@@ -1,0 +1,199 @@
+import assert from "node:assert/strict";
+import { test } from "node:test";
+
+import { GET as callbackGet } from "@/features/auth/api/callback";
+import { GET as identityGet } from "@/features/auth/api/identity";
+import { GET as invitationsGet, POST as invitationsPost } from "@/features/auth/api/invitations";
+import { DELETE as revoke } from "@/features/auth/api/invitation-revoke";
+import { accept, decline, GET as tokenGet } from "@/features/auth/api/invitation-token";
+import { GET as mineGet } from "@/features/auth/api/invitations-mine";
+import { DELETE as membersDelete, GET as membersGet, PATCH as membersPatch, POST as membersPost, PUT as membersPut } from "@/features/auth/api/members";
+import { GET as orgGet, PATCH as orgPatch } from "@/features/auth/api/org";
+import { POST as orgsPost } from "@/features/auth/api/orgs-create";
+
+import { scripted } from "../_support/fake-clients.ts";
+import { fakeDb, filterValue, wrote, type Call, type Reply } from "../_support/fake-db.ts";
+import { as, ctx, json, MEMBERSHIP_ID, ORG_A, ORG_B, OTHER_MEMBERSHIP_ID, PERSONAS, script, userDbFor, type Persona } from "../_support/personas.ts";
+
+const TOKEN = "b".repeat(64);
+const INVITE_A = "55555555-5555-4555-8555-555555555555";
+const INVITE_B = "66666666-6666-4666-8666-666666666666";
+
+/** The service-role side of the world: a roster, an org, two memberships in two orgs, one invitation per org. */
+function world(over?: (c: Call) => Reply | undefined) {
+  return fakeDb(
+    (c) => {
+      const custom = over?.(c);
+      if (custom) return custom;
+      const eq = (k: string) => filterValue(c, `eq:${k}`);
+      if (c.table === "org_memberships" && c.op === "select") {
+        if (c.head) return { count: 2 };
+        if (eq("id")) return { data: { id: eq("id"), user_id: eq("id") === MEMBERSHIP_ID ? "t1" : "t9", role: "member", org_id: eq("id") === MEMBERSHIP_ID ? ORG_A : ORG_B } };
+        if (eq("role") === "owner") return { data: { user_id: "u-owner", created_at: "2026-01-01", user: { full_name: "Olga Owner" } } };
+        if (eq("user_id")) return { data: null };
+        return { data: [{ id: MEMBERSHIP_ID, user_id: "u-member", role: "member", created_at: "2026-01-02", user: { full_name: "Mia Member", email: "m@example.test" } }] };
+      }
+      if (c.table === "org_memberships" && c.op === "update") return { data: { id: MEMBERSHIP_ID, role: "admin" } };
+      if (c.table === "org_memberships" && c.op === "insert") return { data: { id: "new", user_id: "t2", role: "member" } };
+      if (c.table === "profiles" && c.columns === "is_platform_admin") return { data: { is_platform_admin: eq("id") === "u-admin" } };
+      if (c.table === "profiles" && c.op === "select") return { data: { id: "t2" } };
+      if (c.table === "organizations" && c.op === "select") return { data: { id: ORG_A, name: "Org A", slug: "org-a", plan: "pro", created_at: "2026-01-01" } };
+      if (c.table === "organizations" && c.op === "update") return { data: { id: ORG_A, name: "Renamed" } };
+      return undefined;
+    },
+    { users: { "u-member": { email: "member@example.test" } } },
+  );
+}
+
+const call = async (handler: (r: Request, c: never) => Promise<Response>, persona: Persona, url: string, init: RequestInit, params: Record<string, string> = {}) => {
+  const res = await handler(as(persona, url, init), ctx(params) as never);
+  return res.status;
+};
+
+/** A persona matrix: the expected status for each of anon, viewer, other-org member, member, owner, platform admin. */
+async function matrix(name: string, run: (persona: Persona) => Promise<number>, expected: Record<Persona, number>) {
+  for (const persona of PERSONAS) assert.equal(await run(persona), expected[persona], `${name} as ${persona}`);
+}
+const E = (anon: number, viewer: number, otherOrgMember: number, member: number, owner: number, platformAdmin: number): Record<Persona, number> => ({ anon, viewer, otherOrgMember, member, owner, platformAdmin });
+
+test("persona matrix: members GET, PATCH, POST, DELETE, PUT", async () => {
+  const orgParams = { org_id: ORG_A };
+  script(world());
+  await matrix("members GET", (p) => call(membersGet, p, `/api/orgs/${ORG_A}/members`, {}, orgParams), E(401, 200, 403, 200, 200, 200));
+  await matrix("members PATCH", (p) => call(membersPatch, p, `/api/orgs/${ORG_A}/members`, { method: "PATCH", body: json({ membership_id: MEMBERSHIP_ID, role: "admin" }) }, orgParams), E(401, 403, 403, 403, 200, 200));
+  await matrix("members POST (ban)", (p) => call(membersPost, p, `/api/orgs/${ORG_A}/members`, { method: "POST", body: json({ membership_id: MEMBERSHIP_ID, reason: "spam" }) }, orgParams), E(401, 403, 403, 403, 200, 200));
+  await matrix("members DELETE", (p) => call(membersDelete, p, `/api/orgs/${ORG_A}/members?membership_id=${MEMBERSHIP_ID}`, { method: "DELETE" }, orgParams), E(401, 403, 403, 403, 200, 200));
+  await matrix("members PUT", (p) => call(membersPut, p, `/api/orgs/${ORG_A}/members`, { method: "PUT", body: json({ email: "new@example.test", role: "member" }) }, orgParams), E(401, 403, 403, 403, 201, 201));
+});
+
+test("persona matrix: org GET and PATCH", async () => {
+  script(world());
+  const orgParams = { org_id: ORG_A };
+  await matrix("org GET", (p) => call(orgGet, p, `/api/orgs/${ORG_A}`, {}, orgParams), E(401, 200, 403, 200, 200, 403));
+  await matrix("org PATCH", (p) => call(orgPatch, p, `/api/orgs/${ORG_A}`, { method: "PATCH", body: json({ name: "Renamed" }) }, orgParams), E(401, 403, 403, 403, 200, 403));
+  const owner = await orgGet(as("owner", `/api/orgs/${ORG_A}`), ctx(orgParams));
+  const body = await owner.json();
+  assert.deepEqual([body.org.slug, body.caller_role, body.member_count, body.owner.display_name], ["org-a", "owner", 2, "Olga Owner"]);
+});
+
+test("persona matrix: invitations (RLS decides who may issue), revoke, token routes, mine, orgs, identity", async () => {
+  const invite = { id: INVITE_A, token: TOKEN, invited_email: "x@y.test", proposed_role: "member", expires_at: "2099-01-01", status: "pending", created_at: "2026-01-01" };
+  // invitations are written and read on the caller's own RLS client; the service client only serves "mine"
+  script(
+    world(),
+    (c) => (c.table === "org_invitations" && c.op === "insert" ? { data: invite } : c.table === "org_invitations" && c.columns?.includes("org_id") ? { data: { id: filterValue(c, "eq:id"), org_id: filterValue(c, "eq:id") === INVITE_A ? ORG_A : ORG_B, status: "pending" } } : c.table === "org_invitations" ? { data: [] } : undefined),
+    (name) => (name === "create_org_for_self" ? { data: ORG_A } : undefined),
+  );
+  const orgParams = { org_id: ORG_A };
+  await matrix("invitations GET", (p) => call(invitationsGet, p, `/api/orgs/${ORG_A}/invitations`, {}, orgParams), E(401, 200, 200, 200, 200, 200));
+  await matrix("invitations POST", (p) => call(invitationsPost, p, `/api/orgs/${ORG_A}/invitations`, { method: "POST", body: json({ email: "x@y.test", role: "member" }) }, orgParams), E(401, 201, 201, 201, 201, 201));
+  await matrix("revoke own org's invitation", (p) => call(revoke, p, `/api/orgs/${ORG_A}/invitations/${INVITE_A}`, { method: "DELETE" }, { org_id: ORG_A, id: INVITE_A }), E(401, 200, 200, 200, 200, 200));
+  assert.equal(await call(revoke, "owner", `/api/orgs/${ORG_A}/invitations/${INVITE_B}`, { method: "DELETE" }, { org_id: ORG_A, id: INVITE_B }), 404, "another org's invitation");
+  assert.equal(await call(revoke, "owner", "/x", { method: "DELETE" }, { org_id: "nope", id: INVITE_A }), 400);
+  await matrix("token GET", (p) => call(tokenGet, p, `/api/invitations/${TOKEN}`, {}, { token: TOKEN }), E(401, 404, 404, 404, 404, 404));
+  assert.equal(await call(tokenGet, "member", "/x", {}, { token: "short" }), 400);
+  assert.equal(await call(accept, "anon", "/x", { method: "POST" }, { token: TOKEN }), 401);
+  assert.equal(await call(decline, "anon", "/x", { method: "POST" }, { token: TOKEN }), 401);
+  assert.equal(await call(accept, "member", "/x", { method: "POST" }, { token: "short" }), 400);
+  await matrix("mine GET", (p) => call(mineGet, p, "/api/invitations/mine", {}), E(401, 200, 200, 200, 200, 200));
+  await matrix("orgs POST", (p) => call(orgsPost, p, "/api/orgs", { method: "POST", body: json({ name: "Acme" }) }), E(401, 201, 201, 201, 201, 201));
+  assert.equal(await call(orgsPost, "member", "/api/orgs", { method: "POST", body: json({ name: "" }) }), 400);
+  assert.equal(await call(orgsPost, "member", "/api/orgs", { method: "POST", body: "{" }), 400);
+});
+
+test("invitation rpc routes answer through the one map", async () => {
+  const withRpc = (error?: { message: string; code: string }) =>
+    script(world(), undefined, (name) => (name === "lookup_invitation" ? { data: [{ id: INVITE_A, org_name: "Org A" }] } : error ? { error } : { data: ORG_A }));
+  withRpc();
+  assert.equal((await (await tokenGet(as("member", "/x"), ctx({ token: TOKEN }))).json()).invitation.org_name, "Org A");
+  assert.deepEqual(await (await accept(as("member", "/x", { method: "POST" }), ctx({ token: TOKEN }))).json(), { ok: true, org_id: ORG_A });
+  assert.deepEqual(await (await decline(as("member", "/x", { method: "POST" }), ctx({ token: TOKEN }))).json(), { ok: true, status: "declined" });
+  for (const [code, status] of [["42501", 403], ["P0002", 404], ["22023", 409], ["XX000", 500]] as const) {
+    withRpc({ message: "raw", code });
+    assert.equal(await call(accept, "member", "/x", { method: "POST" }, { token: TOKEN }), status, code);
+    assert.equal(await call(decline, "member", "/x", { method: "POST" }, { token: TOKEN }), status, code);
+  }
+});
+
+test("identity route: anonymous is an empty identity, a lookup failure is a 503 and is counted, never 'no workspace'", async () => {
+  const service = script(world());
+  const anon = await identityGet(as("anon", "/api/auth/identity"), undefined);
+  assert.equal(anon.status, 200);
+  assert.equal((await anon.json()).user, null);
+  assert.equal(anon.headers.get("Cache-Control"), "private, no-store");
+  const owner = await (await identityGet(as("owner", "/api/auth/identity"), undefined)).json();
+  assert.deepEqual([owner.orgId, owner.role, owner.orgName], [ORG_A, "owner", "Org A"]);
+  scripted.user = () => userDbFor("owner", (c) => (c.table === "org_memberships" ? { error: { message: "down" } } : undefined)).db;
+  const failed = await identityGet(as("owner", "/api/auth/identity"), undefined);
+  assert.equal(failed.status, 503);
+  assert.equal(failed.headers.get("Retry-After"), "1");
+  assert.deepEqual(await failed.json(), { error: "identity_lookup_failed" });
+  assert.equal(wrote(service.calls, "error_events", "insert").length, 1);
+});
+
+test("auth callback: creates the profile and nothing else, sends the visitor to a same-origin path", async () => {
+  const service = script(world((c) => (c.table === "profiles" && c.op === "select" ? { data: null } : undefined)));
+  const exchanging = (error: unknown) => ({ auth: { exchangeCodeForSession: async () => ({ data: { user: { id: "u-new", email: "n@e.test" } }, error }) } }) as never;
+  scripted.user = () => exchanging(null);
+  const good = await callbackGet(new Request("https://app.example.test/auth/callback?code=c1&next=/onboarding", { headers: { "x-forwarded-for": "9.9.9.1" } }));
+  assert.equal(good.status, 307);
+  assert.equal(good.headers.get("location"), "https://app.example.test/onboarding");
+  assert.deepEqual(service.calls.map((c) => `${c.table}.${c.op}`), ["profiles.select", "profiles.insert"], "a profile row and no membership, org or settings write");
+  const evil = await callbackGet(new Request("https://app.example.test/auth/callback?code=c1&next=//evil.test", { headers: { "x-forwarded-for": "9.9.9.2" } }));
+  assert.equal(evil.headers.get("location"), "https://app.example.test/");
+  scripted.user = () => exchanging({ message: "bad code" });
+  const bad = await callbackGet(new Request("https://app.example.test/auth/callback?code=c1", { headers: { "x-forwarded-for": "9.9.9.3" } }));
+  assert.equal(bad.headers.get("location"), "https://app.example.test/login?error=auth_failed");
+  const none = await callbackGet(new Request("https://app.example.test/auth/callback", { headers: { "x-forwarded-for": "9.9.9.4" } }));
+  assert.equal(none.headers.get("location"), "https://app.example.test/login?error=auth_failed");
+});
+
+test("INV-136 bans: the ban row is written before the membership is removed, bans are org-scoped, self-ban is refused, a banned account is not re-added", async () => {
+  const service = script(world());
+  const res = await membersPost(as("owner", `/api/orgs/${ORG_A}/members`, { method: "POST", body: json({ membership_id: MEMBERSHIP_ID, reason: "abuse" }) }), ctx({ org_id: ORG_A }));
+  assert.equal(res.status, 200);
+  const writes = service.calls.filter((c) => c.op !== "select").map((c) => `${c.table}.${c.op}`);
+  assert.deepEqual(writes, ["org_member_bans.upsert", "org_memberships.delete"]);
+  assert.deepEqual(wrote(service.calls, "org_member_bans", "upsert")[0]?.payload, { org_id: ORG_A, user_id: "t1", banned_by: "u-owner", reason: "abuse" });
+  // the target must be in the URL's org
+  assert.equal(await call(membersPost, "owner", "/x", { method: "POST", body: json({ membership_id: OTHER_MEMBERSHIP_ID }) }, { org_id: ORG_A }), 404);
+  // self-ban
+  script(world((c) => (c.table === "org_memberships" && c.filters.some(([k]) => k === "eq:id") ? { data: { id: MEMBERSHIP_ID, user_id: "u-owner", role: "owner", org_id: ORG_A } } : undefined)));
+  assert.equal(await call(membersPost, "owner", "/x", { method: "POST", body: json({ membership_id: MEMBERSHIP_ID }) }, { org_id: ORG_A }), 403);
+  // a banned account cannot be added back
+  script(world((c) => (c.table === "org_member_bans" ? { data: { user_id: "t2" } } : undefined)));
+  assert.equal(await call(membersPut, "owner", "/x", { method: "PUT", body: json({ email: "t2@example.test" }) }, { org_id: ORG_A }), 403);
+  script(world((c) => (c.table === "org_member_bans" ? { error: { message: "down" } } : undefined)));
+  assert.equal(await call(membersPut, "owner", "/x", { method: "PUT", body: json({ email: "t2@example.test" }) }, { org_id: ORG_A }), 503, "a failed ban lookup fails closed");
+});
+
+test("INV-136 role transitions and INV-137: a body names a role and nothing else; owner cannot be added; unknown roles are refused", async () => {
+  const service = script(world());
+  await membersPatch(as("owner", "/x", { method: "PATCH", body: json({ membership_id: MEMBERSHIP_ID, role: "admin", is_platform_admin: true, org_id: ORG_B }) }), ctx({ org_id: ORG_A }));
+  assert.deepEqual(wrote(service.calls, "org_memberships", "update")[0]?.payload, { role: "admin" });
+  assert.equal(await call(membersPatch, "owner", "/x", { method: "PATCH", body: json({ membership_id: MEMBERSHIP_ID, role: "superuser" }) }, { org_id: ORG_A }), 400);
+  assert.equal(await call(membersPatch, "owner", "/x", { method: "PATCH", body: json({ membership_id: "nope", role: "admin" }) }, { org_id: ORG_A }), 400);
+  assert.equal(await call(membersPut, "owner", "/x", { method: "PUT", body: json({ email: "a@b.test", role: "owner" }) }, { org_id: ORG_A }), 400);
+  assert.equal(await call(membersPut, "owner", "/x", { method: "PUT", body: json({ email: "not-an-email" }) }, { org_id: ORG_A }), 400);
+  const insert = wrote(service.calls, "org_memberships", "insert");
+  assert.equal(insert.length, 0);
+  await membersPut(as("owner", "/x", { method: "PUT", body: json({ email: "a_b@example.test", role: "viewer", is_platform_admin: true }) }), ctx({ org_id: ORG_A }));
+  assert.deepEqual(wrote(service.calls, "org_memberships", "insert")[0]?.payload, { org_id: ORG_A, user_id: "t2", role: "viewer" });
+  assert.equal(filterValue(service.calls.find((c) => c.table === "profiles" && c.filters.some(([k]) => k === "ilike:email"))!, "ilike:email"), "a\\_b@example.test", "LIKE wildcards in an email are escaped");
+});
+
+test("INV-153 through the routes: the only owner cannot be demoted, banned or removed; a failed owner count is a 503", async () => {
+  const lastOwner = (count: number | null, error?: { message: string }) =>
+    script(world((c) => (c.table === "org_memberships" && c.head ? { count, error: error ?? null } : c.table === "org_memberships" && c.filters.some(([k]) => k === "eq:id") ? { data: { id: MEMBERSHIP_ID, user_id: "t1", role: "owner", org_id: ORG_A } } : undefined)));
+  const attempts = (persona: Persona) => [
+    call(membersPatch, persona, "/x", { method: "PATCH", body: json({ membership_id: MEMBERSHIP_ID, role: "member" }) }, { org_id: ORG_A }),
+    call(membersPost, persona, "/x", { method: "POST", body: json({ membership_id: MEMBERSHIP_ID }) }, { org_id: ORG_A }),
+    call(membersDelete, persona, `/x?membership_id=${MEMBERSHIP_ID}`, { method: "DELETE" }, { org_id: ORG_A }),
+  ];
+  lastOwner(1);
+  assert.deepEqual(await Promise.all(attempts("owner")), [409, 409, 409]);
+  lastOwner(2);
+  assert.deepEqual(await Promise.all(attempts("owner")), [200, 200, 200]);
+  lastOwner(null, { message: "down" });
+  assert.deepEqual(await Promise.all(attempts("owner")), [503, 503, 503]);
+});

@@ -1,0 +1,389 @@
+{
+ "admin_action_cooldowns": [
+  "action_key"
+ ],
+ "agent_run_searches": [
+  "id"
+ ],
+ "agent_runs": [
+  "id"
+ ],
+ "aggregate_query_log": [
+  "query_id"
+ ],
+ "assumption_register": [
+  "id"
+ ],
+ "auxiliary_energy_profiles": [
+  "profile_id"
+ ],
+ "brief_apply_runs": [
+  "run_id"
+ ],
+ "bulk_imports": [
+  "id"
+ ],
+ "canonical_source_candidates": [
+  "id"
+ ],
+ "census_worklist": [
+  "id"
+ ],
+ "claim_versions": [
+  "id"
+ ],
+ "community_group_invitations": [
+  "id"
+ ],
+ "community_group_members": [
+  "group_id",
+  "user_id"
+ ],
+ "community_groups": [
+  "id"
+ ],
+ "community_member_profiles": [
+  "user_id"
+ ],
+ "community_post_signoff_requests": [
+  "id"
+ ],
+ "community_posts": [
+  "id"
+ ],
+ "community_thread_entities": [
+  "thread_id",
+  "entity_id"
+ ],
+ "community_topic_groups": [
+  "topic_id",
+  "group_id"
+ ],
+ "community_topics": [
+  "id"
+ ],
+ "connection_theme_runs": [
+  "id"
+ ],
+ "connection_themes": [
+  "id"
+ ],
+ "corpus_census": [
+  "intelligence_item_id"
+ ],
+ "corpus_turn_requests": [
+  "id"
+ ],
+ "coverage_gap_candidates": [
+  "id"
+ ],
+ "coverage_gap_census_findings": [
+  "id"
+ ],
+ "coverage_gaps": [
+  "id"
+ ],
+ "data_sources": [
+  "source_key"
+ ],
+ "derivation_edges": [
+  "from_table",
+  "from_pk",
+  "to_value_id",
+  "edge_kind"
+ ],
+ "derived_values": [
+  "value_id"
+ ],
+ "disposition_ledger": [
+  "id"
+ ],
+ "emission_factors": [
+  "factor_id"
+ ],
+ "entities": [
+  "entity_id"
+ ],
+ "entity_aliases": [
+  "entity_id",
+  "alias",
+  "alias_kind",
+  "asserted_by"
+ ],
+ "entity_identifiers": [
+  "entity_id",
+  "scheme",
+  "value"
+ ],
+ "entity_refs": [
+  "ref_table",
+  "ref_id",
+  "entity_id",
+  "role"
+ ],
+ "entity_relations": [
+  "parent_entity_id",
+  "child_entity_id",
+  "relation"
+ ],
+ "entity_scope": [
+  "subject_id",
+  "scope_id",
+  "relation"
+ ],
+ "error_events": [
+  "id"
+ ],
+ "estimated_values": [
+  "estimate_id"
+ ],
+ "funded_pass_runlock": [
+  "lock_key"
+ ],
+ "gate_a_health_cache": [
+  "singleton"
+ ],
+ "grid_connection_queues": [
+  "queue_id"
+ ],
+ "harness_runs": [
+  "run_id"
+ ],
+ "holdings_quality": [
+  "id"
+ ],
+ "indexation_clauses": [
+  "clause_id"
+ ],
+ "inference_records": [
+  "inference_id"
+ ],
+ "ingest_rejections": [
+  "id"
+ ],
+ "institutions": [
+  "id"
+ ],
+ "integrity_flags": [
+  "id"
+ ],
+ "intelligence_changes": [
+  "id"
+ ],
+ "intelligence_item_citations": [
+  "id"
+ ],
+ "intelligence_item_sections": [
+  "id"
+ ],
+ "intelligence_item_versions": [
+  "id"
+ ],
+ "intelligence_items": [
+  "id"
+ ],
+ "intelligence_summaries": [
+  "id"
+ ],
+ "item_assignments": [
+  "id"
+ ],
+ "item_changelog": [
+  "id"
+ ],
+ "item_correction_evidence": [
+  "correction_id"
+ ],
+ "item_corrections": [
+  "id"
+ ],
+ "item_cross_references": [
+  "id"
+ ],
+ "item_disputes": [
+  "id"
+ ],
+ "item_forward_events": [
+  "id"
+ ],
+ "item_gate_a_state": [
+  "intelligence_item_id"
+ ],
+ "item_notes": [
+  "id"
+ ],
+ "item_supersessions": [
+  "id"
+ ],
+ "item_timelines": [
+  "id"
+ ],
+ "item_type_required_slots": [
+  "id"
+ ],
+ "item_workspace_tags": [
+  "tag_id",
+  "intelligence_item_id"
+ ],
+ "market_series": [
+  "id"
+ ],
+ "moderation_reports": [
+  "id"
+ ],
+ "monitoring_queue": [
+  "id"
+ ],
+ "mutation_leases": [
+  "intelligence_item_id"
+ ],
+ "notification_preferences": [
+  "user_id"
+ ],
+ "notifications": [
+  "id"
+ ],
+ "obligation_objects": [
+  "obligation_id"
+ ],
+ "obligations": [
+  "id"
+ ],
+ "oem_tech_roadmaps": [
+  "roadmap_id"
+ ],
+ "org_invitations": [
+  "id"
+ ],
+ "org_member_bans": [
+  "org_id",
+  "user_id"
+ ],
+ "org_memberships": [
+  "id"
+ ],
+ "org_watchlist": [
+  "id"
+ ],
+ "organizations": [
+  "id"
+ ],
+ "pending_first_fetch": [
+  "id"
+ ],
+ "pending_jurisdiction_review": [
+  "id"
+ ],
+ "portal_link_candidates": [
+  "id"
+ ],
+ "portfolio_members": [
+  "id"
+ ],
+ "portfolios": [
+  "id"
+ ],
+ "profiles": [
+  "id"
+ ],
+ "propagation_events": [
+  "event_id"
+ ],
+ "provisional_sources": [
+  "id"
+ ],
+ "published_price_statistics": [
+  "id"
+ ],
+ "raw_fetches": [
+  "id"
+ ],
+ "region_dimension_coverage": [
+  "id"
+ ],
+ "regional_data_facts": [
+  "id"
+ ],
+ "regions": [
+  "id"
+ ],
+ "reroute_events": [
+  "reroute_id"
+ ],
+ "research_assessments": [
+  "id"
+ ],
+ "section_claim_provenance": [
+  "id"
+ ],
+ "sector_contexts": [
+  "sector"
+ ],
+ "sensitive_field_policy": [
+  "table_name",
+  "column_name"
+ ],
+ "signposts": [
+  "entity_id"
+ ],
+ "source_bias_tags": [
+  "id"
+ ],
+ "source_citations": [
+  "id"
+ ],
+ "source_reliability_ledger": [
+  "id"
+ ],
+ "source_tier_opinions": [
+  "id"
+ ],
+ "source_trust_events": [
+  "id"
+ ],
+ "source_verifications": [
+  "id"
+ ],
+ "sources": [
+  "id"
+ ],
+ "staged_updates": [
+  "id"
+ ],
+ "state_cost_facts": [
+  "id"
+ ],
+ "statutory_computations": [
+  "computation_id"
+ ],
+ "system_state": [
+  "id"
+ ],
+ "system_state_flag_audit": [
+  "id"
+ ],
+ "theme_briefs": [
+  "theme_id"
+ ],
+ "user_item_state": [
+  "id"
+ ],
+ "user_watchlist": [
+  "id"
+ ],
+ "vocabulary_mentions": [
+  "id"
+ ],
+ "vocabulary_terms": [
+  "id"
+ ],
+ "workspace_item_overrides": [
+  "id"
+ ],
+ "workspace_settings": [
+  "id"
+ ],
+ "workspace_tags": [
+  "id"
+ ]
+}
