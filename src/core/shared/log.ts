@@ -6,3 +6,5 @@ export function logError(message: string, detail?: unknown): void {
 export function logWarn(message: string, detail?: unknown): void {
   console.warn(message, detail);
 }
+
+export const log = { error: logError, warn: logWarn };
