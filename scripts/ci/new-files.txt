@@ -1,0 +1,5 @@
+# path | reason (files under src/ with no "// Ported from" header)
+src/app/layout.tsx | new in P2-00: root layout placeholder, no old counterpart
+src/app/page.tsx | new in P2-00: placeholder page, no design yet
+src/core/shared/log.ts | new in P2-00: the one logger
+src/core/types/index.ts | new in P2-00: empty placeholder for shared types
