@@ -1,0 +1,198 @@
+{
+  "route": "profile",
+  "path": "/profile",
+  "auth": true,
+  "viewport": {
+    "width": 1280,
+    "height": 900
+  },
+  "captured_at": "2026-10-15T22:46:52.810Z",
+  "http_status": 200,
+  "final_path": "/profile",
+  "network_idle": true,
+  "accessibility": {
+    "source": "locator.ariaSnapshot",
+    "tree": "- complementary:\n  - link \"Caro's Ledge Freight Sustainability Intelligence\":\n    - /url: /\n    - heading \"Caro's Ledge\" [level=1]\n    - paragraph: Freight Sustainability Intelligence\n  - navigation:\n    - paragraph: Brief\n    - link \"Dashboard\":\n      - /url: /\n    - link \"Watchlist 0\":\n      - /url: /watchlist\n    - paragraph: Intelligence\n    - link \"Regulations 1,320\":\n      - /url: /regulations\n    - link \"Market Intel 54\":\n      - /url: /market\n    - link \"Research 39\":\n      - /url: /research\n    - link \"Operations 26\":\n      - /url: /operations\n    - link \"Map\":\n      - /url: /map\n    - paragraph: Network\n    - link \"Community\":\n      - /url: /community\n  - button \"Open account menu\": Account Dietl / Rockit\n- main:\n  - paragraph: VOL IV · No. 42 · Thursday, October 15, 2026 · Personal\n  - heading \"Account\" [level=1]\n  - text: smoke@example.invalid · Dietl / Rockit · Member · member since Oct 2026\n  - search:\n    - combobox \"Search or ask across the workspace\"\n    - button \"Ask\"\n  - navigation \"Account sections\":\n    - button \"Personal\"\n    - button \"Organization\"\n    - button \"Members & roles · 2\"\n    - button \"Sector profile · 6\"\n    - button \"Jurisdictions\"\n    - button \"Verifier badge\"\n    - button \"Activity\"\n    - link \"Settings\":\n      - /url: /settings\n  - text: Personal profile Visible to your workspace\n  - paragraph: Full name\n  - textbox \"Your name\"\n  - paragraph: Headshot URL\n  - textbox \"https://…\"\n  - paragraph: Work email\n  - textbox [disabled]: smoke@example.invalid\n  - paragraph: Bio\n  - textbox \"A short bio for the community\"\n  - button \"Save personal profile\"\n  - text: Sectors followed 6 6 highlighted niches Home jurisdictions 0 None followed yet Member since Oct 2026 Dietl / Rockit · member Plan Enterprise Billing, owner only Quick links\n  - link \"Dashboard\":\n    - /url: /\n  - link \"Settings · notifications, briefing schedule\":\n    - /url: /settings\n  - link \"Watchlist\":\n    - /url: /watchlist\n- button \"Back to top\"\n- alert"
+  },
+  "landmarks": [
+    {
+      "role": "complementary",
+      "name": "Caro's LedgeFreight Sustainability IntelligenceBriefDashboardWatchlist0IntelligenceRegulations1,320Market Intel54Research39Operations26MapNetworkCommunityAccountDietl / Rockit",
+      "source": "implicit"
+    },
+    {
+      "role": "navigation",
+      "name": "BriefDashboardWatchlist0IntelligenceRegulations1,320Market Intel54Research39Operations26MapNetworkCommunity",
+      "source": "implicit"
+    },
+    {
+      "role": "main",
+      "name": "/* D2 fix (operator report 2026-09-07): \"the top text under the operator's Brief\" — the scope line (\"N items across N surfaces...\") and the verticals line — wrapped with a one-word orphan (e.g. \"...Automotive & Motorsport, Humanitarian & NGO\" / \"Cargo\" alone on the next line). Greedy line-breaking packs every line but the last as full as possible, which is exactly what strands a short remainder word alone; `text-wrap: balance` distributes a block's own text evenly across its wrapped lines instead, so a multi-line scope/verticals line splits evenly with no orphan. `text-wrap: pretty` is the declared fallback for a browser that has `pretty` but not yet `balance` — the later `balance` declaration wins wherever it is supported; an unsupported value is ignored by the cascade, leaving `pretty` in effect. Applies to every page through this one shared Masthead part, not a dashboard-only override; DIRECT children of `.cl-masthead- dek` are each their own wrapped block (the scope line and the verticals line are two separate <div>s), so the rule targets them individually rather than the dek container. */ .cl-masthead-dek > * { text-wrap: pretty; text-wrap: balance; } @media (max-width: 767px) { /* D-M5 (lane mobfix61, 2026-09-08, operator mobile report: \"search bar touched bounding box\") [CONFIRMED by measurement at 390 on compose-02-regulations]: card bottom 186.3, body bottom 185.3, command bar bottom 185.3 — the bar's bottom edge sat ON the card's own 1px bottom border with ZERO padding beneath it, on every mobile surface, because this rule set the body's bottom padding to 0 and the command bar is the body's last child. The mobile 390 spec's \"padding 14px 16px 0\" describes where the BODY's content STARTS; the artboard still draws the card's own padding below the bar, and a card whose content touches its border breaks the contained-by-its-parent rule whatever the spec text reads (this lane's brief: \"the card must contain its content with the spec's padding ... which is what the artboard shows\"). 16px is the same spec's own bottom measure for the tile/content container directly beneath, so the two agree. Measured after: card bottom 202.3, bar bottom 185.3, 16px of clearance. Logged in DEVIATION-LOG.md. */ .cl-masthead-body { padding: 14px 16px 16px !important; } .cl-masthead .cl-masthead-eyebrow { font-size: 9.5px !important; font-weight: 700 !important; } .cl-masthead .cl-masthead-title { font-size: 24px !important; line-height: 1.08 !important; margin-top: 5px !important; } /* MOBILE-60 (2026-09-08) [CONFIRMED, measured at 390]: the mobile 390 spec gives the MASTHEAD title 24px/1.08 and the DETAIL HEADER title 22px/1.1, and this component renders both (the size prop). Only the masthead measure was declared, so every detail title rendered at 24px at 390. Keyed off the size prop the component already takes, via a data attribute, rather than a second component or a page-local override. */ .cl-masthead[data-masthead-size=\"detail\"] .cl-masthead-title { font-size: 22px !important; line-height: 1.1 !important; } .cl-masthead .cl-masthead-dek { font-size: 12px !important; line-height: 1.45 !important; } .cl-masthead .cl-masthead-row { flex-direction: column !important; align-items: stretch !important; gap: 12px !important; } .cl-masthead .cl-masthead-cmdbar { flex: 1 1 auto !important; min-width: 0 !important; width: 100% !important; } } /* dc.html's own masthead row, at the width every artboard is drawn at, and only on a masthead that renders a command bar (see the JSX note just above this style tag). */ @media (min-width: 1440px) { .cl-masthead[data-masthead-cmdbar] .cl-masthead-row { display: grid !important; grid-template-columns: minmax(0,1fr) 420px !important; align-items: end !important; gap: 10px 24px !important; } .cl-masthead[data-masthead-cmdbar] .cl-masthead-titleblock { flex: none !important; } .cl-masthead[data-masthead-cmdbar] .cl-masthead-cmdbar { flex: none !important; min-width: 0 !important; } } VOL IV · No. 42 · Thursday, October 15, 2026 · smoke@example.invalid · Dietl / Rockit · Member · member since Oct 2026 @media (max-width: 767px) { .cl-command-bar { height: 44px !important; } .cl-command-bar .cl-cmdk-hint { display: none; } .cl-command-bar .cl-search-glyph { font-size: 15px !important; } } .cl-command-bar-clear:hover, .cl-command-bar-panel-close:hover { background: var(--tag, #F0EDE9); } ⌕⌘KAskPersonalOrganizationMembers & roles · 2Sector profile · 6JurisdictionsVerifier badgeActivitySettings @media (max-width: 1100px) { .cl-account-grid { grid-template-columns: minmax(0,1fr) !important; } } Personal profileVisible to your workspaceFull nameHeadshot URLWork emailBioSave personal profileSectors followed66 highlighted nichesHome jurisdictions0None followed yetMember sinceOct 2026Dietl / Rockit · memberPlanEnterpriseBilling, owner onlyQuick linksDashboardSettings · notifications, briefing scheduleWatchlist",
+      "source": "implicit"
+    },
+    {
+      "role": "banner",
+      "name": "/* D2 fix (operator report 2026-09-07): \"the top text under the operator's Brief\" — the scope line (\"N items across N surfaces...\") and the verticals line — wrapped with a one-word orphan (e.g. \"...Automotive & Motorsport, Humanitarian & NGO\" / \"Cargo\" alone on the next line). Greedy line-breaking packs every line but the last as full as possible, which is exactly what strands a short remainder word alone; `text-wrap: balance` distributes a block's own text evenly across its wrapped lines instead, so a multi-line scope/verticals line splits evenly with no orphan. `text-wrap: pretty` is the declared fallback for a browser that has `pretty` but not yet `balance` — the later `balance` declaration wins wherever it is supported; an unsupported value is ignored by the cascade, leaving `pretty` in effect. Applies to every page through this one shared Masthead part, not a dashboard-only override; DIRECT children of `.cl-masthead- dek` are each their own wrapped block (the scope line and the verticals line are two separate <div>s), so the rule targets them individually rather than the dek container. */ .cl-masthead-dek > * { text-wrap: pretty; text-wrap: balance; } @media (max-width: 767px) { /* D-M5 (lane mobfix61, 2026-09-08, operator mobile report: \"search bar touched bounding box\") [CONFIRMED by measurement at 390 on compose-02-regulations]: card bottom 186.3, body bottom 185.3, command bar bottom 185.3 — the bar's bottom edge sat ON the card's own 1px bottom border with ZERO padding beneath it, on every mobile surface, because this rule set the body's bottom padding to 0 and the command bar is the body's last child. The mobile 390 spec's \"padding 14px 16px 0\" describes where the BODY's content STARTS; the artboard still draws the card's own padding below the bar, and a card whose content touches its border breaks the contained-by-its-parent rule whatever the spec text reads (this lane's brief: \"the card must contain its content with the spec's padding ... which is what the artboard shows\"). 16px is the same spec's own bottom measure for the tile/content container directly beneath, so the two agree. Measured after: card bottom 202.3, bar bottom 185.3, 16px of clearance. Logged in DEVIATION-LOG.md. */ .cl-masthead-body { padding: 14px 16px 16px !important; } .cl-masthead .cl-masthead-eyebrow { font-size: 9.5px !important; font-weight: 700 !important; } .cl-masthead .cl-masthead-title { font-size: 24px !important; line-height: 1.08 !important; margin-top: 5px !important; } /* MOBILE-60 (2026-09-08) [CONFIRMED, measured at 390]: the mobile 390 spec gives the MASTHEAD title 24px/1.08 and the DETAIL HEADER title 22px/1.1, and this component renders both (the size prop). Only the masthead measure was declared, so every detail title rendered at 24px at 390. Keyed off the size prop the component already takes, via a data attribute, rather than a second component or a page-local override. */ .cl-masthead[data-masthead-size=\"detail\"] .cl-masthead-title { font-size: 22px !important; line-height: 1.1 !important; } .cl-masthead .cl-masthead-dek { font-size: 12px !important; line-height: 1.45 !important; } .cl-masthead .cl-masthead-row { flex-direction: column !important; align-items: stretch !important; gap: 12px !important; } .cl-masthead .cl-masthead-cmdbar { flex: 1 1 auto !important; min-width: 0 !important; width: 100% !important; } } /* dc.html's own masthead row, at the width every artboard is drawn at, and only on a masthead that renders a command bar (see the JSX note just above this style tag). */ @media (min-width: 1440px) { .cl-masthead[data-masthead-cmdbar] .cl-masthead-row { display: grid !important; grid-template-columns: minmax(0,1fr) 420px !important; align-items: end !important; gap: 10px 24px !important; } .cl-masthead[data-masthead-cmdbar] .cl-masthead-titleblock { flex: none !important; } .cl-masthead[data-masthead-cmdbar] .cl-masthead-cmdbar { flex: none !important; min-width: 0 !important; } } VOL IV · No. 42 · Thursday, October 15, 2026 · smoke@example.invalid · Dietl / Rockit · Member · member since Oct 2026 @media (max-width: 767px) { .cl-command-bar { height: 44px !important; } .cl-command-bar .cl-cmdk-hint { display: none; } .cl-command-bar .cl-search-glyph { font-size: 15px !important; } } .cl-command-bar-clear:hover, .cl-command-bar-panel-close:hover { background: var(--tag, #F0EDE9); } ⌕⌘KAsk",
+      "source": "implicit"
+    },
+    {
+      "role": "search",
+      "name": "@media (max-width: 767px) { .cl-command-bar { height: 44px !important; } .cl-command-bar .cl-cmdk-hint { display: none; } .cl-command-bar .cl-search-glyph { font-size: 15px !important; } } .cl-command-bar-clear:hover, .cl-command-bar-panel-close:hover { background: var(--tag, #F0EDE9); } ⌕⌘KAsk",
+      "source": "explicit"
+    },
+    {
+      "role": "navigation",
+      "name": "Account sections",
+      "source": "implicit"
+    },
+    {
+      "role": "region",
+      "name": "Personal profileVisible to your workspaceFull nameHeadshot URLWork emailBioSave personal profile",
+      "source": "implicit"
+    },
+    {
+      "role": "form",
+      "name": "Full nameHeadshot URLWork emailBioSave personal profile",
+      "source": "implicit"
+    },
+    {
+      "role": "region",
+      "name": "Quick linksDashboardSettings · notifications, briefing scheduleWatchlist",
+      "source": "implicit"
+    }
+  ],
+  "headings": [
+    {
+      "level": 1,
+      "text": "Caro's Ledge"
+    },
+    {
+      "level": 1,
+      "text": "Account"
+    }
+  ],
+  "controls": [
+    {
+      "role": "link",
+      "name": "Caro's LedgeFreight Sustainability Intelligence"
+    },
+    {
+      "role": "link",
+      "name": "Dashboard"
+    },
+    {
+      "role": "link",
+      "name": "Watchlist0"
+    },
+    {
+      "role": "link",
+      "name": "Regulations1,320"
+    },
+    {
+      "role": "link",
+      "name": "Market Intel54"
+    },
+    {
+      "role": "link",
+      "name": "Research39"
+    },
+    {
+      "role": "link",
+      "name": "Operations26"
+    },
+    {
+      "role": "link",
+      "name": "Map"
+    },
+    {
+      "role": "link",
+      "name": "Community"
+    },
+    {
+      "role": "button",
+      "name": "Open account menu"
+    },
+    {
+      "role": "combobox",
+      "name": "Search or ask across the workspace"
+    },
+    {
+      "role": "button",
+      "name": "Ask"
+    },
+    {
+      "role": "button",
+      "name": "Personal"
+    },
+    {
+      "role": "button",
+      "name": "Organization"
+    },
+    {
+      "role": "button",
+      "name": "Members & roles · 2"
+    },
+    {
+      "role": "button",
+      "name": "Sector profile · 6"
+    },
+    {
+      "role": "button",
+      "name": "Jurisdictions"
+    },
+    {
+      "role": "button",
+      "name": "Verifier badge"
+    },
+    {
+      "role": "button",
+      "name": "Activity"
+    },
+    {
+      "role": "link",
+      "name": "Settings"
+    },
+    {
+      "role": "textbox",
+      "name": "Your name"
+    },
+    {
+      "role": "textbox",
+      "name": "https://…"
+    },
+    {
+      "role": "textbox",
+      "name": ""
+    },
+    {
+      "role": "textbox",
+      "name": "A short bio for the community"
+    },
+    {
+      "role": "button",
+      "name": "Save personal profile"
+    },
+    {
+      "role": "link",
+      "name": "Dashboard"
+    },
+    {
+      "role": "link",
+      "name": "Settings · notifications, briefing schedule"
+    },
+    {
+      "role": "link",
+      "name": "Watchlist"
+    },
+    {
+      "role": "button",
+      "name": "Back to top"
+    }
+  ],
+  "rows": {
+    "selector": "[data-row], li, tr, article",
+    "limit": 20,
+    "items": []
+  },
+  "document_height": 900
+}
