@@ -1,0 +1,25 @@
+# Caro's Ledge
+
+Freight sustainability intelligence. This tree is the clean-room rebuild: a new repository, no history from the old one. It is building; `src/app/page.tsx` says so.
+
+The plan is in `docs/BUILD-PLAN-2026-10-12.md`; how it is executed is in `docs/PART2-AGENT-PLAN-2026-10-15.md`.
+
+## Rules
+
+1. Every feature of the old product is kept; each is written once, as the best version of itself.
+2. Everything is free: no metered model API, no Browserless.
+3. Hierarchy: `src/core` (substrate, at most 25,000 code lines), `src/features/<name>`, `src/ui`, `src/app` (thin routes). `src` at most 60,000.
+4. Every file under `src/` carries `// Ported from <old path> (lines a-b)`, or is listed in `scripts/ci/new-files.txt` with a reason.
+5. A dependency needs a line in the `budget` block of `package.json`. No `@anthropic-ai/*`, `openai`, or Browserless.
+6. The database is `supabase/schema.sql` plus forward files in `supabase/migrations/`, each ending in a DO-block self-check.
+7. Facts live in the database; code and docs cite them and never restate them.
+8. One workflow, `.github/workflows/ci.yml`. A red run is fixed at the root cause before any re-trigger.
+9. Lint has zero warnings: no unused variables, no `any`, ordered imports, no console outside `src/core/shared/log.ts`.
+10. No personal name, email or home path anywhere in the tree.
+
+## Proofs (all in CI)
+
+- `ci`: `npm run lint`, `typecheck`, `build`, `test`, `tree-checks`, `loc`.
+- `schema`: `supabase/schema.sql` applies to an empty Postgres 15 with zero errors (`npm run schema:apply`), then `scripts/ci/properties.mjs` runs: RLS on every table, no anon write policy, every foreign key indexed, every function's `search_path` pinned. The last two fail on the baseline and are waived in `scripts/ci/baseline-waivers.json` until the forward migrations land; the run prints the offenders under "KNOWN BASELINE FAILURES, forward migrations owed".
+
+Edits to `supabase/schema.sql` against the production dump are recorded in `supabase/SCHEMA-NOTES.md`. Environment variable names are in `.env.example`.
