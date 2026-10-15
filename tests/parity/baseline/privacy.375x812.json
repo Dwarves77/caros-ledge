@@ -1,0 +1,362 @@
+{
+  "route": "privacy",
+  "path": "/privacy",
+  "auth": false,
+  "viewport": {
+    "width": 375,
+    "height": 812
+  },
+  "captured_at": "2026-10-15T22:45:41.594Z",
+  "http_status": 200,
+  "final_path": "/privacy",
+  "network_idle": true,
+  "accessibility": {
+    "source": "locator.ariaSnapshot",
+    "tree": "- banner:\n  - button \"Open navigation\"\n  - heading \"Caro's Ledge\" [level=1]\n  - button \"Search\"\n  - link \"Account\":\n    - /url: /profile\n- main:\n  - main:\n    - article:\n      - heading \"Privacy Policy\" [level=1]\n      - paragraph: \"Last updated: April 30, 2026\"\n      - heading \"Introduction\" [level=2]\n      - paragraph: Caro's Ledge (\"we\", \"our\", \"the platform\") is a freight sustainability intelligence platform operated by Pet Pursuit LLC. This Privacy Policy explains how we collect, use, store, and protect information when you use our services.\n      - paragraph: We process personal data in accordance with applicable laws including the EU General Data Protection Regulation (GDPR), the UK GDPR, and the California Consumer Privacy Act (CCPA).\n      - heading \"Information We Collect\" [level=2]\n      - heading \"Information You Provide\" [level=3]\n      - list:\n        - listitem: \"Account information: name, email address, company affiliation, role\"\n        - listitem: \"Workspace profile: organization name, freight sectors, transport modes, jurisdictions of interest\"\n        - listitem: \"Authentication credentials: passwords (stored as cryptographic hashes only)\"\n        - listitem: OAuth identifiers when you sign in via LinkedIn or other providers\n      - heading \"Information We Collect Automatically\" [level=3]\n      - list:\n        - listitem: \"Usage data: pages viewed, features accessed, regulations queried, intersection patterns explored\"\n        - listitem: \"Technical data: IP address, browser type, device information, session timestamps\"\n        - listitem: Cookies and similar tracking technologies (see Cookies section below)\n      - heading \"Information from Third Parties\" [level=3]\n      - list:\n        - listitem: \"Profile information from OAuth providers (LinkedIn) when you sign in: name, email, profile photo, professional title\"\n        - listitem: Public regulatory data ingested from official sources (does not include personal data)\n      - heading \"How We Use Information\" [level=2]\n      - paragraph: \"We use the information we collect to:\"\n      - list:\n        - listitem: Provide, operate, and maintain the platform\n        - listitem: Authenticate users and manage accounts\n        - listitem: Personalize your experience based on workspace profile and freight sectors\n        - listitem: Generate intelligence summaries and regulatory analyses relevant to your operations\n        - listitem: Communicate with you about platform updates, new regulations, and service announcements\n        - listitem: Detect, prevent, and address technical issues, security incidents, and fraud\n        - listitem: Comply with legal obligations\n        - listitem: Improve our services through aggregated, anonymized analytics\n      - heading \"Legal Bases for Processing (GDPR)\" [level=2]\n      - paragraph: \"Where GDPR applies, we process personal data on the following legal bases:\"\n      - list:\n        - listitem: \"Performance of a contract: to provide the services you've signed up for\"\n        - listitem: \"Legitimate interests: to operate, secure, and improve our platform\"\n        - listitem: \"Legal obligations: to comply with applicable laws\"\n        - listitem: \"Consent: where required, such as for marketing communications\"\n      - heading \"Information Sharing\" [level=2]\n      - paragraph: \"We do not sell personal information. We share information only as described below:\"\n      - heading \"Service Providers\" [level=3]\n      - paragraph: \"We share information with vendors who help us operate the platform, including:\"\n      - list:\n        - listitem: Supabase (database and authentication infrastructure)\n        - listitem: Vercel (hosting and content delivery)\n        - listitem: Anthropic (AI processing for intelligence generation)\n        - listitem: LinkedIn (OAuth authentication)\n        - listitem: Browserless (web content rendering for source ingestion)\n        - listitem: Stripe (payment processing, when applicable)\n      - paragraph: These providers are contractually bound to protect your information and use it only for the purposes we specify.\n      - heading \"Legal Requirements\" [level=3]\n      - paragraph: We may disclose information if required by law, court order, or government request, or to protect our rights, property, or safety, or that of our users or others.\n      - heading \"Business Transfers\" [level=3]\n      - paragraph: If Pet Pursuit LLC is involved in a merger, acquisition, or sale of assets, your information may be transferred. We will notify you and provide options before your information becomes subject to a different privacy policy.\n      - heading \"Data Retention\" [level=2]\n      - paragraph: We retain personal information for as long as your account is active and as needed to provide services. After account deletion, we retain certain information as required by law or for legitimate business purposes (such as fraud prevention or legal compliance), typically not exceeding 7 years.\n      - paragraph: Aggregated, anonymized data may be retained indefinitely for analytical purposes.\n      - heading \"Your Rights\" [level=2]\n      - paragraph: \"Depending on your location, you may have the following rights:\"\n      - list:\n        - listitem: \"Access: request a copy of personal information we hold about you\"\n        - listitem: \"Correction: request correction of inaccurate information\"\n        - listitem: \"Deletion: request deletion of your information (\\\"right to be forgotten\\\")\"\n        - listitem: \"Portability: receive your information in a structured, machine-readable format\"\n        - listitem: \"Objection: object to certain types of processing\"\n        - listitem: \"Restriction: request limitation of how we process your information\"\n        - listitem: \"Withdrawal of consent: where processing is based on consent\"\n        - listitem: Lodge a complaint with a supervisory authority\n      - paragraph: To exercise these rights, contact us at the address below. We will respond within 30 days.\n      - heading \"California Residents (CCPA)\" [level=3]\n      - paragraph: California residents have specific rights including the right to know what personal information is collected, the right to delete personal information, and the right to opt out of the sale of personal information. We do not sell personal information.\n      - heading \"International Data Transfers\" [level=2]\n      - paragraph: Caro's Ledge operates globally. Your information may be transferred to and processed in countries other than your own, including the United States. Where required, we use appropriate safeguards such as Standard Contractual Clauses to protect your information during international transfers.\n      - heading \"Data Security\" [level=2]\n      - paragraph: \"We implement reasonable technical and organizational security measures including:\"\n      - list:\n        - listitem: Encryption of data in transit (TLS) and at rest\n        - listitem: Access controls and authentication requirements\n        - listitem: Regular security audits and updates\n        - listitem: Incident response procedures\n      - paragraph: No system is completely secure. We cannot guarantee absolute security.\n      - heading \"Cookies and Tracking Technologies\" [level=2]\n      - paragraph: \"We use cookies and similar technologies to:\"\n      - list:\n        - listitem: Maintain your authenticated session\n        - listitem: Remember your preferences\n        - listitem: Understand how the platform is used\n        - listitem: Improve functionality and performance\n      - paragraph: You can control cookies through your browser settings. Disabling cookies may affect platform functionality.\n      - paragraph: We do not use third-party advertising cookies.\n      - heading \"Children's Privacy\" [level=2]\n      - paragraph: Caro's Ledge is a B2B platform and is not directed to children under 16. We do not knowingly collect personal information from children. If you believe we have collected information from a child, contact us and we will delete it.\n      - heading \"Third-Party Links\" [level=2]\n      - paragraph: The platform may contain links to third-party websites including regulatory sources, official gazettes, and industry publications. Their privacy practices are governed by their own policies. We are not responsible for the content or privacy practices of third-party sites.\n      - heading \"Changes to This Policy\" [level=2]\n      - paragraph: We may update this Privacy Policy. We will notify you of material changes by email or through the platform. The \"Last updated\" date at the top reflects the most recent revision.\n      - heading \"Contact\" [level=2]\n      - paragraph: \"Questions about this Privacy Policy or our data practices:\"\n      - paragraph:\n        - strong: Pet Pursuit LLC\n        - text: \"50 Falls Road, Falls Village, CT 06031, USA Privacy contact:\"\n        - link \"privacy@carosledge.com\":\n          - /url: mailto:privacy@carosledge.com\n      - paragraph: \"For EU/UK data subjects, our representative is: Caro's Ledge is currently in early access. EU/UK GDPR Article 27 representative will be designated upon onboarding of EU/UK data subjects.\"\n      - heading \"Data Protection Officer\" [level=2]\n      - paragraph:\n        - text: Pet Pursuit LLC has not appointed a dedicated Data Protection Officer. Privacy inquiries should be directed to\n        - link \"privacy@carosledge.com\":\n          - /url: mailto:privacy@carosledge.com\n        - text: .\n- button \"Back to top\"\n- alert"
+  },
+  "landmarks": [
+    {
+      "role": "banner",
+      "name": "Caro's Ledge⌕?",
+      "source": "implicit"
+    },
+    {
+      "role": "main",
+      "name": "Privacy PolicyLast updated: April 30, 2026IntroductionCaro's Ledge (\"we\", \"our\", \"the platform\") is a freight sustainability intelligence platform operated by Pet Pursuit LLC. This Privacy Policy explains how we collect, use, store, and protect information when you use our services.We process personal data in accordance with applicable laws including the EU General Data Protection Regulation (GDPR), the UK GDPR, and the California Consumer Privacy Act (CCPA).Information We CollectInformation You ProvideAccount information: name, email address, company affiliation, roleWorkspace profile: organization name, freight sectors, transport modes, jurisdictions of interestAuthentication credentials: passwords (stored as cryptographic hashes only)OAuth identifiers when you sign in via LinkedIn or other providersInformation We Collect AutomaticallyUsage data: pages viewed, features accessed, regulations queried, intersection patterns exploredTechnical data: IP address, browser type, device information, session timestampsCookies and similar tracking technologies (see Cookies section below)Information from Third PartiesProfile information from OAuth providers (LinkedIn) when you sign in: name, email, profile photo, professional titlePublic regulatory data ingested from official sources (does not include personal data)How We Use InformationWe use the information we collect to:Provide, operate, and maintain the platformAuthenticate users and manage accountsPersonalize your experience based on workspace profile and freight sectorsGenerate intelligence summaries and regulatory analyses relevant to your operationsCommunicate with you about platform updates, new regulations, and service announcementsDetect, prevent, and address technical issues, security incidents, and fraudComply with legal obligationsImprove our services through aggregated, anonymized analyticsLegal Bases for Processing (GDPR)Where GDPR applies, we process personal data on the following legal bases:Performance of a contract: to provide the services you've signed up forLegitimate interests: to operate, secure, and improve our platformLegal obligations: to comply with applicable lawsConsent: where required, such as for marketing communicationsInformation SharingWe do not sell personal information. We share information only as described below:Service ProvidersWe share information with vendors who help us operate the platform, including:Supabase (database and authentication infrastructure)Vercel (hosting and content delivery)Anthropic (AI processing for intelligence generation)LinkedIn (OAuth authentication)Browserless (web content rendering for source ingestion)Stripe (payment processing, when applicable)These providers are contractually bound to protect your information and use it only for the purposes we specify.Legal RequirementsWe may disclose information if required by law, court order, or government request, or to protect our rights, property, or safety, or that of our users or others.Business TransfersIf Pet Pursuit LLC is involved in a merger, acquisition, or sale of assets, your information may be transferred. We will notify you and provide options before your information becomes subject to a different privacy policy.Data RetentionWe retain personal information for as long as your account is active and as needed to provide services. After account deletion, we retain certain information as required by law or for legitimate business purposes (such as fraud prevention or legal compliance), typically not exceeding 7 years.Aggregated, anonymized data may be retained indefinitely for analytical purposes.Your RightsDepending on your location, you may have the following rights:Access: request a copy of personal information we hold about youCorrection: request correction of inaccurate informationDeletion: request deletion of your information (\"right to be forgotten\")Portability: receive your information in a structured, machine-readable formatObjection: object to certain types of processingRestriction: request limitation of how we process your informationWithdrawal of consent: where processing is based on consentLodge a complaint with a supervisory authorityTo exercise these rights, contact us at the address below. We will respond within 30 days.California Residents (CCPA)California residents have specific rights including the right to know what personal information is collected, the right to delete personal information, and the right to opt out of the sale of personal information. We do not sell personal information.International Data TransfersCaro's Ledge operates globally. Your information may be transferred to and processed in countries other than your own, including the United States. Where required, we use appropriate safeguards such as Standard Contractual Clauses to protect your information during international transfers.Data SecurityWe implement reasonable technical and organizational security measures including:Encryption of data in transit (TLS) and at restAccess controls and authentication requirementsRegular security audits and updatesIncident response proceduresNo system is completely secure. We cannot guarantee absolute security.Cookies and Tracking TechnologiesWe use cookies and similar technologies to:Maintain your authenticated sessionRemember your preferencesUnderstand how the platform is usedImprove functionality and performanceYou can control cookies through your browser settings. Disabling cookies may affect platform functionality.We do not use third-party advertising cookies.Children's PrivacyCaro's Ledge is a B2B platform and is not directed to children under 16. We do not knowingly collect personal information from children. If you believe we have collected information from a child, contact us and we will delete it.Third-Party LinksThe platform may contain links to third-party websites including regulatory sources, official gazettes, and industry publications. Their privacy practices are governed by their own policies. We are not responsible for the content or privacy practices of third-party sites.Changes to This PolicyWe may update this Privacy Policy. We will notify you of material changes by email or through the platform. The \"Last updated\" date at the top reflects the most recent revision.ContactQuestions about this Privacy Policy or our data practices:Pet Pursuit LLC50 Falls Road, Falls Village, CT 06031, USAPrivacy contact: privacy@carosledge.comFor EU/UK data subjects, our representative is: Caro's Ledge is currently in early access. EU/UK GDPR Article 27 representative will be designated upon onboarding of EU/UK data subjects.Data Protection OfficerPet Pursuit LLC has not appointed a dedicated Data Protection Officer. Privacy inquiries should be directed to privacy@carosledge.com",
+      "source": "implicit"
+    },
+    {
+      "role": "main",
+      "name": "Privacy PolicyLast updated: April 30, 2026IntroductionCaro's Ledge (\"we\", \"our\", \"the platform\") is a freight sustainability intelligence platform operated by Pet Pursuit LLC. This Privacy Policy explains how we collect, use, store, and protect information when you use our services.We process personal data in accordance with applicable laws including the EU General Data Protection Regulation (GDPR), the UK GDPR, and the California Consumer Privacy Act (CCPA).Information We CollectInformation You ProvideAccount information: name, email address, company affiliation, roleWorkspace profile: organization name, freight sectors, transport modes, jurisdictions of interestAuthentication credentials: passwords (stored as cryptographic hashes only)OAuth identifiers when you sign in via LinkedIn or other providersInformation We Collect AutomaticallyUsage data: pages viewed, features accessed, regulations queried, intersection patterns exploredTechnical data: IP address, browser type, device information, session timestampsCookies and similar tracking technologies (see Cookies section below)Information from Third PartiesProfile information from OAuth providers (LinkedIn) when you sign in: name, email, profile photo, professional titlePublic regulatory data ingested from official sources (does not include personal data)How We Use InformationWe use the information we collect to:Provide, operate, and maintain the platformAuthenticate users and manage accountsPersonalize your experience based on workspace profile and freight sectorsGenerate intelligence summaries and regulatory analyses relevant to your operationsCommunicate with you about platform updates, new regulations, and service announcementsDetect, prevent, and address technical issues, security incidents, and fraudComply with legal obligationsImprove our services through aggregated, anonymized analyticsLegal Bases for Processing (GDPR)Where GDPR applies, we process personal data on the following legal bases:Performance of a contract: to provide the services you've signed up forLegitimate interests: to operate, secure, and improve our platformLegal obligations: to comply with applicable lawsConsent: where required, such as for marketing communicationsInformation SharingWe do not sell personal information. We share information only as described below:Service ProvidersWe share information with vendors who help us operate the platform, including:Supabase (database and authentication infrastructure)Vercel (hosting and content delivery)Anthropic (AI processing for intelligence generation)LinkedIn (OAuth authentication)Browserless (web content rendering for source ingestion)Stripe (payment processing, when applicable)These providers are contractually bound to protect your information and use it only for the purposes we specify.Legal RequirementsWe may disclose information if required by law, court order, or government request, or to protect our rights, property, or safety, or that of our users or others.Business TransfersIf Pet Pursuit LLC is involved in a merger, acquisition, or sale of assets, your information may be transferred. We will notify you and provide options before your information becomes subject to a different privacy policy.Data RetentionWe retain personal information for as long as your account is active and as needed to provide services. After account deletion, we retain certain information as required by law or for legitimate business purposes (such as fraud prevention or legal compliance), typically not exceeding 7 years.Aggregated, anonymized data may be retained indefinitely for analytical purposes.Your RightsDepending on your location, you may have the following rights:Access: request a copy of personal information we hold about youCorrection: request correction of inaccurate informationDeletion: request deletion of your information (\"right to be forgotten\")Portability: receive your information in a structured, machine-readable formatObjection: object to certain types of processingRestriction: request limitation of how we process your informationWithdrawal of consent: where processing is based on consentLodge a complaint with a supervisory authorityTo exercise these rights, contact us at the address below. We will respond within 30 days.California Residents (CCPA)California residents have specific rights including the right to know what personal information is collected, the right to delete personal information, and the right to opt out of the sale of personal information. We do not sell personal information.International Data TransfersCaro's Ledge operates globally. Your information may be transferred to and processed in countries other than your own, including the United States. Where required, we use appropriate safeguards such as Standard Contractual Clauses to protect your information during international transfers.Data SecurityWe implement reasonable technical and organizational security measures including:Encryption of data in transit (TLS) and at restAccess controls and authentication requirementsRegular security audits and updatesIncident response proceduresNo system is completely secure. We cannot guarantee absolute security.Cookies and Tracking TechnologiesWe use cookies and similar technologies to:Maintain your authenticated sessionRemember your preferencesUnderstand how the platform is usedImprove functionality and performanceYou can control cookies through your browser settings. Disabling cookies may affect platform functionality.We do not use third-party advertising cookies.Children's PrivacyCaro's Ledge is a B2B platform and is not directed to children under 16. We do not knowingly collect personal information from children. If you believe we have collected information from a child, contact us and we will delete it.Third-Party LinksThe platform may contain links to third-party websites including regulatory sources, official gazettes, and industry publications. Their privacy practices are governed by their own policies. We are not responsible for the content or privacy practices of third-party sites.Changes to This PolicyWe may update this Privacy Policy. We will notify you of material changes by email or through the platform. The \"Last updated\" date at the top reflects the most recent revision.ContactQuestions about this Privacy Policy or our data practices:Pet Pursuit LLC50 Falls Road, Falls Village, CT 06031, USAPrivacy contact: privacy@carosledge.comFor EU/UK data subjects, our representative is: Caro's Ledge is currently in early access. EU/UK GDPR Article 27 representative will be designated upon onboarding of EU/UK data subjects.Data Protection OfficerPet Pursuit LLC has not appointed a dedicated Data Protection Officer. Privacy inquiries should be directed to privacy@carosledge.com",
+      "source": "implicit"
+    },
+    {
+      "role": "region",
+      "name": "IntroductionCaro's Ledge (\"we\", \"our\", \"the platform\") is a freight sustainability intelligence platform operated by Pet Pursuit LLC. This Privacy Policy explains how we collect, use, store, and protect information when you use our services.We process personal data in accordance with applicable laws including the EU General Data Protection Regulation (GDPR), the UK GDPR, and the California Consumer Privacy Act (CCPA).",
+      "source": "implicit"
+    },
+    {
+      "role": "region",
+      "name": "Information We CollectInformation You ProvideAccount information: name, email address, company affiliation, roleWorkspace profile: organization name, freight sectors, transport modes, jurisdictions of interestAuthentication credentials: passwords (stored as cryptographic hashes only)OAuth identifiers when you sign in via LinkedIn or other providersInformation We Collect AutomaticallyUsage data: pages viewed, features accessed, regulations queried, intersection patterns exploredTechnical data: IP address, browser type, device information, session timestampsCookies and similar tracking technologies (see Cookies section below)Information from Third PartiesProfile information from OAuth providers (LinkedIn) when you sign in: name, email, profile photo, professional titlePublic regulatory data ingested from official sources (does not include personal data)",
+      "source": "implicit"
+    },
+    {
+      "role": "region",
+      "name": "How We Use InformationWe use the information we collect to:Provide, operate, and maintain the platformAuthenticate users and manage accountsPersonalize your experience based on workspace profile and freight sectorsGenerate intelligence summaries and regulatory analyses relevant to your operationsCommunicate with you about platform updates, new regulations, and service announcementsDetect, prevent, and address technical issues, security incidents, and fraudComply with legal obligationsImprove our services through aggregated, anonymized analytics",
+      "source": "implicit"
+    },
+    {
+      "role": "region",
+      "name": "Legal Bases for Processing (GDPR)Where GDPR applies, we process personal data on the following legal bases:Performance of a contract: to provide the services you've signed up forLegitimate interests: to operate, secure, and improve our platformLegal obligations: to comply with applicable lawsConsent: where required, such as for marketing communications",
+      "source": "implicit"
+    },
+    {
+      "role": "region",
+      "name": "Information SharingWe do not sell personal information. We share information only as described below:Service ProvidersWe share information with vendors who help us operate the platform, including:Supabase (database and authentication infrastructure)Vercel (hosting and content delivery)Anthropic (AI processing for intelligence generation)LinkedIn (OAuth authentication)Browserless (web content rendering for source ingestion)Stripe (payment processing, when applicable)These providers are contractually bound to protect your information and use it only for the purposes we specify.Legal RequirementsWe may disclose information if required by law, court order, or government request, or to protect our rights, property, or safety, or that of our users or others.Business TransfersIf Pet Pursuit LLC is involved in a merger, acquisition, or sale of assets, your information may be transferred. We will notify you and provide options before your information becomes subject to a different privacy policy.",
+      "source": "implicit"
+    },
+    {
+      "role": "region",
+      "name": "Data RetentionWe retain personal information for as long as your account is active and as needed to provide services. After account deletion, we retain certain information as required by law or for legitimate business purposes (such as fraud prevention or legal compliance), typically not exceeding 7 years.Aggregated, anonymized data may be retained indefinitely for analytical purposes.",
+      "source": "implicit"
+    },
+    {
+      "role": "region",
+      "name": "Your RightsDepending on your location, you may have the following rights:Access: request a copy of personal information we hold about youCorrection: request correction of inaccurate informationDeletion: request deletion of your information (\"right to be forgotten\")Portability: receive your information in a structured, machine-readable formatObjection: object to certain types of processingRestriction: request limitation of how we process your informationWithdrawal of consent: where processing is based on consentLodge a complaint with a supervisory authorityTo exercise these rights, contact us at the address below. We will respond within 30 days.California Residents (CCPA)California residents have specific rights including the right to know what personal information is collected, the right to delete personal information, and the right to opt out of the sale of personal information. We do not sell personal information.",
+      "source": "implicit"
+    },
+    {
+      "role": "region",
+      "name": "International Data TransfersCaro's Ledge operates globally. Your information may be transferred to and processed in countries other than your own, including the United States. Where required, we use appropriate safeguards such as Standard Contractual Clauses to protect your information during international transfers.",
+      "source": "implicit"
+    },
+    {
+      "role": "region",
+      "name": "Data SecurityWe implement reasonable technical and organizational security measures including:Encryption of data in transit (TLS) and at restAccess controls and authentication requirementsRegular security audits and updatesIncident response proceduresNo system is completely secure. We cannot guarantee absolute security.",
+      "source": "implicit"
+    },
+    {
+      "role": "region",
+      "name": "Cookies and Tracking TechnologiesWe use cookies and similar technologies to:Maintain your authenticated sessionRemember your preferencesUnderstand how the platform is usedImprove functionality and performanceYou can control cookies through your browser settings. Disabling cookies may affect platform functionality.We do not use third-party advertising cookies.",
+      "source": "implicit"
+    },
+    {
+      "role": "region",
+      "name": "Children's PrivacyCaro's Ledge is a B2B platform and is not directed to children under 16. We do not knowingly collect personal information from children. If you believe we have collected information from a child, contact us and we will delete it.",
+      "source": "implicit"
+    },
+    {
+      "role": "region",
+      "name": "Third-Party LinksThe platform may contain links to third-party websites including regulatory sources, official gazettes, and industry publications. Their privacy practices are governed by their own policies. We are not responsible for the content or privacy practices of third-party sites.",
+      "source": "implicit"
+    },
+    {
+      "role": "region",
+      "name": "Changes to This PolicyWe may update this Privacy Policy. We will notify you of material changes by email or through the platform. The \"Last updated\" date at the top reflects the most recent revision.",
+      "source": "implicit"
+    },
+    {
+      "role": "region",
+      "name": "ContactQuestions about this Privacy Policy or our data practices:Pet Pursuit LLC50 Falls Road, Falls Village, CT 06031, USAPrivacy contact: privacy@carosledge.comFor EU/UK data subjects, our representative is: Caro's Ledge is currently in early access. EU/UK GDPR Article 27 representative will be designated upon onboarding of EU/UK data subjects.",
+      "source": "implicit"
+    },
+    {
+      "role": "region",
+      "name": "Data Protection OfficerPet Pursuit LLC has not appointed a dedicated Data Protection Officer. Privacy inquiries should be directed to privacy@carosledge.com",
+      "source": "implicit"
+    }
+  ],
+  "headings": [
+    {
+      "level": 1,
+      "text": "Caro's Ledge"
+    },
+    {
+      "level": 1,
+      "text": "Privacy Policy"
+    },
+    {
+      "level": 2,
+      "text": "Introduction"
+    },
+    {
+      "level": 2,
+      "text": "Information We Collect"
+    },
+    {
+      "level": 3,
+      "text": "Information You Provide"
+    },
+    {
+      "level": 3,
+      "text": "Information We Collect Automatically"
+    },
+    {
+      "level": 3,
+      "text": "Information from Third Parties"
+    },
+    {
+      "level": 2,
+      "text": "How We Use Information"
+    },
+    {
+      "level": 2,
+      "text": "Legal Bases for Processing (GDPR)"
+    },
+    {
+      "level": 2,
+      "text": "Information Sharing"
+    },
+    {
+      "level": 3,
+      "text": "Service Providers"
+    },
+    {
+      "level": 3,
+      "text": "Legal Requirements"
+    },
+    {
+      "level": 3,
+      "text": "Business Transfers"
+    },
+    {
+      "level": 2,
+      "text": "Data Retention"
+    },
+    {
+      "level": 2,
+      "text": "Your Rights"
+    },
+    {
+      "level": 3,
+      "text": "California Residents (CCPA)"
+    },
+    {
+      "level": 2,
+      "text": "International Data Transfers"
+    },
+    {
+      "level": 2,
+      "text": "Data Security"
+    },
+    {
+      "level": 2,
+      "text": "Cookies and Tracking Technologies"
+    },
+    {
+      "level": 2,
+      "text": "Children's Privacy"
+    },
+    {
+      "level": 2,
+      "text": "Third-Party Links"
+    },
+    {
+      "level": 2,
+      "text": "Changes to This Policy"
+    },
+    {
+      "level": 2,
+      "text": "Contact"
+    },
+    {
+      "level": 2,
+      "text": "Data Protection Officer"
+    }
+  ],
+  "controls": [
+    {
+      "role": "button",
+      "name": "Open navigation"
+    },
+    {
+      "role": "button",
+      "name": "Search"
+    },
+    {
+      "role": "link",
+      "name": "Account"
+    },
+    {
+      "role": "link",
+      "name": "privacy@carosledge.com"
+    },
+    {
+      "role": "link",
+      "name": "privacy@carosledge.com"
+    },
+    {
+      "role": "button",
+      "name": "Back to top"
+    }
+  ],
+  "rows": {
+    "selector": "[data-row], li, tr, article",
+    "limit": 20,
+    "items": [
+      {
+        "tag": "article",
+        "text": "Privacy PolicyLast updated: April 30, 2026IntroductionCaro's Ledge (\"we\", \"our\", \"the platform\") is a freight sustainability intelligence platform operated by Pet Pursuit LLC. This Privacy Policy explains how we collect, use, store, and protect information when you use our services.We process person",
+        "width": 375,
+        "height": 6531.5
+      },
+      {
+        "tag": "li",
+        "text": "Account information: name, email address, company affiliation, role",
+        "width": 319,
+        "height": 48.75
+      },
+      {
+        "tag": "li",
+        "text": "Workspace profile: organization name, freight sectors, transport modes, jurisdictions of interest",
+        "width": 319,
+        "height": 73.125
+      },
+      {
+        "tag": "li",
+        "text": "Authentication credentials: passwords (stored as cryptographic hashes only)",
+        "width": 319,
+        "height": 48.75
+      },
+      {
+        "tag": "li",
+        "text": "OAuth identifiers when you sign in via LinkedIn or other providers",
+        "width": 319,
+        "height": 48.75
+      },
+      {
+        "tag": "li",
+        "text": "Usage data: pages viewed, features accessed, regulations queried, intersection patterns explored",
+        "width": 319,
+        "height": 73.125
+      },
+      {
+        "tag": "li",
+        "text": "Technical data: IP address, browser type, device information, session timestamps",
+        "width": 319,
+        "height": 48.75
+      },
+      {
+        "tag": "li",
+        "text": "Cookies and similar tracking technologies (see Cookies section below)",
+        "width": 319,
+        "height": 48.75
+      },
+      {
+        "tag": "li",
+        "text": "Profile information from OAuth providers (LinkedIn) when you sign in: name, email, profile photo, professional title",
+        "width": 319,
+        "height": 73.125
+      },
+      {
+        "tag": "li",
+        "text": "Public regulatory data ingested from official sources (does not include personal data)",
+        "width": 319,
+        "height": 48.75
+      },
+      {
+        "tag": "li",
+        "text": "Provide, operate, and maintain the platform",
+        "width": 319,
+        "height": 24.375
+      },
+      {
+        "tag": "li",
+        "text": "Authenticate users and manage accounts",
+        "width": 319,
+        "height": 24.375
+      },
+      {
+        "tag": "li",
+        "text": "Personalize your experience based on workspace profile and freight sectors",
+        "width": 319,
+        "height": 48.75
+      },
+      {
+        "tag": "li",
+        "text": "Generate intelligence summaries and regulatory analyses relevant to your operations",
+        "width": 319,
+        "height": 73.125
+      },
+      {
+        "tag": "li",
+        "text": "Communicate with you about platform updates, new regulations, and service announcements",
+        "width": 319,
+        "height": 73.125
+      },
+      {
+        "tag": "li",
+        "text": "Detect, prevent, and address technical issues, security incidents, and fraud",
+        "width": 319,
+        "height": 48.75
+      },
+      {
+        "tag": "li",
+        "text": "Comply with legal obligations",
+        "width": 319,
+        "height": 24.375
+      },
+      {
+        "tag": "li",
+        "text": "Improve our services through aggregated, anonymized analytics",
+        "width": 319,
+        "height": 48.75
+      },
+      {
+        "tag": "li",
+        "text": "Performance of a contract: to provide the services you've signed up for",
+        "width": 319,
+        "height": 48.75
+      },
+      {
+        "tag": "li",
+        "text": "Legitimate interests: to operate, secure, and improve our platform",
+        "width": 319,
+        "height": 48.75
+      }
+    ]
+  },
+  "document_height": 812
+}
+
+

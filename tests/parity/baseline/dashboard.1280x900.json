@@ -1,0 +1,101 @@
+{
+  "route": "dashboard",
+  "path": "/dashboard",
+  "auth": true,
+  "viewport": {
+    "width": 1280,
+    "height": 900
+  },
+  "captured_at": "2026-10-15T22:45:43.867Z",
+  "http_status": 404,
+  "final_path": "/dashboard",
+  "network_idle": true,
+  "accessibility": {
+    "source": "locator.ariaSnapshot",
+    "tree": "- complementary:\n  - link \"Caro's Ledge Freight Sustainability Intelligence\":\n    - /url: /\n    - heading \"Caro's Ledge\" [level=1]\n    - paragraph: Freight Sustainability Intelligence\n  - navigation:\n    - paragraph: Brief\n    - link \"Dashboard\":\n      - /url: /\n    - link \"Watchlist 0\":\n      - /url: /watchlist\n    - paragraph: Intelligence\n    - link \"Regulations 1,320\":\n      - /url: /regulations\n    - link \"Market Intel 54\":\n      - /url: /market\n    - link \"Research 39\":\n      - /url: /research\n    - link \"Operations 26\":\n      - /url: /operations\n    - link \"Map\":\n      - /url: /map\n    - paragraph: Network\n    - link \"Community\":\n      - /url: /community\n  - button \"Open account menu\": Account Dietl / Rockit\n- main:\n  - paragraph: 404 — Not found\n  - heading \"This page doesn't exist\" [level=1]\n  - paragraph: The link may be outdated, or the item it points to is not published.\n  - link \"Back to Dashboard\":\n    - /url: /\n- button \"Back to top\"\n- alert"
+  },
+  "landmarks": [
+    {
+      "role": "complementary",
+      "name": "Caro's LedgeFreight Sustainability IntelligenceBriefDashboardWatchlist0IntelligenceRegulations1,320Market Intel54Research39Operations26MapNetworkCommunityAccountDietl / Rockit",
+      "source": "implicit"
+    },
+    {
+      "role": "navigation",
+      "name": "BriefDashboardWatchlist0IntelligenceRegulations1,320Market Intel54Research39Operations26MapNetworkCommunity",
+      "source": "implicit"
+    },
+    {
+      "role": "main",
+      "name": "404 — Not foundThis page doesn't existThe link may be outdated, or the item it points to is not published.Back to Dashboard",
+      "source": "implicit"
+    }
+  ],
+  "headings": [
+    {
+      "level": 1,
+      "text": "Caro's Ledge"
+    },
+    {
+      "level": 1,
+      "text": "This page doesn't exist"
+    }
+  ],
+  "controls": [
+    {
+      "role": "link",
+      "name": "Caro's LedgeFreight Sustainability Intelligence"
+    },
+    {
+      "role": "link",
+      "name": "Dashboard"
+    },
+    {
+      "role": "link",
+      "name": "Watchlist0"
+    },
+    {
+      "role": "link",
+      "name": "Regulations1,320"
+    },
+    {
+      "role": "link",
+      "name": "Market Intel54"
+    },
+    {
+      "role": "link",
+      "name": "Research39"
+    },
+    {
+      "role": "link",
+      "name": "Operations26"
+    },
+    {
+      "role": "link",
+      "name": "Map"
+    },
+    {
+      "role": "link",
+      "name": "Community"
+    },
+    {
+      "role": "button",
+      "name": "Open account menu"
+    },
+    {
+      "role": "link",
+      "name": "Back to Dashboard"
+    },
+    {
+      "role": "button",
+      "name": "Back to top"
+    }
+  ],
+  "rows": {
+    "selector": "[data-row], li, tr, article",
+    "limit": 20,
+    "items": []
+  },
+  "document_height": 900
+}
+

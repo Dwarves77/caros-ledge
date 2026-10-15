@@ -1,0 +1,68 @@
+{
+  "route": "dashboard",
+  "path": "/dashboard",
+  "auth": true,
+  "viewport": {
+    "width": 375,
+    "height": 812
+  },
+  "captured_at": "2026-10-15T22:45:45.596Z",
+  "http_status": 404,
+  "final_path": "/dashboard",
+  "network_idle": true,
+  "accessibility": {
+    "source": "locator.ariaSnapshot",
+    "tree": "- banner:\n  - button \"Open navigation\"\n  - heading \"Caro's Ledge\" [level=1]\n  - button \"Search\"\n  - link \"Account\":\n    - /url: /profile\n- main:\n  - paragraph: 404 — Not found\n  - heading \"This page doesn't exist\" [level=1]\n  - paragraph: The link may be outdated, or the item it points to is not published.\n  - link \"Back to Dashboard\":\n    - /url: /\n- button \"Back to top\"\n- alert"
+  },
+  "landmarks": [
+    {
+      "role": "banner",
+      "name": "Caro's Ledge⌕J",
+      "source": "implicit"
+    },
+    {
+      "role": "main",
+      "name": "404 — Not foundThis page doesn't existThe link may be outdated, or the item it points to is not published.Back to Dashboard",
+      "source": "implicit"
+    }
+  ],
+  "headings": [
+    {
+      "level": 1,
+      "text": "Caro's Ledge"
+    },
+    {
+      "level": 1,
+      "text": "This page doesn't exist"
+    }
+  ],
+  "controls": [
+    {
+      "role": "button",
+      "name": "Open navigation"
+    },
+    {
+      "role": "button",
+      "name": "Search"
+    },
+    {
+      "role": "link",
+      "name": "Account"
+    },
+    {
+      "role": "link",
+      "name": "Back to Dashboard"
+    },
+    {
+      "role": "button",
+      "name": "Back to top"
+    }
+  ],
+  "rows": {
+    "selector": "[data-row], li, tr, article",
+    "limit": 20,
+    "items": []
+  },
+  "document_height": 812
+}
+

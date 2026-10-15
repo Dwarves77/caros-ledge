@@ -1,0 +1,267 @@
+{
+  "route": "regulation-detail",
+  "path": "/regulations/g14",
+  "auth": true,
+  "viewport": {
+    "width": 1280,
+    "height": 900
+  },
+  "captured_at": "2026-10-15T22:45:54.677Z",
+  "http_status": 200,
+  "final_path": "/regulations/g14",
+  "network_idle": true,
+  "accessibility": {
+    "source": "locator.ariaSnapshot",
+    "tree": "- complementary:\n  - link \"Caro's Ledge Freight Sustainability Intelligence\":\n    - /url: /\n    - heading \"Caro's Ledge\" [level=1]\n    - paragraph: Freight Sustainability Intelligence\n  - navigation:\n    - paragraph: Brief\n    - link \"Dashboard\":\n      - /url: /\n    - link \"Watchlist 0\":\n      - /url: /watchlist\n    - paragraph: Intelligence\n    - link \"Regulations 1,320\":\n      - /url: /regulations\n    - link \"Market Intel 54\":\n      - /url: /market\n    - link \"Research 39\":\n      - /url: /research\n    - link \"Operations 26\":\n      - /url: /operations\n    - link \"Map\":\n      - /url: /map\n    - paragraph: Network\n    - link \"Community\":\n      - /url: /community\n  - button \"Open account menu\": Account Dietl / Rockit\n- main:\n  - paragraph: VOL IV · No. 42 · Regulations / Mexico\n  - heading \"Mexico SEMARNAT\" [level=1]\n  - text: Mexico · Diario Oficial de la Federación (DOF) — Gobierno de México · Air · Ocean · Road\n  - search:\n    - combobox \"Search or ask across the workspace\"\n    - button \"Ask\"\n  - text: Immediate · ≤ 90 days Regulation T1 9 sources · T1 primary\n  - group \"Source bias tags\": Primary source Government funded Standards defining Regulator aligned\n  - button \"Export brief\"\n  - button \"Share\"\n  - button \"Watch\"\n  - button \"+ Tag\"\n  - button \"Regulation actions\"\n  - paragraph: Exposure\n  - paragraph: Where\n  - text: emissions · Mexico\n  - paragraph: Who pays\n  - text: needs primary-source figure\n  - paragraph: Your lanes\n  - text: connect ↗\n  - paragraph: Next milestone\n  - text: Norm enters into force (180 días posteriores a su publicación) · 18 Nov 2026 · in 34 days\n  - paragraph: Timeline\n  - text: 5 milestones · 4 passed · next 18 Nov 2026\n  - 'img \"Milestone timeline: 5 milestones, 4 passed\"': 2026-11-18 Norm enters into force (180 días posteriores a su publicación)\n  - link \"+4 more\":\n    - /url: \"#obligation-register\"\n  - text: \"Next: Norm enters into force (180 días posteriores a su publicación) · 18 Nov 2026 · in 34 days\"\n  - navigation \"Section index\":\n    - link \"S1 Summary\":\n      - /url: \"#summary\"\n    - link \"S2 Obligations\":\n      - /url: \"#obligations\"\n    - link \"S3 Requirements\":\n      - /url: \"#requirements\"\n    - link \"S4 Registration\":\n      - /url: \"#registration\"\n    - link \"S5 Operations\":\n      - /url: \"#operations\"\n    - link \"S6 Compliance\":\n      - /url: \"#compliance\"\n    - link \"S8 Sources\":\n      - /url: \"#sources\"\n    - group \"Summary depth\":\n      - button \"Summary\" [pressed]\n      - button \"Full brief\"\n  - text: S1\n  - heading \"Summary\" [level=2]\n  - text: Generated · 30-second read\n  - paragraph: Mexico's environmental ministry overseeing packaging regulations, carbon market development, and transport emissions rules.\n  - text: S2\n  - heading \"Obligations — issues requiring action\" [level=2]\n  - paragraph: \"Verify with shipper-clients the operating-hour count of machinery at point of import. The norm defines both \\\"Motor nuevo\\\" and \\\"Maquinaria móvil nueva no de carretera\\\" with a 50-hour ceiling:\"\n  - paragraph: SCOPE\n  - paragraph: \"FACT: \\\"Motor nuevo: es aquel motor que no ha sido objeto de cambio de componente alguno después de haber sido producido y enajenado por parte del fabricante del motor con no más de 50 horas de funcionamiento.\\\" (numeral 3.21)\"\n  - paragraph: T1 NOM-174-SEMARNAT-2026\n  - paragraph: \"SEMARNAT, 2026. - FACT: \\\"Maquinaria móvil nueva no de carretera: maquinaria no destinada al transporte de pasajeros o mercancías por carretera, con motor nuevo de régimen variable, que usan diésel como combustible y que no han sido enajenados por primera vez por el fabricante o importador, con no más de 50 horas de funcionamiento.\\\" (numeral 3.17) *Source: NOM-174-SEMARNAT-2026, SEMARNAT\"\n  - link \"diariooficial.gob.mx\":\n    - /url: http://diariooficial.gob.mx/normasOficiales/9561/semarnat/semarnat.html\n  - paragraph: 2026. http://diariooficial.gob.mx/normasOficiales/9561/semarnat/semarnat.html\n  - paragraph: ANALYTICAL INFERENCE\n  - paragraph: Operational implication\n  - paragraph: Equipment that exceeds 50 operating hours before the point of first alienation or importación definitiva may not qualify as \"nuevo\" under the norm's own definitions, potentially removing both the compliance obligation and the regulatory pathway. This boundary must be verified at transaction level.\n  - paragraph: not citable\n  - paragraph: At a glance\n  - text: Topic emissions\n  - paragraph: Impact assessment\n  - text: \"8/12 High relevance Relevance to your operation: affects your air/ocean/road operations, your role as freight forwarder/importer/exporter in LATAM, MX. Owner & team Assignee\"\n  - combobox \"Assign owner\":\n    - option \"Unassigned\" [selected]\n    - option \"Jason\"\n    - option \"smoke@example.invalid\"\n  - text: Last update Not recorded\n  - paragraph: In this list\n  - paragraph: needs primary-source figure\n  - link \"Back to list\":\n    - /url: /regulations\n  - paragraph: Legend\n  - paragraph:\n    - strong: Impact\n    - text: \", one meter of twelve segments, filled left to right; the number beside it is the score, out of 12.\"\n  - paragraph:\n    - strong: Timeline\n    - text: \", passed · next · ahead.\"\n  - paragraph:\n    - strong: Source tier\n    - text: \", T1 binding law through T7 news / commentary.\"\n  - text: Affected lanes Modes AIR OCEAN ROAD Jurisdictions Mexico Affected lanes will appear here once your workspace shipment data is connected.\n  - heading \"Notes\" [level=2]\n  - text: Visible to your workspace only Add a note for your workspace\n  - textbox \"Add a note for your workspace\":\n    - /placeholder: Which lanes or clients this touches, who is on it, what was decided\n  - button \"Add note\" [disabled]\n  - text: 0 / 4,000\n  - status\n  - paragraph: No notes on this item yet. Notes are visible to your workspace only, never to other organisations.\n  - heading \"Assignments\" [level=2]\n  - text: Assign teammates, with a notification\n  - paragraph: Nobody is assigned to this item yet.\n  - status\n  - group \"Assign to\":\n    - text: Assign to\n    - button \"Jason\"\n    - button \"smoke@example.invalid\"\n  - text: Due date (optional)\n  - textbox \"Due date (optional)\"\n  - button \"Assign\" [disabled]\n  - text: Pick at least one person.\n  - region \"How this regulation reaches you\":\n    - heading \"How this regulation reaches you\" [level=2]\n    - paragraph: Obligations not yet decomposed\n    - paragraph: This regulation has not been broken into individual obligations yet. The dated events below are listed as they were extracted.\n  - region \"Recalculation notices\": Recalculation notices No recalculations on your team's watchlist in this window.\n- button \"Back to top\"\n- alert"
+  },
+  "landmarks": [
+    {
+      "role": "complementary",
+      "name": "Caro's LedgeFreight Sustainability IntelligenceBriefDashboardWatchlist0IntelligenceRegulations1,320Market Intel54Research39Operations26MapNetworkCommunityAccountDietl / Rockit",
+      "source": "implicit"
+    },
+    {
+      "role": "navigation",
+      "name": "BriefDashboardWatchlist0IntelligenceRegulations1,320Market Intel54Research39Operations26MapNetworkCommunity",
+      "source": "implicit"
+    },
+    {
+      "role": "main",
+      "name": "/* D2 fix (operator report 2026-09-07): \"the top text under the operator's Brief\" — the scope line (\"N items across N surfaces...\") and the verticals line — wrapped with a one-word orphan (e.g. \"...Automotive & Motorsport, Humanitarian & NGO\" / \"Cargo\" alone on the next line). Greedy line-breaking packs every line but the last as full as possible, which is exactly what strands a short remainder word alone; `text-wrap: balance` distributes a block's own text evenly across its wrapped lines instead, so a multi-line scope/verticals line splits evenly with no orphan. `text-wrap: pretty` is the declared fallback for a browser that has `pretty` but not yet `balance` — the later `balance` declaration wins wherever it is supported; an unsupported value is ignored by the cascade, leaving `pretty` in effect. Applies to every page through this one shared Masthead part, not a dashboard-only override; DIRECT children of `.cl-masthead- dek` are each their own wrapped block (the scope line and the verticals line are two separate <div>s), so the rule targets them individually rather than the dek container. */ .cl-masthead-dek > * { text-wrap: pretty; text-wrap: balance; } @media (max-width: 767px) { /* D-M5 (lane mobfix61, 2026-09-08, operator mobile report: \"search bar touched bounding box\") [CONFIRMED by measurement at 390 on compose-02-regulations]: card bottom 186.3, body bottom 185.3, command bar bottom 185.3 — the bar's bottom edge sat ON the card's own 1px bottom border with ZERO padding beneath it, on every mobile surface, because this rule set the body's bottom padding to 0 and the command bar is the body's last child. The mobile 390 spec's \"padding 14px 16px 0\" describes where the BODY's content STARTS; the artboard still draws the card's own padding below the bar, and a card whose content touches its border breaks the contained-by-its-parent rule whatever the spec text reads (this lane's brief: \"the card must contain its content with the spec's padding ... which is what the artboard shows\"). 16px is the same spec's own bottom measure for the tile/content container directly beneath, so the two agree. Measured after: card bottom 202.3, bar bottom 185.3, 16px of clearance. Logged in DEVIATION-LOG.md. */ .cl-masthead-body { padding: 14px 16px 16px !important; } .cl-masthead .cl-masthead-eyebrow { font-size: 9.5px !important; font-weight: 700 !important; } .cl-masthead .cl-masthead-title { font-size: 24px !important; line-height: 1.08 !important; margin-top: 5px !important; } /* MOBILE-60 (2026-09-08) [CONFIRMED, measured at 390]: the mobile 390 spec gives the MASTHEAD title 24px/1.08 and the DETAIL HEADER title 22px/1.1, and this component renders both (the size prop). Only the masthead measure was declared, so every detail title rendered at 24px at 390. Keyed off the size prop the component already takes, via a data attribute, rather than a second component or a page-local override. */ .cl-masthead[data-masthead-size=\"detail\"] .cl-masthead-title { font-size: 22px !important; line-height: 1.1 !important; } .cl-masthead .cl-masthead-dek { font-size: 12px !important; line-height: 1.45 !important; } .cl-masthead .cl-masthead-row { flex-direction: column !important; align-items: stretch !important; gap: 12px !important; } .cl-masthead .cl-masthead-cmdbar { flex: 1 1 auto !important; min-width: 0 !important; width: 100% !important; } } /* dc.html's own masthead row, at the width every artboard is drawn at, and only on a masthead that renders a command bar (see the JSX note just above this style tag). */ @media (min-width: 1440px) { .cl-masthead[data-masthead-cmdbar] .cl-masthead-row { display: grid !important; grid-template-columns: minmax(0,1fr) 420px !important; align-items: end !important; gap: 10px 24px !important; } .cl-masthead[data-masthead-cmdbar] .cl-masthead-titleblock { flex: none !important; } .cl-masthead[data-masthead-cmdbar] .cl-masthead-cmdbar { flex: none !important; min-width: 0 !important; } } VOL IV · No. 42 · Regulations / MexicoMexico SEMARNATMexico · Diario Oficial de la Federación (DOF) — Gobierno de México · Air · Ocean · Road @media (max-width: 767px) { .cl-command-bar { height: 44px !important; } .cl-command-bar .cl-cmdk-hint { display: none; } .cl-command-bar .cl-search-glyph { font-size: 15px !important; } } .cl-command-bar-clear:hover, .cl-command-bar-panel-close:hover { background: var(--tag, #F0EDE9); } ⌕⌘KAskImmediate · ≤ 90 daysRegulation @media (max-width: 767px) { .cl-tier-chip { font-size: 9.5px !important; font-weight: 800 !important; letter-spacing: 0.06em !important; border: 1px solid rgba(0,0,0,.2) !important; border-radius: 4px !important; } } T19 sources · T1 primaryPrimary sourceGovernment fundedStandards definingRegulator aligned @media (max-width: 768px) { .cl-action-row { display: grid !important; grid-template-columns: 1fr 1fr; gap: 8px; } .cl-action-row > * { width: 100%; } /* MOBILE-60 (2026-09-08) [CONFIRMED, measured at 390]: the mobile 390 spec gives these four \"Export brief (#5A5552 fill, #FFFFFF, 12.5px/700), Share, Watch, Tag, each 1px solid rgba(0,0,0,.25), 12.5px/600\". Only the 2x2 geometry had been taken from that paragraph; the type was still the desktop 11.5px/800/700, so the buttons read a size and a weight the spec does not state. Desktop is untouched (this block is inside the <=768 query). */ .cl-action-row > button { font-size: 12.5px !important; font-weight: 600 !important; } .cl-action-row > button:first-of-type { font-weight: 700 !important; } } Export briefShare☆Watch+ Tag .cl-overflow-trigger:hover .cl-overflow-glyph { background: #F5F2EE; } ⋯Exposure @media (max-width: 900px) { .cl-exposure-grid { grid-template-columns: repeat(2, minmax(0,1fr)) !important; } } @media (max-width: 520px) { .cl-exposure-grid { grid-template-columns: 1fr !important; } } Whereemissions · MexicoWho paysneeds primary-source figureYour lanesconnect ↗Next milestoneNorm enters into force (180 días posteriores a su publicación) · 18 Nov 2026 · in 34 days .cl-timeline-narrow { display: none; } @media (max-width: 767px) { .cl-timeline-wide { display: none; } .cl-timeline-narrow { display: block; } } Timeline5 milestones · 4 passed · next 18 Nov 20262026-11-18Norm enters into force (180 días posteriores a su publicación)+4 moreNext: Norm enters into force (180 días posteriores a su publicación) · 18 Nov 2026 · in 34 daysTimeline5 milestones · 4 passed · next 18 Nov 20262026-11-18Norm enters into force (180 días posteriores a su publicación)+4 moreNext: Norm enters into force (180 días posteriores a su publicación) · 18 Nov 2026 · in 34 days @media (max-width: 1100px) { .cl-section-index-strip { flex-wrap: wrap; row-gap: 8px; } .cl-section-index-strip .cl-section-index-tabs { flex-basis: 100%; } } S1 SummaryS2 ObligationsS3 RequirementsS4 RegistrationS5 OperationsS6 ComplianceS8 SourcesSummaryFull brief @media (max-width: 1280px) { .cl-detail-layout { grid-template-columns: minmax(0,1fr) !important; } } .cl-section-header { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding: 14px 20px 10px; border-bottom: 1px solid rgba(0,0,0,.08); } .cl-section-header-titlewrap { display: flex; align-items: baseline; gap: 10px; min-width: 0; } .cl-section-header-meta { white-space: nowrap; } @media (max-width: 1279px) { .cl-section-header .cl-section-header-meta { white-space: normal; min-width: 0; text-align: right; } } @media (max-width: 767px) { .cl-section-header { flex-direction: column; align-items: flex-start; gap: 3px; } .cl-section-header .cl-section-header-meta { white-space: normal; text-align: left; } } S1SummaryGenerated · 30-second readMexico's environmental ministry overseeing packaging regulations, carbon market development, and transport emissions rules. .cl-section-header { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding: 14px 20px 10px; border-bottom: 1px solid rgba(0,0,0,.08); } .cl-section-header-titlewrap { display: flex; align-items: baseline; gap: 10px; min-width: 0; } .cl-section-header-meta { white-space: nowrap; } @media (max-width: 1279px) { .cl-section-header .cl-section-header-meta { white-space: normal; min-width: 0; text-align: right; } } @media (max-width: 767px) { .cl-section-header { flex-direction: column; align-items: flex-start; gap: 3px; } .cl-section-header .cl-section-header-meta { white-space: normal; text-align: left; } } S2Obligations — issues requiring actionVerify with shipper-clients the operating-hour count of machinery at point of import. The norm defines both \"Motor nuevo\" and \"Maquinaria móvil nueva no de carretera\" with a 50-hour ceiling: @media (max-width: 767px) { .fact-card-v2-body { display: flex !important; flex-direction: column !important; gap: 8px !important; } .fact-card-v2-provenance { border-left: none !important; border-top: 1px solid var(--line-1); padding-left: 0 !important; padding-top: 8px; flex-direction: row !important; flex-wrap: wrap; align-items: center; gap: 8px !important; } } SCOPEFACT: \"Motor nuevo: es aquel motor que no ha sido objeto de cambio de componente alguno después de haber sido producido y enajenado por parte del fabricante del motor con no más de 50 horas de funcionamiento.\" (numeral 3.21)T1NOM-174-SEMARNAT-2026SEMARNAT, 2026. - FACT: \"Maquinaria móvil nueva no de carretera: maquinaria no destinada al transporte de pasajeros o mercancías por carretera, con motor nuevo de régimen variable, que usan diésel como combustible y que no han sido enajenados por primera vez por el fabricante o importador, con no más de 50 horas de funcionamiento.\" (numeral 3.17) *Source: NOM-174-SEMARNAT-2026, SEMARNATdiariooficial.gob.mx ↗2026. http://diariooficial.gob.mx/normasOficiales/9561/semarnat/semarnat.html @media (max-width: 767px) { .fact-card-v2-body { display: flex !important; flex-direction: column !important; gap: 8px !important; } .fact-card-v2-provenance { border-left: none !important; border-top: 1px solid var(--line-1); padding-left: 0 !important; padding-top: 8px; flex-direction: row !important; flex-wrap: wrap; align-items: center; gap: 8px !important; } } ANALYTICAL INFERENCEOperational implicationEquipment that exceeds 50 operating hours before the point of first alienation or importación definitiva may not qualify as \"nuevo\" under the norm's own definitions, potentially removing both the compliance obligation and the regulatory pathway. This boundary must be verified at transaction level.not citableAt a glanceTopicemissionsImpact assessment8/12High relevanceRelevance to your operation: affects your air/ocean/road operations, your role as freight forwarder/importer/exporter in LATAM, MX.Owner & smoke@example.invalidLast updateNot recordedIn this listneeds primary-source figureBack to listLegendImpact, one meter of twelve segments, filled left to right; the number beside it is the score, out of 12.Timeline, passed · next · ahead.Source tier, T1 binding law through T7 news / commentary.Affected lanesModesAIROCEANROADJurisdictionsMexicoAffected lanes will appear here once your workspace shipment data is connected. @media (max-width: 1280px) { .cl-detail-layout { grid-template-columns: minmax(0,1fr) !important; } } .cl-section-header { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding: 14px 20px 10px; border-bottom: 1px solid rgba(0,0,0,.08); } .cl-section-header-titlewrap { display: flex; align-items: baseline; gap: 10px; min-width: 0; } .cl-section-header-meta { white-space: nowrap; } @media (max-width: 1279px) { .cl-section-header .cl-section-header-meta { white-space: normal; min-width: 0; text-align: right; } } @media (max-width: 767px) { .cl-section-header { flex-direction: column; align-items: flex-start; gap: 3px; } .cl-section-header .cl-section-header-meta { white-space: normal; text-align: left; } } NotesVisible to your workspace onlyAdd a note for your workspaceAdd note0 / 4,000No notes on this item yet. Notes are visible to your workspace only, never to other organisations. .cl-section-header { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding: 14px 20px 10px; border-bottom: 1px solid rgba(0,0,0,.08); } .cl-section-header-titlewrap { display: flex; align-items: baseline; gap: 10px; min-width: 0; } .cl-section-header-meta { white-space: nowrap; } @media (max-width: 1279px) { .cl-section-header .cl-section-header-meta { white-space: normal; min-width: 0; text-align: right; } } @media (max-width: 767px) { .cl-section-header { flex-direction: column; align-items: flex-start; gap: 3px; } .cl-section-header .cl-section-header-meta { white-space: normal; text-align: left; } } AssignmentsAssign teammates, with a notificationNobody is assigned to this item yet.Assign smoke@example.invalidDue date (optional)AssignPick at least one person.How this regulation reaches youObligations not yet decomposedThis regulation has not been broken into individual obligations yet. The dated events below are listed as they were extracted.Recalculation noticesNo recalculations on your team's watchlist in this window.",
+      "source": "implicit"
+    },
+    {
+      "role": "banner",
+      "name": "/* D2 fix (operator report 2026-09-07): \"the top text under the operator's Brief\" — the scope line (\"N items across N surfaces...\") and the verticals line — wrapped with a one-word orphan (e.g. \"...Automotive & Motorsport, Humanitarian & NGO\" / \"Cargo\" alone on the next line). Greedy line-breaking packs every line but the last as full as possible, which is exactly what strands a short remainder word alone; `text-wrap: balance` distributes a block's own text evenly across its wrapped lines instead, so a multi-line scope/verticals line splits evenly with no orphan. `text-wrap: pretty` is the declared fallback for a browser that has `pretty` but not yet `balance` — the later `balance` declaration wins wherever it is supported; an unsupported value is ignored by the cascade, leaving `pretty` in effect. Applies to every page through this one shared Masthead part, not a dashboard-only override; DIRECT children of `.cl-masthead- dek` are each their own wrapped block (the scope line and the verticals line are two separate <div>s), so the rule targets them individually rather than the dek container. */ .cl-masthead-dek > * { text-wrap: pretty; text-wrap: balance; } @media (max-width: 767px) { /* D-M5 (lane mobfix61, 2026-09-08, operator mobile report: \"search bar touched bounding box\") [CONFIRMED by measurement at 390 on compose-02-regulations]: card bottom 186.3, body bottom 185.3, command bar bottom 185.3 — the bar's bottom edge sat ON the card's own 1px bottom border with ZERO padding beneath it, on every mobile surface, because this rule set the body's bottom padding to 0 and the command bar is the body's last child. The mobile 390 spec's \"padding 14px 16px 0\" describes where the BODY's content STARTS; the artboard still draws the card's own padding below the bar, and a card whose content touches its border breaks the contained-by-its-parent rule whatever the spec text reads (this lane's brief: \"the card must contain its content with the spec's padding ... which is what the artboard shows\"). 16px is the same spec's own bottom measure for the tile/content container directly beneath, so the two agree. Measured after: card bottom 202.3, bar bottom 185.3, 16px of clearance. Logged in DEVIATION-LOG.md. */ .cl-masthead-body { padding: 14px 16px 16px !important; } .cl-masthead .cl-masthead-eyebrow { font-size: 9.5px !important; font-weight: 700 !important; } .cl-masthead .cl-masthead-title { font-size: 24px !important; line-height: 1.08 !important; margin-top: 5px !important; } /* MOBILE-60 (2026-09-08) [CONFIRMED, measured at 390]: the mobile 390 spec gives the MASTHEAD title 24px/1.08 and the DETAIL HEADER title 22px/1.1, and this component renders both (the size prop). Only the masthead measure was declared, so every detail title rendered at 24px at 390. Keyed off the size prop the component already takes, via a data attribute, rather than a second component or a page-local override. */ .cl-masthead[data-masthead-size=\"detail\"] .cl-masthead-title { font-size: 22px !important; line-height: 1.1 !important; } .cl-masthead .cl-masthead-dek { font-size: 12px !important; line-height: 1.45 !important; } .cl-masthead .cl-masthead-row { flex-direction: column !important; align-items: stretch !important; gap: 12px !important; } .cl-masthead .cl-masthead-cmdbar { flex: 1 1 auto !important; min-width: 0 !important; width: 100% !important; } } /* dc.html's own masthead row, at the width every artboard is drawn at, and only on a masthead that renders a command bar (see the JSX note just above this style tag). */ @media (min-width: 1440px) { .cl-masthead[data-masthead-cmdbar] .cl-masthead-row { display: grid !important; grid-template-columns: minmax(0,1fr) 420px !important; align-items: end !important; gap: 10px 24px !important; } .cl-masthead[data-masthead-cmdbar] .cl-masthead-titleblock { flex: none !important; } .cl-masthead[data-masthead-cmdbar] .cl-masthead-cmdbar { flex: none !important; min-width: 0 !important; } } VOL IV · No. 42 · Regulations / MexicoMexico SEMARNATMexico · Diario Oficial de la Federación (DOF) — Gobierno de México · Air · Ocean · Road @media (max-width: 767px) { .cl-command-bar { height: 44px !important; } .cl-command-bar .cl-cmdk-hint { display: none; } .cl-command-bar .cl-search-glyph { font-size: 15px !important; } } .cl-command-bar-clear:hover, .cl-command-bar-panel-close:hover { background: var(--tag, #F0EDE9); } ⌕⌘KAskImmediate · ≤ 90 daysRegulation @media (max-width: 767px) { .cl-tier-chip { font-size: 9.5px !important; font-weight: 800 !important; letter-spacing: 0.06em !important; border: 1px solid rgba(0,0,0,.2) !important; border-radius: 4px !important; } } T19 sources · T1 primaryPrimary sourceGovernment fundedStandards definingRegulator aligned @media (max-width: 768px) { .cl-action-row { display: grid !important; grid-template-columns: 1fr 1fr; gap: 8px; } .cl-action-row > * { width: 100%; } /* MOBILE-60 (2026-09-08) [CONFIRMED, measured at 390]: the mobile 390 spec gives these four \"Export brief (#5A5552 fill, #FFFFFF, 12.5px/700), Share, Watch, Tag, each 1px solid rgba(0,0,0,.25), 12.5px/600\". Only the 2x2 geometry had been taken from that paragraph; the type was still the desktop 11.5px/800/700, so the buttons read a size and a weight the spec does not state. Desktop is untouched (this block is inside the <=768 query). */ .cl-action-row > button { font-size: 12.5px !important; font-weight: 600 !important; } .cl-action-row > button:first-of-type { font-weight: 700 !important; } } Export briefShare☆Watch+ Tag .cl-overflow-trigger:hover .cl-overflow-glyph { background: #F5F2EE; } ⋯Exposure @media (max-width: 900px) { .cl-exposure-grid { grid-template-columns: repeat(2, minmax(0,1fr)) !important; } } @media (max-width: 520px) { .cl-exposure-grid { grid-template-columns: 1fr !important; } } Whereemissions · MexicoWho paysneeds primary-source figureYour lanesconnect ↗Next milestoneNorm enters into force (180 días posteriores a su publicación) · 18 Nov 2026 · in 34 days .cl-timeline-narrow { display: none; } @media (max-width: 767px) { .cl-timeline-wide { display: none; } .cl-timeline-narrow { display: block; } } Timeline5 milestones · 4 passed · next 18 Nov 20262026-11-18Norm enters into force (180 días posteriores a su publicación)+4 moreNext: Norm enters into force (180 días posteriores a su publicación) · 18 Nov 2026 · in 34 daysTimeline5 milestones · 4 passed · next 18 Nov 20262026-11-18Norm enters into force (180 días posteriores a su publicación)+4 moreNext: Norm enters into force (180 días posteriores a su publicación) · 18 Nov 2026 · in 34 days",
+      "source": "implicit"
+    },
+    {
+      "role": "search",
+      "name": "@media (max-width: 767px) { .cl-command-bar { height: 44px !important; } .cl-command-bar .cl-cmdk-hint { display: none; } .cl-command-bar .cl-search-glyph { font-size: 15px !important; } } .cl-command-bar-clear:hover, .cl-command-bar-panel-close:hover { background: var(--tag, #F0EDE9); } ⌕⌘KAsk",
+      "source": "explicit"
+    },
+    {
+      "role": "navigation",
+      "name": "Section index",
+      "source": "implicit"
+    },
+    {
+      "role": "region",
+      "name": ".cl-section-header { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding: 14px 20px 10px; border-bottom: 1px solid rgba(0,0,0,.08); } .cl-section-header-titlewrap { display: flex; align-items: baseline; gap: 10px; min-width: 0; } .cl-section-header-meta { white-space: nowrap; } @media (max-width: 1279px) { .cl-section-header .cl-section-header-meta { white-space: normal; min-width: 0; text-align: right; } } @media (max-width: 767px) { .cl-section-header { flex-direction: column; align-items: flex-start; gap: 3px; } .cl-section-header .cl-section-header-meta { white-space: normal; text-align: left; } } S1SummaryGenerated · 30-second readMexico's environmental ministry overseeing packaging regulations, carbon market development, and transport emissions rules.",
+      "source": "implicit"
+    },
+    {
+      "role": "region",
+      "name": ".cl-section-header { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding: 14px 20px 10px; border-bottom: 1px solid rgba(0,0,0,.08); } .cl-section-header-titlewrap { display: flex; align-items: baseline; gap: 10px; min-width: 0; } .cl-section-header-meta { white-space: nowrap; } @media (max-width: 1279px) { .cl-section-header .cl-section-header-meta { white-space: normal; min-width: 0; text-align: right; } } @media (max-width: 767px) { .cl-section-header { flex-direction: column; align-items: flex-start; gap: 3px; } .cl-section-header .cl-section-header-meta { white-space: normal; text-align: left; } } S2Obligations — issues requiring actionVerify with shipper-clients the operating-hour count of machinery at point of import. The norm defines both \"Motor nuevo\" and \"Maquinaria móvil nueva no de carretera\" with a 50-hour ceiling: @media (max-width: 767px) { .fact-card-v2-body { display: flex !important; flex-direction: column !important; gap: 8px !important; } .fact-card-v2-provenance { border-left: none !important; border-top: 1px solid var(--line-1); padding-left: 0 !important; padding-top: 8px; flex-direction: row !important; flex-wrap: wrap; align-items: center; gap: 8px !important; } } SCOPEFACT: \"Motor nuevo: es aquel motor que no ha sido objeto de cambio de componente alguno después de haber sido producido y enajenado por parte del fabricante del motor con no más de 50 horas de funcionamiento.\" (numeral 3.21)T1NOM-174-SEMARNAT-2026SEMARNAT, 2026. - FACT: \"Maquinaria móvil nueva no de carretera: maquinaria no destinada al transporte de pasajeros o mercancías por carretera, con motor nuevo de régimen variable, que usan diésel como combustible y que no han sido enajenados por primera vez por el fabricante o importador, con no más de 50 horas de funcionamiento.\" (numeral 3.17) *Source: NOM-174-SEMARNAT-2026, SEMARNATdiariooficial.gob.mx ↗2026. http://diariooficial.gob.mx/normasOficiales/9561/semarnat/semarnat.html @media (max-width: 767px) { .fact-card-v2-body { display: flex !important; flex-direction: column !important; gap: 8px !important; } .fact-card-v2-provenance { border-left: none !important; border-top: 1px solid var(--line-1); padding-left: 0 !important; padding-top: 8px; flex-direction: row !important; flex-wrap: wrap; align-items: center; gap: 8px !important; } } ANALYTICAL INFERENCEOperational implicationEquipment that exceeds 50 operating hours before the point of first alienation or importación definitiva may not qualify as \"nuevo\" under the norm's own definitions, potentially removing both the compliance obligation and the regulatory pathway. This boundary must be verified at transaction level.not citable",
+      "source": "implicit"
+    },
+    {
+      "role": "region",
+      "name": ".cl-section-header { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding: 14px 20px 10px; border-bottom: 1px solid rgba(0,0,0,.08); } .cl-section-header-titlewrap { display: flex; align-items: baseline; gap: 10px; min-width: 0; } .cl-section-header-meta { white-space: nowrap; } @media (max-width: 1279px) { .cl-section-header .cl-section-header-meta { white-space: normal; min-width: 0; text-align: right; } } @media (max-width: 767px) { .cl-section-header { flex-direction: column; align-items: flex-start; gap: 3px; } .cl-section-header .cl-section-header-meta { white-space: normal; text-align: left; } } NotesVisible to your workspace onlyAdd a note for your workspaceAdd note0 / 4,000No notes on this item yet. Notes are visible to your workspace only, never to other organisations.",
+      "source": "implicit"
+    },
+    {
+      "role": "region",
+      "name": ".cl-section-header { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding: 14px 20px 10px; border-bottom: 1px solid rgba(0,0,0,.08); } .cl-section-header-titlewrap { display: flex; align-items: baseline; gap: 10px; min-width: 0; } .cl-section-header-meta { white-space: nowrap; } @media (max-width: 1279px) { .cl-section-header .cl-section-header-meta { white-space: normal; min-width: 0; text-align: right; } } @media (max-width: 767px) { .cl-section-header { flex-direction: column; align-items: flex-start; gap: 3px; } .cl-section-header .cl-section-header-meta { white-space: normal; text-align: left; } } AssignmentsAssign teammates, with a notificationNobody is assigned to this item yet.Assign smoke@example.invalidDue date (optional)AssignPick at least one person.",
+      "source": "implicit"
+    },
+    {
+      "role": "region",
+      "name": "How this regulation reaches you",
+      "source": "implicit"
+    },
+    {
+      "role": "region",
+      "name": "Recalculation notices",
+      "source": "implicit"
+    }
+  ],
+  "headings": [
+    {
+      "level": 1,
+      "text": "Caro's Ledge"
+    },
+    {
+      "level": 1,
+      "text": "Mexico SEMARNAT"
+    },
+    {
+      "level": 2,
+      "text": "Summary"
+    },
+    {
+      "level": 2,
+      "text": "Obligations — issues requiring action"
+    },
+    {
+      "level": 2,
+      "text": "Notes"
+    },
+    {
+      "level": 2,
+      "text": "Assignments"
+    },
+    {
+      "level": 2,
+      "text": "How this regulation reaches you"
+    }
+  ],
+  "controls": [
+    {
+      "role": "link",
+      "name": "Caro's LedgeFreight Sustainability Intelligence"
+    },
+    {
+      "role": "link",
+      "name": "Dashboard"
+    },
+    {
+      "role": "link",
+      "name": "Watchlist0"
+    },
+    {
+      "role": "link",
+      "name": "Regulations1,320"
+    },
+    {
+      "role": "link",
+      "name": "Market Intel54"
+    },
+    {
+      "role": "link",
+      "name": "Research39"
+    },
+    {
+      "role": "link",
+      "name": "Operations26"
+    },
+    {
+      "role": "link",
+      "name": "Map"
+    },
+    {
+      "role": "link",
+      "name": "Community"
+    },
+    {
+      "role": "button",
+      "name": "Open account menu"
+    },
+    {
+      "role": "combobox",
+      "name": "Search or ask across the workspace"
+    },
+    {
+      "role": "button",
+      "name": "Ask"
+    },
+    {
+      "role": "button",
+      "name": "Export brief"
+    },
+    {
+      "role": "button",
+      "name": "Share"
+    },
+    {
+      "role": "button",
+      "name": "☆Watch"
+    },
+    {
+      "role": "button",
+      "name": "+ Tag"
+    },
+    {
+      "role": "button",
+      "name": "Regulation actions"
+    },
+    {
+      "role": "link",
+      "name": "+4 more"
+    },
+    {
+      "role": "link",
+      "name": "S1 Summary"
+    },
+    {
+      "role": "link",
+      "name": "S2 Obligations"
+    },
+    {
+      "role": "link",
+      "name": "S3 Requirements"
+    },
+    {
+      "role": "link",
+      "name": "S4 Registration"
+    },
+    {
+      "role": "link",
+      "name": "S5 Operations"
+    },
+    {
+      "role": "link",
+      "name": "S6 Compliance"
+    },
+    {
+      "role": "link",
+      "name": "S8 Sources"
+    },
+    {
+      "role": "button",
+      "name": "Summary"
+    },
+    {
+      "role": "button",
+      "name": "Full brief"
+    },
+    {
+      "role": "link",
+      "name": "diariooficial.gob.mx ↗"
+    },
+    {
+      "role": "combobox",
+      "name": "Assign owner"
+    },
+    {
+      "role": "link",
+      "name": "Back to list"
+    },
+    {
+      "role": "textbox",
+      "name": "Add a note for your workspace"
+    },
+    {
+      "role": "button",
+      "name": "Add note"
+    },
+    {
+      "role": "button",
+      "name": "Jason"
+    },
+    {
+      "role": "button",
+      "name": "smoke@example.invalid"
+    },
+    {
+      "role": "textbox",
+      "name": "Due date (optional)"
+    },
+    {
+      "role": "button",
+      "name": "Assign"
+    },
+    {
+      "role": "button",
+      "name": "Back to top"
+    }
+  ],
+  "rows": {
+    "selector": "[data-row], li, tr, article",
+    "limit": 20,
+    "items": []
+  },
+  "document_height": 900
+}
+
+

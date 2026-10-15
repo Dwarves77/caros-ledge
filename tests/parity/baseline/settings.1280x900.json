@@ -1,0 +1,832 @@
+{
+  "route": "settings",
+  "path": "/settings",
+  "auth": true,
+  "viewport": {
+    "width": 1280,
+    "height": 900
+  },
+  "captured_at": "2026-10-15T22:46:47.001Z",
+  "http_status": 200,
+  "final_path": "/settings",
+  "network_idle": true,
+  "accessibility": {
+    "source": "locator.ariaSnapshot",
+    "tree": "- complementary:\n  - link \"Caro's Ledge Freight Sustainability Intelligence\":\n    - /url: /\n    - heading \"Caro's Ledge\" [level=1]\n    - paragraph: Freight Sustainability Intelligence\n  - navigation:\n    - paragraph: Brief\n    - link \"Dashboard\":\n      - /url: /\n    - link \"Watchlist 0\":\n      - /url: /watchlist\n    - paragraph: Intelligence\n    - link \"Regulations 1,320\":\n      - /url: /regulations\n    - link \"Market Intel 54\":\n      - /url: /market\n    - link \"Research 39\":\n      - /url: /research\n    - link \"Operations 26\":\n      - /url: /operations\n    - link \"Map\":\n      - /url: /map\n    - paragraph: Network\n    - link \"Community\":\n      - /url: /community\n  - button \"Open account menu\": Account Dietl / Rockit\n- main:\n  - paragraph: VOL IV · No. 42 · Thursday, October 15, 2026 · Personal\n  - heading \"Settings\" [level=1]\n  - text: Dashboard defaults, freight sectors, notifications, briefing schedule · scoped to Dietl / Rockit\n  - search:\n    - combobox \"Search or ask across the workspace\"\n    - button \"Ask\"\n  - text: Applies workspace-wide · changes here affect every member, not just you\n  - navigation \"Account sections\":\n    - link \"Personal\":\n      - /url: /profile?tab=personal\n    - link \"Organization\":\n      - /url: /profile?tab=organization\n    - link \"Members & roles\":\n      - /url: /profile?tab=members\n    - link \"Sector profile\":\n      - /url: /profile?tab=sectors\n    - link \"Jurisdictions\":\n      - /url: /profile?tab=jurisdictions\n    - link \"Verifier badge\":\n      - /url: /profile?tab=verifier\n    - link \"Activity\":\n      - /url: /profile?tab=activity\n    - button \"Settings\"\n  - navigation \"Section index\":\n    - link \"S1 General\":\n      - /url: \"#general\"\n    - link \"S2 Notifications\":\n      - /url: \"#notifications\"\n    - link \"S3 Saved searches\":\n      - /url: \"#saved\"\n    - link \"S4 Data\":\n      - /url: \"#data\"\n    - link \"S5 Archive\":\n      - /url: \"#archive\"\n    - link \"S6 Help\":\n      - /url: \"#help\"\n  - text: Dashboard defaults Applies on every load\n  - paragraph: Default sort\n  - radiogroup \"Default sort\":\n    - radio \"Next date\" [checked]\n    - radio \"Newest\"\n    - radio \"A-Z\"\n  - paragraph: Default export\n  - radiogroup \"Default export\":\n    - radio \"HTML\" [checked]\n    - radio \"Slack\"\n  - paragraph: Alert bands\n  - group \"Alert bands\":\n    - button \"Immediate\" [pressed]\n    - button \"Action\" [pressed]\n    - button \"Monitor\"\n  - text: Band tiles\n  - switch \"Show Band tiles\" [checked]\n  - text: Due next\n  - switch \"Show Due next\" [checked]\n  - text: What changed\n  - switch \"Show What changed\" [checked]\n  - text: Watchlist rail\n  - switch \"Show Watchlist rail\" [checked]\n  - text: Across the platform\n  - switch \"Show Across the platform\" [checked]\n  - text: Supersessions\n  - switch \"Show Supersessions\" [checked]\n  - text: Freight sectors 0 selected · filters your default view, briefings and relevance scoring\n  - button \"Fine Art & Museum Logistics\"\n  - button \"Live Events & Touring\"\n  - button \"Luxury Goods & High Value\"\n  - button \"Film, TV & Media Production\"\n  - button \"Automotive & Motorsport\"\n  - button \"Humanitarian & NGO Cargo\"\n  - button \"Cold Chain & Perishables\"\n  - button \"Pharmaceutical & Life Sciences\"\n  - button \"Flowers & Live Plants\"\n  - button \"Wine, Spirits & Beverages\"\n  - button \"E-Commerce & Parcel\"\n  - button \"Textiles, Fashion & Apparel\"\n  - button \"Show all 40 sectors\"\n  - button \"Select all\"\n  - text: ·\n  - button \"Clear\"\n  - heading \"Organisation profile\" [level=2]\n  - text: Role & size\n  - paragraph: Which roles you hold and your organisation's size, used to show whether a regulation applies to you.\n  - paragraph: What does your organisation do? Select every role that applies\n  - button \"Shipper\"\n  - button \"Importer of record\"\n  - button \"Exporter\"\n  - button \"Freight forwarder\"\n  - button \"Carrier\"\n  - button \"Warehouse operator\"\n  - button \"Lender / borrower of goods\"\n  - button \"Public body\"\n  - paragraph: Headcount\n  - button \"Micro (under 10 employees)\"\n  - button \"Small (10-49 employees)\"\n  - button \"Medium (50-249 employees)\"\n  - button \"Large (250+ employees)\"\n  - paragraph: Annual revenue\n  - button \"Micro (up to EUR 2m)\"\n  - button \"Small (up to EUR 10m)\"\n  - button \"Medium (up to EUR 50m)\"\n  - button \"Large (over EUR 50m)\"\n  - paragraph: Annual shipment volume\n  - button \"Low (occasional shipments)\"\n  - button \"Medium (regular, non-daily)\"\n  - button \"High (daily volume)\"\n  - button \"Very high (high-frequency, multi-lane)\"\n  - button \"Save organisation profile\" [disabled]\n  - paragraph: A regulation that only applies to a role or size you have not set will show what information it still needs from you, rather than guessing.\n  - text: Notifications In-app now · email and push coming\n  - paragraph: Notifications enabled\n  - paragraph: Master switch\n  - switch \"Notifications enabled\" [checked]\n  - paragraph: Someone @mentions you\n  - paragraph: Direct mentions in any room\n  - switch \"Someone @mentions you\" [checked]\n  - paragraph: Replies in your threads\n  - paragraph: When someone replies to a post you started\n  - switch \"Replies in your threads\" [checked]\n  - paragraph: New posts in groups you've joined\n  - paragraph: Higher volume · off by default\n  - switch \"New posts in groups you've joined\"\n  - paragraph: Workspace invitations\n  - paragraph: Always on · you must be reachable\n  - switch \"Workspace invitations\" [checked] [disabled]\n  - paragraph: Briefing schedule\n  - paragraph: Cadence\n  - radiogroup \"Briefing cadence\":\n    - radio \"Weekly\" [checked] [disabled]\n    - radio \"Daily\" [disabled]\n    - radio \"Biweekly\" [disabled]\n  - paragraph: Day\n  - radiogroup \"Briefing day\":\n    - radio \"Mon\" [checked] [disabled]\n    - radio \"Tue\" [disabled]\n    - radio \"Wed\" [disabled]\n    - radio \"Thu\" [disabled]\n    - radio \"Fri\" [disabled]\n  - paragraph: Time · your local timezone\n  - textbox \"Briefing time\" [disabled]: 08:00\n  - text: · UTC\n  - group: Jurisdiction weighting\n  - button \"Save schedule\" [disabled]\n  - paragraph: Appearance\n  - paragraph: Light only. There is one theme; the product reads like a printed ledger and stays that way.\n  - paragraph: Data & supersessions\n  - link \"Saved searches · 0\":\n    - /url: \"#saved\"\n  - link \"Data summary\":\n    - /url: \"#data\"\n  - link \"Archive\":\n    - /url: \"#archive\"\n  - text: Saved searches Named filter combinations · stored locally\n  - paragraph: Save filter + query combinations you reuse. Named searches appear here and can be re-applied against the Regulations index.\n  - paragraph: Stored locally in this browser. Cross-device sync coming soon.\n  - button \"New saved search\"\n  - paragraph: No saved searches yet.\n  - text: Data summary 1000 Active 0 Archived 14 Jurisdictions 9 Topics Jurisdiction Coverage EU 678 Global 252 United States 21 EU 16 US 12 GLOBAL 6 GB 4 United Kingdom 3 Nordic 2 Latin America (other) 2 LATAM 1 KR 1 ASIA 1 China 1 Supersession history No supersessions recorded. Archive 0 items · still recoverable\n  - paragraph: Nothing archived. Briefs you archive and items you dismiss collect here, out of the working view but never deleted.\n  - paragraph: Help centre pending\n  - text: Documentation and contact routes land here. Until then, workspace owners reach the team through the onboarding channel.\n- button \"Back to top\"\n- alert"
+  },
+  "landmarks": [
+    {
+      "role": "complementary",
+      "name": "Caro's LedgeFreight Sustainability IntelligenceBriefDashboardWatchlist0IntelligenceRegulations1,320Market Intel54Research39Operations26MapNetworkCommunityAccountDietl / Rockit",
+      "source": "implicit"
+    },
+    {
+      "role": "navigation",
+      "name": "BriefDashboardWatchlist0IntelligenceRegulations1,320Market Intel54Research39Operations26MapNetworkCommunity",
+      "source": "implicit"
+    },
+    {
+      "role": "main",
+      "name": "/* D2 fix (operator report 2026-09-07): \"the top text under the operator's Brief\" — the scope line (\"N items across N surfaces...\") and the verticals line — wrapped with a one-word orphan (e.g. \"...Automotive & Motorsport, Humanitarian & NGO\" / \"Cargo\" alone on the next line). Greedy line-breaking packs every line but the last as full as possible, which is exactly what strands a short remainder word alone; `text-wrap: balance` distributes a block's own text evenly across its wrapped lines instead, so a multi-line scope/verticals line splits evenly with no orphan. `text-wrap: pretty` is the declared fallback for a browser that has `pretty` but not yet `balance` — the later `balance` declaration wins wherever it is supported; an unsupported value is ignored by the cascade, leaving `pretty` in effect. Applies to every page through this one shared Masthead part, not a dashboard-only override; DIRECT children of `.cl-masthead- dek` are each their own wrapped block (the scope line and the verticals line are two separate <div>s), so the rule targets them individually rather than the dek container. */ .cl-masthead-dek > * { text-wrap: pretty; text-wrap: balance; } @media (max-width: 767px) { /* D-M5 (lane mobfix61, 2026-09-08, operator mobile report: \"search bar touched bounding box\") [CONFIRMED by measurement at 390 on compose-02-regulations]: card bottom 186.3, body bottom 185.3, command bar bottom 185.3 — the bar's bottom edge sat ON the card's own 1px bottom border with ZERO padding beneath it, on every mobile surface, because this rule set the body's bottom padding to 0 and the command bar is the body's last child. The mobile 390 spec's \"padding 14px 16px 0\" describes where the BODY's content STARTS; the artboard still draws the card's own padding below the bar, and a card whose content touches its border breaks the contained-by-its-parent rule whatever the spec text reads (this lane's brief: \"the card must contain its content with the spec's padding ... which is what the artboard shows\"). 16px is the same spec's own bottom measure for the tile/content container directly beneath, so the two agree. Measured after: card bottom 202.3, bar bottom 185.3, 16px of clearance. Logged in DEVIATION-LOG.md. */ .cl-masthead-body { padding: 14px 16px 16px !important; } .cl-masthead .cl-masthead-eyebrow { font-size: 9.5px !important; font-weight: 700 !important; } .cl-masthead .cl-masthead-title { font-size: 24px !important; line-height: 1.08 !important; margin-top: 5px !important; } /* MOBILE-60 (2026-09-08) [CONFIRMED, measured at 390]: the mobile 390 spec gives the MASTHEAD title 24px/1.08 and the DETAIL HEADER title 22px/1.1, and this component renders both (the size prop). Only the masthead measure was declared, so every detail title rendered at 24px at 390. Keyed off the size prop the component already takes, via a data attribute, rather than a second component or a page-local override. */ .cl-masthead[data-masthead-size=\"detail\"] .cl-masthead-title { font-size: 22px !important; line-height: 1.1 !important; } .cl-masthead .cl-masthead-dek { font-size: 12px !important; line-height: 1.45 !important; } .cl-masthead .cl-masthead-row { flex-direction: column !important; align-items: stretch !important; gap: 12px !important; } .cl-masthead .cl-masthead-cmdbar { flex: 1 1 auto !important; min-width: 0 !important; width: 100% !important; } } /* dc.html's own masthead row, at the width every artboard is drawn at, and only on a masthead that renders a command bar (see the JSX note just above this style tag). */ @media (min-width: 1440px) { .cl-masthead[data-masthead-cmdbar] .cl-masthead-row { display: grid !important; grid-template-columns: minmax(0,1fr) 420px !important; align-items: end !important; gap: 10px 24px !important; } .cl-masthead[data-masthead-cmdbar] .cl-masthead-titleblock { flex: none !important; } .cl-masthead[data-masthead-cmdbar] .cl-masthead-cmdbar { flex: none !important; min-width: 0 !important; } } VOL IV · No. 42 · Thursday, October 15, 2026 · PersonalSettingsDashboard defaults, freight sectors, notifications, briefing schedule · scoped to Dietl / Rockit @media (max-width: 767px) { .cl-command-bar { height: 44px !important; } .cl-command-bar .cl-cmdk-hint { display: none; } .cl-command-bar .cl-search-glyph { font-size: 15px !important; } } .cl-command-bar-clear:hover, .cl-command-bar-panel-close:hover { background: var(--tag, #F0EDE9); } ⌕⌘KAskApplies workspace-wide · changes here affect every member, not just youPersonalOrganizationMembers & rolesSector profileJurisdictionsVerifier badgeActivitySettings @media (max-width: 1100px) { .cl-section-index-strip { flex-wrap: wrap; row-gap: 8px; } .cl-section-index-strip .cl-section-index-tabs { flex-basis: 100%; } } S1 GeneralS2 NotificationsS3 Saved searchesS4 DataS5 ArchiveS6 Help@media (max-width: 1100px){ .cl-settings-columns{ grid-template-columns:1fr !important; } }Dashboard defaultsApplies on every load@media (max-width: 720px){ .cl-set-controls{ grid-template-columns:1fr !important; } .cl-set-toggles{ grid-template-columns:1fr !important; } }Default sortNext dateNewestA-ZDefault exportHTMLSlackAlert bandsImmediateActionMonitorBand tilesDue nextWhat changedWatchlist railAcross the platformSupersessionsFreight sectors0 selected · filters your default view, briefings and relevance scoring@media (max-width: 900px){ .cl-sector-grid{ grid-template-columns:repeat(2, minmax(0,1fr)) !important; } }Fine Art & Museum LogisticsLive Events & TouringLuxury Goods & High ValueFilm, TV & Media ProductionAutomotive & MotorsportHumanitarian & NGO CargoCold Chain & PerishablesPharmaceutical & Life SciencesFlowers & Live PlantsWine, Spirits & BeveragesE-Commerce & ParcelTextiles, Fashion & ApparelShow all 40 sectorsSelect all·Clear @media (max-width: 1279px) { .cl-section-heading .cl-section-heading-aside { white-space: normal !important; min-width: 0 !important; text-align: right; } } @media (max-width: 767px) { .cl-section-heading { flex-direction: column !important; align-items: flex-start !important; gap: 3px !important; } .cl-section-heading .cl-section-heading-aside { white-space: normal !important; text-align: left; } } Organisation profileRole & sizeWhich roles you hold and your organisation's size, used to show whether a regulation applies to you.What does your organisation do? Select every role that appliesShipperImporter of recordExporterFreight forwarderCarrierWarehouse operatorLender / borrower of goodsPublic bodyHeadcountMicro (under 10 employees)Small (10-49 employees)Medium (50-249 employees)Large (250+ employees)Annual revenueMicro (up to EUR 2m)Small (up to EUR 10m)Medium (up to EUR 50m)Large (over EUR 50m)Annual shipment volumeLow (occasional shipments)Medium (regular, non-daily)High (daily volume)Very high (high-frequency, multi-lane)Save organisation profileA regulation that only applies to a role or size you have not set will show what information it still needs from you, rather than guessing.NotificationsIn-app now · email and push comingNotifications enabledMaster switchSomeone @mentions youDirect mentions in any roomReplies in your threadsWhen someone replies to a post you startedNew posts in groups you've joinedHigher volume · off by defaultWorkspace invitationsAlways on · you must be reachableBriefing scheduleCadenceWeeklyDailyBiweeklyDayMonTueWedThuFriTime · your local timezone· UTCJurisdiction weightingAll jurisdictions weighted equallyUnited StatesCanadaMexicoBrazilArgentinaChileColombiaPeruLatin America (other)CaribbeanCentral AmericaEUGermanyFranceNetherlandsBelgiumItalySpainPolandIrelandGreecePortugalRomaniaUnited KingdomNordicSwitzerlandTurkeyUkraineBalkansChinaJapanSouth KoreaTaiwanHong KongIndiaBangladeshPakistanSri LankaSingaporeMalaysiaIndonesiaThailandVietnamPhilippinesASEAN (other)Asia (other)AustraliaNew ZealandPacific IslandsUAESaudi ArabiaQatarKuwaitBahrainOmanGCC (other)IsraelJordanIraqIranMiddle East (other)EgyptMoroccoTunisiaAlgeriaNorth Africa (other)South AfricaNigeriaKenyaEthiopiaGhanaTanzaniaWest Africa (other)East Africa (other)Central AfricaSouthern Africa (other)RussiaCIS (other)KazakhstanGlobalIMOICAOWTOUnited NationsDelivery is in-app. Email and push follow the notifications channel work.Save scheduleAppearanceLight only. There is one theme; the product reads like a printed ledger and stays that way.Data & supersessionsSaved searches · 0Data summaryArchiveSaved searchesNamed filter combinations · stored locallySave filter + query combinations you reuse. Named searches appear here and can be re-applied against the Regulations index.Stored locally in this browser. Cross-device sync coming soon.New saved searchNo saved searches yet.Data summary1000Active0Archived14Jurisdictions9TopicsJurisdiction CoverageEU678Global252United States21EU16US12GLOBAL6GB4United Kingdom3Nordic2Latin America (other)2LATAM1KR1ASIA1China1Supersession historyNo supersessions recorded.Archive0 items · still recoverableNothing archived. Briefs you archive and items you dismiss collect here, out of the working view but never deleted.Help centre pendingDocumentation and contact routes land here. Until then, workspace owners reach the team through the onboarding channel.",
+      "source": "implicit"
+    },
+    {
+      "role": "banner",
+      "name": "/* D2 fix (operator report 2026-09-07): \"the top text under the operator's Brief\" — the scope line (\"N items across N surfaces...\") and the verticals line — wrapped with a one-word orphan (e.g. \"...Automotive & Motorsport, Humanitarian & NGO\" / \"Cargo\" alone on the next line). Greedy line-breaking packs every line but the last as full as possible, which is exactly what strands a short remainder word alone; `text-wrap: balance` distributes a block's own text evenly across its wrapped lines instead, so a multi-line scope/verticals line splits evenly with no orphan. `text-wrap: pretty` is the declared fallback for a browser that has `pretty` but not yet `balance` — the later `balance` declaration wins wherever it is supported; an unsupported value is ignored by the cascade, leaving `pretty` in effect. Applies to every page through this one shared Masthead part, not a dashboard-only override; DIRECT children of `.cl-masthead- dek` are each their own wrapped block (the scope line and the verticals line are two separate <div>s), so the rule targets them individually rather than the dek container. */ .cl-masthead-dek > * { text-wrap: pretty; text-wrap: balance; } @media (max-width: 767px) { /* D-M5 (lane mobfix61, 2026-09-08, operator mobile report: \"search bar touched bounding box\") [CONFIRMED by measurement at 390 on compose-02-regulations]: card bottom 186.3, body bottom 185.3, command bar bottom 185.3 — the bar's bottom edge sat ON the card's own 1px bottom border with ZERO padding beneath it, on every mobile surface, because this rule set the body's bottom padding to 0 and the command bar is the body's last child. The mobile 390 spec's \"padding 14px 16px 0\" describes where the BODY's content STARTS; the artboard still draws the card's own padding below the bar, and a card whose content touches its border breaks the contained-by-its-parent rule whatever the spec text reads (this lane's brief: \"the card must contain its content with the spec's padding ... which is what the artboard shows\"). 16px is the same spec's own bottom measure for the tile/content container directly beneath, so the two agree. Measured after: card bottom 202.3, bar bottom 185.3, 16px of clearance. Logged in DEVIATION-LOG.md. */ .cl-masthead-body { padding: 14px 16px 16px !important; } .cl-masthead .cl-masthead-eyebrow { font-size: 9.5px !important; font-weight: 700 !important; } .cl-masthead .cl-masthead-title { font-size: 24px !important; line-height: 1.08 !important; margin-top: 5px !important; } /* MOBILE-60 (2026-09-08) [CONFIRMED, measured at 390]: the mobile 390 spec gives the MASTHEAD title 24px/1.08 and the DETAIL HEADER title 22px/1.1, and this component renders both (the size prop). Only the masthead measure was declared, so every detail title rendered at 24px at 390. Keyed off the size prop the component already takes, via a data attribute, rather than a second component or a page-local override. */ .cl-masthead[data-masthead-size=\"detail\"] .cl-masthead-title { font-size: 22px !important; line-height: 1.1 !important; } .cl-masthead .cl-masthead-dek { font-size: 12px !important; line-height: 1.45 !important; } .cl-masthead .cl-masthead-row { flex-direction: column !important; align-items: stretch !important; gap: 12px !important; } .cl-masthead .cl-masthead-cmdbar { flex: 1 1 auto !important; min-width: 0 !important; width: 100% !important; } } /* dc.html's own masthead row, at the width every artboard is drawn at, and only on a masthead that renders a command bar (see the JSX note just above this style tag). */ @media (min-width: 1440px) { .cl-masthead[data-masthead-cmdbar] .cl-masthead-row { display: grid !important; grid-template-columns: minmax(0,1fr) 420px !important; align-items: end !important; gap: 10px 24px !important; } .cl-masthead[data-masthead-cmdbar] .cl-masthead-titleblock { flex: none !important; } .cl-masthead[data-masthead-cmdbar] .cl-masthead-cmdbar { flex: none !important; min-width: 0 !important; } } VOL IV · No. 42 · Thursday, October 15, 2026 · PersonalSettingsDashboard defaults, freight sectors, notifications, briefing schedule · scoped to Dietl / Rockit @media (max-width: 767px) { .cl-command-bar { height: 44px !important; } .cl-command-bar .cl-cmdk-hint { display: none; } .cl-command-bar .cl-search-glyph { font-size: 15px !important; } } .cl-command-bar-clear:hover, .cl-command-bar-panel-close:hover { background: var(--tag, #F0EDE9); } ⌕⌘KAskApplies workspace-wide · changes here affect every member, not just you",
+      "source": "implicit"
+    },
+    {
+      "role": "search",
+      "name": "@media (max-width: 767px) { .cl-command-bar { height: 44px !important; } .cl-command-bar .cl-cmdk-hint { display: none; } .cl-command-bar .cl-search-glyph { font-size: 15px !important; } } .cl-command-bar-clear:hover, .cl-command-bar-panel-close:hover { background: var(--tag, #F0EDE9); } ⌕⌘KAsk",
+      "source": "explicit"
+    },
+    {
+      "role": "navigation",
+      "name": "Account sections",
+      "source": "implicit"
+    },
+    {
+      "role": "navigation",
+      "name": "Section index",
+      "source": "implicit"
+    },
+    {
+      "role": "region",
+      "name": "Dashboard defaultsApplies on every load@media (max-width: 720px){ .cl-set-controls{ grid-template-columns:1fr !important; } .cl-set-toggles{ grid-template-columns:1fr !important; } }Default sortNext dateNewestA-ZDefault exportHTMLSlackAlert bandsImmediateActionMonitorBand tilesDue nextWhat changedWatchlist railAcross the platformSupersessions",
+      "source": "implicit"
+    },
+    {
+      "role": "region",
+      "name": "Freight sectors0 selected · filters your default view, briefings and relevance scoring@media (max-width: 900px){ .cl-sector-grid{ grid-template-columns:repeat(2, minmax(0,1fr)) !important; } }Fine Art & Museum LogisticsLive Events & TouringLuxury Goods & High ValueFilm, TV & Media ProductionAutomotive & MotorsportHumanitarian & NGO CargoCold Chain & PerishablesPharmaceutical & Life SciencesFlowers & Live PlantsWine, Spirits & BeveragesE-Commerce & ParcelTextiles, Fashion & ApparelShow all 40 sectorsSelect all·Clear",
+      "source": "implicit"
+    },
+    {
+      "role": "region",
+      "name": "NotificationsIn-app now · email and push comingNotifications enabledMaster switchSomeone @mentions youDirect mentions in any roomReplies in your threadsWhen someone replies to a post you startedNew posts in groups you've joinedHigher volume · off by defaultWorkspace invitationsAlways on · you must be reachable",
+      "source": "implicit"
+    },
+    {
+      "role": "region",
+      "name": "Saved searchesNamed filter combinations · stored locallySave filter + query combinations you reuse. Named searches appear here and can be re-applied against the Regulations index.Stored locally in this browser. Cross-device sync coming soon.New saved searchNo saved searches yet.",
+      "source": "implicit"
+    },
+    {
+      "role": "region",
+      "name": "Data summary1000Active0Archived14Jurisdictions9TopicsJurisdiction CoverageEU678Global252United States21EU16US12GLOBAL6GB4United Kingdom3Nordic2Latin America (other)2LATAM1KR1ASIA1China1",
+      "source": "implicit"
+    },
+    {
+      "role": "region",
+      "name": "Supersession historyNo supersessions recorded.",
+      "source": "implicit"
+    },
+    {
+      "role": "region",
+      "name": "Archive0 items · still recoverableNothing archived. Briefs you archive and items you dismiss collect here, out of the working view but never deleted.",
+      "source": "implicit"
+    }
+  ],
+  "headings": [
+    {
+      "level": 1,
+      "text": "Caro's Ledge"
+    },
+    {
+      "level": 1,
+      "text": "Settings"
+    },
+    {
+      "level": 2,
+      "text": "Organisation profile"
+    }
+  ],
+  "controls": [
+    {
+      "role": "link",
+      "name": "Caro's LedgeFreight Sustainability Intelligence"
+    },
+    {
+      "role": "link",
+      "name": "Dashboard"
+    },
+    {
+      "role": "link",
+      "name": "Watchlist0"
+    },
+    {
+      "role": "link",
+      "name": "Regulations1,320"
+    },
+    {
+      "role": "link",
+      "name": "Market Intel54"
+    },
+    {
+      "role": "link",
+      "name": "Research39"
+    },
+    {
+      "role": "link",
+      "name": "Operations26"
+    },
+    {
+      "role": "link",
+      "name": "Map"
+    },
+    {
+      "role": "link",
+      "name": "Community"
+    },
+    {
+      "role": "button",
+      "name": "Open account menu"
+    },
+    {
+      "role": "combobox",
+      "name": "Search or ask across the workspace"
+    },
+    {
+      "role": "button",
+      "name": "Ask"
+    },
+    {
+      "role": "link",
+      "name": "Personal"
+    },
+    {
+      "role": "link",
+      "name": "Organization"
+    },
+    {
+      "role": "link",
+      "name": "Members & roles"
+    },
+    {
+      "role": "link",
+      "name": "Sector profile"
+    },
+    {
+      "role": "link",
+      "name": "Jurisdictions"
+    },
+    {
+      "role": "link",
+      "name": "Verifier badge"
+    },
+    {
+      "role": "link",
+      "name": "Activity"
+    },
+    {
+      "role": "button",
+      "name": "Settings"
+    },
+    {
+      "role": "link",
+      "name": "S1 General"
+    },
+    {
+      "role": "link",
+      "name": "S2 Notifications"
+    },
+    {
+      "role": "link",
+      "name": "S3 Saved searches"
+    },
+    {
+      "role": "link",
+      "name": "S4 Data"
+    },
+    {
+      "role": "link",
+      "name": "S5 Archive"
+    },
+    {
+      "role": "link",
+      "name": "S6 Help"
+    },
+    {
+      "role": "radio",
+      "name": "Next date"
+    },
+    {
+      "role": "radio",
+      "name": "Newest"
+    },
+    {
+      "role": "radio",
+      "name": "A-Z"
+    },
+    {
+      "role": "radio",
+      "name": "HTML"
+    },
+    {
+      "role": "radio",
+      "name": "Slack"
+    },
+    {
+      "role": "button",
+      "name": "Immediate"
+    },
+    {
+      "role": "button",
+      "name": "Action"
+    },
+    {
+      "role": "button",
+      "name": "Monitor"
+    },
+    {
+      "role": "switch",
+      "name": "Show Band tiles"
+    },
+    {
+      "role": "switch",
+      "name": "Show Due next"
+    },
+    {
+      "role": "switch",
+      "name": "Show What changed"
+    },
+    {
+      "role": "switch",
+      "name": "Show Watchlist rail"
+    },
+    {
+      "role": "switch",
+      "name": "Show Across the platform"
+    },
+    {
+      "role": "switch",
+      "name": "Show Supersessions"
+    },
+    {
+      "role": "button",
+      "name": "Fine Art & Museum Logistics"
+    },
+    {
+      "role": "button",
+      "name": "Live Events & Touring"
+    },
+    {
+      "role": "button",
+      "name": "Luxury Goods & High Value"
+    },
+    {
+      "role": "button",
+      "name": "Film, TV & Media Production"
+    },
+    {
+      "role": "button",
+      "name": "Automotive & Motorsport"
+    },
+    {
+      "role": "button",
+      "name": "Humanitarian & NGO Cargo"
+    },
+    {
+      "role": "button",
+      "name": "Cold Chain & Perishables"
+    },
+    {
+      "role": "button",
+      "name": "Pharmaceutical & Life Sciences"
+    },
+    {
+      "role": "button",
+      "name": "Flowers & Live Plants"
+    },
+    {
+      "role": "button",
+      "name": "Wine, Spirits & Beverages"
+    },
+    {
+      "role": "button",
+      "name": "E-Commerce & Parcel"
+    },
+    {
+      "role": "button",
+      "name": "Textiles, Fashion & Apparel"
+    },
+    {
+      "role": "button",
+      "name": "Show all 40 sectors"
+    },
+    {
+      "role": "button",
+      "name": "Select all"
+    },
+    {
+      "role": "button",
+      "name": "Clear"
+    },
+    {
+      "role": "button",
+      "name": "Shipper"
+    },
+    {
+      "role": "button",
+      "name": "Importer of record"
+    },
+    {
+      "role": "button",
+      "name": "Exporter"
+    },
+    {
+      "role": "button",
+      "name": "Freight forwarder"
+    },
+    {
+      "role": "button",
+      "name": "Carrier"
+    },
+    {
+      "role": "button",
+      "name": "Warehouse operator"
+    },
+    {
+      "role": "button",
+      "name": "Lender / borrower of goods"
+    },
+    {
+      "role": "button",
+      "name": "Public body"
+    },
+    {
+      "role": "button",
+      "name": "Micro (under 10 employees)"
+    },
+    {
+      "role": "button",
+      "name": "Small (10-49 employees)"
+    },
+    {
+      "role": "button",
+      "name": "Medium (50-249 employees)"
+    },
+    {
+      "role": "button",
+      "name": "Large (250+ employees)"
+    },
+    {
+      "role": "button",
+      "name": "Micro (up to EUR 2m)"
+    },
+    {
+      "role": "button",
+      "name": "Small (up to EUR 10m)"
+    },
+    {
+      "role": "button",
+      "name": "Medium (up to EUR 50m)"
+    },
+    {
+      "role": "button",
+      "name": "Large (over EUR 50m)"
+    },
+    {
+      "role": "button",
+      "name": "Low (occasional shipments)"
+    },
+    {
+      "role": "button",
+      "name": "Medium (regular, non-daily)"
+    },
+    {
+      "role": "button",
+      "name": "High (daily volume)"
+    },
+    {
+      "role": "button",
+      "name": "Very high (high-frequency, multi-lane)"
+    },
+    {
+      "role": "button",
+      "name": "Save organisation profile"
+    },
+    {
+      "role": "switch",
+      "name": "Notifications enabled"
+    },
+    {
+      "role": "switch",
+      "name": "Someone @mentions you"
+    },
+    {
+      "role": "switch",
+      "name": "Replies in your threads"
+    },
+    {
+      "role": "switch",
+      "name": "New posts in groups you've joined"
+    },
+    {
+      "role": "switch",
+      "name": "Workspace invitations"
+    },
+    {
+      "role": "radio",
+      "name": "Weekly"
+    },
+    {
+      "role": "radio",
+      "name": "Daily"
+    },
+    {
+      "role": "radio",
+      "name": "Biweekly"
+    },
+    {
+      "role": "radio",
+      "name": "Mon"
+    },
+    {
+      "role": "radio",
+      "name": "Tue"
+    },
+    {
+      "role": "radio",
+      "name": "Wed"
+    },
+    {
+      "role": "radio",
+      "name": "Thu"
+    },
+    {
+      "role": "radio",
+      "name": "Fri"
+    },
+    {
+      "role": "textbox",
+      "name": "Briefing time"
+    },
+    {
+      "role": "button",
+      "name": "United States"
+    },
+    {
+      "role": "button",
+      "name": "Canada"
+    },
+    {
+      "role": "button",
+      "name": "Mexico"
+    },
+    {
+      "role": "button",
+      "name": "Brazil"
+    },
+    {
+      "role": "button",
+      "name": "Argentina"
+    },
+    {
+      "role": "button",
+      "name": "Chile"
+    },
+    {
+      "role": "button",
+      "name": "Colombia"
+    },
+    {
+      "role": "button",
+      "name": "Peru"
+    },
+    {
+      "role": "button",
+      "name": "Latin America (other)"
+    },
+    {
+      "role": "button",
+      "name": "Caribbean"
+    },
+    {
+      "role": "button",
+      "name": "Central America"
+    },
+    {
+      "role": "button",
+      "name": "EU"
+    },
+    {
+      "role": "button",
+      "name": "Germany"
+    },
+    {
+      "role": "button",
+      "name": "France"
+    },
+    {
+      "role": "button",
+      "name": "Netherlands"
+    },
+    {
+      "role": "button",
+      "name": "Belgium"
+    },
+    {
+      "role": "button",
+      "name": "Italy"
+    },
+    {
+      "role": "button",
+      "name": "Spain"
+    },
+    {
+      "role": "button",
+      "name": "Poland"
+    },
+    {
+      "role": "button",
+      "name": "Ireland"
+    },
+    {
+      "role": "button",
+      "name": "Greece"
+    },
+    {
+      "role": "button",
+      "name": "Portugal"
+    },
+    {
+      "role": "button",
+      "name": "Romania"
+    },
+    {
+      "role": "button",
+      "name": "United Kingdom"
+    },
+    {
+      "role": "button",
+      "name": "Nordic"
+    },
+    {
+      "role": "button",
+      "name": "Switzerland"
+    },
+    {
+      "role": "button",
+      "name": "Turkey"
+    },
+    {
+      "role": "button",
+      "name": "Ukraine"
+    },
+    {
+      "role": "button",
+      "name": "Balkans"
+    },
+    {
+      "role": "button",
+      "name": "China"
+    },
+    {
+      "role": "button",
+      "name": "Japan"
+    },
+    {
+      "role": "button",
+      "name": "South Korea"
+    },
+    {
+      "role": "button",
+      "name": "Taiwan"
+    },
+    {
+      "role": "button",
+      "name": "Hong Kong"
+    },
+    {
+      "role": "button",
+      "name": "India"
+    },
+    {
+      "role": "button",
+      "name": "Bangladesh"
+    },
+    {
+      "role": "button",
+      "name": "Pakistan"
+    },
+    {
+      "role": "button",
+      "name": "Sri Lanka"
+    },
+    {
+      "role": "button",
+      "name": "Singapore"
+    },
+    {
+      "role": "button",
+      "name": "Malaysia"
+    },
+    {
+      "role": "button",
+      "name": "Indonesia"
+    },
+    {
+      "role": "button",
+      "name": "Thailand"
+    },
+    {
+      "role": "button",
+      "name": "Vietnam"
+    },
+    {
+      "role": "button",
+      "name": "Philippines"
+    },
+    {
+      "role": "button",
+      "name": "ASEAN (other)"
+    },
+    {
+      "role": "button",
+      "name": "Asia (other)"
+    },
+    {
+      "role": "button",
+      "name": "Australia"
+    },
+    {
+      "role": "button",
+      "name": "New Zealand"
+    },
+    {
+      "role": "button",
+      "name": "Pacific Islands"
+    },
+    {
+      "role": "button",
+      "name": "UAE"
+    },
+    {
+      "role": "button",
+      "name": "Saudi Arabia"
+    },
+    {
+      "role": "button",
+      "name": "Qatar"
+    },
+    {
+      "role": "button",
+      "name": "Kuwait"
+    },
+    {
+      "role": "button",
+      "name": "Bahrain"
+    },
+    {
+      "role": "button",
+      "name": "Oman"
+    },
+    {
+      "role": "button",
+      "name": "GCC (other)"
+    },
+    {
+      "role": "button",
+      "name": "Israel"
+    },
+    {
+      "role": "button",
+      "name": "Jordan"
+    },
+    {
+      "role": "button",
+      "name": "Iraq"
+    },
+    {
+      "role": "button",
+      "name": "Iran"
+    },
+    {
+      "role": "button",
+      "name": "Middle East (other)"
+    },
+    {
+      "role": "button",
+      "name": "Egypt"
+    },
+    {
+      "role": "button",
+      "name": "Morocco"
+    },
+    {
+      "role": "button",
+      "name": "Tunisia"
+    },
+    {
+      "role": "button",
+      "name": "Algeria"
+    },
+    {
+      "role": "button",
+      "name": "North Africa (other)"
+    },
+    {
+      "role": "button",
+      "name": "South Africa"
+    },
+    {
+      "role": "button",
+      "name": "Nigeria"
+    },
+    {
+      "role": "button",
+      "name": "Kenya"
+    },
+    {
+      "role": "button",
+      "name": "Ethiopia"
+    },
+    {
+      "role": "button",
+      "name": "Ghana"
+    },
+    {
+      "role": "button",
+      "name": "Tanzania"
+    },
+    {
+      "role": "button",
+      "name": "West Africa (other)"
+    },
+    {
+      "role": "button",
+      "name": "East Africa (other)"
+    },
+    {
+      "role": "button",
+      "name": "Central Africa"
+    },
+    {
+      "role": "button",
+      "name": "Southern Africa (other)"
+    },
+    {
+      "role": "button",
+      "name": "Russia"
+    },
+    {
+      "role": "button",
+      "name": "CIS (other)"
+    },
+    {
+      "role": "button",
+      "name": "Kazakhstan"
+    },
+    {
+      "role": "button",
+      "name": "Global"
+    },
+    {
+      "role": "button",
+      "name": "IMO"
+    },
+    {
+      "role": "button",
+      "name": "ICAO"
+    },
+    {
+      "role": "button",
+      "name": "WTO"
+    },
+    {
+      "role": "button",
+      "name": "United Nations"
+    },
+    {
+      "role": "button",
+      "name": "Save schedule"
+    },
+    {
+      "role": "link",
+      "name": "Saved searches · 0"
+    },
+    {
+      "role": "link",
+      "name": "Data summary"
+    },
+    {
+      "role": "link",
+      "name": "Archive"
+    },
+    {
+      "role": "button",
+      "name": "New saved search"
+    },
+    {
+      "role": "button",
+      "name": "Back to top"
+    }
+  ],
+  "rows": {
+    "selector": "[data-row], li, tr, article",
+    "limit": 20,
+    "items": []
+  },
+  "document_height": 900
+}
+

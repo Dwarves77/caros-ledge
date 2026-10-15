@@ -1,0 +1,220 @@
+{
+  "captured_at": "2026-10-15T22:45:15.555Z",
+  "commit": "5746eeccc68847dc097018bd01dc4fc52596f8bb",
+  "commit_source": "GITHUB_SHA",
+  "base": "https://carosledge.com",
+  "viewports": [
+    "1280x900",
+    "375x812"
+  ],
+  "signin": "ok",
+  "routes": [
+    {
+      "name": "home",
+      "path": "/",
+      "auth": false,
+      "status": "ok",
+      "files": [
+        "home.1280x900",
+        "home.375x812"
+      ],
+      "error": null
+    },
+    {
+      "name": "login",
+      "path": "/login",
+      "auth": false,
+      "status": "ok",
+      "files": [
+        "login.1280x900",
+        "login.375x812"
+      ],
+      "error": null
+    },
+    {
+      "name": "signup",
+      "path": "/signup",
+      "auth": false,
+      "status": "ok",
+      "files": [
+        "signup.1280x900",
+        "signup.375x812"
+      ],
+      "error": null
+    },
+    {
+      "name": "privacy",
+      "path": "/privacy",
+      "auth": false,
+      "status": "ok",
+      "files": [
+        "privacy.1280x900",
+        "privacy.375x812"
+      ],
+      "error": null
+    },
+    {
+      "name": "dashboard",
+      "path": "/dashboard",
+      "auth": true,
+      "status": "ok",
+      "files": [
+        "dashboard.1280x900",
+        "dashboard.375x812"
+      ],
+      "error": null
+    },
+    {
+      "name": "regulations",
+      "path": "/regulations",
+      "auth": true,
+      "status": "ok",
+      "files": [
+        "regulations.1280x900",
+        "regulations.375x812"
+      ],
+      "error": null
+    },
+    {
+      "name": "regulation-detail",
+      "path": "/regulations/g14",
+      "auth": true,
+      "status": "ok",
+      "files": [
+        "regulation-detail.1280x900",
+        "regulation-detail.375x812"
+      ],
+      "error": null
+    },
+    {
+      "name": "market",
+      "path": "/market",
+      "auth": true,
+      "status": "ok",
+      "files": [
+        "market.1280x900",
+        "market.375x812"
+      ],
+      "error": null
+    },
+    {
+      "name": "market-detail",
+      "path": "/market/9d18608f-269e-405a-9ad8-afa638dda928",
+      "auth": true,
+      "status": "ok",
+      "files": [
+        "market-detail.1280x900",
+        "market-detail.375x812"
+      ],
+      "error": null
+    },
+    {
+      "name": "research",
+      "path": "/research",
+      "auth": true,
+      "status": "ok",
+      "files": [
+        "research.1280x900",
+        "research.375x812"
+      ],
+      "error": null
+    },
+    {
+      "name": "operations",
+      "path": "/operations",
+      "auth": true,
+      "status": "ok",
+      "files": [
+        "operations.1280x900",
+        "operations.375x812"
+      ],
+      "error": null
+    },
+    {
+      "name": "map",
+      "path": "/map",
+      "auth": true,
+      "status": "ok",
+      "files": [
+        "map.1280x900",
+        "map.375x812"
+      ],
+      "error": null
+    },
+    {
+      "name": "search-emissions",
+      "path": "/search?q=emissions",
+      "auth": true,
+      "status": "ok",
+      "files": [
+        "search-emissions.1280x900",
+        "search-emissions.375x812"
+      ],
+      "error": null
+    },
+    {
+      "name": "watchlist",
+      "path": "/watchlist",
+      "auth": true,
+      "status": "ok",
+      "files": [
+        "watchlist.1280x900",
+        "watchlist.375x812"
+      ],
+      "error": null
+    },
+    {
+      "name": "community",
+      "path": "/community",
+      "auth": true,
+      "status": "ok",
+      "files": [
+        "community.1280x900",
+        "community.375x812"
+      ],
+      "error": null
+    },
+    {
+      "name": "community-group",
+      "path": null,
+      "auth": true,
+      "status": "error",
+      "files": [],
+      "error": "discovery found no link on /community matching ^/community/[^/?#]+$"
+    },
+    {
+      "name": "settings",
+      "path": "/settings",
+      "auth": true,
+      "status": "ok",
+      "files": [
+        "settings.1280x900",
+        "settings.375x812"
+      ],
+      "error": null
+    },
+    {
+      "name": "profile",
+      "path": "/profile",
+      "auth": true,
+      "status": "ok",
+      "files": [
+        "profile.1280x900",
+        "profile.375x812"
+      ],
+      "error": null
+    },
+    {
+      "name": "admin",
+      "path": "/admin",
+      "auth": true,
+      "status": "ok",
+      "files": [
+        "admin.1280x900",
+        "admin.375x812"
+      ],
+      "error": null
+    }
+  ]
+}
+

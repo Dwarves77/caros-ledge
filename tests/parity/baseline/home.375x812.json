@@ -1,0 +1,77 @@
+{
+  "route": "home",
+  "path": "/",
+  "auth": false,
+  "viewport": {
+    "width": 375,
+    "height": 812
+  },
+  "captured_at": "2026-10-15T22:45:34.687Z",
+  "http_status": 200,
+  "final_path": "/login?redirect=%2F",
+  "network_idle": true,
+  "accessibility": {
+    "source": "locator.ariaSnapshot",
+    "tree": "- alert\n- text: Caro's Ledge Freight Sustainability Intelligence VOL IV · No. 42 · Thursday, October 15, 2026 Every item, one of four urgency bands Immediate ≤ 90 days Action ≤ 6 months Monitor 6–12 months Awareness background For informational purposes only. Not legal advice. Regulations move fast, always verify with official sources before acting.\n- link \"Privacy\":\n  - /url: /privacy\n- banner:\n  - paragraph: VOL IV · No. 42 · Thursday, October 15, 2026\n  - heading \"Sign in\" [level=1]\n- link \"Sign in\":\n  - /url: /login\n- link \"Create account\":\n  - /url: /signup\n- text: Work email\n- textbox \"smoke@example.invalid\"\n- text: Password\n- textbox \"••••••••\"\n- link \"Forgot password?\":\n  - /url: /auth/reset-password\n- button \"Sign in\"\n- text: or\n- button \"Continue with a magic link\"\n- paragraph: Invited to a workspace? Open the invitation link in your email — it signs you in and joins the workspace in one step."
+  },
+  "landmarks": [
+    {
+      "role": "banner",
+      "name": "/* D2 fix (operator report 2026-09-07): \"the top text under the operator's Brief\" — the scope line (\"N items across N surfaces...\") and the verticals line — wrapped with a one-word orphan (e.g. \"...Automotive & Motorsport, Humanitarian & NGO\" / \"Cargo\" alone on the next line). Greedy line-breaking packs every line but the last as full as possible, which is exactly what strands a short remainder word alone; `text-wrap: balance` distributes a block's own text evenly across its wrapped lines instead, so a multi-line scope/verticals line splits evenly with no orphan. `text-wrap: pretty` is the declared fallback for a browser that has `pretty` but not yet `balance` — the later `balance` declaration wins wherever it is supported; an unsupported value is ignored by the cascade, leaving `pretty` in effect. Applies to every page through this one shared Masthead part, not a dashboard-only override; DIRECT children of `.cl-masthead- dek` are each their own wrapped block (the scope line and the verticals line are two separate <div>s), so the rule targets them individually rather than the dek container. */ .cl-masthead-dek > * { text-wrap: pretty; text-wrap: balance; } @media (max-width: 767px) { /* D-M5 (lane mobfix61, 2026-09-08, operator mobile report: \"search bar touched bounding box\") [CONFIRMED by measurement at 390 on compose-02-regulations]: card bottom 186.3, body bottom 185.3, command bar bottom 185.3 — the bar's bottom edge sat ON the card's own 1px bottom border with ZERO padding beneath it, on every mobile surface, because this rule set the body's bottom padding to 0 and the command bar is the body's last child. The mobile 390 spec's \"padding 14px 16px 0\" describes where the BODY's content STARTS; the artboard still draws the card's own padding below the bar, and a card whose content touches its border breaks the contained-by-its-parent rule whatever the spec text reads (this lane's brief: \"the card must contain its content with the spec's padding ... which is what the artboard shows\"). 16px is the same spec's own bottom measure for the tile/content container directly beneath, so the two agree. Measured after: card bottom 202.3, bar bottom 185.3, 16px of clearance. Logged in DEVIATION-LOG.md. */ .cl-masthead-body { padding: 14px 16px 16px !important; } .cl-masthead .cl-masthead-eyebrow { font-size: 9.5px !important; font-weight: 700 !important; } .cl-masthead .cl-masthead-title { font-size: 24px !important; line-height: 1.08 !important; margin-top: 5px !important; } /* MOBILE-60 (2026-09-08) [CONFIRMED, measured at 390]: the mobile 390 spec gives the MASTHEAD title 24px/1.08 and the DETAIL HEADER title 22px/1.1, and this component renders both (the size prop). Only the masthead measure was declared, so every detail title rendered at 24px at 390. Keyed off the size prop the component already takes, via a data attribute, rather than a second component or a page-local override. */ .cl-masthead[data-masthead-size=\"detail\"] .cl-masthead-title { font-size: 22px !important; line-height: 1.1 !important; } .cl-masthead .cl-masthead-dek { font-size: 12px !important; line-height: 1.45 !important; } .cl-masthead .cl-masthead-row { flex-direction: column !important; align-items: stretch !important; gap: 12px !important; } .cl-masthead .cl-masthead-cmdbar { flex: 1 1 auto !important; min-width: 0 !important; width: 100% !important; } } /* dc.html's own masthead row, at the width every artboard is drawn at, and only on a masthead that renders a command bar (see the JSX note just above this style tag). */ @media (min-width: 1440px) { .cl-masthead[data-masthead-cmdbar] .cl-masthead-row { display: grid !important; grid-template-columns: minmax(0,1fr) 420px !important; align-items: end !important; gap: 10px 24px !important; } .cl-masthead[data-masthead-cmdbar] .cl-masthead-titleblock { flex: none !important; } .cl-masthead[data-masthead-cmdbar] .cl-masthead-cmdbar { flex: none !important; min-width: 0 !important; } } VOL IV · No. 42 · Thursday, October 15, 2026Sign in",
+      "source": "implicit"
+    },
+    {
+      "role": "form",
+      "name": "Work emailPasswordForgot password?Sign in",
+      "source": "implicit"
+    }
+  ],
+  "headings": [
+    {
+      "level": 1,
+      "text": "Sign in"
+    }
+  ],
+  "controls": [
+    {
+      "role": "link",
+      "name": "Privacy"
+    },
+    {
+      "role": "link",
+      "name": "Sign in"
+    },
+    {
+      "role": "link",
+      "name": "Create account"
+    },
+    {
+      "role": "textbox",
+      "name": "smoke@example.invalid"
+    },
+    {
+      "role": "textbox",
+      "name": "••••••••"
+    },
+    {
+      "role": "link",
+      "name": "Forgot password?"
+    },
+    {
+      "role": "button",
+      "name": "Sign in"
+    },
+    {
+      "role": "button",
+      "name": "Continue with a magic link"
+    }
+  ],
+  "rows": {
+    "selector": "[data-row], li, tr, article",
+    "limit": 20,
+    "items": []
+  },
+  "document_height": 910
+}
+
+
