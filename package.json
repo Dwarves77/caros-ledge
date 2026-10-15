@@ -1,0 +1,48 @@
+{
+  "name": "caros-ledge",
+  "version": "0.1.0",
+  "private": true,
+  "engines": { "node": ">=24" },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint . --max-warnings=0",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test \"tests/**/*.test.mjs\"",
+    "loc": "node scripts/ci/loc.mjs",
+    "properties": "node scripts/ci/properties.mjs",
+    "schema:apply": "node scripts/ci/schema-apply.mjs",
+    "tree-checks": "node scripts/ci/tree-checks.mjs"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.8.0",
+    "@supabase/supabase-js": "^2.98.0",
+    "next": "16.1.6",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^24",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.1.6",
+    "typescript": "^5"
+  },
+  "budget": {
+    "next": "App framework and routing; the same major as the old tree (16.1.6), pinned exact.",
+    "react": "UI runtime required by next; pinned to the old tree's 19.2.3.",
+    "react-dom": "DOM renderer required by next; pinned to the old tree's 19.2.3.",
+    "@supabase/supabase-js": "The one database and auth client for the user client and the service client.",
+    "@supabase/ssr": "Cookie-backed session for the user client in server components and route handlers.",
+    "zod": "Request and payload validation at every boundary (src/core/http/parse.ts); the old tree had no validator.",
+    "typescript": "Strict typecheck gate.",
+    "eslint": "Lint gate with zero warnings.",
+    "eslint-config-next": "Next lint rules; bundles the typescript-eslint and import plugins, so no separate plugin is added.",
+    "@types/node": "Node types for scripts and next.config.ts.",
+    "@types/react": "React types.",
+    "@types/react-dom": "React DOM types."
+  }
+}
