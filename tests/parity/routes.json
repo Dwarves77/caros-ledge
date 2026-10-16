@@ -1,41 +1,41 @@
 {
-  "_about": "Parity baseline routes (PART2-AGENT-PLAN-2026-10-15 section 7). auth=false routes are captured signed out; auth=true routes use the storage state from one sign-in through /login. Entries with a `discover` block are resolved at run time: the first href on `discover.list` matching `discover.match` (and not in `discover.exclude`) becomes the path.",
+  "_about": "Parity baseline routes (PART2-AGENT-PLAN-2026-10-15 section 7). auth=false routes are captured signed out; auth member routes use the LIVE_SMOKE_* account and auth admin routes the LIVE_ADMIN_* account (a platform admin), each one sign-in through /login. Entries with a `discover` block are resolved at run time: the first href on `discover.list` matching `discover.match` (and not in `discover.exclude`) becomes the path.",
   "routes": [
     { "name": "home", "path": "/", "auth": false },
     { "name": "login", "path": "/login", "auth": false },
     { "name": "signup", "path": "/signup", "auth": false },
     { "name": "privacy", "path": "/privacy", "auth": false },
 
-    { "name": "dashboard", "path": "/dashboard", "auth": true },
-    { "name": "regulations", "path": "/regulations", "auth": true },
+    { "name": "dashboard", "path": "/dashboard", "auth": "member" },
+    { "name": "regulations", "path": "/regulations", "auth": "member" },
     {
       "name": "regulation-detail",
-      "auth": true,
+      "auth": "member",
       "discover": { "list": "/regulations", "match": "^/regulations/[^/?#]+$", "exclude": ["/regulations/register"] }
     },
-    { "name": "market", "path": "/market", "auth": true },
+    { "name": "market", "path": "/market", "auth": "member" },
     {
       "name": "market-detail",
-      "auth": true,
+      "auth": "member",
       "discover": { "list": "/market", "match": "^/market/[^/?#]+$", "exclude": ["/market/series"] }
     },
-    { "name": "research", "path": "/research", "auth": true },
-    { "name": "operations", "path": "/operations", "auth": true },
-    { "name": "map", "path": "/map", "auth": true },
-    { "name": "search-emissions", "path": "/search?q=emissions", "auth": true },
-    { "name": "watchlist", "path": "/watchlist", "auth": true },
-    { "name": "community", "path": "/community", "auth": true },
+    { "name": "research", "path": "/research", "auth": "member" },
+    { "name": "operations", "path": "/operations", "auth": "member" },
+    { "name": "map", "path": "/map", "auth": "member" },
+    { "name": "search-emissions", "path": "/search?q=emissions", "auth": "member" },
+    { "name": "watchlist", "path": "/watchlist", "auth": "member" },
+    { "name": "community", "path": "/community", "auth": "member" },
     {
       "name": "community-group",
-      "auth": true,
+      "auth": "member",
       "discover": {
         "list": "/community",
         "match": "^/community/[^/?#]+$",
         "exclude": ["/community/browse", "/community/directory", "/community/discover", "/community/moderation", "/community/profile"]
       }
     },
-    { "name": "settings", "path": "/settings", "auth": true },
-    { "name": "profile", "path": "/profile", "auth": true },
-    { "name": "admin", "path": "/admin", "auth": true }
+    { "name": "settings", "path": "/settings", "auth": "member" },
+    { "name": "profile", "path": "/profile", "auth": "member" },
+    { "name": "admin", "path": "/admin", "auth": "admin" }
   ]
 }

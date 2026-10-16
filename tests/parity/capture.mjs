@@ -1,12 +1,12 @@
 // Parity capture (PART2-AGENT-PLAN-2026-10-15 section 7). Ported from the old repo's fsi-app/tests/parity/capture.mjs (lane H-2); the same record shape, so compare.mjs reads a baseline and a capture alike.
-// Without LIVE_SMOKE_EMAIL and LIVE_SMOKE_PASSWORD (or with --signed-out-only) the signed-in routes are recorded as `skipped`, not failed.
+// Each signed-in route names its account in routes.json (`auth`: "member" | "admin"). A route whose account has no credentials (or with --signed-out-only) is recorded as `skipped`, not failed.
 //
 // Usage: node tests/parity/capture.mjs --base <origin> --out <dir> [--signed-out-only]
 //
 // For every route in routes.json, at 1280x900 and 375x812: waits for network idle, writes a full-page PNG and a JSON
 // record (accessibility tree, landmarks, headings, interactive controls, first rows with measured heights).
-// Signed-in routes reuse the storage state of ONE sign-in through the /login form. That state is held in memory only,
-// never written to disk, and never printed. Credentials come from LIVE_SMOKE_EMAIL and LIVE_SMOKE_PASSWORD.
+// Each account signs in once through the /login form; its storage state is held in memory only, never written to disk, never printed.
+// Credentials: member = LIVE_SMOKE_EMAIL / LIVE_SMOKE_PASSWORD, admin = LIVE_ADMIN_EMAIL / LIVE_ADMIN_PASSWORD.
 // Exit code is 1 when any sign-in, discovery or capture failed; index.json is written in every case.
 
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
@@ -21,6 +21,7 @@ const VIEWPORTS = [
   { width: 375, height: 812 },
 ];
 const ROW_LIMIT = 20;
+const ACCOUNTS = { member: ['LIVE_SMOKE_EMAIL', 'LIVE_SMOKE_PASSWORD'], admin: ['LIVE_ADMIN_EMAIL', 'LIVE_ADMIN_PASSWORD'] };
 const ROUTES_FILE = join(dirname(fileURLToPath(import.meta.url)), 'routes.json');
 
 function parseArgs(argv) {
@@ -45,7 +46,6 @@ async function settle(page) {
 }
 
 async function signIn(browser, base, email, password) {
-  if (!email || !password) throw new Error('LIVE_SMOKE_EMAIL and LIVE_SMOKE_PASSWORD must both be set');
   const context = await browser.newContext();
   try {
     const page = await context.newPage();
@@ -175,7 +175,7 @@ async function accessibilitySnapshot(page) {
 
 async function captureOne(browser, base, route, path, viewport, storage, out) {
   const stem = `${route.name}.${viewport.width}x${viewport.height}`;
-  const context = await browser.newContext({ viewport, storageState: route.auth ? storage : undefined });
+  const context = await browser.newContext({ viewport, storageState: route.auth ? storage[route.auth] : undefined });
   try {
     const page = await context.newPage();
     const response = await page.goto(new URL(path, base).href, { waitUntil: 'load', timeout: 60000 });
@@ -231,29 +231,45 @@ async function main() {
   let failed = false;
   const browser = await chromium.launch();
   try {
-    let storage = null;
-    const wantAuth = routes.some((r) => r.auth) && !args['signed-out-only'] && process.env.LIVE_SMOKE_EMAIL && process.env.LIVE_SMOKE_PASSWORD;
-    if (wantAuth) {
+    // One sign-in per account that has both credentials; `storage[account]` is absent for an account without them or whose sign-in failed.
+    const storage = {};
+    const credentials = {};
+    for (const [account, [emailVar, passwordVar]] of Object.entries(ACCOUNTS)) {
+      if (!args['signed-out-only'] && process.env[emailVar] && process.env[passwordVar]) credentials[account] = [process.env[emailVar], process.env[passwordVar]];
+    }
+    index.signin = {};
+    for (const account of new Set(routes.map((r) => r.auth).filter(Boolean))) {
+      if (!credentials[account]) {
+        index.signin[account] = 'skipped';
+        continue;
+      }
       try {
-        storage = await signIn(browser, base, process.env.LIVE_SMOKE_EMAIL, process.env.LIVE_SMOKE_PASSWORD);
-        index.signin = 'ok';
+        storage[account] = await signIn(browser, base, ...credentials[account]);
+        index.signin[account] = 'ok';
       } catch (err) {
-        index.signin = `failed: ${err.message}`;
+        index.signin[account] = `failed: ${err.message}`;
         failed = true;
-        console.log(`sign-in failed: ${err.message}`);
+        console.log(`sign-in failed (${account}): ${err.message}`);
       }
     }
+    // A route whose account has credentials but no state is an error; one whose account has no credentials is skipped.
+    const unavailable = (route) => {
+      if (!route.auth || storage[route.auth]) return null;
+      return credentials[route.auth]
+        ? { status: 'error', error: 'not captured: no signed-in state' }
+        : { status: 'skipped', error: `no ${route.auth} credentials` };
+    };
 
     // Discovery runs first so every capture below has its concrete path.
     for (const [i, route] of routes.entries()) {
       const entry = index.routes[i];
       if (!route.discover) continue;
-      if (!storage) {
-        entry.status = wantAuth ? 'error' : 'skipped';
-        entry.error = 'not captured: no signed-in state';
+      const missing = unavailable(route);
+      if (missing) {
+        Object.assign(entry, missing);
         continue;
       }
-      const context = await browser.newContext({ viewport: VIEWPORTS[1], storageState: storage });
+      const context = await browser.newContext({ viewport: VIEWPORTS[1], storageState: storage[route.auth] });
       try {
         entry.path = await discover(await context.newPage(), base, route);
       } catch (err) {
@@ -268,10 +284,10 @@ async function main() {
     for (const [i, route] of routes.entries()) {
       const entry = index.routes[i];
       if (entry.status === 'error' || entry.status === 'skipped') continue;
-      if (route.auth && !storage) {
-        entry.status = wantAuth ? 'error' : 'skipped';
-        entry.error = 'not captured: no signed-in state';
-        if (wantAuth) failed = true;
+      const missing = unavailable(route);
+      if (missing) {
+        Object.assign(entry, missing);
+        if (missing.status === 'error') failed = true;
         continue;
       }
       try {

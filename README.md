@@ -25,3 +25,13 @@ The plan is in `docs/BUILD-PLAN-2026-10-12.md`; how it is executed is in `docs/P
 - `schema`: `supabase/schema.sql` applies to an empty Postgres 15 with zero errors (`npm run schema:apply`), then `scripts/ci/properties.mjs` runs: RLS on every table, no anon write policy, every foreign key indexed, every function's `search_path` pinned. The last two fail on the baseline and are waived in `scripts/ci/baseline-waivers.json` until the forward migrations land; the run prints the offenders under "KNOWN BASELINE FAILURES, forward migrations owed".
 
 Edits to `supabase/schema.sql` against the production dump are recorded in `supabase/SCHEMA-NOTES.md`. Environment variable names are in `.env.example`.
+
+## Parity capture secrets
+
+The `parity` job (`tests/parity/capture.mjs`) reads six repository secrets. A route whose account has no credentials is recorded `skipped` ("no <account> credentials"), never failed.
+
+| Secret | Used for |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | The built app's Supabase project (placeholders when unset) |
+| `LIVE_SMOKE_EMAIL`, `LIVE_SMOKE_PASSWORD` | `auth: "member"` routes: every signed-in route except `admin` |
+| `LIVE_ADMIN_EMAIL`, `LIVE_ADMIN_PASSWORD` | `auth: "admin"` routes: `/admin` (a platform admin account) |
