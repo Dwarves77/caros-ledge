@@ -1,0 +1,8 @@
+{
+  "seeds": [
+    { "origin": "CNSHA", "dest": "NLRTM", "mode": "ocean", "note": "ADR-024 section 4 worked example (Shanghai-Rotterdam, ocean).", "sourceUrl": "docs/decisions/ADR-024-decision-propagation.md#4-corridor-identity-unlocode-port-pair--mode" },
+    { "origin": "CNSHA", "dest": "ITGOA", "mode": "ocean", "note": "Drewry World Container Index tracked lane, Shanghai-Genoa (Asia-Mediterranean).", "sourceUrl": "https://www.drewry.co.uk/supply-chain-advisors/supply-chain-expertise/world-container-index-assessed-by-drewry" },
+    { "origin": "CNSHA", "dest": "USNYC", "mode": "ocean", "note": "Drewry World Container Index tracked lane, Shanghai-New York (Transpacific).", "sourceUrl": "https://www.drewry.co.uk/supply-chain-advisors/supply-chain-expertise/world-container-index-assessed-by-drewry" },
+    { "origin": "CNSHA", "dest": "USLAX", "mode": "ocean", "note": "Drewry World Container Index tracked lane, Shanghai-Los Angeles (Transpacific).", "sourceUrl": "https://www.drewry.co.uk/supply-chain-advisors/supply-chain-expertise/world-container-index-assessed-by-drewry" }
+  ]
+}

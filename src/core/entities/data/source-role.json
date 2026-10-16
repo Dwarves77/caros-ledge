@@ -1,0 +1,6 @@
+{
+  "newsPattern": "/(news|news-?releases?|press|press-?releases?|media|newsroom|announcements?|articles?|stories|blog|insights?|updates?)(/|$|\\?|#)|(^|//|\\.)(news|prnewswire|businesswire|globenewswire|pr-?web|einpresswire)\\.",
+  "primaryPattern": "(eur-lex\\.europa\\.eu|legislation\\.gov\\.uk|federalregister\\.gov|ecfr\\.gov|govinfo\\.gov|official.?journal|legal-content|\\.pdf($|\\?|#)|/documents?/|/eli/|celex)",
+  "primaryArtifactTypes": ["regulation", "directive", "standard", "guidance", "framework"],
+  "studyBackedTypes": ["research_finding"]
+}

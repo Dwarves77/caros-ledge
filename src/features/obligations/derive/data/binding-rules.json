@@ -1,0 +1,162 @@
+{
+ "rules": [
+  {
+   "position": "direct_duty",
+   "citation": "spec-01 §1 table 1 — CountEmissions EU, Regulation (EU) 2026/1030",
+   "label": "CountEmissions EU",
+   "test": {
+    "source": "countemissions|2026\\/1030|32026r1030",
+    "flags": ""
+   }
+  },
+  {
+   "position": "direct_duty",
+   "citation": "spec-01 §1 table 1 — CBAM, when acting as indirect customs representative",
+   "label": "CBAM",
+   "test": {
+    "source": "\\bcbam\\b|\\b2023\\/956\\b|32023r0956",
+    "flags": ""
+   },
+   "generic": {
+    "phrase": {
+     "source": "carbon border adjustment",
+     "flags": "g"
+    },
+    "acceptedForJurisdiction": "EU"
+   }
+  },
+  {
+   "position": "direct_duty",
+   "citation": "spec-01 §1 table 1 — Empowering Consumers Directive (EU) 2024/825",
+   "label": "Empowering Consumers Directive",
+   "test": {
+    "source": "empowering consumers|2024\\/825|32024l0825",
+    "flags": ""
+   }
+  },
+  {
+   "position": "direct_duty",
+   "citation": "spec-01 §1 table 1 — PPWR, Regulation (EU) 2025/40",
+   "label": "PPWR",
+   "test": {
+    "source": "\\bppwr\\b|\\b2025\\/40\\b|32025r0040",
+    "flags": ""
+   },
+   "generic": {
+    "phrase": {
+     "source": "packaging and packaging waste",
+     "flags": "g"
+    },
+    "acceptedForJurisdiction": "none"
+   }
+  },
+  {
+   "position": "direct_duty",
+   "citation": "spec-01 §1 table 1 — SOLAS VGM (binds the named shipper; forwarders routinely assume it as agent)",
+   "label": "SOLAS VGM",
+   "test": {
+    "source": "solas\\b.*\\bvgm\\b|verified gross mass",
+    "flags": ""
+   }
+  },
+  {
+   "position": "direct_duty",
+   "citation": "spec-01 §1 table 1 — CSRD (largest forwarding groups only, but the instrument itself is a direct duty)",
+   "label": "CSRD",
+   "test": {
+    "source": "\\bcsrd\\b|corporate sustainability reporting directive",
+    "flags": ""
+   }
+  },
+  {
+   "position": "carrier_passthrough",
+   "citation": "spec-01 §1 table 2 — EU ETS maritime",
+   "label": "EU ETS maritime",
+   "test": {
+    "source": "eu ets\\b.*maritime|maritime.*\\beu ets\\b|emissions trading.*maritime",
+    "flags": ""
+   }
+  },
+  {
+   "position": "carrier_passthrough",
+   "citation": "spec-01 §1 table 2 — FuelEU Maritime",
+   "label": "FuelEU Maritime",
+   "test": {
+    "source": "fueleu maritime",
+    "flags": ""
+   }
+  },
+  {
+   "position": "carrier_passthrough",
+   "citation": "spec-01 §1 table 2 — ReFuelEU Aviation",
+   "label": "ReFuelEU Aviation",
+   "test": {
+    "source": "refueleu aviation",
+    "flags": ""
+   }
+  },
+  {
+   "position": "carrier_passthrough",
+   "citation": "spec-01 §1 table 2 — CORSIA",
+   "label": "CORSIA",
+   "test": {
+    "source": "\\bcorsia\\b",
+    "flags": ""
+   }
+  },
+  {
+   "position": "carrier_passthrough",
+   "citation": "spec-01 §1 table 2 — EU ETS2 (from 2028)",
+   "label": "EU ETS2",
+   "test": {
+    "source": "eu ets\\s*2\\b|ets2\\b",
+    "flags": ""
+   }
+  },
+  {
+   "position": "carrier_passthrough",
+   "citation": "spec-01 §1 table 2 — IMO CII/EEXI",
+   "label": "IMO CII carbon intensity indicator",
+   "test": {
+    "source": "\\bcii\\b.*carbon intensity|carbon intensity indicator|\\beexi\\b",
+    "flags": ""
+   }
+  },
+  {
+   "position": "carrier_passthrough",
+   "citation": "spec-01 §1 table 2 — IMO Net-Zero Framework (adopted 2026, not yet law)",
+   "label": "IMO Net-Zero Framework",
+   "test": {
+    "source": "imo net-zero framework|net-zero framework.*\\bimo\\b",
+    "flags": ""
+   }
+  },
+  {
+   "position": "customer_contract",
+   "citation": "spec-01 §1 table 3 — CSDDD supplier codes",
+   "label": "CSDDD",
+   "test": {
+    "source": "\\bcsddd\\b|corporate sustainability due diligence directive",
+    "flags": ""
+   }
+  },
+  {
+   "position": "customer_contract",
+   "citation": "spec-01 §1 table 3 — EUDR due-diligence statement references",
+   "label": "EUDR",
+   "test": {
+    "source": "\\beudr\\b|eu deforestation regulation",
+    "flags": ""
+   }
+  },
+  {
+   "position": "customer_contract",
+   "citation": "spec-01 §1 table 3 — SBTi customer targets",
+   "label": "SBTi",
+   "test": {
+    "source": "\\bsbti\\b|science based targets initiative",
+    "flags": ""
+   }
+  }
+ ]
+}

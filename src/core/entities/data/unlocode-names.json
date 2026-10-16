@@ -1,0 +1,9 @@
+{
+  "unlocode": {
+    "CNSHA": { "place": "Shanghai", "countryIso": "CN", "countryName": "China" },
+    "NLRTM": { "place": "Rotterdam", "countryIso": "NL", "countryName": "Netherlands" },
+    "USNYC": { "place": "New York", "countryIso": "US", "countryName": "United States" },
+    "USLAX": { "place": "Los Angeles", "countryIso": "US", "countryName": "United States" },
+    "ITGOA": { "place": "Genoa", "countryIso": "IT", "countryName": "Italy" }
+  }
+}

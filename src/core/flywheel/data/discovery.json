@@ -1,0 +1,20 @@
+{
+  "weights": { "shared_source": 0.4, "shared_scenario": 0.3, "shared_compliance_object": 0.18, "shared_jurisdiction_topic": 0.2, "shared_entity": 0.85, "shared_obligation": 0.35 },
+  "perTagCap": 3,
+  "threshold": 0.3,
+  "limit": 12,
+  "roleTags": [
+    "freight-forwarder", "shipper", "importer", "exporter", "manufacturer-producer", "consignee", "consignor",
+    "carrier-road", "carrier-ocean", "carrier-air", "carrier-rail", "carrier-inland-waterway",
+    "vessel-operator", "road-fleet-operator", "carrier"
+  ],
+  "intersection": {
+    "points": { "scenario": 3, "object": 2, "explicit": 5, "priority": 2 },
+    "tierMin": { "strong": 12, "medium": 8 },
+    "highPriority": ["CRITICAL", "HIGH"]
+  },
+  "pairBands": { "strong": 0.9, "medium": 0.5 },
+  "convergenceBands": { "high": 1.5, "medium": 0.5 },
+  "cluster": { "maxRounds": 20, "pivotK": 3 },
+  "themeOverlapThreshold": 0.5
+}

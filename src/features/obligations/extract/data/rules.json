@@ -1,0 +1,227 @@
+{
+ "rules": [
+  {
+   "name": "entered-into-force-on",
+   "kind": "entry_into_force",
+   "scanRe": {
+    "source": "\\bentered\\s+into\\s+force\\s+on\\s+",
+    "flags": "gi"
+   }
+  },
+  {
+   "name": "enters-into-force-on",
+   "kind": "entry_into_force",
+   "scanRe": {
+    "source": "\\b(?<!shall\\s)enters?\\s+into\\s+force\\s+on\\s+",
+    "flags": "gi"
+   }
+  },
+  {
+   "name": "shall-enter-into-force-on",
+   "kind": "entry_into_force",
+   "scanRe": {
+    "source": "\\bshall\\s+enter\\s+into\\s+force\\s+on\\s+",
+    "flags": "gi"
+   }
+  },
+  {
+   "name": "applicable-since",
+   "kind": "entry_into_force",
+   "scanRe": {
+    "source": "\\bapplicable\\s+since\\s+",
+    "flags": "gi"
+   }
+  },
+  {
+   "name": "shall-apply-from",
+   "kind": "entry_into_force",
+   "phaseOverride": true,
+   "windowEnd": true,
+   "scanRe": {
+    "source": "\\b(?:it\\s+)?shall\\s+apply\\s+from\\s+",
+    "flags": "gi"
+   }
+  },
+  {
+   "name": "review-shall-be-completed-by",
+   "kind": "review_or_report",
+   "scanRe": {
+    "source": "\\breview\\s+shall\\s+be\\s+completed\\s+by\\s+",
+    "flags": "gi"
+   }
+  },
+  {
+   "name": "by-report-clause",
+   "kind": "review_or_report",
+   "scanRe": {
+    "source": "\\bBy\\s+",
+    "flags": "g"
+   },
+   "requireTrailing": {
+    "source": "^\\s*,",
+    "flags": ""
+   },
+   "requireWordWithin": {
+    "re": {
+     "source": "\\b(report|review|assess)\\b",
+     "flags": "i"
+    },
+    "chars": 160
+   }
+  },
+  {
+   "name": "no-later-than",
+   "kind": "compliance_deadline",
+   "phaseOverride": true,
+   "scanRe": {
+    "source": "\\bno\\s+later\\s+than\\s+",
+    "flags": "gi"
+   }
+  },
+  {
+   "name": "by-comma-deadline",
+   "kind": "compliance_deadline",
+   "phaseOverride": true,
+   "scanRe": {
+    "source": "\\bBy\\s+",
+    "flags": "g"
+   },
+   "requireTrailing": {
+    "source": "^\\s*,",
+    "flags": ""
+   }
+  },
+  {
+   "name": "deadline-is",
+   "kind": "compliance_deadline",
+   "scanRe": {
+    "source": "\\bdeadline\\s+for\\s+[a-z ]{0,40}\\bis\\s+",
+    "flags": "gi"
+   }
+  },
+  {
+   "name": "the-deadline-is",
+   "kind": "compliance_deadline",
+   "scanRe": {
+    "source": "\\bthe\\s+new\\s+deadline\\s+(?:for\\s+[a-z ]{0,40}\\s+)?is\\s+",
+    "flags": "gi"
+   }
+  },
+  {
+   "name": "with-effect-from-shall",
+   "kind": "compliance_deadline",
+   "phaseOverride": true,
+   "scanRe": {
+    "source": "\\bwith\\s+effect\\s+from\\s+",
+    "flags": "gi"
+   },
+   "requireDeonticWithin": 200
+  },
+  {
+   "name": "consultation-ending-on",
+   "kind": "consultation_close",
+   "scanRe": {
+    "source": "\\b(?:public\\s+)?consultation[^.;]{0,40}?\\bending\\s+on\\s+",
+    "flags": "gi"
+   }
+  },
+  {
+   "name": "consultation-closes",
+   "kind": "consultation_close",
+   "scanRe": {
+    "source": "\\b(?:public\\s+)?consultation[^.;]{0,40}?\\bclos(?:ing|es|ed)\\s+(?:on\\s+)?",
+    "flags": "gi"
+   }
+  },
+  {
+   "name": "comments-due-by",
+   "kind": "consultation_close",
+   "scanRe": {
+    "source": "\\bcomments?\\s+(?:are\\s+)?due\\s+(?:by\\s+)?",
+    "flags": "gi"
+   }
+  },
+  {
+   "name": "repealed-with-effect-from",
+   "kind": "other",
+   "scanRe": {
+    "source": "\\brepealed\\s+with\\s+effect\\s+from\\s+",
+    "flags": "gi"
+   }
+  },
+  {
+   "name": "a-partir-de",
+   "kind": "phase_step",
+   "scanRe": {
+    "source": "\\ba\\s+partir\\s+de\\s+",
+    "flags": "gi"
+   }
+  },
+  {
+   "name": "ate-date",
+   "kind": "phase_step",
+   "scanRe": {
+    "source": "\\bat[ée]\\s+",
+    "flags": "gi"
+   }
+  },
+  {
+   "name": "by-year-target",
+   "kind": "compliance_deadline",
+   "bareYear": true,
+   "phaseOverride": true,
+   "scanRe": {
+    "source": "\\bby\\s+",
+    "flags": "gi"
+   }
+  },
+  {
+   "name": "from-year",
+   "kind": "entry_into_force",
+   "bareYear": true,
+   "phaseOverride": true,
+   "windowEnd": true,
+   "scanRe": {
+    "source": "\\bfrom\\s+",
+    "flags": "gi"
+   },
+   "requireDeonticOrAimWithin": 220
+  }
+ ],
+ "candidateOnly": [
+  {
+   "name": "as-of",
+   "scanRe": {
+    "source": "\\bas\\s+of\\s+",
+    "flags": "gi"
+   },
+   "kind": "other"
+  },
+  {
+   "name": "since",
+   "scanRe": {
+    "source": "\\bsince\\s+",
+    "flags": "gi"
+   },
+   "kind": "other"
+  }
+ ],
+ "patterns": {
+  "DEONTIC": {
+   "source": "\\b(shall|must|is required to|are required to|is obligated to|are obligated to|is due|are due|should be (?:submitted|completed|updated|filed|reported|adopted))\\b",
+   "flags": "i"
+  },
+  "AIM_WORDS": {
+   "source": "\\b(aim|aims|aiming|target|targets|targeting|committed|commit|commits|striving|strive|goal|plan to|planning to|ambition)\\b",
+   "flags": "i"
+  },
+  "COMMENCEMENT_CLAUSE_RE": {
+   "source": "\\b(?:enters?\\s+into\\s+force|entry\\s+into\\s+force|comes?\\s+into\\s+force|in\\s+force\\s+from|applies\\s+from|apply\\s+from|commences|takes\\s+effect|effective\\s+from)\\b",
+   "flags": "i"
+  },
+  "STATUS_ONLY_RE": {
+   "source": "^\\s*(in force|current|updated|last updated|valid|accessed|retrieved)\\s+(as of|since)\\s*[.!?]?\\s*$",
+   "flags": "i"
+  }
+ }
+}

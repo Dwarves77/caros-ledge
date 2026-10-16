@@ -19,3 +19,4 @@ Forward changes only, one file per change (`NNNN_<change>.sql`), each ending in 
 | 0010_derivation_inputs_outbox_and_allowlist | derivation_edges admits items and claims; state_cost_facts outbox | 0010-derivation-inputs |
 | 0011_data_retier_analysis_bodies_t3 | DATA: OECD, IEA, World Bank, IPCC to T3 (cutover window) | 0011-data-retier |
 | 0012_drop_function_reading_dropped_table | drops reorder_user_list_item | 0012-drop-dead-function |
+| 0013_fire_signpost | public.fire_signpost: one transaction for the stamp, the propagation event and the assessment lifecycle move (P2-06) | 0013-fire-signpost |

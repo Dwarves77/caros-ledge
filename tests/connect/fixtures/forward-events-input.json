@@ -1,0 +1,1393 @@
+{
+ "referenceDates": [
+  "2026-10-02"
+ ],
+ "claims": [
+  {
+   "claim_id": "0088bb9a-dab3-4845-87c8-057821551785",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «By 31 December 2025, the Commission shall review the implementation of this Directive and»",
+   "span": "By 31 December 2025, the Commission shall review the implementation of this Directive and",
+   "context": {
+    "before": "on shall continuously assess and monitor the impact resulting from any measures adopted under this Article and publish on a regular basis the results of such assessments.’ ; (15) in Article 69, paragraph 2 is replaced by the following: ‘2. ",
+    "after": " shall submit a report to the European Parliament and to the Council. If appropriate, the Commission shall submit a legislative proposal together with or after submitting the report. The Commission’s review shall, in particular, assess the ",
+    "search_id": "c744ada7-9884-4ea3-a9a0-286296d65b30"
+   }
+  },
+  {
+   "claim_id": "00abc42c-515f-49b5-a67b-ba72ab125d41",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «by 1 January 2010 1 January 2010 PART VI CARBON MONOXIDE Averaging period Limit value M»",
+   "span": "by 1 January 2010 1 January 2010 PART VI CARBON MONOXIDE Averaging period Limit value M",
+   "context": {
+    "before": "iod Limit value Margin of tolerance Date by which limit value is to be met Limit value for the protection of human health Calendar year 5μg/m 3 5μg/m 3 reducing on 1 January 2006 and every 12 months thereafter by 1 μg/m 3 to reach 0 μg/m 3 ",
+    "after": "argin of Tolerance Date by which limit value is to be met The maximum daily 8-hour mean concentration shall be selected by examining 8-hour running averages, calculated from hourly data and updated each hour. Each 8-hour average so calculat",
+    "search_id": "fb9ffeb9-034b-4b06-8e12-33cc120a2431"
+   }
+  },
+  {
+   "claim_id": "017262f0-28c5-4a7d-bc56-32979797ccbc",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: year), verbatim: «within 6 months of the day on which section 145 of the Energy Act 2013 comes into force»",
+   "span": "within 6 months of the day on which section 145 of the Energy Act 2013 comes into force",
+   "context": {
+    "before": " such regulations may not be made unless a draft of the instrument has been laid before and approved by a resolution of each House of Parliament. (4) The Secretary of State must lay a draft of the instrument before each House of Parliament ",
+    "after": ". 1B Strategy relating to fuel poverty: England (1) The Secretary of State must prepare and publish a strategy setting out the Secretary of State's policies for achieving the objective set out in regulations under section 1A by the target d",
+    "search_id": "568545d6-4d1e-4069-8c2f-5845ada28854"
+   }
+  },
+  {
+   "claim_id": "01d70a96-48ce-4811-9c7d-c75f1d820037",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «by 30 May 2024, or as appropriate depending on the alternative time-limit for the su»",
+   "span": "by 30 May 2024, or as appropriate depending on the alternative time-limit for the su",
+   "context": {
+    "before": "of that Directive, the operators are to establish climate-neutrality plans by 1 May 2024. In order to align the conditionality with the existing procedure of application for free allocation, the climate-neutrality plans should be submitted ",
+    "after": "bmission of such applications set by Member States. In accordance with Article 10a(1) of Directive 2003/87/EC, the installations concerned by this conditionality are those whose greenhouse gas emission levels are higher than the 80th percen",
+    "search_id": "f92a0f38-a8fe-4ae3-8fae-1284a696e518"
+   }
+  },
+  {
+   "claim_id": "0306f574-b06c-47c5-9473-0a9985d250e4",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «By 1 June 2011 Member States making use of this exemption shall provide a report to»",
+   "span": "By 1 June 2011 Member States making use of this exemption shall provide a report to",
+   "context": {
+    "before": "e market and use of diaphragms containing chrysotile (point (f)) for existing electrolysis installations until they reach the end of their service life, or until suitable asbestos-free substitutes become available, whichever is the sooner. ",
+    "after": " the Commission on the availability of asbestos free substitutes for electrolysis installations and the efforts undertaken to develop such alternatives, on the protection of the health of workers in the installations, on the source and quan",
+    "search_id": "b4f8acef-6e8b-4622-89bc-455d7b1ec9e7"
+   }
+  },
+  {
+   "claim_id": "03f6b1a0-e3ea-482e-a838-cd8bfbd1dfde",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: month), verbatim: «no later than 1st September 2027 and, in each subsequent year no later than 31st December of that year,»",
+   "span": "no later than 1st September 2027 and, in each subsequent year no later than 31st December of that year,",
+   "context": {
+    "before": " scheme producers; (g) the accuracy of the information provided by scheme retailers; (h) the accuracy of the information provided by the deposit management organisation. Monitoring reports 106. —(1) Each national enforcement authority must ",
+    "after": " provide to the Secretary of State or DAERA, as appropriate, a report setting out its proposed monitoring plan. (2) Each national enforcement authority must no later than 30th September 2027 and, in each subsequent year no later than 31st D",
+    "search_id": "03117a98-0111-479f-814c-d1e65e1061b0"
+   }
+  },
+  {
+   "claim_id": "081ae71b-a995-4573-b999-9fae6e5d26f9",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «no later than 31 December 2020 and, where appropriate, put forward a relevant legislative proposal»",
+   "span": "no later than 31 December 2020 and, where appropriate, put forward a relevant legislative proposal",
+   "context": {
+    "before": "cil ( 12 ) in 2016 identified a need for further clarification and simplification of that legislative act, which could increase its relevance, effectiveness, efficiency and coherence. The Commission should, therefore, review that Directive ",
+    "after": ". In order to support the uptake of the most fuel efficient and environmentally friendly vehicles, that review should in particular consider the inclusion of light commercial vehicles and the need for better designed and further harmonised ",
+    "search_id": "5d573458-1d38-4629-8542-467fad58be2d"
+   }
+  },
+  {
+   "claim_id": "086d42d1-70ac-42f6-a73c-3b0e2137c4b3",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «by 31 December 2017 at the latest”»",
+   "span": "by 31 December 2017 at the latest”",
+   "context": {
+    "before": "mber States” substitute “ The CAA ” , and (b) after “issued in the” insert “ United Kingdom or European ” . (4) In paragraph 4 omit “from 17 November 2013”. (5) In paragraph 5— (a) for “Member States” substitute “ The CAA ” , and (b) omit “",
+    "after": ". Commencement Information I233 Reg. 312 in force at 31.12.2020 on IP completion day (in accordance with 2020 c. 1 , Sch. 5 para. 1(1) ), see reg. 1(2) Article 5 of Commission Implementing Regulation (EU) No 1079/2012 U.K. 313. —(1) Article",
+    "search_id": "553f0c00-a7b3-49c4-bbac-2803557537f3"
+   }
+  },
+  {
+   "claim_id": "087968f1-f9b7-432e-8261-5969982a6e0e",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «No later than 31 December 2006 the Assembly must, in the form of regulations, identify all— (a) first r»",
+   "span": "No later than 31 December 2006 the Assembly must, in the form of regulations, identify all— (a) first r",
+   "context": {
+    "before": "991 (c. 40) , Schedule 7 , paragraph 3 and Schedule 8. M7 1980 c. 66 . Schedule 4 has been amended by the Road Traffic (Consequential Provisions) Act 1988 (c. 54) , Schedule 3 , paragraph 21(3) . Identification of noise sources E+W 3. —(1) ",
+    "after": "ound agglomerations; (b) first round major roads; (c) first round major railways; and (d) major airports. (2) No later than 31 December 2011 the Assembly [ F5 must publish maps identifying all ] — (a) agglomerations; (b) major roads; (c) ma",
+    "search_id": "12a33c55-385a-4714-be04-3ade3bc0a1d1"
+   }
+  },
+  {
+   "claim_id": "08870a97-c310-43ea-a40e-5eada292ff06",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «by 28 January 2028, notify the Commission of those rules and of those measures and shall»",
+   "span": "by 28 January 2028, notify the Commission of those rules and of those measures and shall",
+   "context": {
+    "before": " rules on penalties applicable to infringements of this Regulation and shall take all measures necessary to ensure that they are implemented. The penalties provided for shall be effective, proportionate and dissuasive. Member States shall, ",
+    "after": " notify it, without delay, of any subsequent amendment affecting them. 2. The types of infringements which are subject to penalties shall include: (a) making false declarations during approval procedures or while corrective or restrictive m",
+    "search_id": "3a7141f5-9ab8-429c-a930-20707b7cd720"
+   }
+  },
+  {
+   "claim_id": "0de7edd3-3f8e-4251-bc36-049ad3693153",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «By 9 January 2030, for the purpose of making the information referred to in paragraph 1»",
+   "span": "By 9 January 2030, for the purpose of making the information referred to in paragraph 1",
+   "context": {
+    "before": "cle 7(4), point (c), of that Regulation; (vi) an indication of whether the information contains personal data. 2. For the purposes of paragraph 1, point (b)(ii), Member States shall require companies to obtain a legal entity identifier. 3. ",
+    "after": " of this Article accessible on ESAP, Member States shall designate at least one collection body as defined in Article 2, point (2), of Regulation (EU) 2023/2859 and notify ESMA thereof. 4. From 10 January 2030, Member States shall ensure th",
+    "search_id": "619b7c59-d8ee-4a66-a658-ddcb2071e319"
+   }
+  },
+  {
+   "claim_id": "0f2166ab-2781-4576-a9e3-3337925855d4",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «No later than 31 December 2026, the Commission shall assess the need for a revision of this Directive a»",
+   "span": "No later than 31 December 2026, the Commission shall assess the need for a revision of this Directive a",
+   "context": {
+    "before": "ond what is necessary in order to achieve those objectives, HAVE ADOPTED THIS DIRECTIVE: Article 1 Amendments to Directive 2012/19/EU Directive 2012/19/EU is amended as follows: (1) the following article is inserted: ‘Article 24a Review 1. ",
+    "after": "nd, where appropriate, present a legislative proposal in that respect, accompanied by a thorough socioeconomic and environmental impact assessment. 2. In the impact assessment referred to in paragraph 1, the Commission shall consider, in pa",
+    "search_id": "9d383ba9-22cb-4423-bc19-8295c13fcc79"
+   }
+  },
+  {
+   "claim_id": "11ab6bf2-810d-43a4-9860-0788c74c39e7",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «no later than 20 December 2018»",
+   "span": "no later than 20 December 2018",
+   "context": {
+    "before": " drying; ” ; “ “existing medium combustion plant” means a medium combustion plant— (a) put into operation before 20 December 2018; or (b) for which a permit was granted before 19 December 2017, provided that the plant is put into operation ",
+    "after": "; ” ; “ “gas engine” means an internal combustion engine which operates according to the Otto cycle and which uses spark ignition to burn fuel; ” ; “ “gas turbine” means any rotating machine which converts thermal energy into mechanical wor",
+    "search_id": "fe7fadd3-1d3e-4e64-a96e-e79954948e00"
+   }
+  },
+  {
+   "claim_id": "11e12d71-7086-4b6d-bc59-c57bf7142bac",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «no later than 23 October 2030»",
+   "span": "no later than 23 October 2030",
+   "context": {
+    "before": " originating from the equipment which has undergone cleaning in accordance with best available techniques, excluding portable fire extinguishers, shall not exceed 50 mg/L for the sum of all PFAS. The Commission shall review this derogation ",
+    "after": ". 5. By way of derogation from paragraph 1, PFAS may be placed on the market in a concentration equal to or greater than 1 mg/L for the sum of all PFAS: (a) until 23 October 2026 in firefighting foams in portable fire extinguishers; (b) unt",
+    "search_id": "5c65c10b-7d83-4be9-bc49-499c524e9c63"
+   }
+  },
+  {
+   "claim_id": "13ef742e-7837-41ab-abdd-d239e83338f5",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «By 10 July 2027, ESMA shall establish and operate a European single access point (ESA»",
+   "span": "By 10 July 2027, ESMA shall establish and operate a European single access point (ESA",
+   "context": {
+    "before": "etary procedure in the context of the next Multiannual Financial Framework when assessing whether a larger contribution from the Union budget would be appropriate, HAVE ADOPTED THIS REGULATION: Article 1 The European single access point 1. ",
+    "after": "P) providing centralised electronic access to the following information: (a) information made public pursuant to the Union legislative acts listed in the Annex or pursuant to any further legally binding Union acts that provide for centralis",
+    "search_id": "64ba62f3-359b-48a5-b713-f6355f84d6a7"
+   }
+  },
+  {
+   "claim_id": "1410f030-c409-47a8-9b0a-90f6658507a1",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «by 31 December 2015, by means of implementing acts, establish an indicative compendium of»",
+   "span": "by 31 December 2015, by means of implementing acts, establish an indicative compendium of",
+   "context": {
+    "before": " appropriate, input from relevant experts on a cost-effectiveness analysis, including an assessment of the burden on respondents and of the production costs. 5. In order to facilitate a uniform application of Annex V, the Commission shall, ",
+    "after": " environmental goods and services and of the economic activities to be covered by Annex V based on the following categories: environmental specific services, environmental sole purpose products (connected products), adapted goods and enviro",
+    "search_id": "91ffafa2-8e72-41ba-9944-e695ef2545d8"
+   }
+  },
+  {
+   "claim_id": "146bb0bc-4222-4c5a-8e70-e449998616b9",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «no later than 18 July 2024»",
+   "span": "no later than 18 July 2024",
+   "context": {
+    "before": "ng noise situation, and at least every five years after the date of the approval of those plans. The reviews and revisions, that in accordance with the first subparagraph would be due to take place in 2023, shall be postponed to take place ",
+    "after": ".’; (3) in Article 9, paragraph 1 is replaced by the following: ‘1. Member States shall ensure that the strategic noise maps they have made, and where appropriate adopted, and the action plans they have drawn up are made available and disse",
+    "search_id": "b7b2fcf2-3f34-4fac-bd73-ff5abdfd4a48"
+   }
+  },
+  {
+   "claim_id": "1c97f52d-f44e-4239-b862-d12e549eb5b9",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «by 31 October 2021 as provided for in Part A, point 1»",
+   "span": "by 31 October 2021 as provided for in Part A, point 1",
+   "context": {
+    "before": "cles registered in the Union in the calendar years 2018, 2019 and 2020. (7) In the absence of the final CO 2 monitoring data for new light commercial vehicles for the calendar year 2020, the revision of the B 0 value could not be finalised ",
+    "after": ".2.4, of Annex III to Regulation (EU) 2019/631. Taking into account that revising the B 0 value using only the data for the calendar years 2018 and 2019 would have resulted in a value that was very close to the current B 0 value and in orde",
+    "search_id": "2fb3e593-c107-4b23-9127-f5aaa8304c3c"
+   }
+  },
+  {
+   "claim_id": "1dbbde93-79e5-4d17-8e7c-c05757a18d18",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: year), verbatim: «Within 6 months after the closure of the trading period 2013-2020, the central administrator shall calculate th»",
+   "span": "Within 6 months after the closure of the trading period 2013-2020, the central administrator shall calculate th",
+   "context": {
+    "before": "eriod will be limited to that purpose, HAS ADOPTED THIS REGULATION: Article 1 In Regulation (EU) No 389/2013, the following Article 73h is inserted: ‘Article 73h Clearing process for countries not parties to a joint fulfilment agreement 1. ",
+    "after": "e clearing value for countries not parties to a joint fulfilment agreement by subtracting the amount equal to the allowances in the EU ETS resulting from the inclusion of that country in the EU ETS for the trading period 2013-2020 from the ",
+    "search_id": "b906d4f7-bdf4-4d85-a609-e6cf62ab6b8f"
+   }
+  },
+  {
+   "claim_id": "1e487e19-1902-41c4-9d6d-f47c896ea93d",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «no later than 18 July 2006, appropriate legislative proposals»",
+   "span": "no later than 18 July 2006, appropriate legislative proposals",
+   "context": {
+    "before": "se emitted by the major sources, in particular road and rail vehicles and infrastructure, aircraft, outdoor and industrial equipment and mobile machinery. To this end, the Commission shall submit to the European Parliament and the Council, ",
+    "after": ". Those proposals should take into account the results of the report referred to in Article 10(1). Article 2 Scope 1. This Directive shall apply to environmental noise to which humans are exposed in particular in built-up areas, in public p",
+    "search_id": "a638722d-63d0-4f0b-bb6d-e3e1dbe30f74"
+   }
+  },
+  {
+   "claim_id": "1ffd0e7b-9365-4c57-a259-4029a51137fd",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «no later than 12 May 2031»",
+   "span": "no later than 12 May 2031",
+   "context": {
+    "before": "th the least negative environmental impacts. The Commission shall present the results of this review, including, if appropriate, a draft revision proposal, every time a new product is added to Annex VII of that Regulation and, in any case, ",
+    "after": ". Article 6 Entry into force and application This Regulation shall enter into force on the twentieth day following that of its publication in the Official Journal of the European Union . It shall apply from 19 July 2026. This Regulation sha",
+    "search_id": "ac91077a-7bb3-448b-bd17-8891f23f3dec"
+   }
+  },
+  {
+   "claim_id": "2040502e-c013-4386-b082-f47bbd5d59e3",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «by 31 December 2020, and should be auctioned in accordance with the modalities applicable»",
+   "span": "by 31 December 2020, and should be auctioned in accordance with the modalities applicable",
+   "context": {
+    "before": "co-finance decarbonisation of the electricity supply of islands within its territory. Those allowances should come from the maximum amount of allowances referred to in Article 10a(5) of Directive 2003/87/EC which are not allocated for free ",
+    "after": " to the Modernisation Fund. (16) A Modernisation Fund should be established from 2 % of the total quantity of allowances, and auctioned in accordance with the rules and modalities for auctions taking place on the Common Auction Platform set",
+    "search_id": "63d573bd-6d2c-4f7e-8e27-ea84df76fb97"
+   }
+  },
+  {
+   "claim_id": "2063a088-ce45-489d-8958-0745f86ed746",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «by 30 September 2024 in accordance with Article 11(1) of Directive 2003/87/EC»",
+   "span": "by 30 September 2024 in accordance with Article 11(1) of Directive 2003/87/EC",
+   "context": {
+    "before": "installations for the revised benchmark values for the period from 2026 to 2030. (10) The list of installations containing information relevant for free allocation of emission allowances was submitted to the Commission by the Member States ",
+    "after": ". To ensure that the benchmark values are based on correct data, the Commission carried out in-depth completeness and consistency checks of the data relevant for the free allocation of emission allowances. Where appropriate, the Commission ",
+    "search_id": "93582056-7187-4dc5-8c04-f7235693e268"
+   }
+  },
+  {
+   "claim_id": "223442cd-25a0-4f7f-a9c2-d38b48d3037b",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «by 30 September 2027, the existing Annex 8 benchmarks will apply (see article 13(3) of thi»",
+   "span": "by 30 September 2027, the existing Annex 8 benchmarks will apply (see article 13(3) of thi",
+   "context": {
+    "before": "ia secondary legislation using powers provided for in Part 3 of the Climate Change Act 2008 (see articles 19(9) and 22(5) of this Order). Where the UK ETS Authority does not adopt updated benchmarks for the 2028, 2029 and 2030 scheme years ",
+    "after": "s Order). This Order also makes an amendment to the Activity Level Changes Regulation to clarify that the reporting requirement in Article 3(1a) (which will come into force on 1st January 2026) applies in all circumstances in which Article ",
+    "search_id": "8f41a945-1684-4cd2-9290-fb4ed40e9493"
+   }
+  },
+  {
+   "claim_id": "23757228-d6a8-475d-9a96-f0578aa048e8",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «by 1 May 2021, notify the Commission of those rules and of those measures that have»",
+   "span": "by 1 May 2021, notify the Commission of those rules and of those measures that have",
+   "context": {
+    "before": "his Regulation and of the delegated acts adopted pursuant thereto, and shall take all measures necessary to ensure that they are implemented. The penalties provided for shall be effective, proportionate and dissuasive. Member States shall, ",
+    "after": " not previously been notified to the Commission, and shall notify it, without delay, of any subsequent amendment affecting them. Article 12 Union market surveillance and control of products entering the Union market 1. Regulation (EU) 2019/",
+    "search_id": "3f78306b-55f4-488a-9a7f-3fd613a63ffa"
+   }
+  },
+  {
+   "claim_id": "24639138-c006-480f-bf60-5bd5f2fb7174",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: year), verbatim: «no later than 2010, or in the case of concession contracts, when that concession contract is renewed»",
+   "span": "no later than 2010, or in the case of concession contracts, when that concession contract is renewed",
+   "context": {
+    "before": "type of day or season is no more than 50 % of the level of toll that would otherwise be applicable to the vehicle in question. Member States shall be required to vary the rates at which tolls are charged in conformity with the first indent ",
+    "after": ". A Member State may nevertheless derogate from this requirement if: (i) this would seriously undermine the coherence of the tolling systems in its territory; (ii) for the tolling system concerned, it would not be technically practicable to",
+    "search_id": "123dbaa2-0a40-4f5c-9b6d-6af7a8f71588"
+   }
+  },
+  {
+   "claim_id": "24730186-6a2c-4392-b6da-e476c02628d9",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «By 27 September 2025 the Commission shall, by means of implementing acts, specify the desi»",
+   "span": "By 27 September 2025 the Commission shall, by means of implementing acts, specify the desi",
+   "context": {
+    "before": "for the provision of information pursuant to Article 5(1), point (e), and Article 6(1), point (l), and a harmonised label shall be used for the provision of information pursuant to Article 5(1), point (ea), and Article 6(1), point (la). 2. ",
+    "after": "gn and content of the harmonised notice referred to in paragraph 1. 3. The harmonised notice shall contain the main elements of the legal guarantee of conformity, including its minimum duration of two years as provided in Directive (EU) 201",
+    "search_id": "7db69c1b-7bde-4a47-b26e-253621b66b06"
+   }
+  },
+  {
+   "claim_id": "2a747c96-217a-4e8f-8242-a01faf7ed46d",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «no later than from 1 January 2008, gas oils intended for use by non-road mobile machinery (including in»",
+   "span": "no later than from 1 January 2008, gas oils intended for use by non-road mobile machinery (including in",
+   "context": {
+    "before": "tty acid methyl ester (FAME) content greater than 7 %. Member States shall ensure the provision of appropriate information to consumers concerning the biofuel, in particular FAME, content of diesel fuel. 2. Member States shall ensure that, ",
+    "after": "land waterway vessels), agricultural and forestry tractors and recreational craft may be placed on the market within their territory only if the sulphur content of those gas oils does not exceed 1 000 mg/kg. From 1 January 2011, the maximum",
+    "search_id": "754c9709-f8e2-4d89-867c-711c202e50c8"
+   }
+  },
+  {
+   "claim_id": "2b605681-ebca-4130-8b04-dea9b45a6e86",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «by 14 September 2025 at the latest»",
+   "span": "by 14 September 2025 at the latest",
+   "context": {
+    "before": "1 Annex IX to Directive (EU) 2018/2001 is amended in accordance with the Annex to this Directive. Article 2 1. Member States shall bring into force the laws, regulations and administrative provisions necessary to comply with this Directive ",
+    "after": ". They shall forthwith communicate to the Commission the text of those provisions. When Member States adopt those provisions, they shall contain a reference to this Directive or be accompanied by such a reference on the occasion of their of",
+    "search_id": "42ce0be2-b24e-4740-9419-3f698352c3b7"
+   }
+  },
+  {
+   "claim_id": "2e0ee4ca-711a-4cb5-9d5c-0df8f06f0da5",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «no later than 14 November 2023»",
+   "span": "no later than 14 November 2023",
+   "context": {
+    "before": "Annex IV. Article 9 Review The Commission shall review this Regulation in the light of technological progress and shall present the results of this assessment, including, if appropriate, a draft revision proposal, to the Consultation Forum ",
+    "after": ". This review shall in particular address the appropriateness of: (1) setting additional resource efficiency requirements for products in accordance with the objectives of the circular economy, including identification and reuse of rare ear",
+    "search_id": "92642557-ec9a-4940-a097-3a38d46a2f44"
+   }
+  },
+  {
+   "claim_id": "2fa61c3a-8131-42c6-b3d1-c7e9bf5e7b52",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «by 31 December 2030, the following food waste reduction targets at national level: (a) re»",
+   "span": "by 31 December 2030, the following food waste reduction targets at national level: (a) re",
+   "context": {
+    "before": " 38a to supplement this Directive as regards laying down a common methodology and minimum quality requirements for the uniform measurement of food waste levels. 4. Member States shall take the necessary and appropriate measures to achieve, ",
+    "after": "duction of the generation of food waste in processing and manufacturing by 10 % in comparison to the amount of food waste generated as an annual average between 2021 and 2023; (b) reduction of the generation of food waste per capita, jointl",
+    "search_id": "23da9e53-dd18-4708-98e1-984541c65677"
+   }
+  },
+  {
+   "claim_id": "3206e24a-0914-4734-acf7-b506040f416c",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «By 30 November 2024, 30 November 2025, 30 November 2026 and 30 November 2027, Member Stat»",
+   "span": "By 30 November 2024, 30 November 2025, 30 November 2026 and 30 November 2027, Member Stat",
+   "context": {
+    "before": "emissions exceed 0,1 per cent of total CO 2 emissions from international flights reported to ICAO and published by ICAO in 2019, whichever occurs earlier. This Article shall then be applicable to those operators in the subsequent year. (5) ",
+    "after": "es shall inform aircraft operators that reported emissions to them pursuant to the delegated act adopted pursuant to Article 28c of Directive 2003/87/EC of their offsetting requirements for the previous year. Article 4 Total final CO 2 offs",
+    "search_id": "c2204d80-9d66-4ab6-94c7-aae118a1a105"
+   }
+  },
+  {
+   "claim_id": "334b58d5-3c0d-42cf-ba30-6a1917bc53ad",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «by 6 December 2018 and shall be accompanied, if appropriate, by legislative proposals»",
+   "span": "by 6 December 2018 and shall be accompanied, if appropriate, by legislative proposals",
+   "context": {
+    "before": "ncil on the implementation of this Directive, including, among other aspects, its scope, particularly as regards large non-listed undertakings, its effectiveness and the level of guidance and methods provided. The report shall be published ",
+    "after": ". Article 4 Transposition 1. Member States shall bring into force the laws, regulations and administrative provisions necessary to comply with this Directive by 6 December 2016. They shall immediately inform the Commission thereof. Member S",
+    "search_id": "a57e5ebc-0f98-4715-b48c-7ee2b354139d"
+   }
+  },
+  {
+   "claim_id": "343f2bd4-8246-4399-8a8e-2c7dce010b0c",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «by 18 April 2026 and should cover information related to the first reference period, f»",
+   "span": "by 18 April 2026 and should cover information related to the first reference period, f",
+   "context": {
+    "before": "ctive; ii) the measures taken to implement the Directive; and iii) future implementation activities. They should also provide any other information that the Member State considers relevant. The first report of this kind should be submitted ",
+    "after": "rom 2 August 2021 to 31 December 2025. (2) In accordance with Article 10(6) of Directive 2009/33/EC, the Commission should adopt implementing acts setting out the format of these reports to be submitted by the Member States. (3) In accordan",
+    "search_id": "524fef1c-3d8b-45c5-a07d-e12415f558c6"
+   }
+  },
+  {
+   "claim_id": "3485dafa-b802-4b72-89e2-82d14f97f50f",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «by 7 September 2024 on progress made to eliminate PFOS and justify the continuing need fo»",
+   "span": "by 7 September 2024 on progress made to eliminate PFOS and justify the continuing need fo",
+   "context": {
+    "before": "d placing on the market shall be allowed until 7 September 2025 for use as mist suppressant for non-decorative hard chromium (VI) plating in closed loop systems. Provided that those Member States where PFOS is used report to the Commission ",
+    "after": "r this use, the Commission shall review the need for a prolongation of the derogation for this use of PFOS for a maximum of five years by 7 September 2025.’; (2) the third paragraph is deleted.",
+    "search_id": "001fae4a-25f4-49ea-9f4c-24979fcf2377"
+   }
+  },
+  {
+   "claim_id": "35668c84-e805-4f49-bc29-0b455e065dec",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «By 19 July 2026, the Commission shall set up a digital registry (the ‘registry’) whic»",
+   "span": "By 19 July 2026, the Commission shall set up a digital registry (the ‘registry’) whic",
+   "context": {
+    "before": "b) take into account relevant existing technical solutions and standards; (c) ensure that the rules and procedures established remain, to the largest extent possible, technologically neutral. Article 13 Digital product passport registry 1. ",
+    "after": "h stores in a secure manner at least the unique identifiers. In the case of products intended to be placed under the customs procedure ‘release for free circulation’, the registry shall store the commodity code. The registry shall store the",
+    "search_id": "4efebda7-553e-4228-b72a-57d9ff14d1b7"
+   }
+  },
+  {
+   "claim_id": "3d35feb5-5252-47e4-a18d-d9fc0c26f0a3",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «By 31 December 2024, the Commission shall review the target laid down in paragraph 5 with»",
+   "span": "By 31 December 2024, the Commission shall review the target laid down in paragraph 5 with",
+   "context": {
+    "before": "ing the deadline in accordance with paragraph 6, the Member State shall take the necessary measures to reduce by 2035 the amount of municipal waste landfilled to 25 % or less of the total amount of municipal waste generated (by weight). 9. ",
+    "after": " a view to maintaining or, if appropriate, reducing it, to considering quantitative target per capita on landfilling and to introducing restrictions to the landfilling of non-hazardous waste other than municipal waste. To that end, the Comm",
+    "search_id": "6c380c7b-a72a-47a7-b50d-cfdd1da0adc0"
+   }
+  },
+  {
+   "claim_id": "3dca7d53-405d-411e-9c8a-ad0abbc6d204",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «by 30 October 2005 at the latest, and shall notify it without delay of any subsequent am»",
+   "span": "by 30 October 2005 at the latest, and shall notify it without delay of any subsequent am",
+   "context": {
+    "before": " to this Directive and shall take the necessary measures to ensure that they are implemented. The penalties provided for must be effective, proportionate and dissuasive. Member States shall notify those rules and measures to the Commission ",
+    "after": "endment affecting them. Article 11 Adaptation to technical progress Any amendments necessary in order to adapt Annex III to take account of technical progress shall be adopted by the Commission in accordance with the procedure referred to i",
+    "search_id": "31fdf145-4633-4e35-82ae-c8d287eba29e"
+   }
+  },
+  {
+   "claim_id": "3e0a12e1-1bb5-472b-bc7a-4d4a59235d0c",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «by 1 December 2010, “Just a sip of lamp oil – or even sucking the wick of lamps – may le»",
+   "span": "by 1 December 2010, “Just a sip of lamp oil – or even sucking the wick of lamps – may le",
+   "context": {
+    "before": " the following requirements are met: (a) lamp oils, labelled with H304, intended for supply to the general public are visibly, legibly and indelibly marked as follows: “Keep lamps filled with this liquid out of the reach of children”; and, ",
+    "after": "ad to life-threatening lung damage”; (b) grill lighter fluids, labelled with H304, intended for supply to the general public are legibly and indelibly marked by 1 December 2010 as follows: ‘Just a sip of grill lighter fluid may lead to life",
+    "search_id": "75d132b7-2d7d-4b26-8462-2a290ab978f4"
+   }
+  },
+  {
+   "claim_id": "42b54f32-7d47-4f8c-aaaf-db12033ee6ae",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «by 6 July 2027 the provisions of their laws which they adopt pursuant to this paragr»",
+   "span": "by 6 July 2027 the provisions of their laws which they adopt pursuant to this paragr",
+   "context": {
+    "before": "any event, the penalties imposed in accordance with this paragraph shall be effective, proportionate and dissuasive and applied in accordance with the provisions of this Directive. The Member States concerned shall notify to the Commission ",
+    "after": "aph and, without delay, any subsequent amendment to, or amendment affecting, those laws. ( *1 ) Directive (EU) 2024/1203 of the European Parliament and of the Council of 11 April 2024 on the protection of the environment through criminal la",
+    "search_id": "71987710-7f3d-4126-bbe3-c0bd41bf431c"
+   }
+  },
+  {
+   "claim_id": "4948c713-a43a-46d9-84ed-83fa19c51fb4",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «By 30 June 2025, the Commission shall review the implementation of the JTF with regar»",
+   "span": "By 30 June 2025, the Commission shall review the implementation of the JTF with regar",
+   "context": {
+    "before": "r environmental factors, significant changes in the economic or environmental conditions in the Member State concerned or because of reasons of force majeure seriously affecting implementation of the priorities concerned. Article 14 Review ",
+    "after": "d to the specific objective set out in Article 2, taking into account possible changes in Regulation (EU) 2020/852 and the Union’s climate objectives set out in a Regulation of the European Parliament and of the Council establishing the fra",
+    "search_id": "0058b1ad-7770-475d-80d1-7c856d26bcdb"
+   }
+  },
+  {
+   "claim_id": "4a0d0405-d305-443f-bca5-c71899c8a215",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «by 31 March 2023, whether they intend to request loan support»",
+   "span": "by 31 March 2023, whether they intend to request loan support",
+   "context": {
+    "before": "ed to be submitted by other Member States, while applying the principles of equal treatment, solidarity, proportionality and transparency. To facilitate the application of those principles, Member States shall communicate to the Commission ",
+    "after": ". The Commission shall present to the European Parliament and to the Council, simultaneously, on equal terms and without undue delay, an overview of the intentions expressed by the Member States and the proposed way forward for the distribu",
+    "search_id": "8ac9bdf2-3eb4-4e81-8101-fc0bec3ec8cf"
+   }
+  },
+  {
+   "claim_id": "4a4edcc3-d8bc-4276-9662-d85dbec360aa",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «no later than 22 February 2023’»",
+   "span": "no later than 22 February 2023’",
+   "context": {
+    "before": "lts and/or PFOA-related compounds equal to or below 2 mg/kg (0,0002 % by weight) where they are present in medical devices other than invasive devices and implantable devices. This exemption shall be reviewed and assessed by the Commission ",
+    "after": ".",
+    "search_id": "b21654ea-3e0d-40af-909c-68a789c6e322"
+   }
+  },
+  {
+   "claim_id": "4d50a556-4d12-4a33-8639-f3fa42544008",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: month), verbatim: «no later than 18th November 2018»",
+   "span": "no later than 18th November 2018",
+   "context": {
+    "before": "n paragraph 5 of the Schedule. (2) An infrastructure operator must provide to any person ad-hoc access to— (a) all recharging points deployed after 17th November 2017; and (b) all recharging points deployed on or before 17th November 2017, ",
+    "after": ". (3) In this regulation— “ad-hoc access” means the ability for any person to recharge an electric vehicle without entering into a pre-existing contract with an electricity supplier to, or infrastructure operator of, that recharging point. ",
+    "search_id": "79c4db91-b591-433d-be04-9ad00f24564e"
+   }
+  },
+  {
+   "claim_id": "542836f0-91ed-4a0a-b646-3080b12080ef",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «no later than 30 June 2007 and 30 June 2012 and thereafter reviewed, and revised if necessary, at least»",
+   "span": "no later than 30 June 2007 and 30 June 2012 and thereafter reviewed, and revised if necessary, at least",
+   "context": {
+    "before": "ish common assessment methods for the determination of the noise indicators L den and L night through a revision of Annex II. (5) According to Article 7 of Directive 2002/49/EC, Member States shall ensure that strategic noise maps are made ",
+    "after": " every 5 years. (6) Directive 2002/49/EC provides for action plans to be based on strategic noise maps. Strategic noise maps shall be drawn up with the common assessment methods when these methods have been adopted by Member States. However",
+    "search_id": "6e859a3c-6eb0-4073-b8ff-2ceae7626b1e"
+   }
+  },
+  {
+   "claim_id": "545ced0d-d8ac-4aaa-bf55-116161e5a2d3",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «by 5 January 2020 and maintain it»",
+   "span": "by 5 January 2020 and maintain it",
+   "context": {
+    "before": " and (m) develop and support information campaigns to raise awareness about waste prevention and littering. 2. The European Chemicals Agency shall establish a database for the data to be submitted to it pursuant to point (i) of paragraph 1 ",
+    "after": ". The European Chemicals Agency shall provide access to that database to waste treatment operators. It shall also provide access to that database to consumers upon request. 3. Member States shall monitor and assess the implementation of the",
+    "search_id": "00df0e14-3290-4d28-8b78-8778124569fc"
+   }
+  },
+  {
+   "claim_id": "559a8806-758d-46ff-ade3-0ac2f659a9a9",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «By 31 July 2027, the Commission shall develop the common online interface for the Eur»",
+   "span": "By 31 July 2027, the Commission shall develop the common online interface for the Eur",
+   "context": {
+    "before": ". The European online platform shall consist of the national sections that use the common online interface and shall include links to the national online platforms for repair referred to in paragraph 3 (the ‘national online platforms’). 2. ",
+    "after": "opean online platform. That common online interface shall comply with the requirements set out in paragraph 6 and be available in all official Union languages. The Commission shall thereafter ensure the technical maintenance of the common o",
+    "search_id": "afc2eefe-aac8-4e5c-ab22-5576ccc6ab17"
+   }
+  },
+  {
+   "claim_id": "57ee64d6-7181-42b4-a224-f187c8d28d05",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: month), verbatim: «no later than 31st March 2024»",
+   "span": "no later than 31st March 2024",
+   "context": {
+    "before": "ional carbon reporting practice methodology changes. The annual statement of emissions for 2022 will contain adjustments for the years 2018, 2019 and 2020. The annual statement of emissions for 2022 will be published and laid in Parliament ",
+    "after": ". Once published, it can be accessed via https://www.gov.uk and hard copies can be obtained from the House of Commons Library, Palace of Westminster, London SW1A 0AA. ( 9 ) Decision 13/CMP.1, Annex, paragraph 62 (modalities for the accounti",
+    "search_id": "12b4e98b-7f52-4b68-abe6-007a089f434b"
+   }
+  },
+  {
+   "claim_id": "5888cc82-9806-44c5-82e9-1a533fb9fc67",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «By 28 May 2028, the Commission shall review this paragraph in light of new scientifi»",
+   "span": "By 28 May 2028, the Commission shall review this paragraph in light of new scientifi",
+   "context": {
+    "before": "les produced in the Union. Claims made on the recovered origin of the PVC in imported articles shall be accompanied by a certificate that provides equivalent proof of traceability and recycled content, issued by an independent third party. ",
+    "after": "c information and, if appropriate, modify it accordingly. 19. By way of derogation, paragraph 15 shall not apply to: (a) PVC-silica separators in lead acid batteries, until 28 May 2033; (b) articles covered by paragraph 1, in accordance wit",
+    "search_id": "7c1b9db7-0335-48d8-9135-967241429f21"
+   }
+  },
+  {
+   "claim_id": "593066d8-92ca-4c5a-9fb2-7b094d679e84",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «by 31 December 2020, with a view to ensuring its application from 1 January 2022»",
+   "span": "by 31 December 2020, with a view to ensuring its application from 1 January 2022",
+   "context": {
+    "before": "hall establish the technical screening criteria referred to in paragraph 3 of this Article in one delegated act, taking into account the requirements of Article 19. 6. The Commission shall adopt the delegated act referred to in paragraph 3 ",
+    "after": ". Article 11 Substantial contribution to climate change adaptation 1. An economic activity shall qualify as contributing substantially to climate change adaptation where that activity: (a) includes adaptation solutions that either substanti",
+    "search_id": "fd26b245-4cde-4199-87f7-50d651d5be97"
+   }
+  },
+  {
+   "claim_id": "5a710f10-2805-4f25-88da-256cfa81fc2c",
+   "kind": "FACT",
+   "text": "[due_date] [due_date] The captured source states, verbatim: 'no later than 6 weeks after the date on which the 2015 activities or the 2016 activities commence'",
+   "span": "no later than 6 weeks after the date on which the 2015 activities or the 2016 activities commence",
+   "context": {
+    "before": "the 2015 activities or the 2016 activities, B must— (a) apply to the regulator for a monitoring plan without delay after B is aware that B will commence, as appropriate, the 2015 activities or the 2016 activities and in any event by a date ",
+    "after": "; and (b) include with the application a written explanation of why B was unable to comply with paragraph (2). (4) Paragraph (5) applies where B is unable to comply with paragraph (2) by reason only that B’s administering member State, refe",
+    "search_id": "e9ac611a-4f4e-4ab0-8aeb-b37807d32cda"
+   }
+  },
+  {
+   "claim_id": "5d063f57-d8ef-441b-9c4a-9715d35fe0e5",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «no later than 24 August 2024»",
+   "span": "no later than 24 August 2024",
+   "context": {
+    "before": "the single template referred to in the first subparagraph shall be reasonable. 3. The Commission shall assess the applications referred to in paragraph 1 through an open call with regular cut-off dates. The first such cut-off date shall be ",
+    "after": ". The Commission shall set cut-off dates at least four times per year. 4. The Commission shall inform applicants within 30 days of the applicable cut-off date if it considers the information provided in the application to be complete. If th",
+    "search_id": "048a071a-fa91-41d1-892c-bc97aea3fcc2"
+   }
+  },
+  {
+   "claim_id": "5df7b769-608a-4dcc-93b1-39d84a2daa2e",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «no later than 1 April 2018»",
+   "span": "no later than 1 April 2018",
+   "context": {
+    "before": "financial arrangement as the regulations provide. (5) The Secretary of State may by order amend the definition of “energy performance certificate” in subsection (4). (6) The first domestic energy efficiency regulations must come into force ",
+    "after": ". Commencement Information I57 S. 43 in force at 26.3.2015 by S.I. 2015/880 , art. 2 , Sch. 44 Further provision about domestic energy efficiency regulations E+W (1) Domestic energy efficiency regulations may, in particular, include provisi",
+    "search_id": "8f148259-fcf7-435d-91fb-06f681cff75f"
+   }
+  },
+  {
+   "claim_id": "62807fdb-e67a-4daa-9d2c-81ed6490a003",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «By 4 July 2007, the Commission shall adopt the measures for the implementation of Ar»",
+   "span": "By 4 July 2007, the Commission shall adopt the measures for the implementation of Ar",
+   "context": {
+    "before": "air-conditioning systems shall not fill such equipment with fluorinated greenhouse gases if an abnormal amount of the refrigerant has leaked from the system, until the necessary repair has been completed. Article 7 Implementing measures 1. ",
+    "after": "ticle 4 and Article 5, and in particular: (a) the administrative provisions for the EC type-approval of vehicles; and (b) a harmonised leakage detection test for measuring the leakage rate of fluorinated greenhouse gases with a global warmi",
+    "search_id": "40a30689-4f90-47f4-b704-d6f249d8fb90"
+   }
+  },
+  {
+   "claim_id": "62be133d-0f0b-401a-a346-878154bfce51",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «by 30 June 2030, in the interest of simplification for operators and traders, the Com»",
+   "span": "by 30 June 2030, in the interest of simplification for operators and traders, the Com",
+   "context": {
+    "before": " and traders, the general review should also evaluate the impact of those amendments on the achievement of the overall objectives of Regulation (EU) 2023/1115. (14) Ahead of the general review of Regulation (EU) 2023/1115 to be carried out ",
+    "after": "mission should carry out a simplification review of that Regulation and should present a report by 30 April 2026. The report should evaluate the administrative burden and impact of that Regulation, in particular for micro or small operators",
+    "search_id": "126200cc-d8c6-4321-88cb-a5d30ae80785"
+   }
+  },
+  {
+   "claim_id": "634f0ec9-8b34-42e1-99f0-ac6f56090697",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: year), verbatim: «no later than August 7, 2013»",
+   "span": "no later than August 7, 2013",
+   "context": {
+    "before": "ISWI rulemaking, the EPA required states to resubmit state plans for existing source CISWI. See 76 FR 15704 and 78 FR 9112. Existing source CISWI units are those which have commenced construction on or before June 4, 2010, or were modified ",
+    "after": ". The emission guidelines for existing source CISWI are codified at 40 CFR part 60, subpart DDDD. States subject to 40 CFR part 60, subpart DDDD (subpart DDDD) must submit a state plan to the EPA that implements the CISWI emission guideline",
+    "search_id": "0d0e8dd9-2410-4d61-b793-fb0ce28e603a"
+   }
+  },
+  {
+   "claim_id": "650cb132-bb65-436a-841e-c3e7bf4691f1",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «no later than 1 January 2022»",
+   "span": "no later than 1 January 2022",
+   "context": {
+    "before": "view this Regulation in the light of technological progress made in connection to air heating products, cooling products and high temperature process chillers. It shall present the results of this review to the Ecodesign Consultation Forum ",
+    "after": ". The review shall include an assessment of the following aspects: (a) the appropriateness of setting ecodesign requirements covering direct greenhouse gas emissions caused by refrigerants; (b) the appropriateness of setting ecodesign requi",
+    "search_id": "2316ae27-ba67-43ca-a801-decb8b68d7a0"
+   }
+  },
+  {
+   "claim_id": "689a820b-52db-4842-ba74-9d13d292b452",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «by 30 June 2024 that should evaluate the possibility of inclusion of such exposures i»",
+   "span": "by 30 June 2024 that should evaluate the possibility of inclusion of such exposures i",
+   "context": {
+    "before": "may, on a voluntary basis, provide information in relation to exposures to taxonomy aligned bonds and taxonomy aligned debt securities that are issued by central governments, central banks or supranational issuers. There should be a review ",
+    "after": "n the key performance indicators, HAS ADOPTED THIS REGULATION: Article 1 Definitions For the purposes of this Regulation, the following definitions apply: (1) ‘environmental objective’ means one of the environmental objectives laid down in ",
+    "search_id": "52b42495-da71-4ea6-b7ab-798c696d94fe"
+   }
+  },
+  {
+   "claim_id": "69163189-7022-4644-a575-60d0015e44b9",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «by 31 December 2016 at the latest, the laws, regulations and administrative provisions ne»",
+   "span": "by 31 December 2016 at the latest, the laws, regulations and administrative provisions ne",
+   "context": {
+    "before": "irective 2011/65/EU should therefore be amended accordingly, HAS ADOPTED THIS DIRECTIVE: Article 1 Annex II to Directive 2011/65/EU is replaced by the text in the Annex to this Directive. Article 2 1. Member States shall adopt and publish, ",
+    "after": "cessary to comply with this Directive. They shall forthwith communicate to the Commission the text of those provisions. They shall apply those provisions from 22 July 2019. When Member States adopt those provisions, they shall contain a ref",
+    "search_id": "4409e6b7-4599-41e7-ac69-fb6833192c5f"
+   }
+  },
+  {
+   "claim_id": "6a019cbc-99c0-4cf7-9868-54462080e20e",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «by 31 December 2019 and 40 lightweight plastic carrier bags per person by 31 December 202»",
+   "span": "by 31 December 2019 and 40 lightweight plastic carrier bags per person by 31 December 202",
+   "context": {
+    "before": "pecific intended use. The measures taken by Member States shall include either or both of the following: (a) the adoption of measures ensuring that the annual consumption level does not exceed 90 lightweight plastic carrier bags per person ",
+    "after": "5, or equivalent targets set in weight. Very lightweight plastic carrier bags may be excluded from national consumption objectives; (b) the adoption of instruments ensuring that, by 31 December 2018, lightweight plastic carrier bags are not",
+    "search_id": "bff9227f-07c5-4961-859e-119753ba3efb"
+   }
+  },
+  {
+   "claim_id": "6d05c968-8e55-486d-b250-155703ac490c",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «by 15 April 2015, submit to the Secretariat of the UNFCCC a report to facilitate the c»",
+   "span": "by 15 April 2015, submit to the Secretariat of the UNFCCC a report to facilitate the c",
+   "context": {
+    "before": "he Commission follow its usual practice and carry out consultations with experts, including experts from Iceland, before adopting delegated acts included or to be included in Annex 1 of this Agreement. Article 5 Reporting 1. Iceland shall, ",
+    "after": "alculation of its assigned amount, in accordance with this Agreement, the requirements of the Kyoto Protocol, the Doha Amendment and decisions adopted thereunder. 2. The Union shall prepare a report to facilitate the calculation of the assi",
+    "search_id": "7ae5724a-5324-4ef7-9337-0b83844de090"
+   }
+  },
+  {
+   "claim_id": "7670db2d-03b8-48dc-8540-f5e63a9e6d5c",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «No later than 1 January 2000, Member States shall prohibit the marketing of leaded petrol within their»",
+   "span": "No later than 1 January 2000, Member States shall prohibit the marketing of leaded petrol within their",
+   "context": {
+    "before": "road mobile machinery and agricultural tractors Member States may require the same sulphur content as defined for diesel fuels in this Directive or the sulphur content as defined for diesel fuels in Directive 93/12/EEC. Article 3 Petrol 1. ",
+    "after": " territory. 2. (a) Member States shall ensure that, no later than 1 January 2000, unleaded petrol can be marketed within their territory only if it complies with the environmental specifications set out in Annex I. (b) Without prejudice to ",
+    "search_id": "4a7fa3c0-fdd2-45a6-a362-7bfe74d84a5b"
+   }
+  },
+  {
+   "claim_id": "79269230-5cad-4ffa-bfe0-c5c8a3e27e2b",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «by 31 December 2003, to a maximum daily running 8 hour mean of 10 milligrams per cubic me»",
+   "span": "by 31 December 2003, to a maximum daily running 8 hour mean of 10 milligrams per cubic me",
+   "context": {
+    "before": "bjective for benzene of 5 micrograms per cubic metre or less, when expressed as an annual mean, to be achieved by 31 December 2010 (regulation 2(2)(a)). They also alter the air quality objective for carbon monoxide, which is to be achieved ",
+    "after": "tre or less (regulation 2(2)(b)). Amendments are also made to Part II (Interpretation) of the Schedule to the 2000 Regulations These amendments affect the air quality objectives for benzene, carbon monoxide and lead: the meaning of the expr",
+    "search_id": "afe55f82-4ccc-4c54-9fc0-c25ffce383f5"
+   }
+  },
+  {
+   "claim_id": "79918ca6-59ca-4558-b9d5-27c797e22e8b",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «no later than 15 March 2019 in a legally enforceable manner before the Treaties cease to apply in that»",
+   "span": "no later than 15 March 2019 in a legally enforceable manner before the Treaties cease to apply in that",
+   "context": {
+    "before": "lowances created for 2018 shall not be identified with a country code where Union law does not yet cease to apply in that Member State by 30 April 2019 or where it is sufficiently ensured that the surrender of allowances must take place by ",
+    "after": " Member State. The Member State concerned shall immediately after 15 March 2019 report on compliance to the Member States and the Commission.’; (2) in Article 67, the following paragraph 4 is inserted: ‘4. Allowances which have a country co",
+    "search_id": "19fa5e51-1089-4060-954f-5fc1eaac2b49"
+   }
+  },
+  {
+   "claim_id": "7a6c0591-d757-46a7-96ca-49e3cf1baba5",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «by 16 July 2024 the biodegradability criteria of two categories of polymers belonging»",
+   "span": "by 16 July 2024 the biodegradability criteria of two categories of polymers belonging",
+   "context": {
+    "before": " health. That is particularly valid for polymers intentionally added to EU fertilising products which are subsequently released to the environment. (3) Therefore, Regulation (EU) 2019/1009 set out an obligation for the Commission to assess ",
+    "after": " to CMC 9: polymers controlling the water penetration into nutrient particles and thus the release of nutrients (‘coating agents’) and polymers increasing the water retention capacity or wettability of the product (‘water retention polymers",
+    "search_id": "a96f50f2-14fa-445f-9860-455f95513bb2"
+   }
+  },
+  {
+   "claim_id": "7fa01216-e331-463e-9f0c-1516471e3d88",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: month), verbatim: «No later than 31st December 2006 the Secretary of State must, in the form of regulations, identify all—»",
+   "span": "No later than 31st December 2006 the Secretary of State must, in the form of regulations, identify all—",
+   "context": {
+    "before": " Traffic Act 1991 (c.40) , Schedule 7 , paragraph 3 and Schedule 8. M6 Schedule 4 has been amended by the Road Traffic (Consequential Provisions) Act 1988 (c.54) , Schedule 3 , paragraph 21(3) . Identification of noise sources U.K. 3. —(1) ",
+    "after": " (a) first round agglomerations; (b) first round major roads; (c) first round major railways; and (d) major airports. (2) No later than 31st December 2011 the Secretary of State [ F9 must publish maps identifying all ] — (a) agglomerations;",
+    "search_id": "b24d571a-3341-4bce-bd14-333d08494497"
+   }
+  },
+  {
+   "claim_id": "82926ac4-d47a-4587-a6f7-c5cbe3cf9302",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «By 1 January 2022, Member States shall ensure that an on-ground energy data collecting»",
+   "span": "By 1 January 2022, Member States shall ensure that an on-ground energy data collecting",
+   "context": {
+    "before": "1.4.2 is replaced by the following: ‘6.1.4.2. Assessment of current at standstill (DC systems only) ’; (8) point 6.1.5(c) is replaced by the following: ‘(c) continuous current rating;’; (9) point 7.2.4 is replaced by the following: ‘7.2.4. ",
+    "after": " system capable to exchange compiled energy billing data in accordance with point 4.2.17 of this TSI is implemented.’; (10) point 7.3.1(d) is replaced by the following: ‘(d) An existing subsystem may allow the circulation of TSI-compliant v",
+    "search_id": "51d7ca50-f2c0-4102-a90c-b8c6483412ba"
+   }
+  },
+  {
+   "claim_id": "82962579-3318-4e49-928e-eb0ae403ba25",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «by 1 January 2001 at the latest»",
+   "span": "by 1 January 2001 at the latest",
+   "context": {
+    "before": "E: Article 1 Annex I to IV to Directive 98/70/EC are replaced by Annex I to IV to this Directive. Article 2 1. Member States shall bring into force the laws, regulations and administrative provisions necessary to comply with this Directive ",
+    "after": ". They shall forthwith inform the Commission thereof. When Member States adopt those provisions, they shall contain a reference to this Directive or be accompanied by such a reference on the occasion of their official publication. Member St",
+    "search_id": "bd8624b9-cfbe-4c46-9788-7f13a827b64c"
+   }
+  },
+  {
+   "claim_id": "87e04957-4725-4872-ba30-2bd165aaa538",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «by 31 December 2020 and 31 December 2025 respectively»",
+   "span": "by 31 December 2020 and 31 December 2025 respectively",
+   "context": {
+    "before": "tion to stationary installations Article 46 Entry of national allocation tables into the Union Registry 1. Each Member State shall notify its national allocation table for the period 2021-2025 and for the period 2026-2030 to the Commission ",
+    "after": ". Member States shall ensure that national allocation tables include the information set out in Annex X. 2. The Commission shall instruct the central administrator to enter the national allocation table into the Union Registry if it conside",
+    "search_id": "7eb378c2-3dc2-4ec7-8606-8125fda89f48"
+   }
+  },
+  {
+   "claim_id": "8cf1fd7b-7d2a-433b-a2be-7ff7f5924bcf",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: month), verbatim: «no later than 28th February 2001»",
+   "span": "no later than 28th February 2001",
+   "context": {
+    "before": "atter referred to on Form CCL 1 and, in the case of a partner, Form CCL 2 together with such further details as the Commissioners may require. (4) A person so required on 29th January 2001 must deliver the notification to the Commissioners ",
+    "after": ". (5) A person to whom paragraph (4) does not apply, but who becomes so required after 29th January 2001, must deliver the notification to the Commissioners within 30 days starting from the day after becoming so required. (6) A person who i",
+    "search_id": "8a9226b7-2b1a-4cd7-97a8-3ae087c32f8e"
+   }
+  },
+  {
+   "claim_id": "8e0af1af-a8b5-4957-a226-26aa7097cc3a",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «no later than 19 March 2013»",
+   "span": "no later than 19 March 2013",
+   "context": {
+    "before": "d shall comply with this Regulation from 19 March 2013. 2. Registrations of substances under Regulation (EC) No 1907/2006 that are not in accordance with the Annex to this Regulation shall be updated in order to comply with this Regulation ",
+    "after": ". Article 22(5) of Regulation (EC) No 1907/2006 shall not apply to those updates. Article 3 This Regulation shall enter into force on the third day following its publication in the Official Journal of the European Union . This Regulation sh",
+    "search_id": "8aba912b-f1ad-44f4-ad6d-9376964c0dc3"
+   }
+  },
+  {
+   "claim_id": "8f202eff-2dc6-412b-9b0d-c0235cf3a54d",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «by 31 October 2019, assess the outcome of the Talanoa dialogue»",
+   "span": "by 31 October 2019, assess the outcome of the Talanoa dialogue",
+   "context": {
+    "before": "emand for annual emission allocations should also be considered to ensure the adequacy of the obligations laid down by this Regulation. In addition, as part of its regular reporting under Regulation (EU) No 525/2013, the Commission should, ",
+    "after": ". The review for the period after 2030 should be in line with the long-term objectives and the commitments made under the Paris Agreement and, to this end, it should reflect a progression over time. (29) In order to ensure efficient, transp",
+    "search_id": "0931206e-2769-4b7b-9158-18a1dad3a30f"
+   }
+  },
+  {
+   "claim_id": "8fba2247-95cd-4b79-8df4-2a1bab740c02",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «no later than 31 December 2025 with a view to safeguarding progress towards achieving the objectives re»",
+   "span": "no later than 31 December 2025 with a view to safeguarding progress towards achieving the objectives re",
+   "context": {
+    "before": "d road transport, that can inform and enhance the national air pollution control programmes and their implementation. Article 13 Review 1. On the basis of the reports referred to in Article 11(1), the Commission shall review this Directive ",
+    "after": "ferred to in Article 1(2), in particular by taking into account scientific and technical progress and the implementation of Union climate and energy policies. If appropriate, the Commission shall present legislative proposals for emission r",
+    "search_id": "fbfd0a51-bb73-4244-912f-6cce0e6502af"
+   }
+  },
+  {
+   "claim_id": "95f82732-ee4e-440c-b45a-f34cd6c60036",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «no later than 12 March 2029»",
+   "span": "no later than 12 March 2029",
+   "context": {
+    "before": "ember States shall ensure that natural persons who hold a certificate or training attestation under Regulation (EU) No 517/2014 shall participate in such refreshment training courses or complete such evaluation processes for the first time ",
+    "after": ". 10. Within 1 year following the entry into force of the implementing act under paragraph 8, Member States shall notify the Commission of their certification and training programmes. Member States shall recognise certificates and training ",
+    "search_id": "a819590d-55e5-4284-9d72-6bd569726283"
+   }
+  },
+  {
+   "claim_id": "9a6a7bd9-b908-48be-ac2a-bf0d59c71559",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «By 30 June 2023, Member States are to submit a draft update of their integrated natio»",
+   "span": "By 30 June 2023, Member States are to submit a draft update of their integrated natio",
+   "context": {
+    "before": "e covered by Regulation (EU) 2018/842 and therefore will necessarily be part of the measures that Member States will put in place in order to comply with their increased 2030 greenhouse gas emission reduction targets under this Regulation. ",
+    "after": "nal energy and climate plans to the Commission. The Commission will issue guidance in that respect, including to encourage Member States to set out targets and policies to reduce methane emissions. Likewise, Member States are to assess whet",
+    "search_id": "9943838b-db30-4ced-b2e4-4a00f3780f7c"
+   }
+  },
+  {
+   "claim_id": "9c7c6de4-a45a-49c0-bc94-e1fc9e090cc3",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «by 5 July 2011, including a plan presented jointly by Belgium and Luxembourg»",
+   "span": "by 5 July 2011, including a plan presented jointly by Belgium and Luxembourg",
+   "context": {
+    "before": ", capacity and cost-efficiency. However, Member States were not required to set binding targets in the areas of safety and environment during the first reference period. (5) Member States communicated their national plans to the Commission ",
+    "after": ". Denmark and Sweden communicated a plan to the Commission on behalf of their functional airspace block (Danish-Swedish FAB). Belgium, France, Germany, Luxembourg, the Netherlands and Switzerland communicated to the Commission a plan on beh",
+    "search_id": "20f5b418-7968-49d0-be1a-8d9d9d3307bd"
+   }
+  },
+  {
+   "claim_id": "9d777fc6-203e-46aa-bf59-29b288012f37",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: year), verbatim: «no later than in 2035, the Commission shall carry out a final evaluation of the operation of the Innova»",
+   "span": "no later than in 2035, the Commission shall carry out a final evaluation of the operation of the Innova",
+   "context": {
+    "before": "ake proposals to ensure that the Innovation Fund progresses towards the achievement of its objectives provided for in Directive 2003/87/EC and in Article 3 of this Regulation. 3. At the end of the implementation of the Innovation Fund, but ",
+    "after": "tion Fund. 4. The Commission shall make the results of the evaluations undertaken pursuant to paragraphs 1, 2, and 3 publicly available. CHAPTER VI Audits, publicity and knowledge sharing Article 25 Audits 1. Audits on the use of the Innova",
+    "search_id": "dc0cbfd5-796a-4fd2-8355-cb5b001812a0"
+   }
+  },
+  {
+   "claim_id": "a1d506e3-3da0-408b-bd9c-2169699498fe",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «by 30 November 2012 at the latest»",
+   "span": "by 30 November 2012 at the latest",
+   "context": {
+    "before": "lowing its publication in the Official Journal of the European Union . It shall apply from 5 May 2011. However, for registrations submitted prior to 5 May 2011, the chemical safety report shall be updated in accordance with this Regulation ",
+    "after": ". Article 22(5) of Regulation (EC) No 1907/2006 shall not apply to those updates. This Article is without prejudice to Articles 2 and 3 of Commission Regulation (EU) No 253/2011 ( 5 ) , with regard to Article 1(12) of this Regulation. This ",
+    "search_id": "ddb2cdab-b4d6-4b63-b87d-074e4de6e608"
+   }
+  },
+  {
+   "claim_id": "a652994f-2f34-456b-8ff6-8a1cc18f5dd3",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «no later than 31 December 2005»",
+   "span": "no later than 31 December 2005",
+   "context": {
+    "before": "m the existing fleet of vehicles leading to an improvement in air quality, whilst ensuring that there is no overall increase in greenhouse gas emissions. In this context it will be necessary to confirm this date in the case of diesel fuels ",
+    "after": ". (12) In order to protect human health and/or the environment in specific agglomerations or in specific ecologically or environmentally sensitive areas with special pollution problems, Member States should be permitted, subject to a proced",
+    "search_id": "d9950036-89c8-497c-aa47-6d10d74f70fb"
+   }
+  },
+  {
+   "claim_id": "a90f7153-344f-4fe4-acbb-9add69043db6",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «by 30 September 2019 in accordance with Article 11(1) of Directive 2003/87/EC»",
+   "span": "by 30 September 2019 in accordance with Article 11(1) of Directive 2003/87/EC",
+   "context": {
+    "before": "update of the benchmark values for aromatics, hydrogen, syngas and hot metal. (4) The list of installations containing information relevant for the free allocation of emission allowances was submitted to the Commission by the Member States ",
+    "after": ". To ensure that the benchmark values are based on correct data, the Commission carried out in-depth completeness and consistency checks of the data relevant for the free allocation of emission allowances, also using automated tools. Where ",
+    "search_id": "96f23ee5-2bee-48a3-b0b4-646d31edb2e9"
+   }
+  },
+  {
+   "claim_id": "aa3c2901-094f-4f59-a6e2-b3df4d5e647f",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «by 30 August 2025, 30 August 2027 and 30 August 2032 respectively»",
+   "span": "by 30 August 2025, 30 August 2027 and 30 August 2032 respectively",
+   "context": {
+    "before": "ex XXII.’ ; (4) Article 32 is replaced by the following: ‘Article 32 Final review reports The Commission shall inform the Member State concerned of the end of the comprehensive review and provide the Member State with a final review report ",
+    "after": ".’ ; (5) Annex II is replaced by the text in Annex I to this Regulation; (6) Annex XII is replaced by the text in Annex II to this Regulation; (7) Annex XV is replaced by the text in Annex III to this Regulation; (8) Annex XX is amended as ",
+    "search_id": "941b313d-66df-4c52-8830-1494d0faaa22"
+   }
+  },
+  {
+   "claim_id": "ad36aa9b-4425-4f47-986a-9093c771c70f",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «by 31 October 2021 on the basis of the mass in running order of the incomplete base vehi»",
+   "span": "by 31 October 2021 on the basis of the mass in running order of the incomplete base vehi",
+   "context": {
+    "before": "nt of the maximum vehicle load, where maximum vehicle load is defined as the technically permissible maximum laden mass minus the mass in running order of the base vehicle multiplied by B 0 , minus 25 kg. The value of B 0 shall be adjusted ",
+    "after": "cles for all completed vehicles registered in calendar years 2018, 2019, and 2020, calculated in accordance with the below formulas. The new B 0 value shall apply from 1 January 2022 until 31 December 2024. Formula 1: Where, A i is the valu",
+    "search_id": "a4692e74-18e5-48bf-8371-bae9f3abc205"
+   }
+  },
+  {
+   "claim_id": "aea275cb-a9ff-4c60-814e-f6c871be4bda",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «by 1 January 2015 1 January 2015 Marginal Citations M12 The maximum daily eight hour me»",
+   "span": "by 1 January 2015 1 January 2015 Marginal Citations M12 The maximum daily eight hour me",
+   "context": {
+    "before": "·5 Averaging period Limit value Margin of tolerance Date by which limit value is to be met Calendar year 25 μg/m 3 20% on 11 June 2008, decreasing on the next 1 January and every 12 months thereafter by equal annual percentages to reach 0% ",
+    "after": "an concentration of carbon monoxide must be selected by examining eight hour running averages, calculated from hourly data and updated each hour. Each eight hour average so calculated must be assigned to the day on which it ends, that is, t",
+    "search_id": "62421403-c5b9-438c-b405-1bff8ec5d4a9"
+   }
+  },
+  {
+   "claim_id": "b2022112-78bd-4d7b-b63e-fb159d34fb0e",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «No later than 14 August 2023, the Agency shall produce a first report on the results of this review»",
+   "span": "No later than 14 August 2023, the Agency shall produce a first report on the results of this review",
+   "context": {
+    "before": "s concerning support programmes, the psychological assessment of flight crew and the systematic and random testing of psychoactive substances to ensure the medical fitness of flight crew and cabin crew members set out in Annexes II and IV. ",
+    "after": ". That review shall involve relevant expertise and shall be based on data gathered, with the assistance of Member States and the Agency, on a long-term basis.’; (2) Annexes I, II, III, IV, V, VI, VII and VIII are amended in accordance with ",
+    "search_id": "f818fdd2-f1fd-4615-808b-dcf8524299f8"
+   }
+  },
+  {
+   "claim_id": "b2f445ce-ab4c-4c62-8520-ef6a47618757",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «By 30 April 2022 and in each subsequent year, the Secretary of State must publish a li»",
+   "span": "By 30 April 2022 and in each subsequent year, the Secretary of State must publish a li",
+   "context": {
+    "before": "may by regulations”; (3) Omit the second subparagraph. Amendment of Article 11 11. —(1) Article 11 (publication of data and manufacturer performance) is amended as follows. (2) In paragraph 1— (a) for the words before point (a) substitute “",
+    "after": "st indicating:”; (b) in point (a) for “2020” substitute “2021”; (c) in point (b) for “2020” substitute “2021”; (d) in point (d) for “2020” substitute “2021”; (e) in point (f)— (i) for “2020” substitute “2021”; (ii) for “Union” substitute “U",
+    "search_id": "7d91dd19-429b-4da1-80d8-bf03ee4f540b"
+   }
+  },
+  {
+   "claim_id": "b3b2cc2e-5d0b-42fe-81f3-53731319046f",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «by 30 September 2013 at the latest»",
+   "span": "by 30 September 2013 at the latest",
+   "context": {
+    "before": "e 1 Annex I to Directive 94/62/EC is replaced by the text set out in the Annex to this Directive. Article 2 1. Member States shall bring into force the laws, regulations and administrative provisions necessary to comply with this Directive ",
+    "after": ". They shall forthwith communicate to the Commission the text of those provisions. When Member States adopt those provisions, they shall contain a reference to this Directive or be accompanied by such a reference on the occasion of their of",
+    "search_id": "f5de73e1-925a-4327-af32-de6a375d5698"
+   }
+  },
+  {
+   "claim_id": "b8c0e05d-3c31-40e2-8545-21d36dba3a97",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «By 9 January 2030, for the purpose of making the information referred to in paragraph 1»",
+   "span": "By 9 January 2030, for the purpose of making the information referred to in paragraph 1",
+   "context": {
+    "before": "icle 7(4), point (c), of that Regulation; (v) an indication of whether the information contains personal data. 2. For the purposes of paragraph 1, point (b)(ii), audit firms that are legal persons shall obtain a legal entity identifier. 3. ",
+    "after": " of this Article accessible on ESAP, Member States shall designate at least one collection body as defined in Article 2, point (2), of Regulation (EU) 2023/2859 and notify ESMA thereof. 4. For the purpose of ensuring the efficient collectio",
+    "search_id": "11b0736a-48ac-4b7b-9d48-9cfce0afdf1e"
+   }
+  },
+  {
+   "claim_id": "b8cbbdd1-c2da-462a-9554-55003cc8bda4",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «By 31 December 2020, the Commission shall review this Directive, and to that end, shall s»",
+   "span": "By 31 December 2020, the Commission shall review this Directive, and to that end, shall s",
+   "context": {
+    "before": "mission that they will not object. That period shall be extended by two months at the initiative of the European Parliament or of the Council. ( *2 ) OJ L 123, 12.5.2016, p. 1 .’;\" (8) the following article is inserted: ‘Article 10a Review ",
+    "after": "ubmit a report to the European Parliament and to the Council, accompanied, if appropriate, by a legislative proposal.’; (9) Article 11 is replaced by the following: ‘Article 11 Committee procedure 1. The Commission shall be assisted by a co",
+    "search_id": "c7d80625-5cc8-4d53-af58-f9981d7348b4"
+   }
+  },
+  {
+   "claim_id": "baf88995-4af3-4ace-a773-14c5394ece80",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «By 30 December 2020, the ESAs shall develop, through the Joint Committee, draft regulator»",
+   "span": "By 30 December 2020, the ESAs shall develop, through the Joint Committee, draft regulator",
+   "context": {
+    "before": "o consider adverse impacts of investment decisions on sustainability factors in their investment advice or insurance advice, and, where relevant, including information as to whether and when they intend to consider such adverse impacts. 6. ",
+    "after": "y technical standards in accordance with Articles 10 to 14 of Regulations (EU) No 1093/2010, (EU) No 1094/2010 and (EU) No 1095/2010 on the content, methodologies and presentation of information referred to in paragraphs 1 to 5 of this Arti",
+    "search_id": "69495019-9f2f-40de-8974-d3b08b466da1"
+   }
+  },
+  {
+   "claim_id": "be0b4005-0c7d-4e9b-bfbd-e26d7ec44dac",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «by 30 April 2015 instead of 30 April 2014, and verified 2013 emissions for those fligh»",
+   "span": "by 30 April 2015 instead of 30 April 2014, and verified 2013 emissions for those fligh",
+   "context": {
+    "before": "n another region of the EEA in each calendar year from 1 January 2013 to 31 December 2016; (c) the surrender of allowances, corresponding to verified 2013 emissions from flights between aerodromes located in States in the EEA, taking place ",
+    "after": "ts being reported by 31 March 2015 instead of 31 March 2014. For the purposes of Articles 11a, 12 and 14, the verified emissions from flights other than those referred to in the first subparagraph shall be considered to be the verified emis",
+    "search_id": "fbe716cf-09f5-4485-9560-0ebc470c452d"
+   }
+  },
+  {
+   "claim_id": "c026751c-fde5-43cd-9786-6b772247dbfb",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «by 6 June 2018 the laws, regulations and administrative provisions necessary to comp»",
+   "span": "by 6 June 2018 the laws, regulations and administrative provisions necessary to comp",
+   "context": {
+    "before": "of the European Parliament and of the Council ( 2 ) , HAS ADOPTED THIS DIRECTIVE: Article 1 Annex II to Directive 2000/53/EC is replaced by the text set out in the Annex to this Directive. Article 2 1. Member States shall adopt and publish ",
+    "after": "ly with this Directive. They shall forthwith communicate to the Commission the text of those provisions. When Member States adopt those provisions, they shall contain a reference to this Directive or be accompanied by such a reference on th",
+    "search_id": "48ba44e1-919c-4efa-8f4f-0fe98d56c8ec"
+   }
+  },
+  {
+   "claim_id": "c50a3a86-6d22-4c4f-a632-5debbb3a9a22",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «by 31 December 1997, and prohibit as of that date, all transboundary movements of hazardo»",
+   "span": "by 31 December 1997, and prohibit as of that date, all transboundary movements of hazardo",
+   "context": {
+    "before": ". Each Party listed in Annex VII shall prohibit all transboundary movements of hazardous wastes which are destined for operations according to Annex IV A, to States not listed in Annex VII. 2. Each Party listed in Annex VII shall phase out ",
+    "after": "us wastes pursuant to Article 1 (1) (a) of the Convention which are destined for operations according to Annex IV B to States not listed in Annex VII. Such transboundary movement shall not be prohibited unless the wastes in question are cha",
+    "search_id": "cb7593c3-398b-46c0-9522-b82aa3b8a9be"
+   }
+  },
+  {
+   "claim_id": "c66ad556-7be1-4d13-93df-1fd07195c7bf",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «by 30 June 2024, specifying the information that undertakings are to report with rega»",
+   "span": "by 30 June 2024, specifying the information that undertakings are to report with rega",
+   "context": {
+    "before": " they were intended, and to limit the administrative burden. (2) Directive 2013/34/EU of the European Parliament and of the Council ( 3 ) requires the Commission to provide for sustainability reporting standards by means of delegated acts, ",
+    "after": "rd to sustainability matters and the reporting areas specific to the sector in which an undertaking operates, in addition to the information that undertakings are already required to provide under Commission Delegated Regulation (EU) 2023/2",
+    "search_id": "c44cdd98-0751-4ba9-9d54-8ac073a0dbbb"
+   }
+  },
+  {
+   "claim_id": "c7b10d75-7bb7-41bd-afc3-df0af969d63f",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «by 31 December 2011, the Commission should make a proposal to include international marit»",
+   "span": "by 31 December 2011, the Commission should make a proposal to include international marit",
+   "context": {
+    "before": "ment which includes international maritime emissions in its reduction targets through the International Maritime Organisation has been approved by the Member States or no such agreement through the UNFCCC has been approved by the Community ",
+    "after": "ime emissions according to harmonised modalities in the Community reduction commitment, with the aim of the proposed act entering into force by 2013. Such a proposal should minimise any negative impact on the Community’s competitiveness whi",
+    "search_id": "acc6320e-02c6-4259-ae71-72536de8cd3d"
+   }
+  },
+  {
+   "claim_id": "c9e2d426-c7d2-4ca3-a585-4dd60a077e41",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «by 31 December 2020” substitute “ under Article 8 ”»",
+   "span": "by 31 December 2020” substitute “ under Article 8 ”",
+   "context": {
+    "before": " 1 para. 9 in force at 31.12.2020 on IP completion day, see art. 2(2)(a) Article 6 amended (general obligation to monitor) U.K. 10. —(1) Article 6 is amended as follows. (2) Omit “pursuant to Article 10a of Directive 2003/87/EC ”. (3) For “",
+    "after": " . Commencement Information I57 Sch. 1 para. 10 in force at 31.12.2020 on IP completion day, see art. 2(2)(a) Article 7 amended (monitoring principles) U.K. 11. —(1) Article 7 is amended as follows. (2) In paragraph 3 after “application for",
+    "search_id": "fe3f9e16-d9bb-4b07-a943-dfc2204bbef2"
+   }
+  },
+  {
+   "claim_id": "ca9669d5-f6fa-46fc-ad9b-a96519822b9f",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: year), verbatim: «no later than 2020, at least for Member States which have not yet attained a minimum level of integrati»",
+   "span": "no later than 2020, at least for Member States which have not yet attained a minimum level of integrati",
+   "context": {
+    "before": " stated in its conclusions that the Commission, supported by the Member States, is to take urgent measures in order to ensure the achievement of a minimum target of 10 % of existing electricity interconnections, as a matter of urgency, and ",
+    "after": "on in the internal energy market, which are the Baltic States, Portugal and Spain, and for Member States which constitute their main point of access to the internal energy market. It further stated that the Commission is also to report regu",
+    "search_id": "42493cb9-b542-4337-b297-87f4a2bbdb0b"
+   }
+  },
+  {
+   "claim_id": "cc0953de-c42f-4b9b-8fad-3523cd5403cc",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «By 10 April 2028, Member States shall adopt and publish the measures necessary to comp»",
+   "span": "By 10 April 2028, Member States shall adopt and publish the measures necessary to comp",
+   "context": {
+    "before": "ued pursuant to national law which transposes Directive 2014/32/EU or pursuant to other national law, before 10 October 2028, shall remain valid until the expiry of their validity, and in any case no longer than 10 April 2038. Article 3 1. ",
+    "after": "ly with this Directive. They shall immediately inform the Commission thereof. They shall apply those measures from 10 October 2028. When Member States adopt those measures, they shall contain a reference to this Directive or be accompanied ",
+    "search_id": "90d2f8d3-fa97-48ba-84b4-3e7136f7b650"
+   }
+  },
+  {
+   "claim_id": "cdf59f16-ff02-4753-b158-57f9d1e2649f",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «by 30 June 2023 a first set of standards specifying the information that undertakings»",
+   "span": "by 30 June 2023 a first set of standards specifying the information that undertakings",
+   "context": {
+    "before": "repare this information in accordance with sustainability reporting standards starting from the financial year indicated in Article 5(2) of Directive (EU) 2022/2464 for each category of undertakings. (2) The Commission is required to adopt ",
+    "after": " are to report in accordance with Article 19a(1) and (2), and Article 29a(1) and (2) of that Directive, including at least the information that financial market participants need in order to comply with the disclosure obligations of Regulat",
+    "search_id": "c4dc7692-846e-4ab1-ab1c-150051d4df2a"
+   }
+  },
+  {
+   "claim_id": "ce406d8d-13b0-4107-b3db-be9414e58c06",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: month), verbatim: «no later than 20th December 2018»",
+   "span": "no later than 20th December 2018",
+   "context": {
+    "before": "sting medium combustion plant” means a medium combustion plant— (a) put into operation before 20th December 2018, or (b) for which an environmental permit was granted before 19th December 2017, provided that the plant is put into operation ",
+    "after": "; “the MCPD” means the Medium Combustion Plant Directive; “medium combustion plant” means a combustion plant with a rated thermal input equal to or greater than 1 megawatt but less than 50 megawatts, and any combination of combustion plants",
+    "search_id": "f5b507dc-7b1d-4e75-a086-52ad291a8dea"
+   }
+  },
+  {
+   "claim_id": "cedd8da8-2d2a-449b-9466-5133ec6ade7d",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «by 30 April 2013 at the latest»",
+   "span": "by 30 April 2013 at the latest",
+   "context": {
+    "before": "than 30 years have passed since the emission, event or incident, resulting in the damage, occurred. Article 18 Reports and review 1. Member States shall report to the Commission on the experience gained in the application of this Directive ",
+    "after": ". The reports shall include the information and data set out in Annex VI. 2. On that basis, the Commission shall submit a report to the European Parliament and to the Council before 30 April 2014, which shall include any appropriate proposa",
+    "search_id": "25644494-6e7a-47c7-8409-7bdabc57f705"
+   }
+  },
+  {
+   "claim_id": "cfea3946-523e-4b37-96df-0500511c221b",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «By 31 December 2021, benchmark administrators shall, for each benchmark or, where applica»",
+   "span": "By 31 December 2021, benchmark administrators shall, for each benchmark or, where applica",
+   "context": {
+    "before": " Item 10 . By the date of application of this Regulation, for significant equity and bond benchmarks, EU Climate Transition Benchmarks and EU Paris-aligned Benchmarks, benchmark administrators shall also disclose the following information. ",
+    "after": "ble, each family of benchmarks, disclose the following information: (a) Does the benchmark align with the target of reducing carbon emissions or the attainment of the objectives of the Paris Agreement; ☐ Yes ☐ No (b) the temperature scenari",
+    "search_id": "304cf6d6-0181-42ef-a279-88324d4566cf"
+   }
+  },
+  {
+   "claim_id": "cffbaca0-a681-4498-896b-6d0e21625d85",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «By 27 December 2017, the Commission shall review the limit values in paragraphs 5 and 6 i»",
+   "span": "By 27 December 2017, the Commission shall review the limit values in paragraphs 5 and 6 i",
+   "context": {
+    "before": " 0,5 mg/kg (0,00005 % by weight of this component) of any of the listed PAHs. 7. By way of derogation from paragraphs 5 and 6, these paragraphs shall not apply to articles placed on the market for the first time before 27 December 2015. 8. ",
+    "after": "n the light of new scientific information, including migration of PAHs from the articles referred to therein, and information on alternative raw materials and, if appropriate, modify these paragraphs accordingly.’",
+    "search_id": "39a1c46e-1aad-4091-93f0-9c2ae184988f"
+   }
+  },
+  {
+   "claim_id": "d1ea46bc-a155-46fc-b9d3-8e6cb2a74c5e",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «by 14 April 2025, operators of publicly accessible recharging points and refuelling po»",
+   "span": "by 14 April 2025, operators of publicly accessible recharging points and refuelling po",
+   "context": {
+    "before": "13 September 2023 on the deployment of alternative fuels infrastructure, and repealing Directive 2014/94/EU ( 1 ) , and in particular Article 20(6), point (a), thereof, Whereas: (1) Article 20(2) of Regulation (EU) 2023/1804 lays down that ",
+    "after": "ints for alternative fuels, or, in accordance with the arrangements between them, the owners of those points, are to ensure the availability of static data and dynamic data concerning alternative fuels infrastructure operated by them, or se",
+    "search_id": "8d03bef7-ec00-433f-bef3-d2f7a94f9e0c"
+   }
+  },
+  {
+   "claim_id": "d360f1b0-c8df-4463-9125-f4f14dfa0389",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «By 31 December 2013 and every 3 years thereafter, the Commission shall submit a report on»",
+   "span": "By 31 December 2013 and every 3 years thereafter, the Commission shall submit a report on",
+   "context": {
+    "before": "eriod, the European Parliament and the Council have both informed the Commission that they will not object. That period shall be extended by 2 months at the initiative of the European Parliament or the Council. Article 10 Report and review ",
+    "after": " the implementation of this Regulation to the European Parliament and the Council. That report shall evaluate in particular the quality of the data transmitted, the data collection methods, the administrative burden on the Member States and",
+    "search_id": "52e2026f-9785-4fa8-9658-e69e73755867"
+   }
+  },
+  {
+   "claim_id": "d59de086-54bb-41d4-815d-dd95f7dce7e8",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: year), verbatim: «Within 6 months of the closure of the ESD Compliance Account for 2020 in accordance with Article 31, the cen»",
+   "span": "Within 6 months of the closure of the ESD Compliance Account for 2020 in accordance with Article 31, the cen",
+   "context": {
+    "before": "AUs from the ETS Central Clearing Account and the AAUs transferred pursuant to Article 73a(4) of this Regulation to the EU PPSR Account established pursuant to Article 10(1) of Regulation (EU) No 525/2013. Article 73g Clearing Processes 1. ",
+    "after": "tral administrator shall calculate a clearing value for each Member State by subtracting net transfers of AEAs from net acquisitions of AEAs between Member States over the period 2013-2020. 2. Where a Member State has a negative clearing va",
+    "search_id": "2d8884f7-bac4-417a-a495-61346e33eae9"
+   }
+  },
+  {
+   "claim_id": "d5e39e7e-df25-4989-be59-ad15d9f0d76b",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «no later than 31 December 2025»",
+   "span": "no later than 31 December 2025",
+   "context": {
+    "before": "e used. Member States shall identify and remove from use equipment (e.g. transformers, capacitors or other receptacles containing liquid stocks) containing more than 0,005 % PCBs and volumes greater than 0,05 dm 3 , as soon as possible but ",
+    "after": ". Mirex 2385-85-5 219-196-6 — Toxaphene 8001-35-2 232-283-3 — Hexabromobiphenyl 36355-01-8 252-994-2 — 1 Hexabromocyclododecane ‘Hexabromocyclododecane’ means: hexabromocyclododecane, 1,2,5,6,9,10-hexabromocyclododecane and its main diaster",
+    "search_id": "85e4cbf2-baa4-49b1-a198-277e6a3811c2"
+   }
+  },
+  {
+   "claim_id": "da6c77af-85ed-421e-8527-80f2c6287fc5",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «by 21 August 2022 at the latest, the laws, regulations and administrative provisions ne»",
+   "span": "by 21 August 2022 at the latest, the laws, regulations and administrative provisions ne",
+   "context": {
+    "before": "he product or service no longer meets the circumstances of the identified target market, such as where the product becomes illiquid or very volatile due to market changes.’. Article 2 Transposition 1. Member States shall adopt and publish, ",
+    "after": "cessary to comply with this Directive. They shall forthwith communicate to the Commission the text of those provisions. They shall apply those provisions from 22 November 2022. When Member States adopt those provisions, they shall contain a",
+    "search_id": "df576b9e-bf97-497f-a117-35835619a509"
+   }
+  },
+  {
+   "claim_id": "db90fb4a-0054-41d2-8fd9-d92f69f88860",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «no later than 31 December 2025 a minimum of 65 % by weight of all packaging waste will be recycled»",
+   "span": "no later than 31 December 2025 a minimum of 65 % by weight of all packaging waste will be recycled",
+   "context": {
+    "before": "nd, the Commission shall submit a report to the European Parliament and to the Council, accompanied, if appropriate, by a legislative proposal.’; (5) Article 6 is amended as follows: (a) in paragraph 1, the following points are added: ‘(f) ",
+    "after": "; (g) no later than 31 December 2025 the following minimum targets by weight for recycling will be met regarding the following specific materials contained in packaging waste: (i) 50 % of plastic; (ii) 25 % of wood; (iii) 70 % of ferrous me",
+    "search_id": "01f062c8-b1ac-49e1-bec0-96e6736d7303"
+   }
+  },
+  {
+   "claim_id": "dc96c816-0e94-46eb-8b62-5e47f7e4ebf6",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «no later than 26 September 2009: (a) producers or third parties set up schemes using best available tec»",
+   "span": "no later than 26 September 2009: (a) producers or third parties set up schemes using best available tec",
+   "context": {
+    "before": "ce, medical or data integrity reasons, continuity of power supply is necessary and requires a permanent connection between the appliance and the battery or accumulator. Article 12 Treatment and recycling 1. Member States shall ensure that, ",
+    "after": "hniques, in terms of the protection of health and the environment, to provide for the treatment and recycling of waste batteries and accumulators; and (b) all identifiable batteries and accumulators collected in accordance with Article 8 of",
+    "search_id": "0c8c82c5-7720-4209-8330-76b4e38fad2d"
+   }
+  },
+  {
+   "claim_id": "dcfe5cc1-934a-44a6-99cb-930a015f3b43",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «by 31 December 2002 at the latest, that will contain recommendations concerning the expir»",
+   "span": "by 31 December 2002 at the latest, that will contain recommendations concerning the expir",
+   "context": {
+    "before": "be temporarily excluded from the application of part 1 of this Annex until 31 December 2003 at the latest. The Joint Committee, however, shall examine the actual situation of infrastructure and traffic flows in due time and submit a report ",
+    "after": "y of the deadline of 31 December 2003. On the basis of that report the Contracting Parties will review this date: - E68, Szeged to Nagylak and the Romanian border. 4. The following section of the transit routes mentioned in paragraph 1 shal",
+    "search_id": "31100b69-4a10-43a5-aaab-af583ad9ea1a"
+   }
+  },
+  {
+   "claim_id": "de55822e-d1f9-4e98-b35d-1b54c5171a36",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «by 25 December 2022 and every four years thereafter, the Commission is to revise the defa»",
+   "span": "by 25 December 2022 and every four years thereafter, the Commission is to revise the defa",
+   "context": {
+    "before": "cy, amending Directives 2009/125/EC and 2010/30/EU and repealing Directives 2004/8/EC and 2006/32/EC ( 1 ) , and in particular Article 22(2) thereof, Whereas: (1) Pursuant to the provision in footnote 3 in Annex IV to Directive 2012/27/EU, ",
+    "after": "ult coefficient on the basis of observed data. (2) The Commission has carried out a study on the review of the primary energy factor (PEF) in order to reflect the technological progress and the growing share of renewable energy sources in t",
+    "search_id": "f226f961-e031-4fe3-afe2-9f895c2520cf"
+   }
+  },
+  {
+   "claim_id": "e532605b-ec07-4759-9798-fe68ecbdd28b",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «By 3 July 2021, Member States shall prepare a description of the measures which they»",
+   "span": "By 3 July 2021, Member States shall prepare a description of the measures which they",
+   "context": {
+    "before": "reasing consumption trends. Those measures shall achieve a measurable quantitative reduction in the consumption of the single-use plastic products listed in Part A of the Annex on the territory of the Member State by 2026 compared to 2022. ",
+    "after": " have adopted pursuant to the first subparagraph, notify the description to the Commission and make it publicly available. Member States shall integrate the measures set out in the description into the plans or programmes referred to in Art",
+    "search_id": "c32f9e93-a7ae-409e-83ef-87fe65fabba7"
+   }
+  },
+  {
+   "claim_id": "e65db152-1007-4eee-ae64-2ab19d55636f",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «by 31 December 2021 at the latest»",
+   "span": "by 31 December 2021 at the latest",
+   "context": {
+    "before": "ticle 1 Annex III to Directive 2002/49/EC is replaced by the text in the Annex to this Directive. Article 2 1. Member States shall bring into force the laws, regulations and administrative provisions necessary to comply with this Directive ",
+    "after": ". They shall forthwith communicate to the Commission the text of those provisions. When Member States adopt those provisions, they shall contain a reference to this Directive or be accompanied by such a reference on the occasion of their of",
+    "search_id": "c3431b81-30a4-45ae-a073-9eadf0efed65"
+   }
+  },
+  {
+   "claim_id": "e6e43b7d-a580-47ed-9a40-173f8fd3f119",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «no later than 20 December 2018»",
+   "span": "no later than 20 December 2018",
+   "context": {
+    "before": "ation 30; [ F1 “existing medium combustion plant” means a medium combustion plant— (a) put into operation before 20 December 2018; or (b) for which a permit was granted before 19 December 2017, provided that the plant is put into operation ",
+    "after": "; ] “ fuel ” means any liquid or gaseous combustible material; [ F1 “gas engine” means an internal combustion engine which operates according to the Otto cycle and which uses spark ignition to burn fuel; ] “ Gas Importation and Storage Zone",
+    "search_id": "7112469b-20eb-46d8-b951-b145eed20703"
+   }
+  },
+  {
+   "claim_id": "e7356521-26c9-45e8-9110-690808628856",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: year), verbatim: «no later than [ F24 the 2030 scheme year ]»",
+   "span": "no later than [ F24 the 2030 scheme year ]",
+   "context": {
+    "before": "agraph (b) of any of paragraphs (8) to (10C) ] is not a whole number, the number is to be rounded up to the nearest whole number of allowances or credits. (12) A CRTS participant must account for a borrowed CRTS allowance for a scheme year ",
+    "after": " . (13) Where a CRTS participant decides to account for borrowed CRTS allowances for a scheme year earlier than [ F25 the 2030 scheme year ] , that participant must notify the administrator of its decision, before the end of the trading win",
+    "search_id": "048e9f63-b110-456b-86ba-6cbaa9710f4a"
+   }
+  },
+  {
+   "claim_id": "e8cff26e-1d07-440c-ae78-ff0d2ba660de",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «By 5 July 2021 the European Chemicals Agency (‘the Agency’) shall make publicly avai»",
+   "span": "By 5 July 2021 the European Chemicals Agency (‘the Agency’) shall make publicly avai",
+   "context": {
+    "before": "mitted pursuant to Article 61(1) of Regulation (EC) No 1907/2006 concerning an authorisation granted for the use of a substance in the production of legacy spare parts or in the repair of articles or complex products no longer produced. 5. ",
+    "after": "lable specific formats for the analysis of alternatives and the socioeconomic analysis to be used in applications for authorisation for uses of substances in the production of legacy spare parts or in the repair of articles or complex produ",
+    "search_id": "d0950cd2-363c-4f2f-84e6-c8a1bb49acd8"
+   }
+  },
+  {
+   "claim_id": "eb4f03d4-0c3d-4ad2-bfd4-3477f0bd175d",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «By 22 April 2027, suppliers that have been verified with an electronic seal according»",
+   "span": "By 22 April 2027, suppliers that have been verified with an electronic seal according",
+   "context": {
+    "before": "propriate for national and European level, followed by the character ‘:’ (colon). The identifier (according to country and identity type reference) has to be in coherence to the three-character legal person identity type reference used. 2. ",
+    "after": " to the format set under paragraph 1 shall renew their verification by providing a qualified electronic seal as set out in Article 4. Article 7 Product models registered by unverified suppliers 1. Models registered in EPREL by entities not ",
+    "search_id": "6b94ef4f-4ec5-4312-8f17-eb48cb3e9373"
+   }
+  },
+  {
+   "claim_id": "ecccab5a-bf62-47ce-8eba-95ba2ceaeb10",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «No later than 31 December 2009, the Commission shall report to the Council on the fiscal, economic, agr»",
+   "span": "No later than 31 December 2009, the Commission shall report to the Council on the fiscal, economic, agr",
+   "context": {
+    "before": "ligations become binding on the Member States. 7. Member States shall communicate to the Commission the schedule of tax reductions or exemptions applied in accordance with this Article by 31 December 2004 and every 12 months thereafter. 8. ",
+    "after": "icultural, energy, industrial and environmental aspects of the reductions granted in accordance with this Article. Article 17 1. Provided the minimum levels of taxation prescribed in this Directive are respected on average for each business",
+    "search_id": "4309420c-97b4-4fa1-b31c-2c2f8d76e072"
+   }
+  },
+  {
+   "claim_id": "f111e30f-8a4b-4399-99d3-5bcff0e20a63",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: year), verbatim: «no later than the date on which the powers under the Rampion 2 Offshore Order 2025 expire in accordance»",
+   "span": "no later than the date on which the powers under the Rampion 2 Offshore Order 2025 expire in accordance",
+   "context": {
+    "before": "article 3(1) no more than— (a) 116 wind turbine generators; and (b) 1 offshore substation, may be constructed pursuant to this Order unless the development authorised by the Rampion 2 Offshore Wind Farm Order 2025 has not been commenced by ",
+    "after": " with Requirement 1 of Part 3 of Schedule 1 and the right to do so has expired. ” Commencement Information I7 Art. 7 in force at 28.4.2025, see art. 1 Defence to proceedings in respect of statutory nuisance E+W+S 8. —(1) Where proceedings a",
+    "search_id": "b359f156-4c9f-433b-b05c-431f8bd3fd05"
+   }
+  },
+  {
+   "claim_id": "f35f4626-87b8-4b9f-a86b-9d6a5f9d7874",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «by 31 December 2022, to publish the first time the information on those impacts on their»",
+   "span": "by 31 December 2022, to publish the first time the information on those impacts on their",
+   "context": {
+    "before": "articipants that have considered principal adverse impacts of investment decisions on sustainability factors as referred to in Article 4(1), point (a), of Regulation (EU) 2019/2088, or as required by Article 4(3) or (4) of that Regulation, ",
+    "after": " websites in separate sections titled ‘Statement on principal adverse impacts of investment decisions on sustainability factors’ by 30 June 2023 for the period of 1 January 2022 until 31 December 2022, HAS ADOPTED THIS REGULATION: CHAPTER I",
+    "search_id": "b4b9c6ea-6915-4a7c-9ba6-c5e74436ef14"
+   }
+  },
+  {
+   "claim_id": "f5d22db7-6aa7-499a-b630-ee93f2d6a666",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «By 31 December 2014 at the latest, the Commission shall examine the measures and the targ»",
+   "span": "By 31 December 2014 at the latest, the Commission shall examine the measures and the targ",
+   "context": {
+    "before": "o in paragraph 2. Those measures, designed to amend non-essential elements of this Directive by supplementing it, shall be adopted in accordance with the regulatory procedure with scrutiny referred to in Article 39(2) of this Directive. 4. ",
+    "after": "ets referred to in paragraph 2 with a view to, if necessary, reinforcing the targets and considering the setting of targets for other waste streams. The report of the Commission, accompanied by a proposal if appropriate, shall be sent to th",
+    "search_id": "dacefb89-4517-4f0e-9d22-1588f5daefb8"
+   }
+  },
+  {
+   "claim_id": "f6023527-129e-4eb0-ad84-75c349a69106",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «no later than 31 December 2018»",
+   "span": "no later than 31 December 2018",
+   "context": {
+    "before": "is situated under permanent living quarters or working areas. 3. Member States shall ensure that any existing service station with a throughput in excess of 3 000 m 3 /year shall be equipped with a Stage II petrol vapour recovery system by ",
+    "after": ". 4. Paragraphs 1, 2 and 3 shall not apply to service stations exclusively used in association with the construction and delivery of new motor vehicles. Article 4 Minimum level of petrol vapour recovery 1. Member States shall ensure, with e",
+    "search_id": "0653bfcf-b6c9-4281-a35c-fb488a866660"
+   }
+  },
+  {
+   "claim_id": "fab8b03b-a145-4045-b280-aa9832dba209",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: day), verbatim: «By 31 December 2021 and every three years thereafter, the Commission shall report to the»",
+   "span": "By 31 December 2021 and every three years thereafter, the Commission shall report to the",
+   "context": {
+    "before": "nd small islands, Member States may adapt financial support schemes for projects located in those regions in order to take into account the production costs associated with their specific conditions of isolation and external dependence. 8. ",
+    "after": " European Parliament and to the Council on the performance of support for electricity from renewable sources granted by means of tendering procedures in the Union, analysing in particular the ability of tendering procedures to: (a) achieve ",
+    "search_id": "970020d8-e3be-4f8a-a7b2-ed5456be0ff3"
+   }
+  },
+  {
+   "claim_id": "fb898479-01c9-40af-a775-1f5642c99e88",
+   "kind": "FACT",
+   "text": "[due_date] The captured source states a due date (date_precision: month), verbatim: «no later than 20th December 2018»",
+   "span": "no later than 20th December 2018",
+   "context": {
+    "before": "sting medium combustion plant” means a medium combustion plant— (a) put into operation before 20th December 2018, or (b) for which an environmental permit was granted before 19th December 2017, provided that the plant is put into operation ",
+    "after": "; “the MCPD” means the Medium Combustion Plant Directive; “medium combustion plant” means a combustion plant with a rated thermal input equal to or greater than 1 megawatt but less than 50 megawatts, and any combination of combustion plants",
+    "search_id": "877f4426-07a9-436c-85b5-c4ee12048150"
+   }
+  }
+ ],
+ "sections": [
+  {
+   "section_id": "synthetic-plain-slot-1",
+   "key": "record_facts",
+   "md": "[effective_date] No verbatim effective date statement was located in the captured source text for this record-grade item. A full-brief regrounding will re-examine this gap when this item upgrades from record to brief.\n[jurisdictional_scope] The captured source states, verbatim: «Member States” substitute “the United Kingdom”»\n[penalty_summary] No verbatim penalty summary statement was located in the captured source text for this record-grade item. A full-brief regrounding will re-examine this gap when this item upgrades from record to brief.\n[primary_deadline] The captured source states, verbatim: «By 30 April 2022 and in each subsequent year, the Secretary of State must publish a li»\n[binding_position] No verbatim applicability language naming a duty-holder class was located in the captured source text for this record-grade item. A full-brief regrounding will re-examine this gap when this item upgrades from record to brief.\n[due_date] The captured source states a due date (date_precision: day), verbatim: «By 30 April 2022 and in each subsequent year, the Secretary of State must publish a li»"
+  },
+  {
+   "section_id": "synthetic-due-date-precision-1",
+   "key": "record_facts",
+   "md": "[effective_date] The captured source states, verbatim: «shall enter into force on the twentieth day following that of its publication in the Official Journal of the Eur»\n[jurisdictional_scope] The captured source states, verbatim: «Member States, and subsequently to the ICAO Secretariat, it is appropriate to establish a preliminary e»\n[penalty_summary] The captured source states, verbatim: «penalties to be imposed in the event of fraud which are commensurate with their purpose and which have an adequate dete»\n[primary_deadline] The captured source states, verbatim: «by 30 June 2026 on the practical application and levels of uncertainty of the method»\n[binding_position] The captured source's own applicability language places this item at «direct_duty» (Your duty), from the passage: «the operator shall provide to the competent authority data on the biomass fraction of the carbon content of»\n[due_date] The captured source states a due date (date_precision: day), verbatim: «by 30 June 2026 on the practical application and levels of uncertainty of the method»"
+  },
+  {
+   "section_id": "synthetic-binding-position-1",
+   "key": "record_facts",
+   "md": "[effective_date] The captured source states, verbatim: \"shall enter into force on the day of its publication in the Official Journal of the European Union\"\n[jurisdictional_scope] The captured source states, verbatim: \"addressed to the Member States\"\n[penalty_summary] No verbatim penalty summary statement was located in the captured source text for this record-grade item. A full-brief regrounding will re-examine this gap when this item upgrades from record to brief.\n[primary_deadline] The captured source states, verbatim: \"No later than 14 February 2004, the Commission shall forward to the Member States a guidance document s\""
+  },
+  {
+   "section_id": "synthetic-clean-1",
+   "key": "record_facts",
+   "md": "[due_date] No verbatim due-date statement was located in the captured source text for this record-grade item. A full-brief regrounding will re-examine this gap when this item upgrades from record to brief."
+  }
+ ]
+}
