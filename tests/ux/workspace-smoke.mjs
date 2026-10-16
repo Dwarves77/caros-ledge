@@ -29,7 +29,7 @@ const failures = [];
 const fail = (where, what) => failures.push(`${where}: ${what}`);
 
 // ── the mocked backend ───────────────────────────────────────────────────────
-const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' };
+const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*', 'access-control-expose-headers': 'content-range' };
 const DAY = '2026-04-04T00:00:00Z';
 const SECTORS = ['fine-art', 'live-events', 'luxury-goods', 'film-tv', 'automotive', 'humanitarian'];
 const STORED = {
@@ -87,6 +87,7 @@ async function install(page, state) {
     const table = pathname.split('/rest/v1/')[1].split('/')[0];
     const single = /vnd\.pgrst\.object/.test(req.headers().accept ?? '');
     state.rest.push({ m, table, rpc: table === 'rpc' ? pathname.split('/rpc/')[1] : null, body: m === 'GET' ? null : req.postDataJSON() });
+    if (m === 'HEAD') return route.fulfill({ status: 200, headers: { ...CORS, 'content-range': '0-0/2' }, body: '' });
     if (m !== 'GET' && state.failWrites) return json(route, { message: 'boom', code: 'XX000' }, 500);
     if (table === 'rpc') {
       const body = req.postDataJSON();
@@ -248,7 +249,7 @@ try {
 
   // ── fixture parity: the real /settings and /profile screens against the committed baseline ─────────────────────────
   const config = JSON.parse(readFileSync('tests/parity/approved-changes.json', 'utf8'));
-  const shell = [...config.frameControls, '^combobox:Search or ask', '^button:Ask$'].map((re) => new RegExp(re));
+  const shell = [...config.frameControls, '^combobox:Search or ask'].map((re) => new RegExp(re));
   for (const [route, screen, ready] of [['settings', 'settings', 'Show Band tiles'], ['profile', 'account', 'Save personal profile']]) {
     for (const viewport of [[1280, 900], [375, 812]]) {
       const where = `parity ${route} ${viewport.join('x')}`;
@@ -258,7 +259,7 @@ try {
         await s.page.waitForTimeout(300);
         const captured = await s.page.evaluate(domSummary, 20);
         const baseline = JSON.parse(readFileSync(`tests/parity/baseline/${route}.${viewport.join('x')}.json`, 'utf8'));
-        const scoped = { ...baseline, rows: { items: [] }, landmarks: [], headings: baseline.headings.filter((x, i, all) => x.text !== "Caro's Ledge" && !(i > 0 && all[i - 1].text === x.text && all[i - 1].level === x.level)), controls: baseline.controls.filter((c) => !shell.some((re) => re.test(`${c.role}:${c.name.replace(/(?<=[A-Za-z])[\d,]+$/, '')}`))) };
+        const scoped = { ...baseline, rows: { items: [] }, landmarks: baseline.landmarks.slice(Math.max(0, baseline.landmarks.findIndex((l) => l.name.startsWith('Account sections')))), headings: baseline.headings.filter((x, i, all) => x.text !== "Caro's Ledge" && !(i > 0 && all[i - 1].text === x.text && all[i - 1].level === x.level)), controls: baseline.controls.filter((c) => !shell.some((re) => re.test(`${c.role}:${c.name.replace(/(?<=[A-Za-z])[\d,]+$/, '')}`))) };
         const { fails } = compareRecord(route, viewport.join('x'), scoped, captured, config.approved.filter((a) => a.route === route));
         for (const f of fails) fail(where, f);
         // Attack: the same comparison on a capture missing one baseline control, one control out of order, and a swapped heading MUST fail.

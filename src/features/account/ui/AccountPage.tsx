@@ -44,7 +44,7 @@ export function AccountPage({ userId, userEmail, orgId, orgName, role, nowIso, i
   const jurisdictions = jurisdictionLabels(profile.jurisdiction_overrides);
   const since = monthYear(profile.created_at);
   const counts: Partial<Record<ProfileTabKey, string>> = {
-    ...(org ? { members: formatNumber(org.member_count) } : {}),
+    ...(account.memberCount !== null ? { members: formatNumber(account.memberCount) } : org ? { members: formatNumber(org.member_count) } : {}),
     ...(sectors.length > 0 ? { sectors: formatNumber(sectors.length) } : {}),
     ...(jurisdictions.length > 0 ? { jurisdictions: formatNumber(jurisdictions.length) } : {}),
   };
@@ -73,7 +73,8 @@ export function AccountPage({ userId, userEmail, orgId, orgName, role, nowIso, i
               <StatBlock label="Plan" value={org ? capitalize(org.org.plan) : "—"} note={errors.org ? "Could not load" : "Billing, owner only"} />
             </div>
           </SectionCard>
-          <RailCard title="Quick links">
+          <section aria-label="Quick links">
+            <RailCard title="Quick links">
             <div className={styles.chips}>
               {LINKS.map((l) => (
                 <Link key={l.href} href={l.href} className={styles.link}>
@@ -81,7 +82,8 @@ export function AccountPage({ userId, userEmail, orgId, orgName, role, nowIso, i
                 </Link>
               ))}
             </div>
-          </RailCard>
+            </RailCard>
+          </section>
         </>
       }
     >

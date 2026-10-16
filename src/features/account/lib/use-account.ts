@@ -31,6 +31,8 @@ export interface AccountState {
   /** The workspace's sectors (workspace_settings.sector_profile), the same row the relevance lens reads. */
   sectors: string[];
   org: OrgPayload | null;
+  /** The roster size for the Members tab label, counted from org_memberships under the reader's own RLS (head-only); null when it could not be counted. */
+  memberCount: number | null;
   /** One message per read that failed; a failed read is shown with Retry, never rendered as an empty profile or a zero. */
   errors: { profile?: string; sectors?: string; org?: string };
 }
@@ -44,7 +46,7 @@ const COLUMNS = "full_name, bio, avatar_url, jurisdiction_overrides, transport_m
  * strict writer and the SECURITY DEFINER rpc, and local state follows what the server answered.
  */
 export function useAccount(userId: string, orgId: string | null) {
-  const [state, setState] = useState<AccountState>({ loading: true, profile: EMPTY, sectors: [], org: null, errors: {} });
+  const [state, setState] = useState<AccountState>({ loading: true, profile: EMPTY, sectors: [], org: null, memberCount: null, errors: {} });
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
@@ -54,7 +56,8 @@ export function useAccount(userId: string, orgId: string | null) {
       client.from("profiles").select(COLUMNS).eq("id", userId).maybeSingle(),
       orgId ? client.from("workspace_settings").select("sector_profile").eq("org_id", orgId).maybeSingle() : Promise.resolve(null),
       orgId ? requestJson<OrgPayload>(`/api/orgs/${orgId}`) : Promise.resolve(null),
-    ]).then(([p, s, o]) => {
+      orgId ? client.from("org_memberships").select("id", { count: "exact", head: true }).eq("org_id", orgId) : Promise.resolve(null),
+    ]).then(([p, s, o, m]) => {
       if (cancelled) return;
       const errors: AccountState["errors"] = {};
       if (p.error) errors.profile = p.error.message;
@@ -66,6 +69,7 @@ export function useAccount(userId: string, orgId: string | null) {
         profile: row ? { ...EMPTY, ...row, jurisdiction_overrides: row.jurisdiction_overrides ?? [], transport_mode_overrides: row.transport_mode_overrides ?? [], verifier_status: row.verifier_status ?? "none" } : EMPTY,
         sectors: ((s?.data as { sector_profile?: string[] | null } | null)?.sector_profile ?? []) as string[],
         org: o?.ok ? o.data : null,
+        memberCount: m && !m.error && typeof m.count === "number" ? m.count : null,
         errors,
       });
     });

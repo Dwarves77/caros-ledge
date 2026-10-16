@@ -418,6 +418,7 @@ button, input, select, textarea { font-family: inherit; }
 .cl-command-bar-clear { flex-shrink: 0; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 6px; font-size: 20px; }
 .cl-command-bar-clear:hover, .cl-command-bar-panel-close:hover { background: var(--tag); }
 .cl-cmdk-hint { flex-shrink: 0; font-size: var(--fs-10); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 700; color: var(--ink-3); border: 1px solid var(--line-1); border-radius: 4px; padding: 1px 6px; }
+.cl-command-bar-ask-submit:disabled { opacity: 0.45; cursor: not-allowed; }
 .cl-command-bar-ask-submit { flex-shrink: 0; height: 40px; min-width: 44px; padding: 0 14px; font-size: var(--fs-125); font-weight: 700; color: var(--invert-text); background: var(--brand); border: none; border-radius: var(--radius-control); cursor: pointer; }
 .cl-command-bar-panel { position: fixed; background: var(--card); border: 1px solid var(--line-1); border-radius: 8px; box-shadow: var(--shadow-pop); max-height: 360px; overflow: hidden; display: flex; flex-direction: column; z-index: 600; }
 .cl-command-bar-panel-close { flex-shrink: 0; height: 44px; width: 100%; display: flex; align-items: center; gap: 8px; padding: 0 14px; border-bottom: 1px solid var(--line-1); font-size: var(--fs-13); font-weight: 600; color: var(--ink-2); }
