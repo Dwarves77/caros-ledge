@@ -70,6 +70,21 @@ export function compareRecord(route, viewport, base, cap, approved) {
   return { fails, used };
 }
 
+// A frame route proves the shell only: its controls, headings and landmarks are limited to the shell's, the rest is page body that the full gate checks.
+// `config.frameLandmarks[viewport]` is the shell's landmark roles in order (written down in approved-changes.json, from the dashboard baseline).
+export function scopeFrame(base, config, viewport) {
+  const shellRoles = config.frameLandmarks[viewport] ?? [];
+  const body = (base.landmarks ?? []).filter((l) => !shellRoles.includes(l.role)).map((l) => l.role);
+  const scoped = {
+    ...base,
+    rows: { items: [] },
+    landmarks: shellRoles.map((role) => ({ role })),
+    controls: base.controls.filter((x) => config.frameControls.some((re) => new RegExp(re).test(`${x.role}:${x.name}`))),
+    headings: base.headings.filter((h) => config.frameHeadings.includes(h.text)),
+  };
+  return { scoped, notes: [...new Set(body)].map((role) => `body landmark, checked at full: ${role}`) };
+}
+
 async function pixelDiff(browser, aPath, bPath) {
   const [a, b] = await Promise.all([readFile(aPath), readFile(bPath)]);
   const page = await browser.newPage();
@@ -127,8 +142,8 @@ async function main() {
         const [b, c] = await Promise.all([readJson(`${args.baseline}/${stem}.json`), readOpt(`${args.captured}/${stem}.json`)]);
         if (!c) { lines.push(`${viewport}: capture missing`); routeFail ||= gated; continue; }
         if (gated) {
-          // A frame route owns only the shell: the landmarks, headings and controls the shell draws, not the page body a later slice builds.
-          const scoped = frame.has(route.name) ? { ...b, rows: { items: [] }, controls: b.controls.filter((x) => config.frameControls.some((re) => new RegExp(re).test(`${x.role}:${x.name}`))), headings: b.headings.filter((h) => config.frameHeadings.includes(h.text)) } : b;
+                    const { scoped, notes } = frame.has(route.name) ? scopeFrame(b, config, viewport) : { scoped: b, notes: [] };
+          for (const n of notes) lines.push(`${viewport}: ${n}`);
           const { fails, used } = compareRecord(route.name, viewport, scoped, c, approved);
           for (const f of fails) lines.push(`${viewport}: ${f}`);
           if (used.length) lines.push(`${viewport}: approved differences used: ${used.length}`);
