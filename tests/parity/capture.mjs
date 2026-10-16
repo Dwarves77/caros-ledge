@@ -173,11 +173,19 @@ async function accessibilitySnapshot(page) {
   return { source: 'locator.ariaSnapshot', tree: await page.locator('body').ariaSnapshot() };
 }
 
-async function captureOne(browser, base, route, path, viewport, storage, out) {
+// `diag` accumulates across both viewports: the first non-2xx response (status and URL without its query string) and the main-frame navigation count.
+async function captureOne(browser, base, route, path, viewport, storage, out, diag) {
   const stem = `${route.name}.${viewport.width}x${viewport.height}`;
   const context = await browser.newContext({ viewport, storageState: route.auth ? storage[route.auth] : undefined });
   try {
     const page = await context.newPage();
+    const bare = (u) => { const x = new URL(u); return `${x.origin}${x.pathname}`; };
+    page.on('response', (r) => {
+      if (!diag.firstFailure && (r.status() < 200 || r.status() >= 300)) diag.firstFailure = { status: r.status(), url: bare(r.url()) };
+    });
+    page.on('framenavigated', (f) => {
+      if (f === page.mainFrame()) diag.navigations += 1;
+    });
     const response = await page.goto(new URL(path, base).href, { waitUntil: 'load', timeout: 60000 });
     const networkIdle = await settle(page);
     const finalUrl = new URL(page.url());
@@ -226,7 +234,7 @@ async function main() {
     base,
     viewports: VIEWPORTS.map((v) => `${v.width}x${v.height}`),
     signin: null,
-    routes: routes.map((r) => ({ name: r.name, path: r.path ?? null, auth: r.auth, status: 'pending', files: [], error: null })),
+    routes: routes.map((r) => ({ name: r.name, path: r.path ?? null, auth: r.auth, status: 'pending', files: [], error: null, diagnostics: { firstFailure: null, navigations: 0 } })),
   };
   let failed = false;
   const browser = await chromium.launch();
@@ -293,7 +301,7 @@ async function main() {
       }
       try {
         for (const viewport of VIEWPORTS) {
-          entry.files.push(await captureOne(browser, base, route, entry.path, viewport, storage, out));
+          entry.files.push(await captureOne(browser, base, route, entry.path, viewport, storage, out, entry.diagnostics));
         }
         entry.status = 'ok';
         console.log(`captured ${route.name}`);
