@@ -1,0 +1,10 @@
+{
+  "defaultTtlMs": 86400000,
+  "hostTtlMs": {
+    "eur-lex.europa.eu": 2592000000,
+    "legislation.gov.uk": 2592000000,
+    "federalregister.gov": 604800000,
+    "reuters.com": 21600000,
+    "carbonpulse.com": 21600000
+  }
+}

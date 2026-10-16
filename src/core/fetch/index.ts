@@ -1,0 +1,16 @@
+export { apiEndpointFor, fetchDocumentApi } from "./api";
+export { fetchCacheKey, cacheGet, cachePut } from "./cache";
+export { exhaustionFlagRow, fetchPrimaryWithFallback, generateCandidates, persistExhaustionRecord, queryHeldPools } from "./candidates";
+export { BODY_CLASS, classifyBody, detectAccessWall, isErrorBody, partitionErrorBodies, toText, urlIsRoot } from "./classify-body";
+export type { BodyClass } from "./classify-body";
+export { fetchDirect, extractPdfText } from "./direct";
+export type { FetchDeps, TransportResult } from "./direct";
+export { fetchHeadless } from "./headless";
+export { AUTHORIZED_HOLD_CALLERS, assertFetchAllowed, FetchHoldError, fetchAllowed, getScrapeState, isGloballyPaused, nextScrapeDate, readScrapeState, scrapeWindowOpen } from "./hold";
+export { captureForStorage, escalateFetch } from "./ladder";
+export { fetchDocument } from "./policy";
+export { checkReachability, classifyReachability, decideSourceAssessment, REACH } from "./reachability";
+export { capture } from "./capture";
+export type { CaptureResult } from "./capture";
+export { makePoliteGate, parseOjReference } from "./capture";
+export { buildTitleForRow, detectCellarGarbledMetadata, detectNotInForce, extractCellarTitle, extractEurlexTitle, extractOjActTitle, extractTitleFromHtml } from "./titles";

@@ -1,0 +1,25 @@
+{
+  "tiers": [
+    { "tier": 1, "label": "Binding law", "meaning": "Primary legal text: the source IS the rule, and the official legal publishers that carry it.", "examples": ["EUR-Lex / Official Journal", "legislation.gov.uk", "Federal Register / eCFR"] },
+    { "tier": 2, "label": "Regulator guidance", "meaning": "The regulator that issues the binding instrument and its implementation guidance; instrument-issuing intergovernmental regulators belong here.", "examples": ["IMO", "ICAO", "European Commission", "national regulators and ministries"] },
+    { "tier": 3, "label": "Intergovernmental analysis", "meaning": "Intergovernmental institutions that inform but issue no binding rules.", "examples": ["OECD", "IEA", "World Bank", "UNCTAD", "ICAP", "IPCC"] },
+    { "tier": 4, "label": "Industry body / class society", "meaning": "Trade associations, standards bodies, consortiums, classification societies and accredited verifiers.", "examples": ["Lloyd's Register", "DNV", "ClassNK", "Bureau Veritas"] },
+    { "tier": 5, "label": "News reporting", "meaning": "Factual news coverage of regulatory or industry developments.", "examples": ["Reuters", "trade press in factual reporting mode"] },
+    { "tier": 6, "label": "Analysis and opinion", "meaning": "Analytical commentary, think-tank output, analyst reports, law-firm client briefings.", "examples": ["analyst publications", "sustainability journalism"] },
+    { "tier": 7, "label": "Overflow / uncategorized", "meaning": "Authority not established; used sparingly. Carries no weight in the citation network.", "examples": [] }
+  ],
+  "classTier": {
+    "legal": 1,
+    "gov": 2,
+    "intergov_analysis": 3,
+    "verifier": 4,
+    "academic": 4,
+    "association": 4,
+    "standards_body": 4,
+    "analysis": 6,
+    "lawfirm": 7,
+    "news": 7,
+    "company": 7
+  },
+  "citationWeights": { "1": 1.0, "2": 0.85, "3": 0.7, "4": 0.5, "5": 0.3, "6": 0.15, "7": 0 }
+}

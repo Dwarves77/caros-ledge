@@ -1,0 +1,28 @@
+{
+  "states": {
+    "not_applicable": { "label": "Not applicable", "treatment": "suppress_and_explain" },
+    "not_covered": { "label": "Not covered", "treatment": "named_gap_and_request" },
+    "no_data_yet": { "label": "No data yet", "treatment": "expected_refresh_and_last_value" },
+    "suppressed": { "label": "Suppressed", "treatment": "reason_class" },
+    "not_filtered_in": { "label": "Not filtered in", "treatment": "hidden_count_and_widen" },
+    "error": { "label": "Error", "treatment": "retry_and_status" }
+  },
+  "suppressionReasons": {
+    "confidentiality": "Confidential",
+    "k_anonymity": "Too few contributors to publish",
+    "licence": "Licence does not allow redistribution"
+  },
+  "modes": [
+    { "code": "road", "label": "Road", "order": 1 },
+    { "code": "rail", "label": "Rail", "order": 2 },
+    { "code": "ocean", "label": "Ocean", "order": 3 },
+    { "code": "inland_waterway", "label": "Inland waterway", "order": 4 },
+    { "code": "air", "label": "Air", "order": 5 }
+  ],
+  "modeAliases": {
+    "sea": "ocean", "maritime": "ocean", "water": "ocean", "vessel": "ocean", "marine": "ocean",
+    "truck": "road", "lorry": "road", "hgv": "road",
+    "barge": "inland_waterway", "iww": "inland_waterway", "inland-waterway": "inland_waterway",
+    "freighter": "air", "airfreight": "air"
+  }
+}

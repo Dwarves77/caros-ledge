@@ -1,0 +1,179 @@
+{
+ "promotionCriteria": [
+  {
+   "from_tier": 7,
+   "to_tier": 6,
+   "min_trust_score": 20,
+   "min_confirmation_count": 0,
+   "max_conflict_rate": 1,
+   "min_independent_citers": 1,
+   "min_accessibility_rate": 0.8,
+   "min_age_days": 7,
+   "min_lead_time_samples": 0,
+   "additional_requirements": "URL resolves, publishes structured content, can identify the publishing entity."
+  },
+  {
+   "from_tier": 6,
+   "to_tier": 5,
+   "min_trust_score": 40,
+   "min_confirmation_count": 3,
+   "max_conflict_rate": 0.2,
+   "min_independent_citers": 2,
+   "min_accessibility_rate": 0.9,
+   "min_age_days": 90,
+   "min_lead_time_samples": 3,
+   "additional_requirements": "Publishes original analysis or standards (not just reporting). Publishing entity is an identifiable organization with domain expertise."
+  },
+  {
+   "from_tier": 5,
+   "to_tier": 4,
+   "min_trust_score": 60,
+   "min_confirmation_count": 10,
+   "max_conflict_rate": 0.1,
+   "min_independent_citers": 3,
+   "min_accessibility_rate": 0.95,
+   "min_age_days": 180,
+   "min_lead_time_samples": 5,
+   "additional_requirements": "Track record of early accurate reporting confirmed against T1 sources. Recognized as authoritative by at least one intergovernmental or government body."
+  },
+  {
+   "from_tier": 4,
+   "to_tier": 3,
+   "min_trust_score": 80,
+   "min_confirmation_count": 25,
+   "max_conflict_rate": 0.05,
+   "min_independent_citers": 5,
+   "min_accessibility_rate": 0.98,
+   "min_age_days": 365,
+   "min_lead_time_samples": 10,
+   "additional_requirements": "Source is operated by or formally partnered with an intergovernmental organization. Its publications are referenced in official IGO documents."
+  },
+  {
+   "from_tier": 3,
+   "to_tier": 2,
+   "min_trust_score": 90,
+   "min_confirmation_count": 50,
+   "max_conflict_rate": 0.02,
+   "min_independent_citers": 10,
+   "min_accessibility_rate": 0.99,
+   "min_age_days": 730,
+   "min_lead_time_samples": 20,
+   "additional_requirements": "Source has become the official implementation channel for a specific regulatory body. A structural change in the source's role, not a quality improvement."
+  },
+  {
+   "from_tier": 2,
+   "to_tier": 1,
+   "min_trust_score": 100,
+   "min_confirmation_count": 999999,
+   "max_conflict_rate": 0,
+   "min_independent_citers": 999999,
+   "min_accessibility_rate": 1,
+   "min_age_days": 999999,
+   "min_lead_time_samples": 999999,
+   "additional_requirements": "IMPOSSIBLE VIA PROMOTION. T1 status is assigned at source creation based on institutional role."
+  }
+ ],
+ "demotionTriggers": [
+  {
+   "trigger": "high_conflict_rate",
+   "description": "Source has lost more than 30% of factual disputes",
+   "condition": "conflict_count / conflict_total > 0.30 AND conflict_total >= 3",
+   "severity": "flagged",
+   "tiers_affected": [
+    2,
+    3,
+    4,
+    5,
+    6
+   ]
+  },
+  {
+   "trigger": "extended_inaccessibility",
+   "description": "Source has been inaccessible for 30+ consecutive days",
+   "condition": "last_accessible < NOW() - INTERVAL '30 days' AND status = 'inaccessible'",
+   "severity": "flagged",
+   "tiers_affected": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+   ]
+  },
+  {
+   "trigger": "chronic_inaccessibility",
+   "description": "Source accessibility rate has dropped below 50%",
+   "condition": "accessibility_rate < 0.50 AND total_checks >= 10",
+   "severity": "immediate",
+   "tiers_affected": [
+    3,
+    4,
+    5,
+    6
+   ]
+  },
+  {
+   "trigger": "no_substantive_update",
+   "description": "Source has not published substantive new content within 3x its stated update frequency",
+   "condition": "days_since_last_substantive_change > (expected_frequency_days * 3)",
+   "severity": "flagged",
+   "tiers_affected": [
+    2,
+    3,
+    4,
+    5
+   ]
+  },
+  {
+   "trigger": "self_citation_only",
+   "description": "Source's only citations are from itself",
+   "condition": "independent_citers = 0 AND self_citation_count > 0 AND age_days > 90",
+   "severity": "flagged",
+   "tiers_affected": [
+    5,
+    6,
+    7
+   ]
+  }
+ ],
+ "q7": {
+  "promotionWeightedSumThreshold": 2.5,
+  "citationFrequencyPromotionThreshold": 3,
+  "halfLifeMonths": 20
+ },
+ "movement": {
+  "opinionMinCount": 3,
+  "opinionMinDistinctOpiners": 2,
+  "opinionWindowDays": 90,
+  "maxNetStep": 1,
+  "outcomeMinSample": 5,
+  "outcomeWindowDays": 365
+ },
+ "nonEvidenceOpinionSources": [
+  "host_class_table"
+ ],
+ "cadenceHeldTriggers": [
+  "no_substantive_update"
+ ],
+ "updateFrequencyDays": {
+  "continuous": 1,
+  "daily": 1,
+  "business-daily": 1,
+  "weekly": 7,
+  "biweekly": 14,
+  "monthly": 30,
+  "quarterly": 90,
+  "annual": 365,
+  "ad-hoc": 0
+ },
+ "tierPriors": {
+  "1": 85,
+  "2": 75,
+  "3": 65,
+  "4": 55,
+  "5": 45,
+  "6": 35,
+  "7": 25
+ }
+}
