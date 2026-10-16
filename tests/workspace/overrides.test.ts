@@ -7,20 +7,14 @@ import { DELETE as overridesDelete, POST as overridesPost } from "@/features/wor
 import { DELETE as personalDelete, GET as personalGet, POST as personalPost } from "@/features/workspace/api/personal-state";
 
 import type { MemDb, Row } from "./_memdb.ts";
-import { call, E, ITEM_1, matrix, ORG_A, ORG_B, script, seed, TEAMMATE, USER } from "./_world.ts";
+import { call, E, ITEM_1, matrix, ORG_A, ORG_B, script as baseScript, seed, TEAMMATE, USER } from "./_world.ts";
 
 const O = "/api/workspace/overrides";
-const sent: { userId: string; kind: string; payload: Record<string, unknown> }[] = [];
-const wire = (fail = false) => {
-  sent.length = 0;
-  wireWorkspaceDeps({
-    notify: async (n) => {
-      sent.push(n);
-      return fail ? "smtp down" : null;
-    },
-    revalidateWorkspaceData: () => undefined,
-  });
-};
+// IMP-025: a notice is a notification_outbox row (the drain sends it); the writers never call a sender.
+let current: MemDb | null = null;
+const script = (db: MemDb): MemDb => (current = baseScript(db));
+const sent = () => (current?.rows("notification_outbox") ?? []).map((r) => ({ userId: r.user_id as string, kind: r.kind as string, payload: r.payload as Record<string, unknown> }));
+const wire = () => wireWorkspaceDeps({ revalidateWorkspaceData: () => undefined });
 const overrides = (db: MemDb) => db.rows("workspace_item_overrides");
 const archive = { itemId: "o3", isArchived: true, archiveReason: "superseded by the 2027 text" };
 const withOverride = (db: MemDb, over: Row = {}) => (db.rows("workspace_item_overrides").push({ org_id: ORG_A, item_id: ITEM_1, ...over }), db);
@@ -43,7 +37,7 @@ test("INV-165: a member's team archive is refused and nothing is written; a miss
   assert.equal((await call(overridesPost, "admin", "POST", O, { itemId: "o3", isArchived: true })).status, 400);
   assert.equal((await call(overridesPost, "admin", "POST", O, { itemId: "o3", isArchived: true, archiveReason: "   " })).status, 400);
   assert.equal(db.writes("workspace_item_overrides").length, 0);
-  assert.equal(sent.length, 0);
+  assert.equal(sent().length, 0);
 });
 
 test("INV-165: an admin's team archive is stamped, dated and fans out to this org's watchers and owner only, never the archiver, never another org", async () => {
@@ -55,24 +49,26 @@ test("INV-165: an admin's team archive is stamped, dated and fans out to this or
   assert.equal(res.status, 200);
   const row = overrides(db)[0] as Row;
   assert.deepEqual([row.is_archived, row.archived_by, row.archive_reason, typeof row.archived_at], [true, USER.admin, archive.archiveReason, "string"]);
-  assert.deepEqual(sent.map((n) => n.userId).sort(), [TEAMMATE, USER.member].sort());
-  assert.ok(!sent.some((n) => n.userId === USER.otherOrgMember), "a watcher in another org must not be told");
-  assert.ok(!sent.some((n) => n.userId === USER.admin), "the archiver is not told");
-  assert.match(String(sent[0]?.payload.body), /superseded by the 2027 text/);
-  assert.deepEqual(res.body.notifications, { sent: 2, failed: 0, error: null });
+  assert.deepEqual(sent().map((n) => n.userId).sort(), [TEAMMATE, USER.member].sort());
+  assert.ok(!sent().some((n) => n.userId === USER.otherOrgMember), "a watcher in another org must not be told");
+  assert.ok(!sent().some((n) => n.userId === USER.admin), "the archiver is not told");
+  assert.match(String(sent()[0]?.payload.body), /superseded by the 2027 text/);
+  assert.deepEqual(res.body.notifications, { queued: 2, failed: 0, error: null });
 });
 
-test("INV-165: a failing dispatcher or an unreadable watcher list never undoes the archive and is reported in the response", async () => {
-  wire(true);
+test("INV-165, IMP-025: a notice that cannot be queued or an unreadable watcher list never undoes the archive and is reported in the response", async () => {
+  wire();
   const db = script(seed());
+  db.fail("notification_outbox", "insert", { message: "outbox down" }, { times: 1 });
   const failed = await call(overridesPost, "admin", "POST", O, archive);
   assert.equal(failed.status, 200);
-  assert.deepEqual(failed.body.notifications, { sent: 0, failed: 1, error: null });
+  assert.deepEqual(failed.body.notifications, { queued: 0, failed: 1, error: "outbox down" });
+  assert.equal(sent().length, 0, "nothing half-queued");
   db.rows("workspace_item_overrides").length = 0;
   db.fail("rpc:org_watchers", "rpc");
   const unread = await call(overridesPost, "admin", "POST", O, archive);
   assert.equal(unread.status, 200);
-  assert.equal((unread.body.notifications as Record<string, unknown>).sent, 0);
+  assert.equal((unread.body.notifications as Record<string, unknown>).queued, 0);
   assert.ok((unread.body.notifications as Record<string, unknown>).error);
   assert.equal(overrides(db)[0]?.is_archived, true);
 });
@@ -151,7 +147,7 @@ test("INV-165: a personal archive hides for that user alone, notifies nobody and
   wire();
   const db = script(seed());
   await call(personalPost, "viewer", "POST", P, { itemId: "o3", isArchived: true, archiveNote: "noise" });
-  assert.equal(sent.length, 0);
+  assert.equal(sent().length, 0);
   assert.equal(db.writes("workspace_item_overrides").length, 0);
   assert.deepEqual(db.rows("user_item_state").map((r) => [r.user_id, r.is_archived, r.archive_note]), [[USER.viewer, true, "noise"]]);
   assert.deepEqual((await call(personalGet, "member", "GET", P)).body.items, []);

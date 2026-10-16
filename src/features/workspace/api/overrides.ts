@@ -5,6 +5,7 @@ import { serviceClient, type Db } from "@/core/db/clients";
 import { dbError, HttpError, LookupError, ok, route } from "@/core/http/errors";
 import { isRefusal, requireOrgRole } from "@/core/http/guard";
 import { isUuid, parseJson } from "@/core/http/parse";
+import { queueNotifications } from "@/core/notifications";
 import { log } from "@/core/shared/log";
 import { orgWatchersOf } from "@/core/workspace/roster";
 
@@ -37,9 +38,11 @@ async function assertOwnerInOrg(db: Db, orgId: string, ownerUserId: string): Pro
   if (data.role === "viewer") throw new HttpError(403, "A viewer can read this workspace but cannot own an item");
 }
 
-/** Tell the item's org-scoped watchers and its owner about a team archive. The archive has already succeeded, so a failure here is reported in the response, never thrown. */
+/**
+ * Queue the archive notice for the item's org-scoped watchers and its owner (IMP-025): one outbox insert for all of them, sent by the drain with retries.
+ * The archive has already succeeded, so a failure to queue is reported in the response, never thrown and never silent.
+ */
 async function notifyArchive(db: Db, orgId: string, archiverId: string, itemKey: string, itemUuid: string, reason: string, ownerId: string | null) {
-  const notify = workspaceDeps().notify;
   try {
     const { data: item, error } = await db.from("intelligence_items").select("title, legacy_id, item_type, domain").eq("id", itemUuid).maybeSingle();
     if (error) throw new LookupError("intelligence_items", error);
@@ -47,34 +50,23 @@ async function notifyArchive(db: Db, orgId: string, archiverId: string, itemKey:
     const recipients = new Set(watcherIds);
     if (ownerId) recipients.add(ownerId);
     recipients.delete(archiverId);
-    if (recipients.size === 0) return { sent: 0, failed: 0, error: null };
-    if (!notify) return { sent: 0, failed: recipients.size, error: "notification dispatch is not wired" };
+    if (recipients.size === 0) return { queued: 0, failed: 0, error: null };
     const uiId = item?.legacy_id || itemUuid;
     const link = workspaceDeps().itemHref?.({ id: uiId, type: item?.item_type ?? null, domain: item?.domain ?? null }) ?? `/regulations/${encodeURIComponent(uiId)}`;
-    let sent = 0;
-    let failed = 0;
-    for (const userId of recipients) {
-      const err = await notify({
-        userId,
-        kind: "archive",
-        payload: {
-          title: "Item archived for the workspace",
-          body: `"${item?.title || "an item"}" was archived for your whole workspace${reason ? `, reason: ${reason}` : ""}. Any member can restore it from Settings, Archive.`,
-          link,
-          item_id: itemUuid,
-          archived_by: archiverId,
-        },
-      });
-      if (err) {
-        failed += 1;
-        log.warn("[overrides] archive notification failed:", err);
-      } else sent += 1;
-    }
-    return { sent, failed, error: null };
+    const payload = {
+      title: "Item archived for the workspace",
+      body: `"${item?.title || "an item"}" was archived for your whole workspace${reason ? `, reason: ${reason}` : ""}. Any member can restore it from Settings, Archive.`,
+      link,
+      item_id: itemUuid,
+      archived_by: archiverId,
+    };
+    const err = await queueNotifications([...recipients].map((userId) => ({ userId, kind: "archive" as const, payload })), db);
+    if (err) log.warn("[overrides] archive notifications were not queued:", err);
+    return err ? { queued: 0, failed: recipients.size, error: err } : { queued: recipients.size, failed: 0, error: null };
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
     log.warn("[overrides] archive notification fan-out failed:", message);
-    return { sent: 0, failed: 0, error: message };
+    return { queued: 0, failed: 0, error: message };
   }
 }
 

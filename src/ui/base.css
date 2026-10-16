@@ -418,6 +418,7 @@ button, input, select, textarea { font-family: inherit; }
 .cl-command-bar-clear { flex-shrink: 0; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 6px; font-size: 20px; }
 .cl-command-bar-clear:hover, .cl-command-bar-panel-close:hover { background: var(--tag); }
 .cl-cmdk-hint { flex-shrink: 0; font-size: var(--fs-10); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 700; color: var(--ink-3); border: 1px solid var(--line-1); border-radius: 4px; padding: 1px 6px; }
+.cl-command-bar-ask-submit:disabled { opacity: 0.45; cursor: not-allowed; }
 .cl-command-bar-ask-submit { flex-shrink: 0; height: 40px; min-width: 44px; padding: 0 14px; font-size: var(--fs-125); font-weight: 700; color: var(--invert-text); background: var(--brand); border: none; border-radius: var(--radius-control); cursor: pointer; }
 .cl-command-bar-panel { position: fixed; background: var(--card); border: 1px solid var(--line-1); border-radius: 8px; box-shadow: var(--shadow-pop); max-height: 360px; overflow: hidden; display: flex; flex-direction: column; z-index: 600; }
 .cl-command-bar-panel-close { flex-shrink: 0; height: 44px; width: 100%; display: flex; align-items: center; gap: 8px; padding: 0 14px; border-bottom: 1px solid var(--line-1); font-size: var(--fs-13); font-weight: 600; color: var(--ink-2); }
@@ -725,3 +726,30 @@ button, input, select, textarea { font-family: inherit; }
 /* ── minimal hooks ── */
 .cl-tl, .cl-fc-lead, .cl-command-bar-opt { min-width: 0; }
 .cl-impact-unscored { color: var(--ink-3); }
+
+/* ── forms: the one field row, switch, segmented control, choice chip and form card (FormField.tsx) ── */
+.cl-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.cl-field-label { font-size: var(--fs-95); font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); }
+.cl-field-hint { font-size: var(--fs-11); line-height: 1.5; color: var(--ink-3); }
+.cl-field-error { font-size: var(--fs-115); color: var(--immediate); }
+.cl-input { width: 100%; min-height: var(--target); padding: 0 10px; border: 1px solid var(--line-4); border-radius: var(--radius-control); background: var(--card); color: var(--ink); font-size: var(--fs-13); }
+textarea.cl-input { padding: 10px; resize: vertical; }
+.cl-input:disabled { background: var(--tag); color: var(--ink-3); }
+.cl-input[aria-invalid="true"] { border-color: var(--immediate); }
+.cl-switch { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; min-width: var(--target); min-height: var(--target); padding: 0; border: none; background: transparent; cursor: pointer; }
+.cl-switch:disabled { cursor: not-allowed; opacity: 0.6; }
+.cl-switch-track { display: flex; align-items: center; justify-content: flex-start; width: 32px; height: 18px; padding: 2px; border-radius: var(--radius-pill); background: var(--line-4); }
+.cl-switch[aria-checked="true"] .cl-switch-track { justify-content: flex-end; background: var(--brand); }
+.cl-switch-knob { width: 14px; height: 14px; border-radius: 50%; background: var(--card); }
+.cl-seg { display: inline-flex; flex-wrap: wrap; max-width: 100%; overflow: hidden; border: 1px solid var(--line-4); border-radius: var(--radius-control); }
+.cl-seg-item { min-width: var(--target); min-height: var(--target); padding: 0 12px; border: none; border-left: 1px solid var(--line-4); background: transparent; color: var(--ink-2); font-size: var(--fs-12); font-weight: 600; white-space: nowrap; cursor: pointer; }
+.cl-seg-item:first-child { border-left: none; }
+.cl-seg-item[aria-checked="true"], .cl-seg-item[aria-pressed="true"] { background: var(--brand); color: var(--invert-text); }
+.cl-seg-item:disabled { cursor: not-allowed; opacity: 0.6; }
+.cl-choice { display: flex; align-items: center; gap: 8px; width: 100%; min-height: var(--target); padding: 8px 10px; border: 1px solid var(--line-4); border-radius: var(--radius-control); background: var(--card); color: var(--ink); font-size: var(--fs-125); text-align: left; cursor: pointer; }
+.cl-choice[aria-pressed="true"] { border-color: var(--brand); background: var(--tag); font-weight: 600; }
+.cl-choice:disabled { cursor: not-allowed; opacity: 0.6; }
+.cl-choice-mark { flex: none; width: 13px; height: 13px; border: 1.5px solid var(--line-4); border-radius: 3px; background: var(--card); }
+.cl-choice[aria-pressed="true"] .cl-choice-mark { border-color: var(--brand); background: var(--brand); }
+.cl-choice-label { min-width: 0; overflow-wrap: break-word; }
+.cl-form-body { display: flex; flex-direction: column; gap: 14px; padding: 14px 16px 16px; }

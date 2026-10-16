@@ -4,7 +4,7 @@ import { test } from "node:test";
 import { useWorkspaceStore } from "@/core/workspace/store";
 import { PROFILE_TAB_KEYS, resolveInitialProfileTab } from "@/features/account/lib/initial-tab";
 import { profilePatchSchema, saveProfilePatch } from "@/features/account/lib/profile-patch";
-import { patchWorkspaceSettings } from "@/features/settings";
+import { patchWorkspaceSettings } from "@/core/workspace";
 import { bindSettingsToWorkspace, useSettingsStore } from "@/features/settings/state/settings-store";
 
 import { clientFor, ORG_A, ORG_B, seed, USER } from "./_world.ts";

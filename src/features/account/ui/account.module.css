@@ -1,0 +1,36 @@
+/* The account and settings pages' layout. Tokens only; the kit carries every part and every control. */
+.head { padding: 20px 40px 0; }
+.stack { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.rail { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.statGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.inviteRow, .orgRow { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: end; }
+.orgRow { grid-template-columns: 1fr 1fr auto; gap: 12px; }
+.actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { display: inline-flex; align-items: center; min-height: var(--target); padding: 0 13px; border: 1px solid var(--line-4); border-radius: var(--radius-pill); font-size: var(--fs-11); font-weight: 700; color: var(--ink); }
+.chipMore { composes: chip; border-style: dashed; color: var(--ink-3); font-weight: 600; }
+.note { margin: 0; font-size: var(--fs-115); line-height: 1.6; color: var(--ink-2); }
+.muted { margin: 0; font-size: var(--fs-12); color: var(--ink-3); }
+.link { display: inline-flex; align-items: center; min-height: var(--target); font-size: var(--fs-125); font-weight: 600; color: var(--ink); text-decoration: underline; text-decoration-color: var(--link-line); }
+.headline { margin: 0; font-size: var(--fs-125); font-weight: 800; color: var(--ink); }
+.inviteBox { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-radius: var(--radius-control); background: var(--tag); border: 1px solid var(--line-1); font-size: var(--fs-11); color: var(--ink-2); line-height: 1.5; }
+.inviteUrl { display: flex; align-items: center; gap: 8px; }
+.code { flex: 1; min-width: 0; padding: 6px 8px; border-radius: 4px; background: var(--card); font-family: ui-monospace, monospace; font-size: var(--fs-11); overflow-wrap: anywhere; }
+.memberName { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
+.memberSub { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-11); color: var(--ink-3); }
+.mono { font-family: ui-monospace, monospace; font-size: var(--fs-115); }
+.prefRow { display: flex; align-items: center; justify-content: space-between; gap: 14px; min-height: 48px; border-bottom: 1px solid var(--line-3); }
+.prefText { min-width: 0; }
+.prefLabel { margin: 0; font-size: var(--fs-125); font-weight: 800; color: var(--ink); }
+.prefDesc { margin: 2px 0 0; font-size: var(--fs-11); color: var(--ink-3); }
+.disclosure { border-top: 1px solid var(--line-2); }
+.disclosure summary { display: flex; align-items: center; min-height: var(--target); padding: 0 16px; background: var(--page); font-size: var(--fs-12); font-weight: 600; color: var(--ink-3); cursor: pointer; }
+
+@media (max-width: 1100px) {
+  .head { padding-top: 16px; }
+}
+@media (max-width: 767px) {
+  .head { padding: 14px 16px 0; }
+  .statGrid, .pair, .orgRow, .inviteRow { grid-template-columns: minmax(0, 1fr); }
+}

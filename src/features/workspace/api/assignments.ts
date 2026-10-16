@@ -4,6 +4,7 @@ import type { Db } from "@/core/db/clients";
 import { boundedRead } from "@/core/db/query";
 import { LookupError, route } from "@/core/http/errors";
 import { isUuid } from "@/core/http/parse";
+import { queueNotifications } from "@/core/notifications";
 import { isIsoDate } from "@/core/shared/dates";
 import { canWrite, collabFail, collabOk, isOrgAdmin, loadRoster, MAX_ASSIGNEES_PER_REQUEST, nameIndex, namesAfterWrite, readJsonObject, runCollab, type CollabCtx, type CollabResult } from "@/core/workspace/roster";
 
@@ -100,26 +101,16 @@ export async function assignMembers(client: Db, ctx: CollabCtx, input: Record<st
     created = (data ?? []) as Row[];
   }
 
-  // Notification is best effort and counted, never silent: a dispatcher that is not wired counts every recipient as failed.
-  const { notify, itemHref } = workspaceDeps();
+  // IMP-025: the notices are queued for the drain in ONE insert (retried there); a failure to queue is reported in the response, never silent, and never undoes the assignment.
+  const { itemHref } = workspaceDeps();
   const assigner = names.get(ctx.userId) ?? "A teammate";
   const itemId = ctx.item.legacyId || ctx.item.id;
   const href = itemHref?.({ id: itemId, type: ctx.item.type, domain: ctx.item.domain }) ?? `/regulations/${encodeURIComponent(itemId)}`;
-  let notified = 0;
-  let notifyFailed = 0;
-  for (const row of created) {
-    if (row.assignee_user_id === ctx.userId) continue;
-    const err = notify
-      ? await notify({
-          userId: row.assignee_user_id,
-          kind: "assignment",
-          payload: { title: "Assigned to you", body: `${assigner} assigned you "${ctx.item.title || "an item"}"${dueOn ? `, due ${dueOn}` : ""}.`, link: href, item_id: ctx.item.id, assigned_by: ctx.userId, due_on: dueOn },
-        })
-      : "notification dispatch is not wired";
-    if (err) notifyFailed += 1;
-    else notified += 1;
-  }
-  return collabOk(201, { assignments: created.map((row) => view(row, ctx, names)), already_assigned: assignees.filter((id) => already.has(id)), notified, notify_failed: notifyFailed });
+  const notices = created
+    .filter((row) => row.assignee_user_id !== ctx.userId)
+    .map((row) => ({ userId: row.assignee_user_id, kind: "assignment" as const, payload: { title: "Assigned to you", body: `${assigner} assigned you "${ctx.item.title || "an item"}"${dueOn ? `, due ${dueOn}` : ""}.`, link: href, item_id: ctx.item.id, assigned_by: ctx.userId, due_on: dueOn } }));
+  const queueError = await queueNotifications(notices);
+  return collabOk(201, { assignments: created.map((row) => view(row, ctx, names)), already_assigned: assignees.filter((id) => already.has(id)), queued: queueError ? 0 : notices.length, queue_failed: queueError ? notices.length : 0, ...(queueError ? { queue_error: queueError } : {}) });
 }
 
 async function findAssignment(client: Db, ctx: CollabCtx, assignee: string): Promise<Row | null> {

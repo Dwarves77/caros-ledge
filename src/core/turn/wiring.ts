@@ -8,7 +8,6 @@ import { assertFetchAllowed, capture, classifyBody, detectAccessWall, fetchAllow
 import { isStorableClass } from "@/core/fetch/classify-body";
 import { congruence, matchExistingSubject, sourceRole } from "@/core/entities";
 import { type Mode, makeRecorder, type RecorderContext } from "@/core/harness";
-import { dispatchNotification } from "@/core/notifications";
 import { timePhase, withServerTiming } from "@/core/perf";
 import { createMethodRegistry, type LearningDeps, type MarketMethodDeps, type MethodRegistry, registerMarketMethods } from "@/core/propagation";
 import type { Catalog, ProducerSpec } from "@/core/producers";
@@ -233,7 +232,6 @@ export function workspaceWiring(sb: Db): Partial<WorkspaceDeps> {
       if (!row) throw new Error("admin_attention_counts returned no row");
       return row;
     },
-    notify: (input) => dispatchNotification({ userId: input.userId, kind: input.kind as Parameters<typeof dispatchNotification>[0]["kind"], payload: input.payload }),
     itemHref: (item) => surfaceHref(surfaceOf(item.type, item.domain), item.id) ?? `/regulations/${encodeURIComponent(item.id)}`,
     revalidateWorkspaceData: () => void import("next/cache").then((m) => m.revalidateTag("app-data", "max")),
     timePhase,
@@ -264,7 +262,7 @@ export const MANIFEST: readonly ManifestEntry[] = [
   { member: "producers.market (computeSeriesDeltas and the market methods)", status: "owed", owner: "P2-11 market surface (computeSeriesDeltas, carbonIntensity)", present: (d) => d.producers.market !== null },
   { member: "propagation EdgeAuthors (authorCarbonIntensityEdges)", status: "owed", owner: "P2-11 market surface (carbonIntensity)", present: () => false },
   { member: "producers.verdicts (host verdicts as a table, IMP-054)", status: "owed", owner: "P2-S4 (the host_verdicts table)", present: (d) => d.producers.verdicts !== undefined },
-  ...(["notify", "itemHref", "revalidateWorkspaceData", "navCounts", "adminAttention", "timePhase", "withServerTiming"] as const).map((m): ManifestEntry => ({ member: `workspace.${m}`, status: "wired", present: (d) => fn(d.workspace[m]) })),
+  ...(["itemHref", "revalidateWorkspaceData", "navCounts", "adminAttention", "timePhase", "withServerTiming"] as const).map((m): ManifestEntry => ({ member: `workspace.${m}`, status: "wired", present: (d) => fn(d.workspace[m]) })),
 
   { member: "workspace.portfolio", status: "owed", owner: "P2-12 workspace surfaces", present: (d) => d.workspace.portfolio !== undefined },
 ];

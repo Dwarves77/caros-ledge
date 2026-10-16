@@ -8,3 +8,7 @@ export { applyWorkspaceSeed, useWorkspaceStore } from "./store";
 export type { WorkspaceSeed } from "./store";
 export { getViewerRelevanceForItem } from "./viewer-relevance";
 export type { RelevanceInput } from "./viewer-relevance";
+export { JSONB_COLUMNS, patchWorkspaceSettings, REPLACE_COLUMNS } from "./settings";
+export type { PatchResult, SettingsColumn } from "./settings";
+export { ALL_SECTORS, HIGHLIGHTED_SECTOR_IDS, JURISDICTIONS, MODES, REGIONS, regionGroupForLabel } from "./vocabulary";
+export type { JurisdictionDef, ModeDef, RegionDef, SectorDef } from "./vocabulary";

@@ -52,9 +52,10 @@ test("the interface the brief names exists", () => {
   has(core, [
     "getWorkspaceProfile", "DEFAULT_WORKSPACE_PROFILE", "ORG_ROLES", "ORG_SIZE_DIMENSIONS", "findBand", "parseOrgProfile", "validateProfileInput", "relevanceForItem", "getViewerRelevanceForItem", "computeItemRelevance",
     "summariseObligationBinding", "currentObligationObjects", "dutyHoldersExcludeForwarder", "fetchObligationObjectsForItem", "runCollab", "loadRoster", "orgWatchersOf", "canWrite", "isOrgAdmin", "useWorkspaceStore", "applyWorkspaceSeed",
+    "patchWorkspaceSettings", "ALL_SECTORS", "JURISDICTIONS", "MODES", "REGIONS",
   ]);
   has(state, ["useItemStateStore", "mergeWithOverrides"]);
-  has(settings, ["patchWorkspaceSettings", "useSettingsStore"]);
+  has(settings, ["useSettingsStore", "reloadSettings"]);
   assert.match(text("src/core/types/index.ts"), /export type \{[^}]*\bResource\b[^}]*\} from "\.\/item"/);
   assert.match(text("src/core/shared/dates.ts"), /export function isIsoDate/);
 });
@@ -72,7 +73,7 @@ test("nothing in this slice calls a metered model, schedules work, or reads the 
   }
 });
 
-test("INV-168: patchWorkspaceSettings is the one writer of workspace_settings; the only other writer is P2-01's first write on a brand-new org (a reported gap)", () => {
+test("INV-168, IMP-022: patchWorkspaceSettings is the one writer of workspace_settings; the first write on a brand-new org goes through it too", () => {
   const writers = files("src").filter((f) => /\.from\("workspace_settings"\)[\s\S]{0,80}\.(update|insert|upsert)\(/.test(text(f)));
-  assert.deepEqual(writers, ["src/core/auth/orgs.ts", "src/features/settings/lib/patch-workspace-settings.ts"]);
+  assert.deepEqual(writers, ["src/core/workspace/settings.ts"]);
 });

@@ -1,0 +1,8 @@
+[
+{"value":"superseded","label":"Superseded by a newer instrument"},
+{"value":"not_applicable","label":"Not applicable to us"},
+{"value":"expired","label":"Expired or repealed"},
+{"value":"duplicate","label":"Duplicate of another item"},
+{"value":"resolved","label":"Handled, no further action"},
+{"value":"other","label":"Other"}
+]

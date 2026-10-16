@@ -6,6 +6,7 @@ import { z } from "zod";
 
 import type { Db } from "@/core/db/clients";
 import { HttpError } from "@/core/http/errors";
+import { patchWorkspaceSettings } from "@/core/workspace/settings";
 
 import { ensureProfile } from "./ensure-profile";
 
@@ -37,19 +38,10 @@ export async function createOrgForSelf(client: Db, user: { id: string; email: st
   const { data: orgId, error: rpcError } = await client.rpc("create_org_for_self", { p_org_name: input.name, p_org_slug: null });
   if (rpcError || !orgId) throw new HttpError(400, rpcError?.message || "The organisation could not be created.");
 
+  // The one settings writer (IMP-022): the database merges the size key into profile in one statement; a patch that fails is reported, not hidden.
   let settingsSaved = true;
-  const patch: Record<string, unknown> = {};
-  if (input.sectors.length) patch.sector_profile = input.sectors;
-  if (input.headcount_band) {
-    const { data: row, error } = await client.from("workspace_settings").select("profile").eq("org_id", orgId).maybeSingle();
-    if (error) settingsSaved = false;
-    else {
-      const current = row?.profile && typeof row.profile === "object" ? (row.profile as Record<string, unknown>) : {};
-      const size = current[ORG_SIZE_KEY] && typeof current[ORG_SIZE_KEY] === "object" ? (current[ORG_SIZE_KEY] as Record<string, unknown>) : {};
-      patch.profile = { ...current, [ORG_SIZE_KEY]: { ...size, headcount_band: input.headcount_band } };
-    }
-  }
-  if (Object.keys(patch).length && (await client.from("workspace_settings").update(patch).eq("org_id", orgId)).error) settingsSaved = false;
+  if (input.sectors.length && (await patchWorkspaceSettings(client, orgId, "sector_profile", input.sectors)).error) settingsSaved = false;
+  if (input.headcount_band && (await patchWorkspaceSettings(client, orgId, "profile", { [ORG_SIZE_KEY]: { headcount_band: input.headcount_band } })).error) settingsSaved = false;
 
   let profileSaved = true;
   const profilePatch: Record<string, unknown> = {};

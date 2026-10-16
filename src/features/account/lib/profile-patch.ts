@@ -1,5 +1,6 @@
 // Ported from old_repo/src/components/profile/UserProfilePage.tsx (lines 94-96)
 // Ported from old_repo/src/components/profile/UserProfilePage.tsx (lines 230-245)
+// Ported from old_repo/src/components/onboarding/NoWorkspaceLanding.tsx (lines 94-109)
 import { z } from "zod";
 
 import type { Db } from "@/core/db/clients";
@@ -13,6 +14,7 @@ export const profilePatchSchema = z
   .object({
     full_name: z.string().max(200).nullable(),
     bio: z.string().max(4000).nullable(),
+    job_title: z.string().max(120).nullable(),
     avatar_url: z.string().max(2000).nullable(),
     jurisdiction_overrides: z.array(z.string()),
     transport_mode_overrides: z.array(z.string()),

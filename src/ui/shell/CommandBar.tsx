@@ -17,7 +17,7 @@ import { useBootstrapStore } from "./use-bootstrap";
 import { activeDescendantId, clearButtonLabel, clearButtonVisible, isOutsidePointerDown, moveActiveIndex, optionId, resolveEnterKeyAction, runSearch, searchResultsHref, type SearchState } from "./command-bar";
 
 const AssistantContext = createContext(false);
-/** Whether an assistant surface is mounted: the shell command bar draws Ask only then. The Ask event is the one the assistant surface listens for. */
+/** Whether an assistant surface is mounted: the shell command bar enables Ask only then. The Ask event is the one the assistant surface listens for. */
 export const AssistantProvider = ({ mounted, children }: { mounted: boolean; children: ReactNode }) => <AssistantContext.Provider value={mounted}>{children}</AssistantContext.Provider>;
 
 const DEBOUNCE_MS = 250;
@@ -26,7 +26,7 @@ const MIN_QUERY = 2;
 interface CommandBarProps {
   itemCount: number | null;
   placeholder?: string;
-  /** Sends the same text to the assistant; absent when no assistant is mounted or enabled, and the Ask control is then not drawn (no dead control). */
+  /** Sends the same text to the assistant; absent when no assistant is mounted or enabled: Ask is still drawn, disabled with its reason (the old bar did the same; the control is on every signed-in page). */
   onAsk?: (text: string, anchor: { top: number; left: number; width: number } | null) => void;
   onSearch?: (query: string) => void;
 }
@@ -154,11 +154,9 @@ export function CommandBar({ itemCount, placeholder, onAsk, onSearch }: CommandB
       <span aria-hidden="true" className="cl-cmdk-hint">
         ⌘K
       </span>
-      {onAsk && (
-        <button type="button" className="cl-command-bar-ask-submit" onClick={ask}>
-          Ask
-        </button>
-      )}
+      <button type="button" className="cl-command-bar-ask-submit" onClick={ask} disabled={!onAsk} aria-disabled={!onAsk} title={onAsk ? undefined : "The Assistant is currently unavailable."}>
+        Ask
+      </button>
       {open &&
         rect &&
         createPortal(

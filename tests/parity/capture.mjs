@@ -91,8 +91,8 @@ async function discover(page, base, route, gates) {
   throw miss;
 }
 
-// Runs in the page. Helpers live inside so the whole function serialises as one unit.
-function domSummary(rowLimit) {
+// Runs in the page. Helpers live inside so the whole function serialises as one unit. Exported so the UX smoke records its fixture pages the same way.
+export function domSummary(rowLimit) {
   const clean = (s) => (s || '').replace(/\s+/g, ' ').trim();
   const rendered = (el) => el.getClientRects().length > 0;
   const accName = (el) => {

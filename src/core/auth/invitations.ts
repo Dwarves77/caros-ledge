@@ -2,6 +2,7 @@
 // Ported from old_repo/src/app/api/orgs/[org_id]/invitations/[id]/route.ts (lines 11-61)
 // Ported from old_repo/src/app/api/invitations/[token]/route.ts (lines 11-50)
 // Ported from old_repo/src/app/api/invitations/mine/route.ts (lines 7-63)
+// Ported from old_repo/src/app/api/invitations/[token]/accept/route.ts (lines 24-39)
 import { randomBytes } from "node:crypto";
 
 import { z } from "zod";
@@ -63,6 +64,18 @@ export async function acceptInvitation(client: Db, token: string): Promise<strin
   const { data, error } = await client.rpc("accept_invitation", { p_token: token });
   if (error) throw dbError(error, { forbidden: "Not authorized to accept this invitation", notFound: "Invitation not found" });
   return data as string;
+}
+
+/** Accept by the row id (the in-app list carries no raw token, migration 0018). The same rules as the token path: migration 0028 is their one home. */
+export async function acceptInvitationById(client: Db, invitationId: string): Promise<string> {
+  const { data, error } = await client.rpc("accept_invitation_by_id", { p_invitation_id: invitationId });
+  if (error) throw dbError(error, { forbidden: "Not authorized to accept this invitation", notFound: "Invitation not found" });
+  return data as string;
+}
+
+export async function declineInvitationById(client: Db, invitationId: string): Promise<void> {
+  const { error } = await client.rpc("decline_invitation_by_id", { p_invitation_id: invitationId });
+  if (error) throw dbError(error, { forbidden: "Not authorized to decline this invitation", notFound: "Invitation not found" });
 }
 
 export async function declineInvitation(client: Db, token: string): Promise<void> {
