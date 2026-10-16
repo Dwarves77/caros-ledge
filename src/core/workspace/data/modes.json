@@ -1,0 +1,6 @@
+[
+{"id":"air","label":"Air","short":"AIR"},
+{"id":"road","label":"Road","short":"ROAD"},
+{"id":"ocean","label":"Ocean","short":"OCEAN"},
+{"id":"rail","label":"Rail","short":"RAIL"}
+]

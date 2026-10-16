@@ -1,0 +1,10 @@
+[
+{"id":"EU","label":"European Union"},
+{"id":"UK","label":"United Kingdom"},
+{"id":"US","label":"United States"},
+{"id":"LATAM","label":"Latin America"},
+{"id":"APAC","label":"Asia Pacific"},
+{"id":"HK","label":"Hong Kong"},
+{"id":"MEA","label":"Middle East and Africa"},
+{"id":"GLOBAL","label":"Global"}
+]

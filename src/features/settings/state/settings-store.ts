@@ -8,9 +8,8 @@ import { create } from "zustand";
 import { browserClient } from "@/core/db/browser";
 import type { Db } from "@/core/db/clients";
 import { log } from "@/core/shared/log";
+import { patchWorkspaceSettings, type SettingsColumn } from "@/core/workspace/settings";
 import { useWorkspaceStore } from "@/core/workspace/store";
-
-import { patchWorkspaceSettings, type SettingsColumn } from "../lib/patch-workspace-settings";
 
 // The six dashboard regions (artboard 15). Settings persist per workspace in workspace_settings: home_sections, default_export_format,
 // alert_config and default_filters. Every write goes through patchWorkspaceSettings (key-wise, INV-168) and the store is LOADED once per
@@ -41,6 +40,10 @@ interface SettingsState {
   exportFormat: "html" | "slack";
   briefingDay: BriefingDay;
   alertPriorities: string[];
+  /** The stored alert_config and profile objects (the sections read their own keys from them) and the workspace's sectors, as the database holds them. */
+  alertConfig: Record<string, unknown>;
+  profile: Record<string, unknown>;
+  sectorProfile: string[];
   /** The org these settings were loaded for; null until a read succeeded, so no save can overwrite a row that was never read. */
   orgId: string | null;
   loaded: boolean;
@@ -53,6 +56,11 @@ interface SettingsState {
   setBriefingDay: (day: BriefingDay) => void;
   setAlertPriorities: (priorities: string[]) => void;
   loadFromWorkspace: (client: Db, orgId: string) => Promise<void>;
+  /**
+   * Write one settings column NOW through the one writer (not debounced): the failure message, or null when it landed. The local copy follows what the
+   * database stored, so a refused write never leaves the screen saying "saved". Sections never write the table themselves.
+   */
+  commit: (column: SettingsColumn, patch: unknown) => Promise<string | null>;
   /** Write whatever is pending now (the debounce timer calls this; tests and unmount call it directly). */
   flush: () => Promise<void>;
 }
@@ -98,6 +106,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => {
     exportFormat: "html",
     briefingDay: "monday",
     alertPriorities: ["CRITICAL", "HIGH"],
+    alertConfig: {},
+    profile: {},
+    sectorProfile: [],
     orgId: null,
     loaded: false,
     loadError: null,
@@ -126,6 +137,21 @@ export const useSettingsStore = create<SettingsState>((set, get) => {
       queue("alert_config", { priorities: alertPriorities });
     },
 
+    async commit(column, patch) {
+      const orgId = get().orgId;
+      if (!orgId) return "This workspace's settings have not loaded, so nothing was saved.";
+      const result = await patchWorkspaceSettings(provider(), orgId, column, patch);
+      if (result.error) return result.error;
+      const stored = result.value as Record<string, unknown>;
+      if (column === "alert_config") set({ alertConfig: stored, ...(Array.isArray(stored.priorities) ? { alertPriorities: stored.priorities as string[] } : {}), ...(typeof stored.briefingDay === "string" ? { briefingDay: stored.briefingDay as BriefingDay } : {}) });
+      else if (column === "profile") set({ profile: stored });
+      else if (column === "sector_profile") {
+        set({ sectorProfile: patch as string[] });
+        useWorkspaceStore.getState().setSectorProfile(patch as string[]);
+      }
+      return null;
+    },
+
     async flush() {
       if (timer) clearTimeout(timer);
       timer = null;
@@ -145,7 +171,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => {
     },
 
     async loadFromWorkspace(client, orgId) {
-      const { data, error } = await client.from("workspace_settings").select("home_sections, default_export_format, alert_config, default_filters").eq("org_id", orgId).maybeSingle();
+      const { data, error } = await client.from("workspace_settings").select("home_sections, default_export_format, alert_config, default_filters, profile, sector_profile").eq("org_id", orgId).maybeSingle();
       // A failed read shows the defaults for this session and leaves orgId unset, so no save can overwrite the stored row with them.
       if (error) {
         log.warn(`[settings-store] workspace_settings read failed (defaults shown, saves held): ${error.message}`);
@@ -164,6 +190,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => {
         orgId,
         loaded: true,
         loadError: null,
+        alertConfig: (ac as Record<string, unknown> | null) ?? {},
+        profile: (data.profile as Record<string, unknown> | null) ?? {},
+        sectorProfile: (data.sector_profile as string[] | null) ?? [],
         ...(hs ? regions : {}),
         ...(data.default_export_format ? { exportFormat: data.default_export_format as "html" | "slack" } : {}),
         ...(ac?.priorities ? { alertPriorities: ac.priorities } : {}),
@@ -194,6 +223,12 @@ export function bindSettingsToWorkspace(clientFor: () => Db = browserClient): ()
   return useWorkspaceStore.subscribe((s, prev) => {
     if (s.orgId !== prev.orgId) loadFor(s.orgId);
   });
+}
+
+/** Load again after a failed read (the Retry of a section or the page). */
+export function reloadSettings(): void {
+  const orgId = useWorkspaceStore.getState().orgId;
+  if (orgId) void useSettingsStore.getState().loadFromWorkspace(provider(), orgId);
 }
 
 if (typeof window !== "undefined") bindSettingsToWorkspace();

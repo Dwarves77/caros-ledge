@@ -242,10 +242,14 @@ test("orgs: vocabulary sets are enforced when the workspace slice passes them; a
 
   scripted.service = () => fakeDb((c) => (c.op === "select" ? { data: { id: "u1" } } : undefined)).db;
   const input = createOrgBody().parse({ name: "Acme", sectors: ["air"], headcount_band: "1-10", job_title: "Ops", regions: ["EU"] });
-  const client = fakeDb((c) => (c.table === "workspace_settings" && c.op === "update" ? { error: { message: "no" } } : c.table === "workspace_settings" ? { data: { profile: { keep: 1 } } } : c.table === "organizations" ? { data: { id: ORG, name: "Acme", slug: "acme" } } : undefined), { rpc: () => ({ data: ORG }) });
+  const client = fakeDb((c) => (c.table === "workspace_settings" && c.op === "update" ? { error: { message: "no" } } : c.table === "organizations" ? { data: { id: ORG, name: "Acme", slug: "acme" } } : undefined), { rpc: (name) => (name === "create_org_for_self" ? { data: ORG } : name === "patch_workspace_settings" ? { data: { org_size: { headcount_band: "1-10" } } } : undefined) });
   const made = await createOrgForSelf(client.db, { id: "u1", email: "a@b.test" }, input);
   assert.deepEqual(made, { orgId: ORG, slug: "acme", name: "Acme", settingsSaved: false, profileSaved: true });
-  assert.deepEqual(client.rpcs, [{ name: "create_org_for_self", args: { p_org_name: "Acme", p_org_slug: null } }]);
+  assert.deepEqual(client.rpcs, [
+    { name: "create_org_for_self", args: { p_org_name: "Acme", p_org_slug: null } },
+    { name: "patch_workspace_settings", args: { p_org_id: ORG, p_column: "profile", p_patch: { org_size: { headcount_band: "1-10" } } } },
+  ]);
+  assert.equal(client.calls.filter((c) => c.table === "workspace_settings" && c.op === "select").length, 0, "IMP-022: the size is merged by the database, never read-merged-written here");
   const profilePatch = wrote(client.calls, "profiles", "update")[0]?.payload as Record<string, unknown>;
   assert.deepEqual([profilePatch.job_title, profilePatch.region], ["Ops", ["EU"]]);
   assert.equal("is_platform_admin" in profilePatch, false);

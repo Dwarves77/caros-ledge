@@ -1,18 +1,10 @@
 import type { PortfolioDeps } from "../portfolio/types";
 
-export interface NotifyInput {
-  userId: string;
-  kind: string;
-  payload: Record<string, unknown>;
-}
-
 /**
  * What the workspace handlers call into slices that are not merged here. P2-08 (turn) wires them once at startup; a member that is
- * not wired is never faked: the handler reports it (a notification counted as failed, a bootstrap field listed as degraded).
+ * not wired is never faked: the handler reports it (a bootstrap field listed as degraded).
  */
 export interface WorkspaceDeps {
-  /** P1-07 dispatchNotification: resolves to an error message, or null when it delivered. */
-  notify: (input: NotifyInput) => Promise<string | null>;
   /** The canonical detail-page href of an item (the item-links owner). */
   itemHref: (item: { id: string; type: string | null; domain: number | null }) => string;
   /** Invalidate the workspace data cache tag after an override or personal-state write (P1-07 cache tags). */

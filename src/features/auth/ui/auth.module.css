@@ -14,7 +14,7 @@
 .bandName { font-size: var(--fs-95); font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; }
 .bandWindow { font-size: var(--fs-105); color: var(--ink-3); white-space: nowrap; }
 .disclaimer { font-size: var(--fs-11); color: var(--ink-3); }
-.disclaimer a { color: inherit; }
+.disclaimer a { display: inline-flex; align-items: center; min-height: var(--target); min-width: var(--target); color: inherit; }
 @media (max-width: 767px) {
   .frame { grid-template-columns: minmax(0, 1fr); min-height: 0; }
   .identity { order: 2; padding: 28px 16px; border-right: 0; border-top: 1px solid var(--line-1); gap: 24px; }

@@ -16,6 +16,8 @@ export { ClaimTierProvider, FactCard } from "./FactCard";
 export type { ClaimNode, ClaimTierMap, FactCardModel, MatrixFact } from "./claim-tier";
 export { CoverageState } from "./CoverageState";
 export { Dialog } from "./Dialog";
+export { ChoiceChip, FormCard, FormField, Input, Segmented, Select, Switch, Textarea } from "./FormField";
+export type { FieldControlProps, SegmentedOption } from "./FormField";
 export { GfmSection } from "./GfmSection";
 export { ImpactMeter } from "./ImpactMeter";
 export { isImpactScored, rampColor } from "./impact";

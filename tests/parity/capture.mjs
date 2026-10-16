@@ -10,7 +10,7 @@
 // Exit code is 1 when any sign-in, discovery or capture failed; index.json is written in every case.
 
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
@@ -78,8 +78,8 @@ async function discover(page, base, route) {
   throw new Error(`discovery found no link on ${list} matching ${match}`);
 }
 
-// Runs in the page. Helpers live inside so the whole function serialises as one unit.
-function domSummary(rowLimit) {
+// Runs in the page. Helpers live inside so the whole function serialises as one unit. Exported so the UX smoke records its fixture pages the same way.
+export function domSummary(rowLimit) {
   const clean = (s) => (s || '').replace(/\s+/g, ' ').trim();
   const rendered = (el) => el.getClientRects().length > 0;
   const accName = (el) => {
@@ -294,7 +294,9 @@ async function main() {
   process.exitCode = failed ? 1 : 0;
 }
 
-main().catch((err) => {
-  console.error(err.message);
-  process.exitCode = 1;
-});
+if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
+  main().catch((err) => {
+    console.error(err.message);
+    process.exitCode = 1;
+  });
+}

@@ -6,22 +6,15 @@ import { wireWorkspaceDeps } from "@/features/workspace/api/deps";
 import { DELETE, GET, parseAssignInput, PATCH, POST } from "@/features/workspace/api/assignments";
 
 import type { MemDb } from "./_memdb.ts";
-import { call, E, ITEM_1, matrix, ORG_A, ORG_B, script, seed, TEAMMATE, USER } from "./_world.ts";
+import { call, E, ITEM_1, matrix, ORG_A, ORG_B, script as baseScript, seed, TEAMMATE, USER } from "./_world.ts";
 
 const P = { id: "o3" };
 const URL_ = "/api/workspace/items/o3/assignments";
-const sent: { userId: string; kind: string; payload: Record<string, unknown> }[] = [];
-
-const wire = (fail = false) => {
-  sent.length = 0;
-  wireWorkspaceDeps({
-    notify: async (n) => {
-      sent.push(n);
-      return fail ? "smtp down" : null;
-    },
-    itemHref: (item) => `/regulations/${item.id}`,
-  });
-};
+// IMP-025: a notice is a notification_outbox row (the drain sends it); the writers never call a sender.
+let current: MemDb | null = null;
+const script = (db: MemDb): MemDb => (current = baseScript(db));
+const sent = () => (current?.rows("notification_outbox") ?? []).map((r) => ({ userId: r.user_id as string, kind: r.kind as string, payload: r.payload as Record<string, unknown> }));
+const wire = () => wireWorkspaceDeps({ itemHref: (item) => `/regulations/${item.id}` });
 const assigned = (db: MemDb) => db.rows("item_assignments");
 const withAssignment = (db: MemDb, over: Record<string, unknown> = {}) => {
   db.rows("item_assignments").push({ id: "ffffffff-0000-4000-8000-000000000001", org_id: ORG_A, item_id: ITEM_1, assignee_user_id: TEAMMATE, assigned_by: USER.admin, due_on: null, state: "open", created_at: "2026-03-01T00:00:00Z", ...over });
@@ -58,10 +51,10 @@ test("an admin assigns two members with a due date; each is notified once with a
   const res = await call(POST, "admin", "POST", URL_, { assignees: [TEAMMATE, USER.member], dueOn: "2026-12-01" }, P);
   assert.equal(res.status, 201);
   assert.equal(assigned(db).length, 2);
-  assert.deepEqual([res.body.notified, res.body.notify_failed], [2, 0]);
-  assert.deepEqual(sent.map((n) => n.userId).sort(), [TEAMMATE, USER.member].sort());
-  assert.equal(sent[0]?.payload.link, "/regulations/o3");
-  assert.match(String(sent[0]?.payload.body), /due 2026-12-01/);
+  assert.deepEqual([res.body.queued, res.body.queue_failed], [2, 0]);
+  assert.deepEqual(sent().map((n) => n.userId).sort(), [TEAMMATE, USER.member].sort());
+  assert.equal(sent()[0]?.payload.link, "/regulations/o3");
+  assert.match(String(sent()[0]?.payload.body), /due 2026-12-01/);
 });
 
 test("INV-167 ATTACK viewer assignee: a viewer is not assignable, alone or in a batch; nothing is written or sent", async () => {
@@ -72,7 +65,7 @@ test("INV-167 ATTACK viewer assignee: a viewer is not assignable, alone or in a 
   const batch = await call(POST, "admin", "POST", URL_, { assignees: [TEAMMATE, USER.viewer] }, P);
   assert.deepEqual([batch.status, /viewer/i.test(String(batch.body.error))], [403, true]);
   assert.equal(assigned(db).length, 0);
-  assert.equal(sent.length, 0);
+  assert.equal(sent().length, 0);
 });
 
 test("INV-167 ATTACK assign outside the org: an id from another org refuses the whole request, nothing is written or sent", async () => {
@@ -82,7 +75,7 @@ test("INV-167 ATTACK assign outside the org: an id from another org refuses the 
   assert.equal(res.status, 403);
   assert.match(String(res.body.error), /member of your workspace/);
   assert.equal(assigned(db).length, 0);
-  assert.equal(sent.length, 0);
+  assert.equal(sent().length, 0);
 });
 
 test("INV-167: an unverifiable roster fails closed with a 503 and nothing is written", async () => {
@@ -111,25 +104,27 @@ test("assigning yourself notifies nobody; assigning someone already assigned rep
   wire();
   const db = script(seed());
   await call(POST, "member", "POST", URL_, { assignees: [USER.member] }, P);
-  assert.equal(sent.length, 0);
+  assert.equal(sent().length, 0);
   assert.equal(assigned(db).length, 1);
   const first = await call(POST, "admin", "POST", URL_, { assignees: [TEAMMATE] }, P);
-  assert.equal(first.body.notified, 1);
+  assert.equal(first.body.queued, 1);
   const again = await call(POST, "owner", "POST", URL_, { assignees: [TEAMMATE] }, P);
-  assert.deepEqual([again.body.already_assigned, again.body.notified, (again.body.assignments as unknown[]).length], [[TEAMMATE], 0, 0]);
+  assert.deepEqual([again.body.already_assigned, again.body.queued, (again.body.assignments as unknown[]).length], [[TEAMMATE], 0, 0]);
   assert.equal(assigned(db).length, 2);
 });
 
-test("a failing notification never undoes the assignment and is reported; an unwired dispatcher counts as failed, not as sent", async () => {
-  wire(true);
+test("IMP-025: a notice that cannot be queued never undoes the assignment and is reported, not counted as sent", async () => {
+  wire();
   const db = script(seed());
+  db.fail("notification_outbox", "insert", { message: "outbox down" }, { times: 1 });
   const failed = await call(POST, "admin", "POST", URL_, { assignees: [TEAMMATE] }, P);
   assert.equal(failed.status, 201);
-  assert.deepEqual([failed.body.notified, failed.body.notify_failed], [0, 1]);
+  assert.deepEqual([failed.body.queued, failed.body.queue_failed, failed.body.queue_error], [0, 1, "outbox down"]);
   assert.equal(assigned(db).length, 1);
-  wireWorkspaceDeps({ notify: undefined as never });
-  const unwired = await call(POST, "admin", "POST", URL_, { assignees: [USER.owner] }, P);
-  assert.deepEqual([unwired.status, unwired.body.notified, unwired.body.notify_failed], [201, 0, 1]);
+  assert.equal(sent().length, 0);
+  const queued = await call(POST, "admin", "POST", URL_, { assignees: [USER.owner] }, P);
+  assert.deepEqual([queued.status, queued.body.queued, queued.body.queue_failed], [201, 1, 0]);
+  assert.deepEqual(sent().map((n) => [n.userId, n.kind]), [[USER.owner, "assignment"]]);
 });
 
 test("invalid assign input writes nothing", async () => {
