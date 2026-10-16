@@ -1,7 +1,6 @@
 // Ported from old_repo/src/app/api/workspace/portfolios/[id]/route.ts (lines 22-56)
 import { z } from "zod";
 
-import { serviceClient } from "@/core/db/clients";
 import { HttpError, LookupError, ok, route } from "@/core/http/errors";
 import { isRefusal, requireOrgRole } from "@/core/http/guard";
 import { parseJson } from "@/core/http/parse";
@@ -23,7 +22,7 @@ export const GET = route<Ctx>(NAME, async (request, { params }) => {
   if (isRefusal(auth)) return auth;
   const deps = workspaceDeps().portfolio;
   if (!deps) throw new LookupError("portfolio read layer", "not wired");
-  const view = await readPortfolioDetail(serviceClient(), auth.membership.orgId, (await params).id, new Date(), deps);
+  const view = await readPortfolioDetail(auth.client, auth.membership.orgId, (await params).id, new Date(), deps);
   if (!view) throw new HttpError(404, "Portfolio not found in your workspace");
   return ok(auth.headers, view);
 });
@@ -32,12 +31,12 @@ export const PATCH = route<Ctx>(NAME, async (request, { params }) => {
   const auth = await requireOrgRole(request, "member");
   if (isRefusal(auth)) return auth;
   const input = await parseJson(request, nameBody);
-  return ok(auth.headers, { portfolio: await renamePortfolio(serviceClient(), { orgId: auth.membership.orgId, portfolioId: (await params).id, name: input.name }) });
+  return ok(auth.headers, { portfolio: await renamePortfolio(auth.client, { orgId: auth.membership.orgId, portfolioId: (await params).id, name: input.name }) });
 });
 
 export const DELETE = route<Ctx>(NAME, async (request, { params }) => {
   const auth = await requireOrgRole(request, "member");
   if (isRefusal(auth)) return auth;
-  await deletePortfolio(serviceClient(), { orgId: auth.membership.orgId, portfolioId: (await params).id });
+  await deletePortfolio(auth.client, { orgId: auth.membership.orgId, portfolioId: (await params).id });
   return ok(auth.headers, {});
 });

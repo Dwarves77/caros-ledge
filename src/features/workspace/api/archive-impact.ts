@@ -22,9 +22,9 @@ export const GET = route("/api/workspace/archive-impact", async (request) => {
   const orgId = membership?.orgId ?? null;
   const role = membership?.role ?? null;
 
-  const service = serviceClient();
+  const db = auth.client;
   // Branch on the shape rather than composing an .or() string from caller input (an injection surface); .eq() parameterises.
-  const itemQuery = service.from("intelligence_items").select("id, legacy_id, title, priority");
+  const itemQuery = db.from("intelligence_items").select("id, legacy_id, title, priority");
   const { data: item, error: itemError } = await (isUuid(itemId) ? itemQuery.eq("id", itemId) : itemQuery.eq("legacy_id", itemId)).maybeSingle();
   if (itemError) throw new LookupError("intelligence_items", itemError);
   if (!item) throw new HttpError(404, `intelligence_items row not found for itemId=${itemId}`);
@@ -37,26 +37,26 @@ export const GET = route("/api/workspace/archive-impact", async (request) => {
   let alreadyWorkspaceArchived = false;
   let priority = (item.priority as string | null) ?? null; // the workspace override below makes it the effective priority
   if (orgId) {
-    const watchers = await orgWatchersOf(service, orgId, watchKeys);
+    const watchers = await orgWatchersOf(serviceClient(), orgId, watchKeys);
     watcherIds = watchers.watcherIds.filter((id) => id !== auth.userId);
     onTeamWatchlist = watchers.onTeamWatchlist;
-    const { data: override, error } = await service.from("workspace_item_overrides").select("owner_user_id, is_archived, priority_override").eq("org_id", orgId).eq("item_id", itemUuid).maybeSingle();
+    const { data: override, error } = await db.from("workspace_item_overrides").select("owner_user_id, is_archived, priority_override").eq("org_id", orgId).eq("item_id", itemUuid).maybeSingle();
     if (error) throw new LookupError("workspace_item_overrides", error);
     ownerUserId = (override?.owner_user_id as string | null) ?? null;
     alreadyWorkspaceArchived = !!override?.is_archived;
     if (override?.priority_override) priority = override.priority_override as string;
   }
 
-  const { data: personal, error: personalError } = await service.from("user_item_state").select("is_archived").eq("user_id", auth.userId).eq("item_id", itemUuid).maybeSingle();
+  const { data: personal, error: personalError } = await db.from("user_item_state").select("is_archived").eq("user_id", auth.userId).eq("item_id", itemUuid).maybeSingle();
   if (personalError) throw new LookupError("user_item_state", personalError);
 
   // Display names for the capped watcher list and the owner, in one lookup.
   const nameTargets = [...new Set([...watcherIds.slice(0, WATCHER_NAME_CAP), ...(ownerUserId ? [ownerUserId] : [])])];
   const nameById = new Map<string, string>();
   if (nameTargets.length > 0) {
-    const { data: profiles, error } = await service.from("profiles").select("id, full_name, display_name, email").in("id", nameTargets);
+    const { data: profiles, error } = await db.from("profiles").select("id, full_name, display_name").in("id", nameTargets);
     if (error) throw new LookupError("profiles", error);
-    for (const p of (profiles ?? []) as { id: string; full_name?: string | null; display_name?: string | null; email?: string | null }[]) nameById.set(p.id, displayNameOf(p, p.id));
+    for (const p of (profiles ?? []) as { id: string; full_name?: string | null; display_name?: string | null }[]) nameById.set(p.id, displayNameOf(p, p.id));
   }
 
   return ok(auth.headers, {

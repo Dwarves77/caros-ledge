@@ -13,7 +13,7 @@ import { POST as orgsPost } from "@/features/auth/api/orgs-create";
 
 import { scripted } from "../_support/fake-clients.ts";
 import { fakeDb, filterValue, wrote, type Call, type Reply } from "../_support/fake-db.ts";
-import { as, ctx, json, MEMBERSHIP_ID, ORG_A, ORG_B, OTHER_MEMBERSHIP_ID, PERSONAS, script, userDbFor, type Persona } from "../_support/personas.ts";
+import { as, ctx, json, MEMBERSHIP_ID, ORG_A, ORG_B, OTHER_MEMBERSHIP_ID, PERSONAS, personaOf, script, userDbFor, type Persona } from "../_support/personas.ts";
 
 const TOKEN = "b".repeat(64);
 const INVITE_A = "55555555-5555-4555-8555-555555555555";
@@ -202,4 +202,25 @@ test("INV-153 through the routes: the only owner cannot be demoted, banned or re
   assert.deepEqual(await Promise.all(attempts("owner")), [200, 200, 200]);
   lastOwner(null, { message: "down" });
   assert.deepEqual(await Promise.all(attempts("owner")), [503, 503, 503]);
+});
+
+test("identity limiter: anonymous requests are never limited and touch no table; a session is limited per user, not per address", async () => {
+  script(world());
+  const anonCalls: Call[][] = [];
+  scripted.user = (request) => {
+    const made = userDbFor(personaOf(request));
+    if (personaOf(request) === "anon") anonCalls.push(made.calls);
+    return made.db;
+  };
+  const ip = { "x-forwarded-for": "203.0.113.9" };
+  const get = (persona: Persona) => identityGet(as(persona, "/api/auth/identity", { headers: ip }), undefined);
+  for (let i = 0; i < 100; i += 1) assert.equal((await get("anon")).status, 200, `anonymous request ${i + 1}`);
+  assert.equal(anonCalls.flat().length, 0, "no database call for an anonymous request");
+  let last = 200;
+  for (let i = 0; i < 61; i += 1) last = (await get("viewer")).status;
+  assert.equal(last, 429, "the 61st request of one user in the window is limited");
+  const limited = await get("viewer");
+  assert.ok(Number(limited.headers.get("Retry-After")) >= 1);
+  assert.equal((await get("member")).status, 200, "another user behind the same address has an independent window");
+  assert.equal((await get("anon")).status, 200, "and anonymous requests from that address still pass");
 });

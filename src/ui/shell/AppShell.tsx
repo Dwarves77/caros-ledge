@@ -38,7 +38,7 @@ export function AppShell({ children, assistant }: { children: ReactNode; assista
     setDrawerPath(pathname);
     if (drawer) setDrawer(false);
   }
-  useBootstrap(!chromeless && user ? user.id : null);
+  const bootstrap = useBootstrap(!chromeless && user ? user.id : null);
   const notes = shellNotes({ user, orgId, identityStatus, pathname });
   useEffect(() => {
     if (notes.redirect) router.replace(notes.redirect);
@@ -66,6 +66,13 @@ export function AppShell({ children, assistant }: { children: ReactNode; assista
               <div role="status" aria-live="polite" className="cl-shell-note">
                 <StateNote band={bandOf("immediate")} action={{ label: retryingIdentity ? "Retrying…" : "Retry", onClick: retryingIdentity ? () => {} : retryIdentity }}>
                   We couldn&rsquo;t load your workspace and role just now. Nothing in your account has changed. Retry, or it will try again when you return to this tab.
+                </StateNote>
+              </div>
+            )}
+            {bootstrap.status === "failed" && (
+              <div role="status" aria-live="polite" className="cl-shell-note">
+                <StateNote tone="error" action={{ label: "Retry", onClick: bootstrap.refresh }}>
+                  We couldn&rsquo;t load your saved items and team just now. Nothing has changed. Retry to load them again.
                 </StateNote>
               </div>
             )}

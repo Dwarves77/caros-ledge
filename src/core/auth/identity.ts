@@ -27,7 +27,12 @@ export async function resolveIdentity(client: Db & ClaimsClient, opts: { heal?: 
   if (membership.error) throw new LookupError("org_memberships", membership.error);
   if (profile.error) throw new LookupError("profiles", profile.error);
   let overrides = (profile.data as { sector_overrides: string[] | null } | null)?.sector_overrides ?? null;
-  if (!profile.data && opts.heal !== false && (await ensureProfile(claims.userId, claims.email)).exists) overrides = [];
+  if (!profile.data && opts.heal !== false) {
+    // The heal runs on the caller's own client: profiles_self_insert admits exactly the row id = auth.uid(), so no service key is needed. A heal that fails is a stated 503, never a silent empty profile.
+    const healed = await ensureProfile(claims.userId, claims.email, client);
+    if (!healed.exists) throw new LookupError("profile heal", healed.reason ?? healed.failedStep ?? "unavailable");
+    overrides = [];
+  }
   const org = (membership.data?.organizations ?? null) as OrgEmbed;
   return {
     user: { id: claims.userId, email: claims.email },

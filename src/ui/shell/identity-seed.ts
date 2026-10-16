@@ -6,7 +6,7 @@ import type { IdentityStatus } from "@/features/auth/ui/identity-loader";
 
 import { suppressesWorkspaceNote } from "./nav-model";
 
-export { IDENTITY_ERROR_SEED, IDENTITY_RETRY_DELAYS_MS, nextIdentityRetryDelay, resolveAuthSeed, shouldApplySeed, shouldShowAdminNav } from "@/features/auth/ui/identity-loader";
+export { IDENTITY_ERROR_SEED, nextIdentityRetryDelay, resolveAuthSeed, shouldApplySeed, shouldShowAdminNav } from "@/features/auth/ui/identity-loader";
 export type { AuthSeed, IdentityStatus } from "@/features/auth/ui/identity-loader";
 
 export const NO_WORKSPACE_ONBOARDING_ROUTE = "/workspace/new";

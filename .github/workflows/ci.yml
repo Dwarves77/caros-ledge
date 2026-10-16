@@ -162,6 +162,8 @@ jobs:
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder' }}
       LIVE_SMOKE_EMAIL: ${{ secrets.LIVE_SMOKE_EMAIL }}
       LIVE_SMOKE_PASSWORD: ${{ secrets.LIVE_SMOKE_PASSWORD }}
+      LIVE_ADMIN_EMAIL: ${{ secrets.LIVE_ADMIN_EMAIL }}
+      LIVE_ADMIN_PASSWORD: ${{ secrets.LIVE_ADMIN_PASSWORD }}
     steps:
       - uses: actions/checkout@v5
         with:
