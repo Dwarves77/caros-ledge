@@ -20,10 +20,10 @@ test("every wired member is present on the built deps, and the owed members are 
 test("an unwired required member is named, and production refuses to serve with it (IMP-026)", () => {
   const f = fixture();
   (f.d.intake as unknown as { mint: unknown }).mint = {};
-  (f.d.workspace as { notify?: unknown }).notify = undefined;
+  (f.d.workspace as { itemHref?: unknown }).itemHref = undefined;
   const report = startupCheck(f.d);
-  assert.deepEqual(report.missing.sort(), ["intake.mint.mintItem", "workspace.notify"]);
-  assert.throws(() => enforceWired(report, { VERCEL: "1" }), /startup refused: required dependencies are not wired: intake\.mint\.mintItem, workspace\.notify/);
+  assert.deepEqual(report.missing.sort(), ["intake.mint.mintItem", "workspace.itemHref"]);
+  assert.throws(() => enforceWired(report, { VERCEL: "1" }), /startup refused: required dependencies are not wired: intake\.mint\.mintItem, workspace.itemHref/);
   assert.doesNotThrow(() => enforceWired(report, { NODE_ENV: "production" }));
   assert.doesNotThrow(() => enforceWired({ missing: [] }, { VERCEL: "1" }));
 });
