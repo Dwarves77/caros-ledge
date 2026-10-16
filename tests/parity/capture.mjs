@@ -173,7 +173,7 @@ async function accessibilitySnapshot(page) {
   return { source: 'locator.ariaSnapshot', tree: await page.locator('body').ariaSnapshot() };
 }
 
-// `diag` accumulates across both viewports: the first non-2xx response (status and URL without its query string) and the main-frame navigation count.
+// `diag` accumulates across both viewports: the first non-2xx response (status and URL without its query string) the main-frame navigation count and the first ten distinct navigated paths.
 async function captureOne(browser, base, route, path, viewport, storage, out, diag) {
   const stem = `${route.name}.${viewport.width}x${viewport.height}`;
   const context = await browser.newContext({ viewport, storageState: route.auth ? storage[route.auth] : undefined });
@@ -184,7 +184,10 @@ async function captureOne(browser, base, route, path, viewport, storage, out, di
       if (!diag.firstFailure && (r.status() < 200 || r.status() >= 300)) diag.firstFailure = { status: r.status(), url: bare(r.url()) };
     });
     page.on('framenavigated', (f) => {
-      if (f === page.mainFrame()) diag.navigations += 1;
+      if (f !== page.mainFrame()) return;
+      diag.navigations += 1;
+      const path = bare(f.url());
+      if (diag.navigationPaths.length < 10 && !diag.navigationPaths.includes(path)) diag.navigationPaths.push(path);
     });
     const response = await page.goto(new URL(path, base).href, { waitUntil: 'load', timeout: 60000 });
     const networkIdle = await settle(page);
@@ -234,7 +237,7 @@ async function main() {
     base,
     viewports: VIEWPORTS.map((v) => `${v.width}x${v.height}`),
     signin: null,
-    routes: routes.map((r) => ({ name: r.name, path: r.path ?? null, auth: r.auth, status: 'pending', files: [], error: null, diagnostics: { firstFailure: null, navigations: 0 } })),
+    routes: routes.map((r) => ({ name: r.name, path: r.path ?? null, auth: r.auth, status: 'pending', files: [], error: null, diagnostics: { firstFailure: null, navigations: 0, navigationPaths: [] } })),
   };
   let failed = false;
   const browser = await chromium.launch();
