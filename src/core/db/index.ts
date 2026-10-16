@@ -2,6 +2,7 @@ export { bearerToken, describeError, isServiceConfigured, isSupabaseConfigured, 
 export type { Db } from "./clients";
 export { boundedRead, exactCount, fetchAllByIdChunks, fetchAllRows, keyset, MAX_BOUND, ReadTimeoutError, unwrap, withTimeout } from "./query";
 export type { Page, ReadError, ReadResult } from "./query";
+export { allRows, rowsByIds } from "./reads";
 export { qb } from "./qb";
 export type { Qb, QbResponse } from "./qb";
 export { SCHEMA_KEYS } from "./schema-keys";

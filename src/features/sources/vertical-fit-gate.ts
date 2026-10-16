@@ -1,6 +1,6 @@
 // Ported from old_repo/src/lib/sources/vertical-fit-gate.ts (lines 1-54)
 import type { Db } from "@/core/db";
-import { fetchAllRows } from "@/core/db";
+import { allRows } from "@/core/db";
 import { hostOf } from "@/core/shared";
 import { classifyInstitutionalType, isOffVerticalByIdentity, type SourceRole } from "@/core/sources/classify";
 
@@ -21,7 +21,7 @@ export async function checkVerticalFitGate(db: Db, source: { name?: string | nul
   if (!host) return { allow: true, reason: "no parseable host: nothing to gate", flaggedLegislature };
   let rows: Array<{ url: string }>;
   try {
-    rows = await fetchAllRows<{ url: string }>((from, to) => db.from("sources").select("url").eq("status", "suspended").ilike("notes", "%off_vertical_suspended%").order("id", { ascending: true }).range(from, to) as never, { cap: 100_000 });
+    rows = await allRows<{ url: string }>(db, "sources", "url", { cap: 100_000, where: (q) => q.eq("status", "suspended").ilike("notes", "%off_vertical_suspended%") });
   } catch (e) {
     const reason = `negative-list check unavailable (${(e as Error).message})`;
     return { allow: opts.failOpen === true, reason, flaggedLegislature };

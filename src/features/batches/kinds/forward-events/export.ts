@@ -6,8 +6,9 @@
 // held events is by chunks of candidate items, never the whole event table.
 import { fetchAllRows, type Db } from "@/core/db";
 import { readExtractionInput } from "@/features/obligations";
+import { rowsByIds } from "@/core/db";
 
-import { rowsByIds, type BatchExport, type Obj } from "../../kit/session-batch";
+import { type BatchExport, type Obj } from "../../kit/session-batch";
 
 import { buildSnapshot, selectTickets } from "./tickets";
 

@@ -206,3 +206,17 @@ test("ops: every runtime that is not a stage has a named op; an unknown name lis
   const outbox = await runOps(dryCall({ ops: { op: "run-notification-outbox" } }), f.d);
   assert.equal(outbox.counts.pending, 1);
 });
+
+test("ops: plan-drain is a named op that runs the planner over the batch kit's own exporters; off plans nothing, on plans and releases", async () => {
+  assert.ok(opNames().includes("plan-drain"));
+  const f = fixture();
+  const off = await runOps(dryCall({ ops: { op: "plan-drain" } }), f.d);
+  assert.equal(off.outcome, "ok", off.notes.join("; "));
+  assert.deepEqual([off.counts.planned, off.counts.leases_held], [0, 0]);
+  assert.match(off.notes.join(" "), /drain switch is off/);
+  f.db.seed("system_state", [{ id: true, judgement_drain: "on", global_processing_paused: false }]);
+  const on = await runOps(dryCall({ ops: { op: "plan-drain", args: { kind: "screen-verdict" } } }), f.d);
+  assert.equal(on.notes[0], "op=plan-drain");
+  assert.ok(!on.notes.join(" ").includes("no exporter function supplied"), on.notes.join("; "));
+  assert.equal(on.counts.leases_held, 0, "a dry plan takes no lease");
+});

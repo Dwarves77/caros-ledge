@@ -1,6 +1,6 @@
 // Ported from old_repo/scripts/sources/inaccessible-triage.mjs (lines 1-472)
 import type { Db } from "@/core/db";
-import { fetchAllRows } from "@/core/db";
+import { allRows } from "@/core/db";
 import { fetchPrimaryWithFallback, generateCandidates } from "@/core/fetch/candidates";
 import { fetchDirect, type FetchDeps } from "@/core/fetch/direct";
 import { assertFetchAllowed } from "@/core/fetch/hold";
@@ -161,7 +161,7 @@ export async function triageSuspended(deps: TriageDeps, input: TriageInput = {})
   const throttle = createHostThrottle({ minIntervalMs: Math.max(DEFAULT_HOST_INTERVAL_MS, input.hostIntervalMs ?? DEFAULT_HOST_INTERVAL_MS), now, sleep });
   let sources: SuspendedSource[];
   try {
-    sources = await fetchAllRows<SuspendedSource>((from, to) => deps.db.from("sources").select("id, url, name, base_tier, jurisdictions").eq("status", "suspended").order("id", { ascending: true }).range(from, to) as never, { cap: MAX_SOURCES });
+    sources = await allRows<SuspendedSource>(deps.db, "sources", "id, url, name, base_tier, jurisdictions", { cap: MAX_SOURCES, where: (q) => q.eq("status", "suspended") });
   } catch (e) {
     return { counts: { suspended: 0 }, outcome: "failed", notes: [`suspended-sources read failed: ${(e as Error).message}`] };
   }

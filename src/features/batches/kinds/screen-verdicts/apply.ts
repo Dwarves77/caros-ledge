@@ -7,8 +7,9 @@ import { applyScreenVerdictBatch, screenVerdictExporter } from "@/features/drain
 import { isReopenTarget } from "@/features/mint/apply";
 import { runResult } from "@/core/types/run-result";
 import type { RunResult } from "@/core/types/run-result";
+import { rowsByIds } from "@/core/db";
 
-import { rowsByIds, type ApplyOpts, type BatchDeps, type BatchExport } from "../../kit/session-batch";
+import { type ApplyOpts, type BatchDeps, type BatchExport } from "../../kit/session-batch";
 
 export const screenVerdictsExporter = (sb: Db) => async (o: { limit: number; mode: string }): Promise<BatchExport> => screenVerdictExporter(sb)(o);
 

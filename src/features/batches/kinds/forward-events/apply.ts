@@ -6,8 +6,9 @@ import { assertVerbatim } from "@/core/contracts/verbatim";
 import { EVENT_KINDS, forwardEventKey, insertForwardEvents, PRECISIONS, syncComplianceDeadline } from "@/features/obligations";
 import type { ExtractedEvent } from "@/features/obligations";
 import { runResult } from "@/core/types/run-result";
+import { allRows, rowsByIds } from "@/core/db";
 
-import { allRows, applyEntries, isObj, nonEmpty, rowsByIds, type ApplyOpts, type BatchDeps, type EntrySpec } from "../../kit/session-batch";
+import { applyEntries, isObj, nonEmpty, type ApplyOpts, type BatchDeps, type EntrySpec } from "../../kit/session-batch";
 
 import { archivedConsumedBy, consumeTickets, readItemStates, type Ticket } from "./tickets";
 

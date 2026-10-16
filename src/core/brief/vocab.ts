@@ -59,6 +59,9 @@ export function assertDbValue(field: string, value: string | null | undefined, a
 export const ANALYSIS_LABEL_TOKENS: readonly string[] = ["*Analytical inference:*", "*Industry interpretation:*", "*Operational implication:*"];
 export const ANALYSIS_LABELS: readonly string[] = ANALYSIS_LABEL_TOKENS.map((t) => t.replace(/[*:]/g, "").toLowerCase());
 export const LEGAL_CALLOUT = "*Legal Confirmation Required:*";
+/** Criterion 4's two patterns, one home: a paragraph that carries an ANALYSIS label (any extra label a caller accepts is added by name), and the modal verbs that state an obligation. */
+export const analysisLabelRe = (...extra: string[]): RegExp => new RegExp(`\\*?(${[...extra, ...ANALYSIS_LABELS].join("|")})(\\s*\\([^)]*\\))?:\\*?`, "i");
+export const MODAL_RE = /\b(requires|must|mandates|obligates|prohibits|applies to)\b/i;
 /** The locked sentinel a research card states when no assessment grounds a planning-assumption shift (spec 03S1). */
 export const PLANNING_ASSUMPTION_SHIFT_ABSENCE = "no shift grounded";
 
