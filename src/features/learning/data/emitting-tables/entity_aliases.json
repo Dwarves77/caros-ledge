@@ -1,0 +1,7 @@
+{
+  "table_name": "entity_aliases",
+  "type": "identity_revised",
+  "byKind": {},
+  "label": "an alias of this entity",
+  "describe": "identity"
+}

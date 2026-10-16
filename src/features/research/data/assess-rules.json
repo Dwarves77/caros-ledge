@@ -1,0 +1,58 @@
+{
+ "trl": [
+  {
+   "low": 10,
+   "high": 11,
+   "pattern": "\\b(commercial(ly)? (deployed|operating) at scale|integrated into (the )?value chain|mass[- ]produc)"
+  },
+  {
+   "low": 9,
+   "high": 10,
+   "pattern": "\\b(commercially available|in commercial operation|fully commercial)\\b"
+  },
+  {
+   "low": 8,
+   "high": 9,
+   "pattern": "\\b(demonstrat(ed|ion)|pilot (fleet|project|plant)|first[- ]of[- ]a[- ]kind|operational trial)\\b"
+  },
+  {
+   "low": 6,
+   "high": 7,
+   "pattern": "\\b(prototype|field trial|demonstration plant|pre[- ]commercial)\\b"
+  },
+  {
+   "low": 4,
+   "high": 5,
+   "pattern": "\\b(laboratory|lab[- ]scale|bench[- ]scale|proof of concept)\\b"
+  },
+  {
+   "low": 1,
+   "high": 3,
+   "pattern": "\\b(basic research|conceptual design|early[- ]stage research)\\b"
+  }
+ ],
+ "cri": [
+  {
+   "low": 6,
+   "high": 6,
+   "pattern": "\\b(bankable asset class|unsubsidi[sz]ed|without subsidy|investment[- ]grade)\\b"
+  },
+  {
+   "low": 4,
+   "high": 5,
+   "pattern": "\\b(scale[- ]?up|multiple (commercial )?contracts|policy[- ]driven deployment)\\b"
+  },
+  {
+   "low": 3,
+   "high": 4,
+   "pattern": "\\b(subsidi[sz]ed|mandate[sd]?|government[- ]backed|offtake agreement)\\b"
+  },
+  {
+   "low": 1,
+   "high": 2,
+   "pattern": "\\b(pilot purchase|early market|first commercial contract|niche market)\\b"
+  }
+ ],
+ "roadmapBodies": "\\b(IEA|ICCT|IMO|national (transport )?(ministry|plan))\\b",
+ "statutory": "\\b(ReFuelEU|FuelEU|EU ETS|CountEmissions|CBAM|CSRD|regulation \\(EU\\)|directive \\d|phase-?in|compliance date)\\b"
+}

@@ -86,3 +86,33 @@ src/features/mint/data/screen-rules.json | new in P2-05: the 4 CELEX roots and 1
 src/features/mint/data/preflight.json | new in P2-05: the capture-completeness tolerance, the unicode substitution classes, the signature tag fields and the screen provenance values as data (validate-mint-payload.mjs lines 24-150, tag-presence-check.mjs lines 1-12)
 scripts/gen/screen-verdicts-sql.mjs | new in P2-S2: generates migration 0015 from old_repo/scripts/mint/reviewed-verdicts.json (read, never copied); no old counterpart
 scripts/gen/source-backfill-sql.mjs | new in P2-S2: generates migration 0016 from a registry export through the merged classify rules and renderBackfillSql (replaces old_repo/scripts/sources/backfill-source-type.mjs lines 16-100)
+src/core/csv/index.ts | new in P2-07: barrel for the import surface the brief names, no old counterpart
+src/core/drain/index.ts | new in P2-07: barrel for the import surface the brief names, no old counterpart
+src/core/producers/data/operator-tables.json | new in P2-07: the two operator-row table contracts as data (operator-rows-contract.mjs lines 59-157), no old counterpart at this shape
+src/core/producers/data/registry.json | new in P2-07: the seven producer registry entries as one data file (scripts/producers/registry/*.json lines 1-17 each), no old counterpart at this shape
+src/core/producers/deps.ts | new in P2-07: the injected interfaces of the producer runner (recorder, fetch, client, env), no old counterpart
+src/core/producers/index.ts | new in P2-07: barrel for the import surface the brief names, no old counterpart
+src/core/values/index.ts | new in P2-07: barrel for the import surface the brief names, no old counterpart
+src/features/drain/data/kinds.json | new in P2-07: the eight drain kinds as data (kinds.mjs lines 1-221, plus theme-classification and screen-verdict), no old counterpart at this shape
+src/features/drain/index.ts | new in P2-07: barrel for the import surface the brief names, no old counterpart
+src/features/learning/data/emitting-tables/derived_values.json | copied from old_repo/src/lib/learning/emitting-tables/derived_values.json, data
+src/features/learning/data/emitting-tables/emission_factors.json | copied from old_repo/src/lib/learning/emitting-tables/emission_factors.json, data
+src/features/learning/data/emitting-tables/entity_aliases.json | copied from old_repo/src/lib/learning/emitting-tables/entity_aliases.json, data
+src/features/learning/data/emitting-tables/entity_relations.json | copied from old_repo/src/lib/learning/emitting-tables/entity_relations.json, data
+src/features/learning/data/emitting-tables/estimated_values.json | copied from old_repo/src/lib/learning/emitting-tables/estimated_values.json, data
+src/features/learning/data/emitting-tables/grid_connection_queues.json | copied from old_repo/src/lib/learning/emitting-tables/grid_connection_queues.json, data
+src/features/learning/data/emitting-tables/market_series.json | copied from old_repo/src/lib/learning/emitting-tables/market_series.json, data
+src/features/learning/data/emitting-tables/obligation_objects.json | copied from old_repo/src/lib/learning/emitting-tables/obligation_objects.json, data
+src/features/learning/data/emitting-tables/oem_tech_roadmaps.json | copied from old_repo/src/lib/learning/emitting-tables/oem_tech_roadmaps.json, data
+src/features/learning/data/emitting-tables/regional_data_facts.json | copied from old_repo/src/lib/learning/emitting-tables/regional_data_facts.json, data
+src/features/learning/data/emitting-tables/signposts.json | copied from old_repo/src/lib/learning/emitting-tables/signposts.json, data
+src/features/learning/data/emitting-tables/statutory_computations.json | copied from old_repo/src/lib/learning/emitting-tables/statutory_computations.json, data
+src/features/learning/index.ts | new in P2-07: barrel for the import surface the brief names, no old counterpart
+src/features/market/producers/data/eea-hdv-classification.json | copied from old_repo/scripts/producers/oem/eea-hdv-classification.json (lines 1-9), data
+src/features/market/producers/data/series-item-map.json | new in P2-07: the ratified series-to-item map as data (series-item-map.mjs lines 1-58), no old counterpart at this shape
+src/features/market/producers/index.ts | new in P2-07: barrel for the import surface the brief names, no old counterpart
+src/features/operations/producers/index.ts | new in P2-07: barrel for the import surface the brief names, no old counterpart
+src/features/research/data/assess-rules.json | new in P2-07: the TRL and CRI ladders and the statutory and roadmap patterns as data (assess.mjs lines 1-60, 100-110), no old counterpart at this shape
+src/features/research/data/authority-rules.json | new in P2-07: role classes and named overrides as data (authority-score.mjs lines 5-48), no old counterpart at this shape
+src/features/research/data/theme-rules.json | new in P2-07: keyword rules per theme, the free replacement of the theme backfill's model call, no old counterpart
+src/features/research/index.ts | new in P2-07: barrel for the import surface the brief names, no old counterpart

@@ -1,0 +1,68 @@
+[
+  {
+    "name": "ecb-fx",
+    "domain_table": "market_series",
+    "source": "ecb",
+    "licence": "ECB legal notice: reproduction permitted provided the source is acknowledged",
+    "dry_capable": true,
+    "enabled_env": "MARKET_PRODUCER_ECB_FX_ENABLED",
+    "in_all": true
+  },
+  {
+    "name": "eea-hdv-co2",
+    "domain_table": "oem_tech_roadmaps",
+    "source": "eea",
+    "licence": "CC BY 4.0 (EEA catalogue record: License CC-BY 4.0, copyright holder DG-CLIMA and the EEA)",
+    "dry_capable": true,
+    "enabled_env": "OEM_PRODUCER_EEA_HDV_ENABLED",
+    "in_all": false
+  },
+  {
+    "name": "eia-v2-petroleum-spot",
+    "domain_table": "market_series",
+    "source": "eia",
+    "licence": "US public domain (17 USC 105)",
+    "dry_capable": true,
+    "enabled_env": "MARKET_PRODUCER_EIA_V2_ENABLED",
+    "in_all": true,
+    "entity_id": "cl:jurisdiction:9b202ecbc6d45c6d"
+  },
+  {
+    "name": "eu-weekly-oil-bulletin",
+    "domain_table": "market_series",
+    "source": "ec_weekly_oil_bulletin",
+    "licence": "CC BY 4.0 (Decision 2011/833/EU)",
+    "dry_capable": true,
+    "enabled_env": "MARKET_PRODUCER_EU_OIL_BULLETIN_ENABLED",
+    "in_all": true,
+    "accepts_since": true,
+    "entity_id": "cl:jurisdiction:9170a8b2fb3234ba"
+  },
+  {
+    "name": "neso-carbon-intensity",
+    "domain_table": "regional_data_facts",
+    "source": "neso_carbon_intensity",
+    "licence": "CC BY 4.0 (NESO Carbon Intensity API; attribution required)",
+    "dry_capable": true,
+    "enabled_env": "REGIONAL_PRODUCER_NESO_CARBON_INTENSITY_ENABLED",
+    "in_all": false
+  },
+  {
+    "name": "sbti-target-dashboard",
+    "domain_table": "market_series",
+    "source": "sbti_dashboard",
+    "licence": "No data licence published; redistribution prohibited, so the producer refuses --apply (source-licence register)",
+    "dry_capable": true,
+    "enabled_env": "MARKET_PRODUCER_SBTI_ENABLED",
+    "in_all": false
+  },
+  {
+    "name": "ukpn-capacity-heatmap",
+    "domain_table": "grid_connection_queues",
+    "source": "ukpn_ltds_capacity_heatmap",
+    "licence": "CC BY 4.0 (UK Power Networks Long Term Development Statement Capacity Heatmap, catalogue metadata license field)",
+    "dry_capable": true,
+    "enabled_env": "OPERATIONS_PRODUCER_UKPN_HEATMAP_ENABLED",
+    "in_all": false
+  }
+]
