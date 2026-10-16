@@ -54,9 +54,9 @@ export const GET = route("/api/workspace/archive-impact", async (request) => {
   const nameTargets = [...new Set([...watcherIds.slice(0, WATCHER_NAME_CAP), ...(ownerUserId ? [ownerUserId] : [])])];
   const nameById = new Map<string, string>();
   if (nameTargets.length > 0) {
-    const { data: profiles, error } = await db.from("profiles").select("id, full_name, display_name, email").in("id", nameTargets);
+    const { data: profiles, error } = await db.from("profiles").select("id, full_name, display_name").in("id", nameTargets);
     if (error) throw new LookupError("profiles", error);
-    for (const p of (profiles ?? []) as { id: string; full_name?: string | null; display_name?: string | null; email?: string | null }[]) nameById.set(p.id, displayNameOf(p, p.id));
+    for (const p of (profiles ?? []) as { id: string; full_name?: string | null; display_name?: string | null }[]) nameById.set(p.id, displayNameOf(p, p.id));
   }
 
   return ok(auth.headers, {

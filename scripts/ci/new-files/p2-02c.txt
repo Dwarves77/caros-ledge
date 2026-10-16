@@ -1,3 +1,4 @@
 src/core/http/backoff.ts | the one bounded-retry rule the identity loader and the bootstrap loader share (P2-02c), no old counterpart
 tests/workspace/rls-only.test.ts | new in P2-02c: a member's pages answer on the caller's client with no service key
 tests/ui/bootstrap-retry.test.ts | new in P2-02c: the bounded retry of the bootstrap loader against a counting fake fetch
+tests/workspace/profiles-grant.test.ts | new in P2-02c: the profiles column-grant guard, no old counterpart

@@ -31,6 +31,9 @@ export function resolveAuthSeed(bootstrap: IdentityBootstrap | null): AuthSeed {
   };
 }
 
+/** Reload only on a true transition from no session to a session (another tab signed in). SIGNED_IN with a session already known never reloads: supabase-js emits it on every load with a stored session. */
+export const shouldReloadOnSignIn = (event: string, previousSessionUser: string | null): boolean => event === "SIGNED_IN" && previousSessionUser === null;
+
 /** A later seed never overwrites a resolved one. */
 export const shouldApplySeed = (current: IdentityStatus): boolean => current !== "resolved";
 export const shouldShowAdminNav = (p: { status: IdentityStatus; isPlatformAdmin: boolean }): boolean => p.status === "resolved" && p.isPlatformAdmin === true;

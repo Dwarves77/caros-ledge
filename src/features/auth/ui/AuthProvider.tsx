@@ -7,7 +7,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState, ty
 import { browserClient } from "@/core/db/browser";
 import { failureOf } from "@/core/http/backoff";
 
-import { createIdentityLoader, type AuthSeed, type IdentityLoader, type IdentityStatus } from "./identity-loader";
+import { createIdentityLoader, shouldReloadOnSignIn, type AuthSeed, type IdentityLoader, type IdentityStatus } from "./identity-loader";
 
 interface AuthContextValue {
   user: User | null;
@@ -36,6 +36,8 @@ export function AuthProvider({ children, onSeed }: { children: ReactNode; onSeed
   const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
   const loaderRef = useRef<IdentityLoader | null>(null);
   const knownUserRef = useRef<User | null>(null);
+  /** The last SESSION user any auth event reported (not the identity lookup): INITIAL_SESSION sets it on load, so a load with a stored session never looks like a new sign-in. */
+  const sessionUserRef = useRef<string | null>(null);
 
   const seed = useCallback(
     (applied: AuthSeed) => {
@@ -86,11 +88,12 @@ export function AuthProvider({ children, onSeed }: { children: ReactNode; onSeed
     const {
       data: { subscription },
     } = browserClient().auth.onAuthStateChange((event, session) => {
-      const hadUser = knownUserRef.current;
+      const before = sessionUserRef.current;
+      sessionUserRef.current = session?.user?.id ?? null;
       setUser(session?.user ?? null);
       knownUserRef.current = session?.user ?? null;
       if (event === "SIGNED_OUT") window.location.href = "/login";
-      if (event === "SIGNED_IN" && !hadUser) window.location.reload();
+      if (shouldReloadOnSignIn(event, before)) window.location.reload();
     });
     return () => subscription.unsubscribe();
   }, []);

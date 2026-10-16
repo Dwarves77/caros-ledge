@@ -55,7 +55,7 @@ export async function loadRoster(client: Db, orgId: string): Promise<RosterMembe
       (from, to) =>
         client
           .from("org_memberships")
-          .select("user_id, role, created_at, user:profiles!user_id(full_name, display_name, email, avatar_url)")
+          .select("user_id, role, created_at, user:profiles!user_id(full_name, display_name, avatar_url)")
           .eq("org_id", orgId)
           .order("created_at", { ascending: true })
           .order("id", { ascending: true })
