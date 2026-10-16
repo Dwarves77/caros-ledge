@@ -10,7 +10,7 @@
 // Exit code is 1 when any sign-in, discovery or capture failed; index.json is written in every case.
 
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
