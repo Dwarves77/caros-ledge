@@ -1,5 +1,6 @@
 // Ported from old_repo/src/lib/connections/run-discovery.mjs (lines 22-52)
-// Ported from old_repo/scripts/connections/discover-for-items.mjs (lines 23-66, 133-170)
+// Ported from old_repo/scripts/connections/discover-for-items.mjs (lines 23-66)
+// Ported from old_repo/scripts/connections/discover-for-items.mjs (lines 133-170)
 // The per-mint / per-update discovery entry (CLAUDE.md rule 17, INV-194) and discovery for a set of ids or since a date. ONE path: load the item's own
 // signature, load the corpus signatures, score, write `related` edges through the one writer. The corpus pass shares these modules.
 import type { Db } from "@/core/db";

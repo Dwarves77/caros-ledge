@@ -1,4 +1,5 @@
-// Ported from old_repo/scripts/connections/propose-tags.mjs (lines 28-120, 187-420)
+// Ported from old_repo/scripts/connections/propose-tags.mjs (lines 28-120)
+// Ported from old_repo/scripts/connections/propose-tags.mjs (lines 187-420)
 // Ported from old_repo/scripts/connections/apply-tags.mjs (lines 444-575)
 // The tag pass (ADR-025, no human gate, no two-step queue): for each target item derive tags by rule from its own grounded text, drop the ones an admin
 // removed, decide each (high adopts; medium adopts with vocabulary and evidence re-confirmed), write the merged tag columns, record the decision as a flag

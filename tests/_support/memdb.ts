@@ -80,8 +80,11 @@ export class MemDb {
     }
     return this;
   }
+  /** Read-only relations computed from the tables (the SQL views): a read of the name answers the computed rows. */
+  views: Record<string, () => Row[]> = {};
   rows(table: string): Row[] {
-    return (this.tables[table] ??= []);
+    const view = this.views[table];
+    return view ? view() : (this.tables[table] ??= []);
   }
   /** Every write call to a table (optionally one op). */
   writes(table?: string, op?: Op): MemCall[] {

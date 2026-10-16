@@ -9,7 +9,7 @@ import type { RunResult } from "@/core/types/run-result";
 
 import { familyOf } from "./families";
 import { classify, noopContractErrors, type Mode, type Outcome, type Trigger } from "./outcome";
-import { newRunId, recordRun, type RecorderContext, type RunRow } from "./record";
+import { finishRun, newRunId, recordRun, type RecorderContext, type RunRow } from "./record";
 
 /** The integrity flag a fleet-wide hard stop is raised under (rule 11, docs/runbooks/fleet-budget-control.md). */
 export const KILL_SWITCH_REF = "fleet-budget-halt";
@@ -97,7 +97,7 @@ async function readUpstream(sb: Db, name: string, rootRunId: string, id: string)
   const contract = noopContractErrors({ outcome: up.outcome, mode: up.mode, outputs }, upFam.writes);
   if (contract.length) return { ok: false, outcome: "refused", reason: `upstream ${up.family} ${up.id} breaks the no-op contract (${contract.join("; ")}): the chain stops here` };
   // A failed stage (or one that was itself skipped for it) stops the chain. A refused or no-op stage hands nothing over and the next stage runs on its own selection: a producer held by its gate must not stop the turn, and a mint refused by THE GATE must not stop the connect that closes the backlog.
-  if (up.outcome === "failed" || (up.outcome === "noop" && outputs.skipped === true)) return { ok: false, outcome: "noop", reason: `upstream ${up.family} did not run: ${up.outcome}${up.reason ? ` (${up.reason})` : ""}` };
+  if (up.outcome === "failed" || up.outcome === "unknown" || (up.outcome === "noop" && outputs.skipped === true)) return { ok: false, outcome: "noop", reason: `upstream ${up.family} did not run: ${up.outcome}${up.reason ? ` (${up.reason})` : ""}` };
   return { ok: true, row: { id: up.id, family: up.family, outcome: up.outcome, mode: up.mode, ids: (outputs.ids ?? {}) as Record<string, string[]>, counts: (outputs.counts ?? outputs.planned ?? {}) as Record<string, number> } };
 }
 
@@ -116,10 +116,15 @@ export async function runFamily(name: string, req: RunRequest, h: HarnessDeps): 
   const rootRunId = req.rootRunId ?? id;
   const startedAt = h.now().toISOString();
   const code = { code_sha: h.env.GITHUB_SHA ?? null, github_run_id: h.env.GITHUB_RUN_ID ?? null };
+  let started = false;
   const finish = async (outcome: Outcome, mode: Mode | null, forcedDry: boolean, extra: Partial<RunRow>, result: RunResult | null): Promise<FamilyRun> => {
     const row: RunRow = { id, family: name, root_run_id: rootRunId, upstream_run_id: req.upstreamRunId ?? null, trigger: req.trigger, mode, forced_dry: forcedDry, outcome, reason: null, inputs: req.input ?? {}, outputs: {}, error: null, ...code, started_at: startedAt, finished_at: h.now().toISOString(), ...extra };
-    const rec = await recordRun(sb, row);
     h.setContext?.(null);
+    if (started) {
+      const done = await finishRun(sb, row);
+      return { exit: done.error ? 1 : 0, row: done.error ? null : done.row, result, error: done.error };
+    }
+    const rec = await recordRun(sb, row);
     return { exit: rec.error ? 1 : 0, row: rec.error ? null : row, result, error: rec.error };
   };
 
@@ -134,6 +139,13 @@ export async function runFamily(name: string, req: RunRequest, h: HarnessDeps): 
   }
   const dry = resolved.mode === "dry";
   h.setContext?.({ rootRunId, upstreamRunId: req.upstreamRunId ?? null, mode: resolved.mode, trigger: req.trigger, forcedDry: resolved.forcedDry, codeSha: code.code_sha, githubRunId: code.github_run_id });
+  // The row exists before the function runs (outcome `unknown`): anything the run stores that points at it (a graph snapshot) has its parent, a crash leaves the evidence that the firing began, and a run that cannot be recorded does not run.
+  const begun = await recordRun(sb, { id, family: name, root_run_id: rootRunId, upstream_run_id: req.upstreamRunId ?? null, trigger: req.trigger, mode: resolved.mode, forced_dry: resolved.forcedDry, outcome: "unknown", reason: "in progress", inputs: req.input ?? {}, outputs: {}, error: null, ...code, started_at: startedAt, finished_at: startedAt });
+  if (begun.error) {
+    h.setContext?.(null);
+    return { exit: 1, row: null, result: null, error: begun.error };
+  }
+  started = true;
   let result: RunResult;
   try {
     result = await fn({ mode: resolved.mode, dry, input: req.input ?? {}, runId: id, rootRunId, upstream });

@@ -2,7 +2,7 @@ export { FAMILIES, familyOf, stageFamily, validateFamilies } from "./families";
 export type { Family } from "./families";
 export { classify, MODES, noopContractErrors, outcomeOf, OUTCOMES, TRIGGERS, writeCount } from "./outcome";
 export type { Mode, Outcome, Trigger } from "./outcome";
-export { makeRecorder, newRunId, recordRun } from "./record";
+export { finishRun, makeRecorder, newRunId, recordRun } from "./record";
 export type { RecorderContext, RunRow } from "./record";
 export { halted, KILL_SWITCH_REF, resolveMode, runChain, runFamily } from "./run";
 export type { FamilyCall, FamilyFn, FamilyRun, HarnessDeps, Resolved, RunRequest, Upstream } from "./run";

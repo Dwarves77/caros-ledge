@@ -4,7 +4,7 @@ import { serviceClient } from "@/core/db/clients";
 import { ok, route } from "@/core/http/errors";
 import { isRefusal, requireUser } from "@/core/http/guard";
 
-/** GET: my pending, unexpired invitations by account email. Each carries its raw token: the invitee needs it to accept. */
+/** GET: my pending, unexpired invitations by account email. Each carries token_last4 only: the raw token is not stored (migration 0018), the invitee accepts through the emailed link. */
 export const GET = route("/api/invitations/mine", async (request) => {
   const user = await requireUser(request);
   if (isRefusal(user)) return user;

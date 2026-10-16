@@ -8,7 +8,7 @@ import { loadProducerRegistry, runProducer, runRegistered, selectRuns } from "@/
 import type { RunResult } from "@/core/types/run-result";
 import { runResult, worst } from "@/core/types/run-result";
 import { buildEntityItemsReader, buildSignpostStepDeps, runQuestionsOnChange, runSignpostStep } from "@/features/learning";
-import { fetchLiveCandidates, researchAssessment } from "@/features/research";
+import { fetchLiveCandidates } from "@/features/research";
 
 import type { BuiltDeps } from "../wiring";
 
@@ -33,7 +33,8 @@ const pick = (r: RunResult | null, prefix: string): Record<string, number> => Ob
 
 /** One result from the five steps. A producer the gates refused is a note, not a failed stage: the drain and its consumers still ran. Pure. */
 export function shapePropagate(parts: { producers: RunResult | null; drain: RunResult; questions: RunResult; signposts: RunResult; assess: RunResult | null }, events: readonly Processed[], itemIds: readonly string[]): RunResult {
-  const soft = (r: RunResult | null) => (r && r.outcome === "failed" && (r.counts.refused ?? 0) > 0 ? { ...r, outcome: "partial" as const } : r);
+  const held = (r: RunResult) => (r.counts.refused ?? 0) > 0 || r.notes.some((n) => n.includes("REFUSING"));
+  const soft = (r: RunResult | null) => (r && r.outcome === "failed" && held(r) ? { ...r, outcome: "partial" as const } : r);
   const producers = soft(parts.producers);
   const assess = soft(parts.assess);
   const counts: Record<string, number> = {
@@ -70,7 +71,7 @@ export async function runPropagate(call: FamilyCall, d: BuiltDeps): Promise<RunR
   let assess: RunResult | null = null;
   if (itemIds.length) {
     const candidates = await fetchLiveCandidates(sb, undefined, { itemIds });
-    if (candidates.length) assess = await runProducer(d.producers, { spec: researchAssessment, dry: call.dry, text: JSON.stringify(candidates) });
+    if (candidates.length) assess = await runProducer(d.producers, { spec: d.assessment, dry: call.dry, text: JSON.stringify(candidates) });
   }
   return shapePropagate({ producers, drain, questions, signposts, assess }, events, itemIds);
 }

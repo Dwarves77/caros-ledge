@@ -1800,6 +1800,8 @@ BEGIN
     RAISE EXCEPTION '0015-data-screen-verdicts: % present + % absent <> % entries', n_present, n_absent, n_file;
   END IF;
   RAISE NOTICE '0015-data-screen-verdicts OK (% of % entries present, % skipped as absent)', n_present, n_file, n_absent;
+  -- The provenance mix at load (IMP-045): entries per reviewer, so the executor sees who ruled what.
+  RAISE NOTICE '0015-data-screen-verdicts reviewers: %', (SELECT string_agg(coalesce(reviewer, '(none)') || '=' || n, ', ' ORDER BY coalesce(reviewer, '(none)')) FROM (SELECT reviewer, count(*) AS n FROM _sv_in GROUP BY reviewer) r);
 END $$;
 
 COMMIT;

@@ -28,7 +28,7 @@ export default defineConfig([
     rules: { "no-console": ["error", { allow: ["error", "warn"] }] },
   },
   {
-    files: ["scripts/**/*.mjs"],
+    files: ["scripts/**/*.mjs", "tests/parity/*.mjs", "tests/ux/*.mjs"],
     rules: { "no-console": "off" },
   },
 ]);

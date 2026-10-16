@@ -40,13 +40,6 @@ export function groupApplicationsByItem(rows: ItemTagLinkRow[], nameById: Readon
   return out;
 }
 
-/** The tag count per tag id from join rows. */
-export function buildTagCountsMap(rows: { tag_id: string }[]): Map<string, number> {
-  const counts = new Map<string, number>();
-  for (const row of rows) counts.set(row.tag_id, (counts.get(row.tag_id) ?? 0) + 1);
-  return counts;
-}
-
 /** Trim and collapse whitespace; null when empty or over the 60-character CHECK, so the route answers 400 without a round trip. */
 export function normalizeTagName(raw: unknown): string | null {
   if (typeof raw !== "string") return null;

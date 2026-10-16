@@ -2,6 +2,8 @@
 // Ported from old_repo/src/app/api/orgs/[org_id]/invitations/[id]/route.ts (lines 11-61)
 // Ported from old_repo/src/app/api/invitations/[token]/route.ts (lines 11-50)
 // Ported from old_repo/src/app/api/invitations/mine/route.ts (lines 7-63)
+import { randomBytes } from "node:crypto";
+
 import { z } from "zod";
 
 import type { Db } from "@/core/db/clients";
@@ -13,21 +15,23 @@ export const inviteToken = z.string().regex(/^[0-9a-f]{64}$/i, "token must be 64
 export const inviteRole = z.enum(["admin", "member", "viewer"]);
 export const inviteBody = z.object({ email: emailSchema, role: inviteRole.default("member") });
 
-const FIELDS = "id, invited_email, proposed_role, status, created_at, expires_at, accepted_at, declined_at, revoked_at, invited_by_user_id";
+const FIELDS = "id, invited_email, proposed_role, status, created_at, expires_at, accepted_at, declined_at, revoked_at, invited_by_user_id, token_last4";
 
 /**
- * Issue an invitation as the caller (RLS enforces who may). The token is returned to the caller and is never logged.
- * The email result is honest: not configured is `configured: false`, and the caller shows the copy-link flow.
+ * Issue an invitation as the caller (RLS enforces who may). The token is generated here and exists only in this request: it is inserted as
+ * token_input, which the database hashes and clears (migration 0018), so the stored row holds sha256(token) and the last four characters
+ * and nothing else. The raw token is returned once, inside invite_url, and is never logged. The email result is honest: not configured is
+ * `configured: false`, and the caller shows the copy-link flow.
  */
 export async function createInvitation(client: Db, input: { orgId: string; userId: string; email: string; role: string; baseUrl: string }): Promise<{ invitation: Record<string, unknown>; emailDelivery: EmailResult }> {
-  const { data, error } = await client.from("org_invitations").insert({ org_id: input.orgId, invited_email: input.email, invited_by_user_id: input.userId, proposed_role: input.role }).select("id, token, invited_email, proposed_role, expires_at, status, created_at").maybeSingle();
+  const token = randomBytes(32).toString("hex");
+  const { data, error } = await client.from("org_invitations").insert({ org_id: input.orgId, invited_email: input.email, invited_by_user_id: input.userId, proposed_role: input.role, token_input: token }).select("id, token_last4, invited_email, proposed_role, expires_at, status, created_at").maybeSingle();
   if (error?.code === "23505") throw new HttpError(409, "A pending invitation already exists for this email + org");
   if (error) throw dbError(error, { forbidden: "Only org admins can invite members" });
   if (!data) throw new HttpError(403, "Insert returned no row (RLS may have rejected the write)");
-  const { token, ...rest } = data;
   const inviteUrl = `${input.baseUrl}/invitations/${token}`;
   const emailDelivery = await sendInvitationEmail({ to: input.email, inviteUrl, proposedRole: input.role });
-  return { invitation: { ...rest, invite_url: inviteUrl }, emailDelivery };
+  return { invitation: { ...data, invite_url: inviteUrl }, emailDelivery };
 }
 
 /** An org's invitations, newest first (bounded at 200); a pending one past its expiry reads as expired. */
@@ -66,16 +70,16 @@ export async function declineInvitation(client: Db, token: string): Promise<void
   if (error) throw dbError(error, { forbidden: "Not authorized to decline this invitation", notFound: "Invitation not found" });
 }
 
-/** The caller's own pending, unexpired invitations by account email (service client: the invitee has no org yet). A failed user lookup is an error, never an empty list. */
+/** The caller's own pending, unexpired invitations by account email (service client: the invitee has no org yet). The raw token is not stored, so the list carries token_last4 only. A failed user lookup is an error, never an empty list. */
 export async function pendingInvitationsFor(service: Db, userId: string, now = Date.now()): Promise<Record<string, unknown>[]> {
   const { data: found, error: userError } = await service.auth.admin.getUserById(userId);
   if (userError) throw new HttpError(500, userError.message);
   const address = found.user?.email?.toLowerCase();
   if (!address) return [];
-  const { data, error } = await service.from("org_invitations").select("id, org_id, invited_email, proposed_role, status, created_at, expires_at, organizations(name, slug), token").eq("invited_email", address).eq("status", "pending").order("created_at", { ascending: false }).limit(50);
+  const { data, error } = await service.from("org_invitations").select("id, org_id, invited_email, proposed_role, status, created_at, expires_at, organizations(name, slug), token_last4").eq("invited_email", address).eq("status", "pending").order("created_at", { ascending: false }).limit(50);
   if (error) throw new HttpError(500, error.message);
   return (data ?? []).filter((inv) => new Date(inv.expires_at).getTime() > now).map((inv) => {
     const org = inv.organizations as { name?: string; slug?: string } | null;
-    return { id: inv.id, org_id: inv.org_id, org_name: org?.name ?? null, org_slug: org?.slug ?? null, proposed_role: inv.proposed_role, status: inv.status, created_at: inv.created_at, expires_at: inv.expires_at, token: inv.token };
+    return { id: inv.id, org_id: inv.org_id, org_name: org?.name ?? null, org_slug: org?.slug ?? null, proposed_role: inv.proposed_role, status: inv.status, created_at: inv.created_at, expires_at: inv.expires_at, token_last4: inv.token_last4 };
   });
 }

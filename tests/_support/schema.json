@@ -1004,6 +1004,28 @@
    },
    "fks": []
   },
+  "edge_snapshots": {
+   "columns": [
+    "id",
+    "run_id",
+    "table_name",
+    "rows",
+    "taken_at"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "taken_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "run_id",
+     "table": "harness_runs",
+     "ref": "id"
+    }
+   ]
+  },
   "emission_factor_candidates": {
    "columns": [
     "factor_id",
@@ -2439,6 +2461,35 @@
    },
    "fks": []
   },
+  "notification_outbox": {
+   "columns": [
+    "id",
+    "user_id",
+    "kind",
+    "payload",
+    "attempts",
+    "last_error",
+    "status",
+    "created_at",
+    "sent_at"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "payload": {},
+    "attempts": 0,
+    "status": "pending",
+    "created_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "user_id",
+     "table": "users",
+     "ref": "id"
+    }
+   ]
+  },
   "notification_preferences": {
    "columns": [
     "user_id",
@@ -2663,7 +2714,6 @@
     "invited_email",
     "invited_by_user_id",
     "proposed_role",
-    "token",
     "status",
     "created_at",
     "expires_at",
@@ -2671,7 +2721,10 @@
     "accepted_by_user_id",
     "declined_at",
     "revoked_at",
-    "revoked_by_user_id"
+    "revoked_by_user_id",
+    "token_hash",
+    "token_last4",
+    "token_input"
    ],
    "uuid": [
     "id"
@@ -3165,6 +3218,18 @@
      "ref": "id"
     }
    ]
+  },
+  "rate_limit_windows": {
+   "columns": [
+    "key",
+    "window_start",
+    "count"
+   ],
+   "uuid": [],
+   "defaults": {
+    "count": 0
+   },
+   "fks": []
   },
   "raw_fetches": {
    "columns": [
@@ -4306,6 +4371,16 @@
      "ref": "id"
     }
    ]
+  },
+  "workspace_tag_counts": {
+   "columns": [
+    "org_id",
+    "tag_id",
+    "item_count"
+   ],
+   "uuid": [],
+   "defaults": {},
+   "fks": []
   },
   "workspace_tags": {
    "columns": [

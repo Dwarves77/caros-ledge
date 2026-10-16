@@ -78,3 +78,17 @@ test("shared-entity edges: two items naming one regulation identifier, no edge b
   assert.equal(out[0]?.basis?.[0]?.weight, 0.85);
   assert.equal(sharedEntityEdges(items, [{ source_item_id: "b", target_item_id: "a" }], regulationEntityTokens).length, 0, "an existing edge in either direction suppresses it");
 });
+
+test("IMP-047: the pass's run id reaches the default snapshot sink: the prior edge rows are in edge_snapshots under that run, taken before the refresh", async () => {
+  const RUN = "99999999-9999-4999-8999-999999999999";
+  const m = world({ item_cross_references: [{ id: "x1", source_item_id: "a", target_item_id: "b", relationship: "related", origin: "provenance_discovery", score: 0.3, basis: [] }] });
+  const r = await corpusPass({ sb: m.db, now: () => NOW, runId: RUN }, { dry: false });
+  assert.equal(r.outcome, "ok", r.notes.join("; "));
+  const snaps = m.tables.edge_snapshots as Row[];
+  assert.equal(snaps.length, 1);
+  assert.deepEqual([snaps[0]?.run_id, snaps[0]?.table_name, (snaps[0]?.rows as Row[])[0]?.id], [RUN, "item_cross_references", "x1"]);
+  assert.deepEqual((snaps[0]?.rows as Row[])[0]?.basis, [], "the snapshot is the state before the pass");
+  const dry = world({ item_cross_references: [{ id: "x1", source_item_id: "a", target_item_id: "b", relationship: "related", origin: "provenance_discovery", score: 0.3, basis: [] }] });
+  await corpusPass({ sb: dry.db, now: () => NOW, runId: RUN }, { dry: true });
+  assert.equal(dry.tables.edge_snapshots, undefined, "a dry run snapshots nothing");
+});

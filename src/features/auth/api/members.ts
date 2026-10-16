@@ -103,8 +103,11 @@ export const PUT = route<Ctx>("/api/orgs/[org_id]/members", async (request, { pa
   const ctx = await load(request, params, "manager");
   if (isRefusal(ctx)) return ctx;
   const body = await parseJson(request, addBody);
-  const { data: profile, error } = await ctx.service.from("profiles").select("id").ilike("email", body.email.replace(/[\\%_]/g, "\\$&")).maybeSingle();
+  const { data: found, error } = await ctx.service.rpc("profiles_by_email", { p_email: body.email });
   if (error) throw new LookupError("profiles by email", error);
+  const accounts = (found ?? []) as { id: string }[];
+  if (accounts.length > 1) throw new LookupError("profiles by email", new Error("more than one account has this address"));
+  const profile = accounts[0];
   if (!profile) throw new HttpError(404, `No account exists for ${body.email}. Provision the user first (Admin, Users) or send an invitation.`);
   if (await isBanned(ctx.service, ctx.orgId, profile.id)) throw new HttpError(403, "This account is banned from this workspace. Clear the ban before re-adding.");
   const existing = await ctx.service.from("org_memberships").select("id").eq("org_id", ctx.orgId).eq("user_id", profile.id).maybeSingle();

@@ -1,0 +1,21 @@
+{
+  "appName": "Caro's Ledge",
+  "tagline": "Freight Sustainability Intelligence",
+  "sections": [
+    { "label": "Brief", "items": [{ "href": "/", "label": "Dashboard" }, { "href": "/watchlist", "label": "Watchlist", "countKey": "watchlist" }] },
+    {
+      "label": "Intelligence",
+      "items": [
+        { "href": "/regulations", "label": "Regulations", "countKey": "regulations" },
+        { "href": "/market", "label": "Market Intel", "countKey": "market" },
+        { "href": "/research", "label": "Research", "countKey": "research" },
+        { "href": "/operations", "label": "Operations", "countKey": "operations" },
+        { "href": "/map", "label": "Map" }
+      ]
+    },
+    { "label": "Network", "items": [{ "href": "/community", "label": "Community" }] }
+  ],
+  "extraTitles": [{ "href": "/profile", "label": "Account" }, { "href": "/admin", "label": "Admin" }],
+  "chromeless": ["/login", "/auth", "/signup", "/onboarding", "/workspace/new", "/privacy", "/invitations"],
+  "noWorkspaceNoteSuppressed": ["/workspace/new", "/invitations", "/onboarding", "/login", "/auth", "/signup", "/privacy"]
+}

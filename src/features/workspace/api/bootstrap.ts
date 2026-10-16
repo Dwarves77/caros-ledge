@@ -84,7 +84,8 @@ export const GET = route("/api/workspace/bootstrap", async (request) => {
     }),
     phase("nav_counts", async () => {
       if (!deps.navCounts) throw new Error("nav counts are not wired");
-      return deps.navCounts();
+      const membership = await org;
+      return membership ? deps.navCounts({ orgId: membership.orgId, userId: user.userId }) : null;
     }),
   ]);
   // The ask route's own gate, read fresh each request so a flag flip needs no redeploy; exact string comparison, never widened.

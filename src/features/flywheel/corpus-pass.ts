@@ -1,6 +1,7 @@
 // Ported from old_repo/scripts/connections/analyze-corpus.mjs (lines 20-385)
 // Ported from old_repo/src/lib/connections/signal-candidates.mjs (lines 35-116)
-// Ported from old_repo/src/lib/connections/signal-confidence.mjs (lines 115-142, 211-274)
+// Ported from old_repo/src/lib/connections/signal-confidence.mjs (lines 115-142)
+// Ported from old_repo/src/lib/connections/signal-confidence.mjs (lines 211-274)
 // The whole-corpus pass, one function with the guarded service client injected (the old script had a raw client and no main guard). Steps: cross-surface
 // intersections as appended basis entries; shared-entity adoption for pairs with no edge (the old decisive regulation-identifier signal, now a discovery
 // basis); label-propagation clustering into themes REPLACED WHOLESALE inside one connection_theme_runs row that stores the delta against the prior set
@@ -22,6 +23,8 @@ export interface CorpusDeps {
   sb: Db;
   now: () => Date;
   snapshot?: SnapshotSink;
+  /** The harness run this pass belongs to: the default snapshot sink writes the prior edge rows to edge_snapshots under it. */
+  runId?: string;
 }
 export interface CorpusInput {
   dry: boolean;
@@ -71,18 +74,19 @@ export async function corpusPass(deps: CorpusDeps, input: CorpusInput): Promise<
   const nowIso = deps.now().toISOString();
   const counts: Record<string, number> = {};
   let failed = 0;
+  const snapshotOpts = deps.snapshot ? { snapshot: deps.snapshot } : deps.runId ? { runId: deps.runId } : {};
   const items = await fetchAllRows<CorpusItem>((from, to) => sb.from("intelligence_items").select(ITEM_COLUMNS).eq("provenance_status", "verified").eq("is_archived", false).order("id", { ascending: true }).range(from, to), { cap: SIGNATURE_CAP });
   let edges = await readAllEdges(sb);
   Object.assign(counts, { nodes: items.length, edges_read: edges.length });
 
   const pairs = detectIntersections(items);
-  const inter = await writeIntersectionEdges(sb, pairs, { dry: input.dry, existing: edges, ...(deps.snapshot ? { snapshot: deps.snapshot } : {}) });
+  const inter = await writeIntersectionEdges(sb, pairs, { dry: input.dry, existing: edges, ...snapshotOpts });
   Object.assign(counts, { intersection_pairs: pairs.length, intersection_cross_surface: pairs.filter((p) => p.cross_surface === true).length, intersection_inserted: inter.inserted, intersection_updated: inter.updated, intersection_removed: inter.removed, intersection_deleted: inter.deleted, intersection_unchanged: inter.unchanged, intersection_skipped_manual: inter.skippedManual, intersection_failed_chunks: inter.failedChunks });
   notes.push(...inter.notes);
   if (!input.dry && inter.failedChunks) return { counts, outcome: "failed", notes: [...notes, "refusing to cluster over a half-written graph"], data: { themeDelta: null, themes: 0 } };
 
   const sharedEdges = sharedEntityEdges(items, input.dry ? (inter.projected ?? edges) : edges, regulationEntityTokens);
-  const shared = input.dry ? { written: 0, failedChunks: 0, notes: [] as string[] } : await writeDiscoveredEdges(sb, sharedEdges, deps.snapshot ? { snapshot: deps.snapshot } : {});
+  const shared = input.dry ? { written: 0, failedChunks: 0, notes: [] as string[] } : await writeDiscoveredEdges(sb, sharedEdges, snapshotOpts);
   Object.assign(counts, { shared_entity_edges: sharedEdges.length, shared_entity_written: shared.written, shared_entity_failed_chunks: shared.failedChunks });
   if (shared.failedChunks) failed += shared.failedChunks;
   notes.push(...shared.notes);

@@ -2,6 +2,7 @@
 // Ported from old_repo/scripts/turns/run-population-flywheel.mjs (lines 966-1294)
 // Stage 6, connect: the flywheel over the slice the intake stage minted AND any earlier slice nothing ever connected (read from the ledger). Order: tags first, so discovery and the corpus pass see them;
 // then discovery for the slice, the term pass, the corpus pass. A slice whose ids are gone refuses; the stage never writes a zero outcome over it.
+import { edgeSnapshotSink } from "@/core/flywheel/edges";
 import type { FamilyCall } from "@/core/harness";
 import type { RunResult } from "@/core/types/run-result";
 import { runResult, worst } from "@/core/types/run-result";
@@ -42,9 +43,11 @@ export async function runConnect(call: FamilyCall, d: BuiltDeps): Promise<RunRes
   if (state.unrecoverable.length) return runResult("failed", { refused: 1 }, [`refusing: ${state.unrecoverable.length} apply run(s) minted items but carry no recoverable ids (${state.unrecoverable.map((u) => `${u.family} ${u.runId} minted ${u.minted}`).join("; ")}); a slice without ids is resolved by hand, never connected with a zero outcome`]);
   const { ids, corpus } = planConnect(call.upstream?.ids.minted_item_ids ?? [], state.unconnected, call.input);
   const deps = { sb: d.sb, now: d.now };
+  // The prior state of every edge the passes overwrite is stored under THIS run before the overwrite (IMP-047); the run's row exists before the stage starts.
+  const snap = { ...deps, snapshot: edgeSnapshotSink(d.sb, call.runId) };
   const tag = ids.length ? await tagPass(deps, { ids, dry: call.dry, discover: false }) : null;
-  const discovery = ids.length ? await discoverForItems(deps, { ids, dry: call.dry }) : null;
+  const discovery = ids.length ? await discoverForItems(snap, { ids, dry: call.dry }) : null;
   const term = corpus ? await termPass(deps, { dry: call.dry }) : null;
-  const pass = corpus ? await corpusPass(deps, { dry: call.dry }) : null;
+  const pass = corpus ? await corpusPass(snap, { dry: call.dry }) : null;
   return shapeConnect(ids, { tag, discovery, term, corpus: pass });
 }

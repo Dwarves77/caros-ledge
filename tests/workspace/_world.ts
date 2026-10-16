@@ -32,7 +32,7 @@ export function seed(): MemDb {
     ...Object.entries(ROLE).map(([persona, r], i) => ({ id: `cccccccc-0000-4000-8000-${String(i + 1).padStart(12, "0")}`, org_id: r.org, user_id: USER[persona as keyof typeof USER], role: r.role, created_at: `2026-01-0${i + 1}T00:00:00Z` })),
     { id: "cccccccc-0000-4000-8000-000000000099", org_id: ORG_A, user_id: TEAMMATE, role: "member", created_at: "2026-02-01T00:00:00Z" },
   ];
-  return new MemDb({
+  const db = new MemDb({
     profiles,
     org_memberships: memberships,
     organizations: [{ id: ORG_A, name: "Org A", slug: "org-a" }, { id: ORG_B, name: "Org B", slug: "org-b" }],
@@ -51,6 +51,39 @@ export function seed(): MemDb {
     ],
     org_watchlist: [],
   });
+  installSqlObjects(db);
+  return db;
+}
+
+/** The migration-0023 and 0024 objects, emulated over the rows exactly as the SQL defines them (the SQL itself is proven by the migrations' self-checks). */
+function installSqlObjects(db: MemDb): void {
+  const JSONB = ["profile", "alert_config", "home_sections", "default_filters", "jurisdiction_weights"];
+  const isObj = (v: unknown) => !!v && typeof v === "object" && !Array.isArray(v);
+  // patch_workspace_settings: one atomic top-level merge; null when no row. Logged as one update so a test can count writes.
+  db.rpcs.patch_workspace_settings = (args) => {
+    const { p_org_id, p_column, p_patch } = args as { p_org_id: string; p_column: string; p_patch: Record<string, unknown> };
+    if (!JSONB.includes(p_column) || !isObj(p_patch)) throw new Error("patch_workspace_settings: refused");
+    db.log.push({ table: "workspace_settings", op: "update", payload: { [p_column]: p_patch }, filters: [["eq", "org_id", p_org_id]] });
+    const failure = db.takeFailure("workspace_settings", "update", [["eq", "org_id", p_org_id]]);
+    if (failure) throw new Error(failure.message);
+    const row = db.rows("workspace_settings").find((r) => r.org_id === p_org_id);
+    if (!row) return null;
+    row[p_column] = { ...(isObj(row[p_column]) ? (row[p_column] as object) : {}), ...p_patch };
+    row.updated_at = db.tick();
+    return row[p_column];
+  };
+  // workspace_tag_counts: every tag with the number of items it is applied to (0 for none).
+  db.views.workspace_tag_counts = () =>
+    (db.tables.workspace_tags ?? []).map((t) => ({ org_id: t.org_id, tag_id: t.id, item_count: (db.tables.item_workspace_tags ?? []).filter((l) => l.tag_id === t.id && l.org_id === t.org_id).length }));
+  // org_watchers: members of the org who watch any of the items, and whether the team watchlist holds one.
+  db.rpcs.org_watchers = (args) => {
+    const { p_org_id, p_item_ids } = args as { p_org_id: string; p_item_ids: string[] };
+    const failure = db.takeFailure("rpc:org_watchers", "rpc", []);
+    if (failure) throw new Error(failure.message);
+    const members = new Set((db.tables.org_memberships ?? []).filter((m) => m.org_id === p_org_id).map((m) => m.user_id));
+    const watchers = [...new Set((db.tables.user_watchlist ?? []).filter((w) => members.has(w.user_id) && p_item_ids.includes(String(w.item_id))).map((w) => String(w.user_id)))].sort();
+    return [{ watcher_ids: watchers, on_team_watchlist: (db.tables.org_watchlist ?? []).some((o) => o.org_id === p_org_id && p_item_ids.includes(String(o.item_id))) }];
+  };
 }
 
 const personaOf = (request?: Request): Persona => {

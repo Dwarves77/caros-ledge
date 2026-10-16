@@ -28,6 +28,10 @@ export class MemDb extends Shared {
   get log(): Logged[] {
     return this.calls;
   }
+  /** The next injected failure for a call; the workspace world's emulated rpcs ask by (table, op, filters). */
+  override takeFailure(first: Parameters<Shared["takeFailure"]>[0] | string, op?: string, filters: [string, string, unknown][] = []): Err {
+    return super.takeFailure(typeof first === "string" ? { table: first, op: op as never, filters } : first);
+  }
   /** Inject a failure: `times` matching calls fail (omitted: every one); `when` sees the call's filters. */
   override fail(table: string, op: Parameters<Shared["fail"]>[1], error: DbError | string = { message: "boom" }, opts: { times?: number; when?: (filters: [string, string, unknown][]) => boolean } = {}): this {
     const e = typeof error === "string" ? { message: error } : error;
@@ -47,7 +51,12 @@ export function memClient(db: MemDb, who: Who | null = null) {
     async rpc(name: string, args?: unknown) {
       if (name === "is_platform_admin") return { data: who?.admin === true, error: null };
       const fn = db.rpcs[name] as unknown as ((a: unknown) => unknown) | undefined;
-      return fn ? { data: fn(args), error: null } : { data: null, error: { message: `no rpc ${name}` } };
+      if (!fn) return { data: null, error: { message: `no rpc ${name}` } };
+      try {
+        return { data: fn(args), error: null };
+      } catch (e) {
+        return { data: null, error: { message: e instanceof Error ? e.message : String(e) } };
+      }
     },
     auth: {
       async getClaims() {

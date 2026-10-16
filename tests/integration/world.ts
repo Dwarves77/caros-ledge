@@ -23,6 +23,15 @@ export const TITLE = "Regulation (EU) 2023/9999 establishing greenhouse gas emis
 /** The regulation page as the publisher serves it: the instrument text plus the notices around it (the capture policy refuses a body under 1,000 characters). */
 export const DOC_TEXT = `${OFFICIAL_TEXT}
 ${"Notice. This consolidated text is provided for information. Only the Union legislation published in the Official Journal of the European Union is deemed authentic. ".repeat(4)}`;
+/** A second regulation, reached only through the portal ledger. */
+export const NEW_TEXT = `${[
+  "Regulation (EU) 2025/1 of the European Parliament and of the Council on freight emissions monitoring.",
+  "Article 1. This Regulation applies to operators of heavy goods vehicles registered in a Member State.",
+  "Article 2. Operators shall submit a verified annual emissions report to the competent authority before 31 March of each year.",
+  "Article 3. This Regulation shall enter into force on 1 July 2026 and shall be binding in its entirety.",
+].join("\n")}
+${"Notice. This consolidated text is provided for information. Only the Union legislation published in the Official Journal of the European Union is deemed authentic. ".repeat(4)}`;
+export const NEW_VERDICT = { entity_verdict: "specific_document", item_type: "regulation", domain: 1, surface_tags: ["regulations"], relevance: 80, severity: "COST ALERT", priority: "HIGH", urgency_tier: "elevated", topic_tags: ["emissions"], jurisdictions: ["EU"], title_candidate: "Regulation (EU) 2025/1 on freight emissions monitoring", summary: "Annual emissions reporting for heavy goods vehicle operators.", rationale: "A specific regulation." };
 export { OFFICIAL_TEXT };
 
 const ECB_XML = `<?xml version="1.0" encoding="UTF-8"?><gesmes:Envelope xmlns:gesmes="http://www.gesmes.org/xml/2002-08-01" xmlns="http://www.ecb.int/vocabulary/2002-08-01/eurofxref"><gesmes:subject>Reference rates</gesmes:subject><gesmes:Sender><gesmes:name>European Central Bank</gesmes:name></gesmes:Sender><Cube><Cube time="2026-10-15"><Cube currency="USD" rate="1.1000"/></Cube></Cube></gesmes:Envelope>`;
@@ -39,6 +48,7 @@ export function transport(over: Record<string, () => Response> = {}): { fetchImp
     [FEED_URL]: () => new Response(FEED, { status: 200, headers: { "content-type": "application/rss+xml" } }),
     [PORTAL_URL]: () => new Response(HOMEPAGE, { status: 200, headers: { "content-type": "text/html" } }),
     [DOC_URL]: () => new Response(DOC_TEXT, { status: 200, headers: { "content-type": "text/plain; charset=utf-8" } }),
+    [NEW_URL]: () => new Response(NEW_TEXT, { status: 200, headers: { "content-type": "text/plain; charset=utf-8" } }),
     "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml": () => new Response(ECB_XML, { status: 200, headers: { "content-type": "application/xml" } }),
     ...over,
   };

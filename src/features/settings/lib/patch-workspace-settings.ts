@@ -18,15 +18,15 @@ export interface PatchResult {
   value: unknown;
 }
 
-const MAX_ATTEMPTS = 5;
 const isJsonb = (c: string): c is JsonbColumn => (JSONB_COLUMNS as readonly string[]).includes(c);
 const isObject = (v: unknown): v is Record<string, unknown> => !!v && typeof v === "object" && !Array.isArray(v);
+const NO_ROW = "This workspace has no settings row, or you may not change it.";
 
 /**
- * The ONE writer of workspace_settings (INV-168). For a jsonb column it reads the row, merges the caller's keys over the stored ones, and
- * writes the result back only if the row is still the version it read (compare-and-swap on updated_at, which a trigger bumps on every
- * update): two writers of different keys therefore lose nothing, even when they run at the same moment, because the loser re-reads and
- * merges again. For `sector_profile` and `default_export_format` the patch is the new value. A failed read or write is returned, never thrown.
+ * The ONE writer of workspace_settings (INV-168). A jsonb column is patched by the database in one statement (rpc patch_workspace_settings,
+ * migration 0023): it merges the caller's keys over the stored ones under the caller's own RLS, so two writers of different keys lose nothing
+ * even at the same moment and no read-merge-write loop exists. `sector_profile` and `default_export_format` have a single writer, so the patch is
+ * the new value. The allowlist of columns stays here. A failed write is returned, never thrown, and a write that changed nothing is an error.
  */
 export async function patchWorkspaceSettings(client: Db, orgId: string, column: SettingsColumn, patch: unknown): Promise<PatchResult> {
   const fail = (error: string): PatchResult => ({ error, value: null });
@@ -34,17 +34,12 @@ export async function patchWorkspaceSettings(client: Db, orgId: string, column: 
   const jsonb = isJsonb(column);
   if (!jsonb && !(REPLACE_COLUMNS as readonly string[]).includes(column)) return fail(`${String(column)} is not a workspace setting.`);
   if (jsonb && !isObject(patch)) return fail(`${column} takes an object of keys to change.`);
-  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
-    const { data, error } = await client.from("workspace_settings").select(`${column}, updated_at`).eq("org_id", orgId).maybeSingle();
+  if (jsonb) {
+    const { data, error } = await client.rpc("patch_workspace_settings", { p_org_id: orgId, p_column: column, p_patch: patch });
     if (error) return fail(error.message);
-    const row = data as Record<string, unknown> | null;
-    if (!row) return fail("This workspace has no settings row yet.");
-    const current = row[column];
-    const next = jsonb ? { ...(isObject(current) ? current : {}), ...(patch as Record<string, unknown>) } : patch;
-    const { data: written, error: writeError } = await client.from("workspace_settings").update({ [column]: next }).eq("org_id", orgId).eq("updated_at", row.updated_at).select("org_id");
-    if (writeError) return fail(writeError.message);
-    if ((written ?? []).length > 0) return { error: null, value: next };
-    // Another writer changed the row between our read and our write: read it again and merge again.
+    return data === null || data === undefined ? fail(NO_ROW) : { error: null, value: data };
   }
-  return fail("The settings changed while saving. Try again.");
+  const { data, error } = await client.from("workspace_settings").update({ [column]: patch }).eq("org_id", orgId).select("org_id");
+  if (error) return fail(error.message);
+  return (data ?? []).length > 0 ? { error: null, value: patch } : fail(NO_ROW);
 }

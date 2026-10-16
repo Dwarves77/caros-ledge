@@ -78,7 +78,7 @@ function snapshotStore(d: BuiltDeps, sourceId: string) {
 }
 
 /** A changed lastmod on a URL we hold an item for is a change signal: one monitoring_queue row for the source, which the change stage's reconcile consumes. */
-async function recordSignal(d: BuiltDeps, sourceId: string, changed: Array<{ loc: string }>): Promise<number> {
+export async function recordSignal(d: BuiltDeps, sourceId: string, changed: Array<{ loc: string }>): Promise<number> {
   let held = 0;
   for (const c of changed.slice(0, 50)) {
     const r = await d.sb.from("intelligence_items").select("id").eq("source_url", c.loc).eq("is_archived", false).limit(1);

@@ -20,7 +20,7 @@ const INVITE_A = "55555555-5555-4555-8555-555555555555";
 const INVITE_B = "66666666-6666-4666-8666-666666666666";
 
 /** The service-role side of the world: a roster, an org, two memberships in two orgs, one invitation per org. */
-function world(over?: (c: Call) => Reply | undefined) {
+function world(over?: (c: Call) => Reply | undefined, rpcOver?: (name: string, args: unknown) => Reply | undefined) {
   return fakeDb(
     (c) => {
       const custom = over?.(c);
@@ -41,7 +41,7 @@ function world(over?: (c: Call) => Reply | undefined) {
       if (c.table === "organizations" && c.op === "update") return { data: { id: ORG_A, name: "Renamed" } };
       return undefined;
     },
-    { users: { "u-member": { email: "member@example.test" } } },
+    { users: { "u-member": { email: "member@example.test" } }, rpc: (name, args) => rpcOver?.(name, args) ?? (name === "profiles_by_email" ? { data: (args as { p_email: string }).p_email.startsWith("unknown") ? [] : [{ id: "t2" }] } : undefined) },
   );
 }
 
@@ -77,7 +77,7 @@ test("persona matrix: org GET and PATCH", async () => {
 });
 
 test("persona matrix: invitations (RLS decides who may issue), revoke, token routes, mine, orgs, identity", async () => {
-  const invite = { id: INVITE_A, token: TOKEN, invited_email: "x@y.test", proposed_role: "member", expires_at: "2099-01-01", status: "pending", created_at: "2026-01-01" };
+  const invite = { id: INVITE_A, token_last4: "aaaa", invited_email: "x@y.test", proposed_role: "member", expires_at: "2099-01-01", status: "pending", created_at: "2026-01-01" };
   // invitations are written and read on the caller's own RLS client; the service client only serves "mine"
   script(
     world(),
@@ -179,7 +179,13 @@ test("INV-136 role transitions and INV-137: a body names a role and nothing else
   assert.equal(insert.length, 0);
   await membersPut(as("owner", "/x", { method: "PUT", body: json({ email: "a_b@example.test", role: "viewer", is_platform_admin: true }) }), ctx({ org_id: ORG_A }));
   assert.deepEqual(wrote(service.calls, "org_memberships", "insert")[0]?.payload, { org_id: ORG_A, user_id: "t2", role: "viewer" });
-  assert.equal(filterValue(service.calls.find((c) => c.table === "profiles" && c.filters.some(([k]) => k === "ilike:email"))!, "ilike:email"), "a\\_b@example.test", "LIKE wildcards in an email are escaped");
+  assert.deepEqual(service.rpcs.find((r) => r.name === "profiles_by_email")?.args, { p_email: "a_b@example.test" }, "IMP-008: the lookup is an equality rpc on lower(email); there is no LIKE pattern to escape");
+  assert.equal(service.calls.some((c) => c.table === "profiles" && c.filters.some(([k]) => k.startsWith("ilike"))), false, "no ILIKE on profiles.email");
+  assert.equal(await call(membersPut, "owner", "/x", { method: "PUT", body: json({ email: "unknown@example.test" }) }, { org_id: ORG_A }), 404, "an address with no account is a 404");
+  script(world(undefined, () => ({ error: { message: "profiles down" } })));
+  assert.equal(await call(membersPut, "owner", "/x", { method: "PUT", body: json({ email: "a@b.test" }) }, { org_id: ORG_A }), 503, "a failed lookup is a 503, never a 404");
+  script(world(undefined, () => ({ data: [{ id: "t2" }, { id: "t3" }] })));
+  assert.equal(await call(membersPut, "owner", "/x", { method: "PUT", body: json({ email: "a@b.test" }) }, { org_id: ORG_A }), 503, "two accounts for one address is refused, not guessed");
 });
 
 test("INV-153 through the routes: the only owner cannot be demoted, banned or removed; a failed owner count is a 503", async () => {

@@ -3,7 +3,8 @@
 // The outcome, mode and trigger vocabularies, how a runtime's result becomes an outcome, and the no-op contract.
 import type { RunResult } from "@/core/types/run-result";
 
-export const OUTCOMES = ["success", "noop", "refused", "failed"] as const;
+/** `unknown` is a firing that started and has not concluded: the row a crashed process leaves behind (migration 0008 allows it; nothing treats it as work done). */
+export const OUTCOMES = ["success", "noop", "refused", "failed", "unknown"] as const;
 export type Outcome = (typeof OUTCOMES)[number];
 export const MODES = ["dry", "apply"] as const;
 export type Mode = (typeof MODES)[number];

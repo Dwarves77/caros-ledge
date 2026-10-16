@@ -1,7 +1,7 @@
 // THE adapters: every deps interface a slice declared for a slice that was not merged yet, built here from the real exports of the merged slices (the parallel-build bet,
 // proven by tests/turn/wiring-types.test.ts). One construction site: `buildDeps(sb, env, opts)` returns every deps object; `wireAll()` wires the ones the app serves with.
 import type { Db } from "@/core/db";
-import { fetchAllRows, serviceClient } from "@/core/db";
+import { fetchAllRows, isServiceConfigured, serviceClient } from "@/core/db";
 import { deriveKey } from "@/core/intake/canonical-key";
 import type { IdentityHelpers } from "@/core/intake";
 import { assertFetchAllowed, capture, classifyBody, detectAccessWall, fetchAllowed, fetchDirect, makePoliteGate, parseOjReference } from "@/core/fetch";
@@ -11,13 +11,15 @@ import { type Mode, makeRecorder, type RecorderContext } from "@/core/harness";
 import { dispatchNotification } from "@/core/notifications";
 import { timePhase, withServerTiming } from "@/core/perf";
 import { createMethodRegistry, type LearningDeps, type MarketMethodDeps, type MethodRegistry, registerMarketMethods } from "@/core/propagation";
-import type { Catalog } from "@/core/producers";
+import type { Catalog, ProducerSpec } from "@/core/producers";
 import type { ProducerDeps } from "@/core/producers/deps";
 import { surfaceHref, surfaceOf } from "@/core/routing";
 import { buildResolver, classTierForHost, hostInstitution, institutionKey, officialnessOf, registerAndRate, verifyPoolTargetMatch, type SourceRow } from "@/core/sources";
 import type { HostVerdictRef } from "@/core/sources";
 import { hostOf } from "@/core/shared/url";
 import { createConnectDeps } from "@/features/flywheel";
+import { navCountSources } from "@/features/lists";
+import { getNavCounts } from "@/ui/shell/nav-counts.server";
 import { setIntakeDepsFactory } from "@/features/intake/api/run";
 import type { CaptureResult, IntakeDeps, SourcesDeps } from "@/features/intake/deps";
 import { questionFlagRow } from "@/features/learning";
@@ -50,6 +52,8 @@ export interface DepsOptions {
   /** The regulations slice's formula (P2-10) and the market slice's edge authors (P2-11): the ops that need them refuse until they are passed. */
   statutory?: StatutoryDeps | null;
   edgeAuthors?: EdgeAuthors | null;
+  /** The research-assessment producer spec the propagate stage re-scores with (default: the shipped one, whose reviewed constant holds it off in build mode). */
+  assessment?: ProducerSpec;
 }
 export type CaptureWorker = (input: { limit: number }) => Promise<{ status: number; body: Record<string, unknown> }>;
 
@@ -83,6 +87,7 @@ export interface BuiltDeps {
   marketMethods: MarketMethodDeps | null;
   statutory: StatutoryDeps | null;
   edgeAuthors: EdgeAuthors | null;
+  assessment: ProducerSpec;
   registry: MethodRegistry;
   learning: LearningDeps;
   workspace: Partial<WorkspaceDeps>;
@@ -211,14 +216,23 @@ export function buildDeps(sb: Db, env: Env = process.env, opts: DepsOptions = {}
       return error ? { status: 500, body: { error: error.message } } : { status: 200, body: (data ?? {}) as Record<string, unknown> };
     });
   return {
-    sb, env, now, context, recorder, gate, sources, entities, identity, fetch: fetchDeps, io, mintCtx, intake, mintRun, connect, producers, catalog: opts.catalog ?? PRODUCER_CATALOG, worker, marketMethods: opts.market ?? null, statutory: opts.statutory ?? null, edgeAuthors: opts.edgeAuthors ?? null, registry, learning,
-    workspace: workspaceWiring(), halted: async () => (await import("@/core/harness/run")).halted(sb).then((h) => h.halted),
+    sb, env, now, context, recorder, gate, sources, entities, identity, fetch: fetchDeps, io, mintCtx, intake, mintRun, connect, producers, catalog: opts.catalog ?? PRODUCER_CATALOG, worker, marketMethods: opts.market ?? null, statutory: opts.statutory ?? null, edgeAuthors: opts.edgeAuthors ?? null, assessment: opts.assessment ?? researchAssessment, registry, learning,
+    workspace: workspaceWiring(sb), halted: async () => (await import("@/core/harness/run")).halted(sb).then((h) => h.halted),
   };
 }
 
-/** The workspace handlers' cross-slice members that exist now. navCounts (P2-09 shell), adminAttention (P2-14) and portfolio (P2-12) are owed and reported by the startup check, never faked. */
-export function workspaceWiring(): Partial<WorkspaceDeps> {
+/** The workspace handlers' cross-slice members that exist now. Only `portfolio` (P2-12) is owed: the startup check reports it, and it is never faked. */
+export function workspaceWiring(sb: Db): Partial<WorkspaceDeps> {
   return {
+    navCounts: (who) => getNavCounts(navCountSources(sb, who)),
+    // The same counts the old admin attention route read: one rpc, one row. A failed read throws, so the bootstrap names it degraded and the shell shows "unknown", never a zero.
+    adminAttention: async () => {
+      const { data, error } = await sb.rpc("admin_attention_counts");
+      if (error) throw new Error(`admin_attention_counts failed: ${error.message}`);
+      const row = (Array.isArray(data) ? data[0] : data) as Record<string, number> | undefined;
+      if (!row) throw new Error("admin_attention_counts returned no row");
+      return row;
+    },
     notify: (input) => dispatchNotification({ userId: input.userId, kind: input.kind as Parameters<typeof dispatchNotification>[0]["kind"], payload: input.payload }),
     itemHref: (item) => surfaceHref(surfaceOf(item.type, item.domain), item.id) ?? `/regulations/${encodeURIComponent(item.id)}`,
     revalidateWorkspaceData: () => void import("next/cache").then((m) => m.revalidateTag("app-data", "max")),
@@ -250,9 +264,8 @@ export const MANIFEST: readonly ManifestEntry[] = [
   { member: "producers.market (computeSeriesDeltas and the market methods)", status: "owed", owner: "P2-11 market surface (computeSeriesDeltas, carbonIntensity)", present: (d) => d.producers.market !== null },
   { member: "propagation EdgeAuthors (authorCarbonIntensityEdges)", status: "owed", owner: "P2-11 market surface (carbonIntensity)", present: () => false },
   { member: "producers.verdicts (host verdicts as a table, IMP-054)", status: "owed", owner: "P2-S4 (the host_verdicts table)", present: (d) => d.producers.verdicts !== undefined },
-  ...(["notify", "itemHref", "revalidateWorkspaceData", "timePhase", "withServerTiming"] as const).map((m): ManifestEntry => ({ member: `workspace.${m}`, status: "wired", present: (d) => fn(d.workspace[m]) })),
-  { member: "workspace.navCounts", status: "owed", owner: "P2-09 shell", present: (d) => fn(d.workspace.navCounts) },
-  { member: "workspace.adminAttention", status: "owed", owner: "P2-14 admin", present: (d) => fn(d.workspace.adminAttention) },
+  ...(["notify", "itemHref", "revalidateWorkspaceData", "navCounts", "adminAttention", "timePhase", "withServerTiming"] as const).map((m): ManifestEntry => ({ member: `workspace.${m}`, status: "wired", present: (d) => fn(d.workspace[m]) })),
+
   { member: "workspace.portfolio", status: "owed", owner: "P2-12 workspace surfaces", present: (d) => d.workspace.portfolio !== undefined },
 ];
 
@@ -264,13 +277,18 @@ export function startupCheck(d: BuiltDeps): { missing: string[]; owed: { member:
   };
 }
 
+/** IMP-026: in production a required member that is unwired refuses to serve; elsewhere the report is returned for the caller to show. */
+export function enforceWired(report: { missing: string[] }, env: Env = process.env): void {
+  if (report.missing.length && env.NODE_ENV === "production") throw new Error(`startup refused: required dependencies are not wired: ${report.missing.join(", ")}`);
+}
+
 let wiredOnce = false;
 /** Wire the app's deps once at startup: the workspace handlers' members and the intake route's factory. Throws, in production, when a required member is unwired. */
 export function wireAll(env: Env = process.env): { missing: string[]; owed: { member: string; owner: string }[] } {
   const sb = serviceClient();
   const probe = buildDeps(sb, env);
   const report = startupCheck(probe);
-  if (report.missing.length && env.NODE_ENV === "production") throw new Error(`startup refused: required dependencies are not wired: ${report.missing.join(", ")}`);
+  enforceWired(report, env);
   if (wiredOnce) return report;
   wiredOnce = true;
   wireWorkspaceDeps(probe.workspace);

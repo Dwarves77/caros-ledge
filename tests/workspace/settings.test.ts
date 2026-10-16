@@ -36,7 +36,8 @@ test("INV-168: two writers of different keys running at the same moment lose not
   ]);
   assert.deepEqual(results.map((r) => r.error), [null, null, null, null]);
   assert.deepEqual(row(db).alert_config, { priorities: ["CRITICAL"], briefingCadence: "weekly", briefingDay: "friday", briefingTime: "08:00" });
-  assert.equal(db.writes("workspace_settings").length > 4, true, "the losers read the row again and wrote again");
+  assert.equal(db.writes("workspace_settings").length, 4, "one database statement per writer: no read-merge-write loop, no retry");
+  assert.equal(db.log.filter((l) => l.table === "workspace_settings" && l.op === "select").length, 0, "nothing is read first");
 });
 
 test("INV-168: the profile writers of the settings page and the onboarding cannot erase each other either", async () => {
@@ -59,21 +60,17 @@ test("sector_profile and default_export_format are replaced by their one writer;
   assert.equal(db.writes("workspace_settings").length, 2);
 });
 
-test("a failed read or write, a missing row and a lost race are returned as errors, never reported as saved", async () => {
+test("a failed write, a missing row and a refused write are returned as errors, never reported as saved", async () => {
   const db = seed();
   const client = clientFor(db);
-  db.fail("workspace_settings", "select", { message: "read down" });
-  assert.deepEqual(await patchWorkspaceSettings(client, ORG_A, "profile", { a: 1 }), { error: "read down", value: null });
-  db.failures.length = 0;
   db.fail("workspace_settings", "update", { message: "write refused" });
-  assert.equal((await patchWorkspaceSettings(client, ORG_A, "profile", { a: 1 })).error, "write refused");
+  assert.deepEqual(await patchWorkspaceSettings(client, ORG_A, "profile", { a: 1 }), { error: "write refused", value: null });
+  assert.equal((await patchWorkspaceSettings(client, ORG_A, "default_export_format", "slack")).error, "write refused");
   db.failures.length = 0;
   assert.match((await patchWorkspaceSettings(client, "33333333-3333-4333-8333-333333333333", "profile", { a: 1 })).error ?? "", /no settings row/);
-  // A row that changes under every attempt: five reads, five refused writes, then a plain error.
-  let reads = 0;
-  const racing = { from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ((reads += 1), { data: { profile: {}, updated_at: String(reads) }, error: null }) }) }), update: () => ({ eq: () => ({ eq: () => ({ select: async () => ({ data: [], error: null }) }) }) }) }) } as never;
-  const lost = await patchWorkspaceSettings(racing, ORG_A, "profile", { a: 1 });
-  assert.deepEqual([lost.error, reads], ["The settings changed while saving. Try again.", 5]);
+  assert.match((await patchWorkspaceSettings(client, "33333333-3333-4333-8333-333333333333", "sector_profile", [])).error ?? "", /no settings row/);
+  const rpc = { rpc: async () => ({ data: null, error: { message: "permission denied" } }) } as never;
+  assert.equal((await patchWorkspaceSettings(rpc, ORG_A, "profile", { a: 1 })).error, "permission denied");
 });
 
 // ── the settings store ───────────────────────────────────────────────────────────────────────────────

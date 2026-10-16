@@ -19,16 +19,18 @@ export async function proxy(request: NextRequest) {
   });
 
   // An unreachable auth service must not throw out of the proxy (a platform 503 that bypasses every fail-closed handler):
-  // the request is treated as unauthenticated and protected routes redirect to /login.
+  // a protected route answers a 503 page with Retry (IMP-015), never the login form; a public route is served as usual.
   let authenticated = false;
+  let authUnavailable = false;
   try {
     authenticated = (await getClaims(client)) !== null;
   } catch (e) {
     if (!(e instanceof ClaimsUnavailable)) throw e;
+    authUnavailable = true;
     log.warn("[proxy] claims verification unavailable:", e.message);
   }
 
-  const decision = decideRoute({ pathname, search, authenticated });
+  const decision = decideRoute({ pathname, search, authenticated, authUnavailable });
   switch (decision.action) {
     case "scanner-404":
       return new NextResponse(null, { status: 404 });
@@ -38,6 +40,11 @@ export async function proxy(request: NextRequest) {
       const url = new URL("/login", request.url);
       url.searchParams.set("redirect", decision.redirectTo);
       return NextResponse.redirect(url);
+    }
+    case "service-unavailable": {
+      const res = NextResponse.rewrite(new URL("/service-unavailable", request.url), { status: 503 });
+      res.headers.set("Retry-After", "10");
+      return res;
     }
     case "allow":
       return response;

@@ -12,7 +12,7 @@ import { buildRegisterQuerySpec, fetchObligationRegisterPage, readUpcoming } fro
 
 import type { Row } from "../_support/memdb.ts";
 
-import { CENSUS, DOC_TEXT, DOC_URL, fixture, NEW_URL, NOW, PORTAL_URL, SRC, DOC } from "./world.ts";
+import { CENSUS, DOC, DOC_TEXT, DOC_URL, fixture, NEW_URL, NEW_VERDICT, NOW, PORTAL_URL, SRC } from "./world.ts";
 
 const BATCH = JSON.stringify({ verdicts: [{ census_id: CENSUS, verdict: "on_vertical", basis: "EU emissions regulation: core sustainability scope", reviewer: "turn-test" }] });
 
@@ -124,4 +124,19 @@ test("the surface readers that exist return what the turn wrote: the obligation 
   const coverage = await loadCoverage(db.client);
   assert.deepEqual([coverage.counts.total, coverage.counts.verifiedBriefs], [1, 1], "the census row and the verified brief the turn minted");
   assert.equal(coverage.entries[0]?.id, CENSUS);
+});
+
+test("the portal path: the sweep lands a link, a session verdict classifies it, the intake stage captures it through the free ladder and mints it through the same chokepoint, and the ledger candidate is stamped with the item", async () => {
+  const f = fixture();
+  const r = await runTurn({ stage: "sweep", mode: "apply", input: { intake: { verdicts: { [NEW_URL]: NEW_VERDICT }, maxPromote: 5 } } }, { d: f.d, env: {}, now: () => NOW });
+  assert.equal(r.exit, 0);
+  const minted = ((f.db.rows("harness_runs").find((x) => x.family === "ledger-consume")?.outputs as { ids: { minted_item_ids: string[] } }).ids.minted_item_ids);
+  assert.equal(minted.length, 1);
+  const item = f.db.rows("intelligence_items").find((x) => x.id === minted[0]) as Row;
+  assert.deepEqual([item.source_url, item.item_grade, item.item_type], [NEW_URL, "record", "regulation"]);
+  const candidate = f.db.rows("portal_link_candidates").find((x) => x.url === NEW_URL) as Row;
+  assert.deepEqual([candidate.status, candidate.item_id], ["promoted", item.id]);
+  assert.ok(f.requests.urls.includes(NEW_URL), "the page was fetched, once the verdict existed");
+  assert.equal(f.db.rows("staged_updates").filter((x) => x.materialized_item_id === item.id && x.status === "approved").length, 1, "it passed the staged transit and the chokepoint, not a side door");
+  assert.ok(f.db.rows("agent_run_searches").some((x) => x.intelligence_item_id === item.id && x.result_url === NEW_URL && String(x.result_content).includes("shall enter into force on 1 July 2026")), "its pool row is the captured page");
 });

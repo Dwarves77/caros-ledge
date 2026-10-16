@@ -47,6 +47,22 @@ export async function recordRun(sb: Db | null, row: RunRow): Promise<{ id: strin
   }
 }
 
+/**
+ * Conclude a started run: its one row takes the outcome, the outputs and the finish time. A result that breaks the no-op contract is not stored as claimed; the row concludes `failed` and says why.
+ * Never throws; a failed update is the run's error (the row stays `unknown`, which is the evidence the firing began).
+ */
+export async function finishRun(sb: Db, row: RunRow): Promise<{ row: RunRow; error: string | null }> {
+  const fam = familyOf(row.family);
+  const broken = fam ? noopContractErrors(row, fam.writes) : [`family "${row.family}" is not in FAMILIES`];
+  const final: RunRow = broken.length ? { ...row, outcome: "failed", reason: `unrecordable result: ${broken.join("; ")}`, error: broken.join("; ") } : row;
+  try {
+    const { error } = await sb.from("harness_runs").update({ outcome: final.outcome, reason: final.reason, outputs: final.outputs, error: final.error, mode: final.mode, forced_dry: final.forced_dry, finished_at: final.finished_at }).eq("id", final.id);
+    return { row: final, error: error ? `harness_runs update failed: ${error.message}` : null };
+  } catch (e) {
+    return { row: final, error: `harness_runs update threw: ${e instanceof Error ? e.message : String(e)}` };
+  }
+}
+
 /** The run a recorder entry belongs to: set by the frame while a family runs, read when the runtime records one of its own units (a minted item, a producer run). */
 export interface RecorderContext {
   rootRunId: string;
