@@ -99,7 +99,7 @@ test("proof 3: a mint and a substantive update share ONE step list; a failing st
   assert.ok(f.rec.connects.some((x) => x.startsWith("events:")), "a failed step does not stop the others");
   // stale events: flagged, never deleted
   const s = makeWorld();
-  s.db.seed("item_forward_events", [{ id: "e1", item_id: ITEM }]);
+  s.db.seed("item_forward_events", [{ id: "e1", intelligence_item_id: ITEM }]);
   s.deps.connect.extractAndInsertForwardEvents = async () => ({ attempted: 2, inserted: 0, collision: true, staleIds: ["e1"] });
   const r = await runParticipation({ sb: s.deps.sb, connect: s.deps.connect, now: () => new Date() }, { itemId: ITEM, context: "update" });
   assert.ok(r.flags.includes("stale-events:1") && r.flags.includes("forward-events:0"));

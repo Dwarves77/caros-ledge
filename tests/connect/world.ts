@@ -1,2 +1,2 @@
-// The memory database the connect tests use: tests/connect/store.ts (the shared memory-db plus like, overlaps, dotted embed columns and multi-key order).
-export { memoryDb as connectDb } from "./store.ts";
+// The memory database the connect tests use: the one shared memory database, in its functional face (tests/_support/memory-db.ts).
+export { memoryDb as connectDb } from "../_support/memory-db.ts";

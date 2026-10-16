@@ -41,13 +41,15 @@ export interface MemOptions {
   schema?: SchemaInfo | null;
   /** The server's max_rows cut on an unranged select. */
   cap?: number | null;
+  /** Answer every write with the rows it touched (the shape the scripted-world tests were written against); default only when the call asks to return them. */
+  returnRows?: boolean;
 }
 
 const WITH_ID = new Set(["intelligence_items", "agent_run_searches", "section_claim_provenance", "claim_versions", "intelligence_item_sections", "item_timelines", "integrity_flags", "agent_runs", "staged_updates", "sources", "portal_link_candidates", "disposition_ledger", "item_cross_references", "item_forward_events", "vocabulary_terms", "monitoring_queue", "pending_first_fetch", "propagation_events"]);
 export const SCHEMA: SchemaInfo = schemaJson as SchemaInfo;
 const likeRe = (pat: string, flags = "") => new RegExp(`^${pat.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/[%*]/g, ".*")}$`, flags);
 const col = (r: Row, c: string): unknown => (c.includes(".") ? c.split(".").reduce<unknown>((o, k) => (o && typeof o === "object" ? (o as Row)[k] : undefined), r) : r[c]);
-const cmp = (a: unknown, b: unknown): number => (String(a ?? "") < String(b ?? "") ? -1 : String(a ?? "") > String(b ?? "") ? 1 : 0);
+const cmp = (a: unknown, b: unknown): number => (typeof a === "number" && typeof b === "number" ? a - b : String(a ?? "") < String(b ?? "") ? -1 : String(a ?? "") > String(b ?? "") ? 1 : 0);
 
 export class MemDb {
   tables: Record<string, Row[]> = {};
@@ -63,6 +65,7 @@ export class MemDb {
   storageFail: string | null = null;
   readonly opts: Required<Pick<MemOptions, "ids">> & MemOptions;
   private seq = 0;
+  private autoN = 0;
 
   constructor(opts: MemOptions = {}, seed: Record<string, Row[]> = {}) {
     this.opts = { ids: "listed", schema: SCHEMA, ...opts };
@@ -70,6 +73,7 @@ export class MemDb {
   }
   seed(table: string, rows: Row[]): this {
     this.check(table);
+    this.tables[table] ??= [];
     for (const r of rows) {
       this.checkColumns(table, r);
       (this.tables[table] ??= []).push({ ...(this.opts.ids === "listed" && WITH_ID.has(table) && r.id === undefined ? { id: this.nextId() } : {}), ...r });
@@ -89,6 +93,11 @@ export class MemDb {
   fail(table: string, op: Op, message = "boom", o: { times?: number; code?: string; when?: Failure["when"] } = {}): this {
     this.failures.push({ table, op, message, ...(o.code ? { code: o.code } : {}), ...(o.times === undefined ? {} : { times: o.times }), ...(o.when ? { when: o.when } : {}) });
     return this;
+  }
+  /** The next `<table>-<n>` id of the seq style. */
+  autoId(table: string): string {
+    this.autoN += 1;
+    return `${table}-${this.autoN}`;
   }
   nextId(): string {
     this.seq += 1;
@@ -117,7 +126,8 @@ export class MemDb {
   checkColumns(table: string, row: Row): void {
     const cols = this.opts.schema?.tables[table]?.columns;
     if (!cols) return;
-    for (const k of Object.keys(row)) if (!k.startsWith("__") && !cols.includes(k)) throw new Error(`memdb: column "${k}" of relation "${table}" does not exist in the generated schema (a fixture or query typo)`);
+    // A key holding an object is an embedded related row a fixture carries inline (what a PostgREST embed returns); only scalar keys are checked.
+    for (const [k, v] of Object.entries(row)) if (!k.startsWith("__") && !cols.includes(k) && !(v !== null && typeof v === "object" && !Array.isArray(v))) throw new Error(`memdb: column "${k}" of relation "${table}" does not exist in the generated schema (a fixture or query typo)`);
   }
   from(table: string) {
     this.check(table);
@@ -160,12 +170,40 @@ class Query {
   private returning = false;
   private upsertOpts: { onConflict?: string; ignoreDuplicates?: boolean } = {};
   private single_: "one" | "maybe" | null = null;
-  constructor(private db: MemDb, private table: string) {
+  private db: MemDb;
+  private table: string;
+  constructor(db: MemDb, table: string) {
+    this.db = db;
+    this.table = table;
     if (db.opts.cap) this.lim = db.opts.cap;
   }
 
+  /** Every plain column a select list names must be a column of the table (an embed, a star, a cast and a json path are not checked). */
+  private checkSelect(list: string): void {
+    const known = this.db.opts.schema?.tables[this.table]?.columns;
+    if (!known) return;
+    let depth = 0;
+    let token = "";
+    const tokens: string[] = [];
+    for (const ch of list) {
+      if (ch === "(") depth += 1;
+      if (ch === ")") depth -= 1;
+      if (ch === "," && depth === 0) {
+        tokens.push(token);
+        token = "";
+      } else token += ch;
+    }
+    tokens.push(token);
+    for (const raw of tokens) {
+      const t = raw.trim();
+      const bare = (t.includes(":") && !t.includes("::") ? t.split(":").slice(1).join(":") : t).trim();
+      if (!bare || bare.includes("(") || bare.includes("*") || bare.includes("::") || bare.includes("->") || bare.includes(".") || bare.includes("!")) continue;
+      if (!known.includes(bare)) throw new Error(`memdb: column "${bare}" of relation "${this.table}" does not exist in the generated schema (a select list names a column the table does not have)`);
+    }
+  }
   select(cols?: string, o?: { count?: string; head?: boolean }) {
     if (this.op === "select") {
+      if (cols) this.checkSelect(cols);
       this.columns = cols ?? "";
       this.head = o?.head === true;
       this.count = o?.count !== undefined;
@@ -179,7 +217,7 @@ class Query {
   private f(kind: string, c: string, val: unknown, pred: (r: Row) => boolean) {
     const cols = this.db.opts.schema?.tables[this.table]?.columns;
     const base = c.split(".")[0] as string;
-    if (cols && !c.includes(".") && !cols.includes(base)) throw new Error(`memdb: column "${c}" of relation "${this.table}" does not exist in the generated schema (a fixture or query typo)`);
+    if (cols && kind !== "or" && !c.includes(".") && !cols.includes(base)) throw new Error(`memdb: column "${c}" of relation "${this.table}" does not exist in the generated schema (a fixture or query typo)`);
     this.filters.push([kind, c, val]);
     this.preds.push(pred);
     return this;
@@ -242,7 +280,7 @@ class Query {
     const out = { ...row };
     for (const m of this.columns.matchAll(/(?:(\w+):)?(\w+)(?:!\w+)?\(([^()]*)\)/g)) {
       const [, alias, related] = m;
-      if (!related) continue;
+      if (!related || out[alias ?? related] !== undefined) continue; // an embedded row the fixture carries inline stands
       const rel = this.db.opts.relations?.[`${this.table}.${related}`];
       const fk = this.db.opts.schema?.tables[this.table]?.fks.find((f) => f.table === related);
       const back = this.db.opts.schema?.tables[related]?.fks.find((f) => f.table === this.table);
@@ -257,7 +295,7 @@ class Query {
   }
   private newRow(item: Row): Row {
     const ids = this.db.opts.ids;
-    const base: Row = ids === "seq" ? { id: `${this.table}-${this.db.nextId().slice(-4)}` } : ids === "uuid" ? { id: this.db.nextId(), created_at: this.db.tick() } : WITH_ID.has(this.table) ? { id: this.db.nextId() } : {};
+    const base: Row = ids === "seq" ? { id: this.db.autoId(this.table) } : ids === "uuid" ? { id: this.db.nextId(), created_at: this.db.tick() } : WITH_ID.has(this.table) ? { id: this.db.nextId() } : {};
     const row: Row = { ...base, ...(this.table === "agent_runs" && item.created_at === undefined ? { created_at: this.db.now } : {}), ...item };
     if (this.db.opts.generatedKey?.includes(this.table)) row.name_key = String(row.name ?? "").trim().toLowerCase();
     return row;
@@ -283,7 +321,7 @@ class Query {
         rows.push(row);
         out.push(row);
       }
-      if (!this.returning && !this.single_) return { data: null, error: null, count: null };
+      if (!this.returning && !this.single_ && !db.opts.returnRows) return { data: null, error: null, count: null };
     } else if (this.op === "update") {
       out = matching();
       const next = out.map((r) => {
@@ -293,11 +331,11 @@ class Query {
       });
       for (const [i, r] of out.entries()) if (this.violates(next[i] as Row, r)) return { data: null, error: { message: "duplicate key value violates unique constraint", code: "23505" }, count: null };
       for (const [i, r] of out.entries()) Object.assign(r, next[i]);
-      if (!this.returning && !this.single_) return { data: null, error: null, count: null };
+      if (!this.returning && !this.single_ && !db.opts.returnRows) return { data: null, error: null, count: null };
     } else if (this.op === "delete") {
       const gone = new Set(matching());
       db.tables[this.table] = rows.filter((r) => !gone.has(r));
-      return { data: null, error: null, count: null };
+      return { data: db.opts.returnRows ? [...gone].map((r) => ({ ...r })) : null, error: null, count: null };
     } else {
       out = matching();
       const total = out.length;
@@ -308,6 +346,7 @@ class Query {
       out = out.map((r) => this.embed({ ...r }));
       if (this.count) return { data: out, error: null, count: total };
     }
+    if (this.op !== "select") out = out.map((r) => ({ ...r }));
     if (this.single_) {
       if (out.length > 1) return { data: null, error: { message: "multiple rows returned" }, count: null };
       if (!out.length) return this.single_ === "one" ? { data: null, error: { message: "JSON object requested, multiple (or no) rows returned", code: "PGRST116" }, count: null } : { data: null, error: null, count: null };
@@ -322,15 +361,13 @@ export function installPropagationRpcs(db: MemDb): MemDb {
   let n = 0;
   db.rpcs.invalidate_dependents = (a, d) => {
     const edges = d.rows("derivation_edges").filter((e) => e.from_table === a.p_table && e.from_pk === a.p_pk && e.to_table === "derived_values");
-    const hit = d.rows("derived_values").filter((v) => edges.some((e) => e.to_value_id === v.value_id) && v.admissibility !== "stale" && v.superseded_by == null);
+    const hit = d.rows("derived_values").filter((v) => edges.some((e) => e.to_value_id === v.value_id) && v.admissibility !== "stale" && !d.rows("derived_values").some((n) => n.supersedes === v.value_id));
     if (a.p_apply) for (const v of hit) Object.assign(v, { admissibility: "stale", invalidated_by_event: a.p_event });
     return { data: hit.length };
   };
   db.rpcs.register_derived_value = (a, d) => {
     const id = `00000000-0000-4000-9000-${String(++n).padStart(12, "0")}`;
-    d.rows("derived_values").push({ value_id: id, method_id: a.p_method_id, method_version: a.p_method_version, value: a.p_value, admissibility: a.p_admissibility, supersedes: a.p_supersedes, inputs: a.p_inputs, entity_id: a.p_entity_id, superseded_by: null });
-    const old = d.rows("derived_values").find((v) => v.value_id === a.p_supersedes);
-    if (old) old.superseded_by = id;
+    d.rows("derived_values").push({ value_id: id, method_id: a.p_method_id, method_version: a.p_method_version, value: a.p_value, admissibility: a.p_admissibility, supersedes: a.p_supersedes, inputs: a.p_inputs, entity_id: a.p_entity_id });
     for (const ref of (a.p_inputs ?? []) as { table: string; pk: string }[]) d.rows("derivation_edges").push({ from_table: ref.table, from_pk: ref.pk, to_table: "derived_values", to_value_id: id });
     return { data: id };
   };
