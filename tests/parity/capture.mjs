@@ -21,6 +21,8 @@ const VIEWPORTS = [
   { width: 375, height: 812 },
 ];
 const ROW_LIMIT = 20;
+// A page that navigates its main frame more often than this after goto is looping (a reload on every auth event, a redirect cycle).
+const NAVIGATION_CEILING = 3;
 const ACCOUNTS = { member: ['LIVE_SMOKE_EMAIL', 'LIVE_SMOKE_PASSWORD'], admin: ['LIVE_ADMIN_EMAIL', 'LIVE_ADMIN_PASSWORD'] };
 const ROUTES_FILE = join(dirname(fileURLToPath(import.meta.url)), 'routes.json');
 
@@ -191,6 +193,9 @@ async function captureOne(browser, base, route, path, viewport, storage, out, di
     });
     const response = await page.goto(new URL(path, base).href, { waitUntil: 'load', timeout: 60000 });
     const networkIdle = await settle(page);
+    if (diag.navigations > NAVIGATION_CEILING) {
+      throw new Error(`navigation loop: ${diag.navigations} navigations, paths: ${JSON.stringify(diag.navigationPaths)}`);
+    }
     const finalUrl = new URL(page.url());
     await page.screenshot({ path: join(out, `${stem}.png`), fullPage: true });
     const dom = await page.evaluate(domSummary, ROW_LIMIT);
