@@ -313,6 +313,9 @@
  "research_assessments": [
   "id"
  ],
+ "screen_verdicts": [
+  "census_id"
+ ],
  "section_claim_provenance": [
   "id"
  ],

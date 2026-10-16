@@ -1,5 +1,6 @@
 // Applies supabase/schema.sql, then every supabase/migrations/NNNN_*.sql in name order (files named *_data_* are cutover-window data
-// migrations and are never run here), to an empty Postgres (DATABASE_URL) with the Supabase stubs it needs. Every error is printed
+// migrations: never committed here; each is run once after the schema files, after the fixture its `-- rollback-test:` header names,
+// inside a transaction that rolls back, so its SQL is proven to execute and the catalog is unchanged), to an empty Postgres (DATABASE_URL) with the Supabase stubs it needs. Every error is printed
 // with its line and any one stops the run. Then: the property checks against the live catalog, and the catalog diff: one
 // snapshot per step, each migration's changed object classes equal to the classes its `-- catalog:` header declares, the final
 // catalog equal to the last step's (the checks' planted violations leave nothing behind), and src/core/db/schema-keys.json equal
@@ -96,6 +97,25 @@ for (const file of readdirSync("supabase/migrations").filter((f) => /^\d{4}_.+\.
   before = after;
 }
 console.log("migrations applied with zero errors");
+
+for (const file of readdirSync("supabase/migrations").filter((f) => /^\d{4}_data_.+\.sql$/.test(f)).sort()) {
+  const text = readFileSync(`supabase/migrations/${file}`, "utf8");
+  const fixture = text.match(/^-- rollback-test: (\S+)$/m)?.[1];
+  if (!fixture) {
+    console.error(`${file}: a _data_ migration needs a "-- rollback-test: <fixture>" header`);
+    process.exit(1);
+  }
+  const body = text.replace(/^(BEGIN|COMMIT);[ \t]*$/gm, ""); // the job owns the transaction: its ROLLBACK must undo the file's own COMMIT
+  const r = psql(["-v", "ON_ERROR_STOP=1"], ["BEGIN;", readFileSync(fixture, "utf8"), body, "ROLLBACK;", ""].join("\n"));
+  for (const l of r.err.split("\n")) if (/NOTICE/.test(l)) console.log(l.replace(/^.*NOTICE:\s*/, "  self-check: ").slice(0, 220));
+  if (r.code !== 0 || errorsOf(r.err).length) {
+    console.error(`${file}: failed in its rollback-test\n${r.err}`);
+    process.exit(1);
+  }
+  const drifted = diff(before, snapshot());
+  console.log(`${file}: ran after ${fixture} and rolled back${drifted.length ? ` UNEXPLAINED catalog change [${drifted.slice(0, 3)}]` : ""}`);
+  unexplained += drifted.length;
+}
 
 const props = spawnSync("node", ["scripts/ci/properties.mjs"], { stdio: "inherit", env: process.env });
 const last = snapshot();
