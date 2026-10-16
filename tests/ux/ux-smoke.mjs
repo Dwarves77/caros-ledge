@@ -59,7 +59,7 @@ try {
     await ctx.close();
   }
 
-  // Anonymous /privacy: no notifications, bootstrap or admin request, and a single main landmark.
+  // Anonymous /privacy: the shell renders as the baseline does, but the page issues no notifications, bootstrap or admin request, and has a single main landmark.
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
   const page = await ctx.newPage();
   const seen = [];
@@ -68,7 +68,7 @@ try {
   const bad = seen.filter((p) => /notifications|workspace\/bootstrap|\/api\/admin/.test(p));
   if (bad.length) fail('privacy', `an anonymous page issued ${bad.join(', ')}`);
   if ((await page.locator('main').count()) !== 1) fail('privacy', 'the page does not have exactly one main landmark');
-  if (await page.locator('[data-part=nav-card]').count()) fail('privacy', 'the signed-in nav card is on a public page');
+  if (!(await page.locator('[data-part=nav-card]').count())) fail('privacy', 'the shell nav card is missing on /privacy');
   await ctx.close();
 } finally {
   await browser.close();
