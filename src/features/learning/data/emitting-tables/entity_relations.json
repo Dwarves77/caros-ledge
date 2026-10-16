@@ -1,0 +1,7 @@
+{
+  "table_name": "entity_relations",
+  "type": "identity_revised",
+  "byKind": {},
+  "label": "a relation of this entity",
+  "describe": "identity"
+}

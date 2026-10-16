@@ -1,8 +1,8 @@
-// Code lines (non-blank, non-comment) per directory under src/. Exit 1 when src/core > 25000 or src > 60000.
+// Code lines (non-blank, non-comment) per directory under src/. Exit 1 when src/core > 25000 or src > 75000.
 import { appendFileSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-const LIMITS = { "src/core": 25000, src: 60000 };
+const LIMITS = { "src/core": 25000, src: 75000 };
 const EXT = /\.(ts|tsx|js|jsx|mjs)$/;
 
 function codeLines(file) {

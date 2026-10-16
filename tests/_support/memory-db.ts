@@ -101,6 +101,7 @@ export function memoryDb(initial: Record<string, Row[]> = {}, opts: { storageFai
     chain("lt", ((c: string, v: unknown) => add(`lt:${c}`, (r) => String(r[c]) < String(v), v)) as never);
     chain("lte", ((c: string, v: unknown) => add(`lte:${c}`, (r) => String(r[c]) <= String(v), v)) as never);
     chain("ilike", ((c: string, v: string) => add(`ilike:${c}`, (r) => like(v).test(String(r[c] ?? "")), v)) as never);
+    chain("like", ((c: string, v: string) => add(`like:${c}`, (r) => like(v).test(String(r[c] ?? "")), v)) as never);
     chain("contains", ((c: string, v: unknown[]) => add(`contains:${c}`, (r) => Array.isArray(r[c]) && v.every((x) => (r[c] as unknown[]).includes(x)), v)) as never);
     chain("or", ((expr: string) => {
       const parts = expr.split(/,(?=[a-z_]+\.)/).map((p) => {

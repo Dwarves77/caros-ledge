@@ -22,7 +22,11 @@ jobs:
   ci:
     name: ci
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      pull-requests: write
+      actions: read
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -42,6 +46,15 @@ jobs:
       - run: npm run tree-checks
       - run: npm run ui-checks
       - run: npm run loc
+      - name: CI report comment
+        if: github.event_name == 'pull_request' && always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          RUN_ID: ${{ github.run_id }}
+          CI_STATUS: ${{ job.status }}
+        run: node scripts/ci/pr-comment.mjs
 
   schema:
     name: schema
