@@ -1,0 +1,68 @@
+{
+ "roleClasses": [
+  "university",
+  "national_lab",
+  "standards_body",
+  "intergovernmental",
+  "journal",
+  "institute_ngo",
+  "industry_association",
+  "vendor",
+  "analytical_press",
+  "unknown"
+ ],
+ "namedOverrides": [
+  {
+   "pattern": "\\b(IMO|International Maritime Organi[sz]ation)\\b",
+   "roleClass": "intergovernmental"
+  },
+  {
+   "pattern": "\\b(IEA|International Energy Agency)\\b",
+   "roleClass": "intergovernmental"
+  },
+  {
+   "pattern": "\\b(EASA|European (Union )?Aviation Safety Agency)\\b",
+   "roleClass": "intergovernmental"
+  },
+  {
+   "pattern": "\\b(national (transport )?(ministry|department)|ministry of transport)\\b",
+   "roleClass": "intergovernmental"
+  },
+  {
+   "pattern": "\\b(ICCT|International Council on Clean Transportation)\\b",
+   "roleClass": "institute_ngo"
+  },
+  {
+   "pattern": "\\b(Smart Freight Centre)\\b",
+   "roleClass": "institute_ngo"
+  },
+  {
+   "pattern": "\\b(TRB|TRID|Transportation Research Board)\\b",
+   "roleClass": "institute_ngo"
+  },
+  {
+   "pattern": "\\b(ISO|IEC|ASTM|SAE|standards? (body|organi[sz]ation))\\b",
+   "roleClass": "standards_body"
+  }
+ ],
+ "institutionTypeToRole": {
+  "education": "university",
+  "government": "national_lab",
+  "facility": "national_lab",
+  "company": "vendor",
+  "nonprofit": "institute_ngo",
+  "archive": "institute_ngo",
+  "healthcare": "unknown",
+  "other": "unknown"
+ },
+ "highAuthorityRoles": [
+  "university",
+  "national_lab",
+  "standards_body",
+  "intergovernmental"
+ ],
+ "vendorRoles": [
+  "vendor",
+  "industry_association"
+ ]
+}

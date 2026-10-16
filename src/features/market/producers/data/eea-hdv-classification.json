@@ -1,0 +1,9 @@
+{
+  "notes": "Rules for eea-hdv-map.mjs. STAGE RULES: coordinator ruling 2026-10-08 (lane S8-E1): registrations evidence availability only; per manufacturer x tech_category x registration year, 1 to 999 registered vehicles is small_batch_fleet and 1000 or more is mass_series_production; announced and pilot_demonstration are never evidenced by registrations and are never written (the row is the current state, so the year read is the latest with registrations); the row carries derivation calculated, the count itself is observed. ZERO-EMISSION RULES, EMPTY ON PURPOSE: the EEA table definition (HDV-tabledefinition.xlsx on the dataset catalogue record, 'Attribute table', 'Extract from SQL database: 2024-03-22', read 2026-10-08) lists field names and datatypes only: OEM_ZeroEmissionVehicle bit, OEM_HybridElectricHDV bit, OEM_DualFuelVehicle bit, OEM_Engine_FuelType nvarchar(20), MS_FuelType nvarchar(20), MS_Electric nvarchar(10). It carries no list of values, so it does not evidence which fuel value marks a battery-electric or a fuel-cell vehicle, and the committed sample holds no zero-emission vehicle; no battery-electric versus fuel-cell rule is written until a real run's residue shows the values. zev_tech_rules: [{when: {ms_fuel|engine_fuel|ms_electric: exact value}, tech_category: one of the eight in migration 296}]. MANUFACTURER ALIASES: empty by ruling; filled at population time from a real run's residue through the entity alias table (migration 377). manufacturer_aliases: {EEA OEM_ManufacturerName: entities.canonical_name of an existing organisation}.",
+  "zev_tech_rules": [],
+  "stage_rules": [
+    { "min_units": 1, "stage": "small_batch_fleet" },
+    { "min_units": 1000, "stage": "mass_series_production" }
+  ],
+  "manufacturer_aliases": {}
+}

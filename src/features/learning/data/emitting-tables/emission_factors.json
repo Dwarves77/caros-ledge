@@ -1,0 +1,8 @@
+{
+  "table_name": "emission_factors",
+  "type": "value_revised",
+  "byKind": {
+    "supersede": "factor_superseded"
+  },
+  "label": "an emission factor"
+}

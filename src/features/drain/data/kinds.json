@@ -1,0 +1,123 @@
+{
+ "order": [
+  "ledger-verdicts",
+  "host-verdicts",
+  "needs-search",
+  "question-answers",
+  "theme-briefs",
+  "record-briefs",
+  "theme-classification",
+  "screen-verdict"
+ ],
+ "kinds": [
+  {
+   "id": "ledger-verdicts",
+   "label": "Portal link candidate verdicts",
+   "batchDir": "drain/batches/ledger-verdicts",
+   "batchRe": "^ledger-verdicts-\\d{3}\\.json$",
+   "batchPrefix": "ledger-verdicts",
+   "applyStep": "ledger-consume",
+   "namesFile": false,
+   "batchSize": 300,
+   "maxBatchesPerRun": 1,
+   "idKey": "candidate_id",
+   "leaseKey": "candidate_id",
+   "modes": {
+    "stale": {
+     "label": "Candidates owed a re-authored verdict (committed verdicts all under an older prompt_version)"
+    }
+   }
+  },
+  {
+   "id": "host-verdicts",
+   "label": "Unplaced host class verdicts",
+   "batchDir": "drain/batches/host-verdicts",
+   "batchRe": "^host-verdicts-\\d{3}\\.json$",
+   "batchPrefix": "host-verdicts",
+   "applyStep": "source-resolution",
+   "namesFile": false,
+   "batchSize": 150,
+   "maxBatchesPerRun": 1,
+   "idKey": "host",
+   "leaseKey": null
+  },
+  {
+   "id": "needs-search",
+   "label": "Source URLs for open needs",
+   "batchDir": "drain/batches/needs-search",
+   "batchRe": "^needs-search-\\d{3}\\.json$",
+   "batchPrefix": "needs-search",
+   "applyStep": "needs-search",
+   "namesFile": true,
+   "batchSize": 40,
+   "maxBatchesPerRun": 1,
+   "idKey": "need_id",
+   "leaseKey": "need_id"
+  },
+  {
+   "id": "question-answers",
+   "label": "Open question answers",
+   "batchDir": "drain/batches/question-answers",
+   "batchRe": "^question-answers-\\d{3}\\.json$",
+   "batchPrefix": "question-answers",
+   "applyStep": "question-answers",
+   "namesFile": true,
+   "batchSize": 40,
+   "maxBatchesPerRun": 1,
+   "idKey": "subject_ref",
+   "leaseKey": "item_id"
+  },
+  {
+   "id": "theme-briefs",
+   "label": "Theme briefs",
+   "batchDir": "drain/batches/theme-briefs",
+   "batchRe": "^theme-briefs-\\d{3}\\.json$",
+   "batchPrefix": "theme-briefs",
+   "applyStep": "theme-briefs",
+   "namesFile": true,
+   "batchSize": 15,
+   "maxBatchesPerRun": 1,
+   "idKey": "theme_id",
+   "leaseKey": "theme_id"
+  },
+  {
+   "id": "record-briefs",
+   "label": "Record brief authoring",
+   "batchDir": "drain/batches/record-briefs",
+   "batchRe": "^record-briefs-\\d{3}[a-z0-9-]*\\.json$",
+   "batchPrefix": "record-briefs",
+   "applyStep": "brief-apply",
+   "namesFile": true,
+   "batchSize": 40,
+   "maxBatchesPerRun": 1,
+   "idKey": "id",
+   "leaseKey": "id"
+  },
+  {
+   "id": "theme-classification",
+   "label": "Null-theme research findings the rules left unclassified",
+   "batchDir": "drain/batches/theme-classification",
+   "batchRe": "^theme-classification-\\d{3}\\.json$",
+   "batchPrefix": "theme-classification",
+   "applyStep": "theme-classification",
+   "namesFile": true,
+   "batchSize": 40,
+   "maxBatchesPerRun": 1,
+   "idKey": "id",
+   "leaseKey": "id"
+  },
+  {
+   "id": "screen-verdict",
+   "label": "Ambiguous relevance-screen holds awaiting a reviewed verdict",
+   "batchDir": "drain/batches/screen-verdict",
+   "batchRe": "^screen-verdict-\\d{3}\\.json$",
+   "batchPrefix": "screen-verdict",
+   "applyStep": "screen-verdict",
+   "namesFile": true,
+   "batchSize": 60,
+   "maxBatchesPerRun": 1,
+   "idKey": "census_id",
+   "leaseKey": "census_id"
+  }
+ ]
+}
