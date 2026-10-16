@@ -12,7 +12,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { execFileSync } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { chromium } from 'playwright';
 
@@ -63,8 +63,17 @@ async function signIn(browser, base, email, password) {
   }
 }
 
+// What a discovery miss means. A list route declared frame-only in approved-changes.json (`gates.frame`) has no detail links yet, so the detail
+// route is skipped; a list route in `gates.full`, or one nobody declared, is expected to have links, so a miss is an error.
+export function discoveryMissOutcome(route, gates) {
+  const list = route.discover.list;
+  const name = list.replace(/^\//, '').split(/[/?#]/)[0];
+  if ((gates.full ?? []).includes(name) || !(gates.frame ?? []).includes(name)) return { status: 'error', error: null };
+  return { status: 'skipped', error: `discovery deferred: ${list} is frame-only (gates.frame)` };
+}
+
 // Resolves a `discover` route: the first same-origin link on the list page whose pathname matches and is not excluded.
-async function discover(page, base, route) {
+async function discover(page, base, route, gates) {
   const { list, match, exclude = [] } = route.discover;
   const listUrl = new URL(list, base);
   await page.goto(listUrl.href, { waitUntil: 'load', timeout: 60000 });
@@ -77,7 +86,9 @@ async function discover(page, base, route) {
     if (url.origin !== listUrl.origin) continue;
     if (pattern.test(url.pathname) && !exclude.includes(url.pathname)) return `${url.pathname}`;
   }
-  throw new Error(`discovery found no link on ${list} matching ${match}`);
+  const miss = new Error(`discovery found no link on ${list} matching ${match}`);
+  miss.outcome = discoveryMissOutcome(route, gates);
+  throw miss;
 }
 
 // Runs in the page. Helpers live inside so the whole function serialises as one unit.
@@ -237,6 +248,7 @@ async function main() {
   await mkdir(out, { recursive: true });
 
   const { routes } = JSON.parse(await readFile(ROUTES_FILE, 'utf8'));
+  const { gates } = JSON.parse(await readFile(join(dirname(ROUTES_FILE), 'approved-changes.json'), 'utf8'));
   const index = {
     captured_at: new Date().toISOString(),
     ...commitOf(),
@@ -289,11 +301,11 @@ async function main() {
       }
       const context = await browser.newContext({ viewport: VIEWPORTS[1], storageState: storage[route.auth] });
       try {
-        entry.path = await discover(await context.newPage(), base, route);
+        entry.path = await discover(await context.newPage(), base, route, gates);
       } catch (err) {
-        entry.status = 'error';
-        entry.error = err.message;
-        failed = true;
+        entry.status = err.outcome?.status ?? 'error';
+        entry.error = err.outcome?.status === 'skipped' ? err.outcome.error : err.message;
+        if (entry.status === 'error') failed = true;
       } finally {
         await context.close();
       }
@@ -328,7 +340,9 @@ async function main() {
   process.exitCode = failed ? 1 : 0;
 }
 
-main().catch((err) => {
-  console.error(err.message);
-  process.exitCode = 1;
-});
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main().catch((err) => {
+    console.error(err.message);
+    process.exitCode = 1;
+  });
+}
