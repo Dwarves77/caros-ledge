@@ -1,0 +1,111 @@
+{
+  "_purpose": "REFERENCE DATA, NOT A write-statutory.mjs --rows-file. write-statutory.mjs's --rows-file schema (see scripts/_worklists/statutory-fueleu-annex-iv-2026-09-05.json's own _schema block) is ship-YEAR data (a named ship's actual GHG intensity / energy used / consecutive-deficit-year count for one reporting period) — none of that is published in the regulation text; it is per-vessel data a ship's company reports under the EU MRV Regulation (EU) 2015/757 and files as its FuelEU Annex IV compliance balance. THIS file instead carries the regulation's own published, period-level constants (Annex I Article 4(2)'s GHG intensity limit table, the Article 4(2) reference value, and Annex IV Part B(a)'s two penalty-formula constants) — the 'whatever the schema's fields are' the dispatching brief asked for, transcribed verbatim from the primary source with a citation per figure. Lane FUELEU-ROWS, 2026-09-06.",
+  "_legal_caveat": "These are the regulation's own published inputs, transcribed verbatim from EUR-Lex with the exact article/annex and text span named per figure. This is a transcription, not a legal interpretation of the Regulation, and not tax, compliance, or legal advice; the site publishes each figure with its source and the source's credibility rating (rule 18) so a reader can verify it against the primary text themselves.",
+  "reference_value": {
+    "value": 91.16,
+    "unit": "gCO2eq/MJ",
+    "meaning": "Article 4(2)'s reference value that every period's limit is a percentage reduction of. Recital 23 states this is the fleet average GHG intensity of the energy used on board by ships in 2020, per Regulation (EU) 2015/757 (MRV) data.",
+    "source": {
+      "celex": "32023R1805",
+      "instrument": "Regulation (EU) 2023/1805 of the European Parliament and of the Council of 12 September 2023 on the use of renewable and low-carbon fuels in maritime transport, and amending Directive 2009/16/EC (OJ L 234, 22.9.2023)",
+      "article": "Article 4(2)",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32023R1805",
+      "quote": "The limit referred to in paragraph 1 shall be calculated by reducing the reference value of 91,16 grams of CO2 equivalent per MJ by the following percentage:",
+      "verified_at": "2026-09-06",
+      "method": "WebFetch (this lane's own session) against the EUR-Lex CELEX:32023R1805 consolidated-text HTML endpoint; matches the value already CONFIRMED and live in scripts/propagation/write-statutory.mjs's FUELEU_REFERENCE_GCO2E_PER_MJ (verified independently by lane DAG-AUTHOR, 2026-09-04) — two independent sessions, same primary-source figure."
+    }
+  },
+  "ghg_intensity_limit_by_period": {
+    "_note": "target_gco2e_per_mj = reference_value.value * (1 - reduction_fraction), rounding NOT applied here (the regulation states the percentage, not a pre-rounded target; write-statutory.mjs's own SUPPORTED_TARGET_YEARS computes 2025's target the same way: 91.16 * (1 - 0.02) = 89.3368). Only the 2025 row is implemented in write-statutory.mjs today (SUPPORTED_TARGET_YEARS); rows for 2030-2050 are transcribed here, verified, and ready for that file's owning lane (DAG-AUTHOR / W4-DAG) to fold in — out of this lane's write set (scripts/propagation/write-statutory.mjs is not in FUELEU-ROWS's write set).",
+    "periods": [
+      {
+        "from_date": "2025-01-01",
+        "reduction_percent": 2,
+        "target_gco2e_per_mj": 89.3368,
+        "supported_in_write_statutory_mjs": true,
+        "quote": "— 2 % from 1 January 2025;"
+      },
+      {
+        "from_date": "2030-01-01",
+        "reduction_percent": 6,
+        "target_gco2e_per_mj": 85.6904,
+        "supported_in_write_statutory_mjs": false,
+        "quote": "— 6 % from 1 January 2030;"
+      },
+      {
+        "from_date": "2035-01-01",
+        "reduction_percent": 14.5,
+        "target_gco2e_per_mj": 77.9418,
+        "supported_in_write_statutory_mjs": false,
+        "quote": "— 14,5 % from 1 January 2035;"
+      },
+      {
+        "from_date": "2040-01-01",
+        "reduction_percent": 31,
+        "target_gco2e_per_mj": 62.9004,
+        "supported_in_write_statutory_mjs": false,
+        "quote": "— 31 % from 1 January 2040;"
+      },
+      {
+        "from_date": "2045-01-01",
+        "reduction_percent": 62,
+        "target_gco2e_per_mj": 34.6408,
+        "supported_in_write_statutory_mjs": false,
+        "quote": "— 62 % from 1 January 2045;"
+      },
+      {
+        "from_date": "2050-01-01",
+        "reduction_percent": 80,
+        "target_gco2e_per_mj": 18.232,
+        "supported_in_write_statutory_mjs": false,
+        "quote": "— 80 % from 1 January 2050."
+      }
+    ],
+    "source": {
+      "celex": "32023R1805",
+      "article": "Article 4(2)",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32023R1805",
+      "quote_full_list": "— 2 % from 1 January 2025; — 6 % from 1 January 2030; — 14,5 % from 1 January 2035; — 31 % from 1 January 2040; — 62 % from 1 January 2045; — 80 % from 1 January 2050.",
+      "verified_at": "2026-09-06",
+      "method": "WebFetch (this lane's own session), fetched twice with independently-worded prompts, both returns byte-identical on every percentage and year. Only the 2025 row had been independently CONFIRMED before this lane (write-statutory.mjs header, lane DAG-AUTHOR, 2026-09-04); the 2030-2050 rows are NEW verbatim confirmations this session — the write-statutory.mjs header itself flagged '2030... without giving verbatim Article text' and '2035/2040/2045/2050... not covered at all', which this fetch closes.",
+      "caveat": "[CONFIRMED] the percentage-and-year table renders identically across two independent WebFetch calls against the EUR-Lex CELEX:32023R1805 consolidated-text endpoint this session. This lane could NOT independently re-render the EUR-Lex page in a full browser (no Chrome/browser tool available to this worktree) the way lane DAG-AUTHOR's 2026-09-02 coordinator session did for the 2025 figure and the Annex IV constants below — so treat this as CONFIRMED-by-WebFetch-text-extraction, one rung below a human-verified full-page browser read, and re-verify with a browser read before treating 2030-2050 as filing-grade (admissibility='filing_ok') the way the 2025 figure already is."
+    }
+  },
+  "annex_iv_part_b_a_penalty_constants": {
+    "_note": "NOT independently re-fetched by this lane — this lane's WebFetch calls against both EUR-Lex endpoints (legal-content TXT/HTML and eli/reg oj/eng) returned only the operative Articles (through Article 5) and never reached the Annexes (confirmed twice, different prompts, same cutoff) — the same EUR-Lex-annex-unreachable-by-WebFetch gap this lane's own BROWSER-WORKLIST.md predecessor already named for a live-browser session. These two constants are UNCHANGED from the value already CONFIRMED and live in scripts/propagation/write-statutory.mjs / src/lib/statutory/fueleu-annex-iv.mjs (lane DAG-AUTHOR, 2026-09-02, coordinator browser read) — restated here only so this reference file is the one place that carries every Annex I/IV constant the calculator uses, not to claim a fresh re-verification this session.",
+    "unit_price_eur_per_tonne_vlsfoe": {
+      "value": 2400,
+      "source": {
+        "celex": "32023R1805",
+        "article": "Annex IV, Part B(a), row 7/8",
+        "quote": "Is the amount to be paid in EUR per equivalent metric ton of VLSFO",
+        "verified_at": "2026-09-02",
+        "method": "Coordinator browser read against EUR-Lex CELEX:32023R1805 (lane DAG-AUTHOR) — see scripts/propagation/write-statutory.mjs file header and src/lib/statutory/fueleu-annex-iv.mjs's FUELEU_UNIT_PRICE_EUR_PER_T_VLSFOE. NOT re-verified by this lane (2026-09-06) — see _note."
+      }
+    },
+    "vlsfoe_mj_per_tonne": {
+      "value": 41000,
+      "source": {
+        "celex": "32023R1805",
+        "article": "Annex IV, Part B(a), row 5/6",
+        "quote": "Is 1 metric ton of VLSFO that is equivalent to 41 000 MJ",
+        "verified_at": "2026-09-02",
+        "method": "Coordinator browser read against EUR-Lex CELEX:32023R1805 (lane DAG-AUTHOR) — see scripts/propagation/write-statutory.mjs file header and src/lib/statutory/fueleu-annex-iv.mjs's FUELEU_VLSFOE_MJ_PER_TONNE. NOT re-verified by this lane (2026-09-06) — see _note."
+      }
+    },
+    "article_23_2_multiplier": {
+      "formula": "1 + (n - 1) / 10, n = the number of consecutive reporting periods a company is subject to a FuelEU penalty for that ship, n >= 2 (n = 1: multiplier = 1, no surcharge)",
+      "source": {
+        "celex": "32023R1805",
+        "article": "Article 23(2)",
+        "quote": "If a ship has a compliance deficit for two consecutive reporting periods or more, that amount shall be multiplied by 1 + (n − 1)/10, where n is the number of consecutive reporting periods for which the company is subject to a FuelEU penalty for that ship.",
+        "verified_at": "2026-09-02",
+        "method": "Coordinator browser read against EUR-Lex CELEX:32023R1805 (lane DAG-AUTHOR). NOT re-verified by this lane (2026-09-06) — see _note."
+      }
+    }
+  },
+  "what_this_file_does_not_and_cannot_contain": {
+    "ship_year_inputs": "ghgIntensityActual, energyUsedMJ and consecutiveDeficitYears (write-statutory.mjs's --rows-file schema) are per-vessel figures a ship's company reports under the EU MRV Regulation (EU) 2015/757 to EMSA's THETIS-MRV register — they are NOT published anywhere in Regulation (EU) 2023/1805's own text, so rule 2 (never fabricate) and this lane's own dispatch instruction ('if a figure is not in the regulation text, leave the row out and say so') both forbid inventing one here. See docs/runbooks/FUELEU-STATUTORY-RUNBOOK.md for exactly what this session tried against the public THETIS-MRV portal and every other public-guidance channel checked, all unsuccessful this session, and the exact next dispatch to close this gap.",
+    "annex_ii_default_factors": "A future producer that computes ghgIntensityActual from a ship's raw fuel-consumption breakdown (rather than accepting a pre-computed figure, per write-statutory.mjs's own header) would need Annex II's default well-to-wake emission-factor table (LCV / Cf per fuel type) — this lane's WebFetch calls could not reach Annex II either (same Annexes-unreachable gap noted above). Named as a gap for that future producer, not guessed."
+  }
+}

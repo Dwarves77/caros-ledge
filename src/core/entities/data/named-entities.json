@@ -1,0 +1,24 @@
+{
+  "named": [
+    { "canonical": "ISO 14083", "pattern": "\\biso[\\s-]?14083\\b" },
+    { "canonical": "ISO 14064", "pattern": "\\biso[\\s-]?14064\\b" },
+    { "canonical": "EN 16258", "pattern": "\\ben[\\s-]?16258\\b" },
+    { "canonical": "GHG Protocol", "pattern": "\\bghg\\s*protocol\\b" },
+    { "canonical": "GLEC Framework", "pattern": "\\bglec\\b" },
+    { "canonical": "CBAM", "pattern": "\\bcbam\\b|carbon border adjustment mechanism" },
+    { "canonical": "CORSIA", "pattern": "\\bcorsia\\b" },
+    { "canonical": "AFIR", "pattern": "\\bafir\\b|alternative fuels infrastructure regulation" },
+    { "canonical": "EUDR", "pattern": "\\beudr\\b|eu deforestation regulation" },
+    { "canonical": "CSRD", "pattern": "\\bcsrd\\b|corporate sustainability reporting directive" },
+    { "canonical": "ReFuelEU Aviation", "pattern": "\\brefuel\\s?eu\\b" },
+    { "canonical": "FuelEU Maritime", "pattern": "\\bfuel\\s?eu\\s+maritime\\b" },
+    { "canonical": "EEXI", "pattern": "\\beexi\\b" },
+    { "canonical": "CII", "pattern": "\\bcarbon intensity indicator\\b|\\bcii\\b" },
+    { "canonical": "MARPOL", "pattern": "\\bmarpol\\b" },
+    { "canonical": "ISSB", "pattern": "\\bissb\\b" },
+    { "canonical": "IFRS S2", "pattern": "\\bifrs\\s?s2\\b" },
+    { "canonical": "SBTi", "pattern": "\\bsbti\\b|science[\\s-]based targets" },
+    { "canonical": "GRI Standards", "pattern": "\\bgri\\s+standards\\b" },
+    { "canonical": "Fit for 55", "pattern": "\\bfit\\s+for\\s+55\\b" }
+  ]
+}

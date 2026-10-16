@@ -1,0 +1,6 @@
+{
+  "order": ["supersedes", "implements", "conflicts", "amends", "depends_on", "related"],
+  "label": { "supersedes": "Supersedes", "implements": "Implements", "conflicts": "Conflicts with", "amends": "Amends", "depends_on": "Depends on" },
+  "genericLabel": { "outgoing": "References", "incoming": "Referenced by" },
+  "themeMembership": "theme_member"
+}

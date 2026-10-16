@@ -1,0 +1,66 @@
+{
+ "_note": "FuelEU Maritime Regulation (EU) 2023/1805 Article 4(2) GHG-intensity limit trajectory, 2025 to 2050 (BUILD-PLAN ruling 8). Each value carries its verbatim source span (quote); derive-objects writes an obligation object per period ONLY when that span is verbatim in a held capture of the instrument. Transcribed from EUR-Lex CELEX:32023R1805 (see src/features/statutory/data); the 2030-2050 rows were confirmed by text extraction, one rung below a full-page browser read.",
+ "instrument": {
+  "celex": "32023R1805",
+  "identityPattern": "32023r1805|2023/1805",
+  "pinpointBase": "Article 4(2)",
+  "dutyHolderClass": [
+   "ism_company"
+  ],
+  "applicabilityAttribute": "ghg_intensity_limit_from",
+  "jurisdiction": [
+   "EU"
+  ],
+  "mode": [
+   "ocean"
+  ]
+ },
+ "referenceValue": {
+  "value": 91.16,
+  "unit": "gCO2eq/MJ",
+  "quote": "The limit referred to in paragraph 1 shall be calculated by reducing the reference value of 91,16 grams of CO2 equivalent per MJ by the following percentage:"
+ },
+ "periods": [
+  {
+   "from_date": "2025-01-01",
+   "reduction_percent": 2,
+   "target_gco2e_per_mj": 89.3368,
+   "quote": "— 2 % from 1 January 2025;"
+  },
+  {
+   "from_date": "2030-01-01",
+   "reduction_percent": 6,
+   "target_gco2e_per_mj": 85.6904,
+   "quote": "— 6 % from 1 January 2030;"
+  },
+  {
+   "from_date": "2035-01-01",
+   "reduction_percent": 14.5,
+   "target_gco2e_per_mj": 77.9418,
+   "quote": "— 14,5 % from 1 January 2035;"
+  },
+  {
+   "from_date": "2040-01-01",
+   "reduction_percent": 31,
+   "target_gco2e_per_mj": 62.9004,
+   "quote": "— 31 % from 1 January 2040;"
+  },
+  {
+   "from_date": "2045-01-01",
+   "reduction_percent": 62,
+   "target_gco2e_per_mj": 34.6408,
+   "quote": "— 62 % from 1 January 2045;"
+  },
+  {
+   "from_date": "2050-01-01",
+   "reduction_percent": 80,
+   "target_gco2e_per_mj": 18.232,
+   "quote": "— 80 % from 1 January 2050."
+  }
+ ],
+ "source": {
+  "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32023R1805",
+  "article": "Article 4(2)",
+  "verified_at": "2026-09-06"
+ }
+}

@@ -1,0 +1,17 @@
+{
+  "surfaces": ["regulations", "market", "operations", "research"],
+  "fallback": "uncategorized",
+  "rules": [
+    { "itemTypeIn": ["regulation", "directive", "standard", "guidance", "framework", "law"], "surface": "regulations" },
+    { "domainIn": [1], "surface": "regulations" },
+    { "domainIn": [3, 6], "surface": "operations" },
+    { "domainIn": [7], "surface": "research" },
+    { "domainIn": [2, 4], "surface": "market" },
+    { "itemTypeIn": ["regional_data"], "surface": "operations" },
+    { "itemTypeIn": ["research_finding"], "surface": "research" },
+    { "itemTypeIn": ["market_signal", "initiative", "technology", "innovation"], "surface": "market" }
+  ],
+  "path": { "regulations": "/regulations", "market": "/market", "operations": "/operations", "research": "/research" },
+  "label": { "regulations": "Regulations", "market": "Market Intel", "research": "Research", "operations": "Operations" },
+  "order": ["regulations", "market", "research", "operations"]
+}

@@ -1,0 +1,4 @@
+{
+  "targetYears": [2025],
+  "reason": "Only the 2025 limit (Article 4(2)) was read in a full browser against EUR-Lex CELEX:32023R1805. The 2030-2050 rows were confirmed by text extraction (the constants file says so) and are one rung below filing grade until a browser re-read; a row for those years refuses at the filing gate."
+}
