@@ -1,5 +1,5 @@
 // Ported from old_repo/scripts/_reground/free-pass-run.mjs (lines 19-106)
-// Ported from old_repo/scripts/lib/free-pass.mjs (lines 1-50)
+// Ported from old_repo/scripts/lib/free-pass.mjs (lines 1-48)
 // The $0 floor-first re-attribution of a non-verified item (INV-056). A FACT whose attributed source is below the item type's authority
 // floor, or unresolved, is re-homed to a floor-qualifying source THE ITEM ALREADY HOLDS when the span is verbatim in that stored capture,
 // the capture is not an error body, and the capture is a primary instrument (officialness path a). Nothing is fetched and nothing is

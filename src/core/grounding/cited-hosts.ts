@@ -1,5 +1,5 @@
 // Ported from old_repo/src/lib/agent/canonical-pipeline.ts (lines 1684-1758)
-// Ported from old_repo/src/lib/sources/cited-host-gate.mjs (lines 1-20)
+// Ported from old_repo/src/lib/sources/cited-host-gate.mjs (lines 1-19)
 // The cited-host gate (S1-07). A cited URL becomes a pool stub (which criterion 2 accepts by exact URL) ONLY when the system already
 // KNOWS its host: the item's real fetched pool, the source registry or the item's own source_url, matched by host or by institution.
 // Unconditional stubbing made criterion 2 circular (the author's citations licensed themselves). A novel-host citation is flagged,
