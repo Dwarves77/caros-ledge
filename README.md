@@ -2,7 +2,7 @@
 
 Freight sustainability intelligence. This tree is the clean-room rebuild: a new repository, no history from the old one. It is building; `src/app/page.tsx` says so.
 
-The plan is in `docs/BUILD-PLAN-2026-10-12.md`; how it is executed is in `docs/PART2-AGENT-PLAN-2026-10-15.md`.
+The plan is in `docs/BUILD-PLAN-2026-10-12.md`; how it is executed is in `docs/PART2-AGENT-PLAN-2026-10-15.md`. docs/WHY-2026-10-16.md is the operator's rationale: read it before any build or improvement decision; its section 7 is the decision procedure.
 
 ## Rules
 
