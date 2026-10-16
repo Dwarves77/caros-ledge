@@ -1,14 +1,15 @@
 import assert from "node:assert/strict";
-import { test } from "node:test";
+import { mock, test } from "node:test";
 
 import { formatDate, formatRelative, formatRelativeCompact, isoWeek, countNoun, toDate } from "@/core/shared/dates";
 import { domainForItemType, asDomain } from "@/core/shared/domains";
 import { sendInvitationEmail } from "@/core/shared/email";
 import { resolveItemUuid } from "@/core/shared/ids";
 import { htmlToText, slugify } from "@/core/shared/text";
-import { captureError, stackHash, withErrorCapture } from "@/core/shared/telemetry";
+import { captureError, resetTelemetryNotice, stackHash, withErrorCapture } from "@/core/shared/telemetry";
 import { canonicalUrl, hostOf, stripUrlMarkers } from "@/core/shared/url";
 
+import { scripted } from "../_support/fake-clients.ts";
 import { fakeDb, wrote } from "../_support/fake-db.ts";
 
 test("dates: one format set and the ISO week helper", () => {
@@ -120,4 +121,17 @@ test("withErrorCapture re-raises after capturing", async () => {
     throw new Error("handler failed");
   });
   await assert.rejects(wrapped(new Request("https://x.test"), undefined), /handler failed/);
+});
+
+test("telemetry: with no service client captureError says so once per process, never throws and never repeats the line", async () => {
+  scripted.service = null;
+  resetTelemetryNotice();
+  const warned = mock.method(globalThis.console, "warn", () => {});
+  try {
+    for (let i = 0; i < 600; i += 1) await captureError({ side: "server", route: "/api/x", error: new Error("boom") });
+  } finally {
+    warned.mock.restore();
+  }
+  const lines = warned.mock.calls.map((c) => c.arguments);
+  assert.equal(lines.filter((l) => String(l[0]).includes("error_events is unavailable")).length, 1);
 });

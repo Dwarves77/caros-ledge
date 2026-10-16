@@ -5,7 +5,9 @@ import type { User } from "@supabase/supabase-js";
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 
 import { browserClient } from "@/core/db/browser";
+import { failureOf } from "@/core/http/backoff";
 
+import { createAuthEventHandler } from "./auth-events";
 import { createIdentityLoader, type AuthSeed, type IdentityLoader, type IdentityStatus } from "./identity-loader";
 
 interface AuthContextValue {
@@ -58,7 +60,8 @@ export function AuthProvider({ children, onSeed }: { children: ReactNode; onSeed
     const loader = createIdentityLoader({
       fetchIdentity: async () => {
         const r = await fetch("/api/auth/identity", { credentials: "same-origin", cache: "no-store" });
-        return r.ok ? r.json() : null;
+        if (!r.ok) throw failureOf(r.status, r.headers.get("Retry-After"));
+        return r.json();
       },
       onSeed: seed,
       onRetrying: setRetryingIdentity,
@@ -79,21 +82,22 @@ export function AuthProvider({ children, onSeed }: { children: ReactNode; onSeed
     };
   }, [seed]);
 
-  // Cross-tab sync: another tab's sign-out sends this one to /login; a sign-in in another tab reloads this one.
+  // Cross-tab sync, never a document reload (see auth-events.ts): a sign-out elsewhere leaves a protected route for /login; a sign-in elsewhere re-fetches identity in place.
   useEffect(() => {
+    const handle = createAuthEventHandler({
+      setUser: (user) => setUser(user as User | null),
+      loader: () => loaderRef.current,
+      identityHasUser: () => knownUserRef.current !== null,
+      pathname: () => window.location.pathname,
+      navigate: (to) => void (window.location.href = to),
+    });
     const {
       data: { subscription },
-    } = browserClient().auth.onAuthStateChange((event, session) => {
-      const hadUser = knownUserRef.current;
-      setUser(session?.user ?? null);
-      knownUserRef.current = session?.user ?? null;
-      if (event === "SIGNED_OUT") window.location.href = "/login";
-      if (event === "SIGNED_IN" && !hadUser) window.location.reload();
-    });
+    } = browserClient().auth.onAuthStateChange(handle);
     return () => subscription.unsubscribe();
   }, []);
 
-  const retryIdentity = useCallback(() => loaderRef.current?.rearm(), []);
+  const retryIdentity = useCallback(() => loaderRef.current?.rearm(true), []);
   const signOut = async () => {
     await browserClient().auth.signOut();
     window.location.href = "/login";

@@ -37,19 +37,21 @@ function harness(responses: unknown[]) {
 }
 const settle = () => new Promise((r) => setImmediate(r));
 
-test("identity loader: a failed lookup retries at 600 ms then 1.8 s and settles as an error, never as 'no workspace'", async () => {
-  const h = harness([null, new Error("net"), null]);
+test("identity loader: a failed lookup retries at 1 s, 2 s and 4 s (three retries) and settles as an error, never as 'no workspace'", async () => {
+  const h = harness([null, new Error("net"), null, null, null]);
   h.loader.start();
   await settle();
-  assert.deepEqual(h.timers.map((t) => t.ms), [600]);
+  assert.deepEqual(h.timers.map((t) => t.ms), [1000]);
   await h.fire();
-  assert.deepEqual(h.timers.map((t) => t.ms), [600, 1800]);
+  assert.deepEqual(h.timers.map((t) => t.ms), [1000, 2000]);
+  await h.fire();
+  assert.deepEqual(h.timers.map((t) => t.ms), [1000, 2000, 4000]);
   await h.fire();
   assert.equal(h.seeds.length, 1);
   assert.deepEqual(h.seeds[0], IDENTITY_ERROR_SEED);
   assert.equal(h.seeds[0]?.orgId, undefined, "orgId stays unknown, it is not null");
   assert.equal(h.loader.status(), "error");
-  assert.equal(h.fetches(), 3);
+  assert.equal(h.fetches(), 4, "one attempt and three retries, never more");
 });
 
 test("identity loader: a resolved seed is final, focus re-arms an errored loader, stop cancels the timer", async () => {
@@ -62,13 +64,17 @@ test("identity loader: a resolved seed is final, focus re-arms an errored loader
   await settle();
   assert.equal(ok.fetches(), 1, "rearm does nothing once resolved");
 
-  const recover = harness([null, null, null, body()]);
+  const recover = harness([null, null, null, null, body()]);
   recover.loader.start();
   await settle();
   await recover.fire();
   await recover.fire();
+  await recover.fire();
   assert.equal(recover.loader.status(), "error");
   recover.loader.rearm();
+  await settle();
+  assert.equal(recover.loader.status(), "error", "a focus event inside the cooldown does not start a new round");
+  recover.loader.rearm(true);
   await settle();
   assert.equal(recover.loader.status(), "resolved");
   assert.equal(recover.seeds.at(-1)?.status, "resolved");
@@ -85,9 +91,8 @@ test("identity seed: signed-out identity has an unknown org, a malformed body is
   assert.equal(resolveAuthSeed(body({ user: null }) as never).isPlatformAdmin, false);
   assert.equal(resolveAuthSeed(null), IDENTITY_ERROR_SEED);
   assert.equal(nextIdentityRetryDelay(0), null);
-  assert.equal(nextIdentityRetryDelay(1), 600);
-  assert.equal(nextIdentityRetryDelay(2), 1800);
-  assert.equal(nextIdentityRetryDelay(3), null);
+  assert.deepEqual([1, 2, 3].map((n) => nextIdentityRetryDelay(n)), [1000, 2000, 4000]);
+  assert.equal(nextIdentityRetryDelay(4), null);
   assert.equal(shouldApplySeed("resolved"), false);
   assert.equal(shouldShowAdminNav({ status: "resolved", isPlatformAdmin: true }), true);
   assert.equal(shouldShowAdminNav({ status: "error", isPlatformAdmin: true }), false);
