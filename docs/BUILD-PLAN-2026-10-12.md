@@ -198,3 +198,4 @@ Community's proof (groups, threads, moderation, notifications end to end) follow
    Dashboard/search/Assistant (P1 complete); Admin.
 4. Cutover: Vercel repointed, secrets moved, old tree frozen (P6). Then Community (P7). Then the old tree is deleted
    whole and its history purged.
+Amendment 2026-10-16 (operator): the src gate is 75,000; src/core stays 25,000.

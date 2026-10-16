@@ -2,13 +2,13 @@
 
 Freight sustainability intelligence. This tree is the clean-room rebuild: a new repository, no history from the old one. It is building; `src/app/page.tsx` says so.
 
-The plan is in `docs/BUILD-PLAN-2026-10-12.md`; how it is executed is in `docs/PART2-AGENT-PLAN-2026-10-15.md`.
+The plan is in `docs/BUILD-PLAN-2026-10-12.md`; how it is executed is in `docs/PART2-AGENT-PLAN-2026-10-15.md`. docs/WHY-2026-10-16.md is the operator's rationale: read it before any build or improvement decision; its section 7 is the decision procedure.
 
 ## Rules
 
 1. Every feature of the old product is kept; each is written once, as the best version of itself.
 2. Everything is free: no metered model API, no Browserless.
-3. Hierarchy: `src/core` (substrate, at most 25,000 code lines), `src/features/<name>`, `src/ui`, `src/app` (thin routes). `src` at most 60,000.
+3. Hierarchy: `src/core` (substrate, at most 25,000 code lines), `src/features/<name>`, `src/ui`, `src/app` (thin routes). `src` at most 75,000 (raised from 60,000 by the operator on 2026-10-16 after wave 2 landed every feature at 100 to 163 percent of the plan budgets).
 4. Every file under `src/` carries `// Ported from <old path> (lines a-b)`, or is listed in `scripts/ci/new-files.txt` with a reason.
 5. A dependency needs a line in the `budget` block of `package.json`. No `@anthropic-ai/*`, `openai`, or Browserless.
 6. The database is `supabase/schema.sql` plus forward files in `supabase/migrations/`, each ending in a DO-block self-check.
