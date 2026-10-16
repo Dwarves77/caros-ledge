@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
-import { RELATIONSHIPS, writeDiscoveredEdges, type EdgeRow } from "@/core/flywheel/edges";
+import { edgeSnapshotSink, RELATIONSHIPS, writeDiscoveredEdges, type EdgeRow } from "@/core/flywheel/edges";
 import { renderSurfaceOfSql, SURFACE_RULES, surfaceOf } from "@/core/routing";
 
 import { memoryDb } from "../_support/memory-db.ts";
@@ -66,4 +66,26 @@ test("a failed correction read throws before any write", async () => {
   const m = memoryDb({}, { failures: [{ table: "item_corrections", op: "select", message: "boom" }] });
   await assert.rejects(() => writeDiscoveredEdges(m.db, [edge("a", "b")]), /item_corrections read failed/);
   assert.equal(m.wrote("item_cross_references").length, 0);
+});
+
+test("IMP-047: with a harness run id the prior rows are stored in edge_snapshots before the overwrite, in chunks; a failed snapshot write stops the overwrite", async () => {
+  const RUN = "99999999-9999-4999-8999-999999999999";
+  const prior = (n: number) => Array.from({ length: n }, (_, i) => ({ id: `e${i}`, source_item_id: "a", target_item_id: `t${i}`, relationship: "related", origin: "provenance_discovery", score: 0.3, basis: [] }));
+  const m = memoryDb({ item_cross_references: prior(3), item_corrections: [] }, { unique: { item_cross_references: ["source_item_id", "target_item_id"] } });
+  const r = await writeDiscoveredEdges(m.db, prior(3).map((e) => edge("a", e.target_item_id, "provenance_discovery", { score: 0.9 })), { runId: RUN });
+  assert.equal(r.refreshed, 3);
+  const snaps = m.tables.edge_snapshots as Record<string, unknown>[];
+  assert.equal(snaps.length, 1);
+  assert.deepEqual([snaps[0]?.run_id, snaps[0]?.table_name], [RUN, "item_cross_references"]);
+  assert.deepEqual((snaps[0]?.rows as EdgeRow[]).map((x) => x.score), [0.3, 0.3, 0.3], "the snapshot holds the state BEFORE the refresh");
+  assert.ok((m.tables.item_cross_references as EdgeRow[]).every((x) => x.score === 0.9), "and the rows were then refreshed");
+  const chunked = memoryDb({});
+  await edgeSnapshotSink(chunked.db, RUN, 2)("item_cross_references", prior(5) as EdgeRow[]);
+  assert.deepEqual((chunked.tables.edge_snapshots as Record<string, unknown[]>[]).map((x) => (x.rows as unknown[]).length), [2, 2, 1]);
+  const down = memoryDb({ item_cross_references: prior(1), item_corrections: [] }, { unique: { item_cross_references: ["source_item_id", "target_item_id"] }, failures: [{ table: "edge_snapshots", op: "insert", message: "disk full" }] });
+  await assert.rejects(writeDiscoveredEdges(down.db, [edge("a", "t0", "provenance_discovery", { score: 0.9 })], { runId: RUN }), /edge snapshot write failed: disk full/);
+  assert.equal((down.tables.item_cross_references as EdgeRow[])[0]?.score, 0.3, "nothing was overwritten without its evidence");
+  const none = memoryDb({ item_cross_references: prior(1), item_corrections: [] }, { unique: { item_cross_references: ["source_item_id", "target_item_id"] } });
+  await writeDiscoveredEdges(none.db, [edge("a", "t0", "provenance_discovery", { score: 0.9 })], {});
+  assert.equal(none.tables.edge_snapshots, undefined, "no run id and no sink: no snapshot, as before");
 });

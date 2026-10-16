@@ -69,7 +69,7 @@ test("INV-165: a failing dispatcher or an unreadable watcher list never undoes t
   assert.equal(failed.status, 200);
   assert.deepEqual(failed.body.notifications, { sent: 0, failed: 1, error: null });
   db.rows("workspace_item_overrides").length = 0;
-  db.fail("user_watchlist", "select");
+  db.fail("rpc:org_watchers", "rpc");
   const unread = await call(overridesPost, "admin", "POST", O, archive);
   assert.equal(unread.status, 200);
   assert.equal((unread.body.notifications as Record<string, unknown>).sent, 0);

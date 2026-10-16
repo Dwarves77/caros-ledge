@@ -6,7 +6,7 @@ import { checkRateLimit, clientKey } from "@/core/http/rate-limit";
 
 /** The auth redirect target: exchange the code, create the profile row and nothing else (a user with no membership goes to onboarding), then a same-origin return. */
 export async function GET(request: Request) {
-  const limited = checkRateLimit(clientKey(request));
+  const limited = await checkRateLimit(clientKey(request));
   if (limited) return limited;
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");

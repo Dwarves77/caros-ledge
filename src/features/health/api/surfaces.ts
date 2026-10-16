@@ -27,7 +27,7 @@ async function countRows(db: Db, table: string): Promise<Probe> {
 export const GET = route("/api/health/surfaces", async (request) => {
   const denied = workerAuthGuard(request);
   if (denied) return denied;
-  const limited = checkRateLimit("worker:/api/health/surfaces");
+  const limited = await checkRateLimit("worker:/api/health/surfaces");
   if (limited) return limited;
   let db: Db;
   try {

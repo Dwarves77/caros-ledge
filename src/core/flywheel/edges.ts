@@ -39,7 +39,20 @@ export type SnapshotSink = (table: string, priorRows: readonly EdgeRow[]) => voi
 export interface WriteOpts {
   chunk?: number;
   snapshot?: SnapshotSink;
+  /** The harness run taking the snapshots: with no explicit sink, prior rows go to edge_snapshots under this run (migration 0027). */
+  runId?: string;
 }
+
+/** The default sink: prior rows are stored in edge_snapshots, tied to the harness run, in chunks. A failed write throws, so the overwrite it guards never happens. */
+export function edgeSnapshotSink(sb: Db, runId: string, chunk = 500): SnapshotSink {
+  return async (table, priorRows) => {
+    for (let i = 0; i < priorRows.length; i += chunk) {
+      const { error } = await sb.from("edge_snapshots").insert({ run_id: runId, table_name: table, rows: priorRows.slice(i, i + chunk) });
+      if (error) throw new Error(`edge snapshot write failed: ${error.message}`);
+    }
+  };
+}
+const sinkOf = (sb: Db, opts: WriteOpts): SnapshotSink | undefined => opts.snapshot ?? (opts.runId ? edgeSnapshotSink(sb, opts.runId) : undefined);
 export interface DiscoveredWriteResult {
   inserted: number;
   refreshed: number;
@@ -116,7 +129,8 @@ export async function writeDiscoveredEdges(sb: Db, edges: readonly EdgeRow[], op
       writable.push(e);
     }
   }
-  if (opts.snapshot && prior.length) await opts.snapshot("item_cross_references", prior);
+  const sink = sinkOf(sb, opts);
+  if (sink && prior.length) await sink("item_cross_references", prior);
   await upsertChunks(sb, writable as unknown as Record<string, unknown>[], opts.chunk ?? 200, "discovered", result);
   return result;
 }
@@ -211,7 +225,8 @@ export async function writeIntersectionEdges(sb: Db, pairs: readonly Intersectio
   const out: IntersectionWriteResult = { inserted: plan.inserts.length, updated: plan.updates.length, removed: plan.removals.length, deleted: plan.deletes.length, unchanged: plan.unchanged, skippedManual: plan.skippedManual, skippedTombstoned: plan.skippedTombstoned, written: 0, failedChunks: 0, notes: [], projected: null };
   if (opts.dry) return { ...out, projected: projectEdgeRows(opts.existing, plan) };
   const priors = [...plan.updates.map((u) => u.row), ...plan.removals.map((u) => u.row), ...plan.deletes];
-  if (opts.snapshot && priors.length) await opts.snapshot("item_cross_references", priors);
+  const sink = sinkOf(sb, opts);
+  if (sink && priors.length) await sink("item_cross_references", priors);
   const upserts: Record<string, unknown>[] = [
     ...(plan.inserts as unknown as Record<string, unknown>[]),
     ...[...plan.updates, ...plan.removals].map(({ row, basis }) => ({ source_item_id: row.source_item_id, target_item_id: row.target_item_id, relationship: row.relationship, origin: row.origin, score: row.score ?? null, basis })),

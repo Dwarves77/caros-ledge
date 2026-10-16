@@ -4,7 +4,7 @@
 // with its line and any one stops the run. Then: the property checks against the live catalog, and the catalog diff: one
 // snapshot per step, each migration's changed object classes equal to the classes its `-- catalog:` header declares, the final
 // catalog equal to the last step's (the checks' planted violations leave nothing behind), and src/core/db/schema-keys.json equal
-// to the live primary keys. Exit 1 on any error or unexplained difference.
+// to the live primary keys, and the generator pins (scripts/ci/checks/generator-pins.mjs). Exit 1 on any error or unexplained difference.
 import { spawnSync } from "node:child_process";
 import { readdirSync, readFileSync } from "node:fs";
 
@@ -125,6 +125,8 @@ if (gen.status !== 0 || !gen.stdout) {
 rollbackTest("generated source backfill (sample export)", gen.stdout);
 
 const props = spawnSync("node", ["scripts/ci/properties.mjs"], { stdio: "inherit", env: process.env });
+// IMP-037: the four SQL generators of src/core/contracts must equal what the schema applied (run through the register hook that resolves "@/").
+const pins = spawnSync("node", ["--import", "./tests/_support/register.mjs", "scripts/ci/checks/generator-pins.mjs"], { stdio: "inherit", env: process.env });
 const last = snapshot();
 const drift = diff(before, last);
 for (const l of drift.slice(0, 20)) console.error(`unexplained after the property checks: ${l}`);
@@ -138,4 +140,4 @@ const keys = JSON.parse(readFileSync("src/core/db/schema-keys.json", "utf8"));
 const keyDiff = [...new Set([...Object.keys(live), ...Object.keys(keys)])].filter((t) => JSON.stringify(live[t]) !== JSON.stringify(keys[t]));
 for (const t of keyDiff) console.error(`schema-keys.json differs from the live primary key of ${t}: ${JSON.stringify(keys[t])} vs ${JSON.stringify(live[t])}`);
 console.log(`catalog diff: ${diff(step0, last).length} object changes across the migrations, ${unexplained} unexplained class(es), ${drift.length} drifted after the checks, ${keyDiff.length} schema-keys difference(s)`);
-process.exit((props.status ?? 1) || unexplained || drift.length || keyDiff.length ? 1 : 0);
+process.exit((props.status ?? 1) || (pins.status ?? 1) || unexplained || drift.length || keyDiff.length ? 1 : 0);

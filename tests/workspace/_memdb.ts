@@ -44,12 +44,16 @@ export class MemDb {
   log: Logged[] = [];
   failures: Failure[] = [];
   rpcs: Record<string, (args: unknown) => unknown> = {};
+  /** Read-only relations computed from the tables (the SQL views). */
+  views: Record<string, () => Row[]> = {};
   private seq = 0;
 
   constructor(seed: Record<string, Row[]> = {}) {
     for (const [t, rows] of Object.entries(seed)) this.tables[t] = rows.map((r) => ({ ...r }));
   }
   rows(table: string): Row[] {
+    const view = this.views[table];
+    if (view) return view();
     return (this.tables[table] ??= []);
   }
   writes(table?: string): Logged[] {
@@ -263,7 +267,12 @@ export function memClient(db: MemDb, who: Who | null = null) {
     async rpc(name: string, args?: unknown) {
       if (name === "is_platform_admin") return { data: who?.admin === true, error: null };
       const fn = db.rpcs[name];
-      return fn ? { data: fn(args), error: null } : { data: null, error: { message: `no rpc ${name}` } };
+      if (!fn) return { data: null, error: { message: `no rpc ${name}` } };
+      try {
+        return { data: fn(args), error: null };
+      } catch (e) {
+        return { data: null, error: { message: e instanceof Error ? e.message : String(e) } };
+      }
     },
     auth: {
       async getClaims() {

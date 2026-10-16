@@ -148,25 +148,37 @@ test("INV-155: revoke is scoped to the URL's org BEFORE the write; the token is 
   await assert.rejects(revokeInvitation(denied.db, ORG, "i1"), (e: unknown) => e instanceof HttpError && e.status === 403);
 
   const logged: string[] = [];
+  let issued = "";
   const spies = (["log", "info", "warn", "error", "debug"] as const).map((m) => ({ m, orig: console[m] }));
   for (const { m } of spies) console[m] = (...a: unknown[]) => void logged.push(a.map(String).join(" "));
   try {
-    const issuing = fakeDb(() => ({ data: { id: "i2", token: TOKEN, invited_email: "x@y.test", proposed_role: "member", expires_at: "2099-01-01", status: "pending", created_at: "2026-01-01" } }));
+    const issuing = fakeDb(() => ({ data: { id: "i2", token_last4: "aaaa", invited_email: "x@y.test", proposed_role: "member", expires_at: "2099-01-01", status: "pending", created_at: "2026-01-01" } }));
     await createInvitation(issuing.db, { orgId: ORG, userId: "u1", email: "x@y.test", role: "member", baseUrl: "https://app.example.test" });
+    issued = String(wrote(issuing.calls, "org_invitations", "insert")[0]?.payload?.token_input);
     await createInvitation(fakeDb(() => ({ error: { message: `dup ${TOKEN}`, code: "23505" } })).db, { orgId: ORG, userId: "u1", email: "x@y.test", role: "member", baseUrl: "" }).catch(() => undefined);
   } finally {
     for (const { m, orig } of spies) console[m] = orig;
   }
-  assert.equal(logged.filter((l) => l.includes(TOKEN)).length, 0, "the token reached no log line");
+  assert.equal(logged.filter((l) => l.includes(TOKEN) || l.includes(issued)).length, 0, "the token reached no log line");
+  assert.match(issued, /^[0-9a-f]{64}$/, "the generated token was captured");
 });
 
-test("invitations: issue returns the URL once, an honest email result and no raw token field", async () => {
-  const issued = fakeDb(() => ({ data: { id: "i2", token: TOKEN, invited_email: "x@y.test", proposed_role: "member", expires_at: "2099-01-01", status: "pending", created_at: "2026-01-01" } }));
+test("IMP-009: issue generates the token, returns the URL once, stores only the hash input, and the row read back carries token_last4 and no token", async () => {
+  const issued = fakeDb(() => ({ data: { id: "i2", token_last4: "beef", invited_email: "x@y.test", proposed_role: "member", expires_at: "2099-01-01", status: "pending", created_at: "2026-01-01" } }));
   const { invitation, emailDelivery } = await createInvitation(issued.db, { orgId: ORG, userId: "u1", email: "x@y.test", role: "viewer", baseUrl: "https://app.example.test" });
-  assert.equal(invitation.invite_url, `https://app.example.test/invitations/${TOKEN}`);
+  const insert = wrote(issued.calls, "org_invitations", "insert")[0]?.payload as Record<string, unknown>;
+  const token = String(insert.token_input);
+  assert.match(token, /^[0-9a-f]{64}$/, "a 32-byte hex token is generated in code and handed to the database as token_input");
+  assert.equal(invitation.invite_url, `https://app.example.test/invitations/${token}`);
   assert.equal("token" in invitation, false);
+  assert.equal("token_input" in invitation, false);
+  assert.equal(invitation.token_last4, "beef");
+  assert.deepEqual(insert, { org_id: ORG, invited_email: "x@y.test", invited_by_user_id: "u1", proposed_role: "viewer", token_input: token });
+  assert.doesNotMatch(String(issued.calls[0]?.columns), /(^|[ ,])token(,|$)|token_input/, "the read-back never selects a raw token column");
   assert.deepEqual(emailDelivery, { delivered: false, configured: false, reason: "No email provider is configured on this deployment." });
-  assert.deepEqual(wrote(issued.calls, "org_invitations", "insert")[0]?.payload, { org_id: ORG, invited_email: "x@y.test", invited_by_user_id: "u1", proposed_role: "viewer" });
+  const again = fakeDb(() => ({ data: { id: "i3", token_last4: "cafe" } }));
+  await createInvitation(again.db, { orgId: ORG, userId: "u1", email: "z@y.test", role: "member", baseUrl: "" });
+  assert.notEqual((wrote(again.calls, "org_invitations", "insert")[0]?.payload as Record<string, unknown>).token_input, token, "every invitation gets a fresh token");
   const status = async (error: { message: string; code?: string }) => createInvitation(fakeDb(() => ({ error })).db, { orgId: ORG, userId: "u", email: "a@b.test", role: "member", baseUrl: "" }).catch((e: HttpError) => e.status);
   assert.equal(await status({ message: "dup", code: "23505" }), 409);
   assert.equal(await status({ message: "rls", code: "42501" }), 403);
@@ -191,10 +203,13 @@ test("invitations: lazy expiry, lookup, accept and decline go through the rpc on
 });
 
 test("pendingInvitationsFor: a failed user lookup is an error, never an empty list", async () => {
-  const mine = fakeDb(() => ({ data: [{ id: "1", org_id: ORG, expires_at: "2099-01-01", organizations: { name: "Acme", slug: "acme" }, token: TOKEN, proposed_role: "member", status: "pending", created_at: "x" }, { id: "2", expires_at: "2020-01-01" }] }), { users: { u1: { email: "Ada@Example.test" } } });
+  const mine = fakeDb(() => ({ data: [{ id: "1", org_id: ORG, expires_at: "2099-01-01", organizations: { name: "Acme", slug: "acme" }, token_last4: "aaaa", proposed_role: "member", status: "pending", created_at: "x" }, { id: "2", expires_at: "2020-01-01" }] }), { users: { u1: { email: "Ada@Example.test" } } });
   const list = await pendingInvitationsFor(mine.db, "u1", Date.parse("2026-06-01"));
   assert.equal(list.length, 1);
   assert.equal(list[0]?.org_name, "Acme");
+  assert.equal(list[0]?.token_last4, "aaaa");
+  assert.equal("token" in (list[0] ?? {}), false, "IMP-009: mine returns the last four characters, never a token");
+  assert.doesNotMatch(String(mine.calls[0]?.columns), /(^|[ ,])token(,|$)/);
   assert.equal(filterValue(mine.calls[0]!, "eq:invited_email"), "ada@example.test");
   assert.deepEqual(await pendingInvitationsFor(fakeDb(undefined, { users: {} }).db, "u1"), []);
   await assert.rejects(pendingInvitationsFor(fakeDb(undefined, { userError: { message: "auth down" } }).db, "u1"), (e: unknown) => (e as HttpError).status === 500);

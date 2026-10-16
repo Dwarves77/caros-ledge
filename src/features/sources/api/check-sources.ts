@@ -19,7 +19,7 @@ const OFF = { checked: 0, sourcesChecked: 0, changesDetected: 0, portalCandidate
 export const POST = route("/api/worker/check-sources", async (request) => {
   const denied = workerAuthGuard(request);
   if (denied) return denied;
-  const limited = checkRateLimit("worker:/api/worker/check-sources");
+  const limited = await checkRateLimit("worker:/api/worker/check-sources");
   if (limited) return limited;
   let raw: unknown = new URL(request.url).searchParams.get("limit") ?? undefined;
   const body = await request.text();
