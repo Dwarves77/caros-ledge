@@ -6,6 +6,8 @@
 import { z } from "zod";
 
 import { fetchAllRows, type Db } from "@/core/db";
+import { runResult, type RunResult } from "@/core/intake/result";
+import { dispatchNotification } from "@/core/notifications";
 
 import raw from "./data/kinds.json";
 
@@ -80,4 +82,41 @@ export function themeClassificationExporter(sb: Db, classify: (text: string) => 
       return { ok: false, items: [], error: (e as Error).message };
     }
   };
+}
+
+export const OUTBOX_MAX_ATTEMPTS = 5;
+type OutboxRow = { id: string; user_id: string; kind: Parameters<typeof dispatchNotification>[0]["kind"]; payload: Record<string, unknown>; attempts: number | null };
+const PENDING = (sb: Db, limit: number) => sb.from("notification_outbox").select("id, user_id, kind, payload, attempts").eq("status", "pending").order("created_at", { ascending: true }).limit(limit);
+
+/** The pending outbox rows (oldest first) as a drain queue. */
+export function notificationOutboxExporter(sb: Db): Exporter {
+  return async ({ limit }) => {
+    const { data, error } = await PENDING(sb, limit);
+    return error ? { ok: false, items: [], error: error.message } : { ok: true, items: (data ?? []) as Item[], source: { type: "table", table: "notification_outbox" } };
+  };
+}
+
+/**
+ * Send each pending notification through dispatchNotification and stamp the row: sent (with sent_at), or attempts + 1 with last_error; the fifth failed attempt
+ * gives up (status failed) so a poisoned row stops being retried. Dry counts what it would send and touches nothing. A failed read fails the run.
+ */
+export async function runNotificationOutbox(deps: { sb: Db; now(): Date; dispatch?: typeof dispatchNotification }, input: { dry?: boolean; limit?: number } = {}): Promise<RunResult> {
+  const send = deps.dispatch ?? dispatchNotification;
+  const { data, error } = await PENDING(deps.sb, input.limit ?? 200);
+  if (error) return runResult("failed", {}, ["reading notification_outbox failed: " + error.message]);
+  const rows = (data ?? []) as OutboxRow[];
+  const c = { pending: rows.length, sent: 0, retried: 0, gave_up: 0, stamp_errors: 0 };
+  const notes: string[] = [];
+  if (input.dry !== false) return runResult("ok", c, ["dry run: nothing sent or stamped"]);
+  for (const r of rows) {
+    const err = await send({ userId: r.user_id, kind: r.kind, payload: r.payload }, deps.sb);
+    const attempts = (r.attempts ?? 0) + 1;
+    const patch = err === null ? { status: "sent", sent_at: deps.now().toISOString(), attempts } : { status: attempts >= OUTBOX_MAX_ATTEMPTS ? "failed" : "pending", attempts, last_error: err };
+    const up = await deps.sb.from("notification_outbox").update(patch).eq("id", r.id);
+    if (up.error) { c.stamp_errors += 1; notes.push("stamping " + r.id + " failed: " + up.error.message); }
+    else if (err === null) c.sent += 1;
+    else if (patch.status === "failed") { c.gave_up += 1; notes.push(r.id + " gave up after " + attempts + " attempts: " + err); }
+    else c.retried += 1;
+  }
+  return runResult(c.stamp_errors ? "partial" : "ok", c, notes);
 }

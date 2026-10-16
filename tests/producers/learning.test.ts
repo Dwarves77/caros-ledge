@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readdirSync } from "node:fs";
 import { test } from "node:test";
 
-import { DRAIN_KINDS, KIND_ORDER, kindForBatchPath, nextBatchPath, resolveKind, screenVerdictExporter, themeClassificationExporter, applyScreenVerdictBatch, finishDrain, leaseDeps, planDrain, selectStaleItems, type DrainDeps, type Exporter } from "@/features/drain";
+import { DRAIN_KINDS, KIND_ORDER, kindForBatchPath, nextBatchPath, resolveKind, runNotificationOutbox, screenVerdictExporter, themeClassificationExporter, applyScreenVerdictBatch, finishDrain, leaseDeps, planDrain, selectStaleItems, type DrainDeps, type Exporter } from "@/features/drain";
 import { buildEntityItemsReader, describeChange, EMITTING_TABLES, eventTypeForOutboxRow, MAX_ITEMS_PER_EVENT, readOutboxEvents, runQuestionsOnChange, type ChangeDeps } from "@/features/learning/questions-on-change";
 import { buildLedgerRows, deadlineMs, matchEventsToSignposts, runSignpostStep, type OutboxEvent, type SignpostRow, type SignpostStepDeps } from "@/features/learning/signpost-scoring";
 import { buildSignpostStepDeps, hydrateEventRows } from "@/features/learning/signpost-scoring-deps";
@@ -273,7 +273,7 @@ test("finishDrain releases every lease the plan took, records a release that thr
 });
 
 test("the kinds: eight, each with an exporter id and an apply step (no workflow filenames), one batch per kind per run, a batch path maps back to its kind", () => {
-  assert.deepEqual(KIND_ORDER, ["ledger-verdicts", "host-verdicts", "needs-search", "question-answers", "theme-briefs", "record-briefs", "theme-classification", "screen-verdict"]);
+  assert.deepEqual(KIND_ORDER, ["ledger-verdicts", "host-verdicts", "needs-search", "question-answers", "theme-briefs", "record-briefs", "theme-classification", "screen-verdict", "notification-outbox"]);
   assert.ok(DRAIN_KINDS.every((k) => k.applyStep && k.maxBatchesPerRun === 1 && !JSON.stringify(k).includes(".yml")));
   assert.equal(kindForBatchPath("drain/batches/theme-briefs/theme-briefs-003.json")?.id, "theme-briefs");
   assert.equal(kindForBatchPath("drain/batches/theme-briefs/nested/theme-briefs-003.json"), null);
@@ -303,4 +303,26 @@ test("IMP-039: the screen-verdict kind exports the ambiguous holds P2-05 banked 
   const leases = leaseDeps(memoryDb({}, { rpc: (n) => (n === "acquire_mutation_lease" ? { data: [{ acquired: true, cur_holder: "h" }] } : { data: [{ released: true }] }) }).db);
   assert.deepEqual(await leases.acquire(U(1), "h", "judgement-drain", 10800), { acquired: true, cur_holder: "h" });
   assert.equal(await leases.release(U(1), "h"), true);
+});
+
+test("IMP-025: the notification outbox sends each pending row through dispatchNotification, stamps sent or counts the attempt with its error, gives up at 5 attempts, and a dry run touches nothing", async () => {
+  const db = memoryDb({ notification_outbox: [
+    { id: "n1", user_id: "u1", kind: "archive", payload: { a: 1 }, attempts: 0, status: "pending", created_at: "2026-10-01" },
+    { id: "n2", user_id: "u2", kind: "assignment", payload: {}, attempts: 1, status: "pending", created_at: "2026-10-02" },
+    { id: "n3", user_id: "u3", kind: "archive", payload: {}, attempts: 4, status: "pending", created_at: "2026-10-03" },
+    { id: "n4", user_id: "u4", kind: "archive", payload: {}, attempts: 0, status: "sent", created_at: "2026-10-04" },
+  ] });
+  const sent: string[] = [];
+  const dispatch = async (a: { userId: string }) => (a.userId === "u1" ? (sent.push(a.userId), null) : "smtp down");
+  const dry = await runNotificationOutbox({ sb: db.db, now: () => NOW, dispatch: dispatch as never });
+  assert.deepEqual([dry.counts.pending, sent.length, db.writes.filter((w) => w.op === "update").length], [3, 0, 0]);
+  const r = await runNotificationOutbox({ sb: db.db, now: () => NOW, dispatch: dispatch as never }, { dry: false });
+  assert.deepEqual([r.counts.sent, r.counts.retried, r.counts.gave_up], [1, 1, 1]);
+  const byId = Object.fromEntries((db.tables.notification_outbox ?? []).map((x) => [x.id, x]));
+  assert.deepEqual([byId.n1?.status, byId.n1?.sent_at], ["sent", NOW.toISOString()]);
+  assert.deepEqual([byId.n2?.status, byId.n2?.attempts, byId.n2?.last_error], ["pending", 2, "smtp down"]);
+  assert.deepEqual([byId.n3?.status, byId.n3?.attempts], ["failed", 5]);
+  assert.equal(byId.n4?.status, "sent");
+  const failed = await runNotificationOutbox({ sb: memoryDb({}, { failures: [{ table: "notification_outbox", op: "select", message: "down" }] }).db, now: () => NOW });
+  assert.equal(failed.outcome, "failed");
 });

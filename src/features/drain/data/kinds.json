@@ -7,7 +7,8 @@
   "theme-briefs",
   "record-briefs",
   "theme-classification",
-  "screen-verdict"
+  "screen-verdict",
+  "notification-outbox"
  ],
  "kinds": [
   {
@@ -118,6 +119,19 @@
    "maxBatchesPerRun": 1,
    "idKey": "census_id",
    "leaseKey": "census_id"
+  },
+  {
+   "id": "notification-outbox",
+   "label": "Notifications that failed to send and are retried",
+   "batchDir": "drain/batches/notification-outbox",
+   "batchRe": "^notification-outbox-d{3}.json$",
+   "batchPrefix": "notification-outbox",
+   "applyStep": "notification-outbox",
+   "namesFile": false,
+   "batchSize": 200,
+   "maxBatchesPerRun": 1,
+   "idKey": "id",
+   "leaseKey": "id"
   }
  ]
 }
