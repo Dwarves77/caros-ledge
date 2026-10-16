@@ -16,6 +16,6 @@
     { "label": "Network", "items": [{ "href": "/community", "label": "Community" }] }
   ],
   "extraTitles": [{ "href": "/profile", "label": "Account" }, { "href": "/admin", "label": "Admin" }],
-  "chromeless": ["/login", "/auth", "/signup", "/onboarding", "/workspace/new", "/privacy", "/invitations"],
+  "chromeless": ["/login", "/auth", "/signup", "/onboarding", "/workspace/new", "/invitations", "/privacy/ui-fixtures"],
   "noWorkspaceNoteSuppressed": ["/workspace/new", "/invitations", "/onboarding", "/login", "/auth", "/signup", "/privacy"]
 }

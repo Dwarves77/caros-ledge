@@ -27,7 +27,8 @@ test("nav-model: a path matches by segment, never by string prefix", () => {
   assert.equal(navTitleForPath("/mapping"), "Caro's Ledge");
   assert.equal(isChromeless("/auth/callback"), true);
   assert.equal(isChromeless("/author"), false);
-  assert.equal(isChromeless("/privacy"), true);
+  assert.equal(isChromeless("/privacy"), false, "/privacy shows the shell (the polls are gated by the session, not by the route)");
+  assert.equal(isChromeless("/privacy/ui-fixtures"), true);
   assert.equal(isChromeless("/login"), true);
   assert.equal(isChromeless("/loginx"), false);
   assert.equal(isChromeless("/regulations"), false);
