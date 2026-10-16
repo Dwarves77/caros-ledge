@@ -1,12 +1,13 @@
 import { existsSync, readFileSync, statSync } from "node:fs";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const SRC = new URL("../../src/", import.meta.url);
 const REAL_CLIENTS = new URL("core/db/clients.ts", SRC).href;
 const FAKE_CLIENTS = new URL("./fake-clients.ts", import.meta.url).href;
 
 function find(base) {
-  for (const candidate of [base.pathname, `${base.pathname}.ts`, `${base.pathname}.tsx`, `${base.pathname}/index.ts`]) {
+  const p = fileURLToPath(base);
+  for (const candidate of [p, `${p}.ts`, `${p}.tsx`, `${p}/index.ts`]) {
     if (existsSync(candidate) && statSync(candidate).isFile()) return pathToFileURL(candidate).href;
   }
   return null;

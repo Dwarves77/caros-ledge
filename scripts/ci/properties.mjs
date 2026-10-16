@@ -1,7 +1,10 @@
 // Property checks against the applied database (DATABASE_URL), read through psql.
-// Checks named in baseline-waivers.json print their offenders and pass; the rest fail the run.
+// Each check is scripts/ci/checks/<key>.sql (first line: its label). A waiver in baseline-waivers.json names the slice that owes
+// the fix; a check without a waiver fails the run on any offender. Every check is also proven on every run by an attack: its
+// planted violation (scripts/ci/fixtures/<key>.sql) is run inside a transaction that rolls back, and the check must report a row
+// it did not report live. A check that passes its planted violation fails the run.
 import { spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 
 const url = process.env.DATABASE_URL;
 if (!url) {
@@ -9,49 +12,45 @@ if (!url) {
   process.exit(1);
 }
 const waivers = JSON.parse(readFileSync("scripts/ci/baseline-waivers.json", "utf8"));
-
-const CHECKS = [
-  ["rls-enabled", "RLS enabled on every table in public",
-    `SELECT c.relname FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
-     WHERE n.nspname = 'public' AND c.relkind IN ('r','p') AND NOT c.relrowsecurity ORDER BY 1`],
-  ["anon-no-write-policy", "no policy grants INSERT, UPDATE or DELETE to anon",
-    `SELECT tablename || '.' || policyname FROM pg_policies
-     WHERE schemaname = 'public' AND cmd IN ('INSERT','UPDATE','DELETE','ALL')
-       AND (roles && ARRAY['anon','public']::name[]) ORDER BY 1`],
-  ["fk-indexed", "every foreign key's leading column has a non-partial index",
-    `SELECT c.conrelid::regclass || ' (' || c.conname || ')' FROM pg_constraint c
-     JOIN pg_namespace n ON n.oid = c.connamespace
-     WHERE c.contype = 'f' AND n.nspname = 'public' AND NOT EXISTS (
-       SELECT 1 FROM pg_index i WHERE i.indrelid = c.conrelid AND i.indkey[0] = c.conkey[1] AND i.indpred IS NULL) ORDER BY 1`],
-  ["definer-search-path", "every SECURITY DEFINER function has search_path pinned",
-    `SELECT p.oid::regprocedure::text FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
-     WHERE n.nspname = 'public' AND p.prosecdef
-       AND NOT EXISTS (SELECT 1 FROM unnest(coalesce(p.proconfig, '{}')) s WHERE s LIKE 'search_path=%') ORDER BY 1`],
-  ["function-search-path", "every function in public has search_path pinned",
-    `SELECT p.oid::regprocedure::text FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
-     WHERE n.nspname = 'public'
-       AND NOT EXISTS (SELECT 1 FROM unnest(coalesce(p.proconfig, '{}')) s WHERE s LIKE 'search_path=%') ORDER BY 1`],
-];
-
 let failed = false;
-for (const [key, label, sql] of CHECKS) {
-  const r = spawnSync("psql", [url, "-X", "-At", "-v", "ON_ERROR_STOP=1", "-c", sql], { encoding: "utf8" });
+for (const [key, w] of Object.entries(waivers)) {
+  if (!/^P\d-[A-Z0-9]+$/.test(w.slice ?? "") || !w.date || !Number.isInteger(w.baseline)) {
+    console.error(`waiver ${key}: needs slice (e.g. P2-S1), date and integer baseline`);
+    failed = true;
+  }
+}
+
+function rowsOf(sql) {
+  const r = spawnSync("psql", [url, "-X", "-q", "-At", "-v", "ON_ERROR_STOP=1", "-f", "-"], { encoding: "utf8", input: sql, maxBuffer: 1 << 26 });
   if (r.status !== 0) {
-    console.error(`${key}: query failed\n${r.stderr}`);
+    console.error(`query failed\n${r.stderr}`);
     process.exit(1);
   }
-  const rows = r.stdout.split("\n").filter(Boolean);
-  const waiver = waivers[key];
-  if (rows.length === 0) {
-    console.log(`PASS ${key}: ${label}`);
-    continue;
-  }
-  const heading = waiver ? "KNOWN BASELINE FAILURES, forward migrations owed" : "FAIL";
-  console.log(`${heading} ${key}: ${label} (${rows.length} offending${waiver ? `, baseline ${waiver.baseline}, owner ${waiver.owner}, since ${waiver.date}` : ""})`);
-  for (const row of rows) console.log(`  ${row}`);
-  if (waiver && rows.length > waiver.baseline) {
-    console.error(`${key}: ${rows.length} offenders exceed the waived baseline ${waiver.baseline}`);
-    failed = true;
-  } else if (!waiver) failed = true;
+  return r.stdout.split("\n").filter(Boolean);
 }
+
+let nChecks = 0;
+let nPlanted = 0;
+for (const file of readdirSync("scripts/ci/checks").filter((f) => f.endsWith(".sql")).sort()) {
+  const key = file.slice(0, -4);
+  const sql = readFileSync(`scripts/ci/checks/${file}`, "utf8");
+  const label = sql.split("\n")[0].replace(/^-- /, "");
+  const rows = rowsOf(sql);
+  const waiver = waivers[key];
+  nChecks += 1;
+  if (rows.length === 0) console.log(`PASS ${key}: ${label}`);
+  else {
+    const waived = waiver && rows.length <= waiver.baseline;
+    console.log(`${waived ? "WAIVED" : "FAIL"} ${key}: ${label} (${rows.length} offending${waiver ? `, baseline ${waiver.baseline}, slice ${waiver.slice}` : ""})`);
+    for (const row of rows) console.log(`  ${row}`);
+    if (!waived) failed = true;
+  }
+  const fixture = `scripts/ci/fixtures/${key}.sql`;
+  const hits = existsSync(fixture) ? rowsOf(`BEGIN;\n${readFileSync(fixture, "utf8")}\n${sql}\nROLLBACK;`).filter((r) => !rows.includes(r)) : [];
+  if (hits.length === 0) {
+    console.error(`ATTACK FAILED ${key}: ${existsSync(fixture) ? "the planted violation passed" : "no planted violation in scripts/ci/fixtures"}`);
+    failed = true;
+  } else nPlanted += hits.length;
+}
+console.log(`${nChecks} checks, ${nPlanted} planted violations flagged`);
 process.exit(failed ? 1 : 0);

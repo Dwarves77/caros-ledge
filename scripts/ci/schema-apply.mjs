@@ -1,6 +1,11 @@
-// Applies supabase/schema.sql to an empty Postgres (DATABASE_URL) with the Supabase stubs it needs,
-// prints every error with its line, then runs the property checks. Exit 1 on any error.
+// Applies supabase/schema.sql, then every supabase/migrations/NNNN_*.sql in name order (files named *_data_* are cutover-window data
+// migrations and are never run here), to an empty Postgres (DATABASE_URL) with the Supabase stubs it needs. Every error is printed
+// with its line and any one stops the run. Then: the property checks against the live catalog, and the catalog diff: one
+// snapshot per step, each migration's changed object classes equal to the classes its `-- catalog:` header declares, the final
+// catalog equal to the last step's (the checks' planted violations leave nothing behind), and src/core/db/schema-keys.json equal
+// to the live primary keys. Exit 1 on any error or unexplained difference.
 import { spawnSync } from "node:child_process";
+import { readdirSync, readFileSync } from "node:fs";
 
 const url = process.env.DATABASE_URL;
 if (!url) {
@@ -33,7 +38,7 @@ DROP SCHEMA IF EXISTS public CASCADE;
 
 function psql(args, input) {
   const r = spawnSync("psql", [url, "-X", "-q", ...args], { encoding: "utf8", maxBuffer: 1 << 28, input });
-  return { code: r.status ?? 1, err: r.stderr ?? "" };
+  return { code: r.status ?? 1, err: r.stderr ?? "", out: r.stdout ?? "" };
 }
 
 function errorsOf(text) {
@@ -58,5 +63,52 @@ if (result.code !== 0) {
 }
 console.log("schema.sql applied with zero errors");
 
+const snapshot = () => {
+  const r = psql(["-At", "-F", "|", "-v", "ON_ERROR_STOP=1", "-f", "scripts/ci/catalog-snapshot.sql"]);
+  if (r.code !== 0) {
+    console.error(r.err);
+    process.exit(1);
+  }
+  return r.out.split("\n").filter(Boolean);
+};
+const diff = (a, b) => {
+  const [sa, sb] = [new Set(a), new Set(b)];
+  return [...b.filter((l) => !sa.has(l)), ...a.filter((l) => !sb.has(l))];
+};
+
+const step0 = snapshot();
+let before = step0;
+let unexplained = 0;
+for (const file of readdirSync("supabase/migrations").filter((f) => /^\d{4}_.+\.sql$/.test(f) && !f.includes("_data_")).sort()) {
+  const path = `supabase/migrations/${file}`;
+  const m = psql(["-v", "ON_ERROR_STOP=1", "-f", path]);
+  for (const l of m.err.split("\n")) if (/NOTICE/.test(l)) console.log(l.replace(/^.*NOTICE:\s*/, "  self-check: "));
+  if (m.code !== 0 || errorsOf(m.err).length) {
+    console.error(`${file}: failed\n${m.err}`);
+    process.exit(1);
+  }
+  const after = snapshot();
+  const changed = new Set(diff(before, after).map((l) => l.split("|")[0]));
+  const declared = new Set((readFileSync(path, "utf8").match(/^-- catalog: (.*)$/m)?.[1] ?? "").split(",").map((x) => x.trim()).filter((x) => x && x !== "none"));
+  const off = [...changed].filter((c) => !declared.has(c)).concat([...declared].filter((c) => !changed.has(c)).map((c) => `declared but unchanged: ${c}`));
+  console.log(`${file}: changed [${[...changed].sort()}]${off.length ? ` UNEXPLAINED [${off}]` : ""}`);
+  unexplained += off.length;
+  before = after;
+}
+console.log("migrations applied with zero errors");
+
 const props = spawnSync("node", ["scripts/ci/properties.mjs"], { stdio: "inherit", env: process.env });
-process.exit(props.status ?? 1);
+const last = snapshot();
+const drift = diff(before, last);
+for (const l of drift.slice(0, 20)) console.error(`unexplained after the property checks: ${l}`);
+const live = {};
+for (const l of last) {
+  const [cls, obj, def] = l.split("|");
+  const pk = cls === "constraint" && def.match(/^PRIMARY KEY \((.*)\)$/);
+  if (pk) live[obj.split(".")[0]] = pk[1].split(",").map((c) => c.trim());
+}
+const keys = JSON.parse(readFileSync("src/core/db/schema-keys.json", "utf8"));
+const keyDiff = [...new Set([...Object.keys(live), ...Object.keys(keys)])].filter((t) => JSON.stringify(live[t]) !== JSON.stringify(keys[t]));
+for (const t of keyDiff) console.error(`schema-keys.json differs from the live primary key of ${t}: ${JSON.stringify(keys[t])} vs ${JSON.stringify(live[t])}`);
+console.log(`catalog diff: ${diff(step0, last).length} object changes across the migrations, ${unexplained} unexplained class(es), ${drift.length} drifted after the checks, ${keyDiff.length} schema-keys difference(s)`);
+process.exit((props.status ?? 1) || unexplained || drift.length || keyDiff.length ? 1 : 0);
