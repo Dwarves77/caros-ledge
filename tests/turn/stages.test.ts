@@ -165,25 +165,27 @@ test("IMP-055: an item that changed has its research assessment re-scored in the
   assert.equal((await runPropagate(call(), e.d)).counts.assess_candidates, undefined);
 });
 
-test("briefs: a theme brief is written once against the live membership and a stale hash is refused; a screen-verdict batch is validated; the kit kinds are refused as not merged; an unknown kind is refused", async () => {
-  assert.deepEqual(planBriefs({}), { batch: null, error: null });
+test("briefs: a theme brief is written once against the live membership and a stale hash is refused; a screen-verdict batch is validated; every kit kind is reached and refuses content that is not a batch; an unknown kind is refused", async () => {
+  assert.deepEqual(planBriefs({}), { batch: null, export: null, error: null });
+  assert.match(planBriefs({ batch: { kind: "x", content: "y" }, export: { kind: "x" } }).error ?? "", /not both/);
+  assert.match(planBriefs({ export: {} }).error ?? "", /string kind/);
   assert.match(planBriefs({ batch: { kind: 1 } }).error ?? "", /string kind/);
   const f = fixture();
   assert.equal((await runBriefs(call(), f.d)).counts.applied, 0);
   f.db.seed("connection_themes", [{ id: "T1", member_ids: ["a", "b"] }]);
   const brief = (hash: string) => JSON.stringify({ theme_id: "T1", title: "T", brief_md: "body", member_hash: hash });
-  const stale = await runBriefs(call({ input: { batch: { kind: "theme-brief", content: brief("deadbeef") } } }), f.d);
+  const stale = await runBriefs(call({ input: { batch: { kind: "theme-briefs", content: brief("deadbeef") } } }), f.d);
   assert.deepEqual([stale.outcome, f.db.rows("theme_briefs").length], ["failed", 0]);
-  const ok = await runBriefs(call({ input: { batch: { kind: "theme-brief", content: brief(computeMemberHash(["a", "b"])) } } }), f.d);
+  const ok = await runBriefs(call({ input: { batch: { kind: "theme-briefs", content: brief(computeMemberHash(["a", "b"])) } } }), f.d);
   assert.deepEqual([ok.outcome, ok.counts.applied, f.db.rows("theme_briefs").map((x) => x.generated_by)], ["ok", 1, ["session-executor"]]);
-  const dry = await runBriefs(dryCall({ batch: { kind: "theme-brief", content: brief(computeMemberHash(["a", "b"])) } }), f.d);
+  const dry = await runBriefs(dryCall({ batch: { kind: "theme-briefs", content: brief(computeMemberHash(["a", "b"])) } }), f.d);
   assert.equal(f.db.rows("theme_briefs").length, 1, "a dry run wrote nothing more");
   assert.equal(dry.outcome, "ok");
   const badJson = await runBriefs(call({ input: { batch: { kind: "screen-verdicts", content: "{" } } }), f.d);
   assert.match(badJson.notes[0] ?? "", /not JSON/);
   const partial = await runBriefs(call({ input: { batch: { kind: "screen-verdicts", content: JSON.stringify({ verdicts: [{ census_id: CENSUS, verdict: "on_vertical", basis: "b" }, { census_id: "nope", verdict: "on_vertical", basis: "b" }] }) } } }), f.d);
-  assert.deepEqual([partial.outcome, partial.counts.applied, partial.counts.refused_rows], ["partial", 1, 1]);
-  for (const kind of ["record-briefs", "need-urls", "question-answers", "extraction-output"]) assert.match((await runBriefs(call({ input: { batch: { kind, content: "x" } } }), f.d)).notes[0] ?? "", /kit not merged/);
+  assert.deepEqual([partial.outcome, partial.counts.applied, partial.counts.refused], ["partial", 1, 1]);
+  for (const kind of ["record-briefs", "question-answers", "needs-search", "forward-events", "ledger-verdicts"]) assert.match((await runBriefs(call({ input: { batch: { kind, content: "x" } } }), f.d)).notes[0] ?? "", /batch is not JSON/, kind);
   assert.match((await runBriefs(call({ input: { batch: { kind: "mystery", content: "x" } } }), f.d)).notes[0] ?? "", /unknown batch kind/);
 });
 

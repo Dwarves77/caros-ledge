@@ -17,6 +17,7 @@
     "schema:apply": "node scripts/ci/schema-apply.mjs",
     "tree-checks": "node scripts/ci/tree-checks.mjs",
     "connections": "node scripts/ci/connections.mjs",
+    "columns": "node scripts/ci/columns.mjs",
     "turn": "node scripts/turn.mjs",
     "install-hooks": "node scripts/install-hooks.mjs",
     "ui-checks": "node scripts/ci/ui-checks.mjs",

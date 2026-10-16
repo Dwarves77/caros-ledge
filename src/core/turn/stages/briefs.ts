@@ -1,48 +1,52 @@
 // Ported from old_repo/scripts/turns/theme-briefs/artifact.mjs (lines 1-41)
-// Stage 8, briefs: the session-authored batch kinds that exist in merged slices (a theme brief, a screen-verdict batch), each validated before it is written. The remaining kinds (record briefs, need URLs,
-// question answers, extraction output) are the session-batch kit, slice P2-08b: until it is merged they are recorded as refused, never faked.
+// Stage 8, briefs: the session-batch kit. An input names either a batch to apply (`batch: { kind, content, format?, options? }`: record-briefs, question-answers, needs-search, forward-events, theme-briefs, screen-verdicts or
+// ledger-verdicts, each validated whole before it is written) or an export to hand a session (`export: { kind, outDir?, limit?, ids? }`: the bundle goes to a scratch directory, never the repo). The kit's apply ends by
+// calling its own downstream in the same run; the row this stage returns is the run's record.
 import type { FamilyCall } from "@/core/harness";
 import type { RunResult } from "@/core/types/run-result";
 import { runResult } from "@/core/types/run-result";
-import { applyScreenVerdictBatch } from "@/features/drain";
-import { applyThemeBrief } from "@/features/flywheel";
+import { applyBatch, exportBatch } from "@/features/batches";
+import type { BatchDeps, ExportInput } from "@/features/batches";
 
 import type { BuiltDeps } from "../wiring";
 
-export const KIT_KINDS = ["record-briefs", "need-urls", "question-answers", "extraction-output"] as const;
 export interface Batch {
   kind: string;
   format?: "json" | "md";
   content: string;
+  options?: Record<string, unknown>;
+}
+export interface BriefsPlan {
+  batch: Batch | null;
+  export: (ExportInput & { kind: string }) | null;
+  error: string | null;
 }
 
-/** The batch from the stage input, or the reason it is not one. Pure. */
-export function planBriefs(input: Record<string, unknown>): { batch: Batch | null; error: string | null } {
-  if (input.batch === undefined) return { batch: null, error: null };
+/** The batch or the export from the stage input, or the reason it is neither. Pure. */
+export function planBriefs(input: Record<string, unknown>): BriefsPlan {
+  const none = { batch: null, export: null };
+  if (input.batch !== undefined && input.export !== undefined) return { ...none, error: "give a batch to apply or an export to run, not both" };
+  if (input.export !== undefined) {
+    const e = input.export as Record<string, unknown>;
+    if (typeof e?.kind !== "string") return { ...none, error: "export must carry a string kind" };
+    const { kind, outDir, limit, charBudget, ids } = e as { kind: string; outDir?: unknown; limit?: unknown; charBudget?: unknown; ids?: unknown };
+    return { batch: null, export: { kind, ...(typeof outDir === "string" ? { outDir } : {}), ...(typeof limit === "number" ? { limit } : {}), ...(typeof charBudget === "number" ? { charBudget } : {}), ...(Array.isArray(ids) ? { ids: ids.filter((x): x is string => typeof x === "string") } : {}) }, error: null };
+  }
+  if (input.batch === undefined) return { ...none, error: null };
   const b = input.batch as Record<string, unknown>;
-  if (typeof b?.kind !== "string" || typeof b.content !== "string") return { batch: null, error: "batch must carry a string kind and a string content" };
-  return { batch: { kind: b.kind, content: b.content, ...(b.format === "md" ? { format: "md" as const } : {}) }, error: null };
+  if (typeof b?.kind !== "string" || typeof b.content !== "string") return { ...none, error: "batch must carry a string kind and a string content" };
+  return { batch: { kind: b.kind, content: b.content, ...(b.format === "md" ? { format: "md" as const } : {}), ...(b.options && typeof b.options === "object" ? { options: b.options as Record<string, unknown> } : {}) }, export: null, error: null };
 }
+
+/** The kit's deps from the turn's: the members it uses, by name. */
+export const batchDeps = (d: BuiltDeps): BatchDeps => ({ sb: d.sb, now: d.now, intake: d.intake, verdicts: d.producers.verdicts ?? null, flushCache: d.mintRun.flushCache });
 
 export async function runBriefs(call: FamilyCall, d: BuiltDeps): Promise<RunResult> {
-  const { batch, error } = planBriefs(call.input);
-  if (error) return runResult("failed", { refused: 1 }, [error]);
-  if (!batch) return runResult("ok", { applied: 0 }, ["no batch given: nothing to apply"]);
-  const deps = { sb: d.sb, now: d.now };
-  if (batch.kind === "theme-brief") {
-    const r = await applyThemeBrief(deps, { format: batch.format ?? "json", content: batch.content, dry: call.dry });
-    return { ...r, counts: { applied: r.counts.written ?? 0, ...r.counts }, data: { ids: {} } };
-  }
-  if (batch.kind === "screen-verdicts") {
-    let parsed: { verdicts?: Array<Record<string, unknown>> };
-    try {
-      parsed = JSON.parse(batch.content) as typeof parsed;
-    } catch (e) {
-      return runResult("failed", { refused: 1 }, [`screen-verdicts batch is not JSON: ${(e as Error).message}`]);
-    }
-    const r = await applyScreenVerdictBatch(deps, parsed, { dry: call.dry });
-    return runResult(r.refused.length ? "partial" : "ok", { applied: r.written, planned: r.planned, refused_rows: r.refused.length }, r.refused);
-  }
-  const kit = (KIT_KINDS as readonly string[]).includes(batch.kind);
-  return runResult("failed", { refused: 1 }, [kit ? `refused: kit not merged: the "${batch.kind}" batch kind belongs to the session-batch kit (P2-08b)` : `refused: unknown batch kind "${batch.kind}"`]);
+  const plan = planBriefs(call.input);
+  if (plan.error) return runResult("failed", { refused: 1 }, [plan.error]);
+  const deps = batchDeps(d);
+  if (plan.export) return exportBatch(plan.export.kind, deps, { ...plan.export, runId: call.runId });
+  if (!plan.batch) return runResult("ok", { applied: 0 }, ["no batch given: nothing to apply"]);
+  const r = await applyBatch(plan.batch.kind, deps, { content: plan.batch.content, ...(plan.batch.format ? { format: plan.batch.format } : {}), dry: call.dry, runId: call.runId, ...(plan.batch.options ? { options: plan.batch.options } : {}) });
+  return { ...r, counts: { applied: r.counts.written ?? 0, ...r.counts } };
 }
