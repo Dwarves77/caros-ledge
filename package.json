@@ -50,7 +50,7 @@
     "@types/react": "React types.",
     "@types/react-dom": "React DOM types.",
     "unpdf": "PDF text extraction (pdf.js, serverless build) for the direct transport, held-pool reads and the mint capture; the Edge Function loads its own copy via npm: specifier.",
-    "zustand": "The admin source registry filter store (features/sources/store.ts); client state only, 3 kB.",
+    "zustand": "Client state stores (workspace identity, per-item state, dashboard settings) that the shell and every surface read, and the admin source registry filter (features/sources/store.ts); the same major as the old tree.",
     "playwright": "headless transport on the Actions runner and the parity gate; never bundled (dynamic import, browser installed only on the runner)."
   }
 }

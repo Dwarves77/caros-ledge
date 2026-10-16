@@ -1,6 +1,7 @@
 // Ported from old_repo/src/lib/format.ts (lines 1-85)
 // Ported from old_repo/src/lib/relative-time.ts (lines 1-78)
 // Ported from old_repo/src/components/auth/AuthFrame.tsx (lines 35-41)
+// Ported from old_repo/src/lib/workspace/item-assignments.mjs (lines 15-23)
 export const FIXED_LOCALE = "en-US";
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -56,4 +57,11 @@ export function formatRelative(ts: Date, now: Date | number = Date.now()): strin
   const n = Math.round(abs / unit[1]);
   const label = unit[2] ? `${unit[0]}${n === 1 ? "" : "s"}` : unit[0];
   return diff < 0 ? `in ${n} ${label}` : `${n} ${label} ago`;
+}
+
+/** True for a real calendar date written YYYY-MM-DD (2026-02-30 is not one). */
+export function isIsoDate(value: unknown): value is string {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const d = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === value;
 }

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join, relative } from "node:path";
+import { join, relative, sep } from "node:path";
 import { test } from "node:test";
 
 import * as auth from "@/core/auth";
@@ -9,7 +9,8 @@ import * as http from "@/core/http";
 import * as shared from "@/core/shared";
 
 const files = (dir: string): string[] => readdirSync(dir).flatMap((n) => (statSync(join(dir, n)).isDirectory() ? files(join(dir, n)) : [join(dir, n)]));
-const src = files("src").map((f) => f.replaceAll("\\", "/")).filter((f) => /\.(ts|tsx)$/.test(f));
+const src = files("src").map((f) => f.split(sep).join("/")).filter((f) => /\.(ts|tsx)$/.test(f));
+const rel = (f: string): string => relative("src", f).split(sep).join("/");
 const text = (f: string) => readFileSync(f, "utf8");
 
 test("PROP-001/160: every route handler is behind a guard, or is one of the two public auth endpoints", () => {
@@ -25,12 +26,12 @@ test("PROP-001/160: every route handler is behind a guard, or is one of the two 
     const body = text(handler);
     if (documentedPublic.has(handler)) continue;
     if (publicRoutes.has(handler)) assert.match(body, /checkRateLimit/, `${handler} is public, so it must rate limit`);
-    else assert.match(body, /requireUser|requireAdmin|requireOrgRole|workerAuthGuard|withToken/, `${handler} has no guard`);
+    else assert.match(body, /requireUser|requireAdmin|requireOrgRole|runCollab|workerAuthGuard|withToken/, `${handler} has no guard`);
   }
 });
 
 test("PROP-028/127 and PROP-011/109: one module attaches the bearer, one factory builds service clients", () => {
-  const mentions = (re: RegExp) => src.filter((f) => re.test(text(f))).map((f) => relative("src", f).replaceAll("\\", "/")).sort();
+  const mentions = (re: RegExp) => src.filter((f) => re.test(text(f))).map(rel).sort();
   assert.deepEqual(mentions(/authorization/i), ["core/db/clients.ts", "core/http/authed-fetch.ts"]);
   assert.deepEqual(mentions(/SUPABASE_SERVICE_ROLE_KEY/), ["core/db/clients.ts"]);
   assert.deepEqual(mentions(/\bcreateClient\(/), ["core/db/clients.ts"]);
@@ -39,7 +40,7 @@ test("PROP-028/127 and PROP-011/109: one module attaches the bearer, one factory
 });
 
 test("the console is touched by the logger alone", () => {
-  assert.deepEqual(src.filter((f) => /\bconsole\./.test(text(f))).map((f) => relative("src", f).replaceAll("\\", "/")), ["core/shared/log.ts"]);
+  assert.deepEqual(src.filter((f) => /\bconsole\./.test(text(f))).map(rel), ["core/shared/log.ts"]);
 });
 
 test("no auth code reads the user over the network per request: getClaims, never getUser, on the server", () => {

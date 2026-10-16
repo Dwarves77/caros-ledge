@@ -1,12 +1,1 @@
-{
-  "fk-indexed": {
-    "owner": "forward-migration slice owed (schema.md section 8, port order step 2); no slice id assigned yet",
-    "date": "2026-10-15",
-    "baseline": 82
-  },
-  "function-search-path": {
-    "owner": "forward-migration slice owed (schema.md section 8, port order step 2); no slice id assigned yet",
-    "date": "2026-10-15",
-    "baseline": 29
-  }
-}
+{}
