@@ -10,6 +10,7 @@ import { z } from "zod";
 
 import type { Db } from "@/core/db";
 import { fetchAllRows } from "@/core/db";
+import { decodeUriOrNull } from "@/core/shared/url";
 
 import rulesData from "./data/screen-rules.json";
 import type { Screen, ScreenVerdictName } from "./types";
@@ -45,12 +46,7 @@ export function loadRules() {
 const CELEX_RE = /CELEX:?\s*(\d)(\d{4})([A-Z]{1,2})(\d+)/i;
 export function parseCelex(text: string | null | undefined) {
   if (!text) return null;
-  let decoded = text;
-  try {
-    decoded = decodeURIComponent(text);
-  } catch {
-    // not URL-encoded: use as-is
-  }
+  const decoded = decodeUriOrNull(text) ?? text;
   const m = CELEX_RE.exec(decoded);
   return m ? { raw: m[0], sector: m[1] ?? "", year: parseInt(m[2] ?? "0", 10), type: (m[3] ?? "").toUpperCase(), number: parseInt(m[4] ?? "0", 10) } : null;
 }
@@ -62,11 +58,7 @@ export function deriveSearchText(title: string | null | undefined, documentUrl: 
   const u = String(documentUrl ?? "");
   const filename = /[?&]filename=([^&]+)/i.exec(u)?.[1];
   let seg = filename ?? (u.split(/[?#]/)[0] ?? "").replace(/\/+$/, "").split("/").pop() ?? "";
-  try {
-    seg = decodeURIComponent(seg);
-  } catch {
-    // not URL-encoded
-  }
+  seg = decodeUriOrNull(seg) ?? seg;
   return seg.replace(/\.(pdf|html?|aspx?|docx?)$/i, "").replace(/[_-]+/g, " ").replace(/\b(en|fr|de)\b$/i, "").trim();
 }
 

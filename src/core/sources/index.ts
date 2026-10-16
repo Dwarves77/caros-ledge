@@ -1,5 +1,6 @@
 export { classifySourceAxes, detectDrift, expectedOutputForRole, isValidDistribution, observedDistributionFromItems } from "./axes";
-export { BIAS_TAG_LABELS, BIAS_TAG_VOCAB, biasChips, biasLegend, biasTagLabel, hasBiasTags, splitBiasTags, writeBiasTags } from "./bias-tags";
+export { BIAS_DIMENSION_LABELS, BIAS_TAG_LABELS, BIAS_TAG_VOCAB, biasChips, biasLegend, biasTagLabel, hasBiasTags, LOWER_CONFIDENCE_WORDS, splitBiasTags, writeBiasTags } from "./bias-tags";
+export type { BiasChip, BiasDimension, BiasDiscard, BiasRow, BiasTagInput } from "./bias-tags";
 export { classifyInstitutionalType, classifySourceRole, classifySourceType, isOffVerticalByIdentity, isValidSourceTypeArray, SOURCE_TYPE_VALUES, sourceTypeLabel } from "./classify";
 export type { InstitutionalType, SourceRole } from "./classify";
 export { classTierForHost, classTierForHostAcrossNames, codifiedTierForHost, decidePoolHostRegistration, isDoiResolverHost, permanentlyUnregisteredClass, placeHostWithVerdicts } from "./host-class";
@@ -11,7 +12,7 @@ export { readSourceByUrl, registerAndRate, registerSource } from "./register";
 export type { RegisterAndRateResult } from "./register";
 export type { RunDeps, RunResult } from "./run-result";
 export { verifyPoolTargetMatch, verifyPoolTargetMatch as matchTarget, verifyTargetMatch } from "./target-match";
-export { customerTierOf, HOST_CLASS_TIER, isKnownHostClass, TIER_LABELS, tierContract, tierLabelOf, tierScaleSpan } from "./tier-contract";
+export { customerTierOf, HOST_CLASS_TIER, isKnownHostClass, SOURCE_TIER_MAX, TIER_LABELS, tierContract, tierLabelOf, tierScaleSpan } from "./tier-contract";
 export { decideEffectiveTier, evaluateDemotion, evaluatePromotion, planTierMovements, recomputeEffectiveTier } from "./tier-movement";
 export { applyTierMovements, tierMovementWriters, writeEffectiveTierUnlessOverridden } from "./tier-writers";
 export { computeTrustScore, planTrustScores, trustMetricsFromRow } from "./trust-score";

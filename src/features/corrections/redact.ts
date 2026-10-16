@@ -3,8 +3,7 @@
 // reads one item's corrections, or the paged table for several, and never reads a claim for an item with no suppression.
 import type { Db } from "@/core/db";
 import { fetchAllByIdChunks } from "@/core/db";
-
-import { readAllCorrections, readItemCorrections, suppressedClaimMatcher } from "./model";
+import { readAllCorrections, readItemCorrections, suppressedClaimMatcher } from "@/core/corrections";
 
 const REGEX_SPECIALS = /[.*+?^${}()|[\]\\]/g;
 const charPattern = (ch: string): string => (ch === "[" ? "\\\\?\\[" : ch === "]" ? "\\\\?\\]" : ch.replace(REGEX_SPECIALS, "\\$&"));

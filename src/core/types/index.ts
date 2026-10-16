@@ -20,3 +20,5 @@ export interface IdentityBootstrap {
 }
 
 export type { BiasTag, ChangeLogEntry, Dispute, ImpactReasoning, ImpactScores, ItemConnection, OperationalImpact, RecommendedAction, Resource, RiskRegisterEntry, SourceReference, Supersession, TimelineEntry } from "./item";
+export { runResult, worst } from "./run-result";
+export type { RunOutcome, RunResult } from "./run-result";

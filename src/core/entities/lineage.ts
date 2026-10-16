@@ -2,7 +2,7 @@
 // ADR-022 / INV-206: a machine lineage write never changes a manual-origin edge, never downgrades a typed relationship to related, never retypes a
 // foreign-origin edge that already holds a different type (reported as a conflict, not written), merges basis entries additively, and never
 // re-creates an admin-tombstoned pair. The one change it makes to another machine origin's row is upgrading a generic related edge to a typed one.
-import { isPairTombstoned } from "@/features/corrections/model";
+import { isPairTombstoned } from "@/core/corrections";
 
 import { resolveMention, type CorpusRow } from "./mentions";
 

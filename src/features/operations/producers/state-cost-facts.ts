@@ -6,7 +6,7 @@ import { z } from "zod";
 
 import { groundCandidate } from "@/core/contracts";
 import { fetchAllRows, type Db } from "@/core/db";
-import { planJurisdiction, planJurisdictionRefs } from "@/core/entities";
+import { planJurisdiction, planJurisdictionRefs, regionCodes } from "@/core/entities";
 import { loadRowsFile, registerCitedSource } from "@/core/producers/rows-file";
 import type { ParseOut, ProducerCtx, ProducerSpec } from "@/core/producers/runner";
 import { keyOf, type Rec } from "@/core/producers/upsert-plan";
@@ -77,7 +77,7 @@ export const stateCostFacts: ProducerSpec = {
   async resolve(ctx, rows) {
     const sb = ctx.sb as Db;
     const meta = ctx.state.meta as Record<string, { code: string; url: string; title: string }>;
-    const regions = await fetchAllRows<{ id: string; code: string }>((from, to) => sb.from("regions").select("id, code").order("id", { ascending: true }).range(from, to) as never, { cap: 10_000 });
+    const regions = await regionCodes(sb);
     const byCode = new Map(regions.map((r) => [r.code, r.id]));
     const missing = [...new Set(Object.values(meta).map((m) => m.code))].filter((c) => !byCode.has(c));
     if (missing.length) throw new Error(`region code(s) not found in the live regions table: ${missing.join(", ")}`);

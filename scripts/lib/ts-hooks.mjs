@@ -1,9 +1,15 @@
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
+// Module hooks that let `node` run the TypeScript sources: the "@/" alias, extensionless specifiers and JSON as data. The tests register them with a stand-in for the database clients (fakeClients);
+// the turn CLI registers them without one, so a production run reaches the real clients.
 const SRC = new URL("../../src/", import.meta.url);
 const REAL_CLIENTS = new URL("core/db/clients.ts", SRC).href;
-const FAKE_CLIENTS = new URL("./fake-clients.ts", import.meta.url).href;
+let FAKE_CLIENTS = null;
+
+export function initialize(data) {
+  FAKE_CLIENTS = data?.fakeClients ?? null;
+}
 
 function find(base) {
   const p = fileURLToPath(base);
@@ -18,7 +24,7 @@ export async function resolve(specifier, context, next) {
   if (specifier.startsWith("@/")) target = find(new URL(specifier.slice(2), SRC));
   else if (/^\.\.?\//.test(specifier) && context.parentURL?.startsWith(SRC.href)) target = find(new URL(specifier, context.parentURL));
   // Source modules get scripted client factories; a test reaches the real ones by importing the file by its path.
-  if (target === REAL_CLIENTS && context.parentURL?.startsWith(SRC.href)) target = FAKE_CLIENTS;
+  if (FAKE_CLIENTS && target === REAL_CLIENTS && context.parentURL?.startsWith(SRC.href)) target = FAKE_CLIENTS;
   // Node's ESM resolver does not read next's package layout: "next/navigation" is the file next/navigation.js.
   if (!target && /^next\/[a-z-]+$/.test(specifier)) target = `${specifier}.js`;
   return next(target ?? specifier, context);

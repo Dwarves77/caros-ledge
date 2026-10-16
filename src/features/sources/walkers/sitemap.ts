@@ -33,12 +33,9 @@ export function parseRobotsSitemapLines(robotsTxt: string, baseUrl: string): str
   for (const line of String(robotsTxt ?? "").split(/\r?\n/)) {
     const m = line.match(/^\s*sitemap\s*:\s*(\S.*?)\s*$/i);
     if (!m?.[1]) continue;
-    try {
-      const u = new URL(m[1], baseUrl);
-      if (u.protocol === "https:") out.push(u.toString());
-    } catch {
-      // a malformed directive value: skip, never throw
-    }
+    if (!URL.canParse(m[1], baseUrl)) continue;
+    const u = new URL(m[1], baseUrl);
+    if (u.protocol === "https:") out.push(u.toString());
   }
   return out;
 }

@@ -10,6 +10,7 @@
 // derived mechanically from value_numeric and unit, and a region code absent from `regions` fails the run (never guessed). Three dataset specs share it: BLS OEWS wages,
 // Eurostat labour cost (mean over six member states), Eurostat non-household electricity price. Rows carry no derivation edges (ADR-043).
 import { fetchAllRows, type Db } from "@/core/db";
+import { regionCodes } from "@/core/entities";
 import { NetworkError, StructureError, type ParseOut, type ProducerCtx, type ProducerSpec } from "@/core/producers/runner";
 import { KEYS, type Rec } from "@/core/producers/upsert-plan";
 
@@ -135,7 +136,7 @@ export function parseNrgPc205(js: Rec, o: { geo: string; regionCode: string; dim
 const ENVELOPE_SELECT = ["id", "region_id", "dimension", "fact_label", ...ENVELOPE_PAYLOAD_KEYS].join(", ");
 /** Region codes to ids; a code absent from `regions` throws (INV-244: refused, never guessed). The rows then carry region_id and no region_code. */
 async function resolveRegions(ctx: ProducerCtx, rows: Rec[]): Promise<{ rows: Rec[]; refused: string[] }> {
-  const regions = await fetchAllRows<{ id: string; code: string }>((from, to) => (ctx.sb as Db).from("regions").select("id, code").order("id", { ascending: true }).range(from, to) as never, { cap: 10_000 });
+  const regions = await regionCodes(ctx.sb as Db);
   const byCode = new Map(regions.map((r) => [r.code, r.id]));
   const missing = [...new Set(rows.map((r) => String(r.region_code)))].filter((c) => !byCode.has(c));
   if (missing.length) throw new Error(`region code(s) not found in the live regions table: ${missing.join(", ")}`);

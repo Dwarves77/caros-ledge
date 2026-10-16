@@ -8,6 +8,7 @@ import { resolveInputs } from "@/core/propagation";
 import { admissibleFor, createMethodRegistry, effectiveConfidence, FLOOR, buildFirstInferenceInput, nextLifecycleState, registerMarketMethods, runPropagationDrain, evaluateSignpostPredicate, fireSignpost } from "@/core/propagation";
 import type { Lifecycle, Value } from "@/core/propagation";
 
+import { installPropagationRpcs } from "../_support/memdb.ts";
 import { memoryDb } from "../_support/memory-db.ts";
 
 const NOW = new Date("2026-10-15T00:00:00Z");
@@ -52,33 +53,11 @@ test("the method registry never overwrites a registration", () => {
 });
 
 type Row = Record<string, unknown>;
-/** A fake whose RPCs behave like the real ones for the rows this test holds: invalidate_dependents marks dependents stale, register_derived_value supersedes. */
+/** The rows this test holds, with the shared propagation rpcs (installPropagationRpcs): invalidate_dependents marks dependents stale, register_derived_value supersedes. */
 function propagationWorld() {
-  let seq = 0;
-  // eslint-disable-next-line prefer-const
-  let m: ReturnType<typeof memoryDb>;
-  const rpc = (name: string, a: unknown) => {
-    const args = a as Row;
-    const t = m.tables;
-    if (name === "invalidate_dependents") {
-      const edges = (t.derivation_edges ?? []).filter((e) => e.from_table === args.p_table && e.from_pk === args.p_pk && e.to_table === "derived_values");
-      const hit = (t.derived_values ?? []).filter((v) => edges.some((e) => e.to_value_id === v.value_id) && v.admissibility !== "stale" && v.superseded_by == null);
-      if (args.p_apply) for (const v of hit) Object.assign(v, { admissibility: "stale", invalidated_by_event: args.p_event });
-      return { data: hit.length };
-    }
-    if (name === "register_derived_value") {
-      const id = `new-${++seq}`;
-      (t.derived_values ??= []).push({ value_id: id, method_id: args.p_method_id, method_version: args.p_method_version, value: args.p_value, admissibility: args.p_admissibility, supersedes: args.p_supersedes, inputs: args.p_inputs, entity_id: args.p_entity_id });
-      const old = (t.derived_values ?? []).find((v) => v.value_id === args.p_supersedes);
-      if (old) old.superseded_by = id;
-      for (const ref of args.p_inputs as { table: string; pk: string }[]) (t.derivation_edges ??= []).push({ from_table: ref.table, from_pk: ref.pk, to_table: "derived_values", to_value_id: id });
-      return { data: id };
-    }
-    return { data: null };
-  };
   const input = (table: string, pk: string) => ({ table, pk });
-  const dv = (id: string, inputs: ReturnType<typeof input>[]) => ({ value_id: id, entity_id: null, method_id: "carbon_intensity_tkm", method_version: "1.0.0", value: 1, admissibility: "calculation_ok", unit: "g", currency: null, inputs, superseded_by: null });
-  m = memoryDb({
+  const dv = (id: string, inputs: ReturnType<typeof input>[]) => ({ value_id: id, entity_id: null, method_id: "carbon_intensity_tkm", method_version: "1.0.0", value: 1, admissibility: "calculation_ok", unit: "g", currency: null, inputs });
+  const m = memoryDb({
     emission_factors: [{ factor_id: "F1", ttw_co2e: 10, source_key: "s", origin_class: "official", pedigree: 1 }, { factor_id: "F2", ttw_co2e: 20, source_key: "s", origin_class: "official", pedigree: 1 }],
     derived_values: [dv("D1", [input("emission_factors", "F1")]), dv("D2", [input("emission_factors", "F1")]), dv("D3", [input("emission_factors", "F2")])],
     derivation_edges: [
@@ -87,7 +66,8 @@ function propagationWorld() {
       { from_table: "emission_factors", from_pk: "F2", to_table: "derived_values", to_value_id: "D3" },
     ],
     propagation_events: [{ event_id: 1, table_name: "emission_factors", row_pk: "F1", entity_id: null, change_kind: "update", occurred_at: "2026-10-14T00:00:00Z", drained_at: null, new_row: null }],
-  }, { rpc });
+  });
+  installPropagationRpcs(m.mem);
   const registry = createMethodRegistry();
   registerMarketMethods(registry, { carbonIntensity: (f) => ({ ok: true, valueGPerUnit: (f.ttw_co2e ?? 0) * 2, unit: "g/tkm" }), computeSeriesDeltas: () => ({}) });
   return { m, registry };
@@ -112,7 +92,7 @@ test("spec 08 section 7 assertion 2: revise one factor; every dependent goes sta
   for (const id of ["D1", "D2"]) {
     const old = dvs().find((v) => v.value_id === id);
     assert.equal(old?.admissibility, "stale", "the stale row is retained, never overwritten");
-    const next = dvs().find((v) => v.value_id === old?.superseded_by);
+    const next = dvs().find((v) => v.supersedes === id);
     assert.equal(next?.supersedes, id);
     assert.equal(next?.value, 20);
   }

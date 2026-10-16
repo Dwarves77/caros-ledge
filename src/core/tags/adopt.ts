@@ -9,7 +9,7 @@
 import type { Db } from "@/core/db";
 import { buildDecisionNote, buildSubjectRef, createdBy, TAG_NAMESPACE, type Decision } from "@/core/flywheel/flags";
 import type { AdoptedVocabulary } from "@/core/vocabulary/adopted";
-import { filterTagProposals, readItemCorrections, removedTagsFor } from "@/features/corrections/model";
+import { filterTagProposals, readItemCorrections, removedTagsFor } from "@/core/corrections";
 
 import { FIELD_CAPS, meetsConfidence, type Confidence, type TagProposal } from "./derive";
 import { heldVocabulary, TAG_FIELDS, type TagField } from "./vocabulary";

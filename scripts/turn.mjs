@@ -1,0 +1,48 @@
+// The ONE CLI. `node scripts/turn.mjs --stage <sweep|sweep-research|change|capture|intake|connect|propagate|briefs|all|ops> --mode dry|apply [--input '<json keyed by stage>'] [--no-chain]`
+// Exit 0 every stage recorded; 1 a record failed, or a credential is missing in CI (it fails loud there); 2 self-skipped (no credentials locally, or not a dispatched run). It never runs a turn on a push or a pull request.
+// Apply is refused by the run frame while the scrape cadence is off (rule 16): a dispatch in build mode is always dry, and its rows say so.
+import { appendFileSync } from "node:fs";
+import { register } from "node:module";
+import { parseArgs } from "node:util";
+
+register("./lib/ts-hooks.mjs", import.meta.url, { data: {} });
+
+const USAGE = "usage: node scripts/turn.mjs --stage <name|all|ops> --mode dry|apply [--input '<json keyed by stage>'] [--no-chain]";
+const fail = (msg) => {
+  console.error(`turn: ${msg}\n${USAGE}`);
+  process.exit(1);
+};
+const note = (title, msg) => console.log(process.env.GITHUB_ACTIONS ? `::notice title=${title}::${msg}` : `${title}: ${msg}`);
+
+const { values } = parseArgs({ options: { stage: { type: "string" }, mode: { type: "string", default: "dry" }, input: { type: "string", default: "{}" }, "no-chain": { type: "boolean", default: false } }, strict: true, allowPositionals: false });
+const event = process.env.GITHUB_EVENT_NAME;
+if (event && event !== "workflow_dispatch") {
+  note("turn", `self-skipped: a turn runs only on a dispatch (this run is a ${event}); exit 2`);
+  process.exit(2);
+}
+// Past this line the sources are needed (a pull request run stops above and installs nothing).
+const { STAGES, runTurn, opNames } = await import("../src/core/turn/index.ts");
+const { buildDeps } = await import("../src/core/turn/wiring.ts");
+const { serviceClient } = await import("../src/core/db/index.ts");
+
+if (!values.stage || ![...STAGES, "all", "ops"].includes(values.stage)) fail(`--stage must be one of ${[...STAGES, "all", "ops"].join(", ")}`);
+if (!["dry", "apply"].includes(values.mode)) fail("--mode must be dry or apply");
+let input;
+try {
+  input = JSON.parse(values.input);
+} catch (e) {
+  fail(`--input is not JSON: ${e.message}`);
+}
+if (input === null || typeof input !== "object" || Array.isArray(input)) fail("--input must be a JSON object keyed by stage");
+if (values.stage === "ops" && !Object.hasOwn(input.ops ?? {}, "op")) fail(`ops needs --input '{"ops":{"op":"<name>","args":{}}}' (ops: ${opNames().join(", ")})`);
+
+const hasCreds = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
+const result = await runTurn({ stage: values.stage, mode: values.mode, trigger: event ? "dispatch" : "manual", chain: !values["no-chain"], input }, { d: hasCreds ? buildDeps(serviceClient(), process.env) : null, env: process.env, now: () => new Date() });
+
+const lines = result.runs.map((r) => (r.row ? `| ${r.row.family} | ${r.row.mode ?? "-"} | ${r.row.outcome} | ${String(r.row.reason ?? "").replace(/\|/g, "/").slice(0, 160)} |` : `| (not recorded) | - | - | ${String(r.error ?? "").slice(0, 160)} |`));
+const table = [`### Turn ${result.rootRunId}`, "", `stage ${values.stage}, requested ${values.mode}, resolved ${result.resolved.mode}${result.resolved.forcedDry ? ` (${result.resolved.reason})` : ""}`, "", "| family | mode | outcome | reason |", "|---|---|---|---|", ...lines].join("\n");
+console.log(table);
+if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${table}\n`);
+if (result.exit === 2) note("turn", `self-skipped: ${result.runs[0]?.error ?? "no credentials"}; exit 2`);
+if (result.exit === 1) console.error(`turn: ${result.runs.find((r) => r.exit === 1)?.error ?? "a record failed"}`);
+process.exit(result.exit);

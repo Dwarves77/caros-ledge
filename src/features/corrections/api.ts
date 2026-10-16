@@ -7,8 +7,7 @@ import { fetchAllByIdChunks, type Db } from "@/core/db";
 import { isRefusal, requireAdmin } from "@/core/http/guard";
 import { isUuid } from "@/core/http/parse";
 import { route } from "@/core/http/errors";
-
-import { findOrphanedFactCorrections, latestPerTarget, validateCorrectionInput, type Correction, type CorrectionInput } from "./model";
+import { findOrphanedFactCorrections, latestPerTarget, validateCorrectionInput, type Correction, type CorrectionInput } from "@/core/corrections";
 
 export interface Reply {
   status: number;
@@ -93,11 +92,13 @@ export async function revokeCorrection(sb: Db, input: { itemId: string; correcti
   return reply(200, { id: input.correctionId, item_id: input.itemId, revoked: true });
 }
 
-function flushDetailCache(itemId: string): void {
+/** True when the detail cache was flushed; false outside a request scope (a script or a test), where there is no cache and the correction itself has already succeeded. */
+function flushDetailCache(itemId: string): boolean {
   try {
     revalidateItem(itemId);
+    return true;
   } catch {
-    // Outside a request scope (a script or a test) there is no cache to flush; the correction itself has already succeeded.
+    return false;
   }
 }
 const send = (r: Reply, headers: Record<string, string>): Response => Response.json(r.body, { status: r.status, headers });

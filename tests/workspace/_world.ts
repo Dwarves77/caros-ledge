@@ -41,9 +41,9 @@ export function seed(): MemDb {
       { id: "dddddddd-0000-4000-8000-000000000002", org_id: ORG_B, sector_profile: [], jurisdiction_weights: null, default_filters: {}, alert_config: {}, home_sections: {}, default_export_format: "html", profile: {}, updated_at: "2026-01-01T00:00:00.000Z" },
     ],
     intelligence_items: [
-      { id: ITEM_1, legacy_id: "o3", title: "FuelEU Maritime", item_type: "regulation", domain: 1, provenance_status: "verified", is_archived: false, priority: "HIGH", effective_priority: "HIGH", origin_class: "official" },
-      { id: ITEM_2, legacy_id: "o4", title: "ReFuelEU Aviation", item_type: "regulation", domain: 1, provenance_status: "verified", is_archived: false, priority: "CRITICAL", effective_priority: "CRITICAL", origin_class: "official" },
-      { id: ITEM_ARCHIVED, legacy_id: "o9", title: "Old rule", item_type: "regulation", domain: 1, provenance_status: "verified", is_archived: true, priority: "LOW", effective_priority: "LOW", origin_class: null },
+      { id: ITEM_1, legacy_id: "o3", title: "FuelEU Maritime", item_type: "regulation", domain: 1, provenance_status: "verified", is_archived: false, priority: "HIGH", origin_class: "official" },
+      { id: ITEM_2, legacy_id: "o4", title: "ReFuelEU Aviation", item_type: "regulation", domain: 1, provenance_status: "verified", is_archived: false, priority: "CRITICAL", origin_class: "official" },
+      { id: ITEM_ARCHIVED, legacy_id: "o9", title: "Old rule", item_type: "regulation", domain: 1, provenance_status: "verified", is_archived: true, priority: "LOW", origin_class: null },
     ],
     user_watchlist: [
       { id: "w1", user_id: USER.member, item_id: "o3" },

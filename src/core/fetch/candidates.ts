@@ -3,6 +3,7 @@
 // Ported from old_repo/src/lib/sources/seek-more.mjs (lines 199-247)
 // Ported from old_repo/src/lib/sources/primary-fallback.mjs (lines 82-173)
 import type { Db } from "@/core/db";
+import { log } from "@/core/shared/log";
 
 import { ECFR_PORTAL_URL, FEDERAL_REGISTER_API_BASE, FEDERAL_REGISTER_PORTAL_URL, apiEndpointFor } from "./api";
 import { BODY_CLASS, classifyBody, targetLangRatio } from "./classify-body";
@@ -182,8 +183,8 @@ export async function generateCandidates(identity: Identity = {}, deps: { webSea
     const q = [identity.title, identity.jurisdiction, "official legislation text"].filter(Boolean).join(" ").trim();
     try {
       for (const u of (await deps.webSearch(q)) || []) ordered.push(u);
-    } catch {
-      // search failed: the deterministic candidates stand
+    } catch (e) {
+      log.warn("[candidates] web search failed; the deterministic candidates stand", e instanceof Error ? e.message : String(e));
     }
   }
   return [...new Set(ordered.filter((u) => typeof u === "string" && /^https:\/\//i.test(u)))];

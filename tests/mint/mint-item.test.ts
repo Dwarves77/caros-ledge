@@ -109,7 +109,7 @@ test("domain and format_type: an unconditional type is re-domained and stamped; 
   const row = db.rows("intelligence_items").find((x) => x.id === r.itemId);
   assert.equal(row?.domain, 1);
   assert.ok(typeof row?.format_type === "string" && row.format_type.length > 0, "format_type stamped from the same registry generation forces");
-  const preset = await mintItem(req({ seed: seed({ format_type: "custom_format", canonical_instrument_key: null, source_url: "https://eur-lex.europa.eu/other", instrument_identifier: "Z" }) }), ctx, { dry: false });
+  const preset = await mintItem(req({ seed: seed({ format_type: "custom_format", title: "Regulation (EU) 2024/77 on a different subject", canonical_instrument_key: null, source_url: "https://eur-lex.europa.eu/other", instrument_identifier: "Z" }) }), ctx, { dry: false });
   assert.equal(db.rows("intelligence_items").find((x) => x.id === preset.itemId)?.format_type, "custom_format");
 });
 
@@ -123,7 +123,7 @@ test("source-link invariant: a source-less seed is refused, a registered URL lin
   const unsourced = await mintItem(req({ seed: seed({ source_id: undefined, source_url: "https://unregistered.example/doc", canonical_instrument_key: null, instrument_identifier: "U" }) }), ctx, { dry: false });
   assert.equal(unsourced.outcome, "unsourced");
   assert.equal(db.writes("sources").length, 0, "the chokepoint never registers a source");
-  const linked = await mintItem(req({ seed: seed({ source_id: undefined, canonical_instrument_key: null, source_url: "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32024R0001", instrument_identifier: "L" }) }), ctx, { dry: false });
+  const linked = await mintItem(req({ seed: seed({ source_id: undefined, title: "Regulation (EU) 2024/1 on linked sources", canonical_instrument_key: null, source_url: "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32024R0001", instrument_identifier: "L" }) }), ctx, { dry: false });
   assert.ok(linked.reasons.includes("source-linked"));
   assert.equal(db.rows("intelligence_items").find((r) => r.id === linked.itemId)?.source_id, SOURCE);
   const nothing = await mintItem(req({ seed: seed({ source_id: undefined, source_url: undefined }) }), ctx, { dry: false });

@@ -5,7 +5,7 @@
 // no authoritative holding and per non-CELEX absent lineage parent, closing each by rule when the need stops reproducing. Writes vocabulary_terms,
 // vocabulary_mentions, entities (adopted terms only) and integrity_flags in the term-need namespace.
 import type { Db } from "@/core/db";
-import { fetchAllByIdChunks, fetchAllRows } from "@/core/db";
+import { fetchAllByIdChunks, fetchAllRows, qb, type Qb } from "@/core/db";
 import { LINEAGE_GAP_CREATED_BY, planLineageGapTargets, type GapFlag } from "@/core/entities/lineage";
 import { readLinkCorpus } from "@/core/entities/link-items";
 import { planReflect, TERM_NEED_NAMESPACE } from "@/core/flywheel/flags";
@@ -32,10 +32,9 @@ export const TRUST_MIN_ITEMS: number = (tierMovement as { q7: { citationFrequenc
 export const NEED_RESOLVE_NOTE = "term-need closed by rule: the need is no longer reproduced (an authoritative holding exists, the term is no longer adopted, or the lineage parent is now held).";
 type Item = { id: string; source_id: string | null; theme_candidate?: string | null; operational_scenario_tags?: string[] | null; compliance_object_candidates?: string[] | null };
 
-type Q = ReturnType<ReturnType<Db["from"]>["select"]>;
 /** Every row of a table (total order on `order`, capped), optionally filtered. A failed page throws. */
-async function all<T>(sb: Db, table: string, columns: string, order: string, apply: (q: Q) => Q = (q) => q): Promise<T[]> {
-  return fetchAllRows<T>((from, to) => apply(sb.from(table).select(columns)).order(order, { ascending: true }).range(from, to) as unknown as PromiseLike<{ data: T[] | null; error: { message: string } | null }>, { cap: SIGNATURE_CAP });
+async function all<T>(sb: Db, table: string, columns: string, order: string, apply: (q: Qb<T>) => Qb<T> = (q) => q): Promise<T[]> {
+  return fetchAllRows<T>((from, to) => apply(qb<T>(sb.from(table).select(columns))).order(order, { ascending: true }).range(from, to), { cap: SIGNATURE_CAP });
 }
 
 export async function termPass(deps: TermPassDeps, input: TermPassInput): Promise<RunResult> {

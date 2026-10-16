@@ -11,7 +11,7 @@ import type { RunResult } from "@/core/sources/run-result";
 import { adoptTags, type AdoptResult, type TaggedItem } from "@/core/tags/adopt";
 import { assembleTagInput, deriveTags } from "@/core/tags/derive";
 import { readAdoptedVocabulary } from "@/core/vocabulary/adopted";
-import type { Correction } from "@/features/corrections/model";
+import type { Correction } from "@/core/corrections";
 
 import { runConnectionDiscovery } from "./run-discovery";
 

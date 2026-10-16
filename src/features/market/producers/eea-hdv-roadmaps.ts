@@ -7,6 +7,7 @@
 import { z } from "zod";
 
 import { limitBytes, readCsvStream } from "@/core/csv/stream";
+import { entitiesByKind } from "@/core/entities";
 import { registerCitedSource, resolveEntityByName } from "@/core/producers/rows-file";
 import { StructureError, type ParseOut, type ProducerCtx, type ProducerSpec } from "@/core/producers/runner";
 import { KEYS, type Rec } from "@/core/producers/upsert-plan";
@@ -161,9 +162,7 @@ const PATCH = COVERED_COLUMNS.filter((c) => !["manufacturer_id", "tech_category"
 const entitiesOf = async (ctx: ProducerCtx): Promise<Array<{ canonical_name: string; entity_id: string }>> => {
   if (Array.isArray(ctx.input.rowsFile)) return ctx.input.rowsFile as never;
   if (!ctx.sb) return [];
-  const { data, error } = await ctx.sb.from("entities").select("entity_id, canonical_name").eq("kind", "organisation").order("entity_id", { ascending: true }).limit(200_000);
-  if (error) throw new Error(`reading entities failed: ${error.message}`);
-  return (data ?? []) as never;
+  return entitiesByKind(ctx.sb, "organisation");
 };
 
 export const eeaHdvRoadmaps: ProducerSpec = {
