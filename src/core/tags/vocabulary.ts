@@ -1,4 +1,5 @@
-// Ported from old_repo/src/lib/connections/derive-tags.mjs (lines 1-120, 206-440)
+// Ported from old_repo/src/lib/connections/derive-tags.mjs (lines 1-120)
+// Ported from old_repo/src/lib/connections/derive-tags.mjs (lines 206-440)
 // Ported from old_repo/src/lib/connections/tag-labels.mjs (lines 1-102)
 // Ported from old_repo/src/lib/connections/tag-aliases.mjs (lines 1-77)
 // ONE vocabulary read for the tag layer: the closed field values come from the brief contract (the old module parsed another module's SOURCE TEXT at

@@ -1,6 +1,7 @@
 // Ported from old_repo/scripts/connections/analyze-corpus.mjs (lines 20-385)
 // Ported from old_repo/src/lib/connections/signal-candidates.mjs (lines 35-116)
-// Ported from old_repo/src/lib/connections/signal-confidence.mjs (lines 115-142, 211-274)
+// Ported from old_repo/src/lib/connections/signal-confidence.mjs (lines 115-142)
+// Ported from old_repo/src/lib/connections/signal-confidence.mjs (lines 211-274)
 // The whole-corpus pass, one function with the guarded service client injected (the old script had a raw client and no main guard). Steps: cross-surface
 // intersections as appended basis entries; shared-entity adoption for pairs with no edge (the old decisive regulation-identifier signal, now a discovery
 // basis); label-propagation clustering into themes REPLACED WHOLESALE inside one connection_theme_runs row that stores the delta against the prior set

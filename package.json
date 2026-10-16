@@ -15,14 +15,22 @@
     "loc": "node scripts/ci/loc.mjs",
     "properties": "node scripts/ci/properties.mjs",
     "schema:apply": "node scripts/ci/schema-apply.mjs",
-    "tree-checks": "node scripts/ci/tree-checks.mjs"
+    "tree-checks": "node scripts/ci/tree-checks.mjs",
+    "ui-checks": "node scripts/ci/ui-checks.mjs",
+    "parity": "node tests/parity/capture.mjs --base http://localhost:3100 --out parity-capture && node tests/parity/compare.mjs --captured parity-capture"
   },
   "dependencies": {
+    "@fontsource/anton": "^5.3.0",
+    "@fontsource/plus-jakarta-sans": "^5.3.0",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.98.0",
+    "@tanstack/react-query": "^5.104.3",
+    "@tanstack/react-virtual": "^3.14.20",
     "next": "16.1.6",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
     "unpdf": "^1.9.0",
     "zod": "^4.6.7",
     "zustand": "^5.0.15"
@@ -51,6 +59,12 @@
     "@types/react-dom": "React DOM types.",
     "unpdf": "PDF text extraction (pdf.js, serverless build) for the direct transport, held-pool reads and the mint capture; the Edge Function loads its own copy via npm: specifier.",
     "zustand": "Client state stores (workspace identity, per-item state, dashboard settings) that the shell and every surface read, and the admin source registry filter (features/sources/store.ts); the same major as the old tree.",
-    "playwright": "headless transport on the Actions runner and the parity gate; never bundled (dynamic import, browser installed only on the runner)."
+    "playwright": "headless transport on the Actions runner and the parity gate; never bundled (dynamic import, browser installed only on the runner).",
+    "@fontsource/anton": "Self-hosted display font (the masthead title, card titles, band group names); a build must not depend on a font CDN (old tree 2026-08-10).",
+    "@fontsource/plus-jakarta-sans": "Self-hosted body font, five weights; same reason as the display font.",
+    "react-markdown": "The one markdown renderer (GfmSection) for the fact documents and briefs; sanitises by construction, no dangerouslySetInnerHTML.",
+    "remark-gfm": "GFM tables for GfmSection (the briefs carry tables).",
+    "@tanstack/react-query": "The one QueryClient for the list surface remainder fetch (use-list-rows) and the shell; the old tree used it for the same.",
+    "@tanstack/react-virtual": "Row virtualization for a long list surface (a 1,300-row corpus); the old ledger used it."
   }
 }

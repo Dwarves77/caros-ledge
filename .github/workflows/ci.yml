@@ -2,6 +2,7 @@ name: CI
 
 # The one workflow. Job `ci`: lint, typecheck, build, tests, tree checks, LOC gates.
 # Job `schema`: supabase/schema.sql applied to an empty Postgres 15, then the property checks.
+# Job `parity`: the built app on the runner, the UX smoke, and the capture compared with tests/parity/baseline (UI slices).
 
 on:
   pull_request:
@@ -43,6 +44,7 @@ jobs:
         run: npm run build
       - run: npm test
       - run: npm run tree-checks
+      - run: npm run ui-checks
       - run: npm run loc
       - name: CI report comment
         if: github.event_name == 'pull_request' && always()
@@ -80,3 +82,60 @@ jobs:
       - run: npm ci --no-audit # the source-backfill generator imports the classify rules (zod)
       - name: Apply schema.sql to an empty Postgres 15, then run the property checks
         run: npm run schema:apply
+
+  parity:
+    name: parity
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co' }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder' }}
+      LIVE_SMOKE_EMAIL: ${{ secrets.LIVE_SMOKE_EMAIL }}
+      LIVE_SMOKE_PASSWORD: ${{ secrets.LIVE_SMOKE_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Does this change touch the UI?
+        id: scope
+        run: |
+          if [ "${{ github.event_name }}" != "pull_request" ]; then echo "run=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          if git diff --name-only "origin/${{ github.base_ref }}...HEAD" | grep -Eq '^(src/ui/|src/app/|src/features/[^/]+/ui/|tests/(parity|ux)/|\.github/workflows/ci\.yml)'; then echo "run=true" >> "$GITHUB_OUTPUT"; else echo "run=false" >> "$GITHUB_OUTPUT"; fi
+      - uses: actions/setup-node@v5
+        if: steps.scope.outputs.run == 'true'
+        with:
+          node-version: '24'
+          cache: npm
+      - if: steps.scope.outputs.run == 'true'
+        run: npm ci --no-audit
+      - if: steps.scope.outputs.run == 'true'
+        run: npx playwright install --with-deps chromium
+      - if: steps.scope.outputs.run == 'true'
+        run: npm run build
+      - name: Start the app (UI fixtures on, set only here)
+        if: steps.scope.outputs.run == 'true'
+        run: |
+          UI_FIXTURES=1 npx next start -p 3100 > next-start.log 2>&1 &
+          for i in $(seq 1 40); do curl -sf http://localhost:3100/login > /dev/null && break; sleep 1; done
+      - name: UX smoke (four widths, real fonts)
+        if: steps.scope.outputs.run == 'true'
+        run: node tests/ux/ux-smoke.mjs --base http://localhost:3100
+      - name: Capture the routes
+        if: steps.scope.outputs.run == 'true'
+        run: node tests/parity/capture.mjs --base http://localhost:3100 --out parity-capture
+      - name: Compare with the baseline
+        if: steps.scope.outputs.run == 'true'
+        run: node tests/parity/compare.mjs --captured parity-capture | tee parity-report.txt
+      - name: Parity report in the job summary
+        if: always() && steps.scope.outputs.run == 'true'
+        run: |
+          { echo '### Parity'; echo '```'; cat parity-report.txt 2>/dev/null || echo 'no report'; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.scope.outputs.run == 'true'
+        with:
+          name: parity-capture
+          path: |
+            parity-capture
+            parity-report.txt
+            next-start.log

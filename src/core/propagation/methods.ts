@@ -1,7 +1,8 @@
 // Ported from old_repo/src/lib/propagation/methods/index.ts (lines 1-138)
 // Ported from old_repo/src/lib/propagation/methods/carbon-intensity.ts (lines 1-71)
 // Ported from old_repo/src/lib/propagation/methods/market-series-delta.ts (lines 1-86)
-// Ported from old_repo/src/lib/propagation/methods/infer-from-question.ts (lines 1-74, 291-310)
+// Ported from old_repo/src/lib/propagation/methods/infer-from-question.ts (lines 1-74)
+// Ported from old_repo/src/lib/propagation/methods/infer-from-question.ts (lines 291-310)
 // ONE registry keyed by (target table, method@version), never overwritten (INV-202): changed behaviour takes a new version, so every derived row
 // stays reproducible against the code its computed_by names. A method that nothing can dispatch is not registered (signpost_watch was dead). The
 // two market methods call into the market slice through MarketMethodDeps (carbonIntensity, computeSeriesDeltas); P2-08 wires them.
