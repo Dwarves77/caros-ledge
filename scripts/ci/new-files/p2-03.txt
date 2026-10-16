@@ -1,0 +1,20 @@
+# path | reason (files with no "Ported from" header)
+src/core/sources/data/tier-contract.json | new in P2-03: the credibility skill's tier table as data (BUILD-PLAN ruling 1: OECD, IEA, World Bank, IPCC at T3), no old counterpart
+src/core/sources/data/host-class.json | new in P2-03: the class-table allowlists, class patterns, ruled hosts and residue word lists as data (host-authority.ts lines 1-75, 125-214, 268-384), no old counterpart
+src/core/sources/data/source-types.json | new in P2-03: the source_type vocabulary as data (source-type-taxonomy.mjs lines 1-69), no old counterpart
+src/core/fetch/data/ttl.json | new in P2-03: host cache TTLs as data (fetch-hold.mjs lines 61-69), no old counterpart
+src/core/fetch/data/transport-order.json | new in P2-03: the hosts the headless tier is tried first for, as data (transport-escalation.mjs line 112), no old counterpart
+src/core/sources/data/tier-movement.json | new in P2-03: promotion criteria, demotion triggers and movement thresholds as data (types/source.ts lines 238-406, trust.ts lines 64-72, 689-702, 863-876), no old counterpart
+src/core/sources/data/bias-tags.json | new in P2-03: the bias-tag vocabulary, labels and thresholds as data (bias-tag-pipeline.mjs lines 1-30, bias-display.mjs lines 5-47), no old counterpart
+src/core/sources/run-result.ts | new in P2-03: the runtime entry result and deps types WAVE-2-COMMON.md names; P2-08 may move it to the harness, no old counterpart
+src/core/sources/data/shared-portals.json | new in P2-03: shared government portals whose institution key carries a path prefix, as data (scripts/lib/institution-key.mjs lines 17-24), no old counterpart
+src/core/coverage/data/coverage.json | new in P2-03: the six coverage states, suppression reasons and transport-mode vocabulary the coverage slice reads, as data (contracts/vocabularies.mjs lines 419-457, 497-546); the contracts slice owns the canonical lists, no old counterpart
+src/core/sources/index.ts | new in P2-03: barrel for the import surface the brief names, no old counterpart
+src/core/fetch/index.ts | new in P2-03: barrel for the import surface the brief names, no old counterpart
+src/core/capture/index.ts | new in P2-03: barrel for the import surface the brief names, no old counterpart
+src/core/coverage/index.ts | new in P2-03: barrel for the import surface the brief names, no old counterpart
+src/core/census/index.ts | new in P2-03: barrel for the import surface the brief names, no old counterpart
+src/core/cache/index.ts | new in P2-03: barrel for the import surface the brief names, no old counterpart
+src/core/perf/index.ts | new in P2-03: barrel for the import surface the brief names, no old counterpart
+src/core/notifications/index.ts | new in P2-03: barrel for the import surface the brief names, no old counterpart
+src/features/sources/index.ts | new in P2-03: barrel for the import surface the brief names, no old counterpart

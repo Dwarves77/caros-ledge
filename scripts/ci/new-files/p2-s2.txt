@@ -1,0 +1,3 @@
+# path | reason (files with no "Ported from" header)
+scripts/gen/screen-verdicts-sql.mjs | new in P2-S2: generates migration 0015 from old_repo/scripts/mint/reviewed-verdicts.json (read, never copied); no old counterpart
+scripts/gen/source-backfill-sql.mjs | new in P2-S2: generates migration 0016 from a registry export through the merged classify rules and renderBackfillSql (replaces old_repo/scripts/sources/backfill-source-type.mjs lines 16-100)
