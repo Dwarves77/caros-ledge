@@ -1,0 +1,12 @@
+{
+  "capture": { "tolerance_chars": 50, "completeness_floor": 0.98 },
+  "unicode_classes": [
+    { "name": "multiplication_sign", "chars": ["×", "x", "X"] },
+    { "name": "curly_single_quote", "chars": ["‘", "’", "'"] },
+    { "name": "curly_double_quote", "chars": ["“", "”", "\""] },
+    { "name": "en_em_dash", "chars": ["–", "—", "-"] },
+    { "name": "nbsp_space", "chars": [" ", " "] }
+  ],
+  "signature_tag_fields": ["operational_scenario_tags", "compliance_object_tags", "topic_tags"],
+  "screen_provenance": ["rule", "reviewed", "registry"]
+}
