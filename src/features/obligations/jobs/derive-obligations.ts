@@ -1,5 +1,5 @@
 // Ported from old_repo/scripts/obligations/derive-obligations.mjs (lines 203-213, 304-322)
-// Ported from old_repo/scripts/maintenance/derive-obligations.mjs (lines 1-75)
+// Ported from old_repo/scripts/maintenance/derive-obligations.mjs (lines 1-74)
 // The derive job: the register derivation and the obligation-object producer in one run (rule 17: the object writer has its producer here). Dry by default at
 // the caller. The outcome is the worst of the two parts; the counts carry both.
 import type { Db } from "@/core/db";
