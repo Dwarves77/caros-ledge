@@ -1,0 +1,926 @@
+{
+ "pedigree_axes": [
+  "reliability",
+  "completeness",
+  "temporal_correlation",
+  "geographical_correlation",
+  "technological_correlation"
+ ],
+ "mode_aliases": {
+  "sea": "ocean",
+  "maritime": "ocean",
+  "water": "ocean",
+  "vessel": "ocean",
+  "marine": "ocean",
+  "truck": "road",
+  "lorry": "road",
+  "hgv": "road",
+  "barge": "inland_waterway",
+  "iww": "inland_waterway",
+  "inland-waterway": "inland_waterway",
+  "freighter": "air",
+  "airfreight": "air"
+ },
+ "refresh_period_days": {
+  "realtime": 1,
+  "daily": 1,
+  "weekly": 7,
+  "biweekly": 14,
+  "monthly": 31,
+  "quarterly": 92,
+  "biannual": 183,
+  "annual": 366,
+  "irregular": null
+ },
+ "vocabularies": {
+  "obs_status": {
+   "A": {
+    "code": "A",
+    "label": "Normal",
+    "order": 1,
+    "isPresent": true,
+    "isReliable": true
+   },
+   "P": {
+    "code": "P",
+    "label": "Provisional",
+    "order": 2,
+    "isPresent": true,
+    "isReliable": true
+   },
+   "E": {
+    "code": "E",
+    "label": "Estimated",
+    "order": 3,
+    "isPresent": true,
+    "isReliable": true
+   },
+   "I": {
+    "code": "I",
+    "label": "Imputed",
+    "order": 4,
+    "isPresent": true,
+    "isReliable": false
+   },
+   "F": {
+    "code": "F",
+    "label": "Forecast",
+    "order": 5,
+    "isPresent": true,
+    "isReliable": false
+   },
+   "B": {
+    "code": "B",
+    "label": "Series break",
+    "order": 6,
+    "isPresent": true,
+    "isReliable": true
+   },
+   "D": {
+    "code": "D",
+    "label": "Definition differs",
+    "order": 7,
+    "isPresent": true,
+    "isReliable": false
+   },
+   "U": {
+    "code": "U",
+    "label": "Low reliability",
+    "order": 8,
+    "isPresent": true,
+    "isReliable": false
+   },
+   "V": {
+    "code": "V",
+    "label": "Unvalidated",
+    "order": 9,
+    "isPresent": true,
+    "isReliable": false
+   },
+   "G": {
+    "code": "G",
+    "label": "Experimental",
+    "order": 10,
+    "isPresent": true,
+    "isReliable": false
+   },
+   "M": {
+    "code": "M",
+    "label": "Missing, reason unknown",
+    "order": 11,
+    "isPresent": false,
+    "isReliable": false
+   },
+   "O": {
+    "code": "O",
+    "label": "Missing, not applicable",
+    "order": 12,
+    "isPresent": false,
+    "isReliable": false
+   },
+   "L": {
+    "code": "L",
+    "label": "Missing, not covered",
+    "order": 13,
+    "isPresent": false,
+    "isReliable": false
+   },
+   "H": {
+    "code": "H",
+    "label": "Missing, not published yet",
+    "order": 14,
+    "isPresent": false,
+    "isReliable": false
+   },
+   "Q": {
+    "code": "Q",
+    "label": "Missing, suppressed",
+    "order": 15,
+    "isPresent": false,
+    "isReliable": false
+   },
+   "N": {
+    "code": "N",
+    "label": "Not significant",
+    "order": 16,
+    "isPresent": false,
+    "isReliable": false
+   }
+  },
+  "origin_class": {
+   "community": {
+    "code": "community",
+    "label": "Contributed by a member",
+    "strength": 1,
+    "exportable": true,
+    "citableAsFact": false,
+    "admissibleInCalculation": false,
+    "note": "Unverified. Never enters a calculation, an export figure, or an Assistant factual citation."
+   },
+   "community-corroborated": {
+    "code": "community-corroborated",
+    "label": "Corroborated by members",
+    "strength": 2,
+    "exportable": true,
+    "citableAsFact": false,
+    "admissibleInCalculation": false,
+    "note": "N independent organisations agree. Still unverified. May render as a signal with the distribution shown, never as a point estimate."
+   },
+   "modelled": {
+    "code": "modelled",
+    "label": "Modelled estimate",
+    "strength": 3,
+    "exportable": true,
+    "citableAsFact": false,
+    "admissibleInCalculation": true,
+    "note": "Our estimate where inputs are absent. Must never share a visual slot with a statutory or observed figure."
+   },
+   "derived": {
+    "code": "derived",
+    "label": "Derived",
+    "strength": 4,
+    "exportable": true,
+    "citableAsFact": true,
+    "admissibleInCalculation": true,
+    "note": "Our calculation from stated inputs under a named, versioned method."
+   },
+   "partner": {
+    "code": "partner",
+    "label": "Licensed source",
+    "strength": 5,
+    "exportable": true,
+    "citableAsFact": true,
+    "admissibleInCalculation": true,
+    "note": "Licensed third party. Redistribution limits may apply per source."
+   },
+   "verified": {
+    "code": "verified",
+    "label": "Verified",
+    "strength": 6,
+    "exportable": true,
+    "citableAsFact": true,
+    "admissibleInCalculation": true,
+    "note": "Our editorial, traced to a primary source with a provenance chain."
+   },
+   "official": {
+    "code": "official",
+    "label": "Official source",
+    "strength": 7,
+    "exportable": true,
+    "citableAsFact": true,
+    "admissibleInCalculation": true,
+    "note": "Primary source, unmodified. The strongest class; nothing we do can improve on it."
+   }
+  },
+  "source_reliability": {
+   "A": {
+    "code": "A",
+    "label": "Completely reliable",
+    "order": 1
+   },
+   "B": {
+    "code": "B",
+    "label": "Usually reliable",
+    "order": 2
+   },
+   "C": {
+    "code": "C",
+    "label": "Fairly reliable",
+    "order": 3
+   },
+   "D": {
+    "code": "D",
+    "label": "Not usually reliable",
+    "order": 4
+   },
+   "E": {
+    "code": "E",
+    "label": "Unreliable",
+    "order": 5
+   },
+   "F": {
+    "code": "F",
+    "label": "Reliability cannot be judged",
+    "order": 6
+   }
+  },
+  "info_credibility": {
+   "1": {
+    "code": "1",
+    "label": "Confirmed by independent sources",
+    "order": 1
+   },
+   "2": {
+    "code": "2",
+    "label": "Probably true, not confirmed",
+    "order": 2
+   },
+   "3": {
+    "code": "3",
+    "label": "Possibly true",
+    "order": 3
+   },
+   "4": {
+    "code": "4",
+    "label": "Doubtful",
+    "order": 4
+   },
+   "5": {
+    "code": "5",
+    "label": "Improbable",
+    "order": 5
+   },
+   "6": {
+    "code": "6",
+    "label": "Credibility cannot be judged",
+    "order": 6
+   }
+  },
+  "confidence_band": {
+   "very_low": {
+    "code": "very_low",
+    "label": "Very low",
+    "order": 1
+   },
+   "low": {
+    "code": "low",
+    "label": "Low",
+    "order": 2
+   },
+   "medium": {
+    "code": "medium",
+    "label": "Medium",
+    "order": 3
+   },
+   "high": {
+    "code": "high",
+    "label": "High",
+    "order": 4
+   },
+   "very_high": {
+    "code": "very_high",
+    "label": "Very high",
+    "order": 5
+   }
+  },
+  "likelihood": {
+   "almost_no_chance": {
+    "code": "almost_no_chance",
+    "label": "Almost no chance",
+    "lo": 1,
+    "hi": 5,
+    "order": 1
+   },
+   "very_unlikely": {
+    "code": "very_unlikely",
+    "label": "Very unlikely",
+    "lo": 5,
+    "hi": 20,
+    "order": 2
+   },
+   "unlikely": {
+    "code": "unlikely",
+    "label": "Unlikely",
+    "lo": 20,
+    "hi": 45,
+    "order": 3
+   },
+   "roughly_even": {
+    "code": "roughly_even",
+    "label": "Roughly even chance",
+    "lo": 45,
+    "hi": 55,
+    "order": 4
+   },
+   "likely": {
+    "code": "likely",
+    "label": "Likely",
+    "lo": 55,
+    "hi": 80,
+    "order": 5
+   },
+   "very_likely": {
+    "code": "very_likely",
+    "label": "Very likely",
+    "lo": 80,
+    "hi": 95,
+    "order": 6
+   },
+   "almost_certainly": {
+    "code": "almost_certainly",
+    "label": "Almost certainly",
+    "lo": 95,
+    "hi": 99,
+    "order": 7
+   }
+  },
+  "impact": {
+   "none": {
+    "code": "none",
+    "label": "No impact",
+    "order": 0
+   },
+   "operational": {
+    "code": "operational",
+    "label": "Operational",
+    "order": 1
+   },
+   "cost": {
+    "code": "cost",
+    "label": "Cost",
+    "order": 2
+   },
+   "compliance": {
+    "code": "compliance",
+    "label": "Compliance",
+    "order": 3
+   },
+   "licence": {
+    "code": "licence",
+    "label": "Licence to operate",
+    "order": 4
+   }
+  },
+  "applicability": {
+   "confirmed": {
+    "code": "confirmed",
+    "label": "Confirmed applies",
+    "order": 1,
+    "isActionable": true
+   },
+   "likely": {
+    "code": "likely",
+    "label": "Likely applies",
+    "order": 2,
+    "isActionable": true
+   },
+   "monitor": {
+    "code": "monitor",
+    "label": "Monitor",
+    "order": 3,
+    "isActionable": false
+   },
+   "not_applicable": {
+    "code": "not_applicable",
+    "label": "Not applicable",
+    "order": 4,
+    "isActionable": false
+   },
+   "not_assessed": {
+    "code": "not_assessed",
+    "label": "Not assessed",
+    "order": 5,
+    "isActionable": false
+   }
+  },
+  "binding_position": {
+   "direct_duty": {
+    "code": "direct_duty",
+    "label": "Your duty",
+    "order": 1,
+    "note": "Statutory duty falls on the forwarder itself."
+   },
+   "carrier_passthrough": {
+    "code": "carrier_passthrough",
+    "label": "Carrier pass-through",
+    "order": 2,
+    "note": "Binds the carrier. Reaches you as a price, not a duty."
+   },
+   "customer_contract": {
+    "code": "customer_contract",
+    "label": "Customer contract",
+    "order": 3,
+    "note": "Binds your customer. Reaches you as a data request or a contract clause."
+   },
+   "monitoring_only": {
+    "code": "monitoring_only",
+    "label": "Monitor",
+    "order": 4,
+    "note": "Does not currently reach you. Tracked because status may change."
+   }
+  },
+  "duty_holder_class": {
+   "carrier": {
+    "code": "carrier",
+    "label": "Carrier",
+    "order": 1,
+    "orgRoles": [
+     "carrier"
+    ],
+    "origin": "spec 01 section 3.2",
+    "definition": "The party that performs or contracts to perform the carriage of goods by a mode of transport."
+   },
+   "shipper": {
+    "code": "shipper",
+    "label": "Shipper",
+    "order": 2,
+    "orgRoles": [
+     "shipper"
+    ],
+    "origin": "spec 01 section 3.2",
+    "definition": "The party named as shipper in the transport contract, on whose behalf the goods are tendered for carriage."
+   },
+   "forwarder": {
+    "code": "forwarder",
+    "label": "Freight forwarder",
+    "order": 3,
+    "orgRoles": [
+     "forwarder"
+    ],
+    "origin": "spec 01 section 3.2",
+    "definition": "The party that organises the carriage of goods for others without being the carrier."
+   },
+   "nvocc": {
+    "code": "nvocc",
+    "label": "NVOCC",
+    "order": 4,
+    "orgRoles": [
+     "forwarder"
+    ],
+    "origin": "spec 01 section 3.2",
+    "definition": "A non-vessel-operating common carrier: issues its own bill of lading for ocean carriage but operates no vessel."
+   },
+   "customs_representative_direct": {
+    "code": "customs_representative_direct",
+    "label": "Customs representative (direct)",
+    "order": 5,
+    "orgRoles": [
+     "forwarder"
+    ],
+    "origin": "spec 01 section 3.2",
+    "definition": "A customs representative acting in the name and on behalf of the person it represents."
+   },
+   "customs_representative_indirect": {
+    "code": "customs_representative_indirect",
+    "label": "Customs representative (indirect)",
+    "order": 6,
+    "orgRoles": [
+     "forwarder"
+    ],
+    "origin": "spec 01 section 3.2",
+    "definition": "A customs representative acting in its own name but on behalf of the person it represents."
+   },
+   "ism_company": {
+    "code": "ism_company",
+    "label": "ISM company",
+    "order": 7,
+    "orgRoles": [
+     "carrier"
+    ],
+    "origin": "spec 01 section 3.2",
+    "definition": "The shipowner or other organisation that has taken over responsibility for ship operation under the ISM Code."
+   },
+   "fuel_supplier": {
+    "code": "fuel_supplier",
+    "label": "Fuel supplier",
+    "order": 8,
+    "orgRoles": [],
+    "origin": "spec 01 section 3.2",
+    "definition": "The party that supplies fuel for a vessel, aircraft or vehicle."
+   },
+   "aircraft_operator": {
+    "code": "aircraft_operator",
+    "label": "Aircraft operator",
+    "order": 9,
+    "orgRoles": [
+     "carrier"
+    ],
+    "origin": "spec 01 section 3.2",
+    "definition": "The person that operates an aircraft, or the owner when the operator is not known."
+   },
+   "producer": {
+    "code": "producer",
+    "label": "Producer",
+    "order": 10,
+    "orgRoles": [],
+    "origin": "spec 01 section 3.2",
+    "definition": "The party that manufactures or first places goods or packaging on a market, as the instrument defines it."
+   },
+   "importer_of_record": {
+    "code": "importer_of_record",
+    "label": "Importer of record",
+    "order": 11,
+    "orgRoles": [
+     "importer_of_record"
+    ],
+    "origin": "spec 01 section 1 (PPWR: importer of record where applicable)",
+    "definition": "The party that is the declarant or importer for the goods on import into a customs territory."
+   },
+   "exporter": {
+    "code": "exporter",
+    "label": "Exporter",
+    "order": 12,
+    "orgRoles": [
+     "exporter"
+    ],
+    "origin": "ADR-034 role vocabulary",
+    "definition": "The party that makes, or on whose behalf is made, the export declaration for goods leaving a customs territory."
+   },
+   "packaging_user": {
+    "code": "packaging_user",
+    "label": "User of transport packaging",
+    "order": 13,
+    "orgRoles": [],
+    "origin": "spec 01 section 1 (PPWR: user of transport and grouped packaging)",
+    "definition": "The party that uses transport or grouped packaging in the course of its activity."
+   },
+   "trader": {
+    "code": "trader",
+    "label": "Trader",
+    "order": 14,
+    "orgRoles": [],
+    "origin": "spec 01 section 1 (Empowering Consumers: the forwarder's own marketing claims)",
+    "definition": "A business that markets goods or services to consumers, as the unfair-commercial-practices framework defines it."
+   },
+   "member_state": {
+    "code": "member_state",
+    "label": "Member State",
+    "order": 15,
+    "orgRoles": [
+     "public_body"
+    ],
+    "origin": "monitoring_only rule (an instrument addressed to the Member States)",
+    "definition": "A Member State of the European Union, as the addressee of an instrument."
+   }
+  },
+  "freshness": {
+   "current": {
+    "code": "current",
+    "label": "Current",
+    "order": 1,
+    "degraded": false
+   },
+   "ageing": {
+    "code": "ageing",
+    "label": "Ageing",
+    "order": 2,
+    "degraded": false
+   },
+   "stale": {
+    "code": "stale",
+    "label": "Stale",
+    "order": 3,
+    "degraded": true
+   },
+   "frozen": {
+    "code": "frozen",
+    "label": "No longer updated",
+    "order": 4,
+    "degraded": true
+   },
+   "unknown": {
+    "code": "unknown",
+    "label": "Refresh cadence unknown",
+    "order": 5,
+    "degraded": true
+   }
+  },
+  "relation": {
+   "implements": {
+    "code": "implements",
+    "label": "Implements",
+    "order": 1,
+    "inverse": "implemented_by",
+    "symmetric": false
+   },
+   "implemented_by": {
+    "code": "implemented_by",
+    "label": "Implemented by",
+    "order": 2,
+    "inverse": "implements",
+    "symmetric": false
+   },
+   "amends": {
+    "code": "amends",
+    "label": "Amends",
+    "order": 3,
+    "inverse": "amended_by",
+    "symmetric": false
+   },
+   "amended_by": {
+    "code": "amended_by",
+    "label": "Amended by",
+    "order": 4,
+    "inverse": "amends",
+    "symmetric": false
+   },
+   "supersedes": {
+    "code": "supersedes",
+    "label": "Supersedes",
+    "order": 5,
+    "inverse": "superseded_by",
+    "symmetric": false
+   },
+   "superseded_by": {
+    "code": "superseded_by",
+    "label": "Superseded by",
+    "order": 6,
+    "inverse": "supersedes",
+    "symmetric": false
+   },
+   "is_evidence_for": {
+    "code": "is_evidence_for",
+    "label": "Is evidence for",
+    "order": 7,
+    "inverse": "supported_by",
+    "symmetric": false
+   },
+   "supported_by": {
+    "code": "supported_by",
+    "label": "Supported by",
+    "order": 8,
+    "inverse": "is_evidence_for",
+    "symmetric": false
+   },
+   "contradicts": {
+    "code": "contradicts",
+    "label": "Contradicts",
+    "order": 9,
+    "inverse": "contradicts",
+    "symmetric": true
+   },
+   "quantifies": {
+    "code": "quantifies",
+    "label": "Quantifies",
+    "order": 10,
+    "inverse": "quantified_by",
+    "symmetric": false
+   },
+   "quantified_by": {
+    "code": "quantified_by",
+    "label": "Quantified by",
+    "order": 11,
+    "inverse": "quantifies",
+    "symmetric": false
+   },
+   "applies_to": {
+    "code": "applies_to",
+    "label": "Applies to",
+    "order": 12,
+    "inverse": "subject_of",
+    "symmetric": false
+   },
+   "subject_of": {
+    "code": "subject_of",
+    "label": "Subject of",
+    "order": 13,
+    "inverse": "applies_to",
+    "symmetric": false
+   },
+   "affects_corridor": {
+    "code": "affects_corridor",
+    "label": "Affects corridor",
+    "order": 14,
+    "inverse": "affected_by",
+    "symmetric": false
+   },
+   "affected_by": {
+    "code": "affected_by",
+    "label": "Affected by",
+    "order": 15,
+    "inverse": "affects_corridor",
+    "symmetric": false
+   },
+   "discussed_in": {
+    "code": "discussed_in",
+    "label": "Discussed in",
+    "order": 16,
+    "inverse": "discusses",
+    "symmetric": false
+   },
+   "discusses": {
+    "code": "discusses",
+    "label": "Discusses",
+    "order": 17,
+    "inverse": "discussed_in",
+    "symmetric": false
+   },
+   "computed_under": {
+    "code": "computed_under",
+    "label": "Computed under",
+    "order": 18,
+    "inverse": "governs",
+    "symmetric": false
+   },
+   "governs": {
+    "code": "governs",
+    "label": "Governs",
+    "order": 19,
+    "inverse": "computed_under",
+    "symmetric": false
+   }
+  },
+  "coverage_state": {
+   "not_applicable": {
+    "code": "not_applicable",
+    "label": "Not applicable",
+    "order": 1,
+    "obsStatus": "O",
+    "treatment": "suppress_and_explain",
+    "note": "The question is meaningless here. The field is suppressed and the reason is on hover. Not an empty state."
+   },
+   "not_covered": {
+    "code": "not_covered",
+    "label": "Not covered",
+    "order": 2,
+    "obsStatus": "L",
+    "treatment": "named_gap_and_request",
+    "note": "In product scope, not yet built. A named coverage gap, its roadmap position, and a request-coverage action."
+   },
+   "no_data_yet": {
+    "code": "no_data_yet",
+    "label": "No data yet",
+    "order": 3,
+    "obsStatus": "H",
+    "treatment": "expected_refresh_and_last_value",
+    "note": "Covered, but the source has not published. Shows the expected refresh and the last known value with its as-of date."
+   },
+   "suppressed": {
+    "code": "suppressed",
+    "label": "Suppressed",
+    "order": 4,
+    "obsStatus": "Q",
+    "treatment": "reason_class",
+    "note": "Exists but withheld. States the reason class and never looks like absence."
+   },
+   "not_filtered_in": {
+    "code": "not_filtered_in",
+    "label": "Not filtered in",
+    "order": 5,
+    "obsStatus": null,
+    "treatment": "hidden_count_and_widen",
+    "note": "Exists outside the active scope. Says how many are hidden by the reader's scope and offers a one-click widen. The filter-bubble antidote."
+   },
+   "error": {
+    "code": "error",
+    "label": "Error",
+    "order": 6,
+    "obsStatus": null,
+    "treatment": "retry_and_status",
+    "note": "A system failure, rendered distinctly from every kind of absence, with a retry and a way to see status."
+   }
+  },
+  "suppression_reason": {
+   "confidentiality": {
+    "code": "confidentiality",
+    "label": "Confidential",
+    "order": 1
+   },
+   "k_anonymity": {
+    "code": "k_anonymity",
+    "label": "Too few contributors to publish",
+    "order": 2
+   },
+   "licence": {
+    "code": "licence",
+    "label": "Licence does not allow redistribution",
+    "order": 3
+   }
+  },
+  "transport_mode": {
+   "road": {
+    "code": "road",
+    "label": "Road",
+    "order": 1,
+    "corridorOnly": false
+   },
+   "rail": {
+    "code": "rail",
+    "label": "Rail",
+    "order": 2,
+    "corridorOnly": false
+   },
+   "ocean": {
+    "code": "ocean",
+    "label": "Ocean",
+    "order": 3,
+    "corridorOnly": false
+   },
+   "inland_waterway": {
+    "code": "inland_waterway",
+    "label": "Inland waterway",
+    "order": 4,
+    "corridorOnly": false
+   },
+   "air": {
+    "code": "air",
+    "label": "Air",
+    "order": 5,
+    "corridorOnly": false
+   },
+   "multimodal": {
+    "code": "multimodal",
+    "label": "Multimodal",
+    "order": 6,
+    "corridorOnly": true
+   }
+  },
+  "derivation": {
+   "statutory_fixed": {
+    "code": "statutory_fixed",
+    "label": "Statutory constant",
+    "order": 1,
+    "contractable": true,
+    "statutory": true,
+    "note": "A value published in the instrument itself (e.g. EUR 2,400 per tonne VLSFOe). Must cite the provision."
+   },
+   "statutory_formula": {
+    "code": "statutory_formula",
+    "label": "Statutory formula",
+    "order": 2,
+    "contractable": true,
+    "statutory": true,
+    "note": "Computed under a formula prescribed by the instrument. Must cite the provision and the formula version."
+   },
+   "observed": {
+    "code": "observed",
+    "label": "Observed",
+    "order": 3,
+    "contractable": true,
+    "note": "Measured or reported directly by the primary source."
+   },
+   "transacted_index": {
+    "code": "transacted_index",
+    "label": "Transacted index",
+    "order": 4,
+    "contractable": true,
+    "note": "Mechanical aggregation of reported deals. No judgment. Goes dark in illiquid conditions."
+   },
+   "assessed": {
+    "code": "assessed",
+    "label": "Assessed",
+    "order": 5,
+    "contractable": true,
+    "note": "Expert judgment of market value at a timestamp, under a published data hierarchy. Always prints."
+   },
+   "calculated": {
+    "code": "calculated",
+    "label": "Calculated",
+    "order": 6,
+    "contractable": true,
+    "note": "Deterministic function of other observed values under OUR named method. Not law: if a statute prescribes the formula, use statutory_formula."
+   },
+   "interpolated": {
+    "code": "interpolated",
+    "label": "Interpolated",
+    "order": 7,
+    "contractable": false,
+    "note": "Inferred between known points. Not an observation."
+   },
+   "modelled": {
+    "code": "modelled",
+    "label": "Modelled",
+    "order": 8,
+    "contractable": false,
+    "note": "Model output. Must never share a visual slot with an observed or statutory figure."
+   },
+   "estimated": {
+    "code": "estimated",
+    "label": "Estimated",
+    "order": 9,
+    "contractable": false,
+    "note": "Judgment without a fitted model. Must name its donor or basis."
+   }
+  }
+ }
+}
