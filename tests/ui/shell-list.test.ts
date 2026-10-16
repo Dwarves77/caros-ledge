@@ -128,6 +128,7 @@ test("a bundle that arrives after a sign-out or a user change is discarded", asy
   let release: (r: Response) => void = () => {};
   const slow = () => new Promise<Response>((res) => (release = res));
   const pending = loadBootstrap("u1", slow as unknown as typeof fetch, async () => ({ Authorization: "Bearer x" }));
+  await new Promise((r) => setTimeout(r, 0));
   resetBootstrap("u2");
   release(Response.json({ personalState: [], members: null, adminAttention: null, overrides: [], navCounts: null, assistantEnabled: true, degraded: [] }));
   await pending;
