@@ -6,7 +6,7 @@
 // For every route in routes.json, at 1280x900 and 375x812: waits for network idle, writes a full-page PNG and a JSON
 // record (accessibility tree, landmarks, headings, interactive controls, first rows with measured heights).
 // Each account signs in once through the /login form; its storage state is held in memory only, never written to disk, never printed.
-// Credentials: member = LIVE_SMOKE_EMAIL / LIVE_SMOKE_PASSWORD, admin = LIVE_ADMIN_EMAIL / LIVE_ADMIN_PASSWORD.
+// Admin routes are captured only when PARITY_ADMIN=1 (the deployed preview; the CI runner holds no service-role key). Credentials: member = LIVE_SMOKE_EMAIL / LIVE_SMOKE_PASSWORD, admin = LIVE_ADMIN_EMAIL / LIVE_ADMIN_PASSWORD.
 // Exit code is 1 when any sign-in, discovery or capture failed; index.json is written in every case.
 
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
@@ -235,6 +235,7 @@ async function main() {
     const storage = {};
     const credentials = {};
     for (const [account, [emailVar, passwordVar]] of Object.entries(ACCOUNTS)) {
+      if (account === 'admin' && process.env.PARITY_ADMIN !== '1') continue;
       if (!args['signed-out-only'] && process.env[emailVar] && process.env[passwordVar]) credentials[account] = [process.env[emailVar], process.env[passwordVar]];
     }
     index.signin = {};
@@ -257,7 +258,7 @@ async function main() {
       if (!route.auth || storage[route.auth]) return null;
       return credentials[route.auth]
         ? { status: 'error', error: 'not captured: no signed-in state' }
-        : { status: 'skipped', error: `no ${route.auth} credentials` };
+        : { status: 'skipped', error: route.auth === 'admin' && process.env.PARITY_ADMIN !== '1' ? 'admin routes gate on the deployed preview' : `no ${route.auth} credentials` };
     };
 
     // Discovery runs first so every capture below has its concrete path.

@@ -34,4 +34,4 @@ The `parity` job (`tests/parity/capture.mjs`) reads six repository secrets. A ro
 |---|---|
 | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | The built app's Supabase project (placeholders when unset) |
 | `LIVE_SMOKE_EMAIL`, `LIVE_SMOKE_PASSWORD` | `auth: "member"` routes: every signed-in route except `admin` |
-| `LIVE_ADMIN_EMAIL`, `LIVE_ADMIN_PASSWORD` | `auth: "admin"` routes: `/admin` (a platform admin account) |
+| `LIVE_ADMIN_EMAIL`, `LIVE_ADMIN_PASSWORD` | `auth: "admin"` routes: `/admin` (a platform admin account); read only when `PARITY_ADMIN=1` (the deployed-preview capture). In the CI job admin routes are recorded `skipped`: "admin routes gate on the deployed preview" |
