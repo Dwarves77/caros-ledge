@@ -1,7 +1,7 @@
 // THE adapters: every deps interface a slice declared for a slice that was not merged yet, built here from the real exports of the merged slices (the parallel-build bet,
 // proven by tests/turn/wiring-types.test.ts). One construction site: `buildDeps(sb, env, opts)` returns every deps object; `wireAll()` wires the ones the app serves with.
 import type { Db } from "@/core/db";
-import { fetchAllRows, isServiceConfigured, serviceClient } from "@/core/db";
+import { fetchAllRows, serviceClient } from "@/core/db";
 import { deriveKey } from "@/core/intake/canonical-key";
 import type { IdentityHelpers } from "@/core/intake";
 import { assertFetchAllowed, capture, classifyBody, detectAccessWall, fetchAllowed, fetchDirect, makePoliteGate, parseOjReference } from "@/core/fetch";

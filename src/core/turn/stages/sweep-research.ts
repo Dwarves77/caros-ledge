@@ -1,4 +1,4 @@
-// Ported from old_repo/scripts/research/research-sweep.mjs (lines 66-344)
+// Ported from old_repo/scripts/research/research-walker.mjs (lines 66-344)
 // Stage 2, sweep-research: the research walker. It searches OpenAlex for the topic and the open needs, rates each publisher by the class table, and mints only through the chokepoint;
 // the producer gates (the reviewed ENABLED constant, the kill switch, the licence) decide whether an apply may write, and a refusal is recorded as one.
 import type { FamilyCall } from "@/core/harness";

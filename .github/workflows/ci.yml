@@ -204,6 +204,8 @@ jobs:
         if: always() && steps.scope.outputs.run == 'true'
         run: |
           { echo '### Parity'; echo '```'; cat parity-report.txt 2>/dev/null || echo 'no report'; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          # The same report goes to the job log between markers: scripts/ci/pr-comment.mjs reads it back through the jobs API (actions: read, no new permission).
+          echo '=== PARITY-REPORT-BEGIN ==='; cat parity-report.txt 2>/dev/null || echo 'no report'; echo '=== PARITY-REPORT-END ==='
       - uses: actions/upload-artifact@v4
         if: always() && steps.scope.outputs.run == 'true'
         with:

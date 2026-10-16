@@ -17,13 +17,29 @@ async function otherJobs() {
   return [];
 }
 
+// The parity job's per-route table, read back from that job's log between the markers its summary step prints (the jobs call already has actions: read, so no new permission). Empty when the job was skipped.
+function parityTable(jobs) {
+  const job = jobs.find((j) => j.name === "parity" && j.conclusion && j.conclusion !== "skipped");
+  if (!job) return "";
+  try {
+    const log = gh([`repos/${REPO}/actions/jobs/${job.id}/logs`]).split(/\r?\n/).map((l) => l.replace(/^\S+Z /, ""));
+    const a = log.findIndex((l) => l === "=== PARITY-REPORT-BEGIN ===");
+    const b = log.findIndex((l) => l === "=== PARITY-REPORT-END ===");
+    return a >= 0 && b > a ? log.slice(a + 1, b).join("\n").trim() : "";
+  } catch (e) {
+    return `(parity report unavailable: ${String(e.message).split("\n")[0]})`;
+  }
+}
+
 let loc = "";
 try {
   loc = execFileSync("node", ["scripts/ci/loc.mjs"], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
 } catch (e) {
   loc = String(e.stdout ?? "");
 }
-const rows = [["ci", CI_STATUS], ...(await otherJobs()).map((j) => [j.name, j.conclusion ?? j.status])];
+const others = await otherJobs();
+const parity = parityTable(others);
+const rows = [["ci", CI_STATUS], ...others.map((j) => [j.name, j.conclusion ?? j.status])];
 const body = [
   MARKER,
   `### CI report, run ${RUN_ID}`,
@@ -36,6 +52,7 @@ const body = [
   "### Code lines",
   "",
   loc.trim() || "(loc table unavailable)",
+  ...(parity ? ["", "### Parity", "", "```", parity, "```"] : []),
 ].join("\n");
 
 if (DRY) {

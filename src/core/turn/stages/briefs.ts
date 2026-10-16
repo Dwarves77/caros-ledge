@@ -1,4 +1,4 @@
-// Ported from old_repo/scripts/turns/theme-briefs/artifact.mjs (lines 1-120)
+// Ported from old_repo/scripts/turns/theme-briefs/artifact.mjs (lines 1-41)
 // Stage 8, briefs: the session-authored batch kinds that exist in merged slices (a theme brief, a screen-verdict batch), each validated before it is written. The remaining kinds (record briefs, need URLs,
 // question answers, extraction output) are the session-batch kit, slice P2-08b: until it is merged they are recorded as refused, never faked.
 import type { FamilyCall } from "@/core/harness";
