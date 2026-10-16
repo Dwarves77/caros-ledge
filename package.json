@@ -2,7 +2,9 @@
   "name": "caros-ledge",
   "version": "0.1.0",
   "private": true,
-  "engines": { "node": ">=24" },
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -21,7 +23,9 @@
     "next": "16.1.6",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "zod": "^4.6.7"
+    "unpdf": "^1.9.0",
+    "zod": "^4.6.7",
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
     "@types/node": "^24",
@@ -29,6 +33,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
+    "playwright": "^1.64.1",
     "typescript": "^5"
   },
   "budget": {
@@ -43,6 +48,9 @@
     "eslint-config-next": "Next lint rules; bundles the typescript-eslint and import plugins, so no separate plugin is added.",
     "@types/node": "Node types for scripts and next.config.ts.",
     "@types/react": "React types.",
-    "@types/react-dom": "React DOM types."
+    "@types/react-dom": "React DOM types.",
+    "unpdf": "PDF text extraction (pdf.js, serverless build) for the direct transport, held-pool reads and the mint capture; the Edge Function loads its own copy via npm: specifier.",
+    "zustand": "The admin source registry filter store (features/sources/store.ts); client state only, 3 kB.",
+    "playwright": "headless transport on the Actions runner and the parity gate; never bundled (dynamic import, browser installed only on the runner)."
   }
 }

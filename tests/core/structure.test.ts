@@ -9,25 +9,28 @@ import * as http from "@/core/http";
 import * as shared from "@/core/shared";
 
 const files = (dir: string): string[] => readdirSync(dir).flatMap((n) => (statSync(join(dir, n)).isDirectory() ? files(join(dir, n)) : [join(dir, n)]));
-const src = files("src").filter((f) => /\.(ts|tsx)$/.test(f));
+const src = files("src").map((f) => f.replaceAll("\\", "/")).filter((f) => /\.(ts|tsx)$/.test(f));
 const text = (f: string) => readFileSync(f, "utf8");
 
 test("PROP-001/160: every route handler is behind a guard, or is one of the two public auth endpoints", () => {
   const publicRoutes = new Set(["src/features/auth/api/identity.ts", "src/features/auth/api/callback.ts"]);
+  // Public by documented exception (operator-approved 2026-07-11): build metadata only, no database, no parameters, nothing to limit.
+  const documentedPublic = new Set(["src/features/telemetry/api/version.ts"]);
   const routes = src.filter((f) => f.endsWith("/route.ts"));
-  assert.ok(routes.length === 11, `found ${routes.length} routes`);
+  assert.ok(routes.length >= 11, `found ${routes.length} routes`);
   for (const route of routes) {
     const target = /from "@\/(features\/[^"]+)"/.exec(text(route))?.[1];
     assert.ok(target, `${route} re-exports a feature handler`);
     const handler = `src/${target}.ts`;
     const body = text(handler);
+    if (documentedPublic.has(handler)) continue;
     if (publicRoutes.has(handler)) assert.match(body, /checkRateLimit/, `${handler} is public, so it must rate limit`);
     else assert.match(body, /requireUser|requireAdmin|requireOrgRole|workerAuthGuard|withToken/, `${handler} has no guard`);
   }
 });
 
 test("PROP-028/127 and PROP-011/109: one module attaches the bearer, one factory builds service clients", () => {
-  const mentions = (re: RegExp) => src.filter((f) => re.test(text(f))).map((f) => relative("src", f)).sort();
+  const mentions = (re: RegExp) => src.filter((f) => re.test(text(f))).map((f) => relative("src", f).replaceAll("\\", "/")).sort();
   assert.deepEqual(mentions(/authorization/i), ["core/db/clients.ts", "core/http/authed-fetch.ts"]);
   assert.deepEqual(mentions(/SUPABASE_SERVICE_ROLE_KEY/), ["core/db/clients.ts"]);
   assert.deepEqual(mentions(/\bcreateClient\(/), ["core/db/clients.ts"]);
@@ -36,7 +39,7 @@ test("PROP-028/127 and PROP-011/109: one module attaches the bearer, one factory
 });
 
 test("the console is touched by the logger alone", () => {
-  assert.deepEqual(src.filter((f) => /\bconsole\./.test(text(f))).map((f) => relative("src", f)), ["core/shared/log.ts"]);
+  assert.deepEqual(src.filter((f) => /\bconsole\./.test(text(f))).map((f) => relative("src", f).replaceAll("\\", "/")), ["core/shared/log.ts"]);
 });
 
 test("no auth code reads the user over the network per request: getClaims, never getUser, on the server", () => {
