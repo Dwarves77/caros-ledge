@@ -1,0 +1,1 @@
+CREATE FUNCTION public.planted_definer() RETURNS int LANGUAGE sql SECURITY DEFINER AS 'SELECT 1';
