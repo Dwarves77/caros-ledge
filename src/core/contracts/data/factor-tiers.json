@@ -1,0 +1,114 @@
+{
+ "tiers": {
+  "carrier_primary": {
+   "code": "carrier_primary",
+   "rank": 1,
+   "label": "Carrier primary data",
+   "pedigreeFloor": 1,
+   "isPrimaryData": true,
+   "note": "Measured by the carrier for the actual movement: telemetry, verified fuel uplift, or a verified MRV return for the specific vessel and voyage."
+  },
+  "verified_operator_avg": {
+   "code": "verified_operator_avg",
+   "rank": 2,
+   "label": "Verified operator average",
+   "pedigreeFloor": 2,
+   "isPrimaryData": true,
+   "note": "Derived by us from a statutorily verified per-ship dataset (EMSA THETIS-MRV) aggregated to operator and lane. Primary in ORIGIN, derived in computation, so it is our method over their measurement and both must be disclosed."
+  },
+  "programme_lane_avg": {
+   "code": "programme_lane_avg",
+   "rank": 3,
+   "label": "Programme lane average",
+   "pedigreeFloor": 2,
+   "isPrimaryData": false,
+   "note": "A third-party programme's carrier-and-lane average (Clean Cargo is the intended occupant). LICENCE-GATED and EMPTY in v1: carrier-specific factors are members-only. The slot exists so connecting it later is an insert."
+  },
+  "modal_default": {
+   "code": "modal_default",
+   "rank": 4,
+   "label": "Modal default factor",
+   "pedigreeFloor": 3,
+   "isPrimaryData": false,
+   "note": "An open-licence default by mode, vehicle class and fuel (UK DESNZ under OGL v3.0, US EPA public domain). THE v1 BASELINE. GLEC-conformant in method; the numbers come from sources we may lawfully re-serve."
+  },
+  "proxy_estimate": {
+   "code": "proxy_estimate",
+   "rank": 5,
+   "label": "Proxy estimate",
+   "pedigreeFloor": 4,
+   "isPrimaryData": false,
+   "note": "A donor value from an adjacent mode, region or vehicle class. MUST name its donor. Never contractable, and never presented without its range."
+  }
+ },
+ "scope_kinds": {
+  "movement": {
+   "code": "movement",
+   "specificity": 1,
+   "label": "Specific movement",
+   "requires": [
+    "movement_ref"
+   ],
+   "forbids": [],
+   "note": "One actual voyage or trip, measured. The tier-1 shape."
+  },
+  "carrier_lane": {
+   "code": "carrier_lane",
+   "specificity": 2,
+   "label": "Carrier on a lane",
+   "requires": [
+    "operator_key",
+    "corridor_id"
+   ],
+   "forbids": [
+    "movement_ref"
+   ],
+   "note": "A named carrier's average over a named corridor. The Clean Cargo shape."
+  },
+  "operator_lane": {
+   "code": "operator_lane",
+   "specificity": 3,
+   "label": "Operator average",
+   "requires": [
+    "operator_key"
+   ],
+   "forbids": [
+    "movement_ref"
+   ],
+   "note": "An operator's fleet average, optionally narrowed to a corridor. The THETIS-MRV shape."
+  },
+  "modal": {
+   "code": "modal",
+   "specificity": 4,
+   "label": "Modal default",
+   "requires": [
+    "vehicle_class",
+    "energy_carrier",
+    "jurisdiction"
+   ],
+   "forbids": [
+    "operator_key",
+    "corridor_id",
+    "movement_ref"
+   ],
+   "note": "By mode, vehicle class, energy carrier and jurisdiction. The DESNZ/EPA shape, and all of v1."
+  }
+ },
+ "quantity_basis": [
+  "tonne_km",
+  "vehicle_km",
+  "teu_km",
+  "tonne",
+  "litre",
+  "kg",
+  "kwh",
+  "mj"
+ ],
+ "gwp_basis": [
+  "AR4_GWP100",
+  "AR5_GWP100",
+  "AR6_GWP100",
+  "AR6_GWP20",
+  "unstated"
+ ]
+}

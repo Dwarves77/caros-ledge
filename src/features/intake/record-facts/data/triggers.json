@@ -1,0 +1,455 @@
+{
+ "slots": {
+  "effective_date": [
+   {
+    "source": "entered? into force(?:https?:\\/\\/\\S+|[^.;\\n]){0,90}",
+    "flags": "i"
+   },
+   {
+    "source": "shall enter into force(?:https?:\\/\\/\\S+|[^.;\\n]){0,90}",
+    "flags": "i"
+   },
+   {
+    "source": "shall apply from(?:https?:\\/\\/\\S+|[^.;\\n]){0,90}",
+    "flags": "i"
+   },
+   {
+    "source": "applicable since(?:https?:\\/\\/\\S+|[^.;\\n]){0,90}",
+    "flags": "i"
+   }
+  ],
+  "primary_deadline": [
+   {
+    "source": "no later than(?:https?:\\/\\/\\S+|[^.;\\n]){0,90}",
+    "flags": "i"
+   },
+   {
+    "source": "\\bby\\s+\\d{1,2}\\s+\\w+\\s+\\d{4}(?:https?:\\/\\/\\S+|[^.;\\n]){0,70}",
+    "flags": "i"
+   },
+   {
+    "source": "\\bdeadline\\b(?:https?:\\/\\/\\S+|[^.;\\n]){0,90}",
+    "flags": "i"
+   }
+  ],
+  "jurisdictional_scope": [
+   {
+    "source": "\\bapplies to\\b(?:https?:\\/\\/\\S+|\\(?\\d{1,2}\\)?\\.|[^.;\\n]){0,90}",
+    "flags": "i"
+   },
+   {
+    "source": "addressed to(?:https?:\\/\\/\\S+|\\(?\\d{1,2}\\)?\\.|[^.;\\n]){0,90}",
+    "flags": "i"
+   },
+   {
+    "source": "member states?(?:https?:\\/\\/\\S+|\\(?\\d{1,2}\\)?\\.|[^.;\\n]){0,90}",
+    "flags": "i"
+   },
+   {
+    "source": "\\b(?:in|within|throughout|across|of|into) the european union(?!\\s*\\()(?!\\s+act\\b)(?:https?:\\/\\/\\S+|\\(?\\d{1,2}\\)?\\.|[^.;\\n]){0,90}",
+    "flags": "i"
+   }
+  ],
+  "penalty_summary": [
+   {
+    "source": "penalt(?:y|ies)(?:https?:\\/\\/\\S+|[^.;\\n]){0,110}",
+    "flags": "i"
+   },
+   {
+    "source": "\\bfine[sd]?\\b(?:https?:\\/\\/\\S+|[^.;\\n]){0,110}",
+    "flags": "i"
+   },
+   {
+    "source": "sanctions?(?:https?:\\/\\/\\S+|[^.;\\n]){0,110}",
+    "flags": "i"
+   }
+  ],
+  "evidence_agreement_signal": [
+   {
+    "source": "peer[- ]reviewed(?:https?:\\/\\/\\S+|[^.;\\n]){0,90}",
+    "flags": "i"
+   },
+   {
+    "source": "independently (?:confirmed|corroborated|replicated)(?:https?:\\/\\/\\S+|[^.;\\n]){0,90}",
+    "flags": "i"
+   },
+   {
+    "source": "widely (?:accepted|confirmed)(?:https?:\\/\\/\\S+|[^.;\\n]){0,90}",
+    "flags": "i"
+   },
+   {
+    "source": "reaches? (?:a )?consensus(?:https?:\\/\\/\\S+|[^.;\\n]){0,90}",
+    "flags": "i"
+   },
+   {
+    "source": "systematic review(?:https?:\\/\\/\\S+|[^.;\\n]){0,90}",
+    "flags": "i"
+   },
+   {
+    "source": "meta-analysis(?:https?:\\/\\/\\S+|[^.;\\n]){0,90}",
+    "flags": "i"
+   },
+   {
+    "source": "\\bpreliminary\\b(?:https?:\\/\\/\\S+|[^.;\\n]){0,90}",
+    "flags": "i"
+   },
+   {
+    "source": "\\bdisputed\\b(?:https?:\\/\\/\\S+|[^.;\\n]){0,90}",
+    "flags": "i"
+   },
+   {
+    "source": "\\bunconfirmed\\b(?:https?:\\/\\/\\S+|[^.;\\n]){0,90}",
+    "flags": "i"
+   },
+   {
+    "source": "not yet (?:been )?replicated(?:https?:\\/\\/\\S+|[^.;\\n]){0,90}",
+    "flags": "i"
+   },
+   {
+    "source": "\\bpeer[- ]review(?:ed)?\\b[^.;\\n]{0,120}",
+    "flags": "i"
+   },
+   {
+    "source": "\\bsystematic review\\b[^.;\\n]{0,120}",
+    "flags": "i"
+   },
+   {
+    "source": "\\bmeta-analysis\\b[^.;\\n]{0,120}",
+    "flags": "i"
+   },
+   {
+    "source": "\\bindependently (?:replicated|verified|corroborated|confirmed)\\b[^.;\\n]{0,120}",
+    "flags": "i"
+   },
+   {
+    "source": "\\bconsistent with (?:prior|previous|other|earlier) (?:research|studies|findings|literature)\\b[^.;\\n]{0,120}",
+    "flags": "i"
+   },
+   {
+    "source": "\\bcontradicts?[\\s-](?:prior|previous|other|earlier) (?:research|studies|findings|literature)\\b[^.;\\n]{0,120}",
+    "flags": "i"
+   },
+   {
+    "source": "\\bin agreement with[^.;\\n]{0,120}",
+    "flags": "i"
+   },
+   {
+    "source": "\\bconsensus (?:among|is|exists|has emerged)\\b[^.;\\n]{0,120}",
+    "flags": "i"
+   },
+   {
+    "source": "\\b(?:mixed|conflicting|inconclusive) evidence\\b[^.;\\n]{0,120}",
+    "flags": "i"
+   },
+   {
+    "source": "\\bbased on \\d+ (?:studies|papers|sources|datasets|independent)[^.;\\n]{0,120}",
+    "flags": "i"
+   }
+  ],
+  "source_authority_signal": [
+   {
+    "source": "published by(?:https?:\\/\\/\\S+|[^.;\\n]){0,90}",
+    "flags": "i"
+   },
+   {
+    "source": "peer[- ]reviewed journal(?:https?:\\/\\/\\S+|[^.;\\n]){0,90}",
+    "flags": "i"
+   },
+   {
+    "source": "working paper(?:https?:\\/\\/\\S+|[^.;\\n]){0,90}",
+    "flags": "i"
+   },
+   {
+    "source": "\\bpreprint\\b(?:https?:\\/\\/\\S+|[^.;\\n]){0,90}",
+    "flags": "i"
+   },
+   {
+    "source": "\\bin press\\b(?:https?:\\/\\/\\S+|[^.;\\n]){0,90}",
+    "flags": "i"
+   },
+   {
+    "source": "issued by(?:https?:\\/\\/\\S+|[^.;\\n]){0,90}",
+    "flags": "i"
+   },
+   {
+    "source": "commissioned by(?:https?:\\/\\/\\S+|[^.;\\n]){0,90}",
+    "flags": "i"
+   },
+   {
+    "source": "\\buniversity\\b(?:https?:\\/\\/\\S+|[^.;\\n]){0,90}",
+    "flags": "i"
+   },
+   {
+    "source": "national laboratory(?:https?:\\/\\/\\S+|[^.;\\n]){0,90}",
+    "flags": "i"
+   },
+   {
+    "source": "standards body(?:https?:\\/\\/\\S+|[^.;\\n]){0,90}",
+    "flags": "i"
+   },
+   {
+    "source": "intergovernmental organi[sz]ation(?:https?:\\/\\/\\S+|[^.;\\n]){0,90}",
+    "flags": "i"
+   },
+   {
+    "source": "research institute(?:https?:\\/\\/\\S+|[^.;\\n]){0,90}",
+    "flags": "i"
+   },
+   {
+    "source": "industry association(?:https?:\\/\\/\\S+|[^.;\\n]){0,90}",
+    "flags": "i"
+   },
+   {
+    "source": "\\b(?:this )?(?:study|report|research|analysis) was (?:funded|commissioned|sponsored) by[^.;\\n]{0,140}",
+    "flags": "i"
+   },
+   {
+    "source": "\\bindependently (?:funded|conducted)\\b[^.;\\n]{0,120}",
+    "flags": "i"
+   },
+   {
+    "source": "\\bno (?:conflicts? of interest|competing interests?)\\b[^.;\\n]{0,120}",
+    "flags": "i"
+   },
+   {
+    "source": "\\bdeclares? no funding\\b[^.;\\n]{0,120}",
+    "flags": "i"
+   },
+   {
+    "source": "\\bfunded by (?:the )?(?:manufacturer|vendor|industry)\\b[^.;\\n]{0,140}",
+    "flags": "i"
+   },
+   {
+    "source": "\\ban? (?:university|national laborator(?:y|ies)|standards body|intergovernmental (?:organi[sz]ation|body)|peer-reviewed journal|research institute|non-governmental organi[sz]ation|industry association|think tank)\\b[^.;\\n]{0,140}",
+    "flags": "i"
+   }
+  ],
+  "operative_provision": [
+   {
+    "source": "HAS ADOPTED THIS (?:DECISION|REGULATION|DIRECTIVE|RECOMMENDATION):(?:https?:\\/\\/\\S+|[^.;\\n]){0,250}",
+    "flags": "i"
+   },
+   {
+    "source": "HAS DECIDED AS FOLLOWS:(?:https?:\\/\\/\\S+|[^.;\\n]){0,250}",
+    "flags": "i"
+   }
+  ],
+  "addressee": [
+   {
+    "source": "This (?:Decision|Regulation|Directive|Recommendation) is addressed to(?:https?:\\/\\/\\S+|[^.;\\n]){0,90}",
+    "flags": "i"
+   }
+  ],
+  "confirmed_measure": [
+   {
+    "source": "measures notified by(?:https?:\\/\\/\\S+|[^.;\\n]){0,150}",
+    "flags": "i"
+   }
+  ],
+  "finding": [
+   {
+    "source": "\\b(?:this |the )?(?:study|report|analysis|research|paper|survey|review)\\s+finds?\\s+that[^.;\\n]{0,140}",
+    "flags": "i"
+   },
+   {
+    "source": "\\bwe found that[^.;\\n]{0,140}",
+    "flags": "i"
+   },
+   {
+    "source": "\\bfound that[^.;\\n]{0,140}",
+    "flags": "i"
+   },
+   {
+    "source": "\\bresults? (?:show|shows|showed|indicate|indicates|indicated)[^.;\\n]{0,140}",
+    "flags": "i"
+   },
+   {
+    "source": "\\b(?:study|report|analysis) concludes? that[^.;\\n]{0,140}",
+    "flags": "i"
+   },
+   {
+    "source": "\\banalysis shows? that[^.;\\n]{0,140}",
+    "flags": "i"
+   }
+  ],
+  "methodology_limits": [
+   {
+    "source": "\\blimitations? of (?:this|the) (?:study|analysis|report|research)[^.;\\n]{0,140}",
+    "flags": "i"
+   },
+   {
+    "source": "\\b(?:key |main )?limitations? include[^.;\\n]{0,140}",
+    "flags": "i"
+   },
+   {
+    "source": "\\bthis (?:study|analysis|report) (?:is limited|does not account for)[^.;\\n]{0,140}",
+    "flags": "i"
+   },
+   {
+    "source": "\\bmethodology[^.;\\n]{0,140}",
+    "flags": "i"
+   },
+   {
+    "source": "\\bsample size (?:of|was|is)[^.;\\n]{0,110}",
+    "flags": "i"
+   },
+   {
+    "source": "\\bfurther research is needed[^.;\\n]{0,140}",
+    "flags": "i"
+   }
+  ],
+  "decision_relevance": [
+   {
+    "source": "\\b(?:policymakers|operators|forwarders|businesses|firms|shippers|carriers) should[^.;\\n]{0,140}",
+    "flags": "i"
+   },
+   {
+    "source": "\\bimplications? for[^.;\\n]{0,140}",
+    "flags": "i"
+   },
+   {
+    "source": "\\b(?:we |the (?:study|report|authors) )?recommends? that[^.;\\n]{0,140}",
+    "flags": "i"
+   },
+   {
+    "source": "\\bfor decision[- ]makers[^.;\\n]{0,140}",
+    "flags": "i"
+   },
+   {
+    "source": "\\brelevant to[^.;\\n]{0,140}",
+    "flags": "i"
+   }
+  ],
+  "does_not_resolve": [
+   {
+    "source": "\\bdoes not (?:resolve|address|answer|determine|settle)[^.;\\n]{0,140}",
+    "flags": "i"
+   },
+   {
+    "source": "\\bremains? unresolved[^.;\\n]{0,140}",
+    "flags": "i"
+   },
+   {
+    "source": "\\boutside the scope of (?:this|the)[^.;\\n]{0,140}",
+    "flags": "i"
+   },
+   {
+    "source": "\\bfuture (?:work|research) (?:should|will|is needed to)[^.;\\n]{0,140}",
+    "flags": "i"
+   },
+   {
+    "source": "\\bdoes not (?:cover|include)[^.;\\n]{0,140}",
+    "flags": "i"
+   }
+  ],
+  "key_figure": [
+   {
+    "source": "[$€£]\\s?\\d[\\d,]*(?:\\.\\d+)?\\s?(?:million|billion|trillion|bn|m|k)?[^.;\\n]{0,90}",
+    "flags": "i"
+   },
+   {
+    "source": "\\b\\d+(?:\\.\\d+)?\\s?%[^.;\\n]{0,90}",
+    "flags": ""
+   },
+   {
+    "source": "\\b\\d[\\d,]*(?:\\.\\d+)?\\s?(?:tonnes?|tons?|mtco2e?|mt co2e?|kg|kwh|mwh|gwh|gw|mw|km|miles?|litres?|gallons?)\\b[^.;\\n]{0,90}",
+    "flags": "i"
+   }
+  ]
+ },
+ "binding_position": {
+  "direct_duty": [
+   {
+    "source": "(?:freight forwarders?|forwarding agents?|the forwarder|customs representatives?|indirect customs representatives?|the operator|the undertaking)(?:https?:\\/\\/\\S+|[^.;\\n]){0,60}(?:shall|must|is required to|are required to|is obliged to|are obliged to)(?:https?:\\/\\/\\S+|[^.;\\n]){0,90}",
+    "flags": "i"
+   }
+  ],
+  "carrier_passthrough": [
+   {
+    "source": "(?:the carrier|carriers|the shipowners?|the shipping compan(?:y|ies)|the vessel operators?)(?:https?:\\/\\/\\S+|[^.;\\n]){0,60}(?:shall|must|is required to|are required to)(?:https?:\\/\\/\\S+|[^.;\\n]){0,90}",
+    "flags": "i"
+   }
+  ],
+  "customer_contract": [
+   {
+    "source": "(?:the customers?|the shippers?|the consignors?)(?:https?:\\/\\/\\S+|[^.;\\n]){0,60}(?:shall|must|is required to|are required to|may request|may require)(?:https?:\\/\\/\\S+|[^.;\\n]){0,90}",
+    "flags": "i"
+   },
+   {
+    "source": "contractual (?:clause|obligation|requirement)(?:https?:\\/\\/\\S+|[^.;\\n]){0,90}",
+    "flags": "i"
+   }
+  ],
+  "monitoring_only": [
+   {
+    "source": "not yet (?:in force|applicable|binding)(?:https?:\\/\\/\\S+|[^.;\\n]){0,90}",
+    "flags": "i"
+   },
+   {
+    "source": "does not (?:currently )?appl(?:y|ies) to(?:https?:\\/\\/\\S+|[^.;\\n]){0,90}",
+    "flags": "i"
+   }
+  ]
+ },
+ "binding_position_priority": [
+  "direct_duty",
+  "carrier_passthrough",
+  "customer_contract",
+  "monitoring_only"
+ ],
+ "due_date": [
+  {
+   "source": "due (?:date|by)(?:https?:\\/\\/\\S+|[^.;\\n]){0,90}",
+   "flags": "i"
+  },
+  {
+   "source": "no later than(?:https?:\\/\\/\\S+|[^.;\\n]){0,90}",
+   "flags": "i"
+  },
+  {
+   "source": "\\bby\\s+\\d{1,2}\\s+\\w+\\s+\\d{4}(?:https?:\\/\\/\\S+|[^.;\\n]){0,70}",
+   "flags": "i"
+  },
+  {
+   "source": "\\bwithin\\s+\\d+\\s+(?:days?|months?|years?)(?:\\s+of|\\s+from|\\s+after)?(?:https?:\\/\\/\\S+|[^.;\\n]){0,90}",
+   "flags": "i"
+  }
+ ],
+ "eu_act_slots": [
+  "operative_provision",
+  "addressee",
+  "confirmed_measure",
+  "in_force_status",
+  "effective_date"
+ ],
+ "url_bearing_slots": [
+  "jurisdictional_scope"
+ ],
+ "families": {
+  "regulation": [
+   "regulation",
+   "directive",
+   "standard",
+   "guidance",
+   "framework"
+  ],
+  "market": [
+   "market_signal",
+   "initiative"
+  ]
+ },
+ "family_slots": {
+  "regulation": [
+   "binding_position",
+   "due_date"
+  ],
+  "market": [
+   "corridor_identity"
+  ],
+  "research_finding": [
+   "key_figure",
+   "evidence_agreement_signal",
+   "source_authority_signal"
+  ]
+ }
+}

@@ -1,0 +1,16 @@
+export { crossItemAuditGate, hasValidWaiver, hostTierViolationCount, readAllSources, readOpenDataAuditBlock, scoreItemClaims } from "./audit-gate";
+export type { AuditResult, ResolvedSource, ResolveSource } from "./audit-gate";
+export { citedHostGate, partitionCitedByHost } from "./cited-hosts";
+export { GROUND_CONFIG } from "./config";
+export type { TruncEvent } from "./config";
+export { openFlagOnce } from "./flags";
+export { extractFactualTokens, GATE_A_VERSION, scanGateA } from "./gate-a-scan";
+export { buildCitationEdges, buildGateARow, clearGateAState, derivedCoveredTokens, detectConflate, detectNumeric, identityCongruenceHolds, mergeNullTierAggregate, mintGates, perFactGates, summarizeNullTierAggregate, upsertGateAState } from "./gates";
+export { groundBrief } from "./ground";
+export type { GroundDeps, GroundInput, GroundResult, GroundSources, TargetIdentity, TargetMatch } from "./ground";
+export { applyLedgerDiff, diffLedger, eraseClaimWithProof, groundRetryPlan, ledgerRegression, summarizeLedger } from "./ledger";
+export type { ClaimRow } from "./ledger";
+export { authorityFloorFor, authorityFloorForFact, buildSourceBlocks, floorPool, poolHash, prepareSectionForGrounding, readAllPoolRows, readPool, reattributeToFloor, spanIsVerbatim, usableCaptures } from "./pool";
+export type { PoolRow, TierSource } from "./pool";
+export { decideSlotClaim, nominateForSlot, readRequiredSlots, uncoveredSlots } from "./slots";
+export type { Nomination, SlotDecision, SlotRow } from "./slots";

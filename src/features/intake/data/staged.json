@@ -1,0 +1,49 @@
+{
+ "nonSubstantive": [
+  "status",
+  "severity",
+  "confidence",
+  "priority",
+  "is_archived",
+  "archive_reason",
+  "archive_note",
+  "archived_date",
+  "replaced_by",
+  "urgency_tier",
+  "format_type",
+  "last_regenerated_at",
+  "regeneration_skill_version",
+  "sources_used",
+  "version_history",
+  "last_verified",
+  "added_date",
+  "created_at",
+  "updated_at",
+  "legacy_id"
+ ],
+ "contentColumns": [
+  "title",
+  "summary",
+  "what_is_it",
+  "why_matters",
+  "key_data",
+  "operational_impact",
+  "open_questions",
+  "tags",
+  "entry_into_force",
+  "compliance_deadline",
+  "next_review_date",
+  "jurisdiction_iso",
+  "canonical_instrument_key",
+  "instrument_identifier",
+  "instrument_type"
+ ],
+ "chokepointOnlyInputs": [
+  "key_deadlines",
+  "source_name",
+  "authority_level",
+  "relevance",
+  "capturedText"
+ ],
+ "changeSweepMarker": "[change-sweep]"
+}

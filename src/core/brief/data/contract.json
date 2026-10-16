@@ -1,0 +1,814 @@
+{
+ "version": "2026-09-11",
+ "severity": [
+  {
+   "label": "ACTION REQUIRED",
+   "db": "action_required",
+   "priority": "CRITICAL",
+   "meaning": "the reader needs to do something now"
+  },
+  {
+   "label": "COST ALERT",
+   "db": "cost_alert",
+   "priority": "HIGH",
+   "meaning": "rates or costs are changing"
+  },
+  {
+   "label": "WINDOW CLOSING",
+   "db": "window_closing",
+   "priority": "HIGH",
+   "meaning": "a deadline or opportunity is expiring"
+  },
+  {
+   "label": "COMPETITIVE EDGE",
+   "db": "competitive_edge",
+   "priority": "MODERATE",
+   "meaning": "the reader can get ahead of competitors"
+  },
+  {
+   "label": "MONITORING",
+   "db": "monitoring",
+   "priority": "LOW",
+   "meaning": "no action yet but this is moving"
+  }
+ ],
+ "dbSeverityExtra": [
+  "critical",
+  "high",
+  "moderate",
+  "low",
+  "immediate",
+  "watch",
+  "reference",
+  "background"
+ ],
+ "priorities": [
+  "CRITICAL",
+  "HIGH",
+  "MODERATE",
+  "LOW"
+ ],
+ "urgencyTiers": [
+  {
+   "value": "watch",
+   "meaning": "active rulemaking, consultation period open, or scheduled vote/decision within 12 months"
+  },
+  {
+   "value": "elevated",
+   "meaning": "adopted, pre-enforcement, or first enforcement window approaching"
+  },
+  {
+   "value": "stable",
+   "meaning": "enforced and unchanged for the current reporting cycle"
+  },
+  {
+   "value": "informational",
+   "meaning": "expired, superseded, withdrawn, or background context only"
+  }
+ ],
+ "topicTags": [
+  {
+   "tag": "emissions",
+   "meaning": "carbon pricing, ETS systems, GHG strategies, carbon border adjustments"
+  },
+  {
+   "tag": "fuels",
+   "meaning": "SAF mandates, alternative maritime fuels, e-fuels, hydrogen, ammonia bunkering"
+  },
+  {
+   "tag": "transport",
+   "meaning": "vehicle standards, fleet mandates, ZEV requirements, transport infrastructure"
+  },
+  {
+   "tag": "reporting",
+   "meaning": "disclosure frameworks, emissions accounting standards, ratings, certifications"
+  },
+  {
+   "tag": "packaging",
+   "meaning": "PPWR, circular economy, PFAS restrictions, sustainable packaging"
+  },
+  {
+   "tag": "corridors",
+   "meaning": "green shipping corridors, port sustainability, shore power, clean air zones"
+  },
+  {
+   "tag": "research",
+   "meaning": "academic, think-tank, industry news, innovation trackers"
+  }
+ ],
+ "signalBands": [
+  {
+   "band": "price",
+   "meaning": "fuel prices, carbon prices, freight rates, surcharge changes, allowance auctions"
+  },
+  {
+   "band": "corporate",
+   "meaning": "corporate ESG announcements, M&A, financing rounds, board moves, S&P/MSCI rating changes"
+  },
+  {
+   "band": "corridor",
+   "meaning": "green shipping corridors, port partnerships, route-level operational changes"
+  }
+ ],
+ "themes": [
+  "emissions_accounting",
+  "fuels_saf",
+  "packaging_circular",
+  "carbon_markets",
+  "cold_chain_art",
+  "last_mile_electrification",
+  "disclosure_regimes"
+ ],
+ "themeCandidateMap": {
+  "fuels": "fuels_saf",
+  "packaging": "packaging_circular"
+ },
+ "complianceObjects": [
+  {
+   "group": "Carriers",
+   "values": [
+    "carrier-ocean",
+    "carrier-air",
+    "carrier-road",
+    "carrier-rail"
+   ]
+  },
+  {
+   "group": "Vehicle/fleet operators",
+   "values": [
+    "vessel-operator",
+    "aircraft-operator",
+    "road-fleet-operator"
+   ]
+  },
+  {
+   "group": "Forwarders & intermediaries",
+   "values": [
+    "freight-forwarder",
+    "customs-broker",
+    "nvocc"
+   ]
+  },
+  {
+   "group": "Cargo principals",
+   "values": [
+    "shipper",
+    "importer",
+    "exporter",
+    "manufacturer-producer",
+    "distributor"
+   ]
+  },
+  {
+   "group": "Infrastructure",
+   "values": [
+    "port-operator",
+    "airport-operator",
+    "terminal-operator",
+    "warehouse-operator"
+   ]
+  }
+ ],
+ "scenarioGlossary": [
+  {
+   "group": "Ocean",
+   "values": [
+    "ocean-bunkering",
+    "ocean-fuel-blend-mandate",
+    "ocean-emissions-MRV",
+    "vessel-port-call",
+    "vessel-shore-power",
+    "vessel-CII-rating",
+    "green-shipping-corridor"
+   ]
+  },
+  {
+   "group": "Air",
+   "values": [
+    "air-fueling",
+    "SAF-blending",
+    "aircraft-emissions-CORSIA",
+    "aircraft-emissions-ETS",
+    "airport-shore-power"
+   ]
+  },
+  {
+   "group": "Road",
+   "values": [
+    "road-cabotage",
+    "drayage",
+    "urban-truck-zone",
+    "truck-CO2-standard",
+    "road-charging-infrastructure"
+   ]
+  },
+  {
+   "group": "Border-carbon/due-diligence",
+   "values": [
+    "CBAM-declaration",
+    "EUDR-due-diligence"
+   ]
+  },
+  {
+   "group": "Carbon/ETS",
+   "values": [
+    "ETS-allowance-purchase",
+    "ETS-allowance-surrender",
+    "carbon-pricing-pass-through",
+    "carbon-border-adjustment"
+   ]
+  },
+  {
+   "group": "Reporting",
+   "values": [
+    "emissions-reporting-Scope1",
+    "emissions-reporting-Scope3",
+    "sustainability-report-CSRD",
+    "disclosure-ISSB",
+    "supplier-data-request"
+   ]
+  },
+  {
+   "group": "Packaging/products",
+   "values": [
+    "packaging-EPR-registration",
+    "packaging-recyclability-design",
+    "packaging-PFAS-restriction",
+    "product-due-diligence-CSDDD"
+   ]
+  }
+ ],
+ "caps": {
+  "topicTags": 3,
+  "scenarioTags": 5,
+  "complianceTags": 4,
+  "complianceCandidates": 8,
+  "candidateMaxLength": 80,
+  "intersectionSummary": 2000
+ },
+ "mentionedTerms": {
+  "kinds": [
+   "material",
+   "term",
+   "standard"
+  ],
+  "max": 25,
+  "textMax": 120
+ },
+ "claimKinds": [
+  "FACT",
+  "ANALYSIS",
+  "LEGAL",
+  "GAP"
+ ],
+ "fields": [
+  {
+   "name": "full_brief",
+   "kind": "text",
+   "required": false,
+   "description": "the markdown body of the brief, structured per the format type's section list. Already produced as the body of the agent's output."
+  },
+  {
+   "name": "what_is_it",
+   "kind": "text",
+   "required": false,
+   "description": "plain language explanation citing the specific legal instrument (directive/regulation number, Official Journal reference, state register citation, port authority tariff number), jurisdiction, and enforcement body. 2-3 sentences minimum. For non-regulatory formats, name what the thing IS (report, disclosure, standard, dataset, programme) and who issued it, on the same evidentiary terms. Emit on EVERY brief regardless of format. This field is a COMPRESSION of the brief you just wrote, never new claims: every element must already appear in the body or its cited sources. Under the integrity rule, emit null rather than a plausible sentence when the brief itself could not establish what the instrument is."
+  },
+  {
+   "name": "severity",
+   "kind": "severity",
+   "required": true,
+   "description": "one of the 5 SKILL.md severity labels. Reflects the urgency of action implied by the brief's content as it actually exists, not as it would exist if all sections were filled. Briefs that honestly omit sections under the integrity rule still emit severity, scoped to what is known and sourced."
+  },
+  {
+   "name": "priority",
+   "kind": "priority",
+   "required": true,
+   "description": "the 4-tier dashboard counter value, computed from severity per the mapping below. The agent computes this; downstream code does not."
+  },
+  {
+   "name": "urgency_tier",
+   "kind": "urgency",
+   "required": true,
+   "description": "the dashboard tier value, one of 4 values per the rubric below."
+  },
+  {
+   "name": "format_type",
+   "kind": "format",
+   "required": true,
+   "description": "the format used for this brief, derived from item_type per the mapping below."
+  },
+  {
+   "name": "topic_tags",
+   "kind": "topic_tags",
+   "required": true,
+   "description": "array of 0-3 tags from the topic_tags controlled vocabulary below. Tags outside the vocabulary fail the regeneration."
+  },
+  {
+   "name": "signal_band",
+   "kind": "signal_band",
+   "required": true,
+   "onlyFormat": "market_signal_brief",
+   "description": "one of `price | corporate | corridor` when format_type is `market_signal_brief`; null otherwise. Drives /market band routing column-first."
+  },
+  {
+   "name": "theme",
+   "kind": "theme",
+   "required": true,
+   "onlyFormat": "research_summary",
+   "description": "one of the 7 research-theme values (`emissions_accounting | fuels_saf | packaging_circular | carbon_markets | cold_chain_art | last_mile_electrification | disclosure_regimes`) when format_type is `research_summary`; null otherwise. Drives /research theme routing column-first. The single most central theme; distinct from topic_tags which is multi-value and uses a DIFFERENT vocabulary."
+  },
+  {
+   "name": "operational_scenario_tags",
+   "kind": "scenario_tags",
+   "required": true,
+   "description": "array of 0-5 tags describing operational scenarios this item touches. Open vocabulary; prefer the core glossary below; new values allowed when the core doesn't fit. Lower-case kebab-case. Drives intersection detection."
+  },
+  {
+   "name": "compliance_object_tags",
+   "kind": "compliance_tags",
+   "required": true,
+   "description": "array of 0-4 tags from the closed compliance-object vocabulary below. Tags outside the vocabulary fail the regeneration. Drives intersection detection."
+  },
+  {
+   "name": "related_items",
+   "kind": "uuid_array",
+   "required": true,
+   "description": "UUID array of intelligence_items the agent recognised as related during composition. Every UUID MUST satisfy the A3 assertion rule above: from the source pool input, OR from the CANDIDATE CONNECTIONS block when your content genuinely evidences it. No invented UUIDs, no other source. Empty array when no relations identified."
+  },
+  {
+   "name": "intersection_summary",
+   "kind": "text",
+   "required": true,
+   "description": "short markdown string (≤1500 chars) describing how this item interacts with the linked items: overlapping requirements, conflicting timelines, sequential compliance dependencies, operational coupling. Sourced; cite linked items inline by title. Emit empty string OR null when no intersections were identified."
+  },
+  {
+   "name": "sources_used",
+   "kind": "uuid_array",
+   "required": true,
+   "description": "UUID array of source IDs the agent referenced. Populated only with IDs that arrived in the input context. No invented UUIDs. Emit FULL 36-character UUIDs (e.g. a1b2c3d4-e5f6-4789-9abc-def012345678) — never the 8-character prefix shorthand. Truncated UUIDs fail the regeneration."
+  },
+  {
+   "name": "last_regenerated_at",
+   "kind": "iso_date",
+   "required": true,
+   "description": "ISO 8601 timestamp at the moment of generation. The agent emits the current UTC timestamp in ISO 8601 form (e.g., 2026-04-29T18:42:00Z). Do NOT emit literal \"NOW()\" or any other placeholder. Do NOT derive from source publication dates. Do NOT invent a value."
+  },
+  {
+   "name": "regeneration_skill_version",
+   "kind": "version",
+   "required": true,
+   "description": "fixed string identifying the SKILL.md contract version. For regenerations under the current contract, the value is \"{{CONTRACT_VERSION}}\"."
+  },
+  {
+   "name": "what_it_changes",
+   "kind": "text",
+   "required": false,
+   "description": "short editorial callout (single sentence, 80-200 chars) naming what this finding/signal changes for workspace operations: cost mechanism, contract clause, routing decision, compliance action, etc. Emit on EVERY brief regardless of format. Empty string OR null only when the brief has no operational implications (rare; integrity-rule exception). The renderer surfaces this as a per-card right-column callout on /research and /market."
+  },
+  {
+   "name": "does_not_resolve",
+   "kind": "text",
+   "required": false,
+   "description": "short editorial callout (single sentence, 80-200 chars) naming the scope limit, open question, or unresolved aspect this brief deliberately does not address. Emit on research_summary briefs ONLY (and ideally only when an open question is genuinely surfaced); null otherwise. Format: short prose (\"Does NOT resolve whether [open question] — see [pending source/event] for binding answer\"). Renderer surfaces as a muted secondary callout under \"What it changes\"."
+  },
+  {
+   "name": "conversion_trigger",
+   "kind": "text",
+   "required": false,
+   "description": "short editorial callout (single sentence, 80-200 chars) naming the future event that flips this signal from observation to commercial pressure. Emit on market_signal_brief items in signal_band price OR corporate; null otherwise. Format: short prose (\"CORSIA Phase 2 review · Q4 2026\" or \"First commercial pilot 2028 · charging-corridor agreement signing\"). Renderer surfaces as a muted secondary callout."
+  },
+  {
+   "name": "cross_references",
+   "kind": "text",
+   "required": false,
+   "description": "short editorial callout (single sentence, 80-200 chars) listing canonical Operations/Regulations briefs this corridor signal links to. Emit on market_signal_brief items in signal_band corridor; null otherwise. Format: short prose with \"↗\" arrow prefix per surface (\"↗ Operations · Gulf bunkering · Cape route economics\"). Renderer surfaces as a callout block beneath What it changes."
+  },
+  {
+   "name": "cost_mechanism",
+   "kind": "text",
+   "required": false,
+   "description": "one sentence naming who is obligated and how the cost reaches a forwarder's invoice (surcharge, levy, allowance cost, penalty, or pass-through). regulatory_fact_document format only; null on every other format. Verbatim-grounded: emit only when the cited source states the mechanism, never inferred or estimated. Read by RegulationDetailSurface's Who-pays cell."
+  },
+  {
+   "name": "penalty_range",
+   "kind": "text",
+   "required": false,
+   "description": "the specific penalty amount or range, verbatim from the source's S3/S8 penalty_summary material. regulatory_fact_document format only; null otherwise, including when the source states no penalty exists. Renders in PenaltyFacts alongside enforcement_body."
+  },
+  {
+   "name": "enforcement_body",
+   "kind": "text",
+   "required": false,
+   "description": "the name of the body that enforces the instrument, verbatim from the source's S3/S8 penalty_summary material. regulatory_fact_document format only; null otherwise. Renders in PenaltyFacts alongside penalty_range."
+  },
+  {
+   "name": "requirement_trajectory",
+   "kind": "trajectory",
+   "required": false,
+   "description": "the instrument's per-year requirement path as inline JSON, the same qualification-capture per-year series S8 already demands in prose. Shape: { \"steps\": [{\"date\": \"YYYY\" or \"YYYY-MM-DD\", \"value\": \"a string, e.g. 40%\", \"label\": \"optional\"}, ...], \"note\": \"optional free text\" }. regulatory_fact_document format only; null when the instrument has no phase-in or step series. Deliberately distinct from trajectory_points above, which is a numeric price series for market_signal_brief items in signal_band price; this is a qualitative per-year requirement path."
+  },
+  {
+   "name": "why_matters",
+   "kind": "text",
+   "required": false,
+   "description": "3-4 sentences minimum on how this item affects freight forwarding operations: pricing, procurement, carrier contracts, customer reporting, customs processes, or route planning. Include specific cost mechanisms with real figures or ranges when known. No generic \"this is important\" language. Emit on EVERY brief regardless of format."
+  },
+  {
+   "name": "key_data",
+   "kind": "string_array",
+   "required": false,
+   "description": "array of hard data points: effective dates, penalty amounts, phase-in percentages, tonnage thresholds, compliance deadlines. Every entry must be specific and sourced. Emitted as a JSON array of strings. Empty array allowed when the brief has no standalone data points beyond what full_brief already states. Emit on EVERY brief regardless of format."
+  },
+  {
+   "name": "trajectory_points",
+   "kind": "price_points",
+   "extra": true,
+   "required": false,
+   "onlyFormat": "market_signal_brief",
+   "description": "numeric price series { points: [{date, value}], base_date, base_label }; only with signal_band price"
+  },
+  {
+   "name": "mentioned_terms",
+   "kind": "mentioned_terms",
+   "extra": true,
+   "required": false,
+   "description": "optional author-named materials, terms and standards the vocabularies do not hold"
+  }
+ ],
+ "formats": [
+  {
+   "formatType": "regulatory_fact_document",
+   "itemTypes": [
+    "regulation",
+    "directive",
+    "standard",
+    "guidance",
+    "framework"
+   ],
+   "grounding": "span",
+   "sections": [
+    {
+     "key": "1",
+     "order": 1,
+     "heading": "Purpose and Scope of This Document",
+     "conditional": false
+    },
+    {
+     "key": "2",
+     "order": 2,
+     "heading": "What This Regulation Is and Why It Applies to the Workspace",
+     "conditional": false
+    },
+    {
+     "key": "3",
+     "order": 3,
+     "heading": "Issues Requiring Immediate Action",
+     "conditional": false,
+     "roles": [
+      "do_now"
+     ]
+    },
+    {
+     "key": "4",
+     "order": 4,
+     "heading": "How the Workspace Sits in the Compliance Chain",
+     "conditional": false
+    },
+    {
+     "key": "5",
+     "order": 5,
+     "heading": "Authoritative Guidance Document Analysis",
+     "conditional": true
+    },
+    {
+     "key": "6",
+     "order": 6,
+     "heading": "Anticipated Authoritative Guidance and Pending Regulatory Events",
+     "conditional": true
+    },
+    {
+     "key": "7",
+     "order": 7,
+     "heading": "Threshold Questions",
+     "conditional": true
+    },
+    {
+     "key": "8",
+     "order": 8,
+     "heading": "Substantive Requirements",
+     "conditional": false
+    },
+    {
+     "key": "9",
+     "order": 9,
+     "heading": "Product-Specific Compliance Status",
+     "conditional": true
+    },
+    {
+     "key": "10",
+     "order": 10,
+     "heading": "Registration and Reporting Obligations",
+     "conditional": false
+    },
+    {
+     "key": "11",
+     "order": 11,
+     "heading": "Operational System Requirements",
+     "conditional": false,
+     "roles": [
+      "do_now"
+     ]
+    },
+    {
+     "key": "12",
+     "order": 12,
+     "heading": "Exemptions and Edge Cases",
+     "conditional": true
+    },
+    {
+     "key": "13",
+     "order": 13,
+     "heading": "Adjacent Industry Research and Alternatives",
+     "conditional": true
+    },
+    {
+     "key": "14",
+     "order": 14,
+     "heading": "Confirmed Regulatory Timeline",
+     "conditional": false,
+     "headingAlts": [
+      "§14 Confirmed Regulatory Timeline"
+     ],
+     "roles": [
+      "timeline"
+     ]
+    },
+    {
+     "key": "15",
+     "order": 15,
+     "heading": "Sources",
+     "conditional": false,
+     "roles": [
+      "sources"
+     ]
+    }
+   ]
+  },
+  {
+   "formatType": "technology_profile",
+   "itemTypes": [
+    "technology",
+    "innovation",
+    "tool"
+   ],
+   "grounding": "span",
+   "sections": [
+    {
+     "key": "1",
+     "order": 1,
+     "heading": "What's Being Tested or Deployed and By Whom",
+     "conditional": false
+    },
+    {
+     "key": "2",
+     "order": 2,
+     "heading": "What This Tells Us About Industry Trajectory",
+     "conditional": false
+    },
+    {
+     "key": "3",
+     "order": 3,
+     "heading": "Supplier Access and Procurement Reality",
+     "conditional": false
+    },
+    {
+     "key": "4",
+     "order": 4,
+     "heading": "Operational Fit by Transport Mode and Cargo Vertical",
+     "conditional": false
+    },
+    {
+     "key": "5",
+     "order": 5,
+     "heading": "Competitive Positioning Implications for the Workspace",
+     "conditional": true
+    },
+    {
+     "key": "6",
+     "order": 6,
+     "heading": "Conversational and Strategic Talking Points",
+     "conditional": true
+    },
+    {
+     "key": "7",
+     "order": 7,
+     "heading": "Time-to-Market, Procurement Window, and Action",
+     "conditional": false,
+     "roles": [
+      "timeline",
+      "do_now"
+     ]
+    },
+    {
+     "key": "8",
+     "order": 8,
+     "heading": "Sources",
+     "conditional": false,
+     "roles": [
+      "sources"
+     ]
+    }
+   ]
+  },
+  {
+   "formatType": "operations_profile",
+   "itemTypes": [
+    "regional_data"
+   ],
+   "grounding": "matrix",
+   "sections": [
+    {
+     "key": "1",
+     "order": 1,
+     "heading": "Operational Cost Baseline for the Region",
+     "conditional": false
+    },
+    {
+     "key": "2",
+     "order": 2,
+     "heading": "Feasibility of Specific Operational Choices",
+     "conditional": false
+    },
+    {
+     "key": "3",
+     "order": 3,
+     "heading": "Cost Comparison Against Alternatives",
+     "conditional": true
+    },
+    {
+     "key": "4",
+     "order": 4,
+     "heading": "Cross-Regional Strategic Implications",
+     "conditional": true
+    },
+    {
+     "key": "5",
+     "order": 5,
+     "heading": "Competitive Positioning in the Region",
+     "conditional": true
+    },
+    {
+     "key": "6",
+     "order": 6,
+     "heading": "Client Conversation Talking Points",
+     "conditional": true
+    },
+    {
+     "key": "7",
+     "order": 7,
+     "heading": "Pending Changes That Shift the Calculus",
+     "conditional": false,
+     "roles": [
+      "timeline"
+     ]
+    },
+    {
+     "key": "8",
+     "order": 8,
+     "heading": "Sources",
+     "conditional": false,
+     "roles": [
+      "sources"
+     ]
+    }
+   ]
+  },
+  {
+   "formatType": "market_signal_brief",
+   "itemTypes": [
+    "market_signal",
+    "initiative"
+   ],
+   "grounding": "corroboration",
+   "sections": [
+    {
+     "key": "1",
+     "order": 1,
+     "heading": "What's Moving and What Triggered It",
+     "conditional": false
+    },
+    {
+     "key": "2",
+     "order": 2,
+     "heading": "Who's Driving It and What They Want",
+     "conditional": false
+    },
+    {
+     "key": "3",
+     "order": 3,
+     "heading": "Expected Trajectory and Conversion Triggers",
+     "conditional": false,
+     "roles": [
+      "timeline"
+     ]
+    },
+    {
+     "key": "4",
+     "order": 4,
+     "heading": "Operational and Cost Implications If It Materializes",
+     "conditional": false
+    },
+    {
+     "key": "5",
+     "order": 5,
+     "heading": "Competitive Implications",
+     "conditional": true
+    },
+    {
+     "key": "6",
+     "order": 6,
+     "heading": "Client Conversation Talking Points",
+     "conditional": true
+    },
+    {
+     "key": "7",
+     "order": 7,
+     "heading": "What the Workspace Should Do Now",
+     "conditional": false,
+     "roles": [
+      "do_now"
+     ]
+    },
+    {
+     "key": "8",
+     "order": 8,
+     "heading": "Sources",
+     "conditional": false,
+     "roles": [
+      "sources"
+     ]
+    }
+   ]
+  },
+  {
+   "formatType": "research_summary",
+   "itemTypes": [
+    "research_finding"
+   ],
+   "grounding": "span",
+   "sections": [
+    {
+     "key": "1",
+     "order": 1,
+     "heading": "What the Research Found",
+     "headingAlts": [
+      "What the Research Is Investigating",
+      "What the Research Found — OR What the Research Is Investigating"
+     ],
+     "conditional": false
+    },
+    {
+     "key": "2",
+     "order": 2,
+     "heading": "Why This Finding Matters Operationally and Commercially",
+     "conditional": false
+    },
+    {
+     "key": "3",
+     "order": 3,
+     "heading": "What the Finding Changes for Strategy, Claims, or Decisions",
+     "conditional": false
+    },
+    {
+     "key": "4",
+     "order": 4,
+     "heading": "Client Conversation Talking Points and Public Position",
+     "conditional": true
+    },
+    {
+     "key": "5",
+     "order": 5,
+     "heading": "What the Finding Does Not Resolve",
+     "headingAlts": [
+      "What the Finding Does Not Resolve (+ forward timing)",
+      "What the Finding Does Not Resolve + forward timing"
+     ],
+     "conditional": false,
+     "roles": [
+      "timeline"
+     ]
+    },
+    {
+     "key": "6",
+     "order": 6,
+     "heading": "Sources",
+     "conditional": false,
+     "roles": [
+      "sources"
+     ]
+    }
+   ]
+  }
+ ]
+}
