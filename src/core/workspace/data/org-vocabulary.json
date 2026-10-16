@@ -1,0 +1,57 @@
+{
+  "roles": [
+    { "id": "shipper", "label": "Shipper" },
+    { "id": "importer_of_record", "label": "Importer of record" },
+    { "id": "exporter", "label": "Exporter" },
+    { "id": "forwarder", "label": "Freight forwarder" },
+    { "id": "carrier", "label": "Carrier" },
+    { "id": "warehouse_operator", "label": "Warehouse operator" },
+    { "id": "lender_borrower_of_goods", "label": "Lender / borrower of goods" },
+    { "id": "public_body", "label": "Public body" }
+  ],
+  "sizeDimensions": {
+    "headcount": {
+      "label": "Headcount",
+      "bands": [
+        { "id": "micro", "label": "Micro (under 10 employees)", "rank": 0 },
+        { "id": "small", "label": "Small (10-49 employees)", "rank": 1 },
+        { "id": "medium", "label": "Medium (50-249 employees)", "rank": 2 },
+        { "id": "large", "label": "Large (250+ employees)", "rank": 3 }
+      ]
+    },
+    "revenue": {
+      "label": "Annual revenue",
+      "bands": [
+        { "id": "micro", "label": "Micro (up to EUR 2m)", "rank": 0 },
+        { "id": "small", "label": "Small (up to EUR 10m)", "rank": 1 },
+        { "id": "medium", "label": "Medium (up to EUR 50m)", "rank": 2 },
+        { "id": "large", "label": "Large (over EUR 50m)", "rank": 3 }
+      ]
+    },
+    "shipment_volume": {
+      "label": "Annual shipment volume",
+      "bands": [
+        { "id": "low", "label": "Low (occasional shipments)", "rank": 0 },
+        { "id": "medium", "label": "Medium (regular, non-daily)", "rank": 1 },
+        { "id": "high", "label": "High (daily volume)", "rank": 2 },
+        { "id": "very_high", "label": "Very high (high-frequency, multi-lane)", "rank": 3 }
+      ]
+    }
+  },
+  "complianceObjectToOrgRole": {
+    "carrier-ocean": "carrier",
+    "carrier-air": "carrier",
+    "carrier-road": "carrier",
+    "carrier-rail": "carrier",
+    "vessel-operator": "carrier",
+    "aircraft-operator": "carrier",
+    "road-fleet-operator": "carrier",
+    "freight-forwarder": "forwarder",
+    "customs-broker": "importer_of_record",
+    "nvocc": "forwarder",
+    "shipper": "shipper",
+    "importer": "importer_of_record",
+    "exporter": "exporter",
+    "warehouse-operator": "warehouse_operator"
+  }
+}

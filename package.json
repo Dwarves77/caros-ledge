@@ -21,7 +21,8 @@
     "next": "16.1.6",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "zod": "^4.6.7"
+    "zod": "^4.6.7",
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
     "@types/node": "^24",
@@ -43,6 +44,7 @@
     "eslint-config-next": "Next lint rules; bundles the typescript-eslint and import plugins, so no separate plugin is added.",
     "@types/node": "Node types for scripts and next.config.ts.",
     "@types/react": "React types.",
-    "@types/react-dom": "React DOM types."
+    "@types/react-dom": "React DOM types.",
+    "zustand": "Client state stores (workspace identity, per-item state, dashboard settings) that the shell and every surface read; the same major as the old tree."
   }
 }
