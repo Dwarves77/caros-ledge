@@ -181,6 +181,7 @@ async function captureOne(browser, base, route, path, viewport, storage, out, di
   const context = await browser.newContext({ viewport, storageState: route.auth ? storage[route.auth] : undefined });
   try {
     const page = await context.newPage();
+    const before = diag.navigations;
     const bare = (u) => { const x = new URL(u); return `${x.origin}${x.pathname}`; };
     page.on('response', (r) => {
       if (!diag.firstFailure && (r.status() < 200 || r.status() >= 300)) diag.firstFailure = { status: r.status(), url: bare(r.url()) };
@@ -193,8 +194,8 @@ async function captureOne(browser, base, route, path, viewport, storage, out, di
     });
     const response = await page.goto(new URL(path, base).href, { waitUntil: 'load', timeout: 60000 });
     const networkIdle = await settle(page);
-    if (diag.navigations > NAVIGATION_CEILING) {
-      throw new Error(`navigation loop: ${diag.navigations} navigations, paths: ${JSON.stringify(diag.navigationPaths)}`);
+    if (diag.navigations - before > NAVIGATION_CEILING) {
+      throw new Error(`navigation loop: ${diag.navigations - before} navigations, paths: ${JSON.stringify(diag.navigationPaths)}`);
     }
     const finalUrl = new URL(page.url());
     await page.screenshot({ path: join(out, `${stem}.png`), fullPage: true });
