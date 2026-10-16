@@ -7,6 +7,7 @@ import { useEffect } from "react";
 import { create } from "zustand";
 
 import { authHeaders } from "@/core/http/authed-fetch";
+import { failureOf, RetryableError, retryDelayMs } from "@/core/http/backoff";
 import { useItemStateStore, type WorkspaceOverride } from "@/features/workspace/state";
 
 import type { NavCounts } from "./nav-counts.server";
@@ -61,24 +62,46 @@ export function resetBootstrap(userId: string | null = null): void {
   useBootstrapStore.setState({ ...IDLE, userId });
 }
 
-/** One bundle read for `userId`; a result that arrives after a reset or a user change is discarded. The fetch and the header source are injectable for the tests. */
-export async function loadBootstrap(userId: string, fetchImpl: typeof fetch = fetch, headersImpl: () => Promise<Record<string, string> | null> = authHeaders): Promise<void> {
+/** One bundle read for `userId`; a result that arrives after a reset or a user change is discarded. The fetch, the header source and the sleep are injectable for the tests. */
+export async function loadBootstrap(
+  userId: string,
+  fetchImpl: typeof fetch = fetch,
+  headersImpl: () => Promise<Record<string, string> | null> = authHeaders,
+  sleep: (ms: number) => Promise<void> = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+): Promise<void> {
   if (inFlight) return inFlight;
   const mine = epoch;
+  const current = () => mine === epoch && useBootstrapStore.getState().userId === userId;
   useBootstrapStore.setState({ status: "loading", error: null });
   inFlight = (async () => {
-    let next: Partial<BootstrapState>;
-    try {
-      const headers = await headersImpl();
-      if (!headers) next = { status: "idle" };
-      else {
+    let next: Partial<BootstrapState> = { status: "failed", error: "unknown" };
+    // At most 1 + RETRY_LIMIT requests per round: 5xx and network errors back off 1 s, 2 s, 4 s; a 429 waits its Retry-After; any other 4xx is final.
+    for (let made = 1; ; made += 1) {
+      let failure: RetryableError;
+      try {
+        const headers = await headersImpl();
+        if (!headers) {
+          next = { status: "idle" };
+          break;
+        }
         const resp = await fetchImpl("/api/workspace/bootstrap", { headers });
-        next = resp.ok ? { status: "ready", data: (await resp.json()) as WorkspaceBootstrapData } : { status: "failed", error: `HTTP ${resp.status}` };
+        if (resp.ok) {
+          next = { status: "ready", data: (await resp.json()) as WorkspaceBootstrapData };
+          break;
+        }
+        failure = failureOf(resp.status, resp.headers.get("Retry-After"));
+      } catch (e) {
+        failure = e instanceof RetryableError ? e : new RetryableError(e instanceof Error ? e.message : String(e), null, true);
       }
-    } catch (e) {
-      next = { status: "failed", error: e instanceof Error ? e.message : String(e) };
+      const delay = failure.retryable ? retryDelayMs(made, failure.retryAfterMs) : null;
+      if (delay === null || !current()) {
+        next = { status: "failed", error: failure.message };
+        break;
+      }
+      await sleep(delay);
+      if (!current()) return;
     }
-    if (mine === epoch && useBootstrapStore.getState().userId === userId) useBootstrapStore.setState(next);
+    if (current()) useBootstrapStore.setState(next);
   })();
   try {
     await inFlight;

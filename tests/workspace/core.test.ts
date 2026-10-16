@@ -217,14 +217,14 @@ test("viewer relevance fails soft to null outside a session or without a workspa
   assert.equal(await getViewerRelevanceForItem({ title: "x" }, relevanceDeps), null);
 });
 
-test("PROP-011: the lens reads the profile through the service client the one factory hands out, for the viewer's own org", async () => {
+test("PROP-011: the lens reads the profile on the viewer's own client (settings_read_org), for the viewer's own org, with no service client", async () => {
   const db = seed();
   Object.assign(db.rows("workspace_settings")[0]!, { profile: { roles: ["importer"] } });
   let factoryCalls = 0;
   scripted.user = () => clientFor(db, "member");
   scripted.service = () => (factoryCalls += 1, clientFor(db, "anon"));
   const r = await getViewerRelevanceForItem({ title: "Customs rules", transport_modes: ["air"] }, relevanceDeps);
-  assert.deepEqual([factoryCalls, r?.roleSignals], [1, ["importer"]]);
+  assert.deepEqual([factoryCalls, r?.roleSignals], [0, ["importer"]]);
   const settingsRead = db.log.find((l) => l.table === "workspace_settings");
   assert.deepEqual(settingsRead?.filters, [["eq", "org_id", ORG_A]]);
 });

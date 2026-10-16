@@ -5,6 +5,7 @@ import type { User } from "@supabase/supabase-js";
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 
 import { browserClient } from "@/core/db/browser";
+import { failureOf } from "@/core/http/backoff";
 
 import { createIdentityLoader, type AuthSeed, type IdentityLoader, type IdentityStatus } from "./identity-loader";
 
@@ -58,7 +59,8 @@ export function AuthProvider({ children, onSeed }: { children: ReactNode; onSeed
     const loader = createIdentityLoader({
       fetchIdentity: async () => {
         const r = await fetch("/api/auth/identity", { credentials: "same-origin", cache: "no-store" });
-        return r.ok ? r.json() : null;
+        if (!r.ok) throw failureOf(r.status, r.headers.get("Retry-After"));
+        return r.json();
       },
       onSeed: seed,
       onRetrying: setRetryingIdentity,
@@ -93,7 +95,7 @@ export function AuthProvider({ children, onSeed }: { children: ReactNode; onSeed
     return () => subscription.unsubscribe();
   }, []);
 
-  const retryIdentity = useCallback(() => loaderRef.current?.rearm(), []);
+  const retryIdentity = useCallback(() => loaderRef.current?.rearm(true), []);
   const signOut = async () => {
     await browserClient().auth.signOut();
     window.location.href = "/login";

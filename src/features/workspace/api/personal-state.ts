@@ -3,7 +3,7 @@
 import { z } from "zod";
 
 import { currentMembership } from "@/core/auth/membership";
-import { serviceClient, type Db } from "@/core/db/clients";
+import type { Db } from "@/core/db/clients";
 import { fetchAllRows } from "@/core/db/query";
 import { dbError, LookupError, ok, route } from "@/core/http/errors";
 import { isRefusal, requireUser } from "@/core/http/guard";
@@ -64,15 +64,15 @@ const deleteBody = z.object({ itemId: z.string().min(1) });
 export const GET = route("/api/workspace/personal-state", async (request) => {
   const auth = await requireUser(request);
   if (isRefusal(auth)) return auth;
-  return ok(auth.headers, { items: await loadPersonalState(serviceClient(), auth.userId) });
+  return ok(auth.headers, { items: await loadPersonalState(auth.client, auth.userId) });
 });
 
 export const POST = route("/api/workspace/personal-state", async (request) => {
   const auth = await requireUser(request);
   if (isRefusal(auth)) return auth;
   const input = await parseJson(request, postBody);
-  const service = serviceClient();
-  const itemUuid = await itemUuidOr404(service, input.itemId);
+  const db = auth.client;
+  const itemUuid = await itemUuidOr404(db, input.itemId);
   // org_id is contextual metadata (nullable by schema): a failed resolution never blocks the write, and is logged.
   let orgId: string | null = null;
   try {
@@ -84,7 +84,7 @@ export const POST = route("/api/workspace/personal-state", async (request) => {
   const update: Record<string, unknown> = { user_id: auth.userId, org_id: orgId, item_id: itemUuid, is_archived: input.isArchived, archived_at: input.isArchived ? now : null, updated_at: now };
   // A note is optional on a personal archive and cleared on restore.
   if (input.archiveNote !== undefined || !input.isArchived) update.archive_note = input.isArchived && typeof input.archiveNote === "string" ? input.archiveNote : null;
-  const { data, error } = await service.from("user_item_state").upsert(update, { onConflict: "user_id,item_id" }).select().single();
+  const { data, error } = await db.from("user_item_state").upsert(update, { onConflict: "user_id,item_id" }).select().single();
   if (error) throw dbError(error);
   workspaceDeps().revalidateWorkspaceData?.();
   return ok(auth.headers, { state: data });
@@ -94,9 +94,9 @@ export const DELETE = route("/api/workspace/personal-state", async (request) => 
   const auth = await requireUser(request);
   if (isRefusal(auth)) return auth;
   const input = await parseJson(request, deleteBody);
-  const service = serviceClient();
-  const itemUuid = await itemUuidOr404(service, input.itemId);
-  const { error } = await service.from("user_item_state").delete().eq("user_id", auth.userId).eq("item_id", itemUuid);
+  const db = auth.client;
+  const itemUuid = await itemUuidOr404(db, input.itemId);
+  const { error } = await db.from("user_item_state").delete().eq("user_id", auth.userId).eq("item_id", itemUuid);
   if (error) throw dbError(error);
   workspaceDeps().revalidateWorkspaceData?.();
   return ok(auth.headers, { success: true });

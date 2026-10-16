@@ -1,5 +1,6 @@
 // Ported from old_repo/src/components/auth/identity-loader.ts (lines 1-110)
 // Ported from old_repo/src/components/shell/bootstrap-seed.ts (lines 1-129)
+import { RetryableError, retryDelayMs } from "@/core/http/backoff";
 import type { IdentityBootstrap, OrgRole } from "@/core/types";
 
 export type IdentityStatus = "pending" | "resolved" | "error";
@@ -34,24 +35,24 @@ export function resolveAuthSeed(bootstrap: IdentityBootstrap | null): AuthSeed {
 export const shouldApplySeed = (current: IdentityStatus): boolean => current !== "resolved";
 export const shouldShowAdminNav = (p: { status: IdentityStatus; isPlatformAdmin: boolean }): boolean => p.status === "resolved" && p.isPlatformAdmin === true;
 
-/** Two retries after the first attempt (600 ms, then 1.8 s), then the round ends in the error seed. */
-export const IDENTITY_RETRY_DELAYS_MS: readonly number[] = Object.freeze([600, 1800]);
-export function nextIdentityRetryDelay(attemptsMade: number): number | null {
-  if (attemptsMade < 1 || attemptsMade > IDENTITY_RETRY_DELAYS_MS.length) return null;
-  return IDENTITY_RETRY_DELAYS_MS[attemptsMade - 1] ?? null;
-}
+/** Three retries after the first attempt (1 s, 2 s, 4 s; a Retry-After wins when longer), then the round ends in the error seed. */
+export const nextIdentityRetryDelay = retryDelayMs;
+/** A focus or visibility event re-arms an errored loader at most this often; the Retry control is never throttled. */
+export const IDENTITY_REARM_COOLDOWN_MS = 30_000;
 
 export interface IdentityLoaderDeps {
-  /** Resolves the parsed JSON body, or null when the response was not ok. */
+  /** Resolves the parsed JSON body; a failed response throws a RetryableError (core/http/backoff) so its Retry-After is honoured. */
   fetchIdentity: () => Promise<unknown>;
   onSeed: (seed: AuthSeed) => void;
   onRetrying?: (retrying: boolean) => void;
   schedule: (fn: () => void, ms: number) => unknown;
   cancel: (handle: unknown) => void;
+  now?: () => number;
 }
 export interface IdentityLoader {
   start: () => void;
-  rearm: () => void;
+  /** `manual` is the Retry control; an automatic re-arm (focus, visibility) waits out the cooldown after a failure. */
+  rearm: (manual?: boolean) => void;
   stop: () => void;
   status: () => IdentityStatus;
 }
@@ -70,6 +71,8 @@ export function createIdentityLoader(deps: IdentityLoaderDeps): IdentityLoader {
   let timer: unknown = null;
   let stopped = false;
   let retrying = false;
+  let failedAt = 0;
+  const now = deps.now ?? Date.now;
 
   const setRetrying = (v: boolean) => {
     if (retrying === v) return;
@@ -85,10 +88,16 @@ export function createIdentityLoader(deps: IdentityLoaderDeps): IdentityLoader {
     if (stopped || status === "resolved") return;
     inFlight = true;
     let bootstrap: IdentityBootstrap | null = null;
+    let retryAfterMs: number | null = null;
+    let final = false;
     try {
       bootstrap = asBootstrap(await deps.fetchIdentity());
-    } catch {
+    } catch (e) {
       bootstrap = null;
+      if (e instanceof RetryableError) {
+        retryAfterMs = e.retryAfterMs;
+        final = !e.retryable;
+      }
     }
     inFlight = false;
     if (stopped) return;
@@ -97,8 +106,9 @@ export function createIdentityLoader(deps: IdentityLoaderDeps): IdentityLoader {
       apply(resolveAuthSeed(bootstrap));
       return setRetrying(false);
     }
-    const delay = nextIdentityRetryDelay(attempts);
+    const delay = final ? null : retryDelayMs(attempts, retryAfterMs);
     if (delay === null) {
+      failedAt = now();
       apply(IDENTITY_ERROR_SEED);
       return setRetrying(false);
     }
@@ -113,8 +123,9 @@ export function createIdentityLoader(deps: IdentityLoaderDeps): IdentityLoader {
       if (stopped || inFlight || timer !== null || attempts > 0) return;
       void attempt();
     },
-    rearm() {
+    rearm(manual = false) {
       if (stopped || status !== "error" || inFlight || timer !== null) return;
+      if (!manual && now() - failedAt < IDENTITY_REARM_COOLDOWN_MS) return;
       attempts = 0;
       setRetrying(true);
       void attempt();

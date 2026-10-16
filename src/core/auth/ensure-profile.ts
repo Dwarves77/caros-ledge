@@ -7,6 +7,8 @@ export interface EnsureProfileResult {
   created: boolean;
   exists: boolean;
   failedStep?: string;
+  /** Why the step failed (for a stated 503), when it did. */
+  reason?: string;
 }
 
 /**
@@ -17,7 +19,7 @@ export async function ensureProfile(userId: string, email: string | null | undef
   const fail = async (step: string, message: string): Promise<EnsureProfileResult> => {
     log.warn(`[ensure-profile] ${step} failed:`, message);
     await captureError({ side: "server", route: "auth/ensure-profile", error: new Error(`ensure-profile failed at ${step}: ${message}`) });
-    return { created: false, exists: false, failedStep: step };
+    return { created: false, exists: false, failedStep: step, reason: message };
   };
   try {
     const db = client ?? serviceClient();

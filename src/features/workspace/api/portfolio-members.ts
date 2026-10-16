@@ -1,7 +1,7 @@
 // Ported from old_repo/src/app/api/workspace/portfolios/[id]/members/route.ts (lines 24-63)
 import { z } from "zod";
 
-import { serviceClient } from "@/core/db/clients";
+import type { Db } from "@/core/db/clients";
 import { ok, route } from "@/core/http/errors";
 import { isRefusal, requireOrgRole } from "@/core/http/guard";
 import { parseJson } from "@/core/http/parse";
@@ -18,23 +18,23 @@ const memberBody = z.looseObject({ itemId: z.string().optional(), entityId: z.st
 // `existed: true`. DELETE removes ONE member (same body); removing what is absent is not an error. A selection of held things, never
 // customer-entered data (ADR-042). The org comes from the session.
 /** The legacy-id form of itemId resolves to the uuid first (the same helper the tag routes use). */
-async function normalised(body: z.infer<typeof memberBody>) {
-  if (typeof body.itemId === "string" && body.itemId.length > 0) return { ...body, itemId: await itemUuidOr404(serviceClient(), body.itemId) };
+async function normalised(db: Db, body: z.infer<typeof memberBody>) {
+  if (typeof body.itemId === "string" && body.itemId.length > 0) return { ...body, itemId: await itemUuidOr404(db, body.itemId) };
   return body;
 }
 
 export const POST = route<Ctx>(NAME, async (request, { params }) => {
   const auth = await requireOrgRole(request, "member");
   if (isRefusal(auth)) return auth;
-  const input = await normalised(await parseJson(request, memberBody));
-  const result = await addMember(serviceClient(), { orgId: auth.membership.orgId, userId: auth.userId, portfolioId: (await params).id, input });
+  const input = await normalised(auth.client, await parseJson(request, memberBody));
+  const result = await addMember(auth.client, { orgId: auth.membership.orgId, userId: auth.userId, portfolioId: (await params).id, input });
   return ok(auth.headers, result, result.existed ? 200 : 201);
 });
 
 export const DELETE = route<Ctx>(NAME, async (request, { params }) => {
   const auth = await requireOrgRole(request, "member");
   if (isRefusal(auth)) return auth;
-  const input = await normalised(await parseJson(request, memberBody));
-  await removeMember(serviceClient(), { orgId: auth.membership.orgId, portfolioId: (await params).id, input });
+  const input = await normalised(auth.client, await parseJson(request, memberBody));
+  await removeMember(auth.client, { orgId: auth.membership.orgId, portfolioId: (await params).id, input });
   return ok(auth.headers, {});
 });
