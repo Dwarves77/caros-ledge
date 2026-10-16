@@ -1,6 +1,6 @@
 // Ported from old_repo/scripts/mint/export-census-rows.mjs (lines 590-649)
 // Ported from old_repo/scripts/mint/export-census-rows.mjs (lines 1040-1195)
-// Ported from old_repo/scripts/lib/eurlex-cellar.mjs (lines 1-45)
+// Ported from old_repo/scripts/lib/eurlex-cellar.mjs (lines 1-33)
 // Ported from old_repo/scripts/mint/heal-provenance.mjs (lines 1057-1099)
 // Ported from old_repo/scripts/mint/heal-provenance.mjs (lines 1114-1199)
 // Ported from old_repo/scripts/mint/heal-provenance.mjs (lines 1240-1330)
