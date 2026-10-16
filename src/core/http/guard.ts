@@ -56,6 +56,16 @@ export async function requireUser(request: Request): Promise<UserContext | Respo
   }
 }
 
+/** The admin console's service client; a deployment without the key answers 503 with the reason, never an unhandled 500 (the member pages never come here). */
+function adminServiceClient(): Db {
+  try {
+    return serviceClient();
+  } catch (e) {
+    log.warn("[guard] the admin console has no service client:", e instanceof Error ? e.message : String(e));
+    throw new HttpError(503, "The admin console is unavailable here: the server's service key is not configured.");
+  }
+}
+
 /** Platform admin only, decided by the caller's own-row rpc on their own client (no service client needed to ask). */
 export async function requireAdmin(request: Request): Promise<AdminContext | Response> {
   const user = await requireUser(request);
@@ -65,7 +75,7 @@ export async function requireAdmin(request: Request): Promise<AdminContext | Res
   } catch (e) {
     return failed(e);
   }
-  return { ...user, service: serviceClient };
+  return { ...user, service: adminServiceClient };
 }
 
 /** The caller must hold at least `minimum` in `orgId`, or in their active organisation (the oldest membership) when omitted. A viewer is read-only. */

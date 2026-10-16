@@ -104,7 +104,7 @@ test("INV-154 / INV-137: ensureProfile creates the row with no privilege column;
   const events = fakeDb((c) => (c.table === "profiles" ? (c.op === "select" ? { data: null } : { error: { message: "denied", code: "42501" } }) : undefined));
   scripted.service = () => events.db;
   const failed = await ensureProfile("u1", "a@b.test", events.db);
-  assert.deepEqual(failed, { created: false, exists: false, failedStep: "profiles_insert" });
+  assert.deepEqual(failed, { created: false, exists: false, failedStep: "profiles_insert", reason: "denied" });
   assert.match(String((wrote(events.calls, "error_events", "insert")[0]?.payload as { message: string }).message), /ensure-profile failed at profiles_insert/);
 });
 
@@ -129,12 +129,11 @@ test("a failed identity lookup is a LookupError (503 and retry), never 'no works
 });
 
 test("INV-154: the identity pass heals a missing profile row", async () => {
-  const service = fakeDb((c) => (c.op === "select" ? { data: null } : undefined));
-  scripted.service = () => service.db;
-  const { db } = fakeDb((c) => (c.table === "profiles" ? { data: null } : { data: null }), { claims: signedIn("u9", "n@e.test"), rpc: () => ({ data: false }) });
-  const identity = await resolveIdentity(db);
+  scripted.service = null;
+  const caller = fakeDb((c) => (c.table === "profiles" ? { data: null } : { data: null }), { claims: signedIn("u9", "n@e.test"), rpc: () => ({ data: false }) });
+  const identity = await resolveIdentity(caller.db);
   assert.equal(identity.user?.id, "u9");
-  assert.equal(wrote(service.calls, "profiles", "insert").length, 1);
+  assert.equal(wrote(caller.calls, "profiles", "insert").length, 1, "the heal writes on the caller's own client (profiles_self_insert), with no service key configured");
   const none = fakeDb((c) => (c.op === "select" ? { data: null } : undefined));
   scripted.service = () => none.db;
   await resolveIdentity(fakeDb(() => ({ data: null }), { claims: signedIn("u9"), rpc: () => ({ data: false }) }).db, { heal: false });

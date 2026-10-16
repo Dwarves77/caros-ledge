@@ -32,6 +32,9 @@ export function decideRoute({ pathname, search = "", authenticated, authUnavaila
   return authUnavailable ? { action: "service-unavailable" } : { action: "redirect-login", redirectTo: `${pathname}${search}` };
 }
 
+/** True when an anonymous visitor to `pathname` would be sent to /login: the one classification the proxy and the client share. */
+export const requiresAuth = (pathname: string): boolean => decideRoute({ pathname, authenticated: false }).action === "redirect-login";
+
 /** A same-origin path, or "/". Rejects non-paths, `//host`, `/\host` and any control character (a tab or newline would make `/\t/host` protocol-relative in a browser). */
 export function sanitizeReturnPath(raw: string | null | undefined): string {
   if (typeof raw !== "string" || !raw.startsWith("/") || raw.startsWith("//") || raw.startsWith("/\\")) return "/";
