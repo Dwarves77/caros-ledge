@@ -1,0 +1,14 @@
+export { gateRefusal, readSliceState, sliceState } from "./gate";
+export type { SliceState } from "./gate";
+export { familyFns, familyOfStage, isStage, STAGE_RUNNERS, STAGES } from "./registry";
+export type { Stage } from "./registry";
+export { planTurn, runTurn } from "./run-turn";
+export type { TurnRequest, TurnResult } from "./run-turn";
+export { planBriefs, runBriefs } from "./stages/briefs";
+export { planCapture, runCapture, shapeCapture } from "./stages/capture";
+export { planChange, runChange, shapeChange } from "./stages/change";
+export { planConnect, runConnect, shapeConnect } from "./stages/connect";
+export { planIntake, runIntake, shapeIntake } from "./stages/intake";
+export { changedItemIds, planPropagate, runPropagate, shapePropagate } from "./stages/propagate";
+export { planSweep, runSweep, shapeSweep } from "./stages/sweep";
+export { planResearch, runResearch, shapeResearch } from "./stages/sweep-research";

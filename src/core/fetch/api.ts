@@ -1,6 +1,7 @@
 // Ported from old_repo/src/lib/sources/api-transport.mjs (lines 1-96)
 // Ported from old_repo/src/lib/sources/transport-escalation.mjs (lines 98-125)
 import { hostOf } from "@/core/shared";
+import { log } from "@/core/shared/log";
 
 import { toText } from "./classify-body";
 import { type FetchDeps, type TransportResult } from "./direct";
@@ -44,8 +45,8 @@ async function fetchFederalRegisterDocument(url: string, deps: FetchDeps, max: n
         const c = clip(toText(await tr.text()), max);
         if (c.text) return c;
       }
-    } catch {
-      // fall through to the title and abstract: still official content
+    } catch (e) {
+      log.warn("[fetch-api] raw text unavailable, falling back to the title and abstract", { url: doc.raw_text_url, error: e instanceof Error ? e.message : String(e) });
     }
   }
   const summary = [doc.title, doc.abstract].filter(Boolean).join(". ").trim();

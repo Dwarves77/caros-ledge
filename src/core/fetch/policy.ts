@@ -102,12 +102,13 @@ export async function readBodyCapped(resp: Response, capBytes: number): Promise<
     if (!value) continue;
     total += value.byteLength;
     if (total > capBytes) {
+      let cancelError: unknown;
       try {
         await reader.cancel();
-      } catch {
-        // best-effort abort of the underlying stream
+      } catch (e) {
+        cancelError = e;
       }
-      throw new BodyTooLargeError(total);
+      throw Object.assign(new BodyTooLargeError(total), cancelError === undefined ? {} : { cause: cancelError });
     }
     chunks.push(value);
   }
@@ -147,6 +148,8 @@ export interface FetchedDocument {
   pdfBytes: number | null;
   nullsRemoved: number;
   retried403: number | null;
+  /** Why the alternate-header retry after a 403 produced no answer (the original 403 then stands); null when it answered or was not tried. */
+  retry403Error: string | null;
   ceilingBind: { collected: number; fullLength: number } | null;
   /** Every transform applied to the bytes, declared. */
   declaredTransforms: Array<Record<string, unknown>>;
@@ -156,7 +159,7 @@ export type FetchOutcome = FetchedDocument | FetchRefusal;
 export interface FetchDocumentOptions {
   fetchImpl?: typeof fetch;
   /** PDF bytes to text; each runtime supplies its own (unpdf). Absent means a PDF is a typed refusal. */
-  extractPdf?: (bytes: Uint8Array) => Promise<{ text: string; pages: number | null; title: string | null }>;
+  extractPdf?: (bytes: Uint8Array) => Promise<{ text: string; pages: number | null; title: string | null; metaError?: string | null }>;
   now?: () => number;
   headers?: Record<string, string>;
   timeoutMs?: number;
@@ -188,13 +191,14 @@ export async function fetchDocument(url: string, opts: FetchDocumentOptions = {}
   try {
     let resp = await doFetch(url, { redirect: "follow", headers: base, signal: AbortSignal.timeout(timeoutMs) });
     let retried403: number | null = null;
+    let retry403Error: string | null = null;
     if (resp.status === 403) {
       try {
         const retry = await doFetch(url, { redirect: "follow", headers: ALT_HEADERS_ON_403, signal: AbortSignal.timeout(timeoutMs) });
         retried403 = retry.status;
         if (retry.status !== 403) resp = retry;
-      } catch {
-        // the alternate attempt could not reach the server: the original 403 stands
+      } catch (e) {
+        retry403Error = e instanceof Error ? e.message : String(e);
       }
     }
     finalUrl = resp.url || url;
@@ -214,6 +218,7 @@ export async function fetchDocument(url: string, opts: FetchDocumentOptions = {}
     let text: string;
     let title: string | null = null;
     let pdfPages: number | null = null;
+    let pdfMetaError: string | null = null;
     if (isPdf) {
       if (!opts.extractPdf) return refusal("pdf_unavailable", false, 200, contentType, finalUrl, "pdf text extraction is not available in this runtime, NOT stored", bytes.byteLength);
       try {
@@ -221,6 +226,7 @@ export async function fetchDocument(url: string, opts: FetchDocumentOptions = {}
         text = out.text;
         pdfPages = out.pages;
         title = out.title;
+        pdfMetaError = out.metaError ?? null;
       } catch (e) {
         return refusal("pdf_failed", false, 200, contentType, finalUrl, `pdf extraction failed: ${(e as Error).message}, NOT stored`, bytes.byteLength);
       }
@@ -241,7 +247,7 @@ export async function fetchDocument(url: string, opts: FetchDocumentOptions = {}
     }
     const marker = (opts.markers ?? ERROR_MARKERS).find((m) => text.includes(m));
     if (marker) return refusal("error_marker", false, 200, contentType, finalUrl, `error-page marker "${marker}", NOT stored`);
-    if (isPdf) declaredTransforms.push({ declared_transform: "pdf-text-extraction", engine: "unpdf(pdf.js)", pages: pdfPages, pdf_bytes: bytes.byteLength, extracted_chars: text.length, at });
+    if (isPdf) declaredTransforms.push({ declared_transform: "pdf-text-extraction", engine: "unpdf(pdf.js)", pages: pdfPages, pdf_bytes: bytes.byteLength, extracted_chars: text.length, ...(pdfMetaError ? { metadata_error: pdfMetaError } : {}), at });
     const fullLength = text.length;
     let ceilingBind: FetchedDocument["ceilingBind"] = null;
     const cap = opts.maxChars;
@@ -251,7 +257,7 @@ export async function fetchDocument(url: string, opts: FetchDocumentOptions = {}
       declaredTransforms.push({ declared_transform: "storage-ceiling-bind", cap, collected: cap, full_length: fullLength, at });
     }
     if (!isPdf) title = /<title[^>]*>([\s\S]*?)<\/title>/i.exec(text)?.[1]?.trim().slice(0, 500) ?? null;
-    return { ok: true, status: 200, finalUrl, contentType, text, fullLength, title, isPdf, pdfPages, pdfBytes: isPdf ? bytes.byteLength : null, nullsRemoved, retried403, ceilingBind, declaredTransforms };
+    return { ok: true, status: 200, finalUrl, contentType, text, fullLength, title, isPdf, pdfPages, pdfBytes: isPdf ? bytes.byteLength : null, nullsRemoved, retried403, retry403Error, ceilingBind, declaredTransforms };
   } catch (e) {
     return refusal("network", true, null, contentType, finalUrl, `fetch error: ${(e as Error).message}`);
   }

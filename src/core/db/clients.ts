@@ -4,6 +4,8 @@
 import { createServerClient, type CookieMethodsServer } from "@supabase/ssr";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
+import { log } from "@/core/shared/log";
+
 export type Db = SupabaseClient;
 
 function publicEnv(): { url: string; anon: string } {
@@ -42,8 +44,9 @@ export async function userClient(request?: Request): Promise<Db> {
       setAll(list) {
         try {
           list.forEach(({ name, value, options }) => store.set(name, value, options));
-        } catch {
-          // A Server Component may not write cookies; the proxy refreshes the session.
+        } catch (e) {
+          // A Server Component may not write cookies and the proxy refreshes the session, so this is recorded as a warning, not raised.
+          log.warn("[auth] session cookie write skipped", e instanceof Error ? e.message : String(e));
         }
       },
     },

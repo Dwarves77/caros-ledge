@@ -6,6 +6,7 @@ import { create } from "zustand";
 import { authedFetch, type AuthedFetchDeps } from "@/core/http/authed-fetch";
 import type { Resource } from "@/core/types";
 import { log } from "@/core/shared/log";
+import { parseJsonOrNull } from "@/core/shared/text";
 
 import type { PersonalItemState, WorkspaceOverride } from "./types";
 
@@ -32,12 +33,8 @@ async function persist(path: string, payload: Record<string, unknown>, method: "
     if (response.status === 401) return "You are signed out. Sign in and try again.";
     const text = await response.text().catch(() => "");
     log.error(`[item-state] ${path} ${method} returned ${response.status}: ${text.slice(0, 300)}`);
-    try {
-      const parsed = JSON.parse(text) as { error?: unknown };
-      if (typeof parsed.error === "string" && parsed.error) return parsed.error;
-    } catch {
-      // A non-JSON body keeps the status-code message.
-    }
+    const parsed = parseJsonOrNull(text) as { error?: unknown } | null;
+    if (typeof parsed?.error === "string" && parsed.error) return parsed.error;
     return `Request failed (${response.status}).`;
   } catch (e) {
     log.error(`[item-state] ${path} request failed:`, e instanceof Error ? e.message : e);

@@ -175,8 +175,8 @@ export async function capture(url: string, opts: { family?: CaptureFamily; key?:
       const env = await tryDoc(`https://web.archive.org/web/${snap.timestamp}id_/${url}`, "archive", extractTitleFromHtml);
       if (env.usable) return { ...done(env, "archive"), endpoint: url };
     }
-  } catch {
-    // an unreadable availability answer is no snapshot
+  } catch (e) {
+    attempts.push({ endpoint: `https://archive.org/wayback/available?url=${encodeURIComponent(url)}`, transport: "archive", status: null, bytes: 0, head: `unreadable availability answer: ${e instanceof Error ? e.message : String(e)}` });
   }
   return held(`${reason}_no_archive`, last ?? { status: null, endpoint: null });
 }

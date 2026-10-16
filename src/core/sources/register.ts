@@ -99,12 +99,17 @@ export type RegisterAndRateResult =
   | { status: "registered" | "existing"; source_id: string; tier: number; label: string; institution_id: string | null; via: string }
   | { status: "worklist"; host: string; reason: string }
   | { status: "refused"; host: string; reason: string };
+/** What a dry call (IMP-042) adds: the tier a host would be registered at, with nothing written. */
+export type RegisterAndRateDryResult = RegisterAndRateResult | { status: "would-register"; host: string; tier: number; label: string; via: string };
+type RateOpts = { name?: string | null; verdicts?: ReadonlyMap<string, HostVerdictRef> | null };
 
 /**
  * THE registration entry that growth, intake, mint and producers call. The tier is the class table's (a permanent worklist class is refused, an unplaceable host
  * is worklisted, never defaulted); the institution link is read or created from the registrable domain; the row is read back and its REAL tier returned.
  */
-export async function registerAndRate(db: Db, url: string, opts: { name?: string | null; verdicts?: ReadonlyMap<string, HostVerdictRef> | null } = {}): Promise<RegisterAndRateResult> {
+export async function registerAndRate(db: Db, url: string, opts?: RateOpts & { dry?: false }): Promise<RegisterAndRateResult>;
+export async function registerAndRate(db: Db, url: string, opts: RateOpts & { dry: boolean }): Promise<RegisterAndRateDryResult>;
+export async function registerAndRate(db: Db, url: string, opts: RateOpts & { dry?: boolean } = {}): Promise<RegisterAndRateDryResult> {
   const host = hostOf(url);
   if (!host) return { status: "refused", host: "", reason: "unparseable_url" };
   const never = permanentlyUnregisteredClass(host);
@@ -114,11 +119,12 @@ export async function registerAndRate(db: Db, url: string, opts: { name?: string
   const existing = found.rows[0] ?? null;
   const placement = placeHostWithVerdicts(host, [opts.name], opts.verdicts ?? null);
   if (!existing && placement.tier == null) return { status: "worklist", host, reason: "the host places in no class-table class and no committed verdict" };
+  if (opts.dry && !existing) return { status: "would-register", host, tier: placement.tier as number, label: tierLabelOf(placement.tier as number), via: placement.via ?? "class" };
   const reg = existing ? { source_id: existing.id, created: false } : await registerSource(db, { url, name: opts.name ?? null, base_tier: placement.tier as number });
   const real = await readSourceByUrl(db, url);
   const tier = real?.base_tier ?? placement.tier;
   if (tier == null) throw new Error(`registerAndRate: ${reg.source_id} registered but its tier could not be read back`);
-  const institution_id = await linkInstitution(db, reg.source_id, host, real?.institution_id ?? null);
+  const institution_id = opts.dry ? (real?.institution_id ?? null) : await linkInstitution(db, reg.source_id, host, real?.institution_id ?? null);
   return { status: reg.created ? "registered" : "existing", source_id: reg.source_id, tier, label: tierLabelOf(tier), institution_id, via: existing ? "registry" : (placement.via ?? "class") };
 }
 

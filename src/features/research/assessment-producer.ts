@@ -130,11 +130,12 @@ export async function resolveOpenAlexSourceRecords(input: AssessInput, deps: Ope
   return [{ sourceId: `doi:${doi}`, kind: "openalex", institution: inst ? { displayName: inst.display_name ?? null, type: inst.type ?? null } : null, work: { publicationDate: work.publication_date ?? null, citedByCount: typeof work.cited_by_count === "number" ? work.cited_by_count : null, fwci: typeof work.fwci === "number" ? work.fwci : null, citationNormalizedPercentile: typeof pct === "number" ? pct : null, isRetracted: work.is_retracted === true }, funding: null }];
 }
 
-/** The live candidates: verified, non-archived research items with NO current assessment (the first pass never re-scores), at most `limit`, with their source tier and forward events. */
-export async function fetchLiveCandidates(sb: Db, limit?: number): Promise<AssessInput[]> {
+/** The live candidates: verified, non-archived research items with NO current assessment (the first pass never re-scores; `itemIds` names the items to re-score, current assessment or not), at most `limit`, with their source tier and forward events. */
+export async function fetchLiveCandidates(sb: Db, limit?: number, opts: { itemIds?: readonly string[] } = {}): Promise<AssessInput[]> {
   const items = await fetchAllRows<Rec>((from, to) => sb.from("intelligence_items").select("id,item_type,domain,added_date,title,what_is_it,why_matters,full_brief,source_id,instrument_entity_id").or(RESEARCH_CANDIDATE_OR).eq("is_archived", false).eq("provenance_status", "verified").order("id", { ascending: true }).range(from, to) as never, { cap: 100_000 });
-  const admitted = items.filter((r) => isResearchCandidate(r.item_type, r.domain));
-  const have = new Set((await fetchAllByIdChunks(admitted.map((r) => String(r.id)), async (ids) => { const { data, error } = await sb.from("research_assessments_current").select("item_id").in("item_id", ids); if (error) throw new Error(`reading research_assessments_current failed: ${error.message}`); return (data ?? []) as Array<{ item_id: string }>; })).map((r) => r.item_id));
+  const only = opts.itemIds ? new Set(opts.itemIds) : null;
+  const admitted = items.filter((r) => isResearchCandidate(r.item_type, r.domain) && (!only || only.has(String(r.id))));
+  const have = new Set(only ? [] : (await fetchAllByIdChunks(admitted.map((r) => String(r.id)), async (ids) => { const { data, error } = await sb.from("research_assessments_current").select("item_id").in("item_id", ids); if (error) throw new Error(`reading research_assessments_current failed: ${error.message}`); return (data ?? []) as Array<{ item_id: string }>; })).map((r) => r.item_id));
   const needing = admitted.filter((r) => !have.has(String(r.id)));
   const picked = typeof limit === "number" && limit > 0 ? needing.slice(0, limit) : needing;
   const tiers = new Map((await fetchAllByIdChunks(picked.map((r) => String(r.source_id)).filter(Boolean), async (ids) => { const { data, error } = await sb.from("sources").select("id,base_tier").in("id", ids); if (error) throw new Error(`reading sources failed: ${error.message}`); return (data ?? []) as Array<{ id: string; base_tier: number | null }>; })).map((s) => [s.id, s.base_tier] as const));

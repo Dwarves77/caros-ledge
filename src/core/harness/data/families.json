@@ -1,0 +1,14 @@
+[
+  { "name": "source-sweep", "owner": "sources (P2-03)", "stage": "sweep", "downstream": ["research-walker"], "writes": ["upserted"] },
+  { "name": "research-walker", "owner": "research (P2-07)", "stage": "sweep-research", "downstream": ["change-detection"], "writes": ["minted", "upserted"] },
+  { "name": "change-detection", "owner": "sources (P2-03)", "stage": "change", "downstream": ["fetch-drain"], "writes": ["checked", "reconciled", "update_applied"] },
+  { "name": "fetch-drain", "owner": "sources (P2-03)", "stage": "capture", "downstream": ["ledger-consume"], "writes": ["queued", "captured"] },
+  { "name": "ledger-consume", "owner": "intake (P2-04)", "stage": "intake", "downstream": ["corpus-turn"], "writes": ["promoted", "minted", "rejected", "stamped"] },
+  { "name": "corpus-turn", "owner": "flywheel (P2-06)", "stage": "connect", "downstream": ["propagation"], "writes": ["connected", "tag_items_written", "edges_written", "term_writes"] },
+  { "name": "propagation", "owner": "propagation (P2-06) and learning (P2-07)", "stage": "propagate", "downstream": ["brief-apply"], "writes": ["drained", "recomputed", "questions_written", "scored", "producers_written", "assessed"] },
+  { "name": "brief-apply", "owner": "flywheel (P2-06) and drain (P2-07)", "stage": "briefs", "downstream": [], "terminal": "the end of the turn: the batch it applies is read by the surfaces, and its items were connected by the same call", "writes": ["applied"] },
+  { "name": "mint", "owner": "mint (P2-05)", "stage": null, "downstream": ["corpus-turn"], "writes": ["minted", "minted_verified", "minted_unverified"], "note": "one row per minted item, written by the mint recorder; each item is connected inline through the participation list" },
+  { "name": "producers", "owner": "producers (P2-07)", "stage": null, "downstream": ["propagation"], "writes": ["written", "created", "updated"], "note": "one row per producer run, written by the producer runner; its events are drained by the propagate stage" },
+  { "name": "brief-workflow", "owner": "intake (P2-04)", "stage": null, "downstream": ["corpus-turn"], "writes": ["grounded", "sections", "claims"], "note": "one row per item brief workflow, written by the workflow recorder" },
+  { "name": "live-smoke", "owner": "harness (P2-08)", "stage": null, "downstream": [], "terminal": "a smoke report is evidence, nothing consumes it but the proofs", "writes": [] }
+]

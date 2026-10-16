@@ -2,6 +2,7 @@
 // Ported from old_repo/src/lib/sources/target-match.mjs (lines 208-308)
 import { classifyIdentifier } from "@/core/census/identity";
 import { euCandidates, parseYearNumber } from "@/core/fetch/candidates";
+import { decodeUriOrNull } from "@/core/shared/url";
 
 const YEAR_LO = 1950;
 const YEAR_HI = 2099;
@@ -126,12 +127,7 @@ export const targetMatchHolds = (verdict: string): boolean => verdict !== "match
 export function identifierInUrl(item: TargetItem = {}, url = ""): boolean {
   const raw = rawIdOf(item);
   if (!raw || !url) return false;
-  let decoded = String(url);
-  try {
-    decoded = decodeURIComponent(url);
-  } catch {
-    // a malformed % sequence: the raw URL only
-  }
+  const decoded = decodeUriOrNull(url) ?? String(url);
   const haystacks = decoded === url ? [String(url)] : [String(url), decoded];
   const cls = classifyIdentifier(raw);
   if (cls.scheme === "celex") {

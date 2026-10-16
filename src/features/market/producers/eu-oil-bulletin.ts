@@ -146,12 +146,13 @@ export const euOilBulletin: ProducerSpec = {
   async fetchDoc(ctx): Promise<Doc> {
     if (ctx.input.since && !/^\d{4}-\d{2}-\d{2}$/.test(ctx.input.since)) throw new StructureError(`since "${ctx.input.since}" is not a well-formed YYYY-MM-DD date`);
     let url = FALLBACK_XLSX;
+    let linkError: string | null = null;
     try {
       url = findPricesHistoryLink(await (await ctx.get(PAGE_URL, { headers: { accept: "text/html" } })).text()) ?? FALLBACK_XLSX;
-    } catch {
-      /* the page is only a link finder: the known workbook URL is the fallback */
+    } catch (e) {
+      linkError = e instanceof Error ? e.message : String(e);
     }
-    return { bytes: Buffer.from(await (await ctx.get(url)).arrayBuffer()), meta: { url } };
+    return { bytes: Buffer.from(await (await ctx.get(url)).arrayBuffer()), meta: { url, ...(linkError ? { linkFinderError: linkError } : {}) } };
   },
   parse(doc, ctx): ParseOut<Rec> {
     let csv = doc.text ?? "";

@@ -56,12 +56,9 @@ export function hopLinks(html: string | null | undefined, base: string): string[
   for (const m of String(html ?? "").matchAll(HREF)) {
     const raw = (m[2] ?? "").trim();
     if (!raw || raw.startsWith("#") || /^(javascript|mailto|tel):/i.test(raw)) continue;
-    try {
-      const abs = new URL(raw, base).toString();
-      if (/^https?:\/\//i.test(abs) && institutionKey(abs) && institutionKey(abs) === institutionKey(base)) out.add(abs);
-    } catch {
-      // an unparseable href is no link
-    }
+    if (!URL.canParse(raw, base)) continue;
+    const abs = new URL(raw, base).toString();
+    if (/^https?:\/\//i.test(abs) && institutionKey(abs) && institutionKey(abs) === institutionKey(base)) out.add(abs);
   }
   return [...out].slice(0, MAX_HOP_LINKS);
 }

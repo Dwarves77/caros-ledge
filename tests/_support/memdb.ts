@@ -1,0 +1,345 @@
+// The ONE stateful stand-in for a Supabase client (IMP-033, IMP-048). Rows live in memory; the PostgREST subset the source modules use behaves like the real thing: filters (eq, neq, gt, gte, lt, lte, in, is, not,
+// like, ilike, contains, overlaps, or), dotted columns read through an embed, multi-key order, range and limit, upsert on a conflict key, unique keys, an embedded select read through the schema's foreign
+// keys or a declared relation, rpcs scripted by name, storage, failures injected per (table, op), a database-trigger stand-in after every write, and (given the generated schema) a refusal of a table or
+// column the database does not have, so a fixture typo fails instead of passing. tests/_support/fake-db.ts is the scripted, stateless sibling for call-shape tests.
+import schemaJson from "./schema.json" with { type: "json" };
+
+export type Row = Record<string, unknown>;
+export type Op = "select" | "insert" | "update" | "upsert" | "delete";
+export interface MemCall {
+  table: string;
+  op: Op;
+  payload?: unknown;
+  filters: [string, string, unknown][];
+}
+export type Err = { message: string; code?: string } | null;
+export type RpcFn = (args: Record<string, unknown>, db: MemDb) => { data?: unknown; error?: Err };
+export interface Failure {
+  table: string;
+  op: Op;
+  message: string;
+  code?: string;
+  /** How many matching calls fail; omitted means every one. */
+  times?: number;
+  /** Only a call satisfying this fails. */
+  when?: (c: MemCall) => boolean;
+}
+export interface SchemaInfo {
+  tables: Record<string, { columns: string[]; fks: { column: string; table: string; ref: string }[] }>;
+}
+export interface MemOptions {
+  /** listed: a uuid id for the tables in WITH_ID only; seq: `<table>-<n>` for every insert; uuid: a uuid id and a created_at tick for every insert. */
+  ids?: "listed" | "seq" | "uuid";
+  unique?: Record<string, string[][]>;
+  /** Tables whose `name_key` is the lower-cased trimmed `name`. */
+  generatedKey?: readonly string[];
+  /** Tables whose updated_at moves on every update. */
+  touched?: readonly string[];
+  /** `<table>.<related>`: [column on table, key on related], for an embedded select the schema does not describe. */
+  relations?: Record<string, [string, string]>;
+  /** Validate table and column names against the generated schema (default on). */
+  schema?: SchemaInfo | null;
+  /** The server's max_rows cut on an unranged select. */
+  cap?: number | null;
+}
+
+const WITH_ID = new Set(["intelligence_items", "agent_run_searches", "section_claim_provenance", "claim_versions", "intelligence_item_sections", "item_timelines", "integrity_flags", "agent_runs", "staged_updates", "sources", "portal_link_candidates", "disposition_ledger", "item_cross_references", "item_forward_events", "vocabulary_terms", "monitoring_queue", "pending_first_fetch", "propagation_events"]);
+export const SCHEMA: SchemaInfo = schemaJson as SchemaInfo;
+const likeRe = (pat: string, flags = "") => new RegExp(`^${pat.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/[%*]/g, ".*")}$`, flags);
+const col = (r: Row, c: string): unknown => (c.includes(".") ? c.split(".").reduce<unknown>((o, k) => (o && typeof o === "object" ? (o as Row)[k] : undefined), r) : r[c]);
+const cmp = (a: unknown, b: unknown): number => (String(a ?? "") < String(b ?? "") ? -1 : String(a ?? "") > String(b ?? "") ? 1 : 0);
+
+export class MemDb {
+  tables: Record<string, Row[]> = {};
+  calls: MemCall[] = [];
+  rpcs: Record<string, RpcFn> = {};
+  rpcCalls: { name: string; args: Record<string, unknown> }[] = [];
+  failWhen: ((c: MemCall) => string | null) | null = null;
+  failures: Failure[] = [];
+  /** A database-trigger stand-in: runs after every successful write. */
+  afterWrite: ((c: MemCall, db: MemDb) => void) | null = null;
+  now = "2026-10-15T12:00:00.000Z";
+  objects = new Map<string, Uint8Array>();
+  storageFail: string | null = null;
+  readonly opts: Required<Pick<MemOptions, "ids">> & MemOptions;
+  private seq = 0;
+
+  constructor(opts: MemOptions = {}, seed: Record<string, Row[]> = {}) {
+    this.opts = { ids: "listed", schema: SCHEMA, ...opts };
+    for (const [t, rows] of Object.entries(seed)) this.seed(t, rows);
+  }
+  seed(table: string, rows: Row[]): this {
+    this.check(table);
+    for (const r of rows) {
+      this.checkColumns(table, r);
+      (this.tables[table] ??= []).push({ ...(this.opts.ids === "listed" && WITH_ID.has(table) && r.id === undefined ? { id: this.nextId() } : {}), ...r });
+    }
+    return this;
+  }
+  rows(table: string): Row[] {
+    return (this.tables[table] ??= []);
+  }
+  /** Every write call to a table (optionally one op). */
+  writes(table?: string, op?: Op): MemCall[] {
+    return this.calls.filter((c) => c.op !== "select" && (!table || c.table === table) && (!op || c.op === op));
+  }
+  reads(table?: string): MemCall[] {
+    return this.calls.filter((c) => c.op === "select" && (!table || c.table === table));
+  }
+  fail(table: string, op: Op, message = "boom", o: { times?: number; code?: string; when?: Failure["when"] } = {}): this {
+    this.failures.push({ table, op, message, ...(o.code ? { code: o.code } : {}), ...(o.times === undefined ? {} : { times: o.times }), ...(o.when ? { when: o.when } : {}) });
+    return this;
+  }
+  nextId(): string {
+    this.seq += 1;
+    return `00000000-0000-4000-8000-${String(this.seq).padStart(12, "0")}`;
+  }
+  tick(): string {
+    this.seq += 1;
+    return new Date(Date.UTC(2026, 9, 15, 0, 0, 0, 0) + this.seq * 1000).toISOString();
+  }
+  /** The next injected failure matching a call, consuming one use. */
+  takeFailure(c: MemCall): Err {
+    const f = this.failures.find((x) => x.table === c.table && x.op === c.op && (x.times === undefined || x.times > 0) && (!x.when || x.when(c)));
+    if (!f) return null;
+    if (f.times !== undefined) f.times -= 1;
+    return { message: f.message, ...(f.code ? { code: f.code } : {}) };
+  }
+  get client(): never {
+    return this as unknown as never;
+  }
+  /** A schema refusal for an unknown table, or null. */
+  check(table: string): string | null {
+    const s = this.opts.schema;
+    if (s && !s.tables[table]) throw new Error(`memdb: relation "${table}" does not exist in the generated schema (a fixture or query typo)`);
+    return null;
+  }
+  checkColumns(table: string, row: Row): void {
+    const cols = this.opts.schema?.tables[table]?.columns;
+    if (!cols) return;
+    for (const k of Object.keys(row)) if (!k.startsWith("__") && !cols.includes(k)) throw new Error(`memdb: column "${k}" of relation "${table}" does not exist in the generated schema (a fixture or query typo)`);
+  }
+  from(table: string) {
+    this.check(table);
+    return new Query(this, table) as unknown;
+  }
+  async rpc(name: string, args: Record<string, unknown> = {}) {
+    this.rpcCalls.push({ name, args });
+    const fn = this.rpcs[name];
+    if (!fn) return { data: null, error: { message: `rpc ${name} is not scripted` } };
+    const r = fn(args, this);
+    return { data: r.data ?? null, error: r.error ?? null };
+  }
+  auth = { getClaims: async () => ({ data: null, error: { message: "no session" } }) };
+  storage = {
+    from: (bucket: string) => ({
+      upload: async (path: string, body: Uint8Array) => {
+        if (this.storageFail) return { data: null, error: { message: this.storageFail } };
+        this.objects.set(`${bucket}/${path}`, body);
+        return { data: {}, error: null };
+      },
+      download: async (path: string) => {
+        const body = this.objects.get(`${bucket}/${path}`);
+        return body ? { data: new Blob([body as BlobPart]), error: null } : { data: null, error: { message: "no object" } };
+      },
+    }),
+  };
+}
+
+class Query {
+  private op: Op = "select";
+  private payload: unknown;
+  private filters: [string, string, unknown][] = [];
+  private preds: ((r: Row) => boolean)[] = [];
+  private orders: [string, boolean][] = [];
+  private lim: number | null = null;
+  private rng: [number, number] | null = null;
+  private columns = "";
+  private head = false;
+  private count = false;
+  private returning = false;
+  private upsertOpts: { onConflict?: string; ignoreDuplicates?: boolean } = {};
+  private single_: "one" | "maybe" | null = null;
+  constructor(private db: MemDb, private table: string) {
+    if (db.opts.cap) this.lim = db.opts.cap;
+  }
+
+  select(cols?: string, o?: { count?: string; head?: boolean }) {
+    if (this.op === "select") {
+      this.columns = cols ?? "";
+      this.head = o?.head === true;
+      this.count = o?.count !== undefined;
+    } else this.returning = true;
+    return this;
+  }
+  insert(p: unknown) { this.op = "insert"; this.payload = p; return this; }
+  update(p: unknown) { this.op = "update"; this.payload = p; return this; }
+  upsert(p: unknown, o?: { onConflict?: string; ignoreDuplicates?: boolean }) { this.op = "upsert"; this.payload = p; this.upsertOpts = o ?? {}; return this; }
+  delete() { this.op = "delete"; return this; }
+  private f(kind: string, c: string, val: unknown, pred: (r: Row) => boolean) {
+    const cols = this.db.opts.schema?.tables[this.table]?.columns;
+    const base = c.split(".")[0] as string;
+    if (cols && !c.includes(".") && !cols.includes(base)) throw new Error(`memdb: column "${c}" of relation "${this.table}" does not exist in the generated schema (a fixture or query typo)`);
+    this.filters.push([kind, c, val]);
+    this.preds.push(pred);
+    return this;
+  }
+  eq(c: string, v: unknown) { return this.f("eq", c, v, (r) => col(r, c) === v || (v === null && col(r, c) == null)); }
+  neq(c: string, v: unknown) { return this.f("neq", c, v, (r) => col(r, c) !== v); }
+  gt(c: string, v: unknown) { return this.f("gt", c, v, (r) => col(r, c) != null && cmp(col(r, c), v) > 0); }
+  gte(c: string, v: unknown) { return this.f("gte", c, v, (r) => col(r, c) != null && cmp(col(r, c), v) >= 0); }
+  lt(c: string, v: unknown) { return this.f("lt", c, v, (r) => col(r, c) != null && cmp(col(r, c), v) < 0); }
+  lte(c: string, v: unknown) { return this.f("lte", c, v, (r) => col(r, c) != null && cmp(col(r, c), v) <= 0); }
+  in(c: string, v: unknown[]) { return this.f("in", c, v, (r) => v.includes(col(r, c))); }
+  is(c: string, v: unknown) { return this.f("is", c, v, (r) => (v === null ? col(r, c) == null : col(r, c) === v)); }
+  not(c: string, op: string, v: unknown) { return this.f(`not.${op}`, c, v, (r) => (op === "is" ? !(v === null ? col(r, c) == null : col(r, c) === v) : op === "in" ? !String(v).replace(/[()]/g, "").split(",").includes(String(col(r, c))) : col(r, c) !== v)); }
+  like(c: string, pat: string) { return this.f("like", c, pat, (r) => likeRe(pat).test(String(col(r, c) ?? ""))); }
+  ilike(c: string, pat: string) { return this.f("ilike", c, pat, (r) => likeRe(pat, "i").test(String(col(r, c) ?? ""))); }
+  contains(c: string, v: unknown[]) { return this.f("contains", c, v, (r) => Array.isArray(col(r, c)) && v.every((x) => (col(r, c) as unknown[]).includes(x))); }
+  overlaps(c: string, v: unknown[]) { return this.f("overlaps", c, v, (r) => Array.isArray(col(r, c)) && (col(r, c) as unknown[]).some((x) => v.includes(x))); }
+  or(expr: string) {
+    const tests = expr.split(/,(?=[a-z_.]+\.(?:eq|neq|is|ilike|like|lt|lte|gt|gte)\.)/).map((p) => {
+      const m = /^([a-z_.]+)\.(eq|neq|is|ilike|like|lt|lte|gt|gte)\.(.*)$/.exec(p);
+      return (r: Row): boolean => {
+        if (!m) return false;
+        const [, c = "", kind = "", v = ""] = m;
+        const x = col(r, c);
+        if (kind === "is") return v === "null" ? x == null : String(x) === v;
+        if (kind === "ilike") return likeRe(v, "i").test(String(x ?? ""));
+        if (kind === "like") return likeRe(v).test(String(x ?? ""));
+        if (kind === "neq") return String(x) !== v;
+        if (kind === "eq") return String(x) === v;
+        if (x == null) return false;
+        return kind === "lt" ? cmp(x, v) < 0 : kind === "lte" ? cmp(x, v) <= 0 : kind === "gt" ? cmp(x, v) > 0 : cmp(x, v) >= 0;
+      };
+    });
+    this.filters.push(["or", "or", expr]);
+    this.preds.push((r) => tests.some((t) => t(r)));
+    return this;
+  }
+  order(c: string, o?: { ascending?: boolean }) { this.orders.push([c, o?.ascending !== false]); return this; }
+  limit(n: number) { this.lim = n; return this; }
+  range(a: number, b: number) { this.rng = [a, b]; this.lim = null; return this; }
+  maybeSingle() { this.single_ = "maybe"; return this; }
+  single() { this.single_ = "one"; return this; }
+  then(resolve: (v: unknown) => unknown, reject: (e: unknown) => unknown) {
+    return Promise.resolve().then(() => this.run()).then(resolve, reject);
+  }
+
+  private run(): { data: unknown; error: Err; count: number | null } {
+    const call: MemCall = { table: this.table, op: this.op, payload: this.payload, filters: this.filters };
+    this.db.calls.push(call);
+    const message = this.db.failWhen?.(call);
+    if (message) return { data: null, error: { message }, count: null };
+    const injected = this.db.takeFailure(call);
+    if (injected) return { data: null, error: injected, count: null };
+    const result = this.exec();
+    if (call.op !== "select" && !result.error) this.db.afterWrite?.(call, this.db);
+    return result;
+  }
+
+  private embed(row: Row): Row {
+    const out = { ...row };
+    for (const m of this.columns.matchAll(/(?:(\w+):)?(\w+)(?:!\w+)?\(([^()]*)\)/g)) {
+      const [, alias, related] = m;
+      if (!related) continue;
+      const rel = this.db.opts.relations?.[`${this.table}.${related}`];
+      const fk = this.db.opts.schema?.tables[this.table]?.fks.find((f) => f.table === related);
+      const back = this.db.opts.schema?.tables[related]?.fks.find((f) => f.table === this.table);
+      if (rel) out[alias ?? related] = this.db.rows(related).find((r) => r[rel[1]] === row[rel[0]]) ?? null;
+      else if (fk) out[alias ?? related] = this.db.rows(related).find((r) => r[fk.ref] === row[fk.column]) ?? null;
+      else if (back) out[alias ?? related] = this.db.rows(related).filter((r) => r[back.column] === row[back.ref]);
+    }
+    return out;
+  }
+  private violates(candidate: Row, ignore?: Row): boolean {
+    return (this.db.opts.unique?.[this.table] ?? []).some((cols) => cols.every((c) => candidate[c] != null) && this.db.rows(this.table).some((r) => r !== ignore && cols.every((c) => r[c] === candidate[c])));
+  }
+  private newRow(item: Row): Row {
+    const ids = this.db.opts.ids;
+    const base: Row = ids === "seq" ? { id: `${this.table}-${this.db.nextId().slice(-4)}` } : ids === "uuid" ? { id: this.db.nextId(), created_at: this.db.tick() } : WITH_ID.has(this.table) ? { id: this.db.nextId() } : {};
+    const row: Row = { ...base, ...(this.table === "agent_runs" && item.created_at === undefined ? { created_at: this.db.now } : {}), ...item };
+    if (this.db.opts.generatedKey?.includes(this.table)) row.name_key = String(row.name ?? "").trim().toLowerCase();
+    return row;
+  }
+
+  private exec(): { data: unknown; error: Err; count: number | null } {
+    const db = this.db;
+    const rows = db.rows(this.table);
+    const matching = () => rows.filter((r) => this.preds.every((p) => p(r)));
+    if (this.op !== "select") for (const item of Array.isArray(this.payload) ? (this.payload as Row[]) : [this.payload as Row]) if (item && typeof item === "object") db.checkColumns(this.table, item);
+    let out: Row[] = [];
+    if (this.op === "insert" || this.op === "upsert") {
+      for (const p of Array.isArray(this.payload) ? (this.payload as Row[]) : [this.payload as Row]) {
+        const keys = this.upsertOpts.onConflict?.split(",").map((k) => k.trim());
+        const hit = this.op === "upsert" ? rows.find((r) => (keys ?? ["id"]).every((k) => r[k] === p[k])) : undefined;
+        if (hit) {
+          if (!this.upsertOpts.ignoreDuplicates) Object.assign(hit, p);
+          out.push(hit);
+          continue;
+        }
+        const row = this.newRow(p);
+        if (this.violates(row)) return { data: null, error: { message: `duplicate key value violates unique constraint on ${this.table}`, code: "23505" }, count: null };
+        rows.push(row);
+        out.push(row);
+      }
+      if (!this.returning && !this.single_) return { data: null, error: null, count: null };
+    } else if (this.op === "update") {
+      out = matching();
+      const next = out.map((r) => {
+        const merged: Row = { ...r, ...(this.payload as Row), ...(db.opts.touched?.includes(this.table) ? { updated_at: db.tick() } : {}) };
+        if (db.opts.generatedKey?.includes(this.table)) merged.name_key = String(merged.name ?? "").trim().toLowerCase();
+        return merged;
+      });
+      for (const [i, r] of out.entries()) if (this.violates(next[i] as Row, r)) return { data: null, error: { message: "duplicate key value violates unique constraint", code: "23505" }, count: null };
+      for (const [i, r] of out.entries()) Object.assign(r, next[i]);
+      if (!this.returning && !this.single_) return { data: null, error: null, count: null };
+    } else if (this.op === "delete") {
+      const gone = new Set(matching());
+      db.tables[this.table] = rows.filter((r) => !gone.has(r));
+      return { data: null, error: null, count: null };
+    } else {
+      out = matching();
+      const total = out.length;
+      for (const [c, asc] of [...this.orders].reverse()) out = [...out].sort((a, b) => cmp(col(a, c), col(b, c)) * (asc ? 1 : -1));
+      if (this.rng) out = out.slice(this.rng[0], this.rng[1] + 1);
+      if (this.lim !== null) out = out.slice(0, this.lim);
+      if (this.head) return { data: null, error: null, count: total };
+      out = out.map((r) => this.embed({ ...r }));
+      if (this.count) return { data: out, error: null, count: total };
+    }
+    if (this.single_) {
+      if (out.length > 1) return { data: null, error: { message: "multiple rows returned" }, count: null };
+      if (!out.length) return this.single_ === "one" ? { data: null, error: { message: "JSON object requested, multiple (or no) rows returned", code: "PGRST116" }, count: null } : { data: null, error: null, count: null };
+      return { data: out[0], error: null, count: null };
+    }
+    return { data: out, error: null, count: null };
+  }
+}
+
+/** The rpcs the propagation core calls, behaving like the database's for the rows a test holds: invalidate_dependents marks dependents stale, register_derived_value supersedes, fire_signpost stamps and moves the lifecycle. */
+export function installPropagationRpcs(db: MemDb): MemDb {
+  let n = 0;
+  db.rpcs.invalidate_dependents = (a, d) => {
+    const edges = d.rows("derivation_edges").filter((e) => e.from_table === a.p_table && e.from_pk === a.p_pk && e.to_table === "derived_values");
+    const hit = d.rows("derived_values").filter((v) => edges.some((e) => e.to_value_id === v.value_id) && v.admissibility !== "stale" && v.superseded_by == null);
+    if (a.p_apply) for (const v of hit) Object.assign(v, { admissibility: "stale", invalidated_by_event: a.p_event });
+    return { data: hit.length };
+  };
+  db.rpcs.register_derived_value = (a, d) => {
+    const id = `00000000-0000-4000-9000-${String(++n).padStart(12, "0")}`;
+    d.rows("derived_values").push({ value_id: id, method_id: a.p_method_id, method_version: a.p_method_version, value: a.p_value, admissibility: a.p_admissibility, supersedes: a.p_supersedes, inputs: a.p_inputs, entity_id: a.p_entity_id, superseded_by: null });
+    const old = d.rows("derived_values").find((v) => v.value_id === a.p_supersedes);
+    if (old) old.superseded_by = id;
+    for (const ref of (a.p_inputs ?? []) as { table: string; pk: string }[]) d.rows("derivation_edges").push({ from_table: ref.table, from_pk: ref.pk, to_table: "derived_values", to_value_id: id });
+    return { data: id };
+  };
+  db.rpcs.fire_signpost = (a, d) => {
+    const sp = d.rows("signposts").find((s) => s.entity_id === a.p_entity_id);
+    if (!sp) return { error: { message: "signpost not found" } };
+    const first = sp.fired_at == null;
+    sp.fired_at ??= a.p_at;
+    return { data: { fired: true, first_firing: first, signpost_entity_id: sp.entity_id, previous_lifecycle_state: "emerging", new_lifecycle_state: "strengthening" } };
+  };
+  return db;
+}
