@@ -30,9 +30,9 @@ const body = z.looseObject({
 const deleteBody = z.object({ itemId: z.string().min(1) });
 
 /** The owner must hold a membership in the CALLER'S org and be able to write there (INV-167); an unverifiable lookup is a 503. */
-async function assertOwnerInOrg(service: Db, orgId: string, ownerUserId: string): Promise<void> {
+async function assertOwnerInOrg(db: Db, orgId: string, ownerUserId: string): Promise<void> {
   if (!isUuid(ownerUserId)) throw new HttpError(400, "ownerUserId must be a UUID or null");
-  const { data, error } = await service.from("org_memberships").select("role").eq("org_id", orgId).eq("user_id", ownerUserId).maybeSingle();
+  const { data, error } = await db.from("org_memberships").select("role").eq("org_id", orgId).eq("user_id", ownerUserId).maybeSingle();
   if (error) throw new LookupError("org_memberships owner", error);
   if (!data) throw new HttpError(403, "Assignee is not a member of your organization");
   if (data.role === "viewer") throw new HttpError(403, "A viewer can read this workspace but cannot own an item");
@@ -42,11 +42,11 @@ async function assertOwnerInOrg(service: Db, orgId: string, ownerUserId: string)
  * Queue the archive notice for the item's org-scoped watchers and its owner (IMP-025): one outbox insert for all of them, sent by the drain with retries.
  * The archive has already succeeded, so a failure to queue is reported in the response, never thrown and never silent.
  */
-async function notifyArchive(service: Db, orgId: string, archiverId: string, itemKey: string, itemUuid: string, reason: string, ownerId: string | null) {
+async function notifyArchive(db: Db, orgId: string, archiverId: string, itemKey: string, itemUuid: string, reason: string, ownerId: string | null) {
   try {
-    const { data: item, error } = await service.from("intelligence_items").select("title, legacy_id, item_type, domain").eq("id", itemUuid).maybeSingle();
+    const { data: item, error } = await db.from("intelligence_items").select("title, legacy_id, item_type, domain").eq("id", itemUuid).maybeSingle();
     if (error) throw new LookupError("intelligence_items", error);
-    const { watcherIds } = await orgWatchersOf(service, orgId, [itemKey, itemUuid, item?.legacy_id ?? ""]);
+    const { watcherIds } = await orgWatchersOf(db, orgId, [itemKey, itemUuid, item?.legacy_id ?? ""]);
     const recipients = new Set(watcherIds);
     if (ownerId) recipients.add(ownerId);
     recipients.delete(archiverId);
@@ -60,7 +60,7 @@ async function notifyArchive(service: Db, orgId: string, archiverId: string, ite
       item_id: itemUuid,
       archived_by: archiverId,
     };
-    const err = await queueNotifications([...recipients].map((userId) => ({ userId, kind: "archive" as const, payload })), service);
+    const err = await queueNotifications([...recipients].map((userId) => ({ userId, kind: "archive" as const, payload })), db);
     if (err) log.warn("[overrides] archive notifications were not queued:", err);
     return err ? { queued: 0, failed: recipients.size, error: err } : { queued: recipients.size, failed: 0, error: null };
   } catch (e) {
@@ -75,8 +75,8 @@ export const POST = route("/api/workspace/overrides", async (request) => {
   if (isRefusal(auth)) return auth;
   const { orgId, role } = auth.membership;
   const input = await parseJson(request, body);
-  const service = serviceClient();
-  const itemUuid = await itemUuidOr404(service, input.itemId);
+  const db = auth.client;
+  const itemUuid = await itemUuidOr404(db, input.itemId);
   if ("notes" in input) throw new HttpError(400, "Workspace notes moved. Use /api/workspace/items/{id}/notes to add, edit or delete a note.");
 
   const now = new Date().toISOString();
@@ -97,15 +97,15 @@ export const POST = route("/api/workspace/overrides", async (request) => {
   else if (input.dismiss !== undefined) update.dismissed_at = input.dismiss ? now : null;
   if (input.ownerUserId !== undefined) {
     const ownerUserId = input.ownerUserId || null;
-    if (ownerUserId) await assertOwnerInOrg(service, orgId, ownerUserId);
+    if (ownerUserId) await assertOwnerInOrg(db, orgId, ownerUserId);
     update.owner_user_id = ownerUserId;
     update.owner_assigned_by = ownerUserId ? auth.userId : null;
     update.owner_assigned_at = ownerUserId ? now : null;
   }
 
-  const { data, error } = await service.from("workspace_item_overrides").upsert(update, { onConflict: "org_id,item_id" }).select().single();
+  const { data, error } = await db.from("workspace_item_overrides").upsert(update, { onConflict: "org_id,item_id" }).select().single();
   if (error) throw dbError(error);
-  const notifications = input.isArchived === true ? await notifyArchive(service, orgId, auth.userId, input.itemId, itemUuid, input.archiveReason ?? "", (data as { owner_user_id?: string | null } | null)?.owner_user_id ?? null) : null;
+  const notifications = input.isArchived === true ? await notifyArchive(serviceClient(), orgId, auth.userId, input.itemId, itemUuid, input.archiveReason ?? "", (data as { owner_user_id?: string | null } | null)?.owner_user_id ?? null) : null;
   workspaceDeps().revalidateWorkspaceData?.();
   return ok(auth.headers, { override: data, ...(notifications ? { notifications } : {}) });
 });
@@ -114,9 +114,9 @@ export const DELETE = route("/api/workspace/overrides", async (request) => {
   const auth = await requireOrgRole(request, "member");
   if (isRefusal(auth)) return auth;
   const input = await parseJson(request, deleteBody);
-  const service = serviceClient();
-  const itemUuid = await itemUuidOr404(service, input.itemId);
-  const { error } = await service.from("workspace_item_overrides").delete().eq("org_id", auth.membership.orgId).eq("item_id", itemUuid);
+  const db = auth.client;
+  const itemUuid = await itemUuidOr404(db, input.itemId);
+  const { error } = await db.from("workspace_item_overrides").delete().eq("org_id", auth.membership.orgId).eq("item_id", itemUuid);
   if (error) throw dbError(error);
   workspaceDeps().revalidateWorkspaceData?.();
   return ok(auth.headers, { success: true });

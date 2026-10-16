@@ -4,7 +4,6 @@
 // Ported from old_repo/src/app/api/workspace/archive-impact/route.ts (lines 93-124)
 // Ported from old_repo/src/app/api/workspace/overrides/route.ts (lines 195-211)
 import type { Db } from "@/core/db/clients";
-import { serviceClient } from "@/core/db/clients";
 import { fetchAllRows } from "@/core/db/query";
 import { LookupError, refuse } from "@/core/http/errors";
 import { isRefusal, requireOrgRole } from "@/core/http/guard";
@@ -56,7 +55,7 @@ export async function loadRoster(client: Db, orgId: string): Promise<RosterMembe
       (from, to) =>
         client
           .from("org_memberships")
-          .select("user_id, role, created_at, user:profiles!user_id(full_name, display_name, email, avatar_url)")
+          .select("user_id, role, created_at, user:profiles!user_id(full_name, display_name, avatar_url)")
           .eq("org_id", orgId)
           .order("created_at", { ascending: true })
           .order("id", { ascending: true })
@@ -146,7 +145,7 @@ export async function readJsonObject(request: Request): Promise<Record<string, u
 
 /**
  * The one preamble of the notes and assignments routes: the caller (401), their organisation and role (403 with none), THEN the
- * verified item by uuid or legacy id (404), then the handler with the service client. The item is read after the org is resolved
+ * verified item by uuid or legacy id (404), then the handler on the caller's own client (RLS decides every row). The item is read after the org is resolved
  * (B-0084). A failed lookup is a 503 through the route wrapper, never "not found".
  */
 export async function runCollab(request: Request, context: { params: Promise<{ id: string }> }, run: (client: Db, ctx: CollabCtx) => Promise<CollabResult>): Promise<Response> {
@@ -158,7 +157,7 @@ export async function runCollab(request: Request, context: { params: Promise<{ i
   } catch {
     return refuse(400, "Invalid item id");
   }
-  const client = serviceClient();
+  const client = auth.client;
   const { data: item, error } = await client
     .from("intelligence_items")
     .select("id, legacy_id, title, item_type, domain")

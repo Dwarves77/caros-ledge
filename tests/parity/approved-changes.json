@@ -14,7 +14,8 @@
       "regulations",
       "market",
       "research",
-      "operations"
+      "operations",
+      "community"
     ],
     "pixelExact": [
       "home",
@@ -31,6 +32,10 @@
     "^button:(Open navigation|Search)$",
     "^link:Account"
   ],
+  "frameLandmarks": {
+    "1280x900": ["complementary", "navigation", "main"],
+    "375x812": ["banner", "main"]
+  },
   "frameHeadings": [
     "Caro's Ledge",
     "This page doesn't exist"

@@ -35,6 +35,12 @@ export function stackHash(side: string, message: string, stack: string): string 
   return createHash("sha256").update(`${side}\n${normalise(message, stack)}`, "utf8").digest("hex");
 }
 
+let unavailableNoted = false;
+/** Test seam: forget that the missing-key line was written. */
+export const resetTelemetryNotice = (): void => {
+  unavailableNoted = false;
+};
+
 /** Write one error_events row (deduplicated by stack hash, release, side and route). No PII is stored: emails in a message are redacted. Never throws. */
 export async function captureError(input: CaptureErrorInput, client?: Db): Promise<void> {
   try {
@@ -44,7 +50,15 @@ export async function captureError(input: CaptureErrorInput, client?: Db): Promi
     const route = (input.route || "").slice(0, ROUTE_MAX);
     const release = process.env.VERCEL_GIT_COMMIT_SHA || "dev";
     const hash = stackHash(input.side, message, stack);
-    const db = client ?? serviceClient();
+    let db: Db;
+    try {
+      db = client ?? serviceClient();
+    } catch {
+      // No service client (a member-only runner, a preview): error_events cannot be written. Said once per process, never once per error.
+      if (!unavailableNoted) log.warn("[capture-error] error_events is unavailable: no service key is configured, errors are not stored in this process");
+      unavailableNoted = true;
+      return;
+    }
     const row = { release, env: process.env.VERCEL_ENV || process.env.NODE_ENV || "unknown", side: input.side, route, message, stack_hash: hash, stack_excerpt: stack ? stack.slice(0, STACK_MAX) : null, user_scope: input.userScope ?? null };
     const { error } = await db.from("error_events").insert(row);
     if (!error) return;
