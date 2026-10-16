@@ -18,7 +18,7 @@ const body = z.object({ tags: z.array(z.string().min(1)).min(1).max(MAX_TAGS) })
 export const POST = route("/api/revalidate", async (request) => {
   const denied = workerAuthGuard(request);
   if (denied) return denied;
-  const limited = checkRateLimit("worker:/api/revalidate");
+  const limited = await checkRateLimit("worker:/api/revalidate");
   if (limited) return limited;
   const { tags } = await parseJson(request, body);
   for (const tag of tags) revalidateTag(tag, "max");

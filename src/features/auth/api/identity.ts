@@ -9,7 +9,7 @@ const NO_STORE = { "Cache-Control": "private, no-store" };
 
 /** Who the caller is, one server pass. A failed lookup is a 503 and a retry (never "no workspace"), captured in error_events. */
 export const GET = route("/api/auth/identity", async (request) => {
-  const limited = checkRateLimit(clientKey(request));
+  const limited = await checkRateLimit(clientKey(request));
   if (limited) return limited;
   try {
     return Response.json(await resolveIdentity(await userClient(request)), { headers: NO_STORE });

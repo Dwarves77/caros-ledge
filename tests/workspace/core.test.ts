@@ -20,7 +20,7 @@ import { getViewerRelevanceForItem } from "@/core/workspace/viewer-relevance";
 import { scripted } from "../_support/fake-clients.ts";
 
 import { relevanceDeps } from "./_deps.ts";
-import { clientFor, ITEM_1, ORG_A, script, seed, USER } from "./_world.ts";
+import { clientFor, ITEM_1, ORG_A, ORG_B, script, seed, USER } from "./_world.ts";
 
 // ── profile-contract ─────────────────────────────────────────────────────────────────────────────────
 
@@ -256,18 +256,21 @@ test("loadRoster: the org's members with names, org-scoped and complete past one
   await assert.rejects(loadRoster(clientFor(db), ORG_A), /lookup failed/);
 });
 
-test("orgWatchersOf: watchers are scoped by membership, found by uuid or legacy id, chunked past 50 members; the team watchlist is its own bit", async () => {
+test("orgWatchersOf: one rpc; watchers are scoped by membership, found by uuid or legacy id; the team watchlist is its own bit; a failure is a LookupError", async () => {
   const db = seed();
   for (let i = 0; i < 120; i += 1) db.rows("org_memberships").push({ id: `30000000-0000-4000-8000-${String(i).padStart(12, "0")}`, org_id: ORG_A, user_id: `m${i}`, role: "member", created_at: "2026-05-01T00:00:00Z" });
   db.rows("user_watchlist").push({ id: "w9", user_id: "m110", item_id: ITEM_1 });
   const client = clientFor(db);
-  const first = await orgWatchersOf(client, ORG_A, [ITEM_1, "o3"]);
+  const first = await orgWatchersOf(client, ORG_A, [ITEM_1, "o3", ITEM_1, ""]);
   assert.deepEqual(first.watcherIds.sort(), [USER.member, "m110"].sort());
   assert.equal(first.onTeamWatchlist, false);
-  assert.ok(db.log.filter((l) => l.table === "user_watchlist").length >= 3, "the member list is read in chunks");
+  assert.equal(db.log.filter((l) => l.table === "user_watchlist" || l.table === "org_memberships").length, 0, "no roster or watchlist table is paged: the database answers");
   db.rows("org_watchlist").push({ id: "t1", org_id: ORG_A, item_id: "o3" });
   assert.equal((await orgWatchersOf(client, ORG_A, ["o3"])).onTeamWatchlist, true);
+  assert.equal((await orgWatchersOf(client, ORG_B, ["o3"])).onTeamWatchlist, false, "another org's team list is not this org's");
+  assert.ok(!(await orgWatchersOf(client, ORG_A, [ITEM_1])).watcherIds.includes(USER.otherOrgMember), "a watcher who belongs to another org is not returned for this one");
   assert.deepEqual(await orgWatchersOf(client, ORG_A, []), { watcherIds: [], onTeamWatchlist: false });
-  db.fail("org_watchlist", "select");
-  await assert.rejects(orgWatchersOf(client, ORG_A, ["o3"]), /org_watchlist/);
+  const down = clientFor(Object.assign(seed(), {}));
+  (down as unknown as { rpc: unknown }).rpc = async () => ({ data: null, error: { message: "rpc down" } });
+  await assert.rejects(orgWatchersOf(down, ORG_A, ["o3"]), /org_watchers/);
 });

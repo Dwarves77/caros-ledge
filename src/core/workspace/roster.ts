@@ -5,7 +5,7 @@
 // Ported from old_repo/src/app/api/workspace/overrides/route.ts (lines 195-211)
 import type { Db } from "@/core/db/clients";
 import { serviceClient } from "@/core/db/clients";
-import { fetchAllByIdChunks, fetchAllRows } from "@/core/db/query";
+import { fetchAllRows } from "@/core/db/query";
 import { LookupError, refuse } from "@/core/http/errors";
 import { isRefusal, requireOrgRole } from "@/core/http/guard";
 import { isUuid } from "@/core/http/parse";
@@ -85,31 +85,18 @@ export function nameIndex(members: readonly RosterMember[]): Map<string, string>
 }
 
 /**
- * The org's members who watch the item (by uuid or legacy id), and whether the item is on the TEAM watchlist. Scoped by MEMBERSHIP,
- * not by user_watchlist.org_id (nullable, contextual): the item corpus is global, so an item-only filter would reach other tenants'
- * watchers. A failed read throws LookupError.
+ * The org's members who watch the item (by uuid or legacy id), and whether the item is on the TEAM watchlist: one rpc (org_watchers, migration
+ * 0024) in place of a roster read and chunked watchlist reads. Scoped by MEMBERSHIP, not by user_watchlist.org_id (nullable, contextual): the item
+ * corpus is global, so an item-only filter would reach other tenants' watchers. A failed read throws LookupError.
  */
 export async function orgWatchersOf(client: Db, orgId: string, itemKeys: string[]): Promise<{ watcherIds: string[]; onTeamWatchlist: boolean }> {
   const keys = [...new Set(itemKeys.filter(Boolean))];
   if (keys.length === 0) return { watcherIds: [], onTeamWatchlist: false };
-  let memberIds: string[];
-  try {
-    memberIds = (await fetchAllRows((from, to) => client.from("org_memberships").select("user_id").eq("org_id", orgId).order("user_id", { ascending: true }).range(from, to), { cap: ROSTER_CAP })).map((m) => (m as { user_id: string }).user_id);
-  } catch (e) {
-    throw new LookupError("org members", e);
-  }
-  const watchers = await fetchAllByIdChunks(
-    memberIds,
-    async (slice) => {
-      const { data, error } = await client.from("user_watchlist").select("user_id").in("user_id", slice).in("item_id", keys);
-      if (error) throw new LookupError("user_watchlist", error);
-      return (data ?? []) as { user_id: string }[];
-    },
-    { manyPerId: true },
-  );
-  const team = await client.from("org_watchlist").select("id").eq("org_id", orgId).in("item_id", keys).limit(1);
-  if (team.error) throw new LookupError("org_watchlist", team.error);
-  return { watcherIds: [...new Set(watchers.map((w) => w.user_id))], onTeamWatchlist: (team.data ?? []).length > 0 };
+  const { data, error } = await client.rpc("org_watchers", { p_org_id: orgId, p_item_ids: keys });
+  if (error) throw new LookupError("org_watchers", error);
+  const row = (data as { watcher_ids: string[] | null; on_team_watchlist: boolean | null }[] | null)?.[0];
+  if (!row) throw new LookupError("org_watchers", new Error("no row returned"));
+  return { watcherIds: row.watcher_ids ?? [], onTeamWatchlist: row.on_team_watchlist === true };
 }
 
 const DETAIL_PATH_RE = /^\/(?:regulations|market|operations|research)\/([^/]+)\/?$/;

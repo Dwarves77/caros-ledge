@@ -56,8 +56,12 @@ test("B-0043: a failed tag or link read is a 503, never an empty list; unreadabl
   db.fail("workspace_tags", "select");
   assert.equal((await call(tagsGet, "viewer", "GET", T)).status, 503);
   db.failures.length = 0;
+  db.fail("workspace_tag_counts", "select");
+  assert.equal((await call(tagsGet, "viewer", "GET", T)).status, 503, "a failed count read is not a list of zeros");
+  db.failures.length = 0;
   db.fail("item_workspace_tags", "select");
-  assert.equal((await call(tagsGet, "viewer", "GET", T)).status, 503);
+  assert.equal((await call(tagsGet, "viewer", "GET", `${T}?itemId=o3`)).status, 503);
+  assert.equal((await call(tagsGet, "viewer", "GET", T)).status, 200, "the plain list never reads the join table");
   db.failures.length = 0;
   db.fail("profiles", "select", { message: "names down" });
   const degraded = await call(tagsGet, "viewer", "GET", `${T}?itemId=o3`);

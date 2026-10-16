@@ -98,6 +98,9 @@
  "disposition_ledger": [
   "id"
  ],
+ "edge_snapshots": [
+  "id"
+ ],
  "emission_factors": [
   "factor_id"
  ],
@@ -237,6 +240,9 @@
  "mutation_leases": [
   "intelligence_item_id"
  ],
+ "notification_outbox": [
+  "id"
+ ],
  "notification_preferences": [
   "user_id"
  ],
@@ -294,6 +300,10 @@
  ],
  "published_price_statistics": [
   "id"
+ ],
+ "rate_limit_windows": [
+  "key",
+  "window_start"
  ],
  "raw_fetches": [
   "id"

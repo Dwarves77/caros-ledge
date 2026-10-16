@@ -10,10 +10,10 @@ import { parseJson } from "@/core/http/parse";
 import { log } from "@/core/shared/log";
 import { resolveItemUuid } from "@/core/shared/ids";
 
-import { buildApplications, buildTagCountsMap, groupApplicationsByItem, loadAuthorNames, normalizeTagName, type ItemTagLinkRow, type TagApplication } from "./tag-attribution";
+import { buildApplications, groupApplicationsByItem, loadAuthorNames, normalizeTagName, type ItemTagLinkRow, type TagApplication } from "./tag-attribution";
 
 // GET lists the caller's workspace tags with live item counts (the + Tag popover and the list rail facet). Reads are bounded and total-ordered:
-// at most 500 tags and 5000 applications per workspace, and a workspace past either is an error, never a silently short list.
+// at most 500 tags (counts from the workspace_tag_counts view) and 5000 applications per workspace read, and a workspace past either is an error, never a silently short list.
 // ?itemId= adds `appliedTagIds` and `applications` (who applied each tag and when) for one item; ?withItemTags=1 adds the item to tags map.
 // POST creates a tag (a duplicate name returns the EXISTING tag); DELETE removes one and CASCADE removes its applications (migration 313).
 export interface WorkspaceTag {
@@ -34,22 +34,9 @@ export const GET = route("/api/workspace/tags", async (request) => {
   if (isRefusal(auth)) return auth;
   const { orgId } = auth.membership;
   const service = serviceClient();
-  let tagRows: TagRow[];
-  let links: ItemTagLinkRow[];
-  try {
-    tagRows = await fetchAllRows((from, to) => service.from("workspace_tags").select("id, org_id, name, created_at").eq("org_id", orgId).order("name", { ascending: true }).order("id", { ascending: true }).range(from, to), { cap: 500 });
-    links = await fetchAllRows(
-      (from, to) => service.from("item_workspace_tags").select("tag_id, intelligence_item_id, created_by, created_at").eq("org_id", orgId).order("tag_id", { ascending: true }).order("intelligence_item_id", { ascending: true }).range(from, to),
-      { cap: 5000 },
-    );
-  } catch (e) {
-    throw new LookupError("workspace tags", e);
-  }
-  const counts = buildTagCountsMap(links);
   const params = new URL(request.url).searchParams;
   const rawItemId = params.get("itemId");
   const withItemTags = !!params.get("withItemTags");
-
   let itemUuid: string | null = null;
   if (rawItemId) {
     try {
@@ -58,6 +45,26 @@ export const GET = route("/api/workspace/tags", async (request) => {
       throw new LookupError("intelligence_items", e);
     }
   }
+  let tagRows: TagRow[];
+  let countRows: { tag_id: string; item_count: number }[];
+  let links: ItemTagLinkRow[] = [];
+  try {
+    tagRows = await fetchAllRows((from, to) => service.from("workspace_tags").select("id, org_id, name, created_at").eq("org_id", orgId).order("name", { ascending: true }).order("id", { ascending: true }).range(from, to), { cap: 500 });
+    // Counts come from the database (view workspace_tag_counts, migration 0024); the join rows are read only when the response needs who applied what.
+    countRows = await fetchAllRows((from, to) => service.from("workspace_tag_counts").select("tag_id, item_count").eq("org_id", orgId).order("tag_id", { ascending: true }).range(from, to), { cap: 500 });
+    if (withItemTags || itemUuid) {
+      links = await fetchAllRows(
+        (from, to) => {
+          const q = service.from("item_workspace_tags").select("tag_id, intelligence_item_id, created_by, created_at").eq("org_id", orgId);
+          return (withItemTags ? q : q.eq("intelligence_item_id", itemUuid as string)).order("tag_id", { ascending: true }).order("intelligence_item_id", { ascending: true }).range(from, to);
+        },
+        { cap: 5000 },
+      );
+    }
+  } catch (e) {
+    throw new LookupError("workspace tags", e);
+  }
+  const counts = new Map(countRows.map((r) => [r.tag_id, r.item_count]));
   const itemLinks = itemUuid ? links.filter((l) => l.intelligence_item_id === itemUuid) : [];
   // Names for the applying members; a failed read leaves names out and says so, it does not fail the tag list.
   let names = new Map<string, string | null>();
