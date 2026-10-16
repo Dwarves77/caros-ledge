@@ -98,24 +98,31 @@ for (const file of readdirSync("supabase/migrations").filter((f) => /^\d{4}_.+\.
 }
 console.log("migrations applied with zero errors");
 
-for (const file of readdirSync("supabase/migrations").filter((f) => /^\d{4}_data_.+\.sql$/.test(f)).sort()) {
-  const text = readFileSync(`supabase/migrations/${file}`, "utf8");
+const rollbackTest = (name, text) => {
   const fixture = text.match(/^-- rollback-test: (\S+)$/m)?.[1];
   if (!fixture) {
-    console.error(`${file}: a _data_ migration needs a "-- rollback-test: <fixture>" header`);
+    console.error(`${name}: a _data_ migration needs a "-- rollback-test: <fixture>" header`);
     process.exit(1);
   }
   const body = text.replace(/^(BEGIN|COMMIT);[ \t]*$/gm, ""); // the job owns the transaction: its ROLLBACK must undo the file's own COMMIT
   const r = psql(["-v", "ON_ERROR_STOP=1"], ["BEGIN;", readFileSync(fixture, "utf8"), body, "ROLLBACK;", ""].join("\n"));
   for (const l of r.err.split("\n")) if (/NOTICE/.test(l)) console.log(l.replace(/^.*NOTICE:\s*/, "  self-check: ").slice(0, 220));
   if (r.code !== 0 || errorsOf(r.err).length) {
-    console.error(`${file}: failed in its rollback-test\n${r.err}`);
+    console.error(`${name}: failed in its rollback-test\n${r.err}`);
     process.exit(1);
   }
   const drifted = diff(before, snapshot());
-  console.log(`${file}: ran after ${fixture} and rolled back${drifted.length ? ` UNEXPLAINED catalog change [${drifted.slice(0, 3)}]` : ""}`);
+  console.log(`${name}: ran after ${fixture} and rolled back${drifted.length ? ` UNEXPLAINED catalog change [${drifted.slice(0, 3)}]` : ""}`);
   unexplained += drifted.length;
+};
+for (const file of readdirSync("supabase/migrations").filter((f) => /^\d{4}_data_.+\.sql$/.test(f)).sort()) rollbackTest(file, readFileSync(`supabase/migrations/${file}`, "utf8"));
+// The 0016 source backfill is generated at the cutover window from a live registry export, so no file is committed: the generator's own output for the sample export is proven every run.
+const gen = spawnSync("node", ["--import", "./tests/_support/register.mjs", "scripts/gen/source-backfill-sql.mjs", "scripts/ci/fixtures/sources-export-sample.json", "the sample export"], { encoding: "utf8", maxBuffer: 1 << 26 });
+if (gen.status !== 0 || !gen.stdout) {
+  console.error(`source-backfill generator failed\n${gen.stderr}`);
+  process.exit(1);
 }
+rollbackTest("generated source backfill (sample export)", gen.stdout);
 
 const props = spawnSync("node", ["scripts/ci/properties.mjs"], { stdio: "inherit", env: process.env });
 const last = snapshot();

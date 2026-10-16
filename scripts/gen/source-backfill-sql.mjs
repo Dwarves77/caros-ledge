@@ -1,6 +1,8 @@
-// Generates supabase/migrations/0016_data_source_type_backfill.sql: the sources.source_role / source_type backfill, as the
+// Generates the cutover-window data migration supabase/migrations/0016_data_source_type_backfill.sql (NOT committed until then): the sources.source_role / source_type backfill, as the
 // statements P2-03's renderBackfillSql renders for a plan built with the rules of src/core/sources/classify.ts. It classifies only
 // rows whose column is NULL (IMP-032: classify NULL rows once, never overwrite) and every statement is guarded again in SQL.
+// The real file is generated at the cutover window from a read-only export of the live registry (the executor's step) and committed then as
+// 0016; the schema job proves this generator every run on scripts/ci/fixtures/sources-export-sample.json without committing that output.
 // Input: a read-only JSON export of the registry, an array of {id, name, url, source_role, source_type}. Usage:
 //   node --import ./tests/_support/register.mjs scripts/gen/source-backfill-sql.mjs <sources-export.json> [label] > supabase/migrations/0016_data_source_type_backfill.sql
 import { readFileSync } from "node:fs";
