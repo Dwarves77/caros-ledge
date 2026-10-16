@@ -1,0 +1,6 @@
+{
+  "table_name": "signposts",
+  "type": "signpost_fired",
+  "byKind": {},
+  "label": "a signpost on this entity"
+}

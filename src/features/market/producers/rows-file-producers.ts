@@ -1,0 +1,168 @@
+// Ported from old_repo/scripts/spec09/oem-roadmap-producer.mjs (lines 15-112)
+// Ported from old_repo/scripts/spec09/grid-queue-producer.mjs (lines 15-83)
+// Ported from old_repo/scripts/spec09/reroute-producer.mjs (lines 23-109)
+// Ported from old_repo/scripts/spec09/grid-queue-producer.mjs (lines 89-154)
+// Three reviewed rows-file producers (OEM roadmaps, grid connection queues, reroute events) and the ONE driver they share. Every row carries a citation; the cited
+// host is rated by the class table; a figure whose source cannot be rated is refused by name; an entity is resolved by exact canonical name and never minted. With no
+// rows file the run records the gap and writes nothing (INV-121).
+import { fetchAllRows, type Db } from "@/core/db";
+import { loadRowsFile, registerCitedSource, requireCitation, resolveEntityByName, RowsFileError, type Citation } from "@/core/producers/rows-file";
+import type { ParseOut, ProducerCtx, ProducerSpec } from "@/core/producers/runner";
+import { keyOf, type Rec } from "@/core/producers/upsert-plan";
+import { classTierForHost } from "@/core/sources";
+import { hostOf } from "@/core/shared";
+
+type Entity = { entity_id: string; canonical_name: string };
+export type ParsedRow = { refused: true; reason: string } | { refused: false; dbRow: Rec; citation: Citation };
+
+const need = (row: Rec, fields: string[], where: string, i: number): void => {
+  for (const f of fields) if (row[f] === undefined || row[f] === null || row[f] === "") throw new RowsFileError(`${where}: row[${i}] missing required field "${f}".`);
+};
+const oneOf = (v: unknown, set: readonly string[], label: string, where: string, i: number): void => {
+  if (!set.includes(String(v))) throw new RowsFileError(`${where}: row[${i}].${label} "${v}" is not one of ${set.join(", ")}.`);
+};
+const refuse = (reason: string): ParsedRow => ({ refused: true, reason });
+
+const TECH = ["heavy_battery", "megawatt_charging", "hydrogen_fcell", "ammonia_engine", "methanol_dualfuel", "saf_refinery", "e_axle", "reefer_electrification"];
+const STAGES = ["announced", "pilot_demonstration", "small_batch_fleet", "mass_series_production"];
+const ORIGINS = ["community", "community-corroborated", "modelled", "derived", "partner", "verified", "official"];
+const DERIVATIONS = ["statutory_fixed", "statutory_formula", "observed", "transacted_index", "assessed", "calculated", "interpolated", "modelled", "estimated"];
+const OBS_STATUS = ["A", "P", "E", "I", "F", "B", "D", "U", "V", "G", "M", "O", "L", "H", "Q", "N"];
+
+export function parseOemRoadmapRow(row: Rec, i: number, manufacturers: readonly Entity[]): ParsedRow {
+  const where = "oem-roadmap-producer";
+  const citation = requireCitation(row, i, where);
+  need(row, ["manufacturer_name", "tech_category", "commercial_stage", "announced_at"], where, i);
+  oneOf(row.tech_category, TECH, "tech_category", where, i);
+  oneOf(row.commercial_stage, STAGES, "commercial_stage", where, i);
+  if (row.density_basis != null) oneOf(row.density_basis, ["cell", "module", "pack"], "density_basis", where, i);
+  if (row.energy_density_wh_kg != null && row.density_basis == null) return refuse(`row[${i}]: energy_density_wh_kg is set with no density_basis: spec 09 requires a stated basis, never mixed silently.`);
+  const origin = (row.origin_class as string | undefined) ?? "community";
+  oneOf(origin, ORIGINS, "origin_class", where, i);
+  const derivation = (row.derivation as string | undefined) ?? "observed";
+  oneOf(derivation, DERIVATIONS, "derivation", where, i);
+  if (row.confidence_admiralty != null && !/^[A-F][1-6]$/.test(String(row.confidence_admiralty))) throw new RowsFileError(`${where}: row[${i}].confidence_admiralty "${row.confidence_admiralty}" must match ^[A-F][1-6]$.`);
+  const manufacturerId = resolveEntityByName(manufacturers, String(row.manufacturer_name));
+  if (!manufacturerId) return refuse(`row[${i}]: manufacturer "${row.manufacturer_name}" not found in the live entities(kind='organisation') spine; minting one is out of this producer's write set.`);
+  return {
+    refused: false,
+    citation,
+    dbRow: { manufacturer_id: manufacturerId, tech_category: row.tech_category, commercial_stage: row.commercial_stage, target_year: row.target_year ?? null, energy_density_wh_kg: row.energy_density_wh_kg ?? null, density_basis: row.density_basis ?? null, c_rate_max: row.c_rate_max ?? null, usable_kwh: row.usable_kwh ?? null, announced_at: row.announced_at, source_id: null, origin_class: origin, derivation, confidence_admiralty: row.confidence_admiralty ?? null },
+  };
+}
+
+export function parseGridQueueRow(row: Rec, i: number, jurisdictions: readonly Entity[]): ParsedRow {
+  const where = "grid-queue-producer";
+  const citation = requireCitation(row, i, where);
+  need(row, ["jurisdiction_name", "dso_name", "capacity_band_mw", "as_of"], where, i);
+  const [p50, p90] = [row.queue_months_p50, row.queue_months_p90];
+  if (p50 == null && p90 == null) throw new RowsFileError(`${where}: row[${i}] must carry at least one of queue_months_p50/queue_months_p90.`);
+  for (const [k, v] of [["queue_months_p50", p50], ["queue_months_p90", p90]] as const) if (v != null && Number(v) < 0) throw new RowsFileError(`${where}: row[${i}].${k} must be >= 0.`);
+  if (p50 != null && p90 != null && Number(p90) < Number(p50)) return refuse(`row[${i}]: queue_months_p90 (${p90}) < queue_months_p50 (${p50}): a queue cannot read faster at the worse-case percentile.`);
+  const obs = (row.obs_status as string | undefined) ?? "A";
+  if (!OBS_STATUS.includes(obs)) throw new RowsFileError(`${where}: row[${i}].obs_status "${obs}" is not a valid SDMX CL_OBS_STATUS code.`);
+  const jurisdictionId = resolveEntityByName(jurisdictions, String(row.jurisdiction_name));
+  if (!jurisdictionId) return refuse(`row[${i}]: jurisdiction "${row.jurisdiction_name}" not found in the live entities(kind='jurisdiction') spine; minting one is out of this producer's write set.`);
+  return { refused: false, citation, dbRow: { jurisdiction_id: jurisdictionId, dso_name: String(row.dso_name), capacity_band_mw: String(row.capacity_band_mw), queue_months_p50: p50 ?? null, queue_months_p90: p90 ?? null, as_of: row.as_of, obs_status: obs, source_id: null } };
+}
+
+export function parseRerouteRow(row: Rec, i: number, corridors: readonly Entity[]): ParsedRow {
+  const where = "reroute-producer";
+  const citation = requireCitation(row, i, where);
+  need(row, ["baseline_corridor_name", "reroute_corridor_name", "cause", "fuel_burn_multiplier", "effective_from"], where, i);
+  if (!(Number(row.fuel_burn_multiplier) > 0)) throw new RowsFileError(`${where}: row[${i}].fuel_burn_multiplier must be > 0 (got ${row.fuel_burn_multiplier}).`);
+  if (row.effective_to && String(row.effective_to) < String(row.effective_from)) throw new RowsFileError(`${where}: row[${i}].effective_to (${row.effective_to}) is before effective_from (${row.effective_from}).`);
+  const baseline = resolveEntityByName(corridors, String(row.baseline_corridor_name));
+  const reroute = resolveEntityByName(corridors, String(row.reroute_corridor_name));
+  if (!baseline || !reroute) return refuse(`row[${i}]: corridor(s) not found in the live entity spine (baseline "${row.baseline_corridor_name}" ${baseline ? "found" : "MISSING"}, reroute "${row.reroute_corridor_name}" ${reroute ? "found" : "MISSING"}); minting a corridor entity is out of this producer's write set.`);
+  if (baseline === reroute) return refuse(`row[${i}]: baseline and reroute resolved to the SAME corridor entity (${baseline}): not a reroute.`);
+  return { refused: false, citation, dbRow: { baseline_corridor_id: baseline, reroute_corridor_id: reroute, cause: String(row.cause), distance_delta_nm: row.distance_delta_nm ?? null, transit_delta_days: row.transit_delta_days ?? null, fuel_burn_multiplier: Number(row.fuel_burn_multiplier), effective_from: row.effective_from, effective_to: row.effective_to ?? null } };
+}
+
+/** A reroute needs a DISTINCT baseline and reroute corridor pair; a count of corridors alone is never "ready" (the pairing must be sourced and dated). */
+export function evaluateCorridorReadiness(corridors: readonly unknown[] | null | undefined): { ready: false; count: number; gap: string } {
+  const n = Array.isArray(corridors) ? corridors.length : 0;
+  return { ready: false, count: n, gap: n < 2 ? `only ${n} corridor entit${n === 1 ? "y" : "ies"} in the spine: a reroute event needs a DISTINCT baseline + reroute pair (2 minimum); minting a corridor is out of this lane's write set.` : `${n} corridor entities exist but no producer-confirmed reroute pairing (cause + fuel_burn_multiplier, sourced and dated) is built this run.` };
+}
+
+interface RowsFileDef {
+  name: string;
+  table: string;
+  entityKind: "organisation" | "jurisdiction" | "corridor";
+  gap: string;
+  killSwitchEnv: string;
+  pk: string;
+  keyFields: readonly string[];
+  /** The table carries a source_id column: the registered source is stored on the row. */
+  storesSource: boolean;
+  parseRow(row: Rec, i: number, entities: readonly Entity[]): ParsedRow;
+}
+async function readEntities(sb: Db | null, kind: string): Promise<Entity[]> {
+  if (!sb) return [];
+  return fetchAllRows<Entity>((from, to) => sb.from("entities").select("entity_id, canonical_name").eq("kind", kind).order("entity_id", { ascending: true }).range(from, to) as never, { cap: 100_000 });
+}
+
+/** The one rows-file driver: parse every row (a bad row is refused by name, never fatal to the others), rate the citation host, insert only rows not already present. */
+function rowsFileSpec(def: RowsFileDef): ProducerSpec {
+  return {
+    name: def.name,
+    table: def.table,
+    licenceKey: null,
+    enabled: false,
+    enabledRuling: "operator 2026-10-04: no data population before every build layer is complete; the driver is proven on fixtures",
+    killSwitchEnv: def.killSwitchEnv,
+    gap: def.gap,
+    async fetchDoc() {
+      return { text: "" };
+    },
+    async parse(doc, ctx: ProducerCtx): Promise<ParseOut<Rec>> {
+      const rows = loadRowsFile(doc.text ?? "", def.name);
+      const entities = await readEntities(ctx.sb, def.entityKind);
+      const warnings: string[] = [];
+      const out: Rec[] = [];
+      const citations: Record<string, Citation> = {};
+      rows.forEach((raw, i) => {
+        let r: ParsedRow;
+        try {
+          r = def.parseRow(raw, i, entities);
+        } catch (e) {
+          r = refuse((e as Error).message);
+        }
+        const host = r.refused ? null : hostOf(r.citation.url);
+        if (r.refused) warnings.push(`[refused] ${r.reason}`);
+        else if (!host || classTierForHost(host, r.citation.title) == null) warnings.push(`[refused] row[${i}]: citation refused: host "${host ?? r.citation.url}" does not resolve to a codified class; ambiguous hosts are worklisted, never guessed a tier (SC-13)`);
+        else {
+          out.push(r.dbRow);
+          citations[String(i)] = r.citation;
+          (r.dbRow as Rec).__i = i;
+        }
+      });
+      ctx.state.citations = citations;
+      return { rows: out, warnings, counts: { rows_in_file: rows.length, refused_rows_parse: rows.length - out.length } };
+    },
+    /** Apply only: register each citation at its class-table tier; a refusal drops the row, named. */
+    async resolve(ctx, rows) {
+      const citations = ctx.state.citations as Record<string, Citation>;
+      const kept: Rec[] = [];
+      const refused: string[] = [];
+      for (const row of rows) {
+        const { __i, ...dbRow } = row as Rec & { __i: number };
+        const c = citations[String(__i)] as Citation;
+        const reg = await registerCitedSource(c, { sb: ctx.sb });
+        if (reg.refused) refused.push(`row[${__i}]: citation refused: ${reg.reason}`);
+        else kept.push(def.storesSource ? { ...dbRow, source_id: reg.source_id } : dbRow);
+      }
+      return { rows: kept, refused };
+    },
+    plan: {
+      read: (sb) => fetchAllRows<Rec>((from, to) => sb.from(def.table).select([def.pk, ...def.keyFields].join(", ")).order(def.pk, { ascending: true }).range(from, to) as never, { cap: 200_000 }),
+      key: (r) => keyOf(def.keyFields.map((f) => r[f])),
+      patchable: [],
+      pk: def.pk,
+    },
+  };
+}
+
+export const oemRoadmapRows = rowsFileSpec({ name: "oem-roadmap-rows", table: "oem_tech_roadmaps", entityKind: "organisation", killSwitchEnv: "OEM_PRODUCER_ROWS_FILE_ENABLED", pk: "roadmap_id", keyFields: ["manufacturer_id", "tech_category", "commercial_stage", "announced_at"], storesSource: true, parseRow: parseOemRoadmapRow, gap: "no $0 structured feed for OEM commercial-stage announcements; the input is a reviewed rows file" });
+export const gridQueueRows = rowsFileSpec({ name: "grid-queue-rows", table: "grid_connection_queues", entityKind: "jurisdiction", killSwitchEnv: "OPERATIONS_PRODUCER_GRID_QUEUE_ROWS_ENABLED", pk: "queue_id", keyFields: ["jurisdiction_id", "dso_name", "capacity_band_mw", "as_of"], storesSource: true, parseRow: parseGridQueueRow, gap: "no confirmed $0 feed for demand-side DSO connection-queue months; the input is a reviewed rows file" });
+export const rerouteRows = rowsFileSpec({ name: "reroute-rows", table: "reroute_events", entityKind: "corridor", killSwitchEnv: "MARKET_PRODUCER_REROUTE_ROWS_ENABLED", pk: "reroute_id", keyFields: ["baseline_corridor_id", "reroute_corridor_id", "effective_from"], storesSource: false, parseRow: parseRerouteRow, gap: "fewer than two distinct corridor entities with a sourced pairing; the input is a reviewed rows file" });

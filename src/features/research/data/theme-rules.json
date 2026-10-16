@@ -1,0 +1,80 @@
+{
+ "themes": {
+  "emissions_accounting": [
+   "scope 3",
+   "ghg protocol",
+   "lifecycle (assessment|accounting)",
+   "co2e?\\b",
+   "carbon accounting",
+   "emissions? (accounting|inventory|measurement|factor)",
+   "glec",
+   "iso 14083"
+  ],
+  "fuels_saf": [
+   "sustainable aviation fuel",
+   "\\bsaf\\b",
+   "hydrogen",
+   "ammonia",
+   "biofuel",
+   "biodiesel",
+   "e-fuel",
+   "marine fuel",
+   "bunker",
+   "methanol",
+   "feedstock",
+   "renewable diesel",
+   "hvo\\b"
+  ],
+  "packaging_circular": [
+   "packaging",
+   "\\bppwr\\b",
+   "reusable",
+   "returnable",
+   "\\bpfas\\b",
+   "recyclab",
+   "circular economy",
+   "deposit return"
+  ],
+  "carbon_markets": [
+   "\\beu ets\\b",
+   "\\bets\\b",
+   "\\bcbam\\b",
+   "carbon pric",
+   "carbon allowance",
+   "carbon trading",
+   "emissions trading",
+   "carbon market",
+   "carbon border"
+  ],
+  "cold_chain_art": [
+   "cold chain",
+   "cold-chain",
+   "temperature[- ]controlled",
+   "climate[- ]controlled",
+   "reefer",
+   "fine art",
+   "artwork",
+   "conservation"
+  ],
+  "last_mile_electrification": [
+   "last[- ]mile",
+   "urban freight",
+   "electric (van|truck|vehicle)s?",
+   "\\bev\\b",
+   "charging (infrastructure|station)",
+   "zero[- ]emission (delivery|vehicle|zone)",
+   "cargo bike"
+  ],
+  "disclosure_regimes": [
+   "\\bcsrd\\b",
+   "\\bissb\\b",
+   "\\bsfdr\\b",
+   "\\btcfd\\b",
+   "\\bs2\\b",
+   "sustainability (reporting|disclosure)",
+   "corporate sustainability",
+   "esrs"
+  ]
+ },
+ "minMatches": 1
+}
