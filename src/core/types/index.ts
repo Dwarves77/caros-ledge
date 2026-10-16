@@ -1,5 +1,6 @@
 // Ported from old_repo/src/lib/api/org.ts (lines 40-45)
 // Ported from old_repo/src/lib/api/server-bootstrap.ts (lines 48-76)
+// Ported from old_repo/src/types/resource.ts (lines 1-311)
 export type OrgRole = "owner" | "admin" | "member" | "viewer";
 
 export interface OrgMembership {
@@ -17,3 +18,5 @@ export interface IdentityBootstrap {
   workspaceSectors: string[];
   isPlatformAdmin: boolean;
 }
+
+export type { BiasTag, ChangeLogEntry, Dispute, ImpactReasoning, ImpactScores, ItemConnection, OperationalImpact, RecommendedAction, Resource, RiskRegisterEntry, SourceReference, Supersession, TimelineEntry } from "./item";

@@ -9,6 +9,11 @@ src/core/db/index.ts | new in P2-01: barrel for the import surface the brief nam
 src/core/auth/index.ts | new in P2-01: barrel for the import surface the brief names, no old counterpart
 src/core/shared/index.ts | new in P2-01: barrel for the import surface the brief names, no old counterpart
 src/features/auth/ui/auth.module.css | styles extracted from the inline style objects of old_repo/src/components/auth/AuthFrame.tsx, AuthPanel.tsx and the auth pages; a stylesheet cannot carry a // header
+src/core/workspace/data/org-vocabulary.json | rule table as data (WAVE-2-COMMON): the ADR-034 role and size vocabularies and the compliance-tag to role map, lifted out of old_repo/src/lib/profile/profile-contract.mjs lines 1-100; JSON cannot carry a header
+src/core/workspace/index.ts | new in P2-02: barrel for the import surface the brief names, no old counterpart
+src/features/workspace/api/deps.ts | new in P2-02: the injection point for slices not merged yet (WAVE-2-COMMON deps rule), no old counterpart
+src/features/workspace/state/index.ts | new in P2-02: barrel for the import surface the brief names, no old counterpart
+src/features/settings/index.ts | new in P2-02: barrel for the import surface the brief names, no old counterpart
 scripts/ci/properties.mjs | rewritten in P2-S1 from the P2-00 script; the old scripts/proof schema oracle (apply-schema-dump, replay-migrations, schema-diff) was removed in CLEAN-3 and does not exist at old_repo master 646fb098c
 scripts/ci/schema-apply.mjs | extended in P2-S1 from the P2-00 script; same reason as properties.mjs
 scripts/gen/schema-keys.mjs | extended in P2-S1 to read the forward migrations; no old counterpart

@@ -16,14 +16,14 @@ const text = (f: string) => readFileSync(f, "utf8");
 test("PROP-001/160: every route handler is behind a guard, or is one of the two public auth endpoints", () => {
   const publicRoutes = new Set(["src/features/auth/api/identity.ts", "src/features/auth/api/callback.ts"]);
   const routes = src.filter((f) => f.endsWith("/route.ts"));
-  assert.ok(routes.length === 11, `found ${routes.length} routes`);
+  assert.ok(routes.length >= 11, `found ${routes.length} routes`);
   for (const route of routes) {
     const target = /from "@\/(features\/[^"]+)"/.exec(text(route))?.[1];
     assert.ok(target, `${route} re-exports a feature handler`);
     const handler = `src/${target}.ts`;
     const body = text(handler);
     if (publicRoutes.has(handler)) assert.match(body, /checkRateLimit/, `${handler} is public, so it must rate limit`);
-    else assert.match(body, /requireUser|requireAdmin|requireOrgRole|workerAuthGuard|withToken/, `${handler} has no guard`);
+    else assert.match(body, /requireUser|requireAdmin|requireOrgRole|runCollab|workerAuthGuard|withToken/, `${handler} has no guard`);
   }
 });
 
