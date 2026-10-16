@@ -179,8 +179,8 @@ async function accessibilitySnapshot(page) {
   if (typeof page.accessibility?.snapshot === 'function') {
     try {
       return { source: 'page.accessibility.snapshot', tree: await page.accessibility.snapshot() };
-    } catch {
-      // Fall through: the API is unavailable or unsupported in this Playwright build; the aria snapshot is used instead.
+    } catch (e) {
+      return { source: 'locator.ariaSnapshot', tree: await page.locator('body').ariaSnapshot(), fallbackBecause: String(e?.message ?? e) };
     }
   }
   return { source: 'locator.ariaSnapshot', tree: await page.locator('body').ariaSnapshot() };

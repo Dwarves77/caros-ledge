@@ -186,7 +186,7 @@ test("backfill-lineage-edges: snapshot before any write, typed edge inserted, ma
     ],
     intelligence_item_sections: [],
     item_cross_references: [{ id: "x", source_item_id: "t", target_item_id: "p", relationship: "supersedes", origin: "manual", basis: [] }],
-    item_corrections: [], integrity_flags: [], terms: [], adopted_terms: [],
+    item_corrections: [], integrity_flags: [],
   });
   const dry = connectDb(tables());
   const d = await backfillLineageEdges({ sb: dry.db, now: () => NOW }, { dry: true });

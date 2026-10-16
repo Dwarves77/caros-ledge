@@ -14,13 +14,14 @@ async function extractPdf(bytes: Uint8Array) {
   const pdf = await getDocumentProxy(bytes);
   const { totalPages, text } = await extractText(pdf, { mergePages: true });
   let title: string | null = null;
+  let metaError: string | null = null;
   try {
     const t = (await getMeta(pdf))?.info as Record<string, unknown> | undefined;
     if (typeof t?.Title === "string" && t.Title.trim().length > 0) title = t.Title.trim().slice(0, 500);
-  } catch {
-    // metadata is optional
+  } catch (e) {
+    metaError = e instanceof Error ? e.message : String(e);
   }
-  return { text: typeof text === "string" ? text : String(text ?? ""), pages: totalPages, title };
+  return { text: typeof text === "string" ? text : String(text ?? ""), pages: totalPages, title, metaError };
 }
 
 Deno.serve(async (req: Request) => {
@@ -29,10 +30,13 @@ Deno.serve(async (req: Request) => {
   if (!url || !key) return json({ error: "worker is not configured" }, 500);
   if (!isServiceRoleRequest(req.headers.get("authorization"), key)) return json({ error: "service role required" }, 401);
   let body: { limit?: number; queue_ids?: string[] | null } = {};
-  try {
-    body = await req.json();
-  } catch {
-    // an empty body is fine
+  const raw = await req.text();
+  if (raw.trim()) {
+    try {
+      body = JSON.parse(raw);
+    } catch (e) {
+      return json({ error: `body is not valid JSON: ${e instanceof Error ? e.message : String(e)}` }, 400);
+    }
   }
   const deps: WorkerDeps = {
     db: createClient(url, key) as unknown as Db,

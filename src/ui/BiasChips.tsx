@@ -3,8 +3,7 @@
 // Ported from old_repo/src/components/ui/BiasChips.tsx (lines 36-255)
 import { useId, useState } from "react";
 
-import { biasChips, biasLegend } from "@/core/sources";
-import { LOWER_CONFIDENCE_WORDS, type BiasTagInput } from "@/core/sources/bias-tags";
+import { biasChips, biasLegend, LOWER_CONFIDENCE_WORDS, type BiasTagInput } from "@/core/sources";
 
 import { TagChip } from "./Chips";
 

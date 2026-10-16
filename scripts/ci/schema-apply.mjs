@@ -8,11 +8,21 @@
 import { spawnSync } from "node:child_process";
 import { readdirSync, readFileSync } from "node:fs";
 
+import { renderJsonData } from "../gen/json-data.mjs";
+import { readSchema } from "../gen/test-schema.mjs";
+
+import { migrationProblems } from "./migration-checks.mjs";
+
 const url = process.env.DATABASE_URL;
 if (!url) {
   console.error("DATABASE_URL is required");
   process.exit(1);
 }
+
+// Static checks, before any database work (scripts/ci/migration-checks.mjs).
+const staticProblems = migrationProblems();
+for (const p of staticProblems) console.error(p);
+if (staticProblems.length) process.exit(1);
 
 const STUBS = `
 DO $$ DECLARE r text; BEGIN
@@ -139,5 +149,8 @@ for (const l of last) {
 const keys = JSON.parse(readFileSync("src/core/db/schema-keys.json", "utf8"));
 const keyDiff = [...new Set([...Object.keys(live), ...Object.keys(keys)])].filter((t) => JSON.stringify(live[t]) !== JSON.stringify(keys[t]));
 for (const t of keyDiff) console.error(`schema-keys.json differs from the live primary key of ${t}: ${JSON.stringify(keys[t])} vs ${JSON.stringify(live[t])}`);
-console.log(`catalog diff: ${diff(step0, last).length} object changes across the migrations, ${unexplained} unexplained class(es), ${drift.length} drifted after the checks, ${keyDiff.length} schema-keys difference(s)`);
-process.exit((props.status ?? 1) || (pins.status ?? 1) || unexplained || drift.length || keyDiff.length ? 1 : 0);
+const committedSchema = readFileSync("tests/_support/schema.json", "utf8").replace(/\r\n/g, "\n");
+const schemaDiff = renderJsonData(readSchema(url)) === committedSchema ? 0 : 1;
+if (schemaDiff) console.error("tests/_support/schema.json differs from the live catalog: run `DATABASE_URL=... node scripts/gen/test-schema.mjs` and commit the result");
+console.log(`catalog diff: ${diff(step0, last).length} object changes across the migrations, ${unexplained} unexplained class(es), ${drift.length} drifted after the checks, ${keyDiff.length} schema-keys difference(s), ${schemaDiff} test-schema difference(s)`);
+process.exit((props.status ?? 1) || (pins.status ?? 1) || unexplained || drift.length || keyDiff.length || schemaDiff ? 1 : 0);

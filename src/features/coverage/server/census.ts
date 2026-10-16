@@ -1,6 +1,6 @@
 // Ported from old_repo/src/lib/coverage/index-data.ts (lines 1-255)
 import type { Db } from "@/core/db";
-import { exactCount, fetchAllRows } from "@/core/db";
+import { exactCount, fetchAllRows, qb } from "@/core/db";
 import type { CoverageEntry as MatrixEntry } from "@/core/coverage/matrix";
 
 export type IdentityState = "verified" | "unresolved" | "dead" | "pending";
@@ -94,9 +94,9 @@ const COLUMNS = "id,document_url,instrument_identifier,title,source_id,shape_cla
  */
 export async function loadCoverage(db: Db, surface?: CoverageSurface): Promise<{ entries: CoverageIndexEntry[]; counts: CoverageCounts }> {
   const rows = await fetchAllRows<Row>((from, to) => {
-    let q = db.from("census_worklist").select(COLUMNS).eq("dryrun_disposition", "would_mint");
+    let q = qb<Row>(db.from("census_worklist").select(COLUMNS)).eq("dryrun_disposition", "would_mint");
     if (surface) q = q.contains("surface_tags", [surface]);
-    return q.order("id", { ascending: true }).range(from, to) as never;
+    return q.order("id", { ascending: true }).range(from, to);
   }, { cap: 500_000 });
   const verifiedBriefs = await exactCount(db.from("intelligence_items").select("id", { count: "exact", head: true }).eq("provenance_status", "verified").not("full_brief", "is", null) as never);
   const entries: CoverageIndexEntry[] = rows.map((r) => {

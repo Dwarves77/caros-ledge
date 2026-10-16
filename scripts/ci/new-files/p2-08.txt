@@ -1,0 +1,13 @@
+# path | reason (files with no "Ported from" header)
+src/core/types/run-result.ts | new in P2-08: the one runtime result shape (IMP-036), moved from core/sources and core/intake, no old counterpart
+src/core/harness/data/families.json | new in P2-08: the families as data (harness.md section 8 table: 37 old families collapse to one per runtime), no old counterpart
+src/core/harness/index.ts | new in P2-08: barrel for the import surface the brief names, no old counterpart
+src/core/harness/proofs.ts | new in P2-08: the six operator proofs as queries over the one ledger (harness.md section 8), no old counterpart
+src/core/turn/index.ts | new in P2-08: barrel for the import surface the brief names, no old counterpart
+src/core/turn/registry.ts | new in P2-08: the one list of stage runtimes (IMP-030), no old counterpart
+src/core/turn/wiring.ts | new in P2-08: the adapters that build every slice's deps from the merged exports (the parallel-build bet), no old counterpart
+src/core/corrections/index.ts | new in P2-08: barrel for the correction model moved from src/features/corrections (IMP-046), no old counterpart
+src/core/contracts/numbers.ts | moved in P2-08 (IMP-041) from src/features/mint/heal/ground.ts: the value-preserving numeric fold and the inside-a-longer-number test, no old counterpart
+src/core/db/qb.ts | moved in P2-08 (IMP-049) from src/features/obligations/read/qb.ts: the one structural PostgREST builder type, no old counterpart
+src/core/entities/lookup.ts | new in P2-08 (IMP-053): the one lookup of entities by kind and of regions, no old counterpart
+src/instrumentation.ts | new in P2-08: Next's startup hook that wires the deps and refuses to serve when a required member is unwired (IMP-026), no old counterpart

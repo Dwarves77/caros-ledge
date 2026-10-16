@@ -16,6 +16,9 @@
     "properties": "node scripts/ci/properties.mjs",
     "schema:apply": "node scripts/ci/schema-apply.mjs",
     "tree-checks": "node scripts/ci/tree-checks.mjs",
+    "connections": "node scripts/ci/connections.mjs",
+    "turn": "node scripts/turn.mjs",
+    "install-hooks": "node scripts/install-hooks.mjs",
     "ui-checks": "node scripts/ci/ui-checks.mjs",
     "parity": "node tests/parity/capture.mjs --base http://localhost:3100 --out parity-capture && node tests/parity/compare.mjs --captured parity-capture"
   },

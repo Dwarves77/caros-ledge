@@ -5,7 +5,7 @@
 import type { Db } from "@/core/db";
 import { fetchAllRows } from "@/core/db";
 import { readAdoptedVocabulary, type AdoptedVocabulary } from "@/core/vocabulary/adopted";
-import { readConnectionCorrectionsFor, tombstonedPairKeys } from "@/features/corrections/model";
+import { readConnectionCorrectionsFor, tombstonedPairKeys } from "@/core/corrections";
 
 import { partitionLineageWrites, pairKey, type EdgeRowLike } from "./lineage";
 import { assertMoatBoundary, planLinkWrites, type CorpusRow } from "./mentions";

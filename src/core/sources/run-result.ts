@@ -1,12 +1,7 @@
 import type { Db } from "@/core/db";
+import type { RunResult } from "@/core/types/run-result";
 
-/** What every runtime entry returns to its caller (P2-08's recorder writes the ledger row from it). */
-export interface RunResult<T = unknown> {
-  counts: Record<string, number>;
-  outcome: "ok" | "partial" | "failed";
-  notes: string[];
-  data?: T;
-}
+export type { RunResult };
 /** What every runtime entry receives: the service client and the clock. A runtime never reads the wall clock any other way. */
 export interface RunDeps {
   db: Db;

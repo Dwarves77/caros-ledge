@@ -4,5 +4,5 @@ export { sendInvitationEmail } from "./email";
 export { resolveItemUuid } from "./ids";
 export { log } from "./log";
 export { captureError, withErrorCapture } from "./telemetry";
-export { htmlToText, slugify } from "./text";
-export { canonicalUrl, hostOf } from "./url";
+export { htmlToText, parseJsonOrNull, slugify } from "./text";
+export { canonicalUrl, decodeUriOrNull, hostOf } from "./url";

@@ -1,0 +1,4414 @@
+{
+ "tables": {
+  "admin_action_cooldowns": {
+   "columns": [
+    "action_key",
+    "last_triggered_at",
+    "triggered_by",
+    "metadata"
+   ],
+   "uuid": [],
+   "defaults": {
+    "last_triggered_at": "__now",
+    "metadata": {}
+   },
+   "fks": [
+    {
+     "column": "triggered_by",
+     "table": "users",
+     "ref": "id"
+    }
+   ]
+  },
+  "agent_run_searches": {
+   "columns": [
+    "id",
+    "agent_run_id",
+    "intelligence_item_id",
+    "search_query",
+    "result_url",
+    "result_title",
+    "result_index",
+    "result_content",
+    "searched_at",
+    "result_chars"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {},
+   "fks": [
+    {
+     "column": "intelligence_item_id",
+     "table": "intelligence_items",
+     "ref": "id"
+    }
+   ]
+  },
+  "agent_runs": {
+   "columns": [
+    "id",
+    "source_id",
+    "source_url",
+    "fetch_method",
+    "started_at",
+    "ended_at",
+    "duration_ms",
+    "status",
+    "cost_usd_estimated",
+    "errors",
+    "fetch_status",
+    "fetch_html_bytes",
+    "fetch_text_bytes",
+    "fetch_render_ms",
+    "raw_fetch_id",
+    "intelligence_item_id",
+    "intelligence_item_version_id",
+    "created_at",
+    "model"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "started_at": "__now",
+    "status": "running",
+    "cost_usd_estimated": 0,
+    "errors": [],
+    "created_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "intelligence_item_id",
+     "table": "intelligence_items",
+     "ref": "id"
+    },
+    {
+     "column": "intelligence_item_version_id",
+     "table": "intelligence_item_versions",
+     "ref": "id"
+    },
+    {
+     "column": "raw_fetch_id",
+     "table": "raw_fetches",
+     "ref": "id"
+    },
+    {
+     "column": "source_id",
+     "table": "sources",
+     "ref": "id"
+    }
+   ]
+  },
+  "aggregate_query_log": {
+   "columns": [
+    "query_id",
+    "table_name",
+    "column_name",
+    "cohort_hash",
+    "cohort_members",
+    "cohort_size",
+    "requested_at",
+    "requested_by",
+    "refused",
+    "reason",
+    "frozen",
+    "frozen_from",
+    "granted_payload"
+   ],
+   "uuid": [
+    "query_id"
+   ],
+   "defaults": {
+    "requested_at": "__now",
+    "frozen": false
+   },
+   "fks": []
+  },
+  "assumption_register": {
+   "columns": [
+    "id",
+    "assumption_key",
+    "subsystem",
+    "label",
+    "rationale",
+    "code_location",
+    "governing_decision",
+    "status",
+    "superseded_by",
+    "created_at",
+    "updated_at",
+    "value_numeric",
+    "unit",
+    "derivation",
+    "origin_class",
+    "source_key",
+    "source_ref",
+    "n_observations",
+    "method_version",
+    "as_at_date"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "status": "active",
+    "created_at": "__now",
+    "updated_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "source_key",
+     "table": "data_sources",
+     "ref": "source_key"
+    },
+    {
+     "column": "superseded_by",
+     "table": "assumption_register",
+     "ref": "id"
+    }
+   ]
+  },
+  "auxiliary_energy_profiles": {
+   "columns": [
+    "profile_id",
+    "load_type",
+    "node_id",
+    "kw_draw",
+    "duty_cycle",
+    "setpoint_c",
+    "setpoint_rh_pct",
+    "hours_typical",
+    "grid_intensity_source",
+    "created_at",
+    "org_id"
+   ],
+   "uuid": [
+    "profile_id"
+   ],
+   "defaults": {
+    "created_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "node_id",
+     "table": "entities",
+     "ref": "entity_id"
+    },
+    {
+     "column": "org_id",
+     "table": "organizations",
+     "ref": "id"
+    }
+   ]
+  },
+  "brief_apply_runs": {
+   "columns": [
+    "run_id",
+    "mode",
+    "started_at",
+    "finished_at",
+    "bytes_read",
+    "items_applied",
+    "stop_reason"
+   ],
+   "uuid": [],
+   "defaults": {
+    "bytes_read": 0,
+    "items_applied": 0
+   },
+   "fks": []
+  },
+  "bulk_imports": {
+   "columns": [
+    "id",
+    "imported_by",
+    "format",
+    "total_rows",
+    "sources_inserted",
+    "provisional_inserted",
+    "rejected",
+    "raw_input",
+    "preview_summary",
+    "created_at"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "sources_inserted": 0,
+    "provisional_inserted": 0,
+    "rejected": 0,
+    "created_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "imported_by",
+     "table": "users",
+     "ref": "id"
+    }
+   ]
+  },
+  "canonical_source_candidates": {
+   "columns": [
+    "id",
+    "intelligence_item_id",
+    "current_source_id",
+    "current_source_url",
+    "issue_classification",
+    "candidate_url",
+    "candidate_title",
+    "candidate_publisher",
+    "confidence",
+    "rationale",
+    "verified",
+    "verified_status_code",
+    "verified_content_excerpt",
+    "reviewed",
+    "decision",
+    "reviewer_id",
+    "reviewed_at",
+    "reviewer_notes",
+    "promoted_to_source_id",
+    "created_at",
+    "updated_at",
+    "recommended_classification"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "verified": false,
+    "reviewed": false,
+    "decision": "pending",
+    "created_at": "__now",
+    "updated_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "current_source_id",
+     "table": "sources",
+     "ref": "id"
+    },
+    {
+     "column": "intelligence_item_id",
+     "table": "intelligence_items",
+     "ref": "id"
+    },
+    {
+     "column": "promoted_to_source_id",
+     "table": "sources",
+     "ref": "id"
+    }
+   ]
+  },
+  "census_rollup_by_surface": {
+   "columns": [
+    "surface",
+    "enumerated_held_sources",
+    "held",
+    "missing_from_held_sources",
+    "other_dispositioned_held_sources",
+    "undispositioned_held_sources",
+    "enumerated_world",
+    "missing_from_world",
+    "pending_on_session_a",
+    "declined_or_parked_world"
+   ],
+   "uuid": [],
+   "defaults": {},
+   "fks": []
+  },
+  "census_worklist": {
+   "columns": [
+    "id",
+    "source_id",
+    "document_url",
+    "lane",
+    "created_by",
+    "created_at",
+    "shape_class",
+    "enumeration_status",
+    "cap_hit",
+    "dryrun_disposition",
+    "hold_reason",
+    "surface_tags",
+    "instrument_identifier",
+    "resolved_into_id",
+    "flagged_reason",
+    "flagged_at",
+    "notes",
+    "updated_at",
+    "identity_checked_at",
+    "identity_http_status",
+    "identity_resolves",
+    "identity_scheme",
+    "identity_shape_valid",
+    "identity_host_registered",
+    "title",
+    "title_source",
+    "is_archived",
+    "archive_reason"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "created_at": "__now",
+    "enumeration_status": "discovered",
+    "cap_hit": false,
+    "surface_tags": [],
+    "updated_at": "__now",
+    "is_archived": false
+   },
+   "fks": [
+    {
+     "column": "resolved_into_id",
+     "table": "census_worklist",
+     "ref": "id"
+    },
+    {
+     "column": "source_id",
+     "table": "sources",
+     "ref": "id"
+    }
+   ]
+  },
+  "claim_versions": {
+   "columns": [
+    "id",
+    "current_claim_id",
+    "intelligence_item_id",
+    "section_row_id",
+    "claim_text",
+    "claim_kind",
+    "source_span",
+    "source_id",
+    "search_result_id",
+    "source_tier_at_grounding",
+    "mint_hold_reason",
+    "version_number",
+    "supersede_reason",
+    "inaccuracy_proof",
+    "superseded_at",
+    "created_at",
+    "note"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "version_number": 1,
+    "created_at": "__now"
+   },
+   "fks": []
+  },
+  "community_group_invitations": {
+   "columns": [
+    "id",
+    "group_id",
+    "inviter_user_id",
+    "invitee_user_id",
+    "status",
+    "created_at"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "status": "pending",
+    "created_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "group_id",
+     "table": "community_groups",
+     "ref": "id"
+    },
+    {
+     "column": "invitee_user_id",
+     "table": "users",
+     "ref": "id"
+    },
+    {
+     "column": "inviter_user_id",
+     "table": "users",
+     "ref": "id"
+    }
+   ]
+  },
+  "community_group_members": {
+   "columns": [
+    "group_id",
+    "user_id",
+    "role",
+    "joined_at",
+    "starred",
+    "muted"
+   ],
+   "uuid": [],
+   "defaults": {
+    "role": "member",
+    "joined_at": "__now",
+    "starred": false,
+    "muted": false
+   },
+   "fks": [
+    {
+     "column": "group_id",
+     "table": "community_groups",
+     "ref": "id"
+    },
+    {
+     "column": "user_id",
+     "table": "users",
+     "ref": "id"
+    }
+   ]
+  },
+  "community_groups": {
+   "columns": [
+    "id",
+    "name",
+    "slug",
+    "region",
+    "privacy",
+    "owner_user_id",
+    "description",
+    "member_count",
+    "weekly_post_count",
+    "last_active_at",
+    "created_at",
+    "vertical"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "member_count": 0,
+    "weekly_post_count": 0,
+    "last_active_at": "__now",
+    "created_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "owner_user_id",
+     "table": "users",
+     "ref": "id"
+    }
+   ]
+  },
+  "community_member_profiles": {
+   "columns": [
+    "user_id",
+    "org_type",
+    "role",
+    "sector",
+    "region",
+    "organisation_key",
+    "verified",
+    "verified_at",
+    "verification_method",
+    "created_at",
+    "updated_at",
+    "default_anonymous"
+   ],
+   "uuid": [],
+   "defaults": {
+    "verified": false,
+    "created_at": "__now",
+    "updated_at": "__now",
+    "default_anonymous": false
+   },
+   "fks": [
+    {
+     "column": "user_id",
+     "table": "users",
+     "ref": "id"
+    }
+   ]
+  },
+  "community_post_signoff_requests": {
+   "columns": [
+    "id",
+    "post_id",
+    "requested_by",
+    "status",
+    "verifier_id",
+    "primary_doc_url",
+    "decision_note",
+    "created_at",
+    "decided_at"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "status": "pending",
+    "created_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "post_id",
+     "table": "community_posts",
+     "ref": "id"
+    },
+    {
+     "column": "requested_by",
+     "table": "users",
+     "ref": "id"
+    },
+    {
+     "column": "verifier_id",
+     "table": "users",
+     "ref": "id"
+    }
+   ]
+  },
+  "community_posts": {
+   "columns": [
+    "id",
+    "group_id",
+    "parent_post_id",
+    "author_user_id",
+    "title",
+    "body",
+    "created_at",
+    "last_reply_at",
+    "reply_count",
+    "promoted_from_post_id",
+    "attribution",
+    "referenced_intelligence_item_ids",
+    "signed_off_at",
+    "signed_off_by",
+    "anonymous"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "created_at": "__now",
+    "reply_count": 0,
+    "anonymous": false
+   },
+   "fks": [
+    {
+     "column": "author_user_id",
+     "table": "users",
+     "ref": "id"
+    },
+    {
+     "column": "group_id",
+     "table": "community_groups",
+     "ref": "id"
+    },
+    {
+     "column": "parent_post_id",
+     "table": "community_posts",
+     "ref": "id"
+    },
+    {
+     "column": "promoted_from_post_id",
+     "table": "community_posts",
+     "ref": "id"
+    },
+    {
+     "column": "signed_off_by",
+     "table": "users",
+     "ref": "id"
+    }
+   ]
+  },
+  "community_thread_entities": {
+   "columns": [
+    "thread_id",
+    "entity_id",
+    "entity_kind",
+    "created_at"
+   ],
+   "uuid": [],
+   "defaults": {
+    "created_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "entity_id",
+     "table": "entities",
+     "ref": "entity_id"
+    },
+    {
+     "column": "thread_id",
+     "table": "community_posts",
+     "ref": "id"
+    }
+   ]
+  },
+  "community_topic_groups": {
+   "columns": [
+    "topic_id",
+    "group_id"
+   ],
+   "uuid": [],
+   "defaults": {},
+   "fks": [
+    {
+     "column": "group_id",
+     "table": "community_groups",
+     "ref": "id"
+    },
+    {
+     "column": "topic_id",
+     "table": "community_topics",
+     "ref": "id"
+    }
+   ]
+  },
+  "community_topics": {
+   "columns": [
+    "id",
+    "owner_user_id",
+    "label",
+    "created_at"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "created_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "owner_user_id",
+     "table": "users",
+     "ref": "id"
+    }
+   ]
+  },
+  "connection_theme_runs": {
+   "columns": [
+    "id",
+    "started_at",
+    "finished_at",
+    "status",
+    "args",
+    "nodes_read",
+    "edges_read",
+    "nodes_clustered",
+    "edges_used",
+    "themes_written",
+    "gaps_flagged",
+    "rounds",
+    "error_message",
+    "theme_delta"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "status": "running",
+    "args": {}
+   },
+   "fks": []
+  },
+  "connection_themes": {
+   "columns": [
+    "id",
+    "computed_at",
+    "member_ids",
+    "dominant_signals",
+    "surfaces",
+    "density",
+    "convergence",
+    "pivots"
+   ],
+   "uuid": [],
+   "defaults": {
+    "computed_at": "__now",
+    "dominant_signals": [],
+    "surfaces": [],
+    "pivots": []
+   },
+   "fks": []
+  },
+  "corpus_census": {
+   "columns": [
+    "intelligence_item_id",
+    "is_archived",
+    "provenance_status",
+    "archive_reason",
+    "census_class",
+    "haiku_verdict",
+    "haiku_confidence",
+    "haiku_rationale",
+    "classified_by",
+    "classified_at"
+   ],
+   "uuid": [],
+   "defaults": {
+    "classified_at": "__now"
+   },
+   "fks": []
+  },
+  "corpus_turn_requests": {
+   "columns": [
+    "id",
+    "intelligence_item_id",
+    "reason",
+    "requested_at",
+    "consumed_at",
+    "consumed_by"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "requested_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "intelligence_item_id",
+     "table": "intelligence_items",
+     "ref": "id"
+    }
+   ]
+  },
+  "coverage_gap_candidates": {
+   "columns": [
+    "id",
+    "rank",
+    "instrument",
+    "jurisdiction",
+    "primary_vertical",
+    "transport_mode",
+    "freight_relevance",
+    "estimated_priority",
+    "coverage_class",
+    "corpus_match_ref",
+    "sizing_class",
+    "entity_confirmed",
+    "authoritative_url",
+    "notes",
+    "created_by",
+    "created_at",
+    "data_class",
+    "discovery_class",
+    "disposition",
+    "surface_test",
+    "access_model"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "entity_confirmed": false,
+    "created_by": "session-c-coverage-discovery-2026-07-17",
+    "created_at": "__now",
+    "data_class": "instrument"
+   },
+   "fks": []
+  },
+  "coverage_gap_census_findings": {
+   "columns": [
+    "id",
+    "lane",
+    "sweep",
+    "subject_type",
+    "subject_ref",
+    "instrument",
+    "jurisdiction",
+    "url",
+    "fetch_method",
+    "fetch_result",
+    "four_contract_classification",
+    "dry_run_disposition",
+    "dry_run_reason",
+    "entity_confirmed",
+    "notes",
+    "created_at",
+    "pending_dependency",
+    "historical_evidence",
+    "historical_intent",
+    "auth_gate",
+    "operator_confirm_question",
+    "lens"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "lane": "C",
+    "entity_confirmed": false,
+    "created_at": "__now"
+   },
+   "fks": []
+  },
+  "coverage_gaps": {
+   "columns": [
+    "id",
+    "title",
+    "jurisdiction",
+    "sector_affinity",
+    "severity",
+    "description",
+    "suggested_action_label",
+    "suggested_action_href",
+    "created_at"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "sector_affinity": [],
+    "created_at": "__now"
+   },
+   "fks": []
+  },
+  "data_sources": {
+   "columns": [
+    "source_key",
+    "name",
+    "redistribution",
+    "embeddable",
+    "licence",
+    "attribution",
+    "url",
+    "verified_on",
+    "blocker",
+    "ask_who",
+    "ask_what",
+    "substitute",
+    "created_at",
+    "updated_at"
+   ],
+   "uuid": [],
+   "defaults": {
+    "created_at": "__now",
+    "updated_at": "__now"
+   },
+   "fks": []
+  },
+  "derivation_edges": {
+   "columns": [
+    "from_table",
+    "from_pk",
+    "to_value_id",
+    "edge_kind",
+    "to_table"
+   ],
+   "uuid": [],
+   "defaults": {
+    "edge_kind": "input",
+    "to_table": "derived_values"
+   },
+   "fks": []
+  },
+  "derived_values": {
+   "columns": [
+    "value_id",
+    "entity_id",
+    "method_id",
+    "method_version",
+    "value",
+    "value_low",
+    "value_high",
+    "unit",
+    "currency",
+    "derivation",
+    "origin_class",
+    "lifecycle",
+    "admissibility",
+    "base_confidence",
+    "asserted_at",
+    "half_life_days",
+    "inputs",
+    "supersedes",
+    "computed_at",
+    "computed_by",
+    "invalidated_at",
+    "invalidated_by_event"
+   ],
+   "uuid": [
+    "value_id"
+   ],
+   "defaults": {
+    "computed_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "entity_id",
+     "table": "entities",
+     "ref": "entity_id"
+    },
+    {
+     "column": "invalidated_by_event",
+     "table": "propagation_events",
+     "ref": "event_id"
+    },
+    {
+     "column": "supersedes",
+     "table": "derived_values",
+     "ref": "value_id"
+    }
+   ]
+  },
+  "derived_values_admissible": {
+   "columns": [
+    "value_id",
+    "entity_id",
+    "method_id",
+    "method_version",
+    "value",
+    "value_low",
+    "value_high",
+    "unit",
+    "currency",
+    "derivation",
+    "origin_class",
+    "lifecycle",
+    "admissibility",
+    "base_confidence",
+    "asserted_at",
+    "half_life_days",
+    "inputs",
+    "supersedes",
+    "computed_at",
+    "computed_by",
+    "invalidated_at",
+    "invalidated_by_event",
+    "effective_confidence"
+   ],
+   "uuid": [],
+   "defaults": {},
+   "fks": []
+  },
+  "disposition_ledger": {
+   "columns": [
+    "id",
+    "intelligence_item_id",
+    "item_key",
+    "canonical_instrument_key",
+    "title",
+    "source_url",
+    "archive_reason",
+    "disposition",
+    "merged_into_item_id",
+    "snapshot_pointer",
+    "disposition_by",
+    "disposition_date"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "disposition_date": "__now"
+   },
+   "fks": []
+  },
+  "edge_snapshots": {
+   "columns": [
+    "id",
+    "run_id",
+    "table_name",
+    "rows",
+    "taken_at"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "taken_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "run_id",
+     "table": "harness_runs",
+     "ref": "id"
+    }
+   ]
+  },
+  "emission_factor_candidates": {
+   "columns": [
+    "factor_id",
+    "tier",
+    "scope_kind",
+    "mode",
+    "vehicle_class",
+    "energy_carrier",
+    "jurisdiction",
+    "grid_region",
+    "operator_key",
+    "corridor_id",
+    "movement_ref",
+    "quantity_basis",
+    "wtt_co2e",
+    "ttw_co2e",
+    "wtw_co2e",
+    "co2_fossil",
+    "co2_biogenic",
+    "ch4",
+    "n2o",
+    "gwp_basis",
+    "load_factor_pct",
+    "empty_running_pct",
+    "source_key",
+    "source_ref",
+    "donor",
+    "n_observations",
+    "derivation",
+    "origin_class",
+    "pedigree",
+    "pedigree_reliability",
+    "pedigree_completeness",
+    "pedigree_temporal_correlation",
+    "pedigree_geographical_correlation",
+    "pedigree_technological_correlation",
+    "method_version",
+    "as_at_date",
+    "valid_from",
+    "valid_to",
+    "superseded_by",
+    "created_at",
+    "tier_rank",
+    "scope_specificity"
+   ],
+   "uuid": [],
+   "defaults": {},
+   "fks": []
+  },
+  "emission_factors": {
+   "columns": [
+    "factor_id",
+    "tier",
+    "scope_kind",
+    "mode",
+    "vehicle_class",
+    "energy_carrier",
+    "jurisdiction",
+    "grid_region",
+    "operator_key",
+    "corridor_id",
+    "movement_ref",
+    "quantity_basis",
+    "wtt_co2e",
+    "ttw_co2e",
+    "wtw_co2e",
+    "co2_fossil",
+    "co2_biogenic",
+    "ch4",
+    "n2o",
+    "gwp_basis",
+    "load_factor_pct",
+    "empty_running_pct",
+    "source_key",
+    "source_ref",
+    "donor",
+    "n_observations",
+    "derivation",
+    "origin_class",
+    "pedigree",
+    "pedigree_reliability",
+    "pedigree_completeness",
+    "pedigree_temporal_correlation",
+    "pedigree_geographical_correlation",
+    "pedigree_technological_correlation",
+    "method_version",
+    "as_at_date",
+    "valid_from",
+    "valid_to",
+    "superseded_by",
+    "created_at"
+   ],
+   "uuid": [
+    "factor_id"
+   ],
+   "defaults": {
+    "created_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "source_key",
+     "table": "data_sources",
+     "ref": "source_key"
+    },
+    {
+     "column": "superseded_by",
+     "table": "emission_factors",
+     "ref": "factor_id"
+    }
+   ]
+  },
+  "entities": {
+   "columns": [
+    "entity_id",
+    "kind",
+    "canonical_name",
+    "status",
+    "merged_into",
+    "created_at",
+    "display_name",
+    "entity_level"
+   ],
+   "uuid": [],
+   "defaults": {
+    "status": "active",
+    "created_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "merged_into",
+     "table": "entities",
+     "ref": "entity_id"
+    }
+   ]
+  },
+  "entity_aliases": {
+   "columns": [
+    "entity_id",
+    "alias",
+    "alias_kind",
+    "asserted_by",
+    "asserted_at",
+    "source_id",
+    "provenance"
+   ],
+   "uuid": [],
+   "defaults": {
+    "asserted_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "entity_id",
+     "table": "entities",
+     "ref": "entity_id"
+    },
+    {
+     "column": "source_id",
+     "table": "sources",
+     "ref": "id"
+    }
+   ]
+  },
+  "entity_identifiers": {
+   "columns": [
+    "entity_id",
+    "scheme",
+    "value",
+    "scheme_version",
+    "asserted_by",
+    "asserted_at"
+   ],
+   "uuid": [],
+   "defaults": {
+    "asserted_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "entity_id",
+     "table": "entities",
+     "ref": "entity_id"
+    }
+   ]
+  },
+  "entity_refs": {
+   "columns": [
+    "ref_table",
+    "ref_id",
+    "entity_id",
+    "role",
+    "asserted_by",
+    "asserted_at"
+   ],
+   "uuid": [],
+   "defaults": {
+    "asserted_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "entity_id",
+     "table": "entities",
+     "ref": "entity_id"
+    }
+   ]
+  },
+  "entity_relations": {
+   "columns": [
+    "parent_entity_id",
+    "child_entity_id",
+    "relation",
+    "asserted_by",
+    "asserted_at",
+    "source_id",
+    "provenance"
+   ],
+   "uuid": [],
+   "defaults": {
+    "asserted_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "child_entity_id",
+     "table": "entities",
+     "ref": "entity_id"
+    },
+    {
+     "column": "parent_entity_id",
+     "table": "entities",
+     "ref": "entity_id"
+    },
+    {
+     "column": "source_id",
+     "table": "sources",
+     "ref": "id"
+    }
+   ]
+  },
+  "entity_scope": {
+   "columns": [
+    "subject_id",
+    "scope_id",
+    "relation",
+    "confidence",
+    "attributed_to"
+   ],
+   "uuid": [],
+   "defaults": {},
+   "fks": [
+    {
+     "column": "scope_id",
+     "table": "entities",
+     "ref": "entity_id"
+    },
+    {
+     "column": "subject_id",
+     "table": "entities",
+     "ref": "entity_id"
+    }
+   ]
+  },
+  "error_events": {
+   "columns": [
+    "id",
+    "occurred_at",
+    "last_seen_at",
+    "release",
+    "env",
+    "side",
+    "route",
+    "message",
+    "stack_hash",
+    "stack_excerpt",
+    "user_scope",
+    "count"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "occurred_at": "__now",
+    "last_seen_at": "__now",
+    "release": "dev",
+    "env": "unknown",
+    "route": "",
+    "count": 1
+   },
+   "fks": []
+  },
+  "estimated_values": {
+   "columns": [
+    "estimate_id",
+    "entity_id",
+    "scenario_key",
+    "model_id",
+    "model_version",
+    "point",
+    "low",
+    "high",
+    "distribution",
+    "pedigree"
+   ],
+   "uuid": [
+    "estimate_id"
+   ],
+   "defaults": {
+    "scenario_key": "default"
+   },
+   "fks": [
+    {
+     "column": "entity_id",
+     "table": "entities",
+     "ref": "entity_id"
+    }
+   ]
+  },
+  "funded_pass_runlock": {
+   "columns": [
+    "lock_key",
+    "holder_label",
+    "holder_pid",
+    "holder_host",
+    "worklist_ref",
+    "acquired_at",
+    "heartbeat_at"
+   ],
+   "uuid": [],
+   "defaults": {
+    "acquired_at": "__now",
+    "heartbeat_at": "__now"
+   },
+   "fks": []
+  },
+  "gate_a_health_cache": {
+   "columns": [
+    "singleton",
+    "payload",
+    "computed_at"
+   ],
+   "uuid": [],
+   "defaults": {
+    "singleton": true,
+    "computed_at": "__now"
+   },
+   "fks": []
+  },
+  "grid_connection_queues": {
+   "columns": [
+    "queue_id",
+    "jurisdiction_id",
+    "dso_name",
+    "capacity_band_mw",
+    "queue_months_p50",
+    "queue_months_p90",
+    "as_of",
+    "obs_status",
+    "created_at",
+    "substation_ref",
+    "substation_name",
+    "demand_firm_mw",
+    "demand_available_mw",
+    "demand_constraint",
+    "demand_constraint_limiting_factor",
+    "source_id",
+    "origin_class",
+    "derivation",
+    "confidence_admiralty"
+   ],
+   "uuid": [
+    "queue_id"
+   ],
+   "defaults": {
+    "obs_status": "A",
+    "created_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "jurisdiction_id",
+     "table": "entities",
+     "ref": "entity_id"
+    },
+    {
+     "column": "source_id",
+     "table": "sources",
+     "ref": "id"
+    }
+   ]
+  },
+  "harness_runs": {
+   "columns": [
+    "started_at",
+    "finished_at",
+    "trigger",
+    "github_run_id",
+    "created_at",
+    "id",
+    "family",
+    "root_run_id",
+    "upstream_run_id",
+    "mode",
+    "forced_dry",
+    "outcome",
+    "reason",
+    "inputs",
+    "outputs",
+    "error",
+    "code_sha"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "created_at": "__now",
+    "forced_dry": false,
+    "inputs": {},
+    "outputs": {}
+   },
+   "fks": [
+    {
+     "column": "upstream_run_id",
+     "table": "harness_runs",
+     "ref": "id"
+    }
+   ]
+  },
+  "holdings_quality": {
+   "columns": [
+    "id",
+    "intelligence_item_id",
+    "source_id",
+    "capture_kind",
+    "capture_ref",
+    "bytes_collected",
+    "clean_content_chars",
+    "declared_size",
+    "completeness",
+    "defect_evidence",
+    "sufficiency",
+    "publisher_shape",
+    "stale_verified",
+    "audited_at",
+    "audit_version"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "bytes_collected": 0,
+    "defect_evidence": {},
+    "stale_verified": false,
+    "audited_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "capture_ref",
+     "table": "raw_fetches",
+     "ref": "id"
+    },
+    {
+     "column": "intelligence_item_id",
+     "table": "intelligence_items",
+     "ref": "id"
+    },
+    {
+     "column": "source_id",
+     "table": "sources",
+     "ref": "id"
+    }
+   ]
+  },
+  "indexation_clauses": {
+   "columns": [
+    "clause_id",
+    "contract_ref",
+    "corridor_id",
+    "index_id",
+    "base_value",
+    "base_date",
+    "passthrough_pct",
+    "cap_pct",
+    "floor_pct",
+    "review_cadence",
+    "rounding_rule",
+    "created_at",
+    "org_id"
+   ],
+   "uuid": [
+    "clause_id"
+   ],
+   "defaults": {
+    "created_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "corridor_id",
+     "table": "entities",
+     "ref": "entity_id"
+    },
+    {
+     "column": "index_id",
+     "table": "entities",
+     "ref": "entity_id"
+    },
+    {
+     "column": "org_id",
+     "table": "organizations",
+     "ref": "id"
+    }
+   ]
+  },
+  "inference_records": {
+   "columns": [
+    "inference_id",
+    "subject_id",
+    "claim_text",
+    "status_token",
+    "confidence",
+    "cited_item_ids",
+    "origin_class",
+    "supersedes",
+    "trigger_question_ref",
+    "method_id",
+    "method_version",
+    "admissibility",
+    "invalidated_at",
+    "invalidated_by_event",
+    "computed_at",
+    "computed_by"
+   ],
+   "uuid": [
+    "inference_id"
+   ],
+   "defaults": {
+    "admissibility": "current",
+    "computed_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "invalidated_by_event",
+     "table": "propagation_events",
+     "ref": "event_id"
+    },
+    {
+     "column": "subject_id",
+     "table": "entities",
+     "ref": "entity_id"
+    },
+    {
+     "column": "supersedes",
+     "table": "inference_records",
+     "ref": "inference_id"
+    }
+   ]
+  },
+  "ingest_rejections": {
+   "columns": [
+    "id",
+    "raw_value",
+    "rejection_reason",
+    "source_url",
+    "source_id",
+    "ingest_attempted_at",
+    "triaged_by",
+    "triaged_at",
+    "triage_action",
+    "triage_notes"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "ingest_attempted_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "source_id",
+     "table": "sources",
+     "ref": "id"
+    },
+    {
+     "column": "triaged_by",
+     "table": "users",
+     "ref": "id"
+    }
+   ]
+  },
+  "institutions": {
+   "columns": [
+    "id",
+    "name",
+    "registrable_domain",
+    "created_at"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "created_at": "__now"
+   },
+   "fks": []
+  },
+  "integrity_flags": {
+   "columns": [
+    "id",
+    "category",
+    "subject_type",
+    "subject_ref",
+    "description",
+    "recommended_actions",
+    "status",
+    "created_at",
+    "created_by",
+    "resolved_at",
+    "resolved_by",
+    "resolution_note"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "recommended_actions": [],
+    "status": "open",
+    "created_at": "__now"
+   },
+   "fks": []
+  },
+  "intelligence_changes": {
+   "columns": [
+    "id",
+    "item_id",
+    "detected_at",
+    "change_type",
+    "change_severity",
+    "previous_value",
+    "new_value",
+    "change_summary",
+    "raw_diff"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "detected_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "item_id",
+     "table": "intelligence_items",
+     "ref": "id"
+    }
+   ]
+  },
+  "intelligence_item_citations": {
+   "columns": [
+    "id",
+    "intelligence_item_id",
+    "source_id",
+    "detected_at",
+    "origin"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "detected_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "intelligence_item_id",
+     "table": "intelligence_items",
+     "ref": "id"
+    },
+    {
+     "column": "source_id",
+     "table": "sources",
+     "ref": "id"
+    }
+   ]
+  },
+  "intelligence_item_sections": {
+   "columns": [
+    "id",
+    "item_id",
+    "section_key",
+    "section_order",
+    "content_md",
+    "is_conditional",
+    "source_ids",
+    "created_at",
+    "updated_at"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "is_conditional": false,
+    "created_at": "__now",
+    "updated_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "item_id",
+     "table": "intelligence_items",
+     "ref": "id"
+    }
+   ]
+  },
+  "intelligence_item_versions": {
+   "columns": [
+    "id",
+    "intelligence_item_id",
+    "version_number",
+    "created_at",
+    "previous_version_id",
+    "full_brief",
+    "severity",
+    "priority",
+    "urgency_tier",
+    "format_type",
+    "topic_tags",
+    "operational_scenario_tags",
+    "compliance_object_tags",
+    "related_items",
+    "intersection_summary",
+    "sources_used",
+    "last_regenerated_at",
+    "regeneration_skill_version"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "created_at": "__now",
+    "topic_tags": [],
+    "operational_scenario_tags": [],
+    "compliance_object_tags": [],
+    "related_items": []
+   },
+   "fks": [
+    {
+     "column": "intelligence_item_id",
+     "table": "intelligence_items",
+     "ref": "id"
+    },
+    {
+     "column": "previous_version_id",
+     "table": "intelligence_item_versions",
+     "ref": "id"
+    }
+   ]
+  },
+  "intelligence_items": {
+   "columns": [
+    "id",
+    "legacy_id",
+    "title",
+    "summary",
+    "what_is_it",
+    "why_matters",
+    "key_data",
+    "operational_impact",
+    "open_questions",
+    "tags",
+    "domain",
+    "category",
+    "item_type",
+    "source_id",
+    "source_url",
+    "jurisdictions",
+    "transport_modes",
+    "verticals",
+    "status",
+    "severity",
+    "confidence",
+    "priority",
+    "reasoning",
+    "entry_into_force",
+    "compliance_deadline",
+    "next_review_date",
+    "added_date",
+    "last_verified",
+    "is_archived",
+    "archive_reason",
+    "archive_note",
+    "archived_date",
+    "replaced_by",
+    "version_history",
+    "created_at",
+    "updated_at",
+    "region_tags",
+    "topic_tags",
+    "vertical_tags",
+    "full_brief",
+    "urgency_tier",
+    "format_type",
+    "last_regenerated_at",
+    "regeneration_skill_version",
+    "sources_used",
+    "operational_scenario_tags",
+    "compliance_object_tags",
+    "related_items",
+    "intersection_summary",
+    "jurisdiction_iso",
+    "agent_integrity_flag",
+    "agent_integrity_phrase",
+    "agent_integrity_flagged_at",
+    "agent_integrity_resolved_at",
+    "agent_integrity_resolved_by",
+    "pipeline_stage",
+    "hidden_reason",
+    "instrument_type",
+    "instrument_identifier",
+    "signal_band",
+    "theme",
+    "trajectory_points",
+    "what_it_changes",
+    "does_not_resolve",
+    "conversion_trigger",
+    "cross_references",
+    "provenance_status",
+    "provenance_verified_at",
+    "theme_candidate",
+    "search_tsv",
+    "canonical_instrument_key",
+    "origin_class",
+    "item_grade",
+    "instrument_entity_id",
+    "cost_mechanism",
+    "penalty_range",
+    "enforcement_body",
+    "requirement_trajectory",
+    "recommended_actions",
+    "compliance_object_candidates"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "summary": "",
+    "what_is_it": "",
+    "why_matters": "",
+    "key_data": [],
+    "operational_impact": "",
+    "open_questions": [],
+    "tags": [],
+    "item_type": "regulation",
+    "source_url": "",
+    "jurisdictions": [],
+    "transport_modes": [],
+    "verticals": [],
+    "status": "monitoring",
+    "confidence": "confirmed",
+    "priority": "MODERATE",
+    "reasoning": "",
+    "added_date": "__today",
+    "is_archived": false,
+    "version_history": [],
+    "created_at": "__now",
+    "updated_at": "__now",
+    "region_tags": [],
+    "topic_tags": [],
+    "vertical_tags": [],
+    "operational_scenario_tags": [],
+    "compliance_object_tags": [],
+    "jurisdiction_iso": [],
+    "agent_integrity_flag": false,
+    "item_grade": "brief",
+    "recommended_actions": [],
+    "compliance_object_candidates": []
+   },
+   "fks": [
+    {
+     "column": "agent_integrity_resolved_by",
+     "table": "users",
+     "ref": "id"
+    },
+    {
+     "column": "instrument_entity_id",
+     "table": "entities",
+     "ref": "entity_id"
+    },
+    {
+     "column": "replaced_by",
+     "table": "intelligence_items",
+     "ref": "id"
+    },
+    {
+     "column": "source_id",
+     "table": "sources",
+     "ref": "id"
+    }
+   ]
+  },
+  "intelligence_summaries": {
+   "columns": [
+    "id",
+    "item_id",
+    "sector",
+    "summary",
+    "urgency_score",
+    "generated_at",
+    "model_version"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "generated_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "item_id",
+     "table": "intelligence_items",
+     "ref": "id"
+    }
+   ]
+  },
+  "item_assignments": {
+   "columns": [
+    "id",
+    "org_id",
+    "item_id",
+    "assignee_user_id",
+    "assigned_by",
+    "due_on",
+    "state",
+    "created_at"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "state": "open",
+    "created_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "assigned_by",
+     "table": "profiles",
+     "ref": "id"
+    },
+    {
+     "column": "assignee_user_id",
+     "table": "profiles",
+     "ref": "id"
+    },
+    {
+     "column": "item_id",
+     "table": "intelligence_items",
+     "ref": "id"
+    },
+    {
+     "column": "org_id",
+     "table": "organizations",
+     "ref": "id"
+    }
+   ]
+  },
+  "item_changelog": {
+   "columns": [
+    "id",
+    "item_id",
+    "change_date",
+    "change_type",
+    "field",
+    "previous_value",
+    "new_value",
+    "impact",
+    "impact_level",
+    "detected_by",
+    "created_at"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "change_date": "__today",
+    "change_type": "UPDATED",
+    "previous_value": "",
+    "new_value": "",
+    "impact_level": "MODERATE",
+    "created_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "item_id",
+     "table": "intelligence_items",
+     "ref": "id"
+    }
+   ]
+  },
+  "item_correction_evidence": {
+   "columns": [
+    "correction_id",
+    "latest_machine_value",
+    "observed_at",
+    "observed_count"
+   ],
+   "uuid": [],
+   "defaults": {
+    "observed_at": "__now",
+    "observed_count": 1
+   },
+   "fks": [
+    {
+     "column": "correction_id",
+     "table": "item_corrections",
+     "ref": "id"
+    }
+   ]
+  },
+  "item_corrections": {
+   "columns": [
+    "id",
+    "item_id",
+    "target_kind",
+    "target_ref",
+    "op",
+    "value",
+    "machine_value",
+    "reason",
+    "created_by",
+    "created_at",
+    "revoked_at",
+    "revoked_by",
+    "revoked_reason"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "created_at": "__now"
+   },
+   "fks": []
+  },
+  "item_cross_references": {
+   "columns": [
+    "id",
+    "source_item_id",
+    "target_item_id",
+    "relationship",
+    "origin",
+    "basis",
+    "score"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "relationship": "related",
+    "origin": "manual"
+   },
+   "fks": [
+    {
+     "column": "source_item_id",
+     "table": "intelligence_items",
+     "ref": "id"
+    },
+    {
+     "column": "target_item_id",
+     "table": "intelligence_items",
+     "ref": "id"
+    }
+   ]
+  },
+  "item_disputes": {
+   "columns": [
+    "id",
+    "item_id",
+    "is_active",
+    "note",
+    "disputing_sources",
+    "created_at",
+    "resolved_at"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "is_active": true,
+    "disputing_sources": [],
+    "created_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "item_id",
+     "table": "intelligence_items",
+     "ref": "id"
+    }
+   ]
+  },
+  "item_forward_events": {
+   "columns": [
+    "id",
+    "intelligence_item_id",
+    "event_date",
+    "date_precision",
+    "event_kind",
+    "obligation_text",
+    "source_kind",
+    "source_claim_id",
+    "source_section_id",
+    "source_span",
+    "confidence",
+    "extractor_version",
+    "created_at"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "created_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "intelligence_item_id",
+     "table": "intelligence_items",
+     "ref": "id"
+    },
+    {
+     "column": "source_claim_id",
+     "table": "section_claim_provenance",
+     "ref": "id"
+    },
+    {
+     "column": "source_section_id",
+     "table": "intelligence_item_sections",
+     "ref": "id"
+    }
+   ]
+  },
+  "item_gate_a_state": {
+   "columns": [
+    "intelligence_item_id",
+    "scanned_hash",
+    "orphan_count",
+    "orphans",
+    "gate_a_version",
+    "scanned_at"
+   ],
+   "uuid": [],
+   "defaults": {
+    "orphan_count": 0,
+    "orphans": [],
+    "scanned_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "intelligence_item_id",
+     "table": "intelligence_items",
+     "ref": "id"
+    }
+   ]
+  },
+  "item_notes": {
+   "columns": [
+    "id",
+    "org_id",
+    "item_id",
+    "author_user_id",
+    "body",
+    "created_at",
+    "edited_at",
+    "deleted_at",
+    "legacy_override_id"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "created_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "author_user_id",
+     "table": "profiles",
+     "ref": "id"
+    },
+    {
+     "column": "item_id",
+     "table": "intelligence_items",
+     "ref": "id"
+    },
+    {
+     "column": "legacy_override_id",
+     "table": "workspace_item_overrides",
+     "ref": "id"
+    },
+    {
+     "column": "org_id",
+     "table": "organizations",
+     "ref": "id"
+    }
+   ]
+  },
+  "item_supersessions": {
+   "columns": [
+    "id",
+    "old_item_id",
+    "new_item_id",
+    "supersession_date",
+    "severity",
+    "note",
+    "created_at"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "note": "",
+    "created_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "new_item_id",
+     "table": "intelligence_items",
+     "ref": "id"
+    },
+    {
+     "column": "old_item_id",
+     "table": "intelligence_items",
+     "ref": "id"
+    }
+   ]
+  },
+  "item_timelines": {
+   "columns": [
+    "id",
+    "item_id",
+    "milestone_date",
+    "label",
+    "is_completed",
+    "sort_order",
+    "created_at"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "is_completed": false,
+    "sort_order": 0,
+    "created_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "item_id",
+     "table": "intelligence_items",
+     "ref": "id"
+    }
+   ]
+  },
+  "item_type_required_slots": {
+   "columns": [
+    "id",
+    "item_type",
+    "slot_key",
+    "description",
+    "created_at"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "created_at": "__now"
+   },
+   "fks": []
+  },
+  "item_workspace_tags": {
+   "columns": [
+    "tag_id",
+    "intelligence_item_id",
+    "org_id",
+    "created_by",
+    "created_at"
+   ],
+   "uuid": [],
+   "defaults": {
+    "created_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "created_by",
+     "table": "profiles",
+     "ref": "id"
+    },
+    {
+     "column": "intelligence_item_id",
+     "table": "intelligence_items",
+     "ref": "id"
+    },
+    {
+     "column": "org_id",
+     "table": "organizations",
+     "ref": "id"
+    },
+    {
+     "column": "tag_id",
+     "table": "workspace_tags",
+     "ref": "id"
+    }
+   ]
+  },
+  "licence_clear_sources": {
+   "columns": [
+    "source_key",
+    "name",
+    "attribution",
+    "licence",
+    "url",
+    "verified_on"
+   ],
+   "uuid": [],
+   "defaults": {},
+   "fks": []
+  },
+  "market_series": {
+   "columns": [
+    "id",
+    "series_key",
+    "label",
+    "created_at",
+    "updated_at",
+    "value_numeric",
+    "unit",
+    "currency",
+    "derivation",
+    "origin_class",
+    "source_key",
+    "source_ref",
+    "n_observations",
+    "method_version",
+    "as_at_date",
+    "reference_period",
+    "entity_id"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "created_at": "__now",
+    "updated_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "entity_id",
+     "table": "entities",
+     "ref": "entity_id"
+    },
+    {
+     "column": "source_key",
+     "table": "data_sources",
+     "ref": "source_key"
+    }
+   ]
+  },
+  "moderation_reports": {
+   "columns": [
+    "id",
+    "target_kind",
+    "target_id",
+    "reporter_user_id",
+    "reason",
+    "status",
+    "created_at",
+    "resolved_at",
+    "resolved_by_user_id"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "status": "open",
+    "created_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "reporter_user_id",
+     "table": "users",
+     "ref": "id"
+    },
+    {
+     "column": "resolved_by_user_id",
+     "table": "users",
+     "ref": "id"
+    }
+   ]
+  },
+  "monitoring_queue": {
+   "columns": [
+    "id",
+    "source_id",
+    "item_id",
+    "scheduled_check",
+    "priority",
+    "last_result",
+    "change_detected",
+    "checked_at",
+    "error_message",
+    "created_at",
+    "reconciled_at"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "priority": "normal",
+    "change_detected": false,
+    "created_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "item_id",
+     "table": "intelligence_items",
+     "ref": "id"
+    },
+    {
+     "column": "source_id",
+     "table": "sources",
+     "ref": "id"
+    }
+   ]
+  },
+  "mutation_leases": {
+   "columns": [
+    "intelligence_item_id",
+    "holder",
+    "lane",
+    "acquired_at",
+    "heartbeat_at"
+   ],
+   "uuid": [],
+   "defaults": {
+    "acquired_at": "__now",
+    "heartbeat_at": "__now"
+   },
+   "fks": []
+  },
+  "notification_outbox": {
+   "columns": [
+    "id",
+    "user_id",
+    "kind",
+    "payload",
+    "attempts",
+    "last_error",
+    "status",
+    "created_at",
+    "sent_at"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "payload": {},
+    "attempts": 0,
+    "status": "pending",
+    "created_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "user_id",
+     "table": "users",
+     "ref": "id"
+    }
+   ]
+  },
+  "notification_preferences": {
+   "columns": [
+    "user_id",
+    "enabled",
+    "on_mention",
+    "on_reply_in_my_threads",
+    "on_new_post_in_joined_groups",
+    "on_invite",
+    "on_promote",
+    "channels",
+    "updated_at"
+   ],
+   "uuid": [],
+   "defaults": {
+    "enabled": true,
+    "on_mention": true,
+    "on_reply_in_my_threads": true,
+    "on_new_post_in_joined_groups": false,
+    "on_invite": true,
+    "on_promote": true,
+    "updated_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "user_id",
+     "table": "users",
+     "ref": "id"
+    }
+   ]
+  },
+  "notifications": {
+   "columns": [
+    "id",
+    "user_id",
+    "kind",
+    "payload",
+    "read_at",
+    "created_at"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "payload": {},
+    "created_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "user_id",
+     "table": "users",
+     "ref": "id"
+    }
+   ]
+  },
+  "obligation_objects": {
+   "columns": [
+    "obligation_id",
+    "instrument_item_id",
+    "instrument_entity_id",
+    "version",
+    "supersedes",
+    "pinpoint_citation",
+    "verbatim_text",
+    "plain_language",
+    "binding_position",
+    "duty_holder_class",
+    "applicability_trigger",
+    "jurisdiction",
+    "mode",
+    "vertical",
+    "frequency",
+    "entry_into_force",
+    "date_of_application",
+    "first_deadline",
+    "enforcement_start",
+    "evidence_required",
+    "retention_period",
+    "sanction_class",
+    "severity_score",
+    "statutory_maximum",
+    "cost_formula",
+    "direct_compliance_cost",
+    "effort",
+    "status",
+    "date_reviewed",
+    "next_review_due",
+    "source_id",
+    "capture_id",
+    "created_at",
+    "updated_at"
+   ],
+   "uuid": [],
+   "defaults": {
+    "version": 1,
+    "status": "not_assessed",
+    "created_at": "__now",
+    "updated_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "capture_id",
+     "table": "agent_run_searches",
+     "ref": "id"
+    },
+    {
+     "column": "instrument_entity_id",
+     "table": "entities",
+     "ref": "entity_id"
+    },
+    {
+     "column": "instrument_item_id",
+     "table": "intelligence_items",
+     "ref": "id"
+    },
+    {
+     "column": "obligation_id",
+     "table": "entities",
+     "ref": "entity_id"
+    },
+    {
+     "column": "source_id",
+     "table": "sources",
+     "ref": "id"
+    },
+    {
+     "column": "supersedes",
+     "table": "obligation_objects",
+     "ref": "obligation_id"
+    }
+   ]
+  },
+  "obligations": {
+   "columns": [
+    "id",
+    "intelligence_item_id",
+    "forward_event_id",
+    "jurisdiction",
+    "modes",
+    "binding_position",
+    "due_date",
+    "date_precision",
+    "event_kind",
+    "status",
+    "derivation_version",
+    "derived_at",
+    "created_at",
+    "updated_at",
+    "obligation_id"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "jurisdiction": [],
+    "modes": [],
+    "status": "active",
+    "derived_at": "__now",
+    "created_at": "__now",
+    "updated_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "forward_event_id",
+     "table": "item_forward_events",
+     "ref": "id"
+    },
+    {
+     "column": "intelligence_item_id",
+     "table": "intelligence_items",
+     "ref": "id"
+    },
+    {
+     "column": "obligation_id",
+     "table": "obligation_objects",
+     "ref": "obligation_id"
+    }
+   ]
+  },
+  "oem_tech_roadmaps": {
+   "columns": [
+    "roadmap_id",
+    "manufacturer_id",
+    "tech_category",
+    "commercial_stage",
+    "target_year",
+    "energy_density_wh_kg",
+    "density_basis",
+    "c_rate_max",
+    "usable_kwh",
+    "announced_at",
+    "source_id",
+    "origin_class",
+    "derivation",
+    "confidence_admiralty",
+    "created_at"
+   ],
+   "uuid": [
+    "roadmap_id"
+   ],
+   "defaults": {
+    "origin_class": "community",
+    "derivation": "observed",
+    "created_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "manufacturer_id",
+     "table": "entities",
+     "ref": "entity_id"
+    },
+    {
+     "column": "source_id",
+     "table": "sources",
+     "ref": "id"
+    }
+   ]
+  },
+  "org_invitations": {
+   "columns": [
+    "id",
+    "org_id",
+    "invited_email",
+    "invited_by_user_id",
+    "proposed_role",
+    "status",
+    "created_at",
+    "expires_at",
+    "accepted_at",
+    "accepted_by_user_id",
+    "declined_at",
+    "revoked_at",
+    "revoked_by_user_id",
+    "token_hash",
+    "token_last4",
+    "token_input"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "proposed_role": "member",
+    "status": "pending",
+    "created_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "accepted_by_user_id",
+     "table": "profiles",
+     "ref": "id"
+    },
+    {
+     "column": "invited_by_user_id",
+     "table": "profiles",
+     "ref": "id"
+    },
+    {
+     "column": "org_id",
+     "table": "organizations",
+     "ref": "id"
+    },
+    {
+     "column": "revoked_by_user_id",
+     "table": "profiles",
+     "ref": "id"
+    }
+   ]
+  },
+  "org_member_bans": {
+   "columns": [
+    "org_id",
+    "user_id",
+    "banned_by",
+    "banned_at",
+    "reason"
+   ],
+   "uuid": [],
+   "defaults": {
+    "banned_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "banned_by",
+     "table": "users",
+     "ref": "id"
+    },
+    {
+     "column": "org_id",
+     "table": "organizations",
+     "ref": "id"
+    },
+    {
+     "column": "user_id",
+     "table": "users",
+     "ref": "id"
+    }
+   ]
+  },
+  "org_memberships": {
+   "columns": [
+    "id",
+    "org_id",
+    "user_id",
+    "role",
+    "created_at"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "role": "member",
+    "created_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "org_id",
+     "table": "organizations",
+     "ref": "id"
+    },
+    {
+     "column": "user_id",
+     "table": "profiles",
+     "ref": "id"
+    }
+   ]
+  },
+  "org_watchlist": {
+   "columns": [
+    "id",
+    "org_id",
+    "added_by_user_id",
+    "item_type",
+    "item_id",
+    "note",
+    "created_at"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "created_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "added_by_user_id",
+     "table": "profiles",
+     "ref": "id"
+    },
+    {
+     "column": "org_id",
+     "table": "organizations",
+     "ref": "id"
+    }
+   ]
+  },
+  "organizations": {
+   "columns": [
+    "id",
+    "name",
+    "slug",
+    "plan",
+    "settings",
+    "created_at",
+    "updated_at"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "plan": "free",
+    "settings": {},
+    "created_at": "__now",
+    "updated_at": "__now"
+   },
+   "fks": []
+  },
+  "pending_first_fetch": {
+   "columns": [
+    "id",
+    "source_id",
+    "queued_at",
+    "status",
+    "attempt_count",
+    "last_attempt_at",
+    "last_error_text"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "queued_at": "__now",
+    "status": "queued",
+    "attempt_count": 0
+   },
+   "fks": [
+    {
+     "column": "source_id",
+     "table": "sources",
+     "ref": "id"
+    }
+   ]
+  },
+  "pending_jurisdiction_review": {
+   "columns": [
+    "id",
+    "intelligence_item_id",
+    "current_value",
+    "flagged_reason",
+    "source_column",
+    "flagged_at",
+    "resolved_by",
+    "resolved_at",
+    "resolution_value"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "source_column": "jurisdictions",
+    "flagged_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "intelligence_item_id",
+     "table": "intelligence_items",
+     "ref": "id"
+    },
+    {
+     "column": "resolved_by",
+     "table": "users",
+     "ref": "id"
+    }
+   ]
+  },
+  "portal_link_candidates": {
+   "columns": [
+    "id",
+    "source_id",
+    "url",
+    "anchor_text",
+    "status",
+    "first_seen_at",
+    "last_seen_at",
+    "disposition_reason",
+    "dispositioned_at",
+    "item_id"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "status": "candidate",
+    "first_seen_at": "__now",
+    "last_seen_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "item_id",
+     "table": "intelligence_items",
+     "ref": "id"
+    },
+    {
+     "column": "source_id",
+     "table": "sources",
+     "ref": "id"
+    }
+   ]
+  },
+  "portfolio_members": {
+   "columns": [
+    "id",
+    "portfolio_id",
+    "org_id",
+    "member_kind",
+    "item_id",
+    "entity_id",
+    "added_by",
+    "added_at"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "added_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "added_by",
+     "table": "profiles",
+     "ref": "id"
+    },
+    {
+     "column": "entity_id",
+     "table": "entities",
+     "ref": "entity_id"
+    },
+    {
+     "column": "item_id",
+     "table": "intelligence_items",
+     "ref": "id"
+    }
+   ]
+  },
+  "portfolios": {
+   "columns": [
+    "id",
+    "org_id",
+    "name",
+    "name_key",
+    "created_by",
+    "created_at"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "created_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "created_by",
+     "table": "profiles",
+     "ref": "id"
+    },
+    {
+     "column": "org_id",
+     "table": "organizations",
+     "ref": "id"
+    }
+   ]
+  },
+  "profiles": {
+   "columns": [
+    "id",
+    "email",
+    "display_name",
+    "role",
+    "settings",
+    "created_at",
+    "updated_at",
+    "full_name",
+    "headline",
+    "bio",
+    "avatar_url",
+    "organization",
+    "job_title",
+    "linkedin_url",
+    "linkedin_sub",
+    "linkedin_verified",
+    "linkedin_identity_verified",
+    "linkedin_workplace_verified",
+    "linkedin_verification_checked_at",
+    "verification_tier",
+    "affiliation_type",
+    "region",
+    "topic_interests",
+    "membership_tier",
+    "contribution_score",
+    "notification_preferences",
+    "last_active_at",
+    "timezone",
+    "sector_overrides",
+    "jurisdiction_overrides",
+    "transport_mode_overrides",
+    "verifier_status",
+    "verifier_since",
+    "is_platform_admin",
+    "org_id",
+    "workspace_role",
+    "sector"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "role": "viewer",
+    "settings": {},
+    "created_at": "__now",
+    "updated_at": "__now",
+    "linkedin_verified": false,
+    "linkedin_identity_verified": false,
+    "linkedin_workplace_verified": false,
+    "verification_tier": "unverified",
+    "region": [],
+    "membership_tier": "free",
+    "contribution_score": 0,
+    "notification_preferences": {},
+    "timezone": "UTC",
+    "sector_overrides": [],
+    "jurisdiction_overrides": [],
+    "transport_mode_overrides": [],
+    "verifier_status": "none",
+    "is_platform_admin": false,
+    "sector": []
+   },
+   "fks": [
+    {
+     "column": "id",
+     "table": "users",
+     "ref": "id"
+    },
+    {
+     "column": "org_id",
+     "table": "organizations",
+     "ref": "id"
+    }
+   ]
+  },
+  "propagation_events": {
+   "columns": [
+    "event_id",
+    "occurred_at",
+    "table_name",
+    "row_pk",
+    "entity_id",
+    "change_kind",
+    "old_row",
+    "new_row",
+    "txid",
+    "drained_at",
+    "drain_run_id"
+   ],
+   "uuid": [],
+   "defaults": {
+    "occurred_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "entity_id",
+     "table": "entities",
+     "ref": "entity_id"
+    }
+   ]
+  },
+  "propagation_queue_depth": {
+   "columns": [
+    "pending_count",
+    "oldest_pending_at"
+   ],
+   "uuid": [],
+   "defaults": {},
+   "fks": []
+  },
+  "provisional_sources": {
+   "columns": [
+    "id",
+    "name",
+    "url",
+    "description",
+    "domain",
+    "discovered_via",
+    "cited_by_source_id",
+    "cited_by_source_tier",
+    "citation_count",
+    "independent_citers",
+    "citing_source_ids",
+    "highest_citing_tier",
+    "provisional_tier",
+    "recommended_tier",
+    "accessibility_verified",
+    "publishes_structured_content",
+    "entity_identified",
+    "status",
+    "reviewer_notes",
+    "promoted_to_source_id",
+    "created_at",
+    "reviewed_at",
+    "recommended_classification",
+    "discovered_for_jurisdiction"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "description": "",
+    "discovered_via": "citation_detection",
+    "citation_count": 1,
+    "independent_citers": 0,
+    "provisional_tier": 7,
+    "accessibility_verified": false,
+    "publishes_structured_content": false,
+    "entity_identified": false,
+    "status": "pending_review",
+    "reviewer_notes": "",
+    "created_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "cited_by_source_id",
+     "table": "sources",
+     "ref": "id"
+    },
+    {
+     "column": "promoted_to_source_id",
+     "table": "sources",
+     "ref": "id"
+    }
+   ]
+  },
+  "published_price_statistics": {
+   "columns": [
+    "id",
+    "item_id",
+    "label",
+    "value_display",
+    "unit",
+    "context_line",
+    "severity_tone",
+    "source_tier",
+    "released_at",
+    "next_release_at",
+    "next_release_label",
+    "sort_order",
+    "created_at"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "sort_order": 0,
+    "created_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "item_id",
+     "table": "intelligence_items",
+     "ref": "id"
+    }
+   ]
+  },
+  "rate_limit_windows": {
+   "columns": [
+    "key",
+    "window_start",
+    "count"
+   ],
+   "uuid": [],
+   "defaults": {
+    "count": 0
+   },
+   "fks": []
+  },
+  "raw_fetches": {
+   "columns": [
+    "id",
+    "source_id",
+    "content_hash",
+    "fetched_at",
+    "file_path",
+    "http_status",
+    "html_bytes",
+    "created_at"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "fetched_at": "__now",
+    "html_bytes": 0,
+    "created_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "source_id",
+     "table": "sources",
+     "ref": "id"
+    }
+   ]
+  },
+  "region_dimension_coverage": {
+   "columns": [
+    "id",
+    "region_id",
+    "dimension",
+    "state",
+    "notes",
+    "fact_count",
+    "created_at",
+    "updated_at"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "state": "missing",
+    "fact_count": 0,
+    "created_at": "__now",
+    "updated_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "region_id",
+     "table": "regions",
+     "ref": "id"
+    }
+   ]
+  },
+  "regional_data_facts": {
+   "columns": [
+    "id",
+    "region_id",
+    "dimension",
+    "fact_label",
+    "value",
+    "status",
+    "trend",
+    "source_id",
+    "source_note",
+    "last_updated",
+    "created_at",
+    "value_numeric",
+    "unit",
+    "currency",
+    "derivation",
+    "origin_class",
+    "source_key",
+    "source_ref",
+    "n_observations",
+    "method_version",
+    "as_at_date",
+    "reference_period"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "last_updated": "__now",
+    "created_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "region_id",
+     "table": "regions",
+     "ref": "id"
+    },
+    {
+     "column": "source_id",
+     "table": "sources",
+     "ref": "id"
+    },
+    {
+     "column": "source_key",
+     "table": "data_sources",
+     "ref": "source_key"
+    }
+   ]
+  },
+  "regions": {
+   "columns": [
+    "id",
+    "code",
+    "label",
+    "severity",
+    "iso_codes",
+    "display_order",
+    "created_at",
+    "updated_at"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "iso_codes": [],
+    "display_order": 0,
+    "created_at": "__now",
+    "updated_at": "__now"
+   },
+   "fks": []
+  },
+  "reroute_events": {
+   "columns": [
+    "reroute_id",
+    "baseline_corridor_id",
+    "reroute_corridor_id",
+    "cause",
+    "distance_delta_nm",
+    "transit_delta_days",
+    "fuel_burn_multiplier",
+    "effective_from",
+    "effective_to",
+    "created_at"
+   ],
+   "uuid": [
+    "reroute_id"
+   ],
+   "defaults": {
+    "created_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "baseline_corridor_id",
+     "table": "entities",
+     "ref": "entity_id"
+    },
+    {
+     "column": "reroute_corridor_id",
+     "table": "entities",
+     "ref": "entity_id"
+    }
+   ]
+  },
+  "research_assessments": {
+   "columns": [
+    "id",
+    "item_id",
+    "supersedes",
+    "is_current",
+    "technical_maturity_low",
+    "technical_maturity_high",
+    "technical_maturity_method",
+    "technical_maturity_evidence_ids",
+    "commercial_maturity_low",
+    "commercial_maturity_high",
+    "commercial_maturity_method",
+    "commercial_maturity_evidence_ids",
+    "horizon_kind",
+    "horizon_band",
+    "horizon_rule",
+    "horizon_confidence",
+    "horizon_trigger_note",
+    "refusal_reason",
+    "credibility_evidence_score",
+    "credibility_authority_score",
+    "computed_by",
+    "computed_at",
+    "status_token",
+    "created_at",
+    "entity_id",
+    "lifecycle_state"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "is_current": true,
+    "technical_maturity_evidence_ids": [],
+    "commercial_maturity_evidence_ids": [],
+    "computed_at": "__now",
+    "created_at": "__now",
+    "lifecycle_state": "emerging"
+   },
+   "fks": [
+    {
+     "column": "entity_id",
+     "table": "entities",
+     "ref": "entity_id"
+    },
+    {
+     "column": "item_id",
+     "table": "intelligence_items",
+     "ref": "id"
+    },
+    {
+     "column": "supersedes",
+     "table": "research_assessments",
+     "ref": "id"
+    }
+   ]
+  },
+  "research_assessments_current": {
+   "columns": [
+    "id",
+    "item_id",
+    "supersedes",
+    "is_current",
+    "technical_maturity_low",
+    "technical_maturity_high",
+    "technical_maturity_method",
+    "technical_maturity_evidence_ids",
+    "commercial_maturity_low",
+    "commercial_maturity_high",
+    "commercial_maturity_method",
+    "commercial_maturity_evidence_ids",
+    "horizon_kind",
+    "horizon_band",
+    "horizon_rule",
+    "horizon_confidence",
+    "horizon_trigger_note",
+    "refusal_reason",
+    "credibility_evidence_score",
+    "credibility_authority_score",
+    "computed_by",
+    "computed_at",
+    "status_token",
+    "created_at",
+    "entity_id",
+    "lifecycle_state"
+   ],
+   "uuid": [],
+   "defaults": {},
+   "fks": []
+  },
+  "screen_verdicts": {
+   "columns": [
+    "census_id",
+    "verdict",
+    "basis",
+    "reviewer",
+    "ruled_at"
+   ],
+   "uuid": [],
+   "defaults": {
+    "ruled_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "census_id",
+     "table": "census_worklist",
+     "ref": "id"
+    }
+   ]
+  },
+  "section_claim_provenance": {
+   "columns": [
+    "id",
+    "section_row_id",
+    "intelligence_item_id",
+    "claim_text",
+    "claim_kind",
+    "source_span",
+    "source_id",
+    "search_result_id",
+    "source_tier_at_grounding",
+    "extracted_at",
+    "verified_at",
+    "mint_hold_reason",
+    "basis_claim_id"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "extracted_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "basis_claim_id",
+     "table": "section_claim_provenance",
+     "ref": "id"
+    },
+    {
+     "column": "intelligence_item_id",
+     "table": "intelligence_items",
+     "ref": "id"
+    },
+    {
+     "column": "search_result_id",
+     "table": "agent_run_searches",
+     "ref": "id"
+    },
+    {
+     "column": "section_row_id",
+     "table": "intelligence_item_sections",
+     "ref": "id"
+    },
+    {
+     "column": "source_id",
+     "table": "sources",
+     "ref": "id"
+    }
+   ]
+  },
+  "sector_contexts": {
+   "columns": [
+    "sector",
+    "display_name",
+    "transport_modes",
+    "cargo_types",
+    "compliance_roles",
+    "synopsis_prompt",
+    "urgency_weights"
+   ],
+   "uuid": [],
+   "defaults": {
+    "transport_modes": [],
+    "cargo_types": [],
+    "compliance_roles": [],
+    "urgency_weights": {}
+   },
+   "fks": []
+  },
+  "sensitive_field_policy": {
+   "columns": [
+    "table_name",
+    "column_name",
+    "k_min",
+    "max_share_pct",
+    "min_lag_days",
+    "forward_looking_allowed",
+    "bucket_scheme",
+    "policy"
+   ],
+   "uuid": [],
+   "defaults": {
+    "k_min": 10,
+    "max_share_pct": 25,
+    "min_lag_days": 90,
+    "forward_looking_allowed": false,
+    "bucket_scheme": "undefined"
+   },
+   "fks": []
+  },
+  "signposts": {
+   "columns": [
+    "entity_id",
+    "assessment_id",
+    "watches",
+    "predicate",
+    "direction",
+    "fired_at",
+    "inference_record_id",
+    "outcome",
+    "outcome_assessed_at",
+    "scored_by",
+    "lifecycle_applied_at"
+   ],
+   "uuid": [],
+   "defaults": {},
+   "fks": [
+    {
+     "column": "assessment_id",
+     "table": "research_assessments",
+     "ref": "id"
+    },
+    {
+     "column": "entity_id",
+     "table": "entities",
+     "ref": "entity_id"
+    },
+    {
+     "column": "inference_record_id",
+     "table": "inference_records",
+     "ref": "inference_id"
+    },
+    {
+     "column": "watches",
+     "table": "entities",
+     "ref": "entity_id"
+    }
+   ]
+  },
+  "source_bias_tags": {
+   "columns": [
+    "id",
+    "source_id",
+    "dimension",
+    "tag",
+    "confidence",
+    "assignment_source",
+    "assigned_at"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "assigned_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "source_id",
+     "table": "sources",
+     "ref": "id"
+    }
+   ]
+  },
+  "source_citations": {
+   "columns": [
+    "id",
+    "citing_source_id",
+    "cited_source_id",
+    "context",
+    "detected_at"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "context": "",
+    "detected_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "cited_source_id",
+     "table": "sources",
+     "ref": "id"
+    },
+    {
+     "column": "citing_source_id",
+     "table": "sources",
+     "ref": "id"
+    }
+   ]
+  },
+  "source_reliability_ledger": {
+   "columns": [
+    "id",
+    "source_id",
+    "signpost_entity_id",
+    "assessment_id",
+    "outcome",
+    "scored_at",
+    "scored_by"
+   ],
+   "uuid": [],
+   "defaults": {
+    "scored_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "assessment_id",
+     "table": "research_assessments",
+     "ref": "id"
+    },
+    {
+     "column": "signpost_entity_id",
+     "table": "signposts",
+     "ref": "entity_id"
+    },
+    {
+     "column": "source_id",
+     "table": "sources",
+     "ref": "id"
+    }
+   ]
+  },
+  "source_tier_opinions": {
+   "columns": [
+    "id",
+    "target_source_id",
+    "opining_source_id",
+    "intelligence_item_id",
+    "opined_tier",
+    "opinion_source",
+    "opined_at",
+    "dismissed_at",
+    "dismissed_by",
+    "dismissed_reason"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "opined_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "dismissed_by",
+     "table": "users",
+     "ref": "id"
+    },
+    {
+     "column": "intelligence_item_id",
+     "table": "intelligence_items",
+     "ref": "id"
+    },
+    {
+     "column": "opining_source_id",
+     "table": "sources",
+     "ref": "id"
+    },
+    {
+     "column": "target_source_id",
+     "table": "sources",
+     "ref": "id"
+    }
+   ]
+  },
+  "source_trust_events": {
+   "columns": [
+    "id",
+    "source_id",
+    "event_type",
+    "details",
+    "created_by",
+    "reviewer_id",
+    "created_at"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "details": {},
+    "created_by": "system",
+    "created_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "source_id",
+     "table": "sources",
+     "ref": "id"
+    }
+   ]
+  },
+  "source_verifications": {
+   "columns": [
+    "id",
+    "candidate_url",
+    "candidate_name",
+    "jurisdiction_iso",
+    "language",
+    "ai_relevance_score",
+    "ai_freight_score",
+    "ai_trust_tier",
+    "verification_tier",
+    "action_taken",
+    "rejection_reason",
+    "verification_log",
+    "resulting_source_id",
+    "resulting_provisional_id",
+    "created_at"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "jurisdiction_iso": [],
+    "verification_log": {},
+    "created_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "resulting_provisional_id",
+     "table": "provisional_sources",
+     "ref": "id"
+    },
+    {
+     "column": "resulting_source_id",
+     "table": "sources",
+     "ref": "id"
+    }
+   ]
+  },
+  "sources": {
+   "columns": [
+    "id",
+    "name",
+    "url",
+    "description",
+    "base_tier",
+    "tier_at_creation",
+    "intelligence_types",
+    "domains",
+    "jurisdictions",
+    "transport_modes",
+    "update_frequency",
+    "last_checked",
+    "last_substantive_change",
+    "next_scheduled_check",
+    "status",
+    "paywalled",
+    "access_method",
+    "api_endpoint",
+    "rss_feed_url",
+    "confirmation_count",
+    "conflict_count",
+    "conflict_total",
+    "accuracy_rate",
+    "avg_lead_time_days",
+    "lead_time_samples",
+    "consecutive_accessible",
+    "total_checks",
+    "successful_checks",
+    "accessibility_rate",
+    "last_accessible",
+    "last_inaccessible",
+    "independent_citers",
+    "total_citations",
+    "highest_citing_tier",
+    "self_citation_count",
+    "trust_score_overall",
+    "trust_score_accuracy",
+    "trust_score_timeliness",
+    "trust_score_reliability",
+    "trust_score_citation",
+    "trust_score_computed_at",
+    "tier_history",
+    "cited_by",
+    "notes",
+    "created_at",
+    "updated_at",
+    "topic_tags",
+    "vertical_tags",
+    "processing_paused",
+    "admin_only",
+    "jurisdiction_iso",
+    "spotchecked",
+    "last_content_hash",
+    "last_intelligence_item_at",
+    "auto_run_enabled",
+    "api_endpoint_url",
+    "api_auth_method",
+    "api_response_format",
+    "source_role",
+    "secondary_roles",
+    "scope_topics",
+    "scope_modes",
+    "scope_verticals",
+    "expected_output",
+    "classification_assigned_at",
+    "observed_correctness_count",
+    "classification_confidence",
+    "classification_rationale",
+    "category",
+    "effective_tier",
+    "tier_override",
+    "override_reason",
+    "override_date",
+    "tier",
+    "institution_id",
+    "fetch_status",
+    "fetch_status_at",
+    "last_content_changed_at",
+    "organisation_entity_id",
+    "source_type",
+    "sitemap_url",
+    "sitemap_last_walked_at",
+    "sitemap_url_count",
+    "sitemap_walk_outcome",
+    "feed_last_probed_at"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "description": "",
+    "intelligence_types": [],
+    "jurisdictions": [],
+    "transport_modes": [],
+    "update_frequency": "weekly",
+    "status": "active",
+    "paywalled": false,
+    "access_method": "manual",
+    "confirmation_count": 0,
+    "conflict_count": 0,
+    "conflict_total": 0,
+    "accuracy_rate": 0.5,
+    "avg_lead_time_days": 0,
+    "lead_time_samples": 0,
+    "consecutive_accessible": 0,
+    "total_checks": 0,
+    "successful_checks": 0,
+    "accessibility_rate": 1,
+    "independent_citers": 0,
+    "total_citations": 0,
+    "self_citation_count": 0,
+    "trust_score_overall": 50,
+    "trust_score_accuracy": 20,
+    "trust_score_timeliness": 10,
+    "trust_score_reliability": 10,
+    "trust_score_citation": 10,
+    "trust_score_computed_at": "__now",
+    "tier_history": [],
+    "notes": "",
+    "created_at": "__now",
+    "updated_at": "__now",
+    "topic_tags": [],
+    "vertical_tags": [],
+    "processing_paused": false,
+    "admin_only": false,
+    "jurisdiction_iso": [],
+    "spotchecked": false,
+    "auto_run_enabled": true,
+    "secondary_roles": [],
+    "scope_topics": [],
+    "scope_modes": [],
+    "scope_verticals": [],
+    "observed_correctness_count": 0
+   },
+   "fks": [
+    {
+     "column": "institution_id",
+     "table": "institutions",
+     "ref": "id"
+    },
+    {
+     "column": "organisation_entity_id",
+     "table": "entities",
+     "ref": "entity_id"
+    }
+   ]
+  },
+  "staged_updates": {
+   "columns": [
+    "id",
+    "item_id",
+    "source_id",
+    "update_type",
+    "proposed_changes",
+    "reason",
+    "source_url",
+    "confidence",
+    "status",
+    "reviewed_by",
+    "reviewed_at",
+    "batch_id",
+    "created_at",
+    "full_brief",
+    "jurisdiction_iso",
+    "materialization_error",
+    "materialized_at",
+    "materialized_item_id",
+    "reviewer_notes"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "proposed_changes": {},
+    "reason": "",
+    "confidence": "MEDIUM",
+    "status": "pending",
+    "created_at": "__now",
+    "jurisdiction_iso": []
+   },
+   "fks": [
+    {
+     "column": "item_id",
+     "table": "intelligence_items",
+     "ref": "id"
+    },
+    {
+     "column": "materialized_item_id",
+     "table": "intelligence_items",
+     "ref": "id"
+    },
+    {
+     "column": "source_id",
+     "table": "sources",
+     "ref": "id"
+    }
+   ]
+  },
+  "state_cost_facts": {
+   "columns": [
+    "id",
+    "region_id",
+    "state_code",
+    "state_label",
+    "dimension",
+    "fact_label",
+    "value",
+    "unit",
+    "trend",
+    "source_id",
+    "statute_citation",
+    "effective_date",
+    "last_updated",
+    "created_at",
+    "origin_class",
+    "value_numeric"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "last_updated": "__now",
+    "created_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "region_id",
+     "table": "regions",
+     "ref": "id"
+    },
+    {
+     "column": "source_id",
+     "table": "sources",
+     "ref": "id"
+    }
+   ]
+  },
+  "statutory_computations": {
+   "columns": [
+    "computation_id",
+    "entity_id",
+    "scenario_key",
+    "obligation_id",
+    "formula_id",
+    "formula_version",
+    "statute_citation",
+    "unit_price",
+    "unit_price_unit",
+    "inputs",
+    "result",
+    "result_unit",
+    "computed_at"
+   ],
+   "uuid": [
+    "computation_id"
+   ],
+   "defaults": {
+    "scenario_key": "default",
+    "computed_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "entity_id",
+     "table": "entities",
+     "ref": "entity_id"
+    },
+    {
+     "column": "obligation_id",
+     "table": "entities",
+     "ref": "entity_id"
+    }
+   ]
+  },
+  "system_state": {
+   "columns": [
+    "id",
+    "global_processing_paused",
+    "updated_at",
+    "scrape_cadence",
+    "scrape_start_date",
+    "judgement_drain"
+   ],
+   "uuid": [],
+   "defaults": {
+    "id": true,
+    "global_processing_paused": false,
+    "updated_at": "__now",
+    "scrape_cadence": "off",
+    "judgement_drain": "off"
+   },
+   "fks": []
+  },
+  "system_state_flag_audit": {
+   "columns": [
+    "id",
+    "changed_at",
+    "changed_by",
+    "column_name",
+    "old_value",
+    "new_value"
+   ],
+   "uuid": [],
+   "defaults": {
+    "changed_at": "__now"
+   },
+   "fks": []
+  },
+  "theme_briefs": {
+   "columns": [
+    "theme_id",
+    "member_hash",
+    "member_count",
+    "title",
+    "brief_md",
+    "generated_at",
+    "generated_by",
+    "sections",
+    "claims",
+    "member_ids"
+   ],
+   "uuid": [],
+   "defaults": {
+    "generated_at": "__now",
+    "generated_by": "session-executor"
+   },
+   "fks": []
+  },
+  "user_item_state": {
+   "columns": [
+    "id",
+    "user_id",
+    "org_id",
+    "item_id",
+    "is_archived",
+    "archive_note",
+    "archived_at",
+    "created_at",
+    "updated_at"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "is_archived": false,
+    "created_at": "__now",
+    "updated_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "item_id",
+     "table": "intelligence_items",
+     "ref": "id"
+    },
+    {
+     "column": "org_id",
+     "table": "organizations",
+     "ref": "id"
+    },
+    {
+     "column": "user_id",
+     "table": "profiles",
+     "ref": "id"
+    }
+   ]
+  },
+  "user_watchlist": {
+   "columns": [
+    "id",
+    "user_id",
+    "org_id",
+    "item_type",
+    "item_id",
+    "created_at"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "created_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "org_id",
+     "table": "organizations",
+     "ref": "id"
+    },
+    {
+     "column": "user_id",
+     "table": "users",
+     "ref": "id"
+    }
+   ]
+  },
+  "vocabulary_mentions": {
+   "columns": [
+    "id",
+    "term_id",
+    "item_id",
+    "source_id",
+    "detector",
+    "surface_text",
+    "created_at"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "created_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "item_id",
+     "table": "intelligence_items",
+     "ref": "id"
+    },
+    {
+     "column": "source_id",
+     "table": "sources",
+     "ref": "id"
+    },
+    {
+     "column": "term_id",
+     "table": "vocabulary_terms",
+     "ref": "id"
+    }
+   ]
+  },
+  "vocabulary_terms": {
+   "columns": [
+    "id",
+    "kind",
+    "term_key",
+    "label",
+    "status",
+    "distinct_items",
+    "distinct_sources",
+    "first_seen_at",
+    "last_seen_at",
+    "adopted_at",
+    "adoption_rule",
+    "evidence"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "status": "proposed",
+    "distinct_items": 0,
+    "distinct_sources": 0,
+    "first_seen_at": "__now",
+    "last_seen_at": "__now",
+    "evidence": {}
+   },
+   "fks": []
+  },
+  "workspace_item_overrides": {
+   "columns": [
+    "id",
+    "org_id",
+    "item_id",
+    "priority_override",
+    "is_archived",
+    "archive_reason",
+    "archive_note",
+    "archived_at",
+    "notes",
+    "workspace_tags",
+    "created_at",
+    "updated_at",
+    "dismissed_at",
+    "owner_user_id",
+    "owner_assigned_by",
+    "owner_assigned_at",
+    "archived_by"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "is_archived": false,
+    "notes": "",
+    "workspace_tags": [],
+    "created_at": "__now",
+    "updated_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "archived_by",
+     "table": "profiles",
+     "ref": "id"
+    },
+    {
+     "column": "item_id",
+     "table": "intelligence_items",
+     "ref": "id"
+    },
+    {
+     "column": "org_id",
+     "table": "organizations",
+     "ref": "id"
+    },
+    {
+     "column": "owner_assigned_by",
+     "table": "profiles",
+     "ref": "id"
+    },
+    {
+     "column": "owner_user_id",
+     "table": "profiles",
+     "ref": "id"
+    }
+   ]
+  },
+  "workspace_settings": {
+   "columns": [
+    "id",
+    "org_id",
+    "sector_profile",
+    "jurisdiction_weights",
+    "default_filters",
+    "alert_config",
+    "home_sections",
+    "default_export_format",
+    "created_at",
+    "updated_at",
+    "notify_on_sector_activation",
+    "sectors_activation_signup_at",
+    "profile"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "sector_profile": [],
+    "default_filters": {},
+    "default_export_format": "html",
+    "created_at": "__now",
+    "updated_at": "__now",
+    "notify_on_sector_activation": false,
+    "profile": {}
+   },
+   "fks": [
+    {
+     "column": "org_id",
+     "table": "organizations",
+     "ref": "id"
+    }
+   ]
+  },
+  "workspace_tag_counts": {
+   "columns": [
+    "org_id",
+    "tag_id",
+    "item_count"
+   ],
+   "uuid": [],
+   "defaults": {},
+   "fks": []
+  },
+  "workspace_tags": {
+   "columns": [
+    "id",
+    "org_id",
+    "name",
+    "name_key",
+    "created_by",
+    "created_at"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "created_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "created_by",
+     "table": "profiles",
+     "ref": "id"
+    },
+    {
+     "column": "org_id",
+     "table": "organizations",
+     "ref": "id"
+    }
+   ]
+  }
+ }
+}

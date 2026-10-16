@@ -15,6 +15,15 @@ export function canonicalUrl(u: string | null | undefined): string | null {
     .replace(/[/.,;:]+$/, "");
 }
 
+/** decodeURIComponent that answers null for a malformed % sequence instead of throwing: the caller states what it does without a decoded form. */
+export function decodeUriOrNull(s: string): string | null {
+  try {
+    return decodeURIComponent(s);
+  } catch {
+    return null;
+  }
+}
+
 /** The lower-cased host of a URL or bare host, without `www.`; empty when it does not parse. */
 export function hostOf(urlOrHost: string | null | undefined): string {
   const raw = String(urlOrHost || "").trim();

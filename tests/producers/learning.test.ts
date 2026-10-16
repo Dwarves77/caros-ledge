@@ -311,7 +311,7 @@ test("IMP-025: the notification outbox sends each pending row through dispatchNo
     { id: "n2", user_id: "u2", kind: "assignment", payload: {}, attempts: 1, status: "pending", created_at: "2026-10-02" },
     { id: "n3", user_id: "u3", kind: "archive", payload: {}, attempts: 4, status: "pending", created_at: "2026-10-03" },
     { id: "n4", user_id: "u4", kind: "archive", payload: {}, attempts: 0, status: "sent", created_at: "2026-10-04" },
-  ] });
+  ] }, { schema: null }); // notification_outbox is created by P2-S3's migration; the generated schema carries it from that merge
   const sent: string[] = [];
   const dispatch = async (a: { userId: string }) => (a.userId === "u1" ? (sent.push(a.userId), null) : "smtp down");
   const dry = await runNotificationOutbox({ sb: db.db, now: () => NOW, dispatch: dispatch as never });
@@ -323,6 +323,6 @@ test("IMP-025: the notification outbox sends each pending row through dispatchNo
   assert.deepEqual([byId.n2?.status, byId.n2?.attempts, byId.n2?.last_error], ["pending", 2, "smtp down"]);
   assert.deepEqual([byId.n3?.status, byId.n3?.attempts], ["failed", 5]);
   assert.equal(byId.n4?.status, "sent");
-  const failed = await runNotificationOutbox({ sb: memoryDb({}, { failures: [{ table: "notification_outbox", op: "select", message: "down" }] }).db, now: () => NOW });
+  const failed = await runNotificationOutbox({ sb: memoryDb({}, { schema: null, failures: [{ table: "notification_outbox", op: "select", message: "down" }] }).db, now: () => NOW });
   assert.equal(failed.outcome, "failed");
 });

@@ -24,7 +24,7 @@ export const GET = route("/api/workspace/archive-impact", async (request) => {
 
   const db = auth.client;
   // Branch on the shape rather than composing an .or() string from caller input (an injection surface); .eq() parameterises.
-  const itemQuery = db.from("intelligence_items").select("id, legacy_id, title, priority, effective_priority");
+  const itemQuery = db.from("intelligence_items").select("id, legacy_id, title, priority");
   const { data: item, error: itemError } = await (isUuid(itemId) ? itemQuery.eq("id", itemId) : itemQuery.eq("legacy_id", itemId)).maybeSingle();
   if (itemError) throw new LookupError("intelligence_items", itemError);
   if (!item) throw new HttpError(404, `intelligence_items row not found for itemId=${itemId}`);
@@ -35,7 +35,7 @@ export const GET = route("/api/workspace/archive-impact", async (request) => {
   let onTeamWatchlist = false;
   let ownerUserId: string | null = null;
   let alreadyWorkspaceArchived = false;
-  let priority = ((item.effective_priority as string | null) || (item.priority as string | null)) ?? null;
+  let priority = (item.priority as string | null) ?? null; // the workspace override below makes it the effective priority
   if (orgId) {
     const watchers = await orgWatchersOf(serviceClient(), orgId, watchKeys);
     watcherIds = watchers.watcherIds.filter((id) => id !== auth.userId);

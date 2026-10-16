@@ -44,7 +44,7 @@ export function secFairAccessUaForUrl(url: string, env: Record<string, string | 
 }
 
 /** PDF bytes to text with whitespace collapsed (unpdf's serverless pdf.js). Throws on a non-PDF or an empty text layer: a corrupt PDF is a roadblock, not content. */
-export async function extractPdfText(bytes: Uint8Array): Promise<{ text: string; pages: number | null; title: string | null }> {
+export async function extractPdfText(bytes: Uint8Array): Promise<{ text: string; pages: number | null; title: string | null; metaError: string | null }> {
   const { extractText, getDocumentProxy, getMeta } = await import("unpdf");
   const owned = new Uint8Array(bytes.byteLength);
   owned.set(bytes);
@@ -53,13 +53,14 @@ export async function extractPdfText(bytes: Uint8Array): Promise<{ text: string;
   const full = String(text || "").replace(/\s+/g, " ").trim();
   if (!full) throw new Error("pdf extracted to empty text");
   let title: string | null = null;
+  let metaError: string | null = null;
   try {
     const t = ((await getMeta(pdf)).info as Record<string, unknown> | undefined)?.Title;
     if (typeof t === "string" && t.trim()) title = t.trim().slice(0, 500);
-  } catch {
-    // metadata is optional
+  } catch (e) {
+    metaError = e instanceof Error ? e.message : String(e);
   }
-  return { text: full, pages: totalPages, title };
+  return { text: full, pages: totalPages, title, metaError };
 }
 
 /**

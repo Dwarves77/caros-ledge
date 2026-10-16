@@ -13,22 +13,10 @@ export const TITLE = "Regulation (EU) 2023/9999 establishing greenhouse gas emis
 export const CELEX_URL = OFFICIAL_URL;
 export { OFFICIAL_TEXT };
 
-type Q = { lim: number | null; f(op: string, col: string, val: unknown, pred: (r: Row) => boolean): unknown };
-const like = (p: string) => new RegExp(`^${p.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/[%*]/g, ".*")}$`, "i");
-/**
- * The intake memory database plus the two things the registry and dedup reads need: `.or("col.ilike.pattern,...")` and, with `cap`, the server's max_rows cut on an UNRANGED
- * select (a ranged read is not cut), which is what made the old dedup see at most 1,000 rows.
- */
+/** The shared memory database; with `capped`, the server's max_rows cut applies to an UNRANGED select (a ranged read is not cut), which is what made the old dedup see at most 1,000 rows. */
 export class WorldDb extends MemDb {
-  cap = false;
-  override from(table: string) {
-    const q = super.from(table) as unknown as Q & { or(expr: string): unknown };
-    if (this.cap) q.lim = 1000;
-    q.or = (expr: string) => {
-      const tests = expr.split(",").map((p) => /^([a-z_]+).ilike.(.*)$/.exec(p)).map((m) => (r: Row) => !!m && like(m[2] ?? "").test(String(r[m[1] ?? ""] ?? "")));
-      return q.f("or", "or", expr, (r) => tests.some((t) => t(r)));
-    };
-    return q as unknown;
+  constructor(capped = false) {
+    super(capped ? { cap: 1000 } : {});
   }
 }
 
@@ -67,8 +55,7 @@ const SLOTS = [{ item_type: "regulation", slot_key: "binding_position", descript
 
 /** One registered source, one would_mint census row with a stored capture, the required slots, and the database's provenance gate. */
 export function makeWorld(opts: { capped?: boolean; census?: Row[]; items?: Row[]; storedText?: string | null; skipScreenTable?: boolean } = {}) {
-  const db = new WorldDb();
-  db.cap = !!opts.capped;
+  const db = new WorldDb(!!opts.capped);
   db.seed("sources", [{ id: SOURCE, name: "EUR-Lex", url: "https://eur-lex.europa.eu/", base_tier: 1, tier_override: null, status: "active", institution_id: null, category: "regulatory" }]);
   db.seed("census_worklist", opts.census ?? [{ id: CENSUS, source_id: SOURCE, document_url: CELEX_URL, title: TITLE, surface_tags: [], instrument_identifier: "32023R9999", dryrun_disposition: "would_mint", hold_reason: null, notes: null, is_archived: false, enumeration_status: "discovered" }]);
   db.seed("intelligence_items", opts.items ?? []);

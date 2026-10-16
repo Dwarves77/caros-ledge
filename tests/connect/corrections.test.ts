@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { createCorrection, GET, listCorrections, mapDbError, planCorrection, POST, REVOKE, revokeCorrection } from "@/features/corrections/api";
-import { findOrphanedFactCorrections, suppressedClaimMatcher, isPairTombstoned, latestPerTarget, removedTagsFor, tombstonedPairKeys, validateCorrectionInput, type Correction } from "@/features/corrections/model";
+import { findOrphanedFactCorrections, suppressedClaimMatcher, isPairTombstoned, latestPerTarget, removedTagsFor, tombstonedPairKeys, validateCorrectionInput, type Correction } from "@/core/corrections";
 import { loadSuppressedClaims, redactSuppressedClaims, removeClaimText } from "@/features/corrections/redact";
 
 import { fakeDb } from "../_support/fake-db.ts";

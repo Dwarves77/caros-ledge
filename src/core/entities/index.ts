@@ -9,5 +9,7 @@ export { hasOpenFlag, linkItems, readLinkCorpus } from "./link-items";
 export { LINEAGE_GAP_CREATED_BY, partitionLineageWrites, planLineageGapTargets } from "./lineage";
 export { assertMoatBoundary, classifyRelationship, detectMentions, matchExistingSubject, planLinks, planLinkWrites, resolveMention } from "./mentions";
 export { distinctNormalized, planInstrument, planInstrumentFkUpdates, planJurisdiction, planJurisdictionRefs, planOrganisation, planOrganisationFkUpdates } from "./plan";
+export { entitiesByKind, regionCodes } from "./lookup";
+export type { EntityName, RegionCode } from "./lookup";
 export { congruence, sourceRole } from "./source-role";
 export { formatCorridorLabel, formatCorridorLabelCompact, nameForJurisdiction, unlocodeName } from "./unlocode-names";

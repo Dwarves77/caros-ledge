@@ -6,7 +6,7 @@
 // taller than its baseline row. The pixel diff is reported at a 2 percent threshold and GATES only the routes listed in gates.pixelExact. Anything a
 // baseline has that the capture lacks must match an entry of `approved` (BUILD-PLAN ruling 10, or a ruling the entry cites): only those may differ.
 // A route the capture marks `skipped` (no signed-in credentials) is reported, never failed. Exit 0 clean, 1 on any FAIL.
-import { readFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 
 import { chromium } from 'playwright';
 
@@ -15,6 +15,8 @@ const KEEP = new Set(['privacy@carosledge.com']);
 // The baseline was sanitized (every email, placeholders included, became smoke@example.invalid); the capture gets the same treatment before comparing.
 const clean = (s) => String(s ?? '').replace(EMAIL, (m) => (KEEP.has(m) ? m : 'smoke@example.invalid')).replace(/\s+/g, ' ').trim();
 const PIXEL_THRESHOLD = 0.02;
+// IMP-062: the diff images land beside the capture's report so the parity job uploads them as an artifact.
+const DIFF_DIR = 'parity-diff';
 
 function parseArgs(argv) {
   const a = { baseline: 'tests/parity/baseline', config: 'tests/parity/approved-changes.json' };
@@ -99,8 +101,22 @@ async function pixelDiff(browser, aPath, bPath) {
         const da = px(ia);
         const db = px(ib);
         let diff = 0;
-        for (let i = 0; i < da.length; i += 4) if (Math.abs(da[i] - db[i]) + Math.abs(da[i + 1] - db[i + 1]) + Math.abs(da[i + 2] - db[i + 2]) > 48) diff += 1;
-        return { ratio: diff / (w * h), sizeA: [ia.width, ia.height], sizeB: [ib.width, ib.height] };
+        // IMP-062: the diff image a reviewer looks at: the capture faded, every differing pixel red.
+        const out = document.createElement('canvas');
+        out.width = w;
+        out.height = h;
+        const og = out.getContext('2d');
+        const img = og.createImageData(w, h);
+        for (let i = 0; i < da.length; i += 4) {
+          const differs = Math.abs(da[i] - db[i]) + Math.abs(da[i + 1] - db[i + 1]) + Math.abs(da[i + 2] - db[i + 2]) > 48;
+          if (differs) diff += 1;
+          img.data[i] = differs ? 255 : Math.round((db[i] + 765) / 4);
+          img.data[i + 1] = differs ? 0 : Math.round((db[i + 1] + 765) / 4);
+          img.data[i + 2] = differs ? 0 : Math.round((db[i + 2] + 765) / 4);
+          img.data[i + 3] = 255;
+        }
+        og.putImageData(img, 0, 0);
+        return { ratio: diff / (w * h), sizeA: [ia.width, ia.height], sizeB: [ib.width, ib.height], image: diff > 0 ? out.toDataURL('image/png') : null };
       },
       [a.toString('base64'), b.toString('base64')],
     );
@@ -156,6 +172,10 @@ async function main() {
           if (d.error) lines.push(`${viewport}: pixel compare error ${d.error}`);
           else {
             const over = d.ratio > PIXEL_THRESHOLD;
+            if (d.image) {
+              await mkdir(DIFF_DIR, { recursive: true });
+              await writeFile(`${DIFF_DIR}/${stem}.png`, Buffer.from(d.image.split(',')[1], 'base64'));
+            }
             const waived = approved.some((a) => a.kind === 'pixel' && (a.viewport === undefined || a.viewport === viewport));
             lines.push(`${viewport}: pixel diff ${(d.ratio * 100).toFixed(2)}% (threshold ${PIXEL_THRESHOLD * 100}%)${over && pixelExact.has(route.name) ? (waived ? ' over, waived by an approved change' : ' GATE') : ''}`);
             if (over && pixelExact.has(route.name) && !waived) routeFail = true;

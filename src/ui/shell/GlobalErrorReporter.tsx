@@ -19,30 +19,33 @@ function underLimits(): boolean {
     return false;
   }
 }
-function bump(): void {
+/** True when the report was counted; false when storage is blocked (the report is then not rate-limited by storage). */
+function bump(): boolean {
   try {
     sessionStorage.setItem(COUNT_KEY, String(Number(sessionStorage.getItem(COUNT_KEY) || "0") + 1));
     sessionStorage.setItem(LAST_KEY, String(Date.now()));
+    return true;
   } catch {
-    // Storage blocked: the report is simply not rate-limited by storage.
+    return false;
   }
 }
 
 /** Post one client error to /api/telemetry/error (P2-03's ingest): per-session capped, spaced, bounded, signed-in only (a pre-auth page is not captured). */
-export async function reportClientError(message: string, stack?: string | null): Promise<void> {
+export async function reportClientError(message: string, stack?: string | null): Promise<boolean> {
   try {
-    if (!underLimits()) return;
+    if (!underLimits()) return false;
     bump();
     const headers = await authHeaders({ "content-type": "application/json" });
-    if (!headers) return;
+    if (!headers) return false;
     await fetch("/api/telemetry/error", {
       method: "POST",
       keepalive: true,
       headers,
       body: JSON.stringify({ message: String(message || "Unknown client error").slice(0, MESSAGE_MAX), stack: stack ? String(stack).slice(0, STACK_MAX) : null, path: window.location.pathname }),
     });
+    return true;
   } catch {
-    // Reporting must never throw into the page.
+    return false; // reporting never throws into the page: it answers whether the report went out
   }
 }
 

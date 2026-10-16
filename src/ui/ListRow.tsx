@@ -5,7 +5,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-import { hasBiasTags, type BiasTagInput } from "@/core/sources/bias-tags";
+import { hasBiasTags, type BiasTagInput } from "@/core/sources";
 import type { UrgencyBand } from "@/core/lists";
 import type { ImpactScores, TimelineEntry } from "@/core/types";
 
