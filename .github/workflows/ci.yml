@@ -5,6 +5,7 @@ name: CI
 # Job `turn`: the turn runtime (scripts/turn.mjs). It runs a turn only on a dispatch, with the project secrets; any other event, and a dispatch with no secrets locally, self-skips with exit 2 and a notice.
 # Job `windows`: the test step alone on Windows, once per wave (push to main and dispatch, never a pull request).
 # Job `parity`: the built app on the runner, the UX smoke, and the capture compared with tests/parity/baseline (UI slices).
+# Job `report`: after the others (needs, if always), downloads the parity and test artifacts and writes the one job summary and the one PR comment; it polls nothing and never fails the run.
 
 on:
   pull_request:
@@ -57,21 +58,20 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
           NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder
         run: npm run build
-      - run: npm test
+      - name: Tests (output kept for the report job)
+        shell: bash -eo pipefail {0}
+        run: npm test 2>&1 | tee test-output.txt
       - run: npm run tree-checks
       - run: npm run ui-checks
       - run: npm run loc
       - name: Connection check (nothing runs alone)
         run: npm run connections
-      - name: CI report comment
-        if: github.event_name == 'pull_request' && always()
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPO: ${{ github.repository }}
-          PR: ${{ github.event.pull_request.number }}
-          RUN_ID: ${{ github.run_id }}
-          CI_STATUS: ${{ job.status }}
-        run: node scripts/ci/pr-comment.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ci-results
+          path: test-output.txt
+          if-no-files-found: ignore
 
   schema:
     name: schema
@@ -212,5 +212,41 @@ jobs:
           name: parity-capture
           path: |
             parity-capture
+            parity-diff
             parity-report.txt
             next-start.log
+
+  # The one writer of the run's record: runs after the others, polls nothing, holds no secrets, and never fails the run itself (it reports the others' conclusions).
+  report:
+    name: report
+    needs: [ci, schema, parity]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: parity-capture
+          path: parity-artifact
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: ci-results
+          path: results-artifact
+      - name: Job summary and the PR comment
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          RUN_ID: ${{ github.run_id }}
+          NEEDS: ${{ toJSON(needs) }}
+        run: node scripts/ci/pr-comment.mjs
