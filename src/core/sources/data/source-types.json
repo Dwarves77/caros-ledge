@@ -1,0 +1,68 @@
+[
+ {
+  "value": "environmental_body",
+  "label": "Environmental body",
+  "definition": "Government environmental regulator or environment ministry/agency: issues environmental rules, enforces environmental law, publishes air-quality, emissions and inventory data.",
+  "classifiable": true
+ },
+ {
+  "value": "legislature",
+  "label": "Legislature",
+  "definition": "National, sub-national or supra-national legislative body: passes laws; the body, not the gazette.",
+  "classifiable": true
+ },
+ {
+  "value": "gazette",
+  "label": "Gazette",
+  "definition": "Official publication of legal text (regulations, decrees, notices): the journal, not the body.",
+  "classifiable": false
+ },
+ {
+  "value": "regulatory_executive",
+  "label": "Regulatory executive",
+  "definition": "Executive-branch regulator that is not environmental (customs, transport, energy, aviation, maritime, occupational safety).",
+  "classifiable": false
+ },
+ {
+  "value": "judiciary",
+  "label": "Judiciary",
+  "definition": "Courts and tribunals issuing binding rulings on environmental or freight regulation.",
+  "classifiable": false
+ },
+ {
+  "value": "standards_body",
+  "label": "Standards body",
+  "definition": "Standards organizations publishing technical standards relevant to freight emissions accounting, vehicles, fuel or packaging.",
+  "classifiable": false
+ },
+ {
+  "value": "industry_assoc",
+  "label": "Industry association",
+  "definition": "Industry and trade associations representing operators: positions, interpretation, sometimes voluntary standards.",
+  "classifiable": false
+ },
+ {
+  "value": "treaty_org",
+  "label": "Treaty organization",
+  "definition": "Intergovernmental organizations created by treaty (UN system, OECD, EU institutions in a non-regulatory capacity).",
+  "classifiable": false
+ },
+ {
+  "value": "research_institute",
+  "label": "Research institute",
+  "definition": "Universities, national labs and think tanks publishing primary research and policy analysis.",
+  "classifiable": false
+ },
+ {
+  "value": "news",
+  "label": "News",
+  "definition": "Trade press and journalism.",
+  "classifiable": false
+ },
+ {
+  "value": "data_aggregator",
+  "label": "Data aggregator",
+  "definition": "Aggregators and datasets that index across primary sources; closer to tooling than a primary source.",
+  "classifiable": false
+ }
+]

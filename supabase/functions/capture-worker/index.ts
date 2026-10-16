@@ -1,0 +1,45 @@
+// Ported from old_repo/supabase/functions/capture-worker/index.ts (lines 68-70)
+// Ported from old_repo/supabase/functions/capture-worker/index.ts (lines 222-256)
+// Ported from old_repo/supabase/functions/capture-worker/index.ts (lines 589-614)
+// The capture worker: an Edge Function that stays an Edge Function. The contract and the logic are in process.ts (five clauses, ADR-016); the fetch policy is src/core/fetch/policy.ts,
+// imported relatively so this runtime and the Node transports share one policy. It reads no gate and no kill switch: the harness dispatcher is the one invoker and reads both before any call.
+import { createClient } from "jsr:@supabase/supabase-js@2";
+import { extractText, getDocumentProxy, getMeta } from "npm:unpdf@0";
+
+import { drain, isServiceRoleRequest, type Db, type WorkerDeps } from "./process.ts";
+
+const json = (obj: unknown, status = 200): Response => new Response(JSON.stringify(obj), { status, headers: { "Content-Type": "application/json" } });
+
+async function extractPdf(bytes: Uint8Array) {
+  const pdf = await getDocumentProxy(bytes);
+  const { totalPages, text } = await extractText(pdf, { mergePages: true });
+  let title: string | null = null;
+  try {
+    const t = (await getMeta(pdf))?.info as Record<string, unknown> | undefined;
+    if (typeof t?.Title === "string" && t.Title.trim().length > 0) title = t.Title.trim().slice(0, 500);
+  } catch {
+    // metadata is optional
+  }
+  return { text: typeof text === "string" ? text : String(text ?? ""), pages: totalPages, title };
+}
+
+Deno.serve(async (req: Request) => {
+  const url = Deno.env.get("SUPABASE_URL");
+  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!url || !key) return json({ error: "worker is not configured" }, 500);
+  if (!isServiceRoleRequest(req.headers.get("authorization"), key)) return json({ error: "service role required" }, 401);
+  let body: { limit?: number; queue_ids?: string[] | null } = {};
+  try {
+    body = await req.json();
+  } catch {
+    // an empty body is fine
+  }
+  const deps: WorkerDeps = {
+    db: createClient(url, key) as unknown as Db,
+    extractPdf,
+    env: { STORAGE_MAX_CHARS: Deno.env.get("STORAGE_MAX_CHARS") },
+    now: () => Date.now(),
+  };
+  const out = await drain(deps, body);
+  return json(out.body, out.status);
+});

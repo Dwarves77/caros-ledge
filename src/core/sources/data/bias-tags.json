@@ -1,0 +1,113 @@
+{
+ "dimensions": [
+  {
+   "dimension": "funding",
+   "label": "Funding",
+   "tags": [
+    {
+     "tag": "industry-funded",
+     "label": "Industry funded"
+    },
+    {
+     "tag": "government-funded",
+     "label": "Government funded"
+    },
+    {
+     "tag": "foundation-funded",
+     "label": "Foundation funded"
+    },
+    {
+     "tag": "subscription-supported",
+     "label": "Subscription supported"
+    },
+    {
+     "tag": "academic-institutional",
+     "label": "Academic institution"
+    },
+    {
+     "tag": "mixed-funded",
+     "label": "Mixed funding"
+    },
+    {
+     "tag": "funding-opaque",
+     "label": "Funding undisclosed"
+    }
+   ]
+  },
+  {
+   "dimension": "methodology",
+   "label": "Method",
+   "tags": [
+    {
+     "tag": "peer-reviewed",
+     "label": "Peer reviewed"
+    },
+    {
+     "tag": "methodologically-transparent",
+     "label": "Method disclosed"
+    },
+    {
+     "tag": "analytical-synthesis",
+     "label": "Analytical synthesis"
+    },
+    {
+     "tag": "editorial-opinion",
+     "label": "Editorial opinion"
+    },
+    {
+     "tag": "advocacy",
+     "label": "Advocacy"
+    },
+    {
+     "tag": "factual-reporting",
+     "label": "Factual reporting"
+    },
+    {
+     "tag": "standards-defining",
+     "label": "Standards defining"
+    }
+   ]
+  },
+  {
+   "dimension": "stakeholder",
+   "label": "Position",
+   "tags": [
+    {
+     "tag": "industry-incumbent",
+     "label": "Industry incumbent"
+    },
+    {
+     "tag": "industry-challenger",
+     "label": "Industry challenger"
+    },
+    {
+     "tag": "regulator-aligned",
+     "label": "Regulator aligned"
+    },
+    {
+     "tag": "environmental-advocate",
+     "label": "Environmental advocate"
+    },
+    {
+     "tag": "independent-research",
+     "label": "Independent research"
+    },
+    {
+     "tag": "customer-perspective",
+     "label": "Customer perspective"
+    },
+    {
+     "tag": "labor-perspective",
+     "label": "Labour perspective"
+    },
+    {
+     "tag": "investor-perspective",
+     "label": "Investor perspective"
+    }
+   ]
+  }
+ ],
+ "adoptThreshold": 0.65,
+ "lowerConfidenceBelow": 0.8,
+ "assignmentSource": "haiku_auto_high_confidence"
+}
