@@ -1,7 +1,9 @@
 name: CI
 
-# The one workflow. Job `ci`: lint, typecheck, build, tests, tree checks, LOC gates.
+# The one workflow. Job `ci`: lint, typecheck, build, tests, tree checks, LOC gates, the connection check.
 # Job `schema`: supabase/schema.sql applied to an empty Postgres 15, then the property checks.
+# Job `turn`: the turn runtime (scripts/turn.mjs). It runs a turn only on a dispatch, with the project secrets; any other event, and a dispatch with no secrets locally, self-skips with exit 2 and a notice.
+# Job `windows`: the test step alone on Windows, once per wave (push to main and dispatch, never a pull request).
 
 on:
   pull_request:
@@ -9,6 +11,19 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      stage:
+        description: 'Turn stage: sweep, sweep-research, change, capture, intake, connect, propagate, briefs, all or ops'
+        default: all
+      mode:
+        description: 'dry or apply (apply is refused while the scrape cadence is off)'
+        default: dry
+      input:
+        description: 'Turn input, a JSON object keyed by stage'
+        default: '{}'
+      chain:
+        description: 'Run the stage downstream stages too (false runs only the named stage)'
+        default: 'true'
 
 permissions:
   contents: read
@@ -40,6 +55,8 @@ jobs:
       - run: npm test
       - run: npm run tree-checks
       - run: npm run loc
+      - name: Connection check (nothing runs alone)
+        run: npm run connections
 
   schema:
     name: schema
@@ -67,3 +84,52 @@ jobs:
       - run: npm ci --no-audit # the source-backfill generator imports the classify rules (zod)
       - name: Apply schema.sql to an empty Postgres 15, then run the property checks
         run: npm run schema:apply
+
+  turn:
+    name: turn
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      WORKER_SECRET: ${{ secrets.WORKER_SECRET }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install (a dispatch only: any other event self-skips before it needs the sources)
+        if: github.event_name == 'workflow_dispatch'
+        run: npm ci --no-audit
+      - name: Playwright Chromium (the headless transport runs on the runner)
+        if: github.event_name == 'workflow_dispatch'
+        run: npx playwright install --with-deps chromium
+      - name: Turn
+        run: |
+          set +e
+          input="$TURN_INPUT"
+          [ -n "$input" ] || input='{}'
+          node scripts/turn.mjs --stage "${TURN_STAGE:-all}" --mode "${TURN_MODE:-dry}" --input "$input" ${TURN_NO_CHAIN:+--no-chain}
+          code=$?
+          if [ "$code" -eq 2 ]; then echo "::notice title=turn::self-skipped (exit 2): see the step output"; exit 0; fi
+          exit "$code"
+        env:
+          TURN_STAGE: ${{ github.event.inputs.stage }}
+          TURN_MODE: ${{ github.event.inputs.mode }}
+          TURN_INPUT: ${{ github.event.inputs.input }}
+          TURN_NO_CHAIN: ${{ github.event.inputs.chain == 'false' && '1' || '' }}
+
+  windows:
+    name: ci-windows
+    if: github.event_name != 'pull_request'
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --no-audit
+      - run: npm test

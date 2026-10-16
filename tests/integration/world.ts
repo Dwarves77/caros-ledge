@@ -1,12 +1,12 @@
 // The integration world: ONE fixture database and ONE fixture transport that the whole turn runs over with the real wiring (buildDeps). Nothing here stubs a slice: the registered sources, the feed, the pages
 // and the market document are data; every stage is the real stage calling the real module. Surface slices extend this file with their reader (WAVE-2-COMMON addendum 2).
-import { drain, type WorkerDeps } from "../../supabase/functions/capture-worker/process.ts";
 import { buildDeps, type BuiltDeps } from "@/core/turn/wiring";
 import { ecbFx } from "@/features/market/producers";
 import type { MarketMethodDeps } from "@/core/propagation";
 import type { Catalog } from "@/core/producers";
 import { PRODUCER_CATALOG } from "@/core/turn/wiring";
 
+import { drain, type WorkerDeps } from "../../supabase/functions/capture-worker/process.ts";
 import { MemDb, installPortalLedgerRpc, installPropagationRpcs, type Row } from "../_support/memdb.ts";
 import { OFFICIAL_TEXT } from "../intake/fixtures.ts";
 import { installProvenanceRpc } from "../intake/fixtures.ts";

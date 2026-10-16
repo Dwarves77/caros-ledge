@@ -6,6 +6,7 @@
 // host is rated by the class table; a figure whose source cannot be rated is refused by name; an entity is resolved by exact canonical name and never minted. With no
 // rows file the run records the gap and writes nothing (INV-121).
 import { fetchAllRows, type Db } from "@/core/db";
+import { entitiesByKind } from "@/core/entities";
 import { loadRowsFile, registerCitedSource, requireCitation, resolveEntityByName, RowsFileError, type Citation } from "@/core/producers/rows-file";
 import type { ParseOut, ProducerCtx, ProducerSpec } from "@/core/producers/runner";
 import { keyOf, type Rec } from "@/core/producers/upsert-plan";
@@ -98,8 +99,7 @@ interface RowsFileDef {
   parseRow(row: Rec, i: number, entities: readonly Entity[]): ParsedRow;
 }
 async function readEntities(sb: Db | null, kind: string): Promise<Entity[]> {
-  if (!sb) return [];
-  return fetchAllRows<Entity>((from, to) => sb.from("entities").select("entity_id, canonical_name").eq("kind", kind).order("entity_id", { ascending: true }).range(from, to) as never, { cap: 100_000 });
+  return sb ? entitiesByKind(sb, kind) : [];
 }
 
 /** The one rows-file driver: parse every row (a bad row is refused by name, never fatal to the others), rate the citation host, insert only rows not already present. */

@@ -55,11 +55,9 @@ test("the method registry never overwrites a registration", () => {
 type Row = Record<string, unknown>;
 /** The rows this test holds, with the shared propagation rpcs (installPropagationRpcs): invalidate_dependents marks dependents stale, register_derived_value supersedes. */
 function propagationWorld() {
-  // eslint-disable-next-line prefer-const
-  let m: ReturnType<typeof memoryDb>;
   const input = (table: string, pk: string) => ({ table, pk });
   const dv = (id: string, inputs: ReturnType<typeof input>[]) => ({ value_id: id, entity_id: null, method_id: "carbon_intensity_tkm", method_version: "1.0.0", value: 1, admissibility: "calculation_ok", unit: "g", currency: null, inputs });
-  m = memoryDb({
+  const m = memoryDb({
     emission_factors: [{ factor_id: "F1", ttw_co2e: 10, source_key: "s", origin_class: "official", pedigree: 1 }, { factor_id: "F2", ttw_co2e: 20, source_key: "s", origin_class: "official", pedigree: 1 }],
     derived_values: [dv("D1", [input("emission_factors", "F1")]), dv("D2", [input("emission_factors", "F1")]), dv("D3", [input("emission_factors", "F2")])],
     derivation_edges: [

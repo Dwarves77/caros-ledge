@@ -7,8 +7,9 @@
 import type { Db } from "@/core/db";
 import { canonicalJurisdictionCode, GENERIC_JURISDICTIONS } from "@/core/entities/id";
 import { isValid } from "@/core/contracts/vocabularies";
+import { qb, type Qb } from "@/core/db";
 
-import { countOf, qb, rowsOf, type Qb } from "./qb";
+import { countOf, rowsOf } from "./qb";
 import { fetchRegisterFacetOptions, type RegisterFacets } from "./register-facets";
 
 export const UNCLASSIFIED = "unclassified";

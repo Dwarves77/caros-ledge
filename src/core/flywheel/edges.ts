@@ -7,7 +7,7 @@
 import type { Db } from "@/core/db";
 import { fetchAllByIdChunks, fetchAllRows } from "@/core/db";
 import { log } from "@/core/shared/log";
-import { isPairTombstoned, readAllCorrections, readConnectionCorrectionsForMany, tombstonedPairKeys } from "@/features/corrections/model";
+import { isPairTombstoned, readAllCorrections, readConnectionCorrectionsForMany, tombstonedPairKeys } from "@/core/corrections";
 
 import relationships from "./data/relationships.json";
 import type { BasisEntry } from "./discover";

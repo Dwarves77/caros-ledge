@@ -1,6 +1,9 @@
 // IMP-030: every stage runtime registers in this one list; the dispatcher (runFamily), the CLI and the connection check read it. A stage appears here once, with the family it records under.
 import { FAMILIES, type FamilyFn } from "@/core/harness";
+import type { FamilyCall } from "@/core/harness";
+import type { RunResult } from "@/core/types/run-result";
 
+import { runOps } from "./ops";
 import { runBriefs } from "./stages/briefs";
 import { runCapture } from "./stages/capture";
 import { runChange } from "./stages/change";
@@ -10,8 +13,6 @@ import { runPropagate } from "./stages/propagate";
 import { runResearch } from "./stages/sweep-research";
 import { runSweep } from "./stages/sweep";
 import type { BuiltDeps } from "./wiring";
-import type { FamilyCall } from "@/core/harness";
-import type { RunResult } from "@/core/types/run-result";
 
 /** The ordered plan (runtimes-b section 8): each stage is the previous one's downstream. */
 export const STAGES = ["sweep", "sweep-research", "change", "capture", "intake", "connect", "propagate", "briefs"] as const;
@@ -30,5 +31,5 @@ export const familyOfStage = (stage: Stage): string => {
 
 /** The registry the run frame dispatches through: family name to its bound function. */
 export function familyFns(d: BuiltDeps): Record<string, FamilyFn> {
-  return Object.fromEntries(STAGES.map((stage) => [familyOfStage(stage), (call: FamilyCall) => STAGE_RUNNERS[stage](call, d)]));
+  return { ...Object.fromEntries(STAGES.map((stage) => [familyOfStage(stage), (call: FamilyCall) => STAGE_RUNNERS[stage](call, d)])), ops: (call: FamilyCall) => runOps(call, d) };
 }

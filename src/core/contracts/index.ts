@@ -7,3 +7,5 @@ export type { SourceLicence } from "./source-licence";
 export { assertVerbatim, groundCandidate, isVerbatim } from "./verbatim";
 export { admissibleInCalculation, citableAsFact, isMissing, isValid, LEG_MODE_CODES, MODE_CODES, normaliseMode, orderedValues, validatePedigree, VOCABULARIES, weakestOriginClass } from "./vocabularies";
 export type { VocabEntry } from "./vocabularies";
+export { foldRun, insideLongerNumber, normalizeNumeric } from "./numbers";
+export type { Indexed } from "./numbers";

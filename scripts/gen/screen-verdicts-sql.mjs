@@ -4,7 +4,6 @@
 // An entry that is not a uuid key with a known verdict and a non-empty reason stops the run; nothing is invented or defaulted.
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-
 import { createHash } from "node:crypto";
 import { pathToFileURL } from "node:url";
 

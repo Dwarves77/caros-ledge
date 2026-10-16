@@ -1,4 +1,4 @@
-// Stands in for src/core/db/clients.ts for every source module under test (see hooks.mjs).
+// Stands in for src/core/db/clients.ts for every source module under test (see scripts/lib/ts-hooks.mjs).
 import * as real from "../../src/core/db/clients.ts";
 
 export const { bearerToken, describeError, isServiceConfigured, isSupabaseConfigured } = real;

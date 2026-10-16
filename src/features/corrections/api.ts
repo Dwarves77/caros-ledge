@@ -7,8 +7,7 @@ import { fetchAllByIdChunks, type Db } from "@/core/db";
 import { isRefusal, requireAdmin } from "@/core/http/guard";
 import { isUuid } from "@/core/http/parse";
 import { route } from "@/core/http/errors";
-
-import { findOrphanedFactCorrections, latestPerTarget, validateCorrectionInput, type Correction, type CorrectionInput } from "./model";
+import { findOrphanedFactCorrections, latestPerTarget, validateCorrectionInput, type Correction, type CorrectionInput } from "@/core/corrections";
 
 export interface Reply {
   status: number;

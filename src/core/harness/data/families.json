@@ -10,5 +10,6 @@
   { "name": "mint", "owner": "mint (P2-05)", "stage": null, "downstream": ["corpus-turn"], "writes": ["searches", "sections", "claims", "citations"], "note": "one row per minted item, written by the mint recorder; each item is connected inline through the participation list" },
   { "name": "producers", "owner": "producers (P2-07)", "stage": null, "downstream": ["propagation"], "writes": ["created", "updated"], "note": "one row per producer run, written by the producer runner; its events are drained by the propagate stage" },
   { "name": "brief-workflow", "owner": "intake (P2-04)", "stage": null, "downstream": ["corpus-turn"], "writes": ["steps_run"], "note": "one row per item brief workflow, written by the workflow recorder" },
+  { "name": "ops", "owner": "harness (P2-08)", "stage": null, "downstream": [], "terminal": "an operator task: each op is one runtime entry that is not a stage of the turn, and it records its own counts; its inputs name the op", "writes": ["written", "inserted", "updated", "created", "deleted", "healed", "derived", "stamped", "erased", "flipped", "sent", "seeded", "backfilled", "planned_applied", "classified", "applied"] },
   { "name": "live-smoke", "owner": "harness (P2-08)", "stage": null, "downstream": [], "terminal": "a smoke report is evidence, nothing consumes it but the proofs", "writes": [] }
 ]

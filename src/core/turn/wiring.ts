@@ -28,7 +28,9 @@ import { bindMint, type MintCtx } from "@/features/mint";
 import type { EntityDeps, MintRunDeps } from "@/features/mint/deps";
 import { auxiliaryEnergyRows, blsOews, eurostatElectricity, eurostatLabourCost, indexationRows, nesoCarbonIntensity, stateCostFacts, ukpnHeatmap } from "@/features/operations/producers";
 import { researchAssessment, researchWalker } from "@/features/research";
+import type { EdgeAuthors } from "@/features/propagation/ops";
 import { holdingsPresent } from "@/features/sources";
+import type { StatutoryDeps } from "@/features/statutory";
 import { wireWorkspaceDeps, type WorkspaceDeps } from "@/features/workspace/api/deps";
 
 type Env = Record<string, string | undefined>;
@@ -45,6 +47,9 @@ export interface DepsOptions {
   catalog?: Catalog;
   /** The capture worker call; the default invokes the deployed Edge Function through the service client. A test passes the worker's own drain over the fixture client. */
   worker?: CaptureWorker;
+  /** The regulations slice's formula (P2-10) and the market slice's edge authors (P2-11): the ops that need them refuse until they are passed. */
+  statutory?: StatutoryDeps | null;
+  edgeAuthors?: EdgeAuthors | null;
 }
 export type CaptureWorker = (input: { limit: number }) => Promise<{ status: number; body: Record<string, unknown> }>;
 
@@ -75,6 +80,9 @@ export interface BuiltDeps {
   producers: ProducerDeps & { market: MarketSeriesDeps | null; mint: MintCtx; verdicts?: ReadonlyMap<string, HostVerdictRef> };
   catalog: Catalog;
   worker: CaptureWorker;
+  marketMethods: MarketMethodDeps | null;
+  statutory: StatutoryDeps | null;
+  edgeAuthors: EdgeAuthors | null;
   registry: MethodRegistry;
   learning: LearningDeps;
   workspace: Partial<WorkspaceDeps>;
@@ -203,7 +211,7 @@ export function buildDeps(sb: Db, env: Env = process.env, opts: DepsOptions = {}
       return error ? { status: 500, body: { error: error.message } } : { status: 200, body: (data ?? {}) as Record<string, unknown> };
     });
   return {
-    sb, env, now, context, recorder, gate, sources, entities, identity, fetch: fetchDeps, io, mintCtx, intake, mintRun, connect, producers, catalog: opts.catalog ?? PRODUCER_CATALOG, worker, registry, learning,
+    sb, env, now, context, recorder, gate, sources, entities, identity, fetch: fetchDeps, io, mintCtx, intake, mintRun, connect, producers, catalog: opts.catalog ?? PRODUCER_CATALOG, worker, marketMethods: opts.market ?? null, statutory: opts.statutory ?? null, edgeAuthors: opts.edgeAuthors ?? null, registry, learning,
     workspace: workspaceWiring(), halted: async () => (await import("@/core/harness/run")).halted(sb).then((h) => h.halted),
   };
 }

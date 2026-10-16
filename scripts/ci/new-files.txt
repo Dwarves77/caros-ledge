@@ -125,3 +125,5 @@ src/core/turn/registry.ts | new in P2-08: the one list of stage runtimes (IMP-03
 src/core/turn/gate.ts | new in P2-08: THE GATE read from the ledger (INV-195); ported ranges are in the header
 src/core/turn/wiring.ts | new in P2-08: the adapters that build every slice's deps from the merged exports (the parallel-build bet), no old counterpart
 src/core/intake/canonical-key.ts | ported file: header present
+src/core/corrections/index.ts | new in P2-08: barrel for the correction model moved from src/features/corrections (IMP-046), no old counterpart
+src/core/contracts/numbers.ts | moved in P2-08 (IMP-041) from src/features/mint/heal/ground.ts: the value-preserving numeric fold and the inside-a-longer-number test, no old counterpart

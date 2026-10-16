@@ -9,17 +9,18 @@ import { familyFns, familyOfStage, isStage, STAGES, type Stage } from "./registr
 import type { BuiltDeps } from "./wiring";
 
 export interface TurnRequest {
-  stage: Stage | "all";
+  /** A stage, `all`, or `ops` (one operator task, named in the input, outside the chain). */
+  stage: Stage | "all" | "ops";
   mode: Mode;
   trigger?: Trigger;
   /** Run only the named stage when false; the default runs it and everything after it. */
   chain?: boolean;
   /** Per-stage input, keyed by stage name. */
-  input?: Partial<Record<Stage, Record<string, unknown>>>;
+  input?: Partial<Record<Stage | "ops", Record<string, unknown>>>;
 }
 export interface TurnResult {
   rootRunId: string;
-  plan: Stage[];
+  plan: (Stage | "ops")[];
   resolved: Resolved;
   runs: FamilyRun[];
   /** 0 every stage recorded, 1 a failed record or credential in CI, 2 self-skipped for lack of credentials. */
@@ -27,8 +28,9 @@ export interface TurnResult {
 }
 
 /** The stages a request runs: all of them, or the named one and (unless chain is false) its downstream stages. Pure. */
-export function planTurn(stage: Stage | "all", chain = true): Stage[] {
+export function planTurn(stage: Stage | "all" | "ops", chain = true): (Stage | "ops")[] {
   if (stage === "all") return [...STAGES];
+  if (stage === "ops") return ["ops"];
   if (!isStage(stage)) throw new Error(`unknown stage "${stage}" (stages: ${STAGES.join(", ")})`);
   return chain ? STAGES.slice(STAGES.indexOf(stage)) : [stage];
 }
@@ -41,8 +43,8 @@ export async function runTurn(req: TurnRequest, target: { d: BuiltDeps | null; e
   const h: HarnessDeps = { sb: d?.sb ?? null, env: target.env, now: target.now, fns: d ? familyFns(d) : {}, ...(d ? { setContext: (c) => void (d.context.current = c) } : {}) };
   // The build-mode gate is read ONCE: every stage of this turn runs in the mode it resolves, and every row says why.
   const resolved = d ? await resolveMode(d.sb, { mode: req.mode, trigger }) : { mode: req.mode, forcedDry: false, reason: null };
-  const inputs = Object.fromEntries(plan.map((s) => [familyOfStage(s), { ...(req.input?.[s] ?? {}), ...(req.chain === false ? { chain_disabled: true } : {}) }]));
-  const runs = await runChain(plan.map(familyOfStage), { mode: resolved.mode, trigger, rootRunId, resolved }, h, inputs);
+  const inputs = Object.fromEntries(plan.map((s) => [s === "ops" ? "ops" : familyOfStage(s), { ...(req.input?.[s] ?? {}), ...(req.chain === false ? { chain_disabled: true } : {}) }]));
+  const runs = await runChain(plan.map((s) => (s === "ops" ? "ops" : familyOfStage(s))), { mode: resolved.mode, trigger, rootRunId, resolved }, h, inputs);
   const failure = runs.find((r) => r.exit !== 0);
   return { rootRunId, plan, resolved, runs, exit: failure ? failure.exit : 0 };
 }

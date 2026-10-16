@@ -12,3 +12,4 @@ export { planIntake, runIntake, shapeIntake } from "./stages/intake";
 export { changedItemIds, planPropagate, runPropagate, shapePropagate } from "./stages/propagate";
 export { planSweep, runSweep, shapeSweep } from "./stages/sweep";
 export { planResearch, runResearch, shapeResearch } from "./stages/sweep-research";
+export { OPS, opNames, runOps } from "./ops";

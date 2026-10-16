@@ -2,7 +2,8 @@
 // test client refuses a table or column the database does not have (IMP-031). scripts/ci/schema-apply.mjs fails when the committed file differs from the live catalog.
 // Run after the schema changes, against a database that has had schema-apply run on it: DATABASE_URL=... node scripts/gen/test-schema.mjs
 import { spawnSync } from "node:child_process";
-import { writeFileSync } from "node:fs";
+
+import { writeJsonData } from "./json-data.mjs";
 
 export const COLUMNS_SQL = "select table_name, column_name from information_schema.columns where table_schema = 'public' order by table_name, ordinal_position";
 export const UUID_DEFAULTS_SQL = "select table_name, column_name from information_schema.columns where table_schema = 'public' and (column_default ilike '%gen_random_uuid%' or column_default ilike '%uuid_generate%') order by table_name, ordinal_position";
@@ -48,6 +49,6 @@ if (import.meta.url === `file://${process.argv[1].replace(/\\/g, "/")}` || proce
     process.exit(1);
   }
   const doc = readSchema(process.env.DATABASE_URL);
-  writeFileSync("tests/_support/schema.json", `${JSON.stringify(doc, null, 1)}\n`);
+  writeJsonData("tests/_support/schema.json", doc);
   console.log(`${Object.keys(doc.tables).length} tables and views`);
 }
