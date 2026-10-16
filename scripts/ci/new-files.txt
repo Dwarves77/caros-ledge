@@ -51,3 +51,7 @@ src/core/contracts/data/factor-tiers.json | generated from old_repo/src/lib/cont
 src/core/intake/data/classify-instruction.json | generated from old_repo/src/lib/llm/first-fetch-classify.ts: the classify instruction text, byte-identical so existing verdict files keep their version hash
 src/features/intake/data/staged.json | new in P2-04: the non-substantive column list, content columns and chokepoint-only inputs as DATA (from old_repo/src/lib/intake/apply-staged-update.ts)
 src/features/intake/record-facts/data/triggers.json | generated from old_repo/src/lib/intake/record-facts.mjs and record-facts-research.mjs: the slot trigger regexes as DATA
+src/features/mint/index.ts | new in P2-05: the public surface of the mint family (barrel plus reopenHolds, which wraps reopenHeldRows), no old counterpart
+src/features/mint/deps.ts | new in P2-05: the dependency interfaces the mint family consumes from unmerged slices (entities, flywheel, recorder, identity helpers, fetch); P2-08 wires them, no old counterpart
+src/features/mint/data/screen-rules.json | new in P2-05: the 4 CELEX roots and 114 relevance rules as data with an explicit verdict and ruling citation each (screen-rules.mjs lines 64-821; generated from the old module's exports, each ruling taken from the comment above or on the rule)
+src/features/mint/data/preflight.json | new in P2-05: the capture-completeness tolerance, the unicode substitution classes, the signature tag fields and the screen provenance values as data (validate-mint-payload.mjs lines 24-150, tag-presence-check.mjs lines 1-12)
