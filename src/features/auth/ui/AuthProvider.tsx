@@ -7,7 +7,8 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState, ty
 import { browserClient } from "@/core/db/browser";
 import { failureOf } from "@/core/http/backoff";
 
-import { createIdentityLoader, shouldReloadOnSignIn, type AuthSeed, type IdentityLoader, type IdentityStatus } from "./identity-loader";
+import { createAuthEventHandler } from "./auth-events";
+import { createIdentityLoader, type AuthSeed, type IdentityLoader, type IdentityStatus } from "./identity-loader";
 
 interface AuthContextValue {
   user: User | null;
@@ -36,8 +37,6 @@ export function AuthProvider({ children, onSeed }: { children: ReactNode; onSeed
   const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
   const loaderRef = useRef<IdentityLoader | null>(null);
   const knownUserRef = useRef<User | null>(null);
-  /** The last SESSION user any auth event reported (not the identity lookup): INITIAL_SESSION sets it on load, so a load with a stored session never looks like a new sign-in. */
-  const sessionUserRef = useRef<string | null>(null);
 
   const seed = useCallback(
     (applied: AuthSeed) => {
@@ -83,18 +82,18 @@ export function AuthProvider({ children, onSeed }: { children: ReactNode; onSeed
     };
   }, [seed]);
 
-  // Cross-tab sync: another tab's sign-out sends this one to /login; a sign-in in another tab reloads this one.
+  // Cross-tab sync, never a document reload (see auth-events.ts): a sign-out elsewhere leaves a protected route for /login; a sign-in elsewhere re-fetches identity in place.
   useEffect(() => {
+    const handle = createAuthEventHandler({
+      setUser: (user) => setUser(user as User | null),
+      loader: () => loaderRef.current,
+      identityHasUser: () => knownUserRef.current !== null,
+      pathname: () => window.location.pathname,
+      navigate: (to) => void (window.location.href = to),
+    });
     const {
       data: { subscription },
-    } = browserClient().auth.onAuthStateChange((event, session) => {
-      const before = sessionUserRef.current;
-      sessionUserRef.current = session?.user?.id ?? null;
-      setUser(session?.user ?? null);
-      knownUserRef.current = session?.user ?? null;
-      if (event === "SIGNED_OUT") window.location.href = "/login";
-      if (shouldReloadOnSignIn(event, before)) window.location.reload();
-    });
+    } = browserClient().auth.onAuthStateChange(handle);
     return () => subscription.unsubscribe();
   }, []);
 

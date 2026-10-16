@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { createIdentityLoader, shouldReloadOnSignIn, IDENTITY_ERROR_SEED, nextIdentityRetryDelay, resolveAuthSeed, shouldApplySeed, shouldShowAdminNav, type AuthSeed } from "@/features/auth/ui/identity-loader";
+import { createIdentityLoader, IDENTITY_ERROR_SEED, nextIdentityRetryDelay, resolveAuthSeed, shouldApplySeed, shouldShowAdminNav, type AuthSeed } from "@/features/auth/ui/identity-loader";
 import { classifySignUpResult } from "@/features/auth/ui/signup-result";
 
 const body = (over: Record<string, unknown> = {}) => ({ user: { id: "u1", email: "a@b.test" }, orgId: "o1", orgName: "Acme", role: "owner", sectors: [], workspaceSectors: ["air"], isPlatformAdmin: true, ...over });
@@ -104,11 +104,4 @@ test("classifySignUpResult: error, already registered (empty identities), confir
   assert.equal(classifySignUpResult({ data: { user: { identities: [{}] } } }), "confirmation_sent");
   assert.equal(classifySignUpResult({ data: { user: null } }), "confirmation_sent");
   assert.equal(classifySignUpResult(null), "confirmation_sent");
-});
-
-test("auth sync: SIGNED_IN reloads only when no session user was known; a load with a stored session (INITIAL_SESSION then SIGNED_IN) never reloads", () => {
-  assert.equal(shouldReloadOnSignIn("SIGNED_IN", null), true, "another tab signed in");
-  assert.equal(shouldReloadOnSignIn("SIGNED_IN", "u1"), false, "the stored session was reported first");
-  assert.equal(shouldReloadOnSignIn("TOKEN_REFRESHED", null), false);
-  assert.equal(shouldReloadOnSignIn("INITIAL_SESSION", null), false);
 });

@@ -31,9 +31,6 @@ export function resolveAuthSeed(bootstrap: IdentityBootstrap | null): AuthSeed {
   };
 }
 
-/** Reload only on a true transition from no session to a session (another tab signed in). SIGNED_IN with a session already known never reloads: supabase-js emits it on every load with a stored session. */
-export const shouldReloadOnSignIn = (event: string, previousSessionUser: string | null): boolean => event === "SIGNED_IN" && previousSessionUser === null;
-
 /** A later seed never overwrites a resolved one. */
 export const shouldApplySeed = (current: IdentityStatus): boolean => current !== "resolved";
 export const shouldShowAdminNav = (p: { status: IdentityStatus; isPlatformAdmin: boolean }): boolean => p.status === "resolved" && p.isPlatformAdmin === true;
@@ -54,7 +51,7 @@ export interface IdentityLoaderDeps {
 }
 export interface IdentityLoader {
   start: () => void;
-  /** `manual` is the Retry control; an automatic re-arm (focus, visibility) waits out the cooldown after a failure. */
+  /** `manual` is the Retry control or a sign-in seen from another tab; an automatic re-arm (focus, visibility) waits out the cooldown after a failure. */
   rearm: (manual?: boolean) => void;
   stop: () => void;
   status: () => IdentityStatus;
@@ -75,6 +72,7 @@ export function createIdentityLoader(deps: IdentityLoaderDeps): IdentityLoader {
   let stopped = false;
   let retrying = false;
   let failedAt = 0;
+  let resolvedWithoutUser = false;
   const now = deps.now ?? Date.now;
 
   const setRetrying = (v: boolean) => {
@@ -85,6 +83,7 @@ export function createIdentityLoader(deps: IdentityLoaderDeps): IdentityLoader {
   const apply = (seed: AuthSeed) => {
     if (!shouldApplySeed(status)) return;
     status = seed.status;
+    resolvedWithoutUser = seed.status === "resolved" && seed.user === null;
     deps.onSeed(seed);
   };
   const attempt = async (): Promise<void> => {
@@ -127,7 +126,10 @@ export function createIdentityLoader(deps: IdentityLoaderDeps): IdentityLoader {
       void attempt();
     },
     rearm(manual = false) {
-      if (stopped || status !== "error" || inFlight || timer !== null) return;
+      // An errored round re-arms; so does a resolved-with-no-user identity when a session appears (another tab signed in), fetched in place.
+      const signedInElsewhere = manual && status === "resolved" && resolvedWithoutUser;
+      if (stopped || (status !== "error" && !signedInElsewhere) || inFlight || timer !== null) return;
+      if (signedInElsewhere) status = "pending";
       if (!manual && now() - failedAt < IDENTITY_REARM_COOLDOWN_MS) return;
       attempts = 0;
       setRetrying(true);
