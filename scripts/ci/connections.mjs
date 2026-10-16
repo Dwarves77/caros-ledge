@@ -10,7 +10,9 @@ const ROOT = "src";
 const posix = (p) => p.split("\\").join("/");
 const walk = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(join(dir, e.name)) : /\.(ts|tsx)$/.test(e.name) ? [posix(join(dir, e.name))] : []));
 const files = walk(ROOT);
-const strip = (text) => text.replace(/\/\*[\s\S]*?\*\//g, "").split("\n").filter((l) => !l.trim().startsWith("//") && !/^\s*export\s*(\*|\{|type\s*\{)[^;]*from\s/.test(l)).join("\n");
+// An import line is not a call: a runtime that is only imported (never named again) has no caller.
+const IMPORT_LINE = /^[ \t]*import\b[^;'"]*?["'][^"']+["'];?[ \t]*$/gm;
+const strip = (text) => text.replace(/\/\*[\s\S]*?\*\//g, "").replace(IMPORT_LINE, "").split("\n").filter((l) => !l.trim().startsWith("//") && !/^\s*export\s*(\*|\{|type\s*\{)[^;]*from\s/.test(l)).join("\n");
 const src = new Map(files.map((f) => [f, strip(readFileSync(f, "utf8"))]));
 
 const isRoot = (f) => f.startsWith("src/core/turn/") || f.startsWith("src/app/") || /^src\/features\/[^/]+\/api\//.test(f) || f === "src/instrumentation.ts";

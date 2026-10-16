@@ -4,7 +4,7 @@
 // naming the exact token or section: Gate A (a figure or date no FACT covers), criterion 4 (an unlabelled requirement), the per-format timeline, claim-section attachment, depth accounting, qualification accounting,
 // the numeric figure (decimals kept), and criterion 5 (a required slot without a covering FACT or, where its description allows, GAP). Section boundaries come from the REAL format registry
 // (core/brief FORMAT_SPECS), so the old second copy of the section list and its drift test are gone. Pure: the caller supplies the live material.
-import { ANALYSIS_LABELS, buildTimelineRows, checkBriefContent, findInternalMarkers, findTimelineSection, FORMAT_SPECS, LEGAL_CALLOUT, parseTimeline, validateClaimRecords, validateMetadata, type AdoptedTerms, type SectionRow } from "@/core/brief";
+import { analysisLabelRe, buildTimelineRows, checkBriefContent, findInternalMarkers, findTimelineSection, FORMAT_SPECS, LEGAL_CALLOUT, MODAL_RE, parseTimeline, validateClaimRecords, validateMetadata, type AdoptedTerms, type SectionRow } from "@/core/brief";
 import { describeMarkers } from "@/core/brief/sections";
 import { assertVerbatim } from "@/core/contracts/verbatim";
 import { scanGateA, uncoveredSlots, type SlotRow } from "@/core/grounding";
@@ -16,8 +16,7 @@ export const RECORD_BRIEFS_SCHEMA_VERSION = "rb2-2026-10-17.1";
 export const MIN_BODY_CHARS = 600;
 const LARGE_POOL_CHARS = 200_000;
 
-const LABEL_RE = new RegExp(`\\*?(${ANALYSIS_LABELS.join("|")})(\\s*\\([^)]*\\))?:\\*?`, "i");
-const MODAL_RE = /\b(requires|must|mandates|obligates|prohibits|applies to)\b/i;
+const LABEL_RE = analysisLabelRe();
 const ACCOUNTING_RE = /Obligations surveyed:\s*(\d+);\s*workspace-adjacent:\s*(\d+);\s*extracted as FACT:\s*(\d+)\.?/i;
 const SHORTFALL_RE = /^Shortfall:\s*\S.*$/im;
 const NEGATION_RE = /\b(no|not|none|never|nor)\b/i;

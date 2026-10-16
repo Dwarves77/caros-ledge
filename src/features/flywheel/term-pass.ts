@@ -5,7 +5,7 @@
 // no authoritative holding and per non-CELEX absent lineage parent, closing each by rule when the need stops reproducing. Writes vocabulary_terms,
 // vocabulary_mentions, entities (adopted terms only) and integrity_flags in the term-need namespace.
 import type { Db } from "@/core/db";
-import { fetchAllByIdChunks, fetchAllRows, qb, type Qb } from "@/core/db";
+import { allRows, rowsByIds } from "@/core/db";
 import { LINEAGE_GAP_CREATED_BY, planLineageGapTargets, type GapFlag } from "@/core/entities/lineage";
 import { readLinkCorpus } from "@/core/entities/link-items";
 import { planReflect, TERM_NEED_NAMESPACE } from "@/core/flywheel/flags";
@@ -32,11 +32,6 @@ export const TRUST_MIN_ITEMS: number = (tierMovement as { q7: { citationFrequenc
 export const NEED_RESOLVE_NOTE = "term-need closed by rule: the need is no longer reproduced (an authoritative holding exists, the term is no longer adopted, or the lineage parent is now held).";
 type Item = { id: string; source_id: string | null; theme_candidate?: string | null; operational_scenario_tags?: string[] | null; compliance_object_candidates?: string[] | null };
 
-/** Every row of a table (total order on `order`, capped), optionally filtered. A failed page throws. */
-async function all<T>(sb: Db, table: string, columns: string, order: string, apply: (q: Qb<T>) => Qb<T> = (q) => q): Promise<T[]> {
-  return fetchAllRows<T>((from, to) => apply(qb<T>(sb.from(table).select(columns))).order(order, { ascending: true }).range(from, to), { cap: SIGNATURE_CAP });
-}
-
 export async function termPass(deps: TermPassDeps, input: TermPassInput): Promise<RunResult> {
   const { sb } = deps;
   const apply = !input.dry;
@@ -46,11 +41,11 @@ export async function termPass(deps: TermPassDeps, input: TermPassInput): Promis
   const counts: Record<string, number> = {};
   let failed = 0;
 
-  const items = await all<Item>(sb, "intelligence_items", "id, source_id, theme_candidate, operational_scenario_tags, compliance_object_candidates", "id", (q) => q.eq("provenance_status", "verified").eq("is_archived", false));
+  const items = await allRows<Item>(sb, "intelligence_items", "id, source_id, theme_candidate, operational_scenario_tags, compliance_object_candidates", { cap: SIGNATURE_CAP, where: (q) => q.eq("provenance_status", "verified").eq("is_archived", false) });
   const sourceByItemId = new Map(items.map((it) => [it.id, it.source_id ?? null]));
-  const flags = await all<{ id: string; subject_ref: string; created_by: string; recommended_actions: unknown }>(sb, "integrity_flags", "id, subject_ref, created_by, recommended_actions", "id", (q) => q.eq("created_by", ENTITY_LINK_CREATED_BY));
-  const terms = await all<TermRow & { id: string }>(sb, "vocabulary_terms", "*", "id");
-  const mentions = await all<{ term_id: string; item_id: string; source_id: string | null; detector: string; surface_text: string }>(sb, "vocabulary_mentions", "term_id, item_id, source_id, detector, surface_text", "id");
+  const flags = await allRows<{ id: string; subject_ref: string; created_by: string; recommended_actions: unknown }>(sb, "integrity_flags", "id, subject_ref, created_by, recommended_actions", { cap: SIGNATURE_CAP, where: (q) => q.eq("created_by", ENTITY_LINK_CREATED_BY) });
+  const terms = await allRows<TermRow & { id: string }>(sb, "vocabulary_terms", "*", { cap: SIGNATURE_CAP });
+  const mentions = await allRows<{ term_id: string; item_id: string; source_id: string | null; detector: string; surface_text: string }>(sb, "vocabulary_mentions", "term_id, item_id, source_id, detector, surface_text", { cap: SIGNATURE_CAP });
 
   const link = mentionsFromEntityLinkFlags(flags, sourceByItemId);
   if (link.malformed) notes.push(`${link.malformed} entity-link flag payload(s) were malformed and skipped (counted, not swallowed)`);
@@ -100,30 +95,22 @@ export async function termPass(deps: TermPassDeps, input: TermPassInput): Promis
   }
 
   // Needs: re-read the terms so a term adopted in this very pass is considered (rule 17: the pass finishes what it started).
-  const currentTerms = apply ? await all<TermRow & { id: string }>(sb, "vocabulary_terms", "id, kind, term_key, label, status, distinct_items, distinct_sources", "id") : terms;
-  const currentMentions = apply ? await all<{ term_id: string; item_id: string }>(sb, "vocabulary_mentions", "term_id, item_id", "id") : mentions;
+  const currentTerms = apply ? await allRows<TermRow & { id: string }>(sb, "vocabulary_terms", "id, kind, term_key, label, status, distinct_items, distinct_sources", { cap: SIGNATURE_CAP }) : terms;
+  const currentMentions = apply ? await allRows<{ term_id: string; item_id: string }>(sb, "vocabulary_mentions", "term_id, item_id", { cap: SIGNATURE_CAP }) : mentions;
   const adoptedIds = new Set(currentTerms.filter((t) => t.status === "adopted").map((t) => t.id));
   const relevant = currentMentions.filter((m) => adoptedIds.has(m.term_id));
   const itemIds = [...new Set(relevant.map((m) => m.item_id))].sort();
   const needItems = itemIds.length
-    ? await fetchAllByIdChunks<NeedItem & { id: string }>(itemIds, async (slice) => {
-        const { data, error } = await sb.from("intelligence_items").select("id, item_type, provenance_status, is_archived, origin_class, source_id").in("id", slice);
-        if (error) throw new Error(`term needs: items read failed: ${error.message}`);
-        return data ?? [];
-      })
+    ? await rowsByIds<NeedItem & { id: string }>(sb, "intelligence_items", "id, item_type, provenance_status, is_archived, origin_class, source_id", itemIds)
     : [];
   const sourceIds = [...new Set(needItems.map((i) => i.source_id).filter((s): s is string => !!s))].sort();
   const needSources = sourceIds.length
-    ? await fetchAllByIdChunks<NeedSource & { id: string }>(sourceIds, async (slice) => {
-        const { data, error } = await sb.from("sources").select("id, base_tier, tier_override").in("id", slice);
-        if (error) throw new Error(`term needs: sources read failed: ${error.message}`);
-        return data ?? [];
-      })
+    ? await rowsByIds<NeedSource & { id: string }>(sb, "sources", "id, base_tier, tier_override", sourceIds)
     : [];
   const termPlan = planTermNeeds({ terms: currentTerms, mentions: relevant, items: new Map(needItems.map((i) => [i.id, i])), sources: new Map(needSources.map((s) => [s.id, s])) });
-  const lineageFlags = await all<GapFlag & { status: string }>(sb, "integrity_flags", "id, subject_ref, created_by, description, recommended_actions, status", "id", (q) => q.eq("created_by", LINEAGE_GAP_CREATED_BY).in("status", ["open", "in_review"]));
+  const lineageFlags = await allRows<GapFlag & { status: string }>(sb, "integrity_flags", "id, subject_ref, created_by, description, recommended_actions, status", { cap: SIGNATURE_CAP, where: (q) => q.eq("created_by", LINEAGE_GAP_CREATED_BY).in("status", ["open", "in_review"]) });
   const lineage = planLineageNeeds(planLineageGapTargets(lineageFlags, await readLinkCorpus(sb)).targets);
-  const openNeeds = await all<{ id: string; subject_ref: string; created_by: string }>(sb, "integrity_flags", "id, subject_ref, created_by", "id", (q) => q.like("created_by", `${TERM_NEED_NAMESPACE}%`).in("status", ["open", "in_review"]));
+  const openNeeds = await allRows<{ id: string; subject_ref: string; created_by: string }>(sb, "integrity_flags", "id, subject_ref, created_by", { cap: SIGNATURE_CAP, where: (q) => q.like("created_by", `${TERM_NEED_NAMESPACE}%`).in("status", ["open", "in_review"]) });
   const reflect = planReflect(openNeeds, [...termPlan.fresh, ...lineage.fresh]);
   Object.assign(counts, { adopted_terms: termPlan.counts.adopted_terms, terms_with_holding: termPlan.counts.satisfied, term_needs: termPlan.counts.needs, lineage_open_flags: lineageFlags.length, lineage_non_celex_needs: lineage.counts.non_celex_needs, lineage_celex_targets: lineage.counts.celex_targets, open_needs_before: openNeeds.length, needs_to_raise: reflect.newRows.length, needs_to_close: reflect.staleIds.length });
   if (apply) {

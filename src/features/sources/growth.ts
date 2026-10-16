@@ -2,7 +2,7 @@
 // Ported from old_repo/src/lib/sources/tier-opinion-writer.ts (lines 1-92)
 // Ported from old_repo/src/lib/sources/cited-host-gate.mjs (lines 1-19)
 import type { Db } from "@/core/db";
-import { fetchAllRows } from "@/core/db";
+import { allRows } from "@/core/db";
 import { hostOf } from "@/core/shared";
 import { classifySourceRole } from "@/core/sources/classify";
 import { classTierForHost, decidePoolHostRegistration } from "@/core/sources/host-class";
@@ -202,7 +202,7 @@ export async function registerPoolHostsForGrounding(db: Db, itemId: string): Pro
   const pool = await db.from("agent_run_searches").select("result_url, search_query").eq("intelligence_item_id", itemId);
   if (pool.error) throw new Error(`pool read failed for ${itemId}: ${pool.error.message}`);
   if (!pool.data?.length) return { registered: 0, institutions: 0, failed: 0 };
-  const sources = await fetchAllRows<SourceRow>((from, to) => db.from("sources").select("id, url, base_tier, effective_tier, tier_override, status").order("id", { ascending: true }).range(from, to) as never, { cap: 200_000 });
+  const sources = await allRows<SourceRow>(db, "sources", "id, url, base_tier, effective_tier, tier_override, status");
   const resolver = buildResolver(sources);
   const seen = new Set<string>();
   const toRegister: CitedSourceInput[] = [];

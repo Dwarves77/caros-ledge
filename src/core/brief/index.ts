@@ -8,4 +8,4 @@ export { buildTimelineRows, deriveTimeline, derivedTimelineRow, harvestTimeline,
 export type { Derived, DeriveInput, TimelineEntry, TimelineRow } from "./timeline";
 export { bankCandidate, crossLinkClaimSources, isUuidShape, validateClaimRecords, validateMetadata } from "./validate";
 export type { BriefMetadata, ClaimRecord, PoolLink, Validated } from "./validate";
-export { ANALYSIS_LABEL_TOKENS, ANALYSIS_LABELS, assertDbValue, DB_FORMAT_TYPE_VALUES, DB_PRIORITY_VALUES, DB_SIGNAL_BAND_VALUES, DB_THEME_VALUES, DB_URGENCY_TIER_VALUES, LEGAL_CALLOUT, MONTHS, toDbSeverity, toDbTheme, toThemeCandidate } from "./vocab";
+export { ANALYSIS_LABEL_TOKENS, ANALYSIS_LABELS, analysisLabelRe, assertDbValue, DB_FORMAT_TYPE_VALUES, DB_PRIORITY_VALUES, DB_SIGNAL_BAND_VALUES, DB_THEME_VALUES, DB_URGENCY_TIER_VALUES, LEGAL_CALLOUT, MODAL_RE, MONTHS, toDbSeverity, toDbTheme, toThemeCandidate } from "./vocab";

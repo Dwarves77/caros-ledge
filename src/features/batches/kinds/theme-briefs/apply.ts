@@ -9,8 +9,9 @@ import { renderBriefMd, validateThemeBriefEntry, type ThemeContext } from "@/cor
 import { buildThemeBundle, buildValidationContext, computeThemeGaps, loadBriefs, loadLineage, loadThemeMaterial, loadThemes, themesNeedingBrief, type ThemeRow } from "@/core/briefs/theme-brief-material";
 import type { Db } from "@/core/db";
 import { applyThemeBrief } from "@/features/flywheel";
+import { rowsByIds } from "@/core/db";
 
-import { applyEntries, isObj, rowsByIds, type ApplyOpts, type BatchDeps, type BatchExport, type EntrySpec } from "../../kit/session-batch";
+import { applyEntries, isObj, type ApplyOpts, type BatchDeps, type BatchExport, type EntrySpec } from "../../kit/session-batch";
 
 export const THEME_EXPORT_LIMIT = 15;
 const DEFAULT_CHAR_BUDGET = 120_000;

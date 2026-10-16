@@ -5,14 +5,13 @@
 // Labelling after a heal. An unverifiable FACT is RE-KINDED, never rewritten (ruling 4, INV-298): to ANALYSIS when its own text is findable verbatim in a section (the claim
 // moves to that section if it is not its own), or, for a required-slot claim, to the slot's honest GAP. The old pass also replaced the claim's text with another sentence at a
 // Jaccard overlap of 0.15; that is gone: a claim that cannot be re-kinded in place is refused and reported. Paragraph relabelling only prefixes the analysis label.
-import { ANALYSIS_LABELS, LEGAL_CALLOUT } from "@/core/brief";
+import { analysisLabelRe, LEGAL_CALLOUT, MODAL_RE } from "@/core/brief";
 import { isVerbatim } from "@/core/contracts";
 import { buildRecordSlotClaim } from "@/features/intake";
 
 import { locateSpan, type HealClaim } from "./ground";
 
-const LABEL_RE = new RegExp(`\\*?(per the workspace's reading|${ANALYSIS_LABELS.join("|")})(\\s*\\([^)]*\\))?:\\*?`, "i");
-const MODAL_RE = /\b(requires|must|mandates|obligates|prohibits|applies to)\b/i;
+const LABEL_RE = analysisLabelRe("per the workspace's reading");
 const FACT_MARKER = /^\*{0,2}FACT:\*{0,2}\s*/i;
 const SLOT_MARKER = /^\[([a-z0-9_]+)\]\s/i;
 export const DEFAULT_LABEL = "*Analytical inference:* ";

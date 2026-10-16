@@ -5,7 +5,7 @@
 // removed, decide each (high adopts; medium adopts with vocabulary and evidence re-confirmed), write the merged tag columns, record the decision as a flag
 // born resolved, then run connection discovery for every item whose tags changed (rule 17: new tags are new connections).
 import type { Db } from "@/core/db";
-import { fetchAllByIdChunks, fetchAllRows } from "@/core/db";
+import { fetchAllRows, rowsByIds } from "@/core/db";
 import { SIGNATURE_CAP } from "@/core/flywheel/signature";
 import type { RunResult } from "@/core/sources/run-result";
 import { adoptTags, type AdoptResult, type TaggedItem } from "@/core/tags/adopt";
@@ -34,13 +34,8 @@ type Row = TaggedItem & { jurisdiction_iso?: string[] | null; jurisdictions?: st
 const isEmptySignature = (it: Row): boolean => ![it.operational_scenario_tags, it.compliance_object_tags, it.topic_tags].some((a) => Array.isArray(a) && a.length > 0);
 
 async function readByItem<T extends { [k: string]: unknown }>(sb: Db, table: string, columns: string, idColumn: string, ids: readonly string[]): Promise<Map<string, T[]>> {
-  const rows = await fetchAllByIdChunks<T>(ids, async (slice) => {
-    const { data, error } = await sb.from(table).select(columns).in(idColumn, slice);
-    if (error) throw new Error(`tag pass: ${table} read failed: ${error.message}`);
-    return (data ?? []) as unknown as T[];
-  }, { manyPerId: true });
   const out = new Map<string, T[]>();
-  for (const r of rows) out.set(String(r[idColumn]), [...(out.get(String(r[idColumn])) ?? []), r]);
+  for (const r of await rowsByIds<T>(sb, table, columns, ids, idColumn, "id")) out.set(String(r[idColumn]), [...(out.get(String(r[idColumn])) ?? []), r]);
   return out;
 }
 

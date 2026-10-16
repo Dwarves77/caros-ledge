@@ -11,8 +11,7 @@ import { QUESTION_NAMESPACE } from "@/core/flywheel/flags";
 import { ANSWERED_ACTION, FLAG_COLUMNS, OPEN_STATUSES, parseQuestionRef, UNANSWERABLE_ACTION, type NeedFlag, type ParsedQuestionRef } from "@/core/flags/need-targets";
 import { usableCaptures, poolHash } from "@/core/grounding";
 import { surfaceOf } from "@/core/routing";
-
-import { allRows, rowsByIds } from "../../kit/session-batch";
+import { allRows, rowsByIds } from "@/core/db";
 
 /** The most connected items one question reaches. */
 export const MAX_CONNECTED = 8;

@@ -11,8 +11,9 @@ import { FLAG_COLUMNS, loadOpenNeedTargets, needOfFlag, OPEN_STATUSES, type Need
 import { GAP_NAMESPACE, HOLDINGS_NEED_NAMESPACE, TERM_NEED_NAMESPACE } from "@/core/flywheel/flags";
 import { authorityFloorFor } from "@/core/grounding";
 import { celexOf } from "@/core/vocabulary";
+import { allRows, rowsByIds } from "@/core/db";
 
-import { allRows, rowsByIds, type BatchExport } from "../../kit/session-batch";
+import { type BatchExport } from "../../kit/session-batch";
 
 /** resolved_by of every flag the URL apply step closes: how the export finds a need already served. */
 export const RESOLVED_BY = "apply-need-urls";

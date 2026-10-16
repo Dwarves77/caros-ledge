@@ -18,9 +18,10 @@ import { groundInjectedLedger, injectBrief, readAdoptedTerms, sectionBrief } fro
 import { runParticipation } from "@/features/intake/flywheel-participation";
 import { recordItemChange } from "@/features/sources/change";
 import { growSources } from "@/features/sources";
+import { allRows, rowsByIds } from "@/core/db";
 
 import { BUDGET_STOP_REASON, budgetBytes, POOL_REREADS, preflight } from "../../kit/budget";
-import { allRows, applyEntries, isObj, itemPool, rowsByIds, type ApplyOpts, type BatchDeps, type EntrySpec, type Item, type Obj } from "../../kit/session-batch";
+import { applyEntries, isObj, itemPool, type ApplyOpts, type BatchDeps, type EntrySpec, type Item, type Obj } from "../../kit/session-batch";
 
 import { validateRecordBriefEntry, type RecordLive, type RecordPlan } from "./validate";
 

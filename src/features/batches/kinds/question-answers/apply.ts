@@ -8,8 +8,9 @@ import { holdingsNeedRow, loadOpenNeedTargets, needAction, needOfFlag, parseQues
 import { registerFirstInference } from "@/core/propagation";
 import { itemTag } from "@/core/cache";
 import { runResult } from "@/core/types/run-result";
+import { rowsByIds } from "@/core/db";
 
-import { applyEntries, isObj, rowsByIds, type ApplyOpts, type BatchDeps, type BatchExport, type EntrySpec, type Obj } from "../../kit/session-batch";
+import { applyEntries, isObj, type ApplyOpts, type BatchDeps, type BatchExport, type EntrySpec, type Obj } from "../../kit/session-batch";
 
 import { buildQuestionBundle, buildQuestionContext, currentInference, MAX_CONNECTED, loadInferencesByRef, loadQuestionFlags, loadQuestionMaterial, questionContexts, recordedAnswer, recordedOutcome, withAnsweredOutcome, withUnanswerableOutcome, type InferenceRow, type QuestionContext } from "./material";
 import { validateAnswerEntry, type QaLive } from "./validate";

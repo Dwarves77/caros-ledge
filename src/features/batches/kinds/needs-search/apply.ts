@@ -6,8 +6,9 @@
 import type { Db } from "@/core/db";
 import { registerAndRate } from "@/core/sources";
 import { persistPortalCandidates } from "@/features/intake";
+import { rowsByIds } from "@/core/db";
 
-import { applyEntries, isObj, rowsByIds, type ApplyOpts, type BatchDeps, type EntrySpec } from "../../kit/session-batch";
+import { applyEntries, isObj, type ApplyOpts, type BatchDeps, type EntrySpec } from "../../kit/session-batch";
 
 import { buildAppliedNote, loadFlagsByIds, loadLineageTargets, needFromFlag, needKindOf, parseAppliedNote, RESOLVED_BY, type FullFlag, type Need } from "./needs";
 import { validateNeedEntry, type NeedPlan, type NeedsLive } from "./validate";

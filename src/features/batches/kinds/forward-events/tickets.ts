@@ -3,8 +3,7 @@
 // `<by>:item-archived`, never worked) and deferred (not verified yet: stays OPEN and unselected, surfacing on its own once the item verifies). A ticket is consumed only by the run that selected it, and marking retires
 // exactly the ids a prior snapshot named, never the queue as it looks now.
 import type { Db } from "@/core/db";
-
-import { allRows, rowsByIds } from "../../kit/session-batch";
+import { allRows, rowsByIds } from "@/core/db";
 
 export interface Ticket { id: string; intelligence_item_id: string; reason: string | null; requested_at: string }
 export interface ItemState { provenance_status: string | null; is_archived: boolean | null }

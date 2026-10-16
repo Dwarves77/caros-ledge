@@ -6,7 +6,7 @@
 // The session-batch engine: the one validator pattern and the one apply loop every kind plugs into. A session authors a batch file from an exported bundle; the batch is validated WHOLE against the live material
 // (a structural defect refuses the whole file; a defective entry is refused alone, with its reasons kept as residue; an entry already applied is "already applied", never a refusal), then written, read back, and its
 // downstream is called in the same run (rule 17). Nothing here calls a model: the session is the author. A runtime entry never exits the process and reads the clock only through `deps.now`.
-import { fetchAllByIdChunks, fetchAllRows, qb, type Db, type Qb } from "@/core/db";
+import type { Db } from "@/core/db";
 import { poolHash, readPool } from "@/core/grounding";
 import type { HostVerdictRef } from "@/core/sources";
 import type { RunResult } from "@/core/types/run-result";
@@ -44,12 +44,6 @@ export interface ApplyOpts {
 }
 
 // ---- reads -----------------------------------------------------------------------------------------------------
-/** Every row of a table whose `idColumn` is in the list, chunked under the URL budget and paged under a total order (`order` must be unique); a read error throws. */
-export const rowsByIds = <T>(sb: Db, table: string, columns: string, ids: Iterable<string>, idColumn = "id", order = "id"): Promise<T[]> =>
-  fetchAllByIdChunks(ids, (slice) => fetchAllRows<T>((from, to) => sb.from(table).select(columns).in(idColumn, slice).order(order, { ascending: true }).range(from, to) as never, { cap: 500_000 }), { manyPerId: true });
-/** Every row of a table under a total order and a cap (the order column must be unique); a read error throws. */
-export const allRows = <T>(sb: Db, table: string, columns: string, opts: { order?: string; cap?: number; where?: (q: Qb<T>) => Qb<T> } = {}): Promise<T[]> =>
-  fetchAllRows<T>((from, to) => (opts.where ?? ((q: Qb<T>) => q))(qb<T>(sb.from(table).select(columns))).order(opts.order ?? "id", { ascending: true }).range(from, to), { cap: opts.cap ?? 200_000 });
 
 /** An item's stored pool as the hash and the text every batch is authored against; a failed read throws. */
 export async function itemPool(sb: Db, itemId: string): Promise<{ pool: { url: string; text: string }[]; hash: string; bytes: number }> {

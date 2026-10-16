@@ -5,7 +5,8 @@ import type { FamilyCall } from "@/core/harness";
 import { surfaceOf } from "@/core/routing";
 import type { RunResult } from "@/core/types/run-result";
 import { runResult } from "@/core/types/run-result";
-import { runNotificationOutbox } from "@/features/drain";
+import { drainExporters } from "@/features/batches";
+import { finishDrain, leaseDeps, planDrain, runNotificationOutbox } from "@/features/drain";
 import { groundInjected, eraseQuarantined, idStamp, planQuarantine, rehomeQuarantined, resolveQuarantined } from "@/features/intake";
 import { triggerQuestionsForItem } from "@/features/learning";
 import { healItem, healQuarantined, rederiveStale, reopenHolds } from "@/features/mint";
@@ -14,6 +15,7 @@ import { backfillDerivationEdges, backfillEntities, backfillLineageEdges, seedCo
 import { classifySources, triageSuspended, verifyCandidate } from "@/features/sources";
 import { statutoryRun } from "@/features/statutory";
 
+import { batchDeps } from "./stages/briefs";
 import type { BuiltDeps } from "./wiring";
 
 type Args = Record<string, unknown>;
@@ -22,8 +24,20 @@ const owed = (what: string, owner: string): RunResult => runResult("failed", { r
 const heal = (d: BuiltDeps) => ({ sb: d.sb, now: d.now, fetch: d.fetch });
 const fetchDeps = (d: BuiltDeps) => ({ db: d.sb, now: d.now, env: d.env, ...(d.fetch.fetchImpl ? { fetchImpl: d.fetch.fetchImpl } : {}) });
 
+/** One judgement-drain planning pass: the switch is read first (off plans nothing), each kind's exporter is the batch kit's own, leases are taken on a live run and every one is released before the row is written; a dry run takes none. */
+async function planDrainOp(c: FamilyCall, d: BuiltDeps, a: Args): Promise<RunResult> {
+  const lease = leaseDeps(d.sb);
+  const deps = { ...lease, exporters: drainExporters(batchDeps(d)), listBatchDir: () => [], now: d.now };
+  const plan = await planDrain(deps, { runId: c.runId, dry: c.dry, ...(typeof a.limit === "number" ? { limit: a.limit } : {}), ...(typeof a.kind === "string" ? { kindId: a.kind } : {}), ...(typeof a.mode === "string" ? { mode: a.mode } : {}) });
+  const { run } = await finishDrain(deps, plan);
+  const m = run.metrics;
+  const unreleased = m.leases_held - m.leases_released;
+  return { ...runResult(unreleased || run.defectsFound.length ? "partial" : "ok", { planned: m.items, kinds_planned: m.kinds_planned, batches: m.batches, leases_held: m.leases_held, leases_released: m.leases_released }, [plan.drain === "off" ? "the drain switch is off: nothing planned" : `${m.items} item(s) planned in ${m.batches} batch(es)`, ...run.defectsFound.map((x) => `${x.description}: ${x.root_cause}`)]), data: { plan } };
+}
+
 /** Every operator task by name. An apply op (`apply`) is a dry plan unless the frame resolved apply; a dry op (`dry`) is the reverse flag. */
 export const OPS: Readonly<Record<string, Op>> = {
+  "plan-drain": planDrainOp,
   "run-notification-outbox": (c, d, a) => runNotificationOutbox({ sb: d.sb, now: d.now }, { dry: c.dry, ...(typeof a.limit === "number" ? { limit: a.limit } : {}) }),
   "ground-injected": (c, d, a) => groundInjected({ sb: d.sb, sources: d.sources, recorder: d.recorder }, ({ ...a, dry: c.dry } as never)),
   "erase-quarantined": (c, d, a) => eraseQuarantined({ sb: d.sb }, ({ ...a, apply: !c.dry } as never)),

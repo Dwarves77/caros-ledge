@@ -5,7 +5,7 @@
 // Ported from old_repo/scripts/classification/apply-classifications.mjs (lines 579-623)
 // Ported from old_repo/scripts/sources/backfill-source-type.mjs (lines 16-100)
 // Ported from old_repo/scripts/source-role-cleanup.mjs (lines 22-59)
-import { fetchAllRows } from "@/core/db";
+import { allRows, fetchAllRows } from "@/core/db";
 import { REGULATORY_TOPIC_ROLES, classifySourceAxes, detectDrift, isValidDistribution, isValidJurisdictionValue, observedDistributionFromItems, topicKeywordMatch, type AxisProposal, type AxisSource } from "@/core/sources/axes";
 import { classifySourceRole, classifySourceType } from "@/core/sources/classify";
 import { outcomeOf, type RunDeps, type RunResult } from "@/core/sources/run-result";
@@ -101,7 +101,7 @@ export async function classifySources(deps: ClassifyDeps, input: { dry?: boolean
   const { db } = deps;
   let sources: SourceRow[];
   try {
-    sources = await fetchAllRows<SourceRow>((from, to) => db.from("sources").select(COLUMNS).order("id", { ascending: true }).range(from, to) as never, { cap: 200_000 });
+    sources = await allRows<SourceRow>(db, "sources", COLUMNS);
   } catch (e) {
     return { counts: {}, outcome: "failed", notes: [`sources read failed: ${(e as Error).message}`] };
   }

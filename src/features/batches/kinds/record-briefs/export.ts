@@ -6,8 +6,9 @@
 // explicit `ids` list reaches a quarantined item too (ADR-030: items are resolved, never left quarantined), and an id that cannot be exported is named with its reason.
 import type { Db } from "@/core/db";
 import { readExtractionInput } from "@/features/obligations";
+import { allRows, rowsByIds } from "@/core/db";
 
-import { allRows, itemPool, rowsByIds, type BatchExport, type Obj } from "../../kit/session-batch";
+import { itemPool, type BatchExport, type Obj } from "../../kit/session-batch";
 
 export const RECORD_EXPORT_LIMIT = 40;
 const omitId = (row: Obj): Obj => Object.fromEntries(Object.entries(row).filter(([k]) => k !== "id"));
