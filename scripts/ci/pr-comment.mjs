@@ -1,6 +1,9 @@
 // Posts or updates ONE comment on the PR: run id, per-job conclusions, the loc table. Found by an HTML marker, so a rerun updates it.
 // Env: GH_TOKEN, REPO, PR, RUN_ID, CI_STATUS (this job's status so far). DRY=1 prints the body and posts nothing.
 import { execFileSync } from "node:child_process";
+import { mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 const { REPO, PR, RUN_ID, CI_STATUS = "success", DRY } = process.env;
 const MARKER = "<!-- ci-report -->";
@@ -17,17 +20,19 @@ async function otherJobs() {
   return [];
 }
 
-// The parity job's per-route table, read back from that job's log between the markers its summary step prints (the jobs call already has actions: read, so no new permission). Empty when the job was skipped.
+// The parity job's per-route table: parity-report.txt from the run's uploaded `parity-capture` artifact (the artifacts API is covered by actions: read; the zip download answers a 302 to a signed URL, which gh follows). A job that did not run has no table; any failure is printed as its exact error text, never a generic note.
 function parityTable(jobs) {
-  const job = jobs.find((j) => j.name === "parity" && j.conclusion && j.conclusion !== "skipped");
-  if (!job) return "";
+  const job = jobs.find((j) => j.name === "parity");
+  if (!job || job.conclusion === "skipped") return "";
   try {
-    const log = gh([`repos/${REPO}/actions/jobs/${job.id}/logs`]).split(/\r?\n/).map((l) => l.replace(/^\S+Z /, ""));
-    const a = log.findIndex((l) => l === "=== PARITY-REPORT-BEGIN ===");
-    const b = log.findIndex((l) => l === "=== PARITY-REPORT-END ===");
-    return a >= 0 && b > a ? log.slice(a + 1, b).join("\n").trim() : "";
+    const list = JSON.parse(gh([`repos/${REPO}/actions/runs/${RUN_ID}/artifacts?per_page=100`])).artifacts;
+    const art = list.find((a) => a.name === "parity-capture" && !a.expired);
+    if (!art) return `parity job ${job.conclusion ?? job.status}, but no parity-capture artifact was uploaded (${list.map((a) => a.name).join(", ") || "none"})`;
+    const zip = join(mkdtempSync(join(tmpdir(), "parity-")), "a.zip");
+    writeFileSync(zip, execFileSync("gh", ["api", `repos/${REPO}/actions/artifacts/${art.id}/zip`], { maxBuffer: 1 << 28 }));
+    return execFileSync("unzip", ["-p", zip, "parity-report.txt"], { encoding: "utf8" }).trim() || "parity-report.txt is empty";
   } catch (e) {
-    return `(parity report unavailable: ${String(e.message).split("\n")[0]})`;
+    return `parity report could not be read: ${String(e.stderr || e.message).trim()}`;
   }
 }
 

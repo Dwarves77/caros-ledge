@@ -1,7 +1,7 @@
 // THE adapters: every deps interface a slice declared for a slice that was not merged yet, built here from the real exports of the merged slices (the parallel-build bet,
 // proven by tests/turn/wiring-types.test.ts). One construction site: `buildDeps(sb, env, opts)` returns every deps object; `wireAll()` wires the ones the app serves with.
 import type { Db } from "@/core/db";
-import { fetchAllRows, serviceClient } from "@/core/db";
+import { fetchAllRows, isServiceConfigured, serviceClient } from "@/core/db";
 import { deriveKey } from "@/core/intake/canonical-key";
 import type { IdentityHelpers } from "@/core/intake";
 import { assertFetchAllowed, capture, classifyBody, detectAccessWall, fetchAllowed, fetchDirect, makePoliteGate, parseOjReference } from "@/core/fetch";
@@ -277,14 +277,21 @@ export function startupCheck(d: BuiltDeps): { missing: string[]; owed: { member:
   };
 }
 
-/** IMP-026: in production a required member that is unwired refuses to serve; elsewhere the report is returned for the caller to show. */
+/** IMP-026: on Vercel (the deployed app) a required member that is unwired refuses to serve; elsewhere (a CI runner, a laptop) the report is returned for the caller to show and the routes that need the member answer 503 at request time. */
 export function enforceWired(report: { missing: string[] }, env: Env = process.env): void {
-  if (report.missing.length && env.NODE_ENV === "production") throw new Error(`startup refused: required dependencies are not wired: ${report.missing.join(", ")}`);
+  if (report.missing.length && env.VERCEL === "1") throw new Error(`startup refused: required dependencies are not wired: ${report.missing.join(", ")}`);
 }
 
 let wiredOnce = false;
-/** Wire the app's deps once at startup: the workspace handlers' members and the intake route's factory. Throws, in production, when a required member is unwired. */
+export const SERVICE_MEMBER = "service client (no service key configured)";
+
+/** Wire the app's deps once at startup: the workspace handlers' members and the intake route's factory. Deps are built from what the environment provides: without a service key nothing service-dependent is wired (isServiceConfigured is the only test, serviceClient is never called to decide) and the report names it; on Vercel that refuses to start. */
 export function wireAll(env: Env = process.env): { missing: string[]; owed: { member: string; owner: string }[] } {
+  if (!isServiceConfigured()) {
+    const report = { missing: [SERVICE_MEMBER], owed: [] };
+    enforceWired(report, env);
+    return report;
+  }
   const sb = serviceClient();
   const probe = buildDeps(sb, env);
   const report = startupCheck(probe);

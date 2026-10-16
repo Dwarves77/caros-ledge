@@ -3,7 +3,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { buildDeps, enforceWired, MANIFEST, startupCheck, workspaceWiring } from "@/core/turn/wiring";
+import { buildDeps, enforceWired, MANIFEST, SERVICE_MEMBER, startupCheck, wireAll, workspaceWiring } from "@/core/turn/wiring";
 import { deriveKey } from "@/core/intake/canonical-key";
 
 import { DOC_URL, fixture, NOW } from "../integration/world.ts";
@@ -23,9 +23,9 @@ test("an unwired required member is named, and production refuses to serve with 
   (f.d.workspace as { notify?: unknown }).notify = undefined;
   const report = startupCheck(f.d);
   assert.deepEqual(report.missing.sort(), ["intake.mint.mintItem", "workspace.notify"]);
-  assert.throws(() => enforceWired(report, { NODE_ENV: "production" }), /startup refused: required dependencies are not wired: intake\.mint\.mintItem, workspace\.notify/);
-  assert.doesNotThrow(() => enforceWired(report, { NODE_ENV: "test" }));
-  assert.doesNotThrow(() => enforceWired({ missing: [] }, { NODE_ENV: "production" }));
+  assert.throws(() => enforceWired(report, { VERCEL: "1" }), /startup refused: required dependencies are not wired: intake\.mint\.mintItem, workspace\.notify/);
+  assert.doesNotThrow(() => enforceWired(report, { NODE_ENV: "production" }));
+  assert.doesNotThrow(() => enforceWired({ missing: [] }, { VERCEL: "1" }));
 });
 
 test("the intake adapters: the canonical key from an identifier or a URL, institution equality that is never true for an empty key", () => {
@@ -110,4 +110,15 @@ test("halted() is the kill switch as a dep member: true while an open fleet-budg
   assert.equal(await f.d.halted(), false);
   f.db.seed("integrity_flags", [{ category: "budget", subject_type: "fleet", subject_ref: "fleet-budget-halt", status: "open", created_by: "operator", description: "halt" }]);
   assert.equal(await f.d.halted(), true);
+});
+
+test("wireAll builds from what the environment provides: no service key and not Vercel starts (nothing service-dependent wired); no service key on Vercel refuses and names the member", () => {
+  const saved = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+  try {
+    assert.deepEqual(wireAll({ NODE_ENV: "production" }), { missing: [SERVICE_MEMBER], owed: [] });
+    assert.throws(() => wireAll({ VERCEL: "1" }), /startup refused: required dependencies are not wired: service client \(no service key configured\)/);
+  } finally {
+    if (saved !== undefined) process.env.SUPABASE_SERVICE_ROLE_KEY = saved;
+  }
 });
