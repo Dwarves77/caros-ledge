@@ -8,10 +8,10 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
-// The policy copy is the approved text, unchanged until counsel rules on the processor list. The page carries no <main> of its own: the root layout does not wrap a public page, so this one is the page's single main landmark.
+// The policy copy is the approved text, unchanged until counsel rules on the processor list. The page carries no <main> of its own: the shell supplies the page's single main landmark, so this page renders a div (the old page nested a second main).
 export default function PrivacyPolicyPage() {
   return (
-    <main className="cl-privacy">
+    <div className="cl-privacy">
       <article className="cl-privacy-article">
         <h1 className="cl-privacy-title">Privacy Policy</h1>
          <p className="cl-privacy-updated">
@@ -317,7 +317,7 @@ export default function PrivacyPolicyPage() {
           </P>
         </Section>
       </article>
-    </main>
+    </div>
   );
 }
 
