@@ -58,6 +58,13 @@ test("decideRoute: segment matching, scanner 404, signed-in bounce, the query st
   const anon = (pathname: string, search = "") => decideRoute({ pathname, search, authenticated: false });
   const authed = (pathname: string) => decideRoute({ pathname, authenticated: true });
   assert.deepEqual(anon("/dashboard", "?tab=a"), { action: "redirect-login", redirectTo: "/dashboard?tab=a" });
+  const down = (pathname: string) => decideRoute({ pathname, authenticated: false, authUnavailable: true });
+  assert.deepEqual(down("/dashboard"), { action: "service-unavailable" }, "an unreachable auth service is a 503 page, not the login form");
+  assert.deepEqual(down("/login"), { action: "allow" });
+  assert.deepEqual(down("/privacy"), { action: "allow" });
+  assert.deepEqual(down("/api/health/surfaces"), { action: "allow" });
+  assert.deepEqual(decideRoute({ pathname: "/dashboard", authenticated: true, authUnavailable: true }), { action: "allow" });
+  assert.deepEqual(down("/wp-admin/x"), { action: "scanner-404" });
   for (const p of ["/login", "/signup", "/privacy", "/auth/callback", "/auth/reset-password", "/login/x", "/api/anything", "/_next/data/x", "/robots.txt", "/favicon.ico"]) assert.deepEqual(anon(p), { action: "allow" }, p);
   for (const p of ["/loginx", "/privacy-evil", "/signup2", "/apixyz", "/_nextx", "/auth/callbackx"]) assert.equal(anon(p).action, "redirect-login", `${p} is not under a public prefix`);
   for (const p of ["/wp-admin/x", "/wp-login.php", "/a/b.php", "/xmlrpc.php"]) assert.deepEqual(anon(p), { action: "scanner-404" }, p);

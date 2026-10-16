@@ -1,4 +1,5 @@
-// Ported from old_repo/src/components/ui/Timeline.tsx (lines 40-170, 180-376)
+// Ported from old_repo/src/components/ui/Timeline.tsx (lines 40-170)
+// Ported from old_repo/src/components/ui/Timeline.tsx (lines 180-375)
 import Link from "next/link";
 
 import type { UrgencyBand } from "@/core/lists";
@@ -33,7 +34,7 @@ function Header({ total, passed, nextDate }: { total: number; passed: number; ne
 
 /**
  * The action-card timeline: ONE markup. Wide it is a dot track with date above and label below each marker; on the phone the same markers reflow to a
- * vertical stack (grid in base.css). One focusable per marker (its label). The callout states the next milestone; it never asserts that obligations are
+ * vertical stack (grid in base.css). A label is not a focus stop (a tab stop per marker was a defect, B-1965); the full text rides in `title` and the callout's Full schedule action is the keyboard route. The callout states the next milestone; it never asserts that obligations are
  * current from the entry list alone (B-1964).
  */
 export function Timeline({ entries, band, nowIso, onFullSchedule, fullScheduleHref, moreMarkersHref }: TimelineProps) {
@@ -63,7 +64,7 @@ export function Timeline({ entries, band, nowIso, onFullSchedule, fullScheduleHr
             <span className="cl-tl-dotcell">
               <TimelineDot state={state} bandHex={band.hex} size={state === "next" ? 12 : 8} ring={3} />
             </span>
-            <span tabIndex={0} title={entry.label} aria-label={entry.label} className="cl-tl-label">
+            <span title={entry.label} className="cl-tl-label">
               {entry.label}
             </span>
           </li>

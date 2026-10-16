@@ -1,6 +1,6 @@
 "use client";
 
-// Ported from old_repo/src/components/telemetry/GlobalErrorReporter.tsx (lines 1-115)
+// Ported from old_repo/src/components/telemetry/GlobalErrorReporter.tsx (lines 1-114)
 import { useEffect } from "react";
 
 import { authHeaders } from "@/core/http/authed-fetch";

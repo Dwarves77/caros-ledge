@@ -1,4 +1,5 @@
-// Ported from old_repo/src/components/list-surface/list-surface-helpers.ts (lines 6-127, 347-411)
+// Ported from old_repo/src/components/list-surface/list-surface-helpers.ts (lines 6-127)
+// Ported from old_repo/src/components/list-surface/list-surface-helpers.ts (lines 347-411)
 // Facet options and the live counts (INV-267): corpus figures only at rest; with a selection, tallies over the rows with the group's OWN selection removed.
 import { orderedValues } from "@/core/contracts";
 import { BAND_ORDER, bandFromPriority, type UrgencyBandKey } from "@/core/lists";

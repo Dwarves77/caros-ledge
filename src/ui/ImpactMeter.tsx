@@ -20,8 +20,8 @@ function Segments({ n }: { n: number | null }) {
 }
 
 interface ImpactMeterProps {
-  scores?: ImpactScores | null;
-  total?: number;
+  scores?: ImpactScores | null | undefined;
+  total?: number | undefined;
   variant?: "row" | "full";
   valueVisible?: boolean;
 }

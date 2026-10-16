@@ -1,0 +1,90 @@
+{
+  "_about": "The parity gate's configuration (tests/parity/compare.mjs). `gates` names what slice P2-09 owns: `full` routes are compared whole (landmarks, headings, controls, list fields, row heights at 375); `frame` routes only for the shell the slice draws (frameControls, frameHeadings); `pixelExact` routes also gate on the 2 percent pixel diff. `approved` lists the differences from the baseline that a ruling allows, each with its ruling; nothing else may differ. Later UI slices add their routes to `gates` in their own PR.",
+  "gates": {
+    "full": [
+      "home",
+      "login",
+      "signup",
+      "privacy"
+    ],
+    "frame": [
+      "dashboard",
+      "regulations",
+      "market",
+      "research",
+      "operations"
+    ],
+    "pixelExact": [
+      "home",
+      "login",
+      "signup",
+      "privacy"
+    ]
+  },
+  "frameControls": [
+    "^link:Caro's Ledge",
+    "^link:(Dashboard|Watchlist|Regulations|Market Intel|Research|Operations|Map|Community)$",
+    "^button:Open account menu",
+    "^button:Back to top",
+    "^button:(Open navigation|Search)$",
+    "^link:Account"
+  ],
+  "frameHeadings": [
+    "Caro's Ledge",
+    "This page doesn't exist"
+  ],
+  "approved": [
+    {
+      "id": "privacy-no-chrome-landmarks",
+      "route": "privacy",
+      "kind": "landmark",
+      "match": "^(complementary|navigation|banner|main)$",
+      "ruling": "shell-list.md section 8 (AppShell row) and ASSEMBLY H.1 B-0121/B-0153: /privacy and the auth routes render without the signed-in chrome; the old page drew the signed-in nav card and a second <main> for an anonymous visitor (a defect, not a design)."
+    },
+    {
+      "id": "privacy-no-chrome-headings",
+      "route": "privacy",
+      "kind": "heading",
+      "match": "^1:Caro's Ledge$",
+      "ruling": "Same ruling: the nav card's wordmark heading is chrome."
+    },
+    {
+      "id": "privacy-no-chrome-controls",
+      "route": "privacy",
+      "kind": "control",
+      "match": "^(link:(Caro's Ledge|Dashboard|Watchlist|Regulations|Market Intel|Research|Operations|Map|Community|Account.*)|button:(Back to top|Open navigation|Search)|link:Account)",
+      "ruling": "Same ruling: the nav card, the top bar and the back-to-top button are signed-in chrome."
+    },
+    {
+      "id": "privacy-no-chrome-row",
+      "route": "privacy",
+      "kind": "row",
+      "match": "^article:Privacy Policy",
+      "ruling": "Same ruling: the article is a child of the page's single main, not a nested one; its row text is unchanged, its height differs with the removed chrome."
+    },
+    {
+      "id": "privacy-pixel",
+      "route": "privacy",
+      "kind": "pixel",
+      "ruling": "Same ruling: the nav card is absent, so the page is not pixel-exact; structure and copy still gate."
+    },
+    {
+      "id": "auth-field-height",
+      "route": "login",
+      "kind": "pixel",
+      "ruling": "ux-laws.md law 2 (binding, DP-2): fields and buttons are at least 44 px; artboard 16 draws 36 px fields. DESIGN CHANGES OWED #1 (artboard 16). Structure still gates."
+    },
+    {
+      "id": "auth-field-height-signup",
+      "route": "signup",
+      "kind": "pixel",
+      "ruling": "Same as auth-field-height (artboard 16)."
+    },
+    {
+      "id": "auth-field-height-home",
+      "route": "home",
+      "kind": "pixel",
+      "ruling": "Same as auth-field-height: / signed out lands on /login."
+    }
+  ]
+}

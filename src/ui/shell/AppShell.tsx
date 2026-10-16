@@ -10,6 +10,7 @@ import { bandOf } from "@/core/lists";
 import { useAuth } from "@/features/auth/ui/AuthProvider";
 
 import { StateNote } from "../StateNote";
+
 import { BackToTop } from "./BackToTop";
 import { AssistantProvider } from "./CommandBar";
 import { shellNotes } from "./identity-seed";

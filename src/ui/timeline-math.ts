@@ -1,5 +1,5 @@
 // Ported from old_repo/src/components/ui/milestone-timeline-classify.ts (lines 1-28)
-// Ported from old_repo/src/lib/detail/timeline-math.ts (lines 1-169)
+// Ported from old_repo/src/lib/detail/timeline-math.ts (lines 1-168)
 // Milestone classification and the timeline's pure arithmetic. No function here reads the clock: the caller passes `nowIso`.
 import type { TimelineEntry } from "@/core/types";
 

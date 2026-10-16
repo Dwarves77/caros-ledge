@@ -9,10 +9,11 @@ import { authedFetch } from "@/core/http/authed-fetch";
 import { bandFromPriority, detailHref, jurisdictionCode, metaLine } from "@/core/lists";
 import { formatNumber } from "@/core/shared";
 
-import { useBootstrapStore } from "./use-bootstrap";
 import { SkeletonListRow } from "../Skeleton";
 import { StateNote } from "../StateNote";
 import { ListRow } from "../ListRow";
+
+import { useBootstrapStore } from "./use-bootstrap";
 import { activeDescendantId, clearButtonLabel, clearButtonVisible, isOutsidePointerDown, moveActiveIndex, optionId, resolveEnterKeyAction, runSearch, searchResultsHref, type SearchState } from "./command-bar";
 
 const AssistantContext = createContext(false);

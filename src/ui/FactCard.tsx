@@ -1,6 +1,8 @@
 "use client";
 
-// Ported from old_repo/src/components/ui/FactCard.tsx (lines 31-204, 227-348, 365-660)
+// Ported from old_repo/src/components/ui/FactCard.tsx (lines 31-204)
+// Ported from old_repo/src/components/ui/FactCard.tsx (lines 227-348)
+// Ported from old_repo/src/components/ui/FactCard.tsx (lines 365-660)
 import { createContext, useContext, type ReactNode } from "react";
 
 import { hostOf } from "@/core/shared";
@@ -57,7 +59,7 @@ function ProvenanceBlock({ provenance: p, inference }: { provenance?: FactCardPr
       {p.org && !sourceNameWrapsToTwoLines(p.source) && <p className="cl-fc-prov-text">{p.org}</p>}
       {p.href && (
         <a href={p.href} target="_blank" rel="noopener noreferrer" className="cl-fc-prov-link">
-          {hostOf(p.href)} <span aria-hidden="true">&#8599;</span>
+          {hostOf(p.href)} <span aria-hidden="true">{"↗"}</span>
         </a>
       )}
       {p.accessed && <p className="cl-fc-prov-text">{p.accessed}</p>}

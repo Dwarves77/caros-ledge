@@ -1,9 +1,10 @@
-// Ported from old_repo/src/components/ui/CoverageState.tsx (lines 31-85, 124-236)
+// Ported from old_repo/src/components/ui/CoverageState.tsx (lines 31-85)
+// Ported from old_repo/src/components/ui/CoverageState.tsx (lines 124-236)
 import type { ReactNode } from "react";
 
 import { describeCoverageState } from "@/core/coverage";
 
-import { ABSENCE_DASH } from "./absence";
+import { ABSENCE_DASH } from "./absence-reason";
 import { Button } from "./Button";
 
 export type CoverageRequestPhase = "idle" | "sending" | "done" | "already" | "failed";
@@ -60,18 +61,18 @@ export function CoverageState(props: CoverageStateProps) {
   const d = describeCoverageState({
     state: state ?? "",
     subject,
-    reason: props.reason,
-    reasonClass: props.reasonClass,
-    roadmap: props.roadmap,
-    requestRef: props.requestRef,
-    lastValue: props.lastValue,
-    asOf: props.asOf,
-    expectedRefresh: props.expectedRefresh,
-    hiddenCount: props.hiddenCount,
-    noun: props.noun,
+    reason: props.reason ?? null,
+    reasonClass: props.reasonClass ?? null,
+    roadmap: props.roadmap ?? null,
+    requestRef: props.requestRef ?? null,
+    lastValue: props.lastValue ?? null,
+    asOf: props.asOf ?? null,
+    expectedRefresh: props.expectedRefresh ?? null,
+    hiddenCount: props.hiddenCount ?? null,
+    noun: props.noun ?? null,
     canWiden: typeof props.onWiden === "function",
     canRetry: typeof props.onRetry === "function" || !!props.retryHref,
-    statusHref: props.statusHref,
+    statusHref: props.statusHref ?? null,
   });
   if (!d) return <>{fallback}</>;
   if (variant === "cell" || d.suppress) {

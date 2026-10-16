@@ -61,14 +61,15 @@ export function resetBootstrap(userId: string | null = null): void {
   useBootstrapStore.setState({ ...IDLE, userId });
 }
 
-async function load(userId: string, fetchImpl: typeof fetch = fetch): Promise<void> {
+/** One bundle read for `userId`; a result that arrives after a reset or a user change is discarded. The fetch and the header source are injectable for the tests. */
+export async function loadBootstrap(userId: string, fetchImpl: typeof fetch = fetch, headersImpl: () => Promise<Record<string, string> | null> = authHeaders): Promise<void> {
   if (inFlight) return inFlight;
   const mine = epoch;
   useBootstrapStore.setState({ status: "loading", error: null });
   inFlight = (async () => {
     let next: Partial<BootstrapState>;
     try {
-      const headers = await authHeaders();
+      const headers = await headersImpl();
       if (!headers) next = { status: "idle" };
       else {
         const resp = await fetchImpl("/api/workspace/bootstrap", { headers });
@@ -88,7 +89,7 @@ async function load(userId: string, fetchImpl: typeof fetch = fetch): Promise<vo
 
 export function refreshBootstrap(): void {
   const { userId } = useBootstrapStore.getState();
-  if (userId) void load(userId);
+  if (userId) void loadBootstrap(userId);
 }
 
 /** Overrides and personal state into the item-state store, once per bundle. A degraded (null) field is left alone: it never overwrites state with an empty list. */
@@ -108,7 +109,7 @@ export function useBootstrap(userId: string | null) {
       return;
     }
     if (current.userId !== userId) resetBootstrap(userId);
-    if (useBootstrapStore.getState().status === "idle") void load(userId);
+    if (useBootstrapStore.getState().status === "idle") void loadBootstrap(userId);
   }, [userId]);
   useEffect(() => {
     const { data, hydratedFrom } = useBootstrapStore.getState();

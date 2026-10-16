@@ -9,7 +9,7 @@ import { hasBiasTags } from "@/core/sources/bias-tags";
 import type { TimelineEntry } from "@/core/types";
 
 import { Absence } from "./Absence";
-import type { AbsenceReason } from "./absence";
+import type { AbsenceReason } from "./absence-reason";
 import { ActionRow } from "./ActionRow";
 import { BiasChips } from "./BiasChips";
 import { BandChip, TagChip, TierChip, WorkspaceTagPill } from "./Chips";

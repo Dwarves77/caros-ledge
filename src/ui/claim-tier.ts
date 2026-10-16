@@ -1,4 +1,5 @@
-// Ported from old_repo/src/lib/detail/fact-card-model.ts (lines 41-90, 480-572)
+// Ported from old_repo/src/lib/detail/fact-card-model.ts (lines 41-90)
+// Ported from old_repo/src/lib/detail/fact-card-model.ts (lines 480-572)
 // Ported from old_repo/src/lib/agent/parse-record-sections.ts (lines 10-18)
 // The fact-card prop types and the per-claim tier match. INV-126/213: a claim's tier is the caller's map (COALESCE(tier_override, base_tier)); this module only matches, never derives, never reads effective_tier.
 
@@ -83,10 +84,10 @@ export function resolveClaimTier(claimText: string, claimTiers: ClaimTierMap | n
   return found;
 }
 
-function withTier(nodes: ClaimNode[], provenance: FactCardProvenance | null | undefined, claimTiers: ClaimTierMap): FactCardProvenance | null | undefined {
+function withTier(nodes: ClaimNode[], provenance: FactCardProvenance | null | undefined, claimTiers: ClaimTierMap): FactCardProvenance | null {
   if (typeof provenance?.tier === "number") return provenance;
   const info = resolveClaimTier(nodes.map((n) => n.text).join(" "), claimTiers);
-  return info ? { source: provenance?.source ?? info.sourceName ?? null, org: provenance?.org ?? null, href: provenance?.href ?? info.sourceUrl ?? null, accessed: provenance?.accessed ?? null, tier: info.tier } : provenance;
+  return info ? { source: provenance?.source ?? info.sourceName ?? null, org: provenance?.org ?? null, href: provenance?.href ?? info.sourceUrl ?? null, accessed: provenance?.accessed ?? null, tier: info.tier } : (provenance ?? null);
 }
 
 /** Attach each claim's grounded-source tier to a card model; inference and record-grade cards are returned untouched. Pure. */

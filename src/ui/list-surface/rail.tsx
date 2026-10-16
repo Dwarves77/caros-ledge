@@ -1,6 +1,7 @@
 "use client";
 
-// Ported from old_repo/src/components/list-surface/ListSurfaceRailCards.tsx (lines 45-252, 551-578)
+// Ported from old_repo/src/components/list-surface/ListSurfaceRailCards.tsx (lines 45-252)
+// Ported from old_repo/src/components/list-surface/ListSurfaceRailCards.tsx (lines 551-578)
 import { useMemo, useState } from "react";
 
 import { formatNumber } from "@/core/shared";
@@ -8,6 +9,7 @@ import { tierScaleSpan } from "@/core/sources";
 
 import { ImpactMeter } from "../ImpactMeter";
 import { RailCard } from "../SmallParts";
+
 import type { FacetOption } from "./facets";
 
 export interface FacetGroup {

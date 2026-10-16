@@ -3,7 +3,7 @@
 // Ported from old_repo/src/components/ui/SectionIndex.tsx (lines 28-136)
 // Ported from old_repo/src/components/ui/SectionIndexLink.tsx (lines 12-39)
 // Ported from old_repo/src/components/ui/section-index-styles.ts (lines 1-54)
-// Ported from old_repo/src/lib/detail/use-section-scroll-spy.ts (lines 1-41)
+// Ported from old_repo/src/lib/detail/use-section-scroll-spy.ts (lines 1-40)
 import { useEffect, useState } from "react";
 
 export interface SectionIndexEntry {

@@ -1,4 +1,6 @@
-// Ported from old_repo/src/components/ui/ListRow.tsx (lines 52-137, 555, 713-985)
+// Ported from old_repo/src/components/ui/ListRow.tsx (lines 52-137)
+// Ported from old_repo/src/components/ui/ListRow.tsx (lines 555-555)
+// Ported from old_repo/src/components/ui/ListRow.tsx (lines 713-985)
 // The one list row. Class names only: every layout rule lives once in base.css, so a 100-row list carries the CSS once (the old row emitted 13.6 KB per instance).
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -8,7 +10,7 @@ import type { UrgencyBand } from "@/core/lists";
 import type { ImpactScores, TimelineEntry } from "@/core/types";
 
 import { Absence } from "./Absence";
-import { pickAbsenceReason, type AbsenceReason } from "./absence";
+import { pickAbsenceReason, type AbsenceReason } from "./absence-reason";
 import { BiasChips } from "./BiasChips";
 import { GradeChip, TagChip, TierChip, WorkspaceTagPill } from "./Chips";
 import { ImpactMeter } from "./ImpactMeter";

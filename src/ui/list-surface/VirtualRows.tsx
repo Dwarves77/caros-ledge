@@ -21,6 +21,7 @@ function InBox<T>({ rows, rowHeight, overscan = 8, getRowId, renderRow, box }: V
   useLayoutEffect(() => {
     if (holder.current) setMargin(holder.current.getBoundingClientRect().top - box.getBoundingClientRect().top + box.scrollTop);
   }, [box, rows.length]);
+  // eslint-disable-next-line react-hooks/incompatible-library -- the virtualizer's functions are used only inside this component
   const v = useVirtualizer({ count: rows.length, getScrollElement: () => box, estimateSize: () => rowHeight, overscan, scrollMargin: margin, getItemKey: (i) => getRowId(rows[i] as T) });
   return (
     <div ref={holder} className="cl-virtual" style={{ height: v.getTotalSize() }}>

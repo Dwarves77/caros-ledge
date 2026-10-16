@@ -1,5 +1,5 @@
 // Ported from old_repo/src/components/ui/Absence.tsx (lines 166-207)
-import { ABSENCE_DASH, NEEDS_PHRASE, type AbsenceReason } from "./absence";
+import { ABSENCE_DASH, NEEDS_PHRASE, type AbsenceReason } from "./absence-reason";
 
 /** `reason` draws the needs-phrase; `dash` (a cell too narrow for the phrase) draws the dash with the phrase on aria-label and title. */
 export function Absence({ reason, variant = "reason" }: { reason: AbsenceReason; variant?: "reason" | "dash" }) {

@@ -6,6 +6,7 @@
 import { useSyncExternalStore, type ReactNode } from "react";
 
 import { formatLocaleDate, isoWeek } from "@/core/shared/dates";
+import { SectionCard } from "@/ui/SectionCard";
 
 import styles from "./auth.module.css";
 
@@ -68,14 +69,22 @@ export function AuthFrame({ children }: { children: ReactNode }) {
   );
 }
 
-/** The shared page head: the date eyebrow, the title, and an optional dek. */
+/** The shared page head: the kit's masthead card (eyebrow, Anton title, optional dek), re-skinned onto the design system by P2-09. The eyebrow needs the visitor's clock, so it appears after hydration. */
 export function AuthMasthead({ title, dek }: { title: string; dek?: string }) {
   const today = useToday();
   return (
-    <header className={styles.masthead}>
-      {today && <div className={styles.eyebrow}>{formatLocaleDate(today, DATE_LABEL)}</div>}
-      <h1 className={styles.title}>{title}</h1>
-      {dek && <p className={styles.dek}>{dek}</p>}
-    </header>
+    <SectionCard as="header" className="cl-masthead" dataAttributes={{ "data-masthead-size": "detail" }}>
+      <div className="cl-masthead-body">
+        {today && (
+          <p className="cl-masthead-eyebrow">
+            VOL {EDITORIAL_VOLUME} · No. {isoWeek(today)} · {formatLocaleDate(today, DATE_LABEL)}
+          </p>
+        )}
+        <h1 data-guard-title className="cl-masthead-title">
+          {title}
+        </h1>
+        {dek && <div className="cl-masthead-dek">{dek}</div>}
+      </div>
+    </SectionCard>
   );
 }

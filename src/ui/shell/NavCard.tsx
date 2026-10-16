@@ -5,20 +5,22 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { formatNumber } from "@/core/shared";
+import { useAuth } from "@/features/auth/ui/AuthProvider";
+import { useWorkspaceStore } from "@/core/workspace";
 
 import { BandGradientRule } from "../BandParts";
+
 import { shouldShowAdminNav, workspaceLabel } from "./identity-seed";
 import { APP_NAME, APP_TAGLINE, gradientCountsFrom, isActivePath, SECTIONS } from "./nav-model";
 import { useAdminAttention } from "./use-admin-attention";
 import { useBootstrapStore } from "./use-bootstrap";
 import { UserMenu } from "./UserMenu";
-import { useAuth } from "@/features/auth/ui/AuthProvider";
-import { useWorkspaceStore } from "@/core/workspace";
 
 function Wordmark({ drawer, onNavigate }: { drawer: boolean; onNavigate?: (() => void) | undefined }) {
+  const nav = onNavigate ? { onClick: onNavigate } : {};
   return (
     <div className={drawer ? "cl-nav-brand cl-nav-brand--drawer" : "cl-nav-brand"}>
-      <Link href="/" prefetch={false} className="cl-nav-brand-link" onClick={onNavigate}>
+      <Link href="/" prefetch={false} className="cl-nav-brand-link" {...nav}>
         <h1 data-guard-display="wordmark" className="cl-nav-wordmark">
           {APP_NAME}
         </h1>
@@ -42,6 +44,7 @@ export function NavCard({ variant = "card", onNavigate }: { variant?: "card" | "
   const showAdmin = shouldShowAdminNav({ status: identityStatus, isPlatformAdmin });
   const { total } = useAdminAttention(showAdmin);
   const drawer = variant === "drawer";
+  const nav = onNavigate ? { onClick: onNavigate } : {};
   const label = workspaceLabel(identityStatus, orgName);
   const body = (
     <>
@@ -57,7 +60,7 @@ export function NavCard({ variant = "card", onNavigate }: { variant?: "card" | "
                 const active = isActivePath(pathname, href);
                 const n = countKey && counts ? counts[countKey] : null;
                 return (
-                  <Link key={href} href={href} onClick={onNavigate} aria-current={active ? "page" : undefined} className={`cl-nav-row${active ? " cl-nav-row--active" : ""}`}>
+                  <Link key={href} href={href} {...nav} aria-current={active ? "page" : undefined} className={`cl-nav-row${active ? " cl-nav-row--active" : ""}`}>
                     <span>{text}</span>
                     {n != null && <span className="cl-nav-count">{formatNumber(n)}</span>}
                   </Link>
@@ -71,13 +74,13 @@ export function NavCard({ variant = "card", onNavigate }: { variant?: "card" | "
         {user ? (
           <UserMenu email={user.email ?? null} orgName={label === "No workspace" ? "" : orgName || label} isAdmin={showAdmin} onSignOut={() => void signOut()} {...(onNavigate ? { onNavigate } : {})} />
         ) : (
-          <Link href="/profile" prefetch={false} onClick={onNavigate} className="cl-nav-footrow">
+          <Link href="/profile" prefetch={false} {...nav} className="cl-nav-footrow">
             <span className="cl-nav-foot-title">Account</span>
             <span className="cl-nav-foot-sub">{"—"}</span>
           </Link>
         )}
         {showAdmin && (
-          <Link href="/admin" prefetch={false} onClick={onNavigate} aria-current={isActivePath(pathname, "/admin") ? "page" : undefined} aria-label={total > 0 ? `Admin (${total} item${total === 1 ? "" : "s"} need attention)` : "Admin"} className="cl-nav-footrow">
+          <Link href="/admin" prefetch={false} {...nav} aria-current={isActivePath(pathname, "/admin") ? "page" : undefined} aria-label={total > 0 ? `Admin (${total} item${total === 1 ? "" : "s"} need attention)` : "Admin"} className="cl-nav-footrow">
             <span className="cl-nav-foot-title">Admin</span>
             <span className="cl-nav-foot-end">
               {total > 0 && <span className="cl-nav-count">{formatNumber(total)}</span>}

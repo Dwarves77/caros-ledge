@@ -1,4 +1,6 @@
-// Ported from old_repo/src/lib/supabase-server.ts (lines 706-983, 3008-3143, 3210-3251)
+// Ported from old_repo/src/lib/supabase-server.ts (lines 706-983)
+// Ported from old_repo/src/lib/supabase-server.ts (lines 3008-3143)
+// Ported from old_repo/src/lib/supabase-server.ts (lines 3210-3251)
 // The listing reads over the listing RPCs. A failed read says it failed: `failed` is true only when the RPC errored, an empty corpus is `failed: false`
 // with no rows, and no wrapper maps one to the other (INV-263).
 import type { Db } from "@/core/db";
@@ -6,6 +8,7 @@ import type { ListingCursor } from "@/core/lists";
 import type { Resource } from "@/core/types";
 import type { WorkspaceOverride } from "@/features/workspace/state";
 
+import { enrichSources } from "./enrich";
 import { mapRows, type WorkspaceItemRpcRow } from "./map-rows";
 
 /** Every listing RPC ends its own ORDER BY in id (a total order), so a ranged read never repeats or skips a row at a page boundary. */
@@ -28,6 +31,8 @@ export interface ListingRead {
   /** The RPC itself failed. False for an honest empty corpus. */
   failed: boolean;
   timelineFailures: number;
+  /** The source-rating read failed: rows carry no tier or bias tags, and the surface shows the Absence dash (never an invented tier). */
+  enrichFailed: boolean;
   message: string | null;
 }
 
@@ -61,12 +66,13 @@ export async function readListing(db: Db, opts: { orgId?: string | null; rpc: Li
   const call = db.rpc(rpc, args);
   const from = page ? (useCursor ? 0 : page.offset) : 0;
   const { data, error } = await (page ? call.range(from, from + page.limit - 1) : call);
-  if (error) return { rows: [], archived: [], overrides: [], failed: true, timelineFailures: 0, message: error.message };
+  if (error) return { rows: [], archived: [], overrides: [], failed: true, timelineFailures: 0, enrichFailed: false, message: error.message };
   const items = (data ?? []) as WorkspaceItemRpcRow[];
-  if (items.length === 0) return { rows: [], archived: [], overrides: [], failed: false, timelineFailures: 0, message: null };
+  if (items.length === 0) return { rows: [], archived: [], overrides: [], failed: false, timelineFailures: 0, enrichFailed: false, message: null };
   const mapped = await mapRows(db, items);
+  const enriched = await enrichSources(db, [...mapped.active, ...mapped.archived], { biasTags: true });
   const overrides = orgId ? await readOverrides(db, orgId, mapped.uuidToUiId) : [];
-  return { rows: mapped.active, archived: mapped.archived, overrides, failed: false, timelineFailures: mapped.timelineFailures, message: null };
+  return { rows: mapped.active, archived: mapped.archived, overrides, failed: false, timelineFailures: mapped.timelineFailures, enrichFailed: !enriched, message: null };
 }
 
 /** The remainder after the first page, requested explicitly: a failure is a FAILURE for the caller to say, never a short list. */

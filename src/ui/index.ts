@@ -1,7 +1,7 @@
 // Ported from old_repo/src/components/ui/ListRow.tsx (lines 1-985)
 export { Absence } from "./Absence";
-export { ABSENCE_DASH, NEEDS_PHRASE, pickAbsenceReason } from "./absence";
-export type { AbsenceReason } from "./absence";
+export { ABSENCE_DASH, NEEDS_PHRASE, pickAbsenceReason } from "./absence-reason";
+export type { AbsenceReason } from "./absence-reason";
 export { downloadMarkdownBrief, SHARE_MESSAGE, shareResource } from "./actions";
 export type { ShareResult } from "./actions";
 export { ActionCard } from "./ActionCard";

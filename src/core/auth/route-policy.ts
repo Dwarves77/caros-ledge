@@ -19,14 +19,17 @@ export type RouteDecision =
   /** A signed-in visitor hit /login or /signup. */
   | { action: "redirect-home" }
   /** A protected route without a session: /login, carrying the original path and query as the return target. */
-  | { action: "redirect-login"; redirectTo: string };
+  | { action: "redirect-login"; redirectTo: string }
+  /** The auth service could not be reached on a protected route: a 503 page with Retry, never the login form (IMP-015). */
+  | { action: "service-unavailable" };
 
 /** The one routing decision per request, pure: scanner probes, public routes, static and api passthrough, then the protected gate. */
-export function decideRoute({ pathname, search = "", authenticated }: { pathname: string; search?: string; authenticated: boolean }): RouteDecision {
+export function decideRoute({ pathname, search = "", authenticated, authUnavailable = false }: { pathname: string; search?: string; authenticated: boolean; authUnavailable?: boolean }): RouteDecision {
   if (isScannerProbe(pathname)) return { action: "scanner-404" };
   if (isPublicRoute(pathname)) return authenticated && (pathname === "/login" || pathname === "/signup") ? { action: "redirect-home" } : { action: "allow" };
   if (isStaticOrApi(pathname)) return { action: "allow" };
-  return authenticated ? { action: "allow" } : { action: "redirect-login", redirectTo: `${pathname}${search}` };
+  if (authenticated) return { action: "allow" };
+  return authUnavailable ? { action: "service-unavailable" } : { action: "redirect-login", redirectTo: `${pathname}${search}` };
 }
 
 /** A same-origin path, or "/". Rejects non-paths, `//host`, `/\host` and any control character (a tab or newline would make `/\t/host` protocol-relative in a browser). */

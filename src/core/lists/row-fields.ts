@@ -1,9 +1,10 @@
 // Ported from old_repo/src/lib/list-row-fields.ts (lines 1-93)
 // Ported from old_repo/src/lib/dashboard/row-fields.ts (lines 1-86)
 // The fields a list row draws, derived from one Resource. Impact is the stored score or null (rendered as the dash): no keyword heuristic scores a row.
-import { canonicalSurface, detailHref, type DetailSurface } from "./item-links";
 import type { ImpactScores, Resource, TimelineEntry } from "@/core/types";
 import { formatDate } from "@/core/shared";
+
+import { canonicalSurface, detailHref, type DetailSurface } from "./item-links";
 
 export type ListWatchType = "reg" | "signal" | "research" | "operations";
 const WATCH_TYPE: Record<DetailSurface, ListWatchType> = { regulations: "reg", market: "signal", research: "research", operations: "operations" };
@@ -34,7 +35,7 @@ export const LIST_ROW_FIELDS = ["id", "href", "priority", "jurisdiction", "title
 
 export const watchTypeForItem = (item: { type?: string | null; domain?: number | null }): ListWatchType => WATCH_TYPE[canonicalSurface(item)];
 
-export function jurisdictionCode(r: Pick<Resource, "jurisdictionIso" | "jurisdiction">): string {
+export function jurisdictionCode(r: { jurisdictionIso?: string[] | undefined; jurisdiction?: string | undefined }): string {
   const iso = r.jurisdictionIso?.[0];
   return iso ? iso.toUpperCase() : r.jurisdiction ? r.jurisdiction.toUpperCase() : "GLOBAL";
 }

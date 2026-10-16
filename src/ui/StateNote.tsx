@@ -50,4 +50,4 @@ export function StateNote({ band: bandProp, children, action, tone = "note" }: S
 }
 
 /** The empty variant of StateNote, exported by its own name: an honest empty (the read succeeded and returned nothing). */
-export const EmptyState = ({ children, action }: { children: ReactNode; action?: StateNoteProps["action"] }) => <StateNote action={action}>{children}</StateNote>;
+export const EmptyState = ({ children, action }: { children: ReactNode; action?: StateNoteProps["action"] }) => <StateNote {...(action ? { action } : {})}>{children}</StateNote>;

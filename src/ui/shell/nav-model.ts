@@ -1,4 +1,5 @@
-// Ported from old_repo/src/components/Sidebar.tsx (lines 48-104, 135-151)
+// Ported from old_repo/src/components/Sidebar.tsx (lines 48-104)
+// Ported from old_repo/src/components/Sidebar.tsx (lines 135-151)
 // Ported from old_repo/src/components/layout/TopBar.tsx (lines 70-75)
 // Ported from old_repo/src/components/AppShell.tsx (lines 17-39)
 // The nav as data plus the route matching around it. Every match is by path SEGMENT, never by string prefix: "/market" is not "/marketplace".

@@ -1,4 +1,4 @@
-// Ported from old_repo/src/lib/urgency/bands.ts (lines 1-139)
+// Ported from old_repo/src/lib/urgency/bands.ts (lines 1-131)
 // The one urgency vocabulary: four bands, hot to cool. Platform priority maps to a band here and nowhere else (INV-215).
 export type UrgencyBandKey = "immediate" | "action" | "monitor" | "awareness";
 export type PlatformPriority = "CRITICAL" | "HIGH" | "MODERATE" | "LOW";

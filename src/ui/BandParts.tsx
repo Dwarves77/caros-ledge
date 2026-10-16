@@ -12,12 +12,10 @@ import { formatNumber } from "@/core/shared";
 export function BandGradientRule({ counts, height = 3 }: { counts: Record<string, number> | null; height?: number }) {
   if (counts === null) return <div aria-hidden="true" className="cl-band-rule cl-band-rule--unknown" style={{ height }} />;
   const total = BAND_ORDER.reduce((sum, b) => sum + (counts[b.key] ?? 0), 0);
-  let from = 0;
-  const stops = BAND_ORDER.map((b) => {
-    const to = from + (total > 0 ? ((counts[b.key] ?? 0) / total) * 100 : 25);
-    const part = `${b.hex} ${from}%, ${b.hex} ${to}%`;
-    from = to;
-    return part;
+  const shares = BAND_ORDER.map((b) => (total > 0 ? ((counts[b.key] ?? 0) / total) * 100 : 25));
+  const stops = BAND_ORDER.map((b, i) => {
+    const from = shares.slice(0, i).reduce((x, y) => x + y, 0);
+    return `${b.hex} ${from}%, ${b.hex} ${from + (shares[i] ?? 0)}%`;
   }).join(", ");
   return <div aria-hidden="true" className="cl-band-rule" style={{ height, background: `linear-gradient(90deg, ${stops})` }} />;
 }
@@ -48,10 +46,10 @@ interface BandTileProps {
   band: UrgencyBand;
   count: number | null;
   /** A count still loading draws a skeleton, never 0. */
-  loading?: boolean;
-  selected?: boolean;
-  onSelect?: (bandKey: UrgencyBand["key"]) => void;
-  href?: string;
+  loading?: boolean | undefined;
+  selected?: boolean | undefined;
+  onSelect?: ((bandKey: UrgencyBand["key"]) => void) | undefined;
+  href?: string | undefined;
 }
 
 function BandTileBody({ band, count, loading }: Pick<BandTileProps, "band" | "count" | "loading">) {

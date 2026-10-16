@@ -1,4 +1,5 @@
-// Ported from old_repo/src/components/list-surface/list-surface-helpers.ts (lines 129-144, 186-312)
+// Ported from old_repo/src/components/list-surface/list-surface-helpers.ts (lines 129-144)
+// Ported from old_repo/src/components/list-surface/list-surface-helpers.ts (lines 186-312)
 // Filter state, row filtering, sorting and the window filter. Nothing here reads a clock: `now` is passed in.
 import { bandFromPriority, dueInfo, type UrgencyBandKey } from "@/core/lists";
 import type { Resource } from "@/core/types";

@@ -1,4 +1,5 @@
-// Ported from old_repo/src/components/list-surface/list-surface-helpers.ts (lines 146-184, 413-464)
+// Ported from old_repo/src/components/list-surface/list-surface-helpers.ts (lines 146-184)
+// Ported from old_repo/src/components/list-surface/list-surface-helpers.ts (lines 413-464)
 // Ported from old_repo/src/lib/url-params/regulations-region-link.ts (lines 1-32)
 // The one URL vocabulary for list state (INV-264): a shared param name means one thing on every surface. The URL is replaced, not pushed.
 import { BAND_ORDER, type UrgencyBandKey } from "@/core/lists";

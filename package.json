@@ -15,7 +15,9 @@
     "loc": "node scripts/ci/loc.mjs",
     "properties": "node scripts/ci/properties.mjs",
     "schema:apply": "node scripts/ci/schema-apply.mjs",
-    "tree-checks": "node scripts/ci/tree-checks.mjs"
+    "tree-checks": "node scripts/ci/tree-checks.mjs",
+    "ui-checks": "node scripts/ci/ui-checks.mjs",
+    "parity": "node tests/parity/capture.mjs --base http://localhost:3100 --out parity-capture && node tests/parity/compare.mjs --captured parity-capture"
   },
   "dependencies": {
     "@fontsource/anton": "^5.3.0",

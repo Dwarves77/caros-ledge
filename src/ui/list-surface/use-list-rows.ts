@@ -5,6 +5,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 export type RemainderState = "idle" | "loading" | "ready" | "failed";
 
+/** The remainder's state from its three facts; a failure is its own state, never a short ready list. */
+export const remainderState = (enabled: boolean, rest: unknown[] | null, failed: boolean): RemainderState => (!enabled ? "idle" : failed ? "failed" : rest === null ? "loading" : "ready");
+
 /**
  * The first page plus the remainder, with an explicit failed state and Retry. The old hook turned a failed remainder into an empty rest, so a list silently
  * stayed at the first page (B-0155); here a failure is a state the surface says out loud. Rows are de-duplicated by id against the first page.
@@ -35,6 +38,6 @@ export function useListRows<T extends { id: string }>(firstPage: T[], fetchRest:
     return [...firstPage, ...rest.filter((r) => !seen.has(r.id))];
   }, [firstPage, rest]);
   const retry = useCallback(() => setAttempt((n) => n + 1), []);
-  const state: RemainderState = !enabled ? "idle" : failed ? "failed" : rest === null ? "loading" : "ready";
+  const state = remainderState(enabled, rest, failed);
   return { rows, state, loadingMore: state === "loading", failed: state === "failed", retry };
 }

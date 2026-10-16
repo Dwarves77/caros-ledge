@@ -61,7 +61,7 @@ export function Menu({ label, items, extra }: { label: string; items: MenuItem[]
       >
         <span aria-hidden="true" className="cl-menu-sep" />
         <span aria-hidden="true" className="cl-menu-dots">
-          &#8943;
+          {"⋯"}
         </span>
       </button>
       {open && (
