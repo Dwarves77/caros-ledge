@@ -1,4 +1,4 @@
 -- no SELECT policy names PUBLIC on a table anon cannot read (it needs an identity: TO authenticated)
-SELECT p.tablename || '.' || p.policyname FROM pg_policies p
- WHERE p.schemaname = 'public' AND p.cmd = 'SELECT' AND p.roles = '{public}'
-   AND NOT has_table_privilege('anon', format('public.%I', p.tablename), 'SELECT') ORDER BY 1;
+SELECT c.relname || '.' || p.polname FROM pg_policy p JOIN pg_class c ON c.oid = p.polrelid
+ WHERE c.relnamespace = 'public'::regnamespace AND p.polcmd = 'r' AND p.polroles = '{0}'
+   AND NOT has_table_privilege('anon', c.oid, 'SELECT') ORDER BY 1;
