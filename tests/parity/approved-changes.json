@@ -35,38 +35,11 @@
   ],
   "approved": [
     {
-      "id": "privacy-no-chrome-landmarks",
+      "id": "privacy-single-main",
       "route": "privacy",
       "kind": "landmark",
-      "match": "^(complementary|navigation|banner|main)$",
-      "ruling": "shell-list.md section 8 (AppShell row) and ASSEMBLY H.1 B-0121/B-0153: /privacy and the auth routes render without the signed-in chrome; the old page drew the signed-in nav card and a second <main> for an anonymous visitor (a defect, not a design)."
-    },
-    {
-      "id": "privacy-no-chrome-headings",
-      "route": "privacy",
-      "kind": "heading",
-      "match": "^1:Caro's Ledge$",
-      "ruling": "Same ruling: the nav card's wordmark heading is chrome."
-    },
-    {
-      "id": "privacy-no-chrome-controls",
-      "route": "privacy",
-      "kind": "control",
-      "match": "^(link:(Caro's Ledge|Dashboard|Watchlist|Regulations|Market Intel|Research|Operations|Map|Community|Account.*)|button:(Back to top|Open navigation|Search)|link:Account)",
-      "ruling": "Same ruling: the nav card, the top bar and the back-to-top button are signed-in chrome."
-    },
-    {
-      "id": "privacy-no-chrome-row",
-      "route": "privacy",
-      "kind": "row",
-      "match": "^article:Privacy Policy",
-      "ruling": "Same ruling: the article is a child of the page's single main, not a nested one; its row text is unchanged, its height differs with the removed chrome."
-    },
-    {
-      "id": "privacy-pixel",
-      "route": "privacy",
-      "kind": "pixel",
-      "ruling": "Same ruling: the nav card is absent, so the page is not pixel-exact; structure and copy still gate."
+      "match": "^main$",
+      "ruling": "ASSEMBLY H.1 (shell-list.md AppShell row): the old page nested a second <main> inside the shell's <main>; the shell supplies the one main landmark."
     },
     {
       "id": "auth-field-height",
@@ -85,6 +58,12 @@
       "route": "home",
       "kind": "pixel",
       "ruling": "Same as auth-field-height: / signed out lands on /login."
+    },
+    {
+      "id": "privacy-pixel",
+      "route": "privacy",
+      "kind": "pixel",
+      "ruling": "Operator 2026-10-16: 44 px is the standard on every control, so the nav card rows are 44 px (pitch 46) where artboard 01 draws about 42 (DESIGN CHANGES OWED 10); and rule 2 / INV-263: the nav cap draws no band split while the counts are unknown, where artboard 01 shows an equal 25 percent split that is a fabricated number (OWED 11). Structure still gates."
     }
   ]
 }
