@@ -64,5 +64,6 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '24'
+      - run: npm ci --no-audit # the source-backfill generator imports the classify rules (zod)
       - name: Apply schema.sql to an empty Postgres 15, then run the property checks
         run: npm run schema:apply

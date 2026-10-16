@@ -17,6 +17,7 @@
 -- the previous value per row).
 
 -- catalog: none (data migration, not run by the schema job)
+-- rollback-test: scripts/ci/fixtures/data-0011-sources.sql
 
 BEGIN;
 

@@ -1,0 +1,7 @@
+[
+  { "id": "5a5a5a5a-0000-4000-8000-000000000001", "name": "Sample Environmental Agency", "url": "https://agency.example.gov/", "source_role": null, "source_type": null },
+  { "id": "5a5a5a5a-0000-4000-8000-000000000002", "name": "Sample Parliament", "url": "https://parliament.example.org/", "source_role": null, "source_type": null },
+  { "id": "5a5a5a5a-0000-4000-8000-000000000003", "name": "Sample Freight News", "url": "https://news.example.com/", "source_role": null, "source_type": null },
+  { "id": "5a5a5a5a-0000-4000-8000-000000000004", "name": "Sample Already Classified Agency", "url": "https://classified.example.gov/", "source_role": "trade_press", "source_type": ["news"] },
+  { "id": "5a5a5a5a-0000-4000-8000-000000000005", "name": "Sample Unclassifiable", "url": "https://x.invalid/", "source_role": null, "source_type": null }
+]
