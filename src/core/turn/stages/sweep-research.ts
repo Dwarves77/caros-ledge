@@ -20,6 +20,9 @@ export function shapeResearch(r: RunResult): RunResult {
 }
 
 export async function runResearch(call: FamilyCall, d: BuiltDeps): Promise<RunResult> {
-  if (!call.dry && !(await d.gate.refresh())) return { counts: { refused: 1 }, outcome: "failed", notes: ["fetch gate closed (the scrape cadence is off, or the emergency stop is set): the walk is refused"] };
+  const open = await d.gate.refresh();
+  if (!call.dry && !open) return { counts: { refused: 1 }, outcome: "failed", notes: ["fetch gate closed (the scrape cadence is off, or the emergency stop is set): the walk is refused"] };
+  // A dry walk still searches OpenAlex, so it too waits for an open gate.
+  if (call.dry && !open) return shapeResearch({ counts: { planned: 1 }, outcome: "ok", notes: ["dry: the walk is planned, not run: the fetch gate is closed"] });
   return shapeResearch(await walkResearch(d.producers, { dry: call.dry, walk: planResearch(call.input) }));
 }

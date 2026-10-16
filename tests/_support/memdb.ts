@@ -25,7 +25,7 @@ export interface Failure {
   when?: (c: MemCall) => boolean;
 }
 export interface SchemaInfo {
-  tables: Record<string, { columns: string[]; fks: { column: string; table: string; ref: string }[] }>;
+  tables: Record<string, { columns: string[]; uuid?: string[]; defaults?: Record<string, unknown>; fks: { column: string; table: string; ref: string }[] }>;
 }
 export interface MemOptions {
   /** listed: a uuid id for the tables in WITH_ID only; seq: `<table>-<n>` for every insert; uuid: a uuid id and a created_at tick for every insert. */
@@ -296,7 +296,10 @@ class Query {
   private newRow(item: Row): Row {
     const ids = this.db.opts.ids;
     const base: Row = ids === "seq" ? { id: this.db.autoId(this.table) } : ids === "uuid" ? { id: this.db.nextId(), created_at: this.db.tick() } : WITH_ID.has(this.table) ? { id: this.db.nextId() } : {};
-    const row: Row = { ...base, ...(this.table === "agent_runs" && item.created_at === undefined ? { created_at: this.db.now } : {}), ...item };
+    // The database fills a uuid default for a column the insert left out.
+    for (const c of this.db.opts.schema?.tables[this.table]?.uuid ?? []) if (item[c] === undefined && base[c] === undefined) base[c] = this.db.nextId();
+    const defaults = Object.fromEntries(Object.entries(this.db.opts.schema?.tables[this.table]?.defaults ?? {}).map(([k, v]) => [k, v === "__now" ? this.db.now : v === "__today" ? this.db.now.slice(0, 10) : Array.isArray(v) ? [] : v !== null && typeof v === "object" ? {} : v]));
+    const row: Row = { ...defaults, ...base, ...(this.table === "agent_runs" && item.created_at === undefined ? { created_at: this.db.now } : {}), ...item };
     if (this.db.opts.generatedKey?.includes(this.table)) row.name_key = String(row.name ?? "").trim().toLowerCase();
     return row;
   }
@@ -337,7 +340,9 @@ class Query {
       db.tables[this.table] = rows.filter((r) => !gone.has(r));
       return { data: db.opts.returnRows ? [...gone].map((r) => ({ ...r })) : null, error: null, count: null };
     } else {
-      out = matching();
+      // A select that embeds resolves the join BEFORE it filters, the way PostgREST does, so a filter on `embed.column` sees the related row; `!inner` drops a row with no related row.
+      const inner = [...this.columns.matchAll(/(?:(\w+):)?(\w+)!inner\(/g)].map((m) => m[1] ?? m[2] ?? "");
+      out = /\(/.test(this.columns) ? rows.map((r) => this.embed({ ...r })).filter((r) => this.preds.every((p) => p(r)) && inner.every((a) => r[a] != null)) : matching();
       const total = out.length;
       for (const [c, asc] of [...this.orders].reverse()) out = [...out].sort((a, b) => cmp(col(a, c), col(b, c)) * (asc ? 1 : -1));
       if (this.rng) out = out.slice(this.rng[0], this.rng[1] + 1);
@@ -377,6 +382,20 @@ export function installPropagationRpcs(db: MemDb): MemDb {
     const first = sp.fired_at == null;
     sp.fired_at ??= a.p_at;
     return { data: { fired: true, first_firing: first, signpost_entity_id: sp.entity_id, previous_lifecycle_state: "emerging", new_lifecycle_state: "strengthening" } };
+  };
+  return db;
+}
+
+/** next_uncensused_portal_candidates: the ledger's candidates the census does not already hold, in (first_seen_at, id) order, a keyset page, with their source's name, category and tier. */
+export function installPortalLedgerRpc(db: MemDb): MemDb {
+  db.rpcs.next_uncensused_portal_candidates = (a, d) => {
+    const census = new Set(d.rows("census_worklist").map((r) => r.document_url));
+    const after = a.p_after_first_seen ? [String(a.p_after_first_seen), String(a.p_after_id)] : null;
+    const key = (r: Row) => [String(r.first_seen_at ?? ""), String(r.id)] as const;
+    let rows = d.rows("portal_link_candidates").filter((r) => (r.status ?? "candidate") === "candidate" && !census.has(r.url) && (!a.p_source_id || r.source_id === a.p_source_id));
+    rows = rows.sort((x, y) => (key(x)[0] === key(y)[0] ? key(x)[1].localeCompare(key(y)[1]) : key(x)[0].localeCompare(key(y)[0])) * (a.p_newest ? -1 : 1));
+    if (after) rows = rows.filter((r) => (a.p_newest ? key(r)[0] < after[0]! || (key(r)[0] === after[0] && key(r)[1] < after[1]!) : key(r)[0] > after[0]! || (key(r)[0] === after[0] && key(r)[1] > after[1]!)));
+    return { data: rows.slice(0, Number(a.p_limit)).map((r) => { const s = d.rows("sources").find((x) => x.id === r.source_id); return { ...r, source_name: s?.name ?? null, source_category: s?.category ?? null, source_base_tier: s?.base_tier ?? null }; }) };
   };
   return db;
 }

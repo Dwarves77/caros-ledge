@@ -4,7 +4,7 @@
 // Everything after the drain works from the events the drain just processed, so one change reaches every consumer in the same run.
 import type { FamilyCall } from "@/core/harness";
 import { runPropagationDrain, reopener } from "@/core/propagation";
-import { runProducer, runRegistered } from "@/core/producers";
+import { loadProducerRegistry, runProducer, runRegistered, selectRuns } from "@/core/producers";
 import type { RunResult } from "@/core/types/run-result";
 import { runResult, worst } from "@/core/types/run-result";
 import { buildEntityItemsReader, buildSignpostStepDeps, runQuestionsOnChange, runSignpostStep } from "@/features/learning";
@@ -46,10 +46,21 @@ export function shapePropagate(parts: { producers: RunResult | null; drain: RunR
   return { ...runResult(outcome, counts, notes), data: { ids: { drained_event_ids: events.map((e) => String(e.eventId)), reassessed_item_ids: [...itemIds] } } };
 }
 
+/** A dry producer run still fetches its document, so it runs only while the fetch gate is open; with the cadence off it is planned (selected and named), never fetched. */
+async function runProducers(call: FamilyCall, d: BuiltDeps, p: NonNullable<PropagatePlan["producers"]>): Promise<RunResult> {
+  if (!call.dry || (await d.gate.refresh())) return runRegistered(d.producers, { catalog: d.catalog, producer: p.producer, only: p.only, mode: call.mode });
+  try {
+    const picked = selectRuns(loadProducerRegistry(d.catalog), { producer: p.producer, only: p.only });
+    return runResult("ok", { selected: picked.length }, [`dry: ${picked.map((e) => e.name).join(", ") || "no producer"} planned, not fetched: the fetch gate is closed`]);
+  } catch (e) {
+    return runResult("failed", { selected: 0 }, [e instanceof Error ? e.message : String(e)]);
+  }
+}
+
 export async function runPropagate(call: FamilyCall, d: BuiltDeps): Promise<RunResult> {
   const plan = planPropagate(call.input);
   const sb = d.sb;
-  const producers = plan.producers ? await runRegistered(d.producers, { catalog: d.catalog, producer: plan.producers.producer, only: plan.producers.only, mode: call.mode }) : null;
+  const producers = plan.producers ? await runProducers(call, d, plan.producers) : null;
   const drain = await runPropagationDrain({ sb, now: d.now, registry: d.registry, reopenQuestion: reopener(sb, d.learning) }, { dry: call.dry, caller: PROPAGATE_CALLER, ...(plan.batch ? { batch: plan.batch } : {}) });
   if (drain.outcome === "failed" && !drain.data?.eventsConsidered && drain.notes.length) return drain;
   const events = drain.data?.processedEvents ?? [];

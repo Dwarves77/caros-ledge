@@ -85,7 +85,7 @@ export async function resolveMode(sb: Db, req: Pick<RunRequest, "mode" | "trigge
 
 type UpstreamRead = { ok: true; row: Upstream } | { ok: false; outcome: Outcome; reason: string };
 
-/** Read the upstream row by id AND root, and decide whether this family may proceed: it must be a declared hand-off, must obey the no-op contract (a forged success is refused), and a failed, refused or skipped upstream stops the chain. */
+/** Read the upstream row by id AND root, and decide whether this family may proceed: it must be a declared hand-off and obey the no-op contract (a forged success is refused); a failed or skipped upstream stops the chain. */
 async function readUpstream(sb: Db, name: string, rootRunId: string, id: string): Promise<UpstreamRead> {
   const { data, error } = await sb.from("harness_runs").select("id,family,outcome,mode,reason,outputs").eq("id", id).eq("root_run_id", rootRunId).maybeSingle();
   if (error) return { ok: false, outcome: "refused", reason: `upstream row unreadable (${error.message}): refusing` };
@@ -96,7 +96,8 @@ async function readUpstream(sb: Db, name: string, rootRunId: string, id: string)
   const outputs = up.outputs ?? {};
   const contract = noopContractErrors({ outcome: up.outcome, mode: up.mode, outputs }, upFam.writes);
   if (contract.length) return { ok: false, outcome: "refused", reason: `upstream ${up.family} ${up.id} breaks the no-op contract (${contract.join("; ")}): the chain stops here` };
-  if (up.outcome === "failed" || up.outcome === "refused" || outputs.skipped === true) return { ok: false, outcome: "noop", reason: `upstream ${up.family} did not run: ${up.outcome}${up.reason ? ` (${up.reason})` : ""}` };
+  // A failed stage (or one that was itself skipped for it) stops the chain. A refused or no-op stage hands nothing over and the next stage runs on its own selection: a producer held by its gate must not stop the turn, and a mint refused by THE GATE must not stop the connect that closes the backlog.
+  if (up.outcome === "failed" || (up.outcome === "noop" && outputs.skipped === true)) return { ok: false, outcome: "noop", reason: `upstream ${up.family} did not run: ${up.outcome}${up.reason ? ` (${up.reason})` : ""}` };
   return { ok: true, row: { id: up.id, family: up.family, outcome: up.outcome, mode: up.mode, ids: (outputs.ids ?? {}) as Record<string, string[]>, counts: (outputs.counts ?? outputs.planned ?? {}) as Record<string, number> } };
 }
 

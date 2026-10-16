@@ -12,12 +12,13 @@ async function rows(sb: Db, apply: (q: ReturnType<ReturnType<Db["from"]>["select
 }
 const counts = (r: Ledger): Record<string, number> => ((r.outputs.counts ?? r.outputs.planned ?? {}) as Record<string, number>);
 
-/** P1: under one root, every stage family has a success row and nothing failed. Families named in `expect` default to the ones that have a stage. */
+/** P1: under one root, every stage family left a row and none failed. A stage a gate held (refused) or that had nothing to do (noop) is recorded and listed, not a break; `held` names them. */
 export async function chainProof(sb: Db, rootRunId: string, expect: readonly string[] = FAMILIES.filter((f) => f.stage).map((f) => f.name)) {
   const all = await rows(sb, (q) => (q as unknown as { eq: (c: string, v: string) => unknown }).eq("root_run_id", rootRunId));
-  const missing = expect.filter((f) => !all.some((r) => r.family === f && r.outcome === "success"));
+  const missing = expect.filter((f) => !all.some((r) => r.family === f));
   const failed = all.filter((r) => r.outcome === "failed").map((r) => r.family);
-  return { ok: missing.length === 0 && failed.length === 0, missing, failed, rows: all };
+  const held = all.filter((r) => r.outcome === "refused" || r.outcome === "noop").map((r) => `${r.family}:${r.outcome}`);
+  return { ok: missing.length === 0 && failed.length === 0, missing, failed, held, rows: all };
 }
 
 /** P2: the item ids minted by apply runs that succeeded, newest first. */

@@ -7,6 +7,11 @@
     "triggered_by",
     "metadata"
    ],
+   "uuid": [],
+   "defaults": {
+    "last_triggered_at": "__now",
+    "metadata": {}
+   },
    "fks": [
     {
      "column": "triggered_by",
@@ -28,6 +33,10 @@
     "searched_at",
     "result_chars"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {},
    "fks": [
     {
      "column": "intelligence_item_id",
@@ -58,6 +67,16 @@
     "created_at",
     "model"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "started_at": "__now",
+    "status": "running",
+    "cost_usd_estimated": 0,
+    "errors": [],
+    "created_at": "__now"
+   },
    "fks": [
     {
      "column": "intelligence_item_id",
@@ -97,6 +116,13 @@
     "frozen_from",
     "granted_payload"
    ],
+   "uuid": [
+    "query_id"
+   ],
+   "defaults": {
+    "requested_at": "__now",
+    "frozen": false
+   },
    "fks": []
   },
   "assumption_register": {
@@ -122,6 +148,14 @@
     "method_version",
     "as_at_date"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "status": "active",
+    "created_at": "__now",
+    "updated_at": "__now"
+   },
    "fks": [
     {
      "column": "source_key",
@@ -149,6 +183,12 @@
     "created_at",
     "org_id"
    ],
+   "uuid": [
+    "profile_id"
+   ],
+   "defaults": {
+    "created_at": "__now"
+   },
    "fks": [
     {
      "column": "node_id",
@@ -172,6 +212,11 @@
     "items_applied",
     "stop_reason"
    ],
+   "uuid": [],
+   "defaults": {
+    "bytes_read": 0,
+    "items_applied": 0
+   },
    "fks": []
   },
   "bulk_imports": {
@@ -187,6 +232,15 @@
     "preview_summary",
     "created_at"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "sources_inserted": 0,
+    "provisional_inserted": 0,
+    "rejected": 0,
+    "created_at": "__now"
+   },
    "fks": [
     {
      "column": "imported_by",
@@ -220,6 +274,16 @@
     "updated_at",
     "recommended_classification"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "verified": false,
+    "reviewed": false,
+    "decision": "pending",
+    "created_at": "__now",
+    "updated_at": "__now"
+   },
    "fks": [
     {
      "column": "current_source_id",
@@ -251,6 +315,8 @@
     "pending_on_session_a",
     "declined_or_parked_world"
    ],
+   "uuid": [],
+   "defaults": {},
    "fks": []
   },
   "census_worklist": {
@@ -284,6 +350,17 @@
     "is_archived",
     "archive_reason"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "created_at": "__now",
+    "enumeration_status": "discovered",
+    "cap_hit": false,
+    "surface_tags": [],
+    "updated_at": "__now",
+    "is_archived": false
+   },
    "fks": [
     {
      "column": "resolved_into_id",
@@ -317,6 +394,13 @@
     "created_at",
     "note"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "version_number": 1,
+    "created_at": "__now"
+   },
    "fks": []
   },
   "community_group_invitations": {
@@ -328,6 +412,13 @@
     "status",
     "created_at"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "status": "pending",
+    "created_at": "__now"
+   },
    "fks": [
     {
      "column": "group_id",
@@ -355,6 +446,13 @@
     "starred",
     "muted"
    ],
+   "uuid": [],
+   "defaults": {
+    "role": "member",
+    "joined_at": "__now",
+    "starred": false,
+    "muted": false
+   },
    "fks": [
     {
      "column": "group_id",
@@ -383,6 +481,15 @@
     "created_at",
     "vertical"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "member_count": 0,
+    "weekly_post_count": 0,
+    "last_active_at": "__now",
+    "created_at": "__now"
+   },
    "fks": [
     {
      "column": "owner_user_id",
@@ -406,6 +513,13 @@
     "updated_at",
     "default_anonymous"
    ],
+   "uuid": [],
+   "defaults": {
+    "verified": false,
+    "created_at": "__now",
+    "updated_at": "__now",
+    "default_anonymous": false
+   },
    "fks": [
     {
      "column": "user_id",
@@ -426,6 +540,13 @@
     "created_at",
     "decided_at"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "status": "pending",
+    "created_at": "__now"
+   },
    "fks": [
     {
      "column": "post_id",
@@ -462,6 +583,14 @@
     "signed_off_by",
     "anonymous"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "created_at": "__now",
+    "reply_count": 0,
+    "anonymous": false
+   },
    "fks": [
     {
      "column": "author_user_id",
@@ -497,6 +626,10 @@
     "entity_kind",
     "created_at"
    ],
+   "uuid": [],
+   "defaults": {
+    "created_at": "__now"
+   },
    "fks": [
     {
      "column": "entity_id",
@@ -515,6 +648,8 @@
     "topic_id",
     "group_id"
    ],
+   "uuid": [],
+   "defaults": {},
    "fks": [
     {
      "column": "group_id",
@@ -535,6 +670,12 @@
     "label",
     "created_at"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "created_at": "__now"
+   },
    "fks": [
     {
      "column": "owner_user_id",
@@ -560,6 +701,13 @@
     "error_message",
     "theme_delta"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "status": "running",
+    "args": {}
+   },
    "fks": []
   },
   "connection_themes": {
@@ -573,6 +721,13 @@
     "convergence",
     "pivots"
    ],
+   "uuid": [],
+   "defaults": {
+    "computed_at": "__now",
+    "dominant_signals": [],
+    "surfaces": [],
+    "pivots": []
+   },
    "fks": []
   },
   "corpus_census": {
@@ -588,6 +743,10 @@
     "classified_by",
     "classified_at"
    ],
+   "uuid": [],
+   "defaults": {
+    "classified_at": "__now"
+   },
    "fks": []
   },
   "corpus_turn_requests": {
@@ -599,6 +758,12 @@
     "consumed_at",
     "consumed_by"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "requested_at": "__now"
+   },
    "fks": [
     {
      "column": "intelligence_item_id",
@@ -631,6 +796,15 @@
     "surface_test",
     "access_model"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "entity_confirmed": false,
+    "created_by": "session-c-coverage-discovery-2026-07-17",
+    "created_at": "__now",
+    "data_class": "instrument"
+   },
    "fks": []
   },
   "coverage_gap_census_findings": {
@@ -658,6 +832,14 @@
     "operator_confirm_question",
     "lens"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "lane": "C",
+    "entity_confirmed": false,
+    "created_at": "__now"
+   },
    "fks": []
   },
   "coverage_gaps": {
@@ -672,6 +854,13 @@
     "suggested_action_href",
     "created_at"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "sector_affinity": [],
+    "created_at": "__now"
+   },
    "fks": []
   },
   "data_sources": {
@@ -691,6 +880,11 @@
     "created_at",
     "updated_at"
    ],
+   "uuid": [],
+   "defaults": {
+    "created_at": "__now",
+    "updated_at": "__now"
+   },
    "fks": []
   },
   "derivation_edges": {
@@ -701,6 +895,11 @@
     "edge_kind",
     "to_table"
    ],
+   "uuid": [],
+   "defaults": {
+    "edge_kind": "input",
+    "to_table": "derived_values"
+   },
    "fks": []
   },
   "derived_values": {
@@ -728,6 +927,12 @@
     "invalidated_at",
     "invalidated_by_event"
    ],
+   "uuid": [
+    "value_id"
+   ],
+   "defaults": {
+    "computed_at": "__now"
+   },
    "fks": [
     {
      "column": "entity_id",
@@ -772,6 +977,8 @@
     "invalidated_by_event",
     "effective_confidence"
    ],
+   "uuid": [],
+   "defaults": {},
    "fks": []
   },
   "disposition_ledger": {
@@ -789,6 +996,12 @@
     "disposition_by",
     "disposition_date"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "disposition_date": "__now"
+   },
    "fks": []
   },
   "emission_factor_candidates": {
@@ -836,6 +1049,8 @@
     "tier_rank",
     "scope_specificity"
    ],
+   "uuid": [],
+   "defaults": {},
    "fks": []
   },
   "emission_factors": {
@@ -881,6 +1096,12 @@
     "superseded_by",
     "created_at"
    ],
+   "uuid": [
+    "factor_id"
+   ],
+   "defaults": {
+    "created_at": "__now"
+   },
    "fks": [
     {
      "column": "source_key",
@@ -905,6 +1126,11 @@
     "display_name",
     "entity_level"
    ],
+   "uuid": [],
+   "defaults": {
+    "status": "active",
+    "created_at": "__now"
+   },
    "fks": [
     {
      "column": "merged_into",
@@ -923,6 +1149,10 @@
     "source_id",
     "provenance"
    ],
+   "uuid": [],
+   "defaults": {
+    "asserted_at": "__now"
+   },
    "fks": [
     {
      "column": "entity_id",
@@ -945,6 +1175,10 @@
     "asserted_by",
     "asserted_at"
    ],
+   "uuid": [],
+   "defaults": {
+    "asserted_at": "__now"
+   },
    "fks": [
     {
      "column": "entity_id",
@@ -962,6 +1196,10 @@
     "asserted_by",
     "asserted_at"
    ],
+   "uuid": [],
+   "defaults": {
+    "asserted_at": "__now"
+   },
    "fks": [
     {
      "column": "entity_id",
@@ -980,6 +1218,10 @@
     "source_id",
     "provenance"
    ],
+   "uuid": [],
+   "defaults": {
+    "asserted_at": "__now"
+   },
    "fks": [
     {
      "column": "child_entity_id",
@@ -1006,6 +1248,8 @@
     "confidence",
     "attributed_to"
    ],
+   "uuid": [],
+   "defaults": {},
    "fks": [
     {
      "column": "scope_id",
@@ -1034,6 +1278,17 @@
     "user_scope",
     "count"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "occurred_at": "__now",
+    "last_seen_at": "__now",
+    "release": "dev",
+    "env": "unknown",
+    "route": "",
+    "count": 1
+   },
    "fks": []
   },
   "estimated_values": {
@@ -1049,6 +1304,12 @@
     "distribution",
     "pedigree"
    ],
+   "uuid": [
+    "estimate_id"
+   ],
+   "defaults": {
+    "scenario_key": "default"
+   },
    "fks": [
     {
      "column": "entity_id",
@@ -1067,6 +1328,11 @@
     "acquired_at",
     "heartbeat_at"
    ],
+   "uuid": [],
+   "defaults": {
+    "acquired_at": "__now",
+    "heartbeat_at": "__now"
+   },
    "fks": []
   },
   "gate_a_health_cache": {
@@ -1075,6 +1341,11 @@
     "payload",
     "computed_at"
    ],
+   "uuid": [],
+   "defaults": {
+    "singleton": true,
+    "computed_at": "__now"
+   },
    "fks": []
   },
   "grid_connection_queues": {
@@ -1099,6 +1370,13 @@
     "derivation",
     "confidence_admiralty"
    ],
+   "uuid": [
+    "queue_id"
+   ],
+   "defaults": {
+    "obs_status": "A",
+    "created_at": "__now"
+   },
    "fks": [
     {
      "column": "jurisdiction_id",
@@ -1132,6 +1410,15 @@
     "error",
     "code_sha"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "created_at": "__now",
+    "forced_dry": false,
+    "inputs": {},
+    "outputs": {}
+   },
    "fks": [
     {
      "column": "upstream_run_id",
@@ -1158,6 +1445,15 @@
     "audited_at",
     "audit_version"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "bytes_collected": 0,
+    "defect_evidence": {},
+    "stale_verified": false,
+    "audited_at": "__now"
+   },
    "fks": [
     {
      "column": "capture_ref",
@@ -1192,6 +1488,12 @@
     "created_at",
     "org_id"
    ],
+   "uuid": [
+    "clause_id"
+   ],
+   "defaults": {
+    "created_at": "__now"
+   },
    "fks": [
     {
      "column": "corridor_id",
@@ -1229,6 +1531,13 @@
     "computed_at",
     "computed_by"
    ],
+   "uuid": [
+    "inference_id"
+   ],
+   "defaults": {
+    "admissibility": "current",
+    "computed_at": "__now"
+   },
    "fks": [
     {
      "column": "invalidated_by_event",
@@ -1260,6 +1569,12 @@
     "triage_action",
     "triage_notes"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "ingest_attempted_at": "__now"
+   },
    "fks": [
     {
      "column": "source_id",
@@ -1280,6 +1595,12 @@
     "registrable_domain",
     "created_at"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "created_at": "__now"
+   },
    "fks": []
   },
   "integrity_flags": {
@@ -1297,6 +1618,14 @@
     "resolved_by",
     "resolution_note"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "recommended_actions": [],
+    "status": "open",
+    "created_at": "__now"
+   },
    "fks": []
   },
   "intelligence_changes": {
@@ -1311,6 +1640,12 @@
     "change_summary",
     "raw_diff"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "detected_at": "__now"
+   },
    "fks": [
     {
      "column": "item_id",
@@ -1327,6 +1662,12 @@
     "detected_at",
     "origin"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "detected_at": "__now"
+   },
    "fks": [
     {
      "column": "intelligence_item_id",
@@ -1352,6 +1693,14 @@
     "created_at",
     "updated_at"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "is_conditional": false,
+    "created_at": "__now",
+    "updated_at": "__now"
+   },
    "fks": [
     {
      "column": "item_id",
@@ -1381,6 +1730,16 @@
     "last_regenerated_at",
     "regeneration_skill_version"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "created_at": "__now",
+    "topic_tags": [],
+    "operational_scenario_tags": [],
+    "compliance_object_tags": [],
+    "related_items": []
+   },
    "fks": [
     {
      "column": "intelligence_item_id",
@@ -1477,6 +1836,42 @@
     "recommended_actions",
     "compliance_object_candidates"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "summary": "",
+    "what_is_it": "",
+    "why_matters": "",
+    "key_data": [],
+    "operational_impact": "",
+    "open_questions": [],
+    "tags": [],
+    "item_type": "regulation",
+    "source_url": "",
+    "jurisdictions": [],
+    "transport_modes": [],
+    "verticals": [],
+    "status": "monitoring",
+    "confidence": "confirmed",
+    "priority": "MODERATE",
+    "reasoning": "",
+    "added_date": "__today",
+    "is_archived": false,
+    "version_history": [],
+    "created_at": "__now",
+    "updated_at": "__now",
+    "region_tags": [],
+    "topic_tags": [],
+    "vertical_tags": [],
+    "operational_scenario_tags": [],
+    "compliance_object_tags": [],
+    "jurisdiction_iso": [],
+    "agent_integrity_flag": false,
+    "item_grade": "brief",
+    "recommended_actions": [],
+    "compliance_object_candidates": []
+   },
    "fks": [
     {
      "column": "agent_integrity_resolved_by",
@@ -1510,6 +1905,12 @@
     "generated_at",
     "model_version"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "generated_at": "__now"
+   },
    "fks": [
     {
      "column": "item_id",
@@ -1529,6 +1930,13 @@
     "state",
     "created_at"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "state": "open",
+    "created_at": "__now"
+   },
    "fks": [
     {
      "column": "assigned_by",
@@ -1566,6 +1974,17 @@
     "detected_by",
     "created_at"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "change_date": "__today",
+    "change_type": "UPDATED",
+    "previous_value": "",
+    "new_value": "",
+    "impact_level": "MODERATE",
+    "created_at": "__now"
+   },
    "fks": [
     {
      "column": "item_id",
@@ -1581,6 +2000,11 @@
     "observed_at",
     "observed_count"
    ],
+   "uuid": [],
+   "defaults": {
+    "observed_at": "__now",
+    "observed_count": 1
+   },
    "fks": [
     {
      "column": "correction_id",
@@ -1605,6 +2029,12 @@
     "revoked_by",
     "revoked_reason"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "created_at": "__now"
+   },
    "fks": []
   },
   "item_cross_references": {
@@ -1617,6 +2047,13 @@
     "basis",
     "score"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "relationship": "related",
+    "origin": "manual"
+   },
    "fks": [
     {
      "column": "source_item_id",
@@ -1640,6 +2077,14 @@
     "created_at",
     "resolved_at"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "is_active": true,
+    "disputing_sources": [],
+    "created_at": "__now"
+   },
    "fks": [
     {
      "column": "item_id",
@@ -1664,6 +2109,12 @@
     "extractor_version",
     "created_at"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "created_at": "__now"
+   },
    "fks": [
     {
      "column": "intelligence_item_id",
@@ -1691,6 +2142,12 @@
     "gate_a_version",
     "scanned_at"
    ],
+   "uuid": [],
+   "defaults": {
+    "orphan_count": 0,
+    "orphans": [],
+    "scanned_at": "__now"
+   },
    "fks": [
     {
      "column": "intelligence_item_id",
@@ -1711,6 +2168,12 @@
     "deleted_at",
     "legacy_override_id"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "created_at": "__now"
+   },
    "fks": [
     {
      "column": "author_user_id",
@@ -1744,6 +2207,13 @@
     "note",
     "created_at"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "note": "",
+    "created_at": "__now"
+   },
    "fks": [
     {
      "column": "new_item_id",
@@ -1767,6 +2237,14 @@
     "sort_order",
     "created_at"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "is_completed": false,
+    "sort_order": 0,
+    "created_at": "__now"
+   },
    "fks": [
     {
      "column": "item_id",
@@ -1783,6 +2261,12 @@
     "description",
     "created_at"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "created_at": "__now"
+   },
    "fks": []
   },
   "item_workspace_tags": {
@@ -1793,6 +2277,10 @@
     "created_by",
     "created_at"
    ],
+   "uuid": [],
+   "defaults": {
+    "created_at": "__now"
+   },
    "fks": [
     {
      "column": "created_by",
@@ -1825,6 +2313,8 @@
     "url",
     "verified_on"
    ],
+   "uuid": [],
+   "defaults": {},
    "fks": []
   },
   "market_series": {
@@ -1847,6 +2337,13 @@
     "reference_period",
     "entity_id"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "created_at": "__now",
+    "updated_at": "__now"
+   },
    "fks": [
     {
      "column": "entity_id",
@@ -1872,6 +2369,13 @@
     "resolved_at",
     "resolved_by_user_id"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "status": "open",
+    "created_at": "__now"
+   },
    "fks": [
     {
      "column": "reporter_user_id",
@@ -1899,6 +2403,14 @@
     "created_at",
     "reconciled_at"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "priority": "normal",
+    "change_detected": false,
+    "created_at": "__now"
+   },
    "fks": [
     {
      "column": "item_id",
@@ -1920,6 +2432,11 @@
     "acquired_at",
     "heartbeat_at"
    ],
+   "uuid": [],
+   "defaults": {
+    "acquired_at": "__now",
+    "heartbeat_at": "__now"
+   },
    "fks": []
   },
   "notification_preferences": {
@@ -1934,6 +2451,16 @@
     "channels",
     "updated_at"
    ],
+   "uuid": [],
+   "defaults": {
+    "enabled": true,
+    "on_mention": true,
+    "on_reply_in_my_threads": true,
+    "on_new_post_in_joined_groups": false,
+    "on_invite": true,
+    "on_promote": true,
+    "updated_at": "__now"
+   },
    "fks": [
     {
      "column": "user_id",
@@ -1951,6 +2478,13 @@
     "read_at",
     "created_at"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "payload": {},
+    "created_at": "__now"
+   },
    "fks": [
     {
      "column": "user_id",
@@ -1996,6 +2530,13 @@
     "created_at",
     "updated_at"
    ],
+   "uuid": [],
+   "defaults": {
+    "version": 1,
+    "status": "not_assessed",
+    "created_at": "__now",
+    "updated_at": "__now"
+   },
    "fks": [
     {
      "column": "capture_id",
@@ -2047,6 +2588,17 @@
     "updated_at",
     "obligation_id"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "jurisdiction": [],
+    "modes": [],
+    "status": "active",
+    "derived_at": "__now",
+    "created_at": "__now",
+    "updated_at": "__now"
+   },
    "fks": [
     {
      "column": "forward_event_id",
@@ -2083,6 +2635,14 @@
     "confidence_admiralty",
     "created_at"
    ],
+   "uuid": [
+    "roadmap_id"
+   ],
+   "defaults": {
+    "origin_class": "community",
+    "derivation": "observed",
+    "created_at": "__now"
+   },
    "fks": [
     {
      "column": "manufacturer_id",
@@ -2113,6 +2673,14 @@
     "revoked_at",
     "revoked_by_user_id"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "proposed_role": "member",
+    "status": "pending",
+    "created_at": "__now"
+   },
    "fks": [
     {
      "column": "accepted_by_user_id",
@@ -2144,6 +2712,10 @@
     "banned_at",
     "reason"
    ],
+   "uuid": [],
+   "defaults": {
+    "banned_at": "__now"
+   },
    "fks": [
     {
      "column": "banned_by",
@@ -2170,6 +2742,13 @@
     "role",
     "created_at"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "role": "member",
+    "created_at": "__now"
+   },
    "fks": [
     {
      "column": "org_id",
@@ -2193,6 +2772,12 @@
     "note",
     "created_at"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "created_at": "__now"
+   },
    "fks": [
     {
      "column": "added_by_user_id",
@@ -2216,6 +2801,15 @@
     "created_at",
     "updated_at"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "plan": "free",
+    "settings": {},
+    "created_at": "__now",
+    "updated_at": "__now"
+   },
    "fks": []
   },
   "pending_first_fetch": {
@@ -2228,6 +2822,14 @@
     "last_attempt_at",
     "last_error_text"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "queued_at": "__now",
+    "status": "queued",
+    "attempt_count": 0
+   },
    "fks": [
     {
      "column": "source_id",
@@ -2248,6 +2850,13 @@
     "resolved_at",
     "resolution_value"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "source_column": "jurisdictions",
+    "flagged_at": "__now"
+   },
    "fks": [
     {
      "column": "intelligence_item_id",
@@ -2274,6 +2883,14 @@
     "dispositioned_at",
     "item_id"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "status": "candidate",
+    "first_seen_at": "__now",
+    "last_seen_at": "__now"
+   },
    "fks": [
     {
      "column": "item_id",
@@ -2298,6 +2915,12 @@
     "added_by",
     "added_at"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "added_at": "__now"
+   },
    "fks": [
     {
      "column": "added_by",
@@ -2325,6 +2948,12 @@
     "created_by",
     "created_at"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "created_at": "__now"
+   },
    "fks": [
     {
      "column": "created_by",
@@ -2378,6 +3007,30 @@
     "workspace_role",
     "sector"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "role": "viewer",
+    "settings": {},
+    "created_at": "__now",
+    "updated_at": "__now",
+    "linkedin_verified": false,
+    "linkedin_identity_verified": false,
+    "linkedin_workplace_verified": false,
+    "verification_tier": "unverified",
+    "region": [],
+    "membership_tier": "free",
+    "contribution_score": 0,
+    "notification_preferences": {},
+    "timezone": "UTC",
+    "sector_overrides": [],
+    "jurisdiction_overrides": [],
+    "transport_mode_overrides": [],
+    "verifier_status": "none",
+    "is_platform_admin": false,
+    "sector": []
+   },
    "fks": [
     {
      "column": "id",
@@ -2405,6 +3058,10 @@
     "drained_at",
     "drain_run_id"
    ],
+   "uuid": [],
+   "defaults": {
+    "occurred_at": "__now"
+   },
    "fks": [
     {
      "column": "entity_id",
@@ -2418,6 +3075,8 @@
     "pending_count",
     "oldest_pending_at"
    ],
+   "uuid": [],
+   "defaults": {},
    "fks": []
   },
   "provisional_sources": {
@@ -2447,6 +3106,22 @@
     "recommended_classification",
     "discovered_for_jurisdiction"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "description": "",
+    "discovered_via": "citation_detection",
+    "citation_count": 1,
+    "independent_citers": 0,
+    "provisional_tier": 7,
+    "accessibility_verified": false,
+    "publishes_structured_content": false,
+    "entity_identified": false,
+    "status": "pending_review",
+    "reviewer_notes": "",
+    "created_at": "__now"
+   },
    "fks": [
     {
      "column": "cited_by_source_id",
@@ -2476,6 +3151,13 @@
     "sort_order",
     "created_at"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "sort_order": 0,
+    "created_at": "__now"
+   },
    "fks": [
     {
      "column": "item_id",
@@ -2495,6 +3177,14 @@
     "html_bytes",
     "created_at"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "fetched_at": "__now",
+    "html_bytes": 0,
+    "created_at": "__now"
+   },
    "fks": [
     {
      "column": "source_id",
@@ -2514,6 +3204,15 @@
     "created_at",
     "updated_at"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "state": "missing",
+    "fact_count": 0,
+    "created_at": "__now",
+    "updated_at": "__now"
+   },
    "fks": [
     {
      "column": "region_id",
@@ -2547,6 +3246,13 @@
     "as_at_date",
     "reference_period"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "last_updated": "__now",
+    "created_at": "__now"
+   },
    "fks": [
     {
      "column": "region_id",
@@ -2576,6 +3282,15 @@
     "created_at",
     "updated_at"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "iso_codes": [],
+    "display_order": 0,
+    "created_at": "__now",
+    "updated_at": "__now"
+   },
    "fks": []
   },
   "reroute_events": {
@@ -2591,6 +3306,12 @@
     "effective_to",
     "created_at"
    ],
+   "uuid": [
+    "reroute_id"
+   ],
+   "defaults": {
+    "created_at": "__now"
+   },
    "fks": [
     {
      "column": "baseline_corridor_id",
@@ -2633,6 +3354,17 @@
     "entity_id",
     "lifecycle_state"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "is_current": true,
+    "technical_maturity_evidence_ids": [],
+    "commercial_maturity_evidence_ids": [],
+    "computed_at": "__now",
+    "created_at": "__now",
+    "lifecycle_state": "emerging"
+   },
    "fks": [
     {
      "column": "entity_id",
@@ -2680,6 +3412,8 @@
     "entity_id",
     "lifecycle_state"
    ],
+   "uuid": [],
+   "defaults": {},
    "fks": []
   },
   "screen_verdicts": {
@@ -2690,6 +3424,10 @@
     "reviewer",
     "ruled_at"
    ],
+   "uuid": [],
+   "defaults": {
+    "ruled_at": "__now"
+   },
    "fks": [
     {
      "column": "census_id",
@@ -2714,6 +3452,12 @@
     "mint_hold_reason",
     "basis_claim_id"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "extracted_at": "__now"
+   },
    "fks": [
     {
      "column": "basis_claim_id",
@@ -2752,6 +3496,13 @@
     "synopsis_prompt",
     "urgency_weights"
    ],
+   "uuid": [],
+   "defaults": {
+    "transport_modes": [],
+    "cargo_types": [],
+    "compliance_roles": [],
+    "urgency_weights": {}
+   },
    "fks": []
   },
   "sensitive_field_policy": {
@@ -2765,6 +3516,14 @@
     "bucket_scheme",
     "policy"
    ],
+   "uuid": [],
+   "defaults": {
+    "k_min": 10,
+    "max_share_pct": 25,
+    "min_lag_days": 90,
+    "forward_looking_allowed": false,
+    "bucket_scheme": "undefined"
+   },
    "fks": []
   },
   "signposts": {
@@ -2781,6 +3540,8 @@
     "scored_by",
     "lifecycle_applied_at"
    ],
+   "uuid": [],
+   "defaults": {},
    "fks": [
     {
      "column": "assessment_id",
@@ -2814,6 +3575,12 @@
     "assignment_source",
     "assigned_at"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "assigned_at": "__now"
+   },
    "fks": [
     {
      "column": "source_id",
@@ -2830,6 +3597,13 @@
     "context",
     "detected_at"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "context": "",
+    "detected_at": "__now"
+   },
    "fks": [
     {
      "column": "cited_source_id",
@@ -2853,6 +3627,10 @@
     "scored_at",
     "scored_by"
    ],
+   "uuid": [],
+   "defaults": {
+    "scored_at": "__now"
+   },
    "fks": [
     {
      "column": "assessment_id",
@@ -2884,6 +3662,12 @@
     "dismissed_by",
     "dismissed_reason"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "opined_at": "__now"
+   },
    "fks": [
     {
      "column": "dismissed_by",
@@ -2917,6 +3701,14 @@
     "reviewer_id",
     "created_at"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "details": {},
+    "created_by": "system",
+    "created_at": "__now"
+   },
    "fks": [
     {
      "column": "source_id",
@@ -2943,6 +3735,14 @@
     "resulting_provisional_id",
     "created_at"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "jurisdiction_iso": [],
+    "verification_log": {},
+    "created_at": "__now"
+   },
    "fks": [
     {
      "column": "resulting_provisional_id",
@@ -3044,6 +3844,54 @@
     "sitemap_walk_outcome",
     "feed_last_probed_at"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "description": "",
+    "intelligence_types": [],
+    "jurisdictions": [],
+    "transport_modes": [],
+    "update_frequency": "weekly",
+    "status": "active",
+    "paywalled": false,
+    "access_method": "manual",
+    "confirmation_count": 0,
+    "conflict_count": 0,
+    "conflict_total": 0,
+    "accuracy_rate": 0.5,
+    "avg_lead_time_days": 0,
+    "lead_time_samples": 0,
+    "consecutive_accessible": 0,
+    "total_checks": 0,
+    "successful_checks": 0,
+    "accessibility_rate": 1,
+    "independent_citers": 0,
+    "total_citations": 0,
+    "self_citation_count": 0,
+    "trust_score_overall": 50,
+    "trust_score_accuracy": 20,
+    "trust_score_timeliness": 10,
+    "trust_score_reliability": 10,
+    "trust_score_citation": 10,
+    "trust_score_computed_at": "__now",
+    "tier_history": [],
+    "notes": "",
+    "created_at": "__now",
+    "updated_at": "__now",
+    "topic_tags": [],
+    "vertical_tags": [],
+    "processing_paused": false,
+    "admin_only": false,
+    "jurisdiction_iso": [],
+    "spotchecked": false,
+    "auto_run_enabled": true,
+    "secondary_roles": [],
+    "scope_topics": [],
+    "scope_modes": [],
+    "scope_verticals": [],
+    "observed_correctness_count": 0
+   },
    "fks": [
     {
      "column": "institution_id",
@@ -3079,6 +3927,17 @@
     "materialized_item_id",
     "reviewer_notes"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "proposed_changes": {},
+    "reason": "",
+    "confidence": "MEDIUM",
+    "status": "pending",
+    "created_at": "__now",
+    "jurisdiction_iso": []
+   },
    "fks": [
     {
      "column": "item_id",
@@ -3116,6 +3975,13 @@
     "origin_class",
     "value_numeric"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "last_updated": "__now",
+    "created_at": "__now"
+   },
    "fks": [
     {
      "column": "region_id",
@@ -3145,6 +4011,13 @@
     "result_unit",
     "computed_at"
    ],
+   "uuid": [
+    "computation_id"
+   ],
+   "defaults": {
+    "scenario_key": "default",
+    "computed_at": "__now"
+   },
    "fks": [
     {
      "column": "entity_id",
@@ -3167,6 +4040,14 @@
     "scrape_start_date",
     "judgement_drain"
    ],
+   "uuid": [],
+   "defaults": {
+    "id": true,
+    "global_processing_paused": false,
+    "updated_at": "__now",
+    "scrape_cadence": "off",
+    "judgement_drain": "off"
+   },
    "fks": []
   },
   "system_state_flag_audit": {
@@ -3178,6 +4059,10 @@
     "old_value",
     "new_value"
    ],
+   "uuid": [],
+   "defaults": {
+    "changed_at": "__now"
+   },
    "fks": []
   },
   "theme_briefs": {
@@ -3193,6 +4078,11 @@
     "claims",
     "member_ids"
    ],
+   "uuid": [],
+   "defaults": {
+    "generated_at": "__now",
+    "generated_by": "session-executor"
+   },
    "fks": []
   },
   "user_item_state": {
@@ -3207,6 +4097,14 @@
     "created_at",
     "updated_at"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "is_archived": false,
+    "created_at": "__now",
+    "updated_at": "__now"
+   },
    "fks": [
     {
      "column": "item_id",
@@ -3234,6 +4132,12 @@
     "item_id",
     "created_at"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "created_at": "__now"
+   },
    "fks": [
     {
      "column": "org_id",
@@ -3257,6 +4161,12 @@
     "surface_text",
     "created_at"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "created_at": "__now"
+   },
    "fks": [
     {
      "column": "item_id",
@@ -3290,6 +4200,17 @@
     "adoption_rule",
     "evidence"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "status": "proposed",
+    "distinct_items": 0,
+    "distinct_sources": 0,
+    "first_seen_at": "__now",
+    "last_seen_at": "__now",
+    "evidence": {}
+   },
    "fks": []
   },
   "workspace_item_overrides": {
@@ -3312,6 +4233,16 @@
     "owner_assigned_at",
     "archived_by"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "is_archived": false,
+    "notes": "",
+    "workspace_tags": [],
+    "created_at": "__now",
+    "updated_at": "__now"
+   },
    "fks": [
     {
      "column": "archived_by",
@@ -3356,6 +4287,18 @@
     "sectors_activation_signup_at",
     "profile"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "sector_profile": [],
+    "default_filters": {},
+    "default_export_format": "html",
+    "created_at": "__now",
+    "updated_at": "__now",
+    "notify_on_sector_activation": false,
+    "profile": {}
+   },
    "fks": [
     {
      "column": "org_id",
@@ -3373,6 +4316,12 @@
     "created_by",
     "created_at"
    ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "created_at": "__now"
+   },
    "fks": [
     {
      "column": "created_by",
