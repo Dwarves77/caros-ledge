@@ -58,6 +58,12 @@
       "route": "home",
       "kind": "pixel",
       "ruling": "Same as auth-field-height: / signed out lands on /login."
+    },
+    {
+      "id": "privacy-pixel",
+      "route": "privacy",
+      "kind": "pixel",
+      "ruling": "Operator 2026-10-16: 44 px is the standard on every control, so the nav card rows are 44 px (pitch 46) where artboard 01 draws about 42 (DESIGN CHANGES OWED 10); and rule 2 / INV-263: the nav cap draws no band split while the counts are unknown, where artboard 01 shows an equal 25 percent split that is a fabricated number (OWED 11). Structure still gates."
     }
   ]
 }

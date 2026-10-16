@@ -132,6 +132,7 @@ jobs:
         run: node tests/parity/capture.mjs --base http://localhost:3100 --out parity-capture
       - name: Compare with the baseline
         if: steps.scope.outputs.run == 'true'
+        shell: bash -eo pipefail {0}
         run: node tests/parity/compare.mjs --captured parity-capture | tee parity-report.txt
       - name: Parity report in the job summary
         if: always() && steps.scope.outputs.run == 'true'
