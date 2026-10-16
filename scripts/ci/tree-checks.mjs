@@ -11,7 +11,7 @@ const problems = [];
 
 // The operator's name is held only as a hash, so the tree itself never contains it.
 const BANNED_TOKEN_HASHES = new Set(["b8809c7a2aba20b78465f21cb521077f856c743bbf5d8dc36064d8283259f4c9"]);
-const PATTERNS = [/@gmail\./i, /C:\Users/i, /\/Users\/[A-Za-z]/];
+const PATTERNS = [/@gmail\./i, /C:\\Users/i, /\/Users\/[A-Za-z]/];
 
 for (const f of files) {
   let text;
