@@ -6,6 +6,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 
 import { trackedOutputProblems } from "./tracked-output.mjs";
+import { appliedMigrations, retiredWaiverProblems } from "./waiver-check.mjs";
 
 const files = execFileSync("git", ["ls-files", "-z", "--cached", "--others", "--exclude-standard"], { encoding: "utf8" })
   .split("\0").filter((f) => f && existsSync(f));
@@ -70,6 +71,11 @@ for (const f of files.filter((x) => x.startsWith("src/"))) {
   if (/^\/\/ Ported from \S+ \(lines? \d+/m.test(head)) continue;
   if (!allowed.get(f)) problems.push(`${f}:1: no "// Ported from" header and no reason in scripts/ci/new-files/*.txt`);
 }
+
+// Until-migration parity waivers retire themselves once supabase/migrations/APPLIED.json (absent until the cutover) lists their migration.
+const appliedFile = "supabase/migrations/APPLIED.json";
+const applied = appliedMigrations(existsSync(appliedFile) ? JSON.parse(readFileSync(appliedFile, "utf8")) : []);
+problems.push(...retiredWaiverProblems(JSON.parse(readFileSync("tests/parity/approved-changes.json", "utf8")), applied));
 
 const pkg = JSON.parse(readFileSync("package.json", "utf8"));
 for (const name of Object.keys({ ...pkg.dependencies, ...pkg.devDependencies })) {

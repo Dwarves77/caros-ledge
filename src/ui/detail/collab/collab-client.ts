@@ -14,3 +14,6 @@ export async function collabRequest<T>(path: string, init: { method?: string; bo
   if (r.status >= 500 || r.status === 0) return { ...r, error: `${r.error ?? "That did not save."} What you typed is kept.` };
   return r;
 }
+
+/** The roster's fallback label for a member with no profile name: the first eight characters of the id and three dots. */
+export const isIdLabel = (name: string): boolean => name.length === 11 && name.endsWith("...") && [...name.slice(0, 8)].every((c) => "0123456789abcdef".includes(c));

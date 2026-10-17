@@ -5,9 +5,10 @@ import { useEffect, useState } from "react";
 
 import { formatDate, pluralize } from "@/core/shared";
 
+import { Absence } from "../../Absence";
 import { ActionButton } from "../../ActionRow";
 
-import { collabPath, collabRequest } from "./collab-client";
+import { collabPath, collabRequest, isIdLabel } from "./collab-client";
 
 interface ItemAssignment {
   id: string;
@@ -34,6 +35,17 @@ interface AssignPayload {
 const people = (n: number): string => `${n} ${pluralize(n, "person", "people")}`;
 
 /** Workspace assignments on one item: several assignees at once, a due date, a notification. `todayIso` is the request's instant (a due date in the past is refused before the call). */
+/** A member with no profile name is the Absence token with 'Name not set', never a hash (the roster labels such a member by the first eight id characters: the e-mail is not readable under the authenticated column grant, SEC-5). */
+function Who({ name }: { name: string }) {
+  return isIdLabel(name) ? (
+    <>
+      <Absence reason="connect data" variant="dash" /> Name not set
+    </>
+  ) : (
+    <>{name}</>
+  );
+}
+
 export function ItemAssignBlock({ itemId, todayIso }: { itemId: string; todayIso: string }) {
   const [phase, setPhase] = useState<"loading" | "ready" | "error">("loading");
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -117,7 +129,7 @@ export function ItemAssignBlock({ itemId, todayIso }: { itemId: string; todayIso
           {assignments.map((a) => (
             <li key={a.id} aria-label={`${a.assignee_name ?? "Assignee"}, ${a.state}`} className="cl-collab-item">
               <p className="cl-collab-body">
-                <strong data-guard-title>{a.assignee_name ?? "Former member"}</strong>
+                <strong data-guard-title>{a.assignee_name ? <Who name={a.assignee_name} /> : "Former member"}</strong>
               </p>
               <p className="cl-collab-meta">
                 {a.state === "done" ? "Done" : "Open"}
@@ -156,7 +168,7 @@ export function ItemAssignBlock({ itemId, todayIso }: { itemId: string; todayIso
             <div className="cl-collab-row">
               {available.map((m) => (
                 <button key={m.user_id} type="button" className="cl-chip-toggle" aria-pressed={picked.includes(m.user_id)} onClick={() => (setError(null), setPicked((p) => (p.includes(m.user_id) ? p.filter((x) => x !== m.user_id) : [...p, m.user_id])))}>
-                  {m.display_name}
+                  <Who name={m.display_name} />
                 </button>
               ))}
             </div>

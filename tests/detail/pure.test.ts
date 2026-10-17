@@ -10,6 +10,7 @@ import { countryGroupForIso, countryOf, isIso, isoCodesOf, isoToDisplayLabel, ju
 import { deriveThemeLabel, themeAnalysisView, themeChips, themeForItem } from "@/core/themes";
 import { withClaimTiers } from "@/ui/claim-tier";
 import { coverageLineModel } from "@/features/regulations/coverage-line";
+import { isIdLabel } from "@/ui/detail/collab/collab-client";
 import { centroidOf } from "@/features/regulations/map/centroids";
 import { markerSize } from "@/features/regulations/map/marker";
 import { rollupRegions, sourceTypesFor } from "@/features/regulations/map/region-coverage";
@@ -204,4 +205,9 @@ test("the coverage line always draws its link: a refused or failed count is the 
     assert.equal(m.state, "unavailable");
     assert.ok(m.href.startsWith("/dashboard/coverage"), "the link is drawn whatever the count did");
   }
+});
+
+test("a roster label that is only the id prefix is recognised, a real name never is", () => {
+  assert.equal(isIdLabel("6853b368..."), true);
+  for (const name of ["Jason", "Pat Lee", "smoke@example.invalid", "abcdef12 Lee...", "6853b368", "6853b36x..."]) assert.equal(isIdLabel(name), false, name);
 });
