@@ -1340,6 +1340,21 @@
     }
    ]
   },
+  "fact_suppressions": {
+   "columns": [
+    "id",
+    "item_id",
+    "target_kind",
+    "target_ref",
+    "op",
+    "machine_value",
+    "created_at",
+    "revoked_at"
+   ],
+   "uuid": [],
+   "defaults": {},
+   "fks": []
+  },
   "funded_pass_runlock": {
    "columns": [
     "lock_key",
@@ -3498,6 +3513,29 @@
    "uuid": [],
    "defaults": {},
    "fks": []
+  },
+  "saved_views": {
+   "columns": [
+    "id",
+    "user_id",
+    "surface",
+    "name",
+    "query",
+    "created_at"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "created_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "user_id",
+     "table": "users",
+     "ref": "id"
+    }
+   ]
   },
   "screen_verdicts": {
    "columns": [

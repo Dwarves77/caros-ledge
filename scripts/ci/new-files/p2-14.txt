@@ -1,0 +1,7 @@
+# path | reason (files with no "Ported from" header)
+src/features/admin/ui/admin.module.css | styles for the admin console written against the kit tokens; the old console used inline styles and tailwind classes, so no source lines map
+src/features/coverage/ui/coverage.module.css | styles for the coverage screens written against the kit tokens; the old page used tailwind classes
+src/features/admin/ui/parts/PartsGallery.tsx | moved by git mv from src/app/privacy/ui-fixtures (IMP-060); a use-client directive must be the first line, so the header cannot lead
+src/features/admin/ui/parts/WorkspaceParts.tsx | moved by git mv from src/app/privacy/ui-fixtures/workspace (IMP-060); a use-client directive must be the first line
+src/features/admin/ui/parts/AdminParts.tsx | fixture mount for the admin UX smoke, beside the other parts gallery files; a use-client directive must be the first line and the fixtures are new data
+src/app/privacy/ui-fixtures/admin/page.tsx | the UI_FIXTURES-gated route the admin UX smoke mounts, beside the workspace fixture route

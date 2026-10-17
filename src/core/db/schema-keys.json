@@ -326,6 +326,9 @@
  "research_assessments": [
   "id"
  ],
+ "saved_views": [
+  "id"
+ ],
  "screen_verdicts": [
   "census_id"
  ],

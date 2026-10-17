@@ -2,7 +2,7 @@
 import { userClient } from "@/core/db/clients";
 import { formatLocaleDate } from "@/core/shared";
 import { pageSession } from "@/features/account/server/page-session";
-import { PageFailure } from "@/features/account/ui/PageFailure";
+import { PageFailure } from "@/ui/shell/PageFailure";
 
 import { runSearch } from "./run-search";
 import { MAX_RESULTS, MIN_QUERY_LEN, type SearchOutcome, type SearchRow } from "./types";

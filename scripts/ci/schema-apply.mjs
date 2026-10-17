@@ -105,6 +105,13 @@ for (const file of readdirSync("supabase/migrations").filter((f) => /^\d{4}_.+\.
   const off = [...changed].filter((c) => !declared.has(c)).concat([...declared].filter((c) => !changed.has(c)).map((c) => `declared but unchanged: ${c}`));
   console.log(`${file}: changed [${[...changed].sort()}]${off.length ? ` UNEXPLAINED [${off}]` : ""}`);
   unexplained += off.length;
+  if (off.length) {
+    // The differing snapshot lines of an unexplained step (class|object|detail), removed then added, so a red run names the objects and not only the classes.
+    const [sb, sa] = [new Set(before), new Set(after)];
+    const lines = [...before.filter((l) => !sa.has(l)).map((l) => `  - ${l}`), ...after.filter((l) => !sb.has(l)).map((l) => `  + ${l}`)];
+    for (const l of lines.slice(0, 40)) console.log(l.slice(0, 300));
+    if (lines.length > 40) console.log(`  ... ${lines.length - 40} more differing line(s)`);
+  }
   before = after;
 }
 console.log("migrations applied with zero errors");
