@@ -1,1 +1,9 @@
-{ "entries": {}, "written": ["item_supersessions"] }
+{
+  "entries": {},
+  "written": ["item_supersessions", "entity_refs", "market_series"],
+  "_writtenBy": {
+    "item_supersessions": "written by the supersession runtime through a table-name helper",
+    "entity_refs": "written by src/core/entities/link-entities.ts (write(\"entity_refs\", ...)) and the entity backfill, through table-name helpers the pattern cannot see",
+    "market_series": "written by every market producer (src/features/market/producers/*) through the shared producer upsert, a table-name helper the pattern cannot see"
+  }
+}

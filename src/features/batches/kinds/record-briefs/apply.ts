@@ -23,6 +23,7 @@ import { allRows, rowsByIds } from "@/core/db";
 import { BUDGET_STOP_REASON, budgetBytes, POOL_REREADS, preflight } from "../../kit/budget";
 import { applyEntries, isObj, itemPool, type ApplyOpts, type BatchDeps, type EntrySpec, type Item, type Obj } from "../../kit/session-batch";
 
+import { recordChangelog } from "./changelog";
 import { validateRecordBriefEntry, type RecordLive, type RecordPlan } from "./validate";
 
 export interface RecordOpts extends ApplyOpts {
@@ -125,7 +126,10 @@ async function recordRegeneration(c: StepCtx): Promise<string | null> {
   if (seen.error) return `change read failed: ${seen.error.message}`;
   if ((seen.data ?? []).length) return null;
   const r = await recordItemChange(c.deps.sb, { itemId: c.itemId, previous: { full_brief: c.overwrite ? "stored" : null }, next: { full_brief: "regenerated", batch: c.batch }, changeTypeOverride: "provision_amended" });
-  return r.ok ? null : `change not recorded: ${r.error}`;
+  if (!r.ok) return `change not recorded: ${r.error}`;
+  // The same fact for the reader: item_changelog is what get_workspace_recent_changes reads to call an item UPDATED.
+  const log = await recordChangelog(c.deps.sb, { itemId: c.itemId, field: "full_brief", batch: c.batch, note: "Brief regenerated from the item's held sources.", changeDate: c.deps.now().toISOString().slice(0, 10) });
+  return log.error;
 }
 
 async function applyItem(deps: BatchDeps, item: Item<RecordPlan>, batch: string, overwrite: boolean) {

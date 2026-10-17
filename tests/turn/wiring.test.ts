@@ -13,7 +13,7 @@ test("every wired member is present on the built deps, and the owed members are 
   const f = fixture();
   const report = startupCheck(f.d);
   assert.deepEqual(report.missing, []);
-  assert.deepEqual(report.owed.map((o) => o.member).sort(), ["producers.verdicts (host verdicts as a table, IMP-054)", "propagation EdgeAuthors (authorCarbonIntensityEdges)", "workspace.portfolio"].sort());
+  assert.deepEqual(report.owed.map((o) => o.member).sort(), ["assistant.operationsFacts (the Operations data block)", "dashboard.themeChips (the cross-page theme view)", "producers.verdicts (host verdicts as a table, IMP-054)", "propagation EdgeAuthors (authorCarbonIntensityEdges)"].sort());
   assert.ok(MANIFEST.filter((e) => e.status === "wired").length >= 30, "the manifest covers every provider-to-consumer member");
 });
 

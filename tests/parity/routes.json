@@ -6,7 +6,7 @@
     { "name": "signup", "path": "/signup", "auth": false },
     { "name": "privacy", "path": "/privacy", "auth": false },
 
-    { "name": "dashboard", "path": "/dashboard", "auth": "member" },
+    { "name": "dashboard", "path": "/dashboard", "oldPath": "/", "auth": "member" },
     { "name": "regulations", "path": "/regulations", "auth": "member" },
     {
       "name": "regulation-detail",

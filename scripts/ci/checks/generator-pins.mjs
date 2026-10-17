@@ -8,7 +8,7 @@
 //   renderDataSourceSeedSql     -> executes against data_sources (rolled back), is idempotent, and lands every register key with its verdict
 // Everything runs in a transaction that rolls back. Each comparison is attacked on every run: a mutated copy of the generated text must be
 // flagged, or the run fails. Exit 1 on a mismatch or a failed attack; exit 2 when DATABASE_URL is not set.
-import { spawnSync } from "node:child_process";
+import { psql } from "../psql.mjs";
 
 const url = process.env.DATABASE_URL;
 if (!url) {
@@ -18,7 +18,7 @@ if (!url) {
 const c = await import("@/core/contracts");
 
 function sql(text) {
-  const r = spawnSync("psql", [url, "-X", "-q", "-At", "-F", "\t", "-v", "ON_ERROR_STOP=1", "-f", "-"], { encoding: "utf8", input: `BEGIN;\n${text}\nROLLBACK;\n`, maxBuffer: 1 << 26 });
+  const r = psql(url, { sql: `BEGIN;\n${text}\nROLLBACK;\n`, tuples: true, sep: "\t" });
   if (r.status !== 0) throw new Error(`generator-pins: SQL failed\n${r.stderr}`);
   return r.stdout.split("\n").filter(Boolean).map((l) => l.split("\t"));
 }

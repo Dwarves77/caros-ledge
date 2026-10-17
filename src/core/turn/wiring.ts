@@ -33,6 +33,9 @@ import { auxiliaryEnergyRows, blsOews, eurostatElectricity, eurostatLabourCost, 
 import { researchAssessment, researchWalker } from "@/features/research";
 import type { EdgeAuthors } from "@/features/propagation/ops";
 import { holdingsPresent } from "@/features/sources";
+import { assistantDeps } from "@/features/assistant/deps";
+import { dashboardDeps } from "@/features/dashboard/deps";
+import { portfolioDeps } from "@/features/portfolio/deps";
 import type { StatutoryDeps } from "@/features/statutory";
 import { wireWorkspaceDeps, type WorkspaceDeps } from "@/features/workspace/api/deps";
 
@@ -224,7 +227,7 @@ export function buildDeps(sb: Db, env: Env = process.env, opts: DepsOptions = {}
   };
 }
 
-/** The workspace handlers' cross-slice members that exist now. Only `portfolio` (P2-12) is owed: the startup check reports it, and it is never faked. */
+/** The workspace handlers' cross-slice members. `portfolio` is the held-items read layer (P2-13); the pages read it with the caller's own client, the API route with this one. */
 export function workspaceWiring(sb: Db): Partial<WorkspaceDeps> {
   return {
     navCounts: (who) => getNavCounts(navCountSources(sb, who)),
@@ -240,6 +243,7 @@ export function workspaceWiring(sb: Db): Partial<WorkspaceDeps> {
     revalidateWorkspaceData: () => void import("next/cache").then((m) => m.revalidateTag("app-data", "max")),
     timePhase,
     withServerTiming,
+    portfolio: portfolioDeps(sb),
   };
 }
 
@@ -268,7 +272,9 @@ export const MANIFEST: readonly ManifestEntry[] = [
   { member: "producers.verdicts (host verdicts as a table, IMP-054)", status: "owed", owner: "P2-S4 (the host_verdicts table)", present: (d) => d.producers.verdicts !== undefined },
   ...(["itemHref", "revalidateWorkspaceData", "navCounts", "adminAttention", "timePhase", "withServerTiming"] as const).map((m): ManifestEntry => ({ member: `workspace.${m}`, status: "wired", present: (d) => fn(d.workspace[m]) })),
 
-  { member: "workspace.portfolio", status: "owed", owner: "P2-12 workspace surfaces", present: (d) => d.workspace.portfolio !== undefined },
+  { member: "workspace.portfolio", status: "wired", present: (d) => d.workspace.portfolio !== undefined },
+  { member: "dashboard.themeChips (the cross-page theme view)", status: "owed", owner: "P2-10 (src/core/themes themeChips)", present: () => dashboardDeps().themeChips !== undefined },
+  { member: "assistant.operationsFacts (the Operations data block)", status: "owed", owner: "P2-12 (src/features/operations/ask-context.ts)", present: () => assistantDeps().operationsFacts !== undefined },
 ];
 
 /** IMP-026: which required members are unwired (refuse), and which are owed to a slice that is not merged (reported). */
