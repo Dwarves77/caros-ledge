@@ -16,3 +16,5 @@ Counts and data-derived option sets drift (the compare gate treats integer runs 
 3. Update the capture date and the run id in this README, commit, open a PR. Compare then runs against the new baseline in the same PR's parity job.
 
 Known gap (coordinator, not yet built): the current `dashboard` baseline was captured at the old site's /dashboard, which answered 404; the old dashboard lives at signed-in "/". The baseline job must capture the `dashboard` record at "/" under the member sign-in (one record name, "dashboard"; the new site keeps its own path in routes.json). Until a CI slice adds a per-site path to routes.json and the job uses it, recapture the dashboard route by hand.
+
+Proven state (P2-CI3): compare treats integer runs as data; the `baseline` job is dispatch-only and has not been run yet.
