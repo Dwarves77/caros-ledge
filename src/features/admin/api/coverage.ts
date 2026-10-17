@@ -1,7 +1,7 @@
 // Ported from old_repo/src/app/api/admin/coverage/route.ts (lines 62-299)
-import { countryLabel, isIso, subnational, TIER1, TIER2 } from "@/core/jurisdictions";
 import { LookupError } from "@/core/http/errors";
 
+import { countryLabel, countryOf, isIso, subnational, TIER1, TIER2 } from "./jurisdiction-lists";
 import { adminRoute, reply } from "./shared";
 
 /** The window inside which an item counts as fresh for a cell: 180 days. */
@@ -22,7 +22,7 @@ interface RpcRow {
 const tier1 = new Set<string>(TIER1);
 const tier2 = new Set<string>(TIER2);
 /** The tier a jurisdiction has in the one jurisdiction list: 1 must cover, 2 should cover, 3 any other code that parses, null a code that does not. */
-export const tierOf = (iso: string): 1 | 2 | 3 | null => (tier1.has(iso) ? 1 : tier2.has(iso) ? 2 : isIso(iso) ? 3 : null);
+export const tierOf = (iso: string): 1 | 2 | 3 | null => (tier1.has(countryOf(iso)) ? 1 : tier2.has(countryOf(iso)) ? 2 : isIso(iso) ? 3 : null);
 /** The country segment of a code, so a sub-national row groups under its country and a supranational code under itself. */
 export const countryGroup = (iso: string): string => iso.split("-")[0] ?? iso;
 

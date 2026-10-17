@@ -1,5 +1,5 @@
 // Ported from old_repo/src/lib/coverage/matrix-data.ts (lines 1-54)
-import { countryLabel } from "@/core/jurisdictions";
+import { countryLabel } from "@/features/admin/api/jurisdiction-lists";
 import { serviceClient } from "@/core/db";
 
 import { makeCoverageData } from "./matrix-data";
