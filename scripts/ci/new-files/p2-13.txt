@@ -1,0 +1,11 @@
+# path | reason (files with no "Ported from" header)
+src/core/urgency/data/weights.json | rule table as data (WAVE-2-COMMON): the platform's default jurisdiction weights and the sector adjacency map, lifted from old_repo/src/lib/constants.ts lines 211-300; JSON cannot carry a header
+src/features/assistant/data/skill-passages.json | the platform guide as data: six sections of the environmental-policy skill core (old_repo/src/lib/llm/skill-loader.ts lines 80-212), the prompt instructions left out; JSON cannot carry a header
+src/features/assistant/deps.ts | new in P2-13: the injection point for the Operations data block (P2-12), no old counterpart
+src/features/dashboard/deps.ts | new in P2-13: the injection point for the cross-page theme view (P2-10), no old counterpart
+src/features/assistant/ui/assistant.module.css | layout of the Assistant panel, from the Tailwind classes and inline style objects of old_repo/src/components/AskAssistant.tsx; a stylesheet cannot carry a // header
+src/features/dashboard/ui/dashboard.module.css | layout of the dashboard body and rail, from the inline style objects of old_repo/src/components/dashboard/DashboardBrief.tsx and home/DashboardWatchlist.tsx; a stylesheet cannot carry a // header
+src/features/portfolio/ui/portfolio.module.css | layout of the portfolio views, from the inline style objects of old_repo/src/components/portfolio/*.tsx; a stylesheet cannot carry a // header
+src/features/watchlist/ui/watchlist.module.css | layout of the notices card and the watchlist rail notes, from the inline style objects of old_repo/src/components/watchlist/WatchlistSurface.tsx and figures/RecalculationNotice.tsx; a stylesheet cannot carry a // header
+src/app/privacy/ui-fixtures/dash-search/page.tsx | new in P2-13: the fixture route the UX smoke mounts the dashboard, watchlist, search, portfolio and Assistant screens on (a 404 without UI_FIXTURES=1), no old counterpart
+src/app/privacy/ui-fixtures/dash-search/DashSearchFixtures.tsx | new in P2-13: the static props for those screens, no old counterpart

@@ -85,7 +85,7 @@ test("INV-263: counts return null on failure, never zeros; nav counts go blank, 
   const nav = await getNavCounts(navCountSources(bad.db, { orgId: "o", userId: "u" }));
   assert.deepEqual(nav, { regulations: null, market: null, research: null, operations: null, watchlist: null, byPriority: null });
   const good = listDb({
-    rpc: (n) => (n === "get_all_surface_counts" ? { data: { regulations: { total: 3 }, market: { total: 4 }, research: { total: 5 }, operations: { total: 6 } } } : { data: { total_items: 9, by_priority: { CRITICAL: 1, HIGH: 2 } } }),
+    rpc: (n) => (n === "get_all_surface_counts" ? { data: { regulations: { verified: 3, total: 30 }, market: { verified: 4, total: 40 }, research: { verified: 5, total: 50 }, operations: { verified: 6, total: 60 } } } : { data: { total_items: 9, by_priority: { CRITICAL: 1, HIGH: 2 } } }),
     from: () => ({ data: null, count: 7 }),
   });
   const n = await getNavCounts(navCountSources(good.db, { orgId: "o", userId: "u" }));

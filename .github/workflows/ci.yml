@@ -203,6 +203,9 @@ jobs:
       - name: Regulations screens (four widths, behaviours)
         if: steps.scope.outputs.run == 'true'
         run: node tests/ux/regulations-smoke.mjs --base http://localhost:3100
+      - name: Dashboard, watchlist, search, portfolio and Assistant screens (four widths, behaviours, fixture parity for /watchlist and /search)
+        if: steps.scope.outputs.run == 'true'
+        run: node tests/ux/dash-search-smoke.mjs --base http://localhost:3100
       - name: Capture the routes
         if: steps.scope.outputs.run == 'true'
         run: node tests/parity/capture.mjs --base http://localhost:3100 --out parity-capture
