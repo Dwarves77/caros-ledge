@@ -218,6 +218,13 @@
       "on": "control",
       "match": "^button:\\+# more$",
       "ruling": "production carries no new migration before cutover (rulings 2026-10-17): the two '+3 more' buttons are the source bias tags' overflow (BiasChips, in the action card and in the Sources section); source_bias_tags has no member policy until 0031, so without it the page draws no tags and says nothing is missing."
+    },
+    {
+      "id": "market-deadline-tie-order",
+      "route": "market",
+      "kind": "order",
+      "match": "^link:Compliance deadline",
+      "ruling": "old read ordered by event_date only (fsi-app/src/lib/forward-events/read-upcoming.mjs:200, no secondary key: heap order); new rule created_at then id (rulings 2026-10-17)"
     }
   ]
 }

@@ -55,6 +55,9 @@ export function subsequence(baseline, captured, key) {
 // A waiver of kind 'until-migration' (with `migration` and optionally `on`: landmark, heading or control) covers a difference that exists only because production carries no new migration before the
 // cutover window. It is counted apart from the look/ruling waivers, and tree-checks retires it once supabase/migrations/APPLIED.json lists the migration.
 const untilMigration = (approved, route, kind, text) => approved.find((a) => a.kind === 'until-migration' && a.route === route && (!a.on || a.on === kind) && (a.match === '*' || new RegExp(a.match).test(text)));
+// A waiver of kind 'order' (route, `match` on the control name, ruling) covers a "control reordered" line for a matching control where the old tree left the order unspecified (no secondary key, proven by file:line in the ruling)
+// and the new tree's deterministic rule stands. It waives ORDER ONLY: a missing or renamed control under the same pattern is not reordered, it fails.
+const orderWaived = (approved, route, text) => approved.some((a) => a.kind === 'order' && a.route === route && new RegExp(a.match).test(text));
 const isApproved = (approved, route, kind, text) => approved.some((a) => a.route === route && a.kind === kind && (a.match === '*' || new RegExp(a.match).test(text)));
 
 export function compareRecord(route, viewport, base, cap, approved) {
@@ -69,7 +72,10 @@ export function compareRecord(route, viewport, base, cap, approved) {
   const check = (kind, baseItems, capItems, key, show) => {
     const { missing, reordered } = subsequence(baseItems, capItems, key);
     for (const m of missing) sort(kind, m, `${kind} missing: ${m}`);
-    for (const m of reordered) sort(kind, m, `${kind} reordered: ${m}`);
+    for (const m of reordered) {
+      if (kind === 'control' && orderWaived(approved, route, m)) used.push(`${kind} reordered: ${m}`);
+      else sort(kind, m, `${kind} reordered: ${m}`);
+    }
     void show;
   };
   check('landmark', base.landmarks ?? [], cap.landmarks ?? [], (l) => l.role);
