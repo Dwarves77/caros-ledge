@@ -72,11 +72,13 @@ export function compareRecord(route, viewport, base, cap, approved) {
   check('control', base.controls ?? [], cap.controls ?? [], ctl);
   const baseRows = base.rows?.items ?? [];
   const capRows = cap.rows?.items ?? [];
-  check('row', baseRows, capRows, (r) => `${r.tag}:${clean(r.text).slice(0, 80)}`);
+  // A row key carries live counts too ("2/7 sourced · 985 regs"): the same normalisation as names.
+  const rowKey = (r) => `${r.tag}:${uncount(r.text).slice(0, 80)}`;
+  check('row', baseRows, capRows, rowKey);
   if (viewport.startsWith('375')) {
-    const byText = new Map(capRows.map((r) => [`${r.tag}:${clean(r.text).slice(0, 80)}`, r.height]));
+    const byText = new Map(capRows.map((r) => [rowKey(r), r.height]));
     for (const r of baseRows) {
-      const h = byText.get(`${r.tag}:${clean(r.text).slice(0, 80)}`);
+      const h = byText.get(rowKey(r));
       if (h !== undefined && h > r.height + 1) fails.push(`row taller at 375: ${clean(r.text).slice(0, 40)} (${h.toFixed(1)} > ${r.height.toFixed(1)})`);
     }
   }

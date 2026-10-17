@@ -11,7 +11,7 @@ Personal identifiers in the JSON were replaced (64) with smoke@example.invalid /
 
 Counts and data-derived option sets drift (the compare gate treats integer runs in control and heading names as data), but the old site's look and structure can also change, and a deliberate refresh is a PR of its own:
 
-1. Dispatch the workflow `CI` (Actions, Run workflow) with input `routes` (default `all`). Job `baseline` captures https://carosledge.com with the LIVE_SMOKE_* account and uploads artifact `parity-baseline-<run id>`. It never runs on push or pull_request.
+1. Dispatch the workflow `CI` (Actions, Run workflow) with input `only` = `baseline` (it then runs that job alone; with `only` empty a dispatch runs every job except `baseline`, and the `turn` job writes dry rows to the production ledger) and input `routes` (default `all`). Job `baseline` captures https://carosledge.com with the LIVE_SMOKE_* account and uploads artifact `parity-baseline-<run id>`. It never runs on push or pull_request.
 2. Download the artifact; replace the files under `tests/parity/baseline` (keep PNGs only for the four signed-out routes, replace every e-mail address with smoke@example.invalid as above).
 3. Update the capture date and the run id in this README, commit, open a PR. Compare then runs against the new baseline in the same PR's parity job.
 
