@@ -1,0 +1,20 @@
+/* The portfolio views' own layout; colour, type and radius are the shared tokens. */
+.column { display: flex; flex-direction: column; gap: var(--sp-18); min-width: 0; }
+.rail { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.form { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; padding: 0 16px 14px; }
+.grow { flex: 1 1 240px; min-width: 0; }
+.pad { padding: 0 16px 16px; }
+.padSm { padding: 0 16px 14px; }
+.nameLink { display: flex; align-items: center; min-height: var(--target); font-weight: 600; color: var(--ink); text-decoration: none; }
+.title { min-width: 0; overflow-wrap: anywhere; }
+.muted { color: var(--ink-2); }
+.stack { display: flex; flex-direction: column; gap: 8px; }
+.fine { font-size: var(--fs-11); color: var(--ink-3); margin: 6px 0 0; }
+.say { font-size: var(--fs-12); color: var(--ink-2); margin: 0; line-height: 1.45; }
+.hits { list-style: none; margin: 10px 0 0; padding: 0; }
+.hit { display: flex; align-items: center; gap: 12px; min-height: 52px; border-top: 1px solid var(--line-3); padding: 4px 0; }
+.hitText { flex: 1; min-width: 0; font-size: var(--fs-13); color: var(--ink); overflow-wrap: anywhere; }
+.hitBtn { flex-shrink: 0; min-width: 96px; }
+.cover { display: flex; flex-wrap: wrap; align-items: center; gap: 0 8px; margin: 2px 0 0; font-size: var(--fs-11); color: var(--ink-2); }
+.coverLink { display: inline-flex; align-items: center; min-height: var(--target); font-weight: 600; color: var(--ink); }
+.status { font-size: var(--fs-12); color: var(--ink-3); margin: 10px 0 0; }
