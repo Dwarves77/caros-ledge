@@ -6,3 +6,15 @@ Existing site's parity baseline per docs/PART2-AGENT-PLAN section 7. Captured 20
 PNG files are kept only for the four signed-out routes; signed-in routes keep their accessibility JSON only (account details must not enter a public tree); the full capture stays in the old repo's run artifact 38819128509.
 
 Personal identifiers in the JSON were replaced (64) with smoke@example.invalid / smoke; the product address privacy@carosledge.com is unchanged.
+
+## Recapturing the baseline
+
+Counts and data-derived option sets drift (the compare gate treats integer runs in control and heading names as data), but the old site's look and structure can also change, and a deliberate refresh is a PR of its own:
+
+1. Dispatch the workflow `CI` (Actions, Run workflow) with input `routes` (default `all`). Job `baseline` captures https://carosledge.com with the LIVE_SMOKE_* account and uploads artifact `parity-baseline-<run id>`. It never runs on push or pull_request.
+2. Download the artifact; replace the files under `tests/parity/baseline` (keep PNGs only for the four signed-out routes, replace every e-mail address with smoke@example.invalid as above).
+3. Update the capture date and the run id in this README, commit, open a PR. Compare then runs against the new baseline in the same PR's parity job.
+
+Known gap (coordinator, not yet built): the current `dashboard` baseline was captured at the old site's /dashboard, which answered 404; the old dashboard lives at signed-in "/". The baseline job must capture the `dashboard` record at "/" under the member sign-in (one record name, "dashboard"; the new site keeps its own path in routes.json). Until a CI slice adds a per-site path to routes.json and the job uses it, recapture the dashboard route by hand.
+
+Proven state (P2-CI3): compare treats integer runs as data; the `baseline` job is dispatch-only and has not been run yet.
