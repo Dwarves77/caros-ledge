@@ -1,18 +1,22 @@
 // Ported from old_repo/src/app/api/orgs/[org_id]/route.ts (lines 24-223)
+import { currentMembership } from "@/core/auth/membership";
+import { readOwnPlatformAdmin } from "@/core/auth/platform-admin";
 import { updateOrg, renameBody } from "@/core/auth/orgs";
 import { serviceClient } from "@/core/db/clients";
 import { exactCount } from "@/core/db/query";
 import { LookupError, ok, refuse, route } from "@/core/http/errors";
-import { isRefusal, requireOrgRole } from "@/core/http/guard";
+import { isRefusal, requireOrgRole, requireUser } from "@/core/http/guard";
 import { parseJson, parseWith, uuid } from "@/core/http/parse";
 
 type Ctx = { params: Promise<{ org_id: string }> };
 
-/** GET /api/orgs/[org_id]: the organisation, its first owner and its member count, for a member. Every read checks its error. */
+/** GET /api/orgs/[org_id]: the organisation, its first owner and its member count, for a member or a platform admin (IMP-012: the member list admits the admin, so the record does too). Every read checks its error. */
 export const GET = route<Ctx>("/api/orgs/[org_id]", async (request, { params }) => {
   const orgId = parseWith(uuid, (await params).org_id, "org_id");
-  const auth = await requireOrgRole(request, "viewer", orgId);
+  const auth = await requireUser(request);
   if (isRefusal(auth)) return auth;
+  const caller = await currentMembership(auth.client, auth.userId, orgId);
+  if (!caller && !(await readOwnPlatformAdmin(auth.client))) return refuse(403, "User has no organization membership");
   const service = serviceClient();
   const [org, owner, members] = await Promise.all([
     service.from("organizations").select("id, name, slug, plan, created_at").eq("id", orgId).maybeSingle(),
@@ -27,7 +31,7 @@ export const GET = route<Ctx>("/api/orgs/[org_id]", async (request, { params }) 
   const profile = (owner.data?.user ?? null) as { full_name?: string | null } | null;
   return ok(auth.headers, {
     org: org.data,
-    caller_role: auth.membership.role,
+    caller_role: caller?.role ?? "platform_admin",
     owner: owner.data ? { user_id: owner.data.user_id, display_name: profile?.full_name ?? `${String(owner.data.user_id).slice(0, 8)}...`, owner_since: owner.data.created_at } : null,
     member_count: members,
   });

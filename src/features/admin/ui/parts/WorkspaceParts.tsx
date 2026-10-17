@@ -25,7 +25,7 @@ const SETTINGS: SettingsData = {
 };
 
 /** One workspace screen per `?screen=`, with static props; the data it reads arrives from the smoke's mocked responses. */
-export function WorkspaceFixtures({ screen }: { screen: string }) {
+export function WorkspaceParts({ screen }: { screen: string }) {
   const [archiving, setArchiving] = useState(false);
   const [tagging, setTagging] = useState(true);
   return (

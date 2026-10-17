@@ -53,7 +53,7 @@ export function fakeDb(handler: (call: Call) => Reply | undefined = () => undefi
       });
       for (const op of ["insert", "update", "upsert"] as const) chain(op, (payload) => ((call.op = op), (call.payload = payload)));
       chain("delete", () => (call.op = "delete"));
-      for (const f of ["eq", "neq", "ilike", "in", "is", "gt", "lt"]) chain(f, (col, val) => call.filters.push([`${f}:${String(col)}`, val]));
+      for (const f of ["eq", "neq", "ilike", "in", "is", "gt", "gte", "lt", "lte", "or"]) chain(f, (col, val) => call.filters.push([`${f}:${String(col)}`, val]));
       chain("order", (col, opts) => call.order.push([String(col), (opts as { ascending?: boolean } | undefined)?.ascending !== false]));
       chain("limit", (n) => (call.limit = Number(n)));
       chain("range", () => undefined);
