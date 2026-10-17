@@ -1,1 +1,10 @@
-{ "_why": "written: tables a machine writes through a path the check cannot read as .from(t).insert(): the generic producer runner (a spec's table), a database function or trigger, an rpc, or reference data seeded by the schema", "entries": {}, "written": ["item_supersessions", "regions", "region_dimension_coverage", "regional_data_facts", "state_cost_facts", "derived_values", "data_sources", "auxiliary_energy_profiles", "grid_connection_queues", "research_assessments_current"] }
+{
+  "entries": {},
+  "written": ["item_supersessions", "entity_refs", "market_series", "regions", "region_dimension_coverage", "regional_data_facts", "state_cost_facts", "derived_values", "data_sources", "auxiliary_energy_profiles", "grid_connection_queues", "research_assessments_current"],
+  "_writtenBy": {
+    "item_supersessions": "written by the supersession runtime through a table-name helper",
+    "entity_refs": "written by src/core/entities/link-entities.ts (write(\"entity_refs\", ...)) and the entity backfill, through table-name helpers the pattern cannot see",
+    "market_series": "written by every market producer (src/features/market/producers/*) through the shared producer upsert, a table-name helper the pattern cannot see",
+    "p2-12": "regions, region_dimension_coverage, regional_data_facts, state_cost_facts, derived_values, data_sources, auxiliary_energy_profiles, grid_connection_queues and research_assessments_current are written by the generic producer runner, a database function or trigger, an rpc, or reference data seeded by the schema"
+  }
+}

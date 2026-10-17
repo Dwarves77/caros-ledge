@@ -88,8 +88,8 @@ export const GET = route("/api/workspace/bootstrap", async (request) => {
       return membership ? deps.navCounts({ orgId: membership.orgId, userId: user.userId }) : null;
     }),
   ]);
-  // The ask route's own gate, read fresh each request so a flag flip needs no redeploy; exact string comparison, never widened.
-  const payload = { personalState, members, adminAttention, overrides, navCounts, assistantEnabled: process.env.ASSISTANT_ENABLED === "true", degraded };
+  // The Assistant is free (no model, no spend), so it is on; the one switch is an exact "false", read fresh each request so turning it off needs no redeploy.
+  const payload = { personalState, members, adminAttention, overrides, navCounts, assistantEnabled: process.env.ASSISTANT_ENABLED !== "false", degraded };
   const response = Response.json(payload, { headers: { ...user.headers, "Cache-Control": "private, no-store" } });
   return deps.withServerTiming ? deps.withServerTiming(response) : response;
 });

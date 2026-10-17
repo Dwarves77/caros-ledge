@@ -1,0 +1,38 @@
+[
+  {
+    "id": "source-hierarchy",
+    "heading": "How sources are weighted",
+    "keywords": ["source", "sources", "tier", "authority", "weighted", "binding", "guidance", "news", "analysis", "opinion", "conflicting", "hierarchy", "credibility"],
+    "text": "When sources conflict, they are weighted in this order. 1. Binding law and regulation (Official Journal, Federal Register, gazette). 2. Regulator guidance and interpretation (EU Commission FAQ, EPA rule summary). 3. Intergovernmental body position (IMO MEPC summary, ICAO resolution). 4. Industry body interpretation (FIATA, CLECAT, ICCT analysis). 5. News reporting (Reuters, FreightWaves, Lloyd's List). 6. Analysis and opinion (think tanks, academic papers). Analysis is never presented as regulation, and industry interpretation is never raised to legal authority."
+  },
+  {
+    "id": "severity-labels",
+    "heading": "Severity labels",
+    "keywords": ["severity", "label", "labels", "action", "cost", "alert", "window", "closing", "competitive", "edge", "monitoring", "urgent"],
+    "text": "An item may carry one of five severity labels. ACTION REQUIRED: the reader needs to do something now. COST ALERT: rates or costs are changing. WINDOW CLOSING: a deadline or opportunity is expiring. COMPETITIVE EDGE: the reader can get ahead of competitors. MONITORING: no action yet but this is moving."
+  },
+  {
+    "id": "item-formats",
+    "heading": "How an item is structured",
+    "keywords": ["format", "formats", "structure", "structured", "section", "sections", "fact", "document", "profile", "brief", "summary", "regulation", "directive", "standard", "guidance", "technology", "research", "signal"],
+    "text": "Every item has a type that decides its format. Regulation, directive, standard, guidance and framework items are Regulatory Fact Documents (up to 14 sections, shown only where grounded). Technology, innovation and tool items are Technology Profiles (8 sections). Regional data items are Operations Profiles (8 sections). Market signal and initiative items are Market Signal Briefs (8 sections). Research findings are Research Summaries (6 sections). Section counts are maximums: a section without grounded content is left out."
+  },
+  {
+    "id": "four-pages",
+    "heading": "Which page an item lives on",
+    "keywords": ["page", "pages", "surface", "surfaces", "regulations", "market", "intel", "research", "operations", "community", "where", "find", "taxonomy", "category"],
+    "text": "Each item belongs to one of four intelligence pages. Regulations: binding regulatory intelligence (regulation, directive, standard, guidance and framework items). Market Intel: industry signals, corporate announcements, commercial research output, carbon market intelligence and fuel pricing (market signal and initiative items). Research: horizon-scan content with analytical or quantitative depth, such as peer-reviewed academic work, think-tanks, IEA, IRENA, IPCC, World Bank, OECD and industry analytical press with named editorial provenance (research finding items). Operations: jurisdictional decision intelligence, including regulatory feasibility by region, regional resource availability, labour markets, materials sourcing, infrastructure capacity and operational cost data (regional data items). Community is peer discussion between members and feeds no other page."
+  },
+  {
+    "id": "topic-categories",
+    "heading": "Topic categories",
+    "keywords": ["topic", "topics", "category", "categories", "emissions", "fuels", "transport", "reporting", "packaging", "corridors", "carbon", "saf", "ets", "cbam", "ppwr", "disclosure"],
+    "text": "Every item carries up to three topics from a closed list of seven. Emissions: carbon pricing, ETS systems, GHG strategies, carbon border adjustments. Fuels: SAF mandates, alternative maritime fuels, e-fuels, hydrogen, ammonia bunkering. Transport: vehicle standards, fleet mandates, ZEV requirements, infrastructure. Reporting: disclosure frameworks, emissions accounting standards, ratings, certifications. Packaging: PPWR, circular economy, PFAS restrictions, sustainable packaging. Corridors: green shipping corridors, port sustainability, shore power, clean air zones. Research: academic, think-tank, industry news, innovation trackers."
+  },
+  {
+    "id": "jurisdictions",
+    "heading": "Jurisdiction groups",
+    "keywords": ["jurisdiction", "jurisdictions", "region", "regions", "eu", "united", "states", "uk", "latam", "asia", "hong", "kong", "africa", "middle", "east", "global", "imo", "icao", "country"],
+    "text": "Items are grouped by eight jurisdiction groups. EU: the European Union, with the highest regulatory density. US: the United States, politically volatile, with state divergence. UK: the United Kingdom, a post-Brexit independent track. LATAM: Latin America (Brazil, Chile, emerging packaging and transport rules). Asia: China, India, Singapore, South Korea, Hong Kong. HK: Hong Kong, a special administrative zone. MEAF: Middle East and Africa (IRENA, green corridor development, bunkering infrastructure). Global: international bodies (IMO, ICAO, UNFCCC, WTO, ISO, GLEC, GHG Protocol)."
+  }
+]

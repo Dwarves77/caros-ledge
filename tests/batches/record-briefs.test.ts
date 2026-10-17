@@ -27,6 +27,8 @@ test("a valid batch applies end to end: the brief, its sections and timeline, it
   assert.ok(Array.isArray(item(w).recommended_actions), "the structured-actions step is a real write, not a preview");
   const change = w.db.rows("intelligence_changes").filter((c) => c.item_id === ITEM);
   assert.equal(change.length, 1);
+  // P2-13: the reader of the change feed (get_workspace_recent_changes) calls an item UPDATED from item_changelog, so the regeneration writes that row too.
+  assert.deepEqual(w.db.rows("item_changelog").map((c) => [c.item_id, c.change_type, c.field, c.detected_by]), [[ITEM, "UPDATED", "full_brief", "record-briefs"]]);
   assert.equal(w.rec.connects.some((c) => c.startsWith("events:")) && w.rec.connects.some((c) => c.startsWith("obligations:")) && w.rec.connects.some((c) => c.startsWith("entities:")), true, "the flywheel participation ran in the same run");
   assert.deepEqual((r.data as { ids: Record<string, string[]> }).ids.applied_ids, [ITEM]);
   assert.ok(w.flushed.some((t) => t.includes(`item:${ITEM}`)), "the public cache was flushed for the applied item");
@@ -46,6 +48,7 @@ test("INV-210: a re-apply of the same batch writes nothing new; a dry apply writ
   assert.equal(again.counts.applied, 0);
   assert.equal(w.db.writes().length, before, "nothing new was written");
   assert.equal(w.db.rows("intelligence_changes").length, 1, "the change is recorded once");
+  assert.equal(w.db.rows("item_changelog").length, 1, "the changelog row is written once per item, field and batch");
 });
 
 test("INV-210: a structural defect refuses the whole file; a defective entry is refused alone with its reasons and never blocks the valid one", async () => {
@@ -226,4 +229,5 @@ test("an item still verified when its brief was written is not quietly 'grounded
   assert.match(refusals(r), /ground: ground_skipped: the item was still verified when its brief was written, so the authored ledger was not stored/);
   assert.equal(w.db.rows("section_claim_provenance").length, 0);
   assert.equal(w.db.rows("intelligence_changes").length, 0, "no change is recorded for a regeneration whose ledger did not land");
+  assert.equal(w.db.rows("item_changelog").length, 0, "and no changelog row either");
 });

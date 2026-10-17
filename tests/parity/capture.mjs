@@ -32,7 +32,7 @@ function parseArgs(argv) {
     const key = argv[i];
     if (key === '--signed-out-only') args['signed-out-only'] = true;
     else if (key?.startsWith('--') && argv[i + 1] !== undefined) args[key.slice(2)] = argv[(i += 1)];
-    else throw new Error(`usage: capture.mjs --base <origin> --out <dir> [--signed-out-only] (bad argument ${key ?? '<none>'})`);
+    else throw new Error(`usage: capture.mjs --base <origin> --out <dir> [--signed-out-only] [--routes a,b] [--site old] (bad argument ${key ?? '<none>'})`);
   }
   return args;
 }
@@ -61,6 +61,11 @@ async function signIn(browser, base, email, password) {
   } finally {
     await context.close();
   }
+}
+
+// The path a route is captured at: `oldPath` (when the route has one) on the old site (--site old), else `path`. One record name either way.
+export function pathFor(route, site) {
+  return site === "old" && route.oldPath ? route.oldPath : (route.path ?? null);
 }
 
 // What a discovery miss means. A list route declared frame-only in approved-changes.json (`gates.frame`) has no detail links yet, so the detail
@@ -247,7 +252,8 @@ async function main() {
   const out = args.out;
   await mkdir(out, { recursive: true });
 
-  const { routes } = JSON.parse(await readFile(ROUTES_FILE, 'utf8'));
+  const only = args.routes && args.routes !== 'all' ? new Set(args.routes.split(',')) : null;
+  const routes = JSON.parse(await readFile(ROUTES_FILE, 'utf8')).routes.filter((r) => !only || only.has(r.name));
   const { gates } = JSON.parse(await readFile(join(dirname(ROUTES_FILE), 'approved-changes.json'), 'utf8'));
   const index = {
     captured_at: new Date().toISOString(),
@@ -255,7 +261,7 @@ async function main() {
     base,
     viewports: VIEWPORTS.map((v) => `${v.width}x${v.height}`),
     signin: null,
-    routes: routes.map((r) => ({ name: r.name, path: r.path ?? null, auth: r.auth, status: 'pending', files: [], error: null, diagnostics: { firstFailure: null, navigations: 0, navigationPaths: [] } })),
+    routes: routes.map((r) => ({ name: r.name, path: pathFor(r, args.site), auth: r.auth, status: 'pending', files: [], error: null, diagnostics: { firstFailure: null, navigations: 0, navigationPaths: [] } })),
   };
   let failed = false;
   const browser = await chromium.launch();

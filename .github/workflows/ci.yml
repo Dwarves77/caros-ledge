@@ -23,6 +23,9 @@ on:
       input:
         description: 'Turn input, a JSON object keyed by stage'
         default: '{}'
+      routes:
+        description: 'Baseline recapture (job baseline): route names, comma separated, or all'
+        default: all
       chain:
         description: 'Run the stage downstream stages too (false runs only the named stage)'
         default: 'true'
@@ -50,24 +53,9 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci --no-audit
-      - run: npm run lint
-      - run: npm run typecheck
-      - name: Build
-        env:
-          NEXT_TELEMETRY_DISABLED: '1'
-          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder
-        run: npm run build
-      - name: Tests (output kept for the report job)
+      - name: Gates (npm run gates, the same list the pre-push hook runs)
         shell: bash -eo pipefail {0}
-        run: npm test 2>&1 | tee test-output.txt
-      - run: npm run tree-checks
-      - run: npm run ui-checks
-      - run: npm run loc
-      - name: Connection check (nothing runs alone)
-        run: npm run connections
-      - name: Column check (every select, filter and order in src names a column the database defines)
-        run: npm run columns
+        run: npm run gates
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -200,6 +188,9 @@ jobs:
       - name: Workspace screens (four widths, behaviours, fixture parity for /settings and /profile)
         if: steps.scope.outputs.run == 'true'
         run: node tests/ux/workspace-smoke.mjs --base http://localhost:3100
+      - name: Dashboard, watchlist, search, portfolio and Assistant screens (four widths, behaviours, fixture parity for /watchlist and /search)
+        if: steps.scope.outputs.run == 'true'
+        run: node tests/ux/dash-search-smoke.mjs --base http://localhost:3100
       - name: Capture the routes
         if: steps.scope.outputs.run == 'true'
         run: node tests/parity/capture.mjs --base http://localhost:3100 --out parity-capture
@@ -222,6 +213,34 @@ jobs:
             next-start.log
 
   # The one writer of the run's record: runs after the others, polls nothing, holds no secrets, and never fails the run itself (it reports the others' conclusions).
+  # Recapture of the parity baseline from the old site (tests/parity/baseline/README.md says how to use the artifact). Dispatch only: never on push or pull_request.
+  baseline:
+    name: baseline
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    container:
+      image: mcr.microsoft.com/playwright:v1.61.1-noble
+    env:
+      LIVE_SMOKE_EMAIL: ${{ secrets.LIVE_SMOKE_EMAIL }}
+      LIVE_SMOKE_PASSWORD: ${{ secrets.LIVE_SMOKE_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --no-audit
+      - name: Playwright package matching the image (browsers come from the image)
+        run: npm install --no-save playwright@1.61.1 --no-audit --no-fund
+      - name: Capture the old site
+        run: node tests/parity/capture.mjs --base https://carosledge.com --out parity-baseline --site old --routes "${{ inputs.routes || 'all' }}"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: parity-baseline-${{ github.run_id }}
+          path: parity-baseline
+
   report:
     name: report
     needs: [ci, schema, parity]

@@ -27,6 +27,12 @@ for (const f of files) {
   }
 }
 
+// The push gate cannot be deleted quietly: package.json "prepare" wires core.hooksPath, and .githooks/pre-push exists and is executable in the index.
+const pkgText = readFileSync("package.json", "utf8");
+if (!JSON.parse(pkgText).scripts?.prepare === "node scripts/prepare.mjs" || !existsSync("scripts/prepare.mjs") || !readFileSync("scripts/prepare.mjs", "utf8").includes(".githooks")) problems.push("package.json:1: the prepare script that sets core.hooksPath to .githooks is missing");
+const hookMode = execFileSync("git", ["ls-files", "-s", ".githooks/pre-push"], { encoding: "utf8" }).split(" ")[0];
+if (hookMode !== "100755") problems.push(`.githooks/pre-push:1: missing or not executable in the index (mode ${hookMode || "none"}, want 100755)`);
+
 // One allow-file per slice: lines of `path | reason`.
 const allowed = new Map();
 for (const name of readdirSync("scripts/ci/new-files").filter((n) => n.endsWith(".txt"))) {
