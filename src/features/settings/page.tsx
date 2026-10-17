@@ -1,5 +1,5 @@
 // Ported from old_repo/src/app/settings/page.tsx (lines 14-40)
-import { PageFailure } from "@/features/account/ui/PageFailure";
+import { PageFailure } from "@/ui/shell/PageFailure";
 import { pageSession } from "@/features/account/server/page-session";
 import { userClient } from "@/core/db/clients";
 

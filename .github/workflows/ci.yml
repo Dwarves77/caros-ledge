@@ -188,6 +188,9 @@ jobs:
       - name: Workspace screens (four widths, behaviours, fixture parity for /settings and /profile)
         if: steps.scope.outputs.run == 'true'
         run: node tests/ux/workspace-smoke.mjs --base http://localhost:3100
+      - name: Regulations screens (four widths, behaviours)
+        if: steps.scope.outputs.run == 'true'
+        run: node tests/ux/regulations-smoke.mjs --base http://localhost:3100
       - name: Dashboard, watchlist, search, portfolio and Assistant screens (four widths, behaviours, fixture parity for /watchlist and /search)
         if: steps.scope.outputs.run == 'true'
         run: node tests/ux/dash-search-smoke.mjs --base http://localhost:3100

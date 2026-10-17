@@ -3,7 +3,7 @@ import { userClient } from "@/core/db/clients";
 import { formatLocaleDate } from "@/core/shared";
 import { log } from "@/core/shared/log";
 import { pageSession } from "@/features/account/server/page-session";
-import { PageFailure } from "@/features/account/ui/PageFailure";
+import { PageFailure } from "@/ui/shell/PageFailure";
 
 import { NOTICE_WINDOW_DAYS, readNotices, type NoticesRead } from "./read/notices";
 import { readWatchlist, WATCHLIST_PAGE_LIMIT, type WatchlistRead } from "./read/watchlist";

@@ -32,6 +32,7 @@
     "@supabase/supabase-js": "^2.98.0",
     "@tanstack/react-query": "^5.104.3",
     "@tanstack/react-virtual": "^3.14.20",
+    "leaflet": "^1.9.4",
     "next": "16.1.6",
     "react": "19.2.3",
     "react-dom": "19.2.3",
@@ -42,6 +43,7 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@types/leaflet": "^1.9.12",
     "@types/node": "^24",
     "@types/react": "^19",
     "@types/react-dom": "^19",
@@ -75,6 +77,8 @@
     "remark-gfm": "GFM tables for GfmSection (the briefs carry tables).",
     "@tanstack/react-query": "The one QueryClient for the list surface remainder fetch (use-list-rows) and the shell; the old tree used it for the same.",
     "@tanstack/react-virtual": "Row virtualization for a long list surface (a 1,300-row corpus); the old ledger used it.",
+    "leaflet": "The Regulations map (src/features/regulations/map/MapView.tsx): tiles, count-sized markers, fly-to; loaded only on the /map route; OpenStreetMap attribution shown (react-leaflet is not added: one effect drives the map).",
+    "@types/leaflet": "Types for leaflet under the strict typecheck.",
     "embedded-postgres": "A throwaway PostgreSQL 15 for npm run schema:local, so the schema job runs on a workstation without Docker or a system Postgres (devDependency; never bundled).",
     "pg": "The one SQL client of the CI scripts (scripts/ci/psql.mjs): CI and a workstation run the same code, with no psql binary (devDependency; never bundled).",
     "yaml": "Parses .github/workflows/*.yml in the gates (IMP-100), so a malformed workflow is refused at the hook instead of producing a \"workflow file issue\" red (devDependency; never bundled)."

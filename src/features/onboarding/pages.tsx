@@ -6,7 +6,7 @@ import { redirect, unstable_rethrow } from "next/navigation";
 import { getClaims } from "@/core/auth/claims";
 import { userClient } from "@/core/db/clients";
 import { pageSession } from "@/features/account/server/page-session";
-import { PageFailure } from "@/features/account/ui/PageFailure";
+import { PageFailure } from "@/ui/shell/PageFailure";
 import { readAggregates } from "@/features/lists";
 
 import { InvitationLandingPage } from "./ui/InvitationLandingPage";

@@ -6,6 +6,7 @@ import { readFileSync } from "node:fs";
 import pg from "pg";
 
 import { splitStatements } from "./sql-split.mjs";
+import { drained } from "./stdout-drain.mjs";
 
 const job = JSON.parse(readFileSync(0, "utf8"));
 const text = job.file ? readFileSync(job.file, "utf8") : job.sql;
@@ -31,4 +32,5 @@ try {
 } finally {
   await client.end().catch(() => {});
 }
-process.exit(code);
+await drained(process.stdout); // the result is complete on a pipe before the process ends
+process.exitCode = code;
