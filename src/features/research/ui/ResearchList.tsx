@@ -14,6 +14,7 @@ import { filterRows, LegendRailCard, liveFacetCounts, ListSurface, SortRow, Them
 import { filterByWindow, WINDOW_OPTIONS } from "@/ui/list-surface/filter-sort";
 import { ShellCommandBar } from "@/ui/shell/CommandBar";
 import { DenominatorLine } from "@/features/coverage/ui/DenominatorLine";
+import { useTagsFacet } from "@/features/regulations/useTagsFacet";
 
 import { horizonMetaLabel } from "../model/assessment-view";
 import { NEW_WINDOW_DAYS, SEVERITY_LABELS, severityOf, THEME_KEYS, themeLabel, themeOf } from "../model/taxonomy";
@@ -42,6 +43,8 @@ export interface ResearchListProps {
 export function ResearchList({ data, nowIso, chips, denominator, chipsFailed = false }: ResearchListProps) {
   const router = useRouter();
   const url = useListUrlState(["theme"]);
+  const tagsFacet = useTagsFacet();
+  const matchesTag = tagsFacet.matches;
   const [expanded, setExpanded] = useState<Set<UrgencyBandKey>>(new Set());
   const now = useMemo(() => new Date(nowIso), [nowIso]);
   const { filter } = url;
@@ -51,7 +54,7 @@ export function ResearchList({ data, nowIso, chips, denominator, chipsFailed = f
   const aggregates = data.aggregates;
 
   // Everything except the theme facet: the pills count off this, so choosing one theme never zeroes the others.
-  const beforeTheme = useMemo(() => filterByWindow(filterRows(rows, filter), windowKey, now), [rows, filter, windowKey, now]);
+  const beforeTheme = useMemo(() => filterByWindow(filterRows(rows, filter), windowKey, now).filter((r) => matchesTag(r.id)), [rows, filter, windowKey, now, matchesTag]);
   const filtered = useMemo(() => (theme === UNCLASSIFIED ? beforeTheme.filter((r) => !themeOf(r)) : theme ? beforeTheme.filter((r) => themeOf(r) === theme) : beforeTheme), [beforeTheme, theme]);
   const counts = useMemo(() => liveFacetCounts(rows, filter, { ...(aggregates ? { byPriority: aggregates.byPriority as unknown as Record<string, number>, byJurisdiction: aggregates.byJurisdiction, totalItems: aggregates.totalItems } : {}) }), [rows, filter, aggregates]);
   const bandCounts = data.rowsFailed ? null : (Object.fromEntries(counts.band.map((o) => [o.key, o.count])) as Record<UrgencyBandKey, number>);
@@ -75,6 +78,7 @@ export function ResearchList({ data, nowIso, chips, denominator, chipsFailed = f
     { key: "mode", label: "Mode", options: counts.mode, selected: filter.mode, onSelect: (v) => url.setFacet("mode", v) },
     { key: "region", label: "Region", options: counts.region, selected: filter.region, onSelect: (v) => url.setFacet("region", v) },
   ];
+  const tagGroup: FacetGroup = { key: "workspace-tags", label: "Workspace tags", options: tagsFacet.tags.map((t) => ({ value: t.id, label: t.name, count: t.itemCount })), selected: tagsFacet.selected, onSelect: tagsFacet.setSelected };
   const assessments = data.assessments;
   const rowsByBand = useMemo(
     () =>
@@ -120,7 +124,9 @@ export function ResearchList({ data, nowIso, chips, denominator, chipsFailed = f
       selectedBand={filter.band}
       onSelectBand={(key) => url.toggleFacet("band", key)}
       facetGroups={facetGroups}
-      aboveRows={<ThemeFacetRow themes={pills} selected={theme} onSelect={(k) => url.setExtra("theme", k)} unclassifiedCount={unclassified} />}
+      stateNote={tagsFacet.failed ? <StateNote tone="error" action={{ label: "Retry", onClick: tagsFacet.retry }}>Your workspace tags did not load.</StateNote> : undefined}
+      secondaryFacetGroups={[tagGroup]}
+            aboveRows={<ThemeFacetRow themes={pills} selected={theme} onSelect={(k) => url.setExtra("theme", k)} unclassifiedCount={unclassified} />}
       sortRow={
         <SortRow
           countLabel={<><b>{formatNumber(filtered.length)} of {formatNumber(total)}</b> findings{theme ? ` · ${themeLabel(theme)}` : ""}</>}

@@ -13,6 +13,7 @@ import { ErrorState, RailCard, StateNote } from "@/ui";
 import { filterRows, LegendRailCard, liveFacetCounts, ListSurface, ThemeStrip, useListUrlState, type FacetGroup, type ThemeChip } from "@/ui/list-surface";
 import { ShellCommandBar } from "@/ui/shell/CommandBar";
 import { DenominatorLine } from "@/features/coverage/ui/DenominatorLine";
+import { useTagsFacet } from "@/features/regulations/useTagsFacet";
 
 import { bandedRows } from "../../research/ui/rows";
 import { dimensionLabel, DIMENSION_COUNT_WORD, DIMENSIONS } from "../model/dimensions";
@@ -46,7 +47,9 @@ export function OperationsList({ data, nowIso, chips, denominator, chipsFailed =
   const rows = data.rows;
   const roster = data.roster;
 
-  const filtered = useMemo(() => filterRows(rows, filter), [rows, filter]);
+  const tagsFacet = useTagsFacet();
+  const matchesTag = tagsFacet.matches;
+  const filtered = useMemo(() => filterRows(rows, filter).filter((r) => matchesTag(r.id)), [rows, filter, matchesTag]);
   const counts = useMemo(() => liveFacetCounts(rows, filter, data.aggregates ? { byPriority: data.aggregates.byPriority as unknown as Record<string, number>, byJurisdiction: data.aggregates.byJurisdiction, totalItems: data.aggregates.totalItems } : {}), [rows, filter, data.aggregates]);
   const bandCounts = data.rowsFailed ? null : (Object.fromEntries(counts.band.map((o) => [o.key, o.count])) as Record<UrgencyBandKey, number>);
 
@@ -60,6 +63,8 @@ export function OperationsList({ data, nowIso, chips, denominator, chipsFailed =
     { key: "dimension", label: "Dimension", options: dimensionOptions, selected: dimensionFilter, onSelect: (v) => url.setExtra("dimension", v) },
     { key: "mode", label: "Mode", options: counts.mode, selected: filter.mode, onSelect: (v) => url.setFacet("mode", v) },
   ];
+
+  const tagGroup: FacetGroup = { key: "workspace-tags", label: "Workspace tags", options: tagsFacet.tags.map((t) => ({ value: t.id, label: t.name, count: t.itemCount })), selected: tagsFacet.selected, onSelect: tagsFacet.setSelected };
 
   const matrixRegions = useMemo(() => (roster ?? []).filter((r) => !filter.region || r.code === filter.region).map((r) => ({ key: r.code, label: r.label })), [roster, filter.region]);
   const matrixDimensions = useMemo(() => (dimensionFilter ? DIMENSIONS.filter((d) => d.db === dimensionFilter) : DIMENSIONS), [dimensionFilter]);
@@ -109,7 +114,9 @@ export function OperationsList({ data, nowIso, chips, denominator, chipsFailed =
       selectedBand={filter.band}
       onSelectBand={(key) => url.toggleFacet("band", key)}
       facetGroups={facetGroups}
-      aboveRows={above}
+      stateNote={tagsFacet.failed ? <StateNote tone="error" action={{ label: "Retry", onClick: tagsFacet.retry }}>Your workspace tags did not load.</StateNote> : undefined}
+      secondaryFacetGroups={[tagGroup]}
+            aboveRows={above}
       rowsByBand={rowsByBand}
       perBandCap={PER_BAND_CAP}
       expandedBands={expanded}

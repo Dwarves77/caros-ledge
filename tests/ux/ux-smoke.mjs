@@ -70,6 +70,9 @@ async function matrixContracts(page, w, where) {
 // The Research list contracts: a theme pill is a URL state (a view can be linked), a chosen theme offers Clear, the awareness note points at the legend, a row's overflow menu opens.
 async function researchContracts(page, where) {
   const pill = page.getByRole('button', { name: /^Fuels & SAF/ });
+  // The old surface always carried the Workspace tags facet group (one "All" chip when the workspace has no tags): three groups, tags last, before the Filters button.
+  const groups = await page.locator('.cl-facets-mobile > *').count();
+  if (groups !== 3) fail(where, `the mobile facet strip holds ${groups} groups, expected Mode, Region and Workspace tags`);
   if (!(await pill.count())) return fail(where, 'the Fuels & SAF theme pill is missing');
   await pill.first().click();
   await page.waitForURL(/theme=fuels_saf/);
