@@ -1,6 +1,8 @@
 // The integration world: ONE fixture database and ONE fixture transport that the whole turn runs over with the real wiring (buildDeps). Nothing here stubs a slice: the registered sources, the feed, the pages
 // and the market document are data; every stage is the real stage calling the real module. Surface slices extend this file with their reader (WAVE-2-COMMON addendum 2).
 import { buildDeps, type BuiltDeps } from "@/core/turn/wiring";
+import { carbonIntensity } from "@/features/market/lib/carbon";
+import { computeSeriesDeltas } from "@/features/market/lib/deltas";
 import { ecbFx } from "@/features/market/producers";
 import type { MarketMethodDeps } from "@/core/propagation";
 import type { Catalog } from "@/core/producers";
@@ -60,17 +62,8 @@ export function transport(over: Record<string, () => Response> = {}): { fetchImp
   return { fetchImpl, requests };
 }
 
-/** The fixture's stand-in for the market slice's arithmetic (P2-11 owns the real computeSeriesDeltas and carbonIntensity): the one-week delta between the latest point and the earliest in the window. */
-export const MARKET: MarketMethodDeps = {
-  carbonIntensity: () => ({ ok: false, reason: "no emission factors in the fixture" }),
-  computeSeriesDeltas: (rows) => {
-    const pts = [...rows].sort((a, b) => String(a.reference_period).localeCompare(String(b.reference_period)));
-    const latest = pts[pts.length - 1];
-    const first = pts[0];
-    if (!latest || !first || latest === first) return { delta1w: { insufficientHistory: true } };
-    return { latest: { date: latest.reference_period, unit: latest.unit, currency: latest.currency }, delta1w: { value: Number(latest.value_numeric) - Number(first.value_numeric), fromDate: String(first.reference_period) } };
-  },
-};
+/** The market slice's own arithmetic, the real functions the production wiring passes (P2-11). */
+export const MARKET: MarketMethodDeps = { carbonIntensity, computeSeriesDeltas };
 
 /** The database triggers the schema carries, as stand-ins: a write to a figure table emits a propagation event (the outbox), an item update does too. */
 function installTriggers(db: MemDb): void {
@@ -95,6 +88,8 @@ export function makeWorld(opts: { cadence?: "off" | "weekly" } = {}) {
   db.seed("census_worklist", [{ id: CENSUS, source_id: SRC, document_url: DOC_URL, title: TITLE, surface_tags: [], instrument_identifier: "32023R9999", dryrun_disposition: "would_mint", hold_reason: null, notes: null, is_archived: false, enumeration_status: "discovered" }]);
   db.seed("item_type_required_slots", SLOTS);
   db.seed("screen_verdicts", []);
+  db.seed("data_sources", [{ source_key: "ecb", name: "European Central Bank", url: "https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html" }]);
+  db.seed("licence_clear_sources", []);
   db.seed("market_series", [{ id: "d0000000-0000-4000-8000-000000000001", series_key: "ecb-fx:eur-usd", label: "EUR/USD", value_numeric: 1.05, unit: "USD/EUR", currency: "USD", derivation: "observed", origin_class: "official", source_key: "ecb", reference_period: "2026-10-08", as_at_date: "2026-10-08", __emitted: true }]);
   installProvenanceRpc(db);
   installPropagationRpcs(db);

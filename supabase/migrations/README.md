@@ -33,6 +33,8 @@ Forward changes only, one file per change (`NNNN_<change>.sql`), each ending in 
 | 0025_notification_outbox | notification_outbox, service_role only (IMP-025; the writers switch in P2-02b, the drain kind is P2-07) | 0025-notification-outbox |
 | 0027_edge_snapshots | edge_snapshots: the corpus pass's prior-state evidence, tied to harness_runs (IMP-047) | 0027-edge-snapshots |
 | 0028_invitation_actions_by_id | accept_invitation_by_id and decline_invitation_by_id, the one home of the invitation rules (the token entry points delegate to them); the in-app list acts on the row id (P2-02b) | 0028-invitation-by-id |
+| 0029_market_series_items | market_series_items: the series behind an item's price board, ratified only with its item; the table the six code-file attachments become (P2-11) | 0029-market-series-items |
+| 0030_data_market_series_items | DATA: the six ratified series-to-item attachments (cutover window, P2-11) | none (data) |
 
 A `_data_` file carries `-- rollback-test: <fixture>`: the schema job runs the fixture, then the file, in a transaction that rolls back (the SQL is proven to execute, the catalog is unchanged). 0016 is deliberately absent: the sources backfill depends on the live registry, so the executor generates it at the cutover window (`scripts/gen/source-backfill-sql.mjs`, from a read-only registry export) and commits it then as 0016; the schema job proves the generator every run on a sample export. Regenerating 0015 needs the old repo path.
 

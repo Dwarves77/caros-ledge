@@ -1,0 +1,23 @@
+/* The figure cards and the recalculation notices. Tokens only; every target is at least 44 px on its short axis. */
+.head { display: flex; align-items: center; gap: var(--sp-8); margin-bottom: var(--sp-6); flex-wrap: wrap; }
+.badge { display: inline-flex; align-items: center; padding: 2px 7px; border: 1px solid var(--line-4); border-radius: var(--radius-control); font-size: var(--fs-95); font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; background: var(--tag); color: var(--ink-2); }
+.badgeStatutory { background: var(--brand); border-color: var(--brand); color: var(--invert-text); }
+.badgeEstimate { background: var(--ink); border-color: var(--ink); color: var(--invert-text); }
+.title { font-size: var(--fs-13); font-weight: 700; color: var(--ink); min-width: 0; overflow-wrap: anywhere; }
+.stat { font-family: var(--font-display); font-size: 22px; line-height: 1.1; color: var(--ink); margin: 0 0 var(--sp-4); overflow-wrap: anywhere; }
+.statLarge { font-size: 26px; }
+.unit { font-family: var(--font-sans); font-size: var(--fs-12); font-weight: 400; color: var(--ink-3); margin-left: var(--sp-6); }
+.meta { font-size: var(--fs-105); color: var(--ink-3); line-height: 1.5; margin: var(--sp-4) 0 0; }
+.refused { font-size: var(--fs-125); font-weight: 600; color: var(--immediate); margin: 0 0 var(--sp-4); }
+.grid { display: grid; gap: var(--sp-10); grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+.label { font-size: var(--fs-105); color: var(--ink-3); margin: 0 0 var(--sp-2); }
+.refusal { font-size: var(--fs-125); font-style: italic; color: var(--ink-3); }
+.note { display: inline-flex; align-items: center; justify-content: center; min-width: var(--target); min-height: var(--target); border: 0; background: transparent; color: var(--ink-3); font-size: var(--fs-11); cursor: help; }
+.rail { display: grid; gap: var(--sp-10); }
+.list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--sp-10); }
+.notice { padding: var(--sp-12) var(--sp-16); border: 1px solid var(--line-1); border-radius: var(--radius-card); background: var(--card); }
+.noticeHead { display: flex; justify-content: space-between; align-items: baseline; gap: var(--sp-8); flex-wrap: wrap; }
+.noticeTitle { font-size: var(--fs-14); font-weight: 700; color: var(--ink); min-width: 0; overflow-wrap: anywhere; flex: 1 1 auto; }
+.noticeLink { display: inline-flex; align-items: center; min-height: var(--target); color: inherit; text-decoration: underline; }
+.noticeDelta { font-size: var(--fs-13); color: var(--ink); margin: var(--sp-6) 0 0; font-variant-numeric: tabular-nums; }
+.empty { font-size: var(--fs-12); }

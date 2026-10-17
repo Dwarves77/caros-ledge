@@ -7,6 +7,9 @@ import { test } from "node:test";
 
 import { chainProof, flywheelOutcomes, mintedIds } from "@/core/harness";
 import { runTurn } from "@/core/turn";
+import { headlineCardView } from "@/features/market/lib/headline-view";
+import { selectHeadlineSeries } from "@/features/market/lib/headline";
+import { readMarketSeries } from "@/features/market/read";
 import { loadCoverage } from "@/features/coverage/server/census";
 import { buildRegisterQuerySpec, fetchObligationRegisterPage, readUpcoming } from "@/features/obligations";
 
@@ -139,4 +142,17 @@ test("the portal path: the sweep lands a link, a session verdict classifies it, 
   assert.ok(f.requests.urls.includes(NEW_URL), "the page was fetched, once the verdict existed");
   assert.equal(f.db.rows("staged_updates").filter((x) => x.materialized_item_id === item.id && x.status === "approved").length, 1, "it passed the staged transit and the chokepoint, not a side door");
   assert.ok(f.db.rows("agent_run_searches").some((x) => x.intelligence_item_id === item.id && x.result_url === NEW_URL && String(x.result_content).includes("shall enter into force on 1 July 2026")), "its pool row is the captured page");
+});
+
+test("the Market surface reads what the producer run wrote: the figure, the rating of its source and the 1-week change, each change with its edge (INV-045, INV-262)", async () => {
+  const t = await theTurn();
+  const read = await readMarketSeries(t.db.client, { edgeDb: t.db.client });
+  const cards = selectHeadlineSeries(read.board).cards.map((c) => headlineCardView(c, { ratings: read.ratings, nowIso: NOW.toISOString() }));
+  const fx = cards.find((c) => c.key === "fx:ecb-reference-rates");
+  assert.ok(fx, "the producer's series is on the headline strip");
+  assert.equal(fx.value && "text" in fx.value ? fx.value.text.includes("1.1") : false, true, "the figure is the point the producer wrote");
+  assert.ok(fx.tier !== null && fx.rating?.sourceKey === "ecb", "the figure carries the rating of its source");
+  assert.equal(fx.w1.kind === "absent" ? null : fx.w1.text.includes("4.8"), true, "the 1-week change is 1.05 to 1.10, +4.8%");
+  const point = t.db.rows("market_series").find((x) => x.reference_period === "2026-10-15") as Row;
+  assert.ok(read.lineage?.has(point.id as string), "the change shown has a recorded derivation");
 });

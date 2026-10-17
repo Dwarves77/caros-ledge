@@ -7,12 +7,12 @@
       "signup",
       "privacy",
       "settings",
-      "profile"
+      "profile",
+      "market"
     ],
     "frame": [
       "dashboard",
       "regulations",
-      "market",
       "research",
       "operations",
       "community"
@@ -79,6 +79,13 @@
       "kind": "control",
       "match": "^textbox:(Your name|https://…|A short bio for the community)?$",
       "ruling": "ux-laws.md law 14 and DP-2: the visible field labels (Full name, Headshot URL, Work email, Bio) become the controls' accessible names; the old names were placeholders, the last field had none. Layout, copy and order are unchanged."
+    },
+    {
+      "id": "market-carbon-gap-copy",
+      "route": "market",
+      "kind": "row",
+      "match": "^li:no (emission factor supplied for this corridor's mode [(]factor row|EU ETS/FuelEU/CBAM/UKA carbon-price input in market_series)",
+      "ruling": "WAVE-4-COMMON (integrity on every page): no customer string names an internal mechanism, table or code. market.md (P1-20) section 6 lists these two gap sentences: one printed the factor columns (ttw_co2e/wtw_co2e/wtt_co2e), the other a table (market_series) and a producer (eex-eua). Each gap keeps its meaning and its place in the list; only the internal names leave the sentence. Row height at 375 still gates the other two gaps."
     },
     {
       "id": "privacy-pixel",

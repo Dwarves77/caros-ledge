@@ -2379,6 +2379,24 @@
     }
    ]
   },
+  "market_series_items": {
+   "columns": [
+    "series_key",
+    "item_id",
+    "status"
+   ],
+   "uuid": [],
+   "defaults": {
+    "status": "pending"
+   },
+   "fks": [
+    {
+     "column": "item_id",
+     "table": "intelligence_items",
+     "ref": "id"
+    }
+   ]
+  },
   "moderation_reports": {
    "columns": [
     "id",
