@@ -6,3 +6,10 @@ supabase/.temp
 next-env.d.ts
 *.tsbuildinfo
 test-output.txt
+parity-capture/
+parity-diff/
+parity-baseline/
+parity-artifact/
+results-artifact/
+parity-report.txt
+next-start.log

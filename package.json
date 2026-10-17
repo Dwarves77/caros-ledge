@@ -50,7 +50,8 @@
     "eslint-config-next": "16.1.6",
     "pg": "^8.23.1",
     "playwright": "^1.64.1",
-    "typescript": "^5"
+    "typescript": "^5",
+    "yaml": "^2.9.1"
   },
   "budget": {
     "next": "App framework and routing; the same major as the old tree (16.1.6), pinned exact.",
@@ -75,6 +76,7 @@
     "@tanstack/react-query": "The one QueryClient for the list surface remainder fetch (use-list-rows) and the shell; the old tree used it for the same.",
     "@tanstack/react-virtual": "Row virtualization for a long list surface (a 1,300-row corpus); the old ledger used it.",
     "embedded-postgres": "A throwaway PostgreSQL 15 for npm run schema:local, so the schema job runs on a workstation without Docker or a system Postgres (devDependency; never bundled).",
-    "pg": "The one SQL client of the CI scripts (scripts/ci/psql.mjs): CI and a workstation run the same code, with no psql binary (devDependency; never bundled)."
+    "pg": "The one SQL client of the CI scripts (scripts/ci/psql.mjs): CI and a workstation run the same code, with no psql binary (devDependency; never bundled).",
+    "yaml": "Parses .github/workflows/*.yml in the gates (IMP-100), so a malformed workflow is refused at the hook instead of producing a \"workflow file issue\" red (devDependency; never bundled)."
   }
 }
