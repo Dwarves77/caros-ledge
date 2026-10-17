@@ -197,7 +197,7 @@ export interface MarketRead {
 export async function readMarket(db: Db, o: { orgId?: string | null; edgeDb?: Db | null } = {}): Promise<MarketRead> {
   const [signals, series, corridors, panels] = await Promise.all([
     section("signals", async () => {
-      const [list, aggregates] = await Promise.all([readCategory(db, "get_market_intel_items_public"), readSurfaceCounts(db, null, "market")]);
+      const [list, aggregates] = await Promise.all([readCategory(db, "get_market_intel_items_public"), readSurfaceCounts(db, o.orgId ?? null, "market")]);
       if (list.failed) throw new Error("the public market list RPC failed");
       return { rows: list.resources, aggregates };
     }),

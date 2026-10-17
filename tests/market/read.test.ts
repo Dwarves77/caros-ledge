@@ -4,6 +4,8 @@ import { test } from "node:test";
 import { buildSeriesBoard, type SeriesRow } from "@/features/market/lib/series-board";
 import { envelopeFromFactorRow, envelopeFromPriceStat, envelopeFromSeriesRow, provenanceRows, ratingText } from "@/features/market/lib/provenance";
 import { perSeriesWindow, readDeltaEdges, readMarket, readMarketDetail, readMarketSeries, readPanels, readSourceRatings, section } from "@/features/market/read";
+import { liveFacetCounts } from "@/ui/list-surface/facets";
+import { EMPTY_FILTER_STATE } from "@/ui/list-surface/filter-sort";
 
 import { MemDb, type Row } from "../_support/memdb.ts";
 
@@ -175,4 +177,19 @@ test("production carries no 0029 table until cutover: a refused market_series_it
   assert.ok(d2.priceBoard.ok);
   const list = await readMarket(withRpc(db, { get_market_intel_items_public: () => ({ data: [] }), get_surface_counts: () => ({ data: { total_items: 0 } }) }).client, { orgId: null });
   assert.equal(list.series.ok, true, "the list page never reads the 0029 table");
+});
+
+test("the Region facet is the surface-wide counts of the member's org: CN is offered with its count when it has items in the counts but no first-page row; a null org is refused by the counts RPC and the page never asks it", async () => {
+  const db = world();
+  const asked: unknown[] = [];
+  const c = withRpc(db, {
+    get_market_intel_items_public: () => ({ data: [{ id: ITEM, legacy_id: null, title: "Diesel", item_type: "market_signal", effective_priority: "HIGH", added_date: "2026-10-01", severity: "cost_alert", source_id: null, jurisdiction_iso: ["EU"], jurisdictions: ["EU"] }] }),
+    get_surface_counts: (args) => (asked.push(args.p_org_id), args.p_org_id === null ? { error: { message: "42501 a null org is the service role's" } } : { data: { total_items: 3, by_jurisdiction: { EU: 1, CN: 2 }, by_priority: { HIGH: 3 } } }),
+  });
+  const r = await readMarket(c.client, { orgId: ORG_A });
+  assert.deepEqual(asked, [ORG_A], "the counts are asked for the member's org");
+  assert.ok(r.signals.ok && r.signals.data.aggregates);
+  const agg = r.signals.ok ? r.signals.data.aggregates : null;
+  const region = liveFacetCounts([], EMPTY_FILTER_STATE, { byJurisdiction: agg?.byJurisdiction ?? {}, totalItems: agg?.totalItems ?? 0 }).region;
+  assert.deepEqual(region.map((o) => [o.value, o.count]), [["CN", 2], ["EU", 1]]);
 });
