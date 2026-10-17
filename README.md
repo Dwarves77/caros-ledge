@@ -39,3 +39,9 @@ The `parity` job (`tests/parity/capture.mjs`) reads six repository secrets. A ro
 ## Schema checks on a workstation
 
 `npm run schema:local` starts a throwaway PostgreSQL 15 (the `embedded-postgres` devDependency, a temp data dir, a free port), runs `scripts/ci/schema-apply.mjs` against it (schema.sql, every migration, the property checks, the catalog diff) and deletes the instance on every exit path. There is no psql in the path: the CI scripts run their SQL through the `pg` client (`scripts/ci/psql.mjs`), so CI and a workstation run the same code.
+
+## The push gate
+
+`npm run gates` (`scripts/ci/gates.mjs`) is the one list of checks: lint, typecheck, build, tests, tree checks, UI checks, LOC, connections, columns, fail-fast, in CI's order. The `ci` job runs this same script, so CI and the hook cannot drift. When a file under `supabase/` differs from the upstream branch (`origin/main` if none), it also runs `schema:local`.
+
+`.githooks/pre-push` runs it before every push and refuses the push on a failure; it also refuses a head commit carrying `[skip ci]` (a PR never ends on an unproven SHA). `npm ci` installs the hook (`prepare` sets `core.hooksPath` to `.githooks`), and tree-checks fails if the prepare script or the executable hook is missing. The hook is the gate: bypassing it (`--no-verify`, unsetting `core.hooksPath`) is a rule violation, never a step.

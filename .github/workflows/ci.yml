@@ -53,24 +53,9 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci --no-audit
-      - run: npm run lint
-      - run: npm run typecheck
-      - name: Build
-        env:
-          NEXT_TELEMETRY_DISABLED: '1'
-          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder
-        run: npm run build
-      - name: Tests (output kept for the report job)
+      - name: Gates (scripts/ci/gates.mjs: lint, typecheck, build, tests, tree checks, UI checks, LOC, connections, columns; the pre-push hook runs the same script)
         shell: bash -eo pipefail {0}
-        run: npm test 2>&1 | tee test-output.txt
-      - run: npm run tree-checks
-      - run: npm run ui-checks
-      - run: npm run loc
-      - name: Connection check (nothing runs alone)
-        run: npm run connections
-      - name: Column check (every select, filter and order in src names a column the database defines)
-        run: npm run columns
+        run: npm run gates
       - uses: actions/upload-artifact@v4
         if: always()
         with:
