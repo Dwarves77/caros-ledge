@@ -13,7 +13,14 @@ import { chromium } from 'playwright';
 const EMAIL = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g;
 const KEEP = new Set(['privacy@carosledge.com']);
 // The baseline was sanitized (every email, placeholders included, became smoke@example.invalid); the capture gets the same treatment before comparing.
-const clean = (s) => String(s ?? '').replace(EMAIL, (m) => (KEEP.has(m) ? m : 'smoke@example.invalid')).replace(/\s+/g, ' ').trim();
+// The account name token is the local part of LIVE_SMOKE_EMAIL (never a literal here); the baseline carries it as "smoke" in any case, so both sides map to lowercase smoke.
+const nameToken = () => (process.env.LIVE_SMOKE_EMAIL ?? '').split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+const clean = (s) => {
+  let t = String(s ?? '').replace(EMAIL, (m) => (KEEP.has(m) ? m : 'smoke@example.invalid'));
+  const token = nameToken();
+  if (token.length >= 4) t = t.replace(new RegExp(token, 'gi'), 'smoke');
+  return t.replace(/smoke/gi, 'smoke').replace(/\s+/g, ' ').trim();
+};
 // A count a page may or may not draw ("Watchlist0" at baseline, "Watchlist" now) is dropped when it trails a letter.
 const uncount = (s) => clean(s).replace(/\d[\d,]*/g, '#').replace(/(?<=[A-Za-z])#$/, '');
 const PIXEL_THRESHOLD = 0.02;
