@@ -15,6 +15,7 @@
     "loc": "node scripts/ci/loc.mjs",
     "properties": "node scripts/ci/properties.mjs",
     "schema:apply": "node scripts/ci/schema-apply.mjs",
+    "schema:local": "node scripts/ci/schema-local.mjs",
     "tree-checks": "node scripts/ci/tree-checks.mjs",
     "connections": "node scripts/ci/connections.mjs",
     "columns": "node scripts/ci/columns.mjs",
@@ -43,8 +44,10 @@
     "@types/node": "^24",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "embedded-postgres": "^15.18.0-beta.17",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
+    "pg": "^8.23.1",
     "playwright": "^1.64.1",
     "typescript": "^5"
   },
@@ -69,6 +72,8 @@
     "react-markdown": "The one markdown renderer (GfmSection) for the fact documents and briefs; sanitises by construction, no dangerouslySetInnerHTML.",
     "remark-gfm": "GFM tables for GfmSection (the briefs carry tables).",
     "@tanstack/react-query": "The one QueryClient for the list surface remainder fetch (use-list-rows) and the shell; the old tree used it for the same.",
-    "@tanstack/react-virtual": "Row virtualization for a long list surface (a 1,300-row corpus); the old ledger used it."
+    "@tanstack/react-virtual": "Row virtualization for a long list surface (a 1,300-row corpus); the old ledger used it.",
+    "embedded-postgres": "A throwaway PostgreSQL 15 for npm run schema:local, so the schema job runs on a workstation without Docker or a system Postgres (devDependency; never bundled).",
+    "pg": "The one SQL client of the CI scripts (scripts/ci/psql.mjs): CI and a workstation run the same code, with no psql binary (devDependency; never bundled)."
   }
 }

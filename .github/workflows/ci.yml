@@ -249,7 +249,7 @@ jobs:
       - name: Playwright package matching the image (browsers come from the image)
         run: npm install --no-save playwright@1.61.1 --no-audit --no-fund
       - name: Capture the old site
-        run: node tests/parity/capture.mjs --base https://carosledge.com --out parity-baseline --routes "${{ inputs.routes || 'all' }}"
+        run: node tests/parity/capture.mjs --base https://carosledge.com --out parity-baseline --site old --routes "${{ inputs.routes || 'all' }}"
       - uses: actions/upload-artifact@v4
         if: always()
         with:

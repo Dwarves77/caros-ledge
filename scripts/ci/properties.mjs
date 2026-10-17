@@ -1,10 +1,11 @@
-// Property checks against the applied database (DATABASE_URL), read through psql.
+// Property checks against the applied database (DATABASE_URL), read through the pg client (scripts/ci/psql.mjs).
 // Each check is scripts/ci/checks/<key>.sql (first line: its label). A waiver in baseline-waivers.json names the slice that owes
 // the fix; a check without a waiver fails the run on any offender. Every check is also proven on every run by an attack: its
 // planted violation (scripts/ci/fixtures/<key>.sql) is run inside a transaction that rolls back, and the check must report a row
 // it did not report live. A check that passes its planted violation fails the run.
-import { spawnSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
+
+import { psql } from "./psql.mjs";
 
 const url = process.env.DATABASE_URL;
 if (!url) {
@@ -21,7 +22,7 @@ for (const [key, w] of Object.entries(waivers)) {
 }
 
 function rowsOf(sql) {
-  const r = spawnSync("psql", [url, "-X", "-q", "-At", "-v", "ON_ERROR_STOP=1", "-f", "-"], { encoding: "utf8", input: sql, maxBuffer: 1 << 26 });
+  const r = psql(url, { sql, tuples: true });
   if (r.status !== 0) {
     console.error(`query failed\n${r.stderr}`);
     process.exit(1);
