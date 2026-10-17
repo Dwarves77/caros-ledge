@@ -1,7 +1,7 @@
 "use client";
 
 import { buildCoverageMatrix, buildCoverageView, parseCoverageQuery } from "@/core/coverage/matrix";
-import { CoveragePage } from "@/features/coverage/ui/CoveragePage";
+import { CoveragePage } from "@/features/coverage";
 
 import type { ItemTargets } from "../../corrections/types";
 import type { DashboardData } from "../../read/dashboard";

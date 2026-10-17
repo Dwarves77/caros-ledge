@@ -1,4 +1,4 @@
-// Generator pins (IMP-037): the four SQL generators in src/core/contracts must reproduce what the schema applied. A unit test pins their text to
+// Generator pins (IMP-037, IMP-054): the four SQL generators in src/core/contracts and the host_verdicts class CHECK (scripts/gen/host-class-check.mjs) must reproduce what the schema applied. A unit test pins their text to
 // a hash; this checks them against the live catalog, so a change to the tier table or the licence register that the applied constraints do not
 // follow fails the schema job. Run by scripts/ci/schema-apply.mjs after the migrations (through tests/_support/register.mjs, which resolves "@/").
 //   renderTierConstraintsSql    -> emission_factors CHECK constraints, compared by name and by pg_get_constraintdef (the planner's own
@@ -6,8 +6,10 @@
 //   renderEnvelopeColumnsSql    -> emission_factors column types, NOT NULL and column CHECKs, same comparison
 //   renderFactorCandidateViewSql-> emission_factor_candidates, compared by pg_get_viewdef
 //   renderDataSourceSeedSql     -> executes against data_sources (rolled back), is idempotent, and lands every register key with its verdict
+//   renderHostClassCheck        -> the host_verdicts class CHECK (migration 0042): the class names of the tier contract, compared with the applied constraint by pg_get_constraintdef (IMP-054)
 // Everything runs in a transaction that rolls back. Each comparison is attacked on every run: a mutated copy of the generated text must be
 // flagged, or the run fails. Exit 1 on a mismatch or a failed attack; exit 2 when DATABASE_URL is not set.
+import { renderHostClassCheck } from "../../gen/host-class-check.mjs";
 import { psql } from "../psql.mjs";
 
 const url = process.env.DATABASE_URL;
@@ -80,6 +82,16 @@ SELECT source_key, redistribution FROM public.data_sources WHERE source_key = AN
   return bad;
 }
 
+/** The class CHECK generated from the tier contract's class names vs the one applied to host_verdicts. */
+function hostClassMismatches(text) {
+  const rows = sql(`
+CREATE TABLE public.pin_hv (class text, ${text});
+SELECT g.def, coalesce(a.def, '(absent)') FROM
+  (SELECT pg_get_constraintdef(oid) AS def FROM pg_constraint WHERE conrelid = 'public.pin_hv'::regclass AND contype = 'c') g
+  LEFT JOIN (SELECT pg_get_constraintdef(oid) AS def FROM pg_constraint WHERE conrelid = 'public.host_verdicts'::regclass AND conname = 'host_verdicts_class_check') a ON true;`);
+  return rows.filter(([g, a]) => g !== a).map(([g, a]) => `generated ${g} / applied ${a}`);
+}
+
 const mutate = (text, from, to) => {
   if (!text.includes(from)) throw new Error(`generator-pins: cannot plant a violation, ${JSON.stringify(from)} not in the generated text`);
   return text.replace(from, to);
@@ -89,6 +101,7 @@ const pins = [
   { name: "renderEnvelopeColumnsSql", text: c.renderEnvelopeColumnsSql(), run: envelopeMismatches, plant: (t) => mutate(t, "BETWEEN 1 AND 5", "BETWEEN 0 AND 5") },
   { name: "renderFactorCandidateViewSql", text: c.renderFactorCandidateViewSql(), run: viewMismatches, plant: (t) => mutate(t, "THEN 1", "THEN 9") },
   { name: "renderDataSourceSeedSql", text: c.renderDataSourceSeedSql(), run: seedMismatches, plant: (t) => mutate(t, "'permitted'", "'prohibited'") },
+  { name: "renderHostClassCheck", text: renderHostClassCheck(), run: hostClassMismatches, plant: (t) => mutate(t, "'legal'", "'legal', 'invented'") },
 ];
 
 let failed = false;

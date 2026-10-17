@@ -72,6 +72,49 @@ function installSqlObjects(db: MemDb): void {
     row.updated_at = db.tick();
     return row[p_column];
   };
+  // archive_item_for_team and assign_item (migration 0037): the gate, the attribution from the session, the override write and the outbox rows as ONE unit: a failed outbox insert leaves no override behind.
+  const raise = (message: string, code: string) => Object.assign(new Error(message), { code });
+  const roleOf = (org: unknown, uid: unknown) => db.rows("org_memberships").find((m) => m.org_id === org && m.user_id === uid)?.role as string | undefined;
+  const override = (org: unknown, item: unknown): Row | undefined => db.rows("workspace_item_overrides").find((r) => r.org_id === org && r.item_id === item);
+  const caller = (who: Who | null): string => {
+    const id = who?.claims?.sub;
+    if (!id) throw raise("sign in", "42501");
+    return id;
+  };
+  const commit = (org: unknown, item: unknown, patch: Row, notices: { user_id: string; kind: string; payload: Record<string, unknown> }[]) => {
+    if (notices.length && db.takeFailure("notification_outbox", "insert", [])) throw raise("outbox down", "XX000");
+    const prior = override(org, item);
+    const row = prior ?? { org_id: org, item_id: item };
+    Object.assign(row, patch, { updated_at: db.tick() });
+    if (!prior) db.rows("workspace_item_overrides").push(row);
+    db.log.push({ table: "workspace_item_overrides", op: "upsert", payload: patch, filters: [["eq", "org_id", org], ["eq", "item_id", item]] });
+    for (const n of notices) db.rows("notification_outbox").push({ ...n });
+    if (notices.length) db.log.push({ table: "notification_outbox", op: "insert", payload: notices, filters: [] });
+    return { override: { ...row }, queued: notices.length };
+  };
+  db.rpcs.archive_item_for_team = (args, who) => {
+    const { p_org_id, p_item_id, p_reason, p_note, p_notice } = args as { p_org_id: string; p_item_id: string; p_reason: string; p_note: string | null; p_notice: Record<string, unknown> };
+    const uid = caller(who as Who | null);
+    if (!["owner", "admin"].includes(roleOf(p_org_id, uid) ?? "")) throw raise("workspace archive requires the admin or owner role", "42501");
+    if (!String(p_reason ?? "").trim()) throw raise("a reason is required to archive for the workspace", "22023");
+    const item = db.rows("intelligence_items").find((i) => i.id === p_item_id);
+    if (!item) throw raise("no such item", "P0002");
+    const members = new Set(db.rows("org_memberships").filter((m) => m.org_id === p_org_id).map((m) => m.user_id));
+    const keys = [p_item_id, ...(item.legacy_id ? [String(item.legacy_id)] : [])];
+    const watchers = db.rows("user_watchlist").filter((w) => members.has(w.user_id) && keys.includes(String(w.item_id))).map((w) => String(w.user_id));
+    const owner = override(p_org_id, p_item_id)?.owner_user_id as string | null | undefined;
+    const to = [...new Set([...watchers, ...(owner ? [owner] : [])])].filter((u) => u !== uid).sort();
+    return commit(p_org_id, p_item_id, { is_archived: true, archive_reason: p_reason, ...(p_note == null ? {} : { archive_note: p_note }), archived_at: db.tick(), archived_by: uid }, to.map((user_id) => ({ user_id, kind: "archive", payload: { ...p_notice, item_id: p_item_id, archived_by: uid } })));
+  };
+  db.rpcs.assign_item = (args, who) => {
+    const { p_org_id, p_item_id, p_owner_user_id, p_notice } = args as { p_org_id: string; p_item_id: string; p_owner_user_id: string | null; p_notice: Record<string, unknown> | null };
+    const uid = caller(who as Who | null);
+    if (!["owner", "admin", "member"].includes(roleOf(p_org_id, uid) ?? "")) throw raise("a viewer can read this workspace but cannot assign an owner", "42501");
+    if (p_owner_user_id && !["owner", "admin", "member"].includes(roleOf(p_org_id, p_owner_user_id) ?? "")) throw raise("the assignee is not a member who can own an item", "42501");
+    if (!db.rows("intelligence_items").some((i) => i.id === p_item_id)) throw raise("no such item", "P0002");
+    const notices = p_owner_user_id && p_owner_user_id !== uid && p_notice ? [{ user_id: p_owner_user_id, kind: "assignment", payload: { ...p_notice, item_id: p_item_id, assigned_by: uid } }] : [];
+    return commit(p_org_id, p_item_id, { owner_user_id: p_owner_user_id, owner_assigned_by: p_owner_user_id ? uid : null, owner_assigned_at: p_owner_user_id ? db.tick() : null }, notices);
+  };
   // workspace_tag_counts: every tag with the number of items it is applied to (0 for none).
   db.views.workspace_tag_counts = () =>
     (db.tables.workspace_tags ?? []).map((t) => ({ org_id: t.org_id, tag_id: t.id, item_count: (db.tables.item_workspace_tags ?? []).filter((l) => l.tag_id === t.id && l.org_id === t.org_id).length }));

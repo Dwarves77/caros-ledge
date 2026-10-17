@@ -1,0 +1,8 @@
+# path | reason (files with no "Ported from" header)
+src/features/settings/ui/FailedBlock.tsx | new in P2-S4: the settings sections' failed-read block with Retry (IMP-066); the old page had no failed state
+scripts/gen/host-class-check.mjs | new in P2-S4: the host_verdicts class CHECK generator pinned by generator-pins (IMP-054)
+src/core/sources/host-verdicts.ts | new in P2-S4: the host_verdicts reader (IMP-054)
+src/features/market/producers/market-series-items.ts | new in P2-S4: the market_series_items reader the producers use (IMP-084)
+src/features/batches/kinds/host-verdicts/apply.ts | new in P2-S4: the host-verdicts batch kind writing host_verdicts (IMP-054)
+src/features/coverage/server.ts | new in P2-S4: the coverage feature's server-only barrel (IMP-106)
+src/core/db/absent.ts | new in P2-S4: the one test for a relation or function a pending migration has not added yet (IMP-065, 066, 054, 084)

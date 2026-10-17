@@ -2,7 +2,7 @@
 // Ported from old_repo/scripts/turns/export-themes-for-briefs.mjs (lines 1-138)
 // Theme briefs applied over the free theme-brief seam (P2-06): each entry is validated against the theme's LIVE material (the structured contract: sections, claims, figures), the seam checks the payload against the live
 // membership hash (INV-191) and is the one writer of theme_briefs; the structured columns (sections, claims, member_ids) ride the seam's `writeRow`. The stored hash and batch name are read back. A single markdown or
-// JSON brief (the seam's own payload) goes through the same seam. The export is the themes that need a brief (none, stale or superseded), one bundle each within the character budget.
+// JSON brief (the seam's own payload) goes through the same seam. A replaced brief's prior row is kept by the AFTER UPDATE trigger on theme_briefs (theme_brief_versions, migration 0039): this writer does nothing for the history. The export is the themes that need a brief (none, stale or superseded), one bundle each within the character budget.
 import { computeMemberHash } from "@/core/flywheel/themes";
 import { parseFrontmatter } from "@/core/briefs/frontmatter";
 import { renderBriefMd, validateThemeBriefEntry, type ThemeContext } from "@/core/briefs/theme-brief-contract";

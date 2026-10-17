@@ -41,6 +41,7 @@ const result = await runTurn({ stage: values.stage, mode: values.mode, trigger: 
 
 const lines = result.runs.map((r) => (r.row ? `| ${r.row.family} | ${r.row.mode ?? "-"} | ${r.row.outcome} | ${String(r.row.reason ?? "").replace(/\|/g, "/").slice(0, 160)} |` : `| (not recorded) | - | - | ${String(r.error ?? "").slice(0, 160)} |`));
 const table = [`### Turn ${result.rootRunId}`, "", `stage ${values.stage}, requested ${values.mode}, resolved ${result.resolved.mode}${result.resolved.forcedDry ? ` (${result.resolved.reason})` : ""}`, "", "| family | mode | outcome | reason |", "|---|---|---|---|", ...lines].join("\n");
+for (const n of result.notes) note("turn", n);
 console.log(table);
 if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${table}\n`);
 if (result.exit === 2) note("turn", `self-skipped: ${result.runs[0]?.error ?? "no credentials"}; exit 2`);

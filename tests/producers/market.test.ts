@@ -14,12 +14,14 @@ import { aggregateHdvCsv, classifyGroup, eeaHdvRoadmaps, mapGroupsToRows, stageF
 import { eiaPetroleumSpot, parseEiaV2PetroleumSpot } from "@/features/market/producers/eia-petroleum-spot";
 import { euOilBulletin, extractEuSeries, findPricesHistoryLink, parseEuWeeklyOilBulletinCsv, resolveHeaderBlocks } from "@/features/market/producers/eu-oil-bulletin";
 import { assertEdgesAuthored, type MarketSeriesDeps, type SeriesRowLite } from "@/features/market/producers/market-series-delta";
-import { deriveDisplayRows, loadSeriesItemMap, publishedPriceStatistics, ratifySeriesItemMap, SERIES_ITEM_MAP } from "@/features/market/producers/published-price-statistics";
+import { loadSeriesItemMap } from "@/features/market/producers/market-series-items";
+import { deriveDisplayRows, publishedPriceStatistics, ratifySeriesItemMap } from "@/features/market/producers/published-price-statistics";
 import { gridQueueRows, oemRoadmapRows, parseGridQueueRow, parseRerouteRow, rerouteRows } from "@/features/market/producers/rows-file-producers";
 import { aggregateSbtiTargetRows, excelSerialToIsoDate, sbtiTargets } from "@/features/market/producers/sbti-targets";
 import { parseSheetRows, readSheet } from "@/core/producers/xlsx";
 
 import { memoryDb } from "../_support/memory-db.ts";
+import { SEEDED_SERIES } from "../market/series-rows.ts";
 
 import { makeDeps, NOW, xlsx } from "./support.ts";
 
@@ -360,8 +362,8 @@ test("rows files: an apply (armed) stores the registered source on the grid row 
 });
 
 // ---- published price statistics ----
-test("INV-047: display rows derive only from RATIFIED entries with an observation; an unratified entry or an unobserved series makes no row; the six oil bulletin entries are ratified in the shipped map", () => {
-  assert.equal(SERIES_ITEM_MAP.filter(([, e]) => e.status === "ratified").length, 6);
+test("INV-047: display rows derive only from RATIFIED entries with an observation; an unratified entry or an unobserved series makes no row; the six oil bulletin entries are ratified in the seeded table", () => {
+  assert.equal(SEEDED_SERIES.filter((r) => r.status === "ratified").length, 6);
   const map = loadSeriesItemMap({ "a:x": { item_id: "i1", status: "ratified", cadence_days: 7 }, "a:y": { item_id: null, status: "pending" }, "a:z": { item_id: "i3", status: "ratified" } });
   const market = [
     { series_key: "a:x", reference_period: "2026-10-05", label: "X", value_numeric: 10, unit: "EUR/1000L", currency: "EUR", as_at_date: "2026-10-05" },
@@ -377,18 +379,31 @@ test("INV-047: display rows derive only from RATIFIED entries with an observatio
   assert.deepEqual(dispositions.map((x) => x.reason ?? x.action), ["ratified", "outcome_not_verified", "already_ratified"]);
 });
 
-test("INV-047: an apply writes a display row only for an item that is live and verified; any other attachment is refused by name", async () => {
-  const ids = SERIES_ITEM_MAP.map(([, e]) => e.item_id as string);
-  const market = SERIES_ITEM_MAP.slice(0, 2).map(([k], i) => ({ id: `m${i}`, series_key: k, reference_period: "2026-10-12", label: `L${i}`, value_numeric: 1500, unit: "EUR/1000L", currency: "EUR", as_at_date: "2026-10-12" }));
-  const db = memoryDb({ market_series: market, intelligence_items: [{ id: ids[0], provenance_status: "verified", is_archived: false }, { id: ids[1], provenance_status: "unverified", is_archived: false }] });
+test("INV-047: an apply writes a display row only for an item that is live and verified; any other attachment is refused by name; the series, the item and the cadence come from the market_series_items table", async () => {
+  const ids = SEEDED_SERIES.map((r) => r.item_id as string);
+  const market = SEEDED_SERIES.slice(0, 2).map((r, i) => ({ id: `m${i}`, series_key: r.series_key, reference_period: "2026-10-12", label: `L${i}`, value_numeric: 1500, unit: "EUR/1000L", currency: "EUR", as_at_date: "2026-10-12" }));
+  const db = memoryDb({ market_series_items: SEEDED_SERIES, market_series: market, intelligence_items: [{ id: ids[0], provenance_status: "verified", is_archived: false }, { id: ids[1], provenance_status: "unverified", is_archived: false }] });
   const d = makeDeps({ db, env: { MARKET_PRODUCER_PUBLISHED_STATS_ENABLED: "1" } });
   const r = await runProducer(d.deps, { spec: ON(publishedPriceStatistics), dry: false });
   assert.equal(r.outcome, "partial");
   assert.equal(r.counts.created, 1);
+  assert.equal(r.counts.ratified_entries, 6);
   assert.equal(db.tables.published_price_statistics?.[0]?.item_id, ids[0]);
+  assert.equal(db.tables.published_price_statistics?.[0]?.next_release_at, "2026-10-19", "the cadence comes from the table's cadence_days");
   assert.match(r.notes.join("|"), /is not a live verified item/);
   const dry = await runProducer(makeDeps({ noDb: true }).deps, { spec: publishedPriceStatistics });
   assert.equal(dry.outcome, "ok", "a dry run reads nothing and says so");
+});
+
+test("IMP-084 degraded: market_series_items absent (production before the cutover) makes the producer's run FAILED with a note naming 0029/0030, and it writes nothing; a pending attachment is never ratified", async () => {
+  const absent = memoryDb({ market_series: [], intelligence_items: [] }, { failures: [{ table: "market_series_items", op: "select", message: "relation does not exist", code: "PGRST205" }] });
+  const r = await runProducer(makeDeps({ db: absent, env: { MARKET_PRODUCER_PUBLISHED_STATS_ENABLED: "1" } }).deps, { spec: ON(publishedPriceStatistics), dry: false });
+  assert.equal(r.outcome, "failed");
+  assert.match(r.notes.join("|"), /market_series_items is absent \(migrations 0029, 0030, 0044 and 0045 are not applied\)/);
+  assert.equal((absent.tables.published_price_statistics ?? []).length, 0);
+  const pending = memoryDb({ market_series_items: [{ series_key: "a:x", item_id: "4fae403a-ced5-4c8f-82b7-af0fd6127061", status: "pending" }], market_series: [{ id: "m", series_key: "a:x", reference_period: "2026-10-12", label: "X", value_numeric: 1, unit: "EUR/t", currency: "EUR", as_at_date: "2026-10-12" }], intelligence_items: [] });
+  const none = await runProducer(makeDeps({ db: pending, env: { MARKET_PRODUCER_PUBLISHED_STATS_ENABLED: "1" } }).deps, { spec: ON(publishedPriceStatistics), dry: false });
+  assert.deepEqual([none.outcome, none.counts.ratified_entries, (pending.tables.published_price_statistics ?? []).length], ["ok", 0, 0]);
 });
 
 // ---- spec 09 calculators ----

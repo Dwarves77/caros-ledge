@@ -14,7 +14,7 @@ import { ARCHIVE_REASONS, reasonLabel } from "@/features/workspace/ui/archive-re
 import { clampHighlight, moveHighlight, resolveBackspaceAction, resolveEnterAction, rowCount, showCreateRow, visibleRows } from "@/features/workspace/ui/tag-model";
 import { tokenFrom } from "@/features/onboarding/lib/token";
 
-import { fakeDb, type Call, type Reply } from "../_support/fake-db.ts";
+import { fakeDb } from "../_support/fake-db.ts";
 
 import { clientFor, ORG_A, ORG_B, seed } from "./_world.ts";
 
@@ -177,27 +177,30 @@ test("IMP-025: notices are queued in ONE insert for every recipient; an empty ba
 
 const item = (id: string, title: string) => ({ id, legacy_id: null, title, item_type: "regulation", domain: 1 });
 
-test("INV-263: the archive and supersession reads report their own failure; a team archive hides the personal row; replacements come from the supersession table", async () => {
-  const handler = (c: Call): Reply | undefined => {
-    if (c.table === "workspace_item_overrides") return { data: [{ item_id: "i1", archive_reason: "superseded", archive_note: null, archived_at: "2026-09-01T00:00:00Z", item: item("i1", "FuelEU Maritime") }] };
-    if (c.table === "user_item_state") return { data: [{ item_id: "i1", archive_note: "mine", archived_at: "2026-09-02T00:00:00Z", item: item("i1", "FuelEU Maritime") }, { item_id: "i2", archive_note: "n", archived_at: "2026-09-03T00:00:00Z", item: item("i2", "Old port rule") }] };
-    if (c.table === "item_supersessions" && c.columns?.startsWith("old_item_id")) return { data: [{ old_item_id: "i1", new: item("i9", "FuelEU Maritime 2027") }] };
-    if (c.table === "item_supersessions") return { data: [{ id: "s1", supersession_date: "2026-08-01", severity: "major", note: "n", old: item("i1", "A"), new: item("i9", "B") }] };
-    return undefined;
+test("IMP-066, INV-263: the settings page reads ONE bundle (a quarter of the old four requests); a team archive hides the personal row; the replacement comes from the bundle; a failed or absent bundle fails both sections with its reason", async () => {
+  const bundle = {
+    overrides: [{ item_id: "i1", archive_reason: "superseded", archive_note: null, archived_at: "2026-09-01T00:00:00Z", item: item("i1", "FuelEU Maritime") }],
+    personal: [{ item_id: "i1", archive_note: "mine", archived_at: "2026-09-02T00:00:00Z", item: item("i1", "FuelEU Maritime") }, { item_id: "i2", archive_note: "n", archived_at: "2026-09-03T00:00:00Z", item: item("i2", "Old port rule") }],
+    supersessions: [{ id: "s1", supersession_date: "2026-08-01", severity: "major", note: "n", old: item("i1", "A"), new: item("i9", "B") }],
+    history: [{ old_item_id: "i1", new: item("i9", "FuelEU Maritime 2027") }],
+    truncated: { overrides: false, personal: false, supersessions: true },
   };
-  const data = await readSettingsData(fakeDb(handler).db, { orgId: ORG_A, userId: "u1" });
+  const ok = fakeDb(() => undefined, { rpc: (name) => (name === "load_settings_bundle" ? { data: bundle } : undefined) });
+  const data = await readSettingsData(ok.db, { orgId: ORG_A, userId: "u1" });
+  assert.deepEqual([ok.calls.length, ok.rpcs.length, ok.rpcs[0]?.args], [0, 1, { p_org_id: ORG_A, p_user_id: "u1", p_limit: 200 }], "one request, no table read");
   assert.equal(data.archive.error, null);
   const rows = data.archive.rows ?? [];
   assert.deepEqual(rows.map((r) => [r.title, r.scope]), [["FuelEU Maritime", "team"], ["Old port rule", "personal"]]);
   assert.equal(rows[0]?.replacement?.title, "FuelEU Maritime 2027");
   assert.equal(rows[1]?.replacement, null);
-  assert.equal(data.supersessions.rows?.[0]?.old.title, "A");
+  assert.deepEqual([data.supersessions.rows?.[0]?.old.title, data.supersessions.truncated, data.archive.truncated], ["A", true, false]);
 
-  const broken = await readSettingsData(fakeDb((c) => (c.table === "user_item_state" ? { error: { message: "read down" } } : handler(c))).db, { orgId: ORG_A, userId: "u1" });
-  assert.equal(broken.archive.rows, null);
-  assert.match(broken.archive.error ?? "", /personal archive: read down/);
-  assert.equal(broken.supersessions.error, null, "one section failing does not blank the other");
-  const noSupersessions = await readSettingsData(fakeDb((c) => (c.table === "item_supersessions" && !c.columns?.startsWith("old_item_id") ? { error: { message: "no" } } : handler(c))).db, { orgId: null, userId: "u1" });
-  assert.equal(noSupersessions.supersessions.rows, null);
-  assert.deepEqual((noSupersessions.archive.rows ?? []).map((r) => r.scope), ["personal", "personal"], "no workspace: only the personal archive");
+  for (const [what, error, expected] of [["a failed bundle", { message: "read down" }, /read down/], ["an absent function (production before the cutover)", { message: "not found", code: "PGRST202" }, /database update \(0038\)/], ["a missing function", { message: "x", code: "42883" }, /0038/]] as const) {
+    const broken = await readSettingsData(fakeDb(() => undefined, { rpc: () => ({ error }) }).db, { orgId: ORG_A, userId: "u1" });
+    assert.deepEqual([broken.archive.rows, broken.supersessions.rows], [null, null], what);
+    assert.match(broken.archive.error ?? "", expected, what);
+    assert.match(broken.supersessions.error ?? "", expected, what);
+  }
+  const empty = await readSettingsData(fakeDb(() => undefined, { rpc: () => ({ data: null }) }).db, { orgId: null, userId: "u1" });
+  assert.match(empty.archive.error ?? "", /empty/, "no data and no error is a failure, never an empty list");
 });

@@ -5,7 +5,7 @@ import { buildCoverageView, csvFilename, matrixToCsv, parseCoverageQuery } from 
 import { serviceClient } from "@/core/db/clients";
 import { LookupError, route } from "@/core/http/errors";
 import { isRefusal, requireUser } from "@/core/http/guard";
-import { makeCoverageData } from "@/features/coverage/server/matrix-data";
+import { makeCoverageData } from "@/features/coverage/server";
 
 // GET /api/dashboard/coverage/matrix: the coverage matrix as JSON, as a summary (?summary=1) or as CSV (?format=csv), for a signed-in reader. The census is platform data no workspace owns, so the read is
 // the cached platform read (a failure is never cached). An outage is a 503 the client retries, never an empty matrix that reads as "nothing catalogued" (INV-263).

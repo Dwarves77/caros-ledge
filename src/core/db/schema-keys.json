@@ -155,6 +155,9 @@
  "holdings_quality": [
   "id"
  ],
+ "host_verdicts": [
+  "host"
+ ],
  "indexation_clauses": [
   "clause_id"
  ],
@@ -379,6 +382,9 @@
   "id"
  ],
  "system_state_flag_audit": [
+  "id"
+ ],
+ "theme_brief_versions": [
   "id"
  ],
  "theme_briefs": [

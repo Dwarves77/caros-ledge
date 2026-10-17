@@ -133,7 +133,7 @@ test("the assessment bundle: the current row, the signposts (unfired first, the 
   const cur = ROW(U1, { id: "a1000000-0000-4000-8000-0000000000c2", supersedes: "a1000000-0000-4000-8000-0000000000c1" });
   const prior = ROW(U1, { id: "a1000000-0000-4000-8000-0000000000c1", is_current: false, horizon_band: "MID", computed_at: "2026-09-01T00:00:00Z" });
   const world = (assessments: Row[]) => memoryDb({
-    research_assessments_current: [cur], research_assessments: assessments,
+    research_assessments_current: [cur], research_assessment_history: assessments,
     signposts: [{ entity_id: "cl:signpost:aaaaaaaaaaaaaaaa", assessment_id: cur.id, watches: "cl:instrument:bbbbbbbbbbbbbbbb", predicate: { op: "date_passed", by: "2027-01-01", basis: "movement_by_date" }, direction: "confirms", fired_at: "2026-10-02T00:00:00Z" }, { entity_id: "cl:signpost:cccccccccccccccc", assessment_id: cur.id, watches: "cl:instrument:bbbbbbbbbbbbbbbb", predicate: { op: "threshold", metric: "m", gte: 2 }, direction: "refutes", fired_at: null }],
     entities: [{ entity_id: "cl:instrument:bbbbbbbbbbbbbbbb", kind: "instrument", canonical_name: "Regulation X", display_name: null }],
   });
@@ -144,6 +144,8 @@ test("the assessment bundle: the current row, the signposts (unfired first, the 
   assert.deepEqual([closed.history.length, closed.historyComplete, closed.failed], [1, false, false], "the chain points at a row the reader cannot see");
   const down = await readAssessmentBundle(memoryDb({ research_assessments_current: [cur] }, { failures: [{ table: "research_assessments_current", op: "select", message: "boom" }] }).db, U1);
   assert.deepEqual([down.failed, down.assessment], [true, null]);
+  const absent = await readAssessmentBundle(memoryDb({ research_assessments_current: [cur] }, { failures: [{ table: "research_assessment_history", op: "select", message: "relation does not exist" }] }).db, U1);
+  assert.deepEqual([absent.failed, absent.assessment?.id, absent.history.length, absent.historyComplete], [false, cur.id, 1, false], "the history view absent (production before the cutover) keeps the current assessment and says the chain is incomplete");
   const none = await readAssessmentBundle(memoryDb({ research_assessments_current: [] }).db, U1);
   assert.deepEqual([none.failed, none.assessment, none.historyComplete], [false, null, true], "no assessment is an honest absence, not a failure");
 });

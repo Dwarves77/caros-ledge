@@ -13,7 +13,7 @@ import { createMethodRegistry, type LearningDeps, type MarketMethodDeps, type Me
 import type { Catalog, ProducerSpec } from "@/core/producers";
 import type { ProducerDeps } from "@/core/producers/deps";
 import { surfaceHref, surfaceOf } from "@/core/routing";
-import { buildResolver, classTierForHost, hostInstitution, institutionKey, officialnessOf, registerAndRate, verifyPoolTargetMatch, type SourceRow } from "@/core/sources";
+import { buildResolver, classTierForHost, hostInstitution, institutionKey, loadHostVerdicts, officialnessOf, registerAndRate, verifyPoolTargetMatch, type SourceRow } from "@/core/sources";
 import type { HostVerdictRef } from "@/core/sources";
 import { hostOf } from "@/core/shared/url";
 import { createConnectDeps } from "@/features/flywheel";
@@ -26,7 +26,7 @@ import { carbonIntensity } from "@/features/market/lib/carbon";
 import { computeSeriesDeltas } from "@/features/market/lib/deltas";
 import { eeaHdvRoadmaps, carrierEtsSurcharge, ecbFx, eiaPetroleumSpot, euOilBulletin, gridQueueRows, oemRoadmapRows, publishedPriceStatistics, rerouteRows, sbtiTargets } from "@/features/market/producers";
 import type { MarketSeriesDeps } from "@/features/market/producers/market-series-delta";
-import seriesItemMap from "@/features/market/producers/data/series-item-map.json";
+import { readSeriesItemMap } from "@/features/market/producers/market-series-items";
 import { bindMint, type MintCtx } from "@/features/mint";
 import type { EntityDeps, MintRunDeps } from "@/features/mint/deps";
 import { auxiliaryEnergyRows, blsOews, eurostatElectricity, eurostatLabourCost, indexationRows, nesoCarbonIntensity, stateCostFacts, ukpnHeatmap } from "@/features/operations/producers";
@@ -48,7 +48,7 @@ export interface DepsOptions {
   sleep?: (ms: number) => Promise<void>;
   /** The market slice's arithmetic (P2-11): when absent the market methods are not registered and a market write fails closed. */
   market?: MarketMethodDeps | null;
-  /** Committed host verdicts for rating a host the class table does not place (IMP-054: a table, once P2-S4 lands it). */
+  /** Host verdicts handed in whole (a test); absent, they are read from host_verdicts by loadReferenceData (IMP-054). */
   verdicts?: ReadonlyMap<string, HostVerdictRef> | null;
   catalog?: Catalog;
   /** The capture worker call; the default invokes the deployed Edge Function through the service client. A test passes the worker's own drain over the fixture client. */
@@ -85,7 +85,7 @@ export interface BuiltDeps {
   intake: IntakeDeps;
   mintRun: MintRunDeps;
   connect: IntakeDeps["connect"];
-  producers: ProducerDeps & { market: MarketSeriesDeps | null; mint: MintCtx; verdicts?: ReadonlyMap<string, HostVerdictRef> };
+  producers: ProducerDeps & { market: MarketSeriesDeps | null; mint: MintCtx; verdicts: ReadonlyMap<string, HostVerdictRef> };
   catalog: Catalog;
   worker: CaptureWorker;
   marketMethods: MarketMethodDeps | null;
@@ -96,6 +96,8 @@ export interface BuiltDeps {
   learning: LearningDeps;
   workspace: Partial<WorkspaceDeps>;
   halted(): Promise<boolean>;
+  /** Read the host verdicts (host_verdicts) and the series keys (market_series_items) once; the notes say what degraded (a table absent before the cutover, a failed read). The turn calls it first; the intake rating calls it before it rates. */
+  loadReferenceData(): Promise<string[]>;
 }
 
 const UA = { "user-agent": "FSI-turn/1.0 (+turn)", accept: "*/*" };
@@ -103,9 +105,6 @@ const MAX_BYTES = 50 * 1024 * 1024;
 
 /** The catalog every registry entry is checked against: each producer spec by name. */
 export const PRODUCER_CATALOG: Catalog = Object.freeze(Object.fromEntries([eeaHdvRoadmaps, carrierEtsSurcharge, ecbFx, eiaPetroleumSpot, euOilBulletin, gridQueueRows, oemRoadmapRows, publishedPriceStatistics, rerouteRows, sbtiTargets, auxiliaryEnergyRows, blsOews, eurostatElectricity, eurostatLabourCost, indexationRows, nesoCarbonIntensity, stateCostFacts, ukpnHeatmap, researchAssessment, researchWalker].map((s) => [s.name, s])));
-
-/** Is this identifier an implemented market-series key (the record_hollow exemption)? The ratified series map is the list. */
-export const isSeriesKey = (identifier: string | null | undefined): boolean => !!identifier && Object.hasOwn(seriesItemMap, identifier);
 
 const captureFamily = (url: string) => (parseOjReference(url) ? ("oj_issue" as const) : ("generic" as const));
 
@@ -118,6 +117,23 @@ export function buildDeps(sb: Db, env: Env = process.env, opts: DepsOptions = {}
   const recorder = makeRecorder(sb, now, () => context.current);
   const hold = { db: sb, env };
   const fetchDeps: CaptureDeps = { db: sb, env, now, fetchImpl: doFetch, throttle: makePoliteGate({ gapMs: 1000, now: () => now().getTime(), sleep }) };
+
+  // The reference data of the turn, read once per deps: host verdicts for rating a host the class table does not place, and the market series keys (the mint's record_hollow exemption). Both are tables (IMP-054, IMP-084).
+  const verdicts = new Map<string, HostVerdictRef>(opts.verdicts ?? []);
+  const seriesKeys = new Set<string>();
+  let reference: Promise<string[]> | null = null;
+  const loadReferenceData = (): Promise<string[]> =>
+    (reference ??= (async () => {
+      const notes: string[] = [];
+      if (!opts.verdicts) for (const [host, v] of await loadHostVerdicts(sb, notes)) verdicts.set(host, v);
+      try {
+        for (const [key] of await readSeriesItemMap(sb)) seriesKeys.add(key);
+      } catch (e) {
+        notes.push(`no market series key is known this run: ${e instanceof Error ? e.message : String(e)}`);
+      }
+      return notes;
+    })());
+  const isSeriesKey = (identifier: string | null | undefined): boolean => !!identifier && seriesKeys.has(identifier);
 
   let cached: { resolve: (url: string) => { tier: number | null; sourceId: string | null } } | null = null;
   const resolver = async () => {
@@ -141,7 +157,8 @@ export function buildDeps(sb: Db, env: Env = process.env, opts: DepsOptions = {}
       return hit.tier === null && hit.sourceId === null ? null : { tier: hit.tier, institution: hostInstitution(hostOf(url)) || null, sourceId: hit.sourceId };
     },
     async registerAndRate(url) {
-      const r = await registerAndRate(sb, url, { dry: dry(), verdicts: opts.verdicts ?? null });
+      await loadReferenceData();
+      const r = await registerAndRate(sb, url, { dry: dry(), verdicts });
       cached = null;
       if ("reason" in r) return { sourceId: null, tier: null, refused: r.reason };
       return { sourceId: "source_id" in r ? r.source_id : null, tier: r.tier };
@@ -212,7 +229,7 @@ export function buildDeps(sb: Db, env: Env = process.env, opts: DepsOptions = {}
   const marketDeps: MarketMethodDeps | null = opts.market === undefined ? { computeSeriesDeltas: (rows) => computeSeriesDeltas(rows as never), carbonIntensity: (factor) => carbonIntensity(factor as never) } : opts.market;
   if (marketDeps) registerMarketMethods(registry, marketDeps);
   const market: MarketSeriesDeps | null = marketDeps ? { registry, computeSeriesDeltas: (rows) => marketDeps.computeSeriesDeltas(rows as unknown as Parameters<MarketMethodDeps["computeSeriesDeltas"]>[0]) } : null;
-  const producers: BuiltDeps["producers"] = { sb, fetch: (url, init) => doFetch(url, init as RequestInit | undefined), recorder, env, sleep, summaryDir: env.PRODUCER_SUMMARY_DIR ?? null, market, mint: mintCtx, ...(opts.verdicts ? { verdicts: opts.verdicts } : {}) };
+  const producers: BuiltDeps["producers"] = { sb, fetch: (url, init) => doFetch(url, init as RequestInit | undefined), recorder, env, sleep, summaryDir: env.PRODUCER_SUMMARY_DIR ?? null, market, mint: mintCtx, verdicts };
   const learning: LearningDeps = { questionFlagRow };
   // The service client carries its own key, so invoking the function through it is the service-role call the worker requires (the worker reads no gate: the capture stage did).
   const worker: CaptureWorker =
@@ -223,7 +240,7 @@ export function buildDeps(sb: Db, env: Env = process.env, opts: DepsOptions = {}
     });
   return {
     sb, env, now, context, recorder, gate, sources, entities, identity, fetch: fetchDeps, io, mintCtx, intake, mintRun, connect, producers, catalog: opts.catalog ?? PRODUCER_CATALOG, worker, marketMethods: marketDeps, statutory: opts.statutory ?? null, edgeAuthors: opts.edgeAuthors ?? null, assessment: opts.assessment ?? researchAssessment, registry, learning,
-    workspace: workspaceWiring(sb), halted: async () => (await import("@/core/harness/run")).halted(sb).then((h) => h.halted),
+    workspace: workspaceWiring(sb), halted: async () => (await import("@/core/harness/run")).halted(sb).then((h) => h.halted), loadReferenceData,
   };
 }
 
@@ -269,7 +286,8 @@ export const MANIFEST: readonly ManifestEntry[] = [
   { member: "learning.questionFlagRow", status: "wired", present: (d) => fn(d.learning.questionFlagRow) },
   { member: "producers.market (computeSeriesDeltas and the market methods)", status: "wired", present: (d) => d.producers.market !== null },
   { member: "propagation EdgeAuthors (authorCarbonIntensityEdges)", status: "owed", owner: "P2-11 market surface (carbonIntensity)", present: () => false },
-  { member: "producers.verdicts (host verdicts as a table, IMP-054)", status: "owed", owner: "P2-S4 (the host_verdicts table)", present: (d) => d.producers.verdicts !== undefined },
+  { member: "producers.verdicts (host verdicts as a table, IMP-054)", status: "wired", present: (d) => d.producers.verdicts instanceof Map },
+  { member: "loadReferenceData (host_verdicts and market_series_items, read once per turn)", status: "wired", present: (d) => fn(d.loadReferenceData) },
   ...(["itemHref", "revalidateWorkspaceData", "navCounts", "adminAttention", "timePhase", "withServerTiming"] as const).map((m): ManifestEntry => ({ member: `workspace.${m}`, status: "wired", present: (d) => fn(d.workspace[m]) })),
 
   { member: "workspace.portfolio", status: "wired", present: (d) => d.workspace.portfolio !== undefined },

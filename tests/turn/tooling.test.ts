@@ -149,6 +149,16 @@ test("the lint rule: a catch that swallows (empty, or only a comment) fails; a c
   assert.equal((await lint("export function a() {\n  try {\n    return JSON.parse('x');\n  } catch (e) {\n    throw new Error('bad', { cause: e });\n  }\n}\n")).length, 0);
 });
 
+test("the lint rule (IMP-106): outside the coverage feature, a path into its server, ui or api directory fails; its two barrels, and the feature's own files, pass", async () => {
+  const eslint = new ESLint({ cwd: ROOT });
+  const lint = async (code: string, file: string) => (await eslint.lintText(code, { filePath: join(ROOT, file) }))[0]?.messages.filter((m) => m.ruleId === "no-restricted-imports") ?? [];
+  for (const path of ["server/matrix-data", "server/census", "ui/DenominatorLine", "ui/CoveragePage", "api/entries", "page"]) {
+    assert.equal((await lint(`import * as x from "@/features/coverage/${path}";\nexport { x };\n`, "src/features/market/example.ts")).length, 1, path);
+  }
+  assert.equal((await lint('import { loadSurfaceDenominator } from "@/features/coverage/server";\nimport { DenominatorLine } from "@/features/coverage";\nexport { loadSurfaceDenominator, DenominatorLine };\n', "src/features/market/example.ts")).length, 0);
+  assert.equal((await lint('import { x } from "@/features/coverage/server/matrix-data";\nexport { x };\n', "src/features/coverage/example.ts")).length, 0, "the feature reaches its own files");
+});
+
 // ── moved code keeps its behaviour ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 test("the number rule beside isVerbatim: a figure folds only when its value is unchanged, and a match never starts or ends inside a longer number", () => {
   assert.equal(foldRun("1,200,000").text, "1200000");

@@ -5,6 +5,7 @@ export { classifyInstitutionalType, classifySourceRole, classifySourceType, isOf
 export type { InstitutionalType, SourceRole } from "./classify";
 export { classTierForHost, classTierForHostAcrossNames, codifiedTierForHost, decidePoolHostRegistration, isDoiResolverHost, permanentlyUnregisteredClass, placeHostWithVerdicts } from "./host-class";
 export type { HostPlacement, HostVerdictRef } from "./host-class";
+export { loadHostVerdicts } from "./host-verdicts";
 export { buildResolver, hostInstitution, institutionKey, tierOfSource } from "./institution";
 export type { Resolver, SourceRow } from "./institution";
 export { officialnessOf, officialnessOf as officialness } from "./officialness";

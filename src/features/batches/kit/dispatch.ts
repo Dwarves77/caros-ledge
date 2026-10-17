@@ -14,6 +14,7 @@ import type { RunResult } from "@/core/types/run-result";
 
 import { applyForwardEvents } from "../kinds/forward-events/apply";
 import { forwardEventsExporter } from "../kinds/forward-events/export";
+import { applyHostVerdicts, hostVerdictsSpec } from "../kinds/host-verdicts/apply";
 import { applyLedgerVerdicts, ledgerVerdictsExporter } from "../kinds/ledger-verdicts/apply";
 import { applyNeedsSearch, needsSearchSpec } from "../kinds/needs-search/apply";
 import { needsExporter } from "../kinds/needs-search/needs";
@@ -27,12 +28,12 @@ import { themeBriefsSpec } from "../kinds/theme-briefs/apply";
 
 import { validateEntries, type ApplyOpts, type BatchDeps, type BatchExport, type EntrySpec, type Obj, type Verdict } from "./session-batch";
 
-export const BATCH_KINDS = ["record-briefs", "question-answers", "needs-search", "forward-events", "theme-briefs", "screen-verdicts", "ledger-verdicts"] as const;
+export const BATCH_KINDS = ["record-briefs", "question-answers", "needs-search", "forward-events", "theme-briefs", "screen-verdicts", "ledger-verdicts", "host-verdicts"] as const;
 export type BatchKindId = (typeof BATCH_KINDS)[number];
 export const isBatchKind = (k: string): k is BatchKindId => (BATCH_KINDS as readonly string[]).includes(k);
 
 /** The key that names an item in a kind's export (the drain's `idKey`). */
-const ID_KEY: Readonly<Record<BatchKindId, string>> = { "record-briefs": "id", "question-answers": "subject_ref", "needs-search": "need_id", "forward-events": "id", "theme-briefs": "theme_id", "screen-verdicts": "census_id", "ledger-verdicts": "candidate_id" };
+const ID_KEY: Readonly<Record<BatchKindId, string>> = { "record-briefs": "id", "question-answers": "subject_ref", "needs-search": "need_id", "forward-events": "id", "theme-briefs": "theme_id", "screen-verdicts": "census_id", "ledger-verdicts": "candidate_id", "host-verdicts": "host" };
 export const DEFAULT_PART_CHARS = 3_000_000;
 export interface ExportInput { outDir?: string; limit?: number; charBudget?: number; ids?: readonly string[]; mode?: string; runId?: string; repoRoot?: string }
 export interface ExportOpts { limit: number; mode: string; ids?: readonly string[]; charBudget?: number }
@@ -47,9 +48,10 @@ const exporterOf = (kind: BatchKindId, deps: BatchDeps): ((o: ExportOpts) => Pro
     case "theme-briefs": return (o) => themeBriefsExporter(deps.sb, budget(o))(o);
     case "screen-verdicts": return screenVerdictsExporter(deps.sb);
     case "ledger-verdicts": return ledgerVerdictsExporter(deps);
+    case "host-verdicts": return async () => ({ ok: false, items: [], error: "host-verdicts has no export: the session authors a batch from the unplaced hosts a needs-search export names" });
   }
 };
-const DEFAULT_LIMIT: Readonly<Record<BatchKindId, number>> = { "record-briefs": 40, "question-answers": 100, "needs-search": 100, "forward-events": 100, "theme-briefs": 15, "screen-verdicts": 60, "ledger-verdicts": 100 };
+const DEFAULT_LIMIT: Readonly<Record<BatchKindId, number>> = { "record-briefs": 40, "question-answers": 100, "needs-search": 100, "forward-events": 100, "theme-briefs": 15, "screen-verdicts": 60, "ledger-verdicts": 100, "host-verdicts": 150 };
 
 /** The exporters the judgement drain takes (`DrainDeps.exporters`), keyed by the drain's kind ids: the drain's `screen-verdict` is this kit's `screen-verdicts`. */
 export function drainExporters(deps: BatchDeps): Record<string, Exporter> {
@@ -126,6 +128,7 @@ const SPECS: Readonly<Record<string, (o: ApplyOpts) => EntrySpec<never, never>>>
   "needs-search": () => needsSearchSpec as never,
   "forward-events": () => forwardEventsSpec as never,
   "theme-briefs": () => themeBriefsSpec as never,
+  "host-verdicts": () => hostVerdictsSpec as never,
 };
 /** Validate a batch file against live material already loaded (`live` is what the kind's loader returns). Pure. A kind with no entry-by-entry validator (the two verdict files) has its own reader. */
 export function validateBatch(kind: string, file: unknown, live: unknown): Verdict<unknown> {
@@ -155,5 +158,6 @@ export async function applyBatch(kind: string, deps: BatchDeps, input: { content
     case "forward-events": return applyForwardEvents(deps, file, o);
     case "screen-verdicts": return applyScreenVerdicts(deps, file, o);
     case "ledger-verdicts": return applyLedgerVerdicts(deps, file, o);
+    case "host-verdicts": return applyHostVerdicts(deps, file, o);
   }
 }

@@ -2,7 +2,7 @@
 import { userClient } from "@/core/db/clients";
 import { pageSession } from "@/features/account/server/page-session";
 import { PageFailure } from "@/ui/shell";
-import { loadSurfaceDenominator } from "@/features/coverage/server/matrix-data";
+import { loadSurfaceDenominator } from "@/features/coverage/server";
 import { readThemeStrip } from "@/features/research/read/theme-strip";
 
 import { readOperationsPage } from "./read/operations-reads";

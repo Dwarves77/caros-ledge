@@ -50,12 +50,12 @@ export function memClient(db: MemDb, who: Who | null = null) {
     from: (table: string) => db.from(table),
     async rpc(name: string, args?: unknown) {
       if (name === "is_platform_admin") return { data: who?.admin === true, error: null };
-      const fn = db.rpcs[name] as unknown as ((a: unknown) => unknown) | undefined;
-      if (!fn) return { data: null, error: { message: `no rpc ${name}` } };
+      const fn = db.rpcs[name] as unknown as ((a: unknown, who: Who | null) => unknown) | undefined;
+      if (!fn) return { data: null, error: { message: `no rpc ${name}`, code: "PGRST202" } };
       try {
-        return { data: fn(args), error: null };
+        return { data: fn(args, who), error: null };
       } catch (e) {
-        return { data: null, error: { message: e instanceof Error ? e.message : String(e) } };
+        return { data: null, error: { message: e instanceof Error ? e.message : String(e), ...((e as { code?: string }).code ? { code: (e as { code: string }).code } : {}) } };
       }
     },
     auth: {

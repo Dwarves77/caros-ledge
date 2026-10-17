@@ -11,8 +11,8 @@ import { planDrain, screenVerdictExporter } from "@/features/drain";
 import { ITEM, NOW } from "./world.ts";
 import { qaWorld, recordWorld, REF, screenWorld } from "./worlds.ts";
 
-test("the kind table is the kit's: seven kinds, each reached by exportBatch and applyBatch, an unknown one refused by name", async () => {
-  assert.deepEqual([...BATCH_KINDS], ["record-briefs", "question-answers", "needs-search", "forward-events", "theme-briefs", "screen-verdicts", "ledger-verdicts"]);
+test("the kind table is the kit's: eight kinds, each reached by exportBatch and applyBatch, an unknown one refused by name", async () => {
+  assert.deepEqual([...BATCH_KINDS], ["record-briefs", "question-answers", "needs-search", "forward-events", "theme-briefs", "screen-verdicts", "ledger-verdicts", "host-verdicts"]);
   const w = recordWorld();
   assert.match((await exportBatch("mystery", w.deps)).notes[0] ?? "", /unknown batch kind "mystery" \(kinds: record-briefs/);
   assert.match((await applyBatch("mystery", w.deps, { content: "{}", dry: true })).notes[0] ?? "", /unknown batch kind "mystery"/);

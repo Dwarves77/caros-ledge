@@ -12,7 +12,7 @@ import { corridorsTouching } from "@/core/entities";
 import { log } from "@/core/shared";
 import { getWorkspaceProfile } from "@/core/workspace";
 import { pageSession } from "@/features/account/server/page-session";
-import { loadSurfaceDenominator } from "@/features/coverage/server/matrix-data";
+import { loadSurfaceDenominator } from "@/features/coverage/server";
 import { buildRegisterQuerySpec, defaultJurisdictionFilter, fetchObligationRegisterPage, fetchRegisterFacetOptions, KIND_LABELS, readUpcoming } from "@/features/obligations";
 import { readThemeChips } from "@/core/detail";
 import { Masthead, SectionCard } from "@/ui";

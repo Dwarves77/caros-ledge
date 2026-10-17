@@ -4,7 +4,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 
 import { requestJson } from "@/core/http/request-json";
-import { Button, Dialog, FormField, InlineErrorBanner, Select, StateNote, Textarea } from "@/ui";
+import { Button, Dialog, FormField, Select, StateNote, Textarea } from "@/ui";
 
 import { useItemStateStore } from "../state";
 
@@ -74,8 +74,8 @@ export function ArchiveDialog({ itemId, title, onClose, onArchived }: { itemId: 
   const lines = teamSelected && impact ? impactLines(impact) : [];
   const close = () => !submitting && onClose();
 
-  async function submit(e: FormEvent) {
-    e.preventDefault();
+  async function submit(e?: FormEvent) {
+    e?.preventDefault();
     if (submitting || (teamSelected && !reason)) return;
     setError(null);
     setSubmitting(true);
@@ -141,7 +141,11 @@ export function ArchiveDialog({ itemId, title, onClose, onArchived }: { itemId: 
           {(c) => <Textarea {...c} rows={2} value={note} onChange={(e) => setNote(e.target.value)} disabled={submitting} placeholder={teamSelected ? "Anything the team should know." : "Just for your own reference."} />}
         </FormField>
 
-        {error ? <InlineErrorBanner message={error} /> : null}
+        {error ? (
+          <StateNote tone="error" action={{ label: "Retry", onClick: () => void submit() }}>
+            {error}
+          </StateNote>
+        ) : null}
         <div className={styles.actions}>
           <Button variant="secondary" onClick={close} disabled={submitting}>
             Cancel

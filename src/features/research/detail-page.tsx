@@ -2,7 +2,6 @@
 import { notFound } from "next/navigation";
 
 import { applyIdRedirect, loadDetail, type ItemScopedCtx } from "@/core/detail";
-import { isServiceConfigured, serviceClient } from "@/core/db";
 import { pageSession } from "@/features/account/server/page-session";
 import { PageFailure } from "@/ui/shell";
 
@@ -10,14 +9,11 @@ import { readAssessmentBundle } from "./read/research-reads";
 import { relatedItems } from "./read/related-items";
 import { ResearchDetail } from "./ui/ResearchDetail";
 
-/**
- * The item-scoped reads of a finding: the related findings (the same theme first, then the same source) and the assessment bundle. The raw assessments table is closed to a signed-in client (the current view is
- * open), so the history chain is walked on the service client when one is configured; a session without one shows a chain that says it is shorter than the real one.
- */
+/** The item-scoped reads of a finding, on the caller's own client: the related findings (the same theme first, then the same source) and the assessment bundle (its history chain through research_assessment_history). */
 const loadFinding = async ({ db, uuid, resource }: ItemScopedCtx) => {
   const [related, assessment] = await Promise.all([
     relatedItems(db, { id: uuid, sourceId: resource.sourceId ?? null }, resource.theme ? (q) => q.eq("theme", resource.theme as string) : null),
-    readAssessmentBundle(db, uuid, isServiceConfigured() ? serviceClient() : db),
+    readAssessmentBundle(db, uuid),
   ]);
   return { related, assessment };
 };
