@@ -1,7 +1,7 @@
 // Generates tests/_support/schema.json (every public table and view with its columns, the columns the database fills with a uuid default, and single-column foreign keys) from the LIVE catalog of the database the schema job builds, so the in-memory
 // test client refuses a table or column the database does not have (IMP-031). scripts/ci/schema-apply.mjs fails when the committed file differs from the live catalog.
 // Run after the schema changes, against a database that has had schema-apply run on it: DATABASE_URL=... node scripts/gen/test-schema.mjs
-import { spawnSync } from "node:child_process";
+import { psql } from "../ci/psql.mjs";
 
 import { writeJsonData } from "./json-data.mjs";
 
@@ -25,8 +25,8 @@ export function literalDefault(text) {
 }
 
 function rows(url, sql) {
-  const r = spawnSync("psql", [url, "-X", "-q", "-At", "-c", sql], { encoding: "utf8", maxBuffer: 1 << 28 });
-  if (r.status !== 0) throw new Error(`psql failed: ${r.stderr}`);
+  const r = psql(url, { sql, tuples: true });
+  if (r.status !== 0) throw new Error(`query failed: ${r.stderr}`);
   return r.stdout.split("\n").filter(Boolean).map((l) => l.split("|"));
 }
 

@@ -1,7 +1,7 @@
 // The checks and the tools this slice ships, each proven by attack: a planted violation must fail (rule 15), a clean tree must pass.
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -103,17 +103,6 @@ test("every JSON data file under src parses and carries no control character in 
     JSON.parse(readFileSync(join(ROOT, f), "utf8"), (_k, v) => (typeof v === "string" && strings.push(v), v));
     assert.deepEqual(strings.filter((s) => CONTROL.test(s)).slice(0, 1), [], `${f} carries a control character`);
   }
-});
-
-test("install-hooks writes an executable pre-commit that skips without a database and runs the property checks with one", () => {
-  const dir = scratch();
-  execFileSync("git", ["init", "-q"], { cwd: dir });
-  const file = execFileSync(process.execPath, ["-e", `import(${JSON.stringify(`file:///${script("install-hooks.mjs").replace(/\\/g, "/")}`)}).then((m) => console.log(m.installHooks(${JSON.stringify(dir)})))`], { encoding: "utf8" }).trim();
-  assert.ok(file.endsWith("pre-commit") && statSync(file).isFile());
-  const text = readFileSync(file, "utf8");
-  assert.match(text, /scripts\/ci\/properties\.mjs/);
-  assert.match(text, /DATABASE_URL is not set/);
-  assert.match(text, /grep -q '\^supabase\/'/);
 });
 
 // ── the shared test database ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────

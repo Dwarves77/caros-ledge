@@ -1,0 +1,13 @@
+#!/bin/sh
+# The gate: every push runs `npm run gates` (scripts/ci/gates.mjs), the same list the ci job runs. Bypassing it is a rule violation, never a step.
+# A [skip ci] commit at the head of a pushed ref is refused: a PR never ends on an unproven SHA.
+zero=0000000000000000000000000000000000000000
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [ "$local_sha" = "$zero" ] && continue
+  if git log -1 --format=%B "$local_sha" | grep -qi '\[skip ci\]'; then
+    echo "pre-push: refused, the head of $local_ref carries [skip ci]; the last commit of a branch must be one CI proves" >&2
+    exit 1
+  fi
+done
+echo "pre-push: running npm run gates (fail-fast; supabase/ changes add schema:local)"
+exec node scripts/ci/gates.mjs
