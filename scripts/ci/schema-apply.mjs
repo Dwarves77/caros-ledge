@@ -12,6 +12,7 @@ import { renderJsonData } from "../gen/json-data.mjs";
 import { readSchema } from "../gen/test-schema.mjs";
 
 import { migrationProblems } from "./migration-checks.mjs";
+import { psql as runSql } from "./psql.mjs";
 
 const url = process.env.DATABASE_URL;
 if (!url) {
@@ -47,9 +48,9 @@ CREATE OR REPLACE FUNCTION net.http_post(url text, body jsonb DEFAULT '{}', para
 DROP SCHEMA IF EXISTS public CASCADE;
 `;
 
-function psql(args, input) {
-  const r = spawnSync("psql", [url, "-X", "-q", ...args], { encoding: "utf8", maxBuffer: 1 << 28, input });
-  return { code: r.status ?? 1, err: r.stderr ?? "", out: r.stdout ?? "" };
+function psql(opts) {
+  const r = runSql(url, opts);
+  return { code: r.status, err: r.stderr, out: r.stdout };
 }
 
 function errorsOf(text) {
@@ -57,9 +58,9 @@ function errorsOf(text) {
 }
 
 function apply(stopOnError) {
-  const stub = psql(["-v", "ON_ERROR_STOP=1"], STUBS);
+  const stub = psql({ sql: STUBS });
   if (stub.code !== 0) return { code: stub.code, errors: errorsOf(stub.err) };
-  const r = psql(["-v", `ON_ERROR_STOP=${stopOnError ? 1 : 0}`, "-f", "supabase/schema.sql"]);
+  const r = psql({ file: "supabase/schema.sql", stopOnError });
   const errors = errorsOf(r.err);
   return { code: r.code !== 0 || errors.length ? 1 : 0, errors };
 }
@@ -75,7 +76,7 @@ if (result.code !== 0) {
 console.log("schema.sql applied with zero errors");
 
 const snapshot = () => {
-  const r = psql(["-At", "-F", "|", "-v", "ON_ERROR_STOP=1", "-f", "scripts/ci/catalog-snapshot.sql"]);
+  const r = psql({ file: "scripts/ci/catalog-snapshot.sql", tuples: true, sep: "|" });
   if (r.code !== 0) {
     console.error(r.err);
     process.exit(1);
@@ -92,7 +93,7 @@ let before = step0;
 let unexplained = 0;
 for (const file of readdirSync("supabase/migrations").filter((f) => /^\d{4}_.+\.sql$/.test(f) && !f.includes("_data_")).sort()) {
   const path = `supabase/migrations/${file}`;
-  const m = psql(["-v", "ON_ERROR_STOP=1", "-f", path]);
+  const m = psql({ file: path });
   for (const l of m.err.split("\n")) if (/NOTICE/.test(l)) console.log(l.replace(/^.*NOTICE:\s*/, "  self-check: "));
   if (m.code !== 0 || errorsOf(m.err).length) {
     console.error(`${file}: failed\n${m.err}`);
@@ -115,7 +116,7 @@ const rollbackTest = (name, text) => {
     process.exit(1);
   }
   const body = text.replace(/^(BEGIN|COMMIT);[ \t]*$/gm, ""); // the job owns the transaction: its ROLLBACK must undo the file's own COMMIT
-  const r = psql(["-v", "ON_ERROR_STOP=1"], ["BEGIN;", readFileSync(fixture, "utf8"), body, "ROLLBACK;", ""].join("\n"));
+  const r = psql({ sql: ["BEGIN;", readFileSync(fixture, "utf8"), body, "ROLLBACK;", ""].join("\n") });
   for (const l of r.err.split("\n")) if (/NOTICE/.test(l)) console.log(l.replace(/^.*NOTICE:\s*/, "  self-check: ").slice(0, 220));
   if (r.code !== 0 || errorsOf(r.err).length) {
     console.error(`${name}: failed in its rollback-test\n${r.err}`);
