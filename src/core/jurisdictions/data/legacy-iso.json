@@ -1,0 +1,11 @@
+{
+  "us": "US", "canada": "CA", "mexico": "MX", "brazil": "BR", "argentina": "AR", "chile": "CL", "colombia": "CO", "peru": "PE",
+  "eu": "EU", "germany": "DE", "france": "FR", "netherlands": "NL", "belgium": "BE", "italy": "IT", "spain": "ES", "poland": "PL",
+  "ireland": "IE", "greece": "GR", "portugal": "PT", "romania": "RO", "uk": "GB", "switzerland": "CH", "turkey": "TR", "ukraine": "UA",
+  "china": "CN", "japan": "JP", "korea": "KR", "taiwan": "TW", "hk": "HK", "india": "IN", "bangladesh": "BD", "pakistan": "PK",
+  "sri-lanka": "LK", "singapore": "SG", "malaysia": "MY", "indonesia": "ID", "thailand": "TH", "vietnam": "VN", "philippines": "PH",
+  "australia": "AU", "new-zealand": "NZ", "uae": "AE", "saudi": "SA", "qatar": "QA", "kuwait": "KW", "bahrain": "BH", "oman": "OM",
+  "israel": "IL", "jordan": "JO", "iraq": "IQ", "iran": "IR", "egypt": "EG", "morocco": "MA", "tunisia": "TN", "algeria": "DZ",
+  "safrica": "ZA", "nigeria": "NG", "kenya": "KE", "ethiopia": "ET", "ghana": "GH", "tanzania": "TZ", "russia": "RU", "kazakhstan": "KZ",
+  "global": "GLOBAL", "imo": "IMO", "icao": "ICAO"
+}

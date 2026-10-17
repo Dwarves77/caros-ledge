@@ -7,11 +7,13 @@
       "signup",
       "privacy",
       "settings",
-      "profile"
+      "profile",
+      "regulations",
+      "regulation-detail",
+      "map"
     ],
     "frame": [
       "dashboard",
-      "regulations",
       "market",
       "research",
       "operations",
@@ -33,8 +35,15 @@
     "^link:Account"
   ],
   "frameLandmarks": {
-    "1280x900": ["complementary", "navigation", "main"],
-    "375x812": ["banner", "main"]
+    "1280x900": [
+      "complementary",
+      "navigation",
+      "main"
+    ],
+    "375x812": [
+      "banner",
+      "main"
+    ]
   },
   "frameHeadings": [
     "Caro's Ledge",
@@ -85,6 +94,13 @@
       "route": "privacy",
       "kind": "pixel",
       "ruling": "Operator 2026-10-16: 44 px is the standard on every control, so the nav card rows are 44 px (pitch 46) where artboard 01 draws about 42 (DESIGN CHANGES OWED 10); and rule 2 / INV-263: the nav cap draws no band split while the counts are unknown, where artboard 01 shows an equal 25 percent split that is a fabricated number (OWED 11). Structure still gates."
+    },
+    {
+      "id": "map-iso-register",
+      "route": "map",
+      "kind": "control",
+      "match": "^link:(Global|Latin America (other)|Nordic|GB|Asia (other)|Europe (other)|Asia|Latin America|North America)$",
+      "ruling": "regulations.md (P1-19) section 8, rows MapPage, rollup and centroids: the register is ISO-keyed (a country, its subdivisions rolled up); the legacy-slug rows (Global, Nordic, GB beside United Kingdom, the regional remainders) and the title-regex keying that put a Japan item under us are the defect the rollup replaces."
     }
   ]
 }

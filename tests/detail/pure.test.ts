@@ -1,0 +1,194 @@
+// The pure parts of the detail architecture, the jurisdiction model, the applicability gate, the theme views and the map's roll-up: each invariant is asserted on a value that would differ if the rule were broken.
+import assert from "node:assert/strict";
+import { test } from "node:test";
+
+import { computeApplicability } from "@/core/applicability";
+import { deriveFactCardModels, deriveRecordFactCardModel, mergeAdjacentSameKind, parseFactCardModels, parseFactParagraphs } from "@/core/detail/fact-model";
+import { crossPageOrd, indexFor, SECTION_INDEX } from "@/core/detail/section-index";
+import { classifyTimeline, collapseTimeline, formatTrajectoryStep, pickCurrentStepIndex, withObligationEvents } from "@/core/detail/timeline";
+import { countryOf, isIso, isoCodesOf, isoToDisplayLabel, jurisdictionTier, jurisLabelOf, legacyToIso, TIER1, TIER1_REGIONS, TIER2 } from "@/core/jurisdictions";
+import { deriveThemeLabel, themeAnalysisView, themeChips, themeForItem } from "@/core/themes";
+import { withClaimTiers } from "@/ui/claim-tier";
+import { centroidOf } from "@/features/regulations/map/centroids";
+import { markerSize } from "@/features/regulations/map/marker";
+import { rollupRegions, sourceTypesFor } from "@/features/regulations/map/region-coverage";
+import { regionCodes } from "@/features/regulations/map/region-filter";
+import { chipOfKey, jurisdictionKeyOf, rollup } from "@/features/regulations/map/rollup";
+import { joinSegments } from "@/features/regulations/meta";
+import { canonicalQuery } from "@/features/saved-views/api/saved-views";
+
+const EU27 = "AT BE BG HR CY CZ DK EE FI FR DE GR HU IE IT LV LT LU MT NL PL PT RO SK SI ES SE".split(" ");
+
+test("iso labels: every EU member has a name (the old table printed 14 as raw codes), and the answer never depends on Intl (server and browser read the same table)", () => {
+  for (const c of EU27) assert.notEqual(isoToDisplayLabel(c), c, `${c} has a label`);
+  const real = Intl.DisplayNames;
+  const before = EU27.map(isoToDisplayLabel);
+  // A deliberately hostile runtime: a different ICU would answer differently, the table does not.
+  (Intl as unknown as { DisplayNames: unknown }).DisplayNames = class {
+    of() {
+      return "different";
+    }
+  };
+  try {
+    assert.deepEqual(EU27.map(isoToDisplayLabel), before);
+  } finally {
+    (Intl as unknown as { DisplayNames: unknown }).DisplayNames = real;
+  }
+  assert.equal(isoToDisplayLabel("US-CA"), "California, United States");
+  assert.equal(isoToDisplayLabel("EU"), "European Union");
+  assert.equal(isoToDisplayLabel("ZZ"), "ZZ", "an unknown code is itself, never a guess");
+  assert.ok(isIso("GB-ENG") && isIso("GLOBAL") && !isIso("gb") && !isIso("USA"));
+  assert.equal(countryOf("US-CA"), "US");
+  assert.equal(countryOf("EU"), null);
+});
+
+test("ONE Tier-1 list: the priority regions and the country-level scopes are one set, Tier 2 never repeats Tier 1, and the old tier tables keep their codes", () => {
+  for (const r of TIER1_REGIONS) for (const j of r.jurisdictions) assert.equal(jurisdictionTier(j.iso), 1, `${j.iso} is Tier 1`);
+  for (const c of ["US", "EU", "GB", "CA", "AE", "SA", "BR", "MX", "ZA", "KE", "NG"]) assert.equal(jurisdictionTier(c), 1, `${c}`);
+  assert.equal(jurisdictionTier("CH"), 2);
+  assert.equal(jurisdictionTier("CN-44"), 2);
+  assert.equal(jurisdictionTier("LK"), 3);
+  assert.equal(jurisdictionTier("not a code"), null);
+  assert.deepEqual(TIER2.filter((c) => TIER1.includes(c)), []);
+  assert.equal(new Set(TIER1).size, TIER1.length);
+});
+
+test("legacy slugs map to a code only where a row has no jurisdiction_iso; a grouping has none", () => {
+  assert.equal(legacyToIso("uk"), "GB");
+  assert.equal(legacyToIso("nordic"), null);
+  assert.deepEqual(isoCodesOf({ jurisdictionIso: ["DE"], jurisdiction: "france" }), ["DE"], "the code wins");
+  assert.deepEqual(isoCodesOf({ jurisdiction: "france" }), ["FR"]);
+  assert.deepEqual(isoCodesOf({ jurisdiction: "nordic" }), []);
+  assert.equal(jurisLabelOf({ jurisdictionIso: ["DE", "FR"] }), "Germany · France");
+  assert.equal(jurisLabelOf({ jurisdiction: "uk" }), "United Kingdom");
+  assert.equal(jurisLabelOf({}), "Global");
+});
+
+test("computeApplicability: no scope applies; an unset role or size is needs-input, never assumed; a role mismatch and a size below the threshold do not apply", () => {
+  assert.equal(computeApplicability({}, {}).status, "applies");
+  assert.equal(computeApplicability({ roleScope: ["forwarder"] }, { orgRoles: [] }).status, "needs_profile_input");
+  assert.deepEqual(computeApplicability({ roleScope: ["forwarder"] }, { orgRoles: [] }).missingDimensions, ["role"]);
+  assert.equal(computeApplicability({ roleScope: ["forwarder"] }, { orgRoles: ["carrier"] }).status, "does_not_apply");
+  assert.equal(computeApplicability({ roleScope: ["forwarder"] }, { orgRoles: ["forwarder", "carrier"] }).status, "applies");
+  const nobody = { headcount_band: null, revenue_band: null, shipment_volume_band: null };
+  const big = { sizeThreshold: { dimension: "headcount", band: "large", comparison: "at_least" as const } };
+  assert.equal(computeApplicability(big, { orgRoles: [], orgSize: nobody }).status, "needs_profile_input", "an unset size is never assumed");
+  assert.deepEqual(computeApplicability(big, { orgRoles: [], orgSize: nobody }).missingDimensions, ["headcount"]);
+  assert.equal(computeApplicability(big, { orgRoles: [], orgSize: { ...nobody, headcount_band: "small" } }).status, "does_not_apply");
+  assert.equal(computeApplicability(big, { orgRoles: [], orgSize: { ...nobody, headcount_band: "large" } }).status, "applies");
+  assert.equal(computeApplicability({ sizeThreshold: { dimension: "headcount", band: "small", comparison: "below" } }, { orgRoles: [], orgSize: { ...nobody, headcount_band: "micro" } }).status, "applies");
+  assert.equal(computeApplicability({ sizeThreshold: { dimension: "nonsense", band: "x" } }, {}).status, "applies", "an unknown dimension cannot gate");
+});
+
+test("section index: ordinals are fixed (a missing section is omitted, never renumbered), the unrendered fact-document sections gain entries, and the page's ten keep theirs", () => {
+  const ords = Object.fromEntries(SECTION_INDEX.map((e) => [e.id, e.ord]));
+  assert.deepEqual([ords.summary, ords.obligations, ords.requirements, ords.registration, ords.operations, ords.compliance, ords.penalties, ords.sources, ords["across-pages"], ords.inferences], [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+  assert.equal(new Set(SECTION_INDEX.map((e) => e.ord)).size, SECTION_INDEX.length, "no ordinal twice");
+  const keys = SECTION_INDEX.flatMap((e) => (e.key ? [e.key] : [])).sort((a, b) => Number(a) - Number(b));
+  assert.deepEqual(keys, ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13"], "every stored fact-document section but 14 and 15 has an entry");
+  assert.deepEqual(indexFor(new Set(["summary", "sources", "compliance"])).map((e) => [e.id, e.ord]), [["summary", 1], ["compliance", 6], ["sources", 8]]);
+  assert.equal(crossPageOrd("regulations", "inferences"), 10);
+  assert.equal(crossPageOrd("market", "inferences"), 8);
+});
+
+test("timeline and trajectory take the request's instant: the same input at two instants differs, and no Date is built for display", () => {
+  const steps = [{ date: "2026", value: "2%" }, { date: "2030-01-01", value: "6%" }, { date: "2035-01-01", value: "20%" }];
+  assert.equal(pickCurrentStepIndex(steps, "2026-10-15T00:00:00Z"), 1);
+  assert.equal(pickCurrentStepIndex(steps, "2031-01-01T00:00:00Z"), 2);
+  assert.equal(pickCurrentStepIndex(steps, "2040-01-01T00:00:00Z"), 2, "past the last step the last applies");
+  assert.equal(pickCurrentStepIndex([{ date: "later", value: "x" }], "2026-10-15T00:00:00Z"), -1);
+  assert.equal(formatTrajectoryStep(steps[1] as (typeof steps)[number]), "6% (Jan 1 2030)");
+  assert.equal(formatTrajectoryStep(steps[0] as (typeof steps)[number]), "2% (2026)");
+  const four = Array.from({ length: 4 }, (_, i) => ({ date: `2026-0${i + 1}-01`, label: `m${i}` }));
+  const five = [...four, { date: "2026-09-01", label: "m4" }];
+  assert.equal(collapseTimeline(classifyTimeline(four)).collapsed, false);
+  const c5 = collapseTimeline(classifyTimeline(five));
+  assert.deepEqual([c5.collapsed, c5.visible.length, c5.hiddenCount], [true, 4, 1]);
+  assert.deepEqual(withObligationEvents([{ date: "2026-01-01", label: "a" }], [{ event_date: "2026-01-01", event_kind: "x" }, { event_date: "2026-02-01", event_kind: "entry_into_force" }], { entry_into_force: "Entry into force" }).map((t) => t.label), ["a", "Entry into force"], "an event on a date already on the timeline is not repeated");
+});
+
+test("fact model: kinds from lead-ins, embedded sentences split, a source citation becomes provenance, same-kind runs merge, prose is not a card", () => {
+  const md = "**DEADLINE** Reports are due by **31 March 2027** each year. Source: EUR-Lex, Regulation 2023/9999, 2026 https://eur-lex.europa.eu/x\n\n**DEADLINE** A second deadline applies on 1 July. Source: EUR-Lex, 2026\n\nPlain prose with no source.\n\n*Analytical inference:* This probably raises costs.";
+  const paragraphs = parseFactParagraphs(md);
+  assert.deepEqual(paragraphs.map((p) => p.kind), ["fact", "fact", "prose", "inference"]);
+  const models = parseFactCardModels(md);
+  assert.deepEqual(models.map((m) => m.kind), ["DEADLINE", "ANALYTICAL INFERENCE"], "the two deadlines merged, the prose is not a card");
+  assert.equal(models[0]?.additionalClaims?.length, 1);
+  assert.equal(models[0]?.figureLead, "31 March 2027");
+  assert.equal(models[0]?.provenance?.source, "EUR-Lex");
+  assert.equal(deriveFactCardModels(paragraphs[2] as (typeof paragraphs)[number]).length, 0);
+  assert.equal(mergeAdjacentSameKind([]).length, 0);
+  assert.equal(deriveRecordFactCardModel({ label: "x", span: null }), null, "a record fact with no quoted span is not a card");
+});
+
+test("claim tiers: two matches with different tiers draw none, a record-grade card keeps its own tier", () => {
+  const model = { kind: "SCOPE", claim: [{ text: "Operators shall submit a verified annual emissions report before 31 March." }], provenance: { tier: null } };
+  const map = { "Operators shall submit a verified annual emissions report before 31 March.": { tier: 1, sourceName: "A", sourceUrl: null } };
+  assert.equal(withClaimTiers(model as never, map).provenance?.tier, 1);
+  assert.equal(withClaimTiers(model as never, { ...map, "Operators shall submit a verified annual emissions report before 31 March. Extra words follow here.": { tier: 3, sourceName: "B", sourceUrl: null } }).provenance?.tier, null, "ambiguous");
+  assert.equal(withClaimTiers({ ...model, recordGrade: true, provenance: { tier: 2 } } as never, map).provenance?.tier, 2);
+});
+
+test("theme views: the item's theme, the chips of a surface, the analysis when no brief exists, the label when no brief names a theme", () => {
+  const themes = [{ id: "t1", member_ids: ["a", "b"], dominant_signals: [{ signal: "shared_source", weight: 2 }], surfaces: ["regulations", "market"], convergence: 0.9, pivots: [] }, { id: "t2", member_ids: ["c"], surfaces: ["regulations"], convergence: 0.1 }];
+  assert.equal(themeForItem(themes as never, "b")?.id, "t1");
+  assert.equal(themeForItem(themes as never, "zzz"), null);
+  const items = [{ id: "a", legacy_id: "g1", title: "Reg A", item_type: "regulation", domain: 1 }, { id: "b", legacy_id: null, title: "Mkt B", item_type: "market_signal", domain: 4 }];
+  const chips = themeChips({ themes: themes as never, items, surface: "regulations", max: 6 });
+  assert.deepEqual(chips.map((c) => [c.themeId, c.href, c.hasBrief]), [["t1", "/regulations/g1", false]]);
+  assert.match(chips[0]?.label ?? "", /^Shared source across /);
+  const view = themeAnalysisView({ itemId: "a", surface: "regulations", themes: themes as never, briefs: [], members: items });
+  assert.equal(view?.hasBrief, false);
+  assert.match(view?.absence ?? "", /has not been written yet/);
+  assert.deepEqual(view?.membersByPage.map((g) => [g.surface, g.total]), [["market", 1]]);
+  assert.ok(deriveThemeLabel({ pages: [], memberCount: 0 }).length > 0);
+});
+
+test("map: a row counts once under its primary code rolled up to the country; the title never decides the jurisdiction; subdivisions and EU members chip correctly", () => {
+  const row = (id: string, over: object) => ({ id, title: "Carbon levy in Japan", priority: "HIGH", modes: [] as string[], ...over });
+  assert.equal(jurisdictionKeyOf({ jurisdictionIso: ["US-CA"] }), "US");
+  assert.equal(jurisdictionKeyOf({ jurisdictionIso: ["EU", "DE"] }), "EU");
+  assert.equal(jurisdictionKeyOf({ jurisdiction: "nordic" }), "nordic");
+  assert.equal(jurisdictionKeyOf({}), "global");
+  const rows = rollup([row("1", { jurisdictionIso: ["JP"] }), row("2", { jurisdictionIso: ["US-CA"], priority: "CRITICAL" }), row("3", { jurisdictionIso: ["US-NY"], priority: "LOW" }), row("4", { jurisdiction: "nordic" })]);
+  assert.deepEqual(rows.map((r) => [r.key, r.count, r.band.key]), [["US", 2, "immediate"], ["JP", 1, "action"], ["nordic", 1, "action"]]);
+  assert.equal(rows.find((r) => r.key === "US")?.label, "United States");
+  assert.deepEqual(rows.find((r) => r.key === "US")?.codes.sort(), ["US-CA", "US-NY"]);
+  const eu = new Set(EU27);
+  assert.equal(chipOfKey("DE", eu), "EU", "Germany is on the EU chip (the old chip held only the slug eu)");
+  assert.equal(chipOfKey("US", eu), "US");
+  assert.equal(chipOfKey("GB", eu), "UK");
+  assert.equal(chipOfKey("BR", eu), "LATAM");
+  assert.equal(chipOfKey("CA", eu), null);
+  assert.equal(chipOfKey("KE", eu), "MEAF");
+  assert.deepEqual(centroidOf("US"), [38, -97]);
+  assert.equal(centroidOf("nordic")?.length, 2);
+  assert.equal(centroidOf("ZZ"), null, "no centroid: not charted, still listed");
+  assert.ok(markerSize(1) >= 22 && markerSize(10_000) <= 56 && markerSize(100) > markerSize(5));
+});
+
+test("the map's region filter resolves: a priority-region id, one priority code, else nothing (an unknown value filters nothing)", () => {
+  assert.equal(regionCodes("us-subnational")?.length, 56);
+  assert.deepEqual(regionCodes("eu"), ["EU"]);
+  assert.equal(regionCodes("atlantis"), null);
+  assert.equal(regionCodes(""), null);
+});
+
+test("coverage layer: covered needs an environmental body AND a legislature, partial either, a gap neither; stored source types win", () => {
+  const regions = [{ id: "r", name: "R", jurisdictions: [{ iso: "AT", name: "Austria" }, { iso: "BE", name: "Belgium" }, { iso: "BG", name: "Bulgaria" }] }];
+  const rows = [
+    { name: "Austrian Environment Agency", url: "https://umweltbundesamt.at", jurisdictions: ["AT"], source_type: ["environmental_body"] },
+    { name: "Parliament", url: "https://parlament.gv.at", jurisdictions: ["AT"], source_type: ["legislature"] },
+    { name: "Some blog", url: "https://x.example", jurisdictions: ["BE"], source_type: ["legislature"] },
+  ];
+  const [r] = rollupRegions(rows, regions);
+  assert.deepEqual([r?.covered, r?.partial, r?.gap, r?.total], [1, 1, 1, 3]);
+  assert.deepEqual(sourceTypesFor({ name: "x", url: "y", jurisdictions: null, source_type: ["environmental_body"] }), ["environmental_body"]);
+});
+
+test("the dek is built once and never repeats a part; a saved view stores the list's own canonical state and refuses an empty one", () => {
+  assert.equal(joinSegments(["Germany · Federal Ministry", "Federal Ministry", "Germany", "Effective 1 Jan 2027"]), "Germany · Federal Ministry · Effective 1 Jan 2027");
+  assert.equal(canonicalQuery("?band=immediate&region=EU&evil=1&sort=bogus"), "band=immediate&region=EU");
+  assert.equal(canonicalQuery("evil=1"), null);
+  assert.equal(canonicalQuery(""), null);
+});

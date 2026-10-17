@@ -1,0 +1,14 @@
+.frame { position: relative; height: 100%; width: 100%; }
+.map { height: 100%; width: 100%; background: var(--tag); }
+.marker { background: transparent; border: none; }
+.hit { display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.dot { display: flex; align-items: center; justify-content: center; border-radius: 999px; box-shadow: 0 0 0 3px var(--card); color: var(--invert-text); font-family: var(--font-display); font-weight: 400; }
+.legend { position: absolute; bottom: 16px; left: 16px; z-index: 500; display: flex; flex-direction: column; gap: 5px; padding: 10px 12px; border: 1px solid var(--line-1); border-radius: 8px; background: var(--card); font-size: 11px; pointer-events: none; }
+.legendTitle { font-size: var(--fs-95); font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); }
+.legendRow { display: flex; align-items: center; gap: 8px; color: var(--ink); }
+.swatch { display: inline-block; width: 8px; height: 8px; border-radius: 999px; flex-shrink: 0; }
+/* Leaflet's own controls are 26 to 30 px; the floor is 44 (law 2). */
+.map :global(.leaflet-control-zoom a) { width: 44px; height: 44px; line-height: 44px; font-size: 18px; }
+/* The attribution OpenStreetMap's tile policy requires: always visible, links a finger can hit. */
+.map :global(.leaflet-control-attribution) { font-size: 11px; }
+.map :global(.leaflet-control-attribution a) { display: inline-flex; align-items: center; min-height: 24px; padding: 0 4px; }

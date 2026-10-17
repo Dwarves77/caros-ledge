@@ -30,6 +30,7 @@
     "@supabase/supabase-js": "^2.98.0",
     "@tanstack/react-query": "^5.104.3",
     "@tanstack/react-virtual": "^3.14.20",
+    "leaflet": "^1.9.4",
     "next": "16.1.6",
     "react": "19.2.3",
     "react-dom": "19.2.3",
@@ -40,6 +41,7 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@types/leaflet": "^1.9.12",
     "@types/node": "^24",
     "@types/react": "^19",
     "@types/react-dom": "^19",
@@ -69,6 +71,8 @@
     "react-markdown": "The one markdown renderer (GfmSection) for the fact documents and briefs; sanitises by construction, no dangerouslySetInnerHTML.",
     "remark-gfm": "GFM tables for GfmSection (the briefs carry tables).",
     "@tanstack/react-query": "The one QueryClient for the list surface remainder fetch (use-list-rows) and the shell; the old tree used it for the same.",
-    "@tanstack/react-virtual": "Row virtualization for a long list surface (a 1,300-row corpus); the old ledger used it."
+    "@tanstack/react-virtual": "Row virtualization for a long list surface (a 1,300-row corpus); the old ledger used it.",
+    "leaflet": "The Regulations map (src/features/regulations/map/MapView.tsx): tiles, count-sized markers, fly-to; loaded only on the /map route; OpenStreetMap attribution shown (react-leaflet is not added: one effect drives the map).",
+    "@types/leaflet": "Types for leaflet under the strict typecheck."
   }
 }
