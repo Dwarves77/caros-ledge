@@ -43,3 +43,18 @@ test('a row key carries live counts as data: a count change passes, a renamed ro
   assert.deepEqual(compareRecord('operations', '1280x900', base, rows('Operations matrix 3/7 sourced · 991 regs'), []).fails, []);
   assert.equal(compareRecord('operations', '1280x900', base, rows('Operations grid 2/7 sourced · 985 regs'), []).fails.length, 1);
 });
+
+test('the account name token (from LIVE_SMOKE_EMAIL) matches the baseline smoke; a different name still fails', () => {
+  const was = process.env.LIVE_SMOKE_EMAIL;
+  process.env.LIVE_SMOKE_EMAIL = 'testperson@example.invalid';
+  try {
+    const heading = (text) => ({ landmarks: [], controls: [], rows: { items: [] }, headings: [{ level: 2, text }] });
+    const base = heading("SMOKE'S BRIEF");
+    assert.deepEqual(compareRecord('dashboard', '1280x900', base, heading("TESTPERSON'S BRIEF"), []).fails, []);
+    assert.deepEqual(compareRecord('dashboard', '1280x900', heading("smoke'S BRIEF"), heading("TestPerson'S BRIEF"), []).fails, []);
+    assert.equal(compareRecord('dashboard', '1280x900', base, heading("OTHERNAME'S BRIEF"), []).fails.length, 1);
+  } finally {
+    if (was === undefined) delete process.env.LIVE_SMOKE_EMAIL;
+    else process.env.LIVE_SMOKE_EMAIL = was;
+  }
+});
