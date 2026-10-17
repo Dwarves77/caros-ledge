@@ -122,3 +122,11 @@ test("wireAll builds from what the environment provides: no service key and not 
     if (saved !== undefined) process.env.SUPABASE_SERVICE_ROLE_KEY = saved;
   }
 });
+
+test("the production wiring carries the market slice's arithmetic by default (a Vercel start refuses an unwired producers.market)", () => {
+  const d = buildDeps(new MemDb({}, {}).client, {}, { now: () => NOW });
+  assert.notEqual(d.producers.market, null);
+  assert.notEqual(d.marketMethods, null);
+  assert.deepEqual(startupCheck(d).missing, []);
+  assert.throws(() => enforceWired(startupCheck(buildDeps(new MemDb({}, {}).client, {}, { now: () => NOW, market: null })), { VERCEL: "1" }), /producers\.market/);
+});

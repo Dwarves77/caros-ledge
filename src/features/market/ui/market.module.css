@@ -117,3 +117,5 @@
   .hTrack { grid-auto-columns: 150px; }
   .corridorGrid, .producerGrid { grid-template-columns: minmax(0, 1fr); }
 }
+
+.hSource { display: inline-flex; align-items: center; min-height: 44px; color: var(--ink-2); font-size: var(--fs-105); text-decoration: underline; overflow-wrap: anywhere; }

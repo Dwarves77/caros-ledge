@@ -68,6 +68,17 @@ function RibbonCard({ v }: { v: HeadlineCardView }) {
       <p data-audit="headline-card-asof" className={styles.hAsOf}>
         {v.asOf ? `as of ${v.asOf}` : <Cell cell={v.asOfAbsent} audit="headline-card-asof-absent" />}
       </p>
+      {v.envelope.sourceRef ? (
+        <p data-audit="headline-card-source" className={styles.hAsOf}>
+          {v.envelope.sourceUrl ? (
+            <a href={v.envelope.sourceUrl} target="_blank" rel="noopener noreferrer" className={styles.hSource}>
+              {v.envelope.sourceRef}
+            </a>
+          ) : (
+            v.envelope.sourceRef
+          )}
+        </p>
+      ) : null}
       <div className={styles.hFoot}>
         <FreshnessBadge freshness={v.freshness} showAsOf={false} />
         {v.tier != null ? <TierChip tier={v.tier} /> : <span className="cl-absence">Unrated</span>}

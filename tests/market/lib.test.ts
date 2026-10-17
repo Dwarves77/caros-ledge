@@ -8,6 +8,7 @@ import { buildCarbonCostPerFeuView, buildCarbonOverlayView, carbonCostPerFeu, ca
 import { computeSeriesDeltas } from "@/features/market/lib/deltas";
 import { cadenceNameForDays, deriveSeriesFreshness, summarizeBoardFreshness } from "@/features/market/lib/freshness";
 import { selectHeadlineSeries, SERIES_FAMILIES } from "@/features/market/lib/headline";
+import { headlineCardView } from "@/features/market/lib/headline-view";
 import { buildLeadTimePosition } from "@/features/market/lib/lead-time";
 import { selectNextDataDrops, summariseCarbonCorridors } from "@/features/market/lib/rail-select";
 import { PRODUCERS, isImplementedSeriesKey, producerFor } from "@/features/market/lib/registry";
@@ -264,4 +265,16 @@ test("INV-256 derivePromotionState: Fact only on a fact-citable origin, two cite
 test("INV-260 the ETS proxy band (P2-07's) still refuses one row and mixed currencies: the carbon price input never blends", () => {
   assert.equal(buildEtsProxyBand([{ value_numeric: 1, currency: "USD", reference_period: "2026-01-01" }]), null);
   assert.throws(() => buildEtsProxyBand([{ value_numeric: 1, currency: "USD", reference_period: "p" }, { value_numeric: 2, currency: "EUR", reference_period: "p" }]));
+});
+
+test("a headline card carries its source ref and the rating's url (the baseline shows the ref as a link)", () => {
+  const board = buildSeriesBoard([
+    ...["2026-08-24", "2026-08-31"].map((d, i) => ({ id: `a${i}`, series_key: "ecb-fx:eur-usd", label: "EUR/USD", reference_period: d, as_at_date: d, value_numeric: 1.05 + i * 0.05, unit: "USD/EUR", currency: "USD", derivation: "observed", origin_class: "official", source_key: "ecb", source_ref: "ECB reference rates, 2026-08-31" })),
+  ]);
+  const card = selectHeadlineSeries(board).cards[0];
+  assert.ok(card);
+  const v = headlineCardView(card, { ratings: { ecb: { sourceKey: "ecb", name: "ECB", url: "https://www.ecb.europa.eu/stats/", licence: null, attribution: null, tier: 2, via: "class" } }, nowIso: "2026-09-01T00:00:00Z" });
+  assert.deepEqual([v.envelope.sourceRef, v.envelope.sourceUrl], ["ECB reference rates, 2026-08-31", "https://www.ecb.europa.eu/stats/"]);
+  const v2 = headlineCardView(card, { ratings: {}, nowIso: "2026-09-01T00:00:00Z" });
+  assert.match(String(v2.envelope.sourceUrl), /^https:\/\//, "with no rating the producer's own source url applies");
 });
