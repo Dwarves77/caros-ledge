@@ -172,7 +172,7 @@ test("P4: the derived value the turn propagated reads on the Operations panel wi
   f.db.rows("propagation_events").push({ event_id: 9001, occurred_at: NOW.toISOString(), table_name: "intelligence_items", row_pk: finding.id, entity_id: null, change_kind: "update", new_row: { ...finding }, drained_at: null });
   const second = await runTurn({ stage: "propagate", mode: "apply", input: {} }, { d: f.d, env: {}, now: () => NOW });
   assert.equal(second.exit, 0);
-  const page = await readResearchPage(client);
+  const page = await readResearchPage(client, "org-1");
   assert.deepEqual([page.rowsFailed, page.rows.length], [false, 1]);
   const view = page.assessments?.[String(finding.id)] ?? page.assessments?.[String(finding.legacy_id)];
   assert.ok(view, "the assessment the producer wrote is the one the list reads");

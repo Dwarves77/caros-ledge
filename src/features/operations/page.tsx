@@ -13,6 +13,6 @@ export async function OperationsRoute() {
   const session = await pageSession("/operations");
   if ("failed" in session) return <PageFailure what="Operations" />;
   const db = await userClient();
-  const [data, denominator, strip] = await Promise.all([readOperationsPage(db, session.nowIso), loadSurfaceDenominator("operations", { db: () => db }), readThemeStrip(db, "operations")]);
+  const [data, denominator, strip] = await Promise.all([readOperationsPage(db, session.nowIso, session.orgId), loadSurfaceDenominator("operations", { db: () => db }), readThemeStrip(db, "operations")]);
   return <OperationsList data={data} nowIso={session.nowIso} chips={strip.chips} chipsFailed={strip.failed} denominator={{ ...denominator, surfacePath: "/operations" }} />;
 }

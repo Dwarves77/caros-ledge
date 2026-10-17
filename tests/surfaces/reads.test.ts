@@ -1,10 +1,12 @@
 // P2-12 readers (INV-263): a failed read is a failed state beside what did load, never an empty list, a zero or "none yet"; the facts carry their source's rating and a derived freshness; the recalculated figures are current rows
 // with their inputs named, dated and rated; the history chain says when it is shorter than the real one; the raw assessments table is not a customer read.
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { test } from "node:test";
 
 import { readOperationsPage, readDerivedFigures, readFacts, readMatrixEligibility, readRoster, type OperationsRegion } from "@/features/operations/read/operations-reads";
+import { EMPTY_FILTER_STATE } from "@/ui/list-surface/filter-sort";
+import { liveFacetCounts } from "@/ui/list-surface/facets";
 import { relatedItems } from "@/features/research/read/related-items";
 import { readAssessmentBundle, readAssessmentsFor, readResearchPage } from "@/features/research/read/research-reads";
 
@@ -45,14 +47,14 @@ test("INV-263: every Operations read fails on its own; the roster failing leaves
   const rpc = (name: string) => (name === "get_operations_items_public" ? { data: [] } : name === "get_surface_counts" ? { data: { total_items: 0 } } : undefined);
   const base = { regions, region_dimension_coverage: [], regional_data_facts: [], state_cost_facts: [], intelligence_items: [], derived_values: [] };
   const rosterDown = world(base, rpc, [{ table: "regions", op: "select", message: "boom" }]);
-  const a = await readOperationsPage(rosterDown, NOW);
+  const a = await readOperationsPage(rosterDown, NOW, "org-1");
   assert.deepEqual([a.roster, a.coverage, a.facts, a.linkedRegulations, a.rowsFailed], [null, null, null, null, false]);
   assert.ok(Array.isArray(a.stateCosts) && Array.isArray(a.derived), "the reads that need no roster still land");
   const factsDown = world(base, rpc, [{ table: "regional_data_facts", op: "select", message: "boom" }]);
-  const b = await readOperationsPage(factsDown, NOW);
+  const b = await readOperationsPage(factsDown, NOW, "org-1");
   assert.deepEqual([b.roster?.length, b.facts, Array.isArray(b.coverage)], [2, null, true]);
   const rowsDown = world(base, (name) => (name === "get_operations_items_public" ? { data: null, error: { message: "rpc down" } } : rpc(name)));
-  assert.equal((await readOperationsPage(rowsDown, NOW)).rowsFailed, true, "a failed list is a failure, not an empty list");
+  assert.equal((await readOperationsPage(rowsDown, NOW, "org-1")).rowsFailed, true, "a failed list is a failure, not an empty list");
 });
 
 test("the regulation count per region counts only the verified items the routing table sends to Regulations, into every region their codes fall in; nothing else is a regulation", async () => {
@@ -63,7 +65,7 @@ test("the regulation count per region counts only the verified items the routing
     { id: "c0000000-0000-4000-8000-000000000004", item_type: "regulation", domain: 1, jurisdictions: ["EU"], jurisdiction_iso: null, is_archived: false, provenance_status: "unverified" },
   ];
   const db = world({ regions, region_dimension_coverage: [], regional_data_facts: [], state_cost_facts: [], intelligence_items: items, derived_values: [] }, (n) => (n === "get_operations_items_public" ? { data: [] } : n === "get_surface_counts" ? { data: { total_items: 0 } } : undefined));
-  assert.deepEqual((await readOperationsPage(db, NOW)).linkedRegulations, { EU: 2, US: 1 });
+  assert.deepEqual((await readOperationsPage(db, NOW, "org-1")).linkedRegulations, { EU: 2, US: 1 });
 });
 
 test("INV-233: the gate reads the roster and the sourced coverage over the item's whole jurisdiction list; a failed read closes it and says so", async () => {
@@ -117,13 +119,13 @@ test("INV-263: the Research page reports a failed list, failed coverage and fail
   const rows = [{ id: U1, legacy_id: null, title: "T", item_type: "research_finding", domain: 7, priority: "LOW", added_date: "2026-10-01", is_archived: false, effective_archived: false }];
   const rpc = (name: string) => (name === "get_research_items_public" ? { data: rows } : name === "get_surface_counts" ? { data: { total_items: 1 } } : name === "get_research_source_coverage" ? { data: [{ transport_mode: "ocean", jurisdiction_iso: "EU", source_count: 3 }, { transport_mode: 5, jurisdiction_iso: "EU", source_count: 1 }] } : undefined);
   const tables = (assessments: Row[] = [ROW(U1)]) => ({ intelligence_items: [], research_assessments_current: assessments, sources: [], source_bias_tags: [] });
-  const ok = await readResearchPage(world(tables(), rpc));
+  const ok = await readResearchPage(world(tables(), rpc), "org-1");
   assert.deepEqual([ok.rowsFailed, ok.rows.length, ok.coverage, Object.keys(ok.assessments ?? {})], [false, 1, [{ transportMode: "ocean", jurisdictionIso: "EU", sourceCount: 3 }], [U1]]);
-  const covDown = await readResearchPage(world(tables(), (n) => (n === "get_research_source_coverage" ? { data: null, error: { message: "rpc down" } } : rpc(n))));
+  const covDown = await readResearchPage(world(tables(), (n) => (n === "get_research_source_coverage" ? { data: null, error: { message: "rpc down" } } : rpc(n))), "org-1");
   assert.deepEqual([covDown.coverage, covDown.rows.length], [null, 1]);
-  const asDown = await readResearchPage(world(tables([]), rpc, [{ table: "research_assessments_current", op: "select", message: "boom" }]));
+  const asDown = await readResearchPage(world(tables([]), rpc, [{ table: "research_assessments_current", op: "select", message: "boom" }]), "org-1");
   assert.deepEqual([asDown.assessments, asDown.rows.length], [null, 1]);
-  const listDown = await readResearchPage(world(tables([]), (n) => (n === "get_research_items_public" ? { data: null, error: { message: "rpc down" } } : rpc(n))));
+  const listDown = await readResearchPage(world(tables([]), (n) => (n === "get_research_items_public" ? { data: null, error: { message: "rpc down" } } : rpc(n))), "org-1");
   assert.deepEqual([listDown.rowsFailed, listDown.rows, listDown.assessments], [true, [], null]);
 });
 
@@ -168,4 +170,32 @@ test("persona read: the raw assessments table is not a client read (row level se
   assert.equal(/GRANT [A-Z, ]+ ON TABLE public\.research_assessments_current TO anon/.test(sql), false);
   for (const fn of ["get_research_items_public", "get_operations_items_public"]) assert.match(sql, new RegExp(`GRANT ALL ON FUNCTION public\\.${fn}\\(\\) TO authenticated`));
   void readRoster;
+});
+
+// The Region facet is offered from the SURFACE-WIDE tally (get_surface_counts), never from the rows the first page happens to hold. The database function refuses a null org to every caller but the service role
+// (migration 361), so a page read on the member's own client must pass the member's org; the old page read it on the service client with a null org.
+test("a jurisdiction with items in the surface counts but no row on the first page is still offered, with its count, in the old order (count descending, then label)", async () => {
+  const counts = { total_items: 9, by_jurisdiction: { GLOBAL: 4, EU: 3, OECD: 1, AU: 1 }, by_priority: { LOW: 9 } };
+  const rpcFor = (name: string, args: Record<string, unknown>): RpcReply => {
+    if (name === "get_surface_counts") return args.p_org_id == null ? { data: null, error: { message: "org_id is required" } } : { data: counts };
+    if (name === "get_research_items_public") return { data: [{ id: U1, legacy_id: null, title: "T", item_type: "research_finding", domain: 7, priority: "LOW", added_date: "2026-10-01", is_archived: false, effective_archived: false, jurisdictions: ["GLOBAL"] }] };
+    return undefined;
+  };
+  const m = memoryDb({ intelligence_items: [], research_assessments_current: [], sources: [], source_bias_tags: [] });
+  (m.db as unknown as { rpc: unknown }).rpc = (name: string, args: Record<string, unknown> = {}) => {
+    const run = Promise.resolve({ data: null, error: null, ...(rpcFor(name, args) ?? {}) });
+    return Object.assign(run, { range: () => run });
+  };
+  const page = await readResearchPage(m.db, "org-1");
+  assert.ok(page.aggregates, "the surface counts were read for the member's org");
+  const region = liveFacetCounts(page.rows, EMPTY_FILTER_STATE, page.aggregates ? { byJurisdiction: page.aggregates.byJurisdiction } : {}).region;
+  assert.deepEqual(region.map((o) => [o.value, o.count]), [["GLOBAL", 4], ["EU", 3], ["AU", 1], ["OECD", 1]]);
+  const without = await readResearchPage(m.db, null);
+  assert.equal(without.aggregates, null, "a null org is refused by the database, so the page must never call it that way");
+});
+
+test("no page reader asks get_surface_counts with a null org (the database refuses it to everyone but the service role)", () => {
+  const walk = (d: string): string[] => readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(`${d}/${e.name}`) : /\.(ts|tsx)$/.test(e.name) ? [`${d}/${e.name}`] : []));
+  const bad = walk("src").filter((f) => /readSurfaceCounts\([^)]*,\s*null\s*,/.test(readFileSync(f, "utf8")));
+  assert.deepEqual(bad, []);
 });

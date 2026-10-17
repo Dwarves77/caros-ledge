@@ -169,10 +169,10 @@ export interface OperationsPageData {
 }
 
 /** Everything /operations draws, one pass: the public items, the corpus tallies, the roster with its coverage and facts, the state cost facts, the linked-regulation counts and the recomputed figures. */
-export async function readOperationsPage(db: Db, nowIso: string): Promise<OperationsPageData> {
+export async function readOperationsPage(db: Db, nowIso: string, orgId: string | null): Promise<OperationsPageData> {
   const roster = await settle("the region roster", () => readRoster(db));
   const [category, aggregates, coverage, facts, stateCosts, linkedRegulations, derived] = await Promise.all([
-    readCategory(db, "get_operations_items_public"), readSurfaceCounts(db, null, "operations"),
+    readCategory(db, "get_operations_items_public"), readSurfaceCounts(db, orgId, "operations"),
     roster ? settle("coverage", () => readCoverage(db, roster)) : null, roster ? settle("facts", () => readFacts(db, roster, nowIso)) : null,
     settle("state cost facts", () => readStateCosts(db)), roster ? settle("linked regulations", () => readLinkedRegulations(db, roster)) : null, settle("recomputed figures", () => readDerivedFigures(db)),
   ]);

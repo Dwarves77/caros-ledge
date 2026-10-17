@@ -40,7 +40,7 @@ export async function readAggregates(db: Db, orgId: string): Promise<WorkspaceAg
   }
 }
 
-/** One surface's counts (org-scoped, or public when `orgId` is null) with the severity and band tallies; null on failure. */
+/** One surface's counts for a member's org, with the severity and band tallies; null on failure. A null org is accepted by the database for the service role only (migration 361), so a page read on the member's own client passes the member's org. */
 export async function readSurfaceCounts(db: Db, orgId: string | null, surface: string): Promise<WorkspaceAggregates | null> {
   try {
     const { data, error } = await db.rpc("get_surface_counts", { p_org_id: orgId, p_surface: surface });

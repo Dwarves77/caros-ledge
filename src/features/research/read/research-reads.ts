@@ -80,8 +80,9 @@ const settle = async <T>(what: string, read: () => Promise<T>): Promise<T | null
 };
 
 /** Everything /research draws: the category-routed public items, the corpus tallies, the source coverage and the batched assessments, each with its own failed state. */
-export async function readResearchPage(db: Db): Promise<ResearchPageData> {
-  const [category, aggregates, coverage] = await Promise.all([readCategory(db, "get_research_items_public"), readSurfaceCounts(db, null, "research"), settle("source coverage", () => readCoverage(db))]);
+/** `orgId` is the member's org: get_surface_counts refuses a null org to every caller but the service role (migration 361), and the Region facet is offered from its surface-wide tally. */
+export async function readResearchPage(db: Db, orgId: string | null): Promise<ResearchPageData> {
+  const [category, aggregates, coverage] = await Promise.all([readCategory(db, "get_research_items_public"), readSurfaceCounts(db, orgId, "research"), settle("source coverage", () => readCoverage(db))]);
   const assessments = category.failed ? null : await settle("assessments", () => readAssessmentsFor(db, category.resources.map((r) => r.id)));
   return { rows: category.resources, rowsFailed: category.failed, aggregates, coverage, assessments };
 }

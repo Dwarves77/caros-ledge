@@ -13,6 +13,6 @@ export async function ResearchRoute() {
   const session = await pageSession("/research");
   if ("failed" in session) return <PageFailure what="Research" />;
   const db = await userClient();
-  const [data, denominator, strip] = await Promise.all([readResearchPage(db), loadSurfaceDenominator("research", { db: () => db }), readThemeStrip(db, "research")]);
+  const [data, denominator, strip] = await Promise.all([readResearchPage(db, session.orgId), loadSurfaceDenominator("research", { db: () => db }), readThemeStrip(db, "research")]);
   return <ResearchList data={data} nowIso={session.nowIso} chips={strip.chips} chipsFailed={strip.failed} denominator={{ ...denominator, surfacePath: "/research" }} />;
 }
