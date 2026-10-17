@@ -5,6 +5,8 @@ import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 
+import { trackedOutputProblems } from "./tracked-output.mjs";
+
 const files = execFileSync("git", ["ls-files", "-z", "--cached", "--others", "--exclude-standard"], { encoding: "utf8" })
   .split("\0").filter((f) => f && existsSync(f));
 const problems = [];
@@ -26,6 +28,9 @@ for (const f of files) {
     if (BANNED_TOKEN_HASHES.has(createHash("sha256").update(t).digest("hex"))) problems.push(`${f}:1: banned token`);
   }
 }
+
+// Machine output is never tracked, and tracked binaries live only in their allowlisted homes (scripts/ci/tracked-output.mjs).
+for (const p of trackedOutputProblems(execFileSync("git", ["ls-files"], { encoding: "utf8" }).split(String.fromCharCode(10)).filter(Boolean))) problems.push(p);
 
 // The push gate cannot be deleted quietly: package.json "prepare" wires core.hooksPath, and .githooks/pre-push exists and is executable in the index.
 const pkgText = readFileSync("package.json", "utf8");
