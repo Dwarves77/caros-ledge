@@ -79,7 +79,7 @@
       "id": "settings-removed-saved-views",
       "route": "settings",
       "kind": "control",
-      "match": "^(link:(S[3-6] .*|Saved searches · [0-9]+|Data summary)|button:New saved search)$",
+      "match": "^(link:(S# .*|Saved searches · #|Data summary)|button:New saved search)$",
       "ruling": "workspace.md (P1-02) section 7, rows SavedSearchesSection and DataSummary: TRASH as code (browser-only storage with roadmap copy and recall parameters the list never reads; a count of the client-held list, not the corpus). The remaining sections renumber under the section index (S3 Data, S4 Archive, S5 Help). A workspace-scoped saved view needs its own ruling and a table (IMPROVEMENTS)."
     },
     {

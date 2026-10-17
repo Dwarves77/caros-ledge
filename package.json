@@ -15,11 +15,13 @@
     "loc": "node scripts/ci/loc.mjs",
     "properties": "node scripts/ci/properties.mjs",
     "schema:apply": "node scripts/ci/schema-apply.mjs",
+    "schema:local": "node scripts/ci/schema-local.mjs",
     "tree-checks": "node scripts/ci/tree-checks.mjs",
     "connections": "node scripts/ci/connections.mjs",
     "columns": "node scripts/ci/columns.mjs",
     "turn": "node scripts/turn.mjs",
-    "install-hooks": "node scripts/install-hooks.mjs",
+    "gates": "node scripts/ci/gates.mjs",
+    "prepare": "node scripts/prepare.mjs",
     "ui-checks": "node scripts/ci/ui-checks.mjs",
     "parity": "node tests/parity/capture.mjs --base http://localhost:3100 --out parity-capture && node tests/parity/compare.mjs --captured parity-capture"
   },
@@ -45,8 +47,10 @@
     "@types/node": "^24",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "embedded-postgres": "^15.18.0-beta.17",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
+    "pg": "^8.23.1",
     "playwright": "^1.64.1",
     "typescript": "^5"
   },
@@ -73,6 +77,8 @@
     "@tanstack/react-query": "The one QueryClient for the list surface remainder fetch (use-list-rows) and the shell; the old tree used it for the same.",
     "@tanstack/react-virtual": "Row virtualization for a long list surface (a 1,300-row corpus); the old ledger used it.",
     "leaflet": "The Regulations map (src/features/regulations/map/MapView.tsx): tiles, count-sized markers, fly-to; loaded only on the /map route; OpenStreetMap attribution shown (react-leaflet is not added: one effect drives the map).",
-    "@types/leaflet": "Types for leaflet under the strict typecheck."
+    "@types/leaflet": "Types for leaflet under the strict typecheck.",
+    "embedded-postgres": "A throwaway PostgreSQL 15 for npm run schema:local, so the schema job runs on a workstation without Docker or a system Postgres (devDependency; never bundled).",
+    "pg": "The one SQL client of the CI scripts (scripts/ci/psql.mjs): CI and a workstation run the same code, with no psql binary (devDependency; never bundled)."
   }
 }

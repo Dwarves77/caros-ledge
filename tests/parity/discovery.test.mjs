@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { discoveryMissOutcome } from './capture.mjs';
+import { discoveryMissOutcome, pathFor } from './capture.mjs';
 
 const route = (list) => ({ name: 'x-detail', discover: { list, match: '^/x/[^/]+$' } });
 const gates = { full: ['home', 'market'], frame: ['regulations', 'dashboard'] };
@@ -18,4 +18,11 @@ test('a discovery miss on a full-gated list route is an error', () => {
 
 test('a discovery miss on an undeclared list route is an error', () => {
   assert.equal(discoveryMissOutcome(route('/community'), gates).status, 'error');
+});
+
+test('the dashboard is captured at "/" on the old site and at its own path otherwise', () => {
+  const dashboard = { name: 'dashboard', path: '/dashboard', oldPath: '/' };
+  assert.equal(pathFor(dashboard, 'old'), '/');
+  assert.equal(pathFor(dashboard, undefined), '/dashboard');
+  assert.equal(pathFor({ name: 'market', path: '/market' }, 'old'), '/market');
 });

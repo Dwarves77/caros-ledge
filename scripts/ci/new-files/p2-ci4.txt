@@ -1,0 +1,4 @@
+scripts/ci/schema-local.mjs | new in P2-CI4: the schema job on a workstation (embedded PostgreSQL 15); no old counterpart
+scripts/ci/psql.mjs | new in P2-CI4: synchronous SQL runner for the CI scripts over the pg client; replaces the psql child process, no old counterpart
+scripts/ci/pg-run.mjs | new in P2-CI4: the pg-client child process behind psql.mjs, statement by statement as psql ran them; no old counterpart
+scripts/ci/sql-split.mjs | new in P2-CI4: psql-style statement splitter for pg-run.mjs; no old counterpart
