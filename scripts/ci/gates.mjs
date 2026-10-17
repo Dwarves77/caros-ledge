@@ -6,10 +6,13 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { pathToFileURL } from "node:url";
 
+import { workflowProblems } from "./workflow-yaml.mjs";
+
 const inCi = Boolean(process.env.GITHUB_ACTIONS);
 const git = (...args) => execFileSync("git", args, { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
 
 export const STEPS = [
+  { name: "Workflow YAML parses (IMP-100)", fn: () => { const p = workflowProblems(); for (const l of p) console.error(l); return p.length ? 1 : 0; } },
   { name: "Lint", cmd: "lint" },
   { name: "Typecheck", cmd: "typecheck" },
   { name: "Build", cmd: "build", env: { NEXT_TELEMETRY_DISABLED: "1", NEXT_PUBLIC_SUPABASE_URL: "https://placeholder.supabase.co", NEXT_PUBLIC_SUPABASE_ANON_KEY: "placeholder" } },
@@ -39,6 +42,11 @@ export function supabaseChanged() {
 function run(step) {
   if (inCi) console.log(`::group::${step.name}`);
   else console.log(`\n== ${step.name}`);
+  if (step.fn) {
+    const code = step.fn();
+    if (inCi) console.log("::endgroup::");
+    return code;
+  }
   const r = spawnSync("npm", ["run", step.cmd], { shell: true, encoding: "utf8", maxBuffer: 1 << 28, env: { ...process.env, ...step.env }, stdio: step.capture ? "pipe" : "inherit" });
   if (step.capture) {
     const out = `${r.stdout ?? ""}${r.stderr ?? ""}`;
@@ -54,7 +62,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const last = existsSync(stamp) ? readFileSync(stamp, "utf8").trim() : null;
   const steps = [...STEPS];
   if (!inCi && supabaseChanged()) steps.push({ name: "Schema on an embedded PostgreSQL 15 (supabase/ changed)", cmd: "schema:local" });
-  console.log(`gates: ${steps.map((s) => s.cmd).join(", ")}${last ? `; the last run took ${last}s` : ""}`);
+  console.log(`gates: ${steps.map((s) => s.cmd ?? "workflows").join(", ")}${last ? `; the last run took ${last}s` : ""}`);
   const started = Date.now();
   for (const step of steps) {
     const code = run(step);
