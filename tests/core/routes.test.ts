@@ -69,11 +69,12 @@ test("persona matrix: members GET, PATCH, POST, DELETE, PUT", async () => {
 test("persona matrix: org GET and PATCH", async () => {
   script(world());
   const orgParams = { org_id: ORG_A };
-  await matrix("org GET", (p) => call(orgGet, p, `/api/orgs/${ORG_A}`, {}, orgParams), E(401, 200, 403, 200, 200, 403));
+  await matrix("org GET", (p) => call(orgGet, p, `/api/orgs/${ORG_A}`, {}, orgParams), E(401, 200, 403, 200, 200, 200)); // IMP-012: a platform admin reads any organization's record
   await matrix("org PATCH", (p) => call(orgPatch, p, `/api/orgs/${ORG_A}`, { method: "PATCH", body: json({ name: "Renamed" }) }, orgParams), E(401, 403, 403, 403, 200, 403));
   const owner = await orgGet(as("owner", `/api/orgs/${ORG_A}`), ctx(orgParams));
   const body = await owner.json();
   assert.deepEqual([body.org.slug, body.caller_role, body.member_count, body.owner.display_name], ["org-a", "owner", 2, "Olga Owner"]);
+  assert.equal((await (await orgGet(as("platformAdmin", `/api/orgs/${ORG_A}`), ctx(orgParams))).json()).caller_role, "platform_admin", "the admin is named as one, not as a member");
 });
 
 test("persona matrix: invitations (RLS decides who may issue), revoke, token routes, mine, orgs, identity", async () => {

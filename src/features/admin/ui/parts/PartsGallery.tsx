@@ -71,7 +71,7 @@ const rowProps = (i: number, band: UrgencyBand = BAND_ORDER[i % 4] as UrgencyBan
   overflow: <WatchToggle variant="icon" watched={i % 2 === 0} loaded onToggle={() => {}} />,
 });
 
-export function Fixtures() {
+export function PartsGallery() {
   const [dialog, setDialog] = useState(false);
   const [toast, setToast] = useState(true);
   const [tab, setTab] = useState("a");
