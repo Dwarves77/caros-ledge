@@ -53,7 +53,7 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci --no-audit
-      - name: Gates (scripts/ci/gates.mjs: lint, typecheck, build, tests, tree checks, UI checks, LOC, connections, columns; the pre-push hook runs the same script)
+      - name: Gates (npm run gates, the same list the pre-push hook runs)
         shell: bash -eo pipefail {0}
         run: npm run gates
       - uses: actions/upload-artifact@v4
