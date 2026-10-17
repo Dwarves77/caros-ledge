@@ -77,7 +77,10 @@ export function compareRecord(route, viewport, base, cap, approved) {
     const byText = new Map(capRows.map((r) => [`${r.tag}:${clean(r.text).slice(0, 80)}`, r.height]));
     for (const r of baseRows) {
       const h = byText.get(`${r.tag}:${clean(r.text).slice(0, 80)}`);
-      if (h !== undefined && h > r.height + 1) fails.push(`row taller at 375: ${clean(r.text).slice(0, 40)} (${h.toFixed(1)} > ${r.height.toFixed(1)})`);
+      if (h !== undefined && h > r.height + 1) {
+        const line = `row taller at 375: ${clean(r.text).slice(0, 40)} (${h.toFixed(1)} > ${r.height.toFixed(1)})`;
+        (isApproved(approved, route, 'row-height', clean(r.text)) ? used : fails).push(line);
+      }
     }
   }
   return { fails, used, until };

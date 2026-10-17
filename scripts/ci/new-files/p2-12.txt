@@ -3,3 +3,4 @@ src/features/operations/ui/operations.module.css | the Operations stylesheet (ma
 src/features/research/ui/research.module.css | the Research stylesheet (theme pills, assessment rail cards, credibility chips) from the inline style objects of old_repo/src/components/research/*.tsx; a stylesheet cannot carry a // header
 src/app/privacy/ui-fixtures/surfaces/page.tsx | new in P2-12: the Research and Operations UX-smoke fixture route, a 404 unless UI_FIXTURES=1 (set only in the CI parity job), no old counterpart
 src/app/privacy/ui-fixtures/surfaces/SurfaceFixtures.tsx | new in P2-12: the Research and Operations parts and lists mounted over small in-memory data for the UX smoke, no old counterpart
+src/features/coverage/denominator-view.ts

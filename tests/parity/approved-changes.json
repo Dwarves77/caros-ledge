@@ -97,6 +97,13 @@
       "ruling": "INV-216 (the absence rule, binding): the words unscored, pending and not scored never render on a customer surface. The awareness note keeps its place and its job (it points at how impact is read) as the link 'How impact is read', which opens the legend. DESIGN CHANGES OWED (artboard 06)."
     },
     {
+      "id": "operations-matrix-row-height",
+      "route": "operations",
+      "kind": "row-height",
+      "match": "^D[1-7]",
+      "ruling": "ux-laws.md law 2 and the operator's 2026-10-16 44 px standard: the region matrix's dimension rows and cells are 44 px where artboard 08 draws 40 (DESIGN CHANGES OWED, artboard 08). Structure still gates."
+    },
+    {
       "id": "privacy-pixel",
       "route": "privacy",
       "kind": "pixel",
