@@ -13,7 +13,7 @@
   {
    "low": 8,
    "high": 9,
-   "pattern": "\\b(demonstrat(ed|ion)|pilot (fleet|project|plant)|first[- ]of[- ]a[- ]kind|operational trial)\\b"
+   "pattern": "\\b(demonstrat(ed|ion)(?! plant)|pilot (fleet|project|plant)|first[- ]of[- ]a[- ]kind|operational trial)\\b"
   },
   {
    "low": 6,

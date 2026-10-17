@@ -8,6 +8,8 @@
       "privacy",
       "settings",
       "profile",
+      "research",
+      "operations",
       "regulations",
       "regulation-detail",
       "map",
@@ -16,8 +18,6 @@
     ],
     "frame": [
       "dashboard",
-      "research",
-      "operations",
       "community"
     ],
     "pixelExact": [
@@ -96,6 +96,20 @@
       "kind": "row",
       "match": "^li:no (emission factor supplied for this corridor's mode [(]factor row|EU ETS/FuelEU/CBAM/UKA carbon-price input in market_series)",
       "ruling": "WAVE-4-COMMON (integrity on every page): no customer string names an internal mechanism, table or code. market.md (P1-20) section 6 lists these two gap sentences: one printed the factor columns (ttw_co2e/wtw_co2e/wtt_co2e), the other a table (market_series) and a producer (eex-eua). Each gap keeps its meaning and its place in the list; only the internal names leave the sentence. Row height at 375 still gates the other two gaps."
+    },
+    {
+      "id": "research-why-unscored",
+      "route": "research",
+      "kind": "control",
+      "match": "^button:Why unscored",
+      "ruling": "INV-216 (the absence rule, binding): the words unscored, pending and not scored never render on a customer surface. The awareness note keeps its place and its job (it points at how impact is read) as the link 'How impact is read', which opens the legend. DESIGN CHANGES OWED (artboard 06)."
+    },
+    {
+      "id": "operations-matrix-row-height",
+      "route": "operations",
+      "kind": "row-height",
+      "match": "^D[1-7]",
+      "ruling": "ux-laws.md law 2 and the operator's 2026-10-16 44 px standard: the region matrix's dimension rows and cells are 44 px where artboard 08 draws 40 (DESIGN CHANGES OWED, artboard 08). Structure still gates."
     },
     {
       "id": "privacy-pixel",

@@ -4,6 +4,7 @@ import { buildDeps, type BuiltDeps } from "@/core/turn/wiring";
 import { carbonIntensity } from "@/features/market/lib/carbon";
 import { computeSeriesDeltas } from "@/features/market/lib/deltas";
 import { ecbFx } from "@/features/market/producers";
+import { researchAssessment } from "@/features/research";
 import type { MarketMethodDeps } from "@/core/propagation";
 import type { Catalog } from "@/core/producers";
 import { PRODUCER_CATALOG } from "@/core/turn/wiring";
@@ -36,6 +37,18 @@ ${"Notice. This consolidated text is provided for information. Only the Union le
 export const NEW_VERDICT = { entity_verdict: "specific_document", item_type: "regulation", domain: 1, surface_tags: ["regulations"], relevance: 80, severity: "COST ALERT", priority: "HIGH", urgency_tier: "elevated", topic_tags: ["emissions"], jurisdictions: ["EU"], title_candidate: "Regulation (EU) 2025/1 on freight emissions monitoring", summary: "Annual emissions reporting for heavy goods vehicle operators.", rationale: "A specific regulation." };
 export { OFFICIAL_TEXT };
 
+// P2-12: a research finding reached through the portal ledger, the same way the second regulation is. Its text carries a dated statutory event (R1) and a maturity phrase (TRL 6-7).
+export const RESEARCH_URL = "https://www.iea.org/reports/freight-hydrogen-trucks-2026";
+export const RESEARCH_TEXT = `${[
+  "Hydrogen trucks for long-haul freight: a demonstration plant and the road to commercial scale.",
+  "The report finds that a demonstration plant in northern Europe produced fuel at scale during 2026, and that freight operators will need contracts for renewable hydrogen.",
+  "Regulation (EU) 2025/2 shall enter into force on 1 July 2027 and operators shall report the share of renewable fuel used.",
+  "The roadmap sets out the pilot project results and the cost path to 2030 for freight operators in the Union.",
+].join("\n")}
+${"Notice. This report is provided for information and does not bind its authors or the agencies that funded the work. ".repeat(6)}`;
+export const RESEARCH_VERDICT = { entity_verdict: "specific_document", item_type: "research_finding", domain: 7, surface_tags: ["research"], relevance: 80, severity: "MONITORING", priority: "MODERATE", urgency_tier: "elevated", topic_tags: ["fuels"], jurisdictions: ["GLOBAL"], title_candidate: "Hydrogen trucks for long-haul freight: a demonstration plant and the road to commercial scale", summary: "A demonstration plant and the cost path for hydrogen freight trucks.", rationale: "A research report." };
+const FEED_RESEARCH = `<?xml version="1.0"?><rss version="2.0"><channel><title>EUR-Lex</title><item><title>Hydrogen trucks for long-haul freight</title><link>${RESEARCH_URL}</link><pubDate>Wed, 15 Oct 2025 08:00:00 GMT</pubDate></item></channel></rss>`;
+
 const ECB_XML = `<?xml version="1.0" encoding="UTF-8"?><gesmes:Envelope xmlns:gesmes="http://www.gesmes.org/xml/2002-08-01" xmlns="http://www.ecb.int/vocabulary/2002-08-01/eurofxref"><gesmes:subject>Reference rates</gesmes:subject><gesmes:Sender><gesmes:name>European Central Bank</gesmes:name></gesmes:Sender><Cube><Cube time="2026-10-15"><Cube currency="USD" rate="1.1000"/></Cube></Cube></gesmes:Envelope>`;
 const FEED = `<?xml version="1.0"?><rss version="2.0"><channel><title>EUR-Lex</title><item><title>Regulation (EU) 2025/1 on freight emissions</title><link>${NEW_URL}</link><pubDate>Wed, 15 Oct 2025 08:00:00 GMT</pubDate></item></channel></rss>`;
 const HOMEPAGE = `<html><head><title>EUR-Lex</title></head><body><p>${"EUR-Lex gives access to European Union law, the Official Journal and preparatory acts. Newly published this week. ".repeat(12)}</p><a href="${NEW_URL}">Regulation 2025/1</a></body></html>`;
@@ -66,9 +79,15 @@ export function transport(over: Record<string, () => Response> = {}): { fetchImp
 export const MARKET: MarketMethodDeps = { carbonIntensity, computeSeriesDeltas };
 
 /** The database triggers the schema carries, as stand-ins: a write to a figure table emits a propagation event (the outbox), an item update does too. */
-function installTriggers(db: MemDb): void {
+function installTriggers(db: MemDb, itemEvents: boolean): void {
   let n = 0;
   db.afterWrite = (c, d) => {
+    if (itemEvents && c.table === "intelligence_items" && c.op === "insert") {
+      for (const r of d.rows("intelligence_items").filter((x) => x.__emitted === undefined)) {
+        r.__emitted = true;
+        d.rows("propagation_events").push({ event_id: ++n + 1000, occurred_at: NOW.toISOString(), table_name: "intelligence_items", row_pk: r.id, entity_id: null, change_kind: "insert", new_row: { ...r }, drained_at: null });
+      }
+    }
     if (c.table === "market_series" && (c.op === "insert" || c.op === "upsert")) {
       for (const r of d.rows("market_series").filter((x) => x.__emitted === undefined)) {
         r.__emitted = true;
@@ -80,7 +99,7 @@ function installTriggers(db: MemDb): void {
 
 export const SLOTS = [{ item_type: "regulation", slot_key: "binding_position", description: "applicability" }, { item_type: "regulation", slot_key: "due_date", description: "due date" }];
 
-export function makeWorld(opts: { cadence?: "off" | "weekly" } = {}) {
+export function makeWorld(opts: { cadence?: "off" | "weekly"; itemEvents?: boolean } = {}) {
   const db = new MemDb({}, {});
   const src = (id: string, url: string, name: string, over: Row = {}): Row => ({ id, name, url, base_tier: 1, tier_override: null, status: "active", institution_id: null, category: "regulatory", auto_run_enabled: true, processing_paused: false, last_content_hash: "0".repeat(64), last_checked: null, ...over });
   db.seed("system_state", [{ id: true, scrape_cadence: opts.cadence ?? "weekly", scrape_start_date: "2026-10-15", global_processing_paused: false }]);
@@ -94,7 +113,9 @@ export function makeWorld(opts: { cadence?: "off" | "weekly" } = {}) {
   installProvenanceRpc(db);
   installPropagationRpcs(db);
   installPortalLedgerRpc(db);
-  installTriggers(db);
+  installTriggers(db, opts.itemEvents === true);
+  // The current-assessment view (migration 336): the one current row per item.
+  db.views.research_assessments_current = () => db.rows("research_assessments").filter((r) => r.is_current === true);
   return db;
 }
 
@@ -104,12 +125,13 @@ export interface Fixture {
   requests: Requests;
 }
 /** buildDeps over the fixture: the real wiring, the fixture transport, the fixture clock, the worker drained in process (the Edge Function's own code), the market producer armed (the reviewed constant is code, so the fixture arms a copy). */
-export function fixture(opts: { cadence?: "off" | "weekly"; routes?: Record<string, () => Response> } = {}): Fixture {
-  const db = makeWorld(opts.cadence ? { cadence: opts.cadence } : {});
-  const { fetchImpl, requests } = transport(opts.routes);
+export function fixture(opts: { cadence?: "off" | "weekly"; routes?: Record<string, () => Response>; research?: boolean } = {}): Fixture {
+  const db = makeWorld({ ...(opts.cadence ? { cadence: opts.cadence } : {}), itemEvents: opts.research === true });
+  const researchRoutes: Record<string, () => Response> = opts.research ? { [FEED_URL]: () => new Response(FEED_RESEARCH, { status: 200, headers: { "content-type": "application/rss+xml" } }), [RESEARCH_URL]: () => new Response(RESEARCH_TEXT, { status: 200, headers: { "content-type": "text/plain; charset=utf-8" } }) } : {};
+  const { fetchImpl, requests } = transport({ ...researchRoutes, ...(opts.routes ?? {}) });
   const catalog: Catalog = { ...PRODUCER_CATALOG, "ecb-fx": { ...ecbFx, enabled: true } };
-  const env = { MARKET_PRODUCER_ECB_FX_ENABLED: "1" };
+  const env = { MARKET_PRODUCER_ECB_FX_ENABLED: "1", ...(opts.research ? { RESEARCH_ASSESSMENT_PRODUCER_ENABLED: "1" } : {}) };
   const worker: WorkerDeps = { db: db.client, fetchImpl, env, now: () => NOW.getTime() } as WorkerDeps;
-  const d = buildDeps(db.client, env, { now: () => NOW, fetchImpl, market: MARKET, catalog, sleep: async () => undefined, worker: (input) => drain(worker, input) });
+  const d = buildDeps(db.client, env, { now: () => NOW, fetchImpl, market: MARKET, catalog, ...(opts.research ? { assessment: { ...researchAssessment, enabled: true } } : {}), sleep: async () => undefined, worker: (input) => drain(worker, input) });
   return { db, d, requests };
 }
