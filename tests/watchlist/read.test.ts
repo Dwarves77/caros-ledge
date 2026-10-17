@@ -109,7 +109,7 @@ test("recalculation notices: the old and new derived values of the entities the 
     { value_id: "v1", entity_id: ENT, method_id: "m", method_version: "1", value: 10, unit: "EUR", currency: null, supersedes: null, computed_at: "2026-09-01T00:00:00Z", invalidated_by_event: 7 },
     { value_id: "v2", entity_id: ENT, method_id: "m", method_version: "2", value: 12.5, unit: "EUR", currency: null, supersedes: "v1", computed_at: "2026-10-10T00:00:00Z", invalidated_by_event: null },
   ]);
-  db.seed("propagation_events", [{ event_id: 7, occurred_at: "2026-10-10T00:00:00Z", table_name: "market_series", row_pk: "x", change_kind: "update" }]);
+  db.views.recalculation_events = () => [{ event_id: 7, occurred_at: "2026-10-10T00:00:00Z", table_name: "market_series", row_pk: "x", change_kind: "update" }];
   const client = clientFor(db as never, "member");
   const n = await readNotices(client, ORG_A, NOW);
   assert.equal(n.since, "2026-09-15T12:00:00.000Z", "a fixed 30-day window from the request's one instant");

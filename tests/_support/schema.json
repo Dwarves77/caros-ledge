@@ -3291,6 +3291,18 @@
     }
    ]
   },
+  "recalculation_events": {
+   "columns": [
+    "event_id",
+    "table_name",
+    "row_pk",
+    "change_kind",
+    "occurred_at"
+   ],
+   "uuid": [],
+   "defaults": {},
+   "fks": []
+  },
   "region_dimension_coverage": {
    "columns": [
     "id",

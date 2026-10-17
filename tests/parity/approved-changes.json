@@ -195,6 +195,15 @@
       "kind": "control",
       "match": "^button:smoke@example.invalid$",
       "ruling": "SEC-5 (P2-02c): profiles.email is not readable under the authenticated column grant, so the roster cannot label a member without a profile name by e-mail; the control shows the Absence token with 'Name not set' (and the profile name when there is one) where the old page showed the e-mail."
+    },
+    {
+      "id": "market-detail-withheld-bias-tags",
+      "route": "market-detail",
+      "kind": "until-migration",
+      "migration": "0031",
+      "on": "control",
+      "match": "^button:\\+# more$",
+      "ruling": "production carries no new migration before cutover (rulings 2026-10-17): the two '+3 more' buttons are the source bias tags' overflow (BiasChips, in the action card and in the Sources section); source_bias_tags has no member policy until 0031, so without it the page draws no tags and says nothing is missing."
     }
   ]
 }

@@ -12,25 +12,23 @@ const ITEM = "70869a22-39eb-4eb7-ba49-d3826b5b2265";
 const ENTITY = "cl:corridor:9170a8b2fb3234ba";
 const dv = (id: string, over: Row = {}): Row => ({ value_id: id, entity_id: ENTITY, method_id: "market_series_delta", method_version: "1.0.0", value: 1, value_low: null, value_high: null, unit: "USD", currency: null, derivation: "calculated", origin_class: "derived", lifecycle: "verified", admissibility: "calculation_ok", base_confidence: 0.9, asserted_at: "2026-10-10T00:00:00Z", half_life_days: null, inputs: [], supersedes: null, computed_at: "2026-10-12T00:00:00Z", computed_by: "t", invalidated_at: null, invalidated_by_event: null, ...over });
 
-/** The caller's own client (membership and the tables a member can read) and a separate service client (the superseded values). */
-function useWorld(o: { service?: boolean; failService?: boolean } = {}) {
+/** The caller's own client: membership, the watchlist and, since migration 0036, the derived values and the corpus events view. No service client is configured: a member page needs none. */
+function useWorld(o: { failValues?: boolean } = {}) {
   const user = new MemDb({}, {
     org_watchlist: [{ id: "w1", org_id: "11111111-1111-4111-8111-111111111111", item_type: "signal", item_id: ITEM }, { id: "w2", org_id: "22222222-2222-4222-8222-222222222222", item_type: "signal", item_id: "other-org-item" }],
     intelligence_items: [{ id: ITEM, title: "Diesel", domain: 4, instrument_entity_id: ENTITY }],
   });
-  const service = new MemDb({}, {
-    derived_values: [dv("old", { invalidated_by_event: 7, admissibility: "stale", value: 1 }), dv("new", { supersedes: "old", value: 2, computed_at: "2026-10-14T00:00:00Z" })],
-    propagation_events: [{ event_id: 7, occurred_at: "2026-10-13T00:00:00Z", table_name: "market_series", row_pk: "r1", entity_id: ENTITY, change_kind: "update" }],
-    entities: [{ entity_id: ENTITY, canonical_name: "CNSHA-NLRTM:ocean", kind: "corridor", status: "active", display_name: null }],
-  });
-  if (o.failService) service.fail("derived_values", "select", "derived down");
+  user.seed("derived_values", [dv("old", { invalidated_by_event: 7, admissibility: "stale", value: 1 }), dv("new", { supersedes: "old", value: 2, computed_at: "2026-10-14T00:00:00Z" })]);
+  user.seed("entities", [{ entity_id: ENTITY, canonical_name: "CNSHA-NLRTM:ocean", kind: "corridor", status: "active", display_name: null }]);
+  user.views.recalculation_events = () => [{ event_id: 7, occurred_at: "2026-10-13T00:00:00Z", table_name: "market_series", row_pk: "r1", change_kind: "update" }];
+  if (o.failValues) user.fail("derived_values", "select", "derived down");
   scripted.user = (request) => {
     const base = userDbFor((request?.headers.get("authorization")?.replace("Bearer ", "") ?? "anon") as Persona).db as unknown as { from: (t: string) => unknown; auth: unknown; rpc: unknown };
     const own = new Set(["org_memberships", "profiles", "workspace_settings", "organizations"]);
     return { auth: base.auth, rpc: base.rpc, from: (t: string) => (own.has(t) ? base.from(t) : user.from(t)) };
   };
-  scripted.service = o.service === false ? null : () => service.client;
-  return { user, service };
+  scripted.service = null;
+  return { user };
 }
 const call = (p: Persona, url = "/api/notices") => GET(as(p, url), ctx({}) as never);
 
@@ -74,13 +72,13 @@ test("persona matrix: every signed-in caller is answered, anon is refused; a mem
   assert.deepEqual(admin.notices, [], "no organisation, no team watchlist: the honest empty");
 });
 
-test("INV-263 a failed read is a 503 with Retry-After, never an empty 200: the pairs, and a deployment with no service key", async () => {
-  useWorld({ failService: true });
+test("INV-263 a failed read is a 503 with Retry-After, never an empty 200; a deployment with no service key still answers a member (0036)", async () => {
+  useWorld({ failValues: true });
   const down = await call("member");
   assert.equal(down.status, 503);
   assert.ok(down.headers.get("retry-after"));
-  useWorld({ service: false });
-  assert.equal((await call("member")).status, 503, "no service client is an outage said as one");
+  useWorld();
+  assert.equal((await call("member")).status, 200, "no service key: the member's own client answers");
   const { user } = useWorld();
   user.fail("org_watchlist", "select", "watchlist down");
   assert.equal((await call("member")).status, 503);

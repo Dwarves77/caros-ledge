@@ -2,9 +2,9 @@
 // Ported from old_repo/src/app/api/notices/logic.ts (lines 1-34)
 // Ported from old_repo/src/app/api/notices/resolve-watched-entities.ts (lines 1-84)
 // GET /api/notices: the recalculation feed of the caller's ORGANISATION watchlist (a recalculation is a shared fact: "a figure your team tracks changed"). BUILD-PLAN ruling 3: signed-in callers only. Superseded derived values are not readable
-// by a member (the raw table has no member policy), so the pairs are read through the service client AFTER the guard; a failed read is a 503 with Retry-After, never an empty 200 (an outage must not read as "nothing changed").
+// by a member (the raw table has no member policy), so the pairs are read on the caller's own client (migration 0036 grants the member read); a failed read is a 503 with Retry-After, never an empty 200 (an outage must not read as "nothing changed").
 import { currentMembership } from "@/core/auth/membership";
-import { fetchAllByIdChunks, serviceClient, type Db } from "@/core/db";
+import { fetchAllByIdChunks, type Db } from "@/core/db";
 import { formatCorridorLabel, parseCorridorName } from "@/core/entities";
 import { HttpError, LookupError, ok, route } from "@/core/http/errors";
 import { isRefusal, requireUser } from "@/core/http/guard";
@@ -63,10 +63,9 @@ export const GET = route("/api/notices", async (request) => {
     const { data, error } = await auth.client.from("org_watchlist").select("item_type, item_id").eq("org_id", membership.orgId).limit(5000);
     if (error) throw new Error(`org_watchlist read failed: ${error.message}`);
     const entityIds = await resolveWatchedEntityIds(auth.client, (data ?? []) as Array<{ item_type: string; item_id: string }>);
-    const svc = serviceClient();
-    const notices = await fetchSupersededNotices(svc, entityIds, since);
+    const notices = await fetchSupersededNotices(auth.client, entityIds, since);
     const labelled = await fetchAllByIdChunks<{ entity_id: string; canonical_name: string; display_name: string | null }>([...new Set(notices.map((n) => n.entityId).filter((x): x is string => !!x))], async (slice) => {
-      const r = await svc.from("entities").select("entity_id, canonical_name, display_name").in("entity_id", slice);
+      const r = await auth.client.from("entities").select("entity_id, canonical_name, display_name").in("entity_id", slice);
       if (r.error) throw new Error(`entities read failed: ${r.error.message}`);
       return r.data ?? [];
     });
