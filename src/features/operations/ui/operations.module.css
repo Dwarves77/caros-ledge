@@ -1,0 +1,81 @@
+/* The Operations surface's own styling: the region matrix card, the statements block and the labour chain. Tokens only (the kit's theme.css). Every control is at least 44 px on its short axis (ux-laws law 2): the
+   matrix cells are 44 px tall where artboard 08 draws 40 (DESIGN CHANGES OWED, artboard 08). */
+.card { display: flex; flex-direction: column; min-width: 0; }
+.head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding: 14px 16px 10px; border-bottom: 1px solid var(--line-2); flex-wrap: wrap; }
+.title { font-family: var(--font-display); text-transform: uppercase; letter-spacing: 0.04em; font-size: 20px; line-height: 1; margin: 0; color: var(--ink); }
+.hint { font-size: var(--fs-105); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; text-align: right; }
+.scroller { min-width: 0; }
+.table { border-collapse: separate; border-spacing: 0; width: 100%; font-size: var(--fs-125); }
+.thead { background: var(--tag); }
+.th { padding: 8px 12px; border-bottom: 1px solid var(--line-2); vertical-align: bottom; text-align: center; font-weight: 600; min-width: 142px; overflow-wrap: anywhere; background: var(--tag); }
+.thSub { font-size: var(--fs-10); font-weight: 400; color: var(--ink-2); }
+.thSubGap { color: var(--immediate); }
+.sticky { position: sticky; left: 0; z-index: 2; min-width: 180px; border-right: 1px solid var(--line-2); background: var(--card); text-align: left; }
+.thSticky { z-index: 3; background: var(--tag); text-align: left; }
+.cell { height: 44px; padding: 0 12px; border-bottom: 1px solid var(--line-3); vertical-align: middle; text-align: center; min-width: 142px; cursor: pointer; overflow-wrap: anywhere; }
+.cell:focus-visible { outline: 2px solid var(--monitor); outline-offset: -2px; }
+.rowHead { text-align: left; }
+.selected { background: var(--selection); box-shadow: inset 0 0 0 2px var(--monitor); }
+.rowLabel { display: flex; gap: 6px; align-items: baseline; min-width: 0; }
+.dnum { font-size: var(--fs-10); font-weight: 700; letter-spacing: 0.04em; color: var(--ink-3); flex-shrink: 0; }
+.dname { display: block; overflow-wrap: anywhere; min-width: 0; font-weight: 600; color: var(--ink); }
+.score { font-family: var(--font-display); font-size: 16px; line-height: 1; color: var(--ink); }
+.panel { background: var(--page); border-top: 1px solid var(--line-1); padding: 12px 16px 8px; height: 300px; box-sizing: border-box; overflow-y: auto; overflow-x: hidden; }
+.panelHead { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 10px; }
+.panelTitle { font-size: var(--fs-125); color: var(--ink-3); min-width: 0; }
+.panelTitle strong { color: var(--ink); font-weight: 700; }
+.panelLinks { display: flex; align-items: center; gap: 14px; flex-shrink: 0; flex-wrap: wrap; }
+.link { display: inline-flex; align-items: center; min-height: 44px; padding: 0; border: 0; background: none; font-family: inherit; font-size: var(--fs-115); font-weight: 600; color: var(--ink); text-decoration: underline; text-decoration-color: var(--line-4); cursor: pointer; white-space: nowrap; }
+.compareLabel { font-size: var(--fs-10); font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3); margin: 0 0 3px; }
+.muted { font-size: var(--fs-125); color: var(--ink-3); margin: 0; }
+.plain { font-size: var(--fs-125); color: var(--ink-2); margin: 0 0 10px; max-width: 72ch; }
+.foot { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; flex-wrap: wrap; padding: 10px 16px 12px; font-size: var(--fs-105); color: var(--ink-3); }
+.notes { padding: 10px 16px 12px; border-top: 1px solid var(--line-3); }
+.noteText { font-size: var(--fs-12); color: var(--ink-2); margin: 0; max-width: 78ch; }
+.noteWarn { font-size: var(--fs-12); color: var(--action); margin: 8px 0 0; max-width: 78ch; }
+
+.statements { margin: 0; padding: 0; }
+.statement { list-style: none; padding: 12px 16px; border-top: 1px solid var(--line-2); min-width: 0; }
+.kicker { font-size: var(--fs-10); font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3); margin: 0; }
+.sentence { font-size: var(--fs-13); line-height: 1.6; color: var(--ink); margin: 4px 0 0; max-width: 72ch; overflow-wrap: anywhere; }
+.intro { font-size: var(--fs-125); color: var(--ink-2); margin: 0; padding: 0 16px 10px; max-width: 72ch; }
+.components { margin: 8px 0 0; padding: 0; }
+.component { list-style: none; padding: 8px 0; border-top: 1px solid var(--line-3); min-width: 0; }
+.compLead { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; min-width: 0; }
+.compRegion { font-size: var(--fs-125); font-weight: 700; color: var(--ink); overflow-wrap: anywhere; }
+.compValue { font-size: var(--fs-125); color: var(--ink); overflow-wrap: anywhere; }
+.compMeta :global(a) { display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; }
+.compMeta { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 14px; margin-top: 4px; font-size: var(--fs-105); color: var(--ink-3); min-width: 0; }
+.metaLabel { font-size: var(--fs-10); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); margin-right: 4px; }
+
+.chain { margin-top: 4px; }
+.term { display: flex; align-items: baseline; justify-content: space-between; gap: 4px 12px; flex-wrap: wrap; padding: 8px 0; border-bottom: 1px solid var(--line-3); }
+.termLead { display: flex; align-items: baseline; gap: 8px; min-width: 0; flex-wrap: wrap; }
+.op { color: var(--ink-3); font-weight: 700; font-size: var(--fs-115); }
+.termName { font-size: var(--fs-125); color: var(--ink); font-weight: 600; }
+.termValue { text-align: right; min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
+.termFigure { font-family: var(--font-display); font-size: 16px; color: var(--ink); }
+.termUnit { font-size: var(--fs-105); color: var(--ink-3); }
+.termCause { font-size: var(--fs-105); color: var(--ink-3); margin-top: 2px; }
+.final { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 12px; padding: 10px 0 2px; margin-top: 4px; border-top: 1px solid var(--line-1); }
+.finalFigure { font-family: var(--font-display); font-size: 22px; color: var(--ink); }
+
+.rail { display: flex; flex-direction: column; gap: 6px; font-size: var(--fs-12); margin-bottom: 8px; }
+.railRow { display: flex; justify-content: space-between; gap: 10px; }
+.railFigure { color: var(--ink-3); text-align: right; }
+.derived { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 0; }
+.derivedItem { list-style: none; border-left: 2px solid var(--ink); padding: 0 0 0 10px; min-width: 0; }
+.derivedTitle { font-size: var(--fs-125); font-weight: 600; color: var(--ink); margin: 0; overflow-wrap: anywhere; }
+.derivedValue { font-family: var(--font-display); font-size: 18px; color: var(--ink); }
+.derivedMeta { font-size: var(--fs-105); color: var(--ink-3); margin: 2px 0 0; overflow-wrap: anywhere; }
+.spec { display: flex; flex-direction: column; gap: 8px; }
+.specRow { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; flex-wrap: wrap; border-bottom: 1px solid var(--line-3); padding-bottom: 8px; }
+.gate { font-size: var(--fs-10); font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; padding: 1px 6px; border-radius: 4px; border: 1px solid var(--line-4); }
+.gateBlocked { color: var(--immediate); border-color: var(--immediate); }
+.gateClear { color: var(--awareness); border-color: var(--awareness); }
+.detail { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.relatedLink { display: grid; grid-template-columns: 3px 1fr; gap: 10px; min-height: 44px; align-items: stretch; text-decoration: none; color: inherit; }
+.relatedBar { background: var(--awareness); border-radius: 2px; }
+.relatedTitle { font-weight: 600; line-height: 1.35; color: var(--ink); overflow-wrap: anywhere; font-size: var(--fs-12); align-self: center; }
+.summaryProse { font-size: 15px; line-height: 1.7; margin: 0; max-width: 72ch; color: var(--ink); }
+.fullBrief { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line-3); }

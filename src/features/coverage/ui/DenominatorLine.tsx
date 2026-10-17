@@ -2,34 +2,35 @@
 // Ported from old_repo/src/components/coverage/CoverageDenominatorLineView.tsx (lines 1-66)
 import Link from "next/link";
 
-import { formatDenominatorLine, type DenominatorLine as Denominator } from "@/core/coverage/matrix";
-import { CoverageState } from "@/ui";
+import type { DenominatorLine as Denominator } from "@/core/coverage/matrix";
+import { Absence } from "@/ui";
 
+import { denominatorLineView } from "../denominator-view";
 import { RequestableCoverageState } from "../client";
 
 /**
- * The line a surface shows under its masthead: numerator and denominator side by side, the separate verified-brief count, and the link to the cell. A failed read is the error state with Retry (never a zero), and
- * a surface with nothing catalogued says "not covered" with the request control. `surfacePath` is the page's own path, the target of Retry.
+ * The line a surface shows under its masthead: numerator and denominator side by side, the separate verified-brief count, and the link to the cell. The link is ALWAYS drawn. A refused or failed read shows the
+ * Absence token with a stated note beside it; a surface with nothing catalogued (a successful read of zero) says "not covered" with the request control. `surfacePath` is the page's own path ("/research"),
+ * which names the coverage class when the count did not load.
  */
 export function DenominatorLine({ denominator, error, surfacePath }: { denominator: Denominator | null; error: string | null; surfacePath: string }) {
-  if (error || !denominator) {
-    return (
-      <div data-guard-container="coverage-denominator">
-        <CoverageState state="error" variant="inline" subject="The coverage count" retryHref={surfacePath} />
-      </div>
-    );
-  }
-  if (denominator.denominator === 0) {
-    return (
-      <div data-guard-container="coverage-denominator">
-        <RequestableCoverageState state="not_covered" variant="inline" subject={`The ${denominator.label} catalogue`} reason="No instrument has been catalogued for this surface yet." requestRef={denominator.href} />
-      </div>
-    );
-  }
+  const v = denominatorLineView(denominator, error, surfacePath.replace(/^\//, ""));
   return (
     <div data-guard-container="coverage-denominator">
+      {v.state === "empty-catalogue" && denominator ? (
+        <RequestableCoverageState state="not_covered" variant="inline" subject={`The ${denominator.label} catalogue`} reason="No instrument has been catalogued for this surface yet." requestRef={denominator.href} />
+      ) : null}
       <p data-part="coverage-denominator" className="cl-coverage-line">
-        <span>{formatDenominatorLine(denominator)}</span> <Link href={denominator.href} className="cl-coverage-link">See coverage</Link>
+        {v.state === "unavailable" ? (
+          <span>
+            Coverage count: <Absence reason="connect data" variant="dash" /> It did not load; the coverage page has the full count.
+          </span>
+        ) : (
+          <span>{v.text}</span>
+        )}{" "}
+        <Link href={v.href} prefetch={false} className="cl-coverage-link">
+          See coverage
+        </Link>
       </p>
     </div>
   );
