@@ -3,8 +3,9 @@
 // independent: a failed read is that part's note with Retry, the rest of the page stands. The page reads and renders this; the UX fixtures render this with fixed data.
 import { Suspense } from "react";
 
-import type { DenominatorLine } from "@/core/coverage/matrix";
+import type { DenominatorLine as Denominator } from "@/core/coverage/matrix";
 import { trimRemainder } from "@/core/lists";
+import { DenominatorLine } from "@/features/coverage";
 import { NoticesRail } from "@/ui/figures";
 import { ThemeStrip, type ThemeChip } from "@/ui/list-surface";
 
@@ -12,7 +13,6 @@ import { selectNextDataDrops, summariseCarbonCorridors } from "../lib/rail-selec
 import type { MarketRead } from "../read";
 
 import { CarbonCostOverlay } from "./CarbonCostOverlay";
-import { CoverageLine } from "./CoverageLine";
 import { HeadlineSeries } from "./HeadlineSeries";
 import { LeadTimeChart } from "./LeadTimeChart";
 import { MarketLedger } from "./MarketLedger";
@@ -26,7 +26,7 @@ import styles from "./market.module.css";
 export interface MarketViewProps {
   read: MarketRead;
   nowIso: string;
-  coverage: { denominator: DenominatorLine | null; failed: boolean };
+  coverage: { denominator: Denominator | null; error: string | null };
   /** The theme strip's chips; null when that read failed. */
   chips: ThemeChip[] | null;
 }
@@ -49,7 +49,7 @@ export function MarketView({ read, nowIso, coverage, chips }: MarketViewProps) {
           belowRows={
             <>
               {chips === null ? <RetryNote what="The theme strip" /> : <ThemeStrip chips={chips} />}
-              <CoverageLine denominator={coverage.denominator} failed={coverage.failed} />
+              <DenominatorLine denominator={coverage.denominator} error={coverage.error} surfacePath="/market" />
             </>
           }
         />

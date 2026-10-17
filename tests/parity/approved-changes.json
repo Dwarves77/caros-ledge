@@ -11,7 +11,8 @@
       "regulations",
       "regulation-detail",
       "map",
-      "market"
+      "market",
+      "market-detail"
     ],
     "frame": [
       "dashboard",

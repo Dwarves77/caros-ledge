@@ -9,6 +9,7 @@ import { BAND_ORDER, bandFromPriority, toListRowFields, type UrgencyBandKey } fr
 import { formatLocaleDate, formatNumber } from "@/core/shared";
 import type { Resource } from "@/core/types";
 import type { WorkspaceAggregates } from "@/features/lists";
+import { RowWatch } from "@/features/watchlist/ui/RowActions";
 import { Menu, Toast } from "@/ui";
 import { filterRows, liveFacetCounts, sortResourceRows, useListUrlState, withListPosition, ListSurface, SortRow, type FacetGroup, type ListSortKey } from "@/ui/list-surface";
 import { ShellCommandBar } from "@/ui/shell";
@@ -40,10 +41,11 @@ export interface MarketLedgerProps {
   belowRows: ReactNode;
 }
 
-function RowMenu({ href, onResult }: { href: string; onResult: (message: string, ok: boolean) => void }) {
+function RowMenu({ id, href, onResult }: { id: string; href: string; onResult: (message: string, ok: boolean) => void }) {
   return (
     <Menu
       label="Signal actions"
+      extra={<RowWatch type="signal" id={id} />}
       items={[
         {
           key: "copy",
@@ -108,7 +110,7 @@ export function MarketLedger({ resources, aggregates, failed = false, nowIso, se
           tier: f.tier,
           ...(f.biasTags ? { biasTags: f.biasTags } : {}),
           itemGrade: f.itemGrade,
-          overflow: <RowMenu href={f.href} onResult={(message, ok) => setToast({ message, ok })} />,
+          overflow: <RowMenu id={r.id} href={f.href} onResult={(message, ok) => setToast({ message, ok })} />,
         };
       }),
     };

@@ -59,5 +59,5 @@ export default async function MarketFixturesPage({ searchParams }: { searchParam
   if (process.env.UI_FIXTURES !== "1") notFound();
   const state = (await searchParams).state ?? "ok";
   const chips = state === "failed" ? null : [{ themeId: "t1", href: "/research/t1", label: "Fixture theme across the corpus", itemTitle: "Fixture theme", memberCount: 6, pages: [{ surface: "market", label: "Market" }], hasBrief: true, stale: false, links: [] }];
-  return <div data-fx="market"><MarketView read={readFor(state)} nowIso={NOW} coverage={state === "failed" ? { denominator: null, failed: true } : { denominator: { surface: "market_intel", label: "market", numerator: 30, denominator: 54, verifiedBriefs: 54, href: "/dashboard/coverage?data_class=market_intel" }, failed: false }} chips={chips} /></div>;
+  return <div data-fx="market"><MarketView read={readFor(state)} nowIso={NOW} coverage={state === "failed" ? { denominator: null, error: "fixture: read failed" } : { denominator: { surface: "market_intel", label: "market", numerator: 30, denominator: 54, verifiedBriefs: 54, href: "/dashboard/coverage?data_class=market_intel" }, error: null }} chips={chips} /></div>;
 }

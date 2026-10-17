@@ -3,7 +3,7 @@
 import { isServiceConfigured, serviceClient, userClient } from "@/core/db";
 import { formatLocaleDate } from "@/core/shared";
 import { pageSession } from "@/features/account/server/page-session";
-import { PageFailure } from "@/features/account/ui/PageFailure";
+import { PageFailure } from "@/ui/shell/PageFailure";
 import { Masthead } from "@/ui";
 import { ShellCommandBar } from "@/ui/shell";
 
