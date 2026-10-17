@@ -22,7 +22,7 @@ import { joinSegments } from "@/features/regulations/meta";
 import { useItemRelevance } from "@/features/regulations/useItemRelevance";
 import { DetailTagRow } from "@/features/workspace/ui/DetailTagRow";
 import { Absence, ActionCard, ClaimTierProvider, downloadMarkdownBrief, GfmSection, GradeChip, SectionIndex, StateNote, TagChip, type ClaimTierMap } from "@/ui";
-import { AtAGlanceCard, commonActionCardProps, CrossPageSection, crossPagePresence, DetailLayout, DetailMasthead, DetailPageWrapper, DetailRail, DetailSection, FactBlocks, ImpactRailCard, InThisListStat, ItemConnections, ItemWatch, RelevanceRailCard, SourcesGrid, topRecommendedAction, type CrossPageData } from "@/ui/detail";
+import { AtAGlanceCard, commonActionCardProps, CrossPageSection, crossPagePresence, DetailLayout, DetailMasthead, DetailPageWrapper, DetailRail, DetailSection, FactBlocks, ImpactRailCard, InThisListStat, ItemWatch, RelevanceRailCard, SourcesGrid, topRecommendedAction, type CrossPageData } from "@/ui/detail";
 import { NoticesRail } from "@/ui/figures";
 import { DetailSubSection } from "@/ui/ItemGroup";
 import { LegendRailCard } from "@/ui/list-surface";
@@ -45,6 +45,41 @@ export interface MarketDetailViewProps {
   connectionRows: ConnectionRow[];
   bundle: MarketDetailBundle;
   nowIso: string;
+}
+
+const SHOWN = 3;
+
+/** The connections of the item as the old rail card drew them: the relation and the surface it is on, the item, and why they are linked with the score; three shown, the rest behind "+N more". */
+function ConnectionList({ rows }: { rows: ConnectionRow[] }) {
+  const [all, setAll] = useState(false);
+  const linked = rows.filter((r) => r.href);
+  if (linked.length === 0) return null;
+  return (
+    <div data-part="item-connections">
+      <p className="cl-detail-label">Connections</p>
+      {(all ? linked : linked.slice(0, SHOWN)).map((r) => (
+        <Link key={`${r.id}-${r.label}`} href={r.href as string} prefetch={false} className="cl-detail-link" title={r.title}>
+          <p className="cl-detail-label" style={{ margin: 0 }}>
+            {r.label}· {r.surface}
+          </p>
+          <p data-guard-title className="cl-detail-link-title">
+            {r.title}
+          </p>
+          {r.basisSummary[0] ? (
+            <p className={styles.muted}>
+              {r.basisSummary[0].signal.replace(/_/g, " ")}
+              {r.score != null ? ` · ${r.score.toFixed(2)}` : ""}
+            </p>
+          ) : null}
+        </Link>
+      ))}
+      {linked.length > SHOWN && !all ? (
+        <button type="button" onClick={() => setAll(true)} className={styles.moreButton}>
+          +{linked.length - SHOWN} more
+        </button>
+      ) : null}
+    </div>
+  );
 }
 
 const WAITING = "appears here once the signal brief is generated.";
@@ -203,14 +238,14 @@ export function MarketDetailView({ resource: r, sections, claimTiers, claimsDegr
             </DetailSection>
             {hasRelated && (
               <DetailSection id="related" title="Related" aside={BAND_LABEL[signalBand]} index={6}>
-                {connectionRows.length > 0 ? <ItemConnections rows={connectionRows} /> : null}
+                <ConnectionList rows={connectionRows} />
                 {related.length > 0 && (
                   <ul className={styles.gapList}>
                     {related.map((x) => (
                       <li key={x.id}>
-                        <Link href={`/market/${encodeURIComponent(x.id)}`} prefetch={false} className={styles.hSource}>
-                          {x.title}
-                          <span className={styles.muted}> · {SEVERITY_LABEL[deriveSeverity(x)]}</span>
+                        <Link href={`/market/${encodeURIComponent(x.id)}`} prefetch={false} className={styles.relatedLink}>
+                          <span className={styles.relatedTitle}>{x.title}</span>
+                          <span className={styles.muted}>{SEVERITY_LABEL[deriveSeverity(x)]}</span>
                         </Link>
                       </li>
                     ))}
