@@ -3,6 +3,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
+import { runTurn } from "@/core/turn";
 import { buildDeps, enforceWired, MANIFEST, SERVICE_MEMBER, startupCheck, wireAll, workspaceWiring } from "@/core/turn/wiring";
 import { deriveKey } from "@/core/intake/canonical-key";
 
@@ -13,7 +14,7 @@ test("every wired member is present on the built deps, and the owed members are 
   const f = fixture();
   const report = startupCheck(f.d);
   assert.deepEqual(report.missing, []);
-  assert.deepEqual(report.owed.map((o) => o.member).sort(), ["assistant.operationsFacts (the Operations data block)", "dashboard.themeChips (the cross-page theme view)", "producers.verdicts (host verdicts as a table, IMP-054)", "propagation EdgeAuthors (authorCarbonIntensityEdges)"].sort());
+  assert.deepEqual(report.owed.map((o) => o.member).sort(), ["assistant.operationsFacts (the Operations data block)", "dashboard.themeChips (the cross-page theme view)", "propagation EdgeAuthors (authorCarbonIntensityEdges)"].sort());
   assert.ok(MANIFEST.filter((e) => e.status === "wired").length >= 30, "the manifest covers every provider-to-consumer member");
 });
 
@@ -129,4 +130,44 @@ test("the production wiring carries the market slice's arithmetic by default (a 
   assert.notEqual(d.marketMethods, null);
   assert.deepEqual(startupCheck(d).missing, []);
   assert.throws(() => enforceWired(startupCheck(buildDeps(new MemDb({}, {}).client, {}, { now: () => NOW, market: null })), { VERCEL: "1" }), /producers\.market/);
+});
+
+const VERDICTS_MEMBER = "producers.verdicts (host verdicts as a table, IMP-054)";
+
+test("IMP-054, IMP-084: the reference data is read once from host_verdicts and market_series_items; a verdict places an unplaced host, a series key is a series key, and the row of a class the table lost is dropped with a note", async () => {
+  const f = fixture();
+  f.db.seed("host_verdicts", [{ host: "unplaced.example", class: "association", batch_id: "host-verdicts-001" }, { host: "stale.example", class: "tier-9", batch_id: "host-verdicts-002" }]);
+  f.db.seed("market_series_items", [{ series_key: "eu-oil-bulletin:eurosuper-95", item_id: "4fae403a-ced5-4c8f-82b7-af0fd6127061", status: "ratified", cadence_days: 7 }]);
+  const unplaced = await f.d.sources.registerAndRate("https://unplaced.example/page");
+  assert.deepEqual([unplaced.tier, unplaced.refused], [4, undefined], "the verdict names a class; the tier is the table's (association is tier 4)");
+  assert.deepEqual(await f.d.loadReferenceData(), ["host verdict for stale.example names class tier-9, which the class table no longer carries: ignored"], "read once: the same answer again, no second read");
+  assert.equal(f.db.reads("host_verdicts").length, 1);
+  assert.deepEqual(f.d.producers.verdicts.get("unplaced.example"), { class: "association", batch: "host-verdicts-001" });
+  assert.equal(f.d.producers.verdicts.has("stale.example"), false, "a verdict mints no tier the table lacks");
+  assert.deepEqual([f.d.mintRun.isSeriesKey("eu-oil-bulletin:eurosuper-95"), f.d.mintRun.isSeriesKey("eu-oil-bulletin:other"), f.d.mintRun.isSeriesKey(null)], [true, false, false]);
+});
+
+test("IMP-054, IMP-084 degraded: the tables absent (production before the cutover) or unreadable are empty answers WITH notes that the turn returns; nothing invents a verdict and no host is placed by one", async () => {
+  const absent = fixture();
+  absent.db.fail("host_verdicts", "select", "relation does not exist", { code: "PGRST205" });
+  absent.db.fail("market_series_items", "select", "relation does not exist", { code: "42P01" });
+  const turn = await runTurn({ stage: "change", mode: "dry", chain: false }, { d: absent.d, env: {}, now: () => new Date("2026-10-17T00:00:00Z") });
+  assert.equal(turn.notes.length, 2);
+  assert.match(turn.notes[0] ?? "", /host_verdicts is absent \(migration 0042 is not applied\)/);
+  assert.match(turn.notes[1] ?? "", /market_series_items is absent \(migrations 0029, 0030, 0044 and 0045 are not applied\)/);
+  assert.deepEqual([absent.d.producers.verdicts.size, absent.d.mintRun.isSeriesKey("eu-oil-bulletin:eurosuper-95")], [0, false]);
+  assert.match(String((await absent.d.sources.registerAndRate("https://unplaced.example/page")).refused), /places in no class-table class and no committed verdict/);
+  const down = fixture();
+  down.db.fail("host_verdicts", "select", "connection reset");
+  assert.match((await down.d.loadReferenceData())[0] ?? "", /host_verdicts could not be read, no committed host verdict applies this run: connection reset/);
+});
+
+test("IMP-054: a tree that lost producers.verdicts or the reference loader is named by the startup check and refused on Vercel", () => {
+  const f = fixture();
+  assert.equal(MANIFEST.find((e) => e.member === VERDICTS_MEMBER)?.status, "wired");
+  (f.d.producers as { verdicts?: unknown }).verdicts = undefined;
+  (f.d as { loadReferenceData?: unknown }).loadReferenceData = undefined;
+  const report = startupCheck(f.d);
+  assert.deepEqual(report.missing.sort(), [VERDICTS_MEMBER, "loadReferenceData (host_verdicts and market_series_items, read once per turn)"].sort());
+  assert.throws(() => enforceWired(report, { VERCEL: "1" }), /producers\.verdicts/);
 });

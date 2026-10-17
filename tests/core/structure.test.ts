@@ -25,6 +25,12 @@ for (const f of src) {
 }
 const isGuarded = (body: string): boolean => GUARD_CALL.test(body) || [...wrappers].some((w) => new RegExp(`\\b${w}\\(`).test(body));
 
+/** A feature barrel (the server surface of a feature, IMP-106) re-exports a handler from the file that defines it: follow `export { GET as name } from "./path"` to that file, so the guard is read where the handler is. */
+const definingFile = (file: string, name: string): string => {
+  const m = new RegExp(String.raw`export \{ \w+ as ${name} \} from "\./([^"]+)"`).exec(text(file));
+  return m ? `${file.slice(0, file.lastIndexOf("/"))}/${m[1]}.ts` : file;
+};
+
 test("PROP-001/160: every route handler is behind a guard, or is one of the two public auth endpoints", () => {
   const publicRoutes = new Set(["src/features/auth/api/identity.ts", "src/features/auth/api/callback.ts"]);
   // Public by documented exception (operator-approved 2026-07-11): build metadata only, no database, no parameters, nothing to limit.
@@ -34,7 +40,7 @@ test("PROP-001/160: every route handler is behind a guard, or is one of the two 
   for (const route of routes) {
     const target = /from "@\/(features\/[^"]+)"/.exec(text(route))?.[1];
     assert.ok(target, `${route} re-exports a feature handler`);
-    const handler = `src/${target}.ts`;
+    const handler = definingFile(`src/${target}.ts`, /export \{\s*(\w+)/.exec(text(route))?.[1] ?? "GET");
     const body = text(handler);
     if (documentedPublic.has(handler)) continue;
     if (publicRoutes.has(handler)) assert.match(body, /checkRateLimit/, `${handler} is public, so it must rate limit`);

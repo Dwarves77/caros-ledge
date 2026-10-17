@@ -3,22 +3,11 @@
 // Ported from old_repo/scripts/producers/market/ratify-series-items.mjs (lines 15-90)
 // Published price statistics: the display rows of the Market detail page, derived ONLY from ratified series-to-item entries (INV-047). A ratified entry whose item
 // is not a live verified item is refused by name; an unratified entry never produces a row; a ratified series with no observation yet produces no row (never a dash).
-import { z } from "zod";
-
 import { fetchAllRows, type Db } from "@/core/db";
 import type { ParseOut, ProducerCtx, ProducerSpec } from "@/core/producers/runner";
 import { keyOf, type Rec } from "@/core/producers/upsert-plan";
 
-import raw from "./data/series-item-map.json";
-
-const entry = z.object({ item_id: z.string().nullable(), status: z.string(), cadence_days: z.number().int().positive().nullable().optional(), context_line: z.string().nullable().optional(), severity_tone: z.enum(["critical", "high", "moderate", "low", "neutral"]).nullable().optional() }).strict();
-export type SeriesItemEntry = z.infer<typeof entry>;
-export type SeriesItemMap = ReadonlyArray<readonly [string, SeriesItemEntry]>;
-
-export const loadSeriesItemMap = (rawMap: unknown = raw): SeriesItemMap => Object.freeze(Object.entries(z.record(z.string(), entry).parse(rawMap)).filter(([k]) => !k.startsWith("_")).map(([k, e]) => Object.freeze([k, e] as const)));
-export const SERIES_ITEM_MAP: SeriesItemMap = loadSeriesItemMap();
-/** Ratified means a minted item id AND the ratified status; anything pending is never a guessed attachment. */
-export const isRatified = (e: SeriesItemEntry | null | undefined): boolean => e != null && !!e.item_id && e.status === "ratified";
+import { isRatified, readSeriesItemMap, type SeriesItemEntry, type SeriesItemMap } from "./market-series-items";
 
 const SYMBOL: Record<string, string> = { EUR: "€", USD: "$", GBP: "£" };
 export function splitEnvelopeUnit(unit: string | null | undefined, currency: string | null | undefined): { symbol: string | null; suffix: string | null } {
@@ -45,8 +34,8 @@ export function latestPerSeries(rows: readonly Rec[]): Map<string, Rec> {
 }
 
 /** One display row per RATIFIED series that has an observation, in map order. */
-export function deriveDisplayRows(marketRows: readonly Rec[], o: { map?: SeriesItemMap } = {}): Rec[] {
-  const map = o.map ?? SERIES_ITEM_MAP;
+export function deriveDisplayRows(marketRows: readonly Rec[], o: { map: SeriesItemMap }): Rec[] {
+  const { map } = o;
   const latest = latestPerSeries(marketRows);
   const out: Rec[] = [];
   map.forEach(([seriesKey, e], index) => {
@@ -59,7 +48,7 @@ export function deriveDisplayRows(marketRows: readonly Rec[], o: { map?: SeriesI
   });
   return out;
 }
-export const unmappedSeriesKeys = (marketRows: readonly Rec[], map: SeriesItemMap = SERIES_ITEM_MAP): string[] => {
+export const unmappedSeriesKeys = (marketRows: readonly Rec[], map: SeriesItemMap): string[] => {
   const ratified = new Set(map.filter(([, e]) => isRatified(e)).map(([k]) => k));
   return [...new Set(marketRows.map((r) => String(r.series_key)).filter((k) => k && !ratified.has(k)))].sort();
 };
@@ -95,16 +84,18 @@ export const publishedPriceStatistics: ProducerSpec = {
   enabled: false,
   enabledRuling: "operator 2026-10-04: no data population before every build layer is complete",
   killSwitchEnv: "MARKET_PRODUCER_PUBLISHED_STATS_ENABLED",
-  /** A dry run reads nothing (it has no database); the rows come from market_series on an apply. */
+  /** A dry run reads nothing (it has no database); an apply reads the ratified attachments from market_series_items and the observations of those series from market_series. An absent table throws, so the run is "failed" and mints nothing. */
   async fetchDoc(ctx: ProducerCtx) {
-    const keys = SERIES_ITEM_MAP.filter(([, e]) => isRatified(e)).map(([k]) => k);
-    return { text: JSON.stringify(ctx.apply && ctx.sb && keys.length ? await readMarketRows(ctx.sb, keys) : []) };
+    if (!ctx.apply || !ctx.sb) return { text: JSON.stringify({ map: [], market: [] }) };
+    const map = await readSeriesItemMap(ctx.sb);
+    const keys = map.filter(([, e]) => isRatified(e)).map(([k]) => k);
+    return { text: JSON.stringify({ map, market: keys.length ? await readMarketRows(ctx.sb, keys) : [] }) };
   },
   parse(doc): ParseOut<Rec> {
-    const market = JSON.parse(doc.text ?? "[]") as Rec[];
-    const rows = deriveDisplayRows(market);
-    const unmapped = unmappedSeriesKeys(market);
-    return { rows, warnings: unmapped.length ? [`unmapped series, not silently skipped (${unmapped.length}): ${unmapped.join(", ")}`] : [], counts: { ratified_entries: SERIES_ITEM_MAP.filter(([, e]) => isRatified(e)).length, unmapped: unmapped.length } };
+    const { map, market } = JSON.parse(doc.text ?? "{}") as { map: [string, SeriesItemEntry][]; market: Rec[] };
+    const rows = deriveDisplayRows(market, { map });
+    const unmapped = unmappedSeriesKeys(market, map);
+    return { rows, warnings: unmapped.length ? [`unmapped series, not silently skipped (${unmapped.length}): ${unmapped.join(", ")}`] : [], counts: { ratified_entries: map.filter(([, e]) => isRatified(e)).length, unmapped: unmapped.length } };
   },
   /** INV-047: a row is written only for an item that is live and verified; any other is refused by name. */
   async resolve(ctx, rows) {

@@ -16,6 +16,7 @@ import type { SettingsData } from "../server/settings-data";
 import { useSettingsStore, type DashboardRegionKey, type SortKey } from "../state/settings-store";
 
 import { BriefingScheduleSection } from "./BriefingScheduleSection";
+import { FailedBlock } from "./FailedBlock";
 import { OrganisationProfileSection } from "./OrganisationProfileSection";
 import { SettingsGate } from "./SettingsGate";
 import { SupersessionHistory } from "./SupersessionHistory";
@@ -206,7 +207,7 @@ export function SettingsPage({ userId, nowIso, orgName, data }: { userId: string
       </div>
       <div id="archive" className={styles.section}>
         <FormCard title="Archive" aside={archive.rows ? `${archive.rows.length}${archive.truncated ? "+" : ""} item${archive.rows.length === 1 ? "" : "s"} · still recoverable` : "Not loaded"}>
-          {archive.rows ? <ArchiveViewer rows={archive.rows} /> : <StateNote tone="error">The archive did not load: {archive.error}</StateNote>}
+          {archive.rows ? <ArchiveViewer rows={archive.rows} /> : <FailedBlock>The archive did not load: {archive.error}</FailedBlock>}
         </FormCard>
       </div>
       <div id="help" className={styles.section}>

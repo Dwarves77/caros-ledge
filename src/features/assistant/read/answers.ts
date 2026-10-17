@@ -28,11 +28,11 @@ export interface HitRef {
   domain: number | null;
 }
 
-/** The answers on record for the retrieved items. `service` reads the platform-owned inference table; `db` (the caller's client) resolves the cited items under the customer read gate. An answer that quotes a suppressed claim is withheld. */
-export async function readAnswers(service: Db, db: Db, hits: readonly HitRef[], suppressed: readonly SuppressedClaim[]): Promise<AskAnswer[]> {
+/** The answers on record for the retrieved items, read on the caller's own client: the inference records are member-readable (migration 0031) and the cited items resolve under the customer read gate. An answer that quotes a suppressed claim is withheld. */
+export async function readAnswers(db: Db, hits: readonly HitRef[], suppressed: readonly SuppressedClaim[]): Promise<AskAnswer[]> {
   const asked = hits.flatMap((h) => generateTriggerQuestions({ id: h.id, title: h.title, domain: h.domain, item_type: h.item_type }).map((q) => ({ hit: h, q })));
   if (asked.length === 0) return [];
-  const rows = (await rowsByIds<InferenceRow>(service, "inference_records", "inference_id, trigger_question_ref, claim_text, status_token, confidence, cited_item_ids, supersedes, computed_at, admissibility", asked.map((a) => a.q.subjectRef), "trigger_question_ref", "inference_id")).filter((r) => (r as { admissibility?: string }).admissibility !== "stale");
+  const rows = (await rowsByIds<InferenceRow>(db, "inference_records", "inference_id, trigger_question_ref, claim_text, status_token, confidence, cited_item_ids, supersedes, computed_at, admissibility", asked.map((a) => a.q.subjectRef), "trigger_question_ref", "inference_id")).filter((r) => (r as { admissibility?: string }).admissibility !== "stale");
   const superseded = new Set(rows.map((r) => r.supersedes).filter(Boolean));
   const current = new Map<string, InferenceRow>();
   for (const r of rows.filter((x) => !superseded.has(x.inference_id))) if (!current.has(r.trigger_question_ref) || r.computed_at > (current.get(r.trigger_question_ref) as InferenceRow).computed_at) current.set(r.trigger_question_ref, r);

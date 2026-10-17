@@ -35,7 +35,7 @@
    "batchDir": "drain/batches/host-verdicts",
    "batchRe": "^host-verdicts-\\d{3}\\.json$",
    "batchPrefix": "host-verdicts",
-   "applyStep": "source-resolution",
+   "applyStep": "host-verdicts",
    "namesFile": false,
    "batchSize": 150,
    "maxBatchesPerRun": 1,

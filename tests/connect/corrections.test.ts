@@ -94,6 +94,7 @@ const world = () => {
     intelligence_item_sections: [{ id: "s1", item_id: ITEM, content_md: "- The levy is 42 EUR per tonne.\n- Other fact." }],
     section_claim_provenance: [{ id: CLAIM, intelligence_item_id: ITEM, claim_text: "The levy is 42 EUR per tonne.", section_row_id: "s1" }],
   }, { rpc });
+  m.mem.views.fact_suppressions = () => (m.tables.item_corrections ?? []).filter((c) => c.target_kind === "fact");
   return m;
 };
 const render = async (m: ReturnType<typeof world>) => {
@@ -133,9 +134,9 @@ test("round trip: suppress, not rendered, regeneration does not restore, revoke 
 });
 
 test("loadSuppressedClaims: a failed correction read throws; nothing renders unredacted on a failure", async () => {
-  const bad = connectDb({}, { failures: [{ table: "item_corrections", op: "select", message: "down" }] });
-  await assert.rejects(() => loadSuppressedClaims(bad.db, [ITEM]), /down/);
-  const claimFail = connectDb({ item_corrections: [{ id: "c", item_id: ITEM, target_kind: "fact", target_ref: CLAIM, op: "suppress", created_at: "2026-01-01T00:00:00Z", revoked_at: null }] }, { failures: [{ table: "section_claim_provenance", op: "select", message: "down" }] });
+  const bad = connectDb({}, { failures: [{ table: "fact_suppressions", op: "select", message: "down" }] });
+  await assert.rejects(() => loadSuppressedClaims(bad.db, [ITEM]), /fact_suppressions read failed: down/);
+  const claimFail = connectDb({ fact_suppressions: [{ id: "c", item_id: ITEM, target_kind: "fact", target_ref: CLAIM, op: "suppress", created_at: "2026-01-01T00:00:00Z", revoked_at: null }] }, { failures: [{ table: "section_claim_provenance", op: "select", message: "down" }] });
   await assert.rejects(() => loadSuppressedClaims(claimFail.db, [ITEM]), /section_claim_provenance read failed/);
 });
 

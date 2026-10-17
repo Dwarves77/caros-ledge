@@ -1,20 +1,18 @@
 // Ported from old_repo/src/app/api/workspace/overrides/route.ts (lines 36-304)
 import { z } from "zod";
 
-import { serviceClient, type Db } from "@/core/db/clients";
+import { isMissingObject } from "@/core/db/absent";
+import type { Db } from "@/core/db/clients";
 import { dbError, HttpError, LookupError, ok, route } from "@/core/http/errors";
 import { isRefusal, requireOrgRole } from "@/core/http/guard";
 import { isUuid, parseJson } from "@/core/http/parse";
-import { queueNotifications } from "@/core/notifications";
-import { log } from "@/core/shared/log";
-import { orgWatchersOf } from "@/core/workspace/roster";
 
 import { workspaceDeps } from "./deps";
 import { itemUuidOr404 } from "./shared";
 
 // POST   { itemId, priorityOverride?, isArchived?, archiveReason?, archiveNote?, dismissedAt? | dismiss?, ownerUserId? }
-//        upserts (org_id, item_id) into workspace_item_overrides. A WORKSPACE archive is the team-wide hide, so it is gated:
-//        owner or admin only, a reason required, archived_by stamped from the session (INV-165, INV-166). Restore is ungated.
+//        writes (org_id, item_id) of workspace_item_overrides. A WORKSPACE archive is the team-wide hide, so it is gated:
+//        owner or admin only, a reason required, archived_by stamped from the session (INV-165, INV-166), and it and an assignment run as one database call each with their notices queued in the same transaction (0037). Restore is ungated.
 // DELETE { itemId } removes the row.
 // Attribution (archived_by, owner_assigned_by) is built from the session; a body carrying those names is ignored.
 const body = z.looseObject({
@@ -38,36 +36,21 @@ async function assertOwnerInOrg(db: Db, orgId: string, ownerUserId: string): Pro
   if (data.role === "viewer") throw new HttpError(403, "A viewer can read this workspace but cannot own an item");
 }
 
-/**
- * Queue the archive notice for the item's org-scoped watchers and its owner (IMP-025): one outbox insert for all of them, sent by the drain with retries.
- * The archive has already succeeded, so a failure to queue is reported in the response, never thrown and never silent.
- */
-async function notifyArchive(db: Db, orgId: string, archiverId: string, itemKey: string, itemUuid: string, reason: string, ownerId: string | null) {
-  try {
-    const { data: item, error } = await db.from("intelligence_items").select("title, legacy_id, item_type, domain").eq("id", itemUuid).maybeSingle();
-    if (error) throw new LookupError("intelligence_items", error);
-    const { watcherIds } = await orgWatchersOf(db, orgId, [itemKey, itemUuid, item?.legacy_id ?? ""]);
-    const recipients = new Set(watcherIds);
-    if (ownerId) recipients.add(ownerId);
-    recipients.delete(archiverId);
-    if (recipients.size === 0) return { queued: 0, failed: 0, error: null };
-    const uiId = item?.legacy_id || itemUuid;
-    const link = workspaceDeps().itemHref?.({ id: uiId, type: item?.item_type ?? null, domain: item?.domain ?? null }) ?? `/regulations/${encodeURIComponent(uiId)}`;
-    const payload = {
-      title: "Item archived for the workspace",
-      body: `"${item?.title || "an item"}" was archived for your whole workspace${reason ? `, reason: ${reason}` : ""}. Any member can restore it from Settings, Archive.`,
-      link,
-      item_id: itemUuid,
-      archived_by: archiverId,
-    };
-    const err = await queueNotifications([...recipients].map((userId) => ({ userId, kind: "archive" as const, payload })), db);
-    if (err) log.warn("[overrides] archive notifications were not queued:", err);
-    return err ? { queued: 0, failed: recipients.size, error: err } : { queued: recipients.size, failed: 0, error: null };
-  } catch (e) {
-    const message = e instanceof Error ? e.message : String(e);
-    log.warn("[overrides] archive notification fan-out failed:", message);
-    return { queued: 0, failed: 0, error: message };
-  }
+/** The text and link of a notice about an item, read on the caller's own client (it is an item they may open). The recipients are the database's to choose, in the same transaction as the write. */
+async function noticeOf(db: Db, itemUuid: string, title: string, text: (name: string) => string): Promise<Record<string, string>> {
+  const { data: item, error } = await db.from("intelligence_items").select("title, legacy_id, item_type, domain").eq("id", itemUuid).maybeSingle();
+  if (error) throw new LookupError("intelligence_items", error);
+  const uiId = item?.legacy_id || itemUuid;
+  const link = workspaceDeps().itemHref?.({ id: uiId, type: item?.item_type ?? null, domain: item?.domain ?? null }) ?? `/regulations/${encodeURIComponent(uiId)}`;
+  return { title, body: text(item?.title || "an item"), link };
+}
+
+/** archive_item_for_team / assign_item (migrations 0037): the override write and its outbox rows in ONE transaction. An absent function (42883 / PGRST202: production before the cutover) is a 503 with Retry, never a second way to write. */
+async function callWriter(db: Db, name: "archive_item_for_team" | "assign_item", args: Record<string, unknown>): Promise<{ override: unknown; queued: number }> {
+  const { data, error } = await db.rpc(name, args);
+  if (isMissingObject(error)) throw new HttpError(503, "This change cannot be saved until the database update that supports it is applied. Try again shortly.", { "Retry-After": "30" });
+  if (error) throw dbError(error);
+  return data as { override: unknown; queued: number };
 }
 
 export const POST = route("/api/workspace/overrides", async (request) => {
@@ -79,35 +62,44 @@ export const POST = route("/api/workspace/overrides", async (request) => {
   const itemUuid = await itemUuidOr404(db, input.itemId);
   if ("notes" in input) throw new HttpError(400, "Workspace notes moved. Use /api/workspace/items/{id}/notes to add, edit or delete a note.");
 
+  const archiving = input.isArchived === true;
+  if (archiving) {
+    if (!(input.archiveReason ?? "").trim()) throw new HttpError(400, "archiveReason is required to archive for the workspace");
+    if (role !== "owner" && role !== "admin") throw new HttpError(403, "Workspace archive requires the admin or owner role. You can archive it just for yourself instead.");
+  }
+  const ownerUserId = input.ownerUserId || null;
+  if (input.ownerUserId !== undefined && ownerUserId) await assertOwnerInOrg(db, orgId, ownerUserId);
+
+  // Priority, dismissal and restore stay plain upserts; the archive and the assignment go through the rpcs, which stamp the attribution from the session and notify in the same transaction.
   const now = new Date().toISOString();
   const update: Record<string, unknown> = { org_id: orgId, item_id: itemUuid, updated_at: now };
   if (input.priorityOverride !== undefined) update.priority_override = input.priorityOverride;
-  if (input.isArchived !== undefined) {
-    update.is_archived = input.isArchived;
-    update.archived_at = input.isArchived ? now : null;
-  }
-  if (input.archiveReason !== undefined) update.archive_reason = input.archiveReason;
-  if (input.archiveNote !== undefined) update.archive_note = input.archiveNote;
-  if (input.isArchived === true) {
-    if (!(input.archiveReason ?? "").trim()) throw new HttpError(400, "archiveReason is required to archive for the workspace");
-    if (role !== "owner" && role !== "admin") throw new HttpError(403, "Workspace archive requires the admin or owner role. You can archive it just for yourself instead.");
-    update.archived_by = auth.userId;
-  } else if (input.isArchived === false) update.archived_by = null;
+  if (input.isArchived === false) Object.assign(update, { is_archived: false, archived_at: null, archived_by: null });
+  if (!archiving && input.archiveReason !== undefined) update.archive_reason = input.archiveReason;
+  if (!archiving && input.archiveNote !== undefined) update.archive_note = input.archiveNote;
   if (input.dismissedAt !== undefined) update.dismissed_at = input.dismissedAt;
   else if (input.dismiss !== undefined) update.dismissed_at = input.dismiss ? now : null;
-  if (input.ownerUserId !== undefined) {
-    const ownerUserId = input.ownerUserId || null;
-    if (ownerUserId) await assertOwnerInOrg(db, orgId, ownerUserId);
-    update.owner_user_id = ownerUserId;
-    update.owner_assigned_by = ownerUserId ? auth.userId : null;
-    update.owner_assigned_at = ownerUserId ? now : null;
-  }
 
-  const { data, error } = await db.from("workspace_item_overrides").upsert(update, { onConflict: "org_id,item_id" }).select().single();
-  if (error) throw dbError(error);
-  const notifications = input.isArchived === true ? await notifyArchive(serviceClient(), orgId, auth.userId, input.itemId, itemUuid, input.archiveReason ?? "", (data as { owner_user_id?: string | null } | null)?.owner_user_id ?? null) : null;
+  let override: unknown = null;
+  let queued: number | null = null;
+  if (Object.keys(update).length > 3 || (!archiving && input.ownerUserId === undefined)) {
+    const { data, error } = await db.from("workspace_item_overrides").upsert(update, { onConflict: "org_id,item_id" }).select().single();
+    if (error) throw dbError(error);
+    override = data;
+  }
+  if (input.ownerUserId !== undefined) {
+    const notice = ownerUserId ? await noticeOf(db, itemUuid, "Item assigned to you", (name) => `"${name}" was assigned to you as its owner.`) : null;
+    const r = await callWriter(db, "assign_item", { p_org_id: orgId, p_item_id: itemUuid, p_owner_user_id: ownerUserId, p_notice: notice });
+    [override, queued] = [r.override, r.queued];
+  }
+  if (archiving) {
+    const reason = input.archiveReason ?? "";
+    const notice = await noticeOf(db, itemUuid, "Item archived for the workspace", (name) => `"${name}" was archived for your whole workspace${reason ? `, reason: ${reason}` : ""}. Any member can restore it from Settings, Archive.`);
+    const r = await callWriter(db, "archive_item_for_team", { p_org_id: orgId, p_item_id: itemUuid, p_reason: reason, p_note: input.archiveNote ?? null, p_notice: notice });
+    [override, queued] = [r.override, (queued ?? 0) + r.queued];
+  }
   workspaceDeps().revalidateWorkspaceData?.();
-  return ok(auth.headers, { override: data, ...(notifications ? { notifications } : {}) });
+  return ok(auth.headers, { override, ...(queued === null ? {} : { queued }) });
 });
 
 export const DELETE = route("/api/workspace/overrides", async (request) => {

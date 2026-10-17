@@ -29,6 +29,9 @@ function world() {
   ]);
   db.seed("section_claim_provenance", [{ id: "c1", intelligence_item_id: ID.a, claim_text: SECRET, section_row_id: null, claim_kind: "FACT" }]);
   db.seed("item_corrections", [{ id: "k1", item_id: ID.a, target_kind: "fact", target_ref: "c1", op: "suppress", reason: "wrong", created_at: "2026-10-13T00:00:00Z", revoked_at: null }]);
+  // A signed-in member cannot read item_corrections (admin only, RLS): the Assistant must read the member-readable view (migration 0031) or it answers nothing.
+  db.fail("item_corrections", "select", "permission denied for table item_corrections", { code: "42501" });
+  db.views.fact_suppressions = () => db.rows("item_corrections").filter((c) => c.target_kind === "fact");
   scriptWithRpc(db);
   wireAssistantDeps({ operationsFacts: undefined });
   return db;
@@ -70,21 +73,30 @@ test("a suppressed claim never reaches the reader: removed from the excerpt, and
   assert.equal(b.answers.some((a) => a.text.includes("late filing")), false);
 });
 
-test("INV-263 and fail-closed: corrections that cannot be read, or no platform client, is a 503 with Retry-After, never an unredacted answer", async () => {
-  const bad = world();
-  bad.fail("item_corrections", "select", "down");
-  const r = await ask("member", "emissions reporting");
-  assert.deepEqual([r.status, r.headers.get("retry-after")], [503, "1"]);
+test("IMP-091: the Assistant answers on the member's own client with NO service key configured; the old 503 for a missing platform client is gone", async () => {
   world();
   scripted.service = null;
-  const none = await ask("member", "emissions reporting");
-  assert.deepEqual([none.status, none.headers.get("retry-after")], [503, "5"]);
+  const r = await ask("member", "emissions reporting");
+  assert.equal(r.status, 200);
+  const b = r.body as unknown as Body;
+  assert.deepEqual(b.answers.map((a) => a.text).sort(), ["Current answer to what changed.", "Reports are due on 30 April 2027."]);
+  assert.equal(JSON.stringify(b).includes("EUR 50 000"), false, "the suppression still applies, read through the view");
+});
+
+test("INV-263 and fail-closed: suppressions that cannot be read (the view absent included) is a 503 with Retry-After, never an unredacted answer; a failed search is a 503", async () => {
+  const bad = world();
+  bad.fail("fact_suppressions", "select", "relation does not exist");
+  const r = await ask("member", "emissions reporting");
+  assert.deepEqual([r.status, r.headers.get("retry-after")], [503, "1"]);
+  const noAnswers = world();
+  noAnswers.fail("inference_records", "select", "down");
+  assert.equal((await ask("member", "emissions reporting")).status, 503);
   const failedSearch = world();
   failedSearch.rpcs.search_intelligence_items = () => ({ error: { message: "x" } });
   assert.equal((await ask("member", "emissions")).status, 503);
 });
 
-test("no hits: a stated empty with the platform guide where the question names its vocabulary; no platform read is made, so no service client is needed", async () => {
+test("no hits: a stated empty with the platform guide where the question names its vocabulary; no suppression or answer read is made", async () => {
   world();
   scripted.service = null;
   const b = (await ask("member", "which severity labels exist")).body as unknown as Body;

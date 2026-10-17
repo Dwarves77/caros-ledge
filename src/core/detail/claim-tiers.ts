@@ -4,7 +4,7 @@
 // the member policy and the suppressions through the `fact_suppressions` view (0031), so a page renders without the service role. A failed read throws; the caller says so, nothing renders unredacted.
 import { suppressedClaimMatcher, type Correction } from "@/core/corrections";
 import type { Db } from "@/core/db";
-import { boundedRead, fetchAllRows } from "@/core/db/query";
+import { boundedRead, fetchAllByIdChunks, fetchAllRows } from "@/core/db/query";
 import type { ClaimTierMap } from "@/ui";
 
 /** The claim columns the detail page needs, with the source row that grounds the claim. */
@@ -42,9 +42,24 @@ export function buildClaimTierMap(rows: readonly ClaimRow[] | null | undefined):
   return map;
 }
 
+const SUPPRESSION_COLUMNS = "id, item_id, target_kind, target_ref, op, machine_value, created_at, revoked_at";
+
+/** The fact suppressions of several items (the Assistant's hit set), as the view exposes them, read in id chunks on the caller's own client. Throws on a failed read: nothing is answered unredacted. */
+export function readFactSuppressionsFor(db: Db, itemIds: readonly string[]): Promise<Correction[]> {
+  return fetchAllByIdChunks<Correction>(
+    itemIds,
+    async (slice) => {
+      const { data, error } = await db.from("fact_suppressions").select(SUPPRESSION_COLUMNS).in("item_id", slice);
+      if (error) throw new Error(`fact_suppressions read failed: ${error.message}`);
+      return (data ?? []) as unknown as Correction[];
+    },
+    { manyPerId: true },
+  );
+}
+
 /** The active fact suppressions of one item, as the view exposes them. Throws on a failed read. */
 export async function readFactSuppressions(db: Db, itemUuid: string): Promise<Correction[]> {
-  const read = await boundedRead((n) => db.from("fact_suppressions").select("id, item_id, target_kind, target_ref, op, machine_value, created_at, revoked_at").eq("item_id", itemUuid).limit(n), { limit: 200 });
+  const read = await boundedRead((n) => db.from("fact_suppressions").select(SUPPRESSION_COLUMNS).eq("item_id", itemUuid).limit(n), { limit: 200 });
   if (read.error) throw new Error(`fact_suppressions read failed: ${read.error.message}`);
   if (read.truncated) throw new Error(`fact_suppressions for ${itemUuid} reached its bound; suppression would be incomplete`);
   return read.data as unknown as Correction[];

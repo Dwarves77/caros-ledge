@@ -1,8 +1,7 @@
 // Ported from old_repo/src/app/api/ask/route.ts (lines 153-184, 260-317, 346-432, 591-626)
 import { z } from "zod";
 
-import { serviceClient, type Db } from "@/core/db/clients";
-import { HttpError, LookupError, ok, route } from "@/core/http/errors";
+import { LookupError, ok, route } from "@/core/http/errors";
 import { isRefusal, requireUser } from "@/core/http/guard";
 import { parseJson } from "@/core/http/parse";
 import { detailHref, jurisdictionCode, metaLine } from "@/core/lists";
@@ -16,7 +15,7 @@ import { ASK_DISCLAIMER, type AskHit, type AskResponse } from "../types";
 
 // POST /api/ask { question }: the Intelligence Assistant, a research helper that is FREE by construction. It retrieves with Standard Search on the caller's own client (the same hit set the command bar
 // shows), reads the answers a session wrote to the hit items' standard questions (an inference, labelled), quotes the platform guide where the question names its vocabulary, and adds the Operations
-// facts the hits name. No model is called and no model id exists here; the citations ARE the hit set, so nothing generated needs validating. A suppressed claim is removed from every excerpt and withholds any
+// facts the hits name. No model is called and no model id exists here; the citations ARE the hit set, so nothing generated needs validating. Everything is read on the caller's own client under RLS (the inference records and the fact_suppressions view are member-readable, migration 0031): no service key is needed. A suppressed claim is removed from every excerpt and withholds any
 // answer that quotes it; if the corrections cannot be read the route says so (503) rather than answer unredacted.
 const NAME = "/api/ask";
 const HIT_LIMIT = 8;
@@ -55,15 +54,6 @@ const clip = (text: string | null, max: number): string | null => {
   const t = (text ?? "").replace(/^#+\s*/gm, "").replace(/[*_`]+/g, "").replace(/\s+/g, " ").trim();
   return t ? (t.length > max ? `${t.slice(0, max).replace(/\s+\S*$/, "")}...` : t) : null;
 };
-/** The platform-owned reads (corrections, inference records) need the service role; an unconfigured deployment says so rather than answering unredacted. */
-function platformClient(): Db {
-  try {
-    return serviceClient();
-  } catch {
-    throw new HttpError(503, "The Assistant could not check its sources just now. Try again in a moment.", { "Retry-After": "5" });
-  }
-}
-
 export const POST = route(NAME, async (request) => {
   const auth = await requireUser(request);
   if (isRefusal(auth)) return auth;
@@ -75,8 +65,7 @@ export const POST = route(NAME, async (request) => {
   const reply = (r: Partial<AskResponse>) => ok(auth.headers, { question, hits: [], answers: [], passages, operations: [], disclaimer: ASK_DISCLAIMER, empty: rows.length === 0, ...r });
   if (rows.length === 0) return reply({});
 
-  const service = platformClient();
-  const suppressed = await loadSuppressedClaims(service, rows.map((r) => r.id)).catch((e: unknown) => {
+  const suppressed = await loadSuppressedClaims(auth.client, rows.map((r) => r.id)).catch((e: unknown) => {
     throw new LookupError("corrections", e);
   });
   const sourceIds = [...new Set(rows.map((r) => r.source_id).filter((id): id is string => !!id))];
@@ -102,7 +91,7 @@ export const POST = route(NAME, async (request) => {
       source: src || r.source_url ? { name: src?.name ?? null, url: r.source_url ?? src?.url ?? null, citationCount: stat?.citation_count ?? null, recency: stat?.recency ?? null } : null,
     };
   });
-  const answers = await readAnswers(service, auth.client, rows, suppressed).catch((e: unknown) => {
+  const answers = await readAnswers(auth.client, rows, suppressed).catch((e: unknown) => {
     throw new LookupError("answers", e);
   });
   const operationsFacts = assistantDeps().operationsFacts;

@@ -1,5 +1,5 @@
 // New in P2-10 (barrel): the detail architecture every surface imports.
-export { buildClaimTierMap, fetchClaimTierMap, readClaims, readFactSuppressions } from "./claim-tiers";
+export { buildClaimTierMap, fetchClaimTierMap, readClaims, readFactSuppressions, readFactSuppressionsFor } from "./claim-tiers";
 export { readCrossPage, readFreshInferences, readThemeChips, readThemes, readVerifiedItemsByIds } from "./cross-page-read";
 export type { CrossPage } from "./cross-page-read";
 export { deriveFactCardModels, deriveRecordFactCardModel, mergeAdjacentSameKind, parseFactCardModels, parseFactParagraphs, toClaimNodes } from "./fact-model";

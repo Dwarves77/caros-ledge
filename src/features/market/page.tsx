@@ -3,7 +3,7 @@
 import { isServiceConfigured, serviceClient, userClient } from "@/core/db";
 import { readThemeChips } from "@/core/detail";
 import { pageSession } from "@/features/account/server/page-session";
-import { loadSurfaceDenominator } from "@/features/coverage/server/matrix-data";
+import { loadSurfaceDenominator } from "@/features/coverage/server";
 import { PageFailure } from "@/ui/shell/PageFailure";
 
 import { readMarket, section } from "./read";

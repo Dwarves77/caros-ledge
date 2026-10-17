@@ -13,7 +13,7 @@ import { BiasLegend, CoverageState, ErrorState, isImpactScored, RailCard, StateN
 import { filterRows, LegendRailCard, liveFacetCounts, ListSurface, SortRow, ThemeStrip, useListUrlState, type FacetGroup, type ListWindowKey, type ThemeChip } from "@/ui/list-surface";
 import { filterByWindow, WINDOW_OPTIONS } from "@/ui/list-surface/filter-sort";
 import { ShellCommandBar } from "@/ui/shell/CommandBar";
-import { DenominatorLine } from "@/features/coverage/ui/DenominatorLine";
+import { DenominatorLine } from "@/features/coverage";
 import { useTagsFacet } from "@/features/regulations/useTagsFacet";
 
 import { horizonMetaLabel } from "../model/assessment-view";

@@ -1,9 +1,10 @@
 // Ported from old_repo/src/lib/corrections/suppressed-render.mjs (lines 1-118)
 // Redaction of suppressed claims from rendered text (sections and the full brief). Whitespace and escaped brackets tolerant. The loader
-// reads one item's corrections, or the paged table for several, and never reads a claim for an item with no suppression.
+// reads the fact suppressions the member-readable view exposes (migration 0031) for the items asked, and never reads a claim for an item with no suppression.
 import type { Db } from "@/core/db";
 import { fetchAllByIdChunks } from "@/core/db";
-import { readAllCorrections, readItemCorrections, suppressedClaimMatcher } from "@/core/corrections";
+import { suppressedClaimMatcher } from "@/core/corrections";
+import { readFactSuppressionsFor } from "@/core/detail";
 
 const REGEX_SPECIALS = /[.*+?^${}()|[\]\\]/g;
 const charPattern = (ch: string): string => (ch === "[" ? "\\\\?\\[" : ch === "]" ? "\\\\?\\]" : ch.replace(REGEX_SPECIALS, "\\$&"));
@@ -72,7 +73,7 @@ export function redactSuppressedClaims<S extends SectionLike>(input: { sections?
 export async function loadSuppressedClaims(sb: Db, itemIds: readonly (string | null | undefined)[]): Promise<SuppressedClaim[]> {
   const ids = [...new Set(itemIds.filter((x): x is string => !!x))];
   if (!ids.length) return [];
-  const corrections = ids.length === 1 ? await readItemCorrections(sb, ids[0] as string) : await readAllCorrections(sb);
+  const corrections = await readFactSuppressionsFor(sb, ids);
   const withFacts = ids.filter((id) => corrections.some((c) => c.item_id === id && c.target_kind === "fact" && c.op === "suppress" && !c.revoked_at));
   if (!withFacts.length) return [];
   const claims = await fetchAllByIdChunks<{ id: string; claim_text: string; section_row_id: string | null; intelligence_item_id: string }>(

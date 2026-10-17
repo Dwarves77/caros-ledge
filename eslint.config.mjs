@@ -24,6 +24,14 @@ export default defineConfig([
     },
   },
   {
+    // IMP-106: the coverage feature has two barrels, the client-safe index and the server-only ./server; nothing outside it reaches into its directories.
+    files: ["src/**/*.{ts,tsx}"],
+    ignores: ["src/features/coverage/**"],
+    rules: {
+      "no-restricted-imports": ["error", { patterns: [{ group: ["@/features/coverage/server/*", "@/features/coverage/ui/*", "@/features/coverage/api/*", "@/features/coverage/page", "@/features/coverage/client", "@/features/coverage/denominator-view"], message: "Import the coverage feature through its barrels: @/features/coverage (client-safe) or @/features/coverage/server (server only)." }] }],
+    },
+  },
+  {
     files: ["src/core/shared/log.ts"],
     rules: { "no-console": ["error", { allow: ["error", "warn"] }] },
   },

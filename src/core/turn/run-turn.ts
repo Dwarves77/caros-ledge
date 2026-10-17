@@ -25,6 +25,8 @@ export interface TurnResult {
   runs: FamilyRun[];
   /** 0 every stage recorded, 1 a failed record or credential in CI, 2 self-skipped for lack of credentials. */
   exit: 0 | 1 | 2;
+  /** What the turn's reference data read degraded (host_verdicts or market_series_items absent or unreadable): stated, never a silent empty. */
+  notes: string[];
 }
 
 /** The stages a request runs: all of them, or the named one and (unless chain is false) its downstream stages. Pure. */
@@ -42,9 +44,10 @@ export async function runTurn(req: TurnRequest, target: { d: BuiltDeps | null; e
   const d = target.d;
   const h: HarnessDeps = { sb: d?.sb ?? null, env: target.env, now: target.now, fns: d ? familyFns(d) : {}, ...(d ? { setContext: (c) => void (d.context.current = c) } : {}) };
   // The build-mode gate is read ONCE: every stage of this turn runs in the mode it resolves, and every row says why.
+  const notes = d ? await d.loadReferenceData() : [];
   const resolved = d ? await resolveMode(d.sb, { mode: req.mode, trigger }) : { mode: req.mode, forcedDry: false, reason: null };
   const inputs = Object.fromEntries(plan.map((s) => [s === "ops" ? "ops" : familyOfStage(s), { ...(req.input?.[s] ?? {}), ...(req.chain === false ? { chain_disabled: true } : {}) }]));
   const runs = await runChain(plan.map((s) => (s === "ops" ? "ops" : familyOfStage(s))), { mode: resolved.mode, trigger, rootRunId, resolved }, h, inputs);
   const failure = runs.find((r) => r.exit !== 0);
-  return { rootRunId, plan, resolved, runs, exit: failure ? failure.exit : 0 };
+  return { rootRunId, plan, resolved, runs, exit: failure ? failure.exit : 0, notes };
 }

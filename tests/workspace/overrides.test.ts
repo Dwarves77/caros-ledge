@@ -7,7 +7,7 @@ import { DELETE as overridesDelete, POST as overridesPost } from "@/features/wor
 import { DELETE as personalDelete, GET as personalGet, POST as personalPost } from "@/features/workspace/api/personal-state";
 
 import type { MemDb, Row } from "./_memdb.ts";
-import { call, E, ITEM_1, matrix, ORG_A, ORG_B, script as baseScript, seed, TEAMMATE, USER } from "./_world.ts";
+import { call, clientFor, E, ITEM_1, matrix, ORG_A, ORG_B, script as baseScript, seed, TEAMMATE, USER } from "./_world.ts";
 
 const O = "/api/workspace/overrides";
 // IMP-025: a notice is a notification_outbox row (the drain sends it); the writers never call a sender.
@@ -32,7 +32,7 @@ test("INV-165: a member's team archive is refused and nothing is written; a miss
   const db = script(seed());
   const refused = await call(overridesPost, "member", "POST", O, archive);
   assert.equal(refused.status, 403);
-  assert.match(String(refused.body.error), /admin or owner/);
+  assert.match(String(refused.body.error), /archive it just for yourself/, "the route states the rule in its own words before the writer is reached");
   assert.equal(db.writes("workspace_item_overrides").length, 0);
   assert.equal((await call(overridesPost, "admin", "POST", O, { itemId: "o3", isArchived: true })).status, 400);
   assert.equal((await call(overridesPost, "admin", "POST", O, { itemId: "o3", isArchived: true, archiveReason: "   " })).status, 400);
@@ -53,24 +53,45 @@ test("INV-165: an admin's team archive is stamped, dated and fans out to this or
   assert.ok(!sent().some((n) => n.userId === USER.otherOrgMember), "a watcher in another org must not be told");
   assert.ok(!sent().some((n) => n.userId === USER.admin), "the archiver is not told");
   assert.match(String(sent()[0]?.payload.body), /superseded by the 2027 text/);
-  assert.deepEqual(res.body.notifications, { queued: 2, failed: 0, error: null });
+  assert.equal(res.body.queued, 2);
 });
 
-test("INV-165, IMP-025: a notice that cannot be queued or an unreadable watcher list never undoes the archive and is reported in the response", async () => {
+test("IMP-065: a notice that cannot be queued rolls the archive back (one transaction): an error status, no override row, no half-queued notice", async () => {
   wire();
   const db = script(seed());
   db.fail("notification_outbox", "insert", { message: "outbox down" }, { times: 1 });
   const failed = await call(overridesPost, "admin", "POST", O, archive);
-  assert.equal(failed.status, 200);
-  assert.deepEqual(failed.body.notifications, { queued: 0, failed: 1, error: "outbox down" });
-  assert.equal(sent().length, 0, "nothing half-queued");
-  db.rows("workspace_item_overrides").length = 0;
-  db.fail("rpc:org_watchers", "rpc");
-  const unread = await call(overridesPost, "admin", "POST", O, archive);
-  assert.equal(unread.status, 200);
-  assert.equal((unread.body.notifications as Record<string, unknown>).queued, 0);
-  assert.ok((unread.body.notifications as Record<string, unknown>).error);
-  assert.equal(overrides(db)[0]?.is_archived, true);
+  assert.equal(failed.status, 500);
+  assert.equal(overrides(db).length, 0, "the override must not survive its failed notice");
+  assert.equal(sent().length, 0);
+  assert.equal(db.writes("workspace_item_overrides").length, 0);
+  const again = await call(overridesPost, "admin", "POST", O, archive);
+  assert.equal(again.status, 200);
+  assert.deepEqual([overrides(db)[0]?.is_archived, sent().length], [true, 1]);
+});
+
+test("IMP-065 degraded: the writer absent (production before the cutover) is a 503 with Retry-After, and the write is not attempted a second way", async () => {
+  wire();
+  const db = script(seed());
+  delete db.rpcs.archive_item_for_team;
+  delete db.rpcs.assign_item;
+  for (const input of [archive, { itemId: "o3", ownerUserId: TEAMMATE }]) {
+    const res = await call(overridesPost, "admin", "POST", O, input);
+    assert.deepEqual([res.status, res.headers.get("retry-after")], [503, "30"]);
+  }
+  assert.equal(db.writes("workspace_item_overrides").length, 0);
+  assert.equal((await call(overridesPost, "admin", "POST", O, { itemId: "o3", priorityOverride: "LOW" })).status, 200, "a plain upsert needs no writer");
+});
+
+test("INV-165, INV-166 at the writer: the rpc itself refuses a member, a viewer, a stranger and a blank reason with nothing written, and stamps the actor from the session whatever it is told", async () => {
+  wire();
+  const db = script(seed());
+  const rpc = (who: "member" | "viewer" | "otherOrgMember" | "admin", args: Record<string, unknown>) => (clientFor(db, who) as unknown as { rpc(n: string, a: unknown): Promise<{ data: unknown; error: { code?: string } | null }> }).rpc("archive_item_for_team", { p_org_id: ORG_A, p_item_id: ITEM_1, p_reason: "r", p_note: null, p_notice: { title: "t" }, ...args });
+  for (const who of ["member", "viewer", "otherOrgMember"] as const) assert.equal((await rpc(who, {})).error?.code, "42501", who);
+  assert.equal((await rpc("admin", { p_reason: "  " })).error?.code, "22023");
+  assert.equal(db.writes("workspace_item_overrides").length, 0);
+  assert.equal((await rpc("admin", { p_archived_by: USER.owner })).error, null);
+  assert.equal(overrides(db)[0]?.archived_by, USER.admin);
 });
 
 test("restore is ungated: a member un-archives a team archive and archived_by is cleared", async () => {
@@ -105,6 +126,7 @@ test("INV-167: an owner outside the org or a viewer is refused with nothing writ
   db.failures.length = 0;
   assert.equal((await call(overridesPost, "member", "POST", O, { itemId: "o3", ownerUserId: TEAMMATE })).status, 200);
   assert.deepEqual([overrides(db)[0]?.owner_user_id, overrides(db)[0]?.owner_assigned_by], [TEAMMATE, USER.member]);
+  assert.deepEqual(sent().map((n) => [n.userId, n.kind]), [[TEAMMATE, "assignment"]], "the new owner is told, in the same transaction as the assignment");
   assert.equal((await call(overridesPost, "member", "POST", O, { itemId: "o3", ownerUserId: null })).status, 200);
   assert.deepEqual([overrides(db)[0]?.owner_user_id, overrides(db)[0]?.owner_assigned_by, overrides(db)[0]?.owner_assigned_at], [null, null, null]);
 });

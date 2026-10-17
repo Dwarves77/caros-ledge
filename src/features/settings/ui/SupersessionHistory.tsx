@@ -4,10 +4,11 @@
 import Link from "next/link";
 
 import { formatDate } from "@/core/shared";
-import { EmptyState, StateNote } from "@/ui";
+import { EmptyState } from "@/ui";
 
 import type { Section, SupersessionRow } from "../server/settings-data";
 
+import { FailedBlock } from "./FailedBlock";
 import styles from "./settings.module.css";
 
 const SEVERITY_CLASS: Record<string, string> = { major: styles.major ?? "", minor: styles.minor ?? "", replacement: styles.replacement ?? "" };
@@ -15,7 +16,7 @@ const SEVERITY_CLASS: Record<string, string> = { major: styles.major ?? "", mino
 /** The supersessions, newest first, each with both sides linked to their item page. An unknown severity reads in the neutral colour; a failed read says so. */
 export function SupersessionHistory({ section }: { section: Section<SupersessionRow> }) {
   const rows = section.rows;
-  if (!rows) return <StateNote tone="error">Supersession history did not load: {section.error}</StateNote>;
+  if (!rows) return <FailedBlock>Supersession history did not load: {section.error}</FailedBlock>;
   if (rows.length === 0) return <EmptyState>No supersessions recorded.</EmptyState>;
   return (
     <div className={styles.history}>

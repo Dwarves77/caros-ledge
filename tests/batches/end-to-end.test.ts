@@ -63,8 +63,9 @@ for (const c of CASES) {
   });
 }
 
+// host-verdicts is apply-only: its queue (the hosts a needs-search export names as unplaced) has no exporter of its own, and exportBatch says so by name (tests/batches/host-verdicts.test.ts).
 test("every kind in the kit has a case here", () => {
-  assert.deepEqual(CASES.map((c) => c.kind).sort(), [...BATCH_KINDS].sort());
+  assert.deepEqual(CASES.map((c) => c.kind).sort(), BATCH_KINDS.filter((k) => k !== "host-verdicts").sort());
   void NOW;
   void computeMemberHash;
 });

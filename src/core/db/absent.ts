@@ -1,0 +1,2 @@
+/** True when a database error says the relation or function a pending migration adds is not there: Postgres 42P01 and 42883, PostgREST PGRST205 and PGRST202. Production carries no new migration until the cutover window, so a reader of a new object names this state instead of failing blind. */
+export const isMissingObject = (e: { code?: string | null } | null | undefined): boolean => !!e?.code && ["42P01", "42883", "PGRST205", "PGRST202"].includes(e.code);

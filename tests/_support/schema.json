@@ -1509,6 +1509,21 @@
     }
    ]
   },
+  "host_verdicts": {
+   "columns": [
+    "host",
+    "class",
+    "reason",
+    "batch_id",
+    "ruled_by",
+    "ruled_at"
+   ],
+   "uuid": [],
+   "defaults": {
+    "ruled_at": "__now"
+   },
+   "fks": []
+  },
   "indexation_clauses": {
    "columns": [
     "clause_id",
@@ -2398,7 +2413,10 @@
    "columns": [
     "series_key",
     "item_id",
-    "status"
+    "status",
+    "cadence_days",
+    "context_line",
+    "severity_tone"
    ],
    "uuid": [],
    "defaults": {
@@ -3435,6 +3453,39 @@
     }
    ]
   },
+  "research_assessment_history": {
+   "columns": [
+    "id",
+    "item_id",
+    "supersedes",
+    "is_current",
+    "technical_maturity_low",
+    "technical_maturity_high",
+    "technical_maturity_method",
+    "technical_maturity_evidence_ids",
+    "commercial_maturity_low",
+    "commercial_maturity_high",
+    "commercial_maturity_method",
+    "commercial_maturity_evidence_ids",
+    "horizon_kind",
+    "horizon_band",
+    "horizon_rule",
+    "horizon_confidence",
+    "horizon_trigger_note",
+    "refusal_reason",
+    "credibility_evidence_score",
+    "credibility_authority_score",
+    "computed_by",
+    "computed_at",
+    "status_token",
+    "created_at",
+    "entity_id",
+    "lifecycle_state"
+   ],
+   "uuid": [],
+   "defaults": {},
+   "fks": []
+  },
   "research_assessments": {
    "columns": [
     "id",
@@ -4195,6 +4246,24 @@
    "uuid": [],
    "defaults": {
     "changed_at": "__now"
+   },
+   "fks": []
+  },
+  "theme_brief_versions": {
+   "columns": [
+    "id",
+    "theme_key",
+    "version",
+    "row",
+    "generated_by",
+    "written_at",
+    "superseded_at"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "superseded_at": "__now"
    },
    "fks": []
   },

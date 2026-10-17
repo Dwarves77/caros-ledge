@@ -12,7 +12,7 @@ import { formatLocaleDate, formatNumber } from "@/core/shared";
 import { ErrorState, RailCard, StateNote } from "@/ui";
 import { filterRows, LegendRailCard, liveFacetCounts, ListSurface, ThemeStrip, useListUrlState, type FacetGroup, type ThemeChip } from "@/ui/list-surface";
 import { ShellCommandBar } from "@/ui/shell/CommandBar";
-import { DenominatorLine } from "@/features/coverage/ui/DenominatorLine";
+import { DenominatorLine } from "@/features/coverage";
 import { useTagsFacet } from "@/features/regulations/useTagsFacet";
 
 import { bandedRows } from "../../research/ui/rows";

@@ -4,7 +4,7 @@
 // Ported from old_repo/src/app/research/[slug]/page.tsx (lines 114-263)
 // Ported from old_repo/src/lib/research/read-signposts.mjs (lines 68-77)
 // Ported from old_repo/src/lib/research/read-signposts.mjs (lines 120-144)
-// The Research readers, on the query kit (tables read: research_assessments_current, research_assessments, signposts, entities, intelligence_items; the list itself is the shared list read in features/lists).
+// The Research readers, on the query kit (tables read: research_assessments_current, research_assessment_history, signposts, entities, intelligence_items; the list itself is the shared list read in features/lists).
 // A failed read is a failed state beside what did load, never an empty list and never "none yet" (INV-263): the old readers dropped every error and read an outage as "no assessment".
 import { fetchAllByIdChunks, type Db } from "@/core/db";
 import { log } from "@/core/shared/log";
@@ -98,8 +98,11 @@ export interface AssessmentBundle {
 }
 const NO_BUNDLE: AssessmentBundle = { assessment: null, signposts: [], history: [], historyComplete: true, failed: true };
 
-/** An item's current assessment, the signposts watching it (with the watched entity's name) and the append-only chain of the assessments it superseded. The chain is read on `historyDb`: the raw table is closed to a signed-in client. */
-export async function readAssessmentBundle(db: Db, itemUuid: string, historyDb: Db = db): Promise<AssessmentBundle> {
+/**
+ * An item's current assessment, the signposts watching it (with the watched entity's name) and the append-only chain of the assessments it superseded. The chain is walked through research_assessment_history
+ * (migration 0040) on the caller's own client; a link that cannot be read (absent view, an unreadable row) makes `historyComplete` false and the page says the chain is shorter than the real one.
+ */
+export async function readAssessmentBundle(db: Db, itemUuid: string): Promise<AssessmentBundle> {
   try {
     const cur = await db.from("research_assessments_current").select(ASSESSMENT_COLUMNS).eq("item_id", itemUuid).maybeSingle();
     if (cur.error) throw new Error(cur.error.message);
@@ -119,8 +122,11 @@ export async function readAssessmentBundle(db: Db, itemUuid: string, historyDb: 
     let next = assessment.supersedes;
     let historyComplete = true;
     for (let depth = 0; next && depth < MAX_CHAIN; depth += 1) {
-      const prior = await historyDb.from("research_assessments").select(ASSESSMENT_COLUMNS).eq("id", next).maybeSingle();
-      if (prior.error) throw new Error(prior.error.message);
+      const prior = await db.from("research_assessment_history").select(ASSESSMENT_COLUMNS).eq("id", next).maybeSingle();
+      if (prior.error) {
+        warn("assessment history", prior.error);
+        break;
+      }
       const v = selectAssessmentView(prior.data as unknown as AssessmentRow | null);
       if (!v) {
         historyComplete = false;

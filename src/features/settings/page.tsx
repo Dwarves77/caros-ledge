@@ -6,7 +6,7 @@ import { userClient } from "@/core/db/clients";
 import { readSettingsData } from "./server/settings-data";
 import { SettingsPage } from "./ui/SettingsPage";
 
-/** The /settings server gate: the session, then the page's three bounded reads (archive, supersessions); each section reports its own failed read. */
+/** The /settings server gate: the session, then the page's one bundle read (archive and supersessions); a failed read fails both sections, each with its reason and a Retry. */
 export default async function SettingsRoute() {
   const session = await pageSession("/settings");
   if ("failed" in session) return <PageFailure what="Settings" />;
