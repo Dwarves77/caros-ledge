@@ -1,7 +1,6 @@
 {
-  "captured_at": "2026-10-15T22:45:15.555Z",
-  "commit": "5746eeccc68847dc097018bd01dc4fc52596f8bb",
-  "commit_source": "GITHUB_SHA",
+  "captured_at": "2026-10-17T05:48:30.880Z",
+  "commit": "old site (carosledge.com) as of capture; the workflow ran on repo commit ede4a49d7f5f5288c946c52a8744e96cce207209",
   "base": "https://carosledge.com",
   "viewports": [
     "1280x900",
@@ -55,8 +54,8 @@
     },
     {
       "name": "dashboard",
-      "path": "/dashboard",
-      "auth": true,
+      "path": "/",
+      "auth": "member",
       "status": "ok",
       "files": [
         "dashboard.1280x900",
@@ -67,7 +66,7 @@
     {
       "name": "regulations",
       "path": "/regulations",
-      "auth": true,
+      "auth": "member",
       "status": "ok",
       "files": [
         "regulations.1280x900",
@@ -78,7 +77,7 @@
     {
       "name": "regulation-detail",
       "path": "/regulations/g14",
-      "auth": true,
+      "auth": "member",
       "status": "ok",
       "files": [
         "regulation-detail.1280x900",
@@ -89,7 +88,7 @@
     {
       "name": "market",
       "path": "/market",
-      "auth": true,
+      "auth": "member",
       "status": "ok",
       "files": [
         "market.1280x900",
@@ -100,7 +99,7 @@
     {
       "name": "market-detail",
       "path": "/market/9d18608f-269e-405a-9ad8-afa638dda928",
-      "auth": true,
+      "auth": "member",
       "status": "ok",
       "files": [
         "market-detail.1280x900",
@@ -111,7 +110,7 @@
     {
       "name": "research",
       "path": "/research",
-      "auth": true,
+      "auth": "member",
       "status": "ok",
       "files": [
         "research.1280x900",
@@ -122,7 +121,7 @@
     {
       "name": "operations",
       "path": "/operations",
-      "auth": true,
+      "auth": "member",
       "status": "ok",
       "files": [
         "operations.1280x900",
@@ -133,7 +132,7 @@
     {
       "name": "map",
       "path": "/map",
-      "auth": true,
+      "auth": "member",
       "status": "ok",
       "files": [
         "map.1280x900",
@@ -144,7 +143,7 @@
     {
       "name": "search-emissions",
       "path": "/search?q=emissions",
-      "auth": true,
+      "auth": "member",
       "status": "ok",
       "files": [
         "search-emissions.1280x900",
@@ -155,7 +154,7 @@
     {
       "name": "watchlist",
       "path": "/watchlist",
-      "auth": true,
+      "auth": "member",
       "status": "ok",
       "files": [
         "watchlist.1280x900",
@@ -166,7 +165,7 @@
     {
       "name": "community",
       "path": "/community",
-      "auth": true,
+      "auth": "member",
       "status": "ok",
       "files": [
         "community.1280x900",
@@ -177,15 +176,15 @@
     {
       "name": "community-group",
       "path": null,
-      "auth": true,
-      "status": "error",
+      "auth": "member",
+      "status": "skipped",
       "files": [],
-      "error": "discovery found no link on /community matching ^/community/[^/?#]+$"
+      "error": "discovery deferred: /community is frame-only (gates.frame)"
     },
     {
       "name": "settings",
       "path": "/settings",
-      "auth": true,
+      "auth": "member",
       "status": "ok",
       "files": [
         "settings.1280x900",
@@ -196,7 +195,7 @@
     {
       "name": "profile",
       "path": "/profile",
-      "auth": true,
+      "auth": "member",
       "status": "ok",
       "files": [
         "profile.1280x900",
@@ -217,4 +216,3 @@
     }
   ]
 }
-
