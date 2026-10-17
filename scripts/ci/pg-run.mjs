@@ -31,4 +31,5 @@ try {
 } finally {
   await client.end().catch(() => {});
 }
-process.exit(code);
+// Not process.exit(): on a pipe (Linux CI) stdout writes are asynchronous, and exiting here cut a large snapshot short, which the catalog diff read as removed policies and triggers.
+process.exitCode = code;
