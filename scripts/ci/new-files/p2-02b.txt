@@ -9,4 +9,3 @@ src/features/account/ui/account.module.css | layout of the account and settings 
 src/features/settings/ui/settings.module.css | layout of the settings page, from the inline style objects of old_repo/src/components/pages/SettingsPage.tsx and settings/*.tsx; a stylesheet cannot carry a // header
 src/features/onboarding/ui/onboarding.module.css | layout of the onboarding screens, from the inline style objects of old_repo/src/components/onboarding/*.tsx; a stylesheet cannot carry a // header
 src/app/privacy/ui-fixtures/workspace/page.tsx | new in P2-02b: the UX smoke fixture route for the workspace screens, a 404 unless UI_FIXTURES=1 (set only in the CI parity job), no old counterpart
-src/app/privacy/ui-fixtures/workspace/WorkspaceFixtures.tsx | new in P2-02b: mounts each workspace screen with fixture props for the UX smoke and the fixture parity check, no old counterpart

@@ -12,7 +12,7 @@
 --
 -- Reversal: DROP FUNCTION resolve_pending_jurisdiction_review; restore admin_attention_counts from the baseline.
 
--- catalog: function, acl
+-- catalog: function
 
 BEGIN;
 
