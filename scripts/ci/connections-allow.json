@@ -1,1 +1,1 @@
-{ "entries": {}, "written": ["item_supersessions"] }
+{ "_why": "written: tables a machine writes through a path the check cannot read as .from(t).insert(): the generic producer runner (a spec's table), a database function or trigger, an rpc, or reference data seeded by the schema", "entries": {}, "written": ["item_supersessions", "regions", "region_dimension_coverage", "regional_data_facts", "state_cost_facts", "derived_values", "data_sources", "auxiliary_energy_profiles", "grid_connection_queues", "research_assessments_current"] }

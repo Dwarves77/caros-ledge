@@ -62,7 +62,9 @@
    "electric (van|truck|vehicle)s?",
    "\\bev\\b",
    "charging (infrastructure|station)",
-   "zero[- ]emission (delivery|vehicle|zone)",
+   "zero[- ]emission (delivery|vehicle|zone|cargo)",
+   "urban delivery",
+   "ehgv",
    "cargo bike"
   ],
   "disclosure_regimes": [

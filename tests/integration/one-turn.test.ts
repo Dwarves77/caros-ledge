@@ -9,10 +9,12 @@ import { chainProof, flywheelOutcomes, mintedIds } from "@/core/harness";
 import { runTurn } from "@/core/turn";
 import { loadCoverage } from "@/features/coverage/server/census";
 import { buildRegisterQuerySpec, fetchObligationRegisterPage, readUpcoming } from "@/features/obligations";
+import { readDerivedFigures } from "@/features/operations/read/operations-reads";
+import { readResearchPage } from "@/features/research/read/research-reads";
 
 import type { Row } from "../_support/memdb.ts";
 
-import { CENSUS, DOC, DOC_TEXT, DOC_URL, fixture, NEW_URL, NEW_VERDICT, NOW, PORTAL_URL, SRC } from "./world.ts";
+import { CENSUS, DOC, DOC_TEXT, DOC_URL, fixture, NEW_URL, NEW_VERDICT, NOW, PORTAL_URL, RESEARCH_URL, RESEARCH_VERDICT, SRC } from "./world.ts";
 
 const BATCH = JSON.stringify({ verdicts: [{ census_id: CENSUS, verdict: "on_vertical", basis: "EU emissions regulation: core sustainability scope", reviewer: "turn-test" }] });
 
@@ -139,4 +141,40 @@ test("the portal path: the sweep lands a link, a session verdict classifies it, 
   assert.ok(f.requests.urls.includes(NEW_URL), "the page was fetched, once the verdict existed");
   assert.equal(f.db.rows("staged_updates").filter((x) => x.materialized_item_id === item.id && x.status === "approved").length, 1, "it passed the staged transit and the chokepoint, not a side door");
   assert.ok(f.db.rows("agent_run_searches").some((x) => x.intelligence_item_id === item.id && x.result_url === NEW_URL && String(x.result_content).includes("shall enter into force on 1 July 2026")), "its pool row is the captured page");
+});
+
+// P4 (P2-12): the Operations panel and the Research list render what the turn produced. The derived value the propagation stage recomputed shows with its previous value, its inputs and a rating; the research finding the
+// intake stage minted shows on the Research list with the assessment the producer wrote for it, anchored on the dated statutory event and a maturity corridor read from the text.
+test("P4: the derived value the turn propagated reads on the Operations panel with provenance, and the research assessment the turn produced reads on the Research list", async () => {
+  const f = fixture({ research: true });
+  // The page's list rpc, answered from the minted rows (the database function projects the same columns); a range-able reply like the real client's.
+  const listRows = (): unknown[] => f.db.rows("intelligence_items").filter((x) => x.item_type === "research_finding").map((x) => ({ id: x.id, legacy_id: x.legacy_id ?? null, title: x.title, item_type: x.item_type, domain: x.domain, priority: x.priority, added_date: String(x.added_date ?? NOW.toISOString()).slice(0, 10), is_archived: false, effective_archived: false }));
+  const answers: Record<string, () => unknown> = { get_research_items_public: listRows, get_surface_counts: () => ({ total_items: 1 }), get_research_source_coverage: () => [] };
+  const base = f.db.client as unknown as { rpc: (n: string, a?: Record<string, unknown>) => unknown };
+  const client = new Proxy(f.db.client as object, { get: (t, k) => (k === "rpc" ? (n: string, a?: Record<string, unknown>) => { const hit = answers[n]; if (!hit) return base.rpc(n, a); const run = Promise.resolve({ data: hit(), error: null }); return Object.assign(run, { range: () => run }); } : Reflect.get(t, k)) }) as typeof f.db.client;
+  const r = await runTurn({ stage: "all", mode: "apply", input: { intake: { census: { limit: 5 }, verdicts: { [RESEARCH_URL]: RESEARCH_VERDICT }, maxPromote: 5 }, propagate: { producers: { only: "ecb-fx" } } } }, { d: f.d, env: {}, now: () => NOW });
+  assert.equal(r.exit, 0);
+
+  const figures = await readDerivedFigures(f.db.client);
+  const delta = figures.find((x) => x.title.includes("EUR"));
+  assert.ok(delta, "the propagated figure reads on the panel");
+  assert.ok(Math.abs(Number(delta.value) - 0.05) < 1e-9 && delta.previous !== null && delta.inputs.length >= 1);
+  assert.ok(!JSON.stringify(figures).includes("market_series_delta"), "no internal method name reaches the surface");
+
+  const finding = f.db.rows("intelligence_items").find((x) => x.item_type === "research_finding") as Row;
+  assert.ok(finding, "the research finding was minted through the chokepoint");
+  // A portal-promoted item is minted unverified (its grounding is a later pass); the assessment producer takes verified items only. The validator's stamp is the one stand-in here: the item is stamped and the database trigger's
+  // event is emitted, then the next propagate stage drains it and the producer scores the item from its captured text and its forward events.
+  assert.equal(finding.provenance_status ?? null, null, "the promoted item starts unverified, so it is not assessed on the turn that minted it");
+  finding.provenance_status = "verified";
+  f.db.rows("propagation_events").push({ event_id: 9001, occurred_at: NOW.toISOString(), table_name: "intelligence_items", row_pk: finding.id, entity_id: null, change_kind: "update", new_row: { ...finding }, drained_at: null });
+  const second = await runTurn({ stage: "propagate", mode: "apply", input: {} }, { d: f.d, env: {}, now: () => NOW });
+  assert.equal(second.exit, 0);
+  const page = await readResearchPage(client);
+  assert.deepEqual([page.rowsFailed, page.rows.length], [false, 1]);
+  const view = page.assessments?.[String(finding.id)] ?? page.assessments?.[String(finding.legacy_id)];
+  assert.ok(view, "the assessment the producer wrote is the one the list reads");
+  assert.deepEqual([view.technical?.low, view.technical?.high], [6, 7], "the corridor is read from the text the turn captured: a demonstration plant is TRL 6-7, not 8-9");
+  assert.ok(view.horizon && view.horizon.rule, "the horizon cascade ran");
+  assert.equal(f.db.rows("item_forward_events").some((x) => x.intelligence_item_id === finding.id), false, "a portal-promoted item has no forward events yet, so the cascade falls through to its inferred rule rather than anchoring on a date it does not hold");
 });

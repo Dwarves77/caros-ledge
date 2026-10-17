@@ -511,6 +511,7 @@ button, input, select, textarea { font-family: inherit; }
 .cl-facet-group-label { font-size: var(--fs-10); font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); margin: 0 0 6px; }
 .cl-facet-rows { display: flex; flex-direction: column; }
 .cl-facet-row, .cl-facet-more { min-height: 24px; }
+.cl-facet-more { margin-top: 4px; }
 .cl-facet-row { margin: 4px 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 0; line-height: 16px; cursor: pointer; font-size: var(--fs-125); color: var(--ink); }
 .cl-facet-row-main { display: flex; align-items: center; gap: 8px; flex: 1 1 auto; min-width: 0; }
 .cl-facet-check { width: 13px; height: 13px; accent-color: var(--brand); flex-shrink: 0; margin: 0; }

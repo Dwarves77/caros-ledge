@@ -5,7 +5,8 @@ import { test } from "node:test";
 import { entityId } from "@/core/entities";
 import { runProducer } from "@/core/producers/runner";
 import { aggregateAuthorityDistribution, bucketForSource, classifyRoleClass, computeFundingIndependence, computeReception, scoreSource } from "@/features/research/authority-score";
-import { assessItem, extractDoiCandidate, fetchLiveCandidates, hasChanged, researchAssessment, resolveOpenAlexSourceRecords, toRow, type AssessInput } from "@/features/research/assessment-producer";
+import { fetchLiveCandidates, researchAssessment, resolveOpenAlexSourceRecords } from "@/features/research/assessment-producer";
+import { assessItem, extractDoiCandidate, hasChanged, toRow, type AssessInput } from "@/features/research/model/assess";
 import { classifyTheme, classifyThemes, THEME_VALUES } from "@/features/research/theme-rules";
 import { boundNeeds, buildMintSeed, normalizeOpenAlexWork, placePublisher, researchWalker, walkResearch, type WalkerDeps } from "@/features/research/walker";
 
