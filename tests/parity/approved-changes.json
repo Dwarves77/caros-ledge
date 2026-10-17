@@ -152,6 +152,49 @@
       "kind": "control",
       "match": "^button:smoke@example.invalid$",
       "ruling": "SEC-5 (P2-02c): profiles.email is not readable under the authenticated column grant, so the roster cannot label a member without a profile name by e-mail; the control shows the Absence token with 'Name not set' (and the profile name when there is one) where the old page showed the e-mail."
+    },
+    {
+      "id": "market-detail-withheld-heading",
+      "route": "market-detail",
+      "kind": "until-migration",
+      "migration": "0031",
+      "on": "heading",
+      "match": "^[0-9]:New Sources Identified$",
+      "ruling": "production carries no new migration before cutover (rulings 2026-10-17): without 0031 the market detail withholds its fact sections and says so with Retry; the full path is proven on the fixture turn and schema:local."
+    },
+    {
+      "id": "market-detail-withheld-links",
+      "route": "market-detail",
+      "kind": "until-migration",
+      "migration": "0031",
+      "on": "control",
+      "match": "^link:([a-z0-9.-]+ ↗|https?://.*)$",
+      "ruling": "production carries no new migration before cutover (rulings 2026-10-17): without 0031 the market detail withholds its fact sections and says so with Retry; the full path is proven on the fixture turn and schema:local."
+    },
+    {
+      "id": "market-detail-withheld-rows",
+      "route": "market-detail",
+      "kind": "until-migration",
+      "migration": "0031",
+      "on": "row",
+      "match": "^(li|tr):",
+      "ruling": "production carries no new migration before cutover (rulings 2026-10-17): without 0031 the market detail withholds its fact sections and says so with Retry; the full path is proven on the fixture turn and schema:local."
+    },
+    {
+      "id": "market-detail-withheld-region-order",
+      "route": "market-detail",
+      "kind": "until-migration",
+      "migration": "0031",
+      "on": "landmark",
+      "match": "^region$",
+      "ruling": "production carries no new migration before cutover (rulings 2026-10-17): without 0031 the market detail withholds its fact sections and says so with Retry; the full path is proven on the fixture turn and schema:local."
+    },
+    {
+      "id": "market-detail-assignee-name-sec5",
+      "route": "market-detail",
+      "kind": "control",
+      "match": "^button:smoke@example.invalid$",
+      "ruling": "SEC-5 (P2-02c): profiles.email is not readable under the authenticated column grant, so the roster cannot label a member without a profile name by e-mail; the control shows the Absence token with 'Name not set' (and the profile name when there is one) where the old page showed the e-mail."
     }
   ]
 }

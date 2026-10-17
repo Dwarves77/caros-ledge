@@ -1,9 +1,11 @@
 // Ported from old_repo/src/app/market/page.tsx (lines 116-249)
 // The /market page as a pure view of what the reader returned: the ledger with the headline card, the rail and the foot; then the carbon overlay, the lead-time chart, the policy timeline, the notices and the three panels. Every part is
 // independent: a failed read is that part's note with Retry, the rest of the page stands. The page reads and renders this; the UX fixtures render this with fixed data.
+import Link from "next/link";
 import { Suspense } from "react";
 
 import type { DenominatorLine as Denominator } from "@/core/coverage/matrix";
+import { coverageHref } from "@/core/coverage";
 import { trimRemainder } from "@/core/lists";
 import { DenominatorLine } from "@/features/coverage";
 import { NoticesRail } from "@/ui/figures";
@@ -50,6 +52,11 @@ export function MarketView({ read, nowIso, coverage, chips }: MarketViewProps) {
             <>
               {chips === null ? <RetryNote what="The theme strip" /> : <ThemeStrip chips={chips} />}
               <DenominatorLine denominator={coverage.denominator} error={coverage.error} surfacePath="/market" />
+              {!coverage.denominator || coverage.denominator.denominator === 0 ? (
+                <Link href={coverageHref({ dataClass: "market_intel" })} className={styles.hSource}>
+                  See coverage
+                </Link>
+              ) : null}
             </>
           }
         />

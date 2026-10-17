@@ -1,111 +1,94 @@
-// Ported from old_repo/src/components/pages/MarketSignalDetailSurface.tsx (lines 1-873)
-// The market signal's detail body (spec 02 row 12): the promotion state, the price board and the ratified series figure each with freshness and the rating of its source (INV-262), the carbon blocks, related signals. A pure view of
-// MarketDetailBundle; each part is its own Section so one failed read is that part's note with Retry. The route wraps this in P2-10's detail architecture (loadDetail + DetailLayout); this body does not draw the masthead.
-import Link from "next/link";
-
+// Ported from old_repo/src/components/pages/MarketSignalDetailSurface.tsx (lines 757-873)
+// The market signal's detail blocks (spec 02 row 12): the price board and the ratified series figure each with freshness and the rating of their source (INV-262), and the carbon blocks. Pure views of MarketDetailBundle; each part
+// is its own Section, so one failed read is that part's note with Retry. MarketDetailView places them in the detail page's sections.
 import { DerivedFigure } from "@/ui/figures";
-import { SectionCard } from "@/ui/SectionCard";
-import { SectionHead } from "@/ui/SectionHead";
+import { DetailSubSection } from "@/ui/ItemGroup";
 
 import { buildCarbonCostPerFeuView, buildCarbonOverlayView, intensityFigure, selectFactor } from "../lib/carbon";
 import { deriveSeriesFreshness } from "../lib/freshness";
 import { envelopeFromPriceStat, envelopeFromSeriesRow, ratingText } from "../lib/provenance";
 import { prefixOf, producerFor } from "../lib/registry";
-import { derivePromotionState } from "../lib/signal-promotion";
 import type { MarketDetailBundle } from "../read";
 
 import { CarbonCostOverlay } from "./CarbonCostOverlay";
 import { ProvenanceDrawer } from "./Provenance";
 import { RetryNote } from "./RetryNote";
 import { FreshnessBadge } from "./SeriesFreshness";
-import { TrajectoryBars, type TrajectoryPoints } from "./TrajectoryBars";
 import styles from "./market.module.css";
 
-export interface MarketSignalDetailProps {
+export interface MarketBlockProps {
   bundle: MarketDetailBundle;
-  item: { jurisdictionIso: readonly string[]; modes: readonly string[]; originClass: string | null };
   nowIso: string;
-  trajectory?: TrajectoryPoints | null;
 }
 
-export function MarketSignalDetail({ bundle, item, nowIso, trajectory = null }: MarketSignalDetailProps) {
-  const { convergence, priceBoard, seriesFigure, carbon, related } = bundle;
-  const promotion = derivePromotionState({ originClass: item.originClass, independentCiters: convergence.ok ? (convergence.data?.independent_citers ?? null) : null });
-  const now = new Date(nowIso);
+/** The price board, each statistic with its rating (stored, else its series') and release date, and the ratified series figure under it. */
+export function PriceBoardBlock({ bundle, nowIso }: MarketBlockProps) {
+  const { priceBoard, seriesFigure } = bundle;
   return (
-    <div data-audit="market-detail" className={styles.band}>
-      <p data-audit="promotion-state" data-promotion={promotion.code} className={styles.muted}>
-        {promotion.chip}
-        {promotion.independentCiters ? ` · ${promotion.independentCiters} independent sources` : ""}
-      </p>
-      <SectionCard>
-        <SectionHead title="Price board" />
-        {!priceBoard.ok ? (
-          <RetryNote what="The price board" />
-        ) : priceBoard.data.length === 0 ? (
-          <p className={styles.muted}>No published price statistics are attached to this signal.</p>
-        ) : (
-          <ul className={styles.gapList}>
-            {priceBoard.data.map((p) => (
-              <li key={p.label} data-audit="price-stat">
-                <b>{p.valueDisplay}</b> {p.unit ?? ""} · {p.label}
-                <span className={styles.muted}> · {ratingText(envelopeFromPriceStat(p, seriesFigure.ok ? (seriesFigure.data?.rating ?? null) : null).sourceTier)}{p.releasedAt ? ` · released ${p.releasedAt}` : ""}</span>
-                {p.nextReleaseAt ? <span className={styles.muted}> · next {p.nextReleaseLabel ?? p.nextReleaseAt}</span> : null}
-              </li>
-            ))}
-          </ul>
-        )}
-      </SectionCard>
+    <>
+      {!priceBoard.ok ? (
+        <RetryNote what="The price board" />
+      ) : priceBoard.data.length === 0 ? null : (
+        <ul data-audit="price-board" className={styles.gapList}>
+          {priceBoard.data.map((p) => (
+            <li key={p.label} data-audit="price-stat">
+              <b>{p.valueDisplay}</b> {p.unit ?? ""} · {p.label}
+              <span className={styles.muted}>
+                {" "}
+                · {ratingText(envelopeFromPriceStat(p, seriesFigure.ok ? (seriesFigure.data?.rating ?? null) : null).sourceTier)}
+                {p.releasedAt ? ` · released ${p.releasedAt}` : ""}
+              </span>
+              {p.nextReleaseAt ? <span className={styles.muted}> · next {p.nextReleaseLabel ?? p.nextReleaseAt}</span> : null}
+            </li>
+          ))}
+        </ul>
+      )}
       {!seriesFigure.ok ? (
         <RetryNote what="The series figure" />
       ) : seriesFigure.data ? (
-        <SectionCard>
-          <SectionHead title={seriesFigure.data.row.label} />
+        <div data-audit="series-figure-block">
           <p data-audit="series-figure">
-            <b>{seriesFigure.data.row.displayValue}</b> <span className={styles.muted}>{seriesFigure.data.row.unit ?? ""} · {ratingText(seriesFigure.data.rating?.tier)}</span>
+            <b>
+              {seriesFigure.data.row.label}: {seriesFigure.data.row.displayValue}
+            </b>{" "}
+            <span className={styles.muted}>
+              {seriesFigure.data.row.unit ?? ""} · {ratingText(seriesFigure.data.rating?.tier)}
+            </span>
           </p>
           <FreshnessBadge freshness={deriveSeriesFreshness({ as_at_date: seriesFigure.data.row.asAtDate, reference_period: seriesFigure.data.row.referencePeriod }, { cadenceDays: seriesFigure.data.cadenceDays }, nowIso)} />
           <ProvenanceDrawer envelope={envelopeFromSeriesRow(seriesFigure.data.row, producerFor(prefixOf(seriesFigure.data.row.seriesKey)) ?? null, seriesFigure.data.rating)} />
-          {trajectory ? <TrajectoryBars trajectoryPoints={trajectory} /> : null}
-        </SectionCard>
+        </div>
       ) : null}
-      {!carbon.ok ? (
-        <RetryNote what="Carbon intensity" />
-      ) : (
-        <CarbonBlocks carbon={carbon.data} item={item} now={now} nowIso={nowIso} />
-      )}
-      {!related.ok ? (
-        <RetryNote what="Related signals" />
-      ) : related.data.length > 0 ? (
-        <SectionCard>
-          <SectionHead title="Related signals" />
-          <ul className={styles.gapList}>
-            {related.data.slice(0, 6).map((r) => (
-              <li key={r.id}>
-                <Link href={`/market/${r.id}`}>{r.title}</Link>
-              </li>
-            ))}
-          </ul>
-        </SectionCard>
-      ) : null}
-    </div>
+    </>
   );
 }
 
-function CarbonBlocks({ carbon, item, now, nowIso }: { carbon: Extract<MarketDetailBundle["carbon"], { ok: true }>["data"]; item: MarketSignalDetailProps["item"]; now: Date; nowIso: string }) {
-  const overlay = buildCarbonOverlayView({ jurisdictionIso: item.jurisdictionIso, factors: carbon.factors, mode: item.modes.length === 1 ? (item.modes[0] ?? null) : null });
-  const sel = selectFactor(carbon.factors, { mode: item.modes.length === 1 ? (item.modes[0] ?? null) : null, jurisdictionIso: item.jurisdictionIso });
+export interface CarbonItem {
+  jurisdictionIso: readonly string[];
+  modes: readonly string[];
+}
+
+/** The carbon blocks of a corridor signal: the national modal default with its rating, and the per-FEU figure or its named gaps. */
+export function CarbonFindings({ bundle, item, nowIso }: MarketBlockProps & { item: CarbonItem }) {
+  const { carbon } = bundle;
+  if (!carbon.ok) return <RetryNote what="Carbon intensity" />;
+  const mode = item.modes.length === 1 ? (item.modes[0] ?? null) : null;
+  const overlay = buildCarbonOverlayView({ jurisdictionIso: item.jurisdictionIso, factors: carbon.data.factors, mode });
+  const sel = selectFactor(carbon.data.factors, { mode, jurisdictionIso: item.jurisdictionIso });
   const figure = sel.state === "resolved" ? intensityFigure(sel.factor, nowIso) : null;
-  const rating = sel.state === "resolved" && sel.factor.source_key ? (carbon.ratings[sel.factor.source_key] ?? null) : null;
-  const perFeu = buildCarbonCostPerFeuView({ jurisdictionIso: item.jurisdictionIso, modes: item.modes, factors: carbon.factors, corridorCandidates: carbon.corridorCandidates });
+  const rating = sel.state === "resolved" && sel.factor.source_key ? (carbon.data.ratings[sel.factor.source_key] ?? null) : null;
+  const perFeu = buildCarbonCostPerFeuView({ jurisdictionIso: item.jurisdictionIso, modes: item.modes, factors: carbon.data.factors, corridorCandidates: carbon.data.corridorCandidates });
   return (
     <>
-      <SectionCard>
-        <SectionHead title={overlay.header} />
+      <DetailSubSection title={overlay.header} subtitle="National modal default">
         <p className={styles.muted}>{overlay.body}</p>
-        {figure ? <DerivedFigure figure={figure} label="Emission intensity" now={now} rating={ratingText(rating?.tier)} /> : null}
-      </SectionCard>
-      {perFeu?.result ? <CarbonCostOverlay overlays={[{ label: perFeu.label ?? "", corridor: perFeu.result.corridor, entityId: "detail", jurisdictions: [], result: perFeu.result }]} /> : perFeu?.body ? <p className={styles.muted}>{perFeu.body}</p> : null}
+        {figure ? <DerivedFigure figure={figure} label="Emission intensity" now={new Date(nowIso)} rating={ratingText(rating?.tier)} /> : null}
+      </DetailSubSection>
+      {perFeu?.result ? (
+        <CarbonCostOverlay overlays={[{ label: perFeu.label ?? "", corridor: perFeu.result.corridor, entityId: "detail", jurisdictions: [], result: perFeu.result }]} />
+      ) : perFeu?.body ? (
+        <p className={styles.muted}>{perFeu.body}</p>
+      ) : null}
     </>
   );
 }
