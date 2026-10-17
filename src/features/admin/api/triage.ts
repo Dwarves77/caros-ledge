@@ -9,7 +9,7 @@ import { parseJson, uuid } from "@/core/http/parse";
 
 import { JURISDICTION_ACTIONS, REJECTION_ACTIONS } from "../vocab";
 
-import { adminRoute, reply, text } from "./shared";
+import { adminRoute, isMissingFunction, notInstalled, reply, text } from "./shared";
 
 export const TRIAGE_BOUND = 200;
 
@@ -65,6 +65,7 @@ export const resolveJurisdictionReview = adminRoute("/api/admin/triage/pending-j
   const value = text(body.resolution_value);
   if (body.action === "manually-classify" && !value) throw new HttpError(400, "resolution_value is required for manually-classify");
   const { data, error } = await admin.service().rpc("resolve_pending_jurisdiction_review", { p_review_id: body.id, p_action: body.action, p_resolution: body.action === "manually-classify" ? value : null, p_actor: admin.userId });
+  if (isMissingFunction(error)) throw notInstalled("resolve_pending_jurisdiction_review", "0035");
   if (error) throw dbError(error, { notFound: "row not found" });
   return reply(admin, { success: true, id: body.id, action: body.action, ...(data as Record<string, unknown> | null) });
 });

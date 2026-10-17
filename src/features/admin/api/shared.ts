@@ -37,3 +37,9 @@ export async function headCount(q: PromiseLike<{ count: number | null; error: { 
   if (error || typeof count !== "number") throw new HttpError(503, `${what} could not be counted${error ? `: ${error.message}` : ""}`, { "Retry-After": "1" });
   return count;
 }
+
+/** True when a database error says the function is not there: Postgres 42883, PostgREST PGRST202, or the plain message. Production carries no new migration until cutover. */
+export const isMissingFunction = (e: { message?: string; code?: string | null } | null | undefined): boolean => !!e && (e.code === "42883" || e.code === "PGRST202" || /does not exist|could not find the function/i.test(e.message ?? ""));
+
+/** The stated block for a function a pending migration adds: a 503 that names the function and the migration, not a thrown page and not a zero. */
+export const notInstalled = (fn: string, migration: string): HttpError => new HttpError(503, `${fn} is not installed on this database yet (migration ${migration} has not been applied here)`);
