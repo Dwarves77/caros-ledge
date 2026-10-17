@@ -4,6 +4,7 @@
 import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
+import { pathToFileURL } from "node:url";
 
 const inCi = Boolean(process.env.GITHUB_ACTIONS);
 const git = (...args) => execFileSync("git", args, { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
@@ -48,7 +49,7 @@ function run(step) {
   return r.status ?? 1;
 }
 
-if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split(/[\/]/).pop())) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const stamp = execFileSync("git", ["rev-parse", "--git-path", "gates-last"], { encoding: "utf8" }).trim();
   const last = existsSync(stamp) ? readFileSync(stamp, "utf8").trim() : null;
   const steps = [...STEPS];
