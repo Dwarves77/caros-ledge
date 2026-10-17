@@ -32,7 +32,7 @@ function parseArgs(argv) {
     const key = argv[i];
     if (key === '--signed-out-only') args['signed-out-only'] = true;
     else if (key?.startsWith('--') && argv[i + 1] !== undefined) args[key.slice(2)] = argv[(i += 1)];
-    else throw new Error(`usage: capture.mjs --base <origin> --out <dir> [--signed-out-only] (bad argument ${key ?? '<none>'})`);
+    else throw new Error(`usage: capture.mjs --base <origin> --out <dir> [--signed-out-only] [--routes a,b] (bad argument ${key ?? '<none>'})`);
   }
   return args;
 }
@@ -247,7 +247,8 @@ async function main() {
   const out = args.out;
   await mkdir(out, { recursive: true });
 
-  const { routes } = JSON.parse(await readFile(ROUTES_FILE, 'utf8'));
+  const only = args.routes && args.routes !== 'all' ? new Set(args.routes.split(',')) : null;
+  const routes = JSON.parse(await readFile(ROUTES_FILE, 'utf8')).routes.filter((r) => !only || only.has(r.name));
   const { gates } = JSON.parse(await readFile(join(dirname(ROUTES_FILE), 'approved-changes.json'), 'utf8'));
   const index = {
     captured_at: new Date().toISOString(),

@@ -23,6 +23,9 @@ on:
       input:
         description: 'Turn input, a JSON object keyed by stage'
         default: '{}'
+      routes:
+        description: 'Baseline recapture (job baseline): route names, comma separated, or all'
+        default: all
       chain:
         description: 'Run the stage downstream stages too (false runs only the named stage)'
         default: 'true'
@@ -222,6 +225,34 @@ jobs:
             next-start.log
 
   # The one writer of the run's record: runs after the others, polls nothing, holds no secrets, and never fails the run itself (it reports the others' conclusions).
+  # Recapture of the parity baseline from the old site (tests/parity/baseline/README.md says how to use the artifact). Dispatch only: never on push or pull_request.
+  baseline:
+    name: baseline
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    container:
+      image: mcr.microsoft.com/playwright:v1.61.1-noble
+    env:
+      LIVE_SMOKE_EMAIL: ${{ secrets.LIVE_SMOKE_EMAIL }}
+      LIVE_SMOKE_PASSWORD: ${{ secrets.LIVE_SMOKE_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --no-audit
+      - name: Playwright package matching the image (browsers come from the image)
+        run: npm install --no-save playwright@1.61.1 --no-audit --no-fund
+      - name: Capture the old site
+        run: node tests/parity/capture.mjs --base https://carosledge.com --out parity-baseline --routes "${{ inputs.routes || 'all' }}"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: parity-baseline-${{ github.run_id }}
+          path: parity-baseline
+
   report:
     name: report
     needs: [ci, schema, parity]

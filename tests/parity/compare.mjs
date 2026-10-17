@@ -14,6 +14,8 @@ const EMAIL = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g;
 const KEEP = new Set(['privacy@carosledge.com']);
 // The baseline was sanitized (every email, placeholders included, became smoke@example.invalid); the capture gets the same treatment before comparing.
 const clean = (s) => String(s ?? '').replace(EMAIL, (m) => (KEEP.has(m) ? m : 'smoke@example.invalid')).replace(/\s+/g, ' ').trim();
+// A count a page may or may not draw ("Watchlist0" at baseline, "Watchlist" now) is dropped when it trails a letter.
+const uncount = (s) => clean(s).replace(/\d[\d,]*/g, '#').replace(/(?<=[A-Za-z])#$/, '');
 const PIXEL_THRESHOLD = 0.02;
 // IMP-062: the diff images land beside the capture's report so the parity job uploads them as an artifact.
 const DIFF_DIR = 'parity-diff';
@@ -55,9 +57,9 @@ export function compareRecord(route, viewport, base, cap, approved) {
     void show;
   };
   check('landmark', base.landmarks ?? [], cap.landmarks ?? [], (l) => l.role);
-  check('heading', base.headings ?? [], cap.headings ?? [], (h) => `${h.level}:${clean(h.text)}`);
-  // A nav link's trailing count is live data ("Regulations1,320"), not design.
-  const ctl = (c) => `${c.role}:${clean(c.name).replace(/(?<=[A-Za-z])[\d,]+$/, '')}`;
+  // Counts are data, not design: every integer run in a name ("+ 18 more", "GLOBAL16", "Regulations1,320") compares as "#".
+  check('heading', base.headings ?? [], cap.headings ?? [], (h) => `${h.level}:${uncount(h.text)}`);
+  const ctl = (c) => `${c.role}:${uncount(c.name)}`;
   check('control', base.controls ?? [], cap.controls ?? [], ctl);
   const baseRows = base.rows?.items ?? [];
   const capRows = cap.rows?.items ?? [];
