@@ -9,6 +9,7 @@ import { classifyTimeline, collapseTimeline, formatTrajectoryStep, pickCurrentSt
 import { countryGroupForIso, countryOf, isIso, isoCodesOf, isoToDisplayLabel, jurisdictionTier, jurisLabelOf, legacyToIso, TIER1, TIER1_REGIONS, TIER2 } from "@/core/jurisdictions";
 import { deriveThemeLabel, themeAnalysisView, themeChips, themeForItem } from "@/core/themes";
 import { withClaimTiers } from "@/ui/claim-tier";
+import { coverageLineModel } from "@/features/regulations/coverage-line";
 import { centroidOf } from "@/features/regulations/map/centroids";
 import { markerSize } from "@/features/regulations/map/marker";
 import { rollupRegions, sourceTypesFor } from "@/features/regulations/map/region-coverage";
@@ -192,4 +193,15 @@ test("the dek is built once and never repeats a part; a saved view stores the li
   assert.equal(canonicalQuery("?band=immediate&region=EU&evil=1&sort=bogus"), "band=immediate&region=EU");
   assert.equal(canonicalQuery("evil=1"), null);
   assert.equal(canonicalQuery(""), null);
+});
+
+test("the coverage line always draws its link: a refused or failed count is the unavailable state, an empty catalogue its own, a count the count", () => {
+  const line = { surface: "regulations", label: "Regulations", numerator: 3, denominator: 10, verifiedBriefs: 2, href: "/dashboard/coverage?class=regulations" };
+  assert.deepEqual(coverageLineModel(line, false, "regulations"), { href: line.href, state: "count" });
+  assert.deepEqual(coverageLineModel({ ...line, denominator: 0 }, false, "regulations"), { href: line.href, state: "empty-catalogue" });
+  for (const [d, failed] of [[null, true], [null, false], [line, true]] as const) {
+    const m = coverageLineModel(d, failed, "regulations");
+    assert.equal(m.state, "unavailable");
+    assert.ok(m.href.startsWith("/dashboard/coverage"), "the link is drawn whatever the count did");
+  }
 });

@@ -67,6 +67,20 @@ test("/api/listings/rest: signed-in callers only, a named list only, the rows tr
   assert.equal(ORG_A.length, 36);
 });
 
+test("saved views: a database without the table answers a stated, retryable state on every verb, never a raw relation error", async () => {
+  const db = script(seed());
+  db.fail("saved_views", "select", { message: 'relation "public.saved_views" does not exist', code: "42P01" });
+  db.fail("saved_views", "insert", { message: "relation does not exist", code: "42P01" });
+  db.fail("saved_views", "delete", { message: "relation does not exist", code: "PGRST205" });
+  const got = await call(listViews, "member", "GET", `${VIEWS}?surface=regulations`);
+  assert.equal(got.status, 503);
+  assert.equal(got.headers.get("Retry-After"), "60");
+  assert.match(String(got.body.error), /not available yet/);
+  assert.ok(!/relation/.test(String(got.body.error)), "no raw database text reaches the reader");
+  assert.equal((await call(removeView, "member", "DELETE", `${VIEWS}?id=eeeeeeee-0000-4000-8000-000000000001`)).status, 503);
+  assert.equal((await call(saveView, "member", "POST", VIEWS, { surface: "regulations", name: "x", query: "band=action" })).status, 503);
+});
+
 test("saved views: signed-in callers only; personal per user (another user's views are neither listed nor deletable); the stored query is the list's canonical one; names and caps are enforced", async () => {
   const matrix = { anon: 401, viewer: 200, member: 200, admin: 200, owner: 200, otherOrgMember: 200, platformAdmin: 200 };
   for (const [persona, status] of Object.entries(matrix)) {

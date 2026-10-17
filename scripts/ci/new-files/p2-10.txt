@@ -13,3 +13,5 @@ src/ui/detail/index.ts | new in P2-10: the detail components barrel (P2-11..P2-1
 src/ui/detail/watch.tsx | new in P2-10: the watch control on the detail shell over the shared chrome toggle
 src/app/privacy/ui-fixtures/regulations/page.tsx | new in P2-10: the UX smoke's fixture route for the Regulations screens
 src/app/privacy/ui-fixtures/regulations/RegulationsFixtures.tsx | new in P2-10: static props for the Regulations screens the smoke mounts
+src/features/regulations/coverage-line.ts | new in P2-10: the coverage line's decision (link always drawn, count or Absence)
+scripts/ci/stdout-drain.mjs | new in P2-10: awaits the stdout drain before a CI child ends (the schema job's truncated snapshot)

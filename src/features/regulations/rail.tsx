@@ -10,6 +10,8 @@ import { classifyByDays } from "@/core/lists";
 import { daysFrom, formatForwardEventCompact, selectObligationRailRows } from "@/features/obligations";
 import { Absence, CoverageState, RailCard, StateNote } from "@/ui";
 
+import { coverageLineModel } from "./coverage-line";
+
 export interface RailEvent {
   id: string;
   event_date: string;
@@ -44,22 +46,30 @@ export function ObligationsRailCard({ events, failed, nowIso }: { events: readon
   );
 }
 
-/** The coverage count under the list: numerator beside denominator, the verified-brief count, and the way to the cell. A failed read, or a surface with nothing catalogued, says which. */
-export function CoverageLine({ denominator, failed, surfacePath }: { denominator: DenominatorLine | null; failed: boolean; surfacePath: string }) {
+/**
+ * The coverage line under the list: numerator beside denominator and the verified-brief count, and ALWAYS the way to the cell. When the count could not be read (the read failed, or the database
+ * does not yet carry the object it needs) the count is the Absence token with a stated note and the link is still drawn; a surface with nothing catalogued says so.
+ */
+export function CoverageLine({ denominator, failed, surface }: { denominator: DenominatorLine | null; failed: boolean; surface: string }) {
+  const { href, state } = coverageLineModel(denominator, failed, surface);
+  const unavailable = state === "unavailable";
   return (
     <div data-guard-container="coverage-denominator" style={{ padding: "14px 0 0" }}>
-      {failed || !denominator ? (
-        <CoverageState state="error" variant="inline" subject="The coverage count" retryHref={surfacePath} />
-      ) : denominator.denominator === 0 ? (
+      {state === "empty-catalogue" && denominator ? (
         <CoverageState state="not_covered" variant="inline" subject={`The ${denominator.label} catalogue`} reason="No instrument has been catalogued for this surface yet." requestRef={denominator.href} />
-      ) : (
-        <p data-part="coverage-denominator" style={{ margin: 0, display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0 12px", fontSize: "var(--fs-11)", color: "var(--ink-2)" }}>
-          <span style={{ overflowWrap: "anywhere" }}>{formatDenominatorLine(denominator)}</span>
-          <Link href={denominator.href} prefetch={false} className="cl-rail-link">
-            See coverage
-          </Link>
-        </p>
-      )}
+      ) : null}
+      <p data-part="coverage-denominator" style={{ margin: 0, display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0 12px", fontSize: "var(--fs-11)", color: "var(--ink-2)" }}>
+        {unavailable ? (
+          <span style={{ overflowWrap: "anywhere" }}>
+            Coverage count: <Absence reason="connect data" variant="dash" /> It did not load; the coverage page has the full count.
+          </span>
+        ) : (
+          <span style={{ overflowWrap: "anywhere" }}>{denominator ? formatDenominatorLine(denominator) : null}</span>
+        )}
+        <Link href={href} prefetch={false} className="cl-rail-link">
+          See coverage
+        </Link>
+      </p>
     </div>
   );
 }

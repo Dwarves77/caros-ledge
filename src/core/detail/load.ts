@@ -38,6 +38,8 @@ export interface DetailBundle<ItemScoped> {
   /** The stored sections with every suppressed claim removed. */
   sections: SectionRow[];
   claimTiers: ClaimTierMap;
+  /** The claims or their suppressions could not be read (an object a migration adds is absent, or the read failed): the stored sections and the brief are withheld, never shown unredacted (INV-270), and the page says so with Retry. */
+  claimsDegraded: boolean;
   resourceLookup: ResourceLookup;
   /** The masthead rows: supersessions first, then the connections (links on each item's own surface). */
   connectionRows: ConnectionRow[];
@@ -57,13 +59,15 @@ export async function loadDetail<ItemScoped = undefined>(surface: DetailSurface,
   if (!item || item.canonicalSurface !== surface) return { notFound: true };
   const { uuid, resource, connections, supersessions } = item;
   const relatedIds = [...new Set([...connections.map((c) => c.id), ...supersessions.flatMap((s) => [s.old, s.new])])].filter(Boolean);
-  const [claims, lookup, itemScoped] = await Promise.all([
-    readClaims(client, uuid),
+  const [claimsRead, lookup, itemScoped] = await Promise.all([
+    readClaims(client, uuid).then((c) => ({ ok: true as const, ...c }), (e: unknown) => ({ ok: false as const, error: e })),
     buildResourceLookup(client, relatedIds),
     loadItemScoped ? loadItemScoped({ db: client, uuid, resource, connections, supersessions }) : Promise.resolve(undefined as ItemScoped),
   ]);
   const crossPage = await readCrossPage(client, uuid, surface, item.intersectionSummary, connections, lookup);
-  const redacted = redactSuppressedClaims({ sections: item.sections, fullBrief: resource.fullBrief ?? null, claims: claims.suppressed });
+  // INV-270 fails closed: without the suppressions the text is withheld (a named degraded block), never rendered unredacted and never read as 'nothing suppressed'.
+  const claims = claimsRead.ok ? claimsRead : { tiers: {} as ClaimTierMap, suppressed: [] };
+  const redacted = claimsRead.ok ? redactSuppressedClaims({ sections: item.sections, fullBrief: resource.fullBrief ?? null, claims: claims.suppressed }) : { sections: [] as SectionRow[], fullBrief: "" };
   return {
     notFound: false,
     uuid,
@@ -74,6 +78,7 @@ export async function loadDetail<ItemScoped = undefined>(surface: DetailSurface,
     dispute: item.dispute,
     sections: redacted.sections,
     claimTiers: claims.tiers,
+    claimsDegraded: !claimsRead.ok,
     resourceLookup: lookup,
     connectionRows: [...buildSupersessionRows(supersessions, resource.id, lookup), ...buildConnectionRows(connections, lookup)],
     crossPage,

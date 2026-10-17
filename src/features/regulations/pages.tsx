@@ -60,7 +60,7 @@ export async function RegulationsIndex() {
         nowIso={session.nowIso}
         chips={chips ?? []}
         rail={<ObligationsRailCard events={upcoming?.events ?? []} failed={upcoming === null} nowIso={session.nowIso} />}
-        below={<CoverageLine denominator={coverage?.denominator ?? null} failed={coverage === null || coverage.error !== null} surfacePath="/regulations" />}
+        below={<CoverageLine denominator={coverage?.denominator ?? null} failed={coverage === null || coverage.error !== null} surface="regulations" />}
       />
     </Suspense>
   );
@@ -96,6 +96,7 @@ export async function RegulationDetailRoute({ params }: { params: Promise<{ slug
       dispute={detail.dispute}
       sections={detail.sections}
       claimTiers={detail.claimTiers}
+      claimsDegraded={detail.claimsDegraded}
       recommendedActions={detail.recommendedActions}
       crossPage={detail.crossPage}
       connectionRows={detail.connectionRows}

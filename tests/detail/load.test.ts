@@ -62,13 +62,29 @@ test("INV-270: a suppressed claim is absent from the tier map and its text is re
   assert.ok(!again.notFound && again.sections.find((s) => s.section_key === "3")?.content_md.includes("4,000 euro"));
 });
 
-test("INV-270 fails closed: a failed suppression read fails the page; it never renders the claim unredacted and never reads as no suppressions", async () => {
-  const db = world();
-  db.fail("fact_suppressions", "select", "view down");
-  await assert.rejects(() => loadDetail("regulations", "g14", undefined, as(db)), /fact_suppressions read failed/);
-  const db2 = world();
-  db2.fail("section_claim_provenance", "select", "claims down");
-  await assert.rejects(() => loadDetail("regulations", "g14", undefined, as(db2)), /paginated read failed/);
+test("INV-270 fails closed into a named degraded block: a refused suppression read, a refused claims read or an absent view withholds the facts and the page still loads; nothing renders unredacted", async () => {
+  const check = async (db: ReturnType<typeof world>) => {
+    const d = await loadDetail("regulations", "g14", undefined, as(db));
+    assert.ok(!d.notFound);
+    if (d.notFound) return;
+    assert.equal(d.claimsDegraded, true, "the page says the facts did not load");
+    assert.deepEqual(d.sections, [], "no stored section is drawn");
+    assert.equal(d.resource.fullBrief, "", "the brief is withheld");
+    assert.deepEqual(d.claimTiers, {});
+    assert.ok(!JSON.stringify(d).includes("4,000 euro"), "the suppressed claim text is nowhere in the bundle");
+    assert.equal(d.resource.id, "g14", "the rest of the item (title, source, timeline) still loads");
+  };
+  const refused = world();
+  refused.fail("fact_suppressions", "select", "permission denied for view fact_suppressions");
+  await check(refused);
+  const claims = world();
+  claims.fail("section_claim_provenance", "select", "claims down");
+  await check(claims);
+  const absent = world();
+  absent.fail("fact_suppressions", "select", "relation \"public.fact_suppressions\" does not exist", { code: "42P01" }); // the production database before the migration
+  await check(absent);
+  const healthy = await loadDetail("regulations", "g14", undefined, as(world()));
+  assert.ok(!healthy.notFound && healthy.claimsDegraded === false);
 });
 
 test("INV-263: a failed item read throws (the route says so with Retry); it is never 'not found'", async () => {

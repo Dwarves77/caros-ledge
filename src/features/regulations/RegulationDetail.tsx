@@ -37,6 +37,8 @@ interface Props extends Omit<DetailSurfaceSharedProps, "relevance"> {
   dispute: Dispute | null;
   sections: SectionRow[];
   claimTiers: ClaimTierMap;
+  /** The claims or their suppressions did not load: the page says so with Retry and draws no fact section. */
+  claimsDegraded?: boolean;
   recommendedActions: RecommendedAction[];
   crossPage: CrossPageData;
   events: ObligationEvent[];
@@ -120,6 +122,11 @@ export function RegulationDetail(p: Props) {
           <DetailMasthead title={r.title} band={band} surface="Regulations" jurisdiction={jurisLabel} dek={dek} placeholder="Ask about this regulation, e.g. when does the largest deadline hit" nowIso={nowIso} actionSlot={actionCard} connectionsSlot={p.connectionRows && p.connectionRows.length > 0 ? <ItemConnections rows={p.connectionRows} /> : undefined} />
           {isAdminViewer && r.agentIntegrityFlag === true && r.agentIntegrityPhrase && (
             <StateNote tone="error">Flagged for review: the brief carries the phrase “{r.agentIntegrityPhrase}”.</StateNote>
+          )}
+          {p.claimsDegraded && (
+            <StateNote tone="error" action={{ label: "Retry", onClick: () => router.refresh() }}>
+              The facts of this regulation did not load, so none is shown. Nothing was changed; try again.
+            </StateNote>
           )}
           {p.eventsFailed && (
             <StateNote tone="error" action={{ label: "Retry", onClick: () => router.refresh() }}>
