@@ -18,7 +18,8 @@ import { isImpactScored } from "./impact";
 import { MilestoneTimeline } from "./MilestoneTimeline";
 
 export interface ListRowProps {
-  href: string;
+  /** Where the row opens; absent for a row with no page (a watched source), which draws as a row without the link layer. */
+  href?: string | undefined;
   band: UrgencyBand;
   jurisdiction: string;
   title: string;
@@ -48,7 +49,7 @@ export function ListRow({ href, band, jurisdiction, title, meta, kind, impact, d
   return (
     <div className="cl-list-row" data-part="list-row" data-part-variant="list" style={{ minHeight, ["--row-band" as string]: band.cssVar }}>
       <span className="cl-row-spine" aria-hidden="true" style={{ background: band.cssVar }} />
-      <Link href={href} prefetch={false} className="cl-row-link" aria-label={title} />
+      {href && <Link href={href} prefetch={false} className="cl-row-link" aria-label={title} />}
       <div className="cl-row-content">
         <div className="cl-row-line1">
           <span className="cl-row-juris">{jurisdiction}</span>

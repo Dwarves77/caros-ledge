@@ -1,0 +1,25 @@
+/* The Assistant panel: a fixed popover under the command bar. Colour, type and radius are the shared tokens. */
+.panel { position: fixed; z-index: 60; display: flex; flex-direction: column; height: min(70vh, 560px); background: var(--card); border: 1px solid var(--line-1); border-radius: var(--radius-card); box-shadow: var(--shadow-pop); overflow: hidden; }
+.head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 4px 0 16px; border-bottom: 1px solid var(--line-2); background: var(--tag); }
+.title { font-size: var(--fs-13); font-weight: 800; color: var(--ink); margin: 0; }
+.close { min-width: var(--target); min-height: var(--target); border: 0; background: transparent; font-size: 20px; color: var(--ink-2); cursor: pointer; }
+.body { flex: 1; overflow-y: auto; padding: 12px 16px; display: flex; flex-direction: column; gap: 14px; }
+.intro { font-size: var(--fs-12); color: var(--ink-2); line-height: 1.5; margin: 0; }
+.asked { align-self: flex-end; max-width: 85%; padding: 8px 12px; border-radius: var(--radius-card); background: var(--brand); color: var(--invert-text); font-size: var(--fs-12); overflow-wrap: anywhere; }
+.reply { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.label { font-size: var(--fs-95); font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); margin: 0 0 4px; }
+.card { border: 1px solid var(--line-2); border-radius: var(--radius-card); padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
+.q { font-size: var(--fs-11); color: var(--ink-3); margin: 0; }
+.text { font-size: var(--fs-125); color: var(--ink); margin: 0; line-height: 1.5; overflow-wrap: anywhere; }
+.meta { font-size: var(--fs-11); color: var(--ink-3); margin: 0; }
+.cited { display: inline-flex; align-items: center; min-height: var(--target); color: var(--ink); font-weight: 600; }
+.hit { border-bottom: 1px solid var(--line-3); }
+.more > summary { display: flex; align-items: center; min-height: var(--target); padding: 0 12px; font-size: var(--fs-11); font-weight: 700; color: var(--ink-2); cursor: pointer; }
+.moreBody { padding: 0 12px 12px; display: flex; flex-direction: column; gap: 6px; }
+.compose { display: flex; gap: 8px; padding: 10px 12px; border-top: 1px solid var(--line-2); }
+.compose > :first-child { flex: 1; min-width: 0; }
+.fine { font-size: var(--fs-10); color: var(--ink-3); margin: 0; line-height: 1.45; }
+.lines { margin: 0; padding-left: 16px; font-size: var(--fs-12); color: var(--ink-2); display: flex; flex-direction: column; gap: 4px; }
+@media (max-width: 767px) {
+  .panel { left: 16px !important; right: 16px; width: auto !important; }
+}

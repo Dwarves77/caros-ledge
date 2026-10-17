@@ -14,7 +14,7 @@ import { StateNote } from "../StateNote";
 import { ListRow } from "../ListRow";
 
 import { useBootstrapStore } from "./use-bootstrap";
-import { activeDescendantId, clearButtonLabel, clearButtonVisible, isOutsidePointerDown, moveActiveIndex, optionId, resolveEnterKeyAction, runSearch, searchResultsHref, type SearchState } from "./command-bar";
+import { OPEN_ASK_EVENT, activeDescendantId, clearButtonLabel, clearButtonVisible, isOutsidePointerDown, moveActiveIndex, optionId, resolveEnterKeyAction, runSearch, searchResultsHref, type SearchState } from "./command-bar";
 
 const AssistantContext = createContext(false);
 /** Whether an assistant surface is mounted: the shell command bar enables Ask only then. The Ask event is the one the assistant surface listens for. */
@@ -197,12 +197,12 @@ export function CommandBar({ itemCount, placeholder, onAsk, onSearch }: CommandB
 }
 
 /** The command bar a surface drops into the Masthead slot: item count from the nav counts, Ask wired to the assistant event when one is mounted and enabled. */
-export function ShellCommandBar({ placeholder }: { placeholder?: string }) {
+export function ShellCommandBar({ placeholder, onSearch }: { placeholder?: string; onSearch?: (query: string) => void }) {
   const mounted = useContext(AssistantContext);
   const enabled = useBootstrapStore((s) => s.data?.assistantEnabled === true);
   const counts = useBootstrapStore((s) => s.data?.navCounts ?? null);
   const parts = counts ? [counts.regulations, counts.market, counts.research, counts.operations] : [];
   const total = parts.length === 4 && parts.every((n) => n !== null) ? (parts as number[]).reduce((a, b) => a + b, 0) : null;
-  const onAsk = mounted && enabled ? (question: string, anchor: { top: number; left: number; width: number } | null) => window.dispatchEvent(new CustomEvent("open-ask-assistant", { detail: { question, anchor } })) : undefined;
-  return <CommandBar itemCount={total} {...(placeholder ? { placeholder } : {})} {...(onAsk ? { onAsk } : {})} />;
+  const onAsk = mounted && enabled ? (question: string, anchor: { top: number; left: number; width: number } | null) => window.dispatchEvent(new CustomEvent(OPEN_ASK_EVENT, { detail: { question, anchor } })) : undefined;
+  return <CommandBar itemCount={total} {...(placeholder ? { placeholder } : {})} {...(onAsk ? { onAsk } : {})} {...(onSearch ? { onSearch } : {})} />;
 }

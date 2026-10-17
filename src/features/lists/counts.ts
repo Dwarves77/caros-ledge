@@ -52,13 +52,13 @@ export async function readSurfaceCounts(db: Db, orgId: string | null, surface: s
   }
 }
 
-/** The four surface totals from the one all-surfaces RPC; null on failure or when a total is missing. */
+/** The four VERIFIED surface counts from the one all-surfaces RPC (the customer rail counts verified items, ruling 1: the same number the surface's own tiles show); null on failure or when a count is missing. */
 export async function readSurfaceTotals(db: Db, orgId: string): Promise<{ regulations: number; marketIntel: number; research: number; operations: number } | null> {
   try {
     const { data, error } = await db.rpc("get_all_surface_counts", { p_org_id: orgId });
     if (error || !data) return null;
-    const total = (key: string) => Number((data as Record<string, { total?: number } | undefined>)[key]?.total ?? Number.NaN);
-    const out = { regulations: total("regulations"), marketIntel: total("market"), research: total("research"), operations: total("operations") };
+    const verified = (key: string) => Number((data as Record<string, { verified?: number } | undefined>)[key]?.verified ?? Number.NaN);
+    const out = { regulations: verified("regulations"), marketIntel: verified("market"), research: verified("research"), operations: verified("operations") };
     return Object.values(out).some(Number.isNaN) ? null : out;
   } catch {
     return null;
