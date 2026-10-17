@@ -1,6 +1,6 @@
 // Ported from old_repo/src/app/api/admin/coverage/route.ts (lines 62-299)
 import { LookupError } from "@/core/http/errors";
-import { countryGroupForIso, countryLabel, jurisdictionTier, subnational } from "@/core/jurisdictions";
+import { countryGroupForIso, countryLabel, jurisdictionTier, subnational, TIER1, TIER2 } from "@/core/jurisdictions";
 
 import { adminRoute, reply } from "./shared";
 
@@ -48,7 +48,7 @@ export function buildAdminMatrix(rows: readonly RpcRow[], nowMs: number, filter:
     totals.set(r.jurisdiction_iso, { items: t.items + items, sources: Math.max(t.sources, sources) });
     return { jurisdiction_iso: r.jurisdiction_iso, label: countryLabel(r.jurisdiction_iso) || r.jurisdiction_iso, country: countryGroup(r.jurisdiction_iso), item_type: r.item_type, item_count: items, source_count: sources, most_recent_item_at: r.most_recent_item_at, oldest_item_at: r.oldest_item_at, has_critical: !!r.has_critical, cell_state: deriveCellState(items, sources, r.most_recent_item_at, nowMs) };
   });
-  for (const iso of new Set([...tier1, ...tier2])) {
+  for (const iso of new Set([...TIER1, ...TIER2])) {
     if (totals.has(iso)) continue;
     totals.set(iso, { items: 0, sources: 0 });
     cells.push({ jurisdiction_iso: iso, label: countryLabel(iso) || iso, country: countryGroup(iso), item_type: NO_ITEMS, item_count: 0, source_count: 0, most_recent_item_at: null, oldest_item_at: null, has_critical: false, cell_state: "gap-no-source" });
