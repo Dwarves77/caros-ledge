@@ -1,5 +1,4 @@
 src/app/privacy/ui-fixtures/page.tsx | new in P2-09: the UX smoke fixture route, a 404 unless UI_FIXTURES=1 (set only in the CI parity job), no old counterpart
-src/app/privacy/ui-fixtures/Fixtures.tsx | new in P2-09: every row and card part mounted with fixtures for the UX smoke, no old counterpart
 src/ui/base.css | the one base stylesheet, built from old_repo/src/app/globals.css 144-211, 392-626 and the per-instance style templates of src/components/ui; a stylesheet cannot carry a // header
 src/ui/theme.css | the one token set from old_repo/src/app/theme.css 20-96 and globals.css 7-10, 518-521; a stylesheet cannot carry a // header
 src/ui/shell/data/nav.json | the nav as data (sections, titles, chromeless and suppressed routes) from old_repo/src/components/Sidebar.tsx 48-104 and AppShell.tsx 17-39; JSON cannot carry a // header

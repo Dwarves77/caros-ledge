@@ -1,7 +1,7 @@
 // Ported from old_repo/src/app/research/page.tsx (lines 84-138)
 import { userClient } from "@/core/db/clients";
 import { pageSession } from "@/features/account/server/page-session";
-import { PageFailure } from "@/features/account/ui/PageFailure";
+import { PageFailure } from "@/ui/shell";
 import { loadSurfaceDenominator } from "@/features/coverage/server/matrix-data";
 
 import { readResearchPage } from "./read/research-reads";

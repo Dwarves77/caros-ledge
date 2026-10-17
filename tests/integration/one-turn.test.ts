@@ -8,9 +8,11 @@ import { test } from "node:test";
 import { chainProof, flywheelOutcomes, mintedIds } from "@/core/harness";
 import { runTurn } from "@/core/turn";
 import { loadCoverage } from "@/features/coverage/server/census";
+import { loadDetail } from "@/core/detail";
 import { buildRegisterQuerySpec, fetchObligationRegisterPage, readUpcoming } from "@/features/obligations";
 import { readDerivedFigures } from "@/features/operations/read/operations-reads";
 import { readResearchPage } from "@/features/research/read/research-reads";
+import { readRegulationsFirstPage } from "@/features/regulations/list-read";
 
 import type { Row } from "../_support/memdb.ts";
 
@@ -177,4 +179,32 @@ test("P4: the derived value the turn propagated reads on the Operations panel wi
   assert.deepEqual([view.technical?.low, view.technical?.high], [6, 7], "the corridor is read from the text the turn captured: a demonstration plant is TRL 6-7, not 8-9");
   assert.ok(view.horizon && view.horizon.rule, "the horizon cascade ran");
   assert.equal(f.db.rows("item_forward_events").some((x) => x.intelligence_item_id === finding.id), false, "a portal-promoted item has no forward events yet, so the cascade falls through to its inferred rule rather than anchoring on a date it does not hold");
+});
+
+test("P2-10: the item the turn minted and verified renders on /regulations and on its detail, with every section it has, the capture's source rating, and its claims rated by their source", async () => {
+  const t = await theTurn();
+  const { db, ids } = t;
+  const itemId = (ids("ledger-consume").minted_item_ids ?? [])[0] as string;
+  const item = db.rows("intelligence_items").find((x) => x.id === itemId) as Row;
+  // The two database objects the member reads add (migration 0031): the suppression view, and the listing RPC that returns the items the reader may open.
+  db.views.fact_suppressions = () => db.rows("item_corrections").filter((c) => c.target_kind === "fact" && c.item_id === itemId);
+  const rpc = db.rpc.bind(db);
+  (db as unknown as { rpc: unknown }).rpc = (name: string, args: Record<string, unknown>) => Object.assign(rpc(name, args), { range: () => rpc(name, args) });
+  db.rpcs.get_workspace_intelligence_listings_public = () => ({ data: db.rows("intelligence_items").filter((x) => x.provenance_status === "verified" && x.is_archived !== true) });
+
+  // The list: the minted item is a row of the Regulations list, carrying its uuid.
+  const list = await readRegulationsFirstPage(db.client, null);
+  assert.equal(list.failed, false);
+  assert.ok(list.rows.some((r) => r.uuid === itemId), "the minted item is on the Regulations list");
+
+  // The detail: found by its uuid (or legacy id), every stored section carried once, the claims rated by their source, the item's source rated by the registry.
+  const detail = await loadDetail("regulations", String(item.legacy_id ?? itemId), undefined, db.client);
+  assert.ok(!detail.notFound, "the minted item has a detail page");
+  if (detail.notFound) return;
+  const stored = db.rows("intelligence_item_sections").filter((x) => x.item_id === itemId);
+  assert.deepEqual(detail.sections.map((x) => x.id).sort(), stored.map((x) => String(x.id)).sort(), "every stored section reaches the page, once");
+  const facts = db.rows("section_claim_provenance").filter((x) => x.intelligence_item_id === itemId && x.claim_kind === "FACT");
+  assert.ok(facts.length > 0 && facts.every((f) => detail.claimTiers[String(f.claim_text)]?.tier === 1), "each FACT claim carries its source's rating: COALESCE(override, base) of the registered source (base tier 1)");
+  assert.equal(detail.resource.sourceTier ?? null, 1, "the capture's source rating is the registry's, drawn on the item");
+  assert.deepEqual(await loadDetail("market", itemId, undefined, db.client), { notFound: true }, "the same item is not found on another surface");
 });

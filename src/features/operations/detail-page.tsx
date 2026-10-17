@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 
 import { applyIdRedirect, loadDetail, type ItemScopedCtx } from "@/core/detail";
 import { pageSession } from "@/features/account/server/page-session";
-import { PageFailure } from "@/features/account/ui/PageFailure";
+import { PageFailure } from "@/ui/shell";
 import { relatedItems } from "@/features/research/read/related-items";
 
 import { readDerivedFigures, readItemRegionInputs, readMatrixEligibility, readSpec09 } from "./read/operations-reads";

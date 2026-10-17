@@ -7,7 +7,7 @@ import { formatLocaleDate } from "@/core/shared";
 import { log } from "@/core/shared/log";
 import { canWrite } from "@/core/workspace";
 import { pageSession } from "@/features/account/server/page-session";
-import { PageFailure } from "@/features/account/ui/PageFailure";
+import { PageFailure } from "@/ui/shell/PageFailure";
 import { listPortfolios } from "@/features/workspace/portfolio/core";
 import { readPortfolioDetail } from "@/features/workspace/portfolio/read";
 import type { PortfolioDetailView as Detail, PortfolioSummary } from "@/features/workspace/portfolio/types";

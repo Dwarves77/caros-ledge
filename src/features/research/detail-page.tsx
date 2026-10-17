@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { applyIdRedirect, loadDetail, type ItemScopedCtx } from "@/core/detail";
 import { isServiceConfigured, serviceClient } from "@/core/db";
 import { pageSession } from "@/features/account/server/page-session";
-import { PageFailure } from "@/features/account/ui/PageFailure";
+import { PageFailure } from "@/ui/shell";
 
 import { readAssessmentBundle } from "./read/research-reads";
 import { relatedItems } from "./read/related-items";

@@ -10,11 +10,13 @@ import { useState, type ReactNode } from "react";
 import { BAND_ORDER, bandFromPriority, toListRowFields, type UrgencyBand, type UrgencyBandKey } from "@/core/lists";
 import type { Resource } from "@/core/types";
 import { Menu, Toast } from "@/ui";
+import { RowWatch } from "@/features/watchlist/ui/RowActions";
+import type { WatchlistItemType } from "@/features/watchlist/links";
 import { withListPosition } from "@/ui/list-surface";
 import type { ListRowProps } from "@/ui/ListRow";
 
-/** The row overflow menu. Watching is the watchlist's own control (P2-13); until it lands here the menu offers the two actions that need no store. */
-export function RowMenu({ label, href }: { label: string; href: string }) {
+/** The row overflow menu: Open, Copy link and the watchlist's own Watch control (RowWatch, inside the one 44 px overflow). */
+export function RowMenu({ label, href, type, id }: { label: string; href: string; type: WatchlistItemType; id: string }) {
   const router = useRouter();
   const [note, setNote] = useState<{ text: string; error: boolean } | null>(null);
   const copy = async () => {
@@ -27,7 +29,7 @@ export function RowMenu({ label, href }: { label: string; href: string }) {
   };
   return (
     <>
-      <Menu label={label} items={[{ key: "open", label: "Open", onSelect: () => router.push(href) }, { key: "copy", label: "Copy link", onSelect: () => void copy() }]} />
+      <Menu label={label} extra={<RowWatch type={type} id={id} />} items={[{ key: "open", label: "Open", onSelect: () => router.push(href) }, { key: "copy", label: "Copy link", onSelect: () => void copy() }]} />
       <Toast message={note?.text ?? ""} visible={note !== null} variant={note?.error ? "error" : "success"} onDismiss={() => setNote(null)} />
     </>
   );
@@ -66,7 +68,7 @@ export function bandedRows(rows: readonly Resource[], o: BandedOptions): BandedS
           key: r.id,
           href: withListPosition(f.href, o.list, i + 1, inBand.length, { prev: inBand[i - 1]?.id ?? null, next: inBand[i + 1]?.id ?? null }),
           band, jurisdiction: f.jurisdiction, title: f.title, meta: o.meta ? o.meta(r) : f.meta, ...(kind ? { kind } : {}), impact: f.impact, due: f.due, timeline: f.timeline, tier: f.tier,
-          ...(f.biasTags ? { biasTags: f.biasTags } : {}), ...(f.itemGrade ? { itemGrade: f.itemGrade } : {}), overflow: <RowMenu label={o.menuLabel} href={f.href} />,
+          ...(f.biasTags ? { biasTags: f.biasTags } : {}), ...(f.itemGrade ? { itemGrade: f.itemGrade } : {}), overflow: <RowMenu label={o.menuLabel} href={f.href} type={o.list === "operations" ? "operations" : "research"} id={r.id} />,
         };
       }),
     };

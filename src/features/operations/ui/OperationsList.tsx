@@ -12,9 +12,9 @@ import { formatLocaleDate, formatNumber } from "@/core/shared";
 import { ErrorState, RailCard, StateNote } from "@/ui";
 import { filterRows, LegendRailCard, liveFacetCounts, ListSurface, ThemeStrip, useListUrlState, type FacetGroup, type ThemeChip } from "@/ui/list-surface";
 import { ShellCommandBar } from "@/ui/shell/CommandBar";
+import { DenominatorLine } from "@/features/coverage/ui/DenominatorLine";
 
 import { bandedRows } from "../../research/ui/rows";
-import { CoverageLine } from "../../research/ui/CoverageLine";
 import { dimensionLabel, DIMENSION_COUNT_WORD, DIMENSIONS } from "../model/dimensions";
 import { regionsForItem } from "../model/region-resolve";
 import { buildStatements } from "../model/statements";
@@ -32,7 +32,7 @@ export interface OperationsListProps {
   data: OperationsPageData;
   nowIso: string;
   chips: ThemeChip[];
-  denominator: Parameters<typeof CoverageLine>[0];
+  denominator: Parameters<typeof DenominatorLine>[0];
   chipsFailed?: boolean;
 }
 
@@ -117,7 +117,7 @@ export function OperationsList({ data, nowIso, chips, denominator, chipsFailed =
       belowRows={
         <div className={styles.detail}>
           {chipsFailed ? <StateNote tone="error" action={{ label: "Retry", onClick: retry }}>The theme strip did not load.</StateNote> : <ThemeStrip chips={chips} />}
-          <CoverageLine {...denominator} />
+          <DenominatorLine {...denominator} />
         </div>
       }
       rail={

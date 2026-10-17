@@ -13,13 +13,13 @@ import { BiasLegend, CoverageState, ErrorState, isImpactScored, RailCard, StateN
 import { filterRows, LegendRailCard, liveFacetCounts, ListSurface, SortRow, ThemeStrip, useListUrlState, type FacetGroup, type ListWindowKey, type ThemeChip } from "@/ui/list-surface";
 import { filterByWindow, WINDOW_OPTIONS } from "@/ui/list-surface/filter-sort";
 import { ShellCommandBar } from "@/ui/shell/CommandBar";
+import { DenominatorLine } from "@/features/coverage/ui/DenominatorLine";
 
 import { horizonMetaLabel } from "../model/assessment-view";
 import { NEW_WINDOW_DAYS, SEVERITY_LABELS, severityOf, THEME_KEYS, themeLabel, themeOf } from "../model/taxonomy";
 import { UNCLASSIFIED } from "../theme-rules";
 import type { ResearchPageData } from "../read/research-reads";
 
-import { CoverageLine } from "./CoverageLine";
 import { CredibilityChips } from "./CredibilityChips";
 import styles from "./research.module.css";
 import { bandedRows } from "./rows";
@@ -27,7 +27,7 @@ import { ThemeFacetRow } from "./ThemeFacetRow";
 
 const PER_BAND_CAP = 5;
 const PLACEHOLDER = 'Search findings and themes - or ask "what affects my FY26 Scope 3 baseline?"';
-type DenominatorProps = Parameters<typeof CoverageLine>[0];
+type DenominatorProps = Parameters<typeof DenominatorLine>[0];
 
 export interface ResearchListProps {
   data: ResearchPageData;
@@ -99,7 +99,7 @@ export function ResearchList({ data, nowIso, chips, denominator, chipsFailed = f
   const tail: ReactNode = (
     <div className={styles.below}>
       {chipsFailed ? <StateNote tone="error" action={{ label: "Retry", onClick: () => router.refresh() }}>The theme strip did not load.</StateNote> : <ThemeStrip chips={chips} />}
-      <CoverageLine {...denominator} />
+      <DenominatorLine {...denominator} />
       <div className={styles.credRow}>
         <span className={styles.credLabel}>Credibility model</span>
         <CredibilityChips />

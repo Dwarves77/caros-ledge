@@ -1,7 +1,7 @@
 // Ported from old_repo/src/app/operations/page.tsx (lines 34-63)
 import { userClient } from "@/core/db/clients";
 import { pageSession } from "@/features/account/server/page-session";
-import { PageFailure } from "@/features/account/ui/PageFailure";
+import { PageFailure } from "@/ui/shell";
 import { loadSurfaceDenominator } from "@/features/coverage/server/matrix-data";
 import { readThemeStrip } from "@/features/research/read/theme-strip";
 

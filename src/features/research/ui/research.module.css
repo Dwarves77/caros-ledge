@@ -39,8 +39,6 @@
 .relatedLink { display: grid; grid-template-columns: 3px 1fr; gap: 10px; min-height: 44px; align-items: stretch; text-decoration: none; color: inherit; }
 .relatedBar { background: var(--awareness); border-radius: 2px; }
 .relatedTitle { font-weight: 600; line-height: 1.35; color: var(--ink); overflow-wrap: anywhere; font-size: var(--fs-12); align-self: center; }
-.coverageLine { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 0 12px; font-size: var(--fs-11); color: var(--ink-2); }
-.coverageLink { display: inline-flex; align-items: center; min-height: 44px; font-weight: 600; color: var(--ink); }
 .below { display: flex; flex-direction: column; gap: 14px; }
 .credRow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .credLabel { font-size: 10px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); }

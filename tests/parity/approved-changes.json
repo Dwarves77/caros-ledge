@@ -9,11 +9,13 @@
       "settings",
       "profile",
       "research",
-      "operations"
+      "operations",
+      "regulations",
+      "regulation-detail",
+      "map"
     ],
     "frame": [
       "dashboard",
-      "regulations",
       "market",
       "community"
     ],
@@ -33,8 +35,15 @@
     "^link:Account"
   ],
   "frameLandmarks": {
-    "1280x900": ["complementary", "navigation", "main"],
-    "375x812": ["banner", "main"]
+    "1280x900": [
+      "complementary",
+      "navigation",
+      "main"
+    ],
+    "375x812": [
+      "banner",
+      "main"
+    ]
   },
   "frameHeadings": [
     "Caro's Ledge",
@@ -92,6 +101,56 @@
       "route": "privacy",
       "kind": "pixel",
       "ruling": "Operator 2026-10-16: 44 px is the standard on every control, so the nav card rows are 44 px (pitch 46) where artboard 01 draws about 42 (DESIGN CHANGES OWED 10); and rule 2 / INV-263: the nav cap draws no band split while the counts are unknown, where artboard 01 shows an equal 25 percent split that is a fabricated number (OWED 11). Structure still gates."
+    },
+    {
+      "id": "map-iso-register",
+      "route": "map",
+      "kind": "control",
+      "match": "^link:(Global|Latin America \\(other\\)|Nordic|GB|Asia \\(other\\)|Europe \\(other\\)|Asia|Latin America|North America|United States|United Kingdom)$",
+      "ruling": "regulations.md (P1-19) section 8, rows MapPage, rollup and centroids: the register is ISO-keyed (a country, its subdivisions rolled up); the legacy-slug rows (Global, Nordic, GB beside United Kingdom, the regional remainders) and the title-regex keying that put a Japan item under us are the defect the rollup replaces."
+    },
+    {
+      "id": "detail-withheld-obligations-heading",
+      "route": "regulation-detail",
+      "kind": "until-migration",
+      "migration": "0031",
+      "on": "heading",
+      "match": "^2:Obligations — issues requiring action$",
+      "ruling": "production carries no new migration before cutover (rulings 2026-10-17): without 0031 the regulation detail withholds its fact sections and says so with Retry; the full path is proven on the fixture turn and schema:local."
+    },
+    {
+      "id": "detail-withheld-section-links",
+      "route": "regulation-detail",
+      "kind": "until-migration",
+      "migration": "0031",
+      "on": "control",
+      "match": "^link:S[0-9#]+ (Obligations|Requirements|Registration|Operations|Compliance)$",
+      "ruling": "production carries no new migration before cutover (rulings 2026-10-17): without 0031 the regulation detail withholds its fact sections and says so with Retry; the full path is proven on the fixture turn and schema:local."
+    },
+    {
+      "id": "detail-withheld-provenance-link",
+      "route": "regulation-detail",
+      "kind": "until-migration",
+      "migration": "0031",
+      "on": "control",
+      "match": "^link:[a-z0-9.-]+ ↗$",
+      "ruling": "production carries no new migration before cutover (rulings 2026-10-17): without 0031 the regulation detail withholds its fact sections and says so with Retry; the full path is proven on the fixture turn and schema:local."
+    },
+    {
+      "id": "detail-withheld-region-order",
+      "route": "regulation-detail",
+      "kind": "until-migration",
+      "migration": "0031",
+      "on": "landmark",
+      "match": "^region$",
+      "ruling": "production carries no new migration before cutover (rulings 2026-10-17): without 0031 the regulation detail withholds its fact sections and says so with Retry; the full path is proven on the fixture turn and schema:local."
+    },
+    {
+      "id": "detail-assignee-name-sec5",
+      "route": "regulation-detail",
+      "kind": "control",
+      "match": "^button:smoke@example.invalid$",
+      "ruling": "SEC-5 (P2-02c): profiles.email is not readable under the authenticated column grant, so the roster cannot label a member without a profile name by e-mail; the control shows the Absence token with 'Name not set' (and the profile name when there is one) where the old page showed the e-mail."
     }
   ]
 }
