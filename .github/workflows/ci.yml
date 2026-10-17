@@ -26,6 +26,9 @@ on:
       routes:
         description: 'Baseline recapture (job baseline): route names, comma separated, or all'
         default: all
+      only:
+        description: 'Run one job on a dispatch: baseline (the old-site recapture), turn, or empty for everything but baseline'
+        default: ''
       chain:
         description: 'Run the stage downstream stages too (false runs only the named stage)'
         default: 'true'
@@ -40,6 +43,7 @@ concurrency:
 jobs:
   ci:
     name: ci
+    if: github.event_name != 'workflow_dispatch' || github.event.inputs.only == ''
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -65,6 +69,7 @@ jobs:
 
   schema:
     name: schema
+    if: github.event_name != 'workflow_dispatch' || github.event.inputs.only == ''
     runs-on: ubuntu-latest
     timeout-minutes: 15
     services:
@@ -92,6 +97,7 @@ jobs:
 
   turn:
     name: turn
+    if: github.event_name != 'workflow_dispatch' || github.event.inputs.only == '' || github.event.inputs.only == 'turn'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -127,7 +133,7 @@ jobs:
 
   windows:
     name: ci-windows
-    if: github.event_name != 'pull_request'
+    if: github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || github.event.inputs.only == '')
     runs-on: windows-latest
     timeout-minutes: 15
     steps:
@@ -141,6 +147,7 @@ jobs:
 
   parity:
     name: parity
+    if: github.event_name != 'workflow_dispatch' || github.event.inputs.only == ''
     runs-on: ubuntu-latest
     timeout-minutes: 30
     # The baseline was captured in this image (old repo parity-baseline.yml), so fonts and hinting render identically and the pixel diff measures the design, not the machine.
@@ -225,7 +232,7 @@ jobs:
   # Recapture of the parity baseline from the old site (tests/parity/baseline/README.md says how to use the artifact). Dispatch only: never on push or pull_request.
   baseline:
     name: baseline
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.only == 'baseline'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     container:
