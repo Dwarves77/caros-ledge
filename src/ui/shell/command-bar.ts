@@ -9,6 +9,8 @@ export const clearButtonVisible = (hasQueryText: boolean, dropdownOpen: boolean)
 export const clearButtonLabel = (hasQueryText: boolean): "Clear search" | "Close search" => (hasQueryText ? "Clear search" : "Close search");
 export const optionId = (listboxId: string, index: number): string => `${listboxId}-option-${index}`;
 export const activeDescendantId = (listboxId: string, activeIndex: number): string | undefined => (activeIndex >= 0 ? optionId(listboxId, activeIndex) : undefined);
+/** The event the bar fires for Ask and the Assistant panel listens for. */
+export const OPEN_ASK_EVENT = "open-ask-assistant";
 export const searchResultsHref = (query: string): string => `/search?q=${encodeURIComponent(query)}`;
 
 export type EnterAction = "ask" | "navigate-active" | "open-results";

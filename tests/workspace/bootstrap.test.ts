@@ -34,9 +34,7 @@ test("persona matrix: bootstrap GET", async () => {
 test("the bundle: personal state, members, overrides mapped to UI ids with owner names and the stored archive date, nav counts, no-store", async () => {
   wire();
   script(fill(seed()));
-  process.env.ASSISTANT_ENABLED = "true";
   const res = await get("admin");
-  delete process.env.ASSISTANT_ENABLED;
   assert.equal(res.status, 200);
   assert.equal(res.headers.get("cache-control"), "private, no-store");
   assert.equal(res.headers.get("server-timing"), "bootstrap;dur=1");
@@ -47,15 +45,18 @@ test("the bundle: personal state, members, overrides mapped to UI ids with owner
   assert.deepEqual(phases, ["auth", "personal_state", "members", "admin_attention", "overrides", "nav_counts"]);
 });
 
-test("a departed owner reads as unassigned; the flag is exact-string, not truthy", async () => {
+test("a departed owner reads as unassigned; the Assistant is on unless the flag is exactly \"false\"", async () => {
   wire();
   const db = script(fill(seed()));
   db.rows("workspace_item_overrides")[0]!.owner_user_id = "bbbbbbbb-0000-4000-8000-0000000000aa";
-  process.env.ASSISTANT_ENABLED = "yes";
-  const res = await get("member");
+  const on = await get("member");
+  process.env.ASSISTANT_ENABLED = "no";
+  const widened = await get("member");
+  process.env.ASSISTANT_ENABLED = "false";
+  const off = await get("member");
   delete process.env.ASSISTANT_ENABLED;
-  assert.equal((res.body.overrides as Row[])[0]?.ownerName, null);
-  assert.equal(res.body.assistantEnabled, false);
+  assert.equal((on.body.overrides as Row[])[0]?.ownerName, null);
+  assert.deepEqual([on.body.assistantEnabled, widened.body.assistantEnabled, off.body.assistantEnabled], [true, true, false]);
 });
 
 test("a platform admin gets the attention counts through the wired dependency; a non-admin gets null and it is not a degradation", async () => {

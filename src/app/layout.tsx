@@ -10,6 +10,7 @@ import type { ReactNode } from "react";
 
 import "@/ui/theme.css";
 import "@/ui/base.css";
+import { AskAssistant } from "@/features/assistant/ui/AskAssistant";
 import { Providers } from "@/ui/shell/Providers";
 
 export const metadata: Metadata = {
@@ -23,7 +24,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
   return (
     <html lang="en" data-theme="light">
       <body>
-        <Providers>{children}</Providers>
+        <Providers assistant={<AskAssistant />}>{children}</Providers>
       </body>
     </html>
   );

@@ -50,6 +50,9 @@ export interface ListSurfaceProps {
   remainderFailed?: boolean;
   onRetryRemainder?: () => void;
   emptyState?: ReactNode;
+  /** One titled card around the rows (or the empty state), with a head above and a foot below: the watchlist's Watched card. Rows are flat inside it. */
+  cardHead?: ReactNode;
+  cardFoot?: ReactNode;
   stateNote?: ReactNode;
   sectionFoot?: (bandKey: UrgencyBandKey, nextBandKey: UrgencyBandKey | null) => ReactNode;
   belowRows?: ReactNode;
@@ -143,6 +146,12 @@ export function ListSurface(p: ListSurfaceProps) {
               {Array.from({ length: 15 }, (_, i) => (
                 <SkeletonListRow key={i} />
               ))}
+            </SectionCard>
+          ) : p.cardHead ? (
+            <SectionCard>
+              {p.cardHead}
+              {anyRows ? <Rows rows={flatRows} /> : p.emptyState}
+              {p.cardFoot}
             </SectionCard>
           ) : !anyRows ? (
             <SectionCard>
