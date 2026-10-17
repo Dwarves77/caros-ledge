@@ -58,3 +58,19 @@ test('the account name token (from LIVE_SMOKE_EMAIL) matches the baseline smoke;
     else process.env.LIVE_SMOKE_EMAIL = was;
   }
 });
+
+test('an order waiver covers a reordered control and nothing else: a missing or renamed control under the same pattern still fails, and another route is not covered', () => {
+  const link = (name) => ({ role: 'link', name });
+  const ctl = (controls) => ({ landmarks: [], headings: [], controls, rows: { items: [] } });
+  const b = ctl([link('Compliance deadline A'), link('Compliance deadline B'), link('Other')]);
+  const waiver = [{ id: 'tie-order', route: 'market', kind: 'order', match: '^link:Compliance deadline', ruling: 'planted' }];
+  const swapped = ctl([link('Compliance deadline B'), link('Compliance deadline A'), link('Other')]);
+  assert.deepEqual(compareRecord('market', '1280x900', b, swapped, []).fails, ['control reordered: link:Compliance deadline B']);
+  const waived = compareRecord('market', '1280x900', b, swapped, waiver);
+  assert.deepEqual(waived.fails, []);
+  assert.deepEqual(waived.used, ['control reordered: link:Compliance deadline B']);
+  assert.deepEqual(compareRecord('regulations', '1280x900', b, swapped, waiver).fails, ['control reordered: link:Compliance deadline B'], 'the waiver is per route');
+  assert.deepEqual(compareRecord('market', '1280x900', b, ctl([link('Compliance deadline B'), link('Other')]), waiver).fails, ['control missing: link:Compliance deadline A'], 'a missing control still fails');
+  assert.deepEqual(compareRecord('market', '1280x900', b, ctl([link('Compliance deadline A'), link('Compliance deadline Z'), link('Other')]), waiver).fails, ['control missing: link:Compliance deadline B'], 'a renamed control still fails');
+  assert.deepEqual(compareRecord('market', '1280x900', ctl([link('Compliance deadline A'), link('Other')]), ctl([link('Other'), link('Compliance deadline A')]), waiver).fails, ['control reordered: link:Other'], 'a control outside the pattern is still held to its order');
+});

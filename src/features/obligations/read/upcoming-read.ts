@@ -132,7 +132,7 @@ export async function readUpcoming(sb: Db, opts: { itemId?: string | null; kinds
     }
     let q = qb(sb.from("item_forward_events").select(SELECT)).gte("event_date", spec.from).in("event_kind", spec.kinds).eq("item.provenance_status", "verified").eq("item.is_archived", false);
     if (spec.itemId) q = q.eq("intelligence_item_id", spec.itemId);
-    const rows = rowsOf<UpcomingEvent>("item_forward_events", await q.order("event_date", { ascending: true }).order("id", { ascending: true }).range(page * PAGE, page * PAGE + PAGE - 1));
+    const rows = rowsOf<UpcomingEvent>("item_forward_events", await q.order("event_date", { ascending: true }).order("created_at", { ascending: true }).order("id", { ascending: true }).range(page * PAGE, page * PAGE + PAGE - 1));
     unscoped.push(...rows);
     scoped = selectUpcoming(unscoped, { jurisdictionFilter: opts.jurisdictionFilter ?? null, modeFilter: opts.modeFilter ?? null });
     if (rows.length < PAGE) break;

@@ -1,0 +1,8 @@
+[
+  { "familyKey": "fuel:diesel", "familyClass": "fuel", "label": "Diesel · EU avg before tax", "freightMode": "road", "memberNoun": "quotes", "memberSeriesKeys": ["eu-oil-bulletin:automotive-diesel", "eia-v2:diesel-no2-low-sulfur-eer-epd2f-pf4-y35ny-dpg"], "primarySeriesKey": "eu-oil-bulletin:automotive-diesel" },
+  { "familyKey": "fuel:gasoline", "familyClass": "fuel", "label": "Euro-Super 95 · EU avg", "freightMode": "road", "memberNoun": "quotes", "memberSeriesKeys": ["eu-oil-bulletin:eurosuper-95", "eia-v2:gasoline-rbob-regular-eer-epmrr-pf4-y05la-dpg"], "primarySeriesKey": "eu-oil-bulletin:eurosuper-95" },
+  { "familyKey": "fuel:heavy-fuel-oil", "familyClass": "fuel", "label": "Heavy fuel oil 3.5%S", "freightMode": "ocean", "memberNoun": "quotes", "memberSeriesKeys": ["eu-oil-bulletin:heavy-fuel-oil-3-5pct"], "primarySeriesKey": "eu-oil-bulletin:heavy-fuel-oil-3-5pct" },
+  { "familyKey": "fuel:residual-fuel-oil", "familyClass": "fuel", "label": "Residual fuel oil 1%S", "freightMode": "ocean", "memberNoun": "quotes", "memberSeriesKeys": ["eu-oil-bulletin:residual-fuel-oil-1pct"], "primarySeriesKey": "eu-oil-bulletin:residual-fuel-oil-1pct" },
+  { "familyKey": "fuel:jet-fuel", "familyClass": "fuel", "label": "Jet fuel · EIA kerosene spot", "freightMode": "air", "memberNoun": "quotes", "memberSeriesKeys": ["eia-v2:jet-fuel-kerosene-eer-epjk-pf4-rgc-dpg"], "primarySeriesKey": "eia-v2:jet-fuel-kerosene-eer-epjk-pf4-rgc-dpg" },
+  { "familyKey": "fx:ecb-reference-rates", "familyClass": "fx", "label": "EUR/USD · ECB ref.", "freightMode": null, "memberNoun": "rates", "memberSeriesKeys": ["ecb-fx:eur-usd", "ecb-fx:eur-gbp", "ecb-fx:eur-cny", "ecb-fx:eur-jpy"], "primarySeriesKey": "ecb-fx:eur-usd" }
+]

@@ -12,11 +12,12 @@
       "operations",
       "regulations",
       "regulation-detail",
-      "map"
+      "map",
+      "market",
+      "market-detail"
     ],
     "frame": [
       "dashboard",
-      "market",
       "community"
     ],
     "pixelExact": [
@@ -90,6 +91,13 @@
       "ruling": "ux-laws.md law 14 and DP-2: the visible field labels (Full name, Headshot URL, Work email, Bio) become the controls' accessible names; the old names were placeholders, the last field had none. Layout, copy and order are unchanged."
     },
     {
+      "id": "market-carbon-gap-copy",
+      "route": "market",
+      "kind": "row",
+      "match": "^li:no (emission factor supplied for this corridor's mode [(]factor row|EU ETS/FuelEU/CBAM/UKA carbon-price input in market_series)",
+      "ruling": "WAVE-4-COMMON (integrity on every page): no customer string names an internal mechanism, table or code. market.md (P1-20) section 6 lists these two gap sentences: one printed the factor columns (ttw_co2e/wtw_co2e/wtt_co2e), the other a table (market_series) and a producer (eex-eua). Each gap keeps its meaning and its place in the list; only the internal names leave the sentence. Row height at 375 still gates the other two gaps."
+    },
+    {
       "id": "research-why-unscored",
       "route": "research",
       "kind": "control",
@@ -158,6 +166,65 @@
       "kind": "control",
       "match": "^button:smoke@example.invalid$",
       "ruling": "SEC-5 (P2-02c): profiles.email is not readable under the authenticated column grant, so the roster cannot label a member without a profile name by e-mail; the control shows the Absence token with 'Name not set' (and the profile name when there is one) where the old page showed the e-mail."
+    },
+    {
+      "id": "market-detail-withheld-heading",
+      "route": "market-detail",
+      "kind": "until-migration",
+      "migration": "0031",
+      "on": "heading",
+      "match": "^[0-9]:New Sources Identified$",
+      "ruling": "production carries no new migration before cutover (rulings 2026-10-17): without 0031 the market detail withholds its fact sections and says so with Retry; the full path is proven on the fixture turn and schema:local."
+    },
+    {
+      "id": "market-detail-withheld-links",
+      "route": "market-detail",
+      "kind": "until-migration",
+      "migration": "0031",
+      "on": "control",
+      "match": "^link:([a-z0-9.-]+ ↗|https?://.*)$",
+      "ruling": "production carries no new migration before cutover (rulings 2026-10-17): without 0031 the market detail withholds its fact sections and says so with Retry; the full path is proven on the fixture turn and schema:local."
+    },
+    {
+      "id": "market-detail-withheld-rows",
+      "route": "market-detail",
+      "kind": "until-migration",
+      "migration": "0031",
+      "on": "row",
+      "match": "^(li|tr):",
+      "ruling": "production carries no new migration before cutover (rulings 2026-10-17): without 0031 the market detail withholds its fact sections and says so with Retry; the full path is proven on the fixture turn and schema:local."
+    },
+    {
+      "id": "market-detail-withheld-region-order",
+      "route": "market-detail",
+      "kind": "until-migration",
+      "migration": "0031",
+      "on": "landmark",
+      "match": "^region$",
+      "ruling": "production carries no new migration before cutover (rulings 2026-10-17): without 0031 the market detail withholds its fact sections and says so with Retry; the full path is proven on the fixture turn and schema:local."
+    },
+    {
+      "id": "market-detail-assignee-name-sec5",
+      "route": "market-detail",
+      "kind": "control",
+      "match": "^button:smoke@example.invalid$",
+      "ruling": "SEC-5 (P2-02c): profiles.email is not readable under the authenticated column grant, so the roster cannot label a member without a profile name by e-mail; the control shows the Absence token with 'Name not set' (and the profile name when there is one) where the old page showed the e-mail."
+    },
+    {
+      "id": "market-detail-withheld-bias-tags",
+      "route": "market-detail",
+      "kind": "until-migration",
+      "migration": "0031",
+      "on": "control",
+      "match": "^button:\\+# more$",
+      "ruling": "production carries no new migration before cutover (rulings 2026-10-17): the two '+3 more' buttons are the source bias tags' overflow (BiasChips, in the action card and in the Sources section); source_bias_tags has no member policy until 0031, so without it the page draws no tags and says nothing is missing."
+    },
+    {
+      "id": "market-deadline-tie-order",
+      "route": "market",
+      "kind": "order",
+      "match": "^link:Compliance deadline",
+      "ruling": "old read ordered by event_date only (fsi-app/src/lib/forward-events/read-upcoming.mjs:200, no secondary key: heap order); new rule created_at then id (rulings 2026-10-17)"
     }
   ]
 }

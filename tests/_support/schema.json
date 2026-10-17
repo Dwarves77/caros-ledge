@@ -2394,6 +2394,24 @@
     }
    ]
   },
+  "market_series_items": {
+   "columns": [
+    "series_key",
+    "item_id",
+    "status"
+   ],
+   "uuid": [],
+   "defaults": {
+    "status": "pending"
+   },
+   "fks": [
+    {
+     "column": "item_id",
+     "table": "intelligence_items",
+     "ref": "id"
+    }
+   ]
+  },
   "moderation_reports": {
    "columns": [
     "id",
@@ -3272,6 +3290,18 @@
      "ref": "id"
     }
    ]
+  },
+  "recalculation_events": {
+   "columns": [
+    "event_id",
+    "table_name",
+    "row_pk",
+    "change_kind",
+    "occurred_at"
+   ],
+   "uuid": [],
+   "defaults": {},
+   "fks": []
   },
   "region_dimension_coverage": {
    "columns": [

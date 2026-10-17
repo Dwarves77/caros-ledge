@@ -231,6 +231,9 @@
  "market_series": [
   "id"
  ],
+ "market_series_items": [
+  "series_key"
+ ],
  "moderation_reports": [
   "id"
  ],

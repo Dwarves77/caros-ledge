@@ -1,0 +1,7 @@
+src/app/privacy/ui-fixtures/market/page.tsx | new in P2-11: the Market UX smoke fixture route (fixed data, ?state=failed), a 404 unless UI_FIXTURES=1; no old counterpart
+src/core/figures/index.ts | barrel for the figure formatter; ported from old_repo/src/lib/figures (see format.ts); a barrel has no old counterpart
+src/features/market/lib/data/families.json | the headline families as data, from old_repo/src/lib/market/headline-families.mjs 1-60; JSON cannot carry a // header
+src/features/market/lib/data/producers.json | the six producers as data, from old_repo/src/lib/market/producer-registry.mjs 1-120; JSON cannot carry a // header
+src/features/market/ui/market.module.css | the Market surface styles, from old_repo/src/components/market inline styles and globals.css; a stylesheet cannot carry a // header
+src/ui/figures/figures.module.css | the figure cards' styles, from old_repo/src/components/figures inline styles; a stylesheet cannot carry a // header
+src/ui/figures/index.ts | barrel for the figure components; a barrel has no old counterpart

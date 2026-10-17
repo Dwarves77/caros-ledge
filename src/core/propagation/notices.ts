@@ -56,8 +56,8 @@ export async function fetchSupersededNotices(sb: Db, entityIds: readonly string[
   const eventIds = [...new Set(olds.map((r) => r.invalidated_by_event).filter((id): id is number => id != null))];
   const events = eventIds.length
     ? await fetchAllByIdChunks<{ event_id: number; table_name: string; row_pk: string; change_kind: string; occurred_at: string }>(eventIds.map(String), async (slice) => {
-        const { data, error } = await sb.from("propagation_events").select("event_id,table_name,row_pk,change_kind,occurred_at").in("event_id", slice);
-        if (error) throw new Error(`notices: propagation_events read failed: ${error.message}`);
+        const { data, error } = await sb.from("recalculation_events").select("event_id,table_name,row_pk,change_kind,occurred_at").in("event_id", slice);
+        if (error) throw new Error(`notices: recalculation_events read failed: ${error.message}`);
         return data ?? [];
       })
     : [];

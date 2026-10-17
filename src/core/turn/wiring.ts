@@ -22,6 +22,8 @@ import { getNavCounts } from "@/ui/shell/nav-counts.server";
 import { setIntakeDepsFactory } from "@/features/intake/api/run";
 import type { CaptureResult, IntakeDeps, SourcesDeps } from "@/features/intake/deps";
 import { questionFlagRow } from "@/features/learning";
+import { carbonIntensity } from "@/features/market/lib/carbon";
+import { computeSeriesDeltas } from "@/features/market/lib/deltas";
 import { eeaHdvRoadmaps, carrierEtsSurcharge, ecbFx, eiaPetroleumSpot, euOilBulletin, gridQueueRows, oemRoadmapRows, publishedPriceStatistics, rerouteRows, sbtiTargets } from "@/features/market/producers";
 import type { MarketSeriesDeps } from "@/features/market/producers/market-series-delta";
 import seriesItemMap from "@/features/market/producers/data/series-item-map.json";
@@ -206,8 +208,10 @@ export function buildDeps(sb: Db, env: Env = process.env, opts: DepsOptions = {}
   const mintRun: MintRunDeps = { sb, now, entities, connect, recorder, identity, fetch: fetchDeps, isSeriesKey, flushCache };
 
   const registry = createMethodRegistry();
-  if (opts.market) registerMarketMethods(registry, opts.market);
-  const market: MarketSeriesDeps | null = opts.market ? { registry, computeSeriesDeltas: (rows) => opts.market!.computeSeriesDeltas(rows as unknown as Parameters<MarketMethodDeps["computeSeriesDeltas"]>[0]) } : null;
+  // The market slice's own arithmetic is the default (P2-11); a caller passes `market: null` to leave it unwired (the fail-closed test), or its own pair.
+  const marketDeps: MarketMethodDeps | null = opts.market === undefined ? { computeSeriesDeltas: (rows) => computeSeriesDeltas(rows as never), carbonIntensity: (factor) => carbonIntensity(factor as never) } : opts.market;
+  if (marketDeps) registerMarketMethods(registry, marketDeps);
+  const market: MarketSeriesDeps | null = marketDeps ? { registry, computeSeriesDeltas: (rows) => marketDeps.computeSeriesDeltas(rows as unknown as Parameters<MarketMethodDeps["computeSeriesDeltas"]>[0]) } : null;
   const producers: BuiltDeps["producers"] = { sb, fetch: (url, init) => doFetch(url, init as RequestInit | undefined), recorder, env, sleep, summaryDir: env.PRODUCER_SUMMARY_DIR ?? null, market, mint: mintCtx, ...(opts.verdicts ? { verdicts: opts.verdicts } : {}) };
   const learning: LearningDeps = { questionFlagRow };
   // The service client carries its own key, so invoking the function through it is the service-role call the worker requires (the worker reads no gate: the capture stage did).
@@ -218,7 +222,7 @@ export function buildDeps(sb: Db, env: Env = process.env, opts: DepsOptions = {}
       return error ? { status: 500, body: { error: error.message } } : { status: 200, body: (data ?? {}) as Record<string, unknown> };
     });
   return {
-    sb, env, now, context, recorder, gate, sources, entities, identity, fetch: fetchDeps, io, mintCtx, intake, mintRun, connect, producers, catalog: opts.catalog ?? PRODUCER_CATALOG, worker, marketMethods: opts.market ?? null, statutory: opts.statutory ?? null, edgeAuthors: opts.edgeAuthors ?? null, assessment: opts.assessment ?? researchAssessment, registry, learning,
+    sb, env, now, context, recorder, gate, sources, entities, identity, fetch: fetchDeps, io, mintCtx, intake, mintRun, connect, producers, catalog: opts.catalog ?? PRODUCER_CATALOG, worker, marketMethods: marketDeps, statutory: opts.statutory ?? null, edgeAuthors: opts.edgeAuthors ?? null, assessment: opts.assessment ?? researchAssessment, registry, learning,
     workspace: workspaceWiring(sb), halted: async () => (await import("@/core/harness/run")).halted(sb).then((h) => h.halted),
   };
 }
@@ -263,7 +267,7 @@ export const MANIFEST: readonly ManifestEntry[] = [
   { member: "producers.recorder", status: "wired", present: (d) => fn(d.producers.recorder.recordRun) },
   { member: "producers.fetch", status: "wired", present: (d) => fn(d.producers.fetch) },
   { member: "learning.questionFlagRow", status: "wired", present: (d) => fn(d.learning.questionFlagRow) },
-  { member: "producers.market (computeSeriesDeltas and the market methods)", status: "owed", owner: "P2-11 market surface (computeSeriesDeltas, carbonIntensity)", present: (d) => d.producers.market !== null },
+  { member: "producers.market (computeSeriesDeltas and the market methods)", status: "wired", present: (d) => d.producers.market !== null },
   { member: "propagation EdgeAuthors (authorCarbonIntensityEdges)", status: "owed", owner: "P2-11 market surface (carbonIntensity)", present: () => false },
   { member: "producers.verdicts (host verdicts as a table, IMP-054)", status: "owed", owner: "P2-S4 (the host_verdicts table)", present: (d) => d.producers.verdicts !== undefined },
   ...(["itemHref", "revalidateWorkspaceData", "navCounts", "adminAttention", "timePhase", "withServerTiming"] as const).map((m): ManifestEntry => ({ member: `workspace.${m}`, status: "wired", present: (d) => fn(d.workspace[m]) })),
