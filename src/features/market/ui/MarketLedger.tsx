@@ -9,8 +9,9 @@ import { BAND_ORDER, bandFromPriority, toListRowFields, type UrgencyBandKey } fr
 import { formatLocaleDate, formatNumber } from "@/core/shared";
 import type { Resource } from "@/core/types";
 import type { WorkspaceAggregates } from "@/features/lists";
+import { useTagsFacet } from "@/features/regulations/useTagsFacet";
 import { RowWatch } from "@/features/watchlist/ui/RowActions";
-import { Menu, Toast } from "@/ui";
+import { Menu, StateNote, Toast } from "@/ui";
 import { filterRows, liveFacetCounts, sortResourceRows, useListUrlState, withListPosition, ListSurface, SortRow, type FacetGroup, type ListSortKey } from "@/ui/list-surface";
 import { ShellCommandBar } from "@/ui/shell";
 
@@ -68,6 +69,8 @@ export function MarketLedger({ resources, aggregates, failed = false, nowIso, se
   const flat = url.extras.flat === "1";
   const sortKey: ListSortKey = url.sort && SORTS.some((s) => s.key === url.sort) ? url.sort : "next-date";
   const [expanded, setExpanded] = useState<Set<UrgencyBandKey>>(new Set());
+  const tagsFacet = useTagsFacet();
+  const matchesTag = tagsFacet.matches;
   const [toast, setToast] = useState<{ message: string; ok: boolean } | null>(null);
 
   const withKind = useMemo(() => (kind ? resources.filter((r) => kindOf(r) === kind) : resources), [resources, kind]);
@@ -86,7 +89,8 @@ export function MarketLedger({ resources, aggregates, failed = false, nowIso, se
     { key: "region", label: "Region", options: counts.region, selected: filter.region, onSelect: (v) => setFacet("region", v) },
   ];
 
-  const sorted = useMemo(() => sortResourceRows(filterRows(withKind, { ...filter, band: null }), sortKey, now), [withKind, filter, sortKey, now]);
+  const sorted = useMemo(() => sortResourceRows(filterRows(withKind, { ...filter, band: null }).filter((r) => matchesTag(r.id)), sortKey, now), [withKind, filter, sortKey, now, matchesTag]);
+  const tagGroup: FacetGroup = { key: "workspace-tags", label: "Workspace tags", options: tagsFacet.tags.map((t) => ({ value: t.id, label: t.name, count: t.itemCount })), selected: tagsFacet.selected, onSelect: tagsFacet.setSelected };
   const rowsByBand = BAND_ORDER.map((band) => {
     const inBand = filter.band && filter.band !== band.key ? [] : sorted.filter((r) => bandFromPriority(r.priority).key === band.key);
     return {
@@ -141,6 +145,8 @@ export function MarketLedger({ resources, aggregates, failed = false, nowIso, se
         selectedBand={filter.band}
         onSelectBand={(key) => toggleFacet("band", key)}
         facetGroups={facetGroups}
+        secondaryFacetGroups={[tagGroup]}
+        {...(tagsFacet.failed ? { stateNote: <StateNote tone="error" action={{ label: "Retry", onClick: tagsFacet.retry }}>Your workspace tags did not load.</StateNote> } : {})}
         aboveRows={headline}
         sortRow={
           <SortRow

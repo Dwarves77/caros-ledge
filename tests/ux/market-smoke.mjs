@@ -34,6 +34,7 @@ async function open(browser, path, [w, h], mocks = {}) {
     const json = (body, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
     if (u.pathname === '/api/obligations/upcoming') return u.searchParams.get('scope') === 'all' ? json({ events: [EVENT, { ...EVENT, id: 'e2' }], hasJurisdictionFilter: false }) : json({ events: [EVENT], hasJurisdictionFilter: true, scope: { label: 'Ocean, EU' }, hiddenByScope: 13 });
     if (u.pathname === '/api/notices') return state.notices === 'down' ? json({ error: 'The recalculation feed is unavailable.' }, 503) : json({ notices: [NOTICE], since: '2026-09-16T00:00:00Z' });
+    if (u.pathname === '/api/workspace/tags') return json({ tags: [], itemTags: {} });
     if (u.pathname === '/api/dashboard/coverage/request') return json({ ok: true, already: false });
     return json({ error: `unmocked ${m} ${u.pathname}` }, 404);
   });
@@ -122,7 +123,8 @@ try {
   await check('every failed part says so', async () => {
     const s = await open(browser, '/privacy/ui-fixtures/market?state=failed', [375, 812]);
     const alerts = await s.page.locator('[role=alert]').allInnerTexts();
-    for (const what of ['Market signals', 'The headline series', 'Carbon cost per FEU', 'The lead-time position', 'OEM equipment roadmap', 'Rerouting multipliers', 'The theme strip', 'The coverage count']) ensure(alerts.some((a) => a.includes(`${what} did not load`) || a.includes(`${what} could not be loaded`)), `${what} says it did not load`);
+    for (const what of ['Market signals', 'The headline series', 'Carbon cost per FEU', 'The lead-time position', 'OEM equipment roadmap', 'Rerouting multipliers', 'The theme strip']) ensure(alerts.some((a) => a.includes(`${what} did not load`) || a.includes(`${what} could not be loaded`)), `${what} says it did not load`);
+    ensure(/did not load/.test(await s.page.locator('[data-guard-container=coverage-denominator]').innerText()), 'the coverage count says it did not load');
     ensure((await s.page.getByRole('button', { name: 'Retry' }).count()) >= 8, 'each failed part offers Retry');
     ensure((await s.page.evaluate(() => [...document.querySelectorAll('li')].filter((l) => !l.closest('[data-notices-rail]')).length)) === 0, 'no list renders under a failure');
     const body = await s.page.locator('[data-fx="market"]').innerText();
