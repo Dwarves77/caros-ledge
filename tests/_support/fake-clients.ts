@@ -18,3 +18,6 @@ export function serviceClient() {
 export function requestClient(): never {
   throw new Error("requestClient is not scripted");
 }
+export function anonClient(): never {
+  throw new Error("anonClient is not scripted: a test passes the map read its own db");
+}

@@ -45,15 +45,24 @@ export function subsequence(baseline, captured, key) {
   return { missing, reordered };
 }
 
+// A waiver of kind 'until-migration' (with `migration` and optionally `on`: landmark, heading or control) covers a difference that exists only because production carries no new migration before the
+// cutover window. It is counted apart from the look/ruling waivers, and tree-checks retires it once supabase/migrations/APPLIED.json lists the migration.
+const untilMigration = (approved, route, kind, text) => approved.find((a) => a.kind === 'until-migration' && a.route === route && (!a.on || a.on === kind) && (a.match === '*' || new RegExp(a.match).test(text)));
 const isApproved = (approved, route, kind, text) => approved.some((a) => a.route === route && a.kind === kind && (a.match === '*' || new RegExp(a.match).test(text)));
 
 export function compareRecord(route, viewport, base, cap, approved) {
   const fails = [];
   const used = [];
+  const until = [];
+  const sort = (kind, m, line) => {
+    if (isApproved(approved, route, kind, m)) return used.push(line);
+    const w = untilMigration(approved, route, kind, m);
+    return w ? until.push({ line, migration: w.migration }) : fails.push(line);
+  };
   const check = (kind, baseItems, capItems, key, show) => {
     const { missing, reordered } = subsequence(baseItems, capItems, key);
-    for (const m of missing) (isApproved(approved, route, kind, m) ? used : fails).push(`${kind} missing: ${m}`);
-    for (const m of reordered) (isApproved(approved, route, kind, m) ? used : fails).push(`${kind} reordered: ${m}`);
+    for (const m of missing) sort(kind, m, `${kind} missing: ${m}`);
+    for (const m of reordered) sort(kind, m, `${kind} reordered: ${m}`);
     void show;
   };
   check('landmark', base.landmarks ?? [], cap.landmarks ?? [], (l) => l.role);
@@ -71,7 +80,7 @@ export function compareRecord(route, viewport, base, cap, approved) {
       if (h !== undefined && h > r.height + 1) fails.push(`row taller at 375: ${clean(r.text).slice(0, 40)} (${h.toFixed(1)} > ${r.height.toFixed(1)})`);
     }
   }
-  return { fails, used };
+  return { fails, used, until };
 }
 
 // A frame route proves the shell only: its controls, headings and landmarks are limited to the shell's, the rest is page body that the full gate checks.
@@ -162,9 +171,10 @@ async function main() {
         if (gated) {
                     const { scoped, notes } = frame.has(route.name) ? scopeFrame(b, config, viewport) : { scoped: b, notes: [] };
           for (const n of notes) lines.push(`${viewport}: ${n}`);
-          const { fails, used } = compareRecord(route.name, viewport, scoped, c, approved);
+          const { fails, used, until } = compareRecord(route.name, viewport, scoped, c, approved);
           for (const f of fails) lines.push(`${viewport}: ${f}`);
           if (used.length) lines.push(`${viewport}: approved differences used: ${used.length}`);
+          for (const m of [...new Set(until.map((u) => u.migration))]) lines.push(`${viewport}: waived until migration ${m} is applied in production: ${until.filter((u) => u.migration === m).length}`);
           routeFail ||= fails.length > 0;
         }
         const pngA = `${args.baseline}/${stem}.png`;

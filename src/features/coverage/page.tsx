@@ -1,10 +1,11 @@
 // Ported from old_repo/src/app/dashboard/coverage/page.tsx (lines 1-22)
 import { buildCoverageView, parseCoverageQuery } from "@/core/coverage/matrix";
-import { PageFailure } from "@/features/account/ui/PageFailure";
 import { pageSession } from "@/features/account/server/page-session";
 
 import { coverageData } from "./server/data";
 import { CoveragePage } from "./ui/CoveragePage";
+
+import { PageFailure } from "@/features/account/ui/PageFailure";
 
 export const COVERAGE_PATH = "/dashboard/coverage";
 

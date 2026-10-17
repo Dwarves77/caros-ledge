@@ -1,0 +1,18 @@
+# path | reason (files with no "Ported from" header)
+src/core/applicability/index.ts | new in P2-10: barrel of the applicability compute
+src/core/detail/index.ts | new in P2-10: the detail architecture barrel (P2-11..P2-14 import from here)
+src/core/jurisdictions/index.ts | new in P2-10: barrel of the jurisdiction reference (iso, tiers, legacy slugs)
+src/core/jurisdictions/data/countries.json | new in P2-10: ISO country reference data
+src/core/jurisdictions/data/legacy-iso.json | new in P2-10: legacy jurisdiction slug to ISO code table
+src/core/jurisdictions/data/tiers.json | new in P2-10: jurisdiction tier table
+src/core/themes/index.ts | new in P2-10: barrel of the theme analysis view
+src/features/regulations/DetailView.tsx | new in P2-10: the Regulations detail composition over the shared detail shell
+src/features/regulations/map/data/centroids.json | new in P2-10: country centroids for the map
+src/features/regulations/map/map.module.css | new in P2-10: map container sizing (Leaflet needs a sized box)
+src/ui/detail/index.ts | new in P2-10: the detail components barrel (P2-11..P2-14 import from here)
+src/ui/detail/watch.tsx | new in P2-10: the watch control on the detail shell over the shared chrome toggle
+src/app/privacy/ui-fixtures/regulations/page.tsx | new in P2-10: the UX smoke's fixture route for the Regulations screens
+src/app/privacy/ui-fixtures/regulations/RegulationsFixtures.tsx | new in P2-10: static props for the Regulations screens the smoke mounts
+src/features/regulations/coverage-line.ts | new in P2-10: the coverage line's decision (link always drawn, count or Absence)
+scripts/ci/stdout-drain.mjs | new in P2-10: awaits the stdout drain before a CI child ends (the schema job's truncated snapshot)
+scripts/ci/waiver-check.mjs | new in P2-10: the until-migration waiver retires itself once APPLIED.json lists its migration

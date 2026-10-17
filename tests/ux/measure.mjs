@@ -10,7 +10,7 @@ export function measure(opts = { rows: true }) {
   for (const el of document.querySelectorAll('[data-fx] *')) {
     const r = el.getBoundingClientRect();
     if (r.width === 0 || r.height === 0) continue;
-    if (r.right > vw + 1 && !el.closest('[data-guard-strip],.cl-sr-only,.cl-virtual-item')) {
+    if (r.right > vw + 1 && !el.closest('[data-guard-strip],.cl-sr-only,.cl-virtual-item,.leaflet-container')) {
       const cs = getComputedStyle(el);
       if (cs.position !== 'fixed') out.push(`overflow: ${label(el)} right ${Math.round(r.right)} > ${vw}`);
     }
