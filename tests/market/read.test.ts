@@ -159,3 +159,20 @@ test("section(): a thrown read is a named failure, a value is ok", async () => {
   });
   assert.deepEqual(bad, { ok: false, error: "nope" });
 });
+
+test("production carries no 0029 table until cutover: a refused market_series_items read is the series figure's own stated failure, every other part stands, and nothing throws", async () => {
+  const db = world();
+  db.seed("intelligence_items", [{ id: ITEM, title: "Diesel", domain: 4 }]);
+  db.seed("published_price_statistics", [{ id: "p1", item_id: ITEM, label: "EUR/USD", value_display: "$1.10", unit: "/EUR", context_line: null, severity_tone: null, source_tier: null, released_at: "2026-10-15", next_release_at: null, next_release_label: null, sort_order: 1 }]);
+  const refuse = { from: (t: string) => (t === "market_series_items" ? ({ select: () => { throw new Error('relation "public.market_series_items" does not exist'); } } as never) : db.from(t)), rpc: () => ({ then: (res: (v: unknown) => unknown) => Promise.resolve({ data: [], error: null }).then(res) }) } as never;
+  const d = await readMarketDetail(refuse, { id: ITEM });
+  assert.equal(d.seriesFigure.ok, false, "the figure says it did not load");
+  assert.match(d.seriesFigure.ok ? "" : d.seriesFigure.error, /market_series_items|does not exist/);
+  assert.ok(d.priceBoard.ok && d.priceBoard.data.length === 1, "the price board stands");
+  db.fail("market_series_items", "select", "relation does not exist");
+  const d2 = await readMarketDetail(withRpc(db, { get_market_intel_items_public: () => ({ data: [] }) }).client, { id: ITEM });
+  assert.equal(d2.seriesFigure.ok, false);
+  assert.ok(d2.priceBoard.ok);
+  const list = await readMarket(withRpc(db, { get_market_intel_items_public: () => ({ data: [] }), get_surface_counts: () => ({ data: { total_items: 0 } }) }).client, { orgId: null });
+  assert.equal(list.series.ok, true, "the list page never reads the 0029 table");
+});
