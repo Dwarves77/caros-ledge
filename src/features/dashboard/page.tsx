@@ -5,7 +5,7 @@ import { formatLocaleDate } from "@/core/shared";
 import { log } from "@/core/shared/log";
 import { getWorkspaceProfile } from "@/core/workspace";
 import { pageSession } from "@/features/account/server/page-session";
-import { PageFailure } from "@/features/account/ui/PageFailure";
+import { PageFailure } from "@/ui/shell/PageFailure";
 import { readWatchlist, WATCHLIST_RAIL_LIMIT } from "@/features/watchlist/read/watchlist";
 import { StateNote } from "@/ui";
 import { PageFrame } from "@/ui/shell";

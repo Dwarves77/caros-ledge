@@ -6,7 +6,7 @@ import { computeApplicability } from "@/core/applicability";
 import { deriveFactCardModels, deriveRecordFactCardModel, mergeAdjacentSameKind, parseFactCardModels, parseFactParagraphs } from "@/core/detail/fact-model";
 import { crossPageOrd, indexFor, SECTION_INDEX } from "@/core/detail/section-index";
 import { classifyTimeline, collapseTimeline, formatTrajectoryStep, pickCurrentStepIndex, withObligationEvents } from "@/core/detail/timeline";
-import { countryOf, isIso, isoCodesOf, isoToDisplayLabel, jurisdictionTier, jurisLabelOf, legacyToIso, TIER1, TIER1_REGIONS, TIER2 } from "@/core/jurisdictions";
+import { countryGroupForIso, countryOf, isIso, isoCodesOf, isoToDisplayLabel, jurisdictionTier, jurisLabelOf, legacyToIso, TIER1, TIER1_REGIONS, TIER2 } from "@/core/jurisdictions";
 import { deriveThemeLabel, themeAnalysisView, themeChips, themeForItem } from "@/core/themes";
 import { withClaimTiers } from "@/ui/claim-tier";
 import { centroidOf } from "@/features/regulations/map/centroids";
@@ -40,6 +40,7 @@ test("iso labels: every EU member has a name (the old table printed 14 as raw co
   assert.ok(isIso("GB-ENG") && isIso("GLOBAL") && !isIso("gb") && !isIso("USA"));
   assert.equal(countryOf("US-CA"), "US");
   assert.equal(countryOf("EU"), null);
+  assert.deepEqual([countryGroupForIso("US-CA"), countryGroupForIso("DE"), countryGroupForIso("EU")], ["US", "DE", "EU"], "the country of a code, or the code itself");
 });
 
 test("ONE Tier-1 list: the priority regions and the country-level scopes are one set, Tier 2 never repeats Tier 1, and the old tier tables keep their codes", () => {
