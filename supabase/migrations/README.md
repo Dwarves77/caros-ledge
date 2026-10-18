@@ -48,6 +48,20 @@ Forward changes only, one file per change (`NNNN_<change>.sql`), each ending in 
 | 0044_market_series_items_display | market_series_items gains cadence_days, context_line and severity_tone, the three fields of the code file the producers stop reading (IMP-084, P2-S4) | 0044-market-series-display |
 | 0045_data_market_series_cadence | DATA: cadence_days = 7 on the six EU Oil Bulletin attachments, never over a cadence already ruled (cutover window, after 0030; P2-S4) | none (data) |
 | 0046_data_host_verdicts | DATA: the two host verdicts the old tree committed (host-verdicts-001 and -379), never over a verdict ruled since (cutover window, after 0042; P2-S4) | none (data) |
+| 0050_community_group_bans | community_group_bans (group-scoped ban record, admin and moderator read) and the ban guard on community_group_members inserts (P2-16) | 0050-group-bans |
+| 0051_moderation_reports_columns | moderation_reports body, action and notes columns, so reason carries the reason alone (P2-16) | 0051-moderation-columns |
+| 0052_community_group_keeps_an_admin | a group's only admin cannot leave or be demoted; stands aside for a group or account being deleted (P2-16, INV-238) | 0052-keeps-an-admin |
+| 0053_create_group_for_self | create_group_for_self: the group and its owner-admin row in one transaction (P2-16, INV-238) | 0053-create-group |
+| 0054_accept_group_invitation | accept_group_invitation: invitee check, ban check, status flip and membership insert in one transaction (P2-16, INV-240) | 0054-accept-invitation |
+| 0055_create_thread | create_thread: the post and its 1 to 10 entity links in one transaction, the binding rule and the anonymity resolved in SQL (P2-16, INV-236) | 0055-create-thread |
+| 0056_decide_signoff | decide_signoff: the decision and the post stamp in one transaction, active verifier or platform admin only (P2-16, INV-241) | 0056-decide-signoff |
+| 0057_moderate_report | moderate_report: reviewer gate first, then the side effect, the ban record and the close in one transaction (P2-16, INV-239) | 0057-moderate-report |
+| 0058_community_directory_counts | community_directory_counts: peer-organisation aggregates, a cell under 5 distinct organisations is not returned (P2-16, k = 5) | 0058-directory-counts |
+| 0059_community_notification_counts | community_notification_counts: the caller's unread counts per group in SQL (P2-16) | 0059-notification-counts |
+| 0060_community_rls_attacks | no schema change: six scripted RLS breaches that must fail (profiles across organisations, private groups, verification columns, a reporter's own report, an ex-admin inviter, a banned rejoin) (P2-16, rule 15) | 0060-rls-attacks |
+| 0061_data_moderation_reports_split | DATA: split the encoded reason of existing reports into reason, body, action and notes (cutover window, P2-16) | none (data) |
+| 0062_community_round_trip | Self-check only: the Community social round trip on the real schema, as the real roles (create group, invite, accept, thread, reply, report, ban, refused rejoin, sign-off) (P2-16) | none |
+| 0063_community_member_mute | community_group_members.muted_until: a real mute (1, 7 or 30 days) set by moderate_report, enforced by one trigger on community_posts, guarded against the member; moderate_report gains p_days (P2-16) | column, function, trigger |
 
 A `_data_` file carries `-- rollback-test: <fixture>`: the schema job runs the fixture, then the file, in a transaction that rolls back (the SQL is proven to execute, the catalog is unchanged). 0016 is deliberately absent: the sources backfill depends on the live registry, so the executor generates it at the cutover window (`scripts/gen/source-backfill-sql.mjs`, from a read-only registry export) and commits it then as 0016; the schema job proves the generator every run on a sample export. Regenerating 0015 needs the old repo path.
 

@@ -74,3 +74,16 @@ test('an order waiver covers a reordered control and nothing else: a missing or 
   assert.deepEqual(compareRecord('market', '1280x900', b, ctl([link('Compliance deadline A'), link('Compliance deadline Z'), link('Other')]), waiver).fails, ['control missing: link:Compliance deadline B'], 'a renamed control still fails');
   assert.deepEqual(compareRecord('market', '1280x900', ctl([link('Compliance deadline A'), link('Other')]), ctl([link('Other'), link('Compliance deadline A')]), waiver).fails, ['control reordered: link:Other'], 'a control outside the pattern is still held to its order');
 });
+
+test('dataNames: a control named by live data compares by its stable prefix on both sides, and nothing else is loosened', () => {
+  const dataNames = [{ route: 'community', match: '^(Global|EU) room', keep: '^(Global|EU) room', reason: 'tiles are named by live data' }];
+  const ctl = (...names) => ({ landmarks: [], headings: [], rows: { items: [] }, controls: names.map((name) => ({ role: 'button', name })) });
+  const base = ctl('Global room9Research · Fuels · Corridorsno discussions yet', 'EU room733Emissions · Reportingno discussions yet', 'Post');
+  const live = ctl('Global room54Research · Fuels · Emissionsno discussions yet', 'EU room1,000Transport · Maritimeno discussions yet', 'Post');
+  assert.deepEqual(compareRecord('community', '1280x900', base, live, [], dataNames).fails, []);
+  assert.equal(compareRecord('community', '1280x900', base, live, [], []).fails.length, 2, 'without the entry the live words fail');
+  assert.deepEqual(compareRecord('community', '1280x900', base, ctl('EU room1Emissions', 'Global room2Fuels', 'Post'), [], dataNames).fails.length, 1, 'order still gates');
+  assert.deepEqual(compareRecord('community', '1280x900', base, ctl('Global room54x', 'Post'), [], dataNames).fails, ['control missing: button:EU room'], 'a missing tile still fails');
+  assert.deepEqual(compareRecord('community', '1280x900', base, ctl('Global room54x', 'EU room1y'), [], dataNames).fails, ['control missing: button:Post'], 'other controls are exact');
+  assert.equal(compareRecord('community', '1280x900', base, live, [], dataNames).used.some((u) => u.startsWith('data names:')), true, 'the reason is recorded');
+});

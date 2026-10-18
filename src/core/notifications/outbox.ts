@@ -2,6 +2,7 @@
 import { serviceClient, type Db } from "@/core/db/clients";
 
 import type { NotificationKind } from "./dispatch";
+import { allowedRecipients } from "./preferences";
 
 export interface OutboxInput {
   userId: string;
@@ -12,12 +13,16 @@ export interface OutboxInput {
 /**
  * Queue notifications for the drain (notification_outbox, migration 0025, IMP-025): ONE insert for every recipient, so the batch lands or fails whole,
  * and a failed send later is retried with its attempts and last_error recorded instead of being counted and lost. Returns null when queued or the
- * failure message; it never throws, so the caller reports the failure and keeps the write it belongs to.
+ * failure message; it never throws, so the caller reports the failure and keeps the write it belongs to. A recipient who disabled the kind or muted the group is dropped HERE, at queue time (allowedRecipients; an invitation
+ * never is), and the drain asks again for a preference changed between queue and send. A preference read that fails is a failure of the queue, never a send past a setting that could not be checked.
  */
 export async function queueNotifications(rows: OutboxInput[], client?: Db): Promise<string | null> {
   if (rows.length === 0) return null;
   try {
-    const { error } = await (client ?? serviceClient()).from("notification_outbox").insert(rows.map((r) => ({ user_id: r.userId, kind: r.kind, payload: r.payload })));
+    const db = client ?? serviceClient();
+    const allowed = await allowedRecipients(db, rows);
+    if (allowed.length === 0) return null;
+    const { error } = await db.from("notification_outbox").insert(allowed.map((r) => ({ user_id: r.userId, kind: r.kind, payload: r.payload })));
     return error ? error.message : null;
   } catch (e) {
     return e instanceof Error ? e.message : "unknown error";

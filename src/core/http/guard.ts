@@ -11,7 +11,7 @@ import { bearerToken, isSupabaseConfigured, serviceClient, userClient, type Db }
 import { log } from "@/core/shared/log";
 import type { OrgMembership, OrgRole } from "@/core/types";
 
-import { HttpError, refuse } from "./errors";
+import { answer, HttpError, refuse } from "./errors";
 import { checkRateLimit, rateLimitHeaders } from "./rate-limit";
 
 /** A guard answered with a refusal (401, 403, 429, 500, 503) instead of a context. */
@@ -38,7 +38,7 @@ export interface OrgContext extends UserContext {
 /** A guard read that failed is its own status (503 for a lookup, never a 401 or 403); anything else is an unexpected 500. */
 const failed = (e: unknown): Response => {
   log.warn("[guard] a guard read failed:", e instanceof Error ? e.message : String(e));
-  return e instanceof HttpError ? refuse(e.status, e.message, e.headers) : refuse(500, "Authentication failed");
+  return e instanceof HttpError ? answer(e) : refuse(500, "Authentication failed");
 };
 
 /** One guard for every route: cookie or bearer, claims verified locally, then the per-user rate limit. A failed read is a 503, never a 401 or a 403. */

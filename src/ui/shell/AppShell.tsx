@@ -16,8 +16,10 @@ import { AssistantProvider } from "./CommandBar";
 import { shellNotes } from "./identity-seed";
 import { isChromeless } from "./nav-model";
 import { NavCard } from "./NavCard";
+import { NotificationsBell } from "./notifications";
 import { ScrollContainer, ScrollProvider } from "./scroll-container";
 import { Sheet } from "./Sheet";
+import { useSurfaceNav } from "./surface-nav";
 import { TopBar } from "./TopBar";
 import { useBootstrap } from "./use-bootstrap";
 
@@ -32,6 +34,7 @@ export function AppShell({ children, assistant }: { children: ReactNode; assista
   const router = useRouter();
   const { user, orgId, identityStatus, retryingIdentity, retryIdentity } = useAuth();
   const chromeless = isChromeless(pathname);
+  const surfaceNav = useSurfaceNav();
   const [drawer, setDrawer] = useState(false);
   const [drawerPath, setDrawerPath] = useState(pathname);
   if (drawerPath !== pathname) {
@@ -49,8 +52,9 @@ export function AppShell({ children, assistant }: { children: ReactNode; assista
     <ScrollProvider>
       <div className="cl-shell-desk">
         <div className="cl-app-frame">
-          <NavCard />
+          {surfaceNav ? surfaceNav({ variant: "card" }) : <NavCard />}
           <div className="cl-shell-col">
+            {user && <NotificationsBell />}
             <TopBar onMenuClick={() => setDrawer(true)} />
             {notes.noWorkspace && (
               <div role="status" className="cl-shell-banner">
@@ -82,7 +86,7 @@ export function AppShell({ children, assistant }: { children: ReactNode; assista
           </div>
         </div>
         <Sheet open={drawer} onClose={() => setDrawer(false)} title="Navigation" side="left" hideTitle>
-          <NavCard variant="drawer" onNavigate={() => setDrawer(false)} />
+          {surfaceNav ? surfaceNav({ variant: "drawer", onNavigate: () => setDrawer(false) }) : <NavCard variant="drawer" onNavigate={() => setDrawer(false)} />}
         </Sheet>
         {assistant}
         <BackToTop />

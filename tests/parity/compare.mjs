@@ -60,7 +60,9 @@ const untilMigration = (approved, route, kind, text) => approved.find((a) => a.k
 const orderWaived = (approved, route, text) => approved.some((a) => a.kind === 'order' && a.route === route && new RegExp(a.match).test(text));
 const isApproved = (approved, route, kind, text) => approved.some((a) => a.route === route && a.kind === kind && (a.match === '*' || new RegExp(a.match).test(text)));
 
-export function compareRecord(route, viewport, base, cap, approved) {
+// `dataNames` ({route, match, keep, reason}): a control whose name is derived from live data (a count, then words drawn from the corpus) is compared by its stable prefix `keep`, on both sides, before the
+// subsequence check. Counts are already normalised; words derived from data are the same class. The reason is recorded in the report line.
+export function compareRecord(route, viewport, base, cap, approved, dataNames = []) {
   const fails = [];
   const used = [];
   const until = [];
@@ -81,7 +83,13 @@ export function compareRecord(route, viewport, base, cap, approved) {
   check('landmark', base.landmarks ?? [], cap.landmarks ?? [], (l) => l.role);
   // Counts are data, not design: every integer run in a name ("+ 18 more", "GLOBAL16", "Regulations1,320") compares as "#".
   check('heading', base.headings ?? [], cap.headings ?? [], (h) => `${h.level}:${uncount(h.text)}`);
-  const ctl = (c) => `${c.role}:${uncount(c.name)}`;
+  const names = dataNames.filter((d) => d.route === route);
+  const stable = (name) => {
+    for (const d of names) if (new RegExp(d.match).test(name)) return name.match(new RegExp(d.keep))?.[0] ?? name;
+    return name;
+  };
+  const ctl = (c) => `${c.role}:${stable(uncount(c.name))}`;
+  if (names.length && (base.controls ?? []).some((c) => names.some((d) => new RegExp(d.match).test(uncount(c.name))))) used.push(`data names: ${names[0].reason}`);
   check('control', base.controls ?? [], cap.controls ?? [], ctl);
   const baseRows = base.rows?.items ?? [];
   const capRows = cap.rows?.items ?? [];
@@ -189,7 +197,7 @@ async function main() {
         if (gated) {
                     const { scoped, notes } = frame.has(route.name) ? scopeFrame(b, config, viewport) : { scoped: b, notes: [] };
           for (const n of notes) lines.push(`${viewport}: ${n}`);
-          const { fails, used, until } = compareRecord(route.name, viewport, scoped, c, approved);
+          const { fails, used, until } = compareRecord(route.name, viewport, scoped, c, approved, config.dataNames ?? []);
           for (const f of fails) lines.push(`${viewport}: ${f}`);
           if (used.length) lines.push(`${viewport}: approved differences used: ${used.length}`);
           for (const m of [...new Set(until.map((u) => u.migration))]) lines.push(`${viewport}: waived until migration ${m} is applied in production: ${until.filter((u) => u.migration === m).length}`);

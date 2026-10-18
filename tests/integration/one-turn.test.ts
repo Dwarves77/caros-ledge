@@ -16,8 +16,24 @@ import { buildRegisterQuerySpec, fetchObligationRegisterPage, readUpcoming } fro
 import { readDerivedFigures } from "@/features/operations/read/operations-reads";
 import { readResearchPage } from "@/features/research/read/research-reads";
 import { readRegulationsFirstPage } from "@/features/regulations/list-read";
+import { POST_INVITE } from "@/features/community/api/group-invitations";
+import { POST as join } from "@/features/community/api/group-join";
+import { POST as createGroup } from "@/features/community/api/groups";
+import { POST_ACCEPT } from "@/features/community/api/invitation-respond";
+import { PATCH_MUTE } from "@/features/community/api/group-prefs";
+import { POST_ACT, POST_REPORT } from "@/features/community/api/moderation";
+import { GET as listNotifications } from "@/features/community/api/notifications";
+import { POST_CITE } from "@/features/community/api/post";
+import { POST as createPost } from "@/features/community/api/posts";
+import { POST as reply } from "@/features/community/api/replies";
+import { POST_DECIDE, POST_REQUEST } from "@/features/community/api/signoff";
+import { ROOMS } from "@/features/community/lib/rooms";
+import { readRoomsHome, type RoomsHome } from "@/features/community/lib/rooms-read";
+import { runNotificationOutbox } from "@/features/drain/kinds";
+import { fetchUnread } from "@/ui/shell/use-unread-count";
 
 import type { Row } from "../_support/memdb.ts";
+import { adopt, asClient, call, serviceOf, USER, wire, withDefaults, type Persona } from "../community/_world.ts";
 
 import { CENSUS, DOC, DOC_TEXT, DOC_URL, fixture, NEW_URL, NEW_VERDICT, NOW, PORTAL_URL, RESEARCH_URL, RESEARCH_VERDICT, SRC } from "./world.ts";
 
@@ -223,4 +239,81 @@ test("P2-10: the item the turn minted and verified renders on /regulations and o
   assert.ok(facts.length > 0 && facts.every((f) => detail.claimTiers[String(f.claim_text)]?.tier === 1), "each FACT claim carries its source's rating: COALESCE(override, base) of the registered source (base tier 1)");
   assert.equal(detail.resource.sourceTier ?? null, 1, "the capture's source rating is the registry's, drawn on the item");
   assert.deepEqual(await loadDetail("market", itemId, undefined, db.client), { notFound: true }, "the same item is not found on another surface");
+});
+
+// ── P2-16: Community on the same database as the turn ───────────────────────────────────────────────────────────
+// Community is social only (ADR-041): nothing it holds feeds another surface. What the turn wrote reaches Community the one allowed way: the rooms read the ledger's verified items (the room of an item's jurisdiction),
+// a thread binds to the entities the turn minted, and a member may cite a live item. The member journey then runs end to end on this database through the real routes, the real notification path (route, outbox, drain,
+// notifications row, the shell's unread count) and the same row policies the schema job proves in 0062.
+test("P2-16: the rooms read the item the turn minted in the room of its jurisdiction, a thread binds to the entity the turn wrote, and the social round trip runs on the one database", async () => {
+  const t = await theTurn();
+  const { db } = t;
+  const itemId = (t.ids("ledger-consume").minted_item_ids ?? [])[0] as string;
+  const item = db.rows("intelligence_items").find((x) => x.id === itemId) as Row;
+  const entity = String(item.instrument_entity_id);
+  assert.match(entity, /^cl:instrument:/, "the mint wrote the instrument's entity");
+
+  const w = adopt(db);
+  const people = w.seedPeople();
+  assert.ok(people.length >= 8);
+  w.seed("community_groups", withDefaults(w, "community_groups", ROOMS.map((r, i) => ({ id: `cccccccc-0000-4000-8000-00000000020${i}`, name: r.name, slug: r.slug, region: r.regionCode, privacy: "public", owner_user_id: USER.admin, member_count: 0 }))));
+  wire(w);
+  // The ledger's listing as the member reads it: the verified, live items, as the database function returns them.
+  w.rpcs.get_workspace_intelligence_listings_public = () => ({ data: w.rows("intelligence_items").filter((x) => x.provenance_status === "verified" && x.is_archived !== true).map((x) => ({ id: x.id, legacy_id: x.legacy_id ?? null, title: x.title, domain: x.domain, effective_priority: x.priority, added_date: "2026-10-15", full_brief: "x".repeat(50), source_id: x.source_id ?? null, effective_archived: false, jurisdiction_iso: x.jurisdiction_iso, category: x.category ?? null, topic_tags: x.topic_tags ?? [] })) });
+
+  // 1. The rooms reader returns the minted item, in the EU room, with the theme the turn tagged it with, and offers it to cite.
+  const home = await readRoomsHome(asClient(w, "member"), { userId: USER.member, email: "member@example.test", orgId: null });
+  const eu = home.rooms.find((r) => r.key === "EU") as RoomsHome["rooms"][number];
+  assert.deepEqual([eu.itemCount, eu.itemCountKnown, eu.liveItems.map((l) => l.uuid)], [1, true, [itemId]], "the EU room holds the one item the turn minted, and it can be cited");
+  assert.deepEqual(eu.themes, [], "the mint set no category on the item, so the room names no theme (a theme is derived from items, never invented)");
+  assert.equal(home.rooms.filter((r) => r.itemCount > 0).length, 1, "no other room holds it");
+  assert.deepEqual(home.failures, []);
+
+  // 2. The journey, by the real routes.
+  const created = await call(createGroup, "admin", "POST", "/api/community/groups", { name: "Instrument watchers", vertical: "fine-art" });
+  assert.equal(created.status, 201);
+  const gid = (created.body.group as { id: string }).id;
+  assert.equal((await call(POST_INVITE, "admin", "POST", `/api/community/groups/${gid}/invite`, { invitee_user_id: USER.nonMember }, { id: gid })).body.notified, true);
+  const invitation = w.rows("community_group_invitations").find((x) => x.group_id === gid) as Row;
+  assert.equal((await call(POST_ACCEPT, "nonMember", "POST", `/api/community/invitations/${invitation.id}/accept`, {}, { id: String(invitation.id) })).status, 200);
+  assert.equal(w.role(gid, USER.nonMember), "member");
+
+  const thread = await call(createPost, "nonMember", "POST", "/api/community/posts", { group_id: gid, title: "Who is filing under the new instrument?", body: "We file next week.", entity_ids: [entity] });
+  assert.equal(thread.status, 201);
+  const tid = (thread.body.post as { id: string }).id;
+  assert.deepEqual(w.rows("community_thread_entities").filter((l) => l.thread_id === tid).map((l) => [l.entity_id, l.entity_kind]), [[entity, "instrument"]], "the thread is bound to the entity the turn wrote");
+  const cited = await call(POST_CITE, "nonMember", "POST", `/api/community/posts/${tid}/cite`, { item_id: itemId }, { id: tid });
+  assert.deepEqual(cited.body.cited, [itemId], "the live item the turn minted is cited into the thread");
+  assert.equal((await call(POST_CITE, "nonMember", "POST", `/api/community/posts/${tid}/cite`, { item_id: "aaaaaaaa-0000-4000-8000-0000000000ff" }, { id: tid })).status, 404, "an item that does not exist cannot be cited");
+
+  // A reply notifies the thread author through the outbox; the drain delivers it; the shell's unread count sees it; a muted group drops the next one.
+  const unread = async (who: Persona) => fetchUnread((async (u: string) => new Response(JSON.stringify((await call(listNotifications, who, "GET", u)).body))) as never);
+  assert.equal((await call(reply, "admin", "POST", `/api/community/posts/${tid}/replies`, { body: "We filed on the first." }, { id: tid })).status, 201);
+  assert.equal(w.rows("notification_outbox").filter((o) => o.user_id === USER.nonMember && o.kind === "reply").length, 1);
+  await runNotificationOutbox({ sb: serviceOf(w), now: () => NOW }, { dry: false });
+  assert.equal(await unread("nonMember"), 2, "the invitation and the reply");
+  assert.equal((await call(PATCH_MUTE, "nonMember", "PATCH", `/api/community/groups/${gid}/mute`, { muted: true }, { id: gid })).status, 200);
+  assert.equal((await call(reply, "admin", "POST", `/api/community/posts/${tid}/replies`, { body: "Second note." }, { id: tid })).status, 201);
+  await runNotificationOutbox({ sb: serviceOf(w), now: () => NOW }, { dry: false });
+  assert.equal(await unread("nonMember"), 2, "the muted group's reply is dropped on its way to the notifications table");
+
+  // Report, moderate with a ban, the banned member is refused, then sign-off.
+  assert.equal((await call(POST_REPORT, "admin", "POST", "/api/community/moderation/reports", { post_id: tid, reason: "spam" })).status, 201);
+  const report = w.rows("moderation_reports").find((r) => r.target_id === tid) as Row;
+  const banned = await call(POST_ACT, "admin", "POST", `/api/community/moderation/reports/${report.id}`, { action: "ban", notes: "Repeated spam" }, { id: String(report.id) });
+  assert.deepEqual([banned.status, banned.body.status, banned.body.notified], [200, "resolved", true]);
+  assert.deepEqual(w.rows("community_group_bans").map((b) => [b.group_id, b.user_id, b.banned_by]), [[gid, USER.nonMember, USER.admin]]);
+  assert.equal((await call(join, "nonMember", "POST", `/api/community/groups/${gid}/join`, {}, { id: gid })).status, 403, "the banned member is refused");
+
+  const own = await call(createPost, "admin", "POST", "/api/community/posts", { group_id: gid, title: "Our filing", body: "Filed on the first.", entity_ids: [entity] });
+  const pid = (own.body.post as { id: string }).id;
+  const requested = await call(POST_REQUEST, "admin", "POST", `/api/community/posts/${pid}/signoff`, {}, { id: pid });
+  assert.equal(requested.status, 201);
+  const rid = (requested.body.request as { id: string }).id;
+  assert.equal((await call(POST_DECIDE, "verifier", "POST", `/api/community/signoff/${rid}/decide`, { decision: "signed_off", primary_doc_url: "https://eur-lex.europa.eu/example" }, { id: rid })).status, 200);
+  assert.ok(w.post(pid)?.signed_off_at, "the post is stamped after the decision");
+
+  // Nothing here wrote to the ledger: the turn's rows are the turn's.
+  assert.deepEqual(db.rows("intelligence_items").map((x) => x.id), [itemId]);
+  assert.equal(db.rows("intelligence_items").some((x) => x.signed_off_at !== undefined), false);
 });

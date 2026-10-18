@@ -167,10 +167,11 @@ test("IMP-025: notices are queued in ONE insert for every recipient; an empty ba
     { userId: "u2", kind: "archive" as const, payload: { title: "a" } },
   ];
   assert.equal(await queueNotifications(rows, db.db), null);
-  assert.equal(db.calls.length, 1);
-  assert.deepEqual((db.calls[0]?.payload as { user_id: string }[]).map((r) => r.user_id), ["u1", "u2"]);
-  assert.equal(db.calls[0]?.table, "notification_outbox");
-  assert.equal(await queueNotifications(rows, fakeDb(() => ({ error: { message: "outbox down" } })).db), "outbox down");
+  // The recipients' preferences are read first (allowedRecipients); the outbox gets ONE insert for everyone who may receive it.
+  const inserts = db.calls.filter((c) => c.table === "notification_outbox");
+  assert.equal(inserts.length, 1);
+  assert.deepEqual((inserts[0]?.payload as { user_id: string }[]).map((r) => r.user_id), ["u1", "u2"]);
+  assert.match(String(await queueNotifications(rows, fakeDb(() => ({ error: { message: "outbox down" } })).db)), /outbox down/);
 });
 
 // ── the settings page's reads: a failed read is its own message, never an empty list ─────────────────────────────────
