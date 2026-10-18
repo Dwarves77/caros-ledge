@@ -17,3 +17,7 @@ No SQL statement is edited. Stubs the dump needs (created by `scripts/ci/schema-
 - schema `vault`: `decrypted_secrets` view
 - schema `net`: `http_post()` function, `_http_response` table
 - `DROP SCHEMA public CASCADE` before the apply, because line 28 of the original (`CREATE SCHEMA public;`) fails on an image that already has `public`. Dropping it in the harness keeps the dump unedited.
+
+## P2-15d: the twelve `FOR ROLE supabase_admin` default-privilege statements
+
+Dump lines 23236-23239, 23256-23259 and 23276-23279 (`ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public GRANT ALL ON SEQUENCES|FUNCTIONS|TABLES TO postgres, anon, authenticated, service_role`) are removed: they are Supabase platform state, and the role migrations run as (`postgres`, not a member of supabase_admin) cannot set them (42501). `scripts/ci/schema-apply.mjs` re-creates them as the bootstrap superuser right after the file, so the CI catalog still equals production's.

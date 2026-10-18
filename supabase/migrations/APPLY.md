@@ -11,7 +11,7 @@ Rules: schema first, in name order; a row marked HOLD waits for the step it name
 
 | # | file | class | command | self-check | rollback | when |
 |---|---|---|---|---|---|---|
-| 1 | 0001_grants_and_default_privileges | schema | `supabase db query --linked -f supabase/migrations/0001_grants_and_default_privileges.sql` | 0001-grants | GRANT SELECT back on the listed relations to anon; ALTER POLICY ... TO public; ALTER DEFAULT PRIVILEGES ... GRANT. | in order |
+| 1 | 0001_grants_and_default_privileges | schema | `supabase db query --linked -f supabase/migrations/0001_grants_and_default_privileges.sql` | 0001-grants | GRANT SELECT back on the listed relations to anon; ALTER POLICY ... TO public; ALTER DEFAULT PRIVILEGES FOR ROLE postgres ... GRANT (the supabase_admin defaults are never touched, so there is nothing to restore for them). | in order |
 | 2 | 0002_foreign_key_indexes | schema | `supabase db query --linked -f supabase/migrations/0002_foreign_key_indexes.sql` | 0002-fk-indexes | DROP INDEX for each name below. | in order |
 | 3 | 0003_set_null_on_not_null_fix | schema | `supabase db query --linked -f supabase/migrations/0003_set_null_on_not_null_fix.sql` | 0003-set-null | re-create each constraint with ON DELETE SET NULL (restores the failing behaviour). | in order |
 | 4 | 0004_function_search_path_pins | schema | `supabase db query --linked -f supabase/migrations/0004_function_search_path_pins.sql` | 0004-search-path | ALTER FUNCTION ... RESET search_path for the names in the list below. | in order |
