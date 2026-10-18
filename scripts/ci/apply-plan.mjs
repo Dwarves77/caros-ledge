@@ -9,6 +9,8 @@ import { pathToFileURL } from "node:url";
 
 const DIR = "supabase/migrations";
 const CLI = (file) => `supabase db query --linked -f ${DIR}/${file}`;
+// Files that do not exist on main because the window generates them from live data; their note is written ahead and checked once the file lands.
+const WINDOW_GENERATED = ["0016_data_source_type_backfill"];
 const isData = (f) => f.includes("_data_");
 const cell = (s) => String(s).replace(/\|/g, "/").replace(/\s+/g, " ").trim();
 
@@ -31,7 +33,7 @@ export function planProblems(dir = DIR) {
   const files = readdirSync(dir).filter((f) => /^\d{4}_.+\.sql$/.test(f));
   const notes = existsSync(`${dir}/apply-notes.json`) ? JSON.parse(readFileSync(`${dir}/apply-notes.json`, "utf8")) : {};
   const problems = [];
-  for (const k of Object.keys(notes)) if (!files.includes(`${k}.sql`)) problems.push(`${dir}/apply-notes.json names ${k}, which is not a file`);
+  for (const k of Object.keys(notes)) if (!files.includes(`${k}.sql`) && !WINDOW_GENERATED.includes(k)) problems.push(`${dir}/apply-notes.json names ${k}, which is not a file`);
   for (const f of files.filter(isData)) {
     const n = notes[f.replace(/\.sql$/, "")];
     if (!n?.consumer || !n?.after) problems.push(`${dir}/apply-notes.json: the data file ${f} needs a "consumer" and an "after"`);
