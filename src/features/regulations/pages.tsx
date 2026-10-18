@@ -10,7 +10,7 @@ import { userClient } from "@/core/db";
 import { applyIdRedirect, loadDetail } from "@/core/detail";
 import { corridorsTouching } from "@/core/entities";
 import { log } from "@/core/shared";
-import { getWorkspaceProfile } from "@/core/workspace";
+import { readWorkspaceProfile } from "@/core/workspace";
 import { pageSession } from "@/features/account/server/page-session";
 import { loadSurfaceDenominator } from "@/features/coverage/server";
 import { buildRegisterQuerySpec, defaultJurisdictionFilter, fetchObligationRegisterPage, fetchRegisterFacetOptions, KIND_LABELS, readUpcoming } from "@/features/obligations";
@@ -40,17 +40,23 @@ export async function RegulationsIndex() {
   const db = await userClient();
   const today = session.nowIso.slice(0, 10);
   const data = await attempt("the list", async () => {
-    const profile = await getWorkspaceProfile(db, session.orgId).catch((e) => warn("profile", e));
+    const profileRead = await readWorkspaceProfile(db, session.orgId).catch((e) => warn("profile", e));
+    const profile = profileRead?.profile;
     const [first, chips, upcoming, coverage] = await Promise.all([
       readRegulationsFirstPage(db, session.orgId),
       readThemeChips(db, { surface: "regulations" }).catch((e) => warn("themes", e)),
       readUpcoming(db, { limit: 8, jurisdictionFilter: defaultJurisdictionFilter(profile?.jurisdictions) }, today).catch((e) => warn("upcoming obligations", e)),
       loadSurfaceDenominator("regulations", { db: () => db }).catch((e) => warn("coverage", e)),
     ]);
-    return { first, chips, upcoming, coverage };
+    return { first, chips, upcoming, coverage, profileFailed: profileRead === null || profileRead.failed };
   });
   if (!data || data.first.failed) return <PageFailure what="Regulations" />;
-  const { first, chips, upcoming, coverage } = data;
+  const { first, chips, upcoming, coverage, profileFailed } = data;
+  const degraded = [
+    ...(profileFailed ? ["Your workspace profile did not load, so the obligations rail is not narrowed to your jurisdictions."] : []),
+    ...(first.timelineFailures > 0 ? ["Milestone dates did not load for some rows, so their timelines are blank."] : []),
+    ...(first.overridesFailed ? ["Your workspace's owner, dismissal and archive marks did not load, so the rows show none."] : []),
+  ];
   return (
     <Suspense fallback={null}>
       <RegulationsLedger
@@ -58,7 +64,8 @@ export async function RegulationsIndex() {
         aggregates={first.aggregates}
         hasMore={first.hasMore}
         nowIso={session.nowIso}
-        chips={chips ?? []}
+        chips={chips}
+        degraded={degraded}
         rail={<ObligationsRailCard events={upcoming?.events ?? []} failed={upcoming === null} nowIso={session.nowIso} />}
         below={<CoverageLine denominator={coverage?.denominator ?? null} failed={coverage === null || coverage.error !== null} surface="regulations" />}
       />

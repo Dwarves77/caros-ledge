@@ -39,6 +39,8 @@ export interface WatchlistRead {
   capped: boolean;
   /** The source ratings did not load: the rows carry no tier and the surface says so. */
   ratingsFailed: boolean;
+  /** Some rows' milestone read failed: they carry no timeline and the surface says so. */
+  timelinesFailed: boolean;
 }
 /** Next date first (an undated row after the dated), the most recent watch first among equals: the order the card's aside states. */
 export const byNextDate = (a: WatchlistItem, b: WatchlistItem): number => (a.dueDays ?? Infinity) - (b.dueDays ?? Infinity) || b.watchedAt.localeCompare(a.watchedAt);
@@ -75,7 +77,7 @@ export async function readWatchlist(db: Db, who: { userId: string; orgId: string
   const seen = new Set<string>();
   const all = [...personal, ...team].filter((r) => !seen.has(`${r.item_type}:${r.item_id}`) && (seen.add(`${r.item_type}:${r.item_id}`), true)).sort((a, b) => b.created_at.localeCompare(a.created_at));
   const capped = personal.length >= limit || team.length >= limit;
-  if (all.length === 0) return { items: [], capped, ratingsFailed: false };
+  if (all.length === 0) return { items: [], capped, ratingsFailed: false, timelinesFailed: false };
 
   const of = (type: (t: string) => boolean) => [...new Set(all.filter((r) => type(r.item_type)).map((r) => r.item_id))];
   const itemKeys = of((t) => ITEM_BACKED.has(t));
@@ -110,5 +112,5 @@ export async function readWatchlist(db: Db, who: { userId: string; orgId: string
     const title = resource?.title ?? (r.item_type === "source" ? sourceName.get(r.item_id) : r.item_type === "market_series" ? seriesLabel.get(r.item_id) : undefined) ?? UNAVAILABLE_TITLE;
     return { id: r.item_id, type: r.item_type, scope: r.scope, title, watchedAt: r.created_at, note: r.note, addedBy: r.added_by_user_id ? (names.get(r.added_by_user_id) ?? null) : null, fields: resource ? toListRowFields(resource, now) : null, dueDays: resource ? (dueInfo(resource, now)?.daysNum ?? null) : null };
   });
-  return { items, capped, ratingsFailed: !enriched };
+  return { items, capped, ratingsFailed: !enriched, timelinesFailed: mapped.timelineFailures > 0 };
 }

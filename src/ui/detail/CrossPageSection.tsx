@@ -162,7 +162,7 @@ function ThemeAnalysis({ theme, surfaceLabel, first }: { theme: ThemeAnalysisVie
 
 /** Which of the two cross-page sections this item has (the section index lists only those). */
 export function crossPagePresence(crossPage?: CrossPageData | null): { connected: boolean; inferences: boolean } {
-  return { connected: !!crossPage?.intersections || !!crossPage?.theme || (crossPage?.degraded?.includes("themes") ?? false), inferences: pickVisibleInferences(crossPage?.inferences?.claims ?? [], admissibleForDisplay).length > 0 };
+  return { connected: !!crossPage?.intersections || !!crossPage?.theme || (crossPage?.degraded?.includes("themes") ?? false), inferences: (crossPage?.degraded?.includes("inferences") ?? false) || pickVisibleInferences(crossPage?.inferences?.claims ?? [], admissibleForDisplay).length > 0 };
 }
 
 /** "Connected intelligence" (intersections and the theme analysis) and the Inferences section; the view is computed once here from the rows the page read. */
@@ -170,7 +170,7 @@ export function CrossPageSection({ surfaceKey, surfaceLabel, crossPage, onRetry 
   const view = crossPage?.intersections ?? null;
   const theme = crossPage?.theme ?? null;
   const themesFailed = crossPage?.degraded?.includes("themes") ?? false;
-  const inferences = <InferenceSection inferences={crossPage?.inferences} index={crossPageOrd(surfaceKey, INFERENCES_SECTION_ID)} />;
+  const inferences = <InferenceSection inferences={crossPage?.inferences} index={crossPageOrd(surfaceKey, INFERENCES_SECTION_ID)} failed={crossPage?.degraded?.includes("inferences") ?? false} onRetry={onRetry} />;
   if (!view && !theme && !themesFailed) return inferences;
   return (
     <>

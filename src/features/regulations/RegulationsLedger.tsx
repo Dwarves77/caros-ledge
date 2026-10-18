@@ -37,7 +37,8 @@ async function fetchRest(): Promise<LedgerRow[]> {
   return r.data?.resources ?? [];
 }
 
-export function RegulationsLedger({ initial, aggregates, hasMore, nowIso, chips, rail, below }: { initial: LedgerRow[]; aggregates: WorkspaceAggregates | null; hasMore: boolean; nowIso: string; chips: ThemeChip[]; rail: ReactNode; below?: ReactNode }) {
+/** `chips` is null when the theme strip's read failed; `degraded` are the sentences for reads that failed beside the list (profile, milestones, marks), each with Retry. */
+export function RegulationsLedger({ initial, aggregates, hasMore, nowIso, chips, degraded = [], rail, below }: { initial: LedgerRow[]; aggregates: WorkspaceAggregates | null; hasMore: boolean; nowIso: string; chips: ThemeChip[] | null; degraded?: readonly string[]; rail: ReactNode; below?: ReactNode }) {
   const router = useRouter();
   const now = useMemo(() => new Date(nowIso), [nowIso]);
   const url = useListUrlState();
@@ -118,6 +119,11 @@ export function RegulationsLedger({ initial, aggregates, hasMore, nowIso, chips,
               The counts for this list did not load, so the band tiles and the facet totals are left blank.
             </StateNote>
           )}
+          {degraded.map((note) => (
+            <StateNote key={note} tone="error" action={{ label: "Retry", onClick: () => router.refresh() }}>
+              {note}
+            </StateNote>
+          ))}
           {tagsFacet.failed && (
             <StateNote tone="error" action={{ label: "Retry", onClick: tagsFacet.retry }}>
               Your workspace tags did not load.
@@ -152,7 +158,7 @@ export function RegulationsLedger({ initial, aggregates, hasMore, nowIso, chips,
       stateNote={remainder.loadingMore ? <StateNote>Loading the rest of the regulations in the background.</StateNote> : null}
       belowRows={
         <>
-          <ThemeStrip chips={chips} />
+          {chips === null ? <StateNote tone="error" action={{ label: "Retry", onClick: () => router.refresh() }}>The theme strip did not load.</StateNote> : <ThemeStrip chips={chips} />}
           {below}
           <DismissedStash dismissed={dismissed} onRestore={restore} />
         </>

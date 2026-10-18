@@ -30,6 +30,8 @@ export interface DashboardBriefProps {
   /** The row read failed (timed out or errored): both cards say so with Retry instead of drawing an empty list. */
   rowsFailed: boolean;
   ratingsFailed: boolean;
+  /** Reads that failed beside the rows (profile, milestones, hold state): each is a sentence with Retry; the rows still draw. */
+  degraded: readonly string[];
   /** null when the count reads failed. */
   counts: Counts | null;
   /** null when the watchlist read failed. */
@@ -116,6 +118,11 @@ export function DashboardBrief(p: DashboardBriefProps) {
       }
     >
       <div className={styles.column}>
+        {p.degraded.map((note) => (
+          <StateNote key={note} tone="error" action={{ label: "Retry", onClick: retry }}>
+            {note}
+          </StateNote>
+        ))}
         {p.counts === null && (
           <StateNote tone="error" action={{ label: "Retry", onClick: retry }}>
             The band counts did not load, so the tiles are blank rather than zero.

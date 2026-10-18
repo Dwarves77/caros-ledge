@@ -34,7 +34,7 @@ export async function readRegulationsFirstPage(db: Db, orgId: string | null) {
   const [page, aggregates] = await Promise.all([readListing(db, { orgId, rpc: rpcFor(orgId), page: { offset: 0, limit: pageSizes.first, domain: REGULATIONS_DOMAIN } }), readSurfaceCounts(db, orgId, "regulations")]);
   const rows = page.failed ? [] : await withUuids(db, page.rows.filter((r) => r.domain === REGULATIONS_DOMAIN).map(trimRemainder));
   const hasMore = (aggregates?.totalItems ?? rows.length) > rows.length;
-  return { rows, aggregates, hasMore, failed: page.failed, enrichFailed: page.enrichFailed, timelineFailures: page.timelineFailures };
+  return { rows, aggregates, hasMore, failed: page.failed, enrichFailed: page.enrichFailed, timelineFailures: page.timelineFailures, overridesFailed: page.overrides === null };
 }
 
 /** Everything after the first page, trimmed. A failure is reported as one, never as a short list. */

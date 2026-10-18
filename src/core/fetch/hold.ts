@@ -21,13 +21,17 @@ export async function readScrapeState(db: Db): Promise<ScrapeState> {
   if (error) throw new Error(`system_state read failed: ${error.message}`);
   return { cadence: (data?.scrape_cadence as ScrapeCadence | undefined) ?? "off", startDate: (data?.scrape_start_date as string | null | undefined) ?? null, emergencyPaused: !!data?.global_processing_paused };
 }
-/** The same read, failing CLOSED (a read error counts as off): the gate every fetch and every dispatcher uses. */
-export async function getScrapeState(db: Db): Promise<ScrapeState> {
+/** The same read, failing CLOSED (a read error counts as off) and saying so: `unreadable` is true when the state is the fail-closed one, so a page can state that the hold is unknown. */
+export async function readScrapeStateOrClosed(db: Db): Promise<{ state: ScrapeState; unreadable: boolean }> {
   try {
-    return await readScrapeState(db);
+    return { state: await readScrapeState(db), unreadable: false };
   } catch {
-    return FAIL_CLOSED;
+    return { state: FAIL_CLOSED, unreadable: true };
   }
+}
+/** The fail-closed read every fetch and every dispatcher uses. */
+export async function getScrapeState(db: Db): Promise<ScrapeState> {
+  return (await readScrapeStateOrClosed(db)).state;
 }
 /** Scraping is switched off when the cadence is off or the emergency stop is set. */
 export async function isGloballyPaused(db: Db): Promise<boolean> {

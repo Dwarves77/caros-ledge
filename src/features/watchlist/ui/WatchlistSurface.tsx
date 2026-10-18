@@ -139,6 +139,13 @@ export function WatchlistSurface({ watch, notices, limit, dateLabel, nowIso }: W
               </StateNote>
             </div>
           )}
+          {watch?.timelinesFailed && (
+            <div className="cl-pad-16">
+              <StateNote tone="error" action={{ label: "Retry", onClick: retry }}>
+                Milestone dates did not load for some rows, so their timelines are blank.
+              </StateNote>
+            </div>
+          )}
           {rows.length > 0 && <ListRowHeader titleLabel="Title · type · modes" dueLabel="Next date" />}
         </>
       }

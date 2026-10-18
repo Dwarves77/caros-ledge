@@ -57,5 +57,9 @@ Rulings cited: **law 2** is `docs/design/ux-laws.md` law 2 (interactive targets)
 | 47 | 36 P2-16 | none given | the directory and discover pages | rule 20 | open |
 | 48 | 36 P2-16 | none given | region tabs only on /community/browse | rule 20 | open |
 | 49 | 36 P2-16 | 12 | no mute state is drawn: the Muted chip, the three duration buttons (1, 7, 30 days) and the refusal sentence naming the date | rule 20 | open |
+| 50 | 38 P2-15b | 01 (Dashboard), 02 (Regulations list) | a failure note with Retry above the brief or list for each side read that failed (workspace profile, milestone dates, owner and archive marks, hold state), and for the theme strip | INV-263 | open |
+| 51 | 38 P2-15b | 03, 06, 08 (Market, Research, Operations lists) | when the corpus counts do not load: a note with Retry, the band tiles and Region totals blank, the masthead count reads "Counts unavailable" | INV-263 | open |
+| 52 | 38 P2-15b | 08 (Operations) | a failure note with Retry in the Coverage gaps card (state-level cost facts) and above a profile whose regional coverage did not load | INV-263 | open |
+| 53 | 38 P2-15b | detail pages (04, 05, 07, 09) | the Inferences section draws a failure note with Retry, with its index entry, when the inference read failed | INV-263 | open |
 
 Items 44 to 48 were given no artboard number by the lane; each needs one assigned before the operator decides it.

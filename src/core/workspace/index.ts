@@ -1,4 +1,4 @@
-export { DEFAULT_ORG_PROFILE, DEFAULT_WORKSPACE_PROFILE, deriveRoleScopeFromComplianceObjectTags, findBand, getWorkspaceProfile, ORG_ROLES, ORG_SIZE_DIMENSIONS, parseOrgProfile, PROFILE_JSON_KEYS, validateProfileInput } from "./profile";
+export { DEFAULT_ORG_PROFILE, DEFAULT_WORKSPACE_PROFILE, deriveRoleScopeFromComplianceObjectTags, findBand, getWorkspaceProfile, ORG_ROLES, ORG_SIZE_DIMENSIONS, parseOrgProfile, PROFILE_JSON_KEYS, readWorkspaceProfile, validateProfileInput } from "./profile";
 export type { OrgProfile, OrgSize, WorkspaceProfile } from "./profile";
 export { computeItemRelevance, currentObligationObjects, dutyHoldersExcludeForwarder, fetchObligationObjectsForItem, relevanceForItem, summariseObligationBinding } from "./relevance";
 export type { ItemApplicability, ItemRelevance, ObligationBinding, ObligationObject, RelevanceDeps } from "./relevance";
