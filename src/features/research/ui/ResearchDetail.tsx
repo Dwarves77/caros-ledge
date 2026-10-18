@@ -37,6 +37,8 @@ export interface ResearchDetailProps {
   resource: Resource;
   sections: SectionRow[];
   claimTiers: ClaimTierMap;
+  /** The claims or their suppressions could not be read: the stored sections and the brief are withheld (INV-270) and the page says so with Retry. */
+  claimsDegraded: boolean;
   recommendedActions: RecommendedAction[];
   connectionRows: ConnectionRow[];
   crossPage: CrossPageData;
@@ -104,6 +106,11 @@ export function ResearchDetail(p: ResearchDetailProps) {
       <div style={{ paddingTop: 16 }}>
         <DetailPageWrapper band={band} action={topRecommendedAction(p.recommendedActions)} nowIso={nowIso}>
           <DetailMasthead title={r.title} band={band} surface="Research" jurisdiction={jurisLabel} dek={dek} placeholder="Ask about this finding, e.g. when does the largest deadline hit" nowIso={nowIso} actionSlot={actionCard} connectionsSlot={p.connectionRows.length > 0 ? <ItemConnections rows={p.connectionRows} /> : undefined} />
+          {p.claimsDegraded && (
+            <StateNote tone="error" action={{ label: "Retry", onClick: () => router.refresh() }}>
+              The facts of this finding did not load, so none is shown. Nothing was changed; try again.
+            </StateNote>
+          )}
           <SectionIndex sections={index} depth={depth} onDepthChange={setDepth} />
           <DetailLayout
             rail={
@@ -152,7 +159,7 @@ export function ResearchDetail(p: ResearchDetailProps) {
                     </DetailSubSection>
                   ))
                 ) : (
-                  <StateNote>Detailed sections for this finding are not written yet; they need the finding&apos;s brief.</StateNote>
+                  <StateNote>{p.claimsDegraded ? "Detailed sections for this finding are withheld until the facts load." : "Detailed sections for this finding are not written yet; they need the finding&apos;s brief."}</StateNote>
                 )}
               </DetailSection>
             )}

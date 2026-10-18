@@ -26,5 +26,5 @@ export async function ResearchDetailRoute({ params }: { params: Promise<{ slug: 
   if ("failed" in session) return <PageFailure what="This finding" />;
   const d = await loadDetail("research", id, loadFinding);
   if (d.notFound) notFound();
-  return <ResearchDetail resource={d.resource} sections={d.sections} claimTiers={d.claimTiers} recommendedActions={d.recommendedActions} connectionRows={d.connectionRows} crossPage={d.crossPage} related={d.itemScoped.related} assessment={d.itemScoped.assessment} nowIso={session.nowIso} />;
+  return <ResearchDetail resource={d.resource} sections={d.sections} claimTiers={d.claimTiers} claimsDegraded={d.claimsDegraded} recommendedActions={d.recommendedActions} connectionRows={d.connectionRows} crossPage={d.crossPage} related={d.itemScoped.related} assessment={d.itemScoped.assessment} nowIso={session.nowIso} />;
 }

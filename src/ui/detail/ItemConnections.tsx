@@ -19,10 +19,10 @@ export function ItemConnections({ rows }: { rows: ConnectionRow[] }) {
   const linked = rows.filter((r) => r.href);
   if (linked.length === 0) return null;
   const item = (r: ConnectionRow) => (
-    <Link key={`${r.id}-${r.label}`} href={r.href as string} prefetch={false} className="cl-detail-link" title={r.title}>
+    <Link key={`${r.id}-${r.label}`} href={r.href as string} prefetch={false} className="cl-detail-link" title={r.title} data-discovered={r.discovered ? "true" : undefined}>
       <p className="cl-detail-label" style={{ margin: 0 }}>
         {r.label}
-        {r.discovered ? " · discovered" : ""}
+        {r.surface && r.surface !== "uncategorized" ? ` · ${r.surface}` : ""}
       </p>
       <p data-guard-title className="cl-detail-link-title">
         {r.title}

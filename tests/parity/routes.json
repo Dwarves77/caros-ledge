@@ -20,7 +20,17 @@
       "discover": { "list": "/market", "match": "^/market/[^/?#]+$", "exclude": ["/market/series"] }
     },
     { "name": "research", "path": "/research", "auth": "member" },
+    {
+      "name": "research-detail",
+      "auth": "member",
+      "discover": { "list": "/research", "match": "^/research/[^/?#]+$", "exclude": [] }
+    },
     { "name": "operations", "path": "/operations", "auth": "member" },
+    {
+      "name": "operations-detail",
+      "auth": "member",
+      "discover": { "list": "/operations", "match": "^/operations/[^/?#]+$", "exclude": [] }
+    },
     { "name": "map", "path": "/map", "auth": "member" },
     { "name": "search-emissions", "path": "/search?q=emissions", "auth": "member" },
     { "name": "watchlist", "path": "/watchlist", "auth": "member" },
