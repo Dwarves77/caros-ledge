@@ -5,6 +5,8 @@ Every migration file on main, in the order the cutover window applies it to prod
 
 How to run a file: the command in its row, from the repo root, with the Supabase CLI logged in and linked to the production project (`supabase login`, `supabase link --project-ref <ref>`). When the CLI refuses a file (size, timeout) the same file runs with `--db-url "$DATABASE_URL"` in place of `--linked` (the direct connection string from the dashboard, percent-encoded). A file is one transaction: BEGIN, its change, its self-check DO block, COMMIT. A failing self-check raises, the transaction rolls back, the command exits non-zero and nothing of the file stays. Success is exit code 0 with no ERROR line; keep each command's full output in the run artifact (cutover-run/<NNNN>.log).
 
+Before the window resumes, rehearse the remaining chain on production's real schema and data: `DATABASE_URL=<direct connection> node scripts/cutover/dry-run.mjs` runs the rows from 0004 (HOLD rows left out, then the data files) as one transaction and ends in ROLLBACK; it names the first file that fails and keeps nothing. There is no commit mode: the real apply stays file by file, below.
+
 Rules: schema first, in name order; a row marked HOLD waits for the step it names; data files after the schema they name (standing rule 3, the two-track policy); stop at the first failure and report it, never skip a file or reorder. After the last row, write APPLIED.json (`node scripts/cutover/write-applied.mjs cutover-run/applied.txt`) and delete the waivers it retires in the same commit.
 
 ## Phase 1: schema files, in name order

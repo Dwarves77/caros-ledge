@@ -13,7 +13,7 @@ No SQL statement is edited. Stubs the dump needs (created by `scripts/ci/schema-
 
 - roles `anon`, `authenticated`, `service_role`, `supabase_admin`, `reconciler` (NOLOGIN)
 - schema `auth`: `users` table, `uid()`, `role()`
-- schema `extensions` with `pgcrypto`
+- schemas and extensions: scripts/ci/data/production-shape.json (read from production's catalog 2026-10-18; P2-15g). `schema-apply.mjs` creates ltree and pg_trgm in `public`, pgcrypto, uuid-ossp and pg_stat_statements in `extensions`, and an empty stub schema for every other production schema (cron, graphql, graphql_public, net, realtime, storage, supabase_migrations, vault); the Supabase-only extensions (pg_cron, pg_net, pgjwt, pgsodium, supabase_vault) are recorded, not installed. schema.sql has no CREATE EXTENSION line (the dump is `--schema=public`); its `CREATE SCHEMA public;` is applied as `IF NOT EXISTS` in memory because the extensions live there first
 - schema `vault`: `decrypted_secrets` view
 - schema `net`: `http_post()` function, `_http_response` table
 - `DROP SCHEMA public CASCADE` before the apply, because line 28 of the original (`CREATE SCHEMA public;`) fails on an image that already has `public`. Dropping it in the harness keeps the dump unedited.

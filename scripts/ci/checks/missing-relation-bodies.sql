@@ -7,6 +7,7 @@ SELECT DISTINCT r.sig || ' -> ' || r.qname FROM (
                                               '''([^'']|'''')*''', '''''', 'g') AS src) s
     CROSS JOIN LATERAL regexp_matches(s.src, '(?<!distinct\s)\m(from|join|update|insert\s+into)\s+(?:only\s+)?(?:([a-z_][a-z0-9_]*)\.)?([a-z_][a-z0-9_]*)', 'gi') AS m
    WHERE p.pronamespace = 'public'::regnamespace AND p.prolang IN (SELECT oid FROM pg_language WHERE lanname IN ('plpgsql', 'sql'))
+     AND NOT EXISTS (SELECT 1 FROM pg_depend d WHERE d.classid = 'pg_proc'::regclass AND d.objid = p.oid AND d.deptype = 'e')
 ) r
 WHERE r.rel NOT IN ('select', 'only', 'lateral', 'values', 'set')
   AND to_regclass(coalesce(quote_ident(r.sch) || '.', '') || quote_ident(r.rel)) IS NULL

@@ -36,14 +36,34 @@ const staticProblems = migrationProblems();
 for (const p of staticProblems) console.error(p);
 if (staticProblems.length) process.exit(1);
 
+// Production's own extension and schema list (scripts/ci/data/production-shape.json, read from its catalog). Every extension the Postgres image provides is
+// created in production's schema; the Supabase-only ones (pg_cron, pg_net, pgjwt, pgsodium, supabase_vault; pg_graphql and supautils are not extensions here)
+// have no image build and stand as empty schemas, named in a comment. Extensions in `public` are created after the schema is recreated, before schema.sql,
+// so the CI database holds the same extension-owned functions in public that production does (P2-15g: 0004's self-check listed ltree_* and pg_trgm's
+// functions as unpinned on production; the CI database never had them).
+const SHAPE = JSON.parse(readFileSync("scripts/ci/data/production-shape.json", "utf8"));
+const NL = String.fromCharCode(10);
+const ident = (x) => `"${x.replace(/"/g, '""')}"`;
+const imageExt = (inPublic) => SHAPE.extensions.filter((e) => e.source === "image" && (e.schema === "public") === inPublic);
+const supabaseOnly = SHAPE.extensions.filter((e) => e.source === "supabase");
+const shapeSchemas = SHAPE.schemas.filter((s) => s !== "public");
+const SHAPE_SQL = `
+${shapeSchemas.map((s) => `CREATE SCHEMA IF NOT EXISTS ${ident(s)};`).join(NL)}
+${imageExt(false).map((e) => `CREATE EXTENSION IF NOT EXISTS ${ident(e.name)} WITH SCHEMA ${ident(e.schema)};`).join(NL)}
+${supabaseOnly.map((e) => `-- ${e.name} ${e.version} (${e.schema}): Supabase-only, not in the Postgres image; its schema is the stub.`).join(NL)}
+`;
+const PUBLIC_SQL = `
+CREATE SCHEMA public AUTHORIZATION postgres;
+${imageExt(true).map((e) => `CREATE EXTENSION IF NOT EXISTS ${ident(e.name)} WITH SCHEMA public;`).join(NL)}
+`;
+
 const STUBS = `
 DO $$ DECLARE r text; BEGIN
   FOREACH r IN ARRAY ARRAY['anon','authenticated','service_role','supabase_admin','reconciler'] LOOP
     IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = r) THEN EXECUTE format('CREATE ROLE %I NOLOGIN', r); END IF;
   END LOOP;
 END $$;
-CREATE SCHEMA IF NOT EXISTS extensions;
-CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions;
+${SHAPE_SQL}
 CREATE SCHEMA IF NOT EXISTS auth;
 CREATE TABLE IF NOT EXISTS auth.users (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), email text);
 CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE
@@ -63,6 +83,7 @@ ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA storage GRANT ALL ON TABLES
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA storage GRANT ALL ON SEQUENCES TO anon, authenticated;
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA storage GRANT ALL ON FUNCTIONS TO anon, authenticated;
 DROP SCHEMA IF EXISTS public CASCADE;
+${PUBLIC_SQL}
 `;
 
 function psql(opts, asSuperuser = false) {
@@ -79,7 +100,11 @@ function apply(stopOnError) {
   if (stub.code !== 0) return { code: stub.code, errors: errorsOf(stub.err) };
   const grants = psql({ sql: PRODUCTION_ROLE_GRANTS(db) }, true);
   if (grants.code !== 0) return { code: grants.code, errors: errorsOf(grants.err) };
-  const r = psql({ file: "supabase/schema.sql", stopOnError });
+  // schema.sql opens with CREATE SCHEMA public; the stub already made it (so the extensions can live there, as on production). The dump stays unedited on disk.
+  const dump = readFileSync("supabase/schema.sql", "utf8").split(String.fromCharCode(13, 10)).join(NL);
+  const OPEN = NL + "CREATE SCHEMA public;" + NL;
+  if (!dump.includes(OPEN)) { console.error("schema.sql no longer opens with CREATE SCHEMA public;"); process.exit(1); }
+  const r = psql({ sql: dump.replace(OPEN, NL + "CREATE SCHEMA IF NOT EXISTS public;" + NL), stopOnError });
   const errors = errorsOf(r.err);
   return { code: r.code !== 0 || errors.length ? 1 : 0, errors };
 }
