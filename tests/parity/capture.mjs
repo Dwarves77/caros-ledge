@@ -214,18 +214,36 @@ async function accessibilitySnapshot(page) {
 }
 
 // `diag` accumulates across both viewports: the first non-2xx response (status and URL without its query string) the main-frame navigation count and the first ten distinct navigated paths.
-// The app limits a signed-in account to 60 requests per 60 seconds, counted across every page the job opens. A page that was answered 429 (or 503) while loading
-// is not what a member sees: its workspace blocks never filled. Such an attempt is discarded and the page captured again once the window has reset.
+// The app limits a signed-in account to 60 requests per 60 seconds, counted across every page the job opens. A page that was answered 429 or 503 while loading
+// is not what a member sees: its workspace blocks never filled. Such an attempt is discarded and the page captured again after the wait the server asked for
+// (Retry-After, seconds or an HTTP date; THROTTLE_FALLBACK_MS only when the header is absent or unreadable, THROTTLE_CEILING_MS so a hostile header cannot hang the job).
+// A route still throttled after THROTTLE_ATTEMPTS is a FAILED capture, never a partial page compared as if whole. Every throttle event is recorded in the route's diagnostics.
 export const THROTTLE_STATUSES = [429, 503];
-export const THROTTLE_WAIT_MS = 65000;
+export const THROTTLE_FALLBACK_MS = 65000;
+export const THROTTLE_CEILING_MS = 120000;
 export const THROTTLE_ATTEMPTS = 3;
-export const isThrottled = (statuses) => statuses.some((s) => THROTTLE_STATUSES.includes(s));
+export const throttleEvents = (responses) => responses.filter((r) => THROTTLE_STATUSES.includes(r.status));
+export const isThrottled = (responses) => throttleEvents(responses).length > 0;
+export function retryWaitMs(retryAfter, nowMs = Date.now()) {
+  const raw = String(retryAfter ?? '').trim();
+  let ms = null;
+  if (/^\d+$/.test(raw)) ms = Number(raw) * 1000;
+  else if (raw) {
+    const at = Date.parse(raw);
+    if (!Number.isNaN(at)) ms = Math.max(0, at - nowMs);
+  }
+  return Math.min(ms ?? THROTTLE_FALLBACK_MS, THROTTLE_CEILING_MS);
+}
+export const throttleWaitMs = (events, nowMs) => Math.max(...events.map((e) => retryWaitMs(e.retryAfter, nowMs)));
 
 async function captureOne(browser, base, route, path, viewport, storage, out, diag) {
   for (let attempt = 1; ; attempt += 1) {
     const result = await captureAttempt(browser, base, route, path, viewport, storage, out, diag);
-    if (!result.throttled || attempt >= THROTTLE_ATTEMPTS) return result.stem;
-    await new Promise((resolve) => setTimeout(resolve, THROTTLE_WAIT_MS));
+    if (result.throttled.length === 0) return result.stem;
+    const waitMs = throttleWaitMs(result.throttled);
+    diag.throttle = [...(diag.throttle ?? []), ...result.throttled.map((e) => ({ route: route.name, path, viewport: `${viewport.width}x${viewport.height}`, attempt, status: e.status, waitMs }))];
+    if (attempt >= THROTTLE_ATTEMPTS) throw new Error(`throttled on every one of ${THROTTLE_ATTEMPTS} attempts (${route.name} ${path} at ${viewport.width}x${viewport.height}): the page was never captured whole`);
+    await new Promise((resolve) => setTimeout(resolve, waitMs));
   }
 }
 
@@ -238,7 +256,7 @@ async function captureAttempt(browser, base, route, path, viewport, storage, out
     const bare = (u) => { const x = new URL(u); return `${x.origin}${x.pathname}`; };
     const statuses = [];
     page.on('response', (r) => {
-      statuses.push(r.status());
+      statuses.push({ status: r.status(), retryAfter: r.headers()['retry-after'] });
       if (!diag.firstFailure && (r.status() < 200 || r.status() >= 300)) diag.firstFailure = { status: r.status(), url: bare(r.url()) };
     });
     page.on('framenavigated', (f) => {
@@ -269,7 +287,7 @@ async function captureAttempt(browser, base, route, path, viewport, storage, out
       ...dom,
     };
     await writeFile(join(out, `${stem}.json`), `${JSON.stringify(record, null, 2)}\n`);
-    return { stem, throttled: isThrottled(statuses) };
+    return { stem, throttled: throttleEvents(statuses) };
   } finally {
     await context.close();
   }

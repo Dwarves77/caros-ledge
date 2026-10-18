@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { discoveryMissOutcome, pathFor, isThrottled, pickDetailHref, pinnedPath } from './capture.mjs';
+import { discoveryMissOutcome, pathFor, isThrottled, pickDetailHref, retryWaitMs, throttleWaitMs, throttleEvents, THROTTLE_FALLBACK_MS, THROTTLE_CEILING_MS, pinnedPath } from './capture.mjs';
 
 const route = (list) => ({ name: 'x-detail', discover: { list, match: '^/x/[^/]+$' } });
 const gates = { full: ['home', 'market'], frame: ['regulations', 'dashboard'] };
@@ -66,9 +66,20 @@ test('a route whose baseline holds a path is captured at that path on the new si
   assert.equal(pinnedPath(route('/x'), undefined, undefined), null);
 });
 
-test('a page answered 429 or 503 while loading is a throttled attempt (recaptured after the window), any other status is not', () => {
-  assert.equal(isThrottled([200, 304, 429]), true);
-  assert.equal(isThrottled([200, 503]), true);
-  assert.equal(isThrottled([200, 204, 401, 404, 500]), false);
-  assert.equal(isThrottled([]), false);
+test('a page answered 429 or 503 while loading is a throttled attempt, any other status is not', () => {
+  assert.equal(isThrottled([{ status: 200 }, { status: 429 }]), true);
+  assert.equal(isThrottled([{ status: 503 }]), true);
+  assert.equal(isThrottled([200, 204, 401, 404, 500].map((status) => ({ status }))), false);
+  assert.equal(throttleEvents([{ status: 200 }, { status: 503, retryAfter: '3' }]).length, 1);
+});
+
+test('the wait is what the server asked for: seconds or an HTTP date; the fallback only when the header is absent; a ceiling bounds it', () => {
+  const now = Date.parse('2026-10-18T00:00:00Z');
+  assert.equal(retryWaitMs('7', now), 7000);
+  assert.equal(retryWaitMs('Sun, 18 Oct 2026 00:00:20 GMT', now), 20000);
+  assert.equal(retryWaitMs('Sat, 17 Oct 2026 00:00:00 GMT', now), 0, 'a date in the past is no wait');
+  assert.equal(retryWaitMs(undefined, now), THROTTLE_FALLBACK_MS);
+  assert.equal(retryWaitMs('garbage', now), THROTTLE_FALLBACK_MS);
+  assert.equal(retryWaitMs('999999', now), THROTTLE_CEILING_MS);
+  assert.equal(throttleWaitMs([{ status: 429, retryAfter: '4' }, { status: 429, retryAfter: '9' }, { status: 503 }], now), THROTTLE_FALLBACK_MS, 'the longest ask wins');
 });
