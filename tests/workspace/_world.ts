@@ -115,6 +115,26 @@ function installSqlObjects(db: MemDb): void {
     const notices = p_owner_user_id && p_owner_user_id !== uid && p_notice ? [{ user_id: p_owner_user_id, kind: "assignment", payload: { ...p_notice, item_id: p_item_id, assigned_by: uid } }] : [];
     return commit(p_org_id, p_item_id, { owner_user_id: p_owner_user_id, owner_assigned_by: p_owner_user_id ? uid : null, owner_assigned_at: p_owner_user_id ? db.tick() : null }, notices);
   };
+  // assign_item_members (migration 0065): the gates, the rows stamped from the session and their outbox rows as ONE unit: a failed outbox insert leaves no assignment behind.
+  db.rpcs.assign_item_members = (args, who) => {
+    const { p_org_id, p_item_id, p_assignees, p_due_on, p_notice } = args as { p_org_id: string; p_item_id: string; p_assignees: string[]; p_due_on: string | null; p_notice: Record<string, unknown> };
+    const uid = caller(who as Who | null);
+    if (!["owner", "admin", "member"].includes(roleOf(p_org_id, uid) ?? "")) throw raise("a viewer can read this workspace but cannot assign work", "42501");
+    const ids = [...new Set(p_assignees ?? [])];
+    if (ids.length === 0 || ids.length > 25) throw raise("assign between 1 and 25 people at a time", "22023");
+    for (const a of ids) if (!["owner", "admin", "member"].includes(roleOf(p_org_id, a) ?? "")) throw raise("the assignee is not a member who can be assigned work", "42501");
+    if (!db.rows("intelligence_items").some((i) => i.id === p_item_id)) throw raise("no such item", "P0002");
+    const fresh = ids.filter((a) => !db.rows("item_assignments").some((r) => r.org_id === p_org_id && r.item_id === p_item_id && r.assignee_user_id === a));
+    const notices = fresh.filter((a) => a !== uid).map((a) => ({ user_id: a, kind: "assignment", payload: { ...p_notice, item_id: p_item_id, assigned_by: uid, due_on: p_due_on } }));
+    if (notices.length && db.takeFailure("notification_outbox", "insert", [])) throw raise("outbox down", "XX000");
+    const created = fresh.map((a) => {
+      const row = { id: db.nextId(), org_id: p_org_id, item_id: p_item_id, assignee_user_id: a, assigned_by: uid, due_on: p_due_on, state: "open", created_at: db.tick() };
+      db.rows("item_assignments").push(row);
+      return { ...row };
+    });
+    for (const n of notices) db.rows("notification_outbox").push({ ...n });
+    return { created, already: ids.filter((a) => !fresh.includes(a)), queued: notices.length };
+  };
   // workspace_tag_counts: every tag with the number of items it is applied to (0 for none).
   db.views.workspace_tag_counts = () =>
     (db.tables.workspace_tags ?? []).map((t) => ({ org_id: t.org_id, tag_id: t.id, item_count: (db.tables.item_workspace_tags ?? []).filter((l) => l.tag_id === t.id && l.org_id === t.org_id).length }));

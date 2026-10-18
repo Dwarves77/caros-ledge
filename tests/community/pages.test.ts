@@ -16,6 +16,7 @@ import { useToast } from "@/features/community/ui/toast";
 
 import { renderApp, textOf } from "../_support/render.ts";
 import { scripted } from "../_support/fake-clients.ts";
+import { sweepPage, type SweepWorld } from "../_support/page-sweep.ts";
 
 import { asClient, ROOM_EU, USER, world, type Viewer, type World } from "./_world.ts";
 
@@ -39,17 +40,19 @@ async function draw(spec: PageSpec): Promise<{ html: string; text: string }> {
   const html = renderApp((await spec.render()) as never, { path: spec.path });
   return { html, text: textOf(html) };
 }
-/** The reads a healthy page makes: the tables it selects from and the rpcs it calls. */
-async function readsOf(spec: PageSpec): Promise<{ tables: string[]; rpcs: string[] }> {
+/** The world behind the shared page sweep (tests/_support/page-sweep.ts): a fresh Community world, a member signed in, the reads a draw made and the refusal of one by name. */
+function communityWorld(): SweepWorld {
   const db = world();
   as(db, "member");
-  await draw(spec);
-  return { tables: [...new Set(db.reads().map((c) => c.table))], rpcs: [...new Set(db.rpcLog)] };
+  return {
+    reads: () => ({ tables: [...new Set(db.reads().map((c) => c.table))], rpcs: [...new Set(db.rpcLog)] }),
+    failTable: (table) => void db.fail(table, "select", "refused by the fake client"),
+    failRpc: (rpc) => void db.rpcFail.set(rpc, { message: "refused by the fake client" }),
+  };
 }
 /** Every control a page offers: the text of each button and the target of each link. */
 const controlsOf = (html: string): string[] =>
   [...new Set([...[...html.matchAll(/<button\b[^>]*>([\s\S]*?)<\/button>/g)].map((m) => "button:" + textOf(m[1] ?? "")), ...[...html.matchAll(/<a\b[^>]*href="([^"]*)"/g)].map((m) => "link:" + m[1])])].sort();
-const STATED = /did not load|could not be loaded|could not|unavailable|Try again|Retry/i;
 /** Reads whose failure is a documented fall-back that shows nothing wrong: the admin bit is a display gate (false), the footer name falls back to the account's, the identity reads degrade every author to anonymous. */
 const FALLS_BACK = new Set(["is_platform_admin", "my_profile"]);
 /** Reads the Rooms page makes only because the shared listing reader enriches rows (a timeline, an override badge): it draws neither, so their refusal changes nothing it shows. */
@@ -78,24 +81,9 @@ test("INV-263: every page draws, healthy, with its heading and its controls", as
 
 for (const spec of PAGES) {
   test(`INV-263 ${spec.name}: a read refused is a stated failure with Retry, for every table and rpc the page reads`, async () => {
-    const { tables, rpcs } = await readsOf(spec);
-    assert.ok(tables.length + rpcs.length > 0 || spec.name === "/community/directory", "the page reads something");
-    const silent: string[] = [];
-    for (const table of tables.filter((t) => !(NOT_DRAWN[spec.name] ?? []).includes(t))) {
-      const db = world();
-      as(db, "member");
-      db.fail(table, "select", "refused by the fake client");
-      const { text } = await draw(spec);
-      if (!STATED.test(text)) silent.push(`table ${table}`);
-    }
-    for (const rpc of rpcs.filter((r) => !FALLS_BACK.has(r))) {
-      const db = world();
-      as(db, "member");
-      db.rpcFail.set(rpc, { message: "refused by the fake client" });
-      const { text } = await draw(spec);
-      if (!STATED.test(text)) silent.push(`rpc ${rpc}`);
-    }
-    assert.deepEqual(silent, [], `${spec.name}: a refused read drew a page with no stated failure`);
+    const r = await sweepPage({ name: spec.name, draw: async () => (await draw(spec)).text, fallsBack: [...FALLS_BACK], notDrawn: NOT_DRAWN[spec.name] ?? [] }, communityWorld);
+    assert.ok(r.tables.length + r.rpcs.length > 0 || spec.name === "/community/directory", "the page reads something");
+    assert.deepEqual(r.silent, [], `${spec.name}: a refused read drew a page with no stated failure`);
   });
 }
 

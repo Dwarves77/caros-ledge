@@ -48,14 +48,26 @@ export interface MemOptions {
 const WITH_ID = new Set(["intelligence_items", "agent_run_searches", "section_claim_provenance", "claim_versions", "intelligence_item_sections", "item_timelines", "integrity_flags", "agent_runs", "staged_updates", "sources", "portal_link_candidates", "disposition_ledger", "item_cross_references", "item_forward_events", "vocabulary_terms", "monitoring_queue", "pending_first_fetch", "propagation_events"]);
 export const SCHEMA: SchemaInfo = schemaJson as SchemaInfo;
 const likeRe = (pat: string, flags = "") => new RegExp(`^${pat.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/[%*]/g, ".*")}$`, flags);
-const col = (r: Row, c: string): unknown => (c.includes(".") ? c.split(".").reduce<unknown>((o, k) => (o && typeof o === "object" ? (o as Row)[k] : undefined), r) : r[c]);
+const col = (r: Row, c: string): unknown => (c.includes("->>") ? String(((r[c.split("->>")[0] as string] as Row | undefined) ?? {})[c.split("->>")[1] as string] ?? "") : c.includes(".") ? c.split(".").reduce<unknown>((o, k) => (o && typeof o === "object" ? (o as Row)[k] : undefined), r) : r[c]);
 const cmp = (a: unknown, b: unknown): number => (typeof a === "number" && typeof b === "number" ? a - b : String(a ?? "") < String(b ?? "") ? -1 : String(a ?? "") > String(b ?? "") ? 1 : 0);
+
+/** record_host_worklist (migration 0064): one upsert that counts each call once, as the SQL does; its attacks are proven by the migration's own self-check. */
+const recordHostWorklist: RpcFn = (a, d) => {
+  const rows = d.rows("host_worklist");
+  const name = typeof a.p_name === "string" && a.p_name.trim() ? a.p_name.trim() : null;
+  const hit = rows.find((r) => r.host === a.p_host);
+  if (hit) Object.assign(hit, { seen_count: Number(hit.seen_count) + 1, last_seen_at: d.now, reason: a.p_reason, last_name: name ?? hit.last_name ?? null });
+  else rows.push({ host: a.p_host, reason: a.p_reason, first_seen_at: d.now, last_seen_at: d.now, seen_count: 1, last_name: name });
+  return { data: Number((hit ?? rows[rows.length - 1])?.seen_count) };
+};
 
 export class MemDb {
   tables: Record<string, Row[]> = {};
   calls: MemCall[] = [];
-  rpcs: Record<string, RpcFn> = {};
+  rpcs: Record<string, RpcFn> = { record_host_worklist: recordHostWorklist };
   rpcCalls: { name: string; args: Record<string, unknown> }[] = [];
+  /** An rpc refused by name (the page sweep): every call answers this error. */
+  rpcFail = new Map<string, { message: string; code?: string }>();
   failWhen: ((c: MemCall) => string | null) | null = null;
   failures: Failure[] = [];
   /** A database-trigger stand-in: runs after every successful write. */
@@ -138,6 +150,8 @@ export class MemDb {
   }
   async rpc(name: string, args: Record<string, unknown> = {}) {
     this.rpcCalls.push({ name, args });
+    const refused = this.rpcFail.get(name);
+    if (refused) return { data: null, error: refused };
     const fn = this.rpcs[name];
     if (!fn) return { data: null, error: { message: `rpc ${name} is not scripted` } };
     const r = fn(args, this);
@@ -219,7 +233,7 @@ class Query {
   delete() { this.op = "delete"; return this; }
   private f(kind: string, c: string, val: unknown, pred: (r: Row) => boolean) {
     const cols = this.db.opts.schema?.tables[this.table]?.columns;
-    const base = c.split(".")[0] as string;
+    const base = (c.split("->>")[0] as string).split(".")[0] as string;
     if (cols && kind !== "or" && !c.includes(".") && !cols.includes(base)) throw new Error(`memdb: column "${c}" of relation "${this.table}" does not exist in the generated schema (a fixture or query typo)`);
     this.filters.push([kind, c, val]);
     this.preds.push(pred);

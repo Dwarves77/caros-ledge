@@ -1,13 +1,19 @@
-// The static checks on supabase/migrations, before any database work: the README table lists every file and only files that exist (IMP-043), and a generated data file carries its `-- source-export:` header and
-// reproduces byte for byte from its own entries (IMP-044). Returns the problems; schema-apply prints them and stops.
-import { readdirSync, readFileSync } from "node:fs";
+// The static checks on supabase/migrations, before any database work: the README table lists every file and only files that exist (IMP-043), a generated data file carries its `-- source-export:` header and
+// reproduces byte for byte from its own entries (IMP-044), and APPLY.md, the cutover order, equals what scripts/ci/apply-plan.mjs generates from the directory (P2-15). Returns the problems; schema-apply prints them and stops.
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 
 import { checkGenerated } from "../gen/screen-verdicts-sql.mjs";
+
+import { planProblems, planText } from "./apply-plan.mjs";
 
 export function migrationProblems(dir = "supabase/migrations") {
   const files = readdirSync(dir).filter((f) => /^\d{4}_.+\.sql$/.test(f)).sort();
   const listed = [...readFileSync(`${dir}/README.md`, "utf8").matchAll(/^\| (\d{4}_\S+) \|/gm)].map((m) => m[1]);
+  const have = existsSync(`${dir}/APPLY.md`) ? readFileSync(`${dir}/APPLY.md`, "utf8").replace(/\r\n/g, "\n") : "";
+  const plan = planProblems(dir);
   return [
+    ...plan,
+    ...(plan.length || have === planText(dir) ? [] : [`${dir}/APPLY.md differs from the directory: run \`node scripts/ci/apply-plan.mjs --write\` and commit it (the cutover order cannot drift from the files)`]),
     ...files.filter((f) => !listed.includes(f.replace(/\.sql$/, ""))).map((f) => `${dir}/README.md does not list ${f}`),
     ...listed.filter((l) => !files.includes(`${l}.sql`)).map((l) => `${dir}/README.md lists ${l}, which is not a file`),
     ...files.flatMap((f) => {

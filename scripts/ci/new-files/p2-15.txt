@@ -1,0 +1,3 @@
+src/ui/fonts.ts | new in P2-15: the two vendored font faces for next/font/local (IMP-063); replaces the @fontsource imports of old_repo/src/app/layout.tsx 1-76, no old counterpart
+src/features/batches/kinds/host-verdicts/export.ts | new in P2-15: the host-verdicts exporter over host_worklist (IMP-114); the old tree had no producer for the kind
+src/features/market/producers/ratify-series.ts | new in P2-15: the ratification as a turn op (IMP-113); the old tree rewrote a code file, old_repo/scripts/maintenance/market/ratify-series-items.mjs

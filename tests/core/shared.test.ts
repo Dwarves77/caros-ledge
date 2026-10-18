@@ -135,3 +135,22 @@ test("telemetry: with no service client captureError says so once per process, n
   const lines = warned.mock.calls.map((c) => c.arguments);
   assert.equal(lines.filter((l) => String(l[0]).includes("error_events is unavailable")).length, 1);
 });
+
+test("IMP-014: with RESEND_API_KEY and INVITATION_FROM_EMAIL the invitation goes through Resend as one HTTPS call; a refusal, a network failure and a half-set configuration are each stated, never a silent success", async () => {
+  const env = { RESEND_API_KEY: "re_test", INVITATION_FROM_EMAIL: "invites@mail.example.test" };
+  const sent: { url: string; init: RequestInit }[] = [];
+  const answer = (status: number) => (async (url: string, init: RequestInit) => (sent.push({ url, init }), new Response("{}", { status }))) as unknown as typeof fetch;
+  const mail = { to: "pat@example.test", inviteUrl: "https://app.example.test/invitations/t0", orgName: "Org <A>", proposedRole: "member" };
+  assert.deepEqual(await sendInvitationEmail(mail, { env, fetchImpl: answer(200) }), { delivered: true, configured: true });
+  assert.equal(sent[0]?.url, "https://api.resend.com/emails");
+  const body = JSON.parse(String(sent[0]?.init.body)) as { from: string; to: string[]; html: string; text: string };
+  assert.deepEqual([body.from, body.to], ["invites@mail.example.test", ["pat@example.test"]]);
+  assert.match(body.text, /https:\/\/app\.example\.test\/invitations\/t0/);
+  assert.match(body.html, /Org &lt;A&gt;/, "the organisation name is escaped");
+  assert.equal((sent[0]?.init.headers as Record<string, string>).authorization, "Bearer re_test");
+  assert.deepEqual(await sendInvitationEmail(mail, { env, fetchImpl: answer(422) }), { delivered: false, configured: true, reason: "The e-mail provider answered HTTP 422." });
+  const down = await sendInvitationEmail(mail, { env, fetchImpl: (async () => { throw new Error("offline"); }) as unknown as typeof fetch });
+  assert.deepEqual([down.delivered, down.configured, down.reason], [false, true, "The e-mail provider could not be reached: offline"]);
+  for (const half of [{ RESEND_API_KEY: "re_test" }, { INVITATION_FROM_EMAIL: "invites@mail.example.test" }, {}]) assert.deepEqual(await sendInvitationEmail(mail, { env: half, fetchImpl: answer(200) }), { delivered: false, configured: false, reason: "No email provider is configured on this deployment." });
+  assert.equal(sent.length, 2, "nothing was sent for a half-set configuration");
+});

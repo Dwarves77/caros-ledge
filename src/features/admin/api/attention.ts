@@ -1,9 +1,9 @@
 // Ported from old_repo/src/app/api/admin/attention/logic.ts (lines 1-52)
 // Ported from old_repo/src/app/api/admin/attention/route.ts (lines 17-45)
-import type { Db } from "@/core/db";
+import { isMissingObject, type Db } from "@/core/db";
 import { LookupError } from "@/core/http/errors";
 
-import { adminRoute, isMissingFunction, notInstalled, reply } from "./shared";
+import { adminRoute, notInstalled, reply } from "./shared";
 
 export interface AttentionCounts {
   provisional_sources_pending: number;
@@ -22,7 +22,7 @@ export interface AttentionCounts {
 /** The one attention read: the rpc's single row. A failed read or an empty answer throws (503); it is never a row of zeros. */
 export async function readAttention(db: Db): Promise<AttentionCounts> {
   const { data, error } = await db.rpc("admin_attention_counts");
-  if (isMissingFunction(error)) throw notInstalled("admin_attention_counts", "0035");
+  if (isMissingObject(error)) throw notInstalled("admin_attention_counts", "0035");
   if (error) throw new LookupError("admin_attention_counts", error);
   const row = (Array.isArray(data) ? data[0] : data) as AttentionCounts | undefined;
   if (!row) throw new LookupError("admin_attention_counts", "the rpc returned no row");

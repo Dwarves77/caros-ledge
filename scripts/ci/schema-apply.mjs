@@ -91,8 +91,22 @@ const diff = (a, b) => {
 const step0 = snapshot();
 let before = step0;
 let unexplained = 0;
+// IMP-058: the window's duplicate-email query is proven right before 0066 (the unique index makes a duplicate impossible after it): it returns nothing on a clean table and exactly the planted address when two accounts differ only in case.
+function proveDuplicateEmailQuery() {
+  const query = readFileSync("scripts/cutover/duplicate-emails.sql", "utf8");
+  const clean = psql({ sql: query, tuples: true });
+  const planted = psql({ sql: `BEGIN;
+SET LOCAL session_replication_role = replica;
+INSERT INTO public.profiles (id, email) VALUES (gen_random_uuid(), 'Dup.Planted@invalid.example'), (gen_random_uuid(), 'dup.planted@invalid.example');
+${query}
+ROLLBACK;`, tuples: true });
+  const ok = clean.code === 0 && clean.out.trim() === "" && planted.code === 0 && planted.out.trim() === "dup.planted@invalid.example|2";
+  console.log(`duplicate-emails.sql: ${ok ? "returns nothing on a clean table and the planted pair when two accounts differ only in case" : `FAILED (clean: ${JSON.stringify(clean.out)}, planted: ${JSON.stringify(planted.out)} ${planted.err.trim()})`}`);
+  if (!ok) process.exit(1);
+}
 for (const file of readdirSync("supabase/migrations").filter((f) => /^\d{4}_.+\.sql$/.test(f) && !f.includes("_data_")).sort()) {
   const path = `supabase/migrations/${file}`;
+  if (file.startsWith("0066_")) proveDuplicateEmailQuery();
   const m = psql({ file: path });
   for (const l of m.err.split("\n")) if (/NOTICE/.test(l)) console.log(l.replace(/^.*NOTICE:\s*/, "  self-check: "));
   if (m.code !== 0 || errorsOf(m.err).length) {

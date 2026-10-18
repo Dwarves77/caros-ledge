@@ -45,6 +45,26 @@ test("registerAndRate: an unplaceable host is worklisted and an aggregator is re
   assert.equal((await registerAndRate(w.db, "not a url")).status, "refused");
   assert.equal(w.tables.sources?.length ?? 0, 0);
 });
+test("IMP-114: every worklist answer is kept on host_worklist by registerAndRate itself, one count per call; a dry call, an aggregator and a placed host keep nothing", async () => {
+  const w = memoryDb({ sources: [] });
+  const first = await registerAndRate(w.db, "https://some-unknown-site.example/x");
+  assert.equal(first.status, "worklist");
+  assert.deepEqual(w.tables.host_worklist?.map((r) => [r.host, r.seen_count, r.last_name]), [["some-unknown-site.example", 1, null]]);
+  await registerAndRate(w.db, "https://www.some-unknown-site.example/y");
+  assert.deepEqual(w.tables.host_worklist?.map((r) => [r.host, r.seen_count, r.last_name]), [["some-unknown-site.example", 2, null]], "a second call (www. and a path do not make a second host) counts once");
+  await registerAndRate(w.db, "https://dry-site.example/x", { dry: true });
+  await registerAndRate(w.db, "https://law.justia.com/x", { name: "Anything" });
+  await registerAndRate(w.db, "https://www.epa.gov/rules");
+  assert.deepEqual(w.tables.host_worklist?.map((r) => r.host), ["some-unknown-site.example"], "a dry call, a refused aggregator and a placed host are not worklisted");
+});
+test("IMP-114: a worklist answer that cannot be kept is the call's failure, never a silent drop", async () => {
+  const down = memoryDb({ sources: [] });
+  down.mem.rpcs.record_host_worklist = () => ({ error: { message: "write refused" } });
+  await assert.rejects(() => registerAndRate(down.db, "https://some-unknown-site.example/x"), /recording some-unknown-site\.example on the host worklist failed: write refused/);
+  const absent = memoryDb({ sources: [] });
+  absent.mem.rpcs.record_host_worklist = () => ({ error: { message: "function does not exist", code: "PGRST202" } });
+  await assert.rejects(() => registerAndRate(absent.db, "https://some-unknown-site.example/x"), /host_worklist is absent \(migration 0064 is not applied\)/);
+});
 test("registerAndRate: a registry read failure throws, never reads as 'not registered'", async () => {
   const w = memoryDb({ sources: [] }, { failures: [{ table: "sources", op: "select", message: "down" }] });
   await assert.rejects(() => registerAndRate(w.db, "https://www.epa.gov/rules"), /registry lookup failed/);

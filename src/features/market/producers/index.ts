@@ -7,5 +7,6 @@ export { euOilBulletin, parseEuWeeklyOilBulletinCsv } from "./eu-oil-bulletin";
 export { afterMarketWrite, authorMarketSeriesDeltaEdges, assertEdgesAuthored } from "./market-series-delta";
 export type { MarketSeriesDeps } from "./market-series-delta";
 export { deriveDisplayRows, publishedPriceStatistics, ratifySeriesItemMap } from "./published-price-statistics";
+export { ratifySeriesItems } from "./ratify-series";
 export { gridQueueRows, oemRoadmapRows, rerouteRows } from "./rows-file-producers";
 export { sbtiTargets } from "./sbti-targets";

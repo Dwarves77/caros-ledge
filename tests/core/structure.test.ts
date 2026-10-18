@@ -50,7 +50,8 @@ test("PROP-001/160: every route handler is behind a guard, or is one of the two 
 
 test("PROP-028/127 and PROP-011/109: one module attaches the bearer, one factory builds service clients", () => {
   const mentions = (re: RegExp) => src.filter((f) => re.test(text(f))).map(rel).sort();
-  assert.deepEqual(mentions(/authorization/i), ["core/db/clients.ts", "core/http/authed-fetch.ts"]);
+  // The third holder is the e-mail provider's own API key (core/shared/email.ts, IMP-014): a different credential to a different service, not the user's session bearer.
+  assert.deepEqual(mentions(/authorization/i), ["core/db/clients.ts", "core/http/authed-fetch.ts", "core/shared/email.ts"]);
   assert.deepEqual(mentions(/SUPABASE_SERVICE_ROLE_KEY/), ["core/db/clients.ts"]);
   assert.deepEqual(mentions(/\bcreateClient\(/), ["core/db/clients.ts"]);
   assert.deepEqual(mentions(/\bcreateServerClient\(/), ["core/db/clients.ts"]);

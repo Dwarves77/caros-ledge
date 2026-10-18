@@ -81,9 +81,6 @@
  "coverage_gap_candidates": [
   "id"
  ],
- "coverage_gap_census_findings": [
-  "id"
- ],
  "coverage_gaps": [
   "id"
  ],
@@ -160,6 +157,9 @@
   "id"
  ],
  "host_verdicts": [
+  "host"
+ ],
+ "host_worklist": [
   "host"
  ],
  "indexation_clauses": [

@@ -102,3 +102,10 @@ export function ledgerWorld(): World {
   w.db.rpcs.next_uncensused_portal_candidates = () => ({ data: w.db.rows("portal_link_candidates").filter((r) => r.status === "candidate").map((r) => ({ ...rows.find((x) => x.id === r.id) })) });
   return w;
 }
+
+/** The unplaced hosts registerAndRate kept on host_worklist (migration 0064), for the host-verdicts export. */
+export function hostWorld(): World {
+  const w = batchWorld();
+  w.db.seed("host_worklist", ["one.example", "two.example"].map((host, i) => ({ host, reason: "no class", seen_count: 3 - i, first_seen_at: "2026-10-01T00:00:00Z", last_seen_at: "2026-10-02T00:00:00Z", last_name: null })));
+  return w;
+}
