@@ -64,6 +64,7 @@ DECLARE bad text;
 BEGIN
   SELECT string_agg(p.oid::regprocedure::text, ', ') INTO bad FROM pg_proc p
    WHERE p.pronamespace = 'public'::regnamespace
+     AND NOT EXISTS (SELECT 1 FROM pg_depend d WHERE d.classid = 'pg_proc'::regclass AND d.objid = p.oid AND d.deptype = 'e') -- an extension's function (ltree, pg_trgm live in public on production) is not ours to pin
      AND NOT EXISTS (SELECT 1 FROM unnest(coalesce(p.proconfig, '{}')) s WHERE s LIKE 'search_path=%');
   IF bad IS NOT NULL THEN RAISE EXCEPTION '0004-search-path: unpinned %', bad; END IF;
   IF length(public.cl_corridor_id('NLRTM', 'USNYC', 'ocean', 1, 'k', ARRAY[]::text[])) < 20 THEN

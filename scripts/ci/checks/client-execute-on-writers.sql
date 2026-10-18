@@ -4,6 +4,7 @@ SELECT p.oid::regprocedure::text FROM pg_proc p
  WHERE p.pronamespace = 'public'::regnamespace AND p.prokind = 'f'
    AND (has_function_privilege('anon', p.oid, 'EXECUTE') OR has_function_privilege('authenticated', p.oid, 'EXECUTE'))
    AND p.proname <> 'patch_workspace_settings'
+   AND NOT EXISTS (SELECT 1 FROM pg_depend d WHERE d.classid = 'pg_proc'::regclass AND d.objid = p.oid AND d.deptype = 'e') -- an extension's function is not ours
    AND (p.prorettype = 'trigger'::regtype
         OR (NOT p.prosecdef AND p.prosrc ~* '(insert[[:space:]]+into|delete[[:space:]]+from|update[[:space:]]+[a-z_.]+([[:space:]]+[a-z_]+)?[[:space:]]+set)'))
  ORDER BY 1;
