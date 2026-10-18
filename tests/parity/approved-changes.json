@@ -340,6 +340,13 @@
       "on": "control",
       "match": "^button:Request coverage$",
       "ruling": "production carries no new migration before cutover (rulings 2026-10-17): without 0031 the operations detail withholds its stored sections and the brief (so the source rows its Sources section drew from them) and its auxiliary-energy and grid-queue panels read nothing, so each says so with Retry where the old page drew its rows and its Request coverage actions; the full path is proven on the fixture turn and schema:local."
+    },
+    {
+      "id": "operations-related-tie-order",
+      "route": "operations-detail",
+      "kind": "order",
+      "match": "^link:(India|Australia) Regional Operations Profile$",
+      "ruling": "old read ordered the related regional profiles by added_date only (fsi-app/src/app/operations/[slug]/page.tsx:203, jurisdiction query; :222, source query: no secondary key, heap order for tied dates); new rule added_date then id (src/features/research/read/related-items.ts), deterministic (rulings 2026-10-17)"
     }
   ]
 }
