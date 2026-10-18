@@ -1,0 +1,3553 @@
+[
+  {
+    "id": "01d44b64-39c6-4e98-b9e3-252ec251ca6c",
+    "lane": "C",
+    "sweep": "sweep4_found_then_lost_recovery",
+    "subject_type": "lost_historical_provider",
+    "subject_ref": "lost:ecb",
+    "instrument": "European Central Bank (banking supervision, climate risk)",
+    "jurisdiction": "eu",
+    "url": "https://www.ecb.europa.eu",
+    "fetch_method": "not_applicable",
+    "fetch_result": null,
+    "four_contract_classification": {
+      "primary_surface": "regulations"
+    },
+    "dry_run_disposition": "would_mint",
+    "dry_run_reason": "Free official regulator; genuine regulatory-authority gap.",
+    "entity_confirmed": true,
+    "notes": "LOST: absent from all tracked tables. Free-acquire candidate.",
+    "created_at": "2026-07-20T15:12:31.425014+00:00",
+    "pending_dependency": null,
+    "historical_evidence": "esgtoday source-map A1; existence-check ABSENT tier T2.",
+    "historical_intent": "add to registry with role+tier.",
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": "esg_finance"
+  },
+  {
+    "id": "02ba093d-924c-461d-99ff-a15209adfcfd",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "94",
+    "instrument": "EU \"Have Your Say\" public consultation portal",
+    "jurisdiction": "eu",
+    "url": "https://have-your-say.ec.europa.eu/index_en",
+    "fetch_method": "plain_http",
+    "fetch_result": "Three engagement channels described (public consultations, European Citizens' Initiative, Citizens' Engagement Platform); the mechanism is static and reachable, but no specific CURRENT open-consultation listing is visible on this landing page.",
+    "four_contract_classification": {
+      "research": {
+        "reason": "Not horizon-scan in the academic sense, though early-signal adjacent.",
+        "verdict": "OUT"
+      },
+      "operations": {
+        "reason": "Not a cost/feasibility surface.",
+        "verdict": "OUT"
+      },
+      "regulations": {
+        "reason": "Genuine early-signal value per ADR-015's awareness-tier framing, but this landing page describes the mechanism rather than listing today's open consultations.",
+        "verdict": "CONDITIONAL"
+      },
+      "market_intel": {
+        "reason": "Not a market signal.",
+        "verdict": "OUT"
+      }
+    },
+    "dry_run_disposition": "would_mint",
+    "dry_run_reason": "Mechanism page reachable and static; the actual per-consultation listing needs a deeper page or an API, a second-hop register-enumeration case.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": "session_a_register_walk",
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "0442cccf-f665-4a8b-b22c-5dc2de98da3d",
+    "lane": "C",
+    "sweep": "sweep4_found_then_lost_recovery",
+    "subject_type": "lost_historical_provider",
+    "subject_ref": "lost:cdp-opendata",
+    "instrument": "CDP Open Data API (Socrata; free disclosure data)",
+    "jurisdiction": "global",
+    "url": "https://data.cdp.net",
+    "fetch_method": "not_applicable",
+    "fetch_result": null,
+    "four_contract_classification": {
+      "primary_surface": "market_intel"
+    },
+    "dry_run_disposition": "would_mint",
+    "dry_run_reason": "Free open-data API sibling of the held cdp.net; worth recovering as a machine-readable feed.",
+    "entity_confirmed": true,
+    "notes": "LOST: cdp.net is held, this data.cdp.net API endpoint is not. Free-acquire candidate.",
+    "created_at": "2026-07-20T15:12:31.425014+00:00",
+    "pending_dependency": null,
+    "historical_evidence": "sprint3-a15 vendor-source-sweep 2026-05-25 (notes_snippet named the Socrata endpoint).",
+    "historical_intent": "flagged in the vendor sweep as CDP's open-data API; cdp.net registered, the API endpoint not.",
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": "freight_native"
+  },
+  {
+    "id": "04ee908c-6d26-4fa6-87a3-6726fe7209d6",
+    "lane": "C",
+    "sweep": "sweep4_found_then_lost_recovery",
+    "subject_type": "lost_historical_provider",
+    "subject_ref": "lost:bigmile",
+    "instrument": "BigMile (freight emissions calculation)",
+    "jurisdiction": "eu",
+    "url": "https://www.bigmile.eu",
+    "fetch_method": "not_applicable",
+    "fetch_result": null,
+    "four_contract_classification": {
+      "primary_surface": "operations"
+    },
+    "dry_run_disposition": "would_park",
+    "dry_run_reason": "Commercial emissions-calc SaaS.",
+    "entity_confirmed": true,
+    "notes": "LOST: absent from all tracked tables.",
+    "created_at": "2026-07-20T15:12:31.425014+00:00",
+    "pending_dependency": null,
+    "historical_evidence": "legacy seed-resources.json (think-tanks record r34 prose).",
+    "historical_intent": "embedded reference; never promoted.",
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": "freight_native"
+  },
+  {
+    "id": "0a4c1263-9378-4385-b979-17573c0dbd57",
+    "lane": "C",
+    "sweep": "sweep4_found_then_lost_recovery",
+    "subject_type": "lost_historical_provider",
+    "subject_ref": "lost:morganstanley",
+    "instrument": "Morgan Stanley Institute for Sustainable Investing (investor flow data)",
+    "jurisdiction": "global",
+    "url": "https://www.morganstanley.com/ideas",
+    "fetch_method": "not_applicable",
+    "fetch_result": null,
+    "four_contract_classification": {
+      "primary_surface": "market_intel"
+    },
+    "dry_run_disposition": "would_park",
+    "dry_run_reason": "Commercial investor research; paid/gated. Operator confirms no account held.",
+    "entity_confirmed": true,
+    "notes": "LOST. Operator confirmed 2026-07-19: no account held.",
+    "created_at": "2026-07-20T15:12:31.425014+00:00",
+    "pending_dependency": null,
+    "historical_evidence": "esgtoday source-map B3; existence-check ABSENT tier T3.",
+    "historical_intent": "add to registry with role+tier.",
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": "esg_finance"
+  },
+  {
+    "id": "0a964e78-0add-4161-bc12-31945c584b80",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "54",
+    "instrument": "Massachusetts DEP 310 CMR 7.40 (Low Emission Vehicle Program)",
+    "jurisdiction": "us-ma",
+    "url": "https://www.mass.gov/regulations/310-CMR-700-air-pollution-control",
+    "fetch_method": "browser_required",
+    "fetch_result": "403 Forbidden on plain fetch-light attempt.",
+    "four_contract_classification": null,
+    "dry_run_disposition": "browser_required_undetermined",
+    "dry_run_reason": "Bot-blocked to fetch-light; routed to Session A's queue.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": "session_a_chrome_render",
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "0e75b333-6303-4ead-85f3-1118fc1b2752",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "97",
+    "instrument": "IEA Hydrogen Tracker and Production/Infrastructure Database",
+    "jurisdiction": "global",
+    "url": "https://www.iea.org/data-and-statistics/data-tools/hydrogen-tracker",
+    "fetch_method": "browser_required",
+    "fetch_result": "Landing/description page only (project-level data, 1,000+ policy tracker, cost-to-2030 projections described); the interactive data explorer itself is not embedded in the static HTML.",
+    "four_contract_classification": null,
+    "dry_run_disposition": "browser_required_undetermined",
+    "dry_run_reason": "Routed to Session A's queue for the actual tracker interface.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": "session_a_chrome_render",
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "13add5dd-18d1-4658-9ad5-1beabb62bd8b",
+    "lane": "C",
+    "sweep": "sweep4_found_then_lost_recovery",
+    "subject_type": "lost_historical_provider",
+    "subject_ref": "lost:workiva",
+    "instrument": "Workiva (sustainability reporting tooling, surveys)",
+    "jurisdiction": "global",
+    "url": "https://www.workiva.com/insights",
+    "fetch_method": "not_applicable",
+    "fetch_result": null,
+    "four_contract_classification": {
+      "primary_surface": "market_intel"
+    },
+    "dry_run_disposition": "would_park",
+    "dry_run_reason": "Commercial reporting-tooling vendor. Operator confirms no account held.",
+    "entity_confirmed": true,
+    "notes": "LOST. Operator confirmed 2026-07-19: no account held.",
+    "created_at": "2026-07-20T15:12:31.425014+00:00",
+    "pending_dependency": null,
+    "historical_evidence": "esgtoday source-map B3; existence-check ABSENT tier T3.",
+    "historical_intent": "add to registry with role+tier.",
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": "esg_finance"
+  },
+  {
+    "id": "14adac24-caf0-4eea-a336-8a0e8e7ebcd9",
+    "lane": "C",
+    "sweep": "sweep3_research_feedstock",
+    "subject_type": "candidate_catalog",
+    "subject_ref": "iso-tc8",
+    "instrument": "ISO/TC 8 Ships and marine technology, work programme",
+    "jurisdiction": "global",
+    "url": "https://www.iso.org/committee/45776.html",
+    "fetch_method": "browser_required",
+    "fetch_result": "403 Forbidden on plain fetch-light attempt.",
+    "four_contract_classification": null,
+    "dry_run_disposition": "browser_required_undetermined",
+    "dry_run_reason": "Bot-blocked to fetch-light; routed to Session A's queue.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:30:59.74072+00:00",
+    "pending_dependency": "session_a_chrome_render",
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "14c889f3-0aba-40d1-99c9-4ebbd0fef38a",
+    "lane": "C",
+    "sweep": "sweep4_found_then_lost_recovery",
+    "subject_type": "lost_historical_provider",
+    "subject_ref": "lost:tcfd",
+    "instrument": "TCFD (climate-related financial disclosure framework)",
+    "jurisdiction": "global",
+    "url": "https://www.fsb-tcfd.org",
+    "fetch_method": "not_applicable",
+    "fetch_result": null,
+    "four_contract_classification": {
+      "primary_surface": "research"
+    },
+    "dry_run_disposition": "would_mint",
+    "dry_run_reason": "Free framework reference (legacy, folded into ISSB).",
+    "entity_confirmed": true,
+    "notes": "LOST: absent from all tracked tables. Free-acquire candidate.",
+    "created_at": "2026-07-20T15:12:31.425014+00:00",
+    "pending_dependency": null,
+    "historical_evidence": "esgtoday source-map A5; existence-check ABSENT tier T3.",
+    "historical_intent": "add to registry with role+tier.",
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": "esg_finance"
+  },
+  {
+    "id": "159658f9-06c7-40b4-bd02-469896fecd47",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "32",
+    "instrument": "Brazil IBGE Pesquisa Industrial Mensal de Emprego e Salario",
+    "jurisdiction": "latam",
+    "url": "https://www.ibge.gov.br/en/statistics/economic/industry-and-construction/17330-pesquisa-industrial-mensal-de-emprego-e-salario-2.html",
+    "fetch_method": "browser_required",
+    "fetch_result": "403 Forbidden on plain fetch-light attempt.",
+    "four_contract_classification": null,
+    "dry_run_disposition": "browser_required_undetermined",
+    "dry_run_reason": "Bot-blocked to fetch-light; routed to Session A's Chrome-enumeration queue to confirm whether the block is durable.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": "session_a_chrome_render",
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "169531cd-2676-40c6-8d09-fb2efcdd86e1",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "73",
+    "instrument": "Spain Registro de Productores de Producto (Ecoembes)",
+    "jurisdiction": "eu",
+    "url": "https://www.ecoembes.com/en/registration-product-producers",
+    "fetch_method": "plain_http",
+    "fetch_result": "Registry landing page (Royal Decree 1055/2022), minimal content, static.",
+    "four_contract_classification": {
+      "research": {
+        "reason": "Not horizon-scan.",
+        "verdict": "OUT"
+      },
+      "operations": {
+        "reason": "Not the primary use case; landing page carries minimal operational detail.",
+        "verdict": "OUT"
+      },
+      "regulations": {
+        "reason": "Statutory registry under a named Royal Decree.",
+        "verdict": "IN"
+      },
+      "market_intel": {
+        "reason": "Not a market signal.",
+        "verdict": "OUT"
+      }
+    },
+    "dry_run_disposition": "would_mint",
+    "dry_run_reason": "Live, static, thin content but a genuine regulatory registry entry point.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": null,
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "17966ac4-33fa-4473-b346-e14df4078ca9",
+    "lane": "C",
+    "sweep": "sweep4_found_then_lost_recovery",
+    "subject_type": "lost_historical_provider",
+    "subject_ref": "lost:eiopa",
+    "instrument": "EIOPA (insurance & pensions sustainability)",
+    "jurisdiction": "eu",
+    "url": "https://www.eiopa.europa.eu",
+    "fetch_method": "not_applicable",
+    "fetch_result": null,
+    "four_contract_classification": {
+      "primary_surface": "regulations"
+    },
+    "dry_run_disposition": "would_mint",
+    "dry_run_reason": "Free official regulator.",
+    "entity_confirmed": true,
+    "notes": "LOST: absent from all tracked tables. Free-acquire candidate.",
+    "created_at": "2026-07-20T15:12:31.425014+00:00",
+    "pending_dependency": null,
+    "historical_evidence": "esgtoday source-map A1; existence-check ABSENT tier T2.",
+    "historical_intent": "add to registry with role+tier.",
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": "esg_finance"
+  },
+  {
+    "id": "18ed6576-574b-45f7-a642-600a47b29fed",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "85",
+    "instrument": "EEX EU ETS Spot, Futures and Options",
+    "jurisdiction": "eu",
+    "url": "https://www.eex.com/en/markets/environmental-markets/eu-ets-spot-futures-options",
+    "fetch_method": "plain_http",
+    "fetch_result": "Static contract-specifications page (contract volume, tick size, delivery procedures); no live prices on this specific page.",
+    "four_contract_classification": {
+      "research": {
+        "reason": "Not horizon-scan.",
+        "verdict": "OUT"
+      },
+      "operations": {
+        "reason": "Not a cost/feasibility surface.",
+        "verdict": "OUT"
+      },
+      "regulations": {
+        "reason": "Not regulatory text; exchange product specifications.",
+        "verdict": "OUT"
+      },
+      "market_intel": {
+        "reason": "Reference/product-spec content, not a live price feed; the live-price value (if any) lives elsewhere on eex.com and was not tested this pass.",
+        "verdict": "CONDITIONAL"
+      }
+    },
+    "dry_run_disposition": "would_decline",
+    "dry_run_reason": "This page is product specifications, not a live price feed; not a genuine gap-closing candidate as registered.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": null,
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "1aa2e403-92f2-48ae-afd9-54af517f632a",
+    "lane": "C",
+    "sweep": "sweep4_found_then_lost_recovery",
+    "subject_type": "lost_historical_provider",
+    "subject_ref": "lost:searoutes",
+    "instrument": "Searoutes (routing / freight-emissions data)",
+    "jurisdiction": "global",
+    "url": "https://www.searoutes.com",
+    "fetch_method": "not_applicable",
+    "fetch_result": null,
+    "four_contract_classification": {
+      "primary_surface": "operations"
+    },
+    "dry_run_disposition": "would_park",
+    "dry_run_reason": "Commercial routing/emissions API/SaaS.",
+    "entity_confirmed": true,
+    "notes": "LOST: absent from all tracked tables.",
+    "created_at": "2026-07-20T15:12:31.425014+00:00",
+    "pending_dependency": null,
+    "historical_evidence": "legacy seed-resources.json (emissions-accounting record a7 prose).",
+    "historical_intent": "embedded reference; never promoted.",
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": "freight_native"
+  },
+  {
+    "id": "1c12aaa2-83b6-4f6e-8ea2-518fd5f67cca",
+    "lane": "C",
+    "sweep": "sweep4_found_then_lost_recovery",
+    "subject_type": "lost_historical_provider",
+    "subject_ref": "lost:moodys",
+    "instrument": "Moody's (sustainability bonds, transition finance)",
+    "jurisdiction": "global",
+    "url": "https://www.moodys.com",
+    "fetch_method": "not_applicable",
+    "fetch_result": null,
+    "four_contract_classification": {
+      "primary_surface": "market_intel"
+    },
+    "dry_run_disposition": "would_park",
+    "dry_run_reason": "Commercial finance-data provider; paid. Operator confirms no account held.",
+    "entity_confirmed": true,
+    "notes": "LOST. Operator confirmed 2026-07-19: no account held.",
+    "created_at": "2026-07-20T15:12:31.425014+00:00",
+    "pending_dependency": null,
+    "historical_evidence": "esgtoday source-map B3; existence-check ABSENT tier T3.",
+    "historical_intent": "add to registry with role+tier.",
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": "esg_finance"
+  },
+  {
+    "id": "1c543c8f-2930-400b-afb4-3e054725917e",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "33",
+    "instrument": "Mexico INEGI Encuesta Anual de Transportes (EAT) / ENOE",
+    "jurisdiction": "latam",
+    "url": "https://www.inegi.org.mx/programas/eat/2018/",
+    "fetch_method": "browser_required",
+    "fetch_result": "Only the page title returned (\"Encuesta Anual de Transportes (EAT). Serie 2018\"); no substantive content in the plain fetch, consistent with a JS-rendered body.",
+    "four_contract_classification": null,
+    "dry_run_disposition": "browser_required_undetermined",
+    "dry_run_reason": "Insufficient content in fetch-light pass; routed to Session A's queue.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": "session_a_chrome_render",
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "1ec7c317-7376-4c57-8a85-25dec4077484",
+    "lane": "C",
+    "sweep": "sweep4_found_then_lost_recovery",
+    "subject_type": "lost_historical_provider",
+    "subject_ref": "lost:msci",
+    "instrument": "MSCI (climate alignment, ESG ratings)",
+    "jurisdiction": "global",
+    "url": "https://www.msci.com/research",
+    "fetch_method": "not_applicable",
+    "fetch_result": null,
+    "four_contract_classification": {
+      "primary_surface": "market_intel"
+    },
+    "dry_run_disposition": "would_park",
+    "dry_run_reason": "Commercial ESG-ratings provider; paid relationship, a spend decision not a free-acquire. Operator confirms no account held.",
+    "entity_confirmed": true,
+    "notes": "LOST: absent from all tracked tables. Operator confirmed 2026-07-19: no account held.",
+    "created_at": "2026-07-20T15:12:31.425014+00:00",
+    "pending_dependency": null,
+    "historical_evidence": "esgtoday source-map 2026-05-09 Section B3; existence-check 2026-05-10 ABSENT, assigned tier T3.",
+    "historical_intent": "Section H dispatch: add to registry with role+tier. The add never happened for B3.",
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": "esg_finance"
+  },
+  {
+    "id": "267570f0-8cad-4d1b-b7f3-b3e04ea21309",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "55",
+    "instrument": "Vermont DEC Advanced Clean Trucks program",
+    "jurisdiction": "us-vt",
+    "url": "https://dec.vermont.gov/air-quality/mobile-sources/zero-emission-vehicles/ACT",
+    "fetch_method": "browser_required",
+    "fetch_result": "403 Forbidden on plain fetch-light attempt.",
+    "four_contract_classification": null,
+    "dry_run_disposition": "browser_required_undetermined",
+    "dry_run_reason": "Bot-blocked to fetch-light; routed to Session A's queue.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": "session_a_chrome_render",
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "2d1aa38e-1f6f-4a08-924a-c381ee5854c0",
+    "lane": "C",
+    "sweep": "sweep4_found_then_lost_recovery",
+    "subject_type": "lost_historical_provider",
+    "subject_ref": "lost:linkedin-economicgraph",
+    "instrument": "LinkedIn Economic Graph (green-skills / workforce data)",
+    "jurisdiction": "global",
+    "url": "https://economicgraph.linkedin.com",
+    "fetch_method": "not_applicable",
+    "fetch_result": null,
+    "four_contract_classification": {
+      "primary_surface": "operations"
+    },
+    "dry_run_disposition": "would_park",
+    "dry_run_reason": "Gated workforce-data platform. Operator confirms no account held.",
+    "entity_confirmed": true,
+    "notes": "LOST. Operator confirmed 2026-07-19: no account held.",
+    "created_at": "2026-07-20T15:12:31.425014+00:00",
+    "pending_dependency": null,
+    "historical_evidence": "esgtoday source-map B3; existence-check ABSENT tier T3.",
+    "historical_intent": "add to registry with role+tier.",
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": "esg_finance"
+  },
+  {
+    "id": "2d66fa93-a8c3-4323-aae5-d594ed928b32",
+    "lane": "C",
+    "sweep": "sweep4_found_then_lost_recovery",
+    "subject_type": "lost_historical_provider",
+    "subject_ref": "lost:sebi",
+    "instrument": "SEBI (India BRSR / ESG ratings)",
+    "jurisdiction": "asia",
+    "url": "https://www.sebi.gov.in",
+    "fetch_method": "not_applicable",
+    "fetch_result": null,
+    "four_contract_classification": {
+      "primary_surface": "regulations"
+    },
+    "dry_run_disposition": "would_mint",
+    "dry_run_reason": "Free national markets regulator.",
+    "entity_confirmed": true,
+    "notes": "LOST: absent from all tracked tables. Free-acquire candidate.",
+    "created_at": "2026-07-20T15:12:31.425014+00:00",
+    "pending_dependency": null,
+    "historical_evidence": "esgtoday source-map A4; existence-check ABSENT tier T2.",
+    "historical_intent": "add to registry with role+tier.",
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": "esg_finance"
+  },
+  {
+    "id": "2e9d6d19-d813-4281-b045-0db6bd499c4a",
+    "lane": "C",
+    "sweep": "sweep2_adjacent_universes",
+    "subject_type": "candidate_source",
+    "subject_ref": "port-tariff-rotterdam",
+    "instrument": "Port of Rotterdam port dues and tariffs",
+    "jurisdiction": "eu",
+    "url": "https://www.portofrotterdam.com/en/doing-business/port-tariffs",
+    "fetch_method": "browser_required",
+    "fetch_result": "403 Forbidden on plain fetch-light attempt.",
+    "four_contract_classification": null,
+    "dry_run_disposition": "browser_required_undetermined",
+    "dry_run_reason": "Bot-blocked to fetch-light; routed to Session A's queue.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:28:30.287919+00:00",
+    "pending_dependency": "session_a_chrome_render",
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "314bb62a-1db2-45f2-8a52-e28bf2b05177",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "29",
+    "instrument": "UK ONS labour cost / earnings data (ASHE by SIC, transport and warehousing)",
+    "jurisdiction": "uk",
+    "url": "https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/earningsandworkinghours/datasets/regionbyindustry2digitsicashetable5",
+    "fetch_method": "plain_http",
+    "fetch_result": "Static dataset archive page; editions 1997-2025 directly downloadable, no JS needed.",
+    "four_contract_classification": {
+      "research": {
+        "reason": "Not horizon-scan.",
+        "verdict": "OUT"
+      },
+      "operations": {
+        "reason": "UK regional/sector earnings data, direct Operations labor-cost input.",
+        "verdict": "IN"
+      },
+      "regulations": {
+        "reason": "Not regulatory text.",
+        "verdict": "OUT"
+      },
+      "market_intel": {
+        "reason": "Not a market signal.",
+        "verdict": "OUT"
+      }
+    },
+    "dry_run_disposition": "would_mint",
+    "dry_run_reason": "Live, fully static, not yet wired.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": null,
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "32e2ab41-2d7b-4f7b-a6f9-0679d64d620d",
+    "lane": "C",
+    "sweep": "sweep4_found_then_lost_recovery",
+    "subject_type": "lost_historical_provider",
+    "subject_ref": "lost:atwonline",
+    "instrument": "Air Transport World (aviation industry trade)",
+    "jurisdiction": "global",
+    "url": "https://www.atwonline.com",
+    "fetch_method": "not_applicable",
+    "fetch_result": null,
+    "four_contract_classification": {
+      "primary_surface": "market_intel"
+    },
+    "dry_run_disposition": "would_park",
+    "dry_run_reason": "Freight/aviation trade press; secondary.",
+    "entity_confirmed": true,
+    "notes": "LOST: absent from all tracked tables.",
+    "created_at": "2026-07-20T15:12:31.425014+00:00",
+    "pending_dependency": null,
+    "historical_evidence": "esgtoday source-map B2; existence-check ABSENT tier T3.",
+    "historical_intent": "add as market_news source.",
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": "freight_native"
+  },
+  {
+    "id": "35b96efa-ac4e-49a3-a00b-3261342cde87",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "65",
+    "instrument": "Japan JCPRA (Japan Containers and Packaging Recycling Association)",
+    "jurisdiction": "asia",
+    "url": "https://www.jcpra.or.jp/",
+    "fetch_method": "plain_http",
+    "fetch_result": "Homepage with statutory obligations (Container Packaging Recycling Law) and fee structures referenced, mostly static.",
+    "four_contract_classification": {
+      "research": {
+        "reason": "Not horizon-scan.",
+        "verdict": "OUT"
+      },
+      "operations": {
+        "reason": "Not the primary use case.",
+        "verdict": "OUT"
+      },
+      "regulations": {
+        "reason": "Statutory recycling-law obligations and fee structures.",
+        "verdict": "IN"
+      },
+      "market_intel": {
+        "reason": "Not a market signal.",
+        "verdict": "OUT"
+      }
+    },
+    "dry_run_disposition": "would_mint",
+    "dry_run_reason": "Live, mostly static, not yet wired.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": null,
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "3663aa5b-dec6-4d1e-a507-b05d53c3a57a",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "34",
+    "instrument": "UAE FCSA UAE.Stat labour force and wage statistics",
+    "jurisdiction": "meaf",
+    "url": "https://uaestat.fcsc.gov.ae/en",
+    "fetch_method": "browser_required",
+    "fetch_result": "403 Forbidden on plain fetch-light attempt.",
+    "four_contract_classification": null,
+    "dry_run_disposition": "browser_required_undetermined",
+    "dry_run_reason": "Bot-blocked to fetch-light; routed to Session A's queue.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": "session_a_chrome_render",
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "37142a79-782d-41db-aa1f-e61ee514f49e",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "82",
+    "instrument": "Freightos Baltic Index (FBX)",
+    "jurisdiction": "global",
+    "url": "https://www.freightos.com/freight-index/",
+    "fetch_method": "browser_required",
+    "fetch_result": "404 Not Found. The registered authoritative_url no longer resolves.",
+    "four_contract_classification": null,
+    "dry_run_disposition": "would_decline",
+    "dry_run_reason": "A dead-URL finding, not a fetch obstacle. Registered authoritative_url needs re-verification, flagged for the source-health lane rather than this census.",
+    "entity_confirmed": true,
+    "notes": "Real finding: authoritative_url is stale.",
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": null,
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "3795b933-f6e5-4ec5-bab4-e2fb906112ac",
+    "lane": "C",
+    "sweep": "sweep4_found_then_lost_recovery",
+    "subject_type": "lost_historical_provider",
+    "subject_ref": "lost:oxfordenergy",
+    "instrument": "Oxford Institute for Energy Studies (energy-economics research)",
+    "jurisdiction": "global",
+    "url": "https://www.oxfordenergy.org",
+    "fetch_method": "not_applicable",
+    "fetch_result": null,
+    "four_contract_classification": {
+      "primary_surface": "research"
+    },
+    "dry_run_disposition": "would_park",
+    "dry_run_reason": "Energy research institute; secondary reference.",
+    "entity_confirmed": true,
+    "notes": "LOST: absent from all tracked tables.",
+    "created_at": "2026-07-20T15:12:31.425014+00:00",
+    "pending_dependency": null,
+    "historical_evidence": "legacy seed-resources.json (EU-policy record g7 prose).",
+    "historical_intent": "embedded reference; never promoted.",
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": "freight_native"
+  },
+  {
+    "id": "3c4b141f-27c7-417f-8c5c-57951cdb625c",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "71",
+    "instrument": "Belgium dual packaging EPR system (Fost Plus / Valipac)",
+    "jurisdiction": "eu",
+    "url": "https://www.ecopv-eu.com/en/packaging-belgium-epr-guideline/",
+    "fetch_method": "plain_http",
+    "fetch_result": "Full compliance guide: thresholds, fee/eco-modulation, incoming PPWR de-minimis elimination noted, static.",
+    "four_contract_classification": {
+      "research": {
+        "reason": "Not horizon-scan.",
+        "verdict": "OUT"
+      },
+      "operations": {
+        "reason": "Fee-calculation and threshold data is direct Operations cost input.",
+        "verdict": "IN"
+      },
+      "regulations": {
+        "reason": "Belgian EPR compliance requirements, including a forward PPWR threshold change.",
+        "verdict": "IN"
+      },
+      "market_intel": {
+        "reason": "Not a market signal.",
+        "verdict": "OUT"
+      }
+    },
+    "dry_run_disposition": "would_mint",
+    "dry_run_reason": "Live, fully static, dual regulations/operations value, includes a real forward-looking PPWR change.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": null,
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "3c89e636-557e-413c-8f3f-2f522cf3914f",
+    "lane": "C",
+    "sweep": "sweep4_found_then_lost_recovery",
+    "subject_type": "lost_historical_provider",
+    "subject_ref": "lost:adec-esg",
+    "instrument": "ADEC ESG (emissions reporting standard / reference)",
+    "jurisdiction": "global",
+    "url": "https://www.adecesg.com",
+    "fetch_method": "not_applicable",
+    "fetch_result": null,
+    "four_contract_classification": {
+      "primary_surface": "research"
+    },
+    "dry_run_disposition": "would_mint",
+    "dry_run_reason": "Free reference/reporting standard content.",
+    "entity_confirmed": true,
+    "notes": "LOST: absent from all tracked tables. Free-acquire candidate.",
+    "created_at": "2026-07-20T15:12:31.425014+00:00",
+    "pending_dependency": null,
+    "historical_evidence": "legacy seed-resources.json (supply-chain-data record c9 prose).",
+    "historical_intent": "embedded reference; never promoted.",
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": "esg_finance"
+  },
+  {
+    "id": "422b9c44-0687-4845-aefd-07702d72b034",
+    "lane": "C",
+    "sweep": "sweep4_found_then_lost_recovery",
+    "subject_type": "lost_historical_provider",
+    "subject_ref": "lost:ft-moralmoney",
+    "instrument": "FT Moral Money (sustainable-finance newsletter/section)",
+    "jurisdiction": "global",
+    "url": "https://www.ft.com/moral-money",
+    "fetch_method": "not_applicable",
+    "fetch_result": null,
+    "four_contract_classification": {
+      "primary_surface": "market_intel"
+    },
+    "dry_run_disposition": "would_park",
+    "dry_run_reason": "Paywalled general-finance press; secondary.",
+    "entity_confirmed": true,
+    "notes": "LOST: absent from all tracked tables.",
+    "created_at": "2026-07-20T15:12:31.425014+00:00",
+    "pending_dependency": null,
+    "historical_evidence": "esgtoday source-map B1; existence-check ABSENT tier T3.",
+    "historical_intent": "add as market_news source.",
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": "esg_finance"
+  },
+  {
+    "id": "4235aefa-8bba-4553-a98b-5ff5966ccb03",
+    "lane": "C",
+    "sweep": "sweep4_found_then_lost_recovery",
+    "subject_type": "lost_historical_provider",
+    "subject_ref": "lost:rystad",
+    "instrument": "Rystad Energy (energy market intelligence, SAF pricing)",
+    "jurisdiction": "global",
+    "url": "https://www.rystadenergy.com",
+    "fetch_method": "not_applicable",
+    "fetch_result": null,
+    "four_contract_classification": {
+      "primary_surface": "market_intel"
+    },
+    "dry_run_disposition": "would_park",
+    "dry_run_reason": "Commercial energy-market intelligence; paid. Operator confirms no account held.",
+    "entity_confirmed": true,
+    "notes": "LOST. Operator confirmed 2026-07-19: no account held.",
+    "created_at": "2026-07-20T15:12:31.425014+00:00",
+    "pending_dependency": null,
+    "historical_evidence": "esgtoday source-map B3 + seed-resources (CORSIA record a4); existence-check ABSENT tier T2.",
+    "historical_intent": "add, SAF/energy pricing feed.",
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": "freight_native"
+  },
+  {
+    "id": "44e18f39-a5ef-4bd1-aebe-1f6c90647f84",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "47",
+    "instrument": "Ship & Bunker world bunker prices (free daily port-level VLSFO/IFO/MGO)",
+    "jurisdiction": "global",
+    "url": "https://shipandbunker.com/prices",
+    "fetch_method": "browser_required",
+    "fetch_result": "403 Forbidden on plain fetch-light attempt.",
+    "four_contract_classification": null,
+    "dry_run_disposition": "browser_required_undetermined",
+    "dry_run_reason": "Bot-blocked to fetch-light; routed to Session A's queue.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": "session_a_chrome_render",
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "4a26b10f-8cb7-4ea5-894a-c5fed7608750",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "64",
+    "instrument": "UK Extended Producer Responsibility for packaging: public registers",
+    "jurisdiction": "uk",
+    "url": "https://www.gov.uk/guidance/find-large-producers-on-the-report-packaging-data-service",
+    "fetch_method": "plain_http",
+    "fetch_result": "Three public registers described (producers/schemes/reprocessors), static, cites Producer Responsibility Obligations (Packaging and Packaging Waste) Regulations 2024.",
+    "four_contract_classification": {
+      "research": {
+        "reason": "Not horizon-scan.",
+        "verdict": "OUT"
+      },
+      "operations": {
+        "reason": "Register content has direct vendor/compliance-status Operations value.",
+        "verdict": "IN"
+      },
+      "regulations": {
+        "reason": "Statutory register guidance under a named 2024 regulation.",
+        "verdict": "IN"
+      },
+      "market_intel": {
+        "reason": "Not a market signal.",
+        "verdict": "OUT"
+      }
+    },
+    "dry_run_disposition": "would_mint",
+    "dry_run_reason": "Live, fully static, dual regulations/operations value.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": null,
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "4c9dbeba-7e9e-432e-a22f-7d334edd76ef",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "36",
+    "instrument": "South Africa Stats SA Quarterly Employment Statistics (QES)",
+    "jurisdiction": "meaf",
+    "url": "https://www.statssa.gov.za/?p=18527",
+    "fetch_method": "plain_http",
+    "fetch_result": "Q1 2025 employment media release visible with real figures (\"Total employment decreased by 74 000 or -0.7% quarter-on-quarter\"); some interactive nav elements use javascript:void(0) but the core release text is static and readable.",
+    "four_contract_classification": {
+      "research": {
+        "reason": "Not horizon-scan.",
+        "verdict": "OUT"
+      },
+      "operations": {
+        "reason": "South African employment statistics, direct labor-market Operations input.",
+        "verdict": "IN"
+      },
+      "regulations": {
+        "reason": "Not regulatory text.",
+        "verdict": "OUT"
+      },
+      "market_intel": {
+        "reason": "Quarterly employment change is a genuine market-moving labor signal.",
+        "verdict": "IN"
+      }
+    },
+    "dry_run_disposition": "would_mint",
+    "dry_run_reason": "Core release content already static-readable despite JS-dependent nav chrome.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": null,
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "4d8d3555-6b38-4f8a-9eae-be97c03b3a73",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "25",
+    "instrument": "EIA industrial electricity retail pricing (state-filterable)",
+    "jurisdiction": "us",
+    "url": "https://api.eia.gov/v2/electricity/retail-sales/data/",
+    "fetch_method": "api",
+    "fetch_result": "403 Forbidden. EIA v2 API requires a registered api_key query parameter; confirmed the API exists, requires a free operator-obtained key (fetch-light compatible once keyed, not a browser blocker).",
+    "four_contract_classification": {
+      "research": {
+        "reason": "Not horizon-scan.",
+        "verdict": "OUT"
+      },
+      "operations": {
+        "reason": "State-level industrial electricity pricing, direct Operations cost input.",
+        "verdict": "IN"
+      },
+      "regulations": {
+        "reason": "Not regulatory text.",
+        "verdict": "OUT"
+      },
+      "market_intel": {
+        "reason": "Not a market signal.",
+        "verdict": "OUT"
+      }
+    },
+    "dry_run_disposition": "would_mint",
+    "dry_run_reason": "Needs a free registered API key; not yet wired.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": null,
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "4e5465e4-aacf-4dee-8efc-38391ce1d642",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "66",
+    "instrument": "South Korea KECO Resource Circulation Compliance System (EPR)",
+    "jurisdiction": "asia",
+    "url": "https://www.keco.or.kr/en/lay1/S295T386C400/contents.do",
+    "fetch_method": "plain_http",
+    "fetch_result": "EPR program description, mandatory items (4 packaging materials, 7 products), exemption criteria table, static.",
+    "four_contract_classification": {
+      "research": {
+        "reason": "Not horizon-scan.",
+        "verdict": "OUT"
+      },
+      "operations": {
+        "reason": "Not the primary use case.",
+        "verdict": "OUT"
+      },
+      "regulations": {
+        "reason": "Mandatory compliance obligations under Korean EPR scheme.",
+        "verdict": "IN"
+      },
+      "market_intel": {
+        "reason": "Not a market signal.",
+        "verdict": "OUT"
+      }
+    },
+    "dry_run_disposition": "would_mint",
+    "dry_run_reason": "Live, fully static, not yet wired.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": null,
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "4ee3d57b-886a-4433-831d-dd9b9e6cc927",
+    "lane": "C",
+    "sweep": "sweep4_found_then_lost_recovery",
+    "subject_type": "lost_historical_provider",
+    "subject_ref": "lost:entsoe",
+    "instrument": "ENTSO-E Transparency Platform (EU electricity grid / transmission data)",
+    "jurisdiction": "eu",
+    "url": "https://www.entsoe.eu",
+    "fetch_method": "not_applicable",
+    "fetch_result": null,
+    "four_contract_classification": {
+      "primary_surface": "operations"
+    },
+    "dry_run_disposition": "would_mint",
+    "dry_run_reason": "Free EU grid transparency platform (registration-gated but free API); direct Operations energy-cost input, worth recovering.",
+    "entity_confirmed": true,
+    "notes": "LOST: absent from all tracked tables. Free-acquire candidate.",
+    "created_at": "2026-07-20T15:12:31.425014+00:00",
+    "pending_dependency": null,
+    "historical_evidence": "seed-sources.sql Section F (EU energy data).",
+    "historical_intent": "named in the operations-layer source class; never registered.",
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": "freight_native"
+  },
+  {
+    "id": "50af3cec-9e11-44a1-b6e3-14c2974ce20f",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "74",
+    "instrument": "Poland BDO (Baza Danych o Produktach i Opakowaniach)",
+    "jurisdiction": "eu",
+    "url": "https://bdo.mos.gov.pl/",
+    "fetch_method": "browser_required",
+    "fetch_result": "403 Forbidden on plain fetch-light attempt.",
+    "four_contract_classification": null,
+    "dry_run_disposition": "browser_required_undetermined",
+    "dry_run_reason": "Bot-blocked to fetch-light; routed to Session A's queue.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": "session_a_chrome_render",
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "53da1fd6-a439-4855-927a-9336d52922a2",
+    "lane": "C",
+    "sweep": "sweep4_found_then_lost_recovery",
+    "subject_type": "lost_historical_provider",
+    "subject_ref": "lost:zeronorth",
+    "instrument": "ZeroNorth (maritime emissions / optimization data)",
+    "jurisdiction": "global",
+    "url": "https://www.zeronorth.com",
+    "fetch_method": "not_applicable",
+    "fetch_result": null,
+    "four_contract_classification": {
+      "primary_surface": "operations"
+    },
+    "dry_run_disposition": "would_park",
+    "dry_run_reason": "Commercial maritime-optimization SaaS.",
+    "entity_confirmed": true,
+    "notes": "LOST: absent from all tracked tables.",
+    "created_at": "2026-07-20T15:12:31.425014+00:00",
+    "pending_dependency": null,
+    "historical_evidence": "legacy seed-resources.json (green-corridors record r32 prose).",
+    "historical_intent": "embedded reference; never promoted.",
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": "freight_native"
+  },
+  {
+    "id": "55d46a79-97a8-4d8e-a6a2-8edee32a060a",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "88",
+    "instrument": "UNCTADstat container port throughput database",
+    "jurisdiction": "global",
+    "url": "https://unctadstat.unctad.org/datacentre/dataviewer/US.ContPortThroughput",
+    "fetch_method": "browser_required",
+    "fetch_result": "Empty body in static pass beyond institutional metadata; explicit BROWSER_REQUIRED, SPA data-viewer shell.",
+    "four_contract_classification": null,
+    "dry_run_disposition": "browser_required_undetermined",
+    "dry_run_reason": "Routed to Session A's queue.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": "session_a_chrome_render",
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "58729adc-3618-4cf8-bf16-977d3e59b09b",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "77",
+    "instrument": "Denmark Dansk Producentansvar (DPA)",
+    "jurisdiction": "eu",
+    "url": "https://producentansvar.dk/en/about-us/",
+    "fetch_method": "plain_http",
+    "fetch_result": "About-us page: governance/board structure, IT systems for producer-responsibility registers across electronics/batteries/vehicles/packaging, static.",
+    "four_contract_classification": {
+      "research": {
+        "reason": "Not horizon-scan.",
+        "verdict": "OUT"
+      },
+      "operations": {
+        "reason": "Register infrastructure description has Operations compliance-status value.",
+        "verdict": "IN"
+      },
+      "regulations": {
+        "reason": "Danish EPR administrator, statutory basis under the Environmental Protection Act.",
+        "verdict": "IN"
+      },
+      "market_intel": {
+        "reason": "Not a market signal.",
+        "verdict": "OUT"
+      }
+    },
+    "dry_run_disposition": "would_mint",
+    "dry_run_reason": "Live, fully static, dual regulations/operations value.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": null,
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "6223472f-ad25-4522-857f-b0522b7ed88e",
+    "lane": "C",
+    "sweep": "sweep4_found_then_lost_recovery",
+    "subject_type": "lost_historical_provider",
+    "subject_ref": "lost:terrascope",
+    "instrument": "Terrascope (emissions data platform)",
+    "jurisdiction": "global",
+    "url": "https://www.terrascope.com",
+    "fetch_method": "not_applicable",
+    "fetch_result": null,
+    "four_contract_classification": {
+      "primary_surface": "operations"
+    },
+    "dry_run_disposition": "would_park",
+    "dry_run_reason": "Commercial emissions-data SaaS. Operator confirms no account held.",
+    "entity_confirmed": true,
+    "notes": "LOST. Operator confirmed 2026-07-19: no account held.",
+    "created_at": "2026-07-20T15:12:31.425014+00:00",
+    "pending_dependency": null,
+    "historical_evidence": "legacy seed-resources.json (Asia-Pacific record g20 prose).",
+    "historical_intent": "embedded reference; never promoted.",
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": "freight_native"
+  },
+  {
+    "id": "65c97976-6d65-4ac6-9e60-c65dd1371ff6",
+    "lane": "C",
+    "sweep": "sweep4_found_then_lost_recovery",
+    "subject_type": "lost_historical_provider",
+    "subject_ref": "lost:nyc-comptroller",
+    "instrument": "New York City Comptroller (pension climate alignment)",
+    "jurisdiction": "us",
+    "url": "https://comptroller.nyc.gov",
+    "fetch_method": "not_applicable",
+    "fetch_result": null,
+    "four_contract_classification": {
+      "primary_surface": "market_intel"
+    },
+    "dry_run_disposition": "would_mint",
+    "dry_run_reason": "Free public office; investor-signal source.",
+    "entity_confirmed": true,
+    "notes": "LOST: absent from all tracked tables. Free-acquire candidate.",
+    "created_at": "2026-07-20T15:12:31.425014+00:00",
+    "pending_dependency": null,
+    "historical_evidence": "esgtoday source-map A3; existence-check ABSENT tier T3.",
+    "historical_intent": "add to registry with role+tier (investor signal).",
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": "esg_finance"
+  },
+  {
+    "id": "69e430f7-20a3-46e3-acc9-600f1dda0029",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "75",
+    "instrument": "Austria ARA (Altstoff Recycling Austria)",
+    "jurisdiction": "eu",
+    "url": "https://www.ara.at/en",
+    "fetch_method": "plain_http",
+    "fetch_result": "Homepage describing EPR services (packaging, e-waste, battery compliance), static.",
+    "four_contract_classification": {
+      "research": {
+        "reason": "Not horizon-scan.",
+        "verdict": "OUT"
+      },
+      "operations": {
+        "reason": "Licensing/material-flow service descriptions have Operations feasibility value.",
+        "verdict": "IN"
+      },
+      "regulations": {
+        "reason": "Austrian EPR compliance-organization services.",
+        "verdict": "IN"
+      },
+      "market_intel": {
+        "reason": "Not a market signal.",
+        "verdict": "OUT"
+      }
+    },
+    "dry_run_disposition": "would_mint",
+    "dry_run_reason": "Live, fully static, dual regulations/operations value.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": null,
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "6ba10a55-5065-41fa-8059-90118adb5575",
+    "lane": "C",
+    "sweep": "sweep4_found_then_lost_recovery",
+    "subject_type": "lost_historical_provider",
+    "subject_ref": "lost:sasb",
+    "instrument": "SASB (industry-specific sustainability standards)",
+    "jurisdiction": "global",
+    "url": "https://www.sasb.org",
+    "fetch_method": "not_applicable",
+    "fetch_result": null,
+    "four_contract_classification": {
+      "primary_surface": "research"
+    },
+    "dry_run_disposition": "would_mint",
+    "dry_run_reason": "Free standards reference (now under IFRS/ISSB stewardship).",
+    "entity_confirmed": true,
+    "notes": "LOST: absent from all tracked tables. Free-acquire candidate.",
+    "created_at": "2026-07-20T15:12:31.425014+00:00",
+    "pending_dependency": null,
+    "historical_evidence": "esgtoday source-map A5; existence-check ABSENT tier T2.",
+    "historical_intent": "add to registry with role+tier.",
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": "esg_finance"
+  },
+  {
+    "id": "6e4e4d34-2fdd-4193-a3ac-3ecdf3ce394e",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "38",
+    "instrument": "UK DESNZ Quarterly Energy Prices (non-domestic/industrial electricity)",
+    "jurisdiction": "uk",
+    "url": "https://www.gov.uk/government/collections/quarterly-energy-prices",
+    "fetch_method": "plain_http",
+    "fetch_result": "Static collection index; publications 2015-2026 listed by quarter with dates, fully static.",
+    "four_contract_classification": {
+      "research": {
+        "reason": "Not horizon-scan.",
+        "verdict": "OUT"
+      },
+      "operations": {
+        "reason": "UK industrial/domestic electricity pricing series, direct Operations cost input.",
+        "verdict": "IN"
+      },
+      "regulations": {
+        "reason": "Not regulatory text; statistical bulletins.",
+        "verdict": "OUT"
+      },
+      "market_intel": {
+        "reason": "Not a market-movement signal.",
+        "verdict": "OUT"
+      }
+    },
+    "dry_run_disposition": "would_mint",
+    "dry_run_reason": "Live, fully static, not yet wired.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": null,
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "6fe42c22-f74e-4024-a473-15a197b639c6",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "42",
+    "instrument": "Mexico CRE/CFE industrial electricity tariffs (Gran Demanda MTH)",
+    "jurisdiction": "latam",
+    "url": "https://app.cfe.mx/Aplicaciones/CCFE/Tarifas/TarifasCREIndustria/Tarifas/GranDemandaMTH.aspx",
+    "fetch_method": "browser_required",
+    "fetch_result": "TLS certificate verification failure (\"unable to verify the first certificate\") blocked the fetch-light attempt; a cert-chain issue specific to this host, not a JS-rendering issue.",
+    "four_contract_classification": null,
+    "dry_run_disposition": "browser_required_undetermined",
+    "dry_run_reason": "Genuinely blocked to this fetch tool by a TLS cert problem; a full 3-tier canonical-fetch transport may tolerate it differently. Flagged for build-time transport, not necessarily a Chrome-rendering need, but routed to the same worklist since it cannot be resolved fetch-light today.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": "session_a_chrome_render",
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "70fc44f3-f408-4c61-aa56-703284171f46",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "76",
+    "instrument": "Sweden EPR packaging producer-responsibility reporting",
+    "jurisdiction": "eu",
+    "url": "https://www.naturvardsverket.se/en/guidance/extended-producer-responsibility-epr/producer-responsibility-for-packaging/",
+    "fetch_method": "plain_http",
+    "fetch_result": "404 Not Found. The registered authoritative_url no longer resolves.",
+    "four_contract_classification": null,
+    "dry_run_disposition": "would_decline",
+    "dry_run_reason": "A dead-URL finding, not a fetch obstacle. The registered authoritative_url needs re-verification/correction, flagged for the source-health lane rather than this census.",
+    "entity_confirmed": true,
+    "notes": "Real finding: authoritative_url is stale.",
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": null,
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "713f20ae-a9d7-418d-945d-f7605386b867",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "57",
+    "instrument": "Maryland MDE COMAR 26.11.43 (Advanced Clean Trucks Program) fact sheet",
+    "jurisdiction": "us-md",
+    "url": "https://mde.maryland.gov/programs/regulations/air/Documents/2023%20ACT%20Fact%20Sheet%2005.24.23%20AQCAC.pdf",
+    "fetch_method": "plain_http",
+    "fetch_result": "PDF fetched (255KB, 7pp, dated 2023-06-07); structural metadata visible but body text was not decompressed by this light pass, substantive content inconclusive from metadata alone.",
+    "four_contract_classification": {
+      "research": {
+        "reason": "Not horizon-scan.",
+        "verdict": "OUT"
+      },
+      "operations": {
+        "reason": "Not the primary use case.",
+        "verdict": "OUT"
+      },
+      "regulations": {
+        "reason": "Very likely a regulatory fact sheet by title and source (MDE air-regulations documents path); body text not confirmed this pass, labeled inconclusive rather than asserted.",
+        "verdict": "CONDITIONAL"
+      },
+      "market_intel": {
+        "reason": "Not a market signal.",
+        "verdict": "OUT"
+      }
+    },
+    "dry_run_disposition": "would_park",
+    "dry_run_reason": "PDF is reachable via plain HTTP, not browser-required; this light pass could not extract body text, a real fetch/parse at build time would resolve it, not blocked, just under-resolved.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": null,
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "734d7430-3dc7-4c30-a041-1e05362595eb",
+    "lane": "C",
+    "sweep": "sweep2_adjacent_universes",
+    "subject_type": "candidate_source",
+    "subject_ref": "carbon-rggi-auction",
+    "instrument": "Regional Greenhouse Gas Initiative (RGGI) auction results",
+    "jurisdiction": "us",
+    "url": "https://www.rggi.org/auctions/auction-results",
+    "fetch_method": "plain_http",
+    "fetch_result": "Static HTML table: cumulative proceeds ($11.4B+), recent auction pricing/volumes, bidder statistics across 11 participating US states.",
+    "four_contract_classification": {
+      "research": {
+        "reason": "Not horizon-scan.",
+        "verdict": "OUT"
+      },
+      "operations": {
+        "reason": "Regional carbon-allowance cost data, direct Operations input for RGGI-covered lanes.",
+        "verdict": "IN"
+      },
+      "regulations": {
+        "reason": "Not regulatory text; transactional auction records.",
+        "verdict": "OUT"
+      },
+      "market_intel": {
+        "reason": "Carbon-price auction results are a genuine market signal.",
+        "verdict": "IN"
+      }
+    },
+    "dry_run_disposition": "would_mint",
+    "dry_run_reason": "Live, fully static, dual operations/market_intel value, not among held sources.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:28:30.287919+00:00",
+    "pending_dependency": null,
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "7646d05f-5732-4acb-94aa-4be752efeeae",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "78",
+    "instrument": "EU-EPR-remainder (rollup placeholder, ~19 smaller EU member-state packaging registers)",
+    "jurisdiction": "eu",
+    "url": null,
+    "fetch_method": "not_applicable",
+    "fetch_result": null,
+    "four_contract_classification": null,
+    "dry_run_disposition": "not_applicable",
+    "dry_run_reason": "Rollup placeholder row with no single authoritative_url of its own; no individual feed to enumerate. Each real register would need its own row if/when priced individually.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": null,
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "7a3a90a2-5ed7-4115-8486-5b6cef95cea7",
+    "lane": "C",
+    "sweep": "sweep4_found_then_lost_recovery",
+    "subject_type": "lost_historical_provider",
+    "subject_ref": "lost:ftserussell",
+    "instrument": "FTSE Russell (asset-owner sustainability surveys)",
+    "jurisdiction": "global",
+    "url": "https://www.ftserussell.com/research",
+    "fetch_method": "not_applicable",
+    "fetch_result": null,
+    "four_contract_classification": {
+      "primary_surface": "market_intel"
+    },
+    "dry_run_disposition": "would_park",
+    "dry_run_reason": "Commercial index/research provider; gated. Operator confirms no account held.",
+    "entity_confirmed": true,
+    "notes": "LOST. Operator confirmed 2026-07-19: no account held.",
+    "created_at": "2026-07-20T15:12:31.425014+00:00",
+    "pending_dependency": null,
+    "historical_evidence": "esgtoday source-map B3; existence-check ABSENT tier T3.",
+    "historical_intent": "add to registry with role+tier.",
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": "esg_finance"
+  },
+  {
+    "id": "7b557537-143b-4873-a80f-440447212431",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "96",
+    "instrument": "California CARB Advanced Clean Trucks / Advanced Clean Fleets (Research carry-forward)",
+    "jurisdiction": "us-ca",
+    "url": "https://ww2.arb.ca.gov/rulemaking-activity",
+    "fetch_method": "browser_required",
+    "fetch_result": "Same authoritative_url as rank 50; 403 Forbidden confirmed once via rank 50's fetch attempt, not re-fetched separately.",
+    "four_contract_classification": null,
+    "dry_run_disposition": "browser_required_undetermined",
+    "dry_run_reason": "Duplicate URL with rank 50 (dual Operations/Research surface framing per migration 227); one fetch attempt serves both census rows honestly rather than a redundant second call.",
+    "entity_confirmed": true,
+    "notes": "Duplicate authoritative_url with rank 50.",
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": "session_a_chrome_render",
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "7dd481ac-e73f-4e3e-aa37-a8eac5a134cb",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "30",
+    "instrument": "Japan MHLW Basic Survey on Wage Structure (via e-Stat), transport sector",
+    "jurisdiction": "asia",
+    "url": "https://www.e-stat.go.jp/en/statistics/00450091",
+    "fetch_method": "plain_http",
+    "fetch_result": "Landing/metadata page only; links to the actual survey data tables hosted elsewhere on the same site (a register-enumeration case, not the raw data itself).",
+    "four_contract_classification": {
+      "research": {
+        "reason": "Not horizon-scan.",
+        "verdict": "OUT"
+      },
+      "operations": {
+        "reason": "Genuine wage data exists one hop deeper; this landing page alone does not carry it.",
+        "verdict": "CONDITIONAL"
+      },
+      "regulations": {
+        "reason": "Not regulatory text.",
+        "verdict": "OUT"
+      },
+      "market_intel": {
+        "reason": "Not a market signal.",
+        "verdict": "OUT"
+      }
+    },
+    "dry_run_disposition": "would_mint",
+    "dry_run_reason": "Needs a second-hop link-follow to the actual data tables, not just this landing page.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": "session_a_register_walk",
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "7e876d92-0914-44da-9b22-6b547c9e8ba0",
+    "lane": "C",
+    "sweep": "sweep2_adjacent_universes",
+    "subject_type": "candidate_source",
+    "subject_ref": "port-tariff-la",
+    "instrument": "Port of Los Angeles tariff schedule",
+    "jurisdiction": "us",
+    "url": "https://www.portoflosangeles.org/business/tariff",
+    "fetch_method": "browser_required",
+    "fetch_result": "403 Forbidden on plain fetch-light attempt.",
+    "four_contract_classification": null,
+    "dry_run_disposition": "browser_required_undetermined",
+    "dry_run_reason": "Bot-blocked to fetch-light; routed to Session A's queue.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:28:30.287919+00:00",
+    "pending_dependency": "session_a_chrome_render",
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "845577cb-1bad-4bf7-9b83-bd27cb1ae8e3",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "80",
+    "instrument": "EPD International EPD Library",
+    "jurisdiction": "global",
+    "url": "https://www.environdec.com/library",
+    "fetch_method": "browser_required",
+    "fetch_result": "Static pass shows ~10 of ~2245 total entries; full pagination/filtering needs JS.",
+    "four_contract_classification": null,
+    "dry_run_disposition": "would_mint",
+    "dry_run_reason": "Partial static content visible; a build-time integration should look for an API/bulk-export path rather than paginated scraping. Routed to Session A's queue for the full-depth pass.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": null,
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "85ab353e-5a70-40b7-94ff-13048604b68a",
+    "lane": "C",
+    "sweep": "sweep4_found_then_lost_recovery",
+    "subject_type": "lost_historical_provider",
+    "subject_ref": "lost:mordor",
+    "instrument": "Mordor Intelligence (transport/logistics market research)",
+    "jurisdiction": "global",
+    "url": "https://www.mordorintelligence.com",
+    "fetch_method": "not_applicable",
+    "fetch_result": null,
+    "four_contract_classification": {
+      "primary_surface": "market_intel"
+    },
+    "dry_run_disposition": "would_park",
+    "dry_run_reason": "Commercial market-research reports; paid.",
+    "entity_confirmed": true,
+    "notes": "LOST: absent from all tracked tables.",
+    "created_at": "2026-07-20T15:12:31.425014+00:00",
+    "pending_dependency": null,
+    "historical_evidence": "legacy seed-resources.json (Asia-Pacific record g24 prose).",
+    "historical_intent": "embedded reference in a legacy resource; never promoted to a source.",
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": "esg_finance"
+  },
+  {
+    "id": "85dec10b-6b4a-49ae-b273-d6bbceaec775",
+    "lane": "C",
+    "sweep": "sweep4_found_then_lost_recovery",
+    "subject_type": "lost_historical_provider",
+    "subject_ref": "lost:afm",
+    "instrument": "Dutch AFM (Netherlands sustainability claims)",
+    "jurisdiction": "eu",
+    "url": "https://www.afm.nl",
+    "fetch_method": "not_applicable",
+    "fetch_result": null,
+    "four_contract_classification": {
+      "primary_surface": "regulations"
+    },
+    "dry_run_disposition": "would_mint",
+    "dry_run_reason": "Free national regulator.",
+    "entity_confirmed": true,
+    "notes": "LOST: absent from all tracked tables. Free-acquire candidate.",
+    "created_at": "2026-07-20T15:12:31.425014+00:00",
+    "pending_dependency": null,
+    "historical_evidence": "esgtoday source-map A4; existence-check ABSENT tier T3.",
+    "historical_intent": "add to registry with role+tier.",
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": "esg_finance"
+  },
+  {
+    "id": "8931d986-88c9-45c8-b9c9-968c89281b9a",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "40",
+    "instrument": "Singapore EMA regulated electricity tariff + Uniform Singapore Energy Price",
+    "jurisdiction": "asia",
+    "url": "https://www.ema.gov.sg/resources/statistics/average-monthly-uniform-singapore-energy-price",
+    "fetch_method": "browser_required",
+    "fetch_result": "Landing page with a loading indicator, explicit BROWSER_REQUIRED for the embedded chart; direct Excel/PDF download links for the underlying data ARE present in the static HTML though.",
+    "four_contract_classification": null,
+    "dry_run_disposition": "browser_required_undetermined",
+    "dry_run_reason": "The page-embedded chart needs JS, but the Excel/PDF download links are a plain-HTTP-fetchable document path worth trying directly at build time rather than the rendered page.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": "session_a_chrome_render",
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "894d64fa-4b3a-4657-a7d5-8c517a0ecf90",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "72",
+    "instrument": "Italy CONAI (Consorzio Nazionale Imballaggi) and RENAP",
+    "jurisdiction": "eu",
+    "url": "https://www.conai.org/",
+    "fetch_method": "browser_required",
+    "fetch_result": "403 Forbidden on plain fetch-light attempt.",
+    "four_contract_classification": null,
+    "dry_run_disposition": "browser_required_undetermined",
+    "dry_run_reason": "Bot-blocked to fetch-light; routed to Session A's queue.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": "session_a_chrome_render",
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "8dfcbfc6-5fe0-4e3f-9530-cc65096aba06",
+    "lane": "C",
+    "sweep": "sweep4_found_then_lost_recovery",
+    "subject_type": "lost_historical_provider",
+    "subject_ref": "lost:dg-grow",
+    "instrument": "European Commission DG GROW (industrial policy, made-in-EU)",
+    "jurisdiction": "eu",
+    "url": "https://single-market-economy.ec.europa.eu",
+    "fetch_method": "not_applicable",
+    "fetch_result": null,
+    "four_contract_classification": {
+      "primary_surface": "regulations"
+    },
+    "dry_run_disposition": "would_mint",
+    "dry_run_reason": "Free official EC directorate.",
+    "entity_confirmed": true,
+    "notes": "LOST: absent from all tracked tables. Free-acquire candidate.",
+    "created_at": "2026-07-20T15:12:31.425014+00:00",
+    "pending_dependency": null,
+    "historical_evidence": "esgtoday source-map A1; existence-check ABSENT tier T2.",
+    "historical_intent": "add to registry with role+tier.",
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": "esg_finance"
+  },
+  {
+    "id": "921a04bc-e8ef-484e-82ce-43567a108d56",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "39",
+    "instrument": "Japan METI/ANRE General Energy Statistics (industrial electricity)",
+    "jurisdiction": "asia",
+    "url": "https://www.meti.go.jp/english/statistics/",
+    "fetch_method": "browser_required",
+    "fetch_result": "403 Forbidden on plain fetch-light attempt.",
+    "four_contract_classification": null,
+    "dry_run_disposition": "browser_required_undetermined",
+    "dry_run_reason": "Bot-blocked to fetch-light; routed to Session A's queue.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": "session_a_chrome_render",
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "93e7b308-1921-47d3-8007-1983cf27efae",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "56",
+    "instrument": "Colorado CDPHE Clean Trucking program and Regulation 20",
+    "jurisdiction": "us-co",
+    "url": "https://cdphe.colorado.gov/cleantrucking",
+    "fetch_method": "browser_required",
+    "fetch_result": "403 Forbidden on plain fetch-light attempt.",
+    "four_contract_classification": null,
+    "dry_run_disposition": "browser_required_undetermined",
+    "dry_run_reason": "Bot-blocked to fetch-light; routed to Session A's queue.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": "session_a_chrome_render",
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "973e07ae-a5b6-4505-bf95-eac1f0cb4d58",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "95",
+    "instrument": "ICAO CAEP (Committee on Aviation Environmental Protection)",
+    "jurisdiction": "global",
+    "url": "https://www.icao.int/CAEP",
+    "fetch_method": "plain_http",
+    "fetch_result": "Committee structure, membership (34 states + 21 observers), 8 working groups, milestones visible; no current meeting documents visible on this page.",
+    "four_contract_classification": {
+      "research": {
+        "reason": "Structural page only; meeting-document depth not confirmed this pass.",
+        "verdict": "OUT"
+      },
+      "operations": {
+        "reason": "Not a cost/feasibility surface.",
+        "verdict": "OUT"
+      },
+      "regulations": {
+        "reason": "Institutional/governance body formulating ICAO SARPs, binding aviation environmental standards.",
+        "verdict": "IN"
+      },
+      "market_intel": {
+        "reason": "Not a market signal.",
+        "verdict": "OUT"
+      }
+    },
+    "dry_run_disposition": "would_park",
+    "dry_run_reason": "Structural page reachable and static; the actual meeting-document index (the real feedstock value) is a deeper page not confirmed this pass, a second-hop register-enumeration case per the build plan's Phase-1 seam, not resolved here.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": "session_a_register_walk",
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "97e88bf0-f6c6-4c67-88c9-a675f6838458",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "81",
+    "instrument": "Science Based Targets initiative (SBTi) Target Dashboard",
+    "jurisdiction": "global",
+    "url": "https://sciencebasedtargets.org/target-dashboard",
+    "fetch_method": "browser_required",
+    "fetch_result": "Explicit BROWSER_REQUIRED for the interactive 15,246-record filter dashboard; summary stats visible in the static pass (13,895 companies, 11,549 validated targets); an Excel export is referenced.",
+    "four_contract_classification": null,
+    "dry_run_disposition": "would_mint",
+    "dry_run_reason": "The Excel bulk-export path referenced on the page is the fetch-light-appropriate integration route, worth a direct check at build time rather than the JS dashboard itself.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": null,
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "9b881b0f-5dcb-440d-9966-127b4113ea35",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "23",
+    "instrument": "BLS labor cost data (warehousing and transportation wage series)",
+    "jurisdiction": "us",
+    "url": "https://api.bls.gov/publicAPI/v2/timeseries/data/",
+    "fetch_method": "api",
+    "fetch_result": "GET returned 405 Method Not Allowed. BLS Series API requires POST with series IDs + registration key; confirmed the API exists and is reachable via POST (fetch-light compatible, not a browser blocker).",
+    "four_contract_classification": {
+      "research": {
+        "reason": "Not horizon-scan.",
+        "verdict": "OUT"
+      },
+      "operations": {
+        "reason": "Direct warehousing/transportation wage series, the labor-cost input Operations hire-vs-automate comparisons need.",
+        "verdict": "IN"
+      },
+      "regulations": {
+        "reason": "Not regulatory text.",
+        "verdict": "OUT"
+      },
+      "market_intel": {
+        "reason": "Not a market-movement signal.",
+        "verdict": "OUT"
+      }
+    },
+    "dry_run_disposition": "would_mint",
+    "dry_run_reason": "API confirmed live via POST; not yet wired as an Operations-surface consumer.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": null,
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "9e13b016-7019-449c-8ee9-4e0235631537",
+    "lane": "C",
+    "sweep": "sweep4_found_then_lost_recovery",
+    "subject_type": "lost_historical_provider",
+    "subject_ref": "lost:cargofacts",
+    "instrument": "Cargo Facts (air freight market data)",
+    "jurisdiction": "global",
+    "url": "https://www.cargofactsconsulting.com",
+    "fetch_method": "not_applicable",
+    "fetch_result": null,
+    "four_contract_classification": {
+      "primary_surface": "market_intel"
+    },
+    "dry_run_disposition": "would_park",
+    "dry_run_reason": "Air-freight trade data; secondary/paywalled.",
+    "entity_confirmed": true,
+    "notes": "LOST: absent from all tracked tables.",
+    "created_at": "2026-07-20T15:12:31.425014+00:00",
+    "pending_dependency": null,
+    "historical_evidence": "esgtoday source-map B2; existence-check ABSENT tier T3.",
+    "historical_intent": "add as market_news source.",
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": "freight_native"
+  },
+  {
+    "id": "9ff27699-6a86-46d6-ba71-cbebb5c59351",
+    "lane": "C",
+    "sweep": "sweep2_adjacent_universes",
+    "subject_type": "candidate_source",
+    "subject_ref": "port-tariff-hamburg",
+    "instrument": "Hamburg Port Authority tariffs",
+    "jurisdiction": "eu",
+    "url": "https://www.hamburg-port-authority.de/en/hpa-360/port-tariffs",
+    "fetch_method": "browser_required",
+    "fetch_result": "404 Not Found. The entity (Hamburg Port Authority, a real port authority that publishes tariffs) is well established, but this specific URL guess did not resolve and the correct current URL was not independently re-derived this pass.",
+    "four_contract_classification": null,
+    "dry_run_disposition": "browser_required_undetermined",
+    "dry_run_reason": "URL unconfirmed this pass, entity real but not independently entity-confirmed via a second source; needs either a corrected URL search or Session A's Chrome-based navigation.",
+    "entity_confirmed": false,
+    "notes": "entity_confirmed=false: URL guess only, not independently verified.",
+    "created_at": "2026-07-19T21:28:30.287919+00:00",
+    "pending_dependency": "session_a_chrome_render",
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "a0a36e41-16e9-4abf-9106-1357004b8fb6",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "103",
+    "instrument": "FMC tariff and surcharge monitoring",
+    "jurisdiction": "us",
+    "url": "https://www.fmc.gov/articles/fmc-monitoring-and-review-of-surcharges-and-fees/",
+    "fetch_method": "plain_http",
+    "fetch_result": "A 2024-10-11 dated news article, static, full text visible; not a recurring monitoring index.",
+    "four_contract_classification": {
+      "research": {
+        "reason": "Not horizon-scan.",
+        "verdict": "OUT"
+      },
+      "operations": {
+        "reason": "Not a cost/feasibility surface.",
+        "verdict": "OUT"
+      },
+      "regulations": {
+        "reason": "FMC enforcement-posture statement on surcharge legality.",
+        "verdict": "IN"
+      },
+      "market_intel": {
+        "reason": "Enforcement signaling that could affect ocean-carrier surcharge decisions.",
+        "verdict": "IN"
+      }
+    },
+    "dry_run_disposition": "would_decline",
+    "dry_run_reason": "This specific URL is one dated news article, already fully captured as a point fact. If FMC publishes an ongoing surcharge-review index/register, that would be the actual feed-worthy URL; not tested this pass, second-hop needed, flagged not fetched (sweep 1 scope is auditing registered URLs as-is).",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": null,
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "a61026d3-b53c-4111-8ccc-cec0c86d0992",
+    "lane": "C",
+    "sweep": "sweep2_adjacent_universes",
+    "subject_type": "candidate_source",
+    "subject_ref": "carrier-surcharge-cmacgm",
+    "instrument": "CMA CGM news (surcharge and local notices)",
+    "jurisdiction": "global",
+    "url": "https://www.cma-cgm.com/news/list",
+    "fetch_method": "browser_required",
+    "fetch_result": "403 Forbidden on plain fetch-light attempt.",
+    "four_contract_classification": null,
+    "dry_run_disposition": "browser_required_undetermined",
+    "dry_run_reason": "Bot-blocked to fetch-light; routed to Session A's queue.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:28:30.287919+00:00",
+    "pending_dependency": "session_a_chrome_render",
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "a79dad30-dd25-4b0e-b3ba-b39c00187b53",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "41",
+    "instrument": "Brazil ANEEL open-data tariff datasets (Tarifa de Energia / TUSD)",
+    "jurisdiction": "latam",
+    "url": "https://dadosabertos.aneel.gov.br/dataset/tarifas-distribuidoras-energia-eletrica",
+    "fetch_method": "plain_http",
+    "fetch_result": "Dataset metadata page with CSV/XML/PDF resource links, fully static, no JS needed.",
+    "four_contract_classification": {
+      "research": {
+        "reason": "Not horizon-scan.",
+        "verdict": "OUT"
+      },
+      "operations": {
+        "reason": "Brazilian distribution-company electricity tariffs, direct Operations cost input.",
+        "verdict": "IN"
+      },
+      "regulations": {
+        "reason": "Not regulatory text; a tariff dataset.",
+        "verdict": "OUT"
+      },
+      "market_intel": {
+        "reason": "Not a market signal.",
+        "verdict": "OUT"
+      }
+    },
+    "dry_run_disposition": "would_mint",
+    "dry_run_reason": "Live, fully static, CSV/XML resources directly linked.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": null,
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "b17a504f-b735-4e7b-937b-52c961541ebf",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "37",
+    "instrument": "Eurostat electricity prices for non-household (industrial) consumers",
+    "jurisdiction": "eu",
+    "url": "https://ec.europa.eu/eurostat/databrowser/view/nrg_pc_205/default/table?lang=en",
+    "fetch_method": "browser_required",
+    "fetch_result": "Only nav scaffold rendered, no data visible; explicit BROWSER_REQUIRED (databrowser UI shell).",
+    "four_contract_classification": null,
+    "dry_run_disposition": "browser_required_undetermined",
+    "dry_run_reason": "This is the interactive databrowser UI; Eurostat likely has a plain dissemination-API equivalent (same pattern as rank 24) that was not tested this pass, scope-bounded to what was registered. Flagged as a lead, not tested.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": "session_a_chrome_render",
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "b258576c-86c4-40d1-8ec2-12509ff8ba46",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "58",
+    "instrument": "Rhode Island DEM Advanced Clean Cars II and Advanced Clean Trucks",
+    "jurisdiction": "us-ri",
+    "url": "https://dem.ri.gov/environmental-protection-bureau/air-resources/mobile-sources/advanced-clean-cars-ii-advanced-clean",
+    "fetch_method": "plain_http",
+    "fetch_result": "Final rule (250-RICR-120-05-37) with FAQ and legal framework (Clean Air Act Section 177), static, fully readable.",
+    "four_contract_classification": {
+      "research": {
+        "reason": "Not horizon-scan.",
+        "verdict": "OUT"
+      },
+      "operations": {
+        "reason": "Not the primary use case.",
+        "verdict": "OUT"
+      },
+      "regulations": {
+        "reason": "Finalized rule text and legal citations.",
+        "verdict": "IN"
+      },
+      "market_intel": {
+        "reason": "Not a market signal.",
+        "verdict": "OUT"
+      }
+    },
+    "dry_run_disposition": "would_mint",
+    "dry_run_reason": "Live, fully static, not yet wired.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": null,
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "b29fa6e3-0b09-4c1f-8415-39e70975f4fe",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "91",
+    "instrument": "SSRN Transportation Research Network (TransportRN)",
+    "jurisdiction": "global",
+    "url": "https://www.ssrn.com/index.cfm/en/transportrn/",
+    "fetch_method": "browser_required",
+    "fetch_result": "403 Forbidden on plain fetch-light attempt.",
+    "four_contract_classification": null,
+    "dry_run_disposition": "browser_required_undetermined",
+    "dry_run_reason": "Bot-blocked to fetch-light; routed to Session A's queue.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": "session_a_chrome_render",
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "b2a7f2ec-38e5-4dbd-846a-7cc2548a3807",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "92",
+    "instrument": "arXiv physics.soc-ph (Physics and Society) listing",
+    "jurisdiction": "global",
+    "url": "https://arxiv.org/list/physics.soc-ph/recent",
+    "fetch_method": "plain_http",
+    "fetch_result": "35 entries visible for 2026-07-13 through 2026-07-17, full listing with titles/authors, static and current.",
+    "four_contract_classification": {
+      "research": {
+        "reason": "Live, current preprint listing spanning climate/social-dynamics/policy-impact research, genuine Research horizon-scan content.",
+        "verdict": "IN"
+      },
+      "operations": {
+        "reason": "Not the primary use case.",
+        "verdict": "OUT"
+      },
+      "regulations": {
+        "reason": "Not regulatory text.",
+        "verdict": "OUT"
+      },
+      "market_intel": {
+        "reason": "Not a market signal.",
+        "verdict": "OUT"
+      }
+    },
+    "dry_run_disposition": "would_mint",
+    "dry_run_reason": "Live, current, fully static listing, not yet wired as a Research-surface intake walker.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": null,
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "b33a4290-81f8-486d-a035-639df6763f6c",
+    "lane": "C",
+    "sweep": "sweep4_found_then_lost_recovery",
+    "subject_type": "lost_historical_provider",
+    "subject_ref": "lost:bloomberg-green",
+    "instrument": "Bloomberg Green (climate & sustainability vertical)",
+    "jurisdiction": "global",
+    "url": "https://www.bloomberg.com/green",
+    "fetch_method": "not_applicable",
+    "fetch_result": null,
+    "four_contract_classification": {
+      "primary_surface": "market_intel"
+    },
+    "dry_run_disposition": "would_park",
+    "dry_run_reason": "Paywalled general-finance press; secondary.",
+    "entity_confirmed": true,
+    "notes": "LOST: absent from all tracked tables.",
+    "created_at": "2026-07-20T15:12:31.425014+00:00",
+    "pending_dependency": null,
+    "historical_evidence": "esgtoday source-map B1; existence-check ABSENT tier T2.",
+    "historical_intent": "add as market_news source.",
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": "esg_finance"
+  },
+  {
+    "id": "b491f062-93b4-4e91-bebc-e2d3c1d933a7",
+    "lane": "C",
+    "sweep": "sweep2_adjacent_universes",
+    "subject_type": "candidate_source",
+    "subject_ref": "register-ecfr-api",
+    "instrument": "eCFR (Electronic Code of Federal Regulations) versioner API",
+    "jurisdiction": "us",
+    "url": "https://www.ecfr.gov/api/versioner/v1/titles.json",
+    "fetch_method": "api",
+    "fetch_result": "GET succeeded; live JSON listing of all 50 CFR titles with amendment/issue dates and currency status as of 2026-07-16.",
+    "four_contract_classification": {
+      "research": {
+        "reason": "Not horizon-scan.",
+        "verdict": "OUT"
+      },
+      "operations": {
+        "reason": "Not a jurisdictional cost/feasibility surface.",
+        "verdict": "OUT"
+      },
+      "regulations": {
+        "reason": "Live, machine-readable index of the official compiled federal regulations.",
+        "verdict": "IN"
+      },
+      "market_intel": {
+        "reason": "Not a market signal.",
+        "verdict": "OUT"
+      }
+    },
+    "dry_run_disposition": "would_mint",
+    "dry_run_reason": "Live, fully machine-readable API, plain-HTTP register index not among held sources.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:28:30.287919+00:00",
+    "pending_dependency": null,
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "b7d272f0-cbd9-4535-bada-f3e21a596b55",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "59",
+    "instrument": "British Columbia Zero-Emission Vehicles Act (medium/heavy-duty)",
+    "jurisdiction": "ca-bc",
+    "url": "https://www2.gov.bc.ca/gov/content/industry/electricity-alternative-energy/transportation-energies/clean-transportation-policies-programs/zero-emission-vehicles-act",
+    "fetch_method": "plain_http",
+    "fetch_result": "Legislated sales targets (26% by 2026, 90% by 2030, 100% by 2035), compliance structure and advisory-council info, static.",
+    "four_contract_classification": {
+      "research": {
+        "reason": "Not horizon-scan.",
+        "verdict": "OUT"
+      },
+      "operations": {
+        "reason": "Compliance/credit-tracking structure has direct Operations feasibility value.",
+        "verdict": "IN"
+      },
+      "regulations": {
+        "reason": "Legislated ZEV sales-target requirements.",
+        "verdict": "IN"
+      },
+      "market_intel": {
+        "reason": "Not a market signal.",
+        "verdict": "OUT"
+      }
+    },
+    "dry_run_disposition": "would_mint",
+    "dry_run_reason": "Live, fully static, dual regulations/operations value.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": null,
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "bce76f86-7f9b-4d0a-bb08-149390bb5ad5",
+    "lane": "C",
+    "sweep": "sweep3_research_feedstock",
+    "subject_type": "candidate_catalog",
+    "subject_ref": "trid",
+    "instrument": "Transport Research International Documentation (TRID, TRB/OECD-ITRD joint database)",
+    "jurisdiction": "global",
+    "url": "https://trid.trb.org/",
+    "fetch_method": "plain_http",
+    "fetch_result": "Homepage: search/access interface, \"1.5 million records of transportation research worldwide\" across aviation, highways, rail, public transit and other modes, functional as static HTML.",
+    "four_contract_classification": {
+      "research": {
+        "reason": "A large, live, cross-modal transport-research publication index -- directly the Research surface's horizon-scan feedstock, per ADR-015's G-6 registration.",
+        "verdict": "IN"
+      },
+      "operations": {
+        "reason": "Not a cost/feasibility surface.",
+        "verdict": "OUT"
+      },
+      "regulations": {
+        "reason": "Not regulatory text.",
+        "verdict": "OUT"
+      },
+      "market_intel": {
+        "reason": "Not a market signal.",
+        "verdict": "OUT"
+      }
+    },
+    "dry_run_disposition": "would_mint",
+    "dry_run_reason": "Live, reachable, large-scale transport-research index not among held sources.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:30:59.74072+00:00",
+    "pending_dependency": null,
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "bd8d6e30-552d-439c-9f75-6cba988d4059",
+    "lane": "C",
+    "sweep": "sweep2_adjacent_universes",
+    "subject_type": "candidate_source",
+    "subject_ref": "carrier-surcharge-msc",
+    "instrument": "MSC newsroom (surcharge and rate notices)",
+    "jurisdiction": "global",
+    "url": "https://www.msc.com/en/newsroom",
+    "fetch_method": "browser_required",
+    "fetch_result": "403 Forbidden on plain fetch-light attempt.",
+    "four_contract_classification": null,
+    "dry_run_disposition": "browser_required_undetermined",
+    "dry_run_reason": "Bot-blocked to fetch-light; routed to Session A's queue.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:28:30.287919+00:00",
+    "pending_dependency": "session_a_chrome_render",
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "c0b62c88-94ac-4dac-9e4e-b885a6f9e19a",
+    "lane": "C",
+    "sweep": "sweep4_found_then_lost_recovery",
+    "subject_type": "lost_historical_provider",
+    "subject_ref": "lost:normative",
+    "instrument": "Normative (carbon accounting data)",
+    "jurisdiction": "global",
+    "url": "https://www.normative.io",
+    "fetch_method": "not_applicable",
+    "fetch_result": null,
+    "four_contract_classification": {
+      "primary_surface": "operations"
+    },
+    "dry_run_disposition": "would_park",
+    "dry_run_reason": "Commercial carbon-accounting SaaS. Operator confirms no account held.",
+    "entity_confirmed": true,
+    "notes": "LOST. Operator confirmed 2026-07-19: no account held.",
+    "created_at": "2026-07-20T15:12:31.425014+00:00",
+    "pending_dependency": null,
+    "historical_evidence": "legacy seed-resources.json (think-tanks record r13 prose).",
+    "historical_intent": "embedded reference; never promoted.",
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": "freight_native"
+  },
+  {
+    "id": "c37874e3-b7f8-44ba-8197-514912873c29",
+    "lane": "C",
+    "sweep": "sweep4_found_then_lost_recovery",
+    "subject_type": "lost_historical_provider",
+    "subject_ref": "lost:sea-lng",
+    "instrument": "SEA-LNG (maritime LNG-fuel coalition / position data)",
+    "jurisdiction": "global",
+    "url": "https://sea-lng.org",
+    "fetch_method": "not_applicable",
+    "fetch_result": null,
+    "four_contract_classification": {
+      "primary_surface": "research"
+    },
+    "dry_run_disposition": "would_mint",
+    "dry_run_reason": "Free industry-body site; maritime alternative-fuel positions.",
+    "entity_confirmed": true,
+    "notes": "LOST: absent from all tracked tables. Free-acquire candidate.",
+    "created_at": "2026-07-20T15:12:31.425014+00:00",
+    "pending_dependency": null,
+    "historical_evidence": "seed-sources.sql Section F (ocean fuels) + seed-resources record o8.",
+    "historical_intent": "named in the fuels-and-technology source class; never registered.",
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": "freight_native"
+  },
+  {
+    "id": "c532f6c9-77f9-48c0-9a48-5e2cab46b93f",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "86",
+    "instrument": "ICE EU Carbon Allowance futures launch",
+    "jurisdiction": "global",
+    "url": "https://ir.theice.com/press/news-details/2025/ICE-Launches-EU-Carbon-Allowance-2-Futures/default.aspx",
+    "fetch_method": "plain_http",
+    "fetch_result": "Static press release announcing the 2025-05-06 EUA2 futures launch; a one-time dated announcement, not an ongoing feed.",
+    "four_contract_classification": {
+      "research": {
+        "reason": "Not horizon-scan.",
+        "verdict": "OUT"
+      },
+      "operations": {
+        "reason": "Not a cost/feasibility surface.",
+        "verdict": "OUT"
+      },
+      "regulations": {
+        "reason": "Not regulatory text.",
+        "verdict": "OUT"
+      },
+      "market_intel": {
+        "reason": "Genuinely a market-moving instrument-launch signal, but this specific URL is a single dated event, not a recurring feed.",
+        "verdict": "IN"
+      }
+    },
+    "dry_run_disposition": "would_decline",
+    "dry_run_reason": "Single dated press release, already fully captured as a point-in-time fact; no ongoing enumeration value from this specific URL.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": null,
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "c5a40f47-3184-49c3-a6e2-a3463fe2316c",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "53",
+    "instrument": "New Jersey DEP Advanced Clean Trucks rulemaking and fleet-reporting",
+    "jurisdiction": "us-nj",
+    "url": "https://dep.nj.gov/stopthesoot/advanced-clean-trucks-rule-fleet-reporting/",
+    "fetch_method": "browser_required",
+    "fetch_result": "Fetch timed out at 60s; content undetermined this pass.",
+    "four_contract_classification": null,
+    "dry_run_disposition": "browser_required_undetermined",
+    "dry_run_reason": "Timeout, not confirmed JS-dependent; worth a plain retry at build time before assuming a hard block. Routed to Session A's queue in the meantime.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": "session_a_chrome_render",
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "c5dfa7b3-21c9-4010-9d2d-4041a41020fb",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "98",
+    "instrument": "PNNL Port Electrification Handbook",
+    "jurisdiction": "us",
+    "url": "https://www.pnnl.gov/projects/port-electrification-handbook",
+    "fetch_method": "plain_http",
+    "fetch_result": "Project overview with downloadable handbook/executive-summary/workbook (PDF/Excel), static.",
+    "four_contract_classification": {
+      "research": {
+        "reason": "Forward-looking port-electrification planning guidance, genuine Research horizon-scan content.",
+        "verdict": "IN"
+      },
+      "operations": {
+        "reason": "A reference handbook, not live jurisdictional cost data.",
+        "verdict": "OUT"
+      },
+      "regulations": {
+        "reason": "Not regulatory text.",
+        "verdict": "OUT"
+      },
+      "market_intel": {
+        "reason": "Not a market signal.",
+        "verdict": "OUT"
+      }
+    },
+    "dry_run_disposition": "would_mint",
+    "dry_run_reason": "Live, fully static, downloadable resources directly linked.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": null,
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "c8d72f2b-5cb6-44ef-9e59-8c71365025ea",
+    "lane": "C",
+    "sweep": "sweep4_found_then_lost_recovery",
+    "subject_type": "lost_historical_provider",
+    "subject_ref": "lost:responsible-investor",
+    "instrument": "Responsible Investor (investor-side ESG news)",
+    "jurisdiction": "global",
+    "url": "https://www.responsible-investor.com",
+    "fetch_method": "not_applicable",
+    "fetch_result": null,
+    "four_contract_classification": {
+      "primary_surface": "market_intel"
+    },
+    "dry_run_disposition": "would_park",
+    "dry_run_reason": "Finance/investor trade press; paywalled secondary.",
+    "entity_confirmed": true,
+    "notes": "LOST: absent from all tracked tables.",
+    "created_at": "2026-07-20T15:12:31.425014+00:00",
+    "pending_dependency": null,
+    "historical_evidence": "esgtoday source-map B1; existence-check ABSENT tier T2.",
+    "historical_intent": "add as market_news source.",
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": "esg_finance"
+  },
+  {
+    "id": "c989a1f1-9519-43d8-85ae-1f5b05ac6249",
+    "lane": "C",
+    "sweep": "sweep2_adjacent_universes",
+    "subject_type": "candidate_source",
+    "subject_ref": "rate-index-baltic-dry",
+    "instrument": "Baltic Exchange dry bulk indices (BDI/BCI/BPI/BSI)",
+    "jurisdiction": "global",
+    "url": "https://www.balticexchange.com/en/data-services/market-information0/dry-services.html",
+    "fetch_method": "browser_required",
+    "fetch_result": "Confirmed the entity and page exist (dry bulk freight indices); dynamic query mechanism (`javascript:` handlers) needed for live values.",
+    "four_contract_classification": null,
+    "dry_run_disposition": "browser_required_undetermined",
+    "dry_run_reason": "Genuine market-benchmark entity, blocked to fetch-light; routed to Session A's queue.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:28:30.287919+00:00",
+    "pending_dependency": "session_a_chrome_render",
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "cabd193c-dc02-4538-939f-6b0a92abf7c5",
+    "lane": "C",
+    "sweep": "sweep4_found_then_lost_recovery",
+    "subject_type": "lost_historical_provider",
+    "subject_ref": "lost:container-news",
+    "instrument": "Container News (container shipping)",
+    "jurisdiction": "global",
+    "url": "https://www.container-news.com",
+    "fetch_method": "not_applicable",
+    "fetch_result": null,
+    "four_contract_classification": {
+      "primary_surface": "market_intel"
+    },
+    "dry_run_disposition": "would_park",
+    "dry_run_reason": "Freight trade press; secondary.",
+    "entity_confirmed": true,
+    "notes": "LOST: absent from all tracked tables.",
+    "created_at": "2026-07-20T15:12:31.425014+00:00",
+    "pending_dependency": null,
+    "historical_evidence": "esgtoday source-map B2; existence-check ABSENT tier T3.",
+    "historical_intent": "add as market_news source.",
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": "freight_native"
+  },
+  {
+    "id": "cb1d2022-9d67-48ac-a106-92d45289bcf3",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "63",
+    "instrument": "France Registre National des Producteurs (Citeo)",
+    "jurisdiction": "eu",
+    "url": "https://www.citeo.com/en/my-membership/",
+    "fetch_method": "plain_http",
+    "fetch_result": "FAQ with fee structures (EUR80 flat to per-unit), legal citations (Article L.541-10), penalty amounts, static.",
+    "four_contract_classification": {
+      "research": {
+        "reason": "Not horizon-scan.",
+        "verdict": "OUT"
+      },
+      "operations": {
+        "reason": "Fee/contribution-rate data is direct Operations cost input.",
+        "verdict": "IN"
+      },
+      "regulations": {
+        "reason": "French EPR legal framework and penalty structure.",
+        "verdict": "IN"
+      },
+      "market_intel": {
+        "reason": "Not a market signal.",
+        "verdict": "OUT"
+      }
+    },
+    "dry_run_disposition": "would_mint",
+    "dry_run_reason": "Live, fully static, dual regulations/operations value.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": null,
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "ccad4233-8c04-474b-90d9-9de40fba3b3a",
+    "lane": "C",
+    "sweep": "sweep4_found_then_lost_recovery",
+    "subject_type": "lost_historical_provider",
+    "subject_ref": "lost:iea-monthly-electricity",
+    "instrument": "IEA Monthly Electricity Statistics (statsnews@iea.org newsletter)",
+    "jurisdiction": "global",
+    "url": "https://www.iea.org/data-and-statistics",
+    "fetch_method": "not_applicable",
+    "fetch_result": null,
+    "four_contract_classification": {
+      "primary_surface": "operations"
+    },
+    "dry_run_disposition": "operator_confirm",
+    "dry_run_reason": "iea.org host is HELD (13 source rows) but this specific product is not; it arrives newsletter-borne and the new IEA platform is login-gated. Operator receives the newsletter, so a signup exists.",
+    "entity_confirmed": true,
+    "notes": "LOST at product level despite host held. Auth-gated; operator account confirmed 2026-07-19 -- recovery is operator-credentialed, not cold.",
+    "created_at": "2026-07-20T15:12:31.425014+00:00",
+    "pending_dependency": null,
+    "historical_evidence": "operator inbound newsletter statsnews@iea.org; IEA in the design_handoff market-intel mockup + PROGRAM-BOARD; iea.org host held but this product absent from all tables.",
+    "historical_intent": "monitor / recover as a live auth-gated feed via operator credentials.",
+    "auth_gate": "IEA new platform requires login; delivery via statsnews@iea.org newsletter. ANSWERED 2026-07-19: operator confirms an active IEA account exists, so the feed is operator-credentialed, not free-anonymous.",
+    "operator_confirm_question": "Do you have an active IEA account / subscription to treat the login-gated Monthly Electricity Statistics as a live feed? [ANSWERED 2026-07-19: yes, active account confirmed.]",
+    "lens": "freight_native"
+  },
+  {
+    "id": "ccfe5d17-2adc-40a5-aa10-e4f03c513ed6",
+    "lane": "C",
+    "sweep": "sweep2_adjacent_universes",
+    "subject_type": "candidate_source",
+    "subject_ref": "carrier-surcharge-maersk",
+    "instrument": "Maersk surcharge and rate notifications",
+    "jurisdiction": "global",
+    "url": "https://www.maersk.com/news/notifications",
+    "fetch_method": "browser_required",
+    "fetch_result": "Connection reset (ECONNRESET) on fetch-light attempt.",
+    "four_contract_classification": null,
+    "dry_run_disposition": "browser_required_undetermined",
+    "dry_run_reason": "Network-level failure, not confirmed JS-dependent; entity and page purpose well known (Maersk publishes surcharge notices here). Routed to Session A's queue.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:28:30.287919+00:00",
+    "pending_dependency": "session_a_chrome_render",
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "ce4d46fb-1c3f-4598-8d83-b79fd9e7373b",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "70",
+    "instrument": "Netherlands Verpact national packaging EPR",
+    "jurisdiction": "eu",
+    "url": "https://business.gov.nl/regulations/packaging/",
+    "fetch_method": "plain_http",
+    "fetch_result": "Dutch packaging requirements: 2014 Packaging Management Decree, thresholds, static.",
+    "four_contract_classification": {
+      "research": {
+        "reason": "Not horizon-scan.",
+        "verdict": "OUT"
+      },
+      "operations": {
+        "reason": "Not the primary use case.",
+        "verdict": "OUT"
+      },
+      "regulations": {
+        "reason": "Statutory packaging-law requirements and thresholds.",
+        "verdict": "IN"
+      },
+      "market_intel": {
+        "reason": "Not a market signal.",
+        "verdict": "OUT"
+      }
+    },
+    "dry_run_disposition": "would_mint",
+    "dry_run_reason": "Live, fully static, not yet wired.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": null,
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "d1629d4f-bf38-4052-8329-efaad12138e1",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "51",
+    "instrument": "Washington Department of Ecology WAC 173-423 Clean Vehicles Program",
+    "jurisdiction": "us-wa",
+    "url": "https://ecology.wa.gov/regulations-permits/laws-rules-rulemaking/rulemaking/wac-173-423-clean-vehicles-program",
+    "fetch_method": "plain_http",
+    "fetch_result": "Full rulemaking timeline visible (CR-101 filed Nov 2025, informal comment periods Jan/Mar 2026, CR-102 filing Jun 2026, hearings Aug 2026, anticipated adoption Nov 2026), draft rule language and meeting materials, fully static.",
+    "four_contract_classification": {
+      "research": {
+        "reason": "Not horizon-scan.",
+        "verdict": "OUT"
+      },
+      "operations": {
+        "reason": "Not a cost/feasibility data surface.",
+        "verdict": "OUT"
+      },
+      "regulations": {
+        "reason": "Active rulemaking tracking WAC 173-423, adopting CARB standards by reference.",
+        "verdict": "IN"
+      },
+      "market_intel": {
+        "reason": "Not a market signal.",
+        "verdict": "OUT"
+      }
+    },
+    "dry_run_disposition": "would_mint",
+    "dry_run_reason": "Live, fully static, active rulemaking with a real timeline, not yet wired.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": null,
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "d1f1d63f-1e45-4fb6-b8ad-0ff26131c72f",
+    "lane": "C",
+    "sweep": "sweep3_research_feedstock",
+    "subject_type": "candidate_catalog",
+    "subject_ref": "cen-tc320",
+    "instrument": "CEN/TC 320 Transport, Logistics and Services, work programme",
+    "jurisdiction": "eu",
+    "url": "https://standards.cencenelec.eu/dyn/www/f?p=205:7:0::::FSP_ORG_ID:6295",
+    "fetch_method": "browser_required",
+    "fetch_result": "500 Internal Server Error on plain fetch-light attempt (not confirmed JS-dependent, but blocked regardless).",
+    "four_contract_classification": null,
+    "dry_run_disposition": "browser_required_undetermined",
+    "dry_run_reason": "Server-side failure to fetch-light; routed to Session A's queue.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:30:59.74072+00:00",
+    "pending_dependency": "session_a_chrome_render",
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "d26fd5de-22b8-4b88-8422-97814747d614",
+    "lane": "C",
+    "sweep": "sweep2_adjacent_universes",
+    "subject_type": "candidate_source",
+    "subject_ref": "register-legislation-gov-uk",
+    "instrument": "UK legislation.gov.uk developer API",
+    "jurisdiction": "uk",
+    "url": "https://www.legislation.gov.uk/developer/api",
+    "fetch_method": "plain_http",
+    "fetch_result": "Static HTML with a search interface across primary/secondary/EU-derived UK legislation categories, but the fetch-light pass rendered a \"Coming Soon\" banner on this specific API-documentation sub-path, inconsistent with legislation.gov.uk's well-established live status as a whole site -- flagged as an ambiguity, not resolved this pass.",
+    "four_contract_classification": {
+      "research": {
+        "reason": "Not horizon-scan.",
+        "verdict": "OUT"
+      },
+      "operations": {
+        "reason": "Not a cost/feasibility surface.",
+        "verdict": "OUT"
+      },
+      "regulations": {
+        "reason": "The site is a genuine, well-established UK legislation register; this specific sub-page's content is ambiguous in this pass (see fetch_result), not confidently IN.",
+        "verdict": "CONDITIONAL"
+      },
+      "market_intel": {
+        "reason": "Not a market signal.",
+        "verdict": "OUT"
+      }
+    },
+    "dry_run_disposition": "would_park",
+    "dry_run_reason": "The site itself is real and valuable, but this pass could not confirm live API-documentation content at this URL; worth a direct re-check rather than a confident would_mint or would_decline.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:28:30.287919+00:00",
+    "pending_dependency": null,
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "d4786db8-74da-4917-b802-a70489453ef3",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "62",
+    "instrument": "Germany LUCID Packaging Register (ZSVR)",
+    "jurisdiction": "eu",
+    "url": "https://www.verpackungsregister.org/en/",
+    "fetch_method": "plain_http",
+    "fetch_result": "Static homepage: packaging-law obligations, LUCID registration system links, news through June 2026.",
+    "four_contract_classification": {
+      "research": {
+        "reason": "Not horizon-scan.",
+        "verdict": "OUT"
+      },
+      "operations": {
+        "reason": "Not the primary use case.",
+        "verdict": "OUT"
+      },
+      "regulations": {
+        "reason": "German packaging-law compliance framework and registration requirements.",
+        "verdict": "IN"
+      },
+      "market_intel": {
+        "reason": "Not a market signal.",
+        "verdict": "OUT"
+      }
+    },
+    "dry_run_disposition": "would_mint",
+    "dry_run_reason": "Live, fully static, not yet wired.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": null,
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "d4924482-99aa-4b79-b5cb-2cab34477825",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "60",
+    "instrument": "Quebec zero-emission vehicles (ZEV) standard, heavy-duty expansion",
+    "jurisdiction": "ca-qc",
+    "url": "https://www.environnement.gouv.qc.ca/changementsclimatiques/vze/index-en.htm",
+    "fetch_method": "plain_http",
+    "fetch_result": "Active public consultation open (2026-06-23 to 2026-07-23) on proposed amendments, registration/credit-tracking system, static.",
+    "four_contract_classification": {
+      "research": {
+        "reason": "Not horizon-scan.",
+        "verdict": "OUT"
+      },
+      "operations": {
+        "reason": "Credit-tracking and compliance-period reporting infrastructure.",
+        "verdict": "IN"
+      },
+      "regulations": {
+        "reason": "Active rulemaking consultation and binding standard text.",
+        "verdict": "IN"
+      },
+      "market_intel": {
+        "reason": "Not a market signal.",
+        "verdict": "OUT"
+      }
+    },
+    "dry_run_disposition": "would_mint",
+    "dry_run_reason": "Live, fully static, active consultation window makes this timely.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": null,
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "d7250c15-2615-4b3c-820a-de355aaa1c9f",
+    "lane": "C",
+    "sweep": "sweep2_adjacent_universes",
+    "subject_type": "candidate_source",
+    "subject_ref": "register-legislation-au",
+    "instrument": "Australia Federal Register of Legislation",
+    "jurisdiction": "global",
+    "url": "https://www.legislation.gov.au/",
+    "fetch_method": "plain_http",
+    "fetch_result": "Homepage: search/browse for Acts, legislative instruments, gazettes, administrative arrangements. Functional as static HTML.",
+    "four_contract_classification": {
+      "research": {
+        "reason": "Not horizon-scan.",
+        "verdict": "OUT"
+      },
+      "operations": {
+        "reason": "Not a cost/feasibility surface.",
+        "verdict": "OUT"
+      },
+      "regulations": {
+        "reason": "The authoritative Australian Commonwealth legislation repository.",
+        "verdict": "IN"
+      },
+      "market_intel": {
+        "reason": "Not a market signal.",
+        "verdict": "OUT"
+      }
+    },
+    "dry_run_disposition": "would_mint",
+    "dry_run_reason": "Live, reachable, plain-HTTP register index not among held sources.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:28:30.287919+00:00",
+    "pending_dependency": null,
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "d877fac6-e03a-4fb9-830a-37f80fc8135d",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "31",
+    "instrument": "Singapore MOM labour market statistics (wages, transport sector)",
+    "jurisdiction": "asia",
+    "url": "https://stats.mom.gov.sg/",
+    "fetch_method": "plain_http",
+    "fetch_result": "Portal landing page with links to a data explorer/filter tool, not raw data itself.",
+    "four_contract_classification": {
+      "research": {
+        "reason": "Not horizon-scan.",
+        "verdict": "OUT"
+      },
+      "operations": {
+        "reason": "Genuine wage data exists via the linked explorer; landing page alone does not carry it.",
+        "verdict": "CONDITIONAL"
+      },
+      "regulations": {
+        "reason": "Not regulatory text.",
+        "verdict": "OUT"
+      },
+      "market_intel": {
+        "reason": "Not a market signal.",
+        "verdict": "OUT"
+      }
+    },
+    "dry_run_disposition": "would_mint",
+    "dry_run_reason": "Needs a second-hop follow into the data explorer.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": "session_a_register_walk",
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "db5110a5-11bb-4c59-a6f7-a98a32fa8e69",
+    "lane": "C",
+    "sweep": "sweep4_found_then_lost_recovery",
+    "subject_type": "lost_historical_provider",
+    "subject_ref": "lost:hkma",
+    "instrument": "Hong Kong HKMA (sustainable-finance taxonomy)",
+    "jurisdiction": "asia",
+    "url": "https://www.hkma.gov.hk",
+    "fetch_method": "not_applicable",
+    "fetch_result": null,
+    "four_contract_classification": {
+      "primary_surface": "regulations"
+    },
+    "dry_run_disposition": "would_mint",
+    "dry_run_reason": "Free monetary/regulatory authority.",
+    "entity_confirmed": true,
+    "notes": "LOST: absent from all tracked tables. Free-acquire candidate.",
+    "created_at": "2026-07-20T15:12:31.425014+00:00",
+    "pending_dependency": null,
+    "historical_evidence": "esgtoday source-map A4; existence-check ABSENT tier T3.",
+    "historical_intent": "add to registry with role+tier.",
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": "esg_finance"
+  },
+  {
+    "id": "dd9cfd70-2cf9-4249-a040-399f014cba02",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "50",
+    "instrument": "California CARB Rulemaking Activity tracker (Advanced Clean Trucks/Fleets)",
+    "jurisdiction": "us-ca",
+    "url": "https://ww2.arb.ca.gov/rulemaking-activity",
+    "fetch_method": "browser_required",
+    "fetch_result": "403 Forbidden on plain fetch-light attempt.",
+    "four_contract_classification": null,
+    "dry_run_disposition": "browser_required_undetermined",
+    "dry_run_reason": "Bot-blocked to fetch-light; routed to Session A's queue. Same authoritative_url as rank 96 (dual Operations/Research surface framing per migration 227); one fetch attempt covers both rows.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": "session_a_chrome_render",
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "dfcf0964-4e76-485c-998a-5402ba468327",
+    "lane": "C",
+    "sweep": "sweep2_adjacent_universes",
+    "subject_type": "candidate_source",
+    "subject_ref": "rate-index-ccfi",
+    "instrument": "China Containerized Freight Index (CCFI)",
+    "jurisdiction": "global",
+    "url": "https://en.sse.net.cn/indices/ccfinew.jsp",
+    "fetch_method": "browser_required",
+    "fetch_result": "Confirmed the entity and query interface exist (same host as SCFI, sibling index); `javascript:queryCCFI2()` gates live values.",
+    "four_contract_classification": null,
+    "dry_run_disposition": "browser_required_undetermined",
+    "dry_run_reason": "Genuine market-benchmark entity, blocked to fetch-light; routed to Session A's queue.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:28:30.287919+00:00",
+    "pending_dependency": "session_a_chrome_render",
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "e41777d5-d268-46b2-b553-1357cbb937e2",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "61",
+    "instrument": "Chile RETC (Registro de Emisiones y Transferencias de Contaminantes)",
+    "jurisdiction": "latam",
+    "url": "https://retc.mma.gob.cl/",
+    "fetch_method": "browser_required",
+    "fetch_result": "Homepage carousel/video/expandable-menu elements explicitly need JS for full functionality; some news headlines visible in the static pass.",
+    "four_contract_classification": null,
+    "dry_run_disposition": "browser_required_undetermined",
+    "dry_run_reason": "Partial static content only; full registry access needs JS. Routed to Session A's queue.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": "session_a_chrome_render",
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "e8825bb4-1a3b-4d80-9576-006b5a3f1506",
+    "lane": "C",
+    "sweep": "sweep2_adjacent_universes",
+    "subject_type": "candidate_source",
+    "subject_ref": "rate-index-scfi",
+    "instrument": "Shanghai Containerized Freight Index (SCFI)",
+    "jurisdiction": "global",
+    "url": "https://en.sse.net.cn/indices/scfinew.jsp",
+    "fetch_method": "browser_required",
+    "fetch_result": "Confirmed the entity and query interface exist; `javascript:querySCFI2()` and similar handlers gate live values.",
+    "four_contract_classification": null,
+    "dry_run_disposition": "browser_required_undetermined",
+    "dry_run_reason": "Genuine market-benchmark entity, blocked to fetch-light; routed to Session A's queue.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:28:30.287919+00:00",
+    "pending_dependency": "session_a_chrome_render",
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "eab5de57-2698-4c34-9d66-2b939046345f",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "35",
+    "instrument": "Switzerland BFS/OFS Swiss Earnings Structure Survey (ESS)",
+    "jurisdiction": "meaf",
+    "url": "https://www.bfs.admin.ch/bfs/en/home/statistics/work-income/wages-income-employment-labour-costs/earnings-structure.html",
+    "fetch_method": "plain_http",
+    "fetch_result": "Live and reachable; earnings-structure statistics page confirmed, but content was truncated in this light pass (fetch-tool length cap), not fully read.",
+    "four_contract_classification": {
+      "research": {
+        "reason": "Not horizon-scan.",
+        "verdict": "OUT"
+      },
+      "operations": {
+        "reason": "Swiss earnings-structure data, inferred from the confirmed live page; full content not read this pass.",
+        "verdict": "IN"
+      },
+      "regulations": {
+        "reason": "Not regulatory text.",
+        "verdict": "OUT"
+      },
+      "market_intel": {
+        "reason": "Not a market signal.",
+        "verdict": "OUT"
+      }
+    },
+    "dry_run_disposition": "would_mint",
+    "dry_run_reason": "Live and reachable; worth a full (uncapped) fetch at build time, this pass only confirmed liveness.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": null,
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "ef5531af-5506-43c6-9618-9013b7e64a7a",
+    "lane": "C",
+    "sweep": "sweep2_adjacent_universes",
+    "subject_type": "candidate_source",
+    "subject_ref": "carbon-carb-auction",
+    "instrument": "California Cap-and-Trade Program auction information (CARB)",
+    "jurisdiction": "us-ca",
+    "url": "https://ww2.arb.ca.gov/our-work/programs/cap-and-trade-program/auction-information",
+    "fetch_method": "browser_required",
+    "fetch_result": "403 Forbidden on plain fetch-light attempt.",
+    "four_contract_classification": null,
+    "dry_run_disposition": "browser_required_undetermined",
+    "dry_run_reason": "Bot-blocked to fetch-light; routed to Session A's queue.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:28:30.287919+00:00",
+    "pending_dependency": "session_a_chrome_render",
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "ef64bd73-7a0b-4959-8f8d-7a8b431113f3",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "43",
+    "instrument": "Switzerland ElCom electricity price and tariff data (LINDAS linked data)",
+    "jurisdiction": "meaf",
+    "url": "https://energy.ld.admin.ch/elcom/electricityprice-swiss",
+    "fetch_method": "api",
+    "fetch_result": "RDF/semantic-web metadata returned live (median electricity tariff dataset, temporal coverage 2009-2026); SPARQL endpoint and visualization tool linked, genuinely machine-readable.",
+    "four_contract_classification": {
+      "research": {
+        "reason": "Not horizon-scan.",
+        "verdict": "OUT"
+      },
+      "operations": {
+        "reason": "Swiss electricity tariff data, direct Operations cost input.",
+        "verdict": "IN"
+      },
+      "regulations": {
+        "reason": "Not regulatory text; a linked-data tariff dataset.",
+        "verdict": "OUT"
+      },
+      "market_intel": {
+        "reason": "Not a market signal.",
+        "verdict": "OUT"
+      }
+    },
+    "dry_run_disposition": "would_mint",
+    "dry_run_reason": "Live SPARQL-queryable linked data, not yet wired.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": null,
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "f15afca1-e5f5-4d9b-a4ef-b28317d09d7c",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "52",
+    "instrument": "Oregon DEQ Clean Truck Rules rulemaking tracker",
+    "jurisdiction": "us-or",
+    "url": "https://www.oregon.gov/deq/rulemaking/pages/ctr2025.aspx",
+    "fetch_method": "plain_http",
+    "fetch_result": "Adopted-rule announcement (Administrative Order DEQ-17-2025, finalized 2025-07-14), full procedural history visible, static.",
+    "four_contract_classification": {
+      "research": {
+        "reason": "Not horizon-scan.",
+        "verdict": "OUT"
+      },
+      "operations": {
+        "reason": "Not a cost/feasibility surface.",
+        "verdict": "OUT"
+      },
+      "regulations": {
+        "reason": "Adopted rule text and procedural record.",
+        "verdict": "IN"
+      },
+      "market_intel": {
+        "reason": "Not a market signal.",
+        "verdict": "OUT"
+      }
+    },
+    "dry_run_disposition": "would_mint",
+    "dry_run_reason": "Live and static; rulemaking is now adopted/closed so tracker value is now a historical record rather than an active process, still a genuine regulatory fact.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": null,
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "f3b74577-6eba-43fb-bd91-a11a7f341857",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "24",
+    "instrument": "Eurostat labour cost index (NACE H, transportation and storage)",
+    "jurisdiction": "eu",
+    "url": "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/lc_lci_lev",
+    "fetch_method": "api",
+    "fetch_result": "GET succeeded; live JSON dataset returned (NACE Rev.2 labour cost levels, updated 2026-04-23).",
+    "four_contract_classification": {
+      "research": {
+        "reason": "Not horizon-scan.",
+        "verdict": "OUT"
+      },
+      "operations": {
+        "reason": "Live EU labour-cost series for the road-secondary Operations benchmark.",
+        "verdict": "IN"
+      },
+      "regulations": {
+        "reason": "Not regulatory text.",
+        "verdict": "OUT"
+      },
+      "market_intel": {
+        "reason": "Not a market signal.",
+        "verdict": "OUT"
+      }
+    },
+    "dry_run_disposition": "would_mint",
+    "dry_run_reason": "Live, fetchable, not yet wired as an Operations-surface consumer.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": null,
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "f920804e-2304-4d96-8757-b14afe74cd4e",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "44",
+    "instrument": "South Africa NERSA-approved Eskom electricity tariffs (industrial)",
+    "jurisdiction": "meaf",
+    "url": "https://www.nersa.org.za/",
+    "fetch_method": "plain_http",
+    "fetch_result": "Static homepage with regulator decisions, municipal tariff determinations, and news, fully static, no JS needed.",
+    "four_contract_classification": {
+      "research": {
+        "reason": "Not horizon-scan.",
+        "verdict": "OUT"
+      },
+      "operations": {
+        "reason": "Eskom-approved industrial tariffs, direct Operations cost input.",
+        "verdict": "IN"
+      },
+      "regulations": {
+        "reason": "Regulator decisions and tariff determinations are binding regulatory content.",
+        "verdict": "IN"
+      },
+      "market_intel": {
+        "reason": "Not a market signal.",
+        "verdict": "OUT"
+      }
+    },
+    "dry_run_disposition": "would_mint",
+    "dry_run_reason": "Live, fully static, dual regulations/operations value.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": null,
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "f95524f2-786e-41c3-a274-6f26087af49a",
+    "lane": "C",
+    "sweep": "sweep2_adjacent_universes",
+    "subject_type": "candidate_source",
+    "subject_ref": "carrier-surcharge-hapaglloyd",
+    "instrument": "Hapag-Lloyd local news (surcharge and rate notices)",
+    "jurisdiction": "global",
+    "url": "https://www.hapag-lloyd.com/en/company/press/local-news.html",
+    "fetch_method": "browser_required",
+    "fetch_result": "403 Forbidden on plain fetch-light attempt.",
+    "four_contract_classification": null,
+    "dry_run_disposition": "browser_required_undetermined",
+    "dry_run_reason": "Bot-blocked to fetch-light; routed to Session A's queue.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:28:30.287919+00:00",
+    "pending_dependency": "session_a_chrome_render",
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "f9a24dc9-7544-43f2-8054-94591471a29e",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "48",
+    "instrument": "Bunker Index (BIX) World and Regional Indices",
+    "jurisdiction": "global",
+    "url": "https://bunkerindex.com/indices/index.php",
+    "fetch_method": "plain_http",
+    "fetch_result": "Live prices returned directly in static HTML table: World/Americas/APAC/EMEA IFO380, VLSFO, MGO values with daily deltas (e.g. World VLSFO $821.07).",
+    "four_contract_classification": {
+      "research": {
+        "reason": "Not horizon-scan.",
+        "verdict": "OUT"
+      },
+      "operations": {
+        "reason": "Not the primary use case.",
+        "verdict": "OUT"
+      },
+      "regulations": {
+        "reason": "Not regulatory text.",
+        "verdict": "OUT"
+      },
+      "market_intel": {
+        "reason": "Live daily bunker-price indices, a genuine Market Intel signal.",
+        "verdict": "IN"
+      }
+    },
+    "dry_run_disposition": "would_mint",
+    "dry_run_reason": "Genuinely live, price-bearing, fetchable feed, not yet wired as a Market Intel consumer.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": null,
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "fdee3801-d1f3-481c-9ea8-526b86b6762d",
+    "lane": "C",
+    "sweep": "sweep4_found_then_lost_recovery",
+    "subject_type": "lost_historical_provider",
+    "subject_ref": "lost:transport-topics",
+    "instrument": "Transport Topics (ATA trucking news)",
+    "jurisdiction": "us",
+    "url": "https://www.ttnews.com",
+    "fetch_method": "not_applicable",
+    "fetch_result": null,
+    "four_contract_classification": {
+      "primary_surface": "market_intel"
+    },
+    "dry_run_disposition": "would_park",
+    "dry_run_reason": "Freight trade press; secondary market_news tier.",
+    "entity_confirmed": true,
+    "notes": "LOST: absent from all tracked tables.",
+    "created_at": "2026-07-20T15:12:31.425014+00:00",
+    "pending_dependency": null,
+    "historical_evidence": "esgtoday source-map B2; existence-check ABSENT tier T2.",
+    "historical_intent": "add as market_news source.",
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": "freight_native"
+  },
+  {
+    "id": "feaf2bfd-707f-4d23-83b7-06c777947c55",
+    "lane": "C",
+    "sweep": "sweep3_research_feedstock",
+    "subject_type": "candidate_catalog",
+    "subject_ref": "iso-tc104",
+    "instrument": "ISO/TC 104 Freight containers, work programme",
+    "jurisdiction": "global",
+    "url": "https://www.iso.org/committee/48192.html",
+    "fetch_method": "browser_required",
+    "fetch_result": "403 Forbidden on plain fetch-light attempt.",
+    "four_contract_classification": null,
+    "dry_run_disposition": "browser_required_undetermined",
+    "dry_run_reason": "Bot-blocked to fetch-light; routed to Session A's queue.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:30:59.74072+00:00",
+    "pending_dependency": "session_a_chrome_render",
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  },
+  {
+    "id": "fff0ceab-0038-4839-9ffd-480ac5c8c019",
+    "lane": "C",
+    "sweep": "sweep1_existing_feed_audit",
+    "subject_type": "existing_feed",
+    "subject_ref": "45",
+    "instrument": "UAE FCSA electricity tariff by entity, slab consumption",
+    "jurisdiction": "meaf",
+    "url": "https://uaestat.fcsc.gov.ae/vis?lc=en&fs%5B0%5D=FCSC+-+Statistical+Hierarchy%2C0%7CElectricity&df%5Bid%5D=DF_ELECTR_TCO&df%5Bag%5D=FCSA",
+    "fetch_method": "browser_required",
+    "fetch_result": "403 Forbidden on plain fetch-light attempt (the interactive .Stat visualization endpoint, distinct from rank 34's landing page).",
+    "four_contract_classification": null,
+    "dry_run_disposition": "browser_required_undetermined",
+    "dry_run_reason": "Bot-blocked to fetch-light; routed to Session A's queue.",
+    "entity_confirmed": true,
+    "notes": null,
+    "created_at": "2026-07-19T21:05:35.467046+00:00",
+    "pending_dependency": "session_a_chrome_render",
+    "historical_evidence": null,
+    "historical_intent": null,
+    "auth_gate": null,
+    "operator_confirm_question": null,
+    "lens": null
+  }
+]
