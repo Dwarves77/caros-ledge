@@ -68,7 +68,7 @@ test("the judgement drain consumes the SAME exporters: planDrain over drainExpor
   const w = qaWorld();
   w.db.seed("census_worklist", screenWorld().db.rows("census_worklist"));
   const ex = drainExporters(w.deps);
-  assert.deepEqual(Object.keys(ex).sort(), ["ledger-verdicts", "needs-search", "question-answers", "record-briefs", "screen-verdict", "theme-briefs"]);
+  assert.deepEqual(Object.keys(ex).sort(), ["host-verdicts", "ledger-verdicts", "needs-search", "question-answers", "record-briefs", "screen-verdict", "theme-briefs"]);
   assert.deepEqual((await ex["screen-verdict"]!({ limit: 10, mode: "pending" })).items, (await screenVerdictExporter(w.db.client)({ limit: 10, mode: "pending" })).items, "the drain's screen-verdict queue IS the kit's screen-verdicts export");
   const plan = await planDrain({
     readSwitch: async () => decideDrainSwitch({ judgementDrain: "on", emergencyPaused: false, fleetHalted: false }),

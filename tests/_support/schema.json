@@ -302,23 +302,6 @@
     }
    ]
   },
-  "census_rollup_by_surface": {
-   "columns": [
-    "surface",
-    "enumerated_held_sources",
-    "held",
-    "missing_from_held_sources",
-    "other_dispositioned_held_sources",
-    "undispositioned_held_sources",
-    "enumerated_world",
-    "missing_from_world",
-    "pending_on_session_a",
-    "declined_or_parked_world"
-   ],
-   "uuid": [],
-   "defaults": {},
-   "fks": []
-  },
   "census_worklist": {
    "columns": [
     "id",
@@ -835,41 +818,6 @@
     "created_by": "session-c-coverage-discovery-2026-07-17",
     "created_at": "__now",
     "data_class": "instrument"
-   },
-   "fks": []
-  },
-  "coverage_gap_census_findings": {
-   "columns": [
-    "id",
-    "lane",
-    "sweep",
-    "subject_type",
-    "subject_ref",
-    "instrument",
-    "jurisdiction",
-    "url",
-    "fetch_method",
-    "fetch_result",
-    "four_contract_classification",
-    "dry_run_disposition",
-    "dry_run_reason",
-    "entity_confirmed",
-    "notes",
-    "created_at",
-    "pending_dependency",
-    "historical_evidence",
-    "historical_intent",
-    "auth_gate",
-    "operator_confirm_question",
-    "lens"
-   ],
-   "uuid": [
-    "id"
-   ],
-   "defaults": {
-    "lane": "C",
-    "entity_confirmed": false,
-    "created_at": "__now"
    },
    "fks": []
   },
@@ -1552,6 +1500,23 @@
    "uuid": [],
    "defaults": {
     "ruled_at": "__now"
+   },
+   "fks": []
+  },
+  "host_worklist": {
+   "columns": [
+    "host",
+    "reason",
+    "first_seen_at",
+    "last_seen_at",
+    "seen_count",
+    "last_name"
+   ],
+   "uuid": [],
+   "defaults": {
+    "first_seen_at": "__now",
+    "last_seen_at": "__now",
+    "seen_count": 1
    },
    "fks": []
   },

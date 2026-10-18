@@ -10,7 +10,7 @@ import { computeMemberHash } from "@/core/flywheel/themes";
 import { applyBatch, BATCH_KINDS, exportBatch } from "@/features/batches";
 
 import { batchFile, goodBody, claims, ITEM, metadata, NOW, SPAN_FORCE, SPAN_REPORT } from "./world.ts";
-import { CLAIM, feWorld, ledgerFile, ledgerWorld, needsWorld, qaWorld, recordWorld, REF, screenWorld, themeWorld, THEME, verdict, T_FLAG, type World } from "./worlds.ts";
+import { CLAIM, feWorld, hostWorld, ledgerFile, ledgerWorld, needsWorld, qaWorld, recordWorld, REF, screenWorld, themeWorld, THEME, verdict, T_FLAG, type World } from "./worlds.ts";
 
 type Item = Record<string, unknown>;
 interface Case { kind: string; world(): World; author(items: Item[], w: World): unknown; applied(w: World): number }
@@ -23,6 +23,7 @@ const CASES: Case[] = [
   { kind: "forward-events", world: feWorld, author: (items) => batchFile("forward-events", [{ item_id: items[0]?.id, ticket_ids: items[0]?.ticket_ids, events: [{ event_date: "2027-01-01", date_precision: "day", event_kind: "entry_into_force", obligation_text: "The Regulation enters into force on 1 January 2027.", source_kind: "claim", source_claim_id: ((items[0]?.claims as Item[])[0] as Item).claim_id ?? CLAIM, source_section_id: null, source_span: SPAN_FORCE, confidence: "high", extractor_version: "e2e" }] }]), applied: (w) => w.db.rows("item_forward_events").length },
   { kind: "theme-briefs", world: themeWorld, author: (items) => batchFile("theme-briefs", [{ theme_id: THEME, member_hash: items[0]?.member_hash, title: "The reporting duty and the surcharge it triggers", sections: { connection: "Both items concern the annual reporting duty.", meaning: "A forwarder should expect the duty to reach the rate card.", ramifications: "### Regulations\nThe duty needs an owner in each operating unit.", watch: "Watch the next dated step.", gaps: "No operations item yet." }, claims: [{ section: "connection", text: "annual reporting duty", member_id: ITEM, claim_ids: [((items[0]?.members as Item[]).find((m) => m.id === ITEM)?.claims as Item[])[0]?.claim_id] }, { section: "watch", text: "Watch the next dated step.", member_id: "a0000000-0000-4000-8000-000000000002", claim_ids: [(((items[0]?.members as Item[]).find((m) => m.id !== ITEM)?.forward_events) as Item[])[0]?.event_id] }] }]), applied: (w) => w.db.rows("theme_briefs").length },
   { kind: "screen-verdicts", world: screenWorld, author: (items) => ({ verdicts: items.map((i) => ({ census_id: i.census_id, verdict: "on_vertical", basis: "EU emissions regulation: core sustainability scope", reviewer: "e2e" })) }), applied: (w) => w.db.rows("screen_verdicts").length },
+  { kind: "host-verdicts", world: hostWorld, author: (items) => ({ batch: "host-verdicts-001", generated_at: NOW.toISOString(), authored_by: "session-lane", entries: items.slice(0, 1).map((i) => ({ host: i.host, class: "association", evidence: "the maker's trade body", verdict_source: "session-lane", generated_at: NOW.toISOString() })) }), applied: (w) => w.db.rows("host_verdicts").length },
   { kind: "ledger-verdicts", world: ledgerWorld, author: (items) => ledgerFile(items.slice(0, 1).map((i) => verdict(String(i.url), { candidate_id: i.candidate_id }))), applied: (w) => w.db.rows("portal_link_candidates").filter((r) => r.status === "promoted").length },
 ];
 
@@ -63,9 +64,8 @@ for (const c of CASES) {
   });
 }
 
-// host-verdicts is apply-only: its queue (the hosts a needs-search export names as unplaced) has no exporter of its own, and exportBatch says so by name (tests/batches/host-verdicts.test.ts).
 test("every kind in the kit has a case here", () => {
-  assert.deepEqual(CASES.map((c) => c.kind).sort(), BATCH_KINDS.filter((k) => k !== "host-verdicts").sort());
+  assert.deepEqual(CASES.map((c) => c.kind).sort(), [...BATCH_KINDS].sort());
   void NOW;
   void computeMemberHash;
 });

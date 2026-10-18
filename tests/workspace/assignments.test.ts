@@ -51,7 +51,7 @@ test("an admin assigns two members with a due date; each is notified once with a
   const res = await call(POST, "admin", "POST", URL_, { assignees: [TEAMMATE, USER.member], dueOn: "2026-12-01" }, P);
   assert.equal(res.status, 201);
   assert.equal(assigned(db).length, 2);
-  assert.deepEqual([res.body.queued, res.body.queue_failed], [2, 0]);
+  assert.equal(res.body.queued, 2);
   assert.deepEqual(sent().map((n) => n.userId).sort(), [TEAMMATE, USER.member].sort());
   assert.equal(sent()[0]?.payload.link, "/regulations/o3");
   assert.match(String(sent()[0]?.payload.body), /due 2026-12-01/);
@@ -113,18 +113,29 @@ test("assigning yourself notifies nobody; assigning someone already assigned rep
   assert.equal(assigned(db).length, 2);
 });
 
-test("IMP-025: a notice that cannot be queued never undoes the assignment and is reported, not counted as sent", async () => {
+test("IMP-115: the assignment and its notices are one database call; a notice that cannot be queued rolls the assignment back, and the answer says so instead of counting a failure", async () => {
   wire();
   const db = script(seed());
   db.fail("notification_outbox", "insert", { message: "outbox down" }, { times: 1 });
   const failed = await call(POST, "admin", "POST", URL_, { assignees: [TEAMMATE] }, P);
-  assert.equal(failed.status, 201);
-  assert.deepEqual([failed.body.queued, failed.body.queue_failed, failed.body.queue_error], [0, 1, "outbox down"]);
-  assert.equal(assigned(db).length, 1);
+  assert.equal(failed.status, 500);
+  assert.match(String(failed.body.error), /outbox down/);
+  assert.equal(assigned(db).length, 0, "no assignment survives a notice that was not queued");
   assert.equal(sent().length, 0);
   const queued = await call(POST, "admin", "POST", URL_, { assignees: [USER.owner] }, P);
-  assert.deepEqual([queued.status, queued.body.queued, queued.body.queue_failed], [201, 1, 0]);
+  assert.deepEqual([queued.status, queued.body.queued], [201, 1]);
   assert.deepEqual(sent().map((n) => [n.userId, n.kind]), [[USER.owner, "assignment"]]);
+});
+
+test("IMP-115: the writer is the rpc and nothing else: the route inserts no assignment row itself, and before the cutover (the rpc absent) it is a 503 with Retry-After that writes nothing", async () => {
+  wire();
+  const db = script(seed());
+  delete db.rpcs.assign_item_members;
+  const res = await call(POST, "admin", "POST", URL_, { assignees: [TEAMMATE] }, P);
+  assert.equal(res.status, 503);
+  assert.equal(res.headers.get("retry-after"), "30");
+  assert.equal(assigned(db).length, 0);
+  assert.equal(db.log.filter((c) => c.table === "item_assignments" && c.op !== "select").length, 0, "no direct write to item_assignments");
 });
 
 test("invalid assign input writes nothing", async () => {

@@ -49,6 +49,9 @@ export function memClient(db: MemDb, who: Who | null = null) {
   return {
     from: (table: string) => db.from(table),
     async rpc(name: string, args?: unknown) {
+      db.rpcCalls.push({ name, args: (args ?? {}) as Record<string, unknown> });
+      const refused = db.rpcFail.get(name);
+      if (refused) return { data: null, error: refused };
       if (name === "is_platform_admin") return { data: who?.admin === true, error: null };
       const fn = db.rpcs[name] as unknown as ((a: unknown, who: Who | null) => unknown) | undefined;
       if (!fn) return { data: null, error: { message: `no rpc ${name}`, code: "PGRST202" } };

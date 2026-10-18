@@ -76,7 +76,7 @@ test("the migration checks: the committed set passes; a file the README does not
   const gen = readFileSync(join(real, "0015_data_screen_verdicts.sql"), "utf8");
   writeFileSync(join(dir, "0015_data_screen_verdicts.sql"), gen);
   const some = migrationProblems(dir);
-  assert.ok(some.every((p: string) => p.includes("README.md lists")), "only the files absent from the scratch dir are reported");
+  assert.ok(some.filter((p: string) => !p.includes("APPLY.md") && !p.includes("apply-notes.json")).every((p: string) => p.includes("README.md lists")), "only the files absent from the scratch dir are reported (the cutover plan has its own tests, tests/cutover/tools.test.ts)");
   writeFileSync(join(dir, "0099_new.sql"), "-- nothing\n");
   assert.ok(migrationProblems(dir).includes(`${dir}/README.md does not list 0099_new.sql`));
   writeFileSync(join(dir, "0015_data_screen_verdicts.sql"), gen.replace(/^\('([0-9a-f-]{36})', 'on_vertical'/m, "('$1', 'off_vertical'"));

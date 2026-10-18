@@ -1,7 +1,8 @@
 // Ported from old_repo/scripts/turns/emit-live-smoke-artifact.mjs (lines 20-129)
-// The live-smoke landing: a smoke report (the parity job's capture, until P2-15 adds the live checks) becomes one `live-smoke` row through the one recorder.
+// The live-smoke landing: a smoke report (one of the live checks of scripts/ci/live-checks.mjs, or the parity capture) becomes one `live-smoke` row through the one recorder.
 import type { Db } from "@/core/db";
 
+import type { Trigger } from "./outcome";
 import { newRunId, recordRun, type RunRow } from "./record";
 
 export interface SmokeFinding {
@@ -19,7 +20,7 @@ export interface SmokeReport {
 }
 
 /** One row from a report: success when no finding failed, failed otherwise; a missing or unreadable report is a failed row that says so. */
-export function smokeRow(report: SmokeReport | null, o: { now: Date; startedAt?: Date; error?: string | null; codeSha: string | null; githubRunId: string | null; rootRunId?: string }): RunRow {
+export function smokeRow(report: SmokeReport | null, o: { now: Date; startedAt?: Date; error?: string | null; codeSha: string | null; githubRunId: string | null; rootRunId?: string; check?: string; trigger?: Trigger; phase?: string }): RunRow {
   const id = newRunId();
   const fails = report?.findings.filter((f) => f.severity === "fail") ?? [];
   const byInvariant: Record<string, number> = {};
@@ -27,8 +28,8 @@ export function smokeRow(report: SmokeReport | null, o: { now: Date; startedAt?:
   const ok = !!report && fails.length === 0;
   const counts = { pages_visited: report?.pagesVisited.length ?? 0, failures: fails.length, warnings: report?.findings.filter((f) => f.severity === "warn").length ?? 0, holds: report?.holds?.length ?? 0 };
   return {
-    id, family: "live-smoke", root_run_id: o.rootRunId ?? id, upstream_run_id: null, trigger: "dispatch", mode: null, forced_dry: false, outcome: ok ? "success" : "failed",
-    reason: ok ? null : (o.error ?? `${fails.length} failed invariant finding(s)`), inputs: { target: report?.baseUrl ?? null },
+    id, family: "live-smoke", root_run_id: o.rootRunId ?? id, upstream_run_id: null, trigger: o.trigger ?? "dispatch", mode: null, forced_dry: false, outcome: ok ? "success" : "failed",
+    reason: ok ? null : (o.error ?? `${fails.length} failed invariant finding(s)`), inputs: { target: report?.baseUrl ?? null, ...(o.check ? { check: o.check } : {}), ...(o.phase ? { phase: o.phase } : {}) },
     outputs: { counts, failures_by_invariant: byInvariant, first_failures: fails.slice(0, 5).map((f) => `${f.invariant} ${f.url}: ${String(f.text ?? "").slice(0, 120)}`) },
     error: ok ? null : (o.error ?? fails[0]?.invariant ?? "failed"), code_sha: o.codeSha, github_run_id: o.githubRunId, started_at: (o.startedAt ?? o.now).toISOString(), finished_at: o.now.toISOString(),
   };

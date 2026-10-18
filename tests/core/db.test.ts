@@ -91,14 +91,9 @@ test("fetchAllByIdChunks chunks the ids and refuses a widened filter", async () 
 });
 
 test("the committed schema-keys file is the generator's output for supabase/schema.sql and the forward migrations", async () => {
-  const { readFileSync, readdirSync } = await import("node:fs");
-  const sql = readFileSync("supabase/schema.sql", "utf8");
-  const keys: Record<string, string[]> = {};
-  for (const [, table, cols] of sql.matchAll(/ALTER TABLE ONLY public\.(\w+)\s+ADD CONSTRAINT \w+ PRIMARY KEY \(([^)]+)\);/g)) keys[table!] = cols!.split(",").map((c) => c.trim());
-  for (const f of readdirSync("supabase/migrations").filter((x) => /^\d{4}_.+\.sql$/.test(x) && !x.includes("_data_")).sort()) {
-    const text = readFileSync(`supabase/migrations/${f}`, "utf8");
-    for (const [, table, cols] of text.matchAll(/ALTER TABLE (?:ONLY )?public\.(\w+)[^;]*?ADD CONSTRAINT \w+ PRIMARY KEY \(([^)]+)\)/g)) keys[table!] = cols!.split(",").map((c) => c.trim());
-  }
-  assert.deepEqual(SCHEMA_KEYS, Object.fromEntries(Object.entries(keys).sort(([a], [b]) => a.localeCompare(b))));
+  // @ts-expect-error plain .mjs module
+  const { schemaKeys } = await import("../../scripts/gen/schema-keys.mjs");
+  assert.deepEqual(SCHEMA_KEYS, schemaKeys());
   assert.deepEqual(SCHEMA_KEYS.profiles, ["id"]);
+  assert.equal("coverage_gap_census_findings" in SCHEMA_KEYS, false, "a table a migration drops leaves the key map with it");
 });

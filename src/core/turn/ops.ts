@@ -2,6 +2,7 @@
 // The operator tasks: every runtime entry that is not a stage of the turn (the quarantine tools, the heal, the backfills and seeds, the extraction and derivation jobs, the source tools) has its dispatch path here,
 // `turn --stage ops --input '{"ops":{"op":"<name>","args":{...}}}'`, recorded under the `ops` family like any other firing. An op never reads the wall clock or a client of its own: it takes the turn's deps.
 import type { FamilyCall } from "@/core/harness";
+import { runProducer } from "@/core/producers";
 import { surfaceOf } from "@/core/routing";
 import type { RunResult } from "@/core/types/run-result";
 import { runResult } from "@/core/types/run-result";
@@ -10,6 +11,7 @@ import { finishDrain, leaseDeps, planDrain, runNotificationOutbox } from "@/feat
 import { groundInjected, eraseQuarantined, idStamp, planQuarantine, rehomeQuarantined, resolveQuarantined } from "@/features/intake";
 import { triggerQuestionsForItem } from "@/features/learning";
 import { healItem, healQuarantined, rederiveStale, reopenHolds } from "@/features/mint";
+import { publishedPriceStatistics, ratifySeriesItems } from "@/features/market/producers";
 import { deriveObligationsJob, extractBackfill, runExtractionJob } from "@/features/obligations";
 import { backfillDerivationEdges, backfillEntities, backfillLineageEdges, seedCorridors, seedDerivedValues } from "@/features/propagation/ops";
 import { classifySources, triageSuspended, verifyCandidate } from "@/features/sources";
@@ -23,6 +25,13 @@ type Op = (c: FamilyCall, d: BuiltDeps, a: Args) => Promise<RunResult>;
 const owed = (what: string, owner: string): RunResult => runResult("failed", { refused: 1 }, [`refused: ${what} is owed by ${owner} and is not wired yet`]);
 const heal = (d: BuiltDeps) => ({ sb: d.sb, now: d.now, fetch: d.fetch });
 const fetchDeps = (d: BuiltDeps) => ({ db: d.sb, now: d.now, env: d.env, ...(d.fetch.fetchImpl ? { fetchImpl: d.fetch.fetchImpl } : {}) });
+
+/** IMP-113: the mint artifact ratifies series onto their items, and the published-price-statistics producer runs in the same firing (rule 17). */
+async function ratifyOp(c: FamilyCall, d: BuiltDeps, a: Args): Promise<RunResult> {
+  const spec = d.catalog[publishedPriceStatistics.name];
+  if (!spec) return runResult("failed", { refused: 1 }, [`refused: the producer catalog lacks ${publishedPriceStatistics.name}, the downstream of a ratification`]);
+  return ratifySeriesItems({ sb: d.sb, downstream: (dry) => runProducer(d.producers, { spec, dry }) }, { artifact: a.artifact, dry: c.dry });
+}
 
 /** One judgement-drain planning pass: the switch is read first (off plans nothing), each kind's exporter is the batch kit's own, leases are taken on a live run and every one is released before the row is written; a dry run takes none. */
 async function planDrainOp(c: FamilyCall, d: BuiltDeps, a: Args): Promise<RunResult> {
@@ -38,7 +47,8 @@ async function planDrainOp(c: FamilyCall, d: BuiltDeps, a: Args): Promise<RunRes
 /** Every operator task by name. An apply op (`apply`) is a dry plan unless the frame resolved apply; a dry op (`dry`) is the reverse flag. */
 export const OPS: Readonly<Record<string, Op>> = {
   "plan-drain": planDrainOp,
-  "run-notification-outbox": (c, d, a) => runNotificationOutbox({ sb: d.sb, now: d.now }, { dry: c.dry, ...(typeof a.limit === "number" ? { limit: a.limit } : {}) }),
+  "ratify-series-items": ratifyOp,
+  "run-notification-outbox": (c, d, a) => runNotificationOutbox({ sb: d.sb, now: d.now }, { dry: c.dry, ...(typeof a.limit === "number" ? { limit: a.limit } : {}), ...(Array.isArray(a.ids) ? { ids: a.ids.map(String) } : {}) }),
   "ground-injected": (c, d, a) => groundInjected({ sb: d.sb, sources: d.sources, recorder: d.recorder }, ({ ...a, dry: c.dry } as never)),
   "erase-quarantined": (c, d, a) => eraseQuarantined({ sb: d.sb }, ({ ...a, apply: !c.dry } as never)),
   "id-stamp": (c, d, a) => idStamp({ sb: d.sb, sources: d.sources }, ({ ...a, apply: !c.dry } as never)),

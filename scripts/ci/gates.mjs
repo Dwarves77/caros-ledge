@@ -22,10 +22,11 @@ export const STEPS = [
   { name: "LOC gates", cmd: "loc" },
   { name: "Connection check (nothing runs alone)", cmd: "connections" },
   { name: "Column check (every select, filter and order in src names a column the database defines)", cmd: "columns" },
+  { name: "Edge Function bundle (IMP-029: capture-worker bundles with its relative policy import)", cmd: "edge-bundle", scoped: () => edgeChanged() },
 ];
 
-/** True when a file under supabase/ differs from the upstream branch (origin/main when there is none), committed or not. */
-export function supabaseChanged() {
+/** True when a file under any of `paths` differs from the upstream branch (origin/main when there is none), committed or not. */
+function changedUnder(...paths) {
   let base;
   try {
     base = git("rev-parse", "--abbrev-ref", "@{upstream}");
@@ -33,11 +34,14 @@ export function supabaseChanged() {
     base = "origin/main"; // no upstream configured
   }
   try {
-    return git("diff", "--name-only", base, "--", "supabase/").length > 0 || git("ls-files", "--others", "--exclude-standard", "supabase/").length > 0;
+    return git("diff", "--name-only", base, "--", ...paths).length > 0 || git("ls-files", "--others", "--exclude-standard", ...paths).length > 0;
   } catch {
-    return true; // cannot tell: run the schema check
+    return true; // cannot tell: run the check
   }
 }
+export const supabaseChanged = () => changedUnder("supabase/");
+/** The Edge Function bundle is worth a download of Deno only when the worker or the policy it imports changed (in CI it always runs). */
+export const edgeChanged = () => changedUnder("supabase/functions/", "src/core/fetch/policy.ts", "scripts/ci/edge-bundle.mjs", "scripts/ci/deno-bundle.json");
 
 function run(step) {
   if (inCi) console.log(`::group::${step.name}`);
@@ -60,7 +64,7 @@ function run(step) {
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const stamp = execFileSync("git", ["rev-parse", "--git-path", "gates-last"], { encoding: "utf8" }).trim();
   const last = existsSync(stamp) ? readFileSync(stamp, "utf8").trim() : null;
-  const steps = [...STEPS];
+  const steps = STEPS.filter((s) => !s.scoped || inCi || s.scoped());
   if (!inCi && supabaseChanged()) steps.push({ name: "Schema on an embedded PostgreSQL 15 (supabase/ changed)", cmd: "schema:local" });
   console.log(`gates: ${steps.map((s) => s.cmd ?? "workflows").join(", ")}${last ? `; the last run took ${last}s` : ""}`);
   const started = Date.now();

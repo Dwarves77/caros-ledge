@@ -86,7 +86,10 @@ export function themeClassificationExporter(sb: Db, classify: (text: string) => 
 
 export const OUTBOX_MAX_ATTEMPTS = 5;
 type OutboxRow = { id: string; user_id: string; kind: Parameters<typeof dispatchNotification>[0]["kind"]; payload: Record<string, unknown>; attempts: number | null };
-const PENDING = (sb: Db, limit: number) => sb.from("notification_outbox").select("id, user_id, kind, payload, attempts").eq("status", "pending").order("created_at", { ascending: true }).limit(limit);
+const PENDING = (sb: Db, limit: number, ids?: readonly string[]) => {
+  const q = sb.from("notification_outbox").select("id, user_id, kind, payload, attempts").eq("status", "pending");
+  return (ids ? q.in("id", [...ids]) : q).order("created_at", { ascending: true }).limit(limit);
+};
 
 /** The pending outbox rows (oldest first) as a drain queue. */
 export function notificationOutboxExporter(sb: Db): Exporter {
@@ -98,11 +101,11 @@ export function notificationOutboxExporter(sb: Db): Exporter {
 
 /**
  * Send each pending notification through dispatchNotification and stamp the row: sent (with sent_at), or attempts + 1 with last_error; the fifth failed attempt
- * gives up (status failed) so a poisoned row stops being retried. Dry counts what it would send and touches nothing. A failed read fails the run.
+ * gives up (status failed) so a poisoned row stops being retried. `ids` restricts the pass to those pending rows (the live check drains the row it planted and no one else's). Dry counts what it would send and touches nothing. A failed read fails the run.
  */
-export async function runNotificationOutbox(deps: { sb: Db; now(): Date; dispatch?: typeof dispatchNotification }, input: { dry?: boolean; limit?: number } = {}): Promise<RunResult> {
+export async function runNotificationOutbox(deps: { sb: Db; now(): Date; dispatch?: typeof dispatchNotification }, input: { dry?: boolean; limit?: number; ids?: readonly string[] } = {}): Promise<RunResult> {
   const send = deps.dispatch ?? dispatchNotification;
-  const { data, error } = await PENDING(deps.sb, input.limit ?? 200);
+  const { data, error } = await PENDING(deps.sb, input.limit ?? 200, input.ids);
   if (error) return runResult("failed", {}, ["reading notification_outbox failed: " + error.message]);
   const rows = (data ?? []) as OutboxRow[];
   const c = { pending: rows.length, sent: 0, retried: 0, gave_up: 0, stamp_errors: 0 };

@@ -1,0 +1,12 @@
+{
+  "0008_harness_runs_one_ledger": { "note": "drops the old ledger columns after folding them into inputs and outputs (no row lost); the operator may instead ask for the additive-only variant that keeps the old columns, default: as written" },
+  "0018_invitation_tokens_hashed": { "note": "drops the raw invitation token column after storing its hash; invitations issued before the window keep working through their hash" },
+  "0066_profiles_email_lower_unique": { "hold": "after `supabase db query --linked -f scripts/cutover/duplicate-emails.sql -o table` returns no row; if it returns any, the operator rules (merge the accounts, or leave this file unapplied) first" },
+  "0067_drop_coverage_gap_census_findings": { "hold": "after `node scripts/cutover/export-table.mjs coverage_gap_census_findings` has written docs/archive/logs/<date>-coverage_gap_census_findings.json and its printed row count equals `select count(*) from public.coverage_gap_census_findings`; DESTRUCTIVE" },
+  "0011_data_retier_analysis_bodies_t3": { "consumer": "src/core/sources/tier-contract.ts and host-class.ts (OECD, IEA, World Bank, IPCC at T3)", "after": "the schema phase, before the new tree serves" },
+  "0015_data_screen_verdicts": { "consumer": "src/features/mint/screen.ts loadReviewedVerdicts", "after": "0014 and the census_worklist rows" },
+  "0030_data_market_series_items": { "consumer": "src/features/market/read.ts readMarketDetail and the published-price-statistics producer", "after": "0029" },
+  "0045_data_market_series_cadence": { "consumer": "src/features/market/producers/market-series-items.ts readSeriesItemMap", "after": "0030 and 0044" },
+  "0046_data_host_verdicts": { "consumer": "src/core/sources/host-verdicts.ts loadHostVerdicts", "after": "0042" },
+  "0061_data_moderation_reports_split": { "consumer": "the Community moderation queue (reads the 0051 columns)", "after": "0051" }
+}

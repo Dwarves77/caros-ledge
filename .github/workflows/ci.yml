@@ -5,6 +5,7 @@ name: CI
 # Job `turn`: the turn runtime (scripts/turn.mjs). It runs a turn only on a dispatch, with the project secrets; any other event, and a dispatch with no secrets locally, self-skips with exit 2 and a notice.
 # Job `windows`: the test step alone on Windows, once per wave (push to main and dispatch, never a pull request).
 # Job `parity`: the built app on the runner, the UX smoke, and the capture compared with tests/parity/baseline (UI slices).
+# Jobs `live` and `preview-parity` (P2-15): on a successful PREVIEW deployment (deployment_status) or a dispatch with only=live: the live checks (scripts/ci/live-checks.mjs) and the parity capture of the deployed URL. Every other job ignores a deployment_status event.
 # Job `report`: after the others (needs, if always), downloads the parity and test artifacts and writes the one job summary and the one PR comment; it polls nothing and never fails the run.
 
 on:
@@ -14,6 +15,15 @@ on:
       - main
   workflow_dispatch:
     inputs:
+      live_url:
+        description: 'Dispatch with only=live: the deployed URL to check (a preview, or production after the window)'
+        default: ''
+      live_phase:
+        description: 'Dispatch with only=live: before (the run made before the cutover window) or after'
+        default: after
+      live_checks:
+        description: 'Dispatch with only=live: check names, comma separated (empty runs the default set; invitation-email only when named)'
+        default: ''
       stage:
         description: 'Turn stage: sweep, sweep-research, change, capture, intake, connect, propagate, briefs, all or ops'
         default: all
@@ -27,23 +37,24 @@ on:
         description: 'Baseline recapture (job baseline): route names, comma separated, or all'
         default: all
       only:
-        description: 'Run one job on a dispatch: baseline (the old-site recapture), turn, or empty for everything but baseline'
+        description: 'Run one job on a dispatch: baseline (the old-site recapture), turn, live (the live checks and the deployed-preview parity), or empty for everything but baseline and live'
         default: ''
       chain:
         description: 'Run the stage downstream stages too (false runs only the named stage)'
         default: 'true'
+  deployment_status:
 
 permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.event.deployment.id || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   ci:
     name: ci
-    if: github.event_name != 'workflow_dispatch' || github.event.inputs.only == ''
+    if: github.event_name != 'deployment_status' && (github.event_name != 'workflow_dispatch' || github.event.inputs.only == '')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -69,7 +80,7 @@ jobs:
 
   schema:
     name: schema
-    if: github.event_name != 'workflow_dispatch' || github.event.inputs.only == ''
+    if: github.event_name != 'deployment_status' && (github.event_name != 'workflow_dispatch' || github.event.inputs.only == '')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     services:
@@ -97,7 +108,7 @@ jobs:
 
   turn:
     name: turn
-    if: github.event_name != 'workflow_dispatch' || github.event.inputs.only == '' || github.event.inputs.only == 'turn'
+    if: github.event_name != 'deployment_status' && (github.event_name != 'workflow_dispatch' || github.event.inputs.only == '' || github.event.inputs.only == 'turn')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -133,7 +144,7 @@ jobs:
 
   windows:
     name: ci-windows
-    if: github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || github.event.inputs.only == '')
+    if: github.event_name != 'pull_request' && github.event_name != 'deployment_status' && (github.event_name != 'workflow_dispatch' || github.event.inputs.only == '')
     runs-on: windows-latest
     timeout-minutes: 15
     steps:
@@ -147,7 +158,7 @@ jobs:
 
   parity:
     name: parity
-    if: github.event_name != 'workflow_dispatch' || github.event.inputs.only == ''
+    if: github.event_name != 'deployment_status' && (github.event_name != 'workflow_dispatch' || github.event.inputs.only == '')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     # The baseline was captured in this image (old repo parity-baseline.yml), so fonts and hinting render identically and the pixel diff measures the design, not the machine.
@@ -231,6 +242,92 @@ jobs:
             parity-report.txt
             next-start.log
 
+  # P2-15: what runs on a deployed URL. A successful PREVIEW deployment (the deployment_status event Vercel posts to GitHub) and a dispatch with only=live both run the live checks (scripts/ci/live-checks.mjs: one live-smoke row per
+  # check through recordRun) and the parity capture of the deployed preview (admin routes too, only when the admin account is configured). A deployment_status run checks out the DEPLOYED commit, not the default branch.
+  live:
+    name: live
+    if: (github.event_name == 'deployment_status' && github.event.deployment_status.state == 'success' && github.event.deployment_status.environment == 'Preview') || (github.event_name == 'workflow_dispatch' && github.event.inputs.only == 'live')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    container:
+      image: mcr.microsoft.com/playwright:v1.61.1-noble
+    env:
+      LIVE_BASE_URL: ${{ github.event.deployment_status.environment_url || github.event.inputs.live_url }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      LIVE_SMOKE_EMAIL: ${{ secrets.LIVE_SMOKE_EMAIL }}
+      LIVE_SMOKE_PASSWORD: ${{ secrets.LIVE_SMOKE_PASSWORD }}
+      LIVE_ADMIN_EMAIL: ${{ secrets.LIVE_ADMIN_EMAIL }}
+      LIVE_ADMIN_PASSWORD: ${{ secrets.LIVE_ADMIN_PASSWORD }}
+      VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      INVITATION_FROM_EMAIL: ${{ secrets.INVITATION_FROM_EMAIL }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.deployment.sha || github.sha }}
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --no-audit
+      - name: Playwright package matching the image (browsers come from the image)
+        run: npm install --no-save playwright@1.61.1 --no-audit --no-fund
+      - name: Live checks (exit 2 is a self-skip without credentials)
+        shell: bash {0}
+        run: |
+          node scripts/ci/live-checks.mjs --base "$LIVE_BASE_URL" --phase "${LIVE_PHASE:-after}" ${LIVE_ONLY:+--only "$LIVE_ONLY"}
+          code=$?
+          if [ "$code" -eq 2 ]; then echo "::notice title=live::self-skipped (exit 2): see the step output"; exit 0; fi
+          exit "$code"
+        env:
+          LIVE_PHASE: ${{ github.event.inputs.live_phase }}
+          LIVE_ONLY: ${{ github.event.inputs.live_checks }}
+
+  preview-parity:
+    name: preview-parity
+    if: (github.event_name == 'deployment_status' && github.event.deployment_status.state == 'success' && github.event.deployment_status.environment == 'Preview') || (github.event_name == 'workflow_dispatch' && github.event.inputs.only == 'live')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    container:
+      image: mcr.microsoft.com/playwright:v1.61.1-noble
+    env:
+      LIVE_SMOKE_EMAIL: ${{ secrets.LIVE_SMOKE_EMAIL }}
+      LIVE_SMOKE_PASSWORD: ${{ secrets.LIVE_SMOKE_PASSWORD }}
+      LIVE_ADMIN_EMAIL: ${{ secrets.LIVE_ADMIN_EMAIL }}
+      LIVE_ADMIN_PASSWORD: ${{ secrets.LIVE_ADMIN_PASSWORD }}
+      PARITY_ADMIN: ${{ secrets.LIVE_ADMIN_EMAIL && secrets.LIVE_ADMIN_PASSWORD && '1' || '' }}
+      PARITY_BASE: ${{ github.event.deployment_status.environment_url || github.event.inputs.live_url }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.deployment.sha || github.sha }}
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --no-audit
+      - name: Playwright package matching the image (browsers come from the image)
+        run: npm install --no-save playwright@1.61.1 --no-audit --no-fund
+      - name: Capture the deployed preview (admin routes only when PARITY_ADMIN=1)
+        run: node tests/parity/capture.mjs --base "$PARITY_BASE" --out parity-capture
+      - name: Compare with the baseline
+        shell: bash -eo pipefail {0}
+        run: node tests/parity/compare.mjs --captured parity-capture | tee parity-report.txt
+      - name: Parity report in the job summary
+        if: always()
+        run: |
+          { echo '### Parity of the deployed preview'; echo '```'; cat parity-report.txt 2>/dev/null || echo 'no report'; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: preview-parity-capture
+          path: |
+            parity-capture
+            parity-diff
+            parity-report.txt
+
   # The one writer of the run's record: runs after the others, polls nothing, holds no secrets, and never fails the run itself (it reports the others' conclusions).
   # Recapture of the parity baseline from the old site (tests/parity/baseline/README.md says how to use the artifact). Dispatch only: never on push or pull_request.
   baseline:
@@ -263,7 +360,7 @@ jobs:
   report:
     name: report
     needs: [ci, schema, parity]
-    if: always()
+    if: always() && github.event_name != 'deployment_status'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:

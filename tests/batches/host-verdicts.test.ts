@@ -1,9 +1,12 @@
 // Host verdicts (IMP-054): a session-authored batch of {host, class, evidence, verdict_source, generated_at} lands in host_verdicts through the kit's one apply loop, is read back, and is read again by loadHostVerdicts into the
 // map every rating takes. The class is the class table's (never a tier), an aggregator or hosting platform is never ruled, a re-apply writes nothing.
 import assert from "node:assert/strict";
+import { mkdtempSync, readFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { test } from "node:test";
 
-import { loadHostVerdicts, placeHostWithVerdicts } from "@/core/sources";
+import { isKnownHostClass, loadHostVerdicts, placeHostWithVerdicts } from "@/core/sources";
 import { applyBatch, exportBatch } from "@/features/batches";
 
 import { memoryDb } from "../_support/memory-db.ts";
@@ -43,9 +46,24 @@ test("an entry that names a tier, an unknown class, a path as the host, another 
   assert.equal((await applyBatch("host-verdicts", w.deps, { content: file([entry()], "wrong-name"), dry: false })).outcome, "failed", "a batch name outside the pattern refuses the whole file");
 });
 
-test("export: the kind has no queue exporter and says so by name; a failed write is counted and reported, never a success", async () => {
-  const w = world();
-  assert.match((await exportBatch("host-verdicts", w.deps)).notes.join("|"), /host-verdicts has no export/);
+test("export (IMP-114): the queue is host_worklist, most-seen first, with the classes a verdict may name; an absent or unreadable table is a named failure, never an empty queue; a failed write is counted and reported, never a success", async () => {
+  const w = world({ host_worklist: [{ host: "b.example", reason: "r", seen_count: 9, first_seen_at: "2026-10-01T00:00:00Z", last_seen_at: "2026-10-02T00:00:00Z", last_name: "B Org" }, { host: "a.example", reason: "r", seen_count: 2, first_seen_at: "2026-10-01T00:00:00Z", last_seen_at: "2026-10-03T00:00:00Z", last_name: null }, { host: "c.example", reason: "r", seen_count: 2, first_seen_at: "2026-10-01T00:00:00Z", last_seen_at: "2026-10-02T00:00:00Z", last_name: null }] });
+  const dir = mkdtempSync(join(tmpdir(), "caros-hv-export-"));
+  const ex = await exportBatch("host-verdicts", w.deps, { outDir: dir, runId: "hv" });
+  assert.equal(ex.outcome, "ok");
+  const part = JSON.parse(readFileSync((ex.data as { ids: { parts: string[] } }).ids.parts[0] as string, "utf8")) as { items: { host: string }[]; summary: { classes: string[] } };
+  assert.deepEqual(part.items.map((i) => i.host), ["b.example", "a.example", "c.example"], "most seen first, ties by host");
+  assert.ok(part.summary.classes.includes("association") && part.summary.classes.every((c) => isKnownHostClass(c)), "the classes are the class table's");
+  const limited = await exportBatch("host-verdicts", w.deps, { outDir: dir, runId: "hv2", limit: 1 });
+  assert.equal(limited.counts.exported, 1);
+  const absent = world();
+  absent.db.mem.fail("host_worklist", "select", "relation does not exist", { code: "PGRST205" });
+  const none = await exportBatch("host-verdicts", absent.deps, { outDir: dir, runId: "hv3" });
+  assert.deepEqual([none.outcome], ["failed"]);
+  assert.match(none.notes.join("|"), /host_worklist is absent \(migration 0064/);
+  const broken = world();
+  broken.db.mem.fail("host_worklist", "select", "down");
+  assert.match((await exportBatch("host-verdicts", broken.deps, { outDir: dir, runId: "hv4" })).notes.join("|"), /could not be read: down/);
   w.db.mem.fail("host_verdicts", "upsert", "write refused");
   const run = await applyBatch("host-verdicts", w.deps, { content: file([entry()]), dry: false });
   assert.deepEqual([run.counts.applied ?? 0, run.counts.write_failures], [0, 1]);

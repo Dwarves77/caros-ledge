@@ -15,6 +15,7 @@ import type { RunResult } from "@/core/types/run-result";
 import { applyForwardEvents } from "../kinds/forward-events/apply";
 import { forwardEventsExporter } from "../kinds/forward-events/export";
 import { applyHostVerdicts, hostVerdictsSpec } from "../kinds/host-verdicts/apply";
+import { hostVerdictsExporter } from "../kinds/host-verdicts/export";
 import { applyLedgerVerdicts, ledgerVerdictsExporter } from "../kinds/ledger-verdicts/apply";
 import { applyNeedsSearch, needsSearchSpec } from "../kinds/needs-search/apply";
 import { needsExporter } from "../kinds/needs-search/needs";
@@ -48,7 +49,7 @@ const exporterOf = (kind: BatchKindId, deps: BatchDeps): ((o: ExportOpts) => Pro
     case "theme-briefs": return (o) => themeBriefsExporter(deps.sb, budget(o))(o);
     case "screen-verdicts": return screenVerdictsExporter(deps.sb);
     case "ledger-verdicts": return ledgerVerdictsExporter(deps);
-    case "host-verdicts": return async () => ({ ok: false, items: [], error: "host-verdicts has no export: the session authors a batch from the unplaced hosts a needs-search export names" });
+    case "host-verdicts": return hostVerdictsExporter(deps.sb);
   }
 };
 const DEFAULT_LIMIT: Readonly<Record<BatchKindId, number>> = { "record-briefs": 40, "question-answers": 100, "needs-search": 100, "forward-events": 100, "theme-briefs": 15, "screen-verdicts": 60, "ledger-verdicts": 100, "host-verdicts": 150 };
@@ -56,7 +57,7 @@ const DEFAULT_LIMIT: Readonly<Record<BatchKindId, number>> = { "record-briefs": 
 /** The exporters the judgement drain takes (`DrainDeps.exporters`), keyed by the drain's kind ids: the drain's `screen-verdict` is this kit's `screen-verdicts`. */
 export function drainExporters(deps: BatchDeps): Record<string, Exporter> {
   const e = (k: BatchKindId): Exporter => (o) => exporterOf(k, deps)({ ...o });
-  return { "record-briefs": e("record-briefs"), "question-answers": e("question-answers"), "needs-search": e("needs-search"), "theme-briefs": e("theme-briefs"), "ledger-verdicts": e("ledger-verdicts"), "screen-verdict": e("screen-verdicts") };
+  return { "record-briefs": e("record-briefs"), "question-answers": e("question-answers"), "needs-search": e("needs-search"), "theme-briefs": e("theme-briefs"), "ledger-verdicts": e("ledger-verdicts"), "host-verdicts": e("host-verdicts"), "screen-verdict": e("screen-verdicts") };
 }
 
 /** Group items into numbered parts so no part's size exceeds `budget`, in input order. An item over the budget on its own goes alone and is flagged oversize (it is exported whole, never cut). Pure. */

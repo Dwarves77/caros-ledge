@@ -4,7 +4,7 @@
 // Ported from old_repo/scripts/mint/heal-provenance.mjs (lines 3341-3361)
 // Ported from old_repo/src/lib/sources/source-growth.ts (lines 81-99)
 import type { Db } from "@/core/db";
-import { fetchAllRows } from "@/core/db";
+import { fetchAllRows, isMissingObject } from "@/core/db";
 import { canonicalUrl, hostOf } from "@/core/shared";
 
 import { classifySourceRole } from "./classify";
@@ -118,7 +118,11 @@ export async function registerAndRate(db: Db, url: string, opts: RateOpts & { dr
   if (!found.ok) throw new Error(`registerAndRate: registry lookup failed for ${url}: ${found.error}`);
   const existing = found.rows[0] ?? null;
   const placement = placeHostWithVerdicts(host, [opts.name], opts.verdicts ?? null);
-  if (!existing && placement.tier == null) return { status: "worklist", host, reason: "the host places in no class-table class and no committed verdict" };
+  if (!existing && placement.tier == null) {
+    const reason = "the host places in no class-table class and no committed verdict";
+    if (!opts.dry) await recordWorklist(db, host, reason, opts.name ?? null);
+    return { status: "worklist", host, reason };
+  }
   if (opts.dry && !existing) return { status: "would-register", host, tier: placement.tier as number, label: tierLabelOf(placement.tier as number), via: placement.via ?? "class" };
   const reg = existing ? { source_id: existing.id, created: false } : await registerSource(db, { url, name: opts.name ?? null, base_tier: placement.tier as number });
   const real = await readSourceByUrl(db, url);
@@ -126,6 +130,12 @@ export async function registerAndRate(db: Db, url: string, opts: RateOpts & { dr
   if (tier == null) throw new Error(`registerAndRate: ${reg.source_id} registered but its tier could not be read back`);
   const institution_id = opts.dry ? (real?.institution_id ?? null) : await linkInstitution(db, reg.source_id, host, real?.institution_id ?? null);
   return { status: reg.created ? "registered" : "existing", source_id: reg.source_id, tier, label: tierLabelOf(tier), institution_id, via: existing ? "registry" : (placement.via ?? "class") };
+}
+
+/** The one place an unplaced host is kept (host_worklist, migration 0064): every `worklist` answer is recorded here by registerAndRate itself, so no caller can drop it. A failed or absent record is the call's failure, never a silent loss. */
+async function recordWorklist(db: Db, host: string, reason: string, name: string | null): Promise<void> {
+  const { error } = await db.rpc("record_host_worklist", { p_host: host, p_reason: reason, p_name: name });
+  if (error) throw new Error(isMissingObject(error) ? `registerAndRate: host_worklist is absent (migration 0064 is not applied): ${host} cannot be kept for a verdict` : `registerAndRate: recording ${host} on the host worklist failed: ${error.message}`);
 }
 
 /** Link a source to its institution (the registrable domain), creating the institution when absent. Every read and write is checked. */

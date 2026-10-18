@@ -1,10 +1,10 @@
 // Ported from old_repo/src/lib/workspace/item-assignments.mjs (lines 25-223)
 // Ported from old_repo/src/app/api/workspace/items/[id]/assignments/route.ts (lines 19-41)
+import { isMissingObject } from "@/core/db/absent";
 import type { Db } from "@/core/db/clients";
 import { boundedRead } from "@/core/db/query";
-import { LookupError, route } from "@/core/http/errors";
+import { dbError, HttpError, LookupError, route } from "@/core/http/errors";
 import { isUuid } from "@/core/http/parse";
-import { queueNotifications } from "@/core/notifications";
 import { isIsoDate } from "@/core/shared/dates";
 import { canWrite, collabFail, collabOk, isOrgAdmin, loadRoster, MAX_ASSIGNEES_PER_REQUEST, nameIndex, namesAfterWrite, readJsonObject, runCollab, type CollabCtx, type CollabResult } from "@/core/workspace/roster";
 
@@ -86,31 +86,18 @@ export async function assignMembers(client: Db, ctx: CollabCtx, input: Record<st
   const roles = new Map(roster.map((m) => [m.user_id, m.role]));
   if (assignees.some((id) => !canWrite(roles.get(id)))) return collabFail(403, "A viewer can read this workspace but cannot be assigned work. Pick a member, admin or owner and try again.");
 
-  const { data: existing, error: existingError } = await client.from("item_assignments").select("assignee_user_id").eq("org_id", ctx.orgId).eq("item_id", ctx.item.id).in("assignee_user_id", assignees);
-  if (existingError) throw new LookupError("item_assignments", existingError);
-  const already = new Set((existing ?? []).map((r) => (r as { assignee_user_id: string }).assignee_user_id));
-  const fresh = assignees.filter((id) => !already.has(id));
-
-  let created: Row[] = [];
-  if (fresh.length > 0) {
-    const { data, error } = await client
-      .from("item_assignments")
-      .insert(fresh.map((assignee) => ({ org_id: ctx.orgId, item_id: ctx.item.id, assignee_user_id: assignee, assigned_by: ctx.userId, due_on: dueOn })))
-      .select(ASSIGNMENT_COLUMNS);
-    if (error) return collabFail(500, error.message);
-    created = (data ?? []) as Row[];
-  }
-
-  // IMP-025: the notices are queued for the drain in ONE insert (retried there); a failure to queue is reported in the response, never silent, and never undoes the assignment.
+  // IMP-115: the rows and their notices are ONE database call (assign_item_members, migration 0065): a notice that cannot be queued rolls the assignment back, and the gates above are re-checked in SQL. The text and
+  // link of the notice are authored here, where the surface routing lives; the database chooses who is notified and adds the item, the assigner and the due date.
   const { itemHref } = workspaceDeps();
   const assigner = names.get(ctx.userId) ?? "A teammate";
   const itemId = ctx.item.legacyId || ctx.item.id;
   const href = itemHref?.({ id: itemId, type: ctx.item.type, domain: ctx.item.domain }) ?? `/regulations/${encodeURIComponent(itemId)}`;
-  const notices = created
-    .filter((row) => row.assignee_user_id !== ctx.userId)
-    .map((row) => ({ userId: row.assignee_user_id, kind: "assignment" as const, payload: { title: "Assigned to you", body: `${assigner} assigned you "${ctx.item.title || "an item"}"${dueOn ? `, due ${dueOn}` : ""}.`, link: href, item_id: ctx.item.id, assigned_by: ctx.userId, due_on: dueOn } }));
-  const queueError = await queueNotifications(notices);
-  return collabOk(201, { assignments: created.map((row) => view(row, ctx, names)), already_assigned: assignees.filter((id) => already.has(id)), queued: queueError ? 0 : notices.length, queue_failed: queueError ? notices.length : 0, ...(queueError ? { queue_error: queueError } : {}) });
+  const notice = { title: "Assigned to you", body: `${assigner} assigned you "${ctx.item.title || "an item"}"${dueOn ? `, due ${dueOn}` : ""}.`, link: href };
+  const { data, error } = await client.rpc("assign_item_members", { p_org_id: ctx.orgId, p_item_id: ctx.item.id, p_assignees: assignees, p_due_on: dueOn, p_notice: notice });
+  if (isMissingObject(error)) throw new HttpError(503, "This change cannot be saved until the database update that supports it is applied. Try again shortly.", { "Retry-After": "30" });
+  if (error) throw dbError(error);
+  const done = data as { created: Row[]; already: string[]; queued: number };
+  return collabOk(201, { assignments: done.created.map((row) => view(row, ctx, names)), already_assigned: done.already, queued: done.queued });
 }
 
 async function findAssignment(client: Db, ctx: CollabCtx, assignee: string): Promise<Row | null> {

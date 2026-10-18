@@ -47,10 +47,9 @@
   --sp-2: 2px; --sp-4: 4px; --sp-6: 6px; --sp-8: 8px; --sp-10: 10px; --sp-12: 12px;
   --sp-14: 14px; --sp-16: 16px; --sp-18: 18px; --sp-20: 20px; --sp-28: 28px; --sp-40: 40px;
   /* type */
-  --font-jakarta: "Plus Jakarta Sans";
-  --font-anton: "Anton";
-  --font-sans: var(--font-jakarta), system-ui, sans-serif;
-  --font-display: var(--font-anton), system-ui, sans-serif;
+  /* --font-jakarta, --font-jakarta-ext, --font-anton and --font-anton-ext are defined on the root element by the vendored faces (src/ui/fonts.ts); a character the latin face lacks falls to the latin-ext face, then to the system font */
+  --font-sans: var(--font-jakarta), var(--font-jakarta-ext), system-ui, sans-serif;
+  --font-display: var(--font-anton), var(--font-anton-ext), system-ui, sans-serif;
   --fs-85: 8.5px; --fs-95: 9.5px; --fs-10: 10px; --fs-105: 10.5px; --fs-11: 11px; --fs-115: 11.5px;
   --fs-12: 12px; --fs-125: 12.5px; --fs-13: 13px; --fs-14: 14px; --fs-22: 22px;
   /* interaction */

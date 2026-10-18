@@ -4,6 +4,7 @@
 // The stored query is the canonical one (parsed and written back by the list's own url-state), never the caller's string.
 import { z } from "zod";
 
+import { isMissingObject } from "@/core/db/absent";
 import { dbError, HttpError, ok, route } from "@/core/http/errors";
 import { isRefusal, requireUser } from "@/core/http/guard";
 import { isUuid, parseJson } from "@/core/http/parse";
@@ -16,9 +17,8 @@ const surface = z.enum(SAVED_VIEW_SURFACES);
 const createBody = z.object({ surface, name: z.string().trim().min(1, "Give the view a name.").max(60, "A view name is at most 60 characters."), query: z.string().max(1000) });
 
 /** The table is added by a migration the database may not carry yet: that is a stated, retryable state ('not available yet'), never a raw relation error. */
-const MISSING_RELATION = new Set(["42P01", "PGRST205"]);
 const failure = (error: { message: string; code?: string | null }): HttpError =>
-  error.code && MISSING_RELATION.has(error.code) ? new HttpError(503, "Saved views are not available yet. Your views are untouched; try again later.", { "Retry-After": "60" }) : dbError(error);
+  isMissingObject(error) ? new HttpError(503, "Saved views are not available yet. Your views are untouched; try again later.", { "Retry-After": "60" }) : dbError(error);
 
 /** The list state in a query string, written the way the list writes it; null when it holds nothing a view could restore. */
 export function canonicalQuery(raw: string, extraKeys: readonly string[] = []): string | null {
