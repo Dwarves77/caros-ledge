@@ -213,6 +213,28 @@
         "admin.375x812"
       ],
       "error": null
+    },
+    {
+      "name": "research-detail",
+      "path": "/research/a7fd2700-de27-4cc1-b5e6-442fdf8a66ad",
+      "auth": "member",
+      "status": "ok",
+      "files": [
+        "research-detail.1280x900",
+        "research-detail.375x812"
+      ],
+      "error": null
+    },
+    {
+      "name": "operations-detail",
+      "path": "/operations/singapore-regional-operations-profile",
+      "auth": "member",
+      "status": "ok",
+      "files": [
+        "operations-detail.1280x900",
+        "operations-detail.375x812"
+      ],
+      "error": null
     }
   ]
 }
