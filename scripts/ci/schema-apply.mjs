@@ -12,12 +12,12 @@ import { renderJsonData } from "../gen/json-data.mjs";
 import { readSchema } from "../gen/test-schema.mjs";
 
 import { migrationProblems } from "./migration-checks.mjs";
+import { bootstrapProductionRole, PRODUCTION_ROLE_GRANTS } from "./prod-role.mjs";
 import { psql as runSql } from "./psql.mjs";
 
 // DATABASE_URL names the cluster's bootstrap superuser (`postgres`). The bootstrap below (roles, auth/vault/net stubs, the extensions schema)
 // stays superuser and runs on `suUrl`; everything from schema.sql onward runs on `url`, a role shaped like production's `postgres`
 // (scripts/ci/prod-role.mjs): LOGIN, not superuser, not a member of supabase_admin. A statement that needs more than production's role fails here, as it would there.
-import { bootstrapProductionRole, PRODUCTION_ROLE_GRANTS } from "./prod-role.mjs";
 
 if (!process.env.DATABASE_URL) {
   console.error("DATABASE_URL is required");
