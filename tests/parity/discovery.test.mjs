@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { discoveryMissOutcome, pathFor, pickDetailHref, pinnedPath } from './capture.mjs';
+import { discoveryMissOutcome, pathFor, isThrottled, pickDetailHref, pinnedPath } from './capture.mjs';
 
 const route = (list) => ({ name: 'x-detail', discover: { list, match: '^/x/[^/]+$' } });
 const gates = { full: ['home', 'market'], frame: ['regulations', 'dashboard'] };
@@ -64,4 +64,11 @@ test('a route whose baseline holds a path is captured at that path on the new si
   assert.equal(pinnedPath({ name: 'y-detail', discover: {} }, index, undefined), null, 'no files, no pin');
   assert.equal(pinnedPath({ name: 'z-detail', discover: {} }, index, undefined), null, 'no entry, discovery runs');
   assert.equal(pinnedPath(route('/x'), undefined, undefined), null);
+});
+
+test('a page answered 429 or 503 while loading is a throttled attempt (recaptured after the window), any other status is not', () => {
+  assert.equal(isThrottled([200, 304, 429]), true);
+  assert.equal(isThrottled([200, 503]), true);
+  assert.equal(isThrottled([200, 204, 401, 404, 500]), false);
+  assert.equal(isThrottled([]), false);
 });

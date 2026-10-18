@@ -322,6 +322,24 @@
       "kind": "control",
       "match": "^button:smoke@example.invalid$",
       "ruling": "SEC-5 (P2-02c): profiles.email is not readable under the authenticated column grant, so the roster cannot label a member without a profile name by e-mail; the control shows the Absence token with 'Name not set' (and the profile name when there is one) where the old page showed the e-mail."
+    },
+    {
+      "id": "operations-detail-withheld-source-rows",
+      "route": "operations-detail",
+      "kind": "until-migration",
+      "migration": "0031",
+      "on": "control",
+      "match": "^link:(—|T#).+ · ",
+      "ruling": "production carries no new migration before cutover (rulings 2026-10-17): without 0031 the operations detail withholds its stored sections and the brief (so the source rows its Sources section drew from them) and its auxiliary-energy and grid-queue panels read nothing, so each says so with Retry where the old page drew its rows and its Request coverage actions; the full path is proven on the fixture turn and schema:local."
+    },
+    {
+      "id": "operations-detail-withheld-request-coverage",
+      "route": "operations-detail",
+      "kind": "until-migration",
+      "migration": "0031",
+      "on": "control",
+      "match": "^button:Request coverage$",
+      "ruling": "production carries no new migration before cutover (rulings 2026-10-17): without 0031 the operations detail withholds its stored sections and the brief (so the source rows its Sources section drew from them) and its auxiliary-energy and grid-queue panels read nothing, so each says so with Retry where the old page drew its rows and its Request coverage actions; the full path is proven on the fixture turn and schema:local."
     }
   ]
 }

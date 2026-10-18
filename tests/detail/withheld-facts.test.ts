@@ -49,3 +49,12 @@ test("the Dissent and Signposts cards are level-2 headings", () => {
   assert.match(html, /<h2[^>]*>Dissent<\/h2>/);
   assert.match(html, /<h2[^>]*>Signposts<\/h2>/);
 });
+
+test("a connection row reads label then the surface it links to (as the old card did); a discovered edge keeps its mark off the visible name", async () => {
+  const { ItemConnections } = await import("@/ui/detail");
+  const row = { id: "x", title: "T", priority: "MODERATE", label: "References", surface: "research", href: "/research/x", origin: "provenance_discovery", discovered: true, basisSummary: [] };
+  const html = renderApp(createElement(ItemConnections, { rows: [row] as never }));
+  assert.match(textOf(html), /References · research T/);
+  assert.doesNotMatch(textOf(html), /discovered/);
+  assert.match(textOf(renderApp(createElement(ItemConnections, { rows: [{ ...row, surface: "uncategorized" }] as never }))), /References T/);
+});
