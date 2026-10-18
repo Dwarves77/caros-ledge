@@ -151,31 +151,35 @@ BEGIN
   END IF;
 
   BEGIN
-    SELECT id INTO actor FROM public.profiles LIMIT 1;
-    SELECT id INTO item FROM public.intelligence_items LIMIT 1;
-    IF actor IS NOT NULL AND item IS NOT NULL THEN
-      INSERT INTO public.pending_jurisdiction_review (intelligence_item_id, current_value, flagged_reason) VALUES (item, 'ASIA', 'continent') RETURNING id INTO rev1;
-      INSERT INTO public.pending_jurisdiction_review (intelligence_item_id, current_value, flagged_reason) VALUES (item, 'ASIA', 'continent') RETURNING id INTO rev2;
-      INSERT INTO public.pending_jurisdiction_review (intelligence_item_id, current_value, flagged_reason) VALUES (item, 'ASIA', 'continent') RETURNING id INTO rev3;
+    -- The fixture owns its rows (a self-check never borrows a live one: it would skip on an empty database and collide with live reviews on production). The user triggers are off for it and the whole block rolls back.
+    SET LOCAL session_replication_role = replica;
+    actor := gen_random_uuid();
+    INSERT INTO auth.users (id, email) VALUES (actor, 'selfcheck-0035@invalid.example');
+    INSERT INTO public.profiles (id, email) VALUES (actor, 'selfcheck-0035@invalid.example');
+    INSERT INTO public.intelligence_items (title, domain, provenance_status, is_archived, jurisdictions) VALUES ('selfcheck-0035', 1, 'verified', false, ARRAY['ASIA-1', 'ASIA-2', 'ASIA-3']) RETURNING id INTO item;
+    INSERT INTO public.pending_jurisdiction_review (intelligence_item_id, current_value, flagged_reason) VALUES (item, 'ASIA-1', 'continent') RETURNING id INTO rev1;
+    INSERT INTO public.pending_jurisdiction_review (intelligence_item_id, current_value, flagged_reason) VALUES (item, 'ASIA-2', 'continent') RETURNING id INTO rev2;
+    INSERT INTO public.pending_jurisdiction_review (intelligence_item_id, current_value, flagged_reason) VALUES (item, 'ASIA-3', 'continent') RETURNING id INTO rev3;
 
-      BEGIN PERFORM public.resolve_pending_jurisdiction_review(rev1, 'manually-classify', '  ', actor); RAISE EXCEPTION '0035-admin-triage: a blank classification resolved';
-      EXCEPTION WHEN SQLSTATE '22023' THEN NULL; END;
-      BEGIN PERFORM public.resolve_pending_jurisdiction_review(gen_random_uuid(), 'confirm', NULL, actor); RAISE EXCEPTION '0035-admin-triage: a missing row resolved';
-      EXCEPTION WHEN SQLSTATE 'P0002' THEN NULL; END;
+    BEGIN PERFORM public.resolve_pending_jurisdiction_review(rev1, 'manually-classify', '  ', actor); RAISE EXCEPTION '0035-admin-triage: a blank classification resolved';
+    EXCEPTION WHEN SQLSTATE '22023' THEN NULL; END;
+    BEGIN PERFORM public.resolve_pending_jurisdiction_review(gen_random_uuid(), 'confirm', NULL, actor); RAISE EXCEPTION '0035-admin-triage: a missing row resolved';
+    EXCEPTION WHEN SQLSTATE 'P0002' THEN NULL; END;
 
-      got := public.resolve_pending_jurisdiction_review(rev1, 'confirm', NULL, actor);
-      IF got->>'resolution_value' IS DISTINCT FROM 'ASIA' THEN RAISE EXCEPTION '0035-admin-triage: confirm resolved to %', got; END IF;
-      BEGIN PERFORM public.resolve_pending_jurisdiction_review(rev1, 'confirm', NULL, actor); RAISE EXCEPTION '0035-admin-triage: a resolved row resolved twice';
-      EXCEPTION WHEN SQLSTATE '22023' THEN NULL; END;
+    got := public.resolve_pending_jurisdiction_review(rev1, 'confirm', NULL, actor);
+    IF got->>'resolution_value' IS DISTINCT FROM 'ASIA-1' THEN RAISE EXCEPTION '0035-admin-triage: confirm resolved to %', got; END IF;
+    BEGIN PERFORM public.resolve_pending_jurisdiction_review(rev1, 'confirm', NULL, actor); RAISE EXCEPTION '0035-admin-triage: a resolved row resolved twice';
+    EXCEPTION WHEN SQLSTATE '22023' THEN NULL; END;
 
-      PERFORM public.resolve_pending_jurisdiction_review(rev2, 'manually-classify', 'CN', actor);
-      SELECT jurisdictions INTO arr FROM public.intelligence_items WHERE id = item;
-      IF 'ASIA' = ANY (arr) OR NOT ('CN' = ANY (arr)) THEN RAISE EXCEPTION '0035-admin-triage: manually-classify left %', arr; END IF;
+    PERFORM public.resolve_pending_jurisdiction_review(rev2, 'manually-classify', 'CN', actor);
+    SELECT jurisdictions INTO arr FROM public.intelligence_items WHERE id = item;
+    IF 'ASIA-2' = ANY (arr) OR NOT ('CN' = ANY (arr)) OR NOT ('ASIA-1' = ANY (arr)) THEN RAISE EXCEPTION '0035-admin-triage: manually-classify left %', arr; END IF;
 
-      PERFORM public.resolve_pending_jurisdiction_review(rev3, 'dismiss', NULL, actor);
-      SELECT COUNT(*) INTO n FROM public.pending_jurisdiction_review WHERE id IN (rev1, rev2, rev3) AND resolved_at IS NOT NULL AND resolved_by = actor;
-      IF n <> 3 THEN RAISE EXCEPTION '0035-admin-triage: % of 3 reviews were stamped', n; END IF;
-    END IF;
+    PERFORM public.resolve_pending_jurisdiction_review(rev3, 'dismiss', NULL, actor);
+    SELECT jurisdictions INTO arr FROM public.intelligence_items WHERE id = item;
+    IF 'ASIA-3' = ANY (arr) THEN RAISE EXCEPTION '0035-admin-triage: dismiss left %', arr; END IF;
+    SELECT COUNT(*) INTO n FROM public.pending_jurisdiction_review WHERE id IN (rev1, rev2, rev3) AND resolved_at IS NOT NULL AND resolved_by = actor;
+    IF n <> 3 THEN RAISE EXCEPTION '0035-admin-triage: % of 3 reviews were stamped', n; END IF;
     RAISE EXCEPTION USING ERRCODE = 'P0099', MESSAGE = 'selfcheck fixture rolled back';
   EXCEPTION WHEN SQLSTATE 'P0099' THEN NULL;
   END;

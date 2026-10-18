@@ -10,7 +10,7 @@ import { planProblems, planText, reversalOf, selfCheckOf } from "../../scripts/c
 // @ts-expect-error plain .mjs modules
 import { bundleProblems, SENTINELS } from "../../scripts/ci/edge-bundle.mjs";
 // @ts-expect-error plain .mjs modules
-import { migrationProblems } from "../../scripts/ci/migration-checks.mjs";
+import { borrowedRowProblems, migrationProblems } from "../../scripts/ci/migration-checks.mjs";
 // @ts-expect-error plain .mjs modules
 import { appliedMigrations, retiredWaiverProblems } from "../../scripts/ci/waiver-check.mjs";
 // @ts-expect-error plain .mjs modules
@@ -56,6 +56,24 @@ test("the plan is generated, so it cannot drift: a file added without a README r
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+test("a self-check that borrows a live row, or guards its assertions behind the borrowed variable, fails (P2-15h)", () => {
+  const borrowing = "DO $$ DECLARE a uuid; b uuid; BEGIN\n  SELECT id INTO a FROM public.profiles LIMIT 1;\n  SELECT id INTO b FROM public.intelligence_items\n   LIMIT 1;\n  IF a IS NOT NULL AND b IS NOT NULL THEN NULL; END IF;\nEND $$;";
+  const found = borrowedRowProblems(borrowing).join("|");
+  assert.match(found, /INTO a FROM public/);
+  assert.match(found, /INTO b FROM public/);
+  assert.match(found, /guards its assertions behind `a IS NOT NULL THEN`/);
+  assert.deepEqual(borrowedRowProblems("DO $$ DECLARE a uuid := gen_random_uuid(); BEGIN INSERT INTO auth.users (id) VALUES (a); SELECT id INTO a FROM public.profiles WHERE id = a; END $$;"), []);
+  const dir = mkdtempSync(join(tmpdir(), "borrow-"));
+  try {
+    cpSync(MIGRATIONS, dir, { recursive: true });
+    writeFileSync(join(dir, "0099_borrow.sql"), borrowing);
+    assert.match(migrationProblems(dir).join("|"), /0099_borrow\.sql: the self-check borrows a live row/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+  assert.deepEqual(migrationProblems(MIGRATIONS).filter((p) => /borrows a live row|IS NOT NULL THEN/.test(p)), [], "no merged migration borrows a live row");
 });
 
 test("a file's self-check and rollback are read from the file, not typed: the id its OK notice prints, the Reversal header with its continuation lines", () => {
