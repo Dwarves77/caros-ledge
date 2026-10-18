@@ -26,3 +26,16 @@ test('the dashboard is captured at "/" on the old site and at its own path other
   assert.equal(pathFor(dashboard, undefined), '/dashboard');
   assert.equal(pathFor({ name: 'market', path: '/market' }, 'old'), '/market');
 });
+
+test('a miss on a route the baseline has never captured is skipped, "baseline owed", whatever the gate says', () => {
+  const index = { routes: [{ name: 'x-detail', files: [] }] };
+  const out = discoveryMissOutcome(route('/market'), gates, index);
+  assert.deepEqual([out.status, out.error], ['skipped', 'baseline owed: x-detail not yet captured from the old site']);
+  assert.equal(discoveryMissOutcome(route('/market'), gates, { routes: [] }).status, 'skipped', 'no entry at all is owed too');
+});
+
+test('once the baseline carries files for the route, a miss fails as before (the owed state retires itself)', () => {
+  const index = { routes: [{ name: 'x-detail', files: ['x-detail.1280x900', 'x-detail.375x812'] }] };
+  assert.equal(discoveryMissOutcome(route('/market'), gates, index).status, 'error');
+  assert.equal(discoveryMissOutcome(route('/regulations'), gates, index).status, 'skipped', 'a frame-only list is still deferred');
+});

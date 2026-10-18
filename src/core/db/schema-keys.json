@@ -32,6 +32,10 @@
  "claim_versions": [
   "id"
  ],
+ "community_group_bans": [
+  "group_id",
+  "user_id"
+ ],
  "community_group_invitations": [
   "id"
  ],

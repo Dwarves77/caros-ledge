@@ -1,0 +1,9 @@
+src/app/privacy/ui-fixtures/community/page.tsx | new in P2-16: the Community UX smoke fixture route (fixed data, ?state=failed), a 404 unless UI_FIXTURES=1; the one file outside the Community directories PROP-044's lint exempts, a test mount that feeds nothing; no old counterpart
+src/features/community/pages/screens.tsx | new in P2-16: the seven Community screens as presentation apart from the reads that feed them (the old pages were one component each, read and drawn together), so the UX smoke measures the screen a member sees; the bodies are ported from the page files that carry their Ported-from headers
+src/features/community/ui/fixtures/CommunityFixtures.tsx | new in P2-16: the fixed data and the screen switch behind the UX smoke fixture route; no old counterpart
+src/features/community/lib/data/free-mail.json | the free-mail domain list as data, from old_repo/src/lib/community/org-key.mjs 1-30; JSON cannot carry a // header
+src/features/community/lib/data/rooms.json | the seven regional rooms as data, from old_repo/src/lib/community/rooms.ts 1-140; JSON cannot carry a // header
+src/features/community/lib/data/vocabulary.json | the organisation types, sensitive fields, report reasons and moderation actions as data, from old_repo/src/components/community/types.ts and the old routes; JSON cannot carry a // header
+src/features/community/ui/RailRetry.tsx | new in P2-16: the failure note with Retry that a server-read rail draws (a server component cannot hold the click); no old counterpart
+src/features/community/ui/community.module.css | the Community surface styles, from old_repo/src/components/community inline styles and globals.css; a stylesheet cannot carry a // header
+src/ui/shell/notifications/index.ts | barrel for the shell's notifications bell and inbox; a barrel has no old counterpart

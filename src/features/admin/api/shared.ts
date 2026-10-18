@@ -1,6 +1,6 @@
 // Ported from old_repo/src/lib/api/route-guard.ts (lines 15-101)
 import type { Db } from "@/core/db";
-import { HttpError, ok, route } from "@/core/http/errors";
+import { HttpError, LOOKUP_SENTENCE, ok, route } from "@/core/http/errors";
 import { isRefusal, requireAdmin, type AdminContext } from "@/core/http/guard";
 
 export type { AdminContext };
@@ -34,7 +34,7 @@ export async function writeTrustEvent(db: Db, e: { sourceId: string; type: "tier
 /** The count of a head query, or an honest failure (never a zero for an unreadable count). */
 export async function headCount(q: PromiseLike<{ count: number | null; error: { message: string } | null }>, what: string): Promise<number> {
   const { count, error } = await q;
-  if (error || typeof count !== "number") throw new HttpError(503, `${what} could not be counted${error ? `: ${error.message}` : ""}`, { "Retry-After": "1" });
+  if (error || typeof count !== "number") throw new HttpError(503, `${what} could not be counted${error ? `: ${error.message}` : ""}`, { "Retry-After": "1" }, LOOKUP_SENTENCE);
   return count;
 }
 

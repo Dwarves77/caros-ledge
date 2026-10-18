@@ -1,0 +1,29 @@
+{
+  "orgTypes": [
+    { "id": "forwarder", "label": "Freight forwarder" },
+    { "id": "carrier", "label": "Carrier" },
+    { "id": "shipper", "label": "Shipper" },
+    { "id": "customs-broker", "label": "Customs broker" },
+    { "id": "3pl", "label": "3PL" },
+    { "id": "regulator", "label": "Regulator" },
+    { "id": "ngo", "label": "NGO" },
+    { "id": "analyst", "label": "Analyst" },
+    { "id": "other", "label": "Other" }
+  ],
+  "sensitiveFields": [
+    { "id": "rate_per_feu", "label": "Rate per FEU" },
+    { "id": "wage_per_hour", "label": "Wage per hour" },
+    { "id": "capacity_teu", "label": "Capacity in TEU" },
+    { "id": "saf_premium_pct", "label": "SAF premium" },
+    { "id": "pricing", "label": "Pricing" }
+  ],
+  "reportReasons": [
+    { "id": "spam", "label": "Spam or commercial promotion", "short": "Spam" },
+    { "id": "harassment", "label": "Harassment or abuse", "short": "Harassment" },
+    { "id": "misinformation", "label": "Misinformation or false claim", "short": "Misinformation" },
+    { "id": "off-topic", "label": "Off-topic for this group", "short": "Off-topic" },
+    { "id": "self-harm", "label": "Self-harm or crisis content", "short": "Self-harm" },
+    { "id": "other", "label": "Other (explain below)", "short": "Other" }
+  ],
+  "moderationActions": ["dismiss", "warn", "remove", "mute", "ban"]
+}

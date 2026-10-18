@@ -403,6 +403,36 @@
    },
    "fks": []
   },
+  "community_group_bans": {
+   "columns": [
+    "group_id",
+    "user_id",
+    "banned_by",
+    "reason",
+    "created_at"
+   ],
+   "uuid": [],
+   "defaults": {
+    "created_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "banned_by",
+     "table": "users",
+     "ref": "id"
+    },
+    {
+     "column": "group_id",
+     "table": "community_groups",
+     "ref": "id"
+    },
+    {
+     "column": "user_id",
+     "table": "users",
+     "ref": "id"
+    }
+   ]
+  },
   "community_group_invitations": {
    "columns": [
     "id",
@@ -444,7 +474,8 @@
     "role",
     "joined_at",
     "starred",
-    "muted"
+    "muted",
+    "muted_until"
    ],
    "uuid": [],
    "defaults": {
@@ -2440,7 +2471,10 @@
     "status",
     "created_at",
     "resolved_at",
-    "resolved_by_user_id"
+    "resolved_by_user_id",
+    "body",
+    "action",
+    "notes"
    ],
    "uuid": [
     "id"

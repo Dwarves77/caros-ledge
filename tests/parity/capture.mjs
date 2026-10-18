@@ -70,7 +70,13 @@ export function pathFor(route, site) {
 
 // What a discovery miss means. A list route declared frame-only in approved-changes.json (`gates.frame`) has no detail links yet, so the detail
 // route is skipped; a list route in `gates.full`, or one nobody declared, is expected to have links, so a miss is an error.
-export function discoveryMissOutcome(route, gates) {
+// A route the baseline has never captured (no files for it in baseline/index.json: the old site had no link to find) cannot fail as if a baseline existed: the miss is reported as skipped, "baseline owed". Once the
+// baseline carries files for the route, a miss fails as before. Data-driven and self-retiring, the way an until-migration waiver is.
+export function discoveryMissOutcome(route, gates, baselineIndex) {
+  if (baselineIndex) {
+    const entry = (baselineIndex.routes ?? []).find((r) => r.name === route.name);
+    if (!entry || !(entry.files ?? []).length) return { status: 'skipped', error: `baseline owed: ${route.name} not yet captured from the old site` };
+  }
   const list = route.discover.list;
   const name = list.replace(/^\//, '').split(/[/?#]/)[0];
   if ((gates.full ?? []).includes(name) || !(gates.frame ?? []).includes(name)) return { status: 'error', error: null };
@@ -78,7 +84,7 @@ export function discoveryMissOutcome(route, gates) {
 }
 
 // Resolves a `discover` route: the first same-origin link on the list page whose pathname matches and is not excluded.
-async function discover(page, base, route, gates) {
+async function discover(page, base, route, gates, baselineIndex) {
   const { list, match, exclude = [] } = route.discover;
   const listUrl = new URL(list, base);
   await page.goto(listUrl.href, { waitUntil: 'load', timeout: 60000 });
@@ -92,7 +98,7 @@ async function discover(page, base, route, gates) {
     if (pattern.test(url.pathname) && !exclude.includes(url.pathname)) return `${url.pathname}`;
   }
   const miss = new Error(`discovery found no link on ${list} matching ${match}`);
-  miss.outcome = discoveryMissOutcome(route, gates);
+  miss.outcome = discoveryMissOutcome(route, gates, baselineIndex);
   throw miss;
 }
 
@@ -255,6 +261,7 @@ async function main() {
   const only = args.routes && args.routes !== 'all' ? new Set(args.routes.split(',')) : null;
   const routes = JSON.parse(await readFile(ROUTES_FILE, 'utf8')).routes.filter((r) => !only || only.has(r.name));
   const { gates } = JSON.parse(await readFile(join(dirname(ROUTES_FILE), 'approved-changes.json'), 'utf8'));
+  const baselineIndex = JSON.parse(await readFile(join(dirname(ROUTES_FILE), 'baseline', 'index.json'), 'utf8'));
   const index = {
     captured_at: new Date().toISOString(),
     ...commitOf(),
@@ -307,7 +314,7 @@ async function main() {
       }
       const context = await browser.newContext({ viewport: VIEWPORTS[1], storageState: storage[route.auth] });
       try {
-        entry.path = await discover(await context.newPage(), base, route, gates);
+        entry.path = await discover(await context.newPage(), base, route, gates, baselineIndex);
       } catch (err) {
         entry.status = err.outcome?.status ?? 'error';
         entry.error = err.outcome?.status === 'skipped' ? err.outcome.error : err.message;

@@ -13,7 +13,7 @@ export function initialize(data) {
 
 function find(base) {
   const p = fileURLToPath(base);
-  for (const candidate of [p, `${p}.ts`, `${p}.tsx`, `${p}/index.ts`]) {
+  for (const candidate of [p, `${p}.ts`, `${p}.tsx`, `${p}/index.ts`, `${p}/index.tsx`]) {
     if (existsSync(candidate) && statSync(candidate).isFile()) return pathToFileURL(candidate).href;
   }
   return null;
@@ -33,6 +33,15 @@ export async function resolve(specifier, context, next) {
 export async function load(url, context, next) {
   if (url.endsWith(".json") && url.startsWith(SRC.href)) {
     return { format: "module", source: `export default ${readFileSync(new URL(url), "utf8")}`, shortCircuit: true };
+  }
+  // A component test renders the real .tsx sources: JSX is transpiled (types stripped) and a stylesheet is a stand-in whose class names are their own keys.
+  if (url.startsWith(SRC.href) && url.endsWith(".tsx")) {
+    const ts = (await import("typescript")).default;
+    const out = ts.transpileModule(readFileSync(new URL(url), "utf8"), { fileName: fileURLToPath(url), compilerOptions: { jsx: ts.JsxEmit.ReactJSX, module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } });
+    return { format: "module", source: out.outputText, shortCircuit: true };
+  }
+  if (url.startsWith(SRC.href) && url.endsWith(".css")) {
+    return { format: "module", source: url.endsWith(".module.css") ? "export default new Proxy({}, { get: (_t, k) => (typeof k === 'string' ? k : undefined) });" : "export default {};", shortCircuit: true };
   }
   return next(url, context);
 }

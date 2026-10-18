@@ -41,14 +41,14 @@ export const POST = route("/api/agent/run", async (request) => {
 
   // Guard 1 (fail closed): a certified item is not regenerated unless the caller refreshes.
   const item = await sb.from("intelligence_items").select("provenance_status").eq("id", itemId).maybeSingle();
-  if (item.error) return Response.json({ error: "guard_unavailable", detail: item.error.message }, { status: 503, headers: { "Retry-After": "1" } });
+  if (item.error) return Response.json({ error: "guard_unavailable" }, { status: 503, headers: { "Retry-After": "1" } });
   if ((item.data as { provenance_status?: string } | null)?.provenance_status === "verified" && body.refresh !== true) {
     return ok(admin.headers, { skipped: "already_verified", item_id: itemId, hint: "pass { refresh: true } to force a regeneration" });
   }
   // Guard 2 (fail closed): one run per item per hour.
   const since = new Date(deps.recorder.now().getTime() - COOLDOWN_MS).toISOString();
   const recent = await boundedRead<{ created_at: string }>((n) => sb.from("agent_runs").select("created_at").eq("intelligence_item_id", itemId as string).gte("created_at", since).limit(n), { limit: 1 });
-  if (recent.error) return Response.json({ error: "guard_unavailable", detail: recent.error.message }, { status: 503, headers: { "Retry-After": "1" } });
+  if (recent.error) return Response.json({ error: "guard_unavailable" }, { status: 503, headers: { "Retry-After": "1" } });
   if (recent.data.length > 0) return Response.json({ error: "cooldown", item_id: itemId, hint: "an agent run for this item ran within the last hour; wait before retrying" }, { status: 429, headers: { "Retry-After": "3600" } });
 
   const result = await startBriefWorkflow(deps, { itemId, ...(body.injected ? { injected: body.injected as InjectedBrief } : {}), ...(body.reresearch ? { reresearch: body.reresearch as InjectedBrief } : {}), ...(body.dry ? { dry: true } : {}) });
