@@ -44,3 +44,7 @@ test('the live jobs check out the DEPLOYED commit (a deployment_status event car
   assert.match(String(jobs.live.env.LIVE_BASE_URL), /deployment_status\.environment_url/);
   assert.match(String(jobs['preview-parity'].env.PARITY_ADMIN), /secrets\.LIVE_ADMIN_EMAIL/, 'the admin capture is on only when the admin account is configured');
 });
+
+test('the turn job receives the free EIA key the market producer reads by name', () => {
+  assert.match(String(jobs.turn.env.EIA_API_KEY), /secrets\.EIA_API_KEY/);
+});
