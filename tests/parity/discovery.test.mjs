@@ -66,11 +66,11 @@ test('a route whose baseline holds a path is captured at that path on the new si
   assert.equal(pinnedPath(route('/x'), undefined, undefined), null);
 });
 
-test('a page answered 429 or 503 while loading is a throttled attempt, any other status is not', () => {
+test('a page answered 429 while loading is a throttled attempt; a 503 (a failed read that recurs) and any other status are not', () => {
   assert.equal(isThrottled([{ status: 200 }, { status: 429 }]), true);
-  assert.equal(isThrottled([{ status: 503 }]), true);
+  assert.equal(isThrottled([{ status: 503, retryAfter: '1' }]), false);
   assert.equal(isThrottled([200, 204, 401, 404, 500].map((status) => ({ status }))), false);
-  assert.equal(throttleEvents([{ status: 200 }, { status: 503, retryAfter: '3' }]).length, 1);
+  assert.equal(throttleEvents([{ status: 200 }, { status: 429, retryAfter: '3' }]).length, 1);
 });
 
 test('the wait is what the server asked for: seconds or an HTTP date; the fallback only when the header is absent; a ceiling bounds it', () => {
@@ -81,5 +81,5 @@ test('the wait is what the server asked for: seconds or an HTTP date; the fallba
   assert.equal(retryWaitMs(undefined, now), THROTTLE_FALLBACK_MS);
   assert.equal(retryWaitMs('garbage', now), THROTTLE_FALLBACK_MS);
   assert.equal(retryWaitMs('999999', now), THROTTLE_CEILING_MS);
-  assert.equal(throttleWaitMs([{ status: 429, retryAfter: '4' }, { status: 429, retryAfter: '9' }, { status: 503 }], now), THROTTLE_FALLBACK_MS, 'the longest ask wins');
+  assert.equal(throttleWaitMs([{ status: 429, retryAfter: '4' }, { status: 429, retryAfter: '9' }, { status: 429 }], now), THROTTLE_FALLBACK_MS, 'the longest ask wins');
 });

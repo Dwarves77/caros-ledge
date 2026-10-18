@@ -214,11 +214,12 @@ async function accessibilitySnapshot(page) {
 }
 
 // `diag` accumulates across both viewports: the first non-2xx response (status and URL without its query string) the main-frame navigation count and the first ten distinct navigated paths.
-// The app limits a signed-in account to 60 requests per 60 seconds, counted across every page the job opens. A page that was answered 429 or 503 while loading
+// The app limits a signed-in account to 60 requests per 60 seconds, counted across every page the job opens. A page that was answered 429 while loading
 // is not what a member sees: its workspace blocks never filled. Such an attempt is discarded and the page captured again after the wait the server asked for
 // (Retry-After, seconds or an HTTP date; THROTTLE_FALLBACK_MS only when the header is absent or unreadable, THROTTLE_CEILING_MS so a hostile header cannot hang the job).
+// A 503 is NOT a throttle: /api/workspace/tags answers 503 (Retry-After 1) on production data in every run, a failed read the page states, and waiting does not change it.
 // A route still throttled after THROTTLE_ATTEMPTS is a FAILED capture, never a partial page compared as if whole. Every throttle event is recorded in the route's diagnostics.
-export const THROTTLE_STATUSES = [429, 503];
+export const THROTTLE_STATUSES = [429];
 export const THROTTLE_FALLBACK_MS = 65000;
 export const THROTTLE_CEILING_MS = 120000;
 export const THROTTLE_ATTEMPTS = 3;
