@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { discoveryMissOutcome, pathFor, pickDetailHref } from './capture.mjs';
+import { discoveryMissOutcome, pathFor, pickDetailHref, pinnedPath } from './capture.mjs';
 
 const route = (list) => ({ name: 'x-detail', discover: { list, match: '^/x/[^/]+$' } });
 const gates = { full: ['home', 'market'], frame: ['regulations', 'dashboard'] };
@@ -56,3 +56,12 @@ for (const [name, list, first] of [['research-detail', '/research', '/research/r
     assert.equal(pickDetailHref([list, '/dashboard', `${list}/a/b`], new URL(list, 'https://site.example'), route), null);
   });
 }
+
+test('a route whose baseline holds a path is captured at that path on the new site; without one, discovery runs', () => {
+  const index = { routes: [{ name: 'x-detail', path: '/x/pinned', files: ['x-detail.1280x900'] }, { name: 'y-detail', path: '/y/none', files: [] }] };
+  assert.equal(pinnedPath(route('/x'), index, undefined), '/x/pinned', 'the baseline item is the item captured');
+  assert.equal(pinnedPath(route('/x'), index, 'old'), null, 'the old site always discovers (a recapture is fresh)');
+  assert.equal(pinnedPath({ name: 'y-detail', discover: {} }, index, undefined), null, 'no files, no pin');
+  assert.equal(pinnedPath({ name: 'z-detail', discover: {} }, index, undefined), null, 'no entry, discovery runs');
+  assert.equal(pinnedPath(route('/x'), undefined, undefined), null);
+});

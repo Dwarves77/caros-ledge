@@ -24,7 +24,7 @@ const Card = ({ title, aside, children }: { title: string; aside?: React.ReactNo
   <SectionCard padding="12px 16px 14px">
     <div className={styles.stack}>
       <div className={styles.railHead}>
-        <h3 data-guard-title className={styles.eyebrow}>{title}</h3>
+        <h2 data-guard-title className={styles.eyebrow}>{title}</h2>
         {aside}
       </div>
       {children}

@@ -130,6 +130,11 @@ export function OperationsDetail(p: OperationsDetailProps) {
         <DetailPageWrapper band={band} action={topRecommendedAction(p.recommendedActions)} nowIso={nowIso}>
           <DetailMasthead title={r.title} band={band} surface="Operations" jurisdiction={regionGroup || jurisLabel} dek={dek} placeholder="Ask about this profile, e.g. when does the largest deadline hit" nowIso={nowIso} actionSlot={actionCard} connectionsSlot={p.connectionRows.length > 0 ? <ItemConnections rows={p.connectionRows} /> : undefined} />
           {r.conversionTrigger && <p className={styles.noteText}>{r.conversionTrigger}</p>}
+          {p.claimsDegraded && (
+            <StateNote tone="error" action={{ label: "Retry", onClick: retry }}>
+              The facts of this profile did not load, so none is shown. Nothing was changed; try again.
+            </StateNote>
+          )}
           <SectionIndex sections={index} depth={depth} onDepthChange={setDepth} />
           <DetailLayout
             rail={
@@ -148,7 +153,7 @@ export function OperationsDetail(p: OperationsDetailProps) {
               {depth === "full" && unparsedBrief && <div className={styles.fullBrief}><GfmSection markdown={unparsedBrief} /></div>}
             </DetailSection>
             <DetailSection id="findings" title="Substantive findings" index={2}>
-              {known.length > 0 ? known.map(finding) : <StateNote>Detailed sections for this regional profile are not written yet; they need the profile&apos;s brief.</StateNote>}
+              {known.length > 0 ? known.map(finding) : <StateNote>{p.claimsDegraded ? "Detailed sections for this regional profile are withheld until the facts load." : "Detailed sections for this regional profile are not written yet; they need the profile&apos;s brief."}</StateNote>}
             </DetailSection>
             <DetailSection id="auxiliary-energy" title="Auxiliary energy load" aside={AUXILIARY_ENERGY_ASIDE} index={3}>
               {p.spec09.intensityFailed && <StateNote tone="error" action={{ label: "Retry", onClick: retry }}>The grid intensity for this region did not load, so loads show kWh only.</StateNote>}

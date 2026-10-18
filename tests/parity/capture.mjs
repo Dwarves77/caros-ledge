@@ -96,6 +96,14 @@ export function pickDetailHref(hrefs, listUrl, route) {
   return null;
 }
 
+// The path a `discover` route is captured at on the NEW site: the path its baseline entry recorded (detail parity compares the same item on both
+// sides), or null when the baseline holds none, in which case discovery from the list runs. The old site (--site old) always discovers, so a recapture is fresh.
+export function pinnedPath(route, baselineIndex, site) {
+  if (site === 'old') return null;
+  const entry = (baselineIndex?.routes ?? []).find((r) => r.name === route.name);
+  return entry && (entry.files ?? []).length && typeof entry.path === 'string' && entry.path.startsWith('/') ? entry.path : null;
+}
+
 // Resolves a `discover` route: the first same-origin link on the list page whose pathname matches and is not excluded.
 async function discover(page, base, route, gates, baselineIndex) {
   const { list, match } = route.discover;
@@ -322,7 +330,7 @@ async function main() {
       }
       const context = await browser.newContext({ viewport: VIEWPORTS[1], storageState: storage[route.auth] });
       try {
-        entry.path = await discover(await context.newPage(), base, route, gates, baselineIndex);
+        entry.path = pinnedPath(route, baselineIndex, args.site) ?? await discover(await context.newPage(), base, route, gates, baselineIndex);
       } catch (err) {
         entry.status = err.outcome?.status ?? 'error';
         entry.error = err.outcome?.status === 'skipped' ? err.outcome.error : err.message;
