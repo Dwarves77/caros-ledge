@@ -37,6 +37,8 @@ export interface ResearchDetailProps {
   resource: Resource;
   sections: SectionRow[];
   claimTiers: ClaimTierMap;
+  /** The claims or their suppressions could not be read: the stored sections and the brief are withheld (INV-270) and the page says so with Retry. */
+  claimsDegraded: boolean;
   recommendedActions: RecommendedAction[];
   connectionRows: ConnectionRow[];
   crossPage: CrossPageData;
