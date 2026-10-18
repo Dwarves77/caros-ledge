@@ -5,6 +5,7 @@
   "0067_drop_coverage_gap_census_findings": { "hold": "after `node scripts/cutover/export-table.mjs coverage_gap_census_findings` has written docs/archive/logs/<date>-coverage_gap_census_findings.json and its printed row count equals `select count(*) from public.coverage_gap_census_findings`; DESTRUCTIVE" },
   "0011_data_retier_analysis_bodies_t3": { "consumer": "src/core/sources/tier-contract.ts and host-class.ts (OECD, IEA, World Bank, IPCC at T3)", "after": "the schema phase, before the new tree serves" },
   "0015_data_screen_verdicts": { "consumer": "src/features/mint/screen.ts loadReviewedVerdicts", "after": "0014 and the census_worklist rows" },
+  "0016_data_source_type_backfill": { "consumer": "the sources registry readers of source_role and source_type (P2-S2, src/features/sources and src/core/sources/classify.ts, whose rules built the plan)", "after": "0014 and the sources columns (0011 retier first); generated at the window from cutover-run/sources-export.json" },
   "0030_data_market_series_items": { "consumer": "src/features/market/read.ts readMarketDetail and the published-price-statistics producer", "after": "0029" },
   "0045_data_market_series_cadence": { "consumer": "src/features/market/producers/market-series-items.ts readSeriesItemMap", "after": "0030 and 0044" },
   "0046_data_host_verdicts": { "consumer": "src/core/sources/host-verdicts.ts loadHostVerdicts", "after": "0042" },
