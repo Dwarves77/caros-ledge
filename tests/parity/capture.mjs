@@ -83,13 +83,9 @@ export function discoveryMissOutcome(route, gates, baselineIndex) {
   return { status: 'skipped', error: `discovery deferred: ${list} is frame-only (gates.frame)` };
 }
 
-// Resolves a `discover` route: the first same-origin link on the list page whose pathname matches and is not excluded.
-async function discover(page, base, route, gates, baselineIndex) {
-  const { list, match, exclude = [] } = route.discover;
-  const listUrl = new URL(list, base);
-  await page.goto(listUrl.href, { waitUntil: 'load', timeout: 60000 });
-  await settle(page);
-  const hrefs = await page.$$eval('a[href]', (anchors) => anchors.map((a) => a.getAttribute('href')));
+// The first same-origin href in `hrefs` whose pathname matches route.discover.match and is not excluded; null when none does.
+export function pickDetailHref(hrefs, listUrl, route) {
+  const { match, exclude = [] } = route.discover;
   const pattern = new RegExp(match);
   for (const href of hrefs) {
     if (!href) continue;
@@ -97,6 +93,18 @@ async function discover(page, base, route, gates, baselineIndex) {
     if (url.origin !== listUrl.origin) continue;
     if (pattern.test(url.pathname) && !exclude.includes(url.pathname)) return `${url.pathname}`;
   }
+  return null;
+}
+
+// Resolves a `discover` route: the first same-origin link on the list page whose pathname matches and is not excluded.
+async function discover(page, base, route, gates, baselineIndex) {
+  const { list, match } = route.discover;
+  const listUrl = new URL(list, base);
+  await page.goto(listUrl.href, { waitUntil: 'load', timeout: 60000 });
+  await settle(page);
+  const hrefs = await page.$$eval('a[href]', (anchors) => anchors.map((a) => a.getAttribute('href')));
+  const found = pickDetailHref(hrefs, listUrl, route);
+  if (found) return found;
   const miss = new Error(`discovery found no link on ${list} matching ${match}`);
   miss.outcome = discoveryMissOutcome(route, gates, baselineIndex);
   throw miss;

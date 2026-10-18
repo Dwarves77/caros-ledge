@@ -39,3 +39,22 @@ test('once the baseline carries files for the route, a miss fails as before (the
   assert.equal(discoveryMissOutcome(route('/market'), gates, index).status, 'error');
   assert.equal(discoveryMissOutcome(route('/regulations'), gates, index).status, 'skipped', 'a frame-only list is still deferred');
 });
+
+import { pickDetailHref } from './capture.mjs';
+import { readFileSync } from 'node:fs';
+
+const declared = JSON.parse(readFileSync(new URL('./routes.json', import.meta.url), 'utf8')).routes;
+const gated = JSON.parse(readFileSync(new URL('./approved-changes.json', import.meta.url), 'utf8')).gates.full;
+
+for (const [name, list, first] of [['research-detail', '/research', '/research/r-42'], ['operations-detail', '/operations', '/operations/o-7']]) {
+  test(`${name} is declared, gated full, and resolves the first detail link from a fixture link set`, () => {
+    const route = declared.find((r) => r.name === name);
+    assert.ok(route, `${name} in routes.json`);
+    assert.ok(gated.includes(name), `${name} in gates.full`);
+    assert.equal(route.discover.list, list);
+    const hrefs = [list, '#legend', 'https://elsewhere.example/x/y', '/dashboard', `${list}/`, first, `${list}/other`, `${list}/with/depth`];
+    assert.equal(pickDetailHref(hrefs, new URL(list, 'https://site.example'), route), first);
+    assert.equal(pickDetailHref(hrefs.filter((h) => h !== first), new URL(list, 'https://site.example'), route), `${list}/other`);
+    assert.equal(pickDetailHref([list, '/dashboard', `${list}/a/b`], new URL(list, 'https://site.example'), route), null);
+  });
+}
