@@ -1,6 +1,6 @@
 Forward changes only, one file per change (`NNNN_<change>.sql`), each ending in a DO-block self-check. The baseline is `supabase/schema.sql`; nothing here edits it.
 
-- `scripts/ci/schema-apply.mjs` applies `schema.sql`, then these files in name order, on an empty Postgres 15.14 in CI. It then runs the property checks and the catalog diff.
+- `scripts/ci/schema-apply.mjs` (superuser bootstrap, then everything from `schema.sql` as a production-shaped `postgres`: `scripts/ci/prod-role.mjs`) applies `schema.sql`, then these files in name order, on an empty Postgres 15.14 in CI. It then runs the property checks and the catalog diff.
 - A file's header names the register row that owes it and carries `-- catalog: <classes>` (any of column, relation, constraint, index, policy, trigger, function, acl, default_acl; `none` for data only). The catalog diff fails when a migration changes a class it did not declare or declares one it did not change.
 - A file with `_data_` in its name is a data migration. The schema job never commits it; it runs it once in a rolled-back transaction after its fixture. It ships with its consumer and runs at the cutover window (two-track policy).
 - Nothing here is applied to production before the cutover window; the old tree serves production until then.

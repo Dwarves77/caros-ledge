@@ -14,11 +14,22 @@ import { readSchema } from "../gen/test-schema.mjs";
 import { migrationProblems } from "./migration-checks.mjs";
 import { psql as runSql } from "./psql.mjs";
 
-const url = process.env.DATABASE_URL;
-if (!url) {
+// DATABASE_URL names the cluster's bootstrap superuser (`postgres`). The bootstrap below (roles, auth/vault/net stubs, the extensions schema)
+// stays superuser and runs on `suUrl`; everything from schema.sql onward runs on `url`, a role shaped like production's `postgres`
+// (scripts/ci/prod-role.mjs): LOGIN, not superuser, not a member of supabase_admin. A statement that needs more than production's role fails here, as it would there.
+import { bootstrapProductionRole, PRODUCTION_ROLE_GRANTS } from "./prod-role.mjs";
+
+if (!process.env.DATABASE_URL) {
   console.error("DATABASE_URL is required");
   process.exit(1);
 }
+const { appUrl: url, suUrl, db, shape } = await bootstrapProductionRole(process.env.DATABASE_URL);
+if (shape.rolsuper || shape.supabase_admin_member || !shape.rolcanlogin || !shape.rolbypassrls) {
+  console.error(`schema job role is not production-shaped: ${JSON.stringify(shape)}`);
+  process.exit(1);
+}
+console.log(`schema job role: postgres ${JSON.stringify(shape)}`);
+process.env.DATABASE_URL = url; // the property checks, generator pins and test-schema reader that follow connect as the same production-shaped role
 
 // Static checks, before any database work (scripts/ci/migration-checks.mjs).
 const staticProblems = migrationProblems();
@@ -48,8 +59,8 @@ CREATE OR REPLACE FUNCTION net.http_post(url text, body jsonb DEFAULT '{}', para
 DROP SCHEMA IF EXISTS public CASCADE;
 `;
 
-function psql(opts) {
-  const r = runSql(url, opts);
+function psql(opts, asSuperuser = false) {
+  const r = runSql(asSuperuser ? suUrl : url, opts);
   return { code: r.status, err: r.stderr, out: r.stdout };
 }
 
@@ -58,8 +69,10 @@ function errorsOf(text) {
 }
 
 function apply(stopOnError) {
-  const stub = psql({ sql: STUBS });
+  const stub = psql({ sql: STUBS }, true);
   if (stub.code !== 0) return { code: stub.code, errors: errorsOf(stub.err) };
+  const grants = psql({ sql: PRODUCTION_ROLE_GRANTS(db) }, true);
+  if (grants.code !== 0) return { code: grants.code, errors: errorsOf(grants.err) };
   const r = psql({ file: "supabase/schema.sql", stopOnError });
   const errors = errorsOf(r.err);
   return { code: r.code !== 0 || errors.length ? 1 : 0, errors };

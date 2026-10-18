@@ -6,8 +6,10 @@
 -- is a live risk.
 --
 -- What it does, in order:
---   1. Default privileges: new tables, sequences and functions created by postgres or supabase_admin grant NOTHING to anon,
---      authenticated or PUBLIC (functions: no PUBLIC EXECUTE). A new object needs an explicit grant.
+--   1. Default privileges: new tables, sequences and functions created by postgres grant NOTHING to anon,
+--      authenticated or PUBLIC (functions: no PUBLIC EXECUTE). A new object needs an explicit grant. The supabase_admin defaults are
+--      Supabase's own platform state and not ours to set: the linked connection is postgres, which is not a member of supabase_admin
+--      (42501 "must be member of role"), and every object these migrations create is owned by postgres.
 --   2. Sequences: anon loses ALL on the existing sequences.
 --   3. SEC-9 (old migration 386, branch-only, never applied): anon keeps SELECT on exactly the 14 relations in the grant table
 --      below and loses every privilege on every other relation (49 dead relations plus 29 whose only policy needs an identity).
@@ -17,7 +19,7 @@
 -- community_group_members keeps its roles-{public} policy and its anon grant: community_posts and community_thread_entities,
 -- which anon reads by design, subquery it, and a subquery needs the invoker's table privilege (old migration 386 header).
 --
--- Reversal: GRANT SELECT back on the listed relations to anon; ALTER POLICY ... TO public; ALTER DEFAULT PRIVILEGES ... GRANT.
+-- Reversal: GRANT SELECT back on the listed relations to anon; ALTER POLICY ... TO public; ALTER DEFAULT PRIVILEGES FOR ROLE postgres ... GRANT (the supabase_admin defaults are never touched, so there is nothing to restore for them).
 
 -- catalog: acl, default_acl, policy, function
 
@@ -25,13 +27,9 @@ BEGIN;
 
 -- 1. Default privileges.
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public REVOKE ALL ON TABLES FROM anon, authenticated;
-ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public REVOKE ALL ON TABLES FROM anon, authenticated;
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public REVOKE ALL ON SEQUENCES FROM anon, authenticated;
-ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public REVOKE ALL ON SEQUENCES FROM anon, authenticated;
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public REVOKE ALL ON FUNCTIONS FROM anon, authenticated;
-ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public REVOKE ALL ON FUNCTIONS FROM anon, authenticated;
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres REVOKE ALL ON FUNCTIONS FROM PUBLIC;
-ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin REVOKE ALL ON FUNCTIONS FROM PUBLIC;
 
 -- 2. Sequences.
 REVOKE ALL ON ALL SEQUENCES IN SCHEMA public FROM anon;
@@ -157,9 +155,10 @@ BEGIN
                AND policyname NOT IN (SELECT policyname FROM _public_policy_keep)) THEN
     RAISE EXCEPTION '0001-grants: an identity policy still names PUBLIC';
   END IF;
-  -- default privileges grant nothing to anon, authenticated or PUBLIC.
+  -- postgres's default privileges grant nothing to anon, authenticated or PUBLIC (supabase_admin's are the platform's, left as they are).
   IF EXISTS (SELECT 1 FROM pg_default_acl d, LATERAL aclexplode(d.defaclacl) a
-              WHERE a.grantee = 0 OR a.grantee IN (SELECT oid FROM pg_roles WHERE rolname IN ('anon', 'authenticated'))) THEN
+              WHERE d.defaclrole = (SELECT oid FROM pg_roles WHERE rolname = 'postgres')
+                AND (a.grantee = 0 OR a.grantee IN (SELECT oid FROM pg_roles WHERE rolname IN ('anon', 'authenticated')))) THEN
     RAISE EXCEPTION '0001-grants: a default ACL still grants to anon, authenticated or PUBLIC';
   END IF;
   -- sequences: anon holds nothing.
