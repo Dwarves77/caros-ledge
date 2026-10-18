@@ -22,12 +22,15 @@ export function stripFraming(name, text) {
   return body.join("\n");
 }
 
+// The real apply runs each file in its own transaction, so SET LOCAL settings die at the file boundary; here they would outlive it. These two are replicated after every body (not RESET ALL: a file may set a session setting for its successors).
+const RESET = "RESET ROLE; RESET session_replication_role;";
+
 /** The single script for [{name, text}] in order: BEGIN; marker, body per file; ROLLBACK;. Pure. */
 export function buildScript(files) {
   if (!files.length) throw new Error("dry-run: no files");
   const parts = ["BEGIN;"];
   for (const { name, text } of files) {
-    parts.push(`DO $dry$ BEGIN RAISE NOTICE 'cutover-dry-run: ${name}'; END $dry$;`, stripFraming(name, text));
+    parts.push(`DO $dry$ BEGIN RAISE NOTICE 'cutover-dry-run: ${name}'; END $dry$;`, stripFraming(name, text), RESET);
   }
   parts.push("ROLLBACK;");
   return parts.join("\n");

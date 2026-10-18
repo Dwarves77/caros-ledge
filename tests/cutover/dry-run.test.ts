@@ -27,3 +27,12 @@ test("the plan is the schema files from 0004 minus holds, then the data files", 
   const names = ["0003_a.sql", "0004_b.sql", "0005_c.sql", "0006_data_d.sql", "0007_e.sql", "APPLY.md"];
   assert.deepEqual(planFiles(names, { "0007_e": { hold: "x" } }), ["0004_b.sql", "0005_c.sql", "0006_data_d.sql"]);
 });
+
+test("RESET ROLE and RESET session_replication_role follow every body, before the next marker and before the final ROLLBACK", () => {
+  const s: string = buildScript([{ name: "0004_a.sql", text: framed("SELECT 1;") }, { name: "0005_b.sql", text: framed("SELECT 2;") }]);
+  const reset = "RESET ROLE; RESET session_replication_role;";
+  assert.equal(s.split(reset).length - 1, 2);
+  assert.ok(s.indexOf("SELECT 1;") < s.indexOf(reset) && s.indexOf(reset) < s.indexOf("cutover-dry-run: 0005_b.sql"));
+  assert.ok(s.lastIndexOf("SELECT 2;") < s.lastIndexOf(reset) && s.lastIndexOf(reset) < s.indexOf("ROLLBACK;"));
+  assert.ok(!/RESET ALL/.test(s));
+});
