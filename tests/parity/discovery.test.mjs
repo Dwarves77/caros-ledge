@@ -1,7 +1,8 @@
+import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { discoveryMissOutcome, pathFor } from './capture.mjs';
+import { discoveryMissOutcome, pathFor, pickDetailHref } from './capture.mjs';
 
 const route = (list) => ({ name: 'x-detail', discover: { list, match: '^/x/[^/]+$' } });
 const gates = { full: ['home', 'market'], frame: ['regulations', 'dashboard'] };
@@ -39,9 +40,6 @@ test('once the baseline carries files for the route, a miss fails as before (the
   assert.equal(discoveryMissOutcome(route('/market'), gates, index).status, 'error');
   assert.equal(discoveryMissOutcome(route('/regulations'), gates, index).status, 'skipped', 'a frame-only list is still deferred');
 });
-
-import { pickDetailHref } from './capture.mjs';
-import { readFileSync } from 'node:fs';
 
 const declared = JSON.parse(readFileSync(new URL('./routes.json', import.meta.url), 'utf8')).routes;
 const gated = JSON.parse(readFileSync(new URL('./approved-changes.json', import.meta.url), 'utf8')).gates.full;
