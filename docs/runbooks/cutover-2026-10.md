@@ -29,6 +29,7 @@ Names only; the values are entered in the places named and are never written dow
 | `SCRAPE_HOLD` | Vercel, GitHub | `src/core/fetch/hold.ts` | leave unset. Build mode is held by `system_state.scrape_cadence = 'off'` (rule 16); this is the second, environment switch and an unrecognised value counts as engaged |
 | `OPENALEX_POLITE_EMAIL` | Vercel | `src/core/http/openalex.ts` | optional contact address for OpenAlex's polite pool; leave unset unless the operator wants one |
 | `SEC_FAIR_ACCESS_UA` | GitHub (turn) | `src/core/fetch/direct.ts` | the User-Agent SEC requires for fair access; the turn only |
+| `EIA_API_KEY` | GitHub (turn) | `src/features/market/producers/eia-petroleum-spot.ts` | free EIA key; the producer is off at cutover (`MARKET_PRODUCER_EIA_V2_ENABLED` unset) |
 | `STORAGE_MAX_CHARS` | Edge, Vercel | `src/core/fetch/policy.ts`, `supabase/functions/capture-worker/index.ts` | optional; the shared default is 10,000,000 |
 | `SUPABASE_URL` | Edge (supplied by Supabase) | `supabase/functions/capture-worker/index.ts` | provided to every Edge Function; not entered by hand |
 | `PRODUCER_SUMMARY_DIR` | GitHub (turn) | `src/core/turn/wiring.ts` | optional; where producer summaries are written |

@@ -1,7 +1,9 @@
 // The cutover runbook lists the environment the tree reads, each name with where it is set: a variable read in src (or the Edge Function) without a row in docs/runbooks/cutover-2026-10.md, and a row for a name nothing reads,
 // are both failures, so the operator is never asked to set a variable the runbook does not know, nor to hunt for one the code stopped using. Names only: no value is read or compared.
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { test } from "node:test";
 
 // @ts-expect-error plain .mjs module
@@ -29,4 +31,16 @@ test("the names the live checks and the workflow use are in the runbook too, and
   const needed = [...Object.values(NEEDS as Record<string, string[]>).flat(), "VERCEL_AUTOMATION_BYPASS_SECRET", "DATABASE_URL"];
   for (const n of needed) assert.ok(runbook.includes(`\`${n}\``), `${n} is in the runbook`);
   assert.doesNotMatch(runbook, /eyJ[A-Za-z0-9_-]{20,}|sb_secret_|re_[A-Za-z0-9]{20,}|postgres(ql)?:\/\/[^\s`<]+:[^\s`@<]+@/, "no key, token or connection string with a password");
+});
+
+test("the scan finds every way a name is read: process.env.X, env.X, env[\"X\"], and an env read through a string constant (planted fixture)", () => {
+  const dir = mkdtempSync(join(tmpdir(), "env-scan-"));
+  try {
+    writeFileSync(join(dir, "consts.ts"), 'export const VIA_CONST_ENV = "FIXTURE_VIA_CONST";\nexport const SWITCH_ENV = "FIXTURE_SWITCH";\n');
+    writeFileSync(join(dir, "reads.ts"), 'const a = process.env.FIXTURE_DOT;\nconst b = process.env["FIXTURE_BRACKET"];\nconst c = deps.env["FIXTURE_DEPS_BRACKET"];\nconst d = ctx.deps.env[VIA_CONST_ENV];\nconst spec = { keyEnv: VIA_CONST_ENV, killSwitchEnv: SWITCH_ENV };\nconst e = deps.env[notAConstant];\n');
+    const found = [...(envNamesRead([dir]) as Map<string, string[]>).keys()].filter((n) => n.startsWith("FIXTURE_")).sort();
+    assert.deepEqual(found, ["FIXTURE_BRACKET", "FIXTURE_DEPS_BRACKET", "FIXTURE_DOT", "FIXTURE_SWITCH", "FIXTURE_VIA_CONST"]);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
