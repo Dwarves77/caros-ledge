@@ -56,6 +56,12 @@ CREATE SCHEMA IF NOT EXISTS net;
 CREATE TABLE IF NOT EXISTS net._http_response (id bigint, status_code int, content text);
 CREATE OR REPLACE FUNCTION net.http_post(url text, body jsonb DEFAULT '{}', params jsonb DEFAULT '{}', headers jsonb DEFAULT '{}', timeout_milliseconds int DEFAULT 5000)
   RETURNS bigint LANGUAGE sql AS $f$ SELECT 0::bigint $f$;
+-- Supabase's own storage schema carries postgres-owned default ACLs granting anon and authenticated (tables arwdDxt, sequences rwU, functions X), as on
+-- production. They are the platform's, not ours: a self-check that reads default ACLs without a schema scope fails on them (P2-15f, found on production).
+CREATE SCHEMA IF NOT EXISTS storage;
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA storage GRANT ALL ON TABLES TO anon, authenticated;
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA storage GRANT ALL ON SEQUENCES TO anon, authenticated;
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA storage GRANT ALL ON FUNCTIONS TO anon, authenticated;
 DROP SCHEMA IF EXISTS public CASCADE;
 `;
 

@@ -16,6 +16,7 @@
 --   4. The roles-{public} SELECT policies outside the grant table, which all need an authenticated identity, are rewritten
 --      TO authenticated, service_role (SEC-7's convention) so policy and grant agree.
 --   5. EXECUTE: trigger functions and invoker functions that write lose PUBLIC, anon and authenticated EXECUTE.
+-- Scope: schema public. Default ACLs in Supabase's own schemas (storage grants anon and authenticated on production) are the platform's, so the self-check reads only public's and the schema-less function defaults.
 -- community_group_members keeps its roles-{public} policy and its anon grant: community_posts and community_thread_entities,
 -- which anon reads by design, subquery it, and a subquery needs the invoker's table privilege (old migration 386 header).
 --
@@ -155,9 +156,11 @@ BEGIN
                AND policyname NOT IN (SELECT policyname FROM _public_policy_keep)) THEN
     RAISE EXCEPTION '0001-grants: an identity policy still names PUBLIC';
   END IF;
-  -- postgres's default privileges grant nothing to anon, authenticated or PUBLIC (supabase_admin's are the platform's, left as they are).
+  -- postgres's default privileges in schema public (and the schema-less function defaults this file sets) grant nothing to anon, authenticated or PUBLIC
+  -- (supabase_admin's and Supabase's own schemas', such as storage, are the platform's, left as they are).
   IF EXISTS (SELECT 1 FROM pg_default_acl d, LATERAL aclexplode(d.defaclacl) a
               WHERE d.defaclrole = (SELECT oid FROM pg_roles WHERE rolname = 'postgres')
+                AND (d.defaclnamespace = 'public'::regnamespace OR (d.defaclnamespace = 0 AND d.defaclobjtype = 'f'))
                 AND (a.grantee = 0 OR a.grantee IN (SELECT oid FROM pg_roles WHERE rolname IN ('anon', 'authenticated')))) THEN
     RAISE EXCEPTION '0001-grants: a default ACL still grants to anon, authenticated or PUBLIC';
   END IF;
