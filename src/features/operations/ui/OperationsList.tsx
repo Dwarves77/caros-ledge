@@ -51,7 +51,7 @@ export function OperationsList({ data, nowIso, chips, denominator, chipsFailed =
   const matchesTag = tagsFacet.matches;
   const filtered = useMemo(() => filterRows(rows, filter).filter((r) => matchesTag(r.id)), [rows, filter, matchesTag]);
   const counts = useMemo(() => liveFacetCounts(rows, filter, data.aggregates ? { byPriority: data.aggregates.byPriority as unknown as Record<string, number>, byJurisdiction: data.aggregates.byJurisdiction, totalItems: data.aggregates.totalItems } : {}), [rows, filter, data.aggregates]);
-  const bandCounts = data.rowsFailed ? null : (Object.fromEntries(counts.band.map((o) => [o.key, o.count])) as Record<UrgencyBandKey, number>);
+  const bandCounts = data.rowsFailed || data.aggregates === null ? null : (Object.fromEntries(counts.band.map((o) => [o.key, o.count])) as Record<UrgencyBandKey, number>);
 
   // The dimension facet's count is real coverage: how many of the roster's regions hold at least one fact for it.
   const dimensionOptions = useMemo(() => DIMENSIONS.map((d) => {
@@ -59,7 +59,7 @@ export function OperationsList({ data, nowIso, chips, denominator, chipsFailed =
     return { value: d.db, label: dimensionLabel(d), count: sourced, countLabel: `${sourced}/${roster?.length ?? 0}` };
   }), [data.facts, roster]);
   const facetGroups: FacetGroup[] = [
-    { key: "region", label: "Region", options: counts.region, selected: filter.region, onSelect: (v) => url.setFacet("region", v) },
+    { key: "region", label: "Region", options: data.aggregates === null ? [] : counts.region, selected: filter.region, onSelect: (v) => url.setFacet("region", v) },
     { key: "dimension", label: "Dimension", options: dimensionOptions, selected: dimensionFilter, onSelect: (v) => url.setExtra("dimension", v) },
     { key: "mode", label: "Mode", options: counts.mode, selected: filter.mode, onSelect: (v) => url.setFacet("mode", v) },
   ];
@@ -98,6 +98,7 @@ export function OperationsList({ data, nowIso, chips, denominator, chipsFailed =
   const failedReads = [!roster && "the region roster", roster && !data.facts && "the regional facts", roster && !data.coverage && "the coverage summary"].filter(Boolean);
   const above: ReactNode = (
     <>
+      {data.aggregates === null && <StateNote tone="error" action={{ label: "Retry", onClick: retry }}>The counts for this list did not load, so the band tiles and the Region totals are left blank.</StateNote>}
       {failedReads.length > 0 && <StateNote tone="error" action={{ label: "Retry", onClick: retry }}>The matrix is not shown: {failedReads.join(" and ")} did not load.</StateNote>}
       {roster && data.facts && <RegionMatrix regions={matrixRegions} dimensions={matrixDimensions} facts={data.facts} coverageRows={data.coverage ?? []} crossRefCounts={data.linkedRegulations} totalRegionCount={roster.length} profileHrefByRegion={profileHrefByRegion} />}
       {data.facts && roster && <StatementsBlock statements={statements.statements} droppedVerdicts={statements.droppedVerdicts} dimensionNames={statementNames} />}
@@ -106,7 +107,7 @@ export function OperationsList({ data, nowIso, chips, denominator, chipsFailed =
   return (
     <ListSurface
       title="Operations Intelligence"
-      dek={<><b>{formatNumber(counts.total)}</b> active items · <b>{formatNumber(jurisdictions)}</b> jurisdictions · {DIMENSION_COUNT_WORD} dimensions per region · every fact carries a source and date</>}
+      dek={<>{data.aggregates === null ? "Counts unavailable" : <><b>{formatNumber(counts.total)}</b> active items · <b>{formatNumber(jurisdictions)}</b> jurisdictions</>} · {DIMENSION_COUNT_WORD} dimensions per region · every fact carries a source and date</>}
       dateLabel={formatLocaleDate(now, { weekday: "long", year: "numeric", month: "long", day: "numeric", timeZone: "UTC" })}
       nowIso={nowIso}
       commandBar={<ShellCommandBar placeholder={PLACEHOLDER} />}
@@ -130,6 +131,7 @@ export function OperationsList({ data, nowIso, chips, denominator, chipsFailed =
       rail={
         <Fragment>
           <RailCard title="Coverage gaps" dataAudit="coverage-gaps-rail">
+            {data.stateCosts === null && <StateNote tone="error" action={{ label: "Retry", onClick: retry }}>The state-level cost facts did not load, so the US sub-national line is not shown.</StateNote>}
             {gaps.length > 0 && (
               <div className={styles.rail}>
                 {gaps.map((g) => (

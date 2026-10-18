@@ -75,6 +75,7 @@ export function MarketLedger({ resources, aggregates, failed = false, nowIso, se
 
   const withKind = useMemo(() => (kind ? resources.filter((r) => kindOf(r) === kind) : resources), [resources, kind]);
   const counts = useMemo(() => liveFacetCounts(withKind, filter, kind ? {} : { byPriority: aggregates?.byPriority as never, byJurisdiction: aggregates?.byJurisdiction ?? {}, totalItems: aggregates?.totalItems ?? 0 }), [withKind, filter, kind, aggregates]);
+  const countsFailed = !failed && aggregates === null;
   const kindOptions = useMemo(() => {
     const tally = new Map<string, number>();
     for (const r of filterRows(resources, filter)) {
@@ -86,7 +87,7 @@ export function MarketLedger({ resources, aggregates, failed = false, nowIso, se
   const facetGroups: FacetGroup[] = [
     { key: "kind", label: "Signal kind", options: kindOptions, selected: kind, onSelect: (v) => setExtra("kind", v) },
     { key: "mode", label: "Mode", options: counts.mode, selected: filter.mode, onSelect: (v) => setFacet("mode", v) },
-    { key: "region", label: "Region", options: counts.region, selected: filter.region, onSelect: (v) => setFacet("region", v) },
+    { key: "region", label: "Region", options: countsFailed ? [] : counts.region, selected: filter.region, onSelect: (v) => setFacet("region", v) },
   ];
 
   const sorted = useMemo(() => sortResourceRows(filterRows(withKind, { ...filter, band: null }).filter((r) => matchesTag(r.id)), sortKey, now), [withKind, filter, sortKey, now, matchesTag]);
@@ -128,7 +129,7 @@ export function MarketLedger({ resources, aggregates, failed = false, nowIso, se
         title="Market Intelligence"
         dek={
           <span data-audit="scope-line">
-            {failed ? "Signals unavailable" : <><b>{formatNumber(total)}</b> active signals</>}
+            {failed ? "Signals unavailable" : countsFailed ? "Signal count unavailable" : <><b>{formatNumber(total)}</b> active signals</>}
             {seriesCount !== null && (
               <>
                 {" · "}
@@ -140,14 +141,14 @@ export function MarketLedger({ resources, aggregates, failed = false, nowIso, se
         dateLabel={formatLocaleDate(now, { weekday: "long", year: "numeric", month: "long", day: "numeric", timeZone: "UTC" })}
         nowIso={nowIso}
         commandBar={<ShellCommandBar />}
-        bandCounts={failed ? null : bandCounts}
+        bandCounts={failed || countsFailed ? null : bandCounts}
         {...(failed ? { emptyState: <RetryNote what="Market signals" /> } : {})}
         selectedBand={filter.band}
         onSelectBand={(key) => toggleFacet("band", key)}
         facetGroups={facetGroups}
         secondaryFacetGroups={[tagGroup]}
         {...(tagsFacet.failed ? { stateNote: <StateNote tone="error" action={{ label: "Retry", onClick: tagsFacet.retry }}>Your workspace tags did not load.</StateNote> } : {})}
-        aboveRows={headline}
+        aboveRows={<>{countsFailed && <RetryNote what="The counts for this list (the band tiles and the Region totals)" />}{headline}</>}
         sortRow={
           <SortRow
             countLabel={

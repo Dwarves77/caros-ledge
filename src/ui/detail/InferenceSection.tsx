@@ -45,7 +45,16 @@ function InferenceClaim({ v, titles, hrefs }: { v: InferenceClaimView; titles: R
 }
 
 /** The Inferences section: at most five admissible claims, each with its question in words, status, confidence and citations. Nothing renders when none is admissible. */
-export function InferenceSection({ inferences, index }: { inferences?: InferenceView | null | undefined; index?: number | null | undefined }) {
+export function InferenceSection({ inferences, index, failed = false, onRetry }: { inferences?: InferenceView | null | undefined; index?: number | null | undefined; failed?: boolean; onRetry?: (() => void) | undefined }) {
+  if (failed) {
+    return (
+      <DetailSection id="inferences" title="Inferences" aside="Machine-written, not facts" index={index}>
+        <StateNote tone="error" {...(onRetry ? { action: { label: "Retry", onClick: onRetry } } : {})}>
+          The inferences did not load.
+        </StateNote>
+      </DetailSection>
+    );
+  }
   const visible = pickVisibleInferences(inferences?.claims ?? [], admissibleForDisplay);
   if (visible.length === 0) return null;
   return (

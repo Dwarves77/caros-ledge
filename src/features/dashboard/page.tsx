@@ -3,7 +3,7 @@ import { APP_DATA_TAG, cachedRead } from "@/core/cache";
 import { userClient } from "@/core/db/clients";
 import { formatLocaleDate } from "@/core/shared";
 import { log } from "@/core/shared/log";
-import { getWorkspaceProfile } from "@/core/workspace";
+import { readWorkspaceProfile } from "@/core/workspace";
 import { pageSession } from "@/features/account/server/page-session";
 import { PageFailure } from "@/ui/shell/PageFailure";
 import { readWatchlist, WATCHLIST_RAIL_LIMIT } from "@/features/watchlist/read/watchlist";
@@ -51,8 +51,8 @@ export default async function DashboardRoute() {
   }
   const db = await userClient();
   const themeChips = dashboardDeps().themeChips;
-  const [profile, digest, counts, watch, name, themes] = await Promise.all([
-    getWorkspaceProfile(db, orgId),
+  const [{ profile, failed: profileFailed }, digest, counts, watch, name, themes] = await Promise.all([
+    readWorkspaceProfile(db, orgId),
     cachedRead(["dashboard-digest", orgId], () => readDigest(db, orgId), { tags: [APP_DATA_TAG], revalidate: REVALIDATE_SECONDS }),
     cachedRead(["dashboard-counts", orgId], () => readCounts(db, orgId), { tags: [APP_DATA_TAG], revalidate: REVALIDATE_SECONDS }),
     settle("watchlist", () => readWatchlist(db, { userId: session.userId, orgId }, WATCHLIST_RAIL_LIMIT, now)),
@@ -82,6 +82,11 @@ export default async function DashboardRoute() {
         auditDate={d ? computeAuditDate(d.feed.map((f) => ({ changeDate: f.change_date ?? f.added_date })), d.lastChangelogDate) : ""}
         rowsFailed={!digest.ok}
         ratingsFailed={d?.ratingsFailed ?? false}
+        degraded={[
+          ...(profileFailed ? ["Your workspace profile did not load, so this brief is ranked without your sectors and jurisdictions."] : []),
+          ...(d?.timelinesFailed || watch?.timelinesFailed ? ["Milestone dates did not load for some rows, so their timelines are blank."] : []),
+          ...(d?.holdUnknown ? ["The collection hold state did not load, so the change window shown is the build-mode window."] : []),
+        ]}
         counts={totals}
         watchlist={watch?.items ?? null}
         themes={themes ?? []}

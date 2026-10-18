@@ -37,7 +37,7 @@ const WATCH_ITEMS: WatchlistItem[] = [
   { id: "src1", type: "source", scope: "team", title: "Official Journal of the European Union", watchedAt: "2026-10-09T09:00:00Z", note: null, addedBy: "Sam Ito", dueDays: null, fields: null },
   { id: "o9", type: "operations", scope: "personal", title: "Item no longer available", watchedAt: "2026-10-01T09:00:00Z", note: null, addedBy: null, dueDays: null, fields: null },
 ];
-const WATCH: WatchlistRead = { items: WATCH_ITEMS, capped: false, ratingsFailed: false };
+const WATCH: WatchlistRead = { items: WATCH_ITEMS, capped: false, ratingsFailed: false, timelinesFailed: false };
 const NOTICES: NoticesRead = { since: "2026-09-15T12:00:00.000Z", notices: [{ entityId: "e1", entityLabel: "EU ETS allowance price", methodId: "m", oldMethodVersion: "1", oldValue: 61.2, oldValueLow: null, oldValueHigh: null, newValueId: "n1", newMethodVersion: "1", newValue: 64.8, newValueLow: null, newValueHigh: null, unit: "EUR/t", currency: null, oldValueId: "o1", supersededAt: "2026-10-10T08:00:00Z", triggeringEvent: null }] };
 const SEARCH: SearchRow[] = ["EU Emissions Trading System (ETS) Extension to Maritime Transport", "Euro 7 Standard", "Regulation (EU) 2025/2083 of the European Parliament and of the Council of 8 October 2025 amending Regulation (EU) 2023/956 as regards simplifying and strengthening the carbon border adjustment mechanism (Text with EEA relevance)", "CountEmissions EU"].map((title, i) => ({ id: `s${i}`, title, item_type: "regulation", domain: 1, priority: i === 0 ? "CRITICAL" : "HIGH", jurisdictions: ["EU"], transport_modes: ["ocean"], topic: "emissions", tier: i === 3 ? null : 1 }));
 const PORTFOLIOS: PortfolioSummary[] = [{ id: "p1", name: "Asia to Europe lanes", createdAt: "2026-10-01T00:00:00Z", memberCount: 7 }, { id: "p2", name: "A portfolio with a very long name that must wrap rather than overflow the table on a narrow phone screen", createdAt: "2026-09-12T00:00:00Z", memberCount: 1 }];
@@ -57,7 +57,7 @@ export function DashSearchFixtures({ screen, titles }: { screen: string; titles:
     useBootstrapStore.setState({ data: { personalState: [], members: null, adminAttention: null, overrides: [], navCounts: null, assistantEnabled: true, degraded: [] }, status: "ready" });
   }, []);
   const parityRows: SearchRow[] = titles.map((title, i) => ({ id: `p${i}`, title, item_type: "regulation", domain: 1, priority: "HIGH", jurisdictions: ["EU"], transport_modes: ["ocean"], topic: "emissions", tier: null }));
-  const brief = (over: Partial<Parameters<typeof DashboardBrief>[0]> = {}) => <DashboardBrief dueRows={DUE} dueWindow="By next binding date · week of Oct 15, reaching to Jan 5, 2027" changedRows={CHANGED} totalChanges={49} windowDays={90} auditDate="2026-10-14" rowsFailed={false} ratingsFailed={false} counts={COUNTS} watchlist={WATCH_ITEMS} themes={[{ themeId: "t1", href: "/research", label: "Carbon pricing reaches shipping", itemTitle: "Carbon pricing reaches shipping", memberCount: 4, pages: [{ surface: "regulations", label: "Regulations" }, { surface: "research", label: "Research" }], hasBrief: false, stale: false, links: [] }]} {...over} />;
+  const brief = (over: Partial<Parameters<typeof DashboardBrief>[0]> = {}) => <DashboardBrief dueRows={DUE} dueWindow="By next binding date · week of Oct 15, reaching to Jan 5, 2027" changedRows={CHANGED} totalChanges={49} windowDays={90} auditDate="2026-10-14" rowsFailed={false} ratingsFailed={false} degraded={[]} counts={COUNTS} watchlist={WATCH_ITEMS} themes={[{ themeId: "t1", href: "/research", label: "Carbon pricing reaches shipping", itemTitle: "Carbon pricing reaches shipping", memberCount: 4, pages: [{ surface: "regulations", label: "Regulations" }, { surface: "research", label: "Research" }], hasBrief: false, stale: false, links: [] }]} {...over} />;
   return (
     <main data-fx="dash-search">
       {screen === "assistant" ? (
@@ -79,7 +79,7 @@ export function DashSearchFixtures({ screen, titles }: { screen: string; titles:
         </>
       ) : null}
       {screen === "watchlist" ? <WatchlistSurface watch={WATCH} notices={NOTICES} limit={250} dateLabel={DATE} nowIso={NOW} /> : null}
-      {screen === "watchlist-empty" ? <WatchlistSurface watch={{ items: [], capped: false, ratingsFailed: false }} notices={{ notices: [], since: "2026-09-15T12:00:00.000Z" }} limit={250} dateLabel={DATE} nowIso={NOW} /> : null}
+      {screen === "watchlist-empty" ? <WatchlistSurface watch={{ items: [], capped: false, ratingsFailed: false, timelinesFailed: false }} notices={{ notices: [], since: "2026-09-15T12:00:00.000Z" }} limit={250} dateLabel={DATE} nowIso={NOW} /> : null}
       {screen === "watchlist-failed" ? <WatchlistSurface watch={null} notices={null} limit={250} dateLabel={DATE} nowIso={NOW} /> : null}
       {screen === "search" ? <SearchResultsView q="emissions" outcome={{ ok: true, rows: SEARCH }} maxResults={20} dateLabel={DATE} nowIso={NOW} /> : null}
       {screen === "search-parity" ? <SearchResultsView q="emissions" outcome={{ ok: true, rows: parityRows }} maxResults={20} dateLabel={DATE} nowIso={NOW} /> : null}

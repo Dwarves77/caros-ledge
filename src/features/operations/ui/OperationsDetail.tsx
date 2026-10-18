@@ -137,6 +137,11 @@ export function OperationsDetail(p: OperationsDetailProps) {
               The facts of this profile did not load, so none is shown. Nothing was changed; try again.
             </StateNote>
           )}
+          {p.eligibility.unavailable && (
+            <StateNote tone="error" action={{ label: "Retry", onClick: retry }}>
+              The regional coverage data did not load, so the cost and cross-regional comparisons are not available.
+            </StateNote>
+          )}
           <SectionIndex sections={index} depth={depth} onDepthChange={setDepth} />
           <DetailLayout
             rail={

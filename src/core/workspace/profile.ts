@@ -118,26 +118,34 @@ export const DEFAULT_WORKSPACE_PROFILE: Readonly<WorkspaceProfile> = Object.free
 const strings = (v: unknown, fallback: string[]): string[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : fallback);
 
 /**
- * The viewer's workspace profile. A null org, an absent row or a failed read gives the default (a generic lens is still useful, so
- * this read never fails a page); a failed read is logged with its full diagnostic surface, never silent.
+ * The viewer's workspace profile. A null org or an absent row gives the default (a generic lens is still useful); a failed read gives the default AND `failed: true`, logged with its full diagnostic
+ * surface, so the page states that it is ranked without the profile (INV-263).
  */
-export async function getWorkspaceProfile(client: Db, orgId: string | null): Promise<WorkspaceProfile> {
-  if (!orgId) return DEFAULT_WORKSPACE_PROFILE;
+export async function readWorkspaceProfile(client: Db, orgId: string | null): Promise<{ profile: WorkspaceProfile; failed: boolean }> {
+  if (!orgId) return { profile: DEFAULT_WORKSPACE_PROFILE, failed: false };
   const { data, error } = await client.from("workspace_settings").select("sector_profile, jurisdiction_weights, profile").eq("org_id", orgId).maybeSingle();
   if (error) {
     log.warn(`[workspace-profile] read failed for org ${orgId}, using the default profile: ${describeError(error)}`);
-    return DEFAULT_WORKSPACE_PROFILE;
+    return { profile: DEFAULT_WORKSPACE_PROFILE, failed: true };
   }
-  if (!data) return DEFAULT_WORKSPACE_PROFILE;
+  if (!data) return { profile: DEFAULT_WORKSPACE_PROFILE, failed: false };
   const p = (data.profile && typeof data.profile === "object" ? data.profile : {}) as Record<string, unknown>;
   const weights = data.jurisdiction_weights;
   const org = parseOrgProfile(data.profile);
   return {
-    roles: strings(p.roles, DEFAULT_WORKSPACE_PROFILE.roles),
-    transportModes: strings(p.transport_modes, DEFAULT_WORKSPACE_PROFILE.transportModes),
-    verticals: strings(data.sector_profile, []),
-    jurisdictions: weights && typeof weights === "object" && !Array.isArray(weights) ? (weights as Record<string, number>) : DEFAULT_WORKSPACE_PROFILE.jurisdictions,
-    orgRoles: org.orgRoles,
-    orgSize: org.orgSize,
+    failed: false,
+    profile: {
+      roles: strings(p.roles, DEFAULT_WORKSPACE_PROFILE.roles),
+      transportModes: strings(p.transport_modes, DEFAULT_WORKSPACE_PROFILE.transportModes),
+      verticals: strings(data.sector_profile, []),
+      jurisdictions: weights && typeof weights === "object" && !Array.isArray(weights) ? (weights as Record<string, number>) : DEFAULT_WORKSPACE_PROFILE.jurisdictions,
+      orgRoles: org.orgRoles,
+      orgSize: org.orgSize,
+    },
   };
+}
+
+/** The viewer's workspace profile for the callers that rank in the background (relevance, upcoming obligations): the default on a failed read, which is logged. */
+export async function getWorkspaceProfile(client: Db, orgId: string | null): Promise<WorkspaceProfile> {
+  return (await readWorkspaceProfile(client, orgId)).profile;
 }

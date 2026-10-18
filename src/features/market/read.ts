@@ -252,7 +252,7 @@ async function ratifiedSeriesKey(db: Db, itemUuid: string): Promise<string | nul
 }
 
 /** Everything the market detail page reads beyond the item itself, each part its own Section. */
-export async function readMarketDetail(db: Db, item: { id: string; sourceId?: string | null }): Promise<MarketDetailBundle> {
+export async function readMarketDetail(db: Db, item: { id: string; sourceId?: string | null; needsCarbon?: boolean }): Promise<MarketDetailBundle> {
   const uuid = await section("item identity", () => resolveItemUuid(db, item.id));
   const itemUuid = uuid.ok ? uuid.data : null;
   const fail = <T,>(): Section<T> => ({ ok: false, error: "the item could not be identified" });
@@ -283,7 +283,9 @@ export async function readMarketDetail(db: Db, item: { id: string; sourceId?: st
           return { row, rating, cadenceDays: producer?.cadenceDays ?? null, sourceName: rating?.name ?? producer?.sourceName ?? null };
         })
       : Promise.resolve(fail<SeriesFigure | null>()),
-    section("carbon factors", async () => {
+    item.needsCarbon === false
+      ? Promise.resolve<MarketDetailBundle["carbon"]>({ ok: false, error: "not read: this signal draws no carbon block" })
+      : section("carbon factors", async () => {
       const factors = await readModalFactors(db);
       const [ratings, corridors] = await Promise.all([readSourceRatings(db, factors.map((f) => f.source_key)), panel<{ entity_id: string; canonical_name: string }>(db.from("entities").select("entity_id, canonical_name").eq("kind", "corridor").eq("status", "active").limit(500) as never, "entities")]);
       return { factors, ratings, corridorCandidates: candidatesFromCorridorEntities(corridors).candidates };

@@ -57,7 +57,7 @@ export function ResearchList({ data, nowIso, chips, denominator, chipsFailed = f
   const beforeTheme = useMemo(() => filterByWindow(filterRows(rows, filter), windowKey, now).filter((r) => matchesTag(r.id)), [rows, filter, windowKey, now, matchesTag]);
   const filtered = useMemo(() => (theme === UNCLASSIFIED ? beforeTheme.filter((r) => !themeOf(r)) : theme ? beforeTheme.filter((r) => themeOf(r) === theme) : beforeTheme), [beforeTheme, theme]);
   const counts = useMemo(() => liveFacetCounts(rows, filter, { ...(aggregates ? { byPriority: aggregates.byPriority as unknown as Record<string, number>, byJurisdiction: aggregates.byJurisdiction, totalItems: aggregates.totalItems } : {}) }), [rows, filter, aggregates]);
-  const bandCounts = data.rowsFailed ? null : (Object.fromEntries(counts.band.map((o) => [o.key, o.count])) as Record<UrgencyBandKey, number>);
+  const bandCounts = data.rowsFailed || aggregates === null ? null : (Object.fromEntries(counts.band.map((o) => [o.key, o.count])) as Record<UrgencyBandKey, number>);
 
   const pills = useMemo(() => {
     const tally = new Map<string, number>();
@@ -76,7 +76,7 @@ export function ResearchList({ data, nowIso, chips, denominator, chipsFailed = f
 
   const facetGroups: FacetGroup[] = [
     { key: "mode", label: "Mode", options: counts.mode, selected: filter.mode, onSelect: (v) => url.setFacet("mode", v) },
-    { key: "region", label: "Region", options: counts.region, selected: filter.region, onSelect: (v) => url.setFacet("region", v) },
+    { key: "region", label: "Region", options: aggregates === null ? [] : counts.region, selected: filter.region, onSelect: (v) => url.setFacet("region", v) },
   ];
   const tagGroup: FacetGroup = { key: "workspace-tags", label: "Workspace tags", options: tagsFacet.tags.map((t) => ({ value: t.id, label: t.name, count: t.itemCount })), selected: tagsFacet.selected, onSelect: tagsFacet.setSelected };
   const assessments = data.assessments;
@@ -116,7 +116,7 @@ export function ResearchList({ data, nowIso, chips, denominator, chipsFailed = f
   return (
     <ListSurface
       title="Research"
-      dek={<><b>{formatNumber(total)}</b> active findings · <b>{pills.length}</b> themes · peer-reviewed journals, think tanks, quantified-climate research, analytical press</>}
+      dek={<>{aggregates === null ? "Count unavailable" : <><b>{formatNumber(total)}</b> active findings</>} · <b>{pills.length}</b> themes · peer-reviewed journals, think tanks, quantified-climate research, analytical press</>}
       dateLabel={formatLocaleDate(now, { weekday: "long", year: "numeric", month: "long", day: "numeric", timeZone: "UTC" })}
       nowIso={nowIso}
       commandBar={<ShellCommandBar placeholder={PLACEHOLDER} />}
@@ -126,7 +126,7 @@ export function ResearchList({ data, nowIso, chips, denominator, chipsFailed = f
       facetGroups={facetGroups}
       stateNote={tagsFacet.failed ? <StateNote tone="error" action={{ label: "Retry", onClick: tagsFacet.retry }}>Your workspace tags did not load.</StateNote> : undefined}
       secondaryFacetGroups={[tagGroup]}
-            aboveRows={<ThemeFacetRow themes={pills} selected={theme} onSelect={(k) => url.setExtra("theme", k)} unclassifiedCount={unclassified} />}
+            aboveRows={<>{aggregates === null && <StateNote tone="error" action={{ label: "Retry", onClick: () => router.refresh() }}>The counts for this list did not load, so the band tiles and the Region totals are left blank.</StateNote>}<ThemeFacetRow themes={pills} selected={theme} onSelect={(k) => url.setExtra("theme", k)} unclassifiedCount={unclassified} /></>}
       sortRow={
         <SortRow
           countLabel={<><b>{formatNumber(filtered.length)} of {formatNumber(total)}</b> findings{theme ? ` · ${themeLabel(theme)}` : ""}</>}

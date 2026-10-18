@@ -7,7 +7,7 @@
 // read checks its error and the whole digest rejects: a failure is a stated failure, never an empty card (INV-263), and the cache above this refuses to keep it.
 import type { Db } from "@/core/db";
 import { fetchAllByIdChunks } from "@/core/db";
-import { getScrapeState } from "@/core/fetch";
+import { readScrapeStateOrClosed } from "@/core/fetch";
 import type { Resource } from "@/core/types";
 import { enrichSources, mapRows, readAggregates, readSurfaceCounts, readSurfaceTotals, type WorkspaceAggregates } from "@/features/lists";
 
@@ -29,6 +29,10 @@ export interface Digest {
   windowDays: number;
   /** The source ratings did not load: the rows carry no tier and the card says so. */
   ratingsFailed: boolean;
+  /** Some rows' milestone read failed: they draw with an empty timeline, and the card says so. */
+  timelinesFailed: boolean;
+  /** The cadence could not be read: it fails closed to off, so the window shown is the build-mode one, and the card says the hold state is unknown. */
+  holdUnknown: boolean;
 }
 
 type Raw = FullRow;
@@ -41,7 +45,8 @@ async function rpc<T>(db: Db, fn: string, args: Record<string, unknown>): Promis
 
 /** The digest for one workspace. Rejects when any read fails. */
 export async function readDigest(db: Db, orgId: string): Promise<Digest> {
-  const windowDays = recentChangesWindowDays((await getScrapeState(db)).cadence);
+  const { state: scrape, unreadable: holdUnknown } = await readScrapeStateOrClosed(db);
+  const windowDays = recentChangesWindowDays(scrape.cadence);
   const [due, feed] = await Promise.all([rpc<Raw>(db, "get_workspace_due_next", { p_org_id: orgId, p_limit: DUE_NEXT_READ }), rpc<FeedRow>(db, "get_workspace_recent_changes", { p_org_id: orgId, p_days: windowDays })]);
   const { changeIds } = selectBriefResources(due.map((d) => d.id), feed);
   const wanted = [...new Set([...due.map((d) => d.id), ...changeIds])];
@@ -71,7 +76,7 @@ export async function readDigest(db: Db, orgId: string): Promise<Digest> {
     if (error) throw new Error(`item_changelog read failed: ${error.message}`);
     lastChangelogDate = (data?.[0] as { change_date?: string } | undefined)?.change_date ?? null;
   }
-  return { dueNext, feed, candidates, changelogField, lastChangelogDate, windowDays, ratingsFailed: !ratings };
+  return { dueNext, feed, candidates, changelogField, lastChangelogDate, windowDays, ratingsFailed: !ratings, timelinesFailed: dueMapped.timelineFailures + changeMapped.timelineFailures > 0, holdUnknown };
 }
 
 export interface Counts {
