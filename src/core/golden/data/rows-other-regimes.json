@@ -1,0 +1,393 @@
+[
+ {
+  "illustrative": false,
+  "state": "ok",
+  "flags": [],
+  "retrieved": "2026-10-19",
+  "status": "verified",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "z_2023",
+    "unit": "%",
+    "origin": "printed",
+    "literal": "5",
+    "locale": "dp",
+    "value": "5",
+    "sigDigits": 1,
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "z_2024",
+    "unit": "%",
+    "origin": "printed",
+    "literal": "7",
+    "locale": "dp",
+    "value": "7",
+    "sigDigits": 1,
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "z_2025",
+    "unit": "%",
+    "origin": "printed",
+    "literal": "9",
+    "locale": "dp",
+    "value": "9",
+    "sigDigits": 1,
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "z_2026",
+    "unit": "%",
+    "origin": "printed",
+    "literal": "11",
+    "locale": "dp",
+    "value": "11",
+    "sigDigits": 2,
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "z_2027",
+    "unit": "%",
+    "origin": "printed",
+    "literal": "-",
+    "missing": "not_set",
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "z_2028",
+    "unit": "%",
+    "origin": "printed",
+    "literal": "-",
+    "missing": "not_set",
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "z_2029",
+    "unit": "%",
+    "origin": "printed",
+    "literal": "-",
+    "missing": "not_set",
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "z_2030",
+    "unit": "%",
+    "origin": "printed",
+    "literal": "-",
+    "missing": "not_set",
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "z_2020",
+    "unit": "%",
+    "origin": "printed",
+    "literal": "1",
+    "locale": "dp",
+    "value": "1",
+    "sigDigits": 1,
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "z_2021",
+    "unit": "%",
+    "origin": "printed",
+    "literal": "2",
+    "locale": "dp",
+    "value": "2",
+    "sigDigits": 1,
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "z_2022",
+    "unit": "%",
+    "origin": "printed",
+    "literal": "3",
+    "locale": "dp",
+    "value": "3",
+    "sigDigits": 1,
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   }
+  ],
+  "relations": [],
+  "traps": [
+   {
+    "what": "The dash for 2027 to 2030 means not yet set (to be strengthened): zero-filling it reads as no reduction.",
+    "wrong_value": "0"
+   },
+   {
+    "what": "Footnote: Z for 2020 to 2022 are 1%, 2% and 3%, set as business as usual; the table row for 2023 carries a footnote mark after 5%."
+   }
+  ],
+  "disagreements": [],
+  "id": "T17",
+  "kind": "truth",
+  "framework": "imo_cii",
+  "framework_version": "MEPC.338(76) G3, Table 1",
+  "checks": [
+   {
+    "doc": "imo_mepc338_76",
+    "page": 4,
+    "folio": "4",
+    "section": "Table 1 reduction factor Z",
+    "tokens": [
+     "2023 5%",
+     "2024 7%",
+     "2025 9%",
+     "2026 11%",
+     "2027 - **",
+     "1%, 2% and 3%"
+    ]
+   }
+  ]
+ },
+ {
+  "illustrative": false,
+  "state": "sources_disagree",
+  "flags": [],
+  "retrieved": "2026-10-19",
+  "status": "verified",
+  "inputs": [
+   {
+    "name": "sgf_newsletter",
+    "unit": "t/t",
+    "origin": "printed",
+    "literal": "0.15948315",
+    "locale": "dp",
+    "value": "0.15948315",
+    "sigDigits": 8
+   },
+   {
+    "name": "emissions",
+    "unit": "t CO2",
+    "origin": "constant",
+    "value": "100000",
+    "basis": "corpus-chosen illustrative input, not from the source"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "offset_if_newsletter",
+    "unit": "t CO2",
+    "origin": "derived",
+    "value": "15948.315",
+    "basis": "derived row, not from the source: input x the newsletter SGF2024",
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   }
+  ],
+  "relations": [
+   {
+    "type": "product",
+    "factors": [
+     "emissions",
+     "sgf_newsletter"
+    ],
+    "result": "offset_if_newsletter"
+   }
+  ],
+  "traps": [
+   {
+    "what": "Two ICAO documents give two SGF2024 values: both are kept with their document and date, and the later is never picked silently. All eight digits are stored.",
+    "wrong_value": "0.159"
+   }
+  ],
+  "disagreements": [
+   {
+    "figure": "sgf2024",
+    "sides": [
+     {
+      "doc": "icao_corsia_newsletter_2025_10",
+      "page": 2,
+      "tokens": [
+       "0.15948315"
+      ],
+      "literal": "0.15948315",
+      "value": "0.15948315",
+      "locale": "dp",
+      "gwp_set": "not_applicable",
+      "document_date": "October 2025, fourth edition"
+     },
+     {
+      "doc": "icao_acw_2026_corsia",
+      "page": 9,
+      "tokens": [
+       "0.15405257"
+      ],
+      "literal": "0.15405257",
+      "value": "0.15405257",
+      "locale": "dp",
+      "gwp_set": "not_applicable",
+      "document_date": "Aviation Climate Week 2026"
+     }
+    ]
+   }
+  ],
+  "id": "T18",
+  "kind": "disagreement",
+  "framework": "icao_corsia",
+  "framework_version": "SGF2024",
+  "checks": [
+   {
+    "doc": "icao_corsia_newsletter_2025_10",
+    "page": 2,
+    "folio": "2",
+    "section": "Fourth edition SGF document",
+    "tokens": [
+     "0.15948315"
+    ]
+   },
+   {
+    "doc": "icao_acw_2026_corsia",
+    "page": 9,
+    "folio": "9",
+    "section": "Overview slide",
+    "tokens": [
+     "0.15405257"
+    ]
+   }
+  ]
+ },
+ {
+  "illustrative": false,
+  "state": "ok",
+  "flags": [],
+  "retrieved": "2026-10-19",
+  "status": "verified",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "cii_min_gt",
+    "unit": "GT",
+    "origin": "printed",
+    "literal": "5,000",
+    "locale": "dp",
+    "value": "5000",
+    "sigDigits": 1,
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "eexi_min_gt",
+    "unit": "GT",
+    "origin": "printed",
+    "literal": "400",
+    "locale": "dp",
+    "value": "400",
+    "sigDigits": 1,
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "cii_report_by",
+    "unit": "date",
+    "origin": "printed",
+    "text": "31 March of the following year",
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "cii_corrective_plan",
+    "unit": "trigger",
+    "origin": "printed",
+    "text": "D three consecutive years or E in any year",
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   }
+  ],
+  "relations": [],
+  "traps": [
+   {
+    "what": "EEXI applies from 400 GT and CII from 5,000 GT: two thresholds, not interchangeable."
+   },
+   {
+    "what": "The same document prints 5,000GT and 5000 GT (with and without the comma and space).",
+    "wrong_value": "5"
+   }
+  ],
+  "disagreements": [],
+  "id": "T19",
+  "kind": "truth",
+  "framework": "uk_mgn683",
+  "framework_version": "MGN 683 (M+F), published 2023-04-03",
+  "categories": {
+   "regime": "CII and EEXI"
+  },
+  "checks": [
+   {
+    "doc": "mcga_mgn683",
+    "section": "Paragraphs 4.3, 6.1, 6.4 and 6.5",
+    "tokens": [
+     "5,000GT and above",
+     "400GT and above",
+     "31 March of the following year",
+     "D for three consecutive years"
+    ]
+   }
+  ]
+ },
+ {
+  "illustrative": false,
+  "state": "not_determinable",
+  "flags": [],
+  "retrieved": "2026-10-19",
+  "status": "verified",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "forwarder_applicability",
+    "unit": "state",
+    "origin": "derived",
+    "text": "not_determinable",
+    "basis": "the page assigns reasonable care to the importer and names no forwarder",
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "source_last_modified",
+    "unit": "date",
+    "origin": "derived",
+    "text": "2026-09-21",
+    "basis": "page footer Sep 21, 2026, ISO date",
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   }
+  ],
+  "relations": [],
+  "traps": [
+   {
+    "what": "The page places the duty of reasonable care on the importer and assigns a forwarder none: applicability for a forwarder is not determinable, never applies and never does not apply."
+   }
+  ],
+  "disagreements": [],
+  "id": "T20",
+  "kind": "rule",
+  "framework": "us_cbp",
+  "framework_version": "Section 232 FAQ, footer 2026-09-21",
+  "checks": [
+   {
+    "doc": "cbp_232_faq",
+    "section": "FAQ text and footer stamp",
+    "tokens": [
+     "Last Modified: Sep 21, 2026",
+     "responsibility of the importer"
+    ],
+    "absent": [
+     "forwarder"
+    ]
+   }
+  ]
+ }
+]

@@ -1,0 +1,137 @@
+[
+ {
+  "illustrative": false,
+  "state": "ok",
+  "flags": [],
+  "retrieved": "2026-10-19",
+  "status": "unresolved",
+  "inputs": [],
+  "outputs": [],
+  "relations": [],
+  "traps": [],
+  "disagreements": [],
+  "id": "G1",
+  "kind": "recheck",
+  "framework": "glec",
+  "framework_version": "3.2",
+  "unresolved_reason": "GLEC v3.2 (published 2025-10 per a vendor blog) could not be read: the register's own S3 URL answers HTTP 403 AccessDenied on 2026-10-19. Re-check the Module 4 road examples (T5, T6, T7).",
+  "categories": {
+   "rechecks": "T5,T6,T7"
+  },
+  "checks": [
+   {
+    "doc": "glec_v3_2",
+    "section": "same section as the v3.0 rows",
+    "tokens": []
+   }
+  ]
+ },
+ {
+  "illustrative": false,
+  "state": "ok",
+  "flags": [],
+  "retrieved": "2026-10-19",
+  "status": "unresolved",
+  "inputs": [],
+  "outputs": [],
+  "relations": [],
+  "traps": [],
+  "disagreements": [],
+  "id": "G2",
+  "kind": "recheck",
+  "framework": "glec",
+  "framework_version": "3.2",
+  "unresolved_reason": "GLEC v3.2 (published 2025-10 per a vendor blog) could not be read: the register's own S3 URL answers HTTP 403 AccessDenied on 2026-10-19. Re-check the Module 4 refrigerant example (T8, A3).",
+  "categories": {
+   "rechecks": "T8,A3"
+  },
+  "checks": [
+   {
+    "doc": "glec_v3_2",
+    "section": "same section as the v3.0 rows",
+    "tokens": []
+   }
+  ]
+ },
+ {
+  "illustrative": false,
+  "state": "ok",
+  "flags": [],
+  "retrieved": "2026-10-19",
+  "status": "unresolved",
+  "inputs": [],
+  "outputs": [],
+  "relations": [],
+  "traps": [],
+  "disagreements": [],
+  "id": "G3",
+  "kind": "recheck",
+  "framework": "glec",
+  "framework_version": "3.2",
+  "unresolved_reason": "GLEC v3.2 (published 2025-10 per a vendor blog) could not be read: the register's own S3 URL answers HTTP 403 AccessDenied on 2026-10-19. Re-check the Module 4 air example (T9).",
+  "categories": {
+   "rechecks": "T9"
+  },
+  "checks": [
+   {
+    "doc": "glec_v3_2",
+    "section": "same section as the v3.0 rows",
+    "tokens": []
+   }
+  ]
+ },
+ {
+  "illustrative": false,
+  "state": "ok",
+  "flags": [],
+  "retrieved": "2026-10-19",
+  "status": "unresolved",
+  "inputs": [],
+  "outputs": [],
+  "relations": [],
+  "traps": [],
+  "disagreements": [],
+  "id": "G4",
+  "kind": "recheck",
+  "framework": "glec",
+  "framework_version": "3.2",
+  "unresolved_reason": "GLEC v3.2 (published 2025-10 per a vendor blog) could not be read: the register's own S3 URL answers HTTP 403 AccessDenied on 2026-10-19. Re-check the Module 4 sea example (T10).",
+  "categories": {
+   "rechecks": "T10"
+  },
+  "checks": [
+   {
+    "doc": "glec_v3_2",
+    "section": "same section as the v3.0 rows",
+    "tokens": []
+   }
+  ]
+ },
+ {
+  "illustrative": false,
+  "state": "ok",
+  "flags": [],
+  "retrieved": "2026-10-19",
+  "status": "unresolved",
+  "inputs": [],
+  "outputs": [],
+  "relations": [],
+  "traps": [],
+  "disagreements": [],
+  "id": "G5",
+  "kind": "recheck",
+  "framework": "glec",
+  "framework_version": "3.2",
+  "unresolved_reason": "GLEC v3.2 (published 2025-10 per a vendor blog) could not be read: the register's own S3 URL answers HTTP 403 AccessDenied on 2026-10-19. Re-check the annex unit conversions (T11).",
+  "categories": {
+   "rechecks": "T11"
+  },
+  "checks": [
+   {
+    "doc": "glec_v3_2",
+    "section": "same section as the v3.0 rows",
+    "tokens": []
+   }
+  ]
+ }
+]
