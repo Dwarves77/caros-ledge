@@ -11,7 +11,7 @@ import { createElement, type ReactNode } from "react";
 import { Timeline } from "@/ui/Timeline";
 import { bandOf } from "@/core/lists";
 import { RelatedSignalLinks } from "@/features/market/ui/RelatedSignalLinks";
-import { RequestableCoverageState } from "@/features/coverage/client";
+import { RequestableCoverageState } from "@/features/coverage";
 
 import { renderApp } from "../_support/render.ts";
 import { memberWorld } from "../_support/sweep-worlds.ts";

@@ -6,7 +6,7 @@
 // when a SOURCED grid intensity for the region exists: the conversion the old card only named), the grid connection queue as a gate (blocked, clear or unknown, never a cost line) and the figures the flywheel
 // recomputed from Operations inputs, each with its inputs and the weakest source rating. A figure that cannot be drawn names the data it needs; a failed read says so with Retry.
 import { formatDate } from "@/core/shared";
-import { RequestableCoverageState } from "@/features/coverage/client";
+import { RequestableCoverageState } from "@/features/coverage";
 import { Absence, CoverageState, RailCard, TierChip } from "@/ui";
 
 import { auxiliaryEnergy } from "../calc/auxiliary-energy";
