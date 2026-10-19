@@ -4,6 +4,8 @@
 // the obligation register and the corridors strip arrive as server-rendered children.
 import type { ComponentProps, ReactNode } from "react";
 
+import { NoticesRail } from "@/ui/figures";
+
 import { BindingBanner } from "./BindingBanner";
 import { RegulationDetail } from "./RegulationDetail";
 import { useItemRelevance } from "./useItemRelevance";
@@ -17,6 +19,7 @@ export function DetailView({ children, ...body }: Body & { children?: ReactNode 
       <RegulationDetail {...body} relevance={relevance} />
       <BindingBanner relevance={relevance} retry={relevance.retry} />
       {children}
+      <NoticesRail />
     </>
   );
 }

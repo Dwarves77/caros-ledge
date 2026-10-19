@@ -56,10 +56,10 @@ export function Timeline({ entries, band, nowIso, onFullSchedule, fullScheduleHr
   return (
     <div data-part="timeline" className="cl-tl">
       <Header total={counts.total} passed={counts.passed} nextDate={counts.nextDate} />
-      <ol role="img" aria-label={`Milestone timeline: ${counts.total} milestones, ${counts.passed} passed`} className="cl-tl-track" style={{ ["--tl-n" as string]: visible.length, ["--tl-green" as string]: `${greenPercent(visible.map((c) => c.state))}%` }}>
-        <li aria-hidden="true" className="cl-tl-line" />
+      <div role="img" aria-label={`Milestone timeline: ${counts.total} milestones, ${counts.passed} passed`} className="cl-tl-track" style={{ ["--tl-n" as string]: visible.length, ["--tl-green" as string]: `${greenPercent(visible.map((c) => c.state))}%` }}>
+        <div aria-hidden="true" className="cl-tl-line" />
         {visible.map(({ entry, state, index }, i) => (
-          <li key={index} className="cl-tl-marker" data-state={state} style={{ ["--c" as string]: i + 1 }}>
+          <div key={index} className="cl-tl-marker" data-state={state} style={{ ["--c" as string]: i + 1 }}>
             <span className="cl-tl-date">{entry.date}</span>
             <span className="cl-tl-dotcell">
               <TimelineDot state={state} bandHex={band.hex} size={state === "next" ? 12 : 8} ring={3} />
@@ -67,9 +67,9 @@ export function Timeline({ entries, band, nowIso, onFullSchedule, fullScheduleHr
             <span title={entry.label} className="cl-tl-label">
               {entry.label}
             </span>
-          </li>
+          </div>
         ))}
-      </ol>
+      </div>
       {collapsed && hiddenCount > 0 &&
         (moreMarkersHref ? (
           <Link href={moreMarkersHref} data-audit="timeline-more-markers" className="cl-tl-more cl-tl-more--link">
