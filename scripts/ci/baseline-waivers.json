@@ -1,1 +1,15 @@
-{}
+{
+  "default-privileges": {
+    "slice": "P2-PLATFORM",
+    "date": "2026-10-19",
+    "reason": "Production carries these default privileges for the platform's own role supabase_admin in public (recorded in scripts/ci/data/production-shape.json). The app's role is not a member of supabase_admin and cannot change them; the schema job re-creates them from the shape so the database it checks is production's, and this check names them so a NEW default grant still fails.",
+    "offenders": [
+      "supabase_admin S in public default grants to anon",
+      "supabase_admin S in public default grants to authenticated",
+      "supabase_admin f in public default grants to anon",
+      "supabase_admin f in public default grants to authenticated",
+      "supabase_admin r in public default grants to anon",
+      "supabase_admin r in public default grants to authenticated"
+    ]
+  }
+}

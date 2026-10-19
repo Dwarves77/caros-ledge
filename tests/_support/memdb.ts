@@ -11,6 +11,8 @@ export interface MemCall {
   op: Op;
   payload?: unknown;
   filters: [string, string, unknown][];
+  /** The ordering the call asked for, in the order given: [column, ascending]. */
+  orders: [string, boolean][];
 }
 export type Err = { message: string; code?: string } | null;
 export type RpcFn = (args: Record<string, unknown>, db: MemDb) => { data?: unknown; error?: Err };
@@ -39,7 +41,7 @@ export interface MemOptions {
   relations?: Record<string, [string, string]>;
   /** Validate table and column names against the generated schema (default on). */
   schema?: SchemaInfo | null;
-  /** The server's max_rows cut on an unranged select. */
+  /** The server's max_rows cut on every select, a ranged one included (PostgREST applies it to both; Supabase's default is 1000). `null` turns it off for a test that needs more rows than that. */
   cap?: number | null;
   /** Answer every write with the rows it touched (the shape the scripted-world tests were written against); default only when the call asks to return them. */
   returnRows?: boolean;
@@ -80,7 +82,7 @@ export class MemDb {
   private autoN = 0;
 
   constructor(opts: MemOptions = {}, seed: Record<string, Row[]> = {}) {
-    this.opts = { ids: "listed", schema: SCHEMA, ...opts };
+    this.opts = { ids: "listed", schema: SCHEMA, cap: 1000, ...opts };
     for (const [t, rows] of Object.entries(seed)) this.seed(t, rows);
   }
   seed(table: string, rows: Row[]): this {
@@ -88,7 +90,9 @@ export class MemDb {
     this.tables[table] ??= [];
     for (const r of rows) {
       this.checkColumns(table, r);
-      (this.tables[table] ??= []).push({ ...(this.opts.ids === "listed" && WITH_ID.has(table) && r.id === undefined ? { id: this.nextId() } : {}), ...r });
+      // A row that was inserted has the column defaults the schema gives the columns it left out (a NOT NULL column with a default is never null): the constants only, not the clock.
+      const constants = Object.fromEntries(Object.entries(this.opts.schema?.tables[table]?.defaults ?? {}).filter(([, v]) => v !== "__now" && v !== "__today").map(([k, v]) => [k, Array.isArray(v) ? [...v] : v]));
+      (this.tables[table] ??= []).push({ ...constants, ...(this.opts.ids === "listed" && WITH_ID.has(table) && r.id === undefined ? { id: this.nextId() } : {}), ...r });
     }
     return this;
   }
@@ -239,13 +243,21 @@ class Query {
     this.preds.push(pred);
     return this;
   }
-  eq(c: string, v: unknown) { return this.f("eq", c, v, (r) => col(r, c) === v || (v === null && col(r, c) == null)); }
-  neq(c: string, v: unknown) { return this.f("neq", c, v, (r) => col(r, c) !== v); }
+  eq(c: string, v: unknown) {
+    // supabase-js sends `col=eq.null`, which compares with the text "null" and matches no row: it is never IS NULL (conformance: scripts/ci/checks/memdb-conformance.mjs).
+    if (v === null) throw new Error("memdb: .eq(\"" + c + "\", null) is `" + c + " = 'null'` on the database, not IS NULL: use .is(\"" + c + "\", null)");
+    return this.f("eq", c, v, (r) => col(r, c) === v);
+  }
+  neq(c: string, v: unknown) {
+    if (v === null) throw new Error("memdb: .neq(\"" + c + "\", null) is `" + c + " <> 'null'` on the database, not IS NOT NULL: use .not(\"" + c + "\", \"is\", null)");
+    // SQL `<>` is unknown for a NULL column, so the row is not returned.
+    return this.f("neq", c, v, (r) => col(r, c) != null && col(r, c) !== v);
+  }
   gt(c: string, v: unknown) { return this.f("gt", c, v, (r) => col(r, c) != null && cmp(col(r, c), v) > 0); }
   gte(c: string, v: unknown) { return this.f("gte", c, v, (r) => col(r, c) != null && cmp(col(r, c), v) >= 0); }
   lt(c: string, v: unknown) { return this.f("lt", c, v, (r) => col(r, c) != null && cmp(col(r, c), v) < 0); }
   lte(c: string, v: unknown) { return this.f("lte", c, v, (r) => col(r, c) != null && cmp(col(r, c), v) <= 0); }
-  in(c: string, v: unknown[]) { return this.f("in", c, v, (r) => v.includes(col(r, c))); }
+  in(c: string, v: unknown[]) { return this.f("in", c, v, (r) => col(r, c) != null && v.includes(col(r, c))); }
   is(c: string, v: unknown) { return this.f("is", c, v, (r) => (v === null ? col(r, c) == null : col(r, c) === v)); }
   not(c: string, op: string, v: unknown) { return this.f(`not.${op}`, c, v, (r) => (op === "is" ? !(v === null ? col(r, c) == null : col(r, c) === v) : op === "in" ? !String(v).replace(/[()]/g, "").split(",").includes(String(col(r, c))) : col(r, c) !== v)); }
   like(c: string, pat: string) { return this.f("like", c, pat, (r) => likeRe(pat).test(String(col(r, c) ?? ""))); }
@@ -262,7 +274,7 @@ class Query {
         if (kind === "is") return v === "null" ? x == null : String(x) === v;
         if (kind === "ilike") return likeRe(v, "i").test(String(x ?? ""));
         if (kind === "like") return likeRe(v).test(String(x ?? ""));
-        if (kind === "neq") return String(x) !== v;
+        if (kind === "neq") return x != null && String(x) !== v;
         if (kind === "eq") return String(x) === v;
         if (x == null) return false;
         return kind === "lt" ? cmp(x, v) < 0 : kind === "lte" ? cmp(x, v) <= 0 : kind === "gt" ? cmp(x, v) > 0 : cmp(x, v) >= 0;
@@ -273,8 +285,8 @@ class Query {
     return this;
   }
   order(c: string, o?: { ascending?: boolean }) { this.orders.push([c, o?.ascending !== false]); return this; }
-  limit(n: number) { this.lim = n; return this; }
-  range(a: number, b: number) { this.rng = [a, b]; this.lim = null; return this; }
+  limit(n: number) { this.lim = this.db.opts.cap ? Math.min(n, this.db.opts.cap) : n; return this; }
+  range(a: number, b: number) { this.rng = [a, b]; this.lim = this.db.opts.cap ?? null; return this; }
   maybeSingle() { this.single_ = "maybe"; return this; }
   single() { this.single_ = "one"; return this; }
   then(resolve: (v: unknown) => unknown, reject: (e: unknown) => unknown) {
@@ -282,7 +294,7 @@ class Query {
   }
 
   private run(): { data: unknown; error: Err; count: number | null } {
-    const call: MemCall = { table: this.table, op: this.op, payload: this.payload, filters: this.filters };
+    const call: MemCall = { table: this.table, op: this.op, payload: this.payload, filters: this.filters, orders: this.orders };
     this.db.calls.push(call);
     const message = this.db.failWhen?.(call);
     if (message) return { data: null, error: { message }, count: null };

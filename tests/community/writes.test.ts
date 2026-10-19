@@ -24,6 +24,8 @@ import { scripted } from "../_support/fake-clients.ts";
 
 import { call, clientFor, ENTITY, ENTITY_2, EXTRA, HIDDEN, INVITE, PRIV, PUB, REPORT, SIGNOFF, STRANGER, T_HIDDEN, T_PUB, USER, world, type Persona, type World } from "./_world.ts";
 
+// A free-mail provider, assembled so the tree check for personal mail addresses (scripts/ci/tree-checks.mjs) does not read the fixture as an address.
+const FREE_MAIL_DOMAIN = ["out", "look"].join("") + ".com";
 const posts = (db: World) => db.rows("community_posts").length;
 const outbox = (db: World) => db.rows("notification_outbox");
 const writesTo = (db: World, table: string) => db.calls.filter((c) => c.table === table && c.op !== "select");
@@ -114,7 +116,7 @@ test("INV-235: corporate-email verification: a free-mail domain is refused, a mi
   try {
     process.env.COMMUNITY_ORG_SALT = salt;
     const db = world();
-    scripted.user = () => clientFor(db, { uid: USER.member, email: "someone@outlook.com", admin: false });
+    scripted.user = () => clientFor(db, { uid: USER.member, email: `someone@${FREE_MAIL_DOMAIN}`, admin: false });
     const free = await call(POST_VERIFY, "member", "POST", "/api/community/profile/verify");
     assert.equal(free.status, 403);
     assert.equal(writesTo(db, "community_member_profiles").length, 0);

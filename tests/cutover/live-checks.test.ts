@@ -2,13 +2,16 @@
 // migrations' own self-checks (0068 for the provenance trigger) and the first live run at the window.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { test } from "node:test";
 
 // @ts-expect-error plain .mjs modules
 import { recordLiveSmoke } from "@/core/harness";
 import { runNotificationOutbox } from "@/features/drain/kinds";
 
-import { CHECKS, DEFAULT_CHECKS, FAILURE_BLOCK, identityAnonymous, memberReads, notificationDrain, pageFinding, pages, provenanceTrigger, SURFACE_PAGES } from "../../scripts/ci/live/checks.mjs";
+import { CHECKS, DEFAULT_CHECKS, FAILURE_BLOCK, identityAnonymous, memberReads, notificationDrain, pageFinding, pages, productionShape, provenanceTrigger, SURFACE_PAGES } from "../../scripts/ci/live/checks.mjs";
 // @ts-expect-error plain .mjs modules
 import { planRun, runLive, triggerOf } from "../../scripts/ci/live-checks.mjs";
 import { MemDb } from "../_support/memdb.ts";
@@ -131,6 +134,27 @@ test("IMP-074's residue: a trigger that flipped the fixture is clean; one that d
   assert.deepEqual((await provenanceTrigger({ phase: "before", io: { service: svc(null, gone) } })).map((f: Any) => f.severity), ["warn"]);
 });
 
+// ---- the production shape (G11) ----
+test("the production-shape check: production equal to the recorded shape is clean; a role setting that differs, a role that is missing, a schema ACL that moved and the function absent are each a finding", async () => {
+  const expectedShape = JSON.parse(readFileSync("scripts/ci/data/production-shape.json", "utf8")).shape;
+  const svc = (data: unknown, error: unknown = null) => ({ rpc: async () => ({ data, error }) });
+  const run = (data: unknown, phase = "after", error: unknown = null) => productionShape({ phase, io: { service: svc(data, error), expectedShape } }) as Promise<Any[]>;
+  assert.deepEqual(await run(structuredClone(expectedShape)), []);
+  assert.deepEqual(await run(JSON.stringify(expectedShape)), [], "the function may answer text");
+  const settings = structuredClone(expectedShape);
+  settings.roleSettings[0].settings = [...settings.roleSettings[0].settings, "planted_setting=1"];
+  assert.match((await run(settings))[0].text, /roleSettings: .*production-shape\.json .*; production /);
+  const noRole = structuredClone(expectedShape);
+  const gone = noRole.roles.pop();
+  assert.match((await run(noRole)).map((f: Any) => f.text).join("\n"), new RegExp(`roles: ${gone.name}: production-shape\\.json has .*; production has none`));
+  const acl = structuredClone(expectedShape);
+  acl.schemaAcls[0].acl = [...acl.schemaAcls[0].acl, "anon=U/postgres"];
+  assert.match((await run(acl))[0].text, /schemaAcls: /);
+  const absentFn = { code: "PGRST202", message: "no function" };
+  assert.deepEqual((await run(null, "after", absentFn)).map((f: Any) => f.severity), ["fail"]);
+  assert.deepEqual((await run(null, "before", absentFn)).map((f: Any) => f.severity), ["warn"]);
+});
+
 // ---- the notification drain: the real drain over a memory database ----
 const drainWorld = () => {
   const db = new MemDb({ ids: "uuid" });
@@ -143,6 +167,12 @@ test("the notification drain drains the planted row and only that row: it is sen
   assert.deepEqual(await notificationDrain({ io }), []);
   assert.deepEqual(db.rows("notification_outbox").map((r) => [r.user_id, r.status]), [["e0000000-0000-4000-8000-000000000009", "pending"]], "the other pending row is still pending and the planted one is gone");
   assert.equal(db.rows("notifications").length, 0);
+});
+test("the notification drain removes its planted rows even when the drain throws: no pending row is left for a real drain to send to the member (K:26)", async () => {
+  const { db, io } = drainWorld();
+  const findings = await notificationDrain({ io: { ...io, drain: async () => { throw new Error("drain exploded"); } } }).catch((e: Error) => e);
+  assert.match(String((findings as Error).message), /drain exploded/, "the throw still reaches the runner, which records the check as failed");
+  assert.deepEqual(db.rows("notification_outbox").map((r) => r.user_id), ["e0000000-0000-4000-8000-000000000009"], "only the other recipient's row remains: the planted pending row was deleted in the finally");
 });
 test("the notification drain attack: a drain that sends nothing, a row left pending, a missing notification and a failed cleanup are each a failure", async () => {
   const { io } = drainWorld();
@@ -179,7 +209,7 @@ test("each check is one live-smoke row through recordRun: a clean check is a suc
 // ---- the plan and the self-skip ----
 test("the plan names the environment NAMES that are missing and never runs half-equipped; the admin check skips on its own account; an unknown check is refused; the e-mail check runs only when named", () => {
   const full = { NEXT_PUBLIC_SUPABASE_URL: "u", SUPABASE_SERVICE_ROLE_KEY: "s", NEXT_PUBLIC_SUPABASE_ANON_KEY: "a", LIVE_SMOKE_EMAIL: "e", LIVE_SMOKE_PASSWORD: "p" };
-  assert.deepEqual(DEFAULT_CHECKS, CHECKS.filter((c: string) => c !== "invitation-email"));
+  assert.deepEqual(DEFAULT_CHECKS, CHECKS.filter((c: string) => c !== "invitation-email" && c !== "provenance-trigger"), "the e-mail check and the trigger check (a short lock on intelligence_items) run only when a dispatch names them");
   const none = planRun({ env: {}, base: "", record: true });
   assert.deepEqual(none.missing.sort(), ["LIVE_BASE_URL", "LIVE_SMOKE_EMAIL", "LIVE_SMOKE_PASSWORD", "NEXT_PUBLIC_SUPABASE_ANON_KEY", "NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"].sort());
   const ready = planRun({ env: full, base: "https://x.test", record: true });
@@ -191,12 +221,27 @@ test("the plan names the environment NAMES that are missing and never runs half-
   assert.deepEqual(planRun({ only: "sign-in,pages", env: {}, base: "https://x.test", record: false }).missing.sort(), ["LIVE_SMOKE_EMAIL", "LIVE_SMOKE_PASSWORD", "NEXT_PUBLIC_SUPABASE_ANON_KEY"], "the page checks need the member account only");
   assert.match(planRun({ only: "nope", env: full, base: "x", record: true }).error, /unknown check/);
   assert.deepEqual(planRun({ only: "identity-anonymous", env: { NEXT_PUBLIC_SUPABASE_URL: "u", SUPABASE_SERVICE_ROLE_KEY: "s" }, base: "https://x.test", record: true }).missing, []);
+  // G3: the admin check skips for lack of its account only in the default set; a dispatch that names it has asked for it, and a rotated admin password is then a missing name, not a green skip.
+  const named = planRun({ only: "admin-pages", env: full, base: "https://x.test", record: true });
+  assert.deepEqual([named.skipped, named.run, named.missing.sort()], [[], ["admin-pages"], ["LIVE_ADMIN_EMAIL", "LIVE_ADMIN_PASSWORD"]]);
 });
 
-test("the script itself self-skips with exit 2 and names what is missing, never a value, when the environment carries no credentials", () => {
+test("the script follows the one exit-code contract: a workstation with no credentials skips (exit 2) and names what is missing, never a value; a CI event that can carry secrets, or a named check, fails (exit 1) and lists the names; only a fork PR skips in CI", () => {
   const env = { PATH: process.env.PATH ?? "", SystemRoot: process.env.SystemRoot ?? "" };
-  const r = spawnSync(process.execPath, ["scripts/ci/live-checks.mjs", "--base", "https://preview.example.test"], { env, encoding: "utf8" });
-  assert.equal(r.status, 2, r.stderr);
-  assert.match(r.stdout, /self-skipped \(exit 2\).*NEXT_PUBLIC_SUPABASE_URL.*SUPABASE_SERVICE_ROLE_KEY/);
+  const run = (extra: Record<string, string>, ...args: string[]) => spawnSync(process.execPath, ["scripts/ci/live-checks.mjs", "--base", "https://preview.example.test", ...args], { env: { ...env, ...extra }, encoding: "utf8" });
+  const local = run({});
+  assert.equal(local.status, 2, local.stderr);
+  assert.match(local.stdout, /self-skipped \(exit 2\).*NEXT_PUBLIC_SUPABASE_URL.*SUPABASE_SERVICE_ROLE_KEY/);
+  for (const event of ["deployment_status", "workflow_dispatch", "push"]) {
+    const ci = run({ GITHUB_ACTIONS: "true", GITHUB_EVENT_NAME: event });
+    assert.equal(ci.status, 1, `${event}: a CI event that can carry secrets and lacks them has not run`);
+    assert.match(ci.stdout, /missing \(exit 1\).*NEXT_PUBLIC_SUPABASE_URL.*SUPABASE_SERVICE_ROLE_KEY/);
+  }
+  assert.equal(run({}, "--only", "member-reads").status, 1, "a check the caller named is a failure even on a workstation");
+  const dir = mkdtempSync(join(tmpdir(), "live-event-"));
+  writeFileSync(join(dir, "fork.json"), JSON.stringify({ pull_request: { head: { repo: { fork: true } } } }));
+  const fork = run({ GITHUB_ACTIONS: "true", GITHUB_EVENT_NAME: "pull_request", GITHUB_EVENT_PATH: join(dir, "fork.json") });
+  assert.equal(fork.status, 2, "a fork PR cannot carry secrets: the one event that skips in CI");
+  assert.match(fork.stdout, /fork cannot carry secrets; not set: .*SUPABASE_SERVICE_ROLE_KEY/);
   assert.equal(spawnSync(process.execPath, ["scripts/ci/live-checks.mjs", "--only", "nope", "--base", "https://x.test"], { env, encoding: "utf8" }).status, 1);
 });

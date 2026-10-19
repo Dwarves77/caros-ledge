@@ -4,7 +4,7 @@ import { test } from "node:test";
 import { POST, setIntakeDepsFactory } from "@/features/intake/api/run";
 
 import { fakeDb } from "../_support/fake-db.ts";
-import { PERSONAS, as, json, script, type Persona } from "../_support/personas.ts";
+import { PERSONAS, as, expectationFor, json, script, type Persona } from "../_support/personas.ts";
 
 import { factClaim, ITEM, makeWorld, marketSignalBody, metadata, poolHashOf, SPAN_PENALTY, SPAN_REPORT } from "./fixtures.ts";
 
@@ -17,11 +17,11 @@ const body = (w: ReturnType<typeof makeWorld>, over: Record<string, unknown> = {
 const call = async (persona: Persona, payload: string) => POST(as(persona, "/api/agent/run", { method: "POST", body: payload }), undefined as never);
 
 test("INV-161: persona matrix for POST /api/agent/run: anon 401, every non-admin 403, platform admin 200", async () => {
-  const expected: Record<Persona, number> = { anon: 401, viewer: 403, otherOrgMember: 403, member: 403, owner: 403, platformAdmin: 200 };
+  const expected: Record<Persona, number> = { anon: 401, viewer: 403, otherOrgMember: 403, member: 403, admin: 403, owner: 403, platformAdmin: 200 };
   for (const persona of PERSONAS) {
     const w = wire();
     const res = await call(persona, body(w));
-    assert.equal(res.status, expected[persona], `${persona}`);
+    assert.equal(res.status, expectationFor(expected, persona, "POST /api/agent/run"), `${persona}`);
     if (persona !== "platformAdmin") assert.equal(w.db.writes("intelligence_items").length, 0, `${persona} wrote nothing`);
   }
 });

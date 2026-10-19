@@ -1,0 +1,2 @@
+src/core/harness/exit.ts | new in R1b: the one exit-code contract (skip only where the event cannot carry secrets); the old scripts each decided exit 2 for themselves; no old counterpart
+src/core/harness/reap.ts | new in R1b: the reaper that closes a started-and-never-concluded run as crashed; the old ledger had no recorder of its own and nothing reaped; no old counterpart
