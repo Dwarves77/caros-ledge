@@ -59,6 +59,12 @@
       "match": "^(Global|EU|United States|United Kingdom|Asia.Pacific|Latin America|Middle East & Africa) room",
       "keep": "^(Global|EU|United States|United Kingdom|Asia.Pacific|Latin America|Middle East & Africa) room",
       "reason": "the seven room tiles are named by live data (the item count, then the three leading theme words drawn from the ledger); they compare by the room name"
+    },
+    {
+      "route": "settings",
+      "match": "^Restore .+ for the whole team$",
+      "keep": "^Restore ",
+      "reason": "the archive list is account data (the item a team archived is named by the live ledger); Restore buttons compare by their stable prefix and the \"for the whole team\" scope is held by the fixture row"
     }
   ],
   "rulings": [

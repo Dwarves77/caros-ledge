@@ -16,6 +16,8 @@ import { Button } from "@/ui";
 
 const NOW = "2026-10-15T00:00:00.000Z";
 const ARCHIVE: ArchiveRow[] = [
+  // The structure the member account has on production (one team-archived item, Expired), so the settings fixture parity compares like with like.
+  { title: "EU CBAM", href: "/regulations/t1", itemId: "t1", scope: "team", reason: "expired", note: null, archivedAt: "2026-04-28T00:00:00Z", replacement: null },
   { title: "FuelEU Maritime", href: "/regulations/o3", itemId: "o3", scope: "team", reason: "superseded", note: null, archivedAt: "2026-09-01T00:00:00Z", replacement: { title: "FuelEU Maritime, 2027 text", href: "/regulations/o4" } },
   { title: "Old port rule", href: "/regulations/o9", itemId: "o9", scope: "personal", reason: null, note: "Not relevant to our lanes", archivedAt: "2026-09-02T00:00:00Z", replacement: null },
 ];

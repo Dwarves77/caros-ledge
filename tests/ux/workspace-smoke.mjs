@@ -249,7 +249,8 @@ try {
 
   // ── fixture parity: the real /settings and /profile screens against the committed baseline ─────────────────────────
   const config = JSON.parse(readFileSync('tests/parity/approved-changes.json', 'utf8'));
-  const shell = [...config.frameControls, '^combobox:Search or ask'].map((re) => new RegExp(re));
+  // Shell parts come from src/ui/shell (AppShell): the frame controls, the search box and the signed-in notifications bell.
+  const shell = [...config.frameControls, '^combobox:Search or ask', '^button:Notifications$'].map((re) => new RegExp(re));
   for (const [route, screen, ready] of [['settings', 'settings', 'Show Band tiles'], ['profile', 'account', 'Save personal profile']]) {
     for (const viewport of [[1280, 900], [375, 812]]) {
       const where = `parity ${route} ${viewport.join('x')}`;
@@ -260,7 +261,7 @@ try {
         const captured = await s.page.evaluate(domSummary, 20);
         const baseline = JSON.parse(readFileSync(`tests/parity/baseline/${route}.${viewport.join('x')}.json`, 'utf8'));
         const scoped = { ...baseline, rows: { items: [] }, landmarks: baseline.landmarks.slice(Math.max(0, baseline.landmarks.findIndex((l) => l.name.startsWith('Account sections')))), headings: baseline.headings.filter((x, i, all) => x.text !== "Caro's Ledge" && !(i > 0 && all[i - 1].text === x.text && all[i - 1].level === x.level)), controls: baseline.controls.filter((c) => !shell.some((re) => re.test(`${c.role}:${c.name.replace(/(?<=[A-Za-z])[\d,]+$/, '')}`))) };
-        const { fails } = compareRecord(route, viewport.join('x'), scoped, captured, config.approved.filter((a) => a.route === route));
+        const { fails } = compareRecord(route, viewport.join('x'), scoped, captured, config.approved.filter((a) => a.route === route), config.dataNames ?? []);
         for (const f of fails) fail(where, f);
         // Attack: the same comparison on a capture missing one baseline control, one control out of order, and a swapped heading MUST fail.
         if (viewport[0] === 1280) {
@@ -268,8 +269,8 @@ try {
           const approved = config.approved.filter((a) => a.route === route);
           const dropped = { ...captured, controls: captured.controls.filter((c) => c.name !== pick.name) };
           const swapped = { ...captured, controls: [...captured.controls].reverse() };
-          if (compareRecord(route, '1280x900', scoped, dropped, approved).fails.length === 0) fail(where, `attack: a removed control (${pick.name}) passed the fixture parity`);
-          if (compareRecord(route, '1280x900', scoped, swapped, approved).fails.length === 0) fail(where, 'attack: a reversed control order passed the fixture parity');
+          if (compareRecord(route, '1280x900', scoped, dropped, approved, config.dataNames ?? []).fails.length === 0) fail(where, `attack: a removed control (${pick.name}) passed the fixture parity`);
+          if (compareRecord(route, '1280x900', scoped, swapped, approved, config.dataNames ?? []).fails.length === 0) fail(where, 'attack: a reversed control order passed the fixture parity');
         }
       } catch (e) {
         fail(where, e.message.split('\n')[0]);
