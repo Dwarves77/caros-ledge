@@ -1,5 +1,5 @@
 {
-  "_about": "The parity gate's configuration (tests/parity/compare.mjs). `gates` names what slice P2-09 owns: `full` routes are compared whole (landmarks, headings, controls, list fields, row heights at 375); `frame` routes only for the shell the slice draws (frameControls, frameHeadings); `pixelExact` routes also gate on the 2 percent pixel diff. `approved` lists the differences from the baseline that a ruling allows, each with its ruling; nothing else may differ. Later UI slices add their routes to `gates` in their own PR.",
+  "_about": "The parity gate's configuration (tests/parity/compare.mjs). `gates` names what slice P2-09 owns: `full` routes are compared whole (landmarks, headings, controls, list fields, row heights at 375); `frame` routes only for the shell the slice draws (frameControls, frameHeadings); `pixelExact` routes also gate on the 2 percent pixel diff. `approved` lists the differences from the baseline that a ruling allows, each with its ruling; nothing else may differ. It is empty because the baseline is the new production site (2026-10-19); a waiver must match a current difference, and compare.mjs ends its report with the `unused waivers:` line. `rulings` is text only. Later UI slices add their routes to `gates` in their own PR.",
   "gates": {
     "full": [
       "home",
@@ -36,7 +36,8 @@
     "^button:Open account menu",
     "^button:Back to top",
     "^button:(Open navigation|Search)$",
-    "^link:Account"
+    "^link:Account",
+    "^button:Notifications$"
   ],
   "frameLandmarks": {
     "1280x900": [
@@ -59,130 +60,19 @@
       "match": "^(Global|EU|United States|United Kingdom|Asia.Pacific|Latin America|Middle East & Africa) room",
       "keep": "^(Global|EU|United States|United Kingdom|Asia.Pacific|Latin America|Middle East & Africa) room",
       "reason": "the seven room tiles are named by live data (the item count, then the three leading theme words drawn from the ledger); they compare by the room name"
+    },
+    {
+      "route": "settings",
+      "match": "^Restore .+ for the whole team$",
+      "keep": "^Restore ",
+      "reason": "the archive list is account data (the item a team archived is named by the live ledger); Restore buttons compare by their stable prefix and the \"for the whole team\" scope is held by the fixture row"
     }
   ],
-  "approved": [
-    {
-      "id": "privacy-single-main",
-      "route": "privacy",
-      "kind": "landmark",
-      "match": "^main$",
-      "ruling": "ASSEMBLY H.1 (shell-list.md AppShell row): the old page nested a second <main> inside the shell's <main>; the shell supplies the one main landmark."
-    },
-    {
-      "id": "auth-field-height",
-      "route": "login",
-      "kind": "pixel",
-      "ruling": "ux-laws.md law 2 (binding, DP-2): fields and buttons are at least 44 px; artboard 16 draws 36 px fields. DESIGN CHANGES OWED #1 (artboard 16). Structure still gates."
-    },
-    {
-      "id": "auth-field-height-signup",
-      "route": "signup",
-      "kind": "pixel",
-      "ruling": "Same as auth-field-height (artboard 16)."
-    },
-    {
-      "id": "auth-field-height-home",
-      "route": "home",
-      "kind": "pixel",
-      "ruling": "Same as auth-field-height: / signed out lands on /login."
-    },
-    {
-      "id": "settings-removed-saved-views",
-      "route": "settings",
-      "kind": "control",
-      "match": "^(link:(S# .*|Saved searches · #|Data summary)|button:New saved search)$",
-      "ruling": "workspace.md (P1-02) section 7, rows SavedSearchesSection and DataSummary: TRASH as code (browser-only storage with roadmap copy and recall parameters the list never reads; a count of the client-held list, not the corpus). The remaining sections renumber under the section index (S3 Data, S4 Archive, S5 Help). A workspace-scoped saved view needs its own ruling and a table (IMPROVEMENTS)."
-    },
-    {
-      "id": "profile-field-names",
-      "route": "profile",
-      "kind": "control",
-      "match": "^textbox:(Your name|https://…|A short bio for the community)?$",
-      "ruling": "ux-laws.md law 14 and DP-2: the visible field labels (Full name, Headshot URL, Work email, Bio) become the controls' accessible names; the old names were placeholders, the last field had none. Layout, copy and order are unchanged."
-    },
-    {
-      "id": "market-carbon-gap-copy",
-      "route": "market",
-      "kind": "row",
-      "match": "^li:no (emission factor supplied for this corridor's mode [(]factor row|EU ETS/FuelEU/CBAM/UKA carbon-price input in market_series)",
-      "ruling": "WAVE-4-COMMON (integrity on every page): no customer string names an internal mechanism, table or code. market.md (P1-20) section 6 lists these two gap sentences: one printed the factor columns (ttw_co2e/wtw_co2e/wtt_co2e), the other a table (market_series) and a producer (eex-eua). Each gap keeps its meaning and its place in the list; only the internal names leave the sentence. Row height at 375 still gates the other two gaps."
-    },
-    {
-      "id": "research-why-unscored",
-      "route": "research",
-      "kind": "control",
-      "match": "^button:Why unscored",
-      "ruling": "INV-216 (the absence rule, binding): the words unscored, pending and not scored never render on a customer surface. The awareness note keeps its place and its job (it points at how impact is read) as the link 'How impact is read', which opens the legend. DESIGN CHANGES OWED (artboard 06)."
-    },
-    {
-      "id": "operations-matrix-row-height",
-      "route": "operations",
-      "kind": "row-height",
-      "match": "^D[1-7]",
-      "ruling": "ux-laws.md law 2 and the operator's 2026-10-16 44 px standard: the region matrix's dimension rows and cells are 44 px where artboard 08 draws 40 (DESIGN CHANGES OWED, artboard 08). Structure still gates."
-    },
-    {
-      "id": "facet-row-desktop",
-      "route": "regulations",
-      "kind": "pixel",
-      "viewport": "1280x900",
-      "ruling": "operator 2026-10-18 on Claude Design's recommendation, WCAG 2.5.8; law 2 exception for the desktop Filters card: facet rows keep a 24 px target on a 32 px pitch (24 px with 8 px clear) on desktop, 44 px on the phone (DESIGN CHANGES OWED 2)."
-    },
-    {
-      "id": "privacy-pixel",
-      "route": "privacy",
-      "kind": "pixel",
-      "ruling": "Operator 2026-10-16: 44 px is the standard on every control, so the nav card rows are 44 px (pitch 46) where artboard 01 draws about 42 (DESIGN CHANGES OWED 10); and rule 2 / INV-263: the nav cap draws no band split while the counts are unknown, where artboard 01 shows an equal 25 percent split that is a fabricated number (OWED 11). Structure still gates."
-    },
-    {
-      "id": "map-iso-register",
-      "route": "map",
-      "kind": "control",
-      "match": "^link:(Global|Latin America \\(other\\)|Nordic|GB|Asia \\(other\\)|Europe \\(other\\)|Asia|Latin America|North America|United States|United Kingdom)$",
-      "ruling": "regulations.md (P1-19) section 8, rows MapPage, rollup and centroids: the register is ISO-keyed (a country, its subdivisions rolled up); the legacy-slug rows (Global, Nordic, GB beside United Kingdom, the regional remainders) and the title-regex keying that put a Japan item under us are the defect the rollup replaces."
-    },
-    {
-      "id": "detail-assignee-name-sec5",
-      "route": "regulation-detail",
-      "kind": "control",
-      "match": "^button:smoke@example.invalid$",
-      "ruling": "SEC-5 (P2-02c): profiles.email is not readable under the authenticated column grant, so the roster cannot label a member without a profile name by e-mail; the control shows the Absence token with 'Name not set' (and the profile name when there is one) where the old page showed the e-mail."
-    },
-    {
-      "id": "market-detail-assignee-name-sec5",
-      "route": "market-detail",
-      "kind": "control",
-      "match": "^button:smoke@example.invalid$",
-      "ruling": "SEC-5 (P2-02c): profiles.email is not readable under the authenticated column grant, so the roster cannot label a member without a profile name by e-mail; the control shows the Absence token with 'Name not set' (and the profile name when there is one) where the old page showed the e-mail."
-    },
-    {
-      "id": "market-deadline-tie-order",
-      "route": "market",
-      "kind": "order",
-      "match": "^link:Compliance deadline",
-      "ruling": "old read ordered by event_date only (fsi-app/src/lib/forward-events/read-upcoming.mjs:200, no secondary key: heap order); new rule created_at then id (rulings 2026-10-17)"
-    },
-    {
-      "id": "research-detail-assignee-name-sec5",
-      "route": "research-detail",
-      "kind": "control",
-      "match": "^button:smoke@example.invalid$",
-      "ruling": "SEC-5 (P2-02c): profiles.email is not readable under the authenticated column grant, so the roster cannot label a member without a profile name by e-mail; the control shows the Absence token with 'Name not set' (and the profile name when there is one) where the old page showed the e-mail."
-    },
-    {
-      "id": "operations-detail-assignee-name-sec5",
-      "route": "operations-detail",
-      "kind": "control",
-      "match": "^button:smoke@example.invalid$",
-      "ruling": "SEC-5 (P2-02c): profiles.email is not readable under the authenticated column grant, so the roster cannot label a member without a profile name by e-mail; the control shows the Absence token with 'Name not set' (and the profile name when there is one) where the old page showed the e-mail."
-    },
-    {
-      "id": "operations-related-tie-order",
-      "route": "operations-detail",
-      "kind": "order",
-      "match": "^link:(India|Australia) Regional Operations Profile$",
-      "ruling": "old read ordered the related regional profiles by added_date only (fsi-app/src/app/operations/[slug]/page.tsx:203, jurisdiction query; :222, source query: no secondary key, heap order for tied dates); new rule added_date then id (src/features/research/read/related-items.ts), deterministic (rulings 2026-10-17)"
-    }
-  ]
+  "rulings": [
+    "Text only, not matching waivers. Retired 2026-10-19 (P2-15p) when the baseline became the new production site: the differences against the old site no longer exist, so their waivers are gone; the look decisions stay recorded here.",
+    "ux-laws.md law 2 (binding, DP-2): every control is at least 44 px. Artboard 16 draws 36 px auth fields (DESIGN CHANGES OWED 1); the artboard-01 privacy nav card rows are 44 px (pitch 46) where the artboard draws about 42 (OWED 10); the nav cap draws no band split while counts are unknown (rule 2 / INV-263, OWED 11). Structure still gates.",
+    "facet-row-desktop (operator 2026-10-18, on Claude Design's recommendation, WCAG 2.5.8): law 2 exception for the desktop Filters card only; facet rows keep a 24 px target on a 32 px pitch (24 px with 8 px clear) on desktop and 44 px on the phone (DESIGN CHANGES OWED 2).",
+    "Retired with the same change: the single-main landmark (ASSEMBLY H.1, the shell supplies the one main), SEC-5 assignee names, tie-order and row-height waivers, and the settings, profile, market, research and map look waivers; each was a difference from the old site only."
+  ],
+  "approved": []
 }

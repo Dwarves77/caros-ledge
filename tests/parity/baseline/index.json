@@ -1,12 +1,16 @@
 {
-  "captured_at": "2026-10-17T05:48:30.880Z",
-  "commit": "old site (carosledge.com) as of capture; the workflow ran on repo commit ede4a49d7f5f5288c946c52a8744e96cce207209",
+  "captured_at": "2026-10-19T03:12:43.868Z",
+  "commit": "deb1f6df198162dbfdccb0cb9e57e4755cdc37de",
+  "commit_source": "GITHUB_SHA",
   "base": "https://carosledge.com",
   "viewports": [
     "1280x900",
     "375x812"
   ],
-  "signin": "ok",
+  "signin": {
+    "member": "ok",
+    "admin": "skipped"
+  },
   "routes": [
     {
       "name": "home",
@@ -17,7 +21,17 @@
         "home.1280x900",
         "home.375x812"
       ],
-      "error": null
+      "error": null,
+      "diagnostics": {
+        "firstFailure": {
+          "status": 307,
+          "url": "https://carosledge.com/"
+        },
+        "navigations": 4,
+        "navigationPaths": [
+          "https://carosledge.com/login"
+        ]
+      }
     },
     {
       "name": "login",
@@ -28,7 +42,14 @@
         "login.1280x900",
         "login.375x812"
       ],
-      "error": null
+      "error": null,
+      "diagnostics": {
+        "firstFailure": null,
+        "navigations": 4,
+        "navigationPaths": [
+          "https://carosledge.com/login"
+        ]
+      }
     },
     {
       "name": "signup",
@@ -39,7 +60,14 @@
         "signup.1280x900",
         "signup.375x812"
       ],
-      "error": null
+      "error": null,
+      "diagnostics": {
+        "firstFailure": null,
+        "navigations": 4,
+        "navigationPaths": [
+          "https://carosledge.com/signup"
+        ]
+      }
     },
     {
       "name": "privacy",
@@ -50,7 +78,17 @@
         "privacy.1280x900",
         "privacy.375x812"
       ],
-      "error": null
+      "error": null,
+      "diagnostics": {
+        "firstFailure": {
+          "status": 307,
+          "url": "https://carosledge.com/operations"
+        },
+        "navigations": 4,
+        "navigationPaths": [
+          "https://carosledge.com/privacy"
+        ]
+      }
     },
     {
       "name": "dashboard",
@@ -61,7 +99,14 @@
         "dashboard.1280x900",
         "dashboard.375x812"
       ],
-      "error": null
+      "error": null,
+      "diagnostics": {
+        "firstFailure": null,
+        "navigations": 4,
+        "navigationPaths": [
+          "https://carosledge.com/"
+        ]
+      }
     },
     {
       "name": "regulations",
@@ -72,7 +117,14 @@
         "regulations.1280x900",
         "regulations.375x812"
       ],
-      "error": null
+      "error": null,
+      "diagnostics": {
+        "firstFailure": null,
+        "navigations": 4,
+        "navigationPaths": [
+          "https://carosledge.com/regulations"
+        ]
+      }
     },
     {
       "name": "regulation-detail",
@@ -83,7 +135,14 @@
         "regulation-detail.1280x900",
         "regulation-detail.375x812"
       ],
-      "error": null
+      "error": null,
+      "diagnostics": {
+        "firstFailure": null,
+        "navigations": 4,
+        "navigationPaths": [
+          "https://carosledge.com/regulations/g14"
+        ]
+      }
     },
     {
       "name": "market",
@@ -94,7 +153,14 @@
         "market.1280x900",
         "market.375x812"
       ],
-      "error": null
+      "error": null,
+      "diagnostics": {
+        "firstFailure": null,
+        "navigations": 4,
+        "navigationPaths": [
+          "https://carosledge.com/market"
+        ]
+      }
     },
     {
       "name": "market-detail",
@@ -105,7 +171,14 @@
         "market-detail.1280x900",
         "market-detail.375x812"
       ],
-      "error": null
+      "error": null,
+      "diagnostics": {
+        "firstFailure": null,
+        "navigations": 4,
+        "navigationPaths": [
+          "https://carosledge.com/market/9d18608f-269e-405a-9ad8-afa638dda928"
+        ]
+      }
     },
     {
       "name": "research",
@@ -116,103 +189,27 @@
         "research.1280x900",
         "research.375x812"
       ],
-      "error": null
-    },
-    {
-      "name": "operations",
-      "path": "/operations",
-      "auth": "member",
-      "status": "ok",
-      "files": [
-        "operations.1280x900",
-        "operations.375x812"
-      ],
-      "error": null
-    },
-    {
-      "name": "map",
-      "path": "/map",
-      "auth": "member",
-      "status": "ok",
-      "files": [
-        "map.1280x900",
-        "map.375x812"
-      ],
-      "error": null
-    },
-    {
-      "name": "search-emissions",
-      "path": "/search?q=emissions",
-      "auth": "member",
-      "status": "ok",
-      "files": [
-        "search-emissions.1280x900",
-        "search-emissions.375x812"
-      ],
-      "error": null
-    },
-    {
-      "name": "watchlist",
-      "path": "/watchlist",
-      "auth": "member",
-      "status": "ok",
-      "files": [
-        "watchlist.1280x900",
-        "watchlist.375x812"
-      ],
-      "error": null
-    },
-    {
-      "name": "community",
-      "path": "/community",
-      "auth": "member",
-      "status": "ok",
-      "files": [
-        "community.1280x900",
-        "community.375x812"
-      ],
-      "error": null
-    },
-    {
-      "name": "community-group",
-      "path": null,
-      "auth": "member",
-      "status": "skipped",
-      "files": [],
-      "error": "discovery deferred: /community is frame-only (gates.frame)"
-    },
-    {
-      "name": "settings",
-      "path": "/settings",
-      "auth": "member",
-      "status": "ok",
-      "files": [
-        "settings.1280x900",
-        "settings.375x812"
-      ],
-      "error": null
-    },
-    {
-      "name": "profile",
-      "path": "/profile",
-      "auth": "member",
-      "status": "ok",
-      "files": [
-        "profile.1280x900",
-        "profile.375x812"
-      ],
-      "error": null
-    },
-    {
-      "name": "admin",
-      "path": "/admin",
-      "auth": true,
-      "status": "ok",
-      "files": [
-        "admin.1280x900",
-        "admin.375x812"
-      ],
-      "error": null
+      "error": null,
+      "diagnostics": {
+        "firstFailure": {
+          "status": 429,
+          "url": "https://carosledge.com/api/workspace/tags"
+        },
+        "navigations": 6,
+        "navigationPaths": [
+          "https://carosledge.com/research"
+        ],
+        "throttle": [
+          {
+            "route": "research",
+            "path": "/research",
+            "viewport": "1280x900",
+            "attempt": 1,
+            "status": 429,
+            "waitMs": 8000
+          }
+        ]
+      }
     },
     {
       "name": "research-detail",
@@ -223,18 +220,213 @@
         "research-detail.1280x900",
         "research-detail.375x812"
       ],
-      "error": null
+      "error": null,
+      "diagnostics": {
+        "firstFailure": null,
+        "navigations": 4,
+        "navigationPaths": [
+          "https://carosledge.com/research/a7fd2700-de27-4cc1-b5e6-442fdf8a66ad"
+        ]
+      }
+    },
+    {
+      "name": "operations",
+      "path": "/operations",
+      "auth": "member",
+      "status": "ok",
+      "files": [
+        "operations.1280x900",
+        "operations.375x812"
+      ],
+      "error": null,
+      "diagnostics": {
+        "firstFailure": null,
+        "navigations": 4,
+        "navigationPaths": [
+          "https://carosledge.com/operations"
+        ]
+      }
     },
     {
       "name": "operations-detail",
-      "path": "/operations/singapore-regional-operations-profile",
+      "path": "/operations/india-regional-operations-profile",
       "auth": "member",
       "status": "ok",
       "files": [
         "operations-detail.1280x900",
         "operations-detail.375x812"
       ],
-      "error": null
+      "error": null,
+      "diagnostics": {
+        "firstFailure": null,
+        "navigations": 4,
+        "navigationPaths": [
+          "https://carosledge.com/operations/india-regional-operations-profile"
+        ]
+      }
+    },
+    {
+      "name": "map",
+      "path": "/map",
+      "auth": "member",
+      "status": "ok",
+      "files": [
+        "map.1280x900",
+        "map.375x812"
+      ],
+      "error": null,
+      "diagnostics": {
+        "firstFailure": null,
+        "navigations": 4,
+        "navigationPaths": [
+          "https://carosledge.com/map"
+        ]
+      }
+    },
+    {
+      "name": "search-emissions",
+      "path": "/search?q=emissions",
+      "auth": "member",
+      "status": "ok",
+      "files": [
+        "search-emissions.1280x900",
+        "search-emissions.375x812"
+      ],
+      "error": null,
+      "diagnostics": {
+        "firstFailure": null,
+        "navigations": 4,
+        "navigationPaths": [
+          "https://carosledge.com/search"
+        ]
+      }
+    },
+    {
+      "name": "watchlist",
+      "path": "/watchlist",
+      "auth": "member",
+      "status": "ok",
+      "files": [
+        "watchlist.1280x900",
+        "watchlist.375x812"
+      ],
+      "error": null,
+      "diagnostics": {
+        "firstFailure": null,
+        "navigations": 4,
+        "navigationPaths": [
+          "https://carosledge.com/watchlist"
+        ]
+      }
+    },
+    {
+      "name": "community",
+      "path": "/community",
+      "auth": "member",
+      "status": "ok",
+      "files": [
+        "community.1280x900",
+        "community.375x812"
+      ],
+      "error": null,
+      "diagnostics": {
+        "firstFailure": null,
+        "navigations": 4,
+        "navigationPaths": [
+          "https://carosledge.com/community"
+        ]
+      }
+    },
+    {
+      "name": "community-group",
+      "path": null,
+      "auth": "member",
+      "status": "skipped",
+      "files": [],
+      "error": "baseline owed: community-group not yet captured from the old site",
+      "diagnostics": {
+        "firstFailure": null,
+        "navigations": 0,
+        "navigationPaths": []
+      }
+    },
+    {
+      "name": "settings",
+      "path": "/settings",
+      "auth": "member",
+      "status": "ok",
+      "files": [
+        "settings.1280x900",
+        "settings.375x812"
+      ],
+      "error": null,
+      "diagnostics": {
+        "firstFailure": null,
+        "navigations": 4,
+        "navigationPaths": [
+          "https://carosledge.com/settings"
+        ]
+      }
+    },
+    {
+      "name": "profile",
+      "path": "/profile",
+      "auth": "member",
+      "status": "ok",
+      "files": [
+        "profile.1280x900",
+        "profile.375x812"
+      ],
+      "error": null,
+      "diagnostics": {
+        "firstFailure": {
+          "status": 429,
+          "url": "https://carosledge.com/api/workspace/bootstrap"
+        },
+        "navigations": 6,
+        "navigationPaths": [
+          "https://carosledge.com/profile"
+        ],
+        "throttle": [
+          {
+            "route": "profile",
+            "path": "/profile",
+            "viewport": "1280x900",
+            "attempt": 1,
+            "status": 429,
+            "waitMs": 14000
+          },
+          {
+            "route": "profile",
+            "path": "/profile",
+            "viewport": "1280x900",
+            "attempt": 1,
+            "status": 429,
+            "waitMs": 14000
+          },
+          {
+            "route": "profile",
+            "path": "/profile",
+            "viewport": "1280x900",
+            "attempt": 1,
+            "status": 429,
+            "waitMs": 14000
+          }
+        ]
+      }
+    },
+    {
+      "name": "admin",
+      "path": "/admin",
+      "auth": "admin",
+      "status": "skipped",
+      "files": [],
+      "error": "admin routes gate on the deployed preview",
+      "diagnostics": {
+        "firstFailure": null,
+        "navigations": 0,
+        "navigationPaths": []
+      }
     }
   ]
 }
