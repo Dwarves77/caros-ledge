@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 /** The honest identity every golden-corpus fetch declares (R6a): one request per second per host, a shared on-disk cache so a test run does not refetch. */
-export const GOLDEN_UA = "CarosLedge/1.0 (+https://carosledge.com/bot)";
+const GOLDEN_UA = "CarosLedge/1.0 (+https://carosledge.com/bot)";
 const CACHE = join(tmpdir(), "caros-golden-cache");
 const TTL_MS = 6 * 3600 * 1000;
 const lastByHost = new Map<string, number>();
@@ -19,7 +19,7 @@ async function pace(host: string): Promise<void> {
 }
 
 /** HTML to readable text: scripts and styles dropped, block ends become newlines, entities for the characters the pages use decoded. */
-export function htmlToText(html: string): string {
+function htmlToText(html: string): string {
   return html
     .replace(/<(script|style|noscript)[\s\S]*?<\/\1>/gi, " ").replace(/<!--[\s\S]*?-->/g, " ")
     .replace(/<\/(p|div|li|h[1-6]|tr|table|ul|ol|section|article)>|<br\s*\/?>/gi, "\n").replace(/<\/t[dh]>/gi, " | ")

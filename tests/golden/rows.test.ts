@@ -26,6 +26,23 @@ test("INV-R6a-1: a row is verified with a locator that carries probes, or unreso
   }
 });
 
+test("INV-R6a-1 bounds: every printed value is its literal under its locale, within its printed digits, and on a cited locator", () => {
+  for (const r of ROWS.filter((x) => x.status === "verified")) {
+    const probes = [...r.checks.flatMap((c) => c.tokens), ...r.disagreements.flatMap((d) => d.sides.flatMap((s) => s.tokens))];
+    const results = new Set(r.relations.flatMap((x) => (x.type === "sum" ? [x.total] : x.type === "wtw" ? [x.wtw] : [x.result])));
+    for (const q of [...r.inputs, ...r.outputs]) {
+      const where = `${r.id} ${q.name}`;
+      assert.equal([q.value, q.text, q.missing].filter((v) => v !== undefined).length, 1, `${where}: exactly one of value, text, missing (a typed missing is never zero-filled)`);
+      if (q.origin === "derived" && q.value !== undefined) assert.ok(results.has(q.name), `${where}: a derived value is the result of a stated relation`);
+      if (q.origin !== "printed" || q.value === undefined) continue;
+      assert.equal(parseLiteral(q.literal!, q.locale!), q.value, `${where}: value is not its printed literal under ${q.locale}`);
+      assert.ok(q.sigDigits! <= q.literal!.replace(/\D/g, "").length, `${where}: sigDigits exceeds the printed digits`);
+      assert.ok(probes.some((t) => t.includes(q.literal!)), `${where}: the printed literal ${q.literal} is on no cited locator`);
+    }
+    for (const o of r.outputs) if (/CO2e/.test(o.unit)) assert.notEqual(o.gwp_set, "not_applicable", `${r.id} ${o.name}: a CO2e figure names its GWP set`);
+  }
+});
+
 test("GLEC rows are tagged v3.0 pending v3.2, and every v3.0 GLEC row has a re-check row", () => {
   const glec = ROWS.filter((r) => r.framework === "glec" && r.framework_version === "3.0");
   assert.ok(glec.length >= 8);

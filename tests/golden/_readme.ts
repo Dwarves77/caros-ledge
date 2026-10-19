@@ -9,7 +9,7 @@ const table = (head: string, rows: Array<[string, number]>): string => [`| ${hea
 const ORDER = ["prohibited", "conditional", "terms_unverified", "permitted"];
 
 /** A row's licence class is the worst class over every document it cites. */
-export function rowLicence(row: GoldenRow): string {
+function rowLicence(row: GoldenRow): string {
   const docs = [...row.checks.map((c) => c.doc), ...row.disagreements.flatMap((d) => d.sides.map((s) => s.doc))];
   return docs.map(licenceClass).sort((a, b) => ORDER.indexOf(a) - ORDER.indexOf(b))[0] ?? "terms_unverified";
 }

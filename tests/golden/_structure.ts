@@ -4,7 +4,7 @@ const RED_TOKEN = /^[\d.,\- %/*]+[A-Za-z/]{0,6}$/;
 const WORD = /[a-z0-9]+/g;
 
 /** Every string in a row, with where it sits, so a prose check cannot miss a field. */
-export function stringsOf(value: unknown, path = ""): Array<[string, string]> {
+function stringsOf(value: unknown, path = ""): Array<[string, string]> {
   if (typeof value === "string") return [[path, value]];
   if (Array.isArray(value)) return value.flatMap((v, i) => stringsOf(v, `${path}[${i}]`));
   if (value && typeof value === "object") return Object.entries(value).flatMap(([k, v]) => stringsOf(v, `${path}.${k}`));
@@ -12,7 +12,6 @@ export function stringsOf(value: unknown, path = ""): Array<[string, string]> {
 }
 
 const isRed = (doc: string): boolean => licenceClass(doc) === "prohibited";
-const docsOf = (row: GoldenRow): string[] => [...row.checks.map((c) => c.doc), ...row.disagreements.flatMap((d) => d.sides.map((s) => s.doc))];
 
 /** Static structure of the licence-red rows: probes against a red document are bare figures with a unit, never a phrase, and no string carries a quotation mark. */
 export function structureProblems(rows: readonly GoldenRow[]): string[] {
@@ -29,7 +28,7 @@ export function structureProblems(rows: readonly GoldenRow[]): string[] {
 const prose = (w: string[]): boolean => w.filter((x) => /^[a-z]{2,}$/.test(x)).length * 8 >= w.length * 5;
 
 /** Eight-word prose windows of a text, lower-cased, punctuation dropped. */
-export function windows(text: string, n = 8): Set<string> {
+function windows(text: string, n = 8): Set<string> {
   const w = text.toLowerCase().match(WORD) ?? [];
   const set = new Set<string>();
   for (let i = 0; i + n <= w.length; i += 1) if (prose(w.slice(i, i + n))) set.add(w.slice(i, i + n).join(" "));
@@ -50,4 +49,3 @@ export function proseOverlap(rows: readonly GoldenRow[], redText: string, n = 8)
 }
 
 export const redDocs = (): string[] => Object.keys(DOCUMENTS).filter(isRed);
-export const rowsOnRedDocs = (rows: readonly GoldenRow[]): GoldenRow[] => rows.filter((r) => docsOf(r).some(isRed));

@@ -49,8 +49,8 @@ const row = z.object({
   traps: z.array(z.object({ what: z.string().max(320), wrong_value: z.string().max(40).optional() }).strict()), disagreements: z.array(z.object({ figure: z.string(), sides: z.array(side).min(2) }).strict()).default([]),
 }).strict();
 export type GoldenRow = z.infer<typeof row>;
-export type GoldenOutput = z.infer<typeof output>;
-export type GoldenDocument = z.infer<typeof documentSchema>;
+type GoldenOutput = z.infer<typeof output>;
+type GoldenDocument = z.infer<typeof documentSchema>;
 
 export const DOCUMENTS: Readonly<Record<string, GoldenDocument>> = z.record(z.string(), documentSchema).parse(documentsRaw);
 const RANK = ["permitted", "conditional", "unverified", "prohibited"];
@@ -63,7 +63,7 @@ export function licenceClass(doc: string): "permitted" | "conditional" | "terms_
 }
 
 /** Parse rows and refuse the ones that cannot be truth: a guessed value (INV-R6a-1), a missing GWP set or boundary, an unlinked derived value, a verified row with no locator. */
-export function parseRows(raw: unknown[]): GoldenRow[] {
+function parseRows(raw: unknown[]): GoldenRow[] {
   const rows = z.array(row).parse(raw);
   const seen = new Set<string>();
   for (const r of rows) {
