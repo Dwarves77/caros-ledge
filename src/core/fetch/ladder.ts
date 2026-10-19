@@ -73,25 +73,26 @@ export interface SubstituteHit {
   result: TransportResult;
 }
 export interface LadderDeps {
-  cacheGet?: (url: string) => Maybe<{ text?: string }>;
-  apiFetch?: (url: string) => Maybe<TransportResult>;
+  /** Every rung is a member of the ladder; a rung the caller does not run is a typed null, never an omission. */
+  cacheGet: ((url: string) => Maybe<{ text?: string }>) | null;
+  apiFetch: ((url: string) => Maybe<TransportResult>) | null;
   /** Read the source's registered feed (R2c C3). */
-  feedFetch?: (feedUrl: string) => Maybe<TransportResult>;
+  feedFetch: ((feedUrl: string) => Maybe<TransportResult>) | null;
   /** Look the URL up in the source's registered sitemap: a discovery channel, it never yields content. */
-  sitemapProbe?: (sitemapUrl: string, url: string) => Maybe<{ status: number; listed: boolean }>;
-  directFetch?: (url: string) => Maybe<TransportResult>;
-  browserFetch?: (url: string) => Maybe<TransportResult>;
+  sitemapProbe: ((sitemapUrl: string, url: string) => Maybe<{ status: number; listed: boolean }>) | null;
+  directFetch: ((url: string) => Maybe<TransportResult>) | null;
+  browserFetch: ((url: string) => Maybe<TransportResult>) | null;
   /** Resolve the item at the next official publisher by its identifier (src/core/sources/publishers.ts); the hits carry their own result. */
-  substituteFetch?: (url: string) => Promise<SubstituteHit[]>;
+  substituteFetch: ((url: string) => Promise<SubstituteHit[]>) | null;
   /** The contact a publisher publishes, for an access request. */
-  contactOf?: (url: string) => Promise<{ contact: string | null; rule: string | null }>;
-  seekMore?: (url: string) => unknown;
+  contactOf: ((url: string) => Promise<{ contact: string | null; rule: string | null }>) | null;
+  seekMore: ((url: string) => unknown) | null;
   /** The cap reported when a winning channel does not carry its own. */
-  max?: number;
-  /** The source row's registered alternatives and flags; absent means a bare URL. */
-  source?: SourceChannels | null;
+  max: number;
+  /** The source row's registered alternatives and flags; null means a bare URL. */
+  source: SourceChannels | null;
   /** Channels not to try (the capture worker already did direct). */
-  skip?: readonly TransportName[];
+  skip: readonly TransportName[];
 }
 
 function labelOf(cls: AttemptClass): Attempt["verdict"] {
@@ -109,13 +110,13 @@ function labelOf(cls: AttemptClass): Attempt["verdict"] {
  * The first content success wins. A 403, 429 or challenge is final for its channel and the next is tried. Every attempt lands in the exhaustion record under its channel name. A source reaches `access_requested` only after every channel
  * has been tried and at least one refused; a robots.txt that could not be read, or a host that asked for a long gap, is `deferred`, never denied. An error body is never returned as content.
  */
-export async function escalateFetch(urls: string | string[], deps: LadderDeps = {}): Promise<LadderVerdict> {
+export async function escalateFetch(urls: string | string[], deps: LadderDeps): Promise<LadderVerdict> {
   const candidates = (Array.isArray(urls) ? urls : [urls]).filter((u): u is string => typeof u === "string" && !!u);
   const attempts: Attempt[] = [];
   const rich = new Map<string, TransportResult>();
-  const max = deps.max ?? 0;
-  const skip = new Set<TransportName>(deps.skip ?? []);
-  const src = deps.source ?? null;
+  const max = deps.max;
+  const skip = new Set<TransportName>(deps.skip);
+  const src = deps.source;
   const note = (url: string, transport: TransportName, res: { status?: number; text?: string; needsHeadless?: boolean; refusal?: { reason: RefusalReason; detail: string } | null }): AttemptClass => {
     const cls: AttemptClass = res.needsHeadless ? NEEDS_HEADLESS : isPolicy(res.refusal?.reason) ? res.refusal.reason : classifyBody(res.text ?? "", { status: res.status ?? 200 }).class;
     attempts.push({ url, transport, class: cls, verdict: labelOf(cls), status: res.status, bytes: typeof res.text === "string" ? res.text.length : 0, reason: isOk(cls) ? null : cls, ...(isPolicy(cls) && res.refusal ? { detail: res.refusal.detail } : {}) });

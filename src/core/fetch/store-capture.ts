@@ -28,6 +28,8 @@ export interface CaptureToStore {
   title: string | null;
   httpStatus: number;
   channel: CaptureChannel;
+  /** The BCP-47 locale of the document (the publisher's declared locale, else what the document declares); null when neither is known, never a guess (migration 0080, number_locale). */
+  numberLocale: string | null;
   itemId: string | null;
   /** Every live item of the source (up to the read limit), whose stale flags a fresh body closes. */
   itemIds: readonly string[];
@@ -44,7 +46,7 @@ export interface StoreOutcome {
   retry: boolean;
 }
 
-export async function sha256Hex(text: string): Promise<string> {
+async function sha256Hex(text: string): Promise<string> {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
   return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
@@ -62,7 +64,7 @@ export async function storeCapture(db: Db, c: CaptureToStore, nowMs: () => numbe
   const runIns = (await db.from("agent_runs").insert({ source_id: c.sourceId, source_url: c.sourceUrl, fetch_method: "capture-worker", status: "success", fetch_status: c.httpStatus, fetch_html_bytes: c.text.length, intelligence_item_id: c.itemId, errors: c.declaredTransforms, ended_at: at, duration_ms: nowMs() - startedMs }).select("id").single()) as { data: unknown; error: { message: string } | null };
   const run = runIns.data as { id: string } | null;
   if (runIns.error || !run) return fail(`agent_runs insert failed: ${runIns.error?.message ?? "no row"}`);
-  const capIns = (await db.from("agent_run_searches").insert({ agent_run_id: run.id, intelligence_item_id: c.itemId, search_query: CAPTURE_QUERY, result_url: c.finalUrl, result_title: c.title ?? c.sourceName, result_index: 0, result_content: c.text, searched_at: at, content_hash: hash, capture_channel: c.channel }).select("id").single()) as { data: unknown; error: { message: string } | null };
+  const capIns = (await db.from("agent_run_searches").insert({ agent_run_id: run.id, intelligence_item_id: c.itemId, search_query: CAPTURE_QUERY, result_url: c.finalUrl, result_title: c.title ?? c.sourceName, result_index: 0, result_content: c.text, searched_at: at, content_hash: hash, capture_channel: c.channel, number_locale: c.numberLocale }).select("id").single()) as { data: unknown; error: { message: string } | null };
   const cap = capIns.data as { id: string } | null;
   if (capIns.error || !cap) {
     await db.from("agent_runs").update({ status: "error" }).eq("id", run.id);

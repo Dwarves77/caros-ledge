@@ -72,6 +72,21 @@ export function decodeBody(bytes: Uint8Array, contentType: string | null | undef
 /** Replace C0 control characters (except tab, LF, CR) with a space. */
 export const cleanCtl = (s: string): string => s.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, " ");
 
+/** A language tag as a capture records it (BCP-47: language lower case, script title case, region upper case), or null when the text is not one. Never a guess. */
+export function normalizeLocale(raw: string | null | undefined): string | null {
+  const m = /^([A-Za-z]{2,3})(?:[-_]([A-Za-z]{4}))?(?:[-_]([A-Za-z]{2}|[0-9]{3}))?$/.exec(String(raw ?? "").trim());
+  if (!m) return null;
+  const script = m[2] ? `${m[2].charAt(0).toUpperCase()}${m[2].slice(1).toLowerCase()}` : null;
+  return [(m[1] as string).toLowerCase(), script, m[3]?.toUpperCase()].filter(Boolean).join("-");
+}
+/** The language a fetched document declares: the `lang` attribute of its root element, else the first tag of the Content-Language header; null when neither is a language tag. */
+export function documentLanguage(contentLanguage: string | null | undefined, markup: string | null | undefined): string | null {
+  const fromMarkup = /<html\b[^>]*?\slang\s*=\s*["']?([A-Za-z0-9_-]+)/i.exec((markup ?? "").slice(0, 4096))?.[1];
+  return normalizeLocale(fromMarkup) ?? normalizeLocale(String(contentLanguage ?? "").split(",")[0]);
+}
+/** The locale a capture records: the publisher's declared locale from the registry, else what the document declares, else null. */
+export const captureLocale = (publisherLocale: string | null | undefined, documentDeclared: string | null | undefined): string | null => normalizeLocale(publisherLocale) ?? normalizeLocale(documentDeclared);
+
 export const isPdfBytes = (b: Uint8Array): boolean => b.length >= 5 && b[0] === 0x25 && b[1] === 0x50 && b[2] === 0x44 && b[3] === 0x46 && b[4] === 0x2d;
 /** A body is a PDF when the content type says so or the magic bytes do. */
 export const isPdfDocument = (contentType: string | null | undefined, bytes: Uint8Array): boolean => /application\/(x-)?pdf/i.test(String(contentType ?? "")) || isPdfBytes(bytes);
@@ -152,6 +167,8 @@ export interface FetchedDocument {
   isPdf: boolean;
   pdfPages: number | null;
   pdfBytes: number | null;
+  /** The language the document declares (its lang attribute, else Content-Language), BCP-47; null when it declares none. */
+  language: string | null;
   nullsRemoved: number;
   ceilingBind: { collected: number; fullLength: number } | null;
   /** Every transform applied to the bytes, declared. */
@@ -249,7 +266,8 @@ export async function fetchDocument(url: string, opts: FetchDocumentOptions): Pr
       declaredTransforms.push({ declared_transform: "storage-ceiling-bind", cap, collected: cap, full_length: fullLength, at });
     }
     if (!isPdf) title = /<title[^>]*>([\s\S]*?)<\/title>/i.exec(text)?.[1]?.trim().slice(0, 500) ?? null;
-    return { ok: true, status: 200, finalUrl, contentType, text, fullLength, title, isPdf, pdfPages, pdfBytes: isPdf ? bytes.byteLength : null, nullsRemoved, ceilingBind, declaredTransforms };
+    const language = documentLanguage(resp.headers.get("content-language"), isPdf ? null : text);
+    return { ok: true, status: 200, finalUrl, contentType, text, fullLength, title, isPdf, pdfPages, pdfBytes: isPdf ? bytes.byteLength : null, language, nullsRemoved, ceilingBind, declaredTransforms };
   } catch (e) {
     const g = (e as { fetchRefusal?: { reason: RefusalReason; transient: boolean; detail: string; rule?: string; identityRefused?: boolean } } | null)?.fetchRefusal;
     if (g) return { ...refusal(g.reason, g.transient, null, contentType, finalUrl, g.detail), ...(g.rule ? { rule: g.rule } : {}), ...(g.identityRefused ? { identityRefused: true } : {}) };

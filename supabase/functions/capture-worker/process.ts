@@ -10,7 +10,7 @@
 //   6. A wall (403, 429, a challenge page, the EUR-Lex 202 gate, a robots.txt disallow) is final for this transport and never retried as another identity: the row is left `refused` for the browser tier on the Actions runner, which
 //      owns the rest of the ladder (browser, substitute publisher, access request). A robots.txt that cannot be read defers the row, never denies it.
 import { guardedFetch, makeHostGate, makeRobotsReader } from "../../../src/core/fetch/guard.ts";
-import { BOT_USER_AGENT, fetchDocument, isWallStatus, MAX_ATTEMPTS, storageMaxChars, type FetchOutcome } from "../../../src/core/fetch/policy.ts";
+import { BOT_USER_AGENT, captureLocale, fetchDocument, isWallStatus, MAX_ATTEMPTS, storageMaxChars, type FetchOutcome } from "../../../src/core/fetch/policy.ts";
 import { makeRobotsGate } from "../../../src/core/fetch/robots.ts";
 import { storeCapture, type CaptureChannel, type Db, type Query, type Reply } from "../../../src/core/fetch/store-capture.ts";
 
@@ -122,8 +122,8 @@ export const isDeferral = (d: Extract<FetchOutcome, { ok: false }>): boolean => 
 export async function processRow(deps: WorkerDeps, row: QueueRow): Promise<CaptureReport> {
   const { db } = deps;
   const report: CaptureReport = { queue_id: row.id, source_id: row.source_id, outcome: "failed", http_status: null, chars: null, capture_id: null, run_id: null, intelligence_item_id: null, content_type: null, nulls_removed: 0, pdf_pages: null, pdf_bytes: null, detail: null, url: null, channel: null, attempts: [] };
-  const srcRes = await db.from("sources").select("id, url, name, paywalled, access_method, api_endpoint_url, rss_feed_url").eq("id", row.source_id).single();
-  const src = srcRes.data as { id: string; url: string; name: string; paywalled: boolean | null; access_method: string | null; api_endpoint_url: string | null; rss_feed_url: string | null } | null;
+  const srcRes = await db.from("sources").select("id, url, name, paywalled, access_method, api_endpoint_url, rss_feed_url, publisher_locale").eq("id", row.source_id).single();
+  const src = srcRes.data as { id: string; url: string; name: string; paywalled: boolean | null; access_method: string | null; api_endpoint_url: string | null; rss_feed_url: string | null; publisher_locale: string | null } | null;
   if (srcRes.error || !src?.url) {
     report.detail = srcRes.error ? `source read failed: ${srcRes.error.message}` : "source row or url missing";
     await recordFailure(deps, row, { id: row.source_id, url: null }, report, deps.now());
@@ -165,10 +165,11 @@ export async function processRow(deps: WorkerDeps, row: QueueRow): Promise<Captu
   const ceiling = storageMaxChars(deps.env);
   const kit = kitOf(deps);
 
-  // The channels in order: a source whose access method is api or rss reads that declared channel first; every other source reads its page first and its registered api and feed after a refusal. The page is the direct channel.
+  // The channels in order: a source with a registered API, or whose access method is api or rss, reads its declared channels first (APIs are preferred wherever a publisher offers one); every other source reads its page first and its registered feed after a refusal. The page is the direct channel.
   const declared: Array<{ channel: "api" | "feed"; url: string }> = [...(src.api_endpoint_url ? [{ channel: "api" as const, url: src.api_endpoint_url }] : []), ...(src.rss_feed_url ? [{ channel: "feed" as const, url: src.rss_feed_url }] : [])];
   const direct = { channel: "direct" as const, url: src.url };
-  const order = src.access_method === "api" || src.access_method === "rss" ? [...declared, direct] : [direct, ...declared];
+  const declaredFirst = !!src.api_endpoint_url || src.access_method === "api" || src.access_method === "rss";
+  const order = declaredFirst ? [...declared, direct] : [direct, ...declared];
   let doc: Extract<FetchOutcome, { ok: true }> | null = null;
   let won: CaptureChannel | null = null;
   let page: Extract<FetchOutcome, { ok: false }> | null = null;
@@ -216,7 +217,7 @@ export async function processRow(deps: WorkerDeps, row: QueueRow): Promise<Captu
 
   const bind = doc.ceilingBind;
   if (bind) report.storage_ceiling_bind = bind;
-  const stored = await storeCapture(db, { sourceId: src.id, sourceUrl: src.url, sourceName: src.name, finalUrl: doc.finalUrl, text: doc.text, title: doc.title, httpStatus: doc.status, channel: won, itemId, itemIds: items.map((i) => i.id), declaredTransforms: doc.declaredTransforms, ceilingBind: bind, ceiling }, deps.now, runStart);
+  const stored = await storeCapture(db, { sourceId: src.id, sourceUrl: src.url, sourceName: src.name, finalUrl: doc.finalUrl, text: doc.text, title: doc.title, httpStatus: doc.status, channel: won, numberLocale: captureLocale(src.publisher_locale, doc.language), itemId, itemIds: items.map((i) => i.id), declaredTransforms: doc.declaredTransforms, ceilingBind: bind, ceiling }, deps.now, runStart);
   report.capture_id = stored.captureId;
   report.run_id = stored.runId;
   if (stored.outcome === "failed") {

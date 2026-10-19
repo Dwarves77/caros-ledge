@@ -28,6 +28,8 @@ export interface TransportResult {
   finalUrl?: string;
   contentType?: string;
   title?: string | null;
+  /** The language the document declares (BCP-47), null when it declares none. */
+  language?: string | null;
   /** The decoded markup, before text extraction; present only when the caller asked for it (portal-link discovery reads links from it). */
   html?: string;
   refusal?: FetchRefusal | null;
@@ -77,5 +79,5 @@ export async function fetchDirect(url: string, deps: FetchDeps, opts: { max: num
     return { status: doc.status ?? 0, text, truncated: false, fullLength: 0, cap: opts.max, ...(doc.finalUrl ? { finalUrl: doc.finalUrl } : {}), contentType: doc.contentType, refusal: doc };
   }
   const full = (cleanCtl(doc.isPdf ? doc.text : toText(doc.text)) || "").replace(/\s+/g, " ").trim();
-  return { status: doc.status, text: full.slice(0, opts.max), truncated: full.length > opts.max, fullLength: full.length, cap: opts.max, finalUrl: doc.finalUrl, contentType: doc.contentType, title: doc.title, ...(opts.keepHtml && !doc.isPdf ? { html: doc.text } : {}), refusal: null };
+  return { status: doc.status, text: full.slice(0, opts.max), truncated: full.length > opts.max, fullLength: full.length, cap: opts.max, finalUrl: doc.finalUrl, contentType: doc.contentType, title: doc.title, language: doc.language, ...(opts.keepHtml && !doc.isPdf ? { html: doc.text } : {}), refusal: null };
 }

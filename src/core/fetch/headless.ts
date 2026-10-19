@@ -28,9 +28,8 @@ export interface BrowserLike {
   close(): Promise<void>;
 }
 export interface BrowserDeps extends FetchDeps {
-  /** Launch the browser; absent means Playwright's Chromium, and only on the Actions runner. A test injects a stand-in. */
-  launchBrowser?: () => Promise<BrowserLike>;
-  random?: () => number;
+  /** Launch the browser; null means Playwright's Chromium, and only on the Actions runner. A test supplies a stand-in. */
+  launchBrowser: (() => Promise<BrowserLike>) | null;
 }
 export interface BrowserCtx {
   /** The source row is flagged paywalled: this tier never runs on it. */
@@ -72,13 +71,20 @@ export async function closeBrowser(deps: object): Promise<void> {
   await s.browser?.close();
 }
 
+/** The wait before a host's next navigation: 3 to 5 seconds, a spread that varies by host and by turn without a source of randomness (so a run is reproducible from its clock). */
+const paceFor = (host: string, turn: number): number => {
+  let h = turn >>> 0;
+  for (let i = 0; i < host.length; i++) h = Math.imul(h ^ host.charCodeAt(i), 16777619) >>> 0;
+  return BROWSER_PACE_MS.min + (h % (BROWSER_PACE_MS.max - BROWSER_PACE_MS.min + 1));
+};
+
 /** Run `job` as this host's next turn: one at a time, at least 3 to 5 seconds after the host's previous navigation. */
 async function onHostTurn<T>(deps: BrowserDeps, s: Session, host: string, job: () => Promise<T>): Promise<T> {
   const now = () => (deps.now ? deps.now().getTime() : Date.now());
   const sleep = deps.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
   const run = (s.turns.get(host) ?? Promise.resolve()).then(async () => {
     const last = s.lastAt.get(host);
-    const gap = BROWSER_PACE_MS.min + Math.floor((deps.random ?? Math.random)() * (BROWSER_PACE_MS.max - BROWSER_PACE_MS.min));
+    const gap = paceFor(host, s.lastAt.size + (last ?? 0));
     if (last !== undefined && now() - last < gap) await sleep(gap - (now() - last));
     try {
       return await job();
