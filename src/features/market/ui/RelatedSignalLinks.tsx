@@ -1,4 +1,4 @@
-// The Related section's signal links. Links, not list items: the old page drew them as bare links, and an `li` here is a row the parity gate samples (first 20 `li, tr, article`), which pushes the theme brief's bullets out of the window.
+// The Related section's signal links, as links.
 import Link from "next/link";
 
 import { deriveSeverity, SEVERITY_LABEL } from "../lib/signal-band";

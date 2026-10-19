@@ -6,7 +6,7 @@
     "width": 1280,
     "height": 900
   },
-  "captured_at": "2026-10-19T03:14:43.982Z",
+  "captured_at": "2026-10-19T20:56:45.087Z",
   "http_status": 200,
   "final_path": "/settings",
   "network_idle": true,
@@ -17,27 +17,27 @@
   "landmarks": [
     {
       "role": "complementary",
-      "name": "Caro's LedgeFreight Sustainability IntelligenceBriefDashboardWatchlistIntelligenceRegulationsMarket IntelResearchOperationsMapNetworkCommunityAccountDietl / Rockit",
+      "name": "",
       "source": "implicit"
     },
     {
       "role": "navigation",
-      "name": "BriefDashboardWatchlistIntelligenceRegulationsMarket IntelResearchOperationsMapNetworkCommunity",
+      "name": "",
       "source": "implicit"
     },
     {
       "role": "main",
-      "name": "VOL IV · No. 43 · Monday, October 19, 2026 · PersonalSettingsDashboard defaults, freight sectors, notifications, briefing schedule · scoped to Dietl / Rockit⌕⌘KAskApplies workspace-wide · changes here affect every member, not just youPersonalOrganizationMembers & rolesSector profileJurisdictionsVerifier badgeActivitySettingsS1 GeneralS2 NotificationsS3 DataS4 ArchiveS5 HelpDashboard defaultsApplies on every loadDefault sortNext dateNewestA-ZDefault exportHTMLSlackAlert bandsImmediateActionMonitorBand tilesDue nextWhat changedWatchlist railAcross the platformSupersessionsFreight sectors6 selected · filters your default view, briefings and relevanceFine Art & Museum LogisticsLive Events & TouringLuxury Goods & High ValueFilm, TV & Media ProductionAutomotive & MotorsportHumanitarian & NGO CargoCold Chain & PerishablesPharmaceutical & Life SciencesFlowers & Live PlantsWine, Spirits & BeveragesE-Commerce & ParcelTextiles, Fashion & ApparelShow all 40 sectorsSelect allClearOrganisation profileRole & sizeWhich roles you hold and your organisation's size, used to show whether a regulation applies to you.What does your organisation do? Select every role that appliesShipperImporter of recordExporterFreight forwarderCarrierWarehouse operatorLender / borrower of goodsPublic bodyHeadcountMicro (under 10 employees)Small (10-49 employees)Medium (50-249 employees)Large (250+ employees)Annual revenueMicro (up to EUR 2m)Small (up to EUR 10m)Medium (up to EUR 50m)Large (over EUR 50m)Annual shipment volumeLow (occasional shipments)Medium (regular, non-daily)High (daily volume)Very high (high-frequency, multi-lane)Only an owner or admin can change the organisation profile.Save organisation profileA regulation that only applies to a role or size you have not set will show what information it still needs from you, rather than guessing.NotificationsIn-app onlyNotifications enabledMaster switchSomeone @mentions youDirect mentions in any roomReplies in your threadsWhen someone replies to a post you startedNew posts in groups you've joinedHigher volume, off by defaultWorkspace invitationsAlways on, you must be reachableSupersession historyNo supersessions recorded.Archive1 item · still recoverableSearch the archiveReasonAll reasonsExpiredEU CBAMWhole teamExpiredApr 28, 2026RestoreHelpDocumentation and contact routes are not published yet. Until then, workspace owners reach the team through the onboarding channel.Briefing scheduleCadenceWeeklyDailyBiweeklyDayMonTueWedThuFriTime · UTCJurisdiction weightingAll jurisdictions weighted equallyUnited StatesCanadaMexicoBrazilArgentinaChileColombiaPeruLatin America (other)CaribbeanCentral AmericaEUGermanyFranceNetherlandsBelgiumItalySpainPolandIrelandGreecePortugalRomaniaUnited KingdomNordicSwitzerlandTurkeyUkraineBalkansChinaJapanSouth KoreaTaiwanHong KongIndiaBangladeshPakistanSri LankaSingaporeMalaysiaIndonesiaThailandVietnamPhilippinesASEAN (other)Asia (other)AustraliaNew ZealandPacific IslandsUAESaudi ArabiaQatarKuwaitBahrainOmanGCC (other)IsraelJordanIraqIranMiddle East (other)EgyptMoroccoTunisiaAlgeriaNorth Africa (other)South AfricaNigeriaKenyaEthiopiaGhanaTanzaniaWest Africa (other)East Africa (other)Central AfricaSouthern Africa (other)RussiaCIS (other)KazakhstanGlobalIMOICAOWTOUnited NationsDelivery is in the app. Email and push are not available yet.Only an owner or admin can change the briefing schedule.Save scheduleAppearanceLight only. There is one theme; the product reads like a printed ledger and stays that way.Data & supersessionsSupersession history · 0Archive",
+      "name": "",
       "source": "implicit"
     },
     {
       "role": "banner",
-      "name": "VOL IV · No. 43 · Monday, October 19, 2026 · PersonalSettingsDashboard defaults, freight sectors, notifications, briefing schedule · scoped to Dietl / Rockit⌕⌘KAskApplies workspace-wide · changes here affect every member, not just you",
+      "name": "",
       "source": "implicit"
     },
     {
       "role": "search",
-      "name": "⌕⌘KAsk",
+      "name": "",
       "source": "explicit"
     },
     {
@@ -87,7 +87,7 @@
     },
     {
       "role": "complementary",
-      "name": "Briefing scheduleCadenceWeeklyDailyBiweeklyDayMonTueWedThuFriTime · UTCJurisdiction weightingAll jurisdictions weighted equallyUnited StatesCanadaMexicoBrazilArgentinaChileColombiaPeruLatin America (other)CaribbeanCentral AmericaEUGermanyFranceNetherlandsBelgiumItalySpainPolandIrelandGreecePortugalRomaniaUnited KingdomNordicSwitzerlandTurkeyUkraineBalkansChinaJapanSouth KoreaTaiwanHong KongIndiaBangladeshPakistanSri LankaSingaporeMalaysiaIndonesiaThailandVietnamPhilippinesASEAN (other)Asia (other)AustraliaNew ZealandPacific IslandsUAESaudi ArabiaQatarKuwaitBahrainOmanGCC (other)IsraelJordanIraqIranMiddle East (other)EgyptMoroccoTunisiaAlgeriaNorth Africa (other)South AfricaNigeriaKenyaEthiopiaGhanaTanzaniaWest Africa (other)East Africa (other)Central AfricaSouthern Africa (other)RussiaCIS (other)KazakhstanGlobalIMOICAOWTOUnited NationsDelivery is in the app. Email and push are not available yet.Only an owner or admin can change the briefing schedule.Save scheduleAppearanceLight only. There is one theme; the product reads like a printed ledger and stays that way.Data & supersessionsSupersession history · 0Archive",
+      "name": "",
       "source": "implicit"
     }
   ],
@@ -860,16 +860,11 @@
     }
   ],
   "rows": {
-    "selector": "[data-row], li, tr, article",
-    "limit": 20,
-    "items": [
-      {
-        "tag": "li",
-        "text": "EU CBAMWhole teamExpiredApr 28, 2026Restore",
-        "width": 586,
-        "height": 81
-      }
-    ]
+    "selector": "[data-part=\"list-row\"], [data-part=\"table-row\"]",
+    "items": [],
+    "containers": []
   },
-  "document_height": 900
+  "document_height": 3459,
+  "truncated": false,
+  "offences": []
 }

@@ -4,22 +4,13 @@
 // the raw Sources markdown never is; a failed relevance read says so with Retry; the map names its attribution and a marker click selects its row).
 //
 // Usage: node tests/ux/regulations-smoke.mjs --base <origin>     (the server must run with UI_FIXTURES=1)
-import { chromium } from 'playwright';
+import { checkClientReads, SHELL_READS } from './client-sweep.mjs';
+import { chromium, open as openPage, smoke, VIEWPORTS, WIDTHS } from './harness.mjs';
+import { hitArea, measurePage } from './measure.mjs';
 
-import { hitArea, measure } from './measure.mjs';
-
-const VIEWPORTS = [
-  [375, 812],
-  [768, 1024],
-  [1024, 768],
-  [1280, 800],
-];
 const SCREENS = ['ledger', 'detail', 'record', 'register', 'map'];
-const base = process.argv[process.argv.indexOf('--base') + 1];
-if (!base || base.startsWith('--')) throw new Error('usage: regulations-smoke.mjs --base <origin>');
-
-const failures = [];
-const fail = (where, what) => failures.push(`${where}: ${what}`);
+const run = smoke('regulations-smoke');
+const { base, fail, check, must } = run;
 const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' };
 // A 1x1 transparent PNG: the map's tiles, so the smoke never reaches the network.
 const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64');
@@ -34,20 +25,14 @@ async function install(page, state) {
     if (p === '/api/workspace/tags') return json(route, { tags: [], itemTags: {} });
     if (p === '/api/detail/relevance') return state.failRelevance ? json(route, { error: 'down' }, 503) : json(route, { relevance: null, binding: null });
     if (p === '/api/saved-views') return json(route, { views: [] });
+    if (p === '/api/notices') return json(route, { notices: [], since: '2026-09-16T00:00:00Z' });
     return json(route, { error: `unmocked ${p}` }, 404);
   });
 }
 
-async function open(browser, screen, [w, h], state = { calls: [] }) {
-  const ctx = await browser.newContext({ viewport: { width: w, height: h } });
-  const page = await ctx.newPage();
-  const errors = [];
-  page.on('pageerror', (e) => errors.push(e.message));
-  await install(page, state);
-  const res = await page.goto(`${base}/privacy/ui-fixtures/regulations?screen=${screen}`, { waitUntil: 'networkidle' });
-  if (!res || res.status() !== 200) throw new Error(`fixture page answered ${res?.status()}`);
-  await page.evaluate(() => document.fonts.ready);
-  return { ctx, page, errors, state };
+async function open(browser, screen, viewport, state = { calls: [] }) {
+  const opened = await openPage(browser, `${base}/privacy/ui-fixtures/regulations?screen=${screen}`, viewport, { prepare: (page) => install(page, state) });
+  return { ...opened, state };
 }
 
 const browser = await chromium.launch();
@@ -55,38 +40,26 @@ try {
   for (const viewport of VIEWPORTS) {
     for (const screen of SCREENS) {
       const where = `${viewport.join('x')} ${screen}`;
-      let session;
-      try {
-        session = await open(browser, screen, viewport);
-        await session.page.waitForTimeout(400);
-        for (const o of await session.page.evaluate(measure, { rows: false })) {
-          // Leaflet's own zoom buttons and attribution link are the library's controls, drawn at the size the library sets; the page's own controls are measured.
-          if (screen === 'map' && /leaflet-/.test(o)) continue;
-          fail(where, o);
+      await check(where, async () => {
+        const session = await open(browser, screen, viewport);
+        try {
+          for (const o of await measurePage(session.page, { rows: false })) {
+            // Leaflet's own zoom buttons and attribution link are the library's controls, drawn at the size the library sets; the page's own controls are measured.
+            if (screen === 'map' && /leaflet-/.test(o)) continue;
+            fail(where, o);
+          }
+          for (const e of session.errors) fail(where, `page error: ${e}`);
+        } finally {
+          await session.ctx.close();
         }
-        for (const e of session.errors) fail(where, `page error: ${e}`);
-      } catch (e) {
-        fail(where, e.message);
-      } finally {
-        await session?.ctx.close();
-      }
+      });
     }
   }
 
-  const check = async (name, run) => {
-    try {
-      await run();
-    } catch (e) {
-      fail(`behaviour: ${name}`, e.message.split('\n').slice(0, 4).join(' | '));
-    }
-  };
-  const must = (cond, what) => {
-    if (!cond) throw new Error(what);
-  };
-  const session = async (screen, run, state) => {
+  const session = async (screen, body, state) => {
     const s = await open(browser, screen, [1280, 800], state);
     try {
-      await run(s);
+      await body(s);
     } finally {
       await s.ctx.close();
     }
@@ -158,6 +131,12 @@ try {
     }, { calls: [], failRelevance: true }),
   );
 
+  // Every read the Regulations screens make after hydration is refused in turn and must be stated (the relevance banner, the tags, the saved views).
+  // The detail fixture draws the obligation positions failed on purpose (one note and its Try again), so two statements are declared.
+  for (const [screen, expectStated] of [['ledger', 0], ['detail', 2]]) {
+    await check(`client reads ${screen}`, () => checkClientReads(run, browser, { name: `regulations ${screen}`, url: `${base}/privacy/ui-fixtures/regulations?screen=${screen}`, viewport: [1280, 800], prepare: (page) => install(page, { calls: [] }), ignore: SHELL_READS, expectStated }));
+  }
+
   await check('map: the attribution is visible and every marker is a keyboard button named by its count', () =>
     session('map', async ({ page }) => {
       await page.locator('.leaflet-control-attribution').getByText(/OpenStreetMap/).waitFor();
@@ -171,9 +150,4 @@ try {
   await browser.close();
 }
 
-if (failures.length) {
-  for (const f of failures) console.error(f);
-  console.error(`regulations-smoke: ${failures.length} failure(s)`);
-  process.exit(1);
-}
-console.log('regulations-smoke: clean at 375x812, 768x1024, 1024x768, 1280x800; behaviours pass');
+run.finish(`clean at ${WIDTHS}; behaviours pass; every client read is stated when refused`);

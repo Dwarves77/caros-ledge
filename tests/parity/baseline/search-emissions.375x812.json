@@ -6,7 +6,7 @@
     "width": 375,
     "height": 812
   },
-  "captured_at": "2026-10-19T03:14:30.978Z",
+  "captured_at": "2026-10-19T20:56:32.998Z",
   "http_status": 200,
   "final_path": "/search?q=emissions",
   "network_idle": true,
@@ -17,22 +17,22 @@
   "landmarks": [
     {
       "role": "banner",
-      "name": "☰Caro's Ledge⌕J",
+      "name": "",
       "source": "implicit"
     },
     {
       "role": "main",
-      "name": "VOL IV · No. 43 · Monday, October 19, 2026SearchResults for “emissions”⌕⌘KAskResults · 20Showing the top 20 matches. Narrow the search to see more precise results.Juris.Title · type · modesImpactDueTimelineTierEUEU Emissions Trading System (ETS) Extension to Maritime Transportregulation · ocean · emissionsneeds more data—T1USUnited States Regional Operations Profileregional_data · road, air, oceanneeds more data—T2EUEuro 7 Standardregulation · road · transportneeds more data—T1EUNorway Zero-Emission Shippingregulation · ocean · emissionsneeds more data—T2USCalifornia SB 253 — Climate Corporate Data Accountability Actregulation · road, ocean, air, rail · reportingneeds more data—T1EUZero-Emission Requirements for World Heritage Fjords: Implementation Timeline and Compliance Rules Adoptedregulation · corridorsneeds more data—T2USEPA Fast Facts: Transportation Accounts for 28% of U.S. Greenhouse Gas Emissions in 2022guidance · emissionsneeds more data—T2EURegulation (EU) 2026/1030 of the European Parliament and of the Council of 29 April 2026 on the greenhouse gas emissions accounting of transport services (Text with EEA relevance)regulationneeds more data—T1GLOBALThe Greenhouse Gas Emissions Trading Scheme (Amendment) Regulations 2014regulationneeds more data—T1EUCommission Implementing Regulation (EU) 2025/35 of 13 January 2025 implementing Regulation (EU) 2019/1242 of the European Parliament and of the Council by determining the procedures for the in-service verification of the CO2 emissions of heavy-duty vehiclesregulationneeds more data—T1EUCommission Delegated Regulation (EU) 2024/3214 of 16 October 2024 amending Regulation (EU) 2015/757 of the European Parliament and of the Council as regards the rules for the monitoring of greenhouse gas emissions from offshore ships and the zero-rating of sustainable fuelsregulationneeds more data—T1EURegulation (EU) 2025/2083 of the European Parliament and of the Council of 8 October 2025 amending Regulation (EU) 2023/956 as regards simplifying and strengthening the carbon border adjustment mechanism (Text with EEA relevance)regulationneeds more data—T1GLOBALMEPC.377(80) - IMO Marine Environment Protection Committee Resolutiondirective · corridorsneeds more data—T2EUEU ETS for Shippingregulation · ocean · emissionsneeds more data—T2EUCountEmissions EUregulation · air, ocean, road · reportingneeds more data—T2EUEU CBAMregulation · air, ocean, road · emissionsneeds more data—T2EUEU Aviation ETSregulation · air · emissionsneeds more data—T2ATMission Innovation Shipping Mission: Net-Zero Industries Award 2024 and MI-9 Global Collaboration Frameworkinitiative · researchneeds more data—T3EUEU Fit for 55 Packageregulation · air, ocean, road · emissionsneeds more data—T1USIowa DNR Air Quality Programs and Compliance Monitoring Dashboardguidance · reportingneeds more data—T2LegendImpact8/12TimelinePassed · next · ahead.Source tierT1 binding law → T7 overflow / uncategorized.",
+      "name": "",
       "source": "implicit"
     },
     {
       "role": "banner",
-      "name": "VOL IV · No. 43 · Monday, October 19, 2026SearchResults for “emissions”⌕⌘KAsk",
+      "name": "",
       "source": "implicit"
     },
     {
       "role": "search",
-      "name": "⌕⌘KAsk",
+      "name": "",
       "source": "explicit"
     }
   ],
@@ -161,9 +161,157 @@
     }
   ],
   "rows": {
-    "selector": "[data-row], li, tr, article",
-    "limit": 20,
-    "items": []
+    "selector": "[data-part=\"list-row\"], [data-part=\"table-row\"]",
+    "items": [
+      {
+        "tag": "div",
+        "text": "EUEU Emissions Trading System (ETS) Extension to Maritime Transportregulation · ocean · emissionsneeds more data—T1",
+        "width": 341,
+        "height": 99.4375,
+        "container": "main"
+      },
+      {
+        "tag": "div",
+        "text": "USUnited States Regional Operations Profileregional_data · road, air, oceanneeds more data—T2",
+        "width": 341,
+        "height": 99.4375,
+        "container": "main"
+      },
+      {
+        "tag": "div",
+        "text": "EUEuro 7 Standardregulation · road · transportneeds more data—T1",
+        "width": 341,
+        "height": 81.21875,
+        "container": "main"
+      },
+      {
+        "tag": "div",
+        "text": "EUNorway Zero-Emission Shippingregulation · ocean · emissionsneeds more data—T2",
+        "width": 341,
+        "height": 81.21875,
+        "container": "main"
+      },
+      {
+        "tag": "div",
+        "text": "USCalifornia SB 253 — Climate Corporate Data Accountability Actregulation · road, ocean, air, rail · reportingneeds more data—T1",
+        "width": 341,
+        "height": 99.4375,
+        "container": "main"
+      },
+      {
+        "tag": "div",
+        "text": "EUZero-Emission Requirements for World Heritage Fjords: Implementation Timeline and Compliance Rules Adoptedregulation · corridorsneeds more data—T2",
+        "width": 341,
+        "height": 135.875,
+        "container": "main"
+      },
+      {
+        "tag": "div",
+        "text": "USEPA Fast Facts: Transportation Accounts for 28% of U.S. Greenhouse Gas Emissions in 2022guidance · emissionsneeds more data—T2",
+        "width": 341,
+        "height": 117.65625,
+        "container": "main"
+      },
+      {
+        "tag": "div",
+        "text": "EURegulation (EU) 2026/1030 of the European Parliament and of the Council of 29 April 2026 on the greenhouse gas emissions accounting of transport services (Text with EEA relevance)regulationneeds more data—T1",
+        "width": 341,
+        "height": 172.3125,
+        "container": "main"
+      },
+      {
+        "tag": "div",
+        "text": "GLOBALThe Greenhouse Gas Emissions Trading Scheme (Amendment) Regulations 2014regulationneeds more data—T1",
+        "width": 341,
+        "height": 117.65625,
+        "container": "main"
+      },
+      {
+        "tag": "div",
+        "text": "EUCommission Implementing Regulation (EU) 2025/35 of 13 January 2025 implementing Regulation (EU) 2019/1242 of the European Parliament and of the Council by determining the procedures for the in-service verification of the CO2 emissions of heavy-duty vehiclesregulationneeds more data—T1",
+        "width": 341,
+        "height": 226.96875,
+        "container": "main"
+      },
+      {
+        "tag": "div",
+        "text": "EUCommission Delegated Regulation (EU) 2024/3214 of 16 October 2024 amending Regulation (EU) 2015/757 of the European Parliament and of the Council as regards the rules for the monitoring of greenhouse gas emissions from offshore ships and the zero-rating of sustainable fuelsregulationneeds more dat",
+        "width": 341,
+        "height": 208.75,
+        "container": "main"
+      },
+      {
+        "tag": "div",
+        "text": "EURegulation (EU) 2025/2083 of the European Parliament and of the Council of 8 October 2025 amending Regulation (EU) 2023/956 as regards simplifying and strengthening the carbon border adjustment mechanism (Text with EEA relevance)regulationneeds more data—T1",
+        "width": 341,
+        "height": 190.53125,
+        "container": "main"
+      },
+      {
+        "tag": "div",
+        "text": "GLOBALMEPC.377(80) - IMO Marine Environment Protection Committee Resolutiondirective · corridorsneeds more data—T2",
+        "width": 341,
+        "height": 117.65625,
+        "container": "main"
+      },
+      {
+        "tag": "div",
+        "text": "EUEU ETS for Shippingregulation · ocean · emissionsneeds more data—T2",
+        "width": 341,
+        "height": 81.21875,
+        "container": "main"
+      },
+      {
+        "tag": "div",
+        "text": "EUCountEmissions EUregulation · air, ocean, road · reportingneeds more data—T2",
+        "width": 341,
+        "height": 81.21875,
+        "container": "main"
+      },
+      {
+        "tag": "div",
+        "text": "EUEU CBAMregulation · air, ocean, road · emissionsneeds more data—T2",
+        "width": 341,
+        "height": 81.21875,
+        "container": "main"
+      },
+      {
+        "tag": "div",
+        "text": "EUEU Aviation ETSregulation · air · emissionsneeds more data—T2",
+        "width": 341,
+        "height": 81.21875,
+        "container": "main"
+      },
+      {
+        "tag": "div",
+        "text": "ATMission Innovation Shipping Mission: Net-Zero Industries Award 2024 and MI-9 Global Collaboration Frameworkinitiative · researchneeds more data—T3",
+        "width": 341,
+        "height": 135.875,
+        "container": "main"
+      },
+      {
+        "tag": "div",
+        "text": "EUEU Fit for 55 Packageregulation · air, ocean, road · emissionsneeds more data—T1",
+        "width": 341,
+        "height": 81.21875,
+        "container": "main"
+      },
+      {
+        "tag": "div",
+        "text": "USIowa DNR Air Quality Programs and Compliance Monitoring Dashboardguidance · reportingneeds more data—T2",
+        "width": 341,
+        "height": 99.4375,
+        "container": "main"
+      }
+    ],
+    "containers": [
+      {
+        "label": "main",
+        "count": 20
+      }
+    ]
   },
-  "document_height": 812
+  "document_height": 2921,
+  "truncated": false,
+  "offences": []
 }

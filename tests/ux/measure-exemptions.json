@@ -1,0 +1,17 @@
+{
+  "_about": "The one list of what tests/ux/measure.mjs does not count as an offence. Every entry says what it matches (`selector`), how (`match`: self = the element itself, within = the element or anything inside one), and why (`reason`, at least 20 characters). loadExemptions refuses an entry without a reason, and tests/ux/measure-exemptions.test.mjs fails an entry whose selector names nothing in src/ (a stale exemption) unless it is a library class. Add to this list only with a ruling or a stated reason; the measure has no list of its own.",
+  "overflow": [
+    { "selector": "[data-guard-strip]", "match": "within", "reason": "a declared sideways strip (theme strip, facet strip, headline track, matrix scroller, row table) scrolls inside its own box by design; the page does not." },
+    { "selector": ".cl-sr-only", "match": "within", "reason": "visually hidden text is positioned off the layout box on purpose and is read by assistive technology only." },
+    { "selector": ".cl-virtual-item", "match": "within", "reason": "a virtualised list row is absolutely positioned by the virtualizer with a transform; its box is measured by the row itself, and the list container clips it." },
+    { "selector": ".leaflet-container", "match": "within", "library": "leaflet", "reason": "the map is Leaflet's own canvas of tiles and panes, which are larger than the viewport by design and clipped by the container; the library draws them, the page does not." }
+  ],
+  "target": [
+    { "selector": ".cl-gfm-a", "match": "self", "reason": "a link inside running prose of a brief is inline text, not a stand-alone target (WCAG 2.5.8 inline exception); stand-alone links to the same places are 44 px." },
+    { "selector": "div[tabindex]", "match": "self", "reason": "a scrollable region made keyboard-focusable so it can be scrolled with the keys (WCAG 2.1.1); it is a container, not a control to hit." },
+    { "selector": "section[tabindex]", "match": "self", "reason": "a scrollable region made keyboard-focusable so it can be scrolled with the keys (WCAG 2.1.1); it is a container, not a control to hit." }
+  ],
+  "collapsed": [
+    { "selector": ".cl-sr-only", "match": "within", "reason": "the visually hidden file input of an upload button is kept focusable for the keyboard and for assistive technology; the visible button beside it is the 44 px target." }
+  ]
+}

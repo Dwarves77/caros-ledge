@@ -275,6 +275,12 @@ button, input, select, textarea { font-family: inherit; }
 .cl-row-grade-mobile, .cl-row-tags-mobile, .cl-row-bias-mobile { display: none; }
 
 
+/* Law 2 / DP-1 (V-9): with the 300 px rail beside it (1280 to 1439 px) the content column is 617 to 777 px, and the fixed columns of the row left the title 117 px. The title column keeps a floor of 160 px (the measure's threshold) and the columns around it
+   yield: the gaps close from 14 to 8 px and impact, due, timeline and tier take less. How the grid is composed at this width is the open look decision V-9 (DESIGN CHANGES OWED); the floor is not. */
+@media (min-width: 1280px) and (max-width: 1439px) {
+  .cl-list-row, .cl-list-row-header { grid-template-columns: 3px 56px minmax(160px, 1fr) 72px 80px 64px 36px 44px; gap: 0 var(--sp-8); }
+}
+
 @media (min-width: 1024px) and (max-width: 1279px) {
   .cl-row-meta-tags { flex-wrap: wrap; row-gap: 4px; }
   .cl-row-bias-desktop { flex: 0 0 100%; min-width: 0; }
@@ -303,7 +309,7 @@ button, input, select, textarea { font-family: inherit; }
 .cl-fc-claim { font-size: var(--fs-13); line-height: 1.6; max-width: 66ch; overflow-wrap: anywhere; color: var(--ink); }
 .cl-fc-claim--inference { font-style: italic; color: var(--ink-2); }
 .cl-fc-claim--more { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line-3); }
-.cl-fc-inline-link { color: inherit; text-decoration: underline; text-decoration-color: var(--link-line); }
+.cl-fc-inline-link { color: inherit; text-decoration: underline; text-decoration-color: var(--link-line); padding: var(--sp-4) 0; } /* law 2: a 24 px box; an inline box's padding adds no line height */
 .cl-fc-prov { border-left: 1px solid var(--line-1); padding-left: 14px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .cl-fc-prov-text { font-size: var(--fs-105); line-height: 1.45; color: var(--ink-3); overflow-wrap: anywhere; }
 .cl-fc-prov-text--italic { font-style: italic; }
@@ -314,7 +320,7 @@ button, input, select, textarea { font-family: inherit; }
 .cl-fc-matrix { background: var(--card); border: 1px solid var(--line-1); border-left: 2px solid var(--ink); border-radius: 0 8px 8px 0; padding: 12px 14px; margin: 0 0 10px; min-width: 0; }
 .cl-fc-matrix-lead { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; min-width: 0; }
 .cl-fc-matrix-figure { font-family: var(--font-display); font-size: 18px; line-height: 1.1; color: var(--ink); flex-shrink: 0; }
-.cl-fc-matrix-headline { font-size: 13px; font-weight: 600; line-height: 1.2; color: var(--ink); flex-shrink: 0; }
+.cl-fc-matrix-headline { font-size: 13px; font-weight: 600; line-height: 1.2; color: var(--ink); min-width: 0; overflow-wrap: anywhere; }
 .cl-fc-matrix-claim { font-size: var(--fs-125); color: var(--ink); line-height: 1.45; overflow-wrap: anywhere; min-width: 0; max-width: 72ch; }
 .cl-fc-matrix-index { font-size: var(--fs-11); color: var(--ink-2); flex-shrink: 0; }
 .cl-fc-matrix-prose { font-size: var(--fs-125); line-height: 1.5; color: var(--ink); margin: 6px 0 0; overflow-wrap: anywhere; max-width: 72ch; }

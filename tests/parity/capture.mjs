@@ -1,15 +1,17 @@
 // Parity capture (PART2-AGENT-PLAN-2026-10-15 section 7). Ported from the old repo's fsi-app/tests/parity/capture.mjs (lane H-2); the same record shape, so compare.mjs reads a baseline and a capture alike.
-// Each signed-in route names its account in routes.json (`auth`: "member" | "admin"). A route whose account has no credentials (or with --signed-out-only) is recorded as `skipped`, not failed.
+// Each signed-in route names its account in routes.json (`auth`: "member" | "admin"). With --signed-out-only, on a local server, on a workstation or in a fork pull request that lacks the account's credentials, its routes are recorded as `skipped` (the reason printed); in CI anywhere else the missing LIVE_SMOKE_* / LIVE_ADMIN_* are a failure that names them (credentialVerdict).
 //
 // Usage: node tests/parity/capture.mjs --base <origin> --out <dir> [--signed-out-only] [--fresh]
 // --fresh (the dispatch-only `screens` job, P2-15e): every detail route is discovered from its list page now instead of pinned to the baseline's item, so the PNGs show the first item production serves today.
 //
-// For every route in routes.json, at 1280x900 and 375x812: waits for network idle, writes a full-page PNG and a JSON
-// record (accessibility tree, landmarks, headings, interactive controls, first rows with measured heights).
+// For every route in routes.json, at 1280x900 and 375x812: waits for the shell to hydrate and the network to go idle, writes a PNG of the WHOLE page (the shell scrolls inside <main>, so the viewport is grown to the page)
+// and a JSON record (CAPTURE_CONTRACT in contract.mjs): accessibility tree, landmarks (role and name), headings, interactive controls, EVERY list row (`[data-part="list-row"]`, `[data-part="table-row"]`, no cap) with its measured
+// height and its container, the page height from <main>, how many screenshot tiles make up the page (a page taller than the 16000 px Chromium ceiling is photographed in tiles; `truncated` only when even that does not reach its foot), and the offences the layout measure (tests/ux/measure.mjs) found on this route at this width.
 // Each account signs in once through the /login form; its storage state is held in memory only, never written to disk, never printed.
 // Admin routes are captured only when PARITY_ADMIN=1 (the deployed preview; the CI runner holds no service-role key). Credentials: member = LIVE_SMOKE_EMAIL / LIVE_SMOKE_PASSWORD, admin = LIVE_ADMIN_EMAIL / LIVE_ADMIN_PASSWORD.
 // Exit code is 1 when any sign-in, discovery or capture failed; index.json is written in every case.
 
+import { readFileSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { execFileSync } from 'node:child_process';
@@ -17,14 +19,42 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { chromium } from 'playwright';
 
-const VIEWPORTS = [
-  { width: 1280, height: 900 },
-  { width: 375, height: 812 },
-];
-const ROW_LIMIT = 20;
+import { measurePage } from '../ux/measure.mjs';
+
+import { CAPTURE_CONTRACT, CAPTURE_VIEWPORTS as VIEWPORTS, ROW_SELECTOR, SCREEN_MAX_HEIGHT } from './contract.mjs';
+
+export { SCREEN_MAX_HEIGHT };
 // A page that navigates its main frame more often than this after goto is looping (a reload on every auth event, a redirect cycle).
 const NAVIGATION_CEILING = 3;
 const ACCOUNTS = { member: ['LIVE_SMOKE_EMAIL', 'LIVE_SMOKE_PASSWORD'], admin: ['LIVE_ADMIN_EMAIL', 'LIVE_ADMIN_PASSWORD'] };
+/** The signed-in credentials the routes need and the environment does not hold (the admin account only when PARITY_ADMIN=1). */
+export function missingCredentials(routes, env) {
+  const accounts = new Set(routes.map((r) => r.auth).filter((a) => a && (a !== 'admin' || env.PARITY_ADMIN === '1')));
+  return [...accounts].flatMap((a) => ACCOUNTS[a].filter((name) => !env[name]));
+}
+
+const isFork = (env) => {
+  if (env.GITHUB_EVENT_NAME !== 'pull_request' || !env.GITHUB_EVENT_PATH) return false;
+  try {
+    return JSON.parse(readFileSync(env.GITHUB_EVENT_PATH, 'utf8')).pull_request?.head?.repo?.fork === true;
+  } catch {
+    return false; // an unreadable payload cannot prove a fork, so the run is treated as one that holds the secrets
+  }
+};
+const isLocalOrigin = (base) => ['localhost', '127.0.0.1', '[::1]'].includes(new URL(base).hostname);
+
+/**
+ * The exit contract (src/core/harness/exit.ts skipVerdict, restated because this is a plain script): credentials the routes need and the environment lacks are a SKIP (exit 2, reason printed) on a workstation, in a
+ * pull request from a fork, or against a local server (which holds no account); anywhere else in CI they are a FAILURE (exit 1) that names the variables, so a run that captured nothing signed-in cannot read green.
+ */
+export function credentialVerdict(env, missing, base) {
+  if (missing.length === 0) return { exit: 0, message: '' };
+  const list = missing.join(', ');
+  if (isFork(env)) return { exit: 2, message: `signed-in routes skipped: a pull request from a fork cannot carry secrets; not set: ${list}` };
+  if (isLocalOrigin(base)) return { exit: 2, message: `signed-in routes skipped: ${new URL(base).host} is a local server and holds no account; not set: ${list}` };
+  if (env.CI === 'true' || env.GITHUB_ACTIONS === 'true') return { exit: 1, message: `missing (exit 1): ${list}. A run that can carry these and does not have them has not captured the signed-in routes; it is a failure, never a skip` };
+  return { exit: 2, message: `signed-in routes skipped: not set here: ${list}` };
+}
 const ROUTES_FILE = join(dirname(fileURLToPath(import.meta.url)), 'routes.json');
 
 function parseArgs(argv) {
@@ -48,8 +78,29 @@ async function settle(page) {
   }
 }
 
+// A deployed preview sits behind Vercel's deployment protection; the project's automation bypass secret (VERCEL_AUTOMATION_BYPASS_SECRET, the same variable scripts/ci/live-checks.mjs reads) lets the capture
+// through. The header goes to the captured origin only: never to a third party the page happens to call (the database, the map tiles).
+export const BYPASS_HEADER = 'x-vercel-protection-bypass';
+export function bypassHeaders(url, origin, env = process.env) {
+  const secret = env.VERCEL_AUTOMATION_BYPASS_SECRET;
+  return secret && new URL(url).origin === origin ? { [BYPASS_HEADER]: secret } : {};
+}
+export async function installBypass(context, origin, env = process.env) {
+  if (!env.VERCEL_AUTOMATION_BYPASS_SECRET) return;
+  await context.route('**/*', (route) => {
+    const extra = bypassHeaders(route.request().url(), origin, env);
+    return Object.keys(extra).length ? route.continue({ headers: { ...route.request().headers(), ...extra } }) : route.fallback();
+  });
+}
+
+// The shell sets data-hydrated on <html> when it has hydrated (src/ui/shell/Hydrated.tsx). A page that never does is a capture error: it would be measured as server markup with no handlers.
+async function hydrated(page) {
+  await page.waitForFunction(() => document.documentElement.dataset.hydrated === 'true', null, { timeout: 20000 });
+}
+
 async function signIn(browser, base, email, password) {
   const context = await browser.newContext();
+  await installBypass(context, new URL(base).origin);
   try {
     const page = await context.newPage();
     await page.goto(new URL('/login', base).href, { waitUntil: 'load', timeout: 60000 });
@@ -119,8 +170,8 @@ async function discover(page, base, route, gates, baselineIndex) {
   throw miss;
 }
 
-// Runs in the page. Helpers live inside so the whole function serialises as one unit. Exported so the UX smoke records its fixture pages the same way.
-export function domSummary(rowLimit) {
+// Runs in the page. Helpers live inside so the whole function serialises as one unit. Exported so the UX smoke records its fixture pages the same way (`{ rowSelector: ROW_SELECTOR }`).
+export function domSummary({ rowSelector }) {
   const clean = (s) => (s || '').replace(/\s+/g, ' ').trim();
   const rendered = (el) => el.getClientRects().length > 0;
   const accName = (el) => {
@@ -138,6 +189,12 @@ export function domSummary(rowLimit) {
     const wrapping = el.closest('label');
     if (wrapping && clean(wrapping.textContent)) return clean(wrapping.textContent);
     return clean(el.textContent) || clean(el.getAttribute('placeholder')) || clean(el.getAttribute('title'));
+  };
+  // A landmark is named by what the author named it (aria-labelledby, aria-label), never by the text inside it: the text of <main> is the whole page and changes with every datum.
+  const landmarkName = (el) => {
+    const ids = el.getAttribute('aria-labelledby');
+    if (ids) return clean(ids.split(/\s+/).map((id) => document.getElementById(id)?.textContent ?? '').join(' '));
+    return clean(el.getAttribute('aria-label'));
   };
   const IMPLICIT_LANDMARK = { header: 'banner', nav: 'navigation', main: 'main', footer: 'contentinfo', aside: 'complementary' };
   const INPUT_ROLE = {
@@ -162,7 +219,7 @@ export function domSummary(rowLimit) {
     if (!rendered(el)) continue;
     const tag = el.tagName.toLowerCase();
     const explicit = el.getAttribute('role');
-    const name = accName(el);
+    const name = landmarkName(el);
     let role = explicit ? explicit.split(/\s+/)[0] : IMPLICIT_LANDMARK[tag];
     if (!role && (tag === 'section' || tag === 'form') && name) role = tag === 'section' ? 'region' : 'form';
     if (!role) continue;
@@ -185,21 +242,30 @@ export function domSummary(rowLimit) {
     controls.push({ role, name: accName(el) });
   }
 
+  // Every list row on the page, none dropped, in document order, with the container it sits in (the nearest labelled region, else the page): a list's rows are compared with the baseline's, container by container.
+  const containerOf = (el) => {
+    const host = el.parentElement?.closest('[aria-label],[aria-labelledby],[data-audit],[data-guard-container]');
+    if (!host) return 'main';
+    return landmarkName(host) || clean(host.getAttribute('data-audit')) || clean(host.getAttribute('data-guard-container')) || 'main';
+  };
   const rows = [];
-  const rowSelector = '[data-row], li, tr, article';
+  const containers = [];
   for (const el of document.querySelectorAll(rowSelector)) {
     if (!rendered(el)) continue;
     const box = el.getBoundingClientRect();
-    rows.push({ tag: el.tagName.toLowerCase(), text: clean(el.textContent).slice(0, 300), width: box.width, height: box.height });
-    if (rows.length === rowLimit) break;
+    const container = containerOf(el);
+    rows.push({ tag: el.tagName.toLowerCase(), text: clean(el.textContent).slice(0, 300), width: box.width, height: box.height, container });
+    const seen = containers.find((c) => c.label === container);
+    if (seen) seen.count += 1;
+    else containers.push({ label: container, count: 1 });
   }
 
   return {
     landmarks,
     headings,
     controls,
-    rows: { selector: rowSelector, limit: rowLimit, items: rows },
-    document_height: document.documentElement.scrollHeight,
+    rows: { selector: rowSelector, items: rows, containers },
+    document_height: (document.querySelector('main') ?? document.documentElement).scrollHeight,
   };
 }
 
@@ -220,10 +286,10 @@ async function accessibilitySnapshot(page) {
 // (Retry-After, seconds or an HTTP date; THROTTLE_FALLBACK_MS only when the header is absent or unreadable, THROTTLE_CEILING_MS so a hostile header cannot hang the job).
 // A 503 is NOT a throttle: /api/workspace/tags answers 503 (Retry-After 1) on production data in every run, a failed read the page states, and waiting does not change it.
 // A route still throttled after THROTTLE_ATTEMPTS is a FAILED capture, never a partial page compared as if whole. Every throttle event is recorded in the route's diagnostics.
-export const THROTTLE_STATUSES = [429];
+const THROTTLE_STATUSES = [429];
 export const THROTTLE_FALLBACK_MS = 65000;
 export const THROTTLE_CEILING_MS = 120000;
-export const THROTTLE_ATTEMPTS = 3;
+const THROTTLE_ATTEMPTS = 3;
 export const throttleEvents = (responses) => responses.filter((r) => THROTTLE_STATUSES.includes(r.status));
 export const isThrottled = (responses) => throttleEvents(responses).length > 0;
 export function retryWaitMs(retryAfter, nowMs = Date.now()) {
@@ -238,9 +304,12 @@ export function retryWaitMs(retryAfter, nowMs = Date.now()) {
 }
 export const throttleWaitMs = (events, nowMs) => Math.max(...events.map((e) => retryWaitMs(e.retryAfter, nowMs)));
 
-// The shell scrolls inside <main>, so a fullPage screenshot of the document is one viewport tall. For the screens job (--fresh) the viewport is grown to the
-// tallest scroll box's content (ceiling SCREEN_MAX_HEIGHT) so the PNG shows the whole page; the DOM record is already taken at the real viewport.
-export const SCREEN_MAX_HEIGHT = 16000;
+// The shell scrolls inside <main>, so a fullPage screenshot of the document is one viewport tall. Every capture grows the viewport to the tallest scroll box's content, up to SCREEN_MAX_HEIGHT (Chromium cannot photograph
+// more in one image), so the PNG shows the whole page; the DOM record is taken first, at the real viewport. A page taller than that is photographed in TILES: the viewport stays at the ceiling and the scroll box is scrolled one
+// box-height at a time, tile 1 in `file` and tile k in `<stem>.<k>.png`. The ceiling is a tooling limit, never a cap on a product page. Returns { tiles, truncated }: `tiles` images make up the one page, and `truncated` is
+// true only when even MAX_TILES tiles do not reach its foot (the compare fails on it).
+const MAX_TILES = 12;
+const tileFile = (file, k) => (k === 1 ? file : file.replace(/\.png$/, `.${k}.png`));
 export async function wholePageScreenshot(page, viewport, file) {
   const needed = await page.evaluate(() => {
     let tallest = 0;
@@ -254,12 +323,36 @@ export async function wholePageScreenshot(page, viewport, file) {
     await page.setViewportSize({ width: viewport.width, height: Math.min(needed, SCREEN_MAX_HEIGHT) });
     await settle(page);
   }
-  await page.screenshot({ path: file, fullPage: true });
+  if (needed <= SCREEN_MAX_HEIGHT) {
+    await page.screenshot({ path: file, fullPage: true });
+    return { tiles: 1, truncated: false };
+  }
+  // Tile the scroll box: mark the tallest one, then photograph the viewport at each scroll offset.
+  const box = await page.evaluate(() => {
+    let best = null;
+    for (const el of document.querySelectorAll('main, body *')) {
+      const overflowY = getComputedStyle(el).overflowY;
+      if ((overflowY === 'auto' || overflowY === 'scroll') && el.scrollHeight > el.clientHeight && (!best || el.scrollHeight > best.scrollHeight)) best = el;
+    }
+    best.setAttribute('data-tile-box', '');
+    return { step: best.clientHeight, height: best.scrollHeight };
+  });
+  const count = Math.ceil(box.height / box.step);
+  const tiles = Math.min(count, MAX_TILES);
+  for (let k = 1; k <= tiles; k += 1) {
+    await page.evaluate(([top]) => {
+      document.querySelector('[data-tile-box]').scrollTop = top;
+      return new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    }, [(k - 1) * box.step]);
+    await page.screenshot({ path: tileFile(file, k) });
+  }
+  await page.evaluate(() => document.querySelector('[data-tile-box]')?.removeAttribute('data-tile-box'));
+  return { tiles, truncated: count > MAX_TILES };
 }
 
-async function captureOne(browser, base, route, path, viewport, storage, out, diag, whole) {
+async function captureOne(browser, base, route, path, viewport, storage, out, diag) {
   for (let attempt = 1; ; attempt += 1) {
-    const result = await captureAttempt(browser, base, route, path, viewport, storage, out, diag, whole);
+    const result = await captureAttempt(browser, base, route, path, viewport, storage, out, diag);
     if (result.throttled.length === 0) return result.stem;
     const waitMs = throttleWaitMs(result.throttled);
     diag.throttle = [...(diag.throttle ?? []), ...result.throttled.map((e) => ({ route: route.name, path, viewport: `${viewport.width}x${viewport.height}`, attempt, status: e.status, waitMs }))];
@@ -268,9 +361,10 @@ async function captureOne(browser, base, route, path, viewport, storage, out, di
   }
 }
 
-async function captureAttempt(browser, base, route, path, viewport, storage, out, diag, whole) {
+async function captureAttempt(browser, base, route, path, viewport, storage, out, diag) {
   const stem = `${route.name}.${viewport.width}x${viewport.height}`;
   const context = await browser.newContext({ viewport, storageState: route.auth ? storage[route.auth] : undefined });
+  await installBypass(context, new URL(base).origin);
   try {
     const page = await context.newPage();
     const before = diag.navigations;
@@ -292,10 +386,12 @@ async function captureAttempt(browser, base, route, path, viewport, storage, out
       throw new Error(`navigation loop: ${diag.navigations - before} navigations, paths: ${JSON.stringify(diag.navigationPaths)}`);
     }
     const finalUrl = new URL(page.url());
-    if (!whole) await page.screenshot({ path: join(out, `${stem}.png`), fullPage: true });
-    const dom = await page.evaluate(domSummary, ROW_LIMIT);
+    await hydrated(page);
+    const dom = await page.evaluate(domSummary, { rowSelector: ROW_SELECTOR });
     const accessibility = await accessibilitySnapshot(page);
-    if (whole) await wholePageScreenshot(page, viewport, join(out, `${stem}.png`));
+    // The layout measure (law 2 targets, overflow, titles) runs on every route at every width the capture visits; the compare fails on what it finds.
+    const offences = await measurePage(page, { scope: 'body *' });
+    const { tiles, truncated } = await wholePageScreenshot(page, viewport, join(out, `${stem}.png`));
     const record = {
       route: route.name,
       path,
@@ -307,6 +403,9 @@ async function captureAttempt(browser, base, route, path, viewport, storage, out
       network_idle: networkIdle,
       accessibility,
       ...dom,
+      tiles,
+      truncated,
+      offences,
     };
     await writeFile(join(out, `${stem}.json`), `${JSON.stringify(record, null, 2)}\n`);
     return { stem, throttled: throttleEvents(statuses) };
@@ -335,7 +434,15 @@ async function main() {
   const routes = JSON.parse(await readFile(ROUTES_FILE, 'utf8')).routes.filter((r) => !only || only.has(r.name));
   const { gates } = JSON.parse(await readFile(join(dirname(ROUTES_FILE), 'approved-changes.json'), 'utf8'));
   const baselineIndex = JSON.parse(await readFile(join(dirname(ROUTES_FILE), 'baseline', 'index.json'), 'utf8'));
+  let failed = false;
+  // Credentials the routes need and the environment lacks: a skip (printed) or a failure naming the variables, by credentialVerdict. A skip is recorded as a signed-out run, which compare accepts; a failure is not.
+  const verdict = args['signed-out-only'] ? { exit: 0, message: '' } : credentialVerdict(process.env, missingCredentials(routes, process.env), base);
+  if (verdict.message) console.log(`capture: ${verdict.message}`);
+  if (verdict.exit === 1) failed = true;
+  const signedOutOnly = Boolean(args['signed-out-only']) || verdict.exit === 2;
   const index = {
+    contract: CAPTURE_CONTRACT,
+    signed_out_only: signedOutOnly,
     captured_at: new Date().toISOString(),
     ...commitOf(),
     base,
@@ -343,7 +450,6 @@ async function main() {
     signin: null,
     routes: routes.map((r) => ({ name: r.name, path: pathFor(r, args.site), auth: r.auth, status: 'pending', files: [], error: null, diagnostics: { firstFailure: null, navigations: 0, navigationPaths: [] } })),
   };
-  let failed = false;
   const browser = await chromium.launch();
   try {
     // One sign-in per account that has both credentials; `storage[account]` is absent for an account without them or whose sign-in failed.
@@ -386,6 +492,7 @@ async function main() {
         continue;
       }
       const context = await browser.newContext({ viewport: VIEWPORTS[1], storageState: storage[route.auth] });
+      await installBypass(context, base);
       try {
         entry.path = (args.fresh ? null : pinnedPath(route, baselineIndex, args.site)) ?? await discover(await context.newPage(), base, route, gates, baselineIndex);
       } catch (err) {
@@ -408,7 +515,7 @@ async function main() {
       }
       try {
         for (const viewport of VIEWPORTS) {
-          entry.files.push(await captureOne(browser, base, route, entry.path, viewport, storage, out, entry.diagnostics, Boolean(args.fresh)));
+          entry.files.push(await captureOne(browser, base, route, entry.path, viewport, storage, out, entry.diagnostics));
         }
         entry.status = 'ok';
         console.log(`captured ${route.name}`);
