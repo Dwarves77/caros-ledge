@@ -20,7 +20,7 @@ export interface SmokeReport {
 }
 
 /** One row from a report: success when no finding failed, failed otherwise; a missing or unreadable report is a failed row that says so. */
-export function smokeRow(report: SmokeReport | null, o: { now: Date; startedAt?: Date; error?: string | null; codeSha: string | null; githubRunId: string | null; rootRunId?: string; check?: string; trigger?: Trigger; phase?: string }): RunRow {
+function smokeRow(report: SmokeReport | null, o: { now: Date; startedAt?: Date; error?: string | null; codeSha: string | null; githubRunId: string | null; rootRunId?: string; check?: string; trigger?: Trigger; phase?: string }): RunRow {
   const id = newRunId();
   const fails = report?.findings.filter((f) => f.severity === "fail") ?? [];
   const byInvariant: Record<string, number> = {};

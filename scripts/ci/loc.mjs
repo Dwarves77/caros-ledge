@@ -1,14 +1,16 @@
 // Code lines (non-blank, non-comment) per directory under src/. Exit 1 when src/core > 25000 or src > 75000.
-import { appendFileSync, readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { appendFileSync, readFileSync } from "node:fs";
 
-const LIMITS = { "src/core": 25000, src: 75000 };
-const EXT = /\.(ts|tsx|js|jsx|mjs)$/;
+import { isMain, walk } from "../lib/fs.mjs";
 
-function codeLines(file) {
+export const LIMITS = { "src/core": 25000, src: 75000 };
+const CODE_FILE = /\.(ts|tsx|js|jsx|mjs)$/;
+
+/** The code lines of one source text: blank lines, `//` lines and block comments do not count. */
+export function codeLines(text) {
   let inBlock = false;
   let n = 0;
-  for (const raw of readFileSync(file, "utf8").split("\n")) {
+  for (const raw of text.split("\n")) {
     let line = raw.trim();
     if (inBlock) {
       const end = line.indexOf("*/");
@@ -30,27 +32,39 @@ function codeLines(file) {
   return n;
 }
 
-const totals = new Map();
-function walk(dir) {
-  for (const e of readdirSync(dir, { withFileTypes: true })) {
-    const p = join(dir, e.name);
-    if (e.isDirectory()) walk(p);
-    else if (EXT.test(e.name)) {
-      const n = codeLines(p);
-      const parts = dir.split("/");
-      for (let depth = 1; depth <= parts.length; depth += 1) {
-        const key = parts.slice(0, depth).join("/");
-        totals.set(key, (totals.get(key) ?? 0) + n);
-      }
+/**
+ * The code lines of every directory under `root`, keyed by its posix path ("src", "src/core", ...): a file counts toward its directory and every ancestor. The keys are posix on every platform
+ * (`walk` returns posix paths), so a limit named "src/core" is compared with the lines of src/core on Windows too.
+ */
+export function totalsOf(root = "src") {
+  const totals = new Map();
+  for (const file of walk(root, (name) => CODE_FILE.test(name))) {
+    const n = codeLines(readFileSync(file, "utf8"));
+    const parts = file.split("/").slice(0, -1);
+    for (let depth = 1; depth <= parts.length; depth += 1) {
+      const key = parts.slice(0, depth).join("/");
+      totals.set(key, (totals.get(key) ?? 0) + n);
     }
   }
+  return totals;
 }
-walk("src");
 
-const rows = [...totals].sort(([a], [b]) => a.localeCompare(b)).filter(([k]) => k.split("/").length <= 3);
-const failures = Object.entries(LIMITS).filter(([k, max]) => (totals.get(k) ?? 0) > max);
-const table = ["| directory | code lines |", "|---|---|", ...rows.map(([k, n]) => `| ${k} | ${n} |`)].join("\n");
-console.log(table);
-if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `### Code lines\n\n${table}\n`);
-for (const [k, max] of failures) console.error(`${k} has ${totals.get(k)} code lines, limit ${max}`);
-process.exit(failures.length ? 1 : 0);
+/** One line per limit the totals exceed. A limit whose directory holds no code at all is a problem too: a gate that compares nothing is not a gate. */
+export function limitProblems(totals, limits = LIMITS) {
+  return Object.entries(limits).flatMap(([dir, max]) => {
+    const n = totals.get(dir);
+    if (n === undefined) return [`${dir} has no code lines at all: the limit ${max} compared nothing (a path-key defect)`];
+    return n > max ? [`${dir} has ${n} code lines, limit ${max}`] : [];
+  });
+}
+
+if (isMain(import.meta.url)) {
+  const totals = totalsOf("src");
+  const rows = [...totals].sort(([a], [b]) => a.localeCompare(b)).filter(([k]) => k.split("/").length <= 3);
+  const table = ["| directory | code lines |", "|---|---|", ...rows.map(([k, n]) => `| ${k} | ${n} |`)].join("\n");
+  console.log(table);
+  if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `### Code lines\n\n${table}\n`);
+  const problems = limitProblems(totals);
+  for (const p of problems) console.error(p);
+  process.exit(problems.length ? 1 : 0);
+}

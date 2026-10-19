@@ -2,29 +2,33 @@
 import { fetchAllRows, type Db } from "@/core/db";
 
 import { FAMILIES } from "./families";
+import { countsOf } from "./outcome";
 import type { RunRow } from "./record";
 
 type Ledger = Pick<RunRow, "id" | "family" | "root_run_id" | "upstream_run_id" | "mode" | "outcome" | "outputs" | "code_sha" | "started_at">;
 const COLUMNS = "id,family,root_run_id,upstream_run_id,mode,outcome,outputs,code_sha,started_at";
 
+type Order = { order: (c: string, o: object) => Order & { range: (a: number, b: number) => never } };
+/** The ledger rows a filter selects, paged in a TOTAL order: `started_at` is not unique (a recorder stamps many unit rows with one instant), so the id breaks the tie and no page boundary skips or repeats a row. */
 async function rows(sb: Db, apply: (q: ReturnType<ReturnType<Db["from"]>["select"]>) => unknown): Promise<Ledger[]> {
-  return fetchAllRows<Ledger>((from, to) => (apply(sb.from("harness_runs").select(COLUMNS)) as { order: (c: string, o: object) => { range: (a: number, b: number) => never } }).order("started_at", { ascending: true }).range(from, to), { cap: 50_000 });
+  return fetchAllRows<Ledger>((from, to) => (apply(sb.from("harness_runs").select(COLUMNS)) as Order).order("started_at", { ascending: true }).order("id", { ascending: true }).range(from, to), { cap: 50_000 });
 }
-const counts = (r: Ledger): Record<string, number> => ((r.outputs.counts ?? r.outputs.planned ?? {}) as Record<string, number>);
+const counts = (r: Ledger): Record<string, number> => countsOf(r.outputs);
 
-/** P1: under one root, every stage family left a row and none failed. A stage a gate held (refused) or that had nothing to do (noop) is recorded and listed, not a break; `held` names them. */
+/** P1: under one root, every stage family left a row and none failed or finished partial (some of its units failed: the proof is not ok). A stage a gate held (refused) or that had nothing to do (noop) is recorded and listed, not a break; `held` names them. */
 export async function chainProof(sb: Db, rootRunId: string, expect: readonly string[] = FAMILIES.filter((f) => f.stage).map((f) => f.name)) {
   const all = await rows(sb, (q) => (q as unknown as { eq: (c: string, v: string) => unknown }).eq("root_run_id", rootRunId));
   const missing = expect.filter((f) => !all.some((r) => r.family === f));
   const failed = all.filter((r) => r.outcome === "failed").map((r) => r.family);
+  const partial = all.filter((r) => r.outcome === "partial").map((r) => r.family);
   const held = all.filter((r) => r.outcome === "refused" || r.outcome === "noop").map((r) => `${r.family}:${r.outcome}`);
-  return { ok: missing.length === 0 && failed.length === 0, missing, failed, held, rows: all };
+  return { ok: missing.length === 0 && failed.length === 0 && partial.length === 0, missing, failed, partial, held, rows: all };
 }
 
-/** P2: the item ids minted by apply runs that succeeded, newest first. */
+/** P2: the item ids minted by apply runs that succeeded or finished partial (the items a partial run did mint exist), newest first. */
 export async function mintedIds(sb: Db): Promise<string[]> {
   const all = await rows(sb, (q) => (q as unknown as { eq: (c: string, v: string) => unknown }).eq("mode", "apply"));
-  return all.filter((r) => r.outcome === "success").reverse().flatMap((r) => ((r.outputs.ids as Record<string, string[]> | undefined)?.minted_item_ids ?? []));
+  return all.filter((r) => r.outcome === "success" || r.outcome === "partial").reverse().flatMap((r) => ((r.outputs.ids as Record<string, string[]> | undefined)?.minted_item_ids ?? []));
 }
 
 /** P3: the rows that share a minted run's root in the flywheel families, with the output count above zero. */

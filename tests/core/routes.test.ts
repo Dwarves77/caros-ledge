@@ -13,7 +13,7 @@ import { POST as orgsPost } from "@/features/auth/api/orgs-create";
 
 import { scripted } from "../_support/fake-clients.ts";
 import { fakeDb, filterValue, wrote, type Call, type Reply } from "../_support/fake-db.ts";
-import { as, ctx, json, MEMBERSHIP_ID, ORG_A, ORG_B, OTHER_MEMBERSHIP_ID, PERSONAS, personaOf, script, userDbFor, type Persona } from "../_support/personas.ts";
+import { as, ctx, expectationFor, json, MEMBERSHIP_ID, ORG_A, ORG_B, OTHER_MEMBERSHIP_ID, PERSONAS, personaOf, script, userDbFor, type Persona } from "../_support/personas.ts";
 
 const TOKEN = "b".repeat(64);
 const INVITE_A = "55555555-5555-4555-8555-555555555555";
@@ -50,27 +50,27 @@ const call = async (handler: (r: Request, c: never) => Promise<Response>, person
   return res.status;
 };
 
-/** A persona matrix: the expected status for each of anon, viewer, other-org member, member, owner, platform admin. */
+/** A persona matrix: the expected status for each of anon, viewer, other-org member, member, organisation admin, owner, platform admin; a persona the matrix names no expectation for fails by name. */
 async function matrix(name: string, run: (persona: Persona) => Promise<number>, expected: Record<Persona, number>) {
-  for (const persona of PERSONAS) assert.equal(await run(persona), expected[persona], `${name} as ${persona}`);
+  for (const persona of PERSONAS) assert.equal(await run(persona), expectationFor(expected, persona, name), `${name} as ${persona}`);
 }
-const E = (anon: number, viewer: number, otherOrgMember: number, member: number, owner: number, platformAdmin: number): Record<Persona, number> => ({ anon, viewer, otherOrgMember, member, owner, platformAdmin });
+const E = (anon: number, viewer: number, otherOrgMember: number, member: number, admin: number, owner: number, platformAdmin: number): Record<Persona, number> => ({ anon, viewer, otherOrgMember, member, admin, owner, platformAdmin });
 
 test("persona matrix: members GET, PATCH, POST, DELETE, PUT", async () => {
   const orgParams = { org_id: ORG_A };
   script(world());
-  await matrix("members GET", (p) => call(membersGet, p, `/api/orgs/${ORG_A}/members`, {}, orgParams), E(401, 200, 403, 200, 200, 200));
-  await matrix("members PATCH", (p) => call(membersPatch, p, `/api/orgs/${ORG_A}/members`, { method: "PATCH", body: json({ membership_id: MEMBERSHIP_ID, role: "admin" }) }, orgParams), E(401, 403, 403, 403, 200, 200));
-  await matrix("members POST (ban)", (p) => call(membersPost, p, `/api/orgs/${ORG_A}/members`, { method: "POST", body: json({ membership_id: MEMBERSHIP_ID, reason: "spam" }) }, orgParams), E(401, 403, 403, 403, 200, 200));
-  await matrix("members DELETE", (p) => call(membersDelete, p, `/api/orgs/${ORG_A}/members?membership_id=${MEMBERSHIP_ID}`, { method: "DELETE" }, orgParams), E(401, 403, 403, 403, 200, 200));
-  await matrix("members PUT", (p) => call(membersPut, p, `/api/orgs/${ORG_A}/members`, { method: "PUT", body: json({ email: "new@example.test", role: "member" }) }, orgParams), E(401, 403, 403, 403, 201, 201));
+  await matrix("members GET", (p) => call(membersGet, p, `/api/orgs/${ORG_A}/members`, {}, orgParams), E(401, 200, 403, 200, 200, 200, 200));
+  await matrix("members PATCH", (p) => call(membersPatch, p, `/api/orgs/${ORG_A}/members`, { method: "PATCH", body: json({ membership_id: MEMBERSHIP_ID, role: "admin" }) }, orgParams), E(401, 403, 403, 403, 403, 200, 200));
+  await matrix("members POST (ban)", (p) => call(membersPost, p, `/api/orgs/${ORG_A}/members`, { method: "POST", body: json({ membership_id: MEMBERSHIP_ID, reason: "spam" }) }, orgParams), E(401, 403, 403, 403, 403, 200, 200));
+  await matrix("members DELETE", (p) => call(membersDelete, p, `/api/orgs/${ORG_A}/members?membership_id=${MEMBERSHIP_ID}`, { method: "DELETE" }, orgParams), E(401, 403, 403, 403, 403, 200, 200));
+  await matrix("members PUT", (p) => call(membersPut, p, `/api/orgs/${ORG_A}/members`, { method: "PUT", body: json({ email: "new@example.test", role: "member" }) }, orgParams), E(401, 403, 403, 403, 403, 201, 201));
 });
 
 test("persona matrix: org GET and PATCH", async () => {
   script(world());
   const orgParams = { org_id: ORG_A };
-  await matrix("org GET", (p) => call(orgGet, p, `/api/orgs/${ORG_A}`, {}, orgParams), E(401, 200, 403, 200, 200, 200)); // IMP-012: a platform admin reads any organization's record
-  await matrix("org PATCH", (p) => call(orgPatch, p, `/api/orgs/${ORG_A}`, { method: "PATCH", body: json({ name: "Renamed" }) }, orgParams), E(401, 403, 403, 403, 200, 403));
+  await matrix("org GET", (p) => call(orgGet, p, `/api/orgs/${ORG_A}`, {}, orgParams), E(401, 200, 403, 200, 200, 200, 200)); // IMP-012: a platform admin reads any organization's record
+  await matrix("org PATCH", (p) => call(orgPatch, p, `/api/orgs/${ORG_A}`, { method: "PATCH", body: json({ name: "Renamed" }) }, orgParams), E(401, 403, 403, 403, 403, 200, 403));
   const owner = await orgGet(as("owner", `/api/orgs/${ORG_A}`), ctx(orgParams));
   const body = await owner.json();
   assert.deepEqual([body.org.slug, body.caller_role, body.member_count, body.owner.display_name], ["org-a", "owner", 2, "Olga Owner"]);
@@ -86,18 +86,18 @@ test("persona matrix: invitations (RLS decides who may issue), revoke, token rou
     (name) => (name === "create_org_for_self" ? { data: ORG_A } : undefined),
   );
   const orgParams = { org_id: ORG_A };
-  await matrix("invitations GET", (p) => call(invitationsGet, p, `/api/orgs/${ORG_A}/invitations`, {}, orgParams), E(401, 200, 200, 200, 200, 200));
-  await matrix("invitations POST", (p) => call(invitationsPost, p, `/api/orgs/${ORG_A}/invitations`, { method: "POST", body: json({ email: "x@y.test", role: "member" }) }, orgParams), E(401, 201, 201, 201, 201, 201));
-  await matrix("revoke own org's invitation", (p) => call(revoke, p, `/api/orgs/${ORG_A}/invitations/${INVITE_A}`, { method: "DELETE" }, { org_id: ORG_A, id: INVITE_A }), E(401, 200, 200, 200, 200, 200));
+  await matrix("invitations GET", (p) => call(invitationsGet, p, `/api/orgs/${ORG_A}/invitations`, {}, orgParams), E(401, 200, 200, 200, 200, 200, 200));
+  await matrix("invitations POST", (p) => call(invitationsPost, p, `/api/orgs/${ORG_A}/invitations`, { method: "POST", body: json({ email: "x@y.test", role: "member" }) }, orgParams), E(401, 201, 201, 201, 201, 201, 201));
+  await matrix("revoke own org's invitation", (p) => call(revoke, p, `/api/orgs/${ORG_A}/invitations/${INVITE_A}`, { method: "DELETE" }, { org_id: ORG_A, id: INVITE_A }), E(401, 200, 200, 200, 200, 200, 200));
   assert.equal(await call(revoke, "owner", `/api/orgs/${ORG_A}/invitations/${INVITE_B}`, { method: "DELETE" }, { org_id: ORG_A, id: INVITE_B }), 404, "another org's invitation");
   assert.equal(await call(revoke, "owner", "/x", { method: "DELETE" }, { org_id: "nope", id: INVITE_A }), 400);
-  await matrix("token GET", (p) => call(tokenGet, p, `/api/invitations/${TOKEN}`, {}, { token: TOKEN }), E(401, 404, 404, 404, 404, 404));
+  await matrix("token GET", (p) => call(tokenGet, p, `/api/invitations/${TOKEN}`, {}, { token: TOKEN }), E(401, 404, 404, 404, 404, 404, 404));
   assert.equal(await call(tokenGet, "member", "/x", {}, { token: "short" }), 400);
   assert.equal(await call(accept, "anon", "/x", { method: "POST" }, { token: TOKEN }), 401);
   assert.equal(await call(decline, "anon", "/x", { method: "POST" }, { token: TOKEN }), 401);
   assert.equal(await call(accept, "member", "/x", { method: "POST" }, { token: "short" }), 400);
-  await matrix("mine GET", (p) => call(mineGet, p, "/api/invitations/mine", {}), E(401, 200, 200, 200, 200, 200));
-  await matrix("orgs POST", (p) => call(orgsPost, p, "/api/orgs", { method: "POST", body: json({ name: "Acme" }) }), E(401, 201, 201, 201, 201, 201));
+  await matrix("mine GET", (p) => call(mineGet, p, "/api/invitations/mine", {}), E(401, 200, 200, 200, 200, 200, 200));
+  await matrix("orgs POST", (p) => call(orgsPost, p, "/api/orgs", { method: "POST", body: json({ name: "Acme" }) }), E(401, 201, 201, 201, 201, 201, 201));
   assert.equal(await call(orgsPost, "member", "/api/orgs", { method: "POST", body: json({ name: "" }) }), 400);
   assert.equal(await call(orgsPost, "member", "/api/orgs", { method: "POST", body: "{" }), 400);
 });

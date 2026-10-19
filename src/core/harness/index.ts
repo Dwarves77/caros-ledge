@@ -1,12 +1,15 @@
 export { FAMILIES, familyOf, stageFamily, validateFamilies } from "./families";
 export type { Family } from "./families";
-export { classify, MODES, noopContractErrors, outcomeOf, OUTCOMES, TRIGGERS, writeCount } from "./outcome";
+export { classify, countProblems, countsOf, MODES, noopContractErrors, outcomeOf, OUTCOMES, TRIGGERS, writeCount } from "./outcome";
 export type { Mode, Outcome, Trigger } from "./outcome";
-export { finishRun, makeRecorder, newRunId, recordRun } from "./record";
+export { currentRunContext, finishRun, makeRecorder, newRunId, recordRun, withRunContext } from "./record";
+export { CRASHED, IN_PROGRESS, reapStaleRuns, RUN_LEASE_MS } from "./reap";
+export { EXIT, skipVerdict, summarise } from "./exit";
+export type { Exit, Verdict } from "./exit";
 export type { RecorderContext, RunRow } from "./record";
 export { halted, KILL_SWITCH_REF, resolveMode, runChain, runFamily } from "./run";
 export type { FamilyCall, FamilyFn, FamilyRun, HarnessDeps, Resolved, RunRequest, Upstream } from "./run";
 export * as proofs from "./proofs";
 export { chainProof, changeProof, flywheelOutcomes, mintedIds, smokeProof } from "./proofs";
-export { recordLiveSmoke, smokeRow } from "./live-smoke";
+export { recordLiveSmoke } from "./live-smoke";
 export type { SmokeReport } from "./live-smoke";

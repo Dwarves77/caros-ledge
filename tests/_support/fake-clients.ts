@@ -1,7 +1,7 @@
 // Stands in for src/core/db/clients.ts for every source module under test (see scripts/lib/ts-hooks.mjs).
 import * as real from "../../src/core/db/clients.ts";
 
-export const { bearerToken, describeError, isServiceConfigured, isSupabaseConfigured } = real;
+export const { bearerToken, describeError, isServiceConfigured, isSupabaseConfigured, missingServiceEnv } = real;
 
 type Factory<T> = (request?: Request) => T | Promise<T>;
 /** What the next call to userClient() and serviceClient() returns; a test sets these. */
