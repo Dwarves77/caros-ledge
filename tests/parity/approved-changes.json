@@ -123,6 +123,13 @@
       "ruling": "ux-laws.md law 2 and the operator's 2026-10-16 44 px standard: the region matrix's dimension rows and cells are 44 px where artboard 08 draws 40 (DESIGN CHANGES OWED, artboard 08). Structure still gates."
     },
     {
+      "id": "facet-row-desktop",
+      "route": "regulations",
+      "kind": "pixel",
+      "viewport": "1280x900",
+      "ruling": "operator 2026-10-18 on Claude Design's recommendation, WCAG 2.5.8; law 2 exception for the desktop Filters card: facet rows keep a 24 px target on a 32 px pitch (24 px with 8 px clear) on desktop, 44 px on the phone (DESIGN CHANGES OWED 2)."
+    },
+    {
       "id": "privacy-pixel",
       "route": "privacy",
       "kind": "pixel",

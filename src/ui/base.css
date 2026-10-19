@@ -502,7 +502,9 @@ button, input, select, textarea { font-family: inherit; }
 .cl-virtual-item { position: absolute; top: 0; left: 0; right: 0; }
 .cl-sort-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 2px 4px; flex-wrap: wrap; }
 .cl-sort-count { font-size: var(--fs-125); color: var(--ink-2); }
-.cl-sort-link { background: none; border: none; padding: 0; font: inherit; color: var(--ink); font-weight: 600; text-decoration: underline; text-decoration-color: var(--link-line); cursor: pointer; min-height: 24px; }
+.cl-sort-link { background: none; border: none; padding: 0; font: inherit; color: var(--ink); font-weight: 600; text-decoration: underline; text-decoration-color: var(--link-line); cursor: pointer; min-height: 24px; position: relative; }
+/* Law 2 (design ruling 2026-10-18 item 21): the look and the 24 px box stay; a 44 px hit box (14 px above, 6 below, so it stays clear of the options strip 8 px under it on the phone) that adds no layout. */
+.cl-sort-link::after { content: ""; position: absolute; left: -4px; right: -4px; top: -14px; bottom: -6px; }
 .cl-sort-options { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: var(--fs-12); }
 .cl-sort-label { color: var(--ink-3); font-size: var(--fs-105); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; margin-right: 4px; }
 .cl-sort-opt { padding: 5px 11px; min-height: 28px; border-radius: 6px; font-weight: 600; border: none; cursor: pointer; background: transparent; color: var(--ink-2); }
