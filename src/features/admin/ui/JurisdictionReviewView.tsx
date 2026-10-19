@@ -28,7 +28,8 @@ export function JurisdictionReviewView() {
   const flash = useFlash();
   const act = useAct(flash, q.reload);
   const [values, setValues] = useState<Record<string, string>>({});
-  const resolve = (r: Row, action: "confirm" | "manually-classify" | "dismiss", done: string) => act.run(r.id, "/api/admin/triage/pending-jurisdiction-review", { method: "POST", body: { id: r.id, action, ...(action === "manually-classify" ? { resolution_value: values[r.id] } : {}) } }, done);
+  const [reasons, setReasons] = useState<Record<string, string>>({});
+  const resolve = (r: Row, action: "confirm" | "manually-classify" | "dismiss", done: string) => act.run(r.id, "/api/admin/triage/pending-jurisdiction-review", { method: "POST", body: { id: r.id, action, reason: (reasons[r.id] ?? "").trim(), ...(action === "manually-classify" ? { resolution_value: values[r.id] } : {}) } }, done);
   return (
     <Panel title="Jurisdiction review" aside={q.data ? `${formatNumber(q.data.total_unresolved)} unresolved` : undefined} onRefresh={q.reload}>
       <p className={styles.note}>The rules resolve a token first; these are the ones they could not. Confirm keeps the token, classify swaps it for a code, dismiss drops it from the item.</p>
@@ -51,10 +52,11 @@ export function JurisdictionReviewView() {
                       </div>
                     ) : null}
                     <FormField label="Replacement code">{(c) => <Input {...c} value={value} onChange={(e) => setValues({ ...values, [r.id]: e.target.value })} placeholder="DE, US-CA, EU" maxLength={120} />}</FormField>
+                    <FormField label="Reason" required hint="Recorded with your decision.">{(c) => <Input {...c} value={reasons[r.id] ?? ""} onChange={(e) => setReasons({ ...reasons, [r.id]: e.target.value })} maxLength={2000} />}</FormField>
                     <div className={styles.actions}>
-                      <Button variant="secondary" size="sm" disabled={busy} onClick={() => resolve(r, "confirm", "Token confirmed.")}>Confirm</Button>
-                      <Button variant="primary" size="sm" disabled={busy || !value.trim()} onClick={() => resolve(r, "manually-classify", `Classified as ${value.trim()}.`)}>Classify</Button>
-                      <Button variant="secondary" size="sm" disabled={busy} onClick={() => resolve(r, "dismiss", "Token dropped from the item.")}>Dismiss</Button>
+                      <Button variant="secondary" size="sm" disabled={busy || !(reasons[r.id] ?? "").trim()} onClick={() => resolve(r, "confirm", "Token confirmed.")}>Confirm</Button>
+                      <Button variant="primary" size="sm" disabled={busy || !value.trim() || !(reasons[r.id] ?? "").trim()} onClick={() => resolve(r, "manually-classify", `Classified as ${value.trim()}.`)}>Classify</Button>
+                      <Button variant="secondary" size="sm" disabled={busy || !(reasons[r.id] ?? "").trim()} onClick={() => resolve(r, "dismiss", "Token dropped from the item.")}>Dismiss</Button>
                     </div>
                   </div>
                 </div>

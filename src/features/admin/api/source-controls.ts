@@ -15,7 +15,7 @@ import { dbError, HttpError, LookupError } from "@/core/http/errors";
 import { parseJson, parseWith, uuid } from "@/core/http/parse";
 import { notUnderTierOverride } from "@/core/sources/tier-writers";
 
-import { adminRoute, reply, text, writeTrustEvent } from "./shared";
+import { adminAct, adminRoute, reasonOf, reply, text, writeTrustEvent } from "./shared";
 
 type Ctx = { params: Promise<{ id: string }> };
 const idOf = async (ctx: Ctx): Promise<string> => parseWith(uuid, (await ctx.params).id, "source id");
@@ -27,17 +27,21 @@ async function updateSource(db: Db, id: string, patch: Record<string, unknown>):
   if (!data?.length) throw new HttpError(404, "source not found");
 }
 
+const switchBody = z.object({ reason: reasonOf });
+
+/** Pause or resume one source's processing. A reason of the operator's own is required and, with the change, is one admin_events row (admin_set_source_switch, migration 0102). */
 export const pauseSource = adminRoute<Ctx>("/api/admin/sources/[id]/pause", async (admin, request, ctx) => {
-  const { paused } = await parseJson(request, z.object({ paused: z.boolean() }));
+  const { paused, reason } = await parseJson(request, switchBody.extend({ paused: z.boolean() }));
   const id = await idOf(ctx);
-  await updateSource(admin.service(), id, { processing_paused: paused });
+  await adminAct(admin, "admin_set_source_switch", { p_source_id: id, p_switch: "processing_paused", p_value: paused, p_reason: reason });
   return reply(admin, { success: true, sourceId: id, paused });
 });
 
+/** Hide a source from workspaces or show it again, on the same terms. */
 export const setVisibility = adminRoute<Ctx>("/api/admin/sources/[id]/visibility", async (admin, request, ctx) => {
-  const { admin_only } = await parseJson(request, z.object({ admin_only: z.boolean() }));
+  const { admin_only, reason } = await parseJson(request, switchBody.extend({ admin_only: z.boolean() }));
   const id = await idOf(ctx);
-  await updateSource(admin.service(), id, { admin_only });
+  await adminAct(admin, "admin_set_source_switch", { p_source_id: id, p_switch: "admin_only", p_value: admin_only, p_reason: reason });
   return reply(admin, { success: true, sourceId: id, admin_only });
 });
 

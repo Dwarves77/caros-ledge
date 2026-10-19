@@ -3,10 +3,10 @@ import { z } from "zod";
 
 import type { Db } from "@/core/db";
 import { nextScrapeDate, type ScrapeCadence } from "@/core/fetch/hold";
-import { HttpError, LookupError, dbError } from "@/core/http/errors";
+import { HttpError, LookupError } from "@/core/http/errors";
 import { parseJson } from "@/core/http/parse";
 
-import { adminRoute, reply } from "./shared";
+import { adminAct, adminRoute, reasonOf, reply } from "./shared";
 
 interface StateRow {
   scrape_cadence?: string | null;
@@ -32,25 +32,18 @@ export async function readHold(db: Db, now: Date) {
 
 export const GET = adminRoute("/api/admin/sources/pause-global", async (admin) => reply(admin, await readHold(admin.service(), new Date())));
 
-const body = z.object({ paused: z.boolean().optional(), cadence: z.enum(["off", "weekly", "monthly"]).optional(), start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}/).nullable().optional(), judgement_drain: z.enum(["off", "on"]).optional() });
+const body = z.object({ paused: z.boolean().optional(), cadence: z.enum(["off", "weekly", "monthly"]).optional(), start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}/).nullable().optional(), judgement_drain: z.enum(["off", "on"]).optional(), reason: reasonOf });
 
 /**
- * The hold switch. This route NEVER writes system_state itself: the pause flags have ONE writer, the admin_set_pause_state rpc (and the judgement drain its own, admin_set_judgement_drain),
- * which declares the marker the guard trigger requires (INV-134). Weekly and monthly need an anchor (today when none is given); off keeps the saved anchor unless the caller clears it with null.
+ * The hold switch and the emergency stop. This route NEVER writes system_state itself: admin_set_hold (migration 0102) calls the two sanctioned writers (admin_set_pause_state, admin_set_judgement_drain), which declare the marker
+ * the guard trigger requires (INV-134), and writes the admin_events row with the operator's reason in the same transaction. Weekly and monthly need an anchor (today when none is given); off keeps the saved anchor unless the
+ * caller clears it with null.
  */
 export const POST = adminRoute("/api/admin/sources/pause-global", async (admin, request) => {
   const b = await parseJson(request, body);
   if (b.paused === undefined && b.cadence === undefined && b.judgement_drain === undefined) throw new HttpError(400, "provide `cadence` (off|weekly|monthly), `paused` (boolean) and/or `judgement_drain` (off|on)");
-  const db = admin.service();
   const now = new Date();
-  if (b.paused !== undefined || b.cadence !== undefined) {
-    const anchored = b.cadence !== undefined && b.cadence !== "off";
-    const { error } = await db.rpc("admin_set_pause_state", { p_actor: `admin:${admin.userId}`, p_paused: b.paused ?? null, p_cadence: b.cadence ?? null, p_start_date: anchored ? (b.start_date ?? now.toISOString()).slice(0, 10) : null, p_clear_start: b.cadence === "off" && b.start_date === null });
-    if (error) throw dbError(error);
-  }
-  if (b.judgement_drain !== undefined) {
-    const { error } = await db.rpc("admin_set_judgement_drain", { p_actor: `admin:${admin.userId}`, p_state: b.judgement_drain });
-    if (error) throw dbError(error);
-  }
-  return reply(admin, { success: true, ...(await readHold(db, now)) });
+  const anchored = b.cadence !== undefined && b.cadence !== "off";
+  await adminAct(admin, "admin_set_hold", { p_paused: b.paused ?? null, p_cadence: b.cadence ?? null, p_start_date: anchored ? (b.start_date ?? now.toISOString()).slice(0, 10) : null, p_clear_start: b.cadence === "off" && b.start_date === null, p_judgement_drain: b.judgement_drain ?? null, p_reason: b.reason });
+  return reply(admin, { success: true, ...(await readHold(admin.service(), now)) });
 });

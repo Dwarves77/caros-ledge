@@ -153,7 +153,7 @@ test("proof 6: the SQL generators reproduce migration 258's generated blocks (pi
   assert.equal(sha(renderEnvelopeColumnsSql()), "0bf06c03b80acd5b6c3f22e4d5ae6226ecfa29ebe4543ed44ec1c9c67558a82c");
   assert.equal(sha(renderTierConstraintsSql()), "bb88f6aeaae15a989337f5617c319da1a76384bc4a3f042b569a8a648a546bcb");
   assert.equal(sha(renderFactorCandidateViewSql()), "21d18a0016b7bd9b1d2b5ba3a3c84198ff7b4f06c1fb0590793d731ee65113e9");
-  assert.equal(sha(renderDataSourceSeedSql()), "8b217b90fb1e24ce9baba93e6911cd80b8c1028f00ff74a96e9f5a38c008e833");
+  assert.equal(sha(renderDataSourceSeedSql()), "d5e48aadb4c6519168c8db7f7d033b3e03f0a486c513dbfa059a129d0a4eabab");
 });
 
 test("INV-174: tier rank decides before scope specificity, and scope specificity before recency", () => {

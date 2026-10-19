@@ -1,0 +1,42 @@
+{
+  "processors": [
+    {
+      "id": "supabase",
+      "name": "Supabase",
+      "role": "Database, sign-in and file storage",
+      "data": "your account, your workspace and Community content, and your sign-in session",
+      "evidence": { "dependencies": ["@supabase/supabase-js", "@supabase/ssr"] }
+    },
+    {
+      "id": "vercel",
+      "name": "Vercel",
+      "role": "Hosting and content delivery",
+      "data": "each request to the site, including your IP address and browser type, and the logs of those requests",
+      "evidence": { "files": ["vercel.json"] }
+    },
+    {
+      "id": "github-actions",
+      "name": "GitHub Actions",
+      "role": "Building and testing the platform's own code",
+      "data": "none of your personal data: it runs on the platform's code, not on member data",
+      "evidence": { "files": [".github/workflows/ci.yml"] }
+    },
+    {
+      "id": "resend",
+      "name": "Resend",
+      "role": "Sending invitation e-mail",
+      "data": "the invited person's e-mail address and the name of the organisation that invited them",
+      "condition": "Only when a deployment has an e-mail provider configured. Otherwise an invitation is shared as a link and nothing is sent.",
+      "evidence": { "hosts": ["api.resend.com"] }
+    },
+    {
+      "id": "openstreetmap",
+      "name": "OpenStreetMap tile servers",
+      "role": "Map tiles on the Regulations map",
+      "data": "your IP address and browser type, when the map loads",
+      "evidence": { "hosts": ["tile.openstreetmap.org"] }
+    }
+  ],
+  "libraries": ["@tanstack/react-query", "@tanstack/react-virtual", "leaflet", "next", "react", "react-dom", "react-markdown", "remark-gfm", "unpdf", "zod", "zustand"],
+  "publicHosts": ["api.openalex.org", "doi.org", "eur-lex.europa.eu", "federalregister.gov", "openstreetmap.org"]
+}

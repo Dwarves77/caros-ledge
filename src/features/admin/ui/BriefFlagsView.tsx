@@ -10,6 +10,7 @@ import { formatDate, formatNumber } from "@/core/shared";
 import { Button, EmptyState, FormField, Input, StatBlock, TierChip } from "@/ui";
 
 import { Load, Panel, useAct, useAdminFetch, useFlash } from "./panel-kit";
+import { useReason } from "./reason-dialog";
 import styles from "./admin.module.css";
 
 interface FlagItem {
@@ -31,13 +32,14 @@ interface FlagsPayload {
 export const ageDays = (iso: string | null, nowMs: number): number | null => (iso ? Math.max(0, Math.round((nowMs - Date.parse(iso)) / 86_400_000)) : null);
 
 /**
- * Per-brief integrity flags: briefs whose agent could not verify the source. An operator may resolve (with a note), replace the source address (stored canonical, with an audit row), or ask for a re-capture, which opens
+ * Per-brief integrity flags: briefs whose agent could not verify the source. An operator may resolve (with a reason), replace the source address (stored canonical, with a reason), or ask for a re-capture, which opens
  * one manual turn request for the item: the machine fetches and re-grounds it and the outcome is in the harness ledger. Nothing here runs a model.
  */
 export function BriefFlagsView({ nowMs }: { nowMs: number }) {
   const q = useAdminFetch<FlagsPayload>("/api/admin/integrity-flags");
   const flash = useFlash();
   const act = useAct(flash, q.reload);
+  const why = useReason();
   const [urls, setUrls] = useState<Record<string, string>>({});
   return (
     <Panel title="Agent integrity flags" aside={q.data ? `${formatNumber(q.data.stats.totalUnresolved)} unresolved` : undefined} onRefresh={q.reload}>
@@ -67,9 +69,9 @@ export function BriefFlagsView({ nowMs }: { nowMs: number }) {
                       <FormField label="Replacement source address">{(c) => <Input {...c} type="url" value={url} onChange={(e) => setUrls((s) => ({ ...s, [r.id]: e.target.value }))} placeholder="https://" disabled={busy} />}</FormField>
                       <div className={styles.actions}>
                         <Link href={`/regulations/${encodeURIComponent(r.legacyId || r.id)}`} target="_blank" className="cl-btn cl-btn--secondary cl-btn--sm">View brief</Link>
-                        <Button variant="secondary" size="sm" disabled={busy} onClick={() => act.run(r.id, "/api/admin/corpus-turn-requests", { method: "POST", body: { itemId: r.id } }, (x) => ((x as { already_open?: boolean } | null)?.already_open ? "A re-capture is already open for this item." : "Re-capture requested: the next turn fetches and re-grounds it."))}>Re-capture</Button>
-                        <Button variant="secondary" size="sm" disabled={busy} onClick={() => act.run(r.id, `/api/admin/integrity-flags/${encodeURIComponent(r.id)}/resolve`, { method: "POST", body: { action: "mark_resolved", note: "marked resolved from the admin console" } }, "Flag marked resolved.")}>Mark resolved</Button>
-                        <Button variant="primary" size="sm" disabled={busy || !/^https?:\/\//.test(url)} onClick={() => act.run(r.id, `/api/admin/integrity-flags/${encodeURIComponent(r.id)}/resolve`, { method: "POST", body: { action: "replace_url", newSourceUrl: url } }, "Source address replaced and the flag resolved.")}>Replace address</Button>
+                        <Button variant="secondary" size="sm" disabled={busy} onClick={async () => { const reason = await why.ask({ title: "Request a re-capture", body: "The next turn fetches and re-grounds this item.", action: "Request re-capture" }); if (reason) await act.run(r.id, "/api/admin/corpus-turn-requests", { method: "POST", body: { itemId: r.id, reason } }, (x) => ((x as { already_open?: boolean } | null)?.already_open ? "A re-capture is already open for this item." : "Re-capture requested: the next turn fetches and re-grounds it.")); }}>Re-capture</Button>
+                        <Button variant="secondary" size="sm" disabled={busy} onClick={async () => { const reason = await why.ask({ title: "Mark this flag resolved", body: "The flag leaves the queue. Say what you checked.", action: "Mark resolved" }); if (reason) await act.run(r.id, `/api/admin/integrity-flags/${encodeURIComponent(r.id)}/resolve`, { method: "POST", body: { action: "mark_resolved", reason } }, "Flag marked resolved."); }}>Mark resolved</Button>
+                        <Button variant="primary" size="sm" disabled={busy || !/^https?:\/\//.test(url)} onClick={async () => { const reason = await why.ask({ title: "Replace the source address", body: <>The address becomes <b className={styles.wrap}>{url}</b> and the flag is resolved.</>, action: "Replace and resolve" }); if (reason) await act.run(r.id, `/api/admin/integrity-flags/${encodeURIComponent(r.id)}/resolve`, { method: "POST", body: { action: "replace_url", newSourceUrl: url, reason } }, "Source address replaced and the flag resolved."); }}>Replace address</Button>
                       </div>
                     </div>
                   </div>
@@ -81,6 +83,7 @@ export function BriefFlagsView({ nowMs }: { nowMs: number }) {
         }}
       </Load>
       {flash.node}
+      {why.node}
     </Panel>
   );
 }

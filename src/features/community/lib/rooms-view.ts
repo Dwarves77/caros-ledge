@@ -35,6 +35,8 @@ export interface ThreadVM {
   author: AuthorBlock | null;
   isYou: boolean;
   signedOffAt: string | null;
+  /** The primary document the sign-off was checked against; null when none was recorded (no badge). */
+  signedOffDocUrl: string | null;
   signoff: ThreadSignoff | null;
 }
 export interface RosterMemberVM {
@@ -80,6 +82,7 @@ export interface SignoffInput {
   requested_by: string;
   status: SignoffStatus;
   created_at: string;
+  primary_doc_url?: string | null;
 }
 export interface RosterInput {
   id: string;
@@ -147,6 +150,7 @@ export function buildRooms(i: RoomsInput): RoomVM[] {
       author: p.author,
       isYou: !!p.author && p.author.userId === i.me.userId,
       signedOffAt: p.signed_off_at,
+      signedOffDocUrl: p.signed_off_at && req?.status === "signed_off" ? (req.primary_doc_url ?? null) : null,
       signoff: req ? { requestId: req.id, status: req.status, isMine: req.requested_by === i.me.userId, requesterName: i.requesterNames.get(req.requested_by) ?? "A member" } : null,
     });
     threadsByGroup.set(p.group_id, list);

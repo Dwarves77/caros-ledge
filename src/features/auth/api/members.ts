@@ -1,119 +1,93 @@
 // Ported from old_repo/src/app/api/orgs/[org_id]/members/route.ts (lines 10-619)
+// The members of an organisation. Every write is ONE database function on the CALLER'S client (set_member_role, remove_member, ban_member, invite_member: migrations 0101): the actor is the session, who may is org_can (one
+// decision, in the database), the SEC-3b rules and the admin_events row are in the same transaction. This route decides nothing about roles: a refusal is the function's, mapped through the one status table, and the service client
+// is not used here. The roster comes from org_roster, which gives an e-mail only to an owner or admin of this organisation and never falls back to one as a name.
 import { z } from "zod";
 
-import { assertNotLastOwner, currentMembership, isBanned } from "@/core/auth/membership";
-import { readOwnPlatformAdmin } from "@/core/auth/platform-admin";
-import { serviceClient, type Db } from "@/core/db/clients";
-import { boundedRead } from "@/core/db/query";
-import { HttpError, LookupError, ok, route } from "@/core/http/errors";
+import { createInvitation } from "@/core/auth/invitations";
+import { currentMembership } from "@/core/auth/membership";
+import { dbError, HttpError, LookupError, ok, route } from "@/core/http/errors";
 import { isRefusal, requireUser, type UserContext } from "@/core/http/guard";
 import { email, parseJson, parseWith, uuid } from "@/core/http/parse";
-import type { OrgMembership } from "@/core/types";
 
 type Ctx = { params: Promise<{ org_id: string }> };
-type Target = { id: string; user_id: string; role: string; org_id: string };
 
-const roles = z.enum(["owner", "admin", "member", "viewer"]);
-const addRoles = z.enum(["admin", "member", "viewer"]);
-const patchBody = z.object({ membership_id: uuid, role: roles });
-const banBody = z.object({ membership_id: uuid, reason: z.string().max(2000).nullish() });
-const addBody = z.object({ email, role: addRoles.default("member") });
+const ROSTER_BOUND = 200;
+const reason = z.string().trim().max(2000).nullish();
+const patchBody = z.object({ membership_id: uuid, role: z.enum(["owner", "admin", "member", "viewer"]), reason });
+const banBody = z.object({ membership_id: uuid, reason });
+const addBody = z.object({ email, role: z.enum(["admin", "member", "viewer"]).default("member") });
+type RosterRow = { id: string; user_id: string; role: string; joined_at: string; display_name: string | null; avatar_url: string | null; email: string | null };
 
-/** The caller, the URL org and their membership. Managing is owner or platform admin (the admin bit is the caller's own, read on their own client); a failed read is a 503, never a 403. */
-async function load(request: Request, params: Ctx["params"], need: "member" | "manager"): Promise<Response | { user: UserContext; service: Db; orgId: string; caller: OrgMembership | null }> {
+/** The caller and the URL's organisation. */
+async function load(request: Request, params: Ctx["params"]): Promise<Response | { user: UserContext; orgId: string }> {
   const user = await requireUser(request);
   if (isRefusal(user)) return user;
-  const orgId = parseWith(uuid, (await params).org_id, "org_id");
-  const service = serviceClient();
-  const caller = await currentMembership(user.client, user.userId, orgId);
-  const admin = caller?.role === "owner" || (await readOwnPlatformAdmin(user.client));
-  if (need === "manager" && !admin) throw new HttpError(403, caller ? "Owner role (or platform admin) required for this action" : "Not a member of this organization");
-  if (need === "member" && !caller && !admin) throw new HttpError(403, "Not a member of this organization");
-  return { user, service, orgId, caller };
+  return { user, orgId: parseWith(uuid, (await params).org_id, "org_id") };
 }
 
-async function target(service: Db, orgId: string, membershipId: string): Promise<Target> {
-  const { data, error } = await service.from("org_memberships").select("id, user_id, role, org_id").eq("id", membershipId).maybeSingle();
-  if (error) throw new LookupError("org_memberships target", error);
-  if (!data || data.org_id !== orgId) throw new HttpError(404, "membership not found in this org");
-  return data as Target;
+/** The function's own refusals (not allowed, not found, a rule it keeps) carry sentences written for the customer; anything else is a failed write the customer is told to retry, with the driver text in the log. */
+const OWN_REFUSALS = new Set(["42501", "P0002", "22023"]);
+
+/** A member-changing function's answer: the row on success, else its refusal through the one status table. */
+async function act(user: UserContext, name: string, args: Record<string, unknown>): Promise<unknown> {
+  const { data, error } = await user.client.rpc(name, args);
+  if (error) throw OWN_REFUSALS.has(error.code ?? "") ? dbError(error) : new LookupError(name, error);
+  return data;
 }
 
-const write = (error: { message: string } | null) => {
-  if (error) throw new HttpError(500, error.message);
-};
-
-/** GET: the member list (bounded at 200; `truncated` says when the bound was hit), for a member or a platform admin. */
+/** GET: the member list (bounded; `truncated` says when the bound was hit) and what the caller may do here, for a member or a platform admin. E-mail addresses reach owners and admins of this organisation only. */
 export const GET = route<Ctx>("/api/orgs/[org_id]/members", async (request, { params }) => {
-  const ctx = await load(request, params, "member");
+  const ctx = await load(request, params);
   if (isRefusal(ctx)) return ctx;
-  const { user, service, orgId, caller } = ctx;
-  const read = await boundedRead(
-    (limit) => service.from("org_memberships").select("id, user_id, role, created_at, user:profiles!user_id(full_name, display_name, email, avatar_url)").eq("org_id", orgId).order("created_at", { ascending: true }).limit(limit),
-    { limit: 200 },
-  );
-  if (read.error) throw new LookupError("org members", read.error);
-  type Row = { id: string; user_id: string; role: string; created_at: string; user: { full_name?: string | null; display_name?: string | null; email?: string | null; avatar_url?: string | null } | null };
+  const { user, orgId } = ctx;
+  const [roster, actions, caller] = await Promise.all([user.client.rpc("org_roster", { p_org_id: orgId, p_limit: ROSTER_BOUND }), user.client.rpc("org_actions", { p_org: orgId }), currentMembership(user.client, user.userId, orgId)]);
+  if (roster.error?.code === "42501") throw new HttpError(403, "Not a member of this organization");
+  if (roster.error) throw new LookupError("org roster", roster.error);
+  if (actions.error) throw new LookupError("org actions", actions.error);
+  const rows = (roster.data ?? []) as RosterRow[];
   return ok(user.headers, {
-    members: (read.data as unknown as Row[]).map((r) => ({ id: r.id, user_id: r.user_id, role: r.role, joined_at: r.created_at, display_name: r.user?.full_name ?? r.user?.display_name ?? r.user?.email ?? `${String(r.user_id).slice(0, 8)}...`, avatar_url: r.user?.avatar_url ?? null })),
-    truncated: read.truncated,
+    members: rows.slice(0, ROSTER_BOUND).map((r) => ({ id: r.id, user_id: r.user_id, role: r.role, joined_at: r.joined_at, display_name: r.display_name ?? "Member", avatar_url: r.avatar_url, ...(r.email ? { email: r.email } : {}) })),
+    truncated: rows.length > ROSTER_BOUND,
     caller_role: caller?.role ?? "platform_admin",
+    actions: (actions.data ?? []) as string[],
   });
 });
 
-/** PATCH: change a role. The body names a membership and a role and nothing else (a request cannot set any other column). Demoting the only owner is a 409 (INV-153). */
+/** PATCH: change a role. The body names a membership, a role and optionally a reason, nothing else. Demoting the only owner is a 409 (INV-153). */
 export const PATCH = route<Ctx>("/api/orgs/[org_id]/members", async (request, { params }) => {
-  const ctx = await load(request, params, "manager");
+  const ctx = await load(request, params);
   if (isRefusal(ctx)) return ctx;
   const body = await parseJson(request, patchBody);
-  const row = await target(ctx.service, ctx.orgId, body.membership_id);
-  if (row.role === "owner" && body.role !== "owner") await assertNotLastOwner(ctx.service, ctx.orgId, "demote");
-  const { data, error } = await ctx.service.from("org_memberships").update({ role: body.role }).eq("id", row.id).select("id, role").maybeSingle();
-  write(error);
-  return ok(ctx.user.headers, { membership: data });
+  return ok(ctx.user.headers, { membership: await act(ctx.user, "set_member_role", { p_org_id: ctx.orgId, p_membership_id: body.membership_id, p_role: body.role, p_reason: body.reason ?? null }) });
 });
 
-/** POST: ban a member from this organisation (an org-scoped ban, not a platform ban). The ban row is written before the membership is removed. */
+/** POST: ban a member from this organisation (an org-scoped ban): the ban row, the removal and the event are one transaction. */
 export const POST = route<Ctx>("/api/orgs/[org_id]/members", async (request, { params }) => {
-  const ctx = await load(request, params, "manager");
+  const ctx = await load(request, params);
   if (isRefusal(ctx)) return ctx;
   const body = await parseJson(request, banBody);
-  const row = await target(ctx.service, ctx.orgId, body.membership_id);
-  if (row.user_id === ctx.user.userId) throw new HttpError(403, "You cannot ban yourself");
-  if (row.role === "owner") await assertNotLastOwner(ctx.service, ctx.orgId, "ban");
-  write((await ctx.service.from("org_member_bans").upsert({ org_id: ctx.orgId, user_id: row.user_id, banned_by: ctx.user.userId, reason: body.reason ?? null }, { onConflict: "org_id,user_id" })).error);
-  write((await ctx.service.from("org_memberships").delete().eq("id", row.id)).error);
-  return ok(ctx.user.headers, { success: true, banned_user_id: row.user_id, membership_id: row.id });
+  await act(ctx.user, "ban_member", { p_org_id: ctx.orgId, p_membership_id: body.membership_id, p_reason: body.reason ?? null });
+  return ok(ctx.user.headers, { success: true, membership_id: body.membership_id });
 });
 
 /** DELETE ?membership_id=: remove a member. Nobody removes themselves here, and the only owner stays. */
 export const DELETE = route<Ctx>("/api/orgs/[org_id]/members", async (request, { params }) => {
-  const ctx = await load(request, params, "manager");
+  const ctx = await load(request, params);
   if (isRefusal(ctx)) return ctx;
   const membershipId = parseWith(uuid, new URL(request.url).searchParams.get("membership_id"), "membership_id");
-  const row = await target(ctx.service, ctx.orgId, membershipId);
-  if (row.user_id === ctx.user.userId) throw new HttpError(403, "Owners cannot revoke their own membership");
-  if (row.role === "owner") await assertNotLastOwner(ctx.service, ctx.orgId, "revoke");
-  write((await ctx.service.from("org_memberships").delete().eq("id", row.id)).error);
-  return ok(ctx.user.headers, { success: true, membership_id: row.id });
+  await act(ctx.user, "remove_member", { p_org_id: ctx.orgId, p_membership_id: membershipId, p_reason: null });
+  return ok(ctx.user.headers, { success: true, membership_id: membershipId });
 });
 
-/** PUT: add an existing account by email. A banned account is refused; the role cannot be owner. */
+/**
+ * PUT: add a person by e-mail. This is an INVITATION the person accepts, never a join: no account is added without its owner's consent, and the answer is the same 202 whether or not the address has an account (the
+ * database function never reads accounts), so the route is no oracle for who is registered. A registered invitee finds it in their account's pending invitations; the link comes from POST /invitations.
+ */
 export const PUT = route<Ctx>("/api/orgs/[org_id]/members", async (request, { params }) => {
-  const ctx = await load(request, params, "manager");
+  const ctx = await load(request, params);
   if (isRefusal(ctx)) return ctx;
   const body = await parseJson(request, addBody);
-  const { data: found, error } = await ctx.service.rpc("profiles_by_email", { p_email: body.email });
-  if (error) throw new LookupError("profiles by email", error);
-  const accounts = (found ?? []) as { id: string }[];
-  if (accounts.length > 1) throw new LookupError("profiles by email", new Error("more than one account has this address"));
-  const profile = accounts[0];
-  if (!profile) throw new HttpError(404, `No account exists for ${body.email}. Provision the user first (Admin, Users) or send an invitation.`);
-  if (await isBanned(ctx.service, ctx.orgId, profile.id)) throw new HttpError(403, "This account is banned from this workspace. Clear the ban before re-adding.");
-  const existing = await ctx.service.from("org_memberships").select("id").eq("org_id", ctx.orgId).eq("user_id", profile.id).maybeSingle();
-  if (existing.error) throw new LookupError("org_memberships existing", existing.error);
-  if (existing.data) throw new HttpError(409, "Already a member of this workspace");
-  const { data: created, error: insertError } = await ctx.service.from("org_memberships").insert({ org_id: ctx.orgId, user_id: profile.id, role: body.role }).select("id, user_id, role").single();
-  write(insertError);
-  return ok(ctx.user.headers, { membership: created }, 201);
+  await createInvitation(ctx.user.client, { orgId: ctx.orgId, userId: ctx.user.userId, email: body.email, role: body.role, baseUrl: process.env.NEXT_PUBLIC_APP_URL || request.headers.get("origin") || "" });
+  return ok(ctx.user.headers, { status: "invited" }, 202);
 });

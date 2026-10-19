@@ -4,6 +4,8 @@ export interface InvitationEmail {
   to: string;
   inviteUrl: string;
   orgName?: string;
+  /** The inviter's display name; an invitation that names neither who invited you nor to what cannot be acted on safely. */
+  invitedBy?: string;
   proposedRole: string;
 }
 export interface EmailResult {
@@ -30,8 +32,9 @@ export async function sendInvitationEmail(params: InvitationEmail, deps: EmailDe
   const from = env.INVITATION_FROM_EMAIL?.trim();
   if (!key || !from) return NOT_CONFIGURED;
   const where = params.orgName ? `the ${params.orgName} workspace` : "a workspace";
-  const text = `You have been invited to join ${where} on Caro's Ledge as ${params.proposedRole}.\n\nAccept the invitation: ${params.inviteUrl}\n`;
-  const html = `<p>You have been invited to join ${escapeHtml(where)} on Caro's Ledge as ${escapeHtml(params.proposedRole)}.</p><p><a href="${escapeHtml(params.inviteUrl)}">Accept the invitation</a></p>`;
+  const who = params.invitedBy ? `${params.invitedBy} has invited you` : "You have been invited";
+  const text = `${who} to join ${where} on Caro's Ledge as ${params.proposedRole}.\n\nAccept the invitation: ${params.inviteUrl}\n`;
+  const html = `<p>${escapeHtml(who)} to join ${escapeHtml(where)} on Caro's Ledge as ${escapeHtml(params.proposedRole)}.</p><p><a href="${escapeHtml(params.inviteUrl)}">Accept the invitation</a></p>`;
   try {
     const res = await (deps.fetchImpl ?? fetch)("https://api.resend.com/emails", {
       method: "POST",

@@ -9,5 +9,6 @@
   "0030_data_market_series_items": { "consumer": "src/features/market/read.ts readMarketDetail and the published-price-statistics producer", "after": "0029" },
   "0045_data_market_series_cadence": { "consumer": "src/features/market/producers/market-series-items.ts readSeriesItemMap", "after": "0030 and 0044" },
   "0046_data_host_verdicts": { "consumer": "src/core/sources/host-verdicts.ts loadHostVerdicts", "after": "0042" },
-  "0061_data_moderation_reports_split": { "consumer": "the Community moderation queue (reads the 0051 columns)", "after": "0051" }
+  "0061_data_moderation_reports_split": { "consumer": "the Community moderation queue (reads the 0051 columns)", "after": "0051" },
+  "0105_data_demote_legacy_verification": { "consumer": "the Community identity and profile form (src/features/community: the verified mark states a recorded verification)", "after": "0103" }
 }

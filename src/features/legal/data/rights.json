@@ -1,0 +1,14 @@
+{
+  "contact": "privacy@carosledge.com",
+  "respondWithinDays": 30,
+  "rights": [
+    { "id": "access", "label": "Access", "text": "get a copy of the personal information we hold about you", "how": { "route": "GET /api/account/export" } },
+    { "id": "correction", "label": "Correction", "text": "correct inaccurate information", "how": { "page": "/profile" } },
+    { "id": "deletion", "label": "Deletion", "text": "delete your account and your personal information (the right to be forgotten)", "how": { "route": "DELETE /api/account" } },
+    { "id": "portability", "label": "Portability", "text": "receive your information in a structured, machine-readable format", "how": { "route": "GET /api/account/export" } },
+    { "id": "objection", "label": "Objection", "text": "object to certain types of processing", "how": { "address": "privacy@carosledge.com" } },
+    { "id": "restriction", "label": "Restriction", "text": "ask us to limit how we process your information", "how": { "address": "privacy@carosledge.com" } },
+    { "id": "withdrawal", "label": "Withdrawal of consent", "text": "withdraw consent where processing is based on it", "how": { "address": "privacy@carosledge.com" } },
+    { "id": "complaint", "label": "Complaint", "text": "lodge a complaint with your national data protection authority", "how": { "address": "privacy@carosledge.com", "note": "We will tell you how to reach the authority for your country; you do not need our permission to complain." } }
+  ]
+}

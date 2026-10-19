@@ -4,13 +4,13 @@
 import { z } from "zod";
 
 import { allRows, boundedRead, exactCount, qb } from "@/core/db";
-import { dbError, HttpError, LookupError } from "@/core/http/errors";
+import { HttpError, LookupError } from "@/core/http/errors";
 import { parseJson, uuid } from "@/core/http/parse";
 import { canonicalUrl } from "@/core/shared";
 
 import { PLATFORM_CATEGORIES, PLATFORM_STATUSES } from "../vocab";
 
-import { adminRoute, boundedInt, reply, text } from "./shared";
+import { adminAct, adminRoute, boundedInt, reasonOf, reply } from "./shared";
 
 type Category = (typeof PLATFORM_CATEGORIES)[number];
 type Status = (typeof PLATFORM_STATUSES)[number];
@@ -65,22 +65,16 @@ export const GET = adminRoute("/api/admin/integrity-flags", async (admin, reques
   return reply(admin, q.get("platform") === "1" ? await platformFlags(admin.service(), q) : await briefFlags(admin.service()));
 });
 
-const patchBody = z.object({ id: uuid, status: z.enum(PLATFORM_STATUSES), resolution_note: z.string().trim().max(2000).nullish() });
+const patchBody = z.object({ id: uuid, status: z.enum(PLATFORM_STATUSES), reason: reasonOf });
 
-/** Move a platform flag to a status. A terminal status stamps who and when; going back to open or in review clears the stamp. A missing flag is a 404. */
+/** Move a platform flag to a status (admin_set_flag_status, migration 0102): the operator's reason is required, a terminal status stamps who and when and keeps the reason as the resolution note, and the event is written with the change. */
 export const PATCH = adminRoute("/api/admin/integrity-flags", async (admin, request) => {
   if (new URL(request.url).searchParams.get("platform") !== "1") throw new HttpError(405, "PATCH is only supported on the platform surface (?platform=1)");
   const body = await parseJson(request, patchBody);
-  const terminal = body.status === "resolved" || body.status === "archived";
-  const note = text(body.resolution_note);
-  const update: Record<string, unknown> = { status: body.status, resolved_at: terminal ? new Date().toISOString() : null, resolved_by: terminal ? admin.userId : null, ...(note !== null ? { resolution_note: note } : body.resolution_note === "" || body.resolution_note === null ? { resolution_note: null } : {}) };
-  const { data, error } = await admin.service().from("integrity_flags").update(update).eq("id", body.id).select("*").maybeSingle();
-  if (error) throw dbError(error);
-  if (!data) throw new HttpError(404, "Flag not found");
-  return reply(admin, { item: data });
+  return reply(admin, { item: await adminAct(admin, "admin_set_flag_status", { p_flag_id: body.id, p_status: body.status, p_reason: body.reason }) });
 });
 
-const resolveBody = z.object({ action: z.enum(["replace_url", "mark_resolved"]), note: z.string().trim().max(2000).nullish(), newSourceUrl: z.string().trim().max(2000).nullish() });
+const resolveBody = z.object({ action: z.enum(["replace_url", "mark_resolved"]), reason: reasonOf, newSourceUrl: z.string().trim().max(2000).nullish() });
 const httpUrl = (raw: string): string | null => {
   try {
     const u = new URL(raw);
@@ -91,8 +85,8 @@ const httpUrl = (raw: string): string | null => {
 };
 
 /**
- * Clear a per-brief flag by an operator resolution: the item is stamped, a replaced URL is written in its canonical form, and ONE audit row (an integrity_flags row, resolved, naming the actor, the
- * prior URL and the phrase) is written after it. A failed audit write is reported as partial, never as success (INV-285). The flag is a statement about the brief, so the URL change alone does not recompute it.
+ * Clear a per-brief flag by an operator resolution (admin_resolve_brief_flag, migration 0102): the item is stamped, a replaced URL is written in its canonical form, and the audit row is the admin_events row of the same
+ * transaction, with the operator's reason, the prior URL and the phrase. There is no partial success. The flag is a statement about the brief, so the URL change alone does not recompute it.
  */
 export const resolveBriefFlag = adminRoute<{ params: Promise<{ id: string }> }>("/api/admin/integrity-flags/[id]/resolve", async (admin, request, ctx) => {
   const { id } = await ctx.params;
@@ -100,16 +94,6 @@ export const resolveBriefFlag = adminRoute<{ params: Promise<{ id: string }> }>(
   const body = await parseJson(request, resolveBody);
   const next = body.action === "replace_url" ? httpUrl(body.newSourceUrl ?? "") : null;
   if (body.action === "replace_url" && !next) throw new HttpError(400, "newSourceUrl must be an http or https address");
-  const db = admin.service();
-  const item = await db.from("intelligence_items").select("id, source_url, agent_integrity_flag, agent_integrity_phrase").eq("id", id).maybeSingle();
-  if (item.error) throw new LookupError("intelligence_items", item.error);
-  if (!item.data) throw new HttpError(404, "Intelligence item not found");
-  if (!item.data.agent_integrity_flag) throw new HttpError(409, "Item is not flagged. Nothing to resolve.");
-  const at = new Date().toISOString();
-  const upd = await db.from("intelligence_items").update({ agent_integrity_resolved_at: at, agent_integrity_resolved_by: admin.userId, ...(next ? { source_url: next } : {}) }).eq("id", id);
-  if (upd.error) throw dbError(upd.error);
-  const note = JSON.stringify({ action: body.action, prior_url: item.data.source_url ?? null, new_url: next, phrase: item.data.agent_integrity_phrase ?? null, note: text(body.note) });
-  const audit = await db.from("integrity_flags").insert({ category: "data_integrity", subject_type: "item", subject_ref: id, description: "Brief integrity flag resolved by an operator", recommended_actions: [], status: "resolved", created_by: "admin-resolve", resolved_at: at, resolved_by: admin.userId, resolution_note: note });
-  if (audit.error) return reply(admin, { success: true, partial: true, itemId: id, action: body.action, resolvedAt: at, warning: `The flag was resolved but its audit row was not written: ${audit.error.message}` }, 200);
-  return reply(admin, { success: true, itemId: id, action: body.action, resolvedAt: at });
+  const done = await adminAct<{ resolved_at: string }>(admin, "admin_resolve_brief_flag", { p_item_id: id, p_action: body.action, p_new_url: next, p_reason: body.reason });
+  return reply(admin, { success: true, itemId: id, action: body.action, resolvedAt: done.resolved_at });
 });

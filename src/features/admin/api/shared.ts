@@ -1,6 +1,9 @@
 // Ported from old_repo/src/lib/api/route-guard.ts (lines 15-101)
+import { z } from "zod";
+
+import { isMissingObject } from "@/core/db/absent";
 import type { Db } from "@/core/db";
-import { HttpError, LOOKUP_SENTENCE, ok, route } from "@/core/http/errors";
+import { dbError, HttpError, LOOKUP_SENTENCE, LookupError, ok, route } from "@/core/http/errors";
 import { isRefusal, requireAdmin, type AdminContext } from "@/core/http/guard";
 
 export type { AdminContext };
@@ -40,3 +43,20 @@ export async function headCount(q: PromiseLike<{ count: number | null; error: { 
 
 /** The stated block for a function a pending migration adds: a 503 that names the function and the migration, not a thrown page and not a zero. */
 export const notInstalled = (fn: string, migration: string): HttpError => new HttpError(503, `${fn} is not installed on this database yet (migration ${migration} has not been applied here)`);
+
+/** The operator's own reason for an act, required and bounded (the database function refuses a blank one too). */
+export const reasonOf = z.string().trim().min(1, "A reason is required: say why in your own words.").max(2000, "A reason is at most 2000 characters.");
+
+/** The refusals an admin function writes for the operator (not allowed, not found, a rule it keeps); anything else is a failed write answered 503 with the driver text in the log. */
+const OWN_REFUSALS = new Set(["42501", "P0002", "22023"]);
+
+/**
+ * One admin act: a database function (migration 0102) called on the admin's OWN client, so the actor is the session, a platform-admin check runs inside it as well as in the guard, and the change and its admin_events row are one
+ * transaction. A function a pending migration adds is the stated block, not a thrown page.
+ */
+export async function adminAct<T = Record<string, unknown>>(admin: AdminContext, fn: string, args: Record<string, unknown>): Promise<T> {
+  const { data, error } = await admin.client.rpc(fn, args);
+  if (isMissingObject(error)) throw notInstalled(fn, "0102");
+  if (error) throw OWN_REFUSALS.has(error.code ?? "") ? dbError(error) : new LookupError(fn, error);
+  return data as T;
+}

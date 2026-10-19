@@ -2,6 +2,9 @@
  "admin_action_cooldowns": [
   "action_key"
  ],
+ "admin_events": [
+  "id"
+ ],
  "agent_run_searches": [
   "id"
  ],
@@ -277,6 +280,10 @@
  ],
  "org_memberships": [
   "id"
+ ],
+ "org_role_actions": [
+  "action",
+  "role"
  ],
  "org_watchlist": [
   "id"

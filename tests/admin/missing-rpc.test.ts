@@ -21,11 +21,11 @@ test("an absent admin_attention_counts is a stated 503 naming the migration, and
   assert.ok(dash.orgs.ok, "the parts that do not need the rpc still read");
 });
 
-test("an absent resolve_pending_jurisdiction_review refuses with the reason (503), writes nothing, and never throws a page", async () => {
-  const w = fakeDb(() => undefined, { rpc: (name) => (name === "resolve_pending_jurisdiction_review" ? missing(name) : undefined) });
-  script(w);
-  const res = await resolveJurisdictionReview(as("platformAdmin", "/api/admin/triage/pending-jurisdiction-review", { method: "POST", body: JSON.stringify({ id: ID, action: "confirm" }) }), ctx({}) as never);
+test("an absent admin_resolve_jurisdiction_review refuses with the reason (503), writes nothing, and never throws a page", async () => {
+  const w = fakeDb();
+  script(w, undefined, (name) => (name === "admin_resolve_jurisdiction_review" ? missing(name) : undefined));
+  const res = await resolveJurisdictionReview(as("platformAdmin", "/api/admin/triage/pending-jurisdiction-review", { method: "POST", body: JSON.stringify({ id: ID, action: "confirm", reason: "the token stands" }) }), ctx({}) as never);
   assert.equal(res.status, 503);
-  assert.match(((await res.json()) as { error: string }).error, /resolve_pending_jurisdiction_review is not installed.*0035/);
+  assert.match(((await res.json()) as { error: string }).error, /admin_resolve_jurisdiction_review is not installed.*0102/);
   assert.equal(w.calls.filter((c) => c.op !== "select").length, 0, "no write happened");
 });

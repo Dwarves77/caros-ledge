@@ -172,9 +172,9 @@
    "redistribution": "permitted",
    "licence": "CC BY 4.0",
    "attribution": "Source: GeoNames, licensed under CC BY 4.0",
-   "url": "https://www.geonames.org/about.html",
-   "verifiedOn": "2026-08-12",
-   "note": "General place gazetteer, the other half of the UN/LOCODE substitute."
+   "url": "https://www.geonames.org/export/",
+   "verifiedOn": "2026-10-19",
+   "note": "General place gazetteer, the other half of the UN/LOCODE substitute. Terms read 2026-10-19 with the honest identity CarosLedge/1.0 on https://www.geonames.org/export/ (cc-by licence, credit GeoNames with a link or another reference, commercial use allowed, as is) and the licence line of https://www.geonames.org/about.html (Creative Commons Attribution 4.0). Serves the port place names of src/core/entities/data/unlocode-names.json (R2e M6); the credit travels with attributionsFor."
   },
   "wikidata": {
    "key": "wikidata",
@@ -183,8 +183,8 @@
    "licence": "CC0 1.0",
    "attribution": null,
    "url": "https://www.wikidata.org/wiki/Wikidata:Licensing",
-   "verifiedOn": "2026-08-12",
-   "note": "Carries UN/LOCODE values as statements under CC0. Useful as an ALIAS RESOLVER: we resolve a customer-supplied LOCODE to our own node key without publishing the LOCODE list ourselves."
+   "verifiedOn": "2026-10-19",
+   "note": "Carries UN/LOCODE values as statements under CC0. Useful as an ALIAS RESOLVER: we resolve a customer-supplied LOCODE to our own node key without publishing the LOCODE list ourselves. Terms re-read 2026-10-19 with the honest identity CarosLedge/1.0: all structured data (main, Property, Lexeme and EntitySchema namespaces) is released into the public domain under Creative Commons Zero. Serves the ISO 3166-1 country names of src/core/entities/data/unlocode-names.json (R2e M6), read from the query service; no credit is required."
   },
   "emsa_thetis_mrv": {
    "key": "emsa_thetis_mrv",

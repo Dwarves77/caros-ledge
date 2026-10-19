@@ -19,7 +19,9 @@ interface Member {
 }
 interface MembersPayload {
   members: Member[];
-  caller_role: Member["role"];
+  caller_role: Member["role"] | "platform_admin";
+  /** What the caller may do in this organisation: the database's one answer (org_actions). The panel shows a control only for an action in this list. */
+  actions?: string[];
 }
 interface InviteResult {
   invitation?: { invite_url?: string };
@@ -142,8 +144,8 @@ export function MembersPanel({ orgId, callerUserId, callerEmail }: { orgId: stri
     );
   }
 
-  const isOwner = data.caller_role === "owner";
-  const canInvite = isOwner || data.caller_role === "admin";
+  const can = (action: string): boolean => (data.actions ?? []).includes(action);
+  const canInvite = can("invite_member");
   const delivery = invite?.email_delivery;
   const url = invite?.invitation?.invite_url;
   return (
@@ -182,7 +184,7 @@ export function MembersPanel({ orgId, callerUserId, callerEmail }: { orgId: stri
                   <span className={styles.memberSub}>{self ? `you · ${callerEmail}` : " "}</span>
                 </span>,
                 <span key="j">{joined(m.joined_at)}</span>,
-                isOwner ? (
+                can("change_role") ? (
                   <Select key="r" aria-label={`Role for ${m.display_name}`} value={m.role} disabled={busy === m.id} onChange={(e) => void act(m, `/api/orgs/${orgId}/members`, { method: "PATCH", body: { membership_id: m.id, role: e.target.value } }, `${m.display_name} is now ${ROLE_LABELS[e.target.value as Member["role"]]}`)}>
                     {(Object.keys(ROLE_LABELS) as Member["role"][]).map((k) => (
                       <option key={k} value={k}>
@@ -193,7 +195,7 @@ export function MembersPanel({ orgId, callerUserId, callerEmail }: { orgId: stri
                 ) : (
                   <b key="r">{ROLE_LABELS[m.role]}</b>
                 ),
-                isOwner ? (
+                can("remove_member") ? (
                   <Menu key="x" label={`More actions for ${m.display_name}`} items={self ? [] : [{ key: "remove", label: "Remove from workspace", onSelect: () => setTarget({ member: m, kind: "remove" }) }, { key: "ban", label: "Ban from this workspace", onSelect: () => setTarget({ member: m, kind: "ban" }) }]} extra={self ? <span className={styles.note}>You cannot remove or ban your own membership.</span> : undefined} />
                 ) : (
                   <span key="x" aria-hidden="true" />
@@ -204,7 +206,7 @@ export function MembersPanel({ orgId, callerUserId, callerEmail }: { orgId: stri
         />
         <p className={styles.note}>Owner · Admin · Member · Viewer. Remove detaches from this workspace; Ban blocks re-joining and asks for typed confirmation. The last owner cannot be removed.</p>
         <StateNote>
-          <b>Workspace</b> · you are {isOwner ? "the owner" : `a ${ROLE_LABELS[data.caller_role].toLowerCase()}`} · seat limit <Absence reason="connect data" />
+          <b>Workspace</b> · your role: {data.caller_role === "platform_admin" ? "Platform admin" : ROLE_LABELS[data.caller_role]} · seat limit <Absence reason="connect data" />
         </StateNote>
       </FormCard>
       {target ? (

@@ -6,8 +6,10 @@ import { useState } from "react";
 
 import { formatNumber } from "@/core/shared";
 import { Button, FormField, Input, RelativeTime, Select, StatBlock, StateNote } from "@/ui";
+import { requestJson } from "@/core/http/request-json";
 
 import { Load, Panel, useAct, useAdminFetch, useFlash } from "./panel-kit";
+import { useReason } from "./reason-dialog";
 import styles from "./admin.module.css";
 
 interface Queue {
@@ -49,6 +51,7 @@ export function DispatchPanel() {
   const queue = useAdminFetch<Queue>("/api/admin/corpus-turn-requests");
   const flash = useFlash();
   const act = useAct(flash, queue.reload);
+  const why = useReason();
   const [itemId, setItemId] = useState("");
   const [topic, setTopic] = useState("");
   const [jurisdiction, setJurisdiction] = useState("");
@@ -70,8 +73,8 @@ export function DispatchPanel() {
         </Load>
         <div className={styles.actions}>
           <FormField label="Item id">{(c) => <Input {...c} value={itemId} onChange={(e) => setItemId(e.target.value)} placeholder="Item id (uuid)" />}</FormField>
-          <Button variant="primary" disabled={!itemId.trim() || act.busy !== null} onClick={async () => { const r = await act.run("item", "/api/admin/corpus-turn-requests", { method: "POST", body: { itemId: itemId.trim() } }, (x) => ((x as { already_open?: boolean } | null)?.already_open ? "That item already has an open request." : "Request created.")); if (r.ok) setItemId(""); }}>Request for this item</Button>
-          <Button variant="secondary" disabled={act.busy !== null} onClick={() => act.run("all", "/api/admin/corpus-turn-requests", { method: "POST", body: { all: true } }, (x) => { const d = x as { inserted?: number; already_open?: number; total_live?: number } | null; return `${d?.inserted ?? 0} new requests; ${d?.already_open ?? 0} items already had one (${d?.total_live ?? 0} live).`; })}>Request for all live items</Button>
+          <Button variant="primary" disabled={!itemId.trim() || act.busy !== null} onClick={async () => { const reason = await why.ask({ title: "Request a turn for this item", body: "The next turn fetches and re-grounds it.", action: "Request" }); if (!reason) return; const r = await act.run("item", "/api/admin/corpus-turn-requests", { method: "POST", body: { itemId: itemId.trim(), reason } }, (x) => ((x as { already_open?: boolean } | null)?.already_open ? "That item already has an open request." : "Request created.")); if (r.ok) setItemId(""); }}>Request for this item</Button>
+          <Button variant="secondary" disabled={act.busy !== null} onClick={async () => { const p = await requestJson<{ total_live: number; already_open: number; would_request: number }>("/api/admin/corpus-turn-requests?preview=all"); if (!p.ok || !p.data) { flash.show(p.error ?? "The count could not be read.", true); return; } const n = p.data; const reason = await why.ask({ title: "Re-ground the whole live corpus", body: `This opens ${formatNumber(n.would_request)} requests (${formatNumber(n.total_live)} live items, ${formatNumber(n.already_open)} already have one). The turn works through them one by one.`, action: `Request ${formatNumber(n.would_request)} turns`, phrase: "re-ground all" }); if (reason) await act.run("all", "/api/admin/corpus-turn-requests", { method: "POST", body: { all: true, reason } }, (x) => { const d = x as { inserted?: number; already_open?: number; total_live?: number } | null; return `${d?.inserted ?? 0} new requests; ${d?.already_open ?? 0} items already had one (${d?.total_live ?? 0} live).`; }); }}>Request for all live items</Button>
         </div>
       </Panel>
       <Panel title="Dispatch a sweep">
@@ -99,6 +102,7 @@ export function DispatchPanel() {
         <Result r={intake} />
       </Panel>
       {flash.node}
+      {why.node}
     </div>
   );
 }

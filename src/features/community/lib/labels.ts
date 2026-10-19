@@ -22,8 +22,8 @@ const V = schema.parse(vocabulary);
 export const ORG_TYPES: readonly string[] = V.orgTypes.map((o) => o.id);
 export const ORG_TYPE_OPTIONS = V.orgTypes;
 export const ORG_TYPE_LABELS: Readonly<Record<string, string>> = Object.fromEntries(V.orgTypes.map((o) => [o.id, o.label]));
-export const SENSITIVE_FIELDS: readonly string[] = V.sensitiveFields.map((f) => f.id);
-export const SENSITIVE_FIELD_OPTIONS = V.sensitiveFields;
+/** The kinds of figure the antitrust guard names, by id (the rules in data/antitrust-rules.json each name one). */
+export const SENSITIVE_FIELD_LABELS: Readonly<Record<string, string>> = Object.fromEntries(V.sensitiveFields.map((f) => [f.id, f.label]));
 export const REPORT_REASONS = V.reportReasons;
 export const REPORT_REASON_IDS: readonly string[] = V.reportReasons.map((r) => r.id);
 export const REPORT_REASON_SHORT: Readonly<Record<string, string>> = Object.fromEntries(V.reportReasons.map((r) => [r.id, r.short]));

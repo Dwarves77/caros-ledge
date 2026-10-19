@@ -6,8 +6,8 @@ import { ClaimsUnavailable, getClaims } from "@/core/auth/claims";
 import { ensureProfile } from "@/core/auth/ensure-profile";
 import { EMPTY_IDENTITY, resolveIdentity } from "@/core/auth/identity";
 import { acceptInvitation, createInvitation, declineInvitation, listInvitations, lookupInvitation, pendingInvitationsFor, revokeInvitation } from "@/core/auth/invitations";
-import { assertNotLastOwner, currentMembership, isBanned, LookupError } from "@/core/auth/membership";
-import { createOrgBody, createOrgForSelf, updateOrg } from "@/core/auth/orgs";
+import { currentMembership, LookupError } from "@/core/auth/membership";
+import { createOrgBody, createOrgForSelf } from "@/core/auth/orgs";
 import { decidePlatformAdmin, isPlatformAdmin, readOwnPlatformAdmin } from "@/core/auth/platform-admin";
 import { decideRoute, sanitizeReturnPath } from "@/core/auth/route-policy";
 import { HttpError } from "@/core/http/errors";
@@ -35,23 +35,6 @@ test("currentMembership: the oldest membership wins and a read error is a Lookup
   assert.equal(filterValue(calls[1]!, "eq:org_id"), ORG);
   assert.equal(await currentMembership(fakeDb(() => ({ data: null })).db, "u1"), null);
   await assert.rejects(currentMembership(fakeDb(() => ({ error: { message: "down" } })).db, "u1"), LookupError);
-});
-
-test("INV-153: an organisation keeps at least one owner", async () => {
-  const owners = (count: number | null, error?: { message: string }) => fakeDb(() => ({ count, error: error ?? null })).db;
-  await assert.rejects(assertNotLastOwner(owners(1), ORG, "demote"), (e: unknown) => e instanceof HttpError && e.status === 409 && /Cannot demote the only owner/.test(e.message));
-  await assert.rejects(assertNotLastOwner(owners(0), ORG, "ban"), HttpError);
-  await assertNotLastOwner(owners(2), ORG, "demote");
-  await assert.rejects(assertNotLastOwner(owners(null), ORG, "demote"), LookupError);
-  await assert.rejects(assertNotLastOwner(owners(5, { message: "x" }), ORG, "demote"), LookupError);
-});
-
-test("isBanned is org-scoped and fails closed", async () => {
-  const { db, calls } = fakeDb(() => ({ data: { user_id: "u1" } }));
-  assert.equal(await isBanned(db, ORG, "u1"), true);
-  assert.equal(filterValue(calls[0]!, "eq:org_id"), ORG);
-  assert.equal(await isBanned(fakeDb(() => ({ data: null })).db, ORG, "u1"), false);
-  await assert.rejects(isBanned(fakeDb(() => ({ error: { message: "x" } })).db, ORG, "u1"), LookupError);
 });
 
 test("decideRoute: segment matching, scanner 404, signed-in bounce, the query string survives the login redirect", () => {
@@ -158,10 +141,10 @@ test("INV-155: revoke is scoped to the URL's org BEFORE the write; the token is 
   const spies = (["log", "info", "warn", "error", "debug"] as const).map((m) => ({ m, orig: console[m] }));
   for (const { m } of spies) console[m] = (...a: unknown[]) => void logged.push(a.map(String).join(" "));
   try {
-    const issuing = fakeDb(() => ({ data: { id: "i2", token_last4: "aaaa", invited_email: "x@y.test", proposed_role: "member", expires_at: "2099-01-01", status: "pending", created_at: "2026-01-01" } }));
+    const issuing = fakeDb(undefined, { rpc: () => ({ data: { id: "i2", token_last4: "aaaa", invited_email: "x@y.test", proposed_role: "member", expires_at: "2099-01-01", status: "pending", created_at: "2026-01-01" } }) });
     await createInvitation(issuing.db, { orgId: ORG, userId: "u1", email: "x@y.test", role: "member", baseUrl: "https://app.example.test" });
-    issued = String(wrote(issuing.calls, "org_invitations", "insert")[0]?.payload?.token_input);
-    await createInvitation(fakeDb(() => ({ error: { message: `dup ${TOKEN}`, code: "23505" } })).db, { orgId: ORG, userId: "u1", email: "x@y.test", role: "member", baseUrl: "" }).catch(() => undefined);
+    issued = String((issuing.rpcs[0]?.args as { p_token: string }).p_token);
+    await createInvitation(fakeDb(undefined, { rpc: () => ({ error: { message: `dup ${TOKEN}`, code: "23505" } }) }).db, { orgId: ORG, userId: "u1", email: "x@y.test", role: "member", baseUrl: "" }).catch(() => undefined);
   } finally {
     for (const { m, orig } of spies) console[m] = orig;
   }
@@ -169,27 +152,50 @@ test("INV-155: revoke is scoped to the URL's org BEFORE the write; the token is 
   assert.match(issued, /^[0-9a-f]{64}$/, "the generated token was captured");
 });
 
-test("IMP-009: issue generates the token, returns the URL once, stores only the hash input, and the row read back carries token_last4 and no token", async () => {
-  const issued = fakeDb(() => ({ data: { id: "i2", token_last4: "beef", invited_email: "x@y.test", proposed_role: "member", expires_at: "2099-01-01", status: "pending", created_at: "2026-01-01" } }));
+test("IMP-009 and R2e: issue generates the token, passes it to invite_member once, returns the URL once, and the row carries token_last4 and no token; the e-mail names the organisation and who invited", async () => {
+  const row = { id: "i2", token_last4: "beef", invited_email: "x@y.test", proposed_role: "viewer", expires_at: "2099-01-01", status: "pending", created_at: "2026-01-01" };
+  const issued = fakeDb((c) => (c.table === "organizations" ? { data: { name: "Acme Freight" } } : c.table === "profiles" ? { data: { full_name: "Ada Admin", display_name: null } } : undefined), { rpc: () => ({ data: row }) });
   const { invitation, emailDelivery } = await createInvitation(issued.db, { orgId: ORG, userId: "u1", email: "x@y.test", role: "viewer", baseUrl: "https://app.example.test" });
-  const insert = wrote(issued.calls, "org_invitations", "insert")[0]?.payload as Record<string, unknown>;
-  const token = String(insert.token_input);
-  assert.match(token, /^[0-9a-f]{64}$/, "a 32-byte hex token is generated in code and handed to the database as token_input");
+  const args = issued.rpcs[0]?.args as Record<string, unknown>;
+  const token = String(args.p_token);
+  assert.match(token, /^[0-9a-f]{64}$/, "a 32-byte hex token is generated in code and handed to the database function as p_token");
+  assert.deepEqual(args, { p_org_id: ORG, p_email: "x@y.test", p_role: "viewer", p_token: token });
+  assert.equal(issued.rpcs[0]?.name, "invite_member");
+  assert.equal(wrote(issued.calls, "org_invitations", "insert").length, 0, "the invitation is not a table write from here");
   assert.equal(invitation.invite_url, `https://app.example.test/invitations/${token}`);
   assert.equal("token" in invitation, false);
   assert.equal("token_input" in invitation, false);
   assert.equal(invitation.token_last4, "beef");
-  assert.deepEqual(insert, { org_id: ORG, invited_email: "x@y.test", invited_by_user_id: "u1", proposed_role: "viewer", token_input: token });
-  assert.doesNotMatch(String(issued.calls[0]?.columns), /(^|[ ,])token(,|$)|token_input/, "the read-back never selects a raw token column");
   assert.deepEqual(emailDelivery, { delivered: false, configured: false, reason: "No email provider is configured on this deployment." });
-  const again = fakeDb(() => ({ data: { id: "i3", token_last4: "cafe" } }));
+  const sent: string[] = [];
+  const env = { RESEND_API_KEY: "re_test", INVITATION_FROM_EMAIL: "invites@mail.example.test" };
+  const real = process.env.RESEND_API_KEY;
+  const realFrom = process.env.INVITATION_FROM_EMAIL;
+  const realFetch = globalThis.fetch;
+  Object.assign(process.env, env);
+  globalThis.fetch = (async (_url: unknown, init?: { body?: string }) => {
+    sent.push(String(init?.body));
+    return { ok: true, status: 200 };
+  }) as unknown as typeof fetch;
+  try {
+    await createInvitation(issued.db, { orgId: ORG, userId: "u1", email: "x@y.test", role: "viewer", baseUrl: "https://app.example.test" });
+  } finally {
+    globalThis.fetch = realFetch;
+    if (real === undefined) delete process.env.RESEND_API_KEY;
+    else process.env.RESEND_API_KEY = real;
+    if (realFrom === undefined) delete process.env.INVITATION_FROM_EMAIL;
+    else process.env.INVITATION_FROM_EMAIL = realFrom;
+  }
+  assert.match(sent[0] ?? "", /Ada Admin has invited you to join the Acme Freight workspace/, "W:6: the e-mail names who invited and to what");
+  const again = fakeDb(undefined, { rpc: () => ({ data: { id: "i3", token_last4: "cafe" } }) });
   await createInvitation(again.db, { orgId: ORG, userId: "u1", email: "z@y.test", role: "member", baseUrl: "" });
-  assert.notEqual((wrote(again.calls, "org_invitations", "insert")[0]?.payload as Record<string, unknown>).token_input, token, "every invitation gets a fresh token");
-  const status = async (error: { message: string; code?: string }) => createInvitation(fakeDb(() => ({ error })).db, { orgId: ORG, userId: "u", email: "a@b.test", role: "member", baseUrl: "" }).catch((e: HttpError) => e.status);
+  assert.notEqual((again.rpcs[0]?.args as { p_token: string }).p_token, token, "every invitation gets a fresh token");
+  const status = async (error: { message: string; code?: string }) => createInvitation(fakeDb(undefined, { rpc: () => ({ error }) }).db, { orgId: ORG, userId: "u", email: "a@b.test", role: "member", baseUrl: "" }).catch((e: HttpError) => e.status);
   assert.equal(await status({ message: "dup", code: "23505" }), 409);
   assert.equal(await status({ message: "rls", code: "42501" }), 403);
   assert.equal(await status({ message: "boom" }), 500);
-  await assert.rejects(createInvitation(fakeDb(() => ({ data: null })).db, { orgId: ORG, userId: "u", email: "a@b.test", role: "member", baseUrl: "" }), (e: unknown) => (e as HttpError).status === 403);
+  await assert.rejects(createInvitation(fakeDb(undefined, { rpc: () => ({ data: null }) }).db, { orgId: ORG, userId: "u", email: "a@b.test", role: "member", baseUrl: "" }), (e: unknown) => (e as HttpError).status === 403);
+  await assert.rejects(createInvitation(fakeDb((c) => (c.table === "organizations" ? { error: { message: "down" } } : undefined)).db, { orgId: ORG, userId: "u", email: "a@b.test", role: "member", baseUrl: "" }), LookupError);
 });
 
 test("invitations: lazy expiry, lookup, accept and decline go through the rpc only (promotion-only accept)", async () => {
@@ -218,7 +224,7 @@ test("pendingInvitationsFor: a failed user lookup is an error, never an empty li
   assert.doesNotMatch(String(mine.calls[0]?.columns), /(^|[ ,])token(,|$)/);
   assert.equal(filterValue(mine.calls[0]!, "eq:invited_email"), "ada@example.test");
   assert.deepEqual(await pendingInvitationsFor(fakeDb(undefined, { users: {} }).db, "u1"), []);
-  await assert.rejects(pendingInvitationsFor(fakeDb(undefined, { userError: { message: "auth down" } }).db, "u1"), (e: unknown) => (e as HttpError).status === 500);
+  await assert.rejects(pendingInvitationsFor(fakeDb(undefined, { userError: { message: "auth down" } }).db, "u1"), (e: unknown) => (e as HttpError).status === 503);
 });
 
 test("INV-137: a request body cannot set privilege columns or any column but its own", async () => {
@@ -253,13 +259,4 @@ test("orgs: vocabulary sets are enforced when the workspace slice passes them; a
   assert.deepEqual([profilePatch.job_title, profilePatch.region], ["Ops", ["EU"]]);
   assert.equal("is_platform_admin" in profilePatch, false);
   await assert.rejects(createOrgForSelf(fakeDb(undefined, { rpc: () => ({ error: { message: "slug taken" } }) }).db, { id: "u1", email: null }, input), (e: unknown) => (e as HttpError).status === 400);
-});
-
-test("updateOrg: only name and slug, a taken slug is a 409, an empty patch a 400", async () => {
-  await assert.rejects(updateOrg(fakeDb().db, ORG, {}), (e: unknown) => (e as HttpError).status === 400);
-  await assert.rejects(updateOrg(fakeDb(() => ({ error: { message: "dup", code: "23505" } })).db, ORG, { slug: "taken" }), (e: unknown) => (e as HttpError).status === 409);
-  const ok = fakeDb(() => ({ data: { id: ORG, name: "New" } }));
-  assert.equal((await updateOrg(ok.db, ORG, { name: "New" })).name, "New");
-  const patch = wrote(ok.calls, "organizations", "update")[0]?.payload as Record<string, unknown>;
-  assert.deepEqual(Object.keys(patch).sort(), ["name", "updated_at"]);
 });

@@ -12,4 +12,4 @@ export { distinctNormalized, planInstrument, planInstrumentFkUpdates, planJurisd
 export { entitiesByKind, regionCodes } from "./lookup";
 export type { EntityName, RegionCode } from "./lookup";
 export { congruence, sourceRole } from "./source-role";
-export { formatCorridorLabel, formatCorridorLabelCompact, nameForJurisdiction, unlocodeName } from "./unlocode-names";
+export { formatCorridorLabel, formatCorridorLabelCompact, nameForJurisdiction, nameSources, nameTable, unlocodeName } from "./unlocode-names";
