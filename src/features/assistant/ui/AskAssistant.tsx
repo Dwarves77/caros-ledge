@@ -17,7 +17,7 @@ import styles from "./assistant.module.css";
 type Anchor = { top: number; left: number; width: number } | null;
 type Turn = { question: string; result: { ok: true; answer: AskResponse } | { ok: false; error: string } | null };
 const GUTTER = 16;
-const PANEL_MAX = 768;
+const PANEL_MAX = 480; // under 489 px the list rows stack (base.css), so a row title keeps its measure inside the panel
 
 const placement = (a: Anchor): CSSProperties => {
   const width = Math.min(Math.max(a?.width ?? 0, 360), PANEL_MAX);

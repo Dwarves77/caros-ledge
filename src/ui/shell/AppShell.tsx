@@ -13,6 +13,7 @@ import { StateNote } from "../StateNote";
 
 import { BackToTop } from "./BackToTop";
 import { AssistantProvider } from "./CommandBar";
+import { Hydrated } from "./Hydrated";
 import { shellNotes } from "./identity-seed";
 import { isChromeless } from "./nav-model";
 import { NavCard } from "./NavCard";
@@ -47,9 +48,10 @@ export function AppShell({ children, assistant }: { children: ReactNode; assista
     if (notes.redirect) router.replace(notes.redirect);
   }, [notes.redirect, router]);
 
-  if (chromeless) return <>{children}</>;
+  if (chromeless) return <><Hydrated />{children}</>;
   return (
     <ScrollProvider>
+      <Hydrated />
       <div className="cl-shell-desk">
         <div className="cl-app-frame">
           {surfaceNav ? surfaceNav({ variant: "card" }) : <NavCard />}

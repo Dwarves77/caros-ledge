@@ -6,7 +6,7 @@
     "width": 1280,
     "height": 900
   },
-  "captured_at": "2026-10-19T03:13:10.539Z",
+  "captured_at": "2026-10-19T20:54:48.305Z",
   "http_status": 200,
   "final_path": "/login?redirect=%2F",
   "network_idle": true,
@@ -17,12 +17,7 @@
   "landmarks": [
     {
       "role": "banner",
-      "name": "VOL IV · No. 43 · Monday, October 19, 2026Sign in",
-      "source": "implicit"
-    },
-    {
-      "role": "form",
-      "name": "Work emailPasswordForgot password?Sign in",
+      "name": "",
       "source": "implicit"
     }
   ],
@@ -67,9 +62,11 @@
     }
   ],
   "rows": {
-    "selector": "[data-row], li, tr, article",
-    "limit": 20,
-    "items": []
+    "selector": "[data-part=\"list-row\"], [data-part=\"table-row\"]",
+    "items": [],
+    "containers": []
   },
-  "document_height": 932
+  "document_height": 932,
+  "truncated": false,
+  "offences": []
 }

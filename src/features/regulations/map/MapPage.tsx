@@ -147,9 +147,9 @@ export function MapPage({ items, coverage, activeCodes }: { items: MapItem[]; co
             </div>
           )}
           {more > 0 && (
-            <p style={{ fontSize: "var(--fs-11)", color: "var(--ink-3)", margin: 0, padding: "10px 16px", borderTop: "1px solid var(--line-3)" }}>
+            <p style={{ fontSize: "var(--fs-11)", color: "var(--ink-3)", margin: 0, padding: "var(--sp-14) var(--sp-16)", borderTop: "1px solid var(--line-3)" }}>
               + {plural(more, "more jurisdiction", "more jurisdictions")} · {plural(shown.length - register.reduce((t, r) => t + r.count, 0), "item", "items")} — full register on the{" "}
-              <Link href="/regulations" style={{ color: "var(--ink)", fontWeight: 700 }}>
+              <Link href="/regulations" style={{ color: "var(--ink)", fontWeight: 700, padding: "var(--sp-6) 0" }}>
                 Regulations index
               </Link>
               .

@@ -3,30 +3,17 @@
 // policy timeline widens and narrows its scope, a failed notices read says so and Retry recovers, "Request coverage" says what happened, and with every read failed (?state=failed) each part says so with Retry and nothing shows an empty list or a zero.
 //
 // Usage: node tests/ux/market-smoke.mjs --base <origin>     (the server must run with UI_FIXTURES=1)
-import { chromium } from 'playwright';
+import { checkClientReads, SHELL_READS } from './client-sweep.mjs';
+import { chromium, open as openPage, smoke, VIEWPORTS, WIDTHS } from './harness.mjs';
+import { measurePage } from './measure.mjs';
 
-import { measure } from './measure.mjs';
-
-const VIEWPORTS = [
-  [375, 812],
-  [768, 1024],
-  [1024, 768],
-  [1280, 800],
-];
-const base = process.argv[process.argv.indexOf('--base') + 1];
-if (!base || base.startsWith('--')) throw new Error('usage: market-smoke.mjs --base <origin>');
-
-const failures = [];
-const fail = (where, what) => failures.push(`${where}: ${what}`);
+const run = smoke('market-smoke');
+const { base, fail, check, must: ensure } = run;
 const EVENT = { id: 'e1', event_date: '2026-11-29', date_precision: 'day', event_kind: 'compliance_deadline', obligation_text: 'Fixture obligation text that is long enough to need clamping at two lines inside the card.', item: { id: 'i1', title: 'Fixture regulation', legacy_id: null, jurisdiction_iso: ['EU'] } };
 const NOTICE = { value_id: 'v2', entityId: 'e', entityLabel: 'Shanghai (CN) → Rotterdam (NL), ocean', methodId: 'market_series_delta', oldMethodVersion: '1.0.0', newMethodVersion: '1.0.0', oldValue: 1, newValue: 2, unit: 'USD', currency: null, supersededAt: '2026-10-12T00:00:00Z', newValueId: 'v2', oldValueId: 'v1', triggeringEvent: null };
 
-async function open(browser, path, [w, h], mocks = {}) {
-  const ctx = await browser.newContext({ viewport: { width: w, height: h } });
-  const page = await ctx.newPage();
-  const state = { calls: [], notices: mocks.notices ?? 'ok' };
-  const errors = [];
-  page.on('pageerror', (e) => errors.push(e.message));
+/** The three routes the Market page's client parts call, answered in the browser; `state.notices` is 'down' to refuse the notices read. */
+async function install(page, state) {
   await page.route('**/api/**', (route) => {
     const u = new URL(route.request().url());
     const m = route.request().method();
@@ -38,11 +25,12 @@ async function open(browser, path, [w, h], mocks = {}) {
     if (u.pathname === '/api/dashboard/coverage/request') return json({ ok: true, already: false });
     return json({ error: `unmocked ${m} ${u.pathname}` }, 404);
   });
-  const res = await page.goto(`${base}${path}`, { waitUntil: 'networkidle' });
-  if (!res || res.status() !== 200) throw new Error(`fixture page answered ${res?.status()}`);
-  await page.evaluate(() => document.fonts.ready);
-  await page.waitForTimeout(600);
-  return { ctx, page, errors, state };
+}
+
+async function open(browser, path, viewport, mocks = {}) {
+  const state = { calls: [], notices: mocks.notices ?? 'ok' };
+  const opened = await openPage(browser, `${base}${path}`, viewport, { prepare: (page) => install(page, state) });
+  return { ...opened, state };
 }
 
 const browser = await chromium.launch();
@@ -50,29 +38,17 @@ try {
   for (const viewport of VIEWPORTS) {
     for (const path of ['/privacy/ui-fixtures/market', '/privacy/ui-fixtures/market?state=failed']) {
       const where = `${viewport.join('x')} ${path.includes('failed') ? 'failed' : 'ok'}`;
-      let s;
-      try {
-        s = await open(browser, path, viewport);
-        for (const o of await s.page.evaluate(measure, { rows: false })) fail(where, o);
-        for (const e of s.errors) fail(where, `page error: ${e}`);
-      } catch (e) {
-        fail(where, e.message);
-      } finally {
-        await s?.ctx.close();
-      }
+      await check(where, async () => {
+        const s = await open(browser, path, viewport);
+        try {
+          for (const o of await measurePage(s.page, { rows: false })) fail(where, o);
+          for (const e of s.errors) fail(where, `page error: ${e}`);
+        } finally {
+          await s.ctx.close();
+        }
+      });
     }
   }
-
-  const check = async (name, run) => {
-    try {
-      await run();
-    } catch (e) {
-      fail(name, e.message);
-    }
-  };
-  const ensure = (cond, what) => {
-    if (!cond) throw new Error(what);
-  };
 
   await check('headline rating', async () => {
     const s = await open(browser, '/privacy/ui-fixtures/market', [1280, 800]);
@@ -131,13 +107,11 @@ try {
     ensure(!/\b0 active signals\b/.test(body), 'a failed list is never zero signals');
     await s.ctx.close();
   });
+
+  // Every read the Market screen makes after hydration is refused in turn and must be stated (the notices, the obligations, the tags).
+  await check('client reads', () => checkClientReads(run, browser, { name: 'market', url: `${base}/privacy/ui-fixtures/market`, viewport: [1280, 800], prepare: (page) => install(page, { calls: [], notices: 'ok' }), ignore: SHELL_READS }));
 } finally {
   await browser.close();
 }
 
-if (failures.length) {
-  for (const f of failures) console.error(f);
-  console.error(`market-smoke: ${failures.length} failure(s)`);
-  process.exit(1);
-}
-console.log('market-smoke: clean at 375x812, 768x1024, 1024x768, 1280x800');
+run.finish(`clean at ${WIDTHS}; every client read is stated when refused`);

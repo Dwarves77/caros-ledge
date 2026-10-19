@@ -6,7 +6,7 @@
     "width": 375,
     "height": 812
   },
-  "captured_at": "2026-10-19T03:14:41.620Z",
+  "captured_at": "2026-10-19T20:56:42.471Z",
   "http_status": 200,
   "final_path": "/community",
   "network_idle": true,
@@ -17,22 +17,22 @@
   "landmarks": [
     {
       "role": "banner",
-      "name": "☰Community⌕J",
+      "name": "",
       "source": "implicit"
     },
     {
       "role": "main",
-      "name": "VOL IV · No. 43 · Monday, October 19, 2026Community7 regional rooms · 1,429 active items across them · you are in 0 · peer signal is unverified until a verifier signs off⌕⌘KAskGlobal room54Research · Fuels · Emissionsno discussions yetEU room1,000Transport · Maritime · Aviationno discussions yetUnited States room66Transport · Infrastructure · Reportingno discussions yetUnited Kingdom room275Research · Transport · Emissionsno discussions yetAsia–Pacific room24Emissions · Corridors · Transportno discussions yetLatin America room6Emissions · Transport · Researchno discussions yetMiddle East & Africa room4Corridorsno discussions yet+ New vertical groupGlobal room0 discussions · 0 shown · 1 member hereBe first in the Global room. No discussions here yet, post what you saw on the ground this week.Start a discussionNew post · GlobalPosts to the Global roomWhat did you see on the ground in Global room this week?Any handler, berth or documentation behaviour worth flagging in Global room?What is this about? Choose 1 to 10 entities *Bind this post to at least one corridor, jurisdiction, instrument, technology or organisation before posting.Join the room to post.PostJoin roomWho’s here · Global room1JasonOwnerPresence comes from profile home jurisdictions. Grow the network by workspace invitation.Verifier sign-offA verifier checks a post’s claim against a primary document and marks it signed off in the room. You are not a verifier.Your open requests · noneWhy post hereThe ledger prints what’s verified. The room holds what operators know first: handler capacity, berth behaviour, what a regulator said on a call. Community is a social place, not a source of information.Vertical groups+ New groupNo vertical groups yet. Rooms are regional; a group cuts across them by cargo vertical (fine art, live events, automotive…). Start one and invite peers wherever they operate.Browse all groups →Moderation queue",
+      "name": "",
       "source": "implicit"
     },
     {
       "role": "banner",
-      "name": "VOL IV · No. 43 · Monday, October 19, 2026Community7 regional rooms · 1,429 active items across them · you are in 0 · peer signal is unverified until a verifier signs off⌕⌘KAsk",
+      "name": "",
       "source": "implicit"
     },
     {
       "role": "search",
-      "name": "⌕⌘KAsk",
+      "name": "",
       "source": "explicit"
     }
   ],
@@ -165,9 +165,11 @@
     }
   ],
   "rows": {
-    "selector": "[data-row], li, tr, article",
-    "limit": 20,
-    "items": []
+    "selector": "[data-part=\"list-row\"], [data-part=\"table-row\"]",
+    "items": [],
+    "containers": []
   },
-  "document_height": 812
+  "document_height": 2451,
+  "truncated": false,
+  "offences": []
 }

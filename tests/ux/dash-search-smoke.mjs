@@ -7,27 +7,17 @@
 // Usage: node tests/ux/dash-search-smoke.mjs --base <origin>     (the server must run with UI_FIXTURES=1)
 import { readFileSync } from 'node:fs';
 
-import { chromium } from 'playwright';
-
 import { compareRecord } from '../parity/compare.mjs';
-import { domSummary } from '../parity/capture.mjs';
 
-import { shellControl } from './shell-filter.mjs';
-import { measure } from './measure.mjs';
+import { checkClientReads, SHELL_READS } from './client-sweep.mjs';
+import { chromium, open as openPage, parityReady, smoke, summarise, until, VIEWPORTS, WIDTHS } from './harness.mjs';
+import { measurePage } from './measure.mjs';
+import { scopeBaseline } from './shell-filter.mjs';
 
-const VIEWPORTS = [
-  [375, 812],
-  [768, 1024],
-  [1024, 768],
-  [1280, 800],
-];
 const SCREENS = ['dashboard', 'dashboard-empty', 'dashboard-failed', 'watchlist', 'watchlist-empty', 'watchlist-failed', 'search', 'search-empty', 'search-failed', 'portfolio-index', 'portfolio-unavailable', 'portfolio-detail', 'assistant'];
-const base = process.argv[process.argv.indexOf('--base') + 1];
-if (!base || base.startsWith('--')) throw new Error('usage: dash-search-smoke.mjs --base <origin>');
+const run = smoke('dash-search-smoke');
+const { base, fail, check, must } = run;
 const config = JSON.parse(readFileSync('tests/parity/approved-changes.json', 'utf8'));
-
-const failures = [];
-const fail = (where, what) => failures.push(`${where}: ${what}`);
 
 // ── the mocked backend ───────────────────────────────────────────────────────
 const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' };
@@ -74,17 +64,9 @@ async function signIn(ctx) {
 }
 
 const url = (screen, extra = '') => `${base}/privacy/ui-fixtures/dash-search?screen=${screen}${extra}`;
-async function open(browser, screen, [w, h], state = { calls: [] }, extra = '') {
-  const ctx = await browser.newContext({ viewport: { width: w, height: h } });
-  await signIn(ctx);
-  const page = await ctx.newPage();
-  const errors = [];
-  page.on('pageerror', (e) => errors.push(e.message));
-  await install(page, state);
-  const res = await page.goto(url(screen, extra), { waitUntil: 'networkidle' });
-  if (!res || res.status() !== 200) throw new Error(`fixture page answered ${res?.status()}`);
-  await page.evaluate(() => document.fonts.ready);
-  return { ctx, page, errors, state };
+async function open(browser, screen, viewport, state = { calls: [] }, extra = '') {
+  const opened = await openPage(browser, url(screen, extra), viewport, { prepare: async (page, ctx) => (await signIn(ctx), install(page, state)) });
+  return { ...opened, state };
 }
 
 const browser = await chromium.launch();
@@ -93,38 +75,27 @@ try {
   for (const viewport of VIEWPORTS) {
     for (const screen of SCREENS) {
       const where = `${viewport.join('x')} ${screen}`;
-      let s;
-      try {
-        s = await open(browser, screen, viewport);
-        if (screen === 'assistant') {
-          await s.page.locator('#fx-ask').click();
-          await s.page.getByText('Platform items').waitFor();
-          await s.page.locator('details > summary').first().click();
-        } else await s.page.waitForTimeout(400);
-        for (const o of await s.page.evaluate(measure, { rows: false })) fail(where, o);
-        for (const e of s.errors) fail(where, `page error: ${e}`);
-      } catch (e) {
-        fail(where, e.message.split('\n')[0]);
-      } finally {
-        await s?.ctx.close();
-      }
+      await check(where, async () => {
+        const s = await open(browser, screen, viewport);
+        try {
+          if (screen === 'assistant') {
+            await s.page.locator('#fx-ask').click();
+            await s.page.getByText('Platform items').waitFor();
+            await s.page.locator('details > summary').first().click();
+          }
+          for (const o of await measurePage(s.page, { rows: false })) fail(where, o);
+          for (const e of s.errors) fail(where, `page error: ${e}`);
+        } finally {
+          await s.ctx.close();
+        }
+      });
     }
   }
 
-  const check = async (name, run) => {
-    try {
-      await run();
-    } catch (e) {
-      fail(`behaviour: ${name}`, e.message.split('\n').slice(0, 4).join(' | '));
-    }
-  };
-  const must = (cond, what) => {
-    if (!cond) throw new Error(what);
-  };
-  const session = async (screen, run, vp = [1280, 800], extra = '') => {
+  const session = async (screen, body, vp = [1280, 800], extra = '') => {
     const s = await open(browser, screen, vp, { calls: [] }, extra);
     try {
-      await run(s);
+      await body(s);
     } finally {
       await s.ctx.close();
     }
@@ -222,8 +193,7 @@ try {
       await page.getByText('Fuel rule for the add card').waitFor();
       await page.getByText(/Coverage for this: 12 of 40 catalogued Regulations instruments/).waitFor();
       await page.getByRole('button', { name: 'Add Fuel rule for the add card to this portfolio' }).click();
-      await page.waitForTimeout(300);
-      must(state.calls.includes('POST /api/workspace/portfolios/p1/members'), 'the add call was not made');
+      await until(() => state.calls.includes('POST /api/workspace/portfolios/p1/members'), 'the add call was made', 5000);
     }),
   );
 
@@ -251,20 +221,35 @@ try {
     });
   });
 
+  // ── every read these screens make after hydration is refused in turn and must be stated (the Watch membership once a row menu is open, the bootstrap bundle, the notices) ──
+  const sweepSpec = (name, screen, after) => ({
+    name,
+    url: url(screen),
+    viewport: [1280, 800],
+    prepare: async (page, ctx) => {
+      await signIn(ctx);
+      await install(page, { calls: [] });
+    },
+    ...(after ? { after } : {}),
+    ignore: SHELL_READS,
+  });
+  await check('client reads dashboard', () => checkClientReads(run, browser, sweepSpec('dashboard', 'dashboard', async (page) => {
+    await page.getByRole('button', { name: 'Actions for ReFuelEU Aviation: sustainable aviation fuel supply mandate' }).click();
+    await page.getByRole('button', { name: /Watch/ }).first().waitFor();
+  })));
+  // The watchlist and search fixtures make no client read (their data arrives as props), so there is nothing to refuse there.
+
   // ── fixture parity: the real screens against the baseline, by the gate's own comparer ──
-  // The fixture draws the page content without the shell (the shell is the frame gate's), so the baseline is cut to the same scope: from the main landmark on, without the shell's controls and heading.
-  const isShell = shellControl(config); // tests/ux/shell-filter.mjs: the shell's controls come from approved-changes.json frameControls
-  const scope = (b) => ({ ...b, rows: { items: [] }, landmarks: b.landmarks.slice(Math.max(0, b.landmarks.findIndex((l) => l.role === 'main'))), headings: b.headings.filter((x, i, all) => x.text !== "Caro's Ledge" && !(i > 0 && all[i - 1].text === x.text && all[i - 1].level === x.level)), controls: b.controls.filter((c) => !isShell(c)) });
+  // The fixture draws the page content without the shell (the shell is the frame gate's), so the baseline is cut to the same scope (tests/ux/shell-filter.mjs, kind 'page').
   const parity = async (name, route, screen, extra = '') => {
     for (const viewport of VIEWPORTS.filter(([w]) => w === 375 || w === 1280)) {
       const where = `parity ${name} ${viewport.join('x')}`;
-      const vp = w375or1280(viewport);
-      try {
+      const vp = viewport[0] === 375 ? [375, 812] : [1280, 900];
+      await check(where, async () => {
         const s = await open(browser, screen, vp, { calls: [] }, extra);
         try {
-          await s.page.waitForTimeout(500);
-          const captured = await s.page.evaluate(domSummary, 20);
-          const baseline = scope(JSON.parse(readFileSync(`tests/parity/baseline/${route}.${vp[0] === 375 ? '375x812' : '1280x900'}.json`, 'utf8')));
+          const captured = await summarise(s.page);
+          const baseline = scopeBaseline(JSON.parse(readFileSync(`tests/parity/baseline/${route}.${vp[0] === 375 ? '375x812' : '1280x900'}.json`, 'utf8')), 'page');
           const approved = config.approved.filter((a) => a.route === route);
           const { fails } = compareRecord(route, vp[0] === 375 ? '375x812' : '1280x900', baseline, captured, approved, config.dataNames ?? []);
           for (const f of fails) fail(where, f);
@@ -280,24 +265,20 @@ try {
         } finally {
           await s.ctx.close();
         }
-      } catch (e) {
-        fail(where, e.message.split('\n')[0]);
-      }
+      });
     }
   };
-  const w375or1280 = ([w]) => (w === 375 ? [375, 812] : [1280, 900]);
-  await parity('watchlist', 'watchlist', 'watchlist-empty');
-  const searchBase = JSON.parse(readFileSync('tests/parity/baseline/search-emissions.1280x900.json', 'utf8'));
-  const titles = searchBase.controls.filter((c) => c.role === 'link' && !/^(Caro|Dashboard|Watchlist|Regulations|Market|Research|Operations|Map|Community|Account)/.test(c.name)).map((c) => c.name);
-  must(titles.length === 20, `the baseline search carries ${titles.length} result titles, not 20`);
-  await parity('search-emissions', 'search-emissions', 'search-parity', `&titles=${encodeURIComponent(JSON.stringify(titles))}`);
+  if (parityReady(run)) {
+    await parity('watchlist', 'watchlist', 'watchlist-empty');
+    const searchBase = JSON.parse(readFileSync('tests/parity/baseline/search-emissions.1280x900.json', 'utf8'));
+    const titles = searchBase.controls.filter((c) => c.role === 'link' && !/^(Caro|Dashboard|Watchlist|Regulations|Market|Research|Operations|Map|Community|Account)/.test(c.name)).map((c) => c.name);
+    await check('parity search-emissions', async () => {
+      must(titles.length === 20, `the baseline search carries ${titles.length} result titles, not 20`);
+      await parity('search-emissions', 'search-emissions', 'search-parity', `&titles=${encodeURIComponent(JSON.stringify(titles))}`);
+    });
+  }
 } finally {
   await browser.close();
 }
 
-if (failures.length) {
-  for (const f of failures) console.error(f);
-  console.error(`dash-search-smoke: ${failures.length} failure(s)`);
-  process.exit(1);
-}
-console.log('dash-search-smoke: clean at 375x812, 768x1024, 1024x768, 1280x800');
+run.finish(`clean at ${WIDTHS}`);

@@ -1,0 +1,280 @@
+{
+  "_about": "The known debt of the UI checks (scripts/ci/ui-checks.mjs), written down once. Every entry is a COUNT of offences per rule and file, with the reason and the slice that owes the fix. The count is a ratchet: one more offence than listed fails the check, and one fewer fails it too (lower the count), so the list only shrinks and an entry cannot outlive its cause. A file entry is a number, or {count, reason} when that file has a reason of its own. A rule with no entry here has no debt. node scripts/ci/ui-checks.mjs --counts prints the current numbers.",
+  "rules": {
+    "colour-built-at-runtime": {
+      "owner": "R4b",
+      "reason": "the impact meter ramp interpolates its stop colours at run time; it moves to color-mix on the band tokens (K:52, K:53).",
+      "files": {
+        "src/ui/impact.ts": 2
+      }
+    },
+    "style-px": {
+      "owner": "R4b",
+      "reason": "an inline style with a literal pixel size where the scale (var(--sp-*), var(--target)) exists (K:53).",
+      "files": {
+        "src/app/market/[slug]/loading.tsx": 6,
+        "src/app/market/loading.tsx": 3,
+        "src/app/market/series/loading.tsx": 3,
+        "src/app/regulations/loading.tsx": 1,
+        "src/features/admin/ui/CoverageMatrixView.tsx": 1,
+        "src/features/market/ui/MarketDetailView.tsx": 3,
+        "src/features/operations/ui/OperationsDetail.tsx": 1,
+        "src/features/regulations/BindingBanner.tsx": 11,
+        "src/features/regulations/CorridorsApplied.tsx": 8,
+        "src/features/regulations/DismissedStash.tsx": 5,
+        "src/features/regulations/ObligationRegister.tsx": 2,
+        "src/features/regulations/OwnerCard.tsx": 4,
+        "src/features/regulations/RegulationDetail.tsx": 11,
+        "src/features/regulations/map/MapPage.tsx": 13,
+        "src/features/regulations/rail.tsx": 6,
+        "src/features/research/loading.tsx": 1,
+        "src/features/research/ui/ResearchDetail.tsx": 3,
+        "src/features/saved-views/SavedViews.tsx": 5,
+        "src/ui/RowTable.tsx": 1,
+        "src/ui/StateNote.tsx": 1,
+        "src/ui/detail/DetailShell.tsx": 1,
+        "src/ui/detail/InferenceSection.tsx": 4,
+        "src/ui/detail/ItemConnections.tsx": 1,
+        "src/ui/detail/RecordFacts.tsx": 4,
+        "src/ui/detail/SourcesGrid.tsx": 1,
+        "src/ui/detail/collab/ItemAssignBlock.tsx": 3
+      }
+    },
+    "class-undefined": {
+      "owner": "R4b",
+      "reason": "a string that starts with cl- and is not a class: a localStorage key, an element id, or a test-mount wrapper class that carries no style. The rule reads every cl- string; these stay and say so.",
+      "files": {
+        "src/features/admin/ui/parts/PartsGallery.tsx": 1,
+        "src/features/community/ui/entities/EntityDiscovery.tsx": 1,
+        "src/ui/shell/CommandBar.tsx": 1,
+        "src/ui/shell/GlobalErrorReporter.tsx": 2
+      }
+    },
+    "cl-btn-outside-button": {
+      "owner": "R4b",
+      "reason": "a button drawn by hand with the cl-btn classes instead of the Button part (K:87); ActionButton and Button become one part and these callers use it.",
+      "files": {
+        "src/app/not-found.tsx": 1,
+        "src/app/privacy/ui-fixtures/dash-search/DashSearchFixtures.tsx": 1,
+        "src/features/admin/ui/BriefFlagsView.tsx": 1,
+        "src/features/admin/ui/parts/PartsGallery.tsx": 2,
+        "src/features/community/ui/groups/GroupCard.tsx": 1,
+        "src/features/onboarding/ui/OnboardingWizard.tsx": 3,
+        "src/features/regulations/BindingBanner.tsx": 1,
+        "src/features/regulations/DismissedStash.tsx": 1,
+        "src/ui/RowTable.tsx": 1,
+        "src/ui/SmallParts.tsx": 1,
+        "src/ui/shell/notifications/NotificationsList.tsx": 2
+      }
+    },
+    "raw-form-control": {
+      "owner": "R4b",
+      "reason": "a raw input, select or textarea outside FormField (K:92): the auth pages, ArchiveDialog, TagPopover, the command bar and the collab blocks migrate to FormField, which injects the field id.",
+      "files": {
+        "src/features/auth/ui/LoginPage.tsx": 2,
+        "src/features/auth/ui/ResetPasswordPage.tsx": 1,
+        "src/features/auth/ui/SignupPage.tsx": 3,
+        "src/features/auth/ui/UpdatePasswordPage.tsx": 2,
+        "src/features/workspace/ui/ArchiveDialog.tsx": 2,
+        "src/features/workspace/ui/TagPopover.tsx": 1,
+        "src/ui/SmallParts.tsx": 1,
+        "src/ui/detail/collab/ItemAssignBlock.tsx": 1,
+        "src/ui/detail/collab/ItemNotesBlock.tsx": 2,
+        "src/ui/list-surface/rail.tsx": 1,
+        "src/ui/shell/CommandBar.tsx": 1
+      }
+    },
+    "wall-clock": {
+      "owner": "R4a",
+      "reason": "a wall-clock read (Date.now() or new Date() with no argument) outside the injected clock (C:48, S:95): each moves to deps.now, and a duration uses performance.now.",
+      "files": {
+        "src/core/auth/invitations.ts": 2,
+        "src/core/auth/orgs.ts": 2,
+        "src/core/http/backoff.ts": 1,
+        "src/core/http/rate-limit.ts": 1,
+        "src/core/perf/server-timing.ts": 2,
+        "src/core/producers/summary.ts": 1,
+        "src/core/propagation/author-edges.ts": 1,
+        "src/core/shared/dates.ts": 2,
+        "src/core/shared/telemetry.ts": 1,
+        "src/core/turn/wiring.ts": 1,
+        "src/features/account/lib/notification-prefs.ts": 1,
+        "src/features/account/lib/profile-patch.ts": 1,
+        "src/features/account/server/page-session.ts": 1,
+        "src/features/admin/api/bulk-import.ts": 2,
+        "src/features/admin/api/corpus-turns.ts": 1,
+        "src/features/admin/api/coverage.ts": 1,
+        "src/features/admin/api/forward-events.ts": 1,
+        "src/features/admin/api/integrity-flags.ts": 2,
+        "src/features/admin/api/overview.ts": 1,
+        "src/features/admin/api/pause-global.ts": 2,
+        "src/features/admin/api/run-intake.ts": 1,
+        "src/features/admin/api/source-controls.ts": 4,
+        "src/features/admin/api/source-decisions.ts": 3,
+        "src/features/admin/api/statutory-rows.ts": 1,
+        "src/features/admin/api/tier-opinions.ts": 1,
+        "src/features/admin/api/triage.ts": 1,
+        "src/features/admin/pages.tsx": 4,
+        "src/features/auth/ui/AuthFrame.tsx": 1,
+        "src/features/community/api/notifications.ts": 2,
+        "src/features/community/api/profile.ts": 1,
+        "src/features/community/api/signoff.ts": 1,
+        "src/features/community/lib/roster.ts": 1,
+        "src/features/coverage/server/data.ts": 1,
+        "src/features/dashboard/api/coverage-matrix.ts": 1,
+        "src/features/flywheel/connect.ts": 1,
+        "src/features/health/api/surfaces.ts": 2,
+        "src/features/market/api/notices.ts": 1,
+        "src/features/obligations/api/register.ts": 1,
+        "src/features/research/authority-score.ts": 2,
+        "src/features/research/model/assess.ts": 1,
+        "src/features/sources/api/check-sources.ts": 2,
+        "src/features/telemetry/api/revalidate.ts": 1,
+        "src/features/workspace/api/notes.ts": 2,
+        "src/features/workspace/api/overrides.ts": 1,
+        "src/features/workspace/api/personal-state.ts": 1,
+        "src/features/workspace/api/portfolio-detail.ts": 1,
+        "src/features/workspace/state/item-state-store.ts": 3,
+        "src/ui/RelativeTime.tsx": 2,
+        "src/ui/shell/GlobalErrorReporter.tsx": 2,
+        "src/ui/shell/notifications/NotificationsList.tsx": 2
+      }
+    },
+    "bare-fetch": {
+      "owner": "R4b",
+      "reason": "a fetch( call outside the one request caller (C:55, K:93).",
+      "files": {
+        "src/core/http/request-json.ts": {
+          "count": 1,
+          "reason": "this is the one request caller: every other module calls it."
+        },
+        "src/core/turn/wiring.ts": {
+          "count": 1,
+          "reason": "the production default of the injected fetch implementation (opts.fetchImpl ?? fetch); the turn hands the gated primitive everything else."
+        },
+        "src/features/auth/ui/AuthProvider.tsx": {
+          "count": 1,
+          "reason": "the identity loader reads the Retry-After header of the response to decide how long to wait; the one request caller does not yet hand a refusal its headers."
+        },
+        "src/features/coverage/client.tsx": {
+          "count": 1,
+          "reason": "the CSV export reads the response as a file (the text of the body and its content-disposition header), which the JSON request caller does not carry."
+        },
+        "src/ui/shell/GlobalErrorReporter.tsx": {
+          "count": 1,
+          "reason": "the error reporter must not depend on the request caller whose failure it may be reporting; it posts with keepalive."
+        }
+      }
+    },
+    "kit-fetch": {
+      "owner": "R4b",
+      "reason": "the kit calls the request caller (K:93): the collab blocks, the notices rail and the notifications list move to their features with the caller handed in.",
+      "files": {
+        "src/ui/detail/collab/ItemAssignBlock.tsx": 4,
+        "src/ui/detail/collab/ItemNotesBlock.tsx": 4,
+        "src/ui/detail/collab/collab-client.ts": 1,
+        "src/ui/figures/Notices.tsx": 1,
+        "src/ui/shell/notifications/NotificationsList.tsx": 4
+      }
+    },
+    "kit-imports-feature": {
+      "owner": "R4b",
+      "reason": "the shell imports the auth provider, the identity types and the workspace state from features (K:93); the shell receives them as props or moves to a feature.",
+      "files": {
+        "src/ui/shell/AppShell.tsx": 1,
+        "src/ui/shell/NavCard.tsx": 1,
+        "src/ui/shell/Providers.tsx": 1,
+        "src/ui/shell/TopBar.tsx": 1,
+        "src/ui/shell/identity-seed.ts": 3,
+        "src/ui/shell/notifications/NotificationsBell.tsx": 1,
+        "src/ui/shell/use-bootstrap.ts": 1
+      }
+    },
+    "entity-in-string": {
+      "owner": "R2d",
+      "reason": "an HTML entity in a string.",
+      "files": {
+        "src/features/obligations/extract/date-grammar.ts": {
+          "count": 2,
+          "reason": "a pattern that matches &nbsp; in captured HTML source, not text shown to a reader: it stays."
+        },
+        "src/features/operations/ui/OperationsDetail.tsx": {
+          "count": 1,
+          "reason": "S:4 (CONFIRMED, P0): the not-written note is a string, so the customer reads the characters &apos;. R2d writes the sentence in the typed copy table and this entry goes."
+        },
+        "src/features/regulations/map/MapView.tsx": {
+          "count": 1,
+          "reason": "Leaflet reads its attribution option as HTML, so the entity is decoded there: it stays."
+        },
+        "src/features/research/ui/ResearchDetail.tsx": {
+          "count": 1,
+          "reason": "S:4 (CONFIRMED, P0): the not-written note is a string, so the customer reads the characters &apos;. R2d writes the sentence in the typed copy table and this entry goes."
+        }
+      }
+    },
+    "http-error-message": {
+      "owner": "R4a",
+      "reason": "a driver or database message passed as the HttpError sentence (E14): typed sentences for the customer replace them.",
+      "files": {
+        "src/core/auth/invitations.ts": 5,
+        "src/core/auth/orgs.ts": 1,
+        "src/core/http/parse.ts": {
+          "count": 1,
+          "reason": "the sentence is the validation issue for the caller's own input, written for the caller; the typed parsers (R2a) replace it."
+        },
+        "src/features/admin/api/bulk-import.ts": 1,
+        "src/features/admin/api/corpus-turns.ts": 1,
+        "src/features/admin/api/shared.ts": 2,
+        "src/features/admin/api/source-controls.ts": 1,
+        "src/features/admin/api/source-decisions.ts": 1,
+        "src/features/auth/api/members.ts": 1,
+        "src/features/community/api/posts.ts": {
+          "count": 1,
+          "reason": "the sentence comes from the project's own rpc (SQLSTATE 22023) and is written for the caller; R4a gives it a typed code."
+        }
+      }
+    },
+    "supabase-error-unhandled": {
+      "owner": "R3a",
+      "reason": "a database read whose error is never looked at, so a failed read is treated as no row.",
+      "files": {
+        "src/core/grounding/ground.ts": {
+          "count": 1,
+          "reason": "the provenance status read after validation ignores its error: a failed read reports provenance null (C: grounding)."
+        },
+        "src/features/market/producers/ratify-series.ts": 1
+      }
+    },
+    "style-on-kit-part": {
+      "owner": "R4b",
+      "reason": "a feature restyles a kit part with `style` (K:48); the part gets a variant or the style moves to the stylesheet.",
+      "files": {
+        "src/features/regulations/OwnerCard.tsx": 1
+      }
+    },
+    "css-px-scale": {
+      "owner": "R4b",
+      "reason": "a literal pixel size in padding, margin, gap or font-size where the scale (var(--sp-*), var(--fs-*)) exists (K:53); base.css uses the spacing tokens nowhere.",
+      "files": {
+        "src/features/account/ui/account.module.css": 19,
+        "src/features/admin/ui/admin.module.css": 30,
+        "src/features/assistant/ui/assistant.module.css": 17,
+        "src/features/auth/ui/auth.module.css": 48,
+        "src/features/community/ui/community.module.css": 93,
+        "src/features/coverage/ui/coverage.module.css": 9,
+        "src/features/dashboard/ui/dashboard.module.css": 12,
+        "src/features/market/ui/market.module.css": 27,
+        "src/features/onboarding/ui/onboarding.module.css": 25,
+        "src/features/operations/ui/operations.module.css": 52,
+        "src/features/portfolio/ui/portfolio.module.css": 13,
+        "src/features/regulations/map/map.module.css": 7,
+        "src/features/research/ui/research.module.css": 37,
+        "src/features/settings/ui/settings.module.css": 16,
+        "src/features/watchlist/ui/watchlist.module.css": 4,
+        "src/features/workspace/ui/workspace.module.css": 22,
+        "src/ui/base.css": 446,
+        "src/ui/figures/figures.module.css": 3
+      }
+    }
+  }
+}

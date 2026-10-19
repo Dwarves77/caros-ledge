@@ -1,5 +1,5 @@
 // The Community UX smoke (P2-16): /community, /community/browse, /community/[slug], /community/moderation and /community/profile (and the directory and discover pages), mounted on /privacy/ui-fixtures/community?screen=<name>
-// from fixed data with MOCKED responses for the routes the screens call, at 375x812 and 1440x900 with the real fonts. It fails on: horizontal overflow, a title narrower than its longest word, an interactive target below
+// from fixed data with MOCKED responses for the routes the screens call, at the four widths every smoke uses (375, 768, 1024 and 1280) with the real fonts. It fails on: horizontal overflow, a title narrower than its longest word, an interactive target below
 // the law-2 floor. Then the behaviour contracts: an invitation is answered from /community; a failed star, mute or moderation action is SAID in the server's sentence and the control goes back; the composer needs an
 // entity before it posts; the members list carries the no-direct-messaging statement; a profile save sends the allowlist only; with every read failed (?state=failed) each part says so with Retry and nothing shows a zero.
 // Then the FIXTURE PARITY: /community is a signed-in route the parity job cannot capture without credentials, so the real screen is rendered here and compared with tests/parity/baseline by the gate's own comparer.
@@ -7,27 +7,15 @@
 // Usage: node tests/ux/community-smoke.mjs --base <origin>     (the server must run with UI_FIXTURES=1)
 import { readFileSync } from 'node:fs';
 
-import { chromium } from 'playwright';
-
 import { compareRecord } from '../parity/compare.mjs';
-import { domSummary } from '../parity/capture.mjs';
 
-import { shellControl } from './shell-filter.mjs';
-import { hitArea, measure } from './measure.mjs';
+import { chromium, open as openPage, parityReady, smoke, summarise, until, VIEWPORTS, WIDTHS } from './harness.mjs';
+import { hitArea, measurePage } from './measure.mjs';
+import { scopeBaseline } from './shell-filter.mjs';
 
-const VIEWPORTS = [
-  [375, 812],
-  [1440, 900],
-];
 const SCREENS = ['rooms', 'group', 'browse', 'directory', 'discover', 'moderation', 'profile'];
-const base = process.argv[process.argv.indexOf('--base') + 1];
-if (!base || base.startsWith('--')) throw new Error('usage: community-smoke.mjs --base <origin>');
-
-const failures = [];
-const fail = (where, what) => failures.push(`${where}: ${what}`);
-const ensure = (cond, what) => {
-  if (!cond) throw new Error(what);
-};
+const run = smoke('community-smoke');
+const { base, fail, check, must: ensure } = run;
 
 // ── the mocked backend ───────────────────────────────────────────────────────
 const ID = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
@@ -62,18 +50,10 @@ async function install(page, state) {
 }
 
 const url = (screen, query = '') => `${base}/privacy/ui-fixtures/community?screen=${screen}${query}`;
-async function open(browser, screen, [w, h], { query = '', refuse = {} } = {}) {
-  const ctx = await browser.newContext({ viewport: { width: w, height: h } });
-  const page = await ctx.newPage();
+async function open(browser, screen, viewport, { query = '', refuse = {} } = {}) {
   const state = { calls: [], refuse: { ...refuse } };
-  const errors = [];
-  page.on('pageerror', (e) => errors.push(e.message));
-  await install(page, state);
-  const res = await page.goto(url(screen, query), { waitUntil: 'networkidle' });
-  if (!res || res.status() !== 200) throw new Error(`fixture page answered ${res?.status()}`);
-  await page.evaluate(() => document.fonts.ready);
-  await page.waitForTimeout(400);
-  return { ctx, page, errors, state };
+  const opened = await openPage(browser, url(screen, query), viewport, { prepare: (page) => install(page, state) });
+  return { ...opened, state };
 }
 
 const browser = await chromium.launch();
@@ -83,41 +63,32 @@ try {
     for (const screen of SCREENS) {
       for (const query of ['', '&state=failed']) {
         const where = `${viewport.join('x')} ${screen}${query ? ' failed' : ''}`;
-        let s;
-        try {
-          s = await open(browser, screen, viewport, { query, refuse: query ? { reports: true, profile: true } : {} });
-          for (const o of await s.page.evaluate(measure, { rows: false })) fail(where, o);
-          for (const e of s.errors) fail(where, `page error: ${e}`);
-        } catch (e) {
-          fail(where, e.message.split('\n')[0]);
-        } finally {
-          await s?.ctx.close();
-        }
+        await check(where, async () => {
+          const s = await open(browser, screen, viewport, { query, refuse: query ? { reports: true, profile: true } : {} });
+          try {
+            for (const o of await measurePage(s.page, { rows: false })) fail(where, o);
+            for (const e of s.errors) fail(where, `page error: ${e}`);
+          } finally {
+            await s.ctx.close();
+          }
+        });
       }
     }
   }
   // The threads state of the rooms (the rooms with discussions, a sign-off pending, a thread signed off).
   for (const viewport of VIEWPORTS) {
     const where = `${viewport.join('x')} rooms threads`;
-    let s;
-    try {
-      s = await open(browser, 'rooms', viewport, { query: '&state=threads' });
-      for (const o of await s.page.evaluate(measure, { rows: false })) fail(where, o);
-      for (const e of s.errors) fail(where, `page error: ${e}`);
-    } catch (e) {
-      fail(where, e.message.split('\n')[0]);
-    } finally {
-      await s?.ctx.close();
-    }
+    await check(where, async () => {
+      const s = await open(browser, 'rooms', viewport, { query: '&state=threads' });
+      try {
+        for (const o of await measurePage(s.page, { rows: false })) fail(where, o);
+        for (const e of s.errors) fail(where, `page error: ${e}`);
+      } finally {
+        await s.ctx.close();
+      }
+    });
   }
 
-  const check = async (name, run) => {
-    try {
-      await run();
-    } catch (e) {
-      fail(name, e.message.split('\n')[0]);
-    }
-  };
   const bodyText = (page) => page.evaluate(() => document.body.innerText);
 
   await check('invitation is answered from /community', async () => {
@@ -141,7 +112,8 @@ try {
     await s.page.getByText('You are not a member of this group').first().waitFor();
     ensure((await s.page.getByRole('button', { name: /^Starred$/ }).getAttribute('aria-pressed')) === 'true', 'the star was not put back after the refusal');
     await s.page.getByRole('button', { name: /^Mute$/ }).click();
-    await s.page.waitForTimeout(300);
+    await until(() => s.state.calls.some((c) => c.m === 'PATCH' && /\/mute$/.test(c.p)), 'the mute change reached its route', 5000);
+    await s.page.getByText('You are not a member of this group').first().waitFor();
     ensure((await s.page.getByRole('button', { name: /^Mute$/ }).getAttribute('aria-pressed')) === 'false', 'the mute was not put back after the refusal');
     ensure(s.state.calls.filter((c) => c.m === 'PATCH').length === 2, 'both changes should have been asked of the routes');
     await s.ctx.close();
@@ -186,7 +158,7 @@ try {
   await check('a profile save sends the allowlist only', async () => {
     const s = await open(browser, 'profile', [1440, 900]);
     await s.page.getByRole('button', { name: /^Save/ }).first().click();
-    await s.page.waitForTimeout(300);
+    await until(() => s.state.calls.some((c) => c.m === 'PUT'), 'the profile save reached its route', 5000);
     const put = s.state.calls.find((c) => c.m === 'PUT');
     ensure(put, 'the profile was not saved');
     ensure(Object.keys(put.body).every((k) => ['org_type', 'role', 'sector', 'region', 'default_anonymous'].includes(k)), `the save carries ${Object.keys(put.body)}`);
@@ -203,42 +175,37 @@ try {
     await s.ctx.close();
   });
 
+  // The rooms screen makes no client read (its data arrives as props), so there is nothing to refuse there.
+
   // ── fixture parity: the real /community screen against the committed baseline ─────────────────────────────────
   const config = JSON.parse(readFileSync('tests/parity/approved-changes.json', 'utf8'));
-  const isShell = shellControl(config); // tests/ux/shell-filter.mjs: the shell's controls come from approved-changes.json frameControls
-  for (const viewport of [[1280, 900], [375, 812]]) {
-    const where = `parity community ${viewport.join('x')}`;
-    let s;
-    try {
-      s = await open(browser, 'rooms', viewport);
-      await s.page.getByRole('button', { name: 'Start a discussion' }).first().waitFor();
-      const captured = await s.page.evaluate(domSummary, 20);
-      const baseline = JSON.parse(readFileSync(`tests/parity/baseline/community.${viewport.join('x')}.json`, 'utf8'));
-      // The shell supplies the platform nav, the mobile top bar and the one <main>: the baseline is cut to what is inside the page (from the first main on; from the page's own h1 on).
-      const mainAt = baseline.landmarks.findIndex((l) => l.role === 'main');
-      const h1At = baseline.headings.map((h) => h.level).lastIndexOf(1);
-      const scoped = {
-        ...baseline,
-        rows: { items: [] },
-        landmarks: baseline.landmarks.slice(mainAt + 1),
-        headings: baseline.headings.slice(h1At),
-        controls: baseline.controls.filter((c) => !isShell(c)),
-      };
-      const approved = config.approved.filter((a) => a.route === 'community');
-      const { fails } = compareRecord('community', viewport.join('x'), scoped, captured, approved, config.dataNames ?? []);
-      for (const f of fails) fail(where, f);
-      if (viewport[0] === 1280) {
-        // Attack: the same comparison on a capture missing one baseline control, and one with the controls reversed, MUST fail.
-        const pick = scoped.controls.find((c) => /Start a discussion|Join room|Post/.test(c.name)) ?? scoped.controls[0];
-        const dropped = { ...captured, controls: captured.controls.filter((c) => c.name !== pick.name) };
-        const swapped = { ...captured, controls: [...captured.controls].reverse() };
-        if (compareRecord('community', '1280x900', scoped, dropped, approved, config.dataNames ?? []).fails.length === 0) fail(where, `attack: a removed control (${pick.name}) passed the fixture parity`);
-        if (compareRecord('community', '1280x900', scoped, swapped, approved, config.dataNames ?? []).fails.length === 0) fail(where, 'attack: a reversed control order passed the fixture parity');
-      }
-    } catch (e) {
-      fail(where, e.message.split('\n')[0]);
-    } finally {
-      await s?.ctx.close();
+  if (parityReady(run)) {
+    for (const viewport of [[1280, 900], [375, 812]]) {
+      const where = `parity community ${viewport.join('x')}`;
+      await check(where, async () => {
+        const s = await open(browser, 'rooms', viewport);
+        try {
+          await s.page.getByRole('button', { name: 'Start a discussion' }).first().waitFor();
+          const captured = await summarise(s.page);
+          // The shell supplies the platform nav, the mobile top bar and the one <main>: the baseline is cut to what is inside the page (tests/ux/shell-filter.mjs, kind 'in-main').
+          const scoped = scopeBaseline(JSON.parse(readFileSync(`tests/parity/baseline/community.${viewport.join('x')}.json`, 'utf8')), 'in-main');
+          const approved = config.approved.filter((a) => a.route === 'community');
+          const { fails } = compareRecord('community', viewport.join('x'), scoped, captured, approved, config.dataNames ?? []);
+          for (const f of fails) fail(where, f);
+          if (viewport[0] === 1280) {
+            // Attack: the same comparison on a capture missing one baseline control, one with the controls reversed, and one with a changed heading MUST fail.
+            const pick = scoped.controls.find((c) => /Start a discussion|Join room|Post/.test(c.name)) ?? scoped.controls[0];
+            const dropped = { ...captured, controls: captured.controls.filter((c) => c.name !== pick.name) };
+            const swapped = { ...captured, controls: [...captured.controls].reverse() };
+            const heading = { ...captured, headings: captured.headings.map((h) => (h.level === 2 ? { ...h, text: `${h.text} (changed)` } : h)) };
+            if (compareRecord('community', '1280x900', scoped, dropped, approved, config.dataNames ?? []).fails.length === 0) fail(where, `attack: a removed control (${pick.name}) passed the fixture parity`);
+            if (compareRecord('community', '1280x900', scoped, swapped, approved, config.dataNames ?? []).fails.length === 0) fail(where, 'attack: a reversed control order passed the fixture parity');
+            if (compareRecord('community', '1280x900', scoped, heading, approved, config.dataNames ?? []).fails.length === 0) fail(where, 'attack: a changed section heading passed the fixture parity');
+          }
+        } finally {
+          await s.ctx.close();
+        }
+      });
     }
   }
   // Design ruling 2026-10-18 item 40: the two prose links ("workspace invitation", "not a verifier") keep their text and line, with a 44 px hit area, at 375 and 1280.
@@ -246,19 +213,18 @@ try {
     const seen = new Set();
     for (const [screen, query] of [['rooms', ''], ['rooms', '&state=threads'], ['group', '']]) {
       const where = `${viewport.join('x')} ${screen}${query} prose links`;
-      let s;
-      try {
-        s = await open(browser, screen, viewport, { query });
-        for (const f of await s.page.evaluate(hitArea, '[class*="inlineLink"]')) {
-          seen.add(f.label);
-          if (f.hitH < 43.5) fail(where, `"${f.label}" hit area ${f.hitW}x${f.hitH}, expected at least 44 high`);
-          if (f.layoutH > 28) fail(where, `"${f.label}" box grew to ${f.layoutH} px`);
+      await check(where, async () => {
+        const s = await open(browser, screen, viewport, { query });
+        try {
+          for (const f of await s.page.evaluate(hitArea, '[class*="inlineLink"]')) {
+            seen.add(f.label);
+            if (f.hitH < 43.5) fail(where, `"${f.label}" hit area ${f.hitW}x${f.hitH}, expected at least 44 high`);
+            if (f.layoutH > 28) fail(where, `"${f.label}" box grew to ${f.layoutH} px`);
+          }
+        } finally {
+          await s.ctx.close();
         }
-      } catch (e) {
-        fail(where, e.message.split('\n')[0]);
-      } finally {
-        await s?.ctx.close();
-      }
+      });
     }
     for (const want of ['workspace invitation', 'not a verifier']) if (!seen.has(want)) fail(`${viewport.join('x')} prose links`, `the "${want}" link was not found on any screen`);
   }
@@ -266,9 +232,4 @@ try {
   await browser.close();
 }
 
-if (failures.length) {
-  for (const f of failures) console.error(f);
-  console.error(`community-smoke: ${failures.length} failure(s)`);
-  process.exit(1);
-}
-console.log('community-smoke: clean at 375x812 and 1440x900; behaviours and fixture parity pass');
+run.finish(`clean at ${WIDTHS}; behaviours and fixture parity pass`);
