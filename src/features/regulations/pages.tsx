@@ -131,7 +131,9 @@ export async function ObligationRegisterRoute() {
   ]);
   return (
     <Suspense fallback={null}>
-      <Masthead title="Obligation register" dek="Every dated obligation on file, soonest first." dateLabel={dateLabel(session.nowIso)} nowIso={session.nowIso} commandBar={<ShellCommandBar placeholder="Search regulations" />} />
+      <div className="cl-list-surface-masthead">
+        <Masthead title="Obligation register" dek="Every dated obligation on file, soonest first." dateLabel={dateLabel(session.nowIso)} nowIso={session.nowIso} commandBar={<ShellCommandBar placeholder="Search regulations" />} />
+      </div>
       <PageFrame
         rail={
           <SectionCard as="aside" padding="14px 16px">

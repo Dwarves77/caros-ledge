@@ -66,3 +66,78 @@ The region landmark order, the theme brief's missing list items and the Spec09 p
 ## Nothing else seen
 
 The login, signup, privacy and home (signed out, redirected to /login?redirect=%2F) captures are consistent with the baseline records. The one 429 on research-detail (bootstrap) was retried by the capture's throttle handling.
+
+---
+
+# Second pass, 2026-10-19
+
+Source: screens run 39184596236 against production after the first-pass fixes (artifact `screens-39184596236`, whole-page PNGs: 1280-wide pages 900 to 16000 px tall, 375-wide pages up to 16000 px). index.json: member sign-in ok; **admin sign-in failed again** (`page.waitForURL: Timeout 60000ms exceeded`), so `/admin` was not captured; `community-group` skipped (baseline owed); every other route `ok`. Method: every PNG was cut into slices and looked at (full resolution for the detail pages, lists, map, settings and community; half-scale to 0.6-scale contact sheets for the remainder and for the 375 captures). market-detail and research-detail at 375, and market-detail at 1280, are cut at the capture's 16000 px ceiling.
+
+## First-pass fixes, read on production
+
+- V-1 [CONFIRMED fixed]: operations-detail at 1280 and 375 shows connection titles clamped to two lines with an ellipsis ("ASEAN Transport Strategic Plan 2016-2025 and Regional...").
+- V-2 [CONFIRMED fixed]: the strip is inset 20 px, a three-column card grid at 1280 with the brand edge, one column at 375, "16 MORE CONNECTIONS BELOW" under it.
+- V-4 [CONFIRMED fixed]: community at 1280 is 948 px wide next to its 300 px rail; room tiles read in full ("ASIA-PACIFIC ROOM", "UNITED KINGDOM ROOM"), "GLOBAL ROOM" and "NEW POST . GLOBAL" on one line.
+- V-6 [CONFIRMED fixed]: the dashboard is captured at `/`, HTTP 200 (the member's brief title).
+- V-7 [CONFIRMED fixed]: whole pages captured. Residual: the 16000 px ceiling cuts the longest pages.
+
+## V-3 [REFUTED for the captured item] Empty band between the timeline and the connections
+
+Operations detail at 1280: the next-milestone callout ends at y=700, the connections rule is at y=718 and its label at y=735: 18 px plus the strip's own 14 px padding. At 375 the callout ends at y=1343 and the strip's rule is at y=1360. There is no empty band under the timeline on india-regional-operations-profile in either viewport. The band the operator saw is not in this item; the 48 px assertion added in the first pass stays as the guard. (The images do show a 46 px gap under "Show more" in the Exposure block at 1280, above the timeline: that is a 44 px control, `.cl-exposure-expand`, src/ui/base.css:361, set by the law-2 floor; not a defect.)
+
+## V-9 [CONFIRMED, look ruling owed, not changed] Narrow title column on lists at 1280
+
+regulations, research, operations, dashboard and search at 1280: titles end at about 115 px ("Mexico SEMAR...", "NEEDS I" under a research title). Cause: `.cl-list-row` is a fixed grid, `3px 56px 1fr 88px 84px 76px 40px 44px` with 14 px gaps (src/ui/base.css:250 and :252): 501 px of fixed columns leave 119 px for the title in the 620 px column that remains beside the 300 px filter rail. The grid is the artboard's and the old file's (old_repo/src/components/ui/ListRow.tsx lines 8 and 138, identical), so this is not a regression. Fixing it means changing the row grid, a look change for a ruling: on DESIGN CHANGES OWED (list row at 1280 with a rail: drop the Impact or Timeline column, or fold the rail earlier). Parity measures row heights at 375 only; nothing changed here.
+
+## V-10 [CONFIRMED] Section titles wrap beside a long, unbreakable aside
+
+settings at 1280 ("FREIGHT SECTORS" on two lines beside "6 SELECTED . FILTERS YOUR DEFAULT VIEW, BRIEFINGS AND RELEVANCE"). The same rule, run over the fixtures, also found admin Coverage: "Coverage matrix . 2 places" wrapped at 768 and 1280 while 238 px of title fit in 838. Cause: `.cl-section-head2` was a single flex row with a no-wrap aside, so the title wrapper shrank first (src/ui/base.css:54-59). Fix: the head wraps (`flex-wrap`), the title wrapper keeps its width, the aside drops under it, right aligned. Test: measure.mjs fails any section title that wraps while its text fits on one line; red on admin Coverage before the fix (2 failures), clean after.
+
+## V-11 [REFUTED as INV-263; data question open] "0 of 56" on Coverage gaps
+
+A failed read cannot draw a zero: `readRegionCoverage` throws (src/features/regulations/map/region-coverage.ts), the route turns that into `null` (route.tsx:26) and the rail then draws "The coverage snapshot did not load" (MapPage.tsx:73-74). So the zeros are the output of a successful read: no active, public source row names any jurisdiction code of those regions (US sub-national 0 of 56, EU member states 0 of 27, and so on), because `sources.jurisdictions` holds the supranational or country code. Whether that equals the real registry is a database question; this lane may not read the database. For the coordinator: one count query of `sources` by jurisdiction code answers it.
+
+## New defects
+
+### V-12 [CONFIRMED] Timeline dates are cut at 375
+- operations-detail at 375: the vertical timeline shows "2025-0...", "2030-0...", "2047-0..." (the date column is 62 px with 8 px padding, the date needs 73 to 75).
+- Cause: src/ui/base.css:693-694 (`grid-template-columns: 62px 14px 1fr`, `.cl-tl-date { width: 62px }`) with the nowrap ellipsis of base.css:339.
+- Fix: 84 px date column, the rail line moved to match (base.css:692). Test: measure.mjs fails any `.cl-tl-date` whose text is wider than its box; red on the regulations detail and record fixtures at 375 and on the ux fixtures (21 failures), clean after.
+
+### V-13 [CONFIRMED] A theme card stretches to its longest member title and is cut off
+- regulations, research and operations lists at 1280: the "Themes across the corpus" card is about 548 px wide, its member titles run off its right edge with no ellipsis, and the strip clips it.
+- Cause: `.cl-theme-card { flex: 0 0 260px }` has `min-width: auto`, which resolves to the unbreakable member title's width: src/ui/base.css:532 (the ellipsis rules at :541 never apply).
+- Fix: `min-width: 0; overflow: hidden` on the card. Test: measure.mjs fails a theme card wider than 262 px; the surfaces fixture's member title is now 130 characters; red (768 research: 722 px) before, clean after.
+
+### V-14 [CONFIRMED] The Regulatory map's masthead and the obligation register's masthead have no page gutter
+- map at 1280 and 375: the masthead card runs from the nav edge to the right window edge (x=252..1280) while the cards below it start 40 px in; the register page has the same bare call.
+- Cause: `<Masthead>` drawn without the `cl-list-surface-masthead` wrapper: src/features/regulations/map/route.tsx:34 and src/features/regulations/pages.tsx:134.
+- Fix: wrapped. Test: tests/ui/masthead-wrapped.test.mjs fails any `<Masthead` in src with no gutter wrapper in the two lines above it (a short list of exempt files, each with its reason); red on exactly those two lines before the fix.
+
+### V-15 [CONFIRMED] Float noise on recalculated figures
+- operations at 1280, "Recalculated figures" rail: "13.209999999999999 gCO2e/tonne-km", "3.5300000000000002", "16.119999999999997", "1278.350000000001" (and "(was 51.58)" beside them).
+- Cause: `${f.value}` and `${f.previous}` printed raw: src/features/operations/ui/Spec09Panels.tsx:86 and :97 (the helper `money`).
+- Fix: `formatFigure` (src/core/shared/dates.ts: thousands separators, at most six decimals). Test: tests/core/shared.test.ts (the four values above).
+
+### V-16 [CONFIRMED] A fact card's provenance column carries a whole paragraph, and its lead column a bold sentence
+- market-detail and regulation-detail at 1280: a card whose paragraph quotes several people or passages, each followed by its own "Source:" line, shows a 40-line provenance column of raw text with literal `**` and `*Source:` marks; cards open with a 132 px display-type lead made of a whole bold sentence ("Trend 1 - Packaging Design: Regions are formalizing definitions of recyclability.") or a name ("California SB 343").
+- Cause 1: the citation pattern started at the FIRST "Source:" and ran to the end of the paragraph, so everything after it became the issuer (src/core/detail/fact-model.ts, `SOURCE_RE` in classifyParagraph and extractProvenance). Cause 2: `figureLeadFor` took any bold run that holds a digit as the "figure" (fact-model.ts:149-155; the old file did the same, old_repo/src/lib/detail/fact-card-model.ts:278-295).
+- Fix: the citation is the LAST "Source:" to the end (earlier passages stay in the claim); a figure lead must open with a digit or a currency or comparison sign and be at most 24 characters. Tests: two new tests in tests/detail/pure.test.ts, red against the old code (2 failures), green after. Parity: the control count per card is unchanged (one source link per card); the link's host is the last citation's, which is the card's own source.
+
+### V-17 [CONFIRMED] The Recalculation notices card has no page gutter on a regulation page
+- regulation-detail at 1280: the card runs x=252..1280 and touches the card above it, while "How this regulation reaches you" is inset.
+- Cause: src/features/regulations/DetailView.tsx rendered `<NoticesRail />` as a bare sibling of the page wrapper (the other four detail pages put it inside their detail layout).
+- Fix: the rail sits in `cl-detail-wrap`. Test: measure.mjs fails a `[data-notices-rail]` card closer than 16 px to either window edge; red on the regulations detail and record fixtures (1024 and 1280) before the fix, clean after.
+
+### V-18 [HYPOTHESIS] Settings leaves its right column empty below the briefing card
+- settings at 1280: after the briefing-schedule card the main column stays 620 px wide with 340 px blank to its right for the rest of a 3400 px page. The rail layout is the old page's (a rail card at the top, long forms below); not traced further, no change.
+
+### V-19 [HYPOTHESIS] Assignments card: a label crowds the line above it
+- regulation-detail at 1280: "ASSIGN TO" sits directly under "Nobody is assigned to this item yet." with no gap. Minor; not traced.
+
+### Tooling note
+- The screens job's 16000 px ceiling (SCREEN_MAX_HEIGHT in tests/parity/capture.mjs) cuts the longest pages; Chromium's own limit is 16384. A tile-and-stitch capture would lift it; not done (the pages affected are long by data, not by layout).
+
+## Owned by P2-15j
+
+The region landmark order, the theme brief's missing list items and the Spec09 panels' missing Request coverage controls are structure; none is visible in the images.

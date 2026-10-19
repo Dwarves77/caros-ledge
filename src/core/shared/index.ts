@@ -1,4 +1,4 @@
-export { countNoun, formatDate, formatLocaleDate, formatLocaleDateTime, formatNumber, formatRelative, formatRelativeCompact, isoWeek, pluralize } from "./dates";
+export { countNoun, formatDate, formatFigure, formatLocaleDate, formatLocaleDateTime, formatNumber, formatRelative, formatRelativeCompact, isoWeek, pluralize } from "./dates";
 export { domainForItemType } from "./domains";
 export { sendInvitationEmail } from "./email";
 export { resolveItemUuid } from "./ids";

@@ -17,6 +17,8 @@ export function formatDate(iso: string | undefined | null): string {
 }
 
 export const formatNumber = (value: number, options?: Intl.NumberFormatOptions): string => value.toLocaleString(FIXED_LOCALE, options);
+/** A computed figure as a person reads it: separators and at most six decimals, so a float's noise (13.209999999999999) never reaches a page. */
+export const formatFigure = (value: number): string => formatNumber(value, { maximumFractionDigits: 6 });
 export const formatLocaleDate = (date: Date, options?: Intl.DateTimeFormatOptions): string => date.toLocaleDateString(FIXED_LOCALE, options);
 export const formatLocaleDateTime = (date: Date, options?: Intl.DateTimeFormatOptions): string => date.toLocaleString(FIXED_LOCALE, options);
 export const pluralize = (count: number, singular: string, plural?: string): string => (Math.abs(count) === 1 ? singular : (plural ?? `${singular}s`));

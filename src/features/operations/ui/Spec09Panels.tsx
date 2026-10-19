@@ -5,7 +5,7 @@
 // The Operations profile's panels, presentational (the page reads, these draw; the old loader/view split existed only so a node test could import the view): the workspace's auxiliary energy loads (kWh, and gCO2e
 // when a SOURCED grid intensity for the region exists: the conversion the old card only named), the grid connection queue as a gate (blocked, clear or unknown, never a cost line) and the figures the flywheel
 // recomputed from Operations inputs, each with its inputs and the weakest source rating. A figure that cannot be drawn names the data it needs; a failed read says so with Retry.
-import { formatDate } from "@/core/shared";
+import { formatDate, formatFigure } from "@/core/shared";
 import { RequestableCoverageState } from "@/features/coverage";
 import { Absence, CoverageState, RailCard, TierChip } from "@/ui";
 
@@ -78,7 +78,7 @@ export function GridQueuePanel({ rows, retryHref }: { rows: GridQueueRow[] | nul
   );
 }
 
-const money = (f: DerivedFigure): string => (f.value === null ? "no value" : `${f.value}${f.unit ? ` ${f.unit}` : ""}${f.currency && !f.unit?.includes(f.currency) ? ` ${f.currency}` : ""}`);
+const money = (f: DerivedFigure): string => (f.value === null ? "no value" : `${formatFigure(f.value)}${f.unit ? ` ${f.unit}` : ""}${f.currency && !f.unit?.includes(f.currency) ? ` ${f.currency}` : ""}`);
 
 /** The figures recomputed from Operations inputs: value, what it replaced, the method's origin, when, the inputs with their period and the weakest rating among them (an unrated input is an absence, not a tier). */
 export function DerivedFigures({ figures, retryHref = "/operations" }: { figures: DerivedFigure[] | null; retryHref?: string }) {
@@ -94,7 +94,7 @@ export function DerivedFigures({ figures, retryHref = "/operations" }: { figures
             <li key={f.valueId} data-audit="derived-figure" className={styles.derivedItem}>
               <p className={styles.derivedTitle}>{f.title}</p>
               <span className={styles.derivedValue}>{money(f)}</span>
-              {f.previous !== null && <span className={styles.derivedMeta}> (was {f.previous})</span>}
+              {f.previous !== null && <span className={styles.derivedMeta}> (was {formatFigure(f.previous)})</span>}
               <p className={styles.derivedMeta}>
                 {f.tier !== null ? <TierChip tier={f.tier} size="square" /> : <Absence reason="not in primary source" variant="dash" />}{" "}
                 {[f.originClass, `recomputed ${formatDate(f.computedAt.slice(0, 10))}`].filter(Boolean).join(" · ")}

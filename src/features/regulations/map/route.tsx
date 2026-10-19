@@ -31,13 +31,15 @@ export async function MapRoute({ searchParams }: { searchParams: Promise<{ regio
   const immediate = rows.filter((r) => r.band.key === "immediate").length;
   return (
     <>
-      <Masthead
-        title="Regulatory map"
-        dateLabel={formatLocaleDate(new Date(session.nowIso), { weekday: "long", year: "numeric", month: "long", day: "numeric", timeZone: "UTC" })}
-        nowIso={session.nowIso}
-        commandBar={<ShellCommandBar placeholder='Search a jurisdiction, or ask "where are my immediate items?"' />}
-        dek={`${countNoun(rows.length, "jurisdiction")} live · ${countNoun(data.items.length, "active item")} · ${countNoun(immediate, "jurisdiction")} with immediate items · marker size = item count · colour = highest band present`}
-      />
+      <div className="cl-list-surface-masthead">
+        <Masthead
+          title="Regulatory map"
+          dateLabel={formatLocaleDate(new Date(session.nowIso), { weekday: "long", year: "numeric", month: "long", day: "numeric", timeZone: "UTC" })}
+          nowIso={session.nowIso}
+          commandBar={<ShellCommandBar placeholder='Search a jurisdiction, or ask "where are my immediate items?"' />}
+          dek={`${countNoun(rows.length, "jurisdiction")} live · ${countNoun(data.items.length, "active item")} · ${countNoun(immediate, "jurisdiction")} with immediate items · marker size = item count · colour = highest band present`}
+        />
+      </div>
       <MapPage items={data.items} coverage={data.coverage} activeCodes={regionCodes(Array.isArray(region) ? region[0] : region)} />
     </>
   );

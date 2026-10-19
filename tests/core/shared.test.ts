@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { mock, test } from "node:test";
 
-import { formatDate, formatRelative, formatRelativeCompact, isoWeek, countNoun, toDate } from "@/core/shared/dates";
+import { formatDate, formatFigure, formatRelative, formatRelativeCompact, isoWeek, countNoun, toDate } from "@/core/shared/dates";
 import { domainForItemType, asDomain } from "@/core/shared/domains";
 import { sendInvitationEmail } from "@/core/shared/email";
 import { resolveItemUuid } from "@/core/shared/ids";
@@ -153,4 +153,13 @@ test("IMP-014: with RESEND_API_KEY and INVITATION_FROM_EMAIL the invitation goes
   assert.deepEqual([down.delivered, down.configured, down.reason], [false, true, "The e-mail provider could not be reached: offline"]);
   for (const half of [{ RESEND_API_KEY: "re_test" }, { INVITATION_FROM_EMAIL: "invites@mail.example.test" }, {}]) assert.deepEqual(await sendInvitationEmail(mail, { env: half, fetchImpl: answer(200) }), { delivered: false, configured: false, reason: "No email provider is configured on this deployment." });
   assert.equal(sent.length, 2, "nothing was sent for a half-set configuration");
+});
+
+test("formatFigure: a computed float prints without its noise, and keeps real precision and separators", () => {
+  assert.equal(formatFigure(13.209999999999999), "13.21");
+  assert.equal(formatFigure(16.119999999999997), "16.12");
+  assert.equal(formatFigure(3.5300000000000002), "3.53");
+  assert.equal(formatFigure(1278.350000000001), "1,278.35");
+  assert.equal(formatFigure(0.000125), "0.000125");
+  assert.equal(formatFigure(60000), "60,000");
 });

@@ -27,7 +27,15 @@ const ANALYSIS: Array<{ token: string; humanized: string }> = [
 ];
 const LEGAL_TOKEN = "Legal Confirmation Required:";
 const FACT_TOKEN_RE = /^\*{0,2}\s*(?:[^*\n]{0,120}?\s+[—–-]\s+)?FACT:\s*\*{0,2}\s*/i;
-const SOURCE_RE = /\*?\s*Source:\s*([\s\S]+?)\*?\s*$/i;
+const SOURCE_MARK_RE = /\*?\s*Source:\s*/gi;
+/** The paragraph's citation: the LAST "Source:" marker to the end (a paragraph that quotes several people, each with its own "Source:" line, once made everything after the first marker one citation: a 40-line provenance column). */
+function sourceCitation(text: string): { index: number; citation: string } | null {
+  let last: RegExpExecArray | null = null;
+  for (const m of text.matchAll(SOURCE_MARK_RE)) last = m;
+  if (!last) return null;
+  const citation = text.slice(last.index + last[0].length).replace(/\*?\s*$/, "");
+  return citation.trim() ? { index: last.index, citation } : null;
+}
 const URL_RE = /https?:\/\/[^\s)\]}"'<>]+/;
 const MD_LINK_RE = /\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/;
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -67,9 +75,9 @@ export function classifyParagraph(paragraph: string): FactParagraph {
   }
   const legal = stripLeadingEmphasisToken(text, LEGAL_TOKEN);
   if (legal !== null) return { kind: "counsel", text: legal };
-  const m = SOURCE_RE.exec(text);
+  const m = sourceCitation(text);
   const before = m ? text.slice(0, m.index).trim() : "";
-  return m && before ? { kind: "fact", text: stripFactLabel(before), source: parseSourceCitation(m[1] ?? "") } : { kind: "prose", text };
+  return m && before ? { kind: "fact", text: stripFactLabel(before), source: parseSourceCitation(m.citation) } : { kind: "prose", text };
 }
 
 /** A section's markdown to classified paragraphs; the claim-ledger blocks never reach a customer. */
@@ -106,9 +114,9 @@ function splitEmbeddedSentences(text: string): Piece[] {
 }
 
 function extractProvenance(text: string): { text: string; provenance: FactCardModel["provenance"] } {
-  const source = SOURCE_RE.exec(text);
+  const source = sourceCitation(text);
   if (source) {
-    const parsed = parseSourceCitation(source[1] ?? "");
+    const parsed = parseSourceCitation(source.citation);
     return { text: text.slice(0, source.index).trim(), provenance: { source: parsed.title, org: parsed.issuer, accessed: parsed.date, href: parsed.url, tier: null } };
   }
   const link = MD_LINK_RE.exec(text);
@@ -146,9 +154,12 @@ export function toClaimNodes(raw: string): ClaimNode[] {
   return nodes.filter((n) => n.text.length > 0).flatMap(splitEmbeddedLinks);
 }
 
+// A figure lead is a quantity or a date (it opens with a digit or a currency or comparison sign) and short; a bold sentence or a name that holds a digit ("California SB 343") is not one (P2-15e: they filled the 132 px lead column).
+const FIGURE_RE = /^[\d€$£~<>≈+-]/;
+const FIGURE_MAX = 24;
 function figureLeadFor(kind: Kind, claim: ClaimNode[]): string | null {
   if (kind === "ANALYTICAL INFERENCE") return null;
-  const figure = claim.find((n) => n.bold && /\d/.test(n.text));
+  const figure = claim.find((n) => n.bold && FIGURE_RE.test(n.text) && n.text.length <= FIGURE_MAX);
   if (figure) return figure.text;
   if (kind !== "ACTION REQUIRED" && kind !== "LEGAL CONFIRMATION REQUIRED") return null;
   const first = claim.map((n) => n.text).join(" ").trim().split(/\s+/)[0]?.replace(/[.,:;]$/, "") ?? "";

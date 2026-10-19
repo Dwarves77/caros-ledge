@@ -31,7 +31,7 @@ const RESEARCH: ResearchPageData = {
   rowsFailed: false, aggregates: null, coverage: [{ transportMode: "ocean", jurisdictionIso: "EU", sourceCount: 12 }, { transportMode: "air", jurisdictionIso: "US", sourceCount: 7 }], assessments: { r0: ASSESS },
 };
 const DENOMINATOR = { denominator: { surface: "research", label: "research", numerator: 4, denominator: 9, verifiedBriefs: 3, href: "/dashboard/coverage?data_class=research" }, error: null, surfacePath: "/research" };
-const CHIPS = [{ themeId: "t1", href: "/research/r0", label: "Maritime decarbonisation: the IMO net-zero arc", itemTitle: "Item", memberCount: 4, pages: [{ surface: "research", label: "Research" }], hasBrief: true, stale: false, links: [{ title: "IMO Net-Zero Framework", href: "/regulations/x" }] }];
+const CHIPS = [{ themeId: "t1", href: "/research/r0", label: "Maritime decarbonisation: the IMO net-zero arc", itemTitle: "Item", memberCount: 4, pages: [{ surface: "research", label: "Research" }], hasBrief: true, stale: false, links: [{ title: "IMO Net-Zero Framework", href: "/regulations/x" }, { title: "Joint Office of Energy and Transportation: Industry Alignment for EV Charging and Refueling Infrastructure Deployment Across Regions", href: "/research/y" }] }];
 
 const REGIONS = ["EU", "US", "UK", "ASIA", "UAE", "BR"].map((code, i) => ({ id: `id-${code}`, code, label: ["European Union", "United States", "United Kingdom", "Asia", "UAE", "Brazil"][i] as string, displayOrder: i + 1, isoCodes: [code] }));
 const F = (regionCode: string, dimension: string, factLabel: string, over: Partial<OperationsFact> = {}): OperationsFact => ({
