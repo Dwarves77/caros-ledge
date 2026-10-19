@@ -16,7 +16,7 @@ on:
   workflow_dispatch:
     inputs:
       live_url:
-        description: 'Dispatch with only=live: the deployed URL to check (a preview, or production after the window)'
+        description: 'Dispatch with only=live or only=screens: the deployed URL to check or photograph (a preview, or production)'
         default: ''
       live_phase:
         description: 'Dispatch with only=live: before (the run made before the cutover window) or after'
@@ -37,7 +37,7 @@ on:
         description: 'Baseline recapture (job baseline): route names, comma separated, or all'
         default: all
       only:
-        description: 'Run one job on a dispatch: baseline (the old-site recapture), turn, live (the live checks and the deployed-preview parity), or empty for everything but baseline and live'
+        description: 'Run one job on a dispatch: baseline (the old-site recapture), turn, live (the live checks and the deployed-preview parity), screens (full-page screenshots of every route at a live_url), or empty for everything but baseline, live and screens'
         default: ''
       chain:
         description: 'Run the stage downstream stages too (false runs only the named stage)'
@@ -357,6 +357,39 @@ jobs:
         with:
           name: parity-baseline-${{ github.run_id }}
           path: parity-baseline
+
+  # P2-15e: full-page PNGs of every route in tests/parity/routes.json (and the first item of each detail route) at 1280x900 and 375x812 against live_url, signed in as the member
+  # account (and the admin account when configured), uploaded as one artifact for a person to look at. Dispatch only: never on push or pull_request.
+  screens:
+    name: screens
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.only == 'screens'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    container:
+      image: mcr.microsoft.com/playwright:v1.61.1-noble
+    env:
+      LIVE_SMOKE_EMAIL: ${{ secrets.LIVE_SMOKE_EMAIL }}
+      LIVE_SMOKE_PASSWORD: ${{ secrets.LIVE_SMOKE_PASSWORD }}
+      LIVE_ADMIN_EMAIL: ${{ secrets.LIVE_ADMIN_EMAIL }}
+      LIVE_ADMIN_PASSWORD: ${{ secrets.LIVE_ADMIN_PASSWORD }}
+      PARITY_ADMIN: ${{ secrets.LIVE_ADMIN_EMAIL && secrets.LIVE_ADMIN_PASSWORD && '1' || '' }}
+      SCREENS_BASE: ${{ github.event.inputs.live_url }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --no-audit
+      - name: Playwright package matching the image (browsers come from the image)
+        run: npm install --no-save playwright@1.61.1 --no-audit --no-fund
+      - name: Photograph every route (admin routes only when PARITY_ADMIN=1)
+        run: node tests/parity/capture.mjs --base "$SCREENS_BASE" --out screens --fresh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: screens-${{ github.run_id }}
+          path: screens
 
   report:
     name: report

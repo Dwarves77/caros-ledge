@@ -1,7 +1,8 @@
 // Parity capture (PART2-AGENT-PLAN-2026-10-15 section 7). Ported from the old repo's fsi-app/tests/parity/capture.mjs (lane H-2); the same record shape, so compare.mjs reads a baseline and a capture alike.
 // Each signed-in route names its account in routes.json (`auth`: "member" | "admin"). A route whose account has no credentials (or with --signed-out-only) is recorded as `skipped`, not failed.
 //
-// Usage: node tests/parity/capture.mjs --base <origin> --out <dir> [--signed-out-only]
+// Usage: node tests/parity/capture.mjs --base <origin> --out <dir> [--signed-out-only] [--fresh]
+// --fresh (the dispatch-only `screens` job, P2-15e): every detail route is discovered from its list page now instead of pinned to the baseline's item, so the PNGs show the first item production serves today.
 //
 // For every route in routes.json, at 1280x900 and 375x812: waits for network idle, writes a full-page PNG and a JSON
 // record (accessibility tree, landmarks, headings, interactive controls, first rows with measured heights).
@@ -30,9 +31,9 @@ function parseArgs(argv) {
   const args = {};
   for (let i = 0; i < argv.length; i += 1) {
     const key = argv[i];
-    if (key === '--signed-out-only') args['signed-out-only'] = true;
+    if (key === '--signed-out-only' || key === '--fresh') args[key.slice(2)] = true;
     else if (key?.startsWith('--') && argv[i + 1] !== undefined) args[key.slice(2)] = argv[(i += 1)];
-    else throw new Error(`usage: capture.mjs --base <origin> --out <dir> [--signed-out-only] [--routes a,b] [--site old] (bad argument ${key ?? '<none>'})`);
+    else throw new Error(`usage: capture.mjs --base <origin> --out <dir> [--signed-out-only] [--fresh] [--routes a,b] [--site old] (bad argument ${key ?? '<none>'})`);
   }
   return args;
 }
@@ -366,7 +367,7 @@ async function main() {
       }
       const context = await browser.newContext({ viewport: VIEWPORTS[1], storageState: storage[route.auth] });
       try {
-        entry.path = pinnedPath(route, baselineIndex, args.site) ?? await discover(await context.newPage(), base, route, gates, baselineIndex);
+        entry.path = (args.fresh ? null : pinnedPath(route, baselineIndex, args.site)) ?? await discover(await context.newPage(), base, route, gates, baselineIndex);
       } catch (err) {
         entry.status = err.outcome?.status ?? 'error';
         entry.error = err.outcome?.status === 'skipped' ? err.outcome.error : err.message;
