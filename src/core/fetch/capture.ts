@@ -49,11 +49,11 @@ export interface CaptureDeps extends FetchDeps {
 const CELLAR_CELEX_PREFIX = "https://publications.europa.eu/resource/celex/";
 
 /** Cellar's CELEX resolver URL for a key; the parentheses are percent-encoded explicitly (the resolver 404s a literal-paren OJ-suffixed key). */
-export const cellarEndpointForCelex = (key: string): string => `${CELLAR_CELEX_PREFIX}${encodeURIComponent(String(key)).replace(/\(/g, "%28").replace(/\)/g, "%29")}`;
+const cellarEndpointForCelex = (key: string): string => `${CELLAR_CELEX_PREFIX}${encodeURIComponent(String(key)).replace(/\(/g, "%28").replace(/\)/g, "%29")}`;
 /** The Publications Office's OJ-issue resource URL for one series, year, issue and edition letter. */
-export const cellarEndpointForOj = ({ series, year, issue }: { series: string; year: string; issue: string }, edition: string): string => `https://publications.europa.eu/resource/oj/${series === "L" ? "JOL" : "JOC"}_${year}_${issue}_${edition}`;
+const cellarEndpointForOj = ({ series, year, issue }: { series: string; year: string; issue: string }, edition: string): string => `https://publications.europa.eu/resource/oj/${series === "L" ? "JOL" : "JOC"}_${year}_${issue}_${edition}`;
 /** EUR-Lex's JS bot gate: HTTP 202 with the "verify that you're not a robot" interstitial. Detected by status and marker text, never by byte count. */
-export const isEurlexRobotGate = (status: number | null, head: string): boolean => Number(status) === 202 && /verify that you.?re not a robot/i.test(String(head ?? ""));
+const isEurlexRobotGate = (status: number | null, head: string): boolean => Number(status) === 202 && /verify that you.?re not a robot/i.test(String(head ?? ""));
 
 /** An eur-lex `uri=OJ:...` value as { series, year, issue (5-digit), edition }; the three OJ-issue shapes (JOL_2025_040_R, L_2025_040, L_202500040). Null for a CELEX or ELI reference. */
 export function parseOjReference(url: string): { series: string; year: string; issue: string; edition: string | null } | null {

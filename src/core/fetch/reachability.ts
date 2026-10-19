@@ -21,7 +21,7 @@ export function classifyReachability({ status, errored }: { status: number | nul
 }
 
 /** The verification action for a reachability outcome; null means proceed. */
-export function reachabilityTier(outcome: Reachability): { tier: "M" | "L"; rejection_reason: string } | null {
+function reachabilityTier(outcome: Reachability): { tier: "M" | "L"; rejection_reason: string } | null {
   if (outcome === REACH.REACHABLE) return null;
   return outcome === REACH.INCONCLUSIVE ? { tier: "M", rejection_reason: "reachability_inconclusive" } : { tier: "L", rejection_reason: "reachability" };
 }

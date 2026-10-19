@@ -24,7 +24,7 @@ type Args = Record<string, unknown>;
 type Op = (c: FamilyCall, d: BuiltDeps, a: Args) => Promise<RunResult>;
 const owed = (what: string, owner: string): RunResult => runResult("failed", { refused: 1 }, [`refused: ${what} is owed by ${owner} and is not wired yet`]);
 const heal = (d: BuiltDeps) => ({ sb: d.sb, now: d.now, fetch: d.fetch });
-const fetchDeps = (d: BuiltDeps) => ({ db: d.sb, now: d.now, env: d.env, resolveHost: null, ...(d.fetch.fetchImpl ? { fetchImpl: d.fetch.fetchImpl } : {}) });
+const fetchDeps = (d: BuiltDeps) => ({ db: d.sb, now: d.now, env: d.env, resolveHost: null, ...(d.fetch.sleep ? { sleep: d.fetch.sleep } : {}), ...(d.fetch.fetchImpl ? { fetchImpl: d.fetch.fetchImpl } : {}) });
 
 /** IMP-113: the mint artifact ratifies series onto their items, and the published-price-statistics producer runs in the same firing (rule 17). */
 async function ratifyOp(c: FamilyCall, d: BuiltDeps, a: Args): Promise<RunResult> {

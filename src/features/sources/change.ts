@@ -20,7 +20,7 @@ export interface Segment {
   hash: string;
 }
 /** A cheap deterministic FNV-1a over the normalised text (lower-cased, whitespace-collapsed, punctuation-trimmed). */
-export function normHash(s: unknown): string {
+function normHash(s: unknown): string {
   const norm = String(s || "").toLowerCase().replace(/\s+/g, " ").replace(/[^\w ]+/g, "").trim();
   let h = 0x811c9dc5;
   for (let i = 0; i < norm.length; i++) {
@@ -32,7 +32,7 @@ export function normHash(s: unknown): string {
 const provisionLabel = (shape: string) => (shape === "legislation.gov.uk" ? "Section" : shape === "federal-register" ? "Sec." : "Article");
 
 /** Segment a document into provisions by publisher shape; no recognisable provision gives one "whole" segment. A duplicate key (a TOC entry and the enacting one) keeps the longer body. */
-export function segmentByShape(text: string, shape: string): Segment[] {
+function segmentByShape(text: string, shape: string): Segment[] {
   const clean = extractCleanText(text);
   if (!clean) return [];
   const re = new RegExp((SHAPE_MARKERS[shape] ?? SHAPE_MARKERS.other)!.source, "gi");
@@ -54,14 +54,14 @@ export function segmentByShape(text: string, shape: string): Segment[] {
   return segs;
 }
 /** Sentence-level set difference between two provision bodies. */
-export function segmentTextDiff(prevBody: string, nextBody: string) {
+function segmentTextDiff(prevBody: string, nextBody: string) {
   const sents = (s: string) => String(s || "").split(/(?<=[.;:])\s+|\n+/).map((x) => x.trim()).filter((x) => x.length > 3);
   const pv = new Map(sents(prevBody).map((s) => [normHash(s), s]));
   const nx = new Map(sents(nextBody).map((s) => [normHash(s), s]));
   return { added: [...nx].filter(([h]) => !pv.has(h)).map(([, s]) => s), removed: [...pv].filter(([h]) => !nx.has(h)).map(([, s]) => s) };
 }
 /** Align two provision lists by key and hash: unchanged, changed (with the sentence diff), added, removed. */
-export function alignSegments(prev: Segment[], next: Segment[]) {
+function alignSegments(prev: Segment[], next: Segment[]) {
   const pv = new Map(prev.map((s) => [s.key, s]));
   const nx = new Map(next.map((s) => [s.key, s]));
   const unchanged: Array<{ key: string }> = [];
@@ -77,21 +77,12 @@ export function alignSegments(prev: Segment[], next: Segment[]) {
   for (const [key, ps] of pv) if (!nx.has(key)) removed.push({ key, body: ps.body });
   return { unchanged, changed, added, removed };
 }
-export function diffDocuments(prevText: string, nextText: string, opts: { url?: string; shape?: PublisherShape } = {}) {
+function diffDocuments(prevText: string, nextText: string, opts: { url?: string; shape?: PublisherShape } = {}) {
   const shape = opts.shape || detectPublisherShape(opts.url);
   const prev = segmentByShape(prevText, shape);
   const next = segmentByShape(nextText, shape);
   const align = alignSegments(prev, next);
   return { shape, counts: { prev_provisions: prev.length, next_provisions: next.length, unchanged: align.unchanged.length, changed: align.changed.length, added: align.added.length, removed: align.removed.length }, ...align };
-}
-/** A diff as timeline-event candidates (kind, provision, label); the caller persists. */
-export function toTimelineEvents(diff: ReturnType<typeof diffDocuments>, opts: { milestoneDate?: string } = {}) {
-  const date = opts.milestoneDate || null;
-  return [
-    ...diff.added.map((a) => ({ kind: "added" as const, provision: a.key, label: `${a.key} added`, milestone_date: date })),
-    ...diff.changed.map((c) => ({ kind: "changed" as const, provision: c.key, label: `${c.key} amended`, milestone_date: date })),
-    ...diff.removed.map((r) => ({ kind: "removed" as const, provision: r.key, label: `${r.key} removed`, milestone_date: date })),
-  ];
 }
 
 export type ChangeType = "new" | "status_change" | "deadline_change" | "scope_change" | "penalty_change" | "provision_added" | "provision_amended" | "administrative";
@@ -102,12 +93,12 @@ export interface FieldDiff {
   to: unknown;
 }
 /** The changed fields between two item snapshots. */
-export function computeDiff(previous: Record<string, unknown>, next: Record<string, unknown>): FieldDiff[] {
+function computeDiff(previous: Record<string, unknown>, next: Record<string, unknown>): FieldDiff[] {
   const fields = new Set([...Object.keys(previous || {}), ...Object.keys(next || {})]);
   return [...fields].filter((f) => JSON.stringify(previous?.[f]) !== JSON.stringify(next?.[f])).map((field) => ({ field, from: previous?.[field], to: next?.[field] }));
 }
 /** (change_type, severity) from which fields moved, most consequential first; both are the intelligence_changes CHECK vocabularies. */
-export function classifyChange(diff: FieldDiff[]): { changeType: ChangeType; severity: ChangeSeverity } {
+function classifyChange(diff: FieldDiff[]): { changeType: ChangeType; severity: ChangeSeverity } {
   const f = new Set(diff.map((d) => d.field));
   if (f.has("status")) return { changeType: "status_change", severity: "critical" };
   if (f.has("compliance_deadline") || f.has("entry_into_force") || f.has("next_review_date")) return { changeType: "deadline_change", severity: "critical" };
@@ -128,26 +119,26 @@ export async function recordItemChange(db: Db, args: { itemId: string; previous:
   return { ok: !error, severity, changeType, changeId: (data as { id: string } | null)?.id, error: error?.message };
 }
 /** The lightweight "a source changed, this item is flagged for re-grounding" event; provision_amended is the closest real CHECK value. */
-export async function recordSourceChangeTrigger(db: Db, args: { itemId: string; sourceUrl: string | null }) {
+async function recordSourceChangeTrigger(db: Db, args: { itemId: string; sourceUrl: string | null }) {
   const { data, error } = await db.from("intelligence_changes").insert({ item_id: args.itemId, change_type: "provision_amended", change_severity: "significant", previous_value: null, new_value: null, change_summary: `source content changed (${args.sourceUrl ?? "unknown url"}): item flagged for re-grounding`, raw_diff: null }).select("id").single();
   return { ok: !error, changeId: (data as { id: string } | null)?.id, error: error?.message };
 }
 
 /** The `reason` prefix every row the bridge stages carries; the ONE marker a consumer matches on (proposed_changes is always empty). */
-export const CHANGE_SWEEP_STAGED_MARKER = "[change-sweep]";
+const CHANGE_SWEEP_STAGED_MARKER = "[change-sweep]";
 /** The bridge's per-source cap, exported once (the reconcile dry projection reads the same bound). */
-export const BRIDGE_DEFAULT_LIMIT = 50;
-export function summarizeAmendmentDiff(diff: ReturnType<typeof diffDocuments>): string {
+const BRIDGE_DEFAULT_LIMIT = 50;
+function summarizeAmendmentDiff(diff: ReturnType<typeof diffDocuments>): string {
   const { added, changed, removed } = diff.counts;
   return !added && !changed && !removed ? `amendment diff: no provision-level change detected (shape=${diff.shape})` : `amendment diff: ${added} provision(s) added, ${changed} changed, ${removed} removed (shape=${diff.shape})`;
 }
-export const fingerprintChangedNote = (sourceUrl: string | null | undefined): string => `source content fingerprint changed (${sourceUrl ?? "unknown source"}): fewer than two stored captures to diff; provision-level detail unavailable until the next capture`;
+const fingerprintChangedNote = (sourceUrl: string | null | undefined): string => `source content fingerprint changed (${sourceUrl ?? "unknown source"}): fewer than two stored captures to diff; provision-level detail unavailable until the next capture`;
 
 /**
  * Stage ONE update_item staged_updates row per LIVE item of a changed source, with an amendment-diff summary in `reason` (the two newest stored captures when both exist).
  * It proposes no content (proposed_changes stays empty). Bounded, and the drop is reported. Every read throws on error; a failed insert is reported per item.
  */
-export async function bridgeChangedSourceToStagedUpdates(db: Db, { sourceId, items, limit = BRIDGE_DEFAULT_LIMIT }: { sourceId: string; items: Array<{ id: string }>; limit?: number }) {
+async function bridgeChangedSourceToStagedUpdates(db: Db, { sourceId, items, limit = BRIDGE_DEFAULT_LIMIT }: { sourceId: string; items: Array<{ id: string }>; limit?: number }) {
   const live = (items ?? []).slice(0, limit);
   const notBridged = (items ?? []).length > limit ? items.length - limit : 0;
   if (!live.length) return { sourceId, summary: null, confidence: null, staged: 0, notBridged, errors: [] as string[] };

@@ -5,10 +5,8 @@ import { ojDailyViewUrl } from "@/core/fetch/candidates";
 import type { Persist } from "./feed";
 import { extractPortalLinks } from "./portal-links";
 
-export { ojDailyViewUrl };
-
 /** The Federal Register documents.json index URL (public API, no key). */
-export function frDocumentsUrl({ from, to, page = 1, perPage = 100, types = ["RULE"], term }: { from: string; to: string; page?: number; perPage?: number; types?: string[]; term?: string }): string {
+function frDocumentsUrl({ from, to, page = 1, perPage = 100, types = ["RULE"], term }: { from: string; to: string; page?: number; perPage?: number; types?: string[]; term?: string }): string {
   for (const d of [from, to]) if (!/^\d{4}-\d{2}-\d{2}$/.test(String(d))) throw new Error(`frDocumentsUrl: bad ISO date ${d}`);
   const q = new URLSearchParams();
   q.set("conditions[publication_date][gte]", from);
@@ -22,7 +20,7 @@ export function frDocumentsUrl({ from, to, page = 1, perPage = 100, types = ["RU
   return `${FEDERAL_REGISTER_API_BASE}/documents.json?${q.toString()}`;
 }
 /** FR API results to the ledger's link shape (html_url plus title as the anchor hint); a row without an https html_url is dropped. */
-export function frDocsToLinks(json: { results?: Array<{ html_url?: string; title?: string; type?: string; publication_date?: string }> } | null | undefined): Array<{ url: string; anchorText: string | null }> {
+function frDocsToLinks(json: { results?: Array<{ html_url?: string; title?: string; type?: string; publication_date?: string }> } | null | undefined): Array<{ url: string; anchorText: string | null }> {
   const out: Array<{ url: string; anchorText: string | null }> = [];
   for (const r of json?.results ?? []) {
     if (typeof r.html_url !== "string" || !/^https:\/\//i.test(r.html_url)) continue;
@@ -32,7 +30,7 @@ export function frDocsToLinks(json: { results?: Array<{ html_url?: string; title
   return out;
 }
 /** An inclusive UTC calendar-day range. A reversed range throws, and over 366 days is refused: a register walk is a bounded run, not a backfill. */
-export function dateRange(fromIso: string, toIso: string): string[] {
+function dateRange(fromIso: string, toIso: string): string[] {
   const from = new Date(`${fromIso}T00:00:00Z`);
   const to = new Date(`${toIso}T00:00:00Z`);
   if (Number.isNaN(+from) || Number.isNaN(+to)) throw new Error(`dateRange: bad dates ${fromIso}..${toIso}`);
@@ -47,7 +45,7 @@ export function dateRange(fromIso: string, toIso: string): string[] {
 // An OJ daily view lists its acts as /legal-content/<LANG>/TXT/?uri=OJ:... or /eli/... links; the rest of the page is chrome that would also satisfy the generic extractor.
 const OJ_ACT_LINK_RE = /\/(legal-content|eli)\//i;
 /** Does this HTML look like an EUR-Lex OJ daily view at all? A zero-link page that fails this is an ERROR day (a rate-limit or interstitial page), never an honest empty week. */
-export const looksLikeOjDailyView = (html: unknown): boolean => String(html ?? "").includes("daily-view") && /official\s+journal/i.test(String(html ?? ""));
+const looksLikeOjDailyView = (html: unknown): boolean => String(html ?? "").includes("daily-view") && /official\s+journal/i.test(String(html ?? ""));
 
 /**
  * Walk the EUR-Lex OJ daily views for a date range: per day, fetch (injected), extract act links, persist (injected). A fetch failure on one day is recorded and the walk continues.

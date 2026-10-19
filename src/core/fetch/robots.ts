@@ -2,11 +2,9 @@
 // RFC 9309 robots.txt. Import-free, so the Edge Function (Deno) and the Node transports share it by relative path. Pure parsing and evaluation, then one reader that turns a robots.txt answer into a verdict.
 
 /** The product token a robots.txt group may name for this crawler (the rest of the identity is BOT_USER_AGENT in policy.ts). */
-export const ROBOTS_PRODUCT_TOKEN = "CarosLedge";
+const ROBOTS_PRODUCT_TOKEN = "CarosLedge";
 /** RFC 9309 section 2.5: a crawler parses at least 500 KiB; the rest is ignored. */
-export const ROBOTS_MAX_BYTES = 500 * 1024;
-/** Our own floor between two requests to one host. A Crawl-delay for our group raises it, never lowers it. */
-export const MIN_HOST_GAP_MS = 1000;
+const ROBOTS_MAX_BYTES = 500 * 1024;
 
 export interface RobotsRule {
   allow: boolean;
@@ -25,14 +23,14 @@ export interface RobotsFile {
 }
 const EMAIL = /[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+/;
 /** The contact a robots.txt publishes, from a `Contact:` line or any e-mail address in it (comments included); an address on a reserved example domain does not count. */
-export function findContact(body: string): string | null {
+function findContact(body: string): string | null {
   const line = /^\s*#?\s*contact\s*:\s*(\S.*?)\s*$/im.exec(body)?.[1];
   const hit = line ?? EMAIL.exec(body)?.[0] ?? null;
   return hit && !/@(?:example\.(?:com|org|net)|localhost)\b/i.test(hit) ? hit.slice(0, 200) : null;
 }
 
 /** Parse a robots.txt body: groups are runs of User-agent lines followed by rules; a User-agent line after a rule starts a new group. Unknown fields and comments are ignored; a malformed line is skipped. */
-export function parseRobots(body: string): RobotsFile {
+function parseRobots(body: string): RobotsFile {
   const groups: RobotsGroup[] = [];
   const sitemaps: string[] = [];
   let current: RobotsGroup | null = null;
@@ -65,7 +63,7 @@ export function parseRobots(body: string): RobotsFile {
 }
 
 /** The groups that apply to a product token: the groups naming it, else the `*` groups; several groups for one agent are one combined group (RFC 9309 section 2.2.1). */
-export function groupFor(file: RobotsFile, token = ROBOTS_PRODUCT_TOKEN): RobotsGroup | null {
+function groupFor(file: RobotsFile, token = ROBOTS_PRODUCT_TOKEN): RobotsGroup | null {
   const t = token.toLowerCase();
   const named = file.groups.filter((g) => g.agents.includes(t));
   const chosen = named.length ? named : file.groups.filter((g) => g.agents.includes("*"));
@@ -76,7 +74,7 @@ export function groupFor(file: RobotsFile, token = ROBOTS_PRODUCT_TOKEN): Robots
 
 const normalizePercent = (s: string): string => s.replace(/%[0-9a-f]{2}/gi, (m) => m.toUpperCase());
 /** Does a robots path pattern (with `*` and a trailing `$`) match the start of `target`? */
-export function patternMatches(pattern: string, target: string): boolean {
+function patternMatches(pattern: string, target: string): boolean {
   const anchored = pattern.endsWith("$");
   const body = normalizePercent(anchored ? pattern.slice(0, -1) : pattern);
   const re = new RegExp(`^${body.split("*").map((p) => p.replace(/[.+?^${}()|[\]\\]/g, "\\$&")).join(".*")}${anchored ? "$" : ""}`);
@@ -89,7 +87,7 @@ export interface PathDecision {
   rule: string | null;
 }
 /** Longest matching pattern wins; Allow wins a tie (RFC 9309 section 2.2.2). No matching rule means allowed. */
-export function decidePath(group: RobotsGroup | null, pathAndQuery: string): PathDecision {
+function decidePath(group: RobotsGroup | null, pathAndQuery: string): PathDecision {
   let best: RobotsRule | null = null;
   for (const r of group?.rules ?? []) {
     if (!patternMatches(r.pattern, pathAndQuery)) continue;
@@ -139,9 +137,6 @@ export function verdictFor(file: RobotsFile | null, pathAndQuery: string, token 
   const d = decidePath(group, pathAndQuery);
   return { status: d.allowed ? "allowed" : "disallowed", rule: d.rule, crawlDelaySec: group?.crawlDelaySec ?? null, reason: null, sitemaps: file.sitemaps, contact: file.contact, identityRefused: false };
 }
-
-/** The gap to keep between two requests to a host: our floor, raised to the host's Crawl-delay. */
-export const gapMsFor = (v: Pick<RobotsVerdict, "crawlDelaySec"> | null | undefined): number => Math.max(MIN_HOST_GAP_MS, Math.round((v?.crawlDelaySec ?? 0) * 1000));
 
 /**
  * The robots gate: one robots.txt read per origin, kept for the run (or for `life.ttlMs` where a process outlives a run), then a verdict for every URL asked about. `read` fetches robots.txt itself (it must not ask this gate again).

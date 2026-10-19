@@ -14,8 +14,8 @@ export interface Query extends Reply {
 export interface Db {
   from(table: string): { select(columns?: string): Query; insert(values: unknown): Query; update(values: unknown): Query };
 }
-export const CAPTURE_QUERY = "capture-worker:first-fetch";
-export const STALE_FLAG_CREATOR = "stale_snapshot_content_changed";
+const CAPTURE_QUERY = "capture-worker:first-fetch";
+const STALE_FLAG_CREATOR = "stale_snapshot_content_changed";
 export type CaptureChannel = "api" | "feed" | "sitemap" | "direct" | "browser" | "substitute";
 
 export interface CaptureToStore {

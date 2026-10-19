@@ -4,14 +4,14 @@ import assert from "node:assert/strict";
 import { gzipSync } from "node:zlib";
 import { test } from "node:test";
 
-import { fetchDocumentApi } from "@/core/fetch/api";
-import { BODY_CLASS, classifyBody, isErrorBody, toText } from "@/core/fetch/classify-body";
+import { BODY_CLASS, classifyBody, INTERACTIVE_CHALLENGE_RE, isErrorBody, toText } from "@/core/fetch/classify-body";
+import { MAX_INFLATED_BYTES } from "@/core/fetch/policy";
 import { capture } from "@/core/fetch/capture";
 import { decodeEntities, stripTags } from "@/core/fetch/entities";
 import { strip } from "@/features/sources/walkers/xml";
-import { decodeXmlBody } from "@/features/sources/walkers/sitemap";
 
 import { memoryDb } from "../_support/memory-db.ts";
+import { walkSitemap } from "../_support/sitemap.ts";
 import { instant, routed } from "../_support/net.ts";
 
 const publicHost = async () => ["93.184.216.34"];
@@ -58,18 +58,6 @@ test("the XML strip keeps a CDATA section literal and drops its markup", () => {
   assert.equal(strip("<title>AT&amp;T &#38; Co</title>"), "AT&T & Co");
 });
 
-test("the Federal Register fallback stores the document text, never the title and abstract as status 200", async () => {
-  const url = "https://www.federalregister.gov/documents/2023/05/01/2023-12345/some-rule";
-  const net = routed(async (u) => (u.includes("/api/v1/documents/") ? new Response(JSON.stringify({ title: "Some rule", abstract: "A long abstract that is not the document. ".repeat(10), raw_text_url: "https://www.federalregister.gov/documents/full_text/text/2023/05/01/2023-12345.txt" }), { headers: { "content-type": "application/json" } }) : new Response("gone", { status: 404 })));
-  const out = await fetchDocumentApi(url, { db: open(), env: {}, fetchImpl: net.fetch, sleep: instant, resolveHost: publicHost }, { max: 1_000_000 });
-  assert.equal(out?.status, 0);
-  assert.equal(out?.text, "");
-  assert.equal(out?.refusal?.reason, "raw_text_unavailable");
-  const good = routed(async (u) => (u.includes("/api/v1/documents/") ? new Response(JSON.stringify({ title: "Some rule", raw_text_url: "https://www.federalregister.gov/full.txt" }), { headers: { "content-type": "application/json" } }) : new Response(`<pre>${legalText}</pre>`, { headers: { "content-type": "text/plain" } })));
-  const full = await fetchDocumentApi(url, { db: open(), env: {}, fetchImpl: good.fetch, sleep: instant, resolveHost: publicHost }, { max: 1_000_000 });
-  assert.equal(full?.status, 200);
-  assert.ok((full?.text.length ?? 0) > 2000);
-});
 test("a Wayback read is forbidden: a refused capture never asks an archive, and the hold carries no archive suffix", async () => {
   const net = routed(async () => new Response("Just a moment...", { status: 403 }));
   const res = await capture("https://agency.gov/p", { family: "generic" }, { db: open(), env: {}, fetchImpl: net.fetch, sleep: instant, resolveHost: publicHost });
@@ -85,10 +73,47 @@ test("a robots refusal is a hold with its own reason and the rule, not a generic
   assert.equal(res.refusal?.rule, "Disallow: /p");
 });
 
-test("a gzipped sitemap that inflates past the bound is refused; a normal one is read (decompression bomb fixture)", async () => {
-  const bomb = gzipSync(Buffer.alloc(20 * 1024 * 1024, 0x61));
-  assert.ok(bomb.length < 100_000, "a small archive");
-  await assert.rejects(() => decodeXmlBody(bomb, "https://agency.gov/sitemap.xml.gz", 1024 * 1024), /larger than|ERR_BUFFER_TOO_LARGE|maxOutputLength/i);
+test("a gzipped sitemap that inflates past the bound is refused and named; a normal one is read (decompression bomb fixture)", async () => {
+  const bomb = gzipSync(Buffer.alloc(MAX_INFLATED_BYTES + 10 * 1024 * 1024, 0x61));
+  assert.ok(bomb.length < 1_000_000, "a small archive");
   const fine = gzipSync(Buffer.from("<urlset><url><loc>https://agency.gov/a</loc></url></urlset>"));
-  assert.match(await decodeXmlBody(fine, "https://agency.gov/sitemap.xml.gz"), /<loc>/);
+  const world = (sitemap: Buffer) => ({
+    fetchBytes: async (url: string) => {
+      if (url === "https://agency.gov/sitemap.xml.gz") return new Uint8Array(sitemap);
+      if (url === "https://agency.gov/robots.txt") return new TextEncoder().encode("Sitemap: https://agency.gov/sitemap.xml.gz");
+      throw new Error(`HTTP 404 for ${url}`);
+    },
+    getPreviousSnapshot: async () => null,
+    saveSnapshot: async () => undefined,
+    persist: async (links: unknown[]) => ({ upserted: links.length, failed: 0 }),
+    recordChange: async () => undefined,
+  });
+  const refused = await walkSitemap(world(bomb), { baseUrl: "https://agency.gov/" });
+  assert.ok(refused.ok);
+  assert.equal(refused.ok && refused.urlCount, 0, "the bomb is not read");
+  assert.equal(refused.ok && refused.coverageComplete, false, "and the walk says it did not see everything");
+  assert.match(String(refused.ok && refused.sitemapsFetched.find((f) => f.kind === "error")?.error), /larger than|ERR_BUFFER_TOO_LARGE|maxOutputLength/i);
+  const read = await walkSitemap(world(fine), { baseUrl: "https://agency.gov/" });
+  assert.equal(read.ok && read.urlCount, 1);
+});
+
+test("the Federal Register capture stores the document's raw text, and a document with no usable raw text is held, never stored as its title and abstract", async () => {
+  const url = "https://www.federalregister.gov/documents/2025/01/02/2024-30001/emissions-rule";
+  const api = "https://www.federalregister.gov/api/v1/documents/2024-30001.json";
+  const rawText = "https://www.federalregister.gov/documents/full_text/text/2025/01/02/2024-30001.txt";
+  const world = (raw: Response) => routed(async (u) => (u === api ? Response.json({ title: "Emissions rule", abstract: "A summary of the rule.", raw_text_url: rawText }) : raw.clone()));
+  const body = `<pre>${"Each operator shall report the emissions of each vessel for the calendar year. ".repeat(10)}</pre>`;
+  const good = await capture(url, { family: "federal_register", key: "2024-30001" }, { db: open(), env: {}, fetchImpl: world(new Response(body)).fetch, sleep: instant, resolveHost: publicHost });
+  assert.equal(good.usable, true);
+  assert.match(good.text ?? "", /Each operator shall report/);
+  assert.doesNotMatch(good.text ?? "", /A summary of the rule/);
+  const none = await capture(url, { family: "federal_register", key: "2024-30001" }, { db: open(), env: {}, fetchImpl: world(new Response("gone", { status: 404 })).fetch, sleep: instant, resolveHost: publicHost });
+  assert.equal(none.usable, false);
+  assert.equal(none.text, null, "the summary is not the document");
+});
+
+test("a CAPTCHA page is an interactive challenge, named for what it is and not for a generic wall", () => {
+  const page = '<div class="g-recaptcha" data-sitekey="k"></div> Please verify you are human to continue.';
+  assert.match(page, INTERACTIVE_CHALLENGE_RE);
+  assert.equal(classifyBody(toText(page)).class, BODY_CLASS.INTERACTIVE_CHALLENGE);
 });

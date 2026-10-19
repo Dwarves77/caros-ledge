@@ -3,45 +3,21 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { apiEndpointFor } from "@/core/fetch/api";
-import { cacheGet, cachePut, ttlForUrl } from "@/core/fetch/cache";
-import { detectRoadblock, euCandidates, fetchPrimaryWithFallback, generateCandidates, renderingUrlForPrimary, toCelex } from "@/core/fetch/candidates";
 import { capture, makePoliteGate, parseOjReference } from "@/core/fetch/capture";
 import { buildTitleForRow, detectNotInForce, extractTitleFromHtml } from "@/core/fetch/titles";
-import { discoveredFeedLinks, feedCandidateUrls, isFeedDocument, parseFeedEntries, walkFeed } from "@/features/sources/walkers/feed";
 import { extractPortalLinks } from "@/features/sources/walkers/portal-links";
-import { dateRange, frDocsToLinks, frDocumentsUrl, walkFederalRegister } from "@/features/sources/walkers/register";
-import { dedupeByLoc, diffUrlSet, isUrlWithinSourcePath, parseRobotsSitemapLines, parseSitemapXml, walkSitemap, type SitemapUrlEntry } from "@/features/sources/walkers/sitemap";
+import { type SitemapUrlEntry } from "@/features/sources/walkers/sitemap";
+import { euCandidates, fetchPrimaryWithFallback, generateCandidates } from "@/core/fetch/candidates";
+import { discoveredFeedLinks, feedCandidateUrls, isFeedDocument, walkFeed } from "@/features/sources/walkers/feed";
+import { walkFederalRegister } from "@/features/sources/walkers/register";
 
 import { instant, routed } from "../_support/net.ts";
 import { memoryDb } from "../_support/memory-db.ts";
+import { walkSitemap } from "../_support/sitemap.ts";
 
 const bytes = (s: string) => new TextEncoder().encode(s);
 const prose = (n: number) => "The regulation requires operators to report greenhouse gas emissions under the scheme each year. ".repeat(n);
 
-// sitemap
-test("sitemap parse: https locs only, an index is told from a urlset, robots lines resolve against the base", () => {
-  const xml = `<?xml version="1.0"?><urlset><url><loc>https://a.gov/x</loc><lastmod>2026-01-01</lastmod></url><url><loc>http://a.gov/y</loc></url></urlset>`;
-  const p = parseSitemapXml(xml);
-  assert.equal(p.kind, "urlset");
-  assert.deepEqual(p.urlEntries.map((e) => e.loc), ["https://a.gov/x"]);
-  assert.equal(parseSitemapXml("<sitemapindex><sitemap><loc>https://a.gov/c.xml</loc></sitemap></sitemapindex>").kind, "sitemapindex");
-  assert.equal(parseSitemapXml("<html>nope</html>").kind, "unknown");
-  assert.deepEqual(parseRobotsSitemapLines("Sitemap: https://a.gov/s.xml\nDisallow: /", "https://a.gov"), ["https://a.gov/s.xml"]);
-  assert.equal(isUrlWithinSourcePath("https://a.gov/rules/x", "https://a.gov/rules/"), true);
-  assert.equal(isUrlWithinSourcePath("https://a.gov/news/x", "https://a.gov/rules/"), false);
-});
-test("sitemap diff: added, changed by lastmod and removed are told apart, and dedupe keeps one per loc in linear time", () => {
-  const prev: SitemapUrlEntry[] = [{ loc: "https://a.gov/x", lastmod: "2026-01-01", changefreq: null }, { loc: "https://a.gov/gone", lastmod: null, changefreq: null }];
-  const cur: SitemapUrlEntry[] = [{ loc: "https://a.gov/x", lastmod: "2026-02-01", changefreq: null }, { loc: "https://a.gov/new", lastmod: null, changefreq: null }];
-  const d = diffUrlSet(prev, cur);
-  assert.deepEqual(d.added.map((e) => e.loc), ["https://a.gov/new"]);
-  assert.deepEqual(d.changed.map((e) => e.loc), ["https://a.gov/x"]);
-  assert.deepEqual(d.removed.map((e) => e.loc), ["https://a.gov/gone"]);
-  const many = Array.from({ length: 50_000 }, (_, i) => ({ loc: `https://a.gov/${i % 25_000}`, lastmod: null, changefreq: null }));
-  const t = Date.now();
-  assert.equal(dedupeByLoc(many).length, 25_000);
-  assert.ok(Date.now() - t < 1000, "not quadratic");
-});
 function sitemapWorld(files: Record<string, string>, previous: SitemapUrlEntry[] | null = null) {
   const saved: SitemapUrlEntry[][] = [];
   const persisted: string[] = [];
@@ -120,84 +96,18 @@ test("walkSitemap: the entry budget binds loudly", async () => {
   assert.equal(out.ok && out.coverageComplete, false);
 });
 
-// feed, portal links, register
-test("feed: documents are recognised, entries parsed, candidate urls scoped, and a walk persists what it found", async () => {
-  assert.equal(isFeedDocument("<?xml version='1.0'?><rss version='2.0'>"), true);
-  assert.equal(isFeedDocument("<html>"), false);
-  const xml = `<rss><channel><item><title>T</title><link>https://a.gov/1</link><pubDate>Mon, 01 Jan 2026</pubDate></item></channel></rss>`;
-  assert.deepEqual(parseFeedEntries(xml).map((e) => e.url), ["https://a.gov/1"]);
-  assert.deepEqual(discoveredFeedLinks(`<link rel="alternate" type="application/rss+xml" href="/f.xml">`, "https://a.gov/"), ["https://a.gov/f.xml"]);
-  assert.ok(feedCandidateUrls("https://a.gov/").includes("https://a.gov/feed"));
-  const persisted: string[] = [];
-  const out = await walkFeed({ fetchText: async () => xml, persist: async (l) => (persisted.push(...l.map((x) => x.url)), { upserted: l.length, failed: 0 }) }, { feedUrl: "https://a.gov/f.xml" });
-  assert.equal(out.ok, true);
-  assert.deepEqual(persisted, ["https://a.gov/1"]);
-});
 test("portal links: same-site links only, resolved against the portal, fragments dropped", () => {
   const links = extractPortalLinks(`<a href="/rules/1">Rule one</a><a href="https://other.com/x">Other</a><a href="#top">top</a>`, "https://a.gov/");
   assert.deepEqual(links, [{ url: "https://a.gov/rules/1", anchorText: "Rule one" }]);
 });
-test("register walkers: the Federal Register URL is built from the range, documents map to links, dates enumerate", async () => {
-  const url = frDocumentsUrl({ from: "2026-01-01", to: "2026-01-31" });
-  assert.match(url, /^https:\/\/www\.federalregister\.gov\/api\/v1\/documents\.json\?/);
-  assert.match(url, /per_page=100/);
-  assert.deepEqual(dateRange("2026-01-01", "2026-01-03"), ["2026-01-01", "2026-01-02", "2026-01-03"]);
-  assert.deepEqual(frDocsToLinks({ results: [{ html_url: "https://www.federalregister.gov/d/1", title: "A rule" }, { title: "no url" }] }), [{ url: "https://www.federalregister.gov/d/1", anchorText: "A rule" }]);
-  const persisted: string[] = [];
-  const out = await walkFederalRegister(
-    { fetchJson: async () => ({ count: 1, total_pages: 1, next_page_url: null, results: [{ html_url: "https://www.federalregister.gov/d/1", title: "A rule" }] as never }), persist: async (l) => (persisted.push(...l.map((x) => x.url)), { upserted: l.length, failed: 0 }) },
-    { from: "2026-01-01", to: "2026-01-31" } as never,
-  );
-  assert.ok(out);
-  assert.deepEqual(persisted, ["https://www.federalregister.gov/d/1"]);
-});
 
-// candidates, titles, cache, api
-test("candidates: identifiers resolve to canonical URLs first, a CELEX key is built, a web search is last and optional", async () => {
-  assert.equal(toCelex(2023, "R", 956), "32023R0956");
-  const eu = euCandidates({ identifier: "2023/956", itemType: "regulation" });
-  assert.deepEqual(eu.celex, ["32023R0956"]);
-  const list = await generateCandidates({ identifier: "2023/956", jurisdiction: "EU", title: "CBAM" }, { webSearch: async () => ["https://example.org/cbam", "http://insecure.example/x"] });
-  assert.equal(list[0]?.startsWith("https://eur-lex.europa.eu/"), true);
-  assert.equal(list.at(-1), "https://example.org/cbam");
-  assert.equal(list.some((u) => u.startsWith("http://")), false, "https only");
-  assert.deepEqual(await generateCandidates({}, {}), []);
-  assert.equal((await generateCandidates({ identifier: "2023/956", jurisdiction: "EU" }, { webSearch: async () => { throw new Error("down"); } })).length > 0, true, "a failed search leaves the deterministic candidates");
-  assert.equal(renderingUrlForPrimary("https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32023R0956"), "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32023R0956");
-});
-test("fallback: a roadblocked primary tries a bounded set of alternatives and records every attempt; a clean primary never searches", async () => {
-  const seen: string[] = [];
-  const out = await fetchPrimaryWithFallback(
-    { primaryUrl: "https://a.gov/p" },
-    { fetchText: async (u) => (seen.push(u), u === "https://alt.gov/ok" ? { text: prose(40), status: 200 } : { text: "Just a moment...", status: 403 }), discoverCandidates: () => ["https://alt.gov/bad", "https://alt.gov/ok", "https://alt.gov/never"], perFetchMs: 1000 },
-  );
-  assert.equal(out.ok, true);
-  assert.equal(out.fellBack, true);
-  assert.equal(out.url, "https://alt.gov/ok");
-  assert.deepEqual(out.alternatives.map((a) => a.role), ["declared_primary", "alternative", "alternative"]);
-  assert.equal(seen.includes("https://alt.gov/never"), false);
-  let searched = 0;
-  const clean = await fetchPrimaryWithFallback({ primaryUrl: "https://a.gov/p" }, { fetchText: async () => ({ text: prose(40) }), discoverCandidates: () => (searched++, []) });
-  assert.equal(clean.fellBack, false);
-  assert.equal(searched, 0);
-  const none = await fetchPrimaryWithFallback({ primaryUrl: "https://a.gov/p" }, { fetchText: async () => ({ text: "", status: 404 }), discoverCandidates: () => ["https://alt.gov/x"] });
-  assert.equal(none.ok, false);
-  assert.equal(detectRoadblock(prose(40)).roadblocked, false);
-  assert.equal(detectRoadblock("", { timedOut: true }).roadblocked, true);
-});
 test("titles: a captured title is used, a not-in-force banner is detected from the text", () => {
   assert.deepEqual(extractTitleFromHtml("<html><head><title>Regulation (EU) 2023/956 - EUR-Lex</title></head></html>"), { title: "Regulation (EU) 2023/956 - EUR-Lex", origin: "captured_title" });
   assert.equal(extractTitleFromHtml("<html></html>"), null);
   assert.ok(buildTitleForRow({ capture: { html: "<title>A Real Title</title>", text: prose(5) }, source: { name: "Src" } as never, identifier: "2023/956" } as never));
   assert.equal(detectNotInForce("A plain statute text with no banner."), null);
 });
-test("cache: an entry is fresh inside its host's ttl and stale after; a rule host holds longer than the default", () => {
-  const store = new Map();
-  cachePut(store, "https://www.A.gov/x/", { text: "t" }, 1000);
-  assert.equal(cacheGet(store, "https://a.gov/x", 1000)?.payload.text, "t", "the key is canonical");
-  assert.equal(cacheGet(store, "https://a.gov/x", 1000 + 10 * 365 * 86_400_000), null, "stale after its ttl");
-  assert.ok(ttlForUrl("https://eur-lex.europa.eu/x") > ttlForUrl("https://unknown.example/"));
-});
+
 test("api: an API host resolves to its endpoint base, any other host to none", () => {
   assert.equal(apiEndpointFor("https://www.federalregister.gov/documents/2024/01/01/2024-00001/x"), "https://www.federalregister.gov/api/v1");
   assert.equal(apiEndpointFor("https://example.com/x"), null);
@@ -226,4 +136,52 @@ test("capture: a generic capture goes through the hold gate and returns the cite
   assert.match(walled.holdReason ?? "", /^capture_blocked$/, "no archive suffix: no archive is ever read");
   const off = memoryDb({ system_state: [{ id: true, scrape_cadence: "off", global_processing_paused: false }] });
   await assert.rejects(() => capture("https://a.gov/p", { family: "generic" }, { db: off.db, env: {}, fetchImpl: (async () => new Response("x")) as typeof fetch }), /FETCH_HOLD_ENGAGED/);
+});
+
+test("feed: documents are recognised, candidate urls scoped, and a walk persists what it found", async () => {
+  assert.equal(isFeedDocument("<?xml version='1.0'?><rss version='2.0'>"), true);
+  assert.equal(isFeedDocument("<html>"), false);
+  const xml = `<rss><channel><item><title>T</title><link>https://a.gov/1</link><pubDate>Mon, 01 Jan 2026</pubDate></item></channel></rss>`;
+  assert.deepEqual(discoveredFeedLinks(`<link rel="alternate" type="application/rss+xml" href="/f.xml">`, "https://a.gov/"), ["https://a.gov/f.xml"]);
+  assert.ok(feedCandidateUrls("https://a.gov/").includes("https://a.gov/feed"));
+  const persisted: string[] = [];
+  const out = await walkFeed({ fetchText: async () => xml, persist: async (l) => (persisted.push(...l.map((x) => x.url)), { upserted: l.length, failed: 0 }) }, { feedUrl: "https://a.gov/f.xml" });
+  assert.equal(out.ok, true);
+  assert.deepEqual(persisted, ["https://a.gov/1"]);
+});
+test("the Federal Register walk persists the documents the API lists and skips one with no url", async () => {
+  const persisted: string[] = [];
+  const out = await walkFederalRegister(
+    { fetchJson: async () => ({ count: 2, total_pages: 1, next_page_url: null, results: [{ html_url: "https://www.federalregister.gov/d/1", title: "A rule" }, { title: "no url" }] as never }), persist: async (l) => (persisted.push(...l.map((x) => x.url)), { upserted: l.length, failed: 0 }) },
+    { from: "2026-01-01", to: "2026-01-31" } as never,
+  );
+  assert.ok(out);
+  assert.deepEqual(persisted, ["https://www.federalregister.gov/d/1"]);
+});
+test("candidates: identifiers resolve to canonical URLs first, a web search is last and optional, and https only", async () => {
+  assert.deepEqual(euCandidates({ identifier: "2023/956", itemType: "regulation" }).celex, ["32023R0956"]);
+  const list = await generateCandidates({ identifier: "2023/956", jurisdiction: "EU", title: "CBAM" }, { webSearch: async () => ["https://example.org/cbam", "http://insecure.example/x"] });
+  assert.equal(list[0]?.startsWith("https://eur-lex.europa.eu/"), true);
+  assert.equal(list.at(-1), "https://example.org/cbam");
+  assert.equal(list.some((u) => u.startsWith("http://")), false, "https only");
+  assert.deepEqual(await generateCandidates({}, {}), []);
+  assert.equal((await generateCandidates({ identifier: "2023/956", jurisdiction: "EU" }, { webSearch: async () => { throw new Error("down"); } })).length > 0, true, "a failed search leaves the deterministic candidates");
+});
+test("fallback: a roadblocked primary tries a bounded set of alternatives and records every attempt; a clean primary never searches", async () => {
+  const seen: string[] = [];
+  const out = await fetchPrimaryWithFallback(
+    { primaryUrl: "https://a.gov/p" },
+    { fetchText: async (u) => (seen.push(u), u === "https://alt.gov/ok" ? { text: prose(40), status: 200 } : { text: "Just a moment...", status: 403 }), discoverCandidates: () => ["https://alt.gov/bad", "https://alt.gov/ok", "https://alt.gov/never"], perFetchMs: 1000 },
+  );
+  assert.equal(out.ok, true);
+  assert.equal(out.fellBack, true);
+  assert.equal(out.url, "https://alt.gov/ok");
+  assert.deepEqual(out.alternatives.map((a) => a.role), ["declared_primary", "alternative", "alternative"]);
+  assert.equal(seen.includes("https://alt.gov/never"), false);
+  let searched = 0;
+  const clean = await fetchPrimaryWithFallback({ primaryUrl: "https://a.gov/p" }, { fetchText: async () => ({ text: prose(40) }), discoverCandidates: () => (searched++, []) });
+  assert.equal(clean.fellBack, false);
+  assert.equal(searched, 0);
+  const none = await fetchPrimaryWithFallback({ primaryUrl: "https://a.gov/p" }, { fetchText: async () => ({ text: "", status: 404 }), discoverCandidates: () => ["https://alt.gov/x"] });
+  assert.equal(none.ok, false);
 });

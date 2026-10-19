@@ -7,8 +7,9 @@ import { parseOjReference } from "@/core/fetch/capture";
 import { hostOf } from "@/core/shared";
 
 import raw from "./data/publishers-by-scheme.json";
+import { REUSE_TERMS } from "./reuse-terms";
 
-const REUSE = z.enum(["open_government", "eu_reuse", "public_domain", "licensed", "unknown", "prohibited"]);
+const REUSE = z.enum(REUSE_TERMS);
 const credential = z.object({ env: z.array(z.string().regex(/^[A-Z][A-Z0-9_]+$/)).min(1), registration: z.string(), fields: z.string(), free: z.boolean(), terms: z.string() }).nullable();
 const publisher = z
   .object({
@@ -118,7 +119,3 @@ export function substituteCandidates(ids: readonly Identifier[], opts: { env: Re
   return { use, skipped };
 }
 
-/** Every credential-needing channel in the table, for the interface-gap report: which variable, where to register, whether it is free. */
-export const credentialGaps = (): Array<{ publisher: string; env: string[]; registration: string; fields: string; free: boolean; terms: string; status: string }> =>
-  Object.entries(TABLE.publishers).flatMap(([id, p]) => (p.credential ? [{ publisher: id, status: p.status, ...p.credential }] : []));
-export const publisherTable = TABLE;

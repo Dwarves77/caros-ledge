@@ -20,7 +20,7 @@ const EXACT_HOST_LOOKUP_LIMIT = 25;
  * PostgREST `or` filter selecting registered urls whose host is exactly `hostKey` (lower-case, no www), with or without www, over http or https, as
  * `scheme://host/...` or the bare `scheme://host`. A longer host that merely contains `hostKey` cannot match: after the host comes `/` or the end.
  */
-export function exactHostUrlFilter(hostKey: string): string {
+function exactHostUrlFilter(hostKey: string): string {
   const out: string[] = [];
   for (const scheme of ["https", "http"]) {
     for (const prefix of ["", "www."]) out.push(`url.ilike.${scheme}://${prefix}${hostKey}/*`, `url.ilike.${scheme}://${prefix}${hostKey}`);
@@ -66,7 +66,7 @@ export async function readSourceByUrl(db: Db, url: string): Promise<RegistryRow 
 }
 
 /** The registry identity of one PAGE (host, path and query, lower case): the key a source other than an institution's own row is born under. Empty when unparseable. */
-export function pageKey(url: string | null | undefined): string {
+function pageKey(url: string | null | undefined): string {
   try {
     const u = new URL(String(url));
     return `${hostOf(url)}${u.pathname.replace(/\/+$/, "")}${u.search}`.toLowerCase();
@@ -142,7 +142,7 @@ export async function registerSource(db: Db, source: RegisterInput): Promise<{ s
  * Which registry keys the rows without one should take: the oldest row of an institution takes the institution's key, every other row of it takes its page key, and a row whose key is already held (two rows of one page) is
  * reported as a conflict and left unkeyed; code never merges rows. Pure.
  */
-export function planInstitutionKeys(rows: ReadonlyArray<{ id: string; url: string | null; created_at?: string | null; institution_key?: string | null }>): { assign: Array<{ id: string; key: string }>; conflicts: Array<{ id: string; key: string; heldBy: string }> } {
+function planInstitutionKeys(rows: ReadonlyArray<{ id: string; url: string | null; created_at?: string | null; institution_key?: string | null }>): { assign: Array<{ id: string; key: string }>; conflicts: Array<{ id: string; key: string; heldBy: string }> } {
   const held = new Map<string, string>(rows.filter((r) => r.institution_key).map((r) => [r.institution_key as string, r.id]));
   const assign: Array<{ id: string; key: string }> = [];
   const conflicts: Array<{ id: string; key: string; heldBy: string }> = [];

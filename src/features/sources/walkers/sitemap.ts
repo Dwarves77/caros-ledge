@@ -27,9 +27,9 @@ const safePath = (url: string): string | null => {
 };
 
 /** A status that suggests a bot wall (Cloudflare, Akamai, ...). The content-based detector covers the 200-OK shells this cannot see. */
-export const isBotWallStatus = (status: number | null): boolean => status === 401 || status === 403 || status === 429;
+const isBotWallStatus = (status: number | null): boolean => status === 401 || status === 403 || status === 429;
 /** `Sitemap:` lines of a robots.txt body (any case); relative values resolve against `baseUrl`; only absolute https URLs are kept, a malformed value is skipped. */
-export function parseRobotsSitemapLines(robotsTxt: string, baseUrl: string): string[] {
+function parseRobotsSitemapLines(robotsTxt: string, baseUrl: string): string[] {
   const out: string[] = [];
   for (const line of String(robotsTxt ?? "").split(/\r?\n/)) {
     const m = line.match(/^\s*sitemap\s*:\s*(\S.*?)\s*$/i);
@@ -40,17 +40,17 @@ export function parseRobotsSitemapLines(robotsTxt: string, baseUrl: string): str
   }
   return out;
 }
-export function sitemapFallbackCandidates(baseUrl: string): string[] {
+function sitemapFallbackCandidates(baseUrl: string): string[] {
   const origin = new URL(baseUrl).origin;
   return [`${origin}/sitemap.xml`, `${origin}/sitemap_index.xml`, `${origin}/sitemap-index.xml`];
 }
 /** The path a source is scoped to, or "" for a bare origin or a syndication endpoint (scoping those would scope nothing meaningful). */
-export function sourceContentPath(sourceUrl: string): string {
+function sourceContentPath(sourceUrl: string): string {
   const pathname = new URL(sourceUrl).pathname.replace(/\/{2,}/g, "/").replace(/\/+$/, "") || "/";
   return pathname === "/" || /\.(?:xml|rss|atom|json|gz)$/i.test(pathname) || /\/(?:feed|rss|atom)\/?$/i.test(pathname) ? "" : pathname;
 }
 /** Is `candidateUrl` within the source's scoped path (same host, path equal to or nested under the scope)? An unscoped source admits everything on its host. */
-export function isUrlWithinSourcePath(candidateUrl: string, sourceUrl: string): boolean {
+function isUrlWithinSourcePath(candidateUrl: string, sourceUrl: string): boolean {
   const scope = sourceContentPath(sourceUrl);
   if (!scope) return true;
   try {
@@ -61,39 +61,39 @@ export function isUrlWithinSourcePath(candidateUrl: string, sourceUrl: string): 
     return false;
   }
 }
-export const filterEntriesForSource = <T extends { loc: string }>(entries: T[], sourceUrl: string): T[] => (sourceContentPath(sourceUrl) ? entries.filter((e) => isUrlWithinSourcePath(e.loc, sourceUrl)) : entries);
+const filterEntriesForSource = <T extends { loc: string }>(entries: T[], sourceUrl: string): T[] => (sourceContentPath(sourceUrl) ? entries.filter((e) => isUrlWithinSourcePath(e.loc, sourceUrl)) : entries);
 
-export const looksGzippedUrl = (url: string): boolean => /\.gz(?:[?#].*)?$/i.test(String(url ?? ""));
-export const looksGzippedBuffer = (buf: Uint8Array): boolean => buf.length >= 2 && buf[0] === 0x1f && buf[1] === 0x8b;
+const looksGzippedUrl = (url: string): boolean => /\.gz(?:[?#].*)?$/i.test(String(url ?? ""));
+const looksGzippedBuffer = (buf: Uint8Array): boolean => buf.length >= 2 && buf[0] === 0x1f && buf[1] === 0x8b;
 /** A fetched sitemap body to text, gunzipped when the URL or the magic bytes say so. The inflated size is bounded (policy MAX_INFLATED_BYTES): a small archive that inflates past it throws, never fills the worker (R2c C9, register row D:54). */
-export async function decodeXmlBody(buf: Uint8Array, url: string, maxInflatedBytes = MAX_INFLATED_BYTES): Promise<string> {
+async function decodeXmlBody(buf: Uint8Array, url: string, maxInflatedBytes = MAX_INFLATED_BYTES): Promise<string> {
   const b = Buffer.from(buf);
   return (looksGzippedUrl(url) || looksGzippedBuffer(b) ? await promisify(gunzip)(b, { maxOutputLength: maxInflatedBytes }) : b).toString("utf8");
 }
-export const DEFAULT_MAX_SITEMAP_RESPONSE_BYTES = 50 * 1024 * 1024;
-export const DEFAULT_MAX_FEED_RESPONSE_BYTES = 10_000_000;
-export function checkResponseBytes(buf: Uint8Array, maxBytes: number, url: string): void {
+const DEFAULT_MAX_SITEMAP_RESPONSE_BYTES = 50 * 1024 * 1024;
+const DEFAULT_MAX_FEED_RESPONSE_BYTES = 10_000_000;
+function checkResponseBytes(buf: Uint8Array, maxBytes: number, url: string): void {
   if (buf.length > maxBytes) throw new Error(`response for ${url} is ${buf.length.toLocaleString()} bytes, over the ${maxBytes.toLocaleString()}-byte bound`);
 }
 
-export const sitemapRootKind = (xml: string): "urlset" | "sitemapindex" | "unknown" => (/<sitemapindex[\s>]/i.test(xml) ? "sitemapindex" : /<urlset[\s>]/i.test(xml) ? "urlset" : "unknown");
+const sitemapRootKind = (xml: string): "urlset" | "sitemapindex" | "unknown" => (/<sitemapindex[\s>]/i.test(xml) ? "sitemapindex" : /<urlset[\s>]/i.test(xml) ? "urlset" : "unknown");
 const httpsEntries = (xml: string, tag: string): Array<{ loc: string; block: string }> =>
   (String(xml ?? "").match(new RegExp(`<${tag}[\\s>][\\s\\S]*?</${tag}>`, "gi")) ?? []).map((block) => ({ loc: inner(block, "loc") ?? "", block })).filter((e) => /^https:\/\//i.test(e.loc));
-export const parseUrlsetEntries = (xml: string): SitemapUrlEntry[] => httpsEntries(xml, "url").map((e) => ({ loc: e.loc, lastmod: inner(e.block, "lastmod"), changefreq: inner(e.block, "changefreq") }));
-export const parseSitemapIndexEntries = (xml: string): SitemapIndexEntry[] => httpsEntries(xml, "sitemap").map((e) => ({ loc: e.loc, lastmod: inner(e.block, "lastmod") }));
+const parseUrlsetEntries = (xml: string): SitemapUrlEntry[] => httpsEntries(xml, "url").map((e) => ({ loc: e.loc, lastmod: inner(e.block, "lastmod"), changefreq: inner(e.block, "changefreq") }));
+const parseSitemapIndexEntries = (xml: string): SitemapIndexEntry[] => httpsEntries(xml, "sitemap").map((e) => ({ loc: e.loc, lastmod: inner(e.block, "lastmod") }));
 /** One sitemap document by its declared root; a malformed or foreign document is `unknown` with both lists empty, never a throw. */
-export function parseSitemapXml(xml: string) {
+function parseSitemapXml(xml: string) {
   const kind = sitemapRootKind(xml);
   return { kind, urlEntries: kind === "urlset" ? parseUrlsetEntries(xml) : [], sitemapEntries: kind === "sitemapindex" ? parseSitemapIndexEntries(xml) : [] };
 }
 /** First-loc-wins dedupe. */
-export function dedupeByLoc(entries: SitemapUrlEntry[]): SitemapUrlEntry[] {
+function dedupeByLoc(entries: SitemapUrlEntry[]): SitemapUrlEntry[] {
   const seen = new Map<string, SitemapUrlEntry>();
   for (const e of entries) if (!seen.has(e.loc)) seen.set(e.loc, e);
   return [...seen.values()];
 }
 /** New locs, locs whose lastmod changed, locs that dropped out. `previous` null (a first walk) reports everything `added` and nothing `removed`. */
-export function diffUrlSet(previous: SitemapUrlEntry[] | null, current: SitemapUrlEntry[]) {
+function diffUrlSet(previous: SitemapUrlEntry[] | null, current: SitemapUrlEntry[]) {
   const prev = new Map((previous ?? []).map((e) => [e.loc, e]));
   const cur = new Set(current.map((e) => e.loc));
   const added: SitemapUrlEntry[] = [];
@@ -106,10 +106,10 @@ export function diffUrlSet(previous: SitemapUrlEntry[] | null, current: SitemapU
   return { added, changed, removed: previous == null ? [] : previous.filter((e) => !cur.has(e.loc)) };
 }
 /** A partial walk merged into the prior snapshot: an unreached loc keeps its last-known lastmod; a seen one is overwritten. */
-export const mergeSnapshotEntries = (previous: SitemapUrlEntry[] | null, current: SitemapUrlEntry[]): SitemapUrlEntry[] => [...new Map([...(previous ?? []), ...current].map((e) => [e.loc, e])).values()];
+const mergeSnapshotEntries = (previous: SitemapUrlEntry[] | null, current: SitemapUrlEntry[]): SitemapUrlEntry[] => [...new Map([...(previous ?? []), ...current].map((e) => [e.loc, e])).values()];
 
-export const DEFAULT_MAX_SITEMAP_FETCHES = 50;
-export const DEFAULT_MAX_SITEMAP_ENTRIES = 100_000;
+const DEFAULT_MAX_SITEMAP_FETCHES = 50;
+const DEFAULT_MAX_SITEMAP_ENTRIES = 100_000;
 const httpStatusOf = (msg: string): number | null => {
   const m = String(msg ?? "").match(/HTTP (\d+)/);
   return m ? Number(m[1]) : null;
@@ -143,7 +143,7 @@ export interface SitemapOpts {
  * source's own path, diff against the previous snapshot, report new, changed and removed, and hand the new locs to the injected ledger write. A per-sitemap failure is recorded and the walk
  * continues; `ok: false` only when no sitemap could be discovered at all. `coverageComplete` gates every claim that depends on having seen everything (removed, the baseline).
  */
-export async function walkSitemap(deps: SitemapDeps, { baseUrl, maxSitemapFetches = DEFAULT_MAX_SITEMAP_FETCHES, maxSitemapEntries = DEFAULT_MAX_SITEMAP_ENTRIES, maxSitemapResponseBytes = DEFAULT_MAX_SITEMAP_RESPONSE_BYTES, limit = Infinity }: SitemapOpts) {
+async function walkSitemap(deps: SitemapDeps, { baseUrl, maxSitemapFetches = DEFAULT_MAX_SITEMAP_FETCHES, maxSitemapEntries = DEFAULT_MAX_SITEMAP_ENTRIES, maxSitemapResponseBytes = DEFAULT_MAX_SITEMAP_RESPONSE_BYTES, limit = Infinity }: SitemapOpts) {
   const fetched: Fetched[] = [];
   const cache = new Map<string, ReturnType<typeof parseSitemapXml> | null>();
   async function fetchAndParse(url: string) {
@@ -257,7 +257,7 @@ export async function walkSitemap(deps: SitemapDeps, { baseUrl, maxSitemapFetche
 }
 
 /** Probe one candidate: fetch (bounded), decode, and report whether it parses as a feed. A failure is "not a feed" so the caller's loop keeps going. */
-export async function probeIsFeed(deps: { fetchBytes: (url: string) => Promise<Uint8Array> }, url: string, maxBytes: number) {
+async function probeIsFeed(deps: { fetchBytes: (url: string) => Promise<Uint8Array> }, url: string, maxBytes: number) {
   try {
     const buf = await deps.fetchBytes(url);
     checkResponseBytes(buf, maxBytes, url);
@@ -272,7 +272,7 @@ export async function probeIsFeed(deps: { fetchBytes: (url: string) => Promise<U
 }
 
 /** Locate a feed for `sourceUrl`: is the source itself a feed, else a `<link>` tag on its homepage or a common feed path, first that parses as a feed. One fetch serves both checks. The probe trail is kept. */
-export async function discoverFeed(deps: { fetchBytes: (url: string) => Promise<Uint8Array> }, { sourceUrl, maxFeedResponseBytes = DEFAULT_MAX_FEED_RESPONSE_BYTES }: { sourceUrl: string; maxFeedResponseBytes?: number }) {
+async function discoverFeed(deps: { fetchBytes: (url: string) => Promise<Uint8Array> }, { sourceUrl, maxFeedResponseBytes = DEFAULT_MAX_FEED_RESPONSE_BYTES }: { sourceUrl: string; maxFeedResponseBytes?: number }) {
   let html = "";
   let error: string | null = null;
   let status: number | null = null;

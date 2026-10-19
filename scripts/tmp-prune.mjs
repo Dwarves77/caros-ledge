@@ -15,7 +15,7 @@ function deadList() {
   const graph = buildGraph(texts);
   const srcTexts = new Map(srcPaths.map((p) => [p, texts.get(p)]));
   const rt = runtimeEntries(srcTexts);
-  return deadExports(graph, srcPaths, rt).filter((d) => MINE.test(d.file) && !d.runtime);
+  return deadExports(graph, srcPaths, rt).filter((d) => MINE.test(d.file) && !d.runtime && d.name !== "POST");
 }
 
 /** Start of the comment run directly above a node (no blank line between), else the node start. */

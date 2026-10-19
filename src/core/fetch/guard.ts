@@ -15,7 +15,7 @@ export interface GuardRefusal {
   /** For robots_unknown: the host answered robots.txt itself with 401, 403 or 429, so the declared identity was refused and the browser tier may re-read it as a person's browser would. */
   identityRefused?: boolean;
 }
-export class FetchRefusalError extends Error {
+class FetchRefusalError extends Error {
   readonly fetchRefusal: GuardRefusal;
   constructor(refusal: GuardRefusal) {
     super(refusal.detail);
@@ -23,8 +23,6 @@ export class FetchRefusalError extends Error {
     this.fetchRefusal = refusal;
   }
 }
-/** Type guard that also works across module copies (the Edge bundle and the Node tree each hold their own class). */
-export const refusalOf = (e: unknown): GuardRefusal | null => ((e as { fetchRefusal?: GuardRefusal } | null)?.fetchRefusal ?? null);
 
 const v4 = (s: string): number[] | null => {
   const m = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(s);
@@ -54,7 +52,7 @@ function groups6(addr: string): number[] | null {
   return all.length === 8 && nums.every((n) => Number.isInteger(n) && n >= 0 && n <= 0xffff) ? nums : null;
 }
 /** Is this address (IPv4 or IPv6 literal) one a public crawler must never request: private, loopback, link-local, unique-local, multicast, documentation or reserved, including IPv4 mapped or translated into IPv6? An unparseable literal is refused. */
-export function isPrivateAddress(addr: string): boolean {
+function isPrivateAddress(addr: string): boolean {
   const four = v4(addr);
   if (four) return isPrivateV4(four);
   const g = groups6(addr);
@@ -87,7 +85,7 @@ export interface GuardOptions {
 }
 
 /** Throw a private_address refusal when the URL's host is a private literal, a reserved name, or resolves to any private address. */
-export async function assertPublicHost(url: URL, resolveHost?: GuardOptions["resolveHost"]): Promise<void> {
+async function assertPublicHost(url: URL, resolveHost?: GuardOptions["resolveHost"]): Promise<void> {
   const host = url.hostname.replace(/^\[|\]$/g, "");
   const refuse = (why: string) => new FetchRefusalError({ reason: "private_address", transient: false, detail: `refused ${url.origin}: ${why}` });
   if (v4(host) || host.includes(":")) {

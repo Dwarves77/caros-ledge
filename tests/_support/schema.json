@@ -33,7 +33,8 @@
     "searched_at",
     "result_chars",
     "content_hash",
-    "capture_channel"
+    "capture_channel",
+    "number_locale"
    ],
    "uuid": [
     "id"
@@ -4033,6 +4034,7 @@
     "collection_detail",
     "access_requested_at",
     "access_contact",
+    "publisher_locale",
     "institution_key"
    ],
    "uuid": [

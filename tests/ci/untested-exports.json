@@ -338,104 +338,42 @@
    "unlocodeName"
   ],
   "src/core/fetch/api.ts": [
-   "ECFR_API_BASE",
    "ECFR_PORTAL_URL",
    "FEDERAL_REGISTER_API_BASE",
-   "FEDERAL_REGISTER_PORTAL_URL",
-   "fetchDocumentApi"
-  ],
-  "src/core/fetch/cache.ts": [
-   "DEFAULT_TTL_MS",
-   "fetchCacheKey",
-   "isFresh"
+   "FEDERAL_REGISTER_PORTAL_URL"
   ],
   "src/core/fetch/candidates.ts": [
-   "EUR_LEX_PORTAL_URL",
-   "LEGISLATION_UK_PORTAL_URL",
-   "apiCandidates",
    "celexTxtHtmlUrl",
-   "celexTxtUrl",
-   "detectScheme",
-   "eliFromIdentity",
-   "eliPathUrl",
-   "eliUrl",
-   "euTypeLetters",
-   "eurlexSearchUrl",
-   "exhaustionFlagRow",
-   "gazetteCandidates",
-   "genericSearchQueries",
    "heldPoolHash",
-   "legislationUkUrl",
-   "lovdataCandidates",
    "ojDailyViewUrl",
-   "parseYearNumber",
-   "separatorVariants",
-   "ukCandidates",
-   "usCandidates"
-  ],
-  "src/core/fetch/capture.ts": [
-   "cellarEndpointForCelex",
-   "cellarEndpointForOj",
-   "isEurlexRobotGate"
+   "parseYearNumber"
   ],
   "src/core/fetch/classify-body.ts": [
-   "CDN_BLOCK_RE",
-   "CHALLENGE_RE",
-   "JS_SHELL_RE",
    "MIN_CONTENT_CHARS",
-   "REQUEST_ACCESS_RE",
-   "SOFT_404_RE",
    "WALL_MAX_CHARS",
-   "errorMarkerCount",
-   "isErrorBody",
-   "looksLikeEurlexInterfaceShell",
-   "partitionErrorBodies",
    "targetLangRatio",
-   "toText",
    "urlIsRoot"
   ],
   "src/core/fetch/direct.ts": [
-   "extractPdfText",
-   "secFairAccessUaForUrl"
-  ],
-  "src/core/fetch/headless.ts": [
-   "fetchHeadless"
+   "extractPdfText"
   ],
   "src/core/fetch/hold.ts": [
-   "AUTHORIZED_HOLD_CALLERS",
    "getScrapeState",
-   "isAuthorizedHoldCaller",
    "isGloballyPaused",
-   "readScrapeState",
-   "startOfUtcDay"
+   "readScrapeState"
   ],
   "src/core/fetch/policy.ts": [
-   "ALT_HEADERS_ON_403",
-   "DEFAULT_STORAGE_MAX_CHARS",
-   "ERROR_MARKERS",
-   "FETCH_TIMEOUT_MS",
    "MAX_ATTEMPTS",
-   "MAX_PDF_BYTES",
    "MAX_TEXT_BYTES",
-   "MIN_BYTES",
-   "PRIMARY_HEADERS",
-   "RETRYABLE_STATUS",
    "cleanCtl",
-   "declaredCharset",
-   "isPdfBytes",
-   "isPdfDocument",
-   "isTextType",
    "storageMaxChars"
   ],
   "src/core/fetch/reachability.ts": [
-   "decideReachabilityAction",
-   "reachabilityTier"
+   "decideReachabilityAction"
   ],
   "src/core/fetch/titles.ts": [
-   "bodyLeadTitle",
    "detectCellarGarbledMetadata",
-   "extractEurlexTitle",
-   "isOjFileName"
+   "extractEurlexTitle"
   ],
   "src/core/figures/format.ts": [
    "CURRENCY_SYMBOL",
@@ -751,102 +689,50 @@
    "decodeUriOrNull"
   ],
   "src/core/sources/axes.ts": [
-   "APPLICABLE_FIELDS",
-   "AXIS5_CATEGORIES",
-   "AXIS5_OUT_OF_SCOPE",
-   "KNOWN_FREE_TEXT_JURISDICTIONS",
-   "LEG_MODES",
    "REGULATORY_TOPIC_ROLES",
-   "SCOPE_MODES",
-   "SCOPE_TOPICS",
-   "SCOPE_VERTICALS",
-   "SURFACES",
-   "classifyScopeModes",
-   "classifyScopeTopics",
-   "classifyScopeVerticals",
    "classifySourceAxes",
-   "classifySourceJurisdiction",
    "detectDrift",
-   "expectedOutputForRole",
    "isValidDistribution",
    "isValidJurisdictionValue",
-   "normalizeDistribution",
    "observedDistributionFromItems",
    "topicKeywordMatch"
   ],
   "src/core/sources/bias-tags.ts": [
-   "BIAS_DIMENSION_LABELS",
-   "BIAS_TAG_LABELS",
-   "BIAS_TAG_VOCAB",
-   "HIGH_CONFIDENCE_THRESHOLD",
    "LOWER_CONFIDENCE_WORDS",
    "biasLegend",
    "biasTagLabel",
    "hasBiasTags",
-   "isLowerConfidence",
    "writeBiasTags"
   ],
-  "src/core/sources/classify.ts": [
-   "SOURCE_TYPE_VALUES",
-   "sourceTypeLabel"
-  ],
   "src/core/sources/host-class.ts": [
-   "classTierForHostAcrossNames",
-   "classifyResidueRuling",
-   "codifiedTierForHost",
-   "isDoiResolverHost",
-   "verdictPlacementForHost"
+   "isDoiResolverHost"
   ],
   "src/core/sources/institution.ts": [
    "hostInstitution"
-  ],
-  "src/core/sources/officialness.ts": [
-   "hasInstrumentMarkers"
-  ],
-  "src/core/sources/register.ts": [
-   "exactHostUrlFilter"
   ],
   "src/core/sources/run-result.ts": [
    "outcomeOf"
   ],
   "src/core/sources/target-match.ts": [
-   "SUBJECT_MATCH_THRESHOLD",
-   "expectedInstrumentIds",
-   "scanInstrumentIds",
-   "subjectOverlap",
-   "targetMatchHolds",
    "verifyPoolTargetMatch"
   ],
   "src/core/sources/tier-contract.ts": [
    "SOURCE_TIER_MAX",
-   "SOURCE_TIER_MIN",
    "TIER_LABELS",
    "tierContract",
    "tierLabelOf",
    "tierScaleSpan"
   ],
   "src/core/sources/tier-movement.ts": [
-   "applyRecencyDecay",
-   "evaluableFromRow",
-   "evaluateDemotion",
-   "evaluatePromotion",
-   "evaluateTierEvidenceForRow",
-   "opinionMovement",
-   "outcomeMovement",
-   "recomputeEffectiveTier",
-   "tallyOutcomes",
-   "tierMovementReaders"
+   "recomputeEffectiveTier"
   ],
   "src/core/sources/tier-writers.ts": [
-   "notUnderTierOverride",
-   "tierMovementEvent"
+   "notUnderTierOverride"
   ],
   "src/core/sources/trust-score.ts": [
    "TIER_SOURCE_COLUMNS",
    "computeCitationComponent",
-   "computeEarnedScore",
    "computeOverallScore",
-   "tierPrior",
    "trustMetricsFromRow"
   ],
   "src/core/tags/adopt.ts": [
@@ -2003,115 +1889,26 @@
    "reloadSettings"
   ],
   "src/features/sources/change.ts": [
-   "BRIDGE_DEFAULT_LIMIT",
-   "CHANGE_SWEEP_STAGED_MARKER",
-   "alignSegments",
-   "fingerprintChangedNote",
-   "normHash",
-   "recordItemChange",
-   "recordSourceChangeTrigger",
-   "segmentByShape",
-   "segmentTextDiff",
-   "summarizeAmendmentDiff",
-   "toTimelineEvents"
-  ],
-  "src/features/sources/classify-sources.ts": [
-   "AXIS_CREATED_BY",
-   "DRIFT_CREATED_BY",
-   "DRIFT_MIN_DISTINCT_DATES",
-   "DRIFT_MIN_ITEMS",
-   "buildMergePatch",
-   "classifySources",
-   "countDistinctDates",
-   "decideDriftResolution"
-  ],
-  "src/features/sources/growth.ts": [
-   "buildReputationEventRow",
-   "citationScore",
-   "collectCitedSources",
-   "compoundSourceCredibility",
-   "exactHostUrlFilter",
-   "registerEntryCitations",
-   "registerPoolHostsForGrounding"
+   "recordItemChange"
   ],
   "src/features/sources/holdings-audit.ts": [
-   "classifySufficiency",
-   "extractCleanText",
-   "structuralTruncation"
-  ],
-  "src/features/sources/null-tier.ts": [
-   "NULL_TIER_CREATED_BY",
-   "NULL_TIER_RESOLVED_BY",
-   "buildNullTierHostResolution",
-   "buildNullTierHostWrite"
+   "extractCleanText"
   ],
   "src/features/sources/provisional.ts": [
    "PROVISIONAL_PROMOTED_STATUS",
    "PROVISIONAL_REJECTED_STATUS"
   ],
   "src/features/sources/snapshot-verify.ts": [
-   "MIN_USABLE_POOL_ROWS",
-   "SNAPSHOT_STUB_MAX",
-   "holdingsPresent",
-   "normalizeForMatch",
-   "probeFreshness",
-   "spanPresent",
-   "writeStaleFlag"
+   "holdingsPresent"
   ],
   "src/features/sources/snapshots.ts": [
-   "contentFingerprint",
-   "findSnapshotRow",
-   "isContentChange",
-   "normalizeForFingerprint",
-   "probeFreshness",
-   "readSnapshotBody",
-   "sha256Hex"
-  ],
-  "src/features/sources/store.ts": [
-   "useSourceStore"
-  ],
-  "src/features/sources/triage.ts": [
-   "DEFAULT_CONCURRENCY",
-   "DEFAULT_HOST_INTERVAL_MS",
-   "DEFAULT_TIME_BUDGET_MIN",
-   "MAX_CONCURRENCY",
-   "triageOneSource"
-  ],
-  "src/features/sources/verify-candidate.ts": [
-   "detectLanguage"
-  ],
-  "src/features/sources/walkers/feed.ts": [
-   "FEED_CANDIDATE_PATHS"
+   "readSnapshotBody"
   ],
   "src/features/sources/walkers/register.ts": [
-   "looksLikeOjDailyView",
-   "ojDailyViewUrl",
    "walkEurlexOj"
   ],
-  "src/features/sources/walkers/sitemap.ts": [
-   "DEFAULT_MAX_FEED_RESPONSE_BYTES",
-   "DEFAULT_MAX_SITEMAP_ENTRIES",
-   "DEFAULT_MAX_SITEMAP_FETCHES",
-   "DEFAULT_MAX_SITEMAP_RESPONSE_BYTES",
-   "checkResponseBytes",
-   "decodeXmlBody",
-   "discoverFeed",
-   "filterEntriesForSource",
-   "isBotWallStatus",
-   "looksGzippedBuffer",
-   "looksGzippedUrl",
-   "mergeSnapshotEntries",
-   "parseSitemapIndexEntries",
-   "parseUrlsetEntries",
-   "probeIsFeed",
-   "sitemapFallbackCandidates",
-   "sitemapRootKind",
-   "sourceContentPath",
-   "walkSource"
-  ],
   "src/features/sources/walkers/xml.ts": [
-   "inner",
-   "strip"
+   "inner"
   ],
   "src/features/statutory/rows.ts": [
    "ARTICLE_4_2_CITATION",

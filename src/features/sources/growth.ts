@@ -2,18 +2,14 @@
 // Ported from old_repo/src/lib/sources/tier-opinion-writer.ts (lines 1-92)
 // Ported from old_repo/src/lib/sources/cited-host-gate.mjs (lines 1-19)
 import type { Db } from "@/core/db";
-import { allRows } from "@/core/db";
 import { hostOf } from "@/core/shared";
-import { classTierForHost, decidePoolHostRegistration } from "@/core/sources/host-class";
-import { buildResolver, hostInstitution, type SourceRow } from "@/core/sources/institution";
-import { exactHostUrlFilter, lookupExactHost, pickInstitutionRow, registerSource } from "@/core/sources/register";
+import { classTierForHost } from "@/core/sources/host-class";
+import { lookupExactHost, pickInstitutionRow, registerSource } from "@/core/sources/register";
 import { outcomeOf, type RunDeps, type RunResult } from "@/core/sources/run-result";
 import { recomputeEffectiveTier } from "@/core/sources/tier-movement";
 import { writeEffectiveTierUnlessOverridden } from "@/core/sources/tier-writers";
 import { computeCitationComponent } from "@/core/sources/trust-score";
 import type { SourceTier, TrustMetrics } from "@/core/sources/types";
-
-export { exactHostUrlFilter };
 
 export interface CitationEdge {
   citer_source_id: string;
@@ -28,7 +24,7 @@ export interface ConvergenceMetrics {
   total_citations: number;
 }
 /** Collapse syndication, then count distinct independent corroborators and the best citing tier. A syndication group counts ONCE at its best tier (INV-179). */
-export function aggregateConvergence(edges: CitationEdge[]): ConvergenceMetrics {
+function aggregateConvergence(edges: CitationEdge[]): ConvergenceMetrics {
   const unit = new Map<string, number>();
   for (const e of edges) {
     const key = e.syndication_group ? `g:${e.syndication_group}` : `s:${e.citer_source_id}`;
@@ -38,7 +34,7 @@ export function aggregateConvergence(edges: CitationEdge[]): ConvergenceMetrics 
   const tiers = [...unit.values()];
   return { independent_citers: unit.size, highest_citing_tier: tiers.length ? Math.min(...tiers) : null, confirmation_count: unit.size, total_citations: edges.length };
 }
-export const citationScore = (m: ConvergenceMetrics): number =>
+const citationScore = (m: ConvergenceMetrics): number =>
   computeCitationComponent({ independent_citers: m.independent_citers, highest_citing_tier: m.highest_citing_tier as SourceTier | null, confirmation_count: m.confirmation_count, conflict_count: 0, total_checks: 0, self_citation_count: 0 } as unknown as TrustMetrics);
 
 export interface CitedSourceInput {
@@ -58,17 +54,9 @@ export interface RegisteredCitation {
   error?: string;
 }
 
-/** Cited-host gate: a cited URL whose host or institution the system does not already know is novel (cross-run self-licensing stays closed). */
-export function partitionCitedByHost<T extends { host: string; institution: string }>(cited: readonly T[], knownHosts: ReadonlySet<string>, knownInstitutions: ReadonlySet<string>) {
-  const allowed: T[] = [];
-  const novel: T[] = [];
-  for (const c of cited) ((!!c.host && knownHosts.has(c.host)) || (!!c.institution && knownInstitutions.has(c.institution)) ? allowed : novel).push(c);
-  return { allowed, novel };
-}
-
 export type OpinionSource = "haiku_brief_classifier" | "haiku_verification" | "operator_review" | "host_class_table";
 /** Record a tier opinion (evidence only, never a tier). The result is read: a failed insert is returned with its full diagnostic, never swallowed. */
-export async function recordTierOpinion(db: Db, i: { targetSourceId: string; opinedTier: number; opiningSourceId?: string | null; intelligenceItemId?: string | null; opinionSource?: OpinionSource }): Promise<{ ok: boolean; error?: string }> {
+async function recordTierOpinion(db: Db, i: { targetSourceId: string; opinedTier: number; opiningSourceId?: string | null; intelligenceItemId?: string | null; opinionSource?: OpinionSource }): Promise<{ ok: boolean; error?: string }> {
   const { error } = await db.from("source_tier_opinions").insert({ target_source_id: i.targetSourceId, opined_tier: i.opinedTier, opinion_source: i.opinionSource ?? "haiku_brief_classifier", opining_source_id: i.opiningSourceId ?? null, intelligence_item_id: i.intelligenceItemId ?? null });
   return error ? { ok: false, error: `message=${error.message} | code=${(error as { code?: string }).code ?? "none"}` } : { ok: true };
 }
@@ -93,7 +81,7 @@ async function worklist(db: Db, cs: CitedSourceInput, note: string, dry?: boolea
  * Register cited sources: an existing exact-host source resolves to its id (and may take an opinion); a classifiable new host becomes a sources row at its class tier; a blocked or
  * unclassifiable one becomes a provisional_sources candidate. Every read and write is checked: a failed duplicate lookup is `lookup_failed` and registers nothing (no duplicate row).
  */
-export async function registerCitedSources(db: Db, cited: CitedSourceInput[], opts: RegisterOpts = {}): Promise<RegisteredCitation[]> {
+async function registerCitedSources(db: Db, cited: CitedSourceInput[], opts: RegisterOpts = {}): Promise<RegisteredCitation[]> {
   const out: RegisteredCitation[] = [];
   for (const cs of cited) {
     const host = hostOf(cs.url);
@@ -145,7 +133,7 @@ export async function registerCitedSources(db: Db, cited: CitedSourceInput[], op
 }
 
 /** Record citation edges item-source to cited source. One insert per edge: the (citing, cited) pair is UNIQUE, so 23505 means already recorded; a self-citation is skipped (INV-179). */
-export async function recordCitations(db: Db, edges: Array<{ citing_source_id: string; cited_source_id: string; syndication_group?: string | null }>): Promise<{ recorded: number; errors: string[] }> {
+async function recordCitations(db: Db, edges: Array<{ citing_source_id: string; cited_source_id: string; syndication_group?: string | null }>): Promise<{ recorded: number; errors: string[] }> {
   let recorded = 0;
   const errors: string[] = [];
   for (const e of edges) {
@@ -159,7 +147,7 @@ export async function recordCitations(db: Db, edges: Array<{ citing_source_id: s
 }
 
 /** Parse the brief's "New Sources Identified" table. A row's tier is its EXPLICIT tier cell or absent; a blocked row becomes a candidate with a reason. */
-export function parseNewSourcesFromBrief(brief: string): CitedSourceInput[] {
+function parseNewSourcesFromBrief(brief: string): CitedSourceInput[] {
   const m = (brief || "").match(/#+\s*New Sources Identified[\s\S]*?(?=\n#+\s|\s*$)/i);
   if (!m) return [];
   const out: CitedSourceInput[] = [];
@@ -179,7 +167,7 @@ export function parseNewSourcesFromBrief(brief: string): CitedSourceInput[] {
 }
 
 /** Recompute convergence for a CITED source from its edges (syndication collapsed) and write the compounded credibility columns. Every read and the write throw on error. */
-export async function compoundSourceCredibility(db: Db, citedSourceId: string) {
+async function compoundSourceCredibility(db: Db, citedSourceId: string) {
   const pre = await db.from("sources").select("independent_citers, trust_score_citation").eq("id", citedSourceId).maybeSingle();
   if (pre.error) throw new Error(`convergence pre-read failed for ${citedSourceId}: ${pre.error.message}`);
   const cits = await db.from("source_citations").select("citing_source_id, context").eq("cited_source_id", citedSourceId);
@@ -200,35 +188,12 @@ export async function compoundSourceCredibility(db: Db, citedSourceId: string) {
   return { before: { independent_citers: prev?.independent_citers ?? 0, trust_score_citation: Number(prev?.trust_score_citation ?? 0) }, after: { ...conv, trust_score_citation: score } };
 }
 
-/** Register the item's pool-corroborator hosts before grounding, deterministically only: an institution that already resolves is inherited, a class-table host is registered, an ambiguous host is left unregistered (never a guessed tier). */
-export async function registerPoolHostsForGrounding(db: Db, itemId: string): Promise<{ registered: number; institutions: number; failed: number }> {
-  const pool = await db.from("agent_run_searches").select("result_url, search_query").eq("intelligence_item_id", itemId);
-  if (pool.error) throw new Error(`pool read failed for ${itemId}: ${pool.error.message}`);
-  if (!pool.data?.length) return { registered: 0, institutions: 0, failed: 0 };
-  const sources = await allRows<SourceRow>(db, "sources", "id, url, base_tier, effective_tier, tier_override, status");
-  const resolver = buildResolver(sources);
-  const seen = new Set<string>();
-  const toRegister: CitedSourceInput[] = [];
-  for (const r of pool.data as Array<{ result_url: string | null; search_query: string | null }>) {
-    if (!r.result_url || r.search_query?.startsWith("canonical:cited")) continue; // citation stubs are not fetched pool content
-    const inst = hostInstitution(hostOf(r.result_url));
-    if (!inst || seen.has(inst)) continue;
-    const decision = decidePoolHostRegistration(hostOf(r.result_url), resolver.resolveSpan(r.result_url).tier);
-    if (decision.action === "inherit") continue;
-    seen.add(inst);
-    if (decision.action === "register") toRegister.push({ name: inst, url: r.result_url });
-  }
-  if (!toRegister.length) return { registered: 0, institutions: 0, failed: 0 };
-  const out = await registerCitedSources(db, toRegister);
-  return { registered: out.filter((o) => o.registered === "new_source").length, institutions: toRegister.length, failed: out.filter((o) => o.registered === "lookup_failed" || o.error).length };
-}
-
 /** The audit row for a reputation-cycle tier change; created_by satisfies the column CHECK, the actor rides in details. */
-export function buildReputationEventRow(sourceId: string, r: { before_tier: number; after_tier: number; weighted_sum: number; citation_count: number; reasoning: string }) {
+function buildReputationEventRow(sourceId: string, r: { before_tier: number; after_tier: number; weighted_sum: number; citation_count: number; reasoning: string }) {
   return { source_id: sourceId, event_type: r.after_tier < r.before_tier ? "tier_promotion" : "tier_demotion", details: { actor: "reputation-cycle", reputation_cycle: true, ...r }, created_by: "worker" };
 }
 /** End-of-cycle reputation recompute for ONE source: effective_tier only, through the override-guarded write; an admin override is left entirely alone. Errors are returned, not logged away. */
-export async function applyReputationRecompute(db: Db, sourceId: string, now: Date): Promise<{ before: number; after: number; changed: boolean; override_skipped: boolean; error: string | null }> {
+async function applyReputationRecompute(db: Db, sourceId: string, now: Date): Promise<{ before: number; after: number; changed: boolean; override_skipped: boolean; error: string | null }> {
   try {
     const r = await recomputeEffectiveTier(db, sourceId, { now });
     const d = r.decision;
@@ -245,7 +210,7 @@ export async function applyReputationRecompute(db: Db, sourceId: string, now: Da
 }
 
 /** Distinct-by-host cited sources from a url list, dropping unparseable urls and excluded hosts. */
-export function collectCitedSources(urls: Array<string | { url: string; name?: string | null }>, excludeHosts: ReadonlySet<string> = new Set()): CitedSourceInput[] {
+function collectCitedSources(urls: Array<string | { url: string; name?: string | null }>, excludeHosts: ReadonlySet<string> = new Set()): CitedSourceInput[] {
   const seen = new Set<string>();
   const out: CitedSourceInput[] = [];
   for (const u of urls) {
@@ -299,7 +264,7 @@ export async function growSources(deps: RunDeps, input: GrowInput): Promise<RunR
 }
 
 /** The free-brief-path registration: every distinct external host an item cites, plus every cited source id, registered the same way as the table path, edges written and credibility compounded in the same call. */
-export async function registerEntryCitations(deps: RunDeps, itemSourceId: string, cited: Array<string | CitedSourceInput>, opts: { dry?: boolean; citedSourceIds?: string[]; intelligenceItemId?: string | null; excludeHosts?: ReadonlySet<string> } = {}) {
+async function registerEntryCitations(deps: RunDeps, itemSourceId: string, cited: Array<string | CitedSourceInput>, opts: { dry?: boolean; citedSourceIds?: string[]; intelligenceItemId?: string | null; excludeHosts?: ReadonlySet<string> } = {}) {
   const { db, now } = deps;
   const own = await db.from("sources").select("url").eq("id", itemSourceId).maybeSingle();
   if (own.error) throw new Error(`own-source read failed for ${itemSourceId}: ${own.error.message}`);

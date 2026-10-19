@@ -71,8 +71,8 @@ Rules: schema first, in name order; a row marked HOLD waits for the step it name
 | 56 | 0070_harness_runs_outcome_partial | schema | `supabase db query --linked -f supabase/migrations/0070_harness_runs_outcome_partial.sql` | 0070-harness-partial | down/0070.sql, applied and catalog-compared by the schema job | pending | in order |
 | 57 | 0071_live_check_production_shape | schema | `supabase db query --linked -f supabase/migrations/0071_live_check_production_shape.sql` | 0071-production-shape | down/0071.sql, applied and catalog-compared by the schema job | pending | in order |
 | 58 | 0073_selfcheck_repairs | schema | `supabase db query --linked -f supabase/migrations/0073_selfcheck_repairs.sql` | 0073-selfcheck-repairs | down/0073.sql, applied and catalog-compared by the schema job | pending | in order |
-| 59 | 0080_collection_state | schema | `supabase db query --linked -f supabase/migrations/0080_collection_state.sql` | 0080-collection-state | none | pending | in order |
-| 60 | 0081_register_source_once | schema | `supabase db query --linked -f supabase/migrations/0081_register_source_once.sql` | 0081-register-source-once | none | pending | in order |
+| 59 | 0080_collection_state | schema | `supabase db query --linked -f supabase/migrations/0080_collection_state.sql` | 0080-collection-state | down/0080.sql, applied and catalog-compared by the schema job | pending | in order |
+| 60 | 0081_register_source_once | schema | `supabase db query --linked -f supabase/migrations/0081_register_source_once.sql` | 0081-register-source-once | down/0081.sql, applied and catalog-compared by the schema job | pending | in order |
 
 ## Phase 2: data files, after the schema (each runs with its consumer)
 

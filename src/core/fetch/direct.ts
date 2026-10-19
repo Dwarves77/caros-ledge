@@ -3,10 +3,8 @@
 // Ported from old_repo/src/lib/sources/canonical-fetch.mjs (lines 46-57)
 import { toText } from "./classify-body";
 import { assertFetchAllowed, type HoldDeps } from "./hold";
-import { honestFetch, secFairAccessUaForUrl } from "./honest";
+import { honestFetch } from "./honest";
 import { cleanCtl, fetchDocument, type FetchDocumentOptions, type FetchRefusal } from "./policy";
-
-export { secFairAccessUaForUrl };
 
 export interface FetchDeps extends HoldDeps {
   /** A signed caller name (see AUTHORIZED_HOLD_CALLERS); absent for every scheduled or pipeline path. */

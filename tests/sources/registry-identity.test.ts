@@ -3,8 +3,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { capQuotation, quotationLimit, reuseTermsForHost } from "@/core/sources/reuse-terms";
-import { backfillInstitutionKeys, pageKey, planInstitutionKeys, registerAndRate, registerSource } from "@/core/sources/register";
+import { reuseTermsForHost } from "@/core/sources/reuse-terms";
+import { backfillInstitutionKeys, pickInstitutionRow, registerAndRate, registerSource } from "@/core/sources/register";
 import { classifySources } from "@/features/sources/classify-sources";
 import { verifyCandidate } from "@/features/sources/verify-candidate";
 import { classifySourceRole } from "@/core/sources/classify";
@@ -63,6 +63,7 @@ test("a legacy row born before the key existed is found by its url or institutio
   assert.equal(w.tables.sources?.[0]?.status, "active");
   assert.equal(w.tables.sources?.length, 1);
 });
+
 test("keys for the registry that has none: the oldest row of an institution takes the institution key, the rest their page keys, a repeated page is a conflict left unkeyed", async () => {
   const rows = [
     { id: "3", url: "https://eur-lex.europa.eu/a?uri=CELEX:3", created_at: "2026-03-01" },
@@ -70,14 +71,11 @@ test("keys for the registry that has none: the oldest row of an institution take
     { id: "2", url: "https://eur-lex.europa.eu/a?uri=CELEX:2", created_at: "2026-02-01" },
     { id: "4", url: "https://eur-lex.europa.eu/a?uri=CELEX:2", created_at: "2026-04-01" },
   ];
-  const plan = planInstitutionKeys(rows);
-  assert.deepEqual(plan.assign.map((a) => [a.id, a.key]), [["1", "eur-lex.europa.eu"], ["2", "eur-lex.europa.eu/a?uri=celex:2"], ["3", "eur-lex.europa.eu/a?uri=celex:3"]]);
-  assert.deepEqual(plan.conflicts.map((c) => [c.id, c.heldBy]), [["4", "2"]]);
-  assert.equal(pageKey("https://www.Agency.gov/A/b/?x=1"), "agency.gov/a/b?x=1");
   const w = memoryDb({ sources: rows.map((r) => ({ ...r, base_tier: 1, institution_key: null })) });
   const out = await backfillInstitutionKeys(w.db, rows);
   assert.deepEqual([out.keyed, out.conflicts, out.errors], [3, 1, []]);
-  assert.equal(w.tables.sources?.find((s) => s.id === "4")?.institution_key, null);
+  const key = (id: string) => w.tables.sources?.find((s) => s.id === id)?.institution_key;
+  assert.deepEqual(["1", "2", "3", "4"].map(key), ["eur-lex.europa.eu", "eur-lex.europa.eu/a?uri=celex:2", "eur-lex.europa.eu/a?uri=celex:3", null]);
 });
 test("classify-sources never overwrites a stored role; it fills a NULL once, and sets the rights verdict where the class fixes it", async () => {
   const name = "International Maritime Organization";
@@ -111,15 +109,10 @@ test("duplicate detection is by registrable domain and page equality: /regulatio
 test("the rights verdict: the class fixes it only where a terms page was read, everything else is unknown", () => {
   assert.deepEqual(["https://eur-lex.europa.eu/x", "https://www.legislation.gov.uk/x", "https://www.federalregister.gov/x", "https://www.michigan.gov/x", "https://www.reuters.com/x"].map(reuseTermsForHost), ["eu_reuse", "open_government", "public_domain", "unknown", "unknown"]);
 });
-test("the quotation rule: a span from an unknown or prohibited source is capped and carries the registry's attribution; the other verdicts are quoted in full", () => {
-  const span = "The operator shall report every emission under the scheme each year and keep the record for five years. ".repeat(10);
-  const src = { name: "Example Press", url: "https://press.example/a" };
-  const capped = capQuotation(span, "unknown", src);
-  assert.equal(capped.truncated, true);
-  assert.ok(capped.text.length <= (quotationLimit("unknown") ?? 0) + 1);
-  assert.equal(capped.attribution, "Example Press (https://press.example/a)");
-  assert.ok((quotationLimit("prohibited") ?? 0) < (quotationLimit("unknown") ?? 0));
-  assert.equal(capQuotation(span, null, src).truncated, true, "a source with no verdict is unknown");
-  for (const v of ["open_government", "eu_reuse", "public_domain", "licensed"] as const) assert.deepEqual(capQuotation(span, v, src), { text: span, truncated: false, attribution: null }, v);
-  assert.equal(capQuotation("short span", "unknown", src).truncated, false);
+
+test("pickInstitutionRow: the row at the same page, else the row of the same institution, never the first row of the host", () => {
+  const rows = [{ url: "https://www.gob.mx/semarnat/documentos/x", id: "a" }, { url: "https://www.gob.mx/economia/documentos/y", id: "b" }];
+  assert.equal(pickInstitutionRow(rows, "https://www.gob.mx/economia/documentos/y")?.id, "b");
+  assert.equal(pickInstitutionRow(rows, "https://www.gob.mx/economia/otro")?.id, "b", "the same institution, another page");
+  assert.equal(pickInstitutionRow(rows, "https://www.gob.mx/shcp/documentos/z"), null, "a third institution on the host has no row yet");
 });

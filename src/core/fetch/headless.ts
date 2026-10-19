@@ -11,7 +11,7 @@ import { robotsGateFor } from "./honest";
 import { documentLanguage, type RefusalReason } from "./policy";
 import { interpretRobotsAnswer, verdictFor, type RobotsVerdict } from "./robots";
 
-export const BROWSER_PACE_MS = { min: 3000, max: 5000 } as const;
+const BROWSER_PACE_MS = { min: 3000, max: 5000 } as const;
 export interface PageLike {
   goto(url: string, opts: { waitUntil: "networkidle"; timeout: number }): Promise<{ status(): number } | null>;
   content(): Promise<string>;

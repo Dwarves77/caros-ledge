@@ -49,7 +49,7 @@ const CONTENT_MAX_CHARS = 6_000;
 const ENGLISH_STOPWORDS = new Set(["the", "and", "of", "to", "in", "is", "it", "for", "on", "with", "as", "by", "this", "that", "from", "or", "be", "are", "an", "at"]);
 
 /** A binary English or not-English call: the ASCII letter ratio, then English stopword density. A false negative drops the row to M, the safe direction. */
-export function detectLanguage(text: string): { language: string | null; method: "heuristic" | "fallback" } {
+function detectLanguage(text: string): { language: string | null; method: "heuristic" | "fallback" } {
   if (!text || text.length < 100) return { language: null, method: "fallback" };
   const sample = text.slice(0, 4000);
   const nonSpace = (sample.match(/\S/g) ?? []).length;
@@ -65,7 +65,7 @@ function domainConfidence(via: "class" | "verdict" | "residue" | null): "high" |
 }
 
 /** Conservative aggregation: any single L trigger forces L; a missing verdict or a non-English page is M; H needs both scores over the bar and a high-confidence class host. */
-export function aggregateTier(i: { duplicate: boolean; duplicateLookupFailed: boolean; domain: "high" | "medium" | "low"; language: string | null; verdict: CandidateVerdict | null; offVertical: boolean }): { tier: VerificationTier; triggers: string[]; rejection_reason?: string } {
+function aggregateTier(i: { duplicate: boolean; duplicateLookupFailed: boolean; domain: "high" | "medium" | "low"; language: string | null; verdict: CandidateVerdict | null; offVertical: boolean }): { tier: VerificationTier; triggers: string[]; rejection_reason?: string } {
   if (i.duplicate) return { tier: "L", triggers: ["duplicate"], rejection_reason: "duplicate" };
   if (i.offVertical) return { tier: "L", triggers: ["off_vertical"], rejection_reason: "off_vertical" };
   if (i.duplicateLookupFailed) return { tier: "M", triggers: ["duplicate_lookup_failed"], rejection_reason: "duplicate_lookup_failed" };

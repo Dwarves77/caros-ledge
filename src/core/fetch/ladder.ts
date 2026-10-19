@@ -6,7 +6,7 @@ import { type TransportResult } from "./direct";
 import type { RefusalReason } from "./policy";
 
 /** The ladder's own classes beside the body classes: the browser tier ran nowhere, or a policy refused a channel before or after it ran. */
-export const NEEDS_HEADLESS = "needs_headless" as const;
+const NEEDS_HEADLESS = "needs_headless" as const;
 const POLICY_CLASSES = ["robots_disallowed", "robots_unknown", "paywalled", "interactive_challenge", "gated", "private_address", "host_busy"] as const;
 type PolicyClass = (typeof POLICY_CLASSES)[number];
 export type AttemptClass = BodyClass | typeof NEEDS_HEADLESS | PolicyClass;
@@ -195,14 +195,3 @@ export async function escalateFetch(urls: string | string[], deps: LadderDeps): 
   return done("no_reachable_source", { url: seed, holdReason: "NO_REACHABLE_SOURCE" });
 }
 
-/**
- * The write-side capture verdict (INV-178): what may be STORED as source content. A capture is excluded when the body classifier calls it
- * anything but real content (an error body, a wall, an interface shell, furniture). When nothing usable remains from a non-empty input the
- * item holds NO_REACHABLE_SOURCE. The excluded set is returned for the caller to surface, never silently dropped.
- */
-export function captureForStorage<T extends { text: string }>(fetched: readonly T[] | null | undefined): { store: T[]; excluded: T[]; holdReason: string | null } {
-  const store: T[] = [];
-  const excluded: T[] = [];
-  for (const b of fetched ?? []) (isStorableClass(classifyBody(b?.text ?? "").class) ? store : excluded).push(b);
-  return { store, excluded, holdReason: store.length === 0 && (fetched?.length ?? 0) > 0 ? "NO_REACHABLE_SOURCE" : null };
-}

@@ -8,13 +8,12 @@ import { PEDIGREE_AXES, validatePedigree } from "@/core/contracts/vocabularies";
 import { primaryDataShare } from "@/core/contracts/factor-tier";
 import { limitBytes } from "@/core/csv/stream";
 import { exactCount, isMissingObject } from "@/core/db";
-import { detectAccessWall, looksLikeFurniture } from "@/core/fetch/classify-body";
+import { detectAccessWall } from "@/core/fetch/classify-body";
 import { queryHeldPools } from "@/core/fetch/candidates";
 import { nextScrapeDate } from "@/core/fetch/hold";
-import { selectTransportOrder } from "@/core/fetch/ladder";
-import { BodyTooLargeError, readBodyCapped } from "@/core/fetch/policy";
+import { readBodyCapped } from "@/core/fetch/policy";
 import { decideFetchOutcome } from "@/core/fetch/reachability";
-import { extractCellarTitle, extractOjActTitle } from "@/core/fetch/titles";
+import { extractCellarTitle } from "@/core/fetch/titles";
 import { changeProof, smokeProof } from "@/core/harness/proofs";
 import { legacyLabelOfIso, regionGroupOfIso } from "@/core/jurisdictions/legacy";
 import { createTimingStore, recordBytesOnStore, recordPhaseOnStore, toServerTimingHeader } from "@/core/perf/server-timing";
@@ -98,37 +97,6 @@ test("limitBytes: chunks pass until the limit, the chunk that crosses it is cut 
   assert.deepEqual(await collect(["abc"], 0), { text: "", truncated: true });
 });
 
-test("readBodyCapped: a declared length over the cap is refused before a byte is read; a stream is cancelled the instant it crosses the cap; a body inside the cap is returned whole", async () => {
-  const text = (r: Uint8Array) => Buffer.from(r).toString("utf8");
-  assert.equal(text(await readBodyCapped(new Response("hello world"), 100)), "hello world");
-  await assert.rejects(readBodyCapped(new Response("x".repeat(50), { headers: { "content-length": "50" } }), 10), BodyTooLargeError);
-  let pulled = 0;
-  let cancelled = false;
-  const stream = new ReadableStream<Uint8Array>({
-    pull(controller) {
-      pulled += 1;
-      controller.enqueue(new Uint8Array(10));
-    },
-    cancel() {
-      cancelled = true;
-    },
-  });
-  await assert.rejects(readBodyCapped(new Response(stream), 25), BodyTooLargeError);
-  assert.equal(cancelled, true, "the download was cancelled, not buffered to the end");
-  assert.ok(pulled <= 5, `the reader stopped after ${pulled} chunks`);
-});
-
-test("detectAccessWall and looksLikeFurniture: a challenge page is a wall, real content is neither; chrome with no sentences is furniture, thin legal text is not", () => {
-  assert.equal(detectAccessWall("Just a moment... Performing security verification")?.class, "bot_wall");
-  assert.equal(detectAccessWall("The regulation applies to carriers from 1 January 2026. ".repeat(10)), null);
-  assert.equal(detectAccessWall("   "), null, "an empty body is not a wall");
-  assert.equal(detectAccessWall(null), null);
-  assert.equal(looksLikeFurniture("Skip to main content. Accept cookies. Sign in"), true);
-  assert.equal(looksLikeFurniture("The operator shall report emissions annually under Article 5; the authority may inspect records at any reasonable time. Failure to report is an offence."), false);
-  assert.equal(looksLikeFurniture(`${"Skip to main content. Accept cookies. Sign in. ".repeat(100)}`), false, "past 3,000 characters it is a document, whatever it repeats");
-  assert.equal(looksLikeFurniture(""), false);
-});
-
 test("decideFetchOutcome: a body is ok; a 404 or 410 is dead (502); any other failure, a thrown error with no status and an error page served with 200 are inconclusive (503) and never evict", () => {
   assert.deepEqual(decideFetchOutcome({ content: "x".repeat(2000) }), { kind: "ok", httpStatus: 200 });
   assert.deepEqual(decideFetchOutcome({ error: { status: 404 } }), { kind: "dead", httpStatus: 502 });
@@ -136,27 +104,6 @@ test("decideFetchOutcome: a body is ok; a 404 or 410 is dead (502); any other fa
   assert.deepEqual(decideFetchOutcome({ error: { status: 503 } }), { kind: "inconclusive", httpStatus: 503 });
   assert.deepEqual(decideFetchOutcome({ error: { message: "socket hang up" } }), { kind: "inconclusive", httpStatus: 503 });
   assert.deepEqual(decideFetchOutcome({ content: "Access denied" }), { kind: "inconclusive", httpStatus: 503, reason: "error-body" });
-});
-
-test("selectTransportOrder: the API hosts go to their API first, an unparseable URL tries direct then headless, any other host direct then headless", () => {
-  assert.deepEqual(selectTransportOrder("https://www.federalregister.gov/documents/2024/01/02/2023-12345/x"), ["api", "direct", "headless"]);
-  assert.deepEqual(selectTransportOrder("https://www.ecfr.gov/current/title-40"), ["api", "direct", "headless"]);
-  assert.deepEqual(selectTransportOrder("not a url"), ["direct", "headless"]);
-  assert.deepEqual(selectTransportOrder("https://agency.example/notice"), ["direct", "headless"]);
-});
-
-test("extractOjActTitle: tier 1 is the heading through its OJ reference; tier 2 is a decision heading cut at the earliest terminator; page chrome is never in the title; a text with no act heading is null", () => {
-  assert.equal(
-    extractOjActTitle("EUR-Lex Official Journal COMMISSION NOTICE on the application of the Regulation to maritime transport operators (2023/C 154/05) and then more text"),
-    "COMMISSION NOTICE on the application of the Regulation to maritime transport operators (2023/C 154/05)",
-  );
-  assert.equal(
-    extractOjActTitle("Official Journal of the European Union Commission Implementing Decision (EU) 2022/1 of 3 January 2022 on the adequate thing Official Journal L 1 THE EUROPEAN COMMISSION, Having regard"),
-    "Commission Implementing Decision (EU) 2022/1 of 3 January 2022 on the adequate thing",
-  );
-  assert.equal(extractOjActTitle("A page of ordinary words with no act heading in it at all."), null);
-  assert.equal(extractOjActTitle("Commission Decision"), null, "a heading too short to be a title is not one");
-  assert.equal(extractOjActTitle(null), null);
 });
 
 test("extractCellarTitle: the oj-doc-ti lines joined; an act with none falls back to the body lead; empty is null", () => {
@@ -196,4 +143,31 @@ test("the harness proofs read the one ledger: changeProof is an applied change-d
   assert.deepEqual([abc.ok, abc.row?.id], [true, "5"], "the newest row of that sha decides");
   assert.deepEqual((await smokeProof(db.client, "def")).ok, false);
   assert.deepEqual(await smokeProof(db.client, "none"), { ok: false, row: null });
+});
+
+test("detectAccessWall: a challenge page is a wall, real content is not, an empty body is not", () => {
+  assert.equal(detectAccessWall("Just a moment... Performing security verification")?.class, "bot_wall");
+  assert.equal(detectAccessWall("The regulation applies to carriers from 1 January 2026. ".repeat(10)), null);
+  assert.equal(detectAccessWall("   "), null, "an empty body is not a wall");
+  assert.equal(detectAccessWall(null), null);
+});
+test("readBodyCapped: a declared length over the cap is refused before a byte is read; a stream is cancelled the instant it crosses the cap; a body inside the cap is returned whole", async () => {
+  const text = (r: Uint8Array) => Buffer.from(r).toString("utf8");
+  const tooLarge = (e: unknown) => (e as Error).name === "BodyTooLargeError";
+  assert.equal(text(await readBodyCapped(new Response("hello world"), 100)), "hello world");
+  await assert.rejects(readBodyCapped(new Response("x".repeat(50), { headers: { "content-length": "50" } }), 10), tooLarge);
+  let pulled = 0;
+  let cancelled = false;
+  const stream = new ReadableStream<Uint8Array>({
+    pull(controller) {
+      pulled += 1;
+      controller.enqueue(new Uint8Array(10));
+    },
+    cancel() {
+      cancelled = true;
+    },
+  });
+  await assert.rejects(readBodyCapped(new Response(stream), 25), tooLarge);
+  assert.equal(cancelled, true, "the download was cancelled, not buffered to the end");
+  assert.ok(pulled <= 5, `the reader stopped after ${pulled} chunks`);
 });

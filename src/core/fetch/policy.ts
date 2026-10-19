@@ -3,16 +3,16 @@
 // The one fetch policy. Web-standard APIs only and no imports, so the Edge Function (Deno) and the Node transports both import it by relative path.
 // R2c: one declared identity (the second browser fingerprint and the retry as another identity are deleted), guard refusals typed, bounded sizes.
 
-export const ERROR_MARKERS = ["Attention Required! | Cloudflare", "Just a moment...", "cf-error-details", "Request unsuccessful. Incapsula", "Access Denied</title>", "error-page-container"];
-export const MIN_BYTES = 1000;
-export const MAX_PDF_BYTES = 25 * 1024 * 1024;
+const ERROR_MARKERS = ["Attention Required! | Cloudflare", "Just a moment...", "cf-error-details", "Request unsuccessful. Incapsula", "Access Denied</title>", "error-page-container"];
+const MIN_BYTES = 1000;
+const MAX_PDF_BYTES = 25 * 1024 * 1024;
 export const MAX_TEXT_BYTES = 50 * 1024 * 1024;
-export const FETCH_TIMEOUT_MS = 45_000;
+const FETCH_TIMEOUT_MS = 45_000;
 /** Transient statuses requeue: 202 (EUR-Lex warm-up), 408, 425, 429, 5xx. A network throw is transient too. */
-export const RETRYABLE_STATUS: ReadonlySet<number> = new Set([202, 408, 425, 429, 500, 502, 503, 504]);
+const RETRYABLE_STATUS: ReadonlySet<number> = new Set([202, 408, 425, 429, 500, 502, 503, 504]);
 export const MAX_ATTEMPTS = 5;
 /** ADR-016: a pathological-page sanity ceiling, never an operating cap; binding it is loud. */
-export const DEFAULT_STORAGE_MAX_CHARS = 10_000_000;
+const DEFAULT_STORAGE_MAX_CHARS = 10_000_000;
 
 /** The one declared identity of every transport that is not a person's browser (R2c C1; docs: the /bot page). The SEC fair-access string for sec.gov is a declared identity of the same kind. */
 export const BOT_USER_AGENT = "CarosLedge/1.0 (+https://carosledge.com/bot)";
@@ -23,12 +23,11 @@ export const DECLARED_HEADERS: Readonly<Record<string, string>> = {
 };
 /** A refusal by the host's wall: the identity was declined (403, 429) or needs credentials (401). It is final for that transport; the next channel is tried, never another identity. */
 export const isWallStatus = (status: number | null | undefined): boolean => status === 401 || status === 403 || status === 429;
-/** Request bodies and inflated payloads are bounded (R2c C9): a route body, a gunzipped sitemap, a feed. */
-export const MAX_REQUEST_BODY_BYTES = 1024 * 1024;
+
 export const MAX_INFLATED_BYTES = 100 * 1024 * 1024;
 
 /** Content-type allowlist for the non-PDF path; a type that is neither text-like nor PDF is a clean unsupported failure. */
-export function isTextType(ct: string): boolean {
+function isTextType(ct: string): boolean {
   if (!ct) return true;
   return ct.startsWith("text/") || ct.includes("html") || ct.includes("xml") || ct.includes("json") || ct.includes("+text");
 }
@@ -51,7 +50,7 @@ function normalizeCharsetLabel(raw: string | null | undefined): string | null {
   }
 }
 /** The charset the bytes DECLARE: the header first, then a <meta> in the first 4 KB, else null (the caller defaults to UTF-8). */
-export function declaredCharset(bytes: Uint8Array, contentType: string | null | undefined): { charset: string; source: "header" | "meta" } | null {
+function declaredCharset(bytes: Uint8Array, contentType: string | null | undefined): { charset: string; source: "header" | "meta" } | null {
   const h = /charset\s*=\s*([^;]+)/i.exec(String(contentType ?? ""));
   const fromHeader = normalizeCharsetLabel(h?.[1]);
   if (fromHeader) return { charset: fromHeader, source: "header" };
@@ -73,7 +72,7 @@ export function decodeBody(bytes: Uint8Array, contentType: string | null | undef
 export const cleanCtl = (s: string): string => s.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, " ");
 
 /** A language tag as a capture records it (BCP-47: language lower case, script title case, region upper case), or null when the text is not one. Never a guess. */
-export function normalizeLocale(raw: string | null | undefined): string | null {
+function normalizeLocale(raw: string | null | undefined): string | null {
   const m = /^([A-Za-z]{2,3})(?:[-_]([A-Za-z]{4}))?(?:[-_]([A-Za-z]{2}|[0-9]{3}))?$/.exec(String(raw ?? "").trim());
   if (!m) return null;
   const script = m[2] ? `${m[2].charAt(0).toUpperCase()}${m[2].slice(1).toLowerCase()}` : null;
@@ -87,12 +86,10 @@ export function documentLanguage(contentLanguage: string | null | undefined, mar
 /** The locale a capture records: the publisher's declared locale from the registry, else what the document declares, else null. */
 export const captureLocale = (publisherLocale: string | null | undefined, documentDeclared: string | null | undefined): string | null => normalizeLocale(publisherLocale) ?? normalizeLocale(documentDeclared);
 
-export const isPdfBytes = (b: Uint8Array): boolean => b.length >= 5 && b[0] === 0x25 && b[1] === 0x50 && b[2] === 0x44 && b[3] === 0x46 && b[4] === 0x2d;
-/** A body is a PDF when the content type says so or the magic bytes do. */
-export const isPdfDocument = (contentType: string | null | undefined, bytes: Uint8Array): boolean => /application\/(x-)?pdf/i.test(String(contentType ?? "")) || isPdfBytes(bytes);
+const isPdfBytes = (b: Uint8Array): boolean => b.length >= 5 && b[0] === 0x25 && b[1] === 0x50 && b[2] === 0x44 && b[3] === 0x46 && b[4] === 0x2d;
 
 /** Thrown when the cap is crossed while streaming; carries the bytes actually read. */
-export class BodyTooLargeError extends Error {
+class BodyTooLargeError extends Error {
   readonly bytesRead: number;
   constructor(bytesRead: number) {
     super(`body exceeded ${bytesRead} bytes read`);

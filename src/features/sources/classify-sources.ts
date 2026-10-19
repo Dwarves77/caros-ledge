@@ -12,11 +12,11 @@ import { backfillInstitutionKeys } from "@/core/sources/register";
 import { reuseTermsForHost } from "@/core/sources/reuse-terms";
 import { outcomeOf, type RunDeps, type RunResult } from "@/core/sources/run-result";
 
-export const AXIS_CREATED_BY = "flywheel-axis:source-classification";
-export const DRIFT_CREATED_BY = "flywheel-axis:source-drift";
+const AXIS_CREATED_BY = "flywheel-axis:source-classification";
+const DRIFT_CREATED_BY = "flywheel-axis:source-drift";
 /** A source's own observed item mix replaces its expected_output only from a sample this large and this wide. */
-export const DRIFT_MIN_ITEMS = 20;
-export const DRIFT_MIN_DISTINCT_DATES = 2;
+const DRIFT_MIN_ITEMS = 20;
+const DRIFT_MIN_DISTINCT_DATES = 2;
 const ARRAY_FIELDS = ["jurisdiction_iso", "scope_topics", "scope_modes", "scope_verticals"] as const;
 
 export interface Decision {
@@ -28,7 +28,7 @@ export interface Decision {
   tag?: string;
 }
 /** Decide every proposal, expanding scope_topics to one decision per topic (re-confirmed against the source's own name and role now, never trusted from a stale payload). Pure; no residue. */
-export function decideProposals(proposals: AxisProposal[], source: AxisSource): Decision[] {
+function decideProposals(proposals: AxisProposal[], source: AxisSource): Decision[] {
   const out: Decision[] = [];
   for (const p of proposals) {
     const label = `${p.field}=${JSON.stringify(p.value)}`;
@@ -50,7 +50,7 @@ export function decideProposals(proposals: AxisProposal[], source: AxisSource): 
 }
 
 /** The sources UPDATE patch from the adopted decisions. Array fields merge (existing values survive, novel ones append); expected_output sets only when null. Only the five applicable columns can appear. */
-export function buildMergePatch(current: AxisSource, decisions: Decision[]): { patch: Record<string, unknown>; applied: Record<string, unknown> } {
+function buildMergePatch(current: AxisSource, decisions: Decision[]): { patch: Record<string, unknown>; applied: Record<string, unknown> } {
   const patch: Record<string, unknown> = {};
   const applied: Record<string, unknown> = {};
   const adopted = decisions.filter((d) => d.decision === "adopt");
@@ -71,9 +71,9 @@ export function buildMergePatch(current: AxisSource, decisions: Decision[]): { p
   return { patch, applied };
 }
 
-export const countDistinctDates = (items: Array<{ created_at?: string | null }>): number => new Set(items.map((i) => (i.created_at ? String(i.created_at).slice(0, 10) : null)).filter(Boolean)).size;
+const countDistinctDates = (items: Array<{ created_at?: string | null }>): number => new Set(items.map((i) => (i.created_at ? String(i.created_at).slice(0, 10) : null)).filter(Boolean)).size;
 /** Is the source's own observed item mix a large enough, wide enough sample to become its expected_output? */
-export function decideDriftResolution(observed: Record<string, number> | null, items: Array<{ created_at?: string | null }>) {
+function decideDriftResolution(observed: Record<string, number> | null, items: Array<{ created_at?: string | null }>) {
   const dates = countDistinctDates(items);
   return items.length >= DRIFT_MIN_ITEMS && dates >= DRIFT_MIN_DISTINCT_DATES && isValidDistribution(observed) ? { adopt: true as const, patch: { expected_output: observed } } : { adopt: false as const, patch: null };
 }

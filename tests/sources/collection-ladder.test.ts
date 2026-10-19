@@ -4,11 +4,12 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { closeBrowser, fetchBrowser, type BrowserDeps, type BrowserLike } from "@/core/fetch/headless";
-import { escalateFetch, NEEDS_HEADLESS, type LadderDeps } from "@/core/fetch/ladder";
+import { escalateFetch, type LadderDeps } from "@/core/fetch/ladder";
 import { collectRefused } from "@/features/sources/collect";
-import { credentialGaps, identifiersOf, substituteCandidates } from "@/core/sources/publishers";
+import { identifiersOf, substituteCandidates } from "@/core/sources/publishers";
 
 import { memoryDb } from "../_support/memory-db.ts";
+import { rungs } from "../_support/ladder.ts";
 import { routed } from "../_support/net.ts";
 
 const prose = (n: number) => "The regulation requires operators to report greenhouse gas emissions under the scheme each year. ".repeat(n);
@@ -18,7 +19,7 @@ const policy = (reason: "robots_disallowed" | "robots_unknown", detail = "robots
 const publicHost = async () => ["93.184.216.34"];
 
 test("INV-R2c-4: a source refused on the honest identity with a registered feed is read from the feed, and the record names both channels", async () => {
-  const v = await escalateFetch("https://agency.gov/rule", { source: { rss_feed_url: "https://agency.gov/feed.xml", access_method: "scrape" }, directFetch: async () => wall(), feedFetch: async () => ok(), browserFetch: async () => ok() });
+  const v = await escalateFetch("https://agency.gov/rule", rungs({ source: { rss_feed_url: "https://agency.gov/feed.xml", access_method: "scrape" }, directFetch: async () => wall(), feedFetch: async () => ok(), browserFetch: async () => ok() }));
   assert.equal(v.outcome, "content");
   assert.equal(v.transport, "feed");
   assert.deepEqual(v.attempts.map((a) => a.transport), ["direct", "feed"]);
@@ -26,17 +27,17 @@ test("INV-R2c-4: a source refused on the honest identity with a registered feed 
 });
 test("a source whose access method is rss or api reads that declared channel first, ahead of the static api-host table; others read the page first", async () => {
   const order: string[] = [];
-  const deps = (method: string): LadderDeps => ({ source: { rss_feed_url: "https://agency.gov/feed.xml", api_endpoint_url: "https://agency.gov/api", access_method: method }, directFetch: async () => (order.push("direct"), ok()), feedFetch: async () => (order.push("feed"), ok()), apiFetch: async () => (order.push("api"), wall()) });
-  await escalateFetch("https://agency.gov/rule", deps("rss"));
+  const deps = (method: string): Partial<LadderDeps> => ({ source: { rss_feed_url: "https://agency.gov/feed.xml", api_endpoint_url: "https://agency.gov/api", access_method: method }, directFetch: async () => (order.push("direct"), ok()), feedFetch: async () => (order.push("feed"), ok()), apiFetch: async () => (order.push("api"), wall()) });
+  await escalateFetch("https://agency.gov/rule", rungs(deps("rss")));
   assert.deepEqual(order.splice(0), ["api", "feed"]);
-  await escalateFetch("https://agency.gov/rule", { ...deps("scrape"), source: { rss_feed_url: "https://agency.gov/feed.xml", access_method: "scrape" } });
+  await escalateFetch("https://agency.gov/rule", rungs({ ...deps("scrape"), source: { rss_feed_url: "https://agency.gov/feed.xml", access_method: "scrape" } }));
   assert.deepEqual(order.splice(0), ["direct"]);
-  const v = await escalateFetch("https://www.federalregister.gov/documents/2023/05/01/2023-12345/x", { directFetch: async () => (order.push("direct"), ok()), apiFetch: async () => (order.push("api"), ok()) });
+  const v = await escalateFetch("https://www.federalregister.gov/documents/2023/05/01/2023-12345/x", rungs({ directFetch: async () => (order.push("direct"), ok()), apiFetch: async () => (order.push("api"), ok()) }));
   assert.deepEqual([order.splice(0), v.transport], [["api"], "api"], "an API host routes to its API first");
 });
 test("a 403 is final for its channel: the next channel is tried, in order, and a source reaches access_requested only after every channel was tried", async () => {
   const tried: string[] = [];
-  const v = await escalateFetch("https://agency.gov/rule", {
+  const v = await escalateFetch("https://agency.gov/rule", rungs({
     source: { rss_feed_url: "https://agency.gov/feed.xml", sitemap_url: "https://agency.gov/sitemap.xml" },
     directFetch: async () => (tried.push("direct"), wall()),
     feedFetch: async () => (tried.push("feed"), wall(429)),
@@ -44,7 +45,7 @@ test("a 403 is final for its channel: the next channel is tried, in order, and a
     browserFetch: async () => (tried.push("browser"), wall()),
     substituteFetch: async () => (tried.push("substitute"), []),
     contactOf: async () => ({ contact: "webmaster@agency.gov", rule: null }),
-  });
+  }));
   assert.deepEqual(tried, ["direct", "feed", "sitemap", "browser", "substitute"]);
   assert.equal(v.outcome, "access_requested");
   assert.equal(v.access?.contact, "webmaster@agency.gov");
@@ -52,27 +53,27 @@ test("a 403 is final for its channel: the next channel is tried, in order, and a
   assert.equal(v.attempts.find((a) => a.transport === "sitemap")?.verdict, "discovery");
 });
 test("the browser tier unavailable is not exhaustion: the ladder defers and requests nothing of the publisher", async () => {
-  const v = await escalateFetch("https://agency.gov/rule", { directFetch: async () => wall(), browserFetch: async () => ({ status: 0, text: "", truncated: false, fullLength: 0, cap: 0, needsHeadless: true }) });
+  const v = await escalateFetch("https://agency.gov/rule", rungs({ directFetch: async () => wall(), browserFetch: async () => ({ status: 0, text: "", truncated: false, fullLength: 0, cap: 0, needsHeadless: true }) }));
   assert.equal(v.outcome, "deferred");
   assert.equal(v.holdReason, "NEEDS_BROWSER");
-  assert.equal(v.attempts[1]?.class, NEEDS_HEADLESS);
+  assert.equal(v.attempts[1]?.class, "needs_headless");
 });
 test("a robots refusal skips the browser tier (it honours the same rule), tries the substitute, and the access request carries the rule; a robots.txt that cannot be read defers", async () => {
   let browser = 0;
-  const v = await escalateFetch("https://agency.gov/rule", { directFetch: async () => policy("robots_disallowed", "robots.txt of agency.gov disallows /rule (Disallow: /)"), browserFetch: async () => (browser++, ok()), substituteFetch: async () => [], contactOf: async () => ({ contact: null, rule: null }) });
+  const v = await escalateFetch("https://agency.gov/rule", rungs({ directFetch: async () => policy("robots_disallowed", "robots.txt of agency.gov disallows /rule (Disallow: /)"), browserFetch: async () => (browser++, ok()), substituteFetch: async () => [], contactOf: async () => ({ contact: null, rule: null }) }));
   assert.equal(browser, 0);
   assert.equal(v.outcome, "access_requested");
   assert.equal(v.access?.rule, "Disallow: /");
   assert.equal(v.access?.contact, null);
   assert.match(v.attempts.find((a) => a.transport === "browser")?.detail ?? "", /not run/);
-  const unknown = await escalateFetch("https://agency.gov/rule", { directFetch: async () => policy("robots_unknown"), browserFetch: async () => ok() });
+  const unknown = await escalateFetch("https://agency.gov/rule", rungs({ directFetch: async () => policy("robots_unknown"), browserFetch: async () => ok() }));
   assert.equal(unknown.outcome, "content", "an unreadable robots.txt on the direct channel does not stop the browser tier from asking its own gate");
-  const stuck = await escalateFetch("https://agency.gov/rule", { directFetch: async () => policy("robots_unknown"), browserFetch: async () => policy("robots_unknown") });
+  const stuck = await escalateFetch("https://agency.gov/rule", rungs({ directFetch: async () => policy("robots_unknown"), browserFetch: async () => policy("robots_unknown") }));
   assert.equal(stuck.outcome, "deferred");
 });
 test("a not-found is not a wall: the browser tier is not asked, and nothing is requested of the publisher", async () => {
   let browser = 0;
-  const v = await escalateFetch("https://agency.gov/gone", { directFetch: async () => ({ status: 404, text: "", truncated: false, fullLength: 0, cap: 0 }), browserFetch: async () => (browser++, ok()) });
+  const v = await escalateFetch("https://agency.gov/gone", rungs({ directFetch: async () => ({ status: 404, text: "", truncated: false, fullLength: 0, cap: 0 }), browserFetch: async () => (browser++, ok()) }));
   assert.equal(browser, 0);
   assert.equal(v.outcome, "seek_more");
 });
@@ -110,7 +111,7 @@ const bdeps = (over: Partial<BrowserDeps> & { robots?: Record<string, { status: 
   const rest = { ...over };
   delete rest.robots;
   const { db } = memoryDb({ system_state: [{ id: true, scrape_cadence: "weekly", scrape_start_date: "2026-01-05", global_processing_paused: false }] });
-  return { net, sleeps, deps: { db, env: {}, fetchImpl: net.fetch, resolveHost: publicHost, now: () => new Date(clock), sleep: async (ms) => void (sleeps.push(ms), (clock += ms)), random: () => 0, ...rest } };
+  return { net, sleeps, deps: { db, env: {}, fetchImpl: net.fetch, resolveHost: publicHost, now: () => new Date(clock), sleep: async (ms) => void (sleeps.push(ms), (clock += ms)), launchBrowser: null, ...rest } };
 };
 
 test("browser tier: it reads the rendered page once the network is idle and the content has stopped changing, with no click and no identity override", async () => {
@@ -170,7 +171,7 @@ test("browser tier condition (c): a CAPTCHA is recorded as an interactive challe
 });
 test("browser tier condition (d): one navigation per host every 3 to 5 seconds, serialised per host; another host does not wait", async () => {
   const fb = fakeBrowser(() => ({ status: 200, html: `<p>${prose(20)}</p>` }));
-  const { deps, sleeps } = bdeps({ launchBrowser: fb.launch, random: () => 0.5 });
+  const { deps, sleeps } = bdeps({ launchBrowser: fb.launch });
   await Promise.all([fetchBrowser("https://agency.gov/1", deps, { max: 1_000_000 }), fetchBrowser("https://agency.gov/2", deps, { max: 1_000_000 }), fetchBrowser("https://agency.gov/3", deps, { max: 1_000_000 })]);
   const gaps = sleeps.filter((s) => s >= 3000);
   assert.equal(gaps.length, 2, "the second and third navigations to the host waited");
@@ -192,26 +193,26 @@ test("browser tier off the runner returns needsHeadless and never crashes; a bro
 });
 
 // ---- the substitute table and the runner side ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+test("the substitute table: an unverified entry is never used, a credential channel self-skips without its variable and names its registration, and the refusing host is never its own substitute", () => {
+  const celex = identifiersOf("https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32023R1115");
+  const eu = substituteCandidates(celex, { env: {}, today: "2026-10-19", refusingHost: "eur-lex.europa.eu" });
+  assert.deepEqual(eu.use.map((c) => c.entry.host), ["publications.europa.eu"]);
+  assert.ok(eu.skipped.some((x) => /unverified/.test(x.why)), "the EUR-Lex web service entry is unverified and not used");
+  const doc = identifiersOf("https://downloads.regulations.gov/x/content.pdf", "EPA-HQ-OAR-2022-0985-0001");
+  const unset = substituteCandidates(doc, { env: {}, today: "2026-10-19", refusingHost: "downloads.regulations.gov" });
+  assert.equal(unset.use.length, 0);
+  assert.match(unset.skipped.map((x) => x.why).join(" "), /REGULATIONS_GOV_API_KEY.*https:\/\/api\.data\.gov\/signup\//);
+  const set = substituteCandidates(doc, { env: { REGULATIONS_GOV_API_KEY: "k" }, today: "2026-10-19", refusingHost: "downloads.regulations.gov" });
+  assert.match(set.use[0]?.url ?? "", /api\.regulations\.gov\/v4\/documents\/EPA-HQ-OAR-2022-0985-0001\?api_key=k/);
+  assert.equal(substituteCandidates(celex, { env: {}, today: "2026-10-19", refusingHost: "publications.europa.eu" }).use.length, 0);
+});
 test("identifiers are read only where the evidence is explicit", () => {
   assert.deepEqual(identifiersOf("https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32023R1115").map((i) => [i.scheme, i.id]), [["celex", "32023R1115"]]);
   assert.deepEqual(identifiersOf("https://x.gov/y", "S.I. 2023/456").map((i) => [i.scheme, i.id]), [["uk_legislation", "uksi/2023/456"]]);
   assert.deepEqual(identifiersOf("https://www.legislation.gov.uk/ukpga/2008/27/contents").map((i) => i.id), ["ukpga/2008/27"]);
   assert.deepEqual(identifiersOf("https://x.gov/y", "Public Law 117-58 and 40 CFR Part 98").map((i) => i.scheme).sort(), ["cfr", "public_law"]);
   assert.deepEqual(identifiersOf("https://x.gov/some-page"), []);
-});
-test("the substitute table: an unverified entry is never used, a credential-needing channel self-skips without its variable, the refusing host is never its own substitute", () => {
-  const ids = identifiersOf("https://x.gov/y", "CELEX 32023R1115 and EPA-HQ-OAR-2021-0208-0001 and MEPC.376(80)");
-  const none = substituteCandidates(ids, { env: {}, today: "2026-10-19" });
-  assert.deepEqual(none.use.map((c) => c.entry.id), ["cellar"]);
-  assert.equal(none.use[0]?.url, "https://publications.europa.eu/resource/celex/32023R1115");
-  assert.ok(none.skipped.some((s) => s.publisher === "regulations_gov_api" && /REGULATIONS_GOV_API_KEY/.test(s.why) && /free: true/.test(s.why)));
-  assert.ok(none.skipped.some((s) => s.publisher === "mca" && /unverified/.test(s.why)));
-  assert.ok(none.skipped.some((s) => s.publisher === "eur_lex_ws" && /unverified/.test(s.why)));
-  const keyed = substituteCandidates(ids, { env: { REGULATIONS_GOV_API_KEY: "k e y" }, today: "2026-10-19" });
-  assert.ok(keyed.use.some((c) => c.entry.id === "regulations_gov_api" && c.url === "https://api.regulations.gov/v4/documents/EPA-HQ-OAR-2021-0208-0001?api_key=k%20e%20y"));
-  const self = substituteCandidates(ids, { env: {}, today: "2026-10-19", refusingHost: "publications.europa.eu" });
-  assert.equal(self.use.length, 0);
-  assert.ok(credentialGaps().some((g) => g.publisher === "regulations_gov_api" && g.free && g.registration.startsWith("https://")));
 });
 
 function world(over: { sourceUrl?: string; paywalled?: boolean; identifier?: string | null; robots?: Record<string, { status: number; body?: string }>; handler?: (u: string) => Response } = {}) {

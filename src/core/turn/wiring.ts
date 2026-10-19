@@ -118,7 +118,7 @@ export function buildDeps(sb: Db, env: Env = process.env, opts: DepsOptions = {}
   const dry = (): boolean => context.current?.mode !== "apply";
   const recorder = makeRecorder(sb, now);
   const hold = { db: sb, env };
-  const fetchDeps: CaptureDeps = { db: sb, env, now, fetchImpl: doFetch, resolveHost: null, throttle: makePoliteGate({ gapMs: 1000, now: () => now().getTime(), sleep }) };
+  const fetchDeps: CaptureDeps = { db: sb, env, now, fetchImpl: doFetch, resolveHost: null, sleep, throttle: makePoliteGate({ gapMs: 1000, now: () => now().getTime(), sleep }) };
 
   // The reference data of the turn, read once per deps: host verdicts for rating a host the class table does not place, and the market series keys (the mint's record_hollow exemption). Both are tables (IMP-054, IMP-084).
   const verdicts = new Map<string, HostVerdictRef>(opts.verdicts ?? []);

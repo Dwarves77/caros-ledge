@@ -1,4 +1,0 @@
-{
-  "_status": "PLACEHOLDER pending a counsel ruling: the lengths below are the configured caps, not a legal conclusion. A source whose reuse_terms is unknown or prohibited is quoted only up to this many characters; every other class is quoted in full (ADR-016 verbatim spans).",
-  "maxChars": { "unknown": 400, "prohibited": 200 }
-}

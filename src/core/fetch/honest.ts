@@ -20,7 +20,7 @@ const kits = new WeakMap<object, Kit>();
 const ROBOTS_TTL_MS = 60 * 60 * 1000;
 
 /** The declared User-Agent SEC fair access requires for sec.gov; null for any other host or an unset contact. */
-export function secFairAccessUaForUrl(url: string, env: Record<string, string | undefined> = process.env): string | null {
+function secFairAccessUaForUrl(url: string, env: Record<string, string | undefined> = process.env): string | null {
   let host: string;
   try {
     host = new URL(url).hostname.toLowerCase();

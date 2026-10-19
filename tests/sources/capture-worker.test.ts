@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { drain, isServiceRoleRequest, processRow, type WorkerDeps } from "../../supabase/functions/capture-worker/process.ts";
+import { storeCapture } from "../../src/core/fetch/store-capture.ts";
+import { captureLocale, documentLanguage, isWallStatus } from "../../src/core/fetch/policy.ts";
 import { memoryDb, type Failure } from "../_support/memory-db.ts";
 import { instant, routed } from "../_support/net.ts";
 
@@ -253,4 +255,38 @@ test("INV-138: only a service-role bearer reaches the worker", () => {
   assert.equal(isServiceRoleRequest(null, "svc-key"), false);
   assert.equal(isServiceRoleRequest("Bearer ", ""), false, "an unset key admits no one");
   assert.equal(isServiceRoleRequest("Bearer anon-key", undefined), false);
+});
+
+test("number_locale: the publisher's declared locale, else the document's lang attribute, else Content-Language, else null (never a guess)", async () => {
+  const stored = async (src: Record<string, unknown>, html: string, headers: Record<string, string> = {}) => {
+    const w = world({ extra: { sources: [{ id: "src-1", url: URL1, name: "Agency Rule", ...src }] } });
+    const rep = await processRow(deps(w.db, (async () => new Response(html, { headers: { "content-type": "text/html", ...headers } })) as typeof fetch), row());
+    assert.equal(rep.outcome, "captured");
+    return w.tables.agent_run_searches?.[0]?.number_locale;
+  };
+  const body = page(prose(80));
+  assert.equal(await stored({ publisher_locale: "en-GB" }, body.replace("<html>", '<html lang="de">')), "en-GB", "the registry's declared locale wins");
+  assert.equal(await stored({}, body.replace("<html>", '<html lang="de-at">')), "de-AT");
+  assert.equal(await stored({}, body, { "content-language": "fr-FR, en" }), "fr-FR");
+  assert.equal(await stored({}, body), null, "a document that declares nothing is null, not a guess");
+  assert.equal(documentLanguage("nonsense language", '<html lang="english">'), null);
+  assert.equal(captureLocale("en_gb", null), "en-GB");
+  assert.equal(captureLocale("not a locale", "pt-br"), "pt-BR");
+});
+test("a wall status is 401, 403 or 429 and nothing else", () => {
+  for (const s of [401, 403, 429]) assert.equal(isWallStatus(s), true, String(s));
+  for (const s of [200, 202, 404, 410, 500, 503, null, undefined]) assert.equal(isWallStatus(s), false, String(s));
+});
+test("storeCapture: the same final URL and hash is unchanged, a different body captures, and the channel and locale are recorded", async () => {
+  const w = world();
+  const clock = () => Date.parse("2026-10-15T10:00:00Z");
+  const one = { sourceId: "src-1", sourceUrl: URL1, sourceName: "Agency Rule", finalUrl: URL1, text: page(prose(50)), title: "The Rule", httpStatus: 200, channel: "browser" as const, numberLocale: "fr-FR", itemId: null, itemIds: [] as string[], declaredTransforms: [], ceilingBind: null, ceiling: 1_000_000 };
+  const first = await storeCapture(w.db as never, one, clock, clock());
+  assert.equal(first.outcome, "captured");
+  const row0 = w.tables.agent_run_searches?.[0];
+  assert.deepEqual([row0?.capture_channel, row0?.number_locale, row0?.content_hash], ["browser", "fr-FR", first.contentHash]);
+  assert.equal((await storeCapture(w.db as never, one, clock, clock())).outcome, "unchanged");
+  assert.equal(w.tables.agent_run_searches?.length, 1);
+  assert.equal((await storeCapture(w.db as never, { ...one, text: page(prose(51)) }, clock, clock())).outcome, "captured");
+  assert.equal(w.tables.agent_run_searches?.length, 2);
 });
