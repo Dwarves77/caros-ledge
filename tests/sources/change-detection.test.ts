@@ -6,6 +6,7 @@ import { contentFingerprint, isContentChange, runChangeDetection, validateCheckL
 import { fetchDirect } from "@/core/fetch/direct";
 import { decideSourceAssessment, REACH } from "@/core/fetch/reachability";
 
+import { routed } from "../_support/net.ts";
 import { memoryDb } from "../_support/memory-db.ts";
 
 const NOW = new Date("2026-10-12T10:00:00Z");
@@ -40,11 +41,11 @@ test("three fixtures: changed is flagged, unchanged is not, and a 403 is a non-a
     system_state: [system],
     sources: [src("altered", { last_content_hash: before, consecutive_accessible: 2 }), src("same", { last_content_hash: before, consecutive_accessible: 2 }), src("walled", { last_content_hash: before, consecutive_accessible: 0 })],
   });
-  const fetchImpl = (async (u: string) => {
+  const fetchImpl = routed(async (u: string) => {
     if (u.includes("altered.gov")) return ok(page(prose(40, "amended")));
     if (u.includes("same.gov")) return ok(page(prose(40)));
     return new Response("forbidden", { status: 403 });
-  }) as unknown as typeof fetch;
+  }).fetch;
   const snaps: string[] = [];
   const run = await runChangeDetection({ db: w.db, now: () => NOW, env: {}, fetchImpl, writeSnapshot: async (id) => void snaps.push(id) });
   assert.equal(run.counts.checked, 3);

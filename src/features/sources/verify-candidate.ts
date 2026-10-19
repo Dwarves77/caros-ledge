@@ -6,7 +6,8 @@ import { checkReachability, decideReachabilityAction, type Reachability } from "
 import { hostOf } from "@/core/shared";
 import { classifySourceRole } from "@/core/sources/classify";
 import { placeHostWithVerdicts, type HostVerdictRef } from "@/core/sources/host-class";
-import { lookupExactHost } from "@/core/sources/register";
+import { hostInstitution } from "@/core/sources/institution";
+import { lookupExactHost, registerSource } from "@/core/sources/register";
 import type { RunDeps, RunResult } from "@/core/sources/run-result";
 
 import { checkVerticalFitGate } from "./vertical-fit-gate";
@@ -78,24 +79,23 @@ export function aggregateTier(i: { duplicate: boolean; duplicateLookupFailed: bo
   return { tier: "M", triggers: [`M_default(rel=${v.relevance},frt=${v.freight},dom=${i.domain})`] };
 }
 
-/** Exact-host duplicate check: a registered row at the same canonical host whose path is this one or a parent of it. A read error is a failure, never "no duplicate" (B-0227). */
-async function checkDuplicate(deps: VerifyDeps, url: string): Promise<{ matched: boolean; failed: boolean; matchedSourceId?: string; method?: "host" | "path" }> {
-  let pathname: string;
+/** The path segments of a URL, lower-cased, without the empty ones: `/a/b/` and `/a/b` are one page, `/regulation-2` is not `/regulation`. */
+const segments = (u: string | null): string[] | null => {
   try {
-    pathname = new URL(url).pathname.replace(/\/+$/, "") || "/";
+    return new URL(String(u)).pathname.split("/").filter(Boolean).map((s) => s.toLowerCase());
   } catch {
-    return { matched: false, failed: false };
+    return null;
   }
+};
+/** Duplicate check: a registered row of the same registrable domain at the same page (path equality by segment, never a prefix). A read error is a failure, never "no duplicate" (B-0227). */
+async function checkDuplicate(deps: VerifyDeps, url: string): Promise<{ matched: boolean; failed: boolean; matchedSourceId?: string; method?: "path" }> {
+  const want = segments(url);
+  if (!want) return { matched: false, failed: false };
   const found = await lookupExactHost(deps.db, url);
   if (!found.ok) return { matched: false, failed: true };
   for (const row of found.rows) {
-    try {
-      const existing = new URL(row.url ?? "").pathname.replace(/\/+$/, "") || "/";
-      if (existing === pathname) return { matched: true, failed: false, matchedSourceId: row.id, method: "path" };
-      if (pathname.startsWith(existing) || existing === "/") return { matched: true, failed: false, matchedSourceId: row.id, method: "host" };
-    } catch {
-      continue;
-    }
+    const have = segments(row.url);
+    if (have && hostInstitution(hostOf(row.url)) === hostInstitution(hostOf(url)) && have.length === want.length && have.every((s, i) => s === want[i])) return { matched: true, failed: false, matchedSourceId: row.id, method: "path" };
   }
   return { matched: false, failed: false };
 }
@@ -105,13 +105,13 @@ async function execute(deps: VerifyDeps, input: VerifyInput, tier: VerificationT
   const name = input.name || input.url;
   const note = `${deps.now().toISOString().slice(0, 10)}`;
   if (tier === "H" && classTier != null) {
-    // base_tier is the class table's tier, never a guess; an unplaced host falls through to the provisional queue.
-    const { data, error } = await deps.db
-      .from("sources")
-      .insert({ name, url: input.url, description: input.verdict?.rationale ?? "", base_tier: classTier, tier_at_creation: classTier, domains: [1], jurisdictions: input.jurisdiction_iso ?? [], transport_modes: [], access_method: "scrape", status: "active", admin_only: false, source_role: classifySourceRole(name, input.url), update_frequency: "weekly", intelligence_types: [], vertical_tags: [], notes: `Auto-approved by candidate verification ${note}. base_tier=${classTier} (class table). Relevance advisory: rel=${input.verdict?.relevance ?? "?"}, frt=${input.verdict?.freight ?? "?"}.` })
-      .select("id")
-      .single();
-    return error || !data ? { action: "rejected" as VerificationAction, error: `H insert failed: ${error?.message ?? "no row returned"}` } : { action: "auto-approved" as VerificationAction, resulting_source_id: (data as { id: string }).id };
+    // base_tier is the class table's tier, never a guess; an unplaced host falls through to the provisional queue. The row is born through the one registerSource: its domain and frequency are the column defaults, not constants.
+    try {
+      const reg = await registerSource(deps.db, { url: input.url, name, base_tier: classTier, profile: "candidate", extra: { description: input.verdict?.rationale ?? "", jurisdictions: input.jurisdiction_iso ?? [], notes: `Auto-approved by candidate verification ${note}. base_tier=${classTier} (class table). Relevance advisory: rel=${input.verdict?.relevance ?? "?"}, frt=${input.verdict?.freight ?? "?"}.` } });
+      return { action: "auto-approved" as VerificationAction, resulting_source_id: reg.source_id };
+    } catch (e) {
+      return { action: "rejected" as VerificationAction, error: `H insert failed: ${(e as Error).message}` };
+    }
   }
   const { data, error } = await deps.db
     .from("provisional_sources")

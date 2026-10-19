@@ -4,7 +4,8 @@ import { allRows } from "@/core/db";
 import { fetchPrimaryWithFallback, generateCandidates } from "@/core/fetch/candidates";
 import { fetchDirect, type FetchDeps } from "@/core/fetch/direct";
 import { assertFetchAllowed } from "@/core/fetch/hold";
-import { PRIMARY_HEADERS } from "@/core/fetch/policy";
+import { honestFetch } from "@/core/fetch/honest";
+import { DECLARED_HEADERS } from "@/core/fetch/policy";
 import { hostOf } from "@/core/shared";
 import { classTierForHost } from "@/core/sources/host-class";
 import { officialnessOf } from "@/core/sources/officialness";
@@ -105,7 +106,7 @@ export async function triageOneSource(source: SuspendedSource, deps: TriageDeps 
   await assertFetchAllowed(url, deps.caller, deps);
   let head: Dossier["probe"]["head"];
   try {
-    const r = await (deps.fetchImpl ?? fetch)(url, { method: "HEAD", headers: PRIMARY_HEADERS, redirect: "follow", signal: AbortSignal.timeout(perFetchMs) });
+    const r = await honestFetch(deps)(url, { method: "HEAD", headers: DECLARED_HEADERS, redirect: "follow", signal: AbortSignal.timeout(perFetchMs) });
     head = { status: r.status, finalUrl: r.url || url };
   } catch (e) {
     head = { status: null, finalUrl: url, err: (e as Error).message };

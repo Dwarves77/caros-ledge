@@ -5,7 +5,7 @@ export { BODY_CLASS, classifyBody, detectAccessWall, isErrorBody, partitionError
 export type { BodyClass } from "./classify-body";
 export { fetchDirect, extractPdfText } from "./direct";
 export type { FetchDeps, TransportResult } from "./direct";
-export { fetchHeadless } from "./headless";
+export { closeBrowser, fetchBrowser } from "./headless";
 export { AUTHORIZED_HOLD_CALLERS, assertFetchAllowed, FetchHoldError, fetchAllowed, getScrapeState, isGloballyPaused, nextScrapeDate, readScrapeState, readScrapeStateOrClosed, scrapeWindowOpen } from "./hold";
 export { captureForStorage, escalateFetch } from "./ladder";
 export { fetchDocument } from "./policy";

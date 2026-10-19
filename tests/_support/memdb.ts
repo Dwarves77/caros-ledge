@@ -61,10 +61,36 @@ const recordHostWorklist: RpcFn = (a, d) => {
   return { data: Number((hit ?? rows[rows.length - 1])?.seen_count) };
 };
 
+/** The fields register_source_once (migration 0081) reads from its row object: a closed list, anything else is ignored. */
+const SOURCE_BIRTH_FIELDS = ["name", "url", "base_tier", "tier_at_creation", "effective_tier", "status", "admin_only", "source_role", "description", "domains", "jurisdictions", "transport_modes", "access_method", "update_frequency", "intelligence_types", "vertical_tags", "topic_tags", "auto_run_enabled", "notes", "reuse_terms"];
+/** register_source_once (migration 0081): the row for the key, or the one that already holds it; its attacks (two callers, two institutions on a host, a bad key, a duplicate key) are proven by the migration's own self-check. */
+const registerSourceOnce: RpcFn = (a, d) => {
+  const key = String(a.p_key ?? "");
+  const row = (a.p_row ?? {}) as Row;
+  const bad = (message: string) => ({ error: { message, code: "22023" } });
+  if (!key.trim() || key !== key.toLowerCase()) return bad("register_source_once: the institution key must be a non-empty lower-case key");
+  if (!row.url || row.base_tier == null) return bad("register_source_once: the row needs a url and a base_tier");
+  const rows = d.rows("sources");
+  const hit = rows.find((r) => r.institution_key === key);
+  if (hit) return { data: [{ r_source_id: hit.id, r_created: false, r_status: hit.status }] };
+  const defaults = Object.fromEntries(Object.entries(d.opts.schema?.tables.sources?.defaults ?? {}).map(([k, v]) => [k, v === "__now" ? d.now : Array.isArray(v) ? [] : v !== null && typeof v === "object" ? { ...(v as object) } : v]));
+  const fresh: Row = { ...defaults, id: d.opts.ids === "seq" ? d.autoId("sources") : d.nextId() };
+  for (const f of SOURCE_BIRTH_FIELDS) if (row[f] !== undefined) fresh[f] = row[f];
+  for (const f of ["domains", "jurisdictions", "transport_modes", "intelligence_types", "vertical_tags", "topic_tags"]) fresh[f] ??= [];
+  fresh.status ??= "active";
+  fresh.access_method ??= "manual";
+  fresh.update_frequency ??= "weekly";
+  fresh.name = row.name ?? row.url;
+  fresh.tier_at_creation = row.tier_at_creation ?? row.base_tier;
+  fresh.institution_key = key;
+  rows.push(fresh);
+  return { data: [{ r_source_id: fresh.id, r_created: true, r_status: fresh.status ?? "active" }] };
+};
+
 export class MemDb {
   tables: Record<string, Row[]> = {};
   calls: MemCall[] = [];
-  rpcs: Record<string, RpcFn> = { record_host_worklist: recordHostWorklist };
+  rpcs: Record<string, RpcFn> = { record_host_worklist: recordHostWorklist, register_source_once: registerSourceOnce };
   rpcCalls: { name: string; args: Record<string, unknown> }[] = [];
   /** An rpc refused by name (the page sweep): every call answers this error. */
   rpcFail = new Map<string, { message: string; code?: string }>();

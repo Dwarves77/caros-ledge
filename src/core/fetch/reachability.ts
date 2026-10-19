@@ -5,7 +5,8 @@
 import { isErrorBody } from "./classify-body";
 import { type FetchDeps } from "./direct";
 import { assertFetchAllowed } from "./hold";
-import { PRIMARY_HEADERS } from "./policy";
+import { honestFetch } from "./honest";
+import { DECLARED_HEADERS } from "./policy";
 
 export const REACH = { REACHABLE: "reachable", INCONCLUSIVE: "inconclusive", DEAD: "dead" } as const;
 export type Reachability = (typeof REACH)[keyof typeof REACH];
@@ -44,21 +45,19 @@ export function decideFetchOutcome({ content, error }: { content?: string | null
   return isErrorBody(content) ? { kind: "inconclusive" as const, httpStatus: 503, reason: "error-body" } : { kind: "ok" as const, httpStatus: 200 };
 }
 
-export interface ReachabilityDeps extends FetchDeps {
-  sleep?: (ms: number) => Promise<void>;
-}
-/** A HEAD (then a GET when the host answers 405) up to three times; REACHABLE and DEAD are terminal, a non-answer retries. The hold gate runs first. */
+export type ReachabilityDeps = FetchDeps;
+/** A HEAD (then a GET when the host answers 405) up to three times, under the declared identity and the robots verdict (a refusal reads as a non-answer, never as dead); REACHABLE and DEAD are terminal, a non-answer retries. The hold gate runs first. */
 export async function checkReachability(url: string, deps: ReachabilityDeps, opts: { timeoutMs?: number; backoff?: number[]; maxAttempts?: number } = {}) {
   await assertFetchAllowed(url, deps.caller, deps);
   const { timeoutMs = 8000, backoff = [200, 800, 3200], maxAttempts = 3 } = opts;
-  const doFetch = deps.fetchImpl ?? fetch;
+  const doFetch = honestFetch(deps);
   const sleep = deps.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
   let last: { status: number | null; errored: boolean; error?: string } = { status: null, errored: true, error: "not attempted" };
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     if (attempt > 1) await sleep(backoff[attempt - 1] ?? 0);
     try {
-      let res = await doFetch(url, { method: "HEAD", redirect: "follow", headers: PRIMARY_HEADERS, signal: AbortSignal.timeout(timeoutMs) });
-      if (res.status === 405) res = await doFetch(url, { method: "GET", redirect: "follow", headers: PRIMARY_HEADERS, signal: AbortSignal.timeout(timeoutMs) });
+      let res = await doFetch(url, { method: "HEAD", redirect: "follow", headers: DECLARED_HEADERS, signal: AbortSignal.timeout(timeoutMs) });
+      if (res.status === 405) res = await doFetch(url, { method: "GET", redirect: "follow", headers: DECLARED_HEADERS, signal: AbortSignal.timeout(timeoutMs) });
       last = { status: res.status, errored: false };
     } catch (e) {
       last = { status: null, errored: true, error: e instanceof Error ? e.message : String(e) };

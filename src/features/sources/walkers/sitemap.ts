@@ -3,6 +3,7 @@ import { promisify } from "node:util";
 import { gunzip } from "node:zlib";
 
 import { detectAccessWall } from "@/core/fetch/classify-body";
+import { MAX_INFLATED_BYTES } from "@/core/fetch/policy";
 import { hostOf } from "@/core/shared";
 
 import { discoveredFeedLinks, feedCandidateUrls, isFeedDocument } from "./feed";
@@ -64,10 +65,10 @@ export const filterEntriesForSource = <T extends { loc: string }>(entries: T[], 
 
 export const looksGzippedUrl = (url: string): boolean => /\.gz(?:[?#].*)?$/i.test(String(url ?? ""));
 export const looksGzippedBuffer = (buf: Uint8Array): boolean => buf.length >= 2 && buf[0] === 0x1f && buf[1] === 0x8b;
-/** A fetched sitemap body to text, gunzipped when the URL or the magic bytes say so. */
-export async function decodeXmlBody(buf: Uint8Array, url: string): Promise<string> {
+/** A fetched sitemap body to text, gunzipped when the URL or the magic bytes say so. The inflated size is bounded (policy MAX_INFLATED_BYTES): a small archive that inflates past it throws, never fills the worker (R2c C9, register row D:54). */
+export async function decodeXmlBody(buf: Uint8Array, url: string, maxInflatedBytes = MAX_INFLATED_BYTES): Promise<string> {
   const b = Buffer.from(buf);
-  return (looksGzippedUrl(url) || looksGzippedBuffer(b) ? await promisify(gunzip)(b) : b).toString("utf8");
+  return (looksGzippedUrl(url) || looksGzippedBuffer(b) ? await promisify(gunzip)(b, { maxOutputLength: maxInflatedBytes }) : b).toString("utf8");
 }
 export const DEFAULT_MAX_SITEMAP_RESPONSE_BYTES = 50 * 1024 * 1024;
 export const DEFAULT_MAX_FEED_RESPONSE_BYTES = 10_000_000;

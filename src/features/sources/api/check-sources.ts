@@ -7,6 +7,7 @@ import { checkRateLimit } from "@/core/http/rate-limit";
 import { isGloballyPaused } from "@/core/fetch/hold";
 
 import { reconcileChanges } from "../change";
+import { collectRefused } from "../collect";
 import { writeSnapshot } from "../snapshots";
 
 const OFF = { checked: 0, sourcesChecked: 0, changesDetected: 0, portalCandidates: 0 };
@@ -14,7 +15,7 @@ const OFF = { checked: 0, sourcesChecked: 0, changesDetected: 0, portalCandidate
 /**
  * POST /api/worker/check-sources: the worker secret, then the shared limiter (one bucket for this route), then the optional limit (400 on a bad value, before any state check), then the hold
  * gate. While the cadence is off it exits with 0 checked (build mode, rule 16: an expected consequence, not a defect). Otherwise it runs the change-detection pass and the reconcile pass in process.
- * Portal-link harvesting is wired by the dispatcher that owns the intake ledger; this route runs without it.
+ * After the reconcile it finishes the collection ladder for refused sources (collectRefused). Portal-link harvesting is wired by the dispatcher that owns the intake ledger; this route runs without it.
  */
 export const POST = route("/api/worker/check-sources", async (request) => {
   const denied = workerAuthGuard(request);
@@ -43,7 +44,10 @@ export const POST = route("/api/worker/check-sources", async (request) => {
   };
   const run = await runChangeDetection(deps, { limit: limit.limit });
   if (run.outcome === "failed") return Response.json({ error: run.notes.join("; ") || "change detection failed" }, { status: 500 });
+  // Rule 17: a source the capture worker found walled goes on to the browser tier, a substitute publisher or an access request in the same pass (a host with no browser reports the rows it left).
+  const collected = await collectRefused({ db, now: () => new Date(), env: process.env }, { limit: 3 });
   return Response.json({
+    collect: { counts: collected.counts, outcome: collected.outcome, notes: collected.notes },
     message: run.notes[0] && run.counts.checked === 0 ? run.notes[0] : `Checked ${run.counts.checked} sources`,
     checked: run.counts.checked,
     sourcesChecked: run.counts.checked,

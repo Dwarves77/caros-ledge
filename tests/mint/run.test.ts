@@ -92,7 +92,7 @@ test("INV-297 and INV-294: every row ends with its disposition on census_worklis
   assert.deepEqual(reason(amb), ["hold", "screen:ambiguous:no_signal_ambiguous"]);
   assert.deepEqual(reason(heldByUrl), ["hold", "held:already_held_by_url:old1"]);
   assert.deepEqual(reason(noIdentity), ["hold", "identity:institution_category_unmapped"]);
-  assert.deepEqual(reason(thin), ["hold", "capture:capture_blocked_no_archive"], "a stored capture under 200 characters is no capture: the free transports are tried, and a refusal holds the row");
+  assert.deepEqual(reason(thin), ["hold", "capture:capture_blocked"], "a stored capture under 200 characters is no capture: the free transports are tried, and a refusal holds the row");
   assert.deepEqual(reason(garbled), ["hold", "capture:capture_garbled_metadata"]);
   assert.deepEqual(reason(repealed), ["hold", "capture:not_in_force"]);
   const notes = JSON.parse(String(census(db, amb).notes)) as { held_by: string; max_age_days: number; expires_at: string; export_kind: string; held_at: string };
@@ -181,10 +181,10 @@ test("a fetch hold DEFERS the row (it stays would_mint, no hold is written, noth
   assert.equal(census(db, id).dryrun_disposition, "would_mint");
   const html = `<html><head><title>x</title></head><body>${textOf(1).split("\n").map((l) => `<p>${l}</p>`).join("")}</body></html>`;
   const calls: string[] = [];
-  const open = makeDeps(db, { fetch: { db: db.client, env: {}, caller: "manual-intake-run", fetchImpl: (async (u: string) => (calls.push(String(u)), new Response(html, { headers: { "content-type": "text/html" } }))) as typeof fetch } });
+  const open = makeDeps(db, { fetch: { db: db.client, env: {}, caller: "manual-intake-run", sleep: async () => undefined, fetchImpl: (async (u: string) => (calls.push(String(u)), new Response(html, { headers: { "content-type": "text/html" } }))) as typeof fetch } });
   const r2 = await runMint(open.deps, { mode: "apply" });
   assert.equal(r2.counts.minted, 1, r2.notes.join("; "));
-  assert.ok(calls[0]?.startsWith("https://publications.europa.eu/resource/celex/"), "Cellar first");
+  assert.ok(calls.filter((u) => !u.endsWith("/robots.txt"))[0]?.startsWith("https://publications.europa.eu/resource/celex/"), "Cellar first (robots.txt is asked before it)");
   assert.equal(census(db, id).enumeration_status, "reconciled");
 });
 

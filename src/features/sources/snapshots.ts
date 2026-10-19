@@ -7,6 +7,7 @@ import { gunzip, gzip } from "node:zlib";
 import { contentFingerprint, isContentChange, normalizeForFingerprint } from "@/core/capture/change-detection";
 import type { Db } from "@/core/db";
 import { assertFetchAllowed, type HoldDeps } from "@/core/fetch/hold";
+import { honestFetch } from "@/core/fetch/honest";
 
 const gzipAsync = promisify(gzip);
 const gunzipAsync = promisify(gunzip);
@@ -85,7 +86,7 @@ export function compareFreshness(stored: { fetchedAt?: string | null; storedEtag
 export async function probeFreshness(url: string, stored: { fetchedAt?: string | null; storedEtag?: string | null }, deps: HoldDeps & { caller?: string | null; fetchImpl?: typeof fetch; timeoutMs?: number }): Promise<Freshness & { httpStatus: number | null }> {
   await assertFetchAllowed(url, deps.caller, deps);
   try {
-    const res = await (deps.fetchImpl ?? fetch)(url, { method: "HEAD", redirect: "follow", signal: AbortSignal.timeout(deps.timeoutMs ?? 15_000) });
+    const res = await honestFetch(deps)(url, { method: "HEAD", redirect: "follow", signal: AbortSignal.timeout(deps.timeoutMs ?? 15_000) });
     return { ...compareFreshness(stored, { ok: res.ok, lastModified: res.headers.get("last-modified"), etag: res.headers.get("etag") }), httpStatus: res.status ?? null };
   } catch (e) {
     return { status: "unknown", reason: `HEAD failed: ${(e as Error).message || "error"}`, httpStatus: null };

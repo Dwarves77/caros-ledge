@@ -24,6 +24,16 @@ async function extractPdf(bytes: Uint8Array) {
   return { text: typeof text === "string" ? text : String(text ?? ""), pages: totalPages, title, metaError };
 }
 
+/** The addresses a host name resolves to, for the guard's private-address check. A name that does not resolve returns none: the fetch then fails on its own and says so. */
+async function resolveHost(host: string): Promise<string[]> {
+  const found: string[] = [];
+  for (const type of ["A", "AAAA"] as const) {
+    // No record of this type is not an error here: the other type, or the fetch itself, reports a name that does not resolve.
+    await Deno.resolveDns(host, type).then((a) => void found.push(...a), () => undefined);
+  }
+  return found;
+}
+
 Deno.serve(async (req: Request) => {
   const url = Deno.env.get("SUPABASE_URL");
   const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -43,6 +53,7 @@ Deno.serve(async (req: Request) => {
     extractPdf,
     env: { STORAGE_MAX_CHARS: Deno.env.get("STORAGE_MAX_CHARS") },
     now: () => Date.now(),
+    resolveHost,
   };
   const out = await drain(deps, body);
   return json(out.body, out.status);

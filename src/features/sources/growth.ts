@@ -4,10 +4,9 @@
 import type { Db } from "@/core/db";
 import { allRows } from "@/core/db";
 import { hostOf } from "@/core/shared";
-import { classifySourceRole } from "@/core/sources/classify";
 import { classTierForHost, decidePoolHostRegistration } from "@/core/sources/host-class";
 import { buildResolver, hostInstitution, type SourceRow } from "@/core/sources/institution";
-import { exactHostUrlFilter, lookupExactHost } from "@/core/sources/register";
+import { exactHostUrlFilter, lookupExactHost, pickInstitutionRow, registerSource } from "@/core/sources/register";
 import { outcomeOf, type RunDeps, type RunResult } from "@/core/sources/run-result";
 import { recomputeEffectiveTier } from "@/core/sources/tier-movement";
 import { writeEffectiveTierUnlessOverridden } from "@/core/sources/tier-writers";
@@ -103,7 +102,7 @@ export async function registerCitedSources(db: Db, cited: CitedSourceInput[], op
       out.push({ url: cs.url, source_id: null, registered: "lookup_failed", error: found.error });
       continue;
     }
-    const row = found.rows[0];
+    const row = pickInstitutionRow(found.rows, cs.url);
     if (row) {
       if (cs.tier_estimate != null && !opts.skipTierOpinions) {
         if (!opts.dry) await recordTierOpinion(db, { targetSourceId: row.id, opinedTier: cs.tier_estimate });
@@ -135,8 +134,12 @@ export async function registerCitedSources(db: Db, cited: CitedSourceInput[], op
       out.push({ url: cs.url, source_id: null, registered: "new_source", class_tier: classTier, opinion_tier: null });
       continue;
     }
-    const ins = await db.from("sources").insert({ name: cs.name, url: cs.url, base_tier: classTier, tier_at_creation: classTier, status: "provisional", auto_run_enabled: false, source_role: classifySourceRole(cs.name, cs.url) }).select("id").single();
-    out.push(ins.error || !ins.data ? { url: cs.url, source_id: null, registered: "candidate", error: ins.error?.message ?? "no row returned" } : { url: cs.url, source_id: (ins.data as { id: string }).id, registered: "new_source" });
+    try {
+      const reg = await registerSource(db, { url: cs.url, name: cs.name, base_tier: classTier, profile: "growth" });
+      out.push({ url: cs.url, source_id: reg.source_id, registered: "new_source" });
+    } catch (e) {
+      out.push({ url: cs.url, source_id: null, registered: "candidate", error: (e as Error).message });
+    }
   }
   return out;
 }

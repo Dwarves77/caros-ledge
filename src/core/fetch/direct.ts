@@ -1,16 +1,21 @@
 // Ported from old_repo/src/lib/sources/charset-decode.mjs (lines 1-69)
 // Ported from old_repo/src/lib/sources/pdf-extract.mjs (lines 1-39)
-// Ported from old_repo/src/lib/sources/sec-fair-access.ts (lines 1-11)
 // Ported from old_repo/src/lib/sources/canonical-fetch.mjs (lines 46-57)
 import { toText } from "./classify-body";
 import { assertFetchAllowed, type HoldDeps } from "./hold";
-import { cleanCtl, fetchDocument, PRIMARY_HEADERS, type FetchDocumentOptions, type FetchRefusal } from "./policy";
+import { honestFetch, secFairAccessUaForUrl } from "./honest";
+import { cleanCtl, fetchDocument, type FetchDocumentOptions, type FetchRefusal } from "./policy";
+
+export { secFairAccessUaForUrl };
 
 export interface FetchDeps extends HoldDeps {
   /** A signed caller name (see AUTHORIZED_HOLD_CALLERS); absent for every scheduled or pipeline path. */
   caller?: string | null;
+  /** The raw network fetch under the guard (tests inject a fake); every transport wraps it with honestFetch, so the identity, the address check and robots.txt apply whatever is injected. */
   fetchImpl?: typeof fetch;
   now?: () => Date;
+  sleep?: (ms: number) => Promise<void>;
+  resolveHost?: (host: string) => Promise<string[]>;
 }
 
 /** What every transport hands the ladder: a status and the text, plus the truncation facts. A cap never binds silently. */
@@ -26,21 +31,10 @@ export interface TransportResult {
   /** The decoded markup, before text extraction; present only when the caller asked for it (portal-link discovery reads links from it). */
   html?: string;
   refusal?: FetchRefusal | null;
-  /** True when this runtime cannot run the transport (the headless tier off the Actions runner). */
+  /** True when this runtime cannot run the transport (the browser tier off the Actions runner). */
   needsHeadless?: boolean;
-}
-
-/** The declared User-Agent SEC fair access requires for sec.gov; null for any other host or an unset contact. */
-export function secFairAccessUaForUrl(url: string, env: Record<string, string | undefined> = process.env): string | null {
-  let host: string;
-  try {
-    host = new URL(url).hostname.toLowerCase();
-  } catch {
-    return null;
-  }
-  if (host !== "sec.gov" && !host.endsWith(".sec.gov")) return null;
-  const ua = env.SEC_FAIR_ACCESS_UA;
-  return ua && ua.trim().length > 0 ? ua : null;
+  /** The channel that produced the text (R2c): set by the browser tier; the ladder names the others. */
+  channel?: "api" | "feed" | "sitemap" | "direct" | "browser" | "substitute";
 }
 
 /** PDF bytes to text with whitespace collapsed (unpdf's serverless pdf.js). Throws on a non-PDF or an empty text layer: a corrupt PDF is a roadblock, not content. */
@@ -64,18 +58,16 @@ export async function extractPdfText(bytes: Uint8Array): Promise<{ text: string;
 }
 
 /**
- * The free direct GET. The hold gate runs first (INV-177): while it is engaged or the cadence is off, nothing reaches the network.
- * HTML is stripped through the one `toText`; PDFs go through unpdf; a charset is read from its declaration; the SEC UA is declared.
+ * The free direct GET under the declared identity. The hold gate runs first (INV-177): while it is engaged or the cadence is off, nothing reaches the network.
+ * HTML is stripped through the one `toText`; PDFs go through unpdf; a charset is read from its declaration; the SEC UA is declared. A 403, 429 or robots refusal is final here: the ladder tries the next channel.
  * The ladder, not this function, judges the body (no thin-body or marker refusal here).
  */
 export async function fetchDirect(url: string, deps: FetchDeps, opts: { max: number; keepHtml?: boolean } & Pick<FetchDocumentOptions, "timeoutMs">): Promise<TransportResult> {
   await assertFetchAllowed(url, deps.caller, deps);
-  const ua = secFairAccessUaForUrl(url, deps.env as Record<string, string | undefined> | undefined);
   const doc = await fetchDocument(url, {
-    ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}),
+    fetchImpl: honestFetch(deps),
     ...(deps.now ? { now: () => (deps.now as () => Date)().getTime() } : {}),
     ...(opts.timeoutMs !== undefined ? { timeoutMs: opts.timeoutMs } : {}),
-    headers: ua ? { ...PRIMARY_HEADERS, "User-Agent": ua } : { ...PRIMARY_HEADERS },
     extractPdf: extractPdfText,
     minChars: 0,
     markers: [],

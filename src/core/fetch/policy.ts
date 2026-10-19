@@ -1,6 +1,7 @@
 // Ported from old_repo/supabase/functions/capture-worker/index.ts (lines 71-220)
 // Ported from old_repo/src/lib/sources/charset-decode.mjs (lines 1-69)
 // The one fetch policy. Web-standard APIs only and no imports, so the Edge Function (Deno) and the Node transports both import it by relative path.
+// R2c: one declared identity (the second browser fingerprint and the retry as another identity are deleted), guard refusals typed, bounded sizes.
 
 export const ERROR_MARKERS = ["Attention Required! | Cloudflare", "Just a moment...", "cf-error-details", "Request unsuccessful. Incapsula", "Access Denied</title>", "error-page-container"];
 export const MIN_BYTES = 1000;
@@ -13,17 +14,18 @@ export const MAX_ATTEMPTS = 5;
 /** ADR-016: a pathological-page sanity ceiling, never an operating cap; binding it is loud. */
 export const DEFAULT_STORAGE_MAX_CHARS = 10_000_000;
 
-/** Two distinct real-browser fingerprints, so a WAF that looks past the UA still sees a self-consistent browser on the retry. */
-export const PRIMARY_HEADERS: Readonly<Record<string, string>> = {
-  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-  Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,application/pdf;q=0.9,image/webp,*/*;q=0.8",
-  "Accept-Language": "en-US,en;q=0.9",
-};
-export const ALT_HEADERS_ON_403: Readonly<Record<string, string>> = {
-  "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15",
+/** The one declared identity of every transport that is not a person's browser (R2c C1; docs: the /bot page). The SEC fair-access string for sec.gov is a declared identity of the same kind. */
+export const BOT_USER_AGENT = "CarosLedge/1.0 (+https://carosledge.com/bot)";
+export const DECLARED_HEADERS: Readonly<Record<string, string>> = {
+  "User-Agent": BOT_USER_AGENT,
   Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,application/pdf;q=0.9,*/*;q=0.8",
   "Accept-Language": "en-US,en;q=0.9",
 };
+/** A refusal by the host's wall: the identity was declined (403, 429) or needs credentials (401). It is final for that transport; the next channel is tried, never another identity. */
+export const isWallStatus = (status: number | null | undefined): boolean => status === 401 || status === 403 || status === 429;
+/** Request bodies and inflated payloads are bounded (R2c C9): a route body, a gunzipped sitemap, a feed. */
+export const MAX_REQUEST_BODY_BYTES = 1024 * 1024;
+export const MAX_INFLATED_BYTES = 100 * 1024 * 1024;
 
 /** Content-type allowlist for the non-PDF path; a type that is neither text-like nor PDF is a clean unsupported failure. */
 export function isTextType(ct: string): boolean {
@@ -121,7 +123,7 @@ export async function readBodyCapped(resp: Response, capBytes: number): Promise<
   return out;
 }
 
-export type RefusalReason = "non_200" | "unsupported_type" | "too_large" | "too_small" | "error_marker" | "pdf_failed" | "pdf_unavailable" | "network";
+export type RefusalReason = "non_200" | "unsupported_type" | "too_large" | "too_small" | "error_marker" | "pdf_failed" | "pdf_unavailable" | "network" | "robots_disallowed" | "robots_unknown" | "private_address" | "bad_scheme" | "too_many_redirects" | "host_busy" | "paywalled" | "raw_text_unavailable" | "interactive_challenge" | "gated" | "browser_launch_failed";
 export interface FetchRefusal {
   ok: false;
   reason: RefusalReason;
@@ -132,6 +134,10 @@ export interface FetchRefusal {
   finalUrl: string | null;
   pdfBytes: number | null;
   detail: string;
+  /** The robots.txt rule that disallowed the URL, for robots_disallowed. */
+  rule?: string;
+  /** For robots_unknown: robots.txt itself refused the declared identity (401, 403, 429); the browser tier may re-read it. */
+  identityRefused?: boolean;
 }
 export interface FetchedDocument {
   ok: true;
@@ -147,9 +153,6 @@ export interface FetchedDocument {
   pdfPages: number | null;
   pdfBytes: number | null;
   nullsRemoved: number;
-  retried403: number | null;
-  /** Why the alternate-header retry after a 403 produced no answer (the original 403 then stands); null when it answered or was not tried. */
-  retry403Error: string | null;
   ceilingBind: { collected: number; fullLength: number } | null;
   /** Every transform applied to the bytes, declared. */
   declaredTransforms: Array<Record<string, unknown>>;
@@ -157,12 +160,14 @@ export interface FetchedDocument {
 export type FetchOutcome = FetchedDocument | FetchRefusal;
 
 export interface FetchDocumentOptions {
-  fetchImpl?: typeof fetch;
+  /** The guarded GET (guard.ts): the declared identity, the address check on every hop, robots.txt and the per-host gap. There is no unguarded default. */
+  fetchImpl: typeof fetch;
   /** PDF bytes to text; each runtime supplies its own (unpdf). Absent means a PDF is a typed refusal. */
   extractPdf?: (bytes: Uint8Array) => Promise<{ text: string; pages: number | null; title: string | null; metaError?: string | null }>;
   now?: () => number;
-  headers?: Record<string, string>;
   timeoutMs?: number;
+  /** Request headers beyond the declared ones (an Accept and Accept-Language a publisher resolver needs); the User-Agent is always the declared one, the guard sets it. */
+  headers?: Record<string, string>;
   minChars?: number;
   maxChars?: number;
   /** The change-detection pass reads reachability from a non-200, so it asks for the refusal rather than a throw. */
@@ -178,29 +183,16 @@ export function storageMaxChars(env: Record<string, string | undefined>): number
 }
 
 /**
- * One document fetch under the shared policy: primary headers, one 403 retry with the second fingerprint, a hard deadline, a streamed
- * capped read, a charset-aware decode, U+0000 removal (counted), and refusal of a non-200, an unsupported type, an error page or a thin body.
- * Never throws: a failure is a typed refusal.
+ * One document fetch under the shared policy: the declared identity through the guarded GET, a hard deadline, a streamed capped read, a charset-aware decode, U+0000 removal (counted), and refusal of a non-200,
+ * an unsupported type, an error page or a thin body. A 403 or 429 is final for this transport: there is no retry as another identity. Never throws: a failure is a typed refusal.
  */
-export async function fetchDocument(url: string, opts: FetchDocumentOptions = {}): Promise<FetchOutcome> {
-  const doFetch = opts.fetchImpl ?? fetch;
+export async function fetchDocument(url: string, opts: FetchDocumentOptions): Promise<FetchOutcome> {
+  const doFetch = opts.fetchImpl;
   const timeoutMs = opts.timeoutMs ?? FETCH_TIMEOUT_MS;
-  const base = opts.headers ?? PRIMARY_HEADERS;
   let finalUrl: string | null = null;
   let contentType = "";
   try {
-    let resp = await doFetch(url, { redirect: "follow", headers: base, signal: AbortSignal.timeout(timeoutMs) });
-    let retried403: number | null = null;
-    let retry403Error: string | null = null;
-    if (resp.status === 403) {
-      try {
-        const retry = await doFetch(url, { redirect: "follow", headers: ALT_HEADERS_ON_403, signal: AbortSignal.timeout(timeoutMs) });
-        retried403 = retry.status;
-        if (retry.status !== 403) resp = retry;
-      } catch (e) {
-        retry403Error = e instanceof Error ? e.message : String(e);
-      }
-    }
+    const resp = await doFetch(url, { redirect: "follow", headers: { ...DECLARED_HEADERS, ...(opts.headers ?? {}) }, signal: AbortSignal.timeout(timeoutMs) });
     finalUrl = resp.url || url;
     contentType = (resp.headers.get("content-type") || "").toLowerCase();
     if (resp.status !== 200) return refusal("non_200", RETRYABLE_STATUS.has(resp.status), resp.status, contentType, finalUrl, `non-200 status ${resp.status}, body NOT stored`);
@@ -257,8 +249,10 @@ export async function fetchDocument(url: string, opts: FetchDocumentOptions = {}
       declaredTransforms.push({ declared_transform: "storage-ceiling-bind", cap, collected: cap, full_length: fullLength, at });
     }
     if (!isPdf) title = /<title[^>]*>([\s\S]*?)<\/title>/i.exec(text)?.[1]?.trim().slice(0, 500) ?? null;
-    return { ok: true, status: 200, finalUrl, contentType, text, fullLength, title, isPdf, pdfPages, pdfBytes: isPdf ? bytes.byteLength : null, nullsRemoved, retried403, retry403Error, ceilingBind, declaredTransforms };
+    return { ok: true, status: 200, finalUrl, contentType, text, fullLength, title, isPdf, pdfPages, pdfBytes: isPdf ? bytes.byteLength : null, nullsRemoved, ceilingBind, declaredTransforms };
   } catch (e) {
+    const g = (e as { fetchRefusal?: { reason: RefusalReason; transient: boolean; detail: string; rule?: string; identityRefused?: boolean } } | null)?.fetchRefusal;
+    if (g) return { ...refusal(g.reason, g.transient, null, contentType, finalUrl, g.detail), ...(g.rule ? { rule: g.rule } : {}), ...(g.identityRefused ? { identityRefused: true } : {}) };
     return refusal("network", true, null, contentType, finalUrl, `fetch error: ${(e as Error).message}`);
   }
 }
