@@ -7,7 +7,7 @@ import type { IdentityHelpers } from "@/core/intake";
 import { assertFetchAllowed, capture, classifyBody, detectAccessWall, fetchAllowed, fetchDirect, makePoliteGate, parseOjReference } from "@/core/fetch";
 import { isStorableClass } from "@/core/fetch/classify-body";
 import { congruence, matchExistingSubject, sourceRole } from "@/core/entities";
-import { type Mode, makeRecorder, type RecorderContext } from "@/core/harness";
+import { currentRunContext, makeRecorder, type RecorderContext } from "@/core/harness";
 import { timePhase, withServerTiming } from "@/core/perf";
 import { createMethodRegistry, type LearningDeps, type MarketMethodDeps, type MethodRegistry, registerMarketMethods } from "@/core/propagation";
 import type { Catalog, ProducerSpec } from "@/core/producers";
@@ -54,6 +54,8 @@ export interface DepsOptions {
   /** The capture worker call; the default invokes the deployed Edge Function through the service client. A test passes the worker's own drain over the fixture client. */
   worker?: CaptureWorker;
   /** The regulations slice's formula (P2-10) and the market slice's edge authors (P2-11): the ops that need them refuse until they are passed. */
+  /** Members of MANIFEST the caller leaves unwired on purpose (a test of the fail-closed path). Any other unwired member makes buildDeps throw. */
+  unwired?: readonly string[];
   statutory?: StatutoryDeps | null;
   edgeAuthors?: EdgeAuthors | null;
   /** The research-assessment producer spec the propagate stage re-scores with (default: the shipped one, whose reviewed constant holds it off in build mode). */
@@ -72,8 +74,8 @@ export interface BuiltDeps {
   sb: Db;
   env: Env;
   now: () => Date;
-  /** Published by the run frame; the recorder and the dry-aware adapters read it. */
-  context: { current: RecorderContext | null };
+  /** The run the current call belongs to (published per call by the run frame, never shared between calls); the recorder and the dry-aware adapters read it. */
+  readonly context: { readonly current: RecorderContext | null };
   recorder: ReturnType<typeof makeRecorder>;
   gate: { allowed: boolean; refresh(): Promise<boolean> };
   sources: SourcesDeps;
@@ -112,9 +114,9 @@ export function buildDeps(sb: Db, env: Env = process.env, opts: DepsOptions = {}
   const now = opts.now ?? (() => new Date());
   const sleep = opts.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
   const doFetch: typeof fetch = opts.fetchImpl ?? ((...a) => fetch(...a));
-  const context: BuiltDeps["context"] = { current: null };
-  const dry = (): boolean => context.current?.mode !== ("apply" satisfies Mode);
-  const recorder = makeRecorder(sb, now, () => context.current);
+  const context: BuiltDeps["context"] = { get current() { return currentRunContext(); } };
+  const dry = (): boolean => context.current?.mode !== "apply";
+  const recorder = makeRecorder(sb, now);
   const hold = { db: sb, env };
   const fetchDeps: CaptureDeps = { db: sb, env, now, fetchImpl: doFetch, throttle: makePoliteGate({ gapMs: 1000, now: () => now().getTime(), sleep }) };
 
@@ -238,10 +240,14 @@ export function buildDeps(sb: Db, env: Env = process.env, opts: DepsOptions = {}
       const { data, error } = await sb.functions.invoke("capture-worker", { body: input });
       return error ? { status: 500, body: { error: error.message } } : { status: 200, body: (data ?? {}) as Record<string, unknown> };
     });
-  return {
+  const deps: BuiltDeps = {
     sb, env, now, context, recorder, gate, sources, entities, identity, fetch: fetchDeps, io, mintCtx, intake, mintRun, connect, producers, catalog: opts.catalog ?? PRODUCER_CATALOG, worker, marketMethods: marketDeps, statutory: opts.statutory ?? null, edgeAuthors: opts.edgeAuthors ?? null, assessment: opts.assessment ?? researchAssessment, registry, learning,
     workspace: workspaceWiring(sb), halted: async () => (await import("@/core/harness/run")).halted(sb).then((h) => h.halted), loadReferenceData,
   };
+  // IMP-026 / G9: a required member nobody wired is a build error everywhere, never a runtime that quietly does less. Only the members the caller names in `unwired` may be absent.
+  const missing = startupCheck(deps).missing.filter((m) => !(opts.unwired ?? []).includes(m));
+  if (missing.length) throw new Error(`buildDeps: required dependencies are not wired: ${missing.join(", ")}`);
+  return deps;
 }
 
 /** The workspace handlers' cross-slice members. `portfolio` is the held-items read layer (P2-13); the pages read it with the caller's own client, the API route with this one. */
@@ -303,9 +309,9 @@ export function startupCheck(d: BuiltDeps): { missing: string[]; owed: { member:
   };
 }
 
-/** IMP-026: on Vercel (the deployed app) a required member that is unwired refuses to serve; elsewhere (a CI runner, a laptop) the report is returned for the caller to show and the routes that need the member answer 503 at request time. */
-export function enforceWired(report: { missing: string[] }, env: Env = process.env): void {
-  if (report.missing.length && env.VERCEL === "1") throw new Error(`startup refused: required dependencies are not wired: ${report.missing.join(", ")}`);
+/** IMP-026: a required member that is unwired refuses to start, whatever the environment (a CI runner and a laptop included). */
+export function enforceWired(report: { missing: string[] }): void {
+  if (report.missing.length) throw new Error(`startup refused: required dependencies are not wired: ${report.missing.join(", ")}`);
 }
 
 let wiredOnce = false;
@@ -314,14 +320,15 @@ export const SERVICE_MEMBER = "service client (no service key configured)";
 /** Wire the app's deps once at startup: the workspace handlers' members and the intake route's factory. Deps are built from what the environment provides: without a service key nothing service-dependent is wired (isServiceConfigured is the only test, serviceClient is never called to decide) and the report names it; on Vercel that refuses to start. */
 export function wireAll(env: Env = process.env): { missing: string[]; owed: { member: string; owner: string }[] } {
   if (!isServiceConfigured()) {
+    // No service key is an environment fact, not an unwired dependency: the deployed app refuses to start without it, a laptop or a CI runner starts with nothing service-dependent wired and the report names it.
     const report = { missing: [SERVICE_MEMBER], owed: [] };
-    enforceWired(report, env);
+    if (env.VERCEL === "1") enforceWired(report);
     return report;
   }
   const sb = serviceClient();
   const probe = buildDeps(sb, env);
   const report = startupCheck(probe);
-  enforceWired(report, env);
+  enforceWired(report);
   if (wiredOnce) return report;
   wiredOnce = true;
   wireWorkspaceDeps(probe.workspace);

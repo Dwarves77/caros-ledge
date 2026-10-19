@@ -6,13 +6,21 @@ export const ORG_B = "22222222-2222-4222-8222-222222222222";
 export const MEMBERSHIP_ID = "33333333-3333-4333-8333-333333333333";
 export const OTHER_MEMBERSHIP_ID = "44444444-4444-4444-8444-444444444444";
 
-export type Persona = "anon" | "viewer" | "otherOrgMember" | "member" | "owner" | "platformAdmin";
-export const PERSONAS: Persona[] = ["anon", "viewer", "otherOrgMember", "member", "owner", "platformAdmin"];
+export type Persona = "anon" | "viewer" | "otherOrgMember" | "member" | "admin" | "owner" | "platformAdmin";
+/** Every caller a route can meet. `admin` is the organisation admin: a role between member and owner, and NOT the platform admin (W:4 lived in the gap between the two). */
+export const PERSONAS: Persona[] = ["anon", "viewer", "otherOrgMember", "member", "admin", "owner", "platformAdmin"];
+
+/** The expectation of a persona in a matrix: a matrix that names no expectation for a persona fails by name, so a persona added later (or forgotten) is never skipped or compared with `undefined`. */
+export function expectationFor<T>(expected: Partial<Record<Persona, T>>, persona: Persona, what: string): T {
+  if (!(persona in expected)) throw new Error(`${what}: the matrix has no expectation for the persona "${persona}"`);
+  return expected[persona] as T;
+}
 
 const WHO: Record<Exclude<Persona, "anon">, { id: string; org: string | null; role: string | null }> = {
   viewer: { id: "u-viewer", org: ORG_A, role: "viewer" },
   otherOrgMember: { id: "u-other", org: ORG_B, role: "owner" },
   member: { id: "u-member", org: ORG_A, role: "member" },
+  admin: { id: "u-org-admin", org: ORG_A, role: "admin" },
   owner: { id: "u-owner", org: ORG_A, role: "owner" },
   platformAdmin: { id: "u-admin", org: null, role: null },
 };

@@ -3,7 +3,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { classify, FAMILIES, makeRecorder, noopContractErrors, outcomeOf, recordRun, resolveMode, runChain, runFamily, validateFamilies, type FamilyFn, type HarnessDeps } from "@/core/harness";
+import { classify, FAMILIES, makeRecorder, noopContractErrors, outcomeOf, recordRun, resolveMode, runChain, runFamily, validateFamilies, withRunContext, type FamilyFn, type HarnessDeps, type RecorderContext } from "@/core/harness";
 import { runResult } from "@/core/types/run-result";
 
 import { MemDb } from "../_support/memdb.ts";
@@ -124,7 +124,7 @@ test("the credentials gate: no client self-skips with exit 2 locally and fails l
   assert.deepEqual([local.exit, local.row], [2, null]);
   const ci = await runFamily("source-sweep", { mode: "dry", trigger: "dispatch" }, harness(null, {}, { CI: "true" }));
   assert.equal(ci.exit, 1);
-  assert.match(String(ci.error), /fails loud/);
+  assert.match(String(ci.error), /missing \(exit 1\): NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY/);
   await assert.rejects(runFamily("not-a-family", { mode: "dry", trigger: "dispatch" }, harness(null, {})), /not in FAMILIES/);
 });
 
@@ -169,18 +169,18 @@ test("a chain threads one root id, each stage the next one's upstream; a failed 
 
 test("the recorder the runtimes call writes a row per unit under the running family's root, and none when nothing is running", async () => {
   const db = world();
-  let ctx: Parameters<typeof makeRecorder>[2] extends () => infer R ? R : never = null;
-  const rec = makeRecorder(db.client, () => NOW, () => ctx);
+  const rec = makeRecorder(db.client, () => NOW);
   assert.match(String((await rec.recordRun({ family: "mint", itemId: "i1", outcome: "ok", counts: { claims: 3 }, notes: [] })).error), /no run is in progress/);
-  ctx = { rootRunId: "c0000000-0000-4000-8000-000000000001", upstreamRunId: null, mode: "apply", trigger: "dispatch", forcedDry: false, codeSha: "abc", githubRunId: "7" };
-  assert.equal((await rec.recordRun({ family: "mint", itemId: "i1", outcome: "ok", counts: { claims: 3 }, notes: [] })).error, null);
-  assert.equal((await rec.recordRun({ family: "mint", itemId: "i2", outcome: "ok", counts: { claims: 0 }, notes: [] })).error, null, "an apply unit that wrote nothing is a noop row");
-  assert.match(String((await rec.recordRun({ family: "bogus", outcome: "ok", counts: {}, notes: [] })).error), /not in FAMILIES/);
+  const ctx: RecorderContext = { rootRunId: "c0000000-0000-4000-8000-000000000001", upstreamRunId: null, mode: "apply", trigger: "dispatch", forcedDry: false, codeSha: "abc", githubRunId: "7" };
+  await withRunContext(ctx, async () => {
+    assert.equal((await rec.recordRun({ family: "mint", itemId: "i1", outcome: "ok", counts: { claims: 3 }, notes: [] })).error, null);
+    assert.equal((await rec.recordRun({ family: "mint", itemId: "i2", outcome: "ok", counts: { claims: 0 }, notes: [] })).error, null, "an apply unit that wrote nothing is a noop row");
+    assert.match(String((await rec.recordRun({ family: "bogus", outcome: "ok", counts: {}, notes: [] })).error), /not in FAMILIES/);
+    const refusing = new MemDb();
+    refusing.fail("harness_runs", "insert", "disk full");
+    assert.match(String((await makeRecorder(refusing.client, () => NOW).recordRun({ family: "mint", outcome: "ok", counts: { claims: 1 }, notes: [] })).error), /disk full/);
+  });
   assert.deepEqual(rows(db).map((r) => [r.family, r.outcome, r.root_run_id, r.code_sha, (r.inputs as Record<string, unknown>).item_id]), [["mint", "success", ctx.rootRunId, "abc", "i1"], ["mint", "noop", ctx.rootRunId, "abc", "i2"]]);
-  const refusing = new MemDb();
-  refusing.fail("harness_runs", "insert", "disk full");
-  const bad = makeRecorder(refusing.client, () => NOW, () => ctx);
-  assert.match(String((await bad.recordRun({ family: "mint", outcome: "ok", counts: { claims: 1 }, notes: [] })).error), /disk full/);
 });
 
 test("a failed record is the run's error: the frame reports exit 1 and no row", async () => {
@@ -197,7 +197,8 @@ test("classify and outcomeOf", () => {
   assert.deepEqual(classify(runResult("ok", { upserted: 2 }), w, "apply"), { outcome: "success", reason: null });
   assert.equal(classify(runResult("ok", { upserted: 0 }), w, "apply").outcome, "noop");
   assert.equal(classify(runResult("ok", { upserted: 0 }), w, "dry").outcome, "success");
-  assert.equal(classify(runResult("partial", { upserted: 1 }, ["one failed"]), w, "apply").reason, "partial: one failed");
+  assert.deepEqual(classify(runResult("partial", { upserted: 1 }, ["one failed"]), w, "apply"), { outcome: "partial", reason: "one failed" }, "a run with failed units is partial, never success");
+  assert.equal(classify(runResult("partial", { upserted: 0 }, ["all failed"]), w, "apply").outcome, "noop", "a partial that wrote nothing is still a noop: no apply evidence");
   assert.equal(classify(runResult("failed", { refused: 1 }, ["gate"]), w, "apply").outcome, "refused");
   assert.equal(classify(runResult("failed", { refused: 1, upserted: 2 }, ["gate"]), w, "apply").outcome, "failed", "a refusal that also wrote is a failure");
   assert.equal(outcomeOf(["success", "failure"]), "failure");

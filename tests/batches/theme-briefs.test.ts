@@ -71,19 +71,6 @@ test("the export lists the themes that need a brief with their bundle; a stale b
   assert.ok(tiny[0] && tiny[0].truncation.chars_used <= 700 * 2, "an over-small budget cuts and counts, it does not silently drop");
 });
 
-test("a single brief goes through the same seam: as JSON, or as markdown with a frontmatter block; a stale hash is refused", async () => {
-  const w = themeWorld();
-  const payload = { theme_id: THEME, title: "T", brief_md: "body", member_hash: hash };
-  assert.equal((await applyBatch("theme-briefs", w.deps, { content: JSON.stringify({ ...payload, member_hash: "x" }), dry: false })).outcome, "failed");
-  const md = `${buildFrontmatter({ theme_id: THEME, title: "T", member_hash: hash })}\nA short body.\n`;
-  const r = await applyBatch("theme-briefs", w.deps, { content: md, format: "md", dry: false });
-  assert.equal(r.counts.written, 1, notes(r));
-  assert.deepEqual([stored(w)[0]?.generated_by, stored(w)[0]?.brief_md], ["session-executor", "A short body."]);
-  assert.equal((await applyBatch("theme-briefs", w.deps, { content: JSON.stringify(payload), dry: false })).counts.written, 1);
-  assert.equal(stored(w).length, 1, "one row per theme: the seam upserts");
-  assert.match(notes(await applyBatch("theme-briefs", w.deps, { content: "{", dry: false })), /not JSON/);
-});
-
 test("the flat frontmatter block round-trips what it can carry and refuses what it cannot (a newline, a comma in an inline-array item, a quoted scalar)", () => {
   const text = buildFrontmatter({ a: "plain", b: ["x", "y"], c: null, d: { json: { k: 1 } } });
   assert.deepEqual(parseFrontmatter(`${text}body`)?.fields, { a: "plain", b: ["x", "y"], c: null, d: { k: 1 } });

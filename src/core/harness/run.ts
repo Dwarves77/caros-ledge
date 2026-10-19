@@ -3,13 +3,15 @@
 // Ported from old_repo/scripts/lib/run-artifact.mjs (lines 380-416)
 // Ported from old_repo/scripts/maintenance/lib/cli.mjs (lines 70-108)
 // The run frame: credentials gate, the kill switch (read first), mode resolution, the upstream hand-off, the call, and the one record. Every firing leaves one row.
-import type { Db } from "@/core/db";
-import { getScrapeState } from "@/core/fetch/hold";
+import { missingServiceEnv, type Db } from "@/core/db";
+import { readScrapeState } from "@/core/fetch/hold";
 import type { RunResult } from "@/core/types/run-result";
 
+import { skipVerdict, type Exit } from "./exit";
 import { familyOf } from "./families";
-import { classify, noopContractErrors, type Mode, type Outcome, type Trigger } from "./outcome";
-import { finishRun, newRunId, recordRun, type RecorderContext, type RunRow } from "./record";
+import { classify, countsOf, noopContractErrors, type Mode, type Outcome, type Trigger } from "./outcome";
+import { IN_PROGRESS, reapStaleRuns } from "./reap";
+import { finishRun, newRunId, recordRun, withRunContext, type RunRow } from "./record";
 
 /** The integrity flag a fleet-wide hard stop is raised under (rule 11, docs/runbooks/fleet-budget-control.md). */
 export const KILL_SWITCH_REF = "fleet-budget-halt";
@@ -46,8 +48,8 @@ export interface HarnessDeps {
   now(): Date;
   /** The registry: family name to its function (IMP-030: every runtime entry registers itself in one list). */
   fns: Readonly<Record<string, FamilyFn>>;
-  /** The frame publishes the running run here so the recorder the runtimes call can write their unit rows under it. */
-  setContext?(ctx: RecorderContext | null): void;
+  /** Waits between the attempts to conclude a started run; absent, real time. A test passes an immediate one. */
+  sleep?(ms: number): Promise<void>;
 }
 export interface RunRequest {
   mode: Mode;
@@ -65,19 +67,22 @@ export interface Resolved {
   reason: string | null;
 }
 export interface FamilyRun {
-  /** 0 recorded, 1 a record or credential failure (CI), 2 self-skipped for lack of credentials. */
-  exit: 0 | 1 | 2;
+  /** 0 recorded, 1 a record or credential failure, 2 self-skipped for lack of credentials where the event cannot carry them (src/core/harness/exit.ts). */
+  exit: Exit;
   row: RunRow | null;
   result: RunResult | null;
   error: string | null;
 }
 
-const isCi = (env: Record<string, string | undefined>): boolean => env.CI === "true" || env.GITHUB_ACTIONS === "true";
-
-/** The mode a request resolves to. Apply needs an operator dispatch (or a hop of one's chain) AND the cadence on; anything else runs dry and says so. A cadence read error is off. */
+/** The mode a request resolves to. Apply needs an operator dispatch (or a hop of one's chain) AND the cadence on; anything else runs dry and says so. A cadence read error is off, and the reason carries the error. */
 export async function resolveMode(sb: Db, req: Pick<RunRequest, "mode" | "trigger">): Promise<Resolved> {
   if (req.mode === "dry") return { mode: "dry", forcedDry: false, reason: null };
-  const state = await getScrapeState(sb);
+  let state;
+  try {
+    state = await readScrapeState(sb);
+  } catch (e) {
+    return { mode: "dry", forcedDry: true, reason: `forced dry: the scrape cadence is unreadable (${e instanceof Error ? e.message : String(e)}); an unknown state is treated as closed` };
+  }
   if (state.cadence === "off" || state.emergencyPaused) return { mode: "dry", forcedDry: true, reason: `forced dry: scrape cadence is ${state.emergencyPaused ? "under the emergency stop" : "off"} (build mode, rule 16)` };
   if (req.trigger !== "dispatch" && req.trigger !== "manual" && req.trigger !== "chained") return { mode: "dry", forcedDry: true, reason: `forced dry: a ${req.trigger} firing is machine-fired and apply needs an operator dispatch` };
   return { mode: "apply", forcedDry: false, reason: null };
@@ -98,7 +103,7 @@ async function readUpstream(sb: Db, name: string, rootRunId: string, id: string)
   if (contract.length) return { ok: false, outcome: "refused", reason: `upstream ${up.family} ${up.id} breaks the no-op contract (${contract.join("; ")}): the chain stops here` };
   // A failed stage (or one that was itself skipped for it) stops the chain. A refused or no-op stage hands nothing over and the next stage runs on its own selection: a producer held by its gate must not stop the turn, and a mint refused by THE GATE must not stop the connect that closes the backlog.
   if (up.outcome === "failed" || up.outcome === "unknown" || (up.outcome === "noop" && outputs.skipped === true)) return { ok: false, outcome: "noop", reason: `upstream ${up.family} did not run: ${up.outcome}${up.reason ? ` (${up.reason})` : ""}` };
-  return { ok: true, row: { id: up.id, family: up.family, outcome: up.outcome, mode: up.mode, ids: (outputs.ids ?? {}) as Record<string, string[]>, counts: (outputs.counts ?? outputs.planned ?? {}) as Record<string, number> } };
+  return { ok: true, row: { id: up.id, family: up.family, outcome: up.outcome, mode: up.mode, ids: (outputs.ids ?? {}) as Record<string, string[]>, counts: countsOf(outputs) } };
 }
 
 /** Run one family once. Always records exactly one row, except without credentials: a self-skip locally (exit 2) and a loud failure in CI (exit 1). */
@@ -106,8 +111,8 @@ export async function runFamily(name: string, req: RunRequest, h: HarnessDeps): 
   const fam = familyOf(name);
   if (!fam) throw new Error(`runFamily: "${name}" is not in FAMILIES`);
   if (!h.sb) {
-    const ci = isCi(h.env);
-    return { exit: ci ? 1 : 2, row: null, result: null, error: `no database credentials: ${name} ${ci ? "fails loud in CI" : "self-skipped"}` };
+    const verdict = skipVerdict(h.env, missingServiceEnv(h.env));
+    return { exit: verdict.exit, row: null, result: null, error: `no database credentials: ${name} ${verdict.message}` };
   }
   const fn = h.fns[name];
   if (!fn) throw new Error(`runFamily: family "${name}" has no registered function`);
@@ -119,9 +124,8 @@ export async function runFamily(name: string, req: RunRequest, h: HarnessDeps): 
   let started = false;
   const finish = async (outcome: Outcome, mode: Mode | null, forcedDry: boolean, extra: Partial<RunRow>, result: RunResult | null): Promise<FamilyRun> => {
     const row: RunRow = { id, family: name, root_run_id: rootRunId, upstream_run_id: req.upstreamRunId ?? null, trigger: req.trigger, mode, forced_dry: forcedDry, outcome, reason: null, inputs: req.input ?? {}, outputs: {}, error: null, ...code, started_at: startedAt, finished_at: h.now().toISOString(), ...extra };
-    h.setContext?.(null);
     if (started) {
-      const done = await finishRun(sb, row);
+      const done = await finishRun(sb, row, h.sleep);
       return { exit: done.error ? 1 : 0, row: done.error ? null : done.row, result, error: done.error };
     }
     const rec = await recordRun(sb, row);
@@ -138,17 +142,14 @@ export async function runFamily(name: string, req: RunRequest, h: HarnessDeps): 
     upstream = up.row;
   }
   const dry = resolved.mode === "dry";
-  h.setContext?.({ rootRunId, upstreamRunId: req.upstreamRunId ?? null, mode: resolved.mode, trigger: req.trigger, forcedDry: resolved.forcedDry, codeSha: code.code_sha, githubRunId: code.github_run_id });
+  const context = { rootRunId, upstreamRunId: req.upstreamRunId ?? null, mode: resolved.mode, trigger: req.trigger, forcedDry: resolved.forcedDry, codeSha: code.code_sha, githubRunId: code.github_run_id };
   // The row exists before the function runs (outcome `unknown`): anything the run stores that points at it (a graph snapshot) has its parent, a crash leaves the evidence that the firing began, and a run that cannot be recorded does not run.
-  const begun = await recordRun(sb, { id, family: name, root_run_id: rootRunId, upstream_run_id: req.upstreamRunId ?? null, trigger: req.trigger, mode: resolved.mode, forced_dry: resolved.forcedDry, outcome: "unknown", reason: "in progress", inputs: req.input ?? {}, outputs: {}, error: null, ...code, started_at: startedAt, finished_at: startedAt });
-  if (begun.error) {
-    h.setContext?.(null);
-    return { exit: 1, row: null, result: null, error: begun.error };
-  }
+  const begun = await recordRun(sb, { id, family: name, root_run_id: rootRunId, upstream_run_id: req.upstreamRunId ?? null, trigger: req.trigger, mode: resolved.mode, forced_dry: resolved.forcedDry, outcome: "unknown", reason: IN_PROGRESS, inputs: req.input ?? {}, outputs: {}, error: null, ...code, started_at: startedAt, finished_at: startedAt });
+  if (begun.error) return { exit: 1, row: null, result: null, error: begun.error };
   started = true;
   let result: RunResult;
   try {
-    result = await fn({ mode: resolved.mode, dry, input: req.input ?? {}, runId: id, rootRunId, upstream });
+    result = await withRunContext(context, () => fn({ mode: resolved.mode, dry, input: req.input ?? {}, runId: id, rootRunId, upstream }));
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     return finish("failed", resolved.mode, resolved.forcedDry, { reason: msg, error: msg, outputs: dry ? { planned: {}, notes: [msg] } : { counts: {}, notes: [msg] } }, null);
@@ -162,6 +163,7 @@ export async function runFamily(name: string, req: RunRequest, h: HarnessDeps): 
 /** Run families in order under one root: each is the previous one's downstream, takes its row as upstream, and inherits its resolved mode. The head's id is the root. */
 export async function runChain(plan: readonly string[], req: RunRequest, h: HarnessDeps, inputs: Readonly<Record<string, Record<string, unknown>>> = {}): Promise<FamilyRun[]> {
   const runs: FamilyRun[] = [];
+  if (h.sb) await reapStaleRuns(h.sb, h.now()); // a firing that began and never concluded (its process died) is closed as crashed before this chain adds its own rows
   const root = req.rootRunId ?? newRunId();
   let prev: FamilyRun | null = null;
   for (const [i, name] of plan.entries()) {

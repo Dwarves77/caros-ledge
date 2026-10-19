@@ -1,0 +1,2 @@
+-- Down for 0007_item_type_required_slots_wave3: the four slot rows the file added are deleted (an item type's required slots are reference data, no catalog object changes).
+DELETE FROM public.item_type_required_slots WHERE (item_type, slot_key) IN (('market_signal', 'corridor_identity'), ('initiative', 'corridor_identity'), ('research_finding', 'evidence_agreement_signal'), ('research_finding', 'source_authority_signal'));
