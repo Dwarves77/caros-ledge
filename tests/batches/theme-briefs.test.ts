@@ -3,7 +3,7 @@ import { test } from "node:test";
 
 import { buildFrontmatter, parseFrontmatter } from "@/core/briefs/frontmatter";
 import { admissibleRows } from "@/core/briefs/admissible";
-import { findUncitedFigures, isValidThemeBrief, parseRamifications } from "@/core/briefs/theme-brief-contract";
+import { figureCoverage, isValidThemeBrief, parseRamifications } from "@/core/briefs/theme-brief-contract";
 import { computeMemberHash } from "@/core/flywheel/themes";
 import { applyBatch } from "@/features/batches";
 import { loadThemeMaterial, loadThemes } from "@/core/briefs/theme-brief-material";
@@ -135,12 +135,17 @@ test("the flat frontmatter block round-trips what it can carry and refuses what 
   assert.equal(parseFrontmatter("no block here"), null);
 });
 
-test("the figure rule: a number or an acronym is allowed only inside a listed claim, a labelled analysis paragraph or a heading; ramifications split by surface heading", () => {
-  assert.deepEqual(findUncitedFigures("CBAM costs 5%"), ["5%", "CBAM"]);
-  assert.deepEqual(findUncitedFigures("CBAM costs 5%", { claimTexts: ["CBAM costs 5%"] }), []);
-  assert.deepEqual(findUncitedFigures("*Analytical inference:* CBAM costs 5%"), []);
-  assert.deepEqual(findUncitedFigures("1. First point"), [], "an ordered-list marker is not a figure");
+test("the figure rule: a number or an acronym is allowed only inside a listed claim, a labelled analysis paragraph or a heading; ramifications split by surface heading", async () => {
+  const w = themeWorld();
+  const valid = async (meaning: string) => (await apply(w, [entry({ sections: { ...entry().sections, meaning } })], true)).counts.valid;
+  assert.equal(await valid("*Analytical inference:* The duty costs EUR 900000 per year."), 1, "a labelled analysis paragraph may state a figure");
+  assert.equal(await valid("1. First point about the duty."), 1, "an ordered-list marker is not a figure");
   assert.deepEqual([...parseRamifications("### Research\nx\n### Research\ny").problems], ['duplicate ramifications subsection "Research"']);
+});
+
+test("the comparator stand-in: a figure the cited grounded text does not state is returned; a figure it states is covered", () => {
+  assert.deepEqual(figureCoverage("The duty costs EUR 900000 per year.", ["The duty costs EUR 500 per year."]), ["900000"]);
+  assert.deepEqual(figureCoverage("The duty costs EUR 500 per year.", ["The duty costs EUR 500 per year."]), []);
 });
 
 test("the stand-ins behind the validator: a copy of a validated brief is not a validated brief; admissibleRows keeps verified, unarchived, unsuppressed rows only", async () => {

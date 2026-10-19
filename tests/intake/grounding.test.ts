@@ -3,7 +3,7 @@ import { test } from "node:test";
 
 import {
   applyLedgerDiff, buildCitationEdges, buildGateARow, buildSourceBlocks, citedHostGate, clearGateAState, diffLedger, eraseClaimWithProof, floorPool, GATE_A_VERSION, groundBrief, groundRetryPlan, ledgerRegression, mintGates,
-  nominateForSlot, partitionCitedByHost, poolHash, reattributeToFloor, scanGateA, summarizeLedger, uncoveredSlots, upsertGateAState, decideSlotClaim, hasValidWaiver,
+  nominateForSlot, poolHash, reattributeToFloor, scanGateA, summarizeLedger, uncoveredSlots, upsertGateAState, decideSlotClaim, hasValidWaiver,
 } from "@/core/grounding";
 import { detectConflate, detectNumeric, mergeNullTierAggregate, summarizeNullTierAggregate } from "@/core/grounding/gates";
 import { openFlagOnce } from "@/core/grounding/flags";
@@ -204,12 +204,14 @@ test("INV-157: the pool hash is order-independent and covers url and text; build
   assert.ok(blocks.trims.some((t) => t.url === "low"), "the trim of the low-tier source is reported");
 });
 
-test("cited-host gate: a cited URL becomes a stub only on a known host; a novel host is flagged and never stubbed", () => {
-  const cited = [{ host: "a.test", institution: null }, { host: "b.test", institution: "Known" }, { host: "c.test", institution: null }];
-  const p = partitionCitedByHost(cited, new Set(["a.test"]), new Set(["Known"]));
-  assert.deepEqual(p.allowed.map((c) => c.host), ["a.test", "b.test"]);
-  assert.deepEqual(p.novel.map((c) => c.host), ["c.test"]);
-  assert.equal(typeof citedHostGate, "function");
+test("cited-host gate: a cited URL becomes a stub only on a known host or institution; a novel host is flagged and never stubbed", async () => {
+  const db = new MemDb();
+  db.seed("sources", [{ id: "s1", url: "https://a.test/rules" }]);
+  const resolve = (url: string) => (/\/\/(b|b2)\.test/.test(url) ? ({ institution: "Known" } as never) : null);
+  const sections = [{ content_md: "See https://a.test/page, https://b2.test/doc and https://c.test/page." }];
+  const r = await citedHostGate(db.client, resolve, { itemId: ITEM, sourceUrl: "https://b.test/x", fullBrief: null, sections, usablePool: [], allPoolUrls: new Set(), nowIso: "2026-10-01T00:00:00Z", dry: true });
+  assert.equal(r.stubbed, 2, "the known host and the known institution are stubbed");
+  assert.deepEqual([...r.novel.keys()], ["https://c.test/page"], "the novel host is flagged, not stubbed");
 });
 
 test("null-tier aggregate: counts merge per item and the text follows rule 18 (register and rate, never refuse the figure)", () => {

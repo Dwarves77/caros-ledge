@@ -26,7 +26,7 @@ const cfg = z.object({
 }).parse(staged);
 const NON_SUBSTANTIVE: ReadonlySet<string> = new Set(cfg.nonSubstantive);
 /** update_item may write these columns and no others: the content columns plus the bookkeeping columns. */
-export const UPDATE_ITEM_ALLOWLIST: ReadonlySet<string> = new Set([...cfg.contentColumns, ...cfg.nonSubstantive]);
+const UPDATE_ITEM_ALLOWLIST: ReadonlySet<string> = new Set([...cfg.contentColumns, ...cfg.nonSubstantive]);
 const CHOKEPOINT_ONLY: ReadonlySet<string> = new Set(cfg.chokepointOnlyInputs);
 export const CHANGE_SWEEP_STAGED_MARKER = cfg.changeSweepMarker;
 
@@ -37,14 +37,14 @@ export interface ApplyUpdateResult { success: boolean; error?: string; itemId?: 
  * True when the patch touches at least one column outside the non-substantive (bookkeeping) set. A DENY list: a column nobody has heard
  * of counts as substantive, so the flywheel runs on it rather than silently skipping. An empty patch touches nothing.
  */
-export function isSubstantiveUpdate(proposed: Record<string, unknown> | null | undefined): boolean {
+function isSubstantiveUpdate(proposed: Record<string, unknown> | null | undefined): boolean {
   const keys = Object.keys(proposed ?? {});
   return keys.length > 0 && keys.some((k) => !NON_SUBSTANTIVE.has(k));
 }
 
 const LANDING_SEGMENT = /^(en|en-us|en-gb|fr|de|es|pt|it|home|index(\.[a-z0-9]+)?|default(\.[a-z0-9]+)?|main|portal|start|welcome)$/i;
 /** Entity gate: is this URL a portal root or a trivial landing page (a SOURCE, not an item)? A deep path is a specific document. */
-export function isRootUrl(url: string): boolean {
+function isRootUrl(url: string): boolean {
   let u: URL;
   try {
     u = new URL(url);
@@ -56,7 +56,7 @@ export function isRootUrl(url: string): boolean {
 }
 
 /** A new_item seed: the chokepoint-only inputs (relevance, capturedText, key_deadlines, source_name, authority_level) are not columns and never reach the INSERT. */
-export function splitNewItemSeed(proposed: Record<string, unknown>): { seed: Record<string, unknown>; relevance: number | null } {
+function splitNewItemSeed(proposed: Record<string, unknown>): { seed: Record<string, unknown>; relevance: number | null } {
   const seed = Object.fromEntries(Object.entries(proposed).filter(([k]) => !CHOKEPOINT_ONLY.has(k)));
   return { seed, relevance: typeof proposed.relevance === "number" ? proposed.relevance : null };
 }

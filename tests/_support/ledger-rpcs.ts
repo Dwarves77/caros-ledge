@@ -3,8 +3,9 @@
 // archives to claim_versions first, and a call is ALL OR NOTHING (a failure after the first write restores every table the call touched).
 import { isVerbatim } from "@/core/contracts/verbatim";
 import { computeMemberHash } from "@/core/flywheel/themes";
-import { UPDATE_ITEM_ALLOWLIST } from "@/features/intake/staged-transit";
 import { hostOf } from "@/core/shared/url";
+
+import staged from "../../src/features/intake/data/staged.json" with { type: "json" };
 
 import type { MemCall, MemDb, Op, Row } from "./memdb.ts";
 
@@ -19,6 +20,9 @@ const related = (a: string, b: string): boolean => !!a && !!b && (a === b || a.e
 const TOUCHED = ["section_claim_provenance", "claim_versions", "intelligence_item_sections", "intelligence_items", "disposition_ledger", "theme_briefs", "theme_brief_versions"];
 
 /** The SQL's ledger_attribution: the tier of the source registered on the capture's host, or the reason it is refused. */
+/** The columns update_item may write: the application's staged.json, which migration 0076's lists are pinned to (tests/ledger/structure.test.ts). */
+const ALLOWED_COLUMNS: ReadonlySet<string> = new Set([...staged.contentColumns, ...staged.nonSubstantive]);
+
 export function attribution(db: MemDb, sourceId: string | null, captureId: string | null, span: string | null): { tier: number | null; problem: string | null } {
   if (!captureId) return { tier: null, problem: "fact_missing_capture" };
   if (!span || !span.trim()) return { tier: null, problem: "fact_missing_span" };
@@ -197,7 +201,7 @@ export function installLedgerRpcs(db: MemDb): void {
   db.rpcs.apply_staged_item_patch = (a, d) => atomic(d, () => {
     const patch = a.p_patch as Row;
     if (!patch || typeof patch !== "object" || !Object.keys(patch).length) throw new Refusal("empty patch refused: nothing to write");
-    const bad = Object.keys(patch).filter((k) => !UPDATE_ITEM_ALLOWLIST.has(k));
+    const bad = Object.keys(patch).filter((k) => !ALLOWED_COLUMNS.has(k));
     if (bad.length) throw new Refusal(`column ${bad[0]} is outside the allowlist`);
     const item = d.rows("intelligence_items").find((i) => i.id === a.p_item_id);
     if (!item) throw new Refusal(`item ${String(a.p_item_id)} not found`, "P0002");

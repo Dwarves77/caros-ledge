@@ -68,7 +68,7 @@ export function figureTokens(text: unknown): Set<string> {
 
 export interface Cover { claimTexts?: string[]; memberTitles?: string[]; gapDescriptions?: string[]; allowedTokens?: ReadonlySet<string> | null }
 /** The figure tokens of `text` that no listed claim, labelled analysis block, heading, member title, gap description or edge-basis token covers. Limits: a fact written without digits or an acronym is not detected. */
-export function findUncitedFigures(text: unknown, cover: Cover = {}): string[] {
+function findUncitedFigures(text: unknown, cover: Cover = {}): string[] {
   if (typeof text !== "string" || !text) return [];
   const covered = [...exemptBlockRanges(text)];
   for (const c of cover.claimTexts ?? []) covered.push(...rangesOf(text, c));
@@ -110,7 +110,7 @@ export function parseRamifications(text: string): { subs: Map<string, string>; p
  * local stub (INTERFACE GAPS): the stub holds the F:15 attack, an invented figure listed under a real claim id, and nothing subtler.
  */
 export type ClaimComparator = (listed: string, grounded: readonly string[]) => string[];
-const figureCoverage: ClaimComparator = (listed, grounded) => {
+export const figureCoverage: ClaimComparator = (listed, grounded) => {
   const have = figureTokens(grounded.join(" "));
   return [...figureTokens(listed)].filter((tok) => !have.has(tok));
 };
@@ -120,7 +120,7 @@ export interface ThemeContext {
   membersById: Map<string, { title?: string | null; claim_ids: Set<string>; event_ids: Set<string> }>;
   /** claim or forward-event id to the grounded texts behind it (the claim text and its verbatim span; an event's obligation text, date and span). */
   groundedText: ReadonlyMap<string, readonly string[]>;
-  comparator?: ClaimComparator;
+  comparator: ClaimComparator;
   gapsByTheme?: Map<string, { description: string }[]>;
   basisTokensByTheme?: Map<string, Set<string>>;
 }
@@ -186,7 +186,7 @@ function validateThemeBriefEntry(entry: unknown, i: number, ctx: ThemeContext): 
       if (!member) return void errs.push(`${ct}: member ${c.member_id} has no loaded claims, cannot verify claim_ids`);
       if (!Array.isArray(c.claim_ids) || c.claim_ids.length === 0) return void errs.push(`${ct}: claim_ids must be a non-empty array`);
       for (const id of c.claim_ids) if (typeof id !== "string" || !(member.claim_ids.has(id) || (section === "watch" && member.event_ids.has(id)))) errs.push(`${ct}: claim id ${JSON.stringify(id)} is not a grounded claim of member ${c.member_id}${section === "watch" ? " (or one of its forward events)" : ""}`);
-      const unbacked = (ctx.comparator ?? figureCoverage)(c.text, c.claim_ids.flatMap((id: unknown) => (typeof id === "string" ? [...(ctx.groundedText.get(id) ?? [])] : [])));
+      const unbacked = ctx.comparator(c.text, c.claim_ids.flatMap((id: unknown) => (typeof id === "string" ? [...(ctx.groundedText.get(id) ?? [])] : [])));
       if (unbacked.length) errs.push(`${ct}: the listed text states ${unbacked.slice(0, 4).map((tok) => JSON.stringify(tok)).join(", ")} that none of its cited grounded claims states`);
     });
   }

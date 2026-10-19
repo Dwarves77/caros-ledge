@@ -13,7 +13,7 @@ import { runResult, type RunResult } from "@/core/intake/result";
 import { acquireLease, releaseLease } from "./id-stamp";
 
 /** archive_reason -> the disposition written to the ledger. A reason not in this map is never deleted by bucket. */
-export const DELETABLE_REASONS: Readonly<Record<string, string>> = {
+const DELETABLE_REASONS: Readonly<Record<string, string>> = {
   reclassified_to_source: "tombstone_delete_reclassified",
   source_not_item: "tombstone_delete_source_not_item",
   portal_artifact: "tombstone_delete_artifact",

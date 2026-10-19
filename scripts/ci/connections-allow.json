@@ -63,8 +63,8 @@
     "src/core/briefs/frontmatter.ts": [
       "buildFrontmatter"
     ],
-    "src/core/briefs/theme-brief-contract.ts": [
-      "findUncitedFigures"
+    "src/core/briefs/theme-brief-material.ts": [
+      "themeBriefSeams"
     ],
     "src/core/cache/fallback-guard.ts": [
       "FALLBACK_NOT_CACHEABLE",
@@ -389,9 +389,6 @@
     ],
     "src/core/grounding/audit-gate.ts": [
       "scoreItemClaims"
-    ],
-    "src/core/grounding/cited-hosts.ts": [
-      "partitionCitedByHost"
     ],
     "src/core/grounding/gate-a-scan.ts": [
       "containsToken",
@@ -1391,9 +1388,6 @@
       "applyPromoteCap",
       "buildCandidateSeed"
     ],
-    "src/features/intake/quarantine/erase.ts": [
-      "DELETABLE_REASONS"
-    ],
     "src/features/intake/quarantine/id-stamp.ts": [
       "heartbeatLease",
       "resolveItemKey"
@@ -1416,12 +1410,6 @@
       "STUB_BRIEF_MARKER",
       "buildRecordFullBrief",
       "buildResearchRecordPayload"
-    ],
-    "src/features/intake/staged-transit.ts": [
-      "UPDATE_ITEM_ALLOWLIST",
-      "isRootUrl",
-      "isSubstantiveUpdate",
-      "splitNewItemSeed"
     ],
     "src/features/intake/workflow.ts": [
       "eraseStep"
@@ -1606,9 +1594,6 @@
       "canonicalDomainOverride",
       "sourceLinkDecision",
       "unconditionalDomain"
-    ],
-    "src/features/mint/heal/brief-honest.ts": [
-      "stripClause"
     ],
     "src/features/mint/preflight.ts": [
       "tagPresence"

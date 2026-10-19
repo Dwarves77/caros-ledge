@@ -8,7 +8,7 @@ import { computeMemberHash, lineageFromThemeDelta, resolveBriefForTheme } from "
 import { surfaceOf } from "@/core/routing";
 
 import { admissibleRows, type AdmissibleRows } from "./admissible";
-import { figureTokens, type ThemeContext } from "./theme-brief-contract";
+import { figureCoverage, figureTokens, type ClaimComparator, type ThemeContext } from "./theme-brief-contract";
 
 export interface ThemeRow { id: string; member_ids: string[] | null; dominant_signals?: unknown; surfaces: string[] | null; density?: number | null; convergence?: number | null; pivots?: { id: string }[] | null }
 export interface MemberItem { id: string; title: string | null; item_type: string | null; domain: number | null; jurisdiction_iso: string[] | null; priority: string | null; summary: string | null; added_date: string | null }
@@ -75,9 +75,14 @@ async function loadHomeJurisdictions(sb: Db, scope: HomeScope): Promise<Record<s
 
 export interface MaterialOpts {
   homes?: HomeScope;
-  /** The admissible-row predicate (R2d's, once it lands): members, claims and events that fail it never reach the author. */
-  admissible?: AdmissibleRows;
+  seams?: ThemeBriefSeams;
 }
+/**
+ * The two stand-ins the theme-brief path reads through until their owners land, behind ONE member so the swap is one line: the comparator of a listed claim against its grounded text (R2a's comparator replaces
+ * the figure-coverage stub) and the admissible-row predicate (R2d's replaces admissibleRows): members, claims and events that fail it never reach the author.
+ */
+export interface ThemeBriefSeams { comparator: ClaimComparator; admissible: AdmissibleRows }
+export const themeBriefSeams: ThemeBriefSeams = { comparator: figureCoverage, admissible: admissibleRows };
 /**
  * Members, grounded FACT claims, forward events and intra-theme edges for a set of themes, read once for the union of their members, and ONLY admissible rows: a member quarantined or archived since the pass and a suppressed
  * claim are not material (F:16). The home jurisdictions come from the scope named in `opts.homes` (default: every workspace), never from an arbitrary row (F:17).
@@ -85,7 +90,7 @@ export interface MaterialOpts {
 export async function loadThemeMaterial(sb: Db, themes: readonly ThemeRow[], opts: MaterialOpts = {}): Promise<ThemeMaterial> {
   const memberIds = [...new Set(themes.flatMap((t) => t.member_ids ?? []))].sort();
   if (!memberIds.length) return { items: [], claims: [], events: [], edges: [], jurisdictionWeights: {} };
-  const admissible = opts.admissible ?? admissibleRows;
+  const admissible = (opts.seams ?? themeBriefSeams).admissible;
   const live = await admissible.itemIds(sb, memberIds);
   const [items, claims, events, edges] = [
     (await byIds<MemberItem>(sb, "intelligence_items", MEMBER_COLUMNS, memberIds, "id", "id")).filter((i) => live.has(i.id)),
@@ -109,7 +114,7 @@ export function computeThemeGaps(themes: readonly ThemeRow[], material: ThemeMat
 }
 
 /** The validator's context: themes, per-member claim and event id sets and titles, the gap lists, and the figure tokens the intra-theme edge basis names (system facts the author is told to name). */
-export function buildValidationContext(themes: readonly ThemeRow[], material: ThemeMaterial, gapsByTheme: ThemeContext["gapsByTheme"]): ThemeContext {
+export function buildValidationContext(themes: readonly ThemeRow[], material: ThemeMaterial, gapsByTheme: ThemeContext["gapsByTheme"], seams: ThemeBriefSeams = themeBriefSeams): ThemeContext {
   const themesById: ThemeContext["themesById"] = new Map(themes.map((t) => [t.id, { id: t.id, member_ids: t.member_ids ?? [], surfaces: t.surfaces ?? [] }]));
   const membersById: ThemeContext["membersById"] = new Map(material.items.map((it) => [it.id, { title: it.title, claim_ids: new Set<string>(), event_ids: new Set<string>() }]));
   for (const c of material.claims) membersById.get(c.intelligence_item_id)?.claim_ids.add(c.id);
@@ -125,7 +130,7 @@ export function buildValidationContext(themes: readonly ThemeRow[], material: Th
     ...material.claims.map((c): [string, readonly string[]] => [c.id, [c.claim_text, c.source_span ?? ""].filter(Boolean)]),
     ...material.events.map((e): [string, readonly string[]] => [e.id, [e.obligation_text, e.event_date, e.source_span ?? ""].filter(Boolean)]),
   ]);
-  return { themesById, membersById, groundedText, ...(gapsByTheme ? { gapsByTheme } : {}), basisTokensByTheme };
+  return { themesById, membersById, groundedText, comparator: seams.comparator, ...(gapsByTheme ? { gapsByTheme } : {}), basisTokensByTheme };
 }
 
 export interface ThemeNeed { theme: ThemeRow; reason: "no_brief" | "stale" | "superseded"; prior: StoredBrief | null; supersedes_theme_id: string | null }

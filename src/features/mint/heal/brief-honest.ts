@@ -27,7 +27,7 @@ function removeSpan(text: string, spans: Span[], i: number): string {
   return text.slice(0, prev ? prev.end : sp.start) + text.slice(sp.end);
 }
 /** Remove the middle clause carrying the token; null when the token sits in the first or last clause or the sentence has fewer than three clauses. */
-export function stripClause(sentence: string, token: string): { rewritten: string; removed: string } | null {
+function stripClause(sentence: string, token: string): { rewritten: string; removed: string } | null {
   const at = sentence.toLowerCase().indexOf(token.toLowerCase());
   if (at === -1) return null;
   const parts: string[] = [];

@@ -3,7 +3,6 @@ import { test } from "node:test";
 
 import { eraseQuarantined, idStamp, planQuarantine, rehomeQuarantined, resolveQuarantined } from "@/features/intake";
 import { DEFERRAL_WINDOW_DAYS, DWELL_BOUND_DAYS, buildDeferralCandidate, computeQuarantineDwell, isValidDeferral, planDispositions, type ReasonClass } from "@/features/intake/quarantine/planner";
-import { DELETABLE_REASONS } from "@/features/intake/quarantine/erase";
 import { HOLD_TYPES } from "@/features/intake/quarantine/resolver";
 
 import { installLedgerRpcs } from "../_support/ledger-rpcs.ts";
@@ -216,7 +215,6 @@ const eraseWorld = () => {
 
 test("proof 8 / INV-101: erase: the tombstone exists BEFORE the delete; a content-bearing row and a row without an ACTIVE source are refused; accurate-but-archived reasons are never bucket-deleted", async () => {
   const db = eraseWorld();
-  assert.equal(Object.keys(DELETABLE_REASONS).includes("off_vertical"), false);
   const refusedBucket = await eraseQuarantined({ sb: db.client }, { bucket: "off_vertical", holder: "h", apply: true });
   assert.equal(refusedBucket.outcome, "failed");
   assert.match(refusedBucket.notes[0] ?? "", /not in the deletable-reason allowlist/);

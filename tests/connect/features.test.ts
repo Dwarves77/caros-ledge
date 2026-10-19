@@ -8,6 +8,7 @@ import { createdBy, GAP_NAMESPACE, planReflect, planResolvedReflectionInserts, r
 import { detectGaps, jurisdictionKey } from "@/core/flywheel/gaps";
 import { computeMemberHash } from "@/core/flywheel/themes";
 import { parseThemeBriefEntry, type ThemeContext } from "@/core/briefs/theme-brief-contract";
+import { themeBriefSeams } from "@/core/briefs/theme-brief-material";
 import { applyThemeBrief } from "@/features/flywheel/theme-brief-seam";
 import { discoverForItems, runConnectionDiscovery } from "@/features/flywheel/run-discovery";
 import { tagPass } from "@/features/flywheel/tag-pass";
@@ -62,7 +63,7 @@ test("gaps: a theme spanning jurisdictions with none of the home ones is a gap; 
 });
 
 const seamWorld = (members: string[]) => connectDb({ connection_themes: [{ id: "T1", member_ids: members }], theme_briefs: [] }, { unique: { theme_briefs: ["theme_id"] } });
-const seamCtx = (members: string[]): ThemeContext => ({ themesById: new Map([["T1", { id: "T1", member_ids: members, surfaces: ["regulations"] }]]), membersById: new Map(), groundedText: new Map() });
+const seamCtx = (members: string[]): ThemeContext => ({ themesById: new Map([["T1", { id: "T1", member_ids: members, surfaces: ["regulations"] }]]), membersById: new Map(), groundedText: new Map(), comparator: themeBriefSeams.comparator });
 const seamEntry = (hash: string) => ({ theme_id: "T1", member_hash: hash, title: "T", sections: { connection: "They connect.", meaning: "It matters.", ramifications: "### Regulations\nAn owner is needed.", watch: "Watch the date.", gaps: "" }, claims: [] });
 const validBrief = (members: string[], hash = computeMemberHash(members)) => {
   const v = parseThemeBriefEntry(seamEntry(hash), 0, seamCtx(members));

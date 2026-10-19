@@ -8,7 +8,7 @@ import { scanGateA } from "@/core/grounding";
 import { classTierForHost } from "@/core/sources";
 import { healItem, healQuarantined, rederiveStale } from "@/features/mint";
 import { buildBuckets, buildSourcesIndex, claimNeedsResource, locateSpan, planGrounding, planResource, type Capture, type HealClaim } from "@/features/mint/heal/ground";
-import { planBriefHonest, stripClause } from "@/features/mint/heal/brief-honest";
+import { planBriefHonest } from "@/features/mint/heal/brief-honest";
 import { planReclassify, planRelabelFromFullBrief, planRelabelModal, planRelabelParagraph } from "@/features/mint/heal/label";
 
 import { CELEX_URL, SOURCE, makeDeps, makeWorld, type WorldDb } from "./world.ts";
@@ -106,9 +106,6 @@ test("relabelling only prefixes the analysis label: the paragraph, the full-brie
 });
 
 test("the honest strip removes the sentence, or the one isolable middle clause, and is ACCEPTED only when Gate A then finds no orphan", () => {
-  assert.deepEqual(stripClause("Fines are EUR 50 000, due 1 January 2027, and apply to vessels.", "1 January 2027"), { rewritten: "Fines are EUR 50 000, and apply to vessels.", removed: "due 1 January 2027" });
-  assert.equal(stripClause("Fines are EUR 50 000, due 1 January 2027, and apply to vessels.", "EUR 50 000"), null, "the first clause is never guessed at");
-  assert.equal(stripClause("Fines are EUR 50 000 and apply.", "EUR 50"), null);
   const single = "The regime applies to vessels. The penalty is EUR 50 000 per breach. Reports are annual.";
   const accepted = planBriefHonest(single, ["EUR 50"], []);
   assert.equal(accepted.outcome, "accepted");
@@ -117,6 +114,8 @@ test("the honest strip removes the sentence, or the one isolable middle clause, 
   const two = "Fines are EUR 50 000, due 1 January 2027, and apply to vessels.";
   const rejected = planBriefHonest(two, ["EUR 50", "1 January 2027"], []);
   assert.equal(rejected.outcome, "rejected", "the figure could not be stripped, so Gate A would still find an orphan");
+  assert.deepEqual(rejected.perToken.map((t) => t.outcome), ["refused:sentence_carries_other_live_token_no_isolable_clause", "clause"], "the first clause is never guessed at; the isolable middle clause is removed");
+  assert.equal(planBriefHonest("Fines are EUR 50 000 and apply.", ["EUR 50", "apply"], []).perToken[0]?.outcome, "refused:sentence_carries_other_live_token_no_isolable_clause");
   assert.equal(scanGateA(two, []).orphan_count, 2);
   assert.equal(planBriefHonest("Nothing to strip.", ["EUR 5"], []).outcome, "no_op");
 });
