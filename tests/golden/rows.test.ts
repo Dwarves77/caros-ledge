@@ -123,5 +123,5 @@ test("unresolved rows: the cited document is still unreadable, or the row is now
 test("the README is generated from the rows (drift guard)", () => {
   const want = renderReadme(ROWS);
   if (process.env.GOLDEN_WRITE_README === "1") writeFileSync(README, want);
-  assert.equal(readFileSync(README, "utf8"), want, "src/core/golden/data/README.md drifted from the rows; regenerate with GOLDEN_WRITE_README=1 npm test");
+  assert.equal(readFileSync(README, "utf8").split("\r\n").join("\n"), want,"src/core/golden/data/README.md drifted from the rows; regenerate with GOLDEN_WRITE_README=1 npm test");
 });
