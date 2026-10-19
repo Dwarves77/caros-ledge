@@ -1,0 +1,178 @@
+[
+ {
+  "illustrative": false,
+  "state": "ok",
+  "flags": [
+   "mixed_locale_in_document"
+  ],
+  "retrieved": "2026-10-19",
+  "status": "verified",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "teu_light",
+    "unit": "t/TEU",
+    "origin": "printed",
+    "literal": "6.0",
+    "locale": "dp",
+    "value": "6.0",
+    "sigDigits": 2,
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "teu_average",
+    "unit": "t/TEU",
+    "origin": "printed",
+    "literal": "10.0",
+    "locale": "dp",
+    "value": "10.0",
+    "sigDigits": 3,
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "teu_heavy",
+    "unit": "t/TEU",
+    "origin": "printed",
+    "literal": "14.5",
+    "locale": "dp",
+    "value": "14.5",
+    "sigDigits": 3,
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "teu_max",
+    "unit": "t/TEU",
+    "origin": "printed",
+    "literal": "16.1",
+    "locale": "dp",
+    "value": "16.1",
+    "sigDigits": 3,
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "empty_teu_etw",
+    "unit": "t/TEU",
+    "origin": "printed",
+    "literal": "1,95",
+    "locale": "dc",
+    "value": "1.95",
+    "sigDigits": 3,
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "empty_teu_flat",
+    "unit": "t/TEU",
+    "origin": "printed",
+    "literal": "2,7",
+    "locale": "dc",
+    "value": "2.7",
+    "sigDigits": 2,
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "air_distance_addition",
+    "unit": "km",
+    "origin": "printed",
+    "literal": "95",
+    "locale": "dp",
+    "value": "95",
+    "sigDigits": 2,
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "sea_daf_clean_cargo",
+    "unit": "%",
+    "origin": "printed",
+    "literal": "15",
+    "locale": "dp",
+    "value": "15",
+    "sigDigits": 2,
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   }
+  ],
+  "relations": [],
+  "traps": [
+   {
+    "what": "The same report prints 1,95 and 2,7 (decimal comma) in a table and 10.0 and 14.5 (decimal point) in the text: locale is decided per document segment, not per token.",
+    "wrong_value": "195"
+   },
+   {
+    "what": "The 15 percent DAF applies by default only to the Clean Cargo ocean variant with ais-based routing disabled; it is not a general default."
+   }
+  ],
+  "disagreements": [],
+  "id": "T12",
+  "kind": "truth",
+  "framework": "ecotransit_world",
+  "framework_version": "4.1 (2026)",
+  "checks": [
+   {
+    "doc": "ecotransit_41",
+    "page": 29,
+    "folio": "28",
+    "section": "Table 3 container empty weights",
+    "tokens": [
+     "1,95 t/TEU",
+     "2,7 t/TEU"
+    ]
+   },
+   {
+    "doc": "ecotransit_41",
+    "page": 31,
+    "folio": "30",
+    "section": "Average cargo net weight",
+    "tokens": [
+     "10.0 tonnes per TEU"
+    ]
+   },
+   {
+    "doc": "ecotransit_41",
+    "page": 32,
+    "folio": "31",
+    "section": "Light and heavy cargo net weights",
+    "tokens": [
+     "6.0 tonnes/TEU",
+     "14.5 tonnes per TEU",
+     "6 metric tonnes/TEU",
+     "10 metric tonnes/TEU",
+     "14.5 metric tonnes/TEU"
+    ]
+   },
+   {
+    "doc": "ecotransit_41",
+    "page": 33,
+    "folio": "32",
+    "section": "Maximum net weight per TEU",
+    "tokens": [
+     "16.1 tonnes per TEU"
+    ]
+   },
+   {
+    "doc": "ecotransit_41",
+    "page": 34,
+    "folio": "33",
+    "section": "Distance adjustment factor",
+    "tokens": [
+     "DAF of 15 percent"
+    ]
+   },
+   {
+    "doc": "ecotransit_41",
+    "page": 95,
+    "folio": "94",
+    "section": "Air freight distance",
+    "tokens": [
+     "adds 95 kilometres"
+    ]
+   }
+  ]
+ }
+]

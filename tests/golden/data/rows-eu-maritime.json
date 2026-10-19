@@ -1,0 +1,873 @@
+[
+ {
+  "illustrative": false,
+  "state": "ok",
+  "flags": [
+   "typed_missing"
+  ],
+  "retrieved": "2026-10-19",
+  "status": "verified",
+  "inputs": [
+   {
+    "name": "hfo_mass",
+    "unit": "t",
+    "origin": "constant",
+    "value": "1000",
+    "basis": "corpus-chosen illustrative input, not from the source"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "hfo_co2",
+    "unit": "g CO2/g fuel",
+    "origin": "printed",
+    "literal": "3,114",
+    "locale": "dc",
+    "value": "3.114",
+    "sigDigits": 4,
+    "boundary": "TTW",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "lfo_co2",
+    "unit": "g CO2/g fuel",
+    "origin": "printed",
+    "literal": "3,151",
+    "locale": "dc",
+    "value": "3.151",
+    "sigDigits": 4,
+    "boundary": "TTW",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "mgo_co2",
+    "unit": "g CO2/g fuel",
+    "origin": "printed",
+    "literal": "3,206",
+    "locale": "dc",
+    "value": "3.206",
+    "sigDigits": 4,
+    "boundary": "TTW",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "lng_co2",
+    "unit": "g CO2/g fuel",
+    "origin": "printed",
+    "literal": "2,750",
+    "locale": "dc",
+    "value": "2.750",
+    "sigDigits": 4,
+    "boundary": "TTW",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "methanol_co2",
+    "unit": "g CO2/g fuel",
+    "origin": "printed",
+    "literal": "1,375",
+    "locale": "dc",
+    "value": "1.375",
+    "sigDigits": 4,
+    "boundary": "TTW",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "ethanol_co2",
+    "unit": "g CO2/g fuel",
+    "origin": "printed",
+    "literal": "1,913",
+    "locale": "dc",
+    "value": "1.913",
+    "sigDigits": 4,
+    "boundary": "TTW",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "biodiesel_co2",
+    "unit": "g CO2/g fuel",
+    "origin": "printed",
+    "literal": "2,834",
+    "locale": "dc",
+    "value": "2.834",
+    "sigDigits": 4,
+    "boundary": "TTW",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "hvo_co2",
+    "unit": "g CO2/g fuel",
+    "origin": "printed",
+    "literal": "3,115",
+    "locale": "dc",
+    "value": "3.115",
+    "sigDigits": 4,
+    "boundary": "TTW",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "hfo_ch4",
+    "unit": "g CH4/g fuel",
+    "origin": "printed",
+    "literal": "0,00005",
+    "locale": "dc",
+    "value": "0.00005",
+    "sigDigits": 1,
+    "boundary": "TTW",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "hfo_n2o",
+    "unit": "g N2O/g fuel",
+    "origin": "printed",
+    "literal": "0,00018",
+    "locale": "dc",
+    "value": "0.00018",
+    "sigDigits": 2,
+    "boundary": "TTW",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "lng_ch4",
+    "unit": "g CH4/g fuel",
+    "origin": "printed",
+    "literal": "0",
+    "locale": "dc",
+    "value": "0",
+    "sigDigits": 1,
+    "boundary": "TTW",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "lng_n2o",
+    "unit": "g N2O/g fuel",
+    "origin": "printed",
+    "literal": "0,00011",
+    "locale": "dc",
+    "value": "0.00011",
+    "sigDigits": 2,
+    "boundary": "TTW",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "methanol_ch4",
+    "unit": "g CH4/g fuel",
+    "origin": "printed",
+    "literal": "TBM",
+    "missing": "TBM",
+    "boundary": "TTW",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "lpg_butane_cj",
+    "unit": "% of fuel mass",
+    "origin": "printed",
+    "literal": "N/A",
+    "missing": "N/A",
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "hfo_cj",
+    "unit": "% of fuel mass",
+    "origin": "printed",
+    "literal": "-",
+    "missing": "dash",
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "tbm_na_rule",
+    "unit": "rule",
+    "origin": "printed",
+    "text": "highest default of the fuel class in that column",
+    "boundary": "TTW",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "hfo_1000t_co2",
+    "unit": "t CO2",
+    "origin": "derived",
+    "value": "3114",
+    "basis": "derived row, not from the source: 1,000 t HFO x 3.114 t CO2 per t",
+    "boundary": "TTW",
+    "gwp_set": "not_applicable"
+   }
+  ],
+  "relations": [
+   {
+    "type": "product",
+    "factors": [
+     "hfo_mass",
+     "hfo_co2"
+    ],
+    "result": "hfo_1000t_co2"
+   }
+  ],
+  "traps": [
+   {
+    "what": "Decimal comma: 3,114 is 3.114 here but 3,114 in GLEC; read with the document locale.",
+    "wrong_value": "3114"
+   },
+   {
+    "what": "TBM, N/A and the dash are three different tokens: TBM and N/A trigger the highest-default rule; a dash means not applicable. None is zero.",
+    "wrong_value": "0"
+   }
+  ],
+  "disagreements": [],
+  "id": "T13",
+  "kind": "truth",
+  "framework": "eu_mrv",
+  "framework_version": "Annex I C(2023) 6728 final",
+  "checks": [
+   {
+    "doc": "mrv_annex_council",
+    "page": 5,
+    "folio": "3",
+    "section": "Part A point 2, HFO row",
+    "tokens": [
+     "3,114 0,00005 0,00018 -",
+     "highest default value of the fuel class"
+    ]
+   },
+   {
+    "doc": "mrv_annex_council",
+    "page": 6,
+    "folio": "4",
+    "section": "Part A point 2, remaining fuel rows",
+    "tokens": [
+     "3,151 0,00005 0,00018 -",
+     "3,206 0,00005 0,00018 -",
+     "2,750 0 0,00011",
+     "1,375 TBM TBM -",
+     "1,913 TBM TBM -",
+     "2,834 TBM TBM -",
+     "3,115 0,00005 0,00018 -",
+     "3,03 TBM TBM N/A"
+    ]
+   },
+   {
+    "doc": "mrv_annex_council",
+    "page": 4,
+    "folio": "2",
+    "section": "Boundary wording",
+    "tokens": [
+     "Tank to Wake CO2 emission factor"
+    ]
+   }
+  ]
+ },
+ {
+  "illustrative": false,
+  "state": "sources_disagree",
+  "flags": [],
+  "retrieved": "2026-10-19",
+  "status": "verified",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "min_gt",
+    "unit": "GT",
+    "origin": "printed",
+    "literal": "5 000",
+    "locale": "dc",
+    "value": "5000",
+    "sigDigits": 1,
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "share_extra_eu",
+    "unit": "% of emissions",
+    "origin": "printed",
+    "literal": "50",
+    "locale": "dp",
+    "value": "50",
+    "sigDigits": 1,
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "share_intra_eu_and_berth",
+    "unit": "% of emissions",
+    "origin": "printed",
+    "literal": "100",
+    "locale": "dp",
+    "value": "100",
+    "sigDigits": 1,
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "phase_in_2024",
+    "unit": "% surrendered",
+    "origin": "printed",
+    "literal": "40",
+    "locale": "dp",
+    "value": "40",
+    "sigDigits": 1,
+    "attrs": {
+     "emissions_year": "2024",
+     "surrender_year": "2025"
+    },
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "phase_in_2025",
+    "unit": "% surrendered",
+    "origin": "printed",
+    "literal": "70",
+    "locale": "dp",
+    "value": "70",
+    "sigDigits": 1,
+    "attrs": {
+     "emissions_year": "2025",
+     "surrender_year": "2026"
+    },
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "phase_in_2026",
+    "unit": "% surrendered",
+    "origin": "printed",
+    "literal": "100",
+    "locale": "dp",
+    "value": "100",
+    "sigDigits": 1,
+    "attrs": {
+     "emissions_year": "2026_inferred",
+     "surrender_year": "2027"
+    },
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "report_by",
+    "unit": "date",
+    "origin": "printed",
+    "text": "30 April",
+    "attrs": {
+     "from_2025": "31 March"
+    },
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "document_of_compliance_by",
+    "unit": "date",
+    "origin": "printed",
+    "text": "30 June",
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   }
+  ],
+  "relations": [],
+  "traps": [
+   {
+    "what": "A bare 40% is ambiguous: it is typed (emissions_year, surrender_year, share). The 100% row states only the surrender year 2027 onwards; emissions year 2026 follows from the one-year lag of the two rows above.",
+    "wrong_value": "40"
+   },
+   {
+    "what": "The page contradicts itself on when CH4 and N2O enter: both statements are kept as a disagreement, neither merged."
+   }
+  ],
+  "disagreements": [
+   {
+    "figure": "ch4_n2o_start_year",
+    "sides": [
+     {
+      "doc": "ec_maritime_ets",
+      "tokens": [
+       "only as from 2026"
+      ],
+      "literal": "2026",
+      "value": "2026",
+      "locale": "dp",
+      "gwp_set": "not_applicable",
+      "document_date": "same page, ETS paragraph"
+     },
+     {
+      "doc": "ec_maritime_ets",
+      "tokens": [
+       "as of 1 January 2024"
+      ],
+      "literal": "2024",
+      "value": "2024",
+      "locale": "dp",
+      "gwp_set": "not_applicable",
+      "document_date": "same page, MRV paragraph"
+     }
+    ]
+   }
+  ],
+  "id": "T14",
+  "kind": "truth",
+  "framework": "eu_ets_maritime",
+  "framework_version": "Commission page, last updated 2026-05-06",
+  "checks": [
+   {
+    "doc": "ec_maritime_ets",
+    "section": "Scope, phase-in and dates",
+    "tokens": [
+     "5 000 gross tonnage",
+     "50% of emissions from voyages",
+     "100% of emissions that occur",
+     "40% of their emissions",
+     "70% of their emissions",
+     "100% of their reported",
+     "30 April of each year",
+     "31 March as of 2025",
+     "30 June of each year"
+    ]
+   }
+  ]
+ },
+ {
+  "illustrative": false,
+  "state": "ok",
+  "flags": [
+   "source_rounding",
+   "mixed_locale_in_document"
+  ],
+  "retrieved": "2026-10-19",
+  "status": "verified",
+  "inputs": [
+   {
+    "name": "direct",
+    "unit": "t CO2",
+    "origin": "printed",
+    "literal": "125 000",
+    "locale": "dc",
+    "value": "125000",
+    "sigDigits": 3
+   },
+   {
+    "name": "grey_t",
+    "unit": "t",
+    "origin": "printed",
+    "literal": "50 000",
+    "locale": "dc",
+    "value": "50000",
+    "sigDigits": 1
+   },
+   {
+    "name": "grey_cl",
+    "unit": "t clinker/t",
+    "origin": "printed",
+    "literal": "0,95",
+    "locale": "dc",
+    "value": "0.95",
+    "sigDigits": 2
+   },
+   {
+    "name": "white_t",
+    "unit": "t",
+    "origin": "printed",
+    "literal": "40 000",
+    "locale": "dc",
+    "value": "40000",
+    "sigDigits": 1
+   },
+   {
+    "name": "white_cl",
+    "unit": "t clinker/t",
+    "origin": "printed",
+    "literal": "0,98",
+    "locale": "dc",
+    "value": "0.98",
+    "sigDigits": 2
+   },
+   {
+    "name": "mixed_t",
+    "unit": "t",
+    "origin": "printed",
+    "literal": "60 000",
+    "locale": "dc",
+    "value": "60000",
+    "sigDigits": 1
+   },
+   {
+    "name": "mixed_white",
+    "unit": "t clinker/t",
+    "origin": "printed",
+    "literal": "0,80",
+    "locale": "dc",
+    "value": "0.80",
+    "sigDigits": 2
+   },
+   {
+    "name": "mixed_grey",
+    "unit": "t clinker/t",
+    "origin": "printed",
+    "literal": "0,17",
+    "locale": "dc",
+    "value": "0.17",
+    "sigDigits": 2
+   },
+   {
+    "name": "fu_grey",
+    "unit": "t clinker",
+    "origin": "derived",
+    "value": "47500",
+    "basis": "grey tonnes x clinker share"
+   },
+   {
+    "name": "fu_white",
+    "unit": "t clinker",
+    "origin": "derived",
+    "value": "39200",
+    "basis": "white tonnes x clinker share"
+   },
+   {
+    "name": "mixed_share",
+    "unit": "t clinker/t",
+    "origin": "derived",
+    "value": "0.97",
+    "basis": "sum of the two clinker shares"
+   },
+   {
+    "name": "fu_mixed",
+    "unit": "t clinker",
+    "origin": "derived",
+    "value": "58200",
+    "basis": "mixed share x tonnes"
+   },
+   {
+    "name": "num_grey",
+    "unit": "t CO2 t clinker",
+    "origin": "derived",
+    "value": "5937500000",
+    "basis": "direct x grey functional units"
+   },
+   {
+    "name": "num_white",
+    "unit": "t CO2 t clinker",
+    "origin": "derived",
+    "value": "4900000000",
+    "basis": "direct x white functional units"
+   },
+   {
+    "name": "num_mixed",
+    "unit": "t CO2 t clinker",
+    "origin": "derived",
+    "value": "7275000000",
+    "basis": "direct x mixed functional units"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "fu_total",
+    "unit": "t clinker",
+    "origin": "printed",
+    "literal": "144 900",
+    "locale": "dc",
+    "value": "144900",
+    "sigDigits": 4,
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "see_clinker",
+    "unit": "t CO2/t clinker",
+    "origin": "printed",
+    "literal": "0,863",
+    "locale": "dc",
+    "value": "0.863",
+    "sigDigits": 3,
+    "rounded": true,
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "attr_grey",
+    "unit": "t CO2",
+    "origin": "printed",
+    "literal": "40 976,5",
+    "locale": "dc",
+    "value": "40976.5",
+    "sigDigits": 6,
+    "rounded": true,
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "attr_white",
+    "unit": "t CO2",
+    "origin": "printed",
+    "literal": "33 816,4",
+    "locale": "dc",
+    "value": "33816.4",
+    "sigDigits": 6,
+    "rounded": true,
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "attr_mixed",
+    "unit": "t CO2",
+    "origin": "printed",
+    "literal": "50 207,0",
+    "locale": "dc",
+    "value": "50207.0",
+    "sigDigits": 6,
+    "rounded": true,
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "see_grey",
+    "unit": "t CO2/t cement",
+    "origin": "printed",
+    "literal": "0,820",
+    "locale": "dc",
+    "value": "0.820",
+    "sigDigits": 3,
+    "rounded": true,
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "see_white",
+    "unit": "t CO2/t cement",
+    "origin": "printed",
+    "literal": "0,845",
+    "locale": "dc",
+    "value": "0.845",
+    "sigDigits": 3,
+    "rounded": true,
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "see_mixed",
+    "unit": "t CO2/t cement",
+    "origin": "printed",
+    "literal": "0,837",
+    "locale": "dc",
+    "value": "0.837",
+    "sigDigits": 3,
+    "rounded": true,
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   }
+  ],
+  "relations": [
+   {
+    "type": "product",
+    "factors": [
+     "grey_t",
+     "grey_cl"
+    ],
+    "result": "fu_grey"
+   },
+   {
+    "type": "product",
+    "factors": [
+     "white_t",
+     "white_cl"
+    ],
+    "result": "fu_white"
+   },
+   {
+    "type": "sum",
+    "terms": [
+     "mixed_white",
+     "mixed_grey"
+    ],
+    "total": "mixed_share"
+   },
+   {
+    "type": "product",
+    "factors": [
+     "mixed_share",
+     "mixed_t"
+    ],
+    "result": "fu_mixed"
+   },
+   {
+    "type": "sum",
+    "terms": [
+     "fu_grey",
+     "fu_white",
+     "fu_mixed"
+    ],
+    "total": "fu_total"
+   },
+   {
+    "type": "quotient",
+    "numerator": "direct",
+    "denominator": "fu_total",
+    "result": "see_clinker"
+   },
+   {
+    "type": "product",
+    "factors": [
+     "direct",
+     "fu_grey"
+    ],
+    "result": "num_grey"
+   },
+   {
+    "type": "product",
+    "factors": [
+     "direct",
+     "fu_white"
+    ],
+    "result": "num_white"
+   },
+   {
+    "type": "product",
+    "factors": [
+     "direct",
+     "fu_mixed"
+    ],
+    "result": "num_mixed"
+   },
+   {
+    "type": "quotient",
+    "numerator": "num_grey",
+    "denominator": "fu_total",
+    "result": "attr_grey"
+   },
+   {
+    "type": "quotient",
+    "numerator": "num_white",
+    "denominator": "fu_total",
+    "result": "attr_white"
+   },
+   {
+    "type": "quotient",
+    "numerator": "num_mixed",
+    "denominator": "fu_total",
+    "result": "attr_mixed"
+   },
+   {
+    "type": "quotient",
+    "numerator": "attr_grey",
+    "denominator": "grey_t",
+    "result": "see_grey"
+   },
+   {
+    "type": "quotient",
+    "numerator": "attr_white",
+    "denominator": "white_t",
+    "result": "see_white"
+   },
+   {
+    "type": "quotient",
+    "numerator": "attr_mixed",
+    "denominator": "mixed_t",
+    "result": "see_mixed"
+   }
+  ],
+  "traps": [
+   {
+    "what": "Space thousands with a decimal comma: 144 900 tokenises as 144 under a regex that stops at the first space.",
+    "wrong_value": "144"
+   },
+   {
+    "what": "The three attributed figures sum to 124 999,9, not 125 000: a validator that demands equality refuses a correct table.",
+    "wrong_value": "124 999,9"
+   },
+   {
+    "what": "Recomputing the attribution from the printed 0,863 gives 40 992,5, not the printed 40 976,5.",
+    "wrong_value": "40 992,5"
+   }
+  ],
+  "disagreements": [],
+  "id": "T15",
+  "kind": "truth",
+  "framework": "eu_cbam",
+  "framework_version": "Guidance Document 3 (2026-08-14)",
+  "checks": [
+   {
+    "doc": "cbam_guidance_3",
+    "page": 42,
+    "folio": "42",
+    "section": "Section 4.3.3 cement example",
+    "tokens": [
+     "125 000 t CO2",
+     "50 000 × 0,95 + 40 000 × 0,98",
+     "(0,80 + 0,17) × 60 000",
+     "144 900 t clinker"
+    ]
+   },
+   {
+    "doc": "cbam_guidance_3",
+    "page": 43,
+    "folio": "43",
+    "section": "Section 4.3.3 cement example results",
+    "tokens": [
+     "125 000 / 144 900 = 0,863",
+     "40 976,5 0,820",
+     "33 816,4 0,845",
+     "50 207,0 0,837"
+    ]
+   }
+  ]
+ },
+ {
+  "illustrative": false,
+  "state": "ok",
+  "flags": [],
+  "retrieved": "2026-10-19",
+  "status": "verified",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "reported_total_decimals",
+    "unit": "decimal places",
+    "origin": "constant",
+    "value": "0",
+    "basis": "rounded to full (whole) tonnes means zero decimal places",
+    "boundary": "not_applicable",
+    "gwp_set": "AR5_100"
+   },
+   {
+    "name": "see_max_decimals",
+    "unit": "decimal places",
+    "origin": "printed",
+    "literal": "5",
+    "locale": "dp",
+    "value": "5",
+    "sigDigits": 1,
+    "boundary": "not_applicable",
+    "gwp_set": "AR5_100"
+   },
+   {
+    "name": "gwp_set_statement",
+    "unit": "GWP set",
+    "origin": "printed",
+    "text": "AR5 100-year",
+    "boundary": "not_applicable",
+    "gwp_set": "AR5_100"
+   }
+  ],
+  "relations": [],
+  "traps": [
+   {
+    "what": "A rule row for the validator, not an arithmetic row: reported totals round to whole tonnes CO2e, specific embedded emissions keep at most five decimals, and the GWP set is the AR5 100-year values."
+   }
+  ],
+  "disagreements": [],
+  "id": "T16",
+  "kind": "rule",
+  "framework": "eu_cbam",
+  "framework_version": "Guidance Document 3 (2026-08-14)",
+  "checks": [
+   {
+    "doc": "cbam_guidance_3",
+    "page": 22,
+    "folio": "22",
+    "section": "Section 4.1.4 units for reporting",
+    "tokens": [
+     "full (whole) tonnes CO2e",
+     "maximum of 5 decimal places",
+     "100-year GWP values of the 5th"
+    ]
+   }
+  ]
+ }
+]
