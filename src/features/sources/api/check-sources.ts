@@ -39,13 +39,14 @@ export const POST = route("/api/worker/check-sources", async (request) => {
   const deps: ChangeDetectionDeps = {
     db,
     now: () => new Date(),
+    resolveHost: null,
     writeSnapshot: (sourceId, snap) => writeSnapshot(db, sourceId, snap),
     reconcile: (input) => reconcileChanges({ db, now: () => new Date() }, input),
   };
   const run = await runChangeDetection(deps, { limit: limit.limit });
   if (run.outcome === "failed") return Response.json({ error: run.notes.join("; ") || "change detection failed" }, { status: 500 });
   // Rule 17: a source the capture worker found walled goes on to the browser tier, a substitute publisher or an access request in the same pass (a host with no browser reports the rows it left).
-  const collected = await collectRefused({ db, now: () => new Date(), env: process.env }, { limit: 3 });
+  const collected = await collectRefused({ db, now: () => new Date(), env: process.env, resolveHost: null, launchBrowser: null }, { limit: 3 });
   return Response.json({
     collect: { counts: collected.counts, outcome: collected.outcome, notes: collected.notes },
     message: run.notes[0] && run.counts.checked === 0 ? run.notes[0] : `Checked ${run.counts.checked} sources`,

@@ -15,7 +15,7 @@ export interface FetchDeps extends HoldDeps {
   fetchImpl?: typeof fetch;
   now?: () => Date;
   sleep?: (ms: number) => Promise<void>;
-  resolveHost?: (host: string) => Promise<string[]>;
+  resolveHost: ((host: string) => Promise<string[]>) | null;
 }
 
 /** What every transport hands the ladder: a status and the text, plus the truncation facts. A cap never binds silently. */

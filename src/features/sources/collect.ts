@@ -8,14 +8,14 @@ import { closeBrowser, fetchBrowser, type BrowserDeps } from "@/core/fetch/headl
 import { fetchAllowed } from "@/core/fetch/hold";
 import { honestFetch, robotsGateFor } from "@/core/fetch/honest";
 import { escalateFetch, type SubstituteHit, type TransportName } from "@/core/fetch/ladder";
-import { fetchDocument, storageMaxChars } from "@/core/fetch/policy";
+import { captureLocale, fetchDocument, storageMaxChars } from "@/core/fetch/policy";
 import { storeCapture, type CaptureChannel, type Db as StoreDb } from "@/core/fetch/store-capture";
 import { hostOf } from "@/core/shared";
 import { identifiersOf, substituteCandidates } from "@/core/sources/publishers";
 import { registerAndRate } from "@/core/sources/register";
 import { outcomeOf, type RunDeps, type RunResult } from "@/core/sources/run-result";
 
-export const COLLECT_MAX_LIMIT = 10;
+const COLLECT_MAX_LIMIT = 10;
 export interface CollectDeps extends RunDeps, Omit<BrowserDeps, "now" | "db"> {}
 interface QueueRow {
   id: string;
@@ -31,6 +31,7 @@ interface SourceRow {
   api_endpoint_url: string | null;
   rss_feed_url: string | null;
   sitemap_url: string | null;
+  publisher_locale: string | null;
 }
 
 /**
@@ -59,7 +60,7 @@ export async function collectRefused(deps: CollectDeps, input: { limit?: number;
       }
       const started = deps.now().getTime();
       const park = (status: "refused" | "error" | "skipped" | "done", text: string | null) => db.from("pending_first_fetch").update({ status, last_error_text: text }).eq("id", row.id);
-      const srcRes = await db.from("sources").select("id, url, name, paywalled, access_method, api_endpoint_url, rss_feed_url, sitemap_url").eq("id", row.source_id).single();
+      const srcRes = await db.from("sources").select("id, url, name, paywalled, access_method, api_endpoint_url, rss_feed_url, sitemap_url, publisher_locale").eq("id", row.source_id).single();
       const src = srcRes.data as SourceRow | null;
       if (srcRes.error || !src) {
         counts.failed++;
@@ -84,6 +85,12 @@ export async function collectRefused(deps: CollectDeps, input: { limit?: number;
         source: { api_endpoint_url: src.api_endpoint_url, rss_feed_url: src.rss_feed_url, sitemap_url: src.sitemap_url, access_method: src.access_method, paywalled: !!src.paywalled },
         skip: ["direct", "api", "feed"] as TransportName[],
         max: 10_000_000,
+        cacheGet: null,
+        apiFetch: null,
+        feedFetch: null,
+        sitemapProbe: null,
+        directFetch: null,
+        seekMore: null,
         browserFetch: (url) => fetchBrowser(url, deps, { max: 10_000_000, paywalled: !!src.paywalled }),
         substituteFetch: async (): Promise<SubstituteHit[]> => {
           const hits: SubstituteHit[] = [];
@@ -94,7 +101,7 @@ export async function collectRefused(deps: CollectDeps, input: { limit?: number;
               continue;
             }
             const text = toText(doc.text);
-            hits.push({ url: doc.finalUrl, host: c.entry.host, publisherId: c.entry.id, result: { status: doc.status, text, html: doc.text, truncated: false, fullLength: text.length, cap: 10_000_000, finalUrl: doc.finalUrl, title: doc.title } });
+            hits.push({ url: doc.finalUrl, host: c.entry.host, publisherId: c.entry.id, result: { status: doc.status, text, html: doc.text, truncated: false, fullLength: text.length, cap: 10_000_000, finalUrl: doc.finalUrl, title: doc.title, language: doc.language } });
             if (text.length > 200) break;
           }
           return hits;
@@ -125,7 +132,7 @@ export async function collectRefused(deps: CollectDeps, input: { limit?: number;
           ownerName = verdict.substitute.host;
         }
         const r = verdict.result;
-        const stored = await storeCapture(db as unknown as StoreDb, { sourceId: ownerId, sourceUrl: ownerUrl, sourceName: ownerName, finalUrl: r.finalUrl ?? verdict.url ?? src.url, text: r.html ?? r.text, title: r.title ?? null, httpStatus: r.status, channel, itemId, itemIds: live.map((i) => i.id), declaredTransforms: [{ declared_transform: "collection-channel", channel, at: deps.now().toISOString() }], ceilingBind: null, ceiling }, () => deps.now().getTime(), started);
+        const stored = await storeCapture(db as unknown as StoreDb, { sourceId: ownerId, sourceUrl: ownerUrl, sourceName: ownerName, finalUrl: r.finalUrl ?? verdict.url ?? src.url, text: r.html ?? r.text, title: r.title ?? null, httpStatus: r.status, channel, numberLocale: captureLocale(channel === "substitute" ? null : src.publisher_locale, r.language), itemId, itemIds: live.map((i) => i.id), declaredTransforms: [{ declared_transform: "collection-channel", channel, at: deps.now().toISOString() }], ceilingBind: null, ceiling }, () => deps.now().getTime(), started);
         if (stored.outcome === "failed") {
           counts.failed++;
           notes.push(`${row.id}: ${stored.detail}`);

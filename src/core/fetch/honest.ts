@@ -9,10 +9,7 @@ import { BOT_USER_AGENT } from "./policy";
 import { makeRobotsGate } from "./robots";
 
 export type RobotsGate = ReturnType<typeof makeRobotsGate>;
-export interface HonestDeps extends Pick<FetchDeps, "fetchImpl" | "env" | "now"> {
-  sleep?: (ms: number) => Promise<void>;
-  resolveHost?: (host: string) => Promise<string[]>;
-}
+export type HonestDeps = Pick<FetchDeps, "fetchImpl" | "env" | "now" | "sleep" | "resolveHost">;
 interface Kit {
   /** The guard without a robots check (a publisher's documented API) and the run's robots gate. */
   base: Omit<GuardOptions, "userAgent" | "robots">;

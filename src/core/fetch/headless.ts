@@ -8,7 +8,7 @@ import { type FetchDeps, type TransportResult } from "./direct";
 import { decodeEntities, stripTags } from "./entities";
 import { assertFetchAllowed } from "./hold";
 import { robotsGateFor } from "./honest";
-import type { RefusalReason } from "./policy";
+import { documentLanguage, type RefusalReason } from "./policy";
 import { interpretRobotsAnswer, verdictFor, type RobotsVerdict } from "./robots";
 
 export const BROWSER_PACE_MS = { min: 3000, max: 5000 } as const;
@@ -151,7 +151,7 @@ export async function fetchBrowser(url: string, deps: BrowserDeps, opts: Browser
       const gate = detectAccessWall(text);
       if (text.length < WALL_MAX_CHARS && (gate?.class === BODY_CLASS.INTERACTIVE_CHALLENGE || INTERACTIVE_CHALLENGE_RE.test(html))) return refused(max, "interactive_challenge", false, `the page presents an interactive challenge (${(gate?.evidence ?? "challenge markup").slice(0, 120)}): recorded, never solved`);
       if (gate?.class === BODY_CLASS.LOGIN_WALL || gate?.class === BODY_CLASS.REQUEST_ACCESS) return refused(max, "gated", false, `the page is a login or access gate (${gate.class}): the browser tier does not enter one`);
-      return { status, text: text.slice(0, max), truncated: text.length > max, fullLength: text.length, cap: max, finalUrl: page.url(), contentType: "text/html", html, channel: "browser" } satisfies TransportResult;
+      return { status, text: text.slice(0, max), truncated: text.length > max, fullLength: text.length, cap: max, finalUrl: page.url(), contentType: "text/html", html, language: documentLanguage(null, html), channel: "browser" } satisfies TransportResult;
     } catch (e) {
       return refused(max, "network", true, `browser navigation failed: ${e instanceof Error ? e.message : String(e)}`);
     } finally {

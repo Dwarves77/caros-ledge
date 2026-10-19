@@ -144,8 +144,8 @@ export function routeProblems(routeFiles, texts) {
     .map((f) => ({ key: f, text: `${f}: no code, script or workflow names ${routePattern(f)}: nothing calls this route` }));
 }
 
-/** Environment members every runtime defaults (the wall clock, the sleep and the name resolver); R4 gives them one home. They are not downstream runtimes, so an optional one is not an omitted downstream. */
-const ENVIRONMENT = new Set(["now", "sleep", "resolveHost"]);
+/** Environment members every runtime defaults (the wall clock and the sleep); R4 gives them one home. They are not downstream runtimes, so an optional one is not an omitted downstream. */
+const ENVIRONMENT = new Set(["now", "sleep"]);
 /** `*Deps` interface members that are optional functions (the environment members excepted). */
 export function optionalDeps(srcTexts) {
   const out = [];
