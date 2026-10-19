@@ -290,7 +290,10 @@ export async function healItem(deps: HealDeps, input: HealItemInput): Promise<He
         notes.push(`${list.length} FACT(s) whose attribution does not resolve to the capture holding their span: ${list.slice(0, 3).map((x) => `${x.claim_id} ${x.reason}`).join("; ")}`);
       }
       // The attempt is stamped on the item so the next sweep takes the items it has not tried (D:45): selection orders by updated_at.
-      if (status !== "verified") must("attempt stamp", await sb.from("intelligence_items").update({ updated_at: nowIso }).eq("id", item.id));
+      if (status !== "verified") {
+        const stamp = await sb.from("intelligence_items").update({ updated_at: nowIso }).eq("id", item.id);
+        if (stamp.error) notes.push(`attempt not stamped (the next sweep may take this item first): ${stamp.error.message}`);
+      }
     }
     return { ...runResult(counts.still_failing || counts.attribution_violations ? "partial" : "ok", counts, notes), itemId: item.id, status, steps, ...(restore ? { restore } : {}) };
   } catch (e) {
