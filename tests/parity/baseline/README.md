@@ -4,6 +4,10 @@ Baseline captured from the NEW production carosledge.com, run 39193537000, repo 
 
 The look rulings that waived differences from the old site (44 px law 2, facet-row-desktop, SEC-5 and the rest) now live as text in `rulings` of tests/parity/approved-changes.json; `approved` is empty because capture and baseline are the same site. compare ends its report with an `unused waivers:` line; a waiver that covers nothing is deleted.
 
+## Capture contract (G1, G2)
+
+The record capture.mjs writes has a version, `contract` in index.json (CAPTURE_CONTRACT in tests/parity/contract.mjs). Contract 2 records every list row (`[data-part="list-row"]`, `[data-part="table-row"]`) with its container, names a landmark by its aria-label, takes the page height from `<main>`, shoots the whole page, and carries `truncated` and the layout `offences` of the route. The files in this directory were written under contract 1 (rows were the first 20 `li, tr, article`, so no list route holds rows), so compare.mjs fails the run and says the baseline is owed a recapture until the files are replaced under contract 2. Recapture only from a build that carries the hydration marker (`data-hydrated`, src/ui/shell/Hydrated.tsx): capture waits for it.
+
 ## Recapturing the baseline
 
 Counts and data-derived option sets drift (the compare gate treats integer runs in control and heading names as data), but the site's look and structure can also change, and a deliberate refresh is a PR of its own:
