@@ -6,7 +6,7 @@ name: CI
 # Job `turn`: the turn runtime (scripts/turn.mjs). Dispatch only: it is the one job that holds the service key for a run of the branch it was dispatched on; no pull request or push ever receives it.
 # Job `windows`: the test step alone on Windows (every push to main and dispatch; a pull request that touches scripts/ or tests/).
 # Job `parity`: the built app on the runner, the UX smoke, and the capture compared with tests/parity/baseline (a pull request that touches anything the build reads).
-# Jobs `live` and `preview-parity` (P2-15): on a successful PREVIEW deployment (deployment_status) or a dispatch with only=live. `live` runs the live checks (scripts/ci/live-checks.mjs) with the service key and the admin account, so it checks
+# Jobs `target`, `live` and `preview-parity` (P2-15): on the successful `Vercel` commit status (Vercel posts a commit status and creates no GitHub Deployment, so a deployment event never fires) or a dispatch with only=live. `live` runs the live checks (scripts/ci/live-checks.mjs) with the service key and the admin account, so it checks
 # out MAIN, never the deployed commit: a branch cannot change the script that holds the secrets. `preview-parity` runs the deployed commit's own capture and compare, so it holds the member test account only.
 # Job `report`: after the others (needs, if always), downloads the parity and test artifacts and writes the one job summary and the one PR comment; it polls nothing and never fails the run.
 # Every action is pinned to a commit SHA (the tag it was taken from is the comment): a moved tag cannot change a gate.
@@ -46,7 +46,7 @@ on:
       chain:
         description: 'Run the stage downstream stages too (false runs only the named stage)'
         default: 'true'
-  deployment_status:
+  status:
 
 permissions:
   contents: read
@@ -54,13 +54,13 @@ permissions:
 # The event and the run id are in the group: a push to main and a dispatch on main no longer share one pending slot (GitHub keeps one pending run per group, so a pending main push could be dropped).
 # Only a pull request cancels its own earlier run.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.event.deployment.id || github.run_id }}
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   changes:
     name: changes
-    if: github.event_name != 'deployment_status' && (github.event_name != 'workflow_dispatch' || github.event.inputs.only == '')
+    if: github.event_name != 'status' && (github.event_name != 'workflow_dispatch' || github.event.inputs.only == '')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
@@ -79,7 +79,7 @@ jobs:
 
   ci:
     name: ci
-    if: github.event_name != 'deployment_status' && (github.event_name != 'workflow_dispatch' || github.event.inputs.only == '')
+    if: github.event_name != 'status' && (github.event_name != 'workflow_dispatch' || github.event.inputs.only == '')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -105,7 +105,7 @@ jobs:
 
   schema:
     name: schema
-    if: github.event_name != 'deployment_status' && (github.event_name != 'workflow_dispatch' || github.event.inputs.only == '')
+    if: github.event_name != 'status' && (github.event_name != 'workflow_dispatch' || github.event.inputs.only == '')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     services:
@@ -164,7 +164,7 @@ jobs:
   windows:
     name: ci-windows
     needs: changes
-    if: github.event_name != 'deployment_status' && (github.event_name != 'workflow_dispatch' || github.event.inputs.only == '') && (github.event_name != 'pull_request' || needs.changes.outputs.windows == 'true')
+    if: github.event_name != 'status' && (github.event_name != 'workflow_dispatch' || github.event.inputs.only == '') && (github.event_name != 'pull_request' || needs.changes.outputs.windows == 'true')
     runs-on: windows-latest
     timeout-minutes: 15
     steps:
@@ -179,7 +179,7 @@ jobs:
   parity:
     name: parity
     needs: changes
-    if: github.event_name != 'deployment_status' && (github.event_name != 'workflow_dispatch' || github.event.inputs.only == '') && (github.event_name != 'pull_request' || needs.changes.outputs.parity == 'true')
+    if: github.event_name != 'status' && (github.event_name != 'workflow_dispatch' || github.event.inputs.only == '') && (github.event_name != 'pull_request' || needs.changes.outputs.parity == 'true')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     # The baseline was captured in this image (old repo parity-baseline.yml), so fonts and hinting render identically and the pixel diff measures the design, not the machine.
@@ -256,19 +256,54 @@ jobs:
             parity-report.txt
             next-start.log
 
-  # P2-15: what runs on a deployed URL. A successful PREVIEW deployment (the deployment_status event Vercel posts to GitHub) and a dispatch with only=live both run the live checks (scripts/ci/live-checks.mjs: one live-smoke row per
+  # P2-15: what runs on a deployed URL. The successful `Vercel` commit status (a status event runs the workflow from the default branch) and a dispatch with only=live both run the live checks (scripts/ci/live-checks.mjs: one live-smoke row per
   # check through recordRun) and the parity capture of the deployed preview. The live checks hold the service key, the admin account and the mail key, so this job checks out MAIN (the default branch): the deployed commit is only
   # the thing being looked at, the URL, and its sha is passed as data (LIVE_CODE_SHA) to be written on the ledger row.
+  # The URL under test, derived once: the preview of the status's branch (https://caros-ledge-git-<branch>-dwarves77s-projects.vercel.app, the branch lower-cased with every character outside [a-z0-9] replaced by "-"), or production (https://carosledge.com)
+  # when the status is the default branch's. A dispatch uses its live_url. A status that names no branch cannot be located and fails the run.
+  target:
+    name: target
+    if: (github.event_name == 'status' && github.event.context == 'Vercel' && github.event.state == 'success') || (github.event_name == 'workflow_dispatch' && github.event.inputs.only == 'live')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      url: ${{ steps.url.outputs.url }}
+      production: ${{ steps.url.outputs.production }}
+    steps:
+      - name: Derive the deployed URL
+        id: url
+        env:
+          EVENT: ${{ github.event_name }}
+          BRANCH: ${{ github.event.branches[0].name }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          LIVE_URL: ${{ github.event.inputs.live_url }}
+        run: |
+          if [ "$EVENT" = workflow_dispatch ]; then
+            echo "url=$LIVE_URL" >> "$GITHUB_OUTPUT"
+            echo "production=false" >> "$GITHUB_OUTPUT"
+          elif [ -z "$BRANCH" ]; then
+            echo 'the status names no branch, so the deployed URL cannot be derived'
+            exit 1
+          elif [ "$BRANCH" = "$DEFAULT_BRANCH" ]; then
+            echo "url=https://carosledge.com" >> "$GITHUB_OUTPUT"
+            echo "production=true" >> "$GITHUB_OUTPUT"
+          else
+            slug=$(printf '%s' "$BRANCH" | tr 'A-Z' 'a-z' | sed 's/[^a-z0-9]/-/g')
+            echo "url=https://caros-ledge-git-${slug}-dwarves77s-projects.vercel.app" >> "$GITHUB_OUTPUT"
+            echo "production=false" >> "$GITHUB_OUTPUT"
+          fi
+
   live:
     name: live
-    if: (github.event_name == 'deployment_status' && github.event.deployment_status.state == 'success' && github.event.deployment_status.environment == 'Preview') || (github.event_name == 'workflow_dispatch' && github.event.inputs.only == 'live')
+    needs: target
+    if: (github.event_name == 'status' && github.event.context == 'Vercel' && github.event.state == 'success') || (github.event_name == 'workflow_dispatch' && github.event.inputs.only == 'live')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     container:
       image: mcr.microsoft.com/playwright:v1.61.1-noble
     env:
-      LIVE_BASE_URL: ${{ github.event.deployment_status.environment_url || github.event.inputs.live_url }}
-      LIVE_CODE_SHA: ${{ github.event.deployment.sha || github.sha }}
+      LIVE_BASE_URL: ${{ needs.target.outputs.url }}
+      LIVE_CODE_SHA: ${{ github.event.sha || github.sha }}
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -298,7 +333,8 @@ jobs:
 
   preview-parity:
     name: preview-parity
-    if: (github.event_name == 'deployment_status' && github.event.deployment_status.state == 'success' && github.event.deployment_status.environment == 'Preview') || (github.event_name == 'workflow_dispatch' && github.event.inputs.only == 'live')
+    needs: target
+    if: ((github.event_name == 'status' && github.event.context == 'Vercel' && github.event.state == 'success') || (github.event_name == 'workflow_dispatch' && github.event.inputs.only == 'live')) && needs.target.outputs.production != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     container:
@@ -307,13 +343,13 @@ jobs:
     env:
       LIVE_SMOKE_EMAIL: ${{ secrets.LIVE_SMOKE_EMAIL }}
       LIVE_SMOKE_PASSWORD: ${{ secrets.LIVE_SMOKE_PASSWORD }}
-      PARITY_BASE: ${{ github.event.deployment_status.environment_url || github.event.inputs.live_url }}
+      PARITY_BASE: ${{ needs.target.outputs.url }}
       # A preview sits behind Vercel deployment protection; the capture sends this as x-vercel-protection-bypass (the same designed mechanism as scripts/ci/live-checks.mjs), or it only ever sees the sign-in page.
       VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
-          ref: ${{ github.event.deployment.sha || github.sha }}
+          ref: ${{ github.event.sha || github.sha }}
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: '24'
@@ -407,7 +443,7 @@ jobs:
   report:
     name: report
     needs: [changes, ci, schema, turn, windows, parity]
-    if: always() && github.event_name != 'deployment_status'
+    if: always() && github.event_name != 'status'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:

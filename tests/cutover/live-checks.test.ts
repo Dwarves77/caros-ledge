@@ -193,7 +193,7 @@ test("each check is one live-smoke row through recordRun: a clean check is a suc
   const rec = (report: Any, o: Any) => recordLiveSmoke(db.client as Any, report, o);
   const checks = ["sign-in", "pages", "provenance-trigger"];
   const io = { base: "https://preview.example.test", signInMember: async () => ({ ok: true }), openPage: async () => ({ status: 500, finalUrl: "https://x.test/", text: "" }), service: { rpc: async () => { throw new Error("rpc down"); } } };
-  const results = await runLive({ checks, io, phase: "after", record: rec, env: { GITHUB_EVENT_NAME: "deployment_status", GITHUB_SHA: "abc", GITHUB_RUN_ID: "77" }, log: () => {} });
+  const results = await runLive({ checks, io, phase: "after", record: rec, env: { GITHUB_EVENT_NAME: "status", GITHUB_SHA: "abc", GITHUB_RUN_ID: "77" }, log: () => {} });
   assert.deepEqual(results.map((r: Any) => [r.check, r.failed > 0]), [["sign-in", false], ["pages", true], ["provenance-trigger", true]]);
   const rows = db.rows("harness_runs");
   assert.deepEqual(rows.map((r) => [r.family, (r.inputs as Any).check, r.outcome, r.trigger, r.code_sha, r.github_run_id]), [["live-smoke", "sign-in", "success", "push", "abc", "77"], ["live-smoke", "pages", "failed", "push", "abc", "77"], ["live-smoke", "provenance-trigger", "failed", "push", "abc", "77"]]);
@@ -237,7 +237,7 @@ test("the script follows the one exit-code contract: a workstation with no crede
   const local = run({});
   assert.equal(local.status, 2, local.stderr);
   assert.match(local.stdout, /self-skipped \(exit 2\).*NEXT_PUBLIC_SUPABASE_URL.*SUPABASE_SERVICE_ROLE_KEY/);
-  for (const event of ["deployment_status", "workflow_dispatch", "push"]) {
+  for (const event of ["status", "workflow_dispatch", "push"]) {
     const ci = run({ GITHUB_ACTIONS: "true", GITHUB_EVENT_NAME: event });
     assert.equal(ci.status, 1, `${event}: a CI event that can carry secrets and lacks them has not run`);
     assert.match(ci.stdout, /missing \(exit 1\).*NEXT_PUBLIC_SUPABASE_URL.*SUPABASE_SERVICE_ROLE_KEY/);

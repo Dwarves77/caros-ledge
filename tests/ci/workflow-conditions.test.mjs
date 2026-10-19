@@ -1,32 +1,37 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import test from 'node:test';
 
 import { parse } from 'yaml';
 
 const workflow = parse(readFileSync('.github/workflows/ci.yml', 'utf8'));
 const jobs = workflow.jobs;
-const VARIABLES = ['ev', 'only', 'dstate', 'denv', 'parityScope', 'windowsScope'];
-// Evaluates a job's `if` for an event, the dispatch input `only`, a deployment_status's state and environment, and the scope the `changes` job decided (the expressions use only ==, !=, &&, || and parentheses on those values).
-const runs = (job, event, only = '', status = {}, scope = { parity: 'true', windows: 'true' }) => {
+const VARIABLES = ['ev', 'only', 'sctx', 'sstate', 'production', 'parityScope', 'windowsScope'];
+// Evaluates a job's `if` for an event, the dispatch input `only`, a status event's context and state, whether the target job derived production, and the scope the `changes` job decided (the expressions use only ==, !=, &&, || and parentheses on those values).
+const runs = (job, event, only = '', status = {}, scope = { parity: 'true', windows: 'true' }, production = '') => {
   const expr = String(jobs[job].if ?? 'true')
     .replaceAll('github.event_name', 'ev')
     .replaceAll('github.event.inputs.only', 'only')
-    .replaceAll('github.event.deployment_status.state', 'dstate')
-    .replaceAll('github.event.deployment_status.environment', 'denv')
+    .replaceAll('github.event.context', 'sctx')
+    .replaceAll('github.event.state', 'sstate')
+    .replaceAll('needs.target.outputs.production', 'production')
     .replaceAll('needs.changes.outputs.parity', 'parityScope')
     .replaceAll('needs.changes.outputs.windows', 'windowsScope')
     .replaceAll('==', '===')
     .replaceAll('!=', '!==');
-  return Function(...VARIABLES, `return (${expr});`)(event, only, status.state ?? '', status.environment ?? '', scope.parity, scope.windows);
+  return Function(...VARIABLES, `return (${expr});`)(event, only, status.context ?? '', status.state ?? '', production, scope.parity, scope.windows);
 };
-const on = (event, only, status, scope) => Object.keys(jobs).filter((j) => j !== 'report' && runs(j, event, only, status, scope)).sort();
+const on = (event, only, status, scope, production) => Object.keys(jobs).filter((j) => j !== 'report' && runs(j, event, only, status, scope, production)).sort();
+const VERCEL_OK = { context: 'Vercel', state: 'success' };
 
 test('a dispatch with only empty runs everything but baseline, live and screens; only=baseline runs baseline alone; only=turn runs turn alone; only=live runs the live checks and the deployed-preview parity alone', () => {
   assert.deepEqual(on('workflow_dispatch', ''), ['changes', 'ci', 'parity', 'schema', 'turn', 'windows']);
   assert.deepEqual(on('workflow_dispatch', 'baseline'), ['baseline']);
   assert.deepEqual(on('workflow_dispatch', 'turn'), ['turn']);
-  assert.deepEqual(on('workflow_dispatch', 'live'), ['live', 'preview-parity']);
+  assert.deepEqual(on('workflow_dispatch', 'live'), ['live', 'preview-parity', 'target']);
 });
 
 test('a pull request never runs baseline, the turn or the live jobs; a push to main runs the checks and windows but not the turn, baseline or the live jobs', () => {
@@ -41,17 +46,42 @@ test('the expensive jobs follow the scope the `changes` job decided on a pull re
   assert.deepEqual(on('push', '', {}, { parity: 'false', windows: 'false' }), ['changes', 'ci', 'parity', 'schema', 'windows'], 'main is never skipped');
 });
 
-test('a successful PREVIEW deployment runs the live checks and the deployed-preview parity and nothing else; a failed, pending or production deployment runs nothing (production is checked by a dispatch, after the window)', () => {
-  assert.deepEqual(on('deployment_status', '', { state: 'success', environment: 'Preview' }), ['live', 'preview-parity']);
-  for (const status of [{ state: 'failure', environment: 'Preview' }, { state: 'pending', environment: 'Preview' }, { state: 'success', environment: 'Production' }, {}]) assert.deepEqual(on('deployment_status', '', status), [], JSON.stringify(status));
-  assert.match(String(jobs.report.if), /deployment_status/, 'the report job does not run for a deployment event');
+test('the live jobs run on the successful Vercel commit status and on nothing else: not on a failed, pending or other-context status, not on a push, a pull request or a deployment event; a production status skips the preview parity', () => {
+  assert.deepEqual(on('status', '', VERCEL_OK), ['live', 'preview-parity', 'target']);
+  assert.deepEqual(on('status', '', VERCEL_OK, undefined, 'true'), ['live', 'target'], 'the default branch is production: live runs against it, the preview parity does not');
+  for (const status of [{ context: 'Vercel', state: 'failure' }, { context: 'Vercel', state: 'pending' }, { context: 'Vercel', state: 'error' }, { context: 'Vercel Preview Comments', state: 'success' }, { context: 'ci', state: 'success' }, {}]) assert.deepEqual(on('status', '', status), [], JSON.stringify(status));
+  for (const event of ['push', 'pull_request', 'deployment_status']) assert.ok(!on(event, '', VERCEL_OK).some((j) => ['live', 'preview-parity', 'target'].includes(j)), event);
+  assert.ok(workflow.on && 'status' in workflow.on && !('deployment_status' in workflow.on), 'the workflow listens for status, not for a deployment event Vercel never posts');
+  assert.match(String(jobs.report.if), /'status'/, 'the report job does not run for a status event');
+  for (const job of ['changes', 'ci', 'schema', 'windows', 'parity']) assert.deepEqual([job, runs(job, 'status', '', VERCEL_OK)], [job, false], 'a status event starts no check job');
+});
+
+test('the deployed URL is derived from the status: the branch lower-cased, every character outside [a-z0-9] replaced by a dash; the default branch is production; a status with no branch fails', () => {
+  const step = jobs.target.steps.find((s) => s.id === 'url');
+  const derive = (env) => {
+    const dir = mkdtempSync(join(tmpdir(), 'target-'));
+    try {
+      const out = join(dir, 'out');
+      writeFileSync(out, '');
+      const r = spawnSync('bash', ['-c', step.run], { env: { PATH: process.env.PATH, EVENT: 'status', DEFAULT_BRANCH: 'main', LIVE_URL: '', BRANCH: '', ...env, GITHUB_OUTPUT: out }, encoding: 'utf8' });
+      return { status: r.status, out: readFileSync(out, 'utf8').trim().split('\n').filter(Boolean) };
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  };
+  assert.deepEqual(derive({ BRANCH: 'slice/r1a' }).out, ['url=https://caros-ledge-git-slice-r1a-dwarves77s-projects.vercel.app', 'production=false']);
+  assert.deepEqual(derive({ BRANCH: 'coord/Report_2' }).out, ['url=https://caros-ledge-git-coord-report-2-dwarves77s-projects.vercel.app', 'production=false']);
+  assert.deepEqual(derive({ BRANCH: 'main' }).out, ['url=https://carosledge.com', 'production=true']);
+  assert.deepEqual(derive({ EVENT: 'workflow_dispatch', LIVE_URL: 'https://x.test' }).out, ['url=https://x.test', 'production=false']);
+  assert.equal(derive({ BRANCH: '' }).status, 1, 'a status that names no branch cannot be located');
+  assert.deepEqual([jobs.live.needs, jobs.live.env.LIVE_BASE_URL], ['target', '${{ needs.target.outputs.url }}']);
+  assert.deepEqual([jobs['preview-parity'].needs, jobs['preview-parity'].env.PARITY_BASE], ['target', '${{ needs.target.outputs.url }}']);
 });
 
 test('the preview-parity job checks out the DEPLOYED commit (its own capture and compare) and passes the preview URL; the live job checks out the default branch and gets the deployed sha as data', () => {
   const checkout = (name) => jobs[name].steps.find((s) => String(s.uses).startsWith('actions/checkout'));
-  assert.match(String(checkout('preview-parity').with.ref), /github\.event\.deployment\.sha/);
-  assert.match(String(jobs.live.env.LIVE_BASE_URL), /deployment_status\.environment_url/);
-  assert.match(String(jobs.live.env.LIVE_CODE_SHA), /github\.event\.deployment\.sha/);
+  assert.match(String(checkout('preview-parity').with.ref), /github\.event\.sha/);
+  assert.match(String(jobs.live.env.LIVE_CODE_SHA), /github\.event\.sha/);
   assert.match(String(checkout('live').with.ref), /github\.event\.repository\.default_branch/);
 });
 
@@ -64,7 +94,7 @@ const secretsOf = (job) => {
   return new Set(blocks.flatMap((b) => Object.values(b)).flatMap((v) => [...String(v).matchAll(/secrets\.(\w+)/g)].map((m) => m[1])));
 };
 // A ref that names a pull request's or a deployment's commit puts that code in the workspace.
-const PR_CODE = /github\.event\.deployment\.sha|github\.head_ref|pull_request\.head|github\.sha|github\.ref\b/;
+const PR_CODE = /github\.event\.sha|github\.head_ref|pull_request\.head|github\.sha|github\.ref\b/;
 const checkoutRefs = (job) => jobs[job].steps.filter((s) => String(s.uses).startsWith('actions/checkout')).map((s) => String(s.with?.ref ?? ''));
 
 test('G13: a job that holds a high-privilege secret never runs on a pull request or a push, and never runs the pull request\'s or the deployed commit\'s code', () => {
@@ -72,7 +102,7 @@ test('G13: a job that holds a high-privilege secret never runs on a pull request
     const high = [...secretsOf(job)].filter((s) => HIGH.includes(s));
     if (!high.length) continue;
     for (const event of ['pull_request', 'push']) assert.ok(!runs(job, event), `${job} holds ${high} and runs on a ${event}`);
-    // On a deployment_status event the default checkout is the default branch, but the job may check out the deployed commit: forbidden for these jobs. A dispatch runs the branch the operator chose and says so.
+    // On a status event the default checkout is the default branch, but the job may check out the deployed commit: forbidden for these jobs. A dispatch runs the branch the operator chose and says so.
     if (job !== 'turn' && job !== 'screens') for (const ref of checkoutRefs(job)) assert.doesNotMatch(ref, PR_CODE, `${job} (${high}) checks out ${ref}: a branch could change the script that holds the secrets`);
   }
 });
@@ -125,7 +155,7 @@ test('the screens job runs on a dispatch with only=screens alone; no push, pull 
   for (const [event, only] of [['workflow_dispatch', ''], ['workflow_dispatch', 'live'], ['workflow_dispatch', 'baseline'], ['workflow_dispatch', 'turn'], ['pull_request', ''], ['push', '']]) {
     assert.ok(!on(event, only).includes('screens'), `${event} only=${only}`);
   }
-  assert.ok(!on('deployment_status', '', { state: 'success', environment: 'Preview' }).includes('screens'));
+  assert.ok(!on('status', '', VERCEL_OK).includes('screens'));
   assert.ok(!on('workflow_dispatch', 'screens').includes('ci'), 'only=screens does not start the checks');
 });
 

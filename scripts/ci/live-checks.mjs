@@ -1,4 +1,4 @@
-// The live checks, run against a DEPLOYED URL (P2-15 PART A; the smoke that replaces the capture, P2-08 D). Called by the `live` job of .github/workflows/ci.yml on a successful preview deployment (deployment_status) and on a
+// The live checks, run against a DEPLOYED URL (P2-15 PART A; the smoke that replaces the capture, P2-08 D). Called by the `live` job of .github/workflows/ci.yml on the successful `Vercel` commit status (a status event) and on a
 // dispatch with only=live, and by hand at the window. Each check (scripts/ci/live/checks.mjs) is written to the `live-smoke` family through recordRun, one row per check, the same ledger every other run lands in.
 //
 //   node scripts/ci/live-checks.mjs --base https://<deployment> [--only member-reads,pages] [--phase before|after] [--no-record]
@@ -49,7 +49,7 @@ export function planRun({ only, env, base, record, ci = false }) {
 
 /** The commit a row is written against: the deployed one when the workflow passes it as data, else the commit the script runs from. */
 export const codeShaOf = (env) => env.LIVE_CODE_SHA || env.GITHUB_SHA || null;
-export const triggerOf = (env) => (env.GITHUB_EVENT_NAME === "workflow_dispatch" ? "dispatch" : env.GITHUB_EVENT_NAME === "deployment_status" ? "push" : "manual");
+export const triggerOf = (env) => (env.GITHUB_EVENT_NAME === "workflow_dispatch" ? "dispatch" : env.GITHUB_EVENT_NAME === "status" ? "push" : "manual");
 
 export async function runLive({ checks, io, phase, record, env, now = () => new Date(), log = console.log }) {
   const results = [];

@@ -156,7 +156,7 @@ test("G3: a run that cannot proceed for a missing secret skips only where the ev
   assert.match(fork.message, /fork cannot carry secrets; not set: SUPABASE_SERVICE_ROLE_KEY, WORKER_SECRET/);
   for (const env of [
     { GITHUB_ACTIONS: "true", GITHUB_EVENT_NAME: "pull_request", GITHUB_EVENT_PATH: event(false) }, // a same-repo PR carries secrets
-    { GITHUB_ACTIONS: "true", GITHUB_EVENT_NAME: "deployment_status" },
+    { GITHUB_ACTIONS: "true", GITHUB_EVENT_NAME: "status" },
     { GITHUB_ACTIONS: "true", GITHUB_EVENT_NAME: "workflow_dispatch" },
     { GITHUB_ACTIONS: "true", GITHUB_EVENT_NAME: "push" },
     { GITHUB_ACTIONS: "true", GITHUB_EVENT_NAME: "pull_request" }, // no readable payload: not provably a fork
