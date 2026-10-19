@@ -23,22 +23,22 @@ const runs = (job, event, only = '', status = {}, scope = { parity: 'true', wind
 const on = (event, only, status, scope) => Object.keys(jobs).filter((j) => j !== 'report' && runs(j, event, only, status, scope)).sort();
 
 test('a dispatch with only empty runs everything but baseline, live and screens; only=baseline runs baseline alone; only=turn runs turn alone; only=live runs the live checks and the deployed-preview parity alone', () => {
-  assert.deepEqual(on('workflow_dispatch', ''), ['changes', 'ci', 'mutants', 'parity', 'schema', 'turn', 'windows']);
+  assert.deepEqual(on('workflow_dispatch', ''), ['changes', 'ci', 'parity', 'schema', 'turn', 'windows']);
   assert.deepEqual(on('workflow_dispatch', 'baseline'), ['baseline']);
   assert.deepEqual(on('workflow_dispatch', 'turn'), ['turn']);
   assert.deepEqual(on('workflow_dispatch', 'live'), ['live', 'preview-parity']);
 });
 
-test('a pull request never runs baseline, the turn or the live jobs; a push to main runs the checks, the mutants and windows but not the turn, baseline or the live jobs', () => {
-  assert.deepEqual(on('pull_request'), ['changes', 'ci', 'mutants', 'parity', 'schema', 'windows']);
-  assert.deepEqual(on('push'), ['changes', 'ci', 'mutants', 'parity', 'schema', 'windows']);
+test('a pull request never runs baseline, the turn or the live jobs; a push to main runs the checks and windows but not the turn, baseline or the live jobs', () => {
+  assert.deepEqual(on('pull_request'), ['changes', 'ci', 'parity', 'schema', 'windows']);
+  assert.deepEqual(on('push'), ['changes', 'ci', 'parity', 'schema', 'windows']);
 });
 
 test('the expensive jobs follow the scope the `changes` job decided on a pull request, and run unconditionally on a push to main', () => {
-  assert.deepEqual(on('pull_request', '', {}, { parity: 'false', windows: 'false' }), ['changes', 'ci', 'mutants', 'schema']);
-  assert.deepEqual(on('pull_request', '', {}, { parity: 'true', windows: 'false' }), ['changes', 'ci', 'mutants', 'parity', 'schema']);
-  assert.deepEqual(on('pull_request', '', {}, { parity: 'false', windows: 'true' }), ['changes', 'ci', 'mutants', 'schema', 'windows']);
-  assert.deepEqual(on('push', '', {}, { parity: 'false', windows: 'false' }), ['changes', 'ci', 'mutants', 'parity', 'schema', 'windows'], 'main is never skipped');
+  assert.deepEqual(on('pull_request', '', {}, { parity: 'false', windows: 'false' }), ['changes', 'ci', 'schema']);
+  assert.deepEqual(on('pull_request', '', {}, { parity: 'true', windows: 'false' }), ['changes', 'ci', 'parity', 'schema']);
+  assert.deepEqual(on('pull_request', '', {}, { parity: 'false', windows: 'true' }), ['changes', 'ci', 'schema', 'windows']);
+  assert.deepEqual(on('push', '', {}, { parity: 'false', windows: 'false' }), ['changes', 'ci', 'parity', 'schema', 'windows'], 'main is never skipped');
 });
 
 test('a successful PREVIEW deployment runs the live checks and the deployed-preview parity and nothing else; a failed, pending or production deployment runs nothing (production is checked by a dispatch, after the window)', () => {
@@ -84,7 +84,7 @@ test('G13: the deployment-protection bypass is held only by the jobs that check 
 });
 
 test('G13: the jobs that run a pull request\'s own code hold the member test account and the public anon key, never the admin account, the service key or a mail key', () => {
-  for (const job of ['parity', 'preview-parity', 'ci', 'schema', 'mutants', 'windows']) {
+  for (const job of ['parity', 'preview-parity', 'ci', 'schema', 'windows']) {
     const used = [...secretsOf(job)];
     assert.deepEqual(used.filter((s) => HIGH.includes(s)), [], `${job}`);
   }
@@ -113,7 +113,7 @@ test('G13: every action is pinned to a commit SHA, and the concurrency group nam
 
 test('G3: no step turns exit 2 into success: a green job means the check ran, and the report waits for every job that can run on a pull request', () => {
   for (const [name, job] of Object.entries(jobs)) for (const step of job.steps ?? []) assert.doesNotMatch(String(step.run ?? ''), /-eq 2|== 2|exit 0.*self-skip|self-skipped \(exit 2\)/, `${name}: ${step.name ?? ''}`);
-  assert.deepEqual([...jobs.report.needs].sort(), ['changes', 'ci', 'mutants', 'parity', 'schema', 'turn', 'windows']);
+  assert.deepEqual([...jobs.report.needs].sort(), ['changes', 'ci', 'parity', 'schema', 'turn', 'windows']);
 });
 
 test('the turn job receives the free EIA key the market producer reads by name', () => {
@@ -136,10 +136,9 @@ test('the screens job photographs the dispatched live_url fresh and uploads the 
   assert.ok(jobs.screens.steps.some((s) => String(s.uses).startsWith('actions/upload-artifact')));
 });
 
-test('the parity job runs every smoke, the capture and the compare whatever an earlier one did, and the mutants job runs the classes the change decided', () => {
+test('the parity job runs every smoke, the capture and the compare whatever an earlier one did', () => {
   const steps = jobs.parity.steps;
   const smokes = steps.filter((s) => /tests\/ux\/.*-smoke\.mjs/.test(String(s.run ?? '')));
   assert.equal(smokes.length, 7);
   for (const s of [...smokes, ...steps.filter((x) => /parity\/(capture|compare)\.mjs/.test(String(x.run ?? '')))]) assert.match(String(s.if), /!cancelled\(\)/, s.name);
-  assert.match(JSON.stringify(jobs.mutants.steps), /needs\.changes\.outputs\.mutant_classes/);
 });

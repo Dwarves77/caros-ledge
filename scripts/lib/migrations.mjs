@@ -1,5 +1,5 @@
-// The one reader of supabase/migrations: file names, class (schema or data), the header declarations and the self-check id. apply-plan.mjs, migration-checks.mjs, schema-apply.mjs, dry-run.mjs and the
-// mutants inventory all take their view of a migration from here.
+// The one reader of supabase/migrations: file names, class (schema or data), the header declarations and the self-check id. apply-plan.mjs, migration-checks.mjs, schema-apply.mjs and dry-run.mjs
+// take their view of a migration from here.
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 
 export const MIGRATIONS_DIR = "supabase/migrations";

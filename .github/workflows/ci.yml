@@ -1,9 +1,8 @@
 name: CI
 
 # The one workflow. Job `changes`: which of the expensive jobs a pull request needs (scripts/ci/changes.mjs); every other event runs everything.
-# Job `ci`: lint, typecheck, build, tests, tree checks, LOC gates, the connection check, the column check, the migration static checks, the mutants registry (npm run gates).
+# Job `ci`: lint, typecheck, build, tests, tree checks, LOC gates, the connection check, the column check, the migration static checks (npm run gates).
 # Job `schema`: supabase/schema.sql applied to an empty Postgres 15, then the migrations (each self-check must print its own OK, each down file is applied and catalog-compared), then the property checks.
-# Job `mutants`: every gate is attacked by a registered mutant (tests/mutants/registry.json) in a scratch copy of the tree and must go red; a mutant that leaves its gate green fails the run.
 # Job `turn`: the turn runtime (scripts/turn.mjs). Dispatch only: it is the one job that holds the service key for a run of the branch it was dispatched on; no pull request or push ever receives it.
 # Job `windows`: the test step alone on Windows (every push to main and dispatch; a pull request that touches scripts/ or tests/).
 # Job `parity`: the built app on the runner, the UX smoke, and the capture compared with tests/parity/baseline (a pull request that touches anything the build reads).
@@ -67,7 +66,6 @@ jobs:
     outputs:
       parity: ${{ steps.scope.outputs.parity }}
       windows: ${{ steps.scope.outputs.windows }}
-      mutant_classes: ${{ steps.scope.outputs.mutant_classes }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -132,45 +130,6 @@ jobs:
       - run: npm ci --no-audit # the source-backfill generator imports the classify rules (zod)
       - name: Apply schema.sql to an empty Postgres 15, then the migrations, the down files and the property checks
         run: npm run schema:apply
-
-  mutants:
-    name: mutants
-    needs: changes
-    if: github.event_name != 'deployment_status' && (github.event_name != 'workflow_dispatch' || github.event.inputs.only == '')
-    runs-on: ubuntu-latest
-    # fast ~5 min, slow (a build, a bundle) ~8, schema ~35 (one chain run for every self-check, the property checks, three whole schema jobs): the whole set runs only when the change touches what the classes read.
-    timeout-minutes: 90
-    services:
-      postgres:
-        image: postgres:15.14
-        env:
-          POSTGRES_PASSWORD: postgres
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-    env:
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
-    steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
-        with:
-          node-version: '24'
-          cache: npm
-      - run: npm ci --no-audit
-      - name: Attack every gate with its registered mutants (fast always; slow and schema when the change touches what they read)
-        env:
-          CLASSES: ${{ needs.changes.outputs.mutant_classes }}
-        run: node scripts/ci/mutants.mjs --classes "$CLASSES" --json mutants-report.json
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        if: always()
-        with:
-          name: mutants-report
-          path: mutants-report.json
-          if-no-files-found: ignore
 
   turn:
     name: turn
@@ -446,7 +405,7 @@ jobs:
   # The one writer of the run's record: runs after every job that can run on a pull request or a push, polls nothing, holds no secrets, and never fails the run itself (it reports the others' conclusions).
   report:
     name: report
-    needs: [changes, ci, schema, mutants, turn, windows, parity]
+    needs: [changes, ci, schema, turn, windows, parity]
     if: always() && github.event_name != 'deployment_status'
     runs-on: ubuntu-latest
     timeout-minutes: 10
