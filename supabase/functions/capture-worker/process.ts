@@ -10,7 +10,8 @@
 import { fetchDocument, MAX_ATTEMPTS, storageMaxChars, type FetchOutcome } from "../../../src/core/fetch/policy.ts";
 
 export type Reply = PromiseLike<{ data: unknown; error: { message: string; code?: string } | null }>;
-export type Query = Reply & { [method: string]: (...args: unknown[]) => Query };
+/** The query-builder calls the worker makes, each named (an index signature reads as possibly undefined under noUncheckedIndexedAccess). */
+export type Query = Reply & Record<"select" | "insert" | "update" | "eq" | "in" | "order" | "limit" | "single", (...args: unknown[]) => Query>;
 export interface Db {
   from(table: string): Query;
 }

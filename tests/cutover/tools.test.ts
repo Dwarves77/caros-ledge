@@ -79,7 +79,7 @@ test("a self-check that borrows a live row, or guards its assertions behind the 
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
-  assert.deepEqual(migrationProblems(MIGRATIONS).filter((p) => /borrows a live row|IS NOT NULL THEN/.test(p)), [], "no merged migration borrows a live row");
+  assert.deepEqual(migrationProblems(MIGRATIONS).filter((p: string) => /borrows a live row|IS NOT NULL THEN/.test(p)), [], "no merged migration borrows a live row");
 });
 
 test("a file's self-check and rollback are read from the file, not typed: the id its OK notice prints or its Self-check header names; the down file, or the irreversible marker with its recovery; a prose header is no rollback", () => {

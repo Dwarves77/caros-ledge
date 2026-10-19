@@ -53,7 +53,7 @@ test("ledger verdicts: the candidates owed a verdict are exported; the verdict f
   assert.equal(w.db.rows("portal_link_candidates").find((c) => c.id === "p-10")?.status, "promoted");
   assert.equal(w.db.rows("portal_link_candidates").find((c) => c.id === "p-11")?.status, "candidate");
   assert.equal(w.rec.mints.filter((m) => !m.dry).length, 1, "minted through the one chokepoint");
-  assert.equal(((r.data as { ids: Record<string, string[]> }).ids.minted_item_ids).length, 1);
+  assert.equal(((r.data as { ids: Record<string, string[]> }).ids.minted_item_ids)?.length, 1);
 });
 
 test("ledger verdicts: a structural defect refuses the WHOLE file; a verdict under another prompt version is excluded and counted, never accepted", async () => {

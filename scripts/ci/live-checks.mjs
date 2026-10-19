@@ -22,8 +22,8 @@ const MEMBER_CHECKS = new Set(["member-reads", "sign-in", "pages", "notification
 /** The checks that read or write the database with the service key. */
 const SERVICE_CHECKS = new Set(["member-reads", "identity-anonymous", "provenance-trigger", "notification-drain", "production-shape"]);
 
-/** Which checks run, which are skipped for lack of an account, and which environment names are missing for the rest. A check the caller named (`only`) is never skipped: a named check that cannot run is a missing name. Pure. */
-export function planRun({ only, env, base, record }) {
+/** Which checks run, which are skipped for lack of an account, and which environment names are missing for the rest. A check the caller named (`only`) is never skipped, and neither is any check in CI (`ci`, from isCi in src/core/harness/exit.ts): a check that cannot run is then a missing name, which the exit contract turns into exit 1 (a fork PR excepted). Pure. */
+export function planRun({ only, env, base, record, ci = false }) {
   const wanted = only ? only.split(",").map((s) => s.trim()).filter(Boolean) : DEFAULT_CHECKS;
   const unknown = wanted.filter((c) => !CHECKS.includes(c));
   if (unknown.length) return { error: `unknown check(s): ${unknown.join(", ")} (checks: ${CHECKS.join(", ")})` };
@@ -38,7 +38,7 @@ export function planRun({ only, env, base, record }) {
     if (MEMBER_CHECKS.has(c)) gaps.push(...missingNames(NEEDS.member, env));
     if (SERVICE_CHECKS.has(c)) gaps.push(...missingNames(NEEDS.record, env));
     if (c === "invitation-email") gaps.push(...missingNames(NEEDS.email, env));
-    if (c === "admin-pages" && gaps.length && !only) skipped.push({ check: c, missing: gaps });
+    if (c === "admin-pages" && gaps.length && !only && !ci) skipped.push({ check: c, missing: gaps });
     else {
       run.push(c);
       gaps.forEach((n) => missing.add(n));
@@ -75,7 +75,7 @@ export async function runLive({ checks, io, phase, record, env, now = () => new 
 
 async function main() {
   register("../lib/ts-hooks.mjs", import.meta.url, { data: {} });
-  const { skipVerdict, summarise } = await import("../../src/core/harness/exit.ts");
+  const { isCi, skipVerdict, summarise } = await import("../../src/core/harness/exit.ts");
   const { values } = parseArgs({ options: { base: { type: "string" }, only: { type: "string" }, phase: { type: "string", default: "after" }, "no-record": { type: "boolean", default: false } }, strict: true });
   const env = process.env;
   const base = (values.base ?? env.LIVE_BASE_URL ?? "").replace(/\/+$/, "");
@@ -83,7 +83,7 @@ async function main() {
     console.error("live-checks: --phase must be before or after");
     process.exit(1);
   }
-  const plan = planRun({ only: values.only, env, base, record: !values["no-record"] });
+  const plan = planRun({ only: values.only, env, base, record: !values["no-record"], ci: isCi(env) });
   if (plan.error) {
     console.error(`live-checks: ${plan.error}`);
     process.exit(1);

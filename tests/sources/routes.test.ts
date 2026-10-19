@@ -2,17 +2,22 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { POST as checkSources } from "@/app/api/worker/check-sources/route";
-import { GET as surfaces } from "@/app/api/health/surfaces/route";
+import { POST as checkSourcesRoute } from "@/app/api/worker/check-sources/route";
+import { GET as surfacesRoute } from "@/app/api/health/surfaces/route";
 import { GET as version } from "@/app/api/version/route";
-import { POST as revalidate } from "@/app/api/revalidate/route";
-import { POST as telemetryError } from "@/app/api/telemetry/error/route";
+import { POST as revalidateRoute } from "@/app/api/revalidate/route";
+import { POST as telemetryErrorRoute } from "@/app/api/telemetry/error/route";
 
 import { scripted } from "../_support/fake-clients.ts";
 import { memoryDb } from "../_support/memory-db.ts";
 import { as, json, personaOf, PERSONAS, userDbFor, type Persona } from "../_support/personas.ts";
 
 process.env.WORKER_SECRET = "route-secret";
+/** A route handler is called with its request and the framework's route context; these routes take none. */
+const checkSources = (request: Request) => checkSourcesRoute(request, undefined);
+const surfaces = (request: Request) => surfacesRoute(request, undefined);
+const revalidate = (request: Request) => revalidateRoute(request, undefined);
+const telemetryError = (request: Request) => telemetryErrorRoute(request, undefined);
 const withSecret = (url: string, secret: string | null, init: RequestInit = {}) =>
   new Request(`https://app.example.test${url}`, { method: "POST", ...init, headers: { "content-type": "application/json", ...(secret ? { "x-worker-secret": secret } : {}), ...(init.headers ?? {}) } });
 const off = () => memoryDb({ system_state: [{ id: true, scrape_cadence: "off", scrape_start_date: null, global_processing_paused: false }] });

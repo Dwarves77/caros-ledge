@@ -56,13 +56,13 @@ test("INV-246: the outcome is the direction map (confirms held, refutes refuted,
   const f = fakeStep({
     watching: [sp("c"), sp("r", { direction: "refutes" }), sp("d", { direction: "delays" })],
     firedUnscored: [sp("repair", { fired_at: "2026-10-01T00:00:00Z", direction: "delays" })],
-    deadline: [sp("late", { watching: undefined, predicate: { op: "date_passed", field: "occurred_at", by: "2026-10-01" } as never }), sp("future", { predicate: { op: "date_passed", field: "occurred_at", by: "2027-01-01" } as never })],
+    deadline: [sp("late", { predicate: { op: "date_passed", field: "occurred_at", by: "2026-10-01" } as never }), sp("future", { predicate: { op: "date_passed", field: "occurred_at", by: "2027-01-01" } as never })],
   } as never);
   const r = await run(f, { dry: false, events: [evt(1, "2026-10-12T00:00:00Z")] });
   const scores = Object.fromEntries(f.log.filter((l) => l.startsWith("score")).map((l) => l.split(":").slice(1)));
   assert.deepEqual(scores, { c: "held", r: "refuted", d: "partial", repair: "partial", late: "refuted" });
   assert.deepEqual([r.counts.scored_by_event, r.counts.scored_by_repair, r.counts.scored_by_deadline], [3, 1, 1]);
-  assert.equal(scores.future, undefined);
+  assert.equal((scores as Record<string, string>).future, undefined);
 });
 
 test("INV-246: scoring writes one ledger row per DISTINCT grounding source BEFORE the score and never twice; a source-less score is counted; a score or fire failure is counted with its event id and never aborts the pass", async () => {
@@ -295,7 +295,7 @@ test("IMP-039: the screen-verdict kind exports the ambiguous holds P2-05 banked 
   assert.equal(db.tables.screen_verdicts, undefined);
   const live = await applyScreenVerdictBatch({ sb: db.db, now: () => NOW }, batch, { dry: false });
   assert.equal(live.written, 1);
-  assert.deepEqual([db.tables.screen_verdicts?.[0]?.verdict, db.tables.screen_verdicts?.[0]?.basis], ["off_vertical", "ruling 2026-10-15"]);
+  assert.deepEqual([(db.tables.screen_verdicts?.[0] as Record<string, unknown> | undefined)?.verdict, (db.tables.screen_verdicts?.[0] as Record<string, unknown> | undefined)?.basis], ["off_vertical", "ruling 2026-10-15"]);
   await assert.rejects(() => applyScreenVerdictBatch({ sb: memoryDb({}, { failures: [{ table: "screen_verdicts", op: "upsert", message: "fk" }] }).db, now: () => NOW }, batch, { dry: false }), /writing screen_verdicts failed/);
   const items = memoryDb({ intelligence_items: [{ id: "a", item_type: "research_finding", theme: null, is_archived: false, title: "Sustainable aviation fuel supply", what_is_it: "SAF feedstock" }, { id: "b", item_type: "research_finding", theme: null, is_archived: false, title: "Port congestion study" }, { id: "c", item_type: "research_finding", theme: "fuels_saf", is_archived: false, title: "x" }] });
   const themes = await themeClassificationExporter(items.db, classifyTheme)({ limit: 10, mode: "pending" });

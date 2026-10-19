@@ -132,7 +132,7 @@ test("INV-073: the plan-and-apply run moves the control source and leaves the ov
   assert.equal(plan.movements.some((m) => m.source_id === "ovr"), false, "overridden source is not planned");
   const first = plan.movements[0] as NonNullable<(typeof plan.movements)[number]>;
   const forged = [...plan.movements, { source_id: "ovr", name: "ovr", decision: { ...first.decision, before_tier: 6, after_tier: 3 } }];
-  const res = await applyTierMovements(forged, tierMovementWriters(db));
+  const res = await applyTierMovements(forged as never, tierMovementWriters(db));
   assert.equal(res.override_skipped, 1);
   assert.equal(tables.sources?.find((r) => r.id === "ovr")?.effective_tier, 6);
   assert.notEqual(tables.sources?.find((r) => r.id === "ctl")?.effective_tier, 4);

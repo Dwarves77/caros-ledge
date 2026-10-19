@@ -20,7 +20,7 @@ test("the port reproduces the old extractor exactly over the frozen live fixture
     assert.deepEqual(extractForwardEvents({ claims: [c], sections: [], referenceDates: input.referenceDates }), (golden.claims[i] as { out: unknown }).out, `claim ${c.claim_id} with context`);
     const bare: Record<string, unknown> = { ...c };
     delete bare.context;
-    assert.deepEqual(extractForwardEvents({ claims: [bare as typeof c], sections: [], referenceDates: input.referenceDates }), (golden.noContext[i] as { out: unknown }).out, `claim ${c.claim_id} without context`);
+    assert.deepEqual(extractForwardEvents({ claims: [bare as unknown as typeof c], sections: [], referenceDates: input.referenceDates }), (golden.noContext[i] as { out: unknown }).out, `claim ${c.claim_id} without context`);
   });
 });
 

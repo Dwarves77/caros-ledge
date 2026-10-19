@@ -112,6 +112,6 @@ test("the export goes to a scratch directory outside the repository and refuses 
   assert.equal(ok.counts.exported, 1, ok.notes.join(";"));
   const ids = (ok.data as { ids: Record<string, string[]> }).ids;
   assert.deepEqual(ids.exported_ids, [REF]);
-  assert.equal(ids.parts.length, 1);
+  assert.equal(ids.parts?.length, 1);
   assert.doesNotMatch(JSON.stringify(ok.data), /Operators shall report/, "the queue carries no pool text");
 });

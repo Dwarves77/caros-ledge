@@ -170,5 +170,5 @@ test("IMP-054: a tree that lost producers.verdicts or the reference loader is na
   (f.d as { loadReferenceData?: unknown }).loadReferenceData = undefined;
   const report = startupCheck(f.d);
   assert.deepEqual(report.missing.sort(), [VERDICTS_MEMBER, "loadReferenceData (host_verdicts and market_series_items, read once per turn)"].sort());
-  assert.throws(() => enforceWired(report, { VERCEL: "1" }), /producers\.verdicts/);
+  assert.throws(() => enforceWired(report), /producers\.verdicts/);
 });

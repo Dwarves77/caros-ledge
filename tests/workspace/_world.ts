@@ -60,7 +60,7 @@ function installSqlObjects(db: MemDb): void {
   const JSONB = ["profile", "alert_config", "home_sections", "default_filters", "jurisdiction_weights"];
   const isObj = (v: unknown) => !!v && typeof v === "object" && !Array.isArray(v);
   // patch_workspace_settings: one atomic top-level merge; null when no row. Logged as one update so a test can count writes.
-  db.rpcs.patch_workspace_settings = (args) => {
+  db.scriptRpc("patch_workspace_settings", (args) => {
     const { p_org_id, p_column, p_patch } = args as { p_org_id: string; p_column: string; p_patch: Record<string, unknown> };
     if (!JSONB.includes(p_column) || !isObj(p_patch)) throw new Error("patch_workspace_settings: refused");
     db.log.push({ table: "workspace_settings", op: "update", payload: { [p_column]: p_patch }, filters: [["eq", "org_id", p_org_id]] });
@@ -71,7 +71,7 @@ function installSqlObjects(db: MemDb): void {
     row[p_column] = { ...(isObj(row[p_column]) ? (row[p_column] as object) : {}), ...p_patch };
     row.updated_at = db.tick();
     return row[p_column];
-  };
+  });
   // archive_item_for_team and assign_item (migration 0037): the gate, the attribution from the session, the override write and the outbox rows as ONE unit: a failed outbox insert leaves no override behind.
   const raise = (message: string, code: string) => Object.assign(new Error(message), { code });
   const roleOf = (org: unknown, uid: unknown) => db.rows("org_memberships").find((m) => m.org_id === org && m.user_id === uid)?.role as string | undefined;
@@ -92,9 +92,9 @@ function installSqlObjects(db: MemDb): void {
     if (notices.length) db.log.push({ table: "notification_outbox", op: "insert", payload: notices, filters: [] });
     return { override: { ...row }, queued: notices.length };
   };
-  db.rpcs.archive_item_for_team = (args, who) => {
+  db.scriptRpc("archive_item_for_team", (args, who) => {
     const { p_org_id, p_item_id, p_reason, p_note, p_notice } = args as { p_org_id: string; p_item_id: string; p_reason: string; p_note: string | null; p_notice: Record<string, unknown> };
-    const uid = caller(who as Who | null);
+    const uid = caller(who);
     if (!["owner", "admin"].includes(roleOf(p_org_id, uid) ?? "")) throw raise("workspace archive requires the admin or owner role", "42501");
     if (!String(p_reason ?? "").trim()) throw raise("a reason is required to archive for the workspace", "22023");
     const item = db.rows("intelligence_items").find((i) => i.id === p_item_id);
@@ -105,20 +105,20 @@ function installSqlObjects(db: MemDb): void {
     const owner = override(p_org_id, p_item_id)?.owner_user_id as string | null | undefined;
     const to = [...new Set([...watchers, ...(owner ? [owner] : [])])].filter((u) => u !== uid).sort();
     return commit(p_org_id, p_item_id, { is_archived: true, archive_reason: p_reason, ...(p_note == null ? {} : { archive_note: p_note }), archived_at: db.tick(), archived_by: uid }, to.map((user_id) => ({ user_id, kind: "archive", payload: { ...p_notice, item_id: p_item_id, archived_by: uid } })));
-  };
-  db.rpcs.assign_item = (args, who) => {
+  });
+  db.scriptRpc("assign_item", (args, who) => {
     const { p_org_id, p_item_id, p_owner_user_id, p_notice } = args as { p_org_id: string; p_item_id: string; p_owner_user_id: string | null; p_notice: Record<string, unknown> | null };
-    const uid = caller(who as Who | null);
+    const uid = caller(who);
     if (!["owner", "admin", "member"].includes(roleOf(p_org_id, uid) ?? "")) throw raise("a viewer can read this workspace but cannot assign an owner", "42501");
     if (p_owner_user_id && !["owner", "admin", "member"].includes(roleOf(p_org_id, p_owner_user_id) ?? "")) throw raise("the assignee is not a member who can own an item", "42501");
     if (!db.rows("intelligence_items").some((i) => i.id === p_item_id)) throw raise("no such item", "P0002");
     const notices = p_owner_user_id && p_owner_user_id !== uid && p_notice ? [{ user_id: p_owner_user_id, kind: "assignment", payload: { ...p_notice, item_id: p_item_id, assigned_by: uid } }] : [];
     return commit(p_org_id, p_item_id, { owner_user_id: p_owner_user_id, owner_assigned_by: p_owner_user_id ? uid : null, owner_assigned_at: p_owner_user_id ? db.tick() : null }, notices);
-  };
+  });
   // assign_item_members (migration 0065): the gates, the rows stamped from the session and their outbox rows as ONE unit: a failed outbox insert leaves no assignment behind.
-  db.rpcs.assign_item_members = (args, who) => {
+  db.scriptRpc("assign_item_members", (args, who) => {
     const { p_org_id, p_item_id, p_assignees, p_due_on, p_notice } = args as { p_org_id: string; p_item_id: string; p_assignees: string[]; p_due_on: string | null; p_notice: Record<string, unknown> };
-    const uid = caller(who as Who | null);
+    const uid = caller(who);
     if (!["owner", "admin", "member"].includes(roleOf(p_org_id, uid) ?? "")) throw raise("a viewer can read this workspace but cannot assign work", "42501");
     const ids = [...new Set(p_assignees ?? [])];
     if (ids.length === 0 || ids.length > 25) throw raise("assign between 1 and 25 people at a time", "22023");
@@ -134,19 +134,19 @@ function installSqlObjects(db: MemDb): void {
     });
     for (const n of notices) db.rows("notification_outbox").push({ ...n });
     return { created, already: ids.filter((a) => !fresh.includes(a)), queued: notices.length };
-  };
+  });
   // workspace_tag_counts: every tag with the number of items it is applied to (0 for none).
   db.views.workspace_tag_counts = () =>
     (db.tables.workspace_tags ?? []).map((t) => ({ org_id: t.org_id, tag_id: t.id, item_count: (db.tables.item_workspace_tags ?? []).filter((l) => l.tag_id === t.id && l.org_id === t.org_id).length }));
   // org_watchers: members of the org who watch any of the items, and whether the team watchlist holds one.
-  db.rpcs.org_watchers = (args) => {
+  db.scriptRpc("org_watchers", (args) => {
     const { p_org_id, p_item_ids } = args as { p_org_id: string; p_item_ids: string[] };
     const failure = db.takeFailure("rpc:org_watchers", "rpc", []);
     if (failure) throw new Error(failure.message);
     const members = new Set((db.tables.org_memberships ?? []).filter((m) => m.org_id === p_org_id).map((m) => m.user_id));
     const watchers = [...new Set((db.tables.user_watchlist ?? []).filter((w) => members.has(w.user_id) && p_item_ids.includes(String(w.item_id))).map((w) => String(w.user_id)))].sort();
     return [{ watcher_ids: watchers, on_team_watchlist: (db.tables.org_watchlist ?? []).some((o) => o.org_id === p_org_id && p_item_ids.includes(String(o.item_id))) }];
-  };
+  });
 }
 
 const personaOf = (request?: Request): Persona => {
