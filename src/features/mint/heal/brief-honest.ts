@@ -8,7 +8,7 @@ const BOUNDARY = /(?<=[.!?])\s+(?=[A-Z0-9])|\n+/g;
 const CLAUSE = /,\s+|;\s+/g;
 export interface Span { start: number; end: number }
 
-export function sentenceSpans(text: string): Span[] {
+function sentenceSpans(text: string): Span[] {
   const spans: Span[] = [];
   let cursor = 0;
   for (const m of text.matchAll(BOUNDARY)) {
@@ -17,14 +17,6 @@ export function sentenceSpans(text: string): Span[] {
   }
   spans.push({ start: cursor, end: text.length });
   return spans;
-}
-/** The sentence around a token, for a report line. */
-export function sentenceContext(fullBrief: string | null, token: string): string | null {
-  const text = fullBrief ?? "";
-  const at = text.toLowerCase().indexOf(token.toLowerCase());
-  if (at === -1) return null;
-  const hit = sentenceSpans(text).find((s) => at >= s.start && at < s.end);
-  return hit ? text.slice(hit.start, hit.end).trim() || null : null;
 }
 function removeSpan(text: string, spans: Span[], i: number): string {
   const sp = spans[i];

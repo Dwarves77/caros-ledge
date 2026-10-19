@@ -3,10 +3,11 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
+import { foldRun } from "@/core/contracts";
 import { scanGateA } from "@/core/grounding";
 import { classTierForHost } from "@/core/sources";
 import { healItem, healQuarantined, rederiveStale } from "@/features/mint";
-import { buildBuckets, buildSourcesIndex, claimNeedsResource, foldRun, locateSpan, planGrounding, planResource, type Capture, type HealClaim } from "@/features/mint/heal/ground";
+import { buildBuckets, buildSourcesIndex, claimNeedsResource, locateSpan, planGrounding, planResource, type Capture, type HealClaim } from "@/features/mint/heal/ground";
 import { planBriefHonest, stripClause } from "@/features/mint/heal/brief-honest";
 import { planReclassify, planRelabelFromFullBrief, planRelabelModal, planRelabelParagraph } from "@/features/mint/heal/label";
 

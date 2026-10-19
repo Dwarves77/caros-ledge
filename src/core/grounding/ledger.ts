@@ -23,10 +23,10 @@ export interface Diff { add: ClaimRow[]; change: { existing: ClaimRow; incoming:
 export interface Applied { added: number; changed: number; unchanged: number; notReproduced: number; versioned: number; failed: number; archived: number }
 export interface FactTicket { id: string; claim_kind: "FACT"; claim_text: string | null; source_span: string | null; source_id: string | null; source_tier_at_grounding: number | null }
 
-export const normText = (t: unknown): string => String(t == null ? "" : t).trim().replace(/\s+/g, " ").toLowerCase();
+const normText = (t: unknown): string => String(t == null ? "" : t).trim().replace(/\s+/g, " ").toLowerCase();
 
 /** Same attribution (so a match is UNCHANGED): source, tier, span, section and kind; a different pool ROW is a change, a null on either side is not. */
-export function sameAttribution(a: ClaimRow, b: ClaimRow): boolean {
+function sameAttribution(a: ClaimRow, b: ClaimRow): boolean {
   return (a.source_id ?? null) === (b.source_id ?? null)
     && (a.search_result_id == null || b.search_result_id == null || a.search_result_id === b.search_result_id)
     && (a.source_tier_at_grounding ?? null) === (b.source_tier_at_grounding ?? null)
@@ -189,7 +189,7 @@ export function eraseItem(sb: Db, itemId: string, e: { disposition: string; merg
 }
 
 // ---- dominance (INV-158) and the ground-failure ladder -------------------------------------------------------------
-export const FACT_FLOOR = 4;
+const FACT_FLOOR = 4;
 export interface LedgerSummary { total: number; facts: number; floorQualifying: number; wouldVerify?: boolean }
 export function summarizeLedger(claims: { claim_kind?: string | null; source_tier_at_grounding?: number | null }[] | null | undefined, itemFloor: number | null = null): LedgerSummary {
   let facts = 0;

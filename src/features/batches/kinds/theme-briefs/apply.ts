@@ -14,7 +14,6 @@ import { rowsByIds } from "@/core/db";
 
 import { applyEntries, isObj, type ApplyOpts, type BatchDeps, type BatchExport, type EntrySpec } from "../../kit/session-batch";
 
-export const THEME_EXPORT_LIMIT = 15;
 /** The batch name a single payload is applied under (the one-entry batch it becomes). */
 const SINGLE_BATCH = "theme-briefs-single-payload";
 const DEFAULT_CHAR_BUDGET = 120_000;
@@ -52,7 +51,7 @@ export const themeBriefsSpec: EntrySpec<ThemeLive, Plan> = {
   },
 };
 
-export const applyThemeBriefBatch = (deps: BatchDeps, file: unknown, o: ApplyOpts) => applyEntries(themeBriefsSpec, deps, file, o);
+const applyThemeBriefBatch = (deps: BatchDeps, file: unknown, o: ApplyOpts) => applyEntries(themeBriefsSpec, deps, file, o);
 
 /**
  * One theme-briefs apply from the stage's content. A batch file (it has `entries`) goes through the structured batch path; a single brief (an entry as JSON, or markdown with a frontmatter block) becomes the one entry of a

@@ -10,11 +10,9 @@ import { z } from "zod";
 
 import { authorityFloorFor } from "@/core/grounding";
 import { canonicalUrl } from "@/core/shared";
-import { foldRun, insideLongerNumber, isVerbatim, normalizeNumeric, type Indexed } from "@/core/contracts";
+import { insideLongerNumber, isVerbatim, normalizeNumeric, type Indexed } from "@/core/contracts";
 
 import orphanRules from "./data/orphan.json";
-
-export { foldRun, insideLongerNumber, normalizeNumeric };
 
 export interface Capture { id: string; result_url: string | null; result_content: string; html?: string | null }
 export interface HealClaim { id: string; claim_kind: string; claim_text: string; source_span: string | null; source_id: string | null; search_result_id: string | null; section_row_id: string | null; basis_claim_id?: string | null; source_tier_at_grounding?: number | null }
@@ -35,7 +33,7 @@ const decodeEntity = (t: string): string | null => {
 };
 
 /** The structural normalisation, with a map from every normalised index back to its ORIGINAL index (and a sentinel at the end). */
-export function normalizeWithMap(text: string): Indexed {
+function normalizeWithMap(text: string): Indexed {
   let chars = "";
   const map: number[] = [];
   for (let i = 0; i < text.length; ) {
@@ -121,7 +119,7 @@ export function planGrounding(claim: HealClaim, captures: Capture[], cache: Inde
 }
 
 // ---- the authority floor and the three re-source buckets -----------------------------------------------------------------------------------------------------------
-export const isFloorArmed = (item: { priority?: string | null; item_type?: string | null }): boolean => item.priority === "CRITICAL" || item.priority === "HIGH" || authorityFloorFor(item.item_type) === 2;
+const isFloorArmed = (item: { priority?: string | null; item_type?: string | null }): boolean => item.priority === "CRITICAL" || item.priority === "HIGH" || authorityFloorFor(item.item_type) === 2;
 const tierOf = (s: HealSource | null | undefined): number | null => s?.base_tier ?? null;
 export function buildSourcesIndex(sources: HealSource[]): SourcesIndex {
   const byId = new Map(sources.map((s) => [s.id, s]));

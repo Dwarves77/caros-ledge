@@ -296,7 +296,7 @@ DECLARE
   v_src_a uuid := gen_random_uuid(); v_src_b uuid := gen_random_uuid(); v_src_s uuid := gen_random_uuid();
   v_cap_a uuid := gen_random_uuid(); v_cap_b uuid := gen_random_uuid(); v_cap_c uuid := gen_random_uuid();
   v_sec uuid := gen_random_uuid(); v_sec_gone uuid := gen_random_uuid();
-  v_sec_new uuid; v_sec3 uuid; r jsonb; v_claim uuid; v_claim2 uuid; n integer; before_cv integer; before_text text; v_msg text;
+  v_sec_new uuid; v_sec3 uuid; r jsonb; v_claim uuid; v_claim2 uuid; n integer; before_cv integer; before_text text; v_msg text; fp text;
 BEGIN
   BEGIN
     INSERT INTO public.sources (id, name, url, base_tier, tier_at_creation) VALUES
@@ -309,6 +309,15 @@ BEGIN
       (v_cap_a, v_item, 'https://regulator-0074.invalid/rules/art4', 'Article 4 states that the limit is 91.16 grams per MJ for every ship.', 0),
       (v_cap_b, v_item, 'https://news-0074.invalid/story', 'A trade paper says the fine is EUR 5 per tonne.', 1),
       (v_cap_c, v_item, 'https://nowhere-0074.invalid/page', 'An unregistered host states the cap is 12 percent.', 2);
+
+    -- INV-R2b-3's measure: a fingerprint of every table a ledger function touches (claims, their archive, the sections, the item, its tombstone), compared before and after each injected failure
+    CREATE FUNCTION pg_temp.fp_0074(p_item uuid) RETURNS text LANGUAGE sql AS $f$
+      SELECT md5(concat_ws('#',
+        (SELECT coalesce(string_agg(c::text, '|' ORDER BY c::text), '') FROM public.section_claim_provenance c WHERE c.intelligence_item_id = p_item),
+        (SELECT coalesce(string_agg(v::text, '|' ORDER BY v::text), '') FROM public.claim_versions v WHERE v.intelligence_item_id = p_item),
+        (SELECT coalesce(string_agg(x::text, '|' ORDER BY x::text), '') FROM public.intelligence_item_sections x WHERE x.item_id = p_item),
+        (SELECT coalesce(string_agg(i::text, '|' ORDER BY i::text), '') FROM public.intelligence_items i WHERE i.id = p_item),
+        (SELECT coalesce(string_agg(d::text, '|' ORDER BY d::text), '') FROM public.disposition_ledger d WHERE d.intelligence_item_id = p_item))) $f$;
 
     -- the host helpers
     IF public.ledger_host_of('https://User:pw@WWW.Example.COM:8443/a?b#c') <> 'example.com' THEN RAISE EXCEPTION '0074-ledger-writers: host_of gave %', public.ledger_host_of('https://User:pw@WWW.Example.COM:8443/a?b#c'); END IF;
@@ -361,12 +370,13 @@ BEGIN
     CREATE TRIGGER inject_0074 BEFORE UPDATE OR DELETE ON public.section_claim_provenance FOR EACH ROW EXECUTE FUNCTION pg_temp.inject_0074();
     SELECT count(*) INTO before_cv FROM public.claim_versions WHERE intelligence_item_id = v_item;
     SELECT claim_text INTO before_text FROM public.section_claim_provenance WHERE id = v_claim;
+    fp := pg_temp.fp_0074(v_item);
     BEGIN
       PERFORM public.ledger_write_claim(v_item, v_claim, jsonb_build_object('claim_text', 'INJECT this'), 'changed', NULL, now());
       RAISE EXCEPTION '0074-ledger-writers: the injected failure did not fire';
     EXCEPTION WHEN SQLSTATE 'P0042' THEN NULL; END;
     SELECT count(*) INTO n FROM public.claim_versions WHERE intelligence_item_id = v_item;
-    IF n <> before_cv OR (SELECT claim_text FROM public.section_claim_provenance WHERE id = v_claim) <> before_text THEN RAISE EXCEPTION '0074-ledger-writers: a failed change left a partial write (% archive rows, was %)', n, before_cv; END IF;
+    IF n <> before_cv OR (SELECT claim_text FROM public.section_claim_provenance WHERE id = v_claim) <> before_text OR pg_temp.fp_0074(v_item) <> fp THEN RAISE EXCEPTION '0074-ledger-writers: a failed change left a partial write (% archive rows, was %)', n, before_cv; END IF;
     DROP TRIGGER inject_0074 ON public.section_claim_provenance;
     DROP FUNCTION pg_temp.inject_0074();
 
@@ -440,12 +450,13 @@ BEGIN
     CREATE FUNCTION pg_temp.inject_del_0074() RETURNS trigger LANGUAGE plpgsql AS $f$ BEGIN RAISE EXCEPTION 'injected 0074 delete failure' USING ERRCODE = 'P0045'; END $f$;
     CREATE TRIGGER inject_del_0074 BEFORE DELETE ON public.section_claim_provenance FOR EACH ROW EXECUTE FUNCTION pg_temp.inject_del_0074();
     SELECT count(*) INTO before_cv FROM public.claim_versions WHERE intelligence_item_id = v_item;
+    fp := pg_temp.fp_0074(v_item);
     BEGIN
       PERFORM public.ledger_remove_claim(v_claim2, 'proven_inaccurate', '{"reason":"selfcheck"}'::jsonb, NULL, now());
       RAISE EXCEPTION '0074-ledger-writers: the injected delete failure did not fire';
     EXCEPTION WHEN SQLSTATE 'P0045' THEN NULL; END;
     SELECT count(*) INTO n FROM public.claim_versions WHERE intelligence_item_id = v_item;
-    IF n <> before_cv OR NOT EXISTS (SELECT 1 FROM public.section_claim_provenance WHERE id = v_claim2) THEN RAISE EXCEPTION '0074-ledger-writers: a failed removal left an archive row or lost the claim'; END IF;
+    IF n <> before_cv OR NOT EXISTS (SELECT 1 FROM public.section_claim_provenance WHERE id = v_claim2) OR pg_temp.fp_0074(v_item) <> fp THEN RAISE EXCEPTION '0074-ledger-writers: a failed removal left an archive row or lost the claim'; END IF;
     DROP TRIGGER inject_del_0074 ON public.section_claim_provenance;
     DROP FUNCTION pg_temp.inject_del_0074();
     v_sec3 := gen_random_uuid();
@@ -454,12 +465,13 @@ BEGIN
     CREATE FUNCTION pg_temp.inject_sec_0074() RETURNS trigger LANGUAGE plpgsql AS $f$ BEGIN IF TG_OP = 'DELETE' THEN RAISE EXCEPTION 'injected 0074 section failure' USING ERRCODE = 'P0046'; END IF; IF NEW.content_md = 'INJECT' THEN RAISE EXCEPTION 'injected 0074 section failure' USING ERRCODE = 'P0046'; END IF; RETURN NEW; END $f$;
     CREATE TRIGGER inject_sec_0074 BEFORE UPDATE OR DELETE ON public.intelligence_item_sections FOR EACH ROW EXECUTE FUNCTION pg_temp.inject_sec_0074();
     SELECT count(*) INTO before_cv FROM public.claim_versions WHERE intelligence_item_id = v_item;
+    fp := pg_temp.fp_0074(v_item);
     BEGIN
       PERFORM public.ledger_reconcile_sections(v_item, '[{"section_key":"keep_0074","section_order":1,"content_md":"kept v3","is_conditional":false}]'::jsonb, now());
       RAISE EXCEPTION '0074-ledger-writers: the injected section failure did not fire on the reconcile';
     EXCEPTION WHEN SQLSTATE 'P0046' THEN NULL; END;
     SELECT count(*) INTO n FROM public.claim_versions WHERE intelligence_item_id = v_item;
-    IF n <> before_cv OR NOT EXISTS (SELECT 1 FROM public.intelligence_item_sections WHERE id = v_sec3) OR NOT EXISTS (SELECT 1 FROM public.section_claim_provenance WHERE section_row_id = v_sec3) THEN
+    IF n <> before_cv OR NOT EXISTS (SELECT 1 FROM public.intelligence_item_sections WHERE id = v_sec3) OR NOT EXISTS (SELECT 1 FROM public.section_claim_provenance WHERE section_row_id = v_sec3) OR pg_temp.fp_0074(v_item) <> fp THEN
       RAISE EXCEPTION '0074-ledger-writers: a failed reconcile archived a claim it did not remove, or removed a section';
     END IF;
     BEGIN
@@ -467,19 +479,20 @@ BEGIN
       RAISE EXCEPTION '0074-ledger-writers: the injected section failure did not fire on the ops list';
     EXCEPTION WHEN SQLSTATE 'P0046' THEN NULL; END;
     SELECT count(*) INTO n FROM public.claim_versions WHERE intelligence_item_id = v_item;
-    IF n <> before_cv OR (SELECT claim_text FROM public.section_claim_provenance WHERE id = v_claim2) <> 'survivor restated' THEN RAISE EXCEPTION '0074-ledger-writers: a failed ops list left its first change or its archive row'; END IF;
+    IF n <> before_cv OR (SELECT claim_text FROM public.section_claim_provenance WHERE id = v_claim2) <> 'survivor restated' OR pg_temp.fp_0074(v_item) <> fp THEN RAISE EXCEPTION '0074-ledger-writers: a failed ops list left its first change or its archive row'; END IF;
     DROP TRIGGER inject_sec_0074 ON public.intelligence_item_sections;
     DROP FUNCTION pg_temp.inject_sec_0074();
 
     CREATE FUNCTION pg_temp.inject_item_0074() RETURNS trigger LANGUAGE plpgsql AS $f$ BEGIN RAISE EXCEPTION 'injected 0074 item failure' USING ERRCODE = 'P0043'; END $f$;
     CREATE TRIGGER inject_item_0074 BEFORE DELETE ON public.intelligence_items FOR EACH ROW EXECUTE FUNCTION pg_temp.inject_item_0074();
     SELECT count(*) INTO before_cv FROM public.claim_versions WHERE intelligence_item_id = v_item;
+    fp := pg_temp.fp_0074(v_item);
     BEGIN
       PERFORM public.ledger_erase_item(v_item, 'tombstone_delete_duplicate', NULL, 'selfcheck', now());
       RAISE EXCEPTION '0074-ledger-writers: the injected item failure did not fire';
     EXCEPTION WHEN SQLSTATE 'P0043' THEN NULL; END;
     SELECT count(*) INTO n FROM public.claim_versions WHERE intelligence_item_id = v_item;
-    IF n <> before_cv OR EXISTS (SELECT 1 FROM public.disposition_ledger WHERE intelligence_item_id = v_item) OR NOT EXISTS (SELECT 1 FROM public.intelligence_items WHERE id = v_item) THEN
+    IF n <> before_cv OR EXISTS (SELECT 1 FROM public.disposition_ledger WHERE intelligence_item_id = v_item) OR NOT EXISTS (SELECT 1 FROM public.intelligence_items WHERE id = v_item) OR pg_temp.fp_0074(v_item) <> fp THEN
       RAISE EXCEPTION '0074-ledger-writers: a failed erase left a tombstone or an archive row behind';
     END IF;
     DROP TRIGGER inject_item_0074 ON public.intelligence_items;

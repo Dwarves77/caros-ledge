@@ -3,11 +3,11 @@
 // allowed only inside a listed claim's text, a labelled analysis paragraph, a heading, a member title or a gap description; a claim must name a grounded claim of a live member. Pure: the caller loads the material.
 import { computeMemberHash } from "@/core/flywheel/themes";
 
-export const THEME_BRIEF_SECTIONS = ["connection", "meaning", "ramifications", "watch", "gaps"] as const;
+const THEME_BRIEF_SECTIONS = ["connection", "meaning", "ramifications", "watch", "gaps"] as const;
 export type ThemeSection = (typeof THEME_BRIEF_SECTIONS)[number];
-export const SECTION_HEADINGS: Readonly<Record<ThemeSection, string>> = { connection: "Connection", meaning: "What it means", ramifications: "Ramifications", watch: "Watch", gaps: "Gaps" };
-export const SECTION_CEILINGS: Readonly<Record<ThemeSection, number>> = { connection: 2000, meaning: 2500, ramifications: 5000, watch: 3000, gaps: 1500 };
-export const TITLE_CEILING = 160;
+const SECTION_HEADINGS: Readonly<Record<ThemeSection, string>> = { connection: "Connection", meaning: "What it means", ramifications: "Ramifications", watch: "Watch", gaps: "Gaps" };
+const SECTION_CEILINGS: Readonly<Record<ThemeSection, number>> = { connection: 2000, meaning: 2500, ramifications: 5000, watch: 3000, gaps: 1500 };
+const TITLE_CEILING = 160;
 /** connection_themes.surfaces value to the heading a ramifications subsection uses for it. */
 export const SURFACE_HEADING: Readonly<Record<string, string>> = { regulations: "Regulations", market: "Market Intel", research: "Research", operations: "Operations" };
 
@@ -18,8 +18,8 @@ const ANALYSIS_LABEL_RE = /^\s*(?:[-*]\s+|\d+[.)]\s+)?[*_]{0,3}(?:Analytical inf
 const LABEL_WORDS = new Set(["ACTION", "REQUIRED", "COST", "ALERT", "WINDOW", "CLOSING", "COMPETITIVE", "EDGE", "MONITORING", "FACT", "ANALYSIS", "LEGAL", "GAP", "NOT", "AND", "THE", "FOR"]);
 
 type Obj = Record<string, unknown>;
-export const isObj = (x: unknown): x is Obj => x !== null && typeof x === "object" && !Array.isArray(x);
-export const nonEmptyStr = (x: unknown): x is string => typeof x === "string" && x.trim().length > 0;
+const isObj = (x: unknown): x is Obj => x !== null && typeof x === "object" && !Array.isArray(x);
+const nonEmptyStr = (x: unknown): x is string => typeof x === "string" && x.trim().length > 0;
 const escapeRe = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /** Every [start, end) range where `needle` occurs in `text`, whitespace-flexible. */

@@ -16,9 +16,9 @@ import type { CaptureDeps } from "../deps";
 
 import { briefSentenceOf, findOwningSection, locateSpan, NO_VERBATIM_SPAN, supportingSentence, type Capture, type HealClaim, type HealSource, type IndexCache, type Orphan, type SourcesIndex } from "./ground";
 
-export const MAX_CANDIDATES_PER_ORPHAN = 5;
-export const MAX_ATTEMPTS_PER_ITEM = 25;
-export const MAX_HOP_LINKS = 3;
+const MAX_CANDIDATES_PER_ORPHAN = 5;
+const MAX_ATTEMPTS_PER_ITEM = 25;
+const MAX_HOP_LINKS = 3;
 const CITED_URL = /https?:\/\/(?:[^\s()\]}"'<>]|\([^\s()]*\))+/g;
 const HREF = /<a\b[^>]*\bhref\s*=\s*(["'])(.*?)\1/gis;
 
@@ -45,7 +45,7 @@ export interface SourceCtx {
 export interface SourceOutcome { token: string; outcome: string; url?: string; sourceId?: string; tier?: number | null }
 
 /** Cited URLs for a token: the owning section's first, then the cited-source URLs of the item's claims, deduplicated, at most 5. */
-export function candidateUrls(token: string, sections: SourceCtx["sections"], claims: HealClaim[], idx: SourcesIndex): string[] {
+function candidateUrls(token: string, sections: SourceCtx["sections"], claims: HealClaim[], idx: SourcesIndex): string[] {
   const owning = findOwningSection(token, sections);
   const urls: string[] = [];
   for (const s of owning ? [owning] : sections) for (const m of (s.content_md ?? "").matchAll(CITED_URL)) urls.push(m[0]);
@@ -56,7 +56,7 @@ export function candidateUrls(token: string, sections: SourceCtx["sections"], cl
   return [...new Set(urls.map((u) => u.trim()).filter(Boolean))].slice(0, MAX_CANDIDATES_PER_ORPHAN);
 }
 /** Same-institution links of a captured page, at most 3. */
-export function hopLinks(html: string | null | undefined, base: string): string[] {
+function hopLinks(html: string | null | undefined, base: string): string[] {
   const out = new Set<string>();
   for (const m of String(html ?? "").matchAll(HREF)) {
     const raw = (m[2] ?? "").trim();

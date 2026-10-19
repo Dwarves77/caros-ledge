@@ -17,15 +17,15 @@ import constants from "./data/fueleu-annex-i-iv-constants.json";
 import filingGrade from "./data/filing-grade.json";
 import { FUELEU_INSTRUMENT } from "./filing-grade";
 
-export const FORMULA_ID = "fueleu_annex_iv_penalty";
-export const DEFAULT_OBLIGATION_SEED = "fueleu-maritime-annex-iv-penalty";
+const FORMULA_ID = "fueleu_annex_iv_penalty";
+const DEFAULT_OBLIGATION_SEED = "fueleu-maritime-annex-iv-penalty";
 
 const periods = z.object({ ghg_intensity_limit_by_period: z.object({ periods: z.array(z.object({ from_date: z.string(), reduction_percent: z.number(), target_gco2e_per_mj: z.number(), quote: z.string() })) }), reference_value: z.object({ value: z.number(), unit: z.string() }) }).loose().parse(constants);
-export const FUELEU_REFERENCE_GCO2E_PER_MJ = periods.reference_value.value;
+const FUELEU_REFERENCE_GCO2E_PER_MJ = periods.reference_value.value;
 /** Target year to the Article 4(2) limit in gCO2eq/MJ, from the transcribed table (reference x (1 - reduction)). */
 export const SUPPORTED_TARGET_YEARS: Readonly<Record<string, number>> = Object.freeze(Object.fromEntries(periods.ghg_intensity_limit_by_period.periods.map((p) => [p.from_date.slice(0, 4), FUELEU_REFERENCE_GCO2E_PER_MJ * (1 - p.reduction_percent / 100)])));
 const FILING_GRADE_YEARS: ReadonlySet<string> = new Set((z.object({ instruments: z.record(z.string(), z.object({ years: z.array(z.number()) }).loose()) }).loose().parse(filingGrade).instruments[FUELEU_INSTRUMENT]?.years ?? []).map(String));
-export const ARTICLE_4_2_CITATION = "Regulation (EU) 2023/1805, Article 4(2) (reference value 91.16 gCO2eq/MJ, reduced by the stated percentage from the stated date) and recital 23 (2020 fleet-average baseline, Regulation (EU) 2015/757 MRV data). Verified against EUR-Lex CELEX:32023R1805.";
+const ARTICLE_4_2_CITATION = "Regulation (EU) 2023/1805, Article 4(2) (reference value 91.16 gCO2eq/MJ, reduced by the stated percentage from the stated date) and recital 23 (2020 fleet-average baseline, Regulation (EU) 2015/757 MRV data). Verified against EUR-Lex CELEX:32023R1805.";
 
 /** What the regulations slice supplies: the formula and its published constants. */
 export interface StatutoryDeps {
@@ -73,7 +73,7 @@ export function validateSourceBlock(source: unknown, where: string): string[] {
   }
   return violations;
 }
-export function validateRow(row: unknown, index: number): string[] {
+function validateRow(row: unknown, index: number): string[] {
   const r = (row ?? {}) as Rec;
   const shipKey = String(r.shipKey ?? `row[${index}]`);
   const violations: string[] = PLACEHOLDER_MARKERS.test(shipKey) ? [`row[${index}] (${shipKey}): shipKey itself carries a placeholder marker, not a real ship key.`] : [];
@@ -119,12 +119,12 @@ export function parseRow(row: unknown, index: number): ParsedStatutoryRow {
 }
 
 /** A rows-file input as the Value the gate reads. */
-export function toValue(input: Pick<RowInputBlock, "value" | "unit" | "derivation" | "originClass" | "lifecycle" | "admissibility" | "baseConfidence" | "halfLifeDays" | "obsStatus" | "asOf">): Value {
+function toValue(input: Pick<RowInputBlock, "value" | "unit" | "derivation" | "originClass" | "lifecycle" | "admissibility" | "baseConfidence" | "halfLifeDays" | "obsStatus" | "asOf">): Value {
   return { valueId: null, entityId: null, methodId: FORMULA_ID, methodVersion: "n/a", value: input.value, valueLow: null, valueHigh: null, unit: input.unit ?? null, currency: null, derivation: input.derivation as Derivation, originClass: input.originClass, lifecycle: input.lifecycle, admissibility: input.admissibility, baseConfidence: input.baseConfidence, assertedAt: input.asOf.eventDate, halfLifeDays: input.halfLifeDays ?? null, inputs: [], supersedes: null, computedAt: input.asOf.eventDate, computedBy: "rows-file", obsStatus: input.obsStatus ?? null };
 }
 
 /** The entity for a seed: existing, or (apply) minted. A failed read throws. */
-export async function resolveOrMintEntity(sb: Db, target: { kind: EntityKind; seed: string; canonicalName?: string }, apply: boolean): Promise<string> {
+async function resolveOrMintEntity(sb: Db, target: { kind: EntityKind; seed: string; canonicalName?: string }, apply: boolean): Promise<string> {
   const id = entityId(target.kind, target.seed);
   const { data, error } = await sb.from("entities").select("entity_id").eq("entity_id", id).maybeSingle();
   if (error) throw new Error(`resolveOrMintEntity: entities read failed: ${error.message}`);

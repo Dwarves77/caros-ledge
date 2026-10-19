@@ -64,13 +64,7 @@
       "buildFrontmatter"
     ],
     "src/core/briefs/theme-brief-contract.ts": [
-      "SECTION_CEILINGS",
-      "SECTION_HEADINGS",
-      "THEME_BRIEF_SECTIONS",
-      "TITLE_CEILING",
-      "findUncitedFigures",
-      "isObj",
-      "nonEmptyStr"
+      "findUncitedFigures"
     ],
     "src/core/cache/fallback-guard.ts": [
       "FALLBACK_NOT_CACHEABLE",
@@ -104,6 +98,9 @@
       "renderTierConstraintsSql",
       "resolveActiveFactor",
       "validateFactor"
+    ],
+    "src/core/contracts/numbers.ts": [
+      "foldRun"
     ],
     "src/core/contracts/source-licence.ts": [
       "SOURCE_KEYS",
@@ -409,11 +406,6 @@
       "identityCongruenceHolds",
       "md5",
       "perFactGates"
-    ],
-    "src/core/grounding/ledger.ts": [
-      "FACT_FLOOR",
-      "normText",
-      "sameAttribution"
     ],
     "src/core/grounding/pool.ts": [
       "OWN_BODY_TYPES",
@@ -1147,10 +1139,6 @@
     "src/features/batches/kinds/screen-verdicts/apply.ts": [
       "reopenRuledHolds"
     ],
-    "src/features/batches/kinds/theme-briefs/apply.ts": [
-      "THEME_EXPORT_LIMIT",
-      "applyThemeBriefBatch"
-    ],
     "src/features/batches/kit/budget.ts": [
       "BYTES_PER_MB",
       "DEFAULT_COOLDOWN_MIN",
@@ -1620,27 +1608,7 @@
       "unconditionalDomain"
     ],
     "src/features/mint/heal/brief-honest.ts": [
-      "sentenceContext",
-      "sentenceSpans",
       "stripClause"
-    ],
-    "src/features/mint/heal/ground.ts": [
-      "foldRun",
-      "insideLongerNumber",
-      "isFloorArmed",
-      "normalizeNumeric",
-      "normalizeWithMap"
-    ],
-    "src/features/mint/heal/label.ts": [
-      "DEFAULT_LABEL",
-      "slotKeyOf"
-    ],
-    "src/features/mint/heal/source.ts": [
-      "MAX_ATTEMPTS_PER_ITEM",
-      "MAX_CANDIDATES_PER_ORPHAN",
-      "MAX_HOP_LINKS",
-      "candidateUrls",
-      "hopLinks"
     ],
     "src/features/mint/preflight.ts": [
       "tagPresence"
@@ -2168,14 +2136,7 @@
       "walkSitemap"
     ],
     "src/features/statutory/rows.ts": [
-      "ARTICLE_4_2_CITATION",
-      "DEFAULT_OBLIGATION_SEED",
-      "FORMULA_ID",
-      "FUELEU_REFERENCE_GCO2E_PER_MJ",
       "SUPPORTED_TARGET_YEARS",
-      "resolveOrMintEntity",
-      "toValue",
-      "validateRow",
       "validateSourceBlock"
     ],
     "src/features/statutory/run.ts": [

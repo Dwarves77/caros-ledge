@@ -100,15 +100,8 @@
    "toThemeCandidate"
   ],
   "src/core/briefs/theme-brief-contract.ts": [
-   "SECTION_CEILINGS",
-   "SECTION_HEADINGS",
    "SURFACE_HEADING",
-   "THEME_BRIEF_SECTIONS",
-   "TITLE_CEILING",
-   "figureTokens",
-   "isObj",
-   "nonEmptyStr",
-   "validateThemeBriefEntry"
+   "figureTokens"
   ],
   "src/core/briefs/theme-brief-material.ts": [
    "buildThemeBundle",
@@ -553,11 +546,6 @@
    "identityCongruenceHolds",
    "md5",
    "perFactGates"
-  ],
-  "src/core/grounding/ledger.ts": [
-   "FACT_FLOOR",
-   "normText",
-   "sameAttribution"
   ],
   "src/core/grounding/pool.ts": [
    "OWN_BODY_TYPES",
@@ -1272,8 +1260,6 @@
    "screenVerdictsExporter"
   ],
   "src/features/batches/kinds/theme-briefs/apply.ts": [
-   "THEME_EXPORT_LIMIT",
-   "applyThemeBriefBatch",
    "applyThemeBriefs",
    "themeBriefsSpec"
   ],
@@ -1633,29 +1619,14 @@
    "RELEVANCE_FLOOR",
    "runGates"
   ],
-  "src/features/mint/heal/brief-honest.ts": [
-   "sentenceContext",
-   "sentenceSpans"
-  ],
   "src/features/mint/heal/ground.ts": [
-   "findOwningSection",
-   "insideLongerNumber",
-   "isFloorArmed",
-   "normalizeNumeric",
-   "normalizeWithMap"
+   "findOwningSection"
   ],
   "src/features/mint/heal/label.ts": [
-   "DEFAULT_LABEL",
-   "sectionNeedsRelabel",
-   "slotKeyOf"
+   "sectionNeedsRelabel"
   ],
   "src/features/mint/heal/source.ts": [
-   "MAX_ATTEMPTS_PER_ITEM",
-   "MAX_CANDIDATES_PER_ORPHAN",
-   "MAX_HOP_LINKS",
-   "candidateUrls",
    "capturePage",
-   "hopLinks",
    "sourceOrphans"
   ],
   "src/features/mint/screen.ts": [
@@ -2106,14 +2077,7 @@
    "strip"
   ],
   "src/features/statutory/rows.ts": [
-   "ARTICLE_4_2_CITATION",
-   "DEFAULT_OBLIGATION_SEED",
-   "FORMULA_ID",
-   "FUELEU_REFERENCE_GCO2E_PER_MJ",
    "parseRow",
-   "resolveOrMintEntity",
-   "toValue",
-   "validateRow",
    "writeOneRow"
   ],
   "src/features/telemetry/api/error.ts": [
