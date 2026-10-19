@@ -21,6 +21,7 @@ import type { Resource } from "@/core/types";
 import { regionGroupForLabel } from "@/core/workspace";
 import { Absence, ActionCard, ClaimTierProvider, DetailSubSection, downloadMarkdownBrief, GfmSection, GradeChip, SectionCard, SectionIndex, StateNote, TagChip, type ClaimTierMap } from "@/ui";
 import { AtAGlanceCard, commonActionCardProps, CrossPageSection, crossPagePresence, DetailLayout, DetailMasthead, DetailPageWrapper, DetailRail, DetailSection, FactBlocks, ImpactRailCard, InThisListStat, ItemConnections, ItemWatch, RelevanceRailCard, SourcesGrid, topRecommendedAction, type CrossPageData } from "@/ui/detail";
+import { NoticesRail } from "@/ui/figures";
 import { LegendRailCard } from "@/ui/list-surface";
 import { useItemRelevance } from "@/features/regulations/useItemRelevance";
 import { DetailTagRow } from "@/features/workspace/ui/DetailTagRow";
@@ -173,6 +174,7 @@ export function OperationsDetail(p: OperationsDetailProps) {
               {rows.length > 0 ? <SourcesGrid rows={rows} /> : <Absence reason="not in primary source" />}
             </DetailSection>
             <CrossPageSection surfaceKey="operations" surfaceLabel="Operations" crossPage={p.crossPage} onRetry={retry} />
+            <NoticesRail />
           </DetailLayout>
         </DetailPageWrapper>
       </div>

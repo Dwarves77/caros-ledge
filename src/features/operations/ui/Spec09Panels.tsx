@@ -6,6 +6,7 @@
 // when a SOURCED grid intensity for the region exists: the conversion the old card only named), the grid connection queue as a gate (blocked, clear or unknown, never a cost line) and the figures the flywheel
 // recomputed from Operations inputs, each with its inputs and the weakest source rating. A figure that cannot be drawn names the data it needs; a failed read says so with Retry.
 import { formatDate } from "@/core/shared";
+import { RequestableCoverageState } from "@/features/coverage";
 import { Absence, CoverageState, RailCard, TierChip } from "@/ui";
 
 import { auxiliaryEnergy } from "../calc/auxiliary-energy";
@@ -19,7 +20,7 @@ const num = (v: unknown): number | null => (typeof v === "number" && Number.isFi
 
 export function AuxiliaryEnergyPanel({ rows, intensity, retryHref }: { rows: AuxiliaryEnergyRow[] | null; intensity: GridIntensity | null; retryHref: string }) {
   if (rows === null) return <CoverageState state="error" variant="inline" subject="Auxiliary energy loads" retryHref={retryHref} />;
-  if (rows.length === 0) return <CoverageState state="not_covered" variant="inline" subject="Auxiliary energy loads" reason="No rows yet: auxiliary-load facts are specific to each asset and no public source publishes them." />;
+  if (rows.length === 0) return <RequestableCoverageState state="not_covered" variant="inline" subject="Auxiliary energy loads" reason="No rows yet: auxiliary-load facts are specific to each asset and no public source publishes them." requestRef={`${retryHref}#auxiliary-energy`} />;
   return (
     <div data-guard-container="auxiliary-energy" className={styles.spec}>
       {rows.map((row) => {
@@ -48,7 +49,7 @@ export function AuxiliaryEnergyPanel({ rows, intensity, retryHref }: { rows: Aux
 
 export function GridQueuePanel({ rows, retryHref }: { rows: GridQueueRow[] | null; retryHref: string }) {
   if (rows === null) return <CoverageState state="error" variant="inline" subject="Grid connection queue" retryHref={retryHref} />;
-  if (rows.length === 0) return <CoverageState state="not_covered" variant="inline" subject="Grid connection queue" reason="No rows yet: no free public source confirms demand-side connection-queue months." />;
+  if (rows.length === 0) return <RequestableCoverageState state="not_covered" variant="inline" subject="Grid connection queue" reason="No rows yet: no free public source confirms demand-side connection-queue months." requestRef={`${retryHref}#grid-queue`} />;
   return (
     <div data-guard-container="grid-queue" className={styles.spec}>
       {rows.map((row) => {

@@ -136,83 +136,11 @@
       "ruling": "regulations.md (P1-19) section 8, rows MapPage, rollup and centroids: the register is ISO-keyed (a country, its subdivisions rolled up); the legacy-slug rows (Global, Nordic, GB beside United Kingdom, the regional remainders) and the title-regex keying that put a Japan item under us are the defect the rollup replaces."
     },
     {
-      "id": "detail-withheld-obligations-heading",
-      "route": "regulation-detail",
-      "kind": "until-migration",
-      "migration": "0031",
-      "on": "heading",
-      "match": "^2:Obligations — issues requiring action$",
-      "ruling": "production carries no new migration before cutover (rulings 2026-10-17): without 0031 the regulation detail withholds its fact sections and says so with Retry; the full path is proven on the fixture turn and schema:local."
-    },
-    {
-      "id": "detail-withheld-section-links",
-      "route": "regulation-detail",
-      "kind": "until-migration",
-      "migration": "0031",
-      "on": "control",
-      "match": "^link:S[0-9#]+ (Obligations|Requirements|Registration|Operations|Compliance)$",
-      "ruling": "production carries no new migration before cutover (rulings 2026-10-17): without 0031 the regulation detail withholds its fact sections and says so with Retry; the full path is proven on the fixture turn and schema:local."
-    },
-    {
-      "id": "detail-withheld-provenance-link",
-      "route": "regulation-detail",
-      "kind": "until-migration",
-      "migration": "0031",
-      "on": "control",
-      "match": "^link:[a-z0-9.-]+ ↗$",
-      "ruling": "production carries no new migration before cutover (rulings 2026-10-17): without 0031 the regulation detail withholds its fact sections and says so with Retry; the full path is proven on the fixture turn and schema:local."
-    },
-    {
-      "id": "detail-withheld-region-order",
-      "route": "regulation-detail",
-      "kind": "until-migration",
-      "migration": "0031",
-      "on": "landmark",
-      "match": "^region$",
-      "ruling": "production carries no new migration before cutover (rulings 2026-10-17): without 0031 the regulation detail withholds its fact sections and says so with Retry; the full path is proven on the fixture turn and schema:local."
-    },
-    {
       "id": "detail-assignee-name-sec5",
       "route": "regulation-detail",
       "kind": "control",
       "match": "^button:smoke@example.invalid$",
       "ruling": "SEC-5 (P2-02c): profiles.email is not readable under the authenticated column grant, so the roster cannot label a member without a profile name by e-mail; the control shows the Absence token with 'Name not set' (and the profile name when there is one) where the old page showed the e-mail."
-    },
-    {
-      "id": "market-detail-withheld-heading",
-      "route": "market-detail",
-      "kind": "until-migration",
-      "migration": "0031",
-      "on": "heading",
-      "match": "^[0-9]:New Sources Identified$",
-      "ruling": "production carries no new migration before cutover (rulings 2026-10-17): without 0031 the market detail withholds its fact sections and says so with Retry; the full path is proven on the fixture turn and schema:local."
-    },
-    {
-      "id": "market-detail-withheld-links",
-      "route": "market-detail",
-      "kind": "until-migration",
-      "migration": "0031",
-      "on": "control",
-      "match": "^link:([a-z0-9.-]+ ↗|https?://.*)$",
-      "ruling": "production carries no new migration before cutover (rulings 2026-10-17): without 0031 the market detail withholds its fact sections and says so with Retry; the full path is proven on the fixture turn and schema:local."
-    },
-    {
-      "id": "market-detail-withheld-rows",
-      "route": "market-detail",
-      "kind": "until-migration",
-      "migration": "0031",
-      "on": "row",
-      "match": "^(li|tr):",
-      "ruling": "production carries no new migration before cutover (rulings 2026-10-17): without 0031 the market detail withholds its fact sections and says so with Retry; the full path is proven on the fixture turn and schema:local."
-    },
-    {
-      "id": "market-detail-withheld-region-order",
-      "route": "market-detail",
-      "kind": "until-migration",
-      "migration": "0031",
-      "on": "landmark",
-      "match": "^region$",
-      "ruling": "production carries no new migration before cutover (rulings 2026-10-17): without 0031 the market detail withholds its fact sections and says so with Retry; the full path is proven on the fixture turn and schema:local."
     },
     {
       "id": "market-detail-assignee-name-sec5",
@@ -222,56 +150,11 @@
       "ruling": "SEC-5 (P2-02c): profiles.email is not readable under the authenticated column grant, so the roster cannot label a member without a profile name by e-mail; the control shows the Absence token with 'Name not set' (and the profile name when there is one) where the old page showed the e-mail."
     },
     {
-      "id": "market-detail-withheld-bias-tags",
-      "route": "market-detail",
-      "kind": "until-migration",
-      "migration": "0031",
-      "on": "control",
-      "match": "^button:\\+# more$",
-      "ruling": "production carries no new migration before cutover (rulings 2026-10-17): the two '+3 more' buttons are the source bias tags' overflow (BiasChips, in the action card and in the Sources section); source_bias_tags has no member policy until 0031, so without it the page draws no tags and says nothing is missing."
-    },
-    {
       "id": "market-deadline-tie-order",
       "route": "market",
       "kind": "order",
       "match": "^link:Compliance deadline",
       "ruling": "old read ordered by event_date only (fsi-app/src/lib/forward-events/read-upcoming.mjs:200, no secondary key: heap order); new rule created_at then id (rulings 2026-10-17)"
-    },
-    {
-      "id": "research-detail-withheld-links",
-      "route": "research-detail",
-      "kind": "until-migration",
-      "migration": "0031",
-      "on": "control",
-      "match": "^link:([a-z0-9.-]+ ↗|https?://.*)$",
-      "ruling": "production carries no new migration before cutover (rulings 2026-10-17): without 0031 the research detail withholds its fact sections and says so with Retry; the full path is proven on the fixture turn and schema:local."
-    },
-    {
-      "id": "research-detail-withheld-rows",
-      "route": "research-detail",
-      "kind": "until-migration",
-      "migration": "0031",
-      "on": "row",
-      "match": "^(li|tr):",
-      "ruling": "production carries no new migration before cutover (rulings 2026-10-17): without 0031 the research detail withholds its fact sections and says so with Retry; the full path is proven on the fixture turn and schema:local."
-    },
-    {
-      "id": "research-detail-withheld-region-order",
-      "route": "research-detail",
-      "kind": "until-migration",
-      "migration": "0031",
-      "on": "landmark",
-      "match": "^region$",
-      "ruling": "production carries no new migration before cutover (rulings 2026-10-17): without 0031 the research detail withholds its fact sections and says so with Retry; the full path is proven on the fixture turn and schema:local."
-    },
-    {
-      "id": "research-detail-withheld-bias-tags",
-      "route": "research-detail",
-      "kind": "until-migration",
-      "migration": "0031",
-      "on": "control",
-      "match": "^button:\\+# more$",
-      "ruling": "production carries no new migration before cutover (rulings 2026-10-17): the two '+3 more' buttons are the source bias tags' overflow (BiasChips, in the action card and in the Sources section); source_bias_tags has no member policy until 0031, so without it the page draws no tags and says nothing is missing."
     },
     {
       "id": "research-detail-assignee-name-sec5",
@@ -281,65 +164,11 @@
       "ruling": "SEC-5 (P2-02c): profiles.email is not readable under the authenticated column grant, so the roster cannot label a member without a profile name by e-mail; the control shows the Absence token with 'Name not set' (and the profile name when there is one) where the old page showed the e-mail."
     },
     {
-      "id": "operations-detail-withheld-links",
-      "route": "operations-detail",
-      "kind": "until-migration",
-      "migration": "0031",
-      "on": "control",
-      "match": "^link:([a-z0-9.-]+ ↗|https?://.*)$",
-      "ruling": "production carries no new migration before cutover (rulings 2026-10-17): without 0031 the operations detail withholds its fact sections and says so with Retry; the full path is proven on the fixture turn and schema:local."
-    },
-    {
-      "id": "operations-detail-withheld-rows",
-      "route": "operations-detail",
-      "kind": "until-migration",
-      "migration": "0031",
-      "on": "row",
-      "match": "^(li|tr):",
-      "ruling": "production carries no new migration before cutover (rulings 2026-10-17): without 0031 the operations detail withholds its fact sections and says so with Retry; the full path is proven on the fixture turn and schema:local."
-    },
-    {
-      "id": "operations-detail-withheld-region-order",
-      "route": "operations-detail",
-      "kind": "until-migration",
-      "migration": "0031",
-      "on": "landmark",
-      "match": "^region$",
-      "ruling": "production carries no new migration before cutover (rulings 2026-10-17): without 0031 the operations detail withholds its fact sections and says so with Retry; the full path is proven on the fixture turn and schema:local."
-    },
-    {
-      "id": "operations-detail-withheld-bias-tags",
-      "route": "operations-detail",
-      "kind": "until-migration",
-      "migration": "0031",
-      "on": "control",
-      "match": "^button:\\+# more$",
-      "ruling": "production carries no new migration before cutover (rulings 2026-10-17): the two '+3 more' buttons are the source bias tags' overflow (BiasChips, in the action card and in the Sources section); source_bias_tags has no member policy until 0031, so without it the page draws no tags and says nothing is missing."
-    },
-    {
       "id": "operations-detail-assignee-name-sec5",
       "route": "operations-detail",
       "kind": "control",
       "match": "^button:smoke@example.invalid$",
       "ruling": "SEC-5 (P2-02c): profiles.email is not readable under the authenticated column grant, so the roster cannot label a member without a profile name by e-mail; the control shows the Absence token with 'Name not set' (and the profile name when there is one) where the old page showed the e-mail."
-    },
-    {
-      "id": "operations-detail-withheld-source-rows",
-      "route": "operations-detail",
-      "kind": "until-migration",
-      "migration": "0031",
-      "on": "control",
-      "match": "^link:(—|T#).+ · ",
-      "ruling": "production carries no new migration before cutover (rulings 2026-10-17): without 0031 the operations detail withholds its stored sections and the brief (so the source rows its Sources section drew from them) and its auxiliary-energy and grid-queue panels read nothing, so each says so with Retry where the old page drew its rows and its Request coverage actions; the full path is proven on the fixture turn and schema:local."
-    },
-    {
-      "id": "operations-detail-withheld-request-coverage",
-      "route": "operations-detail",
-      "kind": "until-migration",
-      "migration": "0031",
-      "on": "control",
-      "match": "^button:Request coverage$",
-      "ruling": "production carries no new migration before cutover (rulings 2026-10-17): without 0031 the operations detail withholds its stored sections and the brief (so the source rows its Sources section drew from them) and its auxiliary-energy and grid-queue panels read nothing, so each says so with Retry where the old page drew its rows and its Request coverage actions; the full path is proven on the fixture turn and schema:local."
     },
     {
       "id": "operations-related-tie-order",

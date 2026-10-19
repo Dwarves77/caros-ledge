@@ -32,6 +32,7 @@ import { derivePromotionState } from "../lib/signal-promotion";
 import type { MarketDetailBundle } from "../read";
 
 import { CarbonFindings, PriceBoardBlock } from "./MarketSignalDetail";
+import { RelatedSignalLinks } from "./RelatedSignalLinks";
 import { TrajectoryBars } from "./TrajectoryBars";
 import styles from "./market.module.css";
 
@@ -240,16 +241,7 @@ export function MarketDetailView({ resource: r, sections, claimTiers, claimsDegr
               <DetailSection id="related" title="Related" aside={BAND_LABEL[signalBand]} index={6}>
                 <ConnectionList rows={connectionRows} />
                 {related.length > 0 && (
-                  <ul className={styles.gapList}>
-                    {related.map((x) => (
-                      <li key={x.id}>
-                        <Link href={`/market/${encodeURIComponent(x.id)}`} prefetch={false} className={styles.relatedLink}>
-                          <span className={styles.relatedTitle}>{x.title}</span>
-                          <span className={styles.muted}>{SEVERITY_LABEL[deriveSeverity(x)]}</span>
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
+                  <RelatedSignalLinks signals={related} />
                 )}
               </DetailSection>
             )}
