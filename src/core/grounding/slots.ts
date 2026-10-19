@@ -5,6 +5,7 @@
 // candidates, and a FACT exists only when the author confirms one (INV-160, never a forced or paraphrased one).
 import { boundedRead, type Db } from "@/core/db";
 import { LookupError } from "@/core/http/errors";
+import { contentWords, hasWord } from "@/core/parse";
 
 import { GROUND_CONFIG } from "./config";
 
@@ -19,15 +20,20 @@ export async function readRequiredSlots(sb: Db, itemType: string): Promise<SlotR
   return r.data;
 }
 
-const wantWords = (s: SlotRow): Set<string> => new Set(String(s.description || s.slot_key).toLowerCase().match(/[a-z]{4,}/g) ?? []);
+/** The slot's distinctive words (stop words removed: "with" and "that" name no topic). */
+const wantWords = (s: SlotRow): Set<string> => contentWords(String(s.description || s.slot_key));
 
-/** Does the prose speak to the slot: its bracketed key or key words, or a sentence sharing a want-word? (The grounding pre-gate heuristic.) */
+/**
+ * Does the prose speak to the slot: its bracketed key or key phrase, or ONE sentence that carries at least two of the slot's distinctive words (one when the slot has only one),
+ * each as a whole word? A slot with no distinctive word at all is not covered: it cannot be shown to be.
+ */
 function slotCovered(body: string, slot: SlotRow): boolean {
   const text = String(body ?? "").toLowerCase();
   const key = slot.slot_key.toLowerCase();
-  if (text.includes(`[${key}]`) || text.includes(key.replace(/_/g, " "))) return true;
-  const want = wantWords(slot);
-  return want.size === 0 || text.split(/(?<=[.!?])\s+/).some((sent) => sent && [...want].some((w) => sent.includes(w)));
+  if (text.includes(`[${key}]`) || hasWord(text, key.replace(/_/g, " "))) return true;
+  const want = [...wantWords(slot)];
+  const need = Math.min(2, want.length);
+  return need > 0 && text.split(/(?<=[.!?])\s+/).some((sent) => want.filter((w) => hasWord(sent, w)).length >= need);
 }
 /** The required slots the brief covers neither topically nor as an explicit GAP: the refusal reason of a silently uncovered slot. */
 export const uncoveredSlots = (body: string, slots: SlotRow[] | null | undefined): SlotRow[] => (slots ?? []).filter((s) => !slotCovered(body, s));
@@ -38,7 +44,7 @@ const CLAUSE_DELIM = /(?:&#x0*(?:d|a|9);)|(?:&#0*(?:13|10|9);)|[\r\n]+|(?<=[.!?;
 
 /** Verbatim clause candidates for a slot from the pool, best topic overlap first. Floor-first is the caller's contract: pass the FLOOR pool for a FACT. */
 export function nominateForSlot(slotDescription: string | null | undefined, pool: { url: string; text: string }[], slotKey = ""): Nomination[] {
-  const want = new Set(`${slotDescription ?? ""} ${slotKey}`.toLowerCase().match(/[a-z]{4,}/g) ?? []);
+  const want = contentWords(`${slotDescription ?? ""} ${slotKey}`);
   const cands: { span: string; url: string; score: number }[] = [];
   const seen = new Set<string>();
   for (const src of pool ?? []) {
@@ -46,7 +52,7 @@ export function nominateForSlot(slotDescription: string | null | undefined, pool
       const clause = (raw ?? "").trim();
       if (clause.length < GROUND_CONFIG.MIN_SPAN_CHARS || clause.length > GROUND_CONFIG.MAX_NOMINATION_SPAN) continue;
       const lc = clause.toLowerCase();
-      const hits = [...want].filter((w) => lc.includes(w)).length;
+      const hits = [...want].filter((w) => hasWord(lc, w)).length;
       const key = `${src.url}\u0000${clause}`;
       if (hits === 0 || seen.has(key)) continue;
       seen.add(key);

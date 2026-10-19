@@ -1,0 +1,4 @@
+{
+  "minLetters": 4,
+  "stopwords": ["that", "this", "with", "from", "have", "will", "shall", "such", "which", "their", "there", "these", "those", "into", "upon", "been", "also", "other", "than", "then", "when", "where", "what", "each", "over", "under", "about", "after", "before", "within", "without", "between", "being", "does", "must", "only", "more", "most", "some", "were", "your", "they", "them", "whose", "while", "would", "could", "should", "same", "both"]
+}
