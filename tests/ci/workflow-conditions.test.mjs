@@ -48,3 +48,19 @@ test('the live jobs check out the DEPLOYED commit (a deployment_status event car
 test('the turn job receives the free EIA key the market producer reads by name', () => {
   assert.match(String(jobs.turn.env.EIA_API_KEY), /secrets\.EIA_API_KEY/);
 });
+
+test('the screens job runs on a dispatch with only=screens alone; no push, pull request, deployment or other dispatch runs it', () => {
+  assert.deepEqual(on('workflow_dispatch', 'screens'), ['screens']);
+  for (const [event, only] of [['workflow_dispatch', ''], ['workflow_dispatch', 'live'], ['workflow_dispatch', 'baseline'], ['workflow_dispatch', 'turn'], ['pull_request', ''], ['push', '']]) {
+    assert.ok(!on(event, only).includes('screens'), `${event} only=${only}`);
+  }
+  assert.ok(!on('deployment_status', '', { state: 'success', environment: 'Preview' }).includes('screens'));
+  assert.ok(!on('workflow_dispatch', 'screens').includes('ci'), 'only=screens does not start the checks');
+});
+
+test('the screens job photographs the dispatched live_url fresh and uploads the PNGs', () => {
+  assert.match(String(jobs.screens.env.SCREENS_BASE), /inputs\.live_url/);
+  const run = jobs.screens.steps.map((s) => String(s.run ?? '')).join(' ');
+  assert.match(run, /capture\.mjs --base "\$SCREENS_BASE" --out screens --fresh/);
+  assert.ok(jobs.screens.steps.some((s) => String(s.uses).startsWith('actions/upload-artifact')));
+});
