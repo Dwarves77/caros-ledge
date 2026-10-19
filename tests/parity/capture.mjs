@@ -1,5 +1,5 @@
 // Parity capture (PART2-AGENT-PLAN-2026-10-15 section 7). Ported from the old repo's fsi-app/tests/parity/capture.mjs (lane H-2); the same record shape, so compare.mjs reads a baseline and a capture alike.
-// Each signed-in route names its account in routes.json (`auth`: "member" | "admin"). A route whose account has no credentials (or with --signed-out-only) is recorded as `skipped`, not failed.
+// Each signed-in route names its account in routes.json (`auth`: "member" | "admin"). With --signed-out-only, on a local server, on a workstation or in a fork pull request that lacks the account's credentials, its routes are recorded as `skipped` (the reason printed); in CI anywhere else the missing LIVE_SMOKE_* / LIVE_ADMIN_* are a failure that names them (credentialVerdict).
 //
 // Usage: node tests/parity/capture.mjs --base <origin> --out <dir> [--signed-out-only] [--fresh]
 // --fresh (the dispatch-only `screens` job, P2-15e): every detail route is discovered from its list page now instead of pinned to the baseline's item, so the PNGs show the first item production serves today.
@@ -11,6 +11,7 @@
 // Admin routes are captured only when PARITY_ADMIN=1 (the deployed preview; the CI runner holds no service-role key). Credentials: member = LIVE_SMOKE_EMAIL / LIVE_SMOKE_PASSWORD, admin = LIVE_ADMIN_EMAIL / LIVE_ADMIN_PASSWORD.
 // Exit code is 1 when any sign-in, discovery or capture failed; index.json is written in every case.
 
+import { readFileSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { execFileSync } from 'node:child_process';
@@ -26,6 +27,34 @@ export { SCREEN_MAX_HEIGHT };
 // A page that navigates its main frame more often than this after goto is looping (a reload on every auth event, a redirect cycle).
 const NAVIGATION_CEILING = 3;
 const ACCOUNTS = { member: ['LIVE_SMOKE_EMAIL', 'LIVE_SMOKE_PASSWORD'], admin: ['LIVE_ADMIN_EMAIL', 'LIVE_ADMIN_PASSWORD'] };
+/** The signed-in credentials the routes need and the environment does not hold (the admin account only when PARITY_ADMIN=1). */
+export function missingCredentials(routes, env) {
+  const accounts = new Set(routes.map((r) => r.auth).filter((a) => a && (a !== 'admin' || env.PARITY_ADMIN === '1')));
+  return [...accounts].flatMap((a) => ACCOUNTS[a].filter((name) => !env[name]));
+}
+
+const isFork = (env) => {
+  if (env.GITHUB_EVENT_NAME !== 'pull_request' || !env.GITHUB_EVENT_PATH) return false;
+  try {
+    return JSON.parse(readFileSync(env.GITHUB_EVENT_PATH, 'utf8')).pull_request?.head?.repo?.fork === true;
+  } catch {
+    return false; // an unreadable payload cannot prove a fork, so the run is treated as one that holds the secrets
+  }
+};
+const isLocalOrigin = (base) => ['localhost', '127.0.0.1', '[::1]'].includes(new URL(base).hostname);
+
+/**
+ * The exit contract (src/core/harness/exit.ts skipVerdict, restated because this is a plain script): credentials the routes need and the environment lacks are a SKIP (exit 2, reason printed) on a workstation, in a
+ * pull request from a fork, or against a local server (which holds no account); anywhere else in CI they are a FAILURE (exit 1) that names the variables, so a run that captured nothing signed-in cannot read green.
+ */
+export function credentialVerdict(env, missing, base) {
+  if (missing.length === 0) return { exit: 0, message: '' };
+  const list = missing.join(', ');
+  if (isFork(env)) return { exit: 2, message: `signed-in routes skipped: a pull request from a fork cannot carry secrets; not set: ${list}` };
+  if (isLocalOrigin(base)) return { exit: 2, message: `signed-in routes skipped: ${new URL(base).host} is a local server and holds no account; not set: ${list}` };
+  if (env.CI === 'true' || env.GITHUB_ACTIONS === 'true') return { exit: 1, message: `missing (exit 1): ${list}. A run that can carry these and does not have them has not captured the signed-in routes; it is a failure, never a skip` };
+  return { exit: 2, message: `signed-in routes skipped: not set here: ${list}` };
+}
 const ROUTES_FILE = join(dirname(fileURLToPath(import.meta.url)), 'routes.json');
 
 function parseArgs(argv) {
@@ -405,9 +434,15 @@ async function main() {
   const routes = JSON.parse(await readFile(ROUTES_FILE, 'utf8')).routes.filter((r) => !only || only.has(r.name));
   const { gates } = JSON.parse(await readFile(join(dirname(ROUTES_FILE), 'approved-changes.json'), 'utf8'));
   const baselineIndex = JSON.parse(await readFile(join(dirname(ROUTES_FILE), 'baseline', 'index.json'), 'utf8'));
+  let failed = false;
+  // Credentials the routes need and the environment lacks: a skip (printed) or a failure naming the variables, by credentialVerdict. A skip is recorded as a signed-out run, which compare accepts; a failure is not.
+  const verdict = args['signed-out-only'] ? { exit: 0, message: '' } : credentialVerdict(process.env, missingCredentials(routes, process.env), base);
+  if (verdict.message) console.log(`capture: ${verdict.message}`);
+  if (verdict.exit === 1) failed = true;
+  const signedOutOnly = Boolean(args['signed-out-only']) || verdict.exit === 2;
   const index = {
     contract: CAPTURE_CONTRACT,
-    signed_out_only: Boolean(args['signed-out-only']),
+    signed_out_only: signedOutOnly,
     captured_at: new Date().toISOString(),
     ...commitOf(),
     base,
@@ -415,7 +450,6 @@ async function main() {
     signin: null,
     routes: routes.map((r) => ({ name: r.name, path: pathFor(r, args.site), auth: r.auth, status: 'pending', files: [], error: null, diagnostics: { firstFailure: null, navigations: 0, navigationPaths: [] } })),
   };
-  let failed = false;
   const browser = await chromium.launch();
   try {
     // One sign-in per account that has both credentials; `storage[account]` is absent for an account without them or whose sign-in failed.
