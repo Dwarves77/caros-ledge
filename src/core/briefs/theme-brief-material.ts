@@ -78,8 +78,8 @@ export interface MaterialOpts {
   seams?: ThemeBriefSeams;
 }
 /**
- * The two stand-ins the theme-brief path reads through until their owners land, behind ONE member so the swap is one line: the comparator of a listed claim against its grounded text (R2a's comparator replaces
- * the figure-coverage stub) and the admissible-row predicate (R2d's replaces admissibleRows): members, claims and events that fail it never reach the author.
+ * The two readers the theme-brief path goes through, behind ONE member: the comparator of a listed claim against its grounded text (R2a's typed figure comparator) and the admissible-row predicate (a local stand-in
+ * until R2d's lands, then it replaces admissibleRows): members, claims and events that fail it never reach the author.
  */
 export interface ThemeBriefSeams { comparator: ClaimComparator; admissible: AdmissibleRows }
 export const themeBriefSeams: ThemeBriefSeams = { comparator: figureCoverage, admissible: admissibleRows };

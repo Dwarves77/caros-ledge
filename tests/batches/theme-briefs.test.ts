@@ -104,7 +104,7 @@ test("INV-R2b-5 (F:3): a single payload takes the batch path: an entry that fail
 test("F:15: an invented figure listed under a REAL claim id is not covered by it; F:16: a quarantined member and a suppressed claim are not brief material; F:17: the home jurisdictions name their source", async () => {
   const w = themeWorld();
   const invented = entry({ sections: { ...entry().sections, connection: "The duty carries a fine of EUR 900000 for late filers." }, claims: [{ section: "connection", text: "a fine of EUR 900000", member_id: ITEM, claim_ids: [CLAIM_A] }] });
-  assert.match(notes(await apply(w, [invented])), /the listed text states .*"900000".* that none of its cited grounded claims states/);
+  assert.match(notes(await apply(w, [invented])), /the listed text states .*"EUR 900000".* that none of its cited grounded claims states/);
   const honest = entry({ sections: { ...entry().sections, connection: "Operators shall report verified annual emissions before 30 April." }, claims: [{ section: "connection", text: "report verified annual emissions before 30 April", member_id: ITEM, claim_ids: [CLAIM_A] }] });
   assert.equal((await apply(w, [honest], true)).counts.valid, 1, "a figure the cited claim states is covered");
   // F:16: the member quarantined since the pass, then the claim suppressed
@@ -143,8 +143,9 @@ test("the figure rule: a number or an acronym is allowed only inside a listed cl
   assert.deepEqual([...parseRamifications("### Research\nx\n### Research\ny").problems], ['duplicate ramifications subsection "Research"']);
 });
 
-test("the comparator stand-in: a figure the cited grounded text does not state is returned; a figure it states is covered", () => {
-  assert.deepEqual(figureCoverage("The duty costs EUR 900000 per year.", ["The duty costs EUR 500 per year."]), ["900000"]);
+test("the comparator: a figure the cited grounded text does not state as the same quantity is returned; one it states is covered", () => {
+  assert.deepEqual(figureCoverage("The duty costs EUR 50 per year.", ["The duty costs EUR 5 per year."]), ["EUR 50"], "EUR 5 never backs EUR 50");
+  assert.deepEqual(figureCoverage("The duty costs EUR 900000 per year.", ["The duty costs EUR 500 per year."]), ["EUR 900000"]);
   assert.deepEqual(figureCoverage("The duty costs EUR 500 per year.", ["The duty costs EUR 500 per year."]), []);
 });
 
