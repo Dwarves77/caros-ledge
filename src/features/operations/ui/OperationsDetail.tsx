@@ -16,7 +16,7 @@ import { sourceEntriesOf } from "@/core/detail/sources-parse";
 import type { ConnectionRow } from "@/core/flywheel/view-model";
 import { jurisLabelOf } from "@/core/jurisdictions";
 import { bandFromPriority } from "@/core/lists";
-import { formatDate } from "@/core/shared";
+import { formatDate, pluralize } from "@/core/shared";
 import type { Resource } from "@/core/types";
 import { regionGroupForLabel } from "@/core/workspace";
 import { Absence, ActionCard, ClaimTierProvider, DetailSubSection, downloadMarkdownBrief, GfmSection, GradeChip, SectionCard, SectionIndex, StateNote, TagChip, type ClaimTierMap } from "@/ui";
@@ -111,7 +111,7 @@ export function OperationsDetail(p: OperationsDetailProps) {
       }
       tier={typeof r.sourceTier === "number" ? r.sourceTier : null}
       biasTags={r.biasTags}
-      meta={rows.length > 0 ? `${rows.length} source${rows.length === 1 ? "" : "s"}${p.connectionRows.length > 0 ? ` · ${p.connectionRows.length} connections` : ""}` : null}
+      meta={rows.length > 0 ? `${rows.length} source${rows.length === 1 ? "" : "s"}${p.connectionRows.length > 0 ? ` · ${p.connectionRows.length} ${pluralize(p.connectionRows.length, "connection")}` : ""}` : null}
       onExport={() => void downloadMarkdownBrief(r, { filenamePrefix: "operations", metaRows: [r.jurisdiction ? `- Region: ${r.jurisdiction}` : null, r.modes && r.modes.length > 0 ? `- Modes: ${r.modes.join(", ")}` : null, r.url ? `- Source: ${r.url}` : null] })}
       {...commonActionCardProps(r, { tagPopover: <DetailTagRow itemId={r.id} open={tagOpen} onOpenChange={setTagOpen} />, watch: <ItemWatch itemId={r.id} />, onTag: () => setTagOpen((v) => !v) })}
       where={{ value: jurisLabel || null }}

@@ -132,11 +132,14 @@ export async function ObligationRegisterRoute() {
   return (
     <Suspense fallback={null}>
       <Masthead title="Obligation register" dek="Every dated obligation on file, soonest first." dateLabel={dateLabel(session.nowIso)} nowIso={session.nowIso} commandBar={<ShellCommandBar placeholder="Search regulations" />} />
-      <PageFrame>
+      <PageFrame
+        rail={
+          <SectionCard as="aside" padding="14px 16px">
+            <p className="cl-detail-link-note">Positions: your duty, carrier pass-through, customer contract, monitor. Each obligation shows the position it has for a freight forwarder.</p>
+          </SectionCard>
+        }
+      >
         <ObligationRegister variant="list" initial={page} failed={page === null} jurisdictions={facets?.jurisdictions ?? []} modes={facets?.modes ?? []} />
-        <SectionCard as="aside" padding="14px 16px">
-          <p className="cl-detail-link-note">Positions: your duty, carrier pass-through, customer contract, monitor. Each obligation shows the position it has for a freight forwarder.</p>
-        </SectionCard>
       </PageFrame>
     </Suspense>
   );

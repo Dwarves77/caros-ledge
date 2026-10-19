@@ -238,9 +238,28 @@ export function retryWaitMs(retryAfter, nowMs = Date.now()) {
 }
 export const throttleWaitMs = (events, nowMs) => Math.max(...events.map((e) => retryWaitMs(e.retryAfter, nowMs)));
 
-async function captureOne(browser, base, route, path, viewport, storage, out, diag) {
+// The shell scrolls inside <main>, so a fullPage screenshot of the document is one viewport tall. For the screens job (--fresh) the viewport is grown to the
+// tallest scroll box's content (ceiling SCREEN_MAX_HEIGHT) so the PNG shows the whole page; the DOM record is already taken at the real viewport.
+export const SCREEN_MAX_HEIGHT = 16000;
+export async function wholePageScreenshot(page, viewport, file) {
+  const needed = await page.evaluate(() => {
+    let tallest = 0;
+    for (const el of document.querySelectorAll('main, body *')) {
+      const overflowY = getComputedStyle(el).overflowY;
+      if ((overflowY === 'auto' || overflowY === 'scroll') && el.scrollHeight > el.clientHeight) tallest = Math.max(tallest, el.scrollHeight + el.getBoundingClientRect().top + window.scrollY);
+    }
+    return Math.ceil(tallest);
+  });
+  if (needed > viewport.height) {
+    await page.setViewportSize({ width: viewport.width, height: Math.min(needed, SCREEN_MAX_HEIGHT) });
+    await settle(page);
+  }
+  await page.screenshot({ path: file, fullPage: true });
+}
+
+async function captureOne(browser, base, route, path, viewport, storage, out, diag, whole) {
   for (let attempt = 1; ; attempt += 1) {
-    const result = await captureAttempt(browser, base, route, path, viewport, storage, out, diag);
+    const result = await captureAttempt(browser, base, route, path, viewport, storage, out, diag, whole);
     if (result.throttled.length === 0) return result.stem;
     const waitMs = throttleWaitMs(result.throttled);
     diag.throttle = [...(diag.throttle ?? []), ...result.throttled.map((e) => ({ route: route.name, path, viewport: `${viewport.width}x${viewport.height}`, attempt, status: e.status, waitMs }))];
@@ -249,7 +268,7 @@ async function captureOne(browser, base, route, path, viewport, storage, out, di
   }
 }
 
-async function captureAttempt(browser, base, route, path, viewport, storage, out, diag) {
+async function captureAttempt(browser, base, route, path, viewport, storage, out, diag, whole) {
   const stem = `${route.name}.${viewport.width}x${viewport.height}`;
   const context = await browser.newContext({ viewport, storageState: route.auth ? storage[route.auth] : undefined });
   try {
@@ -273,9 +292,10 @@ async function captureAttempt(browser, base, route, path, viewport, storage, out
       throw new Error(`navigation loop: ${diag.navigations - before} navigations, paths: ${JSON.stringify(diag.navigationPaths)}`);
     }
     const finalUrl = new URL(page.url());
-    await page.screenshot({ path: join(out, `${stem}.png`), fullPage: true });
+    if (!whole) await page.screenshot({ path: join(out, `${stem}.png`), fullPage: true });
     const dom = await page.evaluate(domSummary, ROW_LIMIT);
     const accessibility = await accessibilitySnapshot(page);
+    if (whole) await wholePageScreenshot(page, viewport, join(out, `${stem}.png`));
     const record = {
       route: route.name,
       path,
@@ -388,7 +408,7 @@ async function main() {
       }
       try {
         for (const viewport of VIEWPORTS) {
-          entry.files.push(await captureOne(browser, base, route, entry.path, viewport, storage, out, entry.diagnostics));
+          entry.files.push(await captureOne(browser, base, route, entry.path, viewport, storage, out, entry.diagnostics, Boolean(args.fresh)));
         }
         entry.status = 'ok';
         console.log(`captured ${route.name}`);
