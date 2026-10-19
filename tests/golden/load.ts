@@ -2,14 +2,14 @@ import { z } from "zod";
 
 import { SOURCE_LICENCES } from "@/core/contracts/source-licence";
 
-import documentsRaw from "./data/documents.json";
-import adversarial from "./data/rows-adversarial.json";
-import ecotransit from "./data/rows-ecotransit.json";
-import euMaritime from "./data/rows-eu-maritime.json";
-import ghgProtocol from "./data/rows-ghg-protocol.json";
-import glec from "./data/rows-glec.json";
-import otherRegimes from "./data/rows-other-regimes.json";
-import recheck from "./data/rows-recheck.json";
+import documentsRaw from "./data/documents.json" with { type: "json" };
+import adversarial from "./data/rows-adversarial.json" with { type: "json" };
+import ecotransit from "./data/rows-ecotransit.json" with { type: "json" };
+import euMaritime from "./data/rows-eu-maritime.json" with { type: "json" };
+import ghgProtocol from "./data/rows-ghg-protocol.json" with { type: "json" };
+import glec from "./data/rows-glec.json" with { type: "json" };
+import otherRegimes from "./data/rows-other-regimes.json" with { type: "json" };
+import recheck from "./data/rows-recheck.json" with { type: "json" };
 
 const dec = z.string().regex(/^-?\d+(\.\d+)?$/);
 const BOUNDARY = z.enum(["WTW", "WTT", "TTW", "not_stated", "not_applicable"]);

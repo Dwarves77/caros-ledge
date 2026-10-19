@@ -2,14 +2,13 @@ import assert from "node:assert/strict";
 import { readFileSync, writeFileSync } from "node:fs";
 import { test } from "node:test";
 
-import { DOCUMENTS, ROWS, compareOutputs, licenceClass, parseLiteral, type GoldenRow } from "@/core/golden/load";
-
+import { DOCUMENTS, ROWS, compareOutputs, licenceClass, parseLiteral, type GoldenRow } from "./load.ts";
 import { getDoc, hasToken, type FetchedDoc } from "./_docs.ts";
 import { renderReadme } from "./_readme.ts";
 import { relationProblems } from "./_relations.ts";
 import { proseOverlap, redDocs, structureProblems } from "./_structure.ts";
 
-const README = new URL("../../src/core/golden/data/README.md", import.meta.url);
+const README = new URL("./data/README.md", import.meta.url);
 const byId = (id: string): GoldenRow => ROWS.find((r) => r.id === id) as GoldenRow;
 
 test("the corpus carries T1 to T20, five adversarial rows and two locale-collision rows", () => {
@@ -140,5 +139,5 @@ test("unresolved rows: the cited document is still unreadable, or the row is now
 test("the README is generated from the rows (drift guard)", () => {
   const want = renderReadme(ROWS);
   if (process.env.GOLDEN_WRITE_README === "1") writeFileSync(README, want);
-  assert.equal(readFileSync(README, "utf8").split("\r\n").join("\n"), want,"src/core/golden/data/README.md drifted from the rows; regenerate with GOLDEN_WRITE_README=1 npm test");
+  assert.equal(readFileSync(README, "utf8").split("\r\n").join("\n"), want,"tests/golden/data/README.md drifted from the rows; regenerate with GOLDEN_WRITE_README=1 npm test");
 });

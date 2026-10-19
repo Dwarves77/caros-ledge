@@ -1,11 +1,11 @@
 # path | reason (files with no "Ported from" header)
-src/core/golden/load.ts | new in R6a: the golden-corpus row schema, loader and series-break comparison, no old counterpart
-src/core/golden/data/documents.json | new in R6a: the cited documents with their register licence keys, no old counterpart
-src/core/golden/data/rows-ghg-protocol.json | new in R6a: GHG Protocol Scope 3 truth rows (T1 to T4), no old counterpart
-src/core/golden/data/rows-glec.json | new in R6a: GLEC v3.0 truth rows (T5 to T11), figures and locators only, no old counterpart
-src/core/golden/data/rows-ecotransit.json | new in R6a: EcoTransIT truth row (T12), no old counterpart
-src/core/golden/data/rows-eu-maritime.json | new in R6a: EU MRV, ETS and CBAM truth rows (T13 to T16), no old counterpart
-src/core/golden/data/rows-other-regimes.json | new in R6a: IMO CII, ICAO CORSIA, UK MGN 683 and CBP rows (T17 to T20), no old counterpart
-src/core/golden/data/rows-adversarial.json | new in R6a: adversarial, locale-collision and disagreement rows, no old counterpart
-src/core/golden/data/rows-recheck.json | new in R6a: unresolved GLEC v3.2 re-check rows, no old counterpart
-src/core/golden/data/README.md | new in R6a: generated counts, guarded by tests/golden/rows.test.ts, no old counterpart
+tests/golden/load.ts | new in R6a: the golden-corpus row schema, loader and series-break comparison, no old counterpart
+tests/golden/data/documents.json | new in R6a: the cited documents with their register licence keys, no old counterpart
+tests/golden/data/rows-ghg-protocol.json | new in R6a: GHG Protocol Scope 3 truth rows (T1 to T4), no old counterpart
+tests/golden/data/rows-glec.json | new in R6a: GLEC v3.0 truth rows (T5 to T11), figures and locators only, no old counterpart
+tests/golden/data/rows-ecotransit.json | new in R6a: EcoTransIT truth row (T12), no old counterpart
+tests/golden/data/rows-eu-maritime.json | new in R6a: EU MRV, ETS and CBAM truth rows (T13 to T16), no old counterpart
+tests/golden/data/rows-other-regimes.json | new in R6a: IMO CII, ICAO CORSIA, UK MGN 683 and CBP rows (T17 to T20), no old counterpart
+tests/golden/data/rows-adversarial.json | new in R6a: adversarial, locale-collision and disagreement rows, no old counterpart
+tests/golden/data/rows-recheck.json | new in R6a: unresolved GLEC v3.2 re-check rows, no old counterpart
+tests/golden/data/README.md | new in R6a: generated counts, guarded by tests/golden/rows.test.ts, no old counterpart

@@ -1,4 +1,4 @@
-import { DOCUMENTS, licenceClass, type GoldenRow } from "@/core/golden/load";
+import { DOCUMENTS, licenceClass, type GoldenRow } from "./load.ts";
 
 const RED_TOKEN = /^[\d.,\- %/*]+[A-Za-z/]{0,6}$/;
 const WORD = /[a-z0-9]+/g;

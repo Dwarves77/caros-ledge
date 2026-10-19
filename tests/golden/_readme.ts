@@ -1,4 +1,4 @@
-import { DOCUMENTS, licenceClass, type GoldenRow } from "@/core/golden/load";
+import { DOCUMENTS, licenceClass, type GoldenRow } from "./load.ts";
 
 const count = <T>(items: T[], key: (t: T) => string): Array<[string, number]> => {
   const m = new Map<string, number>();

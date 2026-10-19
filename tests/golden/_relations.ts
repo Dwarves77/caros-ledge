@@ -1,4 +1,4 @@
-import type { GoldenRow } from "@/core/golden/load";
+import type { GoldenRow } from "./load.ts";
 
 type Q = GoldenRow["inputs"][number];
 const decimals = (v: string): number => (v.includes(".") ? (v.split(".")[1] ?? "").length : 0);
