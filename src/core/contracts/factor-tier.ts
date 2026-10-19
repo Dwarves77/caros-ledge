@@ -1,6 +1,8 @@
 // Ported from old_repo/src/lib/contracts/factor-tier.mjs (lines 1-403)
 import { z } from "zod";
 
+import { numbersSumExactly } from "@/core/parse";
+
 import raw from "./data/factor-tiers.json";
 import { DERIVATION } from "./envelope";
 import { attributionsFor, mayEmbedAsSeed } from "./source-licence";
@@ -57,9 +59,9 @@ export function validateFactor(f: Partial<Factor> | null | undefined): string[] 
   const present = nums.filter((k) => f[k] !== undefined && f[k] !== null);
   for (const k of present) if (typeof f[k] !== "number" || !Number.isFinite(f[k]) || (f[k] as number) < 0) errors.push(`${k} must be a non-negative finite number`);
   if (present.length === 0) errors.push("at least one of wtt_co2e, ttw_co2e, wtw_co2e is required");
-  if (present.length === 3 && present.every((k) => typeof f[k] === "number")) {
-    const sum = (f.wtt_co2e as number) + (f.ttw_co2e as number);
-    if (Math.abs((f.wtw_co2e as number) - sum) > 1e-9 * Math.max(f.wtw_co2e as number, 1)) errors.push(`wtw_co2e ${f.wtw_co2e} does not equal wtt_co2e + ttw_co2e (${sum})`);
+  if (present.length === 3 && present.every((k) => typeof f[k] === "number" && Number.isFinite(f[k]))) {
+    const check = numbersSumExactly(f.wtt_co2e as number, f.ttw_co2e as number, f.wtw_co2e as number);
+    if (!check.ok) errors.push(`wtw_co2e ${f.wtw_co2e} does not equal wtt_co2e + ttw_co2e (${check.sum})`);
   }
   if (!data.quantity_basis.includes(String(f.quantity_basis))) errors.push(`quantity_basis must be one of ${data.quantity_basis.join(", ")}`);
   if (!data.gwp_basis.includes(String(f.gwp_basis))) errors.push(`gwp_basis must be one of ${data.gwp_basis.join(", ")}; "unstated" is allowed, guessing is not`);

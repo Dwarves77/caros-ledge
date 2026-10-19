@@ -1,0 +1,122 @@
+{
+  "window": {
+    "max": 70
+  },
+  "fields": {
+    "boundary": {
+      "WTW": [
+        "\\bWTW\\b",
+        "well[- ]to[- ]wheels?"
+      ],
+      "WTT": [
+        "\\bWTT\\b",
+        "well[- ]to[- ]tank"
+      ],
+      "TTW": [
+        "\\bTTW\\b",
+        "tank[- ]to[- ]wheels?",
+        "tank[- ]to[- ]wake"
+      ]
+    },
+    "gwpSet": {
+      "AR4": [
+        "\\bAR4\\b"
+      ],
+      "AR5": [
+        "\\bAR5\\b",
+        "fifth assessment report"
+      ],
+      "AR6": [
+        "\\bAR6\\b",
+        "sixth assessment report"
+      ]
+    },
+    "distanceBasis": {
+      "SFD": [
+        "\\bSFD\\b",
+        "shortest feasible distance"
+      ],
+      "GCD": [
+        "\\bGCD\\b",
+        "great[- ]circle"
+      ],
+      "actual": [
+        "actual distance"
+      ]
+    },
+    "massBasis": {
+      "actual": [
+        "actual (?:consignment )?(?:mass|weight)"
+      ],
+      "chargeable": [
+        "chargeable (?:mass|weight)"
+      ],
+      "dimensional": [
+        "dimensional (?:mass|weight)"
+      ]
+    },
+    "scope3Category": {
+      "4": [
+        "category 4\\b",
+        "\\bcat\\.? 4\\b"
+      ],
+      "9": [
+        "category 9\\b",
+        "\\bcat\\.? 9\\b"
+      ]
+    },
+    "method": {
+      "fuel": [
+        "fuel[- ]based"
+      ],
+      "distance": [
+        "distance[- ]based"
+      ],
+      "spend": [
+        "spend[- ]based"
+      ],
+      "supplier": [
+        "supplier[- ]specific"
+      ]
+    },
+    "hubKind": {
+      "TOC": [
+        "\\bTOC\\b",
+        "transport operation category"
+      ],
+      "HOC": [
+        "\\bHOC\\b",
+        "hub operation category"
+      ]
+    }
+  },
+  "screeningGrade": [
+    "spend"
+  ],
+  "frameworks": [
+    {
+      "id": "GLEC",
+      "pattern": "\\bGLEC(?: Framework)?,? (?:v|version )?(?<version>\\d+(?:\\.\\d+)*)"
+    },
+    {
+      "id": "ISO 14083",
+      "pattern": "\\bISO 14083(?::(?<version>\\d{4}))?"
+    },
+    {
+      "id": "GHG Protocol",
+      "pattern": "\\bGHG Protocol\\b(?:[^.]{0,40}?(?:v|version )(?<version>\\d+(?:\\.\\d+)*))?"
+    }
+  ],
+  "phaseIn": {
+    "pattern": "(?<share>\\d{1,3}(?:[.,]\\d+)?)\\s?%\\s+of\\s+(?:the\\s+)?(?<emissions>(?:19|20)\\d{2})(?:\\s+(?:verified\\s+)?emissions?)?[^.;%]{0,60}?(?:surrender(?:ed)?|in|by)\\s+(?:in\\s+)?(?<surrender>(?:19|20)\\d{2})\\b",
+    "bare": "(?<share>\\d{1,3}(?:[.,]\\d+)?)\\s?%\\s+(?:from|in|by|as of)\\s+(?<year>(?:19|20)\\d{2})\\b"
+  },
+  "qualifiedDims": [
+    "mass",
+    "distance",
+    "energy",
+    "volume",
+    "activity_tkm",
+    "activity_teu_km"
+  ]
+}

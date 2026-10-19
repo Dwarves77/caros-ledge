@@ -1,0 +1,601 @@
+{
+  "units": [
+    {
+      "id": "t",
+      "dim": "mass",
+      "factor": "1",
+      "label": "t",
+      "symbols": [
+        "t"
+      ],
+      "words": [
+        "tonne",
+        "tonnes",
+        "metric ton",
+        "metric tons",
+        "metric tonne",
+        "metric tonnes"
+      ]
+    },
+    {
+      "id": "kg",
+      "dim": "mass",
+      "factor": "0.001",
+      "label": "kg",
+      "symbols": [
+        "kg"
+      ],
+      "words": [
+        "kilogram",
+        "kilograms",
+        "kilogramme",
+        "kilogrammes"
+      ]
+    },
+    {
+      "id": "g",
+      "dim": "mass",
+      "factor": "0.000001",
+      "label": "g",
+      "symbols": [
+        "g"
+      ],
+      "words": [
+        "gram",
+        "grams"
+      ]
+    },
+    {
+      "id": "kt",
+      "dim": "mass",
+      "factor": "1000",
+      "label": "kt",
+      "symbols": [
+        "kt"
+      ],
+      "words": [
+        "kilotonne",
+        "kilotonnes"
+      ]
+    },
+    {
+      "id": "Mt",
+      "dim": "mass",
+      "factor": "1000000",
+      "label": "Mt",
+      "symbols": [
+        "Mt"
+      ],
+      "words": [
+        "megatonne",
+        "megatonnes"
+      ]
+    },
+    {
+      "id": "lb",
+      "dim": "mass",
+      "factor": "0.000453592",
+      "label": "lb",
+      "symbols": [
+        "lb",
+        "lbs"
+      ],
+      "words": [
+        "pound",
+        "pounds"
+      ]
+    },
+    {
+      "id": "short_ton",
+      "dim": "mass",
+      "factor": "0.90718474",
+      "label": "short ton",
+      "symbols": [],
+      "words": [
+        "short ton",
+        "short tons"
+      ]
+    },
+    {
+      "id": "long_ton",
+      "dim": "mass",
+      "factor": "1.016047",
+      "label": "long ton",
+      "symbols": [],
+      "words": [
+        "long ton",
+        "long tons"
+      ]
+    },
+    {
+      "id": "km",
+      "dim": "distance",
+      "factor": "1",
+      "label": "km",
+      "symbols": [
+        "km"
+      ],
+      "words": [
+        "kilometre",
+        "kilometres",
+        "kilometer",
+        "kilometers"
+      ]
+    },
+    {
+      "id": "m",
+      "dim": "distance",
+      "factor": "0.001",
+      "label": "m",
+      "symbols": [
+        "m"
+      ],
+      "words": [
+        "metre",
+        "metres",
+        "meter",
+        "meters"
+      ]
+    },
+    {
+      "id": "mile",
+      "dim": "distance",
+      "factor": "1.609344",
+      "label": "mile",
+      "symbols": [
+        "mi"
+      ],
+      "words": [
+        "mile",
+        "miles"
+      ]
+    },
+    {
+      "id": "nmi",
+      "dim": "distance",
+      "factor": "1.852",
+      "label": "nmi",
+      "symbols": [
+        "nmi"
+      ],
+      "words": [
+        "nautical mile",
+        "nautical miles"
+      ]
+    },
+    {
+      "id": "ft",
+      "dim": "distance",
+      "factor": "0.0003048",
+      "label": "ft",
+      "symbols": [
+        "ft"
+      ],
+      "words": [
+        "foot",
+        "feet"
+      ]
+    },
+    {
+      "id": "yd",
+      "dim": "distance",
+      "factor": "0.0009144",
+      "label": "yd",
+      "symbols": [
+        "yd"
+      ],
+      "words": [
+        "yard",
+        "yards"
+      ]
+    },
+    {
+      "id": "l",
+      "dim": "volume",
+      "factor": "1",
+      "label": "l",
+      "symbols": [
+        "l",
+        "L"
+      ],
+      "words": [
+        "litre",
+        "litres",
+        "liter",
+        "liters"
+      ]
+    },
+    {
+      "id": "gal_us",
+      "dim": "volume",
+      "factor": "3.785411784",
+      "label": "US gal",
+      "symbols": [
+        "US gal"
+      ],
+      "words": [
+        "US gallon",
+        "US gallons"
+      ]
+    },
+    {
+      "id": "MJ",
+      "dim": "energy",
+      "factor": "1",
+      "label": "MJ",
+      "symbols": [
+        "MJ"
+      ],
+      "words": [
+        "megajoule",
+        "megajoules"
+      ]
+    },
+    {
+      "id": "GJ",
+      "dim": "energy",
+      "factor": "1000",
+      "label": "GJ",
+      "symbols": [
+        "GJ"
+      ],
+      "words": []
+    },
+    {
+      "id": "kWh",
+      "dim": "energy",
+      "factor": "3.6",
+      "label": "kWh",
+      "symbols": [
+        "kWh"
+      ],
+      "words": []
+    },
+    {
+      "id": "MWh",
+      "dim": "energy",
+      "factor": "3600",
+      "label": "MWh",
+      "symbols": [
+        "MWh"
+      ],
+      "words": []
+    },
+    {
+      "id": "GWh",
+      "dim": "energy",
+      "factor": "3600000",
+      "label": "GWh",
+      "symbols": [
+        "GWh"
+      ],
+      "words": []
+    },
+    {
+      "id": "kW",
+      "dim": "power",
+      "factor": "1",
+      "label": "kW",
+      "symbols": [
+        "kW"
+      ],
+      "words": []
+    },
+    {
+      "id": "MW",
+      "dim": "power",
+      "factor": "1000",
+      "label": "MW",
+      "symbols": [
+        "MW"
+      ],
+      "words": []
+    },
+    {
+      "id": "GW",
+      "dim": "power",
+      "factor": "1000000",
+      "label": "GW",
+      "symbols": [
+        "GW"
+      ],
+      "words": []
+    },
+    {
+      "id": "tkm",
+      "dim": "activity_tkm",
+      "factor": "1",
+      "label": "tkm",
+      "symbols": [
+        "tkm",
+        "t-km",
+        "t·km"
+      ],
+      "words": [
+        "tonne-km",
+        "tonne-kilometre",
+        "tonne-kilometres",
+        "tonne kilometre",
+        "tonne kilometres"
+      ]
+    },
+    {
+      "id": "short_ton_mile",
+      "dim": "activity_tkm",
+      "factor": "1.46",
+      "label": "short ton-mile",
+      "symbols": [],
+      "words": [
+        "short ton-mile",
+        "short ton-miles",
+        "short ton mile",
+        "short ton miles"
+      ]
+    },
+    {
+      "id": "teu_km",
+      "dim": "activity_teu_km",
+      "factor": "1",
+      "label": "TEU-km",
+      "symbols": [
+        "TEU-km",
+        "TEUkm",
+        "TEU·km"
+      ],
+      "words": []
+    },
+    {
+      "id": "teu",
+      "dim": "count_teu",
+      "factor": "1",
+      "label": "TEU",
+      "symbols": [
+        "TEU",
+        "TEUs"
+      ],
+      "words": []
+    },
+    {
+      "id": "eur",
+      "dim": "money_eur",
+      "factor": "1",
+      "label": "EUR",
+      "symbols": [
+        "€",
+        "EUR"
+      ],
+      "words": [
+        "euro",
+        "euros"
+      ],
+      "money": true,
+      "display": "prefix",
+      "trajectory": true
+    },
+    {
+      "id": "usd",
+      "dim": "money_usd",
+      "factor": "1",
+      "label": "USD",
+      "symbols": [
+        "$",
+        "US$",
+        "USD"
+      ],
+      "words": [
+        "us dollar",
+        "us dollars"
+      ],
+      "money": true,
+      "display": "prefix",
+      "trajectory": true
+    },
+    {
+      "id": "gbp",
+      "dim": "money_gbp",
+      "factor": "1",
+      "label": "GBP",
+      "symbols": [
+        "£",
+        "GBP"
+      ],
+      "words": [
+        "pound sterling"
+      ],
+      "money": true,
+      "display": "prefix",
+      "trajectory": true
+    },
+    {
+      "id": "pct",
+      "dim": "percent",
+      "factor": "1",
+      "label": "%",
+      "symbols": [
+        "%"
+      ],
+      "words": [
+        "per cent",
+        "percent",
+        "per-cent"
+      ],
+      "display": "tight",
+      "trajectory": true
+    },
+    {
+      "id": "ppm",
+      "dim": "ppm",
+      "factor": "1",
+      "label": "ppm",
+      "symbols": [
+        "ppm"
+      ],
+      "words": []
+    },
+    {
+      "id": "bps",
+      "dim": "bps",
+      "factor": "1",
+      "label": "bps",
+      "symbols": [
+        "bps"
+      ],
+      "words": [
+        "basis points"
+      ]
+    },
+    {
+      "id": "gt",
+      "dim": "gross_tonnage",
+      "factor": "1",
+      "label": "GT",
+      "symbols": [
+        "GT"
+      ],
+      "words": [
+        "gross tonnage"
+      ]
+    },
+    {
+      "id": "ratio",
+      "dim": "ratio",
+      "factor": "1",
+      "label": "",
+      "symbols": [],
+      "words": [],
+      "display": "tight"
+    }
+  ],
+  "gases": [
+    {
+      "id": "CO2e",
+      "aliases": [
+        "CO2e",
+        "CO₂e",
+        "CO2eq",
+        "CO2-eq"
+      ]
+    },
+    {
+      "id": "CO2",
+      "aliases": [
+        "CO2",
+        "CO₂"
+      ]
+    }
+  ],
+  "scales": [
+    {
+      "word": "thousand",
+      "exp": 3
+    },
+    {
+      "word": "million",
+      "exp": 6
+    },
+    {
+      "word": "mn",
+      "exp": 6
+    },
+    {
+      "word": "billion",
+      "exp": 9
+    },
+    {
+      "word": "bn",
+      "exp": 9
+    },
+    {
+      "word": "trillion",
+      "exp": 12
+    }
+  ],
+  "intensity": {
+    "numeratorDims": [
+      "mass"
+    ],
+    "denominatorDims": [
+      "volume",
+      "mass",
+      "energy",
+      "activity_tkm",
+      "activity_teu_km",
+      "count_teu",
+      "distance",
+      "money_eur",
+      "money_usd",
+      "money_gbp"
+    ],
+    "perWords": [
+      "per"
+    ],
+    "functionalUnitStop": [
+      "per",
+      "of",
+      "and",
+      "in",
+      "is",
+      "are",
+      "was",
+      "for",
+      "to",
+      "at",
+      "on",
+      "by",
+      "with",
+      "from",
+      "the",
+      "a",
+      "an",
+      "as",
+      "or",
+      "than",
+      "when",
+      "which",
+      "that",
+      "this",
+      "these",
+      "those",
+      "it"
+    ]
+  },
+  "bridges": [
+    {
+      "id": "teu_mass_average",
+      "from": "activity_tkm",
+      "to": "activity_teu_km",
+      "tonnesPerUnit": "10",
+      "source": "GLEC Framework v3.0 unit-conversion annex: 1 TEU = 10 t average (GHG Protocol Table 4.2 agrees)"
+    },
+    {
+      "id": "teu_mass_light",
+      "from": "activity_tkm",
+      "to": "activity_teu_km",
+      "tonnesPerUnit": "6",
+      "source": "GLEC Framework v3.0 unit-conversion annex: 6 t light TEU (EcoTransIT 6.0)"
+    },
+    {
+      "id": "teu_mass_heavy",
+      "from": "activity_tkm",
+      "to": "activity_teu_km",
+      "tonnesPerUnit": "14.5",
+      "source": "GLEC Framework v3.0 unit-conversion annex: 14.5 t heavy TEU (EcoTransIT 14.5)"
+    }
+  ],
+  "activities": [
+    {
+      "dims": [
+        "mass",
+        "distance"
+      ],
+      "activity": "activity_tkm"
+    },
+    {
+      "dims": [
+        "count_teu",
+        "distance"
+      ],
+      "activity": "activity_teu_km"
+    }
+  ]
+}
