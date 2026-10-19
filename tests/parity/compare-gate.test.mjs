@@ -2,7 +2,7 @@
 // throwaway world (tests/parity/world.mjs) and, for the exit code, the script itself. Nothing here needs a browser: images are read in Node (png.mjs).
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import test from 'node:test';
 
@@ -203,6 +203,16 @@ test('a corrupt capture record is a failure the report names, not a crash', asyn
   const r = await run(w);
   assert.equal(r.failed, true);
   assert.match(text(r), /capture record unreadable/);
+});
+
+test('a baseline record that the baseline index lists and the directory lacks, or cannot parse, is a failure the report names, not a crash', async () => {
+  const w = world({ routes: [{ name: 'home' }] });
+  rmSync(join(w.baseline, 'home.1280x900.json'));
+  writeFileSync(join(w.baseline, 'home.375x812.json'), '{ not json');
+  const r = await run(w);
+  assert.equal(r.failed, true);
+  assert.match(text(r), /1280x900: baseline record missing although the baseline index lists home.1280x900/);
+  assert.match(text(r), /375x812: baseline record unreadable/);
 });
 
 test('the committed configuration is sound: every route in routes.json is gated or exempt with a reason', () => {

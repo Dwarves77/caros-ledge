@@ -297,7 +297,12 @@ export async function compareRun({ captured, baseline = 'tests/parity/baseline',
         routeFail = true;
       }
       if (!isGated || stale) continue;
-      const b = await readJson(`${baseline}/${stem}.json`);
+      const b = await readOpt(`${baseline}/${stem}.json`).catch((e) => ({ unreadable: e.message }));
+      if (!b || b.unreadable) {
+        report.push(`${viewport}: baseline record ${b ? `unreadable (${b.unreadable})` : 'missing'} although the baseline index lists ${stem}`);
+        routeFail = true;
+        continue;
+      }
       relative = true;
       const { scoped, notes } = frame.has(route.name) ? scopeFrame(b, config, viewport) : { scoped: b, notes: [] };
       for (const n of notes) report.push(`${viewport}: ${n}`);
