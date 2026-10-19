@@ -5,7 +5,13 @@
 // the failed-remainder note with Retry, and an anonymous /privacy that issues no notifications, bootstrap or admin request.
 //
 // Usage: node tests/ux/ux-smoke.mjs --base <origin>     (the server must run with UI_FIXTURES=1)
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
 import { chromium } from 'playwright';
+
+import { wholePageScreenshot } from '../parity/capture.mjs';
 
 import { measure } from './measure.mjs';
 
@@ -163,6 +169,25 @@ try {
   if (bad.length) fail('privacy', `an anonymous page issued ${bad.join(', ')}`);
   if ((await page.locator('main').count()) !== 1) fail('privacy', 'the page does not have exactly one main landmark');
   if (!(await page.locator('[data-part=nav-card]').count())) fail('privacy', 'the shell nav card is missing on /privacy');
+  // P2-15e: the screens job photographs the shell, which scrolls inside <main>; the whole-page helper must grow the viewport to the scroll box so the PNG is the whole page, not one viewport.
+  {
+    const viewport = { width: 375, height: 812 };
+    const shot = await browser.newContext({ viewport });
+    const dir = mkdtempSync(join(tmpdir(), 'whole-'));
+    try {
+      const tall = await shot.newPage();
+      await tall.goto(`${base}/privacy`, { waitUntil: 'networkidle' });
+      const content = await tall.evaluate(() => document.querySelector('main').scrollHeight);
+      await wholePageScreenshot(tall, viewport, join(dir, 'p.png'));
+      const png = readFileSync(join(dir, 'p.png'));
+      const height = png.readUInt32BE(20);
+      if (content > viewport.height && height < content) fail('whole-page screenshot', `the PNG is ${height} px tall for ${content} px of page`);
+      if (content <= viewport.height) fail('whole-page screenshot', `/privacy at 375 does not scroll inside main (${content} px): the check proves nothing`);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+      await shot.close();
+    }
+  }
   await ctx.close();
 } finally {
   await browser.close();

@@ -16,6 +16,13 @@ export function measure(opts = { rows: true }) {
     }
   }
 
+  // A page frame is a grid whose second track is the rail: a frame with no rail child must not reserve that track (P2-15e: Community lost 328 px of width at 1280 to an empty rail column).
+  for (const frame of document.querySelectorAll('[data-guard-frame]')) {
+    if (!frame.getClientRects().length) continue;
+    const tracks = getComputedStyle(frame).gridTemplateColumns.split(' ').filter(Boolean).length;
+    if (tracks > frame.children.length) out.push(`page frame reserves ${tracks - frame.children.length} empty column track(s): ${tracks} tracks for ${frame.children.length} child(ren) at ${vw}px`);
+  }
+
   // Titles: never narrower than the longest word.
   const canvas = document.createElement('canvas').getContext('2d');
   for (const el of document.querySelectorAll('[data-guard-title]')) {

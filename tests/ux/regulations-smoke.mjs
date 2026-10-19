@@ -104,6 +104,36 @@ try {
     }),
   );
 
+  // P2-15e: the connections strip in the masthead card. A record title can run to hundreds of words, so the strip clamps every title to two lines (the old page did); the strip is padded like the card's other blocks, never
+  // full-bleed; and no empty band separates it from the block above. Measured at 375 and 1280, on a fixture whose first title is 600 characters.
+  for (const viewport of [[375, 812], [1280, 800]]) {
+    await check(`detail at ${viewport[0]}: the connections strip clamps titles to two lines, is padded, and sits close under the block above`, async () => {
+      const s = await open(browser, 'detail', viewport);
+      try {
+        const m = await s.page.evaluate(() => {
+          const strip = document.querySelector('[data-part="item-connections"]');
+          if (!strip) return null;
+          const card = strip.closest('header') ?? strip.parentElement;
+          const cardLeft = card.getBoundingClientRect().left;
+          const titles = [...strip.querySelectorAll('.cl-detail-link-title')].filter((el) => el.getClientRects().length);
+          const lines = titles.map((el) => Math.round(el.getBoundingClientRect().height / parseFloat(getComputedStyle(el).lineHeight)));
+          const link = strip.querySelector('.cl-detail-link');
+          const label = strip.querySelector('.cl-detail-label').getBoundingClientRect();
+          const above = strip.parentElement.previousElementSibling;
+          return { count: titles.length, lines, inset: link.getBoundingClientRect().left - cardLeft, band: above ? label.top - above.getBoundingClientRect().bottom : 0, full: titles[0].textContent.length };
+        });
+        must(m, 'the connections strip was not drawn');
+        must(m.count >= 4, `expected four connection titles drawn, found ${m.count}`);
+        must(m.full >= 600, `the 600-character title was not drawn whole in the DOM (${m.full})`);
+        must(m.lines.every((n) => n <= 2), `a connection title runs to more than two lines: ${JSON.stringify(m.lines)}`);
+        must(m.inset >= 16, `the connections strip is full-bleed: first link ${Math.round(m.inset)} px from the card edge`);
+        must(m.band <= 48, `an empty band of ${Math.round(m.band)} px separates the connections strip from the block above`);
+      } finally {
+        await s.ctx.close();
+      }
+    });
+  }
+
   await check('detail: a failed relevance read is said, with Retry, never an empty banner', () =>
     session('detail', async ({ page, state }) => {
       await page.getByRole('button', { name: 'Try again' }).first().waitFor({ timeout: 4000 });

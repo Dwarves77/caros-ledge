@@ -32,9 +32,9 @@ export function ItemConnections({ rows }: { rows: ConnectionRow[] }) {
   return (
     <div data-part="item-connections">
       <p className="cl-detail-label">Connections</p>
-      {linked.slice(0, SHOWN).map(item)}
+      <div className="cl-conn-grid">{linked.slice(0, SHOWN).map(item)}</div>
       <MoreBelowDisclosure count={linked.length - SHOWN} itemNoun="more connections">
-        {linked.slice(SHOWN).map(item)}
+        <div className="cl-conn-grid">{linked.slice(SHOWN).map(item)}</div>
       </MoreBelowDisclosure>
     </div>
   );

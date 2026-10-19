@@ -43,6 +43,11 @@ const SECTION_KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "
 const S3 = "**ACTION REQUIRED** Register with the competent authority.\n\nOperators shall submit a verified annual emissions report to the competent authority before 31 March of each year. Source: EUR-Lex, Regulation 2023/9999, 2026 https://eur-lex.europa.eu/doc";
 const sections = SECTION_KEYS.map((k, i) => ({ id: `cccccccc-0000-4000-8000-${String(i + 1).padStart(12, "0")}`, section_key: k, section_order: i + 1, content_md: k === "3" ? S3 : `Section ${k}. Operators shall submit a verified annual emissions report to the competent authority before 31 March of each year.`, is_conditional: false, item_id: "x" }));
 const BRIEF = ["## 15. Sources", "| Source Name | Tier | URL |", "|---|---|---|", "| EUR-Lex | Tier 1 | https://eur-lex.europa.eu/doc |"].join("\n");
+// Five linked items, the first with a 600-character title (a real record title can run to hundreds of words): the strip clamps it to two lines, and the fifth sits behind the closed disclosure.
+const LONG_TITLE = Array.from({ length: 75 }, (_, i) => `provision${i + 1}`).join(" ");
+const CONNECTIONS = [LONG_TITLE, "Euro 7 Standard", "California Advanced Clean Fleets Rule", "Sustainable Trucking", "A fifth linked item"].map((title, i) => ({
+  id: `dddddddd-0000-4000-8000-${String(i + 1).padStart(12, "0")}`, title, priority: null, label: "References", surface: "regulations", href: `/regulations/fx-connection-${i + 1}`, origin: "manual", discovered: false, basisSummary: [], score: null,
+}));
 const DETAIL: ComponentProps<typeof DetailView> = {
   resource: resource(1, { fullBrief: BRIEF, compliance_deadline: "2027-01-01", sourceUrl: "https://eur-lex.europa.eu/doc" } as Partial<Resource>),
   changelog: [{ date: "2026-05-01", type: "UPDATED", field: "x", impact: "Reporting now covers rail operators." } as never],
@@ -51,7 +56,7 @@ const DETAIL: ComponentProps<typeof DetailView> = {
   claimTiers: {},
   recommendedActions: [],
   crossPage: { intersections: null, theme: null, inferences: null, degraded: [] },
-  connectionRows: [],
+  connectionRows: CONNECTIONS,
   events: [{ event_date: "2027-01-01", event_kind: "entry_into_force" }],
   eventsFailed: false,
   kindLabels: KIND_LABELS,
