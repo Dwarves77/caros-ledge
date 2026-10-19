@@ -7,7 +7,7 @@
 import { createHash } from "node:crypto";
 
 import { MONTHS_FULL_RE } from "@/core/brief/vocab";
-import { containsNumeral, figuresEqual, findFigures, isFigure, isTrajectoryUnit, resolveLocale, stateFigure, type Figure, type LocaleVerdict } from "@/core/parse";
+import { containsNumeral, figuresEqual, findFigures, isFigure, isRefusal, isTrajectoryUnit, parseFigure, resolveLocale, stateFigure, type Figure, type LocaleVerdict } from "@/core/parse";
 
 export const GATE_A_VERSION = "2026-10-20.1";
 export const md5 = (s: unknown): string => createHash("md5").update(String(s ?? ""), "utf8").digest("hex");
@@ -22,9 +22,9 @@ export function containsToken(haystack: unknown, token: unknown, opts: ScanOptio
   const t = String(token ?? "").trim();
   const h = String(haystack ?? "");
   if (!t) return false;
-  const first = findFigures(t, opts)[0];
-  if (first && first.start === 0 && first.end === t.length) return isFigure(first.result) && stateFigure(h, first.result, opts);
-  return containsNumeral(h, t);
+  const p = parseFigure(t, opts);
+  if (isFigure(p) && p.literal === t) return stateFigure(h, p, opts);
+  return isRefusal(p) && p.unreadable ? false : containsNumeral(h, t);
 }
 
 export interface SkipCounts { metadata_stamp: number; boilerplate: number; heading_or_list_ordinal: number; instrument_citation: number; citation_url: number; nested_token: number }

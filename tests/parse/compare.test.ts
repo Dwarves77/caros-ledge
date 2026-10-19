@@ -3,8 +3,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { compareFigures, containsNumeral, figureOf, figuresEqual, isFigure, parseFigure, reconcile, stateFigure, type Figure } from "@/core/parse";
-import { cmpDec, divDec, parseDec, roundSig, sigDigitsOf, decToString } from "@/core/parse/decimal";
+import { containsNumeral, figuresEqual, isFigure, numbersSumExactly, parseFigure, stateFigure, type Figure } from "@/core/parse";
+import { cmpDec, parseDec, sigDigitsOf } from "@/core/parse/decimal";
 import { interpretNumber, scanNumbers } from "@/core/parse/locale";
 
 const fig = (text: string, locale = "en"): Figure => {
@@ -35,17 +35,17 @@ test("the same quantity written another way is equal (value, unit and scale, not
   assert.equal(figuresEqual(fig("0,890 t", "fr"), fig("0.89 t", "en")), true, "locale is per document: 0,890 in one and 0.89 in another is one value");
 });
 
-test("kinds, qualifiers and units that differ make two figures incomparable, not equal", () => {
-  assert.equal(compareFigures(fig("49.9 g CO2e/tkm"), fig("49.9 g CO2e/TEU-km")).relation, "incomparable");
-  assert.equal(compareFigures(fig("1 kg CO2e/l"), fig("1 kg CO2e/kg")).relation, "incomparable");
-  assert.equal(compareFigures(fig("1 kg CO2/tkm"), fig("1 kg CO2e/tkm")).relation, "incomparable", "CO2 is not CO2e");
-  assert.equal(compareFigures(fig("1.5 kg CO2e/tkm (WTW)"), fig("1.5 kg CO2e/tkm (TTW)")).relation, "incomparable", "a TTW value is not a WTW value");
-  const gwp = compareFigures(fig("100 t CO2e (AR5)"), fig("100 t CO2e (AR6)"));
-  assert.ok(gwp.relation === "incomparable" && /series break/.test(gwp.reason));
-  assert.equal(compareFigures(fig("1 t CO2/t clinker"), fig("1 t CO2/t cement")).relation, "incomparable", "functional units differ");
-  assert.equal(compareFigures(fig("5 t"), fig("5 km")).relation, "incomparable");
-  assert.equal(compareFigures(fig("€5"), fig("$5")).relation, "incomparable", "currencies do not convert");
-  assert.equal(compareFigures(fig("1.5 kg CO2e/tkm"), fig("1.5 kg CO2e/tkm (WTW)")).relation, "equal", "a label stated on one side only does not split a value");
+test("kinds, qualifiers and units that differ make two figures unequal, not equal", () => {
+  const unequal = (x: string, y: string, why: string) => assert.equal(same(x, y), false, why);
+  unequal("49.9 g CO2e/tkm", "49.9 g CO2e/TEU-km", "tkm is not TEU-km");
+  unequal("1 kg CO2e/l", "1 kg CO2e/kg", "per litre is not per kilogram");
+  unequal("1 kg CO2/tkm", "1 kg CO2e/tkm", "CO2 is not CO2e");
+  unequal("1.5 kg CO2e/tkm (WTW)", "1.5 kg CO2e/tkm (TTW)", "a TTW value is not a WTW value");
+  unequal("100 t CO2e (AR5)", "100 t CO2e (AR6)", "different GWP sets are a series break");
+  unequal("1 t CO2/t clinker", "1 t CO2/t cement", "functional units differ");
+  unequal("5 t", "5 km", "mass is not distance");
+  unequal("€5", "$5", "currencies do not convert");
+  assert.equal(same("1.5 kg CO2e/tkm", "1.5 kg CO2e/tkm (WTW)"), true, "a label stated on one side only does not split a value");
 });
 
 test("stateFigure reads the haystack in its own locale: 9,000 in a UK text is 9000, in a decimal-comma capture 9.000", () => {
@@ -65,31 +65,14 @@ test("containsNumeral: a date or year is found at a numeral boundary on both sid
   assert.equal(containsNumeral("", "2025"), false);
 });
 
-test("P4: two primary captures giving two values for one figure DISAGREE: both kept with document and date, neither picked (T18)", () => {
-  const sgfA = figureOf("0.15948315", "ratio") as Figure;
-  const sgfB = figureOf("0.15405257", "ratio") as Figure;
-  const obs = [
-    { subject: "corsia:sgf:2024", figure: sgfA, document: "ICAO newsletter Oct 2025", date: "2025-10-01" },
-    { subject: "corsia:sgf:2024", figure: sgfB, document: "ICAO Aviation Climate Week 2026 slide 9", date: "2026-03-01" },
-  ];
-  for (const order of [obs, [...obs].reverse()]) {
-    const [r] = reconcile(order);
-    assert.equal(r?.state, "disagree");
-    assert.equal(r?.observations.length, 2, "both observations kept");
-    assert.deepEqual(r?.observations.map((o) => o.document).sort(), ["ICAO Aviation Climate Week 2026 slide 9", "ICAO newsletter Oct 2025"]);
-    assert.ok(!(r && "figure" in r), "there is no chosen figure on a disagreement: the later one is not picked");
-  }
-  const agree = reconcile([{ ...obs[0]!, subject: "x" }, { ...obs[0]!, subject: "x", document: "second capture", date: "2026-01-01" }]);
-  assert.equal(agree[0]?.state, "agree");
-  const other = reconcile([{ subject: "k", figure: fig("49.9 g CO2e/tkm"), document: "a", date: "2025-01-01" }, { subject: "k", figure: fig("49.9 g CO2e/TEU-km"), document: "b", date: "2025-01-02" }]);
-  assert.equal(other[0]?.state, "incomparable");
+test("WTT + TTW = WTW is checked exactly on the stored decimals, with no float epsilon (U4)", () => {
+  assert.deepEqual(numbersSumExactly(0.328, 1.244, 1.572), { ok: true, sum: "1.572" });
+  assert.deepEqual(numbersSumExactly(0.1, 0.2, 0.3), { ok: true, sum: "0.3" });
+  assert.equal(numbersSumExactly(0.328, 1.244, 1.58).ok, false);
 });
 
 test("the decimal and locale internals: exact arithmetic, whole digit runs, no float", () => {
   assert.equal(cmpDec(parseDec("0.1") as never, parseDec("0.10") as never), 0);
-  assert.equal(decToString(divDec(parseDec("1") as never, parseDec("3") as never, 5) as never), "0.33333");
-  assert.equal(decToString(roundSig(parseDec("0.00448") as never, 2) as never), "0.0045");
-  assert.equal(decToString(roundSig(parseDec("15432") as never, 2) as never), "15000");
   assert.equal(sigDigitsOf("0,890"), 3);
   assert.equal(sigDigitsOf("15 000"), 5);
   assert.deepEqual(scanNumbers("€50 of 2019/883 and 15 000 tonnes in 2024 100 tonnes").map((t) => t.literal), ["50", "2019", "883", "15 000", "2024", "100"], "a digit run is taken whole; a 4-digit year does not absorb the next group");

@@ -86,10 +86,3 @@ export function resolveLocale(text: string, declared?: string | null): LocaleVer
   return { locale: best[0], basis: "detected" };
 }
 
-/** Print a decimal string in a locale: digit groups of three with that locale's group separator, its decimal mark. */
-export function formatNumber(value: string, localeId: string): string {
-  const [int = "", frac = ""] = value.split(".");
-  const group = LOCALE_FILE.displayGroupSeparator[localeId] ?? "";
-  const grouped = int.replace(/\B(?=(\d{3})+(?!\d))/g, group);
-  return frac ? `${grouped}${LOCALES[localeId]?.decimal ?? "."}${frac}` : grouped;
-}

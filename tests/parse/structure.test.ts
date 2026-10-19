@@ -28,7 +28,7 @@ function forbidden(): Forbidden[] {
   }
   for (const g of UNIT_FILE.gases) for (const a of g.aliases) add(`gas ${a}`, a, false);
   for (const s of UNIT_FILE.scales) add(`scale word ${s.word}`, s.word, false);
-  for (const c of [...LOCALE_FILE.groupSpaces, ...Object.values(LOCALE_FILE.displayGroupSeparator), ...LOCALE_FILE.minusSigns]) if (NON_ASCII.test(c)) out.push({ label: `locale glyph U+${c.codePointAt(0)?.toString(16)}`, test: (l) => l.includes(c) });
+  for (const c of [...LOCALE_FILE.groupSpaces, ...LOCALE_FILE.minusSigns]) if (NON_ASCII.test(c)) out.push({ label: `locale glyph U+${c.codePointAt(0)?.toString(16)}`, test: (l) => l.includes(c) });
   return out;
 }
 

@@ -33,11 +33,6 @@
   ],
   "majorityShare": 0.75,
   "documentDefault": "en",
-  "displayGroupSeparator": {
-    "en": ",",
-    "fr": " ",
-    "de": "."
-  },
   "minusSigns": [
     "-",
     "−"

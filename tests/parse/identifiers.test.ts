@@ -1,10 +1,10 @@
-// INV-R2a-3: every identifier pair of register row I3 resolves to DISTINCT keys; equality on the normalised identifier decides every edge, a host is matched
-// by registrable domain, a URL keeps its path case, a title is sliced on the original string. Substring matches go to a surface flag, never to an edge.
+// INV-R2a-3: every identifier pair of register row I3 resolves to DISTINCT keys; equality on the normalised identifier decides every edge, a URL keeps its path case, a title is sliced on the original string.
+// Substring matches go to a surface flag, never to an edge.
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { classifyBucket, detectMentions, matchExistingSubject, planLinkWrites, planLinks, resolveMention, canonicalSubjectUrl } from "@/core/entities/mentions";
-import { canonicalizeUrl, findIdentifiers, findYearRanges, hostMatches, indexOfInsensitive, mentionsIdentifier, ownIdentifiers, registrableDomain, sameIdentifier } from "@/core/parse";
+import { canonicalizeUrl, findIdentifiers, indexOfInsensitive, mentionsIdentifier, ownIdentifiers, sameIdentifier } from "@/core/parse";
 import { detectConflate, extractIdentifiers } from "@/core/grounding/gates";
 
 const keys = (t: string) => findIdentifiers(t).map((f) => f.key);
@@ -46,8 +46,6 @@ test("I3: an item is named by its own identifier, else the one its title opens w
 
 test("I3: fiscal years are typed date ranges, never regulation tokens", () => {
   assert.deepEqual(keys("Spring Budget 2023/24 and Annual Report 2024/25"), []);
-  assert.deepEqual(findYearRanges("Spring Budget 2023/24 and Annual Report 2024/25").map((r) => [r.from, r.to]), [[2023, 2024], [2024, 2025]]);
-  assert.deepEqual(findYearRanges("FY 2023-24 and 1999/00").map((r) => [r.from, r.to]), [[2023, 2024], [1999, 2000]]);
   assert.deepEqual(keys("Regulation (EU) 2023/24 sets"), ["instrument:2023/24"], "with the instrument context beside it, it is a regulation number");
   assert.deepEqual(keys("2019/88"), ["instrument:2019/88"], "2019/88 is no fiscal range (88 is not 2020)");
   assert.deepEqual(detectMentions("Budget 2023/24 cites Regulation (EU) 2019/883.").map((m) => m.canonical), ["2019/883"]);
@@ -67,18 +65,6 @@ test("I3: S-CONFLATE compares identifiers by equality: a span that says 2019/883
   const facts = ["Directive 2019/88 applies", "Regulation 2019/883 applies", "Regulation (EU) 2023/1805 applies"].map((claim_text, i) => ({ idx: i, id: `f${i}`, claim_text, source_span: span }));
   const hits = detectConflate(facts);
   assert.ok(hits.length === 3 && /absent from span: \{[^}]*instrument:2019\/88[,}]/.test(hits[0]?.rationale ?? ""), `2019/88 and 2023/1805 are absent from the span: ${hits[0]?.rationale}`);
-});
-
-test("I3: a host is its domain or a subdomain of it, matched by registrable domain, never by suffix text or substring", () => {
-  assert.equal(hostMatches("fakefederalregister.gov", "federalregister.gov"), false);
-  assert.equal(hostMatches("www.federalregister.gov", "federalregister.gov"), true);
-  assert.equal(hostMatches("FederalRegister.gov.", "federalregister.gov"), true);
-  assert.equal(hostMatches("federalregister.gov.evil.com", "federalregister.gov"), false);
-  assert.equal(hostMatches("example.com", "example.co"), false);
-  assert.equal(hostMatches("", "x.com"), false);
-  assert.equal(registrableDomain("www.data.gov.uk"), "data.gov.uk");
-  assert.equal(registrableDomain("a.b.federalregister.gov"), "federalregister.gov");
-  assert.equal(registrableDomain("fakefederalregister.gov"), "fakefederalregister.gov");
 });
 
 test("I3: canonicalUrl keeps the path and query case, sorts the query, drops the fragment, tracking and scheme difference", () => {

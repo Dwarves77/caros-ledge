@@ -92,41 +92,6 @@
   "yearRange": {
     "pattern": "(?<![\\d/.])(?<start>(?:19|20)\\d{2})[/\\u2013-](?<end>\\d{2}|(?:19|20)\\d{2})(?![\\d/])"
   },
-  "cn": {
-    "digits": 8,
-    "groups": [
-      4,
-      2,
-      2
-    ],
-    "printSeparator": " "
-  },
-  "publicSuffixes": [
-    "co.uk",
-    "org.uk",
-    "gov.uk",
-    "ac.uk",
-    "com.au",
-    "gov.au",
-    "org.au",
-    "co.jp",
-    "co.nz",
-    "govt.nz",
-    "com.br",
-    "gov.br",
-    "co.in",
-    "gov.in",
-    "com.cn",
-    "gov.cn",
-    "co.za",
-    "gov.za",
-    "com.sg",
-    "gov.sg",
-    "com.hk",
-    "gov.hk",
-    "com.mx",
-    "gob.mx"
-  ],
   "trackingParams": [
     "utm_source",
     "utm_medium",

@@ -107,10 +107,6 @@
       "pattern": "\\bGHG Protocol\\b(?:[^.]{0,40}?(?:v|version )(?<version>\\d+(?:\\.\\d+)*))?"
     }
   ],
-  "phaseIn": {
-    "pattern": "(?<share>\\d{1,3}(?:[.,]\\d+)?)\\s?%\\s+of\\s+(?:the\\s+)?(?<emissions>(?:19|20)\\d{2})(?:\\s+(?:verified\\s+)?emissions?)?[^.;%]{0,60}?(?:surrender(?:ed)?|in|by)\\s+(?:in\\s+)?(?<surrender>(?:19|20)\\d{2})\\b",
-    "bare": "(?<share>\\d{1,3}(?:[.,]\\d+)?)\\s?%\\s+(?:from|in|by|as of)\\s+(?<year>(?:19|20)\\d{2})\\b"
-  },
   "qualifiedDims": [
     "mass",
     "distance",

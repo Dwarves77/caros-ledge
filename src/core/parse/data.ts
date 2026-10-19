@@ -10,14 +10,12 @@ import qualifierFile from "./data/qualifiers.json";
 import unitFile from "./data/units.json";
 
 const dec = z.string().regex(/^\d+(?:\.\d+)?$/);
-const unit = z.object({ id: z.string().min(1), dim: z.string().min(1), factor: dec, label: z.string(), symbols: z.array(z.string().min(1)), words: z.array(z.string().min(1)), money: z.boolean().optional(), display: z.enum(["prefix", "suffix", "tight"]).optional(), trajectory: z.boolean().optional() });
+const unit = z.object({ id: z.string().min(1), dim: z.string().min(1), factor: dec, symbols: z.array(z.string().min(1)), words: z.array(z.string().min(1)), money: z.boolean().optional(), trajectory: z.boolean().optional() });
 const units = z.object({
   units: z.array(unit).min(1),
   gases: z.array(z.object({ id: z.string().min(1), aliases: z.array(z.string().min(1)).min(1) })).min(1),
   scales: z.array(z.object({ word: z.string().min(1), exp: z.number().int().positive() })),
   intensity: z.object({ numeratorDims: z.array(z.string()).min(1), denominatorDims: z.array(z.string()).min(1), perWords: z.array(z.string()).min(1), functionalUnitStop: z.array(z.string()) }),
-  activities: z.array(z.object({ dims: z.array(z.string()).min(1), activity: z.string() })),
-  bridges: z.array(z.object({ id: z.string().min(1), from: z.string(), to: z.string(), tonnesPerUnit: dec, source: z.string().min(1) })),
 });
 const locales = z.object({
   locales: z.record(z.string(), z.object({ decimal: z.string().length(1), thousands: z.array(z.string().length(1)), family: z.string() })),
@@ -26,7 +24,6 @@ const locales = z.object({
   minusSigns: z.array(z.string().length(1)).min(1),
   majorityShare: z.number().gt(0.5).lte(1),
   documentDefault: z.string(),
-  displayGroupSeparator: z.record(z.string(), z.string()),
 });
 const regexSource = z.string().refine((s) => { try { return !!new RegExp(s); } catch { return false; } }, "not a valid regular expression");
 const scheme = z.object({ id: z.string(), kind: z.string(), context: z.boolean(), pattern: regexSource, key: z.string(), intGroups: z.array(z.string()) });
@@ -35,13 +32,11 @@ const identifiers = z.object({
   yearBounds: z.tuple([z.number().int(), z.number().int()]),
   schemes: z.array(scheme).min(1),
   yearRange: z.object({ pattern: regexSource }),
-  cn: z.object({ digits: z.number().int(), groups: z.array(z.number().int()), printSeparator: z.string() }),
-  publicSuffixes: z.array(z.string()),
   trackingParams: z.array(z.string()),
 });
 const missing = z.object({ tokens: z.array(z.object({ literal: z.string().min(1), kind: z.string().min(1), meaning: z.string().min(1) })).min(1) });
 const patterns = z.record(z.string(), z.array(regexSource).min(1));
-const qualifiers = z.object({ window: z.object({ max: z.number().int().positive() }), fields: z.record(z.string(), patterns), screeningGrade: z.array(z.string()), qualifiedDims: z.array(z.string()), frameworks: z.array(z.object({ id: z.string(), pattern: regexSource })), phaseIn: z.object({ pattern: regexSource, bare: regexSource }) });
+const qualifiers = z.object({ window: z.object({ max: z.number().int().positive() }), fields: z.record(z.string(), patterns), screeningGrade: z.array(z.string()), qualifiedDims: z.array(z.string()), frameworks: z.array(z.object({ id: z.string(), pattern: regexSource })) });
 
 export type Unit = z.infer<typeof unit>;
 export const UNIT_FILE = units.parse(unitFile);

@@ -1,15 +1,15 @@
 src/core/parse/decimal.ts | new in R2a: exact decimal arithmetic for typed figures (no float); the old tree compared figures as strings and floats, remediation R2a P1/P2
 src/core/parse/data.ts | new in R2a: zod-validated loader of the parse rule tables (units, locales, identifier schemes, missing tokens, qualifiers); remediation R2a P5
 src/core/parse/locale.ts | new in R2a: per-document number locale (U1), replacing the old per-token numeric fold of old_repo/src/lib/contracts/numbers; remediation R2a P1
-src/core/parse/unit.ts | new in R2a: the closed unit set, intensity kinds and bridges (U2, U3); the old tree had a regex unit list inside gate-a-scan; remediation R2a P1
-src/core/parse/figure.ts | new in R2a: the typed figure parser, missing values, phase-ins, display (U1-U13); replaces the regex tokenizers of gate-a-scan and mint-gates; remediation R2a P1
-src/core/parse/compare.ts | new in R2a: the one figure comparator, reconciliation of disagreeing captures, boundary and worked-example checks (U4, U7, T18); remediation R2a P2/P4
-src/core/parse/identifiers.ts | new in R2a: identifiers, hosts and URLs by equality on a normalised form (U12, I3); replaces substring matching in mentions, gates and url helpers; remediation R2a P3
+src/core/parse/unit.ts | new in R2a: the closed unit set and intensity kinds (U2, U3); the old tree had a regex unit list inside gate-a-scan; remediation R2a P1
+src/core/parse/figure.ts | new in R2a: the typed figure parser and typed missing values (U1-U13); replaces the regex tokenizers of gate-a-scan and mint-gates; remediation R2a P1
+src/core/parse/compare.ts | new in R2a: the one figure comparator and the exact WTT+TTW=WTW sum (U4); remediation R2a P2
+src/core/parse/identifiers.ts | new in R2a: identifiers and URLs by equality on a normalised form (U12, I3); replaces substring matching in mentions and gates; remediation R2a P3
 src/core/parse/words.ts | new in R2a: whole-word matching and stop words for slot coverage (D:74); remediation R2a P3
 src/core/parse/index.ts | new in R2a: the parse module's public surface
-src/core/parse/data/units.json | rule table as data (WAVE-2-COMMON): units, GLEC annex constants, gases, scales, bridges; lifted from the methods register section 5 (U2, U3); JSON cannot carry a header
+src/core/parse/data/units.json | rule table as data (WAVE-2-COMMON): units, GLEC annex constants, gases, scales; lifted from the methods register section 5 (U2, U3); JSON cannot carry a header
 src/core/parse/data/locales.json | rule table as data: number conventions (U1); JSON cannot carry a header
-src/core/parse/data/identifier-schemes.json | rule table as data: instrument, CELEX, bill and ISO identifier schemes, year ranges, CN shape, public suffixes, tracking parameters (U12, I3); JSON cannot carry a header
+src/core/parse/data/identifier-schemes.json | rule table as data: instrument, CELEX, bill and ISO identifier schemes, year ranges, tracking parameters (U12, I3); JSON cannot carry a header
 src/core/parse/data/missing-tokens.json | rule table as data: TBM, N/A, dash, not_set, M (U10); JSON cannot carry a header
-src/core/parse/data/qualifiers.json | rule table as data: boundary, GWP set, basis, category, method, framework and phase-in phrases (U4, U5, U8, U9, U11, U13); JSON cannot carry a header
+src/core/parse/data/qualifiers.json | rule table as data: boundary, GWP set, basis, category, method and framework phrases (U4, U5, U8, U9, U13); JSON cannot carry a header
 src/core/parse/data/stopwords.json | rule table as data: stop words for slot coverage (D:74); JSON cannot carry a header

@@ -2,10 +2,10 @@
 // A figure carries its literal, its exact decimal value (scale applied), its unit and kind, the significant digits the source printed, and the
 // qualifiers the source states beside it: boundary (WTW/WTT/TTW), GWP set, distance and mass basis, Scope 3 category, method, hub kind, framework.
 // Locale is decided once per document (locale.ts); the unit set, scales and qualifier phrases are data (./data).
-import { LOCALES, MINUS_CLASS, MISSING_FILE, QUALIFIER_FILE, SCALE_ALTERNATION, SCALE_BY_WORD, UNIT_BY_ID } from "./data";
-import { decToString, parseDec, roundSig, shiftDec, sigDigitsOf, type Dec } from "./decimal";
-import { formatNumber, interpretNumber, resolveLocale, scanNumbers, type Interpreted, type LocaleVerdict, type NumberToken } from "./locale";
-import { displayOf, kindOf, labelOf, matchUnit, moneyBefore, unitString, type UnitParts } from "./unit";
+import { LOCALES, MINUS_CLASS, MISSING_FILE, QUALIFIER_FILE, SCALE_ALTERNATION, SCALE_BY_WORD } from "./data";
+import { decToString, parseDec, shiftDec, sigDigitsOf, type Dec } from "./decimal";
+import { interpretNumber, resolveLocale, scanNumbers, type Interpreted, type LocaleVerdict, type NumberToken } from "./locale";
+import { kindOf, matchUnit, moneyBefore, type UnitParts } from "./unit";
 
 export interface Figure {
   literal: string;
@@ -31,7 +31,8 @@ export interface Figure {
   /** a spend-based figure is screening grade by rule, not by an editor */
   screeningGrade?: boolean;
 }
-export interface Refusal { refused: true; reason: string; literal: string }
+/** `unreadable` marks a figure that IS there but cannot be read (an ambiguous number, a mixed convention), against text that has no figure at all. */
+export interface Refusal { refused: true; reason: string; literal: string; unreadable?: true }
 export interface Missing { missing: string; literal: string }
 export type Parsed = Figure | Refusal | Missing;
 export interface Hit { start: number; end: number; result: Figure | Refusal }
@@ -70,7 +71,7 @@ function figureAt(text: string, tok: NumberToken, verdict: LocaleVerdict): Hit |
     const stop = money ? afterScale : afterScale + lead + (um?.length ?? 0);
     const start = tok.start - (money?.length ?? 0) - (negative ? 1 : 0);
     const literal = text.slice(start, stop);
-    const refuse = (reason: string): Hit => ({ start, end: stop, result: { refused: true, reason, literal } });
+    const refuse = (reason: string): Hit => ({ start, end: stop, result: { refused: true, reason, literal, unreadable: true } });
     if (money && /^[A-Za-z]/.test(text.slice(stop))) return refuse("a scale or unit suffix after a currency amount is not in the closed set");
     const num = read(lit, verdict);
     if (!num.ok) {
@@ -155,56 +156,4 @@ export function parseFigure(text: string, opts: ParseOptions = {}): Parsed {
   if (!first) return { refused: true, reason: "no figure with a unit from the closed set", literal: t };
   if (hits.length > 1) return { refused: true, reason: `${hits.length} figures in one cell: parse one figure at a time`, literal: t };
   return first.result;
-}
-
-/** What a writer may store for a parsed cell: a missing value is NULL with its kind, never "0"; a refusal stores nothing. */
-export function storedValue(p: Parsed): { value: string | null; unit: string | null; missing: string | null } | null {
-  if (isRefusal(p)) return null;
-  if ("missing" in p) return { value: null, unit: null, missing: p.missing };
-  return { value: p.value, unit: p.unit, missing: null };
-}
-
-/** `value` printed with at most `sig` significant digits (the source's own precision), grouped for `localeId`. Never more digits than the source printed. */
-export function displayValue(value: string, sig: number, localeId: string): string {
-  const d = parseDec(value) as Dec;
-  return formatNumber(decToString(roundSig(d, sig)), localeId);
-}
-export function displayFigure(f: Figure, localeId: string): string {
-  const num = displayValue(f.value, f.sigDigits, localeId);
-  const label = `${labelOf(f.parts.n)}${f.parts.gas ? ` ${f.parts.gas}` : ""}${f.parts.d ? `/${labelOf(f.parts.d)}` : ""}`;
-  const style = displayOf(f.parts.n);
-  return style === "prefix" ? `${label} ${num}` : style === "tight" ? `${num}${label}` : `${num} ${label}`;
-}
-
-export interface PhaseIn { emissions_year: number; surrender_year: number; share: string; literal: string }
-/** Phase-ins typed with their three roles (U11). A bare "100% from 2026" names no role for its year, so it is refused, not read as either. */
-export function parsePhaseIn(text: string, opts: ParseOptions = {}): { entries: PhaseIn[]; refused: Refusal[] } {
-  const verdict = resolveLocale(text, opts.locale);
-  const entries: PhaseIn[] = [];
-  const refused: Refusal[] = [];
-  const spans: [number, number][] = [];
-  const share = (s: string): string | null => {
-    const r = verdict.locale ? interpretNumber(s, verdict.locale) : null;
-    return r?.ok ? r.text : null;
-  };
-  for (const m of text.matchAll(new RegExp(QUALIFIER_FILE.phaseIn.pattern, "gi"))) {
-    const g = m.groups ?? {};
-    const sh = share(g.share ?? "");
-    spans.push([m.index, m.index + m[0].length]);
-    if (sh === null) refused.push({ refused: true, reason: "phase-in share not readable in the document's number convention", literal: m[0] });
-    else entries.push({ emissions_year: Number(g.emissions), surrender_year: Number(g.surrender), share: sh, literal: m[0] });
-  }
-  for (const m of text.matchAll(new RegExp(QUALIFIER_FILE.phaseIn.bare, "gi"))) {
-    if (spans.some(([a, b]) => m.index >= a && m.index < b)) continue;
-    refused.push({ refused: true, reason: "a phase-in share with one year does not say whether the year is the emissions year or the surrender year", literal: m[0] });
-  }
-  return { entries, refused };
-}
-
-/** A figure built from a stored value and a unit id (a database column, a golden row), so it is compared by the same comparator as one read from prose. */
-export function figureOf(value: string, unit: string | UnitParts, extra: Partial<Pick<Figure, "boundary" | "gwpSet" | "functionalUnit">> = {}): Figure | Refusal {
-  const parts: UnitParts = typeof unit === "string" ? { n: unit } : unit;
-  const dec = parseDec(value);
-  if (!dec || !UNIT_BY_ID.has(parts.n) || (parts.d !== undefined && !UNIT_BY_ID.has(parts.d))) return { refused: true, reason: `${value} ${typeof unit === "string" ? unit : unitString(parts)} is not a decimal with a unit from the closed set`, literal: value };
-  return { literal: value, value: decToString(dec), unit: unitString(parts), scale: null, sigDigits: sigDigitsOf(value), decimals: dec.s, kind: kindOf(parts), parts, locale: "", ...extra };
 }

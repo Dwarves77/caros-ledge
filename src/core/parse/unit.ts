@@ -3,7 +3,7 @@
 // Kinds never convert implicitly: tonne-km is not TEU-km, a per-litre intensity is not a per-MJ one; a cross-kind request is refused, and the
 // only bridge between two activity bases is a NAMED data row (tonnes per TEU, with its source), passed explicitly.
 import { aliasAlternation, escapeRe, GAS_ALTERNATION, GAS_BY_ALIAS, UNIT_BY_ID, UNIT_FILE, UNITS, unitOfAlias, unitsOfDim, type Unit } from "./data";
-import { divDec, mulDec, parseDec, roundSig, type Dec } from "./decimal";
+import { mulDec, parseDec, type Dec } from "./decimal";
 
 /** Unit ids of a quantity: a plain unit (n), or a ratio n[ gas]/d. */
 export interface UnitParts { n: string; d?: string; gas?: string }
@@ -18,11 +18,9 @@ export const kindOf = (p: UnitParts): string => {
   const num = p.gas ? `emission:${p.gas}` : dimOf(p.n);
   return p.d ? `${num}/${dimOf(p.d)}` : num;
 };
-export const unitString = (p: UnitParts): string => (p.d ? `${p.n}${p.gas ? ` ${p.gas}` : ""}/${p.d}` : p.n);
-export const labelOf = (id: string): string => UNIT_BY_ID.get(id)?.label ?? id;
+const unitString = (p: UnitParts): string => (p.d ? `${p.n}${p.gas ? ` ${p.gas}` : ""}/${p.d}` : p.n);
 /** An amount of money or a share: the figures a trajectory table row (a value per year) is made of. */
 export const isTrajectoryUnit = (id: string): boolean => UNIT_BY_ID.get(id)?.trajectory === true;
-export const displayOf = (id: string): string => UNIT_BY_ID.get(id)?.display ?? "suffix";
 
 const NUMERATORS = unitsOfDim(UNIT_FILE.intensity.numeratorDims);
 const DENOMINATORS = unitsOfDim(UNIT_FILE.intensity.denominatorDims);
@@ -72,27 +70,4 @@ export function moneyBefore(before: string): { unit: string; length: number } | 
 /** value * factors of the unit parts, as a numerator and a denominator (cross-multiplied to compare two quantities exactly). */
 export const canonicalRatio = (value: Dec, p: UnitParts): { num: Dec; den: Dec } => ({ num: mulDec(value, factorOf(p.n)), den: p.d ? factorOf(p.d) : ONE });
 
-export type Converted = { ok: true; value: Dec } | { ok: false; reason: string };
-/** `value` in unit `from` expressed in unit `to`, kept to `sig` significant digits; refused when the two are not the same kind. */
-export function convertValue(value: Dec, from: UnitParts, to: UnitParts, sig: number): Converted {
-  if (kindOf(from) !== kindOf(to)) return { ok: false, reason: `${kindOf(from)} is not ${kindOf(to)}: kinds never convert implicitly` };
-  const top = mulDec(mulDec(value, factorOf(from.n)), to.d ? factorOf(to.d) : ONE);
-  const bottom = mulDec(factorOf(to.n), from.d ? factorOf(from.d) : ONE);
-  return { ok: true, value: roundSig(divDec(top, bottom, 40), sig) };
-}
 
-const canonId = (dim: string): string => UNITS.find((u) => u.dim === dim && u.factor === "1")?.id ?? "";
-/** The one door between a tonne-km and a TEU-km intensity: a named bridge row (tonnes per TEU with its source), never an assumption. */
-export function convertViaBridge(value: Dec, from: UnitParts, to: UnitParts, bridgeId: string, sig: number): Converted {
-  const bridge = UNIT_FILE.bridges.find((b) => b.id === bridgeId);
-  if (!bridge) return { ok: false, reason: `no bridge named ${bridgeId}` };
-  if (!from.d || !to.d || from.gas !== to.gas) return { ok: false, reason: "a bridge converts an intensity per activity basis, same gas" };
-  const [dFrom, dTo] = [dimOf(from.d), dimOf(to.d)];
-  const forward = dFrom === bridge.from && dTo === bridge.to;
-  if (!forward && !(dFrom === bridge.to && dTo === bridge.from)) return { ok: false, reason: `bridge ${bridgeId} joins ${bridge.from} and ${bridge.to} intensities only` };
-  const t = parseDec(bridge.tonnesPerUnit) as Dec;
-  const gas = to.gas ? { gas: to.gas } : {};
-  const step = convertValue(value, from, { n: to.n, d: canonId(dFrom), ...gas }, sig + 3);
-  if (!step.ok) return step;
-  return convertValue(forward ? mulDec(step.value, t) : divDec(step.value, t, 40), { n: to.n, d: canonId(dTo), ...gas }, to, sig);
-}

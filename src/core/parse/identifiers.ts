@@ -1,11 +1,10 @@
-// Identifiers, hosts and URLs by EQUALITY on a normalised form (R2a P3), never by substring: "2019/88" is not inside "2019/883", "SB-261" is not inside
-// "SB-2610", "2023/24" is a fiscal-year range and not a regulation, "fakefederalregister.gov" is not federal_register, a URL keeps its path case. Regulation
+// Identifiers and URLs by EQUALITY on a normalised form (R2a P3), never by substring: "2019/88" is not inside "2019/883", "SB-261" is not inside
+// "SB-2610", "2023/24" is a fiscal-year range and not a regulation, a URL keeps its path case. Regulation
 // numbers print as "2025/2547" or as the CELEX id "32026R1030"; both resolve to one key. Schemes, suffixes and tracking parameters are data (./data).
 import { escapeRe, IDENT_FILE } from "./data";
-import type { Refusal } from "./figure";
 
 export interface Identifier { scheme: string; kind: string; key: string; type: string | null; edition?: string; literal: string; start: number; end: number; context: boolean }
-export interface YearRange { from: number; to: number; literal: string; start: number; end: number }
+interface YearRange { from: number; to: number; literal: string; start: number; end: number }
 
 const SCHEMES = IDENT_FILE.schemes.map((s) => ({ ...s, re: new RegExp(s.pattern, s.context ? "gi" : "g") }));
 const [YEAR_MIN, YEAR_MAX] = IDENT_FILE.yearBounds;
@@ -13,7 +12,7 @@ const TYPE_OF = new Map(Object.entries(IDENT_FILE.typeLetters).map(([k, v]) => [
 const fill = (template: string, g: Record<string, string | undefined>, ints: readonly string[]): string => template.replace(/\{(\w+)\}/g, (_, name: string) => (ints.includes(name) ? String(Number(g[name])) : (g[name] ?? "")));
 
 /** Two-digit year range written as a fiscal or financial year ("2023/24", "2023-24", "2023/2024"): consecutive years only, so "2019/88" is never one. */
-export function findYearRanges(text: string): YearRange[] {
+function findYearRanges(text: string): YearRange[] {
   const out: YearRange[] = [];
   for (const m of text.matchAll(new RegExp(IDENT_FILE.yearRange.pattern, "g"))) {
     const from = Number(m.groups?.start);
@@ -57,28 +56,7 @@ export function ownIdentifiers(r: { instrument_identifier?: string | null; title
   return stated.length ? stated : findIdentifiers(String(r.title ?? "")).slice(0, 1);
 }
 
-/** A CN code (8 digits, printed 4-2-2): the digits and the print form, or a refusal; a heading or subheading prefix is not a CN code. */
-export function parseCnCode(text: string): { digits: string; print: string } | Refusal {
-  const digits = text.replace(/\s/g, "");
-  const { digits: want, groups, printSeparator } = IDENT_FILE.cn;
-  if (!/^\d+$/.test(digits) || digits.length !== want) return { refused: true, reason: `a CN code is ${want} digits; got ${/^\d+$/.test(digits) ? digits.length : "a non-numeric value"}`, literal: text };
-  let at = 0;
-  return { digits, print: groups.map((n) => { const part = digits.slice(at, at + n); at += n; return part; }).join(printSeparator) };
-}
 
-const SUFFIXES = new Set(IDENT_FILE.publicSuffixes);
-const hostName = (h: string): string => h.trim().toLowerCase().replace(/\.$/, "");
-/** The registrable domain (one label above the public suffix); the host itself when it has no more labels than its suffix. */
-export function registrableDomain(host: string): string {
-  const labels = hostName(host).split(".");
-  const suffixLen = labels.length >= 3 && SUFFIXES.has(labels.slice(-2).join(".")) ? 2 : 1;
-  return labels.slice(-(suffixLen + 1)).join(".");
-}
-/** The host is the domain or a subdomain of it: equals, or ends with "." plus the domain. Never a plain suffix test, never a substring. */
-export function hostMatches(host: string, domain: string): boolean {
-  const [h, d] = [hostName(host), hostName(domain)];
-  return h !== "" && d !== "" && (h === d || h.endsWith(`.${d}`));
-}
 
 const TRACKING = new Set(IDENT_FILE.trackingParams);
 /** One canonical URL: https, host lower-cased without www and default port, path and query CASE KEPT, query sorted and stripped of tracking parameters, no fragment, no trailing slash. */

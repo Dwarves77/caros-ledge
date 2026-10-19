@@ -4,7 +4,6 @@
       "id": "t",
       "dim": "mass",
       "factor": "1",
-      "label": "t",
       "symbols": [
         "t"
       ],
@@ -21,7 +20,6 @@
       "id": "kg",
       "dim": "mass",
       "factor": "0.001",
-      "label": "kg",
       "symbols": [
         "kg"
       ],
@@ -36,7 +34,6 @@
       "id": "g",
       "dim": "mass",
       "factor": "0.000001",
-      "label": "g",
       "symbols": [
         "g"
       ],
@@ -49,7 +46,6 @@
       "id": "kt",
       "dim": "mass",
       "factor": "1000",
-      "label": "kt",
       "symbols": [
         "kt"
       ],
@@ -62,7 +58,6 @@
       "id": "Mt",
       "dim": "mass",
       "factor": "1000000",
-      "label": "Mt",
       "symbols": [
         "Mt"
       ],
@@ -75,7 +70,6 @@
       "id": "lb",
       "dim": "mass",
       "factor": "0.000453592",
-      "label": "lb",
       "symbols": [
         "lb",
         "lbs"
@@ -89,7 +83,6 @@
       "id": "short_ton",
       "dim": "mass",
       "factor": "0.90718474",
-      "label": "short ton",
       "symbols": [],
       "words": [
         "short ton",
@@ -100,7 +93,6 @@
       "id": "long_ton",
       "dim": "mass",
       "factor": "1.016047",
-      "label": "long ton",
       "symbols": [],
       "words": [
         "long ton",
@@ -111,7 +103,6 @@
       "id": "km",
       "dim": "distance",
       "factor": "1",
-      "label": "km",
       "symbols": [
         "km"
       ],
@@ -126,7 +117,6 @@
       "id": "m",
       "dim": "distance",
       "factor": "0.001",
-      "label": "m",
       "symbols": [
         "m"
       ],
@@ -141,7 +131,6 @@
       "id": "mile",
       "dim": "distance",
       "factor": "1.609344",
-      "label": "mile",
       "symbols": [
         "mi"
       ],
@@ -154,7 +143,6 @@
       "id": "nmi",
       "dim": "distance",
       "factor": "1.852",
-      "label": "nmi",
       "symbols": [
         "nmi"
       ],
@@ -167,7 +155,6 @@
       "id": "ft",
       "dim": "distance",
       "factor": "0.0003048",
-      "label": "ft",
       "symbols": [
         "ft"
       ],
@@ -180,7 +167,6 @@
       "id": "yd",
       "dim": "distance",
       "factor": "0.0009144",
-      "label": "yd",
       "symbols": [
         "yd"
       ],
@@ -193,7 +179,6 @@
       "id": "l",
       "dim": "volume",
       "factor": "1",
-      "label": "l",
       "symbols": [
         "l",
         "L"
@@ -209,7 +194,6 @@
       "id": "gal_us",
       "dim": "volume",
       "factor": "3.785411784",
-      "label": "US gal",
       "symbols": [
         "US gal"
       ],
@@ -222,7 +206,6 @@
       "id": "MJ",
       "dim": "energy",
       "factor": "1",
-      "label": "MJ",
       "symbols": [
         "MJ"
       ],
@@ -235,7 +218,6 @@
       "id": "GJ",
       "dim": "energy",
       "factor": "1000",
-      "label": "GJ",
       "symbols": [
         "GJ"
       ],
@@ -245,7 +227,6 @@
       "id": "kWh",
       "dim": "energy",
       "factor": "3.6",
-      "label": "kWh",
       "symbols": [
         "kWh"
       ],
@@ -255,7 +236,6 @@
       "id": "MWh",
       "dim": "energy",
       "factor": "3600",
-      "label": "MWh",
       "symbols": [
         "MWh"
       ],
@@ -265,7 +245,6 @@
       "id": "GWh",
       "dim": "energy",
       "factor": "3600000",
-      "label": "GWh",
       "symbols": [
         "GWh"
       ],
@@ -275,7 +254,6 @@
       "id": "kW",
       "dim": "power",
       "factor": "1",
-      "label": "kW",
       "symbols": [
         "kW"
       ],
@@ -285,7 +263,6 @@
       "id": "MW",
       "dim": "power",
       "factor": "1000",
-      "label": "MW",
       "symbols": [
         "MW"
       ],
@@ -295,7 +272,6 @@
       "id": "GW",
       "dim": "power",
       "factor": "1000000",
-      "label": "GW",
       "symbols": [
         "GW"
       ],
@@ -305,7 +281,6 @@
       "id": "tkm",
       "dim": "activity_tkm",
       "factor": "1",
-      "label": "tkm",
       "symbols": [
         "tkm",
         "t-km",
@@ -323,7 +298,6 @@
       "id": "short_ton_mile",
       "dim": "activity_tkm",
       "factor": "1.46",
-      "label": "short ton-mile",
       "symbols": [],
       "words": [
         "short ton-mile",
@@ -336,7 +310,6 @@
       "id": "teu_km",
       "dim": "activity_teu_km",
       "factor": "1",
-      "label": "TEU-km",
       "symbols": [
         "TEU-km",
         "TEUkm",
@@ -348,7 +321,6 @@
       "id": "teu",
       "dim": "count_teu",
       "factor": "1",
-      "label": "TEU",
       "symbols": [
         "TEU",
         "TEUs"
@@ -359,7 +331,6 @@
       "id": "eur",
       "dim": "money_eur",
       "factor": "1",
-      "label": "EUR",
       "symbols": [
         "€",
         "EUR"
@@ -369,14 +340,12 @@
         "euros"
       ],
       "money": true,
-      "display": "prefix",
       "trajectory": true
     },
     {
       "id": "usd",
       "dim": "money_usd",
       "factor": "1",
-      "label": "USD",
       "symbols": [
         "$",
         "US$",
@@ -387,14 +356,12 @@
         "us dollars"
       ],
       "money": true,
-      "display": "prefix",
       "trajectory": true
     },
     {
       "id": "gbp",
       "dim": "money_gbp",
       "factor": "1",
-      "label": "GBP",
       "symbols": [
         "£",
         "GBP"
@@ -403,14 +370,12 @@
         "pound sterling"
       ],
       "money": true,
-      "display": "prefix",
       "trajectory": true
     },
     {
       "id": "pct",
       "dim": "percent",
       "factor": "1",
-      "label": "%",
       "symbols": [
         "%"
       ],
@@ -419,14 +384,12 @@
         "percent",
         "per-cent"
       ],
-      "display": "tight",
       "trajectory": true
     },
     {
       "id": "ppm",
       "dim": "ppm",
       "factor": "1",
-      "label": "ppm",
       "symbols": [
         "ppm"
       ],
@@ -436,7 +399,6 @@
       "id": "bps",
       "dim": "bps",
       "factor": "1",
-      "label": "bps",
       "symbols": [
         "bps"
       ],
@@ -448,7 +410,6 @@
       "id": "gt",
       "dim": "gross_tonnage",
       "factor": "1",
-      "label": "GT",
       "symbols": [
         "GT"
       ],
@@ -460,10 +421,8 @@
       "id": "ratio",
       "dim": "ratio",
       "factor": "1",
-      "label": "",
       "symbols": [],
-      "words": [],
-      "display": "tight"
+      "words": []
     }
   ],
   "gases": [
@@ -558,44 +517,5 @@
       "those",
       "it"
     ]
-  },
-  "bridges": [
-    {
-      "id": "teu_mass_average",
-      "from": "activity_tkm",
-      "to": "activity_teu_km",
-      "tonnesPerUnit": "10",
-      "source": "GLEC Framework v3.0 unit-conversion annex: 1 TEU = 10 t average (GHG Protocol Table 4.2 agrees)"
-    },
-    {
-      "id": "teu_mass_light",
-      "from": "activity_tkm",
-      "to": "activity_teu_km",
-      "tonnesPerUnit": "6",
-      "source": "GLEC Framework v3.0 unit-conversion annex: 6 t light TEU (EcoTransIT 6.0)"
-    },
-    {
-      "id": "teu_mass_heavy",
-      "from": "activity_tkm",
-      "to": "activity_teu_km",
-      "tonnesPerUnit": "14.5",
-      "source": "GLEC Framework v3.0 unit-conversion annex: 14.5 t heavy TEU (EcoTransIT 14.5)"
-    }
-  ],
-  "activities": [
-    {
-      "dims": [
-        "mass",
-        "distance"
-      ],
-      "activity": "activity_tkm"
-    },
-    {
-      "dims": [
-        "count_teu",
-        "distance"
-      ],
-      "activity": "activity_teu_km"
-    }
-  ]
+  }
 }

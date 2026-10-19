@@ -3,16 +3,14 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { boundarySumWithin, checkBoundaries, checkWorkedExample, convertValue, convertViaBridge, displayFigure, displayValue, figureOf, findFigures, isFigure, isRefusal, kindOf, parseCnCode, parseFigure, parsePhaseIn, resolveLocale, sameIdentifier, findIdentifiers, storedValue, withinPublishedDigit, type Figure, type Parsed } from "@/core/parse";
-import { parseDec } from "@/core/parse/decimal";
+import { figuresEqual, findFigures, findIdentifiers, isFigure, isRefusal, kindOf, numbersSumExactly, parseFigure, resolveLocale, sameIdentifier, type Figure } from "@/core/parse";
 import { MISSING_FILE } from "@/core/parse/data";
 
 const fig = (text: string, locale: string | null = "en"): Figure => {
-  const p: Parsed = parseFigure(text, { locale });
+  const p = parseFigure(text, { locale });
   assert.ok(isFigure(p), `${text} (${locale}) should parse: ${JSON.stringify(p)}`);
   return p;
 };
-const dec = (s: string) => parseDec(s) as NonNullable<ReturnType<typeof parseDec>>;
 
 test("U1: the locale is the document's; the register's own glyphs read to the value the register states", () => {
   assert.equal(fig("15 000 t", "fr").value, "15000", "space-grouped thousands");
@@ -57,59 +55,44 @@ test("U1: a majority convention resolves the document; no evidence uses the stat
   assert.deepEqual(resolveLocale("0.5 t", "fr"), { locale: "fr", basis: "declared" });
 });
 
-test("U2: the closed unit set carries the GLEC annex constants exactly", () => {
-  const conv = (v: string, from: string, to: string, sig: number) => {
-    const r = convertValue(dec(v), { n: from }, { n: to }, sig);
-    assert.ok(r.ok);
-    return r.ok ? `${r.value.n}e-${r.value.s}` : "";
-  };
-  assert.equal(conv("1", "mile", "km", 7), "1609344e-6");
-  assert.equal(conv("1", "nmi", "km", 4), "1852e-3");
-  assert.equal(conv("1", "ft", "m", 4), "3048e-4");
-  assert.equal(conv("1", "yd", "m", 4), "9144e-4");
-  assert.equal(conv("1", "short_ton", "t", 8), "90718474e-8");
-  assert.equal(conv("1", "long_ton", "t", 7), "1016047e-6");
-  assert.equal(conv("1", "lb", "t", 6), "453592e-9");
-  assert.equal(conv("1", "gal_us", "l", 10), "3785411784e-9");
-  assert.equal(conv("1", "kWh", "MJ", 2), "36e-1");
+test("U2: the closed unit set carries the GLEC annex constants exactly (equal by the comparator, to the last digit)", () => {
+  const eq = (a: string, b: string) => assert.ok(figuresEqual(fig(a), fig(b)), `${a} equals ${b}`);
+  const ne = (a: string, b: string) => assert.ok(!figuresEqual(fig(a), fig(b)), `${a} does not equal ${b}`);
+  eq("1 mile", "1.609344 km");
+  eq("1 nmi", "1.852 km");
+  eq("1 ft", "0.3048 m");
+  eq("1 yd", "0.9144 m");
+  eq("1 short ton", "0.90718474 t");
+  eq("1 long ton", "1.016047 t");
+  eq("1 lb", "0.000453592 t");
+  eq("1 US gal", "3.785411784 l");
+  eq("1 kWh", "3.6 MJ");
+  ne("1 mile", "1.609 km");
+  ne("1 short ton", "0.907 t");
   assert.equal(fig("0.907 184 74 t").value, "0.90718474", "T11: digits grouped by spaces on both sides of the decimal point");
   assert.equal(fig("3.785 411 784 l").value, "3.785411784");
   assert.equal(fig("1.016 047 t").value, "1.016047");
   assert.equal(parseFigure("1 FEU", { locale: "en" }).hasOwnProperty("refused"), true, "FEU = 2 TEU is on no page read: it is not in the set");
 });
 
-test("U3: intensity kinds are distinct types; tkm and TEU-km never convert implicitly, only through a named bridge row with its source", () => {
+test("U3: intensity kinds are distinct types and never equal across kinds; the same kind compares exactly across its units", () => {
   const tkm = fig("49.9 g CO2e/tkm");
   const teuKm = fig("49.9 g CO2e/TEU-km");
   assert.notEqual(tkm.kind, teuKm.kind);
+  assert.equal(figuresEqual(tkm, teuKm), false, "the same number per tonne-km and per TEU-km is not one quantity");
   assert.equal(kindOf(fig("0.15 kg CO2e/l").parts), "emission:CO2e/volume");
   assert.notEqual(fig("97 g CO2e/MJ").kind, fig("97 g CO2e/l").kind);
-  const refused = convertValue(dec("49.9"), tkm.parts, teuKm.parts, 3);
-  assert.ok(!refused.ok && /never convert implicitly/.test(refused.reason), "tkm to TEU-km needs the cited tonnes per TEU");
-  const bridged = convertViaBridge(dec("49.9"), tkm.parts, teuKm.parts, "teu_mass_average", 3);
-  assert.ok(bridged.ok && bridged.value.n === 499n && bridged.value.s === 0, "10 t per TEU: 49.9 g/tkm is 499 g/TEU-km");
-  const back = convertViaBridge(dec("499"), teuKm.parts, tkm.parts, "teu_mass_average", 3);
-  assert.ok(back.ok && back.value.n === 499n && back.value.s === 1, "and back");
-  assert.ok(!convertViaBridge(dec("1"), tkm.parts, fig("1 g CO2e/MJ").parts, "teu_mass_average", 3).ok);
-  assert.ok(!convertViaBridge(dec("1"), tkm.parts, teuKm.parts, "no_such_bridge", 3).ok);
-  // T7: energy intensities of one kind convert exactly: 97 g/MJ is 349.2 g/kWh
-  const kwh = convertValue(dec("97"), fig("97 g CO2e/MJ").parts, fig("1 g CO2e/kWh").parts, 4);
-  assert.ok(kwh.ok && `${kwh.value.n}e-${kwh.value.s}` === "3492e-1");
-  // a hub figure is its own kind
-  assert.notEqual(fig("12 kg CO2e/t throughput").kind, fig("12 kg CO2e/tkm").kind);
+  assert.ok(figuresEqual(fig("97 g CO2e/MJ"), fig("349.2 g CO2e/kWh")), "T7: energy intensities of one kind compare exactly: 97 g/MJ is 349.2 g/kWh");
+  assert.notEqual(fig("12 kg CO2e/t throughput").kind, fig("12 kg CO2e/tkm").kind, "a hub figure is its own kind");
 });
 
-test("U4: the boundary travels with the number and WTT + TTW = WTW within the last published digit or the figure is withheld (T9)", () => {
+test("U4: the boundary travels with the number; WTT + TTW = WTW exactly on the stored decimals (T9)", () => {
   const a = fig("WTT 0.328 kg CO2e/tkm");
   const b = fig("TTW 1.244 kg CO2e/tkm");
   const c = fig("WTW 1.572 kg CO2e/tkm");
   assert.deepEqual([a.boundary, b.boundary, c.boundary], ["WTT", "TTW", "WTW"]);
-  assert.deepEqual(checkBoundaries(a, b, c), { ok: true });
-  const wrong = checkBoundaries(a, b, fig("WTW 1.58 kg CO2e/tkm"));
-  assert.ok(!wrong.ok && /within the last published digit/.test(wrong.reason));
-  assert.deepEqual(boundarySumWithin({ value: "0.84", decimals: 2 }, { value: "3.18", decimals: 2 }, { value: "4.02", decimals: 2 }), { ok: true });
-  assert.ok(!boundarySumWithin({ value: "0.84", decimals: 2 }, { value: "3.18", decimals: 2 }, { value: "4.10", decimals: 2 }).ok);
-  assert.ok(!checkBoundaries(c, b, a).ok, "labels must be WTT, TTW, WTW in that role");
+  assert.deepEqual(numbersSumExactly(0.328, 1.244, 1.572), { ok: true, sum: "1.572" });
+  assert.equal(numbersSumExactly(0.328, 1.244, 1.58).ok, false);
   assert.equal(fig("a headline of 1.572 kg CO2e/tkm").boundary, undefined, "no label stated: none is invented");
   assert.equal(fig("1.244 kg CO2e/tkm (tank-to-wheel)").boundary, "TTW", "a TTW value is never labelled WTW");
   assert.equal(fig("1.572 kg CO2e/tkm, well-to-wheel").boundary, "WTW");
@@ -121,32 +104,13 @@ test("U5: the GWP set is recorded; two CO2e figures with different sets are a se
   assert.equal(fig("100 t CO2e").gwpSet, undefined);
 });
 
-test("U6: the literal's significant digits are stored and a display never prints more", () => {
+test("U5, U6: the GWP set is recorded; the literal's significant digits are stored", () => {
+  assert.equal(fig("100 t CO2e (AR5 100-year GWP)").gwpSet, "AR5");
+  assert.equal(fig("100 t CO2e").gwpSet, undefined);
   assert.equal(fig("1.572 kg CO2e/tkm").sigDigits, 4);
   assert.equal(fig("0.0048 kg CO2e/tkm").sigDigits, 2);
   assert.equal(fig("10.0 t").sigDigits, 3);
-  assert.equal(displayValue("1.7875", 3, "en"), "1.79");
-  assert.equal(displayValue("0.00448", 3, "en"), "0.00448");
-  assert.equal(displayValue("15000000", 2, "en"), "15,000,000");
-  const kgToT = convertValue(dec("4.48"), { n: "kg" }, { n: "t" }, 3);
-  assert.ok(kgToT.ok && kgToT.value.n === 448n && kgToT.value.s === 5, "4.48 kg is 0.00448 t: three significant digits survive the conversion, no more");
-  assert.equal(displayFigure(fig("49.9 g CO2e/TEU-km"), "en"), "49.9 g CO2e/TEU-km");
-  assert.equal(displayFigure(fig("€15 million"), "en"), "EUR 15,000,000");
-  assert.equal(displayFigure(fig("15.5%"), "en"), "15.5%");
-  assert.equal(displayFigure(fig("0,890 t", "fr"), "fr"), "0,890 t".replace("0,890", "0,89"), "0,89: the value without padding zeros it was never printed with");
-  // T8: the print 1.787 is the truncation of 1.7875; they agree within half a unit of the last published digit, a different value does not
-  assert.ok(withinPublishedDigit(fig("1.787 kg"), fig("1.7875 kg")));
-  assert.ok(!withinPublishedDigit(fig("1.787 kg"), fig("1.80 kg")));
-});
-
-test("U7: a worked example whose arithmetic holds but whose printed unit contradicts it resolves by the arithmetic and raises source_unit_defect (T2, T3)", () => {
-  const t2 = checkWorkedExample({ factor: fig("0.2 kg CO2e/TEU-km"), quantities: [fig("2 t"), fig("2,000 km")], result: fig("800 kg CO2e") });
-  assert.ok(t2.ok && t2.sourceUnitDefect && t2.resolvedKind === "emission:CO2e/activity_tkm", JSON.stringify(t2));
-  const t3 = checkWorkedExample({ factor: fig("0.04 kg CO2e/$"), quantities: [fig("$20,000")], result: fig("800 kg CO2e/$") });
-  assert.ok(t3.ok && t3.sourceUnitDefect && /total/.test(t3.reasons.join(" ")), JSON.stringify(t3));
-  const clean = checkWorkedExample({ factor: fig("0.2 kg CO2e/tkm"), quantities: [fig("2 t"), fig("2,000 km")], result: fig("800 kg CO2e") });
-  assert.ok(clean.ok && !clean.sourceUnitDefect, "a consistent example raises no flag");
-  assert.ok(!checkWorkedExample({ factor: fig("0.2 kg CO2e/tkm"), quantities: [fig("2 t"), fig("2,000 km")], result: fig("900 kg CO2e") }).ok, "arithmetic that does not reproduce the result is not resolved");
+  assert.equal(fig("0.15948315 kg").sigDigits, 8, "a stored value keeps all eight digits (T18)");
 });
 
 test("U8, U9: distance and mass basis are recorded when stated, never inferred", () => {
@@ -157,35 +121,22 @@ test("U8, U9: distance and mass basis are recorded when stated, never inferred",
   assert.equal(fig("789,600 tkm").distanceBasis, undefined);
 });
 
-test("U10: missing is typed and never 0 (TBM, N/A, a dash, not_set, M); a table may declare what its dash means", () => {
+test("U10: missing is typed and never 0 (TBM, N/A, a dash, not_set, M); a table may declare what its dash means (INV-R2a-5)", () => {
   const kinds = new Map<string, string>();
   for (const t of MISSING_FILE.tokens) {
     const p = parseFigure(t.literal);
-    assert.ok("missing" in p, `${t.literal} is a typed missing value`);
+    assert.ok("missing" in p && !("value" in p), `${t.literal} is a typed missing value with no value at all`);
     kinds.set(t.literal, (p as { missing: string }).missing);
-    assert.deepEqual(storedValue(p), { value: null, unit: null, missing: t.kind }, "INV-R2a-5: stored as NULL with its kind, never the string 0");
+    assert.equal((p as { missing: string }).missing, t.kind);
   }
   assert.equal(new Set([kinds.get("TBM"), kinds.get("N/A"), kinds.get("-"), kinds.get("not_set"), kinds.get("M")]).size, 5, "five tokens, five kinds");
   assert.deepEqual(parseFigure("-", { missingAs: { "-": "not_set" } }), { missing: "not_set", literal: "-" }, "T17: the IMO Z dash is not_set");
   const zero = parseFigure("0 t");
   assert.ok(isFigure(zero) && zero.value === "0", "a printed zero is a zero, distinct from a missing value");
-  assert.equal(storedValue(parseFigure("0 t"))?.missing, null);
-  assert.equal(storedValue(parseFigure("nonsense")), null, "a refusal stores nothing");
+  assert.ok(isRefusal(parseFigure("nonsense")), "unreadable text is a refusal, not a zero");
 });
 
-test("U11: phase-ins are typed with emissions_year, surrender_year and share; a bare share-and-year is refused (T14)", () => {
-  const text = "Surrender 40% of 2024 emissions (in 2025), 70% of 2025 (in 2026), 100% from 2027.";
-  const r = parsePhaseIn(text, { locale: "en" });
-  assert.deepEqual(r.entries.map((e) => [e.emissions_year, e.surrender_year, e.share]), [[2024, 2025, "40"], [2025, 2026, "70"]]);
-  assert.equal(r.refused.length, 1);
-  assert.match(r.refused[0]?.reason ?? "", /emissions year or the surrender year/);
-  assert.equal(parsePhaseIn("Phase-in 100% from 2026", { locale: "en" }).entries.length, 0, "spec 01 wording is ambiguous: not read as either role");
-});
-
-test("U12: CN codes keep 8 digits and the print form; regulation numbers print as 2025/2547 or 32026R1030 and resolve to one identifier", () => {
-  assert.deepEqual(parseCnCode("7219 12 90"), { digits: "72191290", print: "7219 12 90" });
-  assert.deepEqual(parseCnCode("72191290"), { digits: "72191290", print: "7219 12 90" });
-  assert.ok("refused" in parseCnCode("7219 12"), "a subheading is not a CN code");
+test("U12: regulation numbers print as 2025/2547 or 32026R1030 and resolve to one identifier", () => {
   const celex = findIdentifiers("CELEX 32026R1030")[0];
   const printed = findIdentifiers("Regulation (EU) 2026/1030")[0];
   const bare = findIdentifiers("see 2026/1030 for details")[0];
@@ -226,8 +177,6 @@ test("the register's worked inputs parse to the stated numbers (T1-T15 inputs)",
   assert.equal(v("€15 million"), "15000000");
   assert.equal(v("$2.5bn"), "2500000000");
   assert.equal(fig("128.7 g CO2e/TEU-km").kind, "emission:CO2e/activity_teu_km");
-  const ratio = figureOf("0.15948315", "ratio");
-  assert.ok(isFigure(ratio) && ratio.sigDigits === 8, "a stored value keeps all eight digits (T18)");
 });
 
 test("a currency amount with an unknown scale suffix is refused, not read at face value (EUR 5m is not EUR 5)", () => {
