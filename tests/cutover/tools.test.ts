@@ -8,7 +8,7 @@ import { test } from "node:test";
 // @ts-expect-error plain .mjs modules
 import { planProblems, planText, reversalOf, selfCheckOf } from "../../scripts/ci/apply-plan.mjs";
 // @ts-expect-error plain .mjs modules
-import { bundleProblems, SENTINELS } from "../../scripts/ci/edge-bundle.mjs";
+import { DECLARED } from "../../scripts/ci/edge-bundle.mjs";
 // @ts-expect-error plain .mjs modules
 import { borrowedRowProblems, migrationProblems } from "../../scripts/ci/migration-checks.mjs";
 // @ts-expect-error plain .mjs modules
@@ -189,11 +189,8 @@ test("the duplicate-email query is read-only and member-safe: it names no write,
 });
 
 // ---- the Edge Function bundle ----
-test("IMP-029: a bundle without the fetch policy (the relative import did not land), the drain or the PDF extractor fails the check; a whole one passes", () => {
-  assert.deepEqual([...SENTINELS], ["fetchDocument", "storageMaxChars", "isServiceRoleRequest", "extractText"], "the policy's fetch, its ceiling reader, the worker's auth check and the PDF extractor");
-  const whole = SENTINELS.join(" ");
-  assert.deepEqual(bundleProblems(whole), []);
-  for (const s of SENTINELS) assert.match(bundleProblems(whole.replace(s, "")).join("|"), new RegExp(`does not contain ${s}`));
+test("IMP-029: the worker still imports the fetch policy by a relative path and the bundle gate is a gate step; the bundle's structure checks are in tests/ci/checks.test.mjs", () => {
+  assert.deepEqual([...DECLARED], ["fetchDocument", "storageMaxChars", "isServiceRoleRequest", "extractText"], "the policy's fetch, its ceiling reader, the worker's auth check and the PDF extractor");
   assert.ok(readFileSync("supabase/functions/capture-worker/process.ts", "utf8").includes('from "../../../src/core/fetch/policy.ts"'), "the worker still imports the policy by a relative path, so the Node transports and the worker share one policy");
   assert.match(readFileSync("scripts/ci/gates.mjs", "utf8"), /cmd: "edge-bundle"/);
 });

@@ -1,0 +1,3 @@
+[
+  { "id": "tree-prepare-script-deleted", "gate": "tree-checks", "apply": [{ "file": "package.json", "find": "    \"prepare\": \"node scripts/prepare.mjs\",\n", "replace": "" }], "expect": "red", "closes": ["K:1"] }
+]

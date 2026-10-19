@@ -3,6 +3,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
+import { withRunContext } from "@/core/harness";
 import { runTurn } from "@/core/turn";
 import { buildDeps, enforceWired, MANIFEST, SERVICE_MEMBER, startupCheck, wireAll, workspaceWiring } from "@/core/turn/wiring";
 import { deriveKey } from "@/core/intake/canonical-key";
@@ -46,14 +47,12 @@ test("registerAndRate through the sources dep is read-only in a dry run and repo
   const f = fixture();
   const url = "https://www.europarl.europa.eu/doc/1";
   const before = f.db.rows("sources").length;
-  f.d.context.current = null;
   const dry = await f.d.sources.registerAndRate(url);
   assert.equal(dry.sourceId, null);
   assert.equal(typeof dry.tier, "number");
   assert.equal(f.db.rows("sources").length, before);
   assert.equal(f.db.writes("sources").length, 0);
-  f.d.context.current = { rootRunId: "x", upstreamRunId: null, mode: "apply", trigger: "dispatch", forcedDry: false, codeSha: null, githubRunId: null };
-  const real = await f.d.sources.registerAndRate(url);
+  const real = await withRunContext({ rootRunId: "x", upstreamRunId: null, mode: "apply", trigger: "dispatch", forcedDry: false, codeSha: null, githubRunId: null }, () => f.d.sources.registerAndRate(url));
   assert.ok(real.sourceId);
   assert.equal(real.tier, dry.tier, "the dry tier is the tier the registration gave");
   assert.equal(f.db.rows("sources").length, before + 1);

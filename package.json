@@ -24,7 +24,11 @@
     "prepare": "node scripts/prepare.mjs",
     "ui-checks": "node scripts/ci/ui-checks.mjs",
     "parity": "node tests/parity/capture.mjs --base http://localhost:3100 --out parity-capture && node tests/parity/compare.mjs --captured parity-capture",
-    "edge-bundle": "node scripts/ci/edge-bundle.mjs"
+    "edge-bundle": "node scripts/ci/edge-bundle.mjs",
+    "workflow-yaml": "node scripts/ci/workflow-yaml.mjs",
+    "migration-checks": "node scripts/ci/migration-checks.mjs",
+    "mutants": "node scripts/ci/mutants.mjs",
+    "mutants:check": "node scripts/ci/mutants.mjs --check"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",
@@ -46,6 +50,7 @@
     "@types/node": "^24",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "actionlint": "2.0.6",
     "embedded-postgres": "^15.18.0-beta.17",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
@@ -78,6 +83,7 @@
     "@types/leaflet": "Types for leaflet under the strict typecheck.",
     "embedded-postgres": "A throwaway PostgreSQL 15 for npm run schema:local, so the schema job runs on a workstation without Docker or a system Postgres (devDependency; never bundled).",
     "pg": "The one SQL client of the CI scripts (scripts/ci/psql.mjs): CI and a workstation run the same code, with no psql binary (devDependency; never bundled).",
-    "yaml": "Parses .github/workflows/*.yml in the gates (IMP-100), so a malformed workflow is refused at the hook instead of producing a \"workflow file issue\" red (devDependency; never bundled)."
+    "yaml": "Parses .github/workflows/*.yml in the gates (IMP-100), so a malformed workflow is refused at the hook instead of producing a \"workflow file issue\" red (devDependency; never bundled).",
+    "actionlint": "Lints .github/workflows/*.yml in the gates (scripts/ci/workflow-yaml.mjs): unknown needs, bad expressions and contexts, schema errors, which the YAML parser cannot see and which produce \"workflow file issue\" reds (the project's own wasm build, exact version; devDependency, never bundled)."
   }
 }

@@ -4,9 +4,11 @@
 //   node scripts/ci/live-checks.mjs --base https://<deployment> [--only member-reads,pages] [--phase before|after] [--no-record]
 //
 // --phase before is the run made BEFORE the cutover window (the first live check, IMP-116): an object a pending migration adds is reported as a warning naming the migration. The default (after) fails it.
-// Self-skips with exit 2 (and says which environment NAMES are missing, never a value) when the credentials are not there; exit 1 when a check failed or a row could not be recorded.
+// A missing credential follows the one exit-code contract (src/core/harness/exit.ts): exit 2 (a skip) only where the event cannot carry secrets, a pull request from a fork; on a deployment, a dispatch, a check named with --only and every other
+// CI event it is exit 1, and the message and the job summary list the environment NAMES that are missing, never a value. Exit 1 also when a check failed or a row could not be recorded.
 // Environment names: LIVE_BASE_URL (or --base), NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, LIVE_SMOKE_EMAIL, LIVE_SMOKE_PASSWORD, LIVE_ADMIN_EMAIL, LIVE_ADMIN_PASSWORD,
-// VERCEL_AUTOMATION_BYPASS_SECRET (sent as x-vercel-protection-bypass when the preview is behind Vercel deployment protection), and for invitation-email RESEND_API_KEY and INVITATION_FROM_EMAIL.
+// VERCEL_AUTOMATION_BYPASS_SECRET (sent as x-vercel-protection-bypass when the preview is behind Vercel deployment protection), and for invitation-email RESEND_API_KEY and INVITATION_FROM_EMAIL. LIVE_CODE_SHA is the deployed commit (data: the
+// scripts run are the default branch's), written on every ledger row as its code_sha.
 import { randomUUID } from "node:crypto";
 import { register } from "node:module";
 import { parseArgs } from "node:util";
@@ -19,7 +21,7 @@ const MEMBER_CHECKS = new Set(["member-reads", "sign-in", "pages", "notification
 /** The checks that read or write the database with the service key. */
 const SERVICE_CHECKS = new Set(["member-reads", "identity-anonymous", "provenance-trigger", "notification-drain"]);
 
-/** Which checks run, which are skipped for lack of an account, and which environment names are missing for the rest. Pure. */
+/** Which checks run, which are skipped for lack of an account, and which environment names are missing for the rest. A check the caller named (`only`) is never skipped: a named check that cannot run is a missing name. Pure. */
 export function planRun({ only, env, base, record }) {
   const wanted = only ? only.split(",").map((s) => s.trim()).filter(Boolean) : DEFAULT_CHECKS;
   const unknown = wanted.filter((c) => !CHECKS.includes(c));
@@ -35,7 +37,7 @@ export function planRun({ only, env, base, record }) {
     if (MEMBER_CHECKS.has(c)) gaps.push(...missingNames(NEEDS.member, env));
     if (SERVICE_CHECKS.has(c)) gaps.push(...missingNames(NEEDS.record, env));
     if (c === "invitation-email") gaps.push(...missingNames(NEEDS.email, env));
-    if (c === "admin-pages" && gaps.length) skipped.push({ check: c, missing: gaps });
+    if (c === "admin-pages" && gaps.length && !only) skipped.push({ check: c, missing: gaps });
     else {
       run.push(c);
       gaps.forEach((n) => missing.add(n));
@@ -44,6 +46,8 @@ export function planRun({ only, env, base, record }) {
   return { run, skipped, missing: [...missing] };
 }
 
+/** The commit a row is written against: the deployed one when the workflow passes it as data, else the commit the script runs from. */
+export const codeShaOf = (env) => env.LIVE_CODE_SHA || env.GITHUB_SHA || null;
 export const triggerOf = (env) => (env.GITHUB_EVENT_NAME === "workflow_dispatch" ? "dispatch" : env.GITHUB_EVENT_NAME === "deployment_status" ? "push" : "manual");
 
 export async function runLive({ checks, io, phase, record, env, now = () => new Date(), log = console.log }) {
@@ -60,7 +64,7 @@ export async function runLive({ checks, io, phase, record, env, now = () => new 
     const report = { baseUrl: io.base, findings, pagesVisited: visited.map((url) => ({ url })) };
     const failed = findings.filter((f) => f.severity === "fail");
     let recorded = null;
-    if (record) recorded = await record(report, { now: now(), startedAt, check, phase, trigger: triggerOf(env), codeSha: env.GITHUB_SHA ?? null, githubRunId: env.GITHUB_RUN_ID ?? null });
+    if (record) recorded = await record(report, { now: now(), startedAt, check, phase, trigger: triggerOf(env), codeSha: codeShaOf(env), githubRunId: env.GITHUB_RUN_ID ?? null });
     log(`${failed.length ? "FAIL" : "PASS"} ${check}${findings.length ? ` (${failed.length} failure(s), ${findings.length - failed.length} warning(s))` : ""}${recorded?.error ? ` [NOT RECORDED: ${recorded.error}]` : ""}`);
     for (const f of findings) log(`  ${f.severity} ${f.url}: ${f.text}`);
     results.push({ check, failed: failed.length, warnings: findings.length - failed.length, recordError: recorded?.error ?? null });
@@ -69,6 +73,8 @@ export async function runLive({ checks, io, phase, record, env, now = () => new 
 }
 
 async function main() {
+  register("../lib/ts-hooks.mjs", import.meta.url, { data: {} });
+  const { skipVerdict, summarise } = await import("../../src/core/harness/exit.ts");
   const { values } = parseArgs({ options: { base: { type: "string" }, only: { type: "string" }, phase: { type: "string", default: "after" }, "no-record": { type: "boolean", default: false } }, strict: true });
   const env = process.env;
   const base = (values.base ?? env.LIVE_BASE_URL ?? "").replace(/\/+$/, "");
@@ -82,11 +88,12 @@ async function main() {
     process.exit(1);
   }
   for (const s of plan.skipped) console.log(`skipped ${s.check}: set ${s.missing.join(", ")} to run it`);
-  if (plan.missing.length) {
-    console.log(`live-checks: self-skipped (exit 2): the environment does not carry ${plan.missing.join(", ")}`);
-    process.exit(2);
+  const verdict = skipVerdict(env, plan.missing, Boolean(values.only));
+  if (verdict.message) {
+    console.log(`live-checks: ${verdict.message}`);
+    summarise(env, "Live checks", verdict);
+    process.exit(verdict.exit);
   }
-  register("../lib/ts-hooks.mjs", import.meta.url, { data: {} });
   const { createClient } = await import("@supabase/supabase-js");
   const { recordLiveSmoke } = await import("../../src/core/harness/live-smoke.ts");
   const { runNotificationOutbox } = await import("../../src/features/drain/kinds.ts");

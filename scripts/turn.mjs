@@ -1,5 +1,6 @@
 // The ONE CLI. `node scripts/turn.mjs --stage <sweep|sweep-research|change|capture|intake|connect|propagate|briefs|all|ops> --mode dry|apply [--input '<json keyed by stage>'] [--no-chain]`
-// Exit 0 every stage recorded; 1 a record failed, or a credential is missing in CI (it fails loud there); 2 self-skipped (no credentials locally, or not a dispatched run). It never runs a turn on a push or a pull request.
+// Exit 0 every stage recorded; 1 a record failed, a credential is missing where the event could carry it, or the run is not a dispatch in CI; 2 self-skipped for lack of credentials where the event cannot carry them (src/core/harness/exit.ts:
+// a workstation, or a fork PR). It never runs a turn on a push or a pull request: the workflow gives the turn job its secrets on a dispatch only.
 // Apply is refused by the run frame while the scrape cadence is off (rule 16): a dispatch in build mode is always dry, and its rows say so.
 import { appendFileSync } from "node:fs";
 import { register } from "node:module";
@@ -16,10 +17,7 @@ const note = (title, msg) => console.log(process.env.GITHUB_ACTIONS ? `::notice 
 
 const { values } = parseArgs({ options: { stage: { type: "string" }, mode: { type: "string", default: "dry" }, input: { type: "string", default: "{}" }, "no-chain": { type: "boolean", default: false } }, strict: true, allowPositionals: false });
 const event = process.env.GITHUB_EVENT_NAME;
-if (event && event !== "workflow_dispatch") {
-  note("turn", `self-skipped: a turn runs only on a dispatch (this run is a ${event}); exit 2`);
-  process.exit(2);
-}
+if (event && event !== "workflow_dispatch") fail(`a turn runs only on a dispatch (this run is a ${event}); the workflow gives the turn job its secrets on a dispatch only`);
 // Past this line the sources are needed (a pull request run stops above and installs nothing).
 const { STAGES, runTurn, opNames } = await import("../src/core/turn/index.ts");
 const { buildDeps } = await import("../src/core/turn/wiring.ts");
@@ -44,6 +42,6 @@ const table = [`### Turn ${result.rootRunId}`, "", `stage ${values.stage}, reque
 for (const n of result.notes) note("turn", n);
 console.log(table);
 if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${table}\n`);
-if (result.exit === 2) note("turn", `self-skipped: ${result.runs[0]?.error ?? "no credentials"}; exit 2`);
+if (result.exit === 2) note("turn", `${result.runs[0]?.error ?? "self-skipped: no credentials"}; exit 2`);
 if (result.exit === 1) console.error(`turn: ${result.runs.find((r) => r.exit === 1)?.error ?? "a record failed"}`);
 process.exit(result.exit);

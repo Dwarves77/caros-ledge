@@ -4,15 +4,15 @@
 import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
-import { pathToFileURL } from "node:url";
 
-import { workflowProblems } from "./workflow-yaml.mjs";
+import { isMain } from "../lib/fs.mjs";
 
 const inCi = Boolean(process.env.GITHUB_ACTIONS);
 const git = (...args) => execFileSync("git", args, { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
 
+/** Every step is an npm script, so the mutants inventory (scripts/ci/mutants/inventory.mjs) reads the gate list from here and the failure line names a real script. */
 export const STEPS = [
-  { name: "Workflow YAML parses (IMP-100)", fn: () => { const p = workflowProblems(); for (const l of p) console.error(l); return p.length ? 1 : 0; } },
+  { name: "Workflows are valid: YAML parses and the pinned actionlint finds nothing (IMP-100)", cmd: "workflow-yaml" },
   { name: "Lint", cmd: "lint" },
   { name: "Typecheck", cmd: "typecheck" },
   { name: "Build", cmd: "build", env: { NEXT_TELEMETRY_DISABLED: "1", NEXT_PUBLIC_SUPABASE_URL: "https://placeholder.supabase.co", NEXT_PUBLIC_SUPABASE_ANON_KEY: "placeholder" } },
@@ -21,7 +21,9 @@ export const STEPS = [
   { name: "UI checks", cmd: "ui-checks" },
   { name: "LOC gates", cmd: "loc" },
   { name: "Connection check (nothing runs alone)", cmd: "connections" },
-  { name: "Column check (every select, filter and order in src names a column the database defines)", cmd: "columns" },
+  { name: "Column check (every select, filter, write payload and rpc in src names a column or function the database defines)", cmd: "columns" },
+  { name: "Migration static checks (self-check, reversal, README, APPLY.md, borrowed rows)", cmd: "migration-checks" },
+  { name: "Mutants registry (every gate has a registered mutant, every entry applies; the runner proves each goes red in the mutants job)", cmd: "mutants:check" },
   { name: "Edge Function bundle (IMP-029: capture-worker bundles with its relative policy import)", cmd: "edge-bundle", scoped: () => edgeChanged() },
 ];
 
@@ -46,11 +48,6 @@ export const edgeChanged = () => changedUnder("supabase/functions/", "src/core/f
 function run(step) {
   if (inCi) console.log(`::group::${step.name}`);
   else console.log(`\n== ${step.name}`);
-  if (step.fn) {
-    const code = step.fn();
-    if (inCi) console.log("::endgroup::");
-    return code;
-  }
   const r = spawnSync("npm", ["run", step.cmd], { shell: true, encoding: "utf8", maxBuffer: 1 << 28, env: { ...process.env, ...step.env }, stdio: step.capture ? "pipe" : "inherit" });
   if (step.capture) {
     const out = `${r.stdout ?? ""}${r.stderr ?? ""}`;
@@ -61,12 +58,12 @@ function run(step) {
   return r.status ?? 1;
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (isMain(import.meta.url)) {
   const stamp = execFileSync("git", ["rev-parse", "--git-path", "gates-last"], { encoding: "utf8" }).trim();
   const last = existsSync(stamp) ? readFileSync(stamp, "utf8").trim() : null;
   const steps = STEPS.filter((s) => !s.scoped || inCi || s.scoped());
   if (!inCi && supabaseChanged()) steps.push({ name: "Schema on an embedded PostgreSQL 15 (supabase/ changed)", cmd: "schema:local" });
-  console.log(`gates: ${steps.map((s) => s.cmd ?? "workflows").join(", ")}${last ? `; the last run took ${last}s` : ""}`);
+  console.log(`gates: ${steps.map((s) => s.cmd).join(", ")}${last ? `; the last run took ${last}s` : ""}`);
   const started = Date.now();
   for (const step of steps) {
     const code = run(step);

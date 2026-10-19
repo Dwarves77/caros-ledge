@@ -23,9 +23,9 @@ export function sliceState(rows: readonly Row[]): SliceState {
   return { unconnected, unrecoverable };
 }
 
-/** Read every applied minter and connector row. A failed read throws: an unreadable ledger never reads as "all connected". */
+/** Read every applied minter and connector row (a partial run minted what it minted, so it counts), paged in the total order (started_at, id). A failed read throws: an unreadable ledger never reads as "all connected". */
 export async function readSliceState(sb: Db): Promise<SliceState> {
-  const rows = await fetchAllRows<Row>((from, to) => sb.from("harness_runs").select("id,family,root_run_id,outputs").eq("mode", "apply").eq("outcome", "success").in("family", [...MINTERS, CONNECTOR]).order("started_at", { ascending: true }).range(from, to), { cap: 100_000 });
+  const rows = await fetchAllRows<Row>((from, to) => sb.from("harness_runs").select("id,family,root_run_id,outputs").eq("mode", "apply").in("outcome", ["success", "partial"]).in("family", [...MINTERS, CONNECTOR]).order("started_at", { ascending: true }).order("id", { ascending: true }).range(from, to), { cap: 100_000 });
   return sliceState(rows);
 }
 

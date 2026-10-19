@@ -7,7 +7,7 @@ import type { IdentityHelpers } from "@/core/intake";
 import { assertFetchAllowed, capture, classifyBody, detectAccessWall, fetchAllowed, fetchDirect, makePoliteGate, parseOjReference } from "@/core/fetch";
 import { isStorableClass } from "@/core/fetch/classify-body";
 import { congruence, matchExistingSubject, sourceRole } from "@/core/entities";
-import { type Mode, makeRecorder, type RecorderContext } from "@/core/harness";
+import { currentRunContext, makeRecorder, type RecorderContext } from "@/core/harness";
 import { timePhase, withServerTiming } from "@/core/perf";
 import { createMethodRegistry, type LearningDeps, type MarketMethodDeps, type MethodRegistry, registerMarketMethods } from "@/core/propagation";
 import type { Catalog, ProducerSpec } from "@/core/producers";
@@ -72,8 +72,8 @@ export interface BuiltDeps {
   sb: Db;
   env: Env;
   now: () => Date;
-  /** Published by the run frame; the recorder and the dry-aware adapters read it. */
-  context: { current: RecorderContext | null };
+  /** The run the current call belongs to (published per call by the run frame, never shared between calls); the recorder and the dry-aware adapters read it. */
+  readonly context: { readonly current: RecorderContext | null };
   recorder: ReturnType<typeof makeRecorder>;
   gate: { allowed: boolean; refresh(): Promise<boolean> };
   sources: SourcesDeps;
@@ -112,9 +112,9 @@ export function buildDeps(sb: Db, env: Env = process.env, opts: DepsOptions = {}
   const now = opts.now ?? (() => new Date());
   const sleep = opts.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
   const doFetch: typeof fetch = opts.fetchImpl ?? ((...a) => fetch(...a));
-  const context: BuiltDeps["context"] = { current: null };
-  const dry = (): boolean => context.current?.mode !== ("apply" satisfies Mode);
-  const recorder = makeRecorder(sb, now, () => context.current);
+  const context: BuiltDeps["context"] = { get current() { return currentRunContext(); } };
+  const dry = (): boolean => context.current?.mode !== "apply";
+  const recorder = makeRecorder(sb, now);
   const hold = { db: sb, env };
   const fetchDeps: CaptureDeps = { db: sb, env, now, fetchImpl: doFetch, throttle: makePoliteGate({ gapMs: 1000, now: () => now().getTime(), sleep }) };
 

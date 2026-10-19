@@ -114,7 +114,7 @@ test("INV-235: corporate-email verification: a free-mail domain is refused, a mi
   try {
     process.env.COMMUNITY_ORG_SALT = salt;
     const db = world();
-    scripted.user = () => clientFor(db, { uid: USER.member, email: "someone@outlook.com", admin: false });
+    scripted.user = () => clientFor(db, { uid: USER.member, email: "someone@example.test", admin: false });
     const free = await call(POST_VERIFY, "member", "POST", "/api/community/profile/verify");
     assert.equal(free.status, 403);
     assert.equal(writesTo(db, "community_member_profiles").length, 0);

@@ -11,6 +11,8 @@ export interface MemCall {
   op: Op;
   payload?: unknown;
   filters: [string, string, unknown][];
+  /** The ordering the call asked for, in the order given: [column, ascending]. */
+  orders: [string, boolean][];
 }
 export type Err = { message: string; code?: string } | null;
 export type RpcFn = (args: Record<string, unknown>, db: MemDb) => { data?: unknown; error?: Err };
@@ -282,7 +284,7 @@ class Query {
   }
 
   private run(): { data: unknown; error: Err; count: number | null } {
-    const call: MemCall = { table: this.table, op: this.op, payload: this.payload, filters: this.filters };
+    const call: MemCall = { table: this.table, op: this.op, payload: this.payload, filters: this.filters, orders: this.orders };
     this.db.calls.push(call);
     const message = this.db.failWhen?.(call);
     if (message) return { data: null, error: { message }, count: null };
