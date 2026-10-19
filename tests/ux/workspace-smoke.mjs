@@ -10,6 +10,7 @@ import { readFileSync } from 'node:fs';
 
 import { compareRecord } from '../parity/compare.mjs';
 
+import { checkClientReads, SHELL_READS } from './client-sweep.mjs';
 import { chromium, open as openPage, parityReady, smoke, summarise, until, VIEWPORTS, WIDTHS } from './harness.mjs';
 import { measurePage } from './measure.mjs';
 import { scopeBaseline } from './shell-filter.mjs';
@@ -215,6 +216,11 @@ try {
       await page.getByRole('heading', { name: "You're set up" }).waitFor();
     }),
   );
+
+  // ── every read the settings and account screens make after hydration (the app's routes and the database REST reads) is refused in turn and must be stated ──
+  for (const [name, screen, ready] of [['settings', 'settings', 'Show Band tiles'], ['account', 'account', 'Save personal profile']]) {
+    await check(`client reads ${name}`, () => checkClientReads(run, browser, { name, url: url(screen), viewport: [1280, 800], prepare: (page) => install(page, { calls: [], rest: [] }), after: (page) => page.getByRole(ready.startsWith('Show') ? 'switch' : 'button', { name: ready }).waitFor(), ignore: SHELL_READS }));
+  }
 
   // ── fixture parity: the real /settings and /profile screens against the committed baseline ─────────────────────────
   const config = JSON.parse(readFileSync('tests/parity/approved-changes.json', 'utf8'));

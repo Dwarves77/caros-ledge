@@ -175,6 +175,8 @@ try {
     await s.ctx.close();
   });
 
+  // The rooms screen makes no client read (its data arrives as props), so there is nothing to refuse there.
+
   // ── fixture parity: the real /community screen against the committed baseline ─────────────────────────────────
   const config = JSON.parse(readFileSync('tests/parity/approved-changes.json', 'utf8'));
   if (parityReady(run)) {

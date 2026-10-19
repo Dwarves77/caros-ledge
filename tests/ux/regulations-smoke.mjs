@@ -4,6 +4,7 @@
 // the raw Sources markdown never is; a failed relevance read says so with Retry; the map names its attribution and a marker click selects its row).
 //
 // Usage: node tests/ux/regulations-smoke.mjs --base <origin>     (the server must run with UI_FIXTURES=1)
+import { checkClientReads, SHELL_READS } from './client-sweep.mjs';
 import { chromium, open as openPage, smoke, VIEWPORTS, WIDTHS } from './harness.mjs';
 import { hitArea, measurePage } from './measure.mjs';
 
@@ -24,6 +25,7 @@ async function install(page, state) {
     if (p === '/api/workspace/tags') return json(route, { tags: [], itemTags: {} });
     if (p === '/api/detail/relevance') return state.failRelevance ? json(route, { error: 'down' }, 503) : json(route, { relevance: null, binding: null });
     if (p === '/api/saved-views') return json(route, { views: [] });
+    if (p === '/api/notices') return json(route, { notices: [], since: '2026-09-16T00:00:00Z' });
     return json(route, { error: `unmocked ${p}` }, 404);
   });
 }
@@ -129,6 +131,12 @@ try {
     }, { calls: [], failRelevance: true }),
   );
 
+  // Every read the Regulations screens make after hydration is refused in turn and must be stated (the relevance banner, the tags, the saved views).
+  // The detail fixture draws the obligation positions failed on purpose (one note and its Try again), so two statements are declared.
+  for (const [screen, expectStated] of [['ledger', 0], ['detail', 2]]) {
+    await check(`client reads ${screen}`, () => checkClientReads(run, browser, { name: `regulations ${screen}`, url: `${base}/privacy/ui-fixtures/regulations?screen=${screen}`, viewport: [1280, 800], prepare: (page) => install(page, { calls: [] }), ignore: SHELL_READS, expectStated }));
+  }
+
   await check('map: the attribution is visible and every marker is a keyboard button named by its count', () =>
     session('map', async ({ page }) => {
       await page.locator('.leaflet-control-attribution').getByText(/OpenStreetMap/).waitFor();
@@ -142,4 +150,4 @@ try {
   await browser.close();
 }
 
-run.finish(`clean at ${WIDTHS}; behaviours pass`);
+run.finish(`clean at ${WIDTHS}; behaviours pass; every client read is stated when refused`);

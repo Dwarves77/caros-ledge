@@ -1,0 +1,1225 @@
+[
+  {
+    "expect": "red",
+    "id": "parity-skipped-route-green",
+    "gate": "test",
+    "only": [
+      "tests/parity/compare-gate.test.mjs"
+    ],
+    "closes": [
+      "G1",
+      "K:2"
+    ],
+    "apply": [
+      {
+        "file": "tests/parity/compare.mjs",
+        "find": "        failed = true;\n        result('FAIL', !cap ?",
+        "replace": "        result('SKIPPED', !cap ?"
+      },
+      {
+        "file": "tests/parity/compare.mjs",
+        "find": "  if (comparedGated + skippedGated < gated) failed = true;\n",
+        "replace": ""
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "parity-missing-baseline-green",
+    "gate": "test",
+    "only": [
+      "tests/parity/compare-gate.test.mjs"
+    ],
+    "closes": [
+      "G1",
+      "K:11"
+    ],
+    "apply": [
+      {
+        "file": "tests/parity/compare.mjs",
+        "find": "(cap.status === 'ok' && isGated && baseFiles.length === 0)",
+        "replace": "(false)"
+      },
+      {
+        "file": "tests/parity/compare.mjs",
+        "find": "  if (comparedGated + skippedGated < gated) failed = true;\n",
+        "replace": ""
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "parity-signed-out-skips-everything",
+    "gate": "test",
+    "only": [
+      "tests/parity/compare-gate.test.mjs"
+    ],
+    "closes": [
+      "G1",
+      "K:2"
+    ],
+    "apply": [
+      {
+        "file": "tests/parity/compare.mjs",
+        "find": "const signedOut = capIndex.signed_out_only === true;",
+        "replace": "const signedOut = true;"
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "parity-pixel-error-green",
+    "gate": "test",
+    "only": [
+      "tests/parity/compare-gate.test.mjs"
+    ],
+    "closes": [
+      "G1",
+      "K:9"
+    ],
+    "apply": [
+      {
+        "file": "tests/parity/compare.mjs",
+        "find": "`${viewport}: pixel compare error ${e.message}`], fail: exact }",
+        "replace": "`${viewport}: pixel compare error ${e.message}`], fail: false }"
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "parity-landmark-name-ignored",
+    "gate": "test",
+    "only": [
+      "tests/parity/compare-gate.test.mjs"
+    ],
+    "closes": [
+      "G1",
+      "K:10"
+    ],
+    "apply": [
+      {
+        "file": "tests/parity/compare.mjs",
+        "find": "(l) => `${l.role}:${uncount(l.name)}`",
+        "replace": "(l) => `${l.role}`"
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "parity-route-without-gate-green",
+    "gate": "test",
+    "only": [
+      "tests/parity/compare-gate.test.mjs"
+    ],
+    "closes": [
+      "G1",
+      "K:11"
+    ],
+    "apply": [
+      {
+        "file": "tests/parity/compare.mjs",
+        "find": "if (!gated.has(n) && !exempt.has(n)) problems.push(",
+        "replace": "if (false) problems.push("
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "parity-exemption-without-reason-green",
+    "gate": "test",
+    "only": [
+      "tests/parity/compare-gate.test.mjs"
+    ],
+    "closes": [
+      "G1",
+      "K:11"
+    ],
+    "apply": [
+      {
+        "file": "tests/parity/compare.mjs",
+        "find": "if (typeof e?.reason !== 'string' || e.reason.trim().length < MIN_REASON) problems.push(",
+        "replace": "if (false) problems.push("
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "parity-stale-baseline-compared",
+    "gate": "test",
+    "only": [
+      "tests/parity/compare-gate.test.mjs"
+    ],
+    "closes": [
+      "G1",
+      "G2",
+      "K:7"
+    ],
+    "apply": [
+      {
+        "file": "tests/parity/compare.mjs",
+        "find": "const stale = baseIndex.contract !== CAPTURE_CONTRACT;",
+        "replace": "const stale = false;"
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "parity-empty-list-baseline-green",
+    "gate": "test",
+    "only": [
+      "tests/parity/compare-gate.test.mjs"
+    ],
+    "closes": [
+      "G2",
+      "K:7"
+    ],
+    "apply": [
+      {
+        "file": "tests/parity/compare.mjs",
+        "find": "return (baseRecord.rows?.items ?? []).length === 0 ? 'baseline holds no list rows",
+        "replace": "return false ? 'baseline holds no list rows"
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "parity-row-order-ignored",
+    "gate": "test",
+    "only": [
+      "tests/parity/compare-gate.test.mjs"
+    ],
+    "closes": [
+      "G2",
+      "K:7"
+    ],
+    "apply": [
+      {
+        "file": "tests/parity/compare.mjs",
+        "find": "  check('row', baseRows, capRows, rowKey);\n",
+        "replace": ""
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "parity-truncated-page-green",
+    "gate": "test",
+    "only": [
+      "tests/parity/compare-gate.test.mjs"
+    ],
+    "closes": [
+      "G2",
+      "K:8"
+    ],
+    "apply": [
+      {
+        "file": "tests/parity/compare.mjs",
+        "find": "if (record.truncated === true) problems.push(",
+        "replace": "if (false) problems.push("
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "capture-rows-capped",
+    "gate": "tests/ux/ux-smoke.mjs",
+    "needs": "app",
+    "args": [
+      "--base",
+      "http://localhost:3100"
+    ],
+    "closes": [
+      "G2",
+      "K:7"
+    ],
+    "apply": [
+      {
+        "file": "tests/parity/capture.mjs",
+        "find": "    rows.push({ tag: el.tagName.toLowerCase(), text: clean(el.textContent).slice(0, 300), width: box.width, height: box.height, container });\n",
+        "replace": "    rows.push({ tag: el.tagName.toLowerCase(), text: clean(el.textContent).slice(0, 300), width: box.width, height: box.height, container });\n    if (rows.length === 20) break;\n"
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "capture-sampler-restored",
+    "gate": "tests/ux/ux-smoke.mjs",
+    "needs": "app",
+    "args": [
+      "--base",
+      "http://localhost:3100"
+    ],
+    "closes": [
+      "G2",
+      "K:7",
+      "S:73"
+    ],
+    "apply": [
+      {
+        "file": "tests/parity/contract.mjs",
+        "find": "export const ROW_PARTS = ['list-row', 'table-row'];",
+        "replace": "export const ROW_PARTS = ['article'];"
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "capture-height-from-document",
+    "gate": "tests/ux/ux-smoke.mjs",
+    "needs": "app",
+    "args": [
+      "--base",
+      "http://localhost:3100"
+    ],
+    "closes": [
+      "G2",
+      "K:8"
+    ],
+    "apply": [
+      {
+        "file": "tests/parity/capture.mjs",
+        "find": "document_height: (document.querySelector('main') ?? document.documentElement).scrollHeight,",
+        "replace": "document_height: document.documentElement.scrollHeight,"
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "capture-truncation-silent",
+    "gate": "tests/ux/ux-smoke.mjs",
+    "needs": "app",
+    "args": [
+      "--base",
+      "http://localhost:3100"
+    ],
+    "closes": [
+      "G2",
+      "K:8"
+    ],
+    "apply": [
+      {
+        "file": "tests/parity/capture.mjs",
+        "find": "return { truncated: needed > SCREEN_MAX_HEIGHT };",
+        "replace": "return { truncated: false };"
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "capture-container-counts-dropped",
+    "gate": "tests/ux/ux-smoke.mjs",
+    "needs": "app",
+    "args": [
+      "--base",
+      "http://localhost:3100"
+    ],
+    "closes": [
+      "G2",
+      "K:7"
+    ],
+    "apply": [
+      {
+        "file": "tests/parity/capture.mjs",
+        "find": "    if (seen) seen.count += 1;\n    else containers.push({ label: container, count: 1 });",
+        "replace": "    if (!seen) containers.push({ label: container, count: 0 });"
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "sampler-workaround-comment-restored",
+    "gate": "test",
+    "only": [
+      "tests/surfaces/detail-structure.test.ts"
+    ],
+    "closes": [
+      "G2",
+      "S:73"
+    ],
+    "apply": [
+      {
+        "file": "src/features/market/ui/RelatedSignalLinks.tsx",
+        "find": "// The Related section's signal links, as links.\n",
+        "replace": "// The Related section's signal links. Links, not list items: an `li` here is a row the parity gate samples (first 20 `li, tr, article`).\n"
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "measure-title-column-119",
+    "gate": "tests/ux/ux-smoke.mjs",
+    "needs": "build",
+    "args": [
+      "--base",
+      "http://localhost:3100"
+    ],
+    "closes": [
+      "G2b",
+      "K:32"
+    ],
+    "apply": [
+      {
+        "file": "src/ui/base.css",
+        "find": ".cl-list-row { display: grid; grid-template-columns: 3px 56px 1fr 88px 84px 76px 40px 44px; gap: 0 14px; min-height: 56px;",
+        "replace": ".cl-list-row { display: grid; grid-template-columns: 3px 56px 1fr 88px 84px 76px 40px 294px; gap: 0 14px; min-height: 56px;"
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "measure-title-column-unchecked",
+    "gate": "tests/ux/ux-smoke.mjs",
+    "needs": "app",
+    "args": [
+      "--base",
+      "http://localhost:3100"
+    ],
+    "closes": [
+      "G2b",
+      "K:32"
+    ],
+    "apply": [
+      {
+        "file": "tests/ux/measure.mjs",
+        "find": "if (column < opts.titleColumnMin) out.push(",
+        "replace": "if (false) out.push("
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "measure-collapsed-focusable-unchecked",
+    "gate": "tests/ux/ux-smoke.mjs",
+    "needs": "app",
+    "args": [
+      "--base",
+      "http://localhost:3100"
+    ],
+    "closes": [
+      "G2b",
+      "K:81"
+    ],
+    "apply": [
+      {
+        "file": "tests/ux/measure.mjs",
+        "find": "if ((r.width < 2 || r.height < 2) && !hiddenOnPurpose && !skipped('collapsed', el)) out.push(",
+        "replace": "if (false) out.push("
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "measure-overflow-unchecked",
+    "gate": "tests/ux/ux-smoke.mjs",
+    "needs": "app",
+    "args": [
+      "--base",
+      "http://localhost:3100"
+    ],
+    "closes": [
+      "G2b",
+      "K:32"
+    ],
+    "apply": [
+      {
+        "file": "tests/ux/measure.mjs",
+        "find": "if (r.right > vw + 1 && !skipped('overflow', el)) {",
+        "replace": "if (false) {"
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "measure-target-floor-unchecked",
+    "gate": "tests/ux/ux-smoke.mjs",
+    "needs": "app",
+    "args": [
+      "--base",
+      "http://localhost:3100"
+    ],
+    "closes": [
+      "G2b",
+      "K:32"
+    ],
+    "apply": [
+      {
+        "file": "tests/ux/measure.mjs",
+        "find": "if (Math.min(r.width, r.height) < 23.5) {",
+        "replace": "if (false) {"
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "measure-exemption-reason-optional",
+    "gate": "test",
+    "only": [
+      "tests/ux/ux-support.test.mjs"
+    ],
+    "closes": [
+      "G2b",
+      "K:81"
+    ],
+    "apply": [
+      {
+        "file": "tests/ux/measure.mjs",
+        "find": "if (typeof e.reason !== 'string' || e.reason.trim().length < MIN_REASON) throw",
+        "replace": "if (false) throw"
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "hydration-marker-never-set",
+    "gate": "tests/ux/ux-smoke.mjs",
+    "needs": "build",
+    "args": [
+      "--base",
+      "http://localhost:3100"
+    ],
+    "closes": [
+      "G2b",
+      "K:36",
+      "K:37"
+    ],
+    "apply": [
+      {
+        "file": "src/ui/shell/Hydrated.tsx",
+        "find": "document.documentElement.dataset.hydrated = \"true\";",
+        "replace": "document.documentElement.dataset.hydrated = \"false\";"
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "duplicate-dialog-opener",
+    "gate": "tests/ux/ux-smoke.mjs",
+    "needs": "build",
+    "args": [
+      "--base",
+      "http://localhost:3100"
+    ],
+    "closes": [
+      "G2b",
+      "K:37"
+    ],
+    "apply": [
+      {
+        "file": "src/features/admin/ui/parts/PartsGallery.tsx",
+        "find": "<button type=\"button\" id=\"fx-open-dialog\" className=\"cl-btn cl-btn--secondary cl-btn--md\" onClick={() => setDialog(true)}>Open dialog</button>",
+        "replace": "<button type=\"button\" id=\"fx-open-dialog\" className=\"cl-btn cl-btn--secondary cl-btn--md\" onClick={() => setDialog(true)}>Open dialog</button><button type=\"button\" id=\"fx-open-dialog\" className=\"cl-btn cl-btn--secondary cl-btn--md\" onClick={() => setDialog(true)}>Open dialog</button>"
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "baseline-scope-silent-fallback",
+    "gate": "test",
+    "only": [
+      "tests/ux/ux-support.test.mjs"
+    ],
+    "closes": [
+      "G2b",
+      "K:34"
+    ],
+    "apply": [
+      {
+        "file": "tests/ux/shell-filter.mjs",
+        "find": "if (at < 0) throw new Error(",
+        "replace": "if (at < 0) return 0;\n  if (false) throw new Error("
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "smoke-widths-dropped",
+    "gate": "test",
+    "only": [
+      "tests/ux/ux-support.test.mjs"
+    ],
+    "closes": [
+      "G2b",
+      "K:35"
+    ],
+    "apply": [
+      {
+        "file": "tests/ux/harness.mjs",
+        "find": "  [768, 1024],\n",
+        "replace": ""
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "smoke-sleep-restored",
+    "gate": "test",
+    "only": [
+      "tests/ux/ux-support.test.mjs"
+    ],
+    "closes": [
+      "G2b",
+      "K:36"
+    ],
+    "apply": [
+      {
+        "file": "tests/ux/market-smoke.mjs",
+        "find": "const run = smoke('market-smoke');",
+        "replace": "const run = smoke('market-smoke');\nconst napped = (page) => page.waitForTimeout(600);\nvoid napped;"
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "admin-populated-mock-dropped",
+    "gate": "tests/ux/admin-smoke.mjs",
+    "needs": "app",
+    "args": [
+      "--base",
+      "http://localhost:3100"
+    ],
+    "closes": [
+      "G2b",
+      "K:33"
+    ],
+    "apply": [
+      {
+        "file": "tests/ux/admin-mocks.mjs",
+        "find": "if (pathname === '/api/admin/runtime') return",
+        "replace": "if (pathname === '/api/admin/runtime') return undefined; if (pathname === '/api/admin/runtime-dropped') return"
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "ui-checks-style-element",
+    "gate": "ui-checks",
+    "closes": [
+      "G4",
+      "K:4"
+    ],
+    "apply": [
+      {
+        "file": "src/ui/Skeleton.tsx",
+        "find": "// Ported from old_repo/src/components/ui/Skeleton.tsx (lines 14-122)",
+        "replace": "// Ported from old_repo/src/components/ui/Skeleton.tsx (lines 14-122)\nexport const __planted = () => <div><style>{\"x\"}</style></div>;"
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "ui-checks-colour-literal",
+    "gate": "ui-checks",
+    "closes": [
+      "G4",
+      "K:4"
+    ],
+    "apply": [
+      {
+        "file": "src/ui/Skeleton.tsx",
+        "find": "// Ported from old_repo/src/components/ui/Skeleton.tsx (lines 14-122)",
+        "replace": "// Ported from old_repo/src/components/ui/Skeleton.tsx (lines 14-122)\nexport const __planted = `#ff0000`;"
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "ui-checks-colour-built-at-runtime",
+    "gate": "ui-checks",
+    "closes": [
+      "G4",
+      "K:4"
+    ],
+    "apply": [
+      {
+        "file": "src/ui/Skeleton.tsx",
+        "find": "// Ported from old_repo/src/components/ui/Skeleton.tsx (lines 14-122)",
+        "replace": "// Ported from old_repo/src/components/ui/Skeleton.tsx (lines 14-122)\nexport const __planted = (n: number) => `#${n.toString(16)}`;"
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "ui-checks-style-colour",
+    "gate": "ui-checks",
+    "closes": [
+      "G4",
+      "K:4"
+    ],
+    "apply": [
+      {
+        "file": "src/features/portfolio/ui/PortfolioIndexView.tsx",
+        "find": "\"use client\";",
+        "replace": "\"use client\";\nexport const __planted = () => <div style={{ color: \"red\" }} />;"
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "ui-checks-style-px",
+    "gate": "ui-checks",
+    "closes": [
+      "G4",
+      "K:53"
+    ],
+    "apply": [
+      {
+        "file": "src/features/portfolio/ui/PortfolioIndexView.tsx",
+        "find": "\"use client\";",
+        "replace": "\"use client\";\nexport const __planted = () => <div style={{ padding: 12 }} />;"
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "ui-checks-target-height",
+    "gate": "ui-checks",
+    "closes": [
+      "G4",
+      "K:4"
+    ],
+    "apply": [
+      {
+        "file": "src/features/portfolio/ui/PortfolioIndexView.tsx",
+        "find": "\"use client\";",
+        "replace": "\"use client\";\nexport const __planted = () => <button style={{ height: 20 }}>x</button>;"
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "ui-checks-data-layer-import",
+    "gate": "ui-checks",
+    "closes": [
+      "G4",
+      "K:93"
+    ],
+    "apply": [
+      {
+        "file": "src/ui/Skeleton.tsx",
+        "find": "// Ported from old_repo/src/components/ui/Skeleton.tsx (lines 14-122)",
+        "replace": "// Ported from old_repo/src/components/ui/Skeleton.tsx (lines 14-122)\nimport \"@/core/db/clients\";"
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "ui-checks-media-outside-base",
+    "gate": "ui-checks",
+    "closes": [
+      "G4",
+      "K:4"
+    ],
+    "apply": [
+      {
+        "file": "src/ui/Skeleton.tsx",
+        "find": "// Ported from old_repo/src/components/ui/Skeleton.tsx (lines 14-122)",
+        "replace": "// Ported from old_repo/src/components/ui/Skeleton.tsx (lines 14-122)\nexport const __planted = \"@media (max-width: 10px)\";"
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "ui-checks-var-unresolved",
+    "gate": "ui-checks",
+    "closes": [
+      "G4",
+      "K:4"
+    ],
+    "apply": [
+      {
+        "file": "src/ui/Skeleton.tsx",
+        "find": "// Ported from old_repo/src/components/ui/Skeleton.tsx (lines 14-122)",
+        "replace": "// Ported from old_repo/src/components/ui/Skeleton.tsx (lines 14-122)\nexport const __planted = \"var(--planted)\";"
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "ui-checks-class-undefined",
+    "gate": "ui-checks",
+    "closes": [
+      "G4",
+      "K:4"
+    ],
+    "apply": [
+      {
+        "file": "src/ui/Skeleton.tsx",
+        "find": "// Ported from old_repo/src/components/ui/Skeleton.tsx (lines 14-122)",
+        "replace": "// Ported from old_repo/src/components/ui/Skeleton.tsx (lines 14-122)\nexport const __planted = (x: string) => <div className={`cl-pill-${x}`} />;"
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "ui-checks-cl-btn-outside-button",
+    "gate": "ui-checks",
+    "closes": [
+      "G4",
+      "K:87"
+    ],
+    "apply": [
+      {
+        "file": "src/features/portfolio/ui/PortfolioIndexView.tsx",
+        "find": "\"use client\";",
+        "replace": "\"use client\";\nexport const __planted = () => <button className=\"cl-btn\">x</button>;"
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "ui-checks-raw-form-control",
+    "gate": "ui-checks",
+    "closes": [
+      "G4",
+      "K:92"
+    ],
+    "apply": [
+      {
+        "file": "src/features/portfolio/ui/PortfolioIndexView.tsx",
+        "find": "\"use client\";",
+        "replace": "\"use client\";\nexport const __planted = () => <input />;"
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "ui-checks-details-open",
+    "gate": "ui-checks",
+    "closes": [
+      "G4",
+      "K:96"
+    ],
+    "apply": [
+      {
+        "file": "src/features/portfolio/ui/PortfolioIndexView.tsx",
+        "find": "\"use client\";",
+        "replace": "\"use client\";\nexport const __planted = () => <details open><summary>s</summary></details>;"
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "ui-checks-wall-clock",
+    "gate": "ui-checks",
+    "closes": [
+      "G4",
+      "C:48",
+      "S:95"
+    ],
+    "apply": [
+      {
+        "file": "src/core/shared/log.ts",
+        "find": "// The one logger. The only file under src/ allowed to touch the console.",
+        "replace": "// The one logger. The only file under src/ allowed to touch the console.\nexport const __planted = () => Date.now();"
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "ui-checks-bare-fetch",
+    "gate": "ui-checks",
+    "closes": [
+      "G4",
+      "K:93",
+      "C:55"
+    ],
+    "apply": [
+      {
+        "file": "src/core/shared/log.ts",
+        "find": "// The one logger. The only file under src/ allowed to touch the console.",
+        "replace": "// The one logger. The only file under src/ allowed to touch the console.\nexport const __planted = () => fetch(\"/api/x\");"
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "ui-checks-kit-fetch",
+    "gate": "ui-checks",
+    "closes": [
+      "G4",
+      "K:93"
+    ],
+    "apply": [
+      {
+        "file": "src/ui/Skeleton.tsx",
+        "find": "// Ported from old_repo/src/components/ui/Skeleton.tsx (lines 14-122)",
+        "replace": "// Ported from old_repo/src/components/ui/Skeleton.tsx (lines 14-122)\nexport const __planted = () => requestJson(\"/api/x\");"
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "ui-checks-kit-imports-feature",
+    "gate": "ui-checks",
+    "closes": [
+      "G4",
+      "K:93"
+    ],
+    "apply": [
+      {
+        "file": "src/ui/Skeleton.tsx",
+        "find": "// Ported from old_repo/src/components/ui/Skeleton.tsx (lines 14-122)",
+        "replace": "// Ported from old_repo/src/components/ui/Skeleton.tsx (lines 14-122)\nimport \"@/features/auth/ui/AuthProvider\";"
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "ui-checks-entity-in-string",
+    "gate": "ui-checks",
+    "closes": [
+      "G4",
+      "S:4"
+    ],
+    "apply": [
+      {
+        "file": "src/features/portfolio/ui/PortfolioIndexView.tsx",
+        "find": "\"use client\";",
+        "replace": "\"use client\";\nexport const __planted = \"the finding&apos;s brief\";"
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "ui-checks-http-error-message",
+    "gate": "ui-checks",
+    "closes": [
+      "G4",
+      "K:56"
+    ],
+    "apply": [
+      {
+        "file": "src/core/shared/log.ts",
+        "find": "// The one logger. The only file under src/ allowed to touch the console.",
+        "replace": "// The one logger. The only file under src/ allowed to touch the console.\nexport const __planted = (error: Error) => { throw new HttpError(500, error.message); };"
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "ui-checks-supabase-error-unhandled",
+    "gate": "ui-checks",
+    "closes": [
+      "G4",
+      "K:56"
+    ],
+    "apply": [
+      {
+        "file": "src/core/shared/log.ts",
+        "find": "// The one logger. The only file under src/ allowed to touch the console.",
+        "replace": "// The one logger. The only file under src/ allowed to touch the console.\nexport async function __planted(sb: any) { const r = await sb.from(\"t\").select(\"id\"); return r.data; }"
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "ui-checks-model-id-literal",
+    "gate": "ui-checks",
+    "closes": [
+      "G4",
+      "K:56"
+    ],
+    "apply": [
+      {
+        "file": "src/core/shared/log.ts",
+        "find": "// The one logger. The only file under src/ allowed to touch the console.",
+        "replace": "// The one logger. The only file under src/ allowed to touch the console.\nexport const __planted = \"claude-sonnet-4\";"
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "ui-checks-cron-literal",
+    "gate": "ui-checks",
+    "closes": [
+      "G4",
+      "K:56"
+    ],
+    "apply": [
+      {
+        "file": "src/core/shared/log.ts",
+        "find": "// The one logger. The only file under src/ allowed to touch the console.",
+        "replace": "// The one logger. The only file under src/ allowed to touch the console.\nexport const __planted = \"*/5 * * * *\";"
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "ui-checks-style-on-kit-part",
+    "gate": "ui-checks",
+    "closes": [
+      "G4",
+      "K:48"
+    ],
+    "apply": [
+      {
+        "file": "src/features/portfolio/ui/PortfolioIndexView.tsx",
+        "find": "\"use client\";",
+        "replace": "\"use client\";\nexport const __planted = () => <Button style={{ opacity: 1 }}>x</Button>;"
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "ui-checks-css-px-scale",
+    "gate": "ui-checks",
+    "closes": [
+      "G4",
+      "K:53"
+    ],
+    "apply": [
+      {
+        "file": "src/features/watchlist/ui/watchlist.module.css",
+        "find": "/* The watchlist's own spacing; colour, type and radius are the shared tokens. */",
+        "replace": "/* The watchlist's own spacing; colour, type and radius are the shared tokens. */\n.__planted { padding: 12px; }"
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "ui-checks-button-rest-style",
+    "gate": "ui-checks",
+    "closes": [
+      "G4",
+      "K:48"
+    ],
+    "apply": [
+      {
+        "file": "src/ui/Button.tsx",
+        "find": "Omit<ButtonHTMLAttributes<HTMLButtonElement>, \"style\">",
+        "replace": "ButtonHTMLAttributes<HTMLButtonElement>"
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "ui-checks-r3-five-violations",
+    "gate": "ui-checks",
+    "closes": [
+      "G4",
+      "K:4"
+    ],
+    "apply": [
+      {
+        "file": "src/ui/Skeleton.tsx",
+        "find": "// Ported from old_repo/src/components/ui/Skeleton.tsx (lines 14-122)",
+        "replace": "// Ported from old_repo/src/components/ui/Skeleton.tsx (lines 14-122)\nexport const __r3a = `#ff0000`;\nexport const __r3b = \"hsl(0 100% 50%)\";\nexport const __r3c = (x: string) => <div className={`cl-pill-${x}`} style={{ color: \"red\" }}><button style={{ height: 20 }}>go</button></div>;"
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "ui-checks-allow-without-reason",
+    "gate": "ui-checks",
+    "closes": [
+      "G4",
+      "K:53"
+    ],
+    "apply": [
+      {
+        "file": "scripts/ci/ui-checks-allow.json",
+        "find": "\"owner\": \"R4b\",\n      \"reason\": \"a button drawn by hand with the cl-btn classes instead of the Button part (K:87); ActionButton and Button become one part and these callers use it.\",",
+        "replace": "\"owner\": \"R4b\",\n      \"reason\": \"\","
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "sweep-healthy-stated-ignored",
+    "gate": "test",
+    "only": [
+      "tests/surfaces/page-sweep.test.ts"
+    ],
+    "closes": [
+      "G5",
+      "K:5"
+    ],
+    "apply": [
+      {
+        "file": "tests/_support/page-sweep.ts",
+        "find": "if (already) problems.push(",
+        "replace": "if (false) problems.push("
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "sweep-vacuous-passes",
+    "gate": "test",
+    "only": [
+      "tests/surfaces/page-sweep.test.ts"
+    ],
+    "closes": [
+      "G5",
+      "K:5"
+    ],
+    "apply": [
+      {
+        "file": "tests/_support/page-sweep.ts",
+        "find": "if (refusableTables.length + refusableRpcs.length === 0) problems.push(",
+        "replace": "if (false) problems.push("
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "sweep-static-phrase-counts-as-stated",
+    "gate": "test",
+    "only": [
+      "tests/surfaces/page-sweep.test.ts"
+    ],
+    "closes": [
+      "G5",
+      "K:5"
+    ],
+    "apply": [
+      {
+        "file": "tests/_support/page-sweep.ts",
+        "find": "text !== healthyText && statedCount(text) > statedCount(healthyText)",
+        "replace": "STATED.test(mask(text))"
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "sweep-identical-draw-stated",
+    "gate": "test",
+    "only": [
+      "tests/surfaces/page-sweep.test.ts"
+    ],
+    "closes": [
+      "G5",
+      "K:5"
+    ],
+    "apply": [
+      {
+        "file": "tests/_support/page-sweep.ts",
+        "find": "text !== healthyText && statedCount(text) > statedCount(healthyText)",
+        "replace": "statedCount(text) >= statedCount(healthyText)"
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "sweep-unlisted-route-passes",
+    "gate": "test",
+    "only": [
+      "tests/surfaces/page-sweep.test.ts"
+    ],
+    "closes": [
+      "G5",
+      "S:45"
+    ],
+    "apply": [
+      {
+        "file": "tests/_support/app-routes.ts",
+        "find": "unlisted: found.filter((r) => !registered.includes(r))",
+        "replace": "unlisted: []"
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "sweep-reader-detection-blind",
+    "gate": "test",
+    "only": [
+      "tests/surfaces/page-sweep.test.ts"
+    ],
+    "closes": [
+      "G5",
+      "S:45"
+    ],
+    "apply": [
+      {
+        "file": "tests/_support/app-routes.ts",
+        "find": ".test(m[1] ?? \"\")) return true;",
+        "replace": ".test(m[1] ?? \"\") && false) return true;"
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "client-sweep-everything-stated",
+    "gate": "tests/ux/ux-smoke.mjs",
+    "needs": "app",
+    "args": [
+      "--base",
+      "http://localhost:3100"
+    ],
+    "closes": [
+      "G5",
+      "S:38"
+    ],
+    "apply": [
+      {
+        "file": "tests/ux/client-sweep.mjs",
+        "find": "if (!(refused.text !== healthy.text && statedCount(refused.text) > statedCount(healthy.text))) silent.push(key);",
+        "replace": "if (false) silent.push(key);"
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "client-sweep-static-copy-ignored",
+    "gate": "tests/ux/ux-smoke.mjs",
+    "needs": "app",
+    "args": [
+      "--base",
+      "http://localhost:3100"
+    ],
+    "closes": [
+      "G5",
+      "K:5"
+    ],
+    "apply": [
+      {
+        "file": "tests/ux/client-sweep.mjs",
+        "find": "if (statedCount(healthy.text) !== expected) problems.push(",
+        "replace": "if (false) problems.push("
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "client-sweep-vacuous-passes",
+    "gate": "tests/ux/ux-smoke.mjs",
+    "needs": "app",
+    "args": [
+      "--base",
+      "http://localhost:3100"
+    ],
+    "closes": [
+      "G5",
+      "K:5"
+    ],
+    "apply": [
+      {
+        "file": "tests/ux/client-sweep.mjs",
+        "find": "if (!reads.length) problems.push('the screen makes no read: the sweep is vacuous');",
+        "replace": ""
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "silent-client-fetch-notices",
+    "gate": "tests/ux/market-smoke.mjs",
+    "needs": "build",
+    "args": [
+      "--base",
+      "http://localhost:3100"
+    ],
+    "closes": [
+      "G5",
+      "S:38",
+      "S:45"
+    ],
+    "apply": [
+      {
+        "file": "src/ui/figures/Notices.tsx",
+        "find": "if (!r.ok || !Array.isArray(r.data?.notices)) setState({ status: \"failed\", error: r.error ?? \"The notices came back in a form this page cannot read.\" });",
+        "replace": "if (!r.ok || !Array.isArray(r.data?.notices)) setState({ status: \"ready\", notices: [], since: null });"
+      }
+    ]
+  }
+]

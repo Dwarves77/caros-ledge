@@ -3,6 +3,7 @@
 // policy timeline widens and narrows its scope, a failed notices read says so and Retry recovers, "Request coverage" says what happened, and with every read failed (?state=failed) each part says so with Retry and nothing shows an empty list or a zero.
 //
 // Usage: node tests/ux/market-smoke.mjs --base <origin>     (the server must run with UI_FIXTURES=1)
+import { checkClientReads, SHELL_READS } from './client-sweep.mjs';
 import { chromium, open as openPage, smoke, VIEWPORTS, WIDTHS } from './harness.mjs';
 import { measurePage } from './measure.mjs';
 
@@ -106,8 +107,11 @@ try {
     ensure(!/\b0 active signals\b/.test(body), 'a failed list is never zero signals');
     await s.ctx.close();
   });
+
+  // Every read the Market screen makes after hydration is refused in turn and must be stated (the notices, the obligations, the tags).
+  await check('client reads', () => checkClientReads(run, browser, { name: 'market', url: `${base}/privacy/ui-fixtures/market`, viewport: [1280, 800], prepare: (page) => install(page, { calls: [], notices: 'ok' }), ignore: SHELL_READS }));
 } finally {
   await browser.close();
 }
 
-run.finish(`clean at ${WIDTHS}`);
+run.finish(`clean at ${WIDTHS}; every client read is stated when refused`);

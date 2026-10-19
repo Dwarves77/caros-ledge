@@ -45,6 +45,8 @@ const FIXTURES = {
   "details-open": { bad: { [FEATURE]: "export const P = () => <details open><summary>s</summary></details>;\n" }, good: { [FEATURE]: "export const P = () => <details><summary>s</summary></details>;\n" } },
   "wall-clock": { bad: { "src/core/t.ts": "export const t = () => new Date();\nexport const u = () => Date.now();\n" }, good: { "src/core/t.ts": "export const t = (now: () => Date) => now();\nexport const u = (iso: string) => new Date(iso);\n" } },
   "bare-fetch": { bad: { [FEATURE]: 'export const g = () => fetch("/api/x");\n' }, good: { [FEATURE]: 'import { requestJson } from "@/core/http/request-json";\nexport const g = () => requestJson("/api/x");\n' } },
+  "kit-fetch": { bad: { [UI]: 'import { requestJson } from "@/core/http/request-json";\nexport const load = () => requestJson("/api/x");\n' }, good: { [UI]: "export const load = (rows: string[]) => rows;\n" } },
+  "kit-imports-feature": { bad: { [UI]: 'import { useAuth } from "@/features/auth/ui/AuthProvider";\nexport const x = useAuth;\n' }, good: { [UI]: 'import { x } from "@/core/shared";\nexport { x };\n' } },
   "entity-in-string": { bad: { [FEATURE]: 'export const s = "the finding&apos;s brief";\n' }, good: { [FEATURE]: 'export const P = () => <p title="a &amp; b">the finding&apos;s brief</p>;\n' } },
   "http-error-message": { bad: { "src/features/x/api/h.ts": "export const f = (error: Error) => { throw new HttpError(500, error.message); };\n" }, good: { "src/features/x/api/h.ts": 'export const f = () => { throw new HttpError(500, "The request could not be completed. Try again."); };\n' } },
   "supabase-error-unhandled": {

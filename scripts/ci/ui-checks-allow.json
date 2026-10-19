@@ -142,16 +142,52 @@
     },
     "bare-fetch": {
       "owner": "R4b",
-      "reason": "a client fetch outside core/http/request-json (K:93).",
+      "reason": "a fetch( call outside the one request caller (C:55, K:93).",
       "files": {
+        "src/core/http/request-json.ts": {
+          "count": 1,
+          "reason": "this is the one request caller: every other module calls it."
+        },
+        "src/core/turn/wiring.ts": {
+          "count": 1,
+          "reason": "the production default of the injected fetch implementation (opts.fetchImpl ?? fetch); the turn hands the gated primitive everything else."
+        },
         "src/features/auth/ui/AuthProvider.tsx": {
           "count": 1,
           "reason": "the identity loader reads the Retry-After header of the response to decide how long to wait; the one request caller does not yet hand a refusal its headers."
+        },
+        "src/features/coverage/client.tsx": {
+          "count": 1,
+          "reason": "the CSV export reads the response as a file (the text of the body and its content-disposition header), which the JSON request caller does not carry."
         },
         "src/ui/shell/GlobalErrorReporter.tsx": {
           "count": 1,
           "reason": "the error reporter must not depend on the request caller whose failure it may be reporting; it posts with keepalive."
         }
+      }
+    },
+    "kit-fetch": {
+      "owner": "R4b",
+      "reason": "the kit calls the request caller (K:93): the collab blocks, the notices rail and the notifications list move to their features with the caller handed in.",
+      "files": {
+        "src/ui/detail/collab/ItemAssignBlock.tsx": 4,
+        "src/ui/detail/collab/ItemNotesBlock.tsx": 4,
+        "src/ui/detail/collab/collab-client.ts": 1,
+        "src/ui/figures/Notices.tsx": 1,
+        "src/ui/shell/notifications/NotificationsList.tsx": 4
+      }
+    },
+    "kit-imports-feature": {
+      "owner": "R4b",
+      "reason": "the shell imports the auth provider, the identity types and the workspace state from features (K:93); the shell receives them as props or moves to a feature.",
+      "files": {
+        "src/ui/shell/AppShell.tsx": 1,
+        "src/ui/shell/NavCard.tsx": 1,
+        "src/ui/shell/Providers.tsx": 1,
+        "src/ui/shell/TopBar.tsx": 1,
+        "src/ui/shell/identity-seed.ts": 3,
+        "src/ui/shell/notifications/NotificationsBell.tsx": 1,
+        "src/ui/shell/use-bootstrap.ts": 1
       }
     },
     "entity-in-string": {

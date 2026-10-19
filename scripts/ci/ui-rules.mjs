@@ -308,11 +308,36 @@ export const RULES = [
   },
   {
     id: "bare-fetch",
-    law: "the kit and the feature screens do not call fetch(): the one request caller is core/http/request-json",
-    scope: (f) => isTs(f) && (inUi(f) || /^src\/features\/[^/]+\/ui\//.test(f)),
+    law: "nothing calls fetch() directly: the one request caller is core/http/request-json, and the one gated network primitive is core/fetch (C:55, K:93)",
+    scope: (f) => isTs(f) && f.startsWith("src/"),
     *check({ sf }) {
       const walk = function* (n) {
         if (ts.isCallExpression(n) && ts.isIdentifier(n.expression) && n.expression.text === "fetch") yield { line: lineOf(sf, n), message: "a bare fetch(" };
+        for (const c of n.getChildren(sf)) yield* walk(c);
+      };
+      yield* walk(sf);
+    },
+  },
+  {
+    id: "kit-fetch",
+    law: "the kit never fetches: a screen calls the request caller, and the kit is handed what it draws (K:93)",
+    scope: (f) => isTs(f) && inUi(f),
+    *check({ sf }) {
+      const walk = function* (n) {
+        if (ts.isCallExpression(n) && ts.isIdentifier(n.expression) && ["requestJson", "authedFetch", "collabRequest"].includes(n.expression.text)) yield { line: lineOf(sf, n), message: `the kit calls ${n.expression.text}(` };
+        for (const c of n.getChildren(sf)) yield* walk(c);
+      };
+      yield* walk(sf);
+    },
+  },
+  {
+    id: "kit-imports-feature",
+    law: "the kit does not import a feature: layering runs one way, features use the kit (K:93)",
+    scope: (f) => isTs(f) && inUi(f),
+    *check({ sf }) {
+      const walk = function* (n) {
+        const spec = (ts.isImportDeclaration(n) || ts.isExportDeclaration(n)) && n.moduleSpecifier ? n.moduleSpecifier.text : null;
+        if (spec !== null && spec.startsWith("@/features/")) yield { line: lineOf(sf, n), message: `imports a feature: ${spec}` };
         for (const c of n.getChildren(sf)) yield* walk(c);
       };
       yield* walk(sf);

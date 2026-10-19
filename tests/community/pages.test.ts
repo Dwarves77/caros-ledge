@@ -17,7 +17,6 @@ import { useToast } from "@/features/community/ui/toast";
 import { renderApp, textOf } from "../_support/render.ts";
 import { scripted } from "../_support/fake-clients.ts";
 import { sweepPage, type SweepWorld } from "../_support/page-sweep.ts";
-
 import routeSweep from "../surfaces/route-sweep.json" with { type: "json" };
 
 import { asClient, ROOM_EU, USER, world, type Viewer, type World } from "./_world.ts";

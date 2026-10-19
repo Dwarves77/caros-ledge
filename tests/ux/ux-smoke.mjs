@@ -10,12 +10,14 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { wholePageScreenshot } from '../parity/capture.mjs';
+import { ROW_SELECTOR } from '../parity/contract.mjs';
 
-import { chromium, exactlyOne, open, settled, smoke, VIEWPORTS, WIDTHS } from './harness.mjs';
+import { sweepClientReads } from './client-sweep.mjs';
+import { chromium, exactlyOne, open, settled, smoke, summarise, VIEWPORTS, WIDTHS } from './harness.mjs';
 import { measurePage } from './measure.mjs';
 
 const run = smoke('ux-smoke');
-const { base, fail, check } = run;
+const { base, fail, check, must } = run;
 
 // The matrix contracts (operator 2026-09-09): the card height is constant across arrival, a selected cell, compare mode and Esc; arrows move the selection and Home moves only; Esc closes; the dimension column stays
 // pinned while the regions scroll; six regions scroll inside the card where five fit; the arrival state declares itself and the declaration goes when the reader acts.
@@ -182,6 +184,92 @@ try {
       rmSync(dir, { recursive: true, force: true });
       await shot.close();
     }
+  });
+
+  // G2: the parity capture's record of a page. It holds EVERY list row (no window of 20), counts them per container, takes the page height from <main> (the shell scrolls inside it), and says when the page was taller than
+  // the screenshot ceiling instead of cutting it silently. The 100-row fixture is the list; /privacy is a page that scrolls inside <main>.
+  await check('capture record: every list row, counted per container', async () => {
+    const { ctx, page } = await open(browser, `${base}/privacy/ui-fixtures`, [1280, 800]);
+    try {
+      const dom = await summarise(page);
+      const drawn = await page.locator(ROW_SELECTOR).count();
+      must(drawn >= 100, `the fixture draws ${drawn} row parts, expected the 100-row list`);
+      must(dom.rows.items.length === drawn, `the capture holds ${dom.rows.items.length} of ${drawn} list rows: a window of the list is not the list`);
+      must(dom.rows.containers.reduce((n, c) => n + c.count, 0) === dom.rows.items.length && dom.rows.containers.length >= 1, `the container counts (${JSON.stringify(dom.rows.containers)}) do not add up to the rows`);
+    } finally {
+      await ctx.close();
+    }
+  });
+  await check('capture record: the page height is that of the shell main, and a page taller than the screenshot ceiling is recorded truncated', async () => {
+    const viewport = { width: 375, height: 812 };
+    const { ctx, page } = await open(browser, `${base}/privacy`, [viewport.width, viewport.height]);
+    const dir = mkdtempSync(join(tmpdir(), 'tall-'));
+    try {
+      const dom = await summarise(page);
+      const inMain = await page.evaluate(() => document.querySelector('main').scrollHeight);
+      must(dom.document_height === inMain && inMain > viewport.height, `document_height is ${dom.document_height}, <main> scrolls ${inMain} (the viewport is ${viewport.height}): the page height of the shell is that of main`);
+      await page.evaluate(() => {
+        const tall = document.createElement('div');
+        tall.style.height = '20000px';
+        document.querySelector('main').append(tall);
+      });
+      const shot = await wholePageScreenshot(page, viewport, join(dir, 'tall.png'));
+      must(shot.truncated === true, 'a page of 20000 px was not recorded truncated (the ceiling is 16000)');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+      await ctx.close();
+    }
+  });
+
+  // G2b: the measure itself can fail. Each fault below is planted into a healthy fixture page and the measure must report it; a measure that cannot go red proves nothing about the real routes (the 119 px
+  // title column of V-9 at 1280 is the planted fault in the third, and the real route's own is held by the parity capture's offences).
+  const PLANTED = [
+    ['a 20 px target', 'target under 24 px', (page) => page.evaluate(() => { const b = document.createElement('button'); b.textContent = 'go'; b.style.cssText = 'height:20px;width:90px'; document.querySelector('[data-fx]').append(b); })],
+    ['a box that passes the right edge', 'overflow:', (page) => page.evaluate(() => { const d = document.createElement('div'); d.style.cssText = 'position:absolute;left:0;width:3000px;height:10px'; document.querySelector('[data-fx]').append(d); })],
+    ['a 119 px title column at 1280', 'list title column squeezed', (page) => page.addStyleTag({ content: '.cl-list-row { grid-template-columns: 3px 56px 1fr 88px 84px 76px 40px 294px !important; }' })],
+    ['a focusable control collapsed to 1 px', 'focusable control collapsed', (page) => page.evaluate(() => { const b = document.createElement('button'); b.style.cssText = 'width:1px;height:1px;padding:0;border:0'; document.querySelector('[data-fx]').append(b); })],
+  ];
+  for (const [what, expected, plant] of PLANTED) {
+    await check(`measure can fail: ${what}`, async () => {
+      const { ctx, page } = await open(browser, `${base}/privacy/ui-fixtures`, [1280, 800]);
+      try {
+        must((await measurePage(page, { rows: true })).length === 0, 'the healthy fixture page is not clean, so the plant proves nothing');
+        await plant(page);
+        const offences = (await measurePage(page, { rows: false })).filter((o) => o.includes(expected));
+        must(offences.length > 0, `${what} was planted and the measure reported no "${expected}"`);
+      } finally {
+        await ctx.close();
+      }
+    });
+  }
+
+  // G5: the client-read sweep itself can fail. Four planted screens (served from a fake origin): a read whose failure is drawn as a zero, one that states it, a healthy screen that already carries "Retry", and one that reads nothing.
+  const planted = (script, copy = '') => `<!doctype html><html><body><main><p id="o">loading</p>${copy}</main><script>${script};document.documentElement.dataset.hydrated='true'</script></body></html>`;
+  const FETCH = "fetch('/api/x').then((r)=>r.ok?r.json():Promise.reject()).then((d)=>{o.textContent='count '+d.n},";
+  const SCREENS = {
+    silent: planted(`const o=document.getElementById('o');${FETCH}()=>{o.textContent='count 0'})`),
+    stating: planted(`const o=document.getElementById('o');${FETCH}()=>{o.textContent='The count could not be loaded. Retry'})`),
+    staticRetry: planted(`const o=document.getElementById('o');${FETCH}()=>{o.textContent='count 0'})`, '<p>Anything wrong? Retry from the menu.</p>'),
+    nothing: planted("document.getElementById('o').textContent='static'"),
+  };
+  const sweepPlanted = (name) => sweepClientReads(browser, {
+    name,
+    url: 'http://planted.test/',
+    viewport: [1024, 768],
+    prepare: async (page) => {
+      await page.route('http://planted.test/**', (route) => (new URL(route.request().url()).pathname === '/api/x' ? route.fulfill({ status: 200, contentType: 'application/json', body: '{"n":3}' }) : route.fulfill({ status: 200, contentType: 'text/html', body: SCREENS[name] })));
+    },
+  });
+  await check('client sweep can fail', async () => {
+    const silent = await sweepPlanted('silent');
+    must(JSON.stringify(silent.silent) === '["GET /api/x"]' && silent.problems.length === 0, `a read drawn as a zero was not reported silent: ${JSON.stringify(silent)}`);
+    const stating = await sweepPlanted('stating');
+    must(stating.silent.length === 0 && stating.problems.length === 0, `a screen that states its failure was reported: ${JSON.stringify(stating)}`);
+    const staticRetry = await sweepPlanted('staticRetry');
+    must(staticRetry.problems.length === 1 && /holds 1 stated failure/.test(staticRetry.problems[0]), `a screen that already carries "Retry" was not refused as proving nothing: ${JSON.stringify(staticRetry)}`);
+    must(staticRetry.silent.length === 1, 'and its silent read is still reported (the refused draw says no more of it than the healthy one)');
+    const nothing = await sweepPlanted('nothing');
+    must(nothing.problems.length === 1 && /vacuous/.test(nothing.problems[0]), `a screen that reads nothing was not refused as vacuous: ${JSON.stringify(nothing)}`);
   });
 } finally {
   await browser.close();

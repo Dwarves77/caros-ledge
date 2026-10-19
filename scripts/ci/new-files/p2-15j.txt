@@ -1,1 +1,1 @@
-src/features/market/ui/RelatedSignalLinks.tsx | new in P2-15j: the Related signal links as links, not list items (the old page drew bare links; an li is a row the parity gate samples), split out so a test renders it
+src/features/market/ui/RelatedSignalLinks.tsx | new in P2-15j: the Related signal links as links (the old page drew bare links), split out so a test renders it

@@ -9,6 +9,7 @@ import { readFileSync } from 'node:fs';
 
 import { compareRecord } from '../parity/compare.mjs';
 
+import { checkClientReads, SHELL_READS } from './client-sweep.mjs';
 import { chromium, open as openPage, parityReady, smoke, summarise, until, VIEWPORTS, WIDTHS } from './harness.mjs';
 import { measurePage } from './measure.mjs';
 import { scopeBaseline } from './shell-filter.mjs';
@@ -219,6 +220,24 @@ try {
       await dialog.getByText('Platform items · 1').waitFor();
     });
   });
+
+  // ── every read these screens make after hydration is refused in turn and must be stated (the Watch membership once a row menu is open, the bootstrap bundle, the notices) ──
+  const sweepSpec = (name, screen, after) => ({
+    name,
+    url: url(screen),
+    viewport: [1280, 800],
+    prepare: async (page, ctx) => {
+      await signIn(ctx);
+      await install(page, { calls: [] });
+    },
+    ...(after ? { after } : {}),
+    ignore: SHELL_READS,
+  });
+  await check('client reads dashboard', () => checkClientReads(run, browser, sweepSpec('dashboard', 'dashboard', async (page) => {
+    await page.getByRole('button', { name: 'Actions for ReFuelEU Aviation: sustainable aviation fuel supply mandate' }).click();
+    await page.getByRole('button', { name: /Watch/ }).first().waitFor();
+  })));
+  // The watchlist and search fixtures make no client read (their data arrives as props), so there is nothing to refuse there.
 
   // ── fixture parity: the real screens against the baseline, by the gate's own comparer ──
   // The fixture draws the page content without the shell (the shell is the frame gate's), so the baseline is cut to the same scope (tests/ux/shell-filter.mjs, kind 'page').
