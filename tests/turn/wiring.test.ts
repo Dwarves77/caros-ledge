@@ -3,6 +3,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
+import { withRunContext } from "@/core/harness";
 import { runTurn } from "@/core/turn";
 import { buildDeps, enforceWired, MANIFEST, SERVICE_MEMBER, startupCheck, wireAll, workspaceWiring } from "@/core/turn/wiring";
 import { deriveKey } from "@/core/intake/canonical-key";
@@ -18,15 +19,14 @@ test("every wired member is present on the built deps, and the owed members are 
   assert.ok(MANIFEST.filter((e) => e.status === "wired").length >= 30, "the manifest covers every provider-to-consumer member");
 });
 
-test("an unwired required member is named, and production refuses to serve with it (IMP-026)", () => {
+test("an unwired required member is named, and the start is refused with it in every environment, not only Vercel (IMP-026, G9)", () => {
   const f = fixture();
   (f.d.intake as unknown as { mint: unknown }).mint = {};
   (f.d.workspace as { itemHref?: unknown }).itemHref = undefined;
   const report = startupCheck(f.d);
   assert.deepEqual(report.missing.sort(), ["intake.mint.mintItem", "workspace.itemHref"]);
-  assert.throws(() => enforceWired(report, { VERCEL: "1" }), /startup refused: required dependencies are not wired: intake\.mint\.mintItem, workspace.itemHref/);
-  assert.doesNotThrow(() => enforceWired(report, { NODE_ENV: "production" }));
-  assert.doesNotThrow(() => enforceWired({ missing: [] }, { VERCEL: "1" }));
+  assert.throws(() => enforceWired(report), /startup refused: required dependencies are not wired: intake\.mint\.mintItem, workspace.itemHref/);
+  assert.doesNotThrow(() => enforceWired({ missing: [] }));
 });
 
 test("the intake adapters: the canonical key from an identifier or a URL, institution equality that is never true for an empty key", () => {
@@ -46,14 +46,12 @@ test("registerAndRate through the sources dep is read-only in a dry run and repo
   const f = fixture();
   const url = "https://www.europarl.europa.eu/doc/1";
   const before = f.db.rows("sources").length;
-  f.d.context.current = null;
   const dry = await f.d.sources.registerAndRate(url);
   assert.equal(dry.sourceId, null);
   assert.equal(typeof dry.tier, "number");
   assert.equal(f.db.rows("sources").length, before);
   assert.equal(f.db.writes("sources").length, 0);
-  f.d.context.current = { rootRunId: "x", upstreamRunId: null, mode: "apply", trigger: "dispatch", forcedDry: false, codeSha: null, githubRunId: null };
-  const real = await f.d.sources.registerAndRate(url);
+  const real = await withRunContext({ rootRunId: "x", upstreamRunId: null, mode: "apply", trigger: "dispatch", forcedDry: false, codeSha: null, githubRunId: null }, () => f.d.sources.registerAndRate(url));
   assert.ok(real.sourceId);
   assert.equal(real.tier, dry.tier, "the dry tier is the tier the registration gave");
   assert.equal(f.db.rows("sources").length, before + 1);
@@ -124,12 +122,15 @@ test("wireAll builds from what the environment provides: no service key and not 
   }
 });
 
-test("the production wiring carries the market slice's arithmetic by default (a Vercel start refuses an unwired producers.market)", () => {
+test("the production wiring carries the market slice's arithmetic by default; buildDeps refuses an unwired producers.market unless the caller names it as left out on purpose", () => {
   const d = buildDeps(new MemDb({}, {}).client, {}, { now: () => NOW });
   assert.notEqual(d.producers.market, null);
   assert.notEqual(d.marketMethods, null);
   assert.deepEqual(startupCheck(d).missing, []);
-  assert.throws(() => enforceWired(startupCheck(buildDeps(new MemDb({}, {}).client, {}, { now: () => NOW, market: null })), { VERCEL: "1" }), /producers\.market/);
+  assert.throws(() => buildDeps(new MemDb({}, {}).client, {}, { now: () => NOW, market: null }), /buildDeps: required dependencies are not wired: producers\.market/);
+  const MARKET_MEMBER = "producers.market (computeSeriesDeltas and the market methods)";
+  const left = buildDeps(new MemDb({}, {}).client, {}, { now: () => NOW, market: null, unwired: [MARKET_MEMBER] });
+  assert.deepEqual(startupCheck(left).missing, [MARKET_MEMBER], "named as left out, it builds, and the startup check still reports it");
 });
 
 const VERDICTS_MEMBER = "producers.verdicts (host verdicts as a table, IMP-054)";

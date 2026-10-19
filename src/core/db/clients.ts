@@ -23,6 +23,11 @@ export function isServiceConfigured(): boolean {
   return !!process.env.SUPABASE_SERVICE_ROLE_KEY;
 }
 
+/** The names a service-role client needs that `env` does not set (the harness reports them when it cannot open a database). Empty when `serviceClient()` could be built from `env`. */
+export function missingServiceEnv(env: Record<string, string | undefined>): string[] {
+  return ["NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"].filter((name) => !env[name]);
+}
+
 /** The bearer token of a request, or null. */
 export function bearerToken(request?: Request): string | null {
   const header = request?.headers.get("authorization");

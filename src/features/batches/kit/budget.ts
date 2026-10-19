@@ -32,7 +32,7 @@ export function decideCooldown(a: { now: Date; lastRun: LastRun | null; cooldown
 
 /** The latest brief-apply row that applied (or began to) in apply mode, excluding this firing's own row. A read error throws: an unreadable ledger is never "no previous run". */
 export async function readLastApplyRun(sb: Db, exceptId?: string): Promise<LastRun | null> {
-  let q = sb.from("harness_runs").select("id, started_at, finished_at, outcome").eq("family", "brief-apply").eq("mode", "apply").in("outcome", ["success", "failed", "unknown"]);
+  let q = sb.from("harness_runs").select("id, started_at, finished_at, outcome").eq("family", "brief-apply").eq("mode", "apply").in("outcome", ["success", "partial", "failed", "unknown"]);
   if (exceptId) q = q.neq("id", exceptId);
   const { data, error } = await q.order("started_at", { ascending: false }).limit(1);
   if (error) throw new Error(`harness_runs read failed: ${error.message}`);

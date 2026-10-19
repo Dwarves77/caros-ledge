@@ -1,5 +1,6 @@
 // The ONE CLI. `node scripts/turn.mjs --stage <sweep|sweep-research|change|capture|intake|connect|propagate|briefs|all|ops> --mode dry|apply [--input '<json keyed by stage>'] [--no-chain]`
-// Exit 0 every stage recorded; 1 a record failed, or a credential is missing in CI (it fails loud there); 2 self-skipped (no credentials locally, or not a dispatched run). It never runs a turn on a push or a pull request.
+// Exit 0 every stage recorded; 1 a record failed, a credential is missing where the event could carry it, or the run is not a dispatch in CI; 2 self-skipped for lack of credentials where the event cannot carry them (src/core/harness/exit.ts:
+// a workstation, or a fork PR). It never runs a turn on a push or a pull request: the workflow gives the turn job its secrets on a dispatch only.
 // Apply is refused by the run frame while the scrape cadence is off (rule 16): a dispatch in build mode is always dry, and its rows say so.
 import { appendFileSync } from "node:fs";
 import { register } from "node:module";
@@ -16,13 +17,10 @@ const note = (title, msg) => console.log(process.env.GITHUB_ACTIONS ? `::notice 
 
 const { values } = parseArgs({ options: { stage: { type: "string" }, mode: { type: "string", default: "dry" }, input: { type: "string", default: "{}" }, "no-chain": { type: "boolean", default: false } }, strict: true, allowPositionals: false });
 const event = process.env.GITHUB_EVENT_NAME;
-if (event && event !== "workflow_dispatch") {
-  note("turn", `self-skipped: a turn runs only on a dispatch (this run is a ${event}); exit 2`);
-  process.exit(2);
-}
+if (event && event !== "workflow_dispatch") fail(`a turn runs only on a dispatch (this run is a ${event}); the workflow gives the turn job its secrets on a dispatch only`);
 // Past this line the sources are needed (a pull request run stops above and installs nothing).
 const { STAGES, runTurn, opNames } = await import("../src/core/turn/index.ts");
-const { buildDeps } = await import("../src/core/turn/wiring.ts");
+const { buildDeps, enforceWired, startupCheck } = await import("../src/core/turn/wiring.ts");
 const { serviceClient } = await import("../src/core/db/index.ts");
 
 if (!values.stage || ![...STAGES, "all", "ops"].includes(values.stage)) fail(`--stage must be one of ${[...STAGES, "all", "ops"].join(", ")}`);
@@ -37,13 +35,20 @@ if (input === null || typeof input !== "object" || Array.isArray(input)) fail("-
 if (values.stage === "ops" && !Object.hasOwn(input.ops ?? {}, "op")) fail(`ops needs --input '{"ops":{"op":"<name>","args":{}}}' (ops: ${opNames().join(", ")})`);
 
 const hasCreds = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
-const result = await runTurn({ stage: values.stage, mode: values.mode, trigger: event ? "dispatch" : "manual", chain: !values["no-chain"], input }, { d: hasCreds ? buildDeps(serviceClient(), process.env) : null, env: process.env, now: () => new Date() });
+const d = hasCreds ? buildDeps(serviceClient(), process.env) : null;
+if (d) {
+  // The same startup check the deployed app runs (IMP-026): an unwired required member stops the turn before it writes anything; a member owed to a slice that is not merged is said in the summary.
+  const wiring = startupCheck(d);
+  enforceWired(wiring);
+  for (const o of wiring.owed) note("turn", `owed: ${o.member} (${o.owner})`);
+}
+const result = await runTurn({ stage: values.stage, mode: values.mode, trigger: event ? "dispatch" : "manual", chain: !values["no-chain"], input }, { d, env: process.env, now: () => new Date() });
 
 const lines = result.runs.map((r) => (r.row ? `| ${r.row.family} | ${r.row.mode ?? "-"} | ${r.row.outcome} | ${String(r.row.reason ?? "").replace(/\|/g, "/").slice(0, 160)} |` : `| (not recorded) | - | - | ${String(r.error ?? "").slice(0, 160)} |`));
 const table = [`### Turn ${result.rootRunId}`, "", `stage ${values.stage}, requested ${values.mode}, resolved ${result.resolved.mode}${result.resolved.forcedDry ? ` (${result.resolved.reason})` : ""}`, "", "| family | mode | outcome | reason |", "|---|---|---|---|", ...lines].join("\n");
 for (const n of result.notes) note("turn", n);
 console.log(table);
 if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${table}\n`);
-if (result.exit === 2) note("turn", `self-skipped: ${result.runs[0]?.error ?? "no credentials"}; exit 2`);
+if (result.exit === 2) note("turn", `${result.runs[0]?.error ?? "self-skipped: no credentials"}; exit 2`);
 if (result.exit === 1) console.error(`turn: ${result.runs.find((r) => r.exit === 1)?.error ?? "a record failed"}`);
 process.exit(result.exit);

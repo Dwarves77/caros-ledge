@@ -1,0 +1,70 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+
+import { shapeDiff } from "../../scripts/ci/schema/shape.mjs";
+import { scopeProblems } from "../../scripts/ci/schema/self-check-scope.mjs";
+import { verdictOf } from "../../scripts/ci/schema/selfcheck-mutants.mjs";
+import { changesDatabase, lastDoIndex, statementsOf } from "../../scripts/ci/schema/statements.mjs";
+import { mutate as breakIt } from "../mutants/transforms/break-the-attacked-thing.mjs";
+import { mutate as stripChange } from "../mutants/transforms/strip-change.mjs";
+
+const TABLES = new Set(["profiles", "intelligence_items"]);
+const check = (body, waivers = {}) => scopeProblems(`DO $$\nDECLARE fixture uuid := gen_random_uuid(); n int;\nBEGIN\n${body}\nEND $$;`, { tables: TABLES, functions: new Set(), waivers });
+
+test("what changes the database: DDL, DML and a WITH that ends in one; a SELECT, a WITH that only reads and a temporary table do not", () => {
+  for (const sql of ["CREATE TABLE public.t (id int)", "ALTER TABLE public.t ADD COLUMN c int", "UPDATE public.t SET c = 1", "INSERT INTO public.t VALUES (1)", "WITH parts AS (SELECT id FROM public.t) UPDATE public.t m SET c = 1 FROM parts p WHERE m.id = p.id"]) {
+    assert.equal(changesDatabase(sql), true, sql);
+  }
+  for (const sql of ["SELECT 1", "WITH x AS (SELECT 1) SELECT * FROM x", "CREATE TEMP TABLE _t (id int)", "INSERT INTO _t VALUES (1)"]) assert.equal(changesDatabase(sql), false, sql);
+  const statements = statementsOf("CREATE TABLE a (id int);\nDO $$ BEGIN NULL; END $$;\nUPDATE a SET id = 1;\nDO $$ BEGIN RAISE NOTICE 'x OK'; END $$;");
+  assert.equal(lastDoIndex(statements), 3);
+});
+
+test("the self-check scope rule: a read of a public table scoped by nothing the fixture made is a problem, in every shape the old rule missed", () => {
+  assert.match(check("SELECT count(*) INTO n FROM public.profiles;").join("\n"), /reads profiles with nothing the fixture created in its scope/);
+  assert.match(check("SELECT count(*) INTO n FROM profiles;").join("\n"), /reads profiles/, "an unqualified table");
+  assert.match(check("SELECT count(*) INTO n FROM (SELECT id FROM public.profiles LIMIT 1) s;").join("\n"), /reads profiles/, "a sub-select");
+  assert.match(check("FOR r IN SELECT id FROM public.intelligence_items LOOP n := n + 1; END LOOP;").join("\n"), /reads intelligence_items/, "a loop");
+});
+
+test("the self-check scope rule: a fixture variable, a fixture literal, an unprivileged role and a named waiver each scope a read; a variable the statement only fills does not", () => {
+  assert.deepEqual(check("SELECT count(*) INTO n FROM public.profiles WHERE id = fixture;"), []);
+  assert.deepEqual(check("SELECT count(*) INTO n FROM public.profiles WHERE email = 'a@selfcheck.example';"), []);
+  assert.deepEqual(check("SET LOCAL ROLE authenticated;\nSELECT count(*) INTO n FROM public.profiles;"), []);
+  assert.deepEqual(check("SELECT count(*) INTO n FROM public.profiles;", { profiles: "a whole-table invariant" }), []);
+  assert.match(check("SELECT id INTO fixture FROM public.profiles LIMIT 1;").join("\n"), /reads profiles/, "the INTO target is not a scope");
+});
+
+test("shapeDiff: equal shapes agree whatever the key order; a role setting that differs, a role that is missing and a different owner are each named, with the names the caller gives the two sides", () => {
+  const shape = { roles: [{ name: "anon", login: false }], memberships: [], roleSettings: [{ role: "authenticator", database: "*", settings: ["statement_timeout=8s"] }], schemaAcls: [], defaultAcls: [], serverSettings: { max_rows: "1000" }, databaseOwner: "postgres" };
+  assert.deepEqual(shapeDiff(shape, structuredClone(shape)), []);
+  assert.deepEqual(shapeDiff(shape, { ...structuredClone(shape), roles: [{ login: false, name: "anon" }] }), [], "key order is not a difference");
+  const drifted = structuredClone(shape);
+  drifted.roleSettings[0].settings = ["statement_timeout=30s"];
+  drifted.roles = [];
+  drifted.databaseOwner = "supabase_admin";
+  const found = shapeDiff(shape, drifted, { want: "production-shape.json", have: "production" }).join("\n");
+  assert.match(found, /roleSettings: authenticator@\*: production-shape\.json .*8s.*; production .*30s/);
+  assert.match(found, /roles: anon: production-shape\.json has .*; production has none/);
+  assert.match(found, /databaseOwner: production-shape\.json postgres; production supabase_admin/);
+  assert.match(shapeDiff(shape, drifted).join("\n"), /this database/, "the default names are production and this database");
+});
+
+test("the self-check mutants: the change removed leaves the last DO block; a file that changes nothing has nothing to remove; an unrecognised file is not broken by guesswork", () => {
+  const text = "BEGIN;\nCREATE TABLE public.t (id int);\nCREATE TEMP TABLE _scratch (id int);\nDO $$ BEGIN RAISE EXCEPTION 'gone'; END $$;\nCOMMIT;\n";
+  const out = stripChange(text);
+  assert.doesNotMatch(out, /CREATE TABLE public\.t/);
+  assert.match(out, /CREATE TEMP TABLE _scratch/, "setup that only serves the check stays");
+  assert.match(out, /RAISE EXCEPTION 'gone'/);
+  assert.equal(stripChange("BEGIN;\nDO $$ BEGIN NULL; END $$;\nCOMMIT;\n"), null);
+  assert.equal(breakIt("DO $$ BEGIN RAISE NOTICE 'no-such-id OK'; END $$;"), null);
+  assert.match(breakIt("-- Self-check 0060-rls-attacks\nDO $$ BEGIN NULL; END $$;"), /DISABLE ROW LEVEL SECURITY/);
+});
+
+test("a self-check mutant is red when the check fails for the missing change (its own RAISE EXCEPTION, or the object it reads is not there); passing is green; a failure unrelated to the change is an error", () => {
+  assert.equal(verdictOf({ code: 0, err: "NOTICE:  x OK\n" }).verdict, "green");
+  assert.equal(verdictOf({ code: 3, err: "psql:<stdin>:9: ERROR:  0060: attack 1 [SQLSTATE P0001]\n" }).verdict, "red");
+  assert.equal(verdictOf({ code: 3, err: 'psql:<stdin>:9: ERROR:  relation "public.t" does not exist [SQLSTATE 42P01]\n' }).verdict, "red", "the check read the object the change makes and it is not there");
+  assert.equal(verdictOf({ code: 3, err: "psql:<stdin>:9: ERROR:  syntax error at or near \"x\" [SQLSTATE 42601]\n" }).verdict, "error", "a mutation that does not parse proves nothing");
+  assert.equal(verdictOf({ code: 3, err: "psql:<stdin>:9: ERROR:  something odd\n" }).verdict, "error", "no SQLSTATE: not attributable");
+});
