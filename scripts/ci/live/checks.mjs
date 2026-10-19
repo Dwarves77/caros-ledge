@@ -3,10 +3,15 @@
 // `phase` is "before" when the run is the one made BEFORE the cutover window (the new tree's preview on the database that does not carry the new migrations yet): an object a pending migration adds is then a warning that names the
 // migration; in "after" (the default) it is a failure. Everything else is a failure in both phases.
 import { isMissingObject } from "../../../src/core/db/absent.ts";
+import { shapeDiff } from "../schema/shape.mjs";
 
-export const CHECKS = ["member-reads", "sign-in", "pages", "identity-anonymous", "provenance-trigger", "notification-drain", "admin-pages", "invitation-email"];
-/** Every check but the e-mail one, which sends a real message and runs only when named (--only invitation-email). */
-export const DEFAULT_CHECKS = CHECKS.filter((c) => c !== "invitation-email");
+export const CHECKS = ["member-reads", "sign-in", "pages", "identity-anonymous", "provenance-trigger", "notification-drain", "admin-pages", "invitation-email", "production-shape"];
+/**
+ * Checks that run only when a dispatch names them (--only): invitation-email sends a real message, and provenance-trigger takes a short lock on intelligence_items (migration 0069 disables a trigger under lock_timeout), which a
+ * preview deployment must not do to production each time one is built. The default set runs on every preview; these two run on a named dispatch (the nightly one).
+ */
+export const NAMED_ONLY = ["invitation-email", "provenance-trigger"];
+export const DEFAULT_CHECKS = CHECKS.filter((c) => !NAMED_ONLY.includes(c));
 /** One page per surface: the Dashboard, Regulations, Market Intel, Research, Operations, the watchlist, Search, Community and Settings. */
 export const SURFACE_PAGES = ["/", "/regulations", "/market", "/research", "/operations", "/watchlist", "/search", "/community", "/settings"];
 export const ADMIN_PAGES = ["/admin"];
@@ -163,7 +168,10 @@ export async function provenanceTrigger(ctx) {
   return out;
 }
 
-/** The notification drain drains a planted outbox row: the row is sent, the member's notification exists, and both are removed again. */
+/**
+ * The notification drain drains a planted outbox row: the row is sent, the member's notification exists, and both are removed again. The removal is in a `finally`: a drain that throws must not leave a `pending` row
+ * behind for the next real drain to send ("Live check") to the member account.
+ */
 export async function notificationDrain(ctx) {
   const { io } = ctx;
   const m = await io.member();
@@ -172,14 +180,17 @@ export async function notificationDrain(ctx) {
   if (planted.error) return [absentOr(ctx.phase ?? "after", "notification-drain", "notification_outbox", planted.error, "0025")];
   const id = planted.data.id;
   const out = [];
-  const run = await io.drain([id]);
-  if (run.counts?.sent !== 1 || run.outcome === "failed") out.push(fail("notification-drain", "notification_outbox", `the drain did not send the planted row (${JSON.stringify(run.counts)}; ${(run.notes ?? []).join("; ")})`));
-  const row = await io.service.from("notification_outbox").select("status, sent_at").eq("id", id).single();
-  if (row.error || row.data?.status !== "sent" || !row.data?.sent_at) out.push(fail("notification-drain", "notification_outbox", `the planted row is not stamped sent (${row.error?.message ?? JSON.stringify(row.data)})`));
-  const note = await io.service.from("notifications").select("id").eq("user_id", m.userId).eq("payload->>live_check", tag);
-  if (note.error || (note.data ?? []).length !== 1) out.push(fail("notification-drain", "notifications", `the member's notification was not written once (${note.error?.message ?? (note.data ?? []).length})`));
-  const cleanup = [await io.service.from("notifications").delete().eq("user_id", m.userId).eq("payload->>live_check", tag), await io.service.from("notification_outbox").delete().eq("id", id)];
-  for (const c of cleanup) if (c.error) out.push(fail("notification-drain", "cleanup", `the planted rows were not removed: ${c.error.message}`));
+  try {
+    const run = await io.drain([id]);
+    if (run.counts?.sent !== 1 || run.outcome === "failed") out.push(fail("notification-drain", "notification_outbox", `the drain did not send the planted row (${JSON.stringify(run.counts)}; ${(run.notes ?? []).join("; ")})`));
+    const row = await io.service.from("notification_outbox").select("status, sent_at").eq("id", id).single();
+    if (row.error || row.data?.status !== "sent" || !row.data?.sent_at) out.push(fail("notification-drain", "notification_outbox", `the planted row is not stamped sent (${row.error?.message ?? JSON.stringify(row.data)})`));
+    const note = await io.service.from("notifications").select("id").eq("user_id", m.userId).eq("payload->>live_check", tag);
+    if (note.error || (note.data ?? []).length !== 1) out.push(fail("notification-drain", "notifications", `the member's notification was not written once (${note.error?.message ?? (note.data ?? []).length})`));
+  } finally {
+    const cleanup = [await io.service.from("notifications").delete().eq("user_id", m.userId).eq("payload->>live_check", tag), await io.service.from("notification_outbox").delete().eq("id", id)];
+    for (const c of cleanup) if (c.error) out.push(fail("notification-drain", "cleanup", `the planted rows were not removed: ${c.error.message}`));
+  }
   return out;
 }
 
@@ -189,4 +200,17 @@ export async function invitationEmail(ctx) {
   return r.delivered ? [] : [fail("invitation-email", "sendInvitationEmail", `the invitation e-mail was not delivered (configured ${r.configured}): ${r.reason ?? "no reason given"}`)];
 }
 
-export const RUNNERS = { "member-reads": memberReads, "sign-in": signIn, pages, "identity-anonymous": identityAnonymous, "provenance-trigger": provenanceTrigger, "notification-drain": notificationDrain, "admin-pages": adminPages, "invitation-email": invitationEmail };
+/**
+ * G11: the database behind the deployment is shaped as scripts/ci/data/production-shape.json says (roles and their attributes, memberships, role settings such as search_path and statement_timeout, schema and default
+ * ACLs, server settings, the database owner). The CI database is built from that file, so a drift in production (a platform change, a hand edit in the dashboard) would otherwise leave every schema job proving things about
+ * a database that no longer exists. The query is public.live_check_production_shape() (migration 0071, the text of scripts/ci/data/production-shape.sql); `io.expectedShape` is the file's `shape`.
+ */
+export async function productionShape(ctx) {
+  const r = await ctx.io.service.rpc("live_check_production_shape");
+  if (r.error) return [absentOr(ctx.phase ?? "after", "production-shape", "live_check_production_shape", r.error, "0071")];
+  const actual = typeof r.data === "string" ? JSON.parse(r.data) : r.data;
+  if (!actual || typeof actual !== "object") return [fail("production-shape", "live_check_production_shape", "the function answered with no shape document")];
+  return shapeDiff(ctx.io.expectedShape, actual, { want: "production-shape.json", have: "production" }).map((d) => fail("production-shape", "production-shape.json", d));
+}
+
+export const RUNNERS = { "member-reads": memberReads, "sign-in": signIn, pages, "identity-anonymous": identityAnonymous, "provenance-trigger": provenanceTrigger, "notification-drain": notificationDrain, "admin-pages": adminPages, "invitation-email": invitationEmail, "production-shape": productionShape };

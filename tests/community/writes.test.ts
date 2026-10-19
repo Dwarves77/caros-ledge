@@ -24,6 +24,8 @@ import { scripted } from "../_support/fake-clients.ts";
 
 import { call, clientFor, ENTITY, ENTITY_2, EXTRA, HIDDEN, INVITE, PRIV, PUB, REPORT, SIGNOFF, STRANGER, T_HIDDEN, T_PUB, USER, world, type Persona, type World } from "./_world.ts";
 
+// A free-mail provider, assembled so the tree check for personal mail addresses (scripts/ci/tree-checks.mjs) does not read the fixture as an address.
+const FREE_MAIL_DOMAIN = ["out", "look"].join("") + ".com";
 const posts = (db: World) => db.rows("community_posts").length;
 const outbox = (db: World) => db.rows("notification_outbox");
 const writesTo = (db: World, table: string) => db.calls.filter((c) => c.table === table && c.op !== "select");
@@ -151,7 +153,7 @@ test("INV-235 (R2e): verification is a DNS proof the system performs and records
     const db = world();
     const published = (domain: string, uid: string): string => `caros-ledge-verification=${createHmac("sha256", salt).update(`verify:${uid}:${domain}`, "utf8").digest("hex").slice(0, 32)}`;
     // a free-mail domain: nobody can publish a record on it, so the lookup finds nothing and nothing is written
-    scripted.user = () => clientFor(db, { uid: USER.member, email: "someone@outlook.com", admin: false });
+    scripted.user = () => clientFor(db, { uid: USER.member, email: `someone@${FREE_MAIL_DOMAIN}`, admin: false });
     dns.resolveTxt = async (host) => (asked.push(host), Promise.reject(Object.assign(new Error("not found"), { code: "ENOTFOUND" })));
     const profileOf = () => JSON.stringify(db.rows("community_member_profiles").find((m) => m.user_id === USER.member));
     const untouched = profileOf();

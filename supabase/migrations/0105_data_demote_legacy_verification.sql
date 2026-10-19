@@ -7,7 +7,7 @@
 -- THIS IS A DATA MIGRATION. TWO-TRACK POLICY: it ships with its consumer (the Community identity and the profile form read the verified columns) and is RUN ONLY AT THE CUTOVER WINDOW, after 0103; the CI schema job never commits it, it runs
 -- it once in a rolled-back transaction after the fixture named below (rule 15: the SQL is proven to execute).
 --
--- Reversal: none; the cleared marks carried no proof. Members and admins re-establish them.
+-- Reversal: none; the cleared marks carried no proof. Members and admins re-establish them. The fixture rows are asserted by scripts/ci/fixtures/data-0105-verification.assert.sql.
 
 -- catalog: none (data migration, not run by the schema job)
 -- rollback-test: scripts/ci/fixtures/data-0105-verification.sql
@@ -24,9 +24,6 @@ DO $$
 BEGIN
   IF EXISTS (SELECT 1 FROM public.community_member_profiles WHERE verified AND verification_method NOT IN ('domain-dns', 'admin-mark')) THEN RAISE EXCEPTION '0105: a verification the system did not perform remains'; END IF;
   IF EXISTS (SELECT 1 FROM public.profiles WHERE avatar_url IS NOT NULL AND avatar_url !~ '^https://[^/[:space:]]+/[^[:space:]]*$') THEN RAISE EXCEPTION '0105: a non-https avatar remains'; END IF;
-  IF EXISTS (SELECT 1 FROM public.community_member_profiles WHERE user_id = '01050000-0000-4000-8000-000000000001' AND verified) OR NOT EXISTS (SELECT 1 FROM public.community_member_profiles WHERE user_id = '01050000-0000-4000-8000-000000000003' AND verified AND verification_method = 'domain-dns') THEN
-    RAISE EXCEPTION '0105: the fixture rows are wrong after the run';
-  END IF;
   RAISE NOTICE '0105-demote-legacy-verification OK';
 END $$;
 

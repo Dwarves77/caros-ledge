@@ -7,13 +7,12 @@ import { GET as invitationsGet, POST as invitationsPost } from "@/features/auth/
 import { DELETE as revoke } from "@/features/auth/api/invitation-revoke";
 import { accept, decline, GET as tokenGet } from "@/features/auth/api/invitation-token";
 import { GET as mineGet } from "@/features/auth/api/invitations-mine";
-import { DELETE as membersDelete, GET as membersGet, PATCH as membersPatch, POST as membersPost, PUT as membersPut } from "@/features/auth/api/members";
 import { GET as orgGet, PATCH as orgPatch } from "@/features/auth/api/org";
 import { POST as orgsPost } from "@/features/auth/api/orgs-create";
 
 import { scripted } from "../_support/fake-clients.ts";
 import { fakeDb, filterValue, wrote, type Call, type Reply } from "../_support/fake-db.ts";
-import { as, ctx, json, MEMBERSHIP_ID, ORG_A, ORG_B, OTHER_MEMBERSHIP_ID, PERSONAS, personaOf, script, userDbFor, type Persona } from "../_support/personas.ts";
+import { as, ctx, expectationFor, json, MEMBERSHIP_ID, ORG_A, ORG_B, OTHER_MEMBERSHIP_ID, PERSONAS, personaOf, script, userDbFor, type Persona } from "../_support/personas.ts";
 
 const TOKEN = "b".repeat(64);
 const INVITE_A = "55555555-5555-4555-8555-555555555555";
@@ -50,18 +49,18 @@ const call = async (handler: (r: Request, c: never) => Promise<Response>, person
   return res.status;
 };
 
-/** A persona matrix: the expected status for each of anon, viewer, other-org member, member, owner, platform admin. */
+/** A persona matrix: the expected status for each of anon, viewer, other-org member, member, organisation admin, owner, platform admin; a persona the matrix names no expectation for fails by name. */
 async function matrix(name: string, run: (persona: Persona) => Promise<number>, expected: Record<Persona, number>) {
-  for (const persona of PERSONAS) assert.equal(await run(persona), expected[persona], `${name} as ${persona}`);
+  for (const persona of PERSONAS) assert.equal(await run(persona), expectationFor(expected, persona, name), `${name} as ${persona}`);
 }
-const E = (anon: number, viewer: number, otherOrgMember: number, member: number, owner: number, platformAdmin: number): Record<Persona, number> => ({ anon, viewer, otherOrgMember, member, owner, platformAdmin });
+const E = (anon: number, viewer: number, otherOrgMember: number, member: number, admin: number, owner: number, platformAdmin: number): Record<Persona, number> => ({ anon, viewer, otherOrgMember, member, admin, owner, platformAdmin });
 
 test("persona matrix: org GET and PATCH (the rename is rename_org on the caller's own client: org_can decides in the database, and the route never reads who the caller is)", async () => {
   let who: Persona = "anon";
   script(world(), undefined, (name) => (name === "rename_org" ? (who === "owner" || who === "platformAdmin" ? { data: { id: ORG_A, name: "Renamed", slug: "org-a" } } : { error: { message: "only an owner may rename the organisation", code: "42501" } }) : undefined));
   const orgParams = { org_id: ORG_A };
-  await matrix("org GET", (p) => call(orgGet, p, `/api/orgs/${ORG_A}`, {}, orgParams), E(401, 200, 403, 200, 200, 200)); // IMP-012: a platform admin reads any organization's record
-  await matrix("org PATCH", (p) => ((who = p), call(orgPatch, p, `/api/orgs/${ORG_A}`, { method: "PATCH", body: json({ name: "Renamed" }) }, orgParams)), E(401, 403, 403, 403, 200, 200));
+  await matrix("org GET", (p) => call(orgGet, p, `/api/orgs/${ORG_A}`, {}, orgParams), E(401, 200, 403, 200, 200, 200, 200)); // IMP-012: a platform admin reads any organization's record
+  await matrix("org PATCH", (p) => ((who = p), call(orgPatch, p, `/api/orgs/${ORG_A}`, { method: "PATCH", body: json({ name: "Renamed" }) }, orgParams)), E(401, 403, 403, 403, 403, 200, 200));
   const owner = await orgGet(as("owner", `/api/orgs/${ORG_A}`), ctx(orgParams));
   const body = await owner.json();
   assert.deepEqual([body.org.slug, body.caller_role, body.member_count, body.owner.display_name], ["org-a", "owner", 2, "Olga Owner"]);
@@ -77,18 +76,18 @@ test("persona matrix: invitations (RLS decides who may issue), revoke, token rou
     (name) => (name === "create_org_for_self" ? { data: ORG_A } : name === "invite_member" ? { data: invite } : undefined), // who may invite is org_can in the database (migration 0101 proves it), so the fake accepts every signed-in caller
   );
   const orgParams = { org_id: ORG_A };
-  await matrix("invitations GET", (p) => call(invitationsGet, p, `/api/orgs/${ORG_A}/invitations`, {}, orgParams), E(401, 200, 200, 200, 200, 200));
-  await matrix("invitations POST", (p) => call(invitationsPost, p, `/api/orgs/${ORG_A}/invitations`, { method: "POST", body: json({ email: "x@y.test", role: "member" }) }, orgParams), E(401, 201, 201, 201, 201, 201));
-  await matrix("revoke own org's invitation", (p) => call(revoke, p, `/api/orgs/${ORG_A}/invitations/${INVITE_A}`, { method: "DELETE" }, { org_id: ORG_A, id: INVITE_A }), E(401, 200, 200, 200, 200, 200));
+  await matrix("invitations GET", (p) => call(invitationsGet, p, `/api/orgs/${ORG_A}/invitations`, {}, orgParams), E(401, 200, 200, 200, 200, 200, 200));
+  await matrix("invitations POST", (p) => call(invitationsPost, p, `/api/orgs/${ORG_A}/invitations`, { method: "POST", body: json({ email: "x@y.test", role: "member" }) }, orgParams), E(401, 201, 201, 201, 201, 201, 201));
+  await matrix("revoke own org's invitation", (p) => call(revoke, p, `/api/orgs/${ORG_A}/invitations/${INVITE_A}`, { method: "DELETE" }, { org_id: ORG_A, id: INVITE_A }), E(401, 200, 200, 200, 200, 200, 200));
   assert.equal(await call(revoke, "owner", `/api/orgs/${ORG_A}/invitations/${INVITE_B}`, { method: "DELETE" }, { org_id: ORG_A, id: INVITE_B }), 404, "another org's invitation");
   assert.equal(await call(revoke, "owner", "/x", { method: "DELETE" }, { org_id: "nope", id: INVITE_A }), 400);
-  await matrix("token GET", (p) => call(tokenGet, p, `/api/invitations/${TOKEN}`, {}, { token: TOKEN }), E(401, 404, 404, 404, 404, 404));
+  await matrix("token GET", (p) => call(tokenGet, p, `/api/invitations/${TOKEN}`, {}, { token: TOKEN }), E(401, 404, 404, 404, 404, 404, 404));
   assert.equal(await call(tokenGet, "member", "/x", {}, { token: "short" }), 400);
   assert.equal(await call(accept, "anon", "/x", { method: "POST" }, { token: TOKEN }), 401);
   assert.equal(await call(decline, "anon", "/x", { method: "POST" }, { token: TOKEN }), 401);
   assert.equal(await call(accept, "member", "/x", { method: "POST" }, { token: "short" }), 400);
-  await matrix("mine GET", (p) => call(mineGet, p, "/api/invitations/mine", {}), E(401, 200, 200, 200, 200, 200));
-  await matrix("orgs POST", (p) => call(orgsPost, p, "/api/orgs", { method: "POST", body: json({ name: "Acme" }) }), E(401, 201, 201, 201, 201, 201));
+  await matrix("mine GET", (p) => call(mineGet, p, "/api/invitations/mine", {}), E(401, 200, 200, 200, 200, 200, 200));
+  await matrix("orgs POST", (p) => call(orgsPost, p, "/api/orgs", { method: "POST", body: json({ name: "Acme" }) }), E(401, 201, 201, 201, 201, 201, 201));
   assert.equal(await call(orgsPost, "member", "/api/orgs", { method: "POST", body: json({ name: "" }) }), 400);
   assert.equal(await call(orgsPost, "member", "/api/orgs", { method: "POST", body: "{" }), 400);
 });

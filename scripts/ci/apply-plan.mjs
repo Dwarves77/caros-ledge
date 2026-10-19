@@ -1,39 +1,35 @@
 // The cutover apply plan (P2-15): supabase/migrations/APPLY.md is GENERATED from the directory, so the list cannot drift from it. Every migration file on main, in the order the window applies them:
 //   phase 1  the schema files in name order (a file marked "hold" in apply-notes.json waits for the step it names, then runs in its place),
-//   phase 2  the data files (`_data_`) in name order, each after the schema it names and with its consumer,
-//   phase 3  0016, the source backfill the executor generates from a read-only registry export at the window.
-// For each file: its class, the exact CLI command, the self-check it ends with (the id its `RAISE NOTICE '<id> OK'` prints, read from the file), and its rollback (the file's own `Reversal:` header).
+//   phase 2  the data files (`_data_`) in name order, each after the schema it names and with its consumer.
+// For each file: its class, the exact CLI command, the self-check it ends with (the id its `RAISE NOTICE '<id> OK'` prints, read from the file), how it is undone (the down file the schema job applies and catalog-compares, or the
+// recovery an irreversible file names) and whether production already carries it (APPLIED.json lists the numbers written at the window).
 // `node scripts/ci/apply-plan.mjs` prints the plan, `--write` rewrites APPLY.md, `--check` exits 1 when APPLY.md differs; scripts/ci/migration-checks.mjs runs the check before every schema job.
-import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
-import { pathToFileURL } from "node:url";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
+
+import { isMain } from "../lib/fs.mjs";
+import { appliedNumbers, applyNotes, isData, migrationFiles, numberOf, selfCheckIdOf } from "../lib/migrations.mjs";
 
 const DIR = "supabase/migrations";
 const CLI = (file) => `supabase db query --linked -f ${DIR}/${file}`;
-// Files that do not exist on main because the window generates them from live data; their note is written ahead and checked once the file lands.
-const WINDOW_GENERATED = ["0016_data_source_type_backfill"];
-const isData = (f) => f.includes("_data_");
 const cell = (s) => String(s).replace(/\|/g, "/").replace(/\s+/g, " ").trim();
 
-/** The self-check id a file prints on success, or "none". */
-export function selfCheckOf(text) {
-  return /RAISE NOTICE '([\w.-]+) OK/.exec(text)?.[1] ?? "none";
+/** The self-check id a file prints on success, or "none" when it names none. */
+export function selfCheckOf(text, file = "0000_x.sql") {
+  return /RAISE NOTICE '([\w.-]+) OK/.test(text) || /^-- Self-check /m.test(text) ? selfCheckIdOf(text, file) : "none";
 }
-/** The rollback a file states: its `Reversal:` header with the comment lines that continue it, or "none". */
-export function reversalOf(text) {
-  const lines = text.split(/\r?\n/);
-  const at = lines.findIndex((l) => /^-- .*(?:Reversal|Rollback):/.test(l));
-  if (at < 0) return "none";
-  const parts = [lines[at].replace(/^-- .*?(?:Reversal|Rollback):\s*/, "")];
-  for (let i = at + 1; i < lines.length && /^-- \S/.test(lines[i]) && !/^-- (?:catalog|rollback-test|Self-check|THIS IS)/.test(lines[i]); i += 1) parts.push(lines[i].replace(/^-- /, ""));
-  const joined = parts.join(" ").trim();
-  return joined || "none";
+
+/** How a file is undone: its down file, the recovery it names (`-- irreversible:` line or the apply note), or "none". */
+export function rollbackOf(file, text, notes, dir = DIR) {
+  if (existsSync(`${dir}/down/${numberOf(file)}.sql`)) return `down/${numberOf(file)}.sql, applied and catalog-compared by the schema job`;
+  const recovery = /^-- irreversible: (\S.*)$/m.exec(text)?.[1] ?? notes[file.replace(/\.sql$/, "")]?.irreversible;
+  return recovery ? `irreversible: ${recovery}` : "none";
 }
 
 export function planProblems(dir = DIR) {
-  const files = readdirSync(dir).filter((f) => /^\d{4}_.+\.sql$/.test(f));
-  const notes = existsSync(`${dir}/apply-notes.json`) ? JSON.parse(readFileSync(`${dir}/apply-notes.json`, "utf8")) : {};
+  const files = migrationFiles(dir);
+  const notes = applyNotes(dir);
   const problems = [];
-  for (const k of Object.keys(notes)) if (!files.includes(`${k}.sql`) && !WINDOW_GENERATED.includes(k)) problems.push(`${dir}/apply-notes.json names ${k}, which is not a file`);
+  for (const k of Object.keys(notes)) if (!files.includes(`${k}.sql`)) problems.push(`${dir}/apply-notes.json names ${k}, which is not a file`);
   for (const f of files.filter(isData)) {
     const n = notes[f.replace(/\.sql$/, "")];
     if (!n?.consumer || !n?.after) problems.push(`${dir}/apply-notes.json: the data file ${f} needs a "consumer" and an "after"`);
@@ -43,16 +39,18 @@ export function planProblems(dir = DIR) {
 }
 
 export function planText(dir = DIR) {
-  const files = readdirSync(dir).filter((f) => /^\d{4}_.+\.sql$/.test(f)).sort();
-  const notes = existsSync(`${dir}/apply-notes.json`) ? JSON.parse(readFileSync(`${dir}/apply-notes.json`, "utf8")) : {};
-  const read = (f) => readFileSync(`${dir}/${f}`, "utf8");
+  const files = migrationFiles(dir);
+  const notes = applyNotes(dir);
+  const applied = existsSync(`${dir}/APPLIED.json`) ? appliedNumbers(dir) : new Set();
+  const read = (f) => readFileSync(`${dir}/${f}`, "utf8").replace(/\r\n/g, "\n");
   const row = (n, f, extra) => {
     const text = read(f);
-    return `| ${n} | ${f.replace(/\.sql$/, "")} | ${isData(f) ? "data" : "schema"} | \`${CLI(f)}\` | ${selfCheckOf(text)} | ${cell(reversalOf(text))} | ${cell(extra)} |`;
+    return `| ${n} | ${f.replace(/\.sql$/, "")} | ${isData(f) ? "data" : "schema"} | \`${CLI(f)}\` | ${selfCheckOf(text, f)} | ${cell(rollbackOf(f, text, notes, dir))} | ${applied.has(numberOf(f)) ? "applied" : "pending"} | ${cell(extra)} |`;
   };
-  const head = "| # | file | class | command | self-check | rollback | when |\n|---|---|---|---|---|---|---|";
+  const head = "| # | file | class | command | self-check | rollback | production | when |\n|---|---|---|---|---|---|---|---|";
   const schema = files.filter((f) => !isData(f));
   const data = files.filter(isData);
+  const pending = files.filter((f) => !applied.has(numberOf(f)));
   const waivers = existsSync("tests/parity/approved-changes.json") ? JSON.parse(readFileSync("tests/parity/approved-changes.json", "utf8")).approved.filter((a) => a.kind === "until-migration") : [];
   const byMigration = {};
   for (const w of waivers) byMigration[w.migration] = (byMigration[w.migration] ?? 0) + 1;
@@ -61,11 +59,11 @@ export function planText(dir = DIR) {
     "<!-- GENERATED by `node scripts/ci/apply-plan.mjs --write` from supabase/migrations and apply-notes.json. Do not edit by hand: the schema job fails when this file differs from the directory. -->",
     "# Cutover apply plan",
     "",
-    "Every migration file on main, in the order the cutover window applies it to production. Nothing here is applied before the window the operator opens. The database is the live Supabase project the new tree will serve; the old tree keeps serving until the new one does.",
+    `Every migration file on main, in the order it is applied to production. APPLIED.json lists what production carries: ${applied.size} of ${files.length} file(s) are applied${pending.length ? `; pending: ${pending.map((f) => numberOf(f)).join(", ")}` : ""}. A file that is not listed is not applied, whatever its number.`,
     "",
     "How to run a file: the command in its row, from the repo root, with the Supabase CLI logged in and linked to the production project (`supabase login`, `supabase link --project-ref <ref>`). When the CLI refuses a file (size, timeout) the same file runs with `--db-url \"$DATABASE_URL\"` in place of `--linked` (the direct connection string from the dashboard, percent-encoded). A file is one transaction: BEGIN, its change, its self-check DO block, COMMIT. A failing self-check raises, the transaction rolls back, the command exits non-zero and nothing of the file stays. Success is exit code 0 with no ERROR line; keep each command's full output in the run artifact (cutover-run/<NNNN>.log).",
     "",
-    "Before the window resumes, rehearse the remaining chain on production's real schema and data: `DATABASE_URL=<direct connection> node scripts/cutover/dry-run.mjs` runs the rows from 0004 (HOLD rows left out, then the data files) as one transaction and ends in ROLLBACK; it names the first file that fails and keeps nothing. There is no commit mode: the real apply stays file by file, below.",
+    "Before a run, rehearse the remaining chain on production's real schema and data: `DATABASE_URL=<direct connection> node scripts/cutover/dry-run.mjs` runs the rows from 0004 (HOLD rows left out, then the data files) as one transaction and ends in ROLLBACK; it names the first file that fails and keeps nothing. There is no commit mode: the real apply stays file by file, below.",
     "",
     "Rules: schema first, in name order; a row marked HOLD waits for the step it names; data files after the schema they name (standing rule 3, the two-track policy); stop at the first failure and report it, never skip a file or reorder. After the last row, write APPLIED.json (`node scripts/cutover/write-applied.mjs cutover-run/applied.txt`) and delete the waivers it retires in the same commit.",
     "",
@@ -87,9 +85,9 @@ export function planText(dir = DIR) {
       return row(n, f, `consumer: ${note.consumer}; after: ${note.after}`);
     }),
     "",
-    "## Phase 3: generated at the window",
+    "## The 0016 source backfill",
     "",
-    "- 0016 source backfill: first `node scripts/cutover/export-table.mjs sources --select id,name,url,source_role,source_type --out cutover-run/sources-export.json` (read-only), then `node --import ./tests/_support/register.mjs scripts/gen/source-backfill-sql.mjs cutover-run/sources-export.json \"live registry export\" > supabase/migrations/0016_data_source_type_backfill.sql`, commit it, add its row to the README, run it as a data file (`supabase db query --linked -f supabase/migrations/0016_data_source_type_backfill.sql`), after 0014 and before the new tree serves. The schema job proves the generator on the sample export every run.",
+    "0016 depends on the live registry, so it is generated from a read-only export and committed (it is in phase 2): `node scripts/cutover/export-table.mjs sources --select id,name,url,source_role,source_type --out cutover-run/sources-export.json`, then `node --import ./tests/_support/register.mjs scripts/gen/source-backfill-sql.mjs cutover-run/sources-export.json \"live registry export\" > supabase/migrations/0016_data_source_type_backfill.sql`. The schema job proves the generator on the sample export every run.",
     "",
     "## Parity waivers this plan retires",
     "",
@@ -101,7 +99,7 @@ export function planText(dir = DIR) {
   return out.join("\n");
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (isMain(import.meta.url)) {
   const bad = planProblems();
   if (bad.length) {
     for (const p of bad) console.error(p);

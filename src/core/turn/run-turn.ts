@@ -42,7 +42,7 @@ export async function runTurn(req: TurnRequest, target: { d: BuiltDeps | null; e
   const trigger = req.trigger ?? "dispatch";
   const rootRunId = newRunId();
   const d = target.d;
-  const h: HarnessDeps = { sb: d?.sb ?? null, env: target.env, now: target.now, fns: d ? familyFns(d) : {}, ...(d ? { setContext: (c) => void (d.context.current = c) } : {}) };
+  const h: HarnessDeps = { sb: d?.sb ?? null, env: target.env, now: target.now, fns: d ? familyFns(d) : {} };
   // The build-mode gate is read ONCE: every stage of this turn runs in the mode it resolves, and every row says why.
   const notes = d ? await d.loadReferenceData() : [];
   const resolved = d ? await resolveMode(d.sb, { mode: req.mode, trigger }) : { mode: req.mode, forcedDry: false, reason: null };
