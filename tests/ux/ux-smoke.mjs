@@ -9,7 +9,7 @@ import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { wholePageScreenshot } from '../parity/capture.mjs';
+import { BYPASS_HEADER, installBypass, wholePageScreenshot } from '../parity/capture.mjs';
 import { ROW_SELECTOR } from '../parity/contract.mjs';
 
 import { sweepClientReads } from './client-sweep.mjs';
@@ -220,6 +220,25 @@ try {
       await ctx.close();
     }
   });
+
+  // The capture's protection bypass: the header reaches the server on every request to the captured origin when the secret is set, and is absent when it is not (a third party never gets it: bypassHeaders is tested).
+  for (const [secret, present] of [['planted-secret-value', true], ['', false]]) {
+    await check(`capture bypass header ${present ? 'present' : 'absent'}`, async () => {
+      const ctx = await browser.newContext();
+      try {
+        await installBypass(ctx, new URL(base).origin, { VERCEL_AUTOMATION_BYPASS_SECRET: secret });
+        const page = await ctx.newPage();
+        const seen = [];
+        page.on('request', (r) => void (new URL(r.url()).origin === new URL(base).origin && seen.push(r)));
+        await page.goto(`${base}/login`, { waitUntil: 'load' });
+        const headers = await Promise.all(seen.map((r) => r.allHeaders()));
+        must(headers.length > 1, 'the page made no requests to its origin');
+        must(headers.every((h) => (BYPASS_HEADER in h) === present && (!present || h[BYPASS_HEADER] === secret)), `the header is ${present ? 'missing from' : 'present on'} a request to the captured origin`);
+      } finally {
+        await ctx.close();
+      }
+    });
+  }
 
   // G2b: the measure itself can fail. Each fault below is planted into a healthy fixture page and the measure must report it; a measure that cannot go red proves nothing about the real routes (the 119 px
   // title column of V-9 at 1280 is the planted fault in the third, and the real route's own is held by the parity capture's offences).

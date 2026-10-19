@@ -1221,5 +1221,43 @@
         "replace": "if (!r.ok || !Array.isArray(r.data?.notices)) setState({ status: \"ready\", notices: [], since: null });"
       }
     ]
+  },
+  {
+    "expect": "red",
+    "id": "capture-bypass-sent-to-third-parties",
+    "gate": "test",
+    "only": [
+      "tests/parity/discovery.test.mjs"
+    ],
+    "closes": [
+      "G1"
+    ],
+    "apply": [
+      {
+        "file": "tests/parity/capture.mjs",
+        "find": "return secret && new URL(url).origin === origin ? { [BYPASS_HEADER]: secret } : {};",
+        "replace": "return secret ? { [BYPASS_HEADER]: secret } : {};"
+      }
+    ]
+  },
+  {
+    "expect": "red",
+    "id": "capture-bypass-header-never-sent",
+    "gate": "tests/ux/ux-smoke.mjs",
+    "needs": "app",
+    "args": [
+      "--base",
+      "http://localhost:3100"
+    ],
+    "closes": [
+      "G1"
+    ],
+    "apply": [
+      {
+        "file": "tests/parity/capture.mjs",
+        "find": "return Object.keys(extra).length ? route.continue({ headers: { ...route.request().headers(), ...extra } }) : route.fallback();",
+        "replace": "return route.fallback();"
+      }
+    ]
   }
 ]
