@@ -172,12 +172,13 @@ test("briefs: a theme brief is written once against the live membership and a st
   assert.match(planBriefs({ batch: { kind: 1 } }).error ?? "", /string kind/);
   const f = fixture();
   assert.equal((await runBriefs(call(), f.d)).counts.applied, 0);
-  f.db.seed("connection_themes", [{ id: "T1", member_ids: ["a", "b"] }]);
-  const brief = (hash: string) => JSON.stringify({ theme_id: "T1", title: "T", brief_md: "body", member_hash: hash });
+  f.db.seed("connection_themes", [{ id: "T1", member_ids: ["a", "b"], surfaces: ["regulations"] }]);
+  // a single payload is one entry of a one-entry batch and is validated like any other: sections, claims, figures
+  const brief = (hash: string) => JSON.stringify({ theme_id: "T1", title: "T", member_hash: hash, sections: { connection: "They connect.", meaning: "It matters.", ramifications: "### Regulations\nNeeds an owner.", watch: "Watch the date.", gaps: "" }, claims: [] });
   const stale = await runBriefs(call({ input: { batch: { kind: "theme-briefs", content: brief("deadbeef") } } }), f.d);
   assert.deepEqual([stale.outcome, f.db.rows("theme_briefs").length], ["failed", 0]);
   const ok = await runBriefs(call({ input: { batch: { kind: "theme-briefs", content: brief(computeMemberHash(["a", "b"])) } } }), f.d);
-  assert.deepEqual([ok.outcome, ok.counts.applied, f.db.rows("theme_briefs").map((x) => x.generated_by)], ["ok", 1, ["session-executor"]]);
+  assert.deepEqual([ok.outcome, ok.counts.applied, f.db.rows("theme_briefs").map((x) => x.generated_by)], ["ok", 1, ["theme-briefs-single-payload"]]);
   const dry = await runBriefs(dryCall({ batch: { kind: "theme-briefs", content: brief(computeMemberHash(["a", "b"])) } }), f.d);
   assert.equal(f.db.rows("theme_briefs").length, 1, "a dry run wrote nothing more");
   assert.equal(dry.outcome, "ok");

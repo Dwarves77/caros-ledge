@@ -5,6 +5,7 @@ import { buildFrontmatter, parseFrontmatter } from "@/core/briefs/frontmatter";
 import { findUncitedFigures, parseRamifications, renderBriefMd } from "@/core/briefs/theme-brief-contract";
 import { computeMemberHash } from "@/core/flywheel/themes";
 import { applyBatch } from "@/features/batches";
+import { loadHomeJurisdictions, loadThemeMaterial, loadThemes } from "@/core/briefs/theme-brief-material";
 import { themeBriefsExporter } from "@/features/batches/kinds/theme-briefs/apply";
 
 import { batchFile, ITEM } from "./world.ts";
@@ -71,17 +72,51 @@ test("the export lists the themes that need a brief with their bundle; a stale b
   assert.ok(tiny[0] && tiny[0].truncation.chars_used <= 700 * 2, "an over-small budget cuts and counts, it does not silently drop");
 });
 
-test("a single brief goes through the same seam: as JSON, or as markdown with a frontmatter block; a stale hash is refused", async () => {
+test("INV-R2b-5 (F:3): a single payload takes the batch path: an entry that fails validation is refused with the SAME reasons as in a batch, as JSON or markdown, and nothing is written; a valid single entry is written", async () => {
   const w = themeWorld();
-  const payload = { theme_id: THEME, title: "T", brief_md: "body", member_hash: hash };
-  assert.equal((await applyBatch("theme-briefs", w.deps, { content: JSON.stringify({ ...payload, member_hash: "x" }), dry: false })).outcome, "failed");
+  const bad = entry({ sections: { ...entry().sections, meaning: "The duty costs EUR 900000 per year." } });
+  const viaBatch = notes(await apply(w, [bad]));
+  const single = (content: string, format?: "md") => applyBatch("theme-briefs", w.deps, { content, ...(format ? { format } : {}), dry: false });
+  const viaSingle = notes(await single(JSON.stringify(bad)));
+  const reason = (s: string) => /section "meaning" states "900000"[^\n]*/.exec(s)?.[0];
+  assert.ok(reason(viaBatch), viaBatch);
+  assert.equal(reason(viaSingle), reason(viaBatch), "the same refusal on both paths");
+  assert.equal((await single(JSON.stringify({ theme_id: THEME, title: "T", brief_md: "body", member_hash: hash }))).outcome, "failed", "the old four-field payload carries no sections or claims and is refused");
   const md = `${buildFrontmatter({ theme_id: THEME, title: "T", member_hash: hash })}\nA short body.\n`;
-  const r = await applyBatch("theme-briefs", w.deps, { content: md, format: "md", dry: false });
-  assert.equal(r.counts.written, 1, notes(r));
-  assert.deepEqual([stored(w)[0]?.generated_by, stored(w)[0]?.brief_md], ["session-executor", "A short body."]);
-  assert.equal((await applyBatch("theme-briefs", w.deps, { content: JSON.stringify(payload), dry: false })).counts.written, 1);
-  assert.equal(stored(w).length, 1, "one row per theme: the seam upserts");
-  assert.match(notes(await applyBatch("theme-briefs", w.deps, { content: "{", dry: false })), /not JSON/);
+  const viaMd = await single(md, "md");
+  assert.equal(viaMd.outcome, "failed");
+  assert.match(notes(viaMd), /sections must be an object/);
+  assert.equal(stored(w).length, 0, "nothing was written by any refused payload");
+  assert.match(notes(await single("{")), /not JSON/);
+  const ok = await single(JSON.stringify(entry()));
+  assert.equal(ok.counts.applied, 1, notes(ok));
+  assert.deepEqual([stored(w)[0]?.generated_by, stored(w)[0]?.brief_md], ["theme-briefs-single-payload", renderBriefMd(entry() as never)]);
+  assert.equal(stored(w).length, 1, "one row per theme");
+});
+
+test("F:15: an invented figure listed under a REAL claim id is not covered by it; F:16: a quarantined member and a suppressed claim are not brief material; F:17: the home jurisdictions name their source", async () => {
+  const w = themeWorld();
+  const invented = entry({ sections: { ...entry().sections, connection: "The duty carries a fine of EUR 900000 for late filers." }, claims: [{ section: "connection", text: "a fine of EUR 900000", member_id: ITEM, claim_ids: [CLAIM_A] }] });
+  assert.match(notes(await apply(w, [invented])), /the listed text states .*"900000".* that none of its cited grounded claims states/);
+  const honest = entry({ sections: { ...entry().sections, connection: "Operators shall report verified annual emissions before 30 April." }, claims: [{ section: "connection", text: "report verified annual emissions before 30 April", member_id: ITEM, claim_ids: [CLAIM_A] }] });
+  assert.equal((await apply(w, [honest], true)).counts.valid, 1, "a figure the cited claim states is covered");
+  // F:16: the member quarantined since the pass, then the claim suppressed
+  const themes = await loadThemes(w.db.client, [THEME]);
+  assert.equal((await loadThemeMaterial(w.db.client, themes)).claims.some((c) => c.id === CLAIM_A), true);
+  w.db.seed("fact_suppressions", [{ id: "f2000000-0000-4000-8000-000000000001", item_id: ITEM, target_kind: "fact", target_ref: CLAIM_A, op: "suppress", machine_value: null, created_at: "2026-10-15T00:00:00Z", revoked_at: null }]);
+  const suppressed = await loadThemeMaterial(w.db.client, themes);
+  assert.equal(suppressed.claims.some((c) => c.id === CLAIM_A), false, "a suppressed claim never reaches the author");
+  assert.match(notes(await apply(w, [honest])), /is not a grounded claim of member/);
+  (w.db.rows("intelligence_items").find((r) => r.id === SECOND) as Record<string, unknown>).provenance_status = "quarantined";
+  const quarantined = await loadThemeMaterial(w.db.client, themes);
+  assert.deepEqual(quarantined.items.map((i) => i.id), [ITEM], "a member that is no longer verified is not material");
+  assert.equal(quarantined.claims.some((c) => c.intelligence_item_id === SECOND) || quarantined.events.some((e) => e.intelligence_item_id === SECOND), false);
+  // F:17: two workspaces; the union takes the larger weight, a named org reads its own row, a failed read throws
+  w.db.seed("workspace_settings", [{ id: "w1", org_id: "00000000-0000-4000-8000-0000000000b2", jurisdiction_weights: { EU: 3, US: 1 } }, { id: "w2", org_id: "00000000-0000-4000-8000-0000000000a1", jurisdiction_weights: { EU: 5, GB: 2 } }]);
+  assert.deepEqual(await loadHomeJurisdictions(w.db.client, "all-workspaces"), { EU: 5, GB: 2, US: 1 });
+  assert.deepEqual(await loadHomeJurisdictions(w.db.client, { orgId: "00000000-0000-4000-8000-0000000000b2" }), { EU: 3, US: 1 });
+  w.db.failWhen = (c) => (c.table === "workspace_settings" ? "boom" : null);
+  await assert.rejects(loadHomeJurisdictions(w.db.client, "all-workspaces"), /boom|paginated read failed/);
 });
 
 test("the flat frontmatter block round-trips what it can carry and refuses what it cannot (a newline, a comma in an inline-array item, a quoted scalar)", () => {

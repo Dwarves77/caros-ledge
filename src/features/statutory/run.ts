@@ -5,7 +5,7 @@
 import type { Db } from "@/core/db";
 import type { RunResult } from "@/core/sources/run-result";
 
-import { parseRow, validateRowsFile, writeOneRow, type StatutoryDeps } from "./rows";
+import { parseRow, validateRowsFile, verifyRowQuotes, writeOneRow, type StatutoryDeps } from "./rows";
 
 export interface StatutoryRunDeps {
   sb: Db;
@@ -23,6 +23,7 @@ export async function statutoryRun(deps: StatutoryRunDeps, input: { dry: boolean
   const counts: Record<string, number> = { rows: rows.length, written: 0, would_write: 0, skipped_already: 0, refused: 0, errored: 0 };
   const perItem: { id: string; outcome: string; detail: string | null }[] = [];
   const notes: string[] = [];
+  const texts = new Map<string, string>();
   for (const [i, raw] of rows.entries()) {
     let parsed;
     try {
@@ -33,7 +34,14 @@ export async function statutoryRun(deps: StatutoryRunDeps, input: { dry: boolean
       continue;
     }
     try {
-      const out = await writeOneRow(deps.sb, parsed, deps.statutory, { apply: !input.dry, now: deps.now() });
+      // A quote nobody checked against a stored capture is not an input: the row is refused with the reason, in dry runs too.
+      const proof = await verifyRowQuotes(deps.sb, raw, deps.now(), texts);
+      if (!proof.ok) {
+        counts.refused = (counts.refused ?? 0) + 1;
+        perItem.push({ id: parsed.shipKey, outcome: "refused-quote", detail: proof.reason });
+        continue;
+      }
+      const out = await writeOneRow(deps.sb, parsed, deps.statutory, { apply: !input.dry, now: deps.now(), captureIds: proof.captureIds });
       const key = out.action === "written" ? "written" : out.action === "would-write" ? "would_write" : out.action === "skipped-already-computed" ? "skipped_already" : out.action === "errored" ? "errored" : "refused";
       counts[key] = (counts[key] ?? 0) + 1;
       perItem.push({ id: out.shipKey, outcome: out.action, detail: out.action === "refused-inadmissible" ? `${out.field}: ${out.reason}` : out.action === "errored" ? out.reason : "resultEur" in out ? `result=${out.resultEur} EUR` : null });

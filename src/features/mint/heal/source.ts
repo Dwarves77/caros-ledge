@@ -10,10 +10,11 @@ import type { Db } from "@/core/db";
 import { capture, FetchHoldError, type CaptureResult } from "@/core/fetch";
 import { institutionKey, registerAndRate } from "@/core/sources";
 import { canonicalUrl } from "@/core/shared";
+import type { LedgerOp } from "@/core/grounding/ledger";
 
 import type { CaptureDeps } from "../deps";
 
-import { findOwningSection, locateSpan, orphanClaimText, type Capture, type HealClaim, type HealSource, type IndexCache, type Orphan, type SourcesIndex } from "./ground";
+import { briefSentenceOf, findOwningSection, locateSpan, NO_VERBATIM_SPAN, supportingSentence, type Capture, type HealClaim, type HealSource, type IndexCache, type Orphan, type SourcesIndex } from "./ground";
 
 export const MAX_CANDIDATES_PER_ORPHAN = 5;
 export const MAX_ATTEMPTS_PER_ITEM = 25;
@@ -33,6 +34,10 @@ export interface SourceCtx {
   capCache: Map<string, CaptureResult>;
   captures: Capture[];
   claims: HealClaim[];
+  /** The brief the orphans are in: the claim of a grounded orphan is the brief's own sentence. */
+  fullBrief: string | null;
+  /** The ledger writes this pass plans; the caller applies them as ONE transaction with the rest of the heal. */
+  ops: LedgerOp[];
   sections: { id: string; content_md: string | null }[];
   /** The section a new claim belongs to: the owning section of the token, else the record_facts section (created when absent). */
   sectionFor(token: string): Promise<string>;
@@ -93,15 +98,16 @@ async function ratedSource(ctx: SourceCtx, url: string): Promise<{ source: HealS
 }
 
 async function groundOn(ctx: SourceCtx, o: Orphan, url: string, cap: Capture, via?: string): Promise<SourceOutcome | null> {
-  const found = locateSpan(o.token, cap, ctx.cache);
-  if (!found) return null;
+  if (!locateSpan(o.token, cap, ctx.cache)) return null;
+  const sentence = briefSentenceOf(o.token, ctx.fullBrief);
+  const span = sentence ? supportingSentence(o.token, sentence, cap, ctx.cache) : null;
+  // The page carries the figure but no sentence that says what the brief says: withheld, and the source is NOT registered for it.
+  if (!sentence || !span) return { token: o.token, url, outcome: NO_VERBATIM_SPAN };
   const rated = await ratedSource(ctx, url);
   if ("refused" in rated) return { token: o.token, url, outcome: `unrated_host:${rated.refused}` };
-  const row = { section_row_id: await ctx.sectionFor(o.token), intelligence_item_id: ctx.itemId, claim_text: orphanClaimText(o), claim_kind: "FACT", source_span: found.span, source_id: rated.source.id, search_result_id: cap.id, source_tier_at_grounding: rated.tier };
-  const ins = await ctx.sb.from("section_claim_provenance").insert(row).select("id").single();
-  const id = (ins.data as { id?: string } | null)?.id;
-  if (ins.error || !id) throw new Error(`orphan claim for "${o.token}" not written: ${ins.error?.message ?? "no row"}`);
-  ctx.claims.push({ id, claim_kind: "FACT", claim_text: row.claim_text, source_span: found.span, source_id: rated.source.id, search_result_id: cap.id, section_row_id: row.section_row_id });
+  const sectionId = await ctx.sectionFor(o.token);
+  ctx.ops.push({ op: "claim", claim_id: null, row: { section_row_id: sectionId, claim_text: sentence, claim_kind: "FACT", source_span: span, source_id: rated.source.id, search_result_id: cap.id } });
+  ctx.claims.push({ id: `pending:${ctx.ops.length}`, claim_kind: "FACT", claim_text: sentence, source_span: span, source_id: rated.source.id, search_result_id: cap.id, section_row_id: sectionId });
   return { token: o.token, url, sourceId: rated.source.id, tier: rated.tier, outcome: via ? `grounded_one_hop_from:${via}` : "grounded" };
 }
 
@@ -122,7 +128,8 @@ export async function sourceOrphans(ctx: SourceCtx, orphans: Orphan[]): Promise<
         attempts += 1;
         const cap = await capturePage(ctx, url);
         if (!cap) { out.push({ token: o.token, url, outcome: "unfetchable" }); continue; }
-        done = settle(await groundOn(ctx, o, url, cap));
+        const direct = await groundOn(ctx, o, url, cap);
+        done = settle(direct);
         for (const hop of done ? [] : hopLinks(cap.html, url)) {
           if (attempts >= MAX_ATTEMPTS_PER_ITEM) break;
           attempts += 1;
@@ -131,7 +138,7 @@ export async function sourceOrphans(ctx: SourceCtx, orphans: Orphan[]): Promise<
           if (done) break;
         }
         if (done) break;
-        out.push({ token: o.token, url, outcome: "token_not_in_page" });
+        if (!direct) out.push({ token: o.token, url, outcome: "token_not_in_page" });
       }
     } catch (e) {
       if (!(e instanceof FetchHoldError)) throw e;

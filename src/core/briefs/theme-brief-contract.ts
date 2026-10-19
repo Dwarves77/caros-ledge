@@ -105,9 +105,22 @@ export function parseRamifications(text: string): { subs: Map<string, string>; p
   return { subs, problems };
 }
 
+/**
+ * Does the grounded text behind a listed claim cover what the author wrote? It returns the figure tokens of `listed` that none of the `grounded` texts states (empty: covered). R2a's comparator replaces this
+ * local stub (INTERFACE GAPS): the stub holds the F:15 attack, an invented figure listed under a real claim id, and nothing subtler.
+ */
+export type ClaimComparator = (listed: string, grounded: readonly string[]) => string[];
+export const figureCoverage: ClaimComparator = (listed, grounded) => {
+  const have = figureTokens(grounded.join(" "));
+  return [...figureTokens(listed)].filter((tok) => !have.has(tok));
+};
+
 export interface ThemeContext {
   themesById: Map<string, { id: string; member_ids: string[]; surfaces: string[] }>;
   membersById: Map<string, { title?: string | null; claim_ids: Set<string>; event_ids: Set<string> }>;
+  /** claim or forward-event id to the grounded texts behind it (the claim text and its verbatim span; an event's obligation text, date and span). */
+  groundedText: ReadonlyMap<string, readonly string[]>;
+  comparator?: ClaimComparator;
   gapsByTheme?: Map<string, { description: string }[]>;
   basisTokensByTheme?: Map<string, Set<string>>;
 }
@@ -173,6 +186,8 @@ export function validateThemeBriefEntry(entry: unknown, i: number, ctx: ThemeCon
       if (!member) return void errs.push(`${ct}: member ${c.member_id} has no loaded claims, cannot verify claim_ids`);
       if (!Array.isArray(c.claim_ids) || c.claim_ids.length === 0) return void errs.push(`${ct}: claim_ids must be a non-empty array`);
       for (const id of c.claim_ids) if (typeof id !== "string" || !(member.claim_ids.has(id) || (section === "watch" && member.event_ids.has(id)))) errs.push(`${ct}: claim id ${JSON.stringify(id)} is not a grounded claim of member ${c.member_id}${section === "watch" ? " (or one of its forward events)" : ""}`);
+      const unbacked = (ctx.comparator ?? figureCoverage)(c.text, c.claim_ids.flatMap((id: unknown) => (typeof id === "string" ? [...(ctx.groundedText.get(id) ?? [])] : [])));
+      if (unbacked.length) errs.push(`${ct}: the listed text states ${unbacked.slice(0, 4).map((tok) => JSON.stringify(tok)).join(", ")} that none of its cited grounded claims states`);
     });
   }
 
@@ -197,4 +212,30 @@ export function renderBriefMd(entry: { title: string; sections: Partial<Record<T
     if (body) parts.push(`## ${SECTION_HEADINGS[k]}\n\n${body}`);
   }
   return `${parts.join("\n\n")}\n`;
+}
+
+// ---- the only way to a writable brief ------------------------------------------------------------------------------------------------------------------------------
+declare const VALIDATED: unique symbol;
+/** An entry that passed validateThemeBriefEntry against the theme's LIVE material. applyThemeBrief accepts nothing else, and the type cannot be built outside parseThemeBriefEntry. */
+export interface ValidThemeBrief {
+  readonly [VALIDATED]: true;
+  readonly theme_id: string;
+  readonly member_hash: string;
+  readonly title: string;
+  readonly brief_md: string;
+  readonly sections: Readonly<Record<ThemeSection, string>>;
+  readonly claims: readonly unknown[];
+}
+const validated = new WeakSet<object>();
+/** True only for an object parseThemeBriefEntry returned: a runtime check behind the compile-time brand, so a cast cannot forge one. */
+export const isValidThemeBrief = (x: unknown): x is ValidThemeBrief => typeof x === "object" && x !== null && validated.has(x);
+
+/** Validate ONE entry and, when it passes, hand back the branded brief to write. Batch and single payload both come here: there is no other route to the writer. */
+export function parseThemeBriefEntry(entry: unknown, i: number, ctx: ThemeContext): { ok: true; brief: ValidThemeBrief } | { ok: false; errors: string[] } {
+  const errors = validateThemeBriefEntry(entry, i, ctx);
+  if (errors.length || !isObj(entry)) return { ok: false, errors };
+  const sections = entry.sections as Record<ThemeSection, string>;
+  const brief = Object.freeze({ theme_id: String(entry.theme_id), member_hash: String(entry.member_hash), title: String(entry.title).trim(), brief_md: renderBriefMd({ title: String(entry.title), sections }), sections, claims: entry.claims as unknown[] }) as unknown as ValidThemeBrief;
+  validated.add(brief);
+  return { ok: true, brief };
 }

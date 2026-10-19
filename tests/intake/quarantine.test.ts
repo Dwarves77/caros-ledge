@@ -6,6 +6,8 @@ import { DEFERRAL_WINDOW_DAYS, DWELL_BOUND_DAYS, buildDeferralCandidate, compute
 import { DELETABLE_REASONS } from "@/features/intake/quarantine/erase";
 import { HOLD_TYPES } from "@/features/intake/quarantine/resolver";
 
+import { installLedgerRpcs } from "../_support/ledger-rpcs.ts";
+
 import { ITEM, NOW, OFFICIAL_URL, OTHER_URL, SOURCE, CORROB, SPAN_REPORT, makeWorld } from "./fixtures.ts";
 import { MemDb } from "./memdb.ts";
 
@@ -202,6 +204,7 @@ test("INV-101: id-stamp needs the item's lease (no lease, no touch), a keyed loo
 const archived = (id: string, over: Record<string, unknown> = {}) => ({ id, legacy_id: `L-${id}`, title: `T ${id}`, canonical_instrument_key: null, source_url: "https://a.test/x", source_id: SOURCE, is_archived: true, archive_reason: "duplicate", full_brief: null, ...over });
 const eraseWorld = () => {
   const db = new MemDb();
+  installLedgerRpcs(db);
   db.seed("intelligence_items", [archived("a1"), archived("a2", { full_brief: "real content" }), archived("a3", { source_id: "dead-source" }), archived("a4", { archive_reason: "off_vertical" }), archived("a5")]);
   db.seed("corpus_census", [{ intelligence_item_id: "a1", haiku_verdict: "archive_correct" }, { intelligence_item_id: "a2", haiku_verdict: "archive_correct" }, { intelligence_item_id: "a3", haiku_verdict: "archive_correct" }, { intelligence_item_id: "a5", haiku_verdict: "review_valuable" }]);
   db.seed("sources", [{ id: SOURCE, status: "active" }, { id: "dead-source", status: "suspended" }]);

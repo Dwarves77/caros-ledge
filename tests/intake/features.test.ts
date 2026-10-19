@@ -3,7 +3,7 @@ import { test } from "node:test";
 
 import { MINT_OK, applyStagedUpdate, consumePortalCandidates, drainChangeSweepUpdates, isSubstantiveUpdate, persistPortalCandidates, runIntakeCycle, runParticipation, selectCandidateLedgerPage, stageCandidate } from "@/features/intake";
 import { applyPromoteCap, buildCandidateSeed } from "@/features/intake/portal-ledger";
-import { CHANGE_SWEEP_STAGED_MARKER, UPDATE_ITEM_ALLOWLIST, isRootUrl, splitNewItemSeed } from "@/features/intake/staged-transit";
+import { CHANGE_SWEEP_STAGED_MARKER, UPDATE_ITEM_ALLOWLIST, isRootUrl, parseStagedPatch, splitNewItemSeed } from "@/features/intake/staged-transit";
 
 import { ITEM, OFFICIAL_TEXT, OFFICIAL_URL, SOURCE, SPAN_REPORT, makeWorld } from "./fixtures.ts";
 
@@ -57,6 +57,43 @@ test("proof 4 / B-0059: update_item writes ONLY allowlisted columns; provenance-
   assert.equal((await applyStagedUpdate(deps, { update_type: "bogus", proposed_changes: {} })).success, false);
 });
 
+test("D:36: a staged patch is typed before it reaches the item: a wrong type, a value outside the vocabulary, a malformed date and a column off the kind are refused; a source date needs a verbatim span of a capture OF THE ITEM, which the database re-checks", async () => {
+  const { db, deps } = makeWorld();
+  const apply = (changes: Record<string, unknown>, type = "update_item") => applyStagedUpdate(deps, { update_type: type, item_id: ITEM, proposed_changes: changes });
+  const cases: [string, Record<string, unknown>, RegExp][] = [
+    ["a string for an array column", { jurisdiction_iso: "GB" }, /wrong type or outside its vocabulary: jurisdiction_iso/],
+    ["a priority outside the vocabulary", { priority: "URGENT" }, /outside its vocabulary: priority/],
+    ["a malformed date", { next_review_date: "01/02/2027" }, /outside its vocabulary: next_review_date|wrong type/],
+    ["an impossible date", { next_review_date: "2027-02-30" }, /wrong type/],
+    ["a source date with no evidence", { entry_into_force: "2027-01-01" }, /date_evidence\.entry_into_force/],
+    ["a source date with a short span", { entry_into_force: "2027-01-01", date_evidence: { entry_into_force: { capture_id: "a0000000-0000-4000-8000-0000000000c1", span: "2027" } } }, /date_evidence\.entry_into_force/],
+  ];
+  for (const [name, changes, re] of cases) {
+    const r = await apply(changes);
+    assert.equal(r.success, false, name);
+    assert.match(r.error ?? "", re, name);
+  }
+  assert.equal(db.writes("intelligence_items").length, 0, "no refused patch reached the item");
+  assert.match(JSON.stringify(parseStagedPatch("status_change", { status: "in_force", title: "x" })), /status_change writes the status column alone/);
+  assert.match(JSON.stringify(parseStagedPatch("archive_item", { is_archived: true, title: "x" })), /archive_item writes the archive columns alone/);
+  assert.equal((await apply({ status: "made_up" }, "status_change")).success, false);
+  assert.equal((await apply({ status: "in_force" }, "status_change")).success, true);
+  assert.equal(db.rows("intelligence_items")[0]?.status, "in_force");
+  const cap = db.rows("agent_run_searches").find((r) => r.intelligence_item_id === ITEM) as Record<string, unknown>;
+  const span = String(cap.result_content).slice(0, 40);
+  const ok = await apply({ entry_into_force: "2027-01-01", date_evidence: { entry_into_force: { capture_id: cap.id, span } } });
+  assert.equal(ok.success, true, ok.error);
+  assert.equal(db.rows("intelligence_items")[0]?.entry_into_force, "2027-01-01");
+  assert.equal(db.rows("intelligence_items")[0]?.date_evidence, undefined, "the evidence is not a column");
+  const lie = await apply({ compliance_deadline: "2028-01-01", date_evidence: { compliance_deadline: { capture_id: cap.id, span: "a sentence the capture does not hold" } } });
+  assert.equal(lie.success, false);
+  assert.match(lie.error ?? "", /no verbatim span in a capture of this item/);
+  assert.equal(db.rows("intelligence_items")[0]?.compliance_deadline, undefined, "the database refused it and wrote nothing");
+  const archived = await apply({ archive_reason: "duplicate" }, "archive_item");
+  assert.equal(archived.success, true);
+  assert.equal(db.rows("intelligence_items")[0]?.is_archived, true);
+});
+
 test("INV-172: a substantive update reruns the flywheel steps; a bookkeeping-only or empty change runs none; entities re-link only on jurisdiction or key change", async () => {
   assert.equal(isSubstantiveUpdate({ title: "x" }), true);
   assert.equal(isSubstantiveUpdate({ unheard_of_column: 1 }), true, "a deny list: an unknown column counts as substantive");
@@ -68,7 +105,7 @@ test("INV-172: a substantive update reruns the flywheel steps; a bookkeeping-onl
   assert.deepEqual(a.rec.connects.map((c) => c.split(":")[0]), ["connect", "events", "obligations"], "no entity re-link for a title change");
   assert.ok(sub.flags?.includes("discovery:1"));
   const b = makeWorld();
-  await applyStagedUpdate(b.deps, { update_type: "update_item", item_id: ITEM, proposed_changes: { jurisdiction_iso: "GB" } });
+  await applyStagedUpdate(b.deps, { update_type: "update_item", item_id: ITEM, proposed_changes: { jurisdiction_iso: ["GB"] } });
   assert.ok(b.rec.connects.some((c) => c.startsWith("entities:")), "a jurisdiction change re-links entities");
   const c = makeWorld();
   await applyStagedUpdate(c.deps, { update_type: "update_item", item_id: ITEM, proposed_changes: { severity: "monitoring" } });

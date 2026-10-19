@@ -11,13 +11,19 @@
 // with the mint (flywheel-participation.ts). No `intelligence_items` INSERT exists here: a new_item goes through deps.mint (INV-169).
 import { z } from "zod";
 
+import { DB_FORMAT_TYPE_VALUES, DB_PRIORITY_VALUES, DB_SEVERITY_VALUES, DB_URGENCY_TIER_VALUES } from "@/core/brief/vocab";
 import type { Db } from "@/core/db";
 
 import staged from "./data/staged.json";
 import { MINT_OK, type IntakeDeps } from "./deps";
 import { runParticipation } from "./flywheel-participation";
 
-const cfg = z.object({ nonSubstantive: z.array(z.string()), contentColumns: z.array(z.string()), chokepointOnlyInputs: z.array(z.string()), changeSweepMarker: z.string() }).parse(staged);
+const names = z.array(z.string());
+const cfg = z.object({
+  nonSubstantive: names, contentColumns: names, chokepointOnlyInputs: names, archiveColumns: names, changeSweepMarker: z.string(),
+  columnTypes: z.object({ text: names, textArray: names, date: names, sourceDate: names, timestamp: names, bool: names, uuid: names, uuidArray: names, json: names }),
+  enums: z.object({ status: names, confidence: names }),
+}).parse(staged);
 const NON_SUBSTANTIVE: ReadonlySet<string> = new Set(cfg.nonSubstantive);
 /** update_item may write these columns and no others: the content columns plus the bookkeeping columns. */
 export const UPDATE_ITEM_ALLOWLIST: ReadonlySet<string> = new Set([...cfg.contentColumns, ...cfg.nonSubstantive]);
@@ -55,6 +61,56 @@ export function splitNewItemSeed(proposed: Record<string, unknown>): { seed: Rec
   return { seed, relevance: typeof proposed.relevance === "number" ? proposed.relevance : null };
 }
 
+const DAY = /^\d{4}-\d{2}-\d{2}$/;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const isDay = (v: unknown): boolean => typeof v === "string" && DAY.test(v) && new Date(`${v}T00:00:00Z`).toISOString().startsWith(v);
+const ENUMS: Readonly<Record<string, ReadonlySet<string>>> = { status: new Set(cfg.enums.status), confidence: new Set(cfg.enums.confidence), priority: DB_PRIORITY_VALUES, severity: DB_SEVERITY_VALUES, urgency_tier: DB_URGENCY_TIER_VALUES, format_type: DB_FORMAT_TYPE_VALUES };
+type Check = (v: unknown) => boolean;
+/** The column types of the allowlist, as predicates: a value of the wrong type is a refusal naming the column, never a coercion. */
+const TYPE_OF = new Map<string, Check>([
+  ...cfg.columnTypes.text.map((c): [string, Check] => [c, (v) => typeof v === "string"]),
+  ...cfg.columnTypes.textArray.map((c): [string, Check] => [c, (v) => Array.isArray(v) && v.every((x) => typeof x === "string" && x.trim() !== "")]),
+  ...[...cfg.columnTypes.date, ...cfg.columnTypes.sourceDate].map((c): [string, Check] => [c, isDay]),
+  ...cfg.columnTypes.timestamp.map((c): [string, Check] => [c, (v) => typeof v === "string" && !Number.isNaN(Date.parse(v))]),
+  ...cfg.columnTypes.bool.map((c): [string, Check] => [c, (v) => typeof v === "boolean"]),
+  ...cfg.columnTypes.uuid.map((c): [string, Check] => [c, (v) => typeof v === "string" && UUID.test(v)]),
+  ...cfg.columnTypes.uuidArray.map((c): [string, Check] => [c, (v) => Array.isArray(v) && v.every((x) => typeof x === "string" && UUID.test(x))]),
+  ...cfg.columnTypes.json.map((c): [string, Check] => [c, (v) => v !== undefined]),
+  ...Object.entries(ENUMS).map(([c, set]): [string, Check] => [c, (v) => typeof v === "string" && set.has(v)]),
+]);
+const SOURCE_DATES: ReadonlySet<string> = new Set(cfg.columnTypes.sourceDate);
+const ARCHIVE_ONLY: ReadonlySet<string> = new Set(cfg.archiveColumns);
+
+export type StagedKind = "update_item" | "status_change" | "archive_item";
+export interface StagedPatch { patch: Record<string, unknown>; evidence: Record<string, { capture_id: string; span: string }> }
+/**
+ * The typed parse of a staged item patch (fail closed): the patch is non-empty, every column is on the allowlist and of its type (a null clears), the kind writes only its own columns, and a source date that is set
+ * (not cleared) carries `date_evidence[column] = { capture_id, span }`. Whether that span is verbatim in a capture of the item is checked by the database in the write itself.
+ */
+export function parseStagedPatch(kind: StagedKind, proposed: Record<string, unknown>): { ok: true; value: StagedPatch } | { ok: false; error: string } {
+  const { date_evidence: rawEvidence, ...patch } = proposed;
+  const keys = Object.keys(patch);
+  if (keys.length === 0) return { ok: false, error: "empty patch refused: nothing to write" };
+  const refused = keys.filter((k) => !UPDATE_ITEM_ALLOWLIST.has(k));
+  if (refused.length) return { ok: false, error: `update_item refused: column(s) outside the allowlist: ${refused.join(", ")}` };
+  if (kind === "status_change" && keys.some((k) => k !== "status")) return { ok: false, error: "status_change writes the status column alone" };
+  if (kind === "archive_item" && keys.some((k) => !ARCHIVE_ONLY.has(k))) return { ok: false, error: "archive_item writes the archive columns alone" };
+  const wrong = keys.filter((k) => patch[k] !== null && !(TYPE_OF.get(k)?.(patch[k]) ?? false));
+  if (wrong.length) return { ok: false, error: `staged value of the wrong type or outside its vocabulary: ${wrong.join(", ")}` };
+  const evidence: StagedPatch["evidence"] = {};
+  for (const k of keys.filter((c) => SOURCE_DATES.has(c) && patch[c] !== null)) {
+    const e = (rawEvidence as Record<string, { capture_id?: unknown; span?: unknown }> | null | undefined)?.[k];
+    if (!e || typeof e.capture_id !== "string" || !UUID.test(e.capture_id) || typeof e.span !== "string" || e.span.trim().length < 8) return { ok: false, error: `${k} is a date from a source: it needs date_evidence.${k} = { capture_id, span } naming a verbatim span of a capture of the item` };
+    evidence[k] = { capture_id: e.capture_id, span: e.span };
+  }
+  return { ok: true, value: { patch, evidence } };
+}
+/** The one door to the item row (apply_staged_item_patch): one locked statement, the evidence re-checked in the database. */
+async function writePatch(sb: Db, itemId: string, kind: StagedKind, v: StagedPatch): Promise<string | null> {
+  const { error } = await sb.rpc("apply_staged_item_patch", { p_item_id: itemId, p_kind: kind, p_patch: v.patch, p_evidence: v.evidence });
+  return error ? error.message : null;
+}
+
 /** Materialise one staged row. Never throws; every failure is a returned reason. */
 export async function applyStagedUpdate(deps: IntakeDeps, update: StagedUpdateRow, opts: { dry?: boolean } = {}): Promise<ApplyUpdateResult> {
   const { sb } = deps;
@@ -70,15 +126,14 @@ export async function applyStagedUpdate(deps: IntakeDeps, update: StagedUpdateRo
       }
       case "update_item": {
         if (!update.item_id) return { success: false, error: "No item_id for update" };
-        const keys = Object.keys(proposed);
-        if (keys.length === 0) return { success: false, error: "empty patch refused: nothing to write" };
-        const refused = keys.filter((k) => !UPDATE_ITEM_ALLOWLIST.has(k));
-        if (refused.length) return { success: false, error: `update_item refused: column(s) outside the allowlist: ${refused.join(", ")}` };
+        const parsed = parseStagedPatch("update_item", proposed);
+        if (!parsed.ok) return { success: false, error: parsed.error };
         if (opts.dry) return { success: true, itemId: update.item_id, flags: [] };
-        const { error } = await sb.from("intelligence_items").update(proposed).eq("id", update.item_id);
-        if (error) return { success: false, error: error.message };
+        const err = await writePatch(sb, update.item_id, "update_item", parsed.value);
+        if (err) return { success: false, error: err };
+        const keys = Object.keys(parsed.value.patch);
         const flags: string[] = [];
-        if (isSubstantiveUpdate(proposed)) {
+        if (isSubstantiveUpdate(parsed.value.patch)) {
           const r = await runParticipation({ sb, connect: deps.connect, now: () => deps.recorder.now() }, { itemId: update.item_id, context: "update", changed: keys });
           flags.push(...r.flags);
         }
@@ -87,9 +142,11 @@ export async function applyStagedUpdate(deps: IntakeDeps, update: StagedUpdateRo
       case "status_change": {
         if (!update.item_id) return { success: false, error: "No item_id for status change" };
         if (!proposed.status) return { success: false, error: "proposed_changes.status missing" };
+        const parsed = parseStagedPatch("status_change", { status: proposed.status });
+        if (!parsed.ok) return { success: false, error: parsed.error };
         if (opts.dry) return { success: true, itemId: update.item_id };
-        const { error } = await sb.from("intelligence_items").update({ status: proposed.status }).eq("id", update.item_id);
-        return error ? { success: false, error: error.message } : { success: true, itemId: update.item_id };
+        const err = await writePatch(sb, update.item_id, "status_change", parsed.value);
+        return err ? { success: false, error: err } : { success: true, itemId: update.item_id };
       }
       case "new_source": {
         const url = typeof proposed.url === "string" ? proposed.url : "";
@@ -100,9 +157,11 @@ export async function applyStagedUpdate(deps: IntakeDeps, update: StagedUpdateRo
       }
       case "archive_item": {
         if (!update.item_id) return { success: false, error: "No item_id for archive" };
+        const parsed = parseStagedPatch("archive_item", { is_archived: true, archive_reason: proposed.archive_reason || "Manual", archive_note: proposed.archive_note || "", archived_date: deps.recorder.now().toISOString().slice(0, 10) });
+        if (!parsed.ok) return { success: false, error: parsed.error };
         if (opts.dry) return { success: true, itemId: update.item_id };
-        const { error } = await sb.from("intelligence_items").update({ is_archived: true, archive_reason: proposed.archive_reason || "Manual", archive_note: proposed.archive_note || "", archived_date: deps.recorder.now().toISOString().slice(0, 10) }).eq("id", update.item_id);
-        return error ? { success: false, error: error.message } : { success: true, itemId: update.item_id };
+        const err = await writePatch(sb, update.item_id, "archive_item", parsed.value);
+        return err ? { success: false, error: err } : { success: true, itemId: update.item_id };
       }
       default:
         return { success: false, error: `Unknown update type: ${update.update_type}` };
