@@ -1,0 +1,40 @@
+{
+  "locales": {
+    "en": {
+      "decimal": ".",
+      "thousands": [
+        ","
+      ],
+      "family": "point"
+    },
+    "fr": {
+      "decimal": ",",
+      "thousands": [],
+      "family": "comma"
+    },
+    "de": {
+      "decimal": ",",
+      "thousands": [
+        "."
+      ],
+      "family": "comma"
+    }
+  },
+  "groupSpaces": [
+    " ",
+    " ",
+    " ",
+    " "
+  ],
+  "fractionGroupLocales": [
+    "en",
+    "fr",
+    "de"
+  ],
+  "majorityShare": 0.75,
+  "documentDefault": "en",
+  "minusSigns": [
+    "-",
+    "−"
+  ]
+}
