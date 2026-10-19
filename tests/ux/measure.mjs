@@ -23,6 +23,32 @@ export function measure(opts = { rows: true }) {
     if (tracks > frame.children.length) out.push(`page frame reserves ${tracks - frame.children.length} empty column track(s): ${tracks} tracks for ${frame.children.length} child(ren) at ${vw}px`);
   }
 
+  // P2-15e: a card in a sideways strip keeps its declared width (a long unbreakable member title once stretched a theme card to 548 px and the strip clipped it); a timeline date is never cut by an ellipsis; a section title does not wrap while it fits alone on its line.
+  for (const card of document.querySelectorAll('.cl-theme-card')) {
+    const width = card.getBoundingClientRect().width;
+    if (card.getClientRects().length && width > 262) out.push(`theme card stretched to ${Math.round(width)} px (declared 260)`);
+  }
+  for (const el of document.querySelectorAll('.cl-tl-date')) {
+    if (el.getClientRects().length && el.scrollWidth > el.clientWidth + 1) out.push(`timeline date clipped: "${(el.textContent || '').trim()}" needs ${el.scrollWidth} px, has ${el.clientWidth}`);
+  }
+  for (const rail of document.querySelectorAll('[data-notices-rail]')) {
+    const r = rail.getBoundingClientRect();
+    if (r.width && (r.left < 16 || r.right > vw - 16)) out.push(`recalculation notices card has no page gutter: ${Math.round(r.left)}..${Math.round(r.right)} of ${vw}`);
+  }
+  const headCanvas = document.createElement('canvas').getContext('2d');
+  for (const title of document.querySelectorAll('.cl-section-head2 .cl-section-title')) {
+    if (!title.getClientRects().length) continue;
+    const cs = getComputedStyle(title);
+    const lineHeight = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.2;
+    if (title.getBoundingClientRect().height < lineHeight * 1.5) continue;
+    headCanvas.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+    const text = (title.textContent || '').trim();
+    const natural = headCanvas.measureText(cs.textTransform === 'uppercase' ? text.toUpperCase() : text).width + (parseFloat(cs.letterSpacing) || 0) * text.length;
+    const head = title.closest('.cl-section-head2');
+    const room = head.clientWidth - 2 * (parseFloat(getComputedStyle(head).paddingLeft) || 0);
+    if (natural <= room) out.push(`section title wraps although it fits alone: "${text}" ${Math.round(natural)} px in ${Math.round(room)} px`);
+  }
+
   // Titles: never narrower than the longest word.
   const canvas = document.createElement('canvas').getContext('2d');
   for (const el of document.querySelectorAll('[data-guard-title]')) {

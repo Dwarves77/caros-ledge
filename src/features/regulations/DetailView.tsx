@@ -19,7 +19,9 @@ export function DetailView({ children, ...body }: Body & { children?: ReactNode 
       <RegulationDetail {...body} relevance={relevance} />
       <BindingBanner relevance={relevance} retry={relevance.retry} />
       {children}
-      <NoticesRail />
+      <div className="cl-detail-wrap">
+        <NoticesRail />
+      </div>
     </>
   );
 }

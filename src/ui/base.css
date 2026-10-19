@@ -51,10 +51,11 @@ button, input, select, textarea { font-family: inherit; }
 .cl-card-rule-float { position: absolute; top: 0; left: 0; right: 0; }
 .cl-section-label { font-family: var(--font-sans); font-size: 17px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; color: var(--ink); }
 .cl-section-title { font-family: var(--font-display); font-weight: 400; font-size: 20px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink); min-width: 0; }
-.cl-section-head2 { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding: 14px 16px 10px; }
+.cl-section-head2 { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 16px; padding: 14px 16px 10px; }
 .cl-section-head2--section { padding: 14px 20px 10px; }
 .cl-section-head2--rule { border-bottom: 1px solid var(--line-2); }
-.cl-section-head2-titlewrap { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+.cl-section-head2-titlewrap { display: flex; align-items: baseline; gap: 10px; min-width: 0; max-width: 100%; }
+.cl-section-head2-aside { margin-left: auto; }
 .cl-section-head2-index { flex-shrink: 0; font-size: var(--fs-105); font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3); }
 .cl-section-head2-aside { font-size: var(--fs-105); font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); white-space: nowrap; }
 .cl-section-head2--detail { background: var(--cl-detail-head-tint, transparent); }
@@ -531,7 +532,7 @@ button, input, select, textarea { font-family: inherit; }
 .cl-themes-title { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink); }
 .cl-themes-count { font-size: var(--fs-115); color: var(--ink-3); }
 .cl-themes-strip { display: flex; gap: 12px; overflow-x: auto; max-width: 100%; padding-bottom: 4px; scroll-snap-type: x proximity; }
-.cl-theme-card { flex: 0 0 260px; scroll-snap-align: start; border: 1px solid var(--line-1); border-radius: 8px; padding: 10px 12px; background: var(--card); }
+.cl-theme-card { flex: 0 0 260px; min-width: 0; overflow: hidden; scroll-snap-align: start; border: 1px solid var(--line-1); border-radius: 8px; padding: 10px 12px; background: var(--card); }
 .cl-theme-link { display: flex; align-items: center; min-height: 44px; text-decoration: none; color: inherit; }
 .cl-theme-label { font-size: var(--fs-125); font-weight: 700; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .cl-theme-meta { display: flex; flex-wrap: wrap; gap: 4px; margin: 5px 0 8px; }
@@ -691,9 +692,9 @@ button, input, select, textarea { font-family: inherit; }
   .cl-fc-body, .cl-fc-body--lead { display: flex; flex-direction: column; gap: 8px; }
   .cl-fc-prov { border-left: none; border-top: 1px solid var(--line-1); padding-left: 0; padding-top: 8px; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px; }
   .cl-tl-track { display: block; position: relative; padding: 12px 0 0; }
-  .cl-tl-line { position: absolute; left: 68px; top: 10px; bottom: 10px; width: 2px; height: auto; margin: 0; background: linear-gradient(to bottom, var(--awareness) 0%, var(--awareness) var(--tl-green, 0%), var(--line-1) var(--tl-green, 0%)); }
-  .cl-tl-marker { display: grid; grid-template-columns: 62px 14px 1fr; align-items: start; padding-bottom: 14px; }
-  .cl-tl-date { grid-row: auto; grid-column: 1; justify-self: end; text-align: right; width: 62px; padding: 0 8px 0 0; font-size: var(--fs-11); font-weight: 600; max-width: none; }
+  .cl-tl-line { position: absolute; left: 90px; top: 10px; bottom: 10px; width: 2px; height: auto; margin: 0; background: linear-gradient(to bottom, var(--awareness) 0%, var(--awareness) var(--tl-green, 0%), var(--line-1) var(--tl-green, 0%)); }
+  .cl-tl-marker { display: grid; grid-template-columns: 84px 14px 1fr; align-items: start; padding-bottom: 14px; }
+  .cl-tl-date { grid-row: auto; grid-column: 1; justify-self: end; text-align: right; width: 84px; padding: 0 8px 0 0; font-size: var(--fs-11); font-weight: 600; max-width: none; }
   .cl-tl-marker[data-state="next"] .cl-tl-date { font-weight: 800; }
   .cl-tl-dotcell { grid-row: auto; grid-column: 2; justify-self: center; padding-top: 2px; }
   .cl-tl-label { grid-row: auto; grid-column: 3; justify-self: start; text-align: left; white-space: normal; overflow: visible; padding: 0 0 0 8px; font-size: var(--fs-12); font-weight: 500; overflow-wrap: anywhere; min-width: 0; }

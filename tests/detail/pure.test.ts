@@ -124,6 +124,25 @@ test("fact model: kinds from lead-ins, embedded sentences split, a source citati
   assert.equal(deriveRecordFactCardModel({ label: "x", span: null }), null, "a record fact with no quoted span is not a card");
 });
 
+test("fact model: a figure lead is a figure, never a bold sentence or a name that happens to hold a digit (it is drawn in a 132 px display column)", () => {
+  const lead = (md: string) => parseFactCardModels(`${md} Source: EUR-Lex, 2026`)[0]?.figureLead ?? null;
+  const long = "Trend 1 — Packaging Design: Regions are formalizing definitions of recyclability.";
+  assert.equal(lead(`**DEADLINE** **${long}** The report identifies that guidance on recyclability is increasingly defined by producer schemes.`), null, "a bold sentence is not a figure");
+  assert.equal(lead("**DEADLINE** **California SB 343** EPR legislation is reclassifying what counts as recyclable."), null, "a bold name with a number in it is not a figure");
+  assert.equal(lead("**DEADLINE** Recovery reaches **50-65%** of material in the sorting stream."), "50-65%");
+  assert.equal(lead("**DEADLINE** Reports are due by **31 March 2027** each year."), "31 March 2027");
+  assert.equal(lead("**DEADLINE** Fees start at **€2.5 per tonne** from 2027."), "€2.5 per tonne");
+});
+
+test("fact model: a paragraph that quotes several people, each with a Source line, cites the last one; the provenance never carries the whole paragraph", () => {
+  const md = "**SCOPE** One quote - **Tom Hendrickson**, Industry Affairs Manager, IMFA. *Source: Packaging World, May 6, 2026. https://www.packworld.com/a* Another quote - **Rhodes Yepsen**, Executive Director, BPI, warns that misaligned laws risk eliminating compostables. *Source: Packaging World, May 6, 2026. https://www.packworld.com/b*";
+  const [model] = parseFactCardModels(md);
+  assert.equal(model?.provenance?.href, "https://www.packworld.com/b");
+  assert.equal(model?.provenance?.source, "Packaging World");
+  assert.ok((model?.provenance?.org ?? "").length < 40, `the issuer is ${(model?.provenance?.org ?? "").length} characters`);
+  assert.ok(!(model?.claim ?? []).some((n) => n.text.includes("*")), "no raw asterisks reach the claim");
+});
+
 test("claim tiers: two matches with different tiers draw none, a record-grade card keeps its own tier", () => {
   const model = { kind: "SCOPE", claim: [{ text: "Operators shall submit a verified annual emissions report before 31 March." }], provenance: { tier: null } };
   const map = { "Operators shall submit a verified annual emissions report before 31 March.": { tier: 1, sourceName: "A", sourceUrl: null } };
