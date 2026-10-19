@@ -44,7 +44,7 @@ export interface CaptureResult {
 }
 export interface CaptureDeps extends FetchDeps {
   /** Per-host politeness (one request per second at most), shared across a run. */
-  throttle?: (host: string) => Promise<void>;
+  throttle: ((host: string) => Promise<void>) | null;
 }
 const CELLAR_CELEX_PREFIX = "https://publications.europa.eu/resource/celex/";
 
