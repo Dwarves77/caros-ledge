@@ -102,11 +102,29 @@ export async function adminPages(ctx) {
   return pages(ctx, ADMIN_PAGES, "admin", "admin-pages");
 }
 
-/** The identity route answers an anonymous caller 200 with the empty identity, 25 times in a row (no limiter), and leaves the limiter's table as it found it (no database call). */
+/**
+ * The key shapes the tree writes into rate_limit_windows (src/core/http/rate-limit.ts checkRateLimit callers), all behind authentication or a worker secret:
+ *   user:<uuid>  src/features/auth/api/identity.ts:21     bare <uuid>  src/core/http/guard.ts:51 (every guarded member route)
+ *   worker:<route>  health/api/surfaces.ts:30, sources/api/check-sources.ts:22, telemetry/api/revalidate.ts:21
+ * An anonymous caller can only produce what clientKey() makes (rate-limit.ts:~100): `ip:<address>` or `anon:unknown` (auth/api/callback.ts:9), never one of these.
+ */
+export const AUTHENTICATED_KEY = /^(user:[0-9a-f-]{36}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|worker:\/.+)$/i;
+const KEY_PAGE = 5000;
+
+/** The keys now in the limiter table: a Set, or {error}. */
+async function limiterKeys(io) {
+  const r = await io.service.from("rate_limit_windows").select("key").limit(KEY_PAGE);
+  return r.error ? { error: r.error } : { keys: new Set((r.data ?? []).map((x) => x.key)), full: (r.data ?? []).length >= KEY_PAGE };
+}
+
+/**
+ * The identity route answers an anonymous caller 200 with the empty identity, 25 times in a row, with no cookie and no rate-limit header, and writes no limiter window an anonymous caller could own.
+ * The instrument is the SET of keys, not the table's row count: other sessions (the member's, the operator's, real users) add user:<uuid> windows in the same seconds, which are reported, not failed.
+ */
 export async function identityAnonymous(ctx) {
   const { phase = "after", io } = ctx;
-  const before = await io.service.from("rate_limit_windows").select("*", { count: "exact", head: true });
-  if (before.error && !isAbsent(before.error)) return [fail("identity-anonymous", "rate_limit_windows", `the limiter table could not be counted: ${before.error.message}`)];
+  const before = await limiterKeys(io);
+  if (before.error && !isAbsent(before.error)) return [fail("identity-anonymous", "rate_limit_windows", `the limiter keys could not be read: ${before.error.message}`)];
   const out = [];
   for (let i = 0; i < 25; i += 1) {
     const r = await io.getJson("/api/auth/identity");
@@ -114,10 +132,23 @@ export async function identityAnonymous(ctx) {
       out.push(fail("identity-anonymous", "/api/auth/identity", `call ${i + 1}: HTTP ${r.status}, user ${JSON.stringify(r.body?.user ?? null)} (an anonymous caller is 200 with no user, every time)`));
       break;
     }
+    const bad = (r.headerNames ?? []).filter((h) => h === "set-cookie" || h === "retry-after" || h.startsWith("x-ratelimit-"));
+    if (bad.length) {
+      out.push(fail("identity-anonymous", "/api/auth/identity", `call ${i + 1}: the anonymous answer carries ${bad.join(", ")} (no session and no limiter: nothing to set, nothing to count)`));
+      break;
+    }
   }
-  const after = await io.service.from("rate_limit_windows").select("*", { count: "exact", head: true });
+  const after = await limiterKeys(io);
   if (before.error) out.push((phase === "before" ? warn : fail)("identity-anonymous", "rate_limit_windows", "rate_limit_windows is absent (migration 0019 is not applied here): the limiter is not observable"));
-  else if (after.error || after.count !== before.count) out.push(fail("identity-anonymous", "rate_limit_windows", `anonymous calls moved the limiter table (${before.count} -> ${after.count ?? after.error?.message}): the route touched the database`));
+  else if (after.error) out.push(fail("identity-anonymous", "rate_limit_windows", `the limiter keys could not be read after the calls: ${after.error.message}`));
+  else {
+    const added = [...after.keys].filter((k) => !before.keys.has(k));
+    const foreign = added.filter((k) => !AUTHENTICATED_KEY.test(k));
+    if (foreign.length) out.push(fail("identity-anonymous", "rate_limit_windows", `the anonymous calls left limiter key(s) only an anonymous caller writes: ${foreign.slice(0, 5).join(", ")}: the route touched the database`));
+    const others = added.length - foreign.length;
+    if (others > 0) out.push(warn("identity-anonymous", "rate_limit_windows", `${others} new authenticated or worker limiter key(s) appeared meanwhile (other sessions, not these calls); informational`));
+    if (before.full || after.full) out.push(warn("identity-anonymous", "rate_limit_windows", `the limiter table has at least ${KEY_PAGE} keys: the key comparison read only the first ${KEY_PAGE}`));
+  }
   return out;
 }
 

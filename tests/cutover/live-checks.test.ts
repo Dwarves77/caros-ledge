@@ -91,18 +91,32 @@ test("IMP-116 attack: a member who reads host_verdicts rows, or can write to it,
 });
 
 // ---- the identity route ----
-const svcCount = (before: number, after: number) => {
+const U = "11111111-2222-3333-4444-555555555555";
+const svcKeys = (before: string[], after: string[]) => {
   let n = 0;
-  return { from: () => ({ select: () => ({ then: (r: (v: unknown) => unknown) => r({ count: n++ === 0 ? before : after, error: null }) }) }) };
+  return { from: () => ({ select: () => ({ limit: () => ({ then: (r: (v: unknown) => unknown) => r({ data: (n++ === 0 ? before : after).map((key) => ({ key })), error: null }) }) }) }) };
 };
-test("the identity route: 25 anonymous calls are 200 with no user and leave the limiter table as it was; a 429, a user, or a moved limiter is caught", async () => {
-  const get = (status: number, user: unknown = null) => async () => ({ status, body: { user } });
-  assert.deepEqual(await identityAnonymous({ io: { service: svcCount(4, 4), getJson: get(200) } }), []);
-  assert.match((await identityAnonymous({ io: { service: svcCount(4, 4), getJson: get(429) } }))[0].text, /call 1: HTTP 429/);
-  assert.match((await identityAnonymous({ io: { service: svcCount(4, 4), getJson: get(200, { id: "u" }) } }))[0].text, /user \{"id":"u"\}/);
-  assert.match((await identityAnonymous({ io: { service: svcCount(4, 5), getJson: get(200) } }))[0].text, /moved the limiter table \(4 -> 5\)/);
+test("the identity route: 25 anonymous calls are 200 with no user, no cookie, no limiter header; a 429, a user, a header, an anonymous-shaped new key are caught; another session's user:/worker: key is informational", async () => {
+  const get = (status: number, user: unknown = null, headerNames?: string[]) => async () => ({ status, body: { user }, headerNames });
+  const same = [`user:${U}`, "worker:/api/revalidate"];
+  assert.deepEqual(await identityAnonymous({ io: { service: svcKeys(same, same), getJson: get(200, null, ["content-type", "cache-control"]) } }), []);
+  assert.match((await identityAnonymous({ io: { service: svcKeys(same, same), getJson: get(429) } }))[0].text, /call 1: HTTP 429/);
+  assert.match((await identityAnonymous({ io: { service: svcKeys(same, same), getJson: get(200, { id: "u" }) } }))[0].text, /user \{"id":"u"\}/);
+  assert.match((await identityAnonymous({ io: { service: svcKeys(same, same), getJson: get(200, null, ["set-cookie"]) } }))[0].text, /carries set-cookie/);
+  assert.match((await identityAnonymous({ io: { service: svcKeys(same, same), getJson: get(200, null, ["x-ratelimit-limit"]) } }))[0].text, /x-ratelimit-limit/);
+  // red first: an ip: or anon: key the calls could only have written fails
+  for (const k of ["ip:203.0.113.9", "anon:unknown", "stray"]) {
+    const f = await identityAnonymous({ io: { service: svcKeys(same, [...same, k]), getJson: get(200) } });
+    assert.equal(f.length, 1);
+    assert.equal(f[0].severity, "fail");
+    assert.match(f[0].text, new RegExp(`${k}.*touched the database`));
+  }
+  // another session's windows are reported, not failed (the 28 -> 30 of production run 39187609395)
+  const others = await identityAnonymous({ io: { service: svcKeys(same, [...same, "user:aaaaaaaa-2222-3333-4444-555555555555", "bbbbbbbb-2222-3333-4444-555555555555"]), getJson: get(200) } });
+  assert.deepEqual(others.map((f: Any) => f.severity), ["warn"]);
+  assert.match(others[0].text, /2 new authenticated or worker limiter key/);
   let calls = 0;
-  await identityAnonymous({ io: { service: svcCount(1, 1), getJson: async () => (calls++, { status: 200, body: { user: null } }) } });
+  await identityAnonymous({ io: { service: svcKeys([], []), getJson: async () => (calls++, { status: 200, body: { user: null } }) } });
   assert.equal(calls, 25);
 });
 

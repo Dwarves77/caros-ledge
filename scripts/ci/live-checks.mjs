@@ -148,7 +148,7 @@ async function main() {
     },
     async getJson(path) {
       const res = await fetch(`${base}${path}`, { headers: bypass, signal: AbortSignal.timeout(30000) });
-      return { status: res.status, body: await res.json().catch(() => null) };
+      return { status: res.status, body: await res.json().catch(() => null), headerNames: [...res.headers.keys()].map((h) => h.toLowerCase()) };
     },
     drain: (ids) => runNotificationOutbox({ sb: service, now: () => new Date() }, { dry: false, ids }),
     sendInvitation: () => sendInvitationEmail({ to: env.LIVE_SMOKE_EMAIL, inviteUrl: `${base}/login`, orgName: "the live check", proposedRole: "member" }),
