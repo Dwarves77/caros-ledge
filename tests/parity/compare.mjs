@@ -47,7 +47,7 @@ const readJson = async (p) => JSON.parse(await readFile(p, 'utf8'));
 const readOpt = async (p) => readJson(p).catch((e) => (e.code === 'ENOENT' ? null : Promise.reject(e)));
 
 // Ordered-subsequence check: every baseline item must appear in the capture, in the baseline's order. Returns the missing and the out-of-order items.
-export function subsequence(baseline, captured, key) {
+function subsequence(baseline, captured, key) {
   const want = baseline.map(key);
   const have = captured.map(key);
   const missing = [];
@@ -65,7 +65,7 @@ export function subsequence(baseline, captured, key) {
 // A waiver of kind 'until-migration' (with `migration` and optionally `on`: landmark, heading or control) covers a difference that exists only because production carries no new migration before the
 // cutover window. It is counted apart from the look/ruling waivers, and tree-checks retires it once supabase/migrations/APPLIED.json lists the migration.
 // Waiver usage: every waiver id that covered a difference in this run lands here, so the report can end with the waivers that covered nothing (a waiver must match a current difference).
-export const USED_WAIVERS = new Set();
+const USED_WAIVERS = new Set();
 const hit = (a) => { if (a) USED_WAIVERS.add(a.id); return a; };
 const untilMigration = (approved, route, kind, text) => hit(approved.find((a) => a.kind === 'until-migration' && a.route === route && (!a.on || a.on === kind) && (a.match === '*' || new RegExp(a.match).test(text))));
 // A waiver of kind 'order' (route, `match` on the control name, ruling) covers a "control reordered" line for a matching control where the old tree left the order unspecified (no secondary key, proven by file:line in the ruling)
@@ -175,41 +175,56 @@ export function gateProblems(routes, config) {
 }
 
 // A list route's baseline holds rows: a baseline with none compares nothing about its list, so it fails (unless listEmpty names the route with the reason its account has no rows).
-export function emptyListProblem(route, baseRecord, config) {
+function emptyListProblem(route, baseRecord, config) {
   if (!(config.gates.lists ?? []).includes(route) || (config.listEmpty ?? []).some((e) => e.route === route)) return null;
   return (baseRecord.rows?.items ?? []).length === 0 ? 'baseline holds no list rows, so its list is not compared (recapture the baseline)' : null;
 }
 
-async function pixelLine({ stem, viewport, baseline, captured, diffDir, exact, approved }) {
-  const pngA = `${baseline}/${stem}.png`;
-  const a = await readFile(pngA).catch((e) => (e.code === 'ENOENT' ? null : Promise.reject(e)));
-  if (!a) return { lines: [], fail: false };
-  const b = await readFile(`${captured}/${stem}.png`).catch((e) => (e.code === 'ENOENT' ? null : Promise.reject(e)));
-  if (!b) return { lines: [`${viewport}: capture image missing (${stem}.png)`], fail: exact };
-  let d;
-  try {
-    d = pixelDiff(a, b);
-  } catch (e) {
-    return { lines: [`${viewport}: pixel compare error ${e.message}`], fail: exact };
+const readBytes = async (p) => readFile(p).catch((e) => (e.code === 'ENOENT' ? null : Promise.reject(e)));
+const tileName = (stem, k) => (k === 1 ? `${stem}.png` : `${stem}.${k}.png`);
+
+// The pixel diff of a route, over its tiles as one page: a page taller than the screenshot ceiling is several images (capture.mjs), and the verdict is the share of differing pixels across all of them. A different number of tiles is a
+// page of a different height, and fails where the image is gated.
+async function pixelLine({ stem, viewport, baseline, captured, diffDir, exact, approved, baseTiles = 1, capTiles = 1 }) {
+  if (!(await readBytes(`${baseline}/${stem}.png`))) return { lines: [], fail: false };
+  if (baseTiles !== capTiles) return { lines: [`${viewport}: the page is ${capTiles} screenshot tile(s) where the baseline's is ${baseTiles}: its height changed`], fail: exact };
+  let differing = 0;
+  let area = 0;
+  for (let k = 1; k <= baseTiles; k += 1) {
+    const a = await readBytes(`${baseline}/${tileName(stem, k)}`);
+    if (!a) return { lines: [`${viewport}: baseline image missing (${tileName(stem, k)})`], fail: exact };
+    const b = await readBytes(`${captured}/${tileName(stem, k)}`);
+    if (!b) return { lines: [`${viewport}: capture image missing (${tileName(stem, k)})`], fail: exact };
+    let d;
+    try {
+      d = pixelDiff(a, b);
+    } catch (e) {
+      return { lines: [`${viewport}: pixel compare error ${e.message}`], fail: exact };
+    }
+    const size = Math.max(d.sizeA[0], d.sizeB[0]) * Math.max(d.sizeA[1], d.sizeB[1]);
+    differing += d.ratio * size;
+    area += size;
+    if (d.image) {
+      await mkdir(diffDir, { recursive: true });
+      await writeFile(`${diffDir}/${tileName(stem, k)}`, d.image);
+    }
   }
-  const over = d.ratio > PIXEL_THRESHOLD;
-  if (d.image) {
-    await mkdir(diffDir, { recursive: true });
-    await writeFile(`${diffDir}/${stem}.png`, d.image);
-  }
+  const ratio = differing / area;
+  const over = ratio > PIXEL_THRESHOLD;
   // A pixel waiver counts as used only when the diff is over the threshold on a gated route (the only case it changes the verdict).
   const pixelWaiver = approved.find((x) => x.kind === 'pixel' && (x.viewport === undefined || x.viewport === viewport));
   if (over && exact) hit(pixelWaiver);
   const tail = over && exact ? (pixelWaiver ? ' over, waived by an approved change' : ' GATE') : '';
-  return { lines: [`${viewport}: pixel diff ${(d.ratio * 100).toFixed(2)}% (threshold ${PIXEL_THRESHOLD * 100}%)${tail}`], fail: over && exact && !pixelWaiver };
+  return { lines: [`${viewport}: pixel diff ${(ratio * 100).toFixed(2)}% (threshold ${PIXEL_THRESHOLD * 100}%${baseTiles > 1 ? `, ${baseTiles} tiles` : ''})${tail}`], fail: over && exact && !pixelWaiver };
 }
 
-/** What a capture record says about itself, whatever the baseline holds: the offences its layout measure found, a page taller than the screenshot ceiling. */
-export function intrinsicProblems(record) {
+/** What a capture record says about itself, whatever the baseline holds: the offences its layout measure found, a page whose foot no screenshot tile reaches. */
+function intrinsicProblems(record) {
   const problems = [];
   if (!Array.isArray(record.offences)) problems.push('the record carries no `offences` list, so its layout was never measured');
   else for (const o of record.offences) problems.push(`offence: ${o}`);
-  if (record.truncated === true) problems.push('the page is taller than the screenshot ceiling (truncated), so the lower part is not in the image');
+  if (!Number.isInteger(record.tiles) || record.tiles < 1) problems.push('the record does not say how many screenshot tiles make up the page');
+  if (record.truncated === true) problems.push('the page needs more screenshot tiles than the capture takes (truncated), so its foot is not in the images');
   if (record.truncated === undefined) problems.push('the record does not say whether its screenshot was truncated');
   return problems;
 }
@@ -316,7 +331,7 @@ export async function compareRun({ captured, baseline = 'tests/parity/baseline',
       if (used.length) report.push(`${viewport}: approved differences used: ${used.length}`);
       for (const m of [...new Set(until.map((u) => u.migration))]) report.push(`${viewport}: waived until migration ${m} is applied in production: ${until.filter((u) => u.migration === m).length}`);
       routeFail ||= fails.length > 0;
-      const px = await pixelLine({ stem, viewport, baseline, captured, diffDir, exact: pixelExact.has(route.name), approved });
+      const px = await pixelLine({ stem, viewport, baseline, captured, diffDir, exact: pixelExact.has(route.name), approved, baseTiles: b.tiles ?? 1, capTiles: c.tiles });
       report.push(...px.lines);
       routeFail ||= px.fail;
     }

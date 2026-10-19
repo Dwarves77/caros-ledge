@@ -152,7 +152,7 @@ test('the layout offences a capture carries fail its route, wherever the baselin
   assert.match(text(never), /carries no `offences` list/);
   const truncated = await run(world({ routes: [{ name: 'home' }], cap: { truncated: true } }));
   assert.equal(truncated.failed, true);
-  assert.match(text(truncated), /taller than the screenshot ceiling/);
+  assert.match(text(truncated), /needs more screenshot tiles than the capture takes/);
   assert.match(text(await run(world({ routes: [{ name: 'home' }], cap: { truncated: undefined } }))), /does not say whether its screenshot was truncated/);
 });
 
@@ -228,4 +228,26 @@ test('a frame route is checked for list rows in its whole baseline record, not t
   assert.doesNotMatch(text(r), /baseline holds no list rows/);
   const empty = await run(world({ routes: [{ name: 'home' }], config }));
   assert.match(text(empty), /baseline holds no list rows/, 'and a baseline with none is still reported');
+});
+
+test('a page taller than the screenshot ceiling is several tiles and one page: tiles are compared together, a different number of tiles is a changed page, and a record that does not say how many tiles is refused', async () => {
+  const config = { gates: { pixelExact: ['home'] } };
+  const tiled = (baseTiles, capTiles, capColour) => {
+    const w = world({ routes: [{ name: 'home' }], config, base: { tiles: baseTiles }, cap: { tiles: capTiles } });
+    for (const v of VIEWPORTS) {
+      for (let k = 1; k <= baseTiles; k += 1) writeFileSync(join(w.baseline, k === 1 ? `home.${v}.png` : `home.${v}.${k}.png`), solid(40, 30, [250, 250, 250]));
+      for (let k = 1; k <= capTiles; k += 1) writeFileSync(join(w.captured, k === 1 ? `home.${v}.png` : `home.${v}.${k}.png`), solid(40, 30, capColour));
+    }
+    return w;
+  };
+  assert.equal((await run(tiled(3, 3, [250, 250, 250]))).failed, false, 'three identical tiles pass');
+  const same = await run(tiled(3, 3, [250, 250, 250]));
+  assert.match(text(same), /pixel diff 0.00% .*3 tiles/);
+  const changed = await run(tiled(3, 3, [0, 0, 0]));
+  assert.equal(changed.failed, true);
+  assert.match(text(changed), /pixel diff 100.00% .* GATE/);
+  const taller = await run(tiled(2, 3, [250, 250, 250]));
+  assert.equal(taller.failed, true);
+  assert.match(text(taller), /3 screenshot tile\(s\) where the baseline's is 2: its height changed/);
+  assert.match(text(await run(world({ routes: [{ name: 'home' }], cap: { tiles: undefined } }))), /does not say how many screenshot tiles/);
 });

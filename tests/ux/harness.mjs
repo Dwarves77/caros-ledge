@@ -51,7 +51,7 @@ export async function exactlyOne(page, selector, what = selector) {
 }
 
 /** The origin a smoke runs against: `--base <origin>`. */
-export function baseOf(name) {
+function baseOf(name) {
   const at = process.argv.indexOf('--base');
   const base = at < 0 ? undefined : process.argv[at + 1];
   if (!base || base.startsWith('--')) throw new Error(`usage: ${name} --base <origin>`);

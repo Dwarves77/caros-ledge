@@ -16,6 +16,7 @@ export function record(over = {}) {
     controls: [{ role: 'link', name: 'Open' }],
     rows: { selector: '[data-part="list-row"]', items: [], containers: [] },
     document_height: 900,
+    tiles: 1,
     truncated: false,
     offences: [],
     ...over,

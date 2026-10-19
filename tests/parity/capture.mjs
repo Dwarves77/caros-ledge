@@ -6,7 +6,7 @@
 //
 // For every route in routes.json, at 1280x900 and 375x812: waits for the shell to hydrate and the network to go idle, writes a PNG of the WHOLE page (the shell scrolls inside <main>, so the viewport is grown to the page)
 // and a JSON record (CAPTURE_CONTRACT in contract.mjs): accessibility tree, landmarks (role and name), headings, interactive controls, EVERY list row (`[data-part="list-row"]`, `[data-part="table-row"]`, no cap) with its measured
-// height and its container, the page height from <main>, whether the page was taller than the screenshot ceiling (`truncated`), and the offences the layout measure (tests/ux/measure.mjs) found on this route at this width.
+// height and its container, the page height from <main>, how many screenshot tiles make up the page (a page taller than the 16000 px Chromium ceiling is photographed in tiles; `truncated` only when even that does not reach its foot), and the offences the layout measure (tests/ux/measure.mjs) found on this route at this width.
 // Each account signs in once through the /login form; its storage state is held in memory only, never written to disk, never printed.
 // Admin routes are captured only when PARITY_ADMIN=1 (the deployed preview; the CI runner holds no service-role key). Credentials: member = LIVE_SMOKE_EMAIL / LIVE_SMOKE_PASSWORD, admin = LIVE_ADMIN_EMAIL / LIVE_ADMIN_PASSWORD.
 // Exit code is 1 when any sign-in, discovery or capture failed; index.json is written in every case.
@@ -257,10 +257,10 @@ async function accessibilitySnapshot(page) {
 // (Retry-After, seconds or an HTTP date; THROTTLE_FALLBACK_MS only when the header is absent or unreadable, THROTTLE_CEILING_MS so a hostile header cannot hang the job).
 // A 503 is NOT a throttle: /api/workspace/tags answers 503 (Retry-After 1) on production data in every run, a failed read the page states, and waiting does not change it.
 // A route still throttled after THROTTLE_ATTEMPTS is a FAILED capture, never a partial page compared as if whole. Every throttle event is recorded in the route's diagnostics.
-export const THROTTLE_STATUSES = [429];
+const THROTTLE_STATUSES = [429];
 export const THROTTLE_FALLBACK_MS = 65000;
 export const THROTTLE_CEILING_MS = 120000;
-export const THROTTLE_ATTEMPTS = 3;
+const THROTTLE_ATTEMPTS = 3;
 export const throttleEvents = (responses) => responses.filter((r) => THROTTLE_STATUSES.includes(r.status));
 export const isThrottled = (responses) => throttleEvents(responses).length > 0;
 export function retryWaitMs(retryAfter, nowMs = Date.now()) {
@@ -275,8 +275,12 @@ export function retryWaitMs(retryAfter, nowMs = Date.now()) {
 }
 export const throttleWaitMs = (events, nowMs) => Math.max(...events.map((e) => retryWaitMs(e.retryAfter, nowMs)));
 
-// The shell scrolls inside <main>, so a fullPage screenshot of the document is one viewport tall. Every capture grows the viewport to the tallest scroll box's content (ceiling SCREEN_MAX_HEIGHT) so the PNG shows the whole
-// page; the DOM record is taken first, at the real viewport. Returns { truncated }: true when the page needs more than the ceiling, so the lower part is not in the image (the compare fails on it).
+// The shell scrolls inside <main>, so a fullPage screenshot of the document is one viewport tall. Every capture grows the viewport to the tallest scroll box's content, up to SCREEN_MAX_HEIGHT (Chromium cannot photograph
+// more in one image), so the PNG shows the whole page; the DOM record is taken first, at the real viewport. A page taller than that is photographed in TILES: the viewport stays at the ceiling and the scroll box is scrolled one
+// box-height at a time, tile 1 in `file` and tile k in `<stem>.<k>.png`. The ceiling is a tooling limit, never a cap on a product page. Returns { tiles, truncated }: `tiles` images make up the one page, and `truncated` is
+// true only when even MAX_TILES tiles do not reach its foot (the compare fails on it).
+const MAX_TILES = 12;
+const tileFile = (file, k) => (k === 1 ? file : file.replace(/\.png$/, `.${k}.png`));
 export async function wholePageScreenshot(page, viewport, file) {
   const needed = await page.evaluate(() => {
     let tallest = 0;
@@ -290,8 +294,31 @@ export async function wholePageScreenshot(page, viewport, file) {
     await page.setViewportSize({ width: viewport.width, height: Math.min(needed, SCREEN_MAX_HEIGHT) });
     await settle(page);
   }
-  await page.screenshot({ path: file, fullPage: true });
-  return { truncated: needed > SCREEN_MAX_HEIGHT };
+  if (needed <= SCREEN_MAX_HEIGHT) {
+    await page.screenshot({ path: file, fullPage: true });
+    return { tiles: 1, truncated: false };
+  }
+  // Tile the scroll box: mark the tallest one, then photograph the viewport at each scroll offset.
+  const box = await page.evaluate(() => {
+    let best = null;
+    for (const el of document.querySelectorAll('main, body *')) {
+      const overflowY = getComputedStyle(el).overflowY;
+      if ((overflowY === 'auto' || overflowY === 'scroll') && el.scrollHeight > el.clientHeight && (!best || el.scrollHeight > best.scrollHeight)) best = el;
+    }
+    best.setAttribute('data-tile-box', '');
+    return { step: best.clientHeight, height: best.scrollHeight };
+  });
+  const count = Math.ceil(box.height / box.step);
+  const tiles = Math.min(count, MAX_TILES);
+  for (let k = 1; k <= tiles; k += 1) {
+    await page.evaluate(([top]) => {
+      document.querySelector('[data-tile-box]').scrollTop = top;
+      return new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    }, [(k - 1) * box.step]);
+    await page.screenshot({ path: tileFile(file, k) });
+  }
+  await page.evaluate(() => document.querySelector('[data-tile-box]')?.removeAttribute('data-tile-box'));
+  return { tiles, truncated: count > MAX_TILES };
 }
 
 async function captureOne(browser, base, route, path, viewport, storage, out, diag) {
@@ -335,7 +362,7 @@ async function captureAttempt(browser, base, route, path, viewport, storage, out
     const accessibility = await accessibilitySnapshot(page);
     // The layout measure (law 2 targets, overflow, titles) runs on every route at every width the capture visits; the compare fails on what it finds.
     const offences = await measurePage(page, { scope: 'body *' });
-    const { truncated } = await wholePageScreenshot(page, viewport, join(out, `${stem}.png`));
+    const { tiles, truncated } = await wholePageScreenshot(page, viewport, join(out, `${stem}.png`));
     const record = {
       route: route.name,
       path,
@@ -347,6 +374,7 @@ async function captureAttempt(browser, base, route, path, viewport, storage, out
       network_idle: networkIdle,
       accessibility,
       ...dom,
+      tiles,
       truncated,
       offences,
     };

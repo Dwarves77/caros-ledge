@@ -5,7 +5,7 @@ import { dirname, join, relative, resolve } from "node:path";
 
 const SRC = resolve("src");
 /** The test mounts under /privacy/ui-fixtures answer 404 unless UI_FIXTURES=1, set only in the UX job: they are not routes of the product. */
-export const FIXTURE_PREFIX = "/privacy/ui-fixtures";
+const FIXTURE_PREFIX = "/privacy/ui-fixtures";
 
 export interface AppRoute {
   /** The URL pattern, dynamic segments as [name]. */
@@ -61,7 +61,7 @@ export function importClosure(entries: readonly string[]): Set<string> {
 }
 
 /** A module that reads the database: it calls `.from("table")` or `.rpc("name")` with a literal name, outside core/db (Array.from and the like have no string literal). */
-export function readsDatabase(file: string): boolean {
+function readsDatabase(file: string): boolean {
   if (file.replaceAll("\\", "/").includes("/src/core/db/")) return false;
   for (const m of readFileSync(file, "utf8").matchAll(/([A-Za-z_$][\w$]*)?\s*\.(?:from|rpc)\(\s*["'`][a-z_]+["'`]/g)) if (!/^(?:Buffer|Array|\w*Array|Object|Set|Map)$/.test(m[1] ?? "")) return true;
   return false;

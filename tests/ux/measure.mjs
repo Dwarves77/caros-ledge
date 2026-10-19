@@ -22,7 +22,7 @@ export function loadExemptions(file = EXEMPTIONS_FILE) {
 }
 
 /** A list row's title column is never narrower than this at 1024 px and up (about 22 characters of the row title type): V-9 found it at 119 px at 1280. */
-export const TITLE_COLUMN_MIN = 160;
+const TITLE_COLUMN_MIN = 160;
 
 /** Measures the page in the browser with the repository's exemptions. */
 export function measurePage(page, { rows = false, scope } = {}) {
@@ -121,8 +121,19 @@ export function measure(opts) {
     const hiddenOnPurpose = cs.visibility === 'hidden' || cs.display === 'none' || el.closest('[inert],[hidden],[aria-hidden="true"]') || el.matches(':disabled') || el.getAttribute('tabindex') === '-1';
     if ((r.width < 2 || r.height < 2) && !hiddenOnPurpose && !skipped('collapsed', el)) out.push(`focusable control collapsed to ${Math.round(r.width)}x${Math.round(r.height)}: ${label(el)}`);
   }
+  // A control that a sideways-scrolling or clipping ancestor hides entirely (the off-screen cards of a headline strip lie at the coordinates of the rail beside it) cannot be hit, so it is neither a target nor a neighbour: it is
+  // measured when the strip scrolls it into view. Only the horizontal axis counts: the shell scrolls vertically inside <main>, and a control below the fold is a control.
+  const clippedAway = (el) => {
+    const r = el.getBoundingClientRect();
+    for (let p = el.parentElement; p && p !== document.body; p = p.parentElement) {
+      if (getComputedStyle(p).overflowX === 'visible') continue;
+      const c = p.getBoundingClientRect();
+      if (r.right <= c.left || r.left >= c.right) return true;
+    }
+    return false;
+  };
   const targets = [...document.querySelectorAll(SEL)].filter(visible).map(boxOf);
-  const unique = [...new Set(targets)].filter((el) => !skipped('target', el));
+  const unique = [...new Set(targets)].filter((el) => !skipped('target', el) && !clippedAway(el));
   const rects = unique.map((el) => [el, el.getBoundingClientRect()]);
   const gap = (a, b) => Math.max(0, Math.max(a.left - b.right, b.left - a.right), Math.max(a.top - b.bottom, b.top - a.bottom));
   const overlaps = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;

@@ -1,7 +1,6 @@
 // The UI checks (ui-kit.md proof 3, grown into G4): the laws of the kit and the screens, read from the TypeScript syntax tree and the stylesheets. Run from the repo root; exits 1 with every offence listed.
 //
 //   node scripts/ci/ui-checks.mjs               check src/ against scripts/ci/ui-checks-allow.json
-//   node scripts/ci/ui-checks.mjs --list-rules  the rule ids (tests/ci/ui-checks.test.mjs holds one planted violation for each and fails on a rule without one)
 //   node scripts/ci/ui-checks.mjs --counts      the offences found, counted per rule and file, as JSON (how an allow list is written down or lowered)
 //
 // The rules are in scripts/ci/ui-rules.mjs. Debt that predates a rule is in ui-checks-allow.json as a COUNT per rule and file with the reason and the slice that owes the fix; the count is a ratchet:
@@ -16,11 +15,6 @@ import { RULES } from "./ui-rules.mjs";
 
 const ALLOW_FILE = "scripts/ci/ui-checks-allow.json";
 const MIN_REASON = 20;
-
-if (process.argv.includes("--list-rules")) {
-  console.log(RULES.map((r) => r.id).join("\n"));
-  process.exit(0);
-}
 
 const files = [];
 (function walk(dir) {

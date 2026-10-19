@@ -35,7 +35,7 @@ const paeth = (a, b, c) => {
 };
 
 /** Decodes a PNG to `{ width, height, rgba }` (rgba: Uint8ClampedArray, composited over white, alpha 255). Throws on anything it cannot read whole. */
-export function decodePng(bytes) {
+function decodePng(bytes) {
   const chunks = chunksOf(bytes);
   const header = chunks.find((c) => c.type === 'IHDR');
   if (!header || header.data.length !== 13) throw new Error('PNG has no IHDR');

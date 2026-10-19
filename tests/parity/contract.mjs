@@ -8,7 +8,7 @@
 export const CAPTURE_CONTRACT = 2;
 
 /** The parts that are one row of a list: the list row (ListRow) and the table row (RowTable). A row part carries its name in `data-part`; nothing else is a row. */
-export const ROW_PARTS = ['list-row', 'table-row'];
+const ROW_PARTS = ['list-row', 'table-row'];
 export const ROW_SELECTOR = ROW_PARTS.map((part) => `[data-part="${part}"]`).join(', ');
 
 /** The two widths every route is captured at. */

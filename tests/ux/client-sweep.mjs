@@ -21,7 +21,7 @@ export const SHELL_READS = ['GET /api/auth/identity'];
 const REFUSAL_SENTENCE = 'This could not be read just now. Try again.';
 
 /** The key of a read a screen makes: `GET /api/x`, `GET rest/<table>` or `rpc/<name>`; null for anything that is not a read. */
-export function readKey(request) {
+function readKey(request) {
   const url = new URL(request.url());
   const method = request.method();
   if (url.pathname.startsWith('/rest/v1/rpc/')) return `rpc ${url.pathname.slice('/rest/v1/rpc/'.length)}`;

@@ -3,7 +3,7 @@
 // (scripts/ci/ui-checks-allow.json: a counted, reasoned ratchet) and fails on anything else. tests/ci/ui-checks.test.mjs holds one planted violation per rule and fails when a rule has none.
 import ts from "typescript";
 
-export const NAMED_COLOURS = new Set(
+const NAMED_COLOURS = new Set(
   `aliceblue antiquewhite aqua aquamarine azure beige bisque black blanchedalmond blue blueviolet brown burlywood cadetblue chartreuse chocolate coral cornflowerblue cornsilk crimson cyan darkblue darkcyan darkgoldenrod darkgray
 darkgreen darkgrey darkkhaki darkmagenta darkolivegreen darkorange darkorchid darkred darksalmon darkseagreen darkslateblue darkslategray darkslategrey darkturquoise darkviolet deeppink deepskyblue dimgray dimgrey dodgerblue
 firebrick floralwhite forestgreen fuchsia gainsboro ghostwhite gold goldenrod gray green greenyellow grey honeydew hotpink indianred indigo ivory khaki lavender lavenderblush lawngreen lemonchiffon lightblue lightcoral lightcyan

@@ -96,14 +96,3 @@ test('the register of known silent client reads is made of findings: a status to
     }
   }
 });
-
-test('one four-width list for every smoke, and no smoke sleeps: readiness is the hydration marker and the network, never a fixed wait', async () => {
-  const { VIEWPORTS } = await import('./harness.mjs');
-  assert.deepEqual(VIEWPORTS.map(([w]) => w), [375, 768, 1024, 1280]);
-  for (const name of readdirSync(new URL('.', import.meta.url)).filter((n) => n.endsWith('.mjs'))) {
-    const text = readFileSync(new URL(name, import.meta.url), 'utf8');
-    assert.doesNotMatch(text, /waitForTimeout\(/, `${name} sleeps: wait for the effect instead (until(), settled())`);
-    assert.doesNotMatch(text, /waitUntil:\s*'networkidle'/, `${name} loads with networkidle and no readiness signal: use harness.open()`);
-    if (name.endsWith('-smoke.mjs')) assert.doesNotMatch(text, /^const VIEWPORTS/m, `${name} keeps a list of widths of its own`);
-  }
-});

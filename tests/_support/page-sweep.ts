@@ -63,7 +63,7 @@ export async function sweepPage(page: SweepPage, fresh: () => SweepWorld): Promi
   if (refusableTables.length + refusableRpcs.length === 0) problems.push("the page makes no refusable read: the sweep is vacuous");
   const silent: string[] = [];
   // A refused read is stated when the refused draw says more of it than the healthy one: a phrase the page always carries ("Retry" in a menu) is not a statement about this read.
-  const stated = (text: string) => text !== healthyText && statedCount(text) > statedCount(healthyText);
+  const stated = (text: string) => statedCount(text) > statedCount(healthyText);
   for (const table of refusableTables) {
     const w = fresh();
     w.failTable(table);

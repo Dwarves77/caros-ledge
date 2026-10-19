@@ -5,7 +5,7 @@
 // the failed-remainder note with Retry, and an anonymous /privacy that issues no notifications, bootstrap or admin request.
 //
 // Usage: node tests/ux/ux-smoke.mjs --base <origin>     (the server must run with UI_FIXTURES=1)
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -147,6 +147,21 @@ try {
     }
   }
 
+  // The signed-out routes are real pages, not fixtures: /login and /signup (the tabs and "Forgot password?" were 42 and 15 px high) meet the law-2 floor and do not overflow at every width.
+  for (const [w, h] of VIEWPORTS) {
+    for (const path of ['/login', '/signup']) {
+      const where = `${w}x${h} ${path}`;
+      await check(where, async () => {
+        const { ctx, page } = await open(browser, `${base}${path}`, [w, h]);
+        try {
+          for (const o of await measurePage(page, { scope: 'body *' })) fail(where, o);
+        } finally {
+          await ctx.close();
+        }
+      });
+    }
+  }
+
   // Anonymous /privacy: the shell renders as the baseline does, but the page issues no notifications, bootstrap or admin request, and has a single main landmark.
   await check('privacy', async () => {
     const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
@@ -200,7 +215,7 @@ try {
       await ctx.close();
     }
   });
-  await check('capture record: the page height is that of the shell main, and a page taller than the screenshot ceiling is recorded truncated', async () => {
+  await check('capture record: the page height is that of the shell main, and a page taller than the screenshot ceiling is photographed in tiles', async () => {
     const viewport = { width: 375, height: 812 };
     const { ctx, page } = await open(browser, `${base}/privacy`, [viewport.width, viewport.height]);
     const dir = mkdtempSync(join(tmpdir(), 'tall-'));
@@ -214,7 +229,8 @@ try {
         document.querySelector('main').append(tall);
       });
       const shot = await wholePageScreenshot(page, viewport, join(dir, 'tall.png'));
-      must(shot.truncated === true, 'a page of 20000 px was not recorded truncated (the ceiling is 16000)');
+      must(shot.truncated === false && shot.tiles >= 2, `a page of 20000 px is ${shot.tiles} tile(s), truncated ${shot.truncated}: a page over the 16000 px ceiling is photographed in tiles, never cut`);
+      must(existsSync(join(dir, 'tall.2.png')), 'the second tile was not written');
     } finally {
       rmSync(dir, { recursive: true, force: true });
       await ctx.close();
@@ -245,7 +261,7 @@ try {
   const PLANTED = [
     ['a 20 px target', 'target under 24 px', (page) => page.evaluate(() => { const b = document.createElement('button'); b.textContent = 'go'; b.style.cssText = 'height:20px;width:90px'; document.querySelector('[data-fx]').append(b); })],
     ['a box that passes the right edge', 'overflow:', (page) => page.evaluate(() => { const d = document.createElement('div'); d.style.cssText = 'position:absolute;left:0;width:3000px;height:10px'; document.querySelector('[data-fx]').append(d); })],
-    ['a 119 px title column at 1280', 'list title column squeezed', (page) => page.addStyleTag({ content: '.cl-list-row { grid-template-columns: 3px 56px 1fr 88px 84px 76px 40px 294px !important; }' })],
+    ['a 119 px title column at 1280', 'list title column squeezed', (page) => page.addStyleTag({ content: '.cl-list-row { grid-template-columns: 3px 56px 119px 88px 84px 76px 40px 1fr !important; }' })],
     ['a focusable control collapsed to 1 px', 'focusable control collapsed', (page) => page.evaluate(() => { const b = document.createElement('button'); b.style.cssText = 'width:1px;height:1px;padding:0;border:0'; document.querySelector('[data-fx]').append(b); })],
   ];
   for (const [what, expected, plant] of PLANTED) {
@@ -256,6 +272,66 @@ try {
         await plant(page);
         const offences = (await measurePage(page, { rows: false })).filter((o) => o.includes(expected));
         must(offences.length > 0, `${what} was planted and the measure reported no "${expected}"`);
+      } finally {
+        await ctx.close();
+      }
+    });
+  }
+
+  // V-9, law 2 / DP-1: on the real routes the nav card (252 px) and the rail (300 px) leave a list 617 px at 1280, and the row once left its title 117 px. The research fixture has the rail but no nav card, so it is narrowed by the
+  // nav card's width and every row title must keep the measure's floor at 1280 and across the band the floor covers (1280 to 1439).
+  for (const width of [1280, 1360, 1439]) {
+    await check(`list title floor beside the rail at ${width}`, async () => {
+      const { ctx, page } = await open(browser, `${base}/privacy/ui-fixtures/surfaces?screen=research`, [width, 900]);
+      try {
+        await page.evaluate((w) => { document.querySelector('[data-fx]').style.width = `${w - 252}px`; }, width);
+        const titles = await page.$$eval('[data-part="list-row"] [data-guard-title]', (els) => els.map((e) => Math.round(e.getBoundingClientRect().width)));
+        must(titles.length >= 5, `the fixture draws ${titles.length} row titles`);
+        must(Math.min(...titles) >= 160, `a row title is ${Math.min(...titles)} px wide at ${width} px beside the rail and the nav card: the floor is 160`);
+        const offences = (await measurePage(page, { rows: false })).filter((o) => o.includes('title'));
+        must(offences.length === 0, `the measure reports ${offences[0]}`);
+      } finally {
+        await ctx.close();
+      }
+    });
+  }
+
+  // A control that a sideways strip hides entirely is neither a target nor a neighbour; the same two controls, 2 px apart, are an offence when the strip shows them, and a control below the fold of a vertical scroller is still a control.
+  const PLANTED_PAIRS = {
+    'hidden by its sideways strip': { offence: false, html: '<div style="width:100px;height:30px;overflow-x:auto;white-space:nowrap;position:absolute;left:0;top:0"><span style="display:inline-block;width:300px"></span><button style="height:30px;width:100px;padding:0">B</button></div><button style="position:absolute;left:300px;top:32px;height:30px;width:100px;padding:0">A</button>' },
+    'shown by its sideways strip': { offence: true, html: '<div style="width:100px;height:30px;overflow-x:auto;white-space:nowrap;position:absolute;left:0;top:0"><button style="height:30px;width:100px;padding:0">B</button></div><button style="position:absolute;left:100px;top:32px;height:30px;width:100px;padding:0">A</button>' },
+    'below the fold of a vertical scroller': { offence: true, html: '<div style="width:300px;height:40px;overflow-y:auto;position:absolute;left:0;top:0"><div style="height:200px;position:relative"><button style="position:absolute;left:0;top:100px;height:30px;width:100px;padding:0">B</button><button style="position:absolute;left:0;top:132px;height:30px;width:100px;padding:0">A</button></div></div>' },
+  };
+  for (const [what, planted] of Object.entries(PLANTED_PAIRS)) {
+    await check(`measure: a control ${what}${planted.offence ? ' is measured' : ' is not a neighbour'}`, async () => {
+      const { ctx, page } = await open(browser, `${base}/privacy/ui-fixtures`, [1280, 800]);
+      try {
+        await page.evaluate((html) => {
+          const box = document.createElement('div');
+          box.style.cssText = `position:absolute;left:20px;top:${document.documentElement.scrollHeight + 200}px;width:500px;height:70px`;
+          box.innerHTML = html;
+          document.body.append(box);
+        }, planted.html);
+        const clear = (await measurePage(page, { rows: false })).filter((o) => o.includes('px clear of'));
+        must(planted.offence ? clear.length > 0 : clear.length === 0, planted.offence ? `two controls 2 px apart (${what}) were not reported` : `a control ${what} was counted as a neighbour: ${clear[0]}`);
+      } finally {
+        await ctx.close();
+      }
+    });
+  }
+
+  // Two fact-card parts the real routes drew below the law-2 floor and wider than 375: an in-brief link is a 24 px box (market detail drew it 16 px), and a matrix headline with no figure wraps inside its card (operations drew it 421 px wide).
+  const FACT_PARTS = {
+    'an in-brief fact-card link': '<div class="cl-fc cl-fc--ink"><p class="cl-fc-claim">Industry coverage from <a class="cl-fc-inline-link" href="#x">packworld.com</a> in the brief.</p></div>',
+    'a matrix headline of six long words': '<div class="cl-fc-matrix"><div class="cl-fc-matrix-lead"><span class="cl-fc-matrix-headline">Asia-Pacific — corrugated containerboard prices rising steadily</span></div></div>',
+  };
+  for (const [what, html] of Object.entries(FACT_PARTS)) {
+    await check(`measure: ${what} meets the floor at 375`, async () => {
+      const { ctx, page } = await open(browser, `${base}/privacy/ui-fixtures`, [375, 812]);
+      try {
+        await page.evaluate((markup) => document.querySelector('[data-fx]').insertAdjacentHTML('beforeend', markup), html);
+        const offences = (await measurePage(page, { rows: false })).filter((o) => o.includes('cl-fc-inline-link') || o.includes('cl-fc-matrix-headline'));
+        must(offences.length === 0, `${what} is reported: ${offences[0]}`);
       } finally {
         await ctx.close();
       }
