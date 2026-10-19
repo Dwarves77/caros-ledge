@@ -8,7 +8,7 @@ type Env = Record<string, string | undefined>;
 export const EXIT = Object.freeze({ ok: 0, failed: 1, skipped: 2 } as const);
 export type Exit = (typeof EXIT)[keyof typeof EXIT];
 
-export const isCi = (env: Env): boolean => env.CI === "true" || env.GITHUB_ACTIONS === "true";
+const isCi = (env: Env): boolean => env.CI === "true" || env.GITHUB_ACTIONS === "true";
 
 /** The event payload GitHub wrote for this run, or null when there is none (a workstation) or it cannot be read as JSON. */
 function eventPayload(env: Env): { pull_request?: { head?: { repo?: { fork?: boolean } } } } | null {
@@ -21,7 +21,7 @@ function eventPayload(env: Env): { pull_request?: { head?: { repo?: { fork?: boo
 }
 
 /** True for the one event that never receives repository secrets: a pull request whose head repository is a fork. */
-export function eventCannotCarrySecrets(env: Env): boolean {
+function eventCannotCarrySecrets(env: Env): boolean {
   return env.GITHUB_EVENT_NAME === "pull_request" && eventPayload(env)?.pull_request?.head?.repo?.fork === true;
 }
 

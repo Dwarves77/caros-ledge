@@ -56,7 +56,9 @@ test('the preview-parity job checks out the DEPLOYED commit (its own capture and
 });
 
 // G13: a pull request or a preview deployment runs code its author controls. No such run may hold a secret that can write or read production beyond a throwaway member account.
-const HIGH = ['SUPABASE_SERVICE_ROLE_KEY', 'WORKER_SECRET', 'LIVE_ADMIN_EMAIL', 'LIVE_ADMIN_PASSWORD', 'RESEND_API_KEY', 'INVITATION_FROM_EMAIL', 'VERCEL_AUTOMATION_BYPASS_SECRET', 'EIA_API_KEY'];
+const HIGH = ['SUPABASE_SERVICE_ROLE_KEY', 'WORKER_SECRET', 'LIVE_ADMIN_EMAIL', 'LIVE_ADMIN_PASSWORD', 'RESEND_API_KEY', 'INVITATION_FROM_EMAIL', 'EIA_API_KEY'];
+// The deployment-protection bypass opens previews of this project and nothing else: it may sit in the jobs that photograph or check a deployed preview (a deployment or a dispatch), never in a job that runs on a pull request or a push.
+const PROTECTION_BYPASS = 'VERCEL_AUTOMATION_BYPASS_SECRET';
 const secretsOf = (job) => {
   const blocks = [jobs[job].env ?? {}, ...jobs[job].steps.map((s) => s.env ?? {})];
   return new Set(blocks.flatMap((b) => Object.values(b)).flatMap((v) => [...String(v).matchAll(/secrets\.(\w+)/g)].map((m) => m[1])));
@@ -73,6 +75,12 @@ test('G13: a job that holds a high-privilege secret never runs on a pull request
     // On a deployment_status event the default checkout is the default branch, but the job may check out the deployed commit: forbidden for these jobs. A dispatch runs the branch the operator chose and says so.
     if (job !== 'turn' && job !== 'screens') for (const ref of checkoutRefs(job)) assert.doesNotMatch(ref, PR_CODE, `${job} (${high}) checks out ${ref}: a branch could change the script that holds the secrets`);
   }
+});
+
+test('G13: the deployment-protection bypass is held only by the jobs that check a deployed preview, and by none that runs on a pull request or a push', () => {
+  const holders = Object.keys(jobs).filter((job) => secretsOf(job).has(PROTECTION_BYPASS)).sort();
+  assert.deepEqual(holders, ['live', 'preview-parity', 'screens']);
+  for (const job of holders) for (const event of ['pull_request', 'push']) assert.ok(!runs(job, event), `${job} holds the bypass and runs on a ${event}`);
 });
 
 test('G13: the jobs that run a pull request\'s own code hold the member test account and the public anon key, never the admin account, the service key or a mail key', () => {

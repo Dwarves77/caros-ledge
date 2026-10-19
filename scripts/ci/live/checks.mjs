@@ -3,8 +3,9 @@
 // `phase` is "before" when the run is the one made BEFORE the cutover window (the new tree's preview on the database that does not carry the new migrations yet): an object a pending migration adds is then a warning that names the
 // migration; in "after" (the default) it is a failure. Everything else is a failure in both phases.
 import { isMissingObject } from "../../../src/core/db/absent.ts";
+import { shapeDiff } from "../schema/shape.mjs";
 
-export const CHECKS = ["member-reads", "sign-in", "pages", "identity-anonymous", "provenance-trigger", "notification-drain", "admin-pages", "invitation-email"];
+export const CHECKS = ["member-reads", "sign-in", "pages", "identity-anonymous", "provenance-trigger", "notification-drain", "admin-pages", "invitation-email", "production-shape"];
 /**
  * Checks that run only when a dispatch names them (--only): invitation-email sends a real message, and provenance-trigger takes a short lock on intelligence_items (migration 0069 disables a trigger under lock_timeout), which a
  * preview deployment must not do to production each time one is built. The default set runs on every preview; these two run on a named dispatch (the nightly one).
@@ -199,4 +200,17 @@ export async function invitationEmail(ctx) {
   return r.delivered ? [] : [fail("invitation-email", "sendInvitationEmail", `the invitation e-mail was not delivered (configured ${r.configured}): ${r.reason ?? "no reason given"}`)];
 }
 
-export const RUNNERS = { "member-reads": memberReads, "sign-in": signIn, pages, "identity-anonymous": identityAnonymous, "provenance-trigger": provenanceTrigger, "notification-drain": notificationDrain, "admin-pages": adminPages, "invitation-email": invitationEmail };
+/**
+ * G11: the database behind the deployment is shaped as scripts/ci/data/production-shape.json says (roles and their attributes, memberships, role settings such as search_path and statement_timeout, schema and default
+ * ACLs, server settings, the database owner). The CI database is built from that file, so a drift in production (a platform change, a hand edit in the dashboard) would otherwise leave every schema job proving things about
+ * a database that no longer exists. The query is public.live_check_production_shape() (migration 0071, the text of scripts/ci/data/production-shape.sql); `io.expectedShape` is the file's `shape`.
+ */
+export async function productionShape(ctx) {
+  const r = await ctx.io.service.rpc("live_check_production_shape");
+  if (r.error) return [absentOr(ctx.phase ?? "after", "production-shape", "live_check_production_shape", r.error, "0071")];
+  const actual = typeof r.data === "string" ? JSON.parse(r.data) : r.data;
+  if (!actual || typeof actual !== "object") return [fail("production-shape", "live_check_production_shape", "the function answered with no shape document")];
+  return shapeDiff(ctx.io.expectedShape, actual, { want: "production-shape.json", have: "production" }).map((d) => fail("production-shape", "production-shape.json", d));
+}
+
+export const RUNNERS = { "member-reads": memberReads, "sign-in": signIn, pages, "identity-anonymous": identityAnonymous, "provenance-trigger": provenanceTrigger, "notification-drain": notificationDrain, "admin-pages": adminPages, "invitation-email": invitationEmail, "production-shape": productionShape };

@@ -2,7 +2,7 @@
 // migrations' own self-checks (0068 for the provenance trigger) and the first live run at the window.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
@@ -11,7 +11,7 @@ import { test } from "node:test";
 import { recordLiveSmoke } from "@/core/harness";
 import { runNotificationOutbox } from "@/features/drain/kinds";
 
-import { CHECKS, DEFAULT_CHECKS, FAILURE_BLOCK, identityAnonymous, memberReads, notificationDrain, pageFinding, pages, provenanceTrigger, SURFACE_PAGES } from "../../scripts/ci/live/checks.mjs";
+import { CHECKS, DEFAULT_CHECKS, FAILURE_BLOCK, identityAnonymous, memberReads, notificationDrain, pageFinding, pages, productionShape, provenanceTrigger, SURFACE_PAGES } from "../../scripts/ci/live/checks.mjs";
 // @ts-expect-error plain .mjs modules
 import { planRun, runLive, triggerOf } from "../../scripts/ci/live-checks.mjs";
 import { MemDb } from "../_support/memdb.ts";
@@ -132,6 +132,27 @@ test("IMP-074's residue: a trigger that flipped the fixture is clean; one that d
   const gone = { code: "PGRST202", message: "no function" };
   assert.deepEqual((await provenanceTrigger({ phase: "after", io: { service: svc(null, gone) } })).map((f: Any) => f.severity), ["fail"]);
   assert.deepEqual((await provenanceTrigger({ phase: "before", io: { service: svc(null, gone) } })).map((f: Any) => f.severity), ["warn"]);
+});
+
+// ---- the production shape (G11) ----
+test("the production-shape check: production equal to the recorded shape is clean; a role setting that differs, a role that is missing, a schema ACL that moved and the function absent are each a finding", async () => {
+  const expectedShape = JSON.parse(readFileSync("scripts/ci/data/production-shape.json", "utf8")).shape;
+  const svc = (data: unknown, error: unknown = null) => ({ rpc: async () => ({ data, error }) });
+  const run = (data: unknown, phase = "after", error: unknown = null) => productionShape({ phase, io: { service: svc(data, error), expectedShape } }) as Promise<Any[]>;
+  assert.deepEqual(await run(structuredClone(expectedShape)), []);
+  assert.deepEqual(await run(JSON.stringify(expectedShape)), [], "the function may answer text");
+  const settings = structuredClone(expectedShape);
+  settings.roleSettings[0].settings = [...settings.roleSettings[0].settings, "planted_setting=1"];
+  assert.match((await run(settings))[0].text, /roleSettings: .*production-shape\.json .*; production /);
+  const noRole = structuredClone(expectedShape);
+  const gone = noRole.roles.pop();
+  assert.match((await run(noRole)).map((f: Any) => f.text).join("\n"), new RegExp(`roles: ${gone.name}: production-shape\\.json has .*; production has none`));
+  const acl = structuredClone(expectedShape);
+  acl.schemaAcls[0].acl = [...acl.schemaAcls[0].acl, "anon=U/postgres"];
+  assert.match((await run(acl))[0].text, /schemaAcls: /);
+  const absentFn = { code: "PGRST202", message: "no function" };
+  assert.deepEqual((await run(null, "after", absentFn)).map((f: Any) => f.severity), ["fail"]);
+  assert.deepEqual((await run(null, "before", absentFn)).map((f: Any) => f.severity), ["warn"]);
 });
 
 // ---- the notification drain: the real drain over a memory database ----

@@ -39,7 +39,7 @@ export function shapeProblems(m, at) {
   const script = a && !Array.isArray(a) && typeof a.script === "string" && (a.args === undefined || (Array.isArray(a.args) && a.args.every((x) => typeof x === "string")));
   const transform = a && !Array.isArray(a) && typeof a.transform === "string";
   if (!(editList || script || transform)) p.push(`${where}: apply must be a non-empty list of {file, find, replace} (find non-empty and different from replace), {script, args?} or {transform}`);
-  if (transform && !String(m.gate).endsWith(":*")) p.push(`${where}: a {transform} mutant applies to every gate of a kind and must name \`<kind>:*\``);
+  if (transform && !String(m.gate).endsWith(":*") && !String(m.gate).startsWith("selfcheck:")) p.push(`${where}: a {transform} mutant applies to every gate of a kind (\`<kind>:*\`) or to one migration self-check (\`selfcheck:<id>\`)`);
   if (m.scope !== undefined && (m.gate !== "test" || !Array.isArray(m.scope) || m.scope.length === 0)) p.push(`${where}: scope narrows the gate "test" to a list of test files`);
   return p;
 }

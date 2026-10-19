@@ -8,7 +8,7 @@ import { findOrphanedFactCorrections, suppressedClaimMatcher, isPairTombstoned, 
 import { loadSuppressedClaims, redactSuppressedClaims, removeClaimText } from "@/features/corrections/redact";
 
 import { fakeDb } from "../_support/fake-db.ts";
-import { as, ctx, json, PERSONAS, script, type Persona } from "../_support/personas.ts";
+import { as, ctx, expectationFor, json, PERSONAS, script, type Persona } from "../_support/personas.ts";
 
 import { connectDb } from "./world.ts";
 
@@ -18,15 +18,15 @@ const CORR = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
 type Row = Record<string, unknown>;
 
 const status = async (h: (r: Request, c: never) => Promise<Response>, p: Persona, url: string, init: RequestInit, params: Record<string, string>) => (await h(as(p, url, init), ctx(params) as never)).status;
-const expected = (admin: number): Record<Persona, number> => ({ anon: 401, viewer: 403, otherOrgMember: 403, member: 403, owner: 403, platformAdmin: admin });
+const expected = (admin: number): Record<Persona, number> => ({ anon: 401, viewer: 403, otherOrgMember: 403, member: 403, admin: 403, owner: 403, platformAdmin: admin });
 
 test("persona matrix: the three corrections routes answer only a platform admin", async () => {
   script(fakeDb((c) => (c.table === "intelligence_items" ? { data: { id: ITEM } } : c.table === "item_corrections" || c.table === "section_claim_provenance" ? { data: [] } : undefined), { rpc: (name) => (name === "create_item_correction" ? { data: CORR } : { data: null }) }));
   const body = json({ target_kind: "fact", target_ref: CLAIM, op: "suppress", reason: "wrong figure" });
   for (const p of PERSONAS) {
-    assert.equal(await status(GET, p, `/api/admin/items/${ITEM}/corrections`, {}, { id: ITEM }), expected(200)[p], `GET as ${p}`);
-    assert.equal(await status(POST, p, `/api/admin/items/${ITEM}/corrections`, { method: "POST", body }, { id: ITEM }), expected(201)[p], `POST as ${p}`);
-    assert.equal(await status(REVOKE, p, `/x`, { method: "POST", body: json({ reason: "mistake" }) }, { id: ITEM, correctionId: CORR }), expected(200)[p], `REVOKE as ${p}`);
+    assert.equal(await status(GET, p, `/api/admin/items/${ITEM}/corrections`, {}, { id: ITEM }), expectationFor(expected(200), p, "corrections"), `GET as ${p}`);
+    assert.equal(await status(POST, p, `/api/admin/items/${ITEM}/corrections`, { method: "POST", body }, { id: ITEM }), expectationFor(expected(201), p, "corrections"), `POST as ${p}`);
+    assert.equal(await status(REVOKE, p, `/x`, { method: "POST", body: json({ reason: "mistake" }) }, { id: ITEM, correctionId: CORR }), expectationFor(expected(200), p, "corrections"), `REVOKE as ${p}`);
   }
 });
 

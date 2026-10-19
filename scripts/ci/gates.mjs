@@ -22,6 +22,7 @@ export const STEPS = [
   { name: "LOC gates", cmd: "loc" },
   { name: "Connection check (nothing runs alone)", cmd: "connections" },
   { name: "Column check (every select, filter, write payload and rpc in src names a column or function the database defines)", cmd: "columns" },
+  { name: "Propagation method versions (INV-202: a released method is never edited; new behaviour is a new version)", cmd: "method-versions" },
   { name: "Migration static checks (self-check, reversal, README, APPLY.md, borrowed rows)", cmd: "migration-checks" },
   { name: "Mutants registry (every gate has a registered mutant, every entry applies; the runner proves each goes red in the mutants job)", cmd: "mutants:check" },
   { name: "Edge Function bundle (IMP-029: capture-worker bundles with its relative policy import)", cmd: "edge-bundle", scoped: () => edgeChanged() },

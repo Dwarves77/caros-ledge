@@ -1,0 +1,5 @@
+{
+  "derived_values:carbon_intensity_tkm@1.0.0": "1d7673667a9329e403e92243c282589e3a0ad68c02d4f66a22443c42b1951ccc",
+  "derived_values:market_series_delta@1.0.0": "cd3d368ab01f7a6a212db0c6c31b311aedbcf5a101c5272338a32359f14425ab",
+  "inference_records:infer-from-question@v1": "c65c7c98ceaaa14e7b98a4dbc25a391b650d61797ca324df279f1ee5e3988b74"
+}

@@ -1,12 +1,12 @@
 // The cutover tooling (P2-15 PART A): the apply plan, the APPLIED.json writer, the table export, the Edge Function bundle check, and the structure rules the single homes depend on. Each tool is tried with its failure planted.
 import assert from "node:assert/strict";
-import { cpSync, existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 
 // @ts-expect-error plain .mjs modules
-import { planProblems, planText, reversalOf, selfCheckOf } from "../../scripts/ci/apply-plan.mjs";
+import { planProblems, planText, rollbackOf, selfCheckOf } from "../../scripts/ci/apply-plan.mjs";
 // @ts-expect-error plain .mjs modules
 import { DECLARED } from "../../scripts/ci/edge-bundle.mjs";
 // @ts-expect-error plain .mjs modules
@@ -82,12 +82,21 @@ test("a self-check that borrows a live row, or guards its assertions behind the 
   assert.deepEqual(migrationProblems(MIGRATIONS).filter((p) => /borrows a live row|IS NOT NULL THEN/.test(p)), [], "no merged migration borrows a live row");
 });
 
-test("a file's self-check and rollback are read from the file, not typed: the id its OK notice prints, the Reversal header with its continuation lines", () => {
+test("a file's self-check and rollback are read from the file, not typed: the id its OK notice prints or its Self-check header names; the down file, or the irreversible marker with its recovery; a prose header is no rollback", () => {
   assert.equal(selfCheckOf("DO $$ BEGIN RAISE NOTICE '0064-host-worklist OK'; END $$;"), "0064-host-worklist");
+  assert.equal(selfCheckOf("-- Self-check 0099-named\nSELECT 1;", "0099_x.sql"), "0099-named");
   assert.equal(selfCheckOf("no notice here"), "none");
-  assert.equal(reversalOf("-- Reversal: DROP TABLE a;\n-- DROP TABLE b.\n\n-- next"), "DROP TABLE a; DROP TABLE b.");
-  assert.equal(reversalOf("-- Idempotent. Reversal: UPDATE x SET y = NULL.\n-- catalog: none"), "UPDATE x SET y = NULL.");
-  assert.equal(reversalOf("-- nothing"), "none");
+  const dir = mkdtempSync(join(tmpdir(), "rollback-"));
+  try {
+    mkdirSync(join(dir, "down"));
+    writeFileSync(join(dir, "down", "0098.sql"), "DROP TABLE a;\n");
+    assert.match(rollbackOf("0098_x.sql", "-- schema\n", {}, dir), /^down\/0098\.sql, applied and catalog-compared by the schema job$/);
+    assert.equal(rollbackOf("0099_x.sql", "-- irreversible: restore the table from the export taken at step 3\n", {}, dir), "irreversible: restore the table from the export taken at step 3");
+    assert.equal(rollbackOf("0099_x.sql", "-- schema\n", { "0099_x": { irreversible: "the apply note names the recovery" } }, dir), "irreversible: the apply note names the recovery");
+    assert.equal(rollbackOf("0099_x.sql", "-- Reversal: DROP TABLE a;\n", {}, dir), "none", "a prose Reversal header is not a rollback");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
   const unnamed = sqlFiles.filter((f) => selfCheckOf(readFileSync(`${MIGRATIONS}/${f}`, "utf8")) === "none");
   assert.deepEqual(unnamed, ["0030_data_market_series_items.sql"], "every other file ends in a self-check that names itself; this one prints none and the plan says so");
 });

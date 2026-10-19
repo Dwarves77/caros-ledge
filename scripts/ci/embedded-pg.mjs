@@ -17,10 +17,12 @@ const freePort = () =>
     });
   });
 
+// The server logs no ERROR (its start-up LOG line, which embedded-postgres waits for, is kept): its log pipe is read by this process, and a caller that blocks the event loop (the mutants runner runs its gates synchronously) would stop reading it, fill the pipe and hang the
+// server inside the next statement that logs an error. Every error a check wants to see comes back to the client.
 export async function withEmbeddedPostgres(fn, log = console.log) {
   const dir = mkdtempSync(join(tmpdir(), "schema-local-"));
   const port = await freePort();
-  const pgdb = new EmbeddedPostgres({ databaseDir: join(dir, "data"), user: "postgres", password: "postgres", port, persistent: false, initdbFlags: ["--encoding=UTF8", "--locale=C"], onLog: () => undefined, onError: () => undefined });
+  const pgdb = new EmbeddedPostgres({ databaseDir: join(dir, "data"), user: "postgres", password: "postgres", port, persistent: false, initdbFlags: ["--encoding=UTF8", "--locale=C"], postgresFlags: ["-c", "log_min_messages=log", "-c", "log_min_error_statement=panic"], onLog: () => undefined, onError: () => undefined });
   let stopping = false;
   const cleanup = async () => {
     if (stopping) return;

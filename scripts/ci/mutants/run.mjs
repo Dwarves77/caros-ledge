@@ -1,6 +1,6 @@
 // Running one mutant: apply its edits (or its script) to the scratch tree, run the gate it names, read the verdict. No file of the real tree is touched; the scratch is restored by scratch.mjs between mutants.
 import { spawnSync } from "node:child_process";
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const win = process.platform === "win32";
@@ -38,18 +38,18 @@ export function applyMutant(dir, mutant) {
 /** The command that runs a gate on a tree: an npm script by name; the test gate narrowed to a scope; a property check against DATABASE_URL. */
 export function gateCommand(gate, { scope, stepEnv = {} } = {}) {
   if (gate === "test" && scope) return { command: process.execPath, args: ["--import", "./tests/_support/register.mjs", "--test", ...scope], env: {} };
-  if (gate === "property:generator-pins") return { command: process.execPath, args: ["--import", "./tests/_support/register.mjs", "scripts/ci/checks/generator-pins.mjs"], env: {} };
+  if (gate.startsWith("property:") && existsSync(`scripts/ci/checks/${gate.slice("property:".length)}.mjs`)) return { command: process.execPath, args: ["--import", "./tests/_support/register.mjs", `scripts/ci/checks/${gate.slice("property:".length)}.mjs`], env: {} };
   if (gate.startsWith("property:")) return { command: process.execPath, args: ["scripts/ci/properties.mjs", "--only", gate.slice("property:".length)], env: {} };
   return { command: "npm", args: ["run", "--silent", gate], env: stepEnv };
 }
 
-const NOISE = /^(npm (error|warn|notice)|> |\(node:|\(Use `node|Reparsing as ES module|To eliminate this warning|ℹ )/;
+const NOISE = /^(npm (error|warn|notice)|> |\(node:|\(Use `node|Reparsing as ES module|To eliminate this warning|ℹ |\s*self-check: |\s*attack flagged: |.* OK( \(.*\))?$)/;
 const LOCATED = /^[\w./@-]+:\d+(:\d+)?[: ]/;
 const NAMES_FAILURE = /\b(error|fail(ed|ure)?|problem|unexplained|refused|mismatch|✖|not ok)\b/i;
-/** The first line of a gate's output that says what went red: a `file:line` problem, else a line naming an error, a failure or a problem, else the last line that is not tool noise. */
+/** The first line of a gate's output that says what went red: a failed test (`✖`, `not ok`), else a `file:line` problem, else a line naming an error, a failure or a problem, else the last line that is not tool noise. */
 export function firstRedLine(output) {
   const lines = output.split(/\r?\n/).map((l) => l.trim()).filter((l) => l && !NOISE.test(l));
-  return (lines.find((l) => LOCATED.test(l)) ?? lines.find((l) => NAMES_FAILURE.test(l)) ?? lines[lines.length - 1] ?? "(no output)").slice(0, 300);
+  return (lines.find((l) => /^(✖|not ok)/.test(l)) ?? lines.find((l) => LOCATED.test(l)) ?? lines.find((l) => NAMES_FAILURE.test(l)) ?? lines[lines.length - 1] ?? "(no output)").slice(0, 300);
 }
 
 /** The gates whose own scripts print their problems: a crash of the script (a missing import, a thrown TypeError) is not the gate catching the mutant. */

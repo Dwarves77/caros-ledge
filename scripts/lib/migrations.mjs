@@ -16,6 +16,8 @@ export const appliedNumbers = (dir = MIGRATIONS_DIR) => new Set(JSON.parse(readF
 
 /** The id a file declares on its `-- Self-check <id>` line, or null: the word after the marker, up to a colon or a space. */
 export const selfCheckId = (text) => /^-- Self-check ([\w.-]+)/m.exec(text)?.[1] ?? null;
+/** The id a file's self-check goes by: its declared `-- Self-check <id>`, else the last id its DO block prints as `<id> OK` (a file written before the header was the convention), else its number (a file with no self-check at all: migration-checks refuses it). */
+export const selfCheckIdOf = (text, file) => selfCheckId(text) ?? noticeIds(text).at(-1) ?? numberOf(file);
 /** The ids the file prints as `RAISE NOTICE '<id> OK'`, in order. */
 export const noticeIds = (text) => [...text.matchAll(/RAISE NOTICE '([\w.-]+) OK/g)].map((m) => m[1]);
 /** The `-- catalog:` classes a file declares (an empty set for `none`). */

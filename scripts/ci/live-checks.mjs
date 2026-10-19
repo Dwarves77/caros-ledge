@@ -10,6 +10,7 @@
 // VERCEL_AUTOMATION_BYPASS_SECRET (sent as x-vercel-protection-bypass when the preview is behind Vercel deployment protection), and for invitation-email RESEND_API_KEY and INVITATION_FROM_EMAIL. LIVE_CODE_SHA is the deployed commit (data: the
 // scripts run are the default branch's), written on every ledger row as its code_sha.
 import { randomUUID } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { register } from "node:module";
 import { parseArgs } from "node:util";
 import { pathToFileURL } from "node:url";
@@ -19,7 +20,7 @@ import { CHECKS, DEFAULT_CHECKS, missingNames, NEEDS, RUNNERS } from "./live/che
 /** The checks that need the signed-in member. */
 const MEMBER_CHECKS = new Set(["member-reads", "sign-in", "pages", "notification-drain", "invitation-email"]);
 /** The checks that read or write the database with the service key. */
-const SERVICE_CHECKS = new Set(["member-reads", "identity-anonymous", "provenance-trigger", "notification-drain"]);
+const SERVICE_CHECKS = new Set(["member-reads", "identity-anonymous", "provenance-trigger", "notification-drain", "production-shape"]);
 
 /** Which checks run, which are skipped for lack of an account, and which environment names are missing for the rest. A check the caller named (`only`) is never skipped: a named check that cannot run is a missing name. Pure. */
 export function planRun({ only, env, base, record }) {
@@ -121,6 +122,7 @@ async function main() {
   const io = {
     base,
     service,
+    expectedShape: JSON.parse(readFileSync("scripts/ci/data/production-shape.json", "utf8")).shape,
     runId: randomUUID(),
     async member() {
       if (!member) {

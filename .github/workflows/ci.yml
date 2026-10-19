@@ -138,7 +138,8 @@ jobs:
     needs: changes
     if: github.event_name != 'deployment_status' && (github.event_name != 'workflow_dispatch' || github.event.inputs.only == '')
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    # fast ~5 min, slow (a build, a bundle) ~8, schema ~35 (one chain run for every self-check, the property checks, three whole schema jobs): the whole set runs only when the change touches what the classes read.
+    timeout-minutes: 90
     services:
       postgres:
         image: postgres:15.14
@@ -347,6 +348,8 @@ jobs:
       LIVE_SMOKE_EMAIL: ${{ secrets.LIVE_SMOKE_EMAIL }}
       LIVE_SMOKE_PASSWORD: ${{ secrets.LIVE_SMOKE_PASSWORD }}
       PARITY_BASE: ${{ github.event.deployment_status.environment_url || github.event.inputs.live_url }}
+      # A preview sits behind Vercel deployment protection; the capture sends this as x-vercel-protection-bypass (the same designed mechanism as scripts/ci/live-checks.mjs), or it only ever sees the sign-in page.
+      VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -422,6 +425,7 @@ jobs:
       LIVE_ADMIN_PASSWORD: ${{ secrets.LIVE_ADMIN_PASSWORD }}
       PARITY_ADMIN: ${{ secrets.LIVE_ADMIN_EMAIL && secrets.LIVE_ADMIN_PASSWORD && '1' || '' }}
       SCREENS_BASE: ${{ github.event.inputs.live_url }}
+      VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5

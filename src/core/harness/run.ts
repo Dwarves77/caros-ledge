@@ -3,7 +3,7 @@
 // Ported from old_repo/scripts/lib/run-artifact.mjs (lines 380-416)
 // Ported from old_repo/scripts/maintenance/lib/cli.mjs (lines 70-108)
 // The run frame: credentials gate, the kill switch (read first), mode resolution, the upstream hand-off, the call, and the one record. Every firing leaves one row.
-import type { Db } from "@/core/db";
+import { missingServiceEnv, type Db } from "@/core/db";
 import { readScrapeState } from "@/core/fetch/hold";
 import type { RunResult } from "@/core/types/run-result";
 
@@ -111,7 +111,7 @@ export async function runFamily(name: string, req: RunRequest, h: HarnessDeps): 
   const fam = familyOf(name);
   if (!fam) throw new Error(`runFamily: "${name}" is not in FAMILIES`);
   if (!h.sb) {
-    const verdict = skipVerdict(h.env, ["NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]);
+    const verdict = skipVerdict(h.env, missingServiceEnv(h.env));
     return { exit: verdict.exit, row: null, result: null, error: `no database credentials: ${name} ${verdict.message}` };
   }
   const fn = h.fns[name];

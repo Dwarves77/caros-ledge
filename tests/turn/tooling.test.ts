@@ -25,10 +25,13 @@ const put = (dir: string, rel: string, text: string) => {
 };
 
 // ── the connection check ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-function tree(over: { families?: unknown; extra?: Record<string, string>; stages?: string } = {}): string {
+function tree(over: { families?: unknown; extra?: Record<string, string>; stages?: string; allowed?: Record<string, string[]>; tables?: string[] } = {}): string {
   const dir = scratch();
   const families = over.families ?? [{ name: "a", owner: "x", stage: "one", downstream: ["b"], writes: [] }, { name: "b", owner: "x", stage: "two", downstream: [], terminal: "the end", writes: [] }];
-  put(dir, "scripts/ci/connections-allow.json", JSON.stringify({ entries: {}, written: [] }));
+  for (const d of ["supabase/functions", "supabase/migrations", ".github/workflows"]) mkdirSync(join(dir, d), { recursive: true });
+  put(dir, "tests/_support/schema.json", JSON.stringify({ tables: Object.fromEntries((over.tables ?? []).map((t) => [t, { columns: ["id", "a"] }])) }));
+  put(dir, "scripts/ci/connections-allow.json", JSON.stringify({ _exports: "the toy tree exports what it exports", exports: over.allowed ?? {} }));
+  put(dir, "scripts/main.mjs", 'import { STAGES } from "../src/core/turn/registry.ts";\nimport { x } from "../src/core/turn/stages/one.ts";\nconsole.log(STAGES, x);\n');
   put(dir, "src/core/harness/data/families.json", JSON.stringify(families));
   put(dir, "src/core/turn/registry.ts", `export const STAGES = ${over.stages ?? '["one", "two"]'} as const;\n`);
   put(dir, "src/core/turn/stages/one.ts", 'import { runFoo } from "@/features/foo/run";\nexport const x = runFoo;\n');
@@ -43,21 +46,21 @@ test("the connection check: a clean tree passes and prints the map", () => {
   const r = connections(tree());
   assert.equal(r.status, 0, r.stderr);
   assert.match(r.stdout, /\| one \| a \| b \|/);
-  assert.match(r.stdout, /1 runtime entries, 1 called/);
+  assert.match(r.stdout, /0 exports with no caller \(0 runtime entries\)/);
 });
 
 test("the connection check ATTACKS: an uncalled runtime, a stage that ends with no reason, a stage that does not hand to the next, and a surface reader of an unwritten table each fail", () => {
   const uncalled = connections(tree({ extra: { "src/features/bar/job.ts": 'import type { RunResult } from "@/core/types/run-result";\nexport async function runBar(deps: unknown): Promise<RunResult> {\n  return { counts: {}, outcome: "ok", notes: [] };\n}\n' } }));
   assert.equal(uncalled.status, 1);
-  assert.match(uncalled.stderr, /runBar is a runtime entry with no caller/);
+  assert.match(uncalled.stderr, /runBar is a runtime entry \(it returns a RunResult\) with no caller/);
   const endless = connections(tree({ families: [{ name: "a", owner: "x", stage: "one", downstream: ["b"], writes: [] }, { name: "b", owner: "x", stage: "two", downstream: [], writes: [] }] }));
   assert.match(endless.stderr, /stage two \(family b\) records no downstream and no reason it ends/);
   const broken = connections(tree({ families: [{ name: "a", owner: "x", stage: "one", downstream: [], terminal: "x", writes: [] }, { name: "b", owner: "x", stage: "two", downstream: [], terminal: "x", writes: [] }] }));
   assert.match(broken.stderr, /stage one does not hand off to the next stage two/);
-  const engine = connections(tree({ extra: { "src/features/page/read/page.ts": 'export const q = (db: any) => db.from("ghost_table").select("id");\n' } }));
+  const engine = connections(tree({ tables: ["ghost_table"], extra: { "src/features/page/read/page.ts": 'export const q = (db: any) => db.from("ghost_table").select("id");\n' } }));
   assert.equal(engine.status, 1);
-  assert.match(engine.stderr, /reads ghost_table, which no machine stage, route or runtime writes/);
-  const fed = connections(tree({ extra: { "src/features/page/read/page.ts": 'export const q = (db: any) => db.from("real_table").select("id");\n', "src/features/foo/write.ts": 'export const w = (db: any) => db.from("real_table").insert({ a: 1 });\n' } }));
+  assert.match(engine.stderr, /reads ghost_table, which no machine stage, route, rpc, trigger or seed writes/);
+  const fed = connections(tree({ tables: ["real_table"], allowed: { "src/features/page/read/page.ts": ["q"], "src/features/foo/write.ts": ["w"] }, extra: { "src/features/page/read/page.ts": 'export const q = (db: any) => db.from("real_table").select("id");\n', "src/features/foo/write.ts": 'export const w = (db: any) => db.from("real_table").insert({ a: 1 });\n' } }));
   assert.equal(fed.status, 0, fed.stderr);
 });
 
@@ -73,6 +76,7 @@ test("the migration checks: the committed set passes; a file the README does not
   const dir = scratch();
   const real = join(ROOT, "supabase/migrations");
   writeFileSync(join(dir, "README.md"), readFileSync(join(real, "README.md"), "utf8"));
+  writeFileSync(join(dir, "apply-notes.json"), readFileSync(join(real, "apply-notes.json"), "utf8"));
   const gen = readFileSync(join(real, "0015_data_screen_verdicts.sql"), "utf8");
   writeFileSync(join(dir, "0015_data_screen_verdicts.sql"), gen);
   const some = migrationProblems(dir);
@@ -180,6 +184,7 @@ test("the sources backfill is verified by its own generator's header and stateme
   assert.equal(spawnSync(process.execPath, ["--import", "./tests/_support/register.mjs", "scripts/gen/source-backfill-sql.mjs", "scripts/ci/fixtures/sources-export-sample.json", "the sample export"], { cwd: ROOT, encoding: "utf8" }).stdout, sql, "deterministic from the export");
   const dir = scratch();
   writeFileSync(join(dir, "README.md"), readFileSync(join(ROOT, "supabase/migrations/README.md"), "utf8"));
+  writeFileSync(join(dir, "apply-notes.json"), readFileSync(join(ROOT, "supabase/migrations/apply-notes.json"), "utf8"));
   const mine = (text: string) => { writeFileSync(join(dir, "0016_data_source_type_backfill.sql"), text); return migrationProblems(dir).filter((p: string) => p.startsWith("0016_data_source_type_backfill.sql:")); };
   assert.deepEqual(mine(sql), []);
   assert.ok(mine(sql.replace(/^-- source-export:.*\n/m, "")).some((p: string) => p.includes("no `-- source-export:` header")), "the pre-fix output (no header) fails");
