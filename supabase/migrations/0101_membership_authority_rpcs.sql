@@ -447,7 +447,7 @@ BEGIN
     INSERT INTO public.org_memberships (org_id, user_id, role) VALUES (org, um2, 'member');
     SELECT id INTO mm2 FROM public.org_memberships WHERE org_id = org AND user_id = um2;
     ALTER TABLE public.admin_events ADD CONSTRAINT planted_refuse_event CHECK (action NOT IN ('member_role_changed', 'member_removed', 'member_banned', 'org_renamed', 'member_invited', 'invitation_revoked', 'priority_override_set', 'team_item_restored', 'invitation_accepted')) NOT VALID;
-    SELECT count(*) INTO ev_before FROM public.admin_events;
+    SELECT count(*) INTO ev_before FROM public.admin_events WHERE org_id IN (org, orgb);
     SET LOCAL ROLE authenticated;
     PERFORM set_config('request.jwt.claim.sub', ua::text, true);
     BEGIN PERFORM public.set_member_role(org, mm2, 'viewer', NULL); RAISE EXCEPTION '0101-membership-rpcs: set_member_role survived a refused event'; EXCEPTION WHEN check_violation THEN NULL; END;
@@ -460,7 +460,7 @@ BEGIN
     RESET ROLE;
     IF (SELECT role FROM public.org_memberships WHERE id = mm2) <> 'member' OR NOT EXISTS (SELECT 1 FROM public.org_memberships WHERE id = mm2) OR EXISTS (SELECT 1 FROM public.org_member_bans WHERE org_id = org AND user_id = um2)
        OR EXISTS (SELECT 1 FROM public.org_invitations WHERE invited_email = 'attack-0101@invalid.example') OR (SELECT priority_override FROM public.workspace_item_overrides WHERE org_id = org AND item_id = it) <> 'HIGH'
-       OR (SELECT name FROM public.organizations WHERE id = org) = 'Attack Rename' OR (SELECT count(*) FROM public.admin_events) <> ev_before THEN
+       OR (SELECT name FROM public.organizations WHERE id = org) = 'Attack Rename' OR (SELECT count(*) FROM public.admin_events WHERE org_id IN (org, orgb)) <> ev_before THEN
       RAISE EXCEPTION '0101-membership-rpcs: a change survived its refused event';
     END IF;
     ALTER TABLE public.admin_events DROP CONSTRAINT planted_refuse_event;

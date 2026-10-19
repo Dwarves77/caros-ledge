@@ -243,14 +243,14 @@ BEGIN
     END IF;
     SELECT count(*) INTO n FROM public.admin_events WHERE actor_id = up AND org_id IS NULL AND reason IS NOT NULL AND action IN ('source_switch_set', 'flag_status_set', 'brief_flag_resolved', 'rejection_triaged', 'emergency_stop_engaged', 'emergency_stop_lifted', 'corpus_turns_requested');
     IF n <> 10 THEN RAISE EXCEPTION '0102-admin-actions: % events written, expected 10', n; END IF;
-    IF (SELECT detail ->> 'inserted' FROM public.admin_events WHERE action = 'corpus_turns_requested' AND reason = 'refresh after a feed change') <> '2' THEN RAISE EXCEPTION '0102-admin-actions: the corpus event lacks its count'; END IF;
+    IF (SELECT detail ->> 'inserted' FROM public.admin_events WHERE actor_id = up AND action = 'corpus_turns_requested' AND reason = 'refresh after a feed change') <> '2' THEN RAISE EXCEPTION '0102-admin-actions: the corpus event lacks its count'; END IF;
 
     -- THE ATTACK: a refused event undoes the act.
     DELETE FROM public.corpus_turn_requests WHERE intelligence_item_id IN (it, it2);
     ALTER TABLE public.admin_events ADD CONSTRAINT planted_refuse_event CHECK (action NOT IN ('source_switch_set', 'flag_status_set', 'brief_flag_resolved', 'rejection_triaged', 'emergency_stop_engaged', 'corpus_turns_requested', 'jurisdiction_review_resolved')) NOT VALID;
     INSERT INTO public.ingest_rejections (raw_value, rejection_reason) VALUES ('selfcheck-0102-b', 'unparseable') RETURNING id INTO rej;
     UPDATE public.intelligence_items SET agent_integrity_resolved_at = NULL, agent_integrity_resolved_by = NULL WHERE id = it;
-    SELECT count(*) INTO ev_before FROM public.admin_events;
+    SELECT count(*) INTO ev_before FROM public.admin_events WHERE actor_id = up;
     SET LOCAL ROLE authenticated;
     PERFORM set_config('request.jwt.claim.sub', up::text, true);
     BEGIN PERFORM public.admin_set_source_switch(src, 'processing_paused', false, 'x'); RAISE EXCEPTION '0102-admin-actions: the switch survived a refused event'; EXCEPTION WHEN check_violation THEN NULL; END;
@@ -262,7 +262,7 @@ BEGIN
     RESET ROLE;
     IF (SELECT processing_paused FROM public.sources WHERE id = src) IS NOT TRUE OR (SELECT status FROM public.integrity_flags WHERE id = flg) <> 'open' OR (SELECT agent_integrity_resolved_at FROM public.intelligence_items WHERE id = it) IS NOT NULL
        OR (SELECT triaged_at FROM public.ingest_rejections WHERE id = rej) IS NOT NULL OR (SELECT global_processing_paused FROM public.system_state WHERE id = true) IS DISTINCT FROM held
-       OR EXISTS (SELECT 1 FROM public.corpus_turn_requests WHERE intelligence_item_id IN (it, it2)) OR (SELECT count(*) FROM public.admin_events) <> ev_before THEN RAISE EXCEPTION '0102-admin-actions: a change survived its refused event'; END IF;
+       OR EXISTS (SELECT 1 FROM public.corpus_turn_requests WHERE intelligence_item_id IN (it, it2)) OR (SELECT count(*) FROM public.admin_events WHERE actor_id = up) <> ev_before THEN RAISE EXCEPTION '0102-admin-actions: a change survived its refused event'; END IF;
     ALTER TABLE public.admin_events DROP CONSTRAINT planted_refuse_event;
     PERFORM set_config('request.jwt.claim.sub', '', true);
     RAISE EXCEPTION USING ERRCODE = 'P0099', MESSAGE = 'selfcheck fixture rolled back';

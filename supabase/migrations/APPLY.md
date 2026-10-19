@@ -71,11 +71,11 @@ Rules: schema first, in name order; a row marked HOLD waits for the step it name
 | 56 | 0070_harness_runs_outcome_partial | schema | `supabase db query --linked -f supabase/migrations/0070_harness_runs_outcome_partial.sql` | 0070-harness-partial | down/0070.sql, applied and catalog-compared by the schema job | pending | in order |
 | 57 | 0071_live_check_production_shape | schema | `supabase db query --linked -f supabase/migrations/0071_live_check_production_shape.sql` | 0071-production-shape | down/0071.sql, applied and catalog-compared by the schema job | pending | in order |
 | 58 | 0073_selfcheck_repairs | schema | `supabase db query --linked -f supabase/migrations/0073_selfcheck_repairs.sql` | 0073-selfcheck-repairs | down/0073.sql, applied and catalog-compared by the schema job | pending | in order |
-| 59 | 0100_admin_events | schema | `supabase db query --linked -f supabase/migrations/0100_admin_events.sql` | 0100-admin-events | none | pending | in order |
-| 60 | 0101_membership_authority_rpcs | schema | `supabase db query --linked -f supabase/migrations/0101_membership_authority_rpcs.sql` | 0101-membership-rpcs | none | pending | in order |
-| 61 | 0102_admin_action_rpcs | schema | `supabase db query --linked -f supabase/migrations/0102_admin_action_rpcs.sql` | 0102-admin-actions | none | pending | in order |
-| 62 | 0103_community_trust_marks | schema | `supabase db query --linked -f supabase/migrations/0103_community_trust_marks.sql` | 0103-community-trust | none | pending | in order |
-| 63 | 0104_account_deletion_export | schema | `supabase db query --linked -f supabase/migrations/0104_account_deletion_export.sql` | 0104-account | none | pending | in order |
+| 59 | 0100_admin_events | schema | `supabase db query --linked -f supabase/migrations/0100_admin_events.sql` | 0100-admin-events | down/0100.sql, applied and catalog-compared by the schema job | pending | in order |
+| 60 | 0101_membership_authority_rpcs | schema | `supabase db query --linked -f supabase/migrations/0101_membership_authority_rpcs.sql` | 0101-membership-rpcs | down/0101.sql, applied and catalog-compared by the schema job | pending | in order |
+| 61 | 0102_admin_action_rpcs | schema | `supabase db query --linked -f supabase/migrations/0102_admin_action_rpcs.sql` | 0102-admin-actions | down/0102.sql, applied and catalog-compared by the schema job | pending | in order |
+| 62 | 0103_community_trust_marks | schema | `supabase db query --linked -f supabase/migrations/0103_community_trust_marks.sql` | 0103-community-trust | down/0103.sql, applied and catalog-compared by the schema job | pending | in order |
+| 63 | 0104_account_deletion_export | schema | `supabase db query --linked -f supabase/migrations/0104_account_deletion_export.sql` | 0104-account | down/0104.sql, applied and catalog-compared by the schema job | pending | in order |
 
 ## Phase 2: data files, after the schema (each runs with its consumer)
 

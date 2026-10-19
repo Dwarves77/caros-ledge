@@ -119,6 +119,11 @@
   "0069_live_check_provenance_no_replica": {
     "selfCheckBy": "0073_selfcheck_repairs"
   },
+  "0102_admin_action_rpcs": {
+    "unscopedReads": {
+      "system_state": "the one-row emergency-stop singleton (id = true): the self-check reads the value before the acts and proves it is the same after the refused ones, which holds whatever it was"
+    }
+  },
   "0105_data_demote_legacy_verification": {
     "consumer": "the Community identity and profile form (src/features/community: the verified mark states a recorded verification)",
     "after": "0103",

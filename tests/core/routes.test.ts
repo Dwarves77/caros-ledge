@@ -12,7 +12,7 @@ import { POST as orgsPost } from "@/features/auth/api/orgs-create";
 
 import { scripted } from "../_support/fake-clients.ts";
 import { fakeDb, filterValue, wrote, type Call, type Reply } from "../_support/fake-db.ts";
-import { as, ctx, expectationFor, json, MEMBERSHIP_ID, ORG_A, ORG_B, OTHER_MEMBERSHIP_ID, PERSONAS, personaOf, script, userDbFor, type Persona } from "../_support/personas.ts";
+import { as, ctx, expectationFor, json, MEMBERSHIP_ID, ORG_A, ORG_B, PERSONAS, personaOf, script, userDbFor, type Persona } from "../_support/personas.ts";
 
 const TOKEN = "b".repeat(64);
 const INVITE_A = "55555555-5555-4555-8555-555555555555";
