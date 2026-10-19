@@ -1,10 +1,23 @@
-// The static checks on supabase/migrations, before any database work: the README table lists every file and only files that exist (IMP-043), a generated data file is verified by the generator it names (IMP-044: screen verdicts reproduce byte for byte from their entries, the sources backfill carries its export header and its statement count), and APPLY.md, the cutover order, equals what scripts/ci/apply-plan.mjs generates from the directory (P2-15). Returns the problems; schema-apply prints them and stops.
+// The static checks on supabase/migrations, before any database work (`npm run migration-checks`, and the first step of the schema job):
+//   - the README table lists every file and only files that exist (IMP-043);
+//   - APPLY.md, the cutover order, equals what scripts/ci/apply-plan.mjs generates from the directory (P2-15);
+//   - a generated data file is verified by the generator it names (IMP-044: screen verdicts reproduce byte for byte, the sources backfill carries its export header and statement count);
+//   - every file ends in a self-check: its last DO block comes after the last statement that changes anything, raises (RAISE EXCEPTION) when what it asserts is false, and prints `<id> OK` for the id the file declares
+//     (a self-check that cannot raise, or that is followed by more DDL, certifies nothing);
+//   - no self-check reads a public table, or calls a function over one, with nothing its fixture created in scope (schema/self-check-scope.mjs); a self-check never borrows a live row;
+//   - every file says how it is undone: a down file (supabase/migrations/down/NNNN.sql, applied and catalog-compared by the schema job) or an irreversible marker naming the recovery (a `-- irreversible: <recovery>` line, or the
+//     `irreversible` note in apply-notes.json for a file applied before the marker existed). Never both, never a down file for a data migration (it would never run).
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 
+import { applyNotes, isData, migrationFiles, noticeIds, numberOf, selfCheckIdOf } from "../lib/migrations.mjs";
+import { isMain } from "../lib/fs.mjs";
 import { checkBackfill } from "../gen/source-backfill-check.mjs";
 import { checkGenerated } from "../gen/screen-verdicts-sql.mjs";
+import { checkShapeFunction } from "../gen/shape-function-sql.mjs";
 
 import { planProblems, planText } from "./apply-plan.mjs";
+import { scopeProblems } from "./schema/self-check-scope.mjs";
+import { changesDatabase, lastDoIndex, statementsOf } from "./schema/statements.mjs";
 
 // A self-check owns its fixture (P2-15h): a migration that SELECTs INTO a variable FROM a public table with LIMIT 1 borrows a live row, and the assertions behind `<var> IS NOT NULL THEN` never run on an empty CI
 // database while colliding with live rows on production (0035 did both). Fixtures insert their own rows inside the rolled-back subtransaction.
@@ -21,6 +34,7 @@ export function borrowedRowProblems(text) {
 export const VERIFIERS = {
   "scripts/gen/screen-verdicts-sql.mjs": checkGenerated,
   "scripts/gen/source-backfill-sql.mjs": checkBackfill,
+  "scripts/gen/shape-function-sql.mjs": checkShapeFunction,
 };
 
 export function generatedProblems(text) {
@@ -30,21 +44,74 @@ export function generatedProblems(text) {
   return verify ? verify(text) : [`no verifier for generator ${gen[1]}`];
 }
 
+/** The structural problems of a file's self-check. */
+export function selfCheckStructureProblems(file, text) {
+  const statements = statementsOf(text);
+  const lastDo = lastDoIndex(statements);
+  if (lastDo < 0) return [`${file}: no DO block: a migration ends in a self-check`];
+  const problems = [];
+  const lastChange = statements.map((s, i) => (changesDatabase(s) ? i : -1)).filter((i) => i >= 0).at(-1) ?? -1;
+  if (lastDo < lastChange) problems.push(`${file}: the last DO block comes before the last change (${statements[lastChange].replace(/\s+/g, " ").slice(0, 60)}...): a self-check must be the last thing the file does`);
+  if (!/\bRAISE\s+EXCEPTION\b/i.test(statements[lastDo])) problems.push(`${file}: the last DO block has no RAISE EXCEPTION: it can only pass`);
+  const id = selfCheckIdOf(text, file);
+  if (!noticeIds(statements[lastDo]).includes(id)) problems.push(`${file}: the last DO block does not print \`RAISE NOTICE '${id} OK'\`, the id the file declares`);
+  return problems;
+}
+
+const functionNames = (dir) =>
+  new Set(
+    ["supabase/schema.sql", ...migrationFiles(dir).map((f) => `${dir}/${f}`)]
+      .filter((f) => existsSync(f))
+      .flatMap((f) => [...readFileSync(f, "utf8").matchAll(/CREATE (?:OR REPLACE )?FUNCTION (?:public\.)?(\w+)\s*\(/gi)].map((m) => m[1].toLowerCase())),
+  );
+
+/** How a file is undone: a down file or an irreversible marker with a recovery, never both and never neither. */
+export function reversalProblems(file, text, notes, dir) {
+  const down = existsSync(`${dir}/down/${numberOf(file)}.sql`);
+  const marker = /^-- irreversible: (\S.*)$/m.exec(text)?.[1] ?? notes[file.replace(/\.sql$/, "")]?.irreversible ?? null;
+  const problems = [];
+  if (down && marker) problems.push(`${file}: has a down file and an irreversible marker; it is one or the other`);
+  if (!down && !marker) problems.push(`${file}: no down file (${dir}/down/${numberOf(file)}.sql) and no \`-- irreversible: <recovery>\` marker: how it is undone is a script or a stated recovery, never a prose header`);
+  if (down && isData(file)) problems.push(`${file}: a data migration has no down file (the schema job never commits it, so a down file would never run); name its recovery as irreversible`);
+  if (down) {
+    const body = readFileSync(`${dir}/down/${numberOf(file)}.sql`, "utf8");
+    if (statementsOf(body).some((sql) => /^(BEGIN|COMMIT|ROLLBACK|START\s+TRANSACTION)\b/i.test(sql))) problems.push(`${dir}/down/${numberOf(file)}.sql: a down file holds no transaction statement (the schema job wraps it in one that rolls back)`);
+  }
+  return problems;
+}
+
 export function migrationProblems(dir = "supabase/migrations") {
-  const files = readdirSync(dir).filter((f) => /^\d{4}_.+\.sql$/.test(f)).sort();
+  const files = migrationFiles(dir);
   const listed = [...readFileSync(`${dir}/README.md`, "utf8").matchAll(/^\| (\d{4}_\S+) \|/gm)].map((m) => m[1]);
   const have = existsSync(`${dir}/APPLY.md`) ? readFileSync(`${dir}/APPLY.md`, "utf8").replace(/\r\n/g, "\n") : "";
   const plan = planProblems(dir);
+  const notes = applyNotes(dir);
+  const tables = new Set(Object.keys(JSON.parse(readFileSync("tests/_support/schema.json", "utf8")).tables));
+  const functions = functionNames(dir);
+  const downFiles = existsSync(`${dir}/down`) ? readdirSync(`${dir}/down`).filter((f) => f.endsWith(".sql")) : [];
   return [
     ...plan,
     ...(plan.length || have === planText(dir) ? [] : [`${dir}/APPLY.md differs from the directory: run \`node scripts/ci/apply-plan.mjs --write\` and commit it (the cutover order cannot drift from the files)`]),
     ...files.filter((f) => !listed.includes(f.replace(/\.sql$/, ""))).map((f) => `${dir}/README.md does not list ${f}`),
     ...listed.filter((l) => !files.includes(`${l}.sql`)).map((l) => `${dir}/README.md lists ${l}, which is not a file`),
+    ...downFiles.filter((d) => !files.some((f) => numberOf(f) === d.slice(0, 4))).map((d) => `${dir}/down/${d} belongs to no migration`),
     ...files.flatMap((f) => {
-      const text = readFileSync(`${dir}/${f}`, "utf8");
+      const text = readFileSync(`${dir}/${f}`, "utf8").replace(/\r\n/g, "\n");
+      const note = notes[f.replace(/\.sql$/, "")] ?? {};
       const borrowed = borrowedRowProblems(text).map((p) => `${f}: ${p}`);
-      if (borrowed.length) return borrowed;
-      return generatedProblems(text).map((p) => `${f}: ${p}`);
+      const generated = generatedProblems(text).map((p) => `${f}: ${p}`);
+      if (borrowed.length || generated.length) return [...borrowed, ...generated];
+      const superseded = note.selfCheckBy ? (files.includes(`${note.selfCheckBy}.sql`) ? [] : [`${f}: apply-notes selfCheckBy names ${note.selfCheckBy}, which is not a file`]) : selfCheckStructureProblems(f, text);
+      const scope = /^-- GENERATED by /m.test(text) ? [] : scopeProblems(text, { tables, functions, waivers: note.unscopedReads ?? {} }).map((p) => `${f}: ${p}`);
+      return [...superseded, ...scope, ...reversalProblems(f, text, notes, dir)];
     }),
   ];
+}
+
+if (isMain(import.meta.url)) {
+  const problems = migrationProblems();
+  for (const p of problems.slice(0, 60)) console.error(p);
+  if (problems.length > 60) console.error(`... and ${problems.length - 60} more`);
+  console.log(problems.length ? `migration-checks: ${problems.length} problem(s)` : "migration-checks: clean");
+  process.exit(problems.length ? 1 : 0);
 }

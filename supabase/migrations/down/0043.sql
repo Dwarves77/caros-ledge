@@ -1,0 +1,2 @@
+-- Down for 0043_comment_region_coverage_notes: the column comment returns to the text before the migration (a comment is not in the catalog snapshot; the schema job applies this file all the same).
+COMMENT ON COLUMN public.region_dimension_coverage.notes IS 'Operator narrative for why state is partial/pending/missing. Optional. Surfaced in admin coverage review UI; not rendered to customers directly.';

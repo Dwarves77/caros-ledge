@@ -4,6 +4,7 @@
 // With no file names the list is APPLY.md's: the schema files from --from (default 0004) in name order minus the rows apply-notes.json holds, then the data files in name order. Names may be given with or without .sql.
 // Each file's own first `BEGIN;` and last `COMMIT;` are stripped (a file framed any other way is refused), and `cutover-dry-run: <file>` is raised between files so the first failure names its file.
 import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { register } from "node:module";
 import { pathToFileURL } from "node:url";
 
 const DIR = "supabase/migrations";
@@ -47,14 +48,17 @@ async function run() {
   const args = process.argv.slice(2);
   const fi = args.indexOf("--from");
   const from = fi >= 0 ? args.splice(fi, 2)[1] : "0004";
+  register("../lib/ts-hooks.mjs", import.meta.url, { data: {} });
+  const { skipVerdict } = await import("../../src/core/harness/exit.ts");
   const url = process.env.DATABASE_URL;
-  if (!url) { console.error("DATABASE_URL (the direct connection) is required"); process.exit(2); }
+  const verdict = skipVerdict(process.env, url ? [] : ["DATABASE_URL"], true); // a rehearsal asked for by name that has no database has not run
+  if (verdict.message) { console.error(`dry run: ${verdict.message} (the direct connection string)`); process.exit(verdict.exit); }
   const notes = existsSync(`${DIR}/apply-notes.json`) ? JSON.parse(readFileSync(`${DIR}/apply-notes.json`, "utf8")) : {};
   const names = args.length ? args.map((a) => (a.endsWith(".sql") ? a : `${a}.sql`)) : planFiles(readdirSync(DIR), notes, from);
   let script;
   try {
     script = buildScript(names.map((name) => ({ name, text: readFileSync(`${DIR}/${name}`, "utf8") })));
-  } catch (e) { console.error(e.message); process.exit(2); }
+  } catch (e) { console.error(e.message); process.exit(1); }
   const { default: pg } = await import("pg");
   const client = new pg.Client({ connectionString: url });
   let current = "(before the first file)";

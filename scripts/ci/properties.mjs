@@ -1,10 +1,12 @@
 // Property checks against the applied database (DATABASE_URL), read through the pg client (scripts/ci/psql.mjs).
-// Each check is scripts/ci/checks/<key>.sql (first line: its label). A waiver in baseline-waivers.json names the slice that owes
-// the fix; a check without a waiver fails the run on any offender. Every check is also proven on every run by an attack: its
-// planted violation (scripts/ci/fixtures/<key>.sql) is run inside a transaction that rolls back, and the check must report a row
-// it did not report live. A check that passes its planted violation fails the run.
+// Each check is scripts/ci/checks/<key>.sql (first line: its label); `{{schemas}}` in it is the array of the schemas the app reads (every schema that is not the platform's, see judge.mjs). The verdicts are in
+// scripts/ci/properties/judge.mjs: a check fails on any offender no waiver names (scripts/ci/baseline-waivers.json names each waived row and the slice that owes the fix), and every check is proven on every run by an
+// attack: its planted violation (scripts/ci/fixtures/<key>.sql, whose `-- expect:` lines say what each branch returns) is run inside a transaction that rolls back, and the check must report exactly those rows.
+//   node scripts/ci/properties.mjs [--only <key>]
 import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { parseArgs } from "node:util";
 
+import { appSchemasSql, attackProblems, judgeRows, waiverShapeProblems } from "./properties/judge.mjs";
 import { psql } from "./psql.mjs";
 
 const url = process.env.DATABASE_URL;
@@ -12,13 +14,11 @@ if (!url) {
   console.error("DATABASE_URL is required");
   process.exit(1);
 }
-const waivers = JSON.parse(readFileSync("scripts/ci/baseline-waivers.json", "utf8"));
-let failed = false;
-for (const [key, w] of Object.entries(waivers)) {
-  if (!/^P\d-[A-Z0-9]+$/.test(w.slice ?? "") || !w.date || !Number.isInteger(w.baseline)) {
-    console.error(`waiver ${key}: needs slice (e.g. P2-S1), date and integer baseline`);
-    failed = true;
-  }
+const { values } = parseArgs({ options: { only: { type: "string" } }, strict: true });
+const keys = readdirSync("scripts/ci/checks").filter((f) => f.endsWith(".sql")).map((f) => f.slice(0, -4)).sort();
+if (values.only && !keys.includes(values.only)) {
+  console.error(`--only ${values.only}: there is no such check (${keys.join(", ")})`);
+  process.exit(1);
 }
 
 function rowsOf(sql) {
@@ -30,28 +30,31 @@ function rowsOf(sql) {
   return r.stdout.split("\n").filter(Boolean);
 }
 
+const platform = JSON.parse(readFileSync("scripts/ci/data/production-shape.json", "utf8")).shape.schemaAcls.map((s) => s.schema);
+const schemaSql = appSchemasSql(platform);
+const schemas = rowsOf(`SELECT unnest(${schemaSql})`);
+const withSchemas = (sql) => sql.replaceAll("{{schemas}}", schemaSql);
+
+const waivers = JSON.parse(readFileSync("scripts/ci/baseline-waivers.json", "utf8"));
+const problems = waiverShapeProblems(waivers, keys);
 let nChecks = 0;
 let nPlanted = 0;
-for (const file of readdirSync("scripts/ci/checks").filter((f) => f.endsWith(".sql")).sort()) {
-  const key = file.slice(0, -4);
-  const sql = readFileSync(`scripts/ci/checks/${file}`, "utf8");
+for (const key of values.only ? [values.only] : keys) {
+  const sql = withSchemas(readFileSync(`scripts/ci/checks/${key}.sql`, "utf8"));
   const label = sql.split("\n")[0].replace(/^-- /, "");
   const rows = rowsOf(sql);
-  const waiver = waivers[key];
+  const verdict = judgeRows(key, rows, waivers[key]);
   nChecks += 1;
-  if (rows.length === 0) console.log(`PASS ${key}: ${label}`);
-  else {
-    const waived = waiver && rows.length <= waiver.baseline;
-    console.log(`${waived ? "WAIVED" : "FAIL"} ${key}: ${label} (${rows.length} offending${waiver ? `, baseline ${waiver.baseline}, slice ${waiver.slice}` : ""})`);
-    for (const row of rows) console.log(`  ${row}`);
-    if (!waived) failed = true;
-  }
+  console.log(`${verdict.status} ${key}: ${label}${verdict.waived.length ? ` (${verdict.waived.length} waived, slice ${waivers[key].slice})` : ""}`);
+  for (const row of rows) console.log(`  ${row}`);
+  problems.push(...verdict.problems);
   const fixture = `scripts/ci/fixtures/${key}.sql`;
-  const hits = existsSync(fixture) ? rowsOf(`BEGIN;\n${readFileSync(fixture, "utf8")}\n${sql}\nROLLBACK;`).filter((r) => !rows.includes(r)) : [];
-  if (hits.length === 0) {
-    console.error(`ATTACK FAILED ${key}: ${existsSync(fixture) ? "the planted violation passed" : "no planted violation in scripts/ci/fixtures"}`);
-    failed = true;
-  } else nPlanted += hits.length;
+  const fixtureText = existsSync(fixture) ? readFileSync(fixture, "utf8") : null;
+  const planted = fixtureText === null ? [] : rowsOf(`BEGIN;\n${withSchemas(fixtureText)}\n${sql}\nROLLBACK;`);
+  const attack = attackProblems(key, fixtureText, planted, rows);
+  problems.push(...attack);
+  nPlanted += planted.filter((r) => !rows.includes(r)).length;
 }
-console.log(`${nChecks} checks, ${nPlanted} planted violations flagged`);
-process.exit(failed ? 1 : 0);
+for (const p of problems) console.error(p);
+console.log(`${nChecks} checks over ${schemas.join(", ")}, ${nPlanted} planted violations flagged`);
+process.exit(problems.length ? 1 : 0);

@@ -30,7 +30,7 @@ test("persona matrix: in-app Accept and Decline act on the invitation id; only a
   assert.deepEqual(rpcs.filter((r) => r.name === "decline_invitation_by_id")[0]?.args, { p_invitation_id: ID });
   assert.equal(rpcs.filter((r) => r.name === "accept_invitation" || r.name === "decline_invitation").length, 0, "the by-id route never touches the token rpc");
   assert.equal((await call(accept, "member", "/x", { method: "POST" }, { id: "not-a-uuid" })).status, 400);
-  assert.equal(rpcs.length, 10, "a malformed id reached no rpc");
+  assert.equal(rpcs.length, (PERSONAS.length - 1) * 2, "a malformed id reached no rpc: accept and decline for every persona but anon");
 });
 
 test("the rpc's refusals map through the one table: a different e-mail or a ban is 403, an unknown invitation 404, an answered or expired one 409", async () => {

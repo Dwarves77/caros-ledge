@@ -8,14 +8,16 @@
 //   renderDataSourceSeedSql     -> executes against data_sources (rolled back), is idempotent, and lands every register key with its verdict
 //   renderHostClassCheck        -> the host_verdicts class CHECK (migration 0042): the class names of the tier contract, compared with the applied constraint by pg_get_constraintdef (IMP-054)
 // Everything runs in a transaction that rolls back. Each comparison is attacked on every run: a mutated copy of the generated text must be
-// flagged, or the run fails. Exit 1 on a mismatch or a failed attack; exit 2 when DATABASE_URL is not set.
+// flagged, or the run fails. Exit 1 on a mismatch, a failed attack, or a missing DATABASE_URL where the event could carry one; exit 2 only where nothing was promised (src/core/harness/exit.ts).
 import { renderHostClassCheck } from "../../gen/host-class-check.mjs";
 import { psql } from "../psql.mjs";
 
 const url = process.env.DATABASE_URL;
-if (!url) {
-  console.error("generator-pins: DATABASE_URL is not set (skipped)");
-  process.exit(2);
+const { skipVerdict } = await import("@/core/harness/exit");
+const verdict = skipVerdict(process.env, url ? [] : ["DATABASE_URL"]);
+if (verdict.message) {
+  console.error(`generator-pins: ${verdict.message}`);
+  process.exit(verdict.exit);
 }
 const c = await import("@/core/contracts");
 
