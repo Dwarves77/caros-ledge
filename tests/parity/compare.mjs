@@ -226,6 +226,10 @@ async function main() {
           }
         }
       }
+      if (gated && !route.files.length) {
+        lines.push('the baseline holds no file for this route: nothing was compared');
+        routeFail = true;
+      }
       failed ||= routeFail;
       report.push({ route: route.name, result: routeFail ? 'FAIL' : gated ? 'PASS' : 'REPORTED', lines });
     }
@@ -238,6 +242,10 @@ async function main() {
   }
   // Only routes this run compared count: a skipped route cannot show that its waivers are unused.
   const compared = new Set(report.filter((r) => r.result !== 'SKIPPED' && r.result !== 'ERROR').map((r) => r.route));
+  if (!compared.size) {
+    console.log('parity: no route was compared with its baseline');
+    failed = true;
+  }
   const unused = config.approved.filter((a) => compared.has(a.route) && !USED_WAIVERS.has(a.id)).map((a) => a.id);
   console.log(`unused waivers: ${unused.length ? unused.join(', ') : 'none'}`);
   console.log(failed ? 'parity: FAIL' : 'parity: ok');

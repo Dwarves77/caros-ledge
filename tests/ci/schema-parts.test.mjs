@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { selfCheckStructureProblems } from "../../scripts/ci/migration-checks.mjs";
 import { shapeDiff } from "../../scripts/ci/schema/shape.mjs";
 import { scopeProblems } from "../../scripts/ci/schema/self-check-scope.mjs";
 import { changesDatabase, lastDoIndex, statementsOf } from "../../scripts/ci/schema/statements.mjs";
@@ -45,4 +46,12 @@ test("shapeDiff: equal shapes agree whatever the key order; a role setting that 
   assert.match(found, /roles: anon: production-shape\.json has .*; production has none/);
   assert.match(found, /databaseOwner: production-shape\.json postgres; production supabase_admin/);
   assert.match(shapeDiff(shape, drifted).join("\n"), /this database/, "the default names are production and this database");
+});
+
+test("a self-check whose RAISE EXCEPTION sits only in a comment or a string can only pass, and is refused; one that can raise is accepted", () => {
+  const file = (body) => `-- Self-check 9999-x\nBEGIN;\nCREATE TABLE t (id int);\nDO $$ BEGIN\n${body}\nRAISE NOTICE '9999-x OK';\nEND $$;\nCOMMIT;\n`;
+  for (const body of ["-- RAISE EXCEPTION never", "/* RAISE EXCEPTION never */ NULL;", "PERFORM 'RAISE EXCEPTION';"]) {
+    assert.match(selfCheckStructureProblems("9999_x.sql", file(body)).join("|"), /no RAISE EXCEPTION/, body);
+  }
+  assert.deepEqual(selfCheckStructureProblems("9999_x.sql", file("IF false THEN RAISE EXCEPTION 'it--x'; END IF;")), []);
 });

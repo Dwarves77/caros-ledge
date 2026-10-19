@@ -86,9 +86,9 @@ export function selectColumns(list) {
 }
 
 /** Every violation in one source text. `schema` is loadSchema()'s result. Returns `{ line, message }` rows. */
-export function checkSource(text, schema, path = "x.ts") {
+export function checkSource(text, schema, path = "x.ts", calls = dbCallsOf(path, text)) {
   const problems = [];
-  for (const c of dbCallsOf(path, text)) {
+  for (const c of calls) {
     const add = (message, line = c.line) => problems.push({ line, message });
     if (c.kind === "rpc") {
       const fn = schema.fns.get(c.name);
@@ -117,7 +117,14 @@ export function checkSource(text, schema, path = "x.ts") {
 
 /** Run over a source tree. Returns the problems as `file:line: message`. */
 export function checkTree(root = "src", schema = loadSchema()) {
-  return walk(root, (n) => /\.(ts|tsx)$/.test(n)).flatMap((f) => checkSource(readFileSync(f, "utf8"), schema, f).map((p) => `${posix(f)}:${p.line}: ${p.message}`));
+  let checked = 0;
+  const problems = walk(root, (n) => /\.(ts|tsx)$/.test(n)).flatMap((f) => {
+    const text = readFileSync(f, "utf8");
+    const calls = dbCallsOf(f, text);
+    checked += calls.length;
+    return checkSource(text, schema, f, calls).map((p) => `${posix(f)}:${p.line}: ${p.message}`);
+  });
+  return checked ? problems : [...problems, `${root}: no database call was found to check (a check that read nothing certifies nothing)`];
 }
 
 if (isMain(import.meta.url)) {

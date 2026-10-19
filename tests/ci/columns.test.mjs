@@ -53,3 +53,9 @@ test('K:22: a write payload key, an upsert conflict column, an .or() string, .ma
   assert.deepEqual(msgs('sb.rpc("no_such_function", { a: 1 })'), ['.rpc("no_such_function") names a function the database does not define']);
   assert.deepEqual(msgs('sb.rpc("get_workspace_recent_changes", { p_typo: 1 })'), ['function "get_workspace_recent_changes" has no parameter "p_typo" (rpc arguments)']);
 });
+
+test("a tree with no database call to read fails the tree check: a check that read nothing certifies nothing", () => {
+  const dir = mkdtempSync(join(tmpdir(), "caros-columns-empty-"));
+  writeFileSync(join(dir, "none.ts"), "export const x = 1;\n");
+  assert.match(checkTree(dir, schema).join("|"), /no database call was found to check/);
+});
