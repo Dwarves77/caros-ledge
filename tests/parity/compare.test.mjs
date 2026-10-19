@@ -87,3 +87,18 @@ test('dataNames: a control named by live data compares by its stable prefix on b
   assert.deepEqual(compareRecord('community', '1280x900', base, ctl('Global room54x', 'EU room1y'), [], dataNames).fails, ['control missing: button:Post'], 'other controls are exact');
   assert.equal(compareRecord('community', '1280x900', base, live, [], dataNames).used.some((u) => u.startsWith('data names:')), true, 'the reason is recorded');
 });
+
+// Rule, not literal: the baseline is the new production site, so every waiver in the file must match a current difference (the unused-waivers line of compare.mjs), and every gated route must have baseline files.
+test('every gated full route has baseline files, and every standing waiver names a gated route and carries a ruling', async () => {
+  const index = JSON.parse(await readFile(new URL('./baseline/index.json', import.meta.url), 'utf8'));
+  for (const name of [...config.gates.full, ...config.gates.frame]) {
+    const r = index.routes.find((x) => x.name === name);
+    assert.ok(r, `gated route ${name} is in the baseline index`);
+    if (r.status === 'skipped') continue; // community-group: baseline owed, reported not failed
+    for (const stem of r.files) await readFile(new URL(`./baseline/${stem}.json`, import.meta.url), 'utf8');
+  }
+  for (const w of config.approved) {
+    assert.ok(w.ruling || w.kind === 'until-migration', `waiver ${w.id} carries its ruling`);
+    assert.ok([...config.gates.full, ...config.gates.frame].includes(w.route), `waiver ${w.id} names a gated route`);
+  }
+});

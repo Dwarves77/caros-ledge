@@ -54,11 +54,14 @@ export function subsequence(baseline, captured, key) {
 
 // A waiver of kind 'until-migration' (with `migration` and optionally `on`: landmark, heading or control) covers a difference that exists only because production carries no new migration before the
 // cutover window. It is counted apart from the look/ruling waivers, and tree-checks retires it once supabase/migrations/APPLIED.json lists the migration.
-const untilMigration = (approved, route, kind, text) => approved.find((a) => a.kind === 'until-migration' && a.route === route && (!a.on || a.on === kind) && (a.match === '*' || new RegExp(a.match).test(text)));
+// Waiver usage: every waiver id that covered a difference in this run lands here, so main() can end the report with the waivers that covered nothing (a waiver must match a current difference).
+export const USED_WAIVERS = new Set();
+const hit = (a) => { if (a) USED_WAIVERS.add(a.id); return a; };
+const untilMigration = (approved, route, kind, text) => hit(approved.find((a) => a.kind === 'until-migration' && a.route === route && (!a.on || a.on === kind) && (a.match === '*' || new RegExp(a.match).test(text))));
 // A waiver of kind 'order' (route, `match` on the control name, ruling) covers a "control reordered" line for a matching control where the old tree left the order unspecified (no secondary key, proven by file:line in the ruling)
 // and the new tree's deterministic rule stands. It waives ORDER ONLY: a missing or renamed control under the same pattern is not reordered, it fails.
-const orderWaived = (approved, route, text) => approved.some((a) => a.kind === 'order' && a.route === route && new RegExp(a.match).test(text));
-const isApproved = (approved, route, kind, text) => approved.some((a) => a.route === route && a.kind === kind && (a.match === '*' || new RegExp(a.match).test(text)));
+const orderWaived = (approved, route, text) => Boolean(hit(approved.find((a) => a.kind === 'order' && a.route === route && new RegExp(a.match).test(text))));
+const isApproved = (approved, route, kind, text) => Boolean(hit(approved.find((a) => a.route === route && a.kind === kind && (a.match === '*' || new RegExp(a.match).test(text)))));
 
 // `dataNames` ({route, match, keep, reason}): a control whose name is derived from live data (a count, then words drawn from the corpus) is compared by its stable prefix `keep`, on both sides, before the
 // subsequence check. Counts are already normalised; words derived from data are the same class. The reason is recorded in the report line.
@@ -214,7 +217,10 @@ async function main() {
               await mkdir(DIFF_DIR, { recursive: true });
               await writeFile(`${DIFF_DIR}/${stem}.png`, Buffer.from(d.image.split(',')[1], 'base64'));
             }
-            const waived = approved.some((a) => a.kind === 'pixel' && (a.viewport === undefined || a.viewport === viewport));
+            // A pixel waiver counts as used only when the diff is over the threshold on a gated route (the only case it changes the verdict).
+            const pixelWaiver = approved.find((a) => a.kind === 'pixel' && (a.viewport === undefined || a.viewport === viewport));
+            const waived = Boolean(pixelWaiver);
+            if (over && pixelExact.has(route.name)) hit(pixelWaiver);
             lines.push(`${viewport}: pixel diff ${(d.ratio * 100).toFixed(2)}% (threshold ${PIXEL_THRESHOLD * 100}%)${over && pixelExact.has(route.name) ? (waived ? ' over, waived by an approved change' : ' GATE') : ''}`);
             if (over && pixelExact.has(route.name) && !waived) routeFail = true;
           }
@@ -230,6 +236,10 @@ async function main() {
     console.log(`${r.result.padEnd(9)} ${r.route}${r.note ? `: ${r.note}` : ''}`);
     for (const l of r.lines ?? []) console.log(`            ${l}`);
   }
+  // Only routes this run compared count: a skipped route cannot show that its waivers are unused.
+  const compared = new Set(report.filter((r) => r.result !== 'SKIPPED' && r.result !== 'ERROR').map((r) => r.route));
+  const unused = config.approved.filter((a) => compared.has(a.route) && !USED_WAIVERS.has(a.id)).map((a) => a.id);
+  console.log(`unused waivers: ${unused.length ? unused.join(', ') : 'none'}`);
   console.log(failed ? 'parity: FAIL' : 'parity: ok');
   process.exit(failed ? 1 : 0);
 }
