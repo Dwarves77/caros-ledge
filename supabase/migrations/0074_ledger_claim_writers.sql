@@ -227,7 +227,8 @@ BEGIN
   IF EXISTS (SELECT 1 FROM unnest(v_keys) k WHERE k IS NULL OR k = '') OR (SELECT count(DISTINCT k) FROM unnest(v_keys) k) <> cardinality(v_keys) THEN
     RAISE EXCEPTION 'every section needs a distinct section_key' USING ERRCODE = '22023';
   END IF;
-  FOR s IN SELECT id, section_key FROM public.intelligence_item_sections WHERE item_id = p_item_id AND NOT (section_key = ANY (v_keys)) ORDER BY section_key FOR UPDATE LOOP
+  PERFORM 1 FROM public.intelligence_item_sections WHERE item_id = p_item_id FOR UPDATE;
+  FOR s IN SELECT id, section_key FROM public.intelligence_item_sections WHERE item_id = p_item_id AND NOT (section_key = ANY (v_keys)) ORDER BY section_key LOOP
     INSERT INTO public.claim_versions (current_claim_id, intelligence_item_id, section_row_id, claim_text, claim_kind, source_span, source_id, search_result_id, source_tier_at_grounding, mint_hold_reason, version_number, supersede_reason, inaccuracy_proof, note, superseded_at)
     SELECT c.id, c.intelligence_item_id, c.section_row_id, c.claim_text, c.claim_kind, c.source_span, c.source_id, c.search_result_id, c.source_tier_at_grounding, c.mint_hold_reason,
            coalesce((SELECT max(version_number) FROM public.claim_versions v WHERE v.current_claim_id = c.id), 0) + 1,
@@ -311,13 +312,13 @@ BEGIN
       (v_cap_c, v_item, 'https://nowhere-0074.invalid/page', 'An unregistered host states the cap is 12 percent.', 2);
 
     -- INV-R2b-3's measure: a fingerprint of every table a ledger function touches (claims, their archive, the sections, the item, its tombstone), compared before and after each injected failure
-    CREATE FUNCTION pg_temp.fp_0074(p_item uuid) RETURNS text LANGUAGE sql AS $f$
+    CREATE FUNCTION pg_temp.fp_0074(v_item uuid) RETURNS text LANGUAGE sql AS $f$
       SELECT md5(concat_ws('#',
-        (SELECT coalesce(string_agg(c::text, '|' ORDER BY c::text), '') FROM public.section_claim_provenance c WHERE c.intelligence_item_id = p_item),
-        (SELECT coalesce(string_agg(v::text, '|' ORDER BY v::text), '') FROM public.claim_versions v WHERE v.intelligence_item_id = p_item),
-        (SELECT coalesce(string_agg(x::text, '|' ORDER BY x::text), '') FROM public.intelligence_item_sections x WHERE x.item_id = p_item),
-        (SELECT coalesce(string_agg(i::text, '|' ORDER BY i::text), '') FROM public.intelligence_items i WHERE i.id = p_item),
-        (SELECT coalesce(string_agg(d::text, '|' ORDER BY d::text), '') FROM public.disposition_ledger d WHERE d.intelligence_item_id = p_item))) $f$;
+        (SELECT coalesce(string_agg(c::text, '|' ORDER BY c::text), '') FROM public.section_claim_provenance c WHERE c.intelligence_item_id = v_item),
+        (SELECT coalesce(string_agg(v::text, '|' ORDER BY v::text), '') FROM public.claim_versions v WHERE v.intelligence_item_id = v_item),
+        (SELECT coalesce(string_agg(x::text, '|' ORDER BY x::text), '') FROM public.intelligence_item_sections x WHERE x.item_id = v_item),
+        (SELECT coalesce(string_agg(i::text, '|' ORDER BY i::text), '') FROM public.intelligence_items i WHERE i.id = v_item),
+        (SELECT coalesce(string_agg(d::text, '|' ORDER BY d::text), '') FROM public.disposition_ledger d WHERE d.intelligence_item_id = v_item))) $f$;
 
     -- the host helpers
     IF public.ledger_host_of('https://User:pw@WWW.Example.COM:8443/a?b#c') <> 'example.com' THEN RAISE EXCEPTION '0074-ledger-writers: host_of gave %', public.ledger_host_of('https://User:pw@WWW.Example.COM:8443/a?b#c'); END IF;
