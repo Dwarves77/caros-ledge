@@ -6,7 +6,7 @@
     "width": 1280,
     "height": 900
   },
-  "captured_at": "2026-10-19T03:13:42.483Z",
+  "captured_at": "2026-10-19T20:55:30.260Z",
   "http_status": 200,
   "final_path": "/market",
   "network_idle": true,
@@ -17,53 +17,33 @@
   "landmarks": [
     {
       "role": "complementary",
-      "name": "Caro's LedgeFreight Sustainability IntelligenceBriefDashboardWatchlistIntelligenceRegulationsMarket IntelResearchOperationsMapNetworkCommunityAccountDietl / Rockit",
+      "name": "",
       "source": "implicit"
     },
     {
       "role": "navigation",
-      "name": "BriefDashboardWatchlistIntelligenceRegulationsMarket IntelResearchOperationsMapNetworkCommunity",
+      "name": "",
       "source": "implicit"
     },
     {
       "role": "main",
-      "name": "VOL IV · No. 43 · Monday, October 19, 2026Market Intelligence54 active signals · 16 observed series⌕⌘KAskImmediate≤ 90 days0Action≤ 6 months11Monitor6–12 months8Awarenessbackground35Signal kindAllMonitoringCost alertModeAllOceanRoadAirRailRegionAllGLOBALUSSGUS-CACNEUINPHAEASEANAUBRCACA-NTESIMOKEKRNLUS-COUS-MDUS-MNVNZAWorkspace tagsAllFiltersHeadline series5 of 16 · dated, sourced observations · Series board →Diesel · EU avg before tax +1 quotes€1,217.15/1000L▼1.7% 1w1m · no data yetYoY · no data yetLast year: 2 observations, 2026-08-24 to 2026-08-31as of 2026-08-31Weekly Oil Bulletin, week of 2026-08-31No longer updatedT2Euro-Super 95 · EU avg +1 quotes€1,014.66/1000L▲0.7% 1w1m · no data yetYoY · no data yetLast year: 2 observations, 2026-08-24 to 2026-08-31as of 2026-08-31Weekly Oil Bulletin, week of 2026-08-31No longer updatedT2Heavy fuel oil 3.5%S€535.77/tonne▼8.1% 1w1m · no data yetYoY · no data yetLast year: 2 observations, 2026-08-24 to 2026-08-31as of 2026-08-31Weekly Oil Bulletin, week of 2026-08-31No longer updatedT2Residual fuel oil 1%S€646.17/tonne▲1.8% 1w1m · no data yetYoY · no data yetLast year: 2 observations, 2026-08-24 to 2026-08-31as of 2026-08-31Weekly Oil Bulletin, week of 2026-08-31No longer updatedT2Jet fuel · EIA kerosene spot$3.72 $/GAL▼5.3% 1w▲1.1% 1m▲82.9% YoYLast year: 53 observations, 2025-08-29 to 2026-08-28as of 2026-08-28EIA Open Data API v2, petroleum/pri/spt, series EER_EPJK_PF4_RGC_DPG, period 2026-08-28No longer updatedT3Heating gas oil (EU average, before taxes)€1,034.14/1000L▼0.1% 1w1m · no data yetYoY · no data yetLast year: 2 observations, 2026-08-24 to 2026-08-31as of 2026-08-31Weekly Oil Bulletin, week of 2026-08-31No longer updatedT2LPG motor fuel (EU average, before taxes)€537.74/1000L▼0.7% 1w1m · no data yetYoY · no data yetLast year: 2 observations, 2026-08-24 to 2026-08-31as of 2026-08-31Weekly Oil Bulletin, week of 2026-08-31No longer updatedT2Brent crude oil spot price — NA$89.73 $/BBL▼4.7% 1w▼6.6% 1m▲32.3% YoYLast year: 53 observations, 2025-08-29 to 2026-08-28as of 2026-08-28EIA Open Data API v2, petroleum/pri/spt, series RBRTE, period 2026-08-28No longer updatedT3Propane, Mont Belvieu TX, spot price — NA$0.69 $/GAL▼5.6% 1w▼4.8% 1m▲3.0% YoYLast year: 53 observations, 2025-08-29 to 2026-08-28as of 2026-08-28EIA Open Data API v2, petroleum/pri/spt, series EER_EPLLPA_PF4_Y44MB_DPG, period 2026-08-28No longer updatedT3WTI crude oil spot price — NA$84.62 $/BBL▼3.1% 1w▼4.5% 1m▲31.9% YoYLast year: 53 observations, 2025-08-29 to 2026-08-28as of 2026-08-28EIA Open Data API v2, petroleum/pri/spt, series RWTC, period 2026-08-28No longer updatedT3Freshness · No longer updatedAt least one series has gone quiet: its source has stopped publishing, not merely slipped.16 no longer updatedMethodology & provenance for these seriesAutomotive gas oil / diesel (EU average, before taxes)DerivationobservedOrigin classofficialSource keyec_weekly_oil_bulletinSource refWeekly Oil Bulletin, week of 2026-08-31LicenceCC BY 4.0 (Decision 2011/833/EU)AttributionSource: European Commission, Weekly Oil Bulletin (DG Energy). © European Union — reused under Decision 2011/833/EU (CC BY 4.0); changes indicated.Source ratingT2 · Regulator guidanceAs of2026-08-31Euro-Super 95 (EU average, before taxes)DerivationobservedOrigin classofficialSource keyec_weekly_oil_bulletinSource refWeekly Oil Bulletin, week of 2026-08-31LicenceCC BY 4.0 (Decision 2011/833/EU)AttributionSource: European Commission, Weekly Oil Bulletin (DG Energy). © European Union — reused under Decision 2011/833/EU (CC BY 4.0); changes indicated.Source ratingT2 · Regulator guidanceAs of2026-08-31Heavy fuel oil 3.5%S (EU average, before taxes)DerivationobservedOrigin classofficialSource keyec_weekly_oil_bulletinSource refWeekly Oil Bulletin, week of 2026-08-31LicenceCC BY 4.0 (Decision 2011/833/EU)AttributionSource: European Commission, Weekly Oil Bulletin (DG Energy). © European Union — reused under Decision 2011/833/EU (CC BY 4.0); changes indicated.Source ratingT2 · Regulator guidanceAs of2026-08-31Residual fuel oil 1%S (EU average, before taxes)DerivationobservedOrigin classofficialSource keyec_weekly_oil_bulletinSource refWeekly Oil Bulletin, week of 2026-08-31LicenceCC BY 4.0 (Decision 2011/833/EU)AttributionSource: European Commission, Weekly Oil Bulletin (DG Energy). © European Union — reused under Decision 2011/833/EU (CC BY 4.0); changes indicated.Source ratingT2 · Regulator guidanceAs of2026-08-31Kerosene-type jet fuel spot price — NADerivationobservedOrigin classofficialSource keyeiaSource refEIA Open Data API v2, petroleum/pri/spt, series EER_EPJK_PF4_RGC_DPG, period 2026-08-28LicenceUS public domain (17 USC 105)AttributionSource: U.S. Energy Information AdministrationSource ratingT3 · Intergovernmental analysisAs of2026-08-28Heating gas oil (EU average, before taxes)DerivationobservedOrigin classofficialSource keyec_weekly_oil_bulletinSource refWeekly Oil Bulletin, week of 2026-08-31LicenceCC BY 4.0 (Decision 2011/833/EU)AttributionSource: European Commission, Weekly Oil Bulletin (DG Energy). © European Union — reused under Decision 2011/833/EU (CC BY 4.0); changes indicated.Source ratingT2 · Regulator guidanceAs of2026-08-31LPG motor fuel (EU average, before taxes)DerivationobservedOrigin classofficialSource keyec_weekly_oil_bulletinSource refWeekly Oil Bulletin, week of 2026-08-31LicenceCC BY 4.0 (Decision 2011/833/EU)AttributionSource: European Commission, Weekly Oil Bulletin (DG Energy). © European Union — reused under Decision 2011/833/EU (CC BY 4.0); changes indicated.Source ratingT2 · Regulator guidanceAs of2026-08-31Brent crude oil spot price — NADerivationobservedOrigin classofficialSource keyeiaSource refEIA Open Data API v2, petroleum/pri/spt, series RBRTE, period 2026-08-28LicenceUS public domain (17 USC 105)AttributionSource: U.S. Energy Information AdministrationSource ratingT3 · Intergovernmental analysisAs of2026-08-28Propane, Mont Belvieu TX, spot price — NADerivationobservedOrigin classofficialSource keyeiaSource refEIA Open Data API v2, petroleum/pri/spt, series EER_EPLLPA_PF4_Y44MB_DPG, period 2026-08-28LicenceUS public domain (17 USC 105)AttributionSource: U.S. Energy Information AdministrationSource ratingT3 · Intergovernmental analysisAs of2026-08-28WTI crude oil spot price — NADerivationobservedOrigin classofficialSource keyeiaSource refEIA Open Data API v2, petroleum/pri/spt, series RWTC, period 2026-08-28LicenceUS public domain (17 USC 105)AttributionSource: U.S. Energy Information AdministrationSource ratingT3 · Intergovernmental analysisAs of2026-08-2854 signals · grouped by band · Show as one listSortNext dateNewestA-ZAction≤ 6 monthsshowing 5 of 11USSPC Impact 2026: Industry-Wide Shift in Sustainable Packaging Practices and Recyclability StandardsMonitoringinitiative · packagingneeds more dataFoundation fundedStandards defining+4 more—T4Foundation fundedStandards defining+4 more⋯USU.S. Energy Information Administration Short-Term Energy OutlookMonitoringmarket_signal · researchneeds more dataGovernment fundedFactual reporting+2 more—T3Government fundedFactual reporting+2 more⋯INThe Loadstar Supply Chain News Feed - May 9, 2026Cost alertmarket_signal · corridorsneeds more dataFactual reportingSubscription supported · lower confidence+4 more—T6Factual reportingSubscription supported · lower confidence+4 more⋯GLOBALLloyd's Register Maritime Decarbonisation Hub: Leadership and Evidence for Sustainable ShippingMonitoringinitiative · fuelsneeds more dataStandards definingIndustry funded+3 more—T4Standards definingIndustry funded+3 more⋯KRSouth Korea K-Taxonomy for Sustainable Transport Activitiesmarket_signal · air, road, ocean, rail · reportingneeds more dataGovernment fundedRegulator aligned+2 more—T1Government fundedRegulator aligned+2 more⋯All 11 action →then Monitor · 8Monitor6–12 monthsshowing 5 of 8EUEU Weekly Oil Bulletin — Residual fuel oil 1%S (EU average, before taxes)Catalogue recordmarket_signalneeds more dataGovernment fundedRegulator aligned+2 moreCatalogue record—T1Government fundedRegulator aligned+2 more⋯EUEU Weekly Oil Bulletin — Heavy fuel oil 3.5%S (EU average, before taxes)Catalogue recordmarket_signalneeds more dataGovernment fundedRegulator aligned+2 moreCatalogue record—T1Government fundedRegulator aligned+2 more⋯EUEU Weekly Oil Bulletin — LPG motor fuel (EU average, before taxes)Catalogue recordmarket_signalneeds more dataGovernment fundedRegulator aligned+2 moreCatalogue record—T1Government fundedRegulator aligned+2 more⋯EUEU Weekly Oil Bulletin — Heating gas oil (EU average, before taxes)Catalogue recordmarket_signalneeds more dataGovernment fundedRegulator aligned+2 moreCatalogue record—T1Government fundedRegulator aligned+2 more⋯EUEU Weekly Oil Bulletin — Euro-Super 95 (EU average, before taxes)Catalogue recordmarket_signalneeds more dataGovernment fundedRegulator aligned+2 moreCatalogue record—T1Government fundedRegulator aligned+2 more⋯All 8 monitor →then Awareness · 35Awarenessbackgroundshowing 5 of 35AUGlobal Maritime Forum Green Corridors Initiative: 50+ Trade Routes Catalyzing Zero-Emission Shipping TransitionMonitoringinitiative · corridorsneeds more dataIndustry fundedIndustry incumbent+4 more—T4Industry fundedIndustry incumbent+4 more⋯SGMaritime Singapore Decarbonisation Blueprint: Working Towards 2050Monitoringmarket_signal · infrastructureneeds more dataGovernment fundedRegulator aligned+2 more—T2Government fundedRegulator aligned+2 more⋯GLOBALUNCTAD Sustainable Freight Transport Framework: Six-Step Strategic Planning Methodology for Global Supply Chain DecarbonizationMonitoringmarket_signal · reportingneeds more dataGovernment fundedRegulator aligned+3 more—T3Government fundedRegulator aligned+3 more⋯GLOBALDP World Sustainability Strategy: Net Zero Pathway and ESG Framework AlignmentMonitoringmarket_signal · reportingneeds more dataIndustry fundedIndustry incumbent+2 more—T6Industry fundedIndustry incumbent+2 more⋯PHASEAN Transport Strategic Plan 2016-2025 and Regional Cooperation FrameworkMonitoringmarket_signal · transportneeds more dataGovernment fundedRegulator aligned+2 more—T3Government fundedRegulator aligned+2 more⋯All 35 awareness →end of listThemes across the corpus5 activeShared source on Market Intel6 itemsMarket Intel· EU Weekly Oil Bulletin — Heavy fuel oil 3.5%S (EU average, before taxes)· EU Weekly Oil Bulletin — LPG motor fuel (EU average, before taxes)· EU Weekly Oil Bulletin — Automotive gas oil / diesel (EU average, before taxes)Shared scenarios across 4 pages43 itemsRegulationsMarket IntelResearchOperations· California Advanced Clean Fleets Rule (CARB)· Alaska Department of Transportation Measurement Standards & Commercial Vehicle Compliance Resources· Brazil Regional Operations ProfileMaritime decarbonisation: the IMO net-zero arc, EU MRV and ETS-for-shipping machinery, and the green-corridor economy40 itemsRegulationsMarket IntelResearchOperationsBrief · out of date· MEPC.377(80) - IMO Marine Environment Protection Committee Resolution· IMO MARPOL Annex VI· IMO Net-Zero FrameworkClimate-risk disclosure convergence: CSRD's Scope 3 core, California's SB 261/253 axis, and the CBAM/due-diligence periphery44 itemsRegulationsMarket IntelResearchOperationsBrief · out of date· California SB 261 — Climate-Related Financial Risk Act· California SB 253 — Climate Corporate Data Accountability Act· Directive (EU) 2025/794 of the European Parliament and of the Council of 14 April 2025 amending Directives (EU) 2022/2464 and (EU) 2024/1760 as regards the dates from which Member States are to apply certain corporate sustainability reporting and due diligence requirements (Text with EEA relevance)Shared source across 4 pages847 itemsRegulationsMarket IntelResearchOperations· Directive 2003/87/EC of the European Parliament and of the Council of 13 October 2003 establishing a scheme for greenhouse gas emission allowance trading within the Community and amending Council Directive 96/61/EC (Text with EEA relevance)· Council Regulation (EC) No 1420/1999 of 29 April 1999 establishing common rules and procedures to apply to shipments to certain non-OECD countries of certain types of waste· Final Act of the International Conference and Decision by the Energy Charter Conference in respect of the amendment to the trade-related provisions of the Energy Charter Treaty - Joint Declarations - Annex I: Amendment to the Trade-Related Provisions of the Energy Charter Treaty - Annex II: Decisions in connection with the Adoption of the Amendment to the Trade-Related Provisions of the Energy Charter TreatyCoverage: 1,657 of 1,673 catalogued Market Intel instruments are dual-verified. 1,440 verified briefs are on the platform. See coverageFiltersClearSignal kindMonitoring40Cost alert7ModeOcean21Road14Air11Rail1RegionGLOBAL18US8SG4US-CA3CN2EU2+ 18 moreCarbon cost per FEUShanghai – Rotterdam · ocean4 inputs missingShanghai – New York · ocean4 inputs missingA figure needs four inputs: an emission factor, a routing distance, a payload and a carbon price.Next data dropsECB euro foreign exchange reference ratesSep 4, 2026US EIA fuel and energy pricesSep 4, 2026EU Weekly Oil BulletinSep 7, 2026LegendImpact8/12TimelinePassed · next · ahead.Source tierT1 binding law → T7 overflow / uncategorized.Sources trackedEU Weekly Oil BulletinweeklyEEX EUA primary auctionsper auctionCarrier-published ETS and FuelEU surcharge noticesper carrier noticeECB euro foreign exchange reference ratesdailyUS EIA fuel and energy pricesweeklySBTi Target DashboardweeklyCarbon cost per FEUper corridor, from carrier-published surchargesThe carbon cost of a forty-foot container on each corridor: the emission factor for the corridor's mode, through its routing distance and container payload, at a carrier-published carbon price. Corridors are UN/LOCODE port pairs and a mode.GapShanghai (CN) → Rotterdam (NL), oceanNetherlands (NL)China (CN)no emission factor supplied for this corridor's modeno corridor routing distance available yet (no licence-clear distance dataset in this product today)no cited tonnes-per-FEU payload convention available (GLEC and ISO 14083 are both licence-prohibited; no substitute is registered)no EU ETS/FuelEU/CBAM/UKA carbon-price input from carrier-published surchargesGapShanghai (CN) → New York (US), oceanUnited States (US)China (CN)no emission factor supplied for this corridor's modeno corridor routing distance available yet (no licence-clear distance dataset in this product today)no cited tonnes-per-FEU payload convention available (GLEC and ISO 14083 are both licence-prohibited; no substitute is registered)no EU ETS/FuelEU/CBAM/UKA carbon-price input from carrier-published surchargesGapShanghai (CN) → Los Angeles (US), oceanUnited States (US)China (CN)no emission factor supplied for this corridor's modeno corridor routing distance available yet (no licence-clear distance dataset in this product today)no cited tonnes-per-FEU payload convention available (GLEC and ISO 14083 are both licence-prohibited; no substitute is registered)no EU ETS/FuelEU/CBAM/UKA carbon-price input from carrier-published surchargesGapShanghai (CN) → Genoa (IT), oceanChina (CN)Italy (IT)no emission factor supplied for this corridor's modeno corridor routing distance available yet (no licence-clear distance dataset in this product today)no cited tonnes-per-FEU payload convention available (GLEC and ISO 14083 are both licence-prohibited; no substitute is registered)no EU ETS/FuelEU/CBAM/UKA carbon-price input from carrier-published surchargesLead-time positionSBTi Target DashboardPeer-cohort distribution of months to each company's SBTi target commitment.Not forecastable: no lead-time rows are on record (at least 5 to draw a position).Policy timelineDated, forward-looking obligations for the modes and regions in scope: the filters you set above, otherwise your workspace's own modes and jurisdictions.Upcoming obligations8 eventsScope: Air, Ocean, Road, EU, HK, UK, US, GCC, IMO, UAE, ASIA, ICAO, MEAF, Asean, China, India, Japan, Korea, Latam, Brazil, Canada, Nordic, Turkey, Eafrica, Nafrica, Pacific, Safrica, Wafrica, Australia, Caribbean, Singapore, Switzerland53 hidden by your scope · Show allCompliance deadlineNovember 29, 2026Euro 7 StandardEUWith effect from 29 November 2026, Member States shall prohibit the sale or installation of a system, component or separate technical unit intended to be fitted on a vehicle of category M 1 or…Compliance deadlineNovember 29, 2026Euro 7 StandardEUBy 29 November 2026, the Commission shall adopt, for vehicles of categories M 2 , M 3 , N 2 and N 3, as referred to in paragraph 3, points (b) and (c), respectively, and their eng…Compliance deadlineNovember 29, 2026Euro 7 StandardEUWith effect from 29 November 2026, approval authorities shall, in the case of new types of vehicles of category M 1 or N 1 which do not comply with this Regulation, refuse to grant EU emission…Phase stepNovember 29, 2026Euro 7 StandardEUIt shall apply from 29 November 2026 for new types of vehicles of categories M 1 and N 1 and components, systems and separate technical units intended for vehicles of categories M 1 or N 1 type-ap…Compliance deadlineDecember 31, 2026EU PPWR 2025/40EUBy 31 December 2026, the Commission shall adopt implementing acts establishing the methodology for the calculation and verification of the percentage of recycled content recovered…Compliance deadlineDecember 31, 2026Commission Delegated Regulation (EU) 2024/3214 of 16 October 2024 amending Regulation (EU) 2015/757 of the European Parliament and of the Council as regards the rules for the monitoring of greenhouse gas emissions from offshore ships and the zero-rating of sustainable fuelsEUAccording to Article 3gg(5) of that Directive, no later than 31 December 2026, the Commission should present a report to the European Parliament and to the Council in which it should examine the feasibility and economic, environmental an…Compliance deadlineDecember 31, 2026Commission Delegated Regulation (EU) 2024/3214 of 16 October 2024 amending Regulation (EU) 2015/757 of the European Parliament and of the Council as regards the rules for the monitoring of greenhouse gas emissions from offshore ships and the zero-rating of sustainable fuelsEUThe Commission review for 400–4,999 GT is due by 31 December 2026.Compliance deadlineDecember 31, 2026DIRECTIVE (EU) 2024/884 OF THE EUROPEAN PARLIAMENT AND OF THE COUNCIL of 13 March 2024 amending Directive 2012/19/EU on waste electrical and electronic equipment (WEEE) (Text with EEA relevance)EUNo later than 31 December 2026, the Commission shall assess the need for a revision of this Directive a…Recalculation noticesNo recalculations on your team's watchlist in this window.Not coveredOEM equipment roadmap is not covered yet.No OEM roadmap announcements are on record.No roadmap position is recorded for this yet.Request coverageNot coveredRerouting multipliers is not covered yet.No reroute events are on record.No roadmap position is recorded for this yet.Request coverageNot coveredContract indexation terms is not covered yet.No contract indexation terms are on record for your organisation.No roadmap position is recorded for this yet.Request coverage",
+      "name": "",
       "source": "implicit"
     },
     {
       "role": "banner",
-      "name": "VOL IV · No. 43 · Monday, October 19, 2026Market Intelligence54 active signals · 16 observed series⌕⌘KAsk",
+      "name": "",
       "source": "implicit"
     },
     {
       "role": "search",
-      "name": "⌕⌘KAsk",
+      "name": "",
       "source": "explicit"
-    },
-    {
-      "role": "region",
-      "name": "Themes across the corpus5 activeShared source on Market Intel6 itemsMarket Intel· EU Weekly Oil Bulletin — Heavy fuel oil 3.5%S (EU average, before taxes)· EU Weekly Oil Bulletin — LPG motor fuel (EU average, before taxes)· EU Weekly Oil Bulletin — Automotive gas oil / diesel (EU average, before taxes)Shared scenarios across 4 pages43 itemsRegulationsMarket IntelResearchOperations· California Advanced Clean Fleets Rule (CARB)· Alaska Department of Transportation Measurement Standards & Commercial Vehicle Compliance Resources· Brazil Regional Operations ProfileMaritime decarbonisation: the IMO net-zero arc, EU MRV and ETS-for-shipping machinery, and the green-corridor economy40 itemsRegulationsMarket IntelResearchOperationsBrief · out of date· MEPC.377(80) - IMO Marine Environment Protection Committee Resolution· IMO MARPOL Annex VI· IMO Net-Zero FrameworkClimate-risk disclosure convergence: CSRD's Scope 3 core, California's SB 261/253 axis, and the CBAM/due-diligence periphery44 itemsRegulationsMarket IntelResearchOperationsBrief · out of date· California SB 261 — Climate-Related Financial Risk Act· California SB 253 — Climate Corporate Data Accountability Act· Directive (EU) 2025/794 of the European Parliament and of the Council of 14 April 2025 amending Directives (EU) 2022/2464 and (EU) 2024/1760 as regards the dates from which Member States are to apply certain corporate sustainability reporting and due diligence requirements (Text with EEA relevance)Shared source across 4 pages847 itemsRegulationsMarket IntelResearchOperations· Directive 2003/87/EC of the European Parliament and of the Council of 13 October 2003 establishing a scheme for greenhouse gas emission allowance trading within the Community and amending Council Directive 96/61/EC (Text with EEA relevance)· Council Regulation (EC) No 1420/1999 of 29 April 1999 establishing common rules and procedures to apply to shipments to certain non-OECD countries of certain types of waste· Final Act of the International Conference and Decision by the Energy Charter Conference in respect of the amendment to the trade-related provisions of the Energy Charter Treaty - Joint Declarations - Annex I: Amendment to the Trade-Related Provisions of the Energy Charter Treaty - Annex II: Decisions in connection with the Adoption of the Amendment to the Trade-Related Provisions of the Energy Charter Treaty",
-      "source": "implicit"
     },
     {
       "role": "region",
       "name": "Themes across the corpus, scroll sideways for more",
       "source": "explicit"
-    },
-    {
-      "role": "region",
-      "name": "Carbon cost per FEUper corridor, from carrier-published surchargesThe carbon cost of a forty-foot container on each corridor: the emission factor for the corridor's mode, through its routing distance and container payload, at a carrier-published carbon price. Corridors are UN/LOCODE port pairs and a mode.GapShanghai (CN) → Rotterdam (NL), oceanNetherlands (NL)China (CN)no emission factor supplied for this corridor's modeno corridor routing distance available yet (no licence-clear distance dataset in this product today)no cited tonnes-per-FEU payload convention available (GLEC and ISO 14083 are both licence-prohibited; no substitute is registered)no EU ETS/FuelEU/CBAM/UKA carbon-price input from carrier-published surchargesGapShanghai (CN) → New York (US), oceanUnited States (US)China (CN)no emission factor supplied for this corridor's modeno corridor routing distance available yet (no licence-clear distance dataset in this product today)no cited tonnes-per-FEU payload convention available (GLEC and ISO 14083 are both licence-prohibited; no substitute is registered)no EU ETS/FuelEU/CBAM/UKA carbon-price input from carrier-published surchargesGapShanghai (CN) → Los Angeles (US), oceanUnited States (US)China (CN)no emission factor supplied for this corridor's modeno corridor routing distance available yet (no licence-clear distance dataset in this product today)no cited tonnes-per-FEU payload convention available (GLEC and ISO 14083 are both licence-prohibited; no substitute is registered)no EU ETS/FuelEU/CBAM/UKA carbon-price input from carrier-published surchargesGapShanghai (CN) → Genoa (IT), oceanChina (CN)Italy (IT)no emission factor supplied for this corridor's modeno corridor routing distance available yet (no licence-clear distance dataset in this product today)no cited tonnes-per-FEU payload convention available (GLEC and ISO 14083 are both licence-prohibited; no substitute is registered)no EU ETS/FuelEU/CBAM/UKA carbon-price input from carrier-published surcharges",
-      "source": "implicit"
-    },
-    {
-      "role": "region",
-      "name": "Lead-time positionSBTi Target DashboardPeer-cohort distribution of months to each company's SBTi target commitment.Not forecastable: no lead-time rows are on record (at least 5 to draw a position).",
-      "source": "implicit"
-    },
-    {
-      "role": "region",
-      "name": "Policy timelineDated, forward-looking obligations for the modes and regions in scope: the filters you set above, otherwise your workspace's own modes and jurisdictions.Upcoming obligations8 eventsScope: Air, Ocean, Road, EU, HK, UK, US, GCC, IMO, UAE, ASIA, ICAO, MEAF, Asean, China, India, Japan, Korea, Latam, Brazil, Canada, Nordic, Turkey, Eafrica, Nafrica, Pacific, Safrica, Wafrica, Australia, Caribbean, Singapore, Switzerland53 hidden by your scope · Show allCompliance deadlineNovember 29, 2026Euro 7 StandardEUWith effect from 29 November 2026, Member States shall prohibit the sale or installation of a system, component or separate technical unit intended to be fitted on a vehicle of category M 1 or…Compliance deadlineNovember 29, 2026Euro 7 StandardEUBy 29 November 2026, the Commission shall adopt, for vehicles of categories M 2 , M 3 , N 2 and N 3, as referred to in paragraph 3, points (b) and (c), respectively, and their eng…Compliance deadlineNovember 29, 2026Euro 7 StandardEUWith effect from 29 November 2026, approval authorities shall, in the case of new types of vehicles of category M 1 or N 1 which do not comply with this Regulation, refuse to grant EU emission…Phase stepNovember 29, 2026Euro 7 StandardEUIt shall apply from 29 November 2026 for new types of vehicles of categories M 1 and N 1 and components, systems and separate technical units intended for vehicles of categories M 1 or N 1 type-ap…Compliance deadlineDecember 31, 2026EU PPWR 2025/40EUBy 31 December 2026, the Commission shall adopt implementing acts establishing the methodology for the calculation and verification of the percentage of recycled content recovered…Compliance deadlineDecember 31, 2026Commission Delegated Regulation (EU) 2024/3214 of 16 October 2024 amending Regulation (EU) 2015/757 of the European Parliament and of the Council as regards the rules for the monitoring of greenhouse gas emissions from offshore ships and the zero-rating of sustainable fuelsEUAccording to Article 3gg(5) of that Directive, no later than 31 December 2026, the Commission should present a report to the European Parliament and to the Council in which it should examine the feasibility and economic, environmental an…Compliance deadlineDecember 31, 2026Commission Delegated Regulation (EU) 2024/3214 of 16 October 2024 amending Regulation (EU) 2015/757 of the European Parliament and of the Council as regards the rules for the monitoring of greenhouse gas emissions from offshore ships and the zero-rating of sustainable fuelsEUThe Commission review for 400–4,999 GT is due by 31 December 2026.Compliance deadlineDecember 31, 2026DIRECTIVE (EU) 2024/884 OF THE EUROPEAN PARLIAMENT AND OF THE COUNCIL of 13 March 2024 amending Directive 2012/19/EU on waste electrical and electronic equipment (WEEE) (Text with EEA relevance)EUNo later than 31 December 2026, the Commission shall assess the need for a revision of this Directive a…",
-      "source": "implicit"
     },
     {
       "role": "region",
@@ -556,106 +536,139 @@
     }
   ],
   "rows": {
-    "selector": "[data-row], li, tr, article",
-    "limit": 20,
+    "selector": "[data-part=\"list-row\"], [data-part=\"table-row\"]",
     "items": [
       {
-        "tag": "li",
-        "text": "no emission factor supplied for this corridor's mode",
-        "width": 244.65625,
-        "height": 33
+        "tag": "div",
+        "text": "USSPC Impact 2026: Industry-Wide Shift in Sustainable Packaging Practices and Recyclability StandardsMonitoringinitiative · packagingneeds more dataFoundation fundedStandards defining+4 more—T4Foundation fundedStandards defining+4 more⋯",
+        "width": 618,
+        "height": 56,
+        "container": "main"
       },
       {
-        "tag": "li",
-        "text": "no corridor routing distance available yet (no licence-clear distance dataset in this product today)",
-        "width": 244.65625,
-        "height": 49.5
+        "tag": "div",
+        "text": "USU.S. Energy Information Administration Short-Term Energy OutlookMonitoringmarket_signal · researchneeds more dataGovernment fundedFactual reporting+2 more—T3Government fundedFactual reporting+2 more⋯",
+        "width": 618,
+        "height": 56,
+        "container": "main"
       },
       {
-        "tag": "li",
-        "text": "no cited tonnes-per-FEU payload convention available (GLEC and ISO 14083 are both licence-prohibited; no substitute is registered)",
-        "width": 244.65625,
-        "height": 66
+        "tag": "div",
+        "text": "INThe Loadstar Supply Chain News Feed - May 9, 2026Cost alertmarket_signal · corridorsneeds more dataFactual reportingSubscription supported · lower confidence+4 more—T6Factual reportingSubscription supported · lower confidence+4 more⋯",
+        "width": 618,
+        "height": 56,
+        "container": "main"
       },
       {
-        "tag": "li",
-        "text": "no EU ETS/FuelEU/CBAM/UKA carbon-price input from carrier-published surcharges",
-        "width": 244.65625,
-        "height": 33
+        "tag": "div",
+        "text": "GLOBALLloyd's Register Maritime Decarbonisation Hub: Leadership and Evidence for Sustainable ShippingMonitoringinitiative · fuelsneeds more dataStandards definingIndustry funded+3 more—T4Standards definingIndustry funded+3 more⋯",
+        "width": 618,
+        "height": 56,
+        "container": "main"
       },
       {
-        "tag": "li",
-        "text": "no emission factor supplied for this corridor's mode",
-        "width": 244.671875,
-        "height": 33
+        "tag": "div",
+        "text": "KRSouth Korea K-Taxonomy for Sustainable Transport Activitiesmarket_signal · air, road, ocean, rail · reportingneeds more dataGovernment fundedRegulator aligned+2 more—T1Government fundedRegulator aligned+2 more⋯",
+        "width": 618,
+        "height": 56,
+        "container": "main"
       },
       {
-        "tag": "li",
-        "text": "no corridor routing distance available yet (no licence-clear distance dataset in this product today)",
-        "width": 244.671875,
-        "height": 49.5
+        "tag": "div",
+        "text": "EUEU Weekly Oil Bulletin — Residual fuel oil 1%S (EU average, before taxes)Catalogue recordmarket_signalneeds more dataGovernment fundedRegulator aligned+2 moreCatalogue record—T1Government fundedRegulator aligned+2 more⋯",
+        "width": 618,
+        "height": 56,
+        "container": "main"
       },
       {
-        "tag": "li",
-        "text": "no cited tonnes-per-FEU payload convention available (GLEC and ISO 14083 are both licence-prohibited; no substitute is registered)",
-        "width": 244.671875,
-        "height": 66
+        "tag": "div",
+        "text": "EUEU Weekly Oil Bulletin — Heavy fuel oil 3.5%S (EU average, before taxes)Catalogue recordmarket_signalneeds more dataGovernment fundedRegulator aligned+2 moreCatalogue record—T1Government fundedRegulator aligned+2 more⋯",
+        "width": 618,
+        "height": 56,
+        "container": "main"
       },
       {
-        "tag": "li",
-        "text": "no EU ETS/FuelEU/CBAM/UKA carbon-price input from carrier-published surcharges",
-        "width": 244.671875,
-        "height": 33
+        "tag": "div",
+        "text": "EUEU Weekly Oil Bulletin — LPG motor fuel (EU average, before taxes)Catalogue recordmarket_signalneeds more dataGovernment fundedRegulator aligned+2 moreCatalogue record—T1Government fundedRegulator aligned+2 more⋯",
+        "width": 618,
+        "height": 56,
+        "container": "main"
       },
       {
-        "tag": "li",
-        "text": "no emission factor supplied for this corridor's mode",
-        "width": 244.65625,
-        "height": 33
+        "tag": "div",
+        "text": "EUEU Weekly Oil Bulletin — Heating gas oil (EU average, before taxes)Catalogue recordmarket_signalneeds more dataGovernment fundedRegulator aligned+2 moreCatalogue record—T1Government fundedRegulator aligned+2 more⋯",
+        "width": 618,
+        "height": 56,
+        "container": "main"
       },
       {
-        "tag": "li",
-        "text": "no corridor routing distance available yet (no licence-clear distance dataset in this product today)",
-        "width": 244.65625,
-        "height": 49.5
+        "tag": "div",
+        "text": "EUEU Weekly Oil Bulletin — Euro-Super 95 (EU average, before taxes)Catalogue recordmarket_signalneeds more dataGovernment fundedRegulator aligned+2 moreCatalogue record—T1Government fundedRegulator aligned+2 more⋯",
+        "width": 618,
+        "height": 56,
+        "container": "main"
       },
       {
-        "tag": "li",
-        "text": "no cited tonnes-per-FEU payload convention available (GLEC and ISO 14083 are both licence-prohibited; no substitute is registered)",
-        "width": 244.65625,
-        "height": 66
+        "tag": "div",
+        "text": "AUGlobal Maritime Forum Green Corridors Initiative: 50+ Trade Routes Catalyzing Zero-Emission Shipping TransitionMonitoringinitiative · corridorsneeds more dataIndustry fundedIndustry incumbent+4 more—T4Industry fundedIndustry incumbent+4 more⋯",
+        "width": 618,
+        "height": 56,
+        "container": "main"
       },
       {
-        "tag": "li",
-        "text": "no EU ETS/FuelEU/CBAM/UKA carbon-price input from carrier-published surcharges",
-        "width": 244.65625,
-        "height": 33
+        "tag": "div",
+        "text": "SGMaritime Singapore Decarbonisation Blueprint: Working Towards 2050Monitoringmarket_signal · infrastructureneeds more dataGovernment fundedRegulator aligned+2 more—T2Government fundedRegulator aligned+2 more⋯",
+        "width": 618,
+        "height": 56,
+        "container": "main"
       },
       {
-        "tag": "li",
-        "text": "no emission factor supplied for this corridor's mode",
-        "width": 244.65625,
-        "height": 33
+        "tag": "div",
+        "text": "GLOBALUNCTAD Sustainable Freight Transport Framework: Six-Step Strategic Planning Methodology for Global Supply Chain DecarbonizationMonitoringmarket_signal · reportingneeds more dataGovernment fundedRegulator aligned+3 more—T3Government fundedRegulator aligned+3 more⋯",
+        "width": 618,
+        "height": 56,
+        "container": "main"
       },
       {
-        "tag": "li",
-        "text": "no corridor routing distance available yet (no licence-clear distance dataset in this product today)",
-        "width": 244.65625,
-        "height": 49.5
+        "tag": "div",
+        "text": "GLOBALDP World Sustainability Strategy: Net Zero Pathway and ESG Framework AlignmentMonitoringmarket_signal · reportingneeds more dataIndustry fundedIndustry incumbent+2 more—T6Industry fundedIndustry incumbent+2 more⋯",
+        "width": 618,
+        "height": 56,
+        "container": "main"
       },
       {
-        "tag": "li",
-        "text": "no cited tonnes-per-FEU payload convention available (GLEC and ISO 14083 are both licence-prohibited; no substitute is registered)",
-        "width": 244.65625,
-        "height": 66
-      },
+        "tag": "div",
+        "text": "PHASEAN Transport Strategic Plan 2016-2025 and Regional Cooperation FrameworkMonitoringmarket_signal · transportneeds more dataGovernment fundedRegulator aligned+2 more—T3Government fundedRegulator aligned+2 more⋯",
+        "width": 618,
+        "height": 56,
+        "container": "main"
+      }
+    ],
+    "containers": [
       {
-        "tag": "li",
-        "text": "no EU ETS/FuelEU/CBAM/UKA carbon-price input from carrier-published surcharges",
-        "width": 244.65625,
-        "height": 33
+        "label": "main",
+        "count": 15
       }
     ]
   },
-  "document_height": 900
+  "document_height": 4088,
+  "truncated": false,
+  "offences": [
+    "list title column squeezed to 117 px at 1280 px wide (floor 160): span.cl-row-title-text \"SPC Impact 2026: Industry-Wide\"",
+    "list title column squeezed to 117 px at 1280 px wide (floor 160): span.cl-row-title-text \"U.S. Energy Information Admini\"",
+    "list title column squeezed to 117 px at 1280 px wide (floor 160): span.cl-row-title-text \"The Loadstar Supply Chain News\"",
+    "list title column squeezed to 117 px at 1280 px wide (floor 160): span.cl-row-title-text \"Lloyd's Register Maritime Deca\"",
+    "list title column squeezed to 117 px at 1280 px wide (floor 160): span.cl-row-title-text \"South Korea K-Taxonomy for Sus\"",
+    "list title column squeezed to 117 px at 1280 px wide (floor 160): span.cl-row-title-text \"EU Weekly Oil Bulletin — Resid\"",
+    "list title column squeezed to 117 px at 1280 px wide (floor 160): span.cl-row-title-text \"EU Weekly Oil Bulletin — Heavy\"",
+    "list title column squeezed to 117 px at 1280 px wide (floor 160): span.cl-row-title-text \"EU Weekly Oil Bulletin — LPG m\"",
+    "list title column squeezed to 117 px at 1280 px wide (floor 160): span.cl-row-title-text \"EU Weekly Oil Bulletin — Heati\"",
+    "list title column squeezed to 117 px at 1280 px wide (floor 160): span.cl-row-title-text \"EU Weekly Oil Bulletin — Euro-\"",
+    "list title column squeezed to 117 px at 1280 px wide (floor 160): span.cl-row-title-text \"Global Maritime Forum Green Co\"",
+    "list title column squeezed to 117 px at 1280 px wide (floor 160): span.cl-row-title-text \"Maritime Singapore Decarbonisa\"",
+    "list title column squeezed to 117 px at 1280 px wide (floor 160): span.cl-row-title-text \"UNCTAD Sustainable Freight Tra\"",
+    "list title column squeezed to 117 px at 1280 px wide (floor 160): span.cl-row-title-text \"DP World Sustainability Strate\"",
+    "list title column squeezed to 117 px at 1280 px wide (floor 160): span.cl-row-title-text \"ASEAN Transport Strategic Plan\"",
+    "target 266x24 has only 2 px clear of a.market-module__E9zylW__hSource \"Weekly Oil Bulletin, week of 2\": label.cl-facet-row \"GLOBAL18\""
+  ]
 }

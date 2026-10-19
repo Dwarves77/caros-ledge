@@ -306,7 +306,7 @@ export async function compareRun({ captured, baseline = 'tests/parity/baseline',
       relative = true;
       const { scoped, notes } = frame.has(route.name) ? scopeFrame(b, config, viewport) : { scoped: b, notes: [] };
       for (const n of notes) report.push(`${viewport}: ${n}`);
-      const empty = emptyListProblem(route.name, scoped, config);
+      const empty = emptyListProblem(route.name, b, config);
       if (empty) {
         report.push(`${viewport}: ${empty}`);
         routeFail = true;

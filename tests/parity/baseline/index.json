@@ -1,8 +1,10 @@
 {
-  "captured_at": "2026-10-19T03:12:43.868Z",
-  "commit": "deb1f6df198162dbfdccb0cb9e57e4755cdc37de",
+  "contract": 2,
+  "signed_out_only": false,
+  "captured_at": "2026-10-19T20:54:22.609Z",
+  "commit": "2ab77a0acde3af74ec48ef42169fef3d832c6756",
   "commit_source": "GITHUB_SHA",
-  "base": "https://carosledge.com",
+  "base": "https://caros-ledge-a3mlaj6ek-dwarves77s-projects.vercel.app",
   "viewports": [
     "1280x900",
     "375x812"
@@ -25,11 +27,11 @@
       "diagnostics": {
         "firstFailure": {
           "status": 307,
-          "url": "https://carosledge.com/"
+          "url": "https://caros-ledge-a3mlaj6ek-dwarves77s-projects.vercel.app/"
         },
         "navigations": 4,
         "navigationPaths": [
-          "https://carosledge.com/login"
+          "https://caros-ledge-a3mlaj6ek-dwarves77s-projects.vercel.app/login"
         ]
       }
     },
@@ -47,7 +49,7 @@
         "firstFailure": null,
         "navigations": 4,
         "navigationPaths": [
-          "https://carosledge.com/login"
+          "https://caros-ledge-a3mlaj6ek-dwarves77s-projects.vercel.app/login"
         ]
       }
     },
@@ -65,7 +67,7 @@
         "firstFailure": null,
         "navigations": 4,
         "navigationPaths": [
-          "https://carosledge.com/signup"
+          "https://caros-ledge-a3mlaj6ek-dwarves77s-projects.vercel.app/signup"
         ]
       }
     },
@@ -82,11 +84,11 @@
       "diagnostics": {
         "firstFailure": {
           "status": 307,
-          "url": "https://carosledge.com/operations"
+          "url": "https://caros-ledge-a3mlaj6ek-dwarves77s-projects.vercel.app/research"
         },
         "navigations": 4,
         "navigationPaths": [
-          "https://carosledge.com/privacy"
+          "https://caros-ledge-a3mlaj6ek-dwarves77s-projects.vercel.app/privacy"
         ]
       }
     },
@@ -104,7 +106,7 @@
         "firstFailure": null,
         "navigations": 4,
         "navigationPaths": [
-          "https://carosledge.com/"
+          "https://caros-ledge-a3mlaj6ek-dwarves77s-projects.vercel.app/"
         ]
       }
     },
@@ -122,7 +124,7 @@
         "firstFailure": null,
         "navigations": 4,
         "navigationPaths": [
-          "https://carosledge.com/regulations"
+          "https://caros-ledge-a3mlaj6ek-dwarves77s-projects.vercel.app/regulations"
         ]
       }
     },
@@ -140,7 +142,7 @@
         "firstFailure": null,
         "navigations": 4,
         "navigationPaths": [
-          "https://carosledge.com/regulations/g14"
+          "https://caros-ledge-a3mlaj6ek-dwarves77s-projects.vercel.app/regulations/g14"
         ]
       }
     },
@@ -158,7 +160,7 @@
         "firstFailure": null,
         "navigations": 4,
         "navigationPaths": [
-          "https://carosledge.com/market"
+          "https://caros-ledge-a3mlaj6ek-dwarves77s-projects.vercel.app/market"
         ]
       }
     },
@@ -176,7 +178,7 @@
         "firstFailure": null,
         "navigations": 4,
         "navigationPaths": [
-          "https://carosledge.com/market/9d18608f-269e-405a-9ad8-afa638dda928"
+          "https://caros-ledge-a3mlaj6ek-dwarves77s-projects.vercel.app/market/9d18608f-269e-405a-9ad8-afa638dda928"
         ]
       }
     },
@@ -191,23 +193,10 @@
       ],
       "error": null,
       "diagnostics": {
-        "firstFailure": {
-          "status": 429,
-          "url": "https://carosledge.com/api/workspace/tags"
-        },
-        "navigations": 6,
+        "firstFailure": null,
+        "navigations": 4,
         "navigationPaths": [
-          "https://carosledge.com/research"
-        ],
-        "throttle": [
-          {
-            "route": "research",
-            "path": "/research",
-            "viewport": "1280x900",
-            "attempt": 1,
-            "status": 429,
-            "waitMs": 8000
-          }
+          "https://caros-ledge-a3mlaj6ek-dwarves77s-projects.vercel.app/research"
         ]
       }
     },
@@ -222,10 +211,23 @@
       ],
       "error": null,
       "diagnostics": {
-        "firstFailure": null,
-        "navigations": 4,
+        "firstFailure": {
+          "status": 429,
+          "url": "https://caros-ledge-a3mlaj6ek-dwarves77s-projects.vercel.app/api/detail/relevance"
+        },
+        "navigations": 6,
         "navigationPaths": [
-          "https://carosledge.com/research/a7fd2700-de27-4cc1-b5e6-442fdf8a66ad"
+          "https://caros-ledge-a3mlaj6ek-dwarves77s-projects.vercel.app/research/a7fd2700-de27-4cc1-b5e6-442fdf8a66ad"
+        ],
+        "throttle": [
+          {
+            "route": "research-detail",
+            "path": "/research/a7fd2700-de27-4cc1-b5e6-442fdf8a66ad",
+            "viewport": "1280x900",
+            "attempt": 1,
+            "status": 429,
+            "waitMs": 12000
+          }
         ]
       }
     },
@@ -243,7 +245,7 @@
         "firstFailure": null,
         "navigations": 4,
         "navigationPaths": [
-          "https://carosledge.com/operations"
+          "https://caros-ledge-a3mlaj6ek-dwarves77s-projects.vercel.app/operations"
         ]
       }
     },
@@ -261,7 +263,7 @@
         "firstFailure": null,
         "navigations": 4,
         "navigationPaths": [
-          "https://carosledge.com/operations/india-regional-operations-profile"
+          "https://caros-ledge-a3mlaj6ek-dwarves77s-projects.vercel.app/operations/india-regional-operations-profile"
         ]
       }
     },
@@ -279,7 +281,7 @@
         "firstFailure": null,
         "navigations": 4,
         "navigationPaths": [
-          "https://carosledge.com/map"
+          "https://caros-ledge-a3mlaj6ek-dwarves77s-projects.vercel.app/map"
         ]
       }
     },
@@ -297,7 +299,7 @@
         "firstFailure": null,
         "navigations": 4,
         "navigationPaths": [
-          "https://carosledge.com/search"
+          "https://caros-ledge-a3mlaj6ek-dwarves77s-projects.vercel.app/search"
         ]
       }
     },
@@ -315,7 +317,7 @@
         "firstFailure": null,
         "navigations": 4,
         "navigationPaths": [
-          "https://carosledge.com/watchlist"
+          "https://caros-ledge-a3mlaj6ek-dwarves77s-projects.vercel.app/watchlist"
         ]
       }
     },
@@ -333,7 +335,7 @@
         "firstFailure": null,
         "navigations": 4,
         "navigationPaths": [
-          "https://carosledge.com/community"
+          "https://caros-ledge-a3mlaj6ek-dwarves77s-projects.vercel.app/community"
         ]
       }
     },
@@ -364,7 +366,7 @@
         "firstFailure": null,
         "navigations": 4,
         "navigationPaths": [
-          "https://carosledge.com/settings"
+          "https://caros-ledge-a3mlaj6ek-dwarves77s-projects.vercel.app/settings"
         ]
       }
     },
@@ -379,54 +381,14 @@
       ],
       "error": null,
       "diagnostics": {
-        "firstFailure": {
-          "status": 429,
-          "url": "https://carosledge.com/api/workspace/bootstrap"
-        },
-        "navigations": 6,
+        "firstFailure": null,
+        "navigations": 4,
         "navigationPaths": [
-          "https://carosledge.com/profile"
-        ],
-        "throttle": [
-          {
-            "route": "profile",
-            "path": "/profile",
-            "viewport": "1280x900",
-            "attempt": 1,
-            "status": 429,
-            "waitMs": 14000
-          },
-          {
-            "route": "profile",
-            "path": "/profile",
-            "viewport": "1280x900",
-            "attempt": 1,
-            "status": 429,
-            "waitMs": 14000
-          },
-          {
-            "route": "profile",
-            "path": "/profile",
-            "viewport": "1280x900",
-            "attempt": 1,
-            "status": 429,
-            "waitMs": 14000
-          }
+          "https://caros-ledge-a3mlaj6ek-dwarves77s-projects.vercel.app/profile"
         ]
       }
-    },
-    {
-      "name": "admin",
-      "path": "/admin",
-      "auth": "admin",
-      "status": "skipped",
-      "files": [],
-      "error": "admin routes gate on the deployed preview",
-      "diagnostics": {
-        "firstFailure": null,
-        "navigations": 0,
-        "navigationPaths": []
-      }
     }
-  ]
+  ],
+  "deployment": "dpl_CujSEeZynpqxDnkttwTN9S6xzX6o",
+  "run": "39323086290"
 }

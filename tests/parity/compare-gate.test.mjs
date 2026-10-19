@@ -220,3 +220,12 @@ test('the committed configuration is sound: every route in routes.json is gated 
   const config = JSON.parse(readFileSync('tests/parity/approved-changes.json', 'utf8'));
   assert.deepEqual(gateProblems(routes, config), []);
 });
+
+test('a frame route is checked for list rows in its whole baseline record, not the shell-scoped one: a dashboard baseline that holds rows is not reported empty', async () => {
+  const rows = record({ rows: { selector: '', items: [listRow('EU Fuel rule')], containers: [{ label: 'due-next-card', count: 1 }] } });
+  const config = { gates: { full: [], frame: ['home'], lists: ['home'] }, frameLandmarks: { '1280x900': [], '375x812': [] }, frameControls: [], frameHeadings: [] };
+  const r = await run(world({ routes: [{ name: 'home' }], config, base: rows, cap: rows }));
+  assert.doesNotMatch(text(r), /baseline holds no list rows/);
+  const empty = await run(world({ routes: [{ name: 'home' }], config }));
+  assert.match(text(empty), /baseline holds no list rows/, 'and a baseline with none is still reported');
+});

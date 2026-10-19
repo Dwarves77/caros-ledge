@@ -6,7 +6,7 @@
     "width": 1280,
     "height": 900
   },
-  "captured_at": "2026-10-19T03:14:24.907Z",
+  "captured_at": "2026-10-19T20:56:26.748Z",
   "http_status": 200,
   "final_path": "/map",
   "network_idle": true,
@@ -17,27 +17,27 @@
   "landmarks": [
     {
       "role": "complementary",
-      "name": "Caro's LedgeFreight Sustainability IntelligenceBriefDashboardWatchlistIntelligenceRegulationsMarket IntelResearchOperationsMapNetworkCommunityAccountDietl / Rockit",
+      "name": "",
       "source": "implicit"
     },
     {
       "role": "navigation",
-      "name": "BriefDashboardWatchlistIntelligenceRegulationsMarket IntelResearchOperationsMapNetworkCommunity",
+      "name": "",
       "source": "implicit"
     },
     {
       "role": "main",
-      "name": "VOL IV · No. 43 · Monday, October 19, 2026Regulatory map15 jurisdictions live · 1,316 active items · 5 jurisdictions with immediate items · marker size = item count · colour = highest band present⌕⌘KAskModeAllAirRoadOceanRailBandAllImmediateActionMonitorAwarenessRegionAllEUUSUKLATAMAPACMEAFRegulatory map15 charted of 15 live · 1,316 of 1,316 items98226842543222111111+− Leaflet | © OpenStreetMap contributorsKeyImmediate presentAction presentMonitor presentAwareness presentJurisdiction register15 jurisdictions · open one to see its regulationsJurisdictionActive themesBandItemsEUEUTransport · Aviation · EmissionsImmediate982GBUnited KingdomTransport · EmissionsImmediate268USUnited StatesEmissions · Reporting · TransportImmediate42GLOBALGlobalEmissions · Corridors · ReportingAwareness5SGSingaporeCorridors · Emissions · InfrastructureAction4GLOBALGlobalInfrastructureImmediate3AUAustraliaEmissions · InfrastructureAwareness2BRBrazilFuels · TransportMonitor2JPJapanEmissions · TransportAwareness2ATAustria—Awareness1CNChinaEmissionsAwareness1DKDenmarkMaritimeAwareness1+ 3 more jurisdictions · 3 items — full register on the Regulations index.Immediate · 22 items bind within 90 days across 5 jurisdictionsOpen the register →Immediate · 5 jurisdictionsEU982 immediate itemsUnited Kingdom268 immediate itemsUnited States42 immediate itemsGlobal3 immediate itemsMexico1 immediate itemCoverage gapsUnited States (sub-national)0 of 56EU member states0 of 27Canada (provinces & territories)0 of 13Australia (federal & states)0 of 9Latin America priority0 of 6LegendImpact8/12TimelinePassed · next · ahead.Source tierT1 binding law → T7 overflow / uncategorized.",
+      "name": "",
       "source": "implicit"
     },
     {
       "role": "banner",
-      "name": "VOL IV · No. 43 · Monday, October 19, 2026Regulatory map15 jurisdictions live · 1,316 active items · 5 jurisdictions with immediate items · marker size = item count · colour = highest band present⌕⌘KAsk",
+      "name": "",
       "source": "implicit"
     },
     {
       "role": "search",
-      "name": "⌕⌘KAsk",
+      "name": "",
       "source": "explicit"
     }
   ],
@@ -338,9 +338,13 @@
     }
   ],
   "rows": {
-    "selector": "[data-row], li, tr, article",
-    "limit": 20,
-    "items": []
+    "selector": "[data-part=\"list-row\"], [data-part=\"table-row\"]",
+    "items": [],
+    "containers": []
   },
-  "document_height": 900
+  "document_height": 1598,
+  "truncated": false,
+  "offences": [
+    "target under 24 px: a \"Regulations index\" 97x13"
+  ]
 }
