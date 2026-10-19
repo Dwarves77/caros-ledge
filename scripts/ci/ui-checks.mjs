@@ -1,61 +1,86 @@
-// The kit's lint rules (P2-09, ui-kit.md proof 3). Run from the repo root; exits 1 with every offence listed.
-//   1. no <style> element in src/ui
-//   2. no hex or rgba literal in src/ui outside theme.css
-//   3. no data-layer import in src/ui
-//   4. no @media outside src/ui/base.css
-//   5. every var(--name) in src/ui resolves (theme.css, or a custom property the code itself sets)
-//   6. every cl- class a component names is defined in base.css
-import { readdirSync, readFileSync } from "node:fs";
+// The UI checks (ui-kit.md proof 3, grown into G4): the laws of the kit and the screens, read from the TypeScript syntax tree and the stylesheets. Run from the repo root; exits 1 with every offence listed.
+//
+//   node scripts/ci/ui-checks.mjs               check src/ against scripts/ci/ui-checks-allow.json
+//   node scripts/ci/ui-checks.mjs --list-rules  the rule ids (tests/ci/ui-checks.test.mjs holds one planted violation for each and fails on a rule without one)
+//   node scripts/ci/ui-checks.mjs --counts      the offences found, counted per rule and file, as JSON (how an allow list is written down or lowered)
+//
+// The rules are in scripts/ci/ui-rules.mjs. Debt that predates a rule is in ui-checks-allow.json as a COUNT per rule and file with the reason and the slice that owes the fix; the count is a ratchet:
+// one more offence than allowed fails, and one fewer fails too (lower the number), so the debt can only go down and an entry cannot outlive its cause. A file entry is a count, or {count, reason} when
+// that file needs a reason of its own beside the rule's.
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-const ROOT = "src/ui";
+import ts from "typescript";
+
+import { RULES } from "./ui-rules.mjs";
+
+const ALLOW_FILE = "scripts/ci/ui-checks-allow.json";
+const MIN_REASON = 20;
+
+if (process.argv.includes("--list-rules")) {
+  console.log(RULES.map((r) => r.id).join("\n"));
+  process.exit(0);
+}
+
 const files = [];
 (function walk(dir) {
+  if (!existsSync(dir)) return;
   for (const e of readdirSync(dir, { withFileTypes: true })) {
-    const p = join(dir, e.name);
+    const p = join(dir, e.name).replaceAll("\\", "/");
     if (e.isDirectory()) walk(p);
-    else if (/\.(tsx?|css)$/.test(e.name)) files.push(p.replaceAll("\\", "/"));
+    else if (/\.(tsx?|css)$/.test(e.name)) files.push(p);
   }
-})(ROOT);
+})("src");
+files.sort();
+
+const text = new Map(files.map((f) => [f, readFileSync(f, "utf8")]));
+const stripped = (f) => text.get(f).replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+// The context some rules need: the custom properties that exist (theme.css, or set by code under src/ui) and the classes base.css defines.
+const defined = new Set();
+for (const f of files.filter((x) => x.startsWith("src/ui/"))) {
+  for (const m of stripped(f).matchAll(/(--[a-z0-9-]+)\s*:/g)) defined.add(m[1]);
+  for (const m of stripped(f).matchAll(/"(--[a-z0-9-]+)"/g)) defined.add(m[1]);
+}
+const defClasses = new Set([...(text.get("src/ui/base.css") ?? "").matchAll(/\.(cl-[a-z0-9-]+)/g)].map((m) => m[1]));
+
+const found = new Map(RULES.map((r) => [r.id, new Map()]));
+for (const f of files) {
+  const scoped = RULES.filter((r) => r.scope(f));
+  if (!scoped.length) continue;
+  const sf = /\.tsx?$/.test(f) ? ts.createSourceFile(f, text.get(f), ts.ScriptTarget.Latest, true, f.endsWith("x") ? ts.ScriptKind.TSX : ts.ScriptKind.TS) : null;
+  for (const r of scoped) {
+    const hits = [...r.check({ file: f, text: text.get(f), sf, defined, defClasses })];
+    if (hits.length) found.get(r.id).set(f, hits);
+  }
+}
+
+if (process.argv.includes("--counts")) {
+  console.log(JSON.stringify(Object.fromEntries([...found].filter(([, m]) => m.size).map(([id, m]) => [id, Object.fromEntries([...m].map(([f, h]) => [f, h.length]))])), null, 2));
+  process.exit(0);
+}
 
 const problems = [];
-const text = new Map(files.map((f) => [f, readFileSync(f, "utf8")]));
-const code = (f) => text.get(f).replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
-const isCode = (f) => /\.tsx?$/.test(f);
-
-const DATA_LAYER = [/from "@\/core\/db(\/|")/, /from "@supabase\//, /from "@\/features\/lists/, /from "@\/core\/auth\/(membership|orgs|invitations|claims|ensure-profile|platform-admin)/, /from "@\/features\/[a-z-]+\/api\//];
-
-for (const f of files) {
-  const c = code(f);
-  if (isCode(f) && /<style[\s>]/.test(c)) problems.push(`${f}: a <style> element (rule 1)`);
-  if (f !== `${ROOT}/theme.css` && (/#[0-9a-fA-F]{3,8}\b/.test(c) || /\brgba?\(/.test(c))) problems.push(`${f}: a hex or rgba literal (rule 2)`);
-  if (isCode(f)) for (const re of DATA_LAYER) if (re.test(c)) problems.push(`${f}: a data-layer import ${re} (rule 3)`);
-  if (f !== `${ROOT}/base.css` && /@media|@container/.test(c)) problems.push(`${f}: @media outside base.css (rule 4)`);
-}
-
-const theme = text.get(`${ROOT}/theme.css`) ?? "";
-const defined = new Set([...theme.matchAll(/(--[a-z0-9-]+)\s*:/g)].map((m) => m[1]));
-for (const f of files) for (const m of code(f).matchAll(/(--[a-z0-9-]+)\s*:/g)) defined.add(m[1]);
-for (const f of files) for (const m of code(f).matchAll(/"(--[a-z0-9-]+)"/g)) defined.add(m[1]);
-for (const f of files) {
-  for (const m of code(f).matchAll(/var\((--[a-z0-9-]+)/g)) {
-    const name = m[1];
-    if (!defined.has(name) && !/^--(row-band|cl-detail-head-tint)$/.test(name)) problems.push(`${f}: var(${name}) resolves to nothing (rule 5)`);
+const allow = existsSync(ALLOW_FILE) ? JSON.parse(readFileSync(ALLOW_FILE, "utf8")).rules ?? {} : {};
+for (const [id, a] of Object.entries(allow)) {
+  if (!RULES.some((r) => r.id === id)) problems.push(`${ALLOW_FILE}: names the rule ${id}, which does not exist`);
+  if (typeof a.reason !== "string" || a.reason.trim().length < MIN_REASON) problems.push(`${ALLOW_FILE}: ${id} carries no reason (at least ${MIN_REASON} characters)`);
+  if (typeof a.owner !== "string" || !a.owner) problems.push(`${ALLOW_FILE}: ${id} names no owner (the slice that removes the debt)`);
+  for (const [f, v] of Object.entries(a.files ?? {})) {
+    const n = typeof v === "number" ? v : v?.count;
+    if (!Number.isInteger(n) || n < 1) problems.push(`${ALLOW_FILE}: ${id} ${f} must allow a whole number of offences, at least 1`);
+    if (typeof v === "object" && (typeof v.reason !== "string" || v.reason.trim().length < MIN_REASON)) problems.push(`${ALLOW_FILE}: ${id} ${f} carries no reason of its own (at least ${MIN_REASON} characters)`);
   }
 }
-
-const base = text.get(`${ROOT}/base.css`) ?? "";
-const defClasses = new Set([...base.matchAll(/\.(cl-[a-z0-9-]+)/g)].map((m) => m[1]));
-const NOT_CLASSES = new Set(["cl-err-report-count", "cl-err-report-last", "cl-command-bar-input"]);
-for (const f of files.filter(isCode)) {
-  for (const m of code(f).matchAll(/cl-[a-z0-9]+(?:-[a-z0-9]+)*/g)) {
-    const name = m[0];
-    const at = m.index + name.length;
-    if (code(f)[at] === "-" || code(f)[m.index - 1] === "-" || NOT_CLASSES.has(name) || name.startsWith("cl-cb")) continue;
-    if (!defClasses.has(name)) problems.push(`${f}: class ${name} is not defined in base.css (rule 6)`);
+for (const r of RULES) {
+  const allowed = allow[r.id]?.files ?? {};
+  for (const f of new Set([...found.get(r.id).keys(), ...Object.keys(allowed)])) {
+    const hits = found.get(r.id).get(f) ?? [];
+    const n = typeof allowed[f] === "object" ? allowed[f].count : (allowed[f] ?? 0);
+    if (hits.length > n) for (const h of hits) problems.push(`${f}:${h.line}: ${h.message} (${r.id}${n ? `; ${n} allowed in this file, ${hits.length} found` : ""}): ${r.law}`);
+    else if (hits.length < n) problems.push(`${ALLOW_FILE}: ${r.id} allows ${n} in ${f} and finds ${hits.length}; lower the count (the debt was paid)`);
   }
 }
 
 for (const p of [...new Set(problems)]) console.error(p);
-console.log(problems.length ? `ui-checks: ${new Set(problems).size} problem(s)` : `ui-checks: clean (${files.length} files)`);
+console.log(problems.length ? `ui-checks: ${new Set(problems).size} problem(s)` : `ui-checks: clean (${files.length} files, ${RULES.length} rules)`);
 process.exit(problems.length ? 1 : 0);

@@ -1,16 +1,48 @@
-// The in-page measurement shared by the UX smokes: runs in the browser (page.evaluate) and returns the offences for one mounted fixture page.
-// `rows` also checks the 100-row list fixture (only the main fixture page has it).
-export function measure(opts = { rows: true }) {
+// The in-page measurement shared by the UX smokes and the parity capture: `measure` runs in the browser (page.evaluate) and returns the offences for one mounted page; `measurePage` is the Node side that hands it
+// the exemption lists. The exemptions are DATA with a reason each (tests/ux/measure-exemptions.json, validated on load): no exemption lives in this function, so a class name cannot be added to a list unseen.
+// `rows` also checks the 100-row list fixture (only the main fixture page has it). `scope` is the CSS selector the overflow scan walks: a fixture page is `[data-fx] *`, a real route is `body *`.
+import { readFileSync } from 'node:fs';
+
+const EXEMPTIONS_FILE = new URL('./measure-exemptions.json', import.meta.url);
+const KINDS = ['overflow', 'target', 'collapsed'];
+const MIN_REASON = 20;
+
+/** Reads and validates the exemption lists: every kind present and non-empty, every entry a selector, a match mode and a reason. Throws on anything else. */
+export function loadExemptions(file = EXEMPTIONS_FILE) {
+  const json = JSON.parse(readFileSync(file, 'utf8'));
+  for (const kind of KINDS) {
+    if (!Array.isArray(json[kind]) || json[kind].length === 0) throw new Error(`measure-exemptions.json: "${kind}" must be a non-empty list`);
+    for (const e of json[kind]) {
+      if (typeof e.selector !== 'string' || !e.selector) throw new Error(`measure-exemptions.json: a "${kind}" entry has no selector`);
+      if (e.match !== 'self' && e.match !== 'within') throw new Error(`measure-exemptions.json: "${e.selector}" must say match "self" or "within"`);
+      if (typeof e.reason !== 'string' || e.reason.trim().length < MIN_REASON) throw new Error(`measure-exemptions.json: "${e.selector}" carries no reason (at least ${MIN_REASON} characters)`);
+    }
+  }
+  return Object.fromEntries(KINDS.map((k) => [k, json[k]]));
+}
+
+/** A list row's title column is never narrower than this at 1024 px and up (about 22 characters of the row title type): V-9 found it at 119 px at 1280. */
+export const TITLE_COLUMN_MIN = 160;
+
+/** Measures the page in the browser with the repository's exemptions. */
+export function measurePage(page, { rows = false, scope } = {}) {
+  return page.evaluate(measure, { rows, scope, exempt: loadExemptions(), titleColumnMin: TITLE_COLUMN_MIN });
+}
+
+export function measure(opts) {
+  if (!opts?.exempt) throw new Error('measure needs the exemption lists (use measurePage)');
+  const scope = opts.scope ?? '[data-fx] *';
+  const skipped = (kind, el) => opts.exempt[kind].some((e) => (e.match === 'within' ? el.closest(e.selector) : el.matches(e.selector)));
   const out = [];
   const label = (el) => `${el.tagName.toLowerCase()}${el.className && typeof el.className === 'string' ? `.${el.className.split(' ')[0]}` : ''} "${(el.textContent || el.getAttribute('aria-label') || '').trim().slice(0, 30)}"`;
   const vw = document.documentElement.clientWidth;
   if (document.documentElement.scrollWidth > vw + 1) out.push(`page scrolls sideways: scrollWidth ${document.documentElement.scrollWidth} > ${vw}`);
 
   // Overflow: any box whose right edge passes the viewport, unless a declared sideways strip carries it.
-  for (const el of document.querySelectorAll('[data-fx] *')) {
+  for (const el of document.querySelectorAll(scope)) {
     const r = el.getBoundingClientRect();
     if (r.width === 0 || r.height === 0) continue;
-    if (r.right > vw + 1 && !el.closest('[data-guard-strip],.cl-sr-only,.cl-virtual-item,.leaflet-container')) {
+    if (r.right > vw + 1 && !skipped('overflow', el)) {
       const cs = getComputedStyle(el);
       if (cs.position !== 'fixed') out.push(`overflow: ${label(el)} right ${Math.round(r.right)} > ${vw}`);
     }
@@ -61,19 +93,36 @@ export function measure(opts = { rows: true }) {
     if (width + 1 < Math.min(longest, 120)) out.push(`title narrower than its longest word: ${label(el)} ${Math.round(width)} < ${Math.round(longest)}`);
   }
 
+  // A list row's title column: the 1fr cell of the row grid. At 1024 px and up it keeps a readable measure (V-9: 119 px at 1280 with the filter rail beside it).
+  if (vw >= 1024) {
+    for (const title of document.querySelectorAll('[data-part="list-row"] [data-guard-title]')) {
+      if (!title.getClientRects().length) continue;
+      const column = Math.round(title.getBoundingClientRect().width);
+      if (column < opts.titleColumnMin) out.push(`list title column squeezed to ${column} px at ${vw} px wide (floor ${opts.titleColumnMin}): ${label(title)}`);
+    }
+  }
+
   // Targets.
   const SEL = 'a[href],button,input:not([type=hidden]),select,textarea,[role=button],[role=tab],[role=menuitem],[role=option],summary,[tabindex]:not([tabindex="-1"])';
   const visible = (el) => {
     const r = el.getBoundingClientRect();
     const cs = getComputedStyle(el);
-    return r.width >= 2 && r.height >= 2 && cs.visibility !== 'hidden' && cs.display !== 'none' && !el.closest('[inert],.cl-sr-only') && el.getAttribute('tabindex') !== '-1';
+    return r.width >= 2 && r.height >= 2 && cs.visibility !== 'hidden' && cs.display !== 'none' && !el.closest('[inert]') && el.getAttribute('tabindex') !== '-1';
   };
   const boxOf = (el) => {
     if (el.matches('input[type=checkbox],input[type=radio]')) el = el.closest('label') || el;
     return el;
   };
+  // A focusable control collapsed to under 2 px is a target nobody can see or hit: an offence, unless an exemption names why it is hidden on purpose.
+  for (const el of document.querySelectorAll(SEL)) {
+    if (!el.getClientRects().length) continue;
+    const r = el.getBoundingClientRect();
+    const cs = getComputedStyle(el);
+    const hiddenOnPurpose = cs.visibility === 'hidden' || cs.display === 'none' || el.closest('[inert],[hidden],[aria-hidden="true"]') || el.matches(':disabled') || el.getAttribute('tabindex') === '-1';
+    if ((r.width < 2 || r.height < 2) && !hiddenOnPurpose && !skipped('collapsed', el)) out.push(`focusable control collapsed to ${Math.round(r.width)}x${Math.round(r.height)}: ${label(el)}`);
+  }
   const targets = [...document.querySelectorAll(SEL)].filter(visible).map(boxOf);
-  const unique = [...new Set(targets)].filter((el) => !el.closest('[data-fx-exempt]') && !el.classList.contains('cl-gfm-a') && !el.matches('div[tabindex],section[tabindex]'));
+  const unique = [...new Set(targets)].filter((el) => !skipped('target', el));
   const rects = unique.map((el) => [el, el.getBoundingClientRect()]);
   const gap = (a, b) => Math.max(0, Math.max(a.left - b.right, b.left - a.right), Math.max(a.top - b.bottom, b.top - a.bottom));
   const overlaps = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;

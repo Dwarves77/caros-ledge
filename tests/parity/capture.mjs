@@ -4,8 +4,9 @@
 // Usage: node tests/parity/capture.mjs --base <origin> --out <dir> [--signed-out-only] [--fresh]
 // --fresh (the dispatch-only `screens` job, P2-15e): every detail route is discovered from its list page now instead of pinned to the baseline's item, so the PNGs show the first item production serves today.
 //
-// For every route in routes.json, at 1280x900 and 375x812: waits for network idle, writes a full-page PNG and a JSON
-// record (accessibility tree, landmarks, headings, interactive controls, first rows with measured heights).
+// For every route in routes.json, at 1280x900 and 375x812: waits for the shell to hydrate and the network to go idle, writes a PNG of the WHOLE page (the shell scrolls inside <main>, so the viewport is grown to the page)
+// and a JSON record (CAPTURE_CONTRACT in contract.mjs): accessibility tree, landmarks (role and name), headings, interactive controls, EVERY list row (`[data-part="list-row"]`, `[data-part="table-row"]`, no cap) with its measured
+// height and its container, the page height from <main>, whether the page was taller than the screenshot ceiling (`truncated`), and the offences the layout measure (tests/ux/measure.mjs) found on this route at this width.
 // Each account signs in once through the /login form; its storage state is held in memory only, never written to disk, never printed.
 // Admin routes are captured only when PARITY_ADMIN=1 (the deployed preview; the CI runner holds no service-role key). Credentials: member = LIVE_SMOKE_EMAIL / LIVE_SMOKE_PASSWORD, admin = LIVE_ADMIN_EMAIL / LIVE_ADMIN_PASSWORD.
 // Exit code is 1 when any sign-in, discovery or capture failed; index.json is written in every case.
@@ -17,11 +18,11 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { chromium } from 'playwright';
 
-const VIEWPORTS = [
-  { width: 1280, height: 900 },
-  { width: 375, height: 812 },
-];
-const ROW_LIMIT = 20;
+import { measurePage } from '../ux/measure.mjs';
+
+import { CAPTURE_CONTRACT, CAPTURE_VIEWPORTS as VIEWPORTS, ROW_SELECTOR, SCREEN_MAX_HEIGHT } from './contract.mjs';
+
+export { SCREEN_MAX_HEIGHT };
 // A page that navigates its main frame more often than this after goto is looping (a reload on every auth event, a redirect cycle).
 const NAVIGATION_CEILING = 3;
 const ACCOUNTS = { member: ['LIVE_SMOKE_EMAIL', 'LIVE_SMOKE_PASSWORD'], admin: ['LIVE_ADMIN_EMAIL', 'LIVE_ADMIN_PASSWORD'] };
@@ -46,6 +47,11 @@ async function settle(page) {
   } catch {
     return false;
   }
+}
+
+// The shell sets data-hydrated on <html> when it has hydrated (src/ui/shell/Hydrated.tsx). A page that never does is a capture error: it would be measured as server markup with no handlers.
+async function hydrated(page) {
+  await page.waitForFunction(() => document.documentElement.dataset.hydrated === 'true', null, { timeout: 20000 });
 }
 
 async function signIn(browser, base, email, password) {
@@ -119,8 +125,8 @@ async function discover(page, base, route, gates, baselineIndex) {
   throw miss;
 }
 
-// Runs in the page. Helpers live inside so the whole function serialises as one unit. Exported so the UX smoke records its fixture pages the same way.
-export function domSummary(rowLimit) {
+// Runs in the page. Helpers live inside so the whole function serialises as one unit. Exported so the UX smoke records its fixture pages the same way (`{ rowSelector: ROW_SELECTOR }`).
+export function domSummary({ rowSelector }) {
   const clean = (s) => (s || '').replace(/\s+/g, ' ').trim();
   const rendered = (el) => el.getClientRects().length > 0;
   const accName = (el) => {
@@ -138,6 +144,12 @@ export function domSummary(rowLimit) {
     const wrapping = el.closest('label');
     if (wrapping && clean(wrapping.textContent)) return clean(wrapping.textContent);
     return clean(el.textContent) || clean(el.getAttribute('placeholder')) || clean(el.getAttribute('title'));
+  };
+  // A landmark is named by what the author named it (aria-labelledby, aria-label), never by the text inside it: the text of <main> is the whole page and changes with every datum.
+  const landmarkName = (el) => {
+    const ids = el.getAttribute('aria-labelledby');
+    if (ids) return clean(ids.split(/\s+/).map((id) => document.getElementById(id)?.textContent ?? '').join(' '));
+    return clean(el.getAttribute('aria-label'));
   };
   const IMPLICIT_LANDMARK = { header: 'banner', nav: 'navigation', main: 'main', footer: 'contentinfo', aside: 'complementary' };
   const INPUT_ROLE = {
@@ -162,7 +174,7 @@ export function domSummary(rowLimit) {
     if (!rendered(el)) continue;
     const tag = el.tagName.toLowerCase();
     const explicit = el.getAttribute('role');
-    const name = accName(el);
+    const name = landmarkName(el);
     let role = explicit ? explicit.split(/\s+/)[0] : IMPLICIT_LANDMARK[tag];
     if (!role && (tag === 'section' || tag === 'form') && name) role = tag === 'section' ? 'region' : 'form';
     if (!role) continue;
@@ -185,21 +197,30 @@ export function domSummary(rowLimit) {
     controls.push({ role, name: accName(el) });
   }
 
+  // Every list row on the page, none dropped, in document order, with the container it sits in (the nearest labelled region, else the page): a list's rows are compared with the baseline's, container by container.
+  const containerOf = (el) => {
+    const host = el.parentElement?.closest('[aria-label],[aria-labelledby],[data-audit],[data-guard-container]');
+    if (!host) return 'main';
+    return landmarkName(host) || clean(host.getAttribute('data-audit')) || clean(host.getAttribute('data-guard-container')) || 'main';
+  };
   const rows = [];
-  const rowSelector = '[data-row], li, tr, article';
+  const containers = [];
   for (const el of document.querySelectorAll(rowSelector)) {
     if (!rendered(el)) continue;
     const box = el.getBoundingClientRect();
-    rows.push({ tag: el.tagName.toLowerCase(), text: clean(el.textContent).slice(0, 300), width: box.width, height: box.height });
-    if (rows.length === rowLimit) break;
+    const container = containerOf(el);
+    rows.push({ tag: el.tagName.toLowerCase(), text: clean(el.textContent).slice(0, 300), width: box.width, height: box.height, container });
+    const seen = containers.find((c) => c.label === container);
+    if (seen) seen.count += 1;
+    else containers.push({ label: container, count: 1 });
   }
 
   return {
     landmarks,
     headings,
     controls,
-    rows: { selector: rowSelector, limit: rowLimit, items: rows },
-    document_height: document.documentElement.scrollHeight,
+    rows: { selector: rowSelector, items: rows, containers },
+    document_height: (document.querySelector('main') ?? document.documentElement).scrollHeight,
   };
 }
 
@@ -238,9 +259,8 @@ export function retryWaitMs(retryAfter, nowMs = Date.now()) {
 }
 export const throttleWaitMs = (events, nowMs) => Math.max(...events.map((e) => retryWaitMs(e.retryAfter, nowMs)));
 
-// The shell scrolls inside <main>, so a fullPage screenshot of the document is one viewport tall. For the screens job (--fresh) the viewport is grown to the
-// tallest scroll box's content (ceiling SCREEN_MAX_HEIGHT) so the PNG shows the whole page; the DOM record is already taken at the real viewport.
-export const SCREEN_MAX_HEIGHT = 16000;
+// The shell scrolls inside <main>, so a fullPage screenshot of the document is one viewport tall. Every capture grows the viewport to the tallest scroll box's content (ceiling SCREEN_MAX_HEIGHT) so the PNG shows the whole
+// page; the DOM record is taken first, at the real viewport. Returns { truncated }: true when the page needs more than the ceiling, so the lower part is not in the image (the compare fails on it).
 export async function wholePageScreenshot(page, viewport, file) {
   const needed = await page.evaluate(() => {
     let tallest = 0;
@@ -255,11 +275,12 @@ export async function wholePageScreenshot(page, viewport, file) {
     await settle(page);
   }
   await page.screenshot({ path: file, fullPage: true });
+  return { truncated: needed > SCREEN_MAX_HEIGHT };
 }
 
-async function captureOne(browser, base, route, path, viewport, storage, out, diag, whole) {
+async function captureOne(browser, base, route, path, viewport, storage, out, diag) {
   for (let attempt = 1; ; attempt += 1) {
-    const result = await captureAttempt(browser, base, route, path, viewport, storage, out, diag, whole);
+    const result = await captureAttempt(browser, base, route, path, viewport, storage, out, diag);
     if (result.throttled.length === 0) return result.stem;
     const waitMs = throttleWaitMs(result.throttled);
     diag.throttle = [...(diag.throttle ?? []), ...result.throttled.map((e) => ({ route: route.name, path, viewport: `${viewport.width}x${viewport.height}`, attempt, status: e.status, waitMs }))];
@@ -268,7 +289,7 @@ async function captureOne(browser, base, route, path, viewport, storage, out, di
   }
 }
 
-async function captureAttempt(browser, base, route, path, viewport, storage, out, diag, whole) {
+async function captureAttempt(browser, base, route, path, viewport, storage, out, diag) {
   const stem = `${route.name}.${viewport.width}x${viewport.height}`;
   const context = await browser.newContext({ viewport, storageState: route.auth ? storage[route.auth] : undefined });
   try {
@@ -292,10 +313,12 @@ async function captureAttempt(browser, base, route, path, viewport, storage, out
       throw new Error(`navigation loop: ${diag.navigations - before} navigations, paths: ${JSON.stringify(diag.navigationPaths)}`);
     }
     const finalUrl = new URL(page.url());
-    if (!whole) await page.screenshot({ path: join(out, `${stem}.png`), fullPage: true });
-    const dom = await page.evaluate(domSummary, ROW_LIMIT);
+    await hydrated(page);
+    const dom = await page.evaluate(domSummary, { rowSelector: ROW_SELECTOR });
     const accessibility = await accessibilitySnapshot(page);
-    if (whole) await wholePageScreenshot(page, viewport, join(out, `${stem}.png`));
+    // The layout measure (law 2 targets, overflow, titles) runs on every route at every width the capture visits; the compare fails on what it finds.
+    const offences = await measurePage(page, { scope: 'body *' });
+    const { truncated } = await wholePageScreenshot(page, viewport, join(out, `${stem}.png`));
     const record = {
       route: route.name,
       path,
@@ -307,6 +330,8 @@ async function captureAttempt(browser, base, route, path, viewport, storage, out
       network_idle: networkIdle,
       accessibility,
       ...dom,
+      truncated,
+      offences,
     };
     await writeFile(join(out, `${stem}.json`), `${JSON.stringify(record, null, 2)}\n`);
     return { stem, throttled: throttleEvents(statuses) };
@@ -336,6 +361,8 @@ async function main() {
   const { gates } = JSON.parse(await readFile(join(dirname(ROUTES_FILE), 'approved-changes.json'), 'utf8'));
   const baselineIndex = JSON.parse(await readFile(join(dirname(ROUTES_FILE), 'baseline', 'index.json'), 'utf8'));
   const index = {
+    contract: CAPTURE_CONTRACT,
+    signed_out_only: Boolean(args['signed-out-only']),
     captured_at: new Date().toISOString(),
     ...commitOf(),
     base,
@@ -408,7 +435,7 @@ async function main() {
       }
       try {
         for (const viewport of VIEWPORTS) {
-          entry.files.push(await captureOne(browser, base, route, entry.path, viewport, storage, out, entry.diagnostics, Boolean(args.fresh)));
+          entry.files.push(await captureOne(browser, base, route, entry.path, viewport, storage, out, entry.diagnostics));
         }
         entry.status = 'ok';
         console.log(`captured ${route.name}`);

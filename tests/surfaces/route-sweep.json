@@ -1,0 +1,179 @@
+{
+  "_about": "For every page and route handler under src/app (outside /api and the UI fixture mounts): the sweep that draws it, or the reason none needs to. tests/surfaces/page-sweep.test.ts holds this list to the file system in both directions (a new route that is neither swept nor exempt is red, and so is an entry for a route that is gone), requires the routes it names as its own to be exactly the pages it draws, and for every EXEMPT route walks the modules the page imports and fails when one of them reads the database (a `.from(\"table\")` or `.rpc(\"name\")` outside core/db) that the entry does not name in `readers`: an exempt page cannot read silently. `swept` is the test file that draws the page over a world and refuses each read in turn (INV-263).",
+  "routes": {
+    "/": {
+      "swept": "tests/surfaces/page-sweep.test.ts"
+    },
+    "/admin": {
+      "swept": "tests/surfaces/page-sweep.test.ts"
+    },
+    "/admin/factors": {
+      "swept": "tests/surfaces/page-sweep.test.ts"
+    },
+    "/admin/inferences": {
+      "swept": "tests/surfaces/page-sweep.test.ts"
+    },
+    "/admin/items/[id]": {
+      "swept": "tests/surfaces/page-sweep.test.ts"
+    },
+    "/admin/parts": {
+      "exempt": "The parts gallery draws every part from fixtures; it reads nothing from the database.",
+      "readers": [
+        "src/features/account/lib/notification-prefs.ts",
+        "src/features/account/lib/profile-patch.ts",
+        "src/features/account/lib/use-account.ts",
+        "src/features/admin/api/attention.ts",
+        "src/features/admin/api/runtime.ts",
+        "src/features/admin/api/shared.ts",
+        "src/features/admin/corrections/load-item-targets.ts",
+        "src/features/admin/read/dashboard.ts",
+        "src/features/onboarding/ui/OnboardingWizard.tsx",
+        "src/features/settings/state/settings-store.ts"
+      ],
+      "readersReason": "features/admin/pages.tsx holds every admin route and imports their readers, and this route calls none of them; the gallery also draws the account, onboarding and settings parts, which read through the browser client and are outside the server sweep."
+    },
+    "/admin/parts/workspace": {
+      "exempt": "The workspace screens drawn from fixtures; it reads nothing from the database.",
+      "readers": [
+        "src/features/account/lib/notification-prefs.ts",
+        "src/features/account/lib/profile-patch.ts",
+        "src/features/account/lib/use-account.ts",
+        "src/features/admin/api/attention.ts",
+        "src/features/admin/api/runtime.ts",
+        "src/features/admin/api/shared.ts",
+        "src/features/admin/corrections/load-item-targets.ts",
+        "src/features/admin/read/dashboard.ts",
+        "src/features/onboarding/ui/OnboardingWizard.tsx",
+        "src/features/settings/state/settings-store.ts"
+      ],
+      "readersReason": "features/admin/pages.tsx holds every admin route and imports their readers, and this route calls none of them; the gallery also draws the account, onboarding and settings parts, which read through the browser client and are outside the server sweep."
+    },
+    "/auth/callback": {
+      "exempt": "A route handler that exchanges a sign-in code for a session and redirects; it draws no page and reads no table."
+    },
+    "/auth/reset-password": {
+      "exempt": "A client form that asks the auth service for a reset e-mail; it reads no table."
+    },
+    "/auth/update-password": {
+      "exempt": "A client form that sets a new password through the auth service; it reads no table."
+    },
+    "/community": {
+      "swept": "tests/community/pages.test.ts"
+    },
+    "/community/[slug]": {
+      "swept": "tests/community/pages.test.ts"
+    },
+    "/community/browse": {
+      "swept": "tests/community/pages.test.ts"
+    },
+    "/community/directory": {
+      "swept": "tests/community/pages.test.ts"
+    },
+    "/community/discover": {
+      "swept": "tests/community/pages.test.ts"
+    },
+    "/community/moderation": {
+      "swept": "tests/community/pages.test.ts"
+    },
+    "/community/profile": {
+      "swept": "tests/community/pages.test.ts"
+    },
+    "/dashboard/coverage": {
+      "swept": "tests/surfaces/page-sweep.test.ts"
+    },
+    "/dashboard/portfolio": {
+      "swept": "tests/surfaces/page-sweep.test.ts"
+    },
+    "/dashboard/portfolio/[id]": {
+      "swept": "tests/surfaces/page-sweep.test.ts"
+    },
+    "/invitations/[token]": {
+      "exempt": "The page checks the session claims and hands the token to a client part that reads the invitation through its own route; the page itself reads no table.",
+      "readers": [
+        "src/features/account/lib/notification-prefs.ts",
+        "src/features/account/lib/profile-patch.ts",
+        "src/features/lists/counts.ts",
+        "src/features/lists/enrich.ts",
+        "src/features/lists/map-rows.ts",
+        "src/features/lists/read.ts",
+        "src/features/onboarding/ui/OnboardingWizard.tsx",
+        "src/features/settings/state/settings-store.ts"
+      ],
+      "readersReason": "features/onboarding/pages.tsx holds the onboarding routes and imports the list reader for the other one (/onboarding, which is swept); this route calls none of it. The wizard and settings parts read through the browser client and are outside the server sweep."
+    },
+    "/login": {
+      "exempt": "A client sign-in form over the auth service; it reads no table."
+    },
+    "/map": {
+      "swept": "tests/surfaces/page-sweep.test.ts"
+    },
+    "/market": {
+      "swept": "tests/surfaces/page-sweep.test.ts"
+    },
+    "/market/[slug]": {
+      "swept": "tests/surfaces/page-sweep.test.ts"
+    },
+    "/market/series": {
+      "swept": "tests/surfaces/page-sweep.test.ts"
+    },
+    "/onboarding": {
+      "swept": "tests/surfaces/page-sweep.test.ts"
+    },
+    "/operations": {
+      "swept": "tests/surfaces/page-sweep.test.ts"
+    },
+    "/operations/[slug]": {
+      "swept": "tests/surfaces/page-sweep.test.ts"
+    },
+    "/privacy": {
+      "exempt": "Static policy text; it reads nothing."
+    },
+    "/profile": {
+      "swept": "tests/surfaces/page-sweep.test.ts"
+    },
+    "/regulations": {
+      "swept": "tests/surfaces/page-sweep.test.ts"
+    },
+    "/regulations/[slug]": {
+      "swept": "tests/surfaces/page-sweep.test.ts"
+    },
+    "/regulations/register": {
+      "swept": "tests/surfaces/page-sweep.test.ts"
+    },
+    "/research": {
+      "swept": "tests/surfaces/page-sweep.test.ts"
+    },
+    "/research/[slug]": {
+      "swept": "tests/surfaces/page-sweep.test.ts"
+    },
+    "/search": {
+      "swept": "tests/surfaces/page-sweep.test.ts"
+    },
+    "/service-unavailable": {
+      "exempt": "A static client page that states the sign-in service is unavailable, with Retry; it reads nothing."
+    },
+    "/settings": {
+      "swept": "tests/surfaces/page-sweep.test.ts"
+    },
+    "/signup": {
+      "exempt": "A client sign-up form over the auth service; it reads no table."
+    },
+    "/watchlist": {
+      "swept": "tests/surfaces/page-sweep.test.ts"
+    },
+    "/workspace/new": {
+      "exempt": "The page gate reads the session claims and shows a client form that creates the workspace through its own route; the page itself reads no table.",
+      "readers": [
+        "src/features/account/lib/notification-prefs.ts",
+        "src/features/account/lib/profile-patch.ts",
+        "src/features/lists/counts.ts",
+        "src/features/lists/enrich.ts",
+        "src/features/lists/map-rows.ts",
+        "src/features/lists/read.ts",
+        "src/features/onboarding/ui/OnboardingWizard.tsx",
+        "src/features/settings/state/settings-store.ts"
+      ],
+      "readersReason": "features/onboarding/pages.tsx holds the onboarding routes and imports the list reader for the other one (/onboarding, which is swept); this route calls none of it. The wizard and settings parts read through the browser client and are outside the server sweep."
+    }
+  }
+}

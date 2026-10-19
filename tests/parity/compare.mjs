@@ -1,14 +1,20 @@
 // The parity gate (PART2-AGENT-PLAN-2026-10-15 section 7). Compares a capture (tests/parity/capture.mjs output) with the committed baseline.
 //
-// Usage: node tests/parity/compare.mjs --captured <dir> [--baseline tests/parity/baseline] [--config tests/parity/approved-changes.json]
+// Usage: node tests/parity/compare.mjs --captured <dir> [--baseline tests/parity/baseline] [--config tests/parity/approved-changes.json] [--routes tests/parity/routes.json]
 //
-// FAIL when, on a route a UI slice owns (config.gates), any baseline landmark, heading, control or list field is missing or reordered, or a row at 375 is
-// taller than its baseline row. The pixel diff is reported at a 2 percent threshold and GATES only the routes listed in gates.pixelExact. Anything a
-// baseline has that the capture lacks must match an entry of `approved` (BUILD-PLAN ruling 10, or a ruling the entry cites): only those may differ.
-// A route the capture marks `skipped` (no signed-in credentials) is reported, never failed. Exit 0 clean, 1 on any FAIL.
+// The gate can fail. It ends with `compared N of M gated routes` and exits 1 unless every gated route was compared; a gated route that was not compared is a FAIL unless approved-changes.json names it
+// in `skippable` with a reason (a baseline that cannot exist yet), or the capture says it was a signed-out run (`signed_out_only`: member routes were never requested). Every name in routes.json is gated
+// or exempt with a reason, so a new route cannot sit outside the gate unseen.
+//
+// On a gated route FAIL means: a baseline landmark (role and name), heading, control, list container or list row is missing or reordered; a row at 375 is taller than its baseline row; a list route's baseline
+// holds no rows; the capture holds an offence the layout measure found (a target under the law-2 floor, overflow, a squeezed title); the page was taller than the screenshot ceiling; a pixelExact route's
+// image differs by more than 2 percent, or either image cannot be read. Anything a baseline has that the capture lacks must match an entry of `approved` (a look, security or until-migration ruling).
+// A baseline written under another capture contract is not compared: the run fails and names the recapture. Exit 0 clean, 1 on any FAIL. No browser is needed: images are read in Node (png.mjs).
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { pathToFileURL } from 'node:url';
 
-import { chromium } from 'playwright';
+import { CAPTURE_CONTRACT } from './contract.mjs';
+import { pixelDiff } from './png.mjs';
 
 const EMAIL = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g;
 const KEEP = new Set(['privacy@carosledge.com']);
@@ -26,15 +32,19 @@ const uncount = (s) => clean(s).replace(/\d[\d,]*/g, '#').replace(/(?<=[A-Za-z])
 const PIXEL_THRESHOLD = 0.02;
 // IMP-062: the diff images land beside the capture's report so the parity job uploads them as an artifact.
 const DIFF_DIR = 'parity-diff';
+const MIN_REASON = 20;
 
 function parseArgs(argv) {
-  const a = { baseline: 'tests/parity/baseline', config: 'tests/parity/approved-changes.json' };
-  for (let i = 0; i < argv.length; i += 2) a[argv[i].slice(2)] = argv[i + 1];
-  if (!a.captured) throw new Error('usage: compare.mjs --captured <dir> [--baseline <dir>] [--config <file>]');
+  const a = { baseline: 'tests/parity/baseline', config: 'tests/parity/approved-changes.json', routes: 'tests/parity/routes.json' };
+  for (let i = 0; i < argv.length; i += 2) {
+    if (!argv[i]?.startsWith('--') || argv[i + 1] === undefined) throw new Error(`usage: compare.mjs --captured <dir> [--baseline <dir>] [--config <file>] [--routes <file>] (bad argument ${argv[i] ?? '<none>'})`);
+    a[argv[i].slice(2)] = argv[i + 1];
+  }
+  if (!a.captured) throw new Error('usage: compare.mjs --captured <dir> [--baseline <dir>] [--config <file>] [--routes <file>]');
   return a;
 }
 const readJson = async (p) => JSON.parse(await readFile(p, 'utf8'));
-const readOpt = async (p) => readJson(p).catch(() => null);
+const readOpt = async (p) => readJson(p).catch((e) => (e.code === 'ENOENT' ? null : Promise.reject(e)));
 
 // Ordered-subsequence check: every baseline item must appear in the capture, in the baseline's order. Returns the missing and the out-of-order items.
 export function subsequence(baseline, captured, key) {
@@ -54,7 +64,7 @@ export function subsequence(baseline, captured, key) {
 
 // A waiver of kind 'until-migration' (with `migration` and optionally `on`: landmark, heading or control) covers a difference that exists only because production carries no new migration before the
 // cutover window. It is counted apart from the look/ruling waivers, and tree-checks retires it once supabase/migrations/APPLIED.json lists the migration.
-// Waiver usage: every waiver id that covered a difference in this run lands here, so main() can end the report with the waivers that covered nothing (a waiver must match a current difference).
+// Waiver usage: every waiver id that covered a difference in this run lands here, so the report can end with the waivers that covered nothing (a waiver must match a current difference).
 export const USED_WAIVERS = new Set();
 const hit = (a) => { if (a) USED_WAIVERS.add(a.id); return a; };
 const untilMigration = (approved, route, kind, text) => hit(approved.find((a) => a.kind === 'until-migration' && a.route === route && (!a.on || a.on === kind) && (a.match === '*' || new RegExp(a.match).test(text))));
@@ -74,16 +84,16 @@ export function compareRecord(route, viewport, base, cap, approved, dataNames = 
     const w = untilMigration(approved, route, kind, m);
     return w ? until.push({ line, migration: w.migration }) : fails.push(line);
   };
-  const check = (kind, baseItems, capItems, key, show) => {
+  const check = (kind, baseItems, capItems, key) => {
     const { missing, reordered } = subsequence(baseItems, capItems, key);
     for (const m of missing) sort(kind, m, `${kind} missing: ${m}`);
     for (const m of reordered) {
       if (kind === 'control' && orderWaived(approved, route, m)) used.push(`${kind} reordered: ${m}`);
       else sort(kind, m, `${kind} reordered: ${m}`);
     }
-    void show;
   };
-  check('landmark', base.landmarks ?? [], cap.landmarks ?? [], (l) => l.role);
+  // A landmark is its role and its name: a region renamed or swapped for another of the same role is a difference, and a missing one is told apart from a reordered one.
+  check('landmark', base.landmarks ?? [], cap.landmarks ?? [], (l) => `${l.role}:${uncount(l.name)}`);
   // Counts are data, not design: every integer run in a name ("+ 18 more", "GLOBAL16", "Regulations1,320") compares as "#".
   check('heading', base.headings ?? [], cap.headings ?? [], (h) => `${h.level}:${uncount(h.text)}`);
   const names = dataNames.filter((d) => d.route === route);
@@ -96,6 +106,8 @@ export function compareRecord(route, viewport, base, cap, approved, dataNames = 
   check('control', base.controls ?? [], cap.controls ?? [], ctl);
   const baseRows = base.rows?.items ?? [];
   const capRows = cap.rows?.items ?? [];
+  // The lists themselves: each baseline container that held rows still exists, in order, and its rows are all there, in the baseline's order.
+  check('list container', (base.rows?.containers ?? []).filter((c) => c.count > 0), cap.rows?.containers ?? [], (c) => uncount(c.label));
   // A row key carries live counts too ("2/7 sourced · 985 regs"): the same normalisation as names.
   const rowKey = (r) => `${r.tag}:${uncount(r.text).slice(0, 80)}`;
   check('row', baseRows, capRows, rowKey);
@@ -113,135 +125,216 @@ export function compareRecord(route, viewport, base, cap, approved, dataNames = 
 }
 
 // A frame route proves the shell only: its controls, headings and landmarks are limited to the shell's, the rest is page body that the full gate checks.
-// `config.frameLandmarks[viewport]` is the shell's landmark roles in order (written down in approved-changes.json, from the dashboard baseline).
+// `config.frameLandmarks[viewport]` is the shell's landmark roles in order (written down in approved-changes.json, from the dashboard baseline); each keeps the name the baseline gave it.
 export function scopeFrame(base, config, viewport) {
   const shellRoles = config.frameLandmarks[viewport] ?? [];
   const body = (base.landmarks ?? []).filter((l) => !shellRoles.includes(l.role)).map((l) => l.role);
   const scoped = {
     ...base,
-    rows: { items: [] },
-    landmarks: shellRoles.map((role) => ({ role })),
+    rows: { items: [], containers: [] },
+    landmarks: shellRoles.map((role) => ({ role, name: (base.landmarks ?? []).find((l) => l.role === role)?.name ?? '' })),
     controls: base.controls.filter((x) => config.frameControls.some((re) => new RegExp(re).test(`${x.role}:${x.name}`))),
     headings: base.headings.filter((h) => config.frameHeadings.includes(h.text)),
   };
   return { scoped, notes: [...new Set(body)].map((role) => `body landmark, checked at full: ${role}`) };
 }
 
-async function pixelDiff(browser, aPath, bPath) {
-  const [a, b] = await Promise.all([readFile(aPath), readFile(bPath)]);
-  const page = await browser.newPage();
-  try {
-    return await page.evaluate(
-      async ([x, y]) => {
-        const load = (b64) => new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = `data:image/png;base64,${b64}`; });
-        const [ia, ib] = await Promise.all([load(x), load(y)]);
-        const w = Math.max(ia.width, ib.width);
-        const h = Math.max(ia.height, ib.height);
-        const px = (img) => { const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, w, h); g.drawImage(img, 0, 0); return g.getImageData(0, 0, w, h).data; };
-        const da = px(ia);
-        const db = px(ib);
-        let diff = 0;
-        // IMP-062: the diff image a reviewer looks at: the capture faded, every differing pixel red.
-        const out = document.createElement('canvas');
-        out.width = w;
-        out.height = h;
-        const og = out.getContext('2d');
-        const img = og.createImageData(w, h);
-        for (let i = 0; i < da.length; i += 4) {
-          const differs = Math.abs(da[i] - db[i]) + Math.abs(da[i + 1] - db[i + 1]) + Math.abs(da[i + 2] - db[i + 2]) > 48;
-          if (differs) diff += 1;
-          img.data[i] = differs ? 255 : Math.round((db[i] + 765) / 4);
-          img.data[i + 1] = differs ? 0 : Math.round((db[i + 1] + 765) / 4);
-          img.data[i + 2] = differs ? 0 : Math.round((db[i + 2] + 765) / 4);
-          img.data[i + 3] = 255;
-        }
-        og.putImageData(img, 0, 0);
-        return { ratio: diff / (w * h), sizeA: [ia.width, ia.height], sizeB: [ib.width, ib.height], image: diff > 0 ? out.toDataURL('image/png') : null };
-      },
-      [a.toString('base64'), b.toString('base64')],
-    );
-  } finally {
-    await page.close();
+// The structure of the gate itself: every name in routes.json is gated or exempt with a reason, every name a list refers to is a route, every reason is a sentence. Returns the problems (empty when sound).
+export function gateProblems(routes, config) {
+  const problems = [];
+  const names = routes.map((r) => r.name);
+  const known = new Set(names);
+  const arrayOf = (what, v) => (Array.isArray(v) ? v : (problems.push(`approved-changes.json: ${what} must be an array`), []));
+  const full = arrayOf('gates.full', config.gates?.full);
+  const frame = arrayOf('gates.frame', config.gates?.frame);
+  const pixelExact = arrayOf('gates.pixelExact', config.gates?.pixelExact);
+  const lists = arrayOf('gates.lists', config.gates?.lists);
+  const reasoned = (what, entries) => {
+    const routesNamed = new Set();
+    for (const e of arrayOf(what, entries)) {
+      if (!known.has(e?.route)) problems.push(`${what}: ${JSON.stringify(e?.route)} is not a route in routes.json`);
+      if (typeof e?.reason !== 'string' || e.reason.trim().length < MIN_REASON) problems.push(`${what}: ${e?.route} carries no reason (at least ${MIN_REASON} characters)`);
+      routesNamed.add(e?.route);
+    }
+    return routesNamed;
+  };
+  const exempt = reasoned('exempt', config.exempt);
+  const skippable = reasoned('skippable', config.skippable);
+  const listEmpty = reasoned('listEmpty', config.listEmpty);
+  const gated = new Set([...full, ...frame]);
+  for (const n of names) {
+    if (!gated.has(n) && !exempt.has(n)) problems.push(`route ${n} is in routes.json but is neither gated (gates.full, gates.frame) nor exempt with a reason`);
+    if (gated.has(n) && exempt.has(n)) problems.push(`route ${n} is both gated and exempt`);
   }
+  for (const n of full) if (frame.includes(n)) problems.push(`route ${n} is in both gates.full and gates.frame`);
+  for (const n of gated) if (!known.has(n)) problems.push(`gates name ${n}, which routes.json does not`);
+  for (const [what, list] of [['gates.pixelExact', pixelExact], ['gates.lists', lists]]) for (const n of list) if (!gated.has(n)) problems.push(`${what} names ${n}, which is not a gated route`);
+  for (const n of skippable) if (!gated.has(n)) problems.push(`skippable names ${n}, which is not a gated route`);
+  for (const n of listEmpty) if (!lists.includes(n)) problems.push(`listEmpty names ${n}, which is not in gates.lists`);
+  return problems;
 }
 
-async function main() {
-  const args = parseArgs(process.argv.slice(2));
-  const config = await readJson(args.config);
-  const baseIndex = await readJson(`${args.baseline}/index.json`);
-  const capIndex = await readJson(`${args.captured}/index.json`);
+// A list route's baseline holds rows: a baseline with none compares nothing about its list, so it fails (unless listEmpty names the route with the reason its account has no rows).
+export function emptyListProblem(route, baseRecord, config) {
+  if (!(config.gates.lists ?? []).includes(route) || (config.listEmpty ?? []).some((e) => e.route === route)) return null;
+  return (baseRecord.rows?.items ?? []).length === 0 ? 'baseline holds no list rows, so its list is not compared (recapture the baseline)' : null;
+}
+
+async function pixelLine({ stem, viewport, baseline, captured, diffDir, exact, approved }) {
+  const pngA = `${baseline}/${stem}.png`;
+  const a = await readFile(pngA).catch((e) => (e.code === 'ENOENT' ? null : Promise.reject(e)));
+  if (!a) return { lines: [], fail: false };
+  const b = await readFile(`${captured}/${stem}.png`).catch((e) => (e.code === 'ENOENT' ? null : Promise.reject(e)));
+  if (!b) return { lines: [`${viewport}: capture image missing (${stem}.png)`], fail: exact };
+  let d;
+  try {
+    d = pixelDiff(a, b);
+  } catch (e) {
+    return { lines: [`${viewport}: pixel compare error ${e.message}`], fail: exact };
+  }
+  const over = d.ratio > PIXEL_THRESHOLD;
+  if (d.image) {
+    await mkdir(diffDir, { recursive: true });
+    await writeFile(`${diffDir}/${stem}.png`, d.image);
+  }
+  // A pixel waiver counts as used only when the diff is over the threshold on a gated route (the only case it changes the verdict).
+  const pixelWaiver = approved.find((x) => x.kind === 'pixel' && (x.viewport === undefined || x.viewport === viewport));
+  if (over && exact) hit(pixelWaiver);
+  const tail = over && exact ? (pixelWaiver ? ' over, waived by an approved change' : ' GATE') : '';
+  return { lines: [`${viewport}: pixel diff ${(d.ratio * 100).toFixed(2)}% (threshold ${PIXEL_THRESHOLD * 100}%)${tail}`], fail: over && exact && !pixelWaiver };
+}
+
+/** What a capture record says about itself, whatever the baseline holds: the offences its layout measure found, a page taller than the screenshot ceiling. */
+export function intrinsicProblems(record) {
+  const problems = [];
+  if (!Array.isArray(record.offences)) problems.push('the record carries no `offences` list, so its layout was never measured');
+  else for (const o of record.offences) problems.push(`offence: ${o}`);
+  if (record.truncated === true) problems.push('the page is taller than the screenshot ceiling (truncated), so the lower part is not in the image');
+  if (record.truncated === undefined) problems.push('the record does not say whether its screenshot was truncated');
+  return problems;
+}
+
+/**
+ * Runs the whole comparison. Returns `{ lines, failed, compared, gated }`; it prints nothing and exits nothing, so a test can plant any capture and read the verdict.
+ * `signed_out_only` in the capture index is the one way a member route is not requested; a missing credential without it is a route that was not captured.
+ */
+export async function compareRun({ captured, baseline = 'tests/parity/baseline', config: configPath = 'tests/parity/approved-changes.json', routes: routesPath = 'tests/parity/routes.json', diffDir = DIFF_DIR }) {
+  const config = await readJson(configPath);
+  const routes = (await readJson(routesPath)).routes;
+  const baseIndex = await readJson(`${baseline}/index.json`);
+  const capIndex = await readJson(`${captured}/index.json`);
+  const lines = [];
+  let failed = false;
+  const say = (line) => lines.push(line);
+  for (const p of gateProblems(routes, config)) {
+    failed = true;
+    say(`FAIL      gate configuration: ${p}`);
+  }
+  const stale = baseIndex.contract !== CAPTURE_CONTRACT;
+  if (stale) {
+    failed = true;
+    say(`FAIL      baseline: written under capture contract ${baseIndex.contract ?? 1}, this capture is contract ${CAPTURE_CONTRACT}; the baseline is recaptured (tests/parity/baseline/README.md) before anything is compared with it`);
+  }
+  if (capIndex.contract !== CAPTURE_CONTRACT) {
+    failed = true;
+    say(`FAIL      capture: written under capture contract ${capIndex.contract ?? 1}, the compare reads contract ${CAPTURE_CONTRACT}`);
+  }
+  const signedOut = capIndex.signed_out_only === true;
   const full = new Set(config.gates.full);
   const frame = new Set(config.gates.frame);
   const pixelExact = new Set(config.gates.pixelExact);
-  let failed = false;
-  const report = [];
-  const browser = await chromium.launch();
-  try {
-    for (const route of baseIndex.routes) {
-      const cap = capIndex.routes.find((r) => r.name === route.name);
-      const gated = full.has(route.name) || frame.has(route.name);
-      if (!cap || cap.status === 'skipped') {
-        report.push({ route: route.name, result: 'SKIPPED', note: cap ? 'no signed-in credentials in this run' : 'not captured' });
-        continue;
-      }
-      if (cap.status !== 'ok') {
-        const fatal = gated;
-        failed ||= fatal;
-        report.push({ route: route.name, result: fatal ? 'FAIL' : 'ERROR', note: `capture ${cap.status}: ${cap.error}` });
-        continue;
-      }
-      const approved = config.approved.filter((a) => a.route === route.name);
-      const lines = [];
-      let routeFail = false;
-      for (const stem of route.files) {
-        const viewport = stem.split('.')[1];
-        const [b, c] = await Promise.all([readJson(`${args.baseline}/${stem}.json`), readOpt(`${args.captured}/${stem}.json`)]);
-        if (!c) { lines.push(`${viewport}: capture missing`); routeFail ||= gated; continue; }
-        if (gated) {
-                    const { scoped, notes } = frame.has(route.name) ? scopeFrame(b, config, viewport) : { scoped: b, notes: [] };
-          for (const n of notes) lines.push(`${viewport}: ${n}`);
-          const { fails, used, until } = compareRecord(route.name, viewport, scoped, c, approved, config.dataNames ?? []);
-          for (const f of fails) lines.push(`${viewport}: ${f}`);
-          if (used.length) lines.push(`${viewport}: approved differences used: ${used.length}`);
-          for (const m of [...new Set(until.map((u) => u.migration))]) lines.push(`${viewport}: waived until migration ${m} is applied in production: ${until.filter((u) => u.migration === m).length}`);
-          routeFail ||= fails.length > 0;
-        }
-        const pngA = `${args.baseline}/${stem}.png`;
-        const pngB = `${args.captured}/${stem}.png`;
-        if (await readFile(pngA).then(() => true, () => false)) {
-          const d = await pixelDiff(browser, pngA, pngB).catch((e) => ({ error: String(e) }));
-          if (d.error) lines.push(`${viewport}: pixel compare error ${d.error}`);
-          else {
-            const over = d.ratio > PIXEL_THRESHOLD;
-            if (d.image) {
-              await mkdir(DIFF_DIR, { recursive: true });
-              await writeFile(`${DIFF_DIR}/${stem}.png`, Buffer.from(d.image.split(',')[1], 'base64'));
-            }
-            // A pixel waiver counts as used only when the diff is over the threshold on a gated route (the only case it changes the verdict).
-            const pixelWaiver = approved.find((a) => a.kind === 'pixel' && (a.viewport === undefined || a.viewport === viewport));
-            const waived = Boolean(pixelWaiver);
-            if (over && pixelExact.has(route.name)) hit(pixelWaiver);
-            lines.push(`${viewport}: pixel diff ${(d.ratio * 100).toFixed(2)}% (threshold ${PIXEL_THRESHOLD * 100}%)${over && pixelExact.has(route.name) ? (waived ? ' over, waived by an approved change' : ' GATE') : ''}`);
-            if (over && pixelExact.has(route.name) && !waived) routeFail = true;
-          }
-        }
-      }
-      failed ||= routeFail;
-      report.push({ route: route.name, result: routeFail ? 'FAIL' : gated ? 'PASS' : 'REPORTED', lines });
+  const compared = new Set();
+  let gated = 0;
+  let skippedGated = 0;
+  let notRequested = 0;
+  for (const route of routes) {
+    const isGated = full.has(route.name) || frame.has(route.name);
+    const cap = capIndex.routes.find((r) => r.name === route.name);
+    const entry = baseIndex.routes.find((r) => r.name === route.name);
+    const skippable = (config.skippable ?? []).find((s) => s.route === route.name);
+    const baseFiles = entry?.files ?? [];
+    const result = (word, note, rest = []) => {
+      say(`${word.padEnd(9)} ${route.name}${note ? `: ${note}` : ''}`);
+      for (const l of rest) say(`            ${l}`);
+    };
+    if (isGated && signedOut && route.auth) {
+      notRequested += 1;
+      result('NOT ASKED', 'a signed-out run does not request a signed-in route');
+      continue;
     }
-  } finally {
-    await browser.close();
+    if (isGated) gated += 1;
+    if (!cap || cap.status === 'skipped' || (cap.status === 'ok' && isGated && baseFiles.length === 0)) {
+      if (!isGated) {
+        result('SKIPPED', cap ? `${cap.error ?? 'skipped'}` : 'not captured (exempt route)');
+      } else if (skippable) {
+        skippedGated += 1;
+        result('SKIPPED', cap?.status === 'ok' ? `${skippable.reason} (the capture succeeded: capture the baseline and delete this skippable entry)` : skippable.reason);
+      } else {
+        failed = true;
+        result('FAIL', !cap ? 'gated route not captured' : cap.status === 'skipped' ? `capture skipped (${cap.error ?? 'no reason recorded'}) and approved-changes.json names no skippable reason for it` : `gated route has no baseline files and approved-changes.json names no skippable reason for it`);
+      }
+      continue;
+    }
+    if (cap.status !== 'ok') {
+      failed ||= isGated;
+      result(isGated ? 'FAIL' : 'ERROR', `capture ${cap.status}: ${cap.error}`);
+      continue;
+    }
+    const approved = config.approved.filter((a) => a.route === route.name);
+    const report = [];
+    let routeFail = false;
+    let relative = false;
+    for (const stem of isGated ? baseFiles : cap.files) {
+      const viewport = stem.split('.')[1];
+      const c = await readOpt(`${captured}/${stem}.json`).catch((e) => ({ unreadable: e.message }));
+      if (!c || c.unreadable) {
+        report.push(`${viewport}: ${c ? `capture record unreadable (${c.unreadable})` : 'capture missing'}`);
+        routeFail ||= isGated || Boolean(c);
+        continue;
+      }
+      for (const p of intrinsicProblems(c)) {
+        report.push(`${viewport}: ${p}`);
+        routeFail = true;
+      }
+      if (!isGated || stale) continue;
+      const b = await readJson(`${baseline}/${stem}.json`);
+      relative = true;
+      const { scoped, notes } = frame.has(route.name) ? scopeFrame(b, config, viewport) : { scoped: b, notes: [] };
+      for (const n of notes) report.push(`${viewport}: ${n}`);
+      const empty = emptyListProblem(route.name, scoped, config);
+      if (empty) {
+        report.push(`${viewport}: ${empty}`);
+        routeFail = true;
+      }
+      const { fails, used, until } = compareRecord(route.name, viewport, scoped, c, approved, config.dataNames ?? []);
+      for (const f of fails) report.push(`${viewport}: ${f}`);
+      if (used.length) report.push(`${viewport}: approved differences used: ${used.length}`);
+      for (const m of [...new Set(until.map((u) => u.migration))]) report.push(`${viewport}: waived until migration ${m} is applied in production: ${until.filter((u) => u.migration === m).length}`);
+      routeFail ||= fails.length > 0;
+      const px = await pixelLine({ stem, viewport, baseline, captured, diffDir, exact: pixelExact.has(route.name), approved });
+      report.push(...px.lines);
+      routeFail ||= px.fail;
+    }
+    if (relative) compared.add(route.name);
+    if (isGated && stale) {
+      report.push('not compared: the baseline is stale');
+      routeFail = true;
+    }
+    failed ||= routeFail;
+    result(routeFail ? 'FAIL' : isGated ? 'PASS' : 'REPORTED', '', report);
   }
-  for (const r of report) {
-    console.log(`${r.result.padEnd(9)} ${r.route}${r.note ? `: ${r.note}` : ''}`);
-    for (const l of r.lines ?? []) console.log(`            ${l}`);
-  }
+  const comparedGated = [...compared].filter((n) => full.has(n) || frame.has(n)).length;
   // Only routes this run compared count: a skipped route cannot show that its waivers are unused.
-  const compared = new Set(report.filter((r) => r.result !== 'SKIPPED' && r.result !== 'ERROR').map((r) => r.route));
   const unused = config.approved.filter((a) => compared.has(a.route) && !USED_WAIVERS.has(a.id)).map((a) => a.id);
-  console.log(`unused waivers: ${unused.length ? unused.join(', ') : 'none'}`);
-  console.log(failed ? 'parity: FAIL' : 'parity: ok');
-  process.exit(failed ? 1 : 0);
+  if (comparedGated + skippedGated < gated) failed = true;
+  say(`unused waivers: ${unused.length ? unused.join(', ') : 'none'}`);
+  say(`compared ${comparedGated} of ${gated} gated routes${skippedGated ? `, ${skippedGated} named skippable with a reason` : ''}${notRequested ? `, ${notRequested} signed-in routes not requested (signed-out run)` : ''}`);
+  say(failed ? 'parity: FAIL' : 'parity: ok');
+  return { lines, failed, compared: comparedGated, gated };
 }
 
-if (import.meta.url === `file://${process.argv[1].replaceAll('\\', '/')}` || process.argv[1]?.endsWith('compare.mjs')) await main();
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  const { lines, failed } = await compareRun(parseArgs(process.argv.slice(2)));
+  for (const l of lines) console.log(l);
+  process.exit(failed ? 1 : 0);
+}

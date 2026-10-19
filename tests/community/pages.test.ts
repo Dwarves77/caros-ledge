@@ -18,6 +18,8 @@ import { renderApp, textOf } from "../_support/render.ts";
 import { scripted } from "../_support/fake-clients.ts";
 import { sweepPage, type SweepWorld } from "../_support/page-sweep.ts";
 
+import routeSweep from "../surfaces/route-sweep.json" with { type: "json" };
+
 import { asClient, ROOM_EU, USER, world, type Viewer, type World } from "./_world.ts";
 
 const SLUG = "grp-fine-art-room";
@@ -79,13 +81,19 @@ test("INV-263: every page draws, healthy, with its heading and its controls", as
 
 // ── the sweep: each read a page makes is refused in turn ─────────────────────────────────────────────────────────
 
-for (const spec of PAGES) {
+const SWEPT = PAGES;
+for (const spec of SWEPT) {
   test(`INV-263 ${spec.name}: a read refused is a stated failure with Retry, for every table and rpc the page reads`, async () => {
     const r = await sweepPage({ name: spec.name, draw: async () => (await draw(spec)).text, fallsBack: [...FALLS_BACK], notDrawn: NOT_DRAWN[spec.name] ?? [] }, communityWorld);
-    assert.ok(r.tables.length + r.rpcs.length > 0 || spec.name === "/community/directory", "the page reads something");
+    assert.deepEqual(r.problems, [], `${spec.name}: the sweep cannot prove this page`);
     assert.deepEqual(r.silent, [], `${spec.name}: a refused read drew a page with no stated failure`);
   });
 }
+
+test("G5: the pages this file sweeps are exactly the routes tests/surfaces/route-sweep.json says it sweeps", () => {
+  const mine = Object.entries(routeSweep.routes as Record<string, { swept?: string }>).filter(([, e]) => e.swept === "tests/community/pages.test.ts").map(([r]) => r).sort();
+  assert.deepEqual(SWEPT.map((p) => p.name).sort(), mine);
+});
 
 test("INV-263 /community: each block that fails says so inside the page; the rest draws; the failed number is a dash, never a zero or 'no discussions yet'", async () => {
   const room = async (fail: (db: World) => void) => {

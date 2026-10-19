@@ -9,24 +9,13 @@ import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { chromium } from 'playwright';
-
 import { wholePageScreenshot } from '../parity/capture.mjs';
 
-import { measure } from './measure.mjs';
+import { chromium, exactlyOne, open, settled, smoke, VIEWPORTS, WIDTHS } from './harness.mjs';
+import { measurePage } from './measure.mjs';
 
-const VIEWPORTS = [
-  [375, 812],
-  [768, 1024],
-  [1024, 768],
-  [1280, 800],
-];
-const base = process.argv[process.argv.indexOf('--base') + 1];
-if (!base || base.startsWith('--')) throw new Error('usage: ux-smoke.mjs --base <origin>');
-
-const failures = [];
-const fail = (where, what) => failures.push(`${where}: ${what}`);
-
+const run = smoke('ux-smoke');
+const { base, fail, check } = run;
 
 // The matrix contracts (operator 2026-09-09): the card height is constant across arrival, a selected cell, compare mode and Esc; arrows move the selection and Home moves only; Esc closes; the dimension column stays
 // pinned while the regions scroll; six regions scroll inside the card where five fit; the arrival state declares itself and the declaration goes when the reader acts.
@@ -86,7 +75,8 @@ async function researchContracts(page, where) {
   await pill.first().click();
   await page.waitForURL(/theme=fuels_saf/);
   if ((await page.getByRole('button', { name: /Clear theme/ }).count()) === 0) fail(where, 'a chosen theme offers no Clear theme');
-  await page.goto(`${new URL(page.url()).origin}/privacy/ui-fixtures/surfaces?screen=research`, { waitUntil: 'networkidle' });
+  await page.goto(`${new URL(page.url()).origin}/privacy/ui-fixtures/surfaces?screen=research`, { waitUntil: 'load' });
+  await settled(page);
   await page.getByRole('button', { name: 'Research item actions' }).first().click();
   if (!(await page.getByRole('menuitem', { name: 'Copy link' }).count())) fail(where, 'the row menu offers no Copy link');
   await page.keyboard.press('Escape');
@@ -96,109 +86,105 @@ async function researchContracts(page, where) {
 const browser = await chromium.launch();
 try {
   for (const [w, h] of VIEWPORTS) {
-    const ctx = await browser.newContext({ viewport: { width: w, height: h } });
-    const page = await ctx.newPage();
     const where = `${w}x${h}`;
-    const res = await page.goto(`${base}/privacy/ui-fixtures`, { waitUntil: 'networkidle' });
-    if (!res || res.status() !== 200) {
-      fail(where, `fixture page answered ${res?.status()}`);
-      await ctx.close();
-      continue;
-    }
-    await page.evaluate(() => document.fonts.ready);
-    for (const o of await page.evaluate(measure, { rows: true })) fail(where, o);
-    if (w === 375) {
-      // The four band tiles sit in a 2x2 grid at 375.
-      const tiles = await page.$$eval('[data-fx="tiles"] .cl-band-tile', (els) => els.map((e) => e.getBoundingClientRect().top));
-      if (new Set(tiles.map((t) => Math.round(t))).size !== 2) fail(where, `band tiles are not 2x2: ${tiles.join(',')}`);
-    }
-    // The failed remainder says so, offers Retry, and the first page is not presented as the whole list.
-    const note = await page.locator('[data-fx="surface"] [role=alert]').first().innerText();
-    if (!/did not load/i.test(note) || !/Retry/.test(note)) fail(where, `the failed-remainder note is wrong: ${note}`);
-    // Dialog focus contract.
-    const opener = page.locator('#fx-open-dialog');
-    await opener.focus();
-    await opener.click();
-    const inside = await page.evaluate(() => !!document.activeElement?.closest('[role=dialog]'));
-    if (!inside) fail(where, 'opening the dialog did not move focus inside it');
-    await page.keyboard.press('Tab');
-    await page.keyboard.press('Tab');
-    await page.keyboard.press('Tab');
-    if (!(await page.evaluate(() => !!document.activeElement?.closest('[role=dialog]')))) fail(where, 'Tab escaped the dialog');
-    await page.keyboard.press('Escape');
-    if (await page.locator('[role=dialog]').count()) fail(where, 'Esc did not close the dialog');
-    if (!(await page.evaluate(() => document.activeElement?.id === 'fx-open-dialog'))) fail(where, 'focus did not return to the opener');
-    await ctx.close();
+    await check(where, async () => {
+      const { ctx, page } = await open(browser, `${base}/privacy/ui-fixtures`, [w, h]);
+      try {
+        for (const o of await measurePage(page, { rows: true })) fail(where, o);
+        if (w === 375) {
+          // The four band tiles sit in a 2x2 grid at 375.
+          const tiles = await page.$$eval('[data-fx="tiles"] .cl-band-tile', (els) => els.map((e) => e.getBoundingClientRect().top));
+          if (new Set(tiles.map((t) => Math.round(t))).size !== 2) fail(where, `band tiles are not 2x2: ${tiles.join(',')}`);
+        }
+        // The failed remainder says so, offers Retry, and the first page is not presented as the whole list.
+        const note = await page.locator('[data-fx="surface"] [role=alert]').first().innerText();
+        if (!/did not load/i.test(note) || !/Retry/.test(note)) fail(where, `the failed-remainder note is wrong: ${note}`);
+        // Dialog focus contract. The opener is one element: a second one is the duplicate id of IMP-128, and the page HTML is printed to show where it came from.
+        const opener = await exactlyOne(page, '#fx-open-dialog', 'the dialog opener');
+        await opener.focus();
+        await opener.click();
+        const inside = await page.evaluate(() => !!document.activeElement?.closest('[role=dialog]'));
+        if (!inside) fail(where, 'opening the dialog did not move focus inside it');
+        await page.keyboard.press('Tab');
+        await page.keyboard.press('Tab');
+        await page.keyboard.press('Tab');
+        if (!(await page.evaluate(() => !!document.activeElement?.closest('[role=dialog]')))) fail(where, 'Tab escaped the dialog');
+        await page.keyboard.press('Escape');
+        if (await page.locator('[role=dialog]').count()) fail(where, 'Esc did not close the dialog');
+        if (!(await page.evaluate(() => document.activeElement?.id === 'fx-open-dialog'))) fail(where, 'focus did not return to the opener');
+      } finally {
+        await ctx.close();
+      }
+    });
   }
 
   // P2-12: the Research and Operations screens (the real parts and lists over fixtures) at the same four widths: law 2, overflow, titles, then the contracts of the matrix and the lists.
   for (const [w, h] of VIEWPORTS) {
-    const ctx = await browser.newContext({ viewport: { width: w, height: h } });
-    const page = await ctx.newPage();
-    const errors = [];
-    page.on('pageerror', (e) => errors.push(e.message));
     for (const screen of ['parts', 'research', 'operations']) {
       const where = `${w}x${h} ${screen}`;
-      const res = await page.goto(`${base}/privacy/ui-fixtures/surfaces?screen=${screen}`, { waitUntil: 'networkidle' });
-      if (!res || res.status() !== 200) {
-        fail(where, `fixture page answered ${res?.status()}`);
-        continue;
-      }
-      await page.evaluate(() => document.fonts.ready);
-      for (const o of await page.evaluate(measure, { rows: false })) fail(where, o);
-      // The absence rule: "pending", "unscored" and "not scored" never render on a customer surface.
-      const text = await page.locator('[data-fx]').first().innerText();
-      const banned = text.match(/\b(pending|unscored|not scored)\b/i);
-      if (banned) fail(where, `the word "${banned[0]}" renders`);
-      if (screen === 'parts') await matrixContracts(page, w, where);
-      if (screen === 'research') await researchContracts(page, where);
-      if (screen === 'operations') {
-        for (const name of ['Regions side by side', 'Statements']) if (!(await page.getByRole('heading', { name }).count())) fail(where, `heading "${name}" is missing`);
-        if (!(await page.locator('[data-audit="ops-matrix-panel"][data-open-on-mount]').count())) fail(where, 'the matrix does not arrive with its default cell open and declared');
-        if (!(await page.getByText('Recalculated figures').count())) fail(where, 'the recalculated-figures rail card is missing');
-      }
+      await check(where, async () => {
+        const { ctx, page, errors } = await open(browser, `${base}/privacy/ui-fixtures/surfaces?screen=${screen}`, [w, h]);
+        try {
+          for (const o of await measurePage(page, { rows: false })) fail(where, o);
+          // The absence rule: "pending", "unscored" and "not scored" never render on a customer surface.
+          const text = await page.locator('[data-fx]').first().innerText();
+          const banned = text.match(/\b(pending|unscored|not scored)\b/i);
+          if (banned) fail(where, `the word "${banned[0]}" renders`);
+          if (screen === 'parts') await matrixContracts(page, w, where);
+          if (screen === 'research') await researchContracts(page, where);
+          if (screen === 'operations') {
+            for (const name of ['Regions side by side', 'Statements']) if (!(await page.getByRole('heading', { name }).count())) fail(where, `heading "${name}" is missing`);
+            if (!(await page.locator('[data-audit="ops-matrix-panel"][data-open-on-mount]').count())) fail(where, 'the matrix does not arrive with its default cell open and declared');
+            if (!(await page.getByText('Recalculated figures').count())) fail(where, 'the recalculated-figures rail card is missing');
+          }
+          for (const e of errors) fail(where, `page error: ${e}`);
+        } finally {
+          await ctx.close();
+        }
+      });
     }
-    for (const e of errors) fail(`${w}x${h}`, `page error: ${e}`);
-    await ctx.close();
   }
 
   // Anonymous /privacy: the shell renders as the baseline does, but the page issues no notifications, bootstrap or admin request, and has a single main landmark.
-  const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
-  const page = await ctx.newPage();
-  const seen = [];
-  page.on('request', (r) => seen.push(new URL(r.url()).pathname));
-  await page.goto(`${base}/privacy`, { waitUntil: 'networkidle' });
-  const bad = seen.filter((p) => /notifications|workspace\/bootstrap|\/api\/admin/.test(p));
-  if (bad.length) fail('privacy', `an anonymous page issued ${bad.join(', ')}`);
-  if ((await page.locator('main').count()) !== 1) fail('privacy', 'the page does not have exactly one main landmark');
-  if (!(await page.locator('[data-part=nav-card]').count())) fail('privacy', 'the shell nav card is missing on /privacy');
+  await check('privacy', async () => {
+    const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    try {
+      const page = await ctx.newPage();
+      const seen = [];
+      page.on('request', (r) => seen.push(new URL(r.url()).pathname));
+      await page.goto(`${base}/privacy`, { waitUntil: 'load' });
+      await settled(page);
+      const bad = seen.filter((p) => /notifications|workspace\/bootstrap|\/api\/admin/.test(p));
+      if (bad.length) fail('privacy', `an anonymous page issued ${bad.join(', ')}`);
+      if ((await page.locator('main').count()) !== 1) fail('privacy', 'the page does not have exactly one main landmark');
+      if (!(await page.locator('[data-part=nav-card]').count())) fail('privacy', 'the shell nav card is missing on /privacy');
+    } finally {
+      await ctx.close();
+    }
+  });
   // P2-15e: the screens job photographs the shell, which scrolls inside <main>; the whole-page helper must grow the viewport to the scroll box so the PNG is the whole page, not one viewport.
-  {
+  await check('whole-page screenshot', async () => {
     const viewport = { width: 375, height: 812 };
     const shot = await browser.newContext({ viewport });
     const dir = mkdtempSync(join(tmpdir(), 'whole-'));
     try {
       const tall = await shot.newPage();
-      await tall.goto(`${base}/privacy`, { waitUntil: 'networkidle' });
+      await tall.goto(`${base}/privacy`, { waitUntil: 'load' });
+      await settled(tall);
       const content = await tall.evaluate(() => document.querySelector('main').scrollHeight);
-      await wholePageScreenshot(tall, viewport, join(dir, 'p.png'));
+      const { truncated } = await wholePageScreenshot(tall, viewport, join(dir, 'p.png'));
       const png = readFileSync(join(dir, 'p.png'));
       const height = png.readUInt32BE(20);
       if (content > viewport.height && height < content) fail('whole-page screenshot', `the PNG is ${height} px tall for ${content} px of page`);
       if (content <= viewport.height) fail('whole-page screenshot', `/privacy at 375 does not scroll inside main (${content} px): the check proves nothing`);
+      if (truncated) fail('whole-page screenshot', `/privacy is reported truncated at ${content} px`);
     } finally {
       rmSync(dir, { recursive: true, force: true });
       await shot.close();
     }
-  }
-  await ctx.close();
+  });
 } finally {
   await browser.close();
 }
 
-if (failures.length) {
-  for (const f of failures) console.error(f);
-  console.error(`ux-smoke: ${failures.length} failure(s)`);
-  process.exit(1);
-}
-console.log('ux-smoke: clean at 375x812, 768x1024, 1024x768, 1280x800');
+run.finish(`clean at ${WIDTHS}`);
