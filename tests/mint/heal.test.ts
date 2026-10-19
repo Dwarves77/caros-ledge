@@ -199,7 +199,7 @@ test("rule 18: an orphan figure no capture carries is sourced from a URL the ite
   assert.ok(src, "the cited page was registered");
   assert.equal(src?.base_tier, expectedTier, "the tier is the class table's, never typed here");
   const orphan = claimsOf(db).find((c) => String(c.claim_text).startsWith("The captured source text states the figure"));
-  assert.deepEqual([orphan?.claim_kind, orphan?.source_span, orphan?.source_id, orphan?.source_tier_at_grounding], ["FACT", "EUR 50", src?.id, expectedTier]);
+  assert.deepEqual([orphan?.claim_kind, orphan?.source_span, orphan?.source_id, orphan?.source_tier_at_grounding], ["FACT", "EUR 50 000", src?.id, expectedTier]);
   assert.equal(r.counts.orphans_sourced, 1, r.notes.join("; "));
   assert.ok(PAGE.includes(String(orphan?.source_span ?? "NO_SPAN")), "INV-003: the figure attaches with its URL and a quote verbatim on the page");
   assert.equal(db.rows("agent_run_searches").find((x) => x.id === orphan?.search_result_id)?.result_url, url);

@@ -1,0 +1,112 @@
+{
+  "typeLetters": {
+    "regulation": "R",
+    "directive": "L",
+    "decision": "D",
+    "R": "R",
+    "L": "L",
+    "D": "D"
+  },
+  "schemes": [
+    {
+      "id": "celex",
+      "kind": "instrument",
+      "context": true,
+      "pattern": "\\b(?:CELEX[:\\s]*)?3(?<year>\\d{4})(?<type>[RLD])(?<number>\\d{4})\\b",
+      "key": "instrument:{year}/{number}",
+      "intGroups": [
+        "number"
+      ]
+    },
+    {
+      "id": "celex_case",
+      "kind": "case",
+      "context": true,
+      "pattern": "\\b(?:CELEX[:\\s]*)?6(?<year>\\d{4})(?<type>[A-Z]{1,2})(?<number>\\d{4})\\b",
+      "key": "case:{year}/{type}/{number}",
+      "intGroups": [
+        "number"
+      ]
+    },
+    {
+      "id": "eu_number_year",
+      "kind": "instrument",
+      "context": true,
+      "pattern": "(?<![A-Za-z0-9])(?:(?<tname>Regulation|Directive|Decision)\\s*)?\\((?:EC|EEC|EU|Euratom)\\)\\s*No\\.?\\s*(?<number>\\d{1,4})\\/(?<year>(?:19|20)\\d{2})\\b",
+      "key": "instrument:{year}/{number}",
+      "intGroups": [
+        "number"
+      ]
+    },
+    {
+      "id": "eu_year_number",
+      "kind": "instrument",
+      "context": true,
+      "pattern": "(?<![A-Za-z0-9])(?:(?<tname>Regulation|Directive|Decision)\\s*)?\\((?:EU|Euratom)\\)\\s*(?<year>(?:19|20)\\d{2})\\/(?<number>\\d{1,4})\\b",
+      "key": "instrument:{year}/{number}",
+      "intGroups": [
+        "number"
+      ]
+    },
+    {
+      "id": "eu_typed_slash",
+      "kind": "instrument",
+      "context": true,
+      "pattern": "\\b(?<tname>Regulation|Directive|Decision)\\s+(?<year>(?:19|20)\\d{2})\\/(?<number>\\d{1,4})(?:\\/(?:EC|EU|EEC))?\\b",
+      "key": "instrument:{year}/{number}",
+      "intGroups": [
+        "number"
+      ]
+    },
+    {
+      "id": "bare_year_number",
+      "kind": "instrument",
+      "context": false,
+      "pattern": "(?<![\\d/.\\-])(?<year>(?:19|20)\\d{2})\\/(?<number>\\d{1,4})(?![\\d/])",
+      "key": "instrument:{year}/{number}",
+      "intGroups": [
+        "number"
+      ]
+    },
+    {
+      "id": "us_bill",
+      "kind": "bill",
+      "context": false,
+      "pattern": "\\b(?<prefix>SB|AB|HB|HR|SJR|AJR)[\\s-]?(?<number>\\d{1,5})(?![\\d])",
+      "key": "bill:{prefix}-{number}",
+      "intGroups": [
+        "number"
+      ]
+    },
+    {
+      "id": "iso",
+      "kind": "standard",
+      "context": false,
+      "pattern": "\\bISO(?:\\/IEC)?\\s?(?<number>\\d{3,5})(?![\\d])(?:[:-](?<edition>\\d{4}))?",
+      "key": "iso:{number}",
+      "intGroups": [
+        "number"
+      ]
+    }
+  ],
+  "yearRange": {
+    "pattern": "(?<![\\d/.])(?<start>(?:19|20)\\d{2})[/\\u2013-](?<end>\\d{2}|(?:19|20)\\d{2})(?![\\d/])"
+  },
+  "trackingParams": [
+    "utm_source",
+    "utm_medium",
+    "utm_campaign",
+    "utm_term",
+    "utm_content",
+    "utm_id",
+    "fbclid",
+    "gclid",
+    "msclkid",
+    "mc_cid",
+    "mc_eid"
+  ],
+  "yearBounds": [
+    1957,
+    2100
+  ]
+}
