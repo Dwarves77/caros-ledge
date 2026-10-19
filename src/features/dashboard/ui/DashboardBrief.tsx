@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { BAND_ORDER, bandFromPriority } from "@/core/lists";
-import { formatNumber } from "@/core/shared";
+import { formatDate, formatNumber } from "@/core/shared";
 import { CardFoot, ListRow, ListRowHeader, RailCard, SectionCard, SectionHead, SkeletonBandTile, StatBlock, StateNote, BandTile, BandTileRow } from "@/ui";
 import { LegendRailCard, type ThemeChip } from "@/ui/list-surface";
 import { PARAM } from "@/ui/list-surface/url-state";
@@ -14,10 +14,12 @@ import { PageFrame } from "@/ui/shell";
 import type { WatchlistItem } from "@/features/watchlist/read/watchlist";
 import { RowActions } from "@/features/watchlist/ui/RowActions";
 
-import { briefCardState, changeRowPrefix, type BriefRow } from "../rows";
+import { briefCardState, changeRowPrefix, SURFACES, type BriefRow } from "../rows";
+import type { SourceCoverage } from "@/core/derived/source-coverage";
 import type { Counts } from "../read/digest";
 
 import styles from "./dashboard.module.css";
+import { CoverageLedgerCard } from "./CoverageLedgerCard";
 import { WatchlistRailCard } from "./WatchlistRailCard";
 
 export interface DashboardBriefProps {
@@ -37,14 +39,10 @@ export interface DashboardBriefProps {
   /** null when the watchlist read failed. */
   watchlist: WatchlistItem[] | null;
   themes: ThemeChip[];
+  /** null when the source coverage read failed; absent when the caller reads none (a fixture), and then no coverage card is drawn. */
+  coverage?: SourceCoverage | null;
 }
 
-const SURFACE_ROWS = [
-  { key: "regulations", label: "Regulations", note: "Binding law, agency rules, court decisions", href: "/regulations" },
-  { key: "marketIntel", label: "Market Intel", note: "Price series, corporate moves, capital", href: "/market" },
-  { key: "research", label: "Research", note: "Horizon-scan findings", href: "/research" },
-  { key: "operations", label: "Operations", note: "Regional cost, feasibility, infrastructure", href: "/operations" },
-] as const;
 const bandHref = (key: string) => `/regulations?${PARAM.band}=${key}`;
 
 function Rows({ rows, prefix }: { rows: BriefRow[]; prefix: boolean }) {
@@ -74,6 +72,7 @@ export function DashboardBrief(p: DashboardBriefProps) {
     </StateNote>
   );
   const by = p.counts?.regulations.byPriority;
+  const surfaceCounts = p.counts?.surfaces ?? null;
   return (
     <PageFrame
       rail={
@@ -81,15 +80,15 @@ export function DashboardBrief(p: DashboardBriefProps) {
           <SectionCard dataAudit="across-platform-card">
             <div className={styles.pad}>
               <p className={styles.eyebrow}>Across the platform</p>
-              {p.counts === null ? (
+              {surfaceCounts === null ? (
                 <StateNote tone="error" action={{ label: "Retry", onClick: retry }}>
                   Counts did not load.
                 </StateNote>
               ) : (
                 <div className={styles.stats}>
-                  {SURFACE_ROWS.map((s) => (
+                  {SURFACES.map((s) => (
                     <Link key={s.key} href={s.href} prefetch={false} className={styles.stat}>
-                      <StatBlock layout="row" label={s.label} note={s.note} value={formatNumber(p.counts?.surfaces[s.key] ?? 0)} />
+                      <StatBlock layout="row" label={s.label} note={s.note} value={formatNumber(surfaceCounts[s.key])} />
                     </Link>
                   ))}
                 </div>
@@ -109,6 +108,7 @@ export function DashboardBrief(p: DashboardBriefProps) {
               )}
             </div>
           </SectionCard>
+          {p.coverage !== undefined && <CoverageLedgerCard coverage={p.coverage} />}
           <WatchlistRailCard items={p.watchlist} onRetry={retry} />
           <RailCard title="Portfolios" titleHref="/dashboard/portfolio" dataAudit="portfolio-rail-card">
             <p className={styles.note}>Items, corridors and entities your workspace holds together.</p>
@@ -150,7 +150,7 @@ export function DashboardBrief(p: DashboardBriefProps) {
 
         <section>
           <SectionCard dataAudit="what-changed-card">
-            <SectionHead title="What changed" aside={p.auditDate ? `Detection pass ${p.auditDate}` : "No detection pass on record"} />
+            <SectionHead title="What changed" aside={p.auditDate ? `Latest change ${formatDate(p.auditDate)}` : "No change on record"} />
             {p.ratingsFailed && p.changedRows.length + p.dueRows.length > 0 && (
               <div className="cl-pad-16">
                 <StateNote tone="error" action={{ label: "Retry", onClick: retry }}>
@@ -167,7 +167,7 @@ export function DashboardBrief(p: DashboardBriefProps) {
             ) : (
               <>
                 <Rows rows={p.changedRows} prefix />
-                <CardFoot left={`All ${formatNumber(p.totalChanges)} changes in the last ${p.windowDays} days`} leftHref={`/regulations?${PARAM.sort}=newest`} right="NEW = first seen this pass · UPDATED = brief or timeline changed" />
+                <CardFoot left={`All ${formatNumber(p.totalChanges)} changes in the last ${p.windowDays} days`} leftHref={`/regulations?${PARAM.sort}=newest`} right="New = added in this window · Updated = brief or timeline changed" />
               </>
             )}
           </SectionCard>

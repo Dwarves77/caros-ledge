@@ -9,7 +9,7 @@ import { TierChip } from "@/ui";
 import { SectionCard } from "@/ui/SectionCard";
 
 import { boardFreshnessSummary } from "../lib/freshness";
-import { selectHeadlineSeries } from "../lib/headline";
+import { headlineCaption, selectHeadlineSeries } from "../lib/headline";
 import { headlineCardView, type HeadlineCardView } from "../lib/headline-view";
 import type { SourceRating } from "../lib/provenance";
 import { SPARK_H, SPARK_W, type DeltaCellModel } from "../lib/ribbon-model";
@@ -97,7 +97,7 @@ export function HeadlineSeries({ board, ratings, nowIso }: { board: SeriesBoard;
       <div className={styles.hHead}>
         <h2 className={styles.hTitle}>Headline series</h2>
         <span className={styles.hCaption}>
-          {formatNumber(selection.familiesShown)} of {formatNumber(selection.totalSeries)} · dated, sourced observations ·{" "}
+          {headlineCaption(selection)} · dated, sourced observations ·{" "}
           <Link href="/market/series" className={styles.hLink}>
             Series board →
           </Link>

@@ -9,6 +9,9 @@
 import { z } from "zod";
 
 import { DUTY_HOLDER_CLASSES, isValid, LEG_MODE_CODES } from "@/core/contracts/vocabularies";
+import { readFactSuppressionsFor } from "@/core/detail/claim-tiers";
+import { admissibleClaims, admitItems } from "@/core/derived/admissible";
+import { isVerbatim } from "@/core/contracts/verbatim";
 import type { Db } from "@/core/db";
 import { fetchAllByIdChunks } from "@/core/db";
 import { entityId } from "@/core/entities/id";
@@ -106,8 +109,7 @@ export function buildObjectRow(c: Candidate, ctx: { item: ObjectItem | null; cap
   if (!capture) return { ok: false, reason: "capture_missing" };
   if (capture.intelligence_item_id !== c.instrument_item_id) return { ok: false, reason: "capture_not_of_instrument" };
   if (!nz(c.pinpoint_citation)) return { ok: false, reason: "pinpoint_blank" };
-  const span = norm(c.verbatim_text);
-  if (!span || typeof capture.result_content !== "string" || !capture.result_content.toLowerCase().includes(span)) return { ok: false, reason: "span_not_verbatim" };
+  if (!isVerbatim(capture.result_content, c.verbatim_text)) return { ok: false, reason: "span_not_verbatim" };
   if (c.status !== undefined && c.status !== null && c.status !== "not_assessed") return { ok: false, reason: "status_not_writer_owned" };
   const classes = Array.isArray(c.duty_holder_class) ? c.duty_holder_class.filter((x) => typeof x === "string" && x.trim()) : [];
   if (!classes.length) return { ok: false, reason: "duty_holder_missing" };
@@ -233,7 +235,7 @@ export function candidatesFromFueleuTargets(item: ObjectItem, captures: readonly
   const timeline = timelineFromEvents(events);
   const out: Candidate[] = [];
   for (const p of FUELEU_TARGETS.periods) {
-    const capture = captures.find((c) => typeof c.result_content === "string" && c.result_content.toLowerCase().includes(norm(p.quote)));
+    const capture = captures.find((c) => isVerbatim(c.result_content, p.quote));
     if (!capture) continue;
     out.push({
       instrument_item_id: item.id, capture_id: capture.id, pinpoint_citation: `${t.pinpointBase}, from ${p.from_date}`, verbatim_text: p.quote, duty_holder_class: t.dutyHolderClass,
@@ -248,16 +250,19 @@ export function candidatesFromFueleuTargets(item: ObjectItem, captures: readonly
 export async function deriveObligationObjects(sb: Db, input: { dry: boolean; itemIds: readonly string[]; extraCandidates?: readonly Candidate[] }): Promise<RunResult<{ plan: ObjectPlan }>> {
   const ids = [...new Set([...input.itemIds, ...(input.extraCandidates ?? []).map((c) => c.instrument_item_id)])];
   const items = await fetchAllByIdChunks<ObjectItem & { id: string }>(ids, async (slice) => {
-    const { data, error } = await sb.from("intelligence_items").select("id, title, is_archived, jurisdiction_iso, instrument_identifier, canonical_instrument_key").in("id", slice);
+    const { data, error } = await admitItems(sb.from("intelligence_items").select("id, title, is_archived, jurisdiction_iso, instrument_identifier, canonical_instrument_key").in("id", slice));
     if (error) throw new Error(`derive-objects: intelligence_items read failed: ${error.message}`);
     return data ?? [];
   });
   const itemsById = new Map(items.filter((i) => !i.is_archived).map((i) => [i.id, i]));
-  const claims = await fetchAllByIdChunks<ClaimForObjects>([...itemsById.keys()], async (slice) => {
-    const { data, error } = await sb.from("section_claim_provenance").select("id, claim_text, claim_kind, source_span, search_result_id, source_id, intelligence_item_id").eq("claim_kind", "FACT").in("intelligence_item_id", slice);
-    if (error) throw new Error(`derive-objects: section_claim_provenance read failed: ${error.message}`);
-    return data ?? [];
-  }, { manyPerId: true });
+  const claims = admissibleClaims(
+    await fetchAllByIdChunks<ClaimForObjects>([...itemsById.keys()], async (slice) => {
+      const { data, error } = await sb.from("section_claim_provenance").select("id, claim_text, claim_kind, source_span, search_result_id, source_id, intelligence_item_id").eq("claim_kind", "FACT").in("intelligence_item_id", slice);
+      if (error) throw new Error(`derive-objects: section_claim_provenance read failed: ${error.message}`);
+      return data ?? [];
+    }, { manyPerId: true }),
+    await readFactSuppressionsFor(sb, [...itemsById.keys()]),
+  );
   const events = await fetchAllByIdChunks<EventForDates & { intelligence_item_id: string }>([...itemsById.keys()], async (slice) => {
     const { data, error } = await sb.from("item_forward_events").select("intelligence_item_id, event_date, date_precision, event_kind, obligation_text, confidence").in("intelligence_item_id", slice);
     if (error) throw new Error(`derive-objects: item_forward_events read failed: ${error.message}`);

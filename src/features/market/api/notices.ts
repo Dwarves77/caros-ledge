@@ -3,6 +3,7 @@
 // Ported from old_repo/src/app/api/notices/resolve-watched-entities.ts (lines 1-84)
 // GET /api/notices: the recalculation feed of the caller's ORGANISATION watchlist (a recalculation is a shared fact: "a figure your team tracks changed"). BUILD-PLAN ruling 3: signed-in callers only. Superseded derived values are not readable
 // by a member (the raw table has no member policy), so the pairs are read on the caller's own client (migration 0036 grants the member read); a failed read is a 503 with Retry-After, never an empty 200 (an outage must not read as "nothing changed").
+import { admitItems } from "@/core/derived/admissible";
 import { currentMembership } from "@/core/auth/membership";
 import { fetchAllByIdChunks, type Db } from "@/core/db";
 import { formatCorridorLabel, parseCorridorName } from "@/core/entities";
@@ -44,7 +45,7 @@ export async function resolveWatchedEntityIds(db: Db, watched: ReadonlyArray<{ i
       return data ?? [];
     }, { manyPerId: true });
   const [items, refs, sources] = await Promise.all([
-    read<{ instrument_entity_id: string | null }>("intelligence_items", itemIds, (s) => db.from("intelligence_items").select("id, instrument_entity_id").in("id", s)),
+    read<{ instrument_entity_id: string | null }>("intelligence_items", itemIds, (s) => admitItems(db.from("intelligence_items").select("id, instrument_entity_id").in("id", s))),
     read<{ entity_id: string }>("entity_refs", itemIds, (s) => db.from("entity_refs").select("entity_id").eq("ref_table", "intelligence_items").in("ref_id", s)),
     read<{ organisation_entity_id: string | null }>("sources", sourceIds, (s) => db.from("sources").select("id, organisation_entity_id").in("id", s)),
   ]);

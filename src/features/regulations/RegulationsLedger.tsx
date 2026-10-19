@@ -7,14 +7,15 @@
 import { useRouter } from "next/navigation";
 import { useMemo, useState, type ReactNode } from "react";
 
-import { BAND_ORDER, bandFromPriority, detailHref, dueInfo, jurisdictionCode, metaLine, type UrgencyBandKey } from "@/core/lists";
+import { BAND_ORDER, bandFromPriority, detailHref, dueInfo, jurisdictionCode, type UrgencyBandKey } from "@/core/lists";
+import { rowMeta } from "@/features/market/lib/item-type";
 import { formatLocaleDate, formatNumber } from "@/core/shared";
 import type { WorkspaceAggregates } from "@/features/lists";
 import { mergeWithOverrides, useItemStateStore } from "@/features/workspace/state";
 import { requestJson } from "@/core/http/request-json";
 import { StateNote } from "@/ui";
 import { filterRows, liveFacetCounts, ListSurface, SortRow, sortResourceRows, ThemeStrip, useListRows, useListUrlState, withListPosition, type FacetGroup, type ListSortKey, type ThemeChip } from "@/ui/list-surface";
-import { ItemWatch } from "@/ui/detail";
+import { DetailWatch } from "@/features/workspace/ui/DetailWatch";
 import { ShellCommandBar } from "@/ui/shell/CommandBar";
 import { SavedViews } from "@/features/saved-views/SavedViews";
 
@@ -80,7 +81,7 @@ export function RegulationsLedger({ initial, aggregates, hasMore, nowIso, chips,
           band,
           jurisdiction: jurisdictionCode(r),
           title: r.title,
-          meta: metaLine(r),
+          meta: rowMeta(r),
           ...(days >= 0 && days <= 30 ? { kind: `Updated ${formatLocaleDate(new Date(r.lastRegeneratedAt as string), { month: "short", day: "numeric", timeZone: "UTC" })}` } : {}),
           impact: r.impactScores ?? null,
           due: due ? { label: due.label, days: due.days } : null,
@@ -89,16 +90,18 @@ export function RegulationsLedger({ initial, aggregates, hasMore, nowIso, chips,
           ...(r.biasTags && r.biasTags.length > 0 ? { biasTags: r.biasTags } : {}),
           ...(r.itemGrade ? { itemGrade: r.itemGrade } : {}),
           tags: tagsFacet.tagsFor(uuids.get(r.id) ?? r.id),
-          overflow: <PriorityMenu itemId={r.id} title={r.title} priority={r.priority} top={<ItemWatch itemId={r.id} variant="row" />} />,
+          overflow: <PriorityMenu itemId={r.id} title={r.title} priority={r.priority} top={<DetailWatch type="reg" id={r.id} />} />,
         };
       }),
     };
   });
 
   const total = counts.total;
+  // The count is the list's only when the counts read answered, the first page was not the whole of it (no more to come), or the remainder has arrived; otherwise it is what is shown so far.
+  const exact = aggregates !== null || !hasMore || remainder.state === "ready";
   const jurisdictions = counts.liveSelection ? counts.region.length : aggregates?.totalJurisdictions || counts.region.length;
   const next = useMemo(() => active.reduce<{ days: number; label: string; title: string } | null>((best, r) => (((d) => (d && (!best || d.daysNum < best.days) ? { days: d.daysNum, label: d.label, title: r.title } : best))(dueInfo(r, now))), null), [active, now]);
-  const scope = [`${formatNumber(total)} active`, `${formatNumber(jurisdictions)} jurisdictions`, aggregates?.lastUpdatedAt ? `last sync ${formatLocaleDate(new Date(aggregates.lastUpdatedAt), { month: "short", day: "numeric", timeZone: "UTC" })}` : null, next ? `next obligation ${next.label.replace(/, \d{4}$/, "")} · ${next.title}` : null].filter(Boolean).join(" · ");
+  const scope = [exact ? `${formatNumber(total)} active` : `${formatNumber(total)} shown, the list is longer`, `${formatNumber(jurisdictions)} jurisdictions`, aggregates?.lastUpdatedAt ? `last sync ${formatLocaleDate(new Date(aggregates.lastUpdatedAt), { month: "short", day: "numeric", timeZone: "UTC" })}` : null, next ? `next obligation ${next.label.replace(/, \d{4}$/, "")} · ${next.title}` : null].filter(Boolean).join(" · ");
 
   return (
     <ListSurface
@@ -136,7 +139,7 @@ export function RegulationsLedger({ initial, aggregates, hasMore, nowIso, chips,
         <SortRow
           countLabel={
             <>
-              <b style={{ color: "var(--ink)" }}>{formatNumber(total)}</b> regulations · {flat ? "flat" : "grouped by band"}
+              <b style={{ color: "var(--ink)" }}>{formatNumber(total)}</b> regulations{exact ? "" : " shown"} · {flat ? "flat" : "grouped by band"}
             </>
           }
           linkLabel={flat ? "Group by band" : "Show as one list"}

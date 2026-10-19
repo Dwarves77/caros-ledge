@@ -18,9 +18,10 @@ import type { ChangeLogEntry, Dispute, Resource } from "@/core/types";
 import type { RecommendedAction } from "@/core/brief";
 import { useWorkspaceStore } from "@/core/workspace/store";
 import { Absence, ActionCard, ClaimTierProvider, downloadMarkdownBrief, GfmSection, GradeChip, SectionIndex, StateNote, type ClaimTierMap } from "@/ui";
-import { AtAGlanceCard, commonActionCardProps, CrossPageSection, crossPagePresence, DetailLayout, DetailMasthead, DetailPageWrapper, DetailRail, DetailSection, FactBlocks, ImpactRailCard, InThisListStat, ItemConnections, ItemWatch, RecordFacts, RelevanceRailCard, RequirementTrajectory, SourcesGrid, topRecommendedAction, type CrossPageData, type DetailSurfaceSharedProps } from "@/ui/detail";
+import { AtAGlanceCard, commonActionCardProps, CrossPageSection, crossPagePresence, DetailLayout, DetailMasthead, DetailPageWrapper, DetailRail, DetailSection, FactBlocks, ImpactRailCard, InThisListStat, ItemConnections, RecordFacts, RelevanceRailCard, RequirementTrajectory, SourcesGrid, topRecommendedAction, type CrossPageData, type DetailSurfaceSharedProps } from "@/ui/detail";
 import { LegendRailCard } from "@/ui/list-surface";
 import { DetailTagRow } from "@/features/workspace/ui/DetailTagRow";
+import { DetailWatch } from "@/features/workspace/ui/DetailWatch";
 
 import { OwnerCard } from "./OwnerCard";
 import { PriorityMenu } from "./PriorityMenu";
@@ -107,7 +108,7 @@ export function RegulationDetail(p: Props) {
       biasTags={r.biasTags}
       meta={meta}
       onExport={() => void downloadMarkdownBrief(r, { filenamePrefix: "regulation", metaRows: [r.jurisdiction ? `- Jurisdiction: ${r.jurisdiction}` : null, r.priority ? `- Priority: ${r.priority}` : null, r.complianceDeadline ? `- Compliance deadline: ${r.complianceDeadline}` : null, r.url ? `- Source: ${r.url}` : null] })}
-      {...commonActionCardProps(r, { tagPopover: <DetailTagRow itemId={r.id} open={tagOpen} onOpenChange={setTagOpen} />, watch: <ItemWatch itemId={r.id} />, onTag: () => setTagOpen((v) => !v) })}
+      {...commonActionCardProps(r, { tagPopover: <DetailTagRow itemId={r.id} open={tagOpen} onOpenChange={setTagOpen} />, watch: <DetailWatch type="reg" id={r.id} />, onTag: () => setTagOpen((v) => !v) })}
       where={{ value: [r.sub, jurisLabel].filter(Boolean).join(" · ") || null }}
       timeline={timeline}
       moreMarkersHref="#obligation-register"
@@ -190,7 +191,7 @@ export function RegulationDetail(p: Props) {
             )}
             {depth === "full" && (
               <DetailSection id="sources" title="Sources" aside={rows.length > 0 ? `${rows.length} · tier = provenance, never urgency` : undefined} index={8}>
-                {rows.length > 0 ? <SourcesGrid rows={rows} /> : <Absence reason="not in primary source" />}
+                {rows.length > 0 ? <SourcesGrid rows={rows} /> : <StateNote>No sources are listed for this item.</StateNote>}
               </DetailSection>
             )}
             <CrossPageSection surfaceKey="regulations" surfaceLabel="Regulations" crossPage={p.crossPage} onRetry={() => router.refresh()} />

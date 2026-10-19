@@ -3,6 +3,8 @@
 // One item's extraction input: its FACT and GAP claims, its sections and its reference dates (the run date and the brief's own document date, both refused
 // as events when their clause names no commencement verb). The capture pool is read ONLY when a due-date slot claim needs context. Every read destructures
 // its error and throws on it: a failed read is never an empty input (the old reader's warning is a returned count here).
+import { readFactSuppressionsFor } from "@/core/detail/claim-tiers";
+import { admissibleClaims } from "@/core/derived/admissible";
 import type { Db } from "@/core/db";
 import { readAllPoolRows, usableCaptures, type PoolRow } from "@/core/grounding";
 
@@ -80,7 +82,8 @@ export async function readExtractionInput(sb: Db, itemId: string, now: Date): Pr
   if (claimRes.error) throw new Error(`section_claim_provenance read failed: ${claimRes.error.message}`);
   if (sectionRes.error) throw new Error(`intelligence_item_sections read failed: ${sectionRes.error.message}`);
   if (itemRes.error) throw new Error(`intelligence_items read failed: ${itemRes.error.message}`);
-  const mapped = ((claimRes.data ?? []) as ClaimRow[]).map(mapClaimRow);
+  const claimRows = admissibleClaims(((claimRes.data ?? []) as ClaimRow[]).map((r) => ({ ...r, intelligence_item_id: itemId })), await readFactSuppressionsFor(sb, [itemId]));
+  const mapped = claimRows.map(mapClaimRow);
   const poolRows = mapped.some(needsDueDateContext) ? await readAllPoolRows(sb, itemId) : [];
   return { claims: attachDueDateContext(mapped, poolRows), sections: ((sectionRes.data ?? []) as SectionRow[]).map(mapSectionRow), referenceDates: buildReferenceDates(itemRes.data as { last_regenerated_at?: string } | null, now) };
 }

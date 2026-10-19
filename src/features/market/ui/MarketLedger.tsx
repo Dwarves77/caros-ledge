@@ -15,6 +15,9 @@ import { Menu, StateNote, Toast } from "@/ui";
 import { filterRows, liveFacetCounts, sortResourceRows, useListUrlState, withListPosition, ListSurface, SortRow, type FacetGroup, type ListSortKey } from "@/ui/list-surface";
 import { ShellCommandBar } from "@/ui/shell";
 
+import { rowMeta } from "../lib/item-type";
+import { severityLabel } from "../lib/severity";
+
 import { RetryNote } from "./RetryNote";
 
 const PER_BAND_CAP = 5;
@@ -24,9 +27,8 @@ const SORTS: Array<{ key: ListSortKey; label: string }> = [
   { key: "newest", label: "Newest" },
   { key: "az", label: "A-Z" },
 ];
-const KIND_LABEL: Record<string, string> = { action_required: "Action required", cost_alert: "Cost alert", window_closing: "Window closing", competitive_edge: "Competitive edge", monitoring: "Monitoring" };
-/** The signal kind is the classified `severity` column; a row it was never classified for has no kind (no keyword guess). */
-const kindOf = (r: Resource): string | null => (r.severity ? (KIND_LABEL[r.severity] ?? null) : null);
+/** The signal kind is the stored `severity` column in its one vocabulary (../lib/severity); a row it was never classified for has no kind (no keyword guess). */
+const kindOf = (r: Resource): string | null => severityLabel(r.severity);
 
 export interface MarketLedgerProps {
   resources: Resource[];
@@ -107,7 +109,7 @@ export function MarketLedger({ resources, aggregates, failed = false, nowIso, se
           band,
           jurisdiction: f.jurisdiction,
           title: f.title,
-          meta: f.meta,
+          meta: rowMeta(r),
           ...(kindLabel ? { kind: kindLabel } : {}),
           impact: f.impact,
           due: f.due,

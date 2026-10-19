@@ -1,9 +1,11 @@
 // Ported from old_repo/src/lib/forward-events/compliance-deadline-sync.mjs (lines 1-56)
 // Ported from old_repo/scripts/forward-events/dispatch-extraction.mjs (lines 84-103)
-// intelligence_items.compliance_deadline is the earliest compliance_deadline event on or after today (ties: confidence high before medium, then id) and is
+// intelligence_items.compliance_deadline is the earliest compliance_deadline event (one whose claim was not suppressed) on or after today (ties: confidence high before medium, then id) and is
 // NEVER nulled when no future event exists (INV-220); the Dashboard's Due next reads the column. ONE writer: the update goes through the Db handed in
 // (the service client, or a guarded one), and a read or write error throws.
 import type { Db } from "@/core/db";
+
+import { notInList, suppressedEventIds } from "@/core/derived/suppressed-events";
 
 export const COMPLIANCE_DEADLINE_EVENT_KIND = "compliance_deadline";
 const confRank = (c: unknown): number => (c === "high" ? 0 : c === "medium" ? 1 : 2);
@@ -25,7 +27,9 @@ export function pickComplianceDeadline(rows: readonly DeadlineCandidate[] | null
 export type DeadlineSync = { changed: false; reason: string } | { changed: true; value: string };
 /** Sync one item's column from its held events. `pending` lets a backfill sync from events it has not inserted yet (a dry run). */
 export async function syncComplianceDeadline(sb: Db, itemId: string, asOfIso: string, opts: { dry?: boolean; pending?: readonly DeadlineCandidate[] } = {}): Promise<DeadlineSync> {
-  const { data, error } = await sb.from("item_forward_events").select("id, event_date, event_kind, confidence").eq("intelligence_item_id", itemId);
+  const suppressed = notInList(await suppressedEventIds(sb, itemId));
+  const events = sb.from("item_forward_events").select("id, event_date, event_kind, confidence").eq("intelligence_item_id", itemId);
+  const { data, error } = await (suppressed ? events.not("id", "in", suppressed) : events);
   if (error) throw new Error(`item_forward_events read failed: ${error.message}`);
   const picked = pickComplianceDeadline([...((data ?? []) as DeadlineCandidate[]), ...(opts.pending ?? [])], asOfIso);
   if (!picked) return { changed: false, reason: "no future compliance_deadline event" };

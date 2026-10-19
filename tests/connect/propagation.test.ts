@@ -14,10 +14,10 @@ import { memoryDb } from "../_support/memory-db.ts";
 const NOW = new Date("2026-10-15T00:00:00Z");
 const value = (over: Partial<Value> = {}): Value => ({
   valueId: "v", entityId: null, methodId: "m", methodVersion: "1", value: 1, valueLow: null, valueHigh: null, unit: null, currency: null, derivation: "calculated", originClass: "derived",
-  lifecycle: "verified", admissibility: "calculation_ok", baseConfidence: 0.95, assertedAt: NOW.toISOString(), halfLifeDays: null, inputs: [], supersedes: null, computedAt: NOW.toISOString(), computedBy: "t", ...over,
+  lifecycle: "verified", admissibility: "filing_ok", baseConfidence: 0.95, assertedAt: NOW.toISOString(), halfLifeDays: null, inputs: [], supersedes: null, computedAt: NOW.toISOString(), computedBy: "t", ...over,
 });
 
-test("admissibleFor: the six refusals, each from a value that is otherwise admissible", () => {
+test("admissibleFor: the refusals, each from a value that is otherwise admissible (the ceiling and the superseded lifecycle are tests/derived/gate.test.ts)", () => {
   assert.equal(admissibleFor(value(), "filing", NOW).ok, true);
   const refused = (v: Partial<Value>, use: "display" | "analysis" | "calculation" | "filing", why: RegExp) => {
     const r = admissibleFor(value(v), use, NOW);
@@ -58,7 +58,7 @@ function propagationWorld() {
   const input = (table: string, pk: string) => ({ table, pk });
   const dv = (id: string, inputs: ReturnType<typeof input>[]) => ({ value_id: id, entity_id: null, method_id: "carbon_intensity_tkm", method_version: "1.0.0", value: 1, admissibility: "calculation_ok", unit: "g", currency: null, inputs });
   const m = memoryDb({
-    emission_factors: [{ factor_id: "F1", ttw_co2e: 10, source_key: "s", origin_class: "official", pedigree: 1 }, { factor_id: "F2", ttw_co2e: 20, source_key: "s", origin_class: "official", pedigree: 1 }],
+    emission_factors: [{ factor_id: "F1", ttw_co2e: 10, source_key: "s", origin_class: "official", pedigree: 1, superseded_by: null }, { factor_id: "F2", ttw_co2e: 20, source_key: "s", origin_class: "official", pedigree: 1, superseded_by: null }],
     derived_values: [dv("D1", [input("emission_factors", "F1")]), dv("D2", [input("emission_factors", "F1")]), dv("D3", [input("emission_factors", "F2")])],
     derivation_edges: [
       { from_table: "emission_factors", from_pk: "F1", to_table: "derived_values", to_value_id: "D1" },

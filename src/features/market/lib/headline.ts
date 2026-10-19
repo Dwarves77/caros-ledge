@@ -54,6 +54,9 @@ const rank = (c: string): number => {
   return i === -1 ? FAMILY_CLASS_ORDER.length : i;
 };
 
+/** The caption over the headline strip: the cards are families and the total is series, so it says both and never a fraction of one over the other (register surfaces:18). */
+export const headlineCaption = (s: Pick<HeadlineSelection, "cards" | "totalSeries">): string => `${s.cards.length} ${s.cards.length === 1 ? "family" : "families"} from ${s.totalSeries} series`;
+
 export function selectHeadlineSeries(board: Pick<SeriesBoard, "groups" | "unregistered">, o: { cap?: number; families?: readonly SeriesFamily[] } = {}): HeadlineSelection {
   const located = [...board.groups.flatMap((g) => g.series.map((row) => ({ row, group: g }))), ...board.unregistered.map((row) => ({ row, group: null as ProducerGroup | null }))];
   const eligible = located.filter((x) => hasComputedDelta(x.row.deltas));

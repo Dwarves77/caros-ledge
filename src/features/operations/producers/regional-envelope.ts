@@ -103,7 +103,10 @@ export function parseOewsResponse(js: Rec, o: { regionCode?: string; dimension?:
 
 export const EU_MEMBER_GEO_CODES = ["DE", "NL", "BE", "FR", "IT", "ES"] as const;
 const LC_FILTER = { unit: "EUR", lcstruct: "D1_D4_MD5", nace_r2: "B-N" } as const;
-/** Mean of the latest labour-cost value over the member states that answered; one derived row (calculated) naming the geos and years used. A geo that failed is excluded, never imputed. */
+/**
+ * Mean of the latest labour-cost value over the member states that answered; one derived row (calculated) naming the geos and years used. A geo that failed is excluded, never imputed, and the LABEL names the geos that
+ * were averaged, so a changed composition is a different fact (its own natural key and as-of) and a six-state mean is never read as the EU (register surfaces:16).
+ */
 export function aggregateLcLciLevForRegion(jsByGeo: Record<string, Rec>, o: { geoCodes?: readonly string[]; regionCode: string; dimension?: string }): Rec[] {
   const per: Array<{ geo: string; value: number; year: string; unit: string; currency: string | null }> = [];
   for (const geo of o.geoCodes ?? EU_MEMBER_GEO_CODES) {
@@ -116,7 +119,7 @@ export function aggregateLcLciLevForRegion(jsByGeo: Record<string, Rec>, o: { ge
   if (!per.length) return [];
   const years = [...new Set(per.map((f) => f.year))].sort();
   const latestYear = years[years.length - 1] as string;
-  return [{ region_code: o.regionCode, dimension: o.dimension ?? "labor_markets", fact_label: `${o.regionCode} — Labour cost, business economy (EUR/hour), mean across member states (Eurostat lc_lci_lev)`, value_numeric: Math.round((per.reduce((s, f) => s + f.value, 0) / per.length) * 100) / 100, unit: (per[0] as { unit: string }).unit, currency: (per[0] as { currency: string | null }).currency, derivation: "calculated", origin_class: "derived", source_key: "eurostat", source_ref: `lc_lci_lev:unit=${LC_FILTER.unit};lcstruct=${LC_FILTER.lcstruct};nace_r2=${LC_FILTER.nace_r2};geo_mean_of=${per.map((f) => f.geo).sort().join(",")};years=${years.join(",")}`, method_version: "eurostat-lc-lci-lev-parser@1", as_at_date: `${latestYear}-01-01`, reference_period: latestYear, n_observations: per.length }];
+  return [{ region_code: o.regionCode, dimension: o.dimension ?? "labor_markets", fact_label: `${o.regionCode} — Labour cost, business economy (EUR/hour), unweighted mean of ${per.length} member states: ${per.map((f) => f.geo).sort().join(", ")} (Eurostat lc_lci_lev)`, value_numeric: Math.round((per.reduce((s, f) => s + f.value, 0) / per.length) * 100) / 100, unit: (per[0] as { unit: string }).unit, currency: (per[0] as { currency: string | null }).currency, derivation: "calculated", origin_class: "derived", source_key: "eurostat", source_ref: `lc_lci_lev:unit=${LC_FILTER.unit};lcstruct=${LC_FILTER.lcstruct};nace_r2=${LC_FILTER.nace_r2};geo_mean_of=${per.map((f) => f.geo).sort().join(",")};years=${years.join(",")}`, method_version: "eurostat-lc-lci-lev-parser@1", as_at_date: `${latestYear}-01-01`, reference_period: latestYear, n_observations: per.length }];
 }
 
 /** Eurostat nrg_pc_205: one observation per consumption band and half-year; an unrecognised time code is skipped rather than given a guessed date. */

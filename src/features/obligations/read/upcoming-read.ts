@@ -1,8 +1,9 @@
 // Ported from old_repo/src/lib/forward-events/read-upcoming.mjs (lines 12-231)
-// The upcoming-obligations read: forward events from a date, every kind but `other` by default, joined IN THE QUERY to verified live items, narrowed by the
+// The upcoming-obligations read: forward events from a date, every kind but `other` by default, joined IN THE QUERY to admissible items (core/derived) and minus the events of a suppressed claim, narrowed by the
 // workspace profile or the URL facets (jurisdiction and mode), with the hidden-by-scope count. Fixes: a failed events or item read throws (the old reader
 // folded it into an empty result: B-1564/0058), and the scope filter is applied while paging until the limit is filled (the old overfetch of limit x 5 could
 // starve a scoped read short). "uk" matches GB through the jurisdiction canon.
+import { admitItems } from "@/core/derived/admissible";
 import type { Db } from "@/core/db";
 import { canonicalJurisdictionCode, GENERIC_JURISDICTIONS } from "@/core/entities/id";
 import { qb } from "@/core/db";
@@ -11,6 +12,7 @@ import { DEFAULT_KINDS, EVENT_KINDS, type EventKind } from "../kinds";
 
 
 import { rowsOf } from "./qb";
+import { notInList, suppressedEventIds } from "@/core/derived/suppressed-events";
 
 const ISO_RE = /^\d{4}-\d{2}-\d{2}$/;
 const csvKeys = (v: unknown): string[] => (Array.isArray(v) ? v : typeof v === "string" ? v.split(",") : []).map((x) => String(x ?? "").trim().toLowerCase()).filter(Boolean);
@@ -121,6 +123,7 @@ export interface UpcomingResult {
 /** Read upcoming events. Pages of the dated, verified-item-joined list are scanned until the scoped list fills (or, when the hidden count is wanted, the list ends or the cap is reached). */
 export async function readUpcoming(sb: Db, opts: { itemId?: string | null; kinds?: readonly unknown[]; from?: unknown; limit?: unknown; jurisdictionFilter?: readonly string[] | null; modeFilter?: readonly string[] | null; countHidden?: boolean }, todayIso: string): Promise<UpcomingResult> {
   const spec = buildUpcomingEventsQuerySpec(opts, todayIso);
+  const suppressed = notInList(await suppressedEventIds(sb));
   const wantAll = opts.countHidden === true;
   const unscoped: UpcomingEvent[] = [];
   let scoped: UpcomingEvent[] = [];
@@ -130,7 +133,8 @@ export async function readUpcoming(sb: Db, opts: { itemId?: string | null; kinds
       truncated = true;
       break;
     }
-    let q = qb(sb.from("item_forward_events").select(SELECT)).gte("event_date", spec.from).in("event_kind", spec.kinds).eq("item.provenance_status", "verified").eq("item.is_archived", false);
+    let q = admitItems(qb(sb.from("item_forward_events").select(SELECT)).gte("event_date", spec.from).in("event_kind", spec.kinds), "item");
+    if (suppressed) q = q.not("id", "in", suppressed);
     if (spec.itemId) q = q.eq("intelligence_item_id", spec.itemId);
     const rows = rowsOf<UpcomingEvent>("item_forward_events", await q.order("event_date", { ascending: true }).order("created_at", { ascending: true }).order("id", { ascending: true }).range(page * PAGE, page * PAGE + PAGE - 1));
     unscoped.push(...rows);

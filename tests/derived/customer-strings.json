@@ -1,0 +1,76 @@
+{
+ "shapes": [
+  {
+   "id": "html-entity",
+   "re": "&(?:[a-z]{2,6}|#\\d+);",
+   "why": "An entity in a string is printed as its characters; a customer reads '&apos;'."
+  },
+  {
+   "id": "status-token",
+   "re": "\\b(?:HYPOTHESIS|CONFIRMED|REFUTED)\\b",
+   "why": "The audit status tokens are the build's words, not the product's."
+  },
+  {
+   "id": "iso-timestamp",
+   "re": "\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}",
+   "why": "A raw database timestamp is not a date a person reads."
+  },
+  {
+   "id": "driver-message",
+   "re": "refused by the page sweep|violates (?:unique|foreign key|check)|duplicate key value|does not exist|syntax error at|permission denied for",
+   "why": "A database driver sentence names a constraint, a table or a role."
+  },
+  {
+   "id": "migration-number",
+   "re": "\\bmigration\\s+0\\d{3}\\b|\\(0\\d{3}\\)",
+   "why": "A migration number is an operator's word."
+  },
+  {
+   "id": "pipeline-word",
+   "re": "first seen this pass|Detection pass|build-mode window|brief regenerated",
+   "why": "Pipeline vocabulary in a customer row."
+  },
+  {
+   "id": "internal-label",
+   "re": "\\bSource key\\b|\\bOrigin class\\b|\\bMethod version\\b|\\bseries_key\\b|\\bindex_id\\b",
+   "why": "A column name used as a label."
+  },
+  {
+   "id": "raw-token",
+   "re": "\\b[a-z]+_[a-z]+(?:_[a-z]+)*\\b",
+   "why": "A stored code with an underscore printed as a word."
+  }
+ ],
+ "owed": [
+  {
+   "where": "src/core/auth/invitations.ts",
+   "shape": "driver-message-into-an-error",
+   "owner": "R2e",
+   "finding": "Invitation and org errors are built from error.message (register core:21, workspace-admin-community:19); R2e owns core/auth and the invitation flows: replace with dbError."
+  },
+  {
+   "where": "src/features/auth/api/members.ts",
+   "shape": "driver-message-into-an-error",
+   "owner": "R2e",
+   "finding": "The members route answers 500 with the driver's message; R2e owns auth and orgs: replace with dbError."
+  },
+  {
+   "where": "src/features/community/api/posts.ts",
+   "shape": "driver-message-into-an-error",
+   "owner": "R2e",
+   "finding": "A 22023 from the post rpc is answered with its own message; R2e owns Community: map to a sentence."
+  }
+ ],
+ "exempt": [
+  {
+   "where": "src/features/obligations/extract/date-grammar.ts",
+   "shape": "entity-in-a-js-string",
+   "why": "A pattern that MATCHES an entity in captured HTML text; the string is a regular expression, never printed."
+  },
+  {
+   "where": "src/features/regulations/map/MapView.tsx",
+   "shape": "entity-in-a-js-string",
+   "why": "The map tile attribution is an HTML fragment the map library renders as HTML, where the entity is decoded."
+  }
+ ]
+}

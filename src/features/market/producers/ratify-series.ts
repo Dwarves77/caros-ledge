@@ -1,6 +1,7 @@
 // IMP-113: the ratification as a turn op. A series is attached to the item that is its figure (market_series_items) only when a mint reached `minted_verified` for it; this reads the mint artifact (per_item: the series key as
 // `id`, the outcome, the minted item id), decides each series with ratifySeriesItemMap (the one rule), checks the item is live and verified, writes the ratified rows, and calls the published-price-statistics producer in the SAME
 // run (rule 17: the display rows are what the attachment is for). Called by the `ratify-series-items` op (src/core/turn/ops.ts); writes market_series_items; a dry run plans and writes nothing.
+import { isAdmissibleItem, ITEM_ADMISSIBLE_COLUMNS, type ItemAdmissibility } from "@/core/derived/admissible";
 import { z } from "zod";
 
 import { boundedRead, type Db } from "@/core/db";
@@ -53,9 +54,9 @@ export async function ratifySeriesItems(deps: RatifyDeps, input: { artifact: unk
   const itemIds = [...new Set(wanted.map((d) => d.item_id as string))];
   const live = new Set<string>();
   if (itemIds.length) {
-    const r = await boundedRead<{ id: string; provenance_status: string; is_archived: boolean }>((limit) => deps.sb.from("intelligence_items").select("id, provenance_status, is_archived").in("id", itemIds).limit(limit), { limit: 200 });
+    const r = await boundedRead<{ id: string } & ItemAdmissibility>((limit) => deps.sb.from("intelligence_items").select(`id, ${ITEM_ADMISSIBLE_COLUMNS}`).in("id", itemIds).limit(limit), { limit: 200 });
     if (r.error) return runResult("failed", { read_failed: 1 }, [`ratify-series-items: intelligence_items could not be read: ${r.error.message}`]);
-    for (const i of r.data) if (i.provenance_status === "verified" && !i.is_archived) live.add(i.id);
+    for (const i of r.data) if (isAdmissibleItem(i)) live.add(i.id);
   }
   const ratify = wanted.filter((d) => live.has(d.item_id as string));
   for (const d of wanted.filter((x) => !live.has(x.item_id as string))) reasons.set(d.series_key, "item_not_live_verified");

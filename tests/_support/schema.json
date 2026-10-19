@@ -954,7 +954,8 @@
     "computed_by",
     "invalidated_at",
     "invalidated_by_event",
-    "effective_confidence"
+    "effective_confidence",
+    "ceiling_rank"
    ],
    "uuid": [],
    "defaults": {},
@@ -3799,6 +3800,18 @@
      "ref": "id"
     }
    ]
+  },
+  "source_coverage": {
+   "columns": [
+    "source_id",
+    "items_count",
+    "last_item_at",
+    "last_capture_at",
+    "state"
+   ],
+   "uuid": [],
+   "defaults": {},
+   "fks": []
   },
   "source_reliability_ledger": {
    "columns": [

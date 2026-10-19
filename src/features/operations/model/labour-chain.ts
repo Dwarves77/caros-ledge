@@ -22,6 +22,8 @@ export interface ChainTermValue {
   unit: string | null;
   currency: string | null;
   sourceKey: string | null;
+  /** The registered source's name (never the stored key). */
+  sourceName: string | null;
   sourceRef: string | null;
   originClass: string | null;
   derivation: string | null;
@@ -35,6 +37,7 @@ export interface LabourFactLike {
   unit?: string | null;
   currency?: string | null;
   sourceKey?: string | null;
+  sourceName?: string | null;
   sourceRef?: string | null;
   originClass?: string | null;
   derivation?: string | null;
@@ -80,7 +83,7 @@ export function extractLabourChainTerms(facts: readonly LabourFactLike[]): { inp
     const matches = facts.filter((f) => typeof f.factLabel === "string" && MATCHERS[key].test(f.factLabel) && finite(f.valueNumeric ?? null));
     const usable = key === "productiveHours" ? matches[0] : matches.find((f) => PER_HOUR.test(f.unit ?? ""));
     if (usable) {
-      input[key] = { valueNumeric: usable.valueNumeric as number, unit: usable.unit ?? null, currency: usable.currency ?? null, sourceKey: usable.sourceKey ?? null, sourceRef: usable.sourceRef ?? null, originClass: usable.originClass ?? null, derivation: usable.derivation ?? null, referencePeriod: usable.referencePeriod ?? null, asAtDate: usable.asAtDate ?? null, factLabel: usable.factLabel ?? null };
+      input[key] = { valueNumeric: usable.valueNumeric as number, unit: usable.unit ?? null, currency: usable.currency ?? null, sourceKey: usable.sourceKey ?? null, sourceName: usable.sourceName ?? null, sourceRef: usable.sourceRef ?? null, originClass: usable.originClass ?? null, derivation: usable.derivation ?? null, referencePeriod: usable.referencePeriod ?? null, asAtDate: usable.asAtDate ?? null, factLabel: usable.factLabel ?? null };
     } else if (matches[0]) causes[key] = `held only as ${matches[0].unit ?? "a figure with no unit"}, not per hour`;
     else causes[key] = "no figure held for this term";
   }

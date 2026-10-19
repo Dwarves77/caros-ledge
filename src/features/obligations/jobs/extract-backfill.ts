@@ -1,6 +1,7 @@
 // Ported from old_repo/scripts/forward-events/dispatch-extraction.mjs (lines 1-113)
-// The forward-event backfill (INV-108): extract for live items that hold zero events, insert through the one writer, sync compliance_deadline through the
+// The forward-event backfill (INV-108): extract for admissible items (verified, not archived, not replaced) that hold zero events, insert through the one writer, sync compliance_deadline through the
 // one deadline writer. Resumable by `afterId` (the last id processed is returned). Dry by default at the caller: `dry` is required. No clock but deps.now.
+import { admitItems } from "@/core/derived/admissible";
 import type { Db } from "@/core/db";
 import { fetchAllRows } from "@/core/db";
 import type { RunResult } from "@/core/sources/run-result";
@@ -24,7 +25,7 @@ export async function extractBackfill(deps: BackfillDeps, input: BackfillInput):
   const today = deps.now().toISOString().slice(0, 10);
   const covered = new Set((await fetchAllRows<{ intelligence_item_id: string }>((from, to) => sb.from("item_forward_events").select("intelligence_item_id").order("id", { ascending: true }).range(from, to), { cap: 2_000_000 })).map((r) => r.intelligence_item_id));
   let items = await fetchAllRows<{ id: string; title: string | null }>((from, to) => {
-    let q = sb.from("intelligence_items").select("id, title").eq("is_archived", false);
+    let q = admitItems(sb.from("intelligence_items").select("id, title"));
     if (input.afterId) q = q.gt("id", input.afterId);
     return q.order("id", { ascending: true }).range(from, to);
   }, { cap: 1_000_000 });

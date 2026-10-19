@@ -47,9 +47,9 @@ test("buildChangedRows: the workspace's sectors and jurisdiction weights change 
 });
 
 test("changeRowPrefix names the kind and the field; dueNextWindowLabel says how far the rows reach", () => {
-  assert.equal(changeRowPrefix({ isNew: true }), "NEW · first seen this pass");
-  assert.equal(changeRowPrefix({ isUpdated: true, updatedField: "timeline", changeDate: "2026-10-13" }), "UPDATED · timeline added 2026-10-13");
-  assert.equal(changeRowPrefix({ isUpdated: true }), "UPDATED · brief regenerated");
+  assert.equal(changeRowPrefix({ isNew: true }), "New");
+  assert.equal(changeRowPrefix({ isUpdated: true, updatedField: "timeline", changeDate: "2026-10-13" }), "Updated · timeline added Oct 13, 2026");
+  assert.equal(changeRowPrefix({ isUpdated: true }), "Updated · brief updated");
   assert.equal(changeRowPrefix({}), null);
   const rows = buildDueNextRows([item("a", { complianceDeadline: "2026-10-16" }), item("b", { complianceDeadline: "2026-11-30" })], NOW);
   assert.equal(dueNextWindowLabel(rows.slice(0, 1), "Oct 15"), "By next binding date · week of Oct 15");

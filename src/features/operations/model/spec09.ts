@@ -31,8 +31,9 @@ export interface GridIntensity {
   period: string | null;
 }
 export const DECISION_HORIZON_MONTHS = 24;
-export const AUXILIARY_ENERGY_ASIDE = "stationary load, never a per-tonne-km factor";
-export const GRID_QUEUE_ASIDE = `a gate, not a cost line · ${DECISION_HORIZON_MONTHS}-month standing horizon`;
+export const AUXILIARY_ENERGY_ASIDE = "energy and emissions of loads that run in place";
+/** The horizon is an assumption applied to every operator, and the heading says so with its value. */
+export const GRID_QUEUE_ASIDE = `p90 queue months against an assumed ${DECISION_HORIZON_MONTHS}-month planning horizon`;
 
 /** The one-line substation evidence: headroom against the firm demand, and the constraint with its limiting factor. */
 export function substationEvidence(row: GridQueueRow): string | null {

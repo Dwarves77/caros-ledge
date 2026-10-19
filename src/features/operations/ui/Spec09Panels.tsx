@@ -7,7 +7,7 @@
 // recomputed from Operations inputs, each with its inputs and the weakest source rating. A figure that cannot be drawn names the data it needs; a failed read says so with Retry.
 import { formatDate, formatFigure } from "@/core/shared";
 import { RequestableCoverageState } from "@/features/coverage";
-import { Absence, CoverageState, RailCard, TierChip } from "@/ui";
+import { ABSENCE_DASH, CoverageState, RailCard, TierChip } from "@/ui";
 
 import { auxiliaryEnergy } from "../calc/auxiliary-energy";
 import { gridQueueGate } from "../calc/grid-queue";
@@ -15,6 +15,9 @@ import type { DerivedFigure } from "../model/derived-view";
 import { DECISION_HORIZON_MONTHS, substationEvidence, type AuxiliaryEnergyRow, type GridIntensity, type GridQueueRow } from "../model/spec09";
 
 import styles from "./operations.module.css";
+
+/** Shown when a load's draw, duty cycle or hours cannot be used for an energy figure (the calculation's own reason is a developer's message and is not shown). */
+const AUX_NO_ENERGY = "No energy figure: this load's draw, duty cycle or hours are not usable.";
 
 const num = (v: unknown): number | null => (typeof v === "number" && Number.isFinite(v) ? v : null);
 
@@ -35,9 +38,9 @@ export function AuxiliaryEnergyPanel({ rows, intensity, retryHref }: { rows: Aux
               </div>
             </div>
             <div className={styles.termValue}>
-              <div>{kwh.label === "M" ? `needs ${kwh.reason}` : `${(kwh.value as number).toFixed(1)} kWh over ${row.hours_typical}h`}</div>
+              <div>{kwh.label === "M" ? AUX_NO_ENERGY : `${(kwh.value as number).toFixed(1)} kWh over ${row.hours_typical}h`}</div>
               <div className={styles.derivedMeta}>
-                {gco2e.label === "M" ? "gCO2e: needs a sourced grid intensity for this region" : `${Math.round(gco2e.value as number)} gCO2e at ${intensity?.gco2ePerKwh} gCO2/kWh (${[intensity?.sourceName, intensity?.period].filter(Boolean).join(", ")})`}
+                {gco2e.label === "M" ? "gCO2e: no sourced grid intensity is held for this region" : `${Math.round(gco2e.value as number)} gCO2e at ${intensity?.gco2ePerKwh} gCO2/kWh (${[intensity?.sourceName, intensity?.period].filter(Boolean).join(", ")})`}
               </div>
             </div>
           </div>
@@ -55,7 +58,7 @@ export function GridQueuePanel({ rows, retryHref }: { rows: GridQueueRow[] | nul
       {rows.map((row) => {
         const gate = gridQueueGate({ queueMonthsP90: row.queue_months_p90, horizonMonths: DECISION_HORIZON_MONTHS });
         const status = gate.label === "M" ? "UNKNOWN" : (gate.value as string);
-        const detail = status === "UNKNOWN" ? "needs the p90 queue months for this operator and capacity band" : null;
+        const detail = status === "UNKNOWN" ? "No p90 queue time is recorded for this operator and capacity band, so no gate is stated." : null;
         return (
           <div key={row.queue_id} className={styles.specRow}>
             <div>
@@ -65,8 +68,8 @@ export function GridQueuePanel({ rows, retryHref }: { rows: GridQueueRow[] | nul
             <div className={styles.termValue}>
               <span className={`${styles.gate}${status === "BLOCKED" ? ` ${styles.gateBlocked}` : status === "CLEAR" ? ` ${styles.gateClear}` : ""}`} title={detail ?? undefined}>{status}</span>
               <div className={styles.derivedMeta}>
-                p50 {num(row.queue_months_p50) ?? "needs p50 queue months"}
-                {row.queue_months_p50 != null ? " mo" : ""} · p90 {num(row.queue_months_p90) ?? "needs p90 queue months"}
+                p50 {num(row.queue_months_p50) ?? "not recorded"}
+                {row.queue_months_p50 != null ? " mo" : ""} · p90 {num(row.queue_months_p90) ?? "not recorded"}
                 {row.queue_months_p90 != null ? " mo" : ""} · as of {row.as_of}
               </div>
               {detail && <div className={styles.derivedMeta}>{detail}</div>}
@@ -96,7 +99,7 @@ export function DerivedFigures({ figures, retryHref = "/operations" }: { figures
               <span className={styles.derivedValue}>{money(f)}</span>
               {f.previous !== null && <span className={styles.derivedMeta}> (was {formatFigure(f.previous)})</span>}
               <p className={styles.derivedMeta}>
-                {f.tier !== null ? <TierChip tier={f.tier} size="square" /> : <Absence reason="not in primary source" variant="dash" />}{" "}
+                {f.tier !== null ? <TierChip tier={f.tier} size="square" /> : <span aria-label="Source not rated" title="Source not rated">{ABSENCE_DASH}</span>}{" "}
                 {[f.originClass, `recomputed ${formatDate(f.computedAt.slice(0, 10))}`].filter(Boolean).join(" · ")}
               </p>
               <p className={styles.derivedMeta}>

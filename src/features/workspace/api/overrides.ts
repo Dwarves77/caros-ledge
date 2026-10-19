@@ -1,4 +1,5 @@
 // Ported from old_repo/src/app/api/workspace/overrides/route.ts (lines 36-304)
+import { admitItems } from "@/core/derived/admissible";
 import { z } from "zod";
 
 import { isMissingObject } from "@/core/db/absent";
@@ -38,7 +39,7 @@ async function assertOwnerInOrg(db: Db, orgId: string, ownerUserId: string): Pro
 
 /** The text and link of a notice about an item, read on the caller's own client (it is an item they may open). The recipients are the database's to choose, in the same transaction as the write. */
 async function noticeOf(db: Db, itemUuid: string, title: string, text: (name: string) => string): Promise<Record<string, string>> {
-  const { data: item, error } = await db.from("intelligence_items").select("title, legacy_id, item_type, domain").eq("id", itemUuid).maybeSingle();
+  const { data: item, error } = await admitItems(db.from("intelligence_items").select("title, legacy_id, item_type, domain").eq("id", itemUuid)).maybeSingle();
   if (error) throw new LookupError("intelligence_items", error);
   const uiId = item?.legacy_id || itemUuid;
   const link = workspaceDeps().itemHref?.({ id: uiId, type: item?.item_type ?? null, domain: item?.domain ?? null }) ?? `/regulations/${encodeURIComponent(uiId)}`;

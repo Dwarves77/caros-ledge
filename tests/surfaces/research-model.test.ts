@@ -5,7 +5,7 @@ import { test } from "node:test";
 
 import { assessHorizon, assessItem, assessTechnicalMaturity, type AssessInput } from "@/features/research/model/assess";
 import { corridorLabel, horizonMetaLabel, selectAssessmentView, selectAssessmentViewsByItemId, selectHistoryEntry, selectSignpostView, summarizePredicate, type AssessmentRow } from "@/features/research/model/assessment-view";
-import { SEVERITY_COLUMN_TO_KEY, severityOf, themeOf, THEME_KEYS } from "@/features/research/model/taxonomy";
+import { themeOf, THEME_KEYS } from "@/features/research/model/taxonomy";
 
 const NOW = new Date("2026-10-01T00:00:00Z");
 const input = (o: Partial<AssessInput> = {}): AssessInput => ({ id: "item-1", text: "Hydrogen trucks.", sourceTier: 3, citationCount: null, forwardEvents: [], entityId: null, ...o });
@@ -28,7 +28,7 @@ test("R3, R4 and the refusal: a roadmap date is medium, a maturity prior is low 
   assert.deepEqual([r4.horizon?.rule, r4.horizon?.confidence, r4.statusToken], ["R4", "low", "HYPOTHESIS"], "R4 confidence is forced low and never CONFIRMED");
   const none = assessItem(input({ text: "nothing forecastable" }), { now: NOW });
   assert.equal(none.horizon, null);
-  assert.match(none.refusalReason ?? "", /not forecastable/);
+  assert.equal(none.refusalReason, "no_dated_basis");
 });
 
 test("a demonstration plant reads TRL 6-7 (the old ladder shadowed it with the 8-9 row); a demonstration alone still reads 8-9 (INV-228)", () => {
@@ -48,7 +48,7 @@ test("a corridor label is a point for a point and a span for a span; the horizon
     horizon_trigger_note: "binds", refusal_reason: null, credibility_evidence_score: "robust", credibility_authority_score: { highAuthorityIndependent: 1, medium: 0, vendorFlagged: 0 }, status_token: "CONFIRMED", computed_at: "2026-10-01T00:00:00Z",
   };
   const v = selectAssessmentView(row);
-  assert.deepEqual([v?.technical?.label, v?.commercial, v?.anchored, horizonMetaLabel(v)], ["TRL 8", null, true, "NEAR horizon"]);
+  assert.deepEqual([v?.technical?.label, v?.commercial, v?.anchored, horizonMetaLabel(v)], ["TRL 8", null, true, "near, 2 to 5 years"]);
   const refused = selectAssessmentView({ ...row, horizon_band: null, horizon_rule: null, horizon_kind: null, refusal_reason: "not forecastable: x" });
   assert.deepEqual([refused?.horizon, refused?.anchored, horizonMetaLabel(refused)], [null, false, null]);
   assert.equal(selectAssessmentView(null), null);
@@ -74,12 +74,3 @@ test("the theme of an item: the stored column first; the specific last-mile phra
   assert.equal(THEME_KEYS.length, 7);
 });
 
-test("severity: the stored column wins across all 13 values; the text and recency fallbacks read the INJECTED clock; nothing stored and nothing recent is background", () => {
-  assert.equal(Object.keys(SEVERITY_COLUMN_TO_KEY).length, 13);
-  assert.equal(severityOf("x", null, "window_closing", NOW), "action");
-  assert.equal(severityOf("a deadline to file", null, null, NOW), "action");
-  assert.equal(severityOf("a surcharge", null, null, NOW), "cost");
-  assert.equal(severityOf("plain", "2026-09-25", null, NOW), "monitor", "added within 14 days of the injected now");
-  assert.equal(severityOf("plain", "2026-09-25", null, new Date("2027-01-01T00:00:00Z")), "background", "the same item, a later injected now");
-  assert.equal(severityOf("plain", null, null, NOW), "background");
-});

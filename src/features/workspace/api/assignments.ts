@@ -1,5 +1,6 @@
 // Ported from old_repo/src/lib/workspace/item-assignments.mjs (lines 25-223)
 // Ported from old_repo/src/app/api/workspace/items/[id]/assignments/route.ts (lines 19-41)
+import { collabDbFail } from "./collab-db-fail";
 import { isMissingObject } from "@/core/db/absent";
 import type { Db } from "@/core/db/clients";
 import { boundedRead } from "@/core/db/query";
@@ -117,7 +118,7 @@ export async function setAssignmentState(client: Db, ctx: CollabCtx, input: Reco
   if (!found) return collabFail(404, GONE);
   if (!mayChange(found, ctx)) return collabFail(403, "Only the assignee, the person who assigned it, or a workspace owner or admin can change this assignment.");
   const { data, error } = await client.from("item_assignments").update({ state }).eq("id", found.id).eq("org_id", ctx.orgId).select(ASSIGNMENT_COLUMNS).single();
-  if (error) return collabFail(500, error.message);
+  if (error) return collabDbFail(error);
   const names = await namesAfterWrite(client, ctx.orgId);
   return collabOk(200, { assignment: view(data as Row, ctx, names) });
 }
@@ -129,7 +130,7 @@ export async function removeAssignment(client: Db, ctx: CollabCtx, input: { assi
   if (!found) return collabFail(404, GONE);
   if (!mayChange(found, ctx)) return collabFail(403, "Only the assignee, the person who assigned it, or a workspace owner or admin can remove this assignment.");
   const { error } = await client.from("item_assignments").delete().eq("id", found.id).eq("org_id", ctx.orgId);
-  if (error) return collabFail(500, error.message);
+  if (error) return collabDbFail(error);
   return collabOk(200, { success: true });
 }
 

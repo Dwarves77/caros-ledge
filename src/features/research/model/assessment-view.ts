@@ -3,6 +3,9 @@
 // Ported from old_repo/src/lib/research/read-signposts.mjs (lines 79-107)
 // The render-ready view of a stored assessment: ONE column list and ONE corridor label rule (the old tree had three of each), the horizon words, the signposts with the watched entity's name and the
 // append-only history entries. Pure: a reader supplies rows, a component draws the view; nothing here fetches or reads a clock.
+import copyJson from "./data/assessment-copy.json";
+
+const COPY = copyJson as { refusal: Record<string, string>; genericRefusal: string; method: Record<string, string> };
 export const ASSESSMENT_COLUMNS =
   "id, item_id, supersedes, is_current, lifecycle_state, technical_maturity_low, technical_maturity_high, technical_maturity_method, commercial_maturity_low, commercial_maturity_high, commercial_maturity_method, horizon_kind, horizon_band, horizon_rule, horizon_confidence, horizon_trigger_note, refusal_reason, credibility_evidence_score, credibility_authority_score, status_token, computed_at";
 export const SIGNPOST_COLUMNS = "entity_id, assessment_id, watches, predicate, direction, fired_at";
@@ -68,9 +71,9 @@ export interface AssessmentView {
   computedAt: string;
 }
 
-/** The stored method names the spec it was read against; a customer reads the method without the document reference. */
-const plainMethod = (m: string | null): string | null => (m ? m.replace(/\s*\(spec-\d+[^)]*\)/gi, "").trim() : null);
-const corridor = (prefix: "TRL" | "CRI", low: number | null, high: number | null, method: string | null): Corridor | null => (low != null && high != null ? { low, high, label: corridorLabel(prefix, low, high), method: plainMethod(method) } : null);
+/** The stored method is a code; its sentence is in assessment-copy.json, and a stored value that is not a known code (an older row's prose) is not printed. */
+const methodWords = (m: string | null): string | null => (m !== null && Object.hasOwn(COPY.method, m) ? (COPY.method[m] as string) : null);
+const corridor = (prefix: "TRL" | "CRI", low: number | null, high: number | null, method: string | null): Corridor | null => (low != null && high != null ? { low, high, label: corridorLabel(prefix, low, high), method: methodWords(method) } : null);
 
 export function selectAssessmentView(row: AssessmentRow | null | undefined): AssessmentView | null {
   if (!row) return null;
@@ -98,9 +101,10 @@ export function selectAssessmentViewsByItemId(rows: readonly AssessmentRow[]): M
   }
   return out;
 }
-/** The list row's meta segment, e.g. "NEAR horizon"; null for a refusal (the row says nothing rather than a placeholder). */
-export const horizonMetaLabel = (v: AssessmentView | null | undefined): string | null => (v?.horizon ? `${v.horizon.band} horizon` : null);
-export const refusalText = (reason: string | null): string => reason || "not forecastable, and the conditional structure could not be determined";
+/** The list row's meta segment from the horizon words ("near, 2 to 5 years"); null for a refusal and for a band the table does not hold (the row says nothing rather than a token). */
+export const horizonMetaLabel = (v: AssessmentView | null | undefined): string | null => (v?.horizon && Object.hasOwn(HORIZON_BAND_WORDS, v.horizon.band) ? (HORIZON_BAND_WORDS[v.horizon.band] as string) : null);
+/** The one sentence for a stored refusal code; any other stored text (an older row's prose) reads as the generic sentence and is never printed. */
+export const refusalText = (reason: string | null): string => (reason !== null && Object.hasOwn(COPY.refusal, reason) ? (COPY.refusal[reason] as string) : COPY.genericRefusal);
 
 export interface SignpostRow {
   entity_id: string;

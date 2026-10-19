@@ -3,6 +3,7 @@
 // Ported from old_repo/scripts/producers/market/ratify-series-items.mjs (lines 15-90)
 // Published price statistics: the display rows of the Market detail page, derived ONLY from ratified series-to-item entries (INV-047). A ratified entry whose item
 // is not a live verified item is refused by name; an unratified entry never produces a row; a ratified series with no observation yet produces no row (never a dash).
+import { isAdmissibleItem, ITEM_ADMISSIBLE_COLUMNS, type ItemAdmissibility } from "@/core/derived/admissible";
 import { fetchAllRows, type Db } from "@/core/db";
 import type { ParseOut, ProducerCtx, ProducerSpec } from "@/core/producers/runner";
 import { keyOf, type Rec } from "@/core/producers/upsert-plan";
@@ -16,7 +17,12 @@ export function splitEnvelopeUnit(unit: string | null | undefined, currency: str
   const prefix = currency ? `${currency}/` : null;
   return { symbol, suffix: prefix && unit.startsWith(prefix) ? unit.slice(prefix.length - 1) : unit };
 }
-export const formatValueDisplay = (value: unknown, currency: string | null | undefined): string => `${(currency && SYMBOL[currency]) || ""}${Number(value).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+/** The display text of a price; a value that is not a finite number is refused (Number(null) is 0, and an absent observation must never be stored as "0.00": register surfaces:23). */
+export const formatValueDisplay = (value: unknown, currency: string | null | undefined): string => {
+  const n = typeof value === "number" ? value : typeof value === "string" && value.trim() !== "" ? Number(value) : Number.NaN;
+  if (!Number.isFinite(n)) throw new RangeError(`formatValueDisplay: ${JSON.stringify(value)} is not a finite number`);
+  return `${(currency && SYMBOL[currency]) || ""}${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+};
 export function addDaysIso(isoDate: string | null | undefined, days: number | null | undefined): string | null {
   if (!isoDate || days == null) return null;
   const d = new Date(`${isoDate}T00:00:00Z`);
@@ -40,7 +46,7 @@ export function deriveDisplayRows(marketRows: readonly Rec[], o: { map: SeriesIt
   const out: Rec[] = [];
   map.forEach(([seriesKey, e], index) => {
     const row = latest.get(seriesKey);
-    if (!isRatified(e) || !row) return;
+    if (!isRatified(e) || !row || !Number.isFinite(Number(row.value_numeric)) || row.value_numeric === null) return;
     out.push({
       item_id: e.item_id, label: row.label, value_display: formatValueDisplay(row.value_numeric, row.currency as string), unit: splitEnvelopeUnit(row.unit as string, row.currency as string).suffix, context_line: e.context_line ?? null,
       severity_tone: e.severity_tone ?? null, source_tier: null, released_at: row.as_at_date ?? null, next_release_at: addDaysIso(row.reference_period as string, e.cadence_days), next_release_label: null, sort_order: index,
@@ -100,9 +106,9 @@ export const publishedPriceStatistics: ProducerSpec = {
   /** INV-047: a row is written only for an item that is live and verified; any other is refused by name. */
   async resolve(ctx, rows) {
     const ids = [...new Set(rows.map((r) => String(r.item_id)))];
-    const { data, error } = await (ctx.sb as Db).from("intelligence_items").select("id, provenance_status, is_archived").in("id", ids);
+    const { data, error } = await (ctx.sb as Db).from("intelligence_items").select(`id, ${ITEM_ADMISSIBLE_COLUMNS}`).in("id", ids);
     if (error) throw new Error(`reading intelligence_items failed: ${error.message}`);
-    const ok = new Set(((data ?? []) as Array<{ id: string; provenance_status: string; is_archived: boolean }>).filter((i) => i.provenance_status === "verified" && !i.is_archived).map((i) => i.id));
+    const ok = new Set(((data ?? []) as Array<{ id: string } & ItemAdmissibility>).filter(isAdmissibleItem).map((i) => i.id));
     return { rows: rows.filter((r) => ok.has(String(r.item_id))), refused: rows.filter((r) => !ok.has(String(r.item_id))).map((r) => `item ${String(r.item_id)} (${String(r.label)}) is not a live verified item: not a ratified attachment`) };
   },
   plan: {

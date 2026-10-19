@@ -4,20 +4,19 @@ import { ALL_SECTORS } from "@/core/workspace";
 import { Absence, Masthead } from "@/ui";
 import { ShellCommandBar } from "@/ui/shell";
 
-import { deriveBriefTitle } from "../rows";
-
-const SURFACES = 5;
+import { deriveBriefTitle, SURFACES } from "../rows";
 
 /**
- * The personalised masthead: "<FIRST NAME>'S BRIEF", the item and jurisdiction counts, the workspace and its verticals, and the command bar. A count the read could not answer, or a workspace with
- * no name, draws the Absence convention and never a zero or a made-up name.
+ * The personalised masthead: "<FIRST NAME>'S BRIEF", the item and jurisdiction counts, the workspace and its verticals, and the command bar. The item count is the sum of the rail card's four surface counts (the same
+ * read, the same render) over the surfaces of the one list. A count the read could not answer (null) says so in words (the brief below carries the Retry); it is never a zero, "pending" or a constant. A reader with
+ * no workspace has nothing to count: `noWorkspace` leaves the dek without a count.
  */
-export function DashboardMasthead({ firstName, orgName, sectors, itemCount, jurisdictionCount, dateLabel, nowIso }: { firstName: string | null; orgName: string; sectors: readonly string[]; itemCount: number | null; jurisdictionCount: number | null; dateLabel: string; nowIso: string }) {
+export function DashboardMasthead({ firstName, orgName, sectors, itemCount, jurisdictionCount, noWorkspace = false, dateLabel, nowIso }: { firstName: string | null; orgName: string; sectors: readonly string[]; itemCount: number | null; jurisdictionCount: number | null; noWorkspace?: boolean; dateLabel: string; nowIso: string }) {
   const verticals = sectors.flatMap((id) => ALL_SECTORS.find((s) => s.id === id)?.label ?? []);
   const dek = (
     <>
       <div>
-        {itemCount === null ? <Absence reason="pending" /> : formatNumber(itemCount)} items across {SURFACES} surfaces · {jurisdictionCount === null ? <Absence reason="pending" /> : `${formatNumber(jurisdictionCount)} jurisdictions`} · scoped to {orgName || <Absence reason="not in primary source" />}
+        {noWorkspace ? null : `${itemCount === null ? "The item count did not load" : `${formatNumber(itemCount)} items across ${SURFACES.length} surfaces`} · ${jurisdictionCount === null ? "the jurisdiction count did not load" : `${formatNumber(jurisdictionCount)} jurisdictions`} · `}scoped to {orgName || <Absence reason="not in primary source" />}
       </div>
       <div>Verticals: {verticals.length > 0 ? verticals.join(", ") : <Absence reason="not in primary source" />}</div>
     </>

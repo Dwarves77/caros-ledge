@@ -1,0 +1,21 @@
+"use client";
+
+// New in R2d: the Watch control of a detail page and of a Regulations row, LIVE (register surfaces:1 and 38). The kit's ItemWatch reads a context nothing provides, so on every detail page it was a permanently
+// disabled "Watch"; this reads the one membership store the list rows read (features/watchlist/membership). While the membership read is under way the control is disabled and says nothing wrong; when that read
+// FAILED it is replaced by a stated failure with Retry, never a dead control that looks like an unwatched item.
+import { loadMembership, membershipOf, useWatchMembership } from "@/features/watchlist/membership";
+import type { WatchlistItemType } from "@/features/watchlist/links";
+import { StateNote } from "@/ui";
+import { WatchToggle } from "@/ui/WatchToggle";
+
+export function DetailWatch({ type, id }: { type: WatchlistItemType; id: string }) {
+  const m = useWatchMembership(type, id);
+  if (membershipOf(type)?.status === "failed") {
+    return (
+      <StateNote tone="error" action={{ label: "Retry", onClick: () => void loadMembership(type) }}>
+        Watch status did not load.
+      </StateNote>
+    );
+  }
+  return <WatchToggle variant={m.teamOnly ? "default" : "row"} {...m} />;
+}

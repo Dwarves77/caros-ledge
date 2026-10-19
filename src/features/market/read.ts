@@ -48,10 +48,12 @@ export function perSeriesWindow(rows: readonly SeriesRow[]): SeriesRow[] {
   });
 }
 
-/** Every market_series row (a total order, a cap that throws, never a silent truncation), reduced to each series' window. */
+/** Every market_series row (a total order, a cap that throws, never a silent truncation), reduced to each series' window; each kept row carries how many observations its series has on record, so the board never prints the window's count as the series' (register surfaces:17). */
 export async function readSeriesRows(db: Db): Promise<SeriesRow[]> {
   const rows = await fetchAllRows<SeriesRow>((from, to) => db.from("market_series").select(SERIES_COLS).order("id", { ascending: true }).range(from, to) as never, { cap: 100_000 });
-  return perSeriesWindow(rows);
+  const onRecord = new Map<string, number>();
+  for (const r of rows) onRecord.set(r.series_key, (onRecord.get(r.series_key) ?? 0) + 1);
+  return perSeriesWindow(rows).map((r) => ({ ...r, observations_on_record: onRecord.get(r.series_key) as number }));
 }
 
 interface DataSourceRow {

@@ -11,8 +11,9 @@ import { StateNote } from "@/ui";
 import { PageFrame } from "@/ui/shell";
 
 import { dashboardDeps } from "./deps";
+import { readSourceCoverage } from "@/core/derived/source-coverage";
 import { readCounts, readDigest } from "./read/digest";
-import { buildChangedRows, buildDueNextRows, computeAuditDate, dueNextWindowLabel, firstTokenOf } from "./rows";
+import { buildChangedRows, buildDueNextRows, computeAuditDate, dueNextWindowLabel, firstTokenOf, surfaceItemTotal } from "./rows";
 import { DashboardBrief } from "./ui/DashboardBrief";
 import { DashboardMasthead } from "./ui/DashboardMasthead";
 
@@ -41,7 +42,7 @@ export default async function DashboardRoute() {
     return (
       <>
         <div className="cl-list-surface-masthead">
-          <DashboardMasthead firstName={firstTokenOf(session.email)} orgName="" sectors={[]} itemCount={null} jurisdictionCount={null} dateLabel={dateLabel} nowIso={session.nowIso} />
+          <DashboardMasthead firstName={firstTokenOf(session.email)} orgName="" sectors={[]} itemCount={null} jurisdictionCount={null} noWorkspace dateLabel={dateLabel} nowIso={session.nowIso} />
         </div>
         <PageFrame>
           <StateNote action={{ label: "Set up a workspace →", href: "/workspace/new" }}>Your brief shows what is new and due for a workspace. Join or create one to see it.</StateNote>
@@ -51,7 +52,7 @@ export default async function DashboardRoute() {
   }
   const db = await userClient();
   const themeChips = dashboardDeps().themeChips;
-  const [{ profile, failed: profileFailed }, digest, counts, watch, name, themes] = await Promise.all([
+  const [{ profile, failed: profileFailed }, digest, counts, watch, name, themes, coverage] = await Promise.all([
     readWorkspaceProfile(db, orgId),
     cachedRead(["dashboard-digest", orgId], () => readDigest(db, orgId), { tags: [APP_DATA_TAG], revalidate: REVALIDATE_SECONDS }),
     cachedRead(["dashboard-counts", orgId], () => readCounts(db, orgId), { tags: [APP_DATA_TAG], revalidate: REVALIDATE_SECONDS }),
@@ -62,6 +63,7 @@ export default async function DashboardRoute() {
       return (data as { full_name: string | null; display_name: string | null } | null)?.full_name ?? (data as { display_name: string | null } | null)?.display_name ?? null;
     }),
     themeChips ? settle("themes", () => themeChips(db, { minPages: 2, max: 3 })) : Promise.resolve([]),
+    settle("source coverage", () => readSourceCoverage(db)),
   ]);
 
   const d = digest.ok ? digest.value : null;
@@ -71,7 +73,7 @@ export default async function DashboardRoute() {
   return (
     <>
       <div className="cl-list-surface-masthead">
-        <DashboardMasthead firstName={firstTokenOf(name ?? session.email)} orgName={session.orgName} sectors={profile.verticals} itemCount={totals?.aggregates.totalItems ?? null} jurisdictionCount={totals?.aggregates.totalJurisdictions ?? null} dateLabel={dateLabel} nowIso={session.nowIso} />
+        <DashboardMasthead firstName={firstTokenOf(name ?? session.email)} orgName={session.orgName} sectors={profile.verticals} itemCount={totals ? surfaceItemTotal(totals.surfaces) : null} jurisdictionCount={totals?.aggregates.totalJurisdictions ?? null} dateLabel={dateLabel} nowIso={session.nowIso} />
       </div>
       <DashboardBrief
         dueRows={dueRows}
@@ -85,11 +87,12 @@ export default async function DashboardRoute() {
         degraded={[
           ...(profileFailed ? ["Your workspace profile did not load, so this brief is ranked without your sectors and jurisdictions."] : []),
           ...(d?.timelinesFailed || watch?.timelinesFailed ? ["Milestone dates did not load for some rows, so their timelines are blank."] : []),
-          ...(d?.holdUnknown ? ["The collection hold state did not load, so the change window shown is the build-mode window."] : []),
+          ...(d?.holdUnknown ? [`The collection hold state did not load, so the change window shown is the last ${d.windowDays} days.`] : []),
         ]}
         counts={totals}
         watchlist={watch?.items ?? null}
         themes={themes ?? []}
+        coverage={coverage}
       />
     </>
   );

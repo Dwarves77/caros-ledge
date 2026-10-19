@@ -393,6 +393,17 @@ export function installPropagationRpcs(db: MemDb): MemDb {
     for (const ref of (a.p_inputs ?? []) as { table: string; pk: string }[]) d.rows("derivation_edges").push({ from_table: ref.table, from_pk: ref.pk, to_table: "derived_values", to_value_id: id });
     return { data: id };
   };
+  /** author_derived_value (migration 0091): one call checks for a value of the method with an edge from any input and registers otherwise; the database serialises two callers with an advisory lock. */
+  db.rpcs.author_derived_value = (a, d) => {
+    const inputs = (a.p_inputs ?? []) as { table: string; pk: string }[];
+    if (!Array.isArray(a.p_inputs) || inputs.length === 0) return { error: { message: "author_derived_value: inputs must name at least one input", code: "22023" } };
+    const have = d.rows("derived_values").find((v) => v.method_id === a.p_method_id && v.method_version === a.p_method_version && d.rows("derivation_edges").some((e) => e.to_value_id === v.value_id && inputs.some((i) => i.table === e.from_table && i.pk === e.from_pk)));
+    if (have) return { data: [{ value_id: have.value_id, authored: false }] };
+    const made = d.rpcs.register_derived_value!({ ...a, p_supersedes: null }, d);
+    return { data: [{ value_id: made.data, authored: true }] };
+  };
+  const RANK: Record<string, number> = { display_only: 0, analysis_ok: 1, calculation_ok: 2, filing_ok: 3 };
+  db.views.derived_values_admissible = () => db.rows("derived_values").filter((v) => !["falsified", "obsolete", "superseded"].includes(String(v.lifecycle)) && v.admissibility !== "stale").map((v) => ({ ...v, ceiling_rank: RANK[String(v.admissibility)] ?? null }));
   db.rpcs.fire_signpost = (a, d) => {
     const sp = d.rows("signposts").find((s) => s.entity_id === a.p_entity_id);
     if (!sp) return { error: { message: "signpost not found" } };

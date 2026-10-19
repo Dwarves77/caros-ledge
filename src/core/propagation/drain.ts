@@ -4,12 +4,13 @@
 // registering a superseding row (the stale one is retained, never overwritten). A dry run writes nothing and stops after Pass 1. A value whose
 // method is unregistered or refuses stays stale. Events addressed to intelligence_items and section_claim_provenance (a correction) are ordinary
 // events: their payload (the correction row) rides in `newRow`. One recompute loop serves both tables.
+import { currentInputRow } from "@/core/derived/current-input";
 import type { Db } from "@/core/db";
 import { exactCount } from "@/core/db";
 import type { RunResult } from "@/core/sources/run-result";
 
 import { MethodRegistry, METHODS, type ResolvedMethodInput } from "./methods";
-import { registerDerivedValue, registerInferenceRecord } from "./register";
+import { registerDerivedValue, registerInferenceRecord, type StatusToken } from "./register";
 import type { InputRef } from "./types";
 
 export interface DrainDeps {
@@ -55,7 +56,7 @@ export const PK_COLUMN: Readonly<Record<string, string>> = {
   estimated_values: "estimate_id", state_cost_facts: "id", inference_records: "inference_id", intelligence_items: "id", section_claim_provenance: "id",
 };
 
-/** Resolve declared inputs to their current rows. A MISSING row is a null row; a failed READ throws (it is never read as missing). */
+/** Resolve declared inputs to their current rows. A MISSING row, and a row that is no longer current (superseded, archived, unverified, suppressed, stale), is a null row; a failed READ throws (it is never read as missing). */
 export async function resolveInputs(sb: Db, inputs: readonly InputRef[]): Promise<ResolvedMethodInput[]> {
   const out: ResolvedMethodInput[] = [];
   for (const ref of inputs) {
@@ -66,7 +67,7 @@ export async function resolveInputs(sb: Db, inputs: readonly InputRef[]): Promis
     }
     const { data, error } = await sb.from(ref.table).select("*").eq(col, ref.pk).maybeSingle();
     if (error) throw new Error(`resolve input ${ref.table}/${ref.pk}: ${error.message}`);
-    out.push({ table: ref.table, pk: ref.pk, version: ref.version ?? null, row: data ?? null });
+    out.push({ table: ref.table, pk: ref.pk, version: ref.version ?? null, row: await currentInputRow(sb, ref.table, (data ?? null) as Record<string, unknown> | null) });
   }
   return out;
 }
@@ -79,7 +80,7 @@ export async function resolveInferenceDeclaredInputs(sb: Db, inferenceId: string
 }
 
 type StaleDerived = { value_id: string; entity_id: string | null; method_id: string; method_version: string; inputs: InputRef[] | null; unit: string | null; currency: string | null };
-type StaleInference = { inference_id: string; subject_id: string | null; claim_text: string; cited_item_ids: string[]; trigger_question_ref: string | null; method_id: string; method_version: string };
+type StaleInference = { inference_id: string; subject_id: string | null; claim_text: string; cited_item_ids: string[]; trigger_question_ref: string | null; method_id: string; method_version: string; status_token: StatusToken; confidence: number; origin_class: "derived" | "modelled" };
 
 export async function runPropagationDrain(deps: DrainDeps, input: DrainInput): Promise<RunResult<DrainDetail>> {
   const { sb } = deps;
@@ -151,18 +152,18 @@ export async function runPropagationDrain(deps: DrainDeps, input: DrainInput): P
   });
   await recomputeStale<StaleInference>(deps, detail, {
     table: "inference_records",
-    select: "inference_id,subject_id,claim_text,cited_item_ids,trigger_question_ref,method_id,method_version",
+    select: "inference_id,subject_id,claim_text,cited_item_ids,trigger_question_ref,method_id,method_version,status_token,confidence,origin_class",
     idOf: (r) => r.inference_id,
     eventIds,
     async recompute(row) {
       const fn = registry.get("inference_records", row.method_id, row.method_version);
       if (!fn) return { kind: "unknown" };
       const declared = await resolveInferenceDeclaredInputs(sb, row.inference_id);
-      const out = await fn({ entityId: row.subject_id, inputs: await resolveInputs(sb, declared), priorValue: { inference_id: row.inference_id, claim_text: row.claim_text, cited_item_ids: row.cited_item_ids, trigger_question_ref: row.trigger_question_ref }, now: deps.now() });
+      const out = await fn({ entityId: row.subject_id, inputs: await resolveInputs(sb, declared), priorValue: { inference_id: row.inference_id, claim_text: row.claim_text, cited_item_ids: row.cited_item_ids, trigger_question_ref: row.trigger_question_ref, status_token: row.status_token, confidence: row.confidence, origin_class: row.origin_class }, now: deps.now() });
       if (!out.ok) return { kind: "refused" };
       const to = await registerInferenceRecord(sb, {
         subjectId: row.subject_id, claimText: out.claimText, statusToken: out.statusToken, confidence: out.confidence, citedItemIds: out.citedItemIds, originClass: out.originClass,
-        methodId: row.method_id, methodVersion: row.method_version, computedBy: `${row.method_id}@${row.method_version}`, triggerQuestionRef: row.trigger_question_ref, inputs: declared, supersedes: row.inference_id,
+        methodId: row.method_id, methodVersion: out.methodVersion ?? row.method_version, computedBy: `${row.method_id}@${out.methodVersion ?? row.method_version}`, triggerQuestionRef: row.trigger_question_ref, inputs: declared, supersedes: row.inference_id,
       });
       return { kind: "done", to, reopen: out.reopenQuestionRef ?? null };
     },

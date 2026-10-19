@@ -9,7 +9,6 @@ import { computeSeriesDeltas } from "@/features/market/lib/deltas";
 import { cadenceNameForDays, deriveSeriesFreshness, summarizeBoardFreshness } from "@/features/market/lib/freshness";
 import { selectHeadlineSeries, SERIES_FAMILIES } from "@/features/market/lib/headline";
 import { headlineCardView } from "@/features/market/lib/headline-view";
-import { assignBand, deriveSeverity } from "@/features/market/lib/signal-band";
 import { buildLeadTimePosition } from "@/features/market/lib/lead-time";
 import { selectNextDataDrops, summariseCarbonCorridors } from "@/features/market/lib/rail-select";
 import { PRODUCERS, isImplementedSeriesKey, producerFor } from "@/features/market/lib/registry";
@@ -280,13 +279,3 @@ test("a headline card carries its source ref and the rating's url (the baseline 
   assert.match(String(v2.envelope.sourceUrl), /^https:\/\//, "with no rating the producer's own source url applies");
 });
 
-test("the detail page's classifications: the stored column and band win, the keyword pass is the fallback, an unmatched title is a corporate monitor", () => {
-  const base = { title: "Plain title", note: "", priority: "LOW" as const };
-  assert.equal(deriveSeverity({ ...base, severity: "cost_alert" }), "cost");
-  assert.equal(deriveSeverity({ ...base, title: "Deadline for filing" }), "action");
-  assert.equal(deriveSeverity({ ...base, priority: "HIGH" }), "cost");
-  assert.equal(deriveSeverity(base), "monitor");
-  assert.equal(assignBand({ ...base, signalBand: "corridor" }), "corridor");
-  assert.equal(assignBand({ ...base, title: "Diesel spot price rises" }), "price");
-  assert.equal(assignBand(base), "corporate");
-});

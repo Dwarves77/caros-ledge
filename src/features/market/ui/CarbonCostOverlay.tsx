@@ -14,10 +14,10 @@ const BADGE = { statutory: "Statutory", derived: "Derived", estimate: "Estimate"
 function Inputs({ result }: { result: CarbonCostResult }) {
   const p = result.ok ? { intensity: result.intensity, distance: result.distance, payload: result.payload, carbonPrice: result.carbonPrice } : result.partial;
   const chips: Array<[string, string]> = [];
-  if (p.intensity) chips.push([`${p.intensity.headlineLabel} factor · ${p.intensity.sourceKey ?? "unknown source"}`, `Emission intensity: ${p.intensity.unit}`]);
+  if (p.intensity) chips.push([`${p.intensity.headlineLabel} factor`, `Emission intensity: ${p.intensity.unit}`]);
   if (p.distance) chips.push(["Distance", p.distance.basis]);
   if (p.payload) chips.push(["Payload per FEU", p.payload.basis]);
-  if (p.carbonPrice) chips.push([`Carbon price · ${p.carbonPrice.sourceKey}`, `${p.carbonPrice.basis}${p.carbonPrice.asOf ? ` (as of ${p.carbonPrice.asOf})` : ""}`]);
+  if (p.carbonPrice) chips.push(["Carbon price", `${p.carbonPrice.basis}${p.carbonPrice.asOf ? ` (as of ${p.carbonPrice.asOf})` : ""}`]);
   return chips.length === 0 ? null : (
     <div className={styles.chips}>
       {chips.map(([label, title]) => (
@@ -65,7 +65,8 @@ function CorridorCard({ entry }: { entry: CarbonOverlayEntry }) {
 }
 
 export function CarbonCostOverlay({ overlays }: { overlays: readonly CarbonOverlayEntry[] }) {
-  if (overlays.length === 0) return null;
+  // A section that can only list gaps is not drawn: it appears when a stage writes the distance, payload and carbon price and a figure exists (register surfaces:14).
+  if (!overlays.some((e) => e.result.ok)) return null;
   return (
     <div className={styles.band}>
       <SectionCard as="section" dataAudit="carbon-cost-per-feu">

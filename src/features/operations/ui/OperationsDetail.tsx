@@ -20,11 +20,12 @@ import { formatDate, pluralize } from "@/core/shared";
 import type { Resource } from "@/core/types";
 import { regionGroupForLabel } from "@/core/workspace";
 import { Absence, ActionCard, ClaimTierProvider, DetailSubSection, downloadMarkdownBrief, GfmSection, GradeChip, SectionCard, SectionIndex, StateNote, TagChip, type ClaimTierMap } from "@/ui";
-import { AtAGlanceCard, commonActionCardProps, CrossPageSection, crossPagePresence, DetailLayout, DetailMasthead, DetailPageWrapper, DetailRail, DetailSection, FactBlocks, ImpactRailCard, InThisListStat, ItemConnections, ItemWatch, RelevanceRailCard, SourcesGrid, topRecommendedAction, type CrossPageData } from "@/ui/detail";
+import { AtAGlanceCard, commonActionCardProps, CrossPageSection, crossPagePresence, DetailLayout, DetailMasthead, DetailPageWrapper, DetailRail, DetailSection, FactBlocks, ImpactRailCard, InThisListStat, ItemConnections, RelevanceRailCard, SourcesGrid, topRecommendedAction, type CrossPageData } from "@/ui/detail";
 import { NoticesRail } from "@/ui/figures";
 import { LegendRailCard } from "@/ui/list-surface";
 import { useItemRelevance } from "@/features/regulations/useItemRelevance";
 import { DetailTagRow } from "@/features/workspace/ui/DetailTagRow";
+import { DetailWatch } from "@/features/workspace/ui/DetailWatch";
 
 import type { RelatedResult } from "../../research/read/related-items";
 import type { DerivedFigure } from "../model/derived-view";
@@ -114,7 +115,7 @@ export function OperationsDetail(p: OperationsDetailProps) {
       biasTags={r.biasTags}
       meta={rows.length > 0 ? `${rows.length} source${rows.length === 1 ? "" : "s"}${p.connectionRows.length > 0 ? ` · ${p.connectionRows.length} ${pluralize(p.connectionRows.length, "connection")}` : ""}` : null}
       onExport={() => void downloadMarkdownBrief(r, { filenamePrefix: "operations", metaRows: [r.jurisdiction ? `- Region: ${r.jurisdiction}` : null, r.modes && r.modes.length > 0 ? `- Modes: ${r.modes.join(", ")}` : null, r.url ? `- Source: ${r.url}` : null] })}
-      {...commonActionCardProps(r, { tagPopover: <DetailTagRow itemId={r.id} open={tagOpen} onOpenChange={setTagOpen} />, watch: <ItemWatch itemId={r.id} />, onTag: () => setTagOpen((v) => !v) })}
+      {...commonActionCardProps(r, { tagPopover: <DetailTagRow itemId={r.id} open={tagOpen} onOpenChange={setTagOpen} />, watch: <DetailWatch type="operations" id={r.id} />, onTag: () => setTagOpen((v) => !v) })}
       where={{ value: jurisLabel || null }}
     />
   );
@@ -124,7 +125,7 @@ export function OperationsDetail(p: OperationsDetailProps) {
       const open = s.section_key === "3" ? p.eligibility.s3Eligible : p.eligibility.s4Eligible;
       if (!open) return <DetailSubSection key={s.section_key} title={heading} first={i === 0}><StateNote>{omitNote(s.section_key as "3" | "4", p.eligibility)}</StateNote></DetailSubSection>;
     }
-    if (!(s.content_md || "").trim()) return s.is_conditional ? null : <DetailSubSection key={s.section_key} title={heading} first={i === 0}><Absence reason="not in primary source" /></DetailSubSection>;
+    if (!(s.content_md || "").trim()) return s.is_conditional ? null : <DetailSubSection key={s.section_key} title={heading} first={i === 0}><StateNote>No content is recorded for this section.</StateNote></DetailSubSection>;
     return <DetailSubSection key={s.section_key} title={heading} first={i === 0}><FactBlocks markdown={s.content_md} /></DetailSubSection>;
   };
   return (
@@ -161,7 +162,7 @@ export function OperationsDetail(p: OperationsDetailProps) {
               {depth === "full" && unparsedBrief && <div className={styles.fullBrief}><GfmSection markdown={unparsedBrief} /></div>}
             </DetailSection>
             <DetailSection id="findings" title="Substantive findings" index={2}>
-              {known.length > 0 ? known.map(finding) : <StateNote>{p.claimsDegraded ? "Detailed sections for this regional profile are withheld until the facts load." : "Detailed sections for this regional profile are not written yet; they need the profile&apos;s brief."}</StateNote>}
+              {known.length > 0 ? known.map(finding) : <StateNote>{p.claimsDegraded ? "Detailed sections for this regional profile are withheld until the facts load." : "Detailed sections for this regional profile are not written yet; they need the profile's brief."}</StateNote>}
             </DetailSection>
             <DetailSection id="auxiliary-energy" title="Auxiliary energy load" aside={AUXILIARY_ENERGY_ASIDE} index={3}>
               {p.spec09.intensityFailed && <StateNote tone="error" action={{ label: "Retry", onClick: retry }}>The grid intensity for this region did not load, so loads show kWh only.</StateNote>}
@@ -171,7 +172,7 @@ export function OperationsDetail(p: OperationsDetailProps) {
               <GridQueuePanel rows={p.spec09.grid} retryHref={here} />
             </DetailSection>
             <DetailSection id="sources" title="Sources" index={5} aside={rows.length > 0 ? `${rows.length} · tier = provenance, never urgency` : undefined}>
-              {rows.length > 0 ? <SourcesGrid rows={rows} /> : <Absence reason="not in primary source" />}
+              {rows.length > 0 ? <SourcesGrid rows={rows} /> : <StateNote>No sources are listed for this item.</StateNote>}
             </DetailSection>
             <CrossPageSection surfaceKey="operations" surfaceLabel="Operations" crossPage={p.crossPage} onRetry={retry} />
             <NoticesRail />

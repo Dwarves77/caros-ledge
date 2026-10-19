@@ -66,8 +66,9 @@ async function readCoverage(db: Db): Promise<ResearchCoverageCell[]> {
   const { data, error } = await db.rpc("get_research_source_coverage");
   if (error) throw new Error(error.message);
   return ((data ?? []) as Array<{ transport_mode: unknown; jurisdiction_iso: unknown; source_count: unknown }>)
-    .filter((r) => typeof r.transport_mode === "string" && typeof r.jurisdiction_iso === "string")
-    .map((r) => ({ transportMode: r.transport_mode as string, jurisdictionIso: r.jurisdiction_iso as string, sourceCount: typeof r.source_count === "number" ? r.source_count : 0 }));
+    // A cell whose count is not a number is dropped, never drawn as a zero (register surfaces:86).
+    .filter((r) => typeof r.transport_mode === "string" && typeof r.jurisdiction_iso === "string" && typeof r.source_count === "number" && Number.isFinite(r.source_count))
+    .map((r) => ({ transportMode: r.transport_mode as string, jurisdictionIso: r.jurisdiction_iso as string, sourceCount: r.source_count as number }));
 }
 
 const settle = async <T>(what: string, read: () => Promise<T>): Promise<T | null> => {

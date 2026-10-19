@@ -1,6 +1,7 @@
 // Ported from old_repo/src/components/pages/MarketSignalDetailSurface.tsx (lines 757-873)
 // The market signal's detail blocks (spec 02 row 12): the price board and the ratified series figure each with freshness and the rating of their source (INV-262), and the carbon blocks. Pure views of MarketDetailBundle; each part
 // is its own Section, so one failed read is that part's note with Retry. MarketDetailView places them in the detail page's sections.
+import { formatDate } from "@/core/shared";
 import { DerivedFigure } from "@/ui/figures";
 import { DetailSubSection } from "@/ui/ItemGroup";
 
@@ -36,9 +37,9 @@ export function PriceBoardBlock({ bundle, nowIso }: MarketBlockProps) {
               <span className={styles.muted}>
                 {" "}
                 · {ratingText(envelopeFromPriceStat(p, seriesFigure.ok ? (seriesFigure.data?.rating ?? null) : null).sourceTier)}
-                {p.releasedAt ? ` · released ${p.releasedAt}` : ""}
+                {p.releasedAt ? ` · released ${formatDate(p.releasedAt.slice(0, 10))}` : ""}
               </span>
-              {p.nextReleaseAt ? <span className={styles.muted}> · next {p.nextReleaseLabel ?? p.nextReleaseAt}</span> : null}
+              {p.nextReleaseAt ? <span className={styles.muted}> · next {p.nextReleaseLabel ?? formatDate(p.nextReleaseAt.slice(0, 10))}</span> : null}
             </li>
           ))}
         </ul>

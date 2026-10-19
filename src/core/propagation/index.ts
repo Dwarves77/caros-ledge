@@ -1,5 +1,5 @@
 export { admissibleFor, effectiveConfidence, FLOOR } from "./admissible";
-export { authorEdges, hasBeenAuthored } from "./author-edges";
+export { authorEdges } from "./author-edges";
 export type { AuthorResult, Figure } from "./author-edges";
 export { DEFAULT_BATCH, resolveInferenceDeclaredInputs, resolveInputs, runPropagationDrain } from "./drain";
 export type { DrainDeps, DrainDetail, DrainInput } from "./drain";
@@ -9,6 +9,6 @@ export { buildCarbonMethod, confidenceFromPedigree, lifecycleFromFactorOriginCla
 export type { MarketMethodDeps, MethodContext, MethodFn, MethodResult } from "./methods";
 export { fetchSupersededNotices } from "./notices";
 export type { SupersededNotice } from "./notices";
-export { buildFirstInferenceInput, registerDerivedValue, registerFirstInference, registerInferenceRecord, validateRegisterDerivedValueInput, validateRegisterInferenceRecordInput } from "./register";
+export { authorDerivedValue, buildFirstInferenceInput, registerDerivedValue, registerFirstInference, registerInferenceRecord, validateRegisterDerivedValueInput, validateRegisterInferenceRecordInput } from "./register";
 export { evaluateSignpostPredicate, fireSignpost, nextLifecycleState } from "./signpost";
 export type { Admissibility, Derivation, InputRef, Lifecycle, OriginClass, Use, Value, Verdict } from "./types";

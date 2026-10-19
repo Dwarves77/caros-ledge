@@ -12,6 +12,6 @@ export async function itemUuidOr404(client: Db, itemId: string): Promise<string>
   } catch (e) {
     throw new LookupError("intelligence_items", e);
   }
-  if (!uuid) throw new HttpError(404, `intelligence_items row not found for itemId=${itemId}`);
+  if (!uuid) throw new HttpError(404, "That item was not found.");
   return uuid;
 }

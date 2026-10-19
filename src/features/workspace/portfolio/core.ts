@@ -1,4 +1,5 @@
 // Ported from old_repo/src/lib/portfolio/portfolio-core.mjs (lines 60-386)
+import { admitItems } from "@/core/derived/admissible";
 import type { Db } from "@/core/db/clients";
 import { fetchAllRows } from "@/core/db/query";
 import { dbError, HttpError, LookupError } from "@/core/http/errors";
@@ -167,7 +168,7 @@ export async function addMember(client: Db, args: { orgId: string; userId: strin
   let member = parsedMember(args.input);
   await requirePortfolio(client, args.orgId, args.portfolioId);
   if (member.kind === "item") {
-    const { data, error } = await client.from("intelligence_items").select("id").eq("id", member.itemId).eq("provenance_status", "verified").eq("is_archived", false).maybeSingle();
+    const { data, error } = await admitItems(client.from("intelligence_items").select("id").eq("id", member.itemId)).maybeSingle();
     if (error) throw new LookupError("intelligence_items", error);
     if (!data) throw new HttpError(404, "That item is not held by the platform, so it cannot be added.");
   } else {

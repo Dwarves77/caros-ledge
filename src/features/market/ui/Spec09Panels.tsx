@@ -105,7 +105,7 @@ export function Spec09Panels({ panels, corridorLabels }: { panels: MarketPanels;
                     {r.contract_ref || "No contract reference given"} · indexed to {r.index_id}
                   </p>
                   <p className={styles.muted}>
-                    Base {r.base_value} at {r.base_date} · {r.passthrough_pct}% passthrough · band {formatBand(r.floor_pct, r.cap_pct)} · reviewed {r.review_cadence} · rounding: {r.rounding_rule}
+                    Base {r.base_value} at {r.base_date} · {r.passthrough_pct}% passthrough · band {formatBand(r.floor_pct, r.cap_pct)} · reviewed {r.review_cadence} · rounding: {String(r.rounding_rule).replace(/_/g, " ")}
                   </p>
                 </div>
               ))}

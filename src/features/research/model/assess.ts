@@ -35,10 +35,11 @@ function maturity(input: AssessInput, ps: typeof TRL, ladder: string) {
   const c = readCorridor(input.text, ps);
   if (!c) return null;
   const evidenceIds = [input.id, ...input.forwardEvents.filter((e) => { const ec = e.obligation_text ? readCorridor(e.obligation_text, ps) : null; return ec && ec.low === c.low && ec.high === c.high; }).map((e) => e.id)];
-  return { ...c, method: `read from the item's own recorded text against the ${ladder} (spec-03 section 2)`, evidenceIds };
+  return { ...c, method: ladder, evidenceIds };
 }
-export const assessTechnicalMaturity = (i: AssessInput) => maturity(i, TRL, "IEA-extended TRL 1-11 ladder");
-export const assessCommercialMaturity = (i: AssessInput) => maturity(i, CRI, "ARENA CRI 1-6 ladder");
+/** The method is a code (assessment-copy.json holds its sentence); the row never carries prose or a specification reference. */
+export const assessTechnicalMaturity = (i: AssessInput) => maturity(i, TRL, "text_trl");
+export const assessCommercialMaturity = (i: AssessInput) => maturity(i, CRI, "text_cri");
 
 const bandForDate = (d: Date, now: Date): string => { const y = (d.getTime() - now.getTime()) / (365.25 * DAY); return y <= 2 ? "NOW" : y <= 5 ? "NEAR" : y <= 10 ? "MID" : "FAR"; };
 const priorBandFromTrl = (low: number): string => (low >= 10 ? "NOW" : low >= 8 ? "NEAR" : low >= 5 ? "MID" : "FAR");
@@ -92,7 +93,7 @@ export function assessItem(input: AssessInput, opts: { now?: Date } = {}) {
   const horizon = assessHorizon(input, technicalMaturity, now);
   return {
     itemId: input.id, technicalMaturity, commercialMaturity: assessCommercialMaturity(input), horizon,
-    refusalReason: horizon ? null : "not forecastable: no dated statutory instrument, no named institutional roadmap date, and no technical-maturity corridor to prior from (spec-03 section 6's mandatory refusal state).",
+    refusalReason: horizon ? null : "no_dated_basis",
     credibilityEvidenceScore: assessEvidenceScore(input), credibilityAuthorityScore: assessAuthorityScore(input, now),
     statusToken: horizon && (horizon.rule === "R1" || horizon.rule === "R3") ? "CONFIRMED" : "HYPOTHESIS", signposts: assessSignposts(input, horizon, now),
   };

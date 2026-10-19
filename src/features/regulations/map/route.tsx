@@ -1,5 +1,5 @@
 // Ported from old_repo/src/app/map/page.tsx (lines 1-94)
-// The /map route as one server function: the cached public read of the regulation rows, the coverage of the priority regions on the caller's client, the masthead with its counts, the page. A failed
+// The /map route as one server function: the workspace's cached read of the regulation rows (the list's own RPC), the coverage of the priority regions on the caller's client, the masthead with its counts, the page. A failed
 // items read is the shell's PageFailure with Retry; a failed coverage read is said inside the rail. `?region=` takes a priority-region id or one code (the Coverage gaps rail links with a region id).
 import { unstable_rethrow } from "next/navigation";
 
@@ -23,7 +23,7 @@ export async function MapRoute({ searchParams }: { searchParams: Promise<{ regio
   const region = (await searchParams).region;
   const data = await (async () => {
     const db = await userClient();
-    const [items, coverage] = await Promise.all([getMapItems(), readRegionCoverage(db).catch((e) => (unstable_rethrow(e), log.warn("[map] coverage did not load:", e instanceof Error ? e.message : String(e)), null))]);
+    const [items, coverage] = await Promise.all([getMapItems(db, session.orgId).then((r) => { if (!r.ok) throw new Error(r.error); return r.value; }), readRegionCoverage(db).catch((e) => (unstable_rethrow(e), log.warn("[map] coverage did not load:", e instanceof Error ? e.message : String(e)), null))]);
     return { items, coverage };
   })().catch((e: unknown) => (unstable_rethrow(e), log.warn("[map] the map did not load:", e instanceof Error ? e.message : String(e)), null));
   if (!data) return <PageFailure what="The map" />;

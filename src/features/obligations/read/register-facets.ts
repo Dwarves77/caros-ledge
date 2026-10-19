@@ -3,8 +3,11 @@
 // The register's facets: the jurisdictions and modes in the data with live counts (corpus-wide, independent of the loaded page), the binding-position and
 // due-window tallies, and the honest-empty forward-event count ("not yet derived from N forward events", never "nothing"). A failed read throws: the old
 // reader answered an empty facet set, which hid the failure.
+import { admitItems } from "@/core/derived/admissible";
 import type { Db } from "@/core/db";
-import { fetchAllRows } from "@/core/db";
+import { fetchAllRows, qb } from "@/core/db";
+
+import { notInList, suppressedEventIds } from "@/core/derived/suppressed-events";
 
 export const UNCLASSIFIED_KEY = "unclassified";
 const WINDOWS = ["overdue", "30", "90", "365", "undated", "all"] as const;
@@ -53,19 +56,24 @@ export function tallyRegisterFacets(rows: readonly { jurisdiction?: string[] | n
   return out;
 }
 
-/** Facets over the active obligations of verified live items (the same join the register applies). A failed page throws. */
+/** Facets over the active obligations of admissible items, minus the events of a suppressed claim (the same join and filters the register applies). A failed page throws. */
 export async function fetchRegisterFacetOptions(sb: Db, todayIso: string): Promise<RegisterFacets> {
+  const suppressed = notInList(await suppressedEventIds(sb));
   const rows = await fetchAllRows<{ jurisdiction: string[] | null; modes: string[] | null; binding_position: string | null; due_date: string | null; id: string }>(
-    (from, to) =>
-      sb.from("obligations").select("id, jurisdiction, modes, binding_position, due_date, item:intelligence_items!inner(id)").eq("status", "active").eq("item.provenance_status", "verified").eq("item.is_archived", false).order("id").range(from, to) as unknown as PromiseLike<{ data: never[] | null; error: { message: string } | null }>,
+    (from, to) => {
+      const q = admitItems(qb(sb.from("obligations").select("id, jurisdiction, modes, binding_position, due_date, item:intelligence_items!inner(id)")).eq("status", "active"), "item");
+      return (suppressed ? q.not("forward_event_id", "in", suppressed) : q).order("id").range(from, to) as unknown as PromiseLike<{ data: never[] | null; error: { message: string } | null }>;
+    },
     { cap: 500_000 },
   );
   return tallyRegisterFacets(rows, todayIso);
 }
 
-/** All forward events held (the honest-empty count). A failed count throws. */
+/** The forward events a reader can see (the honest-empty count): those of an admissible item, minus a suppressed claim's. A failed count throws. */
 export async function fetchForwardEventCount(sb: Db): Promise<number> {
-  const { count, error } = await sb.from("item_forward_events").select("id", { count: "exact", head: true });
+  const suppressed = notInList(await suppressedEventIds(sb));
+  const q = admitItems(qb(sb.from("item_forward_events").select("id, item:intelligence_items!inner(id)", { count: "exact", head: true })), "item");
+  const { count, error } = await (suppressed ? q.not("id", "in", suppressed) : q);
   if (error) throw new Error(`item_forward_events count failed: ${error.message}`);
   if (typeof count !== "number") throw new Error("item_forward_events count failed: no count returned");
   return count;

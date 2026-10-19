@@ -1,0 +1,10 @@
+{
+ "refusal": {
+  "no_dated_basis": "no dated statutory instrument, no named institutional roadmap date, and no technical-maturity corridor to prior from"
+ },
+ "genericRefusal": "the basis for a horizon could not be determined",
+ "method": {
+  "text_trl": "read from the finding's recorded text against the technology readiness ladder",
+  "text_cri": "read from the finding's recorded text against the commercial readiness ladder"
+ }
+}

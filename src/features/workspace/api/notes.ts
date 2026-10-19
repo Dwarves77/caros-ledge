@@ -1,5 +1,6 @@
 // Ported from old_repo/src/lib/workspace/item-notes.mjs (lines 1-132)
 // Ported from old_repo/src/app/api/workspace/items/[id]/notes/route.ts (lines 15-37)
+import { collabDbFail } from "./collab-db-fail";
 import type { Db } from "@/core/db/clients";
 import { boundedRead } from "@/core/db/query";
 import { LookupError, route } from "@/core/http/errors";
@@ -58,7 +59,7 @@ export async function addNote(client: Db, ctx: CollabCtx, input: Record<string, 
   const parsed = parseNoteBody(input?.body);
   if ("error" in parsed) return collabFail(400, parsed.error);
   const { data, error } = await client.from("item_notes").insert({ org_id: ctx.orgId, item_id: ctx.item.id, author_user_id: ctx.userId, body: parsed.body }).select(NOTE_COLUMNS).single();
-  if (error) return collabFail(500, error.message);
+  if (error) return collabDbFail(error);
   return collabOk(201, { note: view(data as NoteRow, ctx, await namesAfterWrite(client, ctx.orgId)) });
 }
 
@@ -81,7 +82,7 @@ export async function editNote(client: Db, ctx: CollabCtx, input: Record<string,
   if (!found) return collabFail(404, GONE);
   if (!isMine(found, ctx)) return collabFail(403, "Only the author can edit a note.");
   const { data, error } = await client.from("item_notes").update({ body: parsed.body, edited_at: new Date().toISOString() }).eq("id", noteId).eq("org_id", ctx.orgId).eq("author_user_id", ctx.userId).select(NOTE_COLUMNS).single();
-  if (error) return collabFail(500, error.message);
+  if (error) return collabDbFail(error);
   return collabOk(200, { note: view(data as NoteRow, ctx, await namesAfterWrite(client, ctx.orgId)) });
 }
 
@@ -92,7 +93,7 @@ export async function deleteNote(client: Db, ctx: CollabCtx, input: { noteId?: s
   if (!found) return collabFail(404, GONE);
   if (!mayDelete(found, ctx)) return collabFail(403, "Only the author, or a workspace owner or admin, can delete a note.");
   const { error } = await client.from("item_notes").update({ deleted_at: new Date().toISOString() }).eq("id", noteId).eq("org_id", ctx.orgId);
-  if (error) return collabFail(500, error.message);
+  if (error) return collabDbFail(error);
   return collabOk(200, { success: true });
 }
 

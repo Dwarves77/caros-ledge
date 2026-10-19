@@ -15,6 +15,8 @@ import { ShellCommandBar } from "@/ui/shell/CommandBar";
 import { DenominatorLine } from "@/features/coverage";
 import { useTagsFacet } from "@/features/regulations/useTagsFacet";
 
+import { rowMeta } from "@/features/market/lib/item-type";
+
 import { bandedRows } from "../../research/ui/rows";
 import { dimensionLabel, DIMENSION_COUNT_WORD, DIMENSIONS } from "../model/dimensions";
 import { regionsForItem } from "../model/region-resolve";
@@ -79,7 +81,7 @@ export function OperationsList({ data, nowIso, chips, denominator, chipsFailed =
     }
     return out;
   }, [rows, roster]);
-  const rowsByBand = useMemo(() => bandedRows(filtered, { list: "operations", menuLabel: "Operations item actions", bandKey: filter.band, now }), [filtered, filter.band, now]);
+  const rowsByBand = useMemo(() => bandedRows(filtered, { list: "operations", menuLabel: "Operations item actions", bandKey: filter.band, now, meta: rowMeta }), [filtered, filter.band, now]);
   const gaps = useMemo(() => {
     const sourced = new Map<string, Set<string>>();
     for (const f of data.facts ?? []) sourced.set(f.regionCode, (sourced.get(f.regionCode) ?? new Set<string>()).add(f.dimension));
@@ -107,7 +109,7 @@ export function OperationsList({ data, nowIso, chips, denominator, chipsFailed =
   return (
     <ListSurface
       title="Operations Intelligence"
-      dek={<>{data.aggregates === null ? "Counts unavailable" : <><b>{formatNumber(counts.total)}</b> active items · <b>{formatNumber(jurisdictions)}</b> jurisdictions</>} · {DIMENSION_COUNT_WORD} dimensions per region · every fact carries a source and date</>}
+      dek={<>{data.aggregates === null ? "Counts unavailable" : <><b>{formatNumber(counts.total)}</b> active items · <b>{formatNumber(jurisdictions)}</b> jurisdictions</>} · {DIMENSION_COUNT_WORD} dimensions per region</>}
       dateLabel={formatLocaleDate(now, { weekday: "long", year: "numeric", month: "long", day: "numeric", timeZone: "UTC" })}
       nowIso={nowIso}
       commandBar={<ShellCommandBar placeholder={PLACEHOLDER} />}
@@ -142,7 +144,6 @@ export function OperationsList({ data, nowIso, chips, denominator, chipsFailed =
                 ))}
               </div>
             )}
-            <p className={styles.noteText}>A known gap, stated plainly. State-level cost facts are the first fills.</p>
           </RailCard>
           <DerivedFigures figures={data.derived} />
           <LegendRailCard />
