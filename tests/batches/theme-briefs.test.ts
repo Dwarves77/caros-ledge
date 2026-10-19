@@ -2,16 +2,23 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { buildFrontmatter, parseFrontmatter } from "@/core/briefs/frontmatter";
-import { findUncitedFigures, parseRamifications, renderBriefMd } from "@/core/briefs/theme-brief-contract";
+import { admissibleRows } from "@/core/briefs/admissible";
+import { findUncitedFigures, isValidThemeBrief, parseRamifications } from "@/core/briefs/theme-brief-contract";
 import { computeMemberHash } from "@/core/flywheel/themes";
 import { applyBatch } from "@/features/batches";
-import { loadHomeJurisdictions, loadThemeMaterial, loadThemes } from "@/core/briefs/theme-brief-material";
+import { loadThemeMaterial, loadThemes } from "@/core/briefs/theme-brief-material";
 import { themeBriefsExporter } from "@/features/batches/kinds/theme-briefs/apply";
 
 import { batchFile, ITEM } from "./world.ts";
 import { CLAIM_A, CLAIM_B, EVENT_B, SECOND, THEME, themeWorld, type World } from "./worlds.ts";
 
 const hash = computeMemberHash([SECOND, ITEM]);
+/** The stored brief text: the title, then the sections in order under their fixed headings (the format the readers show). */
+const HEADINGS: [string, string][] = [["connection", "Connection"], ["meaning", "What it means"], ["ramifications", "Ramifications"], ["watch", "Watch"], ["gaps", "Gaps"]];
+const renderBriefMd = (e: { title: string; sections: Record<string, string> }) => {
+  const parts = [`# ${e.title.trim()}`, ...HEADINGS.filter(([k]) => (e.sections[k] ?? "").trim()).map(([k, h]) => `## ${h}\n\n${(e.sections[k] ?? "").trim()}`)];
+  return `${parts.join("\n\n")}\n`;
+};
 const entry = (over: Record<string, unknown> = {}) => ({
   theme_id: THEME, member_hash: hash, title: "The reporting duty and the surcharge it triggers",
   sections: { connection: "Both items concern the annual reporting duty and how carriers price it.", meaning: "A forwarder should expect the duty to reach the rate card.", ramifications: "### Regulations\nThe duty needs an owner in each operating unit.", watch: "Watch the next dated step.", gaps: "No operations item yet." },
@@ -113,10 +120,10 @@ test("F:15: an invented figure listed under a REAL claim id is not covered by it
   assert.equal(quarantined.claims.some((c) => c.intelligence_item_id === SECOND) || quarantined.events.some((e) => e.intelligence_item_id === SECOND), false);
   // F:17: two workspaces; the union takes the larger weight, a named org reads its own row, a failed read throws
   w.db.seed("workspace_settings", [{ id: "w1", org_id: "00000000-0000-4000-8000-0000000000b2", jurisdiction_weights: { EU: 3, US: 1 } }, { id: "w2", org_id: "00000000-0000-4000-8000-0000000000a1", jurisdiction_weights: { EU: 5, GB: 2 } }]);
-  assert.deepEqual(await loadHomeJurisdictions(w.db.client, "all-workspaces"), { EU: 5, GB: 2, US: 1 });
-  assert.deepEqual(await loadHomeJurisdictions(w.db.client, { orgId: "00000000-0000-4000-8000-0000000000b2" }), { EU: 3, US: 1 });
+  assert.deepEqual((await loadThemeMaterial(w.db.client, themes)).jurisdictionWeights, { EU: 5, GB: 2, US: 1 }, "the default scope is every workspace, never one arbitrary row");
+  assert.deepEqual((await loadThemeMaterial(w.db.client, themes, { homes: { orgId: "00000000-0000-4000-8000-0000000000b2" } })).jurisdictionWeights, { EU: 3, US: 1 });
   w.db.failWhen = (c) => (c.table === "workspace_settings" ? "boom" : null);
-  await assert.rejects(loadHomeJurisdictions(w.db.client, "all-workspaces"), /boom|paginated read failed/);
+  await assert.rejects(loadThemeMaterial(w.db.client, themes), /boom|paginated read failed/);
 });
 
 test("the flat frontmatter block round-trips what it can carry and refuses what it cannot (a newline, a comma in an inline-array item, a quoted scalar)", () => {
@@ -134,4 +141,16 @@ test("the figure rule: a number or an acronym is allowed only inside a listed cl
   assert.deepEqual(findUncitedFigures("*Analytical inference:* CBAM costs 5%"), []);
   assert.deepEqual(findUncitedFigures("1. First point"), [], "an ordered-list marker is not a figure");
   assert.deepEqual([...parseRamifications("### Research\nx\n### Research\ny").problems], ['duplicate ramifications subsection "Research"']);
+});
+
+test("the stand-ins behind the validator: a copy of a validated brief is not a validated brief; admissibleRows keeps verified, unarchived, unsuppressed rows only", async () => {
+  assert.equal(isValidThemeBrief({ theme_id: THEME }), false);
+  assert.equal(isValidThemeBrief(null), false);
+  const w = themeWorld();
+  assert.deepEqual([...(await admissibleRows.itemIds(w.db.client, [ITEM, SECOND, "ghost"]))].sort(), [ITEM, SECOND].sort());
+  (w.db.rows("intelligence_items").find((r) => r.id === SECOND) as Record<string, unknown>).is_archived = true;
+  assert.deepEqual([...(await admissibleRows.itemIds(w.db.client, [ITEM, SECOND]))], [ITEM]);
+  const claim = (id: string, item: string) => ({ id, intelligence_item_id: item, claim_text: "t" });
+  w.db.seed("fact_suppressions", [{ id: "fs1", item_id: ITEM, target_kind: "fact", target_ref: CLAIM_A, op: "suppress", machine_value: null, created_at: "2026-10-15T00:00:00Z", revoked_at: null }]);
+  assert.deepEqual((await admissibleRows.claims(w.db.client, [claim(CLAIM_A, ITEM), claim("c-other", ITEM), claim(CLAIM_B, SECOND)])).map((c) => c.id), ["c-other"], "the suppressed claim and the archived item's claim are out");
 });

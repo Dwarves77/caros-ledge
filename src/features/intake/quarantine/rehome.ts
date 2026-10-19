@@ -8,7 +8,7 @@
 // (the old writer set the floor source's tier and left the span on the below-floor capture), the prior state archived to claim_versions first; a refusal leaves the item as it was. Every write is checked, and
 // the item is read back: a re-home that did not flip the item is reported as such, never as a success.
 import { fetchAllRows, type Db } from "@/core/db";
-import { applyLedgerOps, reattributionOp, type LedgerOp } from "@/core/grounding/ledger";
+import { applyLedgerOps, reattributeClaim, type LedgerOp } from "@/core/grounding/ledger";
 import { authorityFloorFor, floorPool, readPool, reattributeToFloor } from "@/core/grounding/pool";
 import { runResult, type RunResult } from "@/core/intake/result";
 import { hostOf } from "@/core/shared/url";
@@ -99,7 +99,7 @@ export async function rehomeQuarantined(deps: Deps, input: { apply?: boolean; li
           const hit = registered.has(url) ? { sourceId: registered.get(url) as string } : await sources.resolveSource(url);
           return hit?.sourceId ? { sourceId: hit.sourceId } : null;
         };
-        ops.push(await reattributionOp({ id: h.claimId }, { id: h.target.id, url: h.target.url }, claim.source_span as string, { resolve }, "rehome:floor"));
+        ops.push(await reattributeClaim({ id: h.claimId }, { id: h.target.id, url: h.target.url }, claim.source_span as string, { resolve }, "rehome:floor"));
       }
       await applyLedgerOps(sb, it.id, ops, deps.now().toISOString());
       const touch = await sb.from("intelligence_items").update({ updated_at: deps.now().toISOString() }).eq("id", it.id);

@@ -3,7 +3,7 @@ import { test } from "node:test";
 
 import { MINT_OK, applyStagedUpdate, consumePortalCandidates, drainChangeSweepUpdates, isSubstantiveUpdate, persistPortalCandidates, runIntakeCycle, runParticipation, selectCandidateLedgerPage, stageCandidate } from "@/features/intake";
 import { applyPromoteCap, buildCandidateSeed } from "@/features/intake/portal-ledger";
-import { CHANGE_SWEEP_STAGED_MARKER, UPDATE_ITEM_ALLOWLIST, isRootUrl, parseStagedPatch, splitNewItemSeed } from "@/features/intake/staged-transit";
+import { CHANGE_SWEEP_STAGED_MARKER, UPDATE_ITEM_ALLOWLIST, isRootUrl, splitNewItemSeed } from "@/features/intake/staged-transit";
 
 import { ITEM, OFFICIAL_TEXT, OFFICIAL_URL, SOURCE, SPAN_REPORT, makeWorld } from "./fixtures.ts";
 
@@ -74,8 +74,6 @@ test("D:36: a staged patch is typed before it reaches the item: a wrong type, a 
     assert.match(r.error ?? "", re, name);
   }
   assert.equal(db.writes("intelligence_items").length, 0, "no refused patch reached the item");
-  assert.match(JSON.stringify(parseStagedPatch("status_change", { status: "in_force", title: "x" })), /status_change writes the status column alone/);
-  assert.match(JSON.stringify(parseStagedPatch("archive_item", { is_archived: true, title: "x" })), /archive_item writes the archive columns alone/);
   assert.equal((await apply({ status: "made_up" }, "status_change")).success, false);
   assert.equal((await apply({ status: "in_force" }, "status_change")).success, true);
   assert.equal(db.rows("intelligence_items")[0]?.status, "in_force");

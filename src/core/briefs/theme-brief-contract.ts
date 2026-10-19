@@ -110,7 +110,7 @@ export function parseRamifications(text: string): { subs: Map<string, string>; p
  * local stub (INTERFACE GAPS): the stub holds the F:15 attack, an invented figure listed under a real claim id, and nothing subtler.
  */
 export type ClaimComparator = (listed: string, grounded: readonly string[]) => string[];
-export const figureCoverage: ClaimComparator = (listed, grounded) => {
+const figureCoverage: ClaimComparator = (listed, grounded) => {
   const have = figureTokens(grounded.join(" "));
   return [...figureTokens(listed)].filter((tok) => !have.has(tok));
 };
@@ -126,7 +126,7 @@ export interface ThemeContext {
 }
 
 /** Validate ONE entry: the refusal reasons (empty means valid). */
-export function validateThemeBriefEntry(entry: unknown, i: number, ctx: ThemeContext): string[] {
+function validateThemeBriefEntry(entry: unknown, i: number, ctx: ThemeContext): string[] {
   const where = `entry ${i}`;
   if (!isObj(entry)) return [`${where}: not an object`];
   if (!nonEmptyStr(entry.theme_id)) return [`${where}: theme_id is missing`];
@@ -205,7 +205,7 @@ export function validateThemeBriefEntry(entry: unknown, i: number, ctx: ThemeCon
 }
 
 /** brief_md: the title, then the sections in order under fixed headings. An empty gaps section is omitted. */
-export function renderBriefMd(entry: { title: string; sections: Partial<Record<ThemeSection, unknown>> }): string {
+function renderBriefMd(entry: { title: string; sections: Partial<Record<ThemeSection, unknown>> }): string {
   const parts = [`# ${entry.title.trim()}`];
   for (const k of THEME_BRIEF_SECTIONS) {
     const body = String(entry.sections[k] ?? "").trim();

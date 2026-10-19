@@ -1,3 +1,5 @@
+-- expect: public.planted_writer()
+-- expect: public.planted_trigger_fn()
 CREATE TABLE public.planted_sink (id int);
 CREATE FUNCTION public.planted_writer() RETURNS int LANGUAGE plpgsql SET search_path = public, pg_temp AS $f$
 BEGIN INSERT INTO public.planted_sink VALUES (1); RETURN 1; END $f$;

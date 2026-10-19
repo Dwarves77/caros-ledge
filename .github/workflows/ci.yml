@@ -1,12 +1,17 @@
 name: CI
 
-# The one workflow. Job `ci`: lint, typecheck, build, tests, tree checks, LOC gates, the connection check.
-# Job `schema`: supabase/schema.sql applied to an empty Postgres 15, then the property checks.
-# Job `turn`: the turn runtime (scripts/turn.mjs). It runs a turn only on a dispatch, with the project secrets; any other event, and a dispatch with no secrets locally, self-skips with exit 2 and a notice.
-# Job `windows`: the test step alone on Windows, once per wave (push to main and dispatch, never a pull request).
-# Job `parity`: the built app on the runner, the UX smoke, and the capture compared with tests/parity/baseline (UI slices).
-# Jobs `live` and `preview-parity` (P2-15): on a successful PREVIEW deployment (deployment_status) or a dispatch with only=live: the live checks (scripts/ci/live-checks.mjs) and the parity capture of the deployed URL. Every other job ignores a deployment_status event.
+# The one workflow. Job `changes`: which of the expensive jobs a pull request needs (scripts/ci/changes.mjs); every other event runs everything.
+# Job `ci`: lint, typecheck, build, tests, tree checks, LOC gates, the connection check, the column check, the migration static checks, the mutants registry (npm run gates).
+# Job `schema`: supabase/schema.sql applied to an empty Postgres 15, then the migrations (each self-check must print its own OK, each down file is applied and catalog-compared), then the property checks.
+# Job `mutants`: every gate is attacked by a registered mutant (tests/mutants/registry.json) in a scratch copy of the tree and must go red; a mutant that leaves its gate green fails the run.
+# Job `turn`: the turn runtime (scripts/turn.mjs). Dispatch only: it is the one job that holds the service key for a run of the branch it was dispatched on; no pull request or push ever receives it.
+# Job `windows`: the test step alone on Windows (every push to main and dispatch; a pull request that touches scripts/ or tests/).
+# Job `parity`: the built app on the runner, the UX smoke, and the capture compared with tests/parity/baseline (a pull request that touches anything the build reads).
+# Jobs `live` and `preview-parity` (P2-15): on a successful PREVIEW deployment (deployment_status) or a dispatch with only=live. `live` runs the live checks (scripts/ci/live-checks.mjs) with the service key and the admin account, so it checks
+# out MAIN, never the deployed commit: a branch cannot change the script that holds the secrets. `preview-parity` runs the deployed commit's own capture and compare, so it holds the member test account only.
 # Job `report`: after the others (needs, if always), downloads the parity and test artifacts and writes the one job summary and the one PR comment; it polls nothing and never fails the run.
+# Every action is pinned to a commit SHA (the tag it was taken from is the comment): a moved tag cannot change a gate.
+# Exit 2 (a self-skip) is never converted here: a script exits 2 only where the event cannot carry secrets (src/core/harness/exit.ts), so a green job means the check ran.
 
 on:
   pull_request:
@@ -22,7 +27,7 @@ on:
         description: 'Dispatch with only=live: before (the run made before the cutover window) or after'
         default: after
       live_checks:
-        description: 'Dispatch with only=live: check names, comma separated (empty runs the default set; invitation-email only when named)'
+        description: 'Dispatch with only=live: check names, comma separated (empty runs the default set; invitation-email and provenance-trigger only when named)'
         default: ''
       stage:
         description: 'Turn stage: sweep, sweep-research, change, capture, intake, connect, propagate, briefs, all or ops'
@@ -47,11 +52,33 @@ on:
 permissions:
   contents: read
 
+# The event and the run id are in the group: a push to main and a dispatch on main no longer share one pending slot (GitHub keeps one pending run per group, so a pending main push could be dropped).
+# Only a pull request cancels its own earlier run.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.event.deployment.id || github.ref }}
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.event.deployment.id || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  changes:
+    name: changes
+    if: github.event_name != 'deployment_status' && (github.event_name != 'workflow_dispatch' || github.event.inputs.only == '')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      parity: ${{ steps.scope.outputs.parity }}
+      windows: ${{ steps.scope.outputs.windows }}
+      mutant_classes: ${{ steps.scope.outputs.mutant_classes }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+      - name: Which jobs does this change need?
+        id: scope
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.base_ref }}
+        run: node scripts/ci/changes.mjs
+
   ci:
     name: ci
     if: github.event_name != 'deployment_status' && (github.event_name != 'workflow_dispatch' || github.event.inputs.only == '')
@@ -62,8 +89,8 @@ jobs:
       pull-requests: write
       actions: read
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: '24'
           cache: npm
@@ -71,7 +98,7 @@ jobs:
       - name: Gates (npm run gates, the same list the pre-push hook runs)
         shell: bash -eo pipefail {0}
         run: npm run gates
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
           name: ci-results
@@ -82,7 +109,7 @@ jobs:
     name: schema
     if: github.event_name != 'deployment_status' && (github.event_name != 'workflow_dispatch' || github.event.inputs.only == '')
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     services:
       postgres:
         image: postgres:15.14
@@ -98,17 +125,56 @@ jobs:
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: '24'
       - run: npm ci --no-audit # the source-backfill generator imports the classify rules (zod)
-      - name: Apply schema.sql to an empty Postgres 15, then run the property checks
+      - name: Apply schema.sql to an empty Postgres 15, then the migrations, the down files and the property checks
         run: npm run schema:apply
+
+  mutants:
+    name: mutants
+    needs: changes
+    if: github.event_name != 'deployment_status' && (github.event_name != 'workflow_dispatch' || github.event.inputs.only == '')
+    runs-on: ubuntu-latest
+    # fast ~5 min, slow (a build, a bundle) ~8, schema ~35 (one chain run for every self-check, the property checks, three whole schema jobs): the whole set runs only when the change touches what the classes read.
+    timeout-minutes: 90
+    services:
+      postgres:
+        image: postgres:15.14
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --no-audit
+      - name: Attack every gate with its registered mutants (fast always; slow and schema when the change touches what they read)
+        env:
+          CLASSES: ${{ needs.changes.outputs.mutant_classes }}
+        run: node scripts/ci/mutants.mjs --classes "$CLASSES" --json mutants-report.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: mutants-report
+          path: mutants-report.json
+          if-no-files-found: ignore
 
   turn:
     name: turn
-    if: github.event_name != 'deployment_status' && (github.event_name != 'workflow_dispatch' || github.event.inputs.only == '' || github.event.inputs.only == 'turn')
+    if: github.event_name == 'workflow_dispatch' && (github.event.inputs.only == '' || github.event.inputs.only == 'turn')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -117,40 +183,34 @@ jobs:
       WORKER_SECRET: ${{ secrets.WORKER_SECRET }}
       EIA_API_KEY: ${{ secrets.EIA_API_KEY }}
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: '24'
           cache: npm
-      - name: Install (a dispatch only; any other event self-skips before it needs the sources)
-        if: github.event_name == 'workflow_dispatch'
-        run: npm ci --no-audit
+      - run: npm ci --no-audit
       - name: Playwright Chromium (the headless transport runs on the runner)
-        if: github.event_name == 'workflow_dispatch'
         run: npx playwright install --with-deps chromium
       - name: Turn
-        run: |
-          set +e
-          input="$TURN_INPUT"
-          [ -n "$input" ] || input='{}'
-          node scripts/turn.mjs --stage "${TURN_STAGE:-all}" --mode "${TURN_MODE:-dry}" --input "$input" ${TURN_NO_CHAIN:+--no-chain}
-          code=$?
-          if [ "$code" -eq 2 ]; then echo "::notice title=turn::self-skipped (exit 2): see the step output"; exit 0; fi
-          exit "$code"
         env:
           TURN_STAGE: ${{ github.event.inputs.stage }}
           TURN_MODE: ${{ github.event.inputs.mode }}
           TURN_INPUT: ${{ github.event.inputs.input }}
           TURN_NO_CHAIN: ${{ github.event.inputs.chain == 'false' && '1' || '' }}
+        run: |
+          input="$TURN_INPUT"
+          [ -n "$input" ] || input='{}'
+          node scripts/turn.mjs --stage "${TURN_STAGE:-all}" --mode "${TURN_MODE:-dry}" --input "$input" ${TURN_NO_CHAIN:+--no-chain}
 
   windows:
     name: ci-windows
-    if: github.event_name != 'pull_request' && github.event_name != 'deployment_status' && (github.event_name != 'workflow_dispatch' || github.event.inputs.only == '')
+    needs: changes
+    if: github.event_name != 'deployment_status' && (github.event_name != 'workflow_dispatch' || github.event.inputs.only == '') && (github.event_name != 'pull_request' || needs.changes.outputs.windows == 'true')
     runs-on: windows-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: '24'
           cache: npm
@@ -159,82 +219,75 @@ jobs:
 
   parity:
     name: parity
-    if: github.event_name != 'deployment_status' && (github.event_name != 'workflow_dispatch' || github.event.inputs.only == '')
+    needs: changes
+    if: github.event_name != 'deployment_status' && (github.event_name != 'workflow_dispatch' || github.event.inputs.only == '') && (github.event_name != 'pull_request' || needs.changes.outputs.parity == 'true')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     # The baseline was captured in this image (old repo parity-baseline.yml), so fonts and hinting render identically and the pixel diff measures the design, not the machine.
     container:
       image: mcr.microsoft.com/playwright:v1.61.1-noble
+    # The member test account and the public anon key only: this job runs the pull request's own code, which must not be able to read the admin account or the service key.
     env:
       NEXT_TELEMETRY_DISABLED: '1'
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co' }}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder' }}
       LIVE_SMOKE_EMAIL: ${{ secrets.LIVE_SMOKE_EMAIL }}
       LIVE_SMOKE_PASSWORD: ${{ secrets.LIVE_SMOKE_PASSWORD }}
-      LIVE_ADMIN_EMAIL: ${{ secrets.LIVE_ADMIN_EMAIL }}
-      LIVE_ADMIN_PASSWORD: ${{ secrets.LIVE_ADMIN_PASSWORD }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
       - name: Trust the workspace for git (the container user does not own the checkout)
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
-      - name: Does this change touch the UI?
-        id: scope
-        run: |
-          if [ "${{ github.event_name }}" != "pull_request" ]; then echo "run=true" >> "$GITHUB_OUTPUT"; exit 0; fi
-          if git diff --name-only "origin/${{ github.base_ref }}...HEAD" | grep -Eq '^(src/ui/|src/app/|src/features/[^/]+/ui/|tests/(parity|ux)/|\.github/workflows/ci\.yml)'; then echo "run=true" >> "$GITHUB_OUTPUT"; else echo "run=false" >> "$GITHUB_OUTPUT"; fi
-      - uses: actions/setup-node@v5
-        if: steps.scope.outputs.run == 'true'
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: '24'
           cache: npm
-      - if: steps.scope.outputs.run == 'true'
-        run: npm ci --no-audit
+      - run: npm ci --no-audit
       - name: Playwright package matching the image (browsers come from the image)
-        if: steps.scope.outputs.run == 'true'
         run: npm install --no-save playwright@1.61.1 --no-audit --no-fund
-      - if: steps.scope.outputs.run == 'true'
-        run: npm run build
+      - run: npm run build
       - name: Start the app (UI fixtures on, set only here)
-        if: steps.scope.outputs.run == 'true'
+        id: app
         run: |
           UI_FIXTURES=1 npx next start -p 3100 > next-start.log 2>&1 &
           for i in $(seq 1 40); do curl -sf http://localhost:3100/login > /dev/null && break; sleep 1; done
+      # Every step below runs whatever the one before it did (the app having started is the only condition), so one run lists every failure and a pull request needs one run, not one per failing smoke.
       - name: UX smoke (four widths, real fonts)
-        if: steps.scope.outputs.run == 'true'
+        if: ${{ !cancelled() && steps.app.outcome == 'success' }}
         run: node tests/ux/ux-smoke.mjs --base http://localhost:3100
       - name: Workspace screens (four widths, behaviours, fixture parity for /settings and /profile)
-        if: steps.scope.outputs.run == 'true'
+        if: ${{ !cancelled() && steps.app.outcome == 'success' }}
         run: node tests/ux/workspace-smoke.mjs --base http://localhost:3100
       - name: Market screens (four widths, rating on every headline figure, scope, notices, failed parts)
-        if: steps.scope.outputs.run == 'true'
+        if: ${{ !cancelled() && steps.app.outcome == 'success' }}
         run: node tests/ux/market-smoke.mjs --base http://localhost:3100
       - name: Admin screens (four widths, every console tab)
-        if: steps.scope.outputs.run == 'true'
+        if: ${{ !cancelled() && steps.app.outcome == 'success' }}
         run: node tests/ux/admin-smoke.mjs --base http://localhost:3100
       - name: Regulations screens (four widths, behaviours)
-        if: steps.scope.outputs.run == 'true'
+        if: ${{ !cancelled() && steps.app.outcome == 'success' }}
         run: node tests/ux/regulations-smoke.mjs --base http://localhost:3100
       - name: Dashboard, watchlist, search, portfolio and Assistant screens (four widths, behaviours, fixture parity for /watchlist and /search)
-        if: steps.scope.outputs.run == 'true'
+        if: ${{ !cancelled() && steps.app.outcome == 'success' }}
         run: node tests/ux/dash-search-smoke.mjs --base http://localhost:3100
       - name: Community screens (two widths, behaviours, failed reads, fixture parity for /community)
-        if: steps.scope.outputs.run == 'true'
+        if: ${{ !cancelled() && steps.app.outcome == 'success' }}
         run: node tests/ux/community-smoke.mjs --base http://localhost:3100
       - name: Capture the routes
-        if: steps.scope.outputs.run == 'true'
+        id: capture
+        if: ${{ !cancelled() && steps.app.outcome == 'success' }}
         run: node tests/parity/capture.mjs --base http://localhost:3100 --out parity-capture
       - name: Compare with the baseline
-        if: steps.scope.outputs.run == 'true'
+        if: ${{ !cancelled() && steps.capture.outcome == 'success' }}
         shell: bash -eo pipefail {0}
         run: node tests/parity/compare.mjs --captured parity-capture | tee parity-report.txt
       - name: Parity report in the job summary
-        if: always() && steps.scope.outputs.run == 'true'
+        if: ${{ !cancelled() }}
         run: |
           { echo '### Parity'; echo '```'; cat parity-report.txt 2>/dev/null || echo 'no report'; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
-      - uses: actions/upload-artifact@v4
-        if: always() && steps.scope.outputs.run == 'true'
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: ${{ !cancelled() }}
         with:
           name: parity-capture
           path: |
@@ -244,7 +297,8 @@ jobs:
             next-start.log
 
   # P2-15: what runs on a deployed URL. A successful PREVIEW deployment (the deployment_status event Vercel posts to GitHub) and a dispatch with only=live both run the live checks (scripts/ci/live-checks.mjs: one live-smoke row per
-  # check through recordRun) and the parity capture of the deployed preview (admin routes too, only when the admin account is configured). A deployment_status run checks out the DEPLOYED commit, not the default branch.
+  # check through recordRun) and the parity capture of the deployed preview. The live checks hold the service key, the admin account and the mail key, so this job checks out MAIN (the default branch): the deployed commit is only
+  # the thing being looked at, the URL, and its sha is passed as data (LIVE_CODE_SHA) to be written on the ledger row.
   live:
     name: live
     if: (github.event_name == 'deployment_status' && github.event.deployment_status.state == 'success' && github.event.deployment_status.environment == 'Preview') || (github.event_name == 'workflow_dispatch' && github.event.inputs.only == 'live')
@@ -254,6 +308,7 @@ jobs:
       image: mcr.microsoft.com/playwright:v1.61.1-noble
     env:
       LIVE_BASE_URL: ${{ github.event.deployment_status.environment_url || github.event.inputs.live_url }}
+      LIVE_CODE_SHA: ${{ github.event.deployment.sha || github.sha }}
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -265,26 +320,21 @@ jobs:
       RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
       INVITATION_FROM_EMAIL: ${{ secrets.INVITATION_FROM_EMAIL }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
-          ref: ${{ github.event.deployment.sha || github.sha }}
-      - uses: actions/setup-node@v5
+          ref: ${{ github.event.repository.default_branch }}
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: '24'
           cache: npm
       - run: npm ci --no-audit
       - name: Playwright package matching the image (browsers come from the image)
         run: npm install --no-save playwright@1.61.1 --no-audit --no-fund
-      - name: Live checks (exit 2 is a self-skip without credentials)
-        shell: bash {0}
-        run: |
-          node scripts/ci/live-checks.mjs --base "$LIVE_BASE_URL" --phase "${LIVE_PHASE:-after}" ${LIVE_ONLY:+--only "$LIVE_ONLY"}
-          code=$?
-          if [ "$code" -eq 2 ]; then echo "::notice title=live::self-skipped (exit 2): see the step output"; exit 0; fi
-          exit "$code"
+      - name: Live checks (a missing secret on a run that can carry it is exit 1 and names the secret)
         env:
           LIVE_PHASE: ${{ github.event.inputs.live_phase }}
           LIVE_ONLY: ${{ github.event.inputs.live_checks }}
+        run: node scripts/ci/live-checks.mjs --base "$LIVE_BASE_URL" --phase "${LIVE_PHASE:-after}" ${LIVE_ONLY:+--only "$LIVE_ONLY"}
 
   preview-parity:
     name: preview-parity
@@ -293,25 +343,25 @@ jobs:
     timeout-minutes: 30
     container:
       image: mcr.microsoft.com/playwright:v1.61.1-noble
+    # The member test account only. The deployed commit's own capture and compare run here, so no admin account and no service key: admin routes are captured by a dispatch of `screens` on the default branch.
     env:
       LIVE_SMOKE_EMAIL: ${{ secrets.LIVE_SMOKE_EMAIL }}
       LIVE_SMOKE_PASSWORD: ${{ secrets.LIVE_SMOKE_PASSWORD }}
-      LIVE_ADMIN_EMAIL: ${{ secrets.LIVE_ADMIN_EMAIL }}
-      LIVE_ADMIN_PASSWORD: ${{ secrets.LIVE_ADMIN_PASSWORD }}
-      PARITY_ADMIN: ${{ secrets.LIVE_ADMIN_EMAIL && secrets.LIVE_ADMIN_PASSWORD && '1' || '' }}
       PARITY_BASE: ${{ github.event.deployment_status.environment_url || github.event.inputs.live_url }}
+      # A preview sits behind Vercel deployment protection; the capture sends this as x-vercel-protection-bypass (the same designed mechanism as scripts/ci/live-checks.mjs), or it only ever sees the sign-in page.
+      VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           ref: ${{ github.event.deployment.sha || github.sha }}
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: '24'
           cache: npm
       - run: npm ci --no-audit
       - name: Playwright package matching the image (browsers come from the image)
         run: npm install --no-save playwright@1.61.1 --no-audit --no-fund
-      - name: Capture the deployed preview (admin routes only when PARITY_ADMIN=1)
+      - name: Capture the deployed preview
         run: node tests/parity/capture.mjs --base "$PARITY_BASE" --out parity-capture
       - name: Compare with the baseline
         shell: bash -eo pipefail {0}
@@ -320,7 +370,7 @@ jobs:
         if: always()
         run: |
           { echo '### Parity of the deployed preview'; echo '```'; cat parity-report.txt 2>/dev/null || echo 'no report'; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
           name: preview-parity-capture
@@ -329,7 +379,6 @@ jobs:
             parity-diff
             parity-report.txt
 
-  # The one writer of the run's record: runs after the others, polls nothing, holds no secrets, and never fails the run itself (it reports the others' conclusions).
   # Recapture of the parity baseline from the old site (tests/parity/baseline/README.md says how to use the artifact). Dispatch only: never on push or pull_request.
   baseline:
     name: baseline
@@ -342,8 +391,8 @@ jobs:
       LIVE_SMOKE_EMAIL: ${{ secrets.LIVE_SMOKE_EMAIL }}
       LIVE_SMOKE_PASSWORD: ${{ secrets.LIVE_SMOKE_PASSWORD }}
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: '24'
           cache: npm
@@ -351,8 +400,10 @@ jobs:
       - name: Playwright package matching the image (browsers come from the image)
         run: npm install --no-save playwright@1.61.1 --no-audit --no-fund
       - name: Capture the old site
-        run: node tests/parity/capture.mjs --base https://carosledge.com --out parity-baseline --site old --routes "${{ inputs.routes || 'all' }}"
-      - uses: actions/upload-artifact@v4
+        env:
+          ROUTES: ${{ inputs.routes || 'all' }}
+        run: node tests/parity/capture.mjs --base https://carosledge.com --out parity-baseline --site old --routes "$ROUTES"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
           name: parity-baseline-${{ github.run_id }}
@@ -374,9 +425,10 @@ jobs:
       LIVE_ADMIN_PASSWORD: ${{ secrets.LIVE_ADMIN_PASSWORD }}
       PARITY_ADMIN: ${{ secrets.LIVE_ADMIN_EMAIL && secrets.LIVE_ADMIN_PASSWORD && '1' || '' }}
       SCREENS_BASE: ${{ github.event.inputs.live_url }}
+      VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: '24'
           cache: npm
@@ -385,15 +437,16 @@ jobs:
         run: npm install --no-save playwright@1.61.1 --no-audit --no-fund
       - name: Photograph every route (admin routes only when PARITY_ADMIN=1)
         run: node tests/parity/capture.mjs --base "$SCREENS_BASE" --out screens --fresh
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
           name: screens-${{ github.run_id }}
           path: screens
 
+  # The one writer of the run's record: runs after every job that can run on a pull request or a push, polls nothing, holds no secrets, and never fails the run itself (it reports the others' conclusions).
   report:
     name: report
-    needs: [ci, schema, parity]
+    needs: [changes, ci, schema, mutants, turn, windows, parity]
     if: always() && github.event_name != 'deployment_status'
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -401,16 +454,16 @@ jobs:
       contents: read
       pull-requests: write
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: '24'
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         continue-on-error: true
         with:
           name: parity-capture
           path: parity-artifact
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         continue-on-error: true
         with:
           name: ci-results

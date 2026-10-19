@@ -5,7 +5,7 @@
 // Per-item provenance healing, in order: capture (when the item has none), ground each FACT in a capture and put its attribution right, cover missing required slots, link the source's institution,
 // capture the cited pages, re-source a below-floor FACT from a better capture, re-kind what still cannot be proven (never rewriting), ground the Gate A orphans (buckets first, then source-and-rate),
 // the opt-in honest strip, relabel, rewrite the Gate A state, and re-derive (validate, touch, read the fresh status; un-archive an archived-unreasoned item that now verifies).
-// Every ledger change of the pass is PLANNED as an op (the claim attribution through reattributionOp: the source and so the tier come from the capture's own host, never the item's) and applied at the
+// Every ledger change of the pass is PLANNED as an op (the claim attribution through reattributeClaim: the source and so the tier come from the capture's own host, never the item's) and applied at the
 // end as ONE transaction (ledger_apply_ops: archive first, all or nothing); a refusal fails the item with the rule named and nothing changed. Every read and write is checked. Dry mode plans and writes nothing.
 import { randomUUID } from "node:crypto";
 
@@ -14,7 +14,7 @@ import { capture } from "@/core/fetch";
 import { isVerbatim } from "@/core/contracts/verbatim";
 import { fetchAllRows, type Db } from "@/core/db";
 import { authorityFloorFor, buildGateARow, derivedCoveredTokens, readRequiredSlots, scanGateA, upsertGateAState } from "@/core/grounding";
-import { applyLedgerOps, reattributionOp, sourceForCapture, type AttributionCtx, type LedgerOp } from "@/core/grounding/ledger";
+import { applyLedgerOps, reattributeClaim, sourceForCapture, type AttributionCtx, type LedgerOp } from "@/core/grounding/ledger";
 import { runResult, type RunResult } from "@/core/intake/result";
 import { buildResolver, registerAndRate, type SourceRow } from "@/core/sources";
 import { buildRecordSlotClaim } from "@/features/intake";
@@ -77,7 +77,7 @@ export async function healItem(deps: HealDeps, input: HealItemInput): Promise<He
     };
     /** Stand a FACT on `cap` with `span`: the planned op, and the in-memory claim moved with it for the steps after. */
     const repoint = async (c: HealClaim, cap: Capture, span: string, why: string): Promise<void> => {
-      const op = (await reattributionOp(c, { id: cap.id, url: cap.result_url ?? "" }, span, attr, `heal:${why}`)) as Extract<LedgerOp, { op: "claim" }>;
+      const op = (await reattributeClaim(c, { id: cap.id, url: cap.result_url ?? "" }, span, attr, `heal:${why}`)) as Extract<LedgerOp, { op: "claim" }>;
       if (!dry) ops.push(op);
       Object.assign(c, { source_span: span, search_result_id: cap.id, source_id: op.row.source_id as string | null, source_tier_at_grounding: resolver.resolveSpan(cap.result_url ?? "").tier });
     };

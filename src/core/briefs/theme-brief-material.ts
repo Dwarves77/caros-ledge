@@ -56,7 +56,7 @@ const byIds = <T>(sb: Db, table: string, columns: string, ids: readonly string[]
 /** Which workspace profile the home jurisdictions come from: one named organisation's, or the union of every workspace's (a theme is corpus-wide, so its gaps are measured against everyone's homes). Never "whichever row comes first". */
 export type HomeScope = { orgId: string } | "all-workspaces";
 /** jurisdiction to weight for the scope. A union takes the larger numeric weight per jurisdiction, rows read in organisation order. A failed read throws. */
-export async function loadHomeJurisdictions(sb: Db, scope: HomeScope): Promise<Record<string, unknown>> {
+async function loadHomeJurisdictions(sb: Db, scope: HomeScope): Promise<Record<string, unknown>> {
   const read = scope === "all-workspaces"
     ? await fetchAllRows<{ org_id: string; jurisdiction_weights: unknown }>((from, to) => sb.from("workspace_settings").select("org_id, jurisdiction_weights").order("org_id", { ascending: true }).range(from, to) as never, { cap: 100_000 })
     : await (async () => {

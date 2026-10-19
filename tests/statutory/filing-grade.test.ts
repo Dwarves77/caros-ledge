@@ -5,9 +5,9 @@ import { test } from "node:test";
 
 import { acceptQuote, acceptStoredQuote, parseVerifiedAt } from "@/core/producers/quote";
 import { registerCitedSource, requireCitation } from "@/core/producers/rows-file";
-import { deriveFilingGrade, deriveInstrument, filingInstruments, FUELEU_INSTRUMENT, type FilingInstrument } from "@/features/statutory";
+import { deriveInstrument, filingInstruments, FUELEU_INSTRUMENT, type FilingInstrument } from "@/features/statutory";
 import { statutoryRun } from "@/features/statutory/run";
-import { validateRowsFile, validateSourceBlock } from "@/features/statutory/rows";
+import { validateRowsFile, validateSourceBlock, verifyRowQuotes } from "@/features/statutory/rows";
 
 import { installLedgerRpcs } from "../_support/ledger-rpcs.ts";
 import { MemDb } from "../_support/memdb.ts";
@@ -41,7 +41,8 @@ test("filing grade is DERIVED: a year is filing grade only when every one of its
   assert.deepEqual(deriveInstrument(instrument(), null, NOW).years, []);
   assert.deepEqual(deriveInstrument(instrument({ verifiedAt: "soon" }), TEXT, NOW).years, []);
   const second = instrument({ id: "second-instrument", captureId: "cap-2", yearQuotes: { "2031": ["Article 9. The cap is 12 percent."] } });
-  const doc = deriveFilingGrade([instrument(), second], new Map([["cap-1", TEXT], ["cap-2", "Article 9. The cap is 12 percent. More text."]]), NOW);
+  const captures = new Map([["cap-1", TEXT], ["cap-2", "Article 9. The cap is 12 percent. More text."]]);
+  const doc = { instruments: Object.fromEntries([instrument(), second].map((i) => [i.id, deriveInstrument(i, i.captureId ? captures.get(i.captureId) : null, NOW)])) };
   assert.deepEqual(doc.instruments["fixture-instrument"]?.years, [2025, 2030]);
   assert.deepEqual(doc.instruments["second-instrument"]?.years, [2031], "a second instrument is a data row with its quotes and its own stored capture; no code changes");
 });
@@ -79,6 +80,8 @@ test("the statutory row's source block: verified_at must be a date; and each inp
   assert.match(refused.data.perItem[0]?.detail ?? "", /ghgIntensityActual: quote_not_in_capture/);
   const accepted = await statutoryRun(deps(db), { dry: true, file: { rows: [row] } });
   assert.equal(accepted.counts.refused ?? 0, 0, accepted.data.perItem[0]?.detail ?? "");
+  const proof = await verifyRowQuotes(db.client, row, NOW);
+  assert.deepEqual(proof, { ok: true, captureIds: { ghgIntensityActual: "cap-9", energyUsedMJ: "cap-9", consecutiveDeficitYears: "cap-9" } });
   const verdict = await acceptStoredQuote(db.client, { url: block().url, quote: REF, verifiedAt: "2026-10-01", now: NOW });
   assert.deepEqual(verdict, { ok: true, captureId: "cap-9", verifiedAt: "2026-10-01" });
 });

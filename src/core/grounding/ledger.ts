@@ -4,7 +4,7 @@
 // The claim ledger discipline: a non-destructive diff and apply, erase only with archived proof, the dominance regression guard and the ground-failure ladder.
 // EVERY write of a claim goes through the database's ledger functions (migration 0074): one call, one transaction, the prior state archived to claim_versions FIRST,
 // the version number taken under the claim's row lock, and a FACT accepted only when its capture holds its span and its tier is the one of the source registered on that
-// capture's host (reattributionOp is the single place an attribution is resolved, from the capture and never from the item). A claim the new grounding does not reproduce
+// capture's host (reattributeClaim is the single place an attribution is resolved, from the capture and never from the item). A claim the new grounding does not reproduce
 // is KEPT. A refusal is returned or thrown with its rule; a failed write is never counted as a success.
 import type { Db } from "@/core/db";
 
@@ -54,7 +54,7 @@ export function diffLedger(existing: ClaimRow[] | null | undefined, incoming: Cl
 }
 
 /** A refusal by the database's ledger functions (migration 0074): the message names the rule that held (attribution refused: span_not_in_capture, source_host_mismatch, ...). Nothing was written. */
-export class LedgerRefusal extends Error {
+class LedgerRefusal extends Error {
   readonly fn: string;
   readonly code: string | undefined;
   constructor(fn: string, message: string, code?: string) {
@@ -96,25 +96,17 @@ export interface AttributionCtx {
   register?(url: string): Promise<{ sourceId: string | null }>;
 }
 /**
- * The op that stands a FACT on the capture that holds its span. The source, and so the tier, come from THE CAPTURE'S OWN HOST through the registry, never from the item's source: this function is not given the item.
- * The database re-checks the whole attribution in the same transaction (the capture holds the span, the source is registered on that host, the tier is that source's) and refuses otherwise.
+ * THE re-attribution of a claim: the op that stands a FACT on the capture that holds its span. The source, and so the tier, come from THE CAPTURE'S OWN HOST through the registry, never from the item's source: this function is
+ * not given the item. The op is applied by the database as one UPDATE inside one transaction with the claim_versions row of the prior state (ledger_apply_ops, alone or with the rest of a pass), and the database re-checks
+ * the whole attribution there (the capture holds the span, the source is registered on that host, the tier is that source's) and refuses otherwise, leaving the claim as it was.
  */
-export async function reattributionOp(claim: { id: string }, capture: CaptureRef, span: string, ctx: AttributionCtx, note?: string): Promise<LedgerOp> {
+export async function reattributeClaim(claim: { id: string }, capture: CaptureRef, span: string, ctx: AttributionCtx, note?: string): Promise<LedgerOp> {
   return { op: "claim", claim_id: claim.id, row: { source_span: span, search_result_id: capture.id, source_id: await sourceForCapture(capture.url, ctx) }, ...(note ? { note } : {}) };
 }
 /** The source id registered on a capture's own host (registered and rated on the spot when the registry has none and the context may), or null: an unrated host. */
 export async function sourceForCapture(url: string, ctx: AttributionCtx): Promise<string | null> {
   const found = await ctx.resolve(url);
   return found?.sourceId ?? (ctx.register ? ((await ctx.register(url)).sourceId ?? null) : null);
-}
-/** Re-attribute one FACT (the op above, applied alone), or the refusal with the claim untouched. */
-export async function reattributeClaim(claim: { id: string; itemId: string }, capture: CaptureRef & { span: string }, ctx: AttributionCtx & { sb: Db; nowIso: string | null; note?: string }): Promise<{ ok: true } | { ok: false; reason: string }> {
-  try {
-    await applyLedgerOps(ctx.sb, claim.itemId, [await reattributionOp(claim, capture, capture.span, ctx, ctx.note)], ctx.nowIso);
-    return { ok: true };
-  } catch (e) {
-    return { ok: false, reason: e instanceof Error ? e.message : String(e) };
-  }
 }
 
 /**

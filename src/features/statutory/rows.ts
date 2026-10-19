@@ -142,9 +142,9 @@ export type WriteResult =
   | { action: "errored"; shipKey: string; reason: string };
 
 /** One row: every input must pass the FILING gate, then compute, then insert once (idempotent on ship, formula, version and scenario). */
-export async function writeOneRow(sb: Db, parsed: ParsedStatutoryRow, deps: StatutoryDeps, opts: { apply: boolean; now: Date; captureIds?: Readonly<Record<string, string>> }): Promise<WriteResult> {
+export async function writeOneRow(sb: Db, parsed: ParsedStatutoryRow, deps: StatutoryDeps, opts: { apply: boolean; now: Date; filingYears: ReadonlySet<string>; captureIds?: Readonly<Record<string, string>> }): Promise<WriteResult> {
   const year = String(parsed.targetYear);
-  const targetValue = toValue({ value: SUPPORTED_TARGET_YEARS[year] as number, unit: "gCO2eq/MJ", derivation: "statutory_fixed", originClass: "official", lifecycle: "verified", admissibility: FILING_GRADE_YEARS.has(year) ? "filing_ok" : "calculation_ok", baseConfidence: 1, halfLifeDays: null, asOf: { eventDate: "2023-09-22" } });
+  const targetValue = toValue({ value: SUPPORTED_TARGET_YEARS[year] as number, unit: "gCO2eq/MJ", derivation: "statutory_fixed", originClass: "official", lifecycle: "verified", admissibility: FILING_GRADE_YEARS.has(year) && opts.filingYears.has(year) ? "filing_ok" : "calculation_ok", baseConfidence: 1, halfLifeDays: null, asOf: { eventDate: "2023-09-22" } });
   const checks: [string, Value][] = [["ghgIntensityTarget", targetValue], ["ghgIntensityActual", toValue(parsed.ghgIntensityActual)], ["energyUsedMJ", toValue(parsed.energyUsedMJ)], ["consecutiveDeficitYears", toValue(parsed.consecutiveDeficitYears)]];
   for (const [label, v] of checks) {
     const verdict = admissibleFor(v, "filing", opts.now);

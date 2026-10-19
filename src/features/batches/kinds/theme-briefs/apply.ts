@@ -16,7 +16,7 @@ import { applyEntries, isObj, type ApplyOpts, type BatchDeps, type BatchExport, 
 
 export const THEME_EXPORT_LIMIT = 15;
 /** The batch name a single payload is applied under (the one-entry batch it becomes). */
-export const SINGLE_BATCH = "theme-briefs-single-payload";
+const SINGLE_BATCH = "theme-briefs-single-payload";
 const DEFAULT_CHAR_BUDGET = 120_000;
 interface ThemeLive { ctx: ThemeContext; themes: Map<string, ThemeRow>; stored: Map<string, { member_hash: string; generated_by: string; brief_md: string }> }
 interface Plan { memberIds: string[]; brief: ValidThemeBrief }

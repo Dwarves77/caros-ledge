@@ -185,7 +185,7 @@ export function briefSentenceOf(token: string, fullBrief: string | null | undefi
 }
 const contentWords = (s: string, drop: Set<string>): Set<string> => new Set((s.toLowerCase().match(new RegExp(`\\p{L}{${rules.minWordLength},}`, "gu")) ?? []).filter((w) => !drop.has(w)));
 /** True when the capture's sentence and the brief's sentence say the same thing: the brief's content words (the figure's own words aside) are shared above the stated overlap. */
-export function sentencesAgree(brief: string, span: string, token: string): boolean {
+function sentencesAgree(brief: string, span: string, token: string): boolean {
   const own = new Set(token.toLowerCase().match(/\p{L}+/gu) ?? []);
   const a = contentWords(brief, own);
   if (!a.size) return false;

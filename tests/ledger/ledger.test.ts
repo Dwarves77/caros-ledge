@@ -4,9 +4,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { applyLedgerOps, reattributeClaim, reattributionOp, sourceForCapture, type AttributionCtx } from "@/core/grounding/ledger";
+import { applyLedgerOps, eraseItem, reattributeClaim, reconcileSections, sourceForCapture, type AttributionCtx } from "@/core/grounding/ledger";
 import { eraseQuarantined, rehomeQuarantined, sectionBrief } from "@/features/intake";
-import { briefSentenceOf, planOrphan, sentencesAgree, type Bucket } from "@/features/mint/heal/ground";
+import { briefSentenceOf, NO_VERBATIM_SPAN, planOrphan, supportingSentence, type Bucket } from "@/features/mint/heal/ground";
 import { healItem } from "@/features/mint";
 import { extractSections } from "@/core/brief/sections";
 
@@ -18,9 +18,9 @@ import { CELEX_URL, makeDeps, makeWorld, SOURCE } from "../mint/world.ts";
 // ---- the single writer: the source and tier come from the CAPTURE'S host, never the item's ----------------------------------------------------------------------------------------------------
 const ctxOf = (by: Record<string, string>): AttributionCtx => ({ resolve: (url) => (by[new URL(url).hostname] ? { sourceId: by[new URL(url).hostname] as string } : null) });
 
-test("reattributionOp: the source is the one registered on the CAPTURE'S host; an unregistered host is registered and rated when the context may (rule 18), else the FACT stays unrated, and never borrows another source", async () => {
+test("reattributeClaim: the op takes the source is the one registered on the CAPTURE'S host; an unregistered host is registered and rated when the context may (rule 18), else the FACT stays unrated, and never borrows another source", async () => {
   const ctx = ctxOf({ "eur-lex.europa.eu": "src-law", "news.test": "src-news" });
-  assert.deepEqual((await reattributionOp({ id: "c1" }, { id: "cap-news", url: "https://news.test/a" }, "a span", ctx) as { row: Record<string, unknown> }).row, { source_span: "a span", search_result_id: "cap-news", source_id: "src-news" });
+  assert.deepEqual((await reattributeClaim({ id: "c1" }, { id: "cap-news", url: "https://news.test/a" }, "a span", ctx) as { row: Record<string, unknown> }).row, { source_span: "a span", search_result_id: "cap-news", source_id: "src-news" });
   assert.equal(await sourceForCapture("https://unknown.test/x", ctx), null, "an unregistered host leaves the FACT unrated, it is not given the item's source");
   const registering: AttributionCtx = { ...ctx, register: async (url) => ({ sourceId: new URL(url).hostname === "unknown.test" ? "src-new" : null }) };
   assert.equal(await sourceForCapture("https://unknown.test/x", registering), "src-new");
@@ -38,21 +38,18 @@ const ledgerWorld = () => {
   return db;
 };
 
-test("reattributeClaim: a FACT stood on a capture takes that capture's source and tier in one call with its archive row; the database refuses a source from another host, a span the capture lacks, and leaves the claim as it was", async () => {
+test("reattributeClaim applied by the database: a FACT stood on a capture takes that capture's source and tier in one call with its archive row; the database refuses a source from another host and a span the capture lacks, and leaves the claim as it was", async () => {
   const db = ledgerWorld();
-  const ctx = { sb: db.client, nowIso: NOW.toISOString(), resolve: (url: string) => ({ sourceId: new URL(url).hostname === "eur-lex.europa.eu" ? INTAKE_SOURCE : CORROB }) };
+  const ctx = { resolve: (url: string) => ({ sourceId: new URL(url).hostname === "eur-lex.europa.eu" ? INTAKE_SOURCE : CORROB }) };
+  const apply = async (span: string, via: AttributionCtx = ctx) => applyLedgerOps(db.client, INTAKE_ITEM, [await reattributeClaim({ id: "c1" }, { id: "cap-news", url: OTHER_URL }, span, via)], NOW.toISOString());
   assert.deepEqual(attribution(db, INTAKE_SOURCE, "cap-news", SPAN_REPORT), { tier: null, problem: "source_host_mismatch" }, "the laundering the old heal wrote: a news capture under the regulator's source");
-  const ok = await reattributeClaim({ id: "c1", itemId: INTAKE_ITEM }, { id: "cap-news", url: OTHER_URL, span: SPAN_REPORT }, ctx);
-  assert.equal(ok.ok, true);
+  await apply(SPAN_REPORT);
   const c = db.rows("section_claim_provenance")[0] as Record<string, unknown>;
   assert.deepEqual([c.source_id, c.source_tier_at_grounding, c.search_result_id], [CORROB, 5, "cap-news"], "the news capture is rated as the news source, tier 5");
   assert.equal(db.rows("claim_versions").length, 1);
   assert.equal(db.rows("claim_versions")[0]?.source_tier_at_grounding, 1, "the archived state is the laundered one");
-  const refused = await reattributeClaim({ id: "c1", itemId: INTAKE_ITEM }, { id: "cap-news", url: OTHER_URL, span: "a sentence no capture holds" }, ctx);
-  assert.deepEqual(refused.ok ? null : refused.reason.includes("span_not_in_capture"), true);
-  const wrongHost = await reattributeClaim({ id: "c1", itemId: INTAKE_ITEM }, { id: "cap-news", url: OTHER_URL, span: SPAN_REPORT }, { ...ctx, resolve: () => ({ sourceId: INTAKE_SOURCE }) });
-  assert.equal(wrongHost.ok, false, "the item's own source cannot be attached to a capture on another host");
-  assert.match(wrongHost.ok ? "" : wrongHost.reason, /source_host_mismatch/);
+  await assert.rejects(apply("a sentence no capture holds"), /span_not_in_capture/);
+  await assert.rejects(apply(SPAN_REPORT, { resolve: () => ({ sourceId: INTAKE_SOURCE }) }), /source_host_mismatch/, "the item's own source cannot be attached to a capture on another host");
   assert.equal(db.rows("claim_versions").length, 1, "the refused calls archived nothing");
   assert.equal((db.rows("section_claim_provenance")[0] as Record<string, unknown>).source_id, CORROB);
 });
@@ -130,12 +127,12 @@ test("D:4: a Gate A orphan is grounded by a SENTENCE of the capture that says wh
   assert.equal(sentence, "Fines rise by 10% for operators who file late.");
   const bucket = (text: string): Bucket => ({ id: "b1", result_url: CELEX_URL, result_content: text, source_id: SOURCE, bucket: "own_canonical" });
   const unrelated = planOrphan({ token: "10%", class: "figure" }, sentence, [bucket("The tax on interest income is 10% of the amount received. Operators file elsewhere.")]);
-  assert.deepEqual(unrelated, { found: false, reason: "no_verbatim_span" }, "a '10%' in an unrelated paragraph backs nothing");
+  assert.deepEqual(unrelated, { found: false, reason: NO_VERBATIM_SPAN }, "a '10%' in an unrelated paragraph backs nothing");
+  assert.equal(supportingSentence("10%", sentence as string, bucket("The tax on interest income is 10% of the amount received.")), null);
   const related = planOrphan({ token: "10%", class: "figure" }, sentence, [bucket("Preamble. Late filers face fines that rise by 10% for operators. End.")]);
   assert.equal(related.found, true);
   assert.equal(related.found ? related.span : "", "Late filers face fines that rise by 10% for operators.", "the span is the capture's own sentence, a byte-exact slice");
   assert.equal(planOrphan({ token: "10%", class: "figure" }, null, [bucket("Fines rise by 10% for late operators.")]).found, false, "no sentence in the brief states it: withheld");
-  assert.equal(sentencesAgree("Fines rise 10% late.", "totally different words appear here, 10%", "10%"), false);
 });
 
 // ---- rehome (D:3) ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -196,4 +193,19 @@ test("D:144: erase writes the tombstone, archives every claim of the item to cla
   assert.equal(db.rows("intelligence_items").length, 0);
   assert.deepEqual(db.rows("claim_versions").map((v) => v.current_claim_id).sort(), ["q1", "q2"], "every claim is archived before it goes");
   assert.equal(db.rows("disposition_ledger")[0]?.item_key, "L-1");
+});
+
+test("reconcileSections and eraseItem are the ledger module's doors: the claims of a vanished section and of an erased item are archived by the same call that removes them, and a refusal changes nothing", async () => {
+  const db = ledgerWorld();
+  db.seed("intelligence_item_sections", [{ id: "s-keep", item_id: INTAKE_ITEM, section_key: "1", section_order: 1, content_md: "old" }, { id: "s-gone", item_id: INTAKE_ITEM, section_key: "2", section_order: 2, content_md: "gone" }]);
+  db.seed("section_claim_provenance", [{ id: "k-gone", intelligence_item_id: INTAKE_ITEM, section_row_id: "s-gone", claim_kind: "ANALYSIS", claim_text: "goes" }]);
+  await assert.rejects(reconcileSections(db.client, INTAKE_ITEM, [], NOW.toISOString()), /non-empty sections array/);
+  const r = await reconcileSections(db.client, INTAKE_ITEM, [{ section_key: "1", section_order: 1, content_md: "new", is_conditional: false }], NOW.toISOString());
+  assert.deepEqual(r, { removed: 1, claims_archived: 1, updated: 1, inserted: 0 });
+  assert.deepEqual(db.rows("claim_versions").map((v) => v.current_claim_id), ["k-gone"]);
+  await assert.rejects(eraseItem(db.client, "missing", { disposition: "d", mergedInto: null, holder: "h" }), /not found/);
+  const done = await eraseItem(db.client, INTAKE_ITEM, { disposition: "tombstone_delete_duplicate", mergedInto: null, holder: "h" });
+  assert.equal(done.claims_archived, 1, "the one claim that was left");
+  assert.equal(db.rows("intelligence_items").length, 0);
+  assert.equal(db.rows("disposition_ledger")[0]?.disposition_by, "h");
 });

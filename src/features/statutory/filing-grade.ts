@@ -1,7 +1,8 @@
 // R2b I5 (register D:10, 69): which target years are FILING GRADE is derived, never typed. A year is filing grade for an instrument only when every quote that year's limit rests on is accepted by acceptQuote against the
 // instrument's STORED capture (named by id, text exported to data/captures/<id>.txt) with a verified_at that parses. data/filing-grade.json is the output of deriveFilingGrade over data/filing-grade-inputs.json and
 // those exports; tests/statutory/filing-grade.test.ts regenerates it and fails when the committed file differs (the drift guard), so a hand-typed year, or a capture that no longer holds its quote, turns CI red. An
-// instrument with no stored capture yet derives no year: the filing gate refuses until the capture exists, which is the honest state. Adding an instrument is a data row plus its quotes, not a code change.
+// instrument with no stored capture yet derives no year: the filing gate refuses until the capture exists, which is the honest state. At run time the same derivation is repeated over the capture in the DATABASE (run.ts), so a
+// capture that is gone or no longer holds its quote drops the year even if the committed file lists it. Adding an instrument is a data row plus its quotes, not a code change.
 import { z } from "zod";
 
 import { acceptQuote, type QuoteVerdict } from "@/core/producers/quote";
@@ -20,7 +21,6 @@ export interface FilingInstrument {
   yearQuotes: Readonly<Record<string, readonly string[]>>;
 }
 export interface FilingGrade { years: number[]; refusals: { year: number; reason: string; detail: string }[] }
-export type FilingGradeDoc = { instruments: Record<string, FilingGrade> };
 
 /** One instrument's years: a year is filing grade iff every one of its quotes is accepted; the refusals say why each other year is not. */
 export function deriveInstrument(i: FilingInstrument, captureText: string | null | undefined, now: Date): FilingGrade {
@@ -34,11 +34,6 @@ export function deriveInstrument(i: FilingInstrument, captureText: string | null
   }
   return { years, refusals };
 }
-/** The whole document, from the instruments and the exported capture texts (`captures`: capture id to text). */
-export function deriveFilingGrade(instruments: readonly FilingInstrument[], captures: ReadonlyMap<string, string>, now: Date): FilingGradeDoc {
-  return { instruments: Object.fromEntries(instruments.map((i) => [i.id, deriveInstrument(i, i.captureId ? captures.get(i.captureId) : null, now)])) };
-}
-
 const evidence = z.object({ instruments: z.array(z.object({ id: z.string(), capture_id: z.string().nullable(), verified_at: z.string().nullable() })) }).parse(inputsJson);
 const fueleu = z.object({
   reference_value: z.object({ source: z.object({ quote: z.string() }).loose() }).loose(),

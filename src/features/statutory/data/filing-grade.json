@@ -1,5 +1,5 @@
 {
- "_generated": "Derived by deriveFilingGrade from filing-grade-inputs.json and data/captures/*.txt (tests/statutory/regenerate.mjs writes it). Never edited by hand: the drift guard in tests/statutory/filing-grade.test.ts fails when this file differs from the derivation.",
+ "_generated": "Derived by deriveInstrument from filing-grade-inputs.json and data/captures/*.txt (tests/statutory/regenerate.mjs writes it). Never edited by hand: the drift guard in tests/statutory/filing-grade.test.ts fails when this file differs from the derivation.",
  "instruments": {
   "fueleu-maritime-annex-iv": {
    "years": [],

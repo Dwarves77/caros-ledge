@@ -87,7 +87,7 @@ export interface StagedPatch { patch: Record<string, unknown>; evidence: Record<
  * The typed parse of a staged item patch (fail closed): the patch is non-empty, every column is on the allowlist and of its type (a null clears), the kind writes only its own columns, and a source date that is set
  * (not cleared) carries `date_evidence[column] = { capture_id, span }`. Whether that span is verbatim in a capture of the item is checked by the database in the write itself.
  */
-export function parseStagedPatch(kind: StagedKind, proposed: Record<string, unknown>): { ok: true; value: StagedPatch } | { ok: false; error: string } {
+function parseStagedPatch(kind: StagedKind, proposed: Record<string, unknown>): { ok: true; value: StagedPatch } | { ok: false; error: string } {
   const { date_evidence: rawEvidence, ...patch } = proposed;
   const keys = Object.keys(patch);
   if (keys.length === 0) return { ok: false, error: "empty patch refused: nothing to write" };
