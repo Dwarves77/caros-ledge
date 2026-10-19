@@ -1,0 +1,658 @@
+[
+ {
+  "illustrative": true,
+  "state": "ok",
+  "flags": [],
+  "retrieved": "2026-10-19",
+  "status": "verified",
+  "inputs": [
+   {
+    "name": "diesel_B",
+    "unit": "l",
+    "origin": "printed",
+    "literal": "50,000",
+    "locale": "dp",
+    "value": "50000",
+    "sigDigits": 1
+   },
+   {
+    "name": "diesel_C",
+    "unit": "l",
+    "origin": "printed",
+    "literal": "80,000",
+    "locale": "dp",
+    "value": "80000",
+    "sigDigits": 1
+   },
+   {
+    "name": "diesel_D",
+    "unit": "l",
+    "origin": "printed",
+    "literal": "90,000",
+    "locale": "dp",
+    "value": "90000",
+    "sigDigits": 1
+   },
+   {
+    "name": "ef_diesel",
+    "unit": "kg CO2e/l",
+    "origin": "printed",
+    "literal": "3",
+    "locale": "dp",
+    "value": "3",
+    "sigDigits": 1
+   },
+   {
+    "name": "leak_r410a",
+    "unit": "kg",
+    "origin": "printed",
+    "literal": "50",
+    "locale": "dp",
+    "value": "50",
+    "sigDigits": 1
+   },
+   {
+    "name": "gwp_r410a",
+    "unit": "kg CO2e/kg",
+    "origin": "printed",
+    "literal": "2,000",
+    "locale": "dp",
+    "value": "2000",
+    "sigDigits": 1
+   },
+   {
+    "name": "diesel_litres",
+    "unit": "l",
+    "origin": "derived",
+    "value": "220000",
+    "basis": "sum of the three suppliers' litres"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "diesel_total",
+    "unit": "kg CO2e",
+    "origin": "printed",
+    "literal": "660,000",
+    "locale": "dp",
+    "value": "660000",
+    "sigDigits": 2,
+    "boundary": "not_stated",
+    "gwp_set": "not_stated"
+   },
+   {
+    "name": "refrigerant_total",
+    "unit": "kg CO2e",
+    "origin": "printed",
+    "literal": "100,000",
+    "locale": "dp",
+    "value": "100000",
+    "sigDigits": 1,
+    "boundary": "not_stated",
+    "gwp_set": "not_stated"
+   },
+   {
+    "name": "total",
+    "unit": "kg CO2e",
+    "origin": "printed",
+    "literal": "760,000",
+    "locale": "dp",
+    "value": "760000",
+    "sigDigits": 2,
+    "boundary": "not_stated",
+    "gwp_set": "not_stated"
+   }
+  ],
+  "relations": [
+   {
+    "type": "sum",
+    "terms": [
+     "diesel_B",
+     "diesel_C",
+     "diesel_D"
+    ],
+    "total": "diesel_litres"
+   },
+   {
+    "type": "product",
+    "factors": [
+     "diesel_litres",
+     "ef_diesel"
+    ],
+    "result": "diesel_total"
+   },
+   {
+    "type": "product",
+    "factors": [
+     "leak_r410a",
+     "gwp_r410a"
+    ],
+    "result": "refrigerant_total"
+   },
+   {
+    "type": "sum",
+    "terms": [
+     "diesel_total",
+     "refrigerant_total"
+    ],
+    "total": "total"
+   }
+  ],
+  "traps": [
+   {
+    "what": "The source states its data are illustrative: the factors must never load as real emission factors."
+   },
+   {
+    "what": "Comma thousands read as a decimal point: 50,000 litres read as 50.000.",
+    "wrong_value": "50"
+   }
+  ],
+  "disagreements": [],
+  "id": "T1",
+  "kind": "truth",
+  "framework": "ghg_protocol_scope3",
+  "framework_version": "Technical Guidance (2013), Category 4",
+  "categories": {
+   "scope3_category": "4",
+   "method": "fuel"
+  },
+  "checks": [
+   {
+    "doc": "ghgp_cat4",
+    "page": 8,
+    "folio": "56",
+    "section": "Example 4.1 fuel-based method",
+    "tokens": [
+     "(50,000 × 3)",
+     "(80,000 × 3)",
+     "(90,000 × 3)",
+     "660,000",
+     "50 × 2,000",
+     "100,000",
+     "760,000"
+    ]
+   }
+  ]
+ },
+ {
+  "illustrative": true,
+  "state": "ok",
+  "flags": [
+   "source_unit_defect"
+  ],
+  "retrieved": "2026-10-19",
+  "status": "verified",
+  "inputs": [
+   {
+    "name": "road_t",
+    "unit": "t",
+    "origin": "printed",
+    "literal": "2",
+    "locale": "dp",
+    "value": "2",
+    "sigDigits": 1
+   },
+   {
+    "name": "road_km",
+    "unit": "km",
+    "origin": "printed",
+    "literal": "2,000",
+    "locale": "dp",
+    "value": "2000",
+    "sigDigits": 1
+   },
+   {
+    "name": "road_ef",
+    "unit": "kg CO2e/tkm",
+    "origin": "printed",
+    "literal": "0.2",
+    "locale": "dp",
+    "value": "0.2",
+    "sigDigits": 1
+   },
+   {
+    "name": "air_t",
+    "unit": "t",
+    "origin": "printed",
+    "literal": "1",
+    "locale": "dp",
+    "value": "1",
+    "sigDigits": 1
+   },
+   {
+    "name": "air_km",
+    "unit": "km",
+    "origin": "printed",
+    "literal": "3,000",
+    "locale": "dp",
+    "value": "3000",
+    "sigDigits": 1
+   },
+   {
+    "name": "air_ef",
+    "unit": "kg CO2e/tkm",
+    "origin": "printed",
+    "literal": "1.0",
+    "locale": "dp",
+    "value": "1.0",
+    "sigDigits": 2
+   },
+   {
+    "name": "sea_t",
+    "unit": "t",
+    "origin": "printed",
+    "literal": "6",
+    "locale": "dp",
+    "value": "6",
+    "sigDigits": 1
+   },
+   {
+    "name": "sea_km",
+    "unit": "km",
+    "origin": "printed",
+    "literal": "4,000",
+    "locale": "dp",
+    "value": "4000",
+    "sigDigits": 1
+   },
+   {
+    "name": "sea_ef",
+    "unit": "kg CO2e/tkm",
+    "origin": "printed",
+    "literal": "0.05",
+    "locale": "dp",
+    "value": "0.05",
+    "sigDigits": 1
+   }
+  ],
+  "outputs": [
+   {
+    "name": "road",
+    "unit": "kg CO2e",
+    "origin": "printed",
+    "literal": "800",
+    "locale": "dp",
+    "value": "800",
+    "sigDigits": 1,
+    "boundary": "not_stated",
+    "gwp_set": "not_stated"
+   },
+   {
+    "name": "air",
+    "unit": "kg CO2e",
+    "origin": "printed",
+    "literal": "3,000",
+    "locale": "dp",
+    "value": "3000",
+    "sigDigits": 1,
+    "boundary": "not_stated",
+    "gwp_set": "not_stated"
+   },
+   {
+    "name": "sea",
+    "unit": "kg CO2e",
+    "origin": "printed",
+    "literal": "1,200",
+    "locale": "dp",
+    "value": "1200",
+    "sigDigits": 2,
+    "boundary": "not_stated",
+    "gwp_set": "not_stated"
+   },
+   {
+    "name": "total",
+    "unit": "kg CO2e",
+    "origin": "printed",
+    "literal": "5,000",
+    "locale": "dp",
+    "value": "5000",
+    "sigDigits": 1,
+    "boundary": "not_stated",
+    "gwp_set": "not_stated"
+   }
+  ],
+  "relations": [
+   {
+    "type": "product",
+    "factors": [
+     "road_t",
+     "road_km",
+     "road_ef"
+    ],
+    "result": "road"
+   },
+   {
+    "type": "product",
+    "factors": [
+     "air_t",
+     "air_km",
+     "air_ef"
+    ],
+    "result": "air"
+   },
+   {
+    "type": "product",
+    "factors": [
+     "sea_t",
+     "sea_km",
+     "sea_ef"
+    ],
+    "result": "sea"
+   },
+   {
+    "type": "sum",
+    "terms": [
+     "road",
+     "air",
+     "sea"
+    ],
+    "total": "total"
+   }
+  ],
+  "traps": [
+   {
+    "what": "The factor column header reads kg CO2e/TEU-km but the worked arithmetic multiplies tonnes by km: resolve the unit by the arithmetic and raise source_unit_defect.",
+    "wrong_value": "120"
+   }
+  ],
+  "disagreements": [],
+  "id": "T2",
+  "kind": "truth",
+  "framework": "ghg_protocol_scope3",
+  "framework_version": "Technical Guidance (2013), Category 4",
+  "categories": {
+   "scope3_category": "4",
+   "method": "distance"
+  },
+  "checks": [
+   {
+    "doc": "ghgp_cat4",
+    "page": 14,
+    "folio": "62",
+    "section": "Example 4.2 distance-based method",
+    "tokens": [
+     "kg CO2e/TEU-km",
+     "Air (long haul) 1.0",
+     "2 × 2,000 × 0.2",
+     "1 × 3,000 × 1",
+     "6 × 4,000 × 0.05",
+     "800 + 3,000 + 1,200",
+     "5,000 kg CO2e"
+    ]
+   }
+  ]
+ },
+ {
+  "illustrative": true,
+  "state": "ok",
+  "flags": [
+   "source_unit_defect"
+  ],
+  "retrieved": "2026-10-19",
+  "status": "verified",
+  "inputs": [
+   {
+    "name": "spend_road",
+    "unit": "$",
+    "origin": "printed",
+    "literal": "20,000",
+    "locale": "dp",
+    "value": "20000",
+    "sigDigits": 1
+   },
+   {
+    "name": "ef_road",
+    "unit": "kg CO2e/$",
+    "origin": "printed",
+    "literal": "0.04",
+    "locale": "dp",
+    "value": "0.04",
+    "sigDigits": 1
+   },
+   {
+    "name": "spend_air",
+    "unit": "$",
+    "origin": "printed",
+    "literal": "30,000",
+    "locale": "dp",
+    "value": "30000",
+    "sigDigits": 1
+   },
+   {
+    "name": "ef_air",
+    "unit": "kg CO2e/$",
+    "origin": "printed",
+    "literal": "0.15",
+    "locale": "dp",
+    "value": "0.15",
+    "sigDigits": 2
+   },
+   {
+    "name": "spend_sea",
+    "unit": "$",
+    "origin": "printed",
+    "literal": "40,000",
+    "locale": "dp",
+    "value": "40000",
+    "sigDigits": 1
+   },
+   {
+    "name": "ef_sea",
+    "unit": "kg CO2e/$",
+    "origin": "printed",
+    "literal": "0.05",
+    "locale": "dp",
+    "value": "0.05",
+    "sigDigits": 1
+   }
+  ],
+  "outputs": [
+   {
+    "name": "road",
+    "unit": "kg CO2e",
+    "origin": "printed",
+    "literal": "800",
+    "locale": "dp",
+    "value": "800",
+    "sigDigits": 1,
+    "boundary": "not_stated",
+    "gwp_set": "not_stated"
+   },
+   {
+    "name": "air",
+    "unit": "kg CO2e",
+    "origin": "printed",
+    "literal": "4,500",
+    "locale": "dp",
+    "value": "4500",
+    "sigDigits": 2,
+    "boundary": "not_stated",
+    "gwp_set": "not_stated"
+   },
+   {
+    "name": "sea",
+    "unit": "kg CO2e",
+    "origin": "printed",
+    "literal": "2,000",
+    "locale": "dp",
+    "value": "2000",
+    "sigDigits": 1,
+    "boundary": "not_stated",
+    "gwp_set": "not_stated"
+   },
+   {
+    "name": "total",
+    "unit": "kg CO2e",
+    "origin": "printed",
+    "literal": "7,300",
+    "locale": "dp",
+    "value": "7300",
+    "sigDigits": 2,
+    "boundary": "not_stated",
+    "gwp_set": "not_stated"
+   }
+  ],
+  "relations": [
+   {
+    "type": "product",
+    "factors": [
+     "spend_road",
+     "ef_road"
+    ],
+    "result": "road"
+   },
+   {
+    "type": "product",
+    "factors": [
+     "spend_air",
+     "ef_air"
+    ],
+    "result": "air"
+   },
+   {
+    "type": "product",
+    "factors": [
+     "spend_sea",
+     "ef_sea"
+    ],
+    "result": "sea"
+   },
+   {
+    "type": "sum",
+    "terms": [
+     "road",
+     "air",
+     "sea"
+    ],
+    "total": "total"
+   }
+  ],
+  "traps": [
+   {
+    "what": "The results are printed with the unit kg CO2e/$ though they are amounts in kg CO2e; spend-based figures are screening grade.",
+    "wrong_value": "7,300 kg CO2e/$"
+   }
+  ],
+  "disagreements": [],
+  "id": "T3",
+  "kind": "truth",
+  "framework": "ghg_protocol_scope3",
+  "framework_version": "Technical Guidance (2013), Category 4",
+  "categories": {
+   "scope3_category": "4",
+   "method": "spend"
+  },
+  "checks": [
+   {
+    "doc": "ghgp_cat4",
+    "page": 18,
+    "folio": "66",
+    "section": "Example 4.4 spend-based method",
+    "tokens": [
+     "20,000 × 0.04",
+     "30,000 × 0.15",
+     "40,000 × 0.05",
+     "800 + 4,500 + 2,000",
+     "7,300 kg CO2e/$"
+    ]
+   }
+  ]
+ },
+ {
+  "illustrative": true,
+  "state": "ok",
+  "flags": [],
+  "retrieved": "2026-10-19",
+  "status": "verified",
+  "inputs": [
+   {
+    "name": "mass",
+    "unit": "t",
+    "origin": "printed",
+    "literal": "4",
+    "locale": "dp",
+    "value": "4",
+    "sigDigits": 1
+   },
+   {
+    "name": "distance",
+    "unit": "km",
+    "origin": "printed",
+    "literal": "2,000",
+    "locale": "dp",
+    "value": "2000",
+    "sigDigits": 1
+   },
+   {
+    "name": "ef",
+    "unit": "kg CO2e/tkm",
+    "origin": "printed",
+    "literal": "0.2",
+    "locale": "dp",
+    "value": "0.2",
+    "sigDigits": 1
+   }
+  ],
+  "outputs": [
+   {
+    "name": "emissions",
+    "unit": "kg CO2e",
+    "origin": "printed",
+    "literal": "1,600",
+    "locale": "dp",
+    "value": "1600",
+    "sigDigits": 2,
+    "attrs": {
+     "scope3_category": "9"
+    },
+    "boundary": "not_stated",
+    "gwp_set": "not_stated"
+   }
+  ],
+  "relations": [
+   {
+    "type": "product",
+    "factors": [
+     "mass",
+     "distance",
+     "ef"
+    ],
+    "result": "emissions"
+   }
+  ],
+  "traps": [
+   {
+    "what": "The category depends on who pays for the leg (Table 5.7): the same arithmetic is category 4 when the reporter pays."
+   }
+  ],
+  "disagreements": [],
+  "id": "T4",
+  "kind": "truth",
+  "framework": "ghg_protocol_scope3",
+  "framework_version": "Technical Guidance (2013), Category 9",
+  "categories": {
+   "scope3_category": "9",
+   "method": "distance"
+  },
+  "checks": [
+   {
+    "doc": "ghgp_cat9",
+    "page": 4,
+    "folio": "105",
+    "section": "Example 9.1 downstream transportation",
+    "tokens": [
+     "4 × 2,000 × 0.2",
+     "1,600 kg CO2e"
+    ]
+   },
+   {
+    "doc": "ghgp_cat4",
+    "page": 2,
+    "section": "Table 5.7 category boundary",
+    "tokens": [
+     "Table 5.7"
+    ]
+   }
+  ]
+ }
+]
