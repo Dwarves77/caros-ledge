@@ -1,11 +1,2433 @@
 {
-  "entries": {},
-  "written": ["item_supersessions", "entity_refs", "market_series", "regions", "region_dimension_coverage", "regional_data_facts", "state_cost_facts", "derived_values", "data_sources", "auxiliary_energy_profiles", "grid_connection_queues", "research_assessments_current", "research_assessment_history"],
-  "_writtenBy": {
-    "item_supersessions": "written by the supersession runtime through a table-name helper",
-    "entity_refs": "written by src/core/entities/link-entities.ts (write(\"entity_refs\", ...)) and the entity backfill, through table-name helpers the pattern cannot see",
-    "market_series": "written by every market producer (src/features/market/producers/*) through the shared producer upsert, a table-name helper the pattern cannot see",
-    "p2-12": "regions, region_dimension_coverage, regional_data_facts, state_cost_facts, derived_values, data_sources, auxiliary_energy_profiles, grid_connection_queues and research_assessments_current are written by the generic producer runner, a database function or trigger, an rpc, or reference data seeded by the schema",
-    "p2-s4": "research_assessment_history is a view over research_assessments (migration 0040), which the research assessment producer writes"
+  "_exports": "Exported values with no caller in src, scripts or the Edge Function, recorded at R1b (1,400 of them). Each is a test seam, a helper whose caller was deleted, or a runtime nothing runs. A new one is a red run; one that gains a caller or is deleted must leave this list (it is checked), so the list only shrinks. The slices that own the code (R3 flow, R4 consistency, R5 notes to code) wire or delete them.",
+  "exports": {
+    "src/core/auth/claims.ts": [
+      "ClaimsUnavailable"
+    ],
+    "src/core/auth/invitations.ts": [
+      "inviteRole"
+    ],
+    "src/core/auth/platform-admin.ts": [
+      "decidePlatformAdmin",
+      "isPlatformAdmin"
+    ],
+    "src/core/auth/route-policy.ts": [
+      "decideRoute",
+      "isScannerProbe"
+    ],
+    "src/core/brief/contract.ts": [
+      "THEME_CANDIDATE_MAP",
+      "renderAuthorInstruction"
+    ],
+    "src/core/brief/regulation-sections.ts": [
+      "CONCRETE_ACTION_VERBS",
+      "extractActionFromParagraph",
+      "isPlaceholderSourceName",
+      "parseRegulationSection"
+    ],
+    "src/core/brief/sections.ts": [
+      "JSON_LITERAL_MAX_PROSE_CHARS",
+      "extractSectionByNumber",
+      "normaliseHeading"
+    ],
+    "src/core/brief/timeline.ts": [
+      "CAPTURED_FALLBACK_SORT_ORDER",
+      "RECORDED_FALLBACK_SORT_ORDER",
+      "extractDatelineDate",
+      "extractFederalRegisterDate",
+      "extractForwardEventDate",
+      "extractLegislationGovUkDate",
+      "extractTitleDate",
+      "parseDerivedDate",
+      "parseRecurringRule",
+      "pickBestCapture",
+      "toIsoDate",
+      "ukFrontMatterWindow"
+    ],
+    "src/core/brief/validate.ts": [
+      "bankCandidate",
+      "isUuidShape"
+    ],
+    "src/core/brief/vocab.ts": [
+      "ANALYSIS_LABEL_TOKENS",
+      "DB_SEVERITY_VALUES",
+      "DB_THEME_VALUES",
+      "PLANNING_ASSUMPTION_SHIFT_ABSENCE",
+      "SEVERITY_DB_TO_DISPLAY",
+      "SEVERITY_DISPLAY_TO_DB",
+      "adoptedKeys",
+      "themeToken",
+      "toDbTheme",
+      "toDisplaySeverity",
+      "toThemeCandidate"
+    ],
+    "src/core/briefs/frontmatter.ts": [
+      "buildFrontmatter"
+    ],
+    "src/core/briefs/theme-brief-contract.ts": [
+      "SECTION_CEILINGS",
+      "SECTION_HEADINGS",
+      "THEME_BRIEF_SECTIONS",
+      "TITLE_CEILING",
+      "findUncitedFigures",
+      "isObj",
+      "nonEmptyStr"
+    ],
+    "src/core/cache/fallback-guard.ts": [
+      "FALLBACK_NOT_CACHEABLE",
+      "FallbackNotCacheableError",
+      "readThroughFallbackGuard",
+      "refuseToCacheFallback"
+    ],
+    "src/core/cache/tags.ts": [
+      "surfaceDetailTag"
+    ],
+    "src/core/capture/change-detection.ts": [
+      "DEFAULT_CHECK_LIMIT",
+      "MAX_CHECK_LIMIT",
+      "MONITORING_RESULT",
+      "assessAndUpdateSource"
+    ],
+    "src/core/census/identity.ts": [
+      "UK_TYPES"
+    ],
+    "src/core/contracts/envelope.ts": [
+      "propagateEnvelope",
+      "significantFigures"
+    ],
+    "src/core/contracts/factor-tier.ts": [
+      "FACTOR_TIERS",
+      "TIER_CODES",
+      "isPrimaryData",
+      "primaryDataShare",
+      "renderEnvelopeColumnsSql",
+      "renderFactorCandidateViewSql",
+      "renderTierConstraintsSql",
+      "resolveActiveFactor",
+      "validateFactor"
+    ],
+    "src/core/contracts/source-licence.ts": [
+      "SOURCE_KEYS",
+      "licenceTriage",
+      "renderDataSourceSeedSql"
+    ],
+    "src/core/contracts/vocabularies.ts": [
+      "MODE_CODES",
+      "TRANSPORT_MODES",
+      "admissibleInCalculation",
+      "validatePedigree"
+    ],
+    "src/core/corrections/model.ts": [
+      "TARGET_KINDS",
+      "activeCorrections",
+      "parseTagRef"
+    ],
+    "src/core/coverage/matrix.ts": [
+      "DATA_CLASSES",
+      "DEFINITIONS",
+      "MATRIX_SCHEMA_VERSION",
+      "UNKNOWN_GEOGRAPHY",
+      "cellKey",
+      "isNumerator",
+      "normaliseMode"
+    ],
+    "src/core/coverage/request.ts": [
+      "COVERAGE_REQUEST_CATEGORY",
+      "COVERAGE_REQUEST_CREATED_BY",
+      "COVERAGE_REQUEST_SUBJECT_TYPE",
+      "OPEN_STATUSES",
+      "buildCoverageGapFlag"
+    ],
+    "src/core/coverage/state.ts": [
+      "COVERAGE_ACTION",
+      "isCoverageState"
+    ],
+    "src/core/csv/stream.ts": [
+      "CsvFormatError"
+    ],
+    "src/core/db/clients.ts": [
+      "requestClient"
+    ],
+    "src/core/db/query.ts": [
+      "keyset",
+      "unwrap"
+    ],
+    "src/core/db/schema-keys.ts": [
+      "SCHEMA_KEYS"
+    ],
+    "src/core/detail/claim-tiers.ts": [
+      "buildClaimTierMap",
+      "fetchClaimTierMap",
+      "readFactSuppressions"
+    ],
+    "src/core/detail/cross-page-read.ts": [
+      "readFreshInferences",
+      "readThemes",
+      "readVerifiedItemsByIds"
+    ],
+    "src/core/detail/fact-model.ts": [
+      "classifyParagraph",
+      "parseFactCardModels",
+      "parseSourceCitation",
+      "stripFactLabel",
+      "toClaimNodes"
+    ],
+    "src/core/detail/id-redirect.ts": [
+      "ID_REDIRECT_COLUMNS",
+      "admittedSurfaceFor",
+      "decideIdRedirect",
+      "isItemUuid"
+    ],
+    "src/core/detail/inference-view.ts": [
+      "CUSTOMER_INFERENCE_METHOD_IDS",
+      "INFERENCE_READ_CAP",
+      "MAX_VISIBLE_INFERENCES",
+      "PRODUCT_QUESTION_WORDS",
+      "currentInferenceRows",
+      "isCustomerInferenceMethod",
+      "questionInWords",
+      "restrictToVisibleCitations",
+      "selectCurrentInferences"
+    ],
+    "src/core/detail/timeline.ts": [
+      "classifyTimeline",
+      "collapseTimeline",
+      "mergeObligationEvents",
+      "nextMilestoneClause"
+    ],
+    "src/core/drain/switch.ts": [
+      "decideDrainSwitch"
+    ],
+    "src/core/entities/corridor-scope.ts": [
+      "CORRIDOR_SCOPE_REVALIDATE_SECONDS",
+      "RELATION_TOUCHES_JURISDICTION",
+      "getCachedCorridorScopes",
+      "getCachedCorridorsTouchingJurisdictions"
+    ],
+    "src/core/entities/crosswalk.ts": [
+      "SCHEMES"
+    ],
+    "src/core/entities/id.ts": [
+      "KINDS",
+      "MAX_MERGE_HOPS",
+      "assertEntityId",
+      "entityKindOf",
+      "normalizeSeed",
+      "parseCorridorName",
+      "resolveSurvivors"
+    ],
+    "src/core/entities/kinds.ts": [
+      "CORRIDOR_ID_SCHEME"
+    ],
+    "src/core/entities/lineage.ts": [
+      "LINEAGE_BACKFILL_ORIGIN",
+      "parseLineageGapFlag"
+    ],
+    "src/core/entities/link-items.ts": [
+      "hasOpenFlag"
+    ],
+    "src/core/entities/mentions.ts": [
+      "LINK_ALLOWED_TABLES",
+      "NAMED_ENTITIES",
+      "RE_CELEX",
+      "RE_REGNUM",
+      "RE_STD_SHAPED",
+      "adoptedTermRegex",
+      "canonicalSubjectUrl",
+      "classifyBucket",
+      "classifyRelationship",
+      "detectMentions",
+      "entityDictionary",
+      "planLinks"
+    ],
+    "src/core/entities/source-role.ts": [
+      "NEWS_RE",
+      "PRIMARY_ARTIFACT_TYPES",
+      "STUDY_BACKED_TYPES"
+    ],
+    "src/core/entities/unlocode-names.ts": [
+      "JURISDICTION_NAMES",
+      "UNLOCODE_NAMES",
+      "unlocodeName"
+    ],
+    "src/core/fetch/api.ts": [
+      "ECFR_API_BASE",
+      "fetchDocumentApi"
+    ],
+    "src/core/fetch/cache.ts": [
+      "DEFAULT_TTL_MS",
+      "cacheGet",
+      "cachePut",
+      "fetchCacheKey",
+      "isFresh",
+      "ttlForUrl"
+    ],
+    "src/core/fetch/candidates.ts": [
+      "EUR_LEX_PORTAL_URL",
+      "LEGISLATION_UK_PORTAL_URL",
+      "apiCandidates",
+      "celexTxtUrl",
+      "detectRoadblock",
+      "detectScheme",
+      "eliFromIdentity",
+      "eliPathUrl",
+      "eliUrl",
+      "euTypeLetters",
+      "eurlexSearchUrl",
+      "exhaustionFlagRow",
+      "gazetteCandidates",
+      "genericSearchQueries",
+      "legislationUkUrl",
+      "lovdataCandidates",
+      "persistExhaustionRecord",
+      "renderingUrlForPrimary",
+      "separatorVariants",
+      "toCelex",
+      "ukCandidates",
+      "usCandidates"
+    ],
+    "src/core/fetch/capture.ts": [
+      "cellarEndpointForCelex",
+      "cellarEndpointForOj",
+      "isEurlexRobotGate"
+    ],
+    "src/core/fetch/classify-body.ts": [
+      "CDN_BLOCK_RE",
+      "CHALLENGE_RE",
+      "JS_SHELL_RE",
+      "REQUEST_ACCESS_RE",
+      "SOFT_404_RE",
+      "WALL_MAX_CHARS",
+      "errorMarkerCount",
+      "looksLikeEurlexInterfaceShell",
+      "looksLikeFurniture",
+      "partitionErrorBodies"
+    ],
+    "src/core/fetch/direct.ts": [
+      "extractPdfText",
+      "secFairAccessUaForUrl"
+    ],
+    "src/core/fetch/headless.ts": [
+      "fetchHeadless"
+    ],
+    "src/core/fetch/hold.ts": [
+      "AUTHORIZED_HOLD_CALLERS",
+      "holdEngaged",
+      "isAuthorizedHoldCaller",
+      "startOfUtcDay"
+    ],
+    "src/core/fetch/ladder.ts": [
+      "NEEDS_HEADLESS",
+      "captureForStorage",
+      "escalateFetch",
+      "selectTransportOrder"
+    ],
+    "src/core/fetch/policy.ts": [
+      "ALT_HEADERS_ON_403",
+      "BodyTooLargeError",
+      "DEFAULT_STORAGE_MAX_CHARS",
+      "ERROR_MARKERS",
+      "FETCH_TIMEOUT_MS",
+      "MAX_PDF_BYTES",
+      "MIN_BYTES",
+      "RETRYABLE_STATUS",
+      "declaredCharset",
+      "isPdfBytes",
+      "isPdfDocument",
+      "isTextType"
+    ],
+    "src/core/fetch/reachability.ts": [
+      "reachabilityTier"
+    ],
+    "src/core/fetch/titles.ts": [
+      "bodyLeadTitle",
+      "extractOjActTitle",
+      "isOjFileName"
+    ],
+    "src/core/figures/format.ts": [
+      "CURRENCY_SYMBOL",
+      "UNCERTAINTY_PCT",
+      "unitSuffix"
+    ],
+    "src/core/flywheel/discover.ts": [
+      "scoreConnection"
+    ],
+    "src/core/flywheel/edges.ts": [
+      "RELATIONSHIPS",
+      "bandOf",
+      "canonKey",
+      "collapsePairs",
+      "pairKey",
+      "planIntersectionEdges",
+      "projectEdgeRows",
+      "readEdgesForPairs",
+      "readPairs"
+    ],
+    "src/core/flywheel/flags.ts": [
+      "ALL_NAMESPACES",
+      "FLYWHEEL_DEFECT_NAMESPACE",
+      "RESOLVED_REFLECTION_NOTE",
+      "buildResolvedRow",
+      "planResolvedReflectionInserts"
+    ],
+    "src/core/flywheel/gaps.ts": [
+      "jurisdictionKey"
+    ],
+    "src/core/flywheel/intersections.ts": [
+      "INTERSECTION_SIGNAL",
+      "strengthToScore",
+      "tierOf"
+    ],
+    "src/core/flywheel/themes.ts": [
+      "CONVERGENCE_BANDS",
+      "OVERLAP_THRESHOLD",
+      "overlapCoefficient"
+    ],
+    "src/core/flywheel/view-model.ts": [
+      "MAX_CANDIDATES",
+      "buildAllConnectionRows",
+      "formatCandidateBlock",
+      "labelForConnection",
+      "selectBriefCandidates",
+      "selectCandidates"
+    ],
+    "src/core/grounding/audit-gate.ts": [
+      "scoreItemClaims"
+    ],
+    "src/core/grounding/cited-hosts.ts": [
+      "partitionCitedByHost"
+    ],
+    "src/core/grounding/gate-a-scan.ts": [
+      "containsToken",
+      "extractFactualTokens"
+    ],
+    "src/core/grounding/gates.ts": [
+      "GATE_A_VERSION",
+      "REUSE_MIN",
+      "detectConflate",
+      "detectNumeric",
+      "extractIdentifiers",
+      "identityCongruenceHolds",
+      "md5",
+      "perFactGates"
+    ],
+    "src/core/grounding/ledger.ts": [
+      "FACT_FLOOR",
+      "normText",
+      "sameAttribution",
+      "versionPayload"
+    ],
+    "src/core/grounding/pool.ts": [
+      "OWN_BODY_TYPES",
+      "authorityFloorForFact",
+      "buildSourceBlocks",
+      "prepareSectionForGrounding",
+      "spanIsVerbatim"
+    ],
+    "src/core/harness/exit.ts": [
+      "EXIT"
+    ],
+    "src/core/harness/families.ts": [
+      "stageFamily",
+      "validateFamilies"
+    ],
+    "src/core/harness/index.ts": [
+      "proofs"
+    ],
+    "src/core/harness/outcome.ts": [
+      "MODES",
+      "OUTCOMES",
+      "TRIGGERS",
+      "countProblems",
+      "outcomeOf",
+      "writeCount"
+    ],
+    "src/core/harness/proofs.ts": [
+      "chainProof",
+      "changeProof",
+      "flywheelOutcomes",
+      "mintedIds",
+      "smokeProof"
+    ],
+    "src/core/harness/reap.ts": [
+      "CRASHED",
+      "RUN_LEASE_MS"
+    ],
+    "src/core/health/gate-a.ts": [
+      "ALARM_GAUGES",
+      "GAUGE_NAMES",
+      "decideGateAProbe",
+      "shapeGateAHealth"
+    ],
+    "src/core/http/authed-fetch.ts": [
+      "AUTH_REQUIRED_ERROR"
+    ],
+    "src/core/http/backoff.ts": [
+      "RETRY_AFTER_CAP_MS",
+      "RETRY_BASE_MS",
+      "RETRY_LIMIT",
+      "parseRetryAfter"
+    ],
+    "src/core/http/errors.ts": [
+      "statusForDb"
+    ],
+    "src/core/http/openalex.ts": [
+      "OpenAlexError"
+    ],
+    "src/core/http/rate-limit.ts": [
+      "MAX_REQUESTS",
+      "WINDOW_MS"
+    ],
+    "src/core/http/request-json.ts": [
+      "SIGNED_OUT_MESSAGE",
+      "UNREACHABLE_MESSAGE"
+    ],
+    "src/core/intake/classify-verdict.ts": [
+      "buildClassifyUserMessage"
+    ],
+    "src/core/intake/identity.ts": [
+      "CELEX_SECTOR_LETTER_MAP",
+      "UK_TYPES",
+      "classifyFrDocType",
+      "classifyItemTypeFromCelexKey",
+      "classifyUkLegislationType",
+      "deriveUkLegislationIdentifier",
+      "extractFrDocumentNumber"
+    ],
+    "src/core/jurisdictions/iso.ts": [
+      "KNOWN_FREE_TEXT_JURISDICTIONS"
+    ],
+    "src/core/jurisdictions/legacy.ts": [
+      "legacyToIso",
+      "regionGroupOfIso"
+    ],
+    "src/core/lists/pagination.ts": [
+      "keysetCursor"
+    ],
+    "src/core/lists/row-fields.ts": [
+      "LIST_ROW_FIELDS",
+      "watchTypeForItem"
+    ],
+    "src/core/perf/server-timing.ts": [
+      "COLD_START_UPTIME_SECONDS",
+      "PERF_PHASES",
+      "applyServerTimingHeader",
+      "createTimingStore",
+      "measureJsonBytes",
+      "recordBytesOnStore",
+      "recordPhaseOnStore",
+      "recordSerializedBytes",
+      "sanitizeTimingName",
+      "timePhaseOnStore",
+      "toPerfLogLine",
+      "toServerTimingHeader"
+    ],
+    "src/core/perf/slugs-or-empty.ts": [
+      "slugsOrEmpty"
+    ],
+    "src/core/producers/rows-file.ts": [
+      "MAX_BYTES_PER_FILE",
+      "MAX_ROWS_PER_FILE",
+      "OPERATOR_ROW_TABLES"
+    ],
+    "src/core/producers/runner.ts": [
+      "decideApply",
+      "licenceBlockOf",
+      "makeGetter"
+    ],
+    "src/core/producers/summary.ts": [
+      "foldProducerSummaries"
+    ],
+    "src/core/producers/xlsx.ts": [
+      "decodeXml",
+      "parseSharedStrings",
+      "parseSheetNames",
+      "parseSheetRows",
+      "readZip"
+    ],
+    "src/core/propagation/admissible.ts": [
+      "effectiveConfidence"
+    ],
+    "src/core/propagation/author-edges.ts": [
+      "hasBeenAuthored"
+    ],
+    "src/core/propagation/drain.ts": [
+      "DEFAULT_BATCH",
+      "PK_COLUMN",
+      "resolveInferenceDeclaredInputs"
+    ],
+    "src/core/propagation/inference.ts": [
+      "itemIdOfQuestionRef",
+      "reopenQuestionForRecompute"
+    ],
+    "src/core/propagation/methods.ts": [
+      "MethodRegistry",
+      "buildCarbonMethod",
+      "buildMarketDeltaMethod",
+      "computeInferFromQuestion",
+      "lifecycleFromOriginClasses",
+      "methodKey"
+    ],
+    "src/core/propagation/register.ts": [
+      "INFERENCE_ORIGIN_CLASSES",
+      "STATUS_TOKENS",
+      "buildFirstInferenceInput",
+      "firstInferenceComputedBy",
+      "validateRegisterDerivedValueInput",
+      "validateRegisterInferenceRecordInput"
+    ],
+    "src/core/propagation/signpost.ts": [
+      "nextLifecycleState"
+    ],
+    "src/core/routing/surface.ts": [
+      "FALLBACK_SURFACE",
+      "SURFACES",
+      "SURFACE_RULES",
+      "renderSurfaceOfSql"
+    ],
+    "src/core/shared/dates.ts": [
+      "FIXED_LOCALE",
+      "formatRelative",
+      "formatRelativeCompact",
+      "toDate"
+    ],
+    "src/core/shared/log.ts": [
+      "logError",
+      "logWarn"
+    ],
+    "src/core/shared/telemetry.ts": [
+      "resetTelemetryNotice",
+      "stackHash"
+    ],
+    "src/core/shared/text.ts": [
+      "htmlToText"
+    ],
+    "src/core/sources/axes.ts": [
+      "APPLICABLE_FIELDS",
+      "AXIS5_CATEGORIES",
+      "AXIS5_OUT_OF_SCOPE",
+      "KNOWN_FREE_TEXT_JURISDICTIONS",
+      "LEG_MODES",
+      "SCOPE_MODES",
+      "SCOPE_TOPICS",
+      "SCOPE_VERTICALS",
+      "SURFACES",
+      "classifyScopeModes",
+      "classifyScopeTopics",
+      "classifyScopeVerticals",
+      "classifySourceJurisdiction",
+      "expectedOutputForRole",
+      "normalizeDistribution"
+    ],
+    "src/core/sources/bias-tags.ts": [
+      "BIAS_DIMENSION_LABELS",
+      "BIAS_TAG_LABELS",
+      "BIAS_TAG_VOCAB",
+      "HIGH_CONFIDENCE_THRESHOLD",
+      "isLowerConfidence",
+      "splitBiasTags"
+    ],
+    "src/core/sources/classify.ts": [
+      "SOURCE_TYPE_VALUES",
+      "isValidSourceTypeArray",
+      "sourceTypeLabel"
+    ],
+    "src/core/sources/host-class.ts": [
+      "classTierForHostAcrossNames",
+      "classifyResidueRuling",
+      "codifiedTierForHost",
+      "verdictPlacementForHost"
+    ],
+    "src/core/sources/institution.ts": [
+      "tierOfSource"
+    ],
+    "src/core/sources/officialness.ts": [
+      "hasInstrumentMarkers"
+    ],
+    "src/core/sources/target-match.ts": [
+      "SUBJECT_MATCH_THRESHOLD",
+      "expectedInstrumentIds",
+      "identifierInUrl",
+      "scanInstrumentIds",
+      "subjectOverlap",
+      "targetMatchHolds",
+      "verifyTargetMatch"
+    ],
+    "src/core/sources/tier-contract.ts": [
+      "SOURCE_TIER_MIN"
+    ],
+    "src/core/sources/tier-movement.ts": [
+      "applyRecencyDecay",
+      "decideEffectiveTier",
+      "evaluableFromRow",
+      "evaluateDemotion",
+      "evaluatePromotion",
+      "evaluateTierEvidenceForRow",
+      "opinionMovement",
+      "outcomeMovement",
+      "planTierMovements",
+      "scoreCitationEdges",
+      "tallyOutcomes",
+      "tierMovementReaders"
+    ],
+    "src/core/sources/tier-writers.ts": [
+      "applyTierMovements",
+      "tierMovementEvent",
+      "tierMovementWriters"
+    ],
+    "src/core/sources/trust-score.ts": [
+      "computeEarnedScore",
+      "computeTrustScore",
+      "planTrustScores",
+      "tierPrior"
+    ],
+    "src/core/tags/adopt.ts": [
+      "AUTO_ADOPT_THRESHOLD",
+      "DECISION_SUBTYPE",
+      "TAG_EVIDENCE_TEXT_FIELDS",
+      "buildMergePatch",
+      "buildNoDerivableTagsNote",
+      "decideTagProposal",
+      "evidencePresentInItemText",
+      "itemOwnText"
+    ],
+    "src/core/tags/derive.ts": [
+      "CONFIDENCE_RANK",
+      "DEFAULT_PREFIX_CHARS",
+      "boundedSourceWindow"
+    ],
+    "src/core/tags/vocabulary.ts": [
+      "TAG_VOCABULARY",
+      "ownNameForms",
+      "vocabularyProblems"
+    ],
+    "src/core/telemetry/surface-health.ts": [
+      "MUST_HAVE_SURFACES",
+      "ZERO_LEGAL_SURFACES"
+    ],
+    "src/core/themes/theme-view.ts": [
+      "MAX_MEMBERS_PER_PAGE",
+      "MAX_THEME_LABEL_CHARS",
+      "deriveThemeLabel"
+    ],
+    "src/core/turn/gate.ts": [
+      "sliceState"
+    ],
+    "src/core/turn/ops.ts": [
+      "OPS"
+    ],
+    "src/core/turn/registry.ts": [
+      "STAGE_RUNNERS"
+    ],
+    "src/core/turn/run-turn.ts": [
+      "planTurn"
+    ],
+    "src/core/turn/stages/briefs.ts": [
+      "planBriefs"
+    ],
+    "src/core/turn/stages/capture.ts": [
+      "CAPTURE_MAX_LIMIT",
+      "planCapture"
+    ],
+    "src/core/turn/stages/change.ts": [
+      "CHANGE_DEFAULT_LIMIT",
+      "DRAIN_CALLER",
+      "planChange"
+    ],
+    "src/core/turn/stages/connect.ts": [
+      "planConnect"
+    ],
+    "src/core/turn/stages/intake.ts": [
+      "INTAKE_CEILING",
+      "INTAKE_DEFAULT_LIMIT",
+      "INTAKE_MAX_PROMOTE",
+      "planIntake"
+    ],
+    "src/core/turn/stages/propagate.ts": [
+      "PROPAGATE_CALLER",
+      "changedItemIds",
+      "planPropagate"
+    ],
+    "src/core/turn/stages/sweep-research.ts": [
+      "planResearch"
+    ],
+    "src/core/turn/stages/sweep.ts": [
+      "SWEEP_DEFAULT_LIMIT",
+      "SWEEP_MAX_LIMIT",
+      "planSweep",
+      "recordSignal"
+    ],
+    "src/core/turn/wiring.ts": [
+      "MANIFEST",
+      "PRODUCER_CATALOG",
+      "SERVICE_MEMBER",
+      "workspaceWiring"
+    ],
+    "src/core/urgency/scoring.ts": [
+      "JURISDICTION_WEIGHTS",
+      "SECTOR_WEIGHT",
+      "UNLISTED_JURISDICTION_WEIGHT",
+      "sectorWeight"
+    ],
+    "src/core/values/label.ts": [
+      "SPEC09_LABELS",
+      "isStatutoryLabel",
+      "spec09Label"
+    ],
+    "src/core/vocabulary/adopted.ts": [
+      "ADOPTED_ENTITY_KINDS",
+      "ADOPTED_KINDS",
+      "emptyAdopted",
+      "groupAdoptedTerms",
+      "planAdoptedTermEntities"
+    ],
+    "src/core/vocabulary/terms.ts": [
+      "ADOPTION_MIN_SOURCES",
+      "MENTIONED_TERMS_MAX",
+      "MENTIONED_TERM_KINDS",
+      "MENTIONED_TERM_TEXT_MAX",
+      "TERM_KINDS",
+      "TERM_NEED_RULE",
+      "decideAdoption",
+      "holdingQualifies",
+      "mentionsFromBriefTerms",
+      "needTextFor",
+      "normaliseTermKey",
+      "termNeedRow",
+      "validateMentionedTerms"
+    ],
+    "src/core/workspace/profile.ts": [
+      "DEFAULT_ORG_PROFILE",
+      "DEFAULT_WORKSPACE_PROFILE"
+    ],
+    "src/core/workspace/relevance.ts": [
+      "computeItemRelevance"
+    ],
+    "src/core/workspace/settings.ts": [
+      "JSONB_COLUMNS",
+      "REPLACE_COLUMNS"
+    ],
+    "src/core/workspace/viewer-relevance.ts": [
+      "getViewerRelevanceForItem"
+    ],
+    "src/features/account/lib/profile-patch.ts": [
+      "profilePatchSchema"
+    ],
+    "src/features/account/page.tsx": [
+      "default"
+    ],
+    "src/features/admin/api/attention.ts": [
+      "GET"
+    ],
+    "src/features/admin/api/bulk-import.ts": [
+      "MAX_ROWS",
+      "POST",
+      "TYPE_TO_SOURCE_TYPE",
+      "parseImport",
+      "proposalOf",
+      "validateImportRow"
+    ],
+    "src/features/admin/api/candidates-pending.ts": [
+      "CANDIDATE_PAGE",
+      "GET",
+      "classifyCandidate",
+      "groupCandidates"
+    ],
+    "src/features/admin/api/corpus-turns.ts": [
+      "GET",
+      "OPEN_BOUND",
+      "POST"
+    ],
+    "src/features/admin/api/corrections.ts": [
+      "GET"
+    ],
+    "src/features/admin/api/coverage.ts": [
+      "FRESHNESS_WINDOW_MS",
+      "GET",
+      "NO_ITEMS",
+      "buildAdminMatrix",
+      "countryGroup",
+      "deriveCellState",
+      "deriveOverallState",
+      "tierOf"
+    ],
+    "src/features/admin/api/deps.ts": [
+      "setAdminDeps"
+    ],
+    "src/features/admin/api/forward-events.ts": [
+      "GET"
+    ],
+    "src/features/admin/api/integrity-flags.ts": [
+      "FLAG_PAGE",
+      "GET",
+      "PATCH",
+      "resolveBriefFlag"
+    ],
+    "src/features/admin/api/intersections.ts": [
+      "GET"
+    ],
+    "src/features/admin/api/overview.ts": [
+      "getOverview",
+      "getSources"
+    ],
+    "src/features/admin/api/pause-global.ts": [
+      "GET",
+      "POST",
+      "holdState",
+      "readHold"
+    ],
+    "src/features/admin/api/pipeline.ts": [
+      "GET",
+      "PIPELINE_BOUND"
+    ],
+    "src/features/admin/api/progress.ts": [
+      "GET",
+      "progressOf"
+    ],
+    "src/features/admin/api/run-intake.ts": [
+      "MAX_CANDIDATES",
+      "POST"
+    ],
+    "src/features/admin/api/runtime.ts": [
+      "ERROR_GROUPS_BOUND",
+      "GET",
+      "currentRows",
+      "readAssumptions",
+      "readErrorGroups"
+    ],
+    "src/features/admin/api/shared.ts": [
+      "headCount"
+    ],
+    "src/features/admin/api/source-controls.ts": [
+      "commitTierChange",
+      "fetchNow",
+      "getTierOverride",
+      "patchBiasTag",
+      "pauseSource",
+      "postTierOverride",
+      "setVisibility"
+    ],
+    "src/features/admin/api/source-decisions.ts": [
+      "BULK_MAX",
+      "bulkApprove",
+      "decideCanonical",
+      "decideProvisional",
+      "decideSourceCandidate"
+    ],
+    "src/features/admin/api/statutory-rows.ts": [
+      "POST"
+    ],
+    "src/features/admin/api/themes.ts": [
+      "GET"
+    ],
+    "src/features/admin/api/tier-opinions.ts": [
+      "GET",
+      "OPINION_WINDOW_DAYS",
+      "POST",
+      "modalTier"
+    ],
+    "src/features/admin/api/triage.ts": [
+      "TRIAGE_BOUND",
+      "listJurisdictionReview",
+      "listRejections",
+      "resolveJurisdictionReview",
+      "triageRejection"
+    ],
+    "src/features/admin/api/users.ts": [
+      "GET",
+      "USERS_BOUND"
+    ],
+    "src/features/admin/corrections/CorrectionRow.tsx": [
+      "textOf"
+    ],
+    "src/features/admin/corrections/model.ts": [
+      "OPS_BY_KIND",
+      "buildCorrectionBody"
+    ],
+    "src/features/admin/pages.tsx": [
+      "AdminRoute",
+      "FactorsRoute",
+      "InferencesRoute",
+      "ItemCorrectionsRoute",
+      "PartsRoute",
+      "WorkspacePartsRoute"
+    ],
+    "src/features/admin/read/dashboard.ts": [
+      "MEMBER_BOUND",
+      "STAGED_BOUND",
+      "monthStart"
+    ],
+    "src/features/admin/read/sources.ts": [
+      "PROVISIONAL_REVIEW_STATUSES",
+      "SOURCE_COLUMNS"
+    ],
+    "src/features/admin/ui/BriefFlagsView.tsx": [
+      "ageDays"
+    ],
+    "src/features/admin/ui/BulkImportView.tsx": [
+      "CSV_TEMPLATE",
+      "JSON_TEMPLATE",
+      "headLabel"
+    ],
+    "src/features/admin/ui/CoverageCatalogueView.tsx": [
+      "DISPLAY_CAP",
+      "viewOf"
+    ],
+    "src/features/admin/ui/CoverageMatrixView.tsx": [
+      "CELL_WORDS",
+      "groupByCountry"
+    ],
+    "src/features/admin/ui/DispatchPanel.tsx": [
+      "describeDispatch"
+    ],
+    "src/features/admin/ui/JurisdictionReviewView.tsx": [
+      "siblingsOf"
+    ],
+    "src/features/admin/ui/PlatformFlagsView.tsx": [
+      "flagsQuery",
+      "subjectLabel"
+    ],
+    "src/features/admin/ui/ResearchPipelineView.tsx": [
+      "statusWords"
+    ],
+    "src/features/admin/ui/RuntimeViews.tsx": [
+      "groupBySubsystem",
+      "shortRelease"
+    ],
+    "src/features/admin/ui/StagedTransitView.tsx": [
+      "MODES",
+      "extractFailures",
+      "groupFailures"
+    ],
+    "src/features/admin/ui/StatutoryRowsUpload.tsx": [
+      "summaryOf"
+    ],
+    "src/features/admin/ui/TierDisagreementsView.tsx": [
+      "defaultReason"
+    ],
+    "src/features/admin/ui/UpcomingObligationsPanel.tsx": [
+      "eventDateLabel"
+    ],
+    "src/features/admin/ui/WorkspacesOverview.tsx": [
+      "memberDisplayName",
+      "tallyRoles",
+      "usageFigures"
+    ],
+    "src/features/admin/ui/panel-kit.tsx": [
+      "ConfirmDialog"
+    ],
+    "src/features/assistant/api/ask.ts": [
+      "POST"
+    ],
+    "src/features/assistant/deps.ts": [
+      "wireAssistantDeps"
+    ],
+    "src/features/assistant/passages.ts": [
+      "SKILL_PASSAGES"
+    ],
+    "src/features/auth/api/callback.ts": [
+      "GET"
+    ],
+    "src/features/auth/api/identity.ts": [
+      "GET"
+    ],
+    "src/features/auth/api/invitation-revoke.ts": [
+      "DELETE"
+    ],
+    "src/features/auth/api/invitation-token.ts": [
+      "GET",
+      "accept",
+      "decline"
+    ],
+    "src/features/auth/api/invitations-mine.ts": [
+      "GET",
+      "accept",
+      "decline"
+    ],
+    "src/features/auth/api/invitations.ts": [
+      "GET",
+      "POST"
+    ],
+    "src/features/auth/api/members.ts": [
+      "DELETE",
+      "GET",
+      "PATCH",
+      "POST",
+      "PUT"
+    ],
+    "src/features/auth/api/org.ts": [
+      "GET",
+      "PATCH"
+    ],
+    "src/features/auth/api/orgs-create.ts": [
+      "POST"
+    ],
+    "src/features/auth/ui/AuthFrame.tsx": [
+      "DATE_LABEL",
+      "useToday"
+    ],
+    "src/features/auth/ui/ResetPasswordPage.tsx": [
+      "default"
+    ],
+    "src/features/auth/ui/UpdatePasswordPage.tsx": [
+      "default"
+    ],
+    "src/features/auth/ui/identity-loader.ts": [
+      "IDENTITY_ERROR_SEED",
+      "IDENTITY_REARM_COOLDOWN_MS",
+      "nextIdentityRetryDelay",
+      "resolveAuthSeed",
+      "shouldApplySeed"
+    ],
+    "src/features/batches/brief-queue.ts": [
+      "QUEUE_FAMILY",
+      "QUEUE_WINDOW",
+      "exportedBy",
+      "pendingFrom",
+      "readBriefQueue",
+      "resolveQueueEntry"
+    ],
+    "src/features/batches/kinds/forward-events/apply.ts": [
+      "validateEvent"
+    ],
+    "src/features/batches/kinds/forward-events/export.ts": [
+      "FORWARD_EXPORT_LIMIT"
+    ],
+    "src/features/batches/kinds/forward-events/tickets.ts": [
+      "applyLimit",
+      "itemIdsOf",
+      "partitionByCorpusMembership"
+    ],
+    "src/features/batches/kinds/ledger-verdicts/apply.ts": [
+      "LEDGER_APPLY_LIMIT",
+      "LEDGER_EXPORT_LIMIT",
+      "LEDGER_MAX_PROMOTE"
+    ],
+    "src/features/batches/kinds/needs-search/needs.ts": [
+      "NEED_EXPORT_LIMIT",
+      "OUTPUT_FOR_KIND",
+      "collectOpenNeeds",
+      "lineageTargetsByFlag",
+      "loadAppliedKeys",
+      "needKey"
+    ],
+    "src/features/batches/kinds/needs-search/validate.ts": [
+      "CEILINGS"
+    ],
+    "src/features/batches/kinds/question-answers/apply.ts": [
+      "QUESTION_EXPORT_LIMIT",
+      "RESOLVED_BY",
+      "buildResolutionNote"
+    ],
+    "src/features/batches/kinds/question-answers/material.ts": [
+      "eventContextOf",
+      "itemUnusableReason"
+    ],
+    "src/features/batches/kinds/question-answers/validate.ts": [
+      "CEILINGS",
+      "MIN_SPAN_CHARS",
+      "OUTCOMES",
+      "sentencesOf",
+      "unquotedSentences"
+    ],
+    "src/features/batches/kinds/record-briefs/apply.ts": [
+      "APPLY_STEP_NAMES",
+      "STEPS",
+      "collectEntryCitations",
+      "sameBrief"
+    ],
+    "src/features/batches/kinds/record-briefs/export.ts": [
+      "RECORD_EXPORT_LIMIT"
+    ],
+    "src/features/batches/kinds/record-briefs/validate.ts": [
+      "MIN_BODY_CHARS",
+      "RECORD_BRIEFS_SCHEMA_VERSION",
+      "figureCheckText",
+      "requiredSlotErrors",
+      "slotAllowsGap"
+    ],
+    "src/features/batches/kinds/screen-verdicts/apply.ts": [
+      "reopenRuledHolds"
+    ],
+    "src/features/batches/kinds/theme-briefs/apply.ts": [
+      "THEME_EXPORT_LIMIT",
+      "applyThemeBriefBatch"
+    ],
+    "src/features/batches/kit/budget.ts": [
+      "BYTES_PER_MB",
+      "DEFAULT_COOLDOWN_MIN",
+      "DEFAULT_IO_BUDGET_MB",
+      "IN_FLIGHT_STALE_MIN",
+      "decideCooldown",
+      "readLastApplyRun"
+    ],
+    "src/features/batches/kit/dispatch.ts": [
+      "BATCH_KINDS",
+      "DEFAULT_PART_CHARS",
+      "chunkByCharBudget",
+      "isBatchKind",
+      "scratchDir",
+      "validateBatch"
+    ],
+    "src/features/batches/kit/session-batch.ts": [
+      "fileShapeErrors"
+    ],
+    "src/features/community/api/entity-threads.ts": [
+      "GET",
+      "GET_ENTITIES"
+    ],
+    "src/features/community/api/group-invitations.ts": [
+      "GET_CANDIDATES",
+      "GET_INVITATIONS",
+      "POST_INVITE"
+    ],
+    "src/features/community/api/group-join.ts": [
+      "POST"
+    ],
+    "src/features/community/api/group-members.ts": [
+      "DELETE",
+      "GET"
+    ],
+    "src/features/community/api/group-prefs.ts": [
+      "PATCH_MUTE",
+      "PATCH_STAR"
+    ],
+    "src/features/community/api/group-settings.ts": [
+      "PATCH"
+    ],
+    "src/features/community/api/groups.ts": [
+      "POST"
+    ],
+    "src/features/community/api/invitation-respond.ts": [
+      "POST_ACCEPT",
+      "POST_DECLINE",
+      "POST_REVOKE"
+    ],
+    "src/features/community/api/moderation.ts": [
+      "GET_REPORTS",
+      "POST_ACT",
+      "POST_REPORT"
+    ],
+    "src/features/community/api/notifications.ts": [
+      "GET",
+      "GET_COUNTS",
+      "POST",
+      "POST_ONE"
+    ],
+    "src/features/community/api/post.ts": [
+      "DELETE",
+      "PATCH",
+      "POST_CITE"
+    ],
+    "src/features/community/api/posts.ts": [
+      "GET",
+      "POST"
+    ],
+    "src/features/community/api/profile.ts": [
+      "GET",
+      "POST_VERIFY",
+      "PUT"
+    ],
+    "src/features/community/api/replies.ts": [
+      "GET",
+      "POST"
+    ],
+    "src/features/community/api/search.ts": [
+      "GET"
+    ],
+    "src/features/community/api/signoff.ts": [
+      "POST_DECIDE",
+      "POST_REQUEST",
+      "POST_WITHDRAW"
+    ],
+    "src/features/community/lib/actions.ts": [
+      "sentence"
+    ],
+    "src/features/community/lib/antitrust.ts": [
+      "kAnonymity"
+    ],
+    "src/features/community/lib/entity-binding.ts": [
+      "MIN_ENTITY_IDS"
+    ],
+    "src/features/community/lib/entity-candidates.ts": [
+      "ENTITY_CANDIDATE_LIMIT"
+    ],
+    "src/features/community/lib/identity-format.ts": [
+      "ANONYMOUS_LABEL",
+      "formatAuthorIdentity"
+    ],
+    "src/features/community/lib/identity.ts": [
+      "IDENTITY_IDS_PER_CALL",
+      "authorIdForRow",
+      "effectiveAnonymous",
+      "idWithheld"
+    ],
+    "src/features/community/lib/labels.ts": [
+      "MODERATION_ACTIONS",
+      "REGION_LABELS"
+    ],
+    "src/features/community/lib/org-key.ts": [
+      "ORG_SALT_HKDF_INFO",
+      "isFreeMailDomain"
+    ],
+    "src/features/community/lib/rooms-view.ts": [
+      "chooseSignoffs",
+      "roomForResource"
+    ],
+    "src/features/community/lib/rooms.ts": [
+      "isRoomMember"
+    ],
+    "src/features/community/lib/shell-context.ts": [
+      "loadRegionCounts"
+    ],
+    "src/features/community/pages/Directory.tsx": [
+      "DirectoryPage"
+    ],
+    "src/features/community/pages/Discover.tsx": [
+      "DiscoverPage"
+    ],
+    "src/features/community/pages/Moderation.tsx": [
+      "ModerationPage"
+    ],
+    "src/features/community/pages/Profile.tsx": [
+      "ProfilePage"
+    ],
+    "src/features/community/pages/Rooms.tsx": [
+      "RoomsPage"
+    ],
+    "src/features/community/pages/frame.tsx": [
+      "dateLabelOf"
+    ],
+    "src/features/community/ui/parts/Avatar.tsx": [
+      "initialsOf"
+    ],
+    "src/features/corrections/api.ts": [
+      "GET",
+      "POST",
+      "REVOKE",
+      "createCorrection",
+      "listCorrections",
+      "mapDbError",
+      "planCorrection",
+      "revokeCorrection"
+    ],
+    "src/features/corrections/redact.ts": [
+      "removeClaimText"
+    ],
+    "src/features/coverage/api/entries.ts": [
+      "GET"
+    ],
+    "src/features/coverage/client.tsx": [
+      "fetchCoverageSummary",
+      "requestCoverageRequest"
+    ],
+    "src/features/coverage/page.tsx": [
+      "COVERAGE_PATH",
+      "default"
+    ],
+    "src/features/coverage/server/census.ts": [
+      "INITIAL_CAP",
+      "getCoverageIndex"
+    ],
+    "src/features/coverage/server/matrix-data.ts": [
+      "COVERAGE_UNAVAILABLE",
+      "loadCoverageMatrix"
+    ],
+    "src/features/coverage/ui/CoveragePage.tsx": [
+      "scopeLabel"
+    ],
+    "src/features/dashboard/api/coverage-matrix.ts": [
+      "GET"
+    ],
+    "src/features/dashboard/api/coverage-request.ts": [
+      "POST"
+    ],
+    "src/features/dashboard/deps.ts": [
+      "wireDashboardDeps"
+    ],
+    "src/features/dashboard/page.tsx": [
+      "default"
+    ],
+    "src/features/dashboard/read/items.ts": [
+      "BACKFILL_COLUMNS"
+    ],
+    "src/features/dashboard/rows.ts": [
+      "CANDIDATE_WINDOW",
+      "CHANGED_CAP",
+      "DUE_NEXT_CAP"
+    ],
+    "src/features/drain/kinds.ts": [
+      "OUTBOX_MAX_ATTEMPTS",
+      "kindById",
+      "kindForBatchPath",
+      "notificationOutboxExporter",
+      "themeClassificationExporter"
+    ],
+    "src/features/drain/plan.ts": [
+      "LEASE_STALE_SECONDS",
+      "PLAN_SCHEMA",
+      "earliestPending",
+      "orderKinds",
+      "selectStaleItems"
+    ],
+    "src/features/flywheel/connect.ts": [
+      "connectDeps"
+    ],
+    "src/features/flywheel/corpus-pass.ts": [
+      "sharedEntityEdges"
+    ],
+    "src/features/flywheel/run-discovery.ts": [
+      "edgesFor",
+      "loadItemSignature"
+    ],
+    "src/features/flywheel/term-pass.ts": [
+      "NEED_RESOLVE_NOTE",
+      "TRUST_MIN_ITEMS"
+    ],
+    "src/features/flywheel/theme-brief-seam.ts": [
+      "parseThemeBriefPayload",
+      "validateAgainstLiveMembers"
+    ],
+    "src/features/health/api/surfaces.ts": [
+      "GET"
+    ],
+    "src/features/intake/api/run.ts": [
+      "COOLDOWN_MS",
+      "POST"
+    ],
+    "src/features/intake/change-sweep-drain.ts": [
+      "UPDATE_DRAIN_LIMIT"
+    ],
+    "src/features/intake/cycle.ts": [
+      "MANUAL_INTAKE_CALLER"
+    ],
+    "src/features/intake/pipeline.ts": [
+      "planningAssumptionContext"
+    ],
+    "src/features/intake/portal-ledger.ts": [
+      "PERSIST_CHUNK",
+      "applyPromoteCap",
+      "buildCandidateSeed"
+    ],
+    "src/features/intake/quarantine/erase.ts": [
+      "DELETABLE_REASONS"
+    ],
+    "src/features/intake/quarantine/id-stamp.ts": [
+      "heartbeatLease",
+      "resolveItemKey"
+    ],
+    "src/features/intake/quarantine/planner.ts": [
+      "DEFERRAL_WINDOW_DAYS",
+      "buildDeferralCandidate",
+      "computeQuarantineDwell",
+      "isValidDeferral",
+      "planDispositions"
+    ],
+    "src/features/intake/record-facts/extract.ts": [
+      "claim",
+      "extractIdentityFact",
+      "hasOnlyBareDomainUrls",
+      "isEurlexHost",
+      "isProseSpan"
+    ],
+    "src/features/intake/record-facts/payload.ts": [
+      "STUB_BRIEF_MARKER",
+      "buildRecordFullBrief",
+      "buildResearchRecordPayload"
+    ],
+    "src/features/intake/staged-transit.ts": [
+      "UPDATE_ITEM_ALLOWLIST",
+      "isRootUrl",
+      "isSubstantiveUpdate",
+      "splitNewItemSeed"
+    ],
+    "src/features/intake/workflow.ts": [
+      "eraseStep"
+    ],
+    "src/features/intake/write-item.ts": [
+      "WriteSequenceError",
+      "buildAgentRunSearchRows",
+      "buildClaimRows",
+      "buildSectionRows"
+    ],
+    "src/features/learning/questions-on-change.ts": [
+      "EMITTING_TABLES",
+      "MAX_ITEMS_PER_EVENT",
+      "describeChange",
+      "eventTypeForOutboxRow",
+      "readOutboxEvents"
+    ],
+    "src/features/learning/signpost-scoring-deps.ts": [
+      "hydrateEventRows"
+    ],
+    "src/features/learning/signpost-scoring.ts": [
+      "OUTCOME_BY_DIRECTION",
+      "SCORED_BY",
+      "buildLedgerRows",
+      "isDeadlinePassed",
+      "matchEventsToSignposts",
+      "outcomeForDirection",
+      "scorePatch",
+      "signpostMetrics",
+      "watchedRowForEvent"
+    ],
+    "src/features/learning/trigger-questions.ts": [
+      "MINTED_OR_TOUCHED",
+      "PRODUCT_QUESTIONS",
+      "QUESTION_ACQUISITION",
+      "isTriggerQuestionFlag",
+      "surfacesForDomain",
+      "triggerQuestionFlagRow"
+    ],
+    "src/features/lists/api/rest.ts": [
+      "GET"
+    ],
+    "src/features/lists/map-rows.ts": [
+      "baseResourceFields"
+    ],
+    "src/features/market/api/notices.ts": [
+      "DEFAULT_WINDOW_DAYS",
+      "GET",
+      "attachEntityLabels",
+      "noticesClock",
+      "resolveSince",
+      "resolveWatchedEntityIds"
+    ],
+    "src/features/market/calc/indexation.ts": [
+      "computeIndexedValue"
+    ],
+    "src/features/market/calc/oem-payload.ts": [
+      "computePayloadPenalty"
+    ],
+    "src/features/market/lib/carbon.ts": [
+      "GAP",
+      "carbonCostPerFeu",
+      "resolveItemCorridor"
+    ],
+    "src/features/market/lib/freshness.ts": [
+      "cadenceNameForDays",
+      "summarizeBoardFreshness"
+    ],
+    "src/features/market/lib/headline.ts": [
+      "FAMILY_CLASS_ORDER",
+      "HEADLINE_VISIBLE_CAP",
+      "SERIES_FAMILIES",
+      "hasComputedDelta",
+      "resolveSeriesFamily"
+    ],
+    "src/features/market/lib/provenance.ts": [
+      "envelopeFromFactorRow"
+    ],
+    "src/features/market/lib/rail-select.ts": [
+      "CARBON_CORRIDOR_ROW_CAP",
+      "NEXT_DROPS_ROW_CAP"
+    ],
+    "src/features/market/lib/registry.ts": [
+      "isImplementedSeriesKey"
+    ],
+    "src/features/market/lib/ribbon-model.ts": [
+      "DELTA_STATE_LABEL",
+      "DELTA_STATE_OBS_CODE",
+      "SPARKLINE_MAX_POINTS"
+    ],
+    "src/features/market/lib/signal-promotion.ts": [
+      "PROMOTION_STATE"
+    ],
+    "src/features/market/page.tsx": [
+      "default"
+    ],
+    "src/features/market/producers/carrier-ets-surcharge.ts": [
+      "buildCarrierEtsSurchargeRow",
+      "buildEtsProxyBand",
+      "carrierSlug"
+    ],
+    "src/features/market/producers/ecb-fx.ts": [
+      "CURRENCIES",
+      "ECB_KEY_PREFIX",
+      "ECB_XML_URL",
+      "formatSourceEvidence",
+      "parseEcbFxXml"
+    ],
+    "src/features/market/producers/eea-hdv-roadmaps.ts": [
+      "COVERED_COLUMNS",
+      "DATASET",
+      "DRY_SAMPLE_BYTES",
+      "EEA_HDV_COLUMNS",
+      "aggregateHdvCsv",
+      "classifyGroup",
+      "mapGroupsToRows",
+      "stageFor",
+      "validateClassification"
+    ],
+    "src/features/market/producers/eia-petroleum-spot.ts": [
+      "EIA_KEY_ENV",
+      "PRODUCTS",
+      "parseEiaV2PetroleumSpot"
+    ],
+    "src/features/market/producers/eu-oil-bulletin.ts": [
+      "PRICE_SHEET",
+      "PRODUCTS",
+      "extractEuSeries",
+      "findPricesHistoryLink",
+      "parseEuWeeklyOilBulletinCsv",
+      "resolveHeaderBlocks"
+    ],
+    "src/features/market/producers/market-series-delta.ts": [
+      "REFRESHABLE_FIELDS",
+      "afterMarketWrite",
+      "assertEdgesAuthored",
+      "authorMarketSeriesDeltaEdges",
+      "marketDeps",
+      "marketPlan"
+    ],
+    "src/features/market/producers/market-series-items.ts": [
+      "loadSeriesItemMap"
+    ],
+    "src/features/market/producers/published-price-statistics.ts": [
+      "deriveDisplayRows",
+      "formatValueDisplay",
+      "splitEnvelopeUnit",
+      "unmappedSeriesKeys"
+    ],
+    "src/features/market/producers/rows-file-producers.ts": [
+      "evaluateCorridorReadiness",
+      "parseGridQueueRow",
+      "parseOemRoadmapRow",
+      "parseRerouteRow"
+    ],
+    "src/features/market/producers/sbti-targets.ts": [
+      "LICENCE_BLOCK",
+      "SBTI_XLSX_URL",
+      "SHEET_NAME",
+      "aggregateSbtiTargetRows",
+      "excelSerialToIsoDate",
+      "extractSbtiTargetRows",
+      "resolveHeaderColumns"
+    ],
+    "src/features/market/read.ts": [
+      "perSeriesWindow",
+      "ratingOf",
+      "readDeltaEdges",
+      "readModalFactors",
+      "readPanels",
+      "readSeriesRows",
+      "readSourceRatings"
+    ],
+    "src/features/market/series-page.tsx": [
+      "default"
+    ],
+    "src/features/mint/apply.ts": [
+      "buildItemRow"
+    ],
+    "src/features/mint/gates.ts": [
+      "RELEVANCE_FLOOR",
+      "canonicalDomainOverride",
+      "sourceLinkDecision",
+      "unconditionalDomain"
+    ],
+    "src/features/mint/heal/brief-honest.ts": [
+      "sentenceContext",
+      "sentenceSpans",
+      "stripClause"
+    ],
+    "src/features/mint/heal/ground.ts": [
+      "foldRun",
+      "insideLongerNumber",
+      "isFloorArmed",
+      "normalizeNumeric",
+      "normalizeWithMap"
+    ],
+    "src/features/mint/heal/label.ts": [
+      "DEFAULT_LABEL",
+      "slotKeyOf"
+    ],
+    "src/features/mint/heal/source.ts": [
+      "MAX_ATTEMPTS_PER_ITEM",
+      "MAX_CANDIDATES_PER_ORPHAN",
+      "MAX_HOP_LINKS",
+      "candidateUrls",
+      "hopLinks"
+    ],
+    "src/features/mint/preflight.ts": [
+      "tagPresence"
+    ],
+    "src/features/mint/screen.ts": [
+      "ARCHIVE_REASON",
+      "classifyRelevance",
+      "deriveSearchText",
+      "isMintable",
+      "loadRules",
+      "parseCelex",
+      "reconcileRecordItems"
+    ],
+    "src/features/mint/select.ts": [
+      "LIMIT_CEILING",
+      "normalizeIdentifier",
+      "sameInstrumentIdentity"
+    ],
+    "src/features/mint/types.ts": [
+      "HOLD_PREFIX"
+    ],
+    "src/features/obligations/api/register.ts": [
+      "GET"
+    ],
+    "src/features/obligations/api/upcoming.ts": [
+      "GET"
+    ],
+    "src/features/obligations/derive/classify-binding-position.ts": [
+      "BINDING_POSITION_RULES",
+      "classifyBindingPosition",
+      "classifyInstrumentIdentity"
+    ],
+    "src/features/obligations/derive/compliance-deadline.ts": [
+      "COMPLIANCE_DEADLINE_EVENT_KIND",
+      "pickComplianceDeadline"
+    ],
+    "src/features/obligations/derive/derive-objects.ts": [
+      "DATE_COLUMNS",
+      "FREQUENCIES",
+      "FUELEU_TARGETS",
+      "OBJECT_DERIVATION_VERSION",
+      "buildObjectRow",
+      "candidatesFromClaims",
+      "candidatesFromFueleuTargets",
+      "planObligationObjects",
+      "timelineFromEvents"
+    ],
+    "src/features/obligations/derive/derive-register.ts": [
+      "DERIVATION_VERSION",
+      "buildContextByItem",
+      "deriveObligationRow",
+      "deriveObligationRows",
+      "filterNewRows"
+    ],
+    "src/features/obligations/extract/date-grammar.ts": [
+      "parseDateFragment"
+    ],
+    "src/features/obligations/extract/dedupe.ts": [
+      "sameObligationContent"
+    ],
+    "src/features/obligations/extract/read-extraction-input.ts": [
+      "CLAIM_KIND_FILTER",
+      "CONTEXT_CHARS",
+      "attachDueDateContext",
+      "buildDueDateContext",
+      "buildReferenceDates",
+      "documentDateIso",
+      "itemIdsNeedingContext",
+      "mapClaimRow",
+      "mapSectionRow",
+      "todayIsoUtc",
+      "usableCapturesOrdered"
+    ],
+    "src/features/obligations/extract/rules.ts": [
+      "COMMENCEMENT_CLAUSE_RE",
+      "STATUS_ONLY_RE"
+    ],
+    "src/features/obligations/extract/scan.ts": [
+      "DUE_DATE_SLOT_PREFIX"
+    ],
+    "src/features/obligations/extract/verbatim-in-source.ts": [
+      "REFUSED_NOT_IN_SOURCE",
+      "enforceSectionVerbatimInSource"
+    ],
+    "src/features/obligations/extract/window.ts": [
+      "DEFAULT_MAX_AFTER",
+      "DEFAULT_MAX_BEFORE",
+      "selectDateCell",
+      "unwrapRecordFactsTemplate"
+    ],
+    "src/features/obligations/jobs/run-extraction.ts": [
+      "runExtraction"
+    ],
+    "src/features/obligations/kinds.ts": [
+      "isEventKind"
+    ],
+    "src/features/obligations/read/rail-select.ts": [
+      "OBLIGATION_RAIL_ROW_CAP",
+      "OBLIGATION_RAIL_WINDOW_DAYS",
+      "utcDayStart"
+    ],
+    "src/features/obligations/read/register-facets.ts": [
+      "UNCLASSIFIED_KEY",
+      "emptyRegisterFacets",
+      "matchesDueWindow",
+      "tallyRegisterFacets"
+    ],
+    "src/features/obligations/read/register-read.ts": [
+      "OBLIGATION_TEXT_TRIM_LENGTH",
+      "UNCLASSIFIED",
+      "applyRegisterFilters",
+      "compareByNextDue",
+      "matchingJurisdictionCodes",
+      "nextDueSegment",
+      "planRegisterPageSegments",
+      "trimObligationText"
+    ],
+    "src/features/obligations/read/upcoming-read.ts": [
+      "buildUpcomingEventsQuerySpec",
+      "jurisdictionMatches",
+      "modeMatches",
+      "selectUpcoming"
+    ],
+    "src/features/onboarding/pages.tsx": [
+      "InvitationRoute",
+      "NewWorkspaceRoute",
+      "OnboardingRoute"
+    ],
+    "src/features/operations/ask-context.ts": [
+      "buildOperationsAskContext",
+      "regionalFactLine",
+      "stateCostLine"
+    ],
+    "src/features/operations/calc/auxiliary-energy.ts": [
+      "compareToLegEmissions",
+      "computeEnergyConsumedKwh",
+      "convertKwhToGco2e"
+    ],
+    "src/features/operations/detail-page.tsx": [
+      "OperationsDetailRoute"
+    ],
+    "src/features/operations/loading.tsx": [
+      "default"
+    ],
+    "src/features/operations/model/dimensions.ts": [
+      "ALL_OPERATIONS_DIMENSIONS",
+      "OPERATIONS_DIMENSIONS"
+    ],
+    "src/features/operations/model/labour-chain.ts": [
+      "CHAIN_TERM_ORDER",
+      "NUMERATOR_TERM_ORDER",
+      "currencyOf"
+    ],
+    "src/features/operations/model/matrix-eligibility.ts": [
+      "dimensionCoverageLine"
+    ],
+    "src/features/operations/model/region-grid.ts": [
+      "factHeadline",
+      "sourceNameFromNote",
+      "sourceUrlFromNote"
+    ],
+    "src/features/operations/model/region-resolve.ts": [
+      "itemJurisdictionCodes"
+    ],
+    "src/features/operations/model/statements.ts": [
+      "ELIGIBLE_ORIGIN_CLASSES",
+      "NEEDS_SECOND_REGION",
+      "VERDICT_PATTERN",
+      "hasVerdictWord",
+      "humaniseFactLabel"
+    ],
+    "src/features/operations/page.tsx": [
+      "OperationsRoute"
+    ],
+    "src/features/operations/producers/neso-carbon-intensity.ts": [
+      "DIMENSION",
+      "REGION_CODE",
+      "buildUrl",
+      "omit",
+      "parseNesoStats"
+    ],
+    "src/features/operations/producers/regional-envelope.ts": [
+      "EUROSTAT_BASE",
+      "EU_MEMBER_GEO_CODES",
+      "OEWS_OCCUPATIONS",
+      "aggregateLcLciLevForRegion",
+      "buildOewsSeriesId",
+      "decodeJsonStat",
+      "formatDisplayValue",
+      "parseNrgPc205",
+      "parseOewsResponse"
+    ],
+    "src/features/operations/producers/state-cost-facts.ts": [
+      "buildStateCostFactRow",
+      "naturalKey",
+      "originClassForTier",
+      "parseNumericValue"
+    ],
+    "src/features/operations/producers/ukpn-heatmap.ts": [
+      "CONSTRAINTS",
+      "DATASET_ID",
+      "GB_JURISDICTION_ID",
+      "LICENCE",
+      "LICENCE_URL",
+      "METADATA_URL",
+      "PORTAL_HOST",
+      "SOURCE_NAME",
+      "SOURCE_URL",
+      "checkMetadata",
+      "mapHeatmapFile",
+      "selectAttachments"
+    ],
+    "src/features/operations/read/operations-reads.ts": [
+      "readCoverage",
+      "readFacts",
+      "readLinkedRegulations",
+      "readStateCosts"
+    ],
+    "src/features/portfolio/deps.ts": [
+      "corridorLabel"
+    ],
+    "src/features/portfolio/pages.tsx": [
+      "PortfolioDetailRoute",
+      "PortfolioIndexRoute"
+    ],
+    "src/features/propagation/ops/backfill-entities.ts": [
+      "BACKFILL_KINDS"
+    ],
+    "src/features/propagation/ops/backfill-lineage-edges.ts": [
+      "snapshotEdgeState"
+    ],
+    "src/features/propagation/ops/seed-corridors.ts": [
+      "ATTRIBUTED_BY",
+      "RELATION_CORRIDOR_JURISDICTION",
+      "deriveCorridorJurisdictionCodes",
+      "parseCorridorConvention",
+      "planCorridorEntities",
+      "planDisplayNameBackfill",
+      "resolveCorridorCandidates"
+    ],
+    "src/features/propagation/ops/seed-derived-values.ts": [
+      "CARBON_METHOD_ID",
+      "CARBON_METHOD_VERSION"
+    ],
+    "src/features/regulations/api/relevance.ts": [
+      "GET",
+      "relevanceDeps"
+    ],
+    "src/features/regulations/list-read.ts": [
+      "REGULATIONS_DOMAIN"
+    ],
+    "src/features/regulations/map/centroids.ts": [
+      "CENTROIDS"
+    ],
+    "src/features/regulations/map/marker.ts": [
+      "MARKER_MAX",
+      "MARKER_MIN"
+    ],
+    "src/features/regulations/map/read.ts": [
+      "MAP_REVALIDATE_SECONDS",
+      "readMapItems"
+    ],
+    "src/features/regulations/map/region-coverage.ts": [
+      "rollupRegions",
+      "sourceTypesFor"
+    ],
+    "src/features/regulations/map/rollup.ts": [
+      "labelOfKey"
+    ],
+    "src/features/regulations/useItemRelevance.ts": [
+      "fetchRelevance"
+    ],
+    "src/features/research/assessment-producer.ts": [
+      "resolveOpenAlexSourceRecords"
+    ],
+    "src/features/research/authority-score.ts": [
+      "ROLE_CLASSES",
+      "authorityScore",
+      "bucketForSource",
+      "classifyRoleClass",
+      "computeAuthorStanding",
+      "computeFundingIndependence",
+      "computeInstitutionalStanding",
+      "computeIntegrity",
+      "computeReception",
+      "scoreGreyLiteratureSource",
+      "scoreOpenAlexSource"
+    ],
+    "src/features/research/detail-loading.tsx": [
+      "default"
+    ],
+    "src/features/research/detail-page.tsx": [
+      "ResearchDetailRoute"
+    ],
+    "src/features/research/loading.tsx": [
+      "default"
+    ],
+    "src/features/research/model/assess.ts": [
+      "COMPUTED_BY",
+      "assessAuthorityScore",
+      "assessCommercialMaturity",
+      "assessEvidenceScore",
+      "assessHorizon",
+      "assessSignposts",
+      "assessTechnicalMaturity",
+      "resolveAuthoritySources"
+    ],
+    "src/features/research/model/assessment-view.ts": [
+      "corridorLabel",
+      "summarizePredicate"
+    ],
+    "src/features/research/model/taxonomy.ts": [
+      "SEVERITY_COLUMN_TO_KEY",
+      "THEME_LABELS"
+    ],
+    "src/features/research/page.tsx": [
+      "ResearchRoute"
+    ],
+    "src/features/research/read/related-items.ts": [
+      "RELATED_LIMIT"
+    ],
+    "src/features/research/read/research-reads.ts": [
+      "readAssessmentsFor"
+    ],
+    "src/features/research/theme-rules.ts": [
+      "classifyThemes"
+    ],
+    "src/features/research/ui/CredibilityChips.tsx": [
+      "authorityLabel",
+      "gradeModifiers"
+    ],
+    "src/features/research/ui/rows.tsx": [
+      "RowMenu"
+    ],
+    "src/features/research/walker.ts": [
+      "MAX_NEEDS",
+      "RESIDUE_REASON",
+      "boundNeeds",
+      "buildMintSeed",
+      "normalizeOpenAlexWork",
+      "placePublisher",
+      "searchOpenAlexWorks"
+    ],
+    "src/features/saved-views/api/saved-views.ts": [
+      "DELETE",
+      "GET",
+      "MAX_VIEWS_PER_SURFACE",
+      "POST",
+      "SAVED_VIEW_SURFACES",
+      "canonicalQuery"
+    ],
+    "src/features/search/api/search.ts": [
+      "GET"
+    ],
+    "src/features/search/page.tsx": [
+      "default"
+    ],
+    "src/features/search/run-search.ts": [
+      "RESULT_SELECT"
+    ],
+    "src/features/settings/page.tsx": [
+      "default"
+    ],
+    "src/features/settings/state/settings-store.ts": [
+      "bindSettingsToWorkspace"
+    ],
+    "src/features/sources-admin/ui/CanonicalQueue.tsx": [
+      "bulkEligible"
+    ],
+    "src/features/sources-admin/ui/ConnectionPairsView.tsx": [
+      "SCORE_FLOORS",
+      "SIGNAL_WORDS"
+    ],
+    "src/features/sources-admin/ui/ProvisionalQueue.tsx": [
+      "rowTier"
+    ],
+    "src/features/sources-admin/ui/ScrapeScheduleStrip.tsx": [
+      "holdSentence"
+    ],
+    "src/features/sources-admin/ui/SourceClassificationEditor.tsx": [
+      "biasPreview",
+      "seedDraft"
+    ],
+    "src/features/sources-admin/ui/SourceRegistryCard.tsx": [
+      "filterRegistry",
+      "overdue"
+    ],
+    "src/features/sources-admin/ui/SourceRow.tsx": [
+      "metricOrAbsence"
+    ],
+    "src/features/sources-admin/ui/TierOverrideControl.tsx": [
+      "reasonError"
+    ],
+    "src/features/sources/api/check-sources.ts": [
+      "POST"
+    ],
+    "src/features/sources/change.ts": [
+      "BRIDGE_DEFAULT_LIMIT",
+      "CHANGE_SWEEP_STAGED_MARKER",
+      "alignSegments",
+      "bridgeChangedSourceToStagedUpdates",
+      "classifyChange",
+      "computeDiff",
+      "diffDocuments",
+      "fingerprintChangedNote",
+      "normHash",
+      "recordSourceChangeTrigger",
+      "segmentByShape",
+      "segmentTextDiff",
+      "summarizeAmendmentDiff",
+      "toTimelineEvents"
+    ],
+    "src/features/sources/classify-sources.ts": [
+      "AXIS_CREATED_BY",
+      "DRIFT_CREATED_BY",
+      "DRIFT_MIN_DISTINCT_DATES",
+      "DRIFT_MIN_ITEMS",
+      "buildMergePatch",
+      "countDistinctDates",
+      "decideDriftResolution",
+      "decideProposals"
+    ],
+    "src/features/sources/growth.ts": [
+      "aggregateConvergence",
+      "applyReputationRecompute",
+      "buildReputationEventRow",
+      "citationScore",
+      "collectCitedSources",
+      "compoundSourceCredibility",
+      "exactHostUrlFilter",
+      "parseNewSourcesFromBrief",
+      "partitionCitedByHost",
+      "recordCitations",
+      "recordTierOpinion",
+      "registerCitedSources",
+      "registerEntryCitations",
+      "registerPoolHostsForGrounding"
+    ],
+    "src/features/sources/holdings-audit.ts": [
+      "classifyCompleteness",
+      "classifySufficiency",
+      "structuralTruncation"
+    ],
+    "src/features/sources/null-tier.ts": [
+      "NULL_TIER_CREATED_BY",
+      "NULL_TIER_RESOLVED_BY",
+      "buildNullTierHostResolution",
+      "buildNullTierHostWrite"
+    ],
+    "src/features/sources/snapshot-verify.ts": [
+      "MIN_USABLE_POOL_ROWS",
+      "STALE_FLAG",
+      "cheapVerifyClaims",
+      "decideVerify",
+      "normalizeForMatch",
+      "probeFreshness",
+      "requestCapture",
+      "spanPresent",
+      "verifyItem",
+      "writeStaleFlag"
+    ],
+    "src/features/sources/snapshots.ts": [
+      "compareFreshness",
+      "contentFingerprint",
+      "findSnapshotRow",
+      "isContentChange",
+      "normalizeForFingerprint",
+      "pickLatest",
+      "sha256Hex"
+    ],
+    "src/features/sources/store.ts": [
+      "filterSources",
+      "useSourceStore"
+    ],
+    "src/features/sources/triage.ts": [
+      "DEFAULT_CONCURRENCY",
+      "DEFAULT_HOST_INTERVAL_MS",
+      "DEFAULT_TIME_BUDGET_MIN",
+      "MAX_CONCURRENCY",
+      "applyFetchStatus",
+      "createHostThrottle",
+      "fetchStatusForDossier",
+      "qualifiesAtFloor",
+      "triageOneSource"
+    ],
+    "src/features/sources/verify-candidate.ts": [
+      "aggregateTier",
+      "detectLanguage"
+    ],
+    "src/features/sources/walkers/feed.ts": [
+      "FEED_CANDIDATE_PATHS",
+      "parseFeedEntries"
+    ],
+    "src/features/sources/walkers/register.ts": [
+      "dateRange",
+      "frDocsToLinks",
+      "frDocumentsUrl",
+      "looksLikeOjDailyView",
+      "ojDailyViewUrl"
+    ],
+    "src/features/sources/walkers/sitemap.ts": [
+      "DEFAULT_MAX_FEED_RESPONSE_BYTES",
+      "DEFAULT_MAX_SITEMAP_ENTRIES",
+      "DEFAULT_MAX_SITEMAP_FETCHES",
+      "DEFAULT_MAX_SITEMAP_RESPONSE_BYTES",
+      "checkResponseBytes",
+      "decodeXmlBody",
+      "dedupeByLoc",
+      "diffUrlSet",
+      "discoverFeed",
+      "filterEntriesForSource",
+      "isBotWallStatus",
+      "isUrlWithinSourcePath",
+      "looksGzippedBuffer",
+      "looksGzippedUrl",
+      "mergeSnapshotEntries",
+      "parseRobotsSitemapLines",
+      "parseSitemapIndexEntries",
+      "parseSitemapXml",
+      "parseUrlsetEntries",
+      "probeIsFeed",
+      "sitemapFallbackCandidates",
+      "sitemapRootKind",
+      "sourceContentPath",
+      "walkSitemap"
+    ],
+    "src/features/statutory/rows.ts": [
+      "ARTICLE_4_2_CITATION",
+      "DEFAULT_OBLIGATION_SEED",
+      "FORMULA_ID",
+      "FUELEU_REFERENCE_GCO2E_PER_MJ",
+      "SUPPORTED_TARGET_YEARS",
+      "resolveOrMintEntity",
+      "toValue",
+      "validateRow",
+      "validateSourceBlock"
+    ],
+    "src/features/statutory/run.ts": [
+      "validateStatutoryRows"
+    ],
+    "src/features/telemetry/api/error.ts": [
+      "BODY_MAX_BYTES",
+      "POST"
+    ],
+    "src/features/telemetry/api/revalidate.ts": [
+      "MAX_TAGS",
+      "POST"
+    ],
+    "src/features/telemetry/api/version.ts": [
+      "GET"
+    ],
+    "src/features/watchlist/api/watch.ts": [
+      "DELETE",
+      "GET",
+      "POST"
+    ],
+    "src/features/watchlist/links.ts": [
+      "TEAM_ONLY_TYPES"
+    ],
+    "src/features/watchlist/membership.ts": [
+      "loadMembership",
+      "membershipOf",
+      "resetMembership",
+      "setWatch"
+    ],
+    "src/features/watchlist/page.tsx": [
+      "default"
+    ],
+    "src/features/watchlist/read/watchlist.ts": [
+      "UNAVAILABLE_TITLE"
+    ],
+    "src/features/workspace/api/archive-impact.ts": [
+      "GET"
+    ],
+    "src/features/workspace/api/assignments.ts": [
+      "ASSIGNMENT_STATES",
+      "DELETE",
+      "GET",
+      "PATCH",
+      "POST",
+      "assignMembers",
+      "listAssignments",
+      "parseAssignInput",
+      "removeAssignment",
+      "setAssignmentState"
+    ],
+    "src/features/workspace/api/bootstrap.ts": [
+      "GET",
+      "loadOverrides"
+    ],
+    "src/features/workspace/api/notes.ts": [
+      "DELETE",
+      "GET",
+      "PATCH",
+      "POST",
+      "addNote",
+      "deleteNote",
+      "editNote",
+      "listNotes",
+      "parseNoteBody"
+    ],
+    "src/features/workspace/api/overrides.ts": [
+      "DELETE",
+      "POST"
+    ],
+    "src/features/workspace/api/personal-state.ts": [
+      "DELETE",
+      "GET",
+      "POST"
+    ],
+    "src/features/workspace/api/portfolio-detail.ts": [
+      "DELETE",
+      "GET",
+      "PATCH"
+    ],
+    "src/features/workspace/api/portfolio-members.ts": [
+      "DELETE",
+      "POST"
+    ],
+    "src/features/workspace/api/portfolios.ts": [
+      "GET",
+      "POST"
+    ],
+    "src/features/workspace/api/tag-attribution.ts": [
+      "attributionText",
+      "formatAppliedDate",
+      "memberDisplayName"
+    ],
+    "src/features/workspace/api/tag-items.ts": [
+      "DELETE",
+      "PUT"
+    ],
+    "src/features/workspace/api/tags.ts": [
+      "DELETE",
+      "GET",
+      "POST"
+    ],
+    "src/features/workspace/portfolio/core.ts": [
+      "memberKindForEntityId",
+      "normalizePortfolioName",
+      "parseMemberInput"
+    ],
+    "src/features/workspace/portfolio/types.ts": [
+      "MEMBER_KINDS",
+      "PRIORITY_KEYS"
+    ],
+    "src/features/workspace/state/item-state-store.ts": [
+      "setItemStateTransport"
+    ],
+    "src/features/workspace/ui/tag-model.ts": [
+      "hasExactMatch"
+    ],
+    "src/proxy.ts": [
+      "config",
+      "proxy"
+    ],
+    "src/ui/Banners.tsx": [
+      "SystemErrorBanner"
+    ],
+    "src/ui/SectionCard.tsx": [
+      "SectionRule"
+    ],
+    "src/ui/SectionIndex.tsx": [
+      "SummaryDepthSwitch",
+      "useSectionScrollSpy"
+    ],
+    "src/ui/Skeleton.tsx": [
+      "SkeletonRailDateRow",
+      "SkeletonStatBlock"
+    ],
+    "src/ui/WatchToggle.tsx": [
+      "WATCH_COPY"
+    ],
+    "src/ui/actions.ts": [
+      "SHARE_MESSAGE"
+    ],
+    "src/ui/claim-tier.ts": [
+      "normalizeClaimText",
+      "resolveClaimTier"
+    ],
+    "src/ui/detail/CrossPageSection.tsx": [
+      "cleanPreContractBriefText"
+    ],
+    "src/ui/detail/RecordFacts.tsx": [
+      "RecordFactCard"
+    ],
+    "src/ui/detail/watch.tsx": [
+      "WatchContext"
+    ],
+    "src/ui/figures/Figures.tsx": [
+      "EstimatedFigure",
+      "StatutoryFigure"
+    ],
+    "src/ui/figures/Notices.tsx": [
+      "RecalculationNotice",
+      "useRecalculationNotices"
+    ],
+    "src/ui/impact.ts": [
+      "IMPACT_GROUP_SIZE",
+      "IMPACT_SEGMENTS"
+    ],
+    "src/ui/list-surface/facets.ts": [
+      "facetOptions"
+    ],
+    "src/ui/list-surface/url-state.ts": [
+      "bandFromParam",
+      "normalizeRegionCodes",
+      "sortFromParam",
+      "windowFromParam"
+    ],
+    "src/ui/list-surface/use-list-rows.ts": [
+      "remainderState"
+    ],
+    "src/ui/shell/BackToTop.tsx": [
+      "BACK_TO_TOP_AFTER_PX"
+    ],
+    "src/ui/shell/CommandBar.tsx": [
+      "CommandBar"
+    ],
+    "src/ui/shell/identity-seed.ts": [
+      "NO_WORKSPACE_ONBOARDING_ROUTE"
+    ],
+    "src/ui/shell/nav-model.ts": [
+      "underRoute"
+    ],
+    "src/ui/shell/notifications/inbox-model.ts": [
+      "KIND_LABEL"
+    ],
+    "src/ui/shell/use-admin-attention.ts": [
+      "ADMIN_ATTENTION_POLL_MS"
+    ],
+    "src/ui/shell/use-bootstrap.ts": [
+      "hydrateItemState",
+      "loadBootstrap",
+      "resetBootstrap"
+    ],
+    "src/ui/shell/use-unread-count.ts": [
+      "UNREAD_POLL_MS",
+      "fetchUnread"
+    ],
+    "src/ui/tier.ts": [
+      "TIER_MAX"
+    ],
+    "src/ui/timeline-math.ts": [
+      "daysBetween",
+      "daysPhrase"
+    ]
+  },
+  "runtimeEntries": {
+    "src/core/turn/stages/capture.ts#shapeCapture": "a runtime entry with no caller (rule 17): the owning slice wires it into the turn or deletes it",
+    "src/core/turn/stages/change.ts#shapeChange": "a runtime entry with no caller (rule 17): the owning slice wires it into the turn or deletes it",
+    "src/core/turn/stages/connect.ts#shapeConnect": "a runtime entry with no caller (rule 17): the owning slice wires it into the turn or deletes it",
+    "src/core/turn/stages/intake.ts#shapeIntake": "a runtime entry with no caller (rule 17): the owning slice wires it into the turn or deletes it",
+    "src/core/turn/stages/propagate.ts#shapePropagate": "a runtime entry with no caller (rule 17): the owning slice wires it into the turn or deletes it",
+    "src/core/turn/stages/sweep-research.ts#shapeResearch": "a runtime entry with no caller (rule 17): the owning slice wires it into the turn or deletes it",
+    "src/core/turn/stages/sweep.ts#shapeSweep": "a runtime entry with no caller (rule 17): the owning slice wires it into the turn or deletes it",
+    "src/features/intake/pipeline.ts#writeSynthesizedBrief": "a runtime entry with no caller (rule 17): the owning slice wires it into the turn or deletes it",
+    "src/features/intake/pipeline.ts#harvestItemTimeline": "a runtime entry with no caller (rule 17): the owning slice wires it into the turn or deletes it"
+  },
+  "tables": {
+    "data_sources": "seeded by the SQL renderDataSourceSeedSql generates (src/core/contracts), which scripts/ci/checks/generator-pins.mjs executes against the schema; the producers only read it. The check reads no write of a generated seed",
+    "auxiliary_energy_profiles": "written by the operator-rows producer (src/features/operations/producers/operator-rows.ts), which takes the table name as an argument of operatorRowsSpec(\"auxiliary_energy_profiles\", ...); a call with the table as an argument is not a write the check reads"
+  },
+  "settings": {},
+  "routes": {},
+  "deps": {
+    "src/core/capture/change-detection.ts#ChangeDetectionDeps.harvestPortal": "D:31: the portal-candidate downstream can be omitted by a caller (features/sources/api/check-sources.ts omits it); R3b makes it required in the type",
+    "src/core/capture/change-detection.ts#ChangeDetectionDeps.writeSnapshot": "recorded at R1b: the snapshot write is a downstream of the pass; R3b makes it required or states the null case",
+    "src/core/capture/change-detection.ts#ChangeDetectionDeps.reconcile": "recorded at R1b: the reconcile step is a downstream of the pass; R3b makes it required or states the null case",
+    "src/core/fetch/capture.ts#CaptureDeps.throttle": "recorded at R1b: the polite gate has a no-op default for tests; R4a gives the throttle one home",
+    "src/core/fetch/ladder.ts#LadderDeps.cacheGet": "recorded at R1b: a ladder rung a caller may leave out; R2c states which rungs a ladder always has",
+    "src/core/fetch/ladder.ts#LadderDeps.apiFetch": "recorded at R1b: a ladder rung a caller may leave out; R2c states which rungs a ladder always has",
+    "src/core/fetch/ladder.ts#LadderDeps.directFetch": "recorded at R1b: a ladder rung a caller may leave out; R2c states which rungs a ladder always has",
+    "src/core/fetch/ladder.ts#LadderDeps.headlessFetch": "recorded at R1b: a ladder rung a caller may leave out; R2c states which rungs a ladder always has",
+    "src/core/fetch/ladder.ts#LadderDeps.seekMore": "recorded at R1b: a ladder rung a caller may leave out; R2c states which rungs a ladder always has",
+    "src/core/propagation/drain.ts#DrainDeps.reopenQuestion": "recorded at R1b: the learning downstream of the drain; R3b makes it required or states the null case",
+    "src/features/auth/ui/auth-events.ts#AuthEventDeps.requiresAuth": "recorded at R1b: a UI seam with a default; R4b",
+    "src/features/auth/ui/identity-loader.ts#IdentityLoaderDeps.onRetrying": "recorded at R1b: a UI notification hook with a default; R4b",
+    "src/features/coverage/server/matrix-data.ts#CoverageDeps.labelOf": "recorded at R1b: a labelling seam with a default; R4b",
+    "src/features/flywheel/theme-brief-seam.ts#SeamDeps.writeRow": "recorded at R1b: the seam's writer (F:3); R2b makes it required",
+    "src/features/mint/deps.ts#MintRunDeps.flushCache": "recorded at R1b: the cache flush downstream of a mint; R3b makes it required or states the null case",
+    "src/features/sources/snapshot-verify.ts#VerifyItemDeps.probe": "recorded at R1b: a probe seam with a default; R2c"
   }
 }

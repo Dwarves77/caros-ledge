@@ -1,145 +1,59 @@
-// Applies supabase/schema.sql, then every supabase/migrations/NNNN_*.sql in name order (files named *_data_* are cutover-window data
-// migrations: never committed here; each is run once after the schema files, after the fixture its `-- rollback-test:` header names,
-// inside a transaction that rolls back, so its SQL is proven to execute and the catalog is unchanged), to an empty Postgres (DATABASE_URL) with the Supabase stubs it needs. Every error is printed
-// with its line and any one stops the run. Then: the property checks against the live catalog, and the catalog diff: one
-// snapshot per step, each migration's changed object classes equal to the classes its `-- catalog:` header declares, the final
-// catalog equal to the last step's (the checks' planted violations leave nothing behind), and src/core/db/schema-keys.json equal
-// to the live primary keys, and the generator pins (scripts/ci/checks/generator-pins.mjs). Exit 1 on any error or unexplained difference.
+// The schema job. Against an empty Postgres (DATABASE_URL) it
+//   1. runs the static migration checks (scripts/ci/migration-checks.mjs);
+//   2. builds the Supabase project the migrations are written for from the production shape and applies supabase/schema.sql (scripts/ci/schema/base.mjs);
+//   3. applies every supabase/migrations/NNNN_*.sql in name order (scripts/ci/schema/chain.mjs): each prints its own self-check OK, changes exactly the catalog classes its header declares, and its down file returns the catalog to
+//      where it was; then each `_data_` file once, after its fixture, in a transaction that rolls back (scripts/ci/schema/data.mjs);
+//   4. runs the property checks, the generator pins, and compares the finished catalog with the last step's, src/core/db/schema-keys.json with the live primary keys, tests/_support/schema.json with the live columns, and
+//      the database's shape (roles, settings, ACLs) with the production shape.
+// Exit 1 on any error or unexplained difference.
+//   node scripts/ci/schema-apply.mjs [--build-only] [--selfcheck-mutants <transform module>]
+// --build-only stops after the chain and leaves the database for the property mutants (scripts/ci/mutants/schema-group.mjs). --selfcheck-mutants attacks every migration's self-check with the transform's mutation
+// of the file (run before the real file, in a transaction that rolls back) and prints `MUTANT selfcheck:<id> red|green|error <line>` for each; it applies the real chain after, so the next file sees the state it expects.
 import { spawnSync } from "node:child_process";
-import { readdirSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
+import { parseArgs } from "node:util";
 
 import { renderJsonData } from "../gen/json-data.mjs";
 import { readSchema } from "../gen/test-schema.mjs";
 
 import { migrationProblems } from "./migration-checks.mjs";
-import { bootstrapProductionRole, PRODUCTION_ROLE_GRANTS } from "./prod-role.mjs";
-import { psql as runSql } from "./psql.mjs";
+import { applyBase, openDatabase, shapeProblems } from "./schema/base.mjs";
+import { diff, runChain, snapshot } from "./schema/chain.mjs";
+import { runDataFiles } from "./schema/data.mjs";
+import { selfCheckMutantHooks } from "./schema/selfcheck-mutants.mjs";
 
-// DATABASE_URL names the cluster's bootstrap superuser (`postgres`). The bootstrap below (roles, auth/vault/net stubs, the extensions schema)
-// stays superuser and runs on `suUrl`; everything from schema.sql onward runs on `url`, a role shaped like production's `postgres`
-// (scripts/ci/prod-role.mjs): LOGIN, not superuser, not a member of supabase_admin. A statement that needs more than production's role fails here, as it would there.
-
+const { values } = parseArgs({ options: { "build-only": { type: "boolean", default: false }, "selfcheck-mutants": { type: "string" } }, strict: true });
 if (!process.env.DATABASE_URL) {
   console.error("DATABASE_URL is required");
   process.exit(1);
 }
-const { appUrl: url, suUrl, db, shape } = await bootstrapProductionRole(process.env.DATABASE_URL);
-if (shape.rolsuper || shape.supabase_admin_member || !shape.rolcanlogin || !shape.rolbypassrls) {
-  console.error(`schema job role is not production-shaped: ${JSON.stringify(shape)}`);
+const fail = (problems) => {
+  for (const p of problems) console.error(p);
   process.exit(1);
-}
-console.log(`schema job role: postgres ${JSON.stringify(shape)}`);
-process.env.DATABASE_URL = url; // the property checks, generator pins and test-schema reader that follow connect as the same production-shaped role
+};
 
-// Static checks, before any database work (scripts/ci/migration-checks.mjs).
+// Static checks, before any database work.
 const staticProblems = migrationProblems();
-for (const p of staticProblems) console.error(p);
-if (staticProblems.length) process.exit(1);
+if (staticProblems.length) fail(staticProblems);
 
-// Production's own extension and schema list (scripts/ci/data/production-shape.json, read from its catalog). Every extension the Postgres image provides is
-// created in production's schema; the Supabase-only ones (pg_cron, pg_net, pgjwt, pgsodium, supabase_vault; pg_graphql and supautils are not extensions here)
-// have no image build and stand as empty schemas, named in a comment. Extensions in `public` are created after the schema is recreated, before schema.sql,
-// so the CI database holds the same extension-owned functions in public that production does (P2-15g: 0004's self-check listed ltree_* and pg_trgm's
-// functions as unpinned on production; the CI database never had them).
-const SHAPE = JSON.parse(readFileSync("scripts/ci/data/production-shape.json", "utf8"));
-const NL = String.fromCharCode(10);
-const ident = (x) => `"${x.replace(/"/g, '""')}"`;
-const imageExt = (inPublic) => SHAPE.extensions.filter((e) => e.source === "image" && (e.schema === "public") === inPublic);
-const supabaseOnly = SHAPE.extensions.filter((e) => e.source === "supabase");
-const shapeSchemas = SHAPE.schemas.filter((s) => s !== "public");
-const SHAPE_SQL = `
-${shapeSchemas.map((s) => `CREATE SCHEMA IF NOT EXISTS ${ident(s)};`).join(NL)}
-${imageExt(false).map((e) => `CREATE EXTENSION IF NOT EXISTS ${ident(e.name)} WITH SCHEMA ${ident(e.schema)};`).join(NL)}
-${supabaseOnly.map((e) => `-- ${e.name} ${e.version} (${e.schema}): Supabase-only, not in the Postgres image; its schema is the stub.`).join(NL)}
-`;
-const PUBLIC_SQL = `
-CREATE SCHEMA public AUTHORIZATION postgres;
-${imageExt(true).map((e) => `CREATE EXTENSION IF NOT EXISTS ${ident(e.name)} WITH SCHEMA public;`).join(NL)}
-`;
+const ctx = await openDatabase(process.env.DATABASE_URL);
+process.env.DATABASE_URL = ctx.url; // the property checks, generator pins and test-schema reader that follow connect as the same production-shaped role
 
-const STUBS = `
-DO $$ DECLARE r text; BEGIN
-  FOREACH r IN ARRAY ARRAY['anon','authenticated','service_role','supabase_admin','reconciler'] LOOP
-    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = r) THEN EXECUTE format('CREATE ROLE %I NOLOGIN', r); END IF;
-  END LOOP;
-END $$;
-${SHAPE_SQL}
-CREATE SCHEMA IF NOT EXISTS auth;
-CREATE TABLE IF NOT EXISTS auth.users (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), email text);
-CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE
-  AS $f$ SELECT nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $f$;
-CREATE OR REPLACE FUNCTION auth.role() RETURNS text LANGUAGE sql STABLE
-  AS $f$ SELECT nullif(current_setting('request.jwt.claim.role', true), '')::text $f$;
-CREATE SCHEMA IF NOT EXISTS vault;
-CREATE OR REPLACE VIEW vault.decrypted_secrets AS SELECT NULL::uuid AS id, NULL::text AS name, NULL::text AS decrypted_secret WHERE false;
-CREATE SCHEMA IF NOT EXISTS net;
-CREATE TABLE IF NOT EXISTS net._http_response (id bigint, status_code int, content text);
-CREATE OR REPLACE FUNCTION net.http_post(url text, body jsonb DEFAULT '{}', params jsonb DEFAULT '{}', headers jsonb DEFAULT '{}', timeout_milliseconds int DEFAULT 5000)
-  RETURNS bigint LANGUAGE sql AS $f$ SELECT 0::bigint $f$;
--- Supabase's own storage schema carries postgres-owned default ACLs granting anon and authenticated (tables arwdDxt, sequences rwU, functions X), as on
--- production. They are the platform's, not ours: a self-check that reads default ACLs without a schema scope fails on them (P2-15f, found on production).
-CREATE SCHEMA IF NOT EXISTS storage;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA storage GRANT ALL ON TABLES TO anon, authenticated;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA storage GRANT ALL ON SEQUENCES TO anon, authenticated;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA storage GRANT ALL ON FUNCTIONS TO anon, authenticated;
-DROP SCHEMA IF EXISTS public CASCADE;
-${PUBLIC_SQL}
-`;
-
-function psql(opts, asSuperuser = false) {
-  const r = runSql(asSuperuser ? suUrl : url, opts);
-  return { code: r.status, err: r.stderr, out: r.stdout };
-}
-
-function errorsOf(text) {
-  return text.split("\n").filter((l) => /ERROR|FATAL/.test(l));
-}
-
-function apply(stopOnError) {
-  const stub = psql({ sql: STUBS }, true);
-  if (stub.code !== 0) return { code: stub.code, errors: errorsOf(stub.err) };
-  const grants = psql({ sql: PRODUCTION_ROLE_GRANTS(db) }, true);
-  if (grants.code !== 0) return { code: grants.code, errors: errorsOf(grants.err) };
-  // schema.sql opens with CREATE SCHEMA public; the stub already made it (so the extensions can live there, as on production). The dump stays unedited on disk.
-  const dump = readFileSync("supabase/schema.sql", "utf8").split(String.fromCharCode(13, 10)).join(NL);
-  const OPEN = NL + "CREATE SCHEMA public;" + NL;
-  if (!dump.includes(OPEN)) { console.error("schema.sql no longer opens with CREATE SCHEMA public;"); process.exit(1); }
-  const r = psql({ sql: dump.replace(OPEN, NL + "CREATE SCHEMA IF NOT EXISTS public;" + NL), stopOnError });
-  const errors = errorsOf(r.err);
-  return { code: r.code !== 0 || errors.length ? 1 : 0, errors };
-}
-
-let result = apply(true);
+let result = applyBase(ctx, true);
 if (result.code !== 0) {
   // ON_ERROR_STOP shows only the first failure; a second pass without it lists every one.
-  result = apply(false);
+  result = applyBase(ctx, false);
   console.error(`schema.sql: ${result.errors.length} error(s)`);
-  for (const e of result.errors) console.error(e);
-  process.exit(1);
+  fail(result.errors);
 }
 console.log("schema.sql applied with zero errors");
 
-const snapshot = () => {
-  const r = psql({ file: "scripts/ci/catalog-snapshot.sql", tuples: true, sep: "|" });
-  if (r.code !== 0) {
-    console.error(r.err);
-    process.exit(1);
-  }
-  return r.out.split("\n").filter(Boolean);
-};
-const diff = (a, b) => {
-  const [sa, sb] = [new Set(a), new Set(b)];
-  return [...b.filter((l) => !sa.has(l)), ...a.filter((l) => !sb.has(l))];
-};
-
-const step0 = snapshot();
-let before = step0;
-let unexplained = 0;
+const step0 = snapshot(ctx);
 // IMP-058: the window's duplicate-email query is proven right before 0066 (the unique index makes a duplicate impossible after it): it returns nothing on a clean table and exactly the planted address when two accounts differ only in case.
 function proveDuplicateEmailQuery() {
   const query = readFileSync("scripts/cutover/duplicate-emails.sql", "utf8");
-  const clean = psql({ sql: query, tuples: true });
-  const planted = psql({ sql: `BEGIN;
+  const clean = ctx.psql({ sql: query, tuples: true });
+  const planted = ctx.psql({ sql: `BEGIN;
 SET LOCAL session_replication_role = replica;
 INSERT INTO public.profiles (id, email) VALUES (gen_random_uuid(), 'Dup.Planted@invalid.example'), (gen_random_uuid(), 'dup.planted@invalid.example');
 ${query}
@@ -148,63 +62,27 @@ ROLLBACK;`, tuples: true });
   console.log(`duplicate-emails.sql: ${ok ? "returns nothing on a clean table and the planted pair when two accounts differ only in case" : `FAILED (clean: ${JSON.stringify(clean.out)}, planted: ${JSON.stringify(planted.out)} ${planted.err.trim()})`}`);
   if (!ok) process.exit(1);
 }
-for (const file of readdirSync("supabase/migrations").filter((f) => /^\d{4}_.+\.sql$/.test(f) && !f.includes("_data_")).sort()) {
-  const path = `supabase/migrations/${file}`;
-  if (file.startsWith("0066_")) proveDuplicateEmailQuery();
-  const m = psql({ file: path });
-  for (const l of m.err.split("\n")) if (/NOTICE/.test(l)) console.log(l.replace(/^.*NOTICE:\s*/, "  self-check: "));
-  if (m.code !== 0 || errorsOf(m.err).length) {
-    console.error(`${file}: failed\n${m.err}`);
-    process.exit(1);
-  }
-  const after = snapshot();
-  const changed = new Set(diff(before, after).map((l) => l.split("|")[0]));
-  const declared = new Set((readFileSync(path, "utf8").match(/^-- catalog: (.*)$/m)?.[1] ?? "").split(",").map((x) => x.trim()).filter((x) => x && x !== "none"));
-  const off = [...changed].filter((c) => !declared.has(c)).concat([...declared].filter((c) => !changed.has(c)).map((c) => `declared but unchanged: ${c}`));
-  console.log(`${file}: changed [${[...changed].sort()}]${off.length ? ` UNEXPLAINED [${off}]` : ""}`);
-  unexplained += off.length;
-  if (off.length) {
-    // The differing snapshot lines of an unexplained step (class|object|detail), removed then added, so a red run names the objects and not only the classes.
-    const [sb, sa] = [new Set(before), new Set(after)];
-    const lines = [...before.filter((l) => !sa.has(l)).map((l) => `  - ${l}`), ...after.filter((l) => !sb.has(l)).map((l) => `  + ${l}`)];
-    for (const l of lines.slice(0, 40)) console.log(l.slice(0, 300));
-    if (lines.length > 40) console.log(`  ... ${lines.length - 40} more differing line(s)`);
-  }
-  before = after;
-}
-console.log("migrations applied with zero errors");
 
-const rollbackTest = (name, text) => {
-  const fixture = text.match(/^-- rollback-test: (\S+)$/m)?.[1];
-  if (!fixture) {
-    console.error(`${name}: a _data_ migration needs a "-- rollback-test: <fixture>" header`);
-    process.exit(1);
-  }
-  const body = text.replace(/^(BEGIN|COMMIT);[ \t]*$/gm, ""); // the job owns the transaction: its ROLLBACK must undo the file's own COMMIT
-  const r = psql({ sql: ["BEGIN;", readFileSync(fixture, "utf8"), body, "ROLLBACK;", ""].join("\n") });
-  for (const l of r.err.split("\n")) if (/NOTICE/.test(l)) console.log(l.replace(/^.*NOTICE:\s*/, "  self-check: ").slice(0, 220));
-  if (r.code !== 0 || errorsOf(r.err).length) {
-    console.error(`${name}: failed in its rollback-test\n${r.err}`);
-    process.exit(1);
-  }
-  const drifted = diff(before, snapshot());
-  console.log(`${name}: ran after ${fixture} and rolled back${drifted.length ? ` UNEXPLAINED catalog change [${drifted.slice(0, 3)}]` : ""}`);
-  unexplained += drifted.length;
-};
-for (const file of readdirSync("supabase/migrations").filter((f) => /^\d{4}_data_.+\.sql$/.test(f)).sort()) rollbackTest(file, readFileSync(`supabase/migrations/${file}`, "utf8"));
-// The 0016 source backfill is generated at the cutover window from a live registry export, so no file is committed: the generator's own output for the sample export is proven every run.
-const gen = spawnSync("node", ["--import", "./tests/_support/register.mjs", "scripts/gen/source-backfill-sql.mjs", "scripts/ci/fixtures/sources-export-sample.json", "the sample export"], { encoding: "utf8", maxBuffer: 1 << 26 });
-if (gen.status !== 0 || !gen.stdout) {
-  console.error(`source-backfill generator failed\n${gen.stderr}`);
-  process.exit(1);
+const mutantHooks = values["selfcheck-mutants"] ? await selfCheckMutantHooks(ctx, values["selfcheck-mutants"]) : null;
+const chain = runChain(ctx, { hooks: { before: (file, text, state) => { if (file.startsWith("0066_")) proveDuplicateEmailQuery(); mutantHooks?.before(file, text, state); } } });
+if (chain.problems.length) fail(chain.problems);
+console.log("migrations applied with zero errors");
+if (values["build-only"]) process.exit(0);
+
+const dataProblems = runDataFiles(ctx, { before: chain.last, ...(mutantHooks ? { hooks: mutantHooks } : {}) });
+if (mutantHooks) {
+  mutantHooks.report();
+  process.exit(0);
 }
-rollbackTest("generated source backfill (sample export)", gen.stdout);
+if (dataProblems.length) fail(dataProblems);
 
 const props = spawnSync("node", ["scripts/ci/properties.mjs"], { stdio: "inherit", env: process.env });
 // IMP-037: the four SQL generators of src/core/contracts must equal what the schema applied (run through the register hook that resolves "@/").
 const pins = spawnSync("node", ["--import", "./tests/_support/register.mjs", "scripts/ci/checks/generator-pins.mjs"], { stdio: "inherit", env: process.env });
-const last = snapshot();
-const drift = diff(before, last);
+// G11: the in-memory database every test runs over answers filters and the 1000-row cut as this database does.
+const memdb = spawnSync("node", ["--import", "./tests/_support/register.mjs", "scripts/ci/checks/memdb-conformance.mjs"], { stdio: "inherit", env: process.env });
+const last = snapshot(ctx);
+const drift = diff(chain.last, last);
 for (const l of drift.slice(0, 20)) console.error(`unexplained after the property checks: ${l}`);
 const live = {};
 for (const l of last) {
@@ -216,7 +94,9 @@ const keys = JSON.parse(readFileSync("src/core/db/schema-keys.json", "utf8"));
 const keyDiff = [...new Set([...Object.keys(live), ...Object.keys(keys)])].filter((t) => JSON.stringify(live[t]) !== JSON.stringify(keys[t]));
 for (const t of keyDiff) console.error(`schema-keys.json differs from the live primary key of ${t}: ${JSON.stringify(keys[t])} vs ${JSON.stringify(live[t])}`);
 const committedSchema = readFileSync("tests/_support/schema.json", "utf8").replace(/\r\n/g, "\n");
-const schemaDiff = renderJsonData(readSchema(url)) === committedSchema ? 0 : 1;
+const schemaDiff = renderJsonData(readSchema(ctx.url)) === committedSchema ? 0 : 1;
 if (schemaDiff) console.error("tests/_support/schema.json differs from the live catalog: run `DATABASE_URL=... node scripts/gen/test-schema.mjs` and commit the result");
-console.log(`catalog diff: ${diff(step0, last).length} object changes across the migrations, ${unexplained} unexplained class(es), ${drift.length} drifted after the checks, ${keyDiff.length} schema-keys difference(s), ${schemaDiff} test-schema difference(s)`);
-process.exit((props.status ?? 1) || (pins.status ?? 1) || unexplained || drift.length || keyDiff.length || schemaDiff ? 1 : 0);
+const shape = shapeProblems(ctx);
+for (const p of shape) console.error(`production shape: ${p}`);
+console.log(`catalog diff: ${diff(step0, last).length} object changes across the migrations, ${chain.unexplained} unexplained class(es), ${drift.length} drifted after the checks, ${keyDiff.length} schema-keys difference(s), ${schemaDiff} test-schema difference(s), ${shape.length} production-shape difference(s)`);
+process.exit((props.status ?? 1) || (pins.status ?? 1) || (memdb.status ?? 1) || chain.unexplained || drift.length || keyDiff.length || schemaDiff || shape.length ? 1 : 0);

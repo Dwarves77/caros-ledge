@@ -25,7 +25,6 @@ export const POST = adminRoute("/api/admin/run-intake", async (admin, request) =
     sb: db,
     env: process.env,
     now: () => new Date(),
-    setContext: (c) => void (d.context.current = c),
     fns: { "ledger-consume": async (call) => runIntakeCycle(d.intake, { candidates: b.candidates as IntakeCandidate[], mode: call.dry ? "plan" : "apply" }) },
   };
   const run = await runFamily("ledger-consume", { mode: b.mode === "apply" ? "apply" : "dry", trigger: "dispatch", input: { control: "run-intake-now", candidates: b.candidates.length } }, h);

@@ -13,10 +13,10 @@ export const TITLE = "Regulation (EU) 2023/9999 establishing greenhouse gas emis
 export const CELEX_URL = OFFICIAL_URL;
 export { OFFICIAL_TEXT };
 
-/** The shared memory database; with `capped`, the server's max_rows cut applies to an UNRANGED select (a ranged read is not cut), which is what made the old dedup see at most 1,000 rows. */
+/** The shared memory database, whose server cut (max_rows 1000) applies to every select, a ranged one included; `capped` false lifts it for a test that holds more rows than that and is not about the cut. */
 export class WorldDb extends MemDb {
   constructor(capped = false) {
-    super(capped ? { cap: 1000 } : {});
+    super(capped ? { cap: 1000 } : { cap: null });
   }
 }
 
