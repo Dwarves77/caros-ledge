@@ -11,9 +11,9 @@ import { readFileSync } from 'node:fs';
 import { chromium } from 'playwright';
 
 import { compareRecord } from '../parity/compare.mjs';
-import { shellControl } from './shell-filter.mjs';
 import { domSummary } from '../parity/capture.mjs';
 
+import { shellControl } from './shell-filter.mjs';
 import { measure } from './measure.mjs';
 
 const VIEWPORTS = [
