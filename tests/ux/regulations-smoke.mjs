@@ -6,7 +6,7 @@
 // Usage: node tests/ux/regulations-smoke.mjs --base <origin>     (the server must run with UI_FIXTURES=1)
 import { chromium } from 'playwright';
 
-import { measure } from './measure.mjs';
+import { hitArea, measure } from './measure.mjs';
 
 const VIEWPORTS = [
   [375, 812],
@@ -128,6 +128,23 @@ try {
         must(m.lines.every((n) => n <= 2), `a connection title runs to more than two lines: ${JSON.stringify(m.lines)}`);
         must(m.inset >= 16, `the connections strip is full-bleed: first link ${Math.round(m.inset)} px from the card edge`);
         must(m.band <= 48, `an empty band of ${Math.round(m.band)} px separates the connections strip from the block above`);
+      } finally {
+        await s.ctx.close();
+      }
+    });
+  }
+
+  // Design ruling 2026-10-18 item 21: the list surface's sort link ("Show as one list") keeps its 24 px look and line, with a 44 px hit area, at the phone and the desk.
+  for (const viewport of [VIEWPORTS[0], VIEWPORTS[3]]) {
+    await check(`ledger at ${viewport[0]}: the sort link has a 44 px hit area and does not grow its row`, async () => {
+      const s = await open(browser, 'ledger', viewport);
+      try {
+        const found = await s.page.evaluate(hitArea, '.cl-sort-link');
+        if (!found.length) throw new Error('no sort link on the ledger fixture');
+        for (const f of found) {
+          if (f.hitH < 43.5) throw new Error(`sort link "${f.label}" hit area ${f.hitW}x${f.hitH}, expected at least 44 high`);
+          if (f.layoutH > 28) throw new Error(`sort link "${f.label}" box grew to ${f.layoutH} px`);
+        }
       } finally {
         await s.ctx.close();
       }

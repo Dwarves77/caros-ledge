@@ -78,3 +78,34 @@ export function measure(opts = { rows: true }) {
   return out;
 }
 
+
+// The real hit area of every element matching `selector` (P2-15m, design rulings 2026-10-18 items 21 and 40): found by probing elementFromPoint outward from the element's centre, so a padding or
+// pseudo-element hit box counts and a bare 24 px box does not. Runs in the browser (page.evaluate(hitArea, selector)). Returns one record per visible match:
+// { label, layoutH, hitW, hitH } where layoutH is the box's own height (a hit box must not grow the line or row).
+export function hitArea(selector) {
+  const out = [];
+  for (const el of document.querySelectorAll(selector)) {
+    const r0 = el.getBoundingClientRect();
+    if (r0.width < 2 || r0.height < 2) continue;
+    el.scrollIntoView({ block: 'center', inline: 'nearest' });
+    const r = el.getBoundingClientRect();
+    const cx = Math.min(Math.max(r.left + r.width / 2, 1), document.documentElement.clientWidth - 1);
+    const cy = r.top + r.height / 2;
+    const hits = (x, y) => {
+      const t = document.elementFromPoint(x, y);
+      return !!t && (t === el || el.contains(t));
+    };
+    const reach = (dx, dy) => {
+      let n = 0;
+      while (n < 80 && hits(cx + dx * (n + 1), cy + dy * (n + 1))) n++;
+      return n;
+    };
+    out.push({
+      label: `${(el.textContent || '').trim().slice(0, 30)}`,
+      layoutH: Math.round(r.height * 10) / 10,
+      hitH: reach(0, -1) + reach(0, 1) + 1,
+      hitW: Math.round(r.width),
+    });
+  }
+  return out;
+}

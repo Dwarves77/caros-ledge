@@ -36,6 +36,9 @@ async function matrixContracts(page, w, where) {
   const height = async () => Math.round((await card.boundingBox()).height);
   heights.push(['arrival', await height()]);
   if (!(await card.locator('[data-open-on-mount]').count())) fail(where, 'the arrival state is not declared');
+  // Design ruling 2026-10-18 item 35 (22 merged): every matrix cell and dimension row is a 44 px target (artboard 08 draws 40). Market draws no matrix of its own; the one matrix is this one.
+  const cellHeights = await card.locator('td[role="gridcell"], th[role="rowheader"]').evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().height * 10) / 10));
+  if (!cellHeights.length || Math.min(...cellHeights) < 43.5) fail(where, `a matrix cell is under 44 px: smallest ${Math.min(...cellHeights)} of ${cellHeights.length}`);
   const first = card.locator('td[aria-selected="true"]');
   if ((await first.count()) !== 1) fail(where, 'the first sourced cell is not selected on arrival');
   const before = await first.getAttribute('aria-label');

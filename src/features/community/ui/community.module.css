@@ -27,7 +27,9 @@
 .chipPublic { color: var(--awareness); border-color: var(--awareness-border); }
 .chipVerified { color: var(--monitor); border-color: var(--monitor-border); background: var(--monitor-tint); text-transform: uppercase; letter-spacing: 0.06em; }
 .chipSignedOff { color: var(--action); border-color: var(--action-border); background: var(--action-tint); text-transform: uppercase; letter-spacing: 0.06em; }
-.inlineLink { display: inline-flex; align-items: center; min-height: 24px; color: var(--brand); text-decoration: underline; }
+.inlineLink { position: relative; display: inline-flex; align-items: center; min-height: 24px; color: var(--brand); text-decoration: underline; }
+/* Law 2 (design ruling 2026-10-18 item 40): the text and the line stay; a 44 px hit box centred on the link adds no height. */
+.inlineLink::after { content: ""; position: absolute; left: -2px; right: -2px; top: 50%; height: 44px; transform: translateY(-50%); }
 .railLink { display: inline-flex; align-items: center; min-height: var(--target); color: var(--ink); font-size: var(--fs-12); font-weight: 600; text-decoration: none; overflow-wrap: anywhere; }
 .railLink:hover { text-decoration: underline; }
 .promptRow :global(.cl-btn) { height: auto; padding: 6px 14px; border-color: var(--line-pill); border-radius: var(--radius-pill); background: var(--tag); color: var(--ink-2); font-size: var(--fs-115); font-weight: 600; white-space: normal; text-align: left; }

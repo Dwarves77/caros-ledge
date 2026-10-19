@@ -12,7 +12,7 @@ import { chromium } from 'playwright';
 import { compareRecord } from '../parity/compare.mjs';
 import { domSummary } from '../parity/capture.mjs';
 
-import { measure } from './measure.mjs';
+import { hitArea, measure } from './measure.mjs';
 
 const VIEWPORTS = [
   [375, 812],
@@ -239,6 +239,27 @@ try {
     } finally {
       await s?.ctx.close();
     }
+  }
+  // Design ruling 2026-10-18 item 40: the two prose links ("workspace invitation", "not a verifier") keep their text and line, with a 44 px hit area, at 375 and 1280.
+  for (const viewport of [[375, 812], [1280, 900]]) {
+    const seen = new Set();
+    for (const [screen, query] of [['rooms', ''], ['rooms', '&state=threads'], ['group', '']]) {
+      const where = `${viewport.join('x')} ${screen}${query} prose links`;
+      let s;
+      try {
+        s = await open(browser, screen, viewport, { query });
+        for (const f of await s.page.evaluate(hitArea, '[class*="inlineLink"]')) {
+          seen.add(f.label);
+          if (f.hitH < 43.5) fail(where, `"${f.label}" hit area ${f.hitW}x${f.hitH}, expected at least 44 high`);
+          if (f.layoutH > 28) fail(where, `"${f.label}" box grew to ${f.layoutH} px`);
+        }
+      } catch (e) {
+        fail(where, e.message.split('\n')[0]);
+      } finally {
+        await s?.ctx.close();
+      }
+    }
+    for (const want of ['workspace invitation', 'not a verifier']) if (!seen.has(want)) fail(`${viewport.join('x')} prose links`, `the "${want}" link was not found on any screen`);
   }
 } finally {
   await browser.close();
