@@ -298,16 +298,9 @@
   "src/core/entities/mentions.ts": [
    "LINK_ALLOWED_TABLES",
    "NAMED_ENTITIES",
-   "RE_CELEX",
-   "RE_REGNUM",
    "RE_STD_SHAPED",
    "adoptedTermRegex",
-   "canonicalSubjectUrl",
-   "classifyBucket",
-   "entityDictionary",
-   "matchExistingSubject",
-   "planLinks",
-   "resolveMention"
+   "entityDictionary"
   ],
   "src/core/entities/plan.ts": [
    "planInstrument",
@@ -533,8 +526,6 @@
    "GROUND_CONFIG"
   ],
   "src/core/grounding/gate-a-scan.ts": [
-   "containsToken",
-   "extractFactualTokens",
    "md5",
    "norm"
   ],
@@ -542,7 +533,6 @@
    "GATE_A_VERSION",
    "REUSE_MIN",
    "derivedCoveredTokens",
-   "extractIdentifiers",
    "identityCongruenceHolds",
    "md5",
    "perFactGates"

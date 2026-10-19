@@ -225,8 +225,6 @@
     "src/core/entities/mentions.ts": [
       "LINK_ALLOWED_TABLES",
       "NAMED_ENTITIES",
-      "RE_CELEX",
-      "RE_REGNUM",
       "RE_STD_SHAPED",
       "adoptedTermRegex",
       "canonicalSubjectUrl",

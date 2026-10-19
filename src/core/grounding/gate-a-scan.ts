@@ -7,20 +7,24 @@
 import { createHash } from "node:crypto";
 
 import { MONTHS_FULL_RE } from "@/core/brief/vocab";
+import { containsNumeral, figuresEqual, findFigures, isFigure, isRefusal, isTrajectoryUnit, parseFigure, resolveLocale, stateFigure, type Figure, type LocaleVerdict } from "@/core/parse";
 
-export const GATE_A_VERSION = "2026-09-04.1";
+export const GATE_A_VERSION = "2026-10-20.1";
 export const md5 = (s: unknown): string => createHash("md5").update(String(s ?? ""), "utf8").digest("hex");
 
 export const norm = (s: unknown): string => String(s || "").replace(/\s+/g, " ").toLowerCase();
-const collapsePct = (s: string) => s.replace(/(\d)[\s  ]+%/g, "$1%");
-const PCT_TOKEN = /^\d[\d.,]*%$/;
-const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-/** The one coverage decision: does `haystack` contain `token` as a normalised literal substring? A numeral+% token matches only at a numeral boundary. */
-export function containsToken(haystack: unknown, token: unknown): boolean {
-  const t = collapsePct(norm(token));
-  if (t.length === 0) return false;
-  const h = collapsePct(norm(haystack));
-  return PCT_TOKEN.test(t) ? new RegExp(`(?<![\\d.,])${escapeRe(t)}`).test(h) : h.includes(t);
+export interface ScanOptions { locale?: string | null }
+/**
+ * The one coverage decision: does `haystack` state `token`? A figure token (a number with its unit) is covered by an EQUAL figure (value, unit, scale: the one comparator in
+ * @/core/parse), read whole, so EUR 5 is not backed by EUR 50; any other token (a date, a year) is covered at a numeral boundary on both sides. Never a substring.
+ */
+export function containsToken(haystack: unknown, token: unknown, opts: ScanOptions = {}): boolean {
+  const t = String(token ?? "").trim();
+  const h = String(haystack ?? "");
+  if (!t) return false;
+  const p = parseFigure(t, opts);
+  if (isFigure(p) && p.literal === t) return stateFigure(h, p, opts);
+  return isRefusal(p) && p.unreadable ? false : containsNumeral(h, t);
 }
 
 export interface SkipCounts { metadata_stamp: number; boilerplate: number; heading_or_list_ordinal: number; instrument_citation: number; citation_url: number; nested_token: number }
@@ -74,9 +78,12 @@ function dedupNested(matches: Match[], counts: SkipCounts): string[] {
   return [...out];
 }
 
-function figureTokens(text: string, counts: SkipCounts): string[] {
-  const out = new Set<string>();
-  const res = [/(?:€|£|\$|EUR|GBP|USD)\s?\d[\d.,]*/g, /\b\d[\d.,]*\s?(?:%|per ?cent|percent|tCO2e?|tCO₂e?|gCO2|gCO₂|g\/km|\btonnes?\b|\bgt\b|\bkW\b|\bMW\b|\bGW\b|\bkWh\b|\bMWh\b|\bkm\b|\blitres?\b|\bkg\b|\bppm\b|\bbps\b)/gi];
+/** A brief figure: its token (the literal as written) and the typed figure, or the refusal that says why it cannot be typed. */
+export interface FigureToken { token: string; figure: Figure | null; reason?: string }
+
+/** The figures of a brief, read by the typed parser under ONE locale verdict for the whole document (never a verdict per line). A figure the parser refuses is kept, with its reason: unreadable is not absent. */
+function figureTokens(text: string, counts: SkipCounts, verdict: LocaleVerdict): FigureToken[] {
+  const out = new Map<string, FigureToken>();
   for (const raw of text.split(/\n/)) {
     const line = raw.trim();
     if (!line) continue;
@@ -84,26 +91,21 @@ function figureTokens(text: string, counts: SkipCounts): string[] {
       counts.metadata_stamp += 1;
       continue;
     }
-    const { rest, offset, stripped } = stripOrdinal(line);
+    const { rest, stripped } = stripOrdinal(line);
     if (stripped) counts.heading_or_list_ordinal += 1;
     const bSpans = boilerplateSpans(rest);
     const uSpans = urlSpans(rest);
-    const matches: Match[] = [];
-    for (const re of res) {
-      for (const m of rest.matchAll(re)) {
-        const start = m.index ?? 0;
-        const end = start + m[0].length;
-        if (inside(start, end, uSpans)) counts.citation_url += 1;
-        else if (inside(start, end, bSpans)) counts.boilerplate += 1;
-        else matches.push({ token: m[0].trim(), start: start + offset, end: end + offset });
-      }
+    for (const h of findFigures(rest, { verdict })) {
+      if (inside(h.start, h.end, uSpans)) counts.citation_url += 1;
+      else if (inside(h.start, h.end, bSpans)) counts.boilerplate += 1;
+      else if (isFigure(h.result)) out.set(h.result.literal, { token: h.result.literal, figure: h.result });
+      else out.set(h.result.literal, { token: h.result.literal, figure: null, reason: h.result.reason });
     }
-    for (const t of dedupNested(matches, counts)) out.add(t);
   }
-  return [...out];
+  return [...out.values()];
 }
 
-function deadlineTokens(text: string, counts: SkipCounts): string[] {
+function deadlineTokens(text: string, counts: SkipCounts, verdict: LocaleVerdict): string[] {
   const out = new Set<string>();
   const dateRes = [new RegExp(`\\b\\d{1,2}\\s+(?:${MONTHS_FULL_RE})\\s+\\d{4}\\b`, "gi"), new RegExp(`\\b(?:${MONTHS_FULL_RE})\\s+\\d{4}\\b`, "gi"), /\b\d{4}-\d{2}-\d{2}\b/g];
   for (const raw of text.split(/\n/)) {
@@ -127,7 +129,7 @@ function deadlineTokens(text: string, counts: SkipCounts): string[] {
         else matches.push({ token: m[0].trim(), start: start + offset, end: start + m[0].length + offset });
       }
     }
-    const trajectoryRow = rest.includes("|") && /\d[\d.,]*\s?%|(?:€|£|\$)\s?\d/.test(rest);
+    const trajectoryRow = rest.includes("|") && findFigures(rest, { verdict }).some((h) => isFigure(h.result) && isTrajectoryUnit(h.result.parts.n));
     for (const ym of rest.matchAll(/\b(?:19[89]\d|20[0-4]\d)\b/g)) {
       const start = ym.index ?? 0;
       const end = start + ym[0].length;
@@ -141,19 +143,34 @@ function deadlineTokens(text: string, counts: SkipCounts): string[] {
   return [...out];
 }
 
-/** All Gate A tokens in prose: figures and context-aware deadline dates. */
-export const extractFactualTokens = (fullBrief: string | null | undefined, counts: SkipCounts = freshCounts()): { figures: string[]; deadlines: string[] } => {
+/** All Gate A tokens in prose: figures (typed, one locale for the document) and context-aware deadline dates. */
+export const extractFactualTokens = (fullBrief: string | null | undefined, counts: SkipCounts = freshCounts(), opts: ScanOptions = {}): { figures: string[]; deadlines: string[] } => {
   const text = String(fullBrief || "");
-  return { figures: figureTokens(text, counts), deadlines: deadlineTokens(text, counts) };
+  return { figures: figureTokens(text, counts, resolveLocale(text, opts.locale)).map((f) => f.token), deadlines: deadlineTokens(text, counts, resolveLocale(text, opts.locale)) };
 };
 
-export interface GateAScan { scanned_hash: string; gate_a_version: string; orphan_count: number; orphans: { token: string; class: "figure" | "deadline" }[]; counts: SkipCounts }
-/** scanBrief: orphans are factual tokens absent from every FACT claim (literal arm) and from every valid DERIVED claim (`derivedCovered`). */
-export function scanGateA(fullBrief: string | null | undefined, factClaims: { claim_text: string; source_span: string }[], derivedCovered: Set<string> = new Set()): GateAScan {
+export interface GateAScan { scanned_hash: string; gate_a_version: string; orphan_count: number; orphans: { token: string; class: "figure" | "deadline"; reason?: string }[]; counts: SkipCounts }
+export interface FactClaim { claim_text: string; source_span: string; /** the number locale of the capture the span comes from, when it declares one */ locale?: string | null }
+/**
+ * scanBrief: orphans are factual tokens absent from every FACT claim (literal arm) and from every valid DERIVED claim (`derivedCovered`). A figure is covered only by an EQUAL typed
+ * figure inside one claim (its text and its span, read under that claim's own locale), never by digits scattered across a joined corpus; a figure the parser refuses is an orphan with its reason.
+ */
+export function scanGateA(fullBrief: string | null | undefined, factClaims: FactClaim[], derivedCovered: Set<string> = new Set(), opts: ScanOptions = {}): GateAScan {
   const counts = freshCounts();
-  const { figures, deadlines } = extractFactualTokens(fullBrief, counts);
-  const corpus = (factClaims ?? []).map((c) => `${c.claim_text} ${c.source_span}`).join(" ");
-  const backed = (tk: string) => containsToken(corpus, tk) || derivedCovered.has(norm(tk));
-  const orphans = [...figures.filter((t) => !backed(t)).map((token) => ({ token, class: "figure" as const })), ...deadlines.filter((t) => !backed(t)).map((token) => ({ token, class: "deadline" as const }))];
+  const text = String(fullBrief || "");
+  const figures = figureTokens(text, counts, resolveLocale(text, opts.locale));
+  const deadlines = deadlineTokens(text, counts, resolveLocale(text, opts.locale));
+  const claims = (factClaims ?? []).map((c) => {
+    const doc = `${c.claim_text}\n${c.source_span}`;
+    const verdict = resolveLocale(doc, c.locale);
+    const typed = findFigures(doc, { verdict }).flatMap((h) => (isFigure(h.result) ? [h.result] : []));
+    return { doc, typed };
+  });
+  const figureBacked = (f: FigureToken): boolean => (f.figure !== null && claims.some((c) => c.typed.some((t) => figuresEqual(t, f.figure as Figure)))) || derivedCovered.has(norm(f.token));
+  const deadlineBacked = (tk: string): boolean => claims.some((c) => containsNumeral(c.doc, tk)) || derivedCovered.has(norm(tk));
+  const orphans = [
+    ...figures.filter((f) => !figureBacked(f)).map((f) => ({ token: f.token, class: "figure" as const, ...(f.reason ? { reason: f.reason } : {}) })),
+    ...deadlines.filter((t) => !deadlineBacked(t)).map((token) => ({ token, class: "deadline" as const })),
+  ];
   return { scanned_hash: md5(fullBrief), gate_a_version: GATE_A_VERSION, orphan_count: orphans.length, orphans, counts };
 }
