@@ -12,7 +12,5 @@ Counts and data-derived option sets drift (the compare gate treats integer runs 
 2. Download the artifact; replace the files under `tests/parity/baseline` (keep PNGs only for the four signed-out routes, replace every e-mail address with smoke@example.invalid as above).
 3. Update the capture date and the run id in this README, commit, open a PR. Compare then runs against the new baseline in the same PR's parity job.
 
-The job captures with `--site old`: a route that has `oldPath` in routes.json is captured there (the `dashboard` record at "/", where the old dashboard lives; the old site answered 404 at /dashboard), under the same record name. The new site keeps `path`.
-
-The `baseline` job is dispatch-only and has not been run yet; compare treats integer runs in names as data.
+The job passes `--site old` (a route with `oldPath` in routes.json is captured there; routes.json carries none now, so every route is captured at its `path`). Compare treats integer runs in names as data.
 
