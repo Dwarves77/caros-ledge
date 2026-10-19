@@ -10,6 +10,7 @@ import { readFileSync } from 'node:fs';
 import { chromium } from 'playwright';
 
 import { compareRecord } from '../parity/compare.mjs';
+import { shellControl } from './shell-filter.mjs';
 import { domSummary } from '../parity/capture.mjs';
 
 import { hitArea, measure } from './measure.mjs';
@@ -204,7 +205,7 @@ try {
 
   // ── fixture parity: the real /community screen against the committed baseline ─────────────────────────────────
   const config = JSON.parse(readFileSync('tests/parity/approved-changes.json', 'utf8'));
-  const shell = [...config.frameControls, '^combobox:Search or ask', '^button:Ask$'].map((re) => new RegExp(re));
+  const isShell = shellControl(config); // tests/ux/shell-filter.mjs: the shell's controls come from approved-changes.json frameControls
   for (const viewport of [[1280, 900], [375, 812]]) {
     const where = `parity community ${viewport.join('x')}`;
     let s;
@@ -221,18 +222,18 @@ try {
         rows: { items: [] },
         landmarks: baseline.landmarks.slice(mainAt + 1),
         headings: baseline.headings.slice(h1At),
-        controls: baseline.controls.filter((c) => !shell.some((re) => re.test(`${c.role}:${c.name.replace(/(?<=[A-Za-z])[\d,]+$/, '')}`))),
+        controls: baseline.controls.filter((c) => !isShell(c)),
       };
       const approved = config.approved.filter((a) => a.route === 'community');
-      const { fails } = compareRecord('community', viewport.join('x'), scoped, captured, approved);
+      const { fails } = compareRecord('community', viewport.join('x'), scoped, captured, approved, config.dataNames ?? []);
       for (const f of fails) fail(where, f);
       if (viewport[0] === 1280) {
         // Attack: the same comparison on a capture missing one baseline control, and one with the controls reversed, MUST fail.
         const pick = scoped.controls.find((c) => /Start a discussion|Join room|Post/.test(c.name)) ?? scoped.controls[0];
         const dropped = { ...captured, controls: captured.controls.filter((c) => c.name !== pick.name) };
         const swapped = { ...captured, controls: [...captured.controls].reverse() };
-        if (compareRecord('community', '1280x900', scoped, dropped, approved).fails.length === 0) fail(where, `attack: a removed control (${pick.name}) passed the fixture parity`);
-        if (compareRecord('community', '1280x900', scoped, swapped, approved).fails.length === 0) fail(where, 'attack: a reversed control order passed the fixture parity');
+        if (compareRecord('community', '1280x900', scoped, dropped, approved, config.dataNames ?? []).fails.length === 0) fail(where, `attack: a removed control (${pick.name}) passed the fixture parity`);
+        if (compareRecord('community', '1280x900', scoped, swapped, approved, config.dataNames ?? []).fails.length === 0) fail(where, 'attack: a reversed control order passed the fixture parity');
       }
     } catch (e) {
       fail(where, e.message.split('\n')[0]);

@@ -36,7 +36,8 @@
     "^button:Open account menu",
     "^button:Back to top",
     "^button:(Open navigation|Search)$",
-    "^link:Account"
+    "^link:Account",
+    "^button:Notifications$"
   ],
   "frameLandmarks": {
     "1280x900": [

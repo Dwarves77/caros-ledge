@@ -10,6 +10,7 @@ import { readFileSync } from 'node:fs';
 import { chromium } from 'playwright';
 
 import { compareRecord } from '../parity/compare.mjs';
+import { shellControl } from './shell-filter.mjs';
 import { domSummary } from '../parity/capture.mjs';
 
 import { measure } from './measure.mjs';
@@ -252,8 +253,8 @@ try {
 
   // ── fixture parity: the real screens against the baseline, by the gate's own comparer ──
   // The fixture draws the page content without the shell (the shell is the frame gate's), so the baseline is cut to the same scope: from the main landmark on, without the shell's controls and heading.
-  const shell = [...config.frameControls, '^combobox:Search or ask'].map((re) => new RegExp(re));
-  const scope = (b) => ({ ...b, rows: { items: [] }, landmarks: b.landmarks.slice(Math.max(0, b.landmarks.findIndex((l) => l.role === 'main'))), headings: b.headings.filter((x, i, all) => x.text !== "Caro's Ledge" && !(i > 0 && all[i - 1].text === x.text && all[i - 1].level === x.level)), controls: b.controls.filter((c) => !shell.some((re) => re.test(`${c.role}:${c.name.replace(/(?<=[A-Za-z])[\d,]+$/, '')}`))) });
+  const isShell = shellControl(config); // tests/ux/shell-filter.mjs: the shell's controls come from approved-changes.json frameControls
+  const scope = (b) => ({ ...b, rows: { items: [] }, landmarks: b.landmarks.slice(Math.max(0, b.landmarks.findIndex((l) => l.role === 'main'))), headings: b.headings.filter((x, i, all) => x.text !== "Caro's Ledge" && !(i > 0 && all[i - 1].text === x.text && all[i - 1].level === x.level)), controls: b.controls.filter((c) => !isShell(c)) });
   const parity = async (name, route, screen, extra = '') => {
     for (const viewport of VIEWPORTS.filter(([w]) => w === 375 || w === 1280)) {
       const where = `parity ${name} ${viewport.join('x')}`;
@@ -265,16 +266,16 @@ try {
           const captured = await s.page.evaluate(domSummary, 20);
           const baseline = scope(JSON.parse(readFileSync(`tests/parity/baseline/${route}.${vp[0] === 375 ? '375x812' : '1280x900'}.json`, 'utf8')));
           const approved = config.approved.filter((a) => a.route === route);
-          const { fails } = compareRecord(route, vp[0] === 375 ? '375x812' : '1280x900', baseline, captured, approved);
+          const { fails } = compareRecord(route, vp[0] === 375 ? '375x812' : '1280x900', baseline, captured, approved, config.dataNames ?? []);
           for (const f of fails) fail(where, f);
           if (vp[0] === 1280) {
             const pick = baseline.controls.find((c) => /Ask|Browse/.test(c.name)) ?? baseline.controls[0];
             const dropped = { ...captured, controls: captured.controls.filter((c) => c.name !== pick.name) };
             const swapped = { ...captured, controls: [...captured.controls].reverse() };
             const heading = { ...captured, headings: captured.headings.map((h) => (h.level === 2 ? { ...h, text: `${h.text} (changed)` } : h)) };
-            if (compareRecord(route, '1280x900', baseline, dropped, approved).fails.length === 0) fail(where, `attack: a removed control (${pick.name}) passed`);
-            if (compareRecord(route, '1280x900', baseline, swapped, approved).fails.length === 0) fail(where, 'attack: a reversed control order passed');
-            if (compareRecord(route, '1280x900', baseline, heading, approved).fails.length === 0) fail(where, 'attack: a changed section heading passed');
+            if (compareRecord(route, '1280x900', baseline, dropped, approved, config.dataNames ?? []).fails.length === 0) fail(where, `attack: a removed control (${pick.name}) passed`);
+            if (compareRecord(route, '1280x900', baseline, swapped, approved, config.dataNames ?? []).fails.length === 0) fail(where, 'attack: a reversed control order passed');
+            if (compareRecord(route, '1280x900', baseline, heading, approved, config.dataNames ?? []).fails.length === 0) fail(where, 'attack: a changed section heading passed');
           }
         } finally {
           await s.ctx.close();
