@@ -1,4 +1,4 @@
-// The mutants job: proves every gate can go red. tests/mutants/registry.json lists deliberate defects (mutants); each is applied to a scratch copy of the tree and the gate it names is run there. A mutant that leaves
+// The mutants job: proves every gate can go red. tests/mutants/registry.json and the shards in tests/mutants/registry/ list deliberate defects (mutants); each is applied to a scratch copy of the tree and the gate it names is run there. A mutant that leaves
 // its gate green fails the build (that gate certifies nothing), as does a gate with no mutant and a registry entry that no longer applies.
 //
 //   node scripts/ci/mutants.mjs --check                     the registry against the gate inventory and the tree (no mutant is run; `npm run gates` runs this)
@@ -15,7 +15,7 @@ import { isMain } from "../lib/fs.mjs";
 
 import { STEPS } from "./gates.mjs";
 import { gateInventory } from "./mutants/inventory.mjs";
-import { classOfMutant, covered, loadRegistry, registryProblems } from "./mutants/registry.mjs";
+import { classOfMutant, covered, loadRegistry, registryFiles, registryProblems } from "./mutants/registry.mjs";
 import { applyMutant, execIn, gateCommand, judge } from "./mutants/run.mjs";
 import { prepareScratch, restore } from "./mutants/scratch.mjs";
 import { runSchemaMutants } from "./mutants/schema-group.mjs";
@@ -56,7 +56,7 @@ async function main() {
   for (const p of problems) console.error(p);
   if (values.check) {
     const n = registry.reduce((count, m) => count + (m.gate.endsWith(":*") ? covered(m.gate, inventory).length : 1), 0);
-    console.log(problems.length ? `mutants: ${problems.length} problem(s)` : `mutants: ${registry.length} registry entries (${n} mutants) cover all ${inventory.length} gates`);
+    console.log(problems.length ? `mutants: ${problems.length} problem(s)` : `mutants: ${registry.length} registry entries in ${registryFiles(registry)} file(s) (${n} mutants) cover all ${inventory.length} gates`);
     process.exit(problems.length ? 1 : 0);
   }
   if (problems.length && !values.only) process.exit(1); // a targeted run (--only) is for building mutants: the coverage problems are printed above and `--check` is what fails the build

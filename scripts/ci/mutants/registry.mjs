@@ -1,22 +1,46 @@
-// The mutants registry (tests/mutants/registry.json): an array of
+// The mutants registry: tests/mutants/registry.json AND every tests/mutants/registry/*.json (one shard per lane, named after its slice: r2a.json, r2b.json; sorted by name), each an array of
 //   { id, gate, apply: [{ file, find, replace }] | { script, args? } | { transform }, expect: "red", closes: [register ids], scope?: [test files] }
 // A mutant is ONE deliberate defect: `apply` edits files of a scratch copy of the tree (the first occurrence of `find` becomes `replace`) or runs a script there, then the gate named by `gate` is run on the copy and
 // must go red. `gate` is a name from scripts/ci/mutants/inventory.mjs, or `<kind>:*` for a mutant that applies to every gate of that kind (its `transform` module mutates each one). `scope` narrows the gate `test`
 // to the named test files (the planted case of one script). The build fails when a mutant leaves its gate green (scripts/ci/mutants.mjs), when a gate has no mutant, or when an entry is stale: this file's checks.
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 
 import { classOf } from "./inventory.mjs";
 
 export const REGISTRY_PATH = "tests/mutants/registry.json";
+const SHARD_DIR = "tests/mutants/registry";
 export const REGISTER_ID = /^[CDFSWK]:\d+$/;
 const ID = /^[a-z0-9][a-z0-9-]*$/;
+
+// Where each entry of a loaded registry came from, and the shard problems found while loading: { at: [{ file, i }], files, bad: [problem] }.
+const sources = new WeakMap();
+/** How many registry files were read into `registry` (registry.json counts; a plain array is one). */
+export const registryFiles = (registry) => sources.get(registry)?.files ?? 1;
 
 export function loadRegistry(root = ".") {
   const path = `${root}/${REGISTRY_PATH}`;
   if (!existsSync(path)) throw new Error(`${REGISTRY_PATH} does not exist: no gate has a registered mutant`);
   const registry = JSON.parse(readFileSync(path, "utf8"));
   if (!Array.isArray(registry)) throw new Error(`${REGISTRY_PATH} must be an array of mutants`);
-  return registry;
+  const dir = `${root}/${SHARD_DIR}`;
+  const shards = existsSync(dir) ? readdirSync(dir).filter((n) => n.endsWith(".json")).sort() : [];
+  const all = [];
+  const at = [];
+  const bad = [];
+  const take = (file, list) => list.forEach((m, i) => (all.push(m), at.push({ file, i })));
+  take(REGISTRY_PATH, registry);
+  for (const name of shards) {
+    const file = `${SHARD_DIR}/${name}`;
+    try {
+      const list = JSON.parse(readFileSync(`${root}/${file}`, "utf8"));
+      if (Array.isArray(list) && list.length > 0) take(file, list);
+      else bad.push(`${file}: a shard is a non-empty array of mutants`);
+    } catch (e) {
+      bad.push(`${file}: not valid JSON (${e.message})`);
+    }
+  }
+  sources.set(all, { at, files: 1 + shards.length, bad });
+  return all;
 }
 
 /** Is `gate` named by an inventory (a name in it, or `<kind>:*` over a kind that has members)? */
@@ -27,7 +51,7 @@ export const covered = (gate, inventory) => (gate.endsWith(":*") ? inventory.fil
 /** The shape problems of one entry (no file is read). */
 export function shapeProblems(m, at) {
   const p = [];
-  const where = `${REGISTRY_PATH} #${at}${m && typeof m.id === "string" ? ` (${m.id})` : ""}`;
+  const where = `${typeof at === "string" ? at : `${REGISTRY_PATH} #${at}`}${m && typeof m.id === "string" ? ` (${m.id})` : ""}`;
   if (!m || typeof m !== "object") return [`${where}: not an object`];
   if (typeof m.id !== "string" || !ID.test(m.id)) p.push(`${where}: id must be lower-case words joined by hyphens`);
   if (typeof m.gate !== "string" || !m.gate) p.push(`${where}: gate is required`);
@@ -46,20 +70,22 @@ export function shapeProblems(m, at) {
 
 /** Every problem of the registry against the inventory and the tree under `root`. */
 export function registryProblems(registry, inventory, root = ".") {
-  const problems = [];
-  const seen = new Set();
+  const src = sources.get(registry);
+  const problems = [...(src?.bad ?? [])];
+  const seen = new Map();
   registry.forEach((m, i) => {
-    problems.push(...shapeProblems(m, i));
+    const f = src?.at[i].file ?? REGISTRY_PATH;
+    problems.push(...shapeProblems(m, src ? `${f} #${src.at[i].i}` : i));
     if (!m || typeof m.id !== "string") return;
-    if (seen.has(m.id)) problems.push(`${REGISTRY_PATH}: duplicate id ${m.id}`);
-    seen.add(m.id);
-    if (typeof m.gate === "string" && !gateKnown(m.gate, inventory)) problems.push(`${REGISTRY_PATH}: ${m.id} names gate ${m.gate}, which is not a gate (scripts/ci/mutants/inventory.mjs lists them)`);
+    if (seen.has(m.id)) problems.push(`${f}: duplicate id ${m.id}, also in ${seen.get(m.id)}`);
+    else seen.set(m.id, f);
+    if (typeof m.gate === "string" && !gateKnown(m.gate, inventory)) problems.push(`${f}: ${m.id} names gate ${m.gate}, which is not a gate (scripts/ci/mutants/inventory.mjs lists them)`);
     for (const e of Array.isArray(m.apply) ? m.apply : []) {
       const path = `${root}/${e.file}`;
-      if (!existsSync(path)) problems.push(`${REGISTRY_PATH}: ${m.id} edits ${e.file}, which does not exist`);
-      else if (!readFileSync(path, "utf8").replace(/\r\n/g, "\n").includes(e.find)) problems.push(`${REGISTRY_PATH}: ${m.id} is stale: ${e.file} no longer contains the text it replaces`);
+      if (!existsSync(path)) problems.push(`${f}: ${m.id} edits ${e.file}, which does not exist`);
+      else if (!readFileSync(path, "utf8").replace(/\r\n/g, "\n").includes(e.find)) problems.push(`${f}: ${m.id} is stale: ${e.file} no longer contains the text it replaces`);
     }
-    for (const f of [m.apply?.script, m.apply?.transform, ...(m.scope ?? [])]) if (typeof f === "string" && !existsSync(`${root}/${f}`)) problems.push(`${REGISTRY_PATH}: ${m.id} names ${f}, which does not exist`);
+    for (const f of [m.apply?.script, m.apply?.transform, ...(m.scope ?? [])]) if (typeof f === "string" && !existsSync(`${root}/${f}`)) problems.push(`${f}: ${m.id} names ${f}, which does not exist`);
   });
   const have = new Set(registry.flatMap((m) => (typeof m?.gate === "string" ? covered(m.gate, inventory) : [])));
   for (const g of inventory) if (!have.has(g)) problems.push(`gate ${g} has no registered mutant: a gate nothing has ever turned red certifies nothing (add one to ${REGISTRY_PATH})`);

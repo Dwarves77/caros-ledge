@@ -56,5 +56,6 @@
   {"id":"selfcheck-0060-row-security-off","gate":"selfcheck:0060-rls-attacks","apply":{"transform":"tests/mutants/transforms/break-the-attacked-thing.mjs"},"expect":"red","closes":["K:72"]},
   {"id":"selfcheck-0062-counter-triggers-gone","gate":"selfcheck:0062-round-trip","apply":{"transform":"tests/mutants/transforms/break-the-attacked-thing.mjs"},"expect":"red","closes":["K:6"]},
   {"id":"selfcheck-0073-live-check-without-trigger-enabled","gate":"selfcheck:0073-selfcheck-repairs","apply":{"transform":"tests/mutants/transforms/break-the-attacked-thing.mjs"},"expect":"red","closes":["K:38","K:73"]},
-  {"id":"selfcheck-0072-series-never-planted","gate":"selfcheck:0072-market-series","apply":{"transform":"tests/mutants/transforms/break-the-attacked-thing.mjs"},"expect":"red","closes":["K:39"]}
+  {"id":"selfcheck-0072-series-never-planted","gate":"selfcheck:0072-market-series","apply":{"transform":"tests/mutants/transforms/break-the-attacked-thing.mjs"},"expect":"red","closes":["K:39"]},
+  {"id":"registry-loader-ignores-shards","gate":"test","apply":[{"file":"scripts/ci/mutants/registry.mjs","find":"readdirSync(dir).filter((n) => n.endsWith(\".json\")).sort()","replace":"[]"}],"expect":"red","closes":["K:28"],"scope":["tests/ci/registry-shards.test.mjs"]}
 ]
