@@ -149,6 +149,17 @@ test("browser tier: a host that refused the declared identity robots.txt has it 
   assert.equal(secret.refusal?.reason, "robots_disallowed");
   assert.ok(fb.log.gotos.some((g) => g.url === "https://walled.gov/robots.txt"));
 });
+test("browser tier condition (a): when the browser cannot read robots.txt either, the host is deferred, the page is never loaded and the run goes on", async () => {
+  const fb = fakeBrowser((u) => {
+    if (u.endsWith("/robots.txt")) throw new Error("page.goto: Timeout 30000ms exceeded");
+    return { status: 200, html: `<p>${prose(20)}</p>` };
+  });
+  const { deps } = bdeps({ launchBrowser: fb.launch, robots: { "stalled.gov": { status: 403 } } });
+  const r = await fetchBrowser("https://stalled.gov/page", deps, { max: 1_000_000 });
+  assert.equal(r.refusal?.reason, "robots_unknown");
+  assert.equal(r.refusal?.transient, true);
+  assert.deepEqual(fb.log.gotos.map((g) => g.url), ["https://stalled.gov/robots.txt"], "only robots.txt was asked for");
+});
 test("browser tier condition (b): it never runs on a paywalled source and refuses a login or paywall gate", async () => {
   const fb = fakeBrowser(() => ({ status: 200, html: "<p>Please sign in to continue reading this article. Subscribers only.</p>" }));
   const { deps } = bdeps({ launchBrowser: fb.launch });

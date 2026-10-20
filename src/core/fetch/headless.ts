@@ -59,7 +59,10 @@ async function browserOf(deps: BrowserDeps, s: Session): Promise<BrowserLike> {
   if (s.browser) return s.browser;
   if (deps.launchBrowser) return (s.browser = await deps.launchBrowser());
   const { chromium } = await import(/* webpackIgnore: true */ /* turbopackIgnore: true */ "playwright");
-  return (s.browser = (await chromium.launch({ headless: true })) as unknown as BrowserLike);
+  // A person's browser has a window: the full browser (on the runner, under a virtual display) announces itself as Chrome; the windowless build announces itself as HeadlessChrome, which is how many publishers' firewalls
+  // single it out. No user agent is set either way; the browser says what it is. Without any display the windowless build is the only one that can start.
+  const windowed = process.platform !== "linux" || Boolean(deps.env?.DISPLAY);
+  return (s.browser = (await chromium.launch({ headless: !windowed })) as unknown as BrowserLike);
 }
 
 /** Close the run's browser and its per-host contexts. The caller that fetched calls it once at the end of the run. */
@@ -106,6 +109,9 @@ async function verdictForBrowser(deps: BrowserDeps, s: Session, url: URL, contex
       const res = await page.goto(`${url.origin}/robots.txt`, { waitUntil: "networkidle", timeout: 30_000 });
       const answer = interpretRobotsAnswer({ status: res?.status() ?? null, text: decodeEntities(stripTags(await page.content())), contentType: "text/plain" });
       return answer.verdict && answer.verdict.status === "unknown" ? v : verdictFor(answer.file, `${url.pathname}${url.search}`);
+    } catch {
+      // The browser could not read robots.txt either (a timeout, a reset): the verdict stays unknown and the source is deferred, never read as allowed.
+      return v;
     } finally {
       await page.close();
     }
