@@ -83,7 +83,7 @@ const paceFor = (host: string, turn: number): number => {
 
 /** Run `job` as this host's next turn: one at a time, at least 3 to 5 seconds after the host's previous navigation. */
 async function onHostTurn<T>(deps: BrowserDeps, s: Session, host: string, job: () => Promise<T>): Promise<T> {
-  const now = () => (deps.now ? deps.now().getTime() : Date.now());
+  const now = () => (deps.now ? deps.now().getTime() : performance.now());
   const sleep = deps.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
   const run = (s.turns.get(host) ?? Promise.resolve()).then(async () => {
     const last = s.lastAt.get(host);

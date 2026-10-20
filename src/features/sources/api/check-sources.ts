@@ -35,18 +35,19 @@ export const POST = route("/api/worker/check-sources", async (request) => {
   const limit = validateCheckLimit(raw);
   if (!limit.ok) return Response.json({ error: limit.error }, { status: 400 });
   const db = serviceClient();
+  const now = () => new Date();
   if (await isGloballyPaused(db)) return Response.json({ message: "Scraping is off (cadence 'off' or emergency stop); worker exiting", ...OFF });
   const deps: ChangeDetectionDeps = {
     db,
-    now: () => new Date(),
+    now,
     resolveHost: null,
     writeSnapshot: (sourceId, snap) => writeSnapshot(db, sourceId, snap),
-    reconcile: (input) => reconcileChanges({ db, now: () => new Date() }, input),
+    reconcile: (input) => reconcileChanges({ db, now }, input),
   };
   const run = await runChangeDetection(deps, { limit: limit.limit });
   if (run.outcome === "failed") return Response.json({ error: run.notes.join("; ") || "change detection failed" }, { status: 500 });
   // Rule 17: a source the capture worker found walled goes on to the browser tier, a substitute publisher or an access request in the same pass (a host with no browser reports the rows it left).
-  const collected = await collectRefused({ db, now: () => new Date(), env: process.env, resolveHost: null, launchBrowser: null }, { limit: 3 });
+  const collected = await collectRefused({ db, now, env: process.env, resolveHost: null, launchBrowser: null }, { limit: 3 });
   return Response.json({
     collect: { counts: collected.counts, outcome: collected.outcome, notes: collected.notes },
     message: run.notes[0] && run.counts.checked === 0 ? run.notes[0] : `Checked ${run.counts.checked} sources`,

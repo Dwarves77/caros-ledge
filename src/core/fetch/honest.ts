@@ -44,7 +44,7 @@ function kitFor(deps: HonestDeps): Kit {
   const raw = deps.fetchImpl ?? fetch;
   const held = kits.get(raw);
   if (held) return held;
-  const now = () => (deps.now ? deps.now().getTime() : Date.now());
+  const now = () => (deps.now ? deps.now().getTime() : performance.now());
   const sleep = deps.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
   const base: Omit<GuardOptions, "userAgent" | "robots"> = { fetchImpl: raw, resolveHost: deps.resolveHost ?? nodeResolve, gate: makeHostGate({ now, sleep }), upgradeHttp: true };
   const robots = makeRobotsGate(makeRobotsReader({ ...base, userAgent: BOT_USER_AGENT }), undefined, { now, ttlMs: ROBOTS_TTL_MS });
