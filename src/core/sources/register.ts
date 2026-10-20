@@ -35,7 +35,6 @@ export interface RegistryRow {
   tier_override: number | null;
   status?: string | null;
   institution_id?: string | null;
-  institution_key?: string | null;
 }
 export type ExactHostLookup = { ok: true; rows: RegistryRow[] } | { ok: false; error: string };
 
@@ -43,7 +42,7 @@ export type ExactHostLookup = { ok: true; rows: RegistryRow[] } | { ok: false; e
 export async function lookupExactHost(db: Db, url: string): Promise<ExactHostLookup> {
   const host = hostOf(url);
   if (!host) return { ok: true, rows: [] };
-  const { data, error } = await db.from("sources").select("id, url, base_tier, tier_override, status, institution_id, institution_key").or(exactHostUrlFilter(host)).limit(EXACT_HOST_LOOKUP_LIMIT);
+  const { data, error } = await db.from("sources").select("id, url, base_tier, tier_override, status, institution_id").or(exactHostUrlFilter(host)).limit(EXACT_HOST_LOOKUP_LIMIT);
   if (error) return { ok: false, error: error.message };
   return { ok: true, rows: ((data ?? []) as RegistryRow[]).filter((r) => hostOf(r.url) === host) };
 }

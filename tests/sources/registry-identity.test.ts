@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
 import { REUSE_TERMS, reuseTermsForHost } from "@/core/sources/reuse-terms";
-import { backfillInstitutionKeys, pickInstitutionRow, registerAndRate, registerSource } from "@/core/sources/register";
+import { backfillInstitutionKeys, pickInstitutionRow, readSourceByUrl, registerAndRate, registerSource } from "@/core/sources/register";
 import { classifySources } from "@/features/sources/classify-sources";
 import { verifyCandidate } from "@/features/sources/verify-candidate";
 import { classifySourceRole } from "@/core/sources/classify";
@@ -124,4 +124,13 @@ test("the rights vocabulary in code is the vocabulary the database accepts, and 
   assert.deepEqual([...REUSE_TERMS], list);
   for (const url of ["https://eur-lex.europa.eu/x", "https://www.legislation.gov.uk/x", "https://www.federalregister.gov/x", "https://unknown-publisher.example/x"]) assert.ok(REUSE_TERMS.includes(reuseTermsForHost(url)), url);
   assert.equal(reuseTermsForHost("https://unknown-publisher.example/x"), "unknown");
+});
+
+test("the read a surface makes of the registry names no column that migrations 0080 and 0081 add, so a page renders before they are applied", async () => {
+  const asked: string[] = [];
+  const chain = { or: () => chain, limit: async () => ({ data: [], error: null }) };
+  const db = { from: () => ({ select: (cols: string) => (asked.push(cols), chain) }) };
+  assert.equal(await readSourceByUrl(db as never, "https://www.epa.gov/rules"), null);
+  assert.ok(asked.length > 0);
+  assert.doesNotMatch(asked.join(","), /institution_key|reuse_terms|collection_state|collection_detail|access_requested_at|access_contact|publisher_locale/);
 });
