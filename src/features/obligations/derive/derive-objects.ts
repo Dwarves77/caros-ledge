@@ -259,7 +259,7 @@ function candidatesFromCaptures(item: ObjectItem, captures: readonly CaptureRow[
   const timeline = timelineFromEvents(events);
   const out = new Map<string, Candidate>();
   for (const cap of captures) {
-    for (const window of dutyWindows(cap.result_content ?? "").filter((w) => !withdrawn.some((t) => w.toLowerCase().includes(t)))) {
+    for (const window of dutyWindows(cap.result_content ?? "").filter((w) => !withdrawn.some((t) => isVerbatim(w, t)))) {
       const c = dutyCandidate(item, window, cap.id, null, timeline);
       if (c && !out.has(norm(c.pinpoint_citation))) out.set(norm(c.pinpoint_citation), c);
     }
@@ -303,7 +303,7 @@ export async function deriveObligationObjects(sb: Db, input: { dry: boolean; ite
   const claims = admissibleClaims(factRows, await readFactSuppressionsFor(sb, [...itemsById.keys()]));
   // A claim a correction took out is a statement the platform withdrew: a duty window of the capture that contains its text is withdrawn with it.
   const stands = new Set(claims.map((c) => c.id));
-  const withdrawn = (itemId: string): string[] => factRows.filter((c) => c.intelligence_item_id === itemId && !stands.has(c.id)).flatMap((c) => [c.source_span, c.claim_text]).filter((t): t is string => nz(t) !== "").map((t) => t.toLowerCase());
+  const withdrawn = (itemId: string): string[] => factRows.filter((c) => c.intelligence_item_id === itemId && !stands.has(c.id)).flatMap((c) => [c.source_span, c.claim_text]).filter((t): t is string => nz(t) !== "");
   const events = await fetchAllByIdChunks<EventForDates & { intelligence_item_id: string }>([...itemsById.keys()], async (slice) => {
     const { data, error } = await sb.from("item_forward_events").select("intelligence_item_id, event_date, date_precision, event_kind, obligation_text, confidence").in("intelligence_item_id", slice);
     if (error) throw new Error(`derive-objects: item_forward_events read failed: ${error.message}`);
