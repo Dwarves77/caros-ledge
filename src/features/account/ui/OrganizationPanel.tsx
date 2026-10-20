@@ -39,7 +39,7 @@ export function OrganizationPanel({ orgId, org, error, onReload }: { orgId: stri
     );
   }
 
-  const isOwner = org.caller_role === "owner";
+  const isOwner = (org.actions ?? []).includes("rename_org");
   const nameValue = name ?? org.org.name;
   const slugValue = slug ?? org.org.slug;
   const unchanged = nameValue.trim() === org.org.name && slugValue.trim().toLowerCase() === org.org.slug;

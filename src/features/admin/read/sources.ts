@@ -4,7 +4,7 @@ import type { Db } from "@/core/db";
 import type { IntelligenceDomain, ProvisionalSource, SourceStatus, SourceTier } from "@/core/sources/types";
 
 /** The statuses of the provisional review queue, named once (COUNTS-61): the queue, its badge and the attention count read the same two. */
-export const PROVISIONAL_REVIEW_STATUSES = ["pending_review", "needs_more_data"] as const;
+const PROVISIONAL_REVIEW_STATUSES = ["pending_review", "needs_more_data"] as const;
 
 /** A registry row as the admin surfaces hold it. A column the database leaves empty stays null: a score never read is "not scored", never a number made up (rule 2). */
 export interface AdminSource {
@@ -46,7 +46,7 @@ const num = (v: unknown): number | null => {
 const str = (v: unknown): string | null => (typeof v === "string" && v ? v : null);
 const arr = <T,>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);
 
-export const SOURCE_COLUMNS = [
+const SOURCE_COLUMNS = [
   "id", "name", "url", "description", "base_tier", "effective_tier", "tier_override", "override_reason", "tier_at_creation", "domains", "jurisdictions", "transport_modes", "update_frequency", "last_checked", "last_accessible", "last_inaccessible",
   "next_scheduled_check", "status", "paywalled", "access_method", "processing_paused", "admin_only", "confirmation_count", "conflict_count", "accuracy_rate", "avg_lead_time_days", "accessibility_rate", "total_checks", "successful_checks",
   "independent_citers", "total_citations", "trust_score_overall", "trust_score_accuracy", "trust_score_timeliness", "trust_score_reliability", "trust_score_citation", "trust_score_computed_at", "notes", "created_at",

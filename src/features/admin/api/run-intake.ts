@@ -8,7 +8,7 @@ import { runIntakeCycle, type IntakeCandidate } from "@/features/intake";
 import { adminDeps } from "./deps";
 import { adminRoute, reply } from "./shared";
 
-export const MAX_CANDIDATES = 5;
+const MAX_CANDIDATES = 5;
 const candidate = z.object({ title: z.string().trim().min(1).max(500), source_url: z.string().trim().min(1).max(2000), item_type: z.string().trim().min(1).max(60) }).passthrough();
 const body = z.object({ candidates: z.array(candidate).min(1).max(MAX_CANDIDATES), mode: z.enum(["plan", "apply"]).optional() });
 

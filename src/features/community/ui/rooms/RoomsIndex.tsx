@@ -22,6 +22,7 @@ import type { EntityRef, PostView } from "../../lib/types";
 import styles from "../community.module.css";
 import { EntityPicker } from "../entities/EntityPicker";
 import { SignedOffMark } from "../parts/AuthorIdentity";
+import { useDeletePost } from "../posts/use-delete-post";
 import { useToast } from "../toast";
 
 import { SignoffRail } from "./SignoffRail";
@@ -38,11 +39,12 @@ export interface RoomsIndexProps {
 }
 
 const starters = (room: string) => [`What did you see on the ground in ${room} this week?`, `Any handler, berth or documentation behaviour worth flagging in ${room}?`];
-const toThread = (p: PostView): ThreadVM => ({ id: p.id, groupId: p.group_id, title: p.title ?? p.body.slice(0, 120), body: p.body, replyCount: 0, createdAt: p.created_at, lastActivityAt: p.created_at, referencedItemIds: [], author: p.author, isYou: true, signedOffAt: null, signoff: null });
+const toThread = (p: PostView): ThreadVM => ({ id: p.id, groupId: p.group_id, title: p.title ?? p.body.slice(0, 120), body: p.body, replyCount: 0, createdAt: p.created_at, lastActivityAt: p.created_at, referencedItemIds: [], author: p.author, isYou: true, signedOffAt: null, signedOffDocUrl: null, signoff: null });
 
 export function RoomsIndex({ rooms: initial, seeded, verticalGroups: initialGroups, failures, isVerifier, verifierStatus }: RoomsIndexProps) {
   const router = useRouter();
   const notify = useToast();
+  const del = useDeletePost();
   const [rooms, setRooms] = useState(initial);
   const [groups, setGroups] = useState(initialGroups);
   const [selectedKey, setSelectedKey] = useState<RoomKey>(initial.find((r) => r.youHere)?.key ?? initial[0]?.key ?? "EU");
@@ -70,6 +72,7 @@ export function RoomsIndex({ rooms: initial, seeded, verticalGroups: initialGrou
   if (!seeded) {
     return failures.length > 0 ? (
       <div className={styles.roomsBody} data-audit="community-body">
+      {del.node}
         <StateNote tone="error" action={{ label: "Retry", onClick: () => router.refresh() }}>
           {failures.join(" ")} Nothing has been lost.
         </StateNote>
@@ -100,9 +103,7 @@ export function RoomsIndex({ rooms: initial, seeded, verticalGroups: initialGrou
     });
   const remove = (t: ThreadVM) =>
     guarded(async () => {
-      const r = await communityApi.deletePost(t.id);
-      if (!r.ok) return notify(r.error ?? "The discussion could not be deleted.", "error");
-      patchRoom(selected.key, (room) => ({ threads: room.threads.filter((x) => x.id !== t.id) }));
+      if (await del.del(t.id, false)) patchRoom(selected.key, (room) => ({ threads: room.threads.filter((x) => x.id !== t.id) }));
     });
   const cite = (t: ThreadVM, item: { uuid: string | null }) =>
     guarded(async () => {
@@ -125,12 +126,12 @@ export function RoomsIndex({ rooms: initial, seeded, verticalGroups: initialGrou
       if (!r.ok) return notify(r.error ?? "The request could not be withdrawn.", "error");
       patchThread(t.id, { signoff: null });
     });
-  const decide = (t: ThreadVM, decision: "signed_off" | "declined") =>
+  const decide = (t: ThreadVM, decision: "signed_off" | "declined", docUrl?: string) =>
     guarded(async () => {
       if (!t.signoff) return;
-      const r = await communityApi.decideSignoff(t.signoff.requestId, decision);
+      const r = await communityApi.decideSignoff(t.signoff.requestId, decision, undefined, docUrl);
       if (!r.ok || !r.data) return notify(r.error ?? "The decision could not be recorded.", "error");
-      patchThread(t.id, decision === "signed_off" ? { signedOffAt: r.data.request.decided_at, signoff: { ...t.signoff, status: "signed_off" } } : { signoff: { ...t.signoff, status: "declined" } });
+      patchThread(t.id, decision === "signed_off" ? { signedOffAt: r.data.request.decided_at, signedOffDocUrl: docUrl ?? null, signoff: { ...t.signoff, status: "signed_off" } } : { signoff: { ...t.signoff, status: "declined" } });
     });
 
   const threads = selected.threads;
@@ -149,7 +150,7 @@ export function RoomsIndex({ rooms: initial, seeded, verticalGroups: initialGrou
             Opened by {t.isYou ? "you" : t.author?.anonymous ? "Anonymous member" : (t.author?.name ?? "a member")}
             {t.author?.company && !t.author.anonymous ? ` · ${t.author.company}` : ""}
           </span>
-          {t.signedOffAt && <SignedOffMark />}
+          {t.signedOffAt && <SignedOffMark docUrl={t.signedOffDocUrl} />}
         </span>
       </span>,
       <span key="r"><b>{t.replyCount}</b> <span className={styles.muted}>{t.replyCount === 1 ? "reply" : "replies"}</span></span>,

@@ -7,7 +7,7 @@ import { isUuid } from "@/core/http/parse";
 
 export const TARGET_KINDS = ["fact", "tag", "connection", "section_text", "full_brief"] as const;
 export type TargetKind = (typeof TARGET_KINDS)[number];
-export const OPS_BY_KIND: Readonly<Record<TargetKind, readonly string[]>> = {
+const OPS_BY_KIND: Readonly<Record<TargetKind, readonly string[]>> = {
   fact: ["suppress", "replace"],
   tag: ["add", "remove"],
   connection: ["add", "remove"],

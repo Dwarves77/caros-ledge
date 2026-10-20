@@ -123,7 +123,7 @@ test("two meanings of 'verified' are two marks: the member's Verified (a company
   const { Post } = await import("@/features/community/ui/posts/Post");
   const { ToastProvider } = await import("@/features/community/ui/toast");
   const author = (verified: boolean): AuthorBlock => ({ userId: "u", name: "Ada", company: null, headshotUrl: null, orgType: "forwarder", role: null, sector: null, region: null, verified, anonymous: false });
-  const post = (verified: boolean, signedOff: boolean) => ({ id: "p", group_id: "g", parent_post_id: null, title: "T", body: "B", created_at: "2026-10-01T00:00:00Z", last_reply_at: null, reply_count: 0, signed_off_at: signedOff ? "2026-10-02T00:00:00Z" : null, author: author(verified) });
+  const post = (verified: boolean, signedOff: boolean) => ({ id: "p", group_id: "g", parent_post_id: null, title: "T", body: "B", created_at: "2026-10-01T00:00:00Z", last_reply_at: null, reply_count: 0, signed_off_doc_url: signedOff ? "https://doc.example/primary" : null, signed_off_at: signedOff ? "2026-10-02T00:00:00Z" : null, author: author(verified) });
   const draw = (p: ReturnType<typeof post>) => textOf(renderApp(createElement(ToastProvider, null, createElement(Post, { post: p, meId: "someone", canModerate: false, onDeleted: () => {} }))));
   const memberOnly = draw(post(true, false));
   assert.ok(/\bVerified\b/.test(memberOnly) && !/Signed off/.test(memberOnly), memberOnly);

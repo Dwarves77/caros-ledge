@@ -3,7 +3,7 @@
 // Every thread binds to 1 to 10 well-formed spine entities (INV-223, INV-236). The client composer and the route run this one validator, so the two can never drift; the database repeats the count in create_thread.
 import { entityKindOf } from "@/core/entities/kinds";
 
-export const MIN_ENTITY_IDS = 1;
+const MIN_ENTITY_IDS = 1;
 export const MAX_ENTITY_IDS = 10;
 
 export type EntityBinding = { ok: true; entityIds: string[] } | { ok: false; error: string };

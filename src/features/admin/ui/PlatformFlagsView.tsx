@@ -38,15 +38,15 @@ interface Payload {
 }
 
 /** The subject in words: a flywheel gap flag names a theme, which has no page of its own, so it is labelled and never linked. Pure. */
-export const subjectLabel = (f: Pick<Flag, "subject_type" | "created_by">): string => (f.created_by.startsWith("flywheel-gap:") ? "theme" : f.subject_type);
+const subjectLabel = (f: Pick<Flag, "subject_type" | "created_by">): string => (f.created_by.startsWith("flywheel-gap:") ? "theme" : f.subject_type);
 
 /** The query for a filter set; status omitted means open and in review. Pure. */
-export const flagsQuery = (category: Category | null, status: Status | null, offset: number): string => `/api/admin/integrity-flags?platform=1${category ? `&category=${category}` : ""}${status ? `&status=${status}` : ""}${offset ? `&offset=${offset}` : ""}`;
+const flagsQuery = (category: Category | null, status: Status | null, offset: number): string => `/api/admin/integrity-flags?platform=1${category ? `&category=${category}` : ""}${status ? `&status=${status}` : ""}${offset ? `&offset=${offset}` : ""}`;
 
 function FlagRow({ flag, open, onToggle, act }: { flag: Flag; open: boolean; onToggle: () => void; act: ReturnType<typeof useAct> }) {
   const [note, setNote] = useState(flag.resolution_note ?? "");
   const busy = act.busy === flag.id;
-  const move = (status: Status, done: string) => act.run(flag.id, "/api/admin/integrity-flags?platform=1", { method: "PATCH", body: { id: flag.id, status, resolution_note: note } }, done);
+  const move = (status: Status, done: string) => act.run(flag.id, "/api/admin/integrity-flags?platform=1", { method: "PATCH", body: { id: flag.id, status, reason: note.trim() } }, done);
   return (
     <div className={styles.row}>
       <div className={styles.rowMain}>
@@ -63,12 +63,12 @@ function FlagRow({ flag, open, onToggle, act }: { flag: Flag; open: boolean; onT
             {(flag.recommended_actions ?? []).length ? (
               <ul className={styles.stack}>{(flag.recommended_actions ?? []).map((a, i) => <li key={i} className={styles.note}><b>{a.action}</b>{a.rationale ? `: ${a.rationale}` : ""}</li>)}</ul>
             ) : null}
-            <FormField label="Resolution note">{(c) => <Textarea {...c} rows={2} value={note} onChange={(e) => setNote(e.target.value)} maxLength={2000} />}</FormField>
+            <FormField label="Reason" required hint="Recorded with the status change and who made it.">{(c) => <Textarea {...c} rows={2} value={note} onChange={(e) => setNote(e.target.value)} maxLength={2000} />}</FormField>
             <div className={styles.actions}>
-              {flag.status !== "in_review" ? <Button variant="secondary" size="sm" disabled={busy} onClick={() => move("in_review", "Marked in review.")}>In review</Button> : null}
-              {flag.status !== "resolved" ? <Button variant="primary" size="sm" disabled={busy} onClick={() => move("resolved", "Flag resolved.")}>Resolve</Button> : null}
-              {flag.status !== "archived" ? <Button variant="secondary" size="sm" disabled={busy} onClick={() => move("archived", "Flag archived.")}>Archive</Button> : null}
-              {flag.status === "resolved" || flag.status === "archived" ? <Button variant="ghost" size="sm" disabled={busy} onClick={() => move("open", "Flag reopened.")}>Reopen</Button> : null}
+              {flag.status !== "in_review" ? <Button variant="secondary" size="sm" disabled={busy || !note.trim()} onClick={() => move("in_review", "Marked in review.")}>In review</Button> : null}
+              {flag.status !== "resolved" ? <Button variant="primary" size="sm" disabled={busy || !note.trim()} onClick={() => move("resolved", "Flag resolved.")}>Resolve</Button> : null}
+              {flag.status !== "archived" ? <Button variant="secondary" size="sm" disabled={busy || !note.trim()} onClick={() => move("archived", "Flag archived.")}>Archive</Button> : null}
+              {flag.status === "resolved" || flag.status === "archived" ? <Button variant="ghost" size="sm" disabled={busy || !note.trim()} onClick={() => move("open", "Flag reopened.")}>Reopen</Button> : null}
             </div>
           </div>
         ) : null}
@@ -77,7 +77,7 @@ function FlagRow({ flag, open, onToggle, act }: { flag: Flag; open: boolean; onT
   );
 }
 
-/** The platform flags: the agent's own channel. Filter by category and status (open and in review by default), a row opens closed-by-default detail, and the operator answers with a status and a note. Counts are whole-table. */
+/** The platform flags: the agent's own channel. Filter by category and status (open and in review by default), a row opens closed-by-default detail, and the operator answers with a status and a reason. Counts are whole-table. */
 export function PlatformFlagsView() {
   const [category, setCategory] = useState<Category | null>(null);
   const [status, setStatus] = useState<Status | null>(null);

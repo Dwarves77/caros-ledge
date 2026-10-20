@@ -35,7 +35,7 @@ export interface Viewer {
 type IdentityLike = { anonymous?: boolean | null } | null | undefined;
 
 /** The rpc returns at most this many rows per call; larger sets go in chunks. */
-export const IDENTITY_IDS_PER_CALL = 200;
+const IDENTITY_IDS_PER_CALL = 200;
 
 /** Per-post OR per-member anonymity at read: either one withholds name, company and headshot. */
 export const effectiveAnonymous = (a: { postAnonymous?: boolean | null | undefined; identity?: IdentityLike }): boolean => a.postAnonymous === true || a.identity?.anonymous === true;

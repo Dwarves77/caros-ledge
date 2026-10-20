@@ -1,9 +1,1581 @@
 {
-  "unlocode": {
-    "CNSHA": { "place": "Shanghai", "countryIso": "CN", "countryName": "China" },
-    "NLRTM": { "place": "Rotterdam", "countryIso": "NL", "countryName": "Netherlands" },
-    "USNYC": { "place": "New York", "countryIso": "US", "countryName": "United States" },
-    "USLAX": { "place": "Los Angeles", "countryIso": "US", "countryName": "United States" },
-    "ITGOA": { "place": "Genoa", "countryIso": "IT", "countryName": "Italy" }
+ "provenance": {
+  "geonames": {
+   "source": "geonames",
+   "url": "https://download.geonames.org/export/dump/",
+   "retrievedOn": "2026-10-19",
+   "terms": "https://www.geonames.org/export/",
+   "note": "alternateNamesV2.txt (type unlc) for the code-to-place link, allCountries.txt for the name and country of that place. The link is GeoNames' own except CNSHA, which the corridor seeds name and which is aliased to GeoNames place 1796236 (aliasBasis caros-ledge-seed)."
+  },
+  "wikidata": {
+   "source": "wikidata",
+   "url": "https://query.wikidata.org/sparql",
+   "retrievedOn": "2026-10-19",
+   "terms": "https://www.wikidata.org/wiki/Wikidata:Licensing",
+   "note": "English labels of the items that carry an ISO 3166-1 alpha-2 code (P297) and no end date (P576)."
   }
+ },
+ "ports": {
+  "AEAUH": {
+   "place": "Abu Dhabi",
+   "countryIso": "AE",
+   "geonameId": 292968,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "ARBUE": {
+   "place": "Buenos Aires",
+   "countryIso": "AR",
+   "geonameId": 3435910,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "AUBNE": {
+   "place": "Brisbane",
+   "countryIso": "AU",
+   "geonameId": 2174003,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "AUMEL": {
+   "place": "Melbourne",
+   "countryIso": "AU",
+   "geonameId": 2158177,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "AUSYD": {
+   "place": "Sydney",
+   "countryIso": "AU",
+   "geonameId": 2147714,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "BEANR": {
+   "place": "Antwerp",
+   "countryIso": "BE",
+   "geonameId": 2803138,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "BRSSA": {
+   "place": "Salvador",
+   "countryIso": "BR",
+   "geonameId": 3450554,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "BRSSZ": {
+   "place": "Santos",
+   "countryIso": "BR",
+   "geonameId": 3449433,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "CAHAL": {
+   "place": "Halifax",
+   "countryIso": "CA",
+   "geonameId": 6324729,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "CAMTR": {
+   "place": "Montréal",
+   "countryIso": "CA",
+   "geonameId": 6077243,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "CAVAN": {
+   "place": "Vancouver",
+   "countryIso": "CA",
+   "geonameId": 6173331,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "CLSAI": {
+   "place": "San Antonio",
+   "countryIso": "CL",
+   "geonameId": 3872395,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "CLVAP": {
+   "place": "Valparaíso",
+   "countryIso": "CL",
+   "geonameId": 3868626,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "CNQZH": {
+   "place": "Qinzhou",
+   "countryIso": "CN",
+   "geonameId": 1797551,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "CNSHA": {
+   "place": "Shanghai",
+   "countryIso": "CN",
+   "geonameId": 1796236,
+   "source": "geonames",
+   "aliasBasis": "caros-ledge-seed"
+  },
+  "COCTG": {
+   "place": "Cartagena",
+   "countryIso": "CO",
+   "geonameId": 3687238,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "DEBRV": {
+   "place": "Bremerhaven",
+   "countryIso": "DE",
+   "geonameId": 2944368,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "DEHAM": {
+   "place": "Hamburg",
+   "countryIso": "DE",
+   "geonameId": 2911298,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "DJJIB": {
+   "place": "Djibouti",
+   "countryIso": "DJ",
+   "geonameId": 223817,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "EGALY": {
+   "place": "Alexandria",
+   "countryIso": "EG",
+   "geonameId": 361058,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "EGPSD": {
+   "place": "Port Said",
+   "countryIso": "EG",
+   "geonameId": 358619,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "ESALG": {
+   "place": "Algeciras",
+   "countryIso": "ES",
+   "geonameId": 2522013,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "ESBCN": {
+   "place": "Barcelona",
+   "countryIso": "ES",
+   "geonameId": 3128760,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "ESVLC": {
+   "place": "Valencia",
+   "countryIso": "ES",
+   "geonameId": 2509954,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "FRLEH": {
+   "place": "Le Havre",
+   "countryIso": "FR",
+   "geonameId": 3003796,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "FRMRS": {
+   "place": "Marseille",
+   "countryIso": "FR",
+   "geonameId": 2995469,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "GBFXT": {
+   "place": "Felixstowe",
+   "countryIso": "GB",
+   "geonameId": 2649579,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "GHTEM": {
+   "place": "Tema",
+   "countryIso": "GH",
+   "geonameId": 2294700,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "GRPIR": {
+   "place": "Piraeus",
+   "countryIso": "GR",
+   "geonameId": 255274,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "HKHKG": {
+   "place": "Hong Kong",
+   "countryIso": "HK",
+   "geonameId": 1819729,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "IDJKT": {
+   "place": "Jakarta",
+   "countryIso": "ID",
+   "geonameId": 1642911,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "IDSUB": {
+   "place": "Surabaya",
+   "countryIso": "ID",
+   "geonameId": 1625822,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "INMAA": {
+   "place": "Chennai",
+   "countryIso": "IN",
+   "geonameId": 1264527,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "INMUN": {
+   "place": "Mundra",
+   "countryIso": "IN",
+   "geonameId": 1262497,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "ITGOA": {
+   "place": "Genoa",
+   "countryIso": "IT",
+   "geonameId": 3176219,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "ITNAP": {
+   "place": "Naples",
+   "countryIso": "IT",
+   "geonameId": 3172394,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "JPNGO": {
+   "place": "Nagoya",
+   "countryIso": "JP",
+   "geonameId": 1856057,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "JPTYO": {
+   "place": "Tokyo",
+   "countryIso": "JP",
+   "geonameId": 1850147,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "JPUKB": {
+   "place": "Kobe",
+   "countryIso": "JP",
+   "geonameId": 1859171,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "JPYOK": {
+   "place": "Yokohama",
+   "countryIso": "JP",
+   "geonameId": 1848354,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "KEMBA": {
+   "place": "Mombasa",
+   "countryIso": "KE",
+   "geonameId": 186301,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "KRPUS": {
+   "place": "Busan",
+   "countryIso": "KR",
+   "geonameId": 1838524,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "LKCMB": {
+   "place": "Colombo",
+   "countryIso": "LK",
+   "geonameId": 1248991,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "MATNG": {
+   "place": "Tangier",
+   "countryIso": "MA",
+   "geonameId": 2530335,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "MTMAR": {
+   "place": "Marsaxlokk",
+   "countryIso": "MT",
+   "geonameId": 2562247,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "MXVER": {
+   "place": "Veracruz",
+   "countryIso": "MX",
+   "geonameId": 3514783,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "MYPKG": {
+   "place": "Pelabuhan Klang",
+   "countryIso": "MY",
+   "geonameId": 1734769,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "MYTPP": {
+   "place": "Tanjung Pelepas",
+   "countryIso": "MY",
+   "geonameId": 1732725,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "NGAPP": {
+   "place": "Apapa",
+   "countryIso": "NG",
+   "geonameId": 2349656,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "NGLOS": {
+   "place": "Lagos",
+   "countryIso": "NG",
+   "geonameId": 2332459,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "NLRTM": {
+   "place": "Rotterdam",
+   "countryIso": "NL",
+   "geonameId": 2747891,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "NZAKL": {
+   "place": "Auckland",
+   "countryIso": "NZ",
+   "geonameId": 2193733,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "OMSLL": {
+   "place": "Şalālah",
+   "countryIso": "OM",
+   "geonameId": 286621,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "PABLB": {
+   "place": "Balboa",
+   "countryIso": "PA",
+   "geonameId": 3714426,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "PECLL": {
+   "place": "Callao",
+   "countryIso": "PE",
+   "geonameId": 3946083,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "PHMNL": {
+   "place": "Manila",
+   "countryIso": "PH",
+   "geonameId": 1701668,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "PKKHI": {
+   "place": "Karachi",
+   "countryIso": "PK",
+   "geonameId": 1174872,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "SAJED": {
+   "place": "Jeddah",
+   "countryIso": "SA",
+   "geonameId": 105343,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "SGSIN": {
+   "place": "Singapore",
+   "countryIso": "SG",
+   "geonameId": 1880252,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "THLCH": {
+   "place": "Laem Chabang",
+   "countryIso": "TH",
+   "geonameId": 1897926,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "TRIZM": {
+   "place": "İzmir",
+   "countryIso": "TR",
+   "geonameId": 311046,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "TRMER": {
+   "place": "Mersin",
+   "countryIso": "TR",
+   "geonameId": 304531,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "TWKEL": {
+   "place": "Keelung",
+   "countryIso": "TW",
+   "geonameId": 1678228,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "TWKHH": {
+   "place": "Kaohsiung",
+   "countryIso": "TW",
+   "geonameId": 1673820,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "TZDAR": {
+   "place": "Dar es Salaam",
+   "countryIso": "TZ",
+   "geonameId": 160263,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "USCHS": {
+   "place": "Charleston",
+   "countryIso": "US",
+   "geonameId": 4574324,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "USHOU": {
+   "place": "Houston",
+   "countryIso": "US",
+   "geonameId": 4699066,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "USLAX": {
+   "place": "Los Angeles",
+   "countryIso": "US",
+   "geonameId": 5368361,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "USMIA": {
+   "place": "Miami",
+   "countryIso": "US",
+   "geonameId": 4164138,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "USNYC": {
+   "place": "New York City",
+   "countryIso": "US",
+   "geonameId": 5128581,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "USOAK": {
+   "place": "Oakland",
+   "countryIso": "US",
+   "geonameId": 5378538,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "USORF": {
+   "place": "Norfolk",
+   "countryIso": "US",
+   "geonameId": 4776222,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "USSAV": {
+   "place": "Savannah",
+   "countryIso": "US",
+   "geonameId": 4221552,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "USSEA": {
+   "place": "Seattle",
+   "countryIso": "US",
+   "geonameId": 5809844,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "VNHPH": {
+   "place": "Haiphong",
+   "countryIso": "VN",
+   "geonameId": 1581298,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "VNSGN": {
+   "place": "Ho Chi Minh City",
+   "countryIso": "VN",
+   "geonameId": 1566083,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  },
+  "ZACPT": {
+   "place": "Cape Town",
+   "countryIso": "ZA",
+   "geonameId": 3369157,
+   "source": "geonames",
+   "aliasBasis": "geonames-unlc"
+  }
+ },
+ "countries": {
+  "AC": {
+   "name": "Ascension",
+   "source": "wikidata"
+  },
+  "AD": {
+   "name": "Andorra",
+   "source": "wikidata"
+  },
+  "AE": {
+   "name": "United Arab Emirates",
+   "source": "wikidata"
+  },
+  "AF": {
+   "name": "Afghanistan",
+   "source": "wikidata"
+  },
+  "AG": {
+   "name": "Antigua and Barbuda",
+   "source": "wikidata"
+  },
+  "AI": {
+   "name": "Anguilla",
+   "source": "wikidata"
+  },
+  "AL": {
+   "name": "Albania",
+   "source": "wikidata"
+  },
+  "AM": {
+   "name": "Armenia",
+   "source": "wikidata"
+  },
+  "AO": {
+   "name": "Angola",
+   "source": "wikidata"
+  },
+  "AQ": {
+   "name": "Antarctica",
+   "source": "wikidata"
+  },
+  "AR": {
+   "name": "Argentina",
+   "source": "wikidata"
+  },
+  "AS": {
+   "name": "American Samoa",
+   "source": "wikidata"
+  },
+  "AT": {
+   "name": "Austria",
+   "source": "wikidata"
+  },
+  "AU": {
+   "name": "Australia",
+   "source": "wikidata"
+  },
+  "AW": {
+   "name": "Aruba",
+   "source": "wikidata"
+  },
+  "AX": {
+   "name": "Åland",
+   "source": "wikidata"
+  },
+  "AZ": {
+   "name": "Azerbaijan",
+   "source": "wikidata"
+  },
+  "BA": {
+   "name": "Bosnia and Herzegovina",
+   "source": "wikidata"
+  },
+  "BB": {
+   "name": "Barbados",
+   "source": "wikidata"
+  },
+  "BD": {
+   "name": "Bangladesh",
+   "source": "wikidata"
+  },
+  "BE": {
+   "name": "Belgium",
+   "source": "wikidata"
+  },
+  "BF": {
+   "name": "Burkina Faso",
+   "source": "wikidata"
+  },
+  "BG": {
+   "name": "Bulgaria",
+   "source": "wikidata"
+  },
+  "BH": {
+   "name": "Bahrain",
+   "source": "wikidata"
+  },
+  "BI": {
+   "name": "Burundi",
+   "source": "wikidata"
+  },
+  "BJ": {
+   "name": "Benin",
+   "source": "wikidata"
+  },
+  "BL": {
+   "name": "Saint Barthélemy",
+   "source": "wikidata"
+  },
+  "BM": {
+   "name": "Bermuda",
+   "source": "wikidata"
+  },
+  "BN": {
+   "name": "Brunei",
+   "source": "wikidata"
+  },
+  "BO": {
+   "name": "Bolivia",
+   "source": "wikidata"
+  },
+  "BQ": {
+   "name": "Caribbean Netherlands",
+   "source": "wikidata"
+  },
+  "BR": {
+   "name": "Brazil",
+   "source": "wikidata"
+  },
+  "BS": {
+   "name": "The Bahamas",
+   "source": "wikidata"
+  },
+  "BT": {
+   "name": "Bhutan",
+   "source": "wikidata"
+  },
+  "BV": {
+   "name": "Bouvet Island",
+   "source": "wikidata"
+  },
+  "BW": {
+   "name": "Botswana",
+   "source": "wikidata"
+  },
+  "BY": {
+   "name": "Belarus",
+   "source": "wikidata"
+  },
+  "BZ": {
+   "name": "Belize",
+   "source": "wikidata"
+  },
+  "CA": {
+   "name": "Canada",
+   "source": "wikidata"
+  },
+  "CC": {
+   "name": "Cocos (Keeling) Islands",
+   "source": "wikidata"
+  },
+  "CD": {
+   "name": "Democratic Republic of the Congo",
+   "source": "wikidata"
+  },
+  "CF": {
+   "name": "Central African Republic",
+   "source": "wikidata"
+  },
+  "CG": {
+   "name": "Republic of the Congo",
+   "source": "wikidata"
+  },
+  "CH": {
+   "name": "Switzerland",
+   "source": "wikidata"
+  },
+  "CI": {
+   "name": "Ivory Coast",
+   "source": "wikidata"
+  },
+  "CK": {
+   "name": "Cook Islands",
+   "source": "wikidata"
+  },
+  "CL": {
+   "name": "Chile",
+   "source": "wikidata"
+  },
+  "CM": {
+   "name": "Cameroon",
+   "source": "wikidata"
+  },
+  "CN": {
+   "name": "People's Republic of China",
+   "source": "wikidata"
+  },
+  "CO": {
+   "name": "Colombia",
+   "source": "wikidata"
+  },
+  "CP": {
+   "name": "Clipperton Island",
+   "source": "wikidata"
+  },
+  "CQ": {
+   "name": "Sark",
+   "source": "wikidata"
+  },
+  "CR": {
+   "name": "Costa Rica",
+   "source": "wikidata"
+  },
+  "CU": {
+   "name": "Cuba",
+   "source": "wikidata"
+  },
+  "CV": {
+   "name": "Cape Verde",
+   "source": "wikidata"
+  },
+  "CW": {
+   "name": "Curaçao",
+   "source": "wikidata"
+  },
+  "CX": {
+   "name": "Christmas Island",
+   "source": "wikidata"
+  },
+  "CY": {
+   "name": "Cyprus",
+   "source": "wikidata"
+  },
+  "CZ": {
+   "name": "Czech Republic",
+   "source": "wikidata"
+  },
+  "DE": {
+   "name": "Germany",
+   "source": "wikidata"
+  },
+  "DG": {
+   "name": "Diego Garcia",
+   "source": "wikidata"
+  },
+  "DJ": {
+   "name": "Djibouti",
+   "source": "wikidata"
+  },
+  "DK": {
+   "name": "Denmark",
+   "source": "wikidata"
+  },
+  "DM": {
+   "name": "Dominica",
+   "source": "wikidata"
+  },
+  "DO": {
+   "name": "Dominican Republic",
+   "source": "wikidata"
+  },
+  "DZ": {
+   "name": "Algeria",
+   "source": "wikidata"
+  },
+  "EC": {
+   "name": "Ecuador",
+   "source": "wikidata"
+  },
+  "EE": {
+   "name": "Estonia",
+   "source": "wikidata"
+  },
+  "EG": {
+   "name": "Egypt",
+   "source": "wikidata"
+  },
+  "EH": {
+   "name": "Western Sahara",
+   "source": "wikidata"
+  },
+  "ER": {
+   "name": "Eritrea",
+   "source": "wikidata"
+  },
+  "ES": {
+   "name": "Spain",
+   "source": "wikidata"
+  },
+  "ET": {
+   "name": "Ethiopia",
+   "source": "wikidata"
+  },
+  "FI": {
+   "name": "Finland",
+   "source": "wikidata"
+  },
+  "FJ": {
+   "name": "Fiji",
+   "source": "wikidata"
+  },
+  "FK": {
+   "name": "Falkland Islands",
+   "source": "wikidata"
+  },
+  "FM": {
+   "name": "Federated States of Micronesia",
+   "source": "wikidata"
+  },
+  "FO": {
+   "name": "Faroe Islands",
+   "source": "wikidata"
+  },
+  "FR": {
+   "name": "France",
+   "source": "wikidata"
+  },
+  "GA": {
+   "name": "Gabon",
+   "source": "wikidata"
+  },
+  "GB": {
+   "name": "United Kingdom",
+   "source": "wikidata"
+  },
+  "GD": {
+   "name": "Grenada",
+   "source": "wikidata"
+  },
+  "GE": {
+   "name": "Georgia",
+   "source": "wikidata"
+  },
+  "GF": {
+   "name": "French Guiana",
+   "source": "wikidata"
+  },
+  "GG": {
+   "name": "Guernsey",
+   "source": "wikidata"
+  },
+  "GH": {
+   "name": "Ghana",
+   "source": "wikidata"
+  },
+  "GI": {
+   "name": "Gibraltar",
+   "source": "wikidata"
+  },
+  "GL": {
+   "name": "Greenland",
+   "source": "wikidata"
+  },
+  "GM": {
+   "name": "The Gambia",
+   "source": "wikidata"
+  },
+  "GN": {
+   "name": "Guinea",
+   "source": "wikidata"
+  },
+  "GP": {
+   "name": "Guadeloupe",
+   "source": "wikidata"
+  },
+  "GQ": {
+   "name": "Equatorial Guinea",
+   "source": "wikidata"
+  },
+  "GR": {
+   "name": "Greece",
+   "source": "wikidata"
+  },
+  "GS": {
+   "name": "South Georgia and the South Sandwich Islands",
+   "source": "wikidata"
+  },
+  "GT": {
+   "name": "Guatemala",
+   "source": "wikidata"
+  },
+  "GU": {
+   "name": "Guam",
+   "source": "wikidata"
+  },
+  "GW": {
+   "name": "Guinea-Bissau",
+   "source": "wikidata"
+  },
+  "GY": {
+   "name": "Guyana",
+   "source": "wikidata"
+  },
+  "HK": {
+   "name": "Hong Kong",
+   "source": "wikidata"
+  },
+  "HM": {
+   "name": "Heard Island and McDonald Islands",
+   "source": "wikidata"
+  },
+  "HN": {
+   "name": "Honduras",
+   "source": "wikidata"
+  },
+  "HR": {
+   "name": "Croatia",
+   "source": "wikidata"
+  },
+  "HT": {
+   "name": "Haiti",
+   "source": "wikidata"
+  },
+  "HU": {
+   "name": "Hungary",
+   "source": "wikidata"
+  },
+  "ID": {
+   "name": "Indonesia",
+   "source": "wikidata"
+  },
+  "IE": {
+   "name": "Ireland",
+   "source": "wikidata"
+  },
+  "IL": {
+   "name": "Israel",
+   "source": "wikidata"
+  },
+  "IM": {
+   "name": "Isle of Man",
+   "source": "wikidata"
+  },
+  "IN": {
+   "name": "India",
+   "source": "wikidata"
+  },
+  "IO": {
+   "name": "British Indian Ocean Territory",
+   "source": "wikidata"
+  },
+  "IQ": {
+   "name": "Iraq",
+   "source": "wikidata"
+  },
+  "IR": {
+   "name": "Iran",
+   "source": "wikidata"
+  },
+  "IS": {
+   "name": "Iceland",
+   "source": "wikidata"
+  },
+  "IT": {
+   "name": "Italy",
+   "source": "wikidata"
+  },
+  "JE": {
+   "name": "Jersey",
+   "source": "wikidata"
+  },
+  "JM": {
+   "name": "Jamaica",
+   "source": "wikidata"
+  },
+  "JO": {
+   "name": "Jordan",
+   "source": "wikidata"
+  },
+  "JP": {
+   "name": "Japan",
+   "source": "wikidata"
+  },
+  "KE": {
+   "name": "Kenya",
+   "source": "wikidata"
+  },
+  "KG": {
+   "name": "Kyrgyzstan",
+   "source": "wikidata"
+  },
+  "KH": {
+   "name": "Cambodia",
+   "source": "wikidata"
+  },
+  "KI": {
+   "name": "Kiribati",
+   "source": "wikidata"
+  },
+  "KM": {
+   "name": "Comoros",
+   "source": "wikidata"
+  },
+  "KN": {
+   "name": "Saint Kitts and Nevis",
+   "source": "wikidata"
+  },
+  "KP": {
+   "name": "North Korea",
+   "source": "wikidata"
+  },
+  "KR": {
+   "name": "South Korea",
+   "source": "wikidata"
+  },
+  "KW": {
+   "name": "Kuwait",
+   "source": "wikidata"
+  },
+  "KY": {
+   "name": "Cayman Islands",
+   "source": "wikidata"
+  },
+  "KZ": {
+   "name": "Kazakhstan",
+   "source": "wikidata"
+  },
+  "LA": {
+   "name": "Laos",
+   "source": "wikidata"
+  },
+  "LB": {
+   "name": "Lebanon",
+   "source": "wikidata"
+  },
+  "LC": {
+   "name": "Saint Lucia",
+   "source": "wikidata"
+  },
+  "LI": {
+   "name": "Liechtenstein",
+   "source": "wikidata"
+  },
+  "LK": {
+   "name": "Sri Lanka",
+   "source": "wikidata"
+  },
+  "LR": {
+   "name": "Liberia",
+   "source": "wikidata"
+  },
+  "LS": {
+   "name": "Lesotho",
+   "source": "wikidata"
+  },
+  "LT": {
+   "name": "Lithuania",
+   "source": "wikidata"
+  },
+  "LU": {
+   "name": "Luxembourg",
+   "source": "wikidata"
+  },
+  "LV": {
+   "name": "Latvia",
+   "source": "wikidata"
+  },
+  "LY": {
+   "name": "Libya",
+   "source": "wikidata"
+  },
+  "MA": {
+   "name": "Morocco",
+   "source": "wikidata"
+  },
+  "MC": {
+   "name": "Monaco",
+   "source": "wikidata"
+  },
+  "MD": {
+   "name": "Moldova",
+   "source": "wikidata"
+  },
+  "ME": {
+   "name": "Montenegro",
+   "source": "wikidata"
+  },
+  "MF": {
+   "name": "Saint-Martin",
+   "source": "wikidata"
+  },
+  "MG": {
+   "name": "Madagascar",
+   "source": "wikidata"
+  },
+  "MH": {
+   "name": "Marshall Islands",
+   "source": "wikidata"
+  },
+  "MK": {
+   "name": "North Macedonia",
+   "source": "wikidata"
+  },
+  "ML": {
+   "name": "Mali",
+   "source": "wikidata"
+  },
+  "MM": {
+   "name": "Myanmar",
+   "source": "wikidata"
+  },
+  "MN": {
+   "name": "Mongolia",
+   "source": "wikidata"
+  },
+  "MO": {
+   "name": "Macau",
+   "source": "wikidata"
+  },
+  "MP": {
+   "name": "Northern Mariana Islands",
+   "source": "wikidata"
+  },
+  "MQ": {
+   "name": "Martinique",
+   "source": "wikidata"
+  },
+  "MR": {
+   "name": "Mauritania",
+   "source": "wikidata"
+  },
+  "MS": {
+   "name": "Montserrat",
+   "source": "wikidata"
+  },
+  "MT": {
+   "name": "Malta",
+   "source": "wikidata"
+  },
+  "MU": {
+   "name": "Mauritius",
+   "source": "wikidata"
+  },
+  "MV": {
+   "name": "Maldives",
+   "source": "wikidata"
+  },
+  "MW": {
+   "name": "Malawi",
+   "source": "wikidata"
+  },
+  "MX": {
+   "name": "Mexico",
+   "source": "wikidata"
+  },
+  "MY": {
+   "name": "Malaysia",
+   "source": "wikidata"
+  },
+  "MZ": {
+   "name": "Mozambique",
+   "source": "wikidata"
+  },
+  "NA": {
+   "name": "Namibia",
+   "source": "wikidata"
+  },
+  "NC": {
+   "name": "New Caledonia",
+   "source": "wikidata"
+  },
+  "NE": {
+   "name": "Niger",
+   "source": "wikidata"
+  },
+  "NF": {
+   "name": "Norfolk Island",
+   "source": "wikidata"
+  },
+  "NG": {
+   "name": "Nigeria",
+   "source": "wikidata"
+  },
+  "NI": {
+   "name": "Nicaragua",
+   "source": "wikidata"
+  },
+  "NL": {
+   "name": "Kingdom of the Netherlands",
+   "source": "wikidata"
+  },
+  "NO": {
+   "name": "Norway",
+   "source": "wikidata"
+  },
+  "NP": {
+   "name": "Nepal",
+   "source": "wikidata"
+  },
+  "NR": {
+   "name": "Nauru",
+   "source": "wikidata"
+  },
+  "NU": {
+   "name": "Niue",
+   "source": "wikidata"
+  },
+  "NZ": {
+   "name": "New Zealand",
+   "source": "wikidata"
+  },
+  "OM": {
+   "name": "Oman",
+   "source": "wikidata"
+  },
+  "PA": {
+   "name": "Panama",
+   "source": "wikidata"
+  },
+  "PE": {
+   "name": "Peru",
+   "source": "wikidata"
+  },
+  "PF": {
+   "name": "French Polynesia",
+   "source": "wikidata"
+  },
+  "PG": {
+   "name": "Papua New Guinea",
+   "source": "wikidata"
+  },
+  "PH": {
+   "name": "Philippines",
+   "source": "wikidata"
+  },
+  "PK": {
+   "name": "Pakistan",
+   "source": "wikidata"
+  },
+  "PL": {
+   "name": "Poland",
+   "source": "wikidata"
+  },
+  "PM": {
+   "name": "Saint Pierre and Miquelon",
+   "source": "wikidata"
+  },
+  "PN": {
+   "name": "Pitcairn Islands",
+   "source": "wikidata"
+  },
+  "PR": {
+   "name": "Puerto Rico",
+   "source": "wikidata"
+  },
+  "PS": {
+   "name": "Palestine",
+   "source": "wikidata"
+  },
+  "PT": {
+   "name": "Portugal",
+   "source": "wikidata"
+  },
+  "PW": {
+   "name": "Palau",
+   "source": "wikidata"
+  },
+  "PY": {
+   "name": "Paraguay",
+   "source": "wikidata"
+  },
+  "QA": {
+   "name": "Qatar",
+   "source": "wikidata"
+  },
+  "RE": {
+   "name": "Réunion",
+   "source": "wikidata"
+  },
+  "RO": {
+   "name": "Romania",
+   "source": "wikidata"
+  },
+  "RS": {
+   "name": "Serbia",
+   "source": "wikidata"
+  },
+  "RU": {
+   "name": "Russia",
+   "source": "wikidata"
+  },
+  "RW": {
+   "name": "Rwanda",
+   "source": "wikidata"
+  },
+  "SA": {
+   "name": "Saudi Arabia",
+   "source": "wikidata"
+  },
+  "SB": {
+   "name": "Solomon Islands",
+   "source": "wikidata"
+  },
+  "SC": {
+   "name": "Seychelles",
+   "source": "wikidata"
+  },
+  "SD": {
+   "name": "Sudan",
+   "source": "wikidata"
+  },
+  "SE": {
+   "name": "Sweden",
+   "source": "wikidata"
+  },
+  "SG": {
+   "name": "Singapore",
+   "source": "wikidata"
+  },
+  "SH": {
+   "name": "Saint Helena, Ascension and Tristan da Cunha",
+   "source": "wikidata"
+  },
+  "SI": {
+   "name": "Slovenia",
+   "source": "wikidata"
+  },
+  "SJ": {
+   "name": "Svalbard and Jan Mayen",
+   "source": "wikidata"
+  },
+  "SK": {
+   "name": "Slovakia",
+   "source": "wikidata"
+  },
+  "SL": {
+   "name": "Sierra Leone",
+   "source": "wikidata"
+  },
+  "SM": {
+   "name": "San Marino",
+   "source": "wikidata"
+  },
+  "SN": {
+   "name": "Senegal",
+   "source": "wikidata"
+  },
+  "SO": {
+   "name": "Somalia",
+   "source": "wikidata"
+  },
+  "SR": {
+   "name": "Suriname",
+   "source": "wikidata"
+  },
+  "SS": {
+   "name": "South Sudan",
+   "source": "wikidata"
+  },
+  "ST": {
+   "name": "São Tomé and Príncipe",
+   "source": "wikidata"
+  },
+  "SV": {
+   "name": "El Salvador",
+   "source": "wikidata"
+  },
+  "SX": {
+   "name": "Sint Maarten",
+   "source": "wikidata"
+  },
+  "SY": {
+   "name": "Syria",
+   "source": "wikidata"
+  },
+  "SZ": {
+   "name": "Eswatini",
+   "source": "wikidata"
+  },
+  "TA": {
+   "name": "Tristan da Cunha",
+   "source": "wikidata"
+  },
+  "TC": {
+   "name": "Turks and Caicos Islands",
+   "source": "wikidata"
+  },
+  "TD": {
+   "name": "Chad",
+   "source": "wikidata"
+  },
+  "TF": {
+   "name": "French Southern and Antarctic Lands",
+   "source": "wikidata"
+  },
+  "TG": {
+   "name": "Togo",
+   "source": "wikidata"
+  },
+  "TH": {
+   "name": "Thailand",
+   "source": "wikidata"
+  },
+  "TJ": {
+   "name": "Tajikistan",
+   "source": "wikidata"
+  },
+  "TK": {
+   "name": "Tokelau",
+   "source": "wikidata"
+  },
+  "TL": {
+   "name": "Timor-Leste",
+   "source": "wikidata"
+  },
+  "TM": {
+   "name": "Turkmenistan",
+   "source": "wikidata"
+  },
+  "TN": {
+   "name": "Tunisia",
+   "source": "wikidata"
+  },
+  "TO": {
+   "name": "Tonga",
+   "source": "wikidata"
+  },
+  "TR": {
+   "name": "Turkey",
+   "source": "wikidata"
+  },
+  "TT": {
+   "name": "Trinidad and Tobago",
+   "source": "wikidata"
+  },
+  "TV": {
+   "name": "Tuvalu",
+   "source": "wikidata"
+  },
+  "TW": {
+   "name": "Taiwan",
+   "source": "wikidata"
+  },
+  "TZ": {
+   "name": "Tanzania",
+   "source": "wikidata"
+  },
+  "UA": {
+   "name": "Ukraine",
+   "source": "wikidata"
+  },
+  "UG": {
+   "name": "Uganda",
+   "source": "wikidata"
+  },
+  "UM": {
+   "name": "United States Minor Outlying Islands",
+   "source": "wikidata"
+  },
+  "US": {
+   "name": "United States",
+   "source": "wikidata"
+  },
+  "UY": {
+   "name": "Uruguay",
+   "source": "wikidata"
+  },
+  "UZ": {
+   "name": "Uzbekistan",
+   "source": "wikidata"
+  },
+  "VA": {
+   "name": "Vatican City",
+   "source": "wikidata"
+  },
+  "VC": {
+   "name": "Saint Vincent and the Grenadines",
+   "source": "wikidata"
+  },
+  "VE": {
+   "name": "Venezuela",
+   "source": "wikidata"
+  },
+  "VG": {
+   "name": "British Virgin Islands",
+   "source": "wikidata"
+  },
+  "VI": {
+   "name": "United States Virgin Islands",
+   "source": "wikidata"
+  },
+  "VN": {
+   "name": "Vietnam",
+   "source": "wikidata"
+  },
+  "VU": {
+   "name": "Vanuatu",
+   "source": "wikidata"
+  },
+  "WF": {
+   "name": "Wallis and Futuna",
+   "source": "wikidata"
+  },
+  "WS": {
+   "name": "Samoa",
+   "source": "wikidata"
+  },
+  "XK": {
+   "name": "Kosovo",
+   "source": "wikidata"
+  },
+  "YE": {
+   "name": "Yemen",
+   "source": "wikidata"
+  },
+  "YT": {
+   "name": "Mayotte",
+   "source": "wikidata"
+  },
+  "ZA": {
+   "name": "South Africa",
+   "source": "wikidata"
+  },
+  "ZM": {
+   "name": "Zambia",
+   "source": "wikidata"
+  },
+  "ZW": {
+   "name": "Zimbabwe",
+   "source": "wikidata"
+  }
+ }
 }

@@ -1,0 +1,19 @@
+# path | reason (files with no "Ported from" header)
+src/app/api/account/route.ts | new in R2e: DELETE /api/account, the member's own deletion (the old tree had no way to delete an account)
+src/app/api/account/export/route.ts | new in R2e: GET /api/account/export, the member's own data as one JSON file (the old tree had no export)
+src/app/api/community/posts/[id]/remove/route.ts | new in R2e: a moderator's removal of another member's post through moderate_report (the old tree deleted by row policy with no note and no report)
+src/features/admin/ui/reason-dialog.tsx | new in R2e: the one dialog that asks an operator for the reason an act carries to admin_events (the old console acted on a click)
+src/features/auth/api/account.ts | new in R2e: the two own-account handlers, each one database function (delete_own_account, export_own_account)
+src/features/auth/lib/account-export.ts | new in R2e: the typed output schema of the account export
+src/features/auth/lib/account-phrase.ts | new in R2e: the phrase a member types to delete their account, shared by the privacy page and the route
+src/features/community/lib/data/antitrust-rules.json | new in R2e: the antitrust guard's rules as data, read over the post text (the old guard read a declared field)
+src/features/community/lib/data/room-regions.json | new in R2e: the region of the jurisdiction list each Community room covers (the old rooms left 22 jurisdictions unmapped)
+src/features/community/lib/domain-proof.ts | new in R2e: domain ownership proved by a DNS TXT record the system reads (the old "Verified" meant "not in a free-mail list")
+src/features/community/lib/group-access.ts | new in R2e: the one rule for who may edit a group (the old tree decided it in three places)
+src/features/community/lib/avatar-src.ts | new in R2e: the one rule for which headshot address a browser may be sent to (the old tree drew any author-chosen host)
+src/features/community/ui/posts/use-delete-post.tsx | new in R2e: the one delete-with-confirmation flow every Community surface uses (the old tree confirmed in one surface and not in another)
+src/features/legal/data/processors.json | new in R2e: the processors this tree uses, which the privacy page renders and a structure test holds equal to the code
+src/features/legal/data/rights.json | new in R2e: the rights the privacy page states, each with the route, page or address that honours it
+src/features/legal/lib/privacy.ts | new in R2e: the typed loader of the privacy page's two data files
+src/features/legal/ui/YourData.tsx | new in R2e: the controls that honour the access, portability and deletion rights from the privacy page
+src/core/entities/unlocode-table.ts | new in R2e: the place-name factory over a table, every served name through licenceGate (split from unlocode-names.ts so the gate can be attacked with a planted table)

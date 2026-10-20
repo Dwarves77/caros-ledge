@@ -20,6 +20,38 @@
     }
    ]
   },
+  "admin_events": {
+   "columns": [
+    "id",
+    "created_at",
+    "actor_id",
+    "org_id",
+    "action",
+    "target_kind",
+    "target_id",
+    "reason",
+    "detail"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "created_at": "__now",
+    "detail": {}
+   },
+   "fks": [
+    {
+     "column": "actor_id",
+     "table": "users",
+     "ref": "id"
+    },
+    {
+     "column": "org_id",
+     "table": "organizations",
+     "ref": "id"
+    }
+   ]
+  },
   "agent_run_searches": {
    "columns": [
     "id",
@@ -2429,6 +2461,40 @@
     }
    ]
   },
+  "membership_consents": {
+   "columns": [
+    "id",
+    "user_id",
+    "org_id",
+    "invitation_id",
+    "role",
+    "basis",
+    "consented_at"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "consented_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "invitation_id",
+     "table": "org_invitations",
+     "ref": "id"
+    },
+    {
+     "column": "org_id",
+     "table": "organizations",
+     "ref": "id"
+    },
+    {
+     "column": "user_id",
+     "table": "users",
+     "ref": "id"
+    }
+   ]
+  },
   "migration_log": {
    "columns": [
     "file",
@@ -2879,6 +2945,15 @@
      "ref": "id"
     }
    ]
+  },
+  "org_role_actions": {
+   "columns": [
+    "action",
+    "role"
+   ],
+   "uuid": [],
+   "defaults": {},
+   "fks": []
   },
   "org_watchlist": {
    "columns": [

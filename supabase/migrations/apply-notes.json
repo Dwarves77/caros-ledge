@@ -119,6 +119,21 @@
   "0069_live_check_provenance_no_replica": {
     "selfCheckBy": "0073_selfcheck_repairs"
   },
+  "0102_admin_action_rpcs": {
+    "unscopedReads": {
+      "system_state": "the one-row emergency-stop singleton (id = true): the self-check reads the value before the acts and proves it is the same after the refused ones, which holds whatever it was"
+    }
+  },
+  "0105_data_demote_legacy_verification": {
+    "consumer": "the Community identity and profile form (src/features/community: the verified mark states a recorded verification)",
+    "after": "0103",
+    "assert": "scripts/ci/fixtures/data-0105-verification.assert.sql",
+    "irreversible": "none needed beyond re-verification: the cleared marks carried no proof (a member verifies again by the DNS proof, an admin marks them); a cleared non-https avatar address is re-entered by the member through the profile form",
+    "unscopedReads": {
+      "community_member_profiles": "a whole-table invariant (no verified row keeps a method the system does not perform); the assertions about the fixture's rows are scripts/ci/fixtures/data-0105-verification.assert.sql",
+      "profiles": "a whole-table invariant (no avatar address that is not https remains); the fixture's rows are asserted by the same file"
+    }
+  },
   "0078_migration_log": {
     "unscopedReads": {
       "migration_log": "asserts the whole seed: its size is the invariant, and the table is empty before this file creates it"

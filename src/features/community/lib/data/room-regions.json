@@ -1,0 +1,18 @@
+{
+  "regions": {
+    "Americas": "LATAM",
+    "Europe": "EU",
+    "Asia-Pacific": "APAC",
+    "Oceania": "APAC",
+    "Middle East": "MEA",
+    "Africa": "MEA",
+    "Russia & CIS": "GLOBAL",
+    "International": "GLOBAL"
+  },
+  "overrides": {
+    "us": "US",
+    "uk": "UK",
+    "canada": "GLOBAL",
+    "turkey": "MEA"
+  }
+}

@@ -21,7 +21,9 @@ export interface ProfileRow {
 }
 export interface OrgPayload {
   org: { id: string; name: string; slug: string; plan: string; created_at: string };
-  caller_role: "owner" | "admin" | "member" | "viewer";
+  caller_role: "owner" | "admin" | "member" | "viewer" | "platform_admin";
+  /** What the caller may do in this organisation (the database's org_actions). */
+  actions?: string[];
   owner: { user_id: string; display_name: string; owner_since: string } | null;
   member_count: number;
 }

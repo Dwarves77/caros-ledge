@@ -1,8 +1,8 @@
 // Ported from old_repo/src/lib/community/organisation-key.mjs (lines 25-95)
 // Ported from old_repo/src/lib/community/organisation-salt.ts (lines 1-20)
-// Corporate-email verification (INV-235): a confirmed account address on a non-free-mail domain IS the verification, and the member's pseudonymous organisation key is an HMAC-SHA256 of that domain under a
-// server-only salt, never returned to any client. COMMUNITY_ORG_SALT is the salt; where it is not set the salt is derived from WORKER_SECRET. Rotating WORKER_SECRET without COMMUNITY_ORG_SALT changes every
-// key derived afterwards (keys derived before and after stop matching), so a deployment sets COMMUNITY_ORG_SALT once and never rotates it.
+// The member's pseudonymous organisation key (INV-235) is an HMAC-SHA256 of the domain they proved they control (lib/domain-proof.ts) under a server-only salt, never returned to any client. The free-mail list below is NOT
+// a verification (a name on a list proves nothing): it only keeps a key from naming a mail provider as if it were an organisation. COMMUNITY_ORG_SALT is the salt; where it is not set the salt is derived from WORKER_SECRET.
+// Rotating WORKER_SECRET without COMMUNITY_ORG_SALT changes every key derived afterwards (keys derived before and after stop matching), so a deployment sets COMMUNITY_ORG_SALT once and never rotates it.
 import { createHmac, hkdfSync } from "node:crypto";
 
 import { z } from "zod";
@@ -10,10 +10,10 @@ import { z } from "zod";
 import freeMail from "./data/free-mail.json";
 
 const FREE_MAIL: ReadonlySet<string> = new Set(z.array(z.string().min(3)).min(1).parse(freeMail));
-export const ORG_SALT_HKDF_INFO = "caros-ledge/community-organisation-key/v1";
+const ORG_SALT_HKDF_INFO = "caros-ledge/community-organisation-key/v1";
 const normalise = (domain: unknown): string => String(domain ?? "").trim().toLowerCase().replace(/^@/, "");
 
-export const isFreeMailDomain = (domain: unknown): boolean => FREE_MAIL.has(normalise(domain));
+const isFreeMailDomain = (domain: unknown): boolean => FREE_MAIL.has(normalise(domain));
 
 /** The domain half of an address (lower-cased); null unless it is `local@domain` with a dot in the domain. */
 export function domainFromEmail(email: string | null | undefined): string | null {
@@ -23,11 +23,6 @@ export function domainFromEmail(email: string | null | undefined): string | null
   const domain = t.slice(at + 1);
   return domain.includes(".") ? domain : null;
 }
-
-export const isCorporateDomain = (domain: unknown): boolean => {
-  const d = normalise(domain);
-  return !!d && d.includes(".") && !FREE_MAIL.has(d);
-};
 
 /** The salt and where it came from; null when neither source is long enough (16 characters). */
 export function resolveOrganisationSalt(env: Record<string, string | undefined> = process.env): { salt: string | null; source: "COMMUNITY_ORG_SALT" | "derived-from-WORKER_SECRET" | null } {

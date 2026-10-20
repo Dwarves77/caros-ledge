@@ -38,9 +38,25 @@ function installAttention(f: ReturnType<typeof fixture>) {
   };
 }
 
+/** admin_request_corpus_turns over the fixture rows, as migration 0102 states it: one open manual request per live item that has none, counted. */
+function installCorpusRequests(f: ReturnType<typeof fixture>) {
+  f.db.rpcs.admin_request_corpus_turns = (a, d) => {
+    const live = d.rows("intelligence_items").filter((i) => !i.is_archived && i.provenance_status === "verified" && (a.p_scope === "all" || (a.p_scope === "item" && i.id === a.p_item_id) || (a.p_scope === "source" && i.source_id === a.p_source_id)));
+    const opened = new Set(d.rows("corpus_turn_requests").filter((r) => !r.consumed_at).map((r) => r.intelligence_item_id));
+    const fresh = live.filter((i) => !opened.has(i.id));
+    for (const i of fresh) d.rows("corpus_turn_requests").push({ id: `req-${String(i.id)}`, intelligence_item_id: i.id, reason: "manual", requested_at: NOW.toISOString(), consumed_at: null, consumed_by: null });
+    return { data: { ok: true, inserted: fresh.length, already_open: live.length - fresh.length, total_live: live.length } };
+  };
+}
+
 function asAdmin(f: ReturnType<typeof fixture>) {
   installAttention(f);
-  scripted.user = (request) => userDbFor(personaOf(request)).db;
+  installCorpusRequests(f);
+  scripted.user = (request) => {
+    const user = userDbFor(personaOf(request)).db as unknown as Record<string, unknown>;
+    // the admin's own client: the database function that files the request runs over the fixture rows
+    return { ...user, rpc: (name: string, args: Record<string, unknown>) => (name === "admin_request_corpus_turns" ? f.db.rpc(name, args) : (user.rpc as (n: string, a: unknown) => unknown)(name, args)) } as never;
+  };
   scripted.service = () => f.db.client as never;
 }
 
@@ -59,7 +75,7 @@ test("the console's reads show what the turn wrote: the platform flags, the regi
   assert.ok(dash.staged.ok && dash.staged.data.total === f.db.rows("staged_updates").filter((x) => x.status === "pending").length, "the staged badge equals the pending rows");
 
   const item = f.db.rows("intelligence_items").find((x) => x.provenance_status === "verified") as Row;
-  const filed = await corpusPost(as("platformAdmin", "/api/admin/corpus-turn-requests", { method: "POST", body: JSON.stringify({ itemId: item.id }) }), ctx({}) as never);
+  const filed = await corpusPost(as("platformAdmin", "/api/admin/corpus-turn-requests", { method: "POST", body: JSON.stringify({ itemId: item.id, reason: "regenerate after the feed change" }) }), ctx({}) as never);
   assert.equal(filed.status, 200);
   const open = (await (await corpusGet(as("platformAdmin", "/api/admin/corpus-turn-requests"), ctx({}) as never)).json()) as { total_open?: number; open?: unknown[]; requests?: unknown[] };
   assert.equal(f.db.rows("corpus_turn_requests").filter((x) => x.intelligence_item_id === item.id).length, 1, "one open request per item");

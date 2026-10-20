@@ -1,7 +1,8 @@
-// The write-side invariants of Community: INV-137, 150, 223, 235, 236, 237, 238, 239, 240, 241. The row policies are emulated (tests/community/_world.ts); the SQL of each rpc is proven by the migrations' own self-checks.
+// The write-side invariants of Community: INV-137, 150, 223, 235, 236, 237, 238, 239, 240, 241 (R2e: 235 is a DNS proof the system performs and records, 237 reads the words of a post, 241 needs the document). The row policies are emulated (tests/community/_world.ts); the SQL of each rpc is proven by the migrations' own self-checks.
 import assert from "node:assert/strict";
 import { createHmac } from "node:crypto";
 import { test } from "node:test";
+import dns from "node:dns/promises";
 
 import { POST_INVITE } from "@/features/community/api/group-invitations";
 import { POST as join } from "@/features/community/api/group-join";
@@ -14,11 +15,10 @@ import { POST as createPost } from "@/features/community/api/posts";
 import { POST as reply } from "@/features/community/api/replies";
 import { GET as listPosts } from "@/features/community/api/posts";
 import { POST_DECIDE, POST_REQUEST, POST_WITHDRAW } from "@/features/community/api/signoff";
-import { POST_VERIFY, PUT as putProfile } from "@/features/community/api/profile";
-import { kAnonymity, K_ANONYMITY_FLOOR, refuseSensitivePost } from "@/features/community/lib/antitrust";
+import { GET_VERIFY, POST_VERIFY, PUT as putProfile } from "@/features/community/api/profile";
+import { kAnonymity, K_ANONYMITY_FLOOR, refuseSensitiveText } from "@/features/community/lib/antitrust";
 import { MAX_ENTITY_IDS, validateEntityIds } from "@/features/community/lib/entity-binding";
-import { deriveOrganisationKey, isFreeMailDomain, resolveOrganisationSalt } from "@/features/community/lib/org-key";
-import { SENSITIVE_FIELDS } from "@/features/community/lib/labels";
+import { deriveOrganisationKey, resolveOrganisationSalt } from "@/features/community/lib/org-key";
 
 import { scripted } from "../_support/fake-clients.ts";
 
@@ -74,20 +74,54 @@ test("INV-236: a thread and its links are one call; an unknown entity, a refused
 
 // ── INV-237: a declared commercially sensitive field is refused at write ─────────────────────────────────────────
 
-test("INV-237: each of the five sensitive fields is refused with 403 before any write; an undeclared post passes; an unknown field is a 400", async () => {
-  assert.equal(SENSITIVE_FIELDS.length, 5);
-  for (const field of SENSITIVE_FIELDS) {
-    const db = world();
-    const res = await call(createPost, "member", "POST", "/api/community/posts", { ...NEW, sensitivity_field: field });
-    assert.equal(res.status, 403, field);
-    assert.match(String(res.body.error), /commercially sensitive/);
-    assert.deepEqual([db.rpcLog.includes("create_thread"), posts(db)], [false, 6], `${field}: nothing was written`);
+/** Text that states a rate, wage, capacity or pricing figure (planted violations), and text that does not (regulatory prose, counts, dates). */
+const PLANTED = [
+  "We are paying USD 2,400 per FEU on Shanghai to Rotterdam this month",
+  "Our rate is $1,850 per TEU on the transpacific",
+  "carriers quoted 3200 EUR per container for the Q4 contract",
+  "Drivers here earn a wage of $31 per hour",
+  "Our warehouse salary band is 4200 EUR for pickers",
+  "We hold capacity of 1,200 TEU on this loop",
+  "blank sailings cut allocation to 800 TEU a week",
+  "the SAF surcharge is a 14% premium on our contract",
+  "my price for that lane was $2.1k a box",
+];
+const CLEAN = [
+  "Regulation (EU) 2023/1805 requires a 2% SAF share of aviation fuel supplied from 2025",
+  "The reporting window under ETS2 opens on 1 January 2027",
+  "Has anyone filed the first CBAM declaration yet?",
+  "The terminal operates three berths and handled 40 vessels last quarter",
+  "Article 12 sets a penalty regime but leaves the amounts to member states",
+  "We met 25 members at the conference in Hamburg",
+];
+
+test("INV-237 (R2e): the guard reads the WORDS: every planted figure is refused with the field it states, every clean text passes, in a thread, a reply and an edit, and a declaration is not needed", async () => {
+  for (const text of PLANTED) {
+    const guard = refuseSensitiveText(text);
+    assert.equal(guard.allowed, false, text);
+    assert.ok(!guard.allowed && guard.field.length > 0 && /never permitted/.test(guard.reason), text);
   }
+  for (const text of CLEAN) assert.equal(refuseSensitiveText(text).allowed, true, text);
+  assert.equal(refuseSensitiveText("a title", PLANTED[0]).allowed, false, "the title and the body are read together");
+  assert.equal(refuseSensitiveText(null, undefined, "").allowed, true);
   const db = world();
-  assert.equal((await call(createPost, "member", "POST", "/api/community/posts", { ...NEW, sensitivity_field: "favourite_colour" })).status, 400);
-  assert.equal((await call(createPost, "member", "POST", "/api/community/posts", { ...NEW, sensitivity_field: null })).status, 201);
-  assert.equal(refuseSensitivePost(null).allowed, true);
-  assert.equal(db.rows("community_posts").length, 7);
+  const before = posts(db);
+  for (const text of PLANTED) {
+    const res = await call(createPost, "member", "POST", "/api/community/posts", { ...NEW, body: text });
+    assert.equal(res.status, 403, text);
+    assert.match(String(res.body.error), /never permitted/);
+  }
+  assert.equal((await call(createPost, "member", "POST", "/api/community/posts", { ...NEW, title: PLANTED[1], body: "Some text" })).status, 403, "a figure in the title is a figure");
+  assert.deepEqual([db.rpcLog.includes("create_thread"), posts(db)], [false, before], "nothing was written for any refusal");
+  assert.equal((await call(createPost, "member", "POST", "/api/community/posts", { ...NEW, body: CLEAN[0] })).status, 201);
+  assert.equal((await call(createPost, "member", "POST", "/api/community/posts", { ...NEW, body: CLEAN[1], sensitivity_field: "pricing" })).status, 201, "a declaration in the body of the request is not read; the words are");
+  const rep = await call(reply, "member", "POST", `/api/community/posts/${T_PUB}/replies`, { body: PLANTED[3] }, { id: T_PUB });
+  assert.equal(rep.status, 403, "a reply is a composer too");
+  assert.equal((await call(reply, "member", "POST", `/api/community/posts/${T_PUB}/replies`, { body: CLEAN[2] }, { id: T_PUB })).status, 201);
+  const mine = (await call(createPost, "member", "POST", "/api/community/posts", { ...NEW, body: CLEAN[3] })).body.post as { id: string };
+  const edit = await call(editPost, "member", "PATCH", `/api/community/posts/${mine.id}`, { body: PLANTED[5] }, { id: mine.id });
+  assert.equal(edit.status, 403, "an edit is a composer too");
+  assert.equal(db.post(mine.id)?.body, CLEAN[3], "the refused edit changed nothing");
 });
 
 test("INV-237: the aggregate rule is kept in code as the floor: distinct organisations (never rows) against 5", () => {
@@ -110,16 +144,24 @@ test("INV-235: a member write is an allowlist: the verification columns, the org
   assert.equal((await call(putProfile, "member", "PUT", "/api/community/profile", { org_type: "wizard" })).status, 400);
 });
 
-test("INV-235: corporate-email verification: a free-mail domain is refused, a missing salt is refused, a good one is written by one service call and the key is never returned", async () => {
+test("INV-235 (R2e): verification is a DNS proof the system performs and records: a free-mail domain cannot publish it, a missing salt is refused, a lookup that failed is a retry, a match is one service call, and the key is never returned", async () => {
   const salt = "unit-test-salt-unit-test-salt";
-  const keep = { c: process.env.COMMUNITY_ORG_SALT, w: process.env.WORKER_SECRET };
+  const keep = { c: process.env.COMMUNITY_ORG_SALT, w: process.env.WORKER_SECRET, resolve: dns.resolveTxt };
+  const asked: string[] = [];
   try {
     process.env.COMMUNITY_ORG_SALT = salt;
     const db = world();
+    const published = (domain: string, uid: string): string => `caros-ledge-verification=${createHmac("sha256", salt).update(`verify:${uid}:${domain}`, "utf8").digest("hex").slice(0, 32)}`;
+    // a free-mail domain: nobody can publish a record on it, so the lookup finds nothing and nothing is written
     scripted.user = () => clientFor(db, { uid: USER.member, email: `someone@${FREE_MAIL_DOMAIN}`, admin: false });
+    dns.resolveTxt = async (host) => (asked.push(host), Promise.reject(Object.assign(new Error("not found"), { code: "ENOTFOUND" })));
+    const profileOf = () => JSON.stringify(db.rows("community_member_profiles").find((m) => m.user_id === USER.member));
+    const untouched = profileOf();
     const free = await call(POST_VERIFY, "member", "POST", "/api/community/profile/verify");
-    assert.equal(free.status, 403);
-    assert.equal(writesTo(db, "community_member_profiles").length, 0);
+    assert.equal(free.status, 409);
+    assert.match(String(free.body.error), /_caros-ledge\.outlook\.com/);
+    assert.equal(profileOf(), untouched, "a name on no list verifies nobody; a record that is not there changes nothing");
+    assert.deepEqual(asked, ["_caros-ledge.outlook.com"]);
 
     scripted.user = () => clientFor(db, { uid: USER.member, email: "someone@acme-freight.example", admin: false });
     delete process.env.COMMUNITY_ORG_SALT;
@@ -127,19 +169,32 @@ test("INV-235: corporate-email verification: a free-mail domain is refused, a mi
     const unsalted = await call(POST_VERIFY, "member", "POST", "/api/community/profile/verify");
     assert.equal(unsalted.status, 503);
     assert.equal(unsalted.headers.get("Retry-After"), "60");
-    assert.equal(writesTo(db, "community_member_profiles").length, 0, "no write without a salt");
+    assert.ok(!db.rpcLog.includes("record_domain_verification"), "no write without a salt");
 
     process.env.COMMUNITY_ORG_SALT = salt;
+    dns.resolveTxt = async () => Promise.reject(Object.assign(new Error("servfail"), { code: "ESERVFAIL" }));
+    const down = await call(POST_VERIFY, "member", "POST", "/api/community/profile/verify");
+    assert.equal(down.status, 503, "a lookup that failed is a retry, not a refusal of the member");
+    assert.ok(!db.rpcLog.includes("record_domain_verification"));
+
+    dns.resolveTxt = async () => [["caros-ledge-verification=somebody-elses-token"]];
+    assert.equal((await call(POST_VERIFY, "member", "POST", "/api/community/profile/verify")).status, 409, "another member's record does not verify this one");
+
+    dns.resolveTxt = async () => [["v=spf1 -all"], [published("acme-freight.example", USER.member).slice(0, 20), published("acme-freight.example", USER.member).slice(20)]];
     const good = await call(POST_VERIFY, "member", "POST", "/api/community/profile/verify");
     assert.equal(good.status, 200);
-    const writes = writesTo(db, "community_member_profiles");
-    assert.equal(writes.length, 1, "one write of the four columns together");
+    const row = db.rows("community_member_profiles").find((m) => m.user_id === USER.member);
     const key = createHmac("sha256", salt).update("acme-freight.example", "utf8").digest("hex");
-    assert.deepEqual(Object.keys(writes[0]?.payload as object).sort(), ["organisation_key", "verification_method", "verified", "verified_at"]);
-    assert.equal((writes[0]?.payload as { organisation_key: string }).organisation_key, key);
+    assert.deepEqual([row?.verified, row?.verification_method, row?.organisation_key], [true, "domain-dns", key]);
+    assert.equal(db.rows("admin_events").filter((e) => e.action === "member_verified_domain" && e.actor_id === USER.member).length, 1, "the event is written with the verification");
     assert.ok(!JSON.stringify(good.body).includes(key), "the key is not in the response");
     assert.equal((good.body.profile as { verified: boolean }).verified, true);
+    const instructions = await call(GET_VERIFY, "member", "GET", "/api/community/profile/verify");
+    assert.deepEqual(instructions.body, { domain: "acme-freight.example", host: "_caros-ledge.acme-freight.example", value: published("acme-freight.example", USER.member) });
+    world();
+    assert.equal((await call(GET_VERIFY, "anon", "GET", "/api/community/profile/verify")).status, 401);
   } finally {
+    dns.resolveTxt = keep.resolve;
     if (keep.c === undefined) delete process.env.COMMUNITY_ORG_SALT;
     else process.env.COMMUNITY_ORG_SALT = keep.c;
     if (keep.w !== undefined) process.env.WORKER_SECRET = keep.w;
@@ -154,7 +209,7 @@ test("INV-235: the organisation key is an HMAC-SHA256 of the domain under a serv
   assert.equal(deriveOrganisationKey({ domain: "gmail.com", verified: true, salt }).organisationKey, null);
   assert.equal(deriveOrganisationKey({ domain: "acme.example", verified: false, salt }).organisationKey, null);
   assert.equal(deriveOrganisationKey({ domain: "acme.example", verified: true, salt: "" }).organisationKey, null);
-  assert.equal(isFreeMailDomain("outlook.com"), true);
+  assert.equal(deriveOrganisationKey({ domain: "outlook.com", verified: true, salt }).organisationKey, null, "a free-mail domain is never an organisation");
   assert.deepEqual(resolveOrganisationSalt({}), { salt: null, source: null });
   assert.equal(resolveOrganisationSalt({ COMMUNITY_ORG_SALT: salt }).source, "COMMUNITY_ORG_SALT");
   assert.equal(resolveOrganisationSalt({ WORKER_SECRET: "worker-secret-worker-secret" }).source, "derived-from-WORKER_SECRET");
@@ -330,10 +385,11 @@ test("INV-241: a post is stamped only after a verifier or platform admin decides
   assert.match(String(second.body.error), /already open for this post/, "and it says why, in the route's words");
   const id = (opened.body.request as { id: string }).id;
   assert.equal((await call(POST_WITHDRAW, "moderator", "POST", `/api/community/signoff/${id}/withdraw`, {}, { id })).status, 404, "only the requester withdraws");
-  assert.equal((await call(POST_DECIDE, "member", "POST", `/api/community/signoff/${id}/decide`, { decision: "signed_off" }, { id })).status, 403, "and nobody decides their own");
+  assert.equal((await call(POST_DECIDE, "verifier", "POST", `/api/community/signoff/${id}/decide`, { decision: "signed_off" }, { id })).status, 400, "R2e: a sign-off with no primary document is refused");
+  assert.equal((await call(POST_DECIDE, "member", "POST", `/api/community/signoff/${id}/decide`, { decision: "signed_off", primary_doc_url: "https://eur-lex.europa.eu/x" }, { id })).status, 403, "and nobody decides their own");
   assert.equal((await call(POST_DECIDE, "verifier", "POST", `/api/community/signoff/${id}/decide`, { decision: "declined", decision_note: "No primary document" }, { id })).status, 200);
   assert.equal(db.post(T_HIDDEN)?.signed_off_at ?? null, null, "a decline stamps nothing");
-  assert.equal((await call(POST_DECIDE, "verifier", "POST", `/api/community/signoff/${id}/decide`, { decision: "signed_off" }, { id })).status, 409, "a decided request is closed");
+  assert.equal((await call(POST_DECIDE, "verifier", "POST", `/api/community/signoff/${id}/decide`, { decision: "signed_off", primary_doc_url: "https://eur-lex.europa.eu/x" }, { id })).status, 409, "a decided request is closed");
   const again = await call(POST_REQUEST, "member", "POST", `/api/community/posts/${T_HIDDEN}/signoff`, {}, { id: T_HIDDEN });
   const id2 = (again.body.request as { id: string }).id;
   const done = await call(POST_DECIDE, "platformAdmin", "POST", `/api/community/signoff/${id2}/decide`, { decision: "signed_off", primary_doc_url: "https://eur-lex.europa.eu/x" }, { id: id2 });
@@ -345,13 +401,13 @@ test("INV-241: a post is stamped only after a verifier or platform admin decides
 test("INV-241 (1 of 5): a profile COLUMN that says admin does not make a caller an admin: the rpc decides", async () => {
   const db = world();
   db.rows("profiles").find((p) => p.id === USER.member)!.is_platform_admin = true;
-  assert.equal((await call(POST_DECIDE, "member", "POST", `/api/community/signoff/${SIGNOFF}/decide`, { decision: "signed_off" }, { id: SIGNOFF })).status, 403);
+  assert.equal((await call(POST_DECIDE, "member", "POST", `/api/community/signoff/${SIGNOFF}/decide`, { decision: "signed_off", primary_doc_url: "https://eur-lex.europa.eu/x" }, { id: SIGNOFF })).status, 403);
   assert.equal(db.post(T_PUB)?.signed_off_at ?? null, null);
 });
 test("INV-241 (2 of 5): the rpc saying admin is enough, whatever the column says", async () => {
   const db = world();
   assert.equal(db.rows("profiles").find((p) => p.id === USER.platformAdmin)?.is_platform_admin, false);
-  assert.equal((await call(POST_DECIDE, "platformAdmin", "POST", `/api/community/signoff/${SIGNOFF}/decide`, { decision: "signed_off" }, { id: SIGNOFF })).status, 200);
+  assert.equal((await call(POST_DECIDE, "platformAdmin", "POST", `/api/community/signoff/${SIGNOFF}/decide`, { decision: "signed_off", primary_doc_url: "https://eur-lex.europa.eu/x" }, { id: SIGNOFF })).status, 200);
 });
 test("INV-241 (3 of 5): when the rpc cannot answer, the admin bit is false: an anonymous author's id is withheld even from a real platform admin", async () => {
   const db = world();
@@ -371,7 +427,7 @@ test("INV-241 (4 of 5): no read of the Community routes selects the platform-adm
 });
 test("INV-241 (5 of 5): an admin flag in the request body is ignored", async () => {
   world();
-  const res = await call(POST_DECIDE, "member", "POST", `/api/community/signoff/${SIGNOFF}/decide`, { decision: "signed_off", is_platform_admin: true, admin: true, verifier_status: "active" }, { id: SIGNOFF });
+  const res = await call(POST_DECIDE, "member", "POST", `/api/community/signoff/${SIGNOFF}/decide`, { decision: "signed_off", primary_doc_url: "https://eur-lex.europa.eu/x", is_platform_admin: true, admin: true, verifier_status: "active" }, { id: SIGNOFF });
   assert.equal(res.status, 403);
 });
 

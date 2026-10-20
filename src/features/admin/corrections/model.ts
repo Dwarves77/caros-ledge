@@ -1,10 +1,10 @@
 // Ported from old_repo/src/components/admin/corrections/model.mjs (lines 1-196)
-import { EDGE_RELATIONSHIPS, OPS_BY_KIND, TAG_COLUMNS, validateCorrectionInput } from "@/core/corrections/model";
+import { EDGE_RELATIONSHIPS, TAG_COLUMNS, validateCorrectionInput } from "@/core/corrections/model";
 import { requestJson, type JsonResult } from "@/core/http/request-json";
 
 import type { CorrectionData, TargetKind } from "./types";
 
-export { EDGE_RELATIONSHIPS, OPS_BY_KIND, TAG_COLUMNS };
+export { EDGE_RELATIONSHIPS, TAG_COLUMNS };
 export const KIND_FILTERS = ["fact", "tag", "connection", "section_text", "full_brief"] as const;
 export const STATE_FILTERS = ["active", "revoked", "orphaned"] as const;
 export type CorrectionState = (typeof STATE_FILTERS)[number];
@@ -66,7 +66,7 @@ export interface Draft {
   reason: string;
 }
 /** The POST body for one action, checked with the API's own validator so a missing reason never leaves the browser. Pure. */
-export function buildCorrectionBody(d: Draft): { ok: true; body: Record<string, unknown> } | { ok: false; code: string; message: string } {
+function buildCorrectionBody(d: Draft): { ok: true; body: Record<string, unknown> } | { ok: false; code: string; message: string } {
   const body: Record<string, unknown> = { target_kind: d.kind, target_ref: d.ref, op: d.op, reason: d.reason, ...(d.value ? { value: d.value } : {}) };
   const v = validateCorrectionInput(body);
   return v.ok ? { ok: true, body: { ...body, reason: v.input.reason, target_ref: v.input.target_ref } } : { ok: false, code: v.code, message: friendly(v) };

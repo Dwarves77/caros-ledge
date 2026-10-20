@@ -1,6 +1,6 @@
 // Ported from old_repo/src/app/api/community/posts/[id]/route.ts (lines 118-261)
 // Ported from old_repo/src/components/community/CommunityRooms.tsx (lines 404-432)
-// PATCH (the author edits their own post's title or text) and DELETE (the author, or a group admin or moderator by row policy). The GET of one post had no caller and is not ported. A read that fails is a 503; a delete
+// PATCH (the author edits their own post's title or text) and DELETE (the AUTHOR's own post; a moderator or group admin removes another member's post through POST .../remove, which is moderate_report with a required note). The GET of one post had no caller and is not ported. A read that fails is a 503; a delete
 // that touches no row is a 404, never a silent ok. POST cite is the one way a live system item is cited into a thread (it was a browser-side table write): the item must be a verified, live one, and the update runs under the
 // caller's row policy (the author, or a group admin or moderator).
 import { z } from "zod";
@@ -9,6 +9,7 @@ import { dbError, HttpError, ok, route } from "@/core/http/errors";
 import { isRefusal, requireUser } from "@/core/http/guard";
 import { parseJson } from "@/core/http/parse";
 
+import { refuseSensitiveText } from "../lib/antitrust";
 import { LIMITS } from "../lib/labels";
 import { POST_COLUMNS, shapePosts, type PostRow } from "../lib/post-shape";
 
@@ -29,6 +30,8 @@ export const PATCH = route("/api/community/posts/[id]", async (request, ctx: Ctx
   if (input.title !== undefined) update.title = input.title;
   if (input.body !== undefined) update.body = input.body;
   if (Object.keys(update).length === 0) throw new HttpError(400, "Send a title or some text to change");
+  const guard = refuseSensitiveText(update.title, update.body);
+  if (!guard.allowed) throw new HttpError(403, guard.reason);
   const existing = await one<PostRow>(auth.client.from("community_posts").select(POST_COLUMNS).eq("id", postId).maybeSingle(), "post");
   if (!existing) throw new HttpError(404, "Post not found");
   if (existing.author_user_id !== auth.userId) throw new HttpError(403, "Only the author can edit this post");

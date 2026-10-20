@@ -80,6 +80,8 @@ export interface PostView {
   last_reply_at: string | null;
   reply_count: number;
   signed_off_at: string | null;
+  /** The primary document the sign-off was checked against; the badge is drawn only when it is present. */
+  signed_off_doc_url?: string | null;
   author: AuthorBlock | null;
 }
 

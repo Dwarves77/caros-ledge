@@ -6,7 +6,7 @@ import type { AuthorBlock } from "./types";
 
 export const ANONYMOUS_LABEL = "Anonymous member";
 
-export function formatAuthorIdentity(a: AuthorBlock | null | undefined): string | null {
+function formatAuthorIdentity(a: AuthorBlock | null | undefined): string | null {
   if (!a) return null;
   const parts = [a.name, a.company, a.orgType ? (ORG_TYPE_LABELS[a.orgType] ?? a.orgType) : null, a.role, a.sector, a.region ? regionLabel(a.region) : null].map((p) => (p ?? "").trim()).filter(Boolean);
   return parts.length ? parts.join(" · ") : null;

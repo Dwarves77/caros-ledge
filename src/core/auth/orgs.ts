@@ -6,6 +6,7 @@ import { z } from "zod";
 
 import type { Db } from "@/core/db/clients";
 import { HttpError } from "@/core/http/errors";
+import { log } from "@/core/shared/log";
 import { patchWorkspaceSettings } from "@/core/workspace/settings";
 
 import { ensureProfile } from "./ensure-profile";
@@ -36,7 +37,8 @@ export type CreateOrgInput = z.infer<ReturnType<typeof createOrgBody>>;
 export async function createOrgForSelf(client: Db, user: { id: string; email: string | null }, input: CreateOrgInput): Promise<{ orgId: string; slug: string | null; name: string; settingsSaved: boolean; profileSaved: boolean }> {
   if (!(await ensureProfile(user.id, user.email)).exists) throw new HttpError(500, "Your profile could not be prepared. Try again in a moment.");
   const { data: orgId, error: rpcError } = await client.rpc("create_org_for_self", { p_org_name: input.name, p_org_slug: null });
-  if (rpcError || !orgId) throw new HttpError(400, rpcError?.message || "The organisation could not be created.");
+  if (rpcError) log.warn("[orgs] create_org_for_self failed:", rpcError.message);
+  if (rpcError || !orgId) throw new HttpError(400, "The organisation could not be created.");
 
   // The one settings writer (IMP-022): the database merges the size key into profile in one statement; a patch that fails is reported, not hidden.
   let settingsSaved = true;
@@ -56,13 +58,5 @@ export async function createOrgForSelf(client: Db, user: { id: string; email: st
 export const renameBody = z.object({
   name: z.string().trim().min(1, "name must be non-empty").max(200, "name must be 200 characters or fewer").optional(),
   slug: z.string().trim().toLowerCase().min(2, "slug must be 2-60 characters").max(60, "slug must be 2-60 characters").regex(SLUG_RE, "slug must contain only lowercase letters, digits, or hyphens; cannot start or end with a hyphen").optional(),
+  reason: z.string().trim().max(2000).nullish(),
 });
-
-/** Owner-only rename or re-slug (the caller's role is checked by the guard). A taken slug is a 409. */
-export async function updateOrg(service: Db, orgId: string, patch: z.infer<typeof renameBody>): Promise<Record<string, unknown>> {
-  if (patch.name === undefined && patch.slug === undefined) throw new HttpError(400, "Provide at least one of name or slug");
-  const { data, error } = await service.from("organizations").update({ ...patch, updated_at: new Date().toISOString() }).eq("id", orgId).select("id, name, slug, plan, created_at, updated_at").maybeSingle();
-  if (error) throw new HttpError(error.code === "23505" ? 409 : 500, error.message);
-  if (!data) throw new HttpError(404, "org not found");
-  return data;
-}

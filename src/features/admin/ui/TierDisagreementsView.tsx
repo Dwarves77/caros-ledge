@@ -24,9 +24,6 @@ interface Row {
   delta: number | null;
 }
 
-/** The reason recorded when an operator accepts without writing one: what the evidence was. Pure. */
-export const defaultReason = (r: Pick<Row, "opinion_count" | "analyst_tier" | "base_tier">): string => `Disagreement review: ${r.opinion_count} analyst opinions, modal T${r.analyst_tier} vs standing T${r.base_tier}`;
-
 /** Sources whose analyst tier opinions disagree with the standing tier. Accept is a tier override at the analyst tier with its reason, then the opinions are dismissed; reject dismisses them. One tier path, base tier untouched; nothing is deferred. */
 export function TierDisagreementsView() {
   const q = useAdminFetch<{ items: Row[] }>("/api/admin/sources/tier-opinions");
@@ -55,9 +52,9 @@ export function TierDisagreementsView() {
                       {r.delta !== null ? <span className={styles.pill}>{r.delta > 0 ? "+" : ""}{r.delta}</span> : null}
                     </span>
                     {r.tier_override !== null ? <span className={styles.muted}>Operator override stands: T{r.tier_override}{r.override_reason ? ` (${r.override_reason})` : ""}</span> : null}
-                    <FormField label="Reason" hint="Recorded with the decision. Left blank, the evidence is recorded.">{(c) => <Input {...c} value={reason} onChange={(e) => setReasons({ ...reasons, [r.source_id]: e.target.value })} maxLength={2000} />}</FormField>
+                    <FormField label="Reason" required={true} hint="Recorded with the decision. Accepting needs your own sentence.">{(c) => <Input {...c} value={reason} onChange={(e) => setReasons({ ...reasons, [r.source_id]: e.target.value })} maxLength={2000} />}</FormField>
                     <div className={styles.actions}>
-                      <Button variant="primary" size="sm" disabled={busy || r.analyst_tier === null} onClick={() => act.run(r.source_id, "/api/admin/sources/tier-opinions", { method: "POST", body: { source_id: r.source_id, action: "accept", tier: r.analyst_tier, reason: reason.trim() || defaultReason(r) } }, `Accepted: T${r.analyst_tier}.`)}>Accept analyst tier</Button>
+                      <Button variant="primary" size="sm" disabled={busy || r.analyst_tier === null || !reason.trim()} onClick={() => act.run(r.source_id, "/api/admin/sources/tier-opinions", { method: "POST", body: { source_id: r.source_id, action: "accept", tier: r.analyst_tier, reason: reason.trim() } }, `Accepted: T${r.analyst_tier}.`)}>Accept analyst tier</Button>
                       <Button variant="secondary" size="sm" disabled={busy} onClick={() => act.run(r.source_id, "/api/admin/sources/tier-opinions", { method: "POST", body: { source_id: r.source_id, action: "reject", reason: reason.trim() || null } }, "Opinions dismissed.")}>Reject</Button>
                     </div>
                   </div>

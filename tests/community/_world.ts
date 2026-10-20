@@ -309,6 +309,7 @@ function rpcs(db: World, who: Who | null): Record<string, (a: Record<string, unk
       const u = need();
       if (!verifier(c)) throw new PgError("Only active verifiers may record a sign-off decision", "42501");
       if (!["signed_off", "declined"].includes(String(a.p_decision))) throw new PgError("The decision is signed_off or declined", "22023");
+      if (a.p_decision === "signed_off" && !String(a.p_primary_doc_url ?? "").trim()) throw new PgError("A sign-off names the primary document it was checked against", "22023");
       const req = one("community_post_signoff_requests", a.p_request_id);
       if (!req) throw new PgError("Sign-off request not found", "P0002");
       if (req.requested_by === u) throw new PgError("Nobody decides their own sign-off request", "42501");
@@ -353,6 +354,46 @@ function rpcs(db: World, who: Who | null): Record<string, (a: Record<string, unk
       }
       Object.assign(rep, { status: a.p_action === "dismiss" ? "dismissed" : "resolved", action: a.p_action, notes: a.p_notes ?? null, resolved_at: db.now, resolved_by_user_id: u });
       return { report_id: rep.id, status: rep.status, action: rep.action, group_id: group, post_id: post?.id ?? null, notify_user_id: notify, muted_until: until };
+    },
+    // 0103 set_group_privacy: narrowing by the owner or a group admin; widening by the owner alone, with a reason; both leave an event.
+    set_group_privacy: (a) => {
+      const u = need();
+      const g = one("community_groups", a.p_group_id);
+      if (!g) throw new PgError("Group not found", "P0002");
+      if (g.privacy === a.p_privacy) return { id: g.id, privacy: g.privacy };
+      if (a.p_privacy === "private") {
+        if (g.owner_user_id !== u && db.role(g.id, u) !== "admin") throw new PgError("Only the owner or a group admin can make a group private", "42501");
+      } else {
+        if (g.owner_user_id !== u) throw new PgError("Only the owner can make a private group public: its past threads become visible to everyone", "42501");
+        if (!String(a.p_reason ?? "").trim()) throw new PgError("A reason is required to make a group public", "22023");
+      }
+      const from = g.privacy;
+      g.privacy = a.p_privacy;
+      db.rows("admin_events").push({ id: db.nextId(), actor_id: u, action: a.p_privacy === "public" ? "group_privacy_widened" : "group_privacy_narrowed", target_kind: "community_group", target_id: g.id, reason: a.p_reason ?? null, detail: { from, to: a.p_privacy }, created_at: db.tick() });
+      return { id: g.id, privacy: g.privacy };
+    },
+    // 0103 moderator_remove_post: the report is opened and closed with the note by moderate_report; the author is the one to notify.
+    moderator_remove_post: (a) => {
+      const u = need();
+      const post = db.post(a.p_post_id);
+      if (!post) throw new PgError("Post not found", "P0002");
+      if (!(["admin", "moderator"].includes(db.role(post.group_id, u) ?? "") || c.admin)) throw new PgError("Moderator or platform admin access required", "42501");
+      if (post.author_user_id === u) throw new PgError("Delete your own post directly", "22023");
+      const note = String(a.p_notes ?? "").trim();
+      if (!note) throw new PgError("A removal needs a note for the author and the record", "22023");
+      const rep = insert("moderation_reports", { target_kind: "post", target_id: post.id, reporter_user_id: u, reason: "moderator removal", status: "resolved", action: "remove", notes: note, resolved_at: db.now, resolved_by_user_id: u });
+      db.tables.community_posts = db.rows("community_posts").filter((p) => p.id !== post.id && p.parent_post_id !== post.id);
+      return { report_id: rep.id, status: "resolved", action: "remove", group_id: post.group_id, post_id: post.id, notify_user_id: post.author_user_id, muted_until: null };
+    },
+    // 0103 record_domain_verification: service_role only (no session); the verified columns and the event.
+    record_domain_verification: (a) => {
+      if (c.uid) throw new PgError("permission denied for function record_domain_verification", "42501");
+      const row = db.rows("community_member_profiles").find((m) => m.user_id === a.p_user_id);
+      const fields = { verified: true, verified_at: db.now, verification_method: "domain-dns", organisation_key: a.p_organisation_key };
+      if (row) Object.assign(row, fields);
+      else db.rows("community_member_profiles").push({ user_id: a.p_user_id, org_type: "other", default_anonymous: false, ...fields });
+      db.rows("admin_events").push({ id: db.nextId(), actor_id: a.p_user_id, action: "member_verified_domain", target_kind: "member", target_id: a.p_user_id, detail: { domain: a.p_domain, evidence: a.p_evidence }, created_at: db.tick() });
+      return { verified: true, verified_at: db.now, verification_method: "domain-dns" };
     },
     get_workspace_intelligence_listings_public: () => listing(db),
     get_workspace_intelligence_listings: () => listing(db),

@@ -9,6 +9,7 @@ import { parseJson } from "@/core/http/parse";
 import { queueNotifications } from "@/core/notifications";
 import { log } from "@/core/shared/log";
 
+import { refuseSensitiveText } from "../lib/antitrust";
 import { LIMITS } from "../lib/labels";
 import { POST_COLUMNS, shapePosts, type PostRow } from "../lib/post-shape";
 
@@ -39,6 +40,8 @@ export const POST = route("/api/community/posts/[id]/replies", async (request, c
   if (isRefusal(auth)) return auth;
   const parentId = await idParam(ctx, "id", "post id");
   const { body } = await parseJson(request, z.object({ body: z.string().trim().min(1, "A reply can't be empty").max(LIMITS.replyBody, `A reply is at most ${LIMITS.replyBody} characters`) }));
+  const guard = refuseSensitiveText(body);
+  if (!guard.allowed) throw new HttpError(403, guard.reason);
   const parent = await one<{ id: string; group_id: string; parent_post_id: string | null; author_user_id: string | null }>(auth.client.from("community_posts").select("id, group_id, parent_post_id, author_user_id").eq("id", parentId).maybeSingle(), "thread");
   if (!parent) throw new HttpError(404, "Thread not found");
   if (parent.parent_post_id !== null) throw new HttpError(400, "A reply can't be answered; reply to the thread");

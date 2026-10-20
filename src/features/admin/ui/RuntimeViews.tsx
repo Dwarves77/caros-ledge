@@ -40,9 +40,9 @@ interface Inference {
   computed_at: string;
 }
 
-export const shortRelease = (r: string): string => (!r || r === "dev" ? "dev" : r.slice(0, 7));
+const shortRelease = (r: string): string => (!r || r === "dev" ? "dev" : r.slice(0, 7));
 /** The assumptions grouped by subsystem, subsystems sorted. Pure. */
-export function groupBySubsystem(rows: readonly Assumption[]): [string, Assumption[]][] {
+function groupBySubsystem(rows: readonly Assumption[]): [string, Assumption[]][] {
   const m = new Map<string, Assumption[]>();
   for (const r of rows) m.set(r.subsystem || "(unassigned)", [...(m.get(r.subsystem || "(unassigned)") ?? []), r]);
   return [...m].sort(([a], [b]) => a.localeCompare(b));
@@ -131,6 +131,44 @@ export function InferencesView() {
   return (
     <Panel title="Inferences" aside={q.data ? `${q.data.rows.length} current` : undefined} onRefresh={q.reload}>
       <Load q={q} what="Inferences">{(d) => <InferenceReview rows={d.rows} itemTitles={d.itemTitles} />}</Load>
+    </Panel>
+  );
+}
+
+interface AdminEvent {
+  id: string;
+  at: string;
+  action: string;
+  target_kind: string;
+  target_id: string;
+  reason: string | null;
+  actor: string;
+  org: string | null;
+}
+const words = (token: string): string => token.replaceAll("_", " ");
+
+/** The record of privileged acts (admin_events, written in the same transaction as each change): who did what to what, in which organisation, with the reason they gave, newest first. Read-only; nothing here edits the record. */
+export function AdminEventsView() {
+  const q = useAdminFetch<{ events: AdminEvent[]; capped: boolean }>("/api/admin/runtime?view=events");
+  return (
+    <Panel title="Admin events" aside={q.data ? `${formatNumber(q.data.events.length)} newest${q.data.capped ? " (more exist)" : ""}` : undefined} onRefresh={q.reload}>
+      <Load q={q} what="The admin event log">
+        {(d) =>
+          d.events.length === 0 ? (
+            <EmptyState>No privileged act has been recorded yet.</EmptyState>
+          ) : (
+            d.events.map((e) => (
+              <div key={e.id} className={styles.row}>
+                <div className={styles.rowMain}>
+                  <b className={`${styles.strong} ${styles.wrap}`}>{words(e.action)}</b>
+                  <span className={`${styles.muted} ${styles.wrap}`}>{e.actor} · {words(e.target_kind)} {e.target_id}{e.org ? ` · ${e.org}` : ""} · <RelativeTime iso={e.at} /></span>
+                  {e.reason ? <span className={`${styles.note} ${styles.wrap}`}>{e.reason}</span> : null}
+                </div>
+              </div>
+            ))
+          )
+        }
+      </Load>
     </Panel>
   );
 }

@@ -16,7 +16,7 @@ import { log } from "@/core/shared/log";
 import { LIMITS, REPORT_REASON_IDS } from "../lib/labels";
 import type { GroupRole, ModerationReportView } from "../lib/types";
 
-import { cursorParam, idField, isReviewerRole, limitParam, many, one } from "./_http";
+import { cursorParam, idField, idParam, isReviewerRole, limitParam, many, one } from "./_http";
 
 /** The date a mute ends, as the database words it in its own refusal ("24 Oct 2026"). */
 const mutedDate = (iso: string): string => new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
@@ -86,6 +86,18 @@ const NOTICE: Record<string, (group: string, notes: string | null) => { title: s
   ban: (g, n) => ({ title: `You were banned from ${g}`, body: n ?? "You can no longer join this group." }),
 };
 
+/** The author's notice after a moderation action (queued, never blocking the action): returns whether it was queued. */
+async function noticeAuthor(done: { action: string; group_id: string | null; notify_user_id: string | null; report_id: string; muted_until?: string | null }, notes: string | null): Promise<boolean> {
+  const notice = NOTICE[done.action];
+  if (!notice || !done.notify_user_id || !done.group_id) return true;
+  const group = await one<{ name: string; slug: string }>(serviceClient().from("community_groups").select("name, slug").eq("id", done.group_id).maybeSingle(), "group");
+  const text = notice(group?.name ?? "the group", notes);
+  if (done.action === "mute" && done.muted_until) text.title = `${text.title} until ${mutedDate(done.muted_until)}`;
+  const queued = await queueNotifications([{ userId: done.notify_user_id, kind: "moderation", payload: { ...text, link: done.action === "ban" ? "/community/browse" : `/community/${group?.slug ?? ""}`, group_id: done.group_id, report_id: done.report_id } }]);
+  if (queued) log.warn("[community] the action was taken but its notification was not queued:", queued);
+  return queued === null;
+}
+
 export const POST_ACT = route("/api/community/moderation/reports/[id]", async (request, ctx: { params: Promise<{ id: string }> }) => {
   const auth = await requireUser(request);
   if (isRefusal(auth)) return auth;
@@ -97,15 +109,18 @@ export const POST_ACT = route("/api/community/moderation/reports/[id]", async (r
   const { data, error } = await auth.client.rpc("moderate_report", { p_report_id: reportId.data, p_action: input.action, p_notes: input.notes || null, p_days: input.action === "mute" ? (input.days ?? null) : null });
   if (error) throw dbError(error, { forbidden: "Moderator or platform admin access required", notFound: "Report not found" });
   const done = data as { report_id: string; status: string; action: string; group_id: string | null; notify_user_id: string | null; muted_until: string | null };
-  let notified = true;
-  const notice = NOTICE[done.action];
-  if (notice && done.notify_user_id && done.group_id) {
-    const group = await one<{ name: string; slug: string }>(serviceClient().from("community_groups").select("name, slug").eq("id", done.group_id).maybeSingle(), "group");
-    const text = notice(group?.name ?? "the group", input.notes || null);
-    if (done.action === "mute" && done.muted_until) text.title = `${text.title} until ${mutedDate(done.muted_until)}`;
-    const queued = await queueNotifications([{ userId: done.notify_user_id, kind: "moderation", payload: { ...text, link: done.action === "ban" ? "/community/browse" : `/community/${group?.slug ?? ""}`, group_id: done.group_id, report_id: done.report_id } }]);
-    if (queued) log.warn("[community] the action was taken but its notification was not queued:", queued);
-    notified = queued === null;
-  }
+  const notified = await noticeAuthor(done, input.notes || null);
   return ok(auth.headers, { ok: true, report_id: done.report_id, status: done.status, action: done.action, muted_until: done.muted_until ?? null, notified });
+});
+
+/** POST /api/community/posts/[id]/remove: a moderator or group admin removes ANOTHER member's post. moderator_remove_post opens and closes the report with the required note through moderate_report (one transaction), and the author is told. */
+export const POST_REMOVE = route("/api/community/posts/[id]/remove", async (request, ctx: { params: Promise<{ id: string }> }) => {
+  const auth = await requireUser(request);
+  if (isRefusal(auth)) return auth;
+  const postId = await idParam(ctx, "id", "post id");
+  const input = await parseJson(request, z.object({ note: z.string().trim().min(1, "A removal needs a note for the author and the record").max(LIMITS.moderationNote, `A note is at most ${LIMITS.moderationNote} characters`) }));
+  const { data, error } = await auth.client.rpc("moderator_remove_post", { p_post_id: postId, p_notes: input.note });
+  if (error) throw dbError(error, { forbidden: "Only a moderator of this group can remove its posts", notFound: "Post not found" });
+  const done = data as { report_id: string; action: string; group_id: string | null; notify_user_id: string | null };
+  return ok(auth.headers, { ok: true, removed: true, notified: await noticeAuthor(done, input.note) });
 });
