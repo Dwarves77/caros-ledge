@@ -9,7 +9,6 @@ import { applyFuelBurnMultiplier, compoundingChain } from "@/features/market/cal
 import { tcoCrossoverBand } from "@/features/market/calc/oem-payload";
 import { carrierEtsSurcharge } from "@/features/market/producers/carrier-ets-surcharge";
 import { ecbFx } from "@/features/market/producers/ecb-fx";
-import { aggregateHdvCsv, classifyGroup, eeaHdvRoadmaps, mapGroupsToRows, stageFor, validateClassification } from "@/features/market/producers/eea-hdv-roadmaps";
 import { eiaPetroleumSpot } from "@/features/market/producers/eia-petroleum-spot";
 import { euOilBulletin } from "@/features/market/producers/eu-oil-bulletin";
 import { type MarketSeriesDeps, type SeriesRowLite } from "@/features/market/producers/market-series-delta";
@@ -221,60 +220,6 @@ test("INV-245: the SBTi producer is licence-blocked even when enabled, armed and
 test("the xlsx reader refuses a non-workbook and a missing sheet, naming the sheets present", () => {
   assert.throws(() => readSheet(Buffer.from("not a zip at all, definitely not"), "x"), /End Of Central Directory/);
   assert.throws(() => readSheet(bulletin(), "Nope"), /sheets present: Prices wo taxes/);
-});
-
-// ---- EEA HDV ----
-const HEAD = "Match,UniqueData,OEM_ManufacturerName,OEM_ZeroEmissionVehicle,OEM_HybridElectricHDV,OEM_DualFuelVehicle,OEM_Engine_FuelType,MS_FuelType,MS_Electric,MS_RegistrationCountry,MS_RegistrationDateClean_YYYYMMDD";
-const rec = (o: { m?: string; u?: string; make: string; zev?: string; hyb?: string; fuel?: string; msf?: string; ele?: string; c?: string; date: string }) => [o.m ?? "Match", o.u ?? "Yes", `"${o.make}"`, o.zev ?? "Yes", o.hyb ?? "No", "No", o.fuel ?? "Electric", o.msf ?? "Electric", o.ele ?? "Yes", o.c ?? "DE", o.date].join(",");
-const EEA = [HEAD, rec({ make: "Daimler, Truck", date: "20240105" }), rec({ make: "Daimler, Truck", date: "20240106" }), rec({ make: "Daimler, Truck", date: "20250301" }), rec({ make: "Volvo", zev: "No", fuel: "Diesel", date: "20240101" }), rec({ make: "Volvo", m: "NoMatch", date: "20240101" }), rec({ make: "Volvo", u: "No", date: "20240101" })].join("\r\n") + "\r\n";
-
-test("EEA HDV: a CSV split at a quote and at a CRLF with a byte limit aggregates the same groups and flags the cut read; the half record is never counted", async () => {
-  const bytes = Buffer.from(EEA, "utf8");
-  const whole = await aggregateHdvCsv([bytes]);
-  assert.equal(whole.truncated, false);
-  assert.equal(whole.totals.counted, 4);
-  assert.equal(whole.totals.excluded["Match=NoMatch"], 1);
-  assert.equal(whole.totals.excluded["UniqueData=No"], 1);
-  const dm = whole.groups.find((g) => g.manufacturer === "Daimler, Truck");
-  assert.deepEqual(dm?.units_by_year, { 2024: 2, 2025: 1 });
-  const cutQuote = bytes.indexOf('"Daimler') + 3;
-  const split = await aggregateHdvCsv([bytes.subarray(0, cutQuote), bytes.subarray(cutQuote, cutQuote + 40), bytes.subarray(cutQuote + 40)]);
-  assert.deepEqual(split.groups, whole.groups);
-  const cut = await aggregateHdvCsv([bytes], { maxBytes: bytes.indexOf("Volvo") + 6 });
-  assert.equal(cut.truncated, true);
-  assert.ok(cut.totals.counted < whole.totals.counted);
-  await assert.rejects(() => aggregateHdvCsv(["a,b\n1,2\n"]), /not the EEA HDV vehicle extract/);
-  await assert.rejects(() => aggregateHdvCsv([""]), /body is empty/);
-});
-
-test("EEA HDV: classification and staging by the shipped rules (zero-emission fuel rules and aliases are EMPTY by ruling, so every zero-emission group is residue); a rule and an alias map it; stage from the latest year", async () => {
-  const agg = await aggregateHdvCsv([EEA]);
-  const entities = [{ canonical_name: "Daimler Truck AG", entity_id: "cl:organisation:aaaaaaaaaaaaaaaa" }];
-  const shipped = mapGroupsToRows(agg.groups, { cfg: validateClassification({ zev_tech_rules: [], stage_rules: [{ min_units: 1, stage: "small_batch_fleet" }, { min_units: 1000, stage: "mass_series_production" }], manufacturer_aliases: {} }), entities, sourceId: null });
-  assert.equal(shipped.rows.length, 0);
-  assert.equal(shipped.residue.byReason.zero_emission_unmapped?.units, 3);
-  assert.equal(shipped.residue.byReason.conventional_powertrain?.units, 1);
-  const cfg = validateClassification({ zev_tech_rules: [{ when: { ms_fuel: "Electric" }, tech_category: "heavy_battery" }], stage_rules: [{ min_units: 1, stage: "small_batch_fleet" }, { min_units: 2, stage: "mass_series_production" }], manufacturer_aliases: { "Daimler, Truck": "Daimler Truck AG" } });
-  const mapped = mapGroupsToRows(agg.groups, { cfg, entities, sourceId: "src1" });
-  assert.equal(mapped.rows.length, 1);
-  assert.equal(mapped.rows[0]?.commercial_stage, "small_batch_fleet", "stage reads the LATEST registration year (2025: 1 vehicle), not the total");
-  assert.equal(mapped.rows[0]?.announced_at, null);
-  assert.deepEqual(mapped.residue.unresolvedManufacturers, []);
-  assert.deepEqual(mapGroupsToRows(agg.groups, { cfg, entities: [], sourceId: null }).residue.unresolvedManufacturers, [{ manufacturer: "Daimler, Truck", units: 3 }]);
-  assert.deepEqual(classifyGroup({ ...agg.groups[0]!, zev: "Maybe" }, cfg), { residue: "zero_emission_flag_unreadable" });
-  assert.equal(stageFor(1000, validateClassification({ stage_rules: [{ min_units: 1, stage: "small_batch_fleet" }, { min_units: 1000, stage: "mass_series_production" }] })), "mass_series_production");
-  assert.throws(() => validateClassification({ stage_rules: [{ min_units: 1, stage: "bogus" }] }));
-  assert.throws(() => validateClassification({ extra: 1 }));
-});
-
-test("EEA HDV: a dry run reads a byte-limited sample with a Range request; an apply reads the whole file; the producer is HELD (enabled false)", async () => {
-  const dry = makeDeps({ noDb: true, routes: { "https://discomap.eea.europa.eu/": EEA } });
-  const r = await runProducer(dry.deps, { spec: eeaHdvRoadmaps });
-  assert.equal(r.outcome, "ok");
-  assert.equal(dry.calls[0]?.init?.headers?.Range, "bytes=0-8388607");
-  assert.equal(r.counts.vehicles_counted, 4);
-  const held = await runProducer(makeDeps({ env: { OEM_PRODUCER_EEA_HDV_ENABLED: "1" } }).deps, { spec: eeaHdvRoadmaps, dry: false, text: EEA });
-  assert.match(held.notes[0] as string, /ENABLED constant is false/);
 });
 
 // ---- carrier ETS ----

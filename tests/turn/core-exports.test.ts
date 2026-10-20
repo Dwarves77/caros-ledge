@@ -4,7 +4,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { limitBytes } from "@/core/csv/stream";
 import { exactCount, isMissingObject } from "@/core/db";
 import { detectAccessWall } from "@/core/fetch/classify-body";
 import { queryHeldPools } from "@/core/fetch/candidates";
@@ -48,20 +47,6 @@ test("legacyLabelOfIso: a code's product label through its legacy slug; an unkno
   assert.equal(legacyLabelOfIso("GB"), "United Kingdom");
   assert.equal(legacyLabelOfIso("EU"), "EU");
   assert.equal(legacyLabelOfIso("ZZ"), null);
-});
-
-test("limitBytes: chunks pass until the limit, the chunk that crosses it is cut and the state says so; under the limit nothing is flagged", async () => {
-  const collect = async (chunks: (string | Uint8Array)[], max: number) => {
-    const state = { truncated: false };
-    const out: Buffer[] = [];
-    for await (const c of limitBytes(chunks, max, state)) out.push(Buffer.from(c));
-    return { text: Buffer.concat(out).toString("utf8"), truncated: state.truncated };
-  };
-  assert.deepEqual(await collect(["abc", "def"], 10), { text: "abcdef", truncated: false });
-  assert.deepEqual(await collect(["abc", "def", "ghi"], 5), { text: "abcde", truncated: true });
-  assert.deepEqual(await collect(["abc", "def"], 6), { text: "abcdef", truncated: false }, "exactly the limit is not truncation");
-  assert.deepEqual(await collect([new Uint8Array([1, 2, 3, 4])], 2).then((r) => ({ n: r.text.length, truncated: r.truncated })), { n: 2, truncated: true });
-  assert.deepEqual(await collect(["abc"], 0), { text: "", truncated: true });
 });
 
 test("decideFetchOutcome: a body is ok; a 404 or 410 is dead (502); any other failure, a thrown error with no status and an error page served with 200 are inconclusive (503) and never evict", () => {

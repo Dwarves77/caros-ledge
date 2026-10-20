@@ -1,5 +1,5 @@
 {
-  "_exports": "Exported values with no caller in src, scripts or the Edge Function. R2e owns the entries under src/features/{auth,community,admin,account} (it deletes its own). R2d keeps SIX that are staged capabilities, not dead code: carbonCostPerFeu (src/features/market/lib/carbon.ts: the priced branch waits for a licence-clear distance, payload and carbon-price input, and its tests drive it with those inputs) and validateClassification, aggregateHdvCsv, classifyGroup, stageFor, mapGroupsToRows (src/features/market/producers/eea-hdv-roadmaps.ts: the shipped zero-emission rules are EMPTY by ruling 2026-10-08, so the classification runs only in tests with injected rules until the operator fills them). A new offender or an entry that gained a caller is a red run, so the list only shrinks.",
+  "_exports": "Exported values with no caller in src, scripts or the Edge Function: only the paths a live lane still owns remain (R2e: src/features/{auth,community,admin,account}); that lane deletes its own entries, and a new offender or an entry that gained a caller is a red run, so the list only shrinks.",
   "exports": {
     "src/features/account/lib/profile-patch.ts": [
       "profilePatchSchema"
@@ -26,13 +26,6 @@
       "authorIdForRow",
       "effectiveAnonymous",
       "idWithheld"
-    ],
-    "src/features/market/producers/eea-hdv-roadmaps.ts": [
-      "aggregateHdvCsv",
-      "classifyGroup",
-      "mapGroupsToRows",
-      "stageFor",
-      "validateClassification"
     ]
   },
   "runtimeEntries": {

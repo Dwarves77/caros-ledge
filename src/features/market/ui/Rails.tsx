@@ -1,6 +1,6 @@
 // Ported from old_repo/src/components/list-surface/ListSurfaceRailCards.tsx (lines 377-549)
 // Ported from old_repo/src/components/market/MarketIntelLedger.tsx (lines 329-353)
-// The market rail, in artboard 04's order after the Filters card the list surface draws first: Carbon cost per FEU (only while a corridor has a figure), Next data drops, Legend, then Sources tracked (an app card the artboard does not draw, kept after the last designed card).
+// The market rail, in artboard 04's order after the Filters card the list surface draws first: Next data drops, Legend, then Sources tracked (an app card the artboard does not draw, kept after the last designed card).
 // Each card is a read of the same board the page already holds: no second request, no second computation.
 import { formatDate } from "@/core/shared";
 import { RailCard } from "@/ui";
