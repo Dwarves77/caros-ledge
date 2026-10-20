@@ -6,7 +6,7 @@ import { DOCUMENTS, ROWS, compareOutputs, licenceClass, parseLiteral, type Golde
 import { getDoc, hasToken, type FetchedDoc } from "./_docs.ts";
 import { renderReadme } from "./_readme.ts";
 import { relationProblems } from "./_relations.ts";
-import { proseOverlap, redDocs, structureProblems } from "./_structure.ts";
+import { isRedProbe, proseOverlap, redDocs, structureProblems } from "./_structure.ts";
 
 const README = new URL("./data/README.md", import.meta.url);
 const byId = (id: string): GoldenRow => ROWS.find((r) => r.id === id) as GoldenRow;
@@ -78,15 +78,28 @@ test("locale collision: one glyph shape, two documents, values a thousand apart"
   assert.equal(parseLiteral(l1.literal!, "dp"), "3114", "read under the wrong locale the MRV factor is a thousand times too large");
 });
 
-test("structure: no quotation marks, and probes against a licence-red document are bare figures", () => {
+test("structure: no quotation marks, and probes against a licence-red document are a figure or a figure with its unit", () => {
   assert.deepEqual(structureProblems(ROWS), []);
+});
+
+test("structure: a probe against a licence-red document is a figure, a figure with its unit, or a unit; a phrase, formula, caption or word of the publisher stays red (R2g)", () => {
+  for (const ok of ["7,300", "10.0 tonnes", "15%", "95 kilometres", "1 TEU", "1,200 kg CO2e", "kg CO2e/TEU-km", "7,300 kg CO2e/$", "6.0 tonnes/TEU", "10 t", "5 EUR"]) assert.equal(isRedProbe(ok), true, ok);
+  for (const bad of ["10.0 tonnes per TEU", "DAF of 15 percent", "adds 95 kilometres", "Table 5.7", "(50,000 × 3)", "Air (long haul) 1.0", "6 metric tonnes/TEU", "1%, 2% and 3%", "800 + 3,000 + 1,200", "Z / 100", "emissions", "kg of fuel"]) assert.equal(isRedProbe(bad), false, bad);
 });
 
 test("every document is registered with a licence class; no register entry means terms_unverified, never open", () => {
   assert.equal(licenceClass("glec_v3_0"), "prohibited");
-  assert.equal(licenceClass("ghgp_cat4"), "terms_unverified");
+  assert.equal(licenceClass("ghgp_cat4"), "prohibited", "the GHG Protocol Terms of Use withhold reuse (R2g)");
+  assert.equal(licenceClass("mrv_annex_council"), "terms_unverified", "the Council notice could not be read (R2g)");
   for (const k of Object.keys(DOCUMENTS)) assert.ok(["prohibited", "conditional", "terms_unverified", "permitted"].includes(licenceClass(k)));
 });
+
+/** A document whose publisher forbids automated access is never fetched (documents.json `fetch: false`); the skip names that reason and is printed, never a pass. */
+const FORBIDS = "publisher_forbids_robots";
+const fetchDoc = (k: string): Promise<FetchedDoc> => {
+  const d = DOCUMENTS[k]!;
+  return d.fetch === false ? Promise.resolve({ ok: false, reason: FORBIDS }) : getDoc(d.url, d.format);
+};
 
 type Page = { ok: true; text: string } | { ok: false; reason: string };
 const pageOf = (doc: FetchedDoc, page: number | undefined): Page => {
@@ -98,10 +111,10 @@ const pageOf = (doc: FetchedDoc, page: number | undefined): Page => {
 test("every verified row's locator fetches today and carries its probes (a stale locator is marked in the output, never silently passed)", async (t) => {
   const docs = new Map<string, FetchedDoc>();
   for (const k of new Set(ROWS.filter((r) => r.status === "verified").flatMap((r) => [...r.checks.map((c) => c.doc), ...r.disagreements.flatMap((d) => d.sides.map((s) => s.doc))]))) {
-    const d = DOCUMENTS[k]!;
-    docs.set(k, await getDoc(d.url, d.format));
+    docs.set(k, await fetchDoc(k));
   }
   let stale = 0;
+  let forbidden = 0;
   for (const r of ROWS.filter((x) => x.status === "verified")) {
     await t.test(r.id, (sub) => {
       const wants = [...r.checks.map((c) => ({ ...c, label: c.section })), ...r.disagreements.flatMap((d) => d.sides.map((s) => ({ ...s, section: d.figure, label: d.figure, absent: undefined as string[] | undefined })))];
@@ -112,17 +125,18 @@ test("every verified row's locator fetches today and carries its probes (a stale
         for (const tok of c.tokens) assert.ok(hasToken(p.text, tok), `${r.id} ${c.label}: "${tok}" is not on ${c.doc} page ${c.page ?? 1}`);
         for (const ab of c.absent ?? []) assert.ok(!new RegExp(ab, "i").test(p.text), `${r.id}: "${ab}" is on ${c.doc} although the row states it is absent`);
       }
-      if (reasons.length) { stale += 1; sub.diagnostic(`locator_stale ${r.id}: ${reasons.join("; ")}`); sub.skip(`locator_stale: ${reasons.join("; ")}`); }
+      if (reasons.length && reasons.every((x) => x.endsWith(`: ${FORBIDS}`))) { forbidden += 1; sub.diagnostic(`${FORBIDS} ${r.id}: ${reasons.join("; ")}`); sub.skip(`${FORBIDS}: ${reasons.join("; ")}`); }
+      else if (reasons.length) { stale += 1; sub.diagnostic(`locator_stale ${r.id}: ${reasons.join("; ")}`); sub.skip(`locator_stale: ${reasons.join("; ")}`); }
     });
   }
+  t.diagnostic(`${FORBIDS} rows: ${forbidden}`);
   t.diagnostic(`locator_stale rows: ${stale} of ${ROWS.filter((x) => x.status === "verified").length}`);
 });
 
 test("INV-R6a-2: zero characters of licence-red prose in any row (no eight-word run shared with the fetched GLEC text)", async (t) => {
   for (const k of redDocs()) {
-    const d = DOCUMENTS[k]!;
-    const doc = await getDoc(d.url, d.format);
-    if (!doc.ok) { t.diagnostic(`locator_stale ${k}: ${doc.reason}; the static structure check above still ran`); continue; }
+    const doc = await fetchDoc(k);
+    if (!doc.ok) { t.diagnostic(`${doc.reason === FORBIDS ? FORBIDS : "locator_stale"} ${k}: ${doc.reason}; the static structure check above still ran`); continue; }
     assert.deepEqual(proseOverlap(ROWS, doc.pages.join(" ")), [], `rows share prose with ${k}`);
   }
 });
@@ -130,8 +144,7 @@ test("INV-R6a-2: zero characters of licence-red prose in any row (no eight-word 
 test("unresolved rows: the cited document is still unreadable, or the row is now resolvable and says so", async (t) => {
   for (const r of ROWS.filter((x) => x.status === "unresolved")) {
     const c = r.checks[0]!;
-    const d = DOCUMENTS[c.doc]!;
-    const doc = await getDoc(d.url, d.format);
+    const doc = await fetchDoc(c.doc);
     t.diagnostic(doc.ok ? `${r.id}: ${c.doc} now fetches (${doc.pages.length} pages): read it and resolve the row` : `${r.id}: ${c.doc} unreadable today (${doc.reason})`);
   }
 });

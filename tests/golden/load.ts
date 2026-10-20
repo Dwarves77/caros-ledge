@@ -39,7 +39,7 @@ const relation = z.discriminatedUnion("type", [
   z.object({ type: z.literal("product"), factors: names, result: z.string(), scale: z.number().optional() }).strict(),
   z.object({ type: z.literal("quotient"), numerator: z.string(), denominator: z.string(), result: z.string() }).strict(),
 ]);
-const documentSchema = z.object({ title: z.string(), publisher: z.string(), url: z.string().url(), format: z.enum(["pdf", "html"]), licence_keys: z.array(z.string()), published: z.string().optional(), note: z.string().optional() }).strict();
+const documentSchema = z.object({ title: z.string(), publisher: z.string(), url: z.string().url(), format: z.enum(["pdf", "html"]), licence_keys: z.array(z.string()), fetch: z.literal(false).optional(), published: z.string().optional(), note: z.string().optional() }).strict();
 
 const row = z.object({
   id: z.string().regex(/^[A-Z]\d+$/), kind: z.enum(["truth", "adversarial", "locale_collision", "disagreement", "rule", "recheck"]), framework: z.string(), framework_version: z.string(),

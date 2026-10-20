@@ -1887,9 +1887,7 @@
     "src/features/intake/pipeline.ts#writeSynthesizedBrief": "a runtime entry with no caller (rule 17): the owning slice wires it into the turn or deletes it",
     "src/features/intake/pipeline.ts#harvestItemTimeline": "a runtime entry with no caller (rule 17): the owning slice wires it into the turn or deletes it"
   },
-  "tables": {
-    "data_sources": "seeded by the SQL renderDataSourceSeedSql generates (src/core/contracts), which scripts/ci/checks/generator-pins.mjs executes against the schema; the producers only read it. The check reads no write of a generated seed"
-  },
+  "tables": {},
   "settings": {},
   "routes": {},
   "deps": {

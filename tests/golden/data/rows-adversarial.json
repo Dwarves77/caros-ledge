@@ -321,7 +321,9 @@
     "section": "Example 4.2 sea leg",
     "tokens": [
      "kg CO2e/TEU-km",
-     "6 × 4,000 × 0.05",
+     "6",
+     "4,000",
+     "0.05",
      "1,200 kg CO2e"
     ]
    },
@@ -331,7 +333,8 @@
     "folio": "59",
     "section": "Table 4.2 default TEU mass",
     "tokens": [
-     "Default 1 TEU = 10 t"
+     "1 TEU",
+     "10 t"
     ]
    }
   ]
@@ -452,10 +455,15 @@
     "folio": "66",
     "section": "Example 4.4 total",
     "tokens": [
-     "20,000 × 0.04",
-     "30,000 × 0.15",
-     "40,000 × 0.05",
-     "800 + 4,500 + 2,000",
+     "20,000",
+     "0.04",
+     "30,000",
+     "0.15",
+     "40,000",
+     "0.05",
+     "800",
+     "4,500",
+     "2,000",
      "7,300 kg CO2e/$"
     ]
    }
@@ -722,7 +730,7 @@
     "folio": "4",
     "section": "Required annual operational CII formula",
     "tokens": [
-     "Z / 100"
+     "100"
     ]
    }
   ]
