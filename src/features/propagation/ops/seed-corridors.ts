@@ -2,14 +2,12 @@
 // Ported from old_repo/scripts/entities/write-entity-scope.mjs (lines 8-150)
 // Corridor entities from the confirmed seeds (data/corridor-seeds.json: the ADR-024 worked example and three Drewry WCI lanes) plus any corridor a market
 // series or regional fact names by the `corridor:ORIGIN-DEST:mode` convention, a display_name backfill, and the corridor-to-jurisdiction entity_scope rows
-// (the UN/LOCODE prefix is the ISO 3166-1 country). The always-empty "item jurisdictions" candidate scan is gone. The corridor-scope cache tag is invalidated
-// after a write, so the Market selector and the Regulations strip see the new corridor without waiting out the TTL (B-1559). A runtime function: no CLI.
-import { revalidateTag } from "next/cache";
+// (the UN/LOCODE prefix is the ISO 3166-1 country). The always-empty "item jurisdictions" candidate scan is gone. The Market selector and the Regulations strip read the
+// corridors live, so a new corridor shows on the next request (B-1559). A runtime function: no CLI.
 import { z } from "zod";
 
 import type { Db } from "@/core/db";
 import { fetchAllRows } from "@/core/db";
-import { CORRIDOR_SCOPE_TAG } from "@/core/entities/corridor-scope";
 import { entityId, corridorSeed } from "@/core/entities/id";
 import { parseCorridorName } from "@/core/entities/kinds";
 import { planJurisdiction } from "@/core/entities/plan";
@@ -161,13 +159,6 @@ export async function seedCorridors(deps: { sb: Db; now: () => Date }, input: { 
         notes.push(`${table} insert failed: ${error.message}`);
       } else if (table === "entity_scope") counts.scope_rows = rows.length;
       else if (table === "entities") counts.jurisdictions_created = rows.length;
-    }
-    if (counts.created || counts.labelled || counts.scope_rows) {
-      try {
-        revalidateTag(CORRIDOR_SCOPE_TAG, "max");
-      } catch {
-        notes.push("corridor-scope cache tag not flushed (no request scope); the cache expires on its TTL");
-      }
     }
   }
   return { counts, outcome: counts.failed ? ((counts.created ?? 0) + (counts.scope_rows ?? 0) > 0 ? "partial" : "failed") : "ok", notes: input.dry ? [...notes, "dry: nothing written"] : notes };

@@ -17,7 +17,7 @@ const apply = (w: World, entries: unknown[], dry = false) => applyBatch("questio
 const notes = (r: { notes: string[] }) => r.notes.join("\n");
 const flag = (w: World) => w.db.rows("integrity_flags").find((f) => f.subject_ref === REF && f.created_by === "question:what") as Record<string, unknown>;
 
-test("the export lists the open question with the held pool's identity; the answer applies as an INFERENCE record and closes the question naming it, then flushes the item's cache", async () => {
+test("the export lists the open question with the held pool's identity; the answer applies as an INFERENCE record and closes the question naming it", async () => {
   const w = qaWorld();
   const b = await bundleOf(w);
   assert.deepEqual([b.subject_ref, b.needs], [REF, "unanswered"]);
@@ -30,7 +30,6 @@ test("the export lists the open question with the held pool's identity; the answ
   assert.equal(flag(w).status, "resolved");
   assert.match(String(flag(w).resolution_note), new RegExp(String(inf[0]?.inference_id)));
   assert.equal(w.db.rows("section_claim_provenance").length, 0, "an answer is never written as a fact");
-  assert.ok(w.flushed.some((t) => t.includes(`item:${ITEM}`)), "the answered item's cache was flushed");
   // re-apply: nothing new
   const writes = w.db.writes().length;
   const again = await apply(w, [answered(b.pool_hash)]);

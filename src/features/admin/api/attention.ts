@@ -29,4 +29,4 @@ export async function readAttention(db: Db): Promise<AttentionCounts> {
   return row;
 }
 
-export const GET = adminRoute("/api/admin/attention", async (admin) => reply(admin, await readAttention(admin.service()), 200, { "Cache-Control": "private, max-age=30" }));
+export const GET = adminRoute("/api/admin/attention", async (admin) => reply(admin, await readAttention(admin.service()), 200, { "Cache-Control": "private, no-store" }));

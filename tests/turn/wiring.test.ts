@@ -82,19 +82,6 @@ test("navCounts: getNavCounts over the lists reads for the member's org and user
   await assert.rejects(Promise.resolve(wiring.adminAttention?.("u1")), /admin_attention_counts failed: denied/);
 });
 
-test("the cache flush posts the tags to the app with the worker secret; unconfigured, it says so instead of reporting success", async () => {
-  const calls: { url: string; secret: string | null; body: unknown }[] = [];
-  const fetchImpl = (async (url: string, init: RequestInit) => (calls.push({ url, secret: new Headers(init.headers).get("x-worker-secret"), body: JSON.parse(String(init.body)) }), new Response("{}", { status: 200 }))) as unknown as typeof fetch;
-  const db = new MemDb().client;
-  const armed = buildDeps(db, { NEXT_PUBLIC_APP_URL: "https://app.example.test", WORKER_SECRET: "s3cret" }, { now: () => NOW, fetchImpl });
-  assert.deepEqual(await armed.mintRun.flushCache?.(["intel-items"]), { error: null });
-  assert.deepEqual(calls, [{ url: "https://app.example.test/api/revalidate", secret: "s3cret", body: { tags: ["intel-items"] } }]);
-  const bare = buildDeps(db, {}, { now: () => NOW, fetchImpl });
-  assert.match(String((await bare.mintRun.flushCache?.(["x"]))?.error), /not configured/);
-  const down = buildDeps(db, { NEXT_PUBLIC_APP_URL: "https://app.example.test", WORKER_SECRET: "s" }, { now: () => NOW, fetchImpl: (async () => new Response("", { status: 503 })) as unknown as typeof fetch });
-  assert.match(String((await down.mintRun.flushCache?.(["x"]))?.error), /HTTP 503/);
-});
-
 test("the capture worker is the Edge Function invoked through the service client; its error is a 500 the capture stage reports", async () => {
   const db = Object.assign(Object.create(new MemDb()), { functions: { invoke: async (name: string, o: { body: unknown }) => (name === "capture-worker" ? { data: { processed: 0, results: [], echoed: o.body }, error: null } : { data: null, error: { message: "no" } }) } });
   const d = buildDeps(db, {}, { now: () => NOW });

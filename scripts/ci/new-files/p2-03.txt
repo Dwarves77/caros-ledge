@@ -11,7 +11,6 @@ src/core/fetch/index.ts | new in P2-03: barrel for the import surface the brief 
 src/core/capture/index.ts | new in P2-03: barrel for the import surface the brief names, no old counterpart
 src/core/coverage/index.ts | new in P2-03: barrel for the import surface the brief names, no old counterpart
 src/core/census/index.ts | new in P2-03: barrel for the import surface the brief names, no old counterpart
-src/core/cache/index.ts | new in P2-03: barrel for the import surface the brief names, no old counterpart
 src/core/perf/index.ts | new in P2-03: barrel for the import surface the brief names, no old counterpart
 src/core/notifications/index.ts | new in P2-03: barrel for the import surface the brief names, no old counterpart
 src/features/sources/index.ts | new in P2-03: barrel for the import surface the brief names, no old counterpart

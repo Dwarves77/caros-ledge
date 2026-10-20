@@ -89,7 +89,7 @@ test("the dashboard is read live: the same page drawn twice over changed rows sh
   assert.match(after, /Due next · 0 items/);
 });
 
-// The structure test (the stand-in for next/cache runs every function, so a draw cannot tell a cached read from a live one; the source can): no module in src keeps a read between requests.
+// The structure test (a draw over a fake database cannot tell a cached read from a live one; the source can): no module in src keeps a read between requests.
 const walk = (dir: string): string[] => readdirSync(dir).flatMap((n) => { const f = join(dir, n); return statSync(f).isDirectory() ? walk(f) : /\.(ts|tsx)$/.test(n) ? [f] : []; });
 test("no page or reader caches a read: nothing in src uses unstable_cache, a cachedRead wrapper or a revalidate window (the map, the dashboard and the coverage matrix included)", () => {
   const code = (f: string) => readFileSync(f, "utf8").replace(/^\s*\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, "");

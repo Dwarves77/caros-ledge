@@ -5,7 +5,7 @@ import { z } from "zod";
 
 import { dbError, HttpError, ok, route } from "@/core/http/errors";
 import { statusForDb } from "@/core/http/failure";
-import { checkRateLimit, clientKey, rateLimitHeaders, WORKER_FLUSH_BUDGET } from "@/core/http/rate-limit";
+import { checkRateLimit, clientKey, rateLimitHeaders } from "@/core/http/rate-limit";
 import { email, isUuid, parseJson, uuid } from "@/core/http/parse";
 import { authedFetch, authHeaders } from "@/core/http/authed-fetch";
 
@@ -104,10 +104,11 @@ test("PROP-028/127: the bearer is attached by one module and a missing session n
   assert.equal(await authHeaders({}, { client: session("") }), null);
 });
 
-test("IMP-057: a route's own budget goes through rate_limit_hit as p_limit, and the worker flush route has a larger one than the default", async () => {
+test("IMP-057: a route's own budget goes through rate_limit_hit as p_limit, and a larger one than the default is honoured", async () => {
   const t0 = Date.now();
+  const BIG = { limit: 600, windowMs: 60_000 };
   const open = fakeDb(undefined, { rpc: () => ({ data: [{ allowed: true, remaining: 599, reset_at: new Date(t0 + 30_000).toISOString() }] }) });
-  assert.equal(await checkRateLimit("worker:/api/revalidate-test", t0, open.db, WORKER_FLUSH_BUDGET), null);
-  assert.deepEqual(open.rpcs, [{ name: "rate_limit_hit", args: { p_key: "worker:/api/revalidate-test", p_limit: 600, p_window_seconds: 60 } }]);
-  assert.ok(WORKER_FLUSH_BUDGET.limit! > MAX_REQUESTS);
+  assert.equal(await checkRateLimit("worker:/api/big-test", t0, open.db, BIG), null);
+  assert.deepEqual(open.rpcs, [{ name: "rate_limit_hit", args: { p_key: "worker:/api/big-test", p_limit: 600, p_window_seconds: 60 } }]);
+  assert.ok(BIG.limit! > MAX_REQUESTS);
 });

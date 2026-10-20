@@ -5,7 +5,6 @@ import { test } from "node:test";
 import { POST as checkSourcesRoute } from "@/app/api/worker/check-sources/route";
 import { GET as surfacesRoute } from "@/app/api/health/surfaces/route";
 import { GET as version } from "@/app/api/version/route";
-import { POST as revalidateRoute } from "@/app/api/revalidate/route";
 import { POST as telemetryErrorRoute } from "@/app/api/telemetry/error/route";
 
 import { scripted } from "../_support/fake-clients.ts";
@@ -16,7 +15,6 @@ process.env.WORKER_SECRET = "route-secret";
 /** A route handler is called with its request and the framework's route context; these routes take none. */
 const checkSources = (request: Request) => checkSourcesRoute(request, undefined);
 const surfaces = (request: Request) => surfacesRoute(request, undefined);
-const revalidate = (request: Request) => revalidateRoute(request, undefined);
 const telemetryError = (request: Request) => telemetryErrorRoute(request, undefined);
 const withSecret = (url: string, secret: string | null, init: RequestInit = {}) =>
   new Request(`https://app.example.test${url}`, { method: "POST", ...init, headers: { "content-type": "application/json", ...(secret ? { "x-worker-secret": secret } : {}), ...(init.headers ?? {}) } });
@@ -51,14 +49,6 @@ async function surfacesLimit(query: string) {
   return checkSources(withSecret(`/api/worker/check-sources${query}`, "route-secret"));
 }
 
-test("PROP-001: revalidate: no secret 401, wrong secret 401, bad tags 400, right secret 200", async () => {
-  const post = (secret: string | null, body: unknown) => revalidate(withSecret("/api/revalidate", secret, { body: json(body) }));
-  assert.equal((await post(null, { tags: ["intel-items"] })).status, 401);
-  assert.equal((await post("wrong", { tags: ["intel-items"] })).status, 401);
-  assert.equal((await post("route-secret", { tags: [] })).status, 400);
-  assert.equal((await post("route-secret", { tags: Array.from({ length: 51 }, (_, i) => `t${i}`) })).status, 400);
-  assert.equal((await post("route-secret", { path: "/x" })).status, 400, "tags only, never a path");
-});
 test("PROP-001: health/surfaces: no secret 401, wrong secret 401, right secret answers 200 or 503 with the probe body", async () => {
   const w = memoryDb({ organizations: [{ id: "org-1", created_at: "2026-01-01" }] }, { rpc: (name) => (name === "get_all_surface_counts" ? { data: { total: { verified: 3 }, regulations: { verified: 2 }, market: { verified: 1 }, research: { verified: 1 }, operations: { verified: 1 } } } : { data: { error: "gate_a_health cache empty" } }) });
   scripted.service = () => w.db;

@@ -20,9 +20,9 @@ Names only; the values are entered in the places named and are never written dow
 | `NEXT_PUBLIC_SUPABASE_URL` | Vercel, GitHub | `src/core/db/clients.ts`, `src/core/db/browser.ts`, the live checks, the turn | the production project URL; copy from the old project |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Vercel, GitHub | `src/core/db/clients.ts`, `src/core/db/browser.ts`, the live checks | rotated in step 5 after the new project carries it; the name stays whatever the key kind |
 | `SUPABASE_SERVICE_ROLE_KEY` | Vercel, GitHub | `src/core/db/clients.ts`, the Edge Function, the live checks, the turn | server only; never a `NEXT_PUBLIC_` name |
-| `WORKER_SECRET` | Vercel, GitHub | `src/core/http/guard.ts` (worker routes), `src/core/turn/wiring.ts` (cache flush), `src/features/community/lib/org-key.ts` (fallback) | copy from the old project; rotating it also moves the organisation key unless `COMMUNITY_ORG_SALT` is set |
+| `WORKER_SECRET` | Vercel, GitHub | `src/core/http/guard.ts` (worker routes), `src/features/community/lib/org-key.ts` (fallback) | copy from the old project; rotating it also moves the organisation key unless `COMMUNITY_ORG_SALT` is set |
 | `COMMUNITY_ORG_SALT` | Vercel | `src/features/community/lib/org-key.ts` | the SAME value as the old project (the production `community_member_profiles.organisation_key` values were derived with it); set once, never rotated |
-| `NEXT_PUBLIC_APP_URL` | Vercel, GitHub | `src/core/turn/wiring.ts` (cache flush), `src/features/auth/api/invitations.ts` (invitation links) | the production origin, with scheme and no trailing slash |
+| `NEXT_PUBLIC_APP_URL` | Vercel, GitHub | `src/features/auth/api/invitations.ts` (invitation links) | the production origin, with scheme and no trailing slash |
 | `RESEND_API_KEY` | Vercel, GitHub (for the e-mail live check) | `src/core/shared/email.ts` | new; free tier (IMP-014), step 6 |
 | `INVITATION_FROM_EMAIL` | Vercel, GitHub | `src/core/shared/email.ts` | an address on the domain verified in Resend; with the key above it turns the invitation e-mail on, without either it stays copy-link |
 | `ASSISTANT_ENABLED` | Vercel | `src/features/workspace/api/bootstrap.ts` | leave unset (on); `false` turns the Assistant off |

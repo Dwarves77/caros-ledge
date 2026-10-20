@@ -4,7 +4,6 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { test } from "node:test";
 
-import { INTEL_ITEMS_TAG, itemTag } from "@/core/cache/tags";
 import { buildCoverageMatrix, ALL, parseCoverageQuery, surfaceDenominator, matrixToCsv, formatDenominatorLine, UNTAGGED } from "@/core/coverage/matrix";
 import { recordCoverageRequest, validateCoverageRequest } from "@/core/coverage/request";
 import { describeCoverageState } from "@/core/coverage/state";
@@ -152,10 +151,6 @@ test("surface health: a must-have surface with no rows is down, a zero-legal one
 });
 
 // Platform plumbing
-test("cache: tags are derived", () => {
-  assert.equal(itemTag("42"), "item:42");
-  assert.equal(INTEL_ITEMS_TAG, "intel-items");
-});
 test("perf: a timed phase returns its result and records even when it throws; the header carries the total and a cold or warm marker", async () => {
   assert.equal(await timePhase("listing_rpc", async () => "r"), "r");
   await assert.rejects(() => timePhase("a b;c", () => { throw new Error("phase failed"); }), /phase failed/);

@@ -43,6 +43,4 @@ export interface MintRunDeps {
   fetch: CaptureDeps;
   /** P2-15 (market producers): true when the identifier is an implemented market-series key (the record_hollow exemption). */
   isSeriesKey(identifier: string | null | undefined): boolean;
-  /** Cache flush after a mint (tags only). Absent in a dry run or when the cache layer is not wired. */
-  flushCache?(tags: string[]): Promise<{ error: string | null }>;
 }

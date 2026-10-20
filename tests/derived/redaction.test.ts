@@ -8,7 +8,6 @@ import { POST, REVOKE } from "@/features/corrections/api";
 import { redactDeep, redactSuppressedClaims } from "@/features/corrections/redact";
 
 import { fakeDb } from "../_support/fake-db.ts";
-import { flush } from "../_support/next-cache.ts";
 import { as, ctx, json, script } from "../_support/personas.ts";
 import { CLAIM_KEPT, CLAIM_SUPPRESSED, REG, world } from "../detail/world.ts";
 
@@ -63,18 +62,14 @@ test("the detail page carries the suppression into the summary, the key data and
   assert.ok(withheld.sections.filter((s) => s.id !== SECTION).every((s) => s.content_md === stored.get(String(s.id))), "the other sections stand as stored");
 });
 
-test("a correction answers whether the detail cache was flushed: 'fresh', or 'stale' when the flush threw, so the admin is told a cached page may still show the claim (INV-270)", async () => {
+test("a correction is answered as recorded, with no cache verdict: nothing in the app keeps a detail page, so the next read shows it", async () => {
   script(fakeDb((c) => (c.table === "intelligence_items" ? { data: { id: ITEM } } : c.table === "item_corrections" || c.table === "section_claim_provenance" ? { data: [] } : undefined), { rpc: (name) => (name === "create_item_correction" ? { data: CORR } : name === "revoke_item_correction" ? { data: null } : { data: null }) }));
   const create = async () => POST(as("platformAdmin", "/x", { method: "POST", body: json({ target_kind: "fact", target_ref: "b".repeat(8) + "-bbbb-4bbb-8bbb-bbbbbbbbbbbb", op: "suppress", reason: "wrong figure" }) }), ctx({ id: ITEM }) as never);
   const ok = await create();
-  assert.deepEqual([ok.status, ((await ok.json()) as { cache: string }).cache], [201, "fresh"]);
-  flush.fails = true;
-  try {
-    const stale = await create();
-    assert.deepEqual([stale.status, ((await stale.json()) as { cache: string }).cache], [201, "stale"], "the correction is recorded and the answer says the cache may still hold the page");
-    const revoked = await REVOKE(as("platformAdmin", "/x", { method: "POST", body: json({ reason: "mistake" }) }), ctx({ id: ITEM, correctionId: CORR }) as never);
-    assert.deepEqual([revoked.status, ((await revoked.json()) as { cache: string }).cache], [200, "stale"]);
-  } finally {
-    flush.fails = false;
-  }
+  const body = (await ok.json()) as Record<string, unknown>;
+  assert.equal(ok.status, 201);
+  assert.equal("cache" in body, false);
+  const revoked = await REVOKE(as("platformAdmin", "/x", { method: "POST", body: json({ reason: "mistake" }) }), ctx({ id: ITEM, correctionId: CORR }) as never);
+  assert.equal(revoked.status, 200);
+  assert.equal("cache" in ((await revoked.json()) as Record<string, unknown>), false);
 });

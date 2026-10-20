@@ -140,6 +140,7 @@ test("persona matrix: the register and upcoming routes answer any signed-in call
     assert.equal((await status(upcomingGet, p, "/api/obligations/upcoming?scope=all")).status, want, `upcoming as ${p}`);
   }
   const res = await status(registerGet, "member", "/api/obligations/register");
+  assert.equal(res.headers.get("cache-control"), "private, no-store", "the register is never a response a browser may reuse");
   const body = (await res.json()) as { rows: unknown[]; total: number };
   assert.equal(body.total, body.rows.length);
   assert.equal(body.total, 7);

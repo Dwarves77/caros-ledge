@@ -204,10 +204,6 @@ export async function runMint(deps: MintRunDeps, input: MintRunInput = {}): Prom
     }
   }
 
-  if (!dry && mintedIds.length && deps.flushCache) {
-    const flush = await deps.flushCache(["intel-items", "regulations-detail", "market-detail", "research-detail", "operations-detail"]);
-    if (flush.error) notes.push(`cache flush failed: ${flush.error}`);
-  }
-  const partial = (counts.failed ?? 0) + (counts.census_write_failed ?? 0) + (counts.participation_steps_failed ?? 0) + (counts.minted_unverified ?? 0) > 0 || notes.some((n) => n.startsWith("ledger row") || n.startsWith("cache flush"));
+  const partial = (counts.failed ?? 0) + (counts.census_write_failed ?? 0) + (counts.participation_steps_failed ?? 0) + (counts.minted_unverified ?? 0) > 0 || notes.some((n) => n.startsWith("ledger row"));
   return { ...runResult(partial ? "partial" : "ok", counts, notes), rows, mintedIds };
 }

@@ -62,7 +62,7 @@ test("the whole turn: every stage records under ONE root, each the next one's up
   for (const f of stages) assert.equal(ledger.filter((x) => x.family === f).length, 1, `${f}: exactly one row`);
   stages.slice(1).forEach((f, i) => assert.equal(by(f).upstream_run_id, by(stages[i] as string).id, `${f} follows ${stages[i]}`));
   assert.deepEqual([...new Set(ledger.map((x) => x.family))].filter((f) => !stages.includes(String(f))).sort(), ["mint", "producers"], "the only other rows are the runtimes' own unit rows");
-  assert.deepEqual(stages.map((f) => by(f).outcome), ["success", "refused", "success", "success", "partial", "success", "success", "success"], "the research walker is held by its reviewed constant: a recorded refusal that does not stop the turn; the intake minted its item and reported steps that failed (the fixture has no cache-flush endpoint and no tag rows), which is `partial`, never `success`");
+  assert.deepEqual(stages.map((f) => by(f).outcome), ["success", "refused", "success", "success", "success", "success", "success", "success"], "the research walker is held by its reviewed constant: a recorded refusal that does not stop the turn; every other stage finished");
   assert.match(String(by("research-walker").reason), /ENABLED constant is false/);
 
   // sweep -> change: the swept sources are the sources the change stage checked; the walked feed landed its link in the portal ledger.
@@ -127,8 +127,8 @@ test("the whole turn: every stage records under ONE root, each the next one's up
 
   // The ledger proofs, read from the ledger alone.
   const chain = await chainProof(db.client, r.rootRunId);
-  // Every stage left a row and none failed, but the intake finished partial (its cache flush and tag steps failed in this fixture): the proof is NOT ok, and it names the family.
-  assert.deepEqual([chain.ok, chain.missing, chain.failed, chain.partial], [false, [], [], ["ledger-consume"]]);
+  // Every stage left a row, none failed and none finished partial: the proof is ok (the walker's refusal is held, below, not a failure).
+  assert.deepEqual([chain.ok, chain.missing, chain.failed, chain.partial], [true, [], [], []]);
   assert.deepEqual(chain.held, ["research-walker:refused"]);
   assert.deepEqual(await mintedIds(db.client), minted, "P2: the minted ids");
   const fly = await flywheelOutcomes(db.client, [r.rootRunId]);

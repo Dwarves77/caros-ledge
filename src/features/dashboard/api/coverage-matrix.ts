@@ -10,7 +10,7 @@ import { makeCoverageData } from "@/features/coverage/server";
 // GET /api/dashboard/coverage/matrix: the coverage matrix as JSON, as a summary (?summary=1) or as CSV (?format=csv), for a signed-in reader. The census is platform data no workspace owns, so the read is
 // a live platform read. An outage is a 503 the client retries, never an empty matrix that reads as "nothing catalogued" (INV-263).
 const coverage = makeCoverageData({ db: serviceClient, now: () => new Date().toISOString(), labelOf: countryLabel });
-const PRIVATE = "private, max-age=60";
+const PRIVATE = "private, no-store";
 
 export const GET = route("/api/dashboard/coverage/matrix", async (request) => {
   const auth = await requireUser(request);

@@ -73,9 +73,8 @@ test("the turn mints, the stage exports the stub, a session authors from the exp
   const run = await runTurn({ stage: "briefs", mode: "apply", input: { briefs: { batch: { kind: "record-briefs", content: file } } } }, { d: f.d, env: {}, now: () => NOW });
   assert.equal(run.exit, 0);
   const row = f.db.rows("harness_runs").find((r) => r.family === "brief-apply" && r.id === run.rootRunId) as { outcome: string; outputs: { counts: Record<string, number>; ids: Record<string, string[]>; notes: string[] } };
-  // The applied rows are written, but the cache flush is not configured in this fixture (no NEXT_PUBLIC_APP_URL, no WORKER_SECRET): a stage that did not finish its downstream is `partial` and says why (it used to read `success`).
-  assert.equal(row.outcome, "partial", JSON.stringify(row.outputs));
-  assert.ok(row.outputs.notes.some((n) => /cache flush not configured/.test(n)), "the partial names the unit that did not run");
+  // The applied rows are written and the flywheel passes that follow ran: `success`.
+  assert.equal(row.outcome, "success", JSON.stringify(row.outputs));
   assert.equal(row.outputs.counts.applied, 1);
   assert.deepEqual(row.outputs.ids.applied_ids, [stub.id]);
   const item = f.db.rows("intelligence_items").find((r) => r.id === stub.id) as Record<string, unknown>;

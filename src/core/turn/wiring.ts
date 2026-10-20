@@ -224,13 +224,7 @@ export function buildDeps(sb: Db, env: Env = process.env, opts: DepsOptions = {}
   const connect = createConnectDeps({ getDb: () => sb, now });
   const mintCtx: MintCtx = { sb, entities, connect, now };
   const intake: IntakeDeps = { sb, sources, mint: bindMint(mintCtx), connect, recorder };
-  const flushCache: MintRunDeps["flushCache"] = async (tags) => {
-    const base = env.NEXT_PUBLIC_APP_URL;
-    if (!base || !env.WORKER_SECRET) return { error: "cache flush not configured: NEXT_PUBLIC_APP_URL and WORKER_SECRET are required" };
-    const res = await doFetch(`${base}/api/revalidate`, { method: "POST", headers: { "content-type": "application/json", "x-worker-secret": env.WORKER_SECRET }, body: JSON.stringify({ tags }), signal: AbortSignal.timeout(20_000) });
-    return { error: res.ok ? null : `revalidate answered HTTP ${res.status}` };
-  };
-  const mintRun: MintRunDeps = { sb, now, entities, connect, recorder, identity, fetch: fetchDeps, isSeriesKey, flushCache };
+  const mintRun: MintRunDeps = { sb, now, entities, connect, recorder, identity, fetch: fetchDeps, isSeriesKey };
 
   const registry = createMethodRegistry();
   // The market slice's own arithmetic is the default (P2-11); a caller passes `market: null` to leave it unwired (the fail-closed test), or its own pair.
@@ -291,7 +285,6 @@ const MANIFEST: readonly ManifestEntry[] = [
   ...(["congruence", "sourceRole", "matchExistingSubject"] as const).map((m): ManifestEntry => ({ member: `mintRun.entities.${m}`, status: "wired", present: (d) => fn(d.mintRun.entities[m]) })),
   ...(["deriveKey", "sameInstitution"] as const).map((m): ManifestEntry => ({ member: `mintRun.identity.${m}`, status: "wired", present: (d) => fn(d.mintRun.identity[m]) })),
   { member: "mintRun.isSeriesKey", status: "wired", present: (d) => fn(d.mintRun.isSeriesKey) },
-  { member: "mintRun.flushCache", status: "wired", present: (d) => fn(d.mintRun.flushCache) },
   { member: "producers.recorder", status: "wired", present: (d) => fn(d.producers.recorder.recordRun) },
   { member: "producers.fetch", status: "wired", present: (d) => fn(d.producers.fetch) },
   { member: "learning.questionFlagRow", status: "wired", present: (d) => fn(d.learning.questionFlagRow) },

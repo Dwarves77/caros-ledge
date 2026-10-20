@@ -20,10 +20,10 @@ export class WorldDb extends MemDb {
   }
 }
 
-export interface Rec { runs: { family: string; itemId?: string | null; outcome: string; counts: Record<string, number>; notes: string[] }[]; connects: string[]; flushed: string[][] }
+export interface Rec { runs: { family: string; itemId?: string | null; outcome: string; counts: Record<string, number>; notes: string[] }[]; connects: string[] }
 
 export function makeDeps(db: MemDb, over: Partial<MintRunDeps> = {}): { deps: MintRunDeps; rec: Rec } {
-  const rec: Rec = { runs: [], connects: [], flushed: [] };
+  const rec: Rec = { runs: [], connects: [] };
   const deps: MintRunDeps = {
     sb: db.client,
     now: () => NOW,
@@ -45,7 +45,6 @@ export function makeDeps(db: MemDb, over: Partial<MintRunDeps> = {}): { deps: Mi
     },
     fetch: { db: db.client, resolveHost: null, throttle: null, env: {}, caller: "manual-intake-run", fetchImpl: (async () => new Response("", { status: 404 })) as typeof fetch },
     isSeriesKey: (id) => id === "oil_bulletin_diesel",
-    flushCache: async (tags) => (rec.flushed.push(tags), { error: null }),
     ...over,
   };
   return { deps, rec };
