@@ -39,7 +39,7 @@ export function attribution(db: MemDb, sourceId: string | null, captureId: strin
 }
 
 function write(db: MemDb, table: string, op: Op, payload: unknown): void {
-  const call: MemCall = { table, op, payload, filters: [] };
+  const call: MemCall = { table, op, payload, filters: [], orders: [] };
   const injected = db.failWhen?.(call) ?? db.takeFailure(call)?.message ?? null;
   if (injected) throw new Refusal(injected, "XX000");
   db.calls.push(call);

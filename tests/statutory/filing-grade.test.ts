@@ -12,7 +12,6 @@ import { validateRowsFile, validateSourceBlock, verifyRowQuotes } from "@/featur
 import { installLedgerRpcs } from "../_support/ledger-rpcs.ts";
 import { MemDb } from "../_support/memdb.ts";
 
-// @ts-expect-error plain .mjs modules
 import { committedFilingGrade, derivedFilingGrade, exportedCaptures, headerOf } from "./filing-grade-support.mjs";
 
 const NOW = new Date("2026-10-20T00:00:00Z");
@@ -55,7 +54,7 @@ test("INV-R2b-4 (drift guard): data/filing-grade.json equals the derivation from
   assert.deepEqual(committed.instruments, derived.instruments, "run `node --import ./tests/_support/register.mjs tests/statutory/regenerate.mjs`; never edit the file");
   // the attack: a person adds 2025 to the committed file by hand
   const handTyped = structuredClone(committed);
-  handTyped.instruments[FUELEU_INSTRUMENT].years = [2025];
+  (handTyped.instruments[FUELEU_INSTRUMENT] as { years: number[] }).years = [2025];
   assert.notDeepEqual(handTyped.instruments, derived.instruments, "a hand-typed filing-grade year is not what the derivation yields");
   // every instrument the file lists is derived from an evidence row, and no capture file is orphaned
   assert.deepEqual(Object.keys(committed.instruments).sort(), filingInstruments().map((i) => i.id).sort());
