@@ -14,9 +14,6 @@ export interface StatutoryRunDeps {
   statutory: StatutoryDeps;
 }
 
-/** The violations of a rows file (the `validate` subcommand): empty means it is apply-ready. */
-export const validateStatutoryRows = (file: unknown): string[] => validateRowsFile(file);
-
 /** The target years that are filing grade NOW: the instrument's evidence capture is read from the database and every quote re-checked (the offline derivation, repeated live). No capture, or one that no longer holds a quote, is no year. */
 async function liveFilingYears(sb: Db, now: Date): Promise<ReadonlySet<string>> {
   const instrument = filingInstruments().find((i) => i.id === FUELEU_INSTRUMENT);

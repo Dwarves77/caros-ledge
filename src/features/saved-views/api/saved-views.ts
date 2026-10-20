@@ -10,8 +10,8 @@ import { isRefusal, requireUser } from "@/core/http/guard";
 import { isUuid, parseJson } from "@/core/http/parse";
 import { parseListUrl, serializeListUrl } from "@/ui/list-surface/url-state";
 
-export const SAVED_VIEW_SURFACES = ["regulations", "market", "research", "operations", "watchlist"] as const;
-export const MAX_VIEWS_PER_SURFACE = 50;
+const SAVED_VIEW_SURFACES = ["regulations", "market", "research", "operations", "watchlist"] as const;
+const MAX_VIEWS_PER_SURFACE = 50;
 const COLUMNS = "id, surface, name, query, created_at";
 const surface = z.enum(SAVED_VIEW_SURFACES);
 const createBody = z.object({ surface, name: z.string().trim().min(1, "Give the view a name.").max(60, "A view name is at most 60 characters."), query: z.string().max(1000) });
@@ -21,7 +21,7 @@ const failure = (error: { message: string; code?: string | null }): HttpError =>
   isMissingObject(error) ? new HttpError(503, "Saved views are not available yet. Your views are untouched; try again later.", { "Retry-After": "60" }) : dbError(error);
 
 /** The list state in a query string, written the way the list writes it; null when it holds nothing a view could restore. */
-export function canonicalQuery(raw: string, extraKeys: readonly string[] = []): string | null {
+function canonicalQuery(raw: string, extraKeys: readonly string[] = []): string | null {
   const text = serializeListUrl(parseListUrl(new URLSearchParams(raw.replace(/^\?/, "")), extraKeys));
   return text || null;
 }

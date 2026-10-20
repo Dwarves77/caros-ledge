@@ -10,7 +10,6 @@ import { allRows, rowsByIds } from "@/core/db";
 
 import { itemPool, type BatchExport, type Obj } from "../../kit/session-batch";
 
-export const RECORD_EXPORT_LIMIT = 40;
 const omitId = (row: Obj): Obj => Object.fromEntries(Object.entries(row).filter(([k]) => k !== "id"));
 interface ItemRow { id: string; title: string | null; item_type: string; format_type: string | null; jurisdiction_iso: string[] | null; canonical_instrument_key: string | null; source_id: string | null; source_url: string | null; provenance_status: string | null; is_archived: boolean | null }
 const COLUMNS = "id, title, item_type, format_type, jurisdiction_iso, canonical_instrument_key, source_id, source_url, provenance_status, is_archived";

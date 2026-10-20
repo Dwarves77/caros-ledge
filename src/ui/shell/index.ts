@@ -1,7 +1,7 @@
 // Ported from old_repo/src/components/AppShell.tsx (lines 31-266)
 export { AppShell } from "./AppShell";
 export { BackToTop } from "./BackToTop";
-export { CommandBar, ShellCommandBar } from "./CommandBar";
+export { ShellCommandBar } from "./CommandBar";
 export { isActivePath, navTitleForPath } from "./nav-model";
 export { NotificationsBell } from "./notifications";
 export { PageFailure } from "./PageFailure";

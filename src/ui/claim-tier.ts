@@ -61,7 +61,7 @@ const SLOT_PREFIX_RE = /^\[[a-z0-9_]+\]\s*/i;
 const QUOTE_EDGE_RE = /^["'“”‘’]+|["'“”‘’]+$/g;
 
 /** Slot prefix, FACT label, emphasis markers, edge quotes and whitespace runs removed; lower-cased. */
-export const normalizeClaimText = (raw: string): string =>
+const normalizeClaimText = (raw: string): string =>
   String(raw ?? "").replace(/\*+/g, "").trim().replace(SLOT_PREFIX_RE, "").replace(FACT_LABEL_RE, "").replace(QUOTE_EDGE_RE, "").replace(/\s+/g, " ").trim().toLowerCase();
 
 function claimsMatch(card: string, entry: string): boolean {
@@ -72,7 +72,7 @@ function claimsMatch(card: string, entry: string): boolean {
 }
 
 /** The one rated source a claim resolves to, or null (no match, a match with no tier, or matches that disagree: an ambiguous card gets no tier). */
-export function resolveClaimTier(claimText: string, claimTiers: ClaimTierMap | null | undefined): ClaimTierInfo | null {
+function resolveClaimTier(claimText: string, claimTiers: ClaimTierMap | null | undefined): ClaimTierInfo | null {
   const card = normalizeClaimText(claimText);
   if (!claimTiers || !card) return null;
   let found: ClaimTierInfo | null = null;

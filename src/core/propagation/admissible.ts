@@ -12,7 +12,7 @@ import type { Use, Value, Verdict } from "./types";
 export const FLOOR = Object.freeze({ analysis: 0.5, calculation: 0.75, filing: 0.9 });
 
 /** base x 0.5^(age / half-life), rounded to three places; no decay when the half-life is null. Throws on a non-finite base or a bad date. */
-export function effectiveConfidence(base: number, assertedAt: string | Date, halfLifeDays: number | null | undefined, now: string | Date): number {
+function effectiveConfidence(base: number, assertedAt: string | Date, halfLifeDays: number | null | undefined, now: string | Date): number {
   if (typeof base !== "number" || !Number.isFinite(base)) throw new TypeError(`effectiveConfidence: base must be a finite number (got ${JSON.stringify(base)})`);
   if (halfLifeDays === null || halfLifeDays === undefined) return base;
   if (typeof halfLifeDays !== "number" || !Number.isFinite(halfLifeDays) || halfLifeDays <= 0) throw new TypeError(`effectiveConfidence: halfLifeDays must be null or a positive finite number (got ${JSON.stringify(halfLifeDays)})`);

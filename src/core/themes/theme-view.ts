@@ -34,9 +34,9 @@ export interface MemberRow {
 }
 type Lineage = { prior_id: string; new_id: string }[];
 
-export const MAX_MEMBERS_PER_PAGE = 6;
+const MAX_MEMBERS_PER_PAGE = 6;
 const MAX_CHIP_MEMBER_LINKS = 3;
-export const MAX_THEME_LABEL_CHARS = 56;
+const MAX_THEME_LABEL_CHARS = 56;
 const SIGNAL_PHRASES: Record<string, string> = { shared_source: "Shared source", shared_scenario: "Shared scenarios", shared_compliance_object: "Shared obligated parties", shared_jurisdiction_topic: "Shared jurisdiction and topic" };
 const trim = (x: unknown): string | null => (typeof x === "string" && x.trim() ? x.trim() : null);
 const label = (s: string): string | undefined => SURFACE_LABELS[s];
@@ -111,7 +111,7 @@ function signalPhrase(signal: unknown): string | null {
 }
 
 /** A theme's label when no brief names it: its strongest signal, where it spans, shortened to 56 characters. */
-export function deriveThemeLabel(input: { signals?: ThemeRow["dominant_signals"]; pages?: Array<{ label?: string }>; memberCount?: number } = {}): string {
+function deriveThemeLabel(input: { signals?: ThemeRow["dominant_signals"]; pages?: Array<{ label?: string }>; memberCount?: number } = {}): string {
   const ranked = (input.signals ?? []).filter((x) => x && typeof x.signal === "string" && x.signal.trim()).sort((a, b) => (Number(b.weight) || 0) - (Number(a.weight) || 0));
   const n = input.memberCount && input.memberCount > 0 ? Math.floor(input.memberCount) : 0;
   const lead = (ranked[0] ? signalPhrase(ranked[0].signal) : null) ?? (n > 0 ? `${n} linked ${n === 1 ? "item" : "items"}` : "Linked items");

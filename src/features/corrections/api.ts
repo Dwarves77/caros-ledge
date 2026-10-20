@@ -17,7 +17,7 @@ const reply = (status: number, body: Record<string, unknown>): Reply => ({ statu
 const fail = (status: number, code: string, error: string): Reply => reply(status, { error, code });
 
 /** Database errors raised by the correction functions (`correction_<code>: detail`) to their statuses. */
-export function mapDbError(error: { message?: string } | null | undefined): Reply {
+function mapDbError(error: { message?: string } | null | undefined): Reply {
   const message = String(error?.message ?? "");
   const m = /^correction_([a-z_]+)/.exec(message);
   if (!m) return fail(500, "database_error", message || "database error");
@@ -30,7 +30,7 @@ export function mapDbError(error: { message?: string } | null | undefined): Repl
 }
 
 /** Validate a create request and build the RPC arguments; the actor is the session user. */
-export function planCorrection(itemId: string, userId: string, body: unknown): { ok: true; args: Record<string, unknown>; input: CorrectionInput } | { ok: false; reply: Reply } {
+function planCorrection(itemId: string, userId: string, body: unknown): { ok: true; args: Record<string, unknown>; input: CorrectionInput } | { ok: false; reply: Reply } {
   if (!isUuid(String(itemId))) return { ok: false, reply: fail(400, "item_id_invalid", "item id must be a uuid") };
   const v = validateCorrectionInput(body);
   if (!v.ok) return { ok: false, reply: fail(400, v.code, v.error) };
@@ -38,7 +38,7 @@ export function planCorrection(itemId: string, userId: string, body: unknown): {
   return { ok: true, input, args: { p_item_id: itemId, p_target_kind: input.target_kind, p_target_ref: input.target_ref, p_op: input.op, p_value: input.value, p_reason: input.reason, p_created_by: userId } };
 }
 
-export async function listCorrections(sb: Db, itemId: string): Promise<Reply> {
+async function listCorrections(sb: Db, itemId: string): Promise<Reply> {
   if (!isUuid(String(itemId))) return fail(400, "item_id_invalid", "item id must be a uuid");
   const { data: item, error: itemErr } = await sb.from("intelligence_items").select("id").eq("id", itemId).maybeSingle();
   if (itemErr) return fail(500, "database_error", itemErr.message);
@@ -74,7 +74,7 @@ export async function listCorrections(sb: Db, itemId: string): Promise<Reply> {
   return reply(200, { item_id: itemId, counts: { active, revoked: shaped.length - active, orphaned: orphanIds.size }, corrections: shaped });
 }
 
-export async function createCorrection(sb: Db, input: { itemId: string; userId: string; body: unknown }): Promise<Reply> {
+async function createCorrection(sb: Db, input: { itemId: string; userId: string; body: unknown }): Promise<Reply> {
   const plan = planCorrection(input.itemId, input.userId, input.body);
   if (!plan.ok) return plan.reply;
   const { data, error } = await sb.rpc("create_item_correction", plan.args);
@@ -82,7 +82,7 @@ export async function createCorrection(sb: Db, input: { itemId: string; userId: 
   return reply(201, { id: data, item_id: input.itemId, applied: true });
 }
 
-export async function revokeCorrection(sb: Db, input: { itemId: string; correctionId: string; userId: string; body: unknown }): Promise<Reply> {
+async function revokeCorrection(sb: Db, input: { itemId: string; correctionId: string; userId: string; body: unknown }): Promise<Reply> {
   if (!isUuid(String(input.itemId))) return fail(400, "item_id_invalid", "item id must be a uuid");
   if (!isUuid(String(input.correctionId))) return fail(400, "correction_id_invalid", "correction id must be a uuid");
   const b = (input.body && typeof input.body === "object" ? input.body : {}) as { reason?: unknown };

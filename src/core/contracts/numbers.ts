@@ -13,7 +13,7 @@ const DASHES = new Set(["‐", "‑", "‒", "–", "—", "−"]);
 const RUN = /\d(?:[., ]\d+)*/g;
 
 /** One run of digits and separators, folded by value: thousands groups drop their separator, a decimal separator becomes `.`, an ambiguous single `,` or `.` stays literal. `offs` maps each output character to its offset in the run. */
-export function foldRun(run: string): { text: string; offs: number[] } {
+function foldRun(run: string): { text: string; offs: number[] } {
   const parts = [...run.matchAll(/([., ])(\d+)/g)].map((m) => ({ sep: m[1] ?? "", digits: m[2] ?? "" }));
   const lead = run.match(/^\d+/)?.[0] ?? "";
   let text = lead;

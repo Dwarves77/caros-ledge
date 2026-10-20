@@ -191,7 +191,7 @@ export async function startBriefWorkflow(deps: IntakeDeps, input: WorkflowInput)
  * for re-source (it is never archived). Claims go through eraseClaimWithProof (archived first). Each delete is CHECKED and the first failure ends the erase with ok:false (a silently failed erase
  * left bad-host FACT spans in the corpus tally). The explanatory flag is its own distinct row; other producers' flags are untouched.
  */
-export async function eraseStep(deps: Pick<IntakeDeps, "sb" | "recorder">, itemId: string, kind: "reresearch_failed" | "structural_no_source", notes: string[] = []): Promise<{ ok: boolean; detail: string }> {
+async function eraseStep(deps: Pick<IntakeDeps, "sb" | "recorder">, itemId: string, kind: "reresearch_failed" | "structural_no_source", notes: string[] = []): Promise<{ ok: boolean; detail: string }> {
   const { sb, recorder } = deps;
   const fail = (what: string, error: { message: string }) => ({ ok: false, detail: `erase ${what} FAILED for ${itemId}: ${error.message}` });
   // RD-45: a claim is erased only through eraseClaimWithProof (its final state archived to claim_versions FIRST, the delete after).

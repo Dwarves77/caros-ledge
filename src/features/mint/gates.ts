@@ -13,24 +13,24 @@ import { buildHeldIndex, isHeld } from "./select";
 import type { Holder, MintOutcome } from "./types";
 
 /** Fork-4 relevance floor (0-100). Surface-only: below it a flag opens and the item mints anyway. */
-export const RELEVANCE_FLOOR = 40;
+const RELEVANCE_FLOOR = 40;
 const HOLDER_COLUMNS = "id, source_url, canonical_instrument_key, instrument_identifier, archive_reason";
 const CATEGORIES = [null, "regulatory", "research", "market_news", "operational_data"] as const;
 
 /** The domain an item type decides ALONE (the same answer for every source category), or null for a conditional type (framework, tool, initiative). */
-export function unconditionalDomain(itemType: string | null | undefined): Domain | null {
+function unconditionalDomain(itemType: string | null | undefined): Domain | null {
   const all = CATEGORIES.map((c) => domainForItemType(itemType, c));
   return all[0] != null && all.every((d) => d === all[0]) ? all[0] : null;
 }
 /** Surface-routing guard: the canonical domain when the current one disagrees (or is absent) for an unconditional type, else null. */
-export function canonicalDomainOverride(itemType: string | null | undefined, current: unknown): Domain | null {
+function canonicalDomainOverride(itemType: string | null | undefined, current: unknown): Domain | null {
   const d = unconditionalDomain(itemType);
   return d != null && current !== d ? d : null;
 }
 
 export type SourceLinkOutcome = { kind: "preset" } | { kind: "link"; sourceId: string } | { kind: "reject"; error: string };
 /** A mint cannot produce a source-less LIVE item (grounding grounds against the item's source): trust a preset source_id, link a registered one, else reject. */
-export function sourceLinkDecision(seed: { source_id?: unknown; source_url?: unknown }, matchedSourceId: string | null): SourceLinkOutcome {
+function sourceLinkDecision(seed: { source_id?: unknown; source_url?: unknown }, matchedSourceId: string | null): SourceLinkOutcome {
   if (seed.source_id != null) return { kind: "preset" };
   const url = String(seed.source_url ?? "");
   if (!url) return { kind: "reject", error: "no source_url and no source_id: a live item cannot mint without a source (source-link invariant)" };

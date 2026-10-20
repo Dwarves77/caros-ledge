@@ -30,23 +30,3 @@ export function writeProducerSummary(a: SummaryArgs, o: { dir?: string | null | 
   return out;
 }
 
-/** Fold the summaries of one firing into the family artifact body (per item, metrics, defects). Pure; the harness adds the header and writes the file. */
-export function foldProducerSummaries(summaries: readonly ProducerSummary[]) {
-  const failedOnes = summaries.filter((s) => s.status === "failed");
-  const sum = (f: (s: ProducerSummary) => number | null) => summaries.reduce((acc, s) => acc + (f(s) ?? 0), 0);
-  return {
-    inputs_ref: summaries.map((s) => s.producer),
-    per_item: summaries.map((s) => ({
-      id: s.producer,
-      outcome: s.status === "failed" ? "failed" : "clean",
-      verdict: s.status === "failed" ? s.reason || "no reason recorded" : `rows_changed=${s.rows_changed} edges_authored=${JSON.stringify(s.edges_authored)}`,
-      evidence_refs: [] as string[],
-      error: s.status === "failed" ? JSON.stringify({ reason: s.reason, counts: s.counts }) : null,
-    })),
-    metrics: { producers_reporting: summaries.length, producers_failed: failedOnes.length, rows_changed_total: sum((s) => s.rows_changed), edges_authored_total: sum((s) => s.edges_authored) },
-    defects_found: failedOnes.length
-      ? [{ description: `${failedOnes.length} of ${summaries.length} producer(s) reported status "failed" this run`, root_cause: failedOnes.map((s) => `${s.producer}: ${s.reason}`).join(" | "), fix_ref: null }]
-      : [],
-    proposer_notes: summaries.length ? "Folded from the producers' own summaries." : "This dispatch recorded zero producer summaries (no apply step ran, or no summary directory was set); recorded anyway so the family's history shows every firing.",
-  };
-}

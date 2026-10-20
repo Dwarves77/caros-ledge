@@ -16,7 +16,7 @@ interface Hold {
 }
 
 /** What the strip says about the hold: while the cadence is off nothing scrapes, not the automated worker and not a manual fetch; the emergency stop halts everything and keeps the saved schedule. Pure. */
-export function holdSentence(h: Hold): string {
+function holdSentence(h: Hold): string {
   if (h.paused) return `Emergency stop engaged. Nothing scrapes. Saved schedule: ${h.cadence === "off" ? "off" : `${h.cadence} from ${h.start_date}`} (kept).`;
   if (h.cadence === "off") return "Scraping is off. Nothing scrapes, not the automated worker and not a manual fetch. Set a cadence to turn it on.";
   return `Scraping ${h.cadence} from ${h.start_date}. Next run: ${h.next_scrape ?? "not scheduled"}.`;

@@ -30,7 +30,6 @@ export type Validated<T> = { ok: true; value: T; warnings: string[] } | { ok: fa
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const SCENARIO_TAG = /^[0-9a-z][0-9a-z-]*[0-9a-z]$/i;
-export const isUuidShape = (v: unknown): v is string => typeof v === "string" && UUID.test(v);
 
 class FieldError extends Error {}
 const bad = (msg: string): never => {
@@ -243,4 +242,3 @@ export function crossLinkClaimSources(claims: ClaimRecord[], searches: PoolLink[
     return last ? { ...c, search_result_id: last.id } : { ...c, search_result_id: c.search_result_id ?? null };
   });
 }
-export { bankCandidate };

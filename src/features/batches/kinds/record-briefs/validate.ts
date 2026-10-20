@@ -12,8 +12,7 @@ import { scanGateA, uncoveredSlots, type SlotRow } from "@/core/grounding";
 import { poolHashError, type EntryResult, isObj, nonEmpty, type Obj } from "../../kit/session-batch";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-export const RECORD_BRIEFS_SCHEMA_VERSION = "rb2-2026-10-17.1";
-export const MIN_BODY_CHARS = 600;
+const MIN_BODY_CHARS = 600;
 const LARGE_POOL_CHARS = 200_000;
 
 const LABEL_RE = analysisLabelRe();
@@ -46,7 +45,7 @@ function figuresIn(text: string): string[] {
   return [...String(text ?? "").replace(/\b(\d{1,2})\.(\d{1,2})\.(\d{2,4})\b/g, "$1 $2 $3").matchAll(NUMERIC_RE)].map((m) => m[0].trim()).filter((t) => normalizeFigure(t).replace(/\./g, "").length >= 2);
 }
 /** claim_text with the provenance pointers removed: what the numeric mirror measures against the span. */
-export const figureCheckText = (claimText: string): string => POINTERS.reduce((t, re) => t.replace(re, " "), String(claimText ?? ""));
+const figureCheckText = (claimText: string): string => POINTERS.reduce((t, re) => t.replace(re, " "), String(claimText ?? ""));
 
 /** An unnegated hit of `re` in some claim's own span (a window of words before the match carries no negation). */
 function unnegatedHit(claims: readonly Obj[], re: RegExp): boolean {
@@ -58,13 +57,13 @@ function unnegatedHit(claims: readonly Obj[], re: RegExp): boolean {
 }
 
 /** Does this slot's description name a GAP claim form? The descriptions are the policy source: a description without one is a HARD slot (a FACT only). */
-export function slotAllowsGap(slot: SlotRow): boolean {
+function slotAllowsGap(slot: SlotRow): boolean {
   const d = String(slot?.description ?? "");
   return /claim_kind\s*=\s*GAP/i.test(d) || /\bGAP claim\b/i.test(d) || /\bGAP\s+(acceptable|accepted|allowed|permitted|when|where|if)\b/i.test(d) || /\bemit a GAP\b/i.test(d);
 }
 
 /** Criterion 5: per required slot, a FACT (or a GAP where the description allows one) whose claim_text names the slot key. */
-export function requiredSlotErrors(claims: readonly Obj[], slots: readonly SlotRow[], tag: string, itemType: string): string[] {
+function requiredSlotErrors(claims: readonly Obj[], slots: readonly SlotRow[], tag: string, itemType: string): string[] {
   const errors: string[] = [];
   for (const slot of slots) {
     const key = slot.slot_key.toLowerCase();

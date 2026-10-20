@@ -238,7 +238,7 @@ export interface LensProfile {
 }
 
 /** The read-time lens for one item against a profile: band, matches, a deterministic summary line, and the applicability gate. */
-export function computeItemRelevance(item: Record<string, unknown>, profile: LensProfile, deps: RelevanceDeps): ItemRelevance {
+function computeItemRelevance(item: Record<string, unknown>, profile: LensProfile, deps: RelevanceDeps): ItemRelevance {
   const pModes = arr(profile.transport_modes);
   const iModes = arr(item.transport_modes);
   // An item that declares no modes is mode-agnostic (applies across the reader's modes), not "no match".

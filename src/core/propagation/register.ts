@@ -43,7 +43,7 @@ function inputProblems(inputs: unknown, allowEmpty: boolean): string[] {
 }
 
 /** Every problem with a derived-value registration; empty means valid. */
-export function validateRegisterDerivedValueInput(input: RegisterDerivedValueInput): string[] {
+function validateRegisterDerivedValueInput(input: RegisterDerivedValueInput): string[] {
   const problems: string[] = [];
   for (const f of ["methodId", "methodVersion", "derivation", "originClass", "lifecycle", "admissibility", "computedBy"] as const) {
     if (!text(input[f])) problems.push(`${f} must be a non-empty string`);
@@ -83,8 +83,8 @@ export async function registerDerivedValue(sb: Db, input: RegisterDerivedValueIn
   return data as string;
 }
 
-export const STATUS_TOKENS = ["CONFIRMED", "HYPOTHESIS", "REFUTED"] as const;
-export const INFERENCE_ORIGIN_CLASSES = ["derived", "modelled"] as const;
+const STATUS_TOKENS = ["CONFIRMED", "HYPOTHESIS", "REFUTED"] as const;
+const INFERENCE_ORIGIN_CLASSES = ["derived", "modelled"] as const;
 export type StatusToken = (typeof STATUS_TOKENS)[number];
 
 export interface RegisterInferenceRecordInput {
@@ -102,7 +102,7 @@ export interface RegisterInferenceRecordInput {
   supersedes?: string | null;
 }
 
-export function validateRegisterInferenceRecordInput(input: RegisterInferenceRecordInput): string[] {
+function validateRegisterInferenceRecordInput(input: RegisterInferenceRecordInput): string[] {
   const problems: string[] = [];
   if (!text(input.claimText)) problems.push("claimText must be a non-empty string");
   if (!STATUS_TOKENS.includes(input.statusToken)) problems.push(`statusToken must be one of ${STATUS_TOKENS.join(",")}`);
@@ -137,7 +137,7 @@ export async function registerInferenceRecord(sb: Db, input: RegisterInferenceRe
 
 export const INFER_METHOD_ID = "infer-from-question";
 export const INFER_METHOD_VERSION = "v1";
-export const firstInferenceComputedBy = (batch: string): string => `question-answers:${batch}`;
+const firstInferenceComputedBy = (batch: string): string => `question-answers:${batch}`;
 
 export interface FirstInferenceArgs {
   subjectId: string | null;
@@ -151,7 +151,7 @@ export interface FirstInferenceArgs {
 }
 
 /** The registration of a first inference: a REFUTED claim is not an answer; the cited items are the declared inputs, so the row has edges. */
-export function buildFirstInferenceInput(args: FirstInferenceArgs): RegisterInferenceRecordInput {
+function buildFirstInferenceInput(args: FirstInferenceArgs): RegisterInferenceRecordInput {
   if (args.statusToken === "REFUTED") throw new Error("buildFirstInferenceInput: a REFUTED inference is not an answer; refused");
   return {
     subjectId: args.subjectId ?? null, claimText: args.claimText, statusToken: args.statusToken, confidence: args.confidence, citedItemIds: args.citedItemIds, originClass: "derived",

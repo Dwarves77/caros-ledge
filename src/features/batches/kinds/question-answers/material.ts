@@ -39,7 +39,7 @@ export const withAnsweredOutcome = (actions: unknown, a: { inferenceId: string; 
 export const withUnanswerableOutcome = (actions: unknown, a: { missing: string; poolHash: string; batch: string; nowIso: string }): unknown[] => [...(Array.isArray(actions) ? actions : []).filter((x) => !(x && (x.action === ANSWERED_ACTION || x.action === UNANSWERABLE_ACTION))), { action: UNANSWERABLE_ACTION, rationale: a.missing, pool_hash: a.poolHash, batch: a.batch, recorded_at: a.nowIso }];
 
 /** Why an item may not be cited, or null when it may: archived, not verified, or sourced only from Community (ADR-041). */
-export function itemUnusableReason(item: Pick<ItemRow, "is_archived" | "provenance_status" | "origin_class"> | null | undefined): string | null {
+function itemUnusableReason(item: Pick<ItemRow, "is_archived" | "provenance_status" | "origin_class"> | null | undefined): string | null {
   if (!item) return "item not found";
   if (item.is_archived) return "archived";
   if (item.provenance_status !== "verified") return `not verified (provenance_status ${item.provenance_status ?? "null"})`;
@@ -51,7 +51,7 @@ export function currentInference(rows: readonly InferenceRow[] | undefined): Inf
   return [...(rows ?? [])].filter((r) => !superseded.has(r.inference_id)).sort((a, b) => String(b.computed_at).localeCompare(String(a.computed_at)))[0] ?? null;
 }
 /** The event type the generator recorded in the flag's own rationale, when it did. */
-export function eventContextOf(flag: Pick<NeedFlag, "recommended_actions">): { event_type: string } | null {
+function eventContextOf(flag: Pick<NeedFlag, "recommended_actions">): { event_type: string } | null {
   for (const a of actionsOf(flag)) {
     const m = /event_type=([A-Za-z_]+)/.exec(String(a.rationale ?? ""));
     if (m) return { event_type: m[1] as string };

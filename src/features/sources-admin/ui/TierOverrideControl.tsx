@@ -20,7 +20,7 @@ interface Audit {
 }
 
 /** The reason a set needs, or the refusal in words. Pure. */
-export const reasonError = (tier: number | null, reason: string): string | null => (tier !== null && !reason.trim() ? "A reason is required: the operator's knowledge is the record." : null);
+const reasonError = (tier: number | null, reason: string): string | null => (tier !== null && !reason.trim() ? "A reason is required: the operator's knowledge is the record." : null);
 
 /**
  * The source's three tiers (base, effective, override), and the one operator tier path: set an override with a reason, or revert it. Each change writes an audit row naming you; base_tier is never written. The audit list

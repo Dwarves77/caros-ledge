@@ -4,9 +4,6 @@ import type { Resource } from "@/core/types";
 
 export type ShareResult = "shared" | "copied" | "failed";
 
-/** The words a caller shows for a share or export result. */
-export const SHARE_MESSAGE: Record<ShareResult, string> = { shared: "Shared", copied: "Link copied", failed: "Copy failed. Copy the address from the browser bar." };
-
 type ShareNav = Navigator & { share?: (data: ShareData) => Promise<void>; clipboard?: { writeText: (s: string) => Promise<void> } };
 
 async function copy(text: string, nav: ShareNav): Promise<ShareResult> {

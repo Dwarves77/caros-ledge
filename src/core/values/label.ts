@@ -3,16 +3,13 @@
 import { DERIVATION } from "@/core/contracts";
 
 export type Spec09Label = "statutory" | "estimate" | "M";
-export const SPEC09_LABELS: readonly Spec09Label[] = Object.freeze(["statutory", "estimate", "M"] as const);
 
 /** Bucket a `derivation` into statutory or estimate; an unknown or absent derivation is "M", never guessed into either. */
-export function spec09Label(derivation: string | null | undefined): Spec09Label {
+function spec09Label(derivation: string | null | undefined): Spec09Label {
   const entry = derivation == null ? null : DERIVATION[derivation];
   if (!entry) return "M";
   return entry.statutory === true ? "statutory" : "estimate";
 }
-
-export const isStatutoryLabel = (derivation: string | null | undefined): boolean => spec09Label(derivation) === "statutory";
 
 export type Labelled<V, E extends object = Record<string, never>> = Readonly<{ label: Spec09Label; derivation: string | null; value: V } & E>;
 

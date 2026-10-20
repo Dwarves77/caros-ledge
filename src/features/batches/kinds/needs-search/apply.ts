@@ -21,7 +21,7 @@ async function censusRows(sb: Db, sourceId: string, url: string): Promise<{ id: 
   return (data ?? []) as { id: string }[];
 }
 
-export const needsSearchSpec: EntrySpec<NeedsLive, NeedPlan> = {
+const needsSearchSpec: EntrySpec<NeedsLive, NeedPlan> = {
   kind: "needs-search",
   batchRe: /^needs-search-[A-Za-z0-9._-]+$/,
   ceiling: 200,

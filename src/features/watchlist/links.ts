@@ -8,7 +8,7 @@ export type WatchlistScope = "personal" | "team";
 export const isWatchType = (v: unknown): v is WatchlistItemType => (WATCH_TYPES as readonly unknown[]).includes(v);
 
 /** A series is watched by the workspace, not by one person (WO-23): personal watching of it is refused. */
-export const TEAM_ONLY_TYPES: ReadonlySet<string> = new Set(["market_series"]);
+const TEAM_ONLY_TYPES: ReadonlySet<string> = new Set(["market_series"]);
 export const isTeamOnlyWatchType = (itemType: string): boolean => TEAM_ONLY_TYPES.has(itemType);
 export const isTeamOnlyScopeViolation = (itemType: string, scope: string): boolean => isTeamOnlyWatchType(itemType) && scope !== "team";
 

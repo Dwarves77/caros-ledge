@@ -15,7 +15,7 @@ export interface Zip {
   read(name: string): Buffer;
 }
 /** Open a zip buffer (no zip64). `read` decompresses; a missing entry or an unsupported method is a StructureError naming it. */
-export function readZip(buf: Buffer): Zip {
+function readZip(buf: Buffer): Zip {
   let eocd = -1;
   for (let i = buf.length - 22; i >= Math.max(0, buf.length - 65557); i -= 1) {
     if (buf.readUInt32LE(i) === EOCD_SIG) {
@@ -49,7 +49,7 @@ export function readZip(buf: Buffer): Zip {
   };
 }
 
-export function decodeXml(s: string): string {
+function decodeXml(s: string): string {
   return s
     .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&apos;/g, "'")
     .replace(/&#x([0-9a-fA-F]+);/g, (_, n: string) => String.fromCodePoint(parseInt(n, 16)))
@@ -63,13 +63,13 @@ function attrs(tag: string): Record<string, string> {
   return out;
 }
 
-export function parseSharedStrings(xml: string): string[] {
+function parseSharedStrings(xml: string): string[] {
   if (!xml) return [];
   return [...xml.matchAll(/<si>([\s\S]*?)<\/si>|<si\/>/g)].map((m) => [...(m[1] ?? "").matchAll(/<t\b[^>]*>([\s\S]*?)<\/t>|<t\b[^>]*\/>/g)].map((t) => decodeXml(t[1] ?? "")).join(""));
 }
 
 /** Sheet name to its package path. A sheet whose relationship is missing is a StructureError; an external target is refused. */
-export function parseSheetNames(workbookXml: string, relsXml: string): Record<string, string> {
+function parseSheetNames(workbookXml: string, relsXml: string): Record<string, string> {
   const rels = new Map<string, string>();
   for (const m of relsXml.matchAll(/<Relationship\b[^>]*\/>/g)) {
     const a = attrs(m[0]);
@@ -98,7 +98,7 @@ export interface SheetRow {
   cells: Map<string, Cell>;
 }
 /** Rows of a worksheet, cells keyed by column letter. A cell with no reference is skipped rather than positioned by guess. */
-export function parseSheetRows(sheetXml: string): SheetRow[] {
+function parseSheetRows(sheetXml: string): SheetRow[] {
   if (!/<sheetData\b/.test(sheetXml)) throw new StructureError("worksheet XML has no <sheetData> element: not a recognisable sheet");
   const rows: SheetRow[] = [];
   for (const rm of sheetXml.matchAll(/<row\b([^>]*?)(?:\/>|>([\s\S]*?)<\/row>)/g)) {

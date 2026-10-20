@@ -10,7 +10,7 @@ import { fetchAllByIdChunks, fetchAllRows } from "@/core/db";
 
 import type { CensusRow, Holder } from "./types";
 
-export const LIMIT_CEILING = 100;
+const LIMIT_CEILING = 100;
 
 /** The effective cap: a positive integer, never above the ceiling. Throws on anything else (a bad cap is a caller bug, not a silent clamp). */
 export function resolveLimit(limit: number | null | undefined): number {
@@ -20,13 +20,13 @@ export function resolveLimit(limit: number | null | undefined): number {
   return n;
 }
 
-export const normalizeIdentifier = (v: unknown): string | null => (typeof v === "string" && v.trim() ? v.trim().toLowerCase() : null);
+const normalizeIdentifier = (v: unknown): string | null => (typeof v === "string" && v.trim() ? v.trim().toLowerCase() : null);
 
 /**
  * THE same-document rule. Two identifiers name the same document when both are unlabelled (fail closed) or both are labelled and equal once normalised. Two
  * labelled, different identifiers are siblings (a series sharing one landing page), not a duplicate. An unlabelled side is presumed the same document.
  */
-export function sameInstrumentIdentity(a: unknown, b: unknown): boolean {
+function sameInstrumentIdentity(a: unknown, b: unknown): boolean {
   const p = normalizeIdentifier(a);
   const h = normalizeIdentifier(b);
   return p != null && h != null ? p === h : true;

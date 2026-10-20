@@ -78,12 +78,12 @@ export function resolveEntityByName(list: ReadonlyArray<{ canonical_name: string
 }
 
 // ---- the operator CSV contract ----
-export const MAX_BYTES_PER_FILE = 262_144;
-export const MAX_ROWS_PER_FILE = 500;
+const MAX_BYTES_PER_FILE = 262_144;
+const MAX_ROWS_PER_FILE = 500;
 
 const columns = z.array(z.object({ name: z.string(), kind: z.enum(["string", "number", "enum", "date"]), required: z.boolean(), min: z.number().optional(), max: z.number().optional(), values: z.array(z.string()).optional() }));
 const contracts = z.record(z.string(), z.object({ columns, entityRefs: z.array(z.object({ field: z.string(), kind: z.string() })) })).parse(tables);
-export const OPERATOR_ROW_TABLES: readonly string[] = Object.freeze(Object.keys(contracts));
+const OPERATOR_ROW_TABLES: readonly string[] = Object.freeze(Object.keys(contracts));
 type Column = z.infer<typeof columns>[number];
 
 function cellValue(c: Column, raw: string): { value: unknown } | { error: string } {

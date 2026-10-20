@@ -1,1 +1,1 @@
-export { assessAndUpdateSource, runChangeDetection, validateCheckLimit } from "./change-detection";
+export { runChangeDetection, validateCheckLimit } from "./change-detection";

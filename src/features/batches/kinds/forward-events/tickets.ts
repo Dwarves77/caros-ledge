@@ -20,7 +20,7 @@ export interface TicketSnapshot {
 export const archivedConsumedBy = (by: string): string => `${by}:item-archived`;
 
 /** Split open tickets by the live state of their item. An item with no state (a vanished row) defers: that is no reason to consume its ticket. Pure. */
-export function partitionByCorpusMembership(rows: readonly Ticket[], states: ReadonlyMap<string, ItemState>): TicketPartition {
+function partitionByCorpusMembership(rows: readonly Ticket[], states: ReadonlyMap<string, ItemState>): TicketPartition {
   const out: TicketPartition = { selectable: [], archived: [], deferred: [] };
   for (const r of rows) {
     const st = states.get(r.intelligence_item_id);
@@ -29,9 +29,9 @@ export function partitionByCorpusMembership(rows: readonly Ticket[], states: Rea
   return out;
 }
 /** The first `limit` rows in their existing (oldest-first) order. Pure. */
-export const applyLimit = <T>(rows: readonly T[], limit: number | null | undefined): T[] => (Number.isInteger(limit) && (limit as number) > 0 ? rows.slice(0, limit as number) : [...rows]);
+const applyLimit = <T>(rows: readonly T[], limit: number | null | undefined): T[] => (Number.isInteger(limit) && (limit as number) > 0 ? rows.slice(0, limit as number) : [...rows]);
 /** The distinct item ids of a set of tickets, in order. Pure. */
-export const itemIdsOf = (rows: readonly Ticket[]): string[] => [...new Set(rows.map((r) => r.intelligence_item_id).filter(Boolean))];
+const itemIdsOf = (rows: readonly Ticket[]): string[] => [...new Set(rows.map((r) => r.intelligence_item_id).filter(Boolean))];
 /** The snapshot a run records when it selects: the ids a later mark retires. Pure over the rows and the caller's clock. */
 export function buildSnapshot(selected: readonly Ticket[], opts: { generatedAt: string; archived?: readonly Ticket[]; deferredCount?: number }): TicketSnapshot {
   const by_reason: Record<string, number> = {};

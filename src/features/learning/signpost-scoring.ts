@@ -7,8 +7,8 @@ import { evaluateSignpostPredicate } from "@/core/propagation";
 import type { SignpostPredicate } from "@/core/propagation/signpost";
 import { runResult, type RunResult } from "@/core/intake/result";
 
-export const OUTCOME_BY_DIRECTION: Readonly<Record<string, "held" | "refuted" | "partial">> = Object.freeze({ confirms: "held", refutes: "refuted", delays: "partial" });
-export const SCORED_BY = "signpost_watch@1";
+const OUTCOME_BY_DIRECTION: Readonly<Record<string, "held" | "refuted" | "partial">> = Object.freeze({ confirms: "held", refutes: "refuted", delays: "partial" });
+const SCORED_BY = "signpost_watch@1";
 const DAY_MS = 86_400_000;
 
 export interface OutboxEvent { eventId: string; tableName: string; entityId: string | null; changeKind?: string | null; occurredAt: string; newRow?: Record<string, unknown> | null }
@@ -29,7 +29,7 @@ export interface SignpostStepDeps {
   scoreSignpost(entityId: string, patch: { outcome: string; outcome_assessed_at: string; scored_by: string }): Promise<void>;
 }
 
-export const outcomeForDirection = (d: string): "held" | "refuted" | "partial" | null => OUTCOME_BY_DIRECTION[d] ?? null;
+const outcomeForDirection = (d: string): "held" | "refuted" | "partial" | null => OUTCOME_BY_DIRECTION[d] ?? null;
 /** The predicate's `by` as a deadline in ms; a bare date is the END of that day. Null when absent or unparseable. */
 export function deadlineMs(predicate: { by?: unknown } | null | undefined): number | null {
   const by = predicate && typeof predicate === "object" ? predicate.by : null;
@@ -37,19 +37,19 @@ export function deadlineMs(predicate: { by?: unknown } | null | undefined): numb
   const t = new Date(by).getTime();
   return Number.isNaN(t) ? null : /^\d{4}-\d{2}-\d{2}$/.test(by) ? t + DAY_MS : t;
 }
-export const isDeadlinePassed = (predicate: { by?: unknown }, now: Date): boolean => {
+const isDeadlinePassed = (predicate: { by?: unknown }, now: Date): boolean => {
   const d = deadlineMs(predicate);
   return d !== null && d <= now.getTime();
 };
-export const scorePatch = (outcome: string, now: Date) => ({ outcome, outcome_assessed_at: now.toISOString(), scored_by: SCORED_BY });
+const scorePatch = (outcome: string, now: Date) => ({ outcome, outcome_assessed_at: now.toISOString(), scored_by: SCORED_BY });
 /** One ledger row per DISTINCT grounding source. */
-export function buildLedgerRows(o: { signpostEntityId: string; assessmentId: string; outcome: string; sourceIds: readonly string[] | null | undefined; now: Date }): LedgerRow[] {
+function buildLedgerRows(o: { signpostEntityId: string; assessmentId: string; outcome: string; sourceIds: readonly string[] | null | undefined; now: Date }): LedgerRow[] {
   return [...new Set((o.sourceIds ?? []).filter(Boolean))].map((source_id) => ({ source_id, signpost_entity_id: o.signpostEntityId, outcome: o.outcome, scored_at: o.now.toISOString(), scored_by: SCORED_BY, assessment_id: o.assessmentId }));
 }
-export const watchedRowForEvent = (e: OutboxEvent): Record<string, unknown> => ({ ...(e.newRow && typeof e.newRow === "object" ? e.newRow : {}), occurred_at: e.occurredAt, change_kind: e.changeKind ?? null, table_name: e.tableName });
+const watchedRowForEvent = (e: OutboxEvent): Record<string, unknown> => ({ ...(e.newRow && typeof e.newRow === "object" ? e.newRow : {}), occurred_at: e.occurredAt, change_kind: e.changeKind ?? null, table_name: e.tableName });
 
 /** Match events to the unfired signposts watching their entity, in occurrence order (then id); each signpost fires on the first qualifying event only. */
-export function matchEventsToSignposts(events: readonly OutboxEvent[], signposts: readonly SignpostRow[], now: Date) {
+function matchEventsToSignposts(events: readonly OutboxEvent[], signposts: readonly SignpostRow[], now: Date) {
   const out = { fires: [] as Array<{ signpost: SignpostRow; event: OutboxEvent; reason: string }>, evaluated: 0, late: 0, signpostOriginEvents: 0, eventsNoEntity: 0, eventsMatched: 0 };
   const byEntity = new Map<string, SignpostRow[]>();
   for (const sp of signposts) if (!sp.fired_at) byEntity.set(sp.watches, [...(byEntity.get(sp.watches) ?? []), sp]);
@@ -148,5 +148,3 @@ export async function runSignpostStep(deps: { step: SignpostStepDeps; now(): Dat
   return { ...runResult(c.errors ? "partial" : "ok", c, notes), failedEventIds: [...failed], scored: scoredList };
 }
 
-/** Counts under a prefix for a caller's own run counts. */
-export const signpostMetrics = (r: RunResult | null | undefined, prefix = "sp_"): Record<string, number> => Object.fromEntries(Object.entries(r?.counts ?? {}).map(([k, v]) => [`${prefix}${k}`, v]));

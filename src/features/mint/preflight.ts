@@ -93,7 +93,7 @@ function proseSubstitutions(text: string | null | undefined, reference: Ref, lab
 }
 
 /** Empty signature-tag arrays are visible, never a refusal: an item with no tags scores no connection edge, and inventing a tag is forbidden. */
-export function tagPresence(payload: Pick<RecordPayload, "item">): Warning[] {
+function tagPresence(payload: Pick<RecordPayload, "item">): Warning[] {
   const item = payload.item ?? {};
   const empty = cfg.signature_tag_fields.filter((f) => !Array.isArray(item[f]) || (item[f] as unknown[]).length === 0);
   const out = empty.map((field) => ({ field, reason: `payload.item.${field} is empty or absent: the item mints with no ${field} value and cannot score that connection basis` }));

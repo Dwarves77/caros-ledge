@@ -10,7 +10,7 @@ import type { Theme } from "./cluster";
 const lc = (s: unknown): string => String(s ?? "").toLowerCase().trim();
 
 /** The entity id of a jurisdiction code on the canonical spelling; null for a generic scope or an empty code. */
-export function jurisdictionKey(code: unknown): string | null {
+function jurisdictionKey(code: unknown): string | null {
   const c = canonicalJurisdictionCode(code);
   return c && !GENERIC_JURISDICTIONS.has(lc(c)) ? entityId("jurisdiction", c) : null;
 }

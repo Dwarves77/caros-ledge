@@ -27,7 +27,7 @@ interface Compiled { name: string; verdict: ScreenVerdictName; test: RegExp; exc
 
 let compiled: { roots: z.infer<typeof RulesFile>["celex_roots"]; rules: Compiled[] } | null = null;
 /** Validate and compile the rule table once. Throws when the table breaks its own contract (an OFF rule before an ON rule, a duplicate name). */
-export function loadRules() {
+function loadRules() {
   if (compiled) return compiled;
   const f = RulesFile.parse(rulesData);
   const names = new Set<string>();
@@ -44,7 +44,7 @@ export function loadRules() {
 }
 
 const CELEX_RE = /CELEX:?\s*(\d)(\d{4})([A-Z]{1,2})(\d+)/i;
-export function parseCelex(text: string | null | undefined) {
+function parseCelex(text: string | null | undefined) {
   if (!text) return null;
   const decoded = decodeUriOrNull(text) ?? text;
   const m = CELEX_RE.exec(decoded);
@@ -52,7 +52,7 @@ export function parseCelex(text: string | null | undefined) {
 }
 
 /** The text every rule matches: the title, else a pseudo-title read from the document URL (a descriptive slug or filename). */
-export function deriveSearchText(title: string | null | undefined, documentUrl: string | null | undefined): string {
+function deriveSearchText(title: string | null | undefined, documentUrl: string | null | undefined): string {
   const t = String(title ?? "").trim();
   if (t) return t;
   const u = String(documentUrl ?? "");
@@ -64,7 +64,7 @@ export function deriveSearchText(title: string | null | undefined, documentUrl: 
 
 export interface RuleVerdict { verdict: ScreenVerdictName; rule: string; basis: string }
 /** Classify one census row for freight-sustainability relevance. surface_tags are carried for traceability only, never a decision input (ADR-020 Amendment 1). */
-export function classifyRelevance(row: { title?: string | null; document_url?: string | null; surface_tags?: readonly string[] | null } = {}): RuleVerdict {
+function classifyRelevance(row: { title?: string | null; document_url?: string | null; surface_tags?: readonly string[] | null } = {}): RuleVerdict {
   const { roots, rules } = loadRules();
   const t = String(row.title ?? "").trim();
   const u = String(row.document_url ?? "").trim();
@@ -87,8 +87,6 @@ export function screenVerdictFor(row: { id?: string | null; title?: string | nul
   if (r.verdict === "ambiguous" && entry && entry.basis.length) return { verdict: entry.verdict, rule: null, basis: entry.basis, provenance: "reviewed" };
   return { verdict: r.verdict, rule: r.rule, basis: r.basis, provenance: "rule" };
 }
-/** Only `on_vertical` mints. */
-export const isMintable = (verdict: string | null | undefined): boolean => verdict === "on_vertical";
 
 /** The reviewed verdicts (screen_verdicts, one row per census id). A failed read throws: an unreadable table is never "no overrides". */
 export async function loadReviewedVerdicts(sb: Db): Promise<Map<string, ReviewedVerdict>> {
@@ -96,32 +94,3 @@ export async function loadReviewedVerdicts(sb: Db): Promise<Map<string, Reviewed
   return new Map(rows.map((r) => [r.census_id, { verdict: r.verdict, basis: r.basis, reviewer: r.reviewer }]));
 }
 
-export const ARCHIVE_REASON = "off_vertical";
-export interface ReconcileResult { live: number; onVertical: number; offVertical: number; ambiguous: number; archived: number; ambiguousIds: string[] }
-/** Archive (reversibly, reason off_vertical) the live record items the screen now rules off-vertical; ambiguous items stay live and are returned for the caller to hold. */
-export async function reconcileRecordItems(sb: Db, reviewed: ReadonlyMap<string, ReviewedVerdict>, opts: { dry: boolean; today: string }): Promise<ReconcileResult> {
-  const items = await fetchAllRows<{ id: string; title: string | null; source_url: string | null }>((from, to) => sb.from("intelligence_items").select("id, title, source_url").eq("item_grade", "record").eq("is_archived", false).order("id", { ascending: true }).range(from, to) as never, { cap: 200_000 });
-  const census = new Map<string, { id: string; title: string | null; surface_tags: string[] | null }>();
-  const urls = [...new Set(items.map((i) => i.source_url).filter((x): x is string => !!x))];
-  for (let i = 0; i < urls.length; i += 50) {
-    const r = await sb.from("census_worklist").select("id, document_url, title, surface_tags").in("document_url", urls.slice(i, i + 50));
-    if (r.error) throw new Error(`census read for reconcile failed: ${r.error.message}`);
-    for (const c of (r.data ?? []) as { id: string; document_url: string; title: string | null; surface_tags: string[] | null }[]) if (!census.has(c.document_url)) census.set(c.document_url, c);
-  }
-  const verdicts = items.map((it) => {
-    const c = it.source_url ? census.get(it.source_url) : undefined;
-    return { id: it.id, v: screenVerdictFor({ id: c?.id ?? null, title: c?.title ?? it.title ?? "", document_url: it.source_url, surface_tags: c?.surface_tags ?? [] }, reviewed).verdict };
-  });
-  const off = verdicts.filter((x) => x.v === "off_vertical").map((x) => x.id);
-  const ambiguousIds = verdicts.filter((x) => x.v === "ambiguous").map((x) => x.id);
-  let archived = 0;
-  if (!opts.dry) {
-    for (let i = 0; i < off.length; i += 50) {
-      const u = await sb.from("intelligence_items").update({ is_archived: true, archive_reason: ARCHIVE_REASON, archived_date: opts.today }).in("id", off.slice(i, i + 50)).eq("item_grade", "record").eq("is_archived", false).select("id");
-      if (u.error) throw new Error(`reconcile archive failed: ${u.error.message}`);
-      archived += (u.data ?? []).length;
-    }
-    if (archived !== off.length) throw new Error(`reconcile mismatch: ${off.length} off-vertical items, ${archived} archived`);
-  }
-  return { live: items.length, onVertical: verdicts.length - off.length - ambiguousIds.length, offVertical: off.length, ambiguous: ambiguousIds.length, archived, ambiguousIds };
-}

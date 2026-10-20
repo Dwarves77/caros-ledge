@@ -41,7 +41,7 @@ const ITEM_COLUMNS = "id, item_type, domain, priority, jurisdiction_iso, added_d
 const PER_TOKEN_ITEM_CAP = 6;
 
 /** Pairs of items that name the same regulation identifier in their titles and share no edge in either direction: they get a shared_entity edge in both directions. */
-export function sharedEntityEdges(items: readonly { id: string; title?: string | null }[], existing: readonly Pick<EdgeRow, "source_item_id" | "target_item_id">[], entityTokens: (title: string | null | undefined) => string[]): EdgeRow[] {
+function sharedEntityEdges(items: readonly { id: string; title?: string | null }[], existing: readonly Pick<EdgeRow, "source_item_id" | "target_item_id">[], entityTokens: (title: string | null | undefined) => string[]): EdgeRow[] {
   const connected = new Set(existing.map((e) => (e.source_item_id < e.target_item_id ? `${e.source_item_id}|${e.target_item_id}` : `${e.target_item_id}|${e.source_item_id}`)));
   const byToken = new Map<string, string[]>();
   for (const it of items) for (const t of entityTokens(it.title)) byToken.set(t, [...(byToken.get(t) ?? []), it.id]);

@@ -19,7 +19,7 @@ interface SectionCardProps {
 }
 
 /** The 3 px dark-grey graduated rule, part of the card (ruling A1, 2026-09-08), never a decoration. */
-export const SectionRule = () => <div aria-hidden="true" className="cl-section-rule" />;
+const SectionRule = () => <div aria-hidden="true" className="cl-section-rule" />;
 
 /** THE card shell: every card on every surface is this part. A padded card floats the rule over its top edge; a flow card stacks it. */
 export function SectionCard({ children, as: Tag = "div", padding, dataAudit, className, id, style, "aria-label": ariaLabel, "aria-labelledby": ariaLabelledBy, suppressRuleForBandGrouping = false, dataAttributes, onKeyDown }: SectionCardProps) {

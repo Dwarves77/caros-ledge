@@ -21,13 +21,13 @@ export interface LearningDeps {
 }
 
 /** `<item>:<surface>:<question>` to the item id; null for any other shape. */
-export function itemIdOfQuestionRef(subjectRef: string): string | null {
+function itemIdOfQuestionRef(subjectRef: string): string | null {
   const parts = String(subjectRef ?? "").split(":");
   return parts.length === 3 && parts[0] ? parts[0] : null;
 }
 
 /** Re-open one question as an open flag, once: a missing ref, item or generated question, or an already-open flag, is a reported no-op. Reads and the insert throw on error. */
-export async function reopenQuestionForRecompute(sb: Db, learning: LearningDeps, subjectRef: string | null | undefined): Promise<{ reopened: boolean; reason: string }> {
+async function reopenQuestionForRecompute(sb: Db, learning: LearningDeps, subjectRef: string | null | undefined): Promise<{ reopened: boolean; reason: string }> {
   if (!subjectRef) return { reopened: false, reason: "the inference carries no trigger_question_ref" };
   const itemId = itemIdOfQuestionRef(subjectRef);
   if (!itemId) return { reopened: false, reason: `trigger_question_ref ${JSON.stringify(subjectRef)} is not an <item>:<surface>:<question> reference` };

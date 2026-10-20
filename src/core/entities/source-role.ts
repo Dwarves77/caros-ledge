@@ -6,10 +6,10 @@ import { z } from "zod";
 import raw from "./data/source-role.json";
 
 const cfg = z.object({ newsPattern: z.string(), primaryPattern: z.string(), primaryArtifactTypes: z.array(z.string()), studyBackedTypes: z.array(z.string()) }).parse(raw);
-export const NEWS_RE = new RegExp(cfg.newsPattern, "i");
+const NEWS_RE = new RegExp(cfg.newsPattern, "i");
 const PRIMARY_URL_RE = new RegExp(cfg.primaryPattern, "i");
-export const PRIMARY_ARTIFACT_TYPES: ReadonlySet<string> = new Set(cfg.primaryArtifactTypes);
-export const STUDY_BACKED_TYPES: ReadonlySet<string> = new Set(cfg.studyBackedTypes);
+const PRIMARY_ARTIFACT_TYPES: ReadonlySet<string> = new Set(cfg.primaryArtifactTypes);
+const STUDY_BACKED_TYPES: ReadonlySet<string> = new Set(cfg.studyBackedTypes);
 
 export type Role = "primary" | "news" | "other";
 export function sourceRole(url: unknown): Role {

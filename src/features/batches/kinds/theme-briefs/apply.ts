@@ -20,7 +20,7 @@ const DEFAULT_CHAR_BUDGET = 120_000;
 interface ThemeLive { ctx: ThemeContext; themes: Map<string, ThemeRow>; stored: Map<string, { member_hash: string; generated_by: string; brief_md: string }> }
 interface Plan { memberIds: string[]; brief: ValidThemeBrief }
 
-export const themeBriefsSpec: EntrySpec<ThemeLive, Plan> = {
+const themeBriefsSpec: EntrySpec<ThemeLive, Plan> = {
   kind: "theme-briefs",
   batchRe: /^theme-briefs-[A-Za-z0-9._-]+$/,
   ceiling: 100,

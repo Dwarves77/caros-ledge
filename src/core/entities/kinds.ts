@@ -8,9 +8,6 @@ export type EntityKind = (typeof KINDS)[number];
 const KIND_SET: ReadonlySet<string> = new Set(KINDS);
 const ID_RE = /^cl:([a-z_]+):([0-9a-f]{16})$/;
 
-/** ADR-024: corridor identity is a UN/LOCODE port-pair plus a canonical mode, hashed. */
-export const CORRIDOR_ID_SCHEME = Object.freeze({ basis: "UN/LOCODE port-pair + mode", seedFormat: "ORIGIN-DEST:mode", hashAlgorithm: "sha256", hashHexLength: 16, idPrefix: "cl:corridor:" });
-
 /** Throws unless the id is `cl:<kind>:<16 hex>` with a known kind (and the expected one when given). */
 export function assertEntityId(id: unknown, expectedKind?: EntityKind): true {
   const s = String(id ?? "");

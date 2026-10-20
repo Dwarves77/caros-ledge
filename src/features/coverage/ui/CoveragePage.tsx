@@ -21,7 +21,7 @@ const Fraction = ({ numerator, denominator }: { numerator: number; denominator: 
 );
 
 /** The scope of a view in words, from the labels the matrix itself carries. Pure. */
-export function scopeLabel(matrix: Pick<CoverageMatrix, "dataClasses" | "geographies" | "modes">, query: CoverageQuery): string {
+function scopeLabel(matrix: Pick<CoverageMatrix, "dataClasses" | "geographies" | "modes">, query: CoverageQuery): string {
   const cls = query.dataClass === ALL ? "every data class" : (matrix.dataClasses.find((c) => c.code === query.dataClass)?.label ?? query.dataClass);
   const geo = query.geography === ALL ? "every geography" : (matrix.geographies.find((g) => g.code === query.geography)?.label ?? query.geography);
   const mode = query.mode === ALL ? "all modes" : (matrix.modes.find((m) => m.code === query.mode)?.label ?? query.mode);

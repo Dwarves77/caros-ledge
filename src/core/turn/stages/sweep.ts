@@ -26,11 +26,11 @@ export interface SweepPlan {
   limit: number;
   registers: RegisterWalk[];
 }
-export const SWEEP_DEFAULT_LIMIT = 25;
-export const SWEEP_MAX_LIMIT = 200;
+const SWEEP_DEFAULT_LIMIT = 25;
+const SWEEP_MAX_LIMIT = 200;
 
 /** Validate the stage input into a plan. Pure. */
-export function planSweep(input: Record<string, unknown>): { plan: SweepPlan; errors: string[] } {
+function planSweep(input: Record<string, unknown>): { plan: SweepPlan; errors: string[] } {
   const errors: string[] = [];
   const ids = Array.isArray(input.sourceIds) ? input.sourceIds.filter((x): x is string => typeof x === "string") : null;
   const limit = typeof input.limit === "number" ? Math.floor(input.limit) : SWEEP_DEFAULT_LIMIT;
@@ -78,7 +78,7 @@ function snapshotStore(d: BuiltDeps, sourceId: string) {
 }
 
 /** A changed lastmod on a URL we hold an item for is a change signal: one monitoring_queue row for the source, which the change stage's reconcile consumes. */
-export async function recordSignal(d: BuiltDeps, sourceId: string, changed: Array<{ loc: string }>): Promise<number> {
+async function recordSignal(d: BuiltDeps, sourceId: string, changed: Array<{ loc: string }>): Promise<number> {
   let held = 0;
   for (const c of changed.slice(0, 50)) {
     const r = await d.sb.from("intelligence_items").select("id").eq("source_url", c.loc).eq("is_archived", false).limit(1);

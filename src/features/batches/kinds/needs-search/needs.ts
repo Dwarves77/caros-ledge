@@ -17,10 +17,9 @@ import { type BatchExport } from "../../kit/session-batch";
 
 /** resolved_by of every flag the URL apply step closes: how the export finds a need already served. */
 export const RESOLVED_BY = "apply-need-urls";
-export const NEED_EXPORT_LIMIT = 100;
 export type NeedKind = "term-need" | "holdings-need" | "flywheel-gap" | "lineage-gap";
 /** What a found URL becomes, by need kind: a lineage parent is one instrument whose page is a ledger candidate; every other need is answered by a document the census should see. */
-export const OUTPUT_FOR_KIND: Readonly<Record<NeedKind, "census_worklist" | "portal_link_candidate">> = { "term-need": "census_worklist", "holdings-need": "census_worklist", "flywheel-gap": "census_worklist", "lineage-gap": "portal_link_candidate" };
+const OUTPUT_FOR_KIND: Readonly<Record<NeedKind, "census_worklist" | "portal_link_candidate">> = { "term-need": "census_worklist", "holdings-need": "census_worklist", "flywheel-gap": "census_worklist", "lineage-gap": "portal_link_candidate" };
 const FLAG_COLUMNS_FULL = `${FLAG_COLUMNS}, resolved_by, resolution_note`;
 export type FullFlag = NeedFlag & { resolved_by: string | null; resolution_note: string | null };
 
@@ -30,7 +29,7 @@ export function needKindOf(createdBy: unknown): NeedKind | null {
   return c.startsWith(TERM_NEED_NAMESPACE) ? "term-need" : c.startsWith(HOLDINGS_NEED_NAMESPACE) ? "holdings-need" : c.startsWith(GAP_NAMESPACE) ? "flywheel-gap" : c === LINEAGE_GAP_CREATED_BY ? "lineage-gap" : null;
 }
 /** The identity of a need that survives its flag being re-raised under a new id: kind, subject and the need text, whitespace collapsed. */
-export const needKey = (a: { kind: string; subject_ref: string; text: string }): string => createHash("sha256").update(`${a.kind}\u0000${a.subject_ref}\u0000${String(a.text ?? "").replace(/\s+/g, " ").trim().toLowerCase()}`).digest("hex").slice(0, 16);
+const needKey = (a: { kind: string; subject_ref: string; text: string }): string => createHash("sha256").update(`${a.kind}\u0000${a.subject_ref}\u0000${String(a.text ?? "").replace(/\s+/g, " ").trim().toLowerCase()}`).digest("hex").slice(0, 16);
 
 export interface Need { need_id: string; kind: NeedKind; subject_ref: string | null; text: string; key: string; created_at: string | null; context: Record<string, unknown>; output: "census_worklist" | "portal_link_candidate"; satisfies: Record<string, unknown> }
 
@@ -79,7 +78,7 @@ export function needFromFlag(flag: Pick<NeedFlag, "id" | "subject_ref" | "create
 /** The held corpus the lineage planner resolves parents against (non-archived items). One capped read under a total order. */
 const loadCorpus = (sb: Db) => allRows<{ id: string; title: string | null; instrument_identifier: string | null }>(sb, "intelligence_items", "id, title, instrument_identifier", { cap: 500_000, where: (q) => q.eq("is_archived", false) });
 /** Absent lineage parents grouped by flag id. */
-export function lineageTargetsByFlag(lineageFlags: readonly NeedFlag[], corpus: readonly { id: string; title: string | null; instrument_identifier: string | null }[]): Map<string, { identifier: string; relationship: string }[]> {
+function lineageTargetsByFlag(lineageFlags: readonly NeedFlag[], corpus: readonly { id: string; title: string | null; instrument_identifier: string | null }[]): Map<string, { identifier: string; relationship: string }[]> {
   const out = new Map<string, { identifier: string; relationship: string }[]>();
   for (const t of planLineageGapTargets(lineageFlags as never, corpus as never).targets) out.set(t.flag_id, [...(out.get(t.flag_id) ?? []), { identifier: t.identifier, relationship: t.relationship }]);
   return out;
@@ -87,7 +86,7 @@ export function lineageTargetsByFlag(lineageFlags: readonly NeedFlag[], corpus: 
 export const loadLineageTargets = async (sb: Db, lineageFlags: readonly NeedFlag[]) => (lineageFlags.length ? lineageTargetsByFlag(lineageFlags, await loadCorpus(sb)) : new Map<string, { identifier: string; relationship: string }[]>());
 
 /** Every open need of the four kinds as needs, oldest first, with what was skipped and why. */
-export async function collectOpenNeeds(sb: Db): Promise<{ needs: Need[]; residue: { flag_id: string; kind: string | null; reason: string }[]; counts: { open_by_kind: Record<string, number>; skipped_no_absent_parent: number; unparseable: number } }> {
+async function collectOpenNeeds(sb: Db): Promise<{ needs: Need[]; residue: { flag_id: string; kind: string | null; reason: string }[]; counts: { open_by_kind: Record<string, number>; skipped_no_absent_parent: number; unparseable: number } }> {
   const [held, gaps, lineage] = [
     await loadOpenNeedTargets(sb, { includeTermNeeds: true }),
     await allRows<NeedFlag>(sb, "integrity_flags", FLAG_COLUMNS, { where: (q) => q.like("created_by", `${GAP_NAMESPACE}%`).in("status", [...OPEN_STATUSES]) }),
@@ -112,7 +111,7 @@ export async function collectOpenNeeds(sb: Db): Promise<{ needs: Need[]; residue
   return { needs: needs.sort((a, b) => age(a) - age(b) || (a.need_id < b.need_id ? -1 : a.need_id > b.need_id ? 1 : 0)), residue, counts };
 }
 /** The need keys the apply step already served (resolved flags it closed), mapped to the url applied. */
-export async function loadAppliedKeys(sb: Db): Promise<Map<string, string>> {
+async function loadAppliedKeys(sb: Db): Promise<Map<string, string>> {
   const rows = await allRows<FullFlag>(sb, "integrity_flags", FLAG_COLUMNS_FULL, { where: (q) => q.eq("resolved_by", RESOLVED_BY).eq("status", "resolved") });
   const out = new Map<string, string>();
   for (const r of rows) {

@@ -19,7 +19,7 @@ export const STAGES = ["sweep", "sweep-research", "change", "capture", "intake",
 export type Stage = (typeof STAGES)[number];
 
 export type StageRunner = (call: FamilyCall, d: BuiltDeps) => Promise<RunResult>;
-export const STAGE_RUNNERS: Readonly<Record<Stage, StageRunner>> = { sweep: runSweep, "sweep-research": runResearch, change: runChange, capture: runCapture, intake: runIntake, connect: runConnect, propagate: runPropagate, briefs: runBriefs };
+const STAGE_RUNNERS: Readonly<Record<Stage, StageRunner>> = { sweep: runSweep, "sweep-research": runResearch, change: runChange, capture: runCapture, intake: runIntake, connect: runConnect, propagate: runPropagate, briefs: runBriefs };
 
 export const isStage = (s: string): s is Stage => (STAGES as readonly string[]).includes(s);
 /** The family a stage records under (from FAMILIES, the one table). */

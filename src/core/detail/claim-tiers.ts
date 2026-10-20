@@ -32,7 +32,7 @@ export interface SuppressedClaimRef {
 }
 
 /** The map from a claim's text to its rating: the source's override, else its base tier (null when the claim has no source). */
-export function buildClaimTierMap(rows: readonly ClaimRow[] | null | undefined): ClaimTierMap {
+function buildClaimTierMap(rows: readonly ClaimRow[] | null | undefined): ClaimTierMap {
   const map: ClaimTierMap = {};
   for (const row of rows ?? []) {
     if (!row || typeof row.claim_text !== "string") continue;
@@ -58,7 +58,7 @@ export function readFactSuppressionsFor(db: Db, itemIds: readonly string[]): Pro
 }
 
 /** The active fact suppressions of one item, as the view exposes them. Throws on a failed read. */
-export async function readFactSuppressions(db: Db, itemUuid: string): Promise<Correction[]> {
+async function readFactSuppressions(db: Db, itemUuid: string): Promise<Correction[]> {
   const read = await boundedRead((n) => db.from("fact_suppressions").select(SUPPRESSION_COLUMNS).eq("item_id", itemUuid).limit(n), { limit: 200 });
   if (read.error) throw new Error(`fact_suppressions read failed: ${read.error.message}`);
   if (read.truncated) throw new Error(`fact_suppressions for ${itemUuid} reached its bound; suppression would be incomplete`);
@@ -79,5 +79,3 @@ export async function readClaims(db: Db, itemUuid: string): Promise<{ tiers: Cla
   };
 }
 
-/** The tier map alone (the name the other detail surfaces import). */
-export const fetchClaimTierMap = async (db: Db, itemUuid: string): Promise<ClaimTierMap> => (await readClaims(db, itemUuid)).tiers;

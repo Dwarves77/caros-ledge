@@ -14,9 +14,9 @@ import { filterTagProposals, readItemCorrections, removedTagsFor } from "@/core/
 import { FIELD_CAPS, meetsConfidence, type Confidence, type TagProposal } from "./derive";
 import { heldVocabulary, TAG_FIELDS, type TagField } from "./vocabulary";
 
-export const AUTO_ADOPT_THRESHOLD: Confidence = "high";
-export const TAG_EVIDENCE_TEXT_FIELDS = ["title", "what_is_it", "summary", "full_brief"] as const;
-export const DECISION_SUBTYPE = "decided";
+const AUTO_ADOPT_THRESHOLD: Confidence = "high";
+const TAG_EVIDENCE_TEXT_FIELDS = ["title", "what_is_it", "summary", "full_brief"] as const;
+const DECISION_SUBTYPE = "decided";
 
 export interface TaggedItem {
   id: string;
@@ -31,15 +31,15 @@ export interface TaggedItem {
 }
 export type DecidedProposal = TagProposal & Decision;
 
-export function itemOwnText(item: Partial<TaggedItem>): string {
+function itemOwnText(item: Partial<TaggedItem>): string {
   return TAG_EVIDENCE_TEXT_FIELDS.map((f) => (typeof item?.[f] === "string" ? (item[f] as string) : "")).join("\n");
 }
-export const evidencePresentInItemText = (evidence: unknown, item: Partial<TaggedItem>): boolean => {
+const evidencePresentInItemText = (evidence: unknown, item: Partial<TaggedItem>): boolean => {
   const needle = String(evidence ?? "").trim().toLowerCase();
   return needle !== "" && itemOwnText(item).toLowerCase().includes(needle);
 };
 
-export function decideTagProposal(proposal: TagProposal, item: Partial<TaggedItem>, opts: { threshold?: Confidence; adopted?: Partial<AdoptedVocabulary> } = {}): DecidedProposal {
+function decideTagProposal(proposal: TagProposal, item: Partial<TaggedItem>, opts: { threshold?: Confidence; adopted?: Partial<AdoptedVocabulary> } = {}): DecidedProposal {
   const threshold = opts.threshold ?? AUTO_ADOPT_THRESHOLD;
   const label = `${proposal.field}:${proposal.tag}`;
   if (meetsConfidence(proposal.confidence, threshold)) return { ...proposal, label, decision: "adopt", reason: `confidence '${proposal.confidence}' meets the auto-adopt threshold '${threshold}' (title/instrument-key identity match).` };
@@ -58,7 +58,7 @@ export interface MergePatch {
 }
 
 /** The merge-only column patch: existing tags stay, novel adopted ones are appended up to the field cap, removed tags are blocked. */
-export function buildMergePatch(item: Partial<TaggedItem>, proposals: readonly Pick<TagProposal, "field" | "tag">[], removed?: Partial<Record<string, Set<string>>>): MergePatch {
+function buildMergePatch(item: Partial<TaggedItem>, proposals: readonly Pick<TagProposal, "field" | "tag">[], removed?: Partial<Record<string, Set<string>>>): MergePatch {
   const out: MergePatch = { patch: {}, added: {}, cappedOut: {}, alreadyPresent: {}, blockedByCorrection: {} };
   for (const field of TAG_FIELDS) {
     const existing = Array.isArray(item?.[field]) ? (item[field] as string[]) : [];
@@ -90,7 +90,7 @@ export function buildMergePatch(item: Partial<TaggedItem>, proposals: readonly P
   return out;
 }
 
-export const buildNoDerivableTagsNote = (today: Date): string =>
+const buildNoDerivableTagsNote = (today: Date): string =>
   `no derivable tags from the item's own text on ${today.toISOString().slice(0, 10)} (keyword vocabulary); the item joins the connection graph through its entity refs; no manual tagging (ADR-030)`;
 
 export interface AdoptResult {

@@ -10,14 +10,14 @@ import { adoptedEntries, type AdoptedVocabulary } from "@/core/vocabulary/adopte
 
 import named from "./data/named-entities.json";
 
-export const RE_STD_SHAPED = /\bISO(?:\/IEC)?\s?\d{3,5}(?:[:-]\d{4})?\b|\bEN\s?\d{3,5}\b|\b(?:Regulation|Directive)\s*\(EU\)\s*(?:19|20)\d{2}\/\d{1,4}\b/gi;
+const RE_STD_SHAPED = /\bISO(?:\/IEC)?\s?\d{3,5}(?:[:-]\d{4})?\b|\bEN\s?\d{3,5}\b|\b(?:Regulation|Directive)\s*\(EU\)\s*(?:19|20)\d{2}\/\d{1,4}\b/gi;
 
 export interface DictEntry {
   canonical: string;
   re: RegExp;
   adopted?: boolean;
 }
-export const NAMED_ENTITIES: readonly DictEntry[] = named.named.map((n) => ({ canonical: n.canonical, re: new RegExp(n.pattern, "i") }));
+const NAMED_ENTITIES: readonly DictEntry[] = named.named.map((n) => ({ canonical: n.canonical, re: new RegExp(n.pattern, "i") }));
 export interface Mention {
   kind: "identifier" | "named" | "shaped";
   value: string;
@@ -41,13 +41,13 @@ const uniqBy = <T>(arr: readonly T[], key: (x: T) => string): T[] => {
 const norm = (s: unknown): string => String(s ?? "").toLowerCase().replace(/\s+/g, " ").trim();
 const escapeRe = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-export function adoptedTermRegex(key: string): RegExp {
+function adoptedTermRegex(key: string): RegExp {
   const words = String(key ?? "").split(/[\s-]+/).filter(Boolean).map(escapeRe);
   return new RegExp(`(?<![A-Za-z0-9])${words.join("[\\s-]+")}(?![A-Za-z0-9])`, "i");
 }
 
 /** The named-standard dictionary plus the adopted standards the code does not already name. Built once per call site, not per mention. */
-export function entityDictionary(adopted?: Partial<AdoptedVocabulary>): DictEntry[] {
+function entityDictionary(adopted?: Partial<AdoptedVocabulary>): DictEntry[] {
   const entries = adoptedEntries(adopted, "standard");
   if (!entries.length) return [...NAMED_ENTITIES];
   const have = new Set(NAMED_ENTITIES.map((e) => norm(e.canonical)));
@@ -61,7 +61,7 @@ export function entityDictionary(adopted?: Partial<AdoptedVocabulary>): DictEntr
   return out;
 }
 
-export function detectMentions(text: unknown, adopted?: Partial<AdoptedVocabulary>, dict: readonly DictEntry[] = entityDictionary(adopted)): Mention[] {
+function detectMentions(text: unknown, adopted?: Partial<AdoptedVocabulary>, dict: readonly DictEntry[] = entityDictionary(adopted)): Mention[] {
   const s = String(text ?? "");
   const out: Mention[] = [];
   // Instrument identifiers by scheme (CELEX, "(EU) 2019/883", a bare 2019/883): a fiscal year such as 2023/24 is a date range, never an identifier.
@@ -114,7 +114,7 @@ export function resolveMention(mention: Mention, corpus: readonly CorpusRow[], e
 }
 
 /** Exactly one resolved item for an identifier or a named entity is wired; ambiguous, unmatched or shaped-unknown mentions are surfaced, never guessed. */
-export const classifyBucket = (mention: Pick<Mention, "kind">, resolvedCount: number): "wire" | "surface" => ((mention.kind === "identifier" || mention.kind === "named") && resolvedCount === 1 ? "wire" : "surface");
+const classifyBucket = (mention: Pick<Mention, "kind">, resolvedCount: number): "wire" | "surface" => ((mention.kind === "identifier" || mention.kind === "named") && resolvedCount === 1 ? "wire" : "surface");
 
 const RE_IMPLEMENTS = /\b(implementing|application of)\b/i;
 const RE_SELF_IMPLEMENTING_TITLE = /^\s*commission implementing\b/i;
@@ -142,7 +142,7 @@ function windowAroundMention(content: unknown, mention: string): string {
 }
 
 /** The lineage relationship the sentence around a mention states (derogation and supplement are depends_on; no cue stays related). */
-export function classifyRelationship(content: unknown, mentionCanonical: string, selfTitle: unknown): Typed {
+function classifyRelationship(content: unknown, mentionCanonical: string, selfTitle: unknown): Typed {
   const near = windowAroundMention(content, mentionCanonical);
   const title = String(selfTitle ?? "");
   const lineage = (detail: string): LineageBasis[] => [{ signal: "lineage", detail, weight: 0 }];
@@ -159,7 +159,7 @@ export interface PlannedLinks {
   lineageGaps: { mention: string; relationship: string }[];
 }
 
-export function planLinks(content: string, corpus: readonly CorpusRow[], selfId: string, adopted?: Partial<AdoptedVocabulary>): PlannedLinks {
+function planLinks(content: string, corpus: readonly CorpusRow[], selfId: string, adopted?: Partial<AdoptedVocabulary>): PlannedLinks {
   const selfRow = corpus.find((c) => c.id === selfId);
   const selfTitle = selfRow?.title ?? "";
   const selfIds = selfRow ? ownIdentifiers(selfRow) : [];
@@ -191,7 +191,7 @@ export function planLinks(content: string, corpus: readonly CorpusRow[], selfId:
 }
 
 /** A URL on one canonical spelling (the one in @/core/parse: https, host without www, path and query case kept, query sorted, no fragment or tracking parameters). Unparseable input comes back as it was. */
-export function canonicalSubjectUrl(rawUrl: string): string {
+function canonicalSubjectUrl(rawUrl: string): string {
   if (typeof rawUrl !== "string" || rawUrl.length === 0) return rawUrl;
   return canonicalizeUrl(rawUrl) ?? rawUrl;
 }
@@ -212,7 +212,7 @@ export function matchExistingSubject(item: CorpusRow, corpus: readonly CorpusRow
   return out;
 }
 
-export const LINK_ALLOWED_TABLES: readonly string[] = ["item_cross_references", "integrity_flags"];
+const LINK_ALLOWED_TABLES: readonly string[] = ["item_cross_references", "integrity_flags"];
 export interface LinkWrite {
   table: string;
   row: Record<string, unknown>;

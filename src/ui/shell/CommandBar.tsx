@@ -32,7 +32,7 @@ interface CommandBarProps {
 }
 
 /** The one bar: typing searches, Enter opens the results page, Ask sends the same text. A failed search says so and offers Retry; it never reads as "No results". */
-export function CommandBar({ itemCount, placeholder, onAsk, onSearch }: CommandBarProps) {
+function CommandBar({ itemCount, placeholder, onAsk, onSearch }: CommandBarProps) {
   const router = useRouter();
   const listboxId = `cl-cb-${useId()}`;
   const [value, setValue] = useState("");

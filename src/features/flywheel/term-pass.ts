@@ -28,8 +28,8 @@ export interface TermPassInput {
   /** The citation-frequency threshold; defaults to the trust module's value (tier-movement data). */
   minItems?: number;
 }
-export const TRUST_MIN_ITEMS: number = (tierMovement as { q7: { citationFrequencyPromotionThreshold: number } }).q7.citationFrequencyPromotionThreshold;
-export const NEED_RESOLVE_NOTE = "term-need closed by rule: the need is no longer reproduced (an authoritative holding exists, the term is no longer adopted, or the lineage parent is now held).";
+const TRUST_MIN_ITEMS: number = (tierMovement as { q7: { citationFrequencyPromotionThreshold: number } }).q7.citationFrequencyPromotionThreshold;
+const NEED_RESOLVE_NOTE = "term-need closed by rule: the need is no longer reproduced (an authoritative holding exists, the term is no longer adopted, or the lineage parent is now held).";
 type Item = { id: string; source_id: string | null; theme_candidate?: string | null; operational_scenario_tags?: string[] | null; compliance_object_candidates?: string[] | null };
 
 export async function termPass(deps: TermPassDeps, input: TermPassInput): Promise<RunResult> {

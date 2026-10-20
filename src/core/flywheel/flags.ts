@@ -11,14 +11,12 @@ import { fetchAllRows } from "@/core/db";
 export const GAP_NAMESPACE = "flywheel-gap:";
 export const ANTICIPATE_NAMESPACE = "flywheel-anticipate:";
 export const SIGNAL_NAMESPACE = "flywheel-signal:";
-export const FLYWHEEL_DEFECT_NAMESPACE = "flywheel-defect:";
 export const TAG_NAMESPACE = "flywheel-tag:";
 export const QUESTION_NAMESPACE = "question:";
 export const HOLDINGS_NEED_NAMESPACE = "holdings-need:";
 export const HOLDINGS_NEED_ACTION = "find-source";
 export const TERM_NEED_NAMESPACE = "term-need:";
 export const TERM_NEED_ACTION = HOLDINGS_NEED_ACTION;
-export const ALL_NAMESPACES: readonly string[] = [GAP_NAMESPACE, ANTICIPATE_NAMESPACE, SIGNAL_NAMESPACE, FLYWHEEL_DEFECT_NAMESPACE, TAG_NAMESPACE, QUESTION_NAMESPACE, HOLDINGS_NEED_NAMESPACE, TERM_NEED_NAMESPACE];
 
 export function createdBy(namespace: string, subtype: unknown): string {
   if (typeof namespace !== "string" || !namespace.endsWith(":")) throw new Error(`flag-namespaces.createdBy: namespace must end in ':' (got ${JSON.stringify(namespace)})`);
@@ -27,7 +25,6 @@ export function createdBy(namespace: string, subtype: unknown): string {
   return `${namespace}${st}`;
 }
 export const buildSubjectRef = (...parts: unknown[]): string => parts.map((p) => String(p ?? "").trim()).filter(Boolean).join(":");
-export const isInNamespace = (value: unknown, namespace: string): boolean => typeof value === "string" && value.startsWith(namespace);
 
 export interface Decision {
   label: string;
@@ -57,17 +54,17 @@ export interface Finding {
   subjectRef: string;
   row: FlagRow;
 }
-export const RESOLVED_REFLECTION_NOTE = "reflected in the coverage view; no per-row decision pending";
+const RESOLVED_REFLECTION_NOTE = "reflected in the coverage view; no per-row decision pending";
 
 /** A finding as a row that was never open: the system records it and nothing waits on it. The clock is injected. */
-export function buildResolvedRow(finding: FlagRow, resolvedBy: string, nowIso: string, note: string = RESOLVED_REFLECTION_NOTE): FlagRow {
+function buildResolvedRow(finding: FlagRow, resolvedBy: string, nowIso: string, note: string = RESOLVED_REFLECTION_NOTE): FlagRow {
   return { ...finding, status: "resolved", resolved_at: nowIso, resolved_by: resolvedBy, resolution_note: note };
 }
 
 const key = (subjectRef: string, by: string): string => `${subjectRef}|${by}`;
 
 /** New rows are findings with no row of ANY status for the same (subject_ref, created_by); the rest are unchanged. */
-export function planResolvedReflectionInserts(existingAnyStatus: readonly { subject_ref: string; created_by: string }[] | null | undefined, fresh: readonly Finding[] | null | undefined): { newRows: FlagRow[]; unchanged: number } {
+function planResolvedReflectionInserts(existingAnyStatus: readonly { subject_ref: string; created_by: string }[] | null | undefined, fresh: readonly Finding[] | null | undefined): { newRows: FlagRow[]; unchanged: number } {
   const existing = new Set((existingAnyStatus ?? []).map((r) => key(r.subject_ref, r.created_by)));
   const list = fresh ?? [];
   const newRows = list.filter((f) => !existing.has(key(f.subjectRef, f.row.created_by))).map((f) => f.row);

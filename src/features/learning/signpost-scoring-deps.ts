@@ -4,7 +4,7 @@
 import { fetchAllByIdChunks, fetchAllRows, type Db } from "@/core/db";
 import { fireSignpost } from "@/core/propagation";
 
-import { deadlineMs, type OutboxEvent, type SignpostRow, type SignpostStepDeps } from "./signpost-scoring";
+import { deadlineMs, type SignpostRow, type SignpostStepDeps } from "./signpost-scoring";
 
 const COLS = "entity_id,assessment_id,watches,predicate,direction,fired_at,outcome,lifecycle_applied_at";
 const CAP = 5000;
@@ -43,11 +43,3 @@ export function buildSignpostStepDeps(sb: Db): SignpostStepDeps {
   };
 }
 
-/** Event rows without their new_row are hydrated from propagation_events in id chunks (the watched row a predicate reads). */
-export async function hydrateEventRows(sb: Db, events: readonly OutboxEvent[]): Promise<OutboxEvent[]> {
-  const missing = events.filter((e) => e.newRow === undefined).map((e) => e.eventId);
-  if (!missing.length) return [...events];
-  const rows = await fetchAllByIdChunks(missing, async (slice) => ok(await sb.from("propagation_events").select("event_id,new_row").in("event_id", slice), "reading propagation_events") as Array<{ event_id: string | number; new_row: Record<string, unknown> | null }>);
-  const byId = new Map(rows.map((r) => [String(r.event_id), r.new_row ?? null]));
-  return events.map((e) => (e.newRow === undefined ? { ...e, newRow: byId.get(String(e.eventId)) ?? null } : e));
-}

@@ -18,23 +18,9 @@ const family = z
   .strict();
 export type Family = z.infer<typeof family>;
 
-/** Validate the table: unique names, every downstream a real family, and either a downstream or a stated reason it ends. Returns the problems; it never throws (a registry that threw at import hid the real error). */
-export function validateFamilies(rows: unknown = raw): { families: Family[]; problems: string[] } {
-  const parsed = z.array(family).safeParse(rows);
-  if (!parsed.success) return { families: [], problems: parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`) };
-  const names = new Set<string>();
-  const problems: string[] = [];
-  for (const f of parsed.data) {
-    if (names.has(f.name)) problems.push(`duplicate family ${f.name}`);
-    names.add(f.name);
-  }
-  for (const f of parsed.data) {
-    for (const d of f.downstream) if (!names.has(d)) problems.push(`${f.name}: downstream ${d} is not a family`);
-    if (f.downstream.length === 0 && !f.terminal) problems.push(`${f.name}: no downstream and no stated reason it ends`);
-  }
-  return { families: parsed.data, problems };
-}
-
-export const FAMILIES: readonly Family[] = Object.freeze(validateFamilies().families);
+/** The table, parsed. It never throws at import (a registry that threw there hid the real error): a table that does not parse is empty, and tests/turn/harness.test.ts and the connection check hold the shipped table to its rules (unique names, every downstream a real family, a downstream or a stated reason it ends). */
+export const FAMILIES: readonly Family[] = Object.freeze((() => {
+  const parsed = z.array(family).safeParse(raw);
+  return parsed.success ? parsed.data : [];
+})());
 export const familyOf = (name: string): Family | undefined => FAMILIES.find((f) => f.name === name);
-export const stageFamily = (stage: string): Family | undefined => FAMILIES.find((f) => f.stage === stage);

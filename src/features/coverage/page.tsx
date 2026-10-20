@@ -7,7 +7,7 @@ import { coverageData } from "./server/data";
 import { CoveragePage } from "./ui/CoveragePage";
 
 
-export const COVERAGE_PATH = "/dashboard/coverage";
+const COVERAGE_PATH = "/dashboard/coverage";
 
 /** The /dashboard/coverage server gate: the session, the matrix (cached, an outage never cached) and the view for the query. A failed session lookup is a failure page with Retry. */
 export default async function CoverageRoute({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {

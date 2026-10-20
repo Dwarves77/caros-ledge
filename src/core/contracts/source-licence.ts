@@ -56,6 +56,16 @@ export function licenceGate(sourceKey: string): { ok: true } | { ok: false; reas
   return { ok: false, reason: `source "${sourceKey}" is ${l.redistribution} for embedding: ${l.blocker ?? l.note ?? "see register"}${sub}${ask}` };
 }
 
+/** Register triage for the seed plan: embeddable, conditional or unverified, prohibited. */
+function licenceTriage(): { green: string[]; amber: string[]; red: string[] } {
+  const t: { green: string[]; amber: string[]; red: string[] } = { green: [], amber: [], red: [] };
+  for (const k of SOURCE_KEYS) {
+    const r = SOURCE_LICENCES[k]?.redistribution;
+    (r === "permitted" ? t.green : r === "prohibited" ? t.red : t.amber).push(k);
+  }
+  return t;
+}
+
 /** Every distinct attribution string for a set of sources, deduplicated and sorted. */
 export function attributionsFor(sourceKeys: Iterable<string> | null | undefined): string[] {
   const out = new Set<string>();
@@ -64,16 +74,6 @@ export function attributionsFor(sourceKeys: Iterable<string> | null | undefined)
     if (a) out.add(a);
   }
   return [...out].sort();
-}
-
-/** Register triage for the seed plan: embeddable, conditional or unverified, prohibited. */
-export function licenceTriage(): { green: string[]; amber: string[]; red: string[] } {
-  const t: { green: string[]; amber: string[]; red: string[] } = { green: [], amber: [], red: [] };
-  for (const k of SOURCE_KEYS) {
-    const r = SOURCE_LICENCES[k]?.redistribution;
-    (r === "permitted" ? t.green : r === "prohibited" ? t.red : t.amber).push(k);
-  }
-  return t;
 }
 
 /** The data_sources seed (idempotent ON CONFLICT DO UPDATE, never delete-then-insert: factors reference these rows). Generated, never hand-written. */

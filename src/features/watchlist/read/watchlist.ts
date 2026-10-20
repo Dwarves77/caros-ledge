@@ -17,7 +17,7 @@ import { ITEM_BACKED, type WatchlistItemType, type WatchlistScope } from "../lin
 /** The rail asks for the 14 most recent per scope, the page for 250. */
 export const WATCHLIST_RAIL_LIMIT = 14;
 export const WATCHLIST_PAGE_LIMIT = 250;
-export const UNAVAILABLE_TITLE = "Item no longer available";
+const UNAVAILABLE_TITLE = "Item no longer available";
 const ITEM_COLUMNS = "id, legacy_id, title, summary, tags, domain, category, item_type, source_id, source_url, jurisdictions, transport_modes, priority, compliance_deadline, added_date, is_archived, item_grade, origin_class, last_regenerated_at, jurisdiction_iso";
 
 export interface WatchlistItem {

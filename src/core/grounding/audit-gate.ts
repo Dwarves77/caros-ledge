@@ -22,7 +22,7 @@ export async function hostTierViolationCount(sources: SourceRegRow[], resolve: R
 }
 
 /** Item-scoped unregistered-span and claims-tier scoring (the per-write mirror of the nightly corpus audits). */
-export async function scoreItemClaims(claims: AuditClaim[], searchUrlById: Map<string, string | null>, resolve: ResolveSource, hostOf: (u: string) => string): Promise<{ unregisteredSpanFacts: number; claimsTierMismatches: number; sample: string[] }> {
+async function scoreItemClaims(claims: AuditClaim[], searchUrlById: Map<string, string | null>, resolve: ResolveSource, hostOf: (u: string) => string): Promise<{ unregisteredSpanFacts: number; claimsTierMismatches: number; sample: string[] }> {
   let unregisteredSpanFacts = 0;
   let claimsTierMismatches = 0;
   const sample: string[] = [];

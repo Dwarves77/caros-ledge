@@ -30,7 +30,7 @@ const num = (s: string | undefined): number => Number(s);
 const day = (y: number, m: number, d: number): Normalised | null => (validDay(y, m, d) ? { iso: iso(y, m, d), precision: "day" } : null);
 
 /** One date-ish token to an ISO date plus its precision (day | month | quarter | half | year | range | qualified | segment), or null. */
-export function toIsoDate(token: string | null | undefined): Normalised | null {
+function toIsoDate(token: string | null | undefined): Normalised | null {
   if (!token || typeof token !== "string") return null;
   let t = token.trim();
   const range = t.split(/\s+(?:to|–|—|through)\s+/i);
@@ -170,7 +170,7 @@ const TITLE_DOT = /\bof\s+(\d{1,2})\.(\d{1,2})\.(\d{4})\b/i;
 const TITLE_OF = /\bof\s+(\d{1,2}(?:st|nd|rd|th)?\s+[A-Za-z]+\.?\s+\d{4})\b/i;
 const TITLE_BARE = /\b(\d{1,2}(?:st|nd|rd|th)?\s+[A-Za-z]+\.?\s+\d{4})\b/i;
 /** Step 2: the instrument's own date in its title; the FIRST match, so an amending title's date wins over a cited instrument's. */
-export function extractTitleDate(title: string | null | undefined): Hit | null {
+function extractTitleDate(title: string | null | undefined): Hit | null {
   if (!title) return null;
   const dot = TITLE_DOT.exec(title);
   const fromDot = dot ? hit(`${dot[1]}.${dot[2]}.${dot[3]}`, `${dot[3]}-${(dot[2] ?? "").padStart(2, "0")}-${(dot[1] ?? "").padStart(2, "0")}`) : null;
@@ -179,21 +179,21 @@ export function extractTitleDate(title: string | null | undefined): Hit | null {
   return fromDot ?? (of ? hit(of[1] ?? "", of[1]) : null) ?? (bare ? hit(bare[1] ?? "", bare[1]) : null);
 }
 /** Step 3: a Federal Register document URL's own /documents/YYYY/MM/DD/ segment. */
-export function extractFederalRegisterDate(sourceUrl: string | null | undefined): Hit | null {
+function extractFederalRegisterDate(sourceUrl: string | null | undefined): Hit | null {
   const m = /federalregister\.gov\/documents\/(\d{4})\/(\d{2})\/(\d{2})\//i.exec(sourceUrl ?? "");
   return m ? hit(`${m[1]}-${m[2]}-${m[3]}`, `${m[1]}-${m[2]}-${m[3]}`) : null;
 }
 const UK_BOUNDARY = /^\s*(?:part\s+1\b|1\.\s)|\bregulation\s+1\b|\bsection\s+1\b/im;
 const UK_MAX = 1500;
 /** The item's OWN front matter: from its title when locatable, to the first substantive-body marker or a fixed ceiling. */
-export function ukFrontMatterWindow(fullText: string, title: string | null | undefined): string {
+function ukFrontMatterWindow(fullText: string, title: string | null | undefined): string {
   const idx = title?.trim() ? fullText.toLowerCase().indexOf(title.trim().toLowerCase()) : -1;
   const rest = fullText.slice(Math.max(0, idx));
   const b = UK_BOUNDARY.exec(rest);
   return rest.slice(0, Math.min(b ? b.index : UK_MAX, UK_MAX));
 }
 /** Step 4: legislation.gov.uk Made line, Royal Assent bracket, then a year-only identifier fallback; bounded to the front matter. */
-export function extractLegislationGovUkDate(input: { capturedText?: string | null | undefined; identifier?: string | null | undefined; title?: string | null | undefined }): (Hit & { baseLabel: string; form: string }) | null {
+function extractLegislationGovUkDate(input: { capturedText?: string | null | undefined; identifier?: string | null | undefined; title?: string | null | undefined }): (Hit & { baseLabel: string; form: string }) | null {
   const text = ukFrontMatterWindow(input.capturedText ?? "", input.title);
   const made = /\bMade\b[^\n]{0,40}?(\d{1,2}(?:st|nd|rd|th)?\s+[A-Za-z]+\s+\d{4})\b/i.exec(text);
   const assent = /\[(\d{1,2}(?:st|nd|rd|th)?\s+[A-Za-z]+\s+\d{4})\]/.exec(text);
@@ -213,7 +213,7 @@ const compact = (eventDate: string, precision: string): string => {
   return precision === "year" ? (m[1] ?? "") : precision === "month" ? `${cap} ${m[1]}` : `${cap} ${parseInt(m[3] ?? "0", 10)} ${m[1]}`;
 };
 /** Step 5: the earliest forward event, labeled from its obligation text prefixed by its kind. */
-export function extractForwardEventDate(events: DeriveInput["forwardEvents"]): (Hit & { baseLabel: string }) | null {
+function extractForwardEventDate(events: DeriveInput["forwardEvents"]): (Hit & { baseLabel: string }) | null {
   const list = (events ?? []).filter((e) => e && typeof e.event_date === "string" && e.event_date);
   const earliest = [...list].sort((a, b) => (a.event_date < b.event_date ? -1 : a.event_date > b.event_date ? 1 : 0))[0];
   if (!earliest) return null;
@@ -223,7 +223,7 @@ export function extractForwardEventDate(events: DeriveInput["forwardEvents"]): (
   return { token: compact(earliest.event_date, precision), iso: earliest.event_date, precision, baseLabel: obligation ? `${kind}: ${obligation}` : kind };
 }
 /** Step 6: a dateline in the first 400 characters (Published DD Month YYYY, a bare date) or a <time datetime> tag. */
-export function extractDatelineDate(capturedText: string | null | undefined): Hit | null {
+function extractDatelineDate(capturedText: string | null | undefined): Hit | null {
   if (!capturedText) return null;
   const w = capturedText.slice(0, 400);
   const pub = /\bPublished\s+(\d{1,2}(?:st|nd|rd|th)?\s+[A-Za-z]+\s+\d{4})\b/i.exec(w);
@@ -236,15 +236,9 @@ const dayOf = (ts: string | null | undefined): Hit | null => {
   const d = /^(\d{4}-\d{2}-\d{2})/.exec(ts ?? "")?.[1];
   return d ? hit(d, d) : null;
 };
-export const CAPTURED_FALLBACK_SORT_ORDER = 999;
-export const RECORDED_FALLBACK_SORT_ORDER = 1000;
+const CAPTURED_FALLBACK_SORT_ORDER = 999;
+const RECORDED_FALLBACK_SORT_ORDER = 1000;
 const containsCi = (text: string | null | undefined, token: string | null | undefined): boolean => !!text && !!token && text.toLowerCase().includes(token.toLowerCase());
-
-/** The longest usable capture (over 200 trimmed characters) among the item's captures, whole row, or null. */
-export function pickBestCapture<T extends { result_content?: string | null }>(captures: T[] | null | undefined): T | null {
-  const usable = (captures ?? []).filter((c) => String(c?.result_content ?? "").trim().length > 200);
-  return usable.length ? usable.reduce((best, c) => ((c.result_content ?? "").length > (best.result_content ?? "").length ? c : best)) : null;
-}
 
 /**
  * First hit wins: title (verified against the capture), Federal Register path, legislation.gov.uk, earliest forward event,
@@ -289,7 +283,7 @@ export function derivedTimelineRow(d: Derived, todayIso: string): TimelineRow {
 // ---- Gate B: annual-rule consistency of a derived date --------------------------------------------------------
 const MON = `(${MONTH_NAMES.join("|")})`;
 /** A recurring annual rule in a FACT span (an annual signal AND a month, day optional), or null. */
-export function parseRecurringRule(span: string | null | undefined): { kind: "annual"; month: number; day: number | null } | null {
+function parseRecurringRule(span: string | null | undefined): { kind: "annual"; month: number; day: number | null } | null {
   const s = String(span ?? "").toLowerCase();
   if (!/\b(every year|each year|annually|annual|yearly|per year|per annum|each calendar year)\b/.test(s)) return null;
   const a = new RegExp(`\\b${MON}\\s+(\\d{1,2})(?:st|nd|rd|th)?\\b`).exec(s);
@@ -300,7 +294,7 @@ export function parseRecurringRule(span: string | null | undefined): { kind: "an
   return c ? { kind: "annual", month: MONTHS[c[1] ?? ""] as number, day: null } : null;
 }
 /** A derived-date token to { year, month|null, day|null }, or null. */
-export function parseDerivedDate(token: string | null | undefined): { year: number; month: number | null; day: number | null } | null {
+function parseDerivedDate(token: string | null | undefined): { year: number; month: number | null; day: number | null } | null {
   const t = String(token ?? "").trim().toLowerCase();
   let m = new RegExp(`^(\\d{1,2})\\s+${MON}\\s+(\\d{4})$`).exec(t);
   if (m) return { day: parseInt(m[1] ?? "0", 10), month: MONTHS[m[2] ?? ""] as number, year: parseInt(m[3] ?? "0", 10) };

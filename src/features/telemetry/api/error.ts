@@ -4,7 +4,7 @@ import { isRefusal, requireUser } from "@/core/http/guard";
 import { captureError } from "@/core/shared/telemetry";
 
 /** A legitimate error report is well under this; anything larger is malformed or abusive and refused before it is parsed. */
-export const BODY_MAX_BYTES = 32 * 1024;
+const BODY_MAX_BYTES = 32 * 1024;
 
 /** POST /api/telemetry/error: the client error ingest. Authenticated, bounded, and a message is required; user_scope stays null (no PII, no per-error lookup). Answers 204. */
 export const POST = route("/api/telemetry/error", async (request) => {

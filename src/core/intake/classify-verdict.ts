@@ -44,12 +44,6 @@ export interface ClassifyVerdict {
   rationale: string;
 }
 
-/** The exact user-message text an author reads alongside CLASSIFY_INSTRUCTION. Pure. */
-export function buildClassifyUserMessage(input: Pick<ClassifyInput, "source_url" | "source_id" | "source_tier" | "source_category" | "text">): string {
-  const category = input.source_category && typeof input.source_category === "string" ? input.source_category : "unknown";
-  return `Source URL: ${input.source_url}\nSource id: ${input.source_id}\nSource tier: ${input.source_tier ?? "unknown"}\nSource category: ${category}\nContent excerpt:\n---\n${input.text.slice(0, CONTENT_MAX_CHARS)}\n---\nOutput the JSON object only.`;
-}
-
 const strings = (v: unknown): string[] => (Array.isArray(v) ? (v as unknown[]).filter((t): t is string => typeof t === "string") : []);
 
 /**

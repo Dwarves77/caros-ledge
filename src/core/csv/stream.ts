@@ -1,7 +1,7 @@
 // Ported from old_repo/scripts/producers/oem/eea-hdv-csv.mjs (lines 14-117)
 // Ported from old_repo/src/lib/csv/split.mjs (lines 1-43)
 // The one CSV home: an incremental RFC 4180 reader (chunk-safe, byte-limited) and the whole-text splitter built on it.
-export class CsvFormatError extends Error {}
+class CsvFormatError extends Error {}
 
 const UNQUOTED_STOP = /[,"\r\n]/g;
 

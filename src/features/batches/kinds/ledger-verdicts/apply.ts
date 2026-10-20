@@ -10,9 +10,8 @@ import { consumePortalCandidates, selectCandidateLedgerPage } from "@/features/i
 
 import type { ApplyOpts, BatchDeps, BatchExport, Obj } from "../../kit/session-batch";
 
-export const LEDGER_EXPORT_LIMIT = 100;
-export const LEDGER_APPLY_LIMIT = 200;
-export const LEDGER_MAX_PROMOTE = 50;
+const LEDGER_APPLY_LIMIT = 200;
+const LEDGER_MAX_PROMOTE = 50;
 
 /** Apply one verdict file: validate it whole, then consume the ledger with its verdicts (plan when dry). */
 export async function applyLedgerVerdicts(deps: BatchDeps, file: unknown, o: ApplyOpts & { maxPromote?: number }): Promise<RunResult> {

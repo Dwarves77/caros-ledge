@@ -4,9 +4,9 @@
 import type { Db } from "@/core/db/clients";
 
 /** The jsonb columns of workspace_settings: every writer patches them KEY-WISE (INV-168), never replaces them. */
-export const JSONB_COLUMNS = ["profile", "alert_config", "home_sections", "default_filters", "jurisdiction_weights"] as const;
+const JSONB_COLUMNS = ["profile", "alert_config", "home_sections", "default_filters", "jurisdiction_weights"] as const;
 /** Columns that are not objects: a single writer replaces the value. */
-export const REPLACE_COLUMNS = ["sector_profile", "default_export_format"] as const;
+const REPLACE_COLUMNS = ["sector_profile", "default_export_format"] as const;
 export type JsonbColumn = (typeof JSONB_COLUMNS)[number];
 export type ReplaceColumn = (typeof REPLACE_COLUMNS)[number];
 export type SettingsColumn = JsonbColumn | ReplaceColumn;

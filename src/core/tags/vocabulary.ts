@@ -20,7 +20,7 @@ export const FIELD_CAPS: Readonly<Record<TagField, number>> = { operational_scen
 
 const contract = z.object({ scenarioGlossary: z.array(z.object({ group: z.string(), values: z.array(z.string()) })) }).parse(contractJson);
 export const SCENARIO_TAGS: readonly string[] = contract.scenarioGlossary.flatMap((g) => g.values);
-export const TAG_VOCABULARY: Readonly<Record<TagField, readonly string[]>> = { operational_scenario_tags: SCENARIO_TAGS, compliance_object_tags: COMPLIANCE_OBJECTS, topic_tags: TOPIC_TAGS };
+const TAG_VOCABULARY: Readonly<Record<TagField, readonly string[]>> = { operational_scenario_tags: SCENARIO_TAGS, compliance_object_tags: COMPLIANCE_OBJECTS, topic_tags: TOPIC_TAGS };
 
 const synonyms = z.object({
   curated: z.record(z.string(), z.array(z.string())),
@@ -38,7 +38,7 @@ export interface KeywordEntry {
 const ADOPTED_SCENARIO_SHAPE = /^[a-z0-9][a-z0-9-]*[a-z0-9]$/i;
 
 /** `tag` and `tag` with hyphens as spaces (the forms a sentence writes). */
-export const ownNameForms = (tag: string): string[] => {
+const ownNameForms = (tag: string): string[] => {
   const spaced = tag.replace(/-/g, " ");
   return spaced === tag ? [tag] : [tag, spaced];
 };
@@ -83,22 +83,6 @@ export function heldVocabulary(adopted?: Partial<AdoptedVocabulary>): Record<Tag
     compliance_object_tags: new Set([...TAG_VOCABULARY.compliance_object_tags, ...adoptedKeys(adopted, "compliance_object")]),
     operational_scenario_tags: new Set([...TAG_VOCABULARY.operational_scenario_tags, ...adoptedKeys(adopted, "scenario")]),
   };
-}
-
-/** The former import-time self-checks, as a list of problems: a synonym, suppression or alias that names a tag the vocabulary does not hold, and a tag with no keyword. */
-export function vocabularyProblems(): string[] {
-  const held = heldVocabulary();
-  const problems: string[] = [];
-  const check = (what: string, key: string) => {
-    const i = key.indexOf("|");
-    const field = key.slice(0, i) as TagField;
-    if (!held[field]?.has(key.slice(i + 1))) problems.push(`${what} names tag ${key}, which is not in the live vocabulary`);
-  };
-  for (const k of Object.keys(synonyms.curated)) check("curated synonym", k);
-  for (const k of synonyms.suppressOwnName) check("own-name suppression", k);
-  for (const a of synonyms.aliases) check("alias", `${a.field}|${a.tag}`);
-  for (const e of KEYWORD_MAP) if (!e.keywords.length) problems.push(`${e.field}|${e.tag} has zero keywords`);
-  return problems;
 }
 
 const key = (s: unknown): string => String(s ?? "").trim().toLowerCase();

@@ -27,7 +27,7 @@ export type IntersectionView = NonNullable<ReturnType<typeof buildIntersectionVi
 type Group = IntersectionView["groups"][number];
 
 /** The statistics and weights a pre-contract theme brief carried in its prose are not a customer's to read; the structured sections never carry them. */
-export function cleanPreContractBriefText(md: string): string {
+function cleanPreContractBriefText(md: string): string {
   const num = String.raw`\d+(?:\.\d+)?`;
   return md
     .replace(new RegExp(String.raw`^[ \t]*\*\*\d+ members?\b[^\n]*?density ${num}\*\*[ \t]*\r?\n?`, "gim"), "")

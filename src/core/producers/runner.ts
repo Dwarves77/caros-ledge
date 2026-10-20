@@ -26,7 +26,7 @@ export interface GetOptions {
 export type Getter = (url: string, opts?: GetOptions) => Promise<Response>;
 
 /** The one fetch policy: a timeout per attempt, and a retry (twice, doubling back-off) on a network error, a 429 or a 5xx. Any other non-2xx throws NetworkError. */
-export function makeGetter(fetchFn: FetchFn, o: { timeoutMs?: number; retries?: number; sleep?: ((ms: number) => Promise<void>) | undefined } = {}): Getter {
+function makeGetter(fetchFn: FetchFn, o: { timeoutMs?: number; retries?: number; sleep?: ((ms: number) => Promise<void>) | undefined } = {}): Getter {
   const sleep = o.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
   const retries = o.retries ?? 2;
   return async (url, opts = {}) => {
@@ -56,7 +56,7 @@ export interface GateInput {
   truncated?: boolean;
 }
 /** The gate order is fixed: licence, the reviewed ENABLED constant, the kill switch, credentials, a partial read. A dry run never writes and never needs any of them. */
-export function decideApply(g: GateInput): { canWrite: boolean; reason: string } {
+function decideApply(g: GateInput): { canWrite: boolean; reason: string } {
   if (!g.apply) return { canWrite: false, reason: "dry run: parse only, nothing written, no existing row read" };
   if (g.licenceBlock) return { canWrite: false, reason: `REFUSING: licence block: ${g.licenceBlock}` };
   if (!g.enabled) return { canWrite: false, reason: "REFUSING: the source-level ENABLED constant is false; arming a producer is a reviewed code change, never a runtime flag" };
@@ -139,7 +139,7 @@ export interface ProducerSpec<R extends Rec = Rec> {
 }
 
 /** The licence block of a spec: an explicit one, else the register's refusal for a source it records as prohibited. */
-export function licenceBlockOf(spec: Pick<ProducerSpec, "licenceKey" | "licenceBlock">): string | null {
+function licenceBlockOf(spec: Pick<ProducerSpec, "licenceKey" | "licenceBlock">): string | null {
   if (spec.licenceBlock) return spec.licenceBlock;
   if (!spec.licenceKey || SOURCE_LICENCES[spec.licenceKey]?.redistribution !== "prohibited") return null;
   const g = licenceGate(spec.licenceKey);

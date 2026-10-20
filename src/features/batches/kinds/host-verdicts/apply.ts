@@ -10,7 +10,7 @@ import { normalizeVerdictHost, validateHostVerdictEntry } from "../needs-search/
 
 type Stored = { host: string; class: string };
 
-export const hostVerdictsSpec: EntrySpec<Map<string, string>, { host: string }> = {
+const hostVerdictsSpec: EntrySpec<Map<string, string>, { host: string }> = {
   kind: "host-verdicts",
   batchRe: /^host-verdicts-[A-Za-z0-9._-]+$/,
   ceiling: 150,

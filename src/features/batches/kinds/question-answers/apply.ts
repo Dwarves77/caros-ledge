@@ -16,9 +16,9 @@ import { buildQuestionBundle, buildQuestionContext, currentInference, MAX_CONNEC
 import { validateAnswerEntry, type QaLive } from "./validate";
 
 const DEFAULT_CHAR_BUDGET = 200_000;
-export const RESOLVED_BY = "apply-question-answers";
+const RESOLVED_BY = "apply-question-answers";
 const LIVE = ["open", "in_review"];
-export const buildResolutionNote = (inferenceId: string, entry: { status_token: unknown; pool_hash: unknown }, batch: string): string => `answered by inference ${inferenceId} (batch ${batch}; status ${String(entry.status_token)}; pool_hash ${String(entry.pool_hash)})`;
+const buildResolutionNote = (inferenceId: string, entry: { status_token: unknown; pool_hash: unknown }, batch: string): string => `answered by inference ${inferenceId} (batch ${batch}; status ${String(entry.status_token)}; pool_hash ${String(entry.pool_hash)})`;
 
 interface QaState extends QaLive { flags: Map<string, { flag: NeedFlag; state: "open" | "answered" }>; ctx: Map<string, QuestionContext>; inferences: Map<string, InferenceRow[]>; needs: Map<string, NeedFlag> }
 interface Plan { outcome: string; ref: string }
@@ -29,7 +29,7 @@ async function update(sb: Db, id: string, patch: Record<string, unknown>, status
   return (data ?? []).length;
 }
 
-export const questionAnswersSpec: EntrySpec<QaState, Plan> = {
+const questionAnswersSpec: EntrySpec<QaState, Plan> = {
   kind: "question-answers",
   batchRe: /^question-answers-[A-Za-z0-9._-]+$/,
   keyOf: (e) => (typeof e.subject_ref === "string" ? e.subject_ref : null),
@@ -122,7 +122,6 @@ export const questionAnswersSpec: EntrySpec<QaState, Plan> = {
 
 export const applyQuestionAnswers = (deps: BatchDeps, file: unknown, o: ApplyOpts) => applyEntries(questionAnswersSpec, deps, file, o);
 
-export const QUESTION_EXPORT_LIMIT = 100;
 const CHUNK = 25;
 /**
  * The export half: every open question, and each answered one whose held pool may have moved, with its bundle under the character budget. A question whose item cannot be cited, whose unanswerable outcome or answer

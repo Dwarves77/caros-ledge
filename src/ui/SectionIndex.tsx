@@ -14,7 +14,7 @@ export interface SectionIndexEntry {
 export type SectionIndexDepth = "summary" | "full";
 
 /** The index of the section nearest the top of the viewport (the first one when none intersects). */
-export function useSectionScrollSpy(ids: string[]): number {
+function useSectionScrollSpy(ids: string[]): number {
   const [active, setActive] = useState(0);
   const key = ids.join("|");
   useEffect(() => {
@@ -35,7 +35,7 @@ export function useSectionScrollSpy(ids: string[]): number {
 }
 
 /** The Summary | Full brief switch, inside the index bar so it sits at the same position on every detail page. */
-export function SummaryDepthSwitch({ depth, onChange }: { depth: SectionIndexDepth; onChange: (d: SectionIndexDepth) => void }) {
+function SummaryDepthSwitch({ depth, onChange }: { depth: SectionIndexDepth; onChange: (d: SectionIndexDepth) => void }) {
   const opt = (value: SectionIndexDepth, label: string) => (
     <button key={value} type="button" aria-pressed={depth === value} onClick={() => onChange(value)} className="cl-depth-opt">
       {label}

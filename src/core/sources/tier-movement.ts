@@ -270,23 +270,7 @@ function evaluateTierEvidenceForRow(s: TierSourceRow, now: Date, opts: { scrapeC
   return { promotion: evaluatePromotion(e, now), demotion: evaluateDemotion(e, now, { suppress: opts.scrapeCadence === "off" ? movement.cadenceHeldTriggers : [] }) };
 }
 
-export interface TierMovementReaders {
-  readSources(): Promise<TierSourceRow[]>;
-  readOpinions(sinceIso: string): Promise<TierOpinionRow[]>;
-  readCitations(): Promise<CitationEdgeRow[]>;
-  readOutcomes?(sinceIso: string): Promise<OutcomeRow[]>;
-}
 
-export interface TierMovementPlan {
-  scanned: number;
-  override_held: number;
-  held_cadence_off: number;
-  skipped: Array<{ source_id: string; reason: string }>;
-  movements: Array<{ source_id: string; name: string | null; decision: TierMovementDecision }>;
-  outcome_driven_movements: number;
-  /** The error text when the outcome read failed: the run continues without outcome evidence and says so. */
-  outcome_read_error: string | null;
-}
 
 /**
  * Recompute one source's effective tier from all five evidence kinds and return the decision (writes nothing). Every read destructures its error and throws;

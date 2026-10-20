@@ -18,7 +18,7 @@ const STATUS_WORDS: Record<string, string> = { pending_review: "Provisional", ne
 const COLUMNS = [{ label: "Source", width: "minmax(220px, 1fr)" }, { label: "Tier", width: "56px" }, { label: "Status", width: "120px" }, { label: "Discovered", width: "120px" }, { label: "", width: "110px" }, { label: "", width: "96px" }];
 
 /** The tier a row would be approved at: the class table's for its host and name, else the recommendation stored with it, else nothing (a tier is never invented). Pure. */
-export const rowTier = (r: Pick<AdminProvisional, "url" | "name" | "recommended_tier">): number | null => classTierForHost(hostOf(r.url), r.name) ?? r.recommended_tier;
+const rowTier = (r: Pick<AdminProvisional, "url" | "name" | "recommended_tier">): number | null => classTierForHost(hostOf(r.url), r.name) ?? r.recommended_tier;
 
 /**
  * The provisional review queue: the sources the machine could not place on its own, an override surface (the gates already ruled on everything they could). A row approves at its class tier in one tap, or opens the

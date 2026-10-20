@@ -7,13 +7,12 @@
 import { assertNoInternalMarkers } from "@/core/brief/sections";
 
 import { buildRecordFacts, type RecordClaim } from "./extract";
-import { RESEARCH_FINDING_REQUIRED_SLOTS } from "./triggers";
 
 /** The marker a stub catalogue record opens with: the ONE string a consumer checks to tell a stub from a full brief. */
-export const STUB_BRIEF_MARKER = "Catalogue record: extracted facts only, full brief pending.";
+const STUB_BRIEF_MARKER = "Catalogue record: extracted facts only, full brief pending.";
 
 /** item.full_brief for a record-grade payload: boilerplate plus each claim's own text, FACTs first then GAPs. */
-export function buildRecordFullBrief(a: { sourceUrl: string; claims: RecordClaim[] }): string {
+function buildRecordFullBrief(a: { sourceUrl: string; claims: RecordClaim[] }): string {
   const lines = (kind: "FACT" | "GAP") => a.claims.filter((c) => c.claim_kind === kind).map((c) => `- ${c.claim_text}`);
   const facts = lines("FACT");
   const gaps = lines("GAP");
@@ -77,7 +76,3 @@ export function buildRecordPayload(a: RecordPayloadInput): RecordPayload {
   };
 }
 
-/** The research profile: finding, methodology limits, decision relevance, what it does not resolve, plus the key figure and the two credibility signals. */
-export function buildResearchRecordPayload(a: Omit<RecordPayloadInput, "itemType">): RecordPayload {
-  return buildRecordPayload({ ...a, itemType: "research_finding", requiredSlots: a.requiredSlots ?? RESEARCH_FINDING_REQUIRED_SLOTS });
-}

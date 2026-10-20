@@ -23,7 +23,7 @@ function tally(keys: Iterable<string>, label: (k: string) => string = (k) => k):
   return [...counts].map(([value, count]) => ({ value, label: label(value), count })).sort(byCountThenLabel);
 }
 
-export const facetOptions = {
+const facetOptions = {
   mode: (rows: Resource[]): FacetOption[] => tally(rows.flatMap((r) => (r.modes ?? []).map((m) => m.trim())), (c) => MODE_LABEL[c] ?? c),
   topic: (rows: Resource[]): FacetOption[] => tally(rows.map((r) => (r.topic ?? "").trim())),
   tier: (rows: Resource[]): FacetOption[] =>

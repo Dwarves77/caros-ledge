@@ -1,11 +1,11 @@
 /** Bounded client retry: at most RETRY_LIMIT retries after the first attempt, exponential from one second, and a server's Retry-After wins when it is longer. */
-export const RETRY_LIMIT = 3;
-export const RETRY_BASE_MS = 1000;
+const RETRY_LIMIT = 3;
+const RETRY_BASE_MS = 1000;
 /** A Retry-After past this is not waited out inside one page view: the attempt ends in the failed state and the person's Retry control starts a new round. */
-export const RETRY_AFTER_CAP_MS = 60_000;
+const RETRY_AFTER_CAP_MS = 60_000;
 
 /** Retry-After as milliseconds (delta-seconds or an HTTP date), or null when absent or unreadable. */
-export function parseRetryAfter(header: string | null | undefined, nowMs: number = Date.now()): number | null {
+function parseRetryAfter(header: string | null | undefined, nowMs: number = Date.now()): number | null {
   const text = (header ?? "").trim();
   if (!text) return null;
   if (/^\d+$/.test(text)) return Number(text) * 1000;

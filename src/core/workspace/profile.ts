@@ -48,7 +48,7 @@ export interface OrgProfile {
 }
 
 /** Empty, never invented: an unset dimension is "needs profile input" downstream, never an assumed default. */
-export const DEFAULT_ORG_PROFILE: Readonly<OrgProfile> = Object.freeze({
+const DEFAULT_ORG_PROFILE: Readonly<OrgProfile> = Object.freeze({
   orgRoles: [],
   orgSize: Object.freeze({ headcount_band: null, revenue_band: null, shipment_volume_band: null }),
 });
@@ -106,7 +106,7 @@ export interface WorkspaceProfile {
 }
 
 /** A conservative default for a viewer with no configured profile: a general freight operator, worldwide. It never invents verticals. */
-export const DEFAULT_WORKSPACE_PROFILE: Readonly<WorkspaceProfile> = Object.freeze({
+const DEFAULT_WORKSPACE_PROFILE: Readonly<WorkspaceProfile> = Object.freeze({
   roles: ["freight operator"],
   transportModes: ["air", "ocean", "road"],
   verticals: [],
