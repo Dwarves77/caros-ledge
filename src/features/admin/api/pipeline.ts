@@ -5,7 +5,7 @@ import { surfaceOf } from "@/core/routing";
 
 import { adminRoute, reply } from "./shared";
 
-export const PIPELINE_BOUND = 200;
+const PIPELINE_BOUND = 200;
 
 interface Draft {
   id: string;

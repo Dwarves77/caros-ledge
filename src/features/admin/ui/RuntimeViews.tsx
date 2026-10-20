@@ -40,9 +40,9 @@ interface Inference {
   computed_at: string;
 }
 
-export const shortRelease = (r: string): string => (!r || r === "dev" ? "dev" : r.slice(0, 7));
+const shortRelease = (r: string): string => (!r || r === "dev" ? "dev" : r.slice(0, 7));
 /** The assumptions grouped by subsystem, subsystems sorted. Pure. */
-export function groupBySubsystem(rows: readonly Assumption[]): [string, Assumption[]][] {
+function groupBySubsystem(rows: readonly Assumption[]): [string, Assumption[]][] {
   const m = new Map<string, Assumption[]>();
   for (const r of rows) m.set(r.subsystem || "(unassigned)", [...(m.get(r.subsystem || "(unassigned)") ?? []), r]);
   return [...m].sort(([a], [b]) => a.localeCompare(b));

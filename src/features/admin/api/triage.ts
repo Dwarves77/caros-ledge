@@ -11,7 +11,7 @@ import { JURISDICTION_ACTIONS, REJECTION_ACTIONS } from "../vocab";
 
 import { adminAct, adminRoute, reasonOf, reply, text } from "./shared";
 
-export const TRIAGE_BOUND = 200;
+const TRIAGE_BOUND = 200;
 
 interface QueueRead {
   items: unknown[];

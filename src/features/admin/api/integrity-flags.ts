@@ -14,7 +14,7 @@ import { adminAct, adminRoute, boundedInt, reasonOf, reply } from "./shared";
 
 type Category = (typeof PLATFORM_CATEGORIES)[number];
 type Status = (typeof PLATFORM_STATUSES)[number];
-export const FLAG_PAGE = 100;
+const FLAG_PAGE = 100;
 
 const tally = <K extends string>(keys: readonly K[], rows: readonly Record<string, string>[], col: string): Record<K, number> => {
   const out = Object.fromEntries(keys.map((k) => [k, 0])) as Record<K, number>;

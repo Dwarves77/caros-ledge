@@ -820,35 +820,20 @@
       "GET"
     ],
     "src/features/admin/api/bulk-import.ts": [
-      "MAX_ROWS",
-      "POST",
-      "TYPE_TO_SOURCE_TYPE",
-      "parseImport",
-      "proposalOf",
-      "validateImportRow"
+      "POST"
     ],
     "src/features/admin/api/candidates-pending.ts": [
-      "CANDIDATE_PAGE",
-      "GET",
-      "classifyCandidate",
-      "groupCandidates"
+      "GET"
     ],
     "src/features/admin/api/corpus-turns.ts": [
       "GET",
-      "OPEN_BOUND",
       "POST"
     ],
     "src/features/admin/api/corrections.ts": [
       "GET"
     ],
     "src/features/admin/api/coverage.ts": [
-      "FRESHNESS_WINDOW_MS",
       "GET",
-      "NO_ITEMS",
-      "buildAdminMatrix",
-      "countryGroup",
-      "deriveCellState",
-      "deriveOverallState",
       "tierOf"
     ],
     "src/features/admin/api/deps.ts": [
@@ -858,7 +843,6 @@
       "GET"
     ],
     "src/features/admin/api/integrity-flags.ts": [
-      "FLAG_PAGE",
       "GET",
       "PATCH",
       "resolveBriefFlag"
@@ -872,28 +856,20 @@
     ],
     "src/features/admin/api/pause-global.ts": [
       "GET",
-      "POST",
-      "holdState",
-      "readHold"
+      "POST"
     ],
     "src/features/admin/api/pipeline.ts": [
-      "GET",
-      "PIPELINE_BOUND"
+      "GET"
     ],
     "src/features/admin/api/progress.ts": [
-      "GET",
-      "progressOf"
+      "GET"
     ],
     "src/features/admin/api/run-intake.ts": [
       "MAX_CANDIDATES",
       "POST"
     ],
     "src/features/admin/api/runtime.ts": [
-      "ERROR_GROUPS_BOUND",
-      "GET",
-      "currentRows",
-      "readAssumptions",
-      "readErrorGroups"
+      "GET"
     ],
     "src/features/admin/api/shared.ts": [
       "headCount"
@@ -908,7 +884,6 @@
       "setVisibility"
     ],
     "src/features/admin/api/source-decisions.ts": [
-      "BULK_MAX",
       "bulkApprove",
       "decideCanonical",
       "decideProvisional",
@@ -922,27 +897,22 @@
     ],
     "src/features/admin/api/tier-opinions.ts": [
       "GET",
-      "OPINION_WINDOW_DAYS",
-      "POST",
-      "modalTier"
+      "POST"
     ],
     "src/features/admin/api/triage.ts": [
-      "TRIAGE_BOUND",
       "listJurisdictionReview",
       "listRejections",
       "resolveJurisdictionReview",
       "triageRejection"
     ],
     "src/features/admin/api/users.ts": [
-      "GET",
-      "USERS_BOUND"
+      "GET"
     ],
     "src/features/admin/corrections/CorrectionRow.tsx": [
       "textOf"
     ],
     "src/features/admin/corrections/model.ts": [
-      "OPS_BY_KIND",
-      "buildCorrectionBody"
+      "OPS_BY_KIND"
     ],
     "src/features/admin/pages.tsx": [
       "AdminRoute",
@@ -952,66 +922,20 @@
       "PartsRoute",
       "WorkspacePartsRoute"
     ],
-    "src/features/admin/read/dashboard.ts": [
-      "MEMBER_BOUND",
-      "STAGED_BOUND",
-      "monthStart"
-    ],
     "src/features/admin/read/sources.ts": [
-      "PROVISIONAL_REVIEW_STATUSES",
       "SOURCE_COLUMNS"
     ],
     "src/features/admin/ui/BriefFlagsView.tsx": [
       "ageDays"
     ],
-    "src/features/admin/ui/BulkImportView.tsx": [
-      "CSV_TEMPLATE",
-      "JSON_TEMPLATE",
-      "headLabel"
-    ],
-    "src/features/admin/ui/CoverageCatalogueView.tsx": [
-      "DISPLAY_CAP",
-      "viewOf"
-    ],
-    "src/features/admin/ui/CoverageMatrixView.tsx": [
-      "CELL_WORDS",
-      "groupByCountry"
-    ],
-    "src/features/admin/ui/DispatchPanel.tsx": [
-      "describeDispatch"
-    ],
-    "src/features/admin/ui/JurisdictionReviewView.tsx": [
-      "siblingsOf"
-    ],
-    "src/features/admin/ui/PlatformFlagsView.tsx": [
-      "flagsQuery",
-      "subjectLabel"
-    ],
-    "src/features/admin/ui/ResearchPipelineView.tsx": [
-      "statusWords"
-    ],
-    "src/features/admin/ui/RuntimeViews.tsx": [
-      "groupBySubsystem",
-      "shortRelease"
-    ],
     "src/features/admin/ui/StagedTransitView.tsx": [
-      "MODES",
-      "extractFailures",
-      "groupFailures"
-    ],
-    "src/features/admin/ui/StatutoryRowsUpload.tsx": [
-      "summaryOf"
+      "MODES"
     ],
     "src/features/admin/ui/TierDisagreementsView.tsx": [
       "defaultReason"
     ],
-    "src/features/admin/ui/UpcomingObligationsPanel.tsx": [
-      "eventDateLabel"
-    ],
     "src/features/admin/ui/WorkspacesOverview.tsx": [
-      "memberDisplayName",
-      "tallyRoles",
-      "usageFigures"
+      "memberDisplayName"
     ],
     "src/features/admin/ui/panel-kit.tsx": [
       "ConfirmDialog"
@@ -1062,10 +986,6 @@
     "src/features/auth/api/orgs-create.ts": [
       "POST"
     ],
-    "src/features/auth/ui/AuthFrame.tsx": [
-      "DATE_LABEL",
-      "useToday"
-    ],
     "src/features/auth/ui/ResetPasswordPage.tsx": [
       "default"
     ],
@@ -1074,7 +994,6 @@
     ],
     "src/features/auth/ui/identity-loader.ts": [
       "IDENTITY_ERROR_SEED",
-      "IDENTITY_REARM_COOLDOWN_MS",
       "nextIdentityRetryDelay",
       "resolveAuthSeed",
       "shouldApplySeed"
@@ -1246,39 +1165,22 @@
     "src/features/community/lib/antitrust.ts": [
       "kAnonymity"
     ],
-    "src/features/community/lib/entity-binding.ts": [
-      "MIN_ENTITY_IDS"
-    ],
-    "src/features/community/lib/entity-candidates.ts": [
-      "ENTITY_CANDIDATE_LIMIT"
-    ],
     "src/features/community/lib/identity-format.ts": [
-      "ANONYMOUS_LABEL",
-      "formatAuthorIdentity"
+      "ANONYMOUS_LABEL"
     ],
     "src/features/community/lib/identity.ts": [
-      "IDENTITY_IDS_PER_CALL",
       "authorIdForRow",
       "effectiveAnonymous",
       "idWithheld"
     ],
     "src/features/community/lib/labels.ts": [
-      "MODERATION_ACTIONS",
-      "REGION_LABELS"
+      "MODERATION_ACTIONS"
     ],
     "src/features/community/lib/org-key.ts": [
-      "ORG_SALT_HKDF_INFO",
       "isFreeMailDomain"
-    ],
-    "src/features/community/lib/rooms-view.ts": [
-      "chooseSignoffs",
-      "roomForResource"
     ],
     "src/features/community/lib/rooms.ts": [
       "isRoomMember"
-    ],
-    "src/features/community/lib/shell-context.ts": [
-      "loadRegionCounts"
     ],
     "src/features/community/pages/Directory.tsx": [
       "DirectoryPage"
@@ -1294,12 +1196,6 @@
     ],
     "src/features/community/pages/Rooms.tsx": [
       "RoomsPage"
-    ],
-    "src/features/community/pages/frame.tsx": [
-      "dateLabelOf"
-    ],
-    "src/features/community/ui/parts/Avatar.tsx": [
-      "initialsOf"
     ],
     "src/features/corrections/api.ts": [
       "GET",

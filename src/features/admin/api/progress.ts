@@ -12,7 +12,7 @@ export interface ProgressRow {
 }
 
 /** Brief regeneration progress against the current contract: eligible live items with a source, those at the contract, those at an older one, those never regenerated. Pure. */
-export function progressOf(rows: readonly ProgressRow[]) {
+function progressOf(rows: readonly ProgressRow[]) {
   const eligible = rows.filter((r) => r.source_url && !(r.legacy_id ?? "").startsWith("ss") && !(r.legacy_id ?? "").startsWith("arc"));
   const atCurrent = eligible.filter((r) => r.regeneration_skill_version === CONTRACT_VERSION).length;
   const never = eligible.filter((r) => !r.regeneration_skill_version).length;

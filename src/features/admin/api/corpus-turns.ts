@@ -11,7 +11,7 @@ import { runTurn } from "@/core/turn";
 import { adminDeps } from "./deps";
 import { adminAct, adminRoute, reasonOf, reply } from "./shared";
 
-export const OPEN_BOUND = 200;
+const OPEN_BOUND = 200;
 
 /** The open turn queue, oldest first, with each item's title, the exact open count, and the last time anything was consumed (the signal that something is actually running). */
 export const GET = adminRoute("/api/admin/corpus-turn-requests", async (admin, request) => {

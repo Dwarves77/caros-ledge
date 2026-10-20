@@ -40,14 +40,14 @@ export const MODES: readonly Mode[] = [
 ];
 
 /** The failures array of a staged row, wherever the writer stamped it (top level or under either envelope). Pure. */
-export function extractFailures(update: unknown): Failure[] {
+function extractFailures(update: unknown): Failure[] {
   const u = update as { provenance_failures?: unknown; proposed_data?: { provenance_failures?: unknown } | null; proposed_changes?: { provenance_failures?: unknown } | null } | null;
   const raw = u?.provenance_failures ?? u?.proposed_data?.provenance_failures ?? u?.proposed_changes?.provenance_failures ?? null;
   return Array.isArray(raw) ? (raw as Failure[]) : [];
 }
 
 /** Failures grouped into the five modes; one that matches none is kept under "Other", never dropped. Pure. */
-export function groupFailures(failures: readonly Failure[]) {
+function groupFailures(failures: readonly Failure[]) {
   const groups = MODES.map((m) => ({ key: m.key, label: m.label, lines: failures.filter(m.match).map((f) => ({ text: m.describe(f), href: m.key === "ungrounded_url" && f.url ? f.url : null })) })).filter((g) => g.lines.length > 0);
   const matched = new Set(MODES.flatMap((m) => failures.filter(m.match)));
   const other = failures.filter((f) => !matched.has(f));

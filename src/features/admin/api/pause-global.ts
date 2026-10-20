@@ -17,14 +17,14 @@ interface StateRow {
 }
 
 /** The hold as the console shows it (rule 16: build mode holds the cadence off). Pure. */
-export function holdState(row: StateRow | null | undefined, now: Date) {
+function holdState(row: StateRow | null | undefined, now: Date) {
   const cadence = (row?.scrape_cadence as ScrapeCadence | undefined) ?? "off";
   const startDate = row?.scrape_start_date ?? null;
   const next = nextScrapeDate({ cadence, startDate }, now);
   return { paused: !!row?.global_processing_paused, judgement_drain: row?.judgement_drain === "on" ? "on" : "off", cadence, start_date: startDate, next_scrape: next ? next.toISOString().slice(0, 10) : null, updated_at: row?.updated_at ?? null };
 }
 
-export async function readHold(db: Db, now: Date) {
+async function readHold(db: Db, now: Date) {
   const { data, error } = await db.from("system_state").select("scrape_cadence, scrape_start_date, global_processing_paused, judgement_drain, updated_at").eq("id", true).maybeSingle();
   if (error) throw new LookupError("system_state", error);
   return holdState(data as StateRow | null, now);

@@ -32,7 +32,7 @@ interface Dispatched {
 }
 
 /** A dispatch result in words, not raw JSON: the mode it ran in and why, the outcome, the counts, and each candidate's disposition. Pure. */
-export function describeDispatch(r: Dispatched): string[] {
+function describeDispatch(r: Dispatched): string[] {
   const counts = r.counts ?? r.result?.counts ?? {};
   const lines = [`Ran in ${r.mode ?? "dry"} mode${r.forced_dry || r.reason ? `: ${r.reason ?? "forced dry by the build-mode gate"}` : ""}.`, r.outcome ? `Outcome: ${r.outcome}.` : "", Object.keys(counts).length ? `Counts: ${Object.entries(counts).map(([k, v]) => `${k.replace(/_/g, " ")} ${v}`).join(", ")}.` : ""];
   for (const i of r.result?.items ?? []) lines.push(`${i.title}: ${i.disposition.replace(/_/g, " ")}${i.reason ? ` (${i.reason})` : ""}`);

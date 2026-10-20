@@ -38,10 +38,10 @@ interface Payload {
 }
 
 /** The subject in words: a flywheel gap flag names a theme, which has no page of its own, so it is labelled and never linked. Pure. */
-export const subjectLabel = (f: Pick<Flag, "subject_type" | "created_by">): string => (f.created_by.startsWith("flywheel-gap:") ? "theme" : f.subject_type);
+const subjectLabel = (f: Pick<Flag, "subject_type" | "created_by">): string => (f.created_by.startsWith("flywheel-gap:") ? "theme" : f.subject_type);
 
 /** The query for a filter set; status omitted means open and in review. Pure. */
-export const flagsQuery = (category: Category | null, status: Status | null, offset: number): string => `/api/admin/integrity-flags?platform=1${category ? `&category=${category}` : ""}${status ? `&status=${status}` : ""}${offset ? `&offset=${offset}` : ""}`;
+const flagsQuery = (category: Category | null, status: Status | null, offset: number): string => `/api/admin/integrity-flags?platform=1${category ? `&category=${category}` : ""}${status ? `&status=${status}` : ""}${offset ? `&offset=${offset}` : ""}`;
 
 function FlagRow({ flag, open, onToggle, act }: { flag: Flag; open: boolean; onToggle: () => void; act: ReturnType<typeof useAct> }) {
   const [note, setNote] = useState(flag.resolution_note ?? "");

@@ -8,7 +8,7 @@ import type { Db } from "@/core/db/clients";
 
 import type { EntityRef } from "./types";
 
-export const ENTITY_CANDIDATE_LIMIT = 60;
+const ENTITY_CANDIDATE_LIMIT = 60;
 const escapeLike = (s: string): string => s.replace(/[\\%_]/g, (m) => `\\${m}`);
 
 export async function loadEntityCandidates(db: Db, query: string, limit = ENTITY_CANDIDATE_LIMIT): Promise<EntityRef[]> {

@@ -10,7 +10,7 @@ import { z } from "zod";
 import freeMail from "./data/free-mail.json";
 
 const FREE_MAIL: ReadonlySet<string> = new Set(z.array(z.string().min(3)).min(1).parse(freeMail));
-export const ORG_SALT_HKDF_INFO = "caros-ledge/community-organisation-key/v1";
+const ORG_SALT_HKDF_INFO = "caros-ledge/community-organisation-key/v1";
 const normalise = (domain: unknown): string => String(domain ?? "").trim().toLowerCase().replace(/^@/, "");
 
 export const isFreeMailDomain = (domain: unknown): boolean => FREE_MAIL.has(normalise(domain));

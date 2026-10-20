@@ -9,10 +9,10 @@ import { parseJson, uuid } from "@/core/http/parse";
 import { applyTierOverride } from "./source-controls";
 import { adminRoute, reply, text } from "./shared";
 
-export const OPINION_WINDOW_DAYS = 90;
+const OPINION_WINDOW_DAYS = 90;
 
 /** The most frequent tier among the analyst opinions (first seen wins a tie); null for none. Pure. */
-export function modalTier(values: readonly number[] | null | undefined): number | null {
+function modalTier(values: readonly number[] | null | undefined): number | null {
   const counts = new Map<number, number>();
   for (const v of values ?? []) counts.set(v, (counts.get(v) ?? 0) + 1);
   let best: number | null = null;

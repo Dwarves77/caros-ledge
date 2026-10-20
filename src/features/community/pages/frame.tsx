@@ -21,7 +21,7 @@ export interface PageContext {
   dateLabel: string;
 }
 
-export const dateLabelOf = (nowIso: string): string => formatLocaleDate(new Date(nowIso), { weekday: "long", year: "numeric", month: "long", day: "numeric", timeZone: "UTC" });
+const dateLabelOf = (nowIso: string): string => formatLocaleDate(new Date(nowIso), { weekday: "long", year: "numeric", month: "long", day: "numeric", timeZone: "UTC" });
 
 /** The gate and the context, or `{ failed }` when the identity lookup failed (the page then says so with Retry). */
 export async function openPage(path: string): Promise<{ failed: true } | PageContext> {

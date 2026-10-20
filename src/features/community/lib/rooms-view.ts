@@ -111,7 +111,7 @@ const SURFACE_LABEL = { regulations: "Regulation", market: "Market Intel", opera
 const titleCase = (s: string): string => s.replace(/[-_]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
 /** The room a ledger item sits in: its jurisdiction, then its ISO codes in order; null when none matches. */
-export function roomForResource(r: Resource): RoomKey | null {
+function roomForResource(r: Resource): RoomKey | null {
   const direct = roomForJurisdiction(r.jurisdiction);
   if (direct) return direct;
   for (const iso of r.jurisdictionIso ?? []) {
@@ -122,7 +122,7 @@ export function roomForResource(r: Resource): RoomKey | null {
 }
 
 /** Per post, the request that matters: an open one first, else the newest decided one. */
-export function chooseSignoffs(rows: SignoffInput[]): Map<string, SignoffInput> {
+function chooseSignoffs(rows: SignoffInput[]): Map<string, SignoffInput> {
   const by = new Map<string, SignoffInput>();
   for (const s of rows) {
     const cur = by.get(s.post_id);

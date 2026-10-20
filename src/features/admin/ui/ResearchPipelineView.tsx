@@ -25,7 +25,7 @@ interface Draft {
 }
 
 /** The machine status of an item the gates are still holding, in words: it is customer-visible only once provenance_status is verified, and no person publishes it. Pure. */
-export const statusWords = (d: Pick<Draft, "provenance_status" | "agent_integrity_flag">): string => `${d.provenance_status ? d.provenance_status.replace(/_/g, " ") : "in the pipeline"}${d.agent_integrity_flag ? " · integrity flag raised" : ""}`;
+const statusWords = (d: Pick<Draft, "provenance_status" | "agent_integrity_flag">): string => `${d.provenance_status ? d.provenance_status.replace(/_/g, " ") : "in the pipeline"}${d.agent_integrity_flag ? " · integrity flag raised" : ""}`;
 
 /** Items the machine gates are still holding, each with the surface it joins once they pass. Visibility only: nothing here publishes. One column at every width. */
 export function ResearchPipelineView() {

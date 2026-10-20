@@ -19,7 +19,7 @@ export function avatarSrc(url: string | null | undefined, supabaseUrl: string | 
   }
 }
 
-export function initialsOf(name: string | null | undefined): string {
+function initialsOf(name: string | null | undefined): string {
   const parts = (name ?? "").trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return "?";
   const first = parts[0] as string;

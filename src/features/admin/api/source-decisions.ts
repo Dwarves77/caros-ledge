@@ -16,7 +16,7 @@ import { checkVerticalFitGate } from "@/features/sources/vertical-fit-gate";
 import { applyTierOverride } from "./source-controls";
 import { adminRoute, reply, text, writeTrustEvent } from "./shared";
 
-export const BULK_MAX = 300;
+const BULK_MAX = 300;
 export type CandidateKind = "canonical" | "provisional";
 
 export interface DecisionInput {

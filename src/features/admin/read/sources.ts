@@ -4,7 +4,7 @@ import type { Db } from "@/core/db";
 import type { IntelligenceDomain, ProvisionalSource, SourceStatus, SourceTier } from "@/core/sources/types";
 
 /** The statuses of the provisional review queue, named once (COUNTS-61): the queue, its badge and the attention count read the same two. */
-export const PROVISIONAL_REVIEW_STATUSES = ["pending_review", "needs_more_data"] as const;
+const PROVISIONAL_REVIEW_STATUSES = ["pending_review", "needs_more_data"] as const;
 
 /** A registry row as the admin surfaces hold it. A column the database leaves empty stays null: a score never read is "not scored", never a number made up (rule 2). */
 export interface AdminSource {

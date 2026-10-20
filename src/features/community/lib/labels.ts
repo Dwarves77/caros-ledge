@@ -32,7 +32,7 @@ export type ModerationAction = "dismiss" | "warn" | "remove" | "mute" | "ban";
 
 /** The community region codes (profiles, groups, member regions): the core vocabulary's, one list. */
 export const REGION_CODES: readonly string[] = REGIONS.map((r) => r.id);
-export const REGION_LABELS: Readonly<Record<string, string>> = Object.fromEntries(REGIONS.map((r) => [r.id, r.label]));
+const REGION_LABELS: Readonly<Record<string, string>> = Object.fromEntries(REGIONS.map((r) => [r.id, r.label]));
 export const regionLabel = (code: string | null | undefined): string => (code ? (REGION_LABELS[code] ?? code) : "");
 
 /** The length limits the routes enforce and the forms show, one pair per field (create and rename used 120/80 and 1000/600; the database rpc holds the create pair). */

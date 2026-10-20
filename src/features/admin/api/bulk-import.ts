@@ -19,10 +19,10 @@ import { FetchHoldError } from "@/core/fetch";
 
 import { adminRoute, reply } from "./shared";
 
-export const MAX_ROWS = 500;
+const MAX_ROWS = 500;
 const ISO_PATTERN = /^([A-Z]{2}|[A-Z]{2}-[A-Z0-9]{1,3}|EU|GLOBAL|IMO|ICAO)$/;
 /** The import's `type` column, each value to the registered source_type it means; a type the vocabulary has no token for is kept in the notes, never dropped. */
-export const TYPE_TO_SOURCE_TYPE: Readonly<Record<string, string | null>> = { regulator: "regulatory_executive", "standards-body": "standards_body", "industry-association": "industry_assoc", gazette: "gazette", intergovernmental: "treaty_org", academic: "research_institute", ngo: null, "trade-press": "news", "law-firm": null, other: null };
+const TYPE_TO_SOURCE_TYPE: Readonly<Record<string, string | null>> = { regulator: "regulatory_executive", "standards-body": "standards_body", "industry-association": "industry_assoc", gazette: "gazette", intergovernmental: "treaty_org", academic: "research_institute", ngo: null, "trade-press": "news", "law-firm": null, other: null };
 
 export interface ImportRow {
   url: string;
@@ -47,7 +47,7 @@ export interface PreviewRow {
 const list = (v: string): string[] | undefined => (v ? v.split(/[|;,\s]+/).map((s) => s.trim()).filter(Boolean) : undefined);
 
 /** CSV text to rows: quoted newlines and commas survive (the shared splitter), the header names the columns, `url` and `name` are required. */
-export function parseImport(format: "csv" | "json", raw: string): { rows: ImportRow[]; error?: string } {
+function parseImport(format: "csv" | "json", raw: string): { rows: ImportRow[]; error?: string } {
   if (format === "json") {
     let parsed: unknown;
     try {
@@ -67,7 +67,7 @@ export function parseImport(format: "csv" | "json", raw: string): { rows: Import
 }
 
 /** The reasons a row cannot be imported, and the jurisdiction it carries (its own, else the default). Pure. */
-export function validateImportRow(row: ImportRow, defaults: readonly string[]): { errors: string[]; jurisdiction: string[] } {
+function validateImportRow(row: ImportRow, defaults: readonly string[]): { errors: string[]; jurisdiction: string[] } {
   const errors: string[] = [];
   if (!row.url) errors.push("url is required");
   if (!row.name) errors.push("name is required");
@@ -85,7 +85,7 @@ export function validateImportRow(row: ImportRow, defaults: readonly string[]): 
 }
 
 /** What verification decided for one row, as the import's proposal. A non-answer or a held fetch is INCONCLUSIVE and queues for review; only a definitive 404 or 410 (or a gated or duplicate host) is refused. */
-export function proposalOf(v: VerificationResult): { action: ProposedAction | "auto-approve"; head: number | "error"; reason?: string } {
+function proposalOf(v: VerificationResult): { action: ProposedAction | "auto-approve"; head: number | "error"; reason?: string } {
   const reach = (v.log.reachability ?? {}) as { finalStatus?: number | null; outcome?: string };
   const head = typeof reach.finalStatus === "number" ? reach.finalStatus : "error";
   if (v.rejection_reason === "duplicate") return { action: "duplicate", head };

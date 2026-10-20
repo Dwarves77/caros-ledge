@@ -55,7 +55,7 @@ export async function loadInvitations(db: Db, userId: string): Promise<PendingIn
   return ((data ?? []) as unknown as Array<Omit<PendingInvitation, "group"> & { community_groups: PendingInvitation["group"] | null }>).flatMap((i) => (i.community_groups ? [{ id: i.id, group_id: i.group_id, inviter_user_id: i.inviter_user_id, created_at: i.created_at, group: i.community_groups }] : []));
 }
 
-export async function loadRegionCounts(db: Db, args?: { p_privacy: string }): Promise<Record<string, number>> {
+async function loadRegionCounts(db: Db, args?: { p_privacy: string }): Promise<Record<string, number>> {
   const { data, error } = await (args ? db.rpc("community_region_counts", args) : db.rpc("community_region_counts"));
   if (error) throw new LookupError("region counts", error);
   const counts: Record<string, number> = Object.fromEntries(REGION_CODES.map((c) => [c, 0]));

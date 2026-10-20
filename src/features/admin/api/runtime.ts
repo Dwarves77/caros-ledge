@@ -7,20 +7,20 @@ import { HttpError, LookupError } from "@/core/http/errors";
 
 import { adminRoute, reply } from "./shared";
 
-export const ERROR_GROUPS_BOUND = 50;
+const ERROR_GROUPS_BOUND = 50;
 
 /** The current rows of a set holding whole chains: a row is current when no other row names it in `supersedes` (a recompute inserts a new row pointing at the old one, so the head is the row nothing points at). Pure. */
-export function currentRows<T extends { inference_id: string; supersedes?: string | null }>(rows: readonly T[]): T[] {
+function currentRows<T extends { inference_id: string; supersedes?: string | null }>(rows: readonly T[]): T[] {
   const superseded = new Set(rows.map((r) => r.supersedes).filter((s): s is string => !!s));
   return rows.filter((r) => !superseded.has(r.inference_id));
 }
 
-export async function readErrorGroups(db: Db) {
+async function readErrorGroups(db: Db) {
   const r = await boundedRead<Record<string, unknown>>((n) => db.from("error_events").select("id, message, count, release, side, route, env, last_seen_at, occurred_at").order("last_seen_at", { ascending: false }).order("id", { ascending: true }).limit(n), { limit: ERROR_GROUPS_BOUND });
   if (r.error) throw new LookupError("error_events", r.error);
   return r.data;
 }
-export const readAssumptions = (db: Db) => allRows<Record<string, unknown>>(db, "assumption_register", "id, assumption_key, subsystem, label, value_numeric, unit, derivation, origin_class, governing_decision, code_location, status, as_at_date", { order: "id" });
+const readAssumptions = (db: Db) => allRows<Record<string, unknown>>(db, "assumption_register", "id, assumption_key, subsystem, label, value_numeric, unit, derivation, origin_class, governing_decision, code_location, status, as_at_date", { order: "id" });
 
 export async function readInferences(db: Db) {
   const all = await allRows<{ inference_id: string; supersedes: string | null; cited_item_ids: string[] | null } & Record<string, unknown>>(db, "inference_records", "inference_id, subject_id, claim_text, status_token, confidence, cited_item_ids, origin_class, trigger_question_ref, computed_at, supersedes", { order: "inference_id" });

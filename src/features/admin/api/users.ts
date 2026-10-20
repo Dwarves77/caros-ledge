@@ -4,7 +4,7 @@ import { LookupError } from "@/core/http/errors";
 
 import { adminRoute, reply } from "./shared";
 
-export const USERS_BOUND = 200;
+const USERS_BOUND = 200;
 
 /** Members of every organisation with the profile embed, newest first. Profiles and e-mails are read only on the service client behind the admin gate (SEC-5). Bounded: a capped list says so. */
 export const GET = adminRoute("/api/admin/users", async (admin) => {

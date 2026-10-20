@@ -66,7 +66,7 @@ export interface Draft {
   reason: string;
 }
 /** The POST body for one action, checked with the API's own validator so a missing reason never leaves the browser. Pure. */
-export function buildCorrectionBody(d: Draft): { ok: true; body: Record<string, unknown> } | { ok: false; code: string; message: string } {
+function buildCorrectionBody(d: Draft): { ok: true; body: Record<string, unknown> } | { ok: false; code: string; message: string } {
   const body: Record<string, unknown> = { target_kind: d.kind, target_ref: d.ref, op: d.op, reason: d.reason, ...(d.value ? { value: d.value } : {}) };
   const v = validateCorrectionInput(body);
   return v.ok ? { ok: true, body: { ...body, reason: v.input.reason, target_ref: v.input.target_ref } } : { ok: false, code: v.code, message: friendly(v) };

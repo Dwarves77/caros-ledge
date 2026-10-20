@@ -20,7 +20,7 @@ interface Row {
 const REASONS: Record<string, string> = { continent: "A continent, not a jurisdiction", region_bucket: "A region bucket", undefined_group: "A group the vocabulary does not define" };
 
 /** The item's other tokens in the flagged column: the picks that can stand in for the flagged one. Pure. */
-export const siblingsOf = (r: Pick<Row, "current_value" | "source_column" | "item">): string[] => (r.item?.[r.source_column] ?? []).filter((v) => v !== r.current_value);
+const siblingsOf = (r: Pick<Row, "current_value" | "source_column" | "item">): string[] => (r.item?.[r.source_column] ?? []).filter((v) => v !== r.current_value);
 
 /** Jurisdiction tokens the classifier left in review: confirm as is, classify to a code (a sibling is one tap), or drop. The item array and the queue stamp are one atomic write; a resolved row answers a conflict. */
 export function JurisdictionReviewView() {
