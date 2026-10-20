@@ -8,6 +8,7 @@ import { notFound, redirect } from "next/navigation";
 
 import { buildConnectionRows, buildResourceLookup, buildSupersessionRows, type ConnectionRow, type ResourceLookup } from "@/core/flywheel";
 import { userClient, type Db } from "@/core/db";
+import { attachImpact } from "@/core/impact/attach";
 import type { DetailSurface } from "@/core/lists";
 import type { ClaimTierMap } from "@/ui";
 import type { ChangeLogEntry, Dispute, ItemConnection, Resource, Supersession } from "@/core/types";
@@ -53,11 +54,13 @@ export interface DetailBundle<ItemScoped> {
  * The detail of one item on one surface, or `{ notFound: true }` when no verified, non-archived item the reader can see has this id on THIS surface (a market item at /regulations is not found).
  * A failed read throws: the route's error boundary says so with Retry; it is never read as "not found" or as an empty block.
  */
-export async function loadDetail<ItemScoped = undefined>(surface: DetailSurface, id: string, loadItemScoped?: (ctx: ItemScopedCtx) => Promise<ItemScoped>, db?: Db): Promise<DetailBundle<ItemScoped> | { notFound: true }> {
+export async function loadDetail<ItemScoped = undefined>(surface: DetailSurface, id: string, loadItemScoped?: (ctx: ItemScopedCtx) => Promise<ItemScoped>, db?: Db, orgId: string | null = null): Promise<DetailBundle<ItemScoped> | { notFound: true }> {
   const client = db ?? (await userClient());
   const item = await readDetailItem(client, id);
   if (!item || item.canonicalSurface !== surface) return { notFound: true };
   const { uuid, resource, connections, supersessions } = item;
+  // The rail draws the stored impact scores with the reading workspace's client score, or the sentence of the input it waits for (the same function as every list row).
+  await attachImpact(client, [resource], new Map([[resource.id, uuid]]), orgId);
   const relatedIds = [...new Set([...connections.map((c) => c.id), ...supersessions.flatMap((s) => [s.old, s.new])])].filter(Boolean);
   const [claimsRead, lookup, itemScoped] = await Promise.all([
     readClaims(client, uuid).then((c) => ({ ok: true as const, ...c }), (e: unknown) => ({ ok: false as const, error: e })),

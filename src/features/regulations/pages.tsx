@@ -83,7 +83,7 @@ export async function RegulationDetailRoute({ params }: { params: Promise<{ slug
   const today = session.nowIso.slice(0, 10);
   const data = await attempt(id, async () => {
     await applyIdRedirect("regulations", id, db);
-    const detail = await loadDetail("regulations", id, undefined, db);
+    const detail = await loadDetail("regulations", id, undefined, db, session.orgId);
     if (detail.notFound) return "missing" as const;
     const iso = detail.resource.jurisdictionIso ?? [];
     const [events, register, corridors] = await Promise.all([

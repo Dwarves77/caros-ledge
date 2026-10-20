@@ -358,6 +358,9 @@ test("IMPACT-1: connect reads the backlog, propagate scores what it read, and th
   // the list draws the stored scores plus the workspace's client score; the second turn finds nothing left to read or score.
   const { active } = await mapRows(f.db.client, [{ id: ITEM, legacy_id: null, title: "Voyage emissions reporting", item_type: "regulation", effective_priority: "HIGH", added_date: "2026-01-01", transport_modes: ["ocean"], jurisdiction_iso: ["EU"] }], { orgId: ORG });
   assert.deepEqual(active[0]?.impactScores, { cost: 0, compliance: 1, client: 2, operational: 3 });
+  const detail = await loadDetail("regulations", ITEM, undefined, f.db.client, ORG);
+  assert.ok(!detail.notFound);
+  if (!detail.notFound) assert.deepEqual(detail.resource.impactScores, { cost: 0, compliance: 1, client: 2, operational: 3 }, "the detail rail reads the same stored scores");
   const again = await runTurn({ stage: "connect", mode: "apply" }, { d: f.d, env: {}, now: () => NOW });
   const countsAgain = (family: string) => ((f.db.rows("harness_runs").find((x) => x.family === family && x.root_run_id === again.rootRunId) as Row).outputs as { counts?: Record<string, number>; planned?: Record<string, number> }).counts ?? {};
   assert.deepEqual([countsAgain("corpus-turn").scanned, countsAgain("propagation").impact_scored], [0, 0]);

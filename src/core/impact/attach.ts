@@ -1,11 +1,12 @@
-// New file (scripts/ci/new-files/impact-1.txt): the one place a list reader gives its rows their impact (IMPACT-1). Every reader that maps rows to Resources (mapRows, readCategory) calls it, so a row's impact is item_impact_scores for that item, and a row with a
+// New file (scripts/ci/new-files/impact-1.txt): the one place a reader gives its rows their impact (IMPACT-1). Every reader that maps rows to Resources (mapRows, readCategory, the detail loader) calls it, so a row's impact is item_impact_scores for that item, and a row with a
 // dimension still missing says which input it waits for. The client dimension is the reading workspace's relevance to the item (read-time, never stored); with no workspace it is not known and the row says so.
 import type { Db } from "@/core/db";
 import { fetchAllByIdChunks } from "@/core/db";
-import { clientScore, composeImpact, readImpactRows } from "@/core/impact/read";
 import type { Resource } from "@/core/types";
 import { readWorkspaceProfile, relevanceForItem, type WorkspaceProfile } from "@/core/workspace";
 import { relevanceDeps } from "@/core/workspace/relevance-deps";
+
+import { clientScore, composeImpact, readImpactRows } from "./read";
 
 const TAG_COLUMNS = "id, title, transport_modes, jurisdictions, jurisdiction_iso, topic_tags, operational_scenario_tags, compliance_object_tags";
 

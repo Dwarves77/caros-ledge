@@ -3,7 +3,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { deriveObligationsJob, scanBacklog } from "@/features/obligations";
+import { deriveObligationsJob, extractBackfill, scanBacklog } from "@/features/obligations";
 
 import { C1, C2, C3, capture, DUTY_TEXT, I1, I2, I3, item, NO_DUTY_TEXT, NOW, world } from "./_world.ts";
 
@@ -91,4 +91,13 @@ test("the operator's replay (the derive-obligations op) derives every verified l
   assert.deepEqual([first.outcome, first.counts.objects_inserted, db.rows("obligation_objects").length], ["ok", 90, 90], "45 items in three batches, two duties each; the archived item is not read");
   const again = await deriveObligationsJob({ sb: db.client }, { dry: false });
   assert.deepEqual([again.counts.objects_inserted, again.counts.objects_already_registered, db.rows("obligation_objects").length], [0, 90, 90]);
+});
+
+test("the extract-backfill op, the instrument that sized the backlog, plans the events the captures hold (dry writes nothing) and an apply covers the item", async () => {
+  const db = world([item(I1)], [capture(C1, I1, DUTY_TEXT)]);
+  const dry = await extractBackfill({ sb: db.client, now: () => NOW }, { dry: true });
+  assert.deepEqual([dry.counts.scope, dry.counts.items_with_events, dry.counts.events, dry.counts.inserted, db.rows("item_forward_events").length], [1, 1, 1, 0, 0]);
+  const applied = await extractBackfill({ sb: db.client, now: () => NOW }, { dry: false });
+  assert.deepEqual([applied.counts.inserted, db.rows("item_forward_events").map((e) => e.source_kind)], [1, ["capture"]]);
+  assert.equal((await extractBackfill({ sb: db.client, now: () => NOW }, { dry: false })).counts.scope, 0, "an item that holds an event is out of the backfill's scope");
 });

@@ -5,5 +5,5 @@ src/core/impact/run.ts | new in IMPACT-1: the propagate stage's scoring step; re
 src/core/impact/read.ts | new in IMPACT-1: what a list row draws from the stored scores and the workspace's relevance; the sentence of the first input still missing
 src/core/impact/data/rules.json | new in IMPACT-1: the thresholds of impact_scores@1.0.0 (data; hashed with the method)
 src/core/impact/data/reading.json | new in IMPACT-1: the per-turn bounds of the extraction and scoring backlog, the client dimension's bands and the absence sentences
-src/features/lists/impact.ts | new in IMPACT-1: the one place a list reader gives its rows their impact scores or the sentence of the input they wait for
+src/core/impact/attach.ts | new in IMPACT-1: the one place a reader gives its rows their impact scores or the sentence of the input they wait for (the list readers and the detail loader)
 src/features/obligations/jobs/scan-backlog.ts | new in IMPACT-1: the connect stage's reading of the verified-item backlog (extract the forward events from claims, sections and captures, derive the register and the obligation objects, record the reading)

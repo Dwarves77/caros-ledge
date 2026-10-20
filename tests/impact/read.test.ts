@@ -51,13 +51,14 @@ test("INV-IMP-4: every row the list readers build has the impact item_impact_sco
   const stored = db.rows("item_impact_scores").find((r) => r.item_id === I1)!;
   assert.deepEqual([active[0]?.impactScores?.cost, active[0]?.impactScores?.compliance, active[0]?.impactScores?.operational], [stored.cost, stored.compliance, stored.operational]);
   assert.equal(db.writes().filter((c) => c.op !== "select").length, 0, "reading writes nothing");
-  // The structure over the readers: the two functions that turn listing rows into Resources each call attachImpact, and nothing else assigns a Resource's impact.
+  // The structure over the readers: the functions that turn rows into Resources (the list mapper, the category reader, the detail loader) each call attachImpact, and nothing else assigns a Resource's impact.
   const files = (dir: string): string[] => readdirSync(dir).flatMap((n) => (statSync(join(dir, n)).isDirectory() ? files(join(dir, n)) : /\.tsx?$/.test(n) ? [join(dir, n)] : []));
   const src = files("src").map((f) => [f.replaceAll("\\", "/"), readFileSync(f, "utf8")] as const);
   const callers = (needle: string) => src.filter(([f, t]) => t.includes(needle) && !f.endsWith("map-rows.ts") && !f.endsWith("lists/index.ts")).map(([f]) => f);
   assert.deepEqual(callers("categoryResourceFields"), ["src/features/lists/category.ts"], "one reader builds category rows");
-  for (const f of ["src/features/lists/map-rows.ts", "src/features/lists/category.ts"]) assert.match(src.find(([n]) => n === f)![1], /await attachImpact\(/, `${f} gives its rows their impact`);
-  assert.deepEqual(src.filter(([, t]) => /\.impactScores\s*=[^=]|impactScores:\s*\{/.test(t)).map(([f]) => f).filter((f) => !f.includes("/privacy/ui-fixtures/") && !f.startsWith("src/core/types")), ["src/features/lists/impact.ts"], "the one writer of a Resource's impactScores");
+  assert.deepEqual(callers("readDetailItem(").filter((f) => !f.endsWith("item-read.ts")), ["src/core/detail/load.ts"], "one loader builds the detail Resource");
+  for (const f of ["src/features/lists/map-rows.ts", "src/features/lists/category.ts", "src/core/detail/load.ts"]) assert.match(src.find(([n]) => n === f)![1], /await attachImpact\(/, `${f} gives its rows their impact`);
+  assert.deepEqual(src.filter(([, t]) => /\.impactScores\s*=[^=]|impactScores:\s*\{/.test(t)).map(([f]) => f).filter((f) => !f.includes("/privacy/ui-fixtures/") && !f.startsWith("src/core/types")), ["src/core/impact/attach.ts"], "the one writer of a Resource's impactScores");
 });
 
 test("INV-IMP-5: the client score of one item differs between two workspaces with different relevance, and it is computed at read time, never stored", async () => {

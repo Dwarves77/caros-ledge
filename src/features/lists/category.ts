@@ -3,9 +3,9 @@
 import type { Db } from "@/core/db";
 import { fetchAllRows } from "@/core/db";
 import type { Resource } from "@/core/types";
+import { attachImpact } from "@/core/impact/attach";
 
 import { enrichSources } from "./enrich";
-import { attachImpact } from "./impact";
 import { categoryResourceFields, type WorkspaceItemRpcRow } from "./map-rows";
 
 export type CategoryRpc = "get_market_intel_items" | "get_research_items" | "get_operations_items" | "get_market_intel_items_public" | "get_research_items_public" | "get_operations_items_public";

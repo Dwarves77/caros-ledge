@@ -5,8 +5,7 @@ import type { Db } from "@/core/db";
 import { requirePriority } from "@/core/lists/bands";
 import type { Resource } from "@/core/types";
 import type { WorkspaceProfile } from "@/core/workspace";
-
-import { attachImpact } from "./impact";
+import { attachImpact } from "@/core/impact/attach";
 
 export interface WorkspaceItemRpcRow {
   id: string;
