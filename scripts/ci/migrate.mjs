@@ -1,55 +1,96 @@
-// The `migrate` job's script: production is migrated by the repository, not by a person. The pending files are the plan's (scripts/ci/apply-plan.mjs: name order, schema before data, HOLD rows left out) that APPLIED.json does not list.
-//   node scripts/ci/migrate.mjs --pending   prints the pending file names, one per line
-//   node scripts/ci/migrate.mjs --apply     applies them in order to SUPABASE_DB_URL, one file at a time (scripts/ci/pg-run.mjs, stop on the first error)
-// A file counts as applied only when its run exits 0, prints no ERROR line AND prints its own `<id> OK` notice: a file whose self-check printed nothing did not check anything. The first failure stops the run and prints its ERROR line;
-// the job summary lists each file with OK or its error. When every pending file passed and at least one was applied, `applied.txt` (every applied file name, the previous list included) is written for scripts/cutover/write-applied.mjs
-// and `applied=<numbers>` goes to $GITHUB_OUTPUT, which the workflow's commit step reads. A missing SUPABASE_DB_URL follows the one exit-code contract (src/core/harness/exit.ts): exit 1 naming the secret where the event can carry it.
-import { appendFileSync, writeFileSync } from "node:fs";
+// The `migrate` job's script: production is migrated by the repository, not by a person, and the database is the record of what it carries (public.migration_log, migration 0078); no file in git tracks it and CI commits nothing.
+//   node scripts/ci/migrate.mjs --pending   prints the pending file names: the plan's order (scripts/ci/apply-plan.mjs: schema before data, HOLD rows left out) minus the files migration_log holds
+//   node scripts/ci/migrate.mjs --apply     applies them in order to SUPABASE_DB_URL, one file at a time, and stops at the first failure
+// A file is applied statement by statement on one connection. Its own final COMMIT is held back until the file printed its own `<id> OK` notice; then the file's migration_log row (file, the notice as self_check) is inserted in the same
+// transaction and the COMMIT follows, so a file is recorded if and only if it applied. A file whose self-check printed nothing, or any statement that fails, is rolled back with no row and stops the run; a rerun continues from the next file.
+// With no migration_log table yet the only pending file is the bootstrap, 0078, which creates and seeds the table; once it is applied the log is read again and the normal rule holds. The job summary lists each file with OK or its error.
+// A missing SUPABASE_DB_URL follows the one exit-code contract (src/core/harness/exit.ts): exit 1 naming the secret where the event can carry it.
+import { appendFileSync } from "node:fs";
 import { register } from "node:module";
 import { parseArgs } from "node:util";
 
+import pg from "pg";
+
 import { isMain } from "../lib/fs.mjs";
-import { appliedNumbers, migrationFiles, numberOf, read, selfCheckIdOf } from "../lib/migrations.mjs";
+import { read, selfCheckIdOf } from "../lib/migrations.mjs";
 
 import { pendingFiles } from "./apply-plan.mjs";
-import { psql } from "./psql.mjs";
+import { splitStatements } from "./sql-split.mjs";
 
 const NL = "\n";
+const DIR = "supabase/migrations";
+export const BOOTSTRAP = "0078_migration_log.sql";
+const INSERT_LOG = "INSERT INTO public.migration_log (file, self_check) VALUES ($1, $2) ON CONFLICT (file) DO NOTHING";
 
-/** Why a file's run does not count as applied, or null: a failed exit or an ERROR line (the first is returned), else a self-check that did not print its own OK notice. */
-export function runProblem(file, text, { status, stderr }) {
-  const errors = stderr.split(NL).filter((l) => /ERROR|FATAL/.test(l));
-  if (errors.length) return errors[0].trim();
-  if (status !== 0) return `${file}: exited ${status} without an ERROR line`;
-  const id = selfCheckIdOf(text, file);
-  const printed = stderr.split(NL).some((l) => /NOTICE/.test(l) && l.replace(/^.*NOTICE:\s*/, "").startsWith(`${id} OK`));
-  return printed ? null : `${file}: its self-check ${id} did not print "${id} OK" (it ran nothing, or stopped before its last assertion)`;
+/** The files still to apply: the plan's order minus the logged ones; with no log table (`logged` null) only the bootstrap file. */
+export function pendingFromLog(dir, logged) {
+  return logged === null ? pendingFiles(dir).filter((f) => f === BOOTSTRAP) : pendingFiles(dir, logged);
 }
 
-/** Apply `files` in order with `run(file)` -> { status, stderr }; stop at the first one that does not count as applied. Returns { results: [{ file, problem }], applied }. */
-export function applyAll(files, run, dir = "supabase/migrations") {
+/** The file names migration_log holds, or null when the table does not exist yet. */
+export async function readLog(client) {
+  try {
+    const r = await client.query("SELECT file FROM public.migration_log");
+    return new Set(r.rows.map((row) => row.file));
+  } catch (e) {
+    if (e.code === "42P01") return null;
+    throw e;
+  }
+}
+
+/**
+ * Apply one file on `client` (a pg client, or anything with query and on("notice")). Returns { problem } with problem null when the file applied and was recorded. The COMMIT is held back until the file's own `<id> OK` notice was
+ * printed; the log row goes in just before it, in the same transaction. A file with no COMMIT of its own is wrapped in a BEGIN and a COMMIT here.
+ */
+export async function applyFile(client, file, text) {
+  const notices = [];
+  const listener = (n) => notices.push(n.message);
+  client.on("notice", listener);
+  const statements = splitStatements(text.replace(/\r\n/g, NL)).map((s) => s.sql);
+  const commitAt = statements.findLastIndex((s) => /^COMMIT\b/i.test(s));
+  const fail = async (problem) => {
+    await client.query("ROLLBACK").catch(() => undefined);
+    return { problem };
+  };
+  try {
+    if (commitAt < 0) await client.query("BEGIN");
+    for (const [i, sql] of statements.entries()) {
+      if (i === commitAt) break;
+      try {
+        await client.query(sql);
+      } catch (e) {
+        return await fail(`${file}: ERROR:  ${e.message}${e.code ? ` [SQLSTATE ${e.code}]` : ""}`);
+      }
+    }
+    const id = selfCheckIdOf(text, file);
+    const ok = notices.find((n) => n.startsWith(`${id} OK`));
+    if (!ok) return await fail(`${file}: its self-check ${id} did not print "${id} OK" (it ran nothing, or stopped before its last assertion)`);
+    try {
+      await client.query(INSERT_LOG, [file, ok]);
+      await client.query("COMMIT");
+    } catch (e) {
+      return await fail(`${file}: ERROR:  ${e.message}${e.code ? ` [SQLSTATE ${e.code}]` : ""}`);
+    }
+    return { problem: null };
+  } finally {
+    client.removeListener("notice", listener);
+  }
+}
+
+/** Apply `files` in order; stop at the first that does not apply. Returns { results: [{ file, problem }], applied }. */
+export async function applyAll(client, files, dir = DIR) {
   const results = [];
   for (const file of files) {
-    const problem = runProblem(file, read(file, dir), run(file));
+    const { problem } = await applyFile(client, file, read(file, dir));
     results.push({ file, problem });
     if (problem) break;
   }
   return { results, applied: results.filter((r) => !r.problem).map((r) => r.file) };
 }
 
-/** Every file name whose number production carries after this run: the numbers APPLIED.json lists plus the files just applied. */
-export function appliedAfter(applied, dir = "supabase/migrations") {
-  const numbers = new Set([...appliedNumbers(dir), ...applied.map(numberOf)]);
-  return migrationFiles(dir).filter((f) => numbers.has(numberOf(f)));
-}
-
 async function main() {
   const { values } = parseArgs({ options: { pending: { type: "boolean", default: false }, apply: { type: "boolean", default: false } }, strict: true });
-  if (values.pending) {
-    for (const f of pendingFiles()) console.log(f);
-    return 0;
-  }
-  if (!values.apply) {
+  if (values.pending === values.apply) {
     console.error("usage: node scripts/ci/migrate.mjs --pending | --apply");
     return 1;
   }
@@ -64,24 +105,41 @@ async function main() {
     return verdict.exit;
   }
   const summary = (lines) => env.GITHUB_STEP_SUMMARY && appendFileSync(env.GITHUB_STEP_SUMMARY, `### Migrate\n\n${lines.join(NL)}\n`);
-  const pending = pendingFiles();
-  if (!pending.length) {
-    console.log("migrate: no pending migration; nothing to apply");
-    summary(["No pending migration; nothing to apply."]);
-    return 0;
+  const client = new pg.Client({ connectionString: url });
+  await client.connect();
+  try {
+    const logged = await readLog(client);
+    let pending = pendingFromLog(DIR, logged);
+    if (values.pending) {
+      for (const f of pending) console.log(f);
+      return 0;
+    }
+    const results = [];
+    if (logged === null) {
+      const first = await applyAll(client, [BOOTSTRAP]);
+      results.push(...first.results);
+      if (first.applied.length === 0) return report(results, summary);
+      pending = pendingFromLog(DIR, await readLog(client));
+    }
+    if (!pending.length && !results.length) {
+      console.log("migrate: no pending migration; nothing to apply");
+      summary(["No pending migration; nothing to apply."]);
+      return 0;
+    }
+    console.log(`migrate: pending ${pending.join(", ") || "(none after the bootstrap)"}`);
+    results.push(...(await applyAll(client, pending)).results);
+    return report(results, summary);
+  } finally {
+    await client.end().catch(() => undefined);
   }
-  console.log(`migrate: pending ${pending.join(", ")}`);
-  const { results, applied } = applyAll(pending, (file) => {
-    const r = psql(url, { file: `supabase/migrations/${file}`, stopOnError: true });
-    return { status: r.status, stderr: r.stderr };
-  });
+}
+
+function report(results, summary) {
   summary(results.map((r) => `- ${r.file}: ${r.problem ?? "OK"}`));
-  for (const r of results) console.log(`${r.problem ? "FAILED" : "OK    "} ${r.file}${r.problem ? `\n${r.problem}` : ""}`);
-  if (applied.length < pending.length) return 1;
-  writeFileSync("applied.txt", `${appliedAfter(applied).join(NL)}${NL}`);
-  if (env.GITHUB_OUTPUT) appendFileSync(env.GITHUB_OUTPUT, `applied=${applied.map(numberOf).join(" ")}${NL}`);
-  console.log(`migrate: applied ${applied.length} file(s): ${applied.map(numberOf).join(" ")}`);
-  return 0;
+  for (const r of results) console.log(`${r.problem ? "FAILED" : "OK    "} ${r.file}${r.problem ? `${NL}${r.problem}` : ""}`);
+  const failed = results.some((r) => r.problem);
+  if (!failed) console.log(`migrate: applied ${results.length} file(s)`);
+  return failed ? 1 : 0;
 }
 
 if (isMain(import.meta.url)) process.exit(await main());

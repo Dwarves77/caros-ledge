@@ -77,6 +77,7 @@ Forward changes only, one file per change (`NNNN_<change>.sql`), each ending in 
 | 0075_apply_theme_brief | apply_theme_brief: one transaction for one theme brief, the live member hash recomputed from the locked theme row, the replaced brief kept by the 0039 trigger (R2b, F:3) | 0075-apply-theme-brief |
 | 0076_apply_staged_item_patch | apply_staged_item_patch: the one door from a staged proposal to intelligence_items, allowlisted columns typed by the table, a source date only with a verbatim span in a capture of the item (R2b, D:36) | 0076-staged-patch |
 | 0077_capture_holding_quote | capture_holding_quote(url, quote): the newest stored capture of a URL that holds the quote verbatim, or NULL (R2b, D:10, 69, 114) | 0077-capture-quote |
+| 0078_migration_log | migration_log (file primary key, applied_at, self_check), service_role only: the database records which migration files it carries; scripts/ci/migrate.mjs writes a file's row in the file's own transaction (R0) | 0078-migration-log |
 
 A `_data_` file carries `-- rollback-test: <fixture>`: the schema job runs the fixture, then the file, in a transaction that rolls back (the SQL is proven to execute, the catalog is unchanged). 0016 is deliberately absent: the sources backfill depends on the live registry, so the executor generates it at the cutover window (`scripts/gen/source-backfill-sql.mjs`, from a read-only registry export) and commits it then as 0016; the schema job proves the generator every run on a sample export. Regenerating 0015 needs the old repo path.
 

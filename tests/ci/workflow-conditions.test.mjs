@@ -50,7 +50,7 @@ test('the expensive jobs follow the scope the `changes` job decided on a pull re
   assert.deepEqual(on('push', '', {}, { parity: 'false', windows: 'false' }), ['changes', 'ci', 'migrate', 'parity', 'schema', 'windows'], 'main is never skipped');
 });
 
-test('migrate runs on a push to main and on a dispatch with only=migrate, nowhere else: not on a pull request, a fork, another branch, another dispatch or a status; it holds the one database secret and writes the repository only through its own commit step', () => {
+test('migrate runs on a push to main and on a dispatch with only=migrate, nowhere else: not on a pull request, a fork, another branch, another dispatch or a status; it holds the one database secret and writes nothing to the repository', () => {
   assert.ok(on('push').includes('migrate'));
   assert.deepEqual(on('workflow_dispatch', 'migrate'), ['migrate']);
   for (const [event, only] of [['pull_request', ''], ['workflow_dispatch', ''], ['workflow_dispatch', 'live'], ['workflow_dispatch', 'turn'], ['status', '']]) assert.ok(!on(event, only, VERCEL_OK).includes('migrate'), `${event} only=${only}`);
@@ -68,8 +68,8 @@ test('migrate runs on a push to main and on a dispatch with only=migrate, nowher
   }
   assert.deepEqual([...secretsOf('migrate')], ['SUPABASE_DB_URL']);
   for (const job of Object.keys(jobs).filter((j) => j !== 'migrate')) assert.ok(!secretsOf(job).has('SUPABASE_DB_URL'), `${job} must not hold the database secret`);
-  assert.deepEqual(jobs.migrate.permissions, { contents: 'write' });
-  for (const job of Object.keys(jobs).filter((j) => j !== 'migrate')) assert.notDeepEqual(jobs[job].permissions?.contents, 'write', `${job} must not write the repository`);
+  assert.equal(jobs.migrate.permissions, undefined, 'migrate writes nothing to the repository: it takes the workflow default (read)');
+  for (const job of Object.keys(jobs)) assert.notEqual(jobs[job].permissions?.contents, 'write', `${job} must not write the repository: main is protected and nothing in CI commits`);
 });
 
 test('the live jobs run on the successful Vercel commit status and on nothing else: not on a failed, pending or other-context status, not on a push, a pull request or a deployment event; a production status skips the preview parity', () => {

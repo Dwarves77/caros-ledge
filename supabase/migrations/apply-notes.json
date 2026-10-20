@@ -118,5 +118,10 @@
   },
   "0069_live_check_provenance_no_replica": {
     "selfCheckBy": "0073_selfcheck_repairs"
+  },
+  "0078_migration_log": {
+    "unscopedReads": {
+      "migration_log": "asserts the whole seed: its size is the invariant, and the table is empty before this file creates it"
+    }
   }
 }

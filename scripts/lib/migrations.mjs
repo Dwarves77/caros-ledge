@@ -11,8 +11,6 @@ export const migrationFiles = (dir = MIGRATIONS_DIR) => readdirSync(dir).filter(
 export const numberOf = (file) => MIGRATION_FILE.exec(file)?.[1] ?? null;
 export const read = (file, dir = MIGRATIONS_DIR) => readFileSync(`${dir}/${file}`, "utf8").replace(/\r\n/g, "\n");
 export const applyNotes = (dir = MIGRATIONS_DIR) => (existsSync(`${dir}/apply-notes.json`) ? JSON.parse(readFileSync(`${dir}/apply-notes.json`, "utf8")) : {});
-/** The numbers production carries (APPLIED.json), as strings. */
-export const appliedNumbers = (dir = MIGRATIONS_DIR) => new Set(JSON.parse(readFileSync(`${dir}/APPLIED.json`, "utf8")).applied.map(String));
 
 /** The id a file declares on its `-- Self-check <id>` line, or null: the word after the marker, up to a colon or a space. */
 export const selfCheckId = (text) => /^-- Self-check ([\w.-]+)/m.exec(text)?.[1] ?? null;
