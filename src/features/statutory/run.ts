@@ -5,7 +5,8 @@
 import type { Db } from "@/core/db";
 import type { RunResult } from "@/core/sources/run-result";
 
-import { parseRow, validateRowsFile, writeOneRow, type StatutoryDeps } from "./rows";
+import { deriveInstrument, filingInstruments, FUELEU_INSTRUMENT } from "./filing-grade";
+import { parseRow, validateRowsFile, verifyRowQuotes, writeOneRow, type StatutoryDeps } from "./rows";
 
 export interface StatutoryRunDeps {
   sb: Db;
@@ -16,6 +17,15 @@ export interface StatutoryRunDeps {
 /** The violations of a rows file (the `validate` subcommand): empty means it is apply-ready. */
 export const validateStatutoryRows = (file: unknown): string[] => validateRowsFile(file);
 
+/** The target years that are filing grade NOW: the instrument's evidence capture is read from the database and every quote re-checked (the offline derivation, repeated live). No capture, or one that no longer holds a quote, is no year. */
+async function liveFilingYears(sb: Db, now: Date): Promise<ReadonlySet<string>> {
+  const instrument = filingInstruments().find((i) => i.id === FUELEU_INSTRUMENT);
+  if (!instrument?.captureId) return new Set();
+  const r = await sb.from("agent_run_searches").select("result_content").eq("id", instrument.captureId).maybeSingle();
+  if (r.error) throw new Error(`filing-grade capture read failed: ${r.error.message}`);
+  return new Set(deriveInstrument(instrument, (r.data as { result_content?: string | null } | null)?.result_content, now).years.map(String));
+}
+
 export async function statutoryRun(deps: StatutoryRunDeps, input: { dry: boolean; file: unknown }): Promise<RunResult<{ perItem: { id: string; outcome: string; detail: string | null }[] }>> {
   const violations = validateRowsFile(input.file);
   if (violations.length) return { counts: { violations: violations.length }, outcome: "failed", notes: violations.slice(0, 50), data: { perItem: [] } };
@@ -23,6 +33,13 @@ export async function statutoryRun(deps: StatutoryRunDeps, input: { dry: boolean
   const counts: Record<string, number> = { rows: rows.length, written: 0, would_write: 0, skipped_already: 0, refused: 0, errored: 0 };
   const perItem: { id: string; outcome: string; detail: string | null }[] = [];
   const notes: string[] = [];
+  const texts = new Map<string, string>();
+  let filingYears: ReadonlySet<string>;
+  try {
+    filingYears = await liveFilingYears(deps.sb, deps.now());
+  } catch (e) {
+    return { counts: { rows: rows.length }, outcome: "failed", notes: [e instanceof Error ? e.message : String(e)], data: { perItem: [] } };
+  }
   for (const [i, raw] of rows.entries()) {
     let parsed;
     try {
@@ -33,7 +50,14 @@ export async function statutoryRun(deps: StatutoryRunDeps, input: { dry: boolean
       continue;
     }
     try {
-      const out = await writeOneRow(deps.sb, parsed, deps.statutory, { apply: !input.dry, now: deps.now() });
+      // A quote nobody checked against a stored capture is not an input: the row is refused with the reason, in dry runs too.
+      const proof = await verifyRowQuotes(deps.sb, raw, deps.now(), texts);
+      if (!proof.ok) {
+        counts.refused = (counts.refused ?? 0) + 1;
+        perItem.push({ id: parsed.shipKey, outcome: "refused-quote", detail: proof.reason });
+        continue;
+      }
+      const out = await writeOneRow(deps.sb, parsed, deps.statutory, { apply: !input.dry, now: deps.now(), filingYears, captureIds: proof.captureIds });
       const key = out.action === "written" ? "written" : out.action === "would-write" ? "would_write" : out.action === "skipped-already-computed" ? "skipped_already" : out.action === "errored" ? "errored" : "refused";
       counts[key] = (counts[key] ?? 0) + 1;
       perItem.push({ id: out.shipKey, outcome: out.action, detail: out.action === "refused-inadmissible" ? `${out.field}: ${out.reason}` : out.action === "errored" ? out.reason : "resultEur" in out ? `result=${out.resultEur} EUR` : null });

@@ -1,0 +1,6 @@
+{
+ "minWordLength": 4,
+ "minSharedWords": 2,
+ "minSharedRatio": 0.5,
+ "maxSpanChars": 600
+}

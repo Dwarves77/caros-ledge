@@ -8,26 +8,16 @@
 // Usage: node tests/ux/workspace-smoke.mjs --base <origin>     (the server must run with UI_FIXTURES=1)
 import { readFileSync } from 'node:fs';
 
-import { chromium } from 'playwright';
-
 import { compareRecord } from '../parity/compare.mjs';
-import { domSummary } from '../parity/capture.mjs';
 
-import { shellControl } from './shell-filter.mjs';
-import { measure } from './measure.mjs';
+import { checkClientReads, SHELL_READS } from './client-sweep.mjs';
+import { chromium, open as openPage, parityReady, smoke, summarise, until, VIEWPORTS, WIDTHS } from './harness.mjs';
+import { measurePage } from './measure.mjs';
+import { scopeBaseline } from './shell-filter.mjs';
 
-const VIEWPORTS = [
-  [375, 812],
-  [768, 1024],
-  [1024, 768],
-  [1280, 800],
-];
 const SCREENS = ['account', 'account-members', 'settings', 'landing', 'wizard', 'invitation', 'workspace'];
-const base = process.argv[process.argv.indexOf('--base') + 1];
-if (!base || base.startsWith('--')) throw new Error('usage: workspace-smoke.mjs --base <origin>');
-
-const failures = [];
-const fail = (where, what) => failures.push(`${where}: ${what}`);
+const run = smoke('workspace-smoke');
+const { base, fail, check, must } = run;
 
 // ── the mocked backend ───────────────────────────────────────────────────────
 const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*', 'access-control-expose-headers': 'content-range' };
@@ -103,16 +93,9 @@ async function install(page, state) {
 
 // ── the screens ──────────────────────────────────────────────────────────────
 const url = (screen) => `${base}/privacy/ui-fixtures/workspace?screen=${screen}`;
-async function open(browser, screen, [w, h], state = { calls: [], rest: [] }) {
-  const ctx = await browser.newContext({ viewport: { width: w, height: h } });
-  const page = await ctx.newPage();
-  const errors = [];
-  page.on('pageerror', (e) => errors.push(e.message));
-  await install(page, state);
-  const res = await page.goto(url(screen), { waitUntil: 'networkidle' });
-  if (!res || res.status() !== 200) throw new Error(`fixture page answered ${res?.status()}`);
-  await page.evaluate(() => document.fonts.ready);
-  return { ctx, page, errors, state };
+async function open(browser, screen, viewport, state = { calls: [], rest: [] }) {
+  const opened = await openPage(browser, url(screen), viewport, { prepare: (page) => install(page, state) });
+  return { ...opened, state };
 }
 
 const browser = await chromium.launch();
@@ -121,32 +104,19 @@ try {
   for (const viewport of VIEWPORTS) {
     for (const screen of SCREENS) {
       const where = `${viewport.join('x')} ${screen}`;
-      let session;
-      try {
-        session = await open(browser, screen, viewport);
-        if (screen === 'wizard') await session.page.getByRole('button', { name: 'Air' }).waitFor();
-        else if (screen === 'settings') await session.page.getByRole('switch', { name: 'Show Band tiles' }).waitFor();
-        else await session.page.waitForTimeout(300);
-        for (const o of await session.page.evaluate(measure, { rows: false })) fail(where, o);
-        for (const e of session.errors) fail(where, `page error: ${e}`);
-      } catch (e) {
-        fail(where, e.message);
-      } finally {
-        await session?.ctx.close();
-      }
+      await check(where, async () => {
+        const session = await open(browser, screen, viewport);
+        try {
+          if (screen === 'wizard') await session.page.getByRole('button', { name: 'Air' }).waitFor();
+          else if (screen === 'settings') await session.page.getByRole('switch', { name: 'Show Band tiles' }).waitFor();
+          for (const o of await measurePage(session.page, { rows: false })) fail(where, o);
+          for (const e of session.errors) fail(where, `page error: ${e}`);
+        } finally {
+          await session.ctx.close();
+        }
+      });
     }
   }
-
-  const check = async (name, run) => {
-    try {
-      await run();
-    } catch (e) {
-      fail(`behaviour: ${name}`, e.message.split('\n').slice(0, 4).join(' | '));
-    }
-  };
-  const must = (cond, what) => {
-    if (!cond) throw new Error(what);
-  };
 
   // Each behaviour is its own session, so one failing assertion never hides another.
   const session = async (screen, run) => {
@@ -181,8 +151,7 @@ try {
       const profile = state.rest.find((r) => r.rpc === 'patch_workspace_settings' && r.body.p_column === 'profile');
       must(profile && JSON.stringify(Object.keys(profile.body.p_patch).sort()) === JSON.stringify(['org_roles', 'org_size']), 'the organisation profile patch is not exactly its two keys');
       await page.getByRole('button', { name: 'Live Events & Touring' }).click();
-      await page.waitForTimeout(1100);
-      must(state.rest.some((r) => r.m === 'PATCH' && r.table === 'workspace_settings' && Array.isArray(r.body.sector_profile)), 'the freight sectors card did not write sector_profile');
+      await until(() => state.rest.some((r) => r.m === 'PATCH' && r.table === 'workspace_settings' && Array.isArray(r.body.sector_profile)), 'the freight sectors card wrote sector_profile', 8000);
     }),
   );
 
@@ -248,34 +217,40 @@ try {
     }),
   );
 
+  // ── every read the settings and account screens make after hydration (the app's routes and the database REST reads) is refused in turn and must be stated ──
+  for (const [name, screen, ready] of [['settings', 'settings', 'Show Band tiles'], ['account', 'account', 'Save personal profile']]) {
+    await check(`client reads ${name}`, () => checkClientReads(run, browser, { name, url: url(screen), viewport: [1280, 800], prepare: (page) => install(page, { calls: [], rest: [] }), after: (page) => page.getByRole(ready.startsWith('Show') ? 'switch' : 'button', { name: ready }).waitFor(), ignore: SHELL_READS }));
+  }
+
   // ── fixture parity: the real /settings and /profile screens against the committed baseline ─────────────────────────
   const config = JSON.parse(readFileSync('tests/parity/approved-changes.json', 'utf8'));
-  const isShell = shellControl(config); // tests/ux/shell-filter.mjs: the shell's controls come from approved-changes.json frameControls
-  for (const [route, screen, ready] of [['settings', 'settings', 'Show Band tiles'], ['profile', 'account', 'Save personal profile']]) {
-    for (const viewport of [[1280, 900], [375, 812]]) {
-      const where = `parity ${route} ${viewport.join('x')}`;
-      const s = await open(browser, screen, viewport);
-      try {
-        await s.page.getByRole(ready.startsWith('Show') ? 'switch' : 'button', { name: ready }).waitFor();
-        await s.page.waitForTimeout(300);
-        const captured = await s.page.evaluate(domSummary, 20);
-        const baseline = JSON.parse(readFileSync(`tests/parity/baseline/${route}.${viewport.join('x')}.json`, 'utf8'));
-        const scoped = { ...baseline, rows: { items: [] }, landmarks: baseline.landmarks.slice(Math.max(0, baseline.landmarks.findIndex((l) => l.name.startsWith('Account sections')))), headings: baseline.headings.filter((x, i, all) => x.text !== "Caro's Ledge" && !(i > 0 && all[i - 1].text === x.text && all[i - 1].level === x.level)), controls: baseline.controls.filter((c) => !isShell(c)) };
-        const { fails } = compareRecord(route, viewport.join('x'), scoped, captured, config.approved.filter((a) => a.route === route), config.dataNames ?? []);
-        for (const f of fails) fail(where, f);
-        // Attack: the same comparison on a capture missing one baseline control, one control out of order, and a swapped heading MUST fail.
-        if (viewport[0] === 1280) {
-          const pick = scoped.controls.find((c) => /Save|Filter|Sector|Settings/.test(c.name)) ?? scoped.controls[0];
-          const approved = config.approved.filter((a) => a.route === route);
-          const dropped = { ...captured, controls: captured.controls.filter((c) => c.name !== pick.name) };
-          const swapped = { ...captured, controls: [...captured.controls].reverse() };
-          if (compareRecord(route, '1280x900', scoped, dropped, approved, config.dataNames ?? []).fails.length === 0) fail(where, `attack: a removed control (${pick.name}) passed the fixture parity`);
-          if (compareRecord(route, '1280x900', scoped, swapped, approved, config.dataNames ?? []).fails.length === 0) fail(where, 'attack: a reversed control order passed the fixture parity');
-        }
-      } catch (e) {
-        fail(where, e.message.split('\n')[0]);
-      } finally {
-        await s.ctx.close();
+  if (parityReady(run)) {
+    for (const [route, screen, ready] of [['settings', 'settings', 'Show Band tiles'], ['profile', 'account', 'Save personal profile']]) {
+      for (const viewport of [[1280, 900], [375, 812]]) {
+        const where = `parity ${route} ${viewport.join('x')}`;
+        await check(where, async () => {
+          const s = await open(browser, screen, viewport);
+          try {
+            await s.page.getByRole(ready.startsWith('Show') ? 'switch' : 'button', { name: ready }).waitFor();
+            const captured = await summarise(s.page);
+            const scoped = scopeBaseline(JSON.parse(readFileSync(`tests/parity/baseline/${route}.${viewport.join('x')}.json`, 'utf8')), 'account');
+            const approved = config.approved.filter((a) => a.route === route);
+            const { fails } = compareRecord(route, viewport.join('x'), scoped, captured, approved, config.dataNames ?? []);
+            for (const f of fails) fail(where, f);
+            // Attack: the same comparison on a capture missing one baseline control, one control out of order, and a swapped heading MUST fail.
+            if (viewport[0] === 1280) {
+              const pick = scoped.controls.find((c) => /Save|Filter|Sector|Settings/.test(c.name)) ?? scoped.controls[0];
+              const dropped = { ...captured, controls: captured.controls.filter((c) => c.name !== pick.name) };
+              const swapped = { ...captured, controls: [...captured.controls].reverse() };
+              const heading = { ...captured, headings: captured.headings.map((h) => (h.level === 2 ? { ...h, text: `${h.text} (changed)` } : h)) };
+              if (compareRecord(route, '1280x900', scoped, dropped, approved, config.dataNames ?? []).fails.length === 0) fail(where, `attack: a removed control (${pick.name}) passed the fixture parity`);
+              if (compareRecord(route, '1280x900', scoped, swapped, approved, config.dataNames ?? []).fails.length === 0) fail(where, 'attack: a reversed control order passed the fixture parity');
+              if (compareRecord(route, '1280x900', scoped, heading, approved, config.dataNames ?? []).fails.length === 0) fail(where, 'attack: a changed section heading passed the fixture parity');
+            }
+          } finally {
+            await s.ctx.close();
+          }
+        });
       }
     }
   }
@@ -283,9 +258,4 @@ try {
   await browser.close();
 }
 
-if (failures.length) {
-  for (const f of failures) console.error(f);
-  console.error(`workspace-smoke: ${failures.length} failure(s)`);
-  process.exit(1);
-}
-console.log('workspace-smoke: clean at 375x812, 768x1024, 1024x768, 1280x800; behaviours and fixture parity pass');
+run.finish(`clean at ${WIDTHS}; behaviours and fixture parity pass`);

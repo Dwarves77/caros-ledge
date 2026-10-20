@@ -29,7 +29,7 @@ Edits to `supabase/schema.sql` against the production dump are recorded in `supa
 
 ## Parity capture secrets
 
-The `parity` job (`tests/parity/capture.mjs`) reads six repository secrets. A route whose account has no credentials is recorded `skipped` ("no <account> credentials"), never failed.
+The `parity` job (`tests/parity/capture.mjs`) reads six repository secrets. In CI a missing `LIVE_SMOKE_*` (or `LIVE_ADMIN_*` when `PARITY_ADMIN=1`) fails the capture and names the variable; on a workstation, in a fork pull request and against a local server the account's routes are recorded `skipped` and the reason is printed.
 
 | Secret | Used for |
 |---|---|

@@ -40,6 +40,7 @@ export function RowTable({ columns, rows, metrics }: RowTableProps) {
           <div key={r.key}>
             <div
               id={r.id}
+              data-part="table-row"
               role={r.onActivate ? "button" : undefined}
               tabIndex={r.onActivate ? 0 : undefined}
               aria-label={r.onActivate ? r.activateLabel : undefined}

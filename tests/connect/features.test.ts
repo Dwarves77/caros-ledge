@@ -7,7 +7,9 @@ import { test } from "node:test";
 import { createdBy, GAP_NAMESPACE, planReflect, planResolvedReflectionInserts, reflectResolved, buildSubjectRef } from "@/core/flywheel/flags";
 import { detectGaps, jurisdictionKey } from "@/core/flywheel/gaps";
 import { computeMemberHash } from "@/core/flywheel/themes";
-import { applyThemeBrief, parseThemeBriefPayload } from "@/features/flywheel/theme-brief-seam";
+import { parseThemeBriefEntry, type ThemeContext } from "@/core/briefs/theme-brief-contract";
+import { themeBriefSeams } from "@/core/briefs/theme-brief-material";
+import { applyThemeBrief } from "@/features/flywheel/theme-brief-seam";
 import { discoverForItems, runConnectionDiscovery } from "@/features/flywheel/run-discovery";
 import { tagPass } from "@/features/flywheel/tag-pass";
 import { forwardEventKey, insertForwardEvents } from "@/features/obligations";
@@ -61,27 +63,39 @@ test("gaps: a theme spanning jurisdictions with none of the home ones is a gap; 
 });
 
 const seamWorld = (members: string[]) => connectDb({ connection_themes: [{ id: "T1", member_ids: members }], theme_briefs: [] }, { unique: { theme_briefs: ["theme_id"] } });
+const seamCtx = (members: string[]): ThemeContext => ({ themesById: new Map([["T1", { id: "T1", member_ids: members, surfaces: ["regulations"] }]]), membersById: new Map(), groundedText: new Map(), comparator: themeBriefSeams.comparator });
+const seamEntry = (hash: string) => ({ theme_id: "T1", member_hash: hash, title: "T", sections: { connection: "They connect.", meaning: "It matters.", ramifications: "### Regulations\nAn owner is needed.", watch: "Watch the date.", gaps: "" }, claims: [] });
+const validBrief = (members: string[], hash = computeMemberHash(members)) => {
+  const v = parseThemeBriefEntry(seamEntry(hash), 0, seamCtx(members));
+  assert.ok(v.ok, v.ok ? "" : v.errors.join("; "));
+  return v.brief;
+};
 
-test("theme-brief seam: a payload authored against stale membership is refused (INV-191); a fresh one is written once, stamped session-executor", async () => {
-  const hash = computeMemberHash(["a", "b"]);
-  const json = JSON.stringify({ theme_id: "T1", title: "T", brief_md: "body", member_hash: hash });
+test("theme-brief seam: only a VALIDATED brief is written (a forged object is refused before the database); a stale hash is refused (INV-191); a fresh one is written once under its batch with its structure; the replaced brief is kept", async () => {
+  const brief = validBrief(["a", "b"]);
   const m = seamWorld(["a", "b"]);
-  const dry = await applyThemeBrief({ sb: m.db, now: () => NOW }, { format: "json", content: json, dry: true });
+  const dry = await applyThemeBrief({ sb: m.db, now: () => NOW }, { brief, batch: "theme-briefs-001", dry: true });
   assert.equal(dry.outcome, "ok");
   assert.equal((m.tables.theme_briefs as Row[]).length, 0);
-  const wet = await applyThemeBrief({ sb: m.db, now: () => NOW }, { format: "json", content: json, dry: false });
-  assert.equal(wet.outcome, "ok");
-  assert.equal((m.tables.theme_briefs as Row[])[0]?.generated_by, "session-executor");
+  const forged = await applyThemeBrief({ sb: m.db, now: () => NOW }, { brief: { ...brief } as never, batch: "theme-briefs-001", dry: false });
+  assert.equal(forged.outcome, "failed", "a copy or a cast is not a validated brief");
+  assert.match(forged.notes[0] ?? "", /did not come from parseThemeBriefEntry/);
+  assert.equal(m.mem.rpcCalls.filter((c) => c.name === "apply_theme_brief").length, 0, "the database was not touched");
+  const wet = await applyThemeBrief({ sb: m.db, now: () => NOW }, { brief, batch: "theme-briefs-001", dry: false });
+  assert.equal(wet.outcome, "ok", wet.notes.join("; "));
+  const row = (m.tables.theme_briefs as Row[])[0] as Row;
+  assert.deepEqual([row.generated_by, row.member_ids, row.member_count], ["theme-briefs-001", ["a", "b"], 2]);
+  assert.deepEqual(Object.keys(row.sections as object).sort(), ["connection", "gaps", "meaning", "ramifications", "watch"]);
+  await applyThemeBrief({ sb: m.db, now: () => NOW }, { brief: validBrief(["a", "b"]), batch: "theme-briefs-002", dry: false });
+  assert.equal((m.tables.theme_brief_versions as Row[]).length, 1, "the replaced brief is kept");
   const stale = seamWorld(["a", "b", "c"]);
-  const refused = await applyThemeBrief({ sb: stale.db, now: () => NOW }, { format: "json", content: json, dry: false });
+  const refused = await applyThemeBrief({ sb: stale.db, now: () => NOW }, { brief, batch: "theme-briefs-001", dry: false });
   assert.equal(refused.outcome, "failed");
   assert.match(refused.notes[0] ?? "", /member_hash mismatch/);
   assert.equal((stale.tables.theme_briefs as Row[]).length, 0);
-  const gone = await applyThemeBrief({ sb: connectDb({ connection_themes: [] }).db, now: () => NOW }, { format: "json", content: json, dry: false });
+  const gone = await applyThemeBrief({ sb: connectDb({ connection_themes: [] }).db, now: () => NOW }, { brief, batch: "theme-briefs-001", dry: false });
   assert.match(gone.notes[0] ?? "", /does not exist/);
-  assert.equal(parseThemeBriefPayload("json", "{").ok, false);
-  assert.equal(parseThemeBriefPayload("md", `---\ntheme_id: T1\ntitle: "T"\nmember_hash: ${hash}\n---\nBody`).ok, true);
-  assert.equal(parseThemeBriefPayload("json", JSON.stringify({ theme_id: "T1" })).ok, false);
+  assert.equal(parseThemeBriefEntry({ theme_id: "T1", title: "T" }, 0, seamCtx(["a", "b"])).ok, false);
 });
 
 test("forward events: the migration-307 key (item, kind, date, md5 of the text) de-duplicates; a collision retries row by row; stale supports are reported", async () => {

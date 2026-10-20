@@ -6,7 +6,7 @@
     "width": 375,
     "height": 812
   },
-  "captured_at": "2026-10-19T03:15:07.199Z",
+  "captured_at": "2026-10-19T20:56:51.488Z",
   "http_status": 200,
   "final_path": "/profile",
   "network_idle": true,
@@ -17,22 +17,22 @@
   "landmarks": [
     {
       "role": "banner",
-      "name": "☰Account⌕J",
+      "name": "",
       "source": "implicit"
     },
     {
       "role": "main",
-      "name": "VOL IV · No. 43 · Monday, October 19, 2026 · smoke@example.invalid · Dietl / Rockit · Member · member since Oct 2026⌕⌘KAskPersonalOrganizationMembers & roles · 2Sector profile · 6JurisdictionsVerifier badgeActivitySettingsPersonal profileVisible to your workspaceFull nameHeadshot URLWork emailThe address you sign in with.BioSave personal profileSectors followed66 highlighted nichesHome jurisdictions0None followed yetMember sinceOct 2026Dietl / Rockit · memberPlanEnterpriseBilling, owner onlyQuick linksDashboardSettings · notifications, briefing scheduleWatchlist",
+      "name": "",
       "source": "implicit"
     },
     {
       "role": "banner",
-      "name": "VOL IV · No. 43 · Monday, October 19, 2026 · smoke@example.invalid · Dietl / Rockit · Member · member since Oct 2026⌕⌘KAsk",
+      "name": "",
       "source": "implicit"
     },
     {
       "role": "search",
-      "name": "⌕⌘KAsk",
+      "name": "",
       "source": "explicit"
     },
     {
@@ -46,13 +46,8 @@
       "source": "implicit"
     },
     {
-      "role": "form",
-      "name": "Full nameHeadshot URLWork emailThe address you sign in with.BioSave personal profile",
-      "source": "implicit"
-    },
-    {
       "role": "complementary",
-      "name": "Sectors followed66 highlighted nichesHome jurisdictions0None followed yetMember sinceOct 2026Dietl / Rockit · memberPlanEnterpriseBilling, owner onlyQuick linksDashboardSettings · notifications, briefing scheduleWatchlist",
+      "name": "",
       "source": "implicit"
     },
     {
@@ -170,9 +165,11 @@
     }
   ],
   "rows": {
-    "selector": "[data-row], li, tr, article",
-    "limit": 20,
-    "items": []
+    "selector": "[data-part=\"list-row\"], [data-part=\"table-row\"]",
+    "items": [],
+    "containers": []
   },
-  "document_height": 812
+  "document_height": 1413,
+  "truncated": false,
+  "offences": []
 }

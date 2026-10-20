@@ -1,0 +1,910 @@
+[
+ {
+  "illustrative": false,
+  "state": "sources_disagree",
+  "flags": [
+   "mixed_locale_in_document"
+  ],
+  "retrieved": "2026-10-19",
+  "status": "verified",
+  "inputs": [],
+  "outputs": [],
+  "relations": [],
+  "traps": [
+   {
+    "what": "The worked example uses 1,430 with no GWP set beside it while Table 2 of the same document prints 1.530,0 under a GWP100 AR6 header: a conflict inside one framework, not resolved here.",
+    "wrong_value": "1.53"
+   },
+   {
+    "what": "The table uses dot thousands and decimal comma, the examples comma thousands and decimal point: three conventions in one document."
+   }
+  ],
+  "disagreements": [
+   {
+    "figure": "gwp_r134a",
+    "sides": [
+     {
+      "doc": "glec_v3_0",
+      "page": 106,
+      "tokens": [
+       "1,430 kg"
+      ],
+      "literal": "1,430",
+      "value": "1430",
+      "locale": "dp",
+      "gwp_set": "not_stated",
+      "document_date": "v3.0 September 2023, Module 4"
+     },
+     {
+      "doc": "glec_v3_0",
+      "page": 102,
+      "tokens": [
+       "1.530,0"
+      ],
+      "literal": "1.530,0",
+      "value": "1530.0",
+      "locale": "dc",
+      "gwp_set": "AR6_100",
+      "document_date": "v3.0 September 2023, Module 3 table 2"
+     }
+    ]
+   }
+  ],
+  "id": "D1",
+  "kind": "disagreement",
+  "framework": "glec",
+  "framework_version": "3.0",
+  "recheck_against": "3.2",
+  "checks": [
+   {
+    "doc": "glec_v3_0",
+    "page": 106,
+    "folio": "106",
+    "section": "Module 4 worked example",
+    "tokens": [
+     "1,430 kg"
+    ]
+   },
+   {
+    "doc": "glec_v3_0",
+    "page": 102,
+    "folio": "102",
+    "section": "Module 3 table 2 refrigerant GWP",
+    "tokens": [
+     "1.530,0"
+    ]
+   }
+  ]
+ },
+ {
+  "illustrative": false,
+  "state": "ok",
+  "flags": [
+   "locale_collision"
+  ],
+  "retrieved": "2026-10-19",
+  "status": "verified",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "hfo_co2",
+    "unit": "g CO2/g fuel",
+    "origin": "printed",
+    "literal": "3,114",
+    "locale": "dc",
+    "value": "3.114",
+    "sigDigits": 4,
+    "boundary": "TTW",
+    "gwp_set": "not_applicable"
+   }
+  ],
+  "relations": [],
+  "traps": [
+   {
+    "what": "The glyph 3,114 is 3.114 here (decimal comma) and 3114 in GLEC prose: the capture records the document locale and resolves single-separator tokens by it.",
+    "wrong_value": "3114"
+   }
+  ],
+  "disagreements": [],
+  "id": "L1",
+  "kind": "locale_collision",
+  "framework": "eu_mrv",
+  "framework_version": "Annex I C(2023) 6728 final",
+  "categories": {
+   "collides_with": "L2"
+  },
+  "checks": [
+   {
+    "doc": "mrv_annex_council",
+    "page": 5,
+    "folio": "3",
+    "section": "Part A point 2, HFO row",
+    "tokens": [
+     "3,114 0,00005 0,00018 -"
+    ]
+   }
+  ]
+ },
+ {
+  "illustrative": false,
+  "state": "ok",
+  "flags": [
+   "locale_collision"
+  ],
+  "retrieved": "2026-10-19",
+  "status": "verified",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "gwp_r134a",
+    "unit": "kg CO2e/kg",
+    "origin": "printed",
+    "literal": "1,430",
+    "locale": "dp",
+    "value": "1430",
+    "sigDigits": 3,
+    "boundary": "not_stated",
+    "gwp_set": "not_stated"
+   }
+  ],
+  "relations": [],
+  "traps": [
+   {
+    "what": "The glyph 1,430 is 1430 here (comma thousands): read under the EU legal locale it would be 1.430.",
+    "wrong_value": "1.43"
+   }
+  ],
+  "disagreements": [],
+  "id": "L2",
+  "kind": "locale_collision",
+  "framework": "glec",
+  "framework_version": "3.0",
+  "recheck_against": "3.2",
+  "categories": {
+   "collides_with": "L1"
+  },
+  "checks": [
+   {
+    "doc": "glec_v3_0",
+    "page": 106,
+    "folio": "106",
+    "section": "Module 4 worked example",
+    "tokens": [
+     "1,430 kg"
+    ]
+   }
+  ]
+ },
+ {
+  "illustrative": true,
+  "state": "ok",
+  "flags": [
+   "source_unit_defect"
+  ],
+  "retrieved": "2026-10-19",
+  "status": "verified",
+  "inputs": [
+   {
+    "name": "sea_t",
+    "unit": "t",
+    "origin": "printed",
+    "literal": "6",
+    "locale": "dp",
+    "value": "6",
+    "sigDigits": 1
+   },
+   {
+    "name": "sea_km",
+    "unit": "km",
+    "origin": "printed",
+    "literal": "4,000",
+    "locale": "dp",
+    "value": "4000",
+    "sigDigits": 1
+   },
+   {
+    "name": "sea_ef",
+    "unit": "kg CO2e/tkm",
+    "origin": "printed",
+    "literal": "0.05",
+    "locale": "dp",
+    "value": "0.05",
+    "sigDigits": 1
+   },
+   {
+    "name": "t_per_teu",
+    "unit": "t/TEU",
+    "origin": "printed",
+    "literal": "10",
+    "locale": "dp",
+    "value": "10",
+    "sigDigits": 1
+   },
+   {
+    "name": "tkm",
+    "unit": "tkm",
+    "origin": "derived",
+    "value": "24000",
+    "basis": "tonnes x km"
+   },
+   {
+    "name": "teu_km",
+    "unit": "TEU-km",
+    "origin": "derived",
+    "value": "2400",
+    "basis": "tkm divided by the row's own tonnes per TEU"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "sea_leg",
+    "unit": "kg CO2e",
+    "origin": "printed",
+    "literal": "1,200",
+    "locale": "dp",
+    "value": "1200",
+    "sigDigits": 2,
+    "boundary": "not_stated",
+    "gwp_set": "not_stated"
+   },
+   {
+    "name": "sea_leg_if_header_obeyed",
+    "unit": "kg CO2e",
+    "origin": "derived",
+    "value": "120",
+    "basis": "TEU-km x the factor, as the column header would imply",
+    "boundary": "not_stated",
+    "gwp_set": "not_stated"
+   },
+   {
+    "name": "resolved_factor_unit",
+    "unit": "unit",
+    "origin": "derived",
+    "text": "kg CO2e/tkm",
+    "basis": "the printed arithmetic multiplies tonnes by km",
+    "boundary": "not_stated",
+    "gwp_set": "not_stated"
+   }
+  ],
+  "relations": [
+   {
+    "type": "product",
+    "factors": [
+     "sea_t",
+     "sea_km"
+    ],
+    "result": "tkm"
+   },
+   {
+    "type": "quotient",
+    "numerator": "tkm",
+    "denominator": "t_per_teu",
+    "result": "teu_km"
+   },
+   {
+    "type": "product",
+    "factors": [
+     "tkm",
+     "sea_ef"
+    ],
+    "result": "sea_leg"
+   },
+   {
+    "type": "product",
+    "factors": [
+     "teu_km",
+     "sea_ef"
+    ],
+    "result": "sea_leg_if_header_obeyed"
+   }
+  ],
+  "traps": [
+   {
+    "what": "Obeying the TEU-km header gives 120 instead of 1,200; the unit is resolved from the arithmetic and source_unit_defect is raised. The tkm to TEU-km conversion uses the row's own cited 10 t per TEU.",
+    "wrong_value": "120"
+   }
+  ],
+  "disagreements": [],
+  "id": "A1",
+  "kind": "adversarial",
+  "framework": "ghg_protocol_scope3",
+  "framework_version": "Technical Guidance (2013), Category 4",
+  "categories": {
+   "scope3_category": "4",
+   "method": "distance"
+  },
+  "checks": [
+   {
+    "doc": "ghgp_cat4",
+    "page": 14,
+    "folio": "62",
+    "section": "Example 4.2 sea leg",
+    "tokens": [
+     "kg CO2e/TEU-km",
+     "6 × 4,000 × 0.05",
+     "1,200 kg CO2e"
+    ]
+   },
+   {
+    "doc": "ghgp_cat4",
+    "page": 11,
+    "folio": "59",
+    "section": "Table 4.2 default TEU mass",
+    "tokens": [
+     "Default 1 TEU = 10 t"
+    ]
+   }
+  ]
+ },
+ {
+  "illustrative": true,
+  "state": "ok",
+  "flags": [
+   "source_unit_defect"
+  ],
+  "retrieved": "2026-10-19",
+  "status": "verified",
+  "inputs": [
+   {
+    "name": "spend_road",
+    "unit": "$",
+    "origin": "printed",
+    "literal": "20,000",
+    "locale": "dp",
+    "value": "20000",
+    "sigDigits": 1
+   },
+   {
+    "name": "spend_air",
+    "unit": "$",
+    "origin": "printed",
+    "literal": "30,000",
+    "locale": "dp",
+    "value": "30000",
+    "sigDigits": 1
+   },
+   {
+    "name": "spend_sea",
+    "unit": "$",
+    "origin": "printed",
+    "literal": "40,000",
+    "locale": "dp",
+    "value": "40000",
+    "sigDigits": 1
+   },
+   {
+    "name": "spend_total",
+    "unit": "$",
+    "origin": "derived",
+    "value": "90000",
+    "basis": "sum of the three spends"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "total",
+    "unit": "kg CO2e",
+    "origin": "printed",
+    "literal": "7,300",
+    "locale": "dp",
+    "value": "7300",
+    "sigDigits": 2,
+    "boundary": "not_stated",
+    "gwp_set": "not_stated"
+   },
+   {
+    "name": "total_if_read_as_intensity",
+    "unit": "kg CO2e",
+    "origin": "derived",
+    "value": "657000000",
+    "basis": "7,300 read as kg CO2e per $, multiplied by the total spend",
+    "boundary": "not_stated",
+    "gwp_set": "not_stated"
+   },
+   {
+    "name": "resolved_unit",
+    "unit": "unit",
+    "origin": "derived",
+    "text": "kg CO2e",
+    "basis": "an amount, being the sum of three amounts",
+    "boundary": "not_stated",
+    "gwp_set": "not_stated"
+   }
+  ],
+  "relations": [
+   {
+    "type": "sum",
+    "terms": [
+     "spend_road",
+     "spend_air",
+     "spend_sea"
+    ],
+    "total": "spend_total"
+   },
+   {
+    "type": "product",
+    "factors": [
+     "total",
+     "spend_total"
+    ],
+    "result": "total_if_read_as_intensity"
+   }
+  ],
+  "traps": [
+   {
+    "what": "A total printed per dollar is an amount: reading it as an intensity and applying it to spend again gives 657,000,000 kg CO2e.",
+    "wrong_value": "657000000"
+   }
+  ],
+  "disagreements": [],
+  "id": "A2",
+  "kind": "adversarial",
+  "framework": "ghg_protocol_scope3",
+  "framework_version": "Technical Guidance (2013), Category 4",
+  "categories": {
+   "scope3_category": "4",
+   "method": "spend"
+  },
+  "checks": [
+   {
+    "doc": "ghgp_cat4",
+    "page": 18,
+    "folio": "66",
+    "section": "Example 4.4 total",
+    "tokens": [
+     "20,000 × 0.04",
+     "30,000 × 0.15",
+     "40,000 × 0.05",
+     "800 + 4,500 + 2,000",
+     "7,300 kg CO2e/$"
+    ]
+   }
+  ]
+ },
+ {
+  "illustrative": false,
+  "state": "ok",
+  "flags": [
+   "truncated_intermediate"
+  ],
+  "retrieved": "2026-10-19",
+  "status": "verified",
+  "inputs": [
+   {
+    "name": "charge",
+    "unit": "kg",
+    "origin": "printed",
+    "literal": "5.5",
+    "locale": "dp",
+    "value": "5.5",
+    "sigDigits": 2
+   },
+   {
+    "name": "leak",
+    "unit": "%",
+    "origin": "printed",
+    "literal": "32.5",
+    "locale": "dp",
+    "value": "32.5",
+    "sigDigits": 3
+   }
+  ],
+  "outputs": [
+   {
+    "name": "loss_exact",
+    "unit": "kg",
+    "origin": "printed",
+    "literal": "1.7875",
+    "locale": "dp",
+    "value": "1.7875",
+    "sigDigits": 5,
+    "boundary": "not_stated",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "loss_published",
+    "unit": "kg",
+    "origin": "printed",
+    "literal": "1.787",
+    "locale": "dp",
+    "value": "1.787",
+    "sigDigits": 4,
+    "rounded": true,
+    "boundary": "not_stated",
+    "gwp_set": "not_applicable"
+   }
+  ],
+  "relations": [
+   {
+    "type": "product",
+    "factors": [
+     "charge",
+     "leak"
+    ],
+    "result": "loss_exact",
+    "scale": 0.01
+   },
+   {
+    "type": "product",
+    "factors": [
+     "charge",
+     "leak"
+    ],
+    "result": "loss_published",
+    "scale": 0.01
+   }
+  ],
+  "traps": [
+   {
+    "what": "One document prints the same intermediate as 1.7875 and as 1.787 (a truncation, not a rounding): rounding the longer to 1.788 would match neither, and comparison is within half a unit of the last published digit.",
+    "wrong_value": "1.788"
+   }
+  ],
+  "disagreements": [],
+  "id": "A3",
+  "kind": "adversarial",
+  "framework": "glec",
+  "framework_version": "3.0",
+  "recheck_against": "3.2",
+  "checks": [
+   {
+    "doc": "glec_v3_0",
+    "page": 101,
+    "folio": "101",
+    "section": "Module 3 refrigerant loss defaults",
+    "tokens": [
+     "5.5 kg",
+     "32.5%",
+     "1.7875 kg"
+    ]
+   },
+   {
+    "doc": "glec_v3_0",
+    "page": 106,
+    "folio": "106",
+    "section": "Module 4 refrigerant example",
+    "tokens": [
+     "1.787 kg"
+    ]
+   }
+  ]
+ },
+ {
+  "illustrative": false,
+  "state": "ok",
+  "flags": [
+   "source_rounding"
+  ],
+  "retrieved": "2026-10-19",
+  "status": "verified",
+  "inputs": [
+   {
+    "name": "direct",
+    "unit": "t CO2",
+    "origin": "printed",
+    "literal": "125 000",
+    "locale": "dc",
+    "value": "125000",
+    "sigDigits": 3
+   },
+   {
+    "name": "attr_grey",
+    "unit": "t CO2",
+    "origin": "printed",
+    "literal": "40 976,5",
+    "locale": "dc",
+    "value": "40976.5",
+    "sigDigits": 6,
+    "rounded": true
+   },
+   {
+    "name": "attr_white",
+    "unit": "t CO2",
+    "origin": "printed",
+    "literal": "33 816,4",
+    "locale": "dc",
+    "value": "33816.4",
+    "sigDigits": 6,
+    "rounded": true
+   },
+   {
+    "name": "attr_mixed",
+    "unit": "t CO2",
+    "origin": "printed",
+    "literal": "50 207,0",
+    "locale": "dc",
+    "value": "50207.0",
+    "sigDigits": 6,
+    "rounded": true
+   }
+  ],
+  "outputs": [
+   {
+    "name": "attr_sum",
+    "unit": "t CO2",
+    "origin": "derived",
+    "value": "124999.9",
+    "basis": "sum of the three printed attributed figures",
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   }
+  ],
+  "relations": [
+   {
+    "type": "sum",
+    "terms": [
+     "attr_grey",
+     "attr_white",
+     "attr_mixed"
+    ],
+    "total": "attr_sum"
+   },
+   {
+    "type": "sum",
+    "terms": [
+     "attr_grey",
+     "attr_white",
+     "attr_mixed"
+    ],
+    "total": "direct"
+   }
+  ],
+  "traps": [
+   {
+    "what": "The printed attributed figures sum to 124 999,9, not the 125 000 they were attributed from: a rounding artefact the validator must accept within the operands' rounding, not refuse.",
+    "wrong_value": "124 999,9"
+   }
+  ],
+  "disagreements": [],
+  "id": "A4",
+  "kind": "adversarial",
+  "framework": "eu_cbam",
+  "framework_version": "Guidance Document 3 (2026-08-14)",
+  "checks": [
+   {
+    "doc": "cbam_guidance_3",
+    "page": 43,
+    "folio": "43",
+    "section": "Section 4.3.3 attributed emissions",
+    "tokens": [
+     "40 976,5 0,820",
+     "33 816,4 0,845",
+     "50 207,0 0,837"
+    ]
+   },
+   {
+    "doc": "cbam_guidance_3",
+    "page": 42,
+    "folio": "42",
+    "section": "Section 4.3.3 assumptions",
+    "tokens": [
+     "125 000 t CO2"
+    ]
+   }
+  ]
+ },
+ {
+  "illustrative": false,
+  "state": "ok",
+  "flags": [
+   "extraction_loss"
+  ],
+  "retrieved": "2026-10-19",
+  "status": "verified",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "required_cii_formula",
+    "unit": "formula",
+    "origin": "derived",
+    "text": "(1 - Z/100) x CII_R",
+    "basis": "restored: the text layer drops the minus sign and the product sign",
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   }
+  ],
+  "relations": [],
+  "traps": [
+   {
+    "what": "The text layer reads the formula as (1 Z / 100) u C II R: the minus and the product sign are lost. A parser that cannot restore the operators must flag extraction_loss rather than emit a formula.",
+    "wrong_value": "1 Z / 100"
+   }
+  ],
+  "disagreements": [],
+  "id": "A5",
+  "kind": "adversarial",
+  "framework": "imo_cii",
+  "framework_version": "MEPC.338(76) G3",
+  "checks": [
+   {
+    "doc": "imo_mepc338_76",
+    "page": 4,
+    "folio": "4",
+    "section": "Required annual operational CII formula",
+    "tokens": [
+     "Z / 100"
+    ]
+   }
+  ]
+ },
+ {
+  "illustrative": false,
+  "state": "ok",
+  "flags": [
+   "mixed_locale_in_document"
+  ],
+  "retrieved": "2026-10-19",
+  "status": "verified",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "etw_20",
+    "unit": "t/TEU",
+    "origin": "printed",
+    "literal": "1,95",
+    "locale": "dc",
+    "value": "1.95",
+    "sigDigits": 3,
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "etw_40",
+    "unit": "t/FEU",
+    "origin": "printed",
+    "literal": "3,9",
+    "locale": "dc",
+    "value": "3.9",
+    "sigDigits": 2,
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "hc_40_range",
+    "unit": "t/FEU",
+    "origin": "printed",
+    "text": "4,0-5,2",
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "flat_20",
+    "unit": "t/TEU",
+    "origin": "printed",
+    "literal": "2,7",
+    "locale": "dc",
+    "value": "2.7",
+    "sigDigits": 2,
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "flat_40",
+    "unit": "t/FEU",
+    "origin": "printed",
+    "literal": "4,2",
+    "locale": "dc",
+    "value": "4.2",
+    "sigDigits": 2,
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "reefer_40",
+    "unit": "t/FEU",
+    "origin": "printed",
+    "literal": "4.5",
+    "locale": "dp",
+    "value": "4.5",
+    "sigDigits": 2,
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   }
+  ],
+  "relations": [],
+  "traps": [
+   {
+    "what": "One table prints a decimal comma on five rows and a decimal point on the sixth (4.5): a locale decided per document alone mis-reads one row, per token mis-reads the others.",
+    "wrong_value": "45"
+   },
+   {
+    "what": "4,0-5,2 is a range, not a thousands group.",
+    "wrong_value": "40"
+   }
+  ],
+  "disagreements": [],
+  "id": "A6",
+  "kind": "adversarial",
+  "framework": "ecotransit_world",
+  "framework_version": "4.1 (2026)",
+  "checks": [
+   {
+    "doc": "ecotransit_41",
+    "page": 29,
+    "folio": "28",
+    "section": "Table 3 container empty weights",
+    "tokens": [
+     "1,95 t/TEU",
+     "3,9 t/FEU",
+     "4,0-5,2 t/FEU",
+     "2,7 t/TEU",
+     "4,2 t/FEU",
+     "4.5 t/FEU"
+    ]
+   }
+  ]
+ },
+ {
+  "illustrative": false,
+  "state": "ok",
+  "flags": [
+   "typed_missing"
+  ],
+  "retrieved": "2026-10-19",
+  "status": "verified",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "nh3_co2",
+    "unit": "g CO2/g fuel",
+    "origin": "printed",
+    "literal": "0",
+    "locale": "dc",
+    "value": "0",
+    "sigDigits": 1,
+    "boundary": "TTW",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "nh3_ch4",
+    "unit": "g CH4/g fuel",
+    "origin": "printed",
+    "literal": "N/A",
+    "missing": "N/A",
+    "boundary": "TTW",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "nh3_n2o",
+    "unit": "g N2O/g fuel",
+    "origin": "printed",
+    "literal": "TBM",
+    "missing": "TBM",
+    "boundary": "TTW",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "nh3_cj",
+    "unit": "% of fuel mass",
+    "origin": "printed",
+    "literal": "N/A",
+    "missing": "N/A",
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   }
+  ],
+  "relations": [],
+  "traps": [
+   {
+    "what": "One row holds a real zero (CO2 of fossil ammonia) beside N/A, TBM and N/A: the zero is a value, the others are typed missing and must never become 0.",
+    "wrong_value": "0"
+   }
+  ],
+  "disagreements": [],
+  "id": "A7",
+  "kind": "adversarial",
+  "framework": "eu_mrv",
+  "framework_version": "Annex I C(2023) 6728 final",
+  "checks": [
+   {
+    "doc": "mrv_annex_council",
+    "page": 6,
+    "folio": "4",
+    "section": "Part A point 2, ammonia row",
+    "tokens": [
+     "NH3 (fossil) 0 N/A TBM N/A"
+    ]
+   }
+  ]
+ }
+]

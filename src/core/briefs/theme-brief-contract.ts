@@ -2,12 +2,13 @@
 // The theme-brief contract: the five sections, their ceilings, the surface headings, and the validator of one authored entry against the theme's LIVE material. A figure or acronym in a section is
 // allowed only inside a listed claim's text, a labelled analysis paragraph, a heading, a member title or a gap description; a claim must name a grounded claim of a live member. Pure: the caller loads the material.
 import { computeMemberHash } from "@/core/flywheel/themes";
+import { findFigures, isFigure, stateFigure } from "@/core/parse";
 
-export const THEME_BRIEF_SECTIONS = ["connection", "meaning", "ramifications", "watch", "gaps"] as const;
+const THEME_BRIEF_SECTIONS = ["connection", "meaning", "ramifications", "watch", "gaps"] as const;
 export type ThemeSection = (typeof THEME_BRIEF_SECTIONS)[number];
-export const SECTION_HEADINGS: Readonly<Record<ThemeSection, string>> = { connection: "Connection", meaning: "What it means", ramifications: "Ramifications", watch: "Watch", gaps: "Gaps" };
-export const SECTION_CEILINGS: Readonly<Record<ThemeSection, number>> = { connection: 2000, meaning: 2500, ramifications: 5000, watch: 3000, gaps: 1500 };
-export const TITLE_CEILING = 160;
+const SECTION_HEADINGS: Readonly<Record<ThemeSection, string>> = { connection: "Connection", meaning: "What it means", ramifications: "Ramifications", watch: "Watch", gaps: "Gaps" };
+const SECTION_CEILINGS: Readonly<Record<ThemeSection, number>> = { connection: 2000, meaning: 2500, ramifications: 5000, watch: 3000, gaps: 1500 };
+const TITLE_CEILING = 160;
 /** connection_themes.surfaces value to the heading a ramifications subsection uses for it. */
 export const SURFACE_HEADING: Readonly<Record<string, string>> = { regulations: "Regulations", market: "Market Intel", research: "Research", operations: "Operations" };
 
@@ -18,8 +19,8 @@ const ANALYSIS_LABEL_RE = /^\s*(?:[-*]\s+|\d+[.)]\s+)?[*_]{0,3}(?:Analytical inf
 const LABEL_WORDS = new Set(["ACTION", "REQUIRED", "COST", "ALERT", "WINDOW", "CLOSING", "COMPETITIVE", "EDGE", "MONITORING", "FACT", "ANALYSIS", "LEGAL", "GAP", "NOT", "AND", "THE", "FOR"]);
 
 type Obj = Record<string, unknown>;
-export const isObj = (x: unknown): x is Obj => x !== null && typeof x === "object" && !Array.isArray(x);
-export const nonEmptyStr = (x: unknown): x is string => typeof x === "string" && x.trim().length > 0;
+const isObj = (x: unknown): x is Obj => x !== null && typeof x === "object" && !Array.isArray(x);
+const nonEmptyStr = (x: unknown): x is string => typeof x === "string" && x.trim().length > 0;
 const escapeRe = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /** Every [start, end) range where `needle` occurs in `text`, whitespace-flexible. */
@@ -68,7 +69,7 @@ export function figureTokens(text: unknown): Set<string> {
 
 export interface Cover { claimTexts?: string[]; memberTitles?: string[]; gapDescriptions?: string[]; allowedTokens?: ReadonlySet<string> | null }
 /** The figure tokens of `text` that no listed claim, labelled analysis block, heading, member title, gap description or edge-basis token covers. Limits: a fact written without digits or an acronym is not detected. */
-export function findUncitedFigures(text: unknown, cover: Cover = {}): string[] {
+function findUncitedFigures(text: unknown, cover: Cover = {}): string[] {
   if (typeof text !== "string" || !text) return [];
   const covered = [...exemptBlockRanges(text)];
   for (const c of cover.claimTexts ?? []) covered.push(...rangesOf(text, c));
@@ -105,15 +106,28 @@ export function parseRamifications(text: string): { subs: Map<string, string>; p
   return { subs, problems };
 }
 
+/**
+ * Does the grounded text behind a listed claim cover what the author wrote? It returns the figures of `listed` (typed, read whole by R2a's parser) that none of the `grounded` texts states as the SAME quantity by
+ * R2a's one comparator (empty: covered). A figure that cannot be read fails closed: it is returned, never assumed covered.
+ */
+export type ClaimComparator = (listed: string, grounded: readonly string[]) => string[];
+export const figureCoverage: ClaimComparator = (listed, grounded) => {
+  const text = grounded.join(" ");
+  return findFigures(listed).flatMap((hit) => (isFigure(hit.result) && stateFigure(text, hit.result) ? [] : [hit.result.literal]));
+};
+
 export interface ThemeContext {
   themesById: Map<string, { id: string; member_ids: string[]; surfaces: string[] }>;
   membersById: Map<string, { title?: string | null; claim_ids: Set<string>; event_ids: Set<string> }>;
+  /** claim or forward-event id to the grounded texts behind it (the claim text and its verbatim span; an event's obligation text, date and span). */
+  groundedText: ReadonlyMap<string, readonly string[]>;
+  comparator: ClaimComparator;
   gapsByTheme?: Map<string, { description: string }[]>;
   basisTokensByTheme?: Map<string, Set<string>>;
 }
 
 /** Validate ONE entry: the refusal reasons (empty means valid). */
-export function validateThemeBriefEntry(entry: unknown, i: number, ctx: ThemeContext): string[] {
+function validateThemeBriefEntry(entry: unknown, i: number, ctx: ThemeContext): string[] {
   const where = `entry ${i}`;
   if (!isObj(entry)) return [`${where}: not an object`];
   if (!nonEmptyStr(entry.theme_id)) return [`${where}: theme_id is missing`];
@@ -173,6 +187,8 @@ export function validateThemeBriefEntry(entry: unknown, i: number, ctx: ThemeCon
       if (!member) return void errs.push(`${ct}: member ${c.member_id} has no loaded claims, cannot verify claim_ids`);
       if (!Array.isArray(c.claim_ids) || c.claim_ids.length === 0) return void errs.push(`${ct}: claim_ids must be a non-empty array`);
       for (const id of c.claim_ids) if (typeof id !== "string" || !(member.claim_ids.has(id) || (section === "watch" && member.event_ids.has(id)))) errs.push(`${ct}: claim id ${JSON.stringify(id)} is not a grounded claim of member ${c.member_id}${section === "watch" ? " (or one of its forward events)" : ""}`);
+      const unbacked = ctx.comparator(c.text, c.claim_ids.flatMap((id: unknown) => (typeof id === "string" ? [...(ctx.groundedText.get(id) ?? [])] : [])));
+      if (unbacked.length) errs.push(`${ct}: the listed text states ${unbacked.slice(0, 4).map((tok) => JSON.stringify(tok)).join(", ")} that none of its cited grounded claims states`);
     });
   }
 
@@ -190,11 +206,37 @@ export function validateThemeBriefEntry(entry: unknown, i: number, ctx: ThemeCon
 }
 
 /** brief_md: the title, then the sections in order under fixed headings. An empty gaps section is omitted. */
-export function renderBriefMd(entry: { title: string; sections: Partial<Record<ThemeSection, unknown>> }): string {
+function renderBriefMd(entry: { title: string; sections: Partial<Record<ThemeSection, unknown>> }): string {
   const parts = [`# ${entry.title.trim()}`];
   for (const k of THEME_BRIEF_SECTIONS) {
     const body = String(entry.sections[k] ?? "").trim();
     if (body) parts.push(`## ${SECTION_HEADINGS[k]}\n\n${body}`);
   }
   return `${parts.join("\n\n")}\n`;
+}
+
+// ---- the only way to a writable brief ------------------------------------------------------------------------------------------------------------------------------
+declare const VALIDATED: unique symbol;
+/** An entry that passed validateThemeBriefEntry against the theme's LIVE material. applyThemeBrief accepts nothing else, and the type cannot be built outside parseThemeBriefEntry. */
+export interface ValidThemeBrief {
+  readonly [VALIDATED]: true;
+  readonly theme_id: string;
+  readonly member_hash: string;
+  readonly title: string;
+  readonly brief_md: string;
+  readonly sections: Readonly<Record<ThemeSection, string>>;
+  readonly claims: readonly unknown[];
+}
+const validated = new WeakSet<object>();
+/** True only for an object parseThemeBriefEntry returned: a runtime check behind the compile-time brand, so a cast cannot forge one. */
+export const isValidThemeBrief = (x: unknown): x is ValidThemeBrief => typeof x === "object" && x !== null && validated.has(x);
+
+/** Validate ONE entry and, when it passes, hand back the branded brief to write. Batch and single payload both come here: there is no other route to the writer. */
+export function parseThemeBriefEntry(entry: unknown, i: number, ctx: ThemeContext): { ok: true; brief: ValidThemeBrief } | { ok: false; errors: string[] } {
+  const errors = validateThemeBriefEntry(entry, i, ctx);
+  if (errors.length || !isObj(entry)) return { ok: false, errors };
+  const sections = entry.sections as Record<ThemeSection, string>;
+  const brief = Object.freeze({ theme_id: String(entry.theme_id), member_hash: String(entry.member_hash), title: String(entry.title).trim(), brief_md: renderBriefMd({ title: String(entry.title), sections }), sections, claims: entry.claims as unknown[] }) as unknown as ValidThemeBrief;
+  validated.add(brief);
+  return { ok: true, brief };
 }

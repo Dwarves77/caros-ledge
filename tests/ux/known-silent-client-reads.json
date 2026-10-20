@@ -1,0 +1,41 @@
+{
+  "note": "Reads the client sweep (tests/ux/client-sweep.mjs, run by the UX smokes) found that a screen draws without a stated failure (INV-263). The sweep requires this register to equal its silent set exactly: a new silent read fails the smoke, and a fixed one must leave this file. Each entry is a finding with a status token (rule 14) and the slice that owes the fix.",
+  "screens": {
+    "dashboard": {
+      "GET /api/watchlist": {
+        "status": "CONFIRMED",
+        "owner": "R2d (surfaces showing failed values)",
+        "finding": "S:38, reproduced by the client sweep (G5, 2026-10-19): open the dashboard fixture's row actions menu with GET /api/watchlist answered 503. The Watch toggle stays disabled with its normal tooltip and the screen gains no failure sentence and no Retry: a failed membership read is drawn as a dead control (INV-263)."
+      }
+    },
+    "settings": {
+      "rest notification_preferences": {
+        "status": "CONFIRMED",
+        "owner": "R2d (surfaces showing failed values)",
+        "finding": "Reproduced by the client sweep (G5, 2026-10-19): the settings fixture with the notification_preferences read answered 503 stays on \"Loading notification preferences...\" after the network is quiet: a failed read is drawn as a loading state that never ends, with no failure sentence and no Retry (INV-263, class I8)."
+      },
+      "rest workspace_settings": {
+        "status": "CONFIRMED",
+        "owner": "R2d (surfaces showing failed values)",
+        "finding": "Reproduced by the client sweep (G5, 2026-10-19): the settings fixture with the workspace_settings read answered 503 stays on \"Loading settings...\" in four cards and reads \"0 SELECTED\" for the alert bands: a failed read is drawn as a loading state that never ends and a zero, with no failure sentence and no Retry (INV-263, class I8)."
+      }
+    },
+    "account": {
+      "rest org_memberships": {
+        "status": "CONFIRMED",
+        "owner": "R2d (surfaces showing failed values)",
+        "finding": "Reproduced by the client sweep (G5, 2026-10-19): the account fixture with the org_memberships read answered 503 drops \"member since\" and the counts, stays on \"Loading profile...\", and prints \"No highlighted niches yet\" and dashes: a failed read is drawn as empty values, with no failure sentence and no Retry (INV-263, class I8)."
+      },
+      "rest profiles": {
+        "status": "CONFIRMED",
+        "owner": "R2d (surfaces showing failed values)",
+        "finding": "Reproduced by the client sweep (G5, 2026-10-19): the account fixture with the profiles read answered 503 stays on \"Loading profile...\", and prints \"No highlighted niches yet\" and dashes: a failed read is drawn as empty values, with no failure sentence and no Retry (INV-263, class I8)."
+      },
+      "rest workspace_settings": {
+        "status": "CONFIRMED",
+        "owner": "R2d (surfaces showing failed values)",
+        "finding": "Reproduced by the client sweep (G5, 2026-10-19): the account fixture with the workspace_settings read answered 503 stays on \"Loading profile...\", and prints \"No highlighted niches yet\" and dashes: a failed read is drawn as empty values, with no failure sentence and no Retry (INV-263, class I8)."
+      }
+    }
+  }
+}

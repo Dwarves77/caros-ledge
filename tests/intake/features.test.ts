@@ -1,36 +1,35 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { MINT_OK, applyStagedUpdate, consumePortalCandidates, drainChangeSweepUpdates, isSubstantiveUpdate, persistPortalCandidates, runIntakeCycle, runParticipation, selectCandidateLedgerPage, stageCandidate } from "@/features/intake";
+import { MINT_OK, applyStagedUpdate, consumePortalCandidates, drainChangeSweepUpdates, persistPortalCandidates, runIntakeCycle, runParticipation, selectCandidateLedgerPage, stageCandidate } from "@/features/intake";
 import { applyPromoteCap, buildCandidateSeed } from "@/features/intake/portal-ledger";
-import { CHANGE_SWEEP_STAGED_MARKER, UPDATE_ITEM_ALLOWLIST, isRootUrl, splitNewItemSeed } from "@/features/intake/staged-transit";
+import { CHANGE_SWEEP_STAGED_MARKER } from "@/features/intake/staged-transit";
 
 import { ITEM, OFFICIAL_TEXT, OFFICIAL_URL, SOURCE, SPAN_REPORT, makeWorld } from "./fixtures.ts";
 
 const pending = (over: Record<string, unknown> = {}) => ({ update_type: "update_item", status: "pending", reason: `${CHANGE_SWEEP_STAGED_MARKER} source changed`, item_id: ITEM, proposed_changes: {}, created_at: "2026-10-01T00:00:00Z", ...over });
 
 test("INV-170: a portal root or landing URL is a source, not an item: it never reaches the mint", async () => {
-  for (const url of ["https://agency.test", "https://agency.test/", "https://agency.test/en", "https://agency.test/index.html", "https://agency.test/portal"]) assert.equal(isRootUrl(url), true, url);
-  for (const url of ["https://agency.test/rules/2026-04", "https://agency.test/en?id=4", "https://agency.test/a/b"]) assert.equal(isRootUrl(url), false, url);
-  assert.equal(isRootUrl("not a url"), false);
   const { deps, rec } = makeWorld();
-  const r = await applyStagedUpdate(deps, { update_type: "new_item", proposed_changes: { title: "Portal", source_url: "https://agency.test/", item_type: "regulation" } });
-  assert.equal(r.success, false);
-  assert.match(r.error ?? "", /entity-gate/);
-  assert.equal(rec.mints.length, 0, "the mint was never called");
+  const gate = (url: string) => applyStagedUpdate(deps, { update_type: "new_item", proposed_changes: { title: "Portal", source_url: url, item_type: "regulation" } });
+  for (const url of ["https://agency.test", "https://agency.test/", "https://agency.test/en", "https://agency.test/index.html", "https://agency.test/portal"]) {
+    const r = await gate(url);
+    assert.equal(r.success, false, url);
+    assert.match(r.error ?? "", /entity-gate/, url);
+  }
+  assert.equal(rec.mints.length, 0, "the mint was never called for a portal root");
+  for (const url of ["https://agency.test/rules/2026-04", "https://agency.test/en?id=4", "https://agency.test/a/b", "not a url"]) assert.doesNotMatch((await gate(url)).error ?? "", /entity-gate/, url);
+  assert.equal(rec.mints.length, 4, "a deep path is a specific document: it reaches the mint");
 });
 
 test("INV-170: the chokepoint-only inputs (relevance, capturedText, key_deadlines, source_name, authority_level) never reach the seed; relevance travels beside it", async () => {
   const proposed = { title: "T", source_url: "https://agency.test/rules/1", item_type: "regulation", relevance: 12, capturedText: "text", key_deadlines: ["x"], source_name: "S", authority_level: "gov", legacy_id: "L-1" };
-  const split = splitNewItemSeed(proposed);
-  assert.deepEqual(Object.keys(split.seed).sort(), ["item_type", "legacy_id", "source_url", "title"]);
-  assert.equal(split.relevance, 12);
   const { deps, rec } = makeWorld();
   const r = await applyStagedUpdate(deps, { update_type: "new_item", proposed_changes: proposed });
   assert.equal(r.success, true);
   const call = rec.mints[0];
   assert.ok(call);
-  for (const k of ["relevance", "capturedText", "key_deadlines", "source_name", "authority_level"]) assert.ok(!(k in call.input.seed), `${k} stripped before the seed`);
+  assert.deepEqual(Object.keys(call.input.seed).sort(), ["item_type", "legacy_id", "source_url", "title"], "only columns reach the seed");
   assert.equal(call.input.relevance, 12);
   assert.equal(call.input.legacyId, "L-1");
   assert.equal(call.input.origin, "staged_materialization");
@@ -42,7 +41,11 @@ test("INV-170: the chokepoint-only inputs (relevance, capturedText, key_deadline
 
 test("proof 4 / B-0059: update_item writes ONLY allowlisted columns; provenance-adjacent columns and an empty patch are refused", async () => {
   const { db, deps } = makeWorld();
-  for (const col of ["provenance_status", "item_grade", "full_brief", "source_id", "is_hollow"]) assert.equal(UPDATE_ITEM_ALLOWLIST.has(col), false, `${col} is not allowlisted`);
+  for (const col of ["provenance_status", "item_grade", "full_brief", "source_id", "is_hollow"]) {
+    const refused = await applyStagedUpdate(deps, { update_type: "update_item", item_id: ITEM, proposed_changes: { [col]: "x" } });
+    assert.equal(refused.success, false, col);
+    assert.match(refused.error ?? "", /outside the allowlist/, col);
+  }
   const bad = await applyStagedUpdate(deps, { update_type: "update_item", item_id: ITEM, proposed_changes: { title: "New", provenance_status: "verified" } });
   assert.equal(bad.success, false);
   assert.match(bad.error ?? "", /outside the allowlist: provenance_status/);
@@ -57,18 +60,48 @@ test("proof 4 / B-0059: update_item writes ONLY allowlisted columns; provenance-
   assert.equal((await applyStagedUpdate(deps, { update_type: "bogus", proposed_changes: {} })).success, false);
 });
 
+test("D:36: a staged patch is typed before it reaches the item: a wrong type, a value outside the vocabulary, a malformed date and a column off the kind are refused; a source date needs a verbatim span of a capture OF THE ITEM, which the database re-checks", async () => {
+  const { db, deps } = makeWorld();
+  const apply = (changes: Record<string, unknown>, type = "update_item") => applyStagedUpdate(deps, { update_type: type, item_id: ITEM, proposed_changes: changes });
+  const cases: [string, Record<string, unknown>, RegExp][] = [
+    ["a string for an array column", { jurisdiction_iso: "GB" }, /wrong type or outside its vocabulary: jurisdiction_iso/],
+    ["a priority outside the vocabulary", { priority: "URGENT" }, /outside its vocabulary: priority/],
+    ["a malformed date", { next_review_date: "01/02/2027" }, /outside its vocabulary: next_review_date|wrong type/],
+    ["an impossible date", { next_review_date: "2027-02-30" }, /wrong type/],
+    ["a source date with no evidence", { entry_into_force: "2027-01-01" }, /date_evidence\.entry_into_force/],
+    ["a source date with a short span", { entry_into_force: "2027-01-01", date_evidence: { entry_into_force: { capture_id: "a0000000-0000-4000-8000-0000000000c1", span: "2027" } } }, /date_evidence\.entry_into_force/],
+  ];
+  for (const [name, changes, re] of cases) {
+    const r = await apply(changes);
+    assert.equal(r.success, false, name);
+    assert.match(r.error ?? "", re, name);
+  }
+  assert.equal(db.writes("intelligence_items").length, 0, "no refused patch reached the item");
+  assert.equal((await apply({ status: "made_up" }, "status_change")).success, false);
+  assert.equal((await apply({ status: "in_force" }, "status_change")).success, true);
+  assert.equal(db.rows("intelligence_items")[0]?.status, "in_force");
+  const cap = db.rows("agent_run_searches").find((r) => r.intelligence_item_id === ITEM) as Record<string, unknown>;
+  const span = String(cap.result_content).slice(0, 40);
+  const ok = await apply({ entry_into_force: "2027-01-01", date_evidence: { entry_into_force: { capture_id: cap.id, span } } });
+  assert.equal(ok.success, true, ok.error);
+  assert.equal(db.rows("intelligence_items")[0]?.entry_into_force, "2027-01-01");
+  assert.equal(db.rows("intelligence_items")[0]?.date_evidence, undefined, "the evidence is not a column");
+  const lie = await apply({ compliance_deadline: "2028-01-01", date_evidence: { compliance_deadline: { capture_id: cap.id, span: "a sentence the capture does not hold" } } });
+  assert.equal(lie.success, false);
+  assert.match(lie.error ?? "", /no verbatim span in a capture of this item/);
+  assert.equal(db.rows("intelligence_items")[0]?.compliance_deadline, undefined, "the database refused it and wrote nothing");
+  const archived = await apply({ archive_reason: "duplicate" }, "archive_item");
+  assert.equal(archived.success, true);
+  assert.equal(db.rows("intelligence_items")[0]?.is_archived, true);
+});
+
 test("INV-172: a substantive update reruns the flywheel steps; a bookkeeping-only or empty change runs none; entities re-link only on jurisdiction or key change", async () => {
-  assert.equal(isSubstantiveUpdate({ title: "x" }), true);
-  assert.equal(isSubstantiveUpdate({ unheard_of_column: 1 }), true, "a deny list: an unknown column counts as substantive");
-  assert.equal(isSubstantiveUpdate({ severity: "monitoring", updated_at: "t" }), false);
-  assert.equal(isSubstantiveUpdate({}), false);
-  assert.equal(isSubstantiveUpdate(null), false);
   const a = makeWorld();
   const sub = await applyStagedUpdate(a.deps, { update_type: "update_item", item_id: ITEM, proposed_changes: { title: "Changed" } });
   assert.deepEqual(a.rec.connects.map((c) => c.split(":")[0]), ["connect", "events", "obligations"], "no entity re-link for a title change");
   assert.ok(sub.flags?.includes("discovery:1"));
   const b = makeWorld();
-  await applyStagedUpdate(b.deps, { update_type: "update_item", item_id: ITEM, proposed_changes: { jurisdiction_iso: "GB" } });
+  await applyStagedUpdate(b.deps, { update_type: "update_item", item_id: ITEM, proposed_changes: { jurisdiction_iso: ["GB"] } });
   assert.ok(b.rec.connects.some((c) => c.startsWith("entities:")), "a jurisdiction change re-links entities");
   const c = makeWorld();
   await applyStagedUpdate(c.deps, { update_type: "update_item", item_id: ITEM, proposed_changes: { severity: "monitoring" } });
