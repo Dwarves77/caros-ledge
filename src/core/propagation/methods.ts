@@ -196,6 +196,7 @@ export function createMethodRegistry(): MethodRegistry {
   // v1 stays registered unchanged (INV-202: the rows it computed stay reproducible); the drain recomputes with the latest version, so a v1 row is re-evaluated by v2 and its successor is written as v2.
   r.register("inference_records", INFER_METHOD_ID, INFER_METHOD_VERSION_V1, computeInferFromQuestion);
   r.register("inference_records", INFER_METHOD_ID, INFER_METHOD_VERSION, reevaluateInference);
+  r.register("item_impact_scores", IMPACT_METHOD_ID, IMPACT_METHOD_VERSION, scoreImpact);
   return r;
 }
 /** The process-wide registry the drain and authorEdges default to. */
