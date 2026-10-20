@@ -6,7 +6,9 @@
   "format": "pdf",
   "licence_keys": [
    "ghgprotocol_org"
-  ]
+  ],
+  "fetch": false,
+  "note": "Automated fetch stopped: the publisher's Terms of Use bar robots, spiders and scrapers (register entry ghgprotocol_org, R2g). The rows keep their locators from the 2026-10-19 read; a person re-checks them."
  },
  "ghgp_cat9": {
   "title": "Technical Guidance for Calculating Scope 3 Emissions, Category 9 Downstream Transportation and Distribution",
@@ -15,7 +17,9 @@
   "format": "pdf",
   "licence_keys": [
    "ghgprotocol_org"
-  ]
+  ],
+  "fetch": false,
+  "note": "Automated fetch stopped: the publisher's Terms of Use bar robots, spiders and scrapers (register entry ghgprotocol_org, R2g). The rows keep their locators from the 2026-10-19 read; a person re-checks them."
  },
  "glec_v3_0": {
   "title": "GLEC Framework for Logistics Emissions Accounting and Reporting v3.0",
