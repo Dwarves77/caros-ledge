@@ -6,6 +6,7 @@
 // Usage: node tests/ux/regulations-smoke.mjs --base <origin>     (the server must run with UI_FIXTURES=1)
 import { checkClientReads, SHELL_READS } from './client-sweep.mjs';
 import { chromium, open as openPage, smoke, VIEWPORTS, WIDTHS } from './harness.mjs';
+import { listInvariants } from './list-invariants.mjs';
 import { hitArea, measurePage } from './measure.mjs';
 
 const SCREENS = ['ledger', 'detail', 'record', 'register', 'map'];
@@ -57,6 +58,7 @@ try {
             if (screen === 'map' && /leaflet-/.test(o)) continue;
             fail(where, o);
           }
+          for (const o of await listInvariants(session.page)) fail(where, o);
           for (const e of session.errors) fail(where, `page error: ${e}`);
         } finally {
           await session.ctx.close();
@@ -132,6 +134,14 @@ try {
       }
     });
   }
+
+  // UI-1 U6: "Saved views" is never a bare heading: with none saved the block says so (the views load with the list), and the one read it makes is the mock's.
+  await check('ledger: saved views state their content', () =>
+    session('ledger', async ({ page, state }) => {
+      await page.getByText('No saved views yet.').waitFor({ timeout: 4000 });
+      must(state.calls.includes('GET /api/saved-views'), 'the saved views were not read with the list');
+    }),
+  );
 
   await check('detail: a failed relevance read is said, with Retry, never an empty banner', () =>
     session('detail', async ({ page, state }) => {

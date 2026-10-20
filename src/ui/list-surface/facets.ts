@@ -5,6 +5,7 @@ import { orderedValues } from "@/core/contracts";
 import { BAND_ORDER, bandFromPriority, type UrgencyBandKey } from "@/core/lists";
 import type { Resource } from "@/core/types";
 
+import { facetLabel } from "./facet-labels";
 import { filterRows, isFilterActive, type RowFilterState } from "./filter-sort";
 
 export interface FacetOption {
@@ -24,13 +25,13 @@ function tally(keys: Iterable<string>, label: (k: string) => string = (k) => k):
 }
 
 const facetOptions = {
-  mode: (rows: Resource[]): FacetOption[] => tally(rows.flatMap((r) => (r.modes ?? []).map((m) => m.trim())), (c) => MODE_LABEL[c] ?? c),
-  topic: (rows: Resource[]): FacetOption[] => tally(rows.map((r) => (r.topic ?? "").trim())),
+  mode: (rows: Resource[]): FacetOption[] => tally(rows.flatMap((r) => (r.modes ?? []).map((m) => m.trim())), (c) => MODE_LABEL[c] ?? facetLabel("mode", c)),
+  topic: (rows: Resource[]): FacetOption[] => tally(rows.map((r) => (r.topic ?? "").trim()), (t) => facetLabel("topic", t)),
   tier: (rows: Resource[]): FacetOption[] =>
     tally(rows.filter((r) => r.sourceTier != null).map((r) => String(r.sourceTier)), (t) => `T${t}`).sort((a, b) => Number(a.value) - Number(b.value)),
   /** From the corpus tallies when given, else from the rows (jurisdiction name, "global" when unset). */
   region: (rows: Resource[], byJurisdiction?: Record<string, number>): FacetOption[] =>
-    byJurisdiction && Object.keys(byJurisdiction).length > 0 ? Object.entries(byJurisdiction).map(([value, count]) => ({ value, label: value, count })).sort(byCountThenLabel) : tally(rows.map((r) => (r.jurisdiction || "global").trim())),
+    byJurisdiction && Object.keys(byJurisdiction).length > 0 ? Object.entries(byJurisdiction).map(([value, count]) => ({ value, label: facetLabel("region", value), count })).sort(byCountThenLabel) : tally(rows.map((r) => (r.jurisdiction || "global").trim()), (v) => facetLabel("region", v)),
   band: (rows: Resource[], byPriority?: Record<string, number>): BandFacetOption[] => {
     const counts = new Map<UrgencyBandKey, number>();
     if (!byPriority) for (const r of rows) counts.set(bandFromPriority(r.priority).key, (counts.get(bandFromPriority(r.priority).key) ?? 0) + 1);

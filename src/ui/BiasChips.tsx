@@ -28,13 +28,13 @@ const Chip = ({ c, variant }: { c: DisplayChip; variant: "row" | "detail" }) => 
  * The customer bias display (INV-214): a source's tags in the three dimensions, never for Community content. Row: two chips and a count, no
  * interactive element. Detail: three chips and a disclosure for the rest. Below 0.80 a chip says "lower confidence".
  */
-export function BiasChips({ tags, variant = "row", max, label, wrap = false }: { tags: BiasTagInput[] | null | undefined; variant?: "row" | "detail"; max?: number; label?: string; wrap?: boolean }) {
+export function BiasChips({ tags, variant = "row", max, label }: { tags: BiasTagInput[] | null | undefined; variant?: "row" | "detail"; max?: number; label?: string }) {
   const [open, setOpen] = useState(false);
   const panelId = useId();
   const d = biasChips(tags, max ?? (variant === "row" ? ROW_MAX : DETAIL_MAX));
   if (d.total === 0) return null;
   return (
-    <span data-part="bias-chips" data-part-variant={variant} data-wrap={variant === "row" && wrap ? "true" : undefined} role="group" aria-label="Source bias tags" className={`cl-bias cl-bias--${variant}`}>
+    <span data-part="bias-chips" data-part-variant={variant} role="group" aria-label="Source bias tags" className={`cl-bias cl-bias--${variant}`}>
       {label && <span className="cl-bias-label">{label}</span>}
       {d.shown.map((c) => (
         <Chip key={c.key} c={c} variant={variant} />

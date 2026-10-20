@@ -20,6 +20,7 @@ import { ShellCommandBar } from "@/ui/shell/CommandBar";
 import { SavedViews } from "@/features/saved-views/SavedViews";
 
 import { DismissedStash } from "./DismissedStash";
+import { NextObligationLine } from "./NextObligationLine";
 import { PriorityMenu } from "./PriorityMenu";
 import type { LedgerRow } from "./list-read";
 import { useTagsFacet } from "./useTagsFacet";
@@ -100,13 +101,19 @@ export function RegulationsLedger({ initial, aggregates, hasMore, nowIso, chips,
   // The count is the list's only when the counts read answered, the first page was not the whole of it (no more to come), or the remainder has arrived; otherwise it is what is shown so far.
   const exact = aggregates !== null || !hasMore || remainder.state === "ready";
   const jurisdictions = counts.liveSelection ? counts.region.length : aggregates?.totalJurisdictions || counts.region.length;
-  const next = useMemo(() => active.reduce<{ days: number; label: string; title: string } | null>((best, r) => (((d) => (d && (!best || d.daysNum < best.days) ? { days: d.daysNum, label: d.label, title: r.title } : best))(dueInfo(r, now))), null), [active, now]);
-  const scope = [exact ? `${formatNumber(total)} active` : `${formatNumber(total)} shown, the list is longer`, `${formatNumber(jurisdictions)} jurisdictions`, aggregates?.lastUpdatedAt ? `last sync ${formatLocaleDate(new Date(aggregates.lastUpdatedAt), { month: "short", day: "numeric", timeZone: "UTC" })}` : null, next ? `next obligation ${next.label.replace(/, \d{4}$/, "")} · ${next.title}` : null].filter(Boolean).join(" · ");
+  const next = useMemo(() => active.reduce<{ days: number; label: string; title: string; href: string } | null>((best, r) => (((d) => (d && (!best || d.daysNum < best.days) ? { days: d.daysNum, label: d.label, title: r.title, href: detailHref(r) } : best))(dueInfo(r, now))), null), [active, now]);
+  const scope = [exact ? `${formatNumber(total)} active` : `${formatNumber(total)} shown, the list is longer`, `${formatNumber(jurisdictions)} jurisdictions`, aggregates?.lastUpdatedAt ? `last sync ${formatLocaleDate(new Date(aggregates.lastUpdatedAt), { month: "short", day: "numeric", timeZone: "UTC" })}` : null].filter(Boolean).join(" · ");
+  const dek = (
+    <>
+      {scope}
+      {next && <NextObligationLine label={next.label} title={next.title} href={next.href} />}
+    </>
+  );
 
   return (
     <ListSurface
       title="Regulations"
-      dek={scope}
+      dek={dek}
       dateLabel={formatLocaleDate(now, { weekday: "long", year: "numeric", month: "long", day: "numeric", timeZone: "UTC" })}
       nowIso={nowIso}
       commandBar={<ShellCommandBar placeholder="Search regulations, or ask about one" />}

@@ -10,11 +10,12 @@ import type { UrgencyBand } from "@/core/lists";
 import type { ImpactScores, TimelineEntry } from "@/core/types";
 
 import { Absence } from "./Absence";
-import { pickAbsenceReason, type AbsenceReason } from "./absence-reason";
+import { NEEDS_PHRASE, pickAbsenceReason, type AbsenceReason } from "./absence-reason";
 import { BiasChips } from "./BiasChips";
-import { GradeChip, TagChip, TierChip, WorkspaceTagPill } from "./Chips";
+import { GRADE_SHORT, GradeChip, TagChip, TierChip, WorkspaceTagPill } from "./Chips";
 import { ImpactMeter } from "./ImpactMeter";
 import { isImpactScored } from "./impact";
+import { biasSummary } from "./bias-summary";
 import { MilestoneTimeline } from "./MilestoneTimeline";
 
 export interface ListRowProps {
@@ -38,7 +39,7 @@ export interface ListRowProps {
 }
 
 /**
- * The list row: spine, jurisdiction, title with a meta line (kind, grade, meta text, the ONE absence reason, bias chips, tags), impact, due with days,
+ * The list row: spine, jurisdiction, title with a meta line (kind, grade, meta text, the ONE absence reason, bias chips, tags; on the phone one line: grade, absence, bias as muted text), impact, due with days,
  * timeline, tier and a 44 px overflow cell. The whole row is one link. Phone, tablet, mid and wide layouts and the narrow-box reflow are in base.css.
  */
 export function ListRow({ href, band, jurisdiction, title, meta, kind, impact, due, timeline, tier, overflow, tags, biasTags, itemGrade, minHeight = 56 }: ListRowProps) {
@@ -46,6 +47,7 @@ export function ListRow({ href, band, jurisdiction, title, meta, kind, impact, d
   const isRecord = itemGrade === "record";
   const rowAbsence: AbsenceReason | null = pickAbsenceReason([tier == null ? "not in primary source" : null, !due || !isImpactScored(impact) ? "pending" : null]);
   const hasTags = !!tags && tags.length > 0;
+  const phoneBias = hasBias ? biasSummary(biasTags, (rowAbsence ? NEEDS_PHRASE[rowAbsence].length : 0) + (isRecord ? GRADE_SHORT.length + 1 : 0)) : [];
   return (
     <div className="cl-list-row" data-part="list-row" data-part-variant="list" style={{ minHeight, ["--row-band" as string]: band.cssVar }}>
       <span className="cl-row-spine" aria-hidden="true" style={{ background: band.cssVar }} />
@@ -61,7 +63,7 @@ export function ListRow({ href, band, jurisdiction, title, meta, kind, impact, d
               <span className="cl-row-meta-tags">
                 {kind && <TagChip variant="row">{kind}</TagChip>}
                 {isRecord && (
-                  <span className="cl-row-grade-desktop">
+                  <span className="cl-row-grade">
                     <GradeChip itemGrade={itemGrade} />
                   </span>
                 )}
@@ -69,6 +71,11 @@ export function ListRow({ href, band, jurisdiction, title, meta, kind, impact, d
                 {rowAbsence && (
                   <span className="cl-row-absence-slot">
                     <Absence reason={rowAbsence} />
+                  </span>
+                )}
+                {phoneBias.length > 0 && (
+                  <span className="cl-row-meta-mobile" title="Source bias tags">
+                    {phoneBias.join(" · ")}
                   </span>
                 )}
                 {hasBias && (
@@ -88,11 +95,6 @@ export function ListRow({ href, band, jurisdiction, title, meta, kind, impact, d
           </span>
         </div>
         <div className="cl-row-line2">
-          {isRecord && (
-            <span className="cl-row-grade-mobile">
-              <GradeChip itemGrade={itemGrade} />
-            </span>
-          )}
           <span className="cl-row-impact">
             <ImpactMeter scores={impact} />
           </span>
@@ -117,11 +119,6 @@ export function ListRow({ href, band, jurisdiction, title, meta, kind, impact, d
               {tags.map((t) => (
                 <WorkspaceTagPill key={`m-${t.id}`} name={t.name} {...(t.title ? { title: t.title } : {})} />
               ))}
-            </span>
-          )}
-          {hasBias && (
-            <span className="cl-row-bias-mobile">
-              <BiasChips tags={biasTags} variant="row" wrap />
             </span>
           )}
           <span className="cl-row-overflow">{overflow}</span>

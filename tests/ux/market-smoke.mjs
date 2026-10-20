@@ -5,6 +5,7 @@
 // Usage: node tests/ux/market-smoke.mjs --base <origin>     (the server must run with UI_FIXTURES=1)
 import { checkClientReads, SHELL_READS } from './client-sweep.mjs';
 import { chromium, open as openPage, smoke, VIEWPORTS, WIDTHS } from './harness.mjs';
+import { listInvariants } from './list-invariants.mjs';
 import { measurePage } from './measure.mjs';
 
 const run = smoke('market-smoke');
@@ -42,6 +43,7 @@ try {
         const s = await open(browser, path, viewport);
         try {
           for (const o of await measurePage(s.page, { rows: false })) fail(where, o);
+          for (const o of await listInvariants(s.page)) fail(where, o);
           for (const e of s.errors) fail(where, `page error: ${e}`);
         } finally {
           await s.ctx.close();
@@ -58,6 +60,27 @@ try {
     ensure(tiers === cards, `every headline figure shows its source rating: ${tiers} of ${cards}`);
     ensure((await s.page.locator('[data-audit="headline-track"]').getAttribute('data-guard-strip')) !== null, 'the headline strip is a declared strip');
     ensure((await s.page.locator('details[open]').count()) === 0, 'every disclosure is closed by default');
+    await s.ctx.close();
+  });
+
+  // UI-1 U9: the headline cards and the freshness notice write their data labels and absences in sentence case; the eyebrow and the title above the grid are the only capitals.
+  await check('headline labels are sentence case', async () => {
+    const s = await open(browser, '/privacy/ui-fixtures/market', [1280, 800]);
+    const shouted = await s.page.evaluate(() => {
+      const out = [];
+      for (const root of document.querySelectorAll('[data-audit="headline-card"], [data-audit="series-freshness-panel"], [data-audit="headline-series"] > div > span')) {
+        const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+        for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+          const t = (n.textContent || '').trim();
+          const shown = getComputedStyle(n.parentElement).textTransform === 'uppercase' ? t.toUpperCase() : t;
+          if (shown.replace(/[^A-Za-z]/g, '').length >= 5 && shown === shown.toUpperCase()) out.push(shown);
+        }
+      }
+      return out;
+    });
+    ensure(shouted.length === 0, `capitals in a headline data label: ${shouted.slice(0, 4).join(' | ')}`);
+    const text = await s.page.locator('[data-audit="headline-series"]').innerText();
+    ensure(/No data yet/.test(text) || /\d/.test(text), 'the headline cards drew');
     await s.ctx.close();
   });
 

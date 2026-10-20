@@ -30,7 +30,7 @@ export const BAND_ORDER: readonly UrgencyBand[] = [
   band("immediate", "Immediate", "≤ 90 days", "#DC2626", "CRITICAL"),
   band("action", "Action", "≤ 6 months", "#F97316", "HIGH"),
   band("monitor", "Monitor", "6–12 months", "#2563EB", "MODERATE"),
-  band("awareness", "Awareness", "background", "#16A34A", "LOW"),
+  band("awareness", "Awareness", "later", "#16A34A", "LOW"),
 ];
 
 const BY_PRIORITY = new Map<string, UrgencyBand>(BAND_ORDER.map((b) => [b.priority, b]));

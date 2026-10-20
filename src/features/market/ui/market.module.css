@@ -10,7 +10,7 @@
 .freshBadge { margin: var(--sp-4) 0 0; display: flex; align-items: center; gap: var(--sp-6); font-size: var(--fs-95); }
 .freshDot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; flex: 0 0 auto; }
 .freshPanel { border: 1px solid var(--line-1); border-radius: var(--radius-card); background: var(--card); padding: var(--sp-10) var(--sp-14); display: flex; align-items: center; gap: var(--sp-14); flex-wrap: wrap; }
-.freshPanelHead { font-size: var(--fs-95); font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; white-space: nowrap; }
+.freshPanelHead { font-size: var(--fs-11); font-weight: 800; white-space: nowrap; }
 .freshPanelCopy { font-size: var(--fs-11); color: var(--ink-2); flex: 1 1 260px; }
 
 /* the methodology drawer */
@@ -28,11 +28,11 @@
 /* the headline series card */
 .hHead { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-16); padding: 14px 16px 10px; flex-wrap: wrap; }
 .hTitle { font-family: var(--font-display); font-weight: 400; font-size: 20px; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; }
-.hCaption { font-size: var(--fs-105); font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); min-width: 0; }
+.hCaption { font-size: var(--fs-11); font-weight: 600; color: var(--ink-3); min-width: 0; }
 .hLink { display: inline-flex; align-items: center; min-height: var(--target); color: inherit; text-decoration: underline; }
 .hTrack { display: grid; grid-auto-flow: column; grid-auto-columns: calc((100% - 40px) / 5); gap: var(--sp-10); overflow-x: auto; padding: 0 16px 16px; }
 .hCard { border: 1px solid var(--line-1); border-radius: var(--radius-card); box-shadow: var(--shadow-card); background: var(--card); padding: 10px 12px; overflow: hidden; min-width: 0; }
-.hLabel { font-size: var(--fs-95); font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hLabel { font-size: var(--fs-11); font-weight: 700; color: var(--ink-3); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .hValueRow { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; margin-top: var(--sp-6); }
 .hValue { font-family: var(--font-display); font-size: 17px; line-height: 1.05; color: var(--ink); }
 .hWindows { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; margin-top: var(--sp-4); }
@@ -42,7 +42,7 @@
 .hFoot { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-8); }
 .hFooter { padding: 0 16px 16px; display: grid; gap: var(--sp-10); }
 .cell { font-size: var(--fs-11); font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.cellAbsent { font-size: var(--fs-95); letter-spacing: 0.06em; font-weight: 700; }
+.cellAbsent { font-size: var(--fs-95); font-weight: 600; }
 
 /* the detail page's trajectory and the lead-time chart */
 .traj { background: var(--page); border: 1px solid var(--line-1); border-radius: var(--radius-control); padding: 10px 12px; display: grid; gap: var(--sp-6); }

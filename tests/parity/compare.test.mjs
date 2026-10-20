@@ -103,3 +103,12 @@ test('every gated full route has baseline files, and every standing waiver names
     assert.ok([...config.gates.full, ...config.gates.frame].includes(w.route), `waiver ${w.id} names a gated route`);
   }
 });
+
+test('one waiver may name several kinds: it covers a missing control and a missing row it matches, and nothing it does not match', () => {
+  const rec = (controls, rows) => ({ landmarks: [], headings: [], controls, rows: { items: rows.map((text) => ({ tag: 'div', text, width: 300, height: 40 })) } });
+  const b = rec([{ role: 'button', name: 'Awareness - background, 2 items' }, { role: 'button', name: 'Other' }], ['Row one NEEDS MORE DATA']);
+  const waiver = [{ id: 'both', route: 'regulations', kind: ['control', 'row'], match: '^(button:Awareness |div:Row one)', ruling: 'planted' }];
+  assert.deepEqual(compareRecord('regulations', '1280x900', b, rec([{ role: 'button', name: 'Other' }], ['Row one needs more data']), waiver).fails, []);
+  assert.deepEqual(compareRecord('regulations', '1280x900', b, rec([], ['Row one needs more data']), waiver).fails, ['control missing: button:Other']);
+  assert.equal(compareRecord('market', '1280x900', b, rec([{ role: 'button', name: 'Other' }], []), waiver).fails.length, 2, 'another route is not covered');
+});
