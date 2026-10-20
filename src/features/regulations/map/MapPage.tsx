@@ -78,7 +78,7 @@ export function MapPage({ items, coverage, activeCodes }: { items: MapItem[]; co
             )}
             <div style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: "var(--fs-12)" }}>
                 {(coverage === null ? TIER1_REGIONS.map((region) => ({ region, covered: null as number | null, partial: 0, gap: 0, total: region.jurisdictions.length })) : gaps).map((g) => (
-                  <Link key={g.region.id} href={`/map?region=${encodeURIComponent(g.region.id)}`} prefetch={false} aria-label={g.covered === null ? `Filter map to ${g.region.name}` : `Filter map to ${g.region.name} (${g.covered} of ${g.total} jurisdictions covered, ${g.gap} gaps)`} className="cl-rail-link cl-rail-link--quiet" style={{ display: "flex", justifyContent: "space-between", gap: 10, width: "100%" }}>
+                  <Link key={g.region.id} href={`/map?region=${encodeURIComponent(g.region.id)}`} prefetch={false} aria-label={g.covered === null ? `Filter map to ${g.region.name}` : `Filter map to ${g.region.name} (${g.covered} of ${g.total} jurisdictions covered, ${g.gap} ${g.gap === 1 ? "gap" : "gaps"})`} className="cl-rail-link cl-rail-link--quiet" style={{ display: "flex", justifyContent: "space-between", gap: 10, width: "100%" }}>
                     <span style={{ fontWeight: 600, color: "var(--ink)" }}>{g.region.name}</span>
                     <span style={{ color: "var(--ink-3)", whiteSpace: "nowrap" }}>
                       {g.covered === null ? "—" : `${g.covered} of ${g.total} covered`}

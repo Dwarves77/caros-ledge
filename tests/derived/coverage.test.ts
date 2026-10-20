@@ -79,7 +79,7 @@ test("surfaces:11 the map counts collected sources only and says how many it lef
   assert.match(text, /1 source is not yet collected and 1 collected source has no type, so they are not counted/);
   assert.match(text, /1 of 2 covered/);
   const html = renderApp(createElement(MapPage, { items: [], coverage: { regions: [{ region: REGION, covered: 1, partial: 0, gap: 1, total: 2 }], notCollected: 0, untyped: 0 }, activeCodes: null }));
-  assert.match(html, /aria-label="Filter map to R \(1 of 2 jurisdictions covered, 1 gaps\)"/, "the accessible name states the same quantity as the visible text");
+  assert.match(html, /aria-label="Filter map to R \(1 of 2 jurisdictions covered, 1 gap\)"/, "the accessible name states the same quantity as the visible text");
   assert.deepEqual([...await readCollectedSourceIds(m.db)].sort(), [A, B, D]);
 });
 

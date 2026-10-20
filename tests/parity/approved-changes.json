@@ -102,7 +102,7 @@
     "ux-laws.md law 2 (binding, DP-2): every control is at least 44 px. Artboard 16 draws 36 px auth fields (DESIGN CHANGES OWED 1); the artboard-01 privacy nav card rows are 44 px (pitch 46) where the artboard draws about 42 (OWED 10); the nav cap draws no band split while counts are unknown (rule 2 / INV-263, OWED 11). Structure still gates.",
     "facet-row-desktop (operator 2026-10-18, on Claude Design's recommendation, WCAG 2.5.8): law 2 exception for the desktop Filters card only; facet rows keep a 24 px target on a 32 px pitch (24 px with 8 px clear) on desktop and 44 px on the phone (DESIGN CHANGES OWED 2).",
     "Retired with the same change: the single-main landmark (ASSEMBLY H.1, the shell supplies the one main), SEC-5 assignee names, tie-order and row-height waivers, and the settings, profile, market, research and map look waivers; each was a difference from the old site only.",
-    "R2d (2026-10-20): the approved entries named r2d-* record three look/behaviour decisions the system ruled (rule 20): no jurisdiction is an em dash, the item type is words, and the market detail's Related corpus scan is removed. The neutral band for an unknown priority needs no entry: the compare reads no band colour and the tile counts compare as numbers (no unknown-priority row exists in the baseline account). Nothing else is waived."
+    "R2d (2026-10-20): the approved entries named r2d-* record three look/behaviour decisions the system ruled (rule 20): no jurisdiction is an em dash, the item type is words, and the market detail's Related corpus scan is removed. The neutral band for an unknown priority needs no entry: the compare reads no band colour and the tile counts compare as numbers (no unknown-priority row exists in the baseline account). Nothing else is waived. Second pass (2026-10-20, after 0090-0096 reached production): the entries named r2d-type-cut-*, r2d-period-start-*, r2d-lead-time-not-drawn, r2d-carbon-cost-not-drawn, r2d-roadmap-copy-* and r2d-map-gap-link-name each cite the register row and, where an item is named, its id; every named item was read from production and is verified, current and unarchived."
   ],
   "approved": [
     {
@@ -152,7 +152,7 @@
       "route": "market",
       "kind": "row",
       "match": "(regulation|directive|standard|guidance|technology|market_signal|regional_data|research_finding|innovation|framework|tool|initiative)( ·|needs more data)",
-      "ruling": "Rule 20, register I16 / INV-R2d-4 (customer strings): the item type is drawn in words (\"Market signal\", \"Regional data\"), never as the stored code (\"market_signal\"). Covers only a baseline row whose key carries one of the twelve stored item types followed by the meta separator. Retire this entry when the baseline is recaptured from production after the R2d merge (as the r2e-privacy-generated waiver was)."
+      "ruling": "Rule 20, register I16 / INV-R2d-4 (customer strings): the item type is drawn in words (\"Market signal\", \"Regional data\"), never as the stored code (\"market_signal\"). Covers only a baseline row whose key carries one of the twelve stored item types followed by the meta separator. Retire this entry when the baseline is recaptured from production after the R2d merge (as the r2e-privacy-generated waiver was). Also register surfaces:19 (one severity vocabulary): a stored severity is drawn in its word, so the South Korea K-Taxonomy row (stored severity high) now carries the word High; the baseline drew none."
     },
     {
       "id": "r2d-type-words-research",
@@ -188,6 +188,153 @@
       "kind": "heading",
       "match": "^2:Related$",
       "ruling": "Same ruling as r2d-related-links-market-detail: a signal with no flywheel connection has no Related section. Retire this entry when the baseline is recaptured from production after the R2d merge (as the r2e-privacy-generated waiver was)."
+    },
+    {
+      "id": "r2d-type-cut-afdc",
+      "route": "regulations",
+      "kind": "row",
+      "match": "^div:USAlternative Fuels Data Center",
+      "ruling": "I16 (customer strings), same ruling as r2d-type-words-regulations: item 4a108d70-0062-4c46-a090-151683f202a6, Alternative Fuels Data Center: Federal and State Laws and Incentives Database (item_type guidance), is on the page in the same place; its 80-character row key ends inside the stored type code, so the lower-case stored word of the baseline (\"guidance\", \"market_signal\", \"regional_data\") and the words now drawn (\"Guidance\", \"Market signal\", \"Regional data\") differ in that cut. Verified, current, unarchived: it is not excluded by the admissible predicate. Retire when the baseline is recaptured from production after the R2d merge."
+    },
+    {
+      "id": "r2d-type-cut-eia-steo",
+      "route": "market",
+      "kind": "row",
+      "match": "^div:USU\\.S\\. Energy Information Administration Short-Term Energy OutlookMonitoringmark",
+      "ruling": "I16 (customer strings), same ruling as r2d-type-words-market: item ed63f522-96bd-4aac-b828-a216f34b90a9, U.S. Energy Information Administration Short-Term Energy Outlook (item_type market_signal), is on the page in the same place; its 80-character row key ends inside the stored type code, so the lower-case stored word of the baseline (\"guidance\", \"market_signal\", \"regional_data\") and the words now drawn (\"Guidance\", \"Market signal\", \"Regional data\") differ in that cut. Verified, current, unarchived: it is not excluded by the admissible predicate. Retire when the baseline is recaptured from production after the R2d merge."
+    },
+    {
+      "id": "r2d-type-cut-singapore",
+      "route": "market",
+      "kind": "row",
+      "match": "^div:SGMaritime Singapore Decarbonisation Blueprint",
+      "ruling": "I16 (customer strings), same ruling as r2d-type-words-market: item 237b3cc1-9971-46d6-a4ef-07fd65b05eed, Maritime Singapore Decarbonisation Blueprint (item_type market_signal), is on the page in the same place; its 80-character row key ends inside the stored type code, so the lower-case stored word of the baseline (\"guidance\", \"market_signal\", \"regional_data\") and the words now drawn (\"Guidance\", \"Market signal\", \"Regional data\") differ in that cut. Verified, current, unarchived: it is not excluded by the admissible predicate. Retire when the baseline is recaptured from production after the R2d merge."
+    },
+    {
+      "id": "r2d-type-cut-bls",
+      "route": "operations",
+      "kind": "row",
+      "match": "^div:USU\\.S\\. Bureau of Labor Statistics - Major Economic Indicators",
+      "ruling": "I16 (customer strings), same ruling as r2d-type-words-operations: item 71b03469-c11c-4218-8b44-c1fec3ffda25, U.S. Bureau of Labor Statistics - Major Economic Indicators April 2026 (item_type regional_data), is on the page in the same place; its 80-character row key ends inside the stored type code, so the lower-case stored word of the baseline (\"guidance\", \"market_signal\", \"regional_data\") and the words now drawn (\"Guidance\", \"Market signal\", \"Regional data\") differ in that cut. Verified, current, unarchived: it is not excluded by the admissible predicate. Retire when the baseline is recaptured from production after the R2d merge."
+    },
+    {
+      "id": "r2d-type-cut-nova-scotia",
+      "route": "operations",
+      "kind": "row",
+      "match": "^div:CANova Scotia Government News Feed",
+      "ruling": "I16 (customer strings), same ruling as r2d-type-words-operations: item ee2cfe81-afc8-492f-b03b-2ed9c94400cc, Nova Scotia Government News Feed (item_type regional_data), is on the page in the same place; its 80-character row key ends inside the stored type code, so the lower-case stored word of the baseline (\"guidance\", \"market_signal\", \"regional_data\") and the words now drawn (\"Guidance\", \"Market signal\", \"Regional data\") differ in that cut. Verified, current, unarchived: it is not excluded by the admissible predicate. Retire when the baseline is recaptured from production after the R2d merge."
+    },
+    {
+      "id": "r2d-type-cut-iea",
+      "route": "operations",
+      "kind": "row",
+      "match": "^div:EUIEA Electricity Price Data for Large Industrial Customers",
+      "ruling": "I16 (customer strings), same ruling as r2d-type-words-operations: item 3f11f1fc-5b1f-422a-93bc-a34f6b3c9f3b, IEA Electricity Price Data for Large Industrial Customers (2019-2024) (item_type regional_data), is on the page in the same place; its 80-character row key ends inside the stored type code, so the lower-case stored word of the baseline (\"guidance\", \"market_signal\", \"regional_data\") and the words now drawn (\"Guidance\", \"Market signal\", \"Regional data\") differ in that cut. Verified, current, unarchived: it is not excluded by the admissible predicate. Retire when the baseline is recaptured from production after the R2d merge."
+    },
+    {
+      "id": "r2d-period-start-2025-2621-row",
+      "route": "regulations",
+      "kind": "row",
+      "match": "^div:EUCOMMISSION IMPLEMENTING REGULATION \\(EU\\) #/# of # December",
+      "ruling": "Register F:12 and migration 0094 (item_timelines.date_precision): COMMISSION IMPLEMENTING REGULATION (EU) 2025/2621 (HIGH): its only upcoming entry is the year '2027 - scheduled revision deadline' (date_precision year, stored 2027-01-01). A year or a month is a period start, not a due date, so it is no longer counted down to (\"Jan 1, 2027, 74 days\" was a day nobody wrote) and the row sorts by its stated days, which moves it out of the first 20 rows (item 7dabbe8a-2ba9-4242-8a51-57495e56993f: verified, current, unarchived, not suppressed or replaced; it is still on the list). Retire when the baseline is recaptured from production after the R2d merge."
+    },
+    {
+      "id": "r2d-period-start-2025-2621-control",
+      "route": "regulations",
+      "kind": "control",
+      "match": "^link:COMMISSION IMPLEMENTING REGULATION \\(EU\\) #/# of # December",
+      "ruling": "Register F:12 and migration 0094 (item_timelines.date_precision): COMMISSION IMPLEMENTING REGULATION (EU) 2025/2621 (HIGH): its only upcoming entry is the year '2027 - scheduled revision deadline' (date_precision year, stored 2027-01-01). A year or a month is a period start, not a due date, so it is no longer counted down to (\"Jan 1, 2027, 74 days\" was a day nobody wrote) and the row sorts by its stated days, which moves it out of the first 20 rows (item 7dabbe8a-2ba9-4242-8a51-57495e56993f: verified, current, unarchived, not suppressed or replaced; it is still on the list). Retire when the baseline is recaptured from production after the R2d merge."
+    },
+    {
+      "id": "r2d-period-start-eu-aviation-ets-control",
+      "route": "regulations",
+      "kind": "control",
+      "match": "^link:EU Aviation ETS$",
+      "ruling": "Register F:12 and migration 0094 (item_timelines.date_precision): EU Aviation ETS (HIGH): its only upcoming entry is the month 'Jan 2027 - Non-CO2 MRV mandatory' (date_precision month, stored 2027-01-01). A year or a month is a period start, not a due date, so it is no longer counted down to (\"Jan 1, 2027, 74 days\" was a day nobody wrote) and the row sorts by its stated days, which moves it out of the first 20 rows (item 56031fd3-d7ae-45e5-a1d0-bde3e3c30383: verified, current, unarchived, not suppressed or replaced; it is still on the list). Retire when the baseline is recaptured from production after the R2d merge."
+    },
+    {
+      "id": "r2d-period-start-oregon-deq-row",
+      "route": "regulations",
+      "kind": "row",
+      "match": "^div:USOregon Department of Environmental Quality",
+      "ruling": "Register F:12 and migration 0094 (item_timelines.date_precision): Oregon Department of Environmental Quality (LOW): its upcoming entries are years (2027, 2030, 2035...); the one stated day is compliance_deadline 2035-01-01. A year or a month is a period start, not a due date, so it is no longer counted down to (\"Jan 1, 2027, 74 days\" was a day nobody wrote) and the row sorts by its stated days, which moves it out of the first 20 rows (item fabda0e7-dfb4-43c2-bef9-1821bb148d5d: verified, current, unarchived, not suppressed or replaced; it is still on the list). Retire when the baseline is recaptured from production after the R2d merge."
+    },
+    {
+      "id": "r2d-period-start-oregon-deq-control",
+      "route": "regulations",
+      "kind": "control",
+      "match": "^link:Oregon Department of Environmental Quality",
+      "ruling": "Register F:12 and migration 0094 (item_timelines.date_precision): Oregon Department of Environmental Quality (LOW): its upcoming entries are years (2027, 2030, 2035...); the one stated day is compliance_deadline 2035-01-01. A year or a month is a period start, not a due date, so it is no longer counted down to (\"Jan 1, 2027, 74 days\" was a day nobody wrote) and the row sorts by its stated days, which moves it out of the first 20 rows (item fabda0e7-dfb4-43c2-bef9-1821bb148d5d: verified, current, unarchived, not suppressed or replaced; it is still on the list). Retire when the baseline is recaptured from production after the R2d merge."
+    },
+    {
+      "id": "r2d-period-start-china-ets-row",
+      "route": "regulations",
+      "kind": "row",
+      "match": "^div:CNChina's National Carbon Market",
+      "ruling": "Register F:12 and migration 0094 (item_timelines.date_precision): China's National Carbon Market (LOW): every upcoming entry is a year (2027, 2030, 2060). A year or a month is a period start, not a due date, so it is no longer counted down to (\"Jan 1, 2027, 74 days\" was a day nobody wrote) and the row sorts by its stated days, which moves it out of the first 20 rows (item 3e756291-f79e-487e-84d5-efc535cfef27: verified, current, unarchived, not suppressed or replaced; it is still on the list). Retire when the baseline is recaptured from production after the R2d merge."
+    },
+    {
+      "id": "r2d-period-start-china-ets-control",
+      "route": "regulations",
+      "kind": "control",
+      "match": "^link:China's National Carbon Market",
+      "ruling": "Register F:12 and migration 0094 (item_timelines.date_precision): China's National Carbon Market (LOW): every upcoming entry is a year (2027, 2030, 2060). A year or a month is a period start, not a due date, so it is no longer counted down to (\"Jan 1, 2027, 74 days\" was a day nobody wrote) and the row sorts by its stated days, which moves it out of the first 20 rows (item 3e756291-f79e-487e-84d5-efc535cfef27: verified, current, unarchived, not suppressed or replaced; it is still on the list). Retire when the baseline is recaptured from production after the R2d merge."
+    },
+    {
+      "id": "r2d-period-start-order-regulations",
+      "route": "regulations",
+      "kind": "order",
+      "match": "^link:(California SB # — Climate Corporate Data Accountability Act|EU Emissions Trading System \\(ETS\\) Extension to Maritime Transport|Brazil National Policy on Alternative Fuels \\(PNCA\\))$",
+      "ruling": "Register F:12 and migration 0094: the due-date sort (dueInfo, stated days only) puts rows with a stated day ahead of the four rows above and brings Iowa DNR, EU ETS for Shipping, Japan's GX League and IMO MARPOL Annex VI into the first 20 rows; the three named rows keep their relative order and only their neighbours change. Covers a reordered line for these three controls only. Retire when the baseline is recaptured from production after the R2d merge."
+    },
+    {
+      "id": "r2d-lead-time-not-drawn",
+      "route": "market",
+      "kind": "heading",
+      "match": "^2:Lead-time position$",
+      "ruling": "Register surfaces:15 (tests/derived/market-stored-only.test.ts): the lead-time section is drawn only when rows exist or the producer that writes them is implemented. Production holds 0 market_series rows with series_key like 'sbti:%' (read-only query 2026-10-20: 2,747 rows in 16 series, none SBTi) and the SBTi producer is licence-blocked and registered as not implemented, so the baseline's empty section had no data to show. Retire when the baseline is recaptured from production after the R2d merge."
+    },
+    {
+      "id": "r2d-carbon-cost-not-drawn",
+      "route": "market",
+      "kind": "heading",
+      "match": "^2:Carbon cost per FEU$",
+      "ruling": "Coordinator ruling 2026-10-20 (code that waits for inputs nobody supplies is dead code) and register surfaces:14: the Carbon cost per FEU section is deleted; it could only list gaps (no licence-clear distance, payload or carbon-price input exists). Retire when the baseline is recaptured from production after the R2d merge."
+    },
+    {
+      "id": "r2d-roadmap-copy-evidence-research",
+      "route": "research",
+      "kind": "control",
+      "match": "^button:Evidence × agreement: needs evidence-synthesis data",
+      "ruling": "I16 (no design note or roadmap sentence reaches the customer): the control is now named \"Evidence × agreement\" (the baseline named it \"Evidence × agreement: needs evidence-synthesis data\", with the count in the detail view). Retire when the baseline is recaptured from production after the R2d merge."
+    },
+    {
+      "id": "r2d-roadmap-copy-authority-research",
+      "route": "research",
+      "kind": "control",
+      "match": "^button:Source authority: needs role-class data$",
+      "ruling": "I16: the control is now named \"Source authority\" (the baseline named it \"Source authority: needs role-class data\"). Retire when the baseline is recaptured from production after the R2d merge."
+    },
+    {
+      "id": "r2d-roadmap-copy-evidence-research-detail",
+      "route": "research-detail",
+      "kind": "control",
+      "match": "^button:Evidence × agreement: needs evidence-synthesis data",
+      "ruling": "I16 (no design note or roadmap sentence reaches the customer): the control is now named \"Evidence × agreement\" (the baseline named it \"Evidence × agreement: needs evidence-synthesis data\", with the count in the detail view). Retire when the baseline is recaptured from production after the R2d merge."
+    },
+    {
+      "id": "r2d-roadmap-copy-authority-research-detail",
+      "route": "research-detail",
+      "kind": "control",
+      "match": "^button:Source authority: needs role-class data$",
+      "ruling": "I16: the control is now named \"Source authority\" (the baseline named it \"Source authority: needs role-class data\"). Retire when the baseline is recaptured from production after the R2d merge."
+    },
+    {
+      "id": "r2d-map-gap-link-name",
+      "route": "map",
+      "kind": "control",
+      "match": "^link:Filter map to .+ \\(# gaps of #\\)$",
+      "ruling": "Register surfaces:11 (tests/derived/coverage.test.ts): the accessible name of a region link states the same quantity as its visible text, \"Filter map to EU member states (0 of 27 jurisdictions covered, 27 gaps)\"; the baseline named it \"(27 gaps of 27)\" while the text read \"0 of 27 covered\". The five links are on the page (capture of run 39406949832: United States sub-national, EU member states, Canada, Australia, Latin America priority). Retire when the baseline is recaptured from production after the R2d merge."
     }
   ]
 }
