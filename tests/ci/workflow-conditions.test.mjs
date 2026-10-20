@@ -9,12 +9,16 @@ import { parse } from 'yaml';
 
 const workflow = parse(readFileSync('.github/workflows/ci.yml', 'utf8'));
 const jobs = workflow.jobs;
-const VARIABLES = ['ev', 'only', 'sctx', 'sstate', 'production', 'parityScope', 'windowsScope'];
+const VARIABLES = ['ev', 'only', 'sctx', 'sstate', 'production', 'ref', 'isFork', 'parityScope', 'windowsScope'];
+// The ref the run is on and whether the repository is a fork (a test sets them for one case and puts them back).
+const where = { ref: 'refs/heads/main', fork: false };
 // Evaluates a job's `if` for an event, the dispatch input `only`, a status event's context and state, whether the target job derived production, and the scope the `changes` job decided (the expressions use only ==, !=, &&, || and parentheses on those values).
 const runs = (job, event, only = '', status = {}, scope = { parity: 'true', windows: 'true' }, production = '') => {
   const expr = String(jobs[job].if ?? 'true')
     .replaceAll('github.event_name', 'ev')
     .replaceAll('github.event.inputs.only', 'only')
+    .replaceAll('github.event.repository.fork', 'isFork')
+    .replaceAll('github.ref', 'ref')
     .replaceAll('github.event.context', 'sctx')
     .replaceAll('github.event.state', 'sstate')
     .replaceAll('needs.target.outputs.production', 'production')
@@ -22,7 +26,7 @@ const runs = (job, event, only = '', status = {}, scope = { parity: 'true', wind
     .replaceAll('needs.changes.outputs.windows', 'windowsScope')
     .replaceAll('==', '===')
     .replaceAll('!=', '!==');
-  return Function(...VARIABLES, `return (${expr});`)(event, only, status.context ?? '', status.state ?? '', production, scope.parity, scope.windows);
+  return Function(...VARIABLES, `return (${expr});`)(event, only, status.context ?? '', status.state ?? '', production, where.ref, where.fork, scope.parity, scope.windows);
 };
 const on = (event, only, status, scope, production) => Object.keys(jobs).filter((j) => j !== 'report' && runs(j, event, only, status, scope, production)).sort();
 const VERCEL_OK = { context: 'Vercel', state: 'success' };
@@ -36,14 +40,36 @@ test('a dispatch with only empty runs everything but baseline, live and screens;
 
 test('a pull request never runs baseline, the turn or the live jobs; a push to main runs the checks and windows but not the turn, baseline or the live jobs', () => {
   assert.deepEqual(on('pull_request'), ['changes', 'ci', 'parity', 'schema', 'windows']);
-  assert.deepEqual(on('push'), ['changes', 'ci', 'parity', 'schema', 'windows']);
+  assert.deepEqual(on('push'), ['changes', 'ci', 'migrate', 'parity', 'schema', 'windows']);
 });
 
 test('the expensive jobs follow the scope the `changes` job decided on a pull request, and run unconditionally on a push to main', () => {
   assert.deepEqual(on('pull_request', '', {}, { parity: 'false', windows: 'false' }), ['changes', 'ci', 'schema']);
   assert.deepEqual(on('pull_request', '', {}, { parity: 'true', windows: 'false' }), ['changes', 'ci', 'parity', 'schema']);
   assert.deepEqual(on('pull_request', '', {}, { parity: 'false', windows: 'true' }), ['changes', 'ci', 'schema', 'windows']);
-  assert.deepEqual(on('push', '', {}, { parity: 'false', windows: 'false' }), ['changes', 'ci', 'parity', 'schema', 'windows'], 'main is never skipped');
+  assert.deepEqual(on('push', '', {}, { parity: 'false', windows: 'false' }), ['changes', 'ci', 'migrate', 'parity', 'schema', 'windows'], 'main is never skipped');
+});
+
+test('migrate runs on a push to main and on a dispatch with only=migrate, nowhere else: not on a pull request, a fork, another branch, another dispatch or a status; it holds the one database secret and writes the repository only through its own commit step', () => {
+  assert.ok(on('push').includes('migrate'));
+  assert.deepEqual(on('workflow_dispatch', 'migrate'), ['migrate']);
+  for (const [event, only] of [['pull_request', ''], ['workflow_dispatch', ''], ['workflow_dispatch', 'live'], ['workflow_dispatch', 'turn'], ['status', '']]) assert.ok(!on(event, only, VERCEL_OK).includes('migrate'), `${event} only=${only}`);
+  try {
+    where.fork = true;
+    assert.ok(!on('push').includes('migrate'), 'a fork never migrates production');
+    assert.ok(!on('workflow_dispatch', 'migrate').includes('migrate'));
+    where.fork = false;
+    where.ref = 'refs/heads/slice/x';
+    assert.ok(!on('push').includes('migrate'), 'a branch other than main never migrates production');
+    assert.ok(!on('workflow_dispatch', 'migrate').includes('migrate'), 'a dispatch from another branch neither');
+  } finally {
+    where.ref = 'refs/heads/main';
+    where.fork = false;
+  }
+  assert.deepEqual([...secretsOf('migrate')], ['SUPABASE_DB_URL']);
+  for (const job of Object.keys(jobs).filter((j) => j !== 'migrate')) assert.ok(!secretsOf(job).has('SUPABASE_DB_URL'), `${job} must not hold the database secret`);
+  assert.deepEqual(jobs.migrate.permissions, { contents: 'write' });
+  for (const job of Object.keys(jobs).filter((j) => j !== 'migrate')) assert.notDeepEqual(jobs[job].permissions?.contents, 'write', `${job} must not write the repository`);
 });
 
 test('the live jobs run on the successful Vercel commit status and on nothing else: not on a failed, pending or other-context status, not on a push, a pull request or a deployment event; a production status skips the preview parity', () => {

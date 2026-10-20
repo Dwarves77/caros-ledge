@@ -41,7 +41,7 @@ on:
         description: 'Baseline recapture (job baseline): route names, comma separated, or all'
         default: all
       only:
-        description: 'Run one job on a dispatch: baseline (the old-site recapture), turn, live (the live checks and the deployed-preview parity), screens (full-page screenshots of every route at a live_url), or empty for everything but baseline, live and screens'
+        description: 'Run one job on a dispatch: baseline (the old-site recapture), turn, live (the live checks and the deployed-preview parity), screens (full-page screenshots of every route at a live_url), migrate (apply the pending migrations to production), or empty for everything but baseline, live, screens and migrate'
         default: ''
       chain:
         description: 'Run the stage downstream stages too (false runs only the named stage)'
@@ -438,6 +438,47 @@ jobs:
         with:
           name: screens-${{ github.run_id }}
           path: screens
+
+  # The only way a migration reaches production: the pending files (scripts/ci/apply-plan.mjs order, HOLD rows left out, every file supabase/migrations/APPLIED.json does not list) are applied in order with SUPABASE_DB_URL, each
+  # file must print its own OK notice, the first failure stops the run, and when every pending file passed the workflow commits APPLIED.json and APPLY.md to main. It holds that one secret, runs on a push to main or a dispatch with
+  # only=migrate on main, never on a pull request and never in a fork, and one run at a time.
+  migrate:
+    name: migrate
+    if: github.event.repository.fork == false && github.ref == 'refs/heads/main' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.only == 'migrate'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    concurrency:
+      group: migrate
+      cancel-in-progress: false
+    permissions:
+      contents: write
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --no-audit
+      - name: Pending migrations
+        run: node scripts/ci/migrate.mjs --pending
+      - name: Apply them in order (stops at the first failure; each file must print its own OK)
+        id: apply
+        run: node scripts/ci/migrate.mjs --apply
+      - name: Record what production now carries (APPLIED.json and APPLY.md, one commit to main)
+        if: steps.apply.outputs.applied != ''
+        env:
+          APPLIED: ${{ steps.apply.outputs.applied }}
+        run: |
+          node scripts/cutover/write-applied.mjs applied.txt
+          node scripts/ci/apply-plan.mjs --write
+          git config user.name caros-ledge-ci
+          git config user.email ci@carosledge.com
+          git add supabase/migrations/APPLIED.json supabase/migrations/APPLY.md
+          git commit -m "migrations applied on production: $APPLIED"
+          git pull --rebase origin main
+          git push origin HEAD:main
 
   # The one writer of the run's record: runs after every job that can run on a pull request or a push, polls nothing, holds no secrets, and never fails the run itself (it reports the others' conclusions).
   report:

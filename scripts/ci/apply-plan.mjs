@@ -38,8 +38,22 @@ export function planProblems(dir = DIR) {
   return problems;
 }
 
-export function planText(dir = DIR) {
+/** The order the window applies the files in: the schema files in name order, then the data files in name order. */
+export function planOrder(dir = DIR) {
   const files = migrationFiles(dir);
+  return { files, schema: files.filter((f) => !isData(f)), data: files.filter(isData) };
+}
+
+/** The file names the `migrate` job applies next, in plan order: not listed by APPLIED.json and not a HOLD row (a hold waits for the step it names, which a person runs). */
+export function pendingFiles(dir = DIR) {
+  const { schema, data } = planOrder(dir);
+  const notes = applyNotes(dir);
+  const applied = existsSync(`${dir}/APPLIED.json`) ? appliedNumbers(dir) : new Set();
+  return [...schema, ...data].filter((f) => !applied.has(numberOf(f)) && !notes[f.replace(/\.sql$/, "")]?.hold);
+}
+
+export function planText(dir = DIR) {
+  const { files, schema, data } = planOrder(dir);
   const notes = applyNotes(dir);
   const applied = existsSync(`${dir}/APPLIED.json`) ? appliedNumbers(dir) : new Set();
   const read = (f) => readFileSync(`${dir}/${f}`, "utf8").replace(/\r\n/g, "\n");
@@ -48,8 +62,6 @@ export function planText(dir = DIR) {
     return `| ${n} | ${f.replace(/\.sql$/, "")} | ${isData(f) ? "data" : "schema"} | \`${CLI(f)}\` | ${selfCheckOf(text, f)} | ${cell(rollbackOf(f, text, notes, dir))} | ${applied.has(numberOf(f)) ? "applied" : "pending"} | ${cell(extra)} |`;
   };
   const head = "| # | file | class | command | self-check | rollback | production | when |\n|---|---|---|---|---|---|---|---|";
-  const schema = files.filter((f) => !isData(f));
-  const data = files.filter(isData);
   const pending = files.filter((f) => !applied.has(numberOf(f)));
   const waivers = existsSync("tests/parity/approved-changes.json") ? JSON.parse(readFileSync("tests/parity/approved-changes.json", "utf8")).approved.filter((a) => a.kind === "until-migration") : [];
   const byMigration = {};
@@ -61,11 +73,11 @@ export function planText(dir = DIR) {
     "",
     `Every migration file on main, in the order it is applied to production. APPLIED.json lists what production carries: ${applied.size} of ${files.length} file(s) are applied${pending.length ? `; pending: ${pending.map((f) => numberOf(f)).join(", ")}` : ""}. A file that is not listed is not applied, whatever its number.`,
     "",
-    "How to run a file: the command in its row, from the repo root, with the Supabase CLI logged in and linked to the production project (`supabase login`, `supabase link --project-ref <ref>`). When the CLI refuses a file (size, timeout) the same file runs with `--db-url \"$DATABASE_URL\"` in place of `--linked` (the direct connection string from the dashboard, percent-encoded). A file is one transaction: BEGIN, its change, its self-check DO block, COMMIT. A failing self-check raises, the transaction rolls back, the command exits non-zero and nothing of the file stays. Success is exit code 0 with no ERROR line; keep each command's full output in the run artifact (cutover-run/<NNNN>.log).",
+    "Production is migrated by the `migrate` job of .github/workflows/ci.yml, never by hand: on every push to main (and a dispatch with only=migrate) it computes the pending files with `node scripts/ci/migrate.mjs --pending` (this plan's order, HOLD rows left out, every file APPLIED.json does not list), applies each with SUPABASE_DB_URL, one file at a time (a file is one transaction: BEGIN, its change, its self-check DO block, COMMIT; a failing self-check raises and nothing of the file stays), requires the file's own `<id> OK` notice (a file that ends without it fails the job), stops at the first failure and prints its ERROR line, and when every pending file passed commits APPLIED.json and this file to main. The command in a row is the manual equivalent for a file the job refuses or a HOLD row: from the repo root with the Supabase CLI logged in and linked to the production project (`supabase login`, `supabase link --project-ref <ref>`), or with `--db-url \"$DATABASE_URL\"` in place of `--linked`.",
     "",
     "Before a run, rehearse the remaining chain on production's real schema and data: `DATABASE_URL=<direct connection> node scripts/cutover/dry-run.mjs` runs the rows from 0004 (HOLD rows left out, then the data files) as one transaction and ends in ROLLBACK; it names the first file that fails and keeps nothing. There is no commit mode: the real apply stays file by file, below.",
     "",
-    "Rules: schema first, in name order; a row marked HOLD waits for the step it names; data files after the schema they name (standing rule 3, the two-track policy); stop at the first failure and report it, never skip a file or reorder. After the last row, write APPLIED.json (`node scripts/cutover/write-applied.mjs cutover-run/applied.txt`) and delete the waivers it retires in the same commit.",
+    "Rules: schema first, in name order; a row marked HOLD waits for the step it names; data files after the schema they name (standing rule 3, the two-track policy); stop at the first failure and report it, never skip a file or reorder. After the last file the job writes APPLIED.json (`node scripts/cutover/write-applied.mjs`) and the waivers it retires are deleted in the next commit.",
     "",
     "## Phase 1: schema files, in name order",
     "",
