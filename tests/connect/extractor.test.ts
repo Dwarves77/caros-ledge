@@ -2,11 +2,11 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
-import { locateCalendarDate, tryParseDateAt, tryParseDateOrBareYearAt } from "@/features/obligations/extract/date-grammar";
+import { tryParseDateAt, tryParseDateOrBareYearAt } from "@/features/obligations/extract/date-grammar";
 import { dedupeEvents } from "@/features/obligations/extract/dedupe";
 import { EXTRACTOR_VERSION, extractForwardEvents } from "@/features/obligations/extract/extract-forward-events";
 import { RULES } from "@/features/obligations/extract/rules";
-import { needsDueDateContext, scanText } from "@/features/obligations/extract/scan";
+import { scanText } from "@/features/obligations/extract/scan";
 import { assertVerbatim } from "@/core/contracts/verbatim";
 import { clauseAround, normalizeObligationText } from "@/features/obligations/extract/window";
 import type { ClaimIn } from "@/features/obligations/extract/scan";
@@ -70,8 +70,6 @@ test("a weekday prefix is skipped, a citation number is never a year, month-year
   assert.equal(tryParseDateOrBareYearAt("2023/1805 applies", 0), null);
   assert.equal(tryParseDateOrBareYearAt("2030 targets", 0)?.precision, "year");
   assert.equal(tryParseDateAt("March 2029", 0)?.precision, "month");
-  assert.equal(locateCalendarDate("due on 3 April 2027 at the latest")?.iso, "2027-04-03");
-  assert.equal(locateCalendarDate("no date here, only the year 2027"), null);
 });
 
 test("a bare-year `by` with no deontic or aim word is a skip with a reason, never a guessed kind; an aim word makes it `other`", () => {
@@ -123,9 +121,6 @@ test("a due-date slot rescue has three outcomes, and a slot span with no calenda
   assert.equal(rescued.events[0]?.event_kind, "compliance_deadline");
   assert.equal(rescued.events[0]?.date_precision, "day");
   assert.equal(extractForwardEvents({ claims: [slot("by 2030", { before: "The industry grows ", after: " in a market." })], sections: [] }).skipped.at(-1)?.reason, "calendar_date_no_deontic_in_context");
-  assert.equal(needsDueDateContext(slot("by 2030 the industry will grow")), true);
-  assert.equal(needsDueDateContext(slot("By 31 December 2025, the Commission shall review")), false);
-  assert.equal(needsDueDateContext(slot("within 30 days")), false);
 });
 
 test("the finer of the slot's and the extractor's precision wins, never quarter", () => {

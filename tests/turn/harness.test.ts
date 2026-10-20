@@ -141,6 +141,13 @@ test("INV-051 and rule 16: cadence off forces dry for apply, chained and machine
   assert.equal((await resolveMode(on.client, { mode: "apply", trigger: "dispatch" })).mode, "apply");
   assert.equal((await resolveMode(on.client, { mode: "apply", trigger: "schedule" })).forcedDry, true, "a scheduled firing is machine-fired");
   assert.equal((await resolveMode(on.client, { mode: "apply", trigger: "push" })).forcedDry, true);
+  // Addendum C: the cadence holds the families that FETCH; an analysis family over stored data honours the requested mode on an explicit dispatch, a scheduled firing is still refused, and the emergency stop holds both.
+  assert.deepEqual(await resolveMode(sb, { mode: "apply", trigger: "dispatch" }, false), { mode: "apply", forcedDry: false, reason: null }, "cadence off, analysis family, explicit dispatch: apply");
+  assert.equal((await resolveMode(sb, { mode: "apply", trigger: "schedule" }, false)).forcedDry, true, "a scheduled firing is refused for an analysis family too");
+  assert.equal((await resolveMode(broken.client, { mode: "apply", trigger: "dispatch" }, false)).mode, "dry", "an unreadable state holds the analysis families too");
+  const stopped = new MemDb();
+  stopped.seed("system_state", [{ id: true, scrape_cadence: "weekly", scrape_start_date: "2026-10-15", global_processing_paused: true }]);
+  assert.deepEqual([(await resolveMode(stopped.client, { mode: "apply", trigger: "dispatch" }, false)).mode, (await resolveMode(stopped.client, { mode: "apply", trigger: "dispatch" }, true)).mode], ["dry", "dry"], "the emergency stop holds every family");
   // The frame records the forced dry and the reason on the row, and the function is told dry.
   let seen = "";
   await runFamily("source-sweep", { mode: "apply", trigger: "dispatch" }, harness(off, { "source-sweep": async (c) => ((seen = c.mode), runResult("ok", { upserted: 9 }, [])) }));
@@ -212,4 +219,5 @@ test("the family table: parsed, unique names, every downstream a real family, an
     for (const d of f.downstream) assert.ok(names.has(d), `${f.name}: downstream ${d} is a family`);
     assert.ok(f.downstream.length > 0 || f.terminal, `${f.name}: has a downstream or a stated reason it ends`);
   }
+  assert.deepEqual(FAMILIES.filter((f) => f.fetches).map((f) => f.name), ["source-sweep", "research-walker", "change-detection", "fetch-drain"], "only the families that reach the network are held by the scrape cadence (Addendum C)");
 });

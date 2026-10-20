@@ -24,11 +24,13 @@ export interface InsertResult {
 }
 
 /** Insert the new events of one item; `current` names the claim and section ids that still exist (for the stale report). Dry reads and plans only. */
-export async function insertForwardEvents(sb: Db, itemId: string, events: readonly ExtractedEvent[], current: { claimIds: ReadonlySet<string>; sectionIds: ReadonlySet<string> }, opts: { dry?: boolean } = {}): Promise<InsertResult> {
-  const { data, error } = await sb.from("item_forward_events").select("id, event_date, event_kind, obligation_text, source_claim_id, source_section_id").eq("intelligence_item_id", itemId).order("id", { ascending: true });
+export async function insertForwardEvents(sb: Db, itemId: string, events: readonly ExtractedEvent[], current: { claimIds: ReadonlySet<string>; sectionIds: ReadonlySet<string>; captureIds?: ReadonlySet<string> }, opts: { dry?: boolean } = {}): Promise<InsertResult> {
+  const { data, error } = await sb.from("item_forward_events").select("id, event_date, event_kind, obligation_text, source_claim_id, source_section_id, source_capture_id").eq("intelligence_item_id", itemId).order("id", { ascending: true });
   if (error) throw new Error(`item_forward_events read failed: ${error.message}`);
-  const existing = (data ?? []) as { id: string; event_date: string; event_kind: string; obligation_text: string; source_claim_id: string | null; source_section_id: string | null }[];
-  const staleIds = existing.filter((r) => (r.source_claim_id ? !current.claimIds.has(r.source_claim_id) : r.source_section_id ? !current.sectionIds.has(r.source_section_id) : false)).map((r) => r.id);
+  const existing = (data ?? []) as { id: string; event_date: string; event_kind: string; obligation_text: string; source_claim_id: string | null; source_section_id: string | null; source_capture_id: string | null }[];
+  // A capture-backed row is judged stale only by a caller that lists the captures it holds (a corpus job that carries claims and sections alone says nothing about them).
+  const stale = (r: (typeof existing)[number]): boolean => (r.source_claim_id ? !current.claimIds.has(r.source_claim_id) : r.source_section_id ? !current.sectionIds.has(r.source_section_id) : r.source_capture_id && current.captureIds ? !current.captureIds.has(r.source_capture_id) : false);
+  const staleIds = existing.filter(stale).map((r) => r.id);
   const known = new Set(existing.map(forwardEventKey));
   const rows: Record<string, unknown>[] = [];
   for (const ev of events) {

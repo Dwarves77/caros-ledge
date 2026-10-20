@@ -95,7 +95,7 @@ export async function readWatchlist(db: Db, who: { userId: string; orgId: string
   ]);
 
   const itemRows = [...byUuid, ...byLegacy];
-  const mapped = await mapRows(db, itemRows);
+  const mapped = await mapRows(db, itemRows, { orgId: who.orgId ?? null });
   const resources = [...mapped.active, ...mapped.archived];
   const enriched = await enrichSources(db, resources, { biasTags: true });
   const resourceById = new Map(resources.map((r) => [r.id, r]));

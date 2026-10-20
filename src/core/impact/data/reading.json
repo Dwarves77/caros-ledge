@@ -1,0 +1,11 @@
+{
+  "client": { "noRelevanceStatus": "does_not_apply", "bands": { "low": 1, "medium": 2, "high": 3 } },
+  "backlog": { "scanPerTurn": 60, "scorePerTurn": 600 },
+  "absence": {
+    "obligations": "No obligations extracted yet",
+    "cost": "No cost figure yet",
+    "operational": "No modes or scenarios recorded",
+    "client": "No workspace profile yet",
+    "due": "No milestone dates"
+  }
+}

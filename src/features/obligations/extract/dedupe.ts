@@ -13,9 +13,11 @@ export interface ExtractedEvent {
   date_precision: string;
   event_kind: EventKind;
   obligation_text: string;
-  source_kind: "claim" | "section";
+  source_kind: "claim" | "section" | "capture";
   source_claim_id: string | null;
   source_section_id: string | null;
+  /** Present on a capture-backed event only. */
+  source_capture_id?: string;
   source_span: string;
   confidence: "high" | "medium";
   extractor_version: string;
@@ -40,7 +42,7 @@ function compareNormalize(text: string): string {
   let t = normalizeObligationText(text).toLowerCase();
   t = t.replace(/[₀-₉]/g, (d) => UNICODE_SUBSCRIPT_DIGITS[d] ?? d);
   t = t.replace(/(?<![a-z0-9])([a-z])\s+(\d)/g, "$1$2");
-  t = t.replace(/^["'“”‘’]+/, "").replace(/["'“”‘’]+$/, "");
+  t = t.replace(/^["'“”‘’…\s]+/, "").replace(/["'“”‘’…\s.]+$/, ""); // a window opened or closed mid-sentence carries an ellipsis and the same sentence from another source ends in a full stop
   return t.replace(/\s+/g, " ").trim();
 }
 

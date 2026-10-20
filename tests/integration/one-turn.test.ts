@@ -11,6 +11,7 @@ import { selectHeadlineSeries } from "@/features/market/lib/headline";
 import { readMarketSeries } from "@/features/market/read";
 import { loadCoverage } from "@/features/coverage/server/census";
 import { loadDetail } from "@/core/detail";
+import { mapRows } from "@/features/lists";
 import { buildRegisterQuerySpec, fetchObligationRegisterPage, readUpcoming } from "@/features/obligations";
 import { readDerivedFigures } from "@/features/operations/read/operations-reads";
 import { readResearchPage } from "@/features/research/read/research-reads";
@@ -210,7 +211,8 @@ test("P4: the derived value the turn propagated reads on the Operations panel wi
   assert.ok(view, "the assessment the producer wrote is the one the list reads");
   assert.deepEqual([view.technical?.low, view.technical?.high], [6, 7], "the corridor is read from the text the turn captured: a demonstration plant is TRL 6-7, not 8-9");
   assert.ok(view.horizon && view.horizon.rule, "the horizon cascade ran");
-  assert.equal(f.db.rows("item_forward_events").some((x) => x.intelligence_item_id === finding.id), false, "a portal-promoted item has no forward events yet, so the cascade falls through to its inferred rule rather than anchoring on a date it does not hold");
+  assert.deepEqual(f.db.rows("item_forward_events").filter((x) => x.intelligence_item_id === finding.id).map((x) => [x.source_kind, x.event_kind, x.event_date]), [["capture", "entry_into_force", "2027-07-01"]], "the brief held no dated event, so the one the captured text states is read from the capture (IMPACT-1)");
+  assert.equal(view.horizon.rule, "R4", "an entry-into-force date of a regulation the finding mentions is not a compliance deadline of its own: the cascade still falls through to its inferred rule");
 });
 
 test("P2-10: the item the turn minted and verified renders on /regulations and on its detail, with every section it has, the capture's source rating, and its claims rated by their source", async () => {
@@ -320,4 +322,46 @@ test("P2-16: the rooms read the item the turn minted in the room of its jurisdic
   // Nothing here wrote to the ledger: the turn's rows are the turn's.
   assert.deepEqual(db.rows("intelligence_items").map((x) => x.id), [itemId]);
   assert.equal(db.rows("intelligence_items").some((x) => x.signed_off_at !== undefined), false);
+});
+
+// IMPACT-1 (INV-IMP-1, rule 17): extraction, derivation and scoring are stages of the ONE turn. A verified item nobody has read is read by the connect stage (its dates and duties extracted from its capture, its obligations derived, the reading recorded), the
+// propagate stage behind it scores the item from what it holds, and the list reader draws the stored score with the workspace's client score. One root, the counts of the three families on its ledger rows, the hand-off by id.
+test("IMPACT-1: connect reads the backlog, propagate scores what it read, and the list draws the stored scores, all under one root", async () => {
+  const f = fixture();
+  const ITEM = "dddddddd-0000-4000-8000-000000000001";
+  const ORG = "dddddddd-0000-4000-8000-0000000000a1";
+  f.db.seed("intelligence_items", [{ id: ITEM, title: "Voyage emissions reporting", is_archived: false, provenance_status: "verified", item_type: "regulation", source_id: SRC, jurisdiction_iso: ["EU"], instrument_identifier: "Regulation (EU) 2026/77", last_regenerated_at: "2026-01-01T00:00:00.000Z", updated_at: "2026-01-01T00:00:00.000Z", transport_modes: ["ocean"], operational_scenario_tags: [], compliance_object_tags: [], topic_tags: [] }]);
+  f.db.seed("agent_run_searches", [{ intelligence_item_id: ITEM, result_url: "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32026R0077", result_index: 0, search_query: "capture", result_content: `${["Article 5 Reporting", "1. Carriers shall report the emissions of each voyage to the competent authority before 30 April 2027.", "Article 7 Entry into force", "This Regulation shall enter into force on 1 January 2027."].join("\n")}\n${"Notice. This text is provided for information only and is not the authentic version. ".repeat(4)}` }]);
+  f.db.seed("workspace_settings", [{ org_id: ORG, sector_profile: [], jurisdiction_weights: { EU: 1 }, profile: { transport_modes: ["ocean"], roles: [] } }]);
+
+  const r = await runTurn({ stage: "connect", mode: "apply" }, { d: f.d, env: {}, now: () => NOW });
+  assert.equal(r.exit, 0);
+  const row = (family: string) => f.db.rows("harness_runs").find((x) => x.family === family && x.root_run_id === r.rootRunId) as Row;
+  const counts = (family: string) => (row(family).outputs as { counts: Record<string, number> }).counts;
+  assert.deepEqual(["corpus-turn", "propagation", "brief-apply"].map((x) => row(x).root_run_id), Array(3).fill(r.rootRunId), "the three stages are rows of one root");
+  assert.equal(row("propagation").upstream_run_id, row("corpus-turn").id);
+
+  // connect: the item was read; its capture's dates and its duty are in the register; the reading is recorded.
+  assert.deepEqual([counts("corpus-turn").scanned, counts("corpus-turn").backlog], [1, 1]);
+  assert.deepEqual([counts("corpus-turn").extracted, counts("corpus-turn").derived_register, counts("corpus-turn").derived_objects, counts("corpus-turn").derived], [1, 1, 1, 2], "one dated event from the capture, its register row, one duty object");
+  assert.deepEqual((row("corpus-turn").outputs as { ids: { scanned_item_ids: string[] } }).ids.scanned_item_ids, [ITEM], "the reading is handed to the next stage by id");
+  assert.deepEqual(f.db.rows("obligation_objects").map((o) => [o.instrument_item_id, o.pinpoint_citation]), [[ITEM, "Article 5"]]);
+  assert.ok(f.db.rows("item_forward_events").some((e) => e.intelligence_item_id === ITEM && e.source_kind === "capture" && e.event_date === "2027-01-01"));
+  assert.equal(f.db.rows("item_obligation_scan").length, 1);
+
+  // propagate: the item the connect stage read is scored from its obligations and its modes.
+  assert.equal(counts("propagation").impact_scored, 1);
+  assert.deepEqual((row("propagation").outputs as { ids: { scored_item_ids: string[] } }).ids.scored_item_ids, [ITEM]);
+  const stored = f.db.rows("item_impact_scores").find((s) => s.item_id === ITEM) as Row;
+  assert.deepEqual([stored.compliance, stored.cost, stored.operational, stored.missing], [1, 0, 3, []]);
+
+  // the list draws the stored scores plus the workspace's client score; the second turn finds nothing left to read or score.
+  const { active } = await mapRows(f.db.client, [{ id: ITEM, legacy_id: null, title: "Voyage emissions reporting", item_type: "regulation", effective_priority: "HIGH", added_date: "2026-01-01", transport_modes: ["ocean"], jurisdiction_iso: ["EU"] }], { orgId: ORG });
+  assert.deepEqual(active[0]?.impactScores, { cost: 0, compliance: 1, client: 2, operational: 3 });
+  const detail = await loadDetail("regulations", ITEM, undefined, f.db.client, ORG);
+  assert.ok(!detail.notFound);
+  if (!detail.notFound) assert.deepEqual(detail.resource.impactScores, { cost: 0, compliance: 1, client: 2, operational: 3 }, "the detail rail reads the same stored scores");
+  const again = await runTurn({ stage: "connect", mode: "apply" }, { d: f.d, env: {}, now: () => NOW });
+  const countsAgain = (family: string) => ((f.db.rows("harness_runs").find((x) => x.family === family && x.root_run_id === again.rootRunId) as Row).outputs as { counts?: Record<string, number>; planned?: Record<string, number> }).counts ?? {};
+  assert.deepEqual([countsAgain("corpus-turn").scanned, countsAgain("propagation").impact_scored], [0, 0]);
 });

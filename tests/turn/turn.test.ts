@@ -20,21 +20,25 @@ test("the plan: all stages in order; one stage runs it and its downstream; chain
   await assert.rejects(() => planOf("nope"), /unknown stage/);
 });
 
-test("rule 16 drill: cadence off and mode apply requested: the whole turn is dry, zero network calls, zero writes outside the ledger, and every row says why", async () => {
+test("rule 16 drill: cadence off and mode apply requested: the fetching stages are dry and say why, the analysis stages work on stored data in the requested mode, and nothing reaches the network", async () => {
   const f = fixture({ cadence: "off" });
   const r = await apply(f);
   assert.equal(r.exit, 0);
-  assert.deepEqual([r.resolved.mode, r.resolved.forcedDry], ["dry", true]);
-  assert.equal(f.requests.urls.length, 0, "no request left the process");
-  assert.deepEqual(f.db.writes().filter((c) => c.table !== "harness_runs").map((c) => `${c.op} ${c.table}`), [], "nothing was written outside the ledger");
+  assert.deepEqual([r.resolved.mode, r.resolved.forcedDry], ["dry", true], "the turn reports its first stage, a fetching one");
+  assert.equal(f.requests.urls.length, 0, "no request left the process: the producer the propagate stage was asked for is planned, not fetched");
   const rows = ledger(f);
-  assert.ok(rows.length >= 8 && rows.every((x) => x.mode === "dry" && x.forced_dry === true));
-  for (const x of rows) if (x.family !== "mint" && x.family !== "producers") assert.match(String(x.reason), /cadence is off/);
-  assert.ok(rows.every((x) => (x.outputs as { counts?: unknown }).counts === undefined), "a dry row claims no write (INV-200)");
+  const fetching = ["source-sweep", "research-walker", "change-detection", "fetch-drain"];
+  const analysis = ["ledger-consume", "corpus-turn", "propagation", "brief-apply"];
+  for (const x of rows.filter((y) => fetching.includes(String(y.family)))) {
+    assert.deepEqual([x.mode, x.forced_dry], ["dry", true], `${x.family} is held`);
+    assert.match(String(x.reason), /cadence is off/);
+  }
+  for (const x of rows.filter((y) => analysis.includes(String(y.family)))) assert.deepEqual([x.mode, x.forced_dry], ["apply", false], `${x.family} honours the requested mode`);
+  assert.ok(rows.filter((x) => fetching.includes(String(x.family))).every((x) => (x.outputs as { counts?: unknown }).counts === undefined), "a dry row claims no write (INV-200)");
   assert.equal(new Set(rows.map((x) => x.root_run_id)).size, 1, "one root");
   assert.equal(f.db.rows("intelligence_items").length, 0);
-  assert.equal(rows.filter((x) => x.family === "producers").length, 0, "the producer was planned, not run: a dry producer fetches, and the fetch gate is closed");
-  assert.equal((rows.find((x) => x.family === "propagation")?.outputs as { planned: Record<string, number> }).planned.producers_selected, 1);
+  assert.equal(rows.filter((x) => x.family === "producers").length, 0, "the producer was planned, not run: it fetches, and the fetch gate is closed");
+  assert.equal((rows.find((x) => x.family === "propagation")?.outputs as { counts: Record<string, number> }).counts.producers_selected, 1);
 });
 
 test("a cadence read error fails closed: the turn is dry", async () => {

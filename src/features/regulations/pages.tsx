@@ -43,7 +43,7 @@ export async function RegulationsIndex() {
     const profileRead = await readWorkspaceProfile(db, session.orgId).catch((e) => warn("profile", e));
     const profile = profileRead?.profile;
     const [first, chips, upcoming, coverage] = await Promise.all([
-      readRegulationsFirstPage(db, session.orgId),
+      readRegulationsFirstPage(db, session.orgId, profileRead && !profileRead.failed ? profile : null),
       readThemeChips(db, { surface: "regulations" }).catch((e) => warn("themes", e)),
       readUpcoming(db, { limit: 8, jurisdictionFilter: defaultJurisdictionFilter(profile?.jurisdictions) }, today).catch((e) => warn("upcoming obligations", e)),
       loadSurfaceDenominator("regulations", { db: () => db }).catch((e) => warn("coverage", e)),
@@ -83,7 +83,7 @@ export async function RegulationDetailRoute({ params }: { params: Promise<{ slug
   const today = session.nowIso.slice(0, 10);
   const data = await attempt(id, async () => {
     await applyIdRedirect("regulations", id, db);
-    const detail = await loadDetail("regulations", id, undefined, db);
+    const detail = await loadDetail("regulations", id, undefined, db, session.orgId);
     if (detail.notFound) return "missing" as const;
     const iso = detail.resource.jurisdictionIso ?? [];
     const [events, register, corridors] = await Promise.all([

@@ -6,6 +6,8 @@
 // ONE registry keyed by (target table, method@version), never overwritten (INV-202): changed behaviour takes a new version, so every derived row
 // stays reproducible against the code its computed_by names. A method that nothing can dispatch is not registered (signpost_watch was dead). The
 // two market methods call into the market slice through MarketMethodDeps (carbonIntensity, computeSeriesDeltas); P2-08 wires them.
+import { scoreImpact, type ImpactInput, type ImpactScore } from "@/core/impact/score";
+
 import { FLOOR } from "./admissible";
 import { INFER_METHOD_ID, INFER_METHOD_VERSION, INFER_METHOD_VERSION_V1, type StatusToken } from "./register";
 import type { Admissibility, Derivation, Lifecycle, OriginClass } from "./types";
@@ -30,23 +32,28 @@ export type InferenceResult =
   | { ok: false; reason: string };
 export type MethodFn = (ctx: MethodContext) => Promise<MethodResult> | MethodResult;
 export type InferenceFn = (ctx: MethodContext) => Promise<InferenceResult> | InferenceResult;
-export type MethodTable = "derived_values" | "inference_records";
+/** The impact score of an item (IMPACT-1): pure, over what the item holds, stored in item_impact_scores. */
+export type ImpactFn = (input: ImpactInput) => ImpactScore;
+export type MethodTable = "derived_values" | "inference_records" | "item_impact_scores";
 
 const methodKey = (methodId: string, methodVersion: string): string => `${methodId}@${methodVersion}`;
 
 class MethodRegistry {
   private readonly derived = new Map<string, MethodFn>();
   private readonly inference = new Map<string, InferenceFn>();
+  private readonly impact = new Map<string, ImpactFn>();
   private readonly newest = new Map<string, string>();
 
   /** Register once. A second registration of the same key (in either table) throws: the key is a promise about the code. */
   register(table: "derived_values", id: string, version: string, fn: MethodFn): void;
   register(table: "inference_records", id: string, version: string, fn: InferenceFn): void;
-  register(table: MethodTable, id: string, version: string, fn: MethodFn | InferenceFn): void {
+  register(table: "item_impact_scores", id: string, version: string, fn: ImpactFn): void;
+  register(table: MethodTable, id: string, version: string, fn: MethodFn | InferenceFn | ImpactFn): void {
     const key = methodKey(id, version);
-    if (this.derived.has(key) || this.inference.has(key)) throw new Error(`registerMethod: "${key}" is already registered; a method is never silently overwritten. Register a NEW version for changed behaviour.`);
+    if (this.derived.has(key) || this.inference.has(key) || this.impact.has(key)) throw new Error(`registerMethod: "${key}" is already registered; a method is never silently overwritten. Register a NEW version for changed behaviour.`);
     if (table === "derived_values") this.derived.set(key, fn as MethodFn);
-    else this.inference.set(key, fn as InferenceFn);
+    else if (table === "inference_records") this.inference.set(key, fn as InferenceFn);
+    else this.impact.set(key, fn as ImpactFn);
     this.newest.set(`${table}:${id}`, version);
   }
   /** The version registered last for a method id: a row computed by an older version is recomputed by this one, and its successor is written under this version. */
@@ -55,14 +62,18 @@ class MethodRegistry {
   }
   get(table: "derived_values", id: string, version: string): MethodFn | undefined;
   get(table: "inference_records", id: string, version: string): InferenceFn | undefined;
-  get(table: MethodTable, id: string, version: string): MethodFn | InferenceFn | undefined {
-    return (table === "derived_values" ? this.derived : this.inference).get(methodKey(id, version));
+  get(table: "item_impact_scores", id: string, version: string): ImpactFn | undefined;
+  get(table: MethodTable, id: string, version: string): MethodFn | InferenceFn | ImpactFn | undefined {
+    return this.of(table).get(methodKey(id, version));
   }
   has(table: MethodTable, id: string, version: string): boolean {
-    return (table === "derived_values" ? this.derived : this.inference).has(methodKey(id, version));
+    return this.of(table).has(methodKey(id, version));
   }
   keys(table: MethodTable): string[] {
-    return [...(table === "derived_values" ? this.derived : this.inference).keys()].sort();
+    return [...this.of(table).keys()].sort();
+  }
+  private of(table: MethodTable): Map<string, MethodFn | InferenceFn | ImpactFn> {
+    return table === "derived_values" ? this.derived : table === "inference_records" ? this.inference : this.impact;
   }
 }
 
@@ -103,6 +114,8 @@ const reevaluateInference: InferenceFn = (ctx) => {
   return { ok: true, claimText: prior.claim_text, statusToken: token, confidence: prior.confidence, citedItemIds: cited, originClass: prior.origin_class === "modelled" ? "modelled" : "derived", reopenQuestionRef: prior.trigger_question_ref ?? null };
 };
 
+export const IMPACT_METHOD_ID = "impact_scores";
+export const IMPACT_METHOD_VERSION = "1.0.0";
 export const CARBON_METHOD_ID = "carbon_intensity_tkm";
 export const CARBON_METHOD_VERSION = "1.0.0";
 export const MARKET_DELTA_METHOD_ID = "market_series_delta";
@@ -183,6 +196,7 @@ export function createMethodRegistry(): MethodRegistry {
   // v1 stays registered unchanged (INV-202: the rows it computed stay reproducible); the drain recomputes with the latest version, so a v1 row is re-evaluated by v2 and its successor is written as v2.
   r.register("inference_records", INFER_METHOD_ID, INFER_METHOD_VERSION_V1, computeInferFromQuestion);
   r.register("inference_records", INFER_METHOD_ID, INFER_METHOD_VERSION, reevaluateInference);
+  r.register("item_impact_scores", IMPACT_METHOD_ID, IMPACT_METHOD_VERSION, scoreImpact);
   return r;
 }
 /** The process-wide registry the drain and authorEdges default to. */

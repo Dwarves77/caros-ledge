@@ -2211,7 +2211,8 @@
     "source_span",
     "confidence",
     "extractor_version",
-    "created_at"
+    "created_at",
+    "source_capture_id"
    ],
    "uuid": [
     "id"
@@ -2223,6 +2224,11 @@
     {
      "column": "intelligence_item_id",
      "table": "intelligence_items",
+     "ref": "id"
+    },
+    {
+     "column": "source_capture_id",
+     "table": "agent_run_searches",
      "ref": "id"
     },
     {
@@ -2255,6 +2261,30 @@
    "fks": [
     {
      "column": "intelligence_item_id",
+     "table": "intelligence_items",
+     "ref": "id"
+    }
+   ]
+  },
+  "item_impact_scores": {
+   "columns": [
+    "item_id",
+    "cost",
+    "compliance",
+    "operational",
+    "basis",
+    "missing",
+    "method_version",
+    "computed_at"
+   ],
+   "uuid": [],
+   "defaults": {
+    "missing": [],
+    "computed_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "item_id",
      "table": "intelligence_items",
      "ref": "id"
     }
@@ -2297,6 +2327,27 @@
     {
      "column": "org_id",
      "table": "organizations",
+     "ref": "id"
+    }
+   ]
+  },
+  "item_obligation_scan": {
+   "columns": [
+    "item_id",
+    "scanned_at",
+    "extractor_version",
+    "derivation_version",
+    "events",
+    "objects"
+   ],
+   "uuid": [],
+   "defaults": {
+    "scanned_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "item_id",
+     "table": "intelligence_items",
      "ref": "id"
     }
    ]

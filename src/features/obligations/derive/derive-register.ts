@@ -11,7 +11,7 @@ import type { RunResult } from "@/core/sources/run-result";
 
 import { classifyItemBindingPosition, contextFromClaims, type ClassifyContext, type ItemForClassification } from "./classify-binding-position";
 
-const DERIVATION_VERSION = "oblig-derive-2026-10-08.1";
+export const DERIVATION_VERSION = "oblig-derive-2026-10-08.1";
 const LEG_MODE_SET = new Set(LEG_MODE_CODES);
 
 export interface EventRow {

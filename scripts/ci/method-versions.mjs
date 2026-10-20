@@ -8,6 +8,7 @@
 // `--write` records the current hashes of keys that are new and refuses to overwrite one whose code changed.
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
 import { parseArgs } from "node:util";
 
 import ts from "typescript";
@@ -15,8 +16,9 @@ import ts from "typescript";
 import { isMain, walk } from "../lib/fs.mjs";
 
 export const HASH_FILE = "scripts/ci/data/method-hashes.json";
-const DIR = "src/core/propagation";
-const TABLES = new Set(["derived_values", "inference_records"]);
+// A method's code is the registration, every value declaration it reaches and every JSON table those declarations import (a threshold in data/rules.json is part of the method). The methods live in propagation; the impact score's pure code and rules in impact.
+const DIRS = ["src/core/propagation", "src/core/impact"];
+const TABLES = new Set(["derived_values", "inference_records", "item_impact_scores"]);
 
 const sha = (text) => createHash("sha256").update(text).digest("hex");
 const printer = ts.createPrinter({ removeComments: true });
@@ -37,6 +39,12 @@ function declarationsOf(files) {
   for (const [file, text] of files) {
     const sf = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true);
     for (const st of sf.statements) {
+      // A JSON table the file imports is a value the code reaches: its content hash stands for it, so editing a threshold is editing the method.
+      if (ts.isImportDeclaration(st) && st.importClause?.name && ts.isStringLiteralLike(st.moduleSpecifier) && st.moduleSpecifier.text.endsWith(".json")) {
+        const path = resolve(dirname(file), st.moduleSpecifier.text);
+        if (existsSync(path)) decls.set(st.importClause.name.text, { text: `json ${st.moduleSpecifier.text} ${sha(JSON.stringify(JSON.parse(readFileSync(path, "utf8"))))}`, refs: new Set(), node: st });
+        continue;
+      }
       if ((ts.isFunctionDeclaration(st) || ts.isClassDeclaration(st) || ts.isEnumDeclaration(st)) && st.name) add(st.name.text, st, sf);
       else if (ts.isVariableStatement(st)) for (const d of st.declarationList.declarations) if (ts.isIdentifier(d.name)) add(d.name.text, d, sf);
     }
@@ -115,11 +123,11 @@ export function versionProblems(methods, recorded) {
   return problems;
 }
 
-const propagationFiles = () => new Map(walk(DIR, (n) => /\.ts$/.test(n)).map((f) => [f, readFileSync(f, "utf8")]));
+const methodFiles = () => new Map(DIRS.flatMap((dir) => walk(dir, (n) => /\.ts$/.test(n))).map((f) => [f, readFileSync(f, "utf8")]));
 
 if (isMain(import.meta.url)) {
   const { values } = parseArgs({ options: { write: { type: "boolean", default: false } }, strict: true });
-  const { methods, problems: unreadable } = currentMethods(propagationFiles());
+  const { methods, problems: unreadable } = currentMethods(methodFiles());
   const recorded = existsSync(HASH_FILE) ? JSON.parse(readFileSync(HASH_FILE, "utf8")) : {};
   let problems = [...unreadable, ...versionProblems(methods, recorded)];
   if (values.write) {

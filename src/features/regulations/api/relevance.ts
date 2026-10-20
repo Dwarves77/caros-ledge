@@ -4,21 +4,11 @@
 // say "did not load" with Retry, and "no obligations decomposed" stays a different answer.
 import { admitItems } from "@/core/derived/admissible";
 import { currentMembership } from "@/core/auth/membership";
-import { computeApplicability } from "@/core/applicability";
-import { DUTY_HOLDER_CLASSES } from "@/core/contracts/vocabularies";
 import { itemIdColumn } from "@/core/detail/id-redirect";
 import { LookupError, ok, route } from "@/core/http/errors";
 import { isRefusal, requireUser } from "@/core/http/guard";
-import { ALL_SECTORS, fetchObligationObjectsForItem, getWorkspaceProfile, relevanceForItem, summariseObligationBinding, type RelevanceDeps } from "@/core/workspace";
-import { VOCABULARIES } from "@/core/contracts/vocabularies";
-
-/** The lens's three tables and its gate, from their one homes (the applicability gate, the closed vocabularies, the sector list). */
-const relevanceDeps: RelevanceDeps = {
-  computeApplicability,
-  dutyHolderClasses: Object.fromEntries(Object.values(DUTY_HOLDER_CLASSES).map((c) => [c.code, { label: c.label, orgRoles: c.orgRoles ?? [] }])),
-  bindingPosition: Object.fromEntries(Object.values(VOCABULARIES.binding_position ?? {}).map((p) => [p.code, { code: p.code, label: p.label, note: String((p as { note?: unknown }).note ?? ""), order: p.order ?? 0 }])),
-  sectors: ALL_SECTORS,
-};
+import { fetchObligationObjectsForItem, getWorkspaceProfile, relevanceForItem, summariseObligationBinding } from "@/core/workspace";
+import { relevanceDeps } from "@/core/workspace/relevance-deps";
 
 const COLUMNS = "id, title, transport_modes, jurisdictions, jurisdiction_iso, topic_tags, operational_scenario_tags, compliance_object_tags";
 

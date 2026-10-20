@@ -4,6 +4,8 @@ import { isInstrumentMilestone, timelineDateOf } from "@/core/brief/timeline";
 import type { Db } from "@/core/db";
 import { requirePriority } from "@/core/lists/bands";
 import type { Resource } from "@/core/types";
+import type { WorkspaceProfile } from "@/core/workspace";
+import { attachImpact } from "@/core/impact/attach";
 
 export interface WorkspaceItemRpcRow {
   id: string;
@@ -115,8 +117,8 @@ export interface MappedRows {
   timelineFailures: number;
 }
 
-/** RPC rows to Resources with their timelines, read in chunks of 150 ids; a failed chunk is counted, not hidden. */
-export async function mapRows(db: Db, items: WorkspaceItemRpcRow[]): Promise<MappedRows> {
+/** RPC rows to Resources with their timelines, read in chunks of 150 ids; a failed chunk is counted, not hidden. Every row gets its impact (stored scores plus the reading workspace's client score when `orgId` is given) or the sentence of the input it waits for. */
+export async function mapRows(db: Db, items: WorkspaceItemRpcRow[], opts: { orgId?: string | null; profile?: WorkspaceProfile | null | undefined } = {}): Promise<MappedRows> {
   const uuidToUiId = new Map(items.map((i) => [i.id, i.legacy_id || i.id]));
   const byItem = new Map<string, TimelineRow[]>();
   let timelineFailures = 0;
@@ -137,6 +139,7 @@ export async function mapRows(db: Db, items: WorkspaceItemRpcRow[]): Promise<Map
     const resource: Resource = { ...baseResourceFields(row), timeline, ...(row.compliance_deadline ? { complianceDeadline: row.compliance_deadline } : {}) };
     (resource.isArchived ? archived : active).push(resource);
   }
+  await attachImpact(db, [...active, ...archived], new Map([...uuidToUiId].map(([uuid, uiId]) => [uiId, uuid])), opts.orgId ?? null, opts.profile);
   return { active, archived, uuidToUiId, timelineFailures };
 }
 

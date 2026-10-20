@@ -9,22 +9,28 @@ import { assertVerbatim } from "@/core/contracts/verbatim";
 import { dedupeEvents, type DroppedEvent, type ExtractedEvent } from "./dedupe";
 import { finerDuePrecision, isDueDateSlotClaim, rescueSlotDateWithContext, scanText, slotDatePrecision, type ClaimIn, type Hit } from "./scan";
 
-export const EXTRACTOR_VERSION = "fe1-2026-09-13.1";
+export const EXTRACTOR_VERSION = "fe2-2026-10-20.1";
 export interface SectionIn {
   section_id: string;
   key?: string;
   md: string;
 }
 export interface SkippedEvent {
-  source_kind: "claim" | "section";
+  source_kind: "claim" | "section" | "capture";
   source_claim_id: string | null;
   source_section_id: string | null;
   reason: string;
   text: string;
 }
+/** A held capture of the item (its primary text): a date located in it is verbatim in its source by construction. */
+export interface CaptureIn {
+  capture_id: string;
+  text: string;
+}
 export interface ExtractInput {
   claims?: readonly ClaimIn[];
   sections?: readonly SectionIn[];
+  captures?: readonly CaptureIn[];
   referenceDates?: readonly string[];
 }
 export interface ExtractOutput {
@@ -33,9 +39,11 @@ export interface ExtractOutput {
   counts: { dedupe_dropped: number; dedupe_dropped_detail: DroppedEvent[] };
 }
 
-const toEvent = (h: Pick<Hit, "iso" | "kind" | "obligationText" | "dateSpan">, precision: string, source: { kind: "claim"; claimId: string } | { kind: "section"; sectionId: string }): ExtractedEvent => ({
+const toEvent = (h: Pick<Hit, "iso" | "kind" | "obligationText" | "dateSpan">, precision: string, source: { kind: "claim"; claimId: string } | { kind: "section"; sectionId: string } | { kind: "capture"; captureId: string }): ExtractedEvent => ({
   event_date: h.iso, date_precision: precision, event_kind: h.kind, obligation_text: h.obligationText, source_kind: source.kind,
   source_claim_id: source.kind === "claim" ? source.claimId : null, source_section_id: source.kind === "section" ? source.sectionId : null,
+  // The key exists only on a capture-backed event, so a claim or section insert never names a column the capture migration (0110) adds.
+  ...(source.kind === "capture" ? { source_capture_id: source.captureId } : {}),
   source_span: h.dateSpan, confidence: source.kind === "claim" ? "high" : "medium", extractor_version: EXTRACTOR_VERSION,
 });
 
@@ -82,6 +90,15 @@ export function extractForwardEvents(input: ExtractInput): ExtractOutput {
     for (const h of hits) {
       assertVerbatim(text, h.dateSpan);
       events.push(toEvent(h, h.precision, { kind: "section", sectionId: section.section_id }));
+    }
+  }
+  // The item's own captures are scanned last: a date a brief claim or section already carries is that one (claim-backed preferred), and a duty the brief never quoted is still found in the primary text.
+  for (const capture of input?.captures ?? []) {
+    const { hits, skips } = scanText(capture.text, { referenceDates });
+    for (const s of skips) skipped.push({ source_kind: "capture", source_claim_id: null, source_section_id: null, reason: s.reason, text: s.span });
+    for (const h of hits) {
+      assertVerbatim(capture.text, h.dateSpan);
+      events.push(toEvent(h, h.precision, { kind: "capture", captureId: capture.capture_id }));
     }
   }
   const { events: deduped, dropped } = dedupeEvents(events);

@@ -2,7 +2,7 @@
 // Ported from old_repo/scripts/turns/run-population-flywheel.mjs (lines 1466-1607)
 // The one turn runtime: an ordered stage plan, the build-mode gate read once, one root run id, one ledger row per stage, each stage the next one's upstream. A stage that is asked for runs its
 // downstream stages too (rule 17) unless the dispatch says `chain: false`, and the row then says so.
-import { resolveMode, runChain, type FamilyRun, type HarnessDeps, type Mode, type Resolved, type Trigger } from "@/core/harness";
+import { familyOf, resolveModes, runChain, type FamilyRun, type HarnessDeps, type Mode, type ModeGate, type Resolved, type Trigger } from "@/core/harness";
 import { newRunId } from "@/core/harness";
 
 import { familyFns, familyOfStage, isStage, STAGES, type Stage } from "./registry";
@@ -45,9 +45,13 @@ export async function runTurn(req: TurnRequest, target: { d: BuiltDeps | null; e
   const h: HarnessDeps = { sb: d?.sb ?? null, env: target.env, now: target.now, fns: d ? familyFns(d) : {} };
   // The build-mode gate is read ONCE: every stage of this turn runs in the mode it resolves, and every row says why.
   const notes = d ? await d.loadReferenceData() : [];
-  const resolved = d ? await resolveMode(d.sb, { mode: req.mode, trigger }) : { mode: req.mode, forcedDry: false, reason: null };
-  const inputs = Object.fromEntries(plan.map((s) => [s === "ops" ? "ops" : familyOfStage(s), { ...(req.input?.[s] ?? {}), ...(req.chain === false ? { chain_disabled: true } : {}) }]));
-  const runs = await runChain(plan.map((s) => (s === "ops" ? "ops" : familyOfStage(s))), { mode: resolved.mode, trigger, rootRunId, resolved }, h, inputs);
+  const open: Resolved = { mode: req.mode, forcedDry: false, reason: null };
+  const gate: ModeGate = d ? await resolveModes(d.sb, { mode: req.mode, trigger }) : { fetching: open, analysis: open };
+  // The turn reports the mode its first stage runs in; every row says its own.
+  const families = plan.map((s) => (s === "ops" ? "ops" : familyOfStage(s)));
+  const resolved = gate[familyOf(families[0] as string)?.fetches ? "fetching" : "analysis"];
+  const inputs = Object.fromEntries(plan.map((s, i) => [families[i], { ...(req.input?.[s] ?? {}), ...(req.chain === false ? { chain_disabled: true } : {}) }]));
+  const runs = await runChain(families, { mode: req.mode, trigger, rootRunId, resolved: gate }, h, inputs);
   const failure = runs.find((r) => r.exit !== 0);
   return { rootRunId, plan, resolved, runs, exit: failure ? failure.exit : 0, notes };
 }

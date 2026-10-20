@@ -10,7 +10,7 @@ import type { HeldRow } from "@/features/workspace/portfolio/types";
 
 /** The member items among `uuids` that the platform holds for this workspace: the workspace's own rows (its priority and its archive already applied by the database). */
 export async function readHeld(db: Db, orgId: string, uuids: readonly string[], now: Date): Promise<HeldRow[]> {
-  const mapped = await mapRows(db, await readItemRows(db, orgId, uuids));
+  const mapped = await mapRows(db, await readItemRows(db, orgId, uuids), { orgId });
   await enrichSources(db, mapped.active, { biasTags: true });
   return mapped.active.map((r): HeldRow => ({ uiId: r.id, title: r.title, priority: r.priority ?? null, surface: canonicalSurface(r), dueDays: dueInfo(r, now)?.daysNum ?? null, fields: toListRowFields(r, now) as unknown as Record<string, unknown> }));
 }
