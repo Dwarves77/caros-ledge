@@ -1,7 +1,8 @@
 // R2c C6 and C8: the registry identity (INV-R2c-9: two institutions on one host are two rows with their own tiers), one birth function with named profiles, no overwriting of a stored role, duplicate detection by page equality,
 // and the rights verdict with the quotation rule.
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { join } from "node:path";
 import { test } from "node:test";
 
 import { REUSE_TERMS, reuseTermsForHost } from "@/core/sources/reuse-terms";
@@ -133,4 +134,23 @@ test("the read a surface makes of the registry names no column that migrations 0
   assert.equal(await readSourceByUrl(db as never, "https://www.epa.gov/rules"), null);
   assert.ok(asked.length > 0);
   assert.doesNotMatch(asked.join(","), /institution_key|reuse_terms|collection_state|collection_detail|access_requested_at|access_contact|publisher_locale/);
+});
+
+const ADDED_BY_0080_0081 = /\b(institution_key|reuse_terms|collection_state|collection_detail|access_requested_at|access_contact|publisher_locale|number_locale|content_hash|capture_channel)\b/;
+/** The files that may name a column 0080 or 0081 adds: the writers and the runner jobs, which run after the migrations are applied. A page or an API route that reads names none of them. */
+const MAY_NAME_THEM: Record<string, string> = {
+  "src/core/sources/register.ts": "registerSource and the key backfill write the identity column through register_source_once",
+  "src/core/sources/reuse-terms.ts": "a comment naming the column the verdict is stored in",
+  "src/core/fetch/store-capture.ts": "the capture writer shared by the Edge Function and the runner job",
+  "src/features/sources/classify-sources.ts": "the classify job keys rows and sets the rights verdict",
+  "src/features/sources/collect.ts": "the runner job that finishes the ladder and records the state",
+  "src/features/sources/snapshots.ts": "raw_fetches.content_hash, an older table",
+  "src/core/capture/change-detection.ts": "a note inside a trust event, not a column",
+};
+const sourceFiles = (dir: string): string[] => readdirSync(dir).flatMap((n) => (statSync(join(dir, n)).isDirectory() ? sourceFiles(join(dir, n)) : /\.(ts|tsx)$/.test(n) ? [join(dir, n).replace(/\\/g, "/")] : []));
+
+test("no page or API read names a column that migrations 0080 and 0081 add: only the writers and the runner jobs do", () => {
+  const offenders = sourceFiles("src").filter((f) => ADDED_BY_0080_0081.test(readFileSync(f, "utf8")) && !(f in MAY_NAME_THEM));
+  assert.deepEqual(offenders, []);
+  for (const f of Object.keys(MAY_NAME_THEM)) assert.ok(ADDED_BY_0080_0081.test(readFileSync(f, "utf8")), `${f} no longer names one: delete its entry`);
 });
