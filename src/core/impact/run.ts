@@ -1,6 +1,7 @@
 // New file (scripts/ci/new-files/impact-1.txt): the propagate stage's scoring step. The items whose inputs changed since their score was computed (and every item on the first run) are scored by the registered method and stored in item_impact_scores,
 // the items the connect stage just read first, then the backlog oldest first, at most READING.backlog.scorePerTurn per turn. The method is pure; this file reads its inputs and writes its rows. Dry computes the same scores and writes nothing.
 import { DUTY_HOLDER_CLASSES } from "@/core/contracts/vocabularies";
+import { admitItems } from "@/core/derived/admissible";
 import { fetchAllByIdChunks, fetchAllRows, type Db } from "@/core/db";
 import { authorityFloorFor } from "@/core/grounding/pool";
 import { IMPACT_METHOD_ID, IMPACT_METHOD_VERSION, type MethodRegistry } from "@/core/propagation/methods";
@@ -49,7 +50,7 @@ export async function scoreItems(deps: { sb: Db; now: () => Date; registry: Meth
   const { sb } = deps;
   const method = deps.registry.get("item_impact_scores", IMPACT_METHOD_ID, IMPACT_METHOD_VERSION);
   if (!method) throw new Error(`the registry holds no ${IMPACT_METHOD_KEY}`);
-  const items = await fetchAllRows<ItemRow>((from, to) => sb.from("intelligence_items").select("id, updated_at").eq("provenance_status", "verified").eq("is_archived", false).order("id", { ascending: true }).range(from, to), { cap: 100_000 });
+  const items = await fetchAllRows<ItemRow>((from, to) => admitItems(sb.from("intelligence_items").select("id, updated_at")).order("id", { ascending: true }).range(from, to), { cap: 100_000 });
   const scores = await fetchAllRows<ScoreRow>((from, to) => sb.from("item_impact_scores").select("item_id, computed_at, method_version").order("item_id", { ascending: true }).range(from, to), { cap: 100_000 });
   const scans = await fetchAllRows<ScanRow>((from, to) => sb.from("item_obligation_scan").select("item_id, scanned_at").order("item_id", { ascending: true }).range(from, to), { cap: 100_000 });
   const live = new Set(items.map((i) => i.id));

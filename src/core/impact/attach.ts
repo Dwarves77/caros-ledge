@@ -1,5 +1,6 @@
 // New file (scripts/ci/new-files/impact-1.txt): the one place a reader gives its rows their impact (IMPACT-1). Every reader that maps rows to Resources (mapRows, readCategory, the detail loader) calls it, so a row's impact is item_impact_scores for that item, and a row with a
 // dimension still missing says which input it waits for. The client dimension is the reading workspace's relevance to the item (read-time, never stored); with no workspace it is not known and the row says so.
+import { admitItems } from "@/core/derived/admissible";
 import type { Db } from "@/core/db";
 import { fetchAllByIdChunks } from "@/core/db";
 import type { Resource } from "@/core/types";
@@ -18,7 +19,7 @@ async function clientScores(db: Db, ids: readonly string[], orgId: string, given
   if (read.failed) throw new Error("workspace_settings read failed");
   const profile = read.profile;
   const rows = await fetchAllByIdChunks<Record<string, unknown> & { id: string }>(ids, async (slice) => {
-    const { data, error } = await db.from("intelligence_items").select(TAG_COLUMNS).in("id", slice);
+    const { data, error } = await admitItems(db.from("intelligence_items").select(TAG_COLUMNS)).in("id", slice);
     if (error) throw new Error(`intelligence_items read failed: ${error.message}`);
     return (data ?? []) as (Record<string, unknown> & { id: string })[];
   }, { chunk: 150 });

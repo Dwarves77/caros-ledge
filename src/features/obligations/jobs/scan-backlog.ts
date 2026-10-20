@@ -1,6 +1,7 @@
 // New file (scripts/ci/new-files/impact-1.txt): the connect stage's reading of the backlog. For every verified item that has not been read at the current extractor and derivation versions (or whose brief was regenerated after the last read), oldest first, bounded
 // per turn: extract the forward events from its claims, sections and captures, derive the register and the obligation objects, and record that the item was read (item_obligation_scan). The ops job derive-obligations stays an operator replay;
 // this is the primary path (rule 17: a stage that mints or reads never leaves its downstream to a separate job). Dry plans the same counts and writes nothing.
+import { admitItems } from "@/core/derived/admissible";
 import { fetchAllByIdChunks, fetchAllRows, type Db } from "@/core/db";
 import type { RunResult } from "@/core/sources/run-result";
 import { currentObligationObjects } from "@/core/workspace";
@@ -39,7 +40,7 @@ function staleItems(items: readonly ItemRow[], scans: readonly ScanRow[]): strin
 
 /** Every verified live item still to be read, in reading order. A failed read throws: an unreadable backlog is never an empty one. */
 async function readStale(sb: Db): Promise<string[]> {
-  const items = await fetchAllRows<ItemRow>((from, to) => sb.from("intelligence_items").select("id, last_regenerated_at").eq("provenance_status", "verified").eq("is_archived", false).order("id", { ascending: true }).range(from, to), { cap: 100_000 });
+  const items = await fetchAllRows<ItemRow>((from, to) => admitItems(sb.from("intelligence_items").select("id, last_regenerated_at")).order("id", { ascending: true }).range(from, to), { cap: 100_000 });
   const scans = await fetchAllRows<ScanRow>((from, to) => sb.from("item_obligation_scan").select("item_id, scanned_at, extractor_version, derivation_version").order("item_id", { ascending: true }).range(from, to), { cap: 100_000 });
   return staleItems(items, scans);
 }

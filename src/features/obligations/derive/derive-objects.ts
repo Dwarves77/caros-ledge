@@ -255,11 +255,11 @@ function dutyWindows(text: string): string[] {
 }
 
 /** One candidate per pinpoint from the item's captures: the primary text names its duties whether or not a brief claim quoted them. */
-function candidatesFromCaptures(item: ObjectItem, captures: readonly CaptureRow[], events: readonly EventForDates[]): Candidate[] {
+function candidatesFromCaptures(item: ObjectItem, captures: readonly CaptureRow[], events: readonly EventForDates[], withdrawn: readonly string[]): Candidate[] {
   const timeline = timelineFromEvents(events);
   const out = new Map<string, Candidate>();
   for (const cap of captures) {
-    for (const window of dutyWindows(cap.result_content ?? "")) {
+    for (const window of dutyWindows(cap.result_content ?? "").filter((w) => !withdrawn.some((t) => w.toLowerCase().includes(t)))) {
       const c = dutyCandidate(item, window, cap.id, null, timeline);
       if (c && !out.has(norm(c.pinpoint_citation))) out.set(norm(c.pinpoint_citation), c);
     }
@@ -295,14 +295,15 @@ export async function deriveObligationObjects(sb: Db, input: { dry: boolean; ite
     return data ?? [];
   });
   const itemsById = new Map(items.filter((i) => !i.is_archived).map((i) => [i.id, i]));
-  const claims = admissibleClaims(
-    await fetchAllByIdChunks<ClaimForObjects>([...itemsById.keys()], async (slice) => {
-      const { data, error } = await sb.from("section_claim_provenance").select("id, claim_text, claim_kind, source_span, search_result_id, source_id, intelligence_item_id").eq("claim_kind", "FACT").in("intelligence_item_id", slice);
-      if (error) throw new Error(`derive-objects: section_claim_provenance read failed: ${error.message}`);
-      return data ?? [];
-    }, { manyPerId: true }),
-    await readFactSuppressionsFor(sb, [...itemsById.keys()]),
-  );
+  const factRows = await fetchAllByIdChunks<ClaimForObjects>([...itemsById.keys()], async (slice) => {
+    const { data, error } = await sb.from("section_claim_provenance").select("id, claim_text, claim_kind, source_span, search_result_id, source_id, intelligence_item_id").eq("claim_kind", "FACT").in("intelligence_item_id", slice);
+    if (error) throw new Error(`derive-objects: section_claim_provenance read failed: ${error.message}`);
+    return data ?? [];
+  }, { manyPerId: true });
+  const claims = admissibleClaims(factRows, await readFactSuppressionsFor(sb, [...itemsById.keys()]));
+  // A claim a correction took out is a statement the platform withdrew: a duty window of the capture that contains its text is withdrawn with it.
+  const stands = new Set(claims.map((c) => c.id));
+  const withdrawn = (itemId: string): string[] => factRows.filter((c) => c.intelligence_item_id === itemId && !stands.has(c.id)).flatMap((c) => [c.source_span, c.claim_text]).filter((t): t is string => nz(t) !== "").map((t) => t.toLowerCase());
   const events = await fetchAllByIdChunks<EventForDates & { intelligence_item_id: string }>([...itemsById.keys()], async (slice) => {
     const { data, error } = await sb.from("item_forward_events").select("intelligence_item_id, event_date, date_precision, event_kind, obligation_text, confidence").in("intelligence_item_id", slice);
     if (error) throw new Error(`derive-objects: item_forward_events read failed: ${error.message}`);
@@ -320,7 +321,7 @@ export async function deriveObligationObjects(sb: Db, input: { dry: boolean; ite
     const held = captures.filter((c) => c.intelligence_item_id === item.id);
     const fromClaims = candidatesFromClaims(item, claims.filter((c) => c.intelligence_item_id === item.id), own);
     const taken = new Set(fromClaims.map((c) => norm(c.pinpoint_citation)));
-    candidates.push(...fromClaims, ...candidatesFromCaptures(item, held, own).filter((c) => !taken.has(norm(c.pinpoint_citation))), ...candidatesFromFueleuTargets(item, held, own));
+    candidates.push(...fromClaims, ...candidatesFromCaptures(item, held, own, withdrawn(item.id)).filter((c) => !taken.has(norm(c.pinpoint_citation))), ...candidatesFromFueleuTargets(item, held, own));
   }
   const capturesById = new Map(captures.map((c) => [c.id, c]));
   const missing = [...new Set(candidates.map((c) => c.capture_id))].filter((id) => !capturesById.has(id));
