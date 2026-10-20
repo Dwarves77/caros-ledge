@@ -8,7 +8,7 @@ import { EMPTY_IDENTITY, resolveIdentity } from "@/core/auth/identity";
 import { acceptInvitation, createInvitation, declineInvitation, listInvitations, lookupInvitation, pendingInvitationsFor, revokeInvitation } from "@/core/auth/invitations";
 import { currentMembership, LookupError } from "@/core/auth/membership";
 import { createOrgBody, createOrgForSelf } from "@/core/auth/orgs";
-import { decidePlatformAdmin, isPlatformAdmin, readOwnPlatformAdmin } from "@/core/auth/platform-admin";
+import { readOwnPlatformAdmin, requirePlatformAdmin } from "@/core/auth/platform-admin";
 import { decideRoute, sanitizeReturnPath } from "@/core/auth/route-policy";
 import { HttpError } from "@/core/http/errors";
 
@@ -62,16 +62,21 @@ test("sanitizeReturnPath: same-origin paths only, no control characters", () => 
   for (const bad of ["//evil.test", "/\\evil.test", "https://evil.test", "evil", "", null, undefined, "/\t/evil.test", "/\n//evil.test", "/a\rb", "/a\u0000b", "/a\u007fb"]) assert.equal(sanitizeReturnPath(bad as string), "/", JSON.stringify(bad));
 });
 
-test("decidePlatformAdmin: anonymous, denied (including a failed read) and admitted", async () => {
-  assert.deepEqual(await decidePlatformAdmin(fakeDb(undefined, { claims: signedOut }).db), { kind: "anonymous" });
-  assert.deepEqual(await decidePlatformAdmin(fakeDb(undefined, { claims: signedIn("u1"), rpc: () => ({ data: false }) }).db), { kind: "denied", userId: "u1" });
-  assert.deepEqual(await decidePlatformAdmin(fakeDb(undefined, { claims: signedIn("u1"), rpc: () => ({ error: { message: "x" } }) }).db), { kind: "denied", userId: "u1" });
-  assert.deepEqual(await decidePlatformAdmin(fakeDb(undefined, { claims: signedIn("u1", "a@b.test"), rpc: () => ({ data: true }) }).db), { kind: "admitted", userId: "u1", email: "a@b.test" });
+test("requirePlatformAdmin: anonymous goes to /login, denied (including a failed read) to /, admitted gets the user", async () => {
+  const gate = async (db: ReturnType<typeof fakeDb>["db"]) => {
+    scripted.user = () => db;
+    try {
+      return await requirePlatformAdmin();
+    } catch (e) {
+      return String((e as { digest?: string }).digest ?? e);
+    }
+  };
+  assert.match(String(await gate(fakeDb(undefined, { claims: signedOut }).db)), /^NEXT_REDIRECT;[a-z]+;\/login\?redirect=%2Fadmin;/);
+  assert.match(String(await gate(fakeDb(undefined, { claims: signedIn("u1"), rpc: () => ({ data: false }) }).db)), /^NEXT_REDIRECT;[a-z]+;\/;/);
+  assert.match(String(await gate(fakeDb(undefined, { claims: signedIn("u1"), rpc: () => ({ error: { message: "x" } }) }).db)), /^NEXT_REDIRECT;[a-z]+;\/;/, "a failed flag read denies");
+  assert.deepEqual(await gate(fakeDb(undefined, { claims: signedIn("u1", "a@b.test"), rpc: () => ({ data: true }) }).db), { userId: "u1", email: "a@b.test" });
   assert.equal(await readOwnPlatformAdmin(fakeDb(undefined, { rpc: () => ({ data: "true" }) }).db), false, "only a literal true admits");
   await assert.rejects(readOwnPlatformAdmin(fakeDb(undefined, { rpc: () => ({ error: { message: "x" } }) }).db), LookupError);
-  assert.equal(await isPlatformAdmin("u1", fakeDb(() => ({ data: { is_platform_admin: true } })).db), true);
-  assert.equal(await isPlatformAdmin("u1", fakeDb(() => ({ data: { is_platform_admin: 1 } })).db), false);
-  await assert.rejects(isPlatformAdmin("u1", fakeDb(() => ({ error: { message: "x" } })).db), LookupError);
 });
 
 test("INV-154 / INV-137: ensureProfile creates the row with no privilege column; a race re-reads; a failure is counted", async () => {

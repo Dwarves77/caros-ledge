@@ -10,7 +10,7 @@ import { test } from "node:test";
 import { ESLint } from "eslint";
 
 import { GET as roster } from "@/features/community/api/group-members";
-import { SURFACES } from "@/core/routing/surface";
+import surfaceRules from "@/core/routing/data/surface-rules.json";
 
 import { call, PUB, world } from "./_world.ts";
 
@@ -66,7 +66,7 @@ test("PROP-044: the lint rule is real: an import of Community code from another 
 // ── PROP-098 and PROP-051 ──────────────────────────────────────────────────────────────────────────────────────
 
 test("PROP-098: exactly five customer surfaces, Community co-equal: four item surfaces and Community, each a nav entry and a page; the item router never routes to Community; no Assistant surface", () => {
-  assert.deepEqual([...SURFACES].sort(), ["market", "operations", "regulations", "research"]);
+  assert.deepEqual([...surfaceRules.surfaces].sort(), ["market", "operations", "regulations", "research"]);
   const nav = JSON.parse(read("src/ui/shell/data/nav.json")) as { sections: Array<{ label: string; items: Array<{ href: string }> }> };
   const hrefs = nav.sections.flatMap((s) => s.items.map((i) => i.href));
   const five = ["/regulations", "/market", "/research", "/operations", "/community"];

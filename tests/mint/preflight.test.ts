@@ -3,7 +3,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { preflight, tagPresence, type RecordPayload } from "@/features/mint";
+import { preflight, type RecordPayload } from "@/features/mint";
 
 import { builtPayload } from "./world.ts";
 
@@ -131,10 +131,11 @@ test("INV-294: a record payload needs its own on_vertical screen verdict with a 
 
 test("tag presence is visible and never blocks: each empty signature field and the all-empty case are named", () => {
   const p = clone();
-  assert.equal(tagPresence(p).length, 4);
+  const warnings = () => preflight(p, ok).warnings;
+  assert.equal(warnings().length, 4);
   p.item.topic_tags = ["freight"];
   p.item.operational_scenario_tags = ["x"];
-  assert.deepEqual(tagPresence(p).map((w) => w.field), ["compliance_object_tags"]);
+  assert.deepEqual(warnings().map((w) => w.field), ["compliance_object_tags"]);
   p.item.compliance_object_tags = ["y"];
-  assert.deepEqual(tagPresence(p), []);
+  assert.deepEqual(warnings(), []);
 });

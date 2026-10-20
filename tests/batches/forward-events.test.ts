@@ -4,7 +4,6 @@ import { test } from "node:test";
 
 import { applyBatch } from "@/features/batches";
 import { forwardEventsExporter } from "@/features/batches/kinds/forward-events/export";
-import { applyLimit, buildSnapshot, partitionByCorpusMembership } from "@/features/batches/kinds/forward-events/tickets";
 import { forwardEventKey } from "@/features/obligations";
 
 import { batchFile, ITEM, NOW, SPAN_FORCE } from "./world.ts";
@@ -25,9 +24,6 @@ test("INV-212 selection: the open queue is partitioned by the item's live state 
   assert.equal(items.some((i) => i.id === ARCHIVED || i.id === UNVERIFIED), false);
   const snap = (r.summary as { tickets: { ids: string[]; archived_requests: { id: string }[]; deferred_not_verified: number } }).tickets;
   assert.deepEqual([snap.ids, snap.archived_requests.map((a) => a.id), snap.deferred_not_verified], [[ITEM], [T.archived], 1]);
-  assert.deepEqual(partitionByCorpusMembership([{ id: "x", intelligence_item_id: "gone", reason: null, requested_at: "" }], new Map()).deferred.length, 1, "an item that vanished defers; its ticket is not consumed");
-  assert.deepEqual(applyLimit([1, 2, 3], 2), [1, 2]);
-  assert.equal(buildSnapshot([], { generatedAt: "t" }).count, 0);
 });
 
 test("events load through the ONE writer on the migration-307 key, derive the item's obligations and consume exactly the ticket the entry names; a re-apply writes nothing new", async () => {

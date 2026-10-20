@@ -5,7 +5,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { chainProof, flywheelOutcomes, mintedIds } from "@/core/harness";
 import { runTurn } from "@/core/turn";
 import { headlineCardView } from "@/features/market/lib/headline-view";
 import { selectHeadlineSeries } from "@/features/market/lib/headline";
@@ -30,8 +29,8 @@ import { POST_DECIDE, POST_REQUEST } from "@/features/community/api/signoff";
 import { ROOMS } from "@/features/community/lib/rooms";
 import { readRoomsHome, type RoomsHome } from "@/features/community/lib/rooms-read";
 import { runNotificationOutbox } from "@/features/drain/kinds";
-import { fetchUnread } from "@/ui/shell/use-unread-count";
 
+import { chainProof, flywheelOutcomes, mintedIds } from "../_support/ledger-proofs.ts";
 import type { Row } from "../_support/memdb.ts";
 import { adopt, asClient, call, serviceOf, USER, wire, withDefaults, type Persona } from "../community/_world.ts";
 
@@ -288,7 +287,11 @@ test("P2-16: the rooms read the item the turn minted in the room of its jurisdic
   assert.equal((await call(POST_CITE, "nonMember", "POST", `/api/community/posts/${tid}/cite`, { item_id: "aaaaaaaa-0000-4000-8000-0000000000ff" }, { id: tid })).status, 404, "an item that does not exist cannot be cited");
 
   // A reply notifies the thread author through the outbox; the drain delivers it; the shell's unread count sees it; a muted group drops the next one.
-  const unread = async (who: Persona) => fetchUnread((async (u: string) => new Response(JSON.stringify((await call(listNotifications, who, "GET", u)).body))) as never);
+  const unread = async (who: Persona): Promise<number | null> => {
+    const r = await call(listNotifications, who, "GET", "/api/community/notifications?unread_only=true&limit=1");
+    const n = (r.body as { unread_count?: unknown }).unread_count;
+    return r.status === 200 && typeof n === "number" ? n : null;
+  };
   assert.equal((await call(reply, "admin", "POST", `/api/community/posts/${tid}/replies`, { body: "We filed on the first." }, { id: tid })).status, 201);
   assert.equal(w.rows("notification_outbox").filter((o) => o.user_id === USER.nonMember && o.kind === "reply").length, 1);
   await runNotificationOutbox({ sb: serviceOf(w), now: () => NOW }, { dry: false });

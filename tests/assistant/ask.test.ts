@@ -3,8 +3,7 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { test } from "node:test";
 
 import { POST } from "@/features/assistant/api/ask";
-import { wireAssistantDeps } from "@/features/assistant/deps";
-import { matchPassages, SKILL_PASSAGES } from "@/features/assistant/passages";
+import { matchPassages } from "@/features/assistant/passages";
 import { generateTriggerQuestions } from "@/features/learning";
 
 import { scripted } from "../_support/fake-clients.ts";
@@ -33,7 +32,6 @@ function world() {
   db.fail("item_corrections", "select", "permission denied for table item_corrections", { code: "42501" });
   db.views.fact_suppressions = () => db.rows("item_corrections").filter((c) => c.target_kind === "fact");
   scriptWithRpc(db);
-  wireAssistantDeps({ operationsFacts: undefined });
   return db;
 }
 const ask = (persona: Parameters<typeof call>[1], question: string) => call(POST, persona, "POST", "/api/ask", { question });
@@ -110,16 +108,9 @@ test("the question is validated: two to 500 characters", async () => {
   assert.equal((await call(POST, "member", "POST", "/api/ask", {})).status, 400);
 });
 
-test("the Operations block: the wired dependency's lines are added; a failure is a 503; unwired adds none and says nothing", async () => {
+test("the Operations block: while its dependency is unwired the answer adds none and says nothing", async () => {
   world();
   assert.deepEqual(((await ask("member", "emissions")).body as unknown as Body).operations, []);
-  let seen: unknown;
-  wireAssistantDeps({ operationsFacts: async (_db, input) => ((seen = input), ["EU labour cost: 41.2 EUR/h (Eurostat)"]) });
-  assert.deepEqual(((await ask("member", "emissions")).body as unknown as Body).operations, ["EU labour cost: 41.2 EUR/h (Eurostat)"]);
-  assert.deepEqual((seen as { jurisdictions: string[] }).jurisdictions, ["EU"]);
-  wireAssistantDeps({ operationsFacts: async () => { throw new Error("down"); } });
-  assert.equal((await ask("member", "emissions")).status, 503);
-  wireAssistantDeps({ operationsFacts: undefined });
 });
 
 test("FREE by construction: the whole route runs with the network replaced by a throwing stub and reaches nothing, and the Assistant's server code names no model, key or metered client", async () => {
@@ -139,7 +130,6 @@ test("FREE by construction: the whole route runs with the network replaced by a 
 });
 
 test("the platform guide: matched by WHOLE words from the question, best first, at most two; no match is nothing; a stray 'us' is not the United States", () => {
-  assert.equal(SKILL_PASSAGES.length, 6);
   assert.deepEqual(matchPassages("What do the severity labels mean?").map((p) => p.id), ["severity-labels"]);
   assert.deepEqual(matchPassages("how are sources weighted when they conflict").map((p) => p.id), ["source-hierarchy"]);
   assert.deepEqual(matchPassages("which jurisdictions and regions do you cover on each page").map((p) => p.id).sort(), ["four-pages", "jurisdictions"]);

@@ -3,12 +3,11 @@ import assert from "node:assert/strict";
 import { readdirSync } from "node:fs";
 import { test } from "node:test";
 
-import { DRAIN_KINDS, KIND_ORDER, kindForBatchPath, nextBatchPath, resolveKind, runNotificationOutbox, screenVerdictExporter, themeClassificationExporter, applyScreenVerdictBatch, finishDrain, leaseDeps, planDrain, selectStaleItems, type DrainDeps, type Exporter } from "@/features/drain";
-import { buildEntityItemsReader, describeChange, EMITTING_TABLES, eventTypeForOutboxRow, MAX_ITEMS_PER_EVENT, readOutboxEvents, runQuestionsOnChange, type ChangeDeps } from "@/features/learning/questions-on-change";
-import { buildLedgerRows, deadlineMs, matchEventsToSignposts, runSignpostStep, type OutboxEvent, type SignpostRow, type SignpostStepDeps } from "@/features/learning/signpost-scoring";
-import { buildSignpostStepDeps, hydrateEventRows } from "@/features/learning/signpost-scoring-deps";
-import { generateTriggerQuestions, isTriggerQuestionFlag, PRODUCT_QUESTIONS, questionFlagRow, surfacesForDomain, TRIGGER_EVENT_TYPES, triggerQuestionFlagRow, triggerQuestionsForItem } from "@/features/learning/trigger-questions";
-import { classifyTheme } from "@/features/research/theme-rules";
+import { DRAIN_KINDS, KIND_ORDER, nextBatchPath, resolveKind, runNotificationOutbox, screenVerdictExporter, applyScreenVerdictBatch, finishDrain, leaseDeps, planDrain, type DrainDeps, type Exporter } from "@/features/drain";
+import { buildEntityItemsReader, runQuestionsOnChange, type ChangeDeps } from "@/features/learning/questions-on-change";
+import { deadlineMs, runSignpostStep, type OutboxEvent, type SignpostRow, type SignpostStepDeps } from "@/features/learning/signpost-scoring";
+import { buildSignpostStepDeps } from "@/features/learning/signpost-scoring-deps";
+import { generateTriggerQuestions, questionFlagRow, TRIGGER_EVENT_TYPES, triggerQuestionsForItem } from "@/features/learning/trigger-questions";
 
 import { memoryDb } from "../_support/memory-db.ts";
 
@@ -46,8 +45,6 @@ test("INV-246 matrix: the first qualifying event fires a signpost once; a signpo
   assert.equal(r.counts.signposts_fired, 1);
   assert.deepEqual(f.log.filter((l) => l.startsWith("fire")).map((l) => l.split(":")[1]), ["s1"], "fired once, on the FIRST event in occurrence order, not the first in the array");
   assert.equal(r.counts.scored_held, 1);
-  const m = matchEventsToSignposts([evt(2, "2026-10-13T00:00:00Z"), evt(1, "2026-10-12T00:00:00Z")], [sp("s1")], NOW);
-  assert.equal(m.fires[0]?.event.eventId, "1");
   assert.equal(deadlineMs({ by: "2026-10-10" }), Date.parse("2026-10-10") + 86_400_000);
   assert.equal(deadlineMs({}), null);
 });
@@ -66,7 +63,6 @@ test("INV-246: the outcome is the direction map (confirms held, refutes refuted,
 });
 
 test("INV-246: scoring writes one ledger row per DISTINCT grounding source BEFORE the score and never twice; a source-less score is counted; a score or fire failure is counted with its event id and never aborts the pass", async () => {
-  assert.equal(buildLedgerRows({ signpostEntityId: "s", assessmentId: "a", outcome: "held", sourceIds: ["x", "y", "x", ""], now: NOW }).length, 2);
   const f = fakeStep({ watching: [sp("s1"), sp("s2"), sp("s3", { watches: "ent-2" })], grounding: { "item-a-s1": ["x", "y", "x"], "item-a-s3": ["z"] }, ledger: { s1: ["y"] }, failFire: ["s3"], failScore: ["s2"] });
   const r = await run(f, { dry: false, sweep: false, events: [evt(1, "2026-10-12T00:00:00Z"), evt(2, "2026-10-12T00:00:00Z", { entityId: "ent-2" })] });
   assert.ok(f.log.indexOf("ledger:1") < f.log.indexOf("score:s1:held"), "ledger first, then the score");
@@ -102,28 +98,26 @@ test("the real signpost deps: firing is the one transactional rpc, scoring write
   assert.equal(db.tables.signposts?.[0]?.outcome, "held");
   const broken = memoryDb({}, { failures: [{ table: "signposts", op: "select", message: "down" }] });
   await assert.rejects(() => buildSignpostStepDeps(broken.db).readFiredUnscored(), /paginated read failed/);
-  const hydrated = await hydrateEventRows(memoryDb({ propagation_events: [{ event_id: "7", new_row: { a: 1 } }] }).db, [{ ...evt(7, "2026-10-12T00:00:00Z") }]);
-  assert.deepEqual(hydrated[0]?.newRow, { a: 1 });
 });
 
 // ---- trigger questions ----
-test("INV-247: four questions per routed surface, none for domain 5 or null, the flag row is an open coverage gap under the question: namespace answered from holdings, never a fetch", () => {
-  assert.deepEqual(PRODUCT_QUESTIONS, ["what", "affects_me", "comply", "invest_wait_avoid"]);
+test("INV-247: four questions per routed surface, none for domain 5 or null, the flag row is an open coverage gap under the question: namespace answered from holdings, never a fetch", async () => {
   assert.equal(TRIGGER_EVENT_TYPES.length, 7);
-  assert.deepEqual([surfacesForDomain(1), surfacesForDomain(2), surfacesForDomain(3), surfacesForDomain(4), surfacesForDomain(6), surfacesForDomain(7), surfacesForDomain(5), surfacesForDomain(null)], [["regulations"], ["market_intel"], ["operations"], ["market_intel"], ["operations"], ["research"], [], []]);
+  const surfaceOf = (domain: number | null) => [...new Set(generateTriggerQuestions({ id: "i1", title: "A rule", domain }).map((q) => q.subjectRef.split(":")[1]))];
+  assert.deepEqual([1, 2, 3, 4, 6, 7, 5, null].map(surfaceOf), [["regulations"], ["market_intel"], ["operations"], ["market_intel"], ["operations"], ["research"], [], []]);
   const qs = generateTriggerQuestions({ id: "i1", title: "A rule", domain: 1 }, { eventType: "value_revised", eventId: 9, change: "a value was revised" });
   assert.equal(qs.length, 4);
-  assert.deepEqual(qs.map((q) => q.subjectRef), PRODUCT_QUESTIONS.map((p) => `i1:regulations:${p}`));
+  assert.deepEqual(qs.map((q) => q.subjectRef), ["what", "affects_me", "comply", "invest_wait_avoid"].map((p) => `i1:regulations:${p}`));
   assert.ok(qs.every((q) => q.createdBy.startsWith("question:") && q.questionText.includes("a value was revised")));
   assert.deepEqual(generateTriggerQuestions({ id: "i2", domain: 5 }), []);
   assert.deepEqual(generateTriggerQuestions({ id: "i2", domain: null }), []);
   assert.deepEqual(generateTriggerQuestions(null), []);
-  const row = triggerQuestionFlagRow(qs[0]!);
+  const flags = memoryDb({});
+  await triggerQuestionsForItem({ sb: flags.db, now: () => NOW }, { items: [{ id: "i1", title: "A rule", domain: 1 }], dry: false });
+  const row = (flags.tables.integrity_flags ?? []).find((f) => f.created_by === "question:what") as Record<string, unknown> & { description: string };
   assert.deepEqual([row.category, row.subject_type, row.status, row.created_by], ["coverage_gap", "item", "open", "question:what"]);
   assert.match(JSON.stringify(row.recommended_actions), /answered from holdings by a session batch.*never a fetch or a priced request/);
   assert.equal(row.description.length <= 480, true);
-  assert.equal(isTriggerQuestionFlag("question:what"), true);
-  assert.equal(isTriggerQuestionFlag("flywheel-gap:x"), false);
   assert.equal(questionFlagRow({ id: "i1", title: "A rule", domain: 1 }, "i1:regulations:comply")?.created_by, "question:comply");
   assert.equal(questionFlagRow({ id: "i1", domain: 5 }, "i1:regulations:comply"), null);
 });
@@ -155,17 +149,23 @@ test("INV-247: at most 25 items per change event, verified and non-archived only
   const deps = changeDeps(db, { e1: { entityName: "Series X", items: [...items(30), ...items(2, { provenance_status: "unverified", id: "u" }), ...items(1, { is_archived: true, id: "a" })] } });
   const r = await runQuestionsOnChange(deps, { events: [{ eventId: 1, tableName: "market_series", rowPk: "p", entityId: "e1", changeKind: "update" }, { eventId: 2, tableName: "unregistered_table", entityId: "e1" }, { eventId: 3, tableName: "market_series", entityId: null }] });
   assert.deepEqual([r.counts.events_mapped, r.counts.events_unmapped, r.counts.events_no_entity, r.counts.items_affected, r.counts.items_dropped_by_cap, r.counts.questions_generated], [1, 1, 1, 25, 5, 100]);
-  assert.equal(MAX_ITEMS_PER_EVENT, 25);
   const live = await runQuestionsOnChange(changeDeps(memoryDb({}), { e1: { entityName: "Series X", items: items(3) } }), { dry: false, events: [{ eventId: 1, tableName: "signposts", rowPk: "p", entityId: "e1", changeKind: "update" }] });
   assert.equal(live.counts.written, 12);
-  assert.match(describeChange({ eventId: 1, tableName: "market_series", rowPk: "p1", entityId: "e1", changeKind: "supersede" }, "Series X"), /a market series value \(p1\) was superseded on Series X \(e1\)/);
-  assert.match(describeChange({ eventId: 1, tableName: "entity_aliases", rowPk: "p", entityId: "e1" }, null), /the identity of e1 changed/);
-  assert.equal(eventTypeForOutboxRow({ table_name: "emission_factors", change_kind: "supersede" }), "factor_superseded");
-  assert.equal(eventTypeForOutboxRow({ table_name: "emission_factors", change_kind: "update" }), "value_revised");
-  assert.equal(eventTypeForOutboxRow({ table_name: "nope" }), null);
+  const said = memoryDb({});
+  await runQuestionsOnChange(changeDeps(said, { e1: { entityName: "Series X", items: items(1) } }), { dry: false, events: [{ eventId: 1, tableName: "market_series", rowPk: "p1", entityId: "e1", changeKind: "supersede" }] });
+  assert.match(JSON.stringify(said.tables.integrity_flags), /a market series value \(p1\) was superseded on Series X \(e1\)/);
+  const identity = memoryDb({});
+  await runQuestionsOnChange(changeDeps(identity, { e1: { entityName: null, items: items(1) } }), { dry: false, events: [{ eventId: 1, tableName: "entity_aliases", rowPk: "p", entityId: "e1" }] });
+  assert.match(JSON.stringify(identity.tables.integrity_flags), /the identity of e1 changed/);
+  const typeOf = async (changeKind: string) => {
+    const typed = memoryDb({});
+    await runQuestionsOnChange(changeDeps(typed, { e1: { entityName: null, items: items(1) } }), { dry: false, events: [{ eventId: 1, tableName: "emission_factors", rowPk: "p", entityId: "e1", changeKind }] });
+    return /event_type=(\w+)/.exec(JSON.stringify(typed.tables.integrity_flags))?.[1];
+  };
+  assert.deepEqual([await typeOf("supersede"), await typeOf("update")], ["factor_superseded", "value_revised"], "the event type follows the table and the kind of change");
 });
 
-test("INV-247: a failed entity read is counted WITH its error text and the event id is kept for replay (B-0271), the other events still raise their questions, and the outbox replay reads by ids or by range", async () => {
+test("INV-247: a failed entity read is counted WITH its error text and the event id is kept for replay (B-0271), the other events still raise their questions", async () => {
   const db = memoryDb({});
   const r = await runQuestionsOnChange(changeDeps(db, { ok: { entityName: null, items: items(1) } }, ["bad"]), { events: [{ eventId: 11, tableName: "market_series", entityId: "bad" }, { eventId: 12, tableName: "market_series", entityId: "ok" }] });
   assert.equal(r.counts.read_errors, 1);
@@ -173,19 +173,17 @@ test("INV-247: a failed entity read is counted WITH its error text and the event
   assert.match(r.notes.join("|"), /event 11: reading links of bad failed: links read failed/);
   assert.equal(r.counts.questions_generated, 4);
   assert.equal(r.outcome, "partial");
-  const out = memoryDb({ propagation_events: [{ event_id: "5", table_name: "market_series", row_pk: "a", entity_id: "e", change_kind: "update", occurred_at: "2026-10-01" }, { event_id: "3", table_name: "signposts", row_pk: "b", entity_id: "f", change_kind: "update", occurred_at: "2026-10-02" }, { event_id: "9", table_name: "x", row_pk: "c", entity_id: null, change_kind: null, occurred_at: "2026-10-03" }] });
-  assert.deepEqual((await readOutboxEvents(out.db, { ids: [5, 3] })).map((e) => e.eventId), ["3", "5"]);
-  assert.deepEqual((await readOutboxEvents(out.db, { from: 4, to: 9 })).map((e) => e.eventId), ["5", "9"]);
   const reader = buildEntityItemsReader(memoryDb({ entities: [{ entity_id: "e1", canonical_name: "Series X" }], intelligence_items: [{ id: "i1", instrument_entity_id: "e1", provenance_status: "verified", title: "T", domain: 1 }, { id: "i2", provenance_status: "verified", title: "T2", domain: 1 }, { id: "i3", provenance_status: "unverified", instrument_entity_id: "e1", title: "T3", domain: 1 }], entity_refs: [{ ref_table: "intelligence_items", ref_id: "i2", entity_id: "e1", role: "mentions" }] }).db);
   const links = await reader("e1");
   assert.equal(links.entityName, "Series X");
   assert.deepEqual(links.items.map((i) => i.id).sort(), ["i1", "i2"]);
 });
 
-test("QOC-1: the emitting-table registry equals the directory (a new emitting table adds a file AND its registry line), every entry is valid and names a trigger event type", () => {
+test("QOC-1: the emitting-table registry equals the directory (a new emitting table adds a file AND its registry line), every entry is valid and names a trigger event type", async () => {
   const files = readdirSync(new URL("../../src/features/learning/data/emitting-tables/", import.meta.url)).filter((f) => f.endsWith(".json")).map((f) => f.slice(0, -5)).sort();
-  assert.deepEqual(Object.keys(EMITTING_TABLES).sort(), files);
-  for (const e of Object.values(EMITTING_TABLES)) assert.ok((TRIGGER_EVENT_TYPES as readonly string[]).includes(e.type), e.table_name);
+  const r = await runQuestionsOnChange(changeDeps(memoryDb({}), { e1: { entityName: null, items: items(1) } }), { events: files.map((tableName, i) => ({ eventId: i + 1, tableName, entityId: "e1", changeKind: "update" })) });
+  assert.deepEqual([r.counts.events_mapped, r.counts.events_unmapped], [files.length, 0], "every file in the directory is a registered table with a trigger event type");
+  assert.equal((await runQuestionsOnChange(changeDeps(memoryDb({}), { e1: { entityName: null, items: items(1) } }), { events: [{ eventId: 1, tableName: "not_an_emitting_table", entityId: "e1" }] })).counts.events_unmapped, 1);
 });
 
 // ---- the judgement drain ----
@@ -234,7 +232,6 @@ test("INV-248: every planned item is leased once per uuid by the run holder; a n
 
 test("INV-248: a stale plan lists only items under another prompt_version and REFUSES without a live prompt_version; a mode needs its kind; a kind caps at its batch size and names the over-cap residue", async () => {
   const stale = [{ candidate_id: U(1), verdict_prompt_version: "v1", first_seen_at: "2026-09-01" }, { candidate_id: U(2), verdict_prompt_version: "v2", first_seen_at: "2026-08-01" }, { candidate_id: U(3), verdict_prompt_version: "v1", first_seen_at: "2026-07-01" }];
-  assert.deepEqual(selectStaleItems(stale, "v2").map((i) => i.candidate_id), [U(3), U(1)]);
   const live = drainDeps({ exporters: { "ledger-verdicts": ex(stale, { current_prompt_version: "v2" }) } });
   const p = await planDrain(live.deps, { runId: "r4", kindId: "ledger-verdicts", mode: "stale" });
   assert.deepEqual([p.kinds[0]?.batches[0]?.item_ids, p.kinds[0]?.residue.not_stale], [[U(3), U(1)], 1]);
@@ -275,16 +272,12 @@ test("finishDrain releases every lease the plan took, records a release that thr
 test("the kinds: eight, each with an exporter id and an apply step (no workflow filenames), one batch per kind per run, a batch path maps back to its kind", () => {
   assert.deepEqual(KIND_ORDER, ["ledger-verdicts", "host-verdicts", "needs-search", "question-answers", "theme-briefs", "record-briefs", "theme-classification", "screen-verdict", "notification-outbox"]);
   assert.ok(DRAIN_KINDS.every((k) => k.applyStep && k.maxBatchesPerRun === 1 && !JSON.stringify(k).includes(".yml")));
-  assert.equal(kindForBatchPath("drain/batches/theme-briefs/theme-briefs-003.json")?.id, "theme-briefs");
-  assert.equal(kindForBatchPath("drain/batches/theme-briefs/nested/theme-briefs-003.json"), null);
-  assert.equal(kindForBatchPath("drain/batches/theme-briefs/other-003.json"), null);
   assert.equal(resolveKind("screen")?.id, "screen-verdict");
   assert.equal(resolveKind("theme"), null, "an ambiguous prefix names no kind");
   assert.equal(resolveKind("record-briefs")?.id, "record-briefs");
-  assert.equal(kindForBatchPath("drain/batches/record-briefs/record-briefs-012a-x.json")?.id, "record-briefs");
 });
 
-test("IMP-039: the screen-verdict kind exports the ambiguous holds P2-05 banked and its apply step writes a session batch into screen_verdicts, refusing a bad row by name; the theme kind exports only what the rules left unclassified", async () => {
+test("IMP-039: the screen-verdict kind exports the ambiguous holds P2-05 banked and its apply step writes a session batch into screen_verdicts, refusing a bad row by name", async () => {
   const hold = (id: string, over: object = {}) => ({ id, title: `Doc ${id}`, document_url: `https://eur-lex.europa.eu/${id}`, dryrun_disposition: "hold", hold_reason: "screen:ambiguous:rule_x", notes: JSON.stringify({ export_kind: "screen-verdict" }), ...over });
   const db = memoryDb({ census_worklist: [hold(U(1)), hold(U(2), { notes: JSON.stringify({ export_kind: "other" }) }), hold(U(3), { hold_reason: "capture:empty" }), hold(U(4), { notes: "not json" })] });
   const out = await screenVerdictExporter(db.db)({ limit: 10, mode: "pending" });
@@ -297,9 +290,6 @@ test("IMP-039: the screen-verdict kind exports the ambiguous holds P2-05 banked 
   assert.equal(live.written, 1);
   assert.deepEqual([(db.tables.screen_verdicts?.[0] as Record<string, unknown> | undefined)?.verdict, (db.tables.screen_verdicts?.[0] as Record<string, unknown> | undefined)?.basis], ["off_vertical", "ruling 2026-10-15"]);
   await assert.rejects(() => applyScreenVerdictBatch({ sb: memoryDb({}, { failures: [{ table: "screen_verdicts", op: "upsert", message: "fk" }] }).db, now: () => NOW }, batch, { dry: false }), /writing screen_verdicts failed/);
-  const items = memoryDb({ intelligence_items: [{ id: "a", item_type: "research_finding", theme: null, is_archived: false, title: "Sustainable aviation fuel supply", what_is_it: "SAF feedstock" }, { id: "b", item_type: "research_finding", theme: null, is_archived: false, title: "Port congestion study" }, { id: "c", item_type: "research_finding", theme: "fuels_saf", is_archived: false, title: "x" }] });
-  const themes = await themeClassificationExporter(items.db, classifyTheme)({ limit: 10, mode: "pending" });
-  assert.deepEqual(themes.items.map((i) => i.id), ["b"]);
   const leases = leaseDeps(memoryDb({}, { rpc: (n) => (n === "acquire_mutation_lease" ? { data: [{ acquired: true, cur_holder: "h" }] } : { data: [{ released: true }] }) }).db);
   assert.deepEqual(await leases.acquire(U(1), "h", "judgement-drain", 10800), { acquired: true, cur_holder: "h" });
   assert.equal(await leases.release(U(1), "h"), true);

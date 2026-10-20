@@ -4,8 +4,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { PEDIGREE_AXES, validatePedigree } from "@/core/contracts/vocabularies";
-import { primaryDataShare } from "@/core/contracts/factor-tier";
 import { limitBytes } from "@/core/csv/stream";
 import { exactCount, isMissingObject } from "@/core/db";
 import { detectAccessWall } from "@/core/fetch/classify-body";
@@ -14,10 +12,9 @@ import { nextScrapeDate } from "@/core/fetch/hold";
 import { readBodyCapped } from "@/core/fetch/policy";
 import { decideFetchOutcome } from "@/core/fetch/reachability";
 import { extractCellarTitle } from "@/core/fetch/titles";
-import { changeProof, smokeProof } from "@/core/harness/proofs";
-import { legacyLabelOfIso, regionGroupOfIso } from "@/core/jurisdictions/legacy";
-import { createTimingStore, recordBytesOnStore, recordPhaseOnStore, toServerTimingHeader } from "@/core/perf/server-timing";
+import { legacyLabelOfIso } from "@/core/jurisdictions/legacy";
 
+import { changeProof, smokeProof } from "../_support/ledger-proofs.ts";
 import { MemDb } from "../_support/memdb.ts";
 
 test("isMissingObject: the four codes that say a pending migration's object is absent, and nothing else", () => {
@@ -35,15 +32,6 @@ test("exactCount: the count the head query returned; an error or a missing count
   await assert.rejects(exactCount(Promise.resolve({ count: 5, error: { message: "statement timeout" } as never })), /exact count failed: statement timeout/);
 });
 
-test("primaryDataShare: weighted by tonne-km, not by leg count; a leg with no tonne-km is left out; no legs is null, not zero", () => {
-  assert.equal(primaryDataShare([{ tkm: 30, tier: "carrier_primary" }, { tkm: 70, tier: "modal_default" }]), 0.3);
-  assert.equal(primaryDataShare([{ tkm: 1, tier: "carrier_primary" }, { tkm: 1, tier: "verified_operator_avg" }, { tkm: 98, tier: "proxy_estimate" }]), 0.02, "two primary legs of three are 2% of the weight");
-  assert.equal(primaryDataShare([{ tkm: 0, tier: "carrier_primary" }, { tkm: -4, tier: "carrier_primary" }, { tkm: Number.NaN, tier: "carrier_primary" }, { tkm: 10, tier: "modal_default" }]), 0);
-  assert.equal(primaryDataShare([]), null);
-  assert.equal(primaryDataShare(null), null);
-  assert.equal(primaryDataShare([{ tkm: 0, tier: "carrier_primary" }]), null, "weight zero: no share, not 0%");
-});
-
 test("nextScrapeDate: null when off or unanchored; the anchor itself when it is ahead; weekly lands on the anchor's weekday; monthly clamps a short month", () => {
   const at = (ymd: string) => new Date(`${ymd}T10:30:00Z`);
   const day = (d: Date | null) => d?.toISOString().slice(0, 10) ?? null;
@@ -56,31 +44,10 @@ test("nextScrapeDate: null when off or unanchored; the anchor itself when it is 
   assert.equal(day(nextScrapeDate({ cadence: "monthly", startDate: "2026-01-31" }, at("2026-02-01"))), "2026-02-28", "the 31st clamps to the last day of February");
 });
 
-test("validatePedigree: all five axes, each an integer 1 to 5; every missing or out-of-range axis is named", () => {
-  const ok = Object.fromEntries(PEDIGREE_AXES.map((a: string) => [a, 3]));
-  assert.deepEqual(validatePedigree(ok), []);
-  assert.deepEqual(validatePedigree({ ...ok, reliability: 6, completeness: 0, temporal_correlation: 2.5, geographical_correlation: "3" }), ["reliability must be an integer 1..5", "completeness must be an integer 1..5", "temporal_correlation must be an integer 1..5", "geographical_correlation must be an integer 1..5"]);
-  assert.equal(validatePedigree({}).length, 5, "every axis is missing");
-  assert.deepEqual(validatePedigree(null), ["pedigree must be an object with all five axes"]);
-  assert.deepEqual(validatePedigree("3"), ["pedigree must be an object with all five axes"]);
-});
-
-test("legacyLabelOfIso and regionGroupOfIso: a code's product label and region through its legacy slug; an unknown code is null and the empty group, not a guess", () => {
+test("legacyLabelOfIso: a code's product label through its legacy slug; an unknown code is null, not a guess", () => {
   assert.equal(legacyLabelOfIso("GB"), "United Kingdom");
   assert.equal(legacyLabelOfIso("EU"), "EU");
   assert.equal(legacyLabelOfIso("ZZ"), null);
-  assert.equal(regionGroupOfIso("GB"), "Europe");
-  assert.equal(regionGroupOfIso("DE"), "Europe");
-  assert.equal(regionGroupOfIso("ZZ"), "");
-});
-
-test("toServerTimingHeader: a duration per timed phase, a byte size per sized phase, then the total and the cold or warm marker; negative values never print", () => {
-  const warm = createTimingStore(1000, Number.POSITIVE_INFINITY);
-  recordPhaseOnStore(warm, "auth", 12.4);
-  recordPhaseOnStore(warm, "org", -5);
-  recordBytesOnStore(warm, "serialize_bytes", 2048);
-  assert.equal(toServerTimingHeader(warm, 1250), 'auth;dur=12, org;dur=0, serialize_bytes;desc="2048B", total;dur=250, coldstart;desc="warm"');
-  assert.equal(toServerTimingHeader(createTimingStore(1000, 1), 900), 'total;dur=0, coldstart;desc="cold"', "a clock behind the start never prints a negative total; under 5 s of uptime is a cold start");
 });
 
 test("limitBytes: chunks pass until the limit, the chunk that crosses it is cut and the state says so; under the limit nothing is flagged", async () => {

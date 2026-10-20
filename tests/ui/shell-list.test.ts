@@ -3,11 +3,11 @@ import { test } from "node:test";
 
 import type { Resource } from "@/core/types";
 import { EMPTY_FILTER_STATE, filterByWindow, filterRows, sortResourceRows, withListPosition } from "@/ui/list-surface/filter-sort";
-import { facetOptions, liveFacetCounts } from "@/ui/list-surface/facets";
+import { liveFacetCounts } from "@/ui/list-surface/facets";
 import { parseListUrl, regionLinkHref, serializeListUrl } from "@/ui/list-surface/url-state";
 import { gradientCountsFrom, isActivePath, isChromeless, navTitleForPath, SECTIONS, suppressesWorkspaceNote } from "@/ui/shell/nav-model";
 import { shellNotes, workspaceLabel } from "@/ui/shell/identity-seed";
-import { hydrateItemState, loadBootstrap, resetBootstrap, useBootstrapStore, type WorkspaceBootstrapData } from "@/ui/shell/use-bootstrap";
+import { hydrateItemState, loadBootstrap, resetBootstrap, useBootstrapStore, type WorkspaceBootstrapData } from "@/ui/shell/bootstrap-store";
 import { useItemStateStore } from "@/features/workspace/state";
 
 const R = (over: Partial<Resource> & { id: string }): Resource => ({ cat: "air", sub: "", title: over.id, url: "", note: "", type: "regulation", priority: "HIGH", added: "2026-01-01", reasoning: "", tags: [], whatIsIt: "", whyMatters: "", keyData: [], ...over }) as Resource;
@@ -94,7 +94,7 @@ test("INV-267: live facet counts at rest use the corpus figures; with a selectio
   const two = liveFacetCounts(rows, { ...EMPTY_FILTER_STATE, mode: "air", region: "EU" });
   assert.equal(two.total, 2);
   assert.deepEqual(two.region.map((r) => [r.value, r.count]).sort(), [["EU", 2]], "region counts over the air rows, ignoring its own selection (US has no air row)");
-  assert.deepEqual(facetOptions.tier([R({ id: "t", sourceTier: 3 }), R({ id: "u", sourceTier: 1 }), R({ id: "v" })]).map((o) => o.label), ["T1", "T3"]);
+  assert.deepEqual(liveFacetCounts([R({ id: "t", sourceTier: 3 }), R({ id: "u", sourceTier: 1 }), R({ id: "v" })], EMPTY_FILTER_STATE).tier.map((o) => o.label), ["T1", "T3"]);
 });
 
 test("filters: the window keeps undated rows; the newest sort is NaN-safe; my-order is the identity", () => {

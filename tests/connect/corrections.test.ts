@@ -3,9 +3,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { createCorrection, GET, listCorrections, mapDbError, planCorrection, POST, REVOKE, revokeCorrection } from "@/features/corrections/api";
+import { GET, POST, REVOKE } from "@/features/corrections/api";
 import { findOrphanedFactCorrections, suppressedClaimMatcher, isPairTombstoned, latestPerTarget, removedTagsFor, tombstonedPairKeys, validateCorrectionInput, type Correction } from "@/core/corrections";
-import { loadSuppressedClaims, redactSuppressedClaims, removeClaimText } from "@/features/corrections/redact";
+import { loadSuppressedClaims, redactSuppressedClaims } from "@/features/corrections/redact";
 
 import { fakeDb } from "../_support/fake-db.ts";
 import { as, ctx, expectationFor, json, PERSONAS, script, type Persona } from "../_support/personas.ts";
@@ -39,16 +39,20 @@ test("the actor is the session user, never the body", async () => {
 });
 
 test("a failed read is an error status, never an empty list", async () => {
+  const list = async (db: ReturnType<typeof connectDb>, id = ITEM) => {
+    script({ db: db.db } as never);
+    return (await GET(as("platformAdmin", `/api/admin/items/${id}/corrections`), ctx({ id }) as never)).status;
+  };
   const bad = connectDb({ intelligence_items: [{ id: ITEM }] }, { failures: [{ table: "item_corrections", op: "select", message: "down" }] });
-  assert.equal((await listCorrections(bad.db, ITEM)).status, 500);
+  assert.equal(await list(bad), 500);
   const none = connectDb({});
-  assert.equal((await listCorrections(none.db, ITEM)).status, 404);
+  assert.equal(await list(none), 404);
   const itemDown = connectDb({}, { failures: [{ table: "intelligence_items", op: "select", message: "down" }] });
-  assert.equal((await listCorrections(itemDown.db, ITEM)).status, 500);
-  assert.equal((await listCorrections(none.db, "not-a-uuid")).status, 400);
+  assert.equal(await list(itemDown), 500);
+  assert.equal(await list(none, "not-a-uuid"), 400);
 });
 
-test("validation: reason, kind, op, ref shapes", () => {
+test("validation: reason, kind, op, ref shapes", async () => {
   const v = (b: unknown) => validateCorrectionInput(b);
   assert.equal((v({ target_kind: "fact", target_ref: CLAIM, op: "suppress" }) as { code: string }).code, "reason_required");
   assert.equal((v({ target_kind: "nope", target_ref: "x", op: "x", reason: "r" }) as { code: string }).code, "target_kind_invalid");
@@ -57,15 +61,21 @@ test("validation: reason, kind, op, ref shapes", () => {
   assert.equal((v({ target_kind: "fact", target_ref: CLAIM, op: "replace", reason: "r", value: { source_span: "s" } }) as { code: string }).code, "fact_needs_span");
   assert.equal((v({ target_kind: "tag", target_ref: "nope:x", op: "remove", reason: "r" }) as { code: string }).code, "target_ref_invalid");
   assert.equal((v({ target_kind: "tag", target_ref: "topic_tags:emissions", op: "remove", reason: "r" }) as { ok: boolean }).ok, true);
-  assert.equal(planCorrection("nope", "u", {}).ok, false);
+  script(connectDb({}) as never);
+  assert.equal((await POST(as("platformAdmin", "/x", { method: "POST", body: json({}) }), ctx({ id: "nope" }) as never)).status, 400, "an item id that is not a uuid is refused before any write");
 });
 
-test("database errors map to statuses", () => {
-  assert.equal(mapDbError({ message: "correction_item_not_found: no item" }).status, 404);
-  assert.equal(mapDbError({ message: "correction_not_active: gone" }).status, 409);
-  assert.equal(mapDbError({ message: "correction_reason_required: x" }).status, 400);
-  assert.equal(mapDbError({ message: "correction_other: x" }).status, 422);
-  assert.equal(mapDbError({ message: "boom" }).status, 500);
+test("database errors map to statuses", async () => {
+  const body = json({ target_kind: "fact", target_ref: CLAIM, op: "suppress", reason: "wrong figure" });
+  const statusFor = async (message: string) => {
+    script(fakeDb(undefined, { rpc: () => ({ error: { message } }) }));
+    return (await POST(as("platformAdmin", `/api/admin/items/${ITEM}/corrections`, { method: "POST", body }), ctx({ id: ITEM }) as never)).status;
+  };
+  assert.equal(await statusFor("correction_item_not_found: no item"), 404);
+  assert.equal(await statusFor("correction_not_active: gone"), 409);
+  assert.equal(await statusFor("correction_reason_required: x"), 400);
+  assert.equal(await statusFor("correction_other: x"), 422);
+  assert.equal(await statusFor("boom"), 500);
 });
 
 const world = () => {
@@ -107,7 +117,9 @@ test("round trip: suppress, not rendered, regeneration does not restore, revoke 
   const before = await render(m);
   assert.match(before.sections[0]?.content_md ?? "", /levy/);
 
-  const made = await createCorrection(m.db, { itemId: ITEM, userId: "u-admin", body: { target_kind: "fact", target_ref: CLAIM, op: "suppress", reason: "wrong figure" } });
+  script({ db: m.db } as never);
+  const revoke = async (correctionId: string, body: unknown = {}) => (await REVOKE(as("platformAdmin", "/x", { method: "POST", body: json(body) }), ctx({ id: ITEM, correctionId }) as never)).status;
+  const made = await POST(as("platformAdmin", `/api/admin/items/${ITEM}/corrections`, { method: "POST", body: json({ target_kind: "fact", target_ref: CLAIM, op: "suppress", reason: "wrong figure" }) }), ctx({ id: ITEM }) as never);
   assert.equal(made.status, 201);
   const after = await render(m);
   assert.equal(after.claims.length, 1);
@@ -122,15 +134,15 @@ test("round trip: suppress, not rendered, regeneration does not restore, revoke 
   assert.doesNotMatch(regenerated.sections[0]?.content_md ?? "", /levy/);
 
   const id = (m.tables.item_corrections as Row[])[0]?.id as string;
-  assert.equal((await revokeCorrection(m.db, { itemId: ITEM, correctionId: CORR, userId: "u", body: {} })).status, 409, "an unknown correction is not active");
-  assert.equal((await revokeCorrection(m.db, { itemId: ITEM, correctionId: "nope", userId: "u", body: {} })).status, 400);
+  assert.equal(await revoke(CORR), 409, "an unknown correction is not active");
+  assert.equal(await revoke("nope"), 400);
   m.tables.item_corrections![0]!.id = CORR;
-  assert.equal((await revokeCorrection(m.db, { itemId: ITEM, correctionId: CORR, userId: "u", body: { reason: "mistake" } })).status, 200);
+  assert.equal(await revoke(CORR, { reason: "mistake" }), 200);
   void id;
   const revoked = await render(m);
   assert.equal(revoked.claims.length, 0);
   assert.match(revoked.sections[0]?.content_md ?? "", /levy/, "revoking restores the fact");
-  assert.equal((await revokeCorrection(m.db, { itemId: ITEM, correctionId: CORR, userId: "u", body: {} })).status, 409, "a second revoke is refused");
+  assert.equal(await revoke(CORR), 409, "a second revoke is refused");
 });
 
 test("loadSuppressedClaims: a failed correction read throws; nothing renders unredacted on a failure", async () => {
@@ -151,10 +163,12 @@ test("the newest active correction decides: a later add clears a remove; a revok
   assert.equal(findOrphanedFactCorrections([c({ target_kind: "fact", target_ref: CLAIM, op: "suppress" })], []).length, 1);
 });
 
-test("removeClaimText tolerates whitespace and escaped brackets and reports a miss", () => {
-  assert.deepEqual(removeClaimText("a\n- b  c\nd", "b c"), { text: "a\n\nd", found: true });
-  assert.equal(removeClaimText("x", "y").found, false);
-  assert.equal(removeClaimText("\\[A\\] z", "[A] z").found, true);
+test("redaction tolerates whitespace and escaped brackets and reports a miss", () => {
+  const claim = (claim_text: string) => ({ id: "k", claim_text, section_row_id: "s1" });
+  const out = redactSuppressedClaims({ sections: [{ id: "s1", content_md: "a\n- b  c\nd" }], fullBrief: "x", claims: [claim("b c")] });
+  assert.deepEqual([out.sections[0]?.content_md, out.report[0]?.section_found], ["a\n\nd", true]);
+  assert.equal(redactSuppressedClaims({ sections: [{ id: "s1", content_md: "x" }], fullBrief: null, claims: [claim("y")] }).report[0]?.section_found, false);
+  assert.equal(redactSuppressedClaims({ sections: [{ id: "s1", content_md: "\\[A\\] z" }], fullBrief: null, claims: [claim("[A] z")] }).report[0]?.section_found, true);
 });
 
 test("a suppression matches a claim by id first, then by the machine text", () => {

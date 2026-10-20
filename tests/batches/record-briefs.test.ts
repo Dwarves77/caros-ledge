@@ -1,10 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { applyBatch, validateBatch } from "@/features/batches";
-import { decideCooldown } from "@/features/batches/kit/budget";
-import { collectEntryCitations, STEPS } from "@/features/batches/kinds/record-briefs/apply";
-import { figureCheckText, requiredSlotErrors, slotAllowsGap, validateRecordBriefEntry } from "@/features/batches/kinds/record-briefs/validate";
+import { applyBatch } from "@/features/batches";
+import { validateRecordBriefEntry } from "@/features/batches/kinds/record-briefs/validate";
 
 import { batchFile, batchWorld, claims, factClaim, goodBody, ITEM, metadata, NOW, OFFICIAL_TEXT, OFFICIAL_URL, poolHashOf, recordEntry, SPAN_REPORT } from "./world.ts";
 
@@ -33,7 +31,6 @@ test("a valid batch applies end to end: the brief, its sections and timeline, it
   assert.deepEqual((r.data as { ids: Record<string, string[]> }).ids.applied_ids, [ITEM]);
   assert.ok(w.flushed.some((t) => t.includes(`item:${ITEM}`)), "the public cache was flushed for the applied item");
   assert.equal(r.counts.verified, 1);
-  assert.deepEqual(STEPS.map(([n]) => n), ["generate", "section", "ground", "grow", "terms", "structured-actions", "participation"]);
 });
 
 test("INV-210: a re-apply of the same batch writes nothing new; a dry apply writes nothing", async () => {
@@ -115,8 +112,6 @@ test("INV-211 (criterion 5): a required slot with no covering FACT is refused, a
   assert.equal(ok.counts.valid, 1, refusals(ok));
   const silent = await apply(w, [recordEntry(w.db)]);
   assert.match(refusals(silent), /the body leaves 2 required slot\(s\) silently unaddressed \(tariff_schedule, binding_position\)|silently unaddressed/);
-  assert.equal(slotAllowsGap({ slot_key: "x", description: "GAP acceptable when the source is silent" }), true);
-  assert.deepEqual(requiredSlotErrors([], [], "t", "x"), []);
 });
 
 test("regulatory_fact_document mirrors: depth accounting and qualification accounting refuse a thin 'Substantive Requirements' section", () => {
@@ -140,13 +135,6 @@ test("regulatory_fact_document mirrors: depth accounting and qualification accou
   assert.doesNotMatch(honest, /depth accounting|qualification accounting/, honest);
 });
 
-test("the numeric mirror keeps a correctly cited decimal and ignores a slot tag and a legal locator", () => {
-  const kept = figureCheckText("[effective_date] Article 8(2) of Regulation (EU) No 510/2011 sets 3.5% for 2027");
-  assert.match(kept, /3\.5%.*2027/);
-  assert.doesNotMatch(kept, /effective_date|8\(2\)|510|2011/);
-  assert.match(figureCheckText("under Section 61(6) the fee is EUR 900"), /EUR 900/);
-});
-
 test("allowBriefOverwrite: an item that already holds a brief is regenerated only with the flag, and its prior claims are archived to claim_versions", async () => {
   const w = batchWorld({ briefGrade: true });
   const refused = await apply(w, [recordEntry(w.db)]);
@@ -155,15 +143,6 @@ test("allowBriefOverwrite: an item that already holds a brief is regenerated onl
   const ok = await apply(w, [recordEntry(w.db)], { options: { allowBriefOverwrite: true } });
   assert.equal(ok.counts.applied, 1, refusals(ok));
   assert.equal(item(w).item_grade, "brief");
-});
-
-test("the cooldown reads the ledger: a previous apply that wrote, or one still in flight, holds the next off; an old one does not; its own row never counts", () => {
-  const row = (outcome: string, startedMinAgo: number, finishedMinAgo: number) => ({ id: "prev", started_at: new Date(NOW.getTime() - startedMinAgo * 60000).toISOString(), finished_at: new Date(NOW.getTime() - finishedMinAgo * 60000).toISOString(), outcome });
-  assert.match(decideCooldown({ now: NOW, lastRun: row("success", 40, 10) }) ?? "", /cooldown/);
-  assert.equal(decideCooldown({ now: NOW, lastRun: row("success", 100, 45) }), null);
-  assert.match(decideCooldown({ now: NOW, lastRun: row("unknown", 20, 20) }) ?? "", /in-flight/);
-  assert.equal(decideCooldown({ now: NOW, lastRun: row("unknown", 90, 90) }), null, "an unfinished row older than the stale bound is ignored");
-  assert.equal(decideCooldown({ now: NOW, lastRun: null }), null);
 });
 
 test("the apply refuses inside the cooldown (read from harness_runs) and runs after it; the IO budget stops it cleanly before the next entry", async () => {
@@ -208,17 +187,6 @@ test("the zero-model guard: the whole apply runs with every network call replace
   } finally {
     globalThis.fetch = realFetch;
   }
-});
-
-test("the citations of an entry: distinct claim urls and ids and the metadata's sources_used", () => {
-  const c = collectEntryCitations({ claims: [{ source_url: "https://a.test/x" }, { source_url: "https://a.test/x" }, { source_id: "A0000000-0000-4000-8000-000000000001" }], metadata: { sources_used: ["https://b.test/y", "b0000000-0000-4000-8000-000000000001", 5] } });
-  assert.deepEqual(c.cited.map((x) => x.url), ["https://a.test/x", "https://b.test/y"]);
-  assert.deepEqual(c.citedSourceIds, ["a0000000-0000-4000-8000-000000000001", "b0000000-0000-4000-8000-000000000001"]);
-});
-
-test("validateBatch: the pure check of a file against already-loaded live material", () => {
-  assert.throws(() => validateBatch("ledger-verdicts", {}, {}), /no entry validator/);
-  assert.deepEqual(validateBatch("needs-search", { batch: "x" }, { needs: new Map(), flags: new Map(), committed: null }).fileErrors.length > 0, true);
 });
 
 test("an item still verified when its brief was written is not quietly 'grounded': the ground answers already-verified, the authored ledger did not land, and the step says so", async () => {

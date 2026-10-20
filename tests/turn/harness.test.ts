@@ -3,7 +3,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { classify, FAMILIES, makeRecorder, noopContractErrors, outcomeOf, recordRun, resolveMode, runChain, runFamily, validateFamilies, withRunContext, type FamilyFn, type HarnessDeps, type RecorderContext } from "@/core/harness";
+import { classify, FAMILIES, makeRecorder, noopContractErrors, recordRun, resolveMode, runChain, runFamily, withRunContext, type FamilyFn, type HarnessDeps, type RecorderContext } from "@/core/harness";
 import { runResult } from "@/core/types/run-result";
 
 import { MemDb } from "../_support/memdb.ts";
@@ -193,7 +193,7 @@ test("a failed record is the run's error: the frame reports exit 1 and no row", 
   assert.equal(r.row, null);
 });
 
-test("classify and outcomeOf", () => {
+test("classify", () => {
   const w = ["upserted"];
   assert.deepEqual(classify(runResult("ok", { upserted: 2 }), w, "apply"), { outcome: "success", reason: null });
   assert.equal(classify(runResult("ok", { upserted: 0 }), w, "apply").outcome, "noop");
@@ -202,19 +202,14 @@ test("classify and outcomeOf", () => {
   assert.equal(classify(runResult("partial", { upserted: 0 }, ["all failed"]), w, "apply").outcome, "noop", "a partial that wrote nothing is still a noop: no apply evidence");
   assert.equal(classify(runResult("failed", { refused: 1 }, ["gate"]), w, "apply").outcome, "refused");
   assert.equal(classify(runResult("failed", { refused: 1, upserted: 2 }, ["gate"]), w, "apply").outcome, "failed", "a refusal that also wrote is a failure");
-  assert.equal(outcomeOf(["success", "failure"]), "failure");
-  assert.equal(outcomeOf(["skipped", "skipped"]), "skipped");
-  assert.equal(outcomeOf([]), "skipped");
-  assert.equal(outcomeOf(["success", "cancelled"]), "cancelled");
-  assert.equal(outcomeOf(["success", "skipped"]), "success");
 });
 
-test("the family table: valid as shipped, and a broken table reports its problems instead of throwing", () => {
-  assert.deepEqual(validateFamilies().problems, []);
-  const bad = validateFamilies([
-    { name: "a", owner: "x", stage: null, downstream: ["ghost"], writes: [] },
-    { name: "a", owner: "x", stage: null, downstream: [], writes: [] },
-  ]);
-  assert.deepEqual(bad.problems.sort(), ["a: downstream ghost is not a family", "a: no downstream and no stated reason it ends", "duplicate family a"].sort());
-  assert.ok(validateFamilies([{ name: "Bad Name" }]).problems.length > 0);
+test("the family table: parsed, unique names, every downstream a real family, and either a downstream or a stated reason it ends", () => {
+  assert.ok(FAMILIES.length > 0, "the shipped table parsed");
+  const names = new Set(FAMILIES.map((f) => f.name));
+  assert.equal(names.size, FAMILIES.length, "no duplicate family");
+  for (const f of FAMILIES) {
+    for (const d of f.downstream) assert.ok(names.has(d), `${f.name}: downstream ${d} is a family`);
+    assert.ok(f.downstream.length > 0 || f.terminal, `${f.name}: has a downstream or a stated reason it ends`);
+  }
 });

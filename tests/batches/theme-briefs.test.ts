@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { buildFrontmatter, parseFrontmatter } from "@/core/briefs/frontmatter";
+import { parseFrontmatter } from "@/core/briefs/frontmatter";
 import { admissibleRows } from "@/core/briefs/admissible";
 import { figureCoverage, isValidThemeBrief, parseRamifications } from "@/core/briefs/theme-brief-contract";
 import { computeMemberHash } from "@/core/flywheel/themes";
@@ -89,7 +89,7 @@ test("INV-R2b-5 (F:3): a single payload takes the batch path: an entry that fail
   assert.ok(reason(viaBatch), viaBatch);
   assert.equal(reason(viaSingle), reason(viaBatch), "the same refusal on both paths");
   assert.equal((await single(JSON.stringify({ theme_id: THEME, title: "T", brief_md: "body", member_hash: hash }))).outcome, "failed", "the old four-field payload carries no sections or claims and is refused");
-  const md = `${buildFrontmatter({ theme_id: THEME, title: "T", member_hash: hash })}\nA short body.\n`;
+  const md = `---\ntheme_id: ${THEME}\ntitle: T\nmember_hash: ${hash}\n---\nA short body.\n`;
   const viaMd = await single(md, "md");
   assert.equal(viaMd.outcome, "failed");
   assert.match(notes(viaMd), /sections must be an object/);
@@ -126,12 +126,8 @@ test("F:15: an invented figure listed under a REAL claim id is not covered by it
   await assert.rejects(loadThemeMaterial(w.db.client, themes), /boom|paginated read failed/);
 });
 
-test("the flat frontmatter block round-trips what it can carry and refuses what it cannot (a newline, a comma in an inline-array item, a quoted scalar)", () => {
-  const text = buildFrontmatter({ a: "plain", b: ["x", "y"], c: null, d: { json: { k: 1 } } });
-  assert.deepEqual(parseFrontmatter(`${text}body`)?.fields, { a: "plain", b: ["x", "y"], c: null, d: { k: 1 } });
-  assert.throws(() => buildFrontmatter({ a: "two\nlines" }), /newline/);
-  assert.throws(() => buildFrontmatter({ a: ["EUR 500,000"] }), /comma/);
-  assert.throws(() => buildFrontmatter({ a: '"quoted"' }), /matching quote/);
+test("the flat frontmatter block reads a scalar, an inline array, null and inline JSON, and a text with no block is null", () => {
+  assert.deepEqual(parseFrontmatter(`---\na: plain\nb: [x, y]\nc: null\nd: {"k":1}\n---\nbody`)?.fields, { a: "plain", b: ["x", "y"], c: null, d: { k: 1 } });
   assert.equal(parseFrontmatter("no block here"), null);
 });
 

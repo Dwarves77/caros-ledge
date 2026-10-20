@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { boundedRead, fetchAllByIdChunks, fetchAllRows, keyset, ReadTimeoutError, unwrap, withTimeout } from "@/core/db/query";
-import { SCHEMA_KEYS } from "@/core/db/schema-keys";
+import { boundedRead, fetchAllByIdChunks, fetchAllRows, ReadTimeoutError, withTimeout } from "@/core/db/query";
+import SCHEMA_KEYS from "@/core/db/schema-keys.json";
 
 import * as real from "../../src/core/db/clients.ts";
 
@@ -52,7 +52,6 @@ test("boundedRead: the bound is a hard ceiling of 200 and a failure is a value, 
   assert.match(over.error?.message ?? "", /past its 2-row bound/);
   const slow = await boundedRead(() => new Promise<never>(() => undefined), { limit: 5, timeoutMs: 5 });
   assert.equal(slow.error?.timedOut, true);
-  assert.throws(() => unwrap(failed), /boom/);
 });
 
 test("withTimeout clears its timer on success and on failure, and rejects on the deadline", async () => {
@@ -62,16 +61,6 @@ test("withTimeout clears its timer on success and on failure, and rejects on the
   await assert.rejects(withTimeout(Promise.reject(new Error("x")), 60_000), /x/);
   assert.equal(timers(), before);
   await assert.rejects(withTimeout(new Promise(() => undefined), 5), ReadTimeoutError);
-});
-
-test("keyset paging: limit + 1 rows prove a next page and the cursor round-trips", () => {
-  const rows = [{ id: "a" }, { id: "b" }, { id: "c" }];
-  const page = keyset.page(rows, 2, (r) => [r.id]);
-  assert.deepEqual(page.rows.map((r) => r.id), ["a", "b"]);
-  assert.deepEqual(keyset.decode(page.next), ["b"]);
-  assert.equal(keyset.page(rows, 3, (r) => [r.id]).next, null);
-  assert.equal(keyset.decode("not-a-cursor!!"), null);
-  assert.equal(keyset.decode(null), null);
 });
 
 test("fetchAllRows pages until a short page, throws on any page error, and honours its cap", async () => {

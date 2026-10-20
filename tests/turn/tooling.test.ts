@@ -9,7 +9,7 @@ import { test } from "node:test";
 
 import { ESLint } from "eslint";
 
-import { foldRun, insideLongerNumber } from "@/core/contracts";
+import { insideLongerNumber, normalizeNumeric } from "@/core/contracts/numbers";
 import { checkRateLimit } from "@/core/http/rate-limit";
 
 import { MemDb } from "../_support/memdb.ts";
@@ -167,9 +167,9 @@ test("the lint rule (IMP-106): outside the coverage feature, a path into its ser
 
 // ── moved code keeps its behaviour ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 test("the number rule beside isVerbatim: a figure folds only when its value is unchanged, and a match never starts or ends inside a longer number", () => {
-  assert.equal(foldRun("1,200,000").text, "1200000");
-  assert.equal(foldRun("1 200 000").text, "1200000");
-  assert.equal(foldRun("12.345").text, "12.345", "a single ambiguous separator never folds");
+  assert.equal(normalizeNumeric("1,200,000").chars, "1200000");
+  assert.equal(normalizeNumeric("1 200 000").chars, "1200000");
+  assert.equal(normalizeNumeric("12.345").chars, "12.345", "a single ambiguous separator never folds");
   assert.equal(insideLongerNumber("total 12,345 units", 9, 12), true, "345 inside 12,345");
   assert.equal(insideLongerNumber("total 12,345 units", 6, 12), false);
 });

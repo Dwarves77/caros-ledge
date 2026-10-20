@@ -1,14 +1,14 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { requestJson, SIGNED_OUT_MESSAGE, UNREACHABLE_MESSAGE } from "@/core/http/request-json";
+import { requestJson } from "@/core/http/request-json";
 import { queueNotifications } from "@/core/notifications";
 import { ALL_SECTORS, HIGHLIGHTED_SECTOR_IDS, JURISDICTIONS, MODES, REGIONS, regionGroupForLabel } from "@/core/workspace";
 import { useWorkspaceStore } from "@/core/workspace/store";
 import { DEFAULT_NOTIFICATION_PREFS, readNotificationPrefs, saveNotificationPrefs } from "@/features/account/lib/notification-prefs";
 import { saveProfilePatch } from "@/features/account/lib/profile-patch";
 import { readSettingsData } from "@/features/settings/server/settings-data";
-import { bindSettingsToWorkspace, useSettingsStore } from "@/features/settings/state/settings-store";
+import { useSettingsStore } from "@/features/settings/state/settings-store";
 import { attributionText, formatAppliedDate } from "@/features/workspace/attribution-text";
 import { ARCHIVE_REASONS, reasonLabel } from "@/features/workspace/ui/archive-reasons";
 import { clampHighlight, moveHighlight, resolveBackspaceAction, resolveEnterAction, rowCount, showCreateRow, visibleRows } from "@/features/workspace/ui/tag-model";
@@ -18,8 +18,6 @@ import { fakeDb } from "../_support/fake-db.ts";
 
 import { clientFor, ORG_A, ORG_B, seed } from "./_world.ts";
 
-const settle = () => new Promise((resolve) => setTimeout(resolve, 10));
-
 // ── requestJson: a request never throws, and a refusal carries the server's own words ────────────────────────────────
 
 test("B-0163: requestJson never throws; a refusal carries the server's message, a signed-out answer says so, an unreachable server is a result", async () => {
@@ -28,13 +26,13 @@ test("B-0163: requestJson never throws; a refusal carries the server's message, 
     globalThis.fetch = (async () => Response.json({ error: "Workspace archive requires the admin or owner role." }, { status: 403 })) as typeof fetch;
     assert.deepEqual(await requestJson("/x", { method: "POST", body: { a: 1 } }), { ok: false, status: 403, data: { error: "Workspace archive requires the admin or owner role." }, error: "Workspace archive requires the admin or owner role." });
     globalThis.fetch = (async () => Response.json({}, { status: 401 })) as typeof fetch;
-    assert.equal((await requestJson("/x")).error, SIGNED_OUT_MESSAGE);
+    assert.equal((await requestJson("/x")).error, "You are signed out. Sign in and try again.");
     globalThis.fetch = (async () => new Response("<html>", { status: 502 })) as typeof fetch;
     assert.equal((await requestJson("/x")).error, "The request failed (502).");
     globalThis.fetch = (async () => {
       throw new TypeError("network down");
     }) as typeof fetch;
-    assert.deepEqual(await requestJson("/x"), { ok: false, status: 0, data: null, error: UNREACHABLE_MESSAGE });
+    assert.deepEqual(await requestJson("/x"), { ok: false, status: 0, data: null, error: "The request could not be sent. Check your connection and try again." });
     globalThis.fetch = (async () => Response.json({ invitations: [] })) as typeof fetch;
     assert.deepEqual(await requestJson("/x"), { ok: true, status: 200, data: { invitations: [] }, error: null });
   } finally {
@@ -126,12 +124,10 @@ test("INV-137: the personal profile and the onboarding writers can set only thei
 test("INV-168: the sectors card and the organisation profile are two writers of different columns, even at the same moment, and lose nothing; the schedule keeps its siblings", async () => {
   const db = seed();
   useWorkspaceStore.setState({ orgId: ORG_A });
-  const unbind = bindSettingsToWorkspace(() => clientFor(db));
-  await settle();
+  await useSettingsStore.getState().loadFromWorkspace(clientFor(db), ORG_A);
   const s = useSettingsStore.getState();
   assert.equal(s.orgId, ORG_A);
   const results = await Promise.all([s.commit("sector_profile", ["fine-art", "pharma"]), s.commit("profile", { org_roles: ["carrier"], org_size: { headcount_band: "small" } }), s.commit("alert_config", { briefingCadence: "daily" })]);
-  unbind();
   assert.deepEqual(results, [null, null, null]);
   const row = db.rows("workspace_settings").find((r) => r.org_id === ORG_A) as Record<string, unknown>;
   assert.deepEqual(row.sector_profile, ["fine-art", "pharma"]);
@@ -148,12 +144,10 @@ test("B-0186: a refused write is returned and the screen's copy is untouched; a 
   useSettingsStore.setState({ orgId: null, loaded: false, alertConfig: {}, profile: {}, sectorProfile: ["kept"] });
   assert.match((await useSettingsStore.getState().commit("profile", { a: 1 })) ?? "", /have not loaded/);
   assert.equal(db.writes("workspace_settings").length, 0);
-  const unbind = bindSettingsToWorkspace(() => clientFor(db));
-  await settle();
+  await useSettingsStore.getState().loadFromWorkspace(clientFor(db), ORG_B);
   db.fail("workspace_settings", "update", { message: "write refused" });
   assert.equal(await useSettingsStore.getState().commit("sector_profile", ["x"]), "write refused");
   assert.deepEqual(useSettingsStore.getState().sectorProfile, [], "the copy follows the database, not the attempt");
-  unbind();
 });
 
 // ── the notification outbox (IMP-025) ────────────────────────────────────────────────────────────────────────────────

@@ -3,9 +3,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { classifyBucket, detectMentions, matchExistingSubject, planLinkWrites, planLinks, resolveMention, canonicalSubjectUrl } from "@/core/entities/mentions";
+import { matchExistingSubject, planLinkWrites, resolveMention } from "@/core/entities/mentions";
 import { canonicalizeUrl, findIdentifiers, indexOfInsensitive, mentionsIdentifier, ownIdentifiers, sameIdentifier } from "@/core/parse";
-import { detectConflate, extractIdentifiers } from "@/core/grounding/gates";
+import { mintGates } from "@/core/grounding/gates";
 
 const keys = (t: string) => findIdentifiers(t).map((f) => f.key);
 
@@ -24,13 +24,12 @@ test("I3: a mention 2019/88 never resolves to the item 2019/883 and is never wir
   const corpus = [{ id: "a", title: "Directive (EU) 2019/883 on port reception facilities", instrument_identifier: "2019/883" }];
   const r = resolveMention({ kind: "identifier", value: "2019/88", canonical: "2019/88" }, corpus);
   assert.deepEqual([r.count, r.ids, r.near], [0, [], ["a"]], "no equality match; the containing item is a near miss for the surface flag");
-  assert.equal(classifyBucket({ kind: "identifier" }, r.count), "surface");
   const writes = planLinkWrites("This act refers to 2019/88 in recital 4.", corpus, "self");
   assert.equal(writes.filter((w) => w.table === "item_cross_references").length, 0, "no lineage edge is written");
   const flag = writes.find((w) => w.table === "integrity_flags");
   assert.match(String(flag?.row.description), /2019\/88\(0, 1 near\)/);
-  const exact = planLinks("This act, amending Directive (EU) 2019/883, enters into force.", corpus, "self");
-  assert.deepEqual(exact.edges.map((e) => [e.target_item_id, e.relationship]), [["a", "amends"]], "the equal identifier is wired, typed from the sentence");
+  const exact = planLinkWrites("This act, amending Directive (EU) 2019/883, enters into force.", corpus, "self");
+  assert.deepEqual(exact.filter((w) => w.table === "item_cross_references").map((w) => [w.row.target_item_id, w.row.relationship]), [["a", "amends"]], "the equal identifier is wired, typed from the sentence");
 });
 
 test("I3: an item is named by its own identifier, else the one its title opens with; a title that merely cites another act is not that act", () => {
@@ -48,23 +47,22 @@ test("I3: fiscal years are typed date ranges, never regulation tokens", () => {
   assert.deepEqual(keys("Spring Budget 2023/24 and Annual Report 2024/25"), []);
   assert.deepEqual(keys("Regulation (EU) 2023/24 sets"), ["instrument:2023/24"], "with the instrument context beside it, it is a regulation number");
   assert.deepEqual(keys("2019/88"), ["instrument:2019/88"], "2019/88 is no fiscal range (88 is not 2020)");
-  assert.deepEqual(detectMentions("Budget 2023/24 cites Regulation (EU) 2019/883.").map((m) => m.canonical), ["2019/883"]);
+  const held = [{ id: "a", title: "Directive (EU) 2019/883", instrument_identifier: "2019/883" }];
+  const writes = planLinkWrites("Budget 2023/24 cites Regulation (EU) 2019/883.", held, "self");
+  assert.deepEqual(writes.map((w) => [w.table, w.row.target_item_id]), [["item_cross_references", "a"]], "the fiscal range is no mention: the one edge is to 2019/883 and nothing is flagged");
   assert.deepEqual(findIdentifiers("see 2023/1805", { contextOnly: true }), [], "a bare token has no instrument context");
   assert.deepEqual(keys("Regulation (EC) No 1907/2006 and (EU) No 1257/2013"), ["instrument:2006/1907", "instrument:2013/1257"]);
 });
 
-test("I3: mentions dedupe by instrument and prefer the typed spelling", () => {
-  const ms = detectMentions("Directive (EU) 2019/883 (also written 2019/883 and CELEX 32019L0883).");
-  assert.equal(ms.length, 1);
-  assert.equal(ms[0]?.type, "L");
+test("I3: mentions dedupe by instrument: three spellings of one act are one mention", () => {
+  const flag = planLinkWrites("Directive (EU) 2019/883 (also written 2019/883 and CELEX 32019L0883).", [], "self").find((w) => w.table === "integrity_flags");
+  assert.match(String(flag?.row.description), /: 2019\/883\(0\)$/, "one mention, listed once");
 });
 
 test("I3: S-CONFLATE compares identifiers by equality: a span that says 2019/883 does not carry 2019/88", () => {
-  assert.deepEqual([...extractIdentifiers("Directive (EU) 2019/88 and ISO 14083")].sort(), ["instrument:2019/88", "iso:14083"]);
   const span = "Directive (EU) 2019/883 sets port reception duties for 2019/883 wastes and ISO 14083 reporting.";
-  const facts = ["Directive 2019/88 applies", "Regulation 2019/883 applies", "Regulation (EU) 2023/1805 applies"].map((claim_text, i) => ({ idx: i, id: `f${i}`, claim_text, source_span: span }));
-  const hits = detectConflate(facts);
-  assert.ok(hits.length === 3 && /absent from span: \{[^}]*instrument:2019\/88[,}]/.test(hits[0]?.rationale ?? ""), `2019/88 and 2023/1805 are absent from the span: ${hits[0]?.rationale}`);
+  const facts = ["Directive 2019/88 applies", "Regulation 2019/883 applies", "Regulation (EU) 2023/1805 applies"].map((claim_text, i) => ({ id: `f${i}`, claim_kind: "FACT", claim_text, source_span: span, source_id: "s", source_tier_at_grounding: 1 }));
+  assert.deepEqual(mintGates(facts, { itemFloor: 2 }).conflateHeldIds.sort(), ["f0", "f1", "f2"], "2019/88 and 2023/1805 are absent from the span, and a regulation 2019/883 is not the directive the span names");
 });
 
 test("I3: canonicalUrl keeps the path and query case, sorts the query, drops the fragment, tracking and scheme difference", () => {
@@ -78,7 +76,6 @@ test("I3: canonicalUrl keeps the path and query case, sorts the query, drops the
   assert.equal(canonicalizeUrl("https://example.com/"), "https://example.com");
   assert.equal(canonicalizeUrl(null), null);
   assert.equal(canonicalizeUrl("not a url"), "not a url");
-  assert.equal(canonicalSubjectUrl("https://example.com/Doc/ABC?b=1&a=2"), "https://example.com/Doc/ABC?a=2&b=1", "the mention module's subject URL is the same function");
 });
 
 test("I3: matchExistingSubject compares own registration numbers by equality and keeps URL path case", () => {

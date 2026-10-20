@@ -7,7 +7,7 @@ import { acceptQuote, acceptStoredQuote, parseVerifiedAt } from "@/core/producer
 import { registerCitedSource, requireCitation } from "@/core/producers/rows-file";
 import { deriveInstrument, filingInstruments, FUELEU_INSTRUMENT, type FilingInstrument } from "@/features/statutory";
 import { statutoryRun } from "@/features/statutory/run";
-import { validateRowsFile, validateSourceBlock, verifyRowQuotes } from "@/features/statutory/rows";
+import { validateRowsFile, verifyRowQuotes } from "@/features/statutory/rows";
 
 import { installLedgerRpcs } from "../_support/ledger-rpcs.ts";
 import { MemDb } from "../_support/memdb.ts";
@@ -64,11 +64,10 @@ test("INV-R2b-4 (drift guard): data/filing-grade.json equals the derivation from
 
 test("the statutory row's source block: verified_at must be a date; and each input's quote must stand on a stored capture that holds it, else the row is refused (dry or not); the capture id is recorded on the computation", async () => {
   const block = (over: Record<string, unknown> = {}) => ({ url: "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32023R1805", article: "Article 4(2)", quote: REF, verified_at: "2026-10-01", ...over });
-  assert.match(validateSourceBlock(block({ verified_at: "last week" }), "w").join(), /verified_at "last week" is not a date/);
-  assert.deepEqual(validateSourceBlock(block(), "w"), []);
   const input = (value: number, unit: string) => ({ value, unit, citation: "Annex", asOf: { eventDate: "2026-06-01" }, derivation: "observed", originClass: "official", lifecycle: "verified", admissibility: "filing_ok", baseConfidence: 1, source: block() });
   const row = { shipKey: "IMO-1", targetYear: 2025, ghgIntensityActual: input(90, "gCO2eq/MJ"), energyUsedMJ: input(1000, "MJ"), consecutiveDeficitYears: input(1, "years") };
   assert.deepEqual(validateRowsFile({ rows: [row] }), []);
+  assert.match(validateRowsFile({ rows: [{ ...row, ghgIntensityActual: { ...row.ghgIntensityActual, source: block({ verified_at: "last week" }) } }] }).join(), /verified_at "last week" is not a date/);
   const db = new MemDb();
   installLedgerRpcs(db);
   db.seed("intelligence_items", [{ id: "i1" }]);

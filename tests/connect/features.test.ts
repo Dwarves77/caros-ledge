@@ -4,17 +4,16 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { createdBy, GAP_NAMESPACE, planReflect, planResolvedReflectionInserts, reflectResolved, buildSubjectRef } from "@/core/flywheel/flags";
-import { detectGaps, jurisdictionKey } from "@/core/flywheel/gaps";
+import { createdBy, GAP_NAMESPACE, planReflect, reflectResolved, buildSubjectRef } from "@/core/flywheel/flags";
+import { detectGaps } from "@/core/flywheel/gaps";
 import { computeMemberHash } from "@/core/flywheel/themes";
-import { parseThemeBriefEntry, type ThemeContext } from "@/core/briefs/theme-brief-contract";
-import { themeBriefSeams } from "@/core/briefs/theme-brief-material";
+import { figureCoverage, parseThemeBriefEntry, type ThemeContext } from "@/core/briefs/theme-brief-contract";
 import { applyThemeBrief } from "@/features/flywheel/theme-brief-seam";
 import { discoverForItems, runConnectionDiscovery } from "@/features/flywheel/run-discovery";
 import { tagPass } from "@/features/flywheel/tag-pass";
 import { forwardEventKey, insertForwardEvents } from "@/features/obligations";
-import { statutoryRun, validateStatutoryRows } from "@/features/statutory/run";
-import { SUPPORTED_TARGET_YEARS } from "@/features/statutory/rows";
+import { statutoryRun } from "@/features/statutory/run";
+import { validateRowsFile as validateStatutoryRows } from "@/features/statutory/rows";
 
 import { connectDb } from "./world.ts";
 
@@ -46,13 +45,10 @@ test("planReflect: new rows for findings without an open flag; stale open flags 
   const plan = planReflect(open, fresh);
   assert.deepEqual([plan.newRows.length, plan.staleIds, plan.unchanged], [1, ["b"], 1]);
   assert.deepEqual(planReflect(open, fresh, { scopeSubjectRefs: new Set(["T1"]) }).staleIds, []);
-  assert.deepEqual(planResolvedReflectionInserts([{ subject_ref: "T1", created_by: "c" }], fresh).unchanged, 1);
   assert.equal(buildSubjectRef("a", "", null, "b"), "a:b");
 });
 
 test("gaps: a theme spanning jurisdictions with none of the home ones is a gap; UK is GB; a generic scope names nothing", () => {
-  assert.equal(jurisdictionKey("uk"), jurisdictionKey("GB"));
-  assert.equal(jurisdictionKey("global"), null);
   const theme = { id: "T", members: ["a", "b"], surfaces: ["regulations", "research"], pivots: [] };
   const gaps = detectGaps([theme], { profile: { jurisdictions: { US: 3, GB: 1 } }, jurisdictionsByMember: { a: ["DE"], b: ["FR"] } });
   assert.deepEqual(gaps.map((g) => g.type).sort(), ["jurisdiction_span_gap", "surface_gap"]);
@@ -63,7 +59,7 @@ test("gaps: a theme spanning jurisdictions with none of the home ones is a gap; 
 });
 
 const seamWorld = (members: string[]) => connectDb({ connection_themes: [{ id: "T1", member_ids: members }], theme_briefs: [] }, { unique: { theme_briefs: ["theme_id"] } });
-const seamCtx = (members: string[]): ThemeContext => ({ themesById: new Map([["T1", { id: "T1", member_ids: members, surfaces: ["regulations"] }]]), membersById: new Map(), groundedText: new Map(), comparator: themeBriefSeams.comparator });
+const seamCtx = (members: string[]): ThemeContext => ({ themesById: new Map([["T1", { id: "T1", member_ids: members, surfaces: ["regulations"] }]]), membersById: new Map(), groundedText: new Map(), comparator: figureCoverage });
 const seamEntry = (hash: string) => ({ theme_id: "T1", member_hash: hash, title: "T", sections: { connection: "They connect.", meaning: "It matters.", ramifications: "### Regulations\nAn owner is needed.", watch: "Watch the date.", gaps: "" }, claims: [] });
 const validBrief = (members: string[], hash = computeMemberHash(members)) => {
   const v = parseThemeBriefEntry(seamEntry(hash), 0, seamCtx(members));
@@ -157,8 +153,7 @@ test("tagPass: dry writes nothing; apply tags from the title and records one res
 
 // ------------------------------------------------------------------ statutory
 
-test("statutory: the table holds 2025 to 2050 from the constants; a placeholder or an unrated host refuses the file; an unknown year is refused, not guessed", async () => {
-  assert.deepEqual(Object.keys(SUPPORTED_TARGET_YEARS), ["2025", "2030", "2035", "2040", "2045", "2050"]);
+test("statutory: a placeholder or an unrated host refuses the file; an unknown year is refused, not guessed", async () => {
   assert.ok(validateStatutoryRows({ rows: [] }).length > 0, "an empty file is not apply-ready");
   assert.ok(validateStatutoryRows({ _file_status: "SYNTHETIC fixture", rows: [{}] }).some((v) => v.includes("placeholder")));
   const block = (source: unknown) => ({ value: 1, unit: "u", citation: "c", asOf: { eventDate: "2026-01-01" }, derivation: "observed", originClass: "official", lifecycle: "verified", admissibility: "filing_ok", baseConfidence: 1, source });

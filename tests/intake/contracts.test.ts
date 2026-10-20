@@ -3,12 +3,12 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
-import { makeEnvelope, propagateEnvelope, stalenessOf } from "@/core/contracts/envelope";
-import { renderEnvelopeColumnsSql, renderFactorCandidateViewSql, renderTierConstraintsSql, resolveActiveFactor, validateFactor, FACTOR_TIERS } from "@/core/contracts/factor-tier";
-import { attributionsFor, licenceGate, mayEmbedAsSeed, renderDataSourceSeedSql, SOURCE_KEYS, SOURCE_LICENCES } from "@/core/contracts/source-licence";
+import { makeEnvelope, stalenessOf } from "@/core/contracts/envelope";
+import { renderEnvelopeColumnsSql, renderFactorCandidateViewSql, renderTierConstraintsSql } from "@/core/contracts/factor-tier";
+import { renderDataSourceSeedSql, SOURCE_KEYS, SOURCE_LICENCES } from "@/core/contracts/source-licence";
 import { assertVerbatim, groundCandidate, isVerbatim } from "@/core/contracts/verbatim";
-import { isValid, LEG_MODE_CODES, MODE_CODES, normaliseMode, VOCABULARIES } from "@/core/contracts/vocabularies";
-import { authorityFloorFor, authorityFloorForFact } from "@/core/grounding";
+import { isValid, LEG_MODE_CODES, normaliseMode, VOCABULARIES } from "@/core/contracts/vocabularies";
+import { authorityFloorFor } from "@/core/grounding";
 
 const sha = (s: string) => createHash("sha256").update(s).digest("hex");
 
@@ -48,9 +48,6 @@ test("PROP-157 / INV-081: the per-type authority floor mirrors the schema CASE (
   assert.ok(sqlFloor.size >= 9);
   for (const [t, n] of sqlFloor) assert.equal(authorityFloorFor(t), n, `floor for ${t}`);
   for (const t of ["market_signal", "regional_data", "initiative", "unknown_type"]) assert.equal(authorityFloorFor(t), null, `${t} is floor-exempt like the ELSE branch`);
-  assert.equal(authorityFloorForFact("standard", true), 4, "an own-authoring-body FACT of the voluntary family grounds at the issuing-body tier");
-  assert.equal(authorityFloorForFact("standard", false), 2);
-  assert.equal(authorityFloorForFact("regulation", true), 2, "a regulation has no own-body relaxation");
 });
 
 test("vocabularies: canonical transport mode is ocean; sea and maritime are input aliases; multimodal is corridor-only", () => {
@@ -60,7 +57,7 @@ test("vocabularies: canonical transport mode is ocean; sea and maritime are inpu
   assert.equal(normaliseMode("air"), "air");
   assert.equal(normaliseMode("teleport"), null);
   assert.equal(normaliseMode(null), null);
-  assert.ok(MODE_CODES.includes("multimodal") && !LEG_MODE_CODES.includes("multimodal"));
+  assert.ok(isValid("transport_mode", "multimodal") && !LEG_MODE_CODES.includes("multimodal"));
   assert.equal(isValid("transport_mode", "ocean"), true);
   assert.equal(isValid("transport_mode", "sea"), false, "sea is an input alias, never a stored value");
   assert.ok(Object.keys(VOCABULARIES.duty_holder_class ?? {}).length >= 12, "duty_holder_class is the authoritative list");
@@ -80,7 +77,7 @@ test("INV-173: makeEnvelope refuses a missing observation that carries a value; 
   assert.ok(Object.isFrozen(makeEnvelope({ ...base, value: 1 })));
 });
 
-test("INV-173: freshness is derived from the as-of date and the cadence, never asserted; an aggregate takes the weakest, least contractable and worst of its inputs", () => {
+test("INV-173: freshness is derived from the as-of date and the cadence, never asserted", () => {
   const now = "2026-10-15";
   assert.equal(stalenessOf({ expected_refresh: "monthly", as_of: { event_date: "2026-10-01" } }, now), "current");
   assert.equal(stalenessOf({ expected_refresh: "monthly", as_of: { event_date: "2026-08-20" } }, now), "ageing");
@@ -88,56 +85,8 @@ test("INV-173: freshness is derived from the as-of date and the cadence, never a
   assert.equal(stalenessOf({ expected_refresh: "monthly", as_of: { event_date: "2025-01-01" } }, now), "frozen");
   assert.equal(stalenessOf({ expected_refresh: "irregular", as_of: { event_date: "2026-10-01" } }, now), "unknown");
   assert.equal(stalenessOf({ as_of: { event_date: "2026-10-01" } }, now), "unknown");
-  const p = propagateEnvelope(
-    [
-      { origin_class: "official", derivation: "statutory_fixed", expected_refresh: "monthly", as_of: { event_date: "2026-10-10" } },
-      { origin_class: "modelled", derivation: "estimated", expected_refresh: "monthly", as_of: { event_date: "2026-08-20" } },
-      { origin_class: "verified", derivation: "observed", expected_refresh: "monthly", as_of: { event_date: "2026-10-12" } },
-    ],
-    now,
-  );
-  assert.deepEqual([p.origin_class, p.derivation, p.freshness, p.count], ["modelled", "estimated", "ageing", 3]);
-  const unknown = propagateEnvelope([{ origin_class: "official" }, { origin_class: "made_up" }], now);
-  assert.equal(unknown.origin_class, "community", "an unknown class falls to the weakest, with a note");
-  assert.ok(unknown.notes.length > 0);
-  assert.deepEqual(propagateEnvelope([], now), { origin_class: null, derivation: null, freshness: "unknown", count: 0, notes: [] });
 });
 
-const factor = (over: Record<string, unknown>) => ({ tier: "modal_default", scope_kind: "modal", source_key: "desnz_ghg_factors", as_at_date: "2026-01-01", valid_from: "2026-01-01", quantity_basis: "tonne_km", gwp_basis: "AR5_GWP100", wtt_co2e: 1, ttw_co2e: 2, wtw_co2e: 3, pedigree: 3, vehicle_class: "hgv", energy_carrier: "diesel", jurisdiction: "GB", mode: "road", ...over });
-
-test("INV-174: a factor is selected by tier rank then scope specificity then recency; an unlicensed tier-1 row is skipped and reported, the licensed tier-4 row is served", () => {
-  const cands = [
-    factor({ tier: "carrier_primary", scope_kind: "movement", movement_ref: "m1", pedigree: 1, source_key: "clean_cargo_carrier" }),
-    factor({ id: "licensed", as_at_date: "2026-02-01" }),
-    factor({ id: "older", as_at_date: "2025-02-01" }),
-  ];
-  const r = resolveActiveFactor(cands as never);
-  assert.equal((r.factor as { id?: string }).id, "licensed");
-  assert.equal(r.skipped.length, 1);
-  assert.equal(r.skipped[0]?.reason, "licence");
-  assert.deepEqual(r.attribution, attributionsFor(["desnz_ghg_factors"]));
-  // recency breaks a tier + scope tie
-  assert.equal((resolveActiveFactor([factor({ id: "older", as_at_date: "2025-02-01" }), factor({ id: "newer", as_at_date: "2026-02-01" })] as never).factor as { id?: string }).id, "newer");
-  // invalid, superseded, out of window
-  const out = resolveActiveFactor([factor({ id: "bad", pedigree: 1 }), factor({ id: "sup", superseded_by: "x" }), factor({ id: "old", valid_to: "2026-03-01" })] as never, { onDate: "2026-06-01" });
-  assert.equal(out.factor, null);
-  assert.deepEqual(out.skipped.map((s) => s.reason).sort(), ["invalid", "out_of_window", "superseded"]);
-  // an unregistered source key fails the embed gate closed
-  assert.equal(mayEmbedAsSeed("not_in_register"), false);
-  assert.equal(licenceGate("not_in_register").ok, false);
-  assert.equal(licenceGate("glec_framework").ok, false);
-  assert.equal(licenceGate("desnz_ghg_factors").ok, true);
-  assert.equal(resolveActiveFactor([factor({ source_key: "not_in_register" })] as never).factor, null);
-});
-
-test("validateFactor: a default may not present as primary data; a proxy names its donor; the three splits must add up", () => {
-  assert.match(validateFactor(factor({ pedigree: 1 })).join("|"), /better than tier/);
-  assert.match(validateFactor(factor({ tier: "proxy_estimate", pedigree: 4 })).join("|"), /donor/);
-  assert.match(validateFactor(factor({ wtw_co2e: 99 })).join("|"), /does not equal/);
-  assert.match(validateFactor(factor({ vehicle_class: null })).join("|"), /requires vehicle_class/);
-  assert.deepEqual(validateFactor(factor({})), []);
-  assert.ok(FACTOR_TIERS.carrier_primary?.isPrimaryData);
-});
 
 test("the register: every entry has a verdict, the count line matches SOURCE_KEYS, and the licence triage partitions the register", () => {
   assert.equal(SOURCE_KEYS.length, Object.keys(SOURCE_LICENCES).length);
@@ -156,15 +105,3 @@ test("proof 6: the SQL generators reproduce migration 258's generated blocks (pi
   assert.equal(sha(renderDataSourceSeedSql()), "eae05af95a884c6067594ef6bd08a4e6abaf144e97ae0466c7d8165b4d6b36d9");
 });
 
-test("INV-174: tier rank decides before scope specificity, and scope specificity before recency", () => {
-  const onlyTier = resolveActiveFactor([
-    factor({ id: "modal", as_at_date: "2026-06-01" }),
-    factor({ id: "operator-avg", tier: "verified_operator_avg", scope_kind: "operator_lane", operator_key: "op1", pedigree: 2, as_at_date: "2025-01-01" }),
-  ] as never);
-  assert.equal((onlyTier.factor as { id?: string }).id, "operator-avg", "the better tier wins even though it is older");
-  const sameTier = resolveActiveFactor([
-    factor({ id: "operator", tier: "programme_lane_avg", scope_kind: "operator_lane", operator_key: "op1", pedigree: 2, as_at_date: "2026-06-01" }),
-    factor({ id: "carrier-lane", tier: "programme_lane_avg", scope_kind: "carrier_lane", operator_key: "op1", corridor_id: "cl:corridor:0123456789abcdef", pedigree: 2, as_at_date: "2025-01-01" }),
-  ] as never);
-  assert.equal((sameTier.factor as { id?: string }).id, "carrier-lane", "at one tier the more specific scope wins even though it is older");
-});

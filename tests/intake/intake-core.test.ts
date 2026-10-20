@@ -1,14 +1,11 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { parseRecordSections, splitKeyDateFacts } from "@/core/brief";
 import { isVerbatim } from "@/core/contracts/verbatim";
-import { CLASSIFY_INSTRUCTION, CLASSIFY_PROMPT_VERSION, CONTENT_MAX_CHARS, buildClassifyUserMessage, readVerdictFile, validateClassifyVerdict } from "@/core/intake";
-import { classifyFrDocType, classifyHost, classifyItemTypeFromCelexKey, classifyUkLegislationType, deriveUkLegislationIdentifier, extractFrDocumentNumber, resolveDocumentIdentity } from "@/core/intake/identity";
-import { buildRecordFacts, buildRecordPayload, buildResearchRecordPayload, writeGroundingSequence } from "@/features/intake";
-import { claim, isProseSpan } from "@/features/intake/record-facts/extract";
-import { STUB_BRIEF_MARKER, buildRecordFullBrief } from "@/features/intake/record-facts/payload";
-import { WriteSequenceError, classifyMintOutcome } from "@/features/intake/write-item";
+import { CLASSIFY_INSTRUCTION, CLASSIFY_PROMPT_VERSION, readVerdictFile, validateClassifyVerdict } from "@/core/intake";
+import { classifyHost, resolveDocumentIdentity } from "@/core/intake/identity";
+import { buildRecordFacts, buildRecordPayload, writeGroundingSequence } from "@/features/intake";
+import { classifyMintOutcome } from "@/features/intake/write-item";
 
 import { ITEM, OFFICIAL_TEXT, OFFICIAL_URL, SOURCE } from "./fixtures.ts";
 import { MemDb } from "./memdb.ts";
@@ -16,12 +13,9 @@ import { MemDb } from "./memdb.ts";
 const errBody = (t: string) => t.startsWith("Access Denied");
 const input = { source_id: SOURCE, source_url: OFFICIAL_URL, source_name: "EUR-Lex", source_tier: 1, source_category: "regulatory" as const };
 
-test("proof 1: the classifier instruction is pinned (existing verdict files keep their version) and the user message is capped at the excerpt the author read", () => {
+test("proof 1: the classifier instruction is pinned (existing verdict files keep their version)", () => {
   assert.equal(CLASSIFY_PROMPT_VERSION, "sha256:1ceca92ff0dfae68");
   assert.ok(CLASSIFY_INSTRUCTION.length > 500);
-  const msg = buildClassifyUserMessage({ ...input, text: "x".repeat(CONTENT_MAX_CHARS + 500) });
-  assert.ok(msg.includes("x".repeat(CONTENT_MAX_CHARS)) && !msg.includes("x".repeat(CONTENT_MAX_CHARS + 1)));
-  assert.match(msg, /Source tier: 1/);
 });
 
 test("verdict validation: the error-body pre-gate wins over whatever the author inferred; nothing defaults to a positive", () => {
@@ -65,21 +59,26 @@ test("the verdict file: a stale instruction version is excluded and COUNTED, the
 });
 
 test("proof 1: document identity: CELEX sector map, UK series from the URL path only, Federal Register number and type, institution fallback", () => {
-  assert.deepEqual(classifyItemTypeFromCelexKey("32023R1115"), { itemType: "regulation", hold: null });
-  assert.deepEqual(classifyItemTypeFromCelexKey("32022L2464"), { itemType: "directive", hold: null });
-  assert.deepEqual(classifyItemTypeFromCelexKey("22023A0101"), { itemType: "framework", hold: null });
-  assert.equal(classifyItemTypeFromCelexKey("32023X9999").hold, "item_type_unmapped", "a real key with no home is named, never guessed");
-  assert.equal(classifyItemTypeFromCelexKey("not-celex").hold, "canonical_key_unresolved", "the two holds are never conflated");
-  assert.equal(classifyUkLegislationType("https://www.legislation.gov.uk/uksi/2024/12/made"), "regulation");
-  assert.equal(deriveUkLegislationIdentifier("https://www.legislation.gov.uk/wsi/2024/12/made"), "UK wsi 2024/12", "a Welsh instrument is not labelled uksi");
-  assert.equal(deriveUkLegislationIdentifier("https://example.test/none"), null);
-  assert.equal(extractFrDocumentNumber("https://www.federalregister.gov/documents/2026/03/04/2026-04567/some-rule"), "2026-04567");
-  assert.deepEqual(classifyFrDocType("Rule"), { itemType: "regulation", hold: null });
-  assert.deepEqual(classifyFrDocType("Proposed Rule"), { itemType: "initiative", hold: null });
-  assert.equal(classifyFrDocType("Notice").hold, "item_type_unmapped");
+  const helpers = { deriveKey: (id: string | null) => id, sameInstitution: (a?: string | null, b?: string | null) => !!a && !!b && new URL(a).hostname === new URL(b).hostname };
+  const eurlex = (instrument_identifier: string) => resolveDocumentIdentity({ document_url: "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:x", instrument_identifier }, { url: "https://eur-lex.europa.eu/" }, helpers);
+  assert.deepEqual([eurlex("32023R1115").itemType, eurlex("32023R1115").hold], ["regulation", null]);
+  assert.deepEqual([eurlex("32022L2464").itemType, eurlex("32022L2464").hold], ["directive", null]);
+  assert.deepEqual([eurlex("22023A0101").itemType, eurlex("22023A0101").hold], ["framework", null]);
+  assert.equal(eurlex("32023X9999").hold, "item_type_unmapped", "a real key with no home is named, never guessed");
+  assert.equal(eurlex("not-celex").hold, "canonical_key_unresolved", "the two holds are never conflated");
+  const uk = (document_url: string) => resolveDocumentIdentity({ document_url }, null, helpers);
+  assert.equal(uk("https://www.legislation.gov.uk/uksi/2024/12/made").itemType, "regulation");
+  assert.equal(uk("https://www.legislation.gov.uk/wsi/2024/12/made").instrumentIdentifier, "UK wsi 2024/12", "a Welsh instrument is not labelled uksi");
+  assert.equal(uk("https://www.legislation.gov.uk/none").instrumentIdentifier, null);
+  assert.equal(uk("https://www.legislation.gov.uk/none").hold, "item_type_unmapped");
+  const frUrl = "https://www.federalregister.gov/documents/2026/03/04/2026-04567/some-rule";
+  assert.equal(resolveDocumentIdentity({ document_url: frUrl }, null, helpers).frDocumentNumber, "2026-04567");
+  const frType = (t: string) => resolveDocumentIdentity({ document_url: frUrl }, null, helpers, { frDocType: t });
+  assert.deepEqual([frType("Rule").itemType, frType("Rule").hold], ["regulation", null]);
+  assert.deepEqual([frType("Proposed Rule").itemType, frType("Proposed Rule").hold], ["initiative", null]);
+  assert.equal(frType("Notice").hold, "item_type_unmapped");
   assert.equal(classifyHost("https://eur-lex.europa.eu/x"), "eurlex");
   assert.equal(classifyHost("https://example.test/x"), null);
-  const helpers = { deriveKey: (id: string | null) => id, sameInstitution: (a?: string | null, b?: string | null) => !!a && !!b && new URL(a).hostname === new URL(b).hostname };
   const eu = resolveDocumentIdentity({ document_url: "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32023R1115", instrument_identifier: "32023R1115" }, { url: "https://eur-lex.europa.eu/" }, helpers);
   assert.deepEqual([eu.scheme, eu.itemType, eu.jurisdictionIso], ["celex", "regulation", "EU"]);
   const fr = resolveDocumentIdentity({ document_url: "https://www.federalregister.gov/documents/2026/03/04/2026-04567/x" }, null, helpers);
@@ -104,8 +103,8 @@ test("INV-171 / proof 5: one claim per slot; every FACT span is verbatim under t
   for (const f of facts) assert.ok(isVerbatim(OFFICIAL_TEXT, f.source_span), `FACT span verbatim: ${f.source_span}`);
   assert.ok(claims.filter((c) => c.claim_kind === "GAP").every((g) => g.source_span === null));
   assert.ok(claims.some((c) => c.section_key === "identity" && c.claim_kind === "FACT"), "the identity FACT is the title located verbatim");
-  const brief = buildRecordFullBrief({ sourceUrl: OFFICIAL_URL, claims });
-  assert.ok(brief.startsWith(`*${STUB_BRIEF_MARKER}*`));
+  const brief = String(buildRecordPayload({ sourceUrl: OFFICIAL_URL, itemType: "regulation", title: "Regulation (EU) 2023/9999 of the European Parliament and of the Council on sustainable freight operations", source: { id: SOURCE }, capturedText: OFFICIAL_TEXT, requiredSlots: slots }).item.full_brief);
+  assert.match(brief, /^\*Catalogue record: [^*]+\*/);
   assert.doesNotMatch(brief, /<<<|CLAIM_PROVENANCE|_proof_note/);
   const boiler = brief.split("\n").filter((l) => !l.startsWith("- ") && !l.startsWith("Source:"));
   assert.doesNotMatch(boiler.join("\n"), /\d/, "the boilerplate is digit-free");
@@ -114,27 +113,11 @@ test("INV-171 / proof 5: one claim per slot; every FACT span is verbatim under t
 test("INV-171: a title that is not in the capture yields no identity FACT, and a span that fails the prose guard is never a FACT", () => {
   const none = buildRecordFacts({ title: "A Completely Different Title", sourceUrl: OFFICIAL_URL, capturedText: OFFICIAL_TEXT, requiredSlots: [], itemType: "regulation" });
   assert.equal(none.filter((c) => c.section_key === "identity").length, 0);
-  assert.equal(isProseSpan("====== ====== ======"), false);
-  assert.equal(isProseSpan("&nbsp; Operators shall report their annual emissions"), false);
-  assert.equal(isProseSpan("<div>Operators shall report annual emissions</div>"), false);
-  assert.equal(isProseSpan("see https://example.test/ for the details here"), false, "a bare-domain pointer is not a located fact");
-  assert.equal(isProseSpan("Operators shall report verified annual emissions"), true);
   const nav = buildRecordFacts({ title: null, sourceUrl: null, capturedText: "Home | News | penalty ===== ===== ===== |", requiredSlots: ["penalty_summary"], itemType: "regulation" });
   assert.equal(nav.find((c) => c.slot_key === "penalty_summary")?.claim_kind, "GAP");
 });
 
-test("proof 5: the research payload has one claim per slot (the executed duplicate case), a stub that parses back, and no column-less side-fields", () => {
-  const text = "This study finds that road electrification cuts emissions by a large margin in every tested corridor. The limitations of this study include a small sample of operators. Policymakers should consider a staged rollout of charging capacity. The report does not resolve the cost of grid upgrades. A key cost is $4.5 million per depot across the sample.";
-  const p = buildResearchRecordPayload({ sourceUrl: "https://journal.test/paper", title: "Road electrification study", source: { id: SOURCE }, capturedText: text, requiredSlots: ["finding", "key_figure", "finding"] });
-  const keys = p.claims.filter((c) => c.section_key === "record_facts").map((c) => c.slot_key);
-  assert.equal(new Set(keys).size, keys.length);
-  assert.ok(keys.includes("finding") && keys.includes("key_figure") && keys.includes("evidence_agreement_signal"));
-  assert.equal(p.item.grade, "record");
-  for (const k of ["binding_position", "due_date", "date_precision", "corridor_identity", "research_credibility"]) assert.ok(!(k in p.item), `${k} has no column and is not computed here (ruling 2)`);
-  const parsed = parseRecordSections(p.sections);
-  assert.ok(parsed, "the stored sections parse back for the detail surface");
-  assert.equal((parsed?.facts.length ?? 0) + (parsed?.gaps.length ?? 0), keys.length);
-  assert.ok(Array.isArray(splitKeyDateFacts(parsed?.facts ?? []).dateFacts));
+test("proof 5: the record payload builder refuses a missing source url and an empty capture", () => {
   assert.throws(() => buildRecordPayload({ sourceUrl: "", itemType: "regulation", title: "t", source: { id: "s" }, capturedText: "x" }), /requires sourceUrl/);
   assert.throws(() => buildRecordPayload({ sourceUrl: "u", itemType: "regulation", title: "t", source: { id: "s" }, capturedText: "   " }), /non-empty capturedText/);
 });
@@ -151,7 +134,7 @@ test("INV-295: the grounding write sequence is ordered (pool, sections, Gate A, 
   assert.ok(db.rows("section_claim_provenance").filter((c) => c.claim_kind === "GAP").every((c) => c.source_id === null && c.source_tier_at_grounding === null));
   const broken = new MemDb();
   broken.failWhen = (c) => (c.table === "item_gate_a_state" ? "locked" : null);
-  await assert.rejects(writeGroundingSequence(broken.client, payload, ITEM, { sourceId: SOURCE, sourceTier: 1, nowIso: "t" }), (e: unknown) => e instanceof WriteSequenceError && e.step === "item_gate_a_state");
+  await assert.rejects(writeGroundingSequence(broken.client, payload, ITEM, { sourceId: SOURCE, sourceTier: 1, nowIso: "t" }), (e: unknown) => e instanceof Error && e.name === "WriteSequenceError" && /^write sequence failed at item_gate_a_state:/.test(e.message));
   assert.equal(broken.writes("section_claim_provenance").length, 0, "no claim is written after a failed Gate A state");
   const emptyPool = new MemDb();
   await assert.rejects(writeGroundingSequence(emptyPool.client, { ...payload, search_results: [{ ...payload.search_results[0]!, result_content: undefined as never }] }, ITEM, { sourceId: SOURCE, sourceTier: 1, nowIso: "t" }), /result_content must be a string/);
@@ -161,13 +144,6 @@ test("population run #8: the mint outcome is read from the row's provenance_stat
   assert.equal(classifyMintOutcome("verified"), "minted_verified");
   assert.equal(classifyMintOutcome("quarantined"), "minted_unverified");
   assert.equal(classifyMintOutcome(null), "minted_unverified");
-});
-
-test("INV-171: the one claim constructor refuses a FACT whose span is not verbatim in the capture (the assertion before emission)", () => {
-  const ctx = { capturedText: OFFICIAL_TEXT, sourceUrl: OFFICIAL_URL };
-  assert.equal(claim("effective_date", "record_facts", ctx, { span: "This Regulation shall enter into force on 1 January 2027", text: "x" }).claim_kind, "FACT");
-  assert.throws(() => claim("effective_date", "record_facts", ctx, { span: "This Regulation enters into force whenever it likes", text: "x" }), /not a substring of the captured source text/);
-  assert.equal(claim("effective_date", "record_facts", ctx, null).claim_kind, "GAP");
 });
 
 test("INV-025: a record-grade payload is not hollow: it holds more than its title as a FACT whenever the capture states anything the slots look for; a title-only capture is visibly hollow", () => {

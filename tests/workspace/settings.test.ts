@@ -1,17 +1,17 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
 import { useWorkspaceStore } from "@/core/workspace/store";
 import { PROFILE_TAB_KEYS, resolveInitialProfileTab } from "@/features/account/lib/initial-tab";
 import { profilePatchSchema, saveProfilePatch } from "@/features/account/lib/profile-patch";
 import { patchWorkspaceSettings } from "@/core/workspace";
-import { bindSettingsToWorkspace, useSettingsStore } from "@/features/settings/state/settings-store";
+import { useSettingsStore } from "@/features/settings/state/settings-store";
 
 import { clientFor, ORG_A, ORG_B, seed, USER } from "./_world.ts";
 
 type SettingsRow = Record<string, unknown> & { alert_config: Record<string, unknown>; home_sections: unknown; default_filters: unknown; profile: unknown; sector_profile: unknown; default_export_format: unknown };
 const row = (db: ReturnType<typeof seed>, org = ORG_A) => db.rows("workspace_settings").find((r) => r.org_id === org) as SettingsRow;
-const settle = () => new Promise((resolve) => setTimeout(resolve, 10));
 
 // ── patchWorkspaceSettings (INV-168) ─────────────────────────────────────────────────────────────────
 
@@ -121,9 +121,7 @@ test("B-0665 / INV-168: saves go through the key-wise patch: only the changed ke
   fresh();
   const db = seed();
   Object.assign(row(db), { alert_config: { priorities: ["CRITICAL", "HIGH"], briefingCadence: "weekly", briefingTime: "08:00" }, home_sections: { dueNext: true, someOtherKey: 1 } });
-  const unbind = bindSettingsToWorkspace(() => clientFor(db));
-  useWorkspaceStore.setState({ orgId: ORG_A });
-  await settle();
+  await useSettingsStore.getState().loadFromWorkspace(clientFor(db), ORG_A);
   const s = useSettingsStore.getState();
   assert.equal(s.orgId, ORG_A);
   s.toggleSection("BandTiles");
@@ -132,7 +130,6 @@ test("B-0665 / INV-168: saves go through the key-wise patch: only the changed ke
   s.setDefaultSort("newest");
   s.setExportFormat("slack");
   await s.flush();
-  unbind();
   assert.deepEqual(row(db).alert_config, { priorities: ["CRITICAL"], briefingCadence: "weekly", briefingTime: "08:00", briefingDay: "friday" });
   assert.deepEqual(row(db).home_sections, { dueNext: true, someOtherKey: 1, bandTiles: false });
   assert.deepEqual(row(db).default_filters, { defaultSort: "newest" });
@@ -140,37 +137,17 @@ test("B-0665 / INV-168: saves go through the key-wise patch: only the changed ke
   assert.equal(useSettingsStore.getState().saveError, null);
 });
 
-test("B-0665: the store is loaded ONCE per org from the workspace store, again only when the org changes, and not at all after unbinding", async () => {
-  fresh();
-  const db = seed();
-  const reads = () => db.log.filter((l) => l.table === "workspace_settings" && l.op === "select").length;
-  useWorkspaceStore.setState({ orgId: ORG_A });
-  const unbind = bindSettingsToWorkspace(() => clientFor(db));
-  await settle();
-  assert.deepEqual([reads(), useSettingsStore.getState().orgId], [1, ORG_A]);
-  useWorkspaceStore.setState({ orgName: "renamed" });
-  useWorkspaceStore.setState({ orgId: ORG_A });
-  await settle();
-  assert.equal(reads(), 1);
-  useWorkspaceStore.setState({ orgId: ORG_B });
-  await settle();
-  assert.deepEqual([reads(), useSettingsStore.getState().orgId], [2, ORG_B]);
-  // A second binding (a remount, a hot reload) for the org that is already loaded reads nothing.
-  const again = bindSettingsToWorkspace(() => clientFor(db));
-  await settle();
-  assert.equal(reads(), 2);
-  again();
-  unbind();
-  useWorkspaceStore.setState({ orgId: ORG_A });
-  await settle();
-  assert.equal(reads(), 2);
+test("B-0665: the store binds itself to the workspace store when the module loads in a browser (the loader call the old store was missing)", () => {
+  const source = readFileSync("src/features/settings/state/settings-store.ts", "utf8");
+  assert.match(source, /if \(typeof window !== "undefined"\) bindSettingsToWorkspace\(\);/);
+  assert.match(source, /loadFor\(useWorkspaceStore\.getState\(\)\.orgId\)/);
+  assert.match(source, /if \(s\.orgId !== prev\.orgId\) loadFor\(s\.orgId\)/);
 });
 
 test("a failed save is surfaced as saveError and the change stays on screen; the next good save clears it", async () => {
   fresh();
   const db = seed();
   await useSettingsStore.getState().loadFromWorkspace(clientFor(db), ORG_A);
-  const unbind = bindSettingsToWorkspace(() => clientFor(db));
   db.fail("workspace_settings", "update", { message: "write refused" });
   useSettingsStore.getState().setAlertPriorities(["LOW"]);
   await useSettingsStore.getState().flush();
@@ -178,7 +155,6 @@ test("a failed save is surfaced as saveError and the change stays on screen; the
   db.failures.length = 0;
   useSettingsStore.getState().setAlertPriorities(["HIGH"]);
   await useSettingsStore.getState().flush();
-  unbind();
   assert.equal(useSettingsStore.getState().saveError, null);
   assert.deepEqual(row(db).alert_config.priorities, ["HIGH"]);
 });

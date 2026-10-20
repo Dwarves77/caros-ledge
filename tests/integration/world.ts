@@ -7,7 +7,6 @@ import { ecbFx } from "@/features/market/producers";
 import { researchAssessment } from "@/features/research";
 import type { MarketMethodDeps } from "@/core/propagation";
 import type { Catalog } from "@/core/producers";
-import { PRODUCER_CATALOG } from "@/core/turn/wiring";
 
 import { drain, type WorkerDeps } from "../../supabase/functions/capture-worker/process.ts";
 import { MemDb, installPortalLedgerRpc, installPropagationRpcs, type Row } from "../_support/memdb.ts";
@@ -129,9 +128,10 @@ export function fixture(opts: { cadence?: "off" | "weekly"; routes?: Record<stri
   const db = makeWorld({ ...(opts.cadence ? { cadence: opts.cadence } : {}), itemEvents: opts.research === true });
   const researchRoutes: Record<string, () => Response> = opts.research ? { [FEED_URL]: () => new Response(FEED_RESEARCH, { status: 200, headers: { "content-type": "application/rss+xml" } }), [RESEARCH_URL]: () => new Response(RESEARCH_TEXT, { status: 200, headers: { "content-type": "text/plain; charset=utf-8" } }) } : {};
   const { fetchImpl, requests } = transport({ ...researchRoutes, ...(opts.routes ?? {}) });
-  const catalog: Catalog = { ...PRODUCER_CATALOG, "ecb-fx": { ...ecbFx, enabled: true } };
   const env = { MARKET_PRODUCER_ECB_FX_ENABLED: "1", ...(opts.research ? { RESEARCH_ASSESSMENT_PRODUCER_ENABLED: "1" } : {}) };
   const worker: WorkerDeps = { db: db.client, fetchImpl, env, now: () => NOW.getTime() } as WorkerDeps;
-  const d = buildDeps(db.client, env, { now: () => NOW, fetchImpl, market: MARKET, catalog, ...(opts.research ? { assessment: { ...researchAssessment, enabled: true } } : {}), sleep: async () => undefined, worker: (input) => drain(worker, input) });
+  const common = { now: () => NOW, fetchImpl, market: MARKET, ...(opts.research ? { assessment: { ...researchAssessment, enabled: true } } : {}), sleep: async () => undefined, worker: (input: Parameters<typeof drain>[1]) => drain(worker, input) };
+  const catalog: Catalog = { ...buildDeps(db.client, env, common).catalog, "ecb-fx": { ...ecbFx, enabled: true } };
+  const d = buildDeps(db.client, env, { ...common, catalog });
   return { db, d, requests };
 }

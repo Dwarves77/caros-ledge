@@ -3,7 +3,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { foldRun } from "@/core/contracts";
+import { normalizeNumeric } from "@/core/contracts/numbers";
 import { scanGateA } from "@/core/grounding";
 import { classTierForHost } from "@/core/sources";
 import { healItem, healQuarantined, rederiveStale } from "@/features/mint";
@@ -17,7 +17,7 @@ const cap = (text: string, id = "cap1"): Capture => ({ id, result_url: CELEX_URL
 const claim = (over: Partial<HealClaim>): HealClaim => ({ id: "c1", claim_kind: "FACT", claim_text: "t", source_span: null, source_id: null, search_result_id: null, section_row_id: null, ...over });
 
 test("INV-298: the numeric fold is by VALUE: thousands groups fold, a decimal comma folds to a point, and an ambiguous single separator never folds", () => {
-  const f = (s: string) => foldRun(s).text;
+  const f = (s: string) => normalizeNumeric(s).chars;
   assert.deepEqual(["1 200 000", "1,200,000", "1.200.000", "1 200"].map(f), ["1200000", "1200000", "1200000", "1200"]);
   assert.deepEqual(["35,5", "35.5", "0,75"].map(f), ["35.5", "35.5", "0.75"]);
   assert.deepEqual(["1.234,56", "1,234.56"].map(f), ["1234.56", "1234.56"], "a thousands group then a decimal");
@@ -25,8 +25,8 @@ test("INV-298: the numeric fold is by VALUE: thousands groups fold, a decimal co
   assert.equal(f("12,345"), "12,345");
   assert.notEqual(f("12.345"), f("12,345"), "the two never fold onto one value");
   assert.equal(f("5 12"), "5 12", "a space before a non-thousands group is two numbers");
-  const r = foldRun("1,200,000");
-  assert.equal(r.text.length, r.offs.length);
+  const r = normalizeNumeric("1,200,000");
+  assert.equal(r.map.length, r.chars.length + 1, "every folded character maps back to the capture, plus the end");
 });
 
 test("INV-298: a tolerant match never changes the figure: 12.345 does not ground on 12,345, 345 does not ground inside 12,345, 12 does not ground inside 12.5", () => {

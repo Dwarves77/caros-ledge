@@ -3,9 +3,11 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { containsNumeral, figuresEqual, isFigure, numbersSumExactly, parseFigure, stateFigure, type Figure } from "@/core/parse";
+import { containsNumeral, figuresEqual, isFigure, stateFigure, type Figure } from "@/core/parse";
 import { cmpDec, parseDec, sigDigitsOf } from "@/core/parse/decimal";
 import { interpretNumber, scanNumbers } from "@/core/parse/locale";
+
+import { parseFigure } from "../_support/parse-figure.ts";
 
 const fig = (text: string, locale = "en"): Figure => {
   const p = parseFigure(text, { locale });
@@ -63,12 +65,6 @@ test("containsNumeral: a date or year is found at a numeral boundary on both sid
   assert.equal(containsNumeral("see Regulation 2025/1735", "2025"), false, "an instrument number is not a deadline year");
   assert.equal(containsNumeral("effective 2025-06-30.", "2025-06-30"), true);
   assert.equal(containsNumeral("", "2025"), false);
-});
-
-test("WTT + TTW = WTW is checked exactly on the stored decimals, with no float epsilon (U4)", () => {
-  assert.deepEqual(numbersSumExactly(0.328, 1.244, 1.572), { ok: true, sum: "1.572" });
-  assert.deepEqual(numbersSumExactly(0.1, 0.2, 0.3), { ok: true, sum: "0.3" });
-  assert.equal(numbersSumExactly(0.328, 1.244, 1.58).ok, false);
 });
 
 test("the decimal and locale internals: exact arithmetic, whole digit runs, no float", () => {

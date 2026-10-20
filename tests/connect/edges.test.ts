@@ -4,21 +4,15 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
-import { edgeSnapshotSink, RELATIONSHIPS, writeDiscoveredEdges, type EdgeRow } from "@/core/flywheel/edges";
-import { renderSurfaceOfSql, SURFACE_RULES, surfaceOf } from "@/core/routing";
+import { edgeSnapshotSink, writeDiscoveredEdges, type EdgeRow } from "@/core/flywheel/edges";
+import { surfaceOf } from "@/core/routing";
 
 import { memoryDb } from "../_support/memory-db.ts";
+import { renderSurfaceOfSql } from "../_support/surface-of-sql.ts";
 
 const schema = readFileSync(new URL("../../supabase/schema.sql", import.meta.url), "utf8");
 
-test("relationship table equals the CHECK of item_cross_references", () => {
-  const m = /item_cross_references_relationship_check CHECK \(\(relationship = ANY \(ARRAY\[([^\]]+)\]/.exec(schema);
-  assert.ok(m, "the CHECK exists in schema.sql");
-  const inDb = [...(m[1] as string).matchAll(/'([a-z_]+)'::text/g)].map((x) => x[1] as string).sort();
-  assert.deepEqual([...RELATIONSHIPS].sort(), inDb);
-});
-
-test("SURFACE_RULES renders the body of public.surface_of", () => {
+test("the routing rules render the body of public.surface_of", () => {
   const m = /CREATE FUNCTION public\.surface_of[\s\S]*?SELECT\s+(CASE[\s\S]*?END);/.exec(schema);
   assert.ok(m, "surface_of exists in schema.sql");
   const squash = (s: string) => s.replace(/\s+/g, " ").trim();
@@ -26,7 +20,6 @@ test("SURFACE_RULES renders the body of public.surface_of", () => {
   assert.equal(surfaceOf("regulation", 5), "regulations");
   assert.equal(surfaceOf(null, 7), "research");
   assert.equal(surfaceOf("unknown_type", null), "uncategorized");
-  assert.ok(SURFACE_RULES.length > 0);
 });
 
 const edge = (s: string, t: string, origin = "provenance_discovery", extra: Partial<EdgeRow> = {}): EdgeRow => ({ source_item_id: s, target_item_id: t, relationship: "related", origin, score: 0.5, basis: [], ...extra });
