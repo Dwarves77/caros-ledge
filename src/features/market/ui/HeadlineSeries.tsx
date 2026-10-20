@@ -23,7 +23,7 @@ function Cell({ cell, audit }: { cell: DeltaCellModel; audit: string }) {
   if (cell.kind === "absent") {
     return (
       <span data-audit={audit} data-absence-state={cell.state} data-obs-status={cell.obsStatus} aria-label={`${cell.lead}: ${cell.label}. ${cell.detail}`} title={cell.detail} className={`cl-absence ${styles.cellAbsent}`}>
-        {cell.lead} · {cell.label}
+        {cell.lead} · {cell.label.charAt(0).toUpperCase() + cell.label.slice(1)}
       </span>
     );
   }

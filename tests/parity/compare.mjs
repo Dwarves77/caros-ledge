@@ -68,7 +68,8 @@ const hit = (a) => { if (a) USED_WAIVERS.add(a.id); return a; };
 // A waiver of kind 'order' (route, `match` on the control name, ruling) covers a "control reordered" line for a matching control where the old tree left the order unspecified (no secondary key, proven by file:line in the ruling)
 // and the new tree's deterministic rule stands. It waives ORDER ONLY: a missing or renamed control under the same pattern is not reordered, it fails.
 const orderWaived = (approved, route, text) => Boolean(hit(approved.find((a) => a.kind === 'order' && a.route === route && new RegExp(a.match).test(text))));
-const isApproved = (approved, route, kind, text) => Boolean(hit(approved.find((a) => a.route === route && a.kind === kind && (a.match === '*' || new RegExp(a.match).test(text)))));
+// `kind` of a waiver is one kind or a list of kinds (a design change that moves rows and controls together is one waiver, one ruling).
+const isApproved = (approved, route, kind, text) => Boolean(hit(approved.find((a) => a.route === route && [].concat(a.kind).includes(kind) && (a.match === '*' || new RegExp(a.match).test(text)))));
 
 // `dataNames` ({route, match, keep, reason}): a control whose name is derived from live data (a count, then words drawn from the corpus) is compared by its stable prefix `keep`, on both sides, before the
 // subsequence check. Counts are already normalised; words derived from data are the same class. The reason is recorded in the report line.

@@ -1,0 +1,5 @@
+# path | reason (files with no "Ported from" header)
+src/ui/bias-summary.ts | new in UI-1 (U3): the phone form of a row's source-bias chips as data (whole labels in one meta line, then a +N count); the old row drew the chips on two extra lines
+src/ui/list-surface/facet-labels.ts | new in UI-1 (U7): the one sentence-case label function for facet values; the old facets showed the stored words ("maritime", "transport") beside vocabulary labels ("Road")
+src/ui/list-surface/facet-labels.json | new in UI-1 (U7): the facet label table (acronyms kept, entries for stored words whose label is not mechanical), validated with zod at load
+src/features/regulations/NextObligationLine.tsx | new in UI-1 (U8): the masthead's next-obligation clause; the old dek spilled a whole item title into the subtitle

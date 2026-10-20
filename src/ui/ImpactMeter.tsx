@@ -4,14 +4,14 @@ import type { ImpactScores } from "@/core/types";
 import { Absence } from "./Absence";
 import { isImpactScored, rampColor, segmentFilled, SEGMENT_GROUPS, sumScores } from "./impact";
 
-function Segments({ n }: { n: number | null }) {
-  const color = n === null ? null : rampColor(n);
+function Segments({ n }: { n: number }) {
+  const color = rampColor(n);
   return (
     <span className="cl-impact-bars">
       {SEGMENT_GROUPS.map((group, g) => (
         <span key={g} aria-hidden="true" className="cl-impact-group">
           {group.map((i) => (
-            <span key={i} aria-hidden="true" className={`cl-impact-bar${n === null ? " cl-impact-bar--unscored" : ""}`} style={n !== null ? { background: segmentFilled(n, i) ? (color as string) : "var(--cl-impact-track)" } : undefined} />
+            <span key={i} aria-hidden="true" className="cl-impact-bar" style={{ background: segmentFilled(n, i) ? color : "var(--cl-impact-track)" }} />
           ))}
         </span>
       ))}
@@ -21,19 +21,20 @@ function Segments({ n }: { n: number | null }) {
 
 interface ImpactMeterProps {
   scores?: ImpactScores | null | undefined;
+  /** The sentence naming the input the score is waiting for; the dash is named by it when there is one. */
+  absence?: string | null | undefined;
   total?: number | undefined;
   variant?: "row" | "full";
   valueVisible?: boolean;
 }
 
-/** Twelve segments in four groups of three, one ramp colour at N; unscored draws dashed outlines and the dash (never the word "unscored"). `full` is the per-dimension meter. */
-export function ImpactMeter({ scores, total, variant = "row", valueVisible = false }: ImpactMeterProps) {
+/** Twelve segments in four groups of three, one ramp colour at N; unscored draws ONE quiet dash (the cell stays, no outlines, never the word "unscored"). `full` is the per-dimension meter. */
+export function ImpactMeter({ scores, absence, total, variant = "row", valueVisible = false }: ImpactMeterProps) {
   if (variant === "full") return <FullVariant scores={scores} />;
   if (total == null && !isImpactScored(scores)) {
     return (
-      <span className="cl-impact-scored cl-impact-unscored" aria-label="Impact not scored" title="Impact not scored">
-        <Segments n={null} />
-        {valueVisible && <Absence reason="unscored" variant="dash" />}
+      <span className="cl-impact-unscored">
+        <Absence reason="unscored" variant="dash" label={absence ?? "Impact not scored"} text={absence} />
       </span>
     );
   }

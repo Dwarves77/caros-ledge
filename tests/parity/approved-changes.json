@@ -343,6 +343,46 @@
       "kind": "control",
       "match": "^link:Filter map to .+ \\(# gaps of #\\)$",
       "ruling": "Register surfaces:11 (tests/derived/coverage.test.ts): the accessible name of a region link states the same quantity as its visible text, \"Filter map to EU member states (0 of 27 jurisdictions covered, 27 gaps)\"; the baseline named it \"(27 gaps of 27)\" while the text read \"0 of 27 covered\". The five links are on the page (capture of run 39406949832: United States sub-national, EU member states, Canada, Australia, Latin America priority). Retire when the baseline is recaptured from production after the R2d merge."
+    },
+    {
+      "id": "ui1-list-reads-cleanly-regulations",
+      "route": "regulations",
+      "kind": [
+        "control",
+        "row"
+      ],
+      "match": "^(button:(Immediate|Action|Monitor|Awareness) |button:[A-Za-z0-9_-]+$|checkbox:|div:)",
+      "ruling": "Brief UI-1 (operator 2026-10-20, \"Fix the UI. Make it correct\"; the code decides the look, the ratified UX laws stand): the list surfaces read cleanly. The unscored impact meter is one dash, an absence reads in sentence case, source bias is one muted line on the phone, band tiles name their window whole (\"background\" is \"later\"), and facet labels are sentence case from one label table, so a baseline band-tile or facet-checkbox name and a baseline row key (its text carries the old absence and bias words) differ by design. Covers only a baseline band tile button, a facet checkbox or facet chip (a single-word button on the phone) and a row key. Retire this entry when the baseline is recaptured from production right after the UI-1 merge."
+    },
+    {
+      "id": "ui1-list-reads-cleanly-market",
+      "route": "market",
+      "kind": [
+        "control",
+        "row"
+      ],
+      "match": "^(button:(Immediate|Action|Monitor|Awareness) |button:[A-Za-z0-9_-]+$|checkbox:|div:)",
+      "ruling": "Brief UI-1 (operator 2026-10-20, \"Fix the UI. Make it correct\"; the code decides the look, the ratified UX laws stand): the list surfaces read cleanly. The unscored impact meter is one dash, an absence reads in sentence case, source bias is one muted line on the phone, band tiles name their window whole (\"background\" is \"later\"), and facet labels are sentence case from one label table, so a baseline band-tile or facet-checkbox name and a baseline row key (its text carries the old absence and bias words) differ by design. Covers only a baseline band tile button, a facet checkbox or facet chip (a single-word button on the phone) and a row key. Retire this entry when the baseline is recaptured from production right after the UI-1 merge."
+    },
+    {
+      "id": "ui1-list-reads-cleanly-research",
+      "route": "research",
+      "kind": [
+        "control",
+        "row"
+      ],
+      "match": "^(button:(Immediate|Action|Monitor|Awareness) |button:[A-Za-z0-9_-]+$|checkbox:|div:)",
+      "ruling": "Brief UI-1 (operator 2026-10-20, \"Fix the UI. Make it correct\"; the code decides the look, the ratified UX laws stand): the list surfaces read cleanly. The unscored impact meter is one dash, an absence reads in sentence case, source bias is one muted line on the phone, band tiles name their window whole (\"background\" is \"later\"), and facet labels are sentence case from one label table, so a baseline band-tile or facet-checkbox name and a baseline row key (its text carries the old absence and bias words) differ by design. Covers only a baseline band tile button, a facet checkbox or facet chip (a single-word button on the phone) and a row key. Retire this entry when the baseline is recaptured from production right after the UI-1 merge."
+    },
+    {
+      "id": "ui1-list-reads-cleanly-operations",
+      "route": "operations",
+      "kind": [
+        "control",
+        "row"
+      ],
+      "match": "^(button:(Immediate|Action|Monitor|Awareness) |button:[A-Za-z0-9_-]+$|checkbox:|div:)",
+      "ruling": "Brief UI-1 (operator 2026-10-20, \"Fix the UI. Make it correct\"; the code decides the look, the ratified UX laws stand): the list surfaces read cleanly. The unscored impact meter is one dash, an absence reads in sentence case, source bias is one muted line on the phone, band tiles name their window whole (\"background\" is \"later\"), and facet labels are sentence case from one label table, so a baseline band-tile or facet-checkbox name and a baseline row key (its text carries the old absence and bias words) differ by design. Covers only a baseline band tile button, a facet checkbox or facet chip (a single-word button on the phone) and a row key. Retire this entry when the baseline is recaptured from production right after the UI-1 merge."
     }
   ]
 }

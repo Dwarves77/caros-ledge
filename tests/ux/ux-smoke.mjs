@@ -14,6 +14,7 @@ import { ROW_SELECTOR } from '../parity/contract.mjs';
 
 import { sweepClientReads } from './client-sweep.mjs';
 import { chromium, exactlyOne, open, settled, smoke, summarise, VIEWPORTS, WIDTHS } from './harness.mjs';
+import { listInvariants } from './list-invariants.mjs';
 import { measurePage } from './measure.mjs';
 
 const run = smoke('ux-smoke');
@@ -93,6 +94,7 @@ try {
       const { ctx, page } = await open(browser, `${base}/privacy/ui-fixtures`, [w, h]);
       try {
         for (const o of await measurePage(page, { rows: true })) fail(where, o);
+        for (const o of await listInvariants(page)) fail(where, o);
         if (w === 375) {
           // The four band tiles sit in a 2x2 grid at 375.
           const tiles = await page.$$eval('[data-fx="tiles"] .cl-band-tile', (els) => els.map((e) => e.getBoundingClientRect().top));
