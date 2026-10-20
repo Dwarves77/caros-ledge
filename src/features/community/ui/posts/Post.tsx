@@ -3,11 +3,11 @@
 // Ported from old_repo/src/components/community/Post.tsx (lines 50-503)
 // A thread in a group feed: the author line (name and company shown by default; "Anonymous member" with the verified mark kept; the id never rendered), the text, edit and delete (the author, and a group admin or moderator
 // can delete), report, and the replies. The replies are closed until asked for, 10 at a time, each with the same author line (the old replies drew a legacy name block with no identity), and a failed page of replies says so
-// with Retry instead of stopping. A delete asks in the kit Dialog, not window.confirm.
+// with Retry instead of stopping. A delete asks first through the one useDeletePost (the same confirmation as the rooms); a moderator removing another member's post gives a note.
 import { useState } from "react";
 
 import { formatNumber } from "@/core/shared";
-import { Button, Dialog, FormField, Input, StateNote, Textarea } from "@/ui";
+import { Button, FormField, Input, StateNote, Textarea } from "@/ui";
 import { RelativeTime } from "@/ui";
 
 import { communityApi } from "../../lib/api";
@@ -19,6 +19,7 @@ import { useToast } from "../toast";
 
 import { ReplyComposer } from "./ReplyComposer";
 import { ReportPostDialog } from "./ReportPostDialog";
+import { useDeletePost } from "./use-delete-post";
 
 function Replies({ post, count, onCount }: { post: PostView; count: number; onCount: (n: number) => void }) {
   const [replies, setReplies] = useState<PostView[] | null>(null);
@@ -91,7 +92,7 @@ export function Post({ post: initial, meId, canModerate, onDeleted }: { post: Po
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(initial.title ?? "");
   const [body, setBody] = useState(initial.body);
-  const [confirming, setConfirming] = useState(false);
+  const del = useDeletePost();
   const [busy, setBusy] = useState(false);
   const mine = post.author?.userId === meId;
 
@@ -106,13 +107,7 @@ export function Post({ post: initial, meId, canModerate, onDeleted }: { post: Po
     notify("Post updated");
   }
   async function remove() {
-    setBusy(true);
-    const r = await communityApi.deletePost(post.id);
-    setBusy(false);
-    if (!r.ok) return notify(r.error ?? "The post could not be deleted.", "error");
-    setConfirming(false);
-    onDeleted(post.id);
-    notify("Post deleted");
+    if (await del.del(post.id, !mine)) onDeleted(post.id);
   }
 
   return (
@@ -138,9 +133,9 @@ export function Post({ post: initial, meId, canModerate, onDeleted }: { post: Po
           <p className={styles.body}>{post.body}</p>
         </>
       )}
-      {post.signed_off_at && (
+      {post.signed_off_at && post.signed_off_doc_url && (
         <p className={styles.muted}>
-          <SignedOffMark /> A verifier signed this off against a primary document.
+          <SignedOffMark docUrl={post.signed_off_doc_url} />
         </p>
       )}
       <footer className={styles.postFoot}>
@@ -148,19 +143,11 @@ export function Post({ post: initial, meId, canModerate, onDeleted }: { post: Po
           {formatNumber(count)} repl{count === 1 ? "y" : "ies"}
         </Button>
         {mine && !editing && <Button variant="ghost" size="sm" onClick={() => setEditing(true)}>Edit</Button>}
-        {(mine || canModerate) && <Button variant="ghost" size="sm" onClick={() => setConfirming(true)}>Delete</Button>}
+        {(mine || canModerate) && <Button variant="ghost" size="sm" onClick={() => void remove()}>Delete</Button>}
         {!mine && <ReportPostDialog postId={post.id} />}
       </footer>
       {repliesOpen && <Replies post={post} count={count} onCount={setCount} />}
-      <Dialog open={confirming} onClose={() => setConfirming(false)} title="Delete this post">
-        <div className={styles.dialogForm}>
-          <p>This deletes the thread and its replies. It cannot be undone.</p>
-          <div className={styles.dialogFoot}>
-            <Button variant="secondary" onClick={() => setConfirming(false)}>Keep it</Button>
-            <Button variant="danger" disabled={busy} onClick={() => void remove()}>{busy ? "Deleting…" : "Delete"}</Button>
-          </div>
-        </div>
-      </Dialog>
+      {del.node}
     </article>
   );
 }

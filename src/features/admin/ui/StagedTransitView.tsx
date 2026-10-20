@@ -31,7 +31,7 @@ interface Mode {
   describe: (f: Failure) => string;
 }
 /** The five reviewer-facing modes of a provenance-gate failure (validate_item_provenance criteria 2 to 5). */
-export const MODES: readonly Mode[] = [
+const MODES: readonly Mode[] = [
   { key: "ungrounded_url", label: "Ungrounded URLs", match: (f) => f.criterion === 2 && f.reason === "ungrounded_url", describe: (f) => f.url || "(address missing)" },
   { key: "unverified_span", label: "Unverified FACT spans", match: (f) => f.criterion === 3, describe: (f) => `${f.claim ? `"${cut(f.claim, 90)}": ` : ""}${f.reason === "fact_below_authority_floor" ? `below the tier floor (tier ${f.source_tier_at_grounding ?? "unrated"}, ${f.priority ?? "no priority"})` : (spanReason[f.reason] ?? f.reason)}` },
   { key: "unlabeled", label: "Unlabeled or mislabeled analysis", match: (f) => f.criterion === 4 && (f.reason === "analysis_missing_label_syntax" || f.reason === "unlabeled_assertion"), describe: (f) => (f.reason === "unlabeled_assertion" ? `unlabeled strong-modal assertion${f.section_row_id ? ` (section ${f.section_row_id.slice(0, 8)})` : ""}` : `analysis without a closed-set label${f.claim ? `: "${cut(f.claim, 90)}"` : ""}`) },
@@ -40,14 +40,14 @@ export const MODES: readonly Mode[] = [
 ];
 
 /** The failures array of a staged row, wherever the writer stamped it (top level or under either envelope). Pure. */
-export function extractFailures(update: unknown): Failure[] {
+function extractFailures(update: unknown): Failure[] {
   const u = update as { provenance_failures?: unknown; proposed_data?: { provenance_failures?: unknown } | null; proposed_changes?: { provenance_failures?: unknown } | null } | null;
   const raw = u?.provenance_failures ?? u?.proposed_data?.provenance_failures ?? u?.proposed_changes?.provenance_failures ?? null;
   return Array.isArray(raw) ? (raw as Failure[]) : [];
 }
 
 /** Failures grouped into the five modes; one that matches none is kept under "Other", never dropped. Pure. */
-export function groupFailures(failures: readonly Failure[]) {
+function groupFailures(failures: readonly Failure[]) {
   const groups = MODES.map((m) => ({ key: m.key, label: m.label, lines: failures.filter(m.match).map((f) => ({ text: m.describe(f), href: m.key === "ungrounded_url" && f.url ? f.url : null })) })).filter((g) => g.lines.length > 0);
   const matched = new Set(MODES.flatMap((m) => failures.filter(m.match)));
   const other = failures.filter((f) => !matched.has(f));

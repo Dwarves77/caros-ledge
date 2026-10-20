@@ -7,20 +7,38 @@ import { HttpError, LookupError } from "@/core/http/errors";
 
 import { adminRoute, reply } from "./shared";
 
-export const ERROR_GROUPS_BOUND = 50;
+const ERROR_GROUPS_BOUND = 50;
+const EVENTS_BOUND = 100;
 
 /** The current rows of a set holding whole chains: a row is current when no other row names it in `supersedes` (a recompute inserts a new row pointing at the old one, so the head is the row nothing points at). Pure. */
-export function currentRows<T extends { inference_id: string; supersedes?: string | null }>(rows: readonly T[]): T[] {
+function currentRows<T extends { inference_id: string; supersedes?: string | null }>(rows: readonly T[]): T[] {
   const superseded = new Set(rows.map((r) => r.supersedes).filter((s): s is string => !!s));
   return rows.filter((r) => !superseded.has(r.inference_id));
 }
 
-export async function readErrorGroups(db: Db) {
+async function readErrorGroups(db: Db) {
   const r = await boundedRead<Record<string, unknown>>((n) => db.from("error_events").select("id, message, count, release, side, route, env, last_seen_at, occurred_at").order("last_seen_at", { ascending: false }).order("id", { ascending: true }).limit(n), { limit: ERROR_GROUPS_BOUND });
   if (r.error) throw new LookupError("error_events", r.error);
   return r.data;
 }
-export const readAssumptions = (db: Db) => allRows<Record<string, unknown>>(db, "assumption_register", "id, assumption_key, subsystem, label, value_numeric, unit, derivation, origin_class, governing_decision, code_location, status, as_at_date", { order: "id" });
+/**
+ * The newest privileged acts, read from admin_events (migration 0100): what was done, to what, why in the actor's own words, when, and by whom. A person is named by display name only (never an e-mail address); an account that
+ * was deleted reads as "a deleted account", because the event outlives the person. A failed read is an error, never an empty log.
+ */
+async function readEvents(db: Db) {
+  const r = await boundedRead<{ id: string; created_at: string; actor_id: string | null; org_id: string | null; action: string; target_kind: string; target_id: string; reason: string | null }>(
+    (n) => db.from("admin_events").select("id, created_at, actor_id, org_id, action, target_kind, target_id, reason").order("created_at", { ascending: false }).order("id", { ascending: true }).limit(n),
+    { limit: EVENTS_BOUND },
+  );
+  if (r.error) throw new LookupError("admin_events", r.error);
+  const people = await rowsByIds<{ id: string; full_name: string | null; display_name: string | null }>(db, "profiles", "id, full_name, display_name", r.data.flatMap((e) => (e.actor_id ? [e.actor_id] : [])));
+  const orgs = await rowsByIds<{ id: string; name: string }>(db, "organizations", "id, name", r.data.flatMap((e) => (e.org_id ? [e.org_id] : [])));
+  const person = new Map(people.map((p) => [p.id, p.full_name || p.display_name || "A member"]));
+  const org = new Map(orgs.map((o) => [o.id, o.name]));
+  return { events: r.data.map((e) => ({ id: e.id, at: e.created_at, action: e.action, target_kind: e.target_kind, target_id: e.target_id, reason: e.reason, actor: e.actor_id ? (person.get(e.actor_id) ?? "A member") : "a deleted account", org: e.org_id ? (org.get(e.org_id) ?? null) : null })), capped: r.truncated };
+}
+
+const readAssumptions = (db: Db) => allRows<Record<string, unknown>>(db, "assumption_register", "id, assumption_key, subsystem, label, value_numeric, unit, derivation, origin_class, governing_decision, code_location, status, as_at_date", { order: "id" });
 
 export async function readInferences(db: Db) {
   const all = await allRows<{ inference_id: string; supersedes: string | null; cited_item_ids: string[] | null } & Record<string, unknown>>(db, "inference_records", "inference_id, subject_id, claim_text, status_token, confidence, cited_item_ids, origin_class, trigger_question_ref, computed_at, supersedes", { order: "inference_id" });
@@ -32,14 +50,15 @@ export async function readInferences(db: Db) {
 /** One read for the factors page and its tile: every emission factor row with its licence, live and superseded. */
 export const readFactors = (db: Db) => allRows<Record<string, unknown>>(db, "emission_factors", "factor_id, tier, scope_kind, mode, vehicle_class, energy_carrier, jurisdiction, operator_key, corridor_id, quantity_basis, wtt_co2e, ttw_co2e, wtw_co2e, gwp_basis, derivation, origin_class, pedigree, method_version, as_at_date, valid_from, valid_to, superseded_by, source_key, data_sources(name, licence, redistribution, embeddable)", { order: "factor_id" });
 
-/** The runtime views the console shows read-only: error groups, the assumption register, and the current inferences. */
+/** The runtime views the console shows read-only: error groups, the assumption register, the current inferences, and the admin event log. */
 export const GET = adminRoute("/api/admin/runtime", async (admin, request) => {
   const view = new URL(request.url).searchParams.get("view");
   const db = admin.service();
   if (view === "errors") return reply(admin, { groups: await readErrorGroups(db) });
   if (view === "assumptions") return reply(admin, { rows: await readAssumptions(db) });
   if (view === "inferences") return reply(admin, await readInferences(db));
-  throw new HttpError(400, "view must be one of: errors, assumptions, inferences");
+  if (view === "events") return reply(admin, await readEvents(db));
+  throw new HttpError(400, "view must be one of: errors, assumptions, inferences, events");
 });
 
 /** The live (not superseded) emission-factor count for the console tile. */

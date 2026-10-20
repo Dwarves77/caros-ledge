@@ -18,7 +18,7 @@ interface Payload {
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
 /** A date at the precision it has: a year-precision obligation shows its year and never a day it does not have; a malformed date is shown as given. Parsed from the parts, never through a viewer timezone. Pure. */
-export function eventDateLabel(date: string, precision: string): string {
+function eventDateLabel(date: string, precision: string): string {
   const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(date);
   if (!m) return date;
   const [, y, mo, d] = m as unknown as [string, string, string, string];

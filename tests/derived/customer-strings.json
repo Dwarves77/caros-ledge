@@ -43,18 +43,6 @@
  ],
  "owed": [
   {
-   "where": "src/core/auth/invitations.ts",
-   "shape": "driver-message-into-an-error",
-   "owner": "R2e",
-   "finding": "Invitation and org errors are built from error.message (register core:21, workspace-admin-community:19); R2e owns core/auth and the invitation flows: replace with dbError."
-  },
-  {
-   "where": "src/features/auth/api/members.ts",
-   "shape": "driver-message-into-an-error",
-   "owner": "R2e",
-   "finding": "The members route answers 500 with the driver's message; R2e owns auth and orgs: replace with dbError."
-  },
-  {
    "where": "src/features/community/api/posts.ts",
    "shape": "driver-message-into-an-error",
    "owner": "R2e",

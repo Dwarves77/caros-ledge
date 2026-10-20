@@ -8,7 +8,7 @@ import { adminRoute, boundedInt, reply } from "./shared";
 
 const ISSUE_RANK: Record<string, number> = { stale_url: 0, missing_link: 1, missing_source: 2, thin_match: 3 };
 const CONFIDENCE_RANK: Record<string, number> = { high: 0, medium: 1, low: 2 };
-export const CANDIDATE_PAGE = 100;
+const CANDIDATE_PAGE = 100;
 
 interface Candidate {
   id: string;
@@ -35,13 +35,13 @@ interface ParentItem {
 }
 
 /** The classification the editor starts from, with no model: the class table's tier for the host and name, the source role, and the parent item's own domain, jurisdictions and topics (the grounding the candidate was found for). */
-export function classifyCandidate(c: Pick<Candidate, "candidate_url" | "candidate_title" | "candidate_publisher">, item: ParentItem | undefined) {
+function classifyCandidate(c: Pick<Candidate, "candidate_url" | "candidate_title" | "candidate_publisher">, item: ParentItem | undefined) {
   const name = c.candidate_publisher || c.candidate_title;
   return { tier: classTierForHost(hostOf(c.candidate_url), name), source_role: classifySourceRole(name, c.candidate_url), domains: item?.domain ? [item.domain] : [], jurisdictions: item?.jurisdictions ?? [], transport_modes: [] as string[], topic_tags: item?.topic_tags ?? [] };
 }
 
 /** Group a page of candidates by parent item: candidates by confidence then verified, groups by issue severity then item title. Pure. */
-export function groupCandidates(rows: readonly Candidate[], items: ReadonlyMap<string, ParentItem>, existing: ReadonlyMap<string, string>) {
+function groupCandidates(rows: readonly Candidate[], items: ReadonlyMap<string, ParentItem>, existing: ReadonlyMap<string, string>) {
   const groups = new Map<string, { item_id: string; item: ParentItem | null; issue_classification: string; candidates: (Candidate & { existing_source_id: string | null; classification: ReturnType<typeof classifyCandidate> })[] }>();
   for (const c of rows) {
     const g = groups.get(c.intelligence_item_id) ?? { item_id: c.intelligence_item_id, item: items.get(c.intelligence_item_id) ?? null, issue_classification: c.issue_classification, candidates: [] };

@@ -88,14 +88,20 @@ export function tableProblems(reads, writers) {
   return [...reads].filter(([t]) => !writers.has(t)).map(([t, by]) => ({ key: t, text: `${[...new Set(by)].join(", ")}: reads ${t}, which no machine stage, route, rpc, trigger or seed writes (a page-local engine, or data nobody produces)` }));
 }
 
-/** Columns an `UPDATE system_state SET ...` assigns inside a SQL function that some code calls through `.rpc`. */
+/** Columns an `UPDATE system_state SET ...` assigns inside a SQL function that some code calls through `.rpc`, or that a function so called calls in turn (admin_set_hold calls the two sanctioned writers: one transaction, one event). */
 export function rpcSettingWrites(sqlTexts, rpcCalled) {
+  const bodies = new Map();
+  for (const sql of sqlTexts) for (const fn of sql.matchAll(/CREATE (?:OR REPLACE )?FUNCTION (?:public\.)?(\w+)\s*\([\s\S]*?\$(\w*)\$([\s\S]*?)\$\2\$/gi)) bodies.set(fn[1], fn[3]);
+  const reached = new Set();
+  for (const stack = [...rpcCalled].filter((n) => bodies.has(n)); stack.length; ) {
+    const name = stack.pop();
+    if (reached.has(name)) continue;
+    reached.add(name);
+    for (const other of bodies.keys()) if (!reached.has(other) && new RegExp(`\\b${other}\\s*\\(`).test(bodies.get(name))) stack.push(other);
+  }
   const written = new Set();
-  for (const sql of sqlTexts) {
-    for (const fn of sql.matchAll(/CREATE (?:OR REPLACE )?FUNCTION (?:public\.)?(\w+)\s*\([\s\S]*?\$(\w*)\$([\s\S]*?)\$\2\$/gi)) {
-      if (!rpcCalled.has(fn[1])) continue;
-      for (const u of fn[3].matchAll(/UPDATE\s+(?:public\.)?system_state\s+SET([\s\S]*?)(?:\bWHERE\b|;)/gi)) for (const a of u[1].matchAll(/(\w+)\s*=/g)) written.add(a[1]);
-    }
+  for (const name of reached) {
+    for (const u of bodies.get(name).matchAll(/UPDATE\s+(?:public\.)?system_state\s+SET([\s\S]*?)(?:\bWHERE\b|;)/gi)) for (const a of u[1].matchAll(/(\w+)\s*=/g)) written.add(a[1]);
   }
   return written;
 }

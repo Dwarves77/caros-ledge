@@ -1,5 +1,5 @@
 // Ported from old_repo/src/app/api/community/posts/route.ts (lines 148-408)
-// GET a group's threads (newest first, a cursor that knows whether there is more) and POST a thread. A thread is bound to 1 to 10 spine entities and refused for a declared sensitive field BEFORE anything is written;
+// GET a group's threads (newest first, a cursor that knows whether there is more) and POST a thread. A thread is bound to 1 to 10 spine entities and refused when its title or text states a sensitive figure BEFORE anything is written;
 // the post and its links are then one transaction (create_thread, INV-236), and the anonymity is resolved there. Authors come from the one shaper: the id of an anonymous author reaches only the author and an admin.
 import { z } from "zod";
 
@@ -8,9 +8,9 @@ import { isRefusal, requireUser } from "@/core/http/guard";
 import { dbError } from "@/core/http/errors";
 import { parseJson, parseWith } from "@/core/http/parse";
 
-import { isSensitiveField, refuseSensitivePost } from "../lib/antitrust";
+import { refuseSensitiveText } from "../lib/antitrust";
 import { validateEntityIds } from "../lib/entity-binding";
-import { LIMITS, SENSITIVE_FIELDS } from "../lib/labels";
+import { LIMITS } from "../lib/labels";
 import { POST_COLUMNS, shapePosts, type PostRow } from "../lib/post-shape";
 
 import { cursorParam, idField, limitParam, many, mutedSentence } from "./_http";
@@ -38,7 +38,6 @@ const create = z.object({
   title: z.string().trim().min(1, "A thread needs a title").max(LIMITS.postTitle, `A title is at most ${LIMITS.postTitle} characters`),
   body: z.string().trim().min(1, "A thread needs some text").max(LIMITS.postBody, `A post is at most ${LIMITS.postBody} characters`),
   entity_ids: z.array(z.string()).default([]),
-  sensitivity_field: z.string().trim().nullable().optional(),
   anonymous: z.boolean().optional(),
 });
 
@@ -46,11 +45,9 @@ export const POST = route("/api/community/posts", async (request) => {
   const auth = await requireUser(request);
   if (isRefusal(auth)) return auth;
   const input = await parseJson(request, create);
-  const field = input.sensitivity_field ? input.sensitivity_field : null;
-  if (field !== null && !isSensitiveField(field)) throw new HttpError(400, `Choose the figure from the list: ${SENSITIVE_FIELDS.join(", ")}`);
   const binding = validateEntityIds(input.entity_ids);
   if (!binding.ok) throw new HttpError(400, binding.error);
-  const guard = refuseSensitivePost(field);
+  const guard = refuseSensitiveText(input.title, input.body);
   if (!guard.allowed) throw new HttpError(403, guard.reason);
   const { data, error } = await auth.client.rpc("create_thread", { p_group_id: input.group_id, p_title: input.title, p_body: input.body, p_anonymous: input.anonymous ?? null, p_entity_ids: binding.entityIds });
   if (error) {

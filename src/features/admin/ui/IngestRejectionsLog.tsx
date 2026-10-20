@@ -27,7 +27,7 @@ interface Payload {
 const REASONS: Record<string, string> = { below_granularity: "Below the granularity the ledger tracks", non_geographic: "Not a place", institutional: "An institution, not a place", unparseable: "Could not be parsed" };
 const ACTION_LABELS: Record<(typeof REJECTION_ACTIONS)[number], string> = { discarded: "Discard", reclassified: "Reclassify", escalated: "Escalate" };
 
-/** Jurisdiction tokens the trigger could not normalise. The operator stamps each triaged (who, when, which, a note); a stamp changes no item, and the token re-enters only through intake. */
+/** Jurisdiction tokens the trigger could not normalise. The operator stamps each triaged (who, when, which, a reason); a stamp changes no item, and the token re-enters only through intake. */
 export function IngestRejectionsLog() {
   const q = useAdminFetch<Payload>("/api/admin/triage/ingest-rejections");
   const flash = useFlash();
@@ -47,10 +47,10 @@ export function IngestRejectionsLog() {
                   <b className={`${styles.strong} ${styles.wrap}`}>{r.raw_value}</b>
                   <span className={styles.muted}>{REASONS[r.rejection_reason] ?? r.rejection_reason} · <RelativeTime iso={r.ingest_attempted_at} />{r.source?.name ? ` · ${r.source.name}` : ""}</span>
                   {r.source_url ? <a href={r.source_url} target="_blank" rel="noopener noreferrer" className={`${styles.link} ${styles.wrap}`}>{r.source_url}</a> : null}
-                  <FormField label="Note">{(c) => <Textarea {...c} rows={2} value={notes[r.id] ?? ""} onChange={(e) => setNotes((s) => ({ ...s, [r.id]: e.target.value }))} maxLength={2000} />}</FormField>
+                  <FormField label="Reason" required hint="Recorded with your decision.">{(c) => <Textarea {...c} rows={2} value={notes[r.id] ?? ""} onChange={(e) => setNotes((s) => ({ ...s, [r.id]: e.target.value }))} maxLength={2000} />}</FormField>
                   <div className={styles.actions}>
                     {REJECTION_ACTIONS.map((a) => (
-                      <Button key={a} variant="secondary" size="sm" disabled={act.busy === r.id} onClick={() => act.run(r.id, "/api/admin/triage/ingest-rejections", { method: "POST", body: { id: r.id, action: a, notes: notes[r.id] ?? null } }, `Marked ${a}.`)}>{ACTION_LABELS[a]}</Button>
+                      <Button key={a} variant="secondary" size="sm" disabled={act.busy === r.id || !(notes[r.id] ?? "").trim()} onClick={() => act.run(r.id, "/api/admin/triage/ingest-rejections", { method: "POST", body: { id: r.id, action: a, reason: (notes[r.id] ?? "").trim() } }, `Marked ${a}.`)}>{ACTION_LABELS[a]}</Button>
                     ))}
                   </div>
                 </div>

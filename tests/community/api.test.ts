@@ -2,6 +2,7 @@
 // The row policies are emulated in the world (tests/community/_world.ts), so a handler that leans on a policy is proven against it, not against a permissive stub.
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import dns from "node:dns/promises";
 
 import { PATCH as settings } from "@/features/community/api/group-settings";
 import { PATCH_MUTE, PATCH_STAR } from "@/features/community/api/group-prefs";
@@ -17,7 +18,7 @@ import { GET as entityThreads, GET_ENTITIES } from "@/features/community/api/ent
 import { POST_DECIDE, POST_REQUEST, POST_WITHDRAW } from "@/features/community/api/signoff";
 import { GET_REPORTS, POST_ACT, POST_REPORT } from "@/features/community/api/moderation";
 import { GET as listNotifications, GET_COUNTS, POST as markAll, POST_ONE } from "@/features/community/api/notifications";
-import { GET as getProfile, POST_VERIFY, PUT as putProfile } from "@/features/community/api/profile";
+import { GET as getProfile, GET_VERIFY, POST_VERIFY, PUT as putProfile } from "@/features/community/api/profile";
 import { GET as search } from "@/features/community/api/search";
 
 import { call, E, ENTITY, INVITE, ITEM_LIVE, matrix, PRIV, PUB, REPORT, SIGNOFF, STRANGER, T_HIDDEN, T_PUB } from "./_world.ts";
@@ -51,7 +52,7 @@ M("POST a reply: members only", reply, "POST", `/api/community/posts/${T_PUB}/re
 M("GET threads of an entity", entityThreads, "GET", `/api/community/entities/${ENTITY}/threads`, undefined, E(401, 200, 200, 200, 200, 200, 200, 200), { entityId: ENTITY });
 M("GET entities", GET_ENTITIES, "GET", "/api/community/entities?q=eur", undefined, E(401, 200, 200, 200, 200, 200, 200, 200));
 M("POST sign-off request: members of the room", POST_REQUEST, "POST", `/api/community/posts/${T_HIDDEN}/signoff`, {}, E(401, 403, 201, 201, 201, 403, 403, 403), { id: T_HIDDEN });
-M("POST sign-off decide: an active verifier or a platform admin", POST_DECIDE, "POST", `/api/community/signoff/${SIGNOFF}/decide`, { decision: "signed_off" }, E(401, 403, 403, 403, 403, 200, 200, 403), { id: SIGNOFF });
+M("POST sign-off decide: an active verifier or a platform admin", POST_DECIDE, "POST", `/api/community/signoff/${SIGNOFF}/decide`, { decision: "signed_off", primary_doc_url: "https://eur-lex.europa.eu/x" }, E(401, 403, 403, 403, 403, 200, 200, 403), { id: SIGNOFF });
 M("POST sign-off withdraw: the requester", POST_WITHDRAW, "POST", `/api/community/signoff/${SIGNOFF}/withdraw`, {}, E(401, 404, 200, 404, 404, 404, 404, 404), { id: SIGNOFF });
 M("GET reports", GET_REPORTS, "GET", "/api/community/moderation/reports", undefined, E(401, 200, 200, 200, 200, 200, 200, 200));
 M("POST a report: members of the post's group", POST_REPORT, "POST", "/api/community/moderation/reports", { post_id: T_PUB, reason: "spam" }, E(401, 403, 201, 201, 201, 403, 403, 403));
@@ -62,7 +63,9 @@ M("POST mark one read (not found for everyone here)", POST_ONE, "POST", `/api/co
 M("GET notification counts", GET_COUNTS, "GET", "/api/community/notifications/counts", undefined, E(401, 200, 200, 200, 200, 200, 200, 200));
 M("GET profile", getProfile, "GET", "/api/community/profile", undefined, E(401, 200, 200, 200, 200, 200, 200, 200));
 M("PUT profile", putProfile, "PUT", "/api/community/profile", { org_type: "forwarder" }, E(401, 200, 200, 200, 200, 200, 200, 200));
-M("POST verify", POST_VERIFY, "POST", "/api/community/profile/verify", {}, E(401, 200, 200, 200, 200, 200, 200, 200));
+dns.resolveTxt = async () => Promise.reject(Object.assign(new Error("not found"), { code: "ENOTFOUND" })); // no test reaches the network: the proof record is never there
+M("POST verify (the record is not published: nobody is verified by asking)", POST_VERIFY, "POST", "/api/community/profile/verify", {}, E(401, 409, 409, 409, 409, 409, 409, 409));
+M("GET verify (the record to publish)", GET_VERIFY, "GET", "/api/community/profile/verify", undefined, E(401, 200, 200, 200, 200, 200, 200, 200));
 M("GET search", search, "GET", "/api/community/search?q=ma", undefined, E(401, 200, 200, 200, 200, 200, 200, 200));
 
 test("a private group's threads are read by its members only (the row policy, not the route)", async () => {

@@ -23,12 +23,12 @@ interface Response {
   audit_log_error?: string;
 }
 
-export const CSV_TEMPLATE = 'url,name,type,jurisdiction_iso,language,notes\nhttps://example.com,Example Source,regulator,"US|EU",en,Optional notes\n';
-export const JSON_TEMPLATE = JSON.stringify([{ url: "https://example.com", name: "Example Source", type: "regulator", jurisdiction_iso: ["US", "EU"], language: "en", notes: "Optional notes" }], null, 2);
+const CSV_TEMPLATE = 'url,name,type,jurisdiction_iso,language,notes\nhttps://example.com,Example Source,regulator,"US|EU",en,Optional notes\n';
+const JSON_TEMPLATE = JSON.stringify([{ url: "https://example.com", name: "Example Source", type: "regulator", jurisdiction_iso: ["US", "EU"], language: "en", notes: "Optional notes" }], null, 2);
 const ACTION_WORDS: Record<PreviewRow["proposed_action"], string> = { "auto-approve": "Register", "queue-provisional": "Queue for review", reject: "Reject", duplicate: "Duplicate" };
 
 /** What a row's HEAD check shows: a status code, or the reason it has none ("held" while the hold is on is not a failure). Pure. */
-export const headLabel = (r: Pick<PreviewRow, "head_status" | "head_reason">): string => (typeof r.head_status === "number" ? String(r.head_status) : r.head_status === "held" ? "not checked (hold on)" : (r.head_reason ?? "no answer"));
+const headLabel = (r: Pick<PreviewRow, "head_status" | "head_reason">): string => (typeof r.head_status === "number" ? String(r.head_status) : r.head_status === "held" ? "not checked (hold on)" : (r.head_reason ?? "no answer"));
 
 /** Add sources in bulk: paste or upload CSV or JSON, preview every row (validation, duplicates, a free reachability check, the proposed action), then commit. Reachability is a plain request behind the hold; classification is the class table. No model, no render service. */
 export function BulkImportView() {

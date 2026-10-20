@@ -25,7 +25,7 @@ interface Entry {
 const SURFACES = [{ key: "", label: "All surfaces" }, { key: "regulations", label: "Regulations" }, { key: "operations", label: "Operations" }, { key: "market_intel", label: "Market Intel" }, { key: "research", label: "Research" }];
 const IDENTITY_WORDS: Record<Identity, string> = { verified: "Resolves", pending: "Check pending", unresolved: "Unconfirmed", dead: "Not reachable" };
 const SCHEMES: Record<string, string> = { celex: "CELEX", eli: "ELI", "uk-legislation": "UK-SI", generic: "ref", none: "URL" };
-export const DISPLAY_CAP = 200;
+const DISPLAY_CAP = 200;
 type Sort = "relevance" | "title" | "jurisdiction" | "type" | "identity";
 const RANK: Record<Identity, number> = { verified: 0, pending: 1, unresolved: 2, dead: 3 };
 const SORTS: Record<Sort, (a: Entry, b: Entry) => number> = {
@@ -37,7 +37,7 @@ const SORTS: Record<Sort, (a: Entry, b: Entry) => number> = {
 };
 
 /** The entries after the filters and the sort (the list is cut to 200 for the screen, and the cut is said). Pure. */
-export function viewOf(entries: readonly Entry[], f: { jurisdiction: string; type: string; relevance: string; identity: string; sort: Sort }): Entry[] {
+function viewOf(entries: readonly Entry[], f: { jurisdiction: string; type: string; relevance: string; identity: string; sort: Sort }): Entry[] {
   return entries.filter((e) => (!f.jurisdiction || e.jurisdiction === f.jurisdiction) && (!f.type || e.instrumentType === f.type) && (!f.relevance || e.relevance === f.relevance) && (!f.identity || e.identity === f.identity)).sort(SORTS[f.sort]);
 }
 

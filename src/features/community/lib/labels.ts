@@ -22,17 +22,16 @@ const V = schema.parse(vocabulary);
 export const ORG_TYPES: readonly string[] = V.orgTypes.map((o) => o.id);
 export const ORG_TYPE_OPTIONS = V.orgTypes;
 export const ORG_TYPE_LABELS: Readonly<Record<string, string>> = Object.fromEntries(V.orgTypes.map((o) => [o.id, o.label]));
-export const SENSITIVE_FIELDS: readonly string[] = V.sensitiveFields.map((f) => f.id);
-export const SENSITIVE_FIELD_OPTIONS = V.sensitiveFields;
+/** The kinds of figure the antitrust guard names, by id (the rules in data/antitrust-rules.json each name one). */
+export const SENSITIVE_FIELD_LABELS: Readonly<Record<string, string>> = Object.fromEntries(V.sensitiveFields.map((f) => [f.id, f.label]));
 export const REPORT_REASONS = V.reportReasons;
 export const REPORT_REASON_IDS: readonly string[] = V.reportReasons.map((r) => r.id);
 export const REPORT_REASON_SHORT: Readonly<Record<string, string>> = Object.fromEntries(V.reportReasons.map((r) => [r.id, r.short]));
-export const MODERATION_ACTIONS = V.moderationActions as readonly ModerationAction[];
 export type ModerationAction = "dismiss" | "warn" | "remove" | "mute" | "ban";
 
 /** The community region codes (profiles, groups, member regions): the core vocabulary's, one list. */
 export const REGION_CODES: readonly string[] = REGIONS.map((r) => r.id);
-export const REGION_LABELS: Readonly<Record<string, string>> = Object.fromEntries(REGIONS.map((r) => [r.id, r.label]));
+const REGION_LABELS: Readonly<Record<string, string>> = Object.fromEntries(REGIONS.map((r) => [r.id, r.label]));
 export const regionLabel = (code: string | null | undefined): string => (code ? (REGION_LABELS[code] ?? code) : "");
 
 /** The length limits the routes enforce and the forms show, one pair per field (create and rename used 120/80 and 1000/600; the database rpc holds the create pair). */

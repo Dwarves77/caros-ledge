@@ -26,11 +26,11 @@ let clientToday: Date | null = null;
 const noSubscription = () => () => {};
 
 /** Today, from the visitor's clock after hydration (null on the server and during hydration): the server's date can differ, and a wall-clock read during render mismatches. */
-export function useToday(): Date | null {
+function useToday(): Date | null {
   return useSyncExternalStore(noSubscription, () => (clientToday ??= new Date()), () => null);
 }
 
-export const DATE_LABEL = { weekday: "long", year: "numeric", month: "long", day: "numeric" } as const;
+const DATE_LABEL = { weekday: "long", year: "numeric", month: "long", day: "numeric" } as const;
 
 /** The logged-out frame: identity panel (brand, band legend, the app's one legal disclaimer) and the caller's content. Below 768px it is one column, form first. */
 export function AuthFrame({ children }: { children: ReactNode }) {

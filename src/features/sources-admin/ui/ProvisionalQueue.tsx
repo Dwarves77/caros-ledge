@@ -9,6 +9,7 @@ import { classTierForHost } from "@/core/sources/host-class";
 import type { AdminProvisional } from "@/features/admin/read/sources";
 import { EmptyState, InlineErrorBanner, RelativeTime, RowTable, RowTableAction, SourceLink, StateNote, TierChip } from "@/ui";
 import { useFlash } from "@/features/admin/ui/panel-kit";
+import { useReason } from "@/features/admin/ui/reason-dialog";
 import styles from "@/features/admin/ui/admin.module.css";
 
 import { ProvisionalCard, promoteBody } from "./ProvisionalCard";
@@ -28,6 +29,7 @@ export function ProvisionalQueue({ rows, pendingTotal, stagedCount, onOpenStaged
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const flash = useFlash();
+  const why = useReason();
   const done = (id: string, r: { ok: boolean; decision: string; message: string }) => {
     setBusy(null);
     flash.show(r.message, !r.ok);
@@ -35,8 +37,10 @@ export function ProvisionalQueue({ rows, pendingTotal, stagedCount, onOpenStaged
     if (r.ok && r.decision !== "defer") onRemoved(id);
   };
   const quick = async (r: AdminProvisional, tier: number) => {
+    const reason = await why.ask({ title: `Approve ${r.name} at T${tier}`, body: "The source joins the registry at this tier.", action: `Approve T${tier}` });
+    if (!reason) return;
     setBusy(r.id);
-    const res = await requestJson("/api/admin/sources/promote", { method: "POST", body: promoteBody(r.id, "approve", { assignedTier: tier, domains: [], jurisdictions: [], transport_modes: [], topic_tags: [], reviewerNotes: `approve at T${tier} (queue view)` }) });
+    const res = await requestJson("/api/admin/sources/promote", { method: "POST", body: promoteBody(r.id, "approve", { assignedTier: tier, domains: [], jurisdictions: [], transport_modes: [], topic_tags: [], reviewerNotes: reason }) });
     done(r.id, { ok: res.ok, decision: "approve", message: res.ok ? "Source approved." : (res.error ?? "The decision was not saved.") });
   };
   return (
@@ -67,6 +71,7 @@ export function ProvisionalQueue({ rows, pendingTotal, stagedCount, onOpenStaged
         />
       )}
       {flash.node}
+      {why.node}
     </div>
   );
 }

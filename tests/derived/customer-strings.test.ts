@@ -8,7 +8,7 @@ import { join, relative } from "node:path";
 import { test } from "node:test";
 
 import { answer, dbError, HttpError, LookupError, statusForDb } from "@/core/http/errors";
-import { refusal, refusalSentence, type RefusalReason } from "@/core/http/failure";
+import { DB_SENTENCES, refusal, refusalSentence, type RefusalReason } from "@/core/http/failure";
 import sentences from "@/core/http/data/sentences.json" with { type: "json" };
 import { log } from "@/core/shared/log";
 
@@ -58,6 +58,9 @@ test("I16 dbError: every status answers the table's customer sentence, the drive
   }
   assert.ok(sentences.size >= 5, "a sentence per class, not one for all");
   assert.equal(dbError({ message: "x", code: "42501" }, { forbidden: "Only org admins can invite members" }).publicMessage, "Only org admins can invite members", "a caller's own sentence still wins for 403 and 404");
+  assert.equal(dbError({ message: "only an owner may grant the owner role", code: "42501" }, { own: true }).publicMessage, "only an owner may grant the owner role", "a function of this schema writes its refusal for the member: own passes it for 403");
+  assert.equal(dbError({ message: "duplicate key value violates unique constraint \"x_pkey\"", code: "XX000" }, { own: true }).publicMessage, DB_SENTENCES["500"], "own never passes a 500: a driver failure is the table sentence");
+  assert.equal(dbError({ message: "permission denied for table secret", code: "42501" }).publicMessage, DB_SENTENCES["403"], "without own the driver text never reaches the customer");
   assert.equal(new LookupError("step", { message: "driver down" }).publicMessage, dbError({ message: "x", code: "57014" }).publicMessage, "one sentence for 'could not be read just now'");
   assert.equal(statusForDb("23505"), 409);
 });

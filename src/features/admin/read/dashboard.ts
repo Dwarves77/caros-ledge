@@ -52,11 +52,11 @@ export interface DashboardData {
   attention: Part<AttentionCounts>;
   counts: Part<{ held: number; factors: number; disagreements: number; harnessRuns: number; errors: number }>;
 }
-export const MEMBER_BOUND = 200;
-export const STAGED_BOUND = 100;
+const MEMBER_BOUND = 200;
+const STAGED_BOUND = 100;
 
 /** The start of the UTC month an instant falls in. Pure. */
-export const monthStart = (nowIso: string): string => `${nowIso.slice(0, 7)}-01T00:00:00.000Z`;
+const monthStart = (nowIso: string): string => `${nowIso.slice(0, 7)}-01T00:00:00.000Z`;
 
 /** Every read the console's first paint needs, each on the one service client behind the admin gate, each failing on its own. `nowIso` is the one server instant of the request. */
 export async function readDashboard(db: Db, nowIso: string): Promise<DashboardData> {

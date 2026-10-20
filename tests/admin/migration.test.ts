@@ -8,7 +8,9 @@ const triage = readFileSync("src/features/admin/api/triage.ts", "utf8");
 const attention = readFileSync("src/features/admin/api/attention.ts", "utf8");
 
 test("the jurisdiction resolve is one rpc: the item swap and the queue stamp share a function, a missing row is P0002 and a resolved row 22023", () => {
-  assert.match(triage, /rpc\("resolve_pending_jurisdiction_review"/);
+  assert.match(triage, /adminDone\(await admin\.client\.rpc\("admin_resolve_jurisdiction_review"/, "R2e: the route calls the wrapper that writes the operator's reason and the event with the resolve");
+  const wrapper = /CREATE FUNCTION public\.admin_resolve_jurisdiction_review[\s\S]*?\$\$;/.exec(readFileSync("supabase/migrations/0102_admin_action_rpcs.sql", "utf8"))?.[0] ?? "";
+  assert.ok(wrapper.includes("public.resolve_pending_jurisdiction_review(") && wrapper.includes("record_admin_event"), "one function: the resolve and the event");
   const body = /CREATE FUNCTION public\.resolve_pending_jurisdiction_review[\s\S]*?\$\$;/.exec(sql)?.[0] ?? "";
   assert.ok(body.includes("UPDATE public.intelligence_items") && body.includes("UPDATE public.pending_jurisdiction_review"), "both writes are in the function");
   assert.ok(body.includes("FOR UPDATE"), "the row is locked before the check");

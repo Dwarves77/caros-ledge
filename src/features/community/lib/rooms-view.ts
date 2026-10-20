@@ -35,6 +35,8 @@ export interface ThreadVM {
   author: AuthorBlock | null;
   isYou: boolean;
   signedOffAt: string | null;
+  /** The primary document the sign-off was checked against; null when none was recorded (no badge). */
+  signedOffDocUrl: string | null;
   signoff: ThreadSignoff | null;
 }
 export interface RosterMemberVM {
@@ -80,6 +82,7 @@ export interface SignoffInput {
   requested_by: string;
   status: SignoffStatus;
   created_at: string;
+  primary_doc_url?: string | null;
 }
 export interface RosterInput {
   id: string;
@@ -108,7 +111,7 @@ const SURFACE_LABEL = { regulations: "Regulation", market: "Market Intel", opera
 const titleCase = (s: string): string => s.replace(/[-_]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
 /** The room a ledger item sits in: its jurisdiction, then its ISO codes in order; null when none matches. */
-export function roomForResource(r: Resource): RoomKey | null {
+function roomForResource(r: Resource): RoomKey | null {
   const direct = roomForJurisdiction(r.jurisdiction);
   if (direct) return direct;
   for (const iso of r.jurisdictionIso ?? []) {
@@ -119,7 +122,7 @@ export function roomForResource(r: Resource): RoomKey | null {
 }
 
 /** Per post, the request that matters: an open one first, else the newest decided one. */
-export function chooseSignoffs(rows: SignoffInput[]): Map<string, SignoffInput> {
+function chooseSignoffs(rows: SignoffInput[]): Map<string, SignoffInput> {
   const by = new Map<string, SignoffInput>();
   for (const s of rows) {
     const cur = by.get(s.post_id);
@@ -147,6 +150,7 @@ export function buildRooms(i: RoomsInput): RoomVM[] {
       author: p.author,
       isYou: !!p.author && p.author.userId === i.me.userId,
       signedOffAt: p.signed_off_at,
+      signedOffDocUrl: p.signed_off_at && req?.status === "signed_off" ? (req.primary_doc_url ?? null) : null,
       signoff: req ? { requestId: req.id, status: req.status, isMine: req.requested_by === i.me.userId, requesterName: i.requesterNames.get(req.requested_by) ?? "A member" } : null,
     });
     threadsByGroup.set(p.group_id, list);

@@ -2,16 +2,16 @@
 
 // Ported from old_repo/src/components/community/PostComposer.tsx (lines 84-388)
 // Start a thread in a group: title, text, the entities it is about (1 to 10, checked live by the same validator the route runs), a per-post anonymity switch (identity is shown by default; the member's own default
-// starts the switch), and an optional "this states a figure" choice. A figure of a commercially sensitive kind is refused by the antitrust guard at write time with the reason shown in place; the field is a list of those
-// kinds, not a database key the member must type. A refusal and a failure are both said where the member is looking.
+// starts the switch). A post whose words state a commercially sensitive figure (a rate, wage, capacity or pricing figure) is refused by the antitrust guard on the server, with the reason shown in place: the guard reads
+// the text, so there is nothing for the member to declare. A refusal and a failure are both said where the member is looking.
 import { useState } from "react";
 
 import { formatNumber } from "@/core/shared";
-import { Button, FormField, Input, Select, Switch, Textarea } from "@/ui";
+import { Button, FormField, Input, Switch, Textarea } from "@/ui";
 
 import { communityApi } from "../../lib/api";
 import { entityBindingMessage } from "../../lib/entity-binding";
-import { LIMITS, SENSITIVE_FIELD_OPTIONS } from "../../lib/labels";
+import { LIMITS } from "../../lib/labels";
 import type { EntityRef, PostView } from "../../lib/types";
 import styles from "../community.module.css";
 import { EntityPicker } from "../entities/EntityPicker";
@@ -22,7 +22,6 @@ export function PostComposer({ groupId, defaultAnonymous, onPosted }: { groupId:
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [entities, setEntities] = useState<EntityRef[]>([]);
-  const [figure, setFigure] = useState("");
   const [anonymous, setAnonymous] = useState(defaultAnonymous);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,10 +35,10 @@ export function PostComposer({ groupId, defaultAnonymous, onPosted }: { groupId:
     setBusy(true);
     setError(null);
     setRefusal(null);
-    const r = await communityApi.createPost({ group_id: groupId, title: title.trim(), body: body.trim(), entity_ids: entities.map((x) => x.entity_id), sensitivity_field: figure || null, anonymous });
+    const r = await communityApi.createPost({ group_id: groupId, title: title.trim(), body: body.trim(), entity_ids: entities.map((x) => x.entity_id), anonymous });
     setBusy(false);
     if (!r.ok || !r.data) {
-      if (r.status === 403 && figure) setRefusal(r.error ?? "This post was refused.");
+      if (r.status === 403) setRefusal(r.error ?? "This post was refused.");
       else setError(r.error ?? "The post could not be sent.");
       return;
     }
@@ -48,7 +47,6 @@ export function PostComposer({ groupId, defaultAnonymous, onPosted }: { groupId:
     setTitle("");
     setBody("");
     setEntities([]);
-    setFigure("");
     setAnonymous(defaultAnonymous);
   }
 
@@ -61,18 +59,7 @@ export function PostComposer({ groupId, defaultAnonymous, onPosted }: { groupId:
         <Switch on={anonymous} onChange={setAnonymous} label="Post anonymously" busy={busy} />
         <span>Post anonymously: your name and company are withheld; the verified-member mark still shows.</span>
       </div>
-      <FormField label="Does this post state a figure of one of these kinds? (optional)" hint="Posts that give a rate, wage, capacity or pricing figure for one of these are refused: an individual figure for them is never shared in a post.">
-        {(c) => (
-          <Select {...c} value={figure} onChange={(e) => setFigure(e.target.value)} disabled={busy}>
-            <option value="">No</option>
-            {SENSITIVE_FIELD_OPTIONS.map((f) => (
-              <option key={f.id} value={f.id}>
-                {f.label}
-              </option>
-            ))}
-          </Select>
-        )}
-      </FormField>
+      <p className={styles.muted}>Posts that state a rate, wage, capacity or pricing figure are refused: an individual figure of that kind is never shared in a post.</p>
       <div className={styles.composerFoot}>
         <span className={body.length > LIMITS.postBody ? styles.error : styles.muted}>
           {formatNumber(body.length)} / {formatNumber(LIMITS.postBody)} characters

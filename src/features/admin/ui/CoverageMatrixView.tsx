@@ -48,7 +48,7 @@ interface Payload {
   item_types: string[];
 }
 
-export const CELL_WORDS: Record<CellState, { label: string; description: string; tone: string }> = {
+const CELL_WORDS: Record<CellState, { label: string; description: string; tone: string }> = {
   "gap-no-source": { label: "Gap, no source", description: "No items and no active source. Discovery has not run, or sources are paused.", tone: styles.cellGap ?? "" },
   "gap-with-source": { label: "Gap, sources tracked", description: "An active source but no items yet.", tone: styles.cellStale ?? "" },
   sparse: { label: "Sparse", description: "One or two items. Coverage exists but is thin.", tone: styles.cellSparse ?? "" },
@@ -57,7 +57,7 @@ export const CELL_WORDS: Record<CellState, { label: string; description: string;
 };
 
 /** Roll the visible jurisdictions up to one row per country, the worst overall state winning. Pure. */
-export function groupByCountry(js: readonly Jurisdiction[]): Jurisdiction[] {
+function groupByCountry(js: readonly Jurisdiction[]): Jurisdiction[] {
   const order: OverallState[] = ["gap", "partial", "covered"];
   const out = new Map<string, Jurisdiction>();
   for (const j of js) {

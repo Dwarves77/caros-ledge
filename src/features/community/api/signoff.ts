@@ -41,6 +41,7 @@ export const POST_DECIDE = route("/api/community/signoff/[id]/decide", async (re
   if (isRefusal(auth)) return auth;
   const requestId = await idParam(ctx, "id", "sign-off request id");
   const input = await parseJson(request, decision);
+  if (input.decision === "signed_off" && !input.primary_doc_url) throw new HttpError(400, "A sign-off names the primary document it was checked against.");
   const { data, error } = await auth.client.rpc("decide_signoff", { p_request_id: requestId, p_decision: input.decision, p_primary_doc_url: input.primary_doc_url || null, p_decision_note: input.decision_note || null });
   if (error) throw dbError(error, { forbidden: "Only active verifiers may record a sign-off decision", notFound: "Sign-off request not found" });
   return ok(auth.headers, { request: data });

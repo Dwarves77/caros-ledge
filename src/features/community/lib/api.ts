@@ -45,7 +45,7 @@ export const communityApi = {
   leaveGroup: (id: string) => send<{ ok: true }>("DELETE", `${base}/groups/${id}/members`),
   setStarred: (id: string, starred: boolean) => send<{ ok: true }>("PATCH", `${base}/groups/${id}/star`, { starred }),
   setMuted: (id: string, muted: boolean) => send<{ ok: true }>("PATCH", `${base}/groups/${id}/mute`, { muted }),
-  saveSettings: (id: string, patch: { name?: string; description?: string | null; privacy?: "public" | "private" }) => send<{ ok: true; group: { name: string; description: string | null; privacy: "public" | "private" } }>("PATCH", `${base}/groups/${id}/settings`, patch),
+  saveSettings: (id: string, patch: { name?: string; description?: string | null; privacy?: "public" | "private"; privacy_reason?: string | null }) => send<{ ok: true; group: { name: string; description: string | null; privacy: "public" | "private" } }>("PATCH", `${base}/groups/${id}/settings`, patch),
   members: (id: string) => send<{ members: MemberView[]; truncated: boolean; identity_failed: boolean }>("GET", `${base}/groups/${id}/members`),
   invitations: (id: string) => send<{ invitations: Array<{ id: string; created_at: string; invitee_name: string | null; invitee_avatar: string | null; can_revoke: boolean }>; identity_failed: boolean }>("GET", `${base}/groups/${id}/invitations`),
   candidates: (id: string, query: string) => send<{ candidates: Array<{ user_id: string; name: string; headshot_url: string | null }> }>("GET", `${base}/groups/${id}/invite-candidates${q({ q: query })}`),
@@ -55,9 +55,10 @@ export const communityApi = {
   revokeInvitation: (id: string) => send<{ ok: true }>("POST", `${base}/invitations/${id}/revoke`),
 
   posts: (groupId: string, before?: string | null) => send<{ posts: PostView[]; next_cursor: string | null; identity_failed: boolean }>("GET", `${base}/posts${q({ group_id: groupId, before })}`),
-  createPost: (input: { group_id: string; title: string; body: string; entity_ids: string[]; sensitivity_field?: string | null; anonymous?: boolean }) => send<{ post: PostView & { entity_ids: string[] } }>("POST", `${base}/posts`, input),
+  createPost: (input: { group_id: string; title: string; body: string; entity_ids: string[]; anonymous?: boolean }) => send<{ post: PostView & { entity_ids: string[] } }>("POST", `${base}/posts`, input),
   editPost: (id: string, patch: { title?: string; body?: string }) => send<{ post: PostView }>("PATCH", `${base}/posts/${id}`, patch),
   deletePost: (id: string) => send<{ ok: true }>("DELETE", `${base}/posts/${id}`),
+  removePost: (id: string, note: string) => send<{ ok: true; removed: true; notified: boolean }>("POST", `${base}/posts/${id}/remove`, { note }),
   replies: (postId: string, after?: string | null) => send<{ replies: PostView[]; next_cursor: string | null; identity_failed: boolean }>("GET", `${base}/posts/${postId}/replies${q({ after })}`),
   reply: (postId: string, body: string) => send<{ reply: PostView; notified: boolean }>("POST", `${base}/posts/${postId}/replies`, { body }),
   cite: (postId: string, itemId: string) => send<{ ok: true; cited: string[] }>("POST", `${base}/posts/${postId}/cite`, { item_id: itemId }),
@@ -79,6 +80,7 @@ export const communityApi = {
 
   profile: () => send<{ profile: OwnProfile }>("GET", `${base}/profile`),
   saveProfile: (input: { org_type: string; role?: string | null; sector?: string | null; region?: string | null; default_anonymous?: boolean }) => send<{ profile: OwnProfile }>("PUT", `${base}/profile`, input),
+  verifyRecord: () => send<{ domain: string; host: string; value: string }>("GET", `${base}/profile/verify`),
   verify: () => send<{ profile: OwnProfile }>("POST", `${base}/profile/verify`),
 
   search: (query: string, scope: string) => send<SearchHits>("GET", `${base}/search${q({ q: query, scope })}`),

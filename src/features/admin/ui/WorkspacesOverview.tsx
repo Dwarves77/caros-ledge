@@ -14,13 +14,13 @@ import type { MemberRow, OrgRow } from "../read/dashboard";
 import styles from "./admin.module.css";
 
 /** A member renders by name, never by id: full name, display name, e-mail, else the absence of a profile. */
-export function memberDisplayName(m: Pick<MemberRow, "user">): string {
+function memberDisplayName(m: Pick<MemberRow, "user">): string {
   const u = m.user;
   return u?.full_name?.trim() || u?.display_name?.trim() || u?.email?.trim() || "(no profile)";
 }
 
 /** Role counts for one set of members, owners first. Pure. */
-export function tallyRoles(members: readonly Pick<MemberRow, "role">[]): [string, number][] {
+function tallyRoles(members: readonly Pick<MemberRow, "role">[]): [string, number][] {
   const order = ["owner", "admin", "member", "viewer"];
   const counts = new Map<string, number>();
   for (const m of members) counts.set(m.role, (counts.get(m.role) ?? 0) + 1);
@@ -28,7 +28,7 @@ export function tallyRoles(members: readonly Pick<MemberRow, "role">[]): [string
 }
 
 /** The four figures of the usage card, computed from the rows read (never a snapshot literal): companies, distinct individuals, the newest join, and the owner split. Pure. */
-export function usageFigures(orgs: readonly OrgRow[], members: readonly MemberRow[]) {
+function usageFigures(orgs: readonly OrgRow[], members: readonly MemberRow[]) {
   const newest = members.reduce<MemberRow | null>((n, m) => (m.created_at && (!n || n.created_at < m.created_at) ? m : n), null);
   const owners = members.filter((m) => m.role === "owner").length;
   return { companies: orgs.length, individuals: new Set(members.map((m) => m.user_id)).size, newest, owners, others: members.length - owners };

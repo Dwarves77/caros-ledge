@@ -11,18 +11,19 @@ import { Avatar } from "./Avatar";
 
 export function VerifiedMark() {
   return (
-    <span className={`${styles.chip} ${styles.chipVerified}`} title="Verified member: a company email address on the account">
+    <span className={`${styles.chip} ${styles.chipVerified}`} title="Verified: the member's company domain was checked, or an administrator marked them verified">
       Verified
     </span>
   );
 }
 
-/** The sign-off mark: a verifier checked the post's claim against a primary document. It is NOT the member's "Verified" mark (a company email on the account): the two were one word and one component. */
-export function SignedOffMark() {
+/** The sign-off mark: a verifier checked the post's claim against a primary document, and the mark names it. It is drawn only when the document is recorded; it is NOT the member's "Verified" mark. */
+export function SignedOffMark({ docUrl }: { docUrl: string | null | undefined }) {
+  if (!docUrl) return null;
   return (
-    <span className={`${styles.chip} ${styles.chipSignedOff}`} title="A verifier signed this off against a primary document">
-      Signed off
-    </span>
+    <a className={`${styles.chip} ${styles.chipSignedOff}`} href={docUrl} target="_blank" rel="noopener noreferrer" title="A verifier signed this off against this primary document">
+      Signed off against a primary document
+    </a>
   );
 }
 

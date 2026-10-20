@@ -1,0 +1,14 @@
+{
+  "vars": {
+    "N": "\\d[\\d,.]*\\s?(?:k|m)?",
+    "MONEY": "(?:[$€£¥]\\s?\\d[\\d,.]*\\s?(?:k|m)?|\\b\\d[\\d,.]*\\s?(?:k|m)?\\s?(?:usd|eur|gbp|cny|rmb|jpy|aud|cad|chf|dollars?|euros?|pounds?)\\b|\\b(?:usd|eur|gbp|cny|rmb|jpy|aud|cad|chf)\\s?\\d[\\d,.]*\\s?(?:k|m)?)",
+    "UNIT": "(?:\\/|\\bper\\s+|\\ba\\s+|\\bpe\\s+)(?:feu|teu|container|box|cbm|kg|kilo|kilogram|tonne|ton|pallet|shipment|move|lane|day|hour|hr|mile|km|trip|booking)\\b"
+  },
+  "rules": [
+    { "field": "rate_per_feu", "all": ["{MONEY}", "{UNIT}"] },
+    { "field": "wage_per_hour", "all": ["\\b(?:wage|wages|salary|salaries|hourly pay|pay rate|hourly rate|day rate|overtime rate)\\b", "(?:{MONEY}|\\b{N}\\s?(?:per hour|an hour|\\/h|\\/hr)\\b)"] },
+    { "field": "capacity_teu", "all": ["\\b(?:capacity|capacities|allocation|allocations|slots?|space|blank sailings?)\\b", "\\b{N}\\s?(?:teu|feu|tonnes?|tons?|pallets?|containers?|boxes|slots?)\\b"] },
+    { "field": "saf_premium_pct", "all": ["\\b(?:premium|surcharge|mark-?up|uplift|margin)\\b", "\\b{N}\\s?(?:%|percent|per cent)"] },
+    { "field": "pricing", "all": ["\\b(?:our|we|my|their|your)\\b[^.\\n]{0,60}\\b(?:rate|rates|price|prices|pricing|quote|quotes|quoted|discount|contract)\\b", "{MONEY}"] }
+  ]
+}

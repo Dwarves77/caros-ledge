@@ -7,8 +7,8 @@ import { countryGroupForIso, countryLabel, jurisdictionTier, subnational, TIER1,
 import { adminRoute, reply } from "./shared";
 
 /** The window inside which an item counts as fresh for a cell: 180 days. */
-export const FRESHNESS_WINDOW_MS = 180 * 24 * 60 * 60 * 1000;
-export const NO_ITEMS = "__no_items__";
+const FRESHNESS_WINDOW_MS = 180 * 24 * 60 * 60 * 1000;
+const NO_ITEMS = "__no_items__";
 export type CellState = "covered-fresh" | "covered-stale" | "sparse" | "gap-with-source" | "gap-no-source";
 export type OverallState = "covered" | "partial" | "gap";
 
@@ -22,24 +22,24 @@ interface RpcRow {
   has_critical: boolean;
 }
 /** The tier a jurisdiction has in the one jurisdiction list: 1 must cover, 2 should cover, 3 any other code that parses, null a code that does not. */
-export const tierOf = (iso: string): 1 | 2 | 3 | null => jurisdictionTier(iso);
+const tierOf = (iso: string): 1 | 2 | 3 | null => jurisdictionTier(iso);
 /** The country segment of a code, so a sub-national row groups under its country and a supranational code under itself. */
-export const countryGroup = (iso: string): string => countryGroupForIso(iso);
+const countryGroup = (iso: string): string => countryGroupForIso(iso);
 
 /** A cell's state: no items is a gap (with or without a tracked source); one or two is sparse; three or more is covered, fresh when the newest item is inside the window. Pure: `nowMs` is the request instant. */
-export function deriveCellState(itemCount: number, sourceCount: number, mostRecentAt: string | null, nowMs: number): CellState {
+function deriveCellState(itemCount: number, sourceCount: number, mostRecentAt: string | null, nowMs: number): CellState {
   if (itemCount === 0) return sourceCount === 0 ? "gap-no-source" : "gap-with-source";
   if (itemCount < 3) return "sparse";
   if (!mostRecentAt) return "covered-stale";
   return nowMs - Date.parse(mostRecentAt) <= FRESHNESS_WINDOW_MS ? "covered-fresh" : "covered-stale";
 }
-export const deriveOverallState = (items: number, sources: number): OverallState => (items === 0 && sources === 0 ? "gap" : items < 3 ? "partial" : "covered");
+const deriveOverallState = (items: number, sources: number): OverallState => (items === 0 && sources === 0 ? "gap" : items < 3 ? "partial" : "covered");
 
 /**
  * The jurisdiction by item-type matrix from the rpc rows: per-cell states, per-jurisdiction rollups, and every Tier 1 or Tier 2 jurisdiction the rpc returned nothing for as a gap row (the loudest gaps must show).
  * Filters narrow both. Pure.
  */
-export function buildAdminMatrix(rows: readonly RpcRow[], nowMs: number, filter: { tier?: 1 | 2 | 3 | null; country?: string | null } = {}) {
+function buildAdminMatrix(rows: readonly RpcRow[], nowMs: number, filter: { tier?: 1 | 2 | 3 | null; country?: string | null } = {}) {
   const totals = new Map<string, { items: number; sources: number }>();
   const itemTypes = new Set<string>();
   const cells = rows.map((r) => {

@@ -19,7 +19,7 @@ interface RunResult {
 const OUTCOME_LABEL: Record<string, string> = { written: "Written", "would-write": "Would write (dry)", "skipped-already-computed": "Already computed, skipped", "refused-inadmissible": "Refused: not admissible for filing", "refused-structural": "Refused: structural error", errored: "Errored" };
 
 /** The summary line of a run, from its counts. Pure. */
-export const summaryOf = (r: Pick<RunResult, "mode" | "total" | "counts">): string => `${r.mode === "apply" ? "Applied" : "Dry run"}: ${r.total} row${r.total === 1 ? "" : "s"}, written ${r.counts.written ?? 0}, would write ${r.counts.would_write ?? 0}, already computed ${r.counts.skipped_already ?? 0}, refused ${r.counts.refused ?? 0}, errored ${r.counts.errored ?? 0}.`;
+const summaryOf = (r: Pick<RunResult, "mode" | "total" | "counts">): string => `${r.mode === "apply" ? "Applied" : "Dry run"}: ${r.total} row${r.total === 1 ? "" : "s"}, written ${r.counts.written ?? 0}, would write ${r.counts.would_write ?? 0}, already computed ${r.counts.skipped_already ?? 0}, refused ${r.counts.refused ?? 0}, errored ${r.counts.errored ?? 0}.`;
 
 /** Preview and apply a reviewed statutory rows file. Apply unlocks only after a clean dry run of this exact text; editing the text locks it again. Operator-entered platform data, validated whole before any row is read. */
 export function StatutoryRowsUpload() {

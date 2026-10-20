@@ -10,6 +10,7 @@ import { Button } from "@/ui";
 
 import { setGroupPref } from "../../lib/actions";
 import { communityApi } from "../../lib/api";
+import { canEditGroup } from "../../lib/group-access";
 import { isRecentlyActive } from "../../lib/labels";
 import type { GroupRole, GroupSummary } from "../../lib/types";
 import styles from "../community.module.css";
@@ -37,7 +38,7 @@ export function GroupHeader({ group, membership, nowIso }: { group: GroupSummary
   const [panel, setPanel] = useState<Panel>(null);
   const [edited, setEdited] = useState<{ name: string; description: string | null; privacy: "public" | "private" } | null>(null);
   const shown = { ...group, ...(edited ?? {}) };
-  const admin = membership?.role === "admin";
+  const admin = canEditGroup(membership?.role);
   async function toggle(kind: "starred" | "muted") {
     setBusy(kind === "starred" ? "star" : "mute");
     await setGroupPref(communityApi, notify, kind, group.id, !(kind === "starred" ? starred : muted), kind === "starred" ? setStarred : setMuted);

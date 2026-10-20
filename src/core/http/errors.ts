@@ -45,9 +45,11 @@ export function ok(headers: Record<string, string>, body: unknown, status = 200)
  * A database failure as an HttpError. The body is ALWAYS a customer sentence (the caller's `messages` for 403 and 404 where it has a better one, else the table for the status); the driver's code and message are held back for
  * the log (`answer` logs them), so a constraint name, a table name or a SQL state never reaches a customer (register core:21, workspace-admin-community:19). A transient failure answers 503 with Retry-After.
  */
-export function dbError(error: { message: string; code?: string | null }, messages: { forbidden?: string; notFound?: string } = {}): HttpError {
+export function dbError(error: { message: string; code?: string | null }, messages: { forbidden?: string; notFound?: string; own?: true } = {}): HttpError {
   const status = statusForDb(error.code);
-  const sentence = (status === 403 ? messages.forbidden : status === 404 ? messages.notFound : undefined) ?? DB_SENTENCES[String(status)] ?? (DB_SENTENCES["500"] as string);
+  // `own`: the call is a function of this schema whose refusals are written for the member (RAISE EXCEPTION 'only an owner may grant the owner role'): its sentence is the answer for the refusal statuses. A table read or write never passes it.
+  const authored = messages.own && (status === 403 || status === 404 || status === 409) ? error.message : undefined;
+  const sentence = (status === 403 ? messages.forbidden : status === 404 ? messages.notFound : undefined) ?? authored ?? DB_SENTENCES[String(status)] ?? (DB_SENTENCES["500"] as string);
   // The driver's code and message go to the log here, once; the error that travels carries the code and the customer sentence only.
   log.warn(`[http] database ${error.code ?? "error"} answered ${status}:`, error.message);
   return new HttpError(status, `database ${error.code ?? "error"}`, status === 503 ? { "Retry-After": "1" } : {}, sentence);

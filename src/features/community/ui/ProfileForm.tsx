@@ -2,7 +2,8 @@
 
 // Ported from old_repo/src/components/community/ProfileForm.tsx (lines 21-347)
 // Your Community identity: organisation type, role, sector (chosen from the sector list, not typed), region, and whether your name and company are withheld by default; and verification by a company email address on your
-// account (the verified mark stays even when your name is withheld). A failed load says so with Retry; a refusal shows its sentence. LinkedIn is a second verification method the profile admits and is not offered until it is scheduled.
+// account (the verified mark stays even when your name is withheld). Verification is a check the system performs: you publish a DNS record on the domain of your account address, the page reads it and records the result. A failed
+// load says so with Retry; a refusal shows its sentence. An administrator's mark is the other recorded kind; LinkedIn is not offered.
 import { useCallback, useEffect, useState } from "react";
 
 import { ALL_SECTORS } from "@/core/workspace/vocabulary";
@@ -26,6 +27,7 @@ export function ProfileForm() {
   const [anonymous, setAnonymous] = useState(false);
   const [save, setSave] = useState<{ busy: boolean; error: string | null; saved: boolean }>({ busy: false, error: null, saved: false });
   const [verify, setVerify] = useState<{ busy: boolean; error: string | null }>({ busy: false, error: null });
+  const [record, setRecord] = useState<{ domain: string; host: string; value: string } | null>(null);
 
   const apply = (p: OwnProfile) => {
     setProfile(p);
@@ -53,6 +55,13 @@ export function ProfileForm() {
     if (!r.ok || !r.data) return setSave({ busy: false, error: r.error ?? "Your profile could not be saved.", saved: false });
     apply(r.data.profile);
     setSave({ busy: false, error: null, saved: true });
+  }
+  async function showRecord() {
+    setVerify({ busy: true, error: null });
+    const r = await communityApi.verifyRecord();
+    if (!r.ok || !r.data) return setVerify({ busy: false, error: r.error ?? "The record could not be prepared." });
+    setRecord(r.data);
+    setVerify({ busy: false, error: null });
   }
   async function verifyNow() {
     setVerify({ busy: true, error: null });
@@ -120,14 +129,21 @@ export function ProfileForm() {
       <FormCard title="Verification">
         {profile?.verified ? (
           <p>
-            <VerifiedMark /> Verified by company email{profile.verifiedAt ? ` on ${formatDate(profile.verifiedAt)}` : ""}.
+            <VerifiedMark /> {profile.verificationMethod === "admin-mark" ? "Marked verified by an administrator" : "Domain ownership confirmed"}{profile.verifiedAt ? ` on ${formatDate(profile.verifiedAt)}` : ""}.
           </p>
         ) : (
           <>
-            <p className={styles.muted}>A company email address on your account verifies you. Your organisation is never shown, only the verified mark; personal mail addresses cannot verify.</p>
-            <Button variant="primary" disabled={verify.busy} onClick={() => void verifyNow()}>
-              {verify.busy ? "Verifying…" : "Verify with my company email"}
-            </Button>
+            <p className={styles.muted}>Verified means we checked that you control the domain of your account address. Publish one DNS record on it and we read it. Your organisation is never shown, only the verified mark.</p>
+            {record ? (
+              <>
+                <p className={styles.muted}>Add this TXT record to {record.domain}, wait a few minutes for DNS to update, then check.</p>
+                <p><code>{record.host}</code></p>
+                <p><code>{record.value}</code></p>
+                <Button variant="primary" disabled={verify.busy} onClick={() => void verifyNow()}>{verify.busy ? "Checking…" : "Check the record"}</Button>
+              </>
+            ) : (
+              <Button variant="primary" disabled={verify.busy} onClick={() => void showRecord()}>{verify.busy ? "Preparing…" : "Verify my company domain"}</Button>
+            )}
             {verify.error && <p role="alert" className={styles.error}>{verify.error}</p>}
           </>
         )}

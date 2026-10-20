@@ -38,7 +38,7 @@ export const shouldShowAdminNav = (p: { status: IdentityStatus; isPlatformAdmin:
 /** Three retries after the first attempt (1 s, 2 s, 4 s; a Retry-After wins when longer), then the round ends in the error seed. */
 export const nextIdentityRetryDelay = retryDelayMs;
 /** A focus or visibility event re-arms an errored loader at most this often; the Retry control is never throttled. */
-export const IDENTITY_REARM_COOLDOWN_MS = 30_000;
+const IDENTITY_REARM_COOLDOWN_MS = 30_000;
 
 export interface IdentityLoaderDeps {
   /** Resolves the parsed JSON body; a failed response throws a RetryableError (core/http/backoff) so its Retry-After is honoured. */

@@ -2,7 +2,7 @@
 
 Generated from the rows by tests/golden/rows.test.ts (the drift guard); regenerate with `GOLDEN_WRITE_README=1 npm test`. Do not edit by hand.
 
-Each row carries inputs, expected outputs, locators and traps, never a source's prose. A value is `verified` (read at its locator on the retrieval date and re-checked by the tests) or the row is `unresolved`. GLEC and ISO text is licence-red: rows hold figures, units and locators only. GLEC rows are v3.0 pending v3.2.
+Each row carries inputs, expected outputs, locators and traps, never a source's prose. A value is `verified` (read at its locator on the retrieval date and re-checked by the tests) or the row is `unresolved`. A document whose register verdict is `prohibited` is licence-red (GLEC, ISO, GHG Protocol, EcoTransIT, ICAO, the Hong Kong Marine Department copy): a probe against it is a figure, a figure with its unit (`kg CO2e/TEU-km`, `t`, `%`, `EUR`; the unit list is data/units.json) or a unit, never a formula, a phrase, a table caption or a word of the publisher's sentence, and no eight-word run of its prose appears in any row. A document marked `fetch: false` is never fetched by a test (its publisher forbids robots); its rows are skipped with `publisher_forbids_robots`. GLEC rows are v3.0 pending v3.2.
 
 Conventions: `dp` locale is decimal point with comma thousands, `dc` is decimal comma with space or dot thousands; `sigDigits` counts the printed digits, trailing zeros of an integer without a decimal part not counted; a `rounded` figure is compared within half a unit of its last published digit, every other value exactly.
 
@@ -37,19 +37,10 @@ Rows: 35 (30 verified, 5 unresolved). Documents: 13.
 
 | licence class (worst over cited documents) | rows |
 |---|---|
-| prohibited | 15 |
-| terms_unverified | 20 |
+| permitted | 6 |
+| prohibited | 26 |
+| terms_unverified | 3 |
 
-Documents whose reuse terms are recorded as `terms_unverified` (not in the source-licence register):
+Documents whose register verdict is `unverified`, or that have no register entry (`terms_unverified`):
 
-- ghgp_cat4: Technical Guidance for Calculating Scope 3 Emissions, Category 4 Upstream Transportation and Distribution (GHG Protocol (WRI and WBCSD))
-- ghgp_cat9: Technical Guidance for Calculating Scope 3 Emissions, Category 9 Downstream Transportation and Distribution (GHG Protocol (WRI and WBCSD))
-- ecotransit_41: EcoTransIT World Methodology Report, Version 4.1 (IVE mbH with ifeu, INFRAS and Fraunhofer IML)
 - mrv_annex_council: Annexes 1 and 2 to the Commission Delegated Regulation amending Regulation (EU) 2015/757, C(2023) 6728 final (Council document 14573/23 ADD 1) (European Commission, transmitted to the Council of the EU)
-- ec_maritime_ets: Reducing emissions from the shipping sector (European Commission, DG Climate Action)
-- cbam_guidance_3: Guidance Document 3: CBAM methods for the calculation of emissions embedded in goods (European Commission, DG Taxation and Customs Union)
-- imo_mepc338_76: Resolution MEPC.338(76): 2021 Guidelines on the operational carbon intensity reduction factors relative to reference lines (CII reduction factors guidelines, G3) (IMO Marine Environment Protection Committee (copy served by the Hong Kong Marine Department))
-- icao_corsia_newsletter_2025_10: CORSIA Newsletter, October 2025 (ICAO)
-- icao_acw_2026_corsia: Implementing Aviation's Global Market-based Measure: CORSIA (ICAO Aviation Climate Week 2026 presentation) (ICAO)
-- mcga_mgn683: MGN 683 (M+F) IMO carbon reduction measures (UK Maritime and Coastguard Agency (GOV.UK))
-- cbp_232_faq: Section 232 tariffs on aluminum and steel: frequently asked questions (U.S. Customs and Border Protection)

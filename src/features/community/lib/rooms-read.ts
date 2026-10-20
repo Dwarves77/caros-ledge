@@ -89,7 +89,7 @@ export async function readRoomsHome(db: Db, session: { userId: string; email: st
   // The threads of the rooms and their sign-off requests; authors and requesters through the identity rpc.
   const roomIds = groups.map((g) => g.id);
   let posts: Array<PostRow & { referenced_intelligence_item_ids: string[] | null }> = [];
-  let signoffs: Array<{ id: string; post_id: string; requested_by: string; status: SignoffStatus; created_at: string }> = [];
+  let signoffs: Array<{ id: string; post_id: string; requested_by: string; status: SignoffStatus; created_at: string; primary_doc_url: string | null }> = [];
   let threadsFailed = false;
   let identities: Map<string, IdentityRow> = new Map();
   let shaped: Awaited<ReturnType<typeof shapePosts>> = { posts: [], identityFailed: false };
@@ -99,7 +99,7 @@ export async function readRoomsHome(db: Db, session: { userId: string; email: st
       if (error) throw new LookupError("room threads", error);
       const rows = (data ?? []) as Array<PostRow & { referenced_intelligence_item_ids: string[] | null }>;
       const ids = rows.map((r) => r.id);
-      const reqs = ids.length ? await db.from("community_post_signoff_requests").select("id, post_id, requested_by, status, created_at").in("post_id", ids) : { data: [], error: null };
+      const reqs = ids.length ? await db.from("community_post_signoff_requests").select("id, post_id, requested_by, status, created_at, primary_doc_url").in("post_id", ids) : { data: [], error: null };
       if (reqs.error) throw new LookupError("sign-off requests", reqs.error);
       return { rows, reqs: (reqs.data ?? []) as typeof signoffs };
     });

@@ -3,15 +3,17 @@
 // Ported from old_repo/src/components/community/CommunityRooms.tsx (lines 1198-1359)
 // Ported from old_repo/src/components/community/CommunityRooms.tsx (lines 1362-1389)
 // The verifier sign-off rail: what sign-off is, whether you are a verifier (one meaning of "verified" here: an active verifier; the email-verified mark is another thing and is not this), your open requests with Withdraw,
-// and for an active verifier the decide queue with Sign off and Decline. The copy states what a sign-off does inside Community and no more (it does not say a signed-off claim becomes citable elsewhere).
+// and for an active verifier the decide queue with Sign off (which needs the address of the primary document it was checked against, and records it) and Decline. The copy states what a sign-off does inside Community and no more (it does not say a signed-off claim becomes citable elsewhere).
 import Link from "next/link";
+import { useState } from "react";
 
-import { Button, SectionCard } from "@/ui";
+import { Button, FormField, Input, SectionCard } from "@/ui";
 
 import type { ThreadVM } from "../../lib/rooms-view";
 import styles from "../community.module.css";
 
-export function SignoffRail({ threads, isVerifier, verifierStatus, busy, onWithdraw, onDecide }: { threads: ThreadVM[]; isVerifier: boolean; verifierStatus: string; busy: boolean; onWithdraw: (t: ThreadVM) => void; onDecide: (t: ThreadVM, decision: "signed_off" | "declined") => void }) {
+export function SignoffRail({ threads, isVerifier, verifierStatus, busy, onWithdraw, onDecide }: { threads: ThreadVM[]; isVerifier: boolean; verifierStatus: string; busy: boolean; onWithdraw: (t: ThreadVM) => void; onDecide: (t: ThreadVM, decision: "signed_off" | "declined", docUrl?: string) => void }) {
+  const [docs, setDocs] = useState<Record<string, string>>({});
   const mine = threads.filter((t) => t.signoff?.isMine && t.signoff.status === "pending");
   const queue = threads.filter((t) => t.signoff?.status === "pending");
   return (
@@ -59,8 +61,9 @@ export function SignoffRail({ threads, isVerifier, verifierStatus, busy, onWithd
               <div key={t.id} className={styles.stackTight}>
                 <a href={`#post-${t.id}`} className={styles.railLink}>{t.title.slice(0, 70)}</a>
                 <p className={styles.muted}>Requested by {t.signoff?.requesterName}</p>
+                <FormField label="Primary document address" hint="A sign-off names what it was checked against.">{(c) => <Input {...c} type="url" value={docs[t.id] ?? ""} onChange={(e) => setDocs({ ...docs, [t.id]: e.target.value })} placeholder="https://" />}</FormField>
                 <div className={styles.actions}>
-                  <Button variant="primary" size="sm" disabled={busy} onClick={() => onDecide(t, "signed_off")}>
+                  <Button variant="primary" size="sm" disabled={busy || !/^https?:\/\/\S+$/.test((docs[t.id] ?? "").trim())} onClick={() => onDecide(t, "signed_off", (docs[t.id] ?? "").trim())}>
                     Sign off
                   </Button>
                   <Button variant="secondary" size="sm" disabled={busy} onClick={() => onDecide(t, "declined")}>
