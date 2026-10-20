@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
 
 import { currentMethods, HASH_FILE, versionProblems } from "../../scripts/ci/method-versions.mjs";
@@ -61,6 +63,28 @@ test("a new version is a new key: it needs a record, and the old key must stay r
 test("a registration whose id or version cannot be read is a problem, never a silent skip", () => {
   const dynamic = "export function r(reg, id) { reg.register('derived_values', id, '1', () => 1); }\n";
   assert.match(currentMethods(files(dynamic)).problems.join("\n"), /the key cannot be read/);
+});
+
+test("planted: a threshold in a JSON table the method imports is part of the method, and the impact score is a table of the gate (IMPACT-1)", () => {
+  const dir = mkdtempSync(join(tmpdir(), "method-json-"));
+  mkdirSync(join(dir, "data"));
+  const file = join(dir, "methods.ts");
+  const code = [
+    'import rulesJson from "./data/rules.json";',
+    "const RULES = rulesJson;",
+    'const ID = "score";',
+    'const VERSION = "1";',
+    "const compute = (x) => x.value * RULES.factor;",
+    'export function r(reg) { reg.register("item_impact_scores", ID, VERSION, compute); }',
+  ].join("\n");
+  const hashWith = (json) => {
+    writeFileSync(join(dir, "data", "rules.json"), json);
+    return currentMethods(new Map([[file, code]])).methods;
+  };
+  const recorded = Object.fromEntries([...hashWith('{"factor": 2}')].map(([k, m]) => [k, m.hash]));
+  assert.deepEqual(Object.keys(recorded), ["item_impact_scores:score@1"]);
+  assert.deepEqual(versionProblems(hashWith('{ "factor": 2 }'), recorded), [], "the layout of the table is not a change");
+  assert.match(versionProblems(hashWith('{"factor": 3}'), recorded).join("\n"), /item_impact_scores:score@1: the code its registration runs changed and its version did not/);
 });
 
 test("THIS repository: every registered method is recorded and unchanged under its version", () => {

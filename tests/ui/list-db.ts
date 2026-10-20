@@ -31,6 +31,8 @@ export function listDb(script: { rpc?: (name: string, args: Record<string, unkno
         select: () => chain,
         eq: (k: string, v: unknown) => (call.filters.push([`eq:${k}`, v]), chain),
         in: (k: string, v: unknown) => (call.filters.push([`in:${k}`, v]), chain),
+        is: (k: string, v: unknown) => (call.filters.push([`is:${k}`, v]), chain),
+        maybeSingle: () => Promise.resolve(settle(script.from?.(table, call.filters) ?? { data: [] })).then((r) => ({ ...r, data: Array.isArray(r.data) ? (r.data[0] ?? null) : r.data })),
         then: (res: (v: unknown) => unknown, rej?: (e: unknown) => unknown) => Promise.resolve(settle(script.from?.(table, call.filters) ?? { data: [] })).then(res, rej),
       };
       return chain;

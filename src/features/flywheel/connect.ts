@@ -33,7 +33,7 @@ export function createConnectDeps(opts: { getDb: () => Db; now: () => Date }): C
       const sb = opts.getDb();
       const now = opts.now();
       const r = await readAndExtractForwardEvents(sb, itemId, now);
-      const w = await insertForwardEvents(sb, itemId, r.events, { claimIds: new Set(r.claims.map((c) => c.claim_id)), sectionIds: new Set(r.sections.map((s) => s.section_id)) });
+      const w = await insertForwardEvents(sb, itemId, r.events, { claimIds: new Set(r.claims.map((c) => c.claim_id)), sectionIds: new Set(r.sections.map((s) => s.section_id)), captureIds: new Set(r.captures.map((c) => c.capture_id)) });
       const sync = await syncComplianceDeadline(sb, itemId, now.toISOString().slice(0, 10));
       return { attempted: w.attempted, inserted: w.inserted, collision: w.collision, staleIds: w.staleIds, complianceDeadline: { changed: sync.changed, value: sync.changed ? sync.value : null } };
     },

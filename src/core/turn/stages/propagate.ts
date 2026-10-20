@@ -1,8 +1,10 @@
 // Ported from old_repo/scripts/turns/run-propagation-drain.mjs (lines 122-358)
 // Ported from old_repo/scripts/turns/run-propagation-drain.mjs (lines 393-421)
-// Stage 7, propagate: the producers (when asked), the outbox drain, the questions the drained changes raise, the signposts they fire, and the re-scoring of the research assessments whose item changed.
+// Stage 7, propagate: the producers (when asked), the outbox drain, the questions the drained changes raise, the signposts they fire, the re-scoring of the research assessments whose item changed, and the impact scores of the items the connect stage read
+// (and the backlog whose inputs changed since they were scored).
 // Everything after the drain works from the events the drain just processed, so one change reaches every consumer in the same run.
 import type { FamilyCall } from "@/core/harness";
+import { scoreItems } from "@/core/impact/run";
 import { runPropagationDrain, reopener } from "@/core/propagation";
 import { loadProducerRegistry, runProducer, runRegistered, selectRuns } from "@/core/producers";
 import type { RunResult } from "@/core/types/run-result";
@@ -32,7 +34,7 @@ const changedItemIds = (events: readonly Processed[]): string[] => [...new Set(e
 const pick = (r: RunResult | null, prefix: string): Record<string, number> => Object.fromEntries(Object.entries(r?.counts ?? {}).map(([k, v]) => [`${prefix}${k}`, v]));
 
 /** One result from the five steps. A producer the gates refused is a note, not a failed stage: the drain and its consumers still ran. Pure. */
-export function shapePropagate(parts: { producers: RunResult | null; drain: RunResult; questions: RunResult; signposts: RunResult; assess: RunResult | null }, events: readonly Processed[], itemIds: readonly string[]): RunResult {
+export function shapePropagate(parts: { producers: RunResult | null; drain: RunResult; questions: RunResult; signposts: RunResult; assess: RunResult | null; impact?: RunResult<{ ids: { scored_item_ids: string[] } }> | null }, events: readonly Processed[], itemIds: readonly string[]): RunResult {
   const held = (r: RunResult) => (r.counts.refused ?? 0) > 0 || r.notes.some((n) => n.includes("REFUSING"));
   const soft = (r: RunResult | null) => (r && r.outcome === "failed" && held(r) ? { ...r, outcome: "partial" as const } : r);
   const producers = soft(parts.producers);
@@ -40,16 +42,16 @@ export function shapePropagate(parts: { producers: RunResult | null; drain: RunR
   const counts: Record<string, number> = {
     drained: parts.drain.counts.drained ?? 0, recomputed: parts.drain.counts.recomputed ?? 0, invalidated: parts.drain.counts.invalidated ?? 0, events: parts.drain.counts.events ?? 0,
     questions_written: parts.questions.counts.written ?? 0, scored: parts.signposts.counts.scored ?? 0, signposts_fired: parts.signposts.counts.signposts_fired ?? 0, assessed_written: assess?.counts.written ?? 0,
-    ...pick(producers, "producers_"), ...pick(assess, "assess_"),
+    ...pick(producers, "producers_"), ...pick(assess, "assess_"), ...(parts.impact?.counts ?? {}),
   };
-  const outcome = worst(parts.drain.outcome, parts.questions.outcome, parts.signposts.outcome, producers?.outcome ?? "ok", assess?.outcome ?? "ok");
-  const notes = [parts.drain, parts.questions, parts.signposts, producers, assess].flatMap((p) => p?.notes ?? []);
-  return { ...runResult(outcome, counts, notes), data: { ids: { drained_event_ids: events.map((e) => String(e.eventId)), reassessed_item_ids: [...itemIds] } } };
+  const outcome = worst(parts.drain.outcome, parts.questions.outcome, parts.signposts.outcome, producers?.outcome ?? "ok", assess?.outcome ?? "ok", parts.impact?.outcome ?? "ok");
+  const notes = [parts.drain, parts.questions, parts.signposts, producers, assess, parts.impact ?? null].flatMap((p) => p?.notes ?? []);
+  return { ...runResult(outcome, counts, notes), data: { ids: { drained_event_ids: events.map((e) => String(e.eventId)), reassessed_item_ids: [...itemIds], scored_item_ids: parts.impact?.data?.ids.scored_item_ids ?? [] } } };
 }
 
-/** A dry producer run still fetches its document, so it runs only while the fetch gate is open; with the cadence off it is planned (selected and named), never fetched. */
+/** A producer run fetches its document, dry or not, so it runs only while the fetch gate is open (the analysis stages apply with the cadence off; fetching is what rule 16 holds); with the cadence off it is planned (selected and named), never fetched. */
 async function runProducers(call: FamilyCall, d: BuiltDeps, p: NonNullable<PropagatePlan["producers"]>): Promise<RunResult> {
-  if (!call.dry || (await d.gate.refresh())) return runRegistered(d.producers, { catalog: d.catalog, producer: p.producer, only: p.only, mode: call.mode });
+  if (await d.gate.refresh()) return runRegistered(d.producers, { catalog: d.catalog, producer: p.producer, only: p.only, mode: call.mode });
   try {
     const picked = selectRuns(loadProducerRegistry(d.catalog), { producer: p.producer, only: p.only });
     return runResult("ok", { selected: picked.length }, [`dry: ${picked.map((e) => e.name).join(", ") || "no producer"} planned, not fetched: the fetch gate is closed`]);
@@ -73,5 +75,6 @@ export async function runPropagate(call: FamilyCall, d: BuiltDeps): Promise<RunR
     const candidates = await fetchLiveCandidates(sb, undefined, { itemIds });
     if (candidates.length) assess = await runProducer(d.producers, { spec: d.assessment, dry: call.dry, text: JSON.stringify(candidates) });
   }
-  return shapePropagate({ producers, drain, questions, signposts, assess }, events, itemIds);
+  const impact = await scoreItems({ sb, now: d.now, registry: d.registry }, { dry: call.dry, readIds: call.upstream?.ids.scanned_item_ids ?? [] });
+  return shapePropagate({ producers, drain, questions, signposts, assess, impact }, events, itemIds);
 }

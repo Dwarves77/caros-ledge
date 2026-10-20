@@ -6,6 +6,7 @@
 import type { Db } from "@/core/db";
 import type { ListingCursor } from "@/core/lists";
 import type { Resource } from "@/core/types";
+import type { WorkspaceProfile } from "@/core/workspace";
 import type { WorkspaceOverride } from "@/features/workspace/state";
 
 import { enrichSources } from "./enrich";
@@ -52,7 +53,8 @@ async function readOverrides(db: Db, orgId: string, uiIds: Map<string, string>):
 }
 
 /** One page of a listing RPC, org-scoped (p_org_id) or public (keyset cursor), mapped with timelines. */
-export async function readListing(db: Db, opts: { orgId?: string | null; rpc: ListingRpc; page?: ListingPage }): Promise<ListingRead> {
+/** `profile` is the workspace profile the caller has read already (null: it failed and the caller states so); absent, the rows' client score reads it. */
+export async function readListing(db: Db, opts: { orgId?: string | null; rpc: ListingRpc; page?: ListingPage; profile?: WorkspaceProfile | null | undefined }): Promise<ListingRead> {
   const { orgId, rpc, page } = opts;
   const args: Record<string, unknown> = orgId ? { p_org_id: orgId } : {};
   if (typeof page?.domain === "number" && DOMAIN_SCOPED.has(rpc)) args.p_domain = page.domain;
@@ -69,7 +71,7 @@ export async function readListing(db: Db, opts: { orgId?: string | null; rpc: Li
   if (error) return { rows: [], archived: [], overrides: [], failed: true, timelineFailures: 0, enrichFailed: false, message: error.message };
   const items = (data ?? []) as WorkspaceItemRpcRow[];
   if (items.length === 0) return { rows: [], archived: [], overrides: [], failed: false, timelineFailures: 0, enrichFailed: false, message: null };
-  const mapped = await mapRows(db, items);
+  const mapped = await mapRows(db, items, { orgId: orgId ?? null, profile: opts.profile });
   const enriched = await enrichSources(db, [...mapped.active, ...mapped.archived], { biasTags: true });
   const overrides = orgId ? await readOverrides(db, orgId, mapped.uuidToUiId) : [];
   return { rows: mapped.active, archived: mapped.archived, overrides, failed: false, timelineFailures: mapped.timelineFailures, enrichFailed: !enriched, message: null };
