@@ -19,7 +19,7 @@ export async function readHeld(db: Db, orgId: string, uuids: readonly string[], 
   });
   const by = new Map(overrides.map((o) => [o.item_id, o]));
   const live = rows.filter((r) => !by.get(r.id)?.is_archived).map((r) => ({ ...r, effective_priority: by.get(r.id)?.priority_override ?? r.priority ?? null }));
-  const mapped = await mapRows(db, live);
+  const mapped = await mapRows(db, live, { orgId });
   await enrichSources(db, mapped.active, { biasTags: true });
   return mapped.active.map((r): HeldRow => ({ uiId: r.id, title: r.title, priority: r.priority ?? null, surface: canonicalSurface(r), dueDays: dueInfo(r, now)?.daysNum ?? null, fields: toListRowFields(r, now) as unknown as Record<string, unknown> }));
 }

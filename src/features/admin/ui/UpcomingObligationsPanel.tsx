@@ -51,7 +51,7 @@ export function UpcomingObligationsPanel() {
                   <span className={styles.actions}><b className={styles.strong}>{eventDateLabel(e.event_date, e.date_precision)}</b><span className={styles.pill}>{KIND_LABELS[e.event_kind as EventKind] ?? e.event_kind}</span><span className={styles.pill}>{e.date_precision}</span></span>
                   <span className={styles.strong}>{e.item.title}{e.item.jurisdiction_iso?.length ? <span className={styles.muted}> · {e.item.jurisdiction_iso.join(", ")}</span> : null}</span>
                   <span className={styles.note}>{e.obligation_text}</span>
-                  <span className={styles.muted}>{e.source_kind === "claim" ? "From a grounded claim" : "From a section"} · {e.confidence} confidence</span>
+                  <span className={styles.muted}>{e.source_kind === "claim" ? "From a grounded claim" : e.source_kind === "capture" ? "From the source text" : "From a section"} · {e.confidence} confidence</span>
                 </div>
               </div>
             ))

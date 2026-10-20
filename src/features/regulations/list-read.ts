@@ -7,6 +7,7 @@ import { fetchAllByIdChunks } from "@/core/db";
 import { isUuid } from "@/core/http/parse";
 import { pageSizes, trimRemainder } from "@/core/lists";
 import type { Resource } from "@/core/types";
+import type { WorkspaceProfile } from "@/core/workspace";
 import { readListing, readRemainder, readSurfaceCounts, type ListingRpc } from "@/features/lists";
 
 export const REGULATIONS_DOMAIN = 1;
@@ -30,8 +31,9 @@ async function withUuids(db: Db, rows: Resource[]): Promise<LedgerRow[]> {
 }
 
 /** The first page of the regulations list (trimmed to what a row draws), the aggregates, and whether more follows. `failed` is true only when a read errored. */
-export async function readRegulationsFirstPage(db: Db, orgId: string | null) {
-  const [page, aggregates] = await Promise.all([readListing(db, { orgId, rpc: rpcFor(orgId), page: { offset: 0, limit: pageSizes.first, domain: REGULATIONS_DOMAIN } }), readSurfaceCounts(db, orgId, "regulations")]);
+/** `profile` is the workspace profile the page read for its own rail (null: that read failed and the page says so); the rows' client score uses it instead of reading it again. */
+export async function readRegulationsFirstPage(db: Db, orgId: string | null, profile?: WorkspaceProfile | null) {
+  const [page, aggregates] = await Promise.all([readListing(db, { orgId, rpc: rpcFor(orgId), page: { offset: 0, limit: pageSizes.first, domain: REGULATIONS_DOMAIN }, profile }), readSurfaceCounts(db, orgId, "regulations")]);
   const rows = page.failed ? [] : await withUuids(db, page.rows.filter((r) => r.domain === REGULATIONS_DOMAIN).map(trimRemainder));
   const hasMore = (aggregates?.totalItems ?? rows.length) > rows.length;
   return { rows, aggregates, hasMore, failed: page.failed, enrichFailed: page.enrichFailed, timelineFailures: page.timelineFailures, overridesFailed: page.overrides === null };

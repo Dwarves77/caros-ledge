@@ -1,7 +1,9 @@
 // Ported from old_repo/src/lib/list-row-fields.ts (lines 1-93)
 // Ported from old_repo/src/lib/dashboard/row-fields.ts (lines 1-86)
-// The fields a list row draws, derived from one Resource. Impact is the stored score or null (rendered as the dash): no keyword heuristic scores a row.
+// The fields a list row draws, derived from one Resource. Impact is the stored score (the mapper reads item_impact_scores and the workspace's client relevance) or null (rendered as the dash) with the sentence of the input it waits for; no keyword heuristic scores a row.
+// A missing due date likewise names its input.
 import type { ImpactScores, Resource, TimelineEntry } from "@/core/types";
+import { READING } from "@/core/impact/rules";
 import { formatDate } from "@/core/shared";
 
 import { canonicalSurface, detailHref, type DetailSurface } from "./item-links";
@@ -23,7 +25,11 @@ export interface ListRowFields {
   title: string;
   meta: string;
   impact: ImpactScores | null;
+  /** The input the impact score is waiting for ("No obligations extracted yet"), null when it is scored: the absence text a row draws beside the dash. */
+  impactAbsence?: string | null;
   due: { label: string; days: string } | null;
+  /** Why the due date is empty ("No milestone dates"), null when there is one. */
+  dueAbsence?: string | null;
   timeline: TimelineEntry[] | null;
   tier: number | null;
   biasTags?: Resource["biasTags"];
@@ -64,7 +70,9 @@ export function toListRowFields(r: Resource, now: Date): ListRowFields {
     title: r.title,
     meta: metaLine(r),
     impact: r.impactScores ?? null,
+    impactAbsence: r.impactScores ? null : (r.impactAbsence ?? null),
     due: due ? { label: due.label, days: due.days } : null,
+    dueAbsence: due ? null : READING.absence.due,
     timeline: r.timeline ?? null,
     tier: r.sourceTier ?? null,
     ...(r.biasTags && r.biasTags.length > 0 ? { biasTags: r.biasTags } : {}),

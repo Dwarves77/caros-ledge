@@ -178,7 +178,6 @@
       "DATE_COLUMNS",
       "FREQUENCIES",
       "FUELEU_TARGETS",
-      "OBJECT_DERIVATION_VERSION",
       "buildObjectRow",
       "candidatesFromClaims",
       "candidatesFromFueleuTargets",
@@ -186,7 +185,6 @@
       "timelineFromEvents"
     ],
     "src/features/obligations/derive/derive-register.ts": [
-      "DERIVATION_VERSION",
       "buildContextByItem",
       "deriveObligationRow",
       "deriveObligationRows",
@@ -360,9 +358,6 @@
     "src/features/propagation/ops/seed-derived-values.ts": [
       "CARBON_METHOD_ID",
       "CARBON_METHOD_VERSION"
-    ],
-    "src/features/regulations/api/relevance.ts": [
-      "relevanceDeps"
     ],
     "src/features/regulations/list-read.ts": [
       "REGULATIONS_DOMAIN"

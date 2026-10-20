@@ -222,8 +222,14 @@
  "item_gate_a_state": [
   "intelligence_item_id"
  ],
+ "item_impact_scores": [
+  "item_id"
+ ],
  "item_notes": [
   "id"
+ ],
+ "item_obligation_scan": [
+  "item_id"
  ],
  "item_supersessions": [
   "id"

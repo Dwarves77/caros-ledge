@@ -48,6 +48,17 @@ function clauseStart(text: string, idx: number, maxBefore: number): { pos: numbe
   return { pos: floor, fragment: true };
 }
 
+/** Where the sentence holding a position closes (one past its `.` or `;`, which is not a decimal point and is followed by white space or the end), or null when none closes within `maxAfter` characters; a blank line also closes it. */
+export function sentenceEnd(text: string, idx: number, maxAfter = 400): number | null {
+  const ceil = Math.min(text.length, idx + maxAfter);
+  for (let i = idx; i < ceil; i += 1) {
+    const ch = text[i];
+    if ((ch === "." || ch === ";") && !isDecimalPoint(text, i) && /\s/.test(text[i + 1] ?? " ")) return i + 1;
+    if (isParagraphBreakAt(text, i + 1)) return i + 1;
+  }
+  return null;
+}
+
 /** Where the sentence holding a trigger opens, for the deontic look-behind: `.` or `;` that is not a decimal point, at most `maxBack` characters back. */
 export function sentenceStart(text: string, idx: number, maxBack = 200): number {
   const floor = Math.max(0, idx - maxBack);

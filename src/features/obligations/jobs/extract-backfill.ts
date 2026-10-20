@@ -38,7 +38,7 @@ export async function extractBackfill(deps: BackfillDeps, input: BackfillInput):
       if (!r.events.length) continue;
       counts.items_with_events = (counts.items_with_events ?? 0) + 1;
       counts.events = (counts.events ?? 0) + r.events.length;
-      const w = await insertForwardEvents(sb, it.id, r.events, { claimIds: new Set(r.claims.map((c) => c.claim_id)), sectionIds: new Set(r.sections.map((s) => s.section_id)) }, { dry: input.dry });
+      const w = await insertForwardEvents(sb, it.id, r.events, { claimIds: new Set(r.claims.map((c) => c.claim_id)), sectionIds: new Set(r.sections.map((s) => s.section_id)), captureIds: new Set(r.captures.map((c) => c.capture_id)) }, { dry: input.dry });
       counts.inserted = (counts.inserted ?? 0) + w.inserted;
       counts.collisions = (counts.collisions ?? 0) + w.collisions;
       const sync = await syncComplianceDeadline(sb, it.id, today, { dry: input.dry, pending: input.dry ? r.events.map((e, i) => ({ ...e, id: `pending-${i}` })) : [] });

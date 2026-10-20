@@ -58,8 +58,8 @@ export interface RunRequest {
   id?: string;
   rootRunId?: string;
   upstreamRunId?: string | null;
-  /** The mode resolved once by the caller (a turn reads the build-mode gate once); absent, the frame resolves it. */
-  resolved?: Resolved;
+  /** The modes resolved once by the caller (a turn reads the build-mode gate once); absent, the frame resolves them. */
+  resolved?: ModeGate;
 }
 export interface Resolved {
   mode: Mode;
@@ -74,18 +74,32 @@ export interface FamilyRun {
   error: string | null;
 }
 
-/** The mode a request resolves to. Apply needs an operator dispatch (or a hop of one's chain) AND the cadence on; anything else runs dry and says so. A cadence read error is off, and the reason carries the error. */
-export async function resolveMode(sb: Db, req: Pick<RunRequest, "mode" | "trigger">): Promise<Resolved> {
-  if (req.mode === "dry") return { mode: "dry", forcedDry: false, reason: null };
+/** The mode a request resolves to, for the two kinds of family. Apply needs an operator dispatch (or a hop of one's chain); anything else runs dry and says so. A family that FETCHES also needs the scrape cadence on (rule 16 is about scraping: with the cadence off
+ * the fetching families run dry and the analysis families work on stored data in the requested mode). The emergency stop and an unreadable system state hold every family: an unknown stop is a stop. The state is read once for both. */
+export interface ModeGate {
+  fetching: Resolved;
+  analysis: Resolved;
+}
+export async function resolveModes(sb: Db, req: Pick<RunRequest, "mode" | "trigger">): Promise<ModeGate> {
+  const dry = (reason: string | null, forcedDry: boolean): Resolved => ({ mode: "dry", forcedDry, reason });
+  if (req.mode === "dry") return { fetching: dry(null, false), analysis: dry(null, false) };
   let state;
   try {
     state = await readScrapeState(sb);
   } catch (e) {
-    return { mode: "dry", forcedDry: true, reason: `forced dry: the scrape cadence is unreadable (${e instanceof Error ? e.message : String(e)}); an unknown state is treated as closed` };
+    const unreadable = dry(`forced dry: the scrape cadence is unreadable (${e instanceof Error ? e.message : String(e)}); an unknown state is treated as closed`, true);
+    return { fetching: unreadable, analysis: unreadable };
   }
-  if (state.cadence === "off" || state.emergencyPaused) return { mode: "dry", forcedDry: true, reason: `forced dry: scrape cadence is ${state.emergencyPaused ? "under the emergency stop" : "off"} (build mode, rule 16)` };
-  if (req.trigger !== "dispatch" && req.trigger !== "manual" && req.trigger !== "chained") return { mode: "dry", forcedDry: true, reason: `forced dry: a ${req.trigger} firing is machine-fired and apply needs an operator dispatch` };
-  return { mode: "apply", forcedDry: false, reason: null };
+  const machine = req.trigger !== "dispatch" && req.trigger !== "manual" && req.trigger !== "chained" ? `forced dry: a ${req.trigger} firing is machine-fired and apply needs an operator dispatch` : null;
+  const apply: Resolved = { mode: "apply", forcedDry: false, reason: null };
+  const stopped = state.emergencyPaused ? "forced dry: scrape cadence is under the emergency stop (build mode, rule 16)" : null;
+  const closed = stopped ?? (state.cadence === "off" ? "forced dry: scrape cadence is off (build mode, rule 16)" : null) ?? machine;
+  const held = stopped ?? machine;
+  return { fetching: closed ? dry(closed, true) : apply, analysis: held ? dry(held, true) : apply };
+}
+/** One family kind's resolution (a fetching family by default: the stricter gate). */
+export async function resolveMode(sb: Db, req: Pick<RunRequest, "mode" | "trigger">, fetches = true): Promise<Resolved> {
+  return (await resolveModes(sb, req))[fetches ? "fetching" : "analysis"];
 }
 
 type UpstreamRead = { ok: true; row: Upstream } | { ok: false; outcome: Outcome; reason: string };
@@ -134,7 +148,7 @@ export async function runFamily(name: string, req: RunRequest, h: HarnessDeps): 
 
   const stop = await halted(sb);
   if (stop.halted) return finish("refused", null, false, { reason: stop.reason, outputs: { skipped: true, halted: true } }, null);
-  const resolved = req.resolved ?? (await resolveMode(sb, req));
+  const resolved = (req.resolved ?? (await resolveModes(sb, req)))[fam.fetches ? "fetching" : "analysis"];
   let upstream: Upstream | null = null;
   if (req.upstreamRunId) {
     const up = await readUpstream(sb, name, rootRunId, req.upstreamRunId);
@@ -160,14 +174,14 @@ export async function runFamily(name: string, req: RunRequest, h: HarnessDeps): 
   return finish(outcome, resolved.mode, resolved.forcedDry, { reason: resolved.reason ?? reason, error: outcome === "failed" ? (result.notes[0] ?? "failed") : null, outputs }, result);
 }
 
-/** Run families in order under one root: each is the previous one's downstream, takes its row as upstream, and inherits its resolved mode. The head's id is the root. */
+/** Run families in order under one root: each is the previous one's downstream and takes its row as upstream; each resolves its own mode from the requested one (a held fetching stage does not hold the analysis behind it). The head's id is the root. */
 export async function runChain(plan: readonly string[], req: RunRequest, h: HarnessDeps, inputs: Readonly<Record<string, Record<string, unknown>>> = {}): Promise<FamilyRun[]> {
   const runs: FamilyRun[] = [];
   if (h.sb) await reapStaleRuns(h.sb, h.now()); // a firing that began and never concluded (its process died) is closed as crashed before this chain adds its own rows
   const root = req.rootRunId ?? newRunId();
   let prev: FamilyRun | null = null;
   for (const [i, name] of plan.entries()) {
-    const run: FamilyRun = await runFamily(name, { ...req, input: inputs[name] ?? req.input ?? {}, mode: prev?.row?.mode ?? req.mode, trigger: i === 0 ? req.trigger : "chained", rootRunId: root, ...(i === 0 ? { id: root } : {}), upstreamRunId: prev?.row?.id ?? null }, h);
+    const run: FamilyRun = await runFamily(name, { ...req, input: inputs[name] ?? req.input ?? {}, mode: req.mode, trigger: i === 0 ? req.trigger : "chained", rootRunId: root, ...(i === 0 ? { id: root } : {}), upstreamRunId: prev?.row?.id ?? null }, h);
     runs.push(run);
     if (run.exit !== 0) {
       // A family that failed and was recorded leaves one refused row for every family behind it, so the ledger shows the whole chain and the job is red.

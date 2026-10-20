@@ -172,7 +172,7 @@ export interface OperationsPageData {
 export async function readOperationsPage(db: Db, nowIso: string, orgId: string | null): Promise<OperationsPageData> {
   const roster = await settle("the region roster", () => readRoster(db));
   const [category, aggregates, coverage, facts, stateCosts, linkedRegulations, derived] = await Promise.all([
-    readCategory(db, "get_operations_items_public"), readSurfaceCounts(db, orgId, "operations"),
+    readCategory(db, "get_operations_items_public", null, orgId), readSurfaceCounts(db, orgId, "operations"),
     roster ? settle("coverage", () => readCoverage(db, roster)) : null, roster ? settle("facts", () => readFacts(db, roster, nowIso)) : null,
     settle("state cost facts", () => readStateCosts(db)), roster ? settle("linked regulations", () => readLinkedRegulations(db, roster)) : null, settle("recomputed figures", () => readDerivedFigures(db)),
   ]);

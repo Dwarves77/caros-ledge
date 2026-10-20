@@ -43,7 +43,7 @@ export async function RegulationsIndex() {
     const profileRead = await readWorkspaceProfile(db, session.orgId).catch((e) => warn("profile", e));
     const profile = profileRead?.profile;
     const [first, chips, upcoming, coverage] = await Promise.all([
-      readRegulationsFirstPage(db, session.orgId),
+      readRegulationsFirstPage(db, session.orgId, profileRead && !profileRead.failed ? profile : null),
       readThemeChips(db, { surface: "regulations" }).catch((e) => warn("themes", e)),
       readUpcoming(db, { limit: 8, jurisdictionFilter: defaultJurisdictionFilter(profile?.jurisdictions) }, today).catch((e) => warn("upcoming obligations", e)),
       loadSurfaceDenominator("regulations", { db: () => db }).catch((e) => warn("coverage", e)),

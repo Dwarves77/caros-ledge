@@ -10,6 +10,8 @@ const family = z
     name: z.string().regex(/^[a-z][a-z0-9-]*$/),
     owner: z.string().min(1),
     stage: z.string().nullable(),
+    /** A family that reaches the network. Only these are held dry while the scrape cadence is off (rule 16 is about scraping); the analysis families work on stored data and honour the requested mode. */
+    fetches: z.boolean().optional(),
     downstream: z.array(z.string()),
     terminal: z.string().optional(),
     writes: z.array(z.string()),

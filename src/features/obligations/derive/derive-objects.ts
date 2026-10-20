@@ -13,15 +13,16 @@ import { isVerbatim } from "@/core/contracts/verbatim";
 import type { Db } from "@/core/db";
 import { fetchAllByIdChunks } from "@/core/db";
 import { entityId } from "@/core/entities/id";
-import { readAllPoolRows } from "@/core/grounding";
 import type { RunResult } from "@/core/sources/run-result";
 import { currentObligationObjects } from "@/core/workspace";
+
+import { sentenceEnd, sentenceStart } from "../extract/window";
 
 import { classifyItemBindingPosition, type ItemForClassification } from "./classify-binding-position";
 import rulesJson from "./data/object-rules.json";
 import targetsJson from "./data/fueleu-targets.json";
 
-export const OBJECT_DERIVATION_VERSION = "oblig-objects-2026-10-15.1";
+export const OBJECT_DERIVATION_VERSION = "oblig-objects-2026-10-20.1";
 export const FREQUENCIES: ReadonlySet<string> = new Set(["annual", "per_consignment", "per_voyage", "event_triggered"]);
 const MODE_ALIASES: ReadonlySet<string> = new Set(["sea", "maritime", "water", "vessel", "marine", "truck", "lorry", "hgv", "barge", "iww", "inland-waterway", "freighter", "airfreight"]);
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -29,7 +30,7 @@ export const DATE_COLUMNS = ["entry_into_force", "date_of_application", "first_d
 const MONEY_KEYS = ["amount", "currency", "price", "cost"];
 
 const re = z.string();
-const rules = z.object({ phrases: z.array(z.object({ class: z.string(), pattern: re })), pinpoint: re, deontic: re, triggerAttribute: z.string(), datePhrases: z.object({ date_of_application: re, enforcement_start: re }) }).parse(rulesJson);
+const rules = z.object({ phrases: z.array(z.object({ class: z.string(), pattern: re })), pinpoint: re, deontic: re, crossReference: re, window: z.object({ maxSentence: z.number(), pinpointLookBack: z.number(), headingOverlap: z.number(), subjectDistance: z.number() }), triggerAttribute: z.string(), datePhrases: z.object({ date_of_application: re, enforcement_start: re }) }).parse(rulesJson);
 const targets = z.object({
   instrument: z.object({ celex: z.string(), identityPattern: z.string(), pinpointBase: z.string(), dutyHolderClass: z.array(z.string()), applicabilityAttribute: z.string(), jurisdiction: z.array(z.string()), mode: z.array(z.string()) }),
   referenceValue: z.object({ value: z.number(), unit: z.string(), quote: z.string() }),
@@ -39,6 +40,9 @@ const targets = z.object({
 const PHRASES = rules.phrases.map((p) => ({ class: p.class, re: new RegExp(p.pattern, "i") }));
 const PINPOINT_RE = new RegExp(rules.pinpoint, "i");
 const DEONTIC_RE = new RegExp(rules.deontic, "i");
+const DEONTIC_ALL = new RegExp(rules.deontic, "ig");
+const PINPOINT_ALL = new RegExp(rules.pinpoint, "ig");
+const CROSS_REFERENCE_RE = new RegExp(rules.crossReference, "i");
 const APPLICATION_RE = new RegExp(rules.datePhrases.date_of_application, "i");
 const ENFORCEMENT_RE = new RegExp(rules.datePhrases.enforcement_start, "i");
 export const FUELEU_TARGETS = targets;
@@ -209,20 +213,56 @@ export interface ClaimForObjects {
   source_id: string | null;
   intelligence_item_id: string;
 }
+const instrumentValue = (item: ObjectItem): string => nz(item.canonical_instrument_key) || nz(item.instrument_identifier) || nz(item.title);
+
+/** One candidate from a span that names an Article pinpoint, a duty-holder phrase and a deontic verb, in the capture that holds it; null when it names none. */
+function dutyCandidate(item: ObjectItem, span: string, captureId: string, sourceId: string | null, timeline: ReturnType<typeof timelineFromEvents>): Candidate | null {
+  const value = instrumentValue(item);
+  const pin = PINPOINT_RE.exec(span)?.[0];
+  const holders = [...new Set(PHRASES.filter((p) => p.re.test(span)).map((p) => p.class))];
+  if (!value || !pin || !holders.length || !DEONTIC_RE.test(span)) return null;
+  return { instrument_item_id: item.id, capture_id: captureId, pinpoint_citation: pin.replace(/\s+/g, " "), verbatim_text: span, duty_holder_class: holders, applicability_trigger: { attribute: rules.triggerAttribute, value }, ...timeline, source_id: sourceId };
+}
+
 /** FACT claims whose verbatim span names an Article pinpoint, a duty-holder phrase and a deontic verb: one candidate each, in its own capture. */
 export function candidatesFromClaims(item: ObjectItem, claims: readonly ClaimForObjects[], events: readonly EventForDates[]): Candidate[] {
-  const out: Candidate[] = [];
   const timeline = timelineFromEvents(events);
-  const value = nz(item.canonical_instrument_key) || nz(item.instrument_identifier) || nz(item.title);
-  for (const c of claims) {
-    const span = c.source_span;
-    if (c.claim_kind !== "FACT" || !span || !c.search_result_id || !value) continue;
-    const pin = PINPOINT_RE.exec(span)?.[0];
-    const holders = [...new Set(PHRASES.filter((p) => p.re.test(span)).map((p) => p.class))];
-    if (!pin || !holders.length || !DEONTIC_RE.test(span)) continue;
-    out.push({ instrument_item_id: item.id, capture_id: c.search_result_id, pinpoint_citation: pin.replace(/\s+/g, " "), verbatim_text: span, duty_holder_class: holders, applicability_trigger: { attribute: rules.triggerAttribute, value }, ...timeline, source_id: c.source_id });
+  return claims.flatMap((c) => (c.claim_kind === "FACT" && c.source_span && c.search_result_id ? [dutyCandidate(item, c.source_span, c.search_result_id, c.source_id, timeline)] : [])).filter((c): c is Candidate => c !== null);
+}
+
+/**
+ * The duty windows of a capture: each sentence whose deontic verb follows a duty-holder phrase (the holder is the subject: "operators shall", not "applicable in all Member States"), opened at the Article heading just before it (an Article named INSIDE the sentence, or one that cites another
+ * instrument, is a cross-reference and names no pinpoint). A window is a contiguous slice of the capture, so it is verbatim in it by construction.
+ */
+function dutyWindows(text: string): string[] {
+  const out: string[] = [];
+  let closedAt = -1;
+  for (const m of text.matchAll(DEONTIC_ALL)) {
+    if (m.index < closedAt) continue;
+    const start = sentenceStart(text, m.index, rules.window.maxSentence);
+    const end = sentenceEnd(text, m.index, rules.window.maxSentence);
+    if (end === null) continue;
+    closedAt = end;
+    if (!PHRASES.some((p) => p.re.test(text.slice(Math.max(start, m.index - rules.window.subjectDistance), m.index)))) continue;
+    const lo = Math.max(0, start - rules.window.pinpointLookBack);
+    const headings = [...text.slice(lo, start + rules.window.headingOverlap).matchAll(PINPOINT_ALL)].filter((p) => !CROSS_REFERENCE_RE.test(text.slice(lo + p.index + p[0].length, lo + p.index + p[0].length + 80)));
+    const heading = headings.pop();
+    if (heading) out.push(text.slice(lo + heading.index, end).trim());
   }
   return out;
+}
+
+/** One candidate per pinpoint from the item's captures: the primary text names its duties whether or not a brief claim quoted them. */
+function candidatesFromCaptures(item: ObjectItem, captures: readonly CaptureRow[], events: readonly EventForDates[]): Candidate[] {
+  const timeline = timelineFromEvents(events);
+  const out = new Map<string, Candidate>();
+  for (const cap of captures) {
+    for (const window of dutyWindows(cap.result_content ?? "")) {
+      const c = dutyCandidate(item, window, cap.id, null, timeline);
+      if (c && !out.has(norm(c.pinpoint_citation))) out.set(norm(c.pinpoint_citation), c);
+    }
+  }
+  return [...out.values()];
 }
 
 /** The FuelEU Article 4(2) trajectory: one candidate per period whose quote is verbatim in a held capture of the instrument; periods whose quote is nowhere held are not produced. */
@@ -263,29 +303,33 @@ export async function deriveObligationObjects(sb: Db, input: { dry: boolean; ite
     if (error) throw new Error(`derive-objects: item_forward_events read failed: ${error.message}`);
     return data ?? [];
   }, { manyPerId: true });
+  // The item's captures (its primary text) are read once, in small chunks (a capture is a whole document): the duty windows and the FuelEU quotes are found in them, and a claim's capture is already in hand.
+  const captures = await fetchAllByIdChunks<CaptureRow>([...itemsById.keys()], async (slice) => {
+    const { data, error } = await sb.from("agent_run_searches").select("id, intelligence_item_id, result_content").not("result_content", "is", null).in("intelligence_item_id", slice);
+    if (error) throw new Error(`derive-objects: agent_run_searches read failed: ${error.message}`);
+    return data ?? [];
+  }, { chunk: 10, manyPerId: true });
   const candidates: Candidate[] = [...(input.extraCandidates ?? [])];
   for (const item of itemsById.values()) {
     const own = events.filter((e) => e.intelligence_item_id === item.id);
-    candidates.push(...candidatesFromClaims(item, claims.filter((c) => c.intelligence_item_id === item.id), own));
-    if (new RegExp(FUELEU_TARGETS.instrument.identityPattern, "i").test(`${item.canonical_instrument_key ?? ""} ${item.instrument_identifier ?? ""}`)) {
-      const pool = (await readAllPoolRows(sb, item.id)).map((r) => ({ id: r.id, intelligence_item_id: item.id, result_content: r.text }));
-      candidates.push(...candidatesFromFueleuTargets(item, pool, own));
-    }
+    const held = captures.filter((c) => c.intelligence_item_id === item.id);
+    const fromClaims = candidatesFromClaims(item, claims.filter((c) => c.intelligence_item_id === item.id), own);
+    const taken = new Set(fromClaims.map((c) => norm(c.pinpoint_citation)));
+    candidates.push(...fromClaims, ...candidatesFromCaptures(item, held, own).filter((c) => !taken.has(norm(c.pinpoint_citation))), ...candidatesFromFueleuTargets(item, held, own));
   }
-  const captureIds = [...new Set(candidates.map((c) => c.capture_id))];
-  const captures = captureIds.length
-    ? await fetchAllByIdChunks<CaptureRow>(captureIds, async (slice) => {
-        const { data, error } = await sb.from("agent_run_searches").select("id, intelligence_item_id, result_content").in("id", slice);
-        if (error) throw new Error(`derive-objects: agent_run_searches read failed: ${error.message}`);
-        return data ?? [];
-      })
-    : [];
+  const capturesById = new Map(captures.map((c) => [c.id, c]));
+  const missing = [...new Set(candidates.map((c) => c.capture_id))].filter((id) => !capturesById.has(id));
+  for (const c of await fetchAllByIdChunks<CaptureRow>(missing, async (slice) => {
+    const { data, error } = await sb.from("agent_run_searches").select("id, intelligence_item_id, result_content").in("id", slice);
+    if (error) throw new Error(`derive-objects: agent_run_searches read failed: ${error.message}`);
+    return data ?? [];
+  }, { chunk: 10 })) capturesById.set(c.id, c);
   const existing = await fetchAllByIdChunks<ExistingObject>([...itemsById.keys()], async (slice) => {
     const { data, error } = await sb.from("obligation_objects").select("obligation_id, instrument_item_id, pinpoint_citation, verbatim_text, version, supersedes").in("instrument_item_id", slice);
     if (error) throw new Error(`derive-objects: obligation_objects read failed: ${error.message}`);
     return data ?? [];
   }, { manyPerId: true });
-  const plan = planObligationObjects(candidates, { itemsById, capturesById: new Map(captures.map((c) => [c.id, c])), existing });
+  const plan = planObligationObjects(candidates, { itemsById, capturesById, existing });
   const counts: Record<string, number> = { candidates: candidates.length, to_insert: plan.toInsert.length, already_registered: plan.alreadyRegistered, refused: plan.refused.length, inserted: 0 };
   if (input.dry || !plan.toInsert.length) return { counts, outcome: "ok", notes: input.dry ? ["dry: nothing written"] : [], data: { plan } };
   const { data, error } = await sb.from("obligation_objects").insert(plan.toInsert.map((p) => p.row)).select("obligation_id");

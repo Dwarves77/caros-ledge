@@ -16,6 +16,8 @@
   ],
   "pinpoint": "\\b(?:Article|Art\\.)\\s+\\d+[a-z]?(?:\\(\\d+\\))?(?:\\([a-z]\\))?",
   "deontic": "\\b(?:shall|must|is required to|are required to)\\b",
+  "crossReference": "^[^.;\\n]{0,48}?\\b(?:of|to|in|under)\\s+(?:the\\s+)?(?:Directive|Regulation|Decision|Treaty|Council|Commission|Convention|Annex)",
+  "window": { "maxSentence": 400, "pinpointLookBack": 200, "headingOverlap": 16, "subjectDistance": 80 },
   "triggerAttribute": "instrument_in_scope",
   "datePhrases": { "date_of_application": "\\bappl(?:y|ies|ication)\\b", "enforcement_start": "\\b(?:enforce(?:ment|d)?|penalt(?:y|ies))\\b" }
 }

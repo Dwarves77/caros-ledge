@@ -14,6 +14,7 @@ export { forwardEventKey, insertForwardEvents } from "./extract/write-forward-ev
 export { deriveObligationsJob } from "./jobs/derive-obligations";
 export { extractBackfill } from "./jobs/extract-backfill";
 export { runExtraction, runExtractionJob } from "./jobs/run-extraction";
+export { scanBacklog } from "./jobs/scan-backlog";
 export { DEFAULT_KINDS, EVENT_KINDS, KIND_LABELS, PRECISIONS } from "./kinds";
 export type { EventKind } from "./kinds";
 export { fetchForwardEventCount, fetchRegisterFacetOptions, tallyRegisterFacets } from "./read/register-facets";

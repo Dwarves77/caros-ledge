@@ -1,0 +1,9 @@
+# path | reason (files with no "Ported from" header)
+src/core/impact/rules.ts | new in IMPACT-1: the impact rules (method thresholds) and the reading policy (backlog bounds, client bands, absence sentences) as validated data; the old tree scored impact by a keyword heuristic that was deleted in the port
+src/core/impact/score.ts | new in IMPACT-1: the pure impact_scores method (cost, compliance, operational from the item's obligations, figures, modes and tags), registered in propagation/methods.ts under the method-version gate
+src/core/impact/run.ts | new in IMPACT-1: the propagate stage's scoring step; reads each item's inputs, runs the registered method and upserts item_impact_scores
+src/core/impact/read.ts | new in IMPACT-1: what a list row draws from the stored scores and the workspace's relevance; the sentence of the first input still missing
+src/core/impact/data/rules.json | new in IMPACT-1: the thresholds of impact_scores@1.0.0 (data; hashed with the method)
+src/core/impact/data/reading.json | new in IMPACT-1: the per-turn bounds of the extraction and scoring backlog, the client dimension's bands and the absence sentences
+src/features/lists/impact.ts | new in IMPACT-1: the one place a list reader gives its rows their impact scores or the sentence of the input they wait for
+src/features/obligations/jobs/scan-backlog.ts | new in IMPACT-1: the connect stage's reading of the verified-item backlog (extract the forward events from claims, sections and captures, derive the register and the obligation objects, record the reading)

@@ -1,0 +1,8 @@
+{
+  "horizonDays": 365,
+  "nonBinding": ["monitoring_only"],
+  "dueFields": ["first_deadline", "date_of_application"],
+  "inForceFields": ["entry_into_force"],
+  "operationalRoles": ["forwarder", "carrier"],
+  "operationalSignalsForThree": 3
+}

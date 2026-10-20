@@ -55,7 +55,7 @@ export async function readDigest(db: Db, orgId: string): Promise<Digest> {
   const feedById = new Map(feed.map((f) => [f.id, f]));
   const dueRows = due.map((d) => ({ ...raw.get(d.id), ...d }) as Raw);
   const changeRows = changeIds.flatMap((id) => (raw.has(id) ? [{ ...(raw.get(id) as Raw), effective_priority: feedById.get(id)?.effective_priority ?? null }] : []));
-  const [dueMapped, changeMapped] = await Promise.all([mapRows(db, dueRows), mapRows(db, changeRows)]);
+  const [dueMapped, changeMapped] = await Promise.all([mapRows(db, dueRows, { orgId }), mapRows(db, changeRows, { orgId })]);
   const dueNext = dueMapped.active;
   const changed = changeMapped.active;
   const ratings = await enrichSources(db, [...dueNext, ...changed], { biasTags: true });

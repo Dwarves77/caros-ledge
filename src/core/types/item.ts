@@ -191,6 +191,8 @@ export interface Resource {
 
   urgencyScore?: number;
   impactScores?: ImpactScores;
+  /** The sentence of the first input the impact score is still waiting for (set when impactScores is not): the row names what it needs. */
+  impactAbsence?: string;
   impactReasoning?: ImpactReasoning;
 
   agentIntegrityFlag?: boolean;
