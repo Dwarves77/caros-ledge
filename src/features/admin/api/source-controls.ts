@@ -149,7 +149,7 @@ export const fetchNow = adminRoute<Ctx>("/api/admin/sources/[id]/fetch-now", asy
   let content: string | null = null;
   let failure: { status?: number; message: string } | null = null;
   try {
-    const r = await fetchDirect(source.url, { db, env: process.env, caller: "admin-fetch-now" }, { max: 100_000 });
+    const r = await fetchDirect(source.url, { db, env: process.env, caller: "admin-fetch-now", resolveHost: null }, { max: 100_000 });
     if (r.status >= 400 || r.refusal) failure = { ...(r.status ? { status: r.status } : {}), message: r.refusal?.reason ?? `HTTP ${r.status}` };
     else content = r.text;
   } catch (e) {

@@ -6,7 +6,7 @@
     "width": 375,
     "height": 812
   },
-  "captured_at": "2026-10-19T03:14:17.507Z",
+  "captured_at": "2026-10-19T20:56:16.816Z",
   "http_status": 200,
   "final_path": "/operations",
   "network_idle": true,
@@ -17,32 +17,27 @@
   "landmarks": [
     {
       "role": "banner",
-      "name": "☰Operations⌕J",
+      "name": "",
       "source": "implicit"
     },
     {
       "role": "main",
-      "name": "VOL IV · No. 43 · Monday, October 19, 2026Operations Intelligence26 active items · 18 jurisdictions · seven dimensions per region · every fact carries a source and date⌕⌘KAskImmediate≤ 90 days0Action≤ 6 months3Monitor6–12 months2Awarenessbackground21RegionAllUSGLOBALASIAEUMEAFBRCACA-NSCA-NUGBLATAMUS-CAUS-COUS-IAUS-LAUS-LAXUS-NCUS-NMDimensionAllD1 Regulatory feasibilityD2 Regional resource availabilityD3 Labor marketsD4 Materials sourcingD5 Infrastructure capacityD6 Operational costD7 Grid carbon intensityModeAllOceanRoadAirWorkspace tagsAllFiltersRegions side by side18 of 35 cells sourced · 51% · 5 regionsDimensionEuropean Union2/7 sourced · 986 regsUnited States1/7 sourced · 46 regsAsia, Singapore + Hong Kong5/7 sourced · 9 regsUnited Kingdom5/7 sourced · 271 regsUAE, Dubai5/7 sourcedD1Regulatory feasibility—————D2Regional resource availability——555D3Labor markets16555D4Materials sourcing——555D5Infrastructure capacity——555D6Operational cost8—555D7Grid carbon intensity—————Asia, Singapore + Hong Kong · D2 Regional resource availability · 5 sourced factsCompare across regionsOpen profile →Asia-Pacific — corrugated containerboard demand growthAsian demand for containerboard projected to grow 3.9% in 2025 and 4.3% in 2026, following 2.2% growth in 2024; recycled containerboard prices expected to rise 2–3% in 2025—Fastmarkets · · 2026-03-17 · row written 2026-05-28Asia-Pacific — OCC (old corrugated cardboard)recyclable fiber priceRose USD 7.10/tonne year-on-year in January 2025; supply tightening linked to logistics chokepoints and competing Asian mill demand—Mordor Intelligence (citing RecycleNet) · · 2026-01 · row written 2026-05-28Greater China — recycled fiber supply(OCC/mixed paper import policy)China's 2021 ban on mixed paper imports redirected substantial recovered fiber volumes to Southeast Asian nations; Malaysia and Vietnam have since imposed partial bans, creating bottlenecks in the regional fiber loop affecting crating/packaging supply chains—Market Data Forecast · · 2025-12 · row written 2026-05-282 more facts on the profile →— needs primary-source figure · click a cell to open its facts · arrow keys move the selection5 regions · filters scope columnsStatementsWhat the held figures say across regions. Components shown; nothing estimated.D3 Labor marketsFirst-Line Supervisors of Transportation and Material-Moving Machine and Vehicle Operators annual median wage (OEWS)needs a second sourced region—United States60000 USD/yearPublished byblsDatasetOEUN000000000000053104713Period2025Status flagObserved · Official sourceAs at2025-05-01D3 Labor marketsFirst-Line Supervisors of Transportation and Material-Moving Machine and Vehicle Operators hourly median wage (OEWS)needs a second sourced region—United States30 USD/hourPublished byblsDatasetOEUN000000000000053104708Period2025Status flagObserved · Official sourceAs at2025-05-01D3 Labor marketsHeavy and Tractor-Trailer Truck Drivers annual median wage (OEWS)needs a second sourced region—United States60000 USD/yearPublished byblsDatasetOEUN000000000000053303213Period2025Status flagObserved · Official sourceAs at2025-05-01D3 Labor marketsHeavy and Tractor-Trailer Truck Drivers hourly median wage (OEWS)needs a second sourced region—United States30 USD/hourPublished byblsDatasetOEUN000000000000053303208Period2025Status flagObserved · Official sourceAs at2025-05-01D3 Labor marketsLaborers and Freight, Stock, and Material Movers, Hand annual median wage (OEWS)needs a second sourced region—United States40000 USD/yearPublished byblsDatasetOEUN000000000000053706213Period2025Status flagObserved · Official sourceAs at2025-05-01D3 Labor marketsLaborers and Freight, Stock, and Material Movers, Hand hourly median wage (OEWS)needs a second sourced region—United States20 USD/hourPublished byblsDatasetOEUN000000000000053706208Period2025Status flagObserved · Official sourceAs at2025-05-01D3 Labor marketsLabour cost, business economy (EUR/hour), mean across member states (Eurostat lc lci lev)needs a second sourced region—European Union40.4 EUR/hourPublished byeurostatDatasetlc_lci_lev:unit=EUR;lcstruct=D1_D4_MD5;nace_r2=B-N;geo_mean_of=BE,DE,ES,FR,IT,NL;years=2024,2025Period2025Status flagCalculated · DerivedAs at2025-01-01D6 Operational costElectricity price for non-household consumers, Consumption 150 000 MWh or over - band IG (all taxes and levies)needs a second sourced region—European Union0.1 EUR/kWhPublished byeurostatDatasetnrg_pc_205:geo=EU27_2020;nrg_cons=MWH_GE150000;time=2025-S2Period2025-S2Status flagObserved · Official sourceAs at2025-07-01D6 Operational costElectricity price for non-household consumers, Consumption from 2 000 MWh to 19 999 MWh - band ID (all taxes and levies)needs a second sourced region—European Union0.2 EUR/kWhPublished byeurostatDatasetnrg_pc_205:geo=EU27_2020;nrg_cons=MWH2000-19999;time=2025-S2Period2025-S2Status flagObserved · Official sourceAs at2025-07-01D6 Operational costElectricity price for non-household consumers, Consumption from 20 000 MWh to 69 999 MWh - band IE (all taxes and levies)needs a second sourced region—European Union0.2 EUR/kWhPublished byeurostatDatasetnrg_pc_205:geo=EU27_2020;nrg_cons=MWH20000-69999;time=2025-S2Period2025-S2Status flagObserved · Official sourceAs at2025-07-01D6 Operational costElectricity price for non-household consumers, Consumption from 20 MWh to 499 MWh - band IB (all taxes and levies)needs a second sourced region—European Union0.3 EUR/kWhPublished byeurostatDatasetnrg_pc_205:geo=EU27_2020;nrg_cons=MWH20-499;time=2025-S2Period2025-S2Status flagObserved · Official sourceAs at2025-07-01D6 Operational costElectricity price for non-household consumers, Consumption from 500 MWh to 1 999 MWh - band IC (all taxes and levies)needs a second sourced region—European Union0.2 EUR/kWhPublished byeurostatDatasetnrg_pc_205:geo=EU27_2020;nrg_cons=MWH500-1999;time=2025-S2Period2025-S2Status flagObserved · Official sourceAs at2025-07-01D6 Operational costElectricity price for non-household consumers, Consumption from 70 000 MWh to 149 999 MWh - band IF (all taxes and levies)needs a second sourced region—European Union0.1 EUR/kWhPublished byeurostatDatasetnrg_pc_205:geo=EU27_2020;nrg_cons=MWH70000-149999;time=2025-S2Period2025-S2Status flagObserved · Official sourceAs at2025-07-01D6 Operational costElectricity price for non-household consumers, Consumption less than 20 MWh - band IA (all taxes and levies)needs a second sourced region—European Union0.4 EUR/kWhPublished byeurostatDatasetnrg_pc_205:geo=EU27_2020;nrg_cons=MWH_LT20;time=2025-S2Period2025-S2Status flagObserved · Official sourceAs at2025-07-01D6 Operational costElectricity price for non-household consumers, Consumption of kWh - all bands (all taxes and levies)needs a second sourced region—European Union0.2 EUR/kWhPublished byeurostatDatasetnrg_pc_205:geo=EU27_2020;nrg_cons=TOT_KWH;time=2025-S2Period2025-S2Status flagObserved · Official sourceAs at2025-07-01Action≤ 6 monthsshowing 3 of 3USU.S. Bureau of Labor Statistics - Major Economic Indicators April 2026regional_dataneeds more dataGovernment fundedFactual reporting+2 more—T3Government fundedFactual reporting+2 more⋯GLOBALLogistics Labor Cost & Availability Benchmarksregional_data · road · laborneeds more dataGovernment fundedFactual reporting+3 more—T3Government fundedFactual reporting+3 more⋯GBUnited Kingdom Regional Operations Profileregional_data · air, road, ocean · emissionsneeds more dataGovernment fundedRegulator aligned+2 more—T2Government fundedRegulator aligned+2 more⋯then Monitor · 2Monitor6–12 monthsshowing 2 of 2GLOBALIMF Port Watch - Chokepoint 6 Monitoringregional_data · corridorsneeds more dataGovernment fundedRegulator aligned+3 more—T3Government fundedRegulator aligned+3 more⋯CANova Scotia Government News Feed - Multi-Sector Policy Updatesregional_dataneeds more dataGovernment fundedRegulator aligned+2 more—T1Government fundedRegulator aligned+2 more⋯then Awareness · 21Awarenessbackgroundshowing 5 of 21BRBrazilian Ministry of Transportation - Official Portal Navigation and Servicesregional_data · infrastructureneeds more dataGovernment fundedRegulator aligned+1 more—T1Government fundedRegulator aligned+1 more⋯EUIEA Electricity Price Data for Large Industrial Customers (2019-2024)regional_dataneeds more dataGovernment fundedRegulator aligned+3 more—T2Government fundedRegulator aligned+3 more⋯USIowa Department of Transportation Freight Planning and Transportation Systems Overviewregional_data · infrastructureneeds more dataGovernment fundedRegulator aligned+2 more—T2Government fundedRegulator aligned+2 more⋯GLOBALBlue Visby Solution Completes Second Series of Prototype Trials Demonstrating Significant GHG Emissions Reductionsinitiative · emissionsneeds more data—T4⋯USLouisiana State Freight Plan 2024 and Commodity Flow Dashboardregional_data · infrastructureneeds more dataGovernment fundedRegulator aligned+1 more—T2Government fundedRegulator aligned+1 more⋯All 21 awareness →end of listThemes across the corpus4 activeShared scenarios across 4 pages43 itemsRegulationsMarket IntelResearchOperations· California Advanced Clean Fleets Rule (CARB)· Joint Office of Energy and Transportation: Industry Alignment for EV Charging and Refueling Infrastructure· Autonomous & Connected Freight TechnologyMaritime decarbonisation: the IMO net-zero arc, EU MRV and ETS-for-shipping machinery, and the green-corridor economy40 itemsRegulationsMarket IntelResearchOperationsBrief · out of date· MEPC.377(80) - IMO Marine Environment Protection Committee Resolution· IMO MARPOL Annex VI· IMO Net-Zero FrameworkClimate-risk disclosure convergence: CSRD's Scope 3 core, California's SB 261/253 axis, and the CBAM/due-diligence periphery44 itemsRegulationsMarket IntelResearchOperationsBrief · out of date· California SB 261 — Climate-Related Financial Risk Act· California SB 253 — Climate Corporate Data Accountability Act· Directive (EU) 2025/794 of the European Parliament and of the Council of 14 April 2025 amending Directives (EU) 2022/2464 and (EU) 2024/1760 as regards the dates from which Member States are to apply certain corporate sustainability reporting and due diligence requirements (Text with EEA relevance)Shared source across 4 pages847 itemsRegulationsMarket IntelResearchOperations· Directive 2003/87/EC of the European Parliament and of the Council of 13 October 2003 establishing a scheme for greenhouse gas emission allowance trading within the Community and amending Council Directive 96/61/EC (Text with EEA relevance)· Council Regulation (EC) No 1420/1999 of 29 April 1999 establishing common rules and procedures to apply to shipments to certain non-OECD countries of certain types of waste· Final Act of the International Conference and Decision by the Energy Charter Conference in respect of the amendment to the trade-related provisions of the Energy Charter Treaty - Joint Declarations - Annex I: Amendment to the Trade-Related Provisions of the Energy Charter Treaty - Annex II: Decisions in connection with the Adoption of the Amendment to the Trade-Related Provisions of the Energy Charter TreatyCoverage: 2,122 of 2,212 catalogued Operations instruments are dual-verified. 1,440 verified briefs are on the platform. See coverageFiltersClearRegionUS6GLOBAL5ASIA4EU3MEAF2BR1+ 12 moreDimensionD1 Regulatory feasibility0/5D2 Regional resource availability3/5D3 Labor markets5/5D4 Materials sourcing3/5D5 Infrastructure capacity3/5D6 Operational cost4/5+ 1 moreModeOcean11Road10Air7Coverage gapsUS · sub-national13 jurisdictions sourcedEuropean Union2 of 7 sourcedUnited States1 of 7 sourcedAsia, Singapore + Hong Kong5 of 7 sourcedUnited Kingdom5 of 7 sourcedUAE, Dubai5 of 7 sourcedA known gap, stated plainly. State-level cost facts are the first fills.Recalculated figuresCarbon intensity per tonne-kilometre · ocean · GB · tonne_km51.58 gCO2e/tonne-km (was 51.58)T2 Derived · recomputed Sep 4, 2026From 1 input: ocean · GB · tonne_km, 2025-06-10, UK DESNZ/Defra GHG conversion factorsCarbon intensity per tonne-kilometre · ocean · GB · tonne_km13.21 gCO2e/tonne-km (was 13.21)T2 Derived · recomputed Sep 4, 2026From 1 input: ocean · GB · tonne_km, 2025-06-10, UK DESNZ/Defra GHG conversion factorsCarbon intensity per tonne-kilometre · ocean · GB · tonne_km3.53 gCO2e/tonne-km (was 3.53)T2 Derived · recomputed Sep 4, 2026From 1 input: ocean · GB · tonne_km, 2025-06-10, UK DESNZ/Defra GHG conversion factorsCarbon intensity per tonne-kilometre · ocean · GB · tonne_km16.12 gCO2e/tonne-km (was 16.12)T2 Derived · recomputed Sep 4, 2026From 1 input: ocean · GB · tonne_km, 2025-06-10, UK DESNZ/Defra GHG conversion factorsCarbon intensity per tonne-kilometre · air · GB · tonne_km899.39 gCO2e/tonne-km (was 899.39)T2 Derived · recomputed Sep 4, 2026From 1 input: air · GB · tonne_km, 2025-06-10, UK DESNZ/Defra GHG conversion factorsCarbon intensity per tonne-kilometre · air · GB · tonne_km1,278.35 gCO2e/tonne-km (was 1,278.35)T2 Derived · recomputed Sep 4, 2026From 1 input: air · GB · tonne_km, 2025-06-10, UK DESNZ/Defra GHG conversion factorsCarbon intensity per tonne-kilometre · air · GB · tonne_km4,603.97 gCO2e/tonne-km (was 4,603.97)T2 Derived · recomputed Sep 4, 2026From 1 input: air · GB · tonne_km, 2025-06-10, UK DESNZ/Defra GHG conversion factorsCarbon intensity per tonne-kilometre · rail · GB · tonne_km27.79 gCO2e/tonne-kmT2 Derived · recomputed Sep 2, 2026From 1 input: rail · GB · tonne_km, 2025-06-10, UK DESNZ/Defra GHG conversion factorsLegendImpact8/12TimelinePassed · next · ahead.Source tierT1 binding law → T7 overflow / uncategorized.",
+      "name": "",
       "source": "implicit"
     },
     {
       "role": "banner",
-      "name": "VOL IV · No. 43 · Monday, October 19, 2026Operations Intelligence26 active items · 18 jurisdictions · seven dimensions per region · every fact carries a source and date⌕⌘KAsk",
+      "name": "",
       "source": "implicit"
     },
     {
       "role": "search",
-      "name": "⌕⌘KAsk",
+      "name": "",
       "source": "explicit"
     },
     {
-      "role": "region",
-      "name": "Regions side by side18 of 35 cells sourced · 51% · 5 regionsDimensionEuropean Union2/7 sourced · 986 regsUnited States1/7 sourced · 46 regsAsia, Singapore + Hong Kong5/7 sourced · 9 regsUnited Kingdom5/7 sourced · 271 regsUAE, Dubai5/7 sourcedD1Regulatory feasibility—————D2Regional resource availability——555D3Labor markets16555D4Materials sourcing——555D5Infrastructure capacity——555D6Operational cost8—555D7Grid carbon intensity—————Asia, Singapore + Hong Kong · D2 Regional resource availability · 5 sourced factsCompare across regionsOpen profile →Asia-Pacific — corrugated containerboard demand growthAsian demand for containerboard projected to grow 3.9% in 2025 and 4.3% in 2026, following 2.2% growth in 2024; recycled containerboard prices expected to rise 2–3% in 2025—Fastmarkets · · 2026-03-17 · row written 2026-05-28Asia-Pacific — OCC (old corrugated cardboard)recyclable fiber priceRose USD 7.10/tonne year-on-year in January 2025; supply tightening linked to logistics chokepoints and competing Asian mill demand—Mordor Intelligence (citing RecycleNet) · · 2026-01 · row written 2026-05-28Greater China — recycled fiber supply(OCC/mixed paper import policy)China's 2021 ban on mixed paper imports redirected substantial recovered fiber volumes to Southeast Asian nations; Malaysia and Vietnam have since imposed partial bans, creating bottlenecks in the regional fiber loop affecting crating/packaging supply chains—Market Data Forecast · · 2025-12 · row written 2026-05-282 more facts on the profile →— needs primary-source figure · click a cell to open its facts · arrow keys move the selection5 regions · filters scope columns",
-      "source": "implicit"
-    },
-    {
       "role": "banner",
-      "name": "Regions side by side18 of 35 cells sourced · 51% · 5 regions",
+      "name": "",
       "source": "implicit"
     },
     {
@@ -53,11 +48,6 @@
     {
       "role": "region",
       "name": "Statements",
-      "source": "implicit"
-    },
-    {
-      "role": "region",
-      "name": "Themes across the corpus4 activeShared scenarios across 4 pages43 itemsRegulationsMarket IntelResearchOperations· California Advanced Clean Fleets Rule (CARB)· Joint Office of Energy and Transportation: Industry Alignment for EV Charging and Refueling Infrastructure· Autonomous & Connected Freight TechnologyMaritime decarbonisation: the IMO net-zero arc, EU MRV and ETS-for-shipping machinery, and the green-corridor economy40 itemsRegulationsMarket IntelResearchOperationsBrief · out of date· MEPC.377(80) - IMO Marine Environment Protection Committee Resolution· IMO MARPOL Annex VI· IMO Net-Zero FrameworkClimate-risk disclosure convergence: CSRD's Scope 3 core, California's SB 261/253 axis, and the CBAM/due-diligence periphery44 itemsRegulationsMarket IntelResearchOperationsBrief · out of date· California SB 261 — Climate-Related Financial Risk Act· California SB 253 — Climate Corporate Data Accountability Act· Directive (EU) 2025/794 of the European Parliament and of the Council of 14 April 2025 amending Directives (EU) 2022/2464 and (EU) 2024/1760 as regards the dates from which Member States are to apply certain corporate sustainability reporting and due diligence requirements (Text with EEA relevance)Shared source across 4 pages847 itemsRegulationsMarket IntelResearchOperations· Directive 2003/87/EC of the European Parliament and of the Council of 13 October 2003 establishing a scheme for greenhouse gas emission allowance trading within the Community and amending Council Directive 96/61/EC (Text with EEA relevance)· Council Regulation (EC) No 1420/1999 of 29 April 1999 establishing common rules and procedures to apply to shipments to certain non-OECD countries of certain types of waste· Final Act of the International Conference and Decision by the Energy Charter Conference in respect of the amendment to the trade-related provisions of the Energy Charter Treaty - Joint Declarations - Annex I: Amendment to the Trade-Related Provisions of the Energy Charter Treaty - Annex II: Decisions in connection with the Adoption of the Amendment to the Trade-Related Provisions of the Energy Charter Treaty",
       "source": "implicit"
     },
     {
@@ -443,130 +433,92 @@
     }
   ],
   "rows": {
-    "selector": "[data-row], li, tr, article",
-    "limit": 20,
+    "selector": "[data-part=\"list-row\"], [data-part=\"table-row\"]",
     "items": [
       {
-        "tag": "tr",
-        "text": "DimensionEuropean Union2/7 sourced · 986 regsUnited States1/7 sourced · 46 regsAsia, Singapore + Hong Kong5/7 sourced · 9 regsUnited Kingdom5/7 sourced · 271 regsUAE, Dubai5/7 sourced",
-        "width": 890,
-        "height": 61
-      },
-      {
-        "tag": "tr",
-        "text": "D1Regulatory feasibility—————",
-        "width": 890,
-        "height": 44
-      },
-      {
-        "tag": "tr",
-        "text": "D2Regional resource availability——555",
-        "width": 890,
-        "height": 44
-      },
-      {
-        "tag": "tr",
-        "text": "D3Labor markets16555",
-        "width": 890,
-        "height": 44
-      },
-      {
-        "tag": "tr",
-        "text": "D4Materials sourcing——555",
-        "width": 890,
-        "height": 44
-      },
-      {
-        "tag": "tr",
-        "text": "D5Infrastructure capacity——555",
-        "width": 890,
-        "height": 44
-      },
-      {
-        "tag": "tr",
-        "text": "D6Operational cost8—555",
-        "width": 890,
-        "height": 44
-      },
-      {
-        "tag": "tr",
-        "text": "D7Grid carbon intensity—————",
-        "width": 890,
-        "height": 44
-      },
-      {
-        "tag": "li",
-        "text": "D3 Labor marketsFirst-Line Supervisors of Transportation and Material-Moving Machine and Vehicle Operators annual median wage (OEWS)needs a second sourced region—United States60000 USD/yearPublished byblsDatasetOEUN000000000000053104713Period2025Status flagObserved · Official sourceAs at2025-05-01",
+        "tag": "div",
+        "text": "USU.S. Bureau of Labor Statistics - Major Economic Indicators April 2026regional_dataneeds more dataGovernment fundedFactual reporting+2 more—T3Government fundedFactual reporting+2 more⋯",
         "width": 341,
-        "height": 226.390625
+        "height": 158.65625,
+        "container": "main"
       },
       {
-        "tag": "li",
-        "text": "—United States60000 USD/yearPublished byblsDatasetOEUN000000000000053104713Period2025Status flagObserved · Official sourceAs at2025-05-01",
-        "width": 309,
-        "height": 100
-      },
-      {
-        "tag": "li",
-        "text": "D3 Labor marketsFirst-Line Supervisors of Transportation and Material-Moving Machine and Vehicle Operators hourly median wage (OEWS)needs a second sourced region—United States30 USD/hourPublished byblsDatasetOEUN000000000000053104708Period2025Status flagObserved · Official sourceAs at2025-05-01",
+        "tag": "div",
+        "text": "GLOBALLogistics Labor Cost & Availability Benchmarksregional_data · road · laborneeds more dataGovernment fundedFactual reporting+3 more—T3Government fundedFactual reporting+3 more⋯",
         "width": 341,
-        "height": 226.390625
+        "height": 140.4375,
+        "container": "main"
       },
       {
-        "tag": "li",
-        "text": "—United States30 USD/hourPublished byblsDatasetOEUN000000000000053104708Period2025Status flagObserved · Official sourceAs at2025-05-01",
-        "width": 309,
-        "height": 100
-      },
-      {
-        "tag": "li",
-        "text": "D3 Labor marketsHeavy and Tractor-Trailer Truck Drivers annual median wage (OEWS)needs a second sourced region—United States60000 USD/yearPublished byblsDatasetOEUN000000000000053303213Period2025Status flagObserved · Official sourceAs at2025-05-01",
+        "tag": "div",
+        "text": "GBUnited Kingdom Regional Operations Profileregional_data · air, road, ocean · emissionsneeds more dataGovernment fundedRegulator aligned+2 more—T2Government fundedRegulator aligned+2 more⋯",
         "width": 341,
-        "height": 205.59375
+        "height": 140.4375,
+        "container": "main"
       },
       {
-        "tag": "li",
-        "text": "—United States60000 USD/yearPublished byblsDatasetOEUN000000000000053303213Period2025Status flagObserved · Official sourceAs at2025-05-01",
-        "width": 309,
-        "height": 100
-      },
-      {
-        "tag": "li",
-        "text": "D3 Labor marketsHeavy and Tractor-Trailer Truck Drivers hourly median wage (OEWS)needs a second sourced region—United States30 USD/hourPublished byblsDatasetOEUN000000000000053303208Period2025Status flagObserved · Official sourceAs at2025-05-01",
+        "tag": "div",
+        "text": "GLOBALIMF Port Watch - Chokepoint 6 Monitoringregional_data · corridorsneeds more dataGovernment fundedRegulator aligned+3 more—T3Government fundedRegulator aligned+3 more⋯",
         "width": 341,
-        "height": 205.59375
+        "height": 140.4375,
+        "container": "main"
       },
       {
-        "tag": "li",
-        "text": "—United States30 USD/hourPublished byblsDatasetOEUN000000000000053303208Period2025Status flagObserved · Official sourceAs at2025-05-01",
-        "width": 309,
-        "height": 100
-      },
-      {
-        "tag": "li",
-        "text": "D3 Labor marketsLaborers and Freight, Stock, and Material Movers, Hand annual median wage (OEWS)needs a second sourced region—United States40000 USD/yearPublished byblsDatasetOEUN000000000000053706213Period2025Status flagObserved · Official sourceAs at2025-05-01",
+        "tag": "div",
+        "text": "CANova Scotia Government News Feed - Multi-Sector Policy Updatesregional_dataneeds more dataGovernment fundedRegulator aligned+2 more—T1Government fundedRegulator aligned+2 more⋯",
         "width": 341,
-        "height": 205.59375
+        "height": 140.4375,
+        "container": "main"
       },
       {
-        "tag": "li",
-        "text": "—United States40000 USD/yearPublished byblsDatasetOEUN000000000000053706213Period2025Status flagObserved · Official sourceAs at2025-05-01",
-        "width": 309,
-        "height": 100
-      },
-      {
-        "tag": "li",
-        "text": "D3 Labor marketsLaborers and Freight, Stock, and Material Movers, Hand hourly median wage (OEWS)needs a second sourced region—United States20 USD/hourPublished byblsDatasetOEUN000000000000053706208Period2025Status flagObserved · Official sourceAs at2025-05-01",
+        "tag": "div",
+        "text": "BRBrazilian Ministry of Transportation - Official Portal Navigation and Servicesregional_data · infrastructureneeds more dataGovernment fundedRegulator aligned+1 more—T1Government fundedRegulator aligned+1 more⋯",
         "width": 341,
-        "height": 205.59375
+        "height": 158.65625,
+        "container": "main"
       },
       {
-        "tag": "li",
-        "text": "—United States20 USD/hourPublished byblsDatasetOEUN000000000000053706208Period2025Status flagObserved · Official sourceAs at2025-05-01",
-        "width": 309,
-        "height": 100
+        "tag": "div",
+        "text": "EUIEA Electricity Price Data for Large Industrial Customers (2019-2024)regional_dataneeds more dataGovernment fundedRegulator aligned+3 more—T2Government fundedRegulator aligned+3 more⋯",
+        "width": 341,
+        "height": 140.4375,
+        "container": "main"
+      },
+      {
+        "tag": "div",
+        "text": "USIowa Department of Transportation Freight Planning and Transportation Systems Overviewregional_data · infrastructureneeds more dataGovernment fundedRegulator aligned+2 more—T2Government fundedRegulator aligned+2 more⋯",
+        "width": 341,
+        "height": 158.65625,
+        "container": "main"
+      },
+      {
+        "tag": "div",
+        "text": "GLOBALBlue Visby Solution Completes Second Series of Prototype Trials Demonstrating Significant GHG Emissions Reductionsinitiative · emissionsneeds more data—T4⋯",
+        "width": 341,
+        "height": 135.875,
+        "container": "main"
+      },
+      {
+        "tag": "div",
+        "text": "USLouisiana State Freight Plan 2024 and Commodity Flow Dashboardregional_data · infrastructureneeds more dataGovernment fundedRegulator aligned+1 more—T2Government fundedRegulator aligned+1 more⋯",
+        "width": 341,
+        "height": 140.4375,
+        "container": "main"
+      }
+    ],
+    "containers": [
+      {
+        "label": "main",
+        "count": 10
       }
     ]
   },
-  "document_height": 812
+  "document_height": 8631,
+  "truncated": false,
+  "offences": [
+    "overflow: span.cl-fc-matrix-headline \"Asia-Pacific — corrugated cont\" right 421 > 375",
+    "overflow: span \"Datasetnrg_pc_205:geo=EU27_202\" right 445 > 375",
+    "overflow: span \"Datasetnrg_pc_205:geo=EU27_202\" right 412 > 375",
+    "overflow: span \"Datasetnrg_pc_205:geo=EU27_202\" right 405 > 375"
+  ]
 }

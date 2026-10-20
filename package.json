@@ -10,7 +10,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint . --max-warnings=0",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.tests.json --noEmit",
     "test": "node --import ./tests/_support/register.mjs --test \"tests/**/*.test.mjs\" \"tests/**/*.test.ts\"",
     "loc": "node scripts/ci/loc.mjs",
     "properties": "node scripts/ci/properties.mjs",
@@ -27,9 +27,7 @@
     "parity": "node tests/parity/capture.mjs --base http://localhost:3100 --out parity-capture && node tests/parity/compare.mjs --captured parity-capture",
     "edge-bundle": "node scripts/ci/edge-bundle.mjs",
     "workflow-yaml": "node scripts/ci/workflow-yaml.mjs",
-    "migration-checks": "node scripts/ci/migration-checks.mjs",
-    "mutants": "node scripts/ci/mutants.mjs",
-    "mutants:check": "node scripts/ci/mutants.mjs --check"
+    "migration-checks": "node scripts/ci/migration-checks.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",

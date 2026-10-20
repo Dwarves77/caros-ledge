@@ -6,8 +6,10 @@
 // The per-FACT mint gates, the S-CONFLATE and S-NUMERIC detectors, the Gate B derived coverage, the null-tier host aggregate and
 // the ONE writer of item_gate_a_state (INV-057).
 import { isDerivedConsistent } from "@/core/brief/timeline";
+import { isVerbatim } from "@/core/contracts";
 import { fetchAllByIdChunks, fetchAllRows, type Db } from "@/core/db";
 import { LookupError } from "@/core/http/errors";
+import { containsNumeral, figuresEqual, findFigures, findIdentifiers, isFigure, mentionsIdentifier, resolveLocale } from "@/core/parse";
 
 import { GATE_A_VERSION, md5, norm, scanGateA } from "./gate-a-scan";
 
@@ -17,20 +19,17 @@ const NAMED_ACTS = ["CountEmissions", "FuelEU", "ReFuelEU", "CBAM", "EUDR", "AFI
 interface FactLike { idx?: number; id?: string | number | null; claim_text?: string | null; source_span?: string | null }
 export interface DefectHit { idx?: number | undefined; id?: string | number | null | undefined; signature: "S-CONFLATE" | "S-NUMERIC"; rationale: string }
 
-/** Instrument identifiers named in a claim: EU numbers (2023/1805), ISO numbers, and the named acts. */
+/** Instrument and standard identifiers named in a claim, as normalised keys (EU number, CELEX and print forms of one act are one key), and the named acts. */
 export function extractIdentifiers(claim: string | null | undefined): Set<string> {
   const c = String(claim || "");
   const ids = new Set<string>();
-  for (const m of c.matchAll(/\b(\d{4}\/\d{1,4})\b/g)) ids.add(`EU:${m[1]}`);
-  for (const m of c.matchAll(/\bISO\s?(\d{3,5})\b/gi)) ids.add(`ISO:${m[1]}`);
+  for (const f of findIdentifiers(c)) if (f.kind === "instrument" || f.kind === "standard") ids.add(f.key);
   for (const name of NAMED_ACTS) if (new RegExp(`\\b${name}`, "i").test(c)) ids.add(`NAME:${name.toLowerCase()}`);
   return ids;
 }
+/** Does the span name this identifier? By EQUALITY on the normalised key: 2019/88 is not in a span that says 2019/883. */
 function spanHasIdentifier(span: string, id: string): boolean {
-  const s = span.toLowerCase();
-  if (id.startsWith("EU:")) return s.includes(id.slice(3).toLowerCase());
-  if (id.startsWith("ISO:")) return s.includes(`iso ${id.slice(4)}`) || s.includes(`iso${id.slice(4)}`) || s.includes(id.slice(4));
-  return id.startsWith("NAME:") ? s.includes(id.slice(5)) : false;
+  return id.startsWith("NAME:") ? span.toLowerCase().includes(id.slice(5)) : mentionsIdentifier(span, { key: id, type: null });
 }
 /** S-CONFLATE: one span reused by REUSE_MIN or more FACTs naming two or more distinct instruments, some absent from the span. */
 export function detectConflate(facts: FactLike[]): DefectHit[] {
@@ -51,23 +50,23 @@ export function detectConflate(facts: FactLike[]): DefectHit[] {
   }
   return hits;
 }
-/** Significant numeric tokens in a claim: currency, percent, unit quantities and an obligation year. */
-function extractNumbers(claim: string | null | undefined): { token: string; digits: string }[] {
-  const c = String(claim || "");
-  const out: { token: string; digits: string }[] = [];
-  const push = (token: string) => {
-    const digits = token.replace(/[^\d]/g, "");
-    if (digits.length >= 2) out.push({ token: token.trim(), digits });
-  };
-  for (const re of [/(?:€|£|\$|EUR|USD|GBP)\s?[\d][\d.,\s]*\d/gi, /\b\d[\d.,\s]*\d?\s?%/g, /\b\d[\d.,\s]*\d?\s?(?:GW|GWh|MW|MWh|tonnes?|tCO2|GT|km|billion|million|bn)\b/gi]) for (const m of c.matchAll(re)) push(m[0]);
-  for (const m of c.matchAll(/\b(?:from|by|before|until|effective|deadline|starting)\s+(?:\d{1,2}\s+\w+\s+)?(20\d{2})\b/gi)) push(m[1] ?? "");
-  return out;
-}
-/** S-NUMERIC: a significant figure in the claim whose digits are absent from its span. */
+const OBLIGATION_YEAR = /\b(?:from|by|before|until|effective|deadline|starting)\s+(?:\d{1,2}\s+\w+\s+)?(20\d{2})\b/gi;
+/**
+ * S-NUMERIC: every typed figure of the claim must be stated, as an EQUAL figure (value, unit, scale: @/core/parse), in its span, and an obligation year must stand in the span at a numeral
+ * boundary. A figure the parser refuses is a miss (unreadable is not absent): the claim and its span are one document, read under one locale.
+ */
 export function detectNumeric(fact: FactLike): DefectHit | null {
-  const spanDigits = String(fact.source_span || "").toLowerCase().replace(/[\s,]/g, "");
-  const miss = extractNumbers(fact.claim_text).find(({ digits }) => !spanDigits.includes(digits));
-  return miss ? { idx: fact.idx, id: fact.id, signature: "S-NUMERIC", rationale: `figure "${miss.token}" (digits ${miss.digits}) not found in span` } : null;
+  const [claim, span] = [String(fact.claim_text || ""), String(fact.source_span || "")];
+  const verdict = resolveLocale(`${claim}\n${span}`);
+  const stated = findFigures(span, { verdict }).flatMap((h) => (isFigure(h.result) ? [h.result] : []));
+  const hit = (rationale: string): DefectHit => ({ idx: fact.idx, id: fact.id, signature: "S-NUMERIC", rationale });
+  for (const h of findFigures(claim, { verdict })) {
+    if (!isFigure(h.result)) return hit(`figure "${h.result.literal}" cannot be read: ${h.result.reason}`);
+    const f = h.result;
+    if (!stated.some((s) => figuresEqual(s, f))) return hit(`figure "${f.literal}" (value ${f.value}, ${f.unit}) not stated in span`);
+  }
+  for (const m of claim.matchAll(OBLIGATION_YEAR)) if (!containsNumeral(span, m[1] ?? "")) return hit(`obligation year "${m[1]}" not stated in span`);
+  return null;
 }
 
 // ---- mint gates -----------------------------------------------------------------------------------------------
@@ -88,12 +87,13 @@ export function identityCongruenceHolds(facts: GateFact[]): Set<string | number 
   const list = (facts ?? []).filter((f) => String(f.claim_kind).toUpperCase() === "FACT").map((f, i) => ({ idx: i + 1, id: f.id ?? i + 1, claim_text: f.claim_text, source_span: f.source_span }));
   return new Set(detectConflate(list).map((h) => h.id));
 }
-export interface MintGateReport { conflateHeldIds: string[]; numericFacts: GateFact[]; belowFloor: number; genericSource: number }
-/** All four mint gates over the FACTs a ground added or changed: the HARD hold ids (S-CONFLATE), the SOFT-flag facts (S-NUMERIC), the counts already enforced elsewhere. */
+export interface MintGateReport { conflateHeldIds: string[]; numericHeldIds: string[]; numericFacts: GateFact[]; belowFloor: number; genericSource: number }
+/** All four mint gates over the FACTs a ground added or changed: the HARD hold ids (S-CONFLATE and S-NUMERIC: a figure the span does not state is a hold, not a flag), the facts behind the numeric holds, the counts already enforced elsewhere. */
 export function mintGates(facts: GateFact[], ctx: { itemFloor: number | null; suspendedSourceIds?: Iterable<string> }): MintGateReport {
   const gated = facts.map((f) => perFactGates(f, ctx));
   return {
     conflateHeldIds: [...identityCongruenceHolds(facts)].filter((x): x is string => typeof x === "string"),
+    numericHeldIds: facts.filter((f, i) => gated[i]?.spanNumeric && typeof f.id === "string").map((f) => f.id as string),
     numericFacts: facts.filter((_, i) => gated[i]?.spanNumeric),
     belowFloor: gated.filter((g) => g?.authorityFloor).length,
     genericSource: gated.filter((g) => g?.genericSource).length,
@@ -152,7 +152,7 @@ export async function derivedCoveredTokens(sb: Db, itemId: string): Promise<Set<
   for (const x of derived) {
     const b = x.basis_claim_id ? baseById.get(x.basis_claim_id) : undefined;
     const cap = b?.search_result_id ? capById.get(b.search_result_id) : undefined;
-    if (!b?.source_span || !cap || !cap.toLowerCase().includes(b.source_span.toLowerCase())) continue;
+    if (!b?.source_span || !isVerbatim(cap, b.source_span)) continue;
     if (!isDerivedConsistent(b.source_span, x.claim_text ?? "")) continue;
     covered.add(norm(x.claim_text ?? ""));
   }

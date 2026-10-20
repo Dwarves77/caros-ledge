@@ -46,7 +46,7 @@ function cleanBodyOf(html: unknown): { cleanBody: string; cleanLen: number; link
 const STRONG_MARKER = /\bArticle\s+\d+\b|\bAnnex\s+[IVXLC]+\b|\bCELEX[:\s]|\bOJ\s+L\s*\d+|\b\d{4}\/\d+\/(?:EU|EC|EEC)\b|\bRecital\s+\d+\b/i;
 const SECTION_MARKER = /\bSection\s+\d+\b|\bparagraph\s+\d+\b|\bsub-?paragraph\b|\bpoint\s+\([a-z0-9]+\)/i;
 const OBLIGATION_MARKER = /\b(?:shall|must|is required to|are required to|obligation|obligations)\b/i;
-export const hasInstrumentMarkers = (cleanBody: unknown): boolean => {
+const hasInstrumentMarkers = (cleanBody: unknown): boolean => {
   const b = String(cleanBody ?? "");
   return STRONG_MARKER.test(b) || (SECTION_MARKER.test(b) && OBLIGATION_MARKER.test(b));
 };

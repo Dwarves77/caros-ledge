@@ -1,6 +1,6 @@
 // Ported from old_repo/src/lib/auth/route-policy.ts (lines 1-87)
 // Ported from old_repo/src/lib/auth/safe-return-path.mjs (lines 1-12)
-const PUBLIC_ROUTES = ["/login", "/signup", "/auth/callback", "/auth/reset-password", "/privacy"];
+const PUBLIC_ROUTES = ["/login", "/signup", "/auth/callback", "/auth/reset-password", "/privacy", "/bot"];
 const STATIC_PREFIXES = ["/_next", "/api"];
 const STATIC_FILES = ["/robots.txt", "/favicon.ico"];
 // Deliberately narrow: only path prefixes that are exclusively WordPress or PHP territory, never a route of this app.

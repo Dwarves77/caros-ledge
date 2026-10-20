@@ -12,7 +12,7 @@ import { BandGroupHeader } from "./BandParts";
 import { SectionLabel } from "./SectionLabel";
 import { StateNote, useBandContext } from "./StateNote";
 
-/** The one closed-by-default overflow disclosure ("N more below"); a closed disclosure is the rule for accordions (F43). */
+/** The one closed-by-default overflow disclosure ("N more below"); a closed disclosure is the rule for accordions (ui-checks: details-open). */
 export function MoreBelowDisclosure({ count, itemNoun = "more", children }: { count: number; itemNoun?: string; children: ReactNode }) {
   if (count <= 0) return null;
   return (

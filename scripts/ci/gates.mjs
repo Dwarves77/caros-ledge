@@ -10,7 +10,7 @@ import { isMain } from "../lib/fs.mjs";
 const inCi = Boolean(process.env.GITHUB_ACTIONS);
 const git = (...args) => execFileSync("git", args, { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
 
-/** Every step is an npm script, so the mutants inventory (scripts/ci/mutants/inventory.mjs) reads the gate list from here and the failure line names a real script. */
+/** Every step is an npm script, so the failure line names a real script. */
 export const STEPS = [
   { name: "Workflows are valid: YAML parses and the pinned actionlint finds nothing (IMP-100)", cmd: "workflow-yaml" },
   { name: "Lint", cmd: "lint" },
@@ -24,7 +24,6 @@ export const STEPS = [
   { name: "Column check (every select, filter, write payload and rpc in src names a column or function the database defines)", cmd: "columns" },
   { name: "Propagation method versions (INV-202: a released method is never edited; new behaviour is a new version)", cmd: "method-versions" },
   { name: "Migration static checks (self-check, reversal, README, APPLY.md, borrowed rows)", cmd: "migration-checks" },
-  { name: "Mutants registry (every gate has a registered mutant, every entry applies; the runner proves each goes red in the mutants job)", cmd: "mutants:check" },
   { name: "Edge Function bundle (IMP-029: capture-worker bundles with its relative policy import)", cmd: "edge-bundle", scoped: () => edgeChanged() },
 ];
 

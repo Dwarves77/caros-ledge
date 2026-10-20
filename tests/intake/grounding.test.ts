@@ -3,15 +3,17 @@ import { test } from "node:test";
 
 import {
   applyLedgerDiff, buildCitationEdges, buildGateARow, buildSourceBlocks, citedHostGate, clearGateAState, diffLedger, eraseClaimWithProof, floorPool, GATE_A_VERSION, groundBrief, groundRetryPlan, ledgerRegression, mintGates,
-  nominateForSlot, partitionCitedByHost, poolHash, reattributeToFloor, scanGateA, summarizeLedger, uncoveredSlots, upsertGateAState, decideSlotClaim, hasValidWaiver,
+  nominateForSlot, poolHash, reattributeToFloor, scanGateA, summarizeLedger, uncoveredSlots, upsertGateAState, decideSlotClaim, hasValidWaiver,
 } from "@/core/grounding";
 import { detectConflate, detectNumeric, mergeNullTierAggregate, summarizeNullTierAggregate } from "@/core/grounding/gates";
 import { openFlagOnce } from "@/core/grounding/flags";
 
+import { installLedgerRpcs } from "../_support/ledger-rpcs.ts";
+
 import { factClaim, ITEM, makeWorld, OFFICIAL_TEXT, SOURCE, SPAN_FORCE, SPAN_PENALTY, SPAN_REPORT } from "./fixtures.ts";
 import { MemDb } from "./memdb.ts";
 
-const row = (text: string, over: Record<string, unknown> = {}) => ({ id: undefined as string | undefined, section_row_id: "s1", claim_text: text, claim_kind: "FACT", source_span: `span of ${text}`, source_id: SOURCE, search_result_id: "r1", source_tier_at_grounding: 1, ...over });
+const row = (text: string, over: Record<string, unknown> = {}) => ({ section_row_id: "s1", claim_text: text, claim_kind: "FACT", source_span: `span of ${text}`, source_id: SOURCE, search_result_id: "r1", source_tier_at_grounding: 1, ...over });
 
 test("diffLedger is non-destructive: a result has no delete; a claim the new ledger omits is NOT-REPRODUCED, a duplicate collapses", () => {
   const existing = [row("a", { id: "1" }), row("b", { id: "2" })];
@@ -22,22 +24,39 @@ test("diffLedger is non-destructive: a result has no delete; a claim the new led
   assert.equal(diffLedger(existing, [row("a", { source_tier_at_grounding: 4 })]).change.length, 1, "a different tier is a change");
 });
 
-test("INV-158: a change archives the prior state to claim_versions BEFORE the update, and an archive failure leaves the prior attribution", async () => {
-  const db = new MemDb().seed("section_claim_provenance", [{ id: "c1", intelligence_item_id: ITEM, claim_text: "a", claim_kind: "FACT", source_span: "s", source_id: SOURCE, source_tier_at_grounding: 4, section_row_id: "s1", search_result_id: "r1" }]);
-  const diff = diffLedger(db.rows("section_claim_provenance") as never, [row("a", { source_tier_at_grounding: 1, source_span: "s" })]);
+const REG_URL = "https://reg.test/law";
+const OTHER = "b0000000-0000-4000-8000-0000000000bb";
+/** A database with the ledger functions: the registered regulator source (tier 1), a news source (tier 6) and a capture of the regulator's page that holds the spans. */
+const ledgerDb = (claims: Record<string, unknown>[]) => {
+  const db = new MemDb();
+  installLedgerRpcs(db);
+  db.seed("intelligence_items", [{ id: ITEM }]);
+  db.seed("sources", [{ id: SOURCE, url: REG_URL, base_tier: 1, status: "active" }, { id: OTHER, url: "https://news.test/story", base_tier: 6, status: "active" }]);
+  db.seed("agent_run_searches", [{ id: "r1", intelligence_item_id: ITEM, result_url: REG_URL, result_content: "the span s is here, and the span two is here", result_index: 0 }]);
+  db.seed("section_claim_provenance", claims);
+  return db;
+};
+const stored = (over: Record<string, unknown> = {}) => ({ id: "c1", intelligence_item_id: ITEM, claim_text: "a", claim_kind: "FACT", source_span: "span s", source_id: SOURCE, source_tier_at_grounding: 4, section_row_id: "s1", search_result_id: "r1", ...over });
+
+test("INV-158 / R2b I1: a change archives the prior state to claim_versions in the same call as the update; a refused write leaves the prior attribution and is counted failed, not changed; the tier written is the SOURCE's, not the incoming row's", async () => {
+  const db = ledgerDb([stored()]);
+  const diff = diffLedger(db.rows("section_claim_provenance") as never, [row("a", { source_tier_at_grounding: 6, source_span: "span s" })]);
   db.failWhen = (c) => (c.table === "claim_versions" && c.op === "insert" ? "disk full" : null);
-  await assert.rejects(applyLedgerDiff(db.client, ITEM, diff, { nowIso: "2026-10-15T00:00:00Z" }), /version archive failed/);
+  const failed = await applyLedgerDiff(db.client, ITEM, diff, { nowIso: "2026-10-15T00:00:00Z" });
+  assert.deepEqual([failed.applied.failed, failed.applied.changed, failed.touchedFacts.length], [1, 0, 0], "a change that did not persist is not counted and is not a touched FACT");
+  assert.match(failed.notes.join(" "), /change refused, the prior state stands/);
   assert.equal(db.rows("section_claim_provenance")[0]?.source_tier_at_grounding, 4, "the prior attribution survived");
+  assert.equal(db.rows("claim_versions").length, 0, "nothing was archived by a call that did not complete");
   db.failWhen = null;
   const ok = await applyLedgerDiff(db.client, ITEM, diff, { nowIso: "2026-10-15T00:00:00Z" });
   assert.equal(ok.applied.changed, 1);
   assert.equal(db.rows("claim_versions").length, 1);
   assert.equal(db.rows("claim_versions")[0]?.source_tier_at_grounding, 4, "the archived state is the PRIOR one");
-  assert.equal(db.rows("section_claim_provenance")[0]?.source_tier_at_grounding, 1);
+  assert.equal(db.rows("section_claim_provenance")[0]?.source_tier_at_grounding, 1, "the stored tier is the regulator source's (1), not the 6 the incoming row carried");
 });
 
-test("INV-158: a not-reproduced claim is KEPT unless replaceLedger, and then only after its archive write succeeded", async () => {
-  const mk = () => new MemDb().seed("section_claim_provenance", [{ id: "c1", intelligence_item_id: ITEM, claim_text: "old", claim_kind: "FACT", source_span: "s", source_id: SOURCE, source_tier_at_grounding: 1, section_row_id: "s1", search_result_id: "r1" }]);
+test("INV-158: a not-reproduced claim is KEPT unless replaceLedger, and then only after its archive and removal succeeded in one call", async () => {
+  const mk = () => ledgerDb([stored({ claim_text: "old", source_tier_at_grounding: 1 })]);
   const kept = mk();
   const r1 = await applyLedgerDiff(kept.client, ITEM, diffLedger(kept.rows("section_claim_provenance") as never, []), {});
   assert.equal(r1.applied.notReproduced, 1);
@@ -54,20 +73,20 @@ test("INV-158: a not-reproduced claim is KEPT unless replaceLedger, and then onl
   assert.equal(replaced.rows("claim_versions")[0]?.supersede_reason, "superseded_by_record_briefs");
 });
 
-test("RD-45: eraseClaimWithProof needs a proof with a reason, archives FIRST, and deletes only after the archive", async () => {
-  const mk = () => new MemDb().seed("section_claim_provenance", [{ id: "c1", intelligence_item_id: ITEM, claim_text: "x", claim_kind: "FACT", source_span: "s" }]);
-  const db = mk();
+test("RD-45: eraseClaimWithProof needs a proof with a reason, archives FIRST, and deletes only in the same call as a successful archive", async () => {
+  const db = ledgerDb([stored({ source_tier_at_grounding: 1 })]);
   const existing = db.rows("section_claim_provenance")[0] as never;
   await assert.rejects(eraseClaimWithProof(db.client, existing, ITEM, {} as never), /proof object with a `reason`/);
   await assert.rejects(eraseClaimWithProof(db.client, { claim_text: "x" } as never, ITEM, { reason: "r" }), /existing claim with an id/);
   assert.equal(db.rows("section_claim_provenance").length, 1);
   db.failWhen = (c) => (c.table === "claim_versions" && c.op === "insert" ? "no" : null);
-  await assert.rejects(eraseClaimWithProof(db.client, existing, ITEM, { reason: "wrong" }), /erase aborted/);
+  await assert.rejects(eraseClaimWithProof(db.client, existing, ITEM, { reason: "wrong" }), /ledger_remove_claim: no/);
   assert.equal(db.rows("section_claim_provenance").length, 1, "no delete when the archive failed");
   db.failWhen = null;
   await eraseClaimWithProof(db.client, existing, ITEM, { reason: "proven wrong by the primary" });
   assert.equal(db.rows("section_claim_provenance").length, 0);
   assert.equal(db.rows("claim_versions")[0]?.current_claim_id, null);
+  assert.deepEqual(db.rows("claim_versions")[0]?.inaccuracy_proof, { reason: "proven wrong by the primary" });
 });
 
 test("INV-158 dominance: a weaker ledger is a regression on each axis; an equal-or-stronger one is not", () => {
@@ -185,12 +204,14 @@ test("INV-157: the pool hash is order-independent and covers url and text; build
   assert.ok(blocks.trims.some((t) => t.url === "low"), "the trim of the low-tier source is reported");
 });
 
-test("cited-host gate: a cited URL becomes a stub only on a known host; a novel host is flagged and never stubbed", () => {
-  const cited = [{ host: "a.test", institution: null }, { host: "b.test", institution: "Known" }, { host: "c.test", institution: null }];
-  const p = partitionCitedByHost(cited, new Set(["a.test"]), new Set(["Known"]));
-  assert.deepEqual(p.allowed.map((c) => c.host), ["a.test", "b.test"]);
-  assert.deepEqual(p.novel.map((c) => c.host), ["c.test"]);
-  assert.equal(typeof citedHostGate, "function");
+test("cited-host gate: a cited URL becomes a stub only on a known host or institution; a novel host is flagged and never stubbed", async () => {
+  const db = new MemDb();
+  db.seed("sources", [{ id: "s1", url: "https://a.test/rules" }]);
+  const resolve = (url: string) => (/\/\/(b|b2)\.test/.test(url) ? ({ institution: "Known" } as never) : null);
+  const sections = [{ content_md: "See https://a.test/page, https://b2.test/doc and https://c.test/page." }];
+  const r = await citedHostGate(db.client, resolve, { itemId: ITEM, sourceUrl: "https://b.test/x", fullBrief: null, sections, usablePool: [], allPoolUrls: new Set(), nowIso: "2026-10-01T00:00:00Z", dry: true });
+  assert.equal(r.stubbed, 2, "the known host and the known institution are stubbed");
+  assert.deepEqual([...r.novel.keys()], ["https://c.test/page"], "the novel host is flagged, not stubbed");
 });
 
 test("null-tier aggregate: counts merge per item and the text follows rule 18 (register and rate, never refuse the figure)", () => {

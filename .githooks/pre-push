@@ -4,6 +4,11 @@
 zero=0000000000000000000000000000000000000000
 while read -r local_ref local_sha remote_ref remote_sha; do
   [ "$local_sha" = "$zero" ] && continue
+  # The gates run on the working tree, so the working tree must BE the commit being pushed: a different checkout, or an uncommitted change, would prove a tree that is not the one that goes out.
+  if [ "$local_sha" != "$(git rev-parse HEAD)" ] || [ -n "$(git status --porcelain)" ]; then
+    echo "pre-push: refused, the gates run on the working tree and it is not exactly $local_ref ($local_sha): check out that commit and commit or remove every change" >&2
+    exit 1
+  fi
   if git log -1 --format=%B "$local_sha" | grep -qi '\[skip ci\]'; then
     echo "pre-push: refused, the head of $local_ref carries [skip ci]; the last commit of a branch must be one CI proves" >&2
     exit 1

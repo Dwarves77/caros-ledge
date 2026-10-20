@@ -12,6 +12,8 @@ import type { Resource } from "@/core/types";
 const NOW = "2026-10-15T12:00:00.000Z";
 const PRIORITIES = ["CRITICAL", "HIGH", "HIGH", "MODERATE", "MODERATE", "LOW"] as const;
 const JURISDICTIONS = [["EU"], ["US"], ["GB"], ["DE"], ["CN"], ["BR"]];
+// More jurisdictions than the map register shows (12), so its "+N more" foot with the link to the index is drawn.
+const MAP_CODES = ["EU", "US", "GB", "DE", "CN", "BR", "IN", "JP", "FR", "IT", "ES", "NL", "CA", "AU"];
 
 const resource = (i: number, over: Partial<Resource> = {}): Resource & { uuid: string } => ({
   id: `fx${i}`,
@@ -78,7 +80,7 @@ export function RegulationsFixtures({ screen }: { screen: string }) {
       {screen === "detail" ? <DetailView {...DETAIL}>{null}</DetailView> : null}
       {screen === "record" ? <DetailView {...DETAIL} resource={{ ...DETAIL.resource, itemGrade: "record", fullBrief: "" }} sections={[]}>{null}</DetailView> : null}
       {screen === "register" ? <ObligationRegister variant="list" initial={REGISTER} failed={false} jurisdictions={["EU", "US"]} modes={["road", "ocean"]} /> : null}
-      {screen === "map" ? <MapPage items={ROWS.map((r) => ({ id: r.id, title: r.title, priority: r.priority, modes: r.modes ?? [], jurisdictionIso: r.jurisdictionIso ?? []}))} coverage={null} activeCodes={null} /> : null}
+      {screen === "map" ? <MapPage items={ROWS.map((r, i) => ({ id: r.id, title: r.title, priority: r.priority, modes: r.modes ?? [], jurisdictionIso: [MAP_CODES[i % MAP_CODES.length] ?? "EU"] }))} coverage={null} activeCodes={null} /> : null}
     </div>
   );
 }

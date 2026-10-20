@@ -91,7 +91,7 @@ export function CoverageMatrixView({ onBulkAdd }: { onBulkAdd: (iso: string) => 
                 <StatBlock label="Partial" value={formatNumber(count("partial"))} />
                 <StatBlock label="Total gaps" value={formatNumber(count("gap"))} tone={count("gap") > 0 ? "critical" : "default"} />
               </div>
-              <div className={styles.scroll}>
+              <div className={styles.scroll} data-guard-strip="true">
                 <div className={styles.matrix} style={{ gridTemplateColumns: `minmax(160px, 1.4fr) repeat(${types.length}, 56px)` }} role="table" aria-label="Coverage by jurisdiction and item type">
                   <span role="columnheader" className={styles.muted}>Jurisdiction</span>
                   {types.map((t) => <span key={t} role="columnheader" className={styles.muted} title={t}>{t.replace(/_/g, " ").slice(0, 8)}</span>)}

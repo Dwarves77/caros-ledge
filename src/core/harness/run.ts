@@ -67,7 +67,7 @@ export interface Resolved {
   reason: string | null;
 }
 export interface FamilyRun {
-  /** 0 recorded, 1 a record or credential failure, 2 self-skipped for lack of credentials where the event cannot carry them (src/core/harness/exit.ts). */
+  /** 0 recorded and not failed, 1 a family that failed (its row says so) or a record or credential failure, 2 self-skipped for lack of credentials where the event cannot carry them (src/core/harness/exit.ts). */
   exit: Exit;
   row: RunRow | null;
   result: RunResult | null;
@@ -126,10 +126,10 @@ export async function runFamily(name: string, req: RunRequest, h: HarnessDeps): 
     const row: RunRow = { id, family: name, root_run_id: rootRunId, upstream_run_id: req.upstreamRunId ?? null, trigger: req.trigger, mode, forced_dry: forcedDry, outcome, reason: null, inputs: req.input ?? {}, outputs: {}, error: null, ...code, started_at: startedAt, finished_at: h.now().toISOString(), ...extra };
     if (started) {
       const done = await finishRun(sb, row, h.sleep);
-      return { exit: done.error ? 1 : 0, row: done.error ? null : done.row, result, error: done.error };
+      return { exit: done.error || outcome === "failed" ? 1 : 0, row: done.error ? null : done.row, result, error: done.error };
     }
     const rec = await recordRun(sb, row);
-    return { exit: rec.error ? 1 : 0, row: rec.error ? null : row, result, error: rec.error };
+    return { exit: rec.error || outcome === "failed" ? 1 : 0, row: rec.error ? null : row, result, error: rec.error };
   };
 
   const stop = await halted(sb);
@@ -169,8 +169,20 @@ export async function runChain(plan: readonly string[], req: RunRequest, h: Harn
   for (const [i, name] of plan.entries()) {
     const run: FamilyRun = await runFamily(name, { ...req, input: inputs[name] ?? req.input ?? {}, mode: prev?.row?.mode ?? req.mode, trigger: i === 0 ? req.trigger : "chained", rootRunId: root, ...(i === 0 ? { id: root } : {}), upstreamRunId: prev?.row?.id ?? null }, h);
     runs.push(run);
-    if (run.exit !== 0) break;
+    if (run.exit !== 0) {
+      // A family that failed and was recorded leaves one refused row for every family behind it, so the ledger shows the whole chain and the job is red.
+      if (h.sb && run.row?.outcome === "failed") for (const behind of plan.slice(i + 1)) runs.push(await recordRefusedBehind(h.sb, behind, run.row, root, h.now()));
+      break;
+    }
     prev = run;
   }
   return runs;
+}
+
+/** The row of a family that did not run because an upstream family failed: outcome refused, the failed row as its upstream, nothing written. */
+async function recordRefusedBehind(sb: Db, name: string, failed: RunRow, rootRunId: string, now: Date): Promise<FamilyRun> {
+  const at = now.toISOString();
+  const row: RunRow = { id: newRunId(), family: name, root_run_id: rootRunId, upstream_run_id: failed.id, trigger: "chained", mode: failed.mode, forced_dry: failed.forced_dry, outcome: "refused", reason: `upstream ${failed.family} failed`, inputs: {}, outputs: { skipped: true }, error: null, code_sha: failed.code_sha, github_run_id: failed.github_run_id, started_at: at, finished_at: at };
+  const rec = await recordRun(sb, row);
+  return { exit: rec.error ? 1 : 0, row: rec.error ? null : row, result: null, error: rec.error };
 }

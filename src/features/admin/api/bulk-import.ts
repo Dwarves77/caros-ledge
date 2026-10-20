@@ -139,7 +139,7 @@ export const POST = adminRoute("/api/admin/sources/bulk-import", async (admin, r
   const dry = b.options?.dryRun !== false;
   const db = admin.service();
   const hold = await fetchAllowed("https://hold.invalid/", null, { db, env: process.env });
-  const deps = { db, env: process.env, now: () => new Date() };
+  const deps = { db, env: process.env, now: () => new Date(), resolveHost: null };
   const seen = new Set<string>();
   const preview: PreviewRow[] = [];
   const applied: Applied = { sources_inserted: 0, provisional_inserted: 0, rejected: 0 };

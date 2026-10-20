@@ -33,7 +33,7 @@ export interface SourceRow {
 }
 
 /** The grounding tier of a source is base_tier ONLY: reputation (effective_tier) never confers grounding eligibility (INV-175). */
-export const tierOfSource = (s: SourceRow | null | undefined): number | null => (s == null ? null : (s.base_tier ?? null));
+const tierOfSource = (s: SourceRow | null | undefined): number | null => (s == null ? null : (s.base_tier ?? null));
 
 export interface SpanResolution {
   tier: number | null;

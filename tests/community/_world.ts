@@ -70,7 +70,7 @@ const UNIQUE_KEYS: Record<string, string[][]> = {
 
 export class World extends MemDb {
   /** rpc name -> message: the call answers an error. */
-  rpcFail = new Map<string, { message: string; code?: string }>();
+  override rpcFail = new Map<string, { message: string; code?: string }>();
   rpcLog: string[] = [];
   /** Asks of the auth server for the user (getUser): a page or a route must ask none, the claims are checked locally. */
   authCalls = 0;

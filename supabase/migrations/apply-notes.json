@@ -133,5 +133,10 @@
       "community_member_profiles": "a whole-table invariant (no verified row keeps a method the system does not perform); the assertions about the fixture's rows are scripts/ci/fixtures/data-0105-verification.assert.sql",
       "profiles": "a whole-table invariant (no avatar address that is not https remains); the fixture's rows are asserted by the same file"
     }
+  },
+  "0078_migration_log": {
+    "unscopedReads": {
+      "migration_log": "asserts the whole seed: its size is the invariant, and the table is empty before this file creates it"
+    }
   }
 }

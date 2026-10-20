@@ -1,11 +1,8 @@
 // Ported from old_repo/src/lib/sources/classify-source-role.ts (lines 1-111)
 // Ported from old_repo/src/lib/sources/vertical-fit.ts (lines 1-73)
 // Ported from old_repo/src/lib/sources/source-type-taxonomy.mjs (lines 1-198)
-import { z } from "zod";
 
 import { hostOf } from "@/core/shared";
-
-import types from "./data/source-types.json";
 
 export type SourceRole =
   | "primary_legal_authority"
@@ -115,12 +112,6 @@ export function classifyInstitutionalType(name: string | null | undefined, sourc
 
 /** Off-vertical BY IDENTITY: a general legislature. Never authorizes a kill by itself (the coverage guard is the caller's). */
 export const isOffVerticalByIdentity = (type: InstitutionalType): boolean => type === "general_legislature";
-
-const SOURCE_TYPES = z.array(z.object({ value: z.string(), label: z.string(), definition: z.string(), classifiable: z.boolean() })).parse(types);
-export const SOURCE_TYPE_VALUES: readonly string[] = SOURCE_TYPES.map((t) => t.value);
-export const sourceTypeLabel = (value: string): string => SOURCE_TYPES.find((t) => t.value === value)?.label ?? value;
-/** True iff every element is a registered token; mirrors the column's CHECK so a caller validates before writing. */
-export const isValidSourceTypeArray = (arr: unknown): boolean => arr == null || (Array.isArray(arr) && arr.every((v) => typeof v === "string" && SOURCE_TYPE_VALUES.includes(v)));
 
 const ENV_BODY_PATTERNS = [
   /\bepa\b/i, /environment(al)?/i, /ecolog\w*/i, /climate/i, /eccc\b/i, /\bdefra\b/i, /\beea\b/i,

@@ -1,5 +1,5 @@
 {
-  "_about": "The parity gate's configuration (tests/parity/compare.mjs). `gates` names what slice P2-09 owns: `full` routes are compared whole (landmarks, headings, controls, list fields, row heights at 375); `frame` routes only for the shell the slice draws (frameControls, frameHeadings); `pixelExact` routes also gate on the 2 percent pixel diff. `approved` lists the differences from the baseline that a ruling allows, each with its ruling; nothing else may differ. It is empty because the baseline is the new production site (2026-10-19); a waiver must match a current difference, and compare.mjs ends its report with the `unused waivers:` line. `rulings` is text only. Later UI slices add their routes to `gates` in their own PR.",
+  "_about": "The parity gate's configuration (tests/parity/compare.mjs). `gates` names what the gate holds: `full` routes are compared whole (landmarks by role and name, headings, controls, list containers and rows, row heights at 375); `frame` routes only for the shell the slice draws (frameControls, frameHeadings); `pixelExact` routes also gate on the 2 percent pixel diff; `lists` routes must have rows in their baseline. Every name in routes.json is gated or listed in `exempt` with a reason (gateProblems, tested). A gated route that is not compared is a FAIL unless `skippable` names it with a reason; the report ends `compared N of M gated routes`. `listEmpty` names a list route whose baseline account legitimately holds no rows. `approved` lists the differences from the baseline that a ruling allows, each with its ruling; nothing else may differ. It is empty because the baseline is the new production site (2026-10-19); a waiver must match a current difference, and the report ends with the `unused waivers:` line. `rulings` is text only.",
   "gates": {
     "full": [
       "home",
@@ -18,7 +18,9 @@
       "market",
       "market-detail",
       "community",
-      "community-group"
+      "community-group",
+      "search-emissions",
+      "watchlist"
     ],
     "frame": [
       "dashboard"
@@ -28,8 +30,35 @@
       "login",
       "signup",
       "privacy"
+    ],
+    "lists": [
+      "dashboard",
+      "regulations",
+      "market",
+      "research",
+      "operations",
+      "search-emissions",
+      "watchlist"
     ]
   },
+  "exempt": [
+    {
+      "route": "admin",
+      "reason": "no baseline exists: the console is the platform admin's account data and the baseline job holds no admin sign-in. The deployed-preview capture (PARITY_ADMIN=1) still records it and its offences fail the compare; the layout is held at four widths by admin-smoke over populated mocks."
+    }
+  ],
+  "skippable": [
+    {
+      "route": "community-group",
+      "reason": "baseline owed: the member account holds no group, so the capture finds no group page to discover (tests/parity/baseline/README.md). Capture it once the account joins a group, then delete this entry."
+    }
+  ],
+  "listEmpty": [
+    {
+      "route": "watchlist",
+      "reason": "the baseline account follows nothing (dash-search-smoke compares the empty state), so its list holds no rows; the rows are compared the day the account follows an item."
+    }
+  ],
   "frameControls": [
     "^link:Caro's Ledge",
     "^link:(Dashboard|Watchlist|Regulations|Market Intel|Research|Operations|Map|Community)$",

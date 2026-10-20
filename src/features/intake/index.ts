@@ -15,6 +15,6 @@ export { idStamp } from "./quarantine/id-stamp";
 export { resolveQuarantined } from "./quarantine/resolver";
 export { buildRecordFacts, buildRecordSlotClaim } from "./record-facts/extract";
 export { buildRecordPayload, buildResearchRecordPayload } from "./record-facts/payload";
-export { applyStagedUpdate, isSubstantiveUpdate, stageCandidate } from "./staged-transit";
+export { applyStagedUpdate, stageCandidate } from "./staged-transit";
 export { writeGroundingSequence } from "./write-item";
 export { eraseStep, startBriefWorkflow } from "./workflow";

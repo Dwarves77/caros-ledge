@@ -31,7 +31,7 @@ export function shapeChange(check: RunResult, drain: RunResult, changedSourceIds
 export async function runChange(call: FamilyCall, d: BuiltDeps): Promise<RunResult> {
   const plan = planChange(call.input);
   const deps: ChangeDetectionDeps = {
-    db: d.sb, now: d.now, env: d.env, fetchImpl: d.fetch.fetchImpl ?? fetch,
+    db: d.sb, now: d.now, env: d.env, resolveHost: null, ...(d.fetch.sleep ? { sleep: d.fetch.sleep } : {}), fetchImpl: d.fetch.fetchImpl ?? fetch,
     harvestPortal: async (sourceId, html, url) => (await persistPortalCandidates(d.sb, sourceId, extractPortalLinks(html, url), d.now().toISOString())).upserted,
     writeSnapshot: (sourceId, snap) => writeSnapshot(d.sb, sourceId, snap),
     reconcile: (i) => reconcileChanges({ db: d.sb, now: d.now }, i),

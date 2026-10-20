@@ -40,12 +40,12 @@ export async function isGloballyPaused(db: Db): Promise<boolean> {
 }
 
 /** Exactly two signed callers may pass an engaged hold or a cadence of off (ADR-012 rider, Disposition Unit 0b): no third door. */
-export const AUTHORIZED_HOLD_CALLERS: ReadonlySet<string> = Object.freeze(new Set(["unit3-remediation", "manual-intake-run"]));
-export const isAuthorizedHoldCaller = (caller: unknown): boolean => typeof caller === "string" && AUTHORIZED_HOLD_CALLERS.has(caller);
+const AUTHORIZED_HOLD_CALLERS: ReadonlySet<string> = Object.freeze(new Set(["unit3-remediation", "manual-intake-run"]));
+const isAuthorizedHoldCaller = (caller: unknown): boolean => typeof caller === "string" && AUTHORIZED_HOLD_CALLERS.has(caller);
 
 const LIFTED = new Set(["0", "off", "false", "lifted", "no", ""]);
 /** Is the env hold (SCRAPE_HOLD) engaged? Unset is lifted; any other unrecognised value counts as engaged (a typo must not open the gate). */
-export function holdEngaged(env: Record<string, string | undefined> = process.env): boolean {
+function holdEngaged(env: Record<string, string | undefined> = process.env): boolean {
   return !LIFTED.has(String(env.SCRAPE_HOLD ?? "").trim().toLowerCase());
 }
 
@@ -97,7 +97,7 @@ function parseYmdUtc(ymd: string): Date | null {
   const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
   return Number.isNaN(d.getTime()) ? null : d;
 }
-export const startOfUtcDay = (d: Date): Date => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+const startOfUtcDay = (d: Date): Date => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
 
 /** Is `now` on a scheduled scrape DAY? false when off, unanchored, before the anchor or off an interval boundary. Monthly clamps a short month. */
 export function scrapeWindowOpen(s: ScrapeSchedule, now: Date): boolean {

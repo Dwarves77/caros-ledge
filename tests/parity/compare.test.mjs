@@ -5,8 +5,9 @@ import test from 'node:test';
 import { compareRecord, scopeFrame } from './compare.mjs';
 
 const config = JSON.parse(await readFile(new URL('./approved-changes.json', import.meta.url), 'utf8'));
-const base = { landmarks: [{ role: 'complementary' }, { role: 'navigation' }, { role: 'banner' }, { role: 'search' }, { role: 'main' }], controls: [], headings: [], rows: { items: [] } };
-const capture = (roles) => ({ landmarks: roles.map((role) => ({ role })), controls: [], headings: [], rows: { items: [] } });
+const NAMES = { complementary: 'Side', navigation: 'Platform', banner: '', search: 'Search the ledger', main: '' };
+const base = { landmarks: Object.entries(NAMES).map(([role, name]) => ({ role, name })), controls: [], headings: [], rows: { items: [] } };
+const capture = (roles) => ({ landmarks: roles.map((role) => ({ role, name: NAMES[role] })), controls: [], headings: [], rows: { items: [] } });
 const frameCompare = (roles) => {
   const { scoped, notes } = scopeFrame(base, config, '1280x900');
   return { ...compareRecord('regulations', '1280x900', scoped, capture(roles), []), notes };
@@ -14,7 +15,7 @@ const frameCompare = (roles) => {
 
 test('a frame record missing a shell landmark fails', () => {
   const { fails } = frameCompare(['complementary', 'main']);
-  assert.deepEqual(fails, ['landmark missing: navigation']);
+  assert.deepEqual(fails, ['landmark missing: navigation:Platform']);
 });
 
 test('a frame record missing a body landmark passes, with the body note', () => {
@@ -24,7 +25,7 @@ test('a frame record missing a body landmark passes, with the body note', () => 
 });
 
 test('a full route still fails on a missing body landmark', () => {
-  assert.deepEqual(compareRecord('home', '1280x900', base, capture(['complementary', 'navigation', 'main']), []).fails, ['landmark missing: banner', 'landmark missing: search']);
+  assert.deepEqual(compareRecord('home', '1280x900', base, capture(['complementary', 'navigation', 'main']), []).fails, ['landmark missing: banner:', 'landmark missing: search:Search the ledger']);
 });
 
 test('counts are data: a count change passes, a rename or a removal fails', () => {
@@ -98,7 +99,7 @@ test('every gated full route has baseline files, and every standing waiver names
     for (const stem of r.files) await readFile(new URL(`./baseline/${stem}.json`, import.meta.url), 'utf8');
   }
   for (const w of config.approved) {
-    assert.ok(w.ruling || w.kind === 'until-migration', `waiver ${w.id} carries its ruling`);
+    assert.ok(w.ruling, `waiver ${w.id} carries its ruling`);
     assert.ok([...config.gates.full, ...config.gates.frame].includes(w.route), `waiver ${w.id} names a gated route`);
   }
 });

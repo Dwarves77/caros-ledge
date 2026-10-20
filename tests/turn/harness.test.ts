@@ -150,16 +150,17 @@ test("INV-051 and rule 16: cadence off forces dry for apply, chained and machine
   assert.match(String(row.reason), /cadence is off/);
 });
 
-test("a chain threads one root id, each stage the next one's upstream; a failed stage makes every later stage a recorded noop, a refused one does not stop the chain", async () => {
+test("a chain threads one root id, each stage the next one's upstream; a failed stage exits 1 and leaves a refused row for every later stage, a refused one does not stop the chain", async () => {
   const db = world();
   const fns: Record<string, FamilyFn> = { "source-sweep": ok({ upserted: 2 }), "research-walker": async () => runResult("failed", {}, ["broke"]), "change-detection": ok({ checked: 1 }), "fetch-drain": ok({ captured: 1 }) };
   const runs = await runChain(["source-sweep", "research-walker", "change-detection", "fetch-drain"], { mode: "apply", trigger: "dispatch" }, harness(db, fns));
   assert.equal(runs.length, 4);
   assert.equal(new Set(rows(db).map((r) => r.root_run_id)).size, 1);
-  assert.deepEqual(rows(db).map((r) => r.outcome), ["success", "failed", "noop", "noop"]);
-  assert.deepEqual(rows(db).map((r) => r.upstream_run_id), [null, rows(db)[0]?.id, rows(db)[1]?.id, rows(db)[2]?.id]);
+  assert.deepEqual(rows(db).map((r) => r.outcome), ["success", "failed", "refused", "refused"]);
+  assert.deepEqual(runs.map((r) => r.exit), [0, 1, 0, 0]);
+  assert.deepEqual(rows(db).map((r) => r.upstream_run_id), [null, rows(db)[0]?.id, rows(db)[1]?.id, rows(db)[1]?.id]);
   assert.equal(rows(db)[0]?.id, rows(db)[0]?.root_run_id);
-  assert.match(String(rows(db)[2]?.reason), /did not run/);
+  assert.deepEqual([rows(db)[2]?.reason, rows(db)[3]?.reason], ["upstream research-walker failed", "upstream research-walker failed"]);
   // A stage held by its own gate (refused) hands nothing over, and the next stage still runs on its own selection.
   const held = world();
   const runs2 = await runChain(["source-sweep", "research-walker", "change-detection"], { mode: "apply", trigger: "dispatch" }, harness(held, { "source-sweep": ok({ upserted: 2 }), "research-walker": async () => runResult("failed", { refused: 1 }, ["REFUSING: gate"]), "change-detection": ok({ checked: 1 }) }));

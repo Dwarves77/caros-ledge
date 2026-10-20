@@ -2,7 +2,7 @@
 // Ported from old_repo/src/lib/trust.ts (lines 1129-1264)
 import movement from "./data/tier-movement.json";
 import { TIER_WEIGHTS } from "./tier-contract";
-import type { SourceTier, TrustMetrics, TrustScore } from "./types";
+import type { SourceTier, TrustMetrics } from "./types";
 
 /** The columns the trust and tier calculators read from a sources row. */
 export interface TierSourceRow {
@@ -87,10 +87,10 @@ export const computeCitationComponent = (m: TrustMetrics): number => {
   return 20 * Math.sqrt(Math.min(1, m.independent_citers / 10)) * weight;
 };
 
-export const tierPrior = (tier: number): number => (movement.tierPriors as Record<string, number>)[String(tier)] ?? 25;
+const tierPrior = (tier: number): number => (movement.tierPriors as Record<string, number>)[String(tier)] ?? 25;
 
 /** The earned score (0-100): the sum of the four weighted components. */
-export function computeEarnedScore(m: TrustMetrics): number {
+function computeEarnedScore(m: TrustMetrics): number {
   return Math.round(accuracy(m) + timeliness(m) + reliability(m) + computeCitationComponent(m));
 }
 /** overall = prior_weight x tier_prior + (1 - prior_weight) x earned, prior_weight = max(0, 1 - signals / 10): a tier prior at zero signals, earned data from ten. */
@@ -98,20 +98,6 @@ export function computeOverallScore(m: TrustMetrics, tier: number): number {
   const signals = (m.independent_citers || 0) + (m.total_checks || 0) + (m.confirmation_count || 0) + (m.conflict_count || 0);
   const priorWeight = Math.max(0, 1 - signals / 10);
   return Math.round(priorWeight * tierPrior(tier) + (1 - priorWeight) * computeEarnedScore(m));
-}
-
-const r1 = (n: number): number => Math.round(n * 10) / 10;
-/**
- * The score with stored components that ADD UP to the stored overall. The blended overall differs from the earned sum, so the four earned
- * components are scaled to the overall and the one-decimal residue lands on the accuracy component (a stored 85 with components summing to 40 was the defect).
- */
-export function computeTrustScore(m: TrustMetrics, tier: number, computedAt: string): TrustScore {
-  const overall = computeOverallScore(m, tier);
-  const raw = [accuracy(m), timeliness(m), reliability(m), computeCitationComponent(m)];
-  const sum = raw.reduce((a, b) => a + b, 0);
-  const scaled = sum > 0 ? raw.map((c) => r1((c * overall) / sum)) : [overall, 0, 0, 0];
-  scaled[0] = r1((scaled[0] ?? 0) + (overall - scaled.reduce((a, b) => a + b, 0)));
-  return { overall, accuracy_component: scaled[0] ?? 0, timeliness_component: scaled[1] ?? 0, reliability_component: scaled[2] ?? 0, citation_component: scaled[3] ?? 0, computed_at: computedAt };
 }
 
 export interface TrustScorePatch {
@@ -130,27 +116,3 @@ export interface TrustScoreRow {
   patch: TrustScorePatch;
 }
 
-/**
- * The trust-score pass as a pure plan: for every source not on a per-source hold, the score anchored to base_tier and the column patch to apply,
- * plus the distribution and per-tier averages. Writes nothing; never a tier column (effective_tier has its own guarded writer).
- */
-export function planTrustScores(sources: TierSourceRow[], computedAtIso: string) {
-  const rows: TrustScoreRow[] = [];
-  const distribution = { "0-20": 0, "21-40": 0, "41-60": 0, "61-80": 0, "81-100": 0 };
-  const byTier: Record<number, number[]> = {};
-  let skipped_paused = 0;
-  for (const s of sources) {
-    if (s.processing_paused) {
-      skipped_paused++;
-      continue;
-    }
-    const score = computeTrustScore(trustMetricsFromRow(s), s.base_tier, computedAtIso);
-    rows.push({ id: s.id, name: s.name ?? null, base_tier: s.base_tier, overall: score.overall, patch: { trust_score_overall: score.overall, trust_score_accuracy: score.accuracy_component, trust_score_timeliness: score.timeliness_component, trust_score_reliability: score.reliability_component, trust_score_citation: score.citation_component, trust_score_computed_at: computedAtIso } });
-    const bucket = score.overall <= 20 ? "0-20" : score.overall <= 40 ? "21-40" : score.overall <= 60 ? "41-60" : score.overall <= 80 ? "61-80" : "81-100";
-    distribution[bucket]++;
-    (byTier[s.base_tier] ??= []).push(score.overall);
-  }
-  const tier_averages: Record<string, { n: number; avg: number; min: number; max: number }> = {};
-  for (const [t, arr] of Object.entries(byTier)) tier_averages[`T${t}`] = { n: arr.length, avg: r1(arr.reduce((a, b) => a + b, 0) / arr.length), min: Math.min(...arr), max: Math.max(...arr) };
-  return { rows, distribution, tier_averages, skipped_paused };
-}

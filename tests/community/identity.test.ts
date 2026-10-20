@@ -99,7 +99,7 @@ test("INV-234: the identity projection, unit by unit (per-post OR per-member, th
   assert.deepEqual([row({ userId: "author" }), row({ userId: "x", isAdmin: true }), row({ userId: "x" }), row(null), row({ userId: "x" }, false)], ["author", "author", null, null, "author"]);
   const block = authorOf({ authorUserId: "author", postAnonymous: true, identity: named, member: { user_id: "author", org_type: "forwarder", role: "ops", sector: "air", region: "EU", verified: true }, viewer: { userId: "x", isAdmin: false } });
   assert.deepEqual([block?.name, block?.company, block?.headshotUrl, block?.userId, block?.verified, block?.orgType, block?.anonymous], [null, null, null, null, true, "forwarder", true], "the verified mark and the org type are kept");
-  assert.equal(authorOf({ authorUserId: null, postAnonymous: false, identity: null, member: null, viewer: { userId: "x" } }), null, "a deleted account is null, never a stand-in");
+  assert.equal(authorOf({ authorUserId: null, postAnonymous: false, identity: null, member: null, viewer: { userId: "x", isAdmin: false } }), null, "a deleted account is null, never a stand-in");
 });
 
 test("INV-224: an anonymous author reads 'Anonymous member' with the verified mark kept, and name, company and headshot never render", () => {

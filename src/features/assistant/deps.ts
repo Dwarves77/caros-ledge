@@ -9,12 +9,14 @@ export interface AssistantDeps {
   operationsFacts: (db: Db, input: { question: string; jurisdictions: string[] }) => Promise<string[]>;
 }
 
-let wired: Partial<AssistantDeps> = {};
+/** Each member may be set to `undefined` (a test unwires one). */
+type Wired = { [K in keyof AssistantDeps]?: AssistantDeps[K] | undefined };
+let wired: Wired = {};
 
-export function wireAssistantDeps(deps: Partial<AssistantDeps>): void {
+export function wireAssistantDeps(deps: Wired): void {
   wired = { ...wired, ...deps };
 }
 
-export function assistantDeps(): Partial<AssistantDeps> {
+export function assistantDeps(): Wired {
   return wired;
 }

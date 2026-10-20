@@ -4,22 +4,23 @@
 // Ported from old_repo/scripts/mint/heal-provenance.mjs (lines 3341-3361)
 // Ported from old_repo/src/lib/sources/source-growth.ts (lines 81-99)
 import type { Db } from "@/core/db";
-import { fetchAllRows, isMissingObject } from "@/core/db";
+import { isMissingObject } from "@/core/db";
 import { canonicalUrl, hostOf } from "@/core/shared";
 
 import { classifySourceRole } from "./classify";
 import { permanentlyUnregisteredClass, placeHostWithVerdicts, type HostVerdictRef } from "./host-class";
 import { hostInstitution, institutionKey } from "./institution";
+import { reuseTermsForHost } from "./reuse-terms";
 import { tierLabelOf } from "./tier-contract";
 
-/** How many exact-host rows the duplicate check reads: the first exact-host row is enough, the rest is slack for the in-code re-check. */
+/** How many exact-host rows the duplicate check reads: the rows of one host are matched by institution key in code, so this is slack for a portal host that holds several institutions. */
 const EXACT_HOST_LOOKUP_LIMIT = 25;
 
 /**
  * PostgREST `or` filter selecting registered urls whose host is exactly `hostKey` (lower-case, no www), with or without www, over http or https, as
  * `scheme://host/...` or the bare `scheme://host`. A longer host that merely contains `hostKey` cannot match: after the host comes `/` or the end.
  */
-export function exactHostUrlFilter(hostKey: string): string {
+function exactHostUrlFilter(hostKey: string): string {
   const out: string[] = [];
   for (const scheme of ["https", "http"]) {
     for (const prefix of ["", "www."]) out.push(`url.ilike.${scheme}://${prefix}${hostKey}/*`, `url.ilike.${scheme}://${prefix}${hostKey}`);
@@ -47,15 +48,40 @@ export async function lookupExactHost(db: Db, url: string): Promise<ExactHostLoo
 }
 
 /**
- * The registry row for a URL: the row at the same canonical URL, else the row of the same institution key (registerSource dedups by institution, so a match may
- * sit at a different exact URL). Null when none; a read error throws.
+ * The registry row that IS this URL's institution: the row at the same canonical URL, else the row whose institution key equals the URL's. Never the first row of the host: on a shared portal (gob.mx, gov.br, nj.gov, gov.pl,
+ * nyc.gov) several institutions share one host and each has its own row and tier (register row D:27).
  */
+export function pickInstitutionRow<T extends { url: string | null }>(rows: readonly T[], url: string): T | null {
+  const canon = canonicalUrl(url);
+  const key = institutionKey(url);
+  return rows.find((r) => canonicalUrl(r.url) === canon) ?? rows.find((r) => institutionKey(r.url) === key) ?? null;
+}
+
+/** The registry row for a URL (see pickInstitutionRow). Null when none; a read error throws. */
 export async function readSourceByUrl(db: Db, url: string): Promise<RegistryRow | null> {
   const found = await lookupExactHost(db, url);
   if (!found.ok) throw new Error(`readSourceByUrl failed for ${url}: ${found.error}`);
-  const canon = canonicalUrl(url);
-  return found.rows.find((r) => canonicalUrl(r.url) === canon) ?? found.rows.find((r) => institutionKey(r.url) === institutionKey(url)) ?? null;
+  return pickInstitutionRow(found.rows, url);
 }
+
+/** The registry identity of one PAGE (host, path and query, lower case): the key a source other than an institution's own row is born under. Empty when unparseable. */
+function pageKey(url: string | null | undefined): string {
+  try {
+    const u = new URL(String(url));
+    return `${hostOf(url)}${u.pathname.replace(/\/+$/, "")}${u.search}`.toLowerCase();
+  } catch {
+    return "";
+  }
+}
+
+/** The named ways a source row is born. They differ only in the values below; the identity, the tier rule and the write are the same one function. */
+export type BirthProfile = "class" | "growth" | "candidate" | "promoted";
+const PROFILES: Record<BirthProfile, Record<string, unknown>> = {
+  class: { status: "active", admin_only: false },
+  growth: { status: "provisional", auto_run_enabled: false, admin_only: false },
+  candidate: { status: "active", admin_only: false, access_method: "scrape" },
+  promoted: { status: "active", admin_only: false, access_method: "scrape" },
+};
 
 export interface RegisterInput {
   url: string;
@@ -64,35 +90,86 @@ export interface RegisterInput {
   base_tier: number;
   source_role?: string | null;
   institutionKey?: string;
+  profile?: BirthProfile;
   extra?: Record<string, unknown>;
 }
 /**
- * Register a source, deduplicated by institution key over every registry row (a paginated read: a capped read made the dedup blind past 1000 rows). An existing
- * row is re-activated when it is not active. A new row is born with its source_role and a base_tier the caller took from the class table.
+ * Register a source, one function for every birth path. The institution's own row (profile `class`) is keyed by institutionKey, any other source by its page; the existing row for the key is found by an indexed read, never by
+ * reading the whole registry, and the insert is `register_source_once` (migration 0081), so two workers registering one key make one row. An existing row is re-activated when it is not active. A new row is born with its
+ * source_role, the base_tier the caller took from the class table, and the rights verdict the class table fixes for its host.
  */
 export async function registerSource(db: Db, source: RegisterInput): Promise<{ source_id: string; created: boolean; host: string }> {
   if (!source?.url) throw new Error("registerSource: source.url required");
   const host = hostOf(source.url);
   if (!host) throw new Error(`registerSource: cannot parse host from ${source.url}`);
   if (!Number.isInteger(source.base_tier) || source.base_tier < 1 || source.base_tier > 7) throw new Error(`registerSource: base_tier ${source.base_tier} is not a tier; a source is never registered at a guessed or defaulted tier`);
-  const key = source.institutionKey || institutionKey(source.url);
-  const existing = await fetchAllRows<{ id: string; url: string; status: string }>((from, to) => db.from("sources").select("id, url, status").order("id", { ascending: true }).range(from, to) as never, { cap: 200_000 });
-  const match = existing.find((s) => institutionKey(s.url) === key);
-  if (match) {
-    if (match.status !== "active") {
-      const { error } = await db.from("sources").update({ status: "active" }).eq("id", match.id);
-      if (error) throw new Error(`registerSource: reactivation of ${match.id} failed: ${error.message}`);
+  const profile = source.profile ?? "class";
+  const key = (source.institutionKey || (profile === "class" ? institutionKey(source.url) : pageKey(source.url))).toLowerCase();
+  const reactivate = async (id: string, status: string | null | undefined) => {
+    if (status && status !== "active") {
+      const { error } = await db.from("sources").update({ status: "active" }).eq("id", id);
+      if (error) throw new Error(`registerSource: reactivation of ${id} failed: ${error.message}`);
     }
-    return { source_id: match.id, created: false, host };
+  };
+  const byKey = await db.from("sources").select("id, status").eq("institution_key", key).limit(1);
+  if (byKey.error) throw new Error(`registerSource: key read failed for ${key}: ${byKey.error.message}`);
+  const keyed = ((byKey.data ?? []) as Array<{ id: string; status: string }>)[0];
+  if (keyed) {
+    await reactivate(keyed.id, keyed.status);
+    return { source_id: keyed.id, created: false, host };
+  }
+  // A row born before the key existed: the same page, or (for an institution's own row) any row of the same institution.
+  const found = await lookupExactHost(db, source.url);
+  if (!found.ok) throw new Error(`registerSource: registry lookup failed for ${source.url}: ${found.error}`);
+  const sameUrl = await db.from("sources").select("id, url, status").eq("url", source.url).limit(1);
+  if (sameUrl.error) throw new Error(`registerSource: url read failed for ${source.url}: ${sameUrl.error.message}`);
+  const legacy = ((sameUrl.data ?? []) as Array<{ id: string; status: string }>)[0] ?? (profile === "class" ? found.rows.find((r) => institutionKey(r.url) === key) : found.rows.find((r) => canonicalUrl(r.url) === canonicalUrl(source.url)));
+  if (legacy) {
+    await reactivate(legacy.id, legacy.status);
+    return { source_id: legacy.id, created: false, host };
   }
   const name = source.name || host;
-  const { data, error } = await db
-    .from("sources")
-    .insert({ url: source.url, name, base_tier: source.base_tier, tier_at_creation: source.base_tier, status: "active", admin_only: false, source_role: source.source_role ?? classifySourceRole(name, source.url), ...(source.extra ?? {}) })
-    .select("id")
-    .single();
-  if (error || !data) throw new Error(`registerSource insert failed: ${error?.message ?? "no row returned"}`);
-  return { source_id: (data as { id: string }).id, created: true, host };
+  const row = { name, url: source.url, base_tier: source.base_tier, tier_at_creation: source.base_tier, source_role: source.source_role ?? classifySourceRole(name, source.url), reuse_terms: reuseTermsForHost(source.url), ...PROFILES[profile], ...(source.extra ?? {}) };
+  const { data, error } = await db.rpc("register_source_once", { p_key: key, p_row: row });
+  const out = (Array.isArray(data) ? data[0] : data) as { r_source_id: string; r_created: boolean; r_status: string } | undefined;
+  if (error || !out) throw new Error(`registerSource insert failed: ${error?.message ?? "no row returned"}`);
+  if (!out.r_created) await reactivate(out.r_source_id, out.r_status);
+  return { source_id: out.r_source_id, created: out.r_created, host };
+}
+
+/**
+ * Which registry keys the rows without one should take: the oldest row of an institution takes the institution's key, every other row of it takes its page key, and a row whose key is already held (two rows of one page) is
+ * reported as a conflict and left unkeyed; code never merges rows. Pure.
+ */
+function planInstitutionKeys(rows: ReadonlyArray<{ id: string; url: string | null; created_at?: string | null; institution_key?: string | null }>): { assign: Array<{ id: string; key: string }>; conflicts: Array<{ id: string; key: string; heldBy: string }> } {
+  const held = new Map<string, string>(rows.filter((r) => r.institution_key).map((r) => [r.institution_key as string, r.id]));
+  const assign: Array<{ id: string; key: string }> = [];
+  const conflicts: Array<{ id: string; key: string; heldBy: string }> = [];
+  const todo = rows.filter((r) => !r.institution_key && r.url).sort((a, b) => String(a.created_at ?? "").localeCompare(String(b.created_at ?? "")) || a.id.localeCompare(b.id));
+  for (const r of todo) {
+    const inst = institutionKey(r.url);
+    const key = inst && !held.has(inst) ? inst : pageKey(r.url);
+    if (!key) continue;
+    const owner = held.get(key);
+    if (owner) conflicts.push({ id: r.id, key, heldBy: owner });
+    else {
+      held.set(key, r.id);
+      assign.push({ id: r.id, key });
+    }
+  }
+  return { assign, conflicts };
+}
+/** Key the registry rows that have no institution key yet (planInstitutionKeys), each by a compare-and-set on the empty column. Returns what it did; a failed write is reported, never skipped silently. */
+export async function backfillInstitutionKeys(db: Db, rows: ReadonlyArray<{ id: string; url: string | null; created_at?: string | null; institution_key?: string | null }>): Promise<{ keyed: number; conflicts: number; errors: string[] }> {
+  const plan = planInstitutionKeys(rows);
+  const errors: string[] = [];
+  let keyed = 0;
+  for (const a of plan.assign) {
+    const { error } = await db.from("sources").update({ institution_key: a.key }).eq("id", a.id).is("institution_key", null);
+    if (error) errors.push(`${a.id}: ${error.message}`);
+    else keyed++;
+  }
+  return { keyed, conflicts: plan.conflicts.length, errors };
 }
 
 export type RegisterAndRateResult =
@@ -105,7 +182,7 @@ type RateOpts = { name?: string | null; verdicts?: ReadonlyMap<string, HostVerdi
 
 /**
  * THE registration entry that growth, intake, mint and producers call. The tier is the class table's (a permanent worklist class is refused, an unplaceable host
- * is worklisted, never defaulted); the institution link is read or created from the registrable domain; the row is read back and its REAL tier returned.
+ * is worklisted, never defaulted); the row is the one of the URL's institution (pickInstitutionRow), never the first row of the host; the institution link is read or created from the registrable domain; the row is read back and its REAL tier returned.
  */
 export async function registerAndRate(db: Db, url: string, opts?: RateOpts & { dry?: false }): Promise<RegisterAndRateResult>;
 export async function registerAndRate(db: Db, url: string, opts: RateOpts & { dry: boolean }): Promise<RegisterAndRateDryResult>;
@@ -116,7 +193,7 @@ export async function registerAndRate(db: Db, url: string, opts: RateOpts & { dr
   if (never) return { status: "refused", host, reason: `${never}: the host republishes or hosts another publisher's text and is never registered at any tier` };
   const found = await lookupExactHost(db, url);
   if (!found.ok) throw new Error(`registerAndRate: registry lookup failed for ${url}: ${found.error}`);
-  const existing = found.rows[0] ?? null;
+  const existing = pickInstitutionRow(found.rows, url);
   const placement = placeHostWithVerdicts(host, [opts.name], opts.verdicts ?? null);
   if (!existing && placement.tier == null) {
     const reason = "the host places in no class-table class and no committed verdict";

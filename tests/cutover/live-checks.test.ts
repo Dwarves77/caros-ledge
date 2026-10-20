@@ -7,10 +7,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 
-// @ts-expect-error plain .mjs modules
 import { recordLiveSmoke } from "@/core/harness";
 import { runNotificationOutbox } from "@/features/drain/kinds";
+import { skipVerdict } from "@/core/harness/exit";
 
+// @ts-expect-error plain .mjs modules
 import { CHECKS, DEFAULT_CHECKS, FAILURE_BLOCK, identityAnonymous, memberReads, notificationDrain, pageFinding, pages, productionShape, provenanceTrigger, SURFACE_PAGES } from "../../scripts/ci/live/checks.mjs";
 // @ts-expect-error plain .mjs modules
 import { planRun, runLive, triggerOf } from "../../scripts/ci/live-checks.mjs";
@@ -192,7 +193,7 @@ test("each check is one live-smoke row through recordRun: a clean check is a suc
   const rec = (report: Any, o: Any) => recordLiveSmoke(db.client as Any, report, o);
   const checks = ["sign-in", "pages", "provenance-trigger"];
   const io = { base: "https://preview.example.test", signInMember: async () => ({ ok: true }), openPage: async () => ({ status: 500, finalUrl: "https://x.test/", text: "" }), service: { rpc: async () => { throw new Error("rpc down"); } } };
-  const results = await runLive({ checks, io, phase: "after", record: rec, env: { GITHUB_EVENT_NAME: "deployment_status", GITHUB_SHA: "abc", GITHUB_RUN_ID: "77" }, log: () => {} });
+  const results = await runLive({ checks, io, phase: "after", record: rec, env: { GITHUB_EVENT_NAME: "status", GITHUB_SHA: "abc", GITHUB_RUN_ID: "77" }, log: () => {} });
   assert.deepEqual(results.map((r: Any) => [r.check, r.failed > 0]), [["sign-in", false], ["pages", true], ["provenance-trigger", true]]);
   const rows = db.rows("harness_runs");
   assert.deepEqual(rows.map((r) => [r.family, (r.inputs as Any).check, r.outcome, r.trigger, r.code_sha, r.github_run_id]), [["live-smoke", "sign-in", "success", "push", "abc", "77"], ["live-smoke", "pages", "failed", "push", "abc", "77"], ["live-smoke", "provenance-trigger", "failed", "push", "abc", "77"]]);
@@ -224,15 +225,19 @@ test("the plan names the environment NAMES that are missing and never runs half-
   // G3: the admin check skips for lack of its account only in the default set; a dispatch that names it has asked for it, and a rotated admin password is then a missing name, not a green skip.
   const named = planRun({ only: "admin-pages", env: full, base: "https://x.test", record: true });
   assert.deepEqual([named.skipped, named.run, named.missing.sort()], [[], ["admin-pages"], ["LIVE_ADMIN_EMAIL", "LIVE_ADMIN_PASSWORD"]]);
+  // In CI the admin account is a configured secret: its absence is a missing name (exit 1 through the exit contract), never a skipped check.
+  const inCi = planRun({ env: full, base: "https://x.test", record: true, ci: true });
+  assert.deepEqual([inCi.skipped, inCi.run.includes("admin-pages"), inCi.missing.sort()], [[], true, ["LIVE_ADMIN_EMAIL", "LIVE_ADMIN_PASSWORD"]]);
+  assert.equal(skipVerdict({ GITHUB_ACTIONS: "true" }, inCi.missing).exit, 1);
 });
 
 test("the script follows the one exit-code contract: a workstation with no credentials skips (exit 2) and names what is missing, never a value; a CI event that can carry secrets, or a named check, fails (exit 1) and lists the names; only a fork PR skips in CI", () => {
-  const env = { PATH: process.env.PATH ?? "", SystemRoot: process.env.SystemRoot ?? "" };
+  const env = { PATH: process.env.PATH ?? "", SystemRoot: process.env.SystemRoot ?? "" } as unknown as NodeJS.ProcessEnv;
   const run = (extra: Record<string, string>, ...args: string[]) => spawnSync(process.execPath, ["scripts/ci/live-checks.mjs", "--base", "https://preview.example.test", ...args], { env: { ...env, ...extra }, encoding: "utf8" });
   const local = run({});
   assert.equal(local.status, 2, local.stderr);
   assert.match(local.stdout, /self-skipped \(exit 2\).*NEXT_PUBLIC_SUPABASE_URL.*SUPABASE_SERVICE_ROLE_KEY/);
-  for (const event of ["deployment_status", "workflow_dispatch", "push"]) {
+  for (const event of ["status", "workflow_dispatch", "push"]) {
     const ci = run({ GITHUB_ACTIONS: "true", GITHUB_EVENT_NAME: event });
     assert.equal(ci.status, 1, `${event}: a CI event that can carry secrets and lacks them has not run`);
     assert.match(ci.stdout, /missing \(exit 1\).*NEXT_PUBLIC_SUPABASE_URL.*SUPABASE_SERVICE_ROLE_KEY/);

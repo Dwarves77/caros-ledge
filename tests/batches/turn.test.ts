@@ -58,7 +58,7 @@ test("the turn mints, the stage exports the stub, a session authors from the exp
   assert.deepEqual(exRow.outputs.ids.exported_ids, [minted.id]);
   assert.doesNotMatch(JSON.stringify(exRow.outputs), /Operators shall report/, "the ledger row carries ids and paths, not pool text");
   assert.deepEqual((await readBriefQueue(f.db.client)).map((q) => q.ids), [[minted.id]], "the export is the pending queue");
-  const part = JSON.parse(readFileSync(exRow.outputs.ids.parts[0] as string, "utf8")) as { items: { id: string; source_pool_hash: string; pool: { url: string; text: string }[]; required_slots: { slot_key: string }[] }[] };
+  const part = JSON.parse(readFileSync(exRow.outputs.ids.parts?.[0] as string, "utf8")) as { items: { id: string; source_pool_hash: string; pool: { url: string; text: string }[]; required_slots: { slot_key: string }[] }[] };
   const stub = part.items[0] as (typeof part.items)[number];
   assert.deepEqual(stub.required_slots.map((s) => s.slot_key).sort(), ["binding_position", "due_date"]);
   assert.ok(stub.pool[0]?.text.includes(A2), "the author reads the capture the turn stored");

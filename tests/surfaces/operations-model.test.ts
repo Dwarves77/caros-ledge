@@ -113,7 +113,7 @@ test("INV-231: the annual wage is NOT a base wage (the old unit error); only an 
   assert.equal(r.finalValue, null, "never 'USD/year per productive hour'");
   assert.equal(r.terms[0]?.present, false);
   assert.match(r.terms[0]?.cause ?? "", /held only as USD\/year, not per hour/);
-  assert.match(computeLabourChain(...Object.values(extractLabourChainTerms(COMPLETE.map((f) => (f.factLabel === "Productive hours per year" ? { ...f, valueNumeric: 0 } : f))))).gapReason ?? "", /Productive hours/);
+  assert.match(computeLabourChain(...(Object.values(extractLabourChainTerms(COMPLETE.map((f) => (f.factLabel === "Productive hours per year" ? { ...f, valueNumeric: 0 } : f)))) as Parameters<typeof computeLabourChain>)).gapReason ?? "", /Productive hours/);
   const mixed = extractLabourChainTerms(COMPLETE.map((f) => (f.factLabel === "Leave and absence" ? L("Leave and absence", 2, "EUR/hour") : f)));
   const m = computeLabourChain(mixed.input, mixed.causes);
   assert.equal(m.suppressed, true);

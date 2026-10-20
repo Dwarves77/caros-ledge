@@ -8,13 +8,15 @@
 import { allRows, fetchAllRows } from "@/core/db";
 import { REGULATORY_TOPIC_ROLES, classifySourceAxes, detectDrift, isValidDistribution, isValidJurisdictionValue, observedDistributionFromItems, topicKeywordMatch, type AxisProposal, type AxisSource } from "@/core/sources/axes";
 import { classifySourceRole, classifySourceType } from "@/core/sources/classify";
+import { backfillInstitutionKeys } from "@/core/sources/register";
+import { reuseTermsForHost } from "@/core/sources/reuse-terms";
 import { outcomeOf, type RunDeps, type RunResult } from "@/core/sources/run-result";
 
-export const AXIS_CREATED_BY = "flywheel-axis:source-classification";
-export const DRIFT_CREATED_BY = "flywheel-axis:source-drift";
+const AXIS_CREATED_BY = "flywheel-axis:source-classification";
+const DRIFT_CREATED_BY = "flywheel-axis:source-drift";
 /** A source's own observed item mix replaces its expected_output only from a sample this large and this wide. */
-export const DRIFT_MIN_ITEMS = 20;
-export const DRIFT_MIN_DISTINCT_DATES = 2;
+const DRIFT_MIN_ITEMS = 20;
+const DRIFT_MIN_DISTINCT_DATES = 2;
 const ARRAY_FIELDS = ["jurisdiction_iso", "scope_topics", "scope_modes", "scope_verticals"] as const;
 
 export interface Decision {
@@ -26,7 +28,7 @@ export interface Decision {
   tag?: string;
 }
 /** Decide every proposal, expanding scope_topics to one decision per topic (re-confirmed against the source's own name and role now, never trusted from a stale payload). Pure; no residue. */
-export function decideProposals(proposals: AxisProposal[], source: AxisSource): Decision[] {
+function decideProposals(proposals: AxisProposal[], source: AxisSource): Decision[] {
   const out: Decision[] = [];
   for (const p of proposals) {
     const label = `${p.field}=${JSON.stringify(p.value)}`;
@@ -48,7 +50,7 @@ export function decideProposals(proposals: AxisProposal[], source: AxisSource): 
 }
 
 /** The sources UPDATE patch from the adopted decisions. Array fields merge (existing values survive, novel ones append); expected_output sets only when null. Only the five applicable columns can appear. */
-export function buildMergePatch(current: AxisSource, decisions: Decision[]): { patch: Record<string, unknown>; applied: Record<string, unknown> } {
+function buildMergePatch(current: AxisSource, decisions: Decision[]): { patch: Record<string, unknown>; applied: Record<string, unknown> } {
   const patch: Record<string, unknown> = {};
   const applied: Record<string, unknown> = {};
   const adopted = decisions.filter((d) => d.decision === "adopt");
@@ -69,25 +71,25 @@ export function buildMergePatch(current: AxisSource, decisions: Decision[]): { p
   return { patch, applied };
 }
 
-export const countDistinctDates = (items: Array<{ created_at?: string | null }>): number => new Set(items.map((i) => (i.created_at ? String(i.created_at).slice(0, 10) : null)).filter(Boolean)).size;
+const countDistinctDates = (items: Array<{ created_at?: string | null }>): number => new Set(items.map((i) => (i.created_at ? String(i.created_at).slice(0, 10) : null)).filter(Boolean)).size;
 /** Is the source's own observed item mix a large enough, wide enough sample to become its expected_output? */
-export function decideDriftResolution(observed: Record<string, number> | null, items: Array<{ created_at?: string | null }>) {
+function decideDriftResolution(observed: Record<string, number> | null, items: Array<{ created_at?: string | null }>) {
   const dates = countDistinctDates(items);
   return items.length >= DRIFT_MIN_ITEMS && dates >= DRIFT_MIN_DISTINCT_DATES && isValidDistribution(observed) ? { adopt: true as const, patch: { expected_output: observed } } : { adopt: false as const, patch: null };
 }
 
-type SourceRow = AxisSource & { id: string; source_type?: string[] | null; source_role?: string | null };
-const COLUMNS = "id, name, url, source_role, source_type, jurisdiction_iso, scope_topics, scope_modes, scope_verticals, expected_output";
+type SourceRow = AxisSource & { id: string; source_type?: string[] | null; source_role?: string | null; created_at?: string | null; institution_key?: string | null; reuse_terms?: string | null };
+const COLUMNS = "id, name, url, source_role, source_type, jurisdiction_iso, scope_topics, scope_modes, scope_verticals, expected_output, created_at, institution_key, reuse_terms";
 
 export interface ClassifyDeps extends RunDeps {
   /** The item-to-surface classifier (the flywheel's surface-of), injected: this slice owns no item taxonomy. */
   surfaceOf: (itemType: string | null, domain: number | null) => string;
 }
-/** SQL for a forward data migration from a backfill plan: compare-and-set role updates and NULL-only source_type updates by id, so a re-run never overwrites a changed row. */
-export function renderBackfillSql(plan: Array<{ id: string; source_role?: string; from_role?: string | null; source_type?: string[] }>): string {
+/** SQL for a forward data migration from a backfill plan: NULL-only role and source_type updates by id, so a re-run never overwrites a stored value (R2c: a stored role is never overwritten, register row D:16). */
+export function renderBackfillSql(plan: Array<{ id: string; source_role?: string; source_type?: string[] }>): string {
   const q = (s: string) => `'${s.replace(/'/g, "''")}'`;
   return plan
-    .flatMap((p) => [p.source_role ? `UPDATE public.sources SET source_role = ${q(p.source_role)} WHERE id = ${q(p.id)} AND source_role IS NOT DISTINCT FROM ${p.from_role ? q(p.from_role) : "NULL"};` : "", p.source_type?.length ? `UPDATE public.sources SET source_type = ARRAY[${p.source_type.map(q).join(", ")}]::text[] WHERE id = ${q(p.id)} AND source_type IS NULL;` : ""])
+    .flatMap((p) => [p.source_role ? `UPDATE public.sources SET source_role = ${q(p.source_role)} WHERE id = ${q(p.id)} AND source_role IS NULL;` : "", p.source_type?.length ? `UPDATE public.sources SET source_type = ARRAY[${p.source_type.map(q).join(", ")}]::text[] WHERE id = ${q(p.id)} AND source_type IS NULL;` : ""])
     .filter(Boolean)
     .join("\n");
 }
@@ -107,22 +109,31 @@ export async function classifySources(deps: ClassifyDeps, input: { dry?: boolean
   }
   if (input.limit) sources = sources.slice(0, input.limit);
   const notes: string[] = [];
-  const plan: Array<{ id: string; source_role?: string; from_role?: string | null; source_type?: string[] }> = [];
+  const plan: Array<{ id: string; source_role?: string; source_type?: string[] }> = [];
   let changed = 0;
   let drift = 0;
   let failed = 0;
+  let reuse = 0;
+  let keyed = 0;
+  if (!input.dry) {
+    const k = await backfillInstitutionKeys(db, sources.map((s) => ({ id: s.id, url: s.url ?? null, created_at: s.created_at ?? null, institution_key: s.institution_key ?? null })));
+    keyed = k.keyed;
+    failed += k.errors.length;
+    notes.push(...k.errors.slice(0, 5), ...(k.conflicts ? [`${k.conflicts} row(s) share a page key with an earlier row and stay unkeyed: duplicate pages, for a ruling (code never merges rows)`] : []));
+  }
   const audit = async (id: string, createdBy: string, description: string) => {
     const { error } = await db.from("integrity_flags").insert({ category: "source_issue", subject_type: "source", subject_ref: id, description: description.slice(0, 480), recommended_actions: [], status: "resolved", resolved_at: deps.now().toISOString(), resolved_by: "classify-sources", resolution_note: description.slice(0, 480), created_by: createdBy });
     if (error) notes.push(`${id}: audit row failed: ${error.message}`);
   };
   for (const s of sources) {
-    const proposedRole = classifySourceRole(s.name, s.url);
-    const role = proposedRole ?? s.source_role ?? null;
+    // A stored role is the role: the keyword heuristic fills a NULL once and never overwrites (D:16).
+    const proposedRole = s.source_role ? null : classifySourceRole(s.name, s.url);
+    const role = s.source_role ?? proposedRole ?? null;
     const classified = classifySourceAxes({ ...s, source_role: role });
     const decisions = decideProposals(classified.proposals, { ...s, source_role: role });
     const { patch, applied } = buildMergePatch(s, decisions);
-    const backfill: { id: string; source_role?: string; from_role?: string | null; source_type?: string[] } = { id: s.id };
-    if (proposedRole && proposedRole !== s.source_role) Object.assign(backfill, { source_role: proposedRole, from_role: s.source_role ?? null });
+    const backfill: { id: string; source_role?: string; source_type?: string[] } = { id: s.id };
+    if (proposedRole) Object.assign(backfill, { source_role: proposedRole });
     const types = s.source_type == null ? classifySourceType({ name: s.name, url: s.url }) : [];
     if (types.length) backfill.source_type = types;
     if (backfill.source_role || backfill.source_type) plan.push(backfill);
@@ -137,15 +148,22 @@ export async function classifySources(deps: ClassifyDeps, input: { dry?: boolean
         await audit(s.id, AXIS_CREATED_BY, `classify-sources adopted ${Object.keys(applied).join(", ")}; ${decisions.filter((d) => d.decision === "decline").length} proposal(s) declined with reasons.`);
       }
     }
-    for (const [col, value, was] of [["source_role", backfill.source_role, s.source_role ?? null], ["source_type", backfill.source_type, null]] as const) {
+    for (const [col, value] of [["source_role", backfill.source_role], ["source_type", backfill.source_type]] as const) {
       if (value == null) continue;
-      // Compare-and-set: the write holds only while the column still has the value read, so a row changed in between is left alone.
-      const base = db.from("sources").update({ [col]: value }).eq("id", s.id);
-      const { error } = await (was == null ? base.is(col, null) : base.eq(col, was));
+      // Fill-once: the write holds only while the column is still NULL, so a stored or concurrently set value is left alone.
+      const { error } = await db.from("sources").update({ [col]: value }).eq("id", s.id).is(col, null);
       if (error) {
         failed++;
         notes.push(`${s.id}: ${col} write failed: ${error.message}`);
       }
+    }
+    const terms = reuseTermsForHost(s.url);
+    if (terms !== "unknown" && (s.reuse_terms ?? "unknown") === "unknown") {
+      const { error } = await db.from("sources").update({ reuse_terms: terms }).eq("id", s.id).eq("reuse_terms", "unknown");
+      if (error) {
+        failed++;
+        notes.push(`${s.id}: reuse_terms write failed: ${error.message}`);
+      } else reuse++;
     }
     const expected = patch.expected_output ?? s.expected_output;
     if (expected && isValidDistribution(expected)) {
@@ -173,5 +191,5 @@ export async function classifySources(deps: ClassifyDeps, input: { dry?: boolean
       }
     }
   }
-  return { counts: { sources: sources.length, changed, drift_adopted: drift, backfill_planned: plan.length, failed }, outcome: outcomeOf(sources.length, failed), notes, data: { backfillSql: renderBackfillSql(plan) } };
+  return { counts: { sources: sources.length, changed, drift_adopted: drift, backfill_planned: plan.length, institution_keys_set: keyed, reuse_terms_set: reuse, failed }, outcome: outcomeOf(sources.length, failed), notes, data: { backfillSql: renderBackfillSql(plan) } };
 }

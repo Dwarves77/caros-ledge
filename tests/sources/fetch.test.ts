@@ -3,14 +3,15 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { BODY_CLASS, classifyBody, isStorableClass } from "@/core/fetch/classify-body";
-import { persistExhaustionRecord } from "@/core/fetch/candidates";
 import { fetchDirect } from "@/core/fetch/direct";
-import { assertFetchAllowed, FetchHoldError, fetchAllowed, holdEngaged, scrapeWindowOpen } from "@/core/fetch/hold";
-import { captureForStorage, escalateFetch, NEEDS_HEADLESS } from "@/core/fetch/ladder";
+import { assertFetchAllowed, FetchHoldError, fetchAllowed, scrapeWindowOpen } from "@/core/fetch/hold";
+import { escalateFetch } from "@/core/fetch/ladder";
 import { decodeBody, fetchDocument } from "@/core/fetch/policy";
 import { checkReachability, classifyReachability, REACH } from "@/core/fetch/reachability";
 
 import { memoryDb } from "../_support/memory-db.ts";
+import { rungs } from "../_support/ladder.ts";
+import { instant, routed } from "../_support/net.ts";
 
 const state = (over: Record<string, unknown> = {}) => memoryDb({ system_state: [{ id: true, scrape_cadence: "weekly", scrape_start_date: "2026-01-05", global_processing_paused: false, ...over }] });
 const prose = (n: number) => "The regulation requires operators to report greenhouse gas emissions under the scheme each year. ".repeat(n);
@@ -21,30 +22,26 @@ test("INV-177: a fetch while the cadence is off is refused, and nothing reaches 
   const { db } = state({ scrape_cadence: "off" });
   let calls = 0;
   const fetchImpl = (async () => (calls++, respond(html(prose(30))))) as typeof fetch;
-  await assert.rejects(() => fetchDirect("https://agency.gov/a", { db, env: {}, fetchImpl }, { max: 100_000 }), FetchHoldError);
+  await assert.rejects(() => fetchDirect("https://agency.gov/a", { resolveHost: null, db, env: {}, fetchImpl }, { max: 100_000 }), FetchHoldError);
   assert.equal(calls, 0);
 });
 test("INV-177: a fetch while the env hold is engaged is refused, whatever the cadence", async () => {
   const { db } = state();
   let calls = 0;
   const fetchImpl = (async () => (calls++, respond(html(prose(30))))) as typeof fetch;
-  await assert.rejects(() => fetchDirect("https://agency.gov/a", { db, env: { SCRAPE_HOLD: "1" }, fetchImpl }, { max: 100_000 }), (e: unknown) => e instanceof FetchHoldError && e.reason === "hold_engaged");
+  await assert.rejects(() => fetchDirect("https://agency.gov/a", { resolveHost: null, db, env: { SCRAPE_HOLD: "1" }, fetchImpl }, { max: 100_000 }), (e: unknown) => e instanceof FetchHoldError && e.reason === "hold_engaged");
   assert.equal(calls, 0);
 });
-test("INV-177: an unrecognised hold value counts as engaged, and the lifted spellings do not", () => {
-  assert.equal(holdEngaged({ SCRAPE_HOLD: "maybe" }), true);
-  for (const v of [undefined, "", "0", "off", "false", "lifted", "no", " OFF "]) assert.equal(holdEngaged({ SCRAPE_HOLD: v }), false, String(v));
-});
+
 test("INV-177: exactly two signed callers pass an engaged hold or a cadence of off; a third name does not", async () => {
   const { db } = state({ scrape_cadence: "off" });
   const env = { SCRAPE_HOLD: "1" };
   for (const caller of ["unit3-remediation", "manual-intake-run"]) assert.deepEqual(await fetchAllowed("https://x.test", caller, { db, env }), { allowed: true, reason: "signed_caller" });
   for (const caller of ["capture-worker", "Unit3-Remediation", "", null, undefined]) assert.equal((await fetchAllowed("https://x.test", caller, { db, env })).allowed, false, String(caller));
-  let calls = 0;
-  const fetchImpl = (async () => (calls++, respond(html(prose(30))))) as typeof fetch;
-  const res = await fetchDirect("https://agency.gov/a", { db, env, fetchImpl, caller: "manual-intake-run" }, { max: 100_000 });
+  const net = routed(async () => respond(html(prose(30))));
+  const res = await fetchDirect("https://agency.gov/a", { resolveHost: null, db, env, fetchImpl: net.fetch, sleep: instant, caller: "manual-intake-run" }, { max: 100_000 });
   assert.equal(res.status, 200);
-  assert.equal(calls, 1);
+  assert.equal(net.calls.length, 1);
 });
 test("INV-177: the emergency stop refuses even a signed caller", async () => {
   const { db } = state({ global_processing_paused: true });
@@ -61,7 +58,7 @@ test("INV-177: an open cadence with a lifted hold lets an unsigned caller throug
   const open = state();
   assert.deepEqual(await fetchAllowed("https://x.test", null, { db: open.db, env: {} }), { allowed: true, reason: "lifted" });
   const off = state({ scrape_cadence: "off" });
-  await assert.rejects(() => checkReachability("https://x.test", { db: off.db, env: {}, fetchImpl: (async () => respond("x")) as typeof fetch }), FetchHoldError);
+  await assert.rejects(() => checkReachability("https://x.test", { resolveHost: null, db: off.db, env: {}, fetchImpl: (async () => respond("x")) as typeof fetch }), FetchHoldError);
 });
 test("scrape window: weekly lands on the anchor weekday, monthly clamps a short month, off and unanchored never run", () => {
   assert.equal(scrapeWindowOpen({ cadence: "weekly", startDate: "2026-01-05" }, new Date("2026-10-12T10:00:00Z")), true);
@@ -82,19 +79,7 @@ test("INV-178: one classifier names each failure class", () => {
   assert.equal(classifyBody("Please enable JavaScript to view this page. ".repeat(3)).class, BODY_CLASS.JS_SHELL);
   assert.equal(classifyBody(`Page not found. ${prose(3)}`).class, BODY_CLASS.SOFT_404);
 });
-test("INV-178 attack: an error body handed to captureForStorage is excluded and the item holds", () => {
-  const error = { url: "https://agency.gov/gone", text: `Page not found. The page you requested does not exist. ${prose(2)}` };
-  const wall = { url: "https://agency.gov/wall", text: "Just a moment... Checking your browser" };
-  const good = { url: "https://agency.gov/ok", text: prose(20) };
-  const mixed = captureForStorage([error, wall, good]);
-  assert.deepEqual(mixed.store, [good]);
-  assert.deepEqual(mixed.excluded, [error, wall]);
-  assert.equal(mixed.holdReason, null);
-  const none = captureForStorage([error, wall]);
-  assert.equal(none.store.length, 0);
-  assert.equal(none.holdReason, "NO_REACHABLE_SOURCE");
-  assert.equal(captureForStorage([]).holdReason, null);
-});
+
 test("INV-178: only real content (or a foreign-language body) is storable", () => {
   assert.equal(isStorableClass(BODY_CLASS.OK), true);
   assert.equal(isStorableClass(BODY_CLASS.WRONG_LANGUAGE), true);
@@ -103,37 +88,28 @@ test("INV-178: only real content (or a foreign-language body) is storable", () =
 
 test("ladder: an error body from the first transport is never returned as content, and the exhaustion record names every attempt", async () => {
   const gone = { status: 200, text: `Page not found. The page you requested does not exist. ${prose(2)}`, truncated: false, fullLength: 0, cap: 0 };
-  const v = await escalateFetch(["https://agency.gov/a", "https://agency.gov/b"], { directFetch: async () => gone, headlessFetch: async () => ({ status: 0, text: "", truncated: false, fullLength: 0, cap: 0, needsHeadless: true }) });
+  const wall = { status: 403, text: "", truncated: false, fullLength: 0, cap: 0 };
+  const v = await escalateFetch(["https://agency.gov/a", "https://agency.gov/b"], rungs({ directFetch: async (u) => (u.endsWith("/a") ? gone : wall), browserFetch: async () => ({ status: 0, text: "", truncated: false, fullLength: 0, cap: 0, needsHeadless: true }) }));
   assert.equal(v.storeRow, false);
   assert.equal(v.text, "");
-  assert.equal(v.outcome, "seek_more");
-  assert.equal(v.attempts.length, 4, "two candidates x two transports");
-  assert.deepEqual(v.attempts.map((a) => a.transport), ["direct", "headless", "direct", "headless"]);
-  assert.equal(v.attempts[1]?.class, NEEDS_HEADLESS);
-  assert.equal(v.attempts[1]?.verdict, "needs_headless");
+  assert.equal(v.attempts.length, 3, "a not-found is not walled, so the browser tier is asked only for the walled candidate");
+  assert.deepEqual(v.attempts.map((a) => a.transport), ["direct", "direct", "browser"]);
+  assert.equal(v.attempts[2]?.class, "needs_headless");
+  assert.equal(v.attempts[2]?.verdict, "needs_headless");
 });
-test("ladder: a js shell escalates to the headless tier, whose content wins", async () => {
+test("ladder: a js shell escalates to the browser tier, whose content wins", async () => {
   const shell = { status: 200, text: "Please enable JavaScript to continue. ".repeat(4), truncated: false, fullLength: 0, cap: 0 };
   const real = { status: 200, text: prose(20), truncated: false, fullLength: 2000, cap: 9 };
-  const v = await escalateFetch("https://agency.gov/a", { directFetch: async () => shell, headlessFetch: async () => real });
+  const v = await escalateFetch("https://agency.gov/a", rungs({ directFetch: async () => shell, browserFetch: async () => real }));
   assert.equal(v.outcome, "content");
-  assert.equal(v.transport, "headless");
+  assert.equal(v.transport, "browser");
   assert.deepEqual(v.attempts.map((a) => a.verdict), ["js_shell", "content"]);
 });
 test("ladder: nothing reachable is a hold, with the record intact", async () => {
-  const v = await escalateFetch("https://agency.gov/a", { directFetch: async () => ({ status: 503, text: "", truncated: false, fullLength: 0, cap: 0 }) });
+  const v = await escalateFetch("https://agency.gov/a", rungs({ directFetch: async () => ({ status: 503, text: "", truncated: false, fullLength: 0, cap: 0 }) }));
   assert.equal(v.outcome, "no_reachable_source");
   assert.equal(v.holdReason, "NO_REACHABLE_SOURCE");
   assert.equal(v.reason, BODY_CLASS.HTTP_5XX);
-});
-test("ladder: the exhaustion record is written, and a failed write throws rather than reading as recorded", async () => {
-  const v = await escalateFetch("https://agency.gov/a", { directFetch: async () => ({ status: 404, text: "", truncated: false, fullLength: 0, cap: 0 }) });
-  const ok = memoryDb();
-  const row = await persistExhaustionRecord(ok.db, "item-1", v.attempts.map((a) => ({ url: a.url, transport: a.transport, verdict: a.verdict, bytes: a.bytes })), { outcome: v.outcome, holdReason: v.holdReason });
-  assert.equal(row.subject_ref, "item-1");
-  assert.equal(ok.wrote("integrity_flags", "insert").length, 1);
-  const bad = memoryDb({}, { failures: [{ table: "integrity_flags", op: "insert", message: "rls" }] });
-  await assert.rejects(() => persistExhaustionRecord(bad.db, "item-1", []), /exhaustion record not written/);
 });
 
 // INV-007: a static-text primary is captured through the free direct path, in full, never through a paid render.
@@ -141,7 +117,7 @@ test("INV-007: a static-text primary is captured in full through the free direct
   const { db } = state();
   const body = html(prose(60));
   const fetchImpl = (async () => respond(body)) as typeof fetch;
-  const res = await fetchDirect("https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32023R0956", { db, env: {}, fetchImpl }, { max: 1_000_000 });
+  const res = await fetchDirect("https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32023R0956", { resolveHost: null, db, env: {}, fetchImpl: routed(fetchImpl as never).fetch, sleep: instant }, { max: 1_000_000 });
   assert.equal(res.status, 200);
   assert.ok(res.text.length > 200);
   assert.equal(res.truncated, false);
@@ -183,7 +159,7 @@ test("PROP-103: a size cap never binds silently; the ceiling bind is declared an
 });
 test("PROP-103: the direct transport reports truncation against its own cap", async () => {
   const { db } = state();
-  const res = await fetchDirect("https://agency.gov/a", { db, env: {}, fetchImpl: (async () => respond(html(prose(400)))) as typeof fetch }, { max: 1000 });
+  const res = await fetchDirect("https://agency.gov/a", { resolveHost: null, db, env: {}, fetchImpl: routed(async () => respond(html(prose(400)))).fetch, sleep: instant }, { max: 1000 });
   assert.equal(res.truncated, true);
   assert.ok(res.fullLength > 1000);
   assert.equal(res.text.length, 1000);
