@@ -50,7 +50,6 @@
     ],
     "src/core/brief/vocab.ts": [
       "ANALYSIS_LABEL_TOKENS",
-      "DB_SEVERITY_VALUES",
       "DB_THEME_VALUES",
       "PLANNING_ASSUMPTION_SHIFT_ABSENCE",
       "SEVERITY_DB_TO_DISPLAY",
@@ -64,14 +63,8 @@
     "src/core/briefs/frontmatter.ts": [
       "buildFrontmatter"
     ],
-    "src/core/briefs/theme-brief-contract.ts": [
-      "SECTION_CEILINGS",
-      "SECTION_HEADINGS",
-      "THEME_BRIEF_SECTIONS",
-      "TITLE_CEILING",
-      "findUncitedFigures",
-      "isObj",
-      "nonEmptyStr"
+    "src/core/briefs/theme-brief-material.ts": [
+      "themeBriefSeams"
     ],
     "src/core/cache/fallback-guard.ts": [
       "FALLBACK_NOT_CACHEABLE",
@@ -105,6 +98,9 @@
       "renderTierConstraintsSql",
       "resolveActiveFactor",
       "validateFactor"
+    ],
+    "src/core/contracts/numbers.ts": [
+      "foldRun"
     ],
     "src/core/contracts/source-licence.ts": [
       "SOURCE_KEYS",
@@ -392,9 +388,6 @@
     "src/core/grounding/audit-gate.ts": [
       "scoreItemClaims"
     ],
-    "src/core/grounding/cited-hosts.ts": [
-      "partitionCitedByHost"
-    ],
     "src/core/grounding/gate-a-scan.ts": [
       "containsToken",
       "extractFactualTokens"
@@ -408,12 +401,6 @@
       "identityCongruenceHolds",
       "md5",
       "perFactGates"
-    ],
-    "src/core/grounding/ledger.ts": [
-      "FACT_FLOOR",
-      "normText",
-      "sameAttribution",
-      "versionPayload"
     ],
     "src/core/grounding/pool.ts": [
       "OWN_BODY_TYPES",
@@ -1147,10 +1134,6 @@
     "src/features/batches/kinds/screen-verdicts/apply.ts": [
       "reopenRuledHolds"
     ],
-    "src/features/batches/kinds/theme-briefs/apply.ts": [
-      "THEME_EXPORT_LIMIT",
-      "applyThemeBriefBatch"
-    ],
     "src/features/batches/kit/budget.ts": [
       "BYTES_PER_MB",
       "DEFAULT_COOLDOWN_MIN",
@@ -1382,10 +1365,6 @@
       "NEED_RESOLVE_NOTE",
       "TRUST_MIN_ITEMS"
     ],
-    "src/features/flywheel/theme-brief-seam.ts": [
-      "parseThemeBriefPayload",
-      "validateAgainstLiveMembers"
-    ],
     "src/features/health/api/surfaces.ts": [
       "GET"
     ],
@@ -1406,9 +1385,6 @@
       "PERSIST_CHUNK",
       "applyPromoteCap",
       "buildCandidateSeed"
-    ],
-    "src/features/intake/quarantine/erase.ts": [
-      "DELETABLE_REASONS"
     ],
     "src/features/intake/quarantine/id-stamp.ts": [
       "heartbeatLease",
@@ -1432,12 +1408,6 @@
       "STUB_BRIEF_MARKER",
       "buildRecordFullBrief",
       "buildResearchRecordPayload"
-    ],
-    "src/features/intake/staged-transit.ts": [
-      "UPDATE_ITEM_ALLOWLIST",
-      "isRootUrl",
-      "isSubstantiveUpdate",
-      "splitNewItemSeed"
     ],
     "src/features/intake/workflow.ts": [
       "eraseStep"
@@ -1622,29 +1592,6 @@
       "canonicalDomainOverride",
       "sourceLinkDecision",
       "unconditionalDomain"
-    ],
-    "src/features/mint/heal/brief-honest.ts": [
-      "sentenceContext",
-      "sentenceSpans",
-      "stripClause"
-    ],
-    "src/features/mint/heal/ground.ts": [
-      "foldRun",
-      "insideLongerNumber",
-      "isFloorArmed",
-      "normalizeNumeric",
-      "normalizeWithMap"
-    ],
-    "src/features/mint/heal/label.ts": [
-      "DEFAULT_LABEL",
-      "slotKeyOf"
-    ],
-    "src/features/mint/heal/source.ts": [
-      "MAX_ATTEMPTS_PER_ITEM",
-      "MAX_CANDIDATES_PER_ORPHAN",
-      "MAX_HOP_LINKS",
-      "candidateUrls",
-      "hopLinks"
     ],
     "src/features/mint/preflight.ts": [
       "tagPresence"
@@ -2172,14 +2119,7 @@
       "walkSitemap"
     ],
     "src/features/statutory/rows.ts": [
-      "ARTICLE_4_2_CITATION",
-      "DEFAULT_OBLIGATION_SEED",
-      "FORMULA_ID",
-      "FUELEU_REFERENCE_GCO2E_PER_MJ",
       "SUPPORTED_TARGET_YEARS",
-      "resolveOrMintEntity",
-      "toValue",
-      "validateRow",
       "validateSourceBlock"
     ],
     "src/features/statutory/run.ts": [
@@ -2424,7 +2364,6 @@
     "src/features/auth/ui/auth-events.ts#AuthEventDeps.requiresAuth": "recorded at R1b: a UI seam with a default; R4b",
     "src/features/auth/ui/identity-loader.ts#IdentityLoaderDeps.onRetrying": "recorded at R1b: a UI notification hook with a default; R4b",
     "src/features/coverage/server/matrix-data.ts#CoverageDeps.labelOf": "recorded at R1b: a labelling seam with a default; R4b",
-    "src/features/flywheel/theme-brief-seam.ts#SeamDeps.writeRow": "recorded at R1b: the seam's writer (F:3); R2b makes it required",
     "src/features/mint/deps.ts#MintRunDeps.flushCache": "recorded at R1b: the cache flush downstream of a mint; R3b makes it required or states the null case",
     "src/features/sources/snapshot-verify.ts#VerifyItemDeps.probe": "recorded at R1b: a probe seam with a default; R2c"
   }

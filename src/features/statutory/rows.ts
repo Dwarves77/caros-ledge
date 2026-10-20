@@ -1,8 +1,8 @@
 // Ported from old_repo/src/lib/propagation/statutory-rows.ts (lines 10-344)
 // The FuelEU Annex IV statutory rows: validation of a session-authored rows file (no placeholder marker, every input carries a source block whose host
 // resolves to a codified class tier, rule 18), parse, the per-input FILING gate (admissibleFor), the computation, the minted asset and obligation entities
-// and ONE idempotent insert into statutory_computations. The target-year table now covers Article 4(2) for 2025 to 2050 from the transcribed constants
-// (BUILD-PLAN ruling 8); only years the constants mark browser-verified are filing grade, the rest refuse at the gate until they are re-verified.
+// and ONE idempotent insert into statutory_computations. The target-year table covers Article 4(2) for 2025 to 2050 from the transcribed constants (BUILD-PLAN ruling 8); a year is filing grade only when
+// data/filing-grade.json (DERIVED from the stored capture of the regulation, filing-grade.ts, never typed) lists it, and every quote an input cites must stand on a stored capture that holds it (run.ts).
 // The formula itself (computeStatutory and its constants) is the regulations slice's, reached through StatutoryDeps.
 import { z } from "zod";
 
@@ -10,20 +10,22 @@ import type { Db } from "@/core/db";
 import { entityId, hostFromUrl, type EntityKind } from "@/core/entities/id";
 import { admissibleFor } from "@/core/propagation/admissible";
 import type { Admissibility, Derivation, Lifecycle, OriginClass, StatutoryInput, StatutoryResult, Value } from "@/core/propagation/types";
+import { acceptStoredQuote, parseVerifiedAt } from "@/core/producers/quote";
 import { classTierForHost } from "@/core/sources";
 
 import constants from "./data/fueleu-annex-i-iv-constants.json";
 import filingGrade from "./data/filing-grade.json";
+import { FUELEU_INSTRUMENT } from "./filing-grade";
 
-export const FORMULA_ID = "fueleu_annex_iv_penalty";
-export const DEFAULT_OBLIGATION_SEED = "fueleu-maritime-annex-iv-penalty";
+const FORMULA_ID = "fueleu_annex_iv_penalty";
+const DEFAULT_OBLIGATION_SEED = "fueleu-maritime-annex-iv-penalty";
 
 const periods = z.object({ ghg_intensity_limit_by_period: z.object({ periods: z.array(z.object({ from_date: z.string(), reduction_percent: z.number(), target_gco2e_per_mj: z.number(), quote: z.string() })) }), reference_value: z.object({ value: z.number(), unit: z.string() }) }).loose().parse(constants);
-export const FUELEU_REFERENCE_GCO2E_PER_MJ = periods.reference_value.value;
+const FUELEU_REFERENCE_GCO2E_PER_MJ = periods.reference_value.value;
 /** Target year to the Article 4(2) limit in gCO2eq/MJ, from the transcribed table (reference x (1 - reduction)). */
 export const SUPPORTED_TARGET_YEARS: Readonly<Record<string, number>> = Object.freeze(Object.fromEntries(periods.ghg_intensity_limit_by_period.periods.map((p) => [p.from_date.slice(0, 4), FUELEU_REFERENCE_GCO2E_PER_MJ * (1 - p.reduction_percent / 100)])));
-const FILING_GRADE_YEARS: ReadonlySet<string> = new Set(z.object({ targetYears: z.array(z.number()) }).parse(filingGrade).targetYears.map(String));
-export const ARTICLE_4_2_CITATION = "Regulation (EU) 2023/1805, Article 4(2) (reference value 91.16 gCO2eq/MJ, reduced by the stated percentage from the stated date) and recital 23 (2020 fleet-average baseline, Regulation (EU) 2015/757 MRV data). Verified against EUR-Lex CELEX:32023R1805.";
+const FILING_GRADE_YEARS: ReadonlySet<string> = new Set((z.object({ instruments: z.record(z.string(), z.object({ years: z.array(z.number()) }).loose()) }).loose().parse(filingGrade).instruments[FUELEU_INSTRUMENT]?.years ?? []).map(String));
+const ARTICLE_4_2_CITATION = "Regulation (EU) 2023/1805, Article 4(2) (reference value 91.16 gCO2eq/MJ, reduced by the stated percentage from the stated date) and recital 23 (2020 fleet-average baseline, Regulation (EU) 2015/757 MRV data). Verified against EUR-Lex CELEX:32023R1805.";
 
 /** What the regulations slice supplies: the formula and its published constants. */
 export interface StatutoryDeps {
@@ -63,6 +65,7 @@ export function validateSourceBlock(source: unknown, where: string): string[] {
   const block = source as Rec;
   const violations: string[] = [];
   for (const f of REQUIRED_SOURCE_FIELDS) if (typeof block[f] !== "string" || !(block[f] as string).trim()) violations.push(`${where}.source.${f} is required and must be a non-empty string.`);
+  if (typeof block.verified_at === "string" && block.verified_at.trim() && !parseVerifiedAt(block.verified_at)) violations.push(`${where}.source.verified_at "${block.verified_at}" is not a date (YYYY-MM-DD).`);
   if (typeof block.url === "string" && block.url.trim()) {
     const host = hostFromUrl(block.url);
     if (!host) violations.push(`${where}.source.url is not a valid absolute URL: "${block.url}"`);
@@ -70,7 +73,7 @@ export function validateSourceBlock(source: unknown, where: string): string[] {
   }
   return violations;
 }
-export function validateRow(row: unknown, index: number): string[] {
+function validateRow(row: unknown, index: number): string[] {
   const r = (row ?? {}) as Rec;
   const shipKey = String(r.shipKey ?? `row[${index}]`);
   const violations: string[] = PLACEHOLDER_MARKERS.test(shipKey) ? [`row[${index}] (${shipKey}): shipKey itself carries a placeholder marker, not a real ship key.`] : [];
@@ -116,12 +119,12 @@ export function parseRow(row: unknown, index: number): ParsedStatutoryRow {
 }
 
 /** A rows-file input as the Value the gate reads. */
-export function toValue(input: Pick<RowInputBlock, "value" | "unit" | "derivation" | "originClass" | "lifecycle" | "admissibility" | "baseConfidence" | "halfLifeDays" | "obsStatus" | "asOf">): Value {
+function toValue(input: Pick<RowInputBlock, "value" | "unit" | "derivation" | "originClass" | "lifecycle" | "admissibility" | "baseConfidence" | "halfLifeDays" | "obsStatus" | "asOf">): Value {
   return { valueId: null, entityId: null, methodId: FORMULA_ID, methodVersion: "n/a", value: input.value, valueLow: null, valueHigh: null, unit: input.unit ?? null, currency: null, derivation: input.derivation as Derivation, originClass: input.originClass, lifecycle: input.lifecycle, admissibility: input.admissibility, baseConfidence: input.baseConfidence, assertedAt: input.asOf.eventDate, halfLifeDays: input.halfLifeDays ?? null, inputs: [], supersedes: null, computedAt: input.asOf.eventDate, computedBy: "rows-file", obsStatus: input.obsStatus ?? null };
 }
 
 /** The entity for a seed: existing, or (apply) minted. A failed read throws. */
-export async function resolveOrMintEntity(sb: Db, target: { kind: EntityKind; seed: string; canonicalName?: string }, apply: boolean): Promise<string> {
+async function resolveOrMintEntity(sb: Db, target: { kind: EntityKind; seed: string; canonicalName?: string }, apply: boolean): Promise<string> {
   const id = entityId(target.kind, target.seed);
   const { data, error } = await sb.from("entities").select("entity_id").eq("entity_id", id).maybeSingle();
   if (error) throw new Error(`resolveOrMintEntity: entities read failed: ${error.message}`);
@@ -139,9 +142,9 @@ export type WriteResult =
   | { action: "errored"; shipKey: string; reason: string };
 
 /** One row: every input must pass the FILING gate, then compute, then insert once (idempotent on ship, formula, version and scenario). */
-export async function writeOneRow(sb: Db, parsed: ParsedStatutoryRow, deps: StatutoryDeps, opts: { apply: boolean; now: Date }): Promise<WriteResult> {
+export async function writeOneRow(sb: Db, parsed: ParsedStatutoryRow, deps: StatutoryDeps, opts: { apply: boolean; now: Date; filingYears: ReadonlySet<string>; captureIds?: Readonly<Record<string, string>> }): Promise<WriteResult> {
   const year = String(parsed.targetYear);
-  const targetValue = toValue({ value: SUPPORTED_TARGET_YEARS[year] as number, unit: "gCO2eq/MJ", derivation: "statutory_fixed", originClass: "official", lifecycle: "verified", admissibility: FILING_GRADE_YEARS.has(year) ? "filing_ok" : "calculation_ok", baseConfidence: 1, halfLifeDays: null, asOf: { eventDate: "2023-09-22" } });
+  const targetValue = toValue({ value: SUPPORTED_TARGET_YEARS[year] as number, unit: "gCO2eq/MJ", derivation: "statutory_fixed", originClass: "official", lifecycle: "verified", admissibility: FILING_GRADE_YEARS.has(year) && opts.filingYears.has(year) ? "filing_ok" : "calculation_ok", baseConfidence: 1, halfLifeDays: null, asOf: { eventDate: "2023-09-22" } });
   const checks: [string, Value][] = [["ghgIntensityTarget", targetValue], ["ghgIntensityActual", toValue(parsed.ghgIntensityActual)], ["energyUsedMJ", toValue(parsed.energyUsedMJ)], ["consecutiveDeficitYears", toValue(parsed.consecutiveDeficitYears)]];
   for (const [label, v] of checks) {
     const verdict = admissibleFor(v, "filing", opts.now);
@@ -163,11 +166,23 @@ export async function writeOneRow(sb: Db, parsed: ParsedStatutoryRow, deps: Stat
     entity_id, scenario_key: parsed.scenarioKey, obligation_id, formula_id: FORMULA_ID, formula_version: deps.formulaVersion, statute_citation: deps.statuteCitation, unit_price: deps.unitPriceEurPerTVlsfoe, unit_price_unit: "EUR/t_VLSFOe",
     inputs: [
       { table: "reported:ghg_intensity_target", pk: parsed.shipKey, version: ARTICLE_4_2_CITATION },
-      { table: "reported:ghg_intensity_actual", pk: parsed.shipKey, version: parsed.ghgIntensityActual.citation },
-      { table: "reported:energy_used_mj", pk: parsed.shipKey, version: parsed.energyUsedMJ.citation },
-      { table: "reported:consecutive_deficit_years", pk: parsed.shipKey, version: parsed.consecutiveDeficitYears.citation },
+      { table: "reported:ghg_intensity_actual", pk: parsed.shipKey, version: parsed.ghgIntensityActual.citation, capture_id: opts.captureIds?.ghgIntensityActual ?? null },
+      { table: "reported:energy_used_mj", pk: parsed.shipKey, version: parsed.energyUsedMJ.citation, capture_id: opts.captureIds?.energyUsedMJ ?? null },
+      { table: "reported:consecutive_deficit_years", pk: parsed.shipKey, version: parsed.consecutiveDeficitYears.citation, capture_id: opts.captureIds?.consecutiveDeficitYears ?? null },
     ],
     result: result.result, result_unit: result.resultUnit,
   }).select("computation_id").single();
   return ins.error ? { action: "errored", shipKey: parsed.shipKey, reason: ins.error.message } : { action: "written", shipKey: parsed.shipKey, computationId: (ins.data as { computation_id: unknown }).computation_id, resultEur: result.result };
+}
+
+/** The quote of every input must stand on a stored capture that holds it verbatim, with a verified_at that parses (acceptStoredQuote: the one rule): the capture id per input, or the first refusal. */
+export async function verifyRowQuotes(sb: Db, row: unknown, now: Date, texts: Map<string, string> = new Map()): Promise<{ ok: true; captureIds: Record<string, string> } | { ok: false; reason: string }> {
+  const captureIds: Record<string, string> = {};
+  for (const key of REQUIRED_INPUT_KEYS) {
+    const src = ((row as Rec)?.[key] as Rec | undefined)?.source as Rec | undefined;
+    const verdict = await acceptStoredQuote(sb, { url: String(src?.url ?? ""), quote: String(src?.quote ?? ""), verifiedAt: src?.verified_at, now }, texts);
+    if (!verdict.ok) return { ok: false, reason: `${key}: ${verdict.reason} (${verdict.detail})` };
+    captureIds[key] = verdict.captureId;
+  }
+  return { ok: true, captureIds };
 }

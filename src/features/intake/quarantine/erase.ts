@@ -1,18 +1,19 @@
 // Ported from old_repo/scripts/_reground/tombstone-delete.mjs (lines 10-107)
 // Tombstone-then-delete of verified-correct ARCHIVED items (archive endgame). Rules, each enforced in the tool and none a judgment:
-// the identity is written to disposition_ledger FIRST and the delete runs only if that insert succeeded (INV-101); a bucket outside the
+// the identity is written to disposition_ledger FIRST, every claim is archived to claim_versions, and only then the item goes, all in ONE database transaction (ledger_erase_item; INV-101); a bucket outside the
 // deletable-reason allowlist is refused (accurate-but-archived reasons are never bucket-deleted); a bucket delete is limited to items
 // the census verdicted archive_correct; `emptyOnly` keeps only items whose brief is empty AND that carry zero claims (a label is not
 // proof, so a content-bearing row routes to review); `requireActiveSource` refuses an item whose source row is not ACTIVE (the content
 // must survive somewhere before the item stops being the place it survives). The per-item claim count is a keyed count, not a table read.
 import { exactCount, fetchAllRows, type Db } from "@/core/db";
+import { eraseItem } from "@/core/grounding/ledger";
 import { isUuid } from "@/core/http/parse";
 import { runResult, type RunResult } from "@/core/intake/result";
 
 import { acquireLease, releaseLease } from "./id-stamp";
 
 /** archive_reason -> the disposition written to the ledger. A reason not in this map is never deleted by bucket. */
-export const DELETABLE_REASONS: Readonly<Record<string, string>> = {
+const DELETABLE_REASONS: Readonly<Record<string, string>> = {
   reclassified_to_source: "tombstone_delete_reclassified",
   source_not_item: "tombstone_delete_source_not_item",
   portal_artifact: "tombstone_delete_artifact",
@@ -102,12 +103,8 @@ export async function eraseQuarantined(deps: { sb: Db }, input: EraseInput): Pro
         continue;
       }
       leased = true;
-      // 1. TOMBSTONE FIRST: if it fails the delete never runs.
-      const ledger = await sb.from("disposition_ledger").insert({ intelligence_item_id: it.id, item_key: it.legacy_id, canonical_instrument_key: it.canonical_instrument_key, title: it.title, source_url: it.source_url, archive_reason: it.archive_reason, disposition: effDisp, merged_into_item_id: input.mergedInto ?? null, snapshot_pointer: it.source_id, disposition_by: input.holder });
-      if (ledger.error) throw new Error(`tombstone insert failed (item NOT deleted): ${ledger.error.message}`);
-      // 2. DELETE (cascades sections and claims through the foreign keys).
-      const del = await sb.from("intelligence_items").delete().eq("id", it.id);
-      if (del.error) throw new Error(`delete failed after the tombstone was written: ${del.error.message}`);
+      // The tombstone, the archive of every claim to claim_versions and the delete are ONE transaction: a failure at any step leaves the item, its claims and the ledger exactly as they were.
+      await eraseItem(sb, it.id, { disposition: effDisp, mergedInto: input.mergedInto ?? null, holder: input.holder });
       counts.deleted = (counts.deleted ?? 0) + 1;
       o("deleted", `tombstoned (${effDisp}) and deleted`);
     } catch (e) {

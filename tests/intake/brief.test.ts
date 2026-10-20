@@ -82,14 +82,16 @@ test("claim ledger records: a FACT needs a span and a source, a source_id must b
   assert.equal(validateClaimRecords([{ claim_kind: "FACT", claim_text: "z", source_span: "s", source_id: SOURCE }]).claims.length, 1);
 });
 
-test("INV-156: attribution follows the capture that CONTAINS the span (same URL first, any row second, URL match last), with ONE case rule", () => {
+test("INV-156 / F:43: attribution follows the capture that CONTAINS the span (same URL first, any row second), with ONE case rule; a span no capture holds is attributed to NONE", () => {
   const claims = [{ section: "1", claim_text: "c", claim_kind: "FACT", source_span: "Operators shall report", source_id: null, source_url: "https://a.test/", slot_key: null }];
   const rows = [{ id: "r1", result_url: "https://a.test/", result_content: "unrelated text" }, { id: "r2", result_url: "https://b.test/", result_content: "OPERATORS SHALL REPORT annually" }];
   const [linked] = crossLinkClaimSources(claims as never, rows);
   assert.equal(linked?.search_result_id, "r2", "the capture containing the span wins over the row that merely shares the URL");
   assert.equal(linked?.source_url, "https://b.test/", "the claim is re-pointed to that row's URL");
   const [none] = crossLinkClaimSources([{ ...claims[0], source_span: "absent everywhere" }] as never, rows);
-  assert.equal(none?.search_result_id, "r1", "only when no capture contains the span does the URL match apply");
+  assert.equal(none?.search_result_id, null, "no capture contains the span: attributed to none (the old code pointed it at the last capture of the same URL, a source that does not contain it)");
+  const [note] = crossLinkClaimSources([{ ...claims[0], claim_kind: "ANALYSIS", source_span: null }] as never, rows);
+  assert.equal(note?.search_result_id, "r1", "a claim without a span keeps its URL link");
   const [sameUrl] = crossLinkClaimSources([{ ...claims[0], source_span: "operators shall report" }] as never, [{ id: "x1", result_url: "https://a.test/", result_content: "Operators shall report" }, ...rows]);
   assert.equal(sameUrl?.search_result_id, "x1", "same URL first");
 });

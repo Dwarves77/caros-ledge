@@ -43,7 +43,24 @@
   "source_name",
   "authority_level",
   "relevance",
-  "capturedText"
+  "capturedText",
+  "date_evidence"
  ],
+ "archiveColumns": ["is_archived", "archive_reason", "archive_note", "archived_date"],
+ "columnTypes": {
+  "text": ["title", "summary", "what_is_it", "why_matters", "operational_impact", "canonical_instrument_key", "instrument_identifier", "instrument_type", "archive_reason", "archive_note", "regeneration_skill_version", "legacy_id"],
+  "textArray": ["key_data", "open_questions", "tags", "jurisdiction_iso"],
+  "date": ["next_review_date", "archived_date", "last_verified", "added_date"],
+  "sourceDate": ["entry_into_force", "compliance_deadline"],
+  "timestamp": ["last_regenerated_at", "created_at", "updated_at"],
+  "bool": ["is_archived"],
+  "uuid": ["replaced_by"],
+  "uuidArray": ["sources_used"],
+  "json": ["version_history"]
+ },
+ "enums": {
+  "status": ["proposed", "adopted", "in_force", "monitoring", "superseded", "repealed", "expired"],
+  "confidence": ["confirmed", "unconfirmed"]
+ },
  "changeSweepMarker": "[change-sweep]"
 }
