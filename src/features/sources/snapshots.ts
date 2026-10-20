@@ -12,15 +12,6 @@ const gunzipAsync = promisify(gunzip);
 /** SHA-256 hex of a string: the content_hash used for the storage key and the freshness comparison. */
 const sha256Hex = (s: string): string => createHash("sha256").update(String(s), "utf8").digest("hex");
 
-export interface SnapshotRow {
-  id?: string;
-  content_hash?: string;
-  file_path?: string;
-  fetched_at?: string;
-  created_at?: string;
-  http_status?: number | null;
-  html_bytes?: number;
-}
 
 /** Download and gunzip a stored snapshot body by its storage key. */
 export async function readSnapshotBody(db: Db, filePath: string): Promise<string> {
@@ -28,7 +19,6 @@ export async function readSnapshotBody(db: Db, filePath: string): Promise<string
   if (error || !data) throw new Error(`snapshot body download failed (${filePath}): ${error?.message ?? "no data"}`);
   return (await gunzipAsync(Buffer.from(await data.arrayBuffer()))).toString("utf8");
 }
-export type SnapshotLookup = { found: false } | { found: true; content: string; contentHash: string; fetchedAt: string; filePath: string; httpStatus: number | null };
 
 /**
  * Write a snapshot on acquisition (I3): hash, gzip, upload to the `raw_fetches` bucket, upsert the metadata row (idempotent on source_id and content_hash). The capture

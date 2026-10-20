@@ -9,7 +9,6 @@ const COUNTRIES = z.record(z.string().regex(/^[A-Z]{2}$/), z.string().min(1)).pa
 
 /** Supranational and non-country scopes an item may carry in `jurisdiction_iso`. */
 const FREE_TEXT_LABELS: Readonly<Record<string, string>> = { EU: "European Union", GLOBAL: "Global", IMO: "International Maritime Organization", ICAO: "International Civil Aviation Organization" };
-export const KNOWN_FREE_TEXT_JURISDICTIONS = Object.keys(FREE_TEXT_LABELS);
 
 const COUNTRY = /^[A-Z]{2}$/;
 const SUBDIVISION = /^[A-Z]{2}-[A-Z0-9]{1,3}$/;

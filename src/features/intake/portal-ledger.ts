@@ -20,7 +20,7 @@ import { applyStagedUpdate } from "./staged-transit";
 import type { InjectedBrief } from "./workflow";
 
 export interface PortalLink { url: string; anchorText?: string | null }
-export const PERSIST_CHUNK = 200;
+const PERSIST_CHUNK = 200;
 
 /** Upsert discovered links (one row per URL ever; a re-crawl refreshes last_seen_at and anchor_text and never touches status or dispositions). */
 export async function persistPortalCandidates(sb: Db, sourceId: string, links: PortalLink[], nowIso: string): Promise<RunResult & { upserted: number; failed: number }> {
@@ -53,13 +53,13 @@ export async function selectCandidateLedgerPage(sb: Db, opts: PageOpts): Promise
 }
 
 /** items.slice(0, cap) is promoted, the rest deferred untouched. A non-finite or negative cap means no cap. */
-export function applyPromoteCap<T>(items: T[], cap: number): { toPromote: T[]; deferred: T[] } {
+function applyPromoteCap<T>(items: T[], cap: number): { toPromote: T[]; deferred: T[] } {
   const n = Number.isFinite(cap) && cap >= 0 ? Math.floor(cap) : items.length;
   return { toPromote: items.slice(0, n), deferred: items.slice(n) };
 }
 
 /** The one place a verdict maps to the seed vocabulary; toDbSeverity throws on a vocabulary break (the row is then skipped, loudly). */
-export function buildCandidateSeed(row: LedgerCandidate, cls: ClassifyVerdict, capturedText?: string): IntakeCandidate {
+function buildCandidateSeed(row: LedgerCandidate, cls: ClassifyVerdict, capturedText?: string): IntakeCandidate {
   return { title: cls.title_candidate, source_url: row.url, item_type: cls.item_type as string, domain: cls.domain, severity: toDbSeverity(cls.severity), priority: cls.priority, urgency_tier: cls.urgency_tier, topic_tags: cls.topic_tags, jurisdictions: cls.jurisdictions, summary: cls.summary, relevance: cls.relevance, source_id: row.source_id, ...(capturedText ? { capturedText } : {}) };
 }
 

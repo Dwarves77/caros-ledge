@@ -6,8 +6,8 @@
 import { formatNumber } from "@/core/shared";
 
 /** The sensitivity convention for a non-contractable input: plus or minus this share of its value. */
-export const UNCERTAINTY_PCT = 0.1;
-export const CURRENCY_SYMBOL: Readonly<Record<string, string>> = Object.freeze({ EUR: "€", USD: "$", GBP: "£" });
+const UNCERTAINTY_PCT = 0.1;
+const CURRENCY_SYMBOL: Readonly<Record<string, string>> = Object.freeze({ EUR: "€", USD: "$", GBP: "£" });
 
 const finite = (n: unknown): n is number => typeof n === "number" && Number.isFinite(n);
 /** Whole numbers from 1,000 up, two decimals below. */
@@ -18,7 +18,7 @@ const prefixed = (n: number, currency: string | null | undefined): string => {
 };
 
 /** The unit as a suffix: "EUR/1000L" under currency EUR is "/1000L" (the currency is already drawn), any other unit follows a space. */
-export function unitSuffix(unit: string | null | undefined, currency: string | null | undefined): string {
+function unitSuffix(unit: string | null | undefined, currency: string | null | undefined): string {
   if (!unit) return "";
   return currency && unit.startsWith(`${currency}/`) ? unit.slice(currency.length) : ` ${unit}`;
 }

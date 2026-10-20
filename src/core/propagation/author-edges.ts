@@ -21,7 +21,7 @@ export type AuthorResult =
   | { ok: false; action: "invalid-input" | "unknown-method" | "method-refused"; reason: string };
 
 /** Whether any input already has a derived value by this method (so authoring twice is a no-op). A failed read throws. */
-export async function hasBeenAuthored(sb: Db, inputs: readonly InputRef[], methodId: string, methodVersion: string): Promise<boolean> {
+async function hasBeenAuthored(sb: Db, inputs: readonly InputRef[], methodId: string, methodVersion: string): Promise<boolean> {
   for (const ref of inputs) {
     const edges = await sb.from("derivation_edges").select("to_value_id").eq("from_table", ref.table).eq("from_pk", String(ref.pk));
     if (edges.error) throw new Error(`author-edges: reading derivation_edges failed for ${ref.table}/${ref.pk}: ${edges.error.message}`);

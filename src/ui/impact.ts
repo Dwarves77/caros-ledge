@@ -2,8 +2,8 @@
 // The impact meter's pure parts. The ramp stops are one of the two declared colour exceptions: the ramp is interpolated in code (ruling B).
 import type { ImpactScores } from "@/core/types";
 
-export const IMPACT_SEGMENTS = 12;
-export const IMPACT_GROUP_SIZE = 3;
+const IMPACT_SEGMENTS = 12;
+const IMPACT_GROUP_SIZE = 3;
 
 /** True when at least one dimension is scored (1 to 3); a row of zeros is unscored, not a score of zero. */
 export function isImpactScored(scores: ImpactScores | null | undefined): scores is ImpactScores {

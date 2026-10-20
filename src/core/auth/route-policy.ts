@@ -9,7 +9,7 @@ const SCANNER_PREFIXES = ["/wp-admin", "/wp-includes", "/wp-content", "/wp-login
 /** A path is under a route when it IS the route or continues past a "/": `/loginx` and `/privacy-evil` are not under `/login` and `/privacy`. */
 const under = (pathname: string, route: string): boolean => pathname === route || pathname.startsWith(`${route}/`);
 
-export const isScannerProbe = (pathname: string): boolean => SCANNER_PREFIXES.some((p) => pathname.startsWith(p)) || pathname.endsWith(".php");
+const isScannerProbe = (pathname: string): boolean => SCANNER_PREFIXES.some((p) => pathname.startsWith(p)) || pathname.endsWith(".php");
 const isPublicRoute = (pathname: string): boolean => PUBLIC_ROUTES.some((r) => under(pathname, r));
 const isStaticOrApi = (pathname: string): boolean => STATIC_PREFIXES.some((p) => under(pathname, p)) || STATIC_FILES.includes(pathname);
 

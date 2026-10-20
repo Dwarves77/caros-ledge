@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import { beforeEach, test } from "node:test";
 
-import { loadMembership, membershipOf, resetMembership, setWatch } from "@/features/watchlist/membership";
+import { loadMembership, setWatch } from "@/features/watchlist/watch-store";
+
+import { membershipOf, resetMembership } from "../_support/watch-store.ts";
 
 type Call = Parameters<typeof loadMembership>[1];
 const reply = (status: number, body: unknown = {}) => (async () => new Response(JSON.stringify(body), { status })) as unknown as Call;

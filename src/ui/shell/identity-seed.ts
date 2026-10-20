@@ -9,7 +9,7 @@ import { suppressesWorkspaceNote } from "./nav-model";
 export { IDENTITY_ERROR_SEED, nextIdentityRetryDelay, resolveAuthSeed, shouldApplySeed, shouldShowAdminNav } from "@/features/auth/ui/identity-loader";
 export type { AuthSeed, IdentityStatus } from "@/features/auth/ui/identity-loader";
 
-export const NO_WORKSPACE_ONBOARDING_ROUTE = "/workspace/new";
+const NO_WORKSPACE_ONBOARDING_ROUTE = "/workspace/new";
 
 /** The account row's workspace label: "No workspace" only on a RESOLVED null; a pending lookup says loading and a failed one says unavailable (never "none"). */
 export function workspaceLabel(status: IdentityStatus, orgName: string): string {

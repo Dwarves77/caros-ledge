@@ -12,7 +12,7 @@ export interface DrainSwitchState {
 }
 
 /** Pure. Order of the reason: emergency stop, fleet halt, switch. Anything but a clean `false` for the halt counts as a halt. */
-export function decideDrainSwitch(reads: { judgementDrain: unknown; emergencyPaused: unknown; fleetHalted: unknown; readFailed?: boolean }): DrainSwitchState {
+function decideDrainSwitch(reads: { judgementDrain: unknown; emergencyPaused: unknown; fleetHalted: unknown; readFailed?: boolean }): DrainSwitchState {
   const judgementDrain = reads.judgementDrain === "on" ? "on" : "off";
   const emergencyPaused = reads.emergencyPaused === true;
   const fleetHalted = reads.fleetHalted !== false;

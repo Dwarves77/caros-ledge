@@ -7,11 +7,16 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 
-import { chainProof, countsOf, EXIT, makeRecorder, mintedIds, noopContractErrors, reapStaleRuns, recordRun, resolveMode, RUN_LEASE_MS, runChain, runFamily, skipVerdict, withRunContext, type FamilyFn, type HarnessDeps, type RunRow } from "@/core/harness";
+import { countsOf, makeRecorder, noopContractErrors, reapStaleRuns, recordRun, resolveMode, runChain, runFamily, skipVerdict, withRunContext, type FamilyFn, type HarnessDeps, type RunRow } from "@/core/harness";
 import { readSliceState } from "@/core/turn";
 import { runResult } from "@/core/types/run-result";
 
+import { chainProof, mintedIds } from "../_support/ledger-proofs.ts";
 import { MemDb } from "../_support/memdb.ts";
+
+/** The documented contracts: a run still inside two hours is not stale; the check exit codes are 0 ok, 1 failed, 2 skipped. */
+const RUN_LEASE_MS = 2 * 60 * 60 * 1000;
+const EXIT = { ok: 0, failed: 1, skipped: 2 } as const;
 
 const NOW = new Date("2026-10-19T12:00:00.000Z");
 const ROOT = "d0000000-0000-4000-8000-000000000001";

@@ -57,7 +57,7 @@ export function computeTagFrequencies(corpus: readonly Pick<Signature, "operatio
 const none = (): { score: number; basis: BasisEntry[]; crossSurface: boolean; relationship: string } => ({ score: 0, basis: [], crossSurface: false, relationship: "none" });
 
 /** Score one pair: the basis list, the capped score, the strongest basis as the relationship hint, and whether the two sit on different surfaces. */
-export function scoreConnection(a: Signature, b: Signature, f?: TagFrequencies): ReturnType<typeof none> {
+function scoreConnection(a: Signature, b: Signature, f?: TagFrequencies): ReturnType<typeof none> {
   if (!a?.id || !b?.id || a.id === b.id) return none();
   const W = CONFIG.weights;
   const cap = CONFIG.perTagCap;

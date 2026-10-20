@@ -11,13 +11,10 @@ import { isVerbatim } from "@/core/contracts/verbatim";
 import { boundedRead, type Db } from "@/core/db";
 import { LookupError } from "@/core/http/errors";
 
-import { GROUND_CONFIG, type TruncEvent } from "./config";
+import { GROUND_CONFIG } from "./config";
 
 export interface PoolRow { id: string; url: string; text: string; index: number }
 export interface TierSource { url: string; text: string; tier: number | null }
-
-/** The one verbatim test (the database's criterion 3, case-insensitive): kept filter, re-homing and attribution all use it. */
-export const spanIsVerbatim = isVerbatim;
 
 /** Every pool row of the item, stubs included, ordered by result_index; a failed or over-long read fails loud (never an empty pool). */
 export async function readAllPoolRows(sb: Db, itemId: string): Promise<PoolRow[]> {
@@ -57,13 +54,6 @@ export function authorityFloorFor(itemType: string | null | undefined): number |
     default: return null;
   }
 }
-/** The voluntary-instrument family whose own-authoring-body FACT grounds at the issuing-body tier (migration 203's c_own_body_types). */
-export const OWN_BODY_TYPES: readonly string[] = ["standard", "framework", "initiative"];
-const OWN_BODY_TIER = 4;
-/** The per-FACT floor: the item-type floor, or the issuing-body tier for an own-authoring-body FACT of the voluntary-instrument family. */
-export function authorityFloorForFact(itemType: string | null | undefined, isOwnAuthoringBody: boolean): number | null {
-  return OWN_BODY_TYPES.includes(String(itemType)) && isOwnAuthoringBody ? OWN_BODY_TIER : authorityFloorFor(itemType);
-}
 
 /** Floor-qualifying sources, best tier first. */
 export function floorPool<T extends { tier: number | null }>(pool: T[], floorTier: number | null): T[] {
@@ -80,40 +70,3 @@ export function reattributeToFloor<T extends { text: string }>(span: string | nu
   return ordered.find((s) => isVerbatim(s.text, span)) ?? null;
 }
 
-/**
- * The pool text the author reads: best tier first, unregistered last, stable within a tier. A floor-qualifying source is always
- * whole (the moat); a larger-than-ceiling one is surfaced as a wall; the rest share the remaining budget and every trim is reported.
- */
-export function buildSourceBlocks(fetched: TierSource[], budget: number, opts: { floorTier: number | null; hardCeiling: number }): { blocks: string; trims: TruncEvent[]; ceilingWalls: TruncEvent[] } {
-  const trims: TruncEvent[] = [];
-  const ceilingWalls: TruncEvent[] = [];
-  const ordered = fetched.map((s, i) => ({ ...s, i })).sort((a, b) => (a.tier ?? 99) - (b.tier ?? 99) || a.i - b.i);
-  const parts: string[] = [];
-  let used = 0;
-  for (const s of ordered) {
-    if (opts.floorTier != null && s.tier != null && s.tier <= opts.floorTier) {
-      if (s.text.length > opts.hardCeiling) ceilingWalls.push({ url: s.url, collected: 0, fullLength: s.text.length, cap: opts.hardCeiling, transport: "context-ceiling-wall(floor)" });
-      else {
-        parts.push(`### SOURCE url=${s.url}\n${s.text}`);
-        used += s.text.length;
-      }
-      continue;
-    }
-    const room = Math.max(0, budget - used);
-    if (room < 200) {
-      trims.push({ url: s.url, collected: 0, fullLength: s.text.length, cap: 0, transport: "synthesis-budget(dropped)" });
-      continue;
-    }
-    const t = s.text.length > room ? s.text.slice(0, room) : s.text;
-    if (s.text.length > room) trims.push({ url: s.url, collected: room, fullLength: s.text.length, cap: room, transport: "synthesis-budget" });
-    parts.push(`### SOURCE url=${s.url}\n${t}`);
-    used += t.length;
-  }
-  return { blocks: parts.join("\n\n"), trims, ceilingWalls };
-}
-
-/** A brief section for the grounder: whole under the ceiling; over it, sliced WITH truncated=true so the caller surfaces it. */
-export function prepareSectionForGrounding(contentMd: string | null | undefined, ceiling: number = GROUND_CONFIG.GROUND_SECTION_HARD_CEILING_CHARS): { text: string; truncated: boolean; fullLength: number; cap: number } {
-  const full = String(contentMd ?? "");
-  return full.length <= ceiling ? { text: full, truncated: false, fullLength: full.length, cap: ceiling } : { text: full.slice(0, ceiling), truncated: true, fullLength: full.length, cap: ceiling };
-}

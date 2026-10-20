@@ -34,7 +34,7 @@ const PUNCT_RUN = /([^\p{L}\p{N}\s])\1{3,}/u;
 const HTML_TAG_FRAGMENT = /<\/?[a-zA-Z]/;
 
 /** True when every URL in the span is a bare host with no path, query or hash: it cites "the website", never a document. */
-export function hasOnlyBareDomainUrls(span: string): boolean {
+function hasOnlyBareDomainUrls(span: string): boolean {
   const urls = String(span ?? "").match(/https?:\/\/\S+/g);
   return !!urls && urls.every((raw) => {
     try {
@@ -45,7 +45,7 @@ export function hasOnlyBareDomainUrls(span: string): boolean {
     }
   });
 }
-export function isProseSpan(span: string, opts: { slotKey?: string } = {}): boolean {
+function isProseSpan(span: string, opts: { slotKey?: string } = {}): boolean {
   const s = String(span ?? "");
   if (PUNCT_RUN.test(s) || HTML_ENTITY.test(s) || HTML_TAG_FRAGMENT.test(s)) return false;
   if ((opts.slotKey === undefined || URL_BEARING_SLOTS.has(opts.slotKey)) && hasOnlyBareDomainUrls(s)) return false;
@@ -66,7 +66,7 @@ function walk(triggers: readonly RegExp[], text: string, accept: (span: string) 
 // Span delimiters are guillemets, never straight quotes: the unicode-integrity scan reads a straight quote against a curly one as a transcription slip.
 const slotWords = (slotKey: string) => slotKey.replace(/_/g, " ");
 /** THE claim constructor: a FACT (span verified verbatim first) or an honest GAP; nothing else builds a claim. */
-export function claim(slotKey: string, section: RecordClaim["section_key"], ctx: Ctx, found: { span: string; text: string } | null, gapText?: string): RecordClaim {
+function claim(slotKey: string, section: RecordClaim["section_key"], ctx: Ctx, found: { span: string; text: string } | null, gapText?: string): RecordClaim {
   if (found) {
     assertVerbatim(ctx.capturedText, found.span);
     return { section_key: section, claim_kind: "FACT", claim_text: `[${slotKey}] ${found.text}`, source_span: found.span, source_url: ctx.sourceUrl, slot_key: slotKey };
@@ -76,7 +76,7 @@ export function claim(slotKey: string, section: RecordClaim["section_key"], ctx:
 const stated = (span: string) => `The captured source states, verbatim: «${span}»`;
 
 /** The identity FACT: the item's own title located verbatim in the captured text (case-insensitive; the span is cut from the SOURCE so its casing is the source's own). */
-export function extractIdentityFact(a: { title: string | null | undefined; capturedText: string | null | undefined; sourceUrl: string | null }): RecordClaim | null {
+function extractIdentityFact(a: { title: string | null | undefined; capturedText: string | null | undefined; sourceUrl: string | null }): RecordClaim | null {
   if (!a.title || !a.capturedText) return null;
   const idx = a.capturedText.toLowerCase().indexOf(a.title.toLowerCase());
   if (idx === -1) return null;
@@ -137,7 +137,7 @@ export function buildRecordSlotClaim(slotKey: string, ctx: Ctx): RecordClaim {
 }
 
 /** True when the URL's host is eur-lex.europa.eu or a subdomain: the gate for the EU-act self-description slots, independent of (possibly mis-bucketed) item_type. */
-export function isEurlexHost(sourceUrl: string | null | undefined): boolean {
+function isEurlexHost(sourceUrl: string | null | undefined): boolean {
   try {
     const host = new URL(String(sourceUrl ?? "")).hostname.toLowerCase();
     return host === "eur-lex.europa.eu" || host.endsWith(".eur-lex.europa.eu");

@@ -4,7 +4,7 @@
 // are unconfirmed in the source and kept as written.
 import { assertEntityId } from "./kinds";
 
-export const SCHEMES = ["LEI", "IMO_SHIP", "IMO_COMPANY", "UNLOCODE", "IATA", "ICAO", "ISO3166_1", "ISO3166_2", "NUTS", "CELEX", "ELI", "ROR", "ORCID", "EORI", "SCAC", "ISO6346", "HOST"] as const;
+const SCHEMES = ["LEI", "IMO_SHIP", "IMO_COMPANY", "UNLOCODE", "IATA", "ICAO", "ISO3166_1", "ISO3166_2", "NUTS", "CELEX", "ELI", "ROR", "ORCID", "EORI", "SCAC", "ISO6346", "HOST"] as const;
 export type Scheme = (typeof SCHEMES)[number];
 
 function leiNumeric(str: string): string | null {

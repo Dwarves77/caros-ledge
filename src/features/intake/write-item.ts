@@ -23,13 +23,13 @@ export function assertPoolRowShape(row: Record<string, unknown>): void {
   if (typeof row.result_index !== "number") throw new Error("assertPoolRowShape: result_index must be a number");
 }
 
-export const buildAgentRunSearchRows = (p: RecordPayload, itemId: string, nowIso: string) =>
+const buildAgentRunSearchRows = (p: RecordPayload, itemId: string, nowIso: string) =>
   p.search_results.map((r, i) => ({ intelligence_item_id: itemId, search_query: r.search_query ?? null, result_url: r.result_url, result_title: r.result_title ?? null, result_index: typeof r.result_index === "number" ? r.result_index : i, result_content: r.result_content, searched_at: nowIso }));
-export const buildSectionRows = (p: RecordPayload, itemId: string) => p.sections.map((s) => ({ item_id: itemId, section_key: s.section_key, section_order: s.section_order, content_md: s.content_md, is_conditional: false }));
+const buildSectionRows = (p: RecordPayload, itemId: string) => p.sections.map((s) => ({ item_id: itemId, section_key: s.section_key, section_order: s.section_order, content_md: s.content_md, is_conditional: false }));
 
 export interface ClaimInsertRow { section_row_id: string | null; intelligence_item_id: string; claim_text: string; claim_kind: string; source_span: string | null; source_id: string | null; search_result_id: string | null; source_tier_at_grounding: number | null }
 /** section_claim_provenance rows: a grounded FACT carries the source, its pool row and the source's tier; everything else carries none. */
-export function buildClaimRows(p: RecordPayload, itemId: string, c: { sectionIdByKey: Map<string, string>; searchIdByUrl: Map<string, string>; sourceId: string | null; sourceTier: number | null }): ClaimInsertRow[] {
+function buildClaimRows(p: RecordPayload, itemId: string, c: { sectionIdByKey: Map<string, string>; searchIdByUrl: Map<string, string>; sourceId: string | null; sourceTier: number | null }): ClaimInsertRow[] {
   return p.claims.map((x: RecordClaim) => {
     const grounded = x.claim_kind === "FACT" && !!x.source_span;
     const url = x.source_url ?? null;
@@ -46,7 +46,7 @@ export function buildClaimRows(p: RecordPayload, itemId: string, c: { sectionIdB
   });
 }
 
-export class WriteSequenceError extends Error {
+class WriteSequenceError extends Error {
   readonly step: string;
   constructor(step: string, message: string) {
     super(`write sequence failed at ${step}: ${message}`);

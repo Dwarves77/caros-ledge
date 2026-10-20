@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import type { ConnectDeps } from "@/features/intake";
-import { connectDeps, createConnectDeps } from "@/features/flywheel";
+import { createConnectDeps } from "@/features/flywheel";
 import { classifyItemBindingPosition, contextFromClaims, deriveRegister, pickComplianceDeadline, selectObligationRailRows, syncComplianceDeadline } from "@/features/obligations";
 import { GET as registerGet } from "@/features/obligations/api/register";
 import { GET as upcomingGet } from "@/features/obligations/api/upcoming";
@@ -165,12 +165,11 @@ test("the rail takes events inside 30 days, soonest first, at most four", () => 
   assert.deepEqual(out.map((e) => e.event_date), ["2026-10-16", "2026-10-20", "2026-10-21", "2026-10-22"]);
 });
 
-test("connectDeps is the ConnectDeps the intake slice takes: four steps, a clock injected at construction", async () => {
-  const deps: ConnectDeps = connectDeps;
-  assert.deepEqual(Object.keys(deps).sort(), ["connect", "deriveObligations", "extractAndInsertForwardEvents", "linkEntities"]);
+test("createConnectDeps is the ConnectDeps the intake slice takes: four steps, a clock injected at construction", async () => {
   const m = world();
-  const built = createConnectDeps({ getDb: () => m.db, now: () => new Date("2026-10-15T00:00:00Z") });
+  const built: ConnectDeps = createConnectDeps({ getDb: () => m.db, now: () => new Date("2026-10-15T00:00:00Z") });
   await assert.rejects(() => built.linkEntities("missing"), /does not exist/);
+  assert.deepEqual(Object.keys(built).sort(), ["connect", "deriveObligations", "extractAndInsertForwardEvents", "linkEntities"]);
   const out = await built.deriveObligations("i1");
   assert.equal(typeof out.derived, "number");
   assert.equal((m.tables.obligations as Row[]).length, 2);

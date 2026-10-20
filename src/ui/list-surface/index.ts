@@ -1,5 +1,5 @@
 // Ported from old_repo/src/components/list-surface/ListSurfaceShell.tsx (lines 64-633)
-export { facetOptions, liveFacetCounts } from "./facets";
+export { liveFacetCounts } from "./facets";
 export type { FacetOption, LiveFacetCounts } from "./facets";
 export { filterRows, sortResourceRows, withListPosition } from "./filter-sort";
 export type { ListSortKey, ListWindowKey, RowFilterState } from "./filter-sort";

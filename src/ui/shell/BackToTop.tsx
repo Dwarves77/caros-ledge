@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 
 import { useScrollContainer } from "./scroll-container";
 
-export const BACK_TO_TOP_AFTER_PX = 400;
+const BACK_TO_TOP_AFTER_PX = 400;
 
 /** Jump to the top after 400 px of scroll in <main>, the box the page really scrolls in (the old button listened to the window and never showed: B-0658). A 44 px target. */
 export function BackToTop() {

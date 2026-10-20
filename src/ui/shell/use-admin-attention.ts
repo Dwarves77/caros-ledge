@@ -5,7 +5,7 @@ import { useEffect } from "react";
 
 import { refreshBootstrap, useBootstrapStore, type AdminAttentionCounts } from "./use-bootstrap";
 
-export const ADMIN_ATTENTION_POLL_MS = 60_000;
+const ADMIN_ATTENTION_POLL_MS = 60_000;
 
 /**
  * The admin attention counts, read from the bootstrap bundle (one source, not a second poll). A platform admin's bundle is refreshed once a minute while the

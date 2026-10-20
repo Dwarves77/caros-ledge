@@ -3,7 +3,6 @@ import { test } from "node:test";
 
 import { applyBatch, exportBatch } from "@/features/batches";
 import { questionExporter } from "@/features/batches/kinds/question-answers/apply";
-import { sentencesOf, unquotedSentences } from "@/features/batches/kinds/question-answers/validate";
 
 import { batchFile, ITEM, SPAN_FORCE, SPAN_REPORT } from "./world.ts";
 import { qaWorld, REF, type World } from "./worlds.ts";
@@ -55,8 +54,6 @@ test("INV-208 attack: CONFIRMED with one paraphrased sentence is refused; the sa
   const h2 = (await bundleOf(w2)).pool_hash;
   const loose = await apply(w2, [answered(h2, { answer: `${SPAN_REPORT} The fine can reach EUR 1 000 000.`, status_token: "HYPOTHESIS" })]);
   assert.match(notes(loose), /answer states "1,000,000"|answer states .*that no evidence span/);
-  assert.deepEqual(unquotedSentences("Quoted one. Made up two.", ["xx quoted one. yy"]), ["Made up two"]);
-  assert.deepEqual(sentencesOf("A. B!\nC?"), ["A", "B", "C"]);
 });
 
 test("INV-207 / INV-208: a stale held pool, a paraphrased evidence span, a wrong cited set, an uncitable item and a non-open question are each refused", async () => {

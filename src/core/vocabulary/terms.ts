@@ -10,22 +10,19 @@ import { authorityFloorFor } from "@/core/grounding";
 
 import { normaliseTermKey } from "./adopted";
 
-export { normaliseTermKey };
-export const TERM_KINDS = ["standard", "material", "theme", "scenario", "compliance_object", "term"] as const;
-export type TermKind = (typeof TERM_KINDS)[number];
-export const MENTIONED_TERM_KINDS = ["material", "term", "standard"] as const;
+const MENTIONED_TERM_KINDS = ["material", "term", "standard"] as const;
 export const DETECTORS = ["entity-link", "theme-candidate", "scenario-tag", "compliance-object", "brief-terms"] as const;
 export type Detector = (typeof DETECTORS)[number];
-export const MENTIONED_TERMS_MAX = 25;
-export const MENTIONED_TERM_TEXT_MAX = 120;
-export const ADOPTION_MIN_SOURCES = 2;
+const MENTIONED_TERMS_MAX = 25;
+const MENTIONED_TERM_TEXT_MAX = 120;
+const ADOPTION_MIN_SOURCES = 2;
 export const ENTITY_LINK_CREATED_BY = "intake-entity-link";
 const ENTITY_LINK_ACTION = "review_entity_mention";
 const EVIDENCE_SAMPLE_ITEMS = 5;
 const EVIDENCE_SAMPLE_SURFACE = 3;
 
 /** The brief's mentioned_terms field: kind and text per entry, deduped, bounded. Errors name the entry. */
-export function validateMentionedTerms(value: unknown): { terms: { kind: string; text: string }[]; errors: string[] } {
+function validateMentionedTerms(value: unknown): { terms: { kind: string; text: string }[]; errors: string[] } {
   const errors: string[] = [];
   if (value === null || value === undefined) return { terms: [], errors };
   if (!Array.isArray(value)) return { terms: [], errors: ["mentioned_terms must be a JSON array of { kind, text }"] };
@@ -50,7 +47,7 @@ export function validateMentionedTerms(value: unknown): { terms: { kind: string;
 }
 
 export const adoptionRuleText = (minItems: number): string => `distinct_items>=${minItems} AND distinct_sources>=${ADOPTION_MIN_SOURCES}`;
-export function decideAdoption(counts: { distinct_items: number; distinct_sources: number }, opts: { minItems: number }): { adopt: boolean; rule: string } {
+function decideAdoption(counts: { distinct_items: number; distinct_sources: number }, opts: { minItems: number }): { adopt: boolean; rule: string } {
   if (!Number.isInteger(opts.minItems) || opts.minItems < 1) throw new Error("decideAdoption: minItems must be a positive integer");
   return { adopt: counts.distinct_items >= opts.minItems && counts.distinct_sources >= ADOPTION_MIN_SOURCES, rule: adoptionRuleText(opts.minItems) };
 }
@@ -129,7 +126,7 @@ export function mentionsFromComplianceCandidates(items: readonly { id: string; s
   for (const it of items ?? []) for (const c of Array.isArray(it?.compliance_object_candidates) ? (it.compliance_object_candidates as unknown[]) : []) if (typeof c === "string") push(out, mention("compliance_object", c, it.id, it.source_id, "compliance-object", c));
   return out;
 }
-export function mentionsFromBriefTerms(args: { itemId: string; sourceId?: string | null; terms: unknown }): TermMention[] {
+function mentionsFromBriefTerms(args: { itemId: string; sourceId?: string | null; terms: unknown }): TermMention[] {
   const out: TermMention[] = [];
   for (const t of validateMentionedTerms(args.terms).terms) push(out, mention(t.kind, t.text, args.itemId, args.sourceId ?? null, "brief-terms", t.text));
   return out;
@@ -270,13 +267,13 @@ export async function recordBriefTerms(args: { itemId: string; sourceId?: string
 
 // -- term needs ---------------------------------------------------------------------------------------------------------------------------------------
 
-export const TERM_NEED_RULE = "adopted term with no held item whose primary source base tier is at or above the item type authority floor";
+const TERM_NEED_RULE = "adopted term with no held item whose primary source base tier is at or above the item type authority floor";
 const LINEAGE_NEED_RULE = "absent lineage parent whose identifier is not a CELEX id";
 const DESCRIPTION_MAX = 480;
 const SAMPLE_CITING_ITEMS = 5;
 const KIND_PHRASE: Record<string, string> = { standard: "standard", material: "material", theme: "topic", scenario: "operational scenario", compliance_object: "compliance object", term: "term" };
 
-export const needTextFor = (kind: string, label: unknown): string => `${String(label ?? "").replace(/\s+/g, " ").trim()} ${KIND_PHRASE[kind] ?? "term"} authoritative source`;
+const needTextFor = (kind: string, label: unknown): string => `${String(label ?? "").replace(/\s+/g, " ").trim()} ${KIND_PHRASE[kind] ?? "term"} authoritative source`;
 
 export interface NeedItem {
   id?: string;
@@ -291,7 +288,7 @@ export interface NeedSource {
   tier_override?: number | null;
 }
 /** An item qualifies as a holding when it is live, verified, not community, and its primary source's tier is at or above the type's authority floor. */
-export function holdingQualifies(item: NeedItem | null | undefined, source: NeedSource | null | undefined): boolean {
+function holdingQualifies(item: NeedItem | null | undefined, source: NeedSource | null | undefined): boolean {
   if (!item || !source || item.is_archived || item.provenance_status !== "verified") return false;
   if (item.origin_class === "community" || item.origin_class === "community-corroborated" || !item.source_id) return false;
   const tier = source.tier_override ?? source.base_tier ?? null;
@@ -300,7 +297,7 @@ export function holdingQualifies(item: NeedItem | null | undefined, source: Need
   return floor == null ? true : (tier as number) <= floor;
 }
 
-export function termNeedRow(args: { term: { id?: string | null; kind: string; term_key?: string | null }; need: string; counts?: { distinct_items?: number | null; distinct_sources?: number | null } | null; subjectRef?: string | null; rule?: string; extra?: Record<string, unknown> }): Finding["row"] {
+function termNeedRow(args: { term: { id?: string | null; kind: string; term_key?: string | null }; need: string; counts?: { distinct_items?: number | null; distinct_sources?: number | null } | null; subjectRef?: string | null; rule?: string; extra?: Record<string, unknown> }): Finding["row"] {
   const rule = args.rule ?? TERM_NEED_RULE;
   return {
     category: "coverage_gap", subject_type: "system", subject_ref: args.subjectRef ?? String(args.term.id), status: "open", created_by: createdBy(TERM_NEED_NAMESPACE, args.term.kind),

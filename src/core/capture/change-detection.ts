@@ -21,8 +21,8 @@ function contentFingerprint(text: string | null | undefined): string | null {
 /** A change only when both fingerprints exist and differ: a missing prior (first observation) or a missing current (thin or failed capture) is never a change. */
 const isContentChange = (prevHash: string | null | undefined, nextHash: string | null | undefined): boolean => !!prevHash && !!nextHash && prevHash !== nextHash;
 
-export const DEFAULT_CHECK_LIMIT = 10;
-export const MAX_CHECK_LIMIT = 50;
+const DEFAULT_CHECK_LIMIT = 10;
+const MAX_CHECK_LIMIT = 50;
 
 /** A bounded batch size: an integer 1 to 50, default 10. */
 export function validateCheckLimit(raw: unknown): { ok: true; limit: number } | { ok: false; error: string } {
@@ -33,7 +33,7 @@ export function validateCheckLimit(raw: unknown): { ok: true; limit: number } | 
 }
 
 /** The values the pass writes to monitoring_queue.last_result: exactly the column's CHECK vocabulary (a change is `updated`, a non-answer is `error`, a definitive dead is `inaccessible`). */
-export const MONITORING_RESULT = { changed: "updated", unchanged: "no_change", inconclusive: "error", dead: "inaccessible" } as const;
+const MONITORING_RESULT = { changed: "updated", unchanged: "no_change", inconclusive: "error", dead: "inaccessible" } as const;
 
 export interface CheckSourceRow {
   id: string;
@@ -69,7 +69,7 @@ export interface SourceAssessment {
  * definitive 404 or 410 with a zero streak may; the fingerprint of the decoded text, so a first observation only seeds the hash and a thin capture is never a change.
  * The three writes after the assessment read their errors; a failed write is reported on the result, never dropped.
  */
-export async function assessAndUpdateSource(deps: ChangeDetectionDeps, source: CheckSourceRow): Promise<SourceAssessment> {
+async function assessAndUpdateSource(deps: ChangeDetectionDeps, source: CheckSourceRow): Promise<SourceAssessment> {
   const errors: string[] = [];
   const now = deps.now();
   const res = await fetchDirect(source.url, deps, { max: storageMaxChars((deps.env ?? process.env) as Record<string, string | undefined>), keepHtml: true });

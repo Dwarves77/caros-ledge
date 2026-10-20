@@ -5,12 +5,14 @@ import { test } from "node:test";
 
 import { GET as relevance } from "@/features/regulations/api/relevance";
 import { GET as rest } from "@/features/lists/api/rest";
-import { DELETE as removeView, GET as listViews, MAX_VIEWS_PER_SURFACE, POST as saveView } from "@/features/saved-views/api/saved-views";
+import { DELETE as removeView, GET as listViews, POST as saveView } from "@/features/saved-views/api/saved-views";
 
 import { scripted } from "../_support/fake-clients.ts";
 import { call, E, ITEM_1, ORG_A, script, seed, USER } from "../workspace/_world.ts";
 
 const VIEWS = "/api/saved-views";
+/** The documented cap: fifty saved views per list. */
+const MAX_VIEWS_PER_SURFACE = 50;
 
 test("persona matrix: /api/detail/relevance answers every signed-in caller and refuses an anonymous one (the old route answered anyone on an IP limit)", async () => {
   const run = async (persona: Parameters<typeof call>[1]) => {

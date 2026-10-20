@@ -14,10 +14,10 @@ import { extractPortalLinks } from "@/features/sources/walkers/portal-links";
 
 import type { BuiltDeps } from "../wiring";
 
-export const CHANGE_DEFAULT_LIMIT = 10;
-export const DRAIN_CALLER = "turn-change";
+const CHANGE_DEFAULT_LIMIT = 10;
+const DRAIN_CALLER = "turn-change";
 
-export function planChange(input: Record<string, unknown>): { limit: number; drainLimit: number | undefined } {
+function planChange(input: Record<string, unknown>): { limit: number; drainLimit: number | undefined } {
   return { limit: typeof input.limit === "number" ? input.limit : CHANGE_DEFAULT_LIMIT, drainLimit: typeof input.drainLimit === "number" ? input.drainLimit : undefined };
 }
 

@@ -4,7 +4,6 @@
 // shown, and a refused figure shows its refusal, never a stale number relabelled. `now` is required: the render instant belongs to the request, never to the component. Each can carry the rating of the source it cites (INV-262).
 import type { ReactNode } from "react";
 
-import { formatFigure, formatRange } from "@/core/figures";
 import { formatNumber } from "@/core/shared";
 import { admissibleFor } from "@/core/propagation/admissible";
 import type { Use, Value, Verdict } from "@/core/propagation/types";
@@ -45,47 +44,6 @@ function Card({ kind, badge, badgeClass, label, figure, verdict, use, rating, ch
         </p>
       )}
     </SectionCard>
-  );
-}
-
-const money = (value: number | null, unit: string | null, currency: string | null): string => (value === null || !Number.isFinite(value) ? "—" : formatFigure(value, unit, currency).text);
-
-/** A figure computed under a statute: always its citation and its formula version, so a superseded formula's output is never confused with the current one. */
-export function StatutoryFigure({ figure, citation, formulaVersion, label, now, use = "filing", rating }: Common & { citation: string; formulaVersion: string }) {
-  const verdict = admissibleFor(figure, use, now);
-  return (
-    <Card kind="statutory" badge="Statutory" badgeClass={styles.badgeStatutory} label={label} figure={figure} verdict={verdict} use={use} rating={rating} foot={<p className={styles.meta}>{citation} · Formula version: {formulaVersion}</p>}>
-      <p className={`${styles.stat} ${styles.statLarge}`}>{money(figure.value, figure.unit, figure.currency)}</p>
-    </Card>
-  );
-}
-
-interface Companion {
-  label: string;
-  low: number | null;
-  point: number | null;
-  high: number | null;
-  unit: string | null;
-  /** A companion never inherits the primary figure's currency. */
-  currency?: string | null;
-  /** The named reason this companion has no value at this input point, shown instead of a blank or a zero. */
-  refusal?: string | null;
-}
-/** A modelled or estimated figure: low, point and high always together (never a bare point), companions at equal weight. */
-export function EstimatedFigure({ figure, label, now, use = "analysis", rating, companions = [], pedigreeNote }: Common & { companions?: Companion[]; pedigreeNote?: string | null }) {
-  const verdict = admissibleFor(figure, use, now);
-  const cards: Companion[] = [{ label, low: figure.valueLow, point: figure.value, high: figure.valueHigh, unit: figure.unit, currency: figure.currency, refusal: null }, ...companions];
-  return (
-    <Card kind="estimated" badge="Estimate" badgeClass={styles.badgeEstimate} label={label} figure={figure} verdict={verdict} use={use} rating={rating} foot={pedigreeNote ? <p className={styles.meta}>{pedigreeNote}</p> : null}>
-      <div className={styles.grid} style={cards.length > 1 ? undefined : { gridTemplateColumns: "1fr" }}>
-        {cards.map((c, i) => (
-          <div key={i}>
-            <p className={styles.label}>{c.label}</p>
-            {c.refusal ? <p className={styles.refusal}>{c.refusal}</p> : <p className={styles.stat}>{formatRange(c.low, c.point, c.high, c.unit, c.currency ?? null)}</p>}
-          </div>
-        ))}
-      </div>
-    </Card>
   );
 }
 

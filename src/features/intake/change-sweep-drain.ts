@@ -10,7 +10,7 @@ import { type IntakeDeps } from "./deps";
 import { cheapReverify } from "./quarantine/resolver";
 import { applyStagedUpdate, CHANGE_SWEEP_STAGED_MARKER, stampDisposition, type StagedUpdateRow } from "./staged-transit";
 
-export const UPDATE_DRAIN_LIMIT = 5;
+const UPDATE_DRAIN_LIMIT = 5;
 export interface DrainOutcome { stagedId: string; itemId: string | null; disposition: "update_applied" | "update_rejected"; reason: string; evidence?: Record<string, string> }
 export type DrainResult = RunResult & { items: DrainOutcome[]; notDrained: number };
 

@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { MINT_OK, applyStagedUpdate, consumePortalCandidates, drainChangeSweepUpdates, persistPortalCandidates, runIntakeCycle, runParticipation, selectCandidateLedgerPage, stageCandidate } from "@/features/intake";
-import { applyPromoteCap, buildCandidateSeed } from "@/features/intake/portal-ledger";
 import { CHANGE_SWEEP_STAGED_MARKER } from "@/features/intake/staged-transit";
 
 import { ITEM, OFFICIAL_TEXT, OFFICIAL_URL, SOURCE, SPAN_REPORT, makeWorld } from "./fixtures.ts";
@@ -285,9 +284,6 @@ test("portal ledger: persist is batched and deduped, a failed chunk is reported,
   assert.equal(page[0]?.sources?.category, "regulatory");
   w.db.rpcs.next_uncensused_portal_candidates = () => ({ error: { message: "rpc down" } });
   await assert.rejects(selectCandidateLedgerPage(w.deps.sb, { limit: 10 }), /lookup failed at next_uncensused_portal_candidates/);
-  assert.deepEqual(applyPromoteCap([1, 2, 3], 2), { toPromote: [1, 2], deferred: [3] });
-  assert.deepEqual(applyPromoteCap([1, 2], Number.NaN), { toPromote: [1, 2], deferred: [] });
-  assert.deepEqual(applyPromoteCap([1, 2], -1), { toPromote: [1, 2], deferred: [] });
 });
 
 const verdictFor = (url: string, over: Record<string, unknown> = {}) => ({ entity_verdict: "specific_document", item_type: "regulation", domain: 1, severity: "MONITORING", priority: "LOW", urgency_tier: "stable", title_candidate: `Doc ${url.slice(-2)}`, surface_tags: ["regulations"], relevance: 80, summary: "s", ...over });
@@ -336,6 +332,5 @@ test("portal ledger consume: a wall or a short capture leaves the row a candidat
   const seedBreak = ledgerWorld(1);
   const sv = await consumePortalCandidates(seedBreak.deps, { mode: "plan", limit: 5, verdicts: new Map([[seedBreak.rows[0]!.url, verdictFor(seedBreak.rows[0]!.url, { severity: "CATASTROPHIC" })]]) });
   assert.match(sv.outcomes[0]?.reason ?? "", /seed vocabulary/);
-  assert.equal(buildCandidateSeed({ id: "x", url: "https://a.test/z", anchor_text: null, source_id: SOURCE, first_seen_at: "t", sources: null }, { entity_verdict: "specific_document", item_type: "regulation", domain: 1, surface_tags: [], relevance: 5, severity: "COST ALERT", priority: "HIGH", urgency_tier: "elevated", topic_tags: [], jurisdictions: [], title_candidate: "T", summary: "", rationale: "" }).severity, "cost_alert");
   assert.ok(ITEM);
 });

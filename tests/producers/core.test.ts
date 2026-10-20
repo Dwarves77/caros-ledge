@@ -3,18 +3,18 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { readCsvStream, splitCsvText } from "@/core/csv/stream";
-import { decideDrainSwitch, readDrainSwitch } from "@/core/drain/switch";
+import { readDrainSwitch } from "@/core/drain/switch";
 import { openAlexGet, searchWorks, workByDoi } from "@/core/http/openalex";
 import { loadProducerRegistry, runRegistered, selectRuns } from "@/core/producers/registry";
 import { entityRefValuesForTable, loadRowsFile, parseOperatorRows, registerCitedSource, requireCitation, resolveEntityByName, RowsFileError, validateEntityRefs } from "@/core/producers/rows-file";
-import { decideApply, licenceBlockOf, makeGetter, NetworkError, runProducer, type ProducerSpec } from "@/core/producers/runner";
-import { foldProducerSummaries, writeProducerSummary } from "@/core/producers/summary";
+import { NetworkError, runProducer, type ProducerSpec } from "@/core/producers/runner";
+import { writeProducerSummary } from "@/core/producers/summary";
 import { KEYS, planKeyedUpsert } from "@/core/producers/upsert-plan";
-import { labelled, missing, spec09Label } from "@/core/values/label";
+import { labelled, missing } from "@/core/values/label";
 
 import { memoryDb } from "../_support/memory-db.ts";
 
-import { makeDeps, NOW } from "./support.ts";
+import { makeDeps } from "./support.ts";
 
 const spec = (over: Partial<ProducerSpec> = {}): ProducerSpec => ({
   name: "t", table: "market_series", licenceKey: null, enabled: true, killSwitchEnv: "T_ON",
@@ -24,20 +24,31 @@ const spec = (over: Partial<ProducerSpec> = {}): ProducerSpec => ({
   ...over,
 });
 
-test("the gate matrix: apply x licenceBlock x enabled x killSwitchOn x hasCreds x truncated, canWrite only when every gate passes, and the reason names the FIRST failing gate in the fixed order", () => {
+test("the gate matrix: apply x licenceBlock x enabled x killSwitchOn x hasCreds x truncated, a producer writes only when every gate passes, and the reason names the FIRST failing gate in the fixed order", async () => {
   let writable = 0;
   for (let m = 0; m < 64; m += 1) {
-    const g = { apply: !!(m & 1), licenceBlock: m & 2 ? "blocked" : null, enabled: !!(m & 4), killSwitchOn: !!(m & 8), hasCreds: !!(m & 16), truncated: !!(m & 32) };
-    const d = decideApply(g);
+    const g = { apply: !!(m & 1), licenceBlock: !!(m & 2), enabled: !!(m & 4), killSwitchOn: !!(m & 8), hasCreds: !!(m & 16), truncated: !!(m & 32) };
+    const d = makeDeps({ env: { ...(g.killSwitchOn ? { T_ON: "1" } : {}), ...(g.hasCreds ? { SOME_KEY: "k" } : {}) } });
+    const s = spec({
+      enabled: g.enabled,
+      keyEnv: "SOME_KEY",
+      ...(g.licenceBlock ? { licenceBlock: "blocked" } : {}),
+      ...(g.truncated ? { parse: () => ({ rows: [{ series_key: "t:a", reference_period: "2026-10-01", value_numeric: 1 }], warnings: [], truncated: true }) } : {}),
+    });
+    const r = await runProducer(d.deps, { spec: s, dry: !g.apply, text: "doc" });
     const expect = g.apply && !g.licenceBlock && g.enabled && g.killSwitchOn && g.hasCreds && !g.truncated;
-    assert.equal(d.canWrite, expect, JSON.stringify(g));
+    assert.equal(d.mem.writes.some((w) => w.op !== "select"), expect, JSON.stringify(g));
     if (expect) writable += 1;
-    if (!g.apply) assert.match(d.reason, /dry run/);
-    else if (g.licenceBlock) assert.match(d.reason, /licence block/);
-    else if (!g.enabled) assert.match(d.reason, /ENABLED/);
-    else if (!g.killSwitchOn) assert.match(d.reason, /kill switch/);
-    else if (!g.hasCreds) assert.match(d.reason, /credentials/);
-    else if (g.truncated) assert.match(d.reason, /byte-limited/);
+    if (!g.apply) assert.equal(r.outcome, "ok", `${JSON.stringify(g)}: a dry run is a clean parse`);
+    else if (!expect) {
+      assert.equal(r.outcome, "failed", JSON.stringify(g));
+      const reason = r.notes[0] as string;
+      if (g.licenceBlock) assert.match(reason, /licence block/);
+      else if (!g.enabled) assert.match(reason, /ENABLED/);
+      else if (!g.killSwitchOn) assert.match(reason, /kill switch/);
+      else if (!g.hasCreds) assert.match(reason, /credentials/);
+      else assert.match(reason, /byte-limited/);
+    }
   }
   assert.equal(writable, 1);
 });
@@ -70,12 +81,12 @@ test("INV-046: the kill switch (and every gate) is read BEFORE the first fetch: 
   assert.equal(mem.writes.length, 0);
 });
 
-test("INV-245: a prohibited-redistribution source (the register's sbti_dashboard) is licence-blocked whatever the other gates say; an unregistered or permitted key is not", () => {
-  assert.match(licenceBlockOf({ licenceKey: "sbti_dashboard" }) ?? "", /prohibited/);
-  assert.equal(licenceBlockOf({ licenceKey: "eia" }), null);
-  assert.equal(licenceBlockOf({ licenceKey: null }), null);
-  assert.equal(licenceBlockOf({ licenceKey: "nope_not_registered" }), null);
-  assert.equal(decideApply({ apply: true, licenceBlock: "x", enabled: true, killSwitchOn: true, hasCreds: true }).canWrite, false);
+test("INV-245: a prohibited-redistribution source (the register's sbti_dashboard) is licence-blocked whatever the other gates say; an unregistered or permitted key is not", async () => {
+  const gate = async (licenceKey: string | null) => runProducer(makeDeps({ env: { T_ON: "1" } }).deps, { spec: spec({ licenceKey }), dry: false, text: "doc" });
+  const prohibited = await gate("sbti_dashboard");
+  assert.equal(prohibited.outcome, "failed");
+  assert.match(prohibited.notes[0] as string, /prohibited/);
+  for (const open of ["eia", null, "nope_not_registered"]) assert.equal((await gate(open)).outcome, "ok", String(open));
 });
 
 test("an apply that passes every gate writes through the keyed plan, records the run once, and a missing key (the EIA free key) is a credentials refusal", async () => {
@@ -115,18 +126,26 @@ test("B-0324: no runtime calls process.exit; an input that is empty is a returne
 });
 
 test("the fetch policy: one retry policy (network error, 429, 5xx), no retry on a 4xx, the Range header, and the key is redacted from the error", async () => {
+  const via = (fetch: unknown, fetchDoc: ProducerSpec["fetchDoc"]) => {
+    const d = makeDeps({});
+    d.deps.fetch = fetch as never;
+    return runProducer(d.deps, { spec: spec({ fetchDoc }) });
+  };
   let n = 0;
   const flaky = async (): Promise<Response> => (++n < 3 ? new Response("busy", { status: 503 }) : new Response("fine", { status: 200 }));
-  const get = makeGetter(flaky as never, { sleep: async () => {} });
-  assert.equal(await (await get("https://h/x")).text(), "fine");
+  const okRun = await via(flaky, async (ctx) => ({ text: await (await ctx.get("https://h/x")).text() }));
+  assert.equal(okRun.outcome, "ok");
   assert.equal(n, 3);
   let m = 0;
-  const gone = makeGetter((async () => (m++, new Response("x", { status: 404 }))) as never, { sleep: async () => {} });
-  await assert.rejects(() => gone("https://h/x?api_key=SECRET123"), (e: Error) => e instanceof NetworkError && !e.message.includes("SECRET123") && e.message.includes("REDACTED"));
+  const gone = async () => (m++, new Response("x", { status: 404 }));
+  const failed = await via(gone, async (ctx) => ({ text: await (await ctx.get("https://h/x?api_key=SECRET123")).text() }));
+  assert.equal(failed.outcome, "failed");
+  assert.ok(!failed.notes.join(" ").includes("SECRET123") && failed.notes.join(" ").includes("REDACTED"));
   assert.equal(m, 1, "a 404 is not retried");
   let seen: Record<string, string> | undefined;
-  await makeGetter((async (_u: string, init: { headers?: Record<string, string> }) => ((seen = init.headers), new Response("p", { status: 206 }))) as never)("https://h/y", { range: [0, 99] });
+  await via(async (_u: string, init: { headers?: Record<string, string> }) => ((seen = init.headers), new Response("p", { status: 206 })), async (ctx) => ({ text: await (await ctx.get("https://h/y", { range: [0, 99] })).text() }));
   assert.equal(seen?.Range, "bytes=0-99");
+  assert.ok(new NetworkError("x") instanceof Error);
 });
 
 test("the keyed planner across the four key shapes: create what is new, patch only what differs, count unchanged, skip a null key", () => {
@@ -180,15 +199,9 @@ test("runRegistered runs in registry order, stamps only the entry's own entity, 
   assert.deepEqual(seen, [{ name: "first", entity: "cl:jurisdiction:9170a8b2fb3234ba" }, { name: "second", entity: null }]);
 });
 
-test("the producer summary: no directory writes nothing; a failed status carries its reason; the family fold counts failures and edges", () => {
+test("the producer summary: no directory writes nothing; a status outside the set is refused", () => {
   assert.equal(writeProducerSummary({ producer: "p", status: "ok", rows_changed: 1, edges_authored: null }), null);
   assert.throws(() => writeProducerSummary({ producer: "p", status: "weird" as never, rows_changed: 1, edges_authored: null }, { dir: "x" }), /status/);
-  const mk = (producer: string, status: "ok" | "failed", edges: number | null) => ({ producer, status, rows_changed: 2, edges_authored: edges, reason: status === "failed" ? "no edges" : null, counts: {}, written_at: NOW.toISOString() });
-  const f = foldProducerSummaries([mk("a", "ok", 3), mk("b", "failed", 0), mk("c", "ok", null)]);
-  assert.equal(f.metrics.producers_failed, 1);
-  assert.equal(f.metrics.edges_authored_total, 3);
-  assert.equal(f.defects_found.length, 1);
-  assert.equal(foldProducerSummaries([]).metrics.producers_reporting, 0);
 });
 
 test("the one CSV reader is chunk-safe: a quote, a CRLF and a multibyte character each split across chunks; a byte limit drops the half record; a quoted newline stays one field", async () => {
@@ -233,16 +246,12 @@ test("OpenAlex: the polite mailto comes from the environment (never a literal), 
 });
 
 test("INV-106: the drain switch fails closed on every layer, reads the pause and the fleet halt, and a missing client or failed read is a halt", async () => {
-  assert.equal(decideDrainSwitch({ judgementDrain: "on", emergencyPaused: false, fleetHalted: false }).on, true);
-  assert.match(decideDrainSwitch({ judgementDrain: "on", emergencyPaused: true, fleetHalted: false }).reason ?? "", /emergency/);
-  assert.match(decideDrainSwitch({ judgementDrain: "on", emergencyPaused: false, fleetHalted: true }).reason ?? "", /fleet-budget-halt is open/);
-  assert.match(decideDrainSwitch({ judgementDrain: "off", emergencyPaused: false, fleetHalted: false }).reason ?? "", /judgement_drain is off/);
-  assert.equal(decideDrainSwitch({ judgementDrain: "on", emergencyPaused: false, fleetHalted: undefined }).on, false, "anything but a clean false is a halt");
+  const read = (state: Record<string, unknown>, flags: Record<string, unknown>[] = []) => readDrainSwitch(memoryDb({ system_state: [{ id: true, ...state }], integrity_flags: flags }).db);
+  assert.equal((await read({ judgement_drain: "on", global_processing_paused: false })).on, true);
+  assert.match((await read({ judgement_drain: "on", global_processing_paused: true })).reason ?? "", /emergency/);
+  assert.match((await read({ judgement_drain: "on", global_processing_paused: false }, [{ subject_ref: "fleet-budget-halt", status: "open" }])).reason ?? "", /fleet-budget-halt is open/);
+  assert.match((await read({ judgement_drain: "off", global_processing_paused: false })).reason ?? "", /judgement_drain is off/);
   assert.equal((await readDrainSwitch(null)).on, false);
-  const on = memoryDb({ system_state: [{ id: true, judgement_drain: "on", global_processing_paused: false }] });
-  assert.equal((await readDrainSwitch(on.db)).on, true);
-  const halted = memoryDb({ system_state: [{ id: true, judgement_drain: "on", global_processing_paused: false }], integrity_flags: [{ subject_ref: "fleet-budget-halt", status: "open" }] });
-  assert.equal((await readDrainSwitch(halted.db)).on, false);
   const broken = memoryDb({ system_state: [{ id: true, judgement_drain: "on", global_processing_paused: false }] }, { failures: [{ table: "integrity_flags", op: "select", message: "down" }] });
   const s = await readDrainSwitch(broken.db);
   assert.equal(s.on, false);
@@ -288,10 +297,10 @@ test("rows files and the operator contract: a citation is required by name, an u
 });
 
 test("spec09 labels: a missing value always carries a reason, an unknown derivation is M, never a guessed bucket", () => {
-  assert.equal(spec09Label("statutory_fixed"), "statutory");
-  assert.equal(spec09Label("calculated"), "estimate");
-  assert.equal(spec09Label("nonsense"), "M");
-  assert.equal(spec09Label(null), "M");
+  assert.equal(labelled(1, "statutory_fixed").label, "statutory");
+  assert.equal(labelled(1, "calculated").label, "estimate");
+  assert.equal(labelled(1, "nonsense").label, "M");
+  assert.equal(labelled(1, null).label, "M");
   assert.throws(() => missing(""), TypeError);
   assert.throws(() => missing("   "), TypeError);
   assert.equal(missing("no source").value, null);

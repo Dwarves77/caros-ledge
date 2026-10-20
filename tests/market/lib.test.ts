@@ -3,7 +3,6 @@ import { test } from "node:test";
 
 import { formatFigure, formatRange } from "@/core/figures";
 import { loadProducerRegistry } from "@/core/producers";
-import { PRODUCER_CATALOG } from "@/core/turn/wiring";
 import { buildCarbonCostPerFeuView, buildCarbonOverlayView, carbonCostPerFeu, carbonIntensity, GAP, resolveItemCorridor, selectFactor, type FactorRow } from "@/features/market/lib/carbon";
 import { computeSeriesDeltas } from "@/features/market/lib/deltas";
 import { cadenceNameForDays, deriveSeriesFreshness, summarizeBoardFreshness } from "@/features/market/lib/freshness";
@@ -17,6 +16,8 @@ import { deltaCellModel, sparklineModel } from "@/features/market/lib/ribbon-mod
 import { buildSeriesBoard, type SeriesRow } from "@/features/market/lib/series-board";
 import { derivePromotionState } from "@/features/market/lib/signal-promotion";
 import { buildEtsProxyBand } from "@/features/market/producers";
+
+import { fixture } from "../integration/world.ts";
 
 const obs = (key: string, period: string, value: number | null, over: Partial<SeriesRow> = {}): SeriesRow => ({ id: `${key}@${period}`, series_key: key, label: key, reference_period: period, as_at_date: period, value_numeric: value, unit: "EUR/1000L", currency: "EUR", ...over });
 
@@ -106,9 +107,10 @@ test("registry: six producers as data, their runtime side exists, and the implem
   assert.equal(isImplementedSeriesKey("sbti:x"), false);
   assert.equal(isImplementedSeriesKey("unknown:x"), false);
   assert.equal(producerFor("ecb-fx")?.cadenceDays, 1);
-  const names = new Set(Object.keys(PRODUCER_CATALOG));
+  const catalog = fixture().d.catalog;
+  const names = new Set(Object.keys(catalog));
   for (const p of PRODUCERS) if (p.producer) assert.ok(names.has(p.producer), `${p.keyPrefix}: producer spec ${p.producer} exists`);
-  const registry = loadProducerRegistry(PRODUCER_CATALOG);
+  const registry = loadProducerRegistry(catalog);
   for (const p of PRODUCERS) if (p.producer && registry.some((r) => r.name === p.producer)) assert.equal(registry.find((r) => r.name === p.producer)?.domain_table, "market_series");
 });
 

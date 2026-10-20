@@ -5,7 +5,6 @@ import { z } from "zod";
 
 import identifierFile from "./data/identifier-schemes.json";
 import localeFile from "./data/locales.json";
-import missingFile from "./data/missing-tokens.json";
 import qualifierFile from "./data/qualifiers.json";
 import unitFile from "./data/units.json";
 
@@ -34,7 +33,6 @@ const identifiers = z.object({
   yearRange: z.object({ pattern: regexSource }),
   trackingParams: z.array(z.string()),
 });
-const missing = z.object({ tokens: z.array(z.object({ literal: z.string().min(1), kind: z.string().min(1), meaning: z.string().min(1) })).min(1) });
 const patterns = z.record(z.string(), z.array(regexSource).min(1));
 const qualifiers = z.object({ window: z.object({ max: z.number().int().positive() }), fields: z.record(z.string(), patterns), screeningGrade: z.array(z.string()), qualifiedDims: z.array(z.string()), frameworks: z.array(z.object({ id: z.string(), pattern: regexSource })) });
 
@@ -42,7 +40,6 @@ export type Unit = z.infer<typeof unit>;
 export const UNIT_FILE = units.parse(unitFile);
 export const LOCALE_FILE = locales.parse(localeFile);
 export const IDENT_FILE = identifiers.parse(identifierFile);
-export const MISSING_FILE = missing.parse(missingFile);
 export const QUALIFIER_FILE = qualifiers.parse(qualifierFile);
 
 export const UNITS = UNIT_FILE.units;

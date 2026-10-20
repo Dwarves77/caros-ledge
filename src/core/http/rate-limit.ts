@@ -3,8 +3,8 @@ import { isServiceConfigured, serviceClient, type Db } from "@/core/db/clients";
 import { log } from "@/core/shared/log";
 
 /** A fixed window per key (not a sliding window): 60 requests per 60 seconds, counted in Postgres across every instance when a service client exists (rate_limit_hit, migration 0019), else per instance in memory. */
-export const WINDOW_MS = 60_000;
-export const MAX_REQUESTS = 60;
+const WINDOW_MS = 60_000;
+const MAX_REQUESTS = 60;
 
 /** A route's own budget (IMP-057): the default is 60 requests per 60 seconds; a worker route that does a batch of work per call asks for fewer. */
 export interface RateBudget {

@@ -17,11 +17,11 @@ import ts from "typescript";
 import { isMain, walk } from "../lib/fs.mjs";
 
 import { dbCallsOf } from "./db-calls.mjs";
-import { buildGraph } from "./connections/graph.mjs";
+import { buildGraph, resolveSpecifier } from "./connections/graph.mjs";
 import { readerReads, rpcNames, tableWriters } from "./connections/tables.mjs";
 
 export const ALLOW_FILE = "scripts/ci/connections-allow.json";
-const NEXT_FILES = /^src\/app\/|^src\/instrumentation\.ts$/;
+const NEXT_FILES = /^src\/app\/|^src\/(instrumentation|proxy)\.ts$/;
 const isReader = (f) => /^src\/features\/[^/]+\/(read|server|queries)\//.test(f);
 const isRoot = (f) => NEXT_FILES.test(f) || f.startsWith("scripts/") || f.startsWith("supabase/functions/");
 
@@ -30,6 +30,20 @@ const textsOf = (paths) => new Map(paths.map((p) => [p, readFileSync(p, "utf8")]
 /** Exports with no caller (value exports only; a re-export is judged where it is defined). Returns [{ file, name, line, runtime }]. */
 export function deadExports(graph, srcPaths, runtimeNames) {
   const live = graph.reachable([...graph.files].filter(isRoot));
+  // A route, page or hook file that re-exports a handler or component (`export { GET } from "..."`, `export { default } from "..."`) is the caller of what it re-exports: Next reads the name off the route file.
+  const served = new Set();
+  for (const f of graph.files) {
+    if (!NEXT_FILES.test(f)) continue;
+    for (const r of graph.info.get(f).reexports) {
+      const target = resolveSpecifier(f, r.spec, graph.files);
+      if (!target) continue;
+      const names = r.names === "*" ? [...graph.info.get(target).exports.keys()] : r.names.map(([, imported]) => imported);
+      for (const n of names) {
+        const d = graph.defining(target, n);
+        if (d) served.add(`${d[0]}#${d[1]}`);
+      }
+    }
+  }
   const dead = [];
   for (const f of srcPaths) {
     if (NEXT_FILES.test(f)) continue;
@@ -38,7 +52,7 @@ export function deadExports(graph, srcPaths, runtimeNames) {
       const d = graph.defining(f, name);
       if (!d || d[0] !== f) continue;
       const users = [...(graph.usedBy.get(`${f}#${name}`) ?? [])].filter((u) => u !== f && live.has(u));
-      if (!users.length) dead.push({ file: f, name, line: e.line, runtime: runtimeNames.has(`${f}#${name}`) });
+      if (!users.length && !served.has(`${f}#${name}`)) dead.push({ file: f, name, line: e.line, runtime: runtimeNames.has(`${f}#${name}`) });
     }
   }
   return dead;

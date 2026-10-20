@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { applyBatch } from "@/features/batches";
-import { needsExporter, needKey, needKindOf, parseAppliedNote } from "@/features/batches/kinds/needs-search/needs";
+import { needsExporter, needKindOf, parseAppliedNote } from "@/features/batches/kinds/needs-search/needs";
 import { normalizeVerdictHost, validateHostVerdictEntry } from "@/features/batches/kinds/needs-search/validate";
 
 import { batchFile, NOW } from "./world.ts";
@@ -22,7 +22,6 @@ test("the export lists the open needs of the four kinds with a key that survives
   assert.match(items.find((i) => i.kind === "lineage-gap")?.text ?? "", /Directive 2009\/28\/EC \(amends\)/);
   assert.equal(items.find((i) => i.kind === "lineage-gap")?.output, "portal_link_candidate");
   assert.equal(items.find((i) => i.kind === "term-need")?.output, "census_worklist");
-  assert.equal(needKey({ kind: "term-need", subject_ref: "term-1", text: "The  IMO EEXI technical guidelines" }), items.find((i) => i.kind === "term-need")?.key.replace(/^/, ""), "whitespace and case do not change a need's key");
   assert.equal(needKindOf("nothing:here"), null);
 });
 

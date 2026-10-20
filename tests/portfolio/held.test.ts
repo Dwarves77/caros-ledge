@@ -4,7 +4,7 @@ import { test } from "node:test";
 import { GET as detailGet } from "@/features/workspace/api/portfolio-detail";
 import { wireWorkspaceDeps } from "@/features/workspace/api/deps";
 import { readPortfolioDetail } from "@/features/workspace/portfolio/read";
-import { corridorLabel, portfolioDeps } from "@/features/portfolio/deps";
+import { portfolioDeps } from "@/features/portfolio/deps";
 import { readHeld } from "@/features/portfolio/read/held";
 import { createPortfolioRequest } from "@/features/portfolio/client";
 
@@ -68,6 +68,7 @@ test("the detail API answers with the real held layer wired, for a member and no
 });
 
 test("corridorLabel: a canonical corridor name reads as A to B; anything else is null (the caller falls back to the entity's own name)", () => {
+  const { corridorLabel } = portfolioDeps({} as never);
   assert.equal(corridorLabel("CNSHA-NLRTM:ocean"), "Shanghai (CN) → Rotterdam (NL), ocean");
   assert.equal(corridorLabel("corridor:nlrtm:sgsin"), null);
   assert.equal(corridorLabel(""), null);

@@ -17,7 +17,7 @@ export interface TagProposal {
   evidence: string;
   confidence: Confidence;
 }
-export const CONFIDENCE_RANK: Readonly<Record<string, number>> = { high: 2, medium: 1 };
+const CONFIDENCE_RANK: Readonly<Record<string, number>> = { high: 2, medium: 1 };
 /** Whether a proposal's confidence reaches the threshold. An unknown value ranks 0. */
 export const meetsConfidence = (confidence: unknown, threshold: Confidence): boolean => (CONFIDENCE_RANK[String(confidence)] ?? 0) >= (CONFIDENCE_RANK[threshold] ?? 0);
 
@@ -61,11 +61,11 @@ export function deriveTags(item: TagSource | null | undefined, adopted?: Partial
   return { itemId: it.id, proposals };
 }
 
-export const DEFAULT_PREFIX_CHARS = 8000;
+const DEFAULT_PREFIX_CHARS = 8000;
 const DEFAULT_CONTEXT_CHARS = 300;
 
 /** The text window of a capture: the first `prefixChars`, plus `contextChars` around every later occurrence of a vocabulary keyword (so a long document is not read whole). */
-export function boundedSourceWindow(text: unknown, opts: { prefixChars?: number; contextChars?: number; vocabTerms?: readonly string[]; adopted?: Partial<AdoptedVocabulary> } = {}): string {
+function boundedSourceWindow(text: unknown, opts: { prefixChars?: number; contextChars?: number; vocabTerms?: readonly string[]; adopted?: Partial<AdoptedVocabulary> } = {}): string {
   const str = String(text ?? "");
   if (!str) return "";
   const prefixChars = Number.isFinite(opts.prefixChars) ? (opts.prefixChars as number) : DEFAULT_PREFIX_CHARS;

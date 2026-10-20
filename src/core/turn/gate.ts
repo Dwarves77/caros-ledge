@@ -15,7 +15,7 @@ export interface SliceState {
 }
 
 /** Which minted items has no connect run covered? Pure over the ledger rows. */
-export function sliceState(rows: readonly Row[]): SliceState {
+function sliceState(rows: readonly Row[]): SliceState {
   const connected = new Set(rows.filter((r) => r.family === CONNECTOR).flatMap((r) => r.outputs.ids?.connected_item_ids ?? []));
   const minters = rows.filter((r) => (MINTERS as readonly string[]).includes(r.family));
   const unrecoverable = minters.filter((r) => (r.outputs.counts?.minted ?? 0) > 0 && !(r.outputs.ids?.minted_item_ids ?? []).length).map((r) => ({ runId: r.id, family: r.family, minted: r.outputs.counts?.minted ?? 0 }));

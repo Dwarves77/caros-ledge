@@ -3,16 +3,16 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { buildClaimTierMap, readClaims } from "@/core/detail/claim-tiers";
+import { readClaims } from "@/core/detail/claim-tiers";
 import { loadDetail } from "@/core/detail/load";
 import { readDetailItem } from "@/core/detail/item-read";
-import { currentInferenceRows, pickVisibleInferences, readCustomerInferences, selectCurrentInferences } from "@/core/detail/inference-view";
+import { pickVisibleInferences, readCustomerInferences } from "@/core/detail/inference-view";
 import { sourceEntriesOf } from "@/core/detail/sources-parse";
 
 import { clientFor, script } from "../workspace/_world.ts";
 import { seed } from "../workspace/_world.ts";
 
-import { ARCHIVED, CLAIM_KEPT, CLAIM_SUPPRESSED, MKT, REG, SRC_T1, UNVERIFIED, world } from "./world.ts";
+import { ARCHIVED, CLAIM_KEPT, CLAIM_SUPPRESSED, MKT, REG, SRC_T1, SRC_T3, UNVERIFIED, world } from "./world.ts";
 
 const as = (db: ReturnType<typeof world>) => db.client as never;
 
@@ -41,8 +41,13 @@ test("INV-080/175/213: a claim's rating is the source's override else its base t
   const db = world();
   const { tiers } = await readClaims(as(db), REG);
   assert.equal(tiers[CLAIM_KEPT]?.tier, 1, "base tier 1, effective tier 5 ignored");
-  assert.equal(buildClaimTierMap([{ id: "x", claim_text: "c", section_row_id: null, sources: { name: "n", url: null, base_tier: 3, tier_override: 2 } }]).c?.tier, 2, "override beats base");
-  assert.equal(buildClaimTierMap([{ id: "x", claim_text: "c", section_row_id: null, sources: null }]).c?.tier, null);
+  db.seed("section_claim_provenance", [
+    { id: "dddddddd-1000-4000-8000-0000000000a1", intelligence_item_id: REG, claim_text: "an override claim", claim_kind: "FACT", source_id: SRC_T3, section_row_id: null },
+    { id: "dddddddd-1000-4000-8000-0000000000a2", intelligence_item_id: REG, claim_text: "an unsourced claim", claim_kind: "FACT", source_id: null, section_row_id: null },
+  ]);
+  const seeded = (await readClaims(as(db), REG)).tiers;
+  assert.equal(seeded["an override claim"]?.tier, 2, "override beats base");
+  assert.equal(seeded["an unsourced claim"]?.tier, null);
 });
 
 test("INV-270: a suppressed claim is absent from the tier map and its text is removed from the sections, per request", async () => {
@@ -99,11 +104,9 @@ test("INV-272: an inference shows only if current, allowlisted, cited by an item
   assert.deepEqual(view?.claims.map((c) => c.id).sort(), ["i1", "i6"], "i2 other method, i3 stale, i4 cites an unverified item, i5 superseded by i6");
   assert.equal(view?.hrefs.aaaaaaaa, undefined);
   assert.match(view?.hrefs[REG] ?? "", /^\/regulations\/g14$/);
-  const many = Array.from({ length: 9 }, (_, i) => ({ inference_id: `m${i}`, claim_text: `c${i}`, status_token: "HYPOTHESIS", confidence: 0.5, cited_item_ids: ["x"], origin_class: "derived", trigger_question_ref: null, method_id: "infer-from-question", admissibility: "current", computed_at: `2026-10-0${i + 1}T00:00:00Z` }));
-  assert.equal(pickVisibleInferences(selectCurrentInferences(many), () => true).length, 5);
-  assert.deepEqual(selectCurrentInferences([{ ...many[0]!, method_id: "other-method" }] as never), [], "a method off the allowlist is never shown, whatever the read returned");
-  assert.deepEqual(pickVisibleInferences(selectCurrentInferences(many.slice(0, 2)), (v) => !v.citedItemIds.includes("x")), [], "a claim citing an item the reader cannot open is not shown");
-  assert.deepEqual(currentInferenceRows([{ inference_id: "a" }, { inference_id: "b", supersedes: "a" }]).map((r) => r.inference_id), ["b"]);
+  const views = Array.from({ length: 9 }, (_, i) => ({ id: `m${i}`, citedItemIds: ["x"] }));
+  assert.equal(pickVisibleInferences(views, () => true).length, 5);
+  assert.deepEqual(pickVisibleInferences(views.slice(0, 2), (v) => !v.citedItemIds.includes("x")), [], "a claim citing an item the reader cannot open is not shown");
   db.fail("inference_records", "select", "down");
   await assert.rejects(() => readCustomerInferences(as(db), REG), /inference_records read failed/);
 });

@@ -40,7 +40,7 @@ const intake = (c: StepCtx) => ({ sb: c.deps.sb, sources: c.deps.intake.sources,
 const fromResult = (r: RunResult, ok = r.outcome !== "failed"): StepOut => ({ outcome: ok ? (r.notes[0] ?? r.outcome) : `failed: ${r.notes.slice(0, 2).join("; ")}`, ok });
 
 /** The sources one entry cites: distinct claim urls and ids plus metadata.sources_used (an http(s) value is a url to register, a uuid an already registered source). */
-export function collectEntryCitations(entry: Obj): { cited: { name: string; url: string }[]; citedSourceIds: string[] } {
+function collectEntryCitations(entry: Obj): { cited: { name: string; url: string }[]; citedSourceIds: string[] } {
   const urls = new Set<string>();
   const ids = new Set<string>();
   const take = (v: unknown) => {
@@ -64,7 +64,7 @@ const itemRow = async (db: Db, id: string) => {
 };
 
 /** The per-item steps, in order. A step that throws is that step's failure; the rest still run (the flywheel is independent of a quarantine). */
-export const STEPS: ReadonlyArray<readonly [string, Step]> = [
+const STEPS: ReadonlyArray<readonly [string, Step]> = [
   ["generate", async (c) => {
     const r = await injectBrief(intake(c), { itemId: c.itemId, body: String(c.entry.body), metadata: c.entry.metadata, sourcePoolHash: String(c.entry.source_pool_hash), allowBriefOverwrite: c.overwrite });
     return { outcome: r.ok ? "generated" : `generate_failed: ${r.detail}`, ok: r.ok };
@@ -118,7 +118,6 @@ export const STEPS: ReadonlyArray<readonly [string, Step]> = [
     return { outcome: r.flags.join(",") || "no new links", ok: r.outcome === "ok", counts: { participation_flags: r.flags.length } };
   }],
 ];
-export const APPLY_STEP_NAMES: readonly string[] = STEPS.map(([n]) => n);
 
 /** The customer-visible change a verified regeneration is, once per (item, batch). */
 async function recordRegeneration(c: StepCtx): Promise<string | null> {
@@ -182,7 +181,7 @@ async function afterBatch(deps: BatchDeps, ids: string[], o: ApplyOpts): Promise
   return runResult(worst("ok", ...parts.map((p) => p.outcome), flushed ? "ok" : "partial"), { flywheel_passes: parts.length, cache_flushed: flushed }, notes);
 }
 
-export function recordBriefsSpec(opts: RecordOpts): EntrySpec<RecordLive, RecordPlan> {
+function recordBriefsSpec(opts: RecordOpts): EntrySpec<RecordLive, RecordPlan> {
   return {
     kind: "record-briefs",
     batchRe: /^record-briefs-[A-Za-z0-9._-]+$/,
@@ -219,7 +218,7 @@ export function recordBriefsSpec(opts: RecordOpts): EntrySpec<RecordLive, Record
 
 /** The body as the write site stores it (hygiene applied), so a re-apply of the same batch is recognised as already applied. */
 const stored = (s: string | null | undefined): string => stripClaimLedgerBlocks(stripUrlMarkers(String(s ?? "").trim()) ?? "").replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "").trim();
-export const sameBrief = (storedBrief: string | null | undefined, body: string): boolean => !!storedBrief && stored(storedBrief) === stored(body);
+const sameBrief = (storedBrief: string | null | undefined, body: string): boolean => !!storedBrief && stored(storedBrief) === stored(body);
 
 /** Apply one record-briefs batch (the budget and the window arrive as options; the cooldown reads the ledger). */
 export async function applyRecordBriefs(deps: BatchDeps, file: unknown, o: RecordOpts): Promise<RunResult> {

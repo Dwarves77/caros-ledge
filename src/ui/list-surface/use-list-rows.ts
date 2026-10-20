@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 export type RemainderState = "idle" | "loading" | "ready" | "failed";
 
 /** The remainder's state from its three facts; a failure is its own state, never a short ready list. */
-export const remainderState = (enabled: boolean, rest: unknown[] | null, failed: boolean): RemainderState => (!enabled ? "idle" : failed ? "failed" : rest === null ? "loading" : "ready");
+const remainderState = (enabled: boolean, rest: unknown[] | null, failed: boolean): RemainderState => (!enabled ? "idle" : failed ? "failed" : rest === null ? "loading" : "ready");
 
 /**
  * The first page plus the remainder, with an explicit failed state and Retry. The old hook turned a failed remainder into an empty rest, so a list silently

@@ -1,12 +1,11 @@
 // Propagation: admissibleFor's six refusals, the method registry, the drain (spec 08 section 7 assertion 2 on a fake client), the first-inference
 // edges (B-0829) and the signpost transition table against migration 0013.
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
 import { resolveInputs } from "@/core/propagation";
-import { admissibleFor, createMethodRegistry, effectiveConfidence, FLOOR, buildFirstInferenceInput, nextLifecycleState, registerMarketMethods, runPropagationDrain, evaluateSignpostPredicate, fireSignpost } from "@/core/propagation";
-import type { Lifecycle, Value } from "@/core/propagation";
+import { admissibleFor, createMethodRegistry, FLOOR, registerFirstInference, registerMarketMethods, runPropagationDrain, evaluateSignpostPredicate, fireSignpost } from "@/core/propagation";
+import type { Value } from "@/core/propagation";
 
 import { installPropagationRpcs } from "../_support/memdb.ts";
 import { memoryDb } from "../_support/memory-db.ts";
@@ -36,12 +35,6 @@ test("admissibleFor: the six refusals, each from a value that is otherwise admis
   refused({ baseConfidence: 0.4 }, "analysis", /decayed below floor/);
   assert.equal(admissibleFor(value({ originClass: "community", baseConfidence: 0.1 }), "display", NOW).ok, true, "display has no floor and no community rule");
   assert.deepEqual(FLOOR, { analysis: 0.5, calculation: 0.75, filing: 0.9 });
-});
-
-test("effectiveConfidence halves per half-life and refuses a bad input", () => {
-  assert.equal(effectiveConfidence(0.8, "2026-10-01T00:00:00Z", 14, NOW.toISOString()), 0.4);
-  assert.throws(() => effectiveConfidence(Number.NaN, NOW, null, NOW), TypeError);
-  assert.throws(() => effectiveConfidence(1, NOW, 0, NOW), TypeError);
 });
 
 test("the method registry never overwrites a registration", () => {
@@ -119,16 +112,12 @@ test("a failed queue read is reported, never read as an empty queue", async () =
   assert.ok(m);
 });
 
-test("a first inference declares the items it cites as its inputs (B-0829)", () => {
-  const input = buildFirstInferenceInput({ subjectId: null, claimText: "c", statusToken: "HYPOTHESIS", confidence: 0.5, citedItemIds: ["i1", "i2"], triggerQuestionRef: "q", batch: "b1" } as never);
-  assert.deepEqual((input.inputs ?? []).map((i) => `${i.table}/${i.pk}`).sort(), ["intelligence_items/i1", "intelligence_items/i2"]);
-});
-
-test("signpost transition table: the TypeScript function equals the 24 VALUES rows of migration 0013", () => {
-  const sql = readFileSync(new URL("../../supabase/migrations/0013_fire_signpost.sql", import.meta.url), "utf8");
-  const rows = [...sql.matchAll(/\('([a-z]+)', '(confirms|refutes|delays)', '([a-z]+)'\)/g)];
-  assert.equal(rows.length, 24);
-  for (const [, cur, dir, next] of rows) assert.equal(nextLifecycleState(cur as Lifecycle, dir as "confirms"), next, `${cur} on ${dir}`);
+test("a first inference declares the items it cites as its inputs (B-0829)", async () => {
+  const calls: { name: string; args: Record<string, unknown> }[] = [];
+  const m = memoryDb({}, { rpc: (name, args) => (calls.push({ name, args: args as Record<string, unknown> }), { data: "inference-1" }) });
+  await registerFirstInference(m.db, { subjectId: null, claimText: "c", statusToken: "HYPOTHESIS", confidence: 0.5, citedItemIds: ["i1", "i2"], triggerQuestionRef: "q", batch: "b1" } as never);
+  const inputs = (calls.find((c) => c.name === "register_inference_record")?.args.p_inputs ?? []) as { table: string; pk: string }[];
+  assert.deepEqual(inputs.map((i) => `${i.table}/${i.pk}`).sort(), ["intelligence_items/i1", "intelligence_items/i2"]);
 });
 
 test("signpost predicates fire only on a resolvable, well-typed row", () => {

@@ -107,36 +107,32 @@ test("injectBrief dry runs every check and writes nothing", async () => {
   assert.equal(db.writes("intelligence_items").length, 0);
 });
 
+const heldWithClaim = () => {
+  const w = makeWorld({ withSource: false });
+  w.db.seed("section_claim_provenance", [{ id: "cl-1", intelligence_item_id: ITEM, claim_text: "a grounded claim", claim_kind: "FACT", section_row_id: null, source_span: "a grounded claim", source_id: null, search_result_id: null }]);
+  return w;
+};
+
 test("the ladder: a source-less item is a structural hold (no re-research), and the erase archives each claim before deleting it", async () => {
   const { db, deps } = makeWorld({ withSource: false });
   const res = await startBriefWorkflow(deps, { itemId: ITEM, injected: injected(db) });
   assert.equal(res.status, "structural_held_for_resource");
   assert.ok(db.rows("integrity_flags").some((f) => f.created_by === "source-link-repair"));
-  // erase with claims present: each is archived to claim_versions first (RD-45)
-  const w = makeWorld();
-  const ok = await startBriefWorkflow(w.deps, { itemId: ITEM, injected: injected(w.db) });
-  assert.equal(ok.status, "verified");
-  w.db.rows("integrity_flags").length = 0;
-  w.db.rows("item_timelines").length = 0;
-  const { eraseStep } = await import("@/features/intake/workflow");
-  const n = w.db.rows("section_claim_provenance").length;
-  assert.ok(n > 0);
-  const e = await eraseStep(w.deps, ITEM, "reresearch_failed");
-  assert.equal(e.ok, true, e.detail);
+  // erase with a claim present: it is archived to claim_versions first (RD-45)
+  const w = heldWithClaim();
+  const held = await startBriefWorkflow(w.deps, { itemId: ITEM, injected: injected(w.db) });
+  assert.equal(held.status, "structural_held_for_resource");
   assert.equal(w.db.rows("section_claim_provenance").length, 0);
-  assert.equal(w.db.rows("claim_versions").length, n, "every erased claim was archived first");
-  assert.ok(w.db.rows("claim_versions").every((v) => v.supersede_reason === "proven_inaccurate" || v.reason === "proven_inaccurate" || JSON.stringify(v).includes("proven_inaccurate")));
+  assert.equal(w.db.rows("claim_versions").length, 1, "every erased claim was archived first");
+  assert.ok(w.db.rows("claim_versions").every((v) => JSON.stringify(v).includes("proven_inaccurate")));
 });
 
 test("erase fails closed: an archive failure stops the erase and leaves the claim in place", async () => {
-  const { db, deps } = makeWorld();
-  await startBriefWorkflow(deps, { itemId: ITEM, injected: injected(db) });
+  const { db, deps } = heldWithClaim();
   db.failWhen = (c) => (c.table === "claim_versions" && c.op === "insert" ? "disk full" : null);
-  const { eraseStep } = await import("@/features/intake/workflow");
-  const e = await eraseStep(deps, ITEM, "reresearch_failed");
-  assert.equal(e.ok, false);
-  assert.ok(db.rows("section_claim_provenance").length > 0, "no claim was deleted without its archive");
-  assert.ok(item(db).full_brief, "the brief was not nulled after a failed erase");
+  const res = await startBriefWorkflow(deps, { itemId: ITEM, injected: injected(db) });
+  assert.ok(res.notes.some((n) => /erase claim cl-1 FAILED/.test(n)) || JSON.stringify(res).includes("erase claim cl-1 FAILED"), "the failed erase is reported");
+  assert.equal(db.rows("section_claim_provenance").length, 1, "no claim was deleted without its archive");
 });
 
 test("every step's insert error is reported: a failed agent_runs insert is counted, never swallowed", async () => {

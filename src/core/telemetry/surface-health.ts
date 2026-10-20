@@ -1,7 +1,7 @@
 // Ported from old_repo/src/lib/telemetry/surface-health.mjs (lines 1-67)
 
-export const MUST_HAVE_SURFACES = ["dashboard", "regulations", "market", "research", "operations"] as const;
-export const ZERO_LEGAL_SURFACES = ["community", "map", "assistant-config", "onboarding-config"] as const;
+const MUST_HAVE_SURFACES = ["dashboard", "regulations", "market", "research", "operations"] as const;
+const ZERO_LEGAL_SURFACES = ["community", "map", "assistant-config", "onboarding-config"] as const;
 /** The surface list, exported once: the probe route reads it, so the hard-coded twin the old route kept is gone. */
 export const ALL_SURFACES: readonly string[] = [...MUST_HAVE_SURFACES, ...ZERO_LEGAL_SURFACES];
 

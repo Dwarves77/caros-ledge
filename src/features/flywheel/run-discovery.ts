@@ -20,7 +20,7 @@ export interface DiscoverOptions {
 }
 
 /** One item's signature, whatever its provenance (a minted item is scored even before it is visible in the verified corpus). Null when it does not exist. */
-export async function loadItemSignature(sb: Db, itemId: string, keys?: ReadonlyMap<string, string[]>): Promise<Signature | null> {
+async function loadItemSignature(sb: Db, itemId: string, keys?: ReadonlyMap<string, string[]>): Promise<Signature | null> {
   const { data, error } = await sb.from("intelligence_items").select(SIGNATURE_COLUMNS).eq("id", itemId).maybeSingle();
   if (error) throw new Error(`discovery: item ${itemId} read failed: ${error.message}`);
   if (!data) return null;
@@ -29,7 +29,7 @@ export async function loadItemSignature(sb: Db, itemId: string, keys?: ReadonlyM
   return { ...row, entity_ids: entityTokensOf(row), obligation_keys: held };
 }
 
-export function edgesFor(item: Signature, corpus: readonly Signature[], opts: DiscoverOptions = {}): EdgeRow[] {
+function edgesFor(item: Signature, corpus: readonly Signature[], opts: DiscoverOptions = {}): EdgeRow[] {
   const freqMap = computeTagFrequencies(corpus);
   return discoverConnections(item, corpus, { ...opts, freqMap }).map((c) => ({ source_item_id: item.id, target_item_id: c.target, relationship: "related", origin: "provenance_discovery", basis: c.basis, score: c.score }));
 }

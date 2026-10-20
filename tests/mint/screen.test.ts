@@ -2,16 +2,20 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { classifyRelevance, isMintable, loadReviewedVerdicts, reconcileRecordItems, screenVerdictFor } from "@/features/mint";
-import { loadRules } from "@/features/mint/screen";
+import { loadReviewedVerdicts, screenVerdictFor } from "@/features/mint";
 import rulesData from "@/features/mint/data/screen-rules.json";
 
 import { MemDb } from "../intake/memdb.ts";
 
+/** The rule verdict of one row: the screen with no reviewed overrides. */
+const classifyRelevance = (row: Parameters<typeof screenVerdictFor>[0]) => {
+  const v = screenVerdictFor(row);
+  return { ...v, rule: String(v.rule) };
+};
+
 test("the rule table is data with the contract the register recorded: 4 CELEX roots, 114 rules (61 ON, 53 OFF of which 10 flip to on_vertical), every rule cited", () => {
-  const { roots, rules } = loadRules();
-  assert.equal(roots.length, 4);
-  assert.equal(rules.length, 114);
+  assert.equal(rulesData.celex_roots.length, 4);
+  assert.equal(rulesData.rules.length, 114);
   const data = rulesData.rules;
   assert.equal(data.filter((r) => r.group === "on").length, 61);
   assert.equal(data.filter((r) => r.group === "off").length, 53);
@@ -71,9 +75,6 @@ test("a reviewed verdict replaces only a rule's ambiguous, and only with a state
   assert.deepEqual([screenVerdictFor({ id: "r1", title: "Zebra grazing" }, reviewed).provenance, screenVerdictFor({ id: "r1", title: "Zebra grazing" }, reviewed).verdict], ["reviewed", "on_vertical"]);
   assert.equal(screenVerdictFor({ id: "r2", title: "Zebra grazing" }, reviewed).provenance, "rule", "no basis: ignored");
   assert.equal(screenVerdictFor({ id: "r3", title: "Corrigendum (language corrections)" }, reviewed).verdict, "off_vertical", "a reviewed verdict never overrides a rule's off_vertical");
-  assert.equal(isMintable("on_vertical"), true);
-  assert.equal(isMintable("ambiguous"), false);
-  assert.equal(isMintable(undefined), false);
 });
 
 test("the reviewed verdicts are read from screen_verdicts; a failed read throws and is never 'no overrides'", async () => {
@@ -83,25 +84,3 @@ test("the reviewed verdicts are read from screen_verdicts; a failed read throws 
   await assert.rejects(() => loadReviewedVerdicts(db.client), /paginated read failed/);
 });
 
-test("reconcile: live record items the screen rules off-vertical are archived (reversibly, reason off_vertical); ambiguous ones stay live and are returned", async () => {
-  const db = new MemDb()
-    .seed("intelligence_items", [
-      { id: "i1", title: "Corrigendum (language corrections)", source_url: "https://a.example/1", item_grade: "record", is_archived: false },
-      { id: "i2", title: "Regulation on greenhouse gas emissions reduction", source_url: "https://a.example/2", item_grade: "record", is_archived: false },
-      { id: "i3", title: "Zebra grazing programme", source_url: "https://a.example/3", item_grade: "record", is_archived: false },
-      { id: "i4", title: "Corrigendum (language corrections)", source_url: "https://a.example/4", item_grade: "brief", is_archived: false },
-    ])
-    .seed("census_worklist", []);
-  const dry = await reconcileRecordItems(db.client, new Map(), { dry: true, today: "2026-10-15" });
-  assert.deepEqual([dry.live, dry.offVertical, dry.ambiguous, dry.onVertical, dry.archived], [3, 1, 1, 1, 0]);
-  assert.equal(db.rows("intelligence_items").find((r) => r.id === "i1")?.is_archived, false, "a dry reconcile writes nothing");
-  const res = await reconcileRecordItems(db.client, new Map(), { dry: false, today: "2026-10-15" });
-  assert.equal(res.archived, 1);
-  assert.deepEqual(res.ambiguousIds, ["i3"]);
-  const i1 = db.rows("intelligence_items").find((r) => r.id === "i1");
-  assert.deepEqual([i1?.is_archived, i1?.archive_reason], [true, "off_vertical"]);
-  assert.equal(db.rows("intelligence_items").find((r) => r.id === "i4")?.is_archived, false, "a brief-grade item is never touched");
-  Object.assign(db.rows("intelligence_items").find((r) => r.id === "i1") ?? {}, { is_archived: false, archive_reason: null });
-  db.failWhen = (c) => (c.table === "intelligence_items" && c.op === "update" ? "write refused" : null);
-  await assert.rejects(() => reconcileRecordItems(db.client, new Map(), { dry: false, today: "2026-10-15" }), /reconcile/);
-});

@@ -1,6 +1,6 @@
 // The parse module's public surface: typed figures, the one comparator, identifiers and URLs. Rule tables are data under ./data.
-export { containsNumeral, figuresEqual, numbersSumExactly, stateFigure } from "./compare";
-export { findFigures, isFigure, isRefusal, parseFigure } from "./figure";
+export { containsNumeral, figuresEqual, stateFigure } from "./compare";
+export { findFigures, isFigure } from "./figure";
 export type { Figure } from "./figure";
 export { canonicalizeUrl, findIdentifiers, indexOfInsensitive, mentionsIdentifier, ownIdentifiers, sameIdentifier } from "./identifiers";
 export type { Identifier } from "./identifiers";

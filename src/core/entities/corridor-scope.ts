@@ -1,19 +1,14 @@
 // Ported from old_repo/src/lib/entities/corridor-scope.ts (lines 1-146)
 // Ported from old_repo/src/lib/entities/corridor-scope-cache.ts (lines 1-45)
-// Corridors and the jurisdictions they touch, for the Market overlay selector and the Regulations "corridors this applies on" strip. Every read
-// error is surfaced (B-0056/1560: a corridor must never render with no jurisdictions because a read failed), the cached readers throw rather than
-// return an empty list (B-2157), and the cache tag is exported so the corridor seed can invalidate it (B-1559).
-import { unstable_cache } from "next/cache";
 
 import type { Db } from "@/core/db";
-import { fetchAllByIdChunks, fetchAllRows, serviceClient } from "@/core/db";
+import { fetchAllByIdChunks, fetchAllRows } from "@/core/db";
 
 import { parseCorridorName, type CorridorName } from "./kinds";
 import { formatCorridorLabel, nameForJurisdiction } from "./unlocode-names";
 
-export const RELATION_TOUCHES_JURISDICTION = "touches_jurisdiction";
+const RELATION_TOUCHES_JURISDICTION = "touches_jurisdiction";
 export const CORRIDOR_SCOPE_TAG = "corridor-scope";
-export const CORRIDOR_SCOPE_REVALIDATE_SECONDS = 60 * 60;
 
 export interface CorridorJurisdiction {
   entityId: string;
@@ -84,15 +79,3 @@ export async function corridorsTouching(client: Db, isoCodes: readonly string[])
   return (await corridorScopes(client)).filter((c) => c.jurisdictions.some((j) => wanted.has(j.code.toUpperCase())));
 }
 
-/** The cached list (one hour, tagged). A failure rejects, and a rejected cache function stores nothing: an outage is never "no corridors". */
-export async function getCachedCorridorScopes(): Promise<CorridorScope[]> {
-  const client = serviceClient();
-  return unstable_cache(async () => corridorScopes(client), ["corridor-scope:list"], { tags: [CORRIDOR_SCOPE_TAG], revalidate: CORRIDOR_SCOPE_REVALIDATE_SECONDS })();
-}
-
-export async function getCachedCorridorsTouchingJurisdictions(isoCodes: readonly string[]): Promise<CorridorScope[]> {
-  const codes = [...new Set((isoCodes ?? []).map((c) => String(c).trim().toUpperCase()).filter(Boolean))].sort();
-  if (!codes.length) return [];
-  const client = serviceClient();
-  return unstable_cache(async () => corridorsTouching(client, codes), ["corridor-scope:by-jurisdiction", codes.join(",")], { tags: [CORRIDOR_SCOPE_TAG], revalidate: CORRIDOR_SCOPE_REVALIDATE_SECONDS })();
-}

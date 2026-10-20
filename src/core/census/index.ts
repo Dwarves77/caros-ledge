@@ -1,1 +1,1 @@
-export { classifyIdentifier, UK_TYPES } from "./identity";
+export { classifyIdentifier } from "./identity";

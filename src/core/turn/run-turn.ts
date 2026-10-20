@@ -30,7 +30,7 @@ export interface TurnResult {
 }
 
 /** The stages a request runs: all of them, or the named one and (unless chain is false) its downstream stages. Pure. */
-export function planTurn(stage: Stage | "all" | "ops", chain = true): (Stage | "ops")[] {
+function planTurn(stage: Stage | "all" | "ops", chain = true): (Stage | "ops")[] {
   if (stage === "all") return [...STAGES];
   if (stage === "ops") return ["ops"];
   if (!isStage(stage)) throw new Error(`unknown stage "${stage}" (stages: ${STAGES.join(", ")})`);

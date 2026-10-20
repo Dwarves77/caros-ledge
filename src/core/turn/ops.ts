@@ -45,7 +45,7 @@ async function planDrainOp(c: FamilyCall, d: BuiltDeps, a: Args): Promise<RunRes
 }
 
 /** Every operator task by name. An apply op (`apply`) is a dry plan unless the frame resolved apply; a dry op (`dry`) is the reverse flag. */
-export const OPS: Readonly<Record<string, Op>> = {
+const OPS: Readonly<Record<string, Op>> = {
   "plan-drain": planDrainOp,
   "ratify-series-items": ratifyOp,
   "run-notification-outbox": (c, d, a) => runNotificationOutbox({ sb: d.sb, now: d.now }, { dry: c.dry, ...(typeof a.limit === "number" ? { limit: a.limit } : {}), ...(Array.isArray(a.ids) ? { ids: a.ids.map(String) } : {}) }),

@@ -54,37 +54,10 @@ export async function boundedRead<T>(build: (limit: number) => Response<T>, opts
   }
 }
 
-/** For a read whose failure must reject (so a cache wrapper cannot store it). */
-export function unwrap<T>(result: ReadResult<T>): T[] {
-  if (result.error) throw new Error(result.error.message);
-  return result.data;
-}
-
 export interface Page<T> {
   rows: T[];
   next: string | null;
 }
-
-/** Keyset paging: ask for `limit + 1` rows ordered by a unique key; the extra row only proves there is a next page. */
-export const keyset = {
-  page<T>(rows: T[], limit: number, cursorOf: (row: T) => unknown[]): Page<T> {
-    const page = rows.slice(0, limit);
-    const last = page[page.length - 1];
-    return { rows: page, next: rows.length > limit && last !== undefined ? keyset.encode(cursorOf(last)) : null };
-  },
-  encode(parts: unknown[]): string {
-    return Buffer.from(JSON.stringify(parts), "utf8").toString("base64url");
-  },
-  decode(cursor: string | null | undefined): unknown[] | null {
-    if (!cursor) return null;
-    try {
-      const parts: unknown = JSON.parse(Buffer.from(cursor, "base64url").toString("utf8"));
-      return Array.isArray(parts) ? parts : null;
-    } catch {
-      return null;
-    }
-  },
-};
 
 /**
  * Every row of a query, one page at a time. The builder must apply a TOTAL order (a unique column), or offset

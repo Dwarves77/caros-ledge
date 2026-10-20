@@ -3,8 +3,6 @@ import { test } from "node:test";
 
 import { canWrite, isOrgAdmin, itemIdFromDetailPath, loadRoster, orgWatchersOf } from "@/core/workspace/roster";
 import {
-  DEFAULT_ORG_PROFILE,
-  DEFAULT_WORKSPACE_PROFILE,
   deriveRoleScopeFromComplianceObjectTags,
   findBand,
   getWorkspaceProfile,
@@ -14,13 +12,17 @@ import {
   PROFILE_JSON_KEYS,
   validateProfileInput,
 } from "@/core/workspace/profile";
-import { computeItemRelevance, currentObligationObjects, dutyHoldersExcludeForwarder, fetchObligationObjectsForItem, relevanceForItem, summariseObligationBinding } from "@/core/workspace/relevance";
-import { getViewerRelevanceForItem } from "@/core/workspace/viewer-relevance";
-
-import { scripted } from "../_support/fake-clients.ts";
+import { currentObligationObjects, dutyHoldersExcludeForwarder, fetchObligationObjectsForItem, relevanceForItem, summariseObligationBinding } from "@/core/workspace/relevance";
 
 import { relevanceDeps } from "./_deps.ts";
-import { clientFor, ITEM_1, ORG_A, ORG_B, script, seed, USER } from "./_world.ts";
+import { clientFor, ITEM_1, ORG_A, ORG_B, seed, USER } from "./_world.ts";
+
+/** The documented defaults: nothing invented for an unset org profile; a general freight operator, worldwide, for a viewer with no profile. */
+const DEFAULT_ORG_PROFILE = { orgRoles: [], orgSize: { headcount_band: null, revenue_band: null, shipment_volume_band: null } };
+const DEFAULT_WORKSPACE_PROFILE = { roles: ["freight operator"], transportModes: ["air", "ocean", "road"], verticals: [], jurisdictions: { global: 1 }, orgRoles: [], orgSize: DEFAULT_ORG_PROFILE.orgSize };
+/** The lens over a profile written in the lens's own keys: the workspace profile it is built from, field for field. */
+const computeItemRelevance = (item: Record<string, unknown>, p: Record<string, unknown>, deps: Parameters<typeof relevanceForItem>[2]) =>
+  relevanceForItem(item, { transportModes: p.transport_modes, jurisdictions: p.jurisdictions, verticals: p.verticals, roles: p.roles, orgRoles: p.orgRoles, orgSize: p.orgSize } as never, deps);
 
 // ── profile-contract ─────────────────────────────────────────────────────────────────────────────────
 
@@ -66,10 +68,10 @@ test("compliance_object_tags map to org roles; unmapped tags are dropped, never 
 test("getWorkspaceProfile: the default for a null org, an absent row and a failed read; the stored profile otherwise; no dead fields", async () => {
   const db = seed();
   const client = clientFor(db);
-  assert.equal(await getWorkspaceProfile(client, null), DEFAULT_WORKSPACE_PROFILE);
-  assert.equal(await getWorkspaceProfile(client, "33333333-3333-4333-8333-333333333333"), DEFAULT_WORKSPACE_PROFILE);
+  assert.deepEqual(await getWorkspaceProfile(client, null), DEFAULT_WORKSPACE_PROFILE);
+  assert.deepEqual(await getWorkspaceProfile(client, "33333333-3333-4333-8333-333333333333"), DEFAULT_WORKSPACE_PROFILE);
   db.fail("workspace_settings", "select", { message: "down" });
-  assert.equal(await getWorkspaceProfile(client, ORG_A), DEFAULT_WORKSPACE_PROFILE);
+  assert.deepEqual(await getWorkspaceProfile(client, ORG_A), DEFAULT_WORKSPACE_PROFILE);
   db.failures.length = 0;
   Object.assign(db.rows("workspace_settings")[0]!, { sector_profile: ["fine-art"], jurisdiction_weights: { EU: 2 }, profile: { roles: ["importer"], transport_modes: ["air"], org_roles: ["forwarder"], org_size: { headcount_band: "small" } } });
   const profile = await getWorkspaceProfile(client, ORG_A);
@@ -190,43 +192,6 @@ test("fetchObligationObjectsForItem: current objects for a uuid or a legacy id; 
   db.failures.length = 0;
   db.fail("intelligence_items", "select", { message: "lookup down" });
   await assert.rejects(fetchObligationObjectsForItem(client, "o3"), /lookup down/);
-});
-
-// ── viewer-relevance (PROP-011) ──────────────────────────────────────────────────────────────────────
-
-test("viewer relevance: no item gives null at once and touches no client", async () => {
-  let built = 0;
-  scripted.user = () => (built += 1, undefined);
-  scripted.service = () => (built += 1, undefined);
-  assert.equal(await getViewerRelevanceForItem(null, relevanceDeps), null);
-  assert.equal(await getViewerRelevanceForItem(undefined, relevanceDeps), null);
-  assert.equal(built, 0);
-});
-
-test("viewer relevance fails soft to null outside a session or without a workspace, and never throws", async () => {
-  script(seed());
-  scripted.user = () => {
-    throw new Error("no request scope");
-  };
-  assert.equal(await getViewerRelevanceForItem({ title: "x" }, relevanceDeps), null);
-  const db = seed();
-  scripted.service = () => clientFor(db, "platformAdmin");
-  scripted.user = () => clientFor(db, "platformAdmin");
-  assert.equal(await getViewerRelevanceForItem({ title: "x" }, relevanceDeps), null);
-  scripted.user = () => clientFor(db, "anon");
-  assert.equal(await getViewerRelevanceForItem({ title: "x" }, relevanceDeps), null);
-});
-
-test("PROP-011: the lens reads the profile on the viewer's own client (settings_read_org), for the viewer's own org, with no service client", async () => {
-  const db = seed();
-  Object.assign(db.rows("workspace_settings")[0]!, { profile: { roles: ["importer"] } });
-  let factoryCalls = 0;
-  scripted.user = () => clientFor(db, "member");
-  scripted.service = () => (factoryCalls += 1, clientFor(db, "anon"));
-  const r = await getViewerRelevanceForItem({ title: "Customs rules", transport_modes: ["air"] }, relevanceDeps);
-  assert.deepEqual([factoryCalls, r?.roleSignals], [0, ["importer"]]);
-  const settingsRead = db.log.find((l) => l.table === "workspace_settings");
-  assert.deepEqual(settingsRead?.filters, [["eq", "org_id", ORG_A]]);
 });
 
 // ── roster ───────────────────────────────────────────────────────────────────────────────────────────

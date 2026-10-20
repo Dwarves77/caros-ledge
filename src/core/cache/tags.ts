@@ -8,8 +8,6 @@ export type DetailSurface = "regulations" | "market" | "research" | "operations"
 export const INTEL_ITEMS_TAG = "intel-items";
 /** The precise per-item tag; `id` is the UI-side id (legacy_id or uuid) the detail route reads by. */
 export const itemTag = (id: string): string => `item:${id}`;
-/** The coarse per-surface tag on the item-scoped detail-query cache entries (`<surface>-detail`): a population run that touches many items flushes one surface without an id list. */
-export const surfaceDetailTag = (surface: DetailSurface): string => `${surface}-detail`;
 
 /** Invalidate the detail cache for one item: the precise tag AND the coarse one, so the flush lands whichever id form keyed the entry. Call from a route or server-action scope. */
 export function revalidateItem(id: string): void {

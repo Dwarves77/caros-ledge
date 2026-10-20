@@ -204,9 +204,4 @@ export function placeHostWithVerdicts(host: string | null | undefined, names: Re
   return residue != null ? { tier: residue, via: "residue", verdict: null } : { tier: null, via: null, verdict: null };
 }
 
-export interface PoolHostDecision {
-  action: "inherit" | "register" | "worklist";
-  /** The deterministic tier to register or inherit at; null for the worklist (never a guessed tier). */
-  tier: number | null;
-}
 

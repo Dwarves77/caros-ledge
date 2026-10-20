@@ -3,23 +3,23 @@
 // Trigger questions (ADR-036 decision 1, $0 only): for a verified item whose domain routes to a surface, four product questions become four open integrity_flags rows under the
 // `question:` namespace, deduplicated in the batch and against open flags on (subject_ref, created_by). They are answered from holdings by a session batch; nothing here
 // calls a model, a fetch or a priced request (INV-247).
-import { buildSubjectRef, createdBy, isInNamespace, QUESTION_NAMESPACE } from "@/core/flywheel/flags";
+import { buildSubjectRef, createdBy, QUESTION_NAMESPACE } from "@/core/flywheel/flags";
 import type { Db } from "@/core/db";
 import { fetchAllRows } from "@/core/db";
 import { MARKET_INTEL_DOMAINS, OPERATIONS_DOMAINS, REGULATIONS_DOMAINS, RESEARCH_DOMAINS } from "@/core/shared/domains";
 import { runResult, type RunResult } from "@/core/intake/result";
 
-export const QUESTION_ACQUISITION = "holdings-session-batch";
-export const PRODUCT_QUESTIONS = Object.freeze(["what", "affects_me", "comply", "invest_wait_avoid"] as const);
+const QUESTION_ACQUISITION = "holdings-session-batch";
+const PRODUCT_QUESTIONS = Object.freeze(["what", "affects_me", "comply", "invest_wait_avoid"] as const);
 export const TRIGGER_EVENT_TYPES = Object.freeze(["value_revised", "obligation_amended", "signpost_fired", "factor_superseded", "confidence_decayed", "source_frozen", "identity_revised"] as const);
 export type ProductQuestion = (typeof PRODUCT_QUESTIONS)[number];
-export const MINTED_OR_TOUCHED = "item_minted_or_touched";
+const MINTED_OR_TOUCHED = "item_minted_or_touched";
 
 export interface QuestionItem { id: string; title?: string | null; domain?: number | null; item_type?: string | null; jurisdiction_iso?: string[] | string | null }
 export interface TriggerQuestion { itemId: string; surface: string; productQuestion: ProductQuestion; eventType: string; eventId: string | number | null; questionText: string; subjectRef: string; createdBy: string }
 
 /** The surface a domain routes to; a domain with none (5, null) routes to nothing, so no question is generated for it. */
-export function surfacesForDomain(domain: number | null | undefined): string[] {
+function surfacesForDomain(domain: number | null | undefined): string[] {
   const d = domain as never;
   return REGULATIONS_DOMAINS.has(d) ? ["regulations"] : MARKET_INTEL_DOMAINS.has(d) ? ["market_intel"] : OPERATIONS_DOMAINS.has(d) ? ["operations"] : RESEARCH_DOMAINS.has(d) ? ["research"] : [];
 }
@@ -46,13 +46,12 @@ export function generateTriggerQuestions(item: QuestionItem | null | undefined, 
 }
 
 /** The integrity_flags row of a question: an open coverage gap whose action is "answer from holdings", never a fetch or a priced request. */
-export function triggerQuestionFlagRow(q: TriggerQuestion) {
+function triggerQuestionFlagRow(q: TriggerQuestion) {
   return {
     category: "coverage_gap", subject_type: "item", subject_ref: q.subjectRef, status: "open", created_by: q.createdBy, description: q.questionText.slice(0, 480),
     recommended_actions: [{ action: "answer-seeking", rationale: `product_question=${q.productQuestion} surface=${q.surface} event_type=${q.eventType}${q.eventId != null ? ` event_id=${q.eventId}` : ""} - answered from holdings by a session batch, retrieval-first against held pools; a residual becomes a source search target (ADR-044 decisions 1 and 2, ${QUESTION_ACQUISITION}), never a fetch or a priced request.` }],
   };
 }
-export const isTriggerQuestionFlag = (createdByValue: unknown): boolean => isInNamespace(createdByValue, QUESTION_NAMESPACE);
 
 export interface QuestionDeps { sb: Db; now(): Date }
 /**

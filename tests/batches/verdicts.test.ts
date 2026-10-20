@@ -4,10 +4,8 @@ import { test } from "node:test";
 import { CLASSIFY_PROMPT_VERSION } from "@/core/intake";
 import { applyBatch } from "@/features/batches";
 import { ledgerVerdictsExporter } from "@/features/batches/kinds/ledger-verdicts/apply";
-import { reopenRuledHolds } from "@/features/batches/kinds/screen-verdicts/apply";
 import { screenVerdictExporter } from "@/features/drain";
 
-import { NOW } from "./world.ts";
 import { C1, C2, C3, ledgerFile, ledgerWorld, screenWorld, URL1, URL2, verdict, type World } from "./worlds.ts";
 
 const sv = (census_id: string, verdict: string, basis = "EU emissions regulation: core sustainability scope") => ({ census_id, verdict, basis, reviewer: "t" });
@@ -31,7 +29,6 @@ test("screen verdicts: the held ambiguous rows are the drain's own queue; a ruli
   assert.equal(census(w, C2).dryrun_disposition, "hold", "a verdict that stays ambiguous re-admits nothing");
   assert.equal(census(w, C3).dryrun_disposition, "hold", "an off-vertical hold stays held (it was not an ambiguous one)");
   assert.equal(r.counts.reopened, 1);
-  assert.deepEqual(await reopenRuledHolds(w.db.client, [C1, C3], NOW.toISOString()), { matched: 0, written: 0, failures: [] }, "a second reopen finds nothing held");
   assert.match(notes(await applyBatch("screen-verdicts", w.deps, { content: "{}", dry: false })), /no verdicts array/);
 });
 

@@ -14,7 +14,7 @@ import { type ApplyOpts, type BatchDeps, type BatchExport } from "../../kit/sess
 export const screenVerdictsExporter = (sb: Db) => async (o: { limit: number; mode: string }): Promise<BatchExport> => screenVerdictExporter(sb)(o);
 
 /** Re-admit the held ambiguous rows the verdicts rule (keeping the held evidence in the notes). A failed write is reported per row. */
-export async function reopenRuledHolds(sb: Db, ids: readonly string[], nowIso: string): Promise<{ matched: number; written: number; failures: string[] }> {
+async function reopenRuledHolds(sb: Db, ids: readonly string[], nowIso: string): Promise<{ matched: number; written: number; failures: string[] }> {
   const rows = await rowsByIds<{ id: string; dryrun_disposition: string | null; hold_reason: string | null; notes: string | null }>(sb, "census_worklist", "id, dryrun_disposition, hold_reason, notes", ids);
   const targets = rows.filter((r) => isReopenTarget(r, "screen:ambiguous"));
   const failures: string[] = [];

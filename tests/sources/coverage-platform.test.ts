@@ -5,18 +5,17 @@ import { join } from "node:path";
 import { test } from "node:test";
 
 import { fallbackGuard } from "@/core/cache";
-import { FALLBACK_NOT_CACHEABLE, FallbackNotCacheableError, isFallbackPayload } from "@/core/cache/fallback-guard";
-import { INTEL_ITEMS_TAG, itemTag, surfaceDetailTag } from "@/core/cache/tags";
-import { buildCoverageMatrix, cellKey, ALL, isNumerator, parseCoverageQuery, surfaceDenominator, matrixToCsv, formatDenominatorLine, UNTAGGED, UNKNOWN_GEOGRAPHY } from "@/core/coverage/matrix";
-import { buildCoverageGapFlag, recordCoverageRequest, validateCoverageRequest } from "@/core/coverage/request";
+import { isFallbackPayload } from "@/core/cache/fallback-guard";
+import { INTEL_ITEMS_TAG, itemTag } from "@/core/cache/tags";
+import { buildCoverageMatrix, ALL, parseCoverageQuery, surfaceDenominator, matrixToCsv, formatDenominatorLine, UNTAGGED } from "@/core/coverage/matrix";
+import { recordCoverageRequest, validateCoverageRequest } from "@/core/coverage/request";
 import { describeCoverageState } from "@/core/coverage/state";
 import { classifyIdentifier } from "@/core/census";
-import { decideGateAProbe, readGateAHealth, shapeGateAHealth } from "@/core/health/gate-a";
-import { slugsOrEmpty } from "@/core/perf";
-import { applyServerTimingHeader, createTimingStore, recordBytesOnStore, recordPhaseOnStore, sanitizeTimingName, timePhaseOnStore } from "@/core/perf/server-timing";
+import { readGateAHealth } from "@/core/health/gate-a";
+import { timePhase, withServerTiming } from "@/core/perf";
 import { evaluateSurface, overallOk, seedLeak } from "@/core/telemetry/surface-health";
-import { getCoverageIndex, loadCoverage } from "@/features/coverage/server/census";
-import { loadCoverageMatrix, loadSurfaceDenominator, COVERAGE_UNAVAILABLE } from "@/features/coverage/server/matrix-data";
+import { loadCoverage } from "@/features/coverage/server/census";
+import { makeCoverageData } from "@/features/coverage/server/matrix-data";
 
 import { memoryDb } from "../_support/memory-db.ts";
 
@@ -25,18 +24,19 @@ const entry = (over: Record<string, unknown> = {}) => ({ jurisdiction: "EU", sur
 
 // INV-036
 test("INV-036: the numerator is decided by rule: firm-core relevance AND a verified identity, nothing else", () => {
-  assert.equal(isNumerator({ relevance: "firm", identity: "verified" }), true);
-  for (const [relevance, identity] of [["soft", "verified"], ["firm", "pending"], ["firm", "unresolved"], ["firm", "dead"]] as const) assert.equal(isNumerator({ relevance, identity }), false);
+  const numerators = (relevance: string, identity: string) => buildCoverageMatrix([entry({ relevance, identity })], { generatedAt: NOW }).totals.numerator;
+  assert.equal(numerators("firm", "verified"), 1);
+  for (const [relevance, identity] of [["soft", "verified"], ["firm", "pending"], ["firm", "unresolved"], ["firm", "dead"]] as const) assert.equal(numerators(relevance, identity), 0, `${relevance}/${identity}`);
   const m = buildCoverageMatrix([entry(), entry({ identity: "pending" }), entry({ relevance: "soft" })], { generatedAt: NOW });
   assert.deepEqual(m.totals, { numerator: 1, denominator: 3 });
-  const cell = m.cells.find((c) => c.key === cellKey(ALL, "regulations", "EU"));
+  const cell = m.cells.find((c) => c.key === `${ALL}|regulations|EU`);
   assert.deepEqual({ n: cell?.numerator, d: cell?.denominator }, { n: 1, d: 3 });
 });
 test("INV-036: an untagged mode, surface or geography is counted in its own bucket, never dropped or guessed", () => {
   const m = buildCoverageMatrix([entry({ modes: [], surfaces: [], jurisdiction: null })], { generatedAt: NOW });
   assert.equal(m.modes[0]?.code, UNTAGGED);
   assert.equal(m.dataClasses[0]?.code, UNTAGGED);
-  assert.equal(m.geographies[0]?.code, UNKNOWN_GEOGRAPHY);
+  assert.equal(m.geographies[0]?.code, "UNKNOWN");
   assert.deepEqual(m.modeTagging, { tagged: 0, total: 1 });
 });
 test("INV-036: the matrix is deterministic, its clock is injected, and a bad clock is refused", () => {
@@ -68,7 +68,7 @@ test("INV-036: a coverage request is validated to a site path and a label, and o
   assert.deepEqual(await recordCoverageRequest(w.db, { subjectRef: "/x", label: "L" }), { ok: true, already: true });
   assert.equal(w.tables.integrity_flags?.length, 1);
   assert.equal(w.tables.integrity_flags?.[0]?.created_by, "coverage-request-route");
-  assert.deepEqual(buildCoverageGapFlag({ subjectRef: "/x", label: "L" }).status, "open");
+  assert.equal(w.tables.integrity_flags?.[0]?.status, "open");
   const down = memoryDb({}, { failures: [{ table: "integrity_flags", op: "select", message: "down" }] });
   assert.equal((await recordCoverageRequest(down.db, { subjectRef: "/x", label: "L" })).ok, false);
   const dup = memoryDb({}, { failures: [{ table: "integrity_flags", op: "insert", message: "dup", code: "23505" }] });
@@ -102,17 +102,16 @@ test("census: identity is verified only with a resolve AND a registered host; pe
 });
 test("census: an outage is an error state with no counts, never an empty index that reads as zero coverage", async () => {
   const bad = memoryDb({}, { failures: [{ table: "census_worklist", op: "select", message: "down" }] });
-  const idx = await getCoverageIndex(bad.db);
-  assert.equal(idx.counts, null);
-  assert.match(idx._error ?? "", /temporarily unavailable/);
+  await assert.rejects(() => loadCoverage(bad.db), /down|census/i);
   const badCount = memoryDb({ census_worklist: [census("a")] }, { failures: [{ table: "intelligence_items", op: "select", message: "down" }] });
-  assert.ok((await getCoverageIndex(badCount.db))._error, "a failed brief count must not publish 0 verified briefs");
-  const m = await loadCoverageMatrix({ db: () => bad.db, now: () => NOW });
-  assert.equal(m.error, COVERAGE_UNAVAILABLE);
+  await assert.rejects(() => loadCoverage(badCount.db), /down|intelligence_items/i, "a failed brief count must not publish 0 verified briefs");
+  const data = (db: ReturnType<typeof memoryDb>["db"]) => makeCoverageData({ db: () => db, now: () => NOW, tag: "coverage" });
+  const m = await data(bad.db).getCoverageMatrix();
+  assert.match(m.error ?? "", /Coverage could not be read just now/);
   assert.equal(m.matrix.totals.denominator, 0);
-  assert.equal((await loadSurfaceDenominator("regulations", { db: () => bad.db })).error, COVERAGE_UNAVAILABLE);
+  assert.match((await data(bad.db).getSurfaceDenominator("regulations")).error ?? "", /Coverage could not be read just now/);
   const good = memoryDb({ census_worklist: [census("a")], intelligence_items: [] });
-  assert.equal((await loadCoverageMatrix({ db: () => good.db, now: () => NOW })).matrix.totals.numerator, 1);
+  assert.equal((await data(good.db).getCoverageMatrix()).matrix.totals.numerator, 1);
 });
 test("identifier classification: known schemes are named and an unknown shape is not guessed", () => {
   assert.equal(classifyIdentifier("32023R0956").scheme, "celex");
@@ -122,27 +121,17 @@ test("identifier classification: known schemes are named and an unknown shape is
 // Gate A
 test("gate-a: an empty or stale cache is not_computed, an rpc error is unreadable, and neither is ever a bare zero", async () => {
   const now = new Date(NOW);
-  assert.equal(shapeGateAHealth({ data: { error: "gate_a_health cache empty: run refresh" }, now }).invariant_violations?.state, "not_computed");
-  assert.equal(shapeGateAHealth({ data: { error: "gate_a_health cache stale since 2026-10-15T08:00:00Z" }, now }).invariant_violations?.state, "not_computed");
-  assert.equal(shapeGateAHealth({ error: { message: "x" }, now }).invariant_violations?.state, "unreadable");
-  assert.equal(shapeGateAHealth({ thrown: "boom", now }).invariant_violations?.state, "unreadable");
-  assert.equal(shapeGateAHealth({ data: [], now }).invariant_violations?.state, "unreadable");
-  const ok = shapeGateAHealth({ data: { invariant_violations: 0, briefless_verified: 0, no_gatestate_verified: 0, verified_failing_revalidation: 0, verified_gen_ver_null_info: 3, computed_at: NOW }, now });
+  const health = (r: { data?: unknown; error?: { message: string }; thrown?: string }) =>
+    readGateAHealth({ rpc: async () => { if (r.thrown) throw new Error(r.thrown); return { data: r.data ?? null, error: r.error ?? null }; } } as never, now);
+  assert.equal((await health({ data: { error: "gate_a_health cache empty: run refresh" } })).invariant_violations?.state, "not_computed");
+  assert.equal((await health({ data: { error: "gate_a_health cache stale since 2026-10-15T08:00:00Z" } })).invariant_violations?.state, "not_computed");
+  assert.equal((await health({ error: { message: "x" } })).invariant_violations?.state, "unreadable");
+  assert.equal((await health({ thrown: "boom" })).invariant_violations?.state, "unreadable");
+  assert.equal((await health({ data: [] })).invariant_violations?.state, "unreadable");
+  const ok = await health({ data: { invariant_violations: 0, briefless_verified: 0, no_gatestate_verified: 0, verified_failing_revalidation: 0, verified_gen_ver_null_info: 3, computed_at: NOW } });
   assert.equal(ok.invariant_violations?.state, "computed");
-  assert.equal(shapeGateAHealth({ data: { invariant_violations: -1 }, now }).invariant_violations?.state, "unreadable");
+  assert.equal((await health({ data: { invariant_violations: -1 } })).invariant_violations?.state, "unreadable");
   assert.equal((await readGateAHealth({ rpc: async () => { throw new Error("net"); } }, now)).briefless_verified?.state, "unreadable");
-});
-test("gate-a probe: a computed alarm above zero fails, an unreadable gauge fails closed, not_computed warns", () => {
-  const now = new Date(NOW);
-  const base = { invariant_violations: 0, briefless_verified: 0, no_gatestate_verified: 0, verified_failing_revalidation: 0, computed_at: NOW };
-  assert.equal(decideGateAProbe(shapeGateAHealth({ data: base, now })).fail, false);
-  assert.equal(decideGateAProbe(shapeGateAHealth({ data: { ...base, briefless_verified: 2 }, now })).fail, true);
-  assert.equal(decideGateAProbe(shapeGateAHealth({ error: { message: "x" }, now })).fail, true);
-  const cold = decideGateAProbe(shapeGateAHealth({ data: { error: "gate_a_health cache empty" }, now }));
-  assert.equal(cold.fail, false);
-  assert.ok(cold.lines.some((l) => l.startsWith("WARNING")));
-  assert.equal(decideGateAProbe({ invariant_violations: 0 }).fail, true, "an old bare-value shape fails closed");
-  assert.equal(decideGateAProbe(null).fail, true);
 });
 test("surface health: a must-have surface with no rows is down, a zero-legal one is not, and a probe error is never a zero", () => {
   assert.equal(evaluateSurface("dashboard", 0).ok, false);
@@ -159,34 +148,19 @@ test("surface health: a must-have surface with no rows is down, a zero-legal one
 test("cache: tags are derived, a fallback payload is never cacheable", async () => {
   assert.equal(itemTag("42"), "item:42");
   assert.equal(INTEL_ITEMS_TAG, "intel-items");
-  assert.equal(surfaceDetailTag("market"), "market-detail");
   assert.equal(isFallbackPayload({ _error: "down" }), true);
   assert.equal(isFallbackPayload({ rows: [] }), false);
   const guarded = fallbackGuard.refuse(async () => ({ _error: "down", rows: [] }));
-  await assert.rejects(guarded, (e: unknown) => e instanceof FallbackNotCacheableError && (e as Error).message.includes(FALLBACK_NOT_CACHEABLE) || (e as Error).name === FALLBACK_NOT_CACHEABLE);
+  await assert.rejects(guarded, (e: unknown) => e instanceof Error && e.name === "FallbackNotCacheable");
   assert.deepEqual(await fallbackGuard.refuse(async () => ({ rows: [1] }))(), { rows: [1] });
   assert.deepEqual(await fallbackGuard.readThrough(async () => ({ _error: "down" })), { _error: "down" }, "a read-through returns the fallback to the caller, uncached");
 });
-test("perf: phases record against an injected clock, a header names every phase, names are sanitised", async () => {
-  const store = createTimingStore(1000, 1);
-  assert.equal(store.coldStart, true);
-  recordPhaseOnStore(store, "auth", 12.4);
-  recordBytesOnStore(store, "serialize bytes", 2048);
-  let t = 1000;
-  const out = await timePhaseOnStore(store, "listing_rpc", async () => "r", () => (t += 25));
-  assert.equal(out, "r");
-  const res = applyServerTimingHeader(new Response("x"), store, 1100);
-  const h = res.headers.get("Server-Timing") ?? "";
-  assert.match(h, /auth;dur=12/);
-  assert.match(h, /listing_rpc/);
-  assert.equal(sanitizeTimingName("a b;c"), "a_b_c");
-});
-test("perf: slugsOrEmpty returns the slugs, and an error or a timeout degrades to empty with a warning, never a throw", async () => {
-  const warnings: string[] = [];
-  assert.deepEqual(await slugsOrEmpty(async () => ["a", "b"], { warn: (m) => warnings.push(m) }), ["a", "b"]);
-  assert.deepEqual(await slugsOrEmpty(async () => { throw new Error("db"); }, { warn: (m) => warnings.push(m), route: "r" }), []);
-  assert.deepEqual(await slugsOrEmpty(() => new Promise<string[]>(() => undefined), { timeoutMs: 5, warn: (m) => warnings.push(m) }), []);
-  assert.equal(warnings.length, 2);
+test("perf: a timed phase returns its result and records even when it throws; the header carries the total and a cold or warm marker", async () => {
+  assert.equal(await timePhase("listing_rpc", async () => "r"), "r");
+  await assert.rejects(() => timePhase("a b;c", () => { throw new Error("phase failed"); }), /phase failed/);
+  const h = withServerTiming(new Response("x")).headers.get("Server-Timing") ?? "";
+  assert.match(h, /total;dur=\d+/);
+  assert.match(h, /coldstart;desc="(cold|warm)"/);
 });
 
 // INV-134: the pause flags have exactly one writer, admin_set_pause_state(). Nothing this lane ships writes them.

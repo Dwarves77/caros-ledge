@@ -8,7 +8,7 @@ import { log } from "@/core/shared/log";
 
 import { loadCoverage, type CoverageSurface } from "./census";
 
-export const COVERAGE_UNAVAILABLE = "Coverage could not be read just now.";
+const COVERAGE_UNAVAILABLE = "Coverage could not be read just now.";
 const REVALIDATE_SECONDS = 600;
 
 export interface CoverageDeps {
@@ -20,7 +20,7 @@ export interface CoverageDeps {
   tag: string;
 }
 /** The matrix: the census read ONCE (the same entries and counts feed the build). A failure is an error state with an empty matrix, and the cause is logged. */
-export async function loadCoverageMatrix(deps: Pick<CoverageDeps, "db" | "now" | "labelOf">): Promise<{ matrix: CoverageMatrix; error: string | null }> {
+async function loadCoverageMatrix(deps: Pick<CoverageDeps, "db" | "now" | "labelOf">): Promise<{ matrix: CoverageMatrix; error: string | null }> {
   const generatedAt = deps.now();
   try {
     const { entries, counts } = await loadCoverage(deps.db());

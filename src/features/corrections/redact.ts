@@ -15,7 +15,7 @@ function claimTextPattern(claimText: string): RegExp {
 }
 
 /** Remove one claim's text (with its list marker) from a text; found is false when it is not there. */
-export function removeClaimText(text: unknown, claimText: unknown): { text: string; found: boolean } {
+function removeClaimText(text: unknown, claimText: unknown): { text: string; found: boolean } {
   const t = typeof text === "string" ? text : "";
   const c = typeof claimText === "string" ? claimText : "";
   if (!t || !c.trim()) return { text: t, found: false };

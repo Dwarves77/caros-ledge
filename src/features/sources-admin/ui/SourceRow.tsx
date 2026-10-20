@@ -14,7 +14,7 @@ import { TierOverrideControl } from "./TierOverrideControl";
 const pct = (v: number | null): string | null => (v === null ? null : `${Math.round(v * 100)}%`);
 
 /** A figure, or the absence with its reason: a metric the database holds nothing for is never drawn as 0 or 50%. Pure. */
-export function metricOrAbsence(v: string | number | null) {
+function metricOrAbsence(v: string | number | null) {
   return v === null ? <Absence reason="connect data" variant="dash" /> : v;
 }
 

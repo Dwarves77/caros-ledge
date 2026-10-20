@@ -36,7 +36,7 @@ const HEADER_LITERALS = new Set([
 ]);
 const NO_DATA = new Set(["", "—", "–", "-", "n/a", "na", "tbd", "tba", "...", "…", "null", "none"]);
 /** True when a parsed field is not real: null, empty, a no-data token, a table-header literal or a separator fragment. */
-export function isPlaceholderSourceName(name: string | null | undefined): boolean {
+function isPlaceholderSourceName(name: string | null | undefined): boolean {
   if (name == null) return true;
   const t = String(name).trim().toLowerCase();
   return NO_DATA.has(t) || HEADER_LITERALS.has(t) || /^[|:\-–—\s]+$/.test(t);
@@ -150,7 +150,7 @@ function parseSourcesList(markdown: string): SourceEntry[] {
 }
 
 /** One section's markdown body parsed by its key. */
-export function parseRegulationSection(key: RegulationSectionKey, heading: string, markdown: string): RegulationSection {
+function parseRegulationSection(key: RegulationSectionKey, heading: string, markdown: string): RegulationSection {
   switch (key) {
     case "3": return { kind: "action_list", heading, items: parseActionList(markdown) };
     case "4": return parseProseWithSource(heading, markdown);
@@ -178,7 +178,7 @@ export function parseRegulationSections(fullBrief: string | null | undefined): P
 }
 
 // ---- recommended actions ---------------------------------------------------------------------------------
-export const CONCRETE_ACTION_VERBS = ["Assess", "Map", "Verify", "Commission", "Engage", "Negotiate", "Reconcile"] as const;
+const CONCRETE_ACTION_VERBS = ["Assess", "Map", "Verify", "Commission", "Engage", "Negotiate", "Reconcile"] as const;
 const LEGISLATIVE_CITATION = /^Commission\s+(Implementing\s+|Delegated\s+)?(Regulation|Directive|Decision)\b/;
 const COMMISSION_AS_INSTITUTION = /^Commission\s+(is|was|are|were|will|shall|has|have|had|must|should|would|may|might|can|could|plans?|scheduled|submits?|adopts?|publishes?|proposes?|issued?|announced?)\b/i;
 const LABEL_MARKER = /\s*\*(Operational implication|Analytical inference|Industry interpretation|Legal Confirmation Required):\*/;
@@ -188,7 +188,7 @@ const OWNER = /\(Owner:\s*([^)]+)\)/i;
 export interface RecommendedAction { action_text: string; verb: string; timeframe_days: number | null; owner: string | null; due_date: string | null; source_section: string }
 
 /** One action from a paragraph: a concrete verb first, the label marker ends the sentence; a due date ONLY when stated explicitly (rule 2). */
-export function extractActionFromParagraph(paragraph: string, sourceSection: string): RecommendedAction | null {
+function extractActionFromParagraph(paragraph: string, sourceSection: string): RecommendedAction | null {
   const stripped = paragraph.replace(/^(?:[-*]\s+|\d+[.)]\s+)/, "");
   const verb = new RegExp(`^(${CONCRETE_ACTION_VERBS.join("|")})\\b`).exec(stripped)?.[1];
   if (!verb || LEGISLATIVE_CITATION.test(stripped) || COMMISSION_AS_INSTITUTION.test(stripped)) return null;

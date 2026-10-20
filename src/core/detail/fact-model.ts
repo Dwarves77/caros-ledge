@@ -50,7 +50,7 @@ function unwrapOuterQuotes(text: string): string {
   }
   return t;
 }
-export const stripFactLabel = (text: string): string => unwrapOuterQuotes(text.replace(FACT_TOKEN_RE, "").trim());
+const stripFactLabel = (text: string): string => unwrapOuterQuotes(text.replace(FACT_TOKEN_RE, "").trim());
 
 function stripLeadingEmphasisToken(text: string, token: string): string | null {
   const re = new RegExp(`^\\*{1,2}\\s*${escapeRe(token)}\\s*\\*{0,2}\\s*`, "i");
@@ -58,7 +58,7 @@ function stripLeadingEmphasisToken(text: string, token: string): string | null {
 }
 
 /** A trailing "Source: Title, Issuer, Date https://..." citation to its parts. */
-export function parseSourceCitation(raw: string): ParsedSource {
+function parseSourceCitation(raw: string): ParsedSource {
   let rest = raw.trim().replace(/\.$/, "");
   const urlMatch = URL_RE.exec(rest);
   const url = urlMatch ? urlMatch[0].replace(/[.,;:]+$/, "") : null;
@@ -67,7 +67,7 @@ export function parseSourceCitation(raw: string): ParsedSource {
   return { title: parts[0] ?? null, issuer: parts.length > 2 ? parts.slice(1, -1).join(", ") : parts.length === 2 ? (parts[1] ?? null) : null, date: parts.length > 1 ? (parts[parts.length - 1] ?? null) : null, url };
 }
 
-export function classifyParagraph(paragraph: string): FactParagraph {
+function classifyParagraph(paragraph: string): FactParagraph {
   const text = paragraph.trim();
   for (const { token, humanized } of ANALYSIS) {
     const rest = stripLeadingEmphasisToken(text, token);
@@ -141,7 +141,7 @@ function splitEmbeddedLinks(node: ClaimNode): ClaimNode[] {
 }
 
 /** Markdown to claim nodes: bold runs and embedded links kept, headings, backticks, list markers and stray asterisks gone. */
-export function toClaimNodes(raw: string): ClaimNode[] {
+function toClaimNodes(raw: string): ClaimNode[] {
   const text = raw.replace(/^\s*#{1,6}\s*/, "").replace(/`+/g, "").replace(/\[([^\]]+)\]\([^)]+\)/g, "$1").replace(/^[ \t]*[-*]\s+/, "").replace(/\n[ \t]*[-*]\s+/g, " ").replace(/\s*\n+\s*/g, " ").replace(/[ \t]{2,}/g, " ").trim();
   const nodes: ClaimNode[] = [];
   let last = 0;
@@ -200,9 +200,6 @@ export function mergeAdjacentSameKind(models: FactCardModel[]): FactCardModel[] 
   }
   return out;
 }
-
-/** A section's markdown to merged fact-card models. */
-export const parseFactCardModels = (markdown: string | null | undefined): FactCardModel[] => mergeAdjacentSameKind(parseFactParagraphs(markdown).flatMap(deriveFactCardModels));
 
 const RECORD_SLOT_KIND: Record<string, Kind> = { effective_date: "DEADLINE", primary_deadline: "DEADLINE", due_date: "DEADLINE", penalty_summary: "PENALTY", jurisdictional_scope: "SCOPE" };
 

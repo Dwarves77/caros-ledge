@@ -4,15 +4,15 @@ import { test } from "node:test";
 import { biasChips } from "@/core/sources";
 import { customerTierOf } from "@/core/sources";
 import { NEEDS_PHRASE, pickAbsenceReason, type AbsenceReason } from "@/ui/absence-reason";
-import { clampTier, TIER_MAX } from "@/ui/tier";
+import { SOURCE_TIER_MAX as TIER_MAX } from "@/core/sources";
+import { clampTier } from "@/ui/tier";
 import { isImpactScored, rampColor, segmentFilled, SEGMENT_GROUPS } from "@/ui/impact";
-import { classifyMilestones, classifyTimelineEntries, collapseTimeline, daysBetween, formatDayMonthYear, greenPercent, nextMilestoneClause, timelineHeaderCounts } from "@/ui/timeline-math";
+import { classifyMilestones, classifyTimelineEntries, collapseTimeline, formatDayMonthYear, greenPercent, nextMilestoneClause, timelineHeaderCounts } from "@/ui/timeline-math";
 import { relativeTimeLabel, stableDateLabel } from "@/ui/relative-time";
 import { weekOfIso } from "@/ui/iso-week";
 import { clampIndex, trapIndex, wrapIndex } from "@/ui/focus";
-import { resolveClaimTier, sixWordHeadline, withClaimTiers, type FactCardModel } from "@/ui/claim-tier";
+import { sixWordHeadline, withClaimTiers, type FactCardModel } from "@/ui/claim-tier";
 import { moveActiveIndex, resolveEnterKeyAction, runSearch } from "@/ui/shell/command-bar";
-import { remainderState } from "@/ui/list-surface/use-list-rows";
 
 test("INV-216: pickAbsenceReason precedence, and the three banned words never render", () => {
   assert.equal(pickAbsenceReason(["pending", "not in primary source", "connect data"]), "connect data");
@@ -87,7 +87,6 @@ test("the timeline reads no clock: the next-milestone clause depends only on now
     const m = classifyMilestones([{ date: "2026-11-01", label: "Filing due" }]);
     assert.equal(nextMilestoneClause(m, "2026-10-15"), "Filing due · 1 Nov 2026 · in 17 days");
     assert.equal(nextMilestoneClause(m, "2026-11-03"), "Filing due · 1 Nov 2026 · 2 days ago");
-    assert.equal(daysBetween("2026-03-01", "2026-02-01"), 28);
     assert.equal(formatDayMonthYear("2026-03"), "Mar 2026");
     assert.equal(formatDayMonthYear("nonsense"), "nonsense");
     assert.equal(nextMilestoneClause(classifyMilestones([{ date: "2026-01-01", label: "x", status: "past" }]), "2026-10-15"), null);
@@ -154,22 +153,15 @@ test("INV-263: a failed search says it failed; it is never an empty result", asy
   assert.deepEqual(await runSearch(res(true, { results: [] }), "carbon"), { phase: "ok", rows: [] });
 });
 
-test("the remainder state: a failure is its own state", () => {
-  assert.equal(remainderState(false, null, false), "idle");
-  assert.equal(remainderState(true, null, false), "loading");
-  assert.equal(remainderState(true, [], false), "ready");
-  assert.equal(remainderState(true, [], true), "failed");
-  assert.equal(remainderState(true, null, true), "failed");
-});
-
 test("claim tiers: exact and contained matches, an ambiguous card gets no tier, record-grade cards are untouched", () => {
   const long = "The regulation applies to all vessels above 5,000 gross tonnage from 1 January 2027.";
   const map = { [`[scope] ${long}`]: { tier: 2, sourceName: "IMO", sourceUrl: "https://imo.org/x" }, "A different claim that is long enough to match nothing here at all.": { tier: 4, sourceName: "Press", sourceUrl: null } };
-  assert.equal(resolveClaimTier(long, map)?.tier, 2);
-  assert.equal(resolveClaimTier("short", map), null);
+  const tierOf = (text: string, tiers: Record<string, { tier: number; sourceName: string; sourceUrl: string | null }>) => withClaimTiers({ kind: "SCOPE", claim: [{ text }] } as FactCardModel, tiers).provenance?.tier ?? null;
+  assert.equal(tierOf(long, map), 2);
+  assert.equal(tierOf("short", map), null);
   const clash = { a: { tier: 2, sourceName: "A", sourceUrl: null }, b: { tier: 3, sourceName: "B", sourceUrl: null } };
   const text = "Both entries contain this same long enough sentence for containment.";
-  assert.equal(resolveClaimTier(text, { [text]: clash.a, [`${text} extra`]: clash.b }), null);
+  assert.equal(tierOf(text, { [text]: clash.a, [`${text} extra`]: clash.b }), null);
   const model: FactCardModel = { kind: "SCOPE", claim: [{ text: long }] };
   assert.equal(withClaimTiers(model, map).provenance?.tier, 2);
   assert.equal(withClaimTiers({ ...model, kind: "ANALYTICAL INFERENCE" }, map).provenance, undefined);

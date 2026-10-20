@@ -18,7 +18,7 @@ import { loadSeriesItemMap } from "@/features/market/producers/market-series-ite
 import { deriveDisplayRows, publishedPriceStatistics, ratifySeriesItemMap } from "@/features/market/producers/published-price-statistics";
 import { gridQueueRows, oemRoadmapRows, parseGridQueueRow, parseRerouteRow, rerouteRows } from "@/features/market/producers/rows-file-producers";
 import { aggregateSbtiTargetRows, excelSerialToIsoDate, sbtiTargets } from "@/features/market/producers/sbti-targets";
-import { parseSheetRows, readSheet } from "@/core/producers/xlsx";
+import { readSheet } from "@/core/producers/xlsx";
 
 import { memoryDb } from "../_support/memory-db.ts";
 import { SEEDED_SERIES } from "../market/series-rows.ts";
@@ -222,7 +222,6 @@ test("INV-245: the SBTi producer is licence-blocked even when enabled, armed and
 test("the xlsx reader refuses a non-workbook and a missing sheet, naming the sheets present", () => {
   assert.throws(() => readSheet(Buffer.from("not a zip at all, definitely not"), "x"), /End Of Central Directory/);
   assert.throws(() => readSheet(bulletin(), "Nope"), /sheets present: Prices wo taxes/);
-  assert.throws(() => parseSheetRows("<worksheet/>"), /no <sheetData>/);
 });
 
 // ---- EEA HDV ----

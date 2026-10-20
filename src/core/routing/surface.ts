@@ -22,10 +22,9 @@ const table = z.object({
 });
 const T = table.parse(rulesJson);
 
-export const SURFACES = T.surfaces as readonly string[];
 export type Surface = string;
-export const SURFACE_RULES = T.rules;
-export const FALLBACK_SURFACE = T.fallback;
+const SURFACE_RULES = T.rules;
+const FALLBACK_SURFACE = T.fallback;
 export const SURFACE_PATH: Readonly<Record<string, string>> = T.path;
 export const SURFACE_LABELS: Readonly<Record<string, string>> = T.label;
 export const SURFACE_ORDER: readonly string[] = T.order;
@@ -39,15 +38,6 @@ export function surfaceOf(itemType: string | null | undefined, domain?: number |
     if ("domainIn" in r && d !== null && r.domainIn.includes(d)) return r.surface;
   }
   return FALLBACK_SURFACE;
-}
-
-/** The CASE expression of public.surface_of(p_item_type text, p_domain integer), generated from the same rules. */
-export function renderSurfaceOfSql(): string {
-  const lines = SURFACE_RULES.map((r) => {
-    const cond = "itemTypeIn" in r ? `p_item_type IN (${r.itemTypeIn.map((x) => `'${x}'`).join(", ")})` : `p_domain IN (${r.domainIn.join(", ")})`;
-    return `      WHEN ${cond} THEN '${r.surface}'`;
-  });
-  return ["    CASE", ...lines, `      ELSE '${FALLBACK_SURFACE}'`, "    END"].join("\n");
 }
 
 /** `/regulations/<id>` for a routed surface, null for an uncategorized item (no page to link to). */

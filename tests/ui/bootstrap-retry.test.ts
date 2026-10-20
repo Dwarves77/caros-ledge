@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { parseRetryAfter, RETRY_AFTER_CAP_MS, retryDelayMs } from "@/core/http/backoff";
-import { loadBootstrap, resetBootstrap, useBootstrapStore } from "@/ui/shell/use-bootstrap";
+import { failureOf, retryDelayMs } from "@/core/http/backoff";
+import { loadBootstrap, resetBootstrap, useBootstrapStore } from "@/ui/shell/bootstrap-store";
 
 const headers = async () => ({ Authorization: "Bearer x" });
 const BUNDLE = { personalState: [], members: [], adminAttention: null, overrides: [], navCounts: null, assistantEnabled: false, degraded: [] };
@@ -28,9 +28,11 @@ test("the backoff rule: three retries from one second, doubling; Retry-After win
   assert.deepEqual([1, 2, 3, 4].map((n) => retryDelayMs(n)), [1000, 2000, 4000, null]);
   assert.equal(retryDelayMs(1, 7000), 7000);
   assert.equal(retryDelayMs(3, 1000), 4000);
-  assert.equal(retryDelayMs(1, RETRY_AFTER_CAP_MS + 1), null);
-  assert.deepEqual([parseRetryAfter("5"), parseRetryAfter(""), parseRetryAfter("soon"), parseRetryAfter(null)], [5000, null, null, null]);
-  assert.equal(parseRetryAfter("Thu, 01 Jan 2026 00:00:10 GMT", Date.parse("2026-01-01T00:00:00Z")), 10_000);
+  assert.equal(retryDelayMs(1, 60_001), null, "a wait past the 60 s cap is refused");
+  const after = (header: string | null) => failureOf(429, header).retryAfterMs;
+  assert.deepEqual([after("5"), after(""), after("soon"), after(null)], [5000, null, null, null]);
+  const dated = after(new Date(Date.now() + 10_000).toUTCString()) ?? -1;
+  assert.ok(dated > 8000 && dated <= 10_000, `an HTTP date is a wait from now (${dated})`);
 });
 
 test("a 5xx is retried exactly three times, backing off 1 s, 2 s, 4 s, then the bundle ends in the failed state (4 requests, no more)", async () => {

@@ -38,5 +38,3 @@ export const URL_BEARING_SLOTS: ReadonlySet<string> = new Set(data.url_bearing_s
 export const REGULATION_FAMILY: ReadonlySet<string> = new Set(data.families.regulation);
 export const MARKET_FAMILY: ReadonlySet<string> = new Set(data.families.market);
 export const FAMILY_SLOTS: Readonly<Record<string, readonly string[]>> = data.family_slots;
-/** The research_finding row of the required-slots table (the default when a caller supplies none). */
-export const RESEARCH_FINDING_REQUIRED_SLOTS: readonly string[] = ["decision_relevance", "does_not_resolve", "finding", "methodology_limits"];

@@ -12,7 +12,7 @@ export interface OpenAlexDeps {
   timeoutMs?: number;
 }
 
-export class OpenAlexError extends Error {
+class OpenAlexError extends Error {
   readonly status: number;
   readonly path: string;
   constructor(message: string, status: number, path: string) {

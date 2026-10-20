@@ -12,7 +12,6 @@ import { type BatchExport, type Obj } from "../../kit/session-batch";
 
 import { buildSnapshot, selectTickets } from "./tickets";
 
-export const FORWARD_EXPORT_LIMIT = 100;
 const CHUNK = 200;
 
 /** Verified live item ids in id order that hold no forward event: candidates are read in chunks and stop at `need`. */

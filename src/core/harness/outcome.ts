@@ -7,15 +7,12 @@ import type { RunResult } from "@/core/types/run-result";
  * `partial` is a run that did its work and some of its units failed (migration 0070): it is neither success nor failure, and no proof counts it as the former.
  * `unknown` is a firing that started and has not concluded: the row a crashed process leaves behind (migration 0008 allows it; nothing treats it as work done).
  */
-export const OUTCOMES = ["success", "partial", "noop", "refused", "failed", "unknown"] as const;
-export type Outcome = (typeof OUTCOMES)[number];
-export const MODES = ["dry", "apply"] as const;
-export type Mode = (typeof MODES)[number];
-export const TRIGGERS = ["dispatch", "chained", "push", "schedule", "manual"] as const;
-export type Trigger = (typeof TRIGGERS)[number];
+export type Outcome = "success" | "partial" | "noop" | "refused" | "failed" | "unknown";
+export type Mode = "dry" | "apply";
+export type Trigger = "dispatch" | "chained" | "push" | "schedule" | "manual";
 
 /** The problems of a counts object: every count must be a non-negative finite number. A malformed count is refused (the row is unrecordable), never coerced to zero. */
-export const countProblems = (counts: Record<string, unknown>): string[] => Object.entries(counts).filter(([, v]) => typeof v !== "number" || !Number.isFinite(v) || v < 0).map(([k, v]) => `count ${k} is ${JSON.stringify(v)}: counts are non-negative finite numbers`);
+const countProblems = (counts: Record<string, unknown>): string[] => Object.entries(counts).filter(([, v]) => typeof v !== "number" || !Number.isFinite(v) || v < 0).map(([k, v]) => `count ${k} is ${JSON.stringify(v)}: counts are non-negative finite numbers`);
 
 /** The counts of a ledger row's outputs: `counts` of an apply row, `planned` of a dry row, `{}` for a row that carries neither (a skipped or legacy row). The one extraction (it was written three times with a silent default). */
 export function countsOf(outputs: Record<string, unknown>): Record<string, number> {
@@ -25,7 +22,7 @@ export function countsOf(outputs: Record<string, unknown>): Record<string, numbe
 }
 
 /** The sum of the counts a family declares as writes (counts are validated by noopContractErrors; an absent key adds nothing). */
-export const writeCount = (counts: Record<string, number> | undefined, writes: readonly string[]): number => writes.reduce((n, k) => n + (counts?.[k] ?? 0), 0);
+const writeCount = (counts: Record<string, number> | undefined, writes: readonly string[]): number => writes.reduce((n, k) => n + (counts?.[k] ?? 0), 0);
 
 /**
  * How a runtime's result becomes a ledger outcome. A failed result is `failed`; a result that refused (counts.refused above zero and nothing written, a held
@@ -51,10 +48,3 @@ export function noopContractErrors(row: { outcome: string; mode: string | null; 
   return errors;
 }
 
-/** The one outcome of a workflow from its jobs' results: a failure outranks a cancellation outranks success; every job skipped means it did not run. */
-export function outcomeOf(results: readonly string[]): "failure" | "cancelled" | "skipped" | "success" {
-  const rs = results.map((r) => String(r).trim()).filter(Boolean);
-  if (rs.includes("failure")) return "failure";
-  if (rs.includes("cancelled")) return "cancelled";
-  return rs.length === 0 || rs.every((r) => r === "skipped") ? "skipped" : "success";
-}

@@ -11,9 +11,8 @@ import { SURFACE_LABELS, SURFACE_ORDER, surfaceHref } from "@/core/routing";
 import { joinLabels, labelForComplianceObject, labelForScenario } from "@/core/tags/vocabulary";
 
 import type { BasisEntry } from "./discover";
-import { RELATIONSHIP_LABEL, relationshipSpecificity, THEME_MEMBERSHIP } from "./edges";
-import { basisDetailText, basisEntryKey, isIntersectionEntry, type IntersectionDetail } from "./intersections";
-import { isBriefStale } from "./themes";
+import { RELATIONSHIP_LABEL } from "./edges";
+import { isIntersectionEntry, type IntersectionDetail } from "./intersections";
 
 export interface ResourceRef {
   id: string;
@@ -44,7 +43,7 @@ export interface ConnectionRow {
 }
 
 /** "Supersedes", "Implements"...; a generic edge reads by direction (References, Referenced by). */
-export function labelForConnection(relationship: string | undefined, direction: string | undefined): string {
+function labelForConnection(relationship: string | undefined, direction: string | undefined): string {
   return (relationship ? RELATIONSHIP_LABEL[relationship] : undefined) ?? (direction === "outgoing" ? "References" : "Referenced by");
 }
 
@@ -86,11 +85,6 @@ export function buildSupersessionRows(supersessions: readonly Supersession[] | n
   }
   return rows;
 }
-
-export const buildAllConnectionRows = (supersessions: readonly Supersession[] | null | undefined, selfId: string, connections: readonly ConnectionIn[] | null | undefined, lookup: ResourceLookup | null | undefined): ConnectionRow[] => [
-  ...buildSupersessionRows(supersessions, selfId, lookup),
-  ...buildConnectionRows(connections, lookup),
-];
 
 /** "Connected through the operational scenarios a and b, and the compliance object c." */
 function couplingText(detail: IntersectionDetail | undefined): string {
@@ -170,20 +164,6 @@ export async function buildResourceLookup(sb: Db, relatedIds: readonly string[])
 
 // -- the brief author's candidate block ------------------------------------------------------------------------------------------------------------
 
-export const MAX_CANDIDATES = 10;
-const isFiniteScore = (n: unknown): n is number => typeof n === "number" && Number.isFinite(n);
-export interface CrossRefRow {
-  source_item_id: string;
-  target_item_id: string;
-  relationship?: string;
-  basis?: BasisEntry[] | null;
-  score?: number | null;
-}
-export interface ThemeIn {
-  id: string;
-  member_ids: readonly string[];
-  dominant_signals?: { signal: string }[] | null;
-}
 export interface Candidate {
   id: string;
   relationship: string;
@@ -196,88 +176,4 @@ export interface Selection {
   theme: { id: string; memberCount: number; title: string | null; stale: boolean | null; dominantSignals: { signal: string }[] } | null;
 }
 
-function readableBasisDetail(b: BasisEntry): string {
-  const d = b?.detail as IntersectionDetail | undefined;
-  if (isIntersectionEntry(b) && d && typeof d === "object") {
-    const list = (xs: unknown, label: (x: string) => string) => (Array.isArray(xs) ? xs.map(label).filter(Boolean).join(", ") : "");
-    return `scenarios: ${list(d.scenarios, labelForScenario)}; objects: ${list(d.objects, labelForComplianceObject)}; ${d.tier ?? "weak"} tier, strength ${d.strength ?? 0}`;
-  }
-  return basisDetailText(b);
-}
 
-/** Up to ten connected items for a brief author: cross-reference edges first, then theme co-members, each with its relationship and grounded basis. */
-export function selectCandidates(itemId: string, input: { crossRefRows?: readonly CrossRefRow[]; theme?: ThemeIn | null; themeBrief?: { member_hash?: string | null; title?: string | null } | null }): Selection {
-  const byId = new Map<string, { id: string; relationships: Set<string>; basis: BasisEntry[]; score: number | null; sources: Set<string> }>();
-  const touch = (id: string) => {
-    let c = byId.get(id);
-    if (!c) byId.set(id, (c = { id, relationships: new Set(), basis: [], score: null, sources: new Set() }));
-    return c;
-  };
-  const mergeBasis = (acc: BasisEntry[], incoming: readonly BasisEntry[] | null | undefined) => {
-    for (const b of incoming ?? []) if (b && b.signal && !acc.some((x) => basisEntryKey(x) === basisEntryKey(b))) acc.push(b);
-  };
-  for (const e of input.crossRefRows ?? []) {
-    if (!e || typeof e.source_item_id !== "string" || typeof e.target_item_id !== "string") continue;
-    const other = e.source_item_id === itemId ? e.target_item_id : e.target_item_id === itemId ? e.source_item_id : null;
-    if (!other || other === itemId) continue;
-    const c = touch(other);
-    c.sources.add("cross_reference");
-    if (e.relationship) c.relationships.add(e.relationship);
-    mergeBasis(c.basis, e.basis);
-    if (isFiniteScore(e.score)) c.score = c.score == null ? e.score : Math.max(c.score, e.score);
-  }
-  const { theme, themeBrief } = input;
-  let themeContext: Selection["theme"] = null;
-  if (theme && Array.isArray(theme.member_ids) && theme.member_ids.includes(itemId)) {
-    const dominant = (theme.dominant_signals ?? []).filter((s) => s && s.signal);
-    const themeBasis: BasisEntry[] = dominant.length ? dominant.slice(0, 3) : [{ signal: "co-clustered", detail: `member of the same connection theme (id ${theme.id})` }];
-    for (const mid of theme.member_ids) {
-      if (!mid || mid === itemId) continue;
-      const c = touch(mid);
-      c.sources.add("connection_theme");
-      mergeBasis(c.basis, themeBasis);
-    }
-    themeContext = { id: theme.id, memberCount: theme.member_ids.length, title: typeof themeBrief?.title === "string" ? themeBrief.title : null, stale: themeBrief && typeof themeBrief.member_hash === "string" ? isBriefStale(themeBrief.member_hash, theme.member_ids) : null, dominantSignals: dominant };
-  }
-  const pick = (rels: Set<string>): string => (rels.size ? [...rels].sort((a, b) => relationshipSpecificity(a) - relationshipSpecificity(b) || (a < b ? -1 : a > b ? 1 : 0))[0] as string : THEME_MEMBERSHIP);
-  const finalized: Candidate[] = [...byId.values()].map((c) => ({
-    id: c.id, relationship: pick(c.relationships), score: c.score, sources: [...c.sources].sort(),
-    basis: c.basis.slice().sort((x, y) => (y.weight ?? 0) - (x.weight ?? 0) || String(x.signal).localeCompare(String(y.signal)) || basisDetailText(x).localeCompare(basisDetailText(y))),
-  }));
-  finalized.sort((a, b) => {
-    const ta = a.sources.includes("cross_reference") ? 0 : 1;
-    const tb = b.sources.includes("cross_reference") ? 0 : 1;
-    if (ta !== tb) return ta - tb;
-    const as = a.score ?? -1;
-    const bs = b.score ?? -1;
-    return as !== bs ? bs - as : a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
-  });
-  return { candidates: finalized.slice(0, MAX_CANDIDATES), theme: themeContext };
-}
-
-export interface CandidateLoaders {
-  loadCrossReferences(itemId: string): Promise<CrossRefRow[]>;
-  loadThemeForItem?(itemId: string): Promise<ThemeIn | null>;
-  loadThemeBrief?(themeId: string): Promise<{ member_hash?: string | null; title?: string | null } | null>;
-}
-export async function selectBriefCandidates(itemId: string, deps: CandidateLoaders): Promise<Selection> {
-  const crossRefRows = await deps.loadCrossReferences(itemId);
-  const theme = deps.loadThemeForItem ? await deps.loadThemeForItem(itemId) : null;
-  const themeBrief = theme && deps.loadThemeBrief ? await deps.loadThemeBrief(theme.id) : null;
-  return selectCandidates(itemId, { crossRefRows, theme, themeBrief });
-}
-
-/** The CANDIDATE CONNECTIONS block for the author's bundle (empty when there are none). The graph's hints, never an obligation to assert a link. */
-export function formatCandidateBlock(selection: Selection | null | undefined): string {
-  const candidates = selection?.candidates ?? [];
-  if (!selection || !candidates.length) return "";
-  const lines = candidates.map((c) => {
-    const basisTxt = c.basis.length ? c.basis.slice(0, 3).map((b) => (readableBasisDetail(b) ? `${b.signal} (${readableBasisDetail(b)})` : b.signal)).join(", ") : "no basis recorded";
-    return `- ${c.id} — relationship: ${c.relationship}${isFiniteScore(c.score) ? ` — score ${c.score.toFixed(2)}` : ""} — basis: ${basisTxt}`;
-  });
-  const t = selection.theme;
-  const themeTxt = t
-    ? `\nThis item is a live member of connection theme ${t.id} (${t.memberCount} members${t.title ? `, "${t.title}"` : ""})${t.stale === true ? " — NOTE: the stored theme brief is STALE (membership drifted since it was generated); treat its content as historical context only, never as a current fact to cite" : ""}${t.dominantSignals.length ? `. The theme's dominant shared signals: ${t.dominantSignals.map((s) => s.signal).join(", ")}.` : "."}`
-    : "";
-  return `\nCANDIDATE CONNECTIONS (graph-derived — the connection graph already identified these items as related to this topic, from real cross-reference edges and/or theme clustering; each carries its relationship and the basis grounding WHY, never invented). Per the A3 assertion rule: you may put a candidate's id into related_items ONLY when your OWN synthesis genuinely evidences the relationship in this brief's content — when you do, cite the reason inline in intersection_summary using the basis below, in your own words, not a bare restatement of the score. A candidate is a hint, not an obligation: most candidates will not belong in most briefs, and omitting all of them is the correct, honest outcome when nothing you actually wrote supports a link. You may still assert a relation to any OTHER item in your source pool that is not listed here — this block does not narrow that.\n${lines.join("\n")}${themeTxt}\n`;
-}

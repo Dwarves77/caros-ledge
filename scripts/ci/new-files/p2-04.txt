@@ -7,7 +7,6 @@ src/features/intake/index.ts | new in P2-04: barrel for the import surface the b
 src/core/intake/result.ts | new in P2-04: the one {counts, outcome, notes} runtime-entry shape (WAVE-2-COMMON), no old counterpart
 src/features/intake/deps.ts | new in P2-04: the SourcesDeps/MintDeps/ConnectDeps/RecorderDeps interfaces the brief names; P2-08 wires them, no old counterpart
 src/core/brief/data/contract.json | generated from old_repo/src/lib/agent/system-prompt.ts, contract-version.mjs and format-spec.ts: the 26-field table, vocabularies and formats as DATA
-src/core/brief/data/author-instruction.json | generated from old_repo/src/lib/agent/system-prompt.ts: the author instruction as parts with placeholders; the metered prompt text rewritten for the injected-brief seam
 src/core/contracts/data/vocabularies.json | generated from old_repo/src/lib/contracts/vocabularies.ts: the closed vocabularies as DATA
 src/core/contracts/data/source-licences.json | generated from old_repo/src/lib/contracts/source-licence.ts: the licence register as DATA
 src/core/contracts/data/factor-tiers.json | generated from old_repo/src/lib/contracts/factor-tier.ts: the factor tier table as DATA

@@ -1,11 +1,13 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { loadMembership, membershipOf, resetMembership, setWatch, useWatchMembership } from "@/features/watchlist/membership";
+import { useWatchMembership } from "@/features/watchlist/membership";
 import { readNotices } from "@/features/watchlist/read/notices";
-import { byNextDate, readWatchlist, UNAVAILABLE_TITLE } from "@/features/watchlist/read/watchlist";
+import { loadMembership, setWatch } from "@/features/watchlist/watch-store";
+import { byNextDate, readWatchlist } from "@/features/watchlist/read/watchlist";
 
 import { MemDb } from "../_support/memdb.ts";
+import { membershipOf, resetMembership } from "../_support/watch-store.ts";
 import { clientFor, ORG_A, seed, TEAMMATE, USER } from "../workspace/_world.ts";
 
 const NOW = new Date("2026-10-15T12:00:00.000Z");
@@ -40,7 +42,7 @@ test("the watchlist read: personal and team merged newest first, a duplicate res
   assert.deepEqual(w.items.map((i) => [i.scope, i.type, i.title]), [
     ["team", "reg", "ReFuelEU Aviation"],
     ["team", "market_series", "EUR/USD"],
-    ["personal", "reg", UNAVAILABLE_TITLE],
+    ["personal", "reg", "Item no longer available"],
     ["personal", "signal", "By uuid"],
     ["personal", "source", "Watched Source"],
     ["personal", "reg", "FuelEU Maritime"],

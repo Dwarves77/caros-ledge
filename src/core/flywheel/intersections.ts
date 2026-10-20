@@ -7,7 +7,7 @@ import { surfaceOf } from "@/core/routing";
 import { CONFIG, ROLE_TAGS } from "./config";
 import type { BasisEntry } from "./discover";
 
-export const INTERSECTION_SIGNAL = "intersection";
+const INTERSECTION_SIGNAL = "intersection";
 const { points: POINTS, tierMin: TIER_MIN } = CONFIG.intersection;
 const HIGH_PRIORITY = new Set(CONFIG.intersection.highPriority);
 
@@ -43,10 +43,10 @@ const lc = (s: unknown): string => String(s ?? "").toLowerCase().trim();
 const tags = (x: unknown): string[] => [...new Set((Array.isArray(x) ? x : []).filter((v): v is string => typeof v === "string" && v.trim() !== "").map(lc))].sort();
 const round4 = (x: number): number => Math.round(x * 1e4) / 1e4;
 
-export const tierOf = (strength: number): Tier => (strength >= TIER_MIN.strong ? "strong" : strength >= TIER_MIN.medium ? "medium" : "weak");
+const tierOf = (strength: number): Tier => (strength >= TIER_MIN.strong ? "strong" : strength >= TIER_MIN.medium ? "medium" : "weak");
 
 /** Strength to edge score: weak 0.3..0.5, medium 0.5..0.9, strong 0.9..1. */
-export function strengthToScore(strength: number): number {
+function strengthToScore(strength: number): number {
   const s = Number(strength);
   if (!Number.isFinite(s)) return 0.3;
   const v = s < TIER_MIN.medium ? 0.3 + (Math.max(s, 5) - 5) / 15 : s < TIER_MIN.strong ? 0.5 + (s - TIER_MIN.medium) * 0.1 : 0.9 + (s - TIER_MIN.strong) * 0.025;

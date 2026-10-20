@@ -12,7 +12,6 @@ import { syncComplianceDeadline } from "@/features/obligations/derive/compliance
 import { readAndExtractForwardEvents } from "@/features/obligations/extract/verbatim-in-source";
 import { insertForwardEvents } from "@/features/obligations/extract/write-forward-events";
 import type { ConnectDeps } from "@/features/intake";
-import { serviceClient } from "@/core/db";
 
 import { runConnectionDiscovery } from "./run-discovery";
 import { tagPass } from "./tag-pass";
@@ -60,8 +59,3 @@ export function createConnectDeps(opts: { getDb: () => Db; now: () => Date }): C
   };
 }
 
-/**
- * The default object: the service client, resolved when a step runs (never at import), and the process clock. This is the ONE construction site that reads
- * the wall clock; P2-08 passes `createConnectDeps({ getDb, now })` with its own clock where it needs a different one.
- */
-export const connectDeps: ConnectDeps = createConnectDeps({ getDb: serviceClient, now: () => new Date() });

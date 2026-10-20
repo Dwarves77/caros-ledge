@@ -15,7 +15,7 @@ export interface WatchApi {
   onToggle: (scope: WatchScope) => void;
 }
 /** The watchlist feature provides this per item; without a provider the control is the kit's not-yet-loaded state (disabled, never shown as unwatched). */
-export const WatchContext = createContext<((itemId: string) => WatchApi) | null>(null);
+const WatchContext = createContext<((itemId: string) => WatchApi) | null>(null);
 
 export function ItemWatch({ itemId, variant = "row" }: { itemId: string; variant?: "row" | "icon" | "default" }) {
   const api = useContext(WatchContext)?.(itemId) ?? null;

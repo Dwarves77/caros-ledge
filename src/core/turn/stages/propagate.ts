@@ -12,7 +12,7 @@ import { fetchLiveCandidates } from "@/features/research";
 
 import type { BuiltDeps } from "../wiring";
 
-export const PROPAGATE_CALLER = "turn-propagate";
+const PROPAGATE_CALLER = "turn-propagate";
 type DrainData = NonNullable<Awaited<ReturnType<typeof runPropagationDrain>>["data"]>;
 type Processed = DrainData["processedEvents"][number];
 
@@ -20,14 +20,14 @@ export interface PropagatePlan {
   producers: { producer: string; only: string | undefined } | null;
   batch: number | undefined;
 }
-export function planPropagate(input: Record<string, unknown>): PropagatePlan {
+function planPropagate(input: Record<string, unknown>): PropagatePlan {
   const p = input.producers && typeof input.producers === "object" ? (input.producers as Record<string, unknown>) : input.producers === true ? {} : null;
   const only = typeof p?.only === "string" ? p.only : undefined;
   return { producers: p ? { producer: only ? "registry" : typeof p.producer === "string" ? p.producer : "all", only } : null, batch: typeof input.batch === "number" ? input.batch : undefined };
 }
 
 /** The ids of the items among the drained events: their research assessments are re-scored (IMP-055). Pure. */
-export const changedItemIds = (events: readonly Processed[]): string[] => [...new Set(events.filter((e) => e.tableName === "intelligence_items").map((e) => e.rowPk))];
+const changedItemIds = (events: readonly Processed[]): string[] => [...new Set(events.filter((e) => e.tableName === "intelligence_items").map((e) => e.rowPk))];
 
 const pick = (r: RunResult | null, prefix: string): Record<string, number> => Object.fromEntries(Object.entries(r?.counts ?? {}).map(([k, v]) => [`${prefix}${k}`, v]));
 

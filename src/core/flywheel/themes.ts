@@ -7,8 +7,7 @@ import { createHash } from "node:crypto";
 
 import { CONFIG, CONVERGENCE_BANDS } from "./config";
 
-export { CONVERGENCE_BANDS };
-export const OVERLAP_THRESHOLD = CONFIG.themeOverlapThreshold;
+const OVERLAP_THRESHOLD = CONFIG.themeOverlapThreshold;
 
 export interface ThemeLike {
   id: string;
@@ -41,7 +40,7 @@ function normalize(themes: readonly ThemeLike[] | null | undefined): Norm[] {
   return out;
 }
 
-export function overlapCoefficient(a: Iterable<string>, b: Iterable<string>): number {
+function overlapCoefficient(a: Iterable<string>, b: Iterable<string>): number {
   const setA = new Set(a);
   const setB = new Set(b);
   if (!setA.size || !setB.size) return 0;

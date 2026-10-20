@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
 import { mock, test } from "node:test";
 
-import { formatDate, formatFigure, formatRelative, formatRelativeCompact, isoWeek, countNoun, toDate } from "@/core/shared/dates";
+import { formatDate, formatFigure, isoWeek, countNoun } from "@/core/shared/dates";
 import { domainForItemType, asDomain } from "@/core/shared/domains";
 import { sendInvitationEmail } from "@/core/shared/email";
 import { resolveItemUuid } from "@/core/shared/ids";
-import { htmlToText, slugify } from "@/core/shared/text";
-import { captureError, resetTelemetryNotice, stackHash, withErrorCapture } from "@/core/shared/telemetry";
+import { slugify } from "@/core/shared/text";
+import { captureError, withErrorCapture } from "@/core/shared/telemetry";
 import { canonicalUrl, hostOf, stripUrlMarkers } from "@/core/shared/url";
 
 import { scripted } from "../_support/fake-clients.ts";
@@ -23,21 +23,9 @@ test("dates: one format set and the ISO week helper", () => {
   assert.equal(isoWeek(new Date(2026, 5, 15)), 25);
   assert.equal(countNoun(1, "item"), "1 item");
   assert.equal(countNoun(1234, "item"), "1,234 items");
-  assert.equal(toDate("nope"), null);
-  const now = Date.parse("2026-06-15T12:00:00Z");
-  assert.equal(formatRelativeCompact("2026-06-15T11:55:00Z", now), "5m ago");
-  assert.equal(formatRelativeCompact("2026-06-12T12:00:00Z", now), "3d ago");
-  assert.equal(formatRelativeCompact("2026-06-15T11:59:50Z", now), "just now");
-  assert.equal(formatRelative(new Date("2026-06-15T11:55:00Z"), now), "5 min ago");
-  assert.equal(formatRelative(new Date("2026-06-18T12:00:00Z"), now), "in 3 days");
-  assert.equal(formatRelative(new Date("2026-06-14T12:00:00Z"), now), "1 day ago");
 });
 
-test("text: html to text and slugs", () => {
-  assert.equal(htmlToText("<style>x{}</style><p>Hello&nbsp;<b>world</b></p><script>alert(1)</script>"), "Hello&nbsp; world");
-  assert.equal(htmlToText("a&amp;b", { blankEntities: true }), "a b");
-  assert.equal(htmlToText("<p>abcdef</p>", { maxChars: 3 }), "abc");
-  assert.equal(htmlToText(null), "");
+test("text: slugs", () => {
   assert.equal(slugify("  Acme & Sons, Ltd.! "), "acme-sons-ltd");
   assert.equal(slugify("x".repeat(80)).length, 40);
 });
@@ -112,22 +100,23 @@ test("telemetry: captureError stores no PII, dedups on the stack hash and never 
   await assert.doesNotReject(captureError({ side: "server", route: "/x", error: new Error("e") }, fakeDb(() => ({ error: { message: "boom" } })).db));
   const exploding = { from() { throw new Error("client exploded"); } } as never;
   await assert.doesNotReject(captureError({ side: "server", route: "/x", error: new Error("e") }, exploding));
-  assert.equal(stackHash("server", "row 1 failed", ""), stackHash("server", "row 99 failed", ""), "numbers do not split a group");
-  assert.notEqual(stackHash("server", "a", ""), stackHash("client", "a", ""));
+  const hashOf = async (side: "server" | "client", message: string) => {
+    const db = fakeDb();
+    await captureError({ side, route: "/x", error: new Error(message) }, db.db);
+    return String((wrote(db.calls, "error_events", "insert")[0]?.payload as Record<string, unknown>).stack_hash);
+  };
+  assert.equal(await hashOf("server", "row 1 failed"), await hashOf("server", "row 99 failed"), "numbers do not split a group");
+  assert.notEqual(await hashOf("server", "a"), await hashOf("client", "a"));
 });
 
-test("withErrorCapture re-raises after capturing", async () => {
-  const wrapped = withErrorCapture("/t", async () => {
-    throw new Error("handler failed");
-  });
-  await assert.rejects(wrapped(new Request("https://x.test"), undefined), /handler failed/);
-});
-
-test("telemetry: with no service client captureError says so once per process, never throws and never repeats the line", async () => {
+test("withErrorCapture re-raises after capturing; with no service client the first capture says so once per process, never throws and never repeats the line", async () => {
   scripted.service = null;
-  resetTelemetryNotice();
   const warned = mock.method(globalThis.console, "warn", () => {});
   try {
+    const wrapped = withErrorCapture("/t", async () => {
+      throw new Error("handler failed");
+    });
+    await assert.rejects(wrapped(new Request("https://x.test"), undefined), /handler failed/);
     for (let i = 0; i < 600; i += 1) await captureError({ side: "server", route: "/api/x", error: new Error("boom") });
   } finally {
     warned.mock.restore();

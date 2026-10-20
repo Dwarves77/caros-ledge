@@ -100,19 +100,4 @@ export function computeOverallScore(m: TrustMetrics, tier: number): number {
   return Math.round(priorWeight * tierPrior(tier) + (1 - priorWeight) * computeEarnedScore(m));
 }
 
-export interface TrustScorePatch {
-  trust_score_overall: number;
-  trust_score_accuracy: number;
-  trust_score_timeliness: number;
-  trust_score_reliability: number;
-  trust_score_citation: number;
-  trust_score_computed_at: string;
-}
-export interface TrustScoreRow {
-  id: string;
-  name: string | null;
-  base_tier: number;
-  overall: number;
-  patch: TrustScorePatch;
-}
 

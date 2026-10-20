@@ -33,7 +33,7 @@ export function appendOlder(state: InboxState, page: { notifications: InboxItem[
 }
 
 /** The title the row draws: the payload's own, else the kind's name. Never a raw id or a table name. */
-export const KIND_LABEL: Readonly<Record<string, string>> = { mention: "Mention", reply: "Reply", invite: "Invitation", moderation: "Moderation", archive: "Archived", assignment: "Assigned" };
+const KIND_LABEL: Readonly<Record<string, string>> = { mention: "Mention", reply: "Reply", invite: "Invitation", moderation: "Moderation", archive: "Archived", assignment: "Assigned" };
 export const titleOf = (n: InboxItem): string => (typeof n.payload.title === "string" && n.payload.title ? n.payload.title : (KIND_LABEL[n.kind] ?? "Notification"));
 
 /** Only an in-app path is followed from a notification; anything else (another site, a protocol-relative address) is ignored. */

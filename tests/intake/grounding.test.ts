@@ -2,10 +2,10 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import {
-  applyLedgerDiff, buildCitationEdges, buildGateARow, buildSourceBlocks, citedHostGate, clearGateAState, diffLedger, eraseClaimWithProof, floorPool, GATE_A_VERSION, groundBrief, groundRetryPlan, ledgerRegression, mintGates,
+  applyLedgerDiff, buildCitationEdges, buildGateARow, citedHostGate, clearGateAState, diffLedger, eraseClaimWithProof, floorPool, groundBrief, groundRetryPlan, ledgerRegression, mintGates,
   nominateForSlot, poolHash, reattributeToFloor, scanGateA, summarizeLedger, uncoveredSlots, upsertGateAState, decideSlotClaim, hasValidWaiver,
 } from "@/core/grounding";
-import { detectConflate, detectNumeric, mergeNullTierAggregate, summarizeNullTierAggregate } from "@/core/grounding/gates";
+import { mergeNullTierAggregate, summarizeNullTierAggregate } from "@/core/grounding/gates";
 import { openFlagOnce } from "@/core/grounding/flags";
 
 import { installLedgerRpcs } from "../_support/ledger-rpcs.ts";
@@ -150,9 +150,10 @@ test("mint gates: S-CONFLATE is a HARD hold, S-NUMERIC a SOFT flag, below-floor 
   const conflated = ["Regulation 2023/1805 applies", "Regulation 2022/999 applies", "ReFuelEU applies"].map((t, i) => ({ id: `f${i}`, claim_kind: "FACT", claim_text: t, source_span: span, source_id: SOURCE, source_tier_at_grounding: 1 }));
   const rep = mintGates(conflated, { itemFloor: 2 });
   assert.deepEqual(rep.conflateHeldIds.sort(), ["f0", "f1", "f2"]);
-  assert.equal(detectConflate(conflated.slice(0, 2)).length, 0, "two reuses are under the minimum");
-  assert.ok(detectNumeric({ claim_text: "A penalty of EUR 75 000 applies", source_span: "A penalty of up to EUR 50 000 applies" }));
-  assert.equal(detectNumeric({ claim_text: "A penalty of EUR 50 000 applies", source_span: "A penalty of up to EUR 50 000 applies" }), null);
+  assert.deepEqual(mintGates(conflated.slice(0, 2), { itemFloor: 2 }).conflateHeldIds, [], "two reuses are under the minimum");
+  const numeric = (claim_text: string) => mintGates([{ id: "n", claim_kind: "FACT", claim_text, source_span: "A penalty of up to EUR 50 000 applies", source_id: SOURCE, source_tier_at_grounding: 1 }], { itemFloor: 2 }).numericHeldIds;
+  assert.deepEqual(numeric("A penalty of EUR 75 000 applies"), ["n"]);
+  assert.deepEqual(numeric("A penalty of EUR 50 000 applies"), []);
   const mixed = mintGates([{ id: "n1", claim_kind: "FACT", claim_text: "Fee of EUR 75 000", source_span: "Fee of EUR 50 000", source_id: null, source_tier_at_grounding: 4 }], { itemFloor: 2 });
   assert.equal(mixed.numericFacts.length, 1);
   assert.equal(mixed.belowFloor, 1);
@@ -169,7 +170,7 @@ test("INV-017/057: Gate A state has one writer shape: a figure or deadline in th
   assert.equal(scanGateA(brief, [...facts, { claim_text: "x", source_span: "enters into force on 1 January 2027" }]).orphan_count, 0);
   assert.equal(scanGateA(brief, facts, new Set(["1 january 2027"])).orphan_count, 0, "a derived claim covers the deadline (arm B)");
   const gr = buildGateARow({ itemId: ITEM, fullBrief: brief, factClaims: facts, nowIso: "2026-10-15T00:00:00Z" });
-  assert.equal(gr.gate_a_version, GATE_A_VERSION);
+  assert.match(gr.gate_a_version, /^\d{4}-\d{2}-\d{2}\.\d+$/);
   assert.deepEqual(Object.keys(gr).sort(), ["gate_a_version", "intelligence_item_id", "orphan_count", "orphans", "scanned_at", "scanned_hash"]);
   const db = new MemDb();
   assert.deepEqual(await upsertGateAState(db.client, gr), { error: null });
@@ -192,16 +193,12 @@ test("floor pool and re-attribution: best tier first, never below the floor, nev
   assert.equal(reattributeToFloor(SPAN_FORCE, 5, floorPool(pool, 2), 2), null, "a span in no floor source is not re-homed");
 });
 
-test("INV-157: the pool hash is order-independent and covers url and text; buildSourceBlocks keeps a floor source whole", () => {
+test("INV-157: the pool hash is order-independent and covers url and text", () => {
   const a = { url: "u1", text: "alpha" };
   const b = { url: "u2", text: "beta" };
   assert.equal(poolHash([a, b]), poolHash([b, a]));
   assert.notEqual(poolHash([a, b]), poolHash([a, { ...b, text: "beta2" }]));
   assert.notEqual(poolHash([{ url: "ab", text: "c" }]), poolHash([{ url: "a", text: "bc" }]), "the separator stops fields shifting across the boundary");
-  const big = "z".repeat(300);
-  const blocks = buildSourceBlocks([{ url: "floor", text: big, tier: 1 }, { url: "low", text: "q".repeat(5000), tier: 5 }], 1000, { floorTier: 2, hardCeiling: 10_000 });
-  assert.ok(blocks.blocks.includes(big), "the floor source is whole");
-  assert.ok(blocks.trims.some((t) => t.url === "low"), "the trim of the low-tier source is reported");
 });
 
 test("cited-host gate: a cited URL becomes a stub only on a known host or institution; a novel host is flagged and never stubbed", async () => {

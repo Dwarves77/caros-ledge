@@ -23,7 +23,7 @@ export const DRAIN_KINDS: readonly DrainKind[] = Object.freeze(parsed.kinds.map(
 export const KIND_ORDER: readonly string[] = Object.freeze(parsed.order);
 export const DEFAULT_MODE = "pending";
 
-export const kindById = (id: string): DrainKind | null => DRAIN_KINDS.find((k) => k.id === id) ?? null;
+const kindById = (id: string): DrainKind | null => DRAIN_KINDS.find((k) => k.id === id) ?? null;
 export const kindModes = (k: DrainKind): string[] => [DEFAULT_MODE, ...Object.keys(k.modes ?? {})];
 /** An exact id, or a prefix naming exactly one kind. */
 export function resolveKind(input: unknown): DrainKind | null {
@@ -33,16 +33,6 @@ export function resolveKind(input: unknown): DrainKind | null {
   if (exact) return exact;
   const hits = DRAIN_KINDS.filter((k) => k.id.startsWith(v));
   return hits.length === 1 ? (hits[0] as DrainKind) : null;
-}
-/** The kind a committed batch path belongs to (the file must sit directly in the kind's directory and match its pattern). */
-export function kindForBatchPath(path: string): DrainKind | null {
-  const p = String(path ?? "").replace(/\\/g, "/").replace(/^\.\//, "");
-  for (const k of DRAIN_KINDS) {
-    if (!p.startsWith(`${k.batchDir}/`)) continue;
-    const name = p.slice(k.batchDir.length + 1);
-    if (!name.includes("/") && k.batchRe.test(name)) return k;
-  }
-  return null;
 }
 /** The next batch path: numbered after the highest committed batch of the kind (plus `offset` for several in one plan). */
 export function nextBatchPath(k: DrainKind, existingNames: readonly string[], offset = 0): string {
@@ -71,33 +61,13 @@ export function screenVerdictExporter(sb: Db): Exporter {
     }
   };
 }
-/** Research findings with no theme that the rules left unclassified: the residue a session authors. Rule-classifiable rows are never exported. */
-export function themeClassificationExporter(sb: Db, classify: (text: string) => { theme: string }): Exporter {
-  return async ({ limit }) => {
-    try {
-      const rows = await fetchAllRows<{ id: string; title: string | null; what_is_it: string | null; full_brief: string | null }>((a, b) => sb.from("intelligence_items").select("id, title, what_is_it, full_brief").eq("item_type", "research_finding").is("theme", null).eq("is_archived", false).order("id", { ascending: true }).range(a, b) as never, { cap: 100_000 });
-      const items = rows.filter((r) => classify(`${r.title ?? ""} ${r.what_is_it ?? ""} ${r.full_brief ?? ""}`).theme === "unclassified").slice(0, limit).map((r) => ({ id: r.id, title: r.title, text: `${r.what_is_it ?? ""} ${r.full_brief ?? ""}`.trim().slice(0, 4000) }));
-      return { ok: true, items, source: { type: "table", table: "intelligence_items" } };
-    } catch (e) {
-      return { ok: false, items: [], error: (e as Error).message };
-    }
-  };
-}
 
-export const OUTBOX_MAX_ATTEMPTS = 5;
+const OUTBOX_MAX_ATTEMPTS = 5;
 type OutboxRow = { id: string; user_id: string; kind: Parameters<typeof dispatchNotification>[0]["kind"]; payload: Record<string, unknown>; attempts: number | null };
 const PENDING = (sb: Db, limit: number, ids?: readonly string[]) => {
   const q = sb.from("notification_outbox").select("id, user_id, kind, payload, attempts").eq("status", "pending");
   return (ids ? q.in("id", [...ids]) : q).order("created_at", { ascending: true }).limit(limit);
 };
-
-/** The pending outbox rows (oldest first) as a drain queue. */
-export function notificationOutboxExporter(sb: Db): Exporter {
-  return async ({ limit }) => {
-    const { data, error } = await PENDING(sb, limit);
-    return error ? { ok: false, items: [], error: error.message } : { ok: true, items: (data ?? []) as Item[], source: { type: "table", table: "notification_outbox" } };
-  };
-}
 
 /**
  * Send each pending notification through dispatchNotification and stamp the row: sent (with sent_at), or attempts + 1 with last_error; the fifth failed attempt

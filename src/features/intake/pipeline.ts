@@ -42,16 +42,6 @@ export async function readAdoptedTerms(sb: Db): Promise<{ adopted: AdoptedTerms;
   }
 }
 
-/** The research assessment block spliced into a research_finding author context (spec 03S1): only real values, or empty. */
-export async function planningAssumptionContext(sb: Db, itemId: string): Promise<{ block: string; note: string | null }> {
-  const r = await sb.from("research_assessments_current").select("horizon_band, horizon_kind, horizon_rule, technical_maturity_low, technical_maturity_high, commercial_maturity_low, commercial_maturity_high").eq("item_id", itemId).maybeSingle();
-  if (r.error) return { block: "", note: `research_assessments_current read failed: ${r.error.message}` };
-  const d = r.data as Record<string, unknown> | null;
-  if (!d?.horizon_band) return { block: "", note: null };
-  const maturity = (k: string, lo: unknown, hi: unknown) => (lo != null && hi != null ? `, ${k}_low=${lo}, ${k}_high=${hi}` : "");
-  return { block: `\n\nRESEARCH ASSESSMENT CONTEXT (cite ONLY these real values in section 3's "Planning assumption shift:" line):\n- Assessment: horizon_band=${d.horizon_band}, horizon_kind=${d.horizon_kind}, horizon_rule=${d.horizon_rule}${maturity("technical_maturity", d.technical_maturity_low, d.technical_maturity_high)}${maturity("commercial_maturity", d.commercial_maturity_low, d.commercial_maturity_high)}`, note: null };
-}
-
 export interface InjectInput {
   itemId: string;
   body: string;

@@ -6,7 +6,7 @@ import { isPairTombstoned } from "@/core/corrections";
 
 import { resolveMention, type CorpusRow } from "./mentions";
 
-export const LINEAGE_BACKFILL_ORIGIN = "entity_extraction";
+const LINEAGE_BACKFILL_ORIGIN = "entity_extraction";
 export const LINEAGE_GAP_CREATED_BY = "lineage-gap:absent-parent";
 const MANUAL_ORIGIN = "manual";
 
@@ -105,7 +105,7 @@ const GAP_ACTION_RE = /^item (\w+) (.+), which does not resolve to any item in t
 const GAP_DESC_ITEM_RE = /([^,():]+?) \((\w+)\)(?:,|$)/g;
 
 /** The (relationship, identifier) pairs a lineage-gap flag names, from its actions or (older flags) its description. */
-export function parseLineageGapFlag(flag: { recommended_actions?: unknown; description?: string | null }): { relationship: string; identifier: string }[] {
+function parseLineageGapFlag(flag: { recommended_actions?: unknown; description?: string | null }): { relationship: string; identifier: string }[] {
   const out: { relationship: string; identifier: string }[] = [];
   const actions = Array.isArray(flag?.recommended_actions) ? (flag.recommended_actions as { rationale?: unknown }[]) : [];
   for (const a of actions) {

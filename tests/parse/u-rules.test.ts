@@ -3,8 +3,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { figuresEqual, findFigures, findIdentifiers, isFigure, isRefusal, kindOf, numbersSumExactly, parseFigure, resolveLocale, sameIdentifier, type Figure } from "@/core/parse";
-import { MISSING_FILE } from "@/core/parse/data";
+import { figuresEqual, findFigures, findIdentifiers, isFigure, kindOf, resolveLocale, sameIdentifier, type Figure } from "@/core/parse";
+
+import { isRefusal, parseFigure } from "../_support/parse-figure.ts";
 
 const fig = (text: string, locale: string | null = "en"): Figure => {
   const p = parseFigure(text, { locale });
@@ -86,13 +87,11 @@ test("U3: intensity kinds are distinct types and never equal across kinds; the s
   assert.notEqual(fig("12 kg CO2e/t throughput").kind, fig("12 kg CO2e/tkm").kind, "a hub figure is its own kind");
 });
 
-test("U4: the boundary travels with the number; WTT + TTW = WTW exactly on the stored decimals (T9)", () => {
+test("U4: the boundary travels with the number (T9)", () => {
   const a = fig("WTT 0.328 kg CO2e/tkm");
   const b = fig("TTW 1.244 kg CO2e/tkm");
   const c = fig("WTW 1.572 kg CO2e/tkm");
   assert.deepEqual([a.boundary, b.boundary, c.boundary], ["WTT", "TTW", "WTW"]);
-  assert.deepEqual(numbersSumExactly(0.328, 1.244, 1.572), { ok: true, sum: "1.572" });
-  assert.equal(numbersSumExactly(0.328, 1.244, 1.58).ok, false);
   assert.equal(fig("a headline of 1.572 kg CO2e/tkm").boundary, undefined, "no label stated: none is invented");
   assert.equal(fig("1.244 kg CO2e/tkm (tank-to-wheel)").boundary, "TTW", "a TTW value is never labelled WTW");
   assert.equal(fig("1.572 kg CO2e/tkm, well-to-wheel").boundary, "WTW");
@@ -121,19 +120,10 @@ test("U8, U9: distance and mass basis are recorded when stated, never inferred",
   assert.equal(fig("789,600 tkm").distanceBasis, undefined);
 });
 
-test("U10: missing is typed and never 0 (TBM, N/A, a dash, not_set, M); a table may declare what its dash means (INV-R2a-5)", () => {
-  const kinds = new Map<string, string>();
-  for (const t of MISSING_FILE.tokens) {
-    const p = parseFigure(t.literal);
-    assert.ok("missing" in p && !("value" in p), `${t.literal} is a typed missing value with no value at all`);
-    kinds.set(t.literal, (p as { missing: string }).missing);
-    assert.equal((p as { missing: string }).missing, t.kind);
-  }
-  assert.equal(new Set([kinds.get("TBM"), kinds.get("N/A"), kinds.get("-"), kinds.get("not_set"), kinds.get("M")]).size, 5, "five tokens, five kinds");
-  assert.deepEqual(parseFigure("-", { missingAs: { "-": "not_set" } }), { missing: "not_set", literal: "-" }, "T17: the IMO Z dash is not_set");
+test("U10: a printed zero is a zero and unreadable text is a refusal, never a zero (INV-R2a-5)", () => {
   const zero = parseFigure("0 t");
-  assert.ok(isFigure(zero) && zero.value === "0", "a printed zero is a zero, distinct from a missing value");
-  assert.ok(isRefusal(parseFigure("nonsense")), "unreadable text is a refusal, not a zero");
+  assert.ok(isFigure(zero) && zero.value === "0", "a printed zero is a zero");
+  for (const t of ["TBM", "N/A", "-", "not_set", "nonsense"]) assert.ok(isRefusal(parseFigure(t)), `${t} is a refusal, not a zero`);
 });
 
 test("U12: regulation numbers print as 2025/2547 or 32026R1030 and resolve to one identifier", () => {

@@ -11,16 +11,16 @@ import { fetchAllByIdChunks, fetchAllRows, type Db } from "@/core/db";
 import { LookupError } from "@/core/http/errors";
 import { containsNumeral, figuresEqual, findFigures, findIdentifiers, isFigure, mentionsIdentifier, resolveLocale } from "@/core/parse";
 
-import { GATE_A_VERSION, md5, norm, scanGateA } from "./gate-a-scan";
+import { norm, scanGateA } from "./gate-a-scan";
 
 // ---- defect signatures ----------------------------------------------------------------------------------------
-export const REUSE_MIN = 3;
+const REUSE_MIN = 3;
 const NAMED_ACTS = ["CountEmissions", "FuelEU", "ReFuelEU", "CBAM", "EUDR", "AFIR", "CSRD", "ESRS", "EPBD", "MEES", "PPWR"];
 interface FactLike { idx?: number; id?: string | number | null; claim_text?: string | null; source_span?: string | null }
 export interface DefectHit { idx?: number | undefined; id?: string | number | null | undefined; signature: "S-CONFLATE" | "S-NUMERIC"; rationale: string }
 
 /** Instrument and standard identifiers named in a claim, as normalised keys (EU number, CELEX and print forms of one act are one key), and the named acts. */
-export function extractIdentifiers(claim: string | null | undefined): Set<string> {
+function extractIdentifiers(claim: string | null | undefined): Set<string> {
   const c = String(claim || "");
   const ids = new Set<string>();
   for (const f of findIdentifiers(c)) if (f.kind === "instrument" || f.kind === "standard") ids.add(f.key);
@@ -32,7 +32,7 @@ function spanHasIdentifier(span: string, id: string): boolean {
   return id.startsWith("NAME:") ? span.toLowerCase().includes(id.slice(5)) : mentionsIdentifier(span, { key: id, type: null });
 }
 /** S-CONFLATE: one span reused by REUSE_MIN or more FACTs naming two or more distinct instruments, some absent from the span. */
-export function detectConflate(facts: FactLike[]): DefectHit[] {
+function detectConflate(facts: FactLike[]): DefectHit[] {
   const groups = new Map<string, FactLike[]>();
   for (const f of facts) {
     const key = String(f.source_span || "").trim();
@@ -55,7 +55,7 @@ const OBLIGATION_YEAR = /\b(?:from|by|before|until|effective|deadline|starting)\
  * S-NUMERIC: every typed figure of the claim must be stated, as an EQUAL figure (value, unit, scale: @/core/parse), in its span, and an obligation year must stand in the span at a numeral
  * boundary. A figure the parser refuses is a miss (unreadable is not absent): the claim and its span are one document, read under one locale.
  */
-export function detectNumeric(fact: FactLike): DefectHit | null {
+function detectNumeric(fact: FactLike): DefectHit | null {
   const [claim, span] = [String(fact.claim_text || ""), String(fact.source_span || "")];
   const verdict = resolveLocale(`${claim}\n${span}`);
   const stated = findFigures(span, { verdict }).flatMap((h) => (isFigure(h.result) ? [h.result] : []));
@@ -73,7 +73,7 @@ export function detectNumeric(fact: FactLike): DefectHit | null {
 export interface GateFact { id?: string; claim_kind: string; claim_text: string | null; source_span: string | null; source_id: string | null; source_tier_at_grounding: number | null }
 export interface PerFactGates { genericSource: boolean; authorityFloor: boolean; spanNumeric: boolean }
 /** Per-FACT gates (true = would have held): no specific source, below the per-type floor, a figure absent from the span. */
-export function perFactGates(fact: GateFact, ctx: { itemFloor: number | null; suspendedSourceIds?: Iterable<string> }): PerFactGates | null {
+function perFactGates(fact: GateFact, ctx: { itemFloor: number | null; suspendedSourceIds?: Iterable<string> }): PerFactGates | null {
   if (!fact || String(fact.claim_kind).toUpperCase() !== "FACT") return null;
   const susp = new Set(ctx.suspendedSourceIds ?? []);
   return {
@@ -83,7 +83,7 @@ export function perFactGates(fact: GateFact, ctx: { itemFloor: number | null; su
   };
 }
 /** Item-level S-CONFLATE: the ids of the FACTs that identity congruence would hold. */
-export function identityCongruenceHolds(facts: GateFact[]): Set<string | number | null | undefined> {
+function identityCongruenceHolds(facts: GateFact[]): Set<string | number | null | undefined> {
   const list = (facts ?? []).filter((f) => String(f.claim_kind).toUpperCase() === "FACT").map((f, i) => ({ idx: i + 1, id: f.id ?? i + 1, claim_text: f.claim_text, source_span: f.source_span }));
   return new Set(detectConflate(list).map((h) => h.id));
 }
@@ -107,7 +107,6 @@ export function buildGateARow(a: { itemId: string; fullBrief: string | null | un
   const ga = scanGateA(a.fullBrief ?? "", a.factClaims, a.derivedCovered);
   return { intelligence_item_id: a.itemId, scanned_hash: ga.scanned_hash, orphan_count: ga.orphan_count, orphans: ga.orphans, gate_a_version: ga.gate_a_version, scanned_at: a.nowIso };
 }
-export { GATE_A_VERSION, md5 };
 export interface CitationEdgeRow { intelligence_item_id: string; source_id: string; detected_at: string; origin: "agent_extraction" }
 /** intelligence_item_citations edge rows for a DISTINCT set of cited source ids (one shape, every writer). Pure; drops falsy ids. */
 export function buildCitationEdges(itemId: string, sourceIds: Iterable<string | null | undefined>, nowIso: string): CitationEdgeRow[] {

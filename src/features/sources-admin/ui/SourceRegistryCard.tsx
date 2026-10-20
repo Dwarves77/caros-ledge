@@ -23,7 +23,7 @@ export type RegistryView = "registry" | "health" | "provisional" | "canonical" |
 const VIEW_LABELS: Record<RegistryView, string> = { registry: "Source registry", health: "Health", provisional: "Provisional", canonical: "Canonical source issues", pairs: "Intersections", themes: "Themes", obligations: "Upcoming obligations" };
 
 /** The registry filtered by tier (the tier a customer sees), status and a name, description and notes search; the facet counts and the filter use the one tier function. Pure. */
-export function filterRegistry(sources: readonly AdminSource[], f: { tiers: readonly number[]; search: string }): AdminSource[] {
+function filterRegistry(sources: readonly AdminSource[], f: { tiers: readonly number[]; search: string }): AdminSource[] {
   const q = f.search.toLowerCase();
   return sources.filter((s) => {
     const t = customerTierOf(s);
@@ -32,7 +32,7 @@ export function filterRegistry(sources: readonly AdminSource[], f: { tiers: read
   });
 }
 /** Sources whose next scheduled check has passed, as of the request's one instant. Pure. */
-export const overdue = (sources: readonly AdminSource[], nowIso: string): AdminSource[] => sources.filter((s) => s.next_scheduled_check !== null && s.next_scheduled_check < nowIso);
+const overdue = (sources: readonly AdminSource[], nowIso: string): AdminSource[] => sources.filter((s) => s.next_scheduled_check !== null && s.next_scheduled_check < nowIso);
 
 /** The source registry card: the tier legend, the scrape schedule, and seven views (the registry, its health, the provisional queue, canonical source issues, connection pairs, themes, upcoming obligations). Every view that reads says so when the read fails. */
 export function SourceRegistryCard({ sources, provisional, initialView, nowIso, pendingTotal, stagedCount, onOpenStaged, onSourceChanged, onProvisionalRemoved }: { sources: AdminSource[]; provisional: AdminProvisional[]; initialView: RegistryView; nowIso: string; pendingTotal: number | null; stagedCount: number; onOpenStaged: () => void; onSourceChanged: (id: string, patch: Partial<AdminSource>) => void; onProvisionalRemoved: (id: string) => void }) {

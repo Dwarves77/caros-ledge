@@ -4,7 +4,7 @@
 // needs from other slices (canonical-key derivation, institution equality) arrive as parameters.
 
 /** CELEX sector digit to the letter-to-item_type map valid for that sector. A CELEX Decision is a binding act (Article 288 TFEU): regulation. */
-export const CELEX_SECTOR_LETTER_MAP: Readonly<Record<string, Readonly<Record<string, string>>>> = {
+const CELEX_SECTOR_LETTER_MAP: Readonly<Record<string, Readonly<Record<string, string>>>> = {
   "2": { A: "framework", D: "regulation" },
   "3": { R: "regulation", L: "directive", D: "regulation", H: "guidance", A: "framework" },
   "4": { D: "regulation" },
@@ -15,32 +15,32 @@ const CELEX_SHAPE = /^[1-9]\d{4}[A-Z]\d{4}/;
  * item_type from a CELEX-shaped key. Two DIFFERENT holds, never conflated: `canonical_key_unresolved` (not CELEX-shaped: the key
  * was never resolved) and `item_type_unmapped` (a real key whose sector or letter has no home: named, never guessed).
  */
-export function classifyItemTypeFromCelexKey(canonicalKey: string | null | undefined): { itemType: string | null; hold: string | null } {
+function classifyItemTypeFromCelexKey(canonicalKey: string | null | undefined): { itemType: string | null; hold: string | null } {
   if (typeof canonicalKey !== "string" || !CELEX_SHAPE.test(canonicalKey)) return { itemType: null, hold: "canonical_key_unresolved" };
   const itemType = CELEX_SECTOR_LETTER_MAP[canonicalKey.charAt(0)]?.[canonicalKey.charAt(5)] ?? null;
   return itemType ? { itemType, hold: null } : { itemType: null, hold: "item_type_unmapped" };
 }
 
 /** The legislation.gov.uk series-code vocabulary (UK statutory instrument and act families). */
-export const UK_TYPES: ReadonlySet<string> = new Set(["uksi", "ukpga", "ukla", "ukcm", "ukmo", "asp", "asc", "anaw", "mwa", "nia", "nisr", "ssi", "wsi", "apni", "aosp", "aep", "gbla", "mnia", "apgb", "aip"]);
+const UK_TYPES: ReadonlySet<string> = new Set(["uksi", "ukpga", "ukla", "ukcm", "ukmo", "asp", "asc", "anaw", "mwa", "nia", "nisr", "ssi", "wsi", "apni", "aosp", "aep", "gbla", "mnia", "apgb", "aip"]);
 const UK_TYPE_RE = /\/(uksi|ukpga|wsi|ssi|nisr)\//i;
 const UK_ID_RE = new RegExp(`/(${[...UK_TYPES].join("|")})/(\\d{4})/(\\d+)`, "i");
 const FR_DOCNUM_RE = /\/documents\/\d{4}\/\d{2}\/\d{2}\/([A-Za-z0-9-]+)/;
 
 /** item_type for a legislation.gov.uk URL path segment (regulation for the statutory-instrument family), or null. */
-export const classifyUkLegislationType = (documentUrl: string | null | undefined): string | null => (UK_TYPE_RE.test(String(documentUrl ?? "")) ? "regulation" : null);
+const classifyUkLegislationType = (documentUrl: string | null | undefined): string | null => (UK_TYPE_RE.test(String(documentUrl ?? "")) ? "regulation" : null);
 /**
  * "UK <type> <year>/<number>" from the URL's own path segment: the ONLY authoritative source for the series code (a Welsh /wsi/
  * instrument was once mislabeled "UK uksi" from a stale value). null when no recognised segment is present; never defaulted.
  */
-export function deriveUkLegislationIdentifier(documentUrl: string | null | undefined): string | null {
+function deriveUkLegislationIdentifier(documentUrl: string | null | undefined): string | null {
   const m = String(documentUrl ?? "").match(UK_ID_RE);
   return m ? `UK ${(m[1] ?? "").toLowerCase()} ${m[2]}/${m[3]}` : null;
 }
 /** The Federal Register document number out of a /documents/YYYY/MM/DD/<docnum>/ path, or null (held, never guessed). */
-export const extractFrDocumentNumber = (documentUrl: string | null | undefined): string | null => String(documentUrl ?? "").match(FR_DOCNUM_RE)?.[1] ?? null;
+const extractFrDocumentNumber = (documentUrl: string | null | undefined): string | null => String(documentUrl ?? "").match(FR_DOCNUM_RE)?.[1] ?? null;
 /** Federal Register API `type` to item_type: Rule is a regulation, Proposed Rule an initiative; every other type holds item_type_unmapped. */
-export function classifyFrDocType(frType: string | null | undefined): { itemType: string | null; hold: string | null } {
+function classifyFrDocType(frType: string | null | undefined): { itemType: string | null; hold: string | null } {
   const t = String(frType ?? "").trim().toLowerCase();
   return t === "rule" ? { itemType: "regulation", hold: null } : t === "proposed rule" ? { itemType: "initiative", hold: null } : { itemType: null, hold: "item_type_unmapped" };
 }
