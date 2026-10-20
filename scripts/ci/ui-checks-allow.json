@@ -95,7 +95,6 @@
         "src/core/perf/server-timing.ts": 2,
         "src/core/producers/summary.ts": 1,
         "src/core/propagation/author-edges.ts": 1,
-        "src/core/shared/dates.ts": 2,
         "src/core/shared/telemetry.ts": 1,
         "src/core/turn/wiring.ts": 1,
         "src/features/account/lib/notification-prefs.ts": 1,
@@ -120,7 +119,6 @@
         "src/features/community/lib/roster.ts": 1,
         "src/features/coverage/server/data.ts": 1,
         "src/features/dashboard/api/coverage-matrix.ts": 1,
-        "src/features/flywheel/connect.ts": 1,
         "src/features/health/api/surfaces.ts": 2,
         "src/features/market/api/notices.ts": 1,
         "src/features/obligations/api/register.ts": 1,
@@ -185,7 +183,7 @@
         "src/ui/shell/TopBar.tsx": 1,
         "src/ui/shell/identity-seed.ts": 3,
         "src/ui/shell/notifications/NotificationsBell.tsx": 1,
-        "src/ui/shell/use-bootstrap.ts": 1
+        "src/ui/shell/bootstrap-store.ts": 1
       }
     },
     "entity-in-string": {
