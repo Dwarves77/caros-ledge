@@ -1,9 +1,10 @@
 // R2c C6 and C8: the registry identity (INV-R2c-9: two institutions on one host are two rows with their own tiers), one birth function with named profiles, no overwriting of a stored role, duplicate detection by page equality,
 // and the rights verdict with the quotation rule.
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
-import { reuseTermsForHost } from "@/core/sources/reuse-terms";
+import { REUSE_TERMS, reuseTermsForHost } from "@/core/sources/reuse-terms";
 import { backfillInstitutionKeys, pickInstitutionRow, registerAndRate, registerSource } from "@/core/sources/register";
 import { classifySources } from "@/features/sources/classify-sources";
 import { verifyCandidate } from "@/features/sources/verify-candidate";
@@ -115,4 +116,12 @@ test("pickInstitutionRow: the row at the same page, else the row of the same ins
   assert.equal(pickInstitutionRow(rows, "https://www.gob.mx/economia/documentos/y")?.id, "b");
   assert.equal(pickInstitutionRow(rows, "https://www.gob.mx/economia/otro")?.id, "b", "the same institution, another page");
   assert.equal(pickInstitutionRow(rows, "https://www.gob.mx/shcp/documentos/z"), null, "a third institution on the host has no row yet");
+});
+
+test("the rights vocabulary in code is the vocabulary the database accepts, and the class table only ever names a member of it", () => {
+  const sql = readFileSync("supabase/migrations/0080_collection_state.sql", "utf8");
+  const list = /sources_reuse_terms_check CHECK \(reuse_terms = ANY \(ARRAY\[([^\]]*)\]/.exec(sql)?.[1]?.match(/'([a-z_]+)'/g)?.map((x) => x.slice(1, -1));
+  assert.deepEqual([...REUSE_TERMS], list);
+  for (const url of ["https://eur-lex.europa.eu/x", "https://www.legislation.gov.uk/x", "https://www.federalregister.gov/x", "https://unknown-publisher.example/x"]) assert.ok(REUSE_TERMS.includes(reuseTermsForHost(url)), url);
+  assert.equal(reuseTermsForHost("https://unknown-publisher.example/x"), "unknown");
 });
