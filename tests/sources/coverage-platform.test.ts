@@ -105,7 +105,7 @@ test("census: an outage is an error state with no counts, never an empty index t
   await assert.rejects(() => loadCoverage(bad.db), /down|census/i);
   const badCount = memoryDb({ census_worklist: [census("a")] }, { failures: [{ table: "intelligence_items", op: "select", message: "down" }] });
   await assert.rejects(() => loadCoverage(badCount.db), /down|intelligence_items/i, "a failed brief count must not publish 0 verified briefs");
-  const data = (db: ReturnType<typeof memoryDb>["db"]) => makeCoverageData({ db: () => db, now: () => NOW, tag: "coverage" });
+  const data = (db: ReturnType<typeof memoryDb>["db"]) => makeCoverageData({ db: () => db, now: () => NOW, labelOf: (code) => code, tag: "coverage" });
   const m = await data(bad.db).getCoverageMatrix();
   assert.match(m.error ?? "", /Coverage could not be read just now/);
   assert.equal(m.matrix.totals.denominator, 0);

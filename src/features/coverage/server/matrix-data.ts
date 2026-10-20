@@ -15,7 +15,7 @@ export interface CoverageDeps {
   db: () => Db;
   now: () => string;
   /** The jurisdiction label for a code (the jurisdictions slice's), injected. */
-  labelOf?: (code: string) => string;
+  labelOf: (code: string) => string;
   /** The app-data cache tag the surface read layer revalidates. */
   tag: string;
 }
@@ -24,7 +24,7 @@ async function loadCoverageMatrix(deps: Pick<CoverageDeps, "db" | "now" | "label
   const generatedAt = deps.now();
   try {
     const { entries, counts } = await loadCoverage(deps.db());
-    return { matrix: buildCoverageMatrix(entries, { generatedAt, verifiedBriefs: counts.verifiedBriefs, ...(deps.labelOf ? { labelOf: deps.labelOf } : {}) }), error: null };
+    return { matrix: buildCoverageMatrix(entries, { generatedAt, verifiedBriefs: counts.verifiedBriefs, labelOf: deps.labelOf }), error: null };
   } catch (e) {
     log.warn(`[coverage] matrix read failed: ${(e as Error).message}`);
     return { matrix: emptyCoverageMatrix(generatedAt), error: COVERAGE_UNAVAILABLE };

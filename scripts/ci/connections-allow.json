@@ -59,7 +59,6 @@
     "src/core/propagation/drain.ts#DrainDeps.reopenQuestion": "recorded at R1b: the learning downstream of the drain; R3b makes it required or states the null case",
     "src/features/auth/ui/auth-events.ts#AuthEventDeps.requiresAuth": "recorded at R1b: a UI seam with a default; R4b",
     "src/features/auth/ui/identity-loader.ts#IdentityLoaderDeps.onRetrying": "recorded at R1b: a UI notification hook with a default; R4b",
-    "src/features/coverage/server/matrix-data.ts#CoverageDeps.labelOf": "recorded at R1b: a labelling seam with a default; R4b",
     "src/features/mint/deps.ts#MintRunDeps.flushCache": "recorded at R1b: the cache flush downstream of a mint; R3b makes it required or states the null case"
   }
 }
