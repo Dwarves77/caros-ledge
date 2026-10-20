@@ -1,10 +1,12 @@
 // R2d, I13: the readers in the surfaces' write set take the predicate, each shown on rows that are unverified, archived or replaced (the structure test, readers.test.ts, proves none was forgotten; these prove the
 // ones that matter read the same rows the list reads).
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
 import { readItemRows } from "@/features/dashboard/read/items";
 import { getMapItems } from "@/features/regulations/map/read";
+import { rollup } from "@/features/regulations/map/rollup";
 import { relatedItems } from "@/features/research/read/related-items";
 
 import { memoryDb, type Row } from "../_support/memory-db.ts";
@@ -50,14 +52,26 @@ test("S:10: the map reads the list's own workspace RPC, so a retagged item is th
   m.mem.rpcs.get_workspace_intelligence_listings = (a, d) => listing(a, d);
   (m.db as { rpc: unknown }).rpc = (name: string, args: Record<string, unknown>) => withRange(name, args);
   const read = await getMapItems(m.db, ORG);
-  assert.ok(read.ok);
-  assert.deepEqual(read.ok && read.value.map((i) => [i.id, i.priority]), [["l-01", "CRITICAL"]]);
+  assert.deepEqual(read.map((i) => [i.id, i.priority]), [["l-01", "CRITICAL"]]);
 });
 
 test("S:10: a failed listing read fails the map; it is never an empty map", async () => {
   const m = memoryDb({ intelligence_items: [] });
   (m.db as { rpc: unknown }).rpc = () => Object.assign(Promise.resolve({ data: null, error: { message: "down" } }), { range: () => Promise.resolve({ data: null, error: { message: "down" } }) });
-  const read = await getMapItems(m.db, ORG);
-  assert.equal(read.ok, false, "a failed listing read is a failed read, never an empty cached map");
-  assert.match(read.ok ? "" : read.error, /down/);
+  await assert.rejects(getMapItems(m.db, ORG), /down/, "a failed listing read is a failed read, never an empty map");
+});
+
+test("the map is read live: two reads with changed counts give changed counts and a changed order, and the reader holds no cache", async () => {
+  const row = (id: string, iso: string) => ({ id, legacy_id: id, title: id, effective_priority: "MODERATE", effective_archived: false, jurisdictions: [iso], jurisdiction_iso: [iso], transport_modes: [], category: null });
+  let rows = [row("a1", "DE"), row("a2", "DE"), row("f1", "FR")];
+  const m = memoryDb({});
+  (m.db as { rpc: unknown }).rpc = () => Object.assign(Promise.resolve({ data: rows, error: null }), { range: () => Promise.resolve({ data: rows, error: null }) });
+  const order = async () => rollup(await getMapItems(m.db, ORG)).map((j) => [j.key, j.count]);
+  assert.deepEqual(await order(), [["DE", 2], ["FR", 1]]);
+  rows = [row("f1", "FR"), row("f2", "FR"), row("f3", "FR"), row("a1", "DE")];
+  assert.deepEqual(await order(), [["FR", 3], ["DE", 1]], "the changed rows are drawn on the next read, in the changed order");
+  rows = [row("a1", "DE"), row("f1", "FR")];
+  assert.deepEqual(await order(), [["FR", 1], ["DE", 1]], "equal counts tie by label (France before Germany), so the order is total");
+  const src = readFileSync("src/features/regulations/map/read.ts", "utf8").replace(/^\s*\/\/.*$/gm, "");
+  assert.doesNotMatch(src, /unstable_cache|cachedRead|revalidate/i, "a page may not draw a cached count");
 });
