@@ -8,7 +8,7 @@ import { admissibleClaims } from "@/core/derived/admissible";
 import type { Db } from "@/core/db";
 import { readAllPoolRows, usableCaptures, type PoolRow } from "@/core/grounding";
 
-import { isDueDateSlotClaim, needsDueDateContext, type ClaimIn } from "./scan";
+import { isDueDateSlotClaim, type ClaimIn } from "./scan";
 import type { CaptureIn, SectionIn } from "./extract-forward-events";
 
 const CLAIM_KIND_FILTER = ["FACT", "GAP"] as const;

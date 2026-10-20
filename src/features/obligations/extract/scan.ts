@@ -5,7 +5,7 @@
 // (never quarter), and a slot span with no event of its own is rescued by re-scanning the capture text around the span.
 import type { EventKind } from "../kinds";
 
-import { locateCalendarDate, tryParseDateAt, tryParseDateOrBareYearAt, type DateMatch } from "./date-grammar";
+import { tryParseDateAt, tryParseDateOrBareYearAt, type DateMatch } from "./date-grammar";
 import { AIM_WORDS, CANDIDATE_ONLY_RULES, DEONTIC, isStatusOnlyClause, refuseForReferenceDate, REFERENCE_DATE_SKIP_REASON, RULES, STATUS_ONLY_SKIP_REASON, type Rule } from "./rules";
 import { clauseAround, sentenceStart } from "./window";
 
@@ -156,13 +156,3 @@ export function rescueSlotDateWithContext(claimSpan: string, context: { before: 
   return hits.find((h) => h.spanStart >= start && h.spanEnd <= start + claimSpan.length) ?? null;
 }
 
-/**
- * Whether a due-date slot claim is worth a capture read: its own span has a calendar date that was refused or is ambiguous (a skip and no hit), so the
- * deontic context around the span might settle it. A span with no date at all, or one that already yields an event, never triggers a read.
- */
-export function needsDueDateContext(claim: ClaimIn): boolean {
-  if (!isDueDateSlotClaim(claim) || typeof claim.span !== "string" || !claim.span) return false;
-  if (!locateCalendarDate(claim.span) && !/\b(?:1[5-9]|2[0-4])\d{2}\b/.test(claim.span)) return false;
-  const { hits, skips } = scanText(claim.span);
-  return hits.length === 0 && skips.length > 0;
-}
