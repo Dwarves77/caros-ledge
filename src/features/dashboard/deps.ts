@@ -12,7 +12,7 @@ export interface DashboardDeps {
 
 let wired: Partial<DashboardDeps> = {};
 
-export function wireDashboardDeps(deps: Partial<DashboardDeps>): void {
+function wireDashboardDeps(deps: Partial<DashboardDeps>): void {
   wired = { ...wired, ...deps };
 }
 

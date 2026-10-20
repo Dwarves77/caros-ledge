@@ -18,13 +18,13 @@ const cap = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1);
 const OTHER_MODIFIERS = "Indirectness, imprecision, inconsistency, publication bias and upgrades are not recorded for this finding.";
 
 /** The GRADE-style modifier lines that have data. Only risk of bias has a data path (the source's bias tags); a modifier with no data is not drawn as a line. */
-export function gradeModifiers(biasTags: readonly BiasTag[] | undefined): Array<{ key: string; label: string; detail: string }> {
+function gradeModifiers(biasTags: readonly BiasTag[] | undefined): Array<{ key: string; label: string; detail: string }> {
   const tags = biasTags ?? [];
   if (tags.length === 0) return [];
   return [{ key: "risk_of_bias", label: "Risk of bias", detail: tags.map((b) => `${b.dimension}: ${b.tag}${b.confidence != null ? ` (confidence ${Math.round(b.confidence * 100)}%)` : ""}`).join("; ") }];
 }
 /** "2 high-authority · 1 medium · 1 vendor-flagged", with unknown standing and integrity flags only when above zero. */
-export function authorityLabel(d: AuthorityDistribution): string {
+function authorityLabel(d: AuthorityDistribution): string {
   const parts = [`${d.highAuthorityIndependent ?? 0} high-authority`, `${d.medium ?? 0} medium`, `${d.vendorFlagged ?? 0} vendor-flagged`];
   if ((d.unknown ?? 0) > 0) parts.push(`${d.unknown} unknown standing`);
   if ((d.integrityFlagged ?? 0) > 0) parts.push(`${d.integrityFlagged} integrity-flagged`);

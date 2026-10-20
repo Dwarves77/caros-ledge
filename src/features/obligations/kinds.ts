@@ -15,4 +15,4 @@ export const KIND_LABELS: Readonly<Record<EventKind, string>> = {
 };
 export const PRECISIONS = ["day", "month", "year"] as const;
 export type Precision = (typeof PRECISIONS)[number];
-export const isEventKind = (v: unknown): v is EventKind => (EVENT_KINDS as readonly unknown[]).includes(v);
+const isEventKind = (v: unknown): v is EventKind => (EVENT_KINDS as readonly unknown[]).includes(v);

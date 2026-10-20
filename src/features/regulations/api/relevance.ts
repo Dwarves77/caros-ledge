@@ -13,7 +13,7 @@ import { ALL_SECTORS, fetchObligationObjectsForItem, getWorkspaceProfile, releva
 import { VOCABULARIES } from "@/core/contracts/vocabularies";
 
 /** The lens's three tables and its gate, from their one homes (the applicability gate, the closed vocabularies, the sector list). */
-export const relevanceDeps: RelevanceDeps = {
+const relevanceDeps: RelevanceDeps = {
   computeApplicability,
   dutyHolderClasses: Object.fromEntries(Object.values(DUTY_HOLDER_CLASSES).map((c) => [c.code, { label: c.label, orgRoles: c.orgRoles ?? [] }])),
   bindingPosition: Object.fromEntries(Object.values(VOCABULARIES.binding_position ?? {}).map((p) => [p.code, { code: p.code, label: p.label, note: String((p as { note?: unknown }).note ?? ""), order: p.order ?? 0 }])),

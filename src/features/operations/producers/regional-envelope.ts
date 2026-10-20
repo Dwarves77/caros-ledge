@@ -15,9 +15,9 @@ import { NetworkError, StructureError, type ParseOut, type ProducerCtx, type Pro
 import { KEYS, type Rec } from "@/core/producers/upsert-plan";
 
 export const ENVELOPE_PAYLOAD_KEYS = ["value", "value_numeric", "unit", "currency", "derivation", "origin_class", "source_key", "source_ref", "n_observations", "method_version", "as_at_date", "reference_period"] as const;
-export const EUROSTAT_BASE = "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data";
+const EUROSTAT_BASE = "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data";
 
-export const formatDisplayValue = (valueNumeric: unknown, unit: unknown): string => {
+const formatDisplayValue = (valueNumeric: unknown, unit: unknown): string => {
   if (typeof valueNumeric !== "number" || !Number.isFinite(valueNumeric)) throw new Error(`formatDisplayValue: value_numeric must be a finite number, got ${JSON.stringify(valueNumeric)}`);
   if (typeof unit !== "string" || !unit) throw new Error("formatDisplayValue: unit is required (a value_numeric with no unit is a malformed envelope).");
   return `${valueNumeric} ${unit}`;
@@ -43,7 +43,7 @@ export function latestPerNaturalKey(candidates: readonly Rec[]): Rec[] {
 }
 
 // ---- JSON-stat (Eurostat) ----
-export function decodeJsonStat(js: Rec): Array<{ coords: Record<string, string>; value: number }> {
+function decodeJsonStat(js: Rec): Array<{ coords: Record<string, string>; value: number }> {
   const { id, size, dimension, value } = (js ?? {}) as { id?: string[]; size?: number[]; dimension?: Record<string, { category?: { index?: Record<string, number> } }>; value?: Record<string, number | null> | Array<number | null> };
   if (!Array.isArray(id) || !Array.isArray(size) || !dimension || !value) throw new StructureError("not a JSON-stat 2.0 document (missing id/size/dimension/value).");
   const byPos = id.map((d) => {
@@ -74,16 +74,16 @@ const firstCode = (js: Rec, dim: string): string | null => {
   return idx ? (Object.keys(idx)[0] ?? null) : null;
 };
 
-export const OEWS_OCCUPATIONS = [{ socCode: "53-3032", title: "Heavy and Tractor-Trailer Truck Drivers" }, { socCode: "53-7062", title: "Laborers and Freight, Stock, and Material Movers, Hand" }, { socCode: "53-1047", title: "First-Line Supervisors of Transportation and Material-Moving Machine and Vehicle Operators" }] as const;
+const OEWS_OCCUPATIONS = [{ socCode: "53-3032", title: "Heavy and Tractor-Trailer Truck Drivers" }, { socCode: "53-7062", title: "Laborers and Freight, Stock, and Material Movers, Hand" }, { socCode: "53-1047", title: "First-Line Supervisors of Transportation and Material-Moving Machine and Vehicle Operators" }] as const;
 const MEASURES = { annual: { datatype: "13", unit: "USD/year", suffix: "annual median wage" }, hourly: { datatype: "08", unit: "USD/hour", suffix: "hourly median wage" } } as const;
-export function buildOewsSeriesId(socCode: string, datatype: string = MEASURES.annual.datatype): string {
+function buildOewsSeriesId(socCode: string, datatype: string = MEASURES.annual.datatype): string {
   const occ = String(socCode).replace(/-/g, "");
   if (!/^\d{6}$/.test(occ)) throw new Error(`buildOewsSeriesId: socCode must be 6 digits (dash optional), got "${socCode}"`);
   if (!/^\d{2}$/.test(String(datatype))) throw new Error(`buildOewsSeriesId: datatype must be 2 digits, got "${datatype}"`);
   return `OEUN0000000000000${occ}${datatype}`;
 }
 /** BLS OEWS: the latest annual (period A01) numeric value per catalogued series; a series with no usable observation is an honest gap. A non-success status (including a rate limit) throws with BLS's own message. */
-export function parseOewsResponse(js: Rec, o: { regionCode?: string; dimension?: string } = {}): Rec[] {
+function parseOewsResponse(js: Rec, o: { regionCode?: string; dimension?: string } = {}): Rec[] {
   const { regionCode = "US", dimension = "labor_markets" } = o;
   if (!js || typeof js !== "object") throw new StructureError("response required.");
   if (js.status && js.status !== "REQUEST_SUCCEEDED") throw new StructureError(`BLS API did not succeed (status=${js.status}, message=${JSON.stringify(js.message ?? [])})`);
@@ -101,13 +101,13 @@ export function parseOewsResponse(js: Rec, o: { regionCode?: string; dimension?:
   return out;
 }
 
-export const EU_MEMBER_GEO_CODES = ["DE", "NL", "BE", "FR", "IT", "ES"] as const;
+const EU_MEMBER_GEO_CODES = ["DE", "NL", "BE", "FR", "IT", "ES"] as const;
 const LC_FILTER = { unit: "EUR", lcstruct: "D1_D4_MD5", nace_r2: "B-N" } as const;
 /**
  * Mean of the latest labour-cost value over the member states that answered; one derived row (calculated) naming the geos and years used. A geo that failed is excluded, never imputed, and the LABEL names the geos that
  * were averaged, so a changed composition is a different fact (its own natural key and as-of) and a six-state mean is never read as the EU (register surfaces:16).
  */
-export function aggregateLcLciLevForRegion(jsByGeo: Record<string, Rec>, o: { geoCodes?: readonly string[]; regionCode: string; dimension?: string }): Rec[] {
+function aggregateLcLciLevForRegion(jsByGeo: Record<string, Rec>, o: { geoCodes?: readonly string[]; regionCode: string; dimension?: string }): Rec[] {
   const per: Array<{ geo: string; value: number; year: string; unit: string; currency: string | null }> = [];
   for (const geo of o.geoCodes ?? EU_MEMBER_GEO_CODES) {
     const js = jsByGeo?.[geo];
@@ -123,7 +123,7 @@ export function aggregateLcLciLevForRegion(jsByGeo: Record<string, Rec>, o: { ge
 }
 
 /** Eurostat nrg_pc_205: one observation per consumption band and half-year; an unrecognised time code is skipped rather than given a guessed date. */
-export function parseNrgPc205(js: Rec, o: { geo: string; regionCode: string; dimension?: string }): Rec[] {
+function parseNrgPc205(js: Rec, o: { geo: string; regionCode: string; dimension?: string }): Rec[] {
   const unitCode = firstCode(js, "unit");
   const currency = firstCode(js, "currency");
   const labels = (js?.dimension as Record<string, { category?: { label?: Record<string, string> } }> | undefined)?.nrg_cons?.category?.label ?? {};

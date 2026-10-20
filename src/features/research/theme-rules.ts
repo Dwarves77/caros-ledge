@@ -24,7 +24,7 @@ export function classifyTheme(text: string | null | undefined): ThemeVerdict {
 }
 
 /** Rows of null-theme findings split into classified (theme to write) and residue (to the drain). */
-export function classifyThemes(rows: ReadonlyArray<{ id: string; title?: string | null; text?: string | null }>) {
+function classifyThemes(rows: ReadonlyArray<{ id: string; title?: string | null; text?: string | null }>) {
   const classified: Array<{ id: string; theme: string; matched: string[] }> = [];
   const residue: Array<{ id: string; reason: ThemeVerdict["reason"] }> = [];
   for (const r of rows) {

@@ -14,7 +14,7 @@ export type { PersonalItemState, WorkspaceOverride } from "./types";
 
 let transport: AuthedFetchDeps = {};
 /** The seam the store sends its writes through (the session source and fetch); the default is the browser session and global fetch. */
-export function setItemStateTransport(deps: AuthedFetchDeps): void {
+function setItemStateTransport(deps: AuthedFetchDeps): void {
   transport = deps;
 }
 

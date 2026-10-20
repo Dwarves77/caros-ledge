@@ -2,7 +2,7 @@
 // Ported from old_repo/src/components/operations/OperationsLedger.tsx (lines 77-123)
 // The seven Operations dimensions, once: the database key (migration 378's CHECK), the display name and the D number. The matrix rows, the rail facet, the coverage counts and the statements all read this
 // list, so a dimension added here reaches every one of them. Grid carbon intensity is the seventh: a system need the artboard draws no row for (DESIGN CHANGES OWED, artboard 08).
-export const OPERATIONS_DIMENSIONS = [
+const OPERATIONS_DIMENSIONS = [
   { db: "regulatory_feasibility", name: "Regulatory feasibility" },
   { db: "regional_resources", name: "Regional resource availability" },
   { db: "labor_markets", name: "Labor markets" },
@@ -20,7 +20,7 @@ export interface Dimension {
   num: number;
 }
 export const DIMENSIONS: readonly Dimension[] = OPERATIONS_DIMENSIONS.map((d, i) => ({ ...d, num: i + 1 }));
-export const ALL_OPERATIONS_DIMENSIONS: readonly OperationsDimension[] = DIMENSIONS.map((d) => d.db);
+const ALL_OPERATIONS_DIMENSIONS: readonly OperationsDimension[] = DIMENSIONS.map((d) => d.db);
 /** The dimension whose cell opens the fully-loaded labour chain. */
 export const LABOUR_DIMENSION: OperationsDimension = "labor_markets";
 

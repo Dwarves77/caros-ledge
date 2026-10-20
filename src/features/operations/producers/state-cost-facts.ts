@@ -21,15 +21,15 @@ const candidate = z.object({
 export type StateCostCandidate = z.infer<typeof candidate>;
 
 /** Official for tiers 1-3, verified for tier 4; a lower tier carries no origin class (null), never a promoted one. */
-export const originClassForTier = (tier: unknown): "official" | "verified" | null => (typeof tier !== "number" || !Number.isFinite(tier) ? null : tier >= 1 && tier <= 3 ? "official" : tier === 4 ? "verified" : null);
-export function parseNumericValue(value: unknown): number | null {
+const originClassForTier = (tier: unknown): "official" | "verified" | null => (typeof tier !== "number" || !Number.isFinite(tier) ? null : tier >= 1 && tier <= 3 ? "official" : tier === 4 ? "verified" : null);
+function parseNumericValue(value: unknown): number | null {
   const s = String(value ?? "").trim();
   return /^-?\d+(\.\d+)?$/.test(s) ? Number(s) : null;
 }
-export const naturalKey = (r: Rec): string | null => keyOf([r.state_code, r.dimension, r.fact_label]);
+const naturalKey = (r: Rec): string | null => keyOf([r.state_code, r.dimension, r.fact_label]);
 const UPDATE_FIELDS = ["value", "value_numeric", "unit", "trend", "source_id", "statute_citation", "effective_date", "origin_class"] as const;
 
-export function buildStateCostFactRow(c: StateCostCandidate, source: { source_id: string | null; tier: number | null }, regionId: string | null): Rec {
+function buildStateCostFactRow(c: StateCostCandidate, source: { source_id: string | null; tier: number | null }, regionId: string | null): Rec {
   return { region_id: regionId, state_code: c.state_code, state_label: c.state_label, dimension: c.dimension, fact_label: c.fact_label, value: String(c.value), value_numeric: parseNumericValue(c.value), unit: c.unit ?? null, trend: c.trend ?? null, source_id: source.source_id, statute_citation: c.statute_citation ?? null, effective_date: c.effective_date ?? null, origin_class: originClassForTier(source.tier) };
 }
 

@@ -1,12 +1,12 @@
 // Ported from old_repo/src/lib/forward-events/obligation-rail-select.mjs (lines 1-54)
 // The rail card's rows: events inside 30 days of the server's day, soonest first, at most the artboard's four. UTC day math; `now` is passed in by the
 // caller (the server's clock, never the client's).
-export const OBLIGATION_RAIL_WINDOW_DAYS = 30;
-export const OBLIGATION_RAIL_ROW_CAP = 4;
+const OBLIGATION_RAIL_WINDOW_DAYS = 30;
+const OBLIGATION_RAIL_ROW_CAP = 4;
 const MS_PER_DAY = 86_400_000;
 
 /** UTC midnight (ms) of the leading YYYY-MM-DD of a value, or null. */
-export function utcDayStart(value: unknown): number | null {
+function utcDayStart(value: unknown): number | null {
   const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(value ?? ""));
   if (!m) return null;
   const ms = Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]));

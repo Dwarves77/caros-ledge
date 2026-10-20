@@ -7,7 +7,7 @@ import { z } from "zod";
 import raw from "./data/authority-rules.json";
 
 const rules = z.object({ roleClasses: z.array(z.string()), namedOverrides: z.array(z.object({ pattern: z.string(), roleClass: z.string() })), institutionTypeToRole: z.record(z.string(), z.string()), highAuthorityRoles: z.array(z.string()), vendorRoles: z.array(z.string()) }).parse(raw);
-export const ROLE_CLASSES: readonly string[] = rules.roleClasses;
+const ROLE_CLASSES: readonly string[] = rules.roleClasses;
 const OVERRIDES = rules.namedOverrides.map((o) => ({ re: new RegExp(o.pattern, "i"), roleClass: o.roleClass }));
 const AVG_MONTH_MS = 30.44 * 86_400_000;
 
@@ -26,7 +26,7 @@ export interface ScoredSource {
   greyLiterature?: Rec;
 }
 
-export function classifyRoleClass(record: Rec | null | undefined): string {
+function classifyRoleClass(record: Rec | null | undefined): string {
   if (!record) return "unknown";
   if (typeof record.roleClass === "string" && ROLE_CLASSES.includes(record.roleClass)) return record.roleClass;
   const hit = OVERRIDES.find((o) => o.re.test(String(record.displayName ?? "")));
@@ -36,11 +36,11 @@ export function classifyRoleClass(record: Rec | null | undefined): string {
   return (record.type ? rules.institutionTypeToRole[String(record.type).toLowerCase()] : undefined) ?? "unknown";
 }
 
-export function computeInstitutionalStanding(s: Rec | null | undefined): Rec | null {
+function computeInstitutionalStanding(s: Rec | null | undefined): Rec | null {
   if (!s || (typeof s.inTopicFwci !== "number" && typeof s.inTopicWorksCount !== "number")) return null;
   return { inTopicFwci: typeof s.inTopicFwci === "number" ? s.inTopicFwci : null, inTopicWorksCount: typeof s.inTopicWorksCount === "number" ? s.inTopicWorksCount : 0, topicShare: typeof s.topicShare === "number" ? s.topicShare : null };
 }
-export function computeAuthorStanding(author: Rec | null | undefined, now: Date = new Date()): Rec | null {
+function computeAuthorStanding(author: Rec | null | undefined, now: Date = new Date()): Rec | null {
   if (!author) return null;
   const summary = (author.summary_stats ?? {}) as Rec;
   const byYear = Array.isArray(author.counts_by_year) ? (author.counts_by_year as Rec[]) : [];
@@ -54,10 +54,10 @@ export function computeAuthorStanding(author: Rec | null | undefined, now: Date 
   };
 }
 /** independent only when funding is disclosed AND its funder is not a commercial beneficiary; dependent when it is; otherwise unknown (never assumed independent). */
-export const computeFundingIndependence = (f: Rec | null | undefined): "independent" | "dependent" | "unknown" => (!f || f.disclosed !== true ? "unknown" : f.funderIsCommercialBeneficiary === true ? "dependent" : f.funderIsCommercialBeneficiary === false ? "independent" : "unknown");
+const computeFundingIndependence = (f: Rec | null | undefined): "independent" | "dependent" | "unknown" => (!f || f.disclosed !== true ? "unknown" : f.funderIsCommercialBeneficiary === true ? "dependent" : f.funderIsCommercialBeneficiary === false ? "independent" : "unknown");
 
 /** Reception: under 24 months a per-month citation velocity (FWCI is suppressed, and the velocity is never presented as FWCI); otherwise the percentile, then FWCI, else unknown. */
-export function computeReception(work: Rec | null | undefined, now: Date): ScoredSource["reception"] {
+function computeReception(work: Rec | null | undefined, now: Date): ScoredSource["reception"] {
   if (!work) return { metric: "unknown", value: null, method: "no work record resolved for this source" };
   const pub = work.publicationDate ? new Date(String(work.publicationDate)) : null;
   const ageMonths = pub && !Number.isNaN(pub.getTime()) ? (now.getTime() - pub.getTime()) / AVG_MONTH_MS : null;
@@ -69,23 +69,23 @@ export function computeReception(work: Rec | null | undefined, now: Date): Score
   if (typeof work.fwci === "number") return { metric: "fwci", value: work.fwci, method: "OpenAlex fwci (field-weighted citation impact)" };
   return { metric: "unknown", value: null, method: "no fwci or citation_normalized_percentile on record" };
 }
-export const computeIntegrity = (work: Rec | null | undefined): ScoredSource["integrity"] => ({ isRetracted: work?.isRetracted === true, hasCorrections: work?.hasCorrections === true, predatoryVenue: typeof work?.predatoryVenue === "boolean" ? work.predatoryVenue : "unknown" });
+const computeIntegrity = (work: Rec | null | undefined): ScoredSource["integrity"] => ({ isRetracted: work?.isRetracted === true, hasCorrections: work?.hasCorrections === true, predatoryVenue: typeof work?.predatoryVenue === "boolean" ? work.predatoryVenue : "unknown" });
 
 /** Vendors and industry associations are capped at vendorFlagged; an unknown role is unknown (never medium); highAuthorityIndependent needs a high-authority role, independent funding and no retraction. */
-export function bucketForSource(p: { roleClass: string; fundingIndependence: string; integrity: { isRetracted: boolean } }): Bucket {
+function bucketForSource(p: { roleClass: string; fundingIndependence: string; integrity: { isRetracted: boolean } }): Bucket {
   if (rules.vendorRoles.includes(p.roleClass)) return "vendorFlagged";
   if (p.roleClass === "unknown") return "unknown";
   return rules.highAuthorityRoles.includes(p.roleClass) && p.fundingIndependence === "independent" && !p.integrity.isRetracted ? "highAuthorityIndependent" : "medium";
 }
 
-export function scoreOpenAlexSource(record: Rec, opts: { now?: Date } = {}): ScoredSource {
+function scoreOpenAlexSource(record: Rec, opts: { now?: Date } = {}): ScoredSource {
   const now = opts.now ?? new Date();
   const roleClass = classifyRoleClass((record.institution ?? {}) as Rec);
   const fundingIndependence = computeFundingIndependence((record.funding ?? null) as Rec | null);
   const integrity = computeIntegrity((record.work ?? null) as Rec | null);
   return { sourceId: String(record.sourceId), method: "openalex", roleClass, institutionalStanding: computeInstitutionalStanding((record.institution ?? null) as Rec | null), authorStanding: computeAuthorStanding((record.author ?? null) as Rec | null, now), fundingIndependence, reception: computeReception((record.work ?? null) as Rec | null, now), integrity, bucket: bucketForSource({ roleClass, fundingIndependence, integrity }) };
 }
-export function scoreGreyLiteratureSource(record: Rec): ScoredSource {
+function scoreGreyLiteratureSource(record: Rec): ScoredSource {
   const roleClass = classifyRoleClass({ displayName: record.displayName, roleClass: record.roleClass });
   const fundingIndependence = computeFundingIndependence((record.funding ?? null) as Rec | null);
   const integrity = { isRetracted: record.integrityConcern === true, hasCorrections: false, predatoryVenue: "unknown" as const };
@@ -103,7 +103,7 @@ export function scoreSource(record: Rec, opts: { now?: Date } = {}): ScoredSourc
   if (record.kind === "openalex") return scoreOpenAlexSource(record, opts);
   throw new Error(`authority-score: unknown record.kind "${record.kind}" (expected "openalex" or "grey_literature")`);
 }
-export const authorityScore = scoreSource;
+const authorityScore = scoreSource;
 
 export function aggregateAuthorityDistribution(sources: readonly ScoredSource[] | null | undefined) {
   const list = sources ?? [];

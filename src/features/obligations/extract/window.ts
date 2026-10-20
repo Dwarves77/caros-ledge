@@ -29,8 +29,8 @@ const SLOT_MARKER_AT_RE = /^\[[a-z][a-z0-9_]*\]\s+/i;
 const SLOT_MARKER_ANYWHERE_RE = /\[[a-z][a-z0-9_]*\]\s+/i;
 const isSlotMarkerStartAt = (text: string, i: number): boolean => SLOT_MARKER_AT_RE.test(text.slice(i, i + 64));
 
-export const DEFAULT_MAX_BEFORE = 300;
-export const DEFAULT_MAX_AFTER = 160;
+const DEFAULT_MAX_BEFORE = 300;
+const DEFAULT_MAX_AFTER = 160;
 const MAX_BEFORE_FOR_MARKER = 3000;
 
 /** Where the displayed clause opens. `fragment` is true when it opens mid-sentence (the text then starts with an ellipsis). */
@@ -72,7 +72,7 @@ const SHORT_DATE_CELL_MAX = 35;
 const MIN_USABLE_CELL_LEN = 12;
 
 /** In a pipe table row, the cell that explains the date (the one after a short date cell), not the date cell itself. */
-export function selectDateCell(text: unknown, dateSpan?: string): string {
+function selectDateCell(text: unknown, dateSpan?: string): string {
   if (typeof text !== "string" || !text.includes("|")) return typeof text === "string" ? text : "";
   const cells = text.split("|").map((c) => c.trim()).filter(Boolean);
   if (cells.length === 0) return "";
@@ -148,7 +148,7 @@ function findStraightQuotePairs(text: string): { start: number; end: number }[] 
 }
 
 /** A record-facts FACT wrapper to the quoted passage that contains the date; a GAP wrapper (no quoted date) is skipped; anything else is not a wrapper (null). */
-export function unwrapRecordFactsTemplate(windowed: unknown, relDateStart: number, relDateEnd: number): { skip: string } | { passage: string } | null {
+function unwrapRecordFactsTemplate(windowed: unknown, relDateStart: number, relDateEnd: number): { skip: string } | { passage: string } | null {
   const t = typeof windowed === "string" ? windowed : "";
   if (!SLOT_MARKER_AT_RE.test(t)) return null;
   if (RECORD_FACTS_GAP_RE.test(t)) return { skip: "record_facts_gap_boilerplate_no_quoted_date" };

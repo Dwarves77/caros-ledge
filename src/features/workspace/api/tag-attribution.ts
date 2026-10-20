@@ -19,7 +19,7 @@ export interface ItemTagLinkRow extends TagLinkRow {
 }
 
 /** A member's display name: full name, else display name, else null. An email is never used, so a tag tooltip cannot leak an address. */
-export function memberDisplayName(profile: { full_name?: string | null; display_name?: string | null } | null | undefined): string | null {
+function memberDisplayName(profile: { full_name?: string | null; display_name?: string | null } | null | undefined): string | null {
   return profile?.full_name?.trim() || profile?.display_name?.trim() || null;
 }
 

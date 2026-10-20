@@ -23,7 +23,7 @@ export interface MarketSeriesDeps {
   registry: MethodRegistry;
   computeSeriesDeltas(rows: SeriesRowLite[]): { latest?: { date?: string | null; unit?: string | null; currency?: string | null } | null; delta1w?: { value?: number; unitMismatch?: boolean; insufficientHistory?: boolean; fromDate?: string } | null };
 }
-export const marketDeps = (ctx: ProducerCtx): MarketSeriesDeps => {
+const marketDeps = (ctx: ProducerCtx): MarketSeriesDeps => {
   const m = (ctx.deps as unknown as { market?: MarketSeriesDeps }).market;
   if (!m) throw new Error("market_series edge authorship is not wired: deps.market (registry + computeSeriesDeltas) is missing, and a market write without its edges fails closed");
   return m;
@@ -41,7 +41,7 @@ export interface DeltaCounts {
 const pointDate = (r: SeriesRowLite): string | null => r.reference_period ?? r.as_at_date ?? null;
 
 /** Author the delta edges of every DISTINCT series key a run touched. Dry mode authors nothing. */
-export async function authorMarketSeriesDeltaEdges(sb: Db, seriesKeys: Iterable<string>, mode: "dry" | "apply", deps: MarketSeriesDeps & { now: () => Date; trace?: boolean }): Promise<{ counts: DeltaCounts; trace: string[] }> {
+async function authorMarketSeriesDeltaEdges(sb: Db, seriesKeys: Iterable<string>, mode: "dry" | "apply", deps: MarketSeriesDeps & { now: () => Date; trace?: boolean }): Promise<{ counts: DeltaCounts; trace: string[] }> {
   const counts: DeltaCounts = { authored: 0, skippedAlready: 0, insufficientHistory: 0, unitMismatch: 0, refused: 0, unknownMethod: 0, errored: 0 };
   const trace: string[] = [];
   const t = (line: string) => deps.trace && trace.push(`market_series_delta: ${line}`);
@@ -91,14 +91,14 @@ export async function authorMarketSeriesDeltaEdges(sb: Db, seriesKeys: Iterable<
 }
 
 /** Fail closed: real rows landed but DAG authorship produced no edge (the defect that shipped silently for every producer run). Throws. */
-export function assertEdgesAuthored(o: { rowsChanged: number; edgesAuthored: number }): void {
+function assertEdgesAuthored(o: { rowsChanged: number; edgesAuthored: number }): void {
   if (o.rowsChanged > 0 && o.edgesAuthored === 0) {
     throw new Error(`assertEdgesAuthored: this run wrote ${o.rowsChanged} row(s) to market_series but authored 0 derivation_edges; authorship was called and had no effect. Re-run with trace to see which outcome bucket each touched series_key landed in (insufficientHistory, unitMismatch, refused, unknownMethod, errored).`);
   }
 }
 
 /** The `after` hook every market_series producer uses: author the edges of the touched series, assert, and report the counts. */
-export async function afterMarketWrite(ctx: ProducerCtx, written: { rows: Rec[]; created: Rec[]; updated: Rec[] }): Promise<Record<string, number>> {
+async function afterMarketWrite(ctx: ProducerCtx, written: { rows: Rec[]; created: Rec[]; updated: Rec[] }): Promise<Record<string, number>> {
   const m = marketDeps(ctx);
   const { counts } = await authorMarketSeriesDeltaEdges(ctx.sb as Db, written.rows.map((r) => String(r.series_key)), "apply", { ...m, now: ctx.now, trace: ctx.input.trace === true });
   assertEdgesAuthored({ rowsChanged: written.created.length + written.updated.length, edgesAuthored: counts.authored });
@@ -106,10 +106,10 @@ export async function afterMarketWrite(ctx: ProducerCtx, written: { rows: Rec[];
 }
 
 /** The envelope and label fields a producer may refresh on an existing market_series row; identity and key fields are excluded. */
-export const REFRESHABLE_FIELDS = ["label", "value_numeric", "unit", "currency", "derivation", "origin_class", "source_key", "source_ref", "n_observations", "method_version", "as_at_date"] as const;
+const REFRESHABLE_FIELDS = ["label", "value_numeric", "unit", "currency", "derivation", "origin_class", "source_key", "source_ref", "n_observations", "method_version", "as_at_date"] as const;
 
 /** The keyed plan of a market_series producer: existing rows read by the producer's own key prefix (one bounded paginated read), keyed (series_key, reference_period). */
-export const marketPlan = (prefix: string): PlanSpec<Rec> => ({
+const marketPlan = (prefix: string): PlanSpec<Rec> => ({
   read: (sb) => fetchAllRows<Rec>((from, to) => sb.from("market_series").select(`id, series_key, reference_period, ${REFRESHABLE_FIELDS.join(", ")}`).like("series_key", `${prefix}:%`).order("id", { ascending: true }).range(from, to) as never, { cap: 200_000 }),
   key: KEYS.seriesPeriod,
   patchable: REFRESHABLE_FIELDS,

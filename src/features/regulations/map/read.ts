@@ -9,7 +9,7 @@ import { fetchAllRows } from "@/core/db/query";
 
 import type { MapItem } from "./rollup";
 
-export const MAP_REVALIDATE_SECONDS = 300;
+const MAP_REVALIDATE_SECONDS = 300;
 const REGULATIONS_DOMAIN = 1;
 
 interface Row {
@@ -25,7 +25,7 @@ interface Row {
   category: string | null;
 }
 
-export async function readMapItems(db: Db, orgId: string | null): Promise<MapItem[]> {
+async function readMapItems(db: Db, orgId: string | null): Promise<MapItem[]> {
   const rpc = orgId ? "get_workspace_intelligence_listings" : "get_workspace_intelligence_listings_public";
   const args = { ...(orgId ? { p_org_id: orgId } : {}), p_domain: REGULATIONS_DOMAIN };
   const rows = await fetchAllRows<Row>((from, to) => db.rpc(rpc, args).range(from, to) as never, { pageSize: 500, cap: 20_000 });

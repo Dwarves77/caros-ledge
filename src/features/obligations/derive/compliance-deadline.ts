@@ -6,7 +6,7 @@
 import type { Db } from "@/core/db";
 import { notInList, suppressedEventIds } from "@/core/derived/suppressed-events";
 
-export const COMPLIANCE_DEADLINE_EVENT_KIND = "compliance_deadline";
+const COMPLIANCE_DEADLINE_EVENT_KIND = "compliance_deadline";
 const confRank = (c: unknown): number => (c === "high" ? 0 : c === "medium" ? 1 : 2);
 
 export interface DeadlineCandidate {
@@ -16,7 +16,7 @@ export interface DeadlineCandidate {
   confidence?: string | null;
 }
 /** The earliest future compliance_deadline date among the rows, or null. */
-export function pickComplianceDeadline(rows: readonly DeadlineCandidate[] | null | undefined, asOfIso: string): string | null {
+function pickComplianceDeadline(rows: readonly DeadlineCandidate[] | null | undefined, asOfIso: string): string | null {
   const candidates = (rows ?? [])
     .filter((r): r is DeadlineCandidate & { event_date: string } => !!r && r.event_kind === COMPLIANCE_DEADLINE_EVENT_KIND && typeof r.event_date === "string" && r.event_date >= asOfIso)
     .sort((a, b) => (a.event_date !== b.event_date ? (a.event_date < b.event_date ? -1 : 1) : confRank(a.confidence) - confRank(b.confidence) || String(a.id ?? "").localeCompare(String(b.id ?? ""))));

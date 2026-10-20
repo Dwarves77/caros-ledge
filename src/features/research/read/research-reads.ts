@@ -46,7 +46,7 @@ async function uuidsOf(db: Db, listIds: readonly string[]): Promise<Map<string, 
 }
 
 /** The batched current assessments for the rows a page shows: one chunked read of the view, keyed by list id. */
-export async function readAssessmentsFor(db: Db, listIds: readonly string[]): Promise<Record<string, AssessmentView>> {
+async function readAssessmentsFor(db: Db, listIds: readonly string[]): Promise<Record<string, AssessmentView>> {
   const uuid = await uuidsOf(db, listIds);
   const rows = await fetchAllByIdChunks([...uuid.values()], async (slice) => {
     const { data, error } = await db.from("research_assessments_current").select(ASSESSMENT_COLUMNS).in("item_id", slice);

@@ -61,8 +61,8 @@ export const originClassLabel = (code: string | null | undefined): string | null
 export const originClassStrength = (code: string | null | undefined): number | null => (code ? (ORIGIN_CLASS[code]?.strength ?? null) : null);
 export const derivationLabel = (code: string | null | undefined): string | null => (code ? (DERIVATION[code]?.label ?? null) : null);
 
-export const sourceUrlFromNote = (note: string | null | undefined): string | null => (typeof note === "string" ? (note.match(/https?:\/\/[^\s)]+/)?.[0] ?? null) : null);
-export function sourceNameFromNote(note: string | null | undefined): string | null {
+const sourceUrlFromNote = (note: string | null | undefined): string | null => (typeof note === "string" ? (note.match(/https?:\/\/[^\s)]+/)?.[0] ?? null) : null);
+function sourceNameFromNote(note: string | null | undefined): string | null {
   if (typeof note !== "string") return null;
   const cleaned = note.replace(/https?:\/\/[^\s)]+/g, "").replace(/[·|\-–—\s]+$/, "").trim();
   return cleaned.length > 0 ? cleaned : null;
@@ -71,7 +71,7 @@ export function sourceNameFromNote(note: string | null | undefined): string | nu
 /** Longest string still read as a figure rather than a sentence (the artboard's own figures run 9 to 15 characters). */
 const FIGURE_MAX_CHARS = 24;
 /** A fact into the artboard's slots: the enveloped figure, else a short numeric `value`, else no figure at all (the sentence is set as prose). Nothing is derived out of prose. */
-export function factHeadline(f: OperationsFact): { figure: string | null; description: string; prose: string | null } {
+function factHeadline(f: OperationsFact): { figure: string | null; description: string; prose: string | null } {
   const enveloped = formatEnvelopedValue(f);
   if (enveloped) return { figure: enveloped, description: f.factLabel, prose: null };
   const value = f.value.trim();

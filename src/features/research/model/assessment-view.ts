@@ -44,7 +44,7 @@ export interface AssessmentRow {
 }
 
 /** "TRL 8" for a point corridor, "TRL 8-9" for a span (the old card printed "8-8"). */
-export const corridorLabel = (prefix: "TRL" | "CRI", low: number, high: number): string => (low === high ? `${prefix} ${low}` : `${prefix} ${low}-${high}`);
+const corridorLabel = (prefix: "TRL" | "CRI", low: number, high: number): string => (low === high ? `${prefix} ${low}` : `${prefix} ${low}-${high}`);
 export const HORIZON_BAND_WORDS: Readonly<Record<string, string>> = { NOW: "now, within 2 years", NEAR: "near, 2 to 5 years", MID: "mid, 5 to 10 years", FAR: "far, beyond 10 years" };
 export const HORIZON_KIND_WORDS: Readonly<Record<string, string>> = { obligation: "Obligation horizon", availability: "Availability horizon", economic: "Economic horizon" };
 export const HORIZON_RULE_WORDS: Readonly<Record<string, string>> = { R1: "a dated statutory instrument", R3: "a named institutional roadmap", R4: "inferred from maturity, no dated evidence" };
@@ -115,7 +115,7 @@ export interface SignpostRow {
   fired_at: string | null;
 }
 /** One customer sentence for a signpost predicate; an unknown op says so and guesses nothing. */
-export function summarizePredicate(p: SignpostRow["predicate"]): string {
+function summarizePredicate(p: SignpostRow["predicate"]): string {
   if (!p || typeof p !== "object" || !p.op) return "no condition recorded";
   if (p.op === "date_passed") return p.basis === "movement_by_date" && p.by ? `expects a recorded change on what it watches by ${p.by}` : "fires once a recorded date has passed";
   if (p.op === "threshold") return p.metric && p.gte != null ? `fires once ${p.metric} reaches ${p.gte}` : "fires once a measure crosses its threshold";

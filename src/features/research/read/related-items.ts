@@ -9,7 +9,7 @@ import type { Db } from "@/core/db";
 import { qb, type Qb } from "@/core/db/qb";
 import { log } from "@/core/shared/log";
 
-export const RELATED_LIMIT = 5;
+const RELATED_LIMIT = 5;
 export interface RelatedItem {
   id: string;
   title: string;

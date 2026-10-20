@@ -8,7 +8,7 @@ import type { Db } from "@/core/db";
 import { fetchAllRows, qb } from "@/core/db";
 import { notInList, suppressedEventIds } from "@/core/derived/suppressed-events";
 
-export const UNCLASSIFIED_KEY = "unclassified";
+const UNCLASSIFIED_KEY = "unclassified";
 const WINDOWS = ["overdue", "30", "90", "365", "undated", "all"] as const;
 
 export interface RegisterFacets {
@@ -16,10 +16,10 @@ export interface RegisterFacets {
   modes: string[];
   counts: { jurisdiction: Record<string, number>; mode: Record<string, number>; bindingPosition: Record<string, number>; dueWindow: Record<string, number> };
 }
-export const emptyRegisterFacets = (): RegisterFacets => ({ jurisdictions: [], modes: [], counts: { jurisdiction: {}, mode: {}, bindingPosition: {}, dueWindow: {} } });
+const emptyRegisterFacets = (): RegisterFacets => ({ jurisdictions: [], modes: [], counts: { jurisdiction: {}, mode: {}, bindingPosition: {}, dueWindow: {} } });
 
 /** Whether a due date falls in a window ("overdue", the next 30/90/365 days, "undated", "all"); a dated window never matches an undated row. */
-export function matchesDueWindow(dueDate: string | null | undefined, dueWindow: string, todayIso: string): boolean {
+function matchesDueWindow(dueDate: string | null | undefined, dueWindow: string, todayIso: string): boolean {
   if (dueWindow === "all") return true;
   if (dueWindow === "undated") return dueDate === null || dueDate === undefined;
   if (dueDate === null || dueDate === undefined) return false;
@@ -31,7 +31,7 @@ export function matchesDueWindow(dueDate: string | null | undefined, dueWindow: 
   return d >= from && d <= new Date(from.getTime() + days * 86_400_000);
 }
 
-export function tallyRegisterFacets(rows: readonly { jurisdiction?: string[] | null; modes?: string[] | null; binding_position?: string | null; due_date?: string | null }[], todayIso: string): RegisterFacets {
+function tallyRegisterFacets(rows: readonly { jurisdiction?: string[] | null; modes?: string[] | null; binding_position?: string | null; due_date?: string | null }[], todayIso: string): RegisterFacets {
   const out = emptyRegisterFacets();
   const jurisdictions = new Set<string>();
   const modes = new Set<string>();

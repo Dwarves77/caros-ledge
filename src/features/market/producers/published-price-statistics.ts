@@ -11,14 +11,14 @@ import { keyOf, type Rec } from "@/core/producers/upsert-plan";
 import { isRatified, readSeriesItemMap, type SeriesItemEntry, type SeriesItemMap } from "./market-series-items";
 
 const SYMBOL: Record<string, string> = { EUR: "€", USD: "$", GBP: "£" };
-export function splitEnvelopeUnit(unit: string | null | undefined, currency: string | null | undefined): { symbol: string | null; suffix: string | null } {
+function splitEnvelopeUnit(unit: string | null | undefined, currency: string | null | undefined): { symbol: string | null; suffix: string | null } {
   const symbol = (currency && SYMBOL[currency]) || null;
   if (!unit) return { symbol, suffix: null };
   const prefix = currency ? `${currency}/` : null;
   return { symbol, suffix: prefix && unit.startsWith(prefix) ? unit.slice(prefix.length - 1) : unit };
 }
 /** The display text of a price; a value that is not a finite number is refused (Number(null) is 0, and an absent observation must never be stored as "0.00": register surfaces:23). */
-export const formatValueDisplay = (value: unknown, currency: string | null | undefined): string => {
+const formatValueDisplay = (value: unknown, currency: string | null | undefined): string => {
   const n = typeof value === "number" ? value : typeof value === "string" && value.trim() !== "" ? Number(value) : Number.NaN;
   if (!Number.isFinite(n)) throw new RangeError(`formatValueDisplay: ${JSON.stringify(value)} is not a finite number`);
   return `${(currency && SYMBOL[currency]) || ""}${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -40,7 +40,7 @@ export function latestPerSeries(rows: readonly Rec[]): Map<string, Rec> {
 }
 
 /** One display row per RATIFIED series that has an observation, in map order. */
-export function deriveDisplayRows(marketRows: readonly Rec[], o: { map: SeriesItemMap }): Rec[] {
+function deriveDisplayRows(marketRows: readonly Rec[], o: { map: SeriesItemMap }): Rec[] {
   const { map } = o;
   const latest = latestPerSeries(marketRows);
   const out: Rec[] = [];
@@ -54,7 +54,7 @@ export function deriveDisplayRows(marketRows: readonly Rec[], o: { map: SeriesIt
   });
   return out;
 }
-export const unmappedSeriesKeys = (marketRows: readonly Rec[], map: SeriesItemMap): string[] => {
+const unmappedSeriesKeys = (marketRows: readonly Rec[], map: SeriesItemMap): string[] => {
   const ratified = new Set(map.filter(([, e]) => isRatified(e)).map(([k]) => k));
   return [...new Set(marketRows.map((r) => String(r.series_key)).filter((k) => k && !ratified.has(k)))].sort();
 };

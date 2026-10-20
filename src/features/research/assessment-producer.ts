@@ -13,7 +13,7 @@ import type { Rec } from "@/core/producers/upsert-plan";
 import { assessItem, extractDoiCandidate, hasChanged, isResearchCandidate, RESEARCH_CANDIDATE_OR, toAssessmentInput, toRow, type AssessInput, type ForwardEvent, type SignpostSpec } from "./model/assess";
 
 /** DOI in the item's text to an OpenAlex work to a source record for the authority score; unresolved is no record, never a guessed one. */
-export async function resolveOpenAlexSourceRecords(input: AssessInput, deps: OpenAlexDeps = {}): Promise<Rec[]> {
+async function resolveOpenAlexSourceRecords(input: AssessInput, deps: OpenAlexDeps = {}): Promise<Rec[]> {
   const doi = extractDoiCandidate(input.text);
   const work = doi ? await workByDoi(doi, deps) : null;
   if (!doi || !work) return [];

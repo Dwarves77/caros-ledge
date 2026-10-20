@@ -3,8 +3,8 @@
 // term is accepted only in a PER-HOUR unit (the annual USD/year wage was found first and the chain printed "USD/year per productive hour") and every term must be in ONE currency; otherwise the figure is
 // suppressed, every missing term is named, and each gap carries its own cause. Nothing is defaulted or imputed.
 export type ChainTermKey = "baseWage" | "employerContributions" | "leaveAbsence" | "turnoverRecruitment" | "shiftPremium" | "productiveHours";
-export const NUMERATOR_TERM_ORDER: readonly ChainTermKey[] = ["baseWage", "employerContributions", "leaveAbsence", "turnoverRecruitment", "shiftPremium"];
-export const CHAIN_TERM_ORDER: readonly ChainTermKey[] = [...NUMERATOR_TERM_ORDER, "productiveHours"];
+const NUMERATOR_TERM_ORDER: readonly ChainTermKey[] = ["baseWage", "employerContributions", "leaveAbsence", "turnoverRecruitment", "shiftPremium"];
+const CHAIN_TERM_ORDER: readonly ChainTermKey[] = [...NUMERATOR_TERM_ORDER, "productiveHours"];
 const LABELS: Readonly<Record<ChainTermKey, string>> = { baseWage: "Base wage", employerContributions: "Employer social contributions", leaveAbsence: "Leave and absence", turnoverRecruitment: "Turnover and recruitment", shiftPremium: "Shift premium", productiveHours: "Productive hours" };
 /** One matcher per term; deliberately broad so a new producer's label for a term is found without a code change. */
 const MATCHERS: Readonly<Record<ChainTermKey, RegExp>> = {
@@ -70,7 +70,7 @@ export interface LabourChainResult {
 
 const finite = (n: unknown): n is number => typeof n === "number" && Number.isFinite(n);
 /** The bare currency of a term: its own currency column, else the unit's leading code ("EUR/hour" is EUR). */
-export const currencyOf = (v: { unit: string | null; currency: string | null }): string | null => v.currency || (v.unit ? v.unit.replace(PER_HOUR, "").trim() || null : null);
+const currencyOf = (v: { unit: string | null; currency: string | null }): string | null => v.currency || (v.unit ? v.unit.replace(PER_HOUR, "").trim() || null : null);
 
 /**
  * The five terms and the divisor from a cell's facts. A numerator term takes the first fact whose label matches AND whose unit is per hour; a match in another unit (an annual figure) is not a term, and the

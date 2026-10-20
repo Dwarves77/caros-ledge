@@ -14,7 +14,7 @@ export interface IndexedInput {
  * The indexed value at a review point: base_value scaled by the index's movement since base_date, passed through at passthrough_pct, then clamped to
  * [floor_pct, cap_pct] of base_value. A commercial term, so `calculated`, never statutory. Anything unusable is M with its reason.
  */
-export function computeIndexedValue({ baseValue, indexBaseline, indexCurrent, passthroughPct, capPct = null, floorPct = null }: IndexedInput) {
+function computeIndexedValue({ baseValue, indexBaseline, indexCurrent, passthroughPct, capPct = null, floorPct = null }: IndexedInput) {
   for (const [name, v] of Object.entries({ baseValue, indexBaseline, indexCurrent, passthroughPct })) if (typeof v !== "number" || !Number.isFinite(v)) return missing(`${name} must be a finite number to compute an indexed value.`);
   if (indexBaseline === 0) return missing("indexBaseline must be non-zero (division by zero).");
   if (passthroughPct < 0 || passthroughPct > 100) return missing("passthroughPct must be between 0 and 100.");

@@ -14,16 +14,16 @@ import { KEYS, type Rec } from "@/core/producers/upsert-plan";
 
 import config from "./data/eea-hdv-classification.json";
 
-export const DATASET = {
+const DATASET = {
   csv_url: "https://discomap.eea.europa.eu/App/CO2HDV/HDV_CO2Emission_VehicleExtract_24042025.csv",
   page_url: "https://www.eea.europa.eu/en/datahub/datahubitem-view/c52f7b51-c1cf-43e5-9a66-3eea19f6385a",
   source_name: "European Environment Agency: CO2 emissions from heavy-duty vehicles",
 } as const;
-export const DRY_SAMPLE_BYTES = 8 * 1024 * 1024;
-export const EEA_HDV_COLUMNS = ["Match", "UniqueData", "OEM_ManufacturerName", "OEM_ZeroEmissionVehicle", "OEM_HybridElectricHDV", "OEM_DualFuelVehicle", "OEM_Engine_FuelType", "MS_FuelType", "MS_Electric", "MS_RegistrationCountry", "MS_RegistrationDateClean_YYYYMMDD"] as const;
+const DRY_SAMPLE_BYTES = 8 * 1024 * 1024;
+const EEA_HDV_COLUMNS = ["Match", "UniqueData", "OEM_ManufacturerName", "OEM_ZeroEmissionVehicle", "OEM_HybridElectricHDV", "OEM_DualFuelVehicle", "OEM_Engine_FuelType", "MS_FuelType", "MS_Electric", "MS_RegistrationCountry", "MS_RegistrationDateClean_YYYYMMDD"] as const;
 const TECH = ["heavy_battery", "megawatt_charging", "hydrogen_fcell", "ammonia_engine", "methanol_dualfuel", "saf_refinery", "e_axle", "reefer_electrification"] as const;
 const STAGES = ["announced", "pilot_demonstration", "small_batch_fleet", "mass_series_production"] as const;
-export const COVERED_COLUMNS = ["manufacturer_id", "tech_category", "commercial_stage", "source_id", "origin_class", "derivation", "confidence_admiralty"] as const;
+const COVERED_COLUMNS = ["manufacturer_id", "tech_category", "commercial_stage", "source_id", "origin_class", "derivation", "confidence_admiralty"] as const;
 
 const classification = z
   .object({
@@ -34,7 +34,7 @@ const classification = z
   })
   .strict();
 export type Classification = z.infer<typeof classification>;
-export const validateClassification = (obj: unknown): Classification => {
+const validateClassification = (obj: unknown): Classification => {
   const c = classification.parse(obj);
   return { ...c, stage_rules: [...c.stage_rules].sort((a, b) => b.min_units - a.min_units) };
 };
@@ -50,7 +50,7 @@ export interface HdvAggregate {
   groups: HdvGroup[];
 }
 /** Fold the extract into groups, streaming; `maxBytes` cuts the read and marks it truncated (the half record at the cut is dropped, never counted). */
-export async function aggregateHdvCsv(chunks: AsyncIterable<Uint8Array> | Iterable<Uint8Array | string>, { maxBytes }: { maxBytes?: number | null } = {}): Promise<HdvAggregate> {
+async function aggregateHdvCsv(chunks: AsyncIterable<Uint8Array> | Iterable<Uint8Array | string>, { maxBytes }: { maxBytes?: number | null } = {}): Promise<HdvAggregate> {
   const state = { truncated: false };
   const source = maxBytes ? limitBytes(chunks, maxBytes, state) : chunks;
   const totals = { records: 0, counted: 0, excluded: {} as Record<string, number>, malformed: 0 };
@@ -101,7 +101,7 @@ export async function aggregateHdvCsv(chunks: AsyncIterable<Uint8Array> | Iterab
 }
 
 /** A tech category for a group, or the named residue reason. Hybrid, dual-fuel and conventional powertrains are not evidence of a roadmap technology. */
-export function classifyGroup(g: HdvGroup, cfg: Classification): { tech_category: string } | { residue: string } {
+function classifyGroup(g: HdvGroup, cfg: Classification): { tech_category: string } | { residue: string } {
   if (g.zev === "Yes") {
     const rule = cfg.zev_tech_rules.find((r) => Object.entries(r.when).every(([k, v]) => (g as unknown as Record<string, string>)[k] === v));
     return rule ? { tech_category: rule.tech_category } : { residue: "zero_emission_unmapped" };
@@ -110,14 +110,14 @@ export function classifyGroup(g: HdvGroup, cfg: Classification): { tech_category
   if (g.hybrid === "Yes") return { residue: "hybrid_powertrain" };
   return g.dual_fuel === "Yes" ? { residue: "dual_fuel_powertrain" } : { residue: "conventional_powertrain" };
 }
-export const stageFor = (units: number, cfg: Classification): string | null => cfg.stage_rules.find((r) => units >= r.min_units)?.stage ?? null;
+const stageFor = (units: number, cfg: Classification): string | null => cfg.stage_rules.find((r) => units >= r.min_units)?.stage ?? null;
 
 export interface Residue {
   byReason: Record<string, { groups: number; units: number }>;
   unresolvedManufacturers: Array<{ manufacturer: string; units: number }>;
 }
 /** Groups to roadmap rows: merged per (manufacturer, technology), staged from the LATEST registration year; every dropped group lands in the named residue. */
-export function mapGroupsToRows(groups: readonly HdvGroup[], o: { cfg: Classification; entities: ReadonlyArray<{ canonical_name: string; entity_id: string }>; sourceId: string | null }) {
+function mapGroupsToRows(groups: readonly HdvGroup[], o: { cfg: Classification; entities: ReadonlyArray<{ canonical_name: string; entity_id: string }>; sourceId: string | null }) {
   const residue: Residue = { byReason: {}, unresolvedManufacturers: [] };
   const add = (reason: string, groupsN: number, units: number) => {
     const r = (residue.byReason[reason] ??= { groups: 0, units: 0 });

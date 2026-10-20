@@ -10,7 +10,7 @@ import { pageSizes, trimRemainder } from "@/core/lists";
 import type { Resource } from "@/core/types";
 import { readListing, readRemainder, readSurfaceCounts, type ListingRpc } from "@/features/lists";
 
-export const REGULATIONS_DOMAIN = 1;
+const REGULATIONS_DOMAIN = 1;
 export type LedgerRow = Resource & { uuid: string | null };
 const rpcFor = (orgId: string | null): ListingRpc => (orgId ? "get_workspace_intelligence_listings" : "get_workspace_intelligence_listings_public");
 

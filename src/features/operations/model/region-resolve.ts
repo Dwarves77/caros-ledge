@@ -13,7 +13,7 @@ export interface ItemJurisdictions {
 }
 
 /** The item's jurisdiction codes, upper-cased and de-duplicated. */
-export function itemJurisdictionCodes(item: ItemJurisdictions): string[] {
+function itemJurisdictionCodes(item: ItemJurisdictions): string[] {
   const all = [...(item.jurisdictionIso ?? []), ...(item.jurisdictions ?? []), item.jurisdiction ?? ""];
   return [...new Set(all.filter((c): c is string => typeof c === "string" && c.trim().length > 0).map((c) => c.trim().toUpperCase()))];
 }

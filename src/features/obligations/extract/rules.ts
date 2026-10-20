@@ -45,8 +45,8 @@ export const RULES: readonly Rule[] = file.rules.map(build);
 export const CANDIDATE_ONLY_RULES: readonly Rule[] = file.candidateOnly.map(build);
 export const DEONTIC = compile(file.patterns.DEONTIC);
 export const AIM_WORDS = compile(file.patterns.AIM_WORDS);
-export const COMMENCEMENT_CLAUSE_RE = compile(file.patterns.COMMENCEMENT_CLAUSE_RE);
-export const STATUS_ONLY_RE = compile(file.patterns.STATUS_ONLY_RE);
+const COMMENCEMENT_CLAUSE_RE = compile(file.patterns.COMMENCEMENT_CLAUSE_RE);
+const STATUS_ONLY_RE = compile(file.patterns.STATUS_ONLY_RE);
 
 export const REFERENCE_DATE_SKIP_REASON = "date equals a reference date (the run date or the brief's own document date) with no instrument-commencement language in its clause -- refused as a fabricated event, never a real obligation";
 export const STATUS_ONLY_SKIP_REASON = "'as of'/'since' clause is only a status/snapshot phrase once its own date span is removed (e.g. \"in force as of\", \"updated as of\") -- never a bound obligation, regardless of any deontic clause nearby";

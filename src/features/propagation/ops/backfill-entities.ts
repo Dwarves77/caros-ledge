@@ -8,7 +8,7 @@ import type { RunResult } from "@/core/sources/run-result";
 
 import { readTable } from "./read";
 
-export const BACKFILL_KINDS = ["jurisdiction", "instrument", "organisation"] as const;
+const BACKFILL_KINDS = ["jurisdiction", "instrument", "organisation"] as const;
 export type BackfillKind = (typeof BACKFILL_KINDS)[number];
 const ASSERTED_BY = "ops/backfill-entities";
 

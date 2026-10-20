@@ -37,7 +37,7 @@ function view(row: NoteRow, ctx: CollabCtx, names: Map<string, string>) {
 const viewer = (ctx: CollabCtx) => ({ role: ctx.role, can_write: canWrite(ctx.role) });
 
 /** Validate a note body: { body } or { error }. Any string is accepted and trimmed. */
-export function parseNoteBody(raw: unknown): { body: string } | { error: string } {
+function parseNoteBody(raw: unknown): { body: string } | { error: string } {
   if (typeof raw !== "string") return { error: "Write a note before saving." };
   const body = raw.trim();
   if (!body) return { error: "Write a note before saving." };
@@ -45,7 +45,7 @@ export function parseNoteBody(raw: unknown): { body: string } | { error: string 
   return { body };
 }
 
-export async function listNotes(client: Db, ctx: CollabCtx): Promise<CollabResult> {
+async function listNotes(client: Db, ctx: CollabCtx): Promise<CollabResult> {
   const [notes, roster] = await Promise.all([
     boundedRead<NoteRow>((limit) => client.from("item_notes").select(NOTE_COLUMNS).eq("org_id", ctx.orgId).eq("item_id", ctx.item.id).is("deleted_at", null).order("created_at", { ascending: false }).limit(limit), { limit: LIST_LIMIT }),
     loadRoster(client, ctx.orgId),
@@ -55,7 +55,7 @@ export async function listNotes(client: Db, ctx: CollabCtx): Promise<CollabResul
   return collabOk(200, { notes: notes.data.map((row) => view(row, ctx, names)), truncated: notes.truncated, viewer: viewer(ctx) });
 }
 
-export async function addNote(client: Db, ctx: CollabCtx, input: Record<string, unknown> | null): Promise<CollabResult> {
+async function addNote(client: Db, ctx: CollabCtx, input: Record<string, unknown> | null): Promise<CollabResult> {
   if (!canWrite(ctx.role)) return collabFail(403, "Your role in this workspace can read notes but not add them.");
   const parsed = parseNoteBody(input?.body);
   if ("error" in parsed) return collabFail(400, parsed.error);
@@ -73,7 +73,7 @@ async function findNote(client: Db, ctx: CollabCtx, noteId: string): Promise<Not
 
 const GONE = "That note no longer exists. Reload to see the current notes.";
 
-export async function editNote(client: Db, ctx: CollabCtx, input: Record<string, unknown> | null): Promise<CollabResult> {
+async function editNote(client: Db, ctx: CollabCtx, input: Record<string, unknown> | null): Promise<CollabResult> {
   const noteId = typeof input?.noteId === "string" ? input.noteId : "";
   if (!noteId) return collabFail(400, "noteId is required.");
   const parsed = parseNoteBody(input?.body);
@@ -87,7 +87,7 @@ export async function editNote(client: Db, ctx: CollabCtx, input: Record<string,
   return collabOk(200, { note: view(data as NoteRow, ctx, await namesAfterWrite(client, ctx.orgId)) });
 }
 
-export async function deleteNote(client: Db, ctx: CollabCtx, input: { noteId?: string | null }): Promise<CollabResult> {
+async function deleteNote(client: Db, ctx: CollabCtx, input: { noteId?: string | null }): Promise<CollabResult> {
   const noteId = typeof input.noteId === "string" ? input.noteId : "";
   if (!noteId) return collabFail(400, "noteId is required.");
   const found = await findNote(client, ctx, noteId);

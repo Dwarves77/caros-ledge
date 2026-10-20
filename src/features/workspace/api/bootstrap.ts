@@ -22,7 +22,7 @@ const OVERRIDE_CAP = 5000;
 type OverrideDbRow = { item_id: string; priority_override: string | null; is_archived: boolean | null; archive_reason: string | null; archive_note: string | null; archived_at: string | null; dismissed_at: string | null; owner_user_id: string | null };
 
 /** The caller's org-scoped override rows mapped to the UI shape (ids are the UI id: legacy id, else uuid; owner names come from the org roster, so a departed owner reads as unassigned). */
-export async function loadOverrides(db: Db, orgId: string, roster: readonly RosterMember[]): Promise<WorkspaceOverride[]> {
+async function loadOverrides(db: Db, orgId: string, roster: readonly RosterMember[]): Promise<WorkspaceOverride[]> {
   let rows: OverrideDbRow[];
   try {
     rows = await fetchAllRows(

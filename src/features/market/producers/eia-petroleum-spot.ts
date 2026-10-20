@@ -7,9 +7,9 @@ import type { Rec } from "@/core/producers/upsert-plan";
 
 import { marketSeriesBase, stampEntity } from "./market-series-delta";
 
-export const EIA_KEY_ENV = "EIA_API_KEY";
+const EIA_KEY_ENV = "EIA_API_KEY";
 const URL_BASE = "https://api.eia.gov/v2/petroleum/pri/spt/data/?frequency=weekly&data[0]=value&sort[0][column]=period&sort[0][direction]=desc&length=5000";
-export const PRODUCTS: Readonly<Record<string, { slug: string; label: string }>> = Object.freeze({
+const PRODUCTS: Readonly<Record<string, { slug: string; label: string }>> = Object.freeze({
   EPCWTI: { slug: "wti-crude", label: "WTI crude oil spot price" },
   EPCBRENT: { slug: "brent-crude", label: "Brent crude oil spot price" },
   EPD2F: { slug: "diesel-no2-low-sulfur", label: "No. 2 diesel, ultra-low sulfur, spot price" },
@@ -19,7 +19,7 @@ export const PRODUCTS: Readonly<Record<string, { slug: string; label: string }>>
 });
 
 /** Parse an EIA v2 envelope. An unknown product, a bad period, a missing unit and a duplicate (series, period) are each skipped with a named reason. */
-export function parseEiaV2PetroleumSpot(json: unknown): { rows: Rec[]; warnings: string[]; total: number | null } {
+function parseEiaV2PetroleumSpot(json: unknown): { rows: Rec[]; warnings: string[]; total: number | null } {
   const none = (w: string) => ({ rows: [] as Rec[], warnings: [w], total: null });
   if (!json || typeof json !== "object") return none("not a JSON object: cannot be an EIA API v2 response");
   const j = json as { error?: unknown; response?: { data?: unknown; warnings?: unknown[]; total?: unknown } };

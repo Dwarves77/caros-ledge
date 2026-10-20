@@ -15,7 +15,7 @@ export interface PayloadInput {
  * density basis is 'pack': a cell or module density is never scaled up to a synthetic pack estimate (it would flatter the result by roughly 20-30 percent).
  * Always `modelled`; the range is the caller's job (a low/high pair of calls over a density band).
  */
-export function computePayloadPenalty(i: PayloadInput) {
+function computePayloadPenalty(i: PayloadInput) {
   if (i.densityBasis !== "pack") return missing(`density_basis is '${i.densityBasis ?? "null"}', not 'pack': a payload-penalty delta is never computed from a cell or module level density (it would flatter the result by roughly 20-30%).`);
   for (const [name, v] of Object.entries({ dieselPowertrainKg: i.dieselPowertrainKg, usableKwh: i.usableKwh, energyDensityWhKg: i.energyDensityWhKg, ePowertrainKg: i.ePowertrainKg, legalPayloadKg: i.legalPayloadKg })) if (typeof v !== "number" || !Number.isFinite(v)) return missing(`${name} must be a finite number to compute a payload-penalty delta.`);
   if (i.energyDensityWhKg <= 0) return missing("energyDensityWhKg must be > 0.");

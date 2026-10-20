@@ -115,7 +115,7 @@ const countriesOf = (c: Corridor): Set<string> => new Set([c.origin.slice(0, 2),
  * The seeded corridor a signal means, from its jurisdiction set (UNORDERED: no direction is invented) and its single mode. Two corridors sharing the country set are ambiguous (picking by mode would still invent which route);
  * a mode that differs from the one corridor, or none or several modes on the item, is no identity.
  */
-export function resolveItemCorridor({ jurisdictionIso, modes, candidates }: { jurisdictionIso?: unknown; modes?: unknown; candidates?: readonly CorridorCandidate[] }): CorridorMatch {
+function resolveItemCorridor({ jurisdictionIso, modes, candidates }: { jurisdictionIso?: unknown; modes?: unknown; candidates?: readonly CorridorCandidate[] }): CorridorMatch {
   const item = new Set((Array.isArray(jurisdictionIso) ? jurisdictionIso : []).map(token).filter(Boolean));
   const same = (c: Corridor) => {
     const set = countriesOf(c);
@@ -131,7 +131,7 @@ export function resolveItemCorridor({ jurisdictionIso, modes, candidates }: { ju
 }
 
 /** Named gap reasons: stable customer-facing sentences, never composed per call site. */
-export const GAP = Object.freeze({
+const GAP = Object.freeze({
   NO_FACTOR: "no emission factor supplied for this corridor's mode",
   NO_DISTANCE: "no corridor routing distance available yet (no licence-clear distance dataset in this product today)",
   NO_PAYLOAD: "no cited tonnes-per-FEU payload convention available (GLEC and ISO 14083 are both licence-prohibited; no substitute is registered)",
@@ -167,7 +167,7 @@ function requireProvenance(name: string, p: Provenanced | null | undefined): voi
   if (!p.basis?.trim()) throw new Error(`carbonCostPerFeu: ${name}=${p.value} was supplied with no basis citation; every number carries its provenance`);
 }
 
-export function carbonCostPerFeu(input: CarbonCostInput): CarbonCostResult {
+function carbonCostPerFeu(input: CarbonCostInput): CarbonCostResult {
   const { corridor, factor = null, distance = null, payload = null, carbonPrice = null } = input ?? ({} as CarbonCostInput);
   if (!corridor?.origin || !corridor.dest || !corridor.mode) throw new Error("carbonCostPerFeu: corridor { origin, dest, mode } is required");
   requireProvenance("distance", distance);

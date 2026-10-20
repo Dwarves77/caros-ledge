@@ -8,9 +8,9 @@ import type { Rec } from "@/core/producers/upsert-plan";
 
 import { marketSeriesBase } from "./market-series-delta";
 
-export const SBTI_XLSX_URL = "https://files.sciencebasedtargets.org/production/files/targets-excel.xlsx";
-export const SHEET_NAME = "WebsiteData";
-export const LICENCE_BLOCK = {
+const SBTI_XLSX_URL = "https://files.sciencebasedtargets.org/production/files/targets-excel.xlsx";
+const SHEET_NAME = "WebsiteData";
+const LICENCE_BLOCK = {
   sourceKey: "sbti_dashboard",
   reason:
     "SBTi's 'sbti_dashboard' register entry states redistribution=\"prohibited\" (\"This does not represent a license to repackage or resell any of the data\"); express permission is required from BOTH SBTi and CDP. " +
@@ -30,7 +30,7 @@ export interface SbtiRow {
 }
 
 /** An Excel serial day to YYYY-MM-DD (1900 system, epoch 1899-12-30); null when not a finite number. */
-export function excelSerialToIsoDate(serial: unknown): string | null {
+function excelSerialToIsoDate(serial: unknown): string | null {
   const n = Number(serial);
   if (!Number.isFinite(n)) return null;
   const d = new Date(Date.UTC(1899, 11, 30) + Math.round(n) * 86_400_000);
@@ -38,7 +38,7 @@ export function excelSerialToIsoDate(serial: unknown): string | null {
 }
 
 /** Columns by header NAME (row 1), never by position; a missing expected column refuses the whole read. */
-export function resolveHeaderColumns(rows: SheetRow[], shared: readonly string[]): Record<keyof typeof FIELDS, string> {
+function resolveHeaderColumns(rows: SheetRow[], shared: readonly string[]): Record<keyof typeof FIELDS, string> {
   const head = rows.find((r) => r.rowNum === 1);
   if (!head) throw new StructureError("no row 1 found: cannot resolve the header");
   const byLabel = new Map([...head.cells].map(([col, cell]) => [cellText(cell, shared).trim().toLowerCase(), col] as const).filter(([l]) => l));
@@ -47,7 +47,7 @@ export function resolveHeaderColumns(rows: SheetRow[], shared: readonly string[]
   return Object.fromEntries(Object.entries(FIELDS).map(([k, l]) => [k, byLabel.get(l)])) as Record<keyof typeof FIELDS, string>;
 }
 
-export function extractSbtiTargetRows(rows: SheetRow[], shared: readonly string[], cols: Record<keyof typeof FIELDS, string>): SbtiRow[] {
+function extractSbtiTargetRows(rows: SheetRow[], shared: readonly string[], cols: Record<keyof typeof FIELDS, string>): SbtiRow[] {
   return rows
     .filter((r) => r.rowNum !== 1)
     .map((r) => {
@@ -67,7 +67,7 @@ const maxDate = (xs: Array<{ date: string | null }>): string | null => xs.reduce
  * Per sector: mean lead time (target year minus base year, in months, 1 decimal) for near-term and net-zero targets with status "Other", and the count of
  * "Removed" commitments (survivorship, aggregated first). A row with a bad year, an unknown target type or no parseable date is excluded with a counted reason.
  */
-export function aggregateSbtiTargetRows(data: readonly SbtiRow[]): { seriesRows: Rec[]; skipReasons: Map<string, number>; sectorCount: number } {
+function aggregateSbtiTargetRows(data: readonly SbtiRow[]): { seriesRows: Rec[]; skipReasons: Map<string, number>; sectorCount: number } {
   const bySector = new Map<string, Bucket>();
   const skip = new Map<string, number>();
   const bump = (r: string) => skip.set(r, (skip.get(r) ?? 0) + 1);

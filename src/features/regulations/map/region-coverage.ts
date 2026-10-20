@@ -25,10 +25,10 @@ export interface RegionCoverage {
 }
 
 /** A source's types: the stored ones, else the classifier's reading of its name and address. */
-export const sourceTypesFor = (row: SourceRow): string[] => (Array.isArray(row.source_type) && row.source_type.length > 0 ? row.source_type : classifySourceType({ name: row.name, url: row.url }));
+const sourceTypesFor = (row: SourceRow): string[] => (Array.isArray(row.source_type) && row.source_type.length > 0 ? row.source_type : classifySourceType({ name: row.name, url: row.url }));
 
 /** Each region's jurisdictions as covered (both an environmental body and a legislature), partial (some source) or a gap (none). */
-export function rollupRegions(rows: readonly SourceRow[], regions: ReadonlyArray<PriorityRegion> = TIER1_REGIONS): RegionCoverage[] {
+function rollupRegions(rows: readonly SourceRow[], regions: ReadonlyArray<PriorityRegion> = TIER1_REGIONS): RegionCoverage[] {
   const hits = new Map<string, { env: boolean; leg: boolean; n: number }>();
   for (const row of rows) {
     const types = sourceTypesFor(row);

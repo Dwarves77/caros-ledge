@@ -75,14 +75,14 @@ export async function readRoster(db: Db): Promise<OperationsRegion[]> {
 }
 
 /** The stored coverage per (region, dimension), with its note (the note is shown on the profile and in the matrix). A row whose region is not on the roster is dropped, never given a placeholder code. */
-export async function readCoverage(db: Db, roster: readonly OperationsRegion[]): Promise<CoverageRow[]> {
+async function readCoverage(db: Db, roster: readonly OperationsRegion[]): Promise<CoverageRow[]> {
   const byId = new Map(roster.map((r) => [r.id, r.code]));
   const rows = await fetchAllRows<{ id: string; region_id: string; dimension: string; state: string; fact_count: number | null; notes: string | null }>((from, to) => db.from("region_dimension_coverage").select("id, region_id, dimension, state, fact_count, notes").order("id", { ascending: true }).range(from, to) as never, { cap: 50_000 });
   return rows.filter((r) => byId.has(r.region_id)).map((r) => ({ regionCode: byId.get(r.region_id) as string, dimension: r.dimension, state: r.state, factCount: r.fact_count, notes: r.notes }));
 }
 
 /** Every regional fact the producers wrote, with the registered source's customer tier and freshness derived from the row's own date against `nowIso`. */
-export async function readFacts(db: Db, roster: readonly OperationsRegion[], nowIso: string): Promise<OperationsFact[]> {
+async function readFacts(db: Db, roster: readonly OperationsRegion[], nowIso: string): Promise<OperationsFact[]> {
   const byId = new Map(roster.map((r) => [r.id, r.code]));
   type Row = Record<string, unknown> & { id: string; region_id: string; sources: SourceEmbed | SourceEmbed[] | null };
   const rows = await fetchAllRows<Row>((from, to) => db.from("regional_data_facts").select("id, region_id, dimension, fact_label, value, status, trend, source_note, last_updated, value_numeric, unit, currency, derivation, origin_class, source_key, source_ref, n_observations, method_version, as_at_date, reference_period, sources(name, url, base_tier, effective_tier, tier_override)").order("id", { ascending: true }).range(from, to) as never, { cap: 100_000 });
@@ -104,14 +104,14 @@ export async function readFacts(db: Db, roster: readonly OperationsRegion[], now
   });
 }
 
-export async function readStateCosts(db: Db): Promise<StateCostFact[]> {
+async function readStateCosts(db: Db): Promise<StateCostFact[]> {
   type Row = { id: string; state_code: string; state_label: string | null; fact_label: string; value: string; unit: string | null; trend: string | null; statute_citation: string | null; effective_date: string | null; sources: SourceEmbed | SourceEmbed[] | null };
   const rows = await fetchAllRows<Row>((from, to) => db.from("state_cost_facts").select("id, state_code, state_label, fact_label, value, unit, trend, statute_citation, effective_date, sources(name, url, base_tier, effective_tier, tier_override)").order("state_code", { ascending: true }).order("id", { ascending: true }).range(from, to) as never, { cap: 50_000 });
   return rows.map((r) => ({ stateCode: r.state_code, stateLabel: r.state_label, factLabel: r.fact_label, value: r.value, unit: r.unit, trend: ["up", "down", "flat"].includes(String(r.trend)) ? r.trend : null, statuteCitation: r.statute_citation, sourceName: embed(r.sources)?.name ?? null, effectiveDate: r.effective_date }));
 }
 
 /** Regulations per region: the verified, non-archived items the routing table sends to Regulations, counted into every region their jurisdictions fall in. Reported beside coverage, never folded into it. */
-export async function readLinkedRegulations(db: Db, roster: readonly OperationsRegion[]): Promise<Record<string, number>> {
+async function readLinkedRegulations(db: Db, roster: readonly OperationsRegion[]): Promise<Record<string, number>> {
   type Row = { id: string; item_type: string | null; domain: number | null; jurisdictions: string[] | null; jurisdiction_iso: string[] | null };
   const rows = await fetchAllRows<Row>((from, to) => admitItems(db.from("intelligence_items").select("id, item_type, domain, jurisdictions, jurisdiction_iso")).order("id", { ascending: true }).range(from, to) as never, { cap: 100_000 });
   const counts: Record<string, number> = Object.fromEntries(roster.map((r) => [r.code, 0]));

@@ -9,8 +9,8 @@ import type { CarbonCostResult } from "./carbon";
 import type { SeriesBoard } from "./series-board";
 
 /** Artboard 04 draws three next-drop rows and two carbon-corridor rows. */
-export const NEXT_DROPS_ROW_CAP = 3;
-export const CARBON_CORRIDOR_ROW_CAP = 2;
+const NEXT_DROPS_ROW_CAP = 3;
+const CARBON_CORRIDOR_ROW_CAP = 2;
 
 export interface CarbonRailEntry {
   label: string;

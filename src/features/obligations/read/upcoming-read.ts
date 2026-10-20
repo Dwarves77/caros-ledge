@@ -26,7 +26,7 @@ export function defaultJurisdictionFilter(profileJurisdictions: unknown): string
 
 const canonLower = (code: unknown): string => (canonicalJurisdictionCode(code) ?? "").toLowerCase();
 /** An item matches when any of its ISO codes equals a key or sits under it; no filter keeps everything, an item with no codes matches nothing. */
-export function jurisdictionMatches(itemJurisdictionIso: readonly string[] | null | undefined, filterKeys: readonly string[] | null | undefined): boolean {
+function jurisdictionMatches(itemJurisdictionIso: readonly string[] | null | undefined, filterKeys: readonly string[] | null | undefined): boolean {
   if (!filterKeys || !filterKeys.length) return true;
   if (!Array.isArray(itemJurisdictionIso) || !itemJurisdictionIso.length) return false;
   const keys = filterKeys.map(canonLower).filter(Boolean);
@@ -36,7 +36,7 @@ export function jurisdictionMatches(itemJurisdictionIso: readonly string[] | nul
   });
 }
 /** An item matches the mode filter when it carries one of the modes, or declares none (mode-agnostic). */
-export function modeMatches(itemModes: readonly string[] | null | undefined, modeKeys: readonly string[] | null | undefined): boolean {
+function modeMatches(itemModes: readonly string[] | null | undefined, modeKeys: readonly string[] | null | undefined): boolean {
   if (!modeKeys || !modeKeys.length || !Array.isArray(itemModes) || !itemModes.length) return true;
   const keys = modeKeys.map((k) => String(k ?? "").trim().toLowerCase()).filter(Boolean);
   return itemModes.some((m) => keys.includes(String(m ?? "").trim().toLowerCase()));
@@ -70,7 +70,7 @@ export interface UpcomingSpec {
   from: string;
   limit: number;
 }
-export function buildUpcomingEventsQuerySpec(opts: { itemId?: string | null; kinds?: readonly unknown[]; from?: unknown; limit?: unknown }, todayIso: string): UpcomingSpec {
+function buildUpcomingEventsQuerySpec(opts: { itemId?: string | null; kinds?: readonly unknown[]; from?: unknown; limit?: unknown }, todayIso: string): UpcomingSpec {
   const kinds = Array.isArray(opts.kinds) && opts.kinds.length ? (opts.kinds.filter((k): k is EventKind => (EVENT_KINDS as readonly unknown[]).includes(k))) : [...DEFAULT_KINDS];
   return {
     itemId: opts.itemId ?? null,
@@ -99,7 +99,7 @@ export interface UpcomingEvent {
   item: UpcomingItem;
 }
 /** Events narrowed by scope, up to `limit`; an event whose item is not in the join never reaches here (the join is in the query). */
-export function selectUpcoming(events: readonly UpcomingEvent[], opts: { jurisdictionFilter?: readonly string[] | null; modeFilter?: readonly string[] | null; limit?: number } = {}): UpcomingEvent[] {
+function selectUpcoming(events: readonly UpcomingEvent[], opts: { jurisdictionFilter?: readonly string[] | null; modeFilter?: readonly string[] | null; limit?: number } = {}): UpcomingEvent[] {
   const limit = typeof opts.limit === "number" && opts.limit > 0 ? Math.floor(opts.limit) : Infinity;
   const out: UpcomingEvent[] = [];
   for (const ev of events) {

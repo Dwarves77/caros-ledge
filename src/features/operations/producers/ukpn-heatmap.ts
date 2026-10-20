@@ -11,22 +11,22 @@ import { StructureError, type ParseOut, type ProducerCtx, type ProducerSpec } fr
 import { KEYS, type Rec } from "@/core/producers/upsert-plan";
 import { hostOf } from "@/core/shared";
 
-export const DATASET_ID = "ukpn-capacity-heatmap";
-export const PORTAL_HOST = "ukpowernetworks.opendatasoft.com";
-export const METADATA_URL = `https://${PORTAL_HOST}/api/explore/v2.1/catalog/datasets/${DATASET_ID}`;
-export const SOURCE_URL = `https://${PORTAL_HOST}/explore/dataset/${DATASET_ID}/`;
-export const SOURCE_NAME = "UK Power Networks, Long Term Development Statement Capacity Heatmap";
-export const LICENCE = "CC BY 4.0";
-export const LICENCE_URL = "https://creativecommons.org/licenses/by/4.0/";
-export const GB_JURISDICTION_ID = entityId("jurisdiction", "GB");
-export const CONSTRAINTS = ["GREEN", "AMBER", "RED"] as const;
+const DATASET_ID = "ukpn-capacity-heatmap";
+const PORTAL_HOST = "ukpowernetworks.opendatasoft.com";
+const METADATA_URL = `https://${PORTAL_HOST}/api/explore/v2.1/catalog/datasets/${DATASET_ID}`;
+const SOURCE_URL = `https://${PORTAL_HOST}/explore/dataset/${DATASET_ID}/`;
+const SOURCE_NAME = "UK Power Networks, Long Term Development Statement Capacity Heatmap";
+const LICENCE = "CC BY 4.0";
+const LICENCE_URL = "https://creativecommons.org/licenses/by/4.0/";
+const GB_JURISDICTION_ID = entityId("jurisdiction", "GB");
+const CONSTRAINTS = ["GREEN", "AMBER", "RED"] as const;
 const REFRESHABLE = ["substation_name", "demand_firm_mw", "demand_available_mw", "demand_constraint", "demand_constraint_limiting_factor", "source_id", "origin_class", "derivation"] as const;
 const ATTACHMENT = /^LTDS_Heatmap_[A-Z]{3}_.*\.json$/i;
 
 type Meta = { dataset_id?: string; metas?: { default?: { license?: string; publisher?: string } }; attachments?: Array<{ mimetype?: string; title?: string; url?: string }> };
 /** Only https attachments on the portal host whose title is a heatmap release file. */
-export const selectAttachments = (meta: Meta) => (Array.isArray(meta?.attachments) ? meta.attachments : []).filter((a) => a && a.mimetype === "application/json" && ATTACHMENT.test(String(a.title ?? "")) && hostOf(String(a.url ?? "")) === PORTAL_HOST && String(a.url).startsWith("https://"));
-export function checkMetadata(meta: Meta) {
+const selectAttachments = (meta: Meta) => (Array.isArray(meta?.attachments) ? meta.attachments : []).filter((a) => a && a.mimetype === "application/json" && ATTACHMENT.test(String(a.title ?? "")) && hostOf(String(a.url ?? "")) === PORTAL_HOST && String(a.url).startsWith("https://"));
+function checkMetadata(meta: Meta) {
   const d = meta?.metas?.default;
   if (!d || typeof d !== "object") throw new StructureError("catalogue metadata has no metas.default");
   if (meta.dataset_id !== DATASET_ID) throw new StructureError(`metadata dataset_id is ${JSON.stringify(meta.dataset_id)}, expected ${DATASET_ID}`);
@@ -38,7 +38,7 @@ export function checkMetadata(meta: Meta) {
 
 const isNum = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
 const isText = (v: unknown): v is string => typeof v === "string" && v.trim() !== "";
-export function mapHeatmapFile(file: Rec, o: { sourceId?: string | null } = {}) {
+function mapHeatmapFile(file: Rec, o: { sourceId?: string | null } = {}) {
   if (!file || typeof file !== "object" || Array.isArray(file)) throw new StructureError("release file is not a JSON object");
   if (file.identifier !== DATASET_ID) throw new StructureError(`release file identifier is ${JSON.stringify(file.identifier)}, expected ${DATASET_ID}`);
   if (file.rights !== LICENCE_URL) throw new StructureError(`release file rights is ${JSON.stringify(file.rights)}, expected ${LICENCE_URL}: refusing`);

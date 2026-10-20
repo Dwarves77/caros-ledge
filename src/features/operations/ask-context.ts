@@ -8,7 +8,7 @@ const NO_SOURCE = "no canonical source on record";
 const dateOnly = (v: string | null | undefined): string | null => (v ? (String(v).match(/^\d{4}-\d{2}-\d{2}/)?.[0] ?? String(v)) : null);
 
 /** One regional fact as one grounding line: the enveloped branch states value, unit, origin, derivation, as-of and observation count; a legacy row states its text value, status and trend. */
-export function regionalFactLine(f: OperationsFact): string {
+function regionalFactLine(f: OperationsFact): string {
   const head = `[${f.regionCode}/${f.dimension}] ${f.factLabel}`;
   const bits: string[] = [];
   if (isEnvelopedFact(f)) {
@@ -29,14 +29,14 @@ export function regionalFactLine(f: OperationsFact): string {
 }
 
 /** One state cost fact as one line: it carries a statute citation and an effective date, not a number envelope. */
-export function stateCostLine(f: StateCostFact): string {
+function stateCostLine(f: StateCostFact): string {
   const bits = [`value: ${f.value}${f.unit ? ` ${f.unit}` : ""}`];
   if (f.trend) bits.push(`trend: ${f.trend}`);
   bits.push(`source: ${f.sourceName ?? f.statuteCitation ?? NO_SOURCE}`, `effective: ${dateOnly(f.effectiveDate) ?? "unknown"}`);
   return `- [${f.stateLabel ? `${f.stateCode} ${f.stateLabel}` : f.stateCode}] ${f.factLabel} — ${bits.join(" | ")}`;
 }
 
-export function buildOperationsAskContext(i: { regionCodes: readonly string[]; regionalFacts: readonly OperationsFact[]; stateCostFacts: readonly StateCostFact[] }): string {
+function buildOperationsAskContext(i: { regionCodes: readonly string[]; regionalFacts: readonly OperationsFact[]; stateCostFacts: readonly StateCostFact[] }): string {
   const withFacts = new Set(i.regionalFacts.map((f) => f.regionCode));
   const sourced = i.regionCodes.filter((c) => withFacts.has(c));
   const unsourced = i.regionCodes.filter((c) => !withFacts.has(c));

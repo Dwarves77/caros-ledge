@@ -3,7 +3,7 @@
 // which counts distinct matches so a specific pattern is never shadowed by a general one). The severity of a row is its stored column in the one vocabulary (@/features/market/lib/severity); nothing here guesses it.
 import { classifyTheme, THEME_VALUES, UNCLASSIFIED } from "../theme-rules";
 
-export const THEME_LABELS: Readonly<Record<string, string>> = {
+const THEME_LABELS: Readonly<Record<string, string>> = {
   emissions_accounting: "Emissions accounting",
   fuels_saf: "Fuels & SAF",
   packaging_circular: "Packaging & circular",

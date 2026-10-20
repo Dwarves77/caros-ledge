@@ -56,4 +56,4 @@ export function omitNote(sectionKey: "3" | "4", e: MatrixEligibility | null | un
   return `${what} needs sourced data in at least two regions for a dimension, including ${region}.`;
 }
 /** One dimension's own line for the profile's coverage card, e.g. "Labor markets: 3 regions sourced". */
-export const dimensionCoverageLine = (d: DimensionEligibility): string => `${dimensionByDb(d.dimension)?.name ?? d.dimension}: ${d.sourcedRegionCount === 0 ? "no region sourced" : `${d.sourcedRegionCount} region${d.sourcedRegionCount === 1 ? "" : "s"} sourced`}`;
+const dimensionCoverageLine = (d: DimensionEligibility): string => `${dimensionByDb(d.dimension)?.name ?? d.dimension}: ${d.sourcedRegionCount === 0 ? "no region sourced" : `${d.sourcedRegionCount} region${d.sourcedRegionCount === 1 ? "" : "s"} sourced`}`;

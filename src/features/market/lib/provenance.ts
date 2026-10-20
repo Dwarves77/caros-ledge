@@ -61,7 +61,7 @@ export function envelopeFromSeriesRow(row: Pick<SeriesDisplayRow, "derivation" |
   };
 }
 
-export function envelopeFromFactorRow(f: FactorRow, rating: SourceRating | null): FigureEnvelope {
+function envelopeFromFactorRow(f: FactorRow, rating: SourceRating | null): FigureEnvelope {
   return { derivation: f.derivation ?? null, originClass: f.origin_class ?? null, methodVersion: f.method_version ?? null, nObservations: f.n_observations ?? null, sourceKey: f.source_key ?? null, sourceName: rating?.name ?? null, sourceUrl: rating?.url ?? null, licence: rating?.licence ?? null, attribution: rating?.attribution ?? null, sourceTier: rating?.tier ?? null, asOf: f.as_at_date ?? null };
 }
 

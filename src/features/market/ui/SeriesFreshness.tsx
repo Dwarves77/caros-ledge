@@ -2,7 +2,7 @@
 // Freshness (spec 02 row 11): derived, never asserted. The badge is one series' state against its producer's cadence; the panel is the worst state on the board. Tones come from the tokens.
 import { FRESHNESS } from "@/core/contracts/vocabularies";
 
-import type { FreshnessCode, SeriesFreshness, summarizeBoardFreshness } from "../lib/freshness";
+import type { BoardFreshnessSummary, FreshnessCode, SeriesFreshness } from "../lib/freshness";
 
 import styles from "./market.module.css";
 
@@ -28,7 +28,7 @@ export function FreshnessBadge({ freshness, showAsOf = true }: { freshness: Seri
 }
 
 /** The panel summary: the worst state governs the headline, the count strip breaks it down. Nothing populated, nothing to summarise. */
-export function FreshnessPanel({ summary }: { summary: ReturnType<typeof summarizeBoardFreshness> }) {
+export function FreshnessPanel({ summary }: { summary: BoardFreshnessSummary }) {
   if (summary.total <= 0) return null;
   const counts = (["current", "ageing", "stale", "frozen"] as const).filter((k) => summary.counts[k] > 0).map((k) => `${summary.counts[k]} ${label(k).toLowerCase()}`);
   return (

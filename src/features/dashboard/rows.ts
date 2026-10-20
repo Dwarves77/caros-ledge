@@ -19,10 +19,10 @@ export const SURFACES = [
 /** The items the rail card's four counts add up to: the masthead's number is this, so it is the rail's number. */
 export const surfaceItemTotal = (surfaces: Readonly<Record<(typeof SURFACES)[number]["key"], number>>): number => SURFACES.reduce((n, s) => n + surfaces[s.key], 0);
 
-export const DUE_NEXT_CAP = 5;
-export const CHANGED_CAP = 6;
+const DUE_NEXT_CAP = 5;
+const CHANGED_CAP = 6;
 /** How many distinct changed items are read in full and ranked; the cards draw CHANGED_CAP of them. */
-export const CANDIDATE_WINDOW = 48;
+const CANDIDATE_WINDOW = 48;
 /** The Due-next card's aside names a week: a row 7 or more days out is past it, and the label then says how far the card reaches. */
 const STATED_WINDOW_DAYS = 7;
 const BUILD_MODE_WINDOW_DAYS = 90;

@@ -38,7 +38,7 @@ const SERIES_COLS = "id, series_key, label, value_numeric, unit, currency, deriv
 const WINDOW_DAYS = 400;
 
 /** Per series, the rows within the window counted back from ITS OWN latest period (never the clock); the latest row is always kept, so a quiet series is still on the board. */
-export function perSeriesWindow(rows: readonly SeriesRow[]): SeriesRow[] {
+function perSeriesWindow(rows: readonly SeriesRow[]): SeriesRow[] {
   const latest = new Map<string, string>();
   for (const r of rows) if (r.reference_period && r.reference_period > (latest.get(r.series_key) ?? "")) latest.set(r.series_key, r.reference_period);
   return rows.filter((r) => {
@@ -49,7 +49,7 @@ export function perSeriesWindow(rows: readonly SeriesRow[]): SeriesRow[] {
 }
 
 /** Every market_series row (a total order, a cap that throws, never a silent truncation), reduced to each series' window; each kept row carries how many observations its series has on record, so the board never prints the window's count as the series' (register surfaces:17). */
-export async function readSeriesRows(db: Db): Promise<SeriesRow[]> {
+async function readSeriesRows(db: Db): Promise<SeriesRow[]> {
   const rows = await fetchAllRows<SeriesRow>((from, to) => db.from("market_series").select(SERIES_COLS).order("id", { ascending: true }).range(from, to) as never, { cap: 100_000 });
   const onRecord = new Map<string, number>();
   for (const r of rows) onRecord.set(r.series_key, (onRecord.get(r.series_key) ?? 0) + 1);
@@ -78,7 +78,7 @@ interface RegistryTierRow {
  * The rating of each data source: customerTierOf the registry row of its host (override, then effective, then base), else the institution class table's tier for the host; licence and attribution only from the licence gate
  * (a source that does not permit redistribution carries none). A read error throws.
  */
-export async function readSourceRatings(db: Db, sourceKeys: Iterable<string | null | undefined>): Promise<Record<string, SourceRating>> {
+async function readSourceRatings(db: Db, sourceKeys: Iterable<string | null | undefined>): Promise<Record<string, SourceRating>> {
   const keys = [...new Set([...sourceKeys].filter((k): k is string => !!k))];
   if (!keys.length) return {};
   const [sources, licences] = await Promise.all([rowsByIds<DataSourceRow>(db, "data_sources", "source_key, name, url", keys, "source_key", "source_key"), rowsByIds<LicenceRow>(db, "licence_clear_sources", "source_key, licence, attribution", keys, "source_key", "source_key")]);
@@ -98,7 +98,7 @@ export async function readSourceRatings(db: Db, sourceKeys: Iterable<string | nu
 }
 
 /** The series ids whose change has a derivation recorded: the lineage of every 1-week change shown (INV-045). Needs the service client (the edges are not readable by a member); a read error throws. */
-export async function readDeltaEdges(db: Db, seriesIds: readonly string[]): Promise<Set<string>> {
+async function readDeltaEdges(db: Db, seriesIds: readonly string[]): Promise<Set<string>> {
   const edges = await fetchAllByIdChunks<{ from_pk: string }>(
     seriesIds,
     async (slice) => {
@@ -126,11 +126,11 @@ export async function readMarketSeries(db: Db, o: { edgeDb?: Db | null } = {}): 
   return { board, leadTime: rows.filter((r) => prefixOf(r.series_key) === "sbti"), ratings, lineage };
 }
 /** The rating of one board row's source (null when it names none or the source is not in the licence register). */
-export const ratingOf = (ratings: Record<string, SourceRating>, row: Pick<SeriesDisplayRow, "sourceKey">): SourceRating | null => (row.sourceKey ? (ratings[row.sourceKey] ?? null) : null);
+const ratingOf = (ratings: Record<string, SourceRating>, row: Pick<SeriesDisplayRow, "sourceKey">): SourceRating | null => (row.sourceKey ? (ratings[row.sourceKey] ?? null) : null);
 
 const FACTOR_COLS = "factor_id, mode, vehicle_class, jurisdiction, quantity_basis, ttw_co2e, wtt_co2e, wtw_co2e, source_key, tier, derivation, origin_class, method_version, n_observations, as_at_date, pedigree";
 /** The modal-default factors in force (superseded ones excluded). */
-export async function readModalFactors(db: Db): Promise<FactorRow[]> {
+async function readModalFactors(db: Db): Promise<FactorRow[]> {
   const r = await boundedRead<FactorRow>((n) => db.from("emission_factors").select(FACTOR_COLS).eq("tier", "modal_default").is("superseded_by", null).order("factor_id", { ascending: true }).limit(n) as never, { limit: 200 });
   if (r.error) throw new Error(`emission_factors read failed: ${r.error.message}`);
   return r.data;
@@ -180,7 +180,7 @@ export interface MarketPanels {
   indexation: Section<IndexationRow[]>;
 }
 /** The three spec 09 panels. Indexation is the viewer's organisation only (and none for a viewer with no organisation). */
-export async function readPanels(db: Db, orgId: string | null): Promise<MarketPanels> {
+async function readPanels(db: Db, orgId: string | null): Promise<MarketPanels> {
   const [oem, reroute, indexation] = await Promise.all([
     section("oem roadmaps", () => panel<OemRow>(db.from("oem_tech_roadmaps").select("roadmap_id, tech_category, commercial_stage, target_year, density_basis, confidence_admiralty, announced_at").order("announced_at", { ascending: false }).limit(PANEL_ROWS) as never, "oem_tech_roadmaps")),
     section("reroute events", () => panel<RerouteRow>(db.from("reroute_events").select("reroute_id, baseline_corridor_id, reroute_corridor_id, cause, fuel_burn_multiplier, effective_from, effective_to").order("effective_from", { ascending: false }).limit(PANEL_ROWS) as never, "reroute_events")),

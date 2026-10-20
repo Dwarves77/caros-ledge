@@ -17,7 +17,7 @@ import { workspaceDeps } from "./deps";
 // the whole request with nothing written, and an unverifiable roster fails closed. assigned_by is the session user (INV-166).
 const ASSIGNMENT_COLUMNS = "id, assignee_user_id, assigned_by, due_on, state, created_at";
 const LIST_LIMIT = 200;
-export const ASSIGNMENT_STATES = ["open", "done"] as const;
+const ASSIGNMENT_STATES = ["open", "done"] as const;
 type Row = { id: string; assignee_user_id: string; assigned_by: string | null; due_on: string | null; state: string; created_at: string };
 
 /** The assignee, the person who assigned it, or an owner or admin may change an assignment; always a writer. */
@@ -39,7 +39,7 @@ function view(row: Row, ctx: CollabCtx, names: Map<string, string>) {
 
 const viewer = (ctx: CollabCtx) => ({ role: ctx.role, can_write: canWrite(ctx.role) });
 
-export async function listAssignments(client: Db, ctx: CollabCtx): Promise<CollabResult> {
+async function listAssignments(client: Db, ctx: CollabCtx): Promise<CollabResult> {
   const [rows, roster] = await Promise.all([
     boundedRead<Row>((limit) => client.from("item_assignments").select(ASSIGNMENT_COLUMNS).eq("org_id", ctx.orgId).eq("item_id", ctx.item.id).order("created_at", { ascending: true }).limit(limit), { limit: LIST_LIMIT }),
     loadRoster(client, ctx.orgId),
@@ -56,7 +56,7 @@ export async function listAssignments(client: Db, ctx: CollabCtx): Promise<Colla
 }
 
 /** Validate the POST body: { assignees, dueOn } or { error }. */
-export function parseAssignInput(input: Record<string, unknown> | null): { assignees: string[]; dueOn: string | null } | { error: string } {
+function parseAssignInput(input: Record<string, unknown> | null): { assignees: string[]; dueOn: string | null } | { error: string } {
   const list = Array.isArray(input?.assignees) ? (input.assignees as unknown[]) : null;
   if (!list || list.length === 0) return { error: "Choose at least one person to assign." };
   if (list.length > MAX_ASSIGNEES_PER_REQUEST) return { error: `Assign at most ${MAX_ASSIGNEES_PER_REQUEST} people at a time.` };
@@ -74,7 +74,7 @@ export function parseAssignInput(input: Record<string, unknown> | null): { assig
   return { assignees, dueOn };
 }
 
-export async function assignMembers(client: Db, ctx: CollabCtx, input: Record<string, unknown> | null): Promise<CollabResult> {
+async function assignMembers(client: Db, ctx: CollabCtx, input: Record<string, unknown> | null): Promise<CollabResult> {
   if (!canWrite(ctx.role)) return collabFail(403, "Your role in this workspace can see assignments but not make them.");
   const parsed = parseAssignInput(input);
   if ("error" in parsed) return collabFail(400, parsed.error);
@@ -109,7 +109,7 @@ async function findAssignment(client: Db, ctx: CollabCtx, assignee: string): Pro
 
 const GONE = "That assignment no longer exists. Reload to see the current assignments.";
 
-export async function setAssignmentState(client: Db, ctx: CollabCtx, input: Record<string, unknown> | null): Promise<CollabResult> {
+async function setAssignmentState(client: Db, ctx: CollabCtx, input: Record<string, unknown> | null): Promise<CollabResult> {
   const assignee = typeof input?.assignee === "string" ? input.assignee : "";
   if (!isUuid(assignee)) return collabFail(400, "assignee is required.");
   const state = input?.state;
@@ -123,7 +123,7 @@ export async function setAssignmentState(client: Db, ctx: CollabCtx, input: Reco
   return collabOk(200, { assignment: view(data as Row, ctx, names) });
 }
 
-export async function removeAssignment(client: Db, ctx: CollabCtx, input: { assignee?: string | null }): Promise<CollabResult> {
+async function removeAssignment(client: Db, ctx: CollabCtx, input: { assignee?: string | null }): Promise<CollabResult> {
   const assignee = typeof input.assignee === "string" ? input.assignee : "";
   if (!isUuid(assignee)) return collabFail(400, "assignee is required.");
   const found = await findAssignment(client, ctx, assignee);

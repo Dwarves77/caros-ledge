@@ -15,7 +15,7 @@ export interface EdgeSnapshot {
   count: number;
   md5: string;
 }
-export function snapshotEdgeState(rows: readonly { source_item_id: string; target_item_id: string; origin: string | null; relationship: string }[]): EdgeSnapshot {
+function snapshotEdgeState(rows: readonly { source_item_id: string; target_item_id: string; origin: string | null; relationship: string }[]): EdgeSnapshot {
   const lines = rows.map((r) => `${r.source_item_id}|${r.target_item_id}|${r.origin}|${r.relationship}`).sort();
   return { count: lines.length, md5: createHash("md5").update(lines.join("\n")).digest("hex") };
 }

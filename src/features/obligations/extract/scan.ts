@@ -127,7 +127,7 @@ export function scanText(text: string, options: { referenceDates?: readonly stri
 
 // -- due-date slot claims --------------------------------------------------------------------------------------------------------------------------
 
-export const DUE_DATE_SLOT_PREFIX = "[due_date] ";
+const DUE_DATE_SLOT_PREFIX = "[due_date] ";
 const SLOT_PRECISION_RE = /\(date_precision:\s*(day|month|quarter|year)\)/;
 const PRECISION_RANK: Readonly<Record<string, number>> = { year: 1, month: 2, day: 3 };
 
