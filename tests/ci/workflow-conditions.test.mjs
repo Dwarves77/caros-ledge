@@ -9,12 +9,14 @@ import { parse } from 'yaml';
 
 const workflow = parse(readFileSync('.github/workflows/ci.yml', 'utf8'));
 const jobs = workflow.jobs;
-const VARIABLES = ['ev', 'only', 'sctx', 'sstate', 'production', 'ref', 'isFork', 'parityScope', 'windowsScope'];
+const VARIABLES = ['ev', 'only', 'sctx', 'sstate', 'production', 'ref', 'isFork', 'parityScope', 'windowsScope', 'edgeScope', 'migrateResult'];
 // The ref the run is on and whether the repository is a fork (a test sets them for one case and puts them back).
 const where = { ref: 'refs/heads/main', fork: false };
 // Evaluates a job's `if` for an event, the dispatch input `only`, a status event's context and state, whether the target job derived production, and the scope the `changes` job decided (the expressions use only ==, !=, &&, || and parentheses on those values).
-const runs = (job, event, only = '', status = {}, scope = { parity: 'true', windows: 'true' }, production = '') => {
+const runs = (job, event, only = '', status = {}, scope = { parity: 'true', windows: 'true', edge: 'false' }, production = '', migrateResult = 'success') => {
   const expr = String(jobs[job].if ?? 'true')
+    .replace(/^\$\{\{|\}\}$/g, '')
+    .replaceAll('!cancelled()', 'true')
     .replaceAll('github.event_name', 'ev')
     .replaceAll('github.event.inputs.only', 'only')
     .replaceAll('github.event.repository.fork', 'isFork')
@@ -24,11 +26,13 @@ const runs = (job, event, only = '', status = {}, scope = { parity: 'true', wind
     .replaceAll('needs.target.outputs.production', 'production')
     .replaceAll('needs.changes.outputs.parity', 'parityScope')
     .replaceAll('needs.changes.outputs.windows', 'windowsScope')
+    .replaceAll('needs.changes.outputs.edge', 'edgeScope')
+    .replaceAll('needs.migrate.result', 'migrateResult')
     .replaceAll('==', '===')
     .replaceAll('!=', '!==');
-  return Function(...VARIABLES, `return (${expr});`)(event, only, status.context ?? '', status.state ?? '', production, where.ref, where.fork, scope.parity, scope.windows);
+  return Function(...VARIABLES, `return (${expr});`)(event, only, status.context ?? '', status.state ?? '', production, where.ref, where.fork, scope.parity, scope.windows, scope.edge ?? 'false', migrateResult);
 };
-const on = (event, only, status, scope, production) => Object.keys(jobs).filter((j) => j !== 'report' && runs(j, event, only, status, scope, production)).sort();
+const on = (event, only, status, scope, production, migrateResult) => Object.keys(jobs).filter((j) => j !== 'report' && runs(j, event, only, status, scope, production, migrateResult)).sort();
 const VERCEL_OK = { context: 'Vercel', state: 'success' };
 
 test('a dispatch with only empty runs everything but baseline, live and screens; only=baseline runs baseline alone; only=turn runs turn alone; only=live runs the live checks and the deployed-preview parity alone', () => {
@@ -70,6 +74,33 @@ test('migrate runs on a push to main and on a dispatch with only=migrate, nowher
   for (const job of Object.keys(jobs).filter((j) => j !== 'migrate')) assert.ok(!secretsOf(job).has('SUPABASE_DB_URL'), `${job} must not hold the database secret`);
   assert.equal(jobs.migrate.permissions, undefined, 'migrate writes nothing to the repository: it takes the workflow default (read)');
   for (const job of Object.keys(jobs)) assert.notEqual(jobs[job].permissions?.contents, 'write', `${job} must not write the repository: main is protected and nothing in CI commits`);
+});
+
+test('edge-deploy runs on a push to main that changed the function (edge output true) after a successful migrate, and on a dispatch with only=edge-deploy; nowhere else; it needs migrate and holds only SUPABASE_ACCESS_TOKEN', () => {
+  const edge = { parity: 'true', windows: 'true', edge: 'true' };
+  assert.ok(on('push', '', {}, edge).includes('edge-deploy'));
+  assert.ok(!on('push').includes('edge-deploy'), 'a push that changed no function skips it');
+  assert.ok(!on('push', '', {}, edge, '', 'failure').includes('edge-deploy'), 'a failed migrate stops the deploy');
+  assert.ok(!on('push', '', {}, edge, '', 'skipped').includes('edge-deploy'));
+  assert.deepEqual(on('workflow_dispatch', 'edge-deploy'), ['edge-deploy']);
+  for (const [event, only] of [['pull_request', ''], ['workflow_dispatch', ''], ['workflow_dispatch', 'migrate'], ['workflow_dispatch', 'live'], ['status', '']]) assert.ok(!on(event, only, VERCEL_OK, edge).includes('edge-deploy'), `${event} only=${only}`);
+  try {
+    where.fork = true;
+    assert.ok(!on('push', '', {}, edge).includes('edge-deploy') && !on('workflow_dispatch', 'edge-deploy').includes('edge-deploy'), 'a fork never deploys');
+    where.fork = false;
+    where.ref = 'refs/heads/slice/x';
+    assert.ok(!on('push', '', {}, edge).includes('edge-deploy') && !on('workflow_dispatch', 'edge-deploy').includes('edge-deploy'), 'a branch other than main never deploys');
+  } finally {
+    where.ref = 'refs/heads/main';
+    where.fork = false;
+  }
+  assert.deepEqual(jobs['edge-deploy'].needs, ['changes', 'migrate']);
+  assert.deepEqual([...secretsOf('edge-deploy')], ['SUPABASE_ACCESS_TOKEN']);
+  for (const job of Object.keys(jobs).filter((j) => j !== 'edge-deploy')) assert.ok(!secretsOf(job).has('SUPABASE_ACCESS_TOKEN'), `${job} must not hold the deploy token`);
+  const run = jobs['edge-deploy'].steps.map((s) => String(s.run ?? '')).join('\n');
+  assert.match(run, /npx supabase@2 functions deploy capture-worker --project-ref "\$ref" --use-api/);
+  assert.match(run, /ref=kwrsbpiseruzbfwjpvsp/);
+  assert.match(run, /missing \(exit 1\): SUPABASE_ACCESS_TOKEN/);
 });
 
 test('the live jobs run on the successful Vercel commit status and on nothing else: not on a failed, pending or other-context status, not on a push, a pull request or a deployment event; a production status skips the preview parity', () => {
