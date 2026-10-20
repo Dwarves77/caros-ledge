@@ -3,7 +3,7 @@ import { test } from "node:test";
 
 import type { Resource } from "@/core/types";
 import { applyWorkspaceSeed, useWorkspaceStore } from "@/core/workspace/store";
-import { mergeWithOverrides, setItemStateTransport, useItemStateStore } from "@/features/workspace/state";
+import { mergeWithOverrides, useItemStateStore } from "@/features/workspace/state";
 import type { PersonalItemState, WorkspaceOverride } from "@/features/workspace/state";
 
 const resource = (id: string, over: Partial<Resource> = {}): Resource => ({ id, cat: "ocean", sub: "", title: id, url: "", note: "", type: "regulation", priority: "MODERATE", added: "2026-01-01", reasoning: "", tags: [], whatIsIt: "", whyMatters: "", keyData: [], ...over });
@@ -50,7 +50,7 @@ interface Sent {
 }
 function transport(reply: (sent: Sent) => Response | Promise<Response> | Error, signedIn = true) {
   const sent: Sent[] = [];
-  setItemStateTransport({
+  useItemStateStore.getState().setTransport({
     client: { auth: { getSession: async () => ({ data: { session: signedIn ? { access_token: "tok" } : null } }) } },
     fetchImpl: async (input, init) => {
       const record = { path: String(input), method: String(init?.method), body: JSON.parse(String(init?.body)) as Record<string, unknown> };

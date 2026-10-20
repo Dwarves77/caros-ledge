@@ -3,7 +3,8 @@ import { test } from "node:test";
 
 import { z } from "zod";
 
-import { dbError, HttpError, ok, route, statusForDb } from "@/core/http/errors";
+import { dbError, HttpError, ok, route } from "@/core/http/errors";
+import { statusForDb } from "@/core/http/failure";
 import { checkRateLimit, clientKey, rateLimitHeaders, WORKER_FLUSH_BUDGET } from "@/core/http/rate-limit";
 import { email, isUuid, parseJson, uuid } from "@/core/http/parse";
 import { authedFetch, authHeaders } from "@/core/http/authed-fetch";

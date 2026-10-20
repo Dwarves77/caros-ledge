@@ -3,11 +3,11 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
 import { locateCalendarDate, tryParseDateAt, tryParseDateOrBareYearAt } from "@/features/obligations/extract/date-grammar";
-import { dedupeEvents, sameObligationContent } from "@/features/obligations/extract/dedupe";
+import { dedupeEvents } from "@/features/obligations/extract/dedupe";
 import { EXTRACTOR_VERSION, extractForwardEvents } from "@/features/obligations/extract/extract-forward-events";
 import { RULES } from "@/features/obligations/extract/rules";
 import { needsDueDateContext, scanText } from "@/features/obligations/extract/scan";
-import { assertVerbatim, normalizeObligationText, selectDateCell, unwrapRecordFactsTemplate } from "@/features/obligations/extract/window";
+import { assertVerbatim, clauseAround, normalizeObligationText } from "@/features/obligations/extract/window";
 import type { ClaimIn } from "@/features/obligations/extract/scan";
 
 const read = (name: string) => JSON.parse(readFileSync(new URL(`./fixtures/${name}`, import.meta.url), "utf8"));
@@ -102,18 +102,16 @@ test("the reference-date refusal, with and without a commencement verb; the stat
   assert.equal(ev("Data is not available as of 5 May 2027, and operators shall file.").hits.length, 0);
 });
 
-test("the GAP wrapper is skipped; the FACT wrapper is unwrapped to the quoted passage containing the date (guillemets, nested, straight)", () => {
-  assert.deepEqual(unwrapRecordFactsTemplate("[due_date] No verbatim due date was located in the captured source. A full-brief regrounding will re-examine this gap when this item upgrades from record to brief.", 0, 1), { skip: "record_facts_gap_boilerplate_no_quoted_date" });
-  const t = "[due_date] The captured source states a due date (date_precision: day), verbatim: «By 30 April 2022, the operator shall publish»";
-  const start = t.indexOf("30 April 2022");
-  assert.deepEqual(unwrapRecordFactsTemplate(t, start, start + 13), { passage: "By 30 April 2022, the operator shall publish" });
-  const nested = "[due_date] The captured source states, verbatim: «outer «By 30 April 2022» tail»";
-  const ns = nested.indexOf("30 April 2022");
-  assert.deepEqual(unwrapRecordFactsTemplate(nested, ns, ns + 13), { passage: "By 30 April 2022" });
-  const straight = '[due_date] The captured source states, verbatim: "By 30 April 2022, shall publish"';
-  const ss = straight.indexOf("30 April 2022");
-  assert.deepEqual(unwrapRecordFactsTemplate(straight, ss, ss + 13), { passage: "By 30 April 2022, shall publish" });
-  assert.deepEqual(unwrapRecordFactsTemplate(t, 0, 2), { skip: "record_facts_template_date_not_in_quote" });
+test("the FACT wrapper is unwrapped to the quoted passage containing the date (guillemets, nested, straight); a date outside the quote is a named skip", () => {
+  const around = (text: string, date = "30 April 2022") => {
+    const s = text.indexOf(date);
+    return clauseAround(text, s, s + date.length, undefined, undefined, date);
+  };
+  const guillemets = "[due_date] The captured source states a due date (date_precision: day), verbatim: «By 30 April 2022, the operator shall publish»";
+  assert.deepEqual(around(guillemets), { text: "By 30 April 2022, the operator shall publish…" });
+  assert.deepEqual(around("[due_date] The captured source states, verbatim: «outer «By 30 April 2022» tail»"), { text: "By 30 April 2022…" });
+  assert.deepEqual(around('[due_date] The captured source states, verbatim: "By 30 April 2022, shall publish"'), { text: "By 30 April 2022, shall publish…" });
+  assert.deepEqual(clauseAround(guillemets, 0, 2, undefined, undefined, "[d"), { skip: "record_facts_template_date_not_in_quote" });
 });
 
 test("a due-date slot rescue has three outcomes, and a slot span with no calendar date is a named skip", () => {
@@ -143,15 +141,17 @@ test("dedupe keeps the claim-backed hit over the section-backed one and records 
   assert.equal(r.dropped[0]?.reason, "claim_backed_preferred_over_section_backed");
   const both = dedupeEvents([claim, { ...claim, source_claim_id: "c2" }]);
   assert.equal(both.dropped[0]?.reason, "duplicate_same_confidence_kept_first");
-  assert.equal(sameObligationContent("short a", "short b"), false);
+  const distinct = dedupeEvents([{ ...claim, obligation_text: "short a" }, { ...claim, source_claim_id: "c2", obligation_text: "short b" }]);
+  assert.deepEqual([distinct.events.length, distinct.dropped.length], [2, 0], "two different short obligations on one date are two events");
 });
 
-test("normalizeObligationText is idempotent; selectDateCell picks the explaining cell; assertVerbatim throws on a non-verbatim span", () => {
+test("normalizeObligationText is idempotent; a table row is read as its explaining cell; assertVerbatim throws on a non-verbatim span", () => {
   for (const raw of ["**Deadline:** FACT: By 1 May 2029, operators shall register https://x.example/a", "| 1 May 2029 | Operators shall register their ships with the registry | ref |", "lower case start without end"]) {
     const once = normalizeObligationText(raw, { dateSpan: "1 May 2029" });
     assert.equal(normalizeObligationText(once, { dateSpan: "1 May 2029" }), once, raw);
   }
-  assert.equal(selectDateCell("| 1 May 2029 | Operators shall register their ships | x |", "1 May 2029"), "Operators shall register their ships");
+  const row = "| 1 May 2029 | Operators shall register their ships | x |";
+  assert.deepEqual(clauseAround(row, row.indexOf("1 May 2029"), row.indexOf("1 May 2029") + 10, undefined, undefined, "1 May 2029"), { text: "Operators shall register their ships…" });
   assert.throws(() => assertVerbatim("abc", "abd"), /not a verbatim substring/);
   assert.throws(() => assertVerbatim("abc", ""), /empty/);
 });

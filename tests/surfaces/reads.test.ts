@@ -4,11 +4,11 @@ import assert from "node:assert/strict";
 import { readdirSync, readFileSync } from "node:fs";
 import { test } from "node:test";
 
-import { readOperationsPage, readDerivedFigures, readFacts, readMatrixEligibility, readRoster, type OperationsRegion } from "@/features/operations/read/operations-reads";
+import { readOperationsAskLines, readOperationsPage, readDerivedFigures, readMatrixEligibility, readRoster } from "@/features/operations/read/operations-reads";
 import { EMPTY_FILTER_STATE } from "@/ui/list-surface/filter-sort";
 import { liveFacetCounts } from "@/ui/list-surface/facets";
 import { relatedItems } from "@/features/research/read/related-items";
-import { readAssessmentBundle, readAssessmentsFor, readResearchPage } from "@/features/research/read/research-reads";
+import { readAssessmentBundle, readResearchPage } from "@/features/research/read/research-reads";
 
 import { memoryDb, type Row } from "../_support/memory-db.ts";
 
@@ -29,13 +29,12 @@ const R_EU = "e0000000-0000-4000-8000-000000000001";
 const R_US = "e0000000-0000-4000-8000-000000000002";
 const SRC = "b0000000-0000-4000-8000-000000000001";
 const regions: Row[] = [{ id: R_EU, code: "EU", label: "European Union", display_order: 1, iso_codes: ["DE", "FR"] }, { id: R_US, code: "US", label: "United States", display_order: 2, iso_codes: ["US-CA"] }];
-const roster: OperationsRegion[] = [{ id: R_EU, code: "EU", label: "European Union", displayOrder: 1, isoCodes: ["DE", "FR"] }, { id: R_US, code: "US", label: "United States", displayOrder: 2, isoCodes: ["US-CA"] }];
 const sources: Row = { id: SRC, name: "Eurostat", url: "https://ec.europa.eu/eurostat", base_tier: 1, tier_override: null, effective_tier: null };
 const factRow = (o: Row = {}): Row => ({ id: "f0000000-0000-4000-8000-000000000001", region_id: R_EU, dimension: "labor_markets", fact_label: "EU - Labour cost", value: "40.4 EUR/hour", value_numeric: "40.4", unit: "EUR/hour", currency: "EUR", derivation: "observed", origin_class: "official", source_key: "eurostat", source_ref: "lc", n_observations: null, method_version: "eurostat-lc-lci-lev-parser@1", as_at_date: "2025-01-01", reference_period: "2025", last_updated: "2025-01-01", source_id: SRC, status: null, trend: "up", source_note: null, ...o });
 
 test("INV-263: the facts carry the registered source's customer tier, a numeric envelope, and a freshness DERIVED from the row's date against the injected instant (1.8 years old against an annual cadence is ageing)", async () => {
-  const { db } = memoryDb({ regions, sources: [sources], regional_data_facts: [factRow(), factRow({ id: "f0000000-0000-4000-8000-000000000002", region_id: "ffffffff-ffff-4fff-8fff-ffffffffffff" }), factRow({ id: "f0000000-0000-4000-8000-000000000003", last_updated: "2026-09-01", as_at_date: "2026-09-01", trend: "sideways", source_id: null })] });
-  const facts = await readFacts(db, roster, NOW);
+  const db = world({ regions, sources: [sources], region_dimension_coverage: [], state_cost_facts: [], intelligence_items: [], derived_values: [], regional_data_facts: [factRow(), factRow({ id: "f0000000-0000-4000-8000-000000000002", region_id: "ffffffff-ffff-4fff-8fff-ffffffffffff" }), factRow({ id: "f0000000-0000-4000-8000-000000000003", last_updated: "2026-09-01", as_at_date: "2026-09-01", trend: "sideways", source_id: null })] }, (name) => (name === "get_operations_items" ? { data: [] } : name === "get_surface_counts" ? { data: { total_items: 0 } } : undefined));
+  const facts = (await readOperationsPage(db, NOW, "org-1")).facts ?? [];
   assert.equal(facts.length, 2, "a fact whose region is not on the roster is dropped, not given a placeholder code");
   const f = facts.find((x) => x.sourceName === "Eurostat");
   assert.deepEqual([f?.regionCode, f?.valueNumeric, f?.sourceTier, f?.freshness, f?.trend], ["EU", 40.4, 1, "ageing", "up"]);
@@ -108,11 +107,14 @@ test("a figure with an input that cannot be rated is an absence, never a tier: t
 
 const ROW = (itemId: string, o: Row = {}): Row => ({ id: `a1${itemId.slice(2)}`, item_id: itemId, supersedes: null, is_current: true, lifecycle_state: null, technical_maturity_low: 8, technical_maturity_high: 9, technical_maturity_method: "m", commercial_maturity_low: null, commercial_maturity_high: null, commercial_maturity_method: null, horizon_kind: "availability", horizon_band: "NEAR", horizon_rule: "R4", horizon_confidence: "low", horizon_trigger_note: "inferred", refusal_reason: null, credibility_evidence_score: "limited", credibility_authority_score: null, status_token: "HYPOTHESIS", computed_at: NOW, ...o });
 test("the batch of assessments is keyed by the LIST id: a legacy id is looked up to its uuid (the old page passed legacy ids to a uuid column and swallowed the error)", async () => {
-  const { db } = memoryDb({ intelligence_items: [{ id: U1, legacy_id: "r1" }, { id: U2, legacy_id: null }], research_assessments_current: [ROW(U1), ROW(U2)] });
-  const out = await readAssessmentsFor(db, ["r1", U2, "r-missing"]);
+  const listRow = (id: string) => ({ id, legacy_id: null, title: "T", item_type: "research_finding", domain: 7, priority: "LOW", added_date: "2026-10-01", is_archived: false, effective_archived: false });
+  const rpc = (name: string) => (name === "get_research_items" ? { data: ["r1", U2, "r-missing"].map(listRow) } : name === "get_surface_counts" ? { data: { total_items: 3 } } : name === "get_research_source_coverage" ? { data: [] } : undefined);
+  const tables = (assessments: Row[]) => ({ intelligence_items: [{ id: U1, legacy_id: "r1" }, { id: U2, legacy_id: null }], research_assessments_current: assessments, sources: [], source_bias_tags: [] });
+  const out = (await readResearchPage(world(tables([ROW(U1), ROW(U2)]), rpc), "org-1")).assessments ?? {};
   assert.deepEqual(Object.keys(out).sort(), [U2, "r1"].sort());
   assert.equal(out.r1?.horizon?.band, "NEAR");
-  await assert.rejects(readAssessmentsFor(memoryDb({ intelligence_items: [{ id: U1, legacy_id: "r1" }], research_assessments_current: [] }, { failures: [{ table: "research_assessments_current", op: "select", message: "boom" }] }).db, ["r1"]), /boom/);
+  const failed = world(tables([]), rpc, [{ table: "research_assessments_current", op: "select", message: "boom" }]);
+  assert.equal((await readResearchPage(failed, "org-1")).assessments, null, "a failed batch is its own failure, never an empty set");
 });
 
 test("INV-263: the Research page reports a failed list, failed coverage and failed assessments separately; the assessments are not read when the list failed", async () => {
@@ -200,4 +202,15 @@ test("no page reader asks get_surface_counts with a null org (the database refus
   const walk = (d: string): string[] => readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(`${d}/${e.name}`) : /\.(ts|tsx)$/.test(e.name) ? [`${d}/${e.name}`] : []));
   const bad = walk("src").filter((f) => /readSurfaceCounts\([^)]*,\s*null\s*,/.test(readFileSync(f, "utf8")));
   assert.deepEqual(bad, []);
+});
+
+test("the Assistant's Operations lines: the regional facts of the regions the hits' jurisdictions fall in and the state costs, one plain line each with its source; no region named is no lines", async () => {
+  const tables = { regions, sources: [sources], regional_data_facts: [factRow(), factRow({ id: "f0000000-0000-4000-8000-000000000002", region_id: R_US, fact_label: "US - Labour cost" })], state_cost_facts: [] };
+  const lines = await readOperationsAskLines(memoryDb(tables).db, { jurisdictions: ["DE"] });
+  assert.equal(lines.length, 1, "DE falls in the EU only");
+  assert.ok(lines[0]?.startsWith("- [EU/labor_markets] EU - Labour cost"));
+  assert.ok(lines[0]?.includes("source: Eurostat"));
+  assert.deepEqual(await readOperationsAskLines(memoryDb(tables).db, { jurisdictions: ["Atlantis"] }), []);
+  assert.deepEqual(await readOperationsAskLines(memoryDb(tables).db, { jurisdictions: [] }), []);
+  await assert.rejects(readOperationsAskLines(memoryDb(tables, { failures: [{ table: "regions", op: "select", message: "boom" }] }).db, { jurisdictions: ["DE"] }), /boom/);
 });

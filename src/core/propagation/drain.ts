@@ -9,7 +9,7 @@ import type { Db } from "@/core/db";
 import { exactCount } from "@/core/db";
 import type { RunResult } from "@/core/sources/run-result";
 
-import { MethodRegistry, METHODS, type ResolvedMethodInput } from "./methods";
+import { METHODS, type MethodRegistry, type ResolvedMethodInput } from "./methods";
 import { registerDerivedValue, registerInferenceRecord, type StatusToken } from "./register";
 import type { InputRef } from "./types";
 

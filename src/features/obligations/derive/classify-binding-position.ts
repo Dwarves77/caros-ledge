@@ -26,8 +26,6 @@ const RULES: readonly Rule[] = file.rules.map((r) => ({
   position: r.position, citation: r.citation, label: r.label, test: new RegExp(r.test.source, r.test.flags),
   generic: r.generic ? { phrase: new RegExp(r.generic.phrase.source, r.generic.phrase.flags), acceptedFor: (item) => (r.generic?.acceptedForJurisdiction === "any" ? true : r.generic?.acceptedForJurisdiction === "EU" ? (item.jurisdictionIso ?? []).includes("EU") : false) } : null,
 }));
-/** The rule table as data (labels and citations), for a surface that explains a classification. */
-const BINDING_POSITION_RULES: readonly { position: string; citation: string; label: string }[] = RULES.map(({ position, citation, label }) => ({ position, citation, label }));
 
 export interface Classified {
   position: string;

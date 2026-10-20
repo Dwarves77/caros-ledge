@@ -3,8 +3,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { assessHorizon, assessItem, assessTechnicalMaturity, type AssessInput } from "@/features/research/model/assess";
-import { corridorLabel, horizonMetaLabel, selectAssessmentView, selectAssessmentViewsByItemId, selectHistoryEntry, selectSignpostView, summarizePredicate, type AssessmentRow } from "@/features/research/model/assessment-view";
+import { assessItem, type AssessInput } from "@/features/research/model/assess";
+import { horizonMetaLabel, selectAssessmentView, selectAssessmentViewsByItemId, selectHistoryEntry, selectSignpostView, type AssessmentRow } from "@/features/research/model/assessment-view";
 import { themeOf, THEME_KEYS } from "@/features/research/model/taxonomy";
 
 const NOW = new Date("2026-10-01T00:00:00Z");
@@ -13,12 +13,13 @@ const ev = (id: string, date: string | null, text: string, cite: string | null =
 
 test("R1 anchors on the dated event whose OWN text names the statutory instrument, not on the first dated event (INV-227)", () => {
   const events = [ev("e-other", "2026-12-01", "Operators submit a report"), ev("e-law", "2028-03-01", "FuelEU phase-in begins")];
-  const h = assessHorizon(input({ text: "FuelEU applies to ships", forwardEvents: events }), null, NOW);
+  const horizonOf = (i: AssessInput) => assessItem(i, { now: NOW }).horizon;
+  const h = horizonOf(input({ text: "FuelEU applies to ships", forwardEvents: events }));
   assert.deepEqual([h?.rule, h?.anchor?.eventId, h?.kind, h?.confidence], ["R1", "e-law", "obligation", "high"], "the unrelated earlier event is not the anchor");
   // The item text naming a law is not enough: no event names it, so R1 does not fire.
-  assert.notEqual(assessHorizon(input({ text: "FuelEU applies to ships", forwardEvents: [ev("e1", "2027-01-01", "Operators submit a report")] }), { low: 8 }, NOW)?.rule, "R1");
+  assert.notEqual(horizonOf(input({ text: "FuelEU applies to ships. A demonstration pilot project.", forwardEvents: [ev("e1", "2027-01-01", "Operators submit a report")] }))?.rule, "R1");
   // An undated or unparseable statutory event cannot anchor.
-  assert.notEqual(assessHorizon(input({ forwardEvents: [ev("e2", null, "FuelEU phase-in"), ev("e3", "not-a-date", "FuelEU phase-in")] }), { low: 8 }, NOW)?.rule, "R1");
+  assert.notEqual(horizonOf(input({ text: "A demonstration pilot project.", forwardEvents: [ev("e2", null, "FuelEU phase-in"), ev("e3", "not-a-date", "FuelEU phase-in")] }))?.rule, "R1");
 });
 
 test("R3, R4 and the refusal: a roadmap date is medium, a maturity prior is low and a hypothesis, nothing to band on is a stated refusal (INV-227)", () => {
@@ -32,22 +33,23 @@ test("R3, R4 and the refusal: a roadmap date is medium, a maturity prior is low 
 });
 
 test("a demonstration plant reads TRL 6-7 (the old ladder shadowed it with the 8-9 row); a demonstration alone still reads 8-9 (INV-228)", () => {
-  const plant = assessTechnicalMaturity(input({ text: "Built as a demonstration plant for green hydrogen." }));
+  const maturityOf = (text: string) => assessItem(input({ text }), { now: NOW }).technicalMaturity;
+  const plant = maturityOf("Built as a demonstration plant for green hydrogen.");
   assert.deepEqual([plant?.low, plant?.high], [6, 7]);
-  const demo = assessTechnicalMaturity(input({ text: "Demonstrated at a pilot project." }));
+  const demo = maturityOf("Demonstrated at a pilot project.");
   assert.deepEqual([demo?.low, demo?.high], [8, 9]);
-  assert.equal(assessTechnicalMaturity(input({ text: "nothing about maturity" })), null, "no ladder phrase is no corridor, never a midpoint");
+  assert.equal(maturityOf("nothing about maturity"), null, "no ladder phrase is no corridor, never a midpoint");
 });
 
 test("a corridor label is a point for a point and a span for a span; the horizon label is null for a refusal", () => {
-  assert.equal(corridorLabel("TRL", 8, 8), "TRL 8");
-  assert.equal(corridorLabel("CRI", 3, 4), "CRI 3-4");
   const row: AssessmentRow = {
     id: "a1", item_id: "i1", supersedes: null, is_current: true, lifecycle_state: null, technical_maturity_low: 8, technical_maturity_high: 8, technical_maturity_method: "m",
     commercial_maturity_low: null, commercial_maturity_high: null, commercial_maturity_method: null, horizon_kind: "obligation", horizon_band: "NEAR", horizon_rule: "R1", horizon_confidence: "high",
     horizon_trigger_note: "binds", refusal_reason: null, credibility_evidence_score: "robust", credibility_authority_score: { highAuthorityIndependent: 1, medium: 0, vendorFlagged: 0 }, status_token: "CONFIRMED", computed_at: "2026-10-01T00:00:00Z",
   };
   const v = selectAssessmentView(row);
+  const span = selectAssessmentView({ ...row, technical_maturity_low: 8, technical_maturity_high: 9, commercial_maturity_low: 3, commercial_maturity_high: 4, commercial_maturity_method: "m" });
+  assert.deepEqual([span?.technical?.label, span?.commercial?.label], ["TRL 8-9", "CRI 3-4"], "a point for a point, a span for a span");
   assert.deepEqual([v?.technical?.label, v?.commercial, v?.anchored, horizonMetaLabel(v)], ["TRL 8", null, true, "near, 2 to 5 years"]);
   const refused = selectAssessmentView({ ...row, horizon_band: null, horizon_rule: null, horizon_kind: null, refusal_reason: "not forecastable: x" });
   assert.deepEqual([refused?.horizon, refused?.anchored, horizonMetaLabel(refused)], [null, false, null]);
@@ -62,8 +64,8 @@ test("a signpost names the watched entity or none (never its raw id); the predic
   assert.deepEqual([named.watchesLabel, named.summary], ["FuelEU Maritime", "expects a recorded change on what it watches by 2027-01-01"]);
   assert.equal(selectSignpostView(row, () => null).watchesLabel, null);
   assert.doesNotMatch(named.summary, /occurred_at|movement_by_date/);
-  assert.equal(summarizePredicate({ op: "teleport" }), "condition not recognised");
-  assert.equal(summarizePredicate(null), "no condition recorded");
+  assert.equal(selectSignpostView({ ...row, predicate: { op: "teleport" } as never }, () => null).summary, "condition not recognised");
+  assert.equal(selectSignpostView({ ...row, predicate: null as never }, () => null).summary, "no condition recorded");
 });
 
 test("the theme of an item: the stored column first; the specific last-mile phrase is reachable (the old general emission rule shadowed it); no match is null, never a default", () => {

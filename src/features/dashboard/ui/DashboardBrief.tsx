@@ -39,7 +39,8 @@ export interface DashboardBriefProps {
   counts: Counts | null;
   /** null when the watchlist read failed. */
   watchlist: WatchlistItem[] | null;
-  themes: ThemeChip[];
+  /** The cross-page theme chips; null when the read failed (the strip says so with Retry, never an empty strip). */
+  themes: ThemeChip[] | null;
   /** null when the source coverage read failed; absent when the caller reads none (a fixture), and then no coverage card is drawn. */
   coverage?: SourceCoverage | null;
 }
@@ -94,7 +95,12 @@ export function DashboardBrief(p: DashboardBriefProps) {
                   ))}
                 </div>
               )}
-              {p.themes.length > 0 && (
+              {p.themes === null && (
+                <StateNote tone="error" action={{ label: "Retry", onClick: retry }}>
+                  {refusalSentence("themes_unavailable")}
+                </StateNote>
+              )}
+              {p.themes !== null && p.themes.length > 0 && (
                 <div className={styles.themes}>
                   <p className={styles.eyebrow}>Connected across pages</p>
                   {p.themes.map((t) => (

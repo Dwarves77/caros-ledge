@@ -20,12 +20,11 @@ export interface Dimension {
   num: number;
 }
 export const DIMENSIONS: readonly Dimension[] = OPERATIONS_DIMENSIONS.map((d, i) => ({ ...d, num: i + 1 }));
-const ALL_OPERATIONS_DIMENSIONS: readonly OperationsDimension[] = DIMENSIONS.map((d) => d.db);
+
 /** The dimension whose cell opens the fully-loaded labour chain. */
 export const LABOUR_DIMENSION: OperationsDimension = "labor_markets";
 
 export const dimensionLabel = (d: Pick<Dimension, "name" | "num">): string => `D${d.num} ${d.name}`;
-export const dimensionByDb = (db: string): Dimension | undefined => DIMENSIONS.find((d) => d.db === db);
 
 const NUMBER_WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"];
 /** The masthead states how many dimensions a region has, from the list itself: it moves with the list. */

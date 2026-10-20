@@ -80,12 +80,6 @@ function parseRerouteRow(row: Rec, i: number, corridors: readonly Entity[]): Par
   return { refused: false, citation, dbRow: { baseline_corridor_id: baseline, reroute_corridor_id: reroute, cause: String(row.cause), distance_delta_nm: row.distance_delta_nm ?? null, transit_delta_days: row.transit_delta_days ?? null, fuel_burn_multiplier: Number(row.fuel_burn_multiplier), effective_from: row.effective_from, effective_to: row.effective_to ?? null } };
 }
 
-/** A reroute needs a DISTINCT baseline and reroute corridor pair; a count of corridors alone is never "ready" (the pairing must be sourced and dated). */
-function evaluateCorridorReadiness(corridors: readonly unknown[] | null | undefined): { ready: false; count: number; gap: string } {
-  const n = Array.isArray(corridors) ? corridors.length : 0;
-  return { ready: false, count: n, gap: n < 2 ? `only ${n} corridor entit${n === 1 ? "y" : "ies"} in the spine: a reroute event needs a DISTINCT baseline + reroute pair (2 minimum); minting a corridor is out of this lane's write set.` : `${n} corridor entities exist but no producer-confirmed reroute pairing (cause + fuel_burn_multiplier, sourced and dated) is built this run.` };
-}
-
 interface RowsFileDef {
   name: string;
   table: string;

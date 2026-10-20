@@ -12,11 +12,8 @@ import type { PersonalItemState, WorkspaceOverride } from "./types";
 
 export type { PersonalItemState, WorkspaceOverride } from "./types";
 
+/** What the store sends its writes through (the session source and fetch); the default is the browser session and global fetch. `setTransport` on the store replaces it. */
 let transport: AuthedFetchDeps = {};
-/** The seam the store sends its writes through (the session source and fetch); the default is the browser session and global fetch. */
-function setItemStateTransport(deps: AuthedFetchDeps): void {
-  transport = deps;
-}
 
 const OVERRIDES_PATH = "/api/workspace/overrides";
 const PERSONAL_PATH = "/api/workspace/personal-state";
@@ -56,6 +53,7 @@ interface ItemStateStore {
   setOverrides: (overrides: WorkspaceOverride[]) => void;
   setPersonalState: (rows: PersonalItemState[]) => void;
   setExpanded: (id: string | null) => void;
+  setTransport: (deps: AuthedFetchDeps) => void;
 
   /**
    * Every action below applies its change locally, writes it, and rolls the entry back when the write fails; each resolves to the server's
@@ -114,6 +112,9 @@ export const useItemStateStore = create<ItemStateStore>((set, get) => {
     setOverrides: (rows) => set({ overrides: toMap(rows) }),
     setPersonalState: (rows) => set({ personalState: toMap(rows) }),
     setExpanded: (expandedId) => set({ expandedId }),
+    setTransport: (deps) => {
+      transport = deps;
+    },
 
     // Setting a priority on a dismissed item clears the dismissal in the same write.
     updatePriority: (id, priority) => write(id, { priorityOverride: priority, dismissedAt: null }, { priorityOverride: priority, dismissedAt: null }),

@@ -6,24 +6,22 @@ import { test } from "node:test";
 import { createMethodRegistry, registerMarketMethods } from "@/core/propagation";
 import { runProducer, type ProducerSpec } from "@/core/producers/runner";
 import { applyFuelBurnMultiplier, compoundingChain } from "@/features/market/calc/reroute";
-import { computeIndexedValue } from "@/features/market/calc/indexation";
-import { computePayloadPenalty, tcoCrossoverBand } from "@/features/market/calc/oem-payload";
-import { buildEtsProxyBand, carrierEtsSurcharge } from "@/features/market/producers/carrier-ets-surcharge";
-import { ecbFx, formatSourceEvidence, parseEcbFxXml } from "@/features/market/producers/ecb-fx";
+import { tcoCrossoverBand } from "@/features/market/calc/oem-payload";
+import { carrierEtsSurcharge } from "@/features/market/producers/carrier-ets-surcharge";
+import { ecbFx } from "@/features/market/producers/ecb-fx";
 import { aggregateHdvCsv, classifyGroup, eeaHdvRoadmaps, mapGroupsToRows, stageFor, validateClassification } from "@/features/market/producers/eea-hdv-roadmaps";
-import { eiaPetroleumSpot, parseEiaV2PetroleumSpot } from "@/features/market/producers/eia-petroleum-spot";
-import { euOilBulletin, extractEuSeries, findPricesHistoryLink, parseEuWeeklyOilBulletinCsv, resolveHeaderBlocks } from "@/features/market/producers/eu-oil-bulletin";
-import { assertEdgesAuthored, type MarketSeriesDeps, type SeriesRowLite } from "@/features/market/producers/market-series-delta";
-import { loadSeriesItemMap } from "@/features/market/producers/market-series-items";
-import { deriveDisplayRows, publishedPriceStatistics, ratifySeriesItemMap } from "@/features/market/producers/published-price-statistics";
-import { gridQueueRows, oemRoadmapRows, parseGridQueueRow, parseRerouteRow, rerouteRows } from "@/features/market/producers/rows-file-producers";
-import { aggregateSbtiTargetRows, excelSerialToIsoDate, sbtiTargets } from "@/features/market/producers/sbti-targets";
+import { eiaPetroleumSpot } from "@/features/market/producers/eia-petroleum-spot";
+import { euOilBulletin } from "@/features/market/producers/eu-oil-bulletin";
+import { type MarketSeriesDeps, type SeriesRowLite } from "@/features/market/producers/market-series-delta";
+import { publishedPriceStatistics, ratifySeriesItemMap } from "@/features/market/producers/published-price-statistics";
+import { gridQueueRows, oemRoadmapRows, rerouteRows } from "@/features/market/producers/rows-file-producers";
+import { sbtiTargets } from "@/features/market/producers/sbti-targets";
 import { readSheet } from "@/core/producers/xlsx";
 
 import { memoryDb } from "../_support/memory-db.ts";
 import { SEEDED_SERIES } from "../market/series-rows.ts";
 
-import { makeDeps, NOW, xlsx } from "./support.ts";
+import { makeDeps, NOW, parseDoc, xlsx } from "./support.ts";
 
 const ON = (spec: ProducerSpec): ProducerSpec => ({ ...spec, enabled: true });
 const day = (iso: string): number => Math.round(Date.parse(`${iso}T00:00:00Z`) / 86_400_000) + 25569;
@@ -31,17 +29,18 @@ const day = (iso: string): number => Math.round(Date.parse(`${iso}T00:00:00Z`) /
 // ---- ECB ----
 const ECB = `<?xml version='1.0' encoding='UTF-8'?><gesmes:Envelope xmlns:gesmes='http://www.gesmes.org/xml/2002-08-01' xmlns='http://www.ecb.int/vocabulary/2002-08-01/eurofxref'><gesmes:subject>Reference rates</gesmes:subject><gesmes:Sender><gesmes:name>European Central Bank</gesmes:name></gesmes:Sender><Cube><Cube time='2026-10-14'><Cube currency='USD' rate='1.0900'/><Cube rate='0.8700' currency='GBP'/><Cube currency='USD' rate='9.9'/><Cube currency='CHF' rate='0.95'/><Cube currency="JPY" rate="-3"/></Cube></Cube></gesmes:Envelope>`;
 
-test("ECB golden (run 22's regression): a single-quoted document with attributes in either order parses; duplicates, an unknown currency and a bad rate are each skipped by name", () => {
-  const { rows, warnings } = parseEcbFxXml(ECB);
+test("ECB golden (run 22's regression): a single-quoted document with attributes in either order parses; duplicates, an unknown currency and a bad rate are each skipped by name", async () => {
+  const parseEcbFxXml = (text: string, meta?: object) => parseDoc(ecbFx, { text, ...(meta ? { meta } : {}) });
+  const { rows, warnings } = await parseEcbFxXml(ECB);
   assert.deepEqual(rows.map((r) => [r.series_key, r.value_numeric, r.unit, r.reference_period]), [["ecb-fx:eur-usd", 1.09, "USD/EUR", "2026-10-14"], ["ecb-fx:eur-gbp", 0.87, "GBP/EUR", "2026-10-14"]]);
   assert.equal(warnings.length, 3);
   assert.match(warnings.join("|"), /duplicate <Cube currency="USD">/);
   assert.match(warnings.join("|"), /"CHF" is not in this lane's closed vocabulary/);
   assert.match(warnings.join("|"), /bad rate "-3"/);
-  assert.match(parseEcbFxXml("<x/>").warnings[0] as string, /no <Cube time/);
-  assert.match(parseEcbFxXml(ECB.replace("<Cube time='2026-10-14'>", "<Cube time='2026-10-14'><Cube time='2026-10-13'>")).warnings[0] as string, /expected exactly one/);
-  assert.match(parseEcbFxXml(ECB.replace("European Central Bank", "Someone Else")).warnings[0] as string, /sender/);
-  assert.match(formatSourceEvidence("abc", { status: 200, contentType: "text/xml" }), /HTTP 200.*3 byte/);
+  assert.match((await parseEcbFxXml("<x/>")).warnings[0] as string, /no <Cube time/);
+  assert.match((await parseEcbFxXml(ECB.replace("<Cube time='2026-10-14'>", "<Cube time='2026-10-14'><Cube time='2026-10-13'>"))).warnings[0] as string, /expected exactly one/);
+  assert.match((await parseEcbFxXml(ECB.replace("European Central Bank", "Someone Else"))).warnings[0] as string, /sender/);
+  assert.match((await parseEcbFxXml("abc", { status: 200, contentType: "text/xml" })).warnings.join("|"), /evidence: HTTP 200.*3 byte/);
 });
 
 const mkMarket = () => {
@@ -83,8 +82,6 @@ test("INV-045/243: an apply writes only inside its own namespace, plans create o
 });
 
 test("INV-045: rows landed but no edge authored fails the run CLOSED; an unwired downstream fails closed too", async () => {
-  assert.throws(() => assertEdgesAuthored({ rowsChanged: 3, edgesAuthored: 0 }), /authored 0 derivation_edges/);
-  assert.doesNotThrow(() => assertEdgesAuthored({ rowsChanged: 0, edgesAuthored: 0 }));
   const noHistory = mkMarket();
   noHistory.tables.market_series = [];
   const d = makeDeps({ db: noHistory, env: { MARKET_PRODUCER_ECB_FX_ENABLED: "1" } });
@@ -110,14 +107,15 @@ test("INV-113: a registry entry's entity is stamped on created rows only; an amb
 test("EIA golden: an unknown product, a duplicate (series, period), a missing unit and a bad period are each skipped by name; the key is read by env name and never logged", async () => {
   const row = (o: object) => ({ period: "2026-10-12", product: "EPCWTI", series: "RWTC", "area-name": "NA", units: "$/BBL", value: "71.4", ...o });
   const doc = { response: { total: 9, data: [row({}), row({}), row({ product: "EPXXX" }), row({ units: null, series: "R2" }), row({ period: "bad", series: "R3" }), row({ value: "n/a", series: "R4" })] } };
-  const { rows, warnings, total } = parseEiaV2PetroleumSpot(doc);
+  const parseEia = (json: unknown) => parseDoc(eiaPetroleumSpot, { text: JSON.stringify(json) });
+  const { rows, warnings, truncated } = await parseEia(doc);
   assert.deepEqual(rows.map((r) => [r.series_key, r.value_numeric, r.currency]), [["eia-v2:wti-crude-rwtc", 71.4, "USD"]]);
-  assert.equal(warnings.length, 5);
+  assert.equal(warnings.length, 6, "five skipped rows and the partial-read warning");
   assert.match(warnings.join("|"), /unrecognised product "EPXXX"/);
   assert.match(warnings.join("|"), /duplicate \(series_key, period\)/);
   assert.match(warnings.join("|"), /missing "units"/);
-  assert.equal(total, 9);
-  assert.match(parseEiaV2PetroleumSpot({ error: "bad key" }).warnings[0] as string, /EIA API error/);
+  assert.equal(truncated, true, "the response reports 9 rows and carries 6: a partial read");
+  assert.match((await parseEia({ error: "bad key" })).warnings[0] as string, /EIA API error/);
   const noKey = await runProducer(makeDeps({ noDb: true }).deps, { spec: eiaPetroleumSpot });
   assert.equal(noKey.outcome, "failed");
   assert.match(noKey.notes[0] as string, /no EIA_API_KEY/);
@@ -141,17 +139,16 @@ const bulletin = (over: { display?: string } = {}) =>
     ["footer text", null, null, null],
   ]);
 
-test("the oil bulletin sheet golden: header resolution by machine id AND display text, the newest week by default, --since weeks, a missing price omitted not zero-filled", () => {
-  const { rows, shared } = readSheet(bulletin(), "Prices wo taxes");
-  const header = resolveHeaderBlocks(new Map(rows.map((r) => [r.rowNum, r])), shared);
-  assert.equal(header.dateCol, "A");
-  assert.deepEqual(header.columns.map((c) => c.slug), ["eurosuper-95", "automotive-diesel", null]);
-  assert.match(header.warnings.join("|"), /unrecognised suffix "mystery"/);
-  const weeks = extractEuSeries(rows, shared, header);
-  assert.deepEqual(weeks.map((w) => w.week_ending), ["2026-10-12", "2026-10-05"]);
-  assert.deepEqual(weeks[0]?.prices, { "eurosuper-95": 1500.5, "automotive-diesel": 1400 });
-  assert.match(weeks[1]?.warnings.join("|") ?? "", /no usable price/);
-  assert.equal(weeks[1]?.prices["automotive-diesel"], undefined);
+test("the oil bulletin sheet golden: header resolution by machine id AND display text, the newest week by default, --since weeks, a missing price omitted not zero-filled", async () => {
+  const all = await parseDoc(euOilBulletin, { bytes: bulletin() }, { input: { since: "2000-01-01" } });
+  assert.match(all.warnings.join("|"), /unrecognised suffix "mystery"/);
+  assert.deepEqual([...new Set(all.rows.map((r) => r.reference_period))].sort().reverse(), ["2026-10-12", "2026-10-05"]);
+  const price = (week: string, slug: string) => all.rows.find((r) => r.reference_period === week && r.series_key === `eu-oil-bulletin:${slug}`)?.value_numeric;
+  assert.deepEqual([price("2026-10-12", "eurosuper-95"), price("2026-10-12", "automotive-diesel")], [1500.5, 1400]);
+  assert.match(all.warnings.join("|"), /no usable price/);
+  assert.equal(price("2026-10-05", "automotive-diesel"), undefined);
+  const newest = await parseDoc(euOilBulletin, { bytes: bulletin() });
+  assert.deepEqual([...new Set(newest.rows.map((r) => r.reference_period))], ["2026-10-12"], "the newest week by default");
 });
 
 test("the oil bulletin: two independent header keys that disagree refuse the run rather than guess a column; the page link finder; the normalised CSV path", async () => {
@@ -164,8 +161,11 @@ test("the oil bulletin: two independent header keys that disagree refuse the run
   assert.equal(since.counts.parsed, 3);
   const badSince = await runProducer(makeDeps({ noDb: true, routes: {} }).deps, { spec: euOilBulletin, since: "next week" });
   assert.match(badSince.notes[0] as string, /not a well-formed YYYY-MM-DD/);
-  assert.equal(findPricesHistoryLink('<a href="/document/download/x?filename=Weekly_Oil_Bulletin_Prices_History_4web.xlsx">h</a>'), "https://energy.ec.europa.eu/document/download/x?filename=Weekly_Oil_Bulletin_Prices_History_4web.xlsx");
-  const csv = parseEuWeeklyOilBulletinCsv("week_ending;product;price_eur;n_member_states\n2026-10-12;eurosuper-95;1500.5;27\n2026-10-12;mystery;1;1\n12-10-2026;eurosuper-95;1;1\n2026-10-12;automotive-diesel;-4;1\n");
+  const link = "https://energy.ec.europa.eu/document/download/x?filename=Weekly_Oil_Bulletin_Prices_History_4web.xlsx";
+  const found = makeDeps({ noDb: true, routes: { "https://energy.ec.europa.eu/data-and-analysis/": '<a href="/document/download/x?filename=Weekly_Oil_Bulletin_Prices_History_4web.xlsx">h</a>', [link]: bulletin() } });
+  await runProducer(found.deps, { spec: euOilBulletin });
+  assert.equal(found.calls[1]?.url, link, "the page's link to the prices history is the file the producer reads");
+  const csv = await parseDoc(euOilBulletin, { text: "week_ending;product;price_eur;n_member_states\n2026-10-12;eurosuper-95;1500.5;27\n2026-10-12;mystery;1;1\n12-10-2026;eurosuper-95;1;1\n2026-10-12;automotive-diesel;-4;1\n" });
   assert.equal(csv.rows.length, 1);
   assert.equal(csv.rows[0]?.n_observations, 27);
   assert.equal(csv.warnings.length, 3);
@@ -188,8 +188,6 @@ const sbtiSheet = (omit?: string) => {
   ]);
 };
 test("SBTi golden: Excel serial dates, the header by NAME (a missing column refuses), lead time in months, survivorship counted, exclusions named", async () => {
-  assert.equal(excelSerialToIsoDate(45658), "2025-01-01");
-  assert.equal(excelSerialToIsoDate("x"), null);
   const r = await runProducer(makeDeps({ noDb: true }).deps, { spec: sbtiTargets, bytes: sbtiSheet() });
   assert.equal(r.outcome, "ok", r.notes.join("|"));
   assert.equal(r.counts.sectors, 2);
@@ -207,7 +205,8 @@ test("SBTi golden: Excel serial dates, the header by NAME (a missing column refu
   const missingCol = await runProducer(makeDeps({ noDb: true }).deps, { spec: sbtiTargets, bytes: sbtiSheet("target_year") });
   assert.equal(missingCol.outcome, "failed");
   assert.match(missingCol.notes[0] as string, /missing expected column\(s\): target_year/);
-  assert.equal(aggregateSbtiTargetRows([]).sectorCount, 0);
+  const empty = await runProducer(makeDeps({ noDb: true }).deps, { spec: sbtiTargets, bytes: xlsx("WebsiteData", [["sector", "status", "action", "target", "base_year", "target_year", "date_published", "company_name"]]) });
+  assert.equal(empty.counts.sectors ?? 0, 0, "a workbook with no company rows aggregates no sector");
 });
 
 test("INV-245: the SBTi producer is licence-blocked even when enabled, armed and credentialed; a dry run still reads and reports", async () => {
@@ -292,9 +291,10 @@ test("carrier ETS: grounded before rated; an ungrounded and an unrated candidate
   assert.match(r.notes.join("|"), /Zxq D\|Lane A\|2026-10-01: refused_unrated_source/);
   const rows = (await carrierEtsSurcharge.parse({ text: JSON.stringify(cands.slice(0, 2)) }, { get: async (u: string) => new Response(String(d.calls.length) + (u.endsWith("a") ? "The surcharge of USD 210 per FEU" : "The surcharge of USD 190 per FEU")), state: {}, deps: d.deps } as never)).rows;
   assert.deepEqual(rows.map((x) => x.series_key), ["carrier-ets:carrier-a-lane-a", "carrier-ets:carrier-b-lane-a"]);
-  assert.deepEqual(buildEtsProxyBand(rows), { low: 190, point: 200, high: 210, currency: "USD", n_carriers: 2, derivation: "calculated", reference_period: "2026-10-01" });
-  assert.equal(buildEtsProxyBand([rows[0]!]), null);
-  assert.throws(() => buildEtsProxyBand([{ ...rows[0]!, currency: "EUR" }, rows[1]!]), /mixed currencies/);
+  const ctx = { get: async (u: string) => new Response(u.endsWith("a") ? "The surcharge of USD 210 per FEU" : "The surcharge of USD 190 per FEU"), state: {}, deps: d.deps } as never;
+  assert.equal((await carrierEtsSurcharge.parse({ text: JSON.stringify(cands.slice(0, 2)) }, ctx)).counts?.proxy_bands_built, 1, "two carriers in one period and one currency make one band");
+  assert.equal((await carrierEtsSurcharge.parse({ text: JSON.stringify(cands.slice(0, 1)) }, ctx)).counts?.proxy_bands_built, 0, "one carrier is not a proxy");
+  await assert.rejects(Promise.resolve(carrierEtsSurcharge.parse({ text: JSON.stringify([cands[0], { ...cands[1], currency: "EUR" }]) }, ctx)), /mixed currencies/);
   const held = await runProducer(makeDeps({}).deps, { spec: carrierEtsSurcharge, dry: false, text: JSON.stringify(cands) });
   assert.match(held.notes[0] as string, /ENABLED/);
 });
@@ -327,23 +327,29 @@ test("rows files: a citation is refused by name, an unclassifiable host is refus
   assert.equal(db.writes.length, 0, "no rows file records a gap and never an invented row");
 });
 
-test("rows files: p90 below p50 is refused, a missing both is an error, a same-corridor reroute is refused, an unresolved corridor is never minted", () => {
+test("rows files: p90 below p50 is refused, a missing both is an error, a same-corridor reroute is refused, an unresolved corridor is never minted", async () => {
   const j = spine("jurisdiction", ["Great Britain"]);
+  const run = (spec: ProducerSpec, entities: Array<Record<string, unknown>>, row: object) => runProducer(makeDeps({ db: memoryDb({ entities }) }).deps, { spec, text: JSON.stringify([row]) });
   const g = (o: object) => ({ jurisdiction_name: "Great Britain", dso_name: "DSO", capacity_band_mw: "10-20", as_of: "2026-09-01", queue_months_p50: 10, queue_months_p90: 20, citation: cite, ...o });
-  assert.equal(parseGridQueueRow(g({}), 0, j).refused, false);
-  const bad = parseGridQueueRow(g({ queue_months_p90: 5 }), 0, j);
-  assert.ok(bad.refused && /p90 \(5\) < queue_months_p50 \(10\)/.test(bad.reason));
-  assert.throws(() => parseGridQueueRow(g({ queue_months_p50: null, queue_months_p90: null }), 0, j), /at least one of/);
-  assert.throws(() => parseGridQueueRow(g({ queue_months_p50: -1 }), 0, j), /must be >= 0/);
+  assert.equal((await run(gridQueueRows, j, g({}))).counts.parsed, 1);
+  const bad = await run(gridQueueRows, j, g({ queue_months_p90: 5 }));
+  assert.equal(bad.counts.parsed, 0);
+  assert.match(bad.notes.join("|"), /p90 \(5\) < queue_months_p50 \(10\)/);
+  const none = await run(gridQueueRows, j, g({ queue_months_p50: null, queue_months_p90: null }));
+  assert.equal(none.counts.parsed, 0);
+  assert.match(none.notes.join("|"), /at least one of/);
+  assert.match((await run(gridQueueRows, j, g({ queue_months_p50: -1 }))).notes.join("|"), /must be >= 0/);
   const c = spine("corridor", ["A-B:ocean", "A-C:ocean"]);
   const rr = (o: object) => ({ baseline_corridor_name: "A-B:ocean", reroute_corridor_name: "A-C:ocean", cause: "closure", fuel_burn_multiplier: 1.3, effective_from: "2026-01-01", citation: cite, ...o });
-  assert.equal(parseRerouteRow(rr({}), 0, c).refused, false);
-  const same = parseRerouteRow(rr({ reroute_corridor_name: "A-B:ocean" }), 0, c);
-  assert.ok(same.refused && /SAME corridor/.test(same.reason));
-  const miss = parseRerouteRow(rr({ reroute_corridor_name: "Z-Z:air" }), 0, c);
-  assert.ok(miss.refused && /MISSING/.test(miss.reason));
-  assert.throws(() => parseRerouteRow(rr({ fuel_burn_multiplier: 0 }), 0, c), /must be > 0/);
-  assert.throws(() => parseRerouteRow(rr({ effective_to: "2025-01-01" }), 0, c), /before effective_from/);
+  assert.equal((await run(rerouteRows, c, rr({}))).counts.parsed, 1);
+  const same = await run(rerouteRows, c, rr({ reroute_corridor_name: "A-B:ocean" }));
+  assert.equal(same.counts.parsed, 0);
+  assert.match(same.notes.join("|"), /SAME corridor/);
+  const miss = await run(rerouteRows, c, rr({ reroute_corridor_name: "Z-Z:air" }));
+  assert.equal(miss.counts.parsed, 0);
+  assert.match(miss.notes.join("|"), /MISSING/);
+  assert.match((await run(rerouteRows, c, rr({ fuel_burn_multiplier: 0 }))).notes.join("|"), /must be > 0/);
+  assert.match((await run(rerouteRows, c, rr({ effective_to: "2025-01-01" }))).notes.join("|"), /before effective_from/);
 });
 
 test("rows files: an apply (armed) stores the registered source on the grid row and a re-run inserts nothing twice", async () => {
@@ -364,17 +370,22 @@ test("rows files: an apply (armed) stores the registered source on the grid row 
 });
 
 // ---- published price statistics ----
-test("INV-047: display rows derive only from RATIFIED entries with an observation; an unratified entry or an unobserved series makes no row; the six oil bulletin entries are ratified in the seeded table", () => {
+test("INV-047: display rows derive only from RATIFIED entries with an observation; an unratified entry or an unobserved series makes no row; the six oil bulletin entries are ratified in the seeded table", async () => {
   assert.equal(SEEDED_SERIES.filter((r) => r.status === "ratified").length, 6);
-  const map = loadSeriesItemMap({ "a:x": { item_id: "i1", status: "ratified", cadence_days: 7 }, "a:y": { item_id: null, status: "pending" }, "a:z": { item_id: "i3", status: "ratified" } });
+  const live = (id: string) => ({ id, provenance_status: "verified", is_archived: false, replaced_by: null });
+  const [i1, i3] = ["4fae403a-ced5-4c8f-82b7-af0fd6127061", "5fae403a-ced5-4c8f-82b7-af0fd6127062"] as const;
+  const items = [{ series_key: "a:x", item_id: i1, status: "ratified", cadence_days: 7 }, { series_key: "a:y", item_id: null, status: "pending" }, { series_key: "a:z", item_id: i3, status: "ratified" }];
   const market = [
     { series_key: "a:x", reference_period: "2026-10-05", label: "X", value_numeric: 10, unit: "EUR/1000L", currency: "EUR", as_at_date: "2026-10-05" },
     { series_key: "a:x", reference_period: "2026-10-12", label: "X", value_numeric: 11.5, unit: "EUR/1000L", currency: "EUR", as_at_date: "2026-10-12" },
     { series_key: "a:y", reference_period: "2026-10-12", label: "Y", value_numeric: 1, unit: "EUR/t", currency: "EUR", as_at_date: "2026-10-12" },
   ];
-  const rows = deriveDisplayRows(market, { map });
+  const db = memoryDb({ market_series_items: items, market_series: market.map((m, i) => ({ id: `m${i}`, ...m })), intelligence_items: [live(i1), live(i3)] });
+  const r = await runProducer(makeDeps({ db, env: { MARKET_PRODUCER_PUBLISHED_STATS_ENABLED: "1" } }).deps, { spec: ON(publishedPriceStatistics), dry: false });
+  const rows = db.tables.published_price_statistics ?? [];
+  assert.equal(r.counts.created, 1);
   assert.equal(rows.length, 1);
-  assert.deepEqual([rows[0]?.item_id, rows[0]?.value_display, rows[0]?.unit, rows[0]?.next_release_at], ["i1", "€11.50", "/1000L", "2026-10-19"]);
+  assert.deepEqual([rows[0]?.item_id, rows[0]?.value_display, rows[0]?.unit, rows[0]?.next_release_at], [i1, "€11.50", "/1000L", "2026-10-19"]);
   const { updated, dispositions } = ratifySeriesItemMap({ "a:y": { item_id: null, status: "pending" }, "a:q": { item_id: null, status: "pending" }, "a:x": { item_id: "i1", status: "ratified" } }, { per_item: [{ id: "a:y", outcome: "minted_verified", item_id: "i9" }, { id: "a:q", outcome: "held" }] });
   assert.equal(updated["a:y"]?.status, "ratified");
   assert.equal(updated["a:q"]?.status, "pending");
@@ -409,19 +420,7 @@ test("IMP-084 degraded: market_series_items absent (production before the cutove
 });
 
 // ---- spec 09 calculators ----
-test("calculators: the indexation clamp, the pack-density-only payload penalty, the refused TCO crossover, the fuel-burn multiplier and the five-surface chain", () => {
-  const v = computeIndexedValue({ baseValue: 100, indexBaseline: 100, indexCurrent: 130, passthroughPct: 50, capPct: 10 });
-  assert.deepEqual([v.label, v.value, "wasClamped" in v && v.wasClamped, "clampedBy" in v && v.clampedBy], ["estimate", 110, true, "cap"]);
-  assert.equal(computeIndexedValue({ baseValue: 100, indexBaseline: 0, indexCurrent: 1, passthroughPct: 50 }).label, "M");
-  assert.match(String((computeIndexedValue({ baseValue: 100, indexBaseline: 1, indexCurrent: 1, passthroughPct: 50, capPct: -5, floorPct: 5 }) as { reason?: string }).reason), /inverted band/);
-  assert.equal(computeIndexedValue({ baseValue: 100, indexBaseline: 100, indexCurrent: 90, passthroughPct: 100, floorPct: -5 }).value, 95);
-  const base = { dieselPowertrainKg: 2000, usableKwh: 300, energyDensityWhKg: 150, ePowertrainKg: 500, legalPayloadKg: 20000 };
-  const refused = computePayloadPenalty({ ...base, densityBasis: "cell" });
-  assert.equal(refused.label, "M");
-  assert.match(String((refused as { reason?: string }).reason), /not 'pack'/);
-  const ok = computePayloadPenalty({ ...base, densityBasis: "pack" });
-  assert.equal(ok.label, "estimate");
-  assert.equal(ok.value, 2000 - 2000 - 500);
+test("calculators: the refused TCO crossover, the fuel-burn multiplier and the five-surface chain", () => {
   assert.equal(tcoCrossoverBand().label, "M");
   assert.match(String((tcoCrossoverBand() as { reason?: string }).reason), /not forecastable/);
   assert.equal(applyFuelBurnMultiplier({ baselineFuelBurn: 100, fuelBurnMultiplier: 1.25 }).value, 125);

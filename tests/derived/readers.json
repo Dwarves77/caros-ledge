@@ -21,11 +21,6 @@
    "why": "Batch export and apply read the items a session-authored batch is about, whatever their state."
   },
   {
-   "glob": "src/features/drain/**",
-   "kind": "pipeline",
-   "why": "The judgement drain reads the items its queue names."
-  },
-  {
    "glob": "src/features/learning/**",
    "kind": "pipeline",
    "why": "Question generation and signpost scoring read the items they were asked about."

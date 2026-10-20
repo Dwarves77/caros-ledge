@@ -24,8 +24,7 @@ export const PRODUCERS: readonly Producer[] = Object.freeze(z.array(entry).parse
 
 export const prefixOf = (seriesKey: unknown): string => String(seriesKey ?? "").split(":")[0] ?? "";
 export const producerFor = (keyPrefix: string): Producer | undefined => PRODUCERS.find((p) => p.keyPrefix === keyPrefix);
-/** True iff the full "prefix:rest" key belongs to a producer that writes today. */
-const isImplementedSeriesKey = (seriesKey: unknown): boolean => !!producerFor(prefixOf(seriesKey))?.implemented;
+
 /** The registry position of a series' producer, the intended reading order. An unknown prefix sorts after every known one. */
 export const producerOrder = (seriesKey: string): number => {
   const i = PRODUCERS.findIndex((p) => p.keyPrefix === prefixOf(seriesKey));

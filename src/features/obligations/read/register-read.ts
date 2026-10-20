@@ -56,9 +56,6 @@ export function buildRegisterQuerySpec(opts: SpecInput, todayIso: string): Regis
   return { jurisdiction, mode, bindingPosition, dueWindow, limit, offset, todayIso: today, itemId: opts.itemId ?? null };
 }
 
-/** 0 upcoming (soonest first), 1 past (most recent first), 2 undated (by id). */
-const nextDueSegment = (dueDate: string | null | undefined, todayIso: string): 0 | 1 | 2 => (dueDate === null || dueDate === undefined ? 2 : dueDate < todayIso ? 1 : 0);
-
 /** Which slices of which segments a page covers, given each segment's exact size. */
 function planRegisterPageSegments(sizes: readonly number[], offset: number, limit: number): { index: number; from: number; to: number }[] {
   const out: { index: number; from: number; to: number }[] = [];
@@ -174,11 +171,3 @@ export async function fetchObligationRegisterPage(sb: Db, spec: RegisterSpec, op
   return { rows: raw.map(flatten), total };
 }
 
-/** The next-due comparator for rows already in memory (used by tests and by callers merging pages). */
-function compareByNextDue(a: Pick<RegisterRow, "id" | "due_date">, b: Pick<RegisterRow, "id" | "due_date">, todayIso: string): number {
-  const sa = nextDueSegment(a.due_date, todayIso);
-  const sb = nextDueSegment(b.due_date, todayIso);
-  if (sa !== sb) return sa - sb;
-  if (sa === 2 || a.due_date === b.due_date) return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
-  return sa === 0 ? ((a.due_date as string) < (b.due_date as string) ? -1 : 1) : (a.due_date as string) > (b.due_date as string) ? -1 : 1;
-}

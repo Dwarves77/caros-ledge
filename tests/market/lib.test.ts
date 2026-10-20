@@ -3,18 +3,17 @@ import { test } from "node:test";
 
 import { formatFigure, formatRange } from "@/core/figures";
 import { loadProducerRegistry } from "@/core/producers";
-import { buildCarbonCostPerFeuView, buildCarbonOverlayView, carbonCostPerFeu, carbonIntensity, GAP, resolveItemCorridor, selectFactor, type FactorRow } from "@/features/market/lib/carbon";
+import { buildCarbonCostPerFeuView, buildCarbonOverlayView, carbonCostPerFeu, carbonIntensity, selectFactor, type FactorRow } from "@/features/market/lib/carbon";
 import { computeSeriesDeltas } from "@/features/market/lib/deltas";
-import { cadenceNameForDays, deriveSeriesFreshness, summarizeBoardFreshness } from "@/features/market/lib/freshness";
-import { selectHeadlineSeries, SERIES_FAMILIES } from "@/features/market/lib/headline";
+import { boardFreshnessSummary, deriveSeriesFreshness } from "@/features/market/lib/freshness";
+import { selectHeadlineSeries } from "@/features/market/lib/headline";
 import { headlineCardView } from "@/features/market/lib/headline-view";
 import { buildLeadTimePosition } from "@/features/market/lib/lead-time";
 import { selectNextDataDrops, summariseCarbonCorridors } from "@/features/market/lib/rail-select";
-import { PRODUCERS, isImplementedSeriesKey, producerFor } from "@/features/market/lib/registry";
+import { PRODUCERS, producerFor } from "@/features/market/lib/registry";
 import { deltaCellModel, sparklineModel } from "@/features/market/lib/ribbon-model";
 import { buildSeriesBoard, type SeriesRow } from "@/features/market/lib/series-board";
 import { derivePromotionState } from "@/features/market/lib/signal-promotion";
-import { buildEtsProxyBand } from "@/features/market/producers";
 
 import { fixture } from "../integration/world.ts";
 
@@ -102,9 +101,6 @@ test("INV-253 buildSeriesBoard: an unregistered prefix is kept, a not-built prod
 
 test("registry: six producers as data, their runtime side exists, and the implemented flags agree with the keys", () => {
   assert.equal(PRODUCERS.length, 6);
-  assert.equal(isImplementedSeriesKey("ecb-fx:eur-usd"), true);
-  assert.equal(isImplementedSeriesKey("sbti:x"), false);
-  assert.equal(isImplementedSeriesKey("unknown:x"), false);
   assert.equal(producerFor("ecb-fx")?.cadenceDays, 1);
   const catalog = fixture().d.catalog;
   const names = new Set(Object.keys(catalog));
@@ -140,14 +136,9 @@ test("INV-253 selectHeadlineSeries: no-delta series are excluded, families fold 
   // a declared primary that has no delta hands the card to another member, with that member's own label
   const alt = selectHeadlineSeries(buildSeriesBoard([...mk("eia-v2:diesel-no2-low-sulfur-eer-epd2f-pf4-y35ny-dpg", [2, 3], { unit: "USD/GAL", currency: "USD", label: "NY diesel" }), obs("eu-oil-bulletin:automotive-diesel", "2026-03-08", 1400)]));
   assert.deepEqual([alt.cards[0]?.label, alt.cards[0]?.fold.count], ["NY diesel", 0]);
-  assert.ok(SERIES_FAMILIES.every((f) => f.memberSeriesKeys.includes(f.primarySeriesKey)));
 });
 
 test("INV-258 freshness: an off-grid cadence never reads fresher than its source, null is unknown, the worst state governs, empty is unknown", () => {
-  assert.equal(cadenceNameForDays(7), "weekly");
-  assert.equal(cadenceNameForDays(10), "weekly", "a 10-day cadence is judged no fresher than 7 days");
-  assert.equal(cadenceNameForDays(400), "annual");
-  assert.equal(cadenceNameForDays(null), "irregular");
   const row = { as_at_date: "2026-03-01", reference_period: "2026-03-01" };
   assert.equal(deriveSeriesFreshness(row, { cadenceDays: 7 }, "2026-03-05T10:00:00Z").code, "current");
   assert.equal(deriveSeriesFreshness(row, { cadenceDays: 7 }, "2026-03-12").code, "ageing");
@@ -155,8 +146,12 @@ test("INV-258 freshness: an off-grid cadence never reads fresher than its source
   assert.equal(deriveSeriesFreshness(row, { cadenceDays: 7 }, "2026-08-01").code, "frozen");
   assert.equal(deriveSeriesFreshness(row, { cadenceDays: null }, "2026-03-05").code, "unknown");
   assert.equal(deriveSeriesFreshness(row, null, "2026-03-05").code, "unknown");
-  assert.equal(summarizeBoardFreshness([]).worst, "unknown");
-  assert.equal(summarizeBoardFreshness(["current", "stale", "ageing"]).worst, "stale");
+  const board = (asAt: string[]) => ({ groups: [{ state: "populated", cadenceDays: 7, series: asAt.map((d) => ({ asAtDate: d, referencePeriod: d })) }] }) as never;
+  assert.equal(boardFreshnessSummary({ groups: [] }, "2026-03-12").worst, "unknown");
+  const mixed = boardFreshnessSummary(board(["2026-03-10", "2026-03-01", "2025-01-01"]), "2026-03-12");
+  assert.equal(mixed.worst, "frozen", "the worst state governs the panel");
+  assert.equal(mixed.total, 3);
+  assert.equal(deriveSeriesFreshness(row, { cadenceDays: 400 }, "2026-12-01").code, "current", "a 400-day cadence is the annual period, not an irregular one");
 });
 
 test("INV-259 next data drops: latest period plus the registered cadence, omitted when unimplemented, no cadence or no observation", () => {
@@ -204,15 +199,17 @@ test("INV-255 selectFactor: two jurisdictions, GLOBAL, two modes without a mode,
   assert.equal(selectFactor([ROAD, RAIL], {}).state, "no_factor");
 });
 
-test("INV-255 resolveItemCorridor: two corridors in one country set are ambiguous, a different mode is no identity, no direction is invented", () => {
+test("INV-255 the corridor a signal means: two corridors in one country set are ambiguous, a different mode is no identity, no direction is invented", () => {
   const c = (entityId: string, origin: string, dest: string, mode: string) => ({ entityId, origin, dest, mode });
   const cands = [c("a", "CNSHA", "NLRTM", "ocean"), c("b", "USLAX", "NLRTM", "ocean")];
-  assert.deepEqual(resolveItemCorridor({ jurisdictionIso: ["NL", "CN"], modes: ["ocean"], candidates: cands }), { state: "resolved", corridor: { origin: "CNSHA", dest: "NLRTM", mode: "ocean" }, matchedCandidateIds: ["a"] });
-  assert.equal(resolveItemCorridor({ jurisdictionIso: ["cn", "nl"], modes: ["road"], candidates: cands }).state, "no_corridor_identity");
-  assert.equal(resolveItemCorridor({ jurisdictionIso: ["CN", "NL"], modes: ["ocean", "road"], candidates: cands }).state, "no_corridor_identity");
-  assert.equal(resolveItemCorridor({ jurisdictionIso: ["CN"], modes: ["ocean"], candidates: cands }).state, "no_corridor_identity");
-  const two = resolveItemCorridor({ jurisdictionIso: ["CN", "NL"], modes: ["ocean"], candidates: [...cands, c("c", "CNNGB", "NLRTM", "ocean")] });
-  assert.deepEqual([two.state, two.matchedCandidateIds], ["ambiguous", ["a", "c"]]);
+  const view = (jurisdictionIso: string[], modes: string[], corridorCandidates = cands) => buildCarbonCostPerFeuView({ jurisdictionIso, modes, factors: [], corridorCandidates });
+  const one = view(["NL", "CN"], ["ocean"]);
+  assert.ok(one?.state === "resolved" && one.result?.corridor.origin === "CNSHA" && one.result.corridor.dest === "NLRTM" && one.result.corridor.mode === "ocean");
+  assert.equal(view(["cn", "nl"], ["road"]), null);
+  assert.equal(view(["CN", "NL"], ["ocean", "road"]), null);
+  assert.equal(view(["CN"], ["ocean"]), null);
+  const two = view(["CN", "NL"], ["ocean"], [...cands, c("c", "CNNGB", "NLRTM", "ocean")]);
+  assert.deepEqual([two?.state, two?.result, two?.label], ["ambiguous", null, null]);
 });
 
 test("INV-254 carbonCostPerFeu: an unprovenanced number throws, each gap is named, a range only with every input, classification by derivation", () => {
@@ -221,8 +218,8 @@ test("INV-254 carbonCostPerFeu: an unprovenanced number throws, each gap is name
   assert.throws(() => carbonCostPerFeu({ corridor, distance: { value: 1000, derivation: "invented", basis: "x" } }), /derivation/);
   assert.throws(() => carbonCostPerFeu({ corridor, distance: { value: Number.NaN, derivation: "observed", basis: "x" } }), /finite/);
   const none = carbonCostPerFeu({ corridor });
-  assert.deepEqual(none.ok ? [] : none.gaps, [GAP.NO_FACTOR, GAP.NO_DISTANCE, GAP.NO_PAYLOAD, GAP.NO_CARBON_PRICE]);
-  assert.ok(!/market_series|ttw_co2e|eex-eua/.test(JSON.stringify(GAP)), "no gap sentence names a table, a column or a producer");
+  assert.equal(none.ok ? 0 : none.gaps.length, 4, "no factor, no distance, no payload, no carbon price: each gap named");
+  assert.ok(!/market_series|ttw_co2e|eex-eua/.test(JSON.stringify(none.ok ? [] : none.gaps)), "no gap sentence names a table, a column or a producer");
   const partial = carbonCostPerFeu({ corridor, factor: ROAD, distance: { value: 1000, derivation: "observed", basis: "d" } });
   assert.ok(!partial.ok && partial.gaps.length === 2 && partial.partial.intensity?.valueGPerUnit === 100 && partial.partial.distance?.value === 1000);
   const price = { value: 80, currency: "EUR", sourceKey: "carrier", asOf: null, derivation: "observed", basis: "notice" };
@@ -262,11 +259,6 @@ test("INV-256 derivePromotionState: Fact only on a fact-citable origin, two cite
   assert.equal(derivePromotionState({ independentCiters: 1 }).code, "signal_unconfirmed");
   assert.equal(derivePromotionState({}).code, "unclassified");
   assert.ok(!/pending|unscored/i.test(JSON.stringify(derivePromotionState({}))));
-});
-
-test("INV-260 the ETS proxy band (P2-07's) still refuses one row and mixed currencies: the carbon price input never blends", () => {
-  assert.equal(buildEtsProxyBand([{ value_numeric: 1, currency: "USD", reference_period: "2026-01-01" }]), null);
-  assert.throws(() => buildEtsProxyBand([{ value_numeric: 1, currency: "USD", reference_period: "p" }, { value_numeric: 2, currency: "EUR", reference_period: "p" }]));
 });
 
 test("a headline card carries its source ref and the rating's url (the baseline shows the ref as a link)", () => {

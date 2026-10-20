@@ -20,6 +20,7 @@
   "brief_unavailable": "The brief did not load. Nothing was changed; try again.",
   "counts_unavailable": "Counts did not load.",
   "band_counts_unavailable": "The band counts did not load, so the tiles are blank rather than zero.",
+  "themes_unavailable": "The cross-page themes did not load.",
   "ratings_unavailable": "Source ratings did not load, so tiers are not shown on these rows."
  }
 }

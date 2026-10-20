@@ -6,9 +6,8 @@ export const PORTFOLIO_NAME_MAX = 80;
 /** Mirrors the migration 362 caps (the database trigger is the authority; these keep reads bounded). */
 export const PORTFOLIO_LIST_CAP = 100;
 export const PORTFOLIO_MEMBER_CAP = 500;
-const MEMBER_KINDS = ["item", "corridor", "entity"] as const;
+
 export const SURFACE_KEYS: readonly PortfolioSurfaceKey[] = ["regulations", "market", "research", "operations"];
-const PRIORITY_KEYS = ["CRITICAL", "HIGH", "MODERATE", "LOW"] as const;
 
 export interface PortfolioRow {
   id: string;

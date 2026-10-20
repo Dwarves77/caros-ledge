@@ -12,7 +12,6 @@ import { distinctNormalized, planJurisdiction } from "@/core/entities/plan";
 import { congruence, sourceRole } from "@/core/entities/source-role";
 import { formatCorridorLabel } from "@/core/entities/unlocode-names";
 import { backfillDerivationEdges, backfillEntities, backfillLineageEdges, seedCorridors, seedDerivedValues } from "@/features/propagation/ops";
-import { deriveCorridorJurisdictionCodes, parseCorridorConvention, planCorridorEntities, planDisplayNameBackfill, resolveCorridorCandidates } from "@/features/propagation/ops/seed-corridors";
 
 import { connectDb } from "./world.ts";
 
@@ -99,23 +98,26 @@ test("planners return only what is not already there", () => {
 
 // ---------------------------------------------------------------------- ops
 
-test("seed-corridors: the convention scan, the seed fallback, the planners and the scope pairs", () => {
-  assert.deepEqual(parseCorridorConvention("corridor:CNSHA-NLRTM:ocean"), { origin: "CNSHA", dest: "NLRTM", mode: "ocean" });
-  assert.equal(parseCorridorConvention("corridor:bad"), null);
-  const fallback = resolveCorridorCandidates({});
-  assert.equal(fallback.usingFallback, true);
-  assert.equal(fallback.candidates.length, 4);
-  const found = resolveCorridorCandidates({ marketSeries: [{ series_key: "corridor:DEHAM-USNYC:ocean" }, { series_key: "corridor:DEHAM-USNYC:ocean" }] });
-  assert.deepEqual([found.usingFallback, found.candidates.length], [false, 1]);
-  const plan = planCorridorEntities(fallback.candidates, new Set());
-  assert.equal(plan.entities.length, 4);
-  assert.equal(planCorridorEntities(fallback.candidates, new Set(plan.entities.map((e) => e.entity_id))).entities.length, 0);
-  assert.equal(planDisplayNameBackfill([{ entity_id: "e", canonical_name: "CNSHA-NLRTM:ocean", display_name: null }]).length, 1);
-  assert.equal(planDisplayNameBackfill([{ entity_id: "e", canonical_name: "CNSHA-NLRTM:ocean", display_name: "x" }]).length, 0);
-  const codes = deriveCorridorJurisdictionCodes([{ entity_id: "c1", canonical_name: "CNSHA-NLRTM:ocean" }, { entity_id: "c2", canonical_name: "bad" }]);
-  assert.deepEqual(codes.isoCodes, ["CN", "NL"]);
-  assert.equal(codes.pairs.length, 2);
-  assert.equal(codes.skipped.length, 1);
+test("seed-corridors: the convention scan, the seed fallback, the planners and the scope pairs", async () => {
+  const empty = { market_series: [], regional_data_facts: [], entities: [], entity_identifiers: [], entity_scope: [] };
+  const dry = async (tables: Record<string, unknown[]>) => seedCorridors({ sb: connectDb({ ...empty, ...tables }).db, now: () => NOW }, { dry: true });
+  // no live data names a corridor: the four confirmed seeds are used and all four are to create
+  const fallback = await dry({});
+  assert.deepEqual([fallback.counts.candidates, fallback.counts.to_create], [4, 4]);
+  assert.match(fallback.notes.join("|"), /confirmed seeds are used/);
+  // the convention scan reads series keys and fact labels: a bad name is no candidate, a repeat is one
+  const found = await dry({ market_series: [{ series_key: "corridor:DEHAM-USNYC:ocean" }, { series_key: "corridor:DEHAM-USNYC:ocean" }, { series_key: "corridor:bad" }], regional_data_facts: [{ fact_label: "corridor:CNSHA-NLRTM:ocean" }] });
+  assert.deepEqual([found.counts.candidates, found.counts.to_create], [2, 2]);
+  assert.doesNotMatch(found.notes.join("|"), /confirmed seeds are used/);
+  // an existing corridor is not planned again; a corridor with no display name is labelled, one with a name is not
+  const existing = { entity_id: entityId("corridor", "CNSHA-NLRTM:ocean"), kind: "corridor", canonical_name: "CNSHA-NLRTM:ocean", display_name: null, status: "active" };
+  const planned = await dry({ entities: [existing, { ...existing, entity_id: "c2", canonical_name: "bad" }, { ...existing, entity_id: "c3", canonical_name: "DEHAM-USNYC:ocean", display_name: "x" }] });
+  assert.equal(planned.counts.display_name_backfill, 1, "only the unnamed corridor that parses is labelled");
+  assert.equal(planned.counts.to_create, 3, "the four seeds, less the one already held");
+  // the scope pairs: the first two letters of each endpoint, one pair per corridor and country; a name that does not parse is skipped by name
+  const pairs = await dry({ entities: [existing, { ...existing, entity_id: "c2", canonical_name: "bad" }], market_series: [{ series_key: "corridor:CNSHA-NLRTM:ocean" }] });
+  assert.match(pairs.notes.join("|"), /corridor c2: canonical_name does not match the ORIGIN-DEST:mode convention/);
+  assert.equal(pairs.counts.scope_rows_planned, 2, "CN and NL for the one corridor that parses");
 });
 
 test("seed-corridors: dry writes nothing; apply writes corridors, jurisdictions and scope once; a second apply writes nothing", async () => {

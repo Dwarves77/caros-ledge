@@ -5,15 +5,16 @@ import { test } from "node:test";
 
 import { createElement } from "react";
 
-import { aggregateLcLciLevForRegion } from "@/features/operations/producers/regional-envelope";
+import { eurostatLabourCost } from "@/features/operations/producers/regional-envelope";
 import { AUXILIARY_ENERGY_ASIDE, GRID_QUEUE_ASIDE } from "@/features/operations/model/spec09";
-import { readFacts } from "@/features/operations/read/operations-reads";
+import { readOperationsPage } from "@/features/operations/read/operations-reads";
 import { LabourChain } from "@/features/operations/ui/LabourChain";
 import { AuxiliaryEnergyPanel, GridQueuePanel } from "@/features/operations/ui/Spec09Panels";
 import { StatementsBlock } from "@/features/operations/ui/StatementsBlock";
 import { ObligationsRailCard } from "@/features/regulations/rail";
 
 import { memoryDb } from "../_support/memory-db.ts";
+import { parseDoc } from "../producers/support.ts";
 import { renderApp, textOf } from "../_support/render.ts";
 
 const draw = (el: ReturnType<typeof createElement>) => textOf(renderApp(el));
@@ -42,8 +43,12 @@ test("surfaces:7 a statement component whose source is unrated shows 'Source not
 test("surfaces:12 freshness is judged against the cadence the fact's producer registered; no cadence, no date, or an unregistered producer is unknown, and the constant 'annual' is gone", async () => {
   const region = "r1";
   const fact = (id: string, over: Record<string, unknown>) => ({ id, region_id: region, dimension: "labor_markets", fact_label: id, value: "1", status: null, trend: null, source_note: null, last_updated: "2025-05-01", value_numeric: 1, unit: "USD/hour", currency: "USD", derivation: "observed", origin_class: "official", source_key: "bls", source_ref: "x", n_observations: null, method_version: "bls-oews-parser@1", as_at_date: "2025-05-01", reference_period: "2025", ...over });
-  const m = memoryDb({ regional_data_facts: [fact("annual-old", {}), fact("annual-fresh", { as_at_date: "2026-09-01", last_updated: "2026-09-01" }), fact("hourly-grid", { method_version: "neso-carbon-intensity-stats-parser@1", as_at_date: "2026-10-18", last_updated: "2026-10-18" }), fact("hourly-grid-old", { method_version: "neso-carbon-intensity-stats-parser@1", as_at_date: "2026-08-01", last_updated: "2026-08-01" }), fact("no-producer", { method_version: "manual@1" }), fact("no-date", { as_at_date: null, last_updated: null })] });
-  const facts = await readFacts(m.db, [{ id: region, code: "US", label: "US", displayOrder: 1, isoCodes: ["US"] }], "2026-10-19T00:00:00Z");
+  const m = memoryDb({ regions: [{ id: region, code: "US", label: "US", display_order: 1, iso_codes: ["US"] }], region_dimension_coverage: [], state_cost_facts: [], intelligence_items: [], derived_values: [], regional_data_facts: [fact("annual-old", {}), fact("annual-fresh", { as_at_date: "2026-09-01", last_updated: "2026-09-01" }), fact("hourly-grid", { method_version: "neso-carbon-intensity-stats-parser@1", as_at_date: "2026-10-18", last_updated: "2026-10-18" }), fact("hourly-grid-old", { method_version: "neso-carbon-intensity-stats-parser@1", as_at_date: "2026-08-01", last_updated: "2026-08-01" }), fact("no-producer", { method_version: "manual@1" }), fact("no-date", { as_at_date: null, last_updated: null })] });
+  (m.db as unknown as { rpc: unknown }).rpc = (name: string) => {
+    const run = Promise.resolve({ data: name === "get_surface_counts" ? { total_items: 0 } : [], error: null });
+    return Object.assign(run, { range: () => run });
+  };
+  const facts = (await readOperationsPage(m.db, "2026-10-19T00:00:00Z", null)).facts ?? [];
   const by = Object.fromEntries(facts.map((f) => [f.factLabel, f.freshness]));
   assert.equal(by["annual-old"], "ageing", "an annual fact from 2025-05 is past its period (a constant 'annual' judged every fact alike)");
   assert.equal(by["annual-fresh"], "current");
@@ -53,11 +58,12 @@ test("surfaces:12 freshness is judged against the cadence the fact's producer re
   assert.equal(by["no-date"], "unknown");
 });
 
-test("surfaces:16 the labour-cost fact names the member states averaged, so a six-state mean is never read as the EU and a changed composition is a different fact", () => {
+test("surfaces:16 the labour-cost fact names the member states averaged, so a six-state mean is never read as the EU and a changed composition is a different fact", async () => {
+  const aggregateLcLciLevForRegion = async (byGeo: Record<string, unknown>) => (await parseDoc(eurostatLabourCost, { text: JSON.stringify(byGeo) })).rows;
   const js = (v: number, geo: string) => ({ id: ["geo", "time", "unit"], size: [1, 1, 1], dimension: { geo: { category: { index: { [geo]: 0 } } }, time: { category: { index: { "2024": 0 } } }, unit: { category: { index: { EUR: 0 } } } }, value: { "0": v } });
-  const six = aggregateLcLciLevForRegion(Object.fromEntries(["DE", "NL", "BE", "FR", "IT", "ES"].map((g, i) => [g, js(30 + i, g)])), { regionCode: "EU" });
+  const six = await aggregateLcLciLevForRegion(Object.fromEntries(["DE", "NL", "BE", "FR", "IT", "ES"].map((g, i) => [g, js(30 + i, g)])));
   assert.match(String(six[0]?.fact_label), /unweighted mean of 6 member states: BE, DE, ES, FR, IT, NL/);
-  const five = aggregateLcLciLevForRegion(Object.fromEntries(["DE", "NL", "BE", "FR", "IT"].map((g, i) => [g, js(30 + i, g)])), { regionCode: "EU" });
+  const five = await aggregateLcLciLevForRegion(Object.fromEntries(["DE", "NL", "BE", "FR", "IT"].map((g, i) => [g, js(30 + i, g)])));
   assert.match(String(five[0]?.fact_label), /unweighted mean of 5 member states: BE, DE, FR, IT, NL/);
   assert.notEqual(six[0]?.fact_label, five[0]?.fact_label, "a state that failed to answer makes a different fact, not a quietly different mean under the same label");
 });

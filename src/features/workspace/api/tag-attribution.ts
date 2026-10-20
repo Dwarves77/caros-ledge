@@ -4,9 +4,8 @@ import type { Db } from "@/core/db/clients";
 import { fetchAllByIdChunks } from "@/core/db/query";
 import { LookupError } from "@/core/http/errors";
 
-import { attributionText, formatAppliedDate, type TagApplication } from "../attribution-text";
+import type { TagApplication } from "../attribution-text";
 
-export { attributionText, formatAppliedDate };
 export type { TagApplication };
 
 export interface TagLinkRow {

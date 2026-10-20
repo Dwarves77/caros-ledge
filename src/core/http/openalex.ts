@@ -59,7 +59,3 @@ export async function workByDoi(doi: string | null | undefined, deps: OpenAlexDe
   return normalized ? openAlexGet(`/works/https://doi.org/${normalized}`, {}, deps) : null;
 }
 
-/** A works search (`search` text, optional filter, a page size); the response envelope is returned whole. */
-export async function searchWorks(query: { search?: string; filter?: string; perPage?: number }, deps: OpenAlexDeps = {}): Promise<{ results: Record<string, unknown>[] } | null> {
-  return openAlexGet("/works", { search: query.search, filter: query.filter, "per-page": query.perPage ?? 25 }, deps);
-}

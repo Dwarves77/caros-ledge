@@ -125,8 +125,6 @@ export async function readMarketSeries(db: Db, o: { edgeDb?: Db | null } = {}): 
   const [ratings, lineage] = await Promise.all([readSourceRatings(db, rows.map((r) => r.source_key)), o.edgeDb ? readDeltaEdges(o.edgeDb, shown.map((s) => s.id).filter((i): i is string => !!i)) : Promise.resolve(null)]);
   return { board, leadTime: rows.filter((r) => prefixOf(r.series_key) === "sbti"), ratings, lineage };
 }
-/** The rating of one board row's source (null when it names none or the source is not in the licence register). */
-const ratingOf = (ratings: Record<string, SourceRating>, row: Pick<SeriesDisplayRow, "sourceKey">): SourceRating | null => (row.sourceKey ? (ratings[row.sourceKey] ?? null) : null);
 
 const FACTOR_COLS = "factor_id, mode, vehicle_class, jurisdiction, quantity_basis, ttw_co2e, wtt_co2e, wtw_co2e, source_key, tier, derivation, origin_class, method_version, n_observations, as_at_date, pedigree";
 /** The modal-default factors in force (superseded ones excluded). */

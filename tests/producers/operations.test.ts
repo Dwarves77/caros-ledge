@@ -5,44 +5,50 @@ import { test } from "node:test";
 
 import { entityId } from "@/core/entities";
 import { runProducer, type ProducerSpec } from "@/core/producers/runner";
-import { auxiliaryEnergy, compareToLegEmissions, computeEnergyConsumedKwh, convertKwhToGco2e } from "@/features/operations/calc/auxiliary-energy";
+import { auxiliaryEnergy } from "@/features/operations/calc/auxiliary-energy";
 import { gridQueueGate } from "@/features/operations/calc/grid-queue";
-import { buildUrl, nesoCarbonIntensity, parseNesoStats } from "@/features/operations/producers/neso-carbon-intensity";
+import { nesoCarbonIntensity } from "@/features/operations/producers/neso-carbon-intensity";
 import { auxiliaryEnergyRows, indexationRows } from "@/features/operations/producers/operator-rows";
-import { aggregateLcLciLevForRegion, blsOews, buildEnvelopeRow, buildOewsSeriesId, decodeJsonStat, eurostatElectricity, eurostatLabourCost, latestPerNaturalKey, OEWS_OCCUPATIONS, parseNrgPc205, parseOewsResponse } from "@/features/operations/producers/regional-envelope";
-import { originClassForTier, stateCostFacts } from "@/features/operations/producers/state-cost-facts";
-import { checkMetadata, GB_JURISDICTION_ID, LICENCE, LICENCE_URL, mapHeatmapFile, selectAttachments, ukpnHeatmap } from "@/features/operations/producers/ukpn-heatmap";
+import { blsOews, buildEnvelopeRow, eurostatElectricity, eurostatLabourCost, latestPerNaturalKey } from "@/features/operations/producers/regional-envelope";
+import { stateCostFacts } from "@/features/operations/producers/state-cost-facts";
+import { ukpnHeatmap } from "@/features/operations/producers/ukpn-heatmap";
 
 import { memoryDb } from "../_support/memory-db.ts";
 
-import { makeDeps, NOW } from "./support.ts";
+import { makeDeps, NOW, parseDoc } from "./support.ts";
 
 const ON = (spec: ProducerSpec): ProducerSpec => ({ ...spec, enabled: true });
 
 // ---- UKPN ----
+const GB_JURISDICTION_ID = entityId("jurisdiction", "GB");
+const LICENCE = "CC BY 4.0";
+const LICENCE_URL = "https://creativecommons.org/licenses/by/4.0/";
+const PORTAL = "https://ukpowernetworks.opendatasoft.com";
 const sub = (o: object) => ({ mRID: "S1", name: "Alpha", demandFirmCapacity: 10, demandAvailableCapacity: 4.5, demandConstraint: "AMBER", demandConstraintLimitingFactor: " thermal ", ...o });
 const release = (subs: object[], over: object = {}) => ({ identifier: "ukpn-capacity-heatmap", rights: LICENCE_URL, publisher: "UK Power Networks", coverage: "Eastern Power Networks", issued: "2026-09-30T00:00:00", Substations: subs, ...over });
 const meta = (over: object = {}) => ({ dataset_id: "ukpn-capacity-heatmap", metas: { default: { license: LICENCE, publisher: "UKPN" } }, attachments: [{ mimetype: "application/json", title: "LTDS_Heatmap_EPN_2026.json", url: "https://ukpowernetworks.opendatasoft.com/api/files/a.json" }, { mimetype: "application/json", title: "LTDS_Heatmap_EPN_2026.json", url: "http://ukpowernetworks.opendatasoft.com/a.json" }, { mimetype: "application/json", title: "LTDS_Heatmap_EPN_2026.json", url: "https://evil.example/a.json" }, { mimetype: "text/csv", title: "other.csv", url: "https://ukpowernetworks.opendatasoft.com/o.csv" }], ...over });
 const bundle = (subs: object[], fileOver: object = {}, m: object = meta()) => JSON.stringify({ meta: m, files: [{ title: "LTDS_Heatmap_EPN_2026.json", json: release(subs, fileOver) }] });
 
-test("UKPN golden: release mapping to rows (queue months NULL with obs_status L, never M), duplicates and bad numbers skipped by name, an envelope per figure", () => {
-  const m = mapHeatmapFile(release([sub({}), sub({ name: "Dup" }), sub({ mRID: "S2", demandFirmCapacity: "x" }), sub({ mRID: "S3", demandConstraint: "BLUE" }), sub({ mRID: "S4", demandAvailableCapacity: -2 }), { name: "no id" }]) as never);
+test("UKPN golden: release mapping to rows (queue months NULL with obs_status L, never M), duplicates and bad numbers skipped by name", async () => {
+  const m = await parseDoc(ukpnHeatmap, { text: bundle([sub({}), sub({ name: "Dup" }), sub({ mRID: "S2", demandFirmCapacity: "x" }), sub({ mRID: "S3", demandConstraint: "BLUE" }), sub({ mRID: "S4", demandAvailableCapacity: -2 }), { name: "no id" }]) });
   assert.equal(m.rows.length, 2);
   assert.deepEqual(m.rows[0], { jurisdiction_id: GB_JURISDICTION_ID, dso_name: "UK Power Networks, Eastern Power Networks", capacity_band_mw: null, queue_months_p50: null, queue_months_p90: null, as_of: "2026-09-30", obs_status: "L", substation_ref: "S1", substation_name: "Alpha", demand_firm_mw: 10, demand_available_mw: 4.5, demand_constraint: "AMBER", demand_constraint_limiting_factor: "thermal", source_id: null, origin_class: "official", derivation: "observed", confidence_admiralty: null });
   assert.equal(m.warnings.length, 4);
   assert.match(m.warnings.join("|"), /duplicate mRID S1/);
   assert.match(m.warnings.join("|"), /demandConstraint "BLUE"/);
-  assert.equal(m.envelopes.size, 4);
-  assert.throws(() => mapHeatmapFile(release([sub({})], { rights: "https://example.com/x" }) as never), /refusing/);
-  assert.throws(() => mapHeatmapFile(release([sub({})], { issued: "yesterday" }) as never), /ISO date/);
-  assert.throws(() => mapHeatmapFile(release([sub({})], { identifier: "other" }) as never), /identifier/);
+  await assert.rejects(parseDoc(ukpnHeatmap, { text: bundle([sub({})], { rights: "https://example.com/x" }) }), /refusing/);
+  await assert.rejects(parseDoc(ukpnHeatmap, { text: bundle([sub({})], { issued: "yesterday" }) }), /ISO date/);
+  await assert.rejects(parseDoc(ukpnHeatmap, { text: bundle([sub({})], { identifier: "other" }) }), /identifier/);
   assert.equal(GB_JURISDICTION_ID, entityId("jurisdiction", "GB"));
 });
 
 test("UKPN: only https attachments on the portal host with a heatmap title are used; a wrong catalogue licence refuses the data", async () => {
-  assert.equal(selectAttachments(meta() as never).length, 1);
-  assert.throws(() => checkMetadata(meta({ metas: { default: { license: "All rights reserved" } } }) as never), /refusing to use the data/);
-  assert.throws(() => checkMetadata(meta({ attachments: [] }) as never), /no heatmap JSON attachment/);
+  const heatmap = `${PORTAL}/api/files/a.json`;
+  const page = makeDeps({ noDb: true, routes: { [`${PORTAL}/api/explore/v2.1/catalog/datasets/ukpn-capacity-heatmap`]: JSON.stringify(meta()), [heatmap]: JSON.stringify(release([sub({})])) } });
+  await runProducer(page.deps, { spec: ukpnHeatmap });
+  assert.deepEqual(page.calls.map((c) => c.url), [`${PORTAL}/api/explore/v2.1/catalog/datasets/ukpn-capacity-heatmap`, heatmap], "only the https attachment on the portal host with a heatmap title is fetched");
+  await assert.rejects(parseDoc(ukpnHeatmap, { text: bundle([sub({})], {}, meta({ metas: { default: { license: "All rights reserved" } } })) }), /refusing to use the data/);
+  await assert.rejects(parseDoc(ukpnHeatmap, { text: bundle([sub({})], {}, meta({ attachments: [] })) }), /no heatmap JSON attachment/);
   const bad = await runProducer(makeDeps({ noDb: true }).deps, { spec: ukpnHeatmap, text: bundle([sub({})], {}, meta({ metas: { default: { license: "x" } } })) });
   assert.equal(bad.outcome, "failed");
   assert.match(bad.notes[0] as string, /structure/);
@@ -76,15 +82,19 @@ test("UKPN apply: the publisher is registered at its class tier and must be acti
 
 // ---- NESO ----
 const stamp = (d: string, h = "00") => `${d}T${h}:00Z`;
-test("NESO golden: midnight-aligned daily blocks only; a misaligned block, a duplicate and a negative average are skipped by name; the window is the last 14 complete days", () => {
+test("NESO golden: midnight-aligned daily blocks only; a misaligned block, a duplicate and a negative average are skipped by name; the window is the last 14 complete days", async () => {
   const doc = { data: [{ from: stamp("2026-10-01"), to: stamp("2026-10-02"), intensity: { average: 120 } }, { from: stamp("2026-10-01"), to: stamp("2026-10-02"), intensity: { average: 130 } }, { from: stamp("2026-10-02", "12"), to: stamp("2026-10-03", "12"), intensity: { average: 1 } }, { from: stamp("2026-10-03"), to: stamp("2026-10-04"), intensity: { average: -5 } }, { from: "bad", to: "x" }, { from: stamp("2026-10-04"), to: stamp("2026-10-05"), intensity: { average: 90.5 } }] };
-  const { observations, warnings } = parseNesoStats(doc);
-  assert.deepEqual(observations.map((o) => [o.reference_period, o.as_at_date, o.value_numeric]), [["2026-10-01", "2026-10-02", 120], ["2026-10-04", "2026-10-05", 90.5]]);
+  const parsed = await parseDoc(nesoCarbonIntensity, { text: JSON.stringify(doc) });
+  const { warnings } = parsed;
+  assert.equal(parsed.counts?.observations, 2, "two blocks are valid");
+  assert.deepEqual(parsed.rows.map((o) => [o.reference_period, o.as_at_date, o.value_numeric]), [["2026-10-04", "2026-10-05", 90.5]], "the current-state table keeps the latest");
   assert.equal(warnings.length, 4);
   assert.match(warnings.join("|"), /not one midnight to midnight day/);
   assert.match(warnings.join("|"), /duplicate period/);
-  assert.throws(() => parseNesoStats({}), /no data array/);
-  assert.equal(buildUrl(new Date("2026-10-15T09:00:00Z")), "https://api.carbonintensity.org.uk/intensity/stats/2026-10-01T00:00Z/2026-10-14T23:59Z/24");
+  await assert.rejects(parseDoc(nesoCarbonIntensity, { text: "{}" }), /no data array/);
+  const fetched = makeDeps({ noDb: true, routes: { "https://api.carbonintensity.org.uk/": "{\"data\":[]}" } });
+  await runProducer(fetched.deps, { spec: nesoCarbonIntensity });
+  assert.equal(fetched.calls[0]?.url, "https://api.carbonintensity.org.uk/intensity/stats/2026-10-01T00:00Z/2026-10-14T23:59Z/24", "the last 14 complete days before the run's clock");
 });
 
 test("NESO apply (armed): the data_sources row and the UK region must exist; the source is rated and stamped; the current-state table keeps only the latest", async () => {
@@ -114,14 +124,15 @@ test("INV-244: the envelope row derives its value text mechanically, only the la
 });
 
 test("BLS golden: the series id is built from parts, the latest annual value per catalogued series wins, a rate-limited response fails with BLS's own message (B-0326), a dry run needs no credentials (bls defect)", async () => {
-  const occ = OEWS_OCCUPATIONS[0];
-  assert.equal(buildOewsSeriesId(occ.socCode, "13"), `OEUN${"0".repeat(7)}${"0".repeat(6)}533032${"13"}`);
-  assert.throws(() => buildOewsSeriesId("53-30", "13"), /6 digits/);
-  const ok = { status: "REQUEST_SUCCEEDED", Results: { series: [{ seriesID: buildOewsSeriesId(occ.socCode, "13"), data: [{ period: "A01", year: "2023", value: "50000" }, { period: "A01", year: "2024", value: "52000" }, { period: "M01", year: "2025", value: "1" }] }, { seriesID: buildOewsSeriesId(occ.socCode, "08"), data: [{ period: "A01", year: "2024", value: "-" }] }, { seriesID: "OTHER", data: [] }] } };
-  const obs = parseOewsResponse(ok);
+  const oewsId = (soc: string, datatype: string) => `OEUN${"0".repeat(7)}${"0".repeat(6)}${soc.replace("-", "")}${datatype}`;
+  const ok = { status: "REQUEST_SUCCEEDED", Results: { series: [{ seriesID: oewsId("53-3032", "13"), data: [{ period: "A01", year: "2023", value: "50000" }, { period: "A01", year: "2024", value: "52000" }, { period: "M01", year: "2025", value: "1" }] }, { seriesID: oewsId("53-3032", "08"), data: [{ period: "A01", year: "2024", value: "-" }] }, { seriesID: "OTHER", data: [] }] } };
+  const obs = (await parseDoc(blsOews, { text: JSON.stringify(ok) })).rows;
   assert.equal(obs.length, 1);
   assert.deepEqual([obs[0]?.value_numeric, obs[0]?.reference_period, obs[0]?.as_at_date, obs[0]?.unit], [52000, "2024", "2024-05-01", "USD/year"]);
-  assert.throws(() => parseOewsResponse({ status: "REQUEST_NOT_PROCESSED", message: ["daily threshold reached"] }), /daily threshold reached/);
+  await assert.rejects(parseDoc(blsOews, { text: JSON.stringify({ status: "REQUEST_NOT_PROCESSED", message: ["daily threshold reached"] }) }), /daily threshold reached/);
+  const posted = makeDeps({ noDb: true, routes: { "https://api.bls.gov/": JSON.stringify(ok) } });
+  await runProducer(posted.deps, { spec: blsOews });
+  assert.ok((JSON.parse(posted.calls[0]?.init?.body ?? "{}") as { seriesid: string[] }).seriesid.includes(oewsId("53-3032", "13")), "the request names the series id built from its parts");
   const dry = await runProducer(makeDeps({ noDb: true }).deps, { spec: blsOews, text: JSON.stringify(ok) });
   assert.equal(dry.outcome, "ok");
   assert.equal(dry.counts.parsed, 1);
@@ -135,18 +146,19 @@ const jsonStat = (dims: Record<string, string[]>, values: Record<string, number 
 });
 test("Eurostat goldens: JSON-stat decoding, the labour-cost mean over the member states that answered (a failed state is excluded, never imputed), the electricity bands by half-year", async () => {
   const lc = (geo: string, vals: Record<string, number>) => jsonStat({ unit: ["EUR"], lcstruct: ["D1_D4_MD5"], nace_r2: ["B-N"], geo: [geo], time: ["2022", "2023"] }, vals);
-  assert.deepEqual(decodeJsonStat(lc("DE", { 0: 40, 1: 42 })).map((x) => [x.coords.geo, x.coords.time, x.value]), [["DE", "2022", 40], ["DE", "2023", 42]]);
-  assert.throws(() => decodeJsonStat({} as never), /not a JSON-stat/);
-  const [fact] = aggregateLcLciLevForRegion({ DE: lc("DE", { 0: 40, 1: 42 }), NL: lc("NL", { 0: 30, 1: 34 }) }, { regionCode: "EU" });
+  await assert.rejects(parseDoc(eurostatElectricity, { text: "{}" }), /not a JSON-stat/);
+  const [fact] = (await parseDoc(eurostatLabourCost, { text: JSON.stringify({ DE: lc("DE", { 0: 40, 1: 42 }), NL: lc("NL", { 0: 30, 1: 34 }) }) })).rows;
   assert.deepEqual([fact?.value_numeric, fact?.n_observations, fact?.derivation, fact?.reference_period, fact?.unit], [38, 2, "calculated", "2023", "EUR/hour"]);
   assert.match(String(fact?.source_ref), /geo_mean_of=DE,NL;years=2023/);
-  assert.deepEqual(aggregateLcLciLevForRegion({}, { regionCode: "EU" }), []);
+  assert.deepEqual((await parseDoc(eurostatLabourCost, { text: "{}" })).rows, []);
   const d = makeDeps({ noDb: true, routes: { "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/lc_lci_lev?format=JSON&lang=EN&geo=DE": JSON.stringify(lc("DE", { 0: 40, 1: 42 })), "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/lc_lci_lev?format=JSON&lang=EN&geo=NL": JSON.stringify(lc("NL", { 0: 30, 1: 34 })) } });
   const r = await runProducer(d.deps, { spec: eurostatLabourCost });
   assert.equal(r.counts.parsed, 1, "four member states failed to answer and are excluded");
   const nrg = jsonStat({ unit: ["KWH"], currency: ["EUR"], tax: ["I_TAX"], nrg_cons: ["MWH2000-19999"], geo: ["EU27_2020"], time: ["2025-S1", "2025-S2", "2025-Q9"] }, { 0: 0.2, 1: 0.21, 2: 9 }, { nrg_cons: { "MWH2000-19999": "Band IC" } });
-  const obs = parseNrgPc205(nrg, { geo: "EU27_2020", regionCode: "EU" });
-  assert.deepEqual(obs.map((o) => [o.as_at_date, o.value_numeric, o.unit]), [["2025-01-01", 0.2, "EUR/kWh"], ["2025-07-01", 0.21, "EUR/kWh"]]);
+  const parsedNrg = await parseDoc(eurostatElectricity, { text: JSON.stringify(nrg) });
+  const obs = parsedNrg.rows;
+  assert.equal(parsedNrg.counts?.observations, 2, "the two valid half-years are observations; the invalid period is dropped");
+  assert.deepEqual(obs.map((o) => [o.as_at_date, o.value_numeric, o.unit]), [["2025-07-01", 0.21, "EUR/kWh"]], "the current-state table keeps the latest half-year");
   assert.match(String(obs[0]?.fact_label), /Band IC/);
   const dry = await runProducer(makeDeps({ noDb: true }).deps, { spec: eurostatElectricity, text: JSON.stringify(nrg) });
   assert.equal(dry.counts.parsed, 1, "current-state: the latest half-year only");
@@ -170,7 +182,6 @@ test("INV-244: a region code absent from regions FAILS the run (never guessed); 
 // ---- state cost facts ----
 const cand = (o: object = {}) => ({ state_code: "CA", state_label: "California", region_code: "US-CA", dimension: "labor", fact_label: "Minimum wage", value: "16.50", unit: "USD/hour", source_url: "https://eur-lex.europa.eu/mw", source_name: "State labour department", span_text: "minimum wage is $16.50 per hour", ...o });
 test("state cost facts: grounded verbatim before rated, refused by name otherwise; a write authors the state's jurisdiction entity, identifier and ref (rule 17); origin class from the tier", async () => {
-  assert.deepEqual([originClassForTier(1), originClassForTier(3), originClassForTier(4), originClassForTier(7), originClassForTier(null)], ["official", "official", "verified", null, null]);
   const routes = { "https://eur-lex.europa.eu/mw": "In 2026 the minimum wage is $16.50 per hour statewide." };
   const dry = await runProducer(makeDeps({ noDb: true, routes }).deps, { spec: stateCostFacts, text: JSON.stringify([cand(), cand({ fact_label: "Paraphrase", span_text: "pay floor of sixteen fifty" }), cand({ fact_label: "Gone", span_text: null }), cand({ fact_label: "Bad host", source_url: "https://www.mondaq.com/x", span_text: "minimum wage" })]) });
   assert.equal(dry.counts.parsed, 1);
@@ -187,6 +198,7 @@ test("state cost facts: grounded verbatim before rated, refused by name otherwis
   assert.equal(db.tables.state_cost_facts?.[0]?.region_id, "r-ca");
   assert.equal(db.tables.state_cost_facts?.[0]?.value_numeric, 16.5);
   assert.ok(db.tables.state_cost_facts?.[0]?.source_id);
+  assert.equal(db.tables.state_cost_facts?.[0]?.origin_class, "official", "a government publisher's tier is an official origin");
   assert.equal(db.tables.entities?.[0]?.entity_id, entityId("jurisdiction", "CA"));
   assert.equal(db.tables.entity_refs?.[0]?.role, "jurisdiction");
   assert.equal(r.counts.refs_written, 1);
@@ -221,11 +233,8 @@ test("operator rows: the org is stamped by the caller (never read from the CSV),
 
 // ---- calculators ----
 test("calculators: auxiliary energy is kWh, then gCO2e only with a SOURCED intensity (never assumed), then a ratio only with a leg; the grid gate reads p90 and UNKNOWN is never CLEAR", () => {
-  assert.equal(computeEnergyConsumedKwh({ kwDraw: 10, dutyCycle: 0.5, hoursTypical: 8 }).value, 40);
-  assert.equal(computeEnergyConsumedKwh({ kwDraw: 10, dutyCycle: 1.5, hoursTypical: 8 }).label, "M");
-  assert.equal(convertKwhToGco2e({ energyKwh: 40, gridIntensityGco2ePerKwh: null }).label, "M");
-  assert.equal(convertKwhToGco2e({ energyKwh: 40, gridIntensityGco2ePerKwh: 100 }).value, 4000);
-  assert.equal(compareToLegEmissions({ auxiliaryGco2e: 4000, legGco2e: 0 }).label, "M");
+  assert.equal(auxiliaryEnergy({ kwDraw: 10, dutyCycle: 1.5, hoursTypical: 8 }).kwh.label, "M", "a duty cycle above 1 is refused");
+  assert.equal(auxiliaryEnergy({ kwDraw: 10, dutyCycle: 0.5, hoursTypical: 8, gridIntensityGco2ePerKwh: 100, legGco2e: 0 }).ratio.label, "M", "a ratio against a leg of zero is refused");
   const full = auxiliaryEnergy({ kwDraw: 10, dutyCycle: 0.5, hoursTypical: 8, gridIntensityGco2ePerKwh: 100, legGco2e: 2000 });
   assert.deepEqual([full.kwh.value, full.gco2e.value, full.ratio.value, "exceedsLeg" in full.ratio && full.ratio.exceedsLeg], [40, 4000, 2, true]);
   const noIntensity = auxiliaryEnergy({ kwDraw: 10, dutyCycle: 0.5, hoursTypical: 8 });

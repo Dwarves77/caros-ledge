@@ -33,8 +33,6 @@ import { auxiliaryEnergyRows, blsOews, eurostatElectricity, eurostatLabourCost, 
 import { researchAssessment, researchWalker } from "@/features/research";
 import type { EdgeAuthors } from "@/features/propagation/ops";
 import { holdingsPresent } from "@/features/sources";
-import { assistantDeps } from "@/features/assistant/deps";
-import { dashboardDeps } from "@/features/dashboard/deps";
 import { portfolioDeps } from "@/features/portfolio/deps";
 import type { StatutoryDeps } from "@/features/statutory";
 import { wireWorkspaceDeps, type WorkspaceDeps } from "@/features/workspace/api/deps";
@@ -305,8 +303,6 @@ const MANIFEST: readonly ManifestEntry[] = [
   ...(["itemHref", "revalidateWorkspaceData", "navCounts", "adminAttention", "timePhase", "withServerTiming"] as const).map((m): ManifestEntry => ({ member: `workspace.${m}`, status: "wired", present: (d) => fn(d.workspace[m]) })),
 
   { member: "workspace.portfolio", status: "wired", present: (d) => d.workspace.portfolio !== undefined },
-  { member: "dashboard.themeChips (the cross-page theme view)", status: "owed", owner: "P2-10 (src/core/themes themeChips)", present: () => dashboardDeps().themeChips !== undefined },
-  { member: "assistant.operationsFacts (the Operations data block)", status: "owed", owner: "P2-12 (src/features/operations/ask-context.ts)", present: () => assistantDeps().operationsFacts !== undefined },
 ];
 
 /** IMP-026: which required members are unwired (refuse), and which are owed to a slice that is not merged (reported). */

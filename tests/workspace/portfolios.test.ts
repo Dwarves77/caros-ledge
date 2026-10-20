@@ -5,7 +5,7 @@ import { wireWorkspaceDeps } from "@/features/workspace/api/deps";
 import { GET as detailGet, PATCH as detailPatch, DELETE as detailDelete } from "@/features/workspace/api/portfolio-detail";
 import { DELETE as membersDelete, POST as membersPost } from "@/features/workspace/api/portfolio-members";
 import { GET as listGet, POST as listPost } from "@/features/workspace/api/portfolios";
-import { computeRollup, memberKindForEntityId, normalizePortfolioName, parseMemberInput } from "@/features/workspace/portfolio/core";
+import { computeRollup } from "@/features/workspace/portfolio/core";
 import type { HeldRow } from "@/features/workspace/portfolio/types";
 
 import type { MemDb, Row } from "./_memdb.ts";
@@ -149,14 +149,18 @@ test("detail: a read layer that is not wired, or a failed member read, is a 503 
   assert.equal((await call(listGet, "viewer", "GET", L)).status, 503);
 });
 
-test("the pure rules: names, entity kinds, one-of member input, and roll-ups with every denominator", () => {
-  assert.equal(normalizePortfolioName("  a   b "), "a b");
-  assert.equal(normalizePortfolioName(7), null);
-  assert.equal(memberKindForEntityId("cl:corridor:x"), "corridor");
-  assert.equal(memberKindForEntityId("cl:port:x"), "entity");
-  assert.equal(memberKindForEntityId("x"), null);
-  assert.equal(parseMemberInput({ itemId: "not-a-uuid" }).ok, false);
-  assert.equal(parseMemberInput({}).ok, false);
+test("names, entity kinds and one-of member input are the requests' rules: a name is collapsed and must be text, an entity id names its kind, an item id must be an id and one of item or entity is required; and roll-ups carry every denominator", async () => {
+  const db = world();
+  const create = async (name: unknown) => call(listPost, "member", "POST", L, { name });
+  assert.equal(((await create("  a   b ")).body.portfolio as Row).name, "a b", "inner whitespace is collapsed");
+  assert.equal((await create(7)).status, 400, "a name that is not text is refused");
+  const add = async (body: unknown) => call(membersPost, "member", "POST", `${L}/${PF}/members`, body, p);
+  assert.equal((await add({ entityId: "cl:corridor:nlrtm-sgsin" })).status, 201);
+  assert.equal((await add({ entityId: "cl:jurisdiction:eu" })).status, 201);
+  assert.deepEqual(db.rows("portfolio_members").filter((r) => r.portfolio_id === PF).map((r) => r.member_kind).sort(), ["corridor", "entity"], "the kind comes from the entity id");
+  assert.equal((await add({ entityId: "x" })).status, 400, "an id that names no kind is refused");
+  assert.equal((await add({ itemId: "not-a-uuid" })).status, 404, "an item id that is no uuid is read as a legacy id and finds nothing");
+  assert.equal((await add({})).status, 400);
   const rollup = computeRollup(
     {
       members: [{ kind: "item", itemId: "a", entityId: null }, { kind: "item", itemId: "b", entityId: null }, { kind: "corridor", itemId: null, entityId: "cl:corridor:x" }],

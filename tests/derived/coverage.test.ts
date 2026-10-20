@@ -8,6 +8,7 @@ import { test } from "node:test";
 import { createElement, type ReactNode } from "react";
 
 import { notCollected, readCollectedSourceIds, readSourceCoverage } from "@/core/derived/source-coverage";
+import { TIER1_REGIONS } from "@/core/jurisdictions";
 import { MapPage } from "@/features/regulations/map/MapPage";
 import { readRegionCoverage } from "@/features/regulations/map/region-coverage";
 
@@ -80,6 +81,18 @@ test("surfaces:11 the map counts collected sources only and says how many it lef
   const html = renderApp(createElement(MapPage, { items: [], coverage: { regions: [{ region: REGION, covered: 1, partial: 0, gap: 1, total: 2 }], notCollected: 0, untyped: 0 }, activeCodes: null }));
   assert.match(html, /aria-label="Filter map to R \(1 of 2 jurisdictions covered, 1 gaps\)"/, "the accessible name states the same quantity as the visible text");
   assert.deepEqual([...await readCollectedSourceIds(m.db)].sort(), [A, B, D]);
+});
+
+test("coverage layer: covered needs an environmental body AND a legislature, partial either, a gap neither; stored source types win over the name's reading", async () => {
+  const region = TIER1_REGIONS.find((r) => ["AT", "BE"].every((iso) => r.jurisdictions.some((j) => j.iso === iso)));
+  assert.ok(region, "a Tier-1 region holds Austria and Belgium");
+  const [A, B, C] = ["60000001-0000-4000-8000-000000000001", "60000002-0000-4000-8000-000000000002", "60000003-0000-4000-8000-000000000003"] as const;
+  const m = memoryDb({
+    sources: [src(A, ["AT"], ["environmental_body"], "Austrian Environment Agency", "https://umweltbundesamt.at"), src(B, ["AT"], ["legislature"], "Parliament", "https://parlament.gv.at"), src(C, ["BE"], ["legislature"], "Some blog", "https://x.example")],
+    source_coverage: [row(1, "collected", { source_id: A }), row(2, "collected", { source_id: B }), row(3, "collected", { source_id: C })],
+  });
+  const r = (await readRegionCoverage(m.db)).regions.find((x) => x.region.id === region.id);
+  assert.deepEqual([r?.covered, r?.partial, r?.gap, r?.total], [1, 1, region.jurisdictions.length - 2, region.jurisdictions.length]);
 });
 
 test("surfaces:11 a failed collection read leaves the region links and says no count is shown; it never draws an all-gap map", () => {

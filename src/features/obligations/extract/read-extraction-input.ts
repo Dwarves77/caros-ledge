@@ -42,7 +42,6 @@ function buildReferenceDates(itemRow: { last_regenerated_at?: string | Date | nu
 }
 
 /** The usable captures in result_index order (the pool the context is cut from). */
-export { usableCaptures as usableCapturesOrdered };
 
 /** The text before and after the first usable capture that holds the span verbatim. */
 function buildDueDateContext(span: string, ordered: readonly PoolRow[]): { before: string; after: string; search_id: string } | null {
@@ -59,13 +58,6 @@ function buildDueDateContext(span: string, ordered: readonly PoolRow[]): { befor
 function attachDueDateContext(claims: readonly ClaimIn[], poolRows: readonly PoolRow[]): ClaimIn[] {
   const ordered = usableCaptures([...poolRows]);
   return claims.map((claim) => (!isDueDateSlotClaim(claim) || typeof claim.span !== "string" || !claim.span ? claim : { ...claim, context: buildDueDateContext(claim.span, ordered) }));
-}
-
-/** The item ids whose slot claims need context (the cheap pre-pass of a corpus run, so the pool is read only for these). */
-function itemIdsNeedingContext(claimRows: readonly ClaimRow[]): Set<string> {
-  const ids = new Set<string>();
-  for (const r of claimRows) if (r?.intelligence_item_id != null && needsDueDateContext(mapClaimRow(r))) ids.add(r.intelligence_item_id);
-  return ids;
 }
 
 export interface ExtractionInput {

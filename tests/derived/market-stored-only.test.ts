@@ -8,8 +8,7 @@ import { createElement } from "react";
 
 import { headlineCaption } from "@/features/market/lib/headline";
 import { leadTimeCanHaveRows } from "@/features/market/lib/lead-time";
-import { buildSeriesBoard } from "@/features/market/lib/series-board";
-import { readSeriesRows } from "@/features/market/read";
+import { readMarketSeries } from "@/features/market/read";
 import { CarbonCostOverlay } from "@/features/market/ui/CarbonCostOverlay";
 import { LeadTimeChart } from "@/features/market/ui/LeadTimeChart";
 import { MarketRail } from "@/features/market/ui/Rails";
@@ -71,10 +70,10 @@ test("surfaces:15 the lead-time section is drawn only when rows exist or the pro
 test("surfaces:17 the observation count is the series', not the window's: a series older than 400 days with 60 observations says 60", async () => {
   const day = (i: number) => new Date(Date.UTC(2025, 0, 1) + i * 7 * 86_400_000).toISOString().slice(0, 10);
   const rows = Array.from({ length: 60 }, (_, i) => ({ series_key: "eu-oil-bulletin:diesel-nl", label: "Diesel NL", value_numeric: 1.5 + i / 100, unit: "EUR/L", currency: "EUR", derivation: "observed", origin_class: "official", source_key: "ec_weekly_oil_bulletin", source_ref: "r", n_observations: null, method_version: "v1", as_at_date: day(i), reference_period: day(i) }));
-  const windowed = await readSeriesRows(memoryDb({ market_series: rows }).db);
-  assert.ok(windowed.length < 60, "the window drops the oldest rows");
-  const board = buildSeriesBoard(windowed);
-  assert.equal(board.groups.find((g) => g.keyPrefix === "eu-oil-bulletin")?.series[0]?.observationCount, 60);
+  const { board } = await readMarketSeries(memoryDb({ market_series: rows, data_sources: [], sources: [] }).db);
+  const series = board.groups.find((g) => g.keyPrefix === "eu-oil-bulletin")?.series[0];
+  assert.ok((series?.deltas.sparkline.length ?? 60) < 60, "the window drops the oldest rows");
+  assert.equal(series?.observationCount, 60);
 });
 
 test("surfaces:18 the headline caption states families and series as two numbers, never one as a fraction of the other", () => {

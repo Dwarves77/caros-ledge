@@ -167,7 +167,7 @@ function requireProvenance(name: string, p: Provenanced | null | undefined): voi
   if (!p.basis?.trim()) throw new Error(`carbonCostPerFeu: ${name}=${p.value} was supplied with no basis citation; every number carries its provenance`);
 }
 
-function carbonCostPerFeu(input: CarbonCostInput): CarbonCostResult {
+export function carbonCostPerFeu(input: CarbonCostInput): CarbonCostResult {
   const { corridor, factor = null, distance = null, payload = null, carbonPrice = null } = input ?? ({} as CarbonCostInput);
   if (!corridor?.origin || !corridor.dest || !corridor.mode) throw new Error("carbonCostPerFeu: corridor { origin, dest, mode } is required");
   requireProvenance("distance", distance);

@@ -7,8 +7,8 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { test } from "node:test";
 
-import { answer, dbError, HttpError, LookupError, statusForDb } from "@/core/http/errors";
-import { DB_SENTENCES, refusal, refusalSentence, type RefusalReason } from "@/core/http/failure";
+import { answer, dbError, HttpError, LookupError } from "@/core/http/errors";
+import { DB_SENTENCES, refusal, refusalSentence, statusForDb, type RefusalReason } from "@/core/http/failure";
 import sentences from "@/core/http/data/sentences.json" with { type: "json" };
 import { log } from "@/core/shared/log";
 

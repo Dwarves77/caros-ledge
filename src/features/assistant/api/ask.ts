@@ -5,10 +5,10 @@ import { LookupError, ok, route } from "@/core/http/errors";
 import { isRefusal, requireUser } from "@/core/http/guard";
 import { parseJson } from "@/core/http/parse";
 import { detailHref, jurisdictionCode, metaLine } from "@/core/lists";
+import { readOperationsAskLines } from "@/features/operations/read/operations-reads";
 import { loadSuppressedClaims, redactDeep, redactSuppressedClaims } from "@/features/corrections";
 import { embeddedTier, runSearch } from "@/features/search/run-search";
 
-import { assistantDeps } from "../deps";
 import { matchPassages } from "../passages";
 import { readAnswers } from "../read/answers";
 import { ASK_DISCLAIMER, type AskHit, type AskResponse } from "../types";
@@ -95,9 +95,8 @@ export const POST = route(NAME, async (request) => {
   const answers = await readAnswers(auth.client, rows, suppressed).catch((e: unknown) => {
     throw new LookupError("answers", e);
   });
-  const operationsFacts = assistantDeps().operationsFacts;
-  const operations = operationsFacts ? await operationsFacts(auth.client, { question, jurisdictions: [...new Set(rows.flatMap((r) => r.jurisdictions ?? []))] }).catch((e: unknown) => {
-        throw new LookupError("operations facts", e);
-      }) : [];
+  const operations = await readOperationsAskLines(auth.client, { jurisdictions: [...new Set(rows.flatMap((r) => r.jurisdictions ?? []))] }).catch((e: unknown) => {
+    throw new LookupError("operations facts", e);
+  });
   return reply({ hits, answers, operations });
 });

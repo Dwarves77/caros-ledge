@@ -4,7 +4,7 @@ import { test } from "node:test";
 
 import { readCsvStream, splitCsvText } from "@/core/csv/stream";
 import { readDrainSwitch } from "@/core/drain/switch";
-import { openAlexGet, searchWorks, workByDoi } from "@/core/http/openalex";
+import { openAlexGet, workByDoi } from "@/core/http/openalex";
 import { loadProducerRegistry, runRegistered, selectRuns } from "@/core/producers/registry";
 import { entityRefValuesForTable, loadRowsFile, parseOperatorRows, registerCitedSource, requireCitation, resolveEntityByName, RowsFileError, validateEntityRefs } from "@/core/producers/rows-file";
 import { NetworkError, runProducer, type ProducerSpec } from "@/core/producers/runner";
@@ -228,7 +228,7 @@ test("OpenAlex: the polite mailto comes from the environment (never a literal), 
     return new Response(JSON.stringify({ results: [{ id: "W1" }] }), { status: 200 });
   };
   const deps = { fetch: fetch as never, sleep: async (ms: number) => void sleeps.push(ms), email: "ops@example.test" };
-  assert.deepEqual(await searchWorks({ search: "freight" }, deps), { results: [{ id: "W1" }] });
+  assert.deepEqual(await openAlexGet("/works", { search: "freight" }, deps), { results: [{ id: "W1" }] });
   assert.deepEqual(sleeps, [2000]);
   assert.match(urls[0] as string, /mailto=ops%40example\.test/);
   assert.equal(await workByDoi("doi:10.1/none", deps), null);

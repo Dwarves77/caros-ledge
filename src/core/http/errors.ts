@@ -7,7 +7,7 @@ import { withErrorCapture } from "@/core/shared/telemetry";
 
 import { DB_SENTENCES, LOOKUP_SENTENCE, statusForDb } from "./failure";
 
-export { LOOKUP_SENTENCE, statusForDb };
+export { LOOKUP_SENTENCE };
 
 /** The one error shape: `{ error: string }` with a status. */
 export class HttpError extends Error {

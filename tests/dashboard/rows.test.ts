@@ -2,9 +2,11 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import type { Resource } from "@/core/types";
-import { buildChangedRows, buildDueNextRows, briefCardState, CANDIDATE_WINDOW, changeRowPrefix, computeAuditDate, deriveBriefTitle, dueNextWindowLabel, firstTokenOf, recentChangesWindowDays, selectBriefResources, type Candidate, type FeedRow } from "@/features/dashboard/rows";
+import { buildChangedRows, buildDueNextRows, briefCardState, changeRowPrefix, computeAuditDate, deriveBriefTitle, dueNextWindowLabel, firstTokenOf, recentChangesWindowDays, selectBriefResources, type Candidate, type FeedRow } from "@/features/dashboard/rows";
 
 const NOW = new Date("2026-10-15T12:00:00.000Z");
+/** The brief reads at most this many distinct change ids in full (the window is a product number, written here once as the test's oracle). */
+const CANDIDATE_WINDOW = 48;
 const item = (id: string, over: Partial<Resource> = {}): Resource => ({ id, title: `Title ${id}`, type: "regulation", domain: 1, priority: "HIGH", jurisdiction: "eu", modes: ["ocean"], topic: "emissions", tags: [], timeline: [], ...over }) as unknown as Resource;
 const feed = (id: string, over: Partial<FeedRow> = {}): FeedRow => ({ id, legacy_id: null, title: `Title ${id}`, priority: "HIGH", effective_priority: "HIGH", added_date: "2026-10-14", change_kind: "new", change_date: "2026-10-14", ...over });
 const cand = (id: string, over: Partial<Resource> = {}, verticals: string[] = []): Candidate => ({ uuid: id, resource: item(id, over), verticals });

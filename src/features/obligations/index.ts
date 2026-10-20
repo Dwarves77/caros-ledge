@@ -7,7 +7,7 @@ export { dedupeEvents } from "./extract/dedupe";
 export type { ExtractedEvent } from "./extract/dedupe";
 export { locateCalendarDate } from "./extract/date-grammar";
 export { EXTRACTOR_VERSION, extractForwardEvents } from "./extract/extract-forward-events";
-export { readExtractionInput, usableCapturesOrdered } from "./extract/read-extraction-input";
+export { readExtractionInput } from "./extract/read-extraction-input";
 export { isDueDateSlotClaim, needsDueDateContext } from "./extract/scan";
 export { readAndExtractForwardEvents } from "./extract/verbatim-in-source";
 export { forwardEventKey, insertForwardEvents } from "./extract/write-forward-events";

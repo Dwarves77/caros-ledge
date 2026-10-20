@@ -12,8 +12,8 @@ import { WatchToggle } from "@/ui/WatchToggle";
 
 export function DetailWatch({ type, id }: { type: WatchlistItemType; id: string }) {
   const m = useWatchMembership(type, id);
-  const status = useWatchStore((s) => s.byType[type]?.status);
-  if (status === "failed") {
+  // The hook above subscribes to this type's slice, so the component renders again when the read settles; the status is read from the store itself (server render included).
+  if (useWatchStore.getState().byType[type]?.status === "failed") {
     return (
       <StateNote tone="error" action={{ label: "Retry", onClick: () => void loadMembership(type) }}>
         {refusalSentence("watch_status_unavailable")}

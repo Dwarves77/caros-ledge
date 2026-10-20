@@ -10,8 +10,6 @@ import { authorEdges, createMethodRegistry, type MarketMethodDeps } from "@/core
 import { buildCarbonMethod, CARBON_METHOD_ID, CARBON_METHOD_VERSION } from "@/core/propagation/methods";
 import type { RunResult } from "@/core/sources/run-result";
 
-export { CARBON_METHOD_ID, CARBON_METHOD_VERSION };
-
 interface FactorRow {
   factor_id: string;
   quantity_basis: unknown;

@@ -17,7 +17,7 @@ import { workspaceDeps } from "./deps";
 // the whole request with nothing written, and an unverifiable roster fails closed. assigned_by is the session user (INV-166).
 const ASSIGNMENT_COLUMNS = "id, assignee_user_id, assigned_by, due_on, state, created_at";
 const LIST_LIMIT = 200;
-const ASSIGNMENT_STATES = ["open", "done"] as const;
+
 type Row = { id: string; assignee_user_id: string; assigned_by: string | null; due_on: string | null; state: string; created_at: string };
 
 /** The assignee, the person who assigned it, or an owner or admin may change an assignment; always a writer. */

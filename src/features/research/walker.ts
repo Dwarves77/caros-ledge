@@ -8,7 +8,7 @@ import { registerCitedSource } from "@/core/producers/rows-file";
 import type { ProducerDeps } from "@/core/producers/deps";
 import type { ParseOut, ProducerCtx, ProducerSpec } from "@/core/producers/runner";
 import { runProducer, type RunInput } from "@/core/producers/runner";
-import { openAlexGet, searchWorks, type OpenAlexDeps } from "@/core/http/openalex";
+import { openAlexGet, type OpenAlexDeps } from "@/core/http/openalex";
 import type { Rec } from "@/core/producers/upsert-plan";
 import { hostOf } from "@/core/shared";
 import { isDoiResolverHost, placeHostWithVerdicts, registerSource, type HostVerdictRef } from "@/core/sources";
@@ -30,10 +30,7 @@ function normalizeOpenAlexWork(work: Rec | null | undefined): WalkCandidate | nu
   const url = ((work?.primary_location as { landing_page_url?: string } | undefined)?.landing_page_url) || (work?.doi as string | undefined) || null;
   return url && work?.title ? { title: String(work.title), sourceUrl: url, publishedDate: (work.publication_date as string) ?? null, openAlexId: (work.id as string) ?? null } : null;
 }
-async function searchOpenAlexWorks(q: { query: string; perPage?: number }, deps: OpenAlexDeps = {}): Promise<WalkCandidate[]> {
-  const body = await searchWorks({ search: q.query, perPage: q.perPage ?? 10 }, deps);
-  return (body?.results ?? []).map(normalizeOpenAlexWork).filter((c): c is WalkCandidate => c !== null);
-}
+
 /** The first `max` needs by subject ref (a stable order), so a bounded pass is repeatable. */
 const boundNeeds = (needs: readonly Need[], max = MAX_NEEDS): Need[] => [...needs].sort((a, b) => a.subject_ref.localeCompare(b.subject_ref)).slice(0, max);
 

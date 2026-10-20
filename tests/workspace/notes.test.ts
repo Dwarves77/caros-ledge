@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { NOTE_MAX_LENGTH } from "@/core/workspace/roster";
-import { DELETE, GET, PATCH, parseNoteBody, POST } from "@/features/workspace/api/notes";
+import { DELETE, GET, PATCH, POST } from "@/features/workspace/api/notes";
 
 import type { MemDb } from "./_memdb.ts";
 import { call, E, ITEM_1, matrix, ORG_A, ORG_B, script, seed, USER } from "./_world.ts";
@@ -25,11 +25,16 @@ test("persona matrix: notes GET, POST, PATCH, DELETE", async () => {
   await matrix("notes DELETE", async (p, db) => (withNote(db), (await call(DELETE, p, "DELETE", `${URL_}?noteId=${NOTE}`, undefined, P)).status), E(401, 403, 200, 200, 200, 404, 403));
 });
 
-test("parseNoteBody trims, refuses blank and over-length with a plain message", () => {
-  assert.deepEqual(parseNoteBody("  hi  "), { body: "hi" });
-  assert.ok("error" in parseNoteBody("   "));
-  assert.ok("error" in parseNoteBody(42));
-  assert.match((parseNoteBody("x".repeat(NOTE_MAX_LENGTH + 1)) as { error: string }).error, /limited to 4000/);
+test("a note body is trimmed, and a blank, a non-text or an over-length body is a 400 with a plain message", async () => {
+  const db = script(seed());
+  const post = async (body: unknown) => call(POST, "member", "POST", URL_, { body }, P);
+  assert.equal(((await post("  hi  ")).body.note as { body: string }).body, "hi");
+  assert.equal((await post("   ")).status, 400);
+  assert.equal((await post(42)).status, 400);
+  const long = await post("x".repeat(NOTE_MAX_LENGTH + 1));
+  assert.equal(long.status, 400);
+  assert.match(String(long.body.error), /limited to 4000/);
+  assert.equal(db.rows("item_notes").length, 1, "only the trimmed note was written");
 });
 
 test("a member adds a note; the list shows it with the author's name and the caller's rights", async () => {

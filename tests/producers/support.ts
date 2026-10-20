@@ -2,11 +2,16 @@
 import { deflateRawSync } from "node:zlib";
 
 import type { ProducerDeps } from "@/core/producers/deps";
+import type { ProducerSpec } from "@/core/producers/runner";
 
 import { memoryDb } from "../_support/memory-db.ts";
 
 export const NOW = new Date("2026-10-15T12:00:00.000Z");
 export interface Call { url: string; init?: { headers?: Record<string, string>; method?: string; body?: string } }
+
+/** A producer's parse over a document: the golden tests read its rows and warnings through the spec, the one path production takes (the helpers behind it are not exported). */
+export const parseDoc = async (spec: ProducerSpec, doc: { text?: string; bytes?: Buffer; meta?: object }, ctx: Record<string, unknown> = {}) =>
+  spec.parse(doc as never, { input: {}, state: {}, get: async () => new Response(""), deps: makeDeps({ noDb: true }).deps, ...ctx } as never);
 
 /** A fetch that answers from a url-prefix table; an unlisted URL answers 404 and every call is recorded. */
 export function stubFetch(routes: Record<string, string | Buffer | (() => Response)>) {

@@ -2,7 +2,7 @@
 // Ported from old_repo/src/components/operations/OperationsDetailSurface.tsx (lines 146-170)
 // The S3/S4 gate of an Operations profile (INV-233), pure: a dimension is eligible when at least two regions hold sourced data for it INCLUDING a region of the item's own (over the item's WHOLE jurisdiction list;
 // the old page passed one value), and ONE note builder says why a section is omitted, rendered in place of the section. A coverage read that failed gates every dimension closed and says so.
-import { dimensionByDb, DIMENSIONS, type OperationsDimension } from "./dimensions";
+import { DIMENSIONS, type OperationsDimension } from "./dimensions";
 import { regionsForItem, type ItemJurisdictions, type RosterRegion } from "./region-resolve";
 
 export interface SourcedCoverage {
@@ -55,5 +55,4 @@ export function omitNote(sectionKey: "3" | "4", e: MatrixEligibility | null | un
   if (short.some((d) => d.sourcedRegionCount >= 2 && !d.itemJurisdictionPresent)) return `${what} needs ${region} to have sourced coverage, and it does not yet.`;
   return `${what} needs sourced data in at least two regions for a dimension, including ${region}.`;
 }
-/** One dimension's own line for the profile's coverage card, e.g. "Labor markets: 3 regions sourced". */
-const dimensionCoverageLine = (d: DimensionEligibility): string => `${dimensionByDb(d.dimension)?.name ?? d.dimension}: ${d.sourcedRegionCount === 0 ? "no region sourced" : `${d.sourcedRegionCount} region${d.sourcedRegionCount === 1 ? "" : "s"} sourced`}`;
+

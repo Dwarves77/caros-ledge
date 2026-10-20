@@ -15,7 +15,7 @@ test("every wired member is present on the built deps, and the owed members are 
   const f = fixture();
   const report = startupCheck(f.d);
   assert.deepEqual(report.missing, []);
-  assert.deepEqual(report.owed.map((o) => o.member).sort(), ["assistant.operationsFacts (the Operations data block)", "dashboard.themeChips (the cross-page theme view)", "propagation EdgeAuthors (authorCarbonIntensityEdges)"].sort());
+  assert.deepEqual(report.owed.map((o) => o.member).sort(), ["propagation EdgeAuthors (authorCarbonIntensityEdges)"].sort());
 });
 
 test("an unwired required member is named, and the start is refused with it in every environment, not only Vercel (IMP-026, G9)", () => {

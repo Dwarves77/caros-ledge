@@ -10,8 +10,8 @@ import { readWatchlist, WATCHLIST_RAIL_LIMIT } from "@/features/watchlist/read/w
 import { StateNote } from "@/ui";
 import { PageFrame } from "@/ui/shell";
 import { readSourceCoverage } from "@/core/derived/source-coverage";
+import { readThemeChips } from "@/core/detail/cross-page-read";
 
-import { dashboardDeps } from "./deps";
 import { readCounts, readDigest } from "./read/digest";
 import { buildChangedRows, buildDueNextRows, computeAuditDate, dueNextWindowLabel, firstTokenOf, surfaceItemTotal } from "./rows";
 import { DashboardBrief } from "./ui/DashboardBrief";
@@ -51,7 +51,6 @@ export default async function DashboardRoute() {
     );
   }
   const db = await userClient();
-  const themeChips = dashboardDeps().themeChips;
   const [{ profile, failed: profileFailed }, digest, counts, watch, name, themes, coverage] = await Promise.all([
     readWorkspaceProfile(db, orgId),
     cachedRead(["dashboard-digest", orgId], () => readDigest(db, orgId), { tags: [APP_DATA_TAG], revalidate: REVALIDATE_SECONDS }),
@@ -62,7 +61,7 @@ export default async function DashboardRoute() {
       if (error) throw new Error(error.message);
       return (data as { full_name: string | null; display_name: string | null } | null)?.full_name ?? (data as { display_name: string | null } | null)?.display_name ?? null;
     }),
-    themeChips ? settle("themes", () => themeChips(db, { minPages: 2, max: 3 })) : Promise.resolve([]),
+    settle("themes", () => readThemeChips(db, { surface: null, minPages: 2, max: 3 })),
     settle("source coverage", () => readSourceCoverage(db)),
   ]);
 
@@ -91,7 +90,7 @@ export default async function DashboardRoute() {
         ]}
         counts={totals}
         watchlist={watch?.items ?? null}
-        themes={themes ?? []}
+        themes={themes}
         coverage={coverage}
       />
     </>

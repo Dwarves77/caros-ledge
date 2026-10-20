@@ -14,7 +14,6 @@ import { coverageLineModel } from "@/features/regulations/coverage-line";
 import { isIdLabel } from "@/ui/detail/collab/collab-client";
 import { centroidOf } from "@/features/regulations/map/centroids";
 import { markerSize } from "@/features/regulations/map/marker";
-import { rollupRegions, sourceTypesFor } from "@/features/regulations/map/region-coverage";
 import { regionCodes } from "@/features/regulations/map/region-filter";
 import { chipOfKey, jurisdictionKeyOf, rollup } from "@/features/regulations/map/rollup";
 import { joinSegments } from "@/features/regulations/meta";
@@ -196,18 +195,6 @@ test("the map's region filter resolves: a priority-region id, one priority code,
   assert.deepEqual(regionCodes("eu"), ["EU"]);
   assert.equal(regionCodes("atlantis"), null);
   assert.equal(regionCodes(""), null);
-});
-
-test("coverage layer: covered needs an environmental body AND a legislature, partial either, a gap neither; stored source types win", () => {
-  const regions = [{ id: "r", name: "R", jurisdictions: [{ iso: "AT", name: "Austria" }, { iso: "BE", name: "Belgium" }, { iso: "BG", name: "Bulgaria" }] }];
-  const rows = [
-    { name: "Austrian Environment Agency", url: "https://umweltbundesamt.at", jurisdictions: ["AT"], source_type: ["environmental_body"] },
-    { name: "Parliament", url: "https://parlament.gv.at", jurisdictions: ["AT"], source_type: ["legislature"] },
-    { name: "Some blog", url: "https://x.example", jurisdictions: ["BE"], source_type: ["legislature"] },
-  ];
-  const [r] = rollupRegions(rows, regions);
-  assert.deepEqual([r?.covered, r?.partial, r?.gap, r?.total], [1, 1, 1, 3]);
-  assert.deepEqual(sourceTypesFor({ name: "x", url: "y", jurisdictions: null, source_type: ["environmental_body"] }), ["environmental_body"]);
 });
 
 test("the dek is built once and never repeats a part", () => {

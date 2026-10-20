@@ -23,7 +23,6 @@ import { classifyItemBindingPosition, type ItemForClassification } from "./class
 import rulesJson from "./data/object-rules.json";
 import targetsJson from "./data/fueleu-targets.json";
 
-const OBJECT_DERIVATION_VERSION = "oblig-objects-2026-10-15.1";
 const FREQUENCIES: ReadonlySet<string> = new Set(["annual", "per_consignment", "per_voyage", "event_triggered"]);
 const MODE_ALIASES: ReadonlySet<string> = new Set(["sea", "maritime", "water", "vessel", "marine", "truck", "lorry", "hgv", "barge", "iww", "inland-waterway", "freighter", "airfreight"]);
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;

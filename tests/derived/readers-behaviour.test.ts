@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { readItemRows } from "@/features/dashboard/read/items";
-import { readMapItems } from "@/features/regulations/map/read";
+import { getMapItems } from "@/features/regulations/map/read";
 import { relatedItems } from "@/features/research/read/related-items";
 
 import { memoryDb, type Row } from "../_support/memory-db.ts";
@@ -49,12 +49,15 @@ test("S:10: the map reads the list's own workspace RPC, so a retagged item is th
   const withRange = (name: string, args: Record<string, unknown>) => Object.assign(Promise.resolve(base(name, args)), { range: () => base(name, args) });
   m.mem.rpcs.get_workspace_intelligence_listings = (a, d) => listing(a, d);
   (m.db as { rpc: unknown }).rpc = (name: string, args: Record<string, unknown>) => withRange(name, args);
-  const items = await readMapItems(m.db, ORG);
-  assert.deepEqual(items.map((i) => [i.id, i.priority]), [["l-01", "CRITICAL"]]);
+  const read = await getMapItems(m.db, ORG);
+  assert.ok(read.ok);
+  assert.deepEqual(read.ok && read.value.map((i) => [i.id, i.priority]), [["l-01", "CRITICAL"]]);
 });
 
 test("S:10: a failed listing read fails the map; it is never an empty map", async () => {
   const m = memoryDb({ intelligence_items: [] });
   (m.db as { rpc: unknown }).rpc = () => Object.assign(Promise.resolve({ data: null, error: { message: "down" } }), { range: () => Promise.resolve({ data: null, error: { message: "down" } }) });
-  await assert.rejects(() => readMapItems(m.db, ORG), /down/);
+  const read = await getMapItems(m.db, ORG);
+  assert.equal(read.ok, false, "a failed listing read is a failed read, never an empty cached map");
+  assert.match(read.ok ? "" : read.error, /down/);
 });

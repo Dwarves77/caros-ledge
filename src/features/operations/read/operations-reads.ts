@@ -15,6 +15,7 @@ import { classTierForHost, customerTierOf } from "@/core/sources";
 import type { Resource } from "@/core/types";
 import { readCategory, readSurfaceCounts, type WorkspaceAggregates } from "@/features/lists";
 
+import { regionalFactLine, stateCostLine } from "../ask-context";
 import { inputRefs, isOperationsFigure, OPERATIONS_INPUT_TABLES, toDerivedFigure, type DerivedFigure, type DerivedRow, type ResolvedInput } from "../model/derived-view";
 import { DIMENSIONS } from "../model/dimensions";
 import { checkMatrixEligibility, eligibilityUnavailable, type MatrixEligibility } from "../model/matrix-eligibility";
@@ -81,8 +82,8 @@ async function readCoverage(db: Db, roster: readonly OperationsRegion[]): Promis
   return rows.filter((r) => byId.has(r.region_id)).map((r) => ({ regionCode: byId.get(r.region_id) as string, dimension: r.dimension, state: r.state, factCount: r.fact_count, notes: r.notes }));
 }
 
-/** Every regional fact the producers wrote, with the registered source's customer tier and freshness derived from the row's own date against `nowIso`. */
-async function readFacts(db: Db, roster: readonly OperationsRegion[], nowIso: string): Promise<OperationsFact[]> {
+/** Every regional fact the producers wrote, with the registered source's customer tier and freshness derived from the row's own date against `nowIso` (no instant, no judgement: freshness is unknown). */
+async function readFacts(db: Db, roster: readonly OperationsRegion[], nowIso?: string): Promise<OperationsFact[]> {
   const byId = new Map(roster.map((r) => [r.id, r.code]));
   type Row = Record<string, unknown> & { id: string; region_id: string; sources: SourceEmbed | SourceEmbed[] | null };
   const rows = await fetchAllRows<Row>((from, to) => db.from("regional_data_facts").select("id, region_id, dimension, fact_label, value, status, trend, source_note, last_updated, value_numeric, unit, currency, derivation, origin_class, source_key, source_ref, n_observations, method_version, as_at_date, reference_period, sources(name, url, base_tier, effective_tier, tier_override)").order("id", { ascending: true }).range(from, to) as never, { cap: 100_000 });
@@ -94,7 +95,7 @@ async function readFacts(db: Db, roster: readonly OperationsRegion[], nowIso: st
     // no date, is unknown. A constant cadence made every fact read "current" for a year (register surfaces:12).
     const cadence = CADENCE[text("method_version") ?? ""] ?? null;
     const asAt = (text("as_at_date") ?? last)?.slice(0, 10) ?? null;
-    const fresh = cadence && asAt ? stalenessOf({ as_of: { event_date: asAt, source_published_at: asAt }, expected_refresh: cadence }, nowIso.slice(0, 10)) : "unknown";
+    const fresh = cadence && asAt && nowIso ? stalenessOf({ as_of: { event_date: asAt, source_published_at: asAt }, expected_refresh: cadence }, nowIso.slice(0, 10)) : "unknown";
     return {
       regionCode: byId.get(r.region_id) as string, dimension: r.dimension as string, factLabel: r.fact_label as string, value: String(r.value ?? ""), status: text("status"), trend: ["up", "down", "flat"].includes(String(r.trend)) ? (r.trend as "up" | "down" | "flat") : null,
       sourceName: src?.name ?? null, sourceUrl: src?.url ?? null, sourceTier: customerTierOf(src), sourceNote: text("source_note"), lastUpdated: last, freshness: (FRESH.has(fresh) ? fresh : "unknown") as Freshness,
@@ -250,4 +251,16 @@ export async function readSpec09(db: Db, orgId: string | null, regionCodes: read
     intensityFailed = true;
   }
   return { aux, grid, intensity, intensityFailed };
+}
+
+/**
+ * The Operations lines the Assistant answers with: the regional facts of the regions the hits' jurisdictions fall in and the per-state cost facts, one plain line each with its source, read live, with no freshness judged since no line states one (the roster, the
+ * facts and the state costs are the same reads the Operations page draws). No region named, or a roster that holds none of them, is no lines: nothing is invented. A failed read throws; the caller says so.
+ */
+export async function readOperationsAskLines(db: Db, input: { jurisdictions: readonly string[] }): Promise<string[]> {
+  const roster = await readRoster(db);
+  const codes = new Set(regionsForItem(roster, { jurisdictions: input.jurisdictions }));
+  if (codes.size === 0) return [];
+  const [facts, stateCosts] = await Promise.all([readFacts(db, roster), readStateCosts(db)]);
+  return [...facts.filter((f) => codes.has(f.regionCode)).map(regionalFactLine), ...stateCosts.map(stateCostLine)];
 }

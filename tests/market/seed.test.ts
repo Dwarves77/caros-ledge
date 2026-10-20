@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { test } from "node:test";
 
-import { isRatified, loadSeriesItemMap, readSeriesItemMap } from "@/features/market/producers/market-series-items";
+import { isRatified, readSeriesItemMap } from "@/features/market/producers/market-series-items";
 
 import { memoryDb } from "../_support/memory-db.ts";
 
@@ -38,9 +38,4 @@ test("0029 declares what the reader relies on: a ratified row has its item, a de
   assert.match(sql, /GRANT SELECT ON TABLE public\.market_series_items TO authenticated;/);
   assert.doesNotMatch(sql, /GRANT (INSERT|UPDATE|DELETE|ALL)[^;]*TO (authenticated|anon)/);
   assert.match(sql, /ENABLE ROW LEVEL SECURITY/);
-});
-
-test("the map loader still refuses an entry outside the shape (a reader of the table and the producers share one vocabulary)", () => {
-  assert.throws(() => loadSeriesItemMap({ "a:b": { item_id: "x", status: "ratified", surprise: 1 } }));
-  assert.equal(loadSeriesItemMap({ "a:b": { item_id: null, status: "pending" } }).length, 1);
 });

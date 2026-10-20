@@ -34,7 +34,7 @@ const classification = z
   })
   .strict();
 export type Classification = z.infer<typeof classification>;
-const validateClassification = (obj: unknown): Classification => {
+export const validateClassification = (obj: unknown): Classification => {
   const c = classification.parse(obj);
   return { ...c, stage_rules: [...c.stage_rules].sort((a, b) => b.min_units - a.min_units) };
 };
@@ -50,7 +50,7 @@ export interface HdvAggregate {
   groups: HdvGroup[];
 }
 /** Fold the extract into groups, streaming; `maxBytes` cuts the read and marks it truncated (the half record at the cut is dropped, never counted). */
-async function aggregateHdvCsv(chunks: AsyncIterable<Uint8Array> | Iterable<Uint8Array | string>, { maxBytes }: { maxBytes?: number | null } = {}): Promise<HdvAggregate> {
+export async function aggregateHdvCsv(chunks: AsyncIterable<Uint8Array> | Iterable<Uint8Array | string>, { maxBytes }: { maxBytes?: number | null } = {}): Promise<HdvAggregate> {
   const state = { truncated: false };
   const source = maxBytes ? limitBytes(chunks, maxBytes, state) : chunks;
   const totals = { records: 0, counted: 0, excluded: {} as Record<string, number>, malformed: 0 };
@@ -101,7 +101,7 @@ async function aggregateHdvCsv(chunks: AsyncIterable<Uint8Array> | Iterable<Uint
 }
 
 /** A tech category for a group, or the named residue reason. Hybrid, dual-fuel and conventional powertrains are not evidence of a roadmap technology. */
-function classifyGroup(g: HdvGroup, cfg: Classification): { tech_category: string } | { residue: string } {
+export function classifyGroup(g: HdvGroup, cfg: Classification): { tech_category: string } | { residue: string } {
   if (g.zev === "Yes") {
     const rule = cfg.zev_tech_rules.find((r) => Object.entries(r.when).every(([k, v]) => (g as unknown as Record<string, string>)[k] === v));
     return rule ? { tech_category: rule.tech_category } : { residue: "zero_emission_unmapped" };
@@ -110,14 +110,14 @@ function classifyGroup(g: HdvGroup, cfg: Classification): { tech_category: strin
   if (g.hybrid === "Yes") return { residue: "hybrid_powertrain" };
   return g.dual_fuel === "Yes" ? { residue: "dual_fuel_powertrain" } : { residue: "conventional_powertrain" };
 }
-const stageFor = (units: number, cfg: Classification): string | null => cfg.stage_rules.find((r) => units >= r.min_units)?.stage ?? null;
+export const stageFor = (units: number, cfg: Classification): string | null => cfg.stage_rules.find((r) => units >= r.min_units)?.stage ?? null;
 
 export interface Residue {
   byReason: Record<string, { groups: number; units: number }>;
   unresolvedManufacturers: Array<{ manufacturer: string; units: number }>;
 }
 /** Groups to roadmap rows: merged per (manufacturer, technology), staged from the LATEST registration year; every dropped group lands in the named residue. */
-function mapGroupsToRows(groups: readonly HdvGroup[], o: { cfg: Classification; entities: ReadonlyArray<{ canonical_name: string; entity_id: string }>; sourceId: string | null }) {
+export function mapGroupsToRows(groups: readonly HdvGroup[], o: { cfg: Classification; entities: ReadonlyArray<{ canonical_name: string; entity_id: string }>; sourceId: string | null }) {
   const residue: Residue = { byReason: {}, unresolvedManufacturers: [] };
   const add = (reason: string, groupsN: number, units: number) => {
     const r = (residue.byReason[reason] ??= { groups: 0, units: 0 });

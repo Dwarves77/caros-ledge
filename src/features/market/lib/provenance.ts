@@ -4,7 +4,6 @@
 import { tierLabelOf } from "@/core/sources";
 
 import wordsJson from "./data/provenance-words.json";
-import type { FactorRow } from "./carbon";
 import type { Producer } from "./registry";
 import type { SeriesDisplayRow } from "./series-board";
 
@@ -59,10 +58,6 @@ export function envelopeFromSeriesRow(row: Pick<SeriesDisplayRow, "derivation" |
     sourceTier: rating?.tier ?? null,
     asOf: row.asAtDate ?? row.referencePeriod,
   };
-}
-
-function envelopeFromFactorRow(f: FactorRow, rating: SourceRating | null): FigureEnvelope {
-  return { derivation: f.derivation ?? null, originClass: f.origin_class ?? null, methodVersion: f.method_version ?? null, nObservations: f.n_observations ?? null, sourceKey: f.source_key ?? null, sourceName: rating?.name ?? null, sourceUrl: rating?.url ?? null, licence: rating?.licence ?? null, attribution: rating?.attribution ?? null, sourceTier: rating?.tier ?? null, asOf: f.as_at_date ?? null };
 }
 
 /** A published price statistic carries a stored rating and a release date; when it stores none, the rating of the series behind it applies. */

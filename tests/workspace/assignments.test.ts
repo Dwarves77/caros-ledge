@@ -3,7 +3,7 @@ import { test } from "node:test";
 
 import { isIsoDate } from "@/core/shared/dates";
 import { wireWorkspaceDeps } from "@/features/workspace/api/deps";
-import { DELETE, GET, parseAssignInput, PATCH, POST } from "@/features/workspace/api/assignments";
+import { DELETE, GET, PATCH, POST } from "@/features/workspace/api/assignments";
 
 import type { MemDb } from "./_memdb.ts";
 import { call, E, ITEM_1, matrix, ORG_A, ORG_B, script as baseScript, seed, TEAMMATE, USER } from "./_world.ts";
@@ -31,18 +31,23 @@ test("persona matrix: assignments GET, POST, PATCH, DELETE", async () => {
   await matrix("assignments DELETE", async (p, db) => (withAssignment(db), (await call(DELETE, p, "DELETE", `${URL_}?assignee=${TEAMMATE}`, undefined, P)).status), E(401, 403, 403, 200, 200, 404, 403));
 });
 
-test("parseAssignInput and isIsoDate validate ids, count and the due date", () => {
+test("the assign request validates ids, count and the due date (a refusal is a 400 with a plain message, nothing is written)", async () => {
   assert.equal(isIsoDate("2026-02-28"), true);
   assert.equal(isIsoDate("2026-02-30"), false);
   assert.equal(isIsoDate("26-02-28"), false);
   assert.equal(isIsoDate(20260228), false);
-  assert.ok("error" in parseAssignInput({}));
-  assert.ok("error" in parseAssignInput({ assignees: [] }));
-  assert.ok("error" in parseAssignInput({ assignees: ["not-a-uuid"] }));
-  assert.ok("error" in parseAssignInput({ assignees: Array.from({ length: 26 }, (_, i) => `bbbbbbbb-0000-4000-8000-${String(100 + i).padStart(12, "0")}`) }));
-  assert.ok("error" in parseAssignInput({ assignees: [TEAMMATE], dueOn: "2026-13-01" }));
-  assert.deepEqual(parseAssignInput({ assignees: [TEAMMATE, TEAMMATE], dueOn: "2026-12-01" }), { assignees: [TEAMMATE], dueOn: "2026-12-01" });
-  assert.deepEqual(parseAssignInput({ assignees: [TEAMMATE], dueOn: "" }), { assignees: [TEAMMATE], dueOn: null });
+  wire();
+  const db = script(seed());
+  const post = async (body: unknown) => call(POST, "admin", "POST", URL_, body, P);
+  for (const body of [{}, { assignees: [] }, { assignees: ["not-a-uuid"] }, { assignees: Array.from({ length: 26 }, (_, i) => `bbbbbbbb-0000-4000-8000-${String(100 + i).padStart(12, "0")}`) }, { assignees: [TEAMMATE], dueOn: "2026-13-01" }]) {
+    const res = await post(body);
+    assert.equal(res.status, 400, JSON.stringify(body).slice(0, 60));
+  }
+  assert.equal(assigned(db).length, 0, "a refused request writes nothing");
+  assert.equal((await post({ assignees: [TEAMMATE, TEAMMATE], dueOn: "2026-12-01" })).status, 201);
+  assert.deepEqual(assigned(db).map((r) => [r.assignee_user_id, r.due_on]), [[TEAMMATE, "2026-12-01"]], "a repeated assignee is one assignment");
+  assert.equal((await post({ assignees: [USER.member], dueOn: "" })).status, 201);
+  assert.equal(assigned(db).find((r) => r.assignee_user_id === USER.member)?.due_on, null, "an empty due date is no due date");
 });
 
 test("an admin assigns two members with a due date; each is notified once with a link to the item", async () => {

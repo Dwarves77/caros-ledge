@@ -103,7 +103,6 @@ export function scoreSource(record: Rec, opts: { now?: Date } = {}): ScoredSourc
   if (record.kind === "openalex") return scoreOpenAlexSource(record, opts);
   throw new Error(`authority-score: unknown record.kind "${record.kind}" (expected "openalex" or "grey_literature")`);
 }
-const authorityScore = scoreSource;
 
 export function aggregateAuthorityDistribution(sources: readonly ScoredSource[] | null | undefined) {
   const list = sources ?? [];

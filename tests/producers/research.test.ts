@@ -4,50 +4,52 @@ import { test } from "node:test";
 
 import { entityId } from "@/core/entities";
 import { runProducer } from "@/core/producers/runner";
-import { aggregateAuthorityDistribution, bucketForSource, classifyRoleClass, computeFundingIndependence, computeReception, scoreSource } from "@/features/research/authority-score";
-import { fetchLiveCandidates, researchAssessment, resolveOpenAlexSourceRecords } from "@/features/research/assessment-producer";
+import { aggregateAuthorityDistribution, scoreSource } from "@/features/research/authority-score";
+import { fetchLiveCandidates, researchAssessment } from "@/features/research/assessment-producer";
 import { assessItem, extractDoiCandidate, hasChanged, toRow, type AssessInput } from "@/features/research/model/assess";
-import { classifyTheme, classifyThemes, THEME_VALUES } from "@/features/research/theme-rules";
-import { boundNeeds, buildMintSeed, normalizeOpenAlexWork, placePublisher, researchWalker, walkResearch, type WalkerDeps } from "@/features/research/walker";
+import { classifyTheme, THEME_VALUES } from "@/features/research/theme-rules";
+import { researchWalker, walkResearch, type WalkerDeps } from "@/features/research/walker";
 
 import { memoryDb } from "../_support/memory-db.ts";
 import { makeWorld, makeDeps as mintDeps } from "../mint/world.ts";
 
-import { makeDeps, NOW } from "./support.ts";
+import { makeDeps, NOW, parseDoc } from "./support.ts";
 
 // ---- authority ----
 test("authority buckets: a vendor is capped and flagged, an unknown role is never medium, a retracted work is never high-authority, funding must be disclosed AND independent", () => {
-  const indep = { roleClass: "university", fundingIndependence: "independent" as const, integrity: { isRetracted: false } };
-  assert.equal(bucketForSource(indep), "highAuthorityIndependent");
-  assert.equal(bucketForSource({ ...indep, integrity: { isRetracted: true } }), "medium");
-  assert.equal(bucketForSource({ ...indep, fundingIndependence: "unknown" }), "medium");
-  assert.equal(bucketForSource({ ...indep, roleClass: "vendor" }), "vendorFlagged");
-  assert.equal(bucketForSource({ ...indep, roleClass: "industry_association" }), "vendorFlagged");
-  assert.equal(bucketForSource({ ...indep, roleClass: "unknown" }), "unknown");
-  assert.equal(computeFundingIndependence({ disclosed: true, funderIsCommercialBeneficiary: false }), "independent");
-  assert.equal(computeFundingIndependence({ disclosed: true, funderIsCommercialBeneficiary: true }), "dependent");
-  assert.equal(computeFundingIndependence({ disclosed: false, funderIsCommercialBeneficiary: false }), "unknown");
-  assert.equal(computeFundingIndependence(null), "unknown");
+  const openAlex = (o: { institution?: object; funding?: object | null; work?: object } = {}) => scoreSource({ kind: "openalex", sourceId: "s1", institution: { type: "education" }, funding: { disclosed: true, funderIsCommercialBeneficiary: false }, work: { isRetracted: false }, ...o });
+  assert.equal(openAlex().bucket, "highAuthorityIndependent");
+  assert.equal(openAlex({ work: { isRetracted: true } }).bucket, "medium");
+  assert.equal(openAlex({ funding: null }).bucket, "medium");
+  assert.equal(openAlex({ institution: { type: "company" } }).bucket, "vendorFlagged");
+  assert.equal(openAlex({ institution: { roleClass: "industry_association" } }).bucket, "vendorFlagged");
+  assert.equal(openAlex({ institution: {} }).bucket, "unknown");
+  assert.equal(openAlex({ funding: { disclosed: true, funderIsCommercialBeneficiary: false } }).fundingIndependence, "independent");
+  assert.equal(openAlex({ funding: { disclosed: true, funderIsCommercialBeneficiary: true } }).fundingIndependence, "dependent");
+  assert.equal(openAlex({ funding: { disclosed: false, funderIsCommercialBeneficiary: false } }).fundingIndependence, "unknown");
+  assert.equal(openAlex({ funding: null }).fundingIndependence, "unknown");
 });
 
 test("authority: named overrides beat the institution type, the grey-literature path reads mandate not citations, reception is a velocity under 24 months (never FWCI) and absence of a footprint is not low authority", () => {
-  assert.equal(classifyRoleClass({ displayName: "International Energy Agency", type: "company" }), "intergovernmental");
-  assert.equal(classifyRoleClass({ displayName: "ICCT" }), "institute_ngo");
-  assert.equal(classifyRoleClass({ type: "education" }), "university");
-  assert.equal(classifyRoleClass({ type: "company" }), "vendor");
-  assert.equal(classifyRoleClass({ displayName: "Mystery Org" }), "unknown");
-  assert.equal(classifyRoleClass({ roleClass: "bogus", displayName: "ICCT" }), "institute_ngo", "an unlisted role class is ignored");
+  const roleOf = (institution: object) => scoreSource({ kind: "openalex", sourceId: "s", institution }).roleClass;
+  assert.equal(roleOf({ displayName: "International Energy Agency", type: "company" }), "intergovernmental");
+  assert.equal(roleOf({ displayName: "ICCT" }), "institute_ngo");
+  assert.equal(roleOf({ type: "education" }), "university");
+  assert.equal(roleOf({ type: "company" }), "vendor");
+  assert.equal(roleOf({ displayName: "Mystery Org" }), "unknown");
+  assert.equal(roleOf({ roleClass: "bogus", displayName: "ICCT" }), "institute_ngo", "an unlisted role class is ignored");
   const grey = scoreSource({ kind: "grey_literature", sourceId: "g1", displayName: "IMO", funding: { disclosed: true, funderIsCommercialBeneficiary: false } });
   assert.equal(grey.bucket, "highAuthorityIndependent");
   assert.equal(grey.method, "grey_literature_non_citation");
   assert.equal(grey.reception.metric, "unknown");
   assert.match(grey.reception.method, /absence of a citation footprint/);
-  const young = computeReception({ publicationDate: "2026-04-15", citedByCount: 12, fwci: 3 }, NOW);
+  const receptionOf = (work: object) => scoreSource({ kind: "openalex", sourceId: "s", work }, { now: NOW }).reception;
+  const young = receptionOf({ publicationDate: "2026-04-15", citedByCount: 12, fwci: 3 });
   assert.equal(young.metric, "velocity");
   assert.ok(young.value !== null && young.value > 1.5 && young.value < 3);
-  assert.equal(computeReception({ publicationDate: "2020-01-01", citationNormalizedPercentile: 0.9, fwci: 3 }, NOW).metric, "citation_normalized_percentile");
-  assert.equal(computeReception({ publicationDate: "2020-01-01", fwci: 3 }, NOW).metric, "fwci");
-  assert.equal(computeReception({ publicationDate: "2020-01-01" }, NOW).metric, "unknown");
+  assert.equal(receptionOf({ publicationDate: "2020-01-01", citationNormalizedPercentile: 0.9, fwci: 3 }).metric, "citation_normalized_percentile");
+  assert.equal(receptionOf({ publicationDate: "2020-01-01", fwci: 3 }).metric, "fwci");
+  assert.equal(receptionOf({ publicationDate: "2020-01-01" }).metric, "unknown");
   assert.throws(() => scoreSource({ kind: "alien", sourceId: "x" }), /unknown record.kind/);
   assert.throws(() => scoreSource({ kind: "openalex" }), /sourceId/);
   const dist = aggregateAuthorityDistribution([grey, scoreSource({ kind: "grey_literature", sourceId: "g2", displayName: "Some Vendor", roleClass: "vendor", integrityConcern: true })]);
@@ -85,13 +87,12 @@ test("assessment rules: R1 a dated statutory instrument (CONFIRMED), R3 a named 
 
 test("an OpenAlex DOI resolves into a source record scored for authority; an unresolved DOI is no record, never a guessed one", async () => {
   const work = { publication_date: "2020-01-01", cited_by_count: 40, fwci: 2, citation_normalized_percentile: { value: 0.93 }, is_retracted: false, authorships: [{ institutions: [{ display_name: "A University", type: "education" }] }] };
-  const deps = { fetch: (async (u: string) => (u.includes("10.1000%2Fno") || u.endsWith("10.1000/no") ? new Response("", { status: 404 }) : new Response(JSON.stringify(work), { status: 200 }))) as never, email: null };
-  const recs = await resolveOpenAlexSourceRecords(input({ text: "cites doi 10.1000/yes here" }), deps);
-  assert.equal(recs.length, 1);
-  const out = assessItem({ ...input({ text: "cites doi 10.1000/yes here" }), sourceRecords: recs }, { now: NOWD });
-  assert.equal(out.credibilityAuthorityScore && "medium" in out.credibilityAuthorityScore ? out.credibilityAuthorityScore.medium : -1, 1, "a university with undisclosed funding is medium, not high-authority-independent");
-  assert.deepEqual(await resolveOpenAlexSourceRecords(input({ text: "cites doi 10.1000/no here" }), deps), []);
-  assert.deepEqual(await resolveOpenAlexSourceRecords(input({ text: "no doi" }), deps), []);
+  const fetch = (async (u: string) => (u.includes("10.1000%2Fno") || u.endsWith("10.1000/no") ? new Response("", { status: 404 }) : new Response(JSON.stringify(work), { status: 200 }))) as never;
+  const authorityOf = async (text: string) => (await parseDoc(researchAssessment, { text: JSON.stringify([input({ text })]) }, { deps: { ...makeDeps({ noDb: true }).deps, fetch }, now: () => NOWD })).rows[0]?.credibility_authority_score;
+  const resolved = (await authorityOf("cites doi 10.1000/yes here")) as { medium?: number; highAuthorityIndependent?: number };
+  assert.deepEqual([resolved.medium, resolved.highAuthorityIndependent], [1, 0], "a university with undisclosed funding is medium, not high-authority-independent");
+  const tierOnly = await authorityOf("no doi");
+  assert.deepEqual(await authorityOf("cites doi 10.1000/no here"), tierOnly, "an unresolved DOI changes nothing: no record, never a guessed one");
 });
 
 const ASSESS_ENV = { RESEARCH_ASSESSMENT_PRODUCER_ENABLED: "1" };
@@ -175,17 +176,24 @@ const walkerDeps = (db = makeWorld(), over: Partial<WalkerDeps> = {}) => {
   const deps = { ...base.deps, sb: db.client, mint: { sb: md.sb, entities: md.entities, connect: md.connect, now: md.now }, ...over } as WalkerDeps;
   return { deps, rec, db };
 };
-test("walker: publisher placement by built-in rule, by committed host verdict, and the named residue; the residue is a note, never a rejection or a guessed tier", () => {
-  assert.deepEqual(placePublisher("https://eprints.soton.ac.uk/1", null), { placed: true, host: "eprints.soton.ac.uk", placedBy: "built-in rule", tier: placePublisher("https://eprints.soton.ac.uk/1", null).placed ? (placePublisher("https://eprints.soton.ac.uk/1", null) as { tier: number }).tier : 0, verdictBatch: null });
-  const v = placePublisher("https://unplaced-example.test/p", new Map([["unplaced-example.test", { class: "academic", batch: "host-verdicts-001" }]]));
-  assert.ok(v.placed && v.placedBy === "host verdict" && v.verdictBatch === "host-verdicts-001");
-  assert.deepEqual(placePublisher("https://unlisted-journal.example/a/42", null), { placed: false, host: "unlisted-journal.example", reason: "awaiting host verdict batch" });
-  assert.deepEqual(placePublisher("https://doi.org/10.1/x", null), { placed: false, host: "", reason: "publisher host unresolved from DOI" });
-  assert.deepEqual(placePublisher("not a url", null), { placed: false, host: "", reason: "no resolvable host" });
-  assert.equal(normalizeOpenAlexWork({ title: "x", primary_location: { landing_page_url: null }, doi: null }), null);
-  assert.equal(normalizeOpenAlexWork({ title: "x", primary_location: { landing_page_url: null }, doi: "https://doi.org/10.1/x" })?.sourceUrl, "https://doi.org/10.1/x");
-  assert.deepEqual(buildMintSeed({ title: "T", sourceUrl: "https://a.b/c", publishedDate: "2026-01-01" }, { sourceId: "s" }), { title: "T", source_url: "https://a.b/c", item_type: "research_finding", domain: 7, added_date: "2026-01-01", source_id: "s" });
-  assert.deepEqual(boundNeeds([{ subject_ref: "b", need: "1" }, { subject_ref: "a", need: "2" }, { subject_ref: "c", need: "3" }], 2).map((n) => n.subject_ref), ["a", "b"]);
+test("walker: publisher placement by built-in rule, by committed host verdict, and the named residue; the residue is a note, never a rejection or a guessed tier; a work with no landing page or DOI is no candidate", async () => {
+  const { deps } = walkerDeps(makeWorld(), { verdicts: new Map([["unplaced-example.test", { class: "academic", batch: "host-verdicts-001" }]]) as never });
+  const noLanding = { primary_location: { landing_page_url: null }, doi: null };
+  const doc = { topic: [W("https://eprints.soton.ac.uk/1", "By rule"), W("https://unplaced-example.test/p", "By verdict"), W("https://unlisted-journal.example/a/42", "Unlisted"), W("", "Doi only", { primary_location: { landing_page_url: null }, doi: "https://doi.org/10.1/x" }), W("", "Nowhere", noLanding)] };
+  const out = await parseDoc(researchWalker, { text: JSON.stringify(doc) }, { deps });
+  assert.deepEqual(out.rows.map((r) => [r.title, r.__host, r.item_type, r.domain, r.added_date]), [["By rule", "eprints.soton.ac.uk", "research_finding", 7, "2026-09-10"], ["By verdict", "unplaced-example.test", "research_finding", 7, "2026-09-10"]], "the placed publishers are mint seeds; the rest are not");
+  assert.equal(typeof out.rows[0]?.__tier, "number");
+  const notes = (out.warnings ?? []).join("|");
+  assert.match(notes, /unlisted-journal\.example\/a\/42: residue: awaiting host verdict batch \(host unlisted-journal\.example\)/);
+  assert.match(notes, /doi\.org\/10\.1\/x: residue: publisher host unresolved from DOI/);
+  assert.doesNotMatch(notes, /Nowhere|rejected/, "no landing page and no DOI is not a candidate, and a residue is not a rejection");
+  assert.equal(out.counts?.residue, 2);
+  // a bounded pass: at most ten needs, by subject ref, so the pass is repeatable
+  const searched = makeDeps({ noDb: true, routes: { "https://api.openalex.org/works": JSON.stringify({ results: [] }) } });
+  const needs = Array.from({ length: 12 }, (_, i) => ({ subject_ref: `n${String(11 - i).padStart(2, "0")}`, need: `need ${11 - i}` }));
+  await walkResearch({ ...searched.deps, mint: undefined } as never, { walk: { needs } }).catch(() => undefined);
+  const asked = searched.calls.map((c) => decodeURIComponent(new URL(c.url).searchParams.get("search") ?? ""));
+  assert.deepEqual(asked, Array.from({ length: 10 }, (_, i) => `need ${i}`), "the first ten needs by subject ref, in that order");
 });
 
 test("walker dry: placed publishers pass the mint chokepoint's gates dry, residue is named and not rejected, nothing is written or registered; a failed need search is a note", async () => {
@@ -241,6 +249,4 @@ test("theme rules: the closed seven-theme vocabulary, a single best match classi
   const tie = classifyTheme("hydrogen reefer");
   assert.equal(tie.theme, "unclassified");
   assert.equal(tie.reason, "tie");
-  const { classified, residue } = classifyThemes([{ id: "a", title: "SAF supply" }, { id: "b", title: "port congestion" }]);
-  assert.deepEqual([classified.map((c) => c.id), residue.map((r) => r.id)], [["a"], ["b"]]);
 });

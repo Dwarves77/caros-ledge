@@ -10,7 +10,7 @@ import { DEFAULT_NOTIFICATION_PREFS, readNotificationPrefs, saveNotificationPref
 import { saveProfilePatch } from "@/features/account/lib/profile-patch";
 import { readSettingsData } from "@/features/settings/server/settings-data";
 import { useSettingsStore } from "@/features/settings/state/settings-store";
-import { attributionText, formatAppliedDate } from "@/features/workspace/attribution-text";
+import { attributionText } from "@/features/workspace/attribution-text";
 import { ARCHIVE_REASONS, reasonLabel } from "@/features/workspace/ui/archive-reasons";
 import { clampHighlight, moveHighlight, resolveBackspaceAction, resolveEnterAction, rowCount, showCreateRow, visibleRows } from "@/features/workspace/ui/tag-model";
 import { tokenFrom } from "@/features/onboarding/lib/token";
@@ -66,8 +66,8 @@ test("tag popover: search is case-insensitive, the create row shows only without
 });
 
 test("tag attribution: the wording the chip title and the popover share; a removed account and a nameless member read plainly", () => {
-  assert.equal(formatAppliedDate("2026-09-03T23:59:00Z"), "3 Sep 2026");
-  assert.equal(formatAppliedDate("not a date"), null);
+  assert.equal(attributionText({ tagId: "t", appliedBy: "u", appliedByName: "Pat Lee", appliedAt: "2026-09-03T23:59:00Z" }), "applied by Pat Lee on 3 Sep 2026");
+  assert.equal(attributionText({ tagId: "t", appliedBy: "u", appliedByName: "Pat Lee", appliedAt: "not a date" }), "applied by Pat Lee", "an unreadable date is left out, never printed");
   assert.equal(attributionText({ tagId: "t", appliedBy: "u", appliedByName: "Pat Lee", appliedAt: "2026-09-03T00:00:00Z" }), "applied by Pat Lee on 3 Sep 2026");
   assert.equal(attributionText({ tagId: "t", appliedBy: "u", appliedByName: null, appliedAt: null }), "applied by a workspace member");
   assert.equal(attributionText({ tagId: "t", appliedBy: null, appliedByName: null, appliedAt: "2026-09-03T00:00:00Z" }), "applied by a former member on 3 Sep 2026");
