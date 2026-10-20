@@ -6,13 +6,13 @@
     "width": 375,
     "height": 812
   },
-  "captured_at": "2026-10-19T20:55:33.935Z",
+  "captured_at": "2026-10-20T11:17:02.799Z",
   "http_status": 200,
   "final_path": "/market",
   "network_idle": true,
   "accessibility": {
     "source": "locator.ariaSnapshot",
-    "tree": "- button \"Notifications\"\n- banner:\n  - button \"Open navigation\"\n  - heading \"Market Intel\" [level=1]\n  - button \"Search\"\n  - link \"Account\":\n    - /url: /profile\n- main:\n  - paragraph: VOL IV · No. 43 · Monday, October 19, 2026\n  - heading \"Market Intelligence\" [level=1]\n  - text: 54 active signals · 16 observed series\n  - search:\n    - combobox \"Search or ask across the workspace\"\n    - button \"Ask\"\n  - button \"Immediate — ≤ 90 days, 0 items\": Immediate ≤ 90 days 0\n  - button \"Action — ≤ 6 months, 11 items\": Action ≤ 6 months 11\n  - button \"Monitor — 6–12 months, 8 items\": Monitor 6–12 months 8\n  - button \"Awareness — background, 35 items\": Awareness background 35\n  - text: Signal kind\n  - button \"All\" [pressed]\n  - button \"Monitoring\"\n  - button \"Cost alert\"\n  - text: Mode\n  - button \"All\" [pressed]\n  - button \"Ocean\"\n  - button \"Road\"\n  - button \"Air\"\n  - button \"Rail\"\n  - text: Region\n  - button \"All\" [pressed]\n  - button \"GLOBAL\"\n  - button \"US\"\n  - button \"SG\"\n  - button \"US-CA\"\n  - button \"CN\"\n  - button \"EU\"\n  - button \"IN\"\n  - button \"PH\"\n  - button \"AE\"\n  - button \"ASEAN\"\n  - button \"AU\"\n  - button \"BR\"\n  - button \"CA\"\n  - button \"CA-NT\"\n  - button \"ES\"\n  - button \"IMO\"\n  - button \"KE\"\n  - button \"KR\"\n  - button \"NL\"\n  - button \"US-CO\"\n  - button \"US-MD\"\n  - button \"US-MN\"\n  - button \"VN\"\n  - button \"ZA\"\n  - text: Workspace tags\n  - button \"All\" [pressed]\n  - button \"Filters\"\n  - heading \"Headline series\" [level=2]\n  - text: 5 of 16 · dated, sourced observations ·\n  - link \"Series board →\":\n    - /url: /market/series\n  - paragraph: Diesel · EU avg before tax +1 quotes\n  - text: €1,217.15/1000L ▼1.7% 1w 1m · no data yet YoY · no data yet\n  - img \"Trend over the last year, 2 observations, 2026-08-24 to 2026-08-31\"\n  - paragraph: as of 2026-08-31\n  - paragraph:\n    - link \"Weekly Oil Bulletin, week of 2026-08-31\":\n      - /url: https://energy.ec.europa.eu/data-and-analysis/weekly-oil-bulletin_en\n  - paragraph: No longer updated\n  - text: T2\n  - paragraph: Euro-Super 95 · EU avg +1 quotes\n  - text: €1,014.66/1000L ▲0.7% 1w 1m · no data yet YoY · no data yet\n  - img \"Trend over the last year, 2 observations, 2026-08-24 to 2026-08-31\"\n  - paragraph: as of 2026-08-31\n  - paragraph:\n    - link \"Weekly Oil Bulletin, week of 2026-08-31\":\n      - /url: https://energy.ec.europa.eu/data-and-analysis/weekly-oil-bulletin_en\n  - paragraph: No longer updated\n  - text: T2\n  - paragraph: Heavy fuel oil 3.5%S\n  - text: €535.77/tonne ▼8.1% 1w 1m · no data yet YoY · no data yet\n  - img \"Trend over the last year, 2 observations, 2026-08-24 to 2026-08-31\"\n  - paragraph: as of 2026-08-31\n  - paragraph:\n    - link \"Weekly Oil Bulletin, week of 2026-08-31\":\n      - /url: https://energy.ec.europa.eu/data-and-analysis/weekly-oil-bulletin_en\n  - paragraph: No longer updated\n  - text: T2\n  - paragraph: Residual fuel oil 1%S\n  - text: €646.17/tonne ▲1.8% 1w 1m · no data yet YoY · no data yet\n  - img \"Trend over the last year, 2 observations, 2026-08-24 to 2026-08-31\"\n  - paragraph: as of 2026-08-31\n  - paragraph:\n    - link \"Weekly Oil Bulletin, week of 2026-08-31\":\n      - /url: https://energy.ec.europa.eu/data-and-analysis/weekly-oil-bulletin_en\n  - paragraph: No longer updated\n  - text: T2\n  - paragraph: Jet fuel · EIA kerosene spot\n  - text: $3.72 $/GAL ▼5.3% 1w ▲1.1% 1m ▲82.9% YoY\n  - img \"Trend over the last year, 53 observations, 2025-08-29 to 2026-08-28\"\n  - paragraph: as of 2026-08-28\n  - paragraph:\n    - link \"EIA Open Data API v2, petroleum/pri/spt, series EER_EPJK_PF4_RGC_DPG, period 2026-08-28\":\n      - /url: https://www.eia.gov/about/copyrights_reuse.php\n  - paragraph: No longer updated\n  - text: T3\n  - paragraph: Heating gas oil (EU average, before taxes)\n  - text: €1,034.14/1000L ▼0.1% 1w 1m · no data yet YoY · no data yet\n  - img \"Trend over the last year, 2 observations, 2026-08-24 to 2026-08-31\"\n  - paragraph: as of 2026-08-31\n  - paragraph:\n    - link \"Weekly Oil Bulletin, week of 2026-08-31\":\n      - /url: https://energy.ec.europa.eu/data-and-analysis/weekly-oil-bulletin_en\n  - paragraph: No longer updated\n  - text: T2\n  - paragraph: LPG motor fuel (EU average, before taxes)\n  - text: €537.74/1000L ▼0.7% 1w 1m · no data yet YoY · no data yet\n  - img \"Trend over the last year, 2 observations, 2026-08-24 to 2026-08-31\"\n  - paragraph: as of 2026-08-31\n  - paragraph:\n    - link \"Weekly Oil Bulletin, week of 2026-08-31\":\n      - /url: https://energy.ec.europa.eu/data-and-analysis/weekly-oil-bulletin_en\n  - paragraph: No longer updated\n  - text: T2\n  - paragraph: Brent crude oil spot price — NA\n  - text: $89.73 $/BBL ▼4.7% 1w ▼6.6% 1m ▲32.3% YoY\n  - img \"Trend over the last year, 53 observations, 2025-08-29 to 2026-08-28\"\n  - paragraph: as of 2026-08-28\n  - paragraph:\n    - link \"EIA Open Data API v2, petroleum/pri/spt, series RBRTE, period 2026-08-28\":\n      - /url: https://www.eia.gov/about/copyrights_reuse.php\n  - paragraph: No longer updated\n  - text: T3\n  - paragraph: Propane, Mont Belvieu TX, spot price — NA\n  - text: $0.69 $/GAL ▼5.6% 1w ▼4.8% 1m ▲3.0% YoY\n  - img \"Trend over the last year, 53 observations, 2025-08-29 to 2026-08-28\"\n  - paragraph: as of 2026-08-28\n  - paragraph:\n    - link \"EIA Open Data API v2, petroleum/pri/spt, series EER_EPLLPA_PF4_Y44MB_DPG, period 2026-08-28\":\n      - /url: https://www.eia.gov/about/copyrights_reuse.php\n  - paragraph: No longer updated\n  - text: T3\n  - paragraph: WTI crude oil spot price — NA\n  - text: $84.62 $/BBL ▼3.1% 1w ▼4.5% 1m ▲31.9% YoY\n  - img \"Trend over the last year, 53 observations, 2025-08-29 to 2026-08-28\"\n  - paragraph: as of 2026-08-28\n  - paragraph:\n    - link \"EIA Open Data API v2, petroleum/pri/spt, series RWTC, period 2026-08-28\":\n      - /url: https://www.eia.gov/about/copyrights_reuse.php\n  - paragraph: No longer updated\n  - text: \"T3 Freshness · No longer updated At least one series has gone quiet: its source has stopped publishing, not merely slipped. 16 no longer updated\"\n  - group: Methodology & provenance for these series\n  - text: 54 signals · grouped by band ·\n  - button \"Show as one list\"\n  - text: Sort\n  - button \"Next date\" [pressed]\n  - button \"Newest\"\n  - button \"A-Z\"\n  - text: Action ≤ 6 months showing 5 of 11\n  - 'link \"SPC Impact 2026: Industry-Wide Shift in Sustainable Packaging Practices and Recyclability Standards\"':\n    - /url: /market/9d18608f-269e-405a-9ad8-afa638dda928?list=market&pos=1&of=11&next=ed63f522-96bd-4aac-b828-a216f34b90a9\n  - text: \"US SPC Impact 2026: Industry-Wide Shift in Sustainable Packaging Practices and Recyclability Standards needs more data — T4\"\n  - group \"Source bias tags\": Foundation funded Standards defining +4 more\n  - button \"Signal actions\"\n  - link \"U.S. Energy Information Administration Short-Term Energy Outlook\":\n    - /url: /market/ed63f522-96bd-4aac-b828-a216f34b90a9?list=market&pos=2&of=11&prev=9d18608f-269e-405a-9ad8-afa638dda928&next=f3510df3-0fdc-49a8-b33c-c45ed78494f8\n  - text: US U.S. Energy Information Administration Short-Term Energy Outlook needs more data — T3\n  - group \"Source bias tags\": Government funded Factual reporting +2 more\n  - button \"Signal actions\"\n  - link \"The Loadstar Supply Chain News Feed - May 9, 2026\":\n    - /url: /market/f3510df3-0fdc-49a8-b33c-c45ed78494f8?list=market&pos=3&of=11&prev=ed63f522-96bd-4aac-b828-a216f34b90a9&next=f92fab46-b7c8-4ebb-ba87-ff54d18aeaf2\n  - text: IN The Loadstar Supply Chain News Feed - May 9, 2026 needs more data — T6\n  - group \"Source bias tags\": Factual reporting Subscription supported · lower confidence +4 more\n  - button \"Signal actions\"\n  - 'link \"Lloyd''s Register Maritime Decarbonisation Hub: Leadership and Evidence for Sustainable Shipping\"':\n    - /url: /market/f92fab46-b7c8-4ebb-ba87-ff54d18aeaf2?list=market&pos=4&of=11&prev=f3510df3-0fdc-49a8-b33c-c45ed78494f8&next=south-korea-k-taxonomy-for-sustainable-transport-activities\n  - text: \"GLOBAL Lloyd's Register Maritime Decarbonisation Hub: Leadership and Evidence for Sustainable Shipping needs more data — T4\"\n  - group \"Source bias tags\": Standards defining Industry funded +3 more\n  - button \"Signal actions\"\n  - link \"South Korea K-Taxonomy for Sustainable Transport Activities\":\n    - /url: /market/south-korea-k-taxonomy-for-sustainable-transport-activities?list=market&pos=5&of=11&prev=f92fab46-b7c8-4ebb-ba87-ff54d18aeaf2&next=packaging-material-input-costs\n  - text: KR South Korea K-Taxonomy for Sustainable Transport Activities needs more data — T1\n  - group \"Source bias tags\": Government funded Regulator aligned +2 more\n  - button \"Signal actions\"\n  - button \"All 11 action →\"\n  - text: then Monitor · 8 Monitor 6–12 months showing 5 of 8\n  - link \"EU Weekly Oil Bulletin — Residual fuel oil 1%S (EU average, before taxes)\":\n    - /url: /market/0ee667cc-a403-4fe3-b5f8-4f829a4a9103?list=market&pos=1&of=8&next=180b8163-6ae5-4f35-98dd-02e46c06b561\n  - text: EU EU Weekly Oil Bulletin — Residual fuel oil 1%S (EU average, before taxes) needs more data Catalogue record — T1\n  - group \"Source bias tags\": Government funded Regulator aligned +2 more\n  - button \"Signal actions\"\n  - link \"EU Weekly Oil Bulletin — Heavy fuel oil 3.5%S (EU average, before taxes)\":\n    - /url: /market/180b8163-6ae5-4f35-98dd-02e46c06b561?list=market&pos=2&of=8&prev=0ee667cc-a403-4fe3-b5f8-4f829a4a9103&next=2d306cc6-084d-44d0-ae88-bb391767f787\n  - text: EU EU Weekly Oil Bulletin — Heavy fuel oil 3.5%S (EU average, before taxes) needs more data Catalogue record — T1\n  - group \"Source bias tags\": Government funded Regulator aligned +2 more\n  - button \"Signal actions\"\n  - link \"EU Weekly Oil Bulletin — LPG motor fuel (EU average, before taxes)\":\n    - /url: /market/2d306cc6-084d-44d0-ae88-bb391767f787?list=market&pos=3&of=8&prev=180b8163-6ae5-4f35-98dd-02e46c06b561&next=32783a47-0073-4cff-a2ae-369508bcdfe9\n  - text: EU EU Weekly Oil Bulletin — LPG motor fuel (EU average, before taxes) needs more data Catalogue record — T1\n  - group \"Source bias tags\": Government funded Regulator aligned +2 more\n  - button \"Signal actions\"\n  - link \"EU Weekly Oil Bulletin — Heating gas oil (EU average, before taxes)\":\n    - /url: /market/32783a47-0073-4cff-a2ae-369508bcdfe9?list=market&pos=4&of=8&prev=2d306cc6-084d-44d0-ae88-bb391767f787&next=4fae403a-ced5-4c8f-82b7-af0fd6127061\n  - text: EU EU Weekly Oil Bulletin — Heating gas oil (EU average, before taxes) needs more data Catalogue record — T1\n  - group \"Source bias tags\": Government funded Regulator aligned +2 more\n  - button \"Signal actions\"\n  - link \"EU Weekly Oil Bulletin — Euro-Super 95 (EU average, before taxes)\":\n    - /url: /market/4fae403a-ced5-4c8f-82b7-af0fd6127061?list=market&pos=5&of=8&prev=32783a47-0073-4cff-a2ae-369508bcdfe9&next=70869a22-39eb-4eb7-ba49-d3826b5b2265\n  - text: EU EU Weekly Oil Bulletin — Euro-Super 95 (EU average, before taxes) needs more data Catalogue record — T1\n  - group \"Source bias tags\": Government funded Regulator aligned +2 more\n  - button \"Signal actions\"\n  - button \"All 8 monitor →\"\n  - text: then Awareness · 35 Awareness background showing 5 of 35\n  - 'link \"Global Maritime Forum Green Corridors Initiative: 50+ Trade Routes Catalyzing Zero-Emission Shipping Transition\"':\n    - /url: /market/0af6afdf-cfba-4562-87ce-ea4e012f7889?list=market&pos=1&of=35&next=237b3cc1-9971-46d6-a4ef-07fd65b05eed\n  - text: \"AU Global Maritime Forum Green Corridors Initiative: 50+ Trade Routes Catalyzing Zero-Emission Shipping Transition needs more data — T4\"\n  - group \"Source bias tags\": Industry funded Industry incumbent +4 more\n  - button \"Signal actions\"\n  - 'link \"Maritime Singapore Decarbonisation Blueprint: Working Towards 2050\"':\n    - /url: /market/237b3cc1-9971-46d6-a4ef-07fd65b05eed?list=market&pos=2&of=35&prev=0af6afdf-cfba-4562-87ce-ea4e012f7889&next=2648d4ad-eac5-406b-888c-d551d5e1d403\n  - text: \"SG Maritime Singapore Decarbonisation Blueprint: Working Towards 2050 needs more data — T2\"\n  - group \"Source bias tags\": Government funded Regulator aligned +2 more\n  - button \"Signal actions\"\n  - 'link \"UNCTAD Sustainable Freight Transport Framework: Six-Step Strategic Planning Methodology for Global Supply Chain Decarbonization\"':\n    - /url: /market/2648d4ad-eac5-406b-888c-d551d5e1d403?list=market&pos=3&of=35&prev=237b3cc1-9971-46d6-a4ef-07fd65b05eed&next=340ddf31-e533-4e2d-b2a6-5b6b1b70e470\n  - text: \"GLOBAL UNCTAD Sustainable Freight Transport Framework: Six-Step Strategic Planning Methodology for Global Supply Chain Decarbonization needs more data — T3\"\n  - group \"Source bias tags\": Government funded Regulator aligned +3 more\n  - button \"Signal actions\"\n  - 'link \"DP World Sustainability Strategy: Net Zero Pathway and ESG Framework Alignment\"':\n    - /url: /market/340ddf31-e533-4e2d-b2a6-5b6b1b70e470?list=market&pos=4&of=35&prev=2648d4ad-eac5-406b-888c-d551d5e1d403&next=432a5042-1a51-4713-bfa0-8aca3fbfee62\n  - text: \"GLOBAL DP World Sustainability Strategy: Net Zero Pathway and ESG Framework Alignment needs more data — T6\"\n  - group \"Source bias tags\": Industry funded Industry incumbent +2 more\n  - button \"Signal actions\"\n  - link \"ASEAN Transport Strategic Plan 2016-2025 and Regional Cooperation Framework\":\n    - /url: /market/432a5042-1a51-4713-bfa0-8aca3fbfee62?list=market&pos=5&of=35&prev=340ddf31-e533-4e2d-b2a6-5b6b1b70e470&next=43fd4d25-dd75-4f60-803f-5c20a44ef65f\n  - text: PH ASEAN Transport Strategic Plan 2016-2025 and Regional Cooperation Framework needs more data — T3\n  - group \"Source bias tags\": Government funded Regulator aligned +2 more\n  - button \"Signal actions\"\n  - button \"All 35 awareness →\"\n  - text: end of list\n  - heading \"Themes across the corpus\" [level=2]\n  - text: 5 active\n  - region \"Themes across the corpus, scroll sideways for more\":\n    - link \"Shared source on Market Intel\":\n      - /url: /market/0ee667cc-a403-4fe3-b5f8-4f829a4a9103\n    - text: 6 items Market Intel\n    - link \"· EU Weekly Oil Bulletin — Heavy fuel oil 3.5%S (EU average, before taxes)\":\n      - /url: /market/180b8163-6ae5-4f35-98dd-02e46c06b561\n    - link \"· EU Weekly Oil Bulletin — LPG motor fuel (EU average, before taxes)\":\n      - /url: /market/2d306cc6-084d-44d0-ae88-bb391767f787\n    - link \"· EU Weekly Oil Bulletin — Automotive gas oil / diesel (EU average, before taxes)\":\n      - /url: /market/70869a22-39eb-4eb7-ba49-d3826b5b2265\n    - link \"Shared scenarios across 4 pages\":\n      - /url: /market/537b8131-280b-47c8-b9fe-5a96070917b7\n    - text: 43 items Regulations Market Intel Research Operations\n    - link \"· California Advanced Clean Fleets Rule (CARB)\":\n      - /url: /regulations/w4_ca_acf\n    - link \"· Alaska Department of Transportation Measurement Standards & Commercial Vehicle Compliance Resources\":\n      - /url: /regulations/de7f09fc-b66e-41d2-a3a9-876aeda6a7e1\n    - link \"· Brazil Regional Operations Profile\":\n      - /url: /operations/brazil-regional-operations-profile\n    - 'link \"Maritime decarbonisation: the IMO net-zero arc, EU MRV and ETS-for-shipping machinery, and the green-corridor economy\"':\n      - /url: /market/340ddf31-e533-4e2d-b2a6-5b6b1b70e470\n    - text: 40 items Regulations Market Intel Research Operations Brief · out of date\n    - link \"· MEPC.377(80) - IMO Marine Environment Protection Committee Resolution\":\n      - /url: /regulations/9622fa5d-4e23-44ff-a926-150d41650043\n    - link \"· IMO MARPOL Annex VI\":\n      - /url: /regulations/o5\n    - link \"· IMO Net-Zero Framework\":\n      - /url: /regulations/o13\n    - 'link \"Climate-risk disclosure convergence: CSRD''s Scope 3 core, California''s SB 261/253 axis, and the CBAM/due-diligence periphery\"':\n      - /url: /market/7aa19423-f99d-4c2b-b634-f4f234b41068\n    - text: 44 items Regulations Market Intel Research Operations Brief · out of date\n    - link \"· California SB 261 — Climate-Related Financial Risk Act\":\n      - /url: /regulations/w4_ca_sb261\n    - link \"· California SB 253 — Climate Corporate Data Accountability Act\":\n      - /url: /regulations/w4_ca_sb253\n    - link \"· Directive (EU) 2025/794 of the European Parliament and of the Council of 14 April 2025 amending Directives (EU) 2022/2464 and (EU) 2024/1760 as regards the dates from which Member States are to apply certain corporate sustainability reporting and due diligence requirements (Text with EEA relevance)\":\n      - /url: /regulations/6cdc920f-6110-412a-b4f8-7b6c7fabdda5\n    - link \"Shared source across 4 pages\":\n      - /url: /market/a8\n    - text: 847 items Regulations Market Intel Research Operations\n    - link \"· Directive 2003/87/EC of the European Parliament and of the Council of 13 October 2003 establishing a scheme for greenhouse gas emission allowance trading within the Community and amending Council Directive 96/61/EC (Text with EEA relevance)\":\n      - /url: /regulations/0053d552-1856-4796-8873-968894400956\n    - link \"· Council Regulation (EC) No 1420/1999 of 29 April 1999 establishing common rules and procedures to apply to shipments to certain non-OECD countries of certain types of waste\":\n      - /url: /regulations/00a2452a-677e-4556-9ef2-c5749ab5f005\n    - 'link \"· Final Act of the International Conference and Decision by the Energy Charter Conference in respect of the amendment to the trade-related provisions of the Energy Charter Treaty - Joint Declarations - Annex I: Amendment to the Trade-Related Provisions of the Energy Charter Treaty - Annex II: Decisions in connection with the Adoption of the Amendment to the Trade-Related Provisions of the Energy Charter Treaty\"':\n      - /url: /regulations/01936f81-7f2f-419a-af3c-681c1d577b6a\n  - paragraph:\n    - text: \"Coverage: 1,657 of 1,673 catalogued Market Intel instruments are dual-verified. 1,440 verified briefs are on the platform.\"\n    - link \"See coverage\":\n      - /url: /dashboard/coverage?data_class=market_intel\n  - paragraph: Carbon cost per FEU\n  - text: Shanghai – Rotterdam · ocean 4 inputs missing Shanghai – New York · ocean 4 inputs missing\n  - paragraph: \"A figure needs four inputs: an emission factor, a routing distance, a payload and a carbon price.\"\n  - paragraph: Next data drops\n  - text: ECB euro foreign exchange reference rates Sep 4, 2026 US EIA fuel and energy prices Sep 4, 2026 EU Weekly Oil Bulletin Sep 7, 2026\n  - paragraph: Legend\n  - term: Impact\n  - definition: 8/12\n  - term: Timeline\n  - definition: Passed · next · ahead.\n  - term: Source tier\n  - definition: T1 binding law → T7 overflow / uncategorized.\n  - paragraph: Sources tracked\n  - text: EU Weekly Oil Bulletin weekly EEX EUA primary auctions per auction Carrier-published ETS and FuelEU surcharge notices per carrier notice ECB euro foreign exchange reference rates daily US EIA fuel and energy prices weekly SBTi Target Dashboard weekly\n  - heading \"Carbon cost per FEU\" [level=2]\n  - text: per corridor, from carrier-published surcharges\n  - paragraph: \"The carbon cost of a forty-foot container on each corridor: the emission factor for the corridor's mode, through its routing distance and container payload, at a carrier-published carbon price. Corridors are UN/LOCODE port pairs and a mode.\"\n  - text: Gap Shanghai (CN) → Rotterdam (NL), ocean Netherlands (NL) China (CN)\n  - list:\n    - listitem: no emission factor supplied for this corridor's mode\n    - listitem: no corridor routing distance available yet (no licence-clear distance dataset in this product today)\n    - listitem: no cited tonnes-per-FEU payload convention available (GLEC and ISO 14083 are both licence-prohibited; no substitute is registered)\n    - listitem: no EU ETS/FuelEU/CBAM/UKA carbon-price input from carrier-published surcharges\n  - text: Gap Shanghai (CN) → New York (US), ocean United States (US) China (CN)\n  - list:\n    - listitem: no emission factor supplied for this corridor's mode\n    - listitem: no corridor routing distance available yet (no licence-clear distance dataset in this product today)\n    - listitem: no cited tonnes-per-FEU payload convention available (GLEC and ISO 14083 are both licence-prohibited; no substitute is registered)\n    - listitem: no EU ETS/FuelEU/CBAM/UKA carbon-price input from carrier-published surcharges\n  - text: Gap Shanghai (CN) → Los Angeles (US), ocean United States (US) China (CN)\n  - list:\n    - listitem: no emission factor supplied for this corridor's mode\n    - listitem: no corridor routing distance available yet (no licence-clear distance dataset in this product today)\n    - listitem: no cited tonnes-per-FEU payload convention available (GLEC and ISO 14083 are both licence-prohibited; no substitute is registered)\n    - listitem: no EU ETS/FuelEU/CBAM/UKA carbon-price input from carrier-published surcharges\n  - text: Gap Shanghai (CN) → Genoa (IT), ocean China (CN) Italy (IT)\n  - list:\n    - listitem: no emission factor supplied for this corridor's mode\n    - listitem: no corridor routing distance available yet (no licence-clear distance dataset in this product today)\n    - listitem: no cited tonnes-per-FEU payload convention available (GLEC and ISO 14083 are both licence-prohibited; no substitute is registered)\n    - listitem: no EU ETS/FuelEU/CBAM/UKA carbon-price input from carrier-published surcharges\n  - heading \"Lead-time position\" [level=2]\n  - text: SBTi Target Dashboard\n  - paragraph: Peer-cohort distribution of months to each company's SBTi target commitment.\n  - paragraph: \"Not forecastable: no lead-time rows are on record (at least 5 to draw a position).\"\n  - paragraph: Policy timeline\n  - paragraph: \"Dated, forward-looking obligations for the modes and regions in scope: the filters you set above, otherwise your workspace's own modes and jurisdictions.\"\n  - heading \"Upcoming obligations\" [level=2]\n  - text: \"8 events Scope: Air, Ocean, Road, EU, HK, UK, US, GCC, IMO, UAE, ASIA, ICAO, MEAF, Asean, China, India, Japan, Korea, Latam, Brazil, Canada, Nordic, Turkey, Eafrica, Nafrica, Pacific, Safrica, Wafrica, Australia, Caribbean, Singapore, Switzerland\"\n  - button \"53 hidden by your scope · Show all\"\n  - link \"Compliance deadline November 29, 2026 Euro 7 StandardEU With effect from 29 November 2026, Member States shall prohibit the sale or installation of a system, component or separate technical unit intended to be fitted on a vehicle of category M 1 or…\":\n    - /url: /regulations/l2\n  - link \"Compliance deadline November 29, 2026 Euro 7 StandardEU By 29 November 2026, the Commission shall adopt, for vehicles of categories M 2 , M 3 , N 2 and N 3, as referred to in paragraph 3, points (b) and (c), respectively, and their eng…\":\n    - /url: /regulations/l2\n  - link \"Compliance deadline November 29, 2026 Euro 7 StandardEU With effect from 29 November 2026, approval authorities shall, in the case of new types of vehicles of category M 1 or N 1 which do not comply with this Regulation, refuse to grant EU emission…\":\n    - /url: /regulations/l2\n  - link \"Phase step November 29, 2026 Euro 7 StandardEU It shall apply from 29 November 2026 for new types of vehicles of categories M 1 and N 1 and components, systems and separate technical units intended for vehicles of categories M 1 or N 1 type-ap…\":\n    - /url: /regulations/l2\n  - link \"Compliance deadline December 31, 2026 EU PPWR 2025/40EU By 31 December 2026, the Commission shall adopt implementing acts establishing the methodology for the calculation and verification of the percentage of recycled content recovered…\":\n    - /url: /regulations/g2\n  - link \"Compliance deadline December 31, 2026 Commission Delegated Regulation (EU) 2024/3214 of 16 October 2024 amending Regulation (EU) 2015/757 of the European Parliament and of the Council as regards the rules for the monitoring of greenhouse gas emissions from offshore ships and the zero-rating of sustainable fuelsEU According to Article 3gg(5) of that Directive, no later than 31 December 2026, the Commission should present a report to the European Parliament and to the Council in which it should examine the feasibility and economic, environmental an…\":\n    - /url: /regulations/0b6537ea-1c85-41b9-81ed-1486fd72ea18\n  - link \"Compliance deadline December 31, 2026 Commission Delegated Regulation (EU) 2024/3214 of 16 October 2024 amending Regulation (EU) 2015/757 of the European Parliament and of the Council as regards the rules for the monitoring of greenhouse gas emissions from offshore ships and the zero-rating of sustainable fuelsEU The Commission review for 400–4,999 GT is due by 31 December 2026.\":\n    - /url: /regulations/0b6537ea-1c85-41b9-81ed-1486fd72ea18\n  - link \"Compliance deadline December 31, 2026 DIRECTIVE (EU) 2024/884 OF THE EUROPEAN PARLIAMENT AND OF THE COUNCIL of 13 March 2024 amending Directive 2012/19/EU on waste electrical and electronic equipment (WEEE) (Text with EEA relevance)EU No later than 31 December 2026, the Commission shall assess the need for a revision of this Directive a…\":\n    - /url: /regulations/9c69866d-d2c7-41f4-9ee5-5212c901e510\n  - region \"Recalculation notices\":\n    - text: Recalculation notices\n    - paragraph: No recalculations on your team's watchlist in this window.\n  - status:\n    - text: Not covered\n    - paragraph: OEM equipment roadmap is not covered yet.\n    - paragraph: No OEM roadmap announcements are on record.\n    - paragraph: No roadmap position is recorded for this yet.\n    - button \"Request coverage\"\n  - status:\n    - text: Not covered\n    - paragraph: Rerouting multipliers is not covered yet.\n    - paragraph: No reroute events are on record.\n    - paragraph: No roadmap position is recorded for this yet.\n    - button \"Request coverage\"\n  - status:\n    - text: Not covered\n    - paragraph: Contract indexation terms is not covered yet.\n    - paragraph: No contract indexation terms are on record for your organisation.\n    - paragraph: No roadmap position is recorded for this yet.\n    - button \"Request coverage\"\n- button \"Back to top\"\n- alert"
+    "tree": "- button \"Notifications\"\n- banner:\n  - button \"Open navigation\"\n  - heading \"Market Intel\" [level=1]\n  - button \"Search\"\n  - link \"Account\":\n    - /url: /profile\n- main:\n  - paragraph: VOL IV · No. 43 · Tuesday, October 20, 2026\n  - heading \"Market Intelligence\" [level=1]\n  - text: 36 active signals · 16 observed series\n  - search:\n    - combobox \"Search or ask across the workspace\"\n    - button \"Ask\"\n  - button \"Immediate — ≤ 90 days, 0 items\": Immediate ≤ 90 days 0\n  - button \"Action — ≤ 6 months, 6 items\": Action ≤ 6 months 6\n  - button \"Monitor — 6–12 months, 8 items\": Monitor 6–12 months 8\n  - button \"Awareness — background, 22 items\": Awareness background 22\n  - text: Signal kind\n  - button \"All\" [pressed]\n  - button \"Monitoring\"\n  - button \"Cost alert\"\n  - text: Mode\n  - button \"All\" [pressed]\n  - button \"Ocean\"\n  - button \"Road\"\n  - button \"Air\"\n  - text: Region\n  - button \"All\" [pressed]\n  - button \"GLOBAL\"\n  - button \"US\"\n  - button \"EU\"\n  - button \"PH\"\n  - button \"US-CA\"\n  - button \"AE\"\n  - button \"ASEAN\"\n  - button \"CN\"\n  - button \"SG\"\n  - button \"US-CO\"\n  - button \"US-MD\"\n  - button \"US-MN\"\n  - button \"VN\"\n  - text: Workspace tags\n  - button \"All\" [pressed]\n  - button \"Filters\"\n  - heading \"Headline series\" [level=2]\n  - text: 5 of 16 · dated, sourced observations ·\n  - link \"Series board →\":\n    - /url: /market/series\n  - paragraph: Diesel · EU avg before tax +1 quotes\n  - text: €1,217.15/1000L ▼1.7% 1w 1m · no data yet YoY · no data yet\n  - img \"Trend over the last year, 2 observations, 2026-08-24 to 2026-08-31\"\n  - paragraph: as of 2026-08-31\n  - paragraph:\n    - link \"Weekly Oil Bulletin, week of 2026-08-31\":\n      - /url: https://energy.ec.europa.eu/data-and-analysis/weekly-oil-bulletin_en\n  - paragraph: No longer updated\n  - text: T2\n  - paragraph: Euro-Super 95 · EU avg +1 quotes\n  - text: €1,014.66/1000L ▲0.7% 1w 1m · no data yet YoY · no data yet\n  - img \"Trend over the last year, 2 observations, 2026-08-24 to 2026-08-31\"\n  - paragraph: as of 2026-08-31\n  - paragraph:\n    - link \"Weekly Oil Bulletin, week of 2026-08-31\":\n      - /url: https://energy.ec.europa.eu/data-and-analysis/weekly-oil-bulletin_en\n  - paragraph: No longer updated\n  - text: T2\n  - paragraph: Heavy fuel oil 3.5%S\n  - text: €535.77/tonne ▼8.1% 1w 1m · no data yet YoY · no data yet\n  - img \"Trend over the last year, 2 observations, 2026-08-24 to 2026-08-31\"\n  - paragraph: as of 2026-08-31\n  - paragraph:\n    - link \"Weekly Oil Bulletin, week of 2026-08-31\":\n      - /url: https://energy.ec.europa.eu/data-and-analysis/weekly-oil-bulletin_en\n  - paragraph: No longer updated\n  - text: T2\n  - paragraph: Residual fuel oil 1%S\n  - text: €646.17/tonne ▲1.8% 1w 1m · no data yet YoY · no data yet\n  - img \"Trend over the last year, 2 observations, 2026-08-24 to 2026-08-31\"\n  - paragraph: as of 2026-08-31\n  - paragraph:\n    - link \"Weekly Oil Bulletin, week of 2026-08-31\":\n      - /url: https://energy.ec.europa.eu/data-and-analysis/weekly-oil-bulletin_en\n  - paragraph: No longer updated\n  - text: T2\n  - paragraph: Jet fuel · EIA kerosene spot\n  - text: $3.72 $/GAL ▼5.3% 1w ▲1.1% 1m ▲82.9% YoY\n  - img \"Trend over the last year, 53 observations, 2025-08-29 to 2026-08-28\"\n  - paragraph: as of 2026-08-28\n  - paragraph:\n    - link \"EIA Open Data API v2, petroleum/pri/spt, series EER_EPJK_PF4_RGC_DPG, period 2026-08-28\":\n      - /url: https://www.eia.gov/about/copyrights_reuse.php\n  - paragraph: No longer updated\n  - text: T3\n  - paragraph: Heating gas oil (EU average, before taxes)\n  - text: €1,034.14/1000L ▼0.1% 1w 1m · no data yet YoY · no data yet\n  - img \"Trend over the last year, 2 observations, 2026-08-24 to 2026-08-31\"\n  - paragraph: as of 2026-08-31\n  - paragraph:\n    - link \"Weekly Oil Bulletin, week of 2026-08-31\":\n      - /url: https://energy.ec.europa.eu/data-and-analysis/weekly-oil-bulletin_en\n  - paragraph: No longer updated\n  - text: T2\n  - paragraph: LPG motor fuel (EU average, before taxes)\n  - text: €537.74/1000L ▼0.7% 1w 1m · no data yet YoY · no data yet\n  - img \"Trend over the last year, 2 observations, 2026-08-24 to 2026-08-31\"\n  - paragraph: as of 2026-08-31\n  - paragraph:\n    - link \"Weekly Oil Bulletin, week of 2026-08-31\":\n      - /url: https://energy.ec.europa.eu/data-and-analysis/weekly-oil-bulletin_en\n  - paragraph: No longer updated\n  - text: T2\n  - paragraph: Brent crude oil spot price — NA\n  - text: $89.73 $/BBL ▼4.7% 1w ▼6.6% 1m ▲32.3% YoY\n  - img \"Trend over the last year, 53 observations, 2025-08-29 to 2026-08-28\"\n  - paragraph: as of 2026-08-28\n  - paragraph:\n    - link \"EIA Open Data API v2, petroleum/pri/spt, series RBRTE, period 2026-08-28\":\n      - /url: https://www.eia.gov/about/copyrights_reuse.php\n  - paragraph: No longer updated\n  - text: T3\n  - paragraph: Propane, Mont Belvieu TX, spot price — NA\n  - text: $0.69 $/GAL ▼5.6% 1w ▼4.8% 1m ▲3.0% YoY\n  - img \"Trend over the last year, 53 observations, 2025-08-29 to 2026-08-28\"\n  - paragraph: as of 2026-08-28\n  - paragraph:\n    - link \"EIA Open Data API v2, petroleum/pri/spt, series EER_EPLLPA_PF4_Y44MB_DPG, period 2026-08-28\":\n      - /url: https://www.eia.gov/about/copyrights_reuse.php\n  - paragraph: No longer updated\n  - text: T3\n  - paragraph: WTI crude oil spot price — NA\n  - text: $84.62 $/BBL ▼3.1% 1w ▼4.5% 1m ▲31.9% YoY\n  - img \"Trend over the last year, 53 observations, 2025-08-29 to 2026-08-28\"\n  - paragraph: as of 2026-08-28\n  - paragraph:\n    - link \"EIA Open Data API v2, petroleum/pri/spt, series RWTC, period 2026-08-28\":\n      - /url: https://www.eia.gov/about/copyrights_reuse.php\n  - paragraph: No longer updated\n  - text: \"T3 Freshness · No longer updated At least one series has gone quiet: its source has stopped publishing, not merely slipped. 16 no longer updated\"\n  - group: Methodology & provenance for these series\n  - text: 36 signals · grouped by band ·\n  - button \"Show as one list\"\n  - text: Sort\n  - button \"Next date\" [pressed]\n  - button \"Newest\"\n  - button \"A-Z\"\n  - text: Action ≤ 6 months showing 5 of 6\n  - 'link \"SPC Impact 2026: Industry-Wide Shift in Sustainable Packaging Practices and Recyclability Standards\"':\n    - /url: /market/9d18608f-269e-405a-9ad8-afa638dda928?list=market&pos=1&of=6&next=ed63f522-96bd-4aac-b828-a216f34b90a9\n  - text: \"US SPC Impact 2026: Industry-Wide Shift in Sustainable Packaging Practices and Recyclability Standards needs more data — T4\"\n  - group \"Source bias tags\": Foundation funded Standards defining +4 more\n  - button \"Signal actions\"\n  - link \"U.S. Energy Information Administration Short-Term Energy Outlook\":\n    - /url: /market/ed63f522-96bd-4aac-b828-a216f34b90a9?list=market&pos=2&of=6&prev=9d18608f-269e-405a-9ad8-afa638dda928&next=f92fab46-b7c8-4ebb-ba87-ff54d18aeaf2\n  - text: US U.S. Energy Information Administration Short-Term Energy Outlook needs more data — T3\n  - group \"Source bias tags\": Government funded Factual reporting +2 more\n  - button \"Signal actions\"\n  - 'link \"Lloyd''s Register Maritime Decarbonisation Hub: Leadership and Evidence for Sustainable Shipping\"':\n    - /url: /market/f92fab46-b7c8-4ebb-ba87-ff54d18aeaf2?list=market&pos=3&of=6&prev=ed63f522-96bd-4aac-b828-a216f34b90a9&next=lng-natural-gas-price-intelligence\n  - text: \"GLOBAL Lloyd's Register Maritime Decarbonisation Hub: Leadership and Evidence for Sustainable Shipping needs more data — T4\"\n  - group \"Source bias tags\": Standards defining Industry funded +3 more\n  - button \"Signal actions\"\n  - link \"LNG & Natural Gas Price Intelligence\":\n    - /url: /market/lng-natural-gas-price-intelligence?list=market&pos=4&of=6&prev=f92fab46-b7c8-4ebb-ba87-ff54d18aeaf2&next=carbon-allowance-price-intelligence\n  - text: JP LNG & Natural Gas Price Intelligence needs more data — T3\n  - group \"Source bias tags\": Government funded Factual reporting +2 more\n  - button \"Signal actions\"\n  - link \"Carbon Allowance Price Intelligence\":\n    - /url: /market/carbon-allowance-price-intelligence?list=market&pos=5&of=6&prev=lng-natural-gas-price-intelligence&next=a8\n  - text: GLOBAL Carbon Allowance Price Intelligence needs more data — T3\n  - group \"Source bias tags\": Government funded Regulator aligned +3 more\n  - button \"Signal actions\"\n  - button \"All 6 action →\"\n  - text: then Monitor · 8 Monitor 6–12 months showing 5 of 8\n  - link \"EU Weekly Oil Bulletin — Residual fuel oil 1%S (EU average, before taxes)\":\n    - /url: /market/0ee667cc-a403-4fe3-b5f8-4f829a4a9103?list=market&pos=1&of=8&next=180b8163-6ae5-4f35-98dd-02e46c06b561\n  - text: EU EU Weekly Oil Bulletin — Residual fuel oil 1%S (EU average, before taxes) needs more data Catalogue record — T1\n  - group \"Source bias tags\": Government funded Regulator aligned +2 more\n  - button \"Signal actions\"\n  - link \"EU Weekly Oil Bulletin — Heavy fuel oil 3.5%S (EU average, before taxes)\":\n    - /url: /market/180b8163-6ae5-4f35-98dd-02e46c06b561?list=market&pos=2&of=8&prev=0ee667cc-a403-4fe3-b5f8-4f829a4a9103&next=2d306cc6-084d-44d0-ae88-bb391767f787\n  - text: EU EU Weekly Oil Bulletin — Heavy fuel oil 3.5%S (EU average, before taxes) needs more data Catalogue record — T1\n  - group \"Source bias tags\": Government funded Regulator aligned +2 more\n  - button \"Signal actions\"\n  - link \"EU Weekly Oil Bulletin — LPG motor fuel (EU average, before taxes)\":\n    - /url: /market/2d306cc6-084d-44d0-ae88-bb391767f787?list=market&pos=3&of=8&prev=180b8163-6ae5-4f35-98dd-02e46c06b561&next=32783a47-0073-4cff-a2ae-369508bcdfe9\n  - text: EU EU Weekly Oil Bulletin — LPG motor fuel (EU average, before taxes) needs more data Catalogue record — T1\n  - group \"Source bias tags\": Government funded Regulator aligned +2 more\n  - button \"Signal actions\"\n  - link \"EU Weekly Oil Bulletin — Heating gas oil (EU average, before taxes)\":\n    - /url: /market/32783a47-0073-4cff-a2ae-369508bcdfe9?list=market&pos=4&of=8&prev=2d306cc6-084d-44d0-ae88-bb391767f787&next=4fae403a-ced5-4c8f-82b7-af0fd6127061\n  - text: EU EU Weekly Oil Bulletin — Heating gas oil (EU average, before taxes) needs more data Catalogue record — T1\n  - group \"Source bias tags\": Government funded Regulator aligned +2 more\n  - button \"Signal actions\"\n  - link \"EU Weekly Oil Bulletin — Euro-Super 95 (EU average, before taxes)\":\n    - /url: /market/4fae403a-ced5-4c8f-82b7-af0fd6127061?list=market&pos=5&of=8&prev=32783a47-0073-4cff-a2ae-369508bcdfe9&next=70869a22-39eb-4eb7-ba49-d3826b5b2265\n  - text: EU EU Weekly Oil Bulletin — Euro-Super 95 (EU average, before taxes) needs more data Catalogue record — T1\n  - group \"Source bias tags\": Government funded Regulator aligned +2 more\n  - button \"Signal actions\"\n  - button \"All 8 monitor →\"\n  - text: then Awareness · 22 Awareness background showing 5 of 22\n  - 'link \"Maritime Singapore Decarbonisation Blueprint: Working Towards 2050\"':\n    - /url: /market/237b3cc1-9971-46d6-a4ef-07fd65b05eed?list=market&pos=1&of=22&next=432a5042-1a51-4713-bfa0-8aca3fbfee62\n  - text: \"SG Maritime Singapore Decarbonisation Blueprint: Working Towards 2050 needs more data — T2\"\n  - group \"Source bias tags\": Government funded Regulator aligned +2 more\n  - button \"Signal actions\"\n  - link \"ASEAN Transport Strategic Plan 2016-2025 and Regional Cooperation Framework\":\n    - /url: /market/432a5042-1a51-4713-bfa0-8aca3fbfee62?list=market&pos=2&of=22&prev=237b3cc1-9971-46d6-a4ef-07fd65b05eed&next=537b8131-280b-47c8-b9fe-5a96070917b7\n  - text: PH ASEAN Transport Strategic Plan 2016-2025 and Regional Cooperation Framework needs more data — T3\n  - group \"Source bias tags\": Government funded Regulator aligned +2 more\n  - button \"Signal actions\"\n  - 'link \"Joint Office of Energy and Transportation: Industry Alignment for EV Charging and Refueling Infrastructure\"':\n    - /url: /market/537b8131-280b-47c8-b9fe-5a96070917b7?list=market&pos=3&of=22&prev=432a5042-1a51-4713-bfa0-8aca3fbfee62&next=538c2774-e271-4e8f-b03d-2385b705b862\n  - text: \"US Joint Office of Energy and Transportation: Industry Alignment for EV Charging and Refueling Infrastructure needs more data — T2\"\n  - group \"Source bias tags\": Government funded Regulator aligned +2 more\n  - button \"Signal actions\"\n  - 'link \"Carbon Trust: Global Organization Overview and Net Zero Transition Services\"':\n    - /url: /market/538c2774-e271-4e8f-b03d-2385b705b862?list=market&pos=4&of=22&prev=537b8131-280b-47c8-b9fe-5a96070917b7&next=5fec12c6-23be-4a7f-b2d3-4b8e9faadc22\n  - text: \"CN Carbon Trust: Global Organization Overview and Net Zero Transition Services needs more data — T4\"\n  - group \"Source bias tags\": Government funded Regulator aligned +4 more\n  - button \"Signal actions\"\n  - link \"IATA Sustainable Aviation Fuel (SAF) Framework and Net Zero Roadmap\":\n    - /url: /market/5fec12c6-23be-4a7f-b2d3-4b8e9faadc22?list=market&pos=5&of=22&prev=538c2774-e271-4e8f-b03d-2385b705b862&next=67c6e313-e501-48ec-82be-944296aad8db\n  - text: GLOBAL IATA Sustainable Aviation Fuel (SAF) Framework and Net Zero Roadmap needs more data — T4\n  - group \"Source bias tags\": Industry funded Industry incumbent +2 more\n  - button \"Signal actions\"\n  - button \"All 22 awareness →\"\n  - text: end of list\n  - heading \"Themes across the corpus\" [level=2]\n  - text: 5 active\n  - region \"Themes across the corpus, scroll sideways for more\":\n    - link \"Shared source on Market Intel\":\n      - /url: /market/0ee667cc-a403-4fe3-b5f8-4f829a4a9103\n    - text: 6 items Market Intel\n    - link \"· EU Weekly Oil Bulletin — Heavy fuel oil 3.5%S (EU average, before taxes)\":\n      - /url: /market/180b8163-6ae5-4f35-98dd-02e46c06b561\n    - link \"· EU Weekly Oil Bulletin — LPG motor fuel (EU average, before taxes)\":\n      - /url: /market/2d306cc6-084d-44d0-ae88-bb391767f787\n    - link \"· EU Weekly Oil Bulletin — Automotive gas oil / diesel (EU average, before taxes)\":\n      - /url: /market/70869a22-39eb-4eb7-ba49-d3826b5b2265\n    - link \"Shared scenarios across 4 pages\":\n      - /url: /market/537b8131-280b-47c8-b9fe-5a96070917b7\n    - text: 43 items Regulations Market Intel Research Operations\n    - link \"· California Advanced Clean Fleets Rule (CARB)\":\n      - /url: /regulations/w4_ca_acf\n    - link \"· Alaska Department of Transportation Measurement Standards & Commercial Vehicle Compliance Resources\":\n      - /url: /regulations/de7f09fc-b66e-41d2-a3a9-876aeda6a7e1\n    - link \"· Brazil Regional Operations Profile\":\n      - /url: /operations/brazil-regional-operations-profile\n    - 'link \"Maritime decarbonisation: the IMO net-zero arc, EU MRV and ETS-for-shipping machinery, and the green-corridor economy\"':\n      - /url: /market/r25\n    - text: 40 items Regulations Market Intel Research Operations Brief · out of date\n    - link \"· IMO MARPOL Annex VI\":\n      - /url: /regulations/o5\n    - link \"· IMO Net-Zero Framework\":\n      - /url: /regulations/o13\n    - link \"· ADB Sustainable Transport\":\n      - /url: /research/g21\n    - 'link \"Climate-risk disclosure convergence: CSRD''s Scope 3 core, California''s SB 261/253 axis, and the CBAM/due-diligence periphery\"':\n      - /url: /market/7aa19423-f99d-4c2b-b634-f4f234b41068\n    - text: 44 items Regulations Market Intel Research Operations Brief · out of date\n    - link \"· California SB 261 — Climate-Related Financial Risk Act\":\n      - /url: /regulations/w4_ca_sb261\n    - link \"· California SB 253 — Climate Corporate Data Accountability Act\":\n      - /url: /regulations/w4_ca_sb253\n    - link \"· Directive (EU) 2025/794 of the European Parliament and of the Council of 14 April 2025 amending Directives (EU) 2022/2464 and (EU) 2024/1760 as regards the dates from which Member States are to apply certain corporate sustainability reporting and due diligence requirements (Text with EEA relevance)\":\n      - /url: /regulations/6cdc920f-6110-412a-b4f8-7b6c7fabdda5\n    - link \"Shared source across 4 pages\":\n      - /url: /market/a8\n    - text: 847 items Regulations Market Intel Research Operations\n    - link \"· Directive 2003/87/EC of the European Parliament and of the Council of 13 October 2003 establishing a scheme for greenhouse gas emission allowance trading within the Community and amending Council Directive 96/61/EC (Text with EEA relevance)\":\n      - /url: /regulations/0053d552-1856-4796-8873-968894400956\n    - link \"· Council Regulation (EC) No 1420/1999 of 29 April 1999 establishing common rules and procedures to apply to shipments to certain non-OECD countries of certain types of waste\":\n      - /url: /regulations/00a2452a-677e-4556-9ef2-c5749ab5f005\n    - 'link \"· Final Act of the International Conference and Decision by the Energy Charter Conference in respect of the amendment to the trade-related provisions of the Energy Charter Treaty - Joint Declarations - Annex I: Amendment to the Trade-Related Provisions of the Energy Charter Treaty - Annex II: Decisions in connection with the Adoption of the Amendment to the Trade-Related Provisions of the Energy Charter Treaty\"':\n      - /url: /regulations/01936f81-7f2f-419a-af3c-681c1d577b6a\n  - paragraph:\n    - text: \"Coverage: 1,657 of 1,673 catalogued Market Intel instruments are dual-verified. 1,414 verified briefs are on the platform.\"\n    - link \"See coverage\":\n      - /url: /dashboard/coverage?data_class=market_intel\n  - paragraph: Carbon cost per FEU\n  - text: Shanghai – Rotterdam · ocean 4 inputs missing Shanghai – New York City · ocean 4 inputs missing\n  - paragraph: \"A figure needs four inputs: an emission factor, a routing distance, a payload and a carbon price.\"\n  - paragraph: Next data drops\n  - text: ECB euro foreign exchange reference rates Sep 4, 2026 US EIA fuel and energy prices Sep 4, 2026 EU Weekly Oil Bulletin Sep 7, 2026\n  - paragraph: Legend\n  - term: Impact\n  - definition: 8/12\n  - term: Timeline\n  - definition: Passed · next · ahead.\n  - term: Source tier\n  - definition: T1 binding law → T7 overflow / uncategorized.\n  - paragraph: Sources tracked\n  - text: EU Weekly Oil Bulletin weekly EEX EUA primary auctions per auction Carrier-published ETS and FuelEU surcharge notices per carrier notice ECB euro foreign exchange reference rates daily US EIA fuel and energy prices weekly SBTi Target Dashboard weekly\n  - heading \"Carbon cost per FEU\" [level=2]\n  - text: per corridor, from carrier-published surcharges\n  - paragraph: \"The carbon cost of a forty-foot container on each corridor: the emission factor for the corridor's mode, through its routing distance and container payload, at a carrier-published carbon price. Corridors are UN/LOCODE port pairs and a mode.\"\n  - text: Gap Shanghai (CN) → Rotterdam (NL), ocean Kingdom of the Netherlands (NL) People's Republic of China (CN)\n  - list:\n    - listitem: no emission factor supplied for this corridor's mode\n    - listitem: no corridor routing distance available yet (no licence-clear distance dataset in this product today)\n    - listitem: no cited tonnes-per-FEU payload convention available (GLEC and ISO 14083 are both licence-prohibited; no substitute is registered)\n    - listitem: no EU ETS/FuelEU/CBAM/UKA carbon-price input from carrier-published surcharges\n  - text: Gap Shanghai (CN) → New York City (US), ocean United States (US) People's Republic of China (CN)\n  - list:\n    - listitem: no emission factor supplied for this corridor's mode\n    - listitem: no corridor routing distance available yet (no licence-clear distance dataset in this product today)\n    - listitem: no cited tonnes-per-FEU payload convention available (GLEC and ISO 14083 are both licence-prohibited; no substitute is registered)\n    - listitem: no EU ETS/FuelEU/CBAM/UKA carbon-price input from carrier-published surcharges\n  - text: Gap Shanghai (CN) → Los Angeles (US), ocean United States (US) People's Republic of China (CN)\n  - list:\n    - listitem: no emission factor supplied for this corridor's mode\n    - listitem: no corridor routing distance available yet (no licence-clear distance dataset in this product today)\n    - listitem: no cited tonnes-per-FEU payload convention available (GLEC and ISO 14083 are both licence-prohibited; no substitute is registered)\n    - listitem: no EU ETS/FuelEU/CBAM/UKA carbon-price input from carrier-published surcharges\n  - text: Gap Shanghai (CN) → Genoa (IT), ocean People's Republic of China (CN) Italy (IT)\n  - list:\n    - listitem: no emission factor supplied for this corridor's mode\n    - listitem: no corridor routing distance available yet (no licence-clear distance dataset in this product today)\n    - listitem: no cited tonnes-per-FEU payload convention available (GLEC and ISO 14083 are both licence-prohibited; no substitute is registered)\n    - listitem: no EU ETS/FuelEU/CBAM/UKA carbon-price input from carrier-published surcharges\n  - heading \"Lead-time position\" [level=2]\n  - text: SBTi Target Dashboard\n  - paragraph: Peer-cohort distribution of months to each company's SBTi target commitment.\n  - paragraph: \"Not forecastable: no lead-time rows are on record (at least 5 to draw a position).\"\n  - paragraph: Policy timeline\n  - paragraph: \"Dated, forward-looking obligations for the modes and regions in scope: the filters you set above, otherwise your workspace's own modes and jurisdictions.\"\n  - heading \"Upcoming obligations\" [level=2]\n  - text: \"8 events Scope: Air, Ocean, Road, EU, HK, UK, US, GCC, IMO, UAE, ASIA, ICAO, MEAF, Asean, China, India, Japan, Korea, Latam, Brazil, Canada, Nordic, Turkey, Eafrica, Nafrica, Pacific, Safrica, Wafrica, Australia, Caribbean, Singapore, Switzerland\"\n  - button \"51 hidden by your scope · Show all\"\n  - link \"Compliance deadline November 29, 2026 Euro 7 StandardEU With effect from 29 November 2026, Member States shall prohibit the sale or installation of a system, component or separate technical unit intended to be fitted on a vehicle of category M 1 or…\":\n    - /url: /regulations/l2\n  - link \"Compliance deadline November 29, 2026 Euro 7 StandardEU By 29 November 2026, the Commission shall adopt, for vehicles of categories M 2 , M 3 , N 2 and N 3, as referred to in paragraph 3, points (b) and (c), respectively, and their eng…\":\n    - /url: /regulations/l2\n  - link \"Compliance deadline November 29, 2026 Euro 7 StandardEU With effect from 29 November 2026, approval authorities shall, in the case of new types of vehicles of category M 1 or N 1 which do not comply with this Regulation, refuse to grant EU emission…\":\n    - /url: /regulations/l2\n  - link \"Phase step November 29, 2026 Euro 7 StandardEU It shall apply from 29 November 2026 for new types of vehicles of categories M 1 and N 1 and components, systems and separate technical units intended for vehicles of categories M 1 or N 1 type-ap…\":\n    - /url: /regulations/l2\n  - link \"Compliance deadline December 31, 2026 EU PPWR 2025/40EU By 31 December 2026, the Commission shall adopt implementing acts establishing the methodology for the calculation and verification of the percentage of recycled content recovered…\":\n    - /url: /regulations/g2\n  - link \"Compliance deadline December 31, 2026 Commission Delegated Regulation (EU) 2024/3214 of 16 October 2024 amending Regulation (EU) 2015/757 of the European Parliament and of the Council as regards the rules for the monitoring of greenhouse gas emissions from offshore ships and the zero-rating of sustainable fuelsEU According to Article 3gg(5) of that Directive, no later than 31 December 2026, the Commission should present a report to the European Parliament and to the Council in which it should examine the feasibility and economic, environmental an…\":\n    - /url: /regulations/0b6537ea-1c85-41b9-81ed-1486fd72ea18\n  - link \"Compliance deadline December 31, 2026 Commission Delegated Regulation (EU) 2024/3214 of 16 October 2024 amending Regulation (EU) 2015/757 of the European Parliament and of the Council as regards the rules for the monitoring of greenhouse gas emissions from offshore ships and the zero-rating of sustainable fuelsEU The Commission review for 400–4,999 GT is due by 31 December 2026.\":\n    - /url: /regulations/0b6537ea-1c85-41b9-81ed-1486fd72ea18\n  - link \"Compliance deadline December 31, 2026 DIRECTIVE (EU) 2024/884 OF THE EUROPEAN PARLIAMENT AND OF THE COUNCIL of 13 March 2024 amending Directive 2012/19/EU on waste electrical and electronic equipment (WEEE) (Text with EEA relevance)EU No later than 31 December 2026, the Commission shall assess the need for a revision of this Directive a…\":\n    - /url: /regulations/9c69866d-d2c7-41f4-9ee5-5212c901e510\n  - region \"Recalculation notices\":\n    - text: Recalculation notices\n    - paragraph: No recalculations on your team's watchlist in this window.\n  - status:\n    - text: Not covered\n    - paragraph: OEM equipment roadmap is not covered yet.\n    - paragraph: No OEM roadmap announcements are on record.\n    - paragraph: No roadmap position is recorded for this yet.\n    - button \"Request coverage\"\n  - status:\n    - text: Not covered\n    - paragraph: Rerouting multipliers is not covered yet.\n    - paragraph: No reroute events are on record.\n    - paragraph: No roadmap position is recorded for this yet.\n    - button \"Request coverage\"\n  - status:\n    - text: Not covered\n    - paragraph: Contract indexation terms is not covered yet.\n    - paragraph: No contract indexation terms are on record for your organisation.\n    - paragraph: No roadmap position is recorded for this yet.\n    - button \"Request coverage\"\n- button \"Back to top\"\n- alert"
   },
   "landmarks": [
     {
@@ -107,7 +107,7 @@
     },
     {
       "role": "button",
-      "name": "Action — ≤ 6 months, 11 items"
+      "name": "Action — ≤ 6 months, 6 items"
     },
     {
       "role": "button",
@@ -115,7 +115,7 @@
     },
     {
       "role": "button",
-      "name": "Awareness — background, 35 items"
+      "name": "Awareness — background, 22 items"
     },
     {
       "role": "button",
@@ -147,10 +147,6 @@
     },
     {
       "role": "button",
-      "name": "Rail"
-    },
-    {
-      "role": "button",
       "name": "All"
     },
     {
@@ -163,27 +159,15 @@
     },
     {
       "role": "button",
-      "name": "SG"
-    },
-    {
-      "role": "button",
-      "name": "US-CA"
-    },
-    {
-      "role": "button",
-      "name": "CN"
-    },
-    {
-      "role": "button",
       "name": "EU"
     },
     {
       "role": "button",
-      "name": "IN"
+      "name": "PH"
     },
     {
       "role": "button",
-      "name": "PH"
+      "name": "US-CA"
     },
     {
       "role": "button",
@@ -195,39 +179,11 @@
     },
     {
       "role": "button",
-      "name": "AU"
+      "name": "CN"
     },
     {
       "role": "button",
-      "name": "BR"
-    },
-    {
-      "role": "button",
-      "name": "CA"
-    },
-    {
-      "role": "button",
-      "name": "CA-NT"
-    },
-    {
-      "role": "button",
-      "name": "ES"
-    },
-    {
-      "role": "button",
-      "name": "IMO"
-    },
-    {
-      "role": "button",
-      "name": "KE"
-    },
-    {
-      "role": "button",
-      "name": "KR"
-    },
-    {
-      "role": "button",
-      "name": "NL"
+      "name": "SG"
     },
     {
       "role": "button",
@@ -244,10 +200,6 @@
     {
       "role": "button",
       "name": "VN"
-    },
-    {
-      "role": "button",
-      "name": "ZA"
     },
     {
       "role": "button",
@@ -335,14 +287,6 @@
     },
     {
       "role": "link",
-      "name": "The Loadstar Supply Chain News Feed - May 9, 2026"
-    },
-    {
-      "role": "button",
-      "name": "Signal actions"
-    },
-    {
-      "role": "link",
       "name": "Lloyd's Register Maritime Decarbonisation Hub: Leadership and Evidence for Sustainable Shipping"
     },
     {
@@ -351,7 +295,15 @@
     },
     {
       "role": "link",
-      "name": "South Korea K-Taxonomy for Sustainable Transport Activities"
+      "name": "LNG & Natural Gas Price Intelligence"
+    },
+    {
+      "role": "button",
+      "name": "Signal actions"
+    },
+    {
+      "role": "link",
+      "name": "Carbon Allowance Price Intelligence"
     },
     {
       "role": "button",
@@ -359,7 +311,7 @@
     },
     {
       "role": "button",
-      "name": "All 11 action →"
+      "name": "All 6 action →"
     },
     {
       "role": "link",
@@ -407,31 +359,7 @@
     },
     {
       "role": "link",
-      "name": "Global Maritime Forum Green Corridors Initiative: 50+ Trade Routes Catalyzing Zero-Emission Shipping Transition"
-    },
-    {
-      "role": "button",
-      "name": "Signal actions"
-    },
-    {
-      "role": "link",
       "name": "Maritime Singapore Decarbonisation Blueprint: Working Towards 2050"
-    },
-    {
-      "role": "button",
-      "name": "Signal actions"
-    },
-    {
-      "role": "link",
-      "name": "UNCTAD Sustainable Freight Transport Framework: Six-Step Strategic Planning Methodology for Global Supply Chain Decarbonization"
-    },
-    {
-      "role": "button",
-      "name": "Signal actions"
-    },
-    {
-      "role": "link",
-      "name": "DP World Sustainability Strategy: Net Zero Pathway and ESG Framework Alignment"
     },
     {
       "role": "button",
@@ -446,8 +374,32 @@
       "name": "Signal actions"
     },
     {
+      "role": "link",
+      "name": "Joint Office of Energy and Transportation: Industry Alignment for EV Charging and Refueling Infrastructure"
+    },
+    {
       "role": "button",
-      "name": "All 35 awareness →"
+      "name": "Signal actions"
+    },
+    {
+      "role": "link",
+      "name": "Carbon Trust: Global Organization Overview and Net Zero Transition Services"
+    },
+    {
+      "role": "button",
+      "name": "Signal actions"
+    },
+    {
+      "role": "link",
+      "name": "IATA Sustainable Aviation Fuel (SAF) Framework and Net Zero Roadmap"
+    },
+    {
+      "role": "button",
+      "name": "Signal actions"
+    },
+    {
+      "role": "button",
+      "name": "All 22 awareness →"
     },
     {
       "role": "link",
@@ -487,15 +439,15 @@
     },
     {
       "role": "link",
-      "name": "· MEPC.377(80) - IMO Marine Environment Protection Committee Resolution"
-    },
-    {
-      "role": "link",
       "name": "· IMO MARPOL Annex VI"
     },
     {
       "role": "link",
       "name": "· IMO Net-Zero Framework"
+    },
+    {
+      "role": "link",
+      "name": "· ADB Sustainable Transport"
     },
     {
       "role": "link",
@@ -535,7 +487,7 @@
     },
     {
       "role": "button",
-      "name": "53 hidden by your scope · Show all"
+      "name": "51 hidden by your scope · Show all"
     },
     {
       "role": "link",
@@ -605,13 +557,6 @@
       },
       {
         "tag": "div",
-        "text": "INThe Loadstar Supply Chain News Feed - May 9, 2026Cost alertmarket_signal · corridorsneeds more dataFactual reportingSubscription supported · lower confidence+4 more—T6Factual reportingSubscription supported · lower confidence+4 more⋯",
-        "width": 341,
-        "height": 172.4375,
-        "container": "main"
-      },
-      {
-        "tag": "div",
         "text": "GLOBALLloyd's Register Maritime Decarbonisation Hub: Leadership and Evidence for Sustainable ShippingMonitoringinitiative · fuelsneeds more dataStandards definingIndustry funded+3 more—T4Standards definingIndustry funded+3 more⋯",
         "width": 341,
         "height": 176.875,
@@ -619,7 +564,14 @@
       },
       {
         "tag": "div",
-        "text": "KRSouth Korea K-Taxonomy for Sustainable Transport Activitiesmarket_signal · air, road, ocean, rail · reportingneeds more dataGovernment fundedRegulator aligned+2 more—T1Government fundedRegulator aligned+2 more⋯",
+        "text": "JPLNG & Natural Gas Price IntelligenceCost alertmarket_signal · oceanneeds more dataGovernment fundedFactual reporting+2 more—T3Government fundedFactual reporting+2 more⋯",
+        "width": 341,
+        "height": 122.21875,
+        "container": "main"
+      },
+      {
+        "tag": "div",
+        "text": "GLOBALCarbon Allowance Price IntelligenceCost alertmarket_signal · ocean, air, road · emissionsneeds more dataGovernment fundedRegulator aligned+3 more—T3Government fundedRegulator aligned+3 more⋯",
         "width": 341,
         "height": 140.4375,
         "container": "main"
@@ -661,13 +613,6 @@
       },
       {
         "tag": "div",
-        "text": "AUGlobal Maritime Forum Green Corridors Initiative: 50+ Trade Routes Catalyzing Zero-Emission Shipping TransitionMonitoringinitiative · corridorsneeds more dataIndustry fundedIndustry incumbent+4 more—T4Industry fundedIndustry incumbent+4 more⋯",
-        "width": 341,
-        "height": 176.875,
-        "container": "main"
-      },
-      {
-        "tag": "div",
         "text": "SGMaritime Singapore Decarbonisation Blueprint: Working Towards 2050Monitoringmarket_signal · infrastructureneeds more dataGovernment fundedRegulator aligned+2 more—T2Government fundedRegulator aligned+2 more⋯",
         "width": 341,
         "height": 140.4375,
@@ -675,21 +620,28 @@
       },
       {
         "tag": "div",
-        "text": "GLOBALUNCTAD Sustainable Freight Transport Framework: Six-Step Strategic Planning Methodology for Global Supply Chain DecarbonizationMonitoringmarket_signal · reportingneeds more dataGovernment fundedRegulator aligned+3 more—T3Government fundedRegulator aligned+3 more⋯",
-        "width": 341,
-        "height": 195.09375,
-        "container": "main"
-      },
-      {
-        "tag": "div",
-        "text": "GLOBALDP World Sustainability Strategy: Net Zero Pathway and ESG Framework AlignmentMonitoringmarket_signal · reportingneeds more dataIndustry fundedIndustry incumbent+2 more—T6Industry fundedIndustry incumbent+2 more⋯",
+        "text": "PHASEAN Transport Strategic Plan 2016-2025 and Regional Cooperation FrameworkMonitoringmarket_signal · transportneeds more dataGovernment fundedRegulator aligned+2 more—T3Government fundedRegulator aligned+2 more⋯",
         "width": 341,
         "height": 158.65625,
         "container": "main"
       },
       {
         "tag": "div",
-        "text": "PHASEAN Transport Strategic Plan 2016-2025 and Regional Cooperation FrameworkMonitoringmarket_signal · transportneeds more dataGovernment fundedRegulator aligned+2 more—T3Government fundedRegulator aligned+2 more⋯",
+        "text": "USJoint Office of Energy and Transportation: Industry Alignment for EV Charging and Refueling InfrastructureMonitoringmarket_signal · transportneeds more dataGovernment fundedRegulator aligned+2 more—T2Government fundedRegulator aligned+2 more⋯",
+        "width": 341,
+        "height": 176.875,
+        "container": "main"
+      },
+      {
+        "tag": "div",
+        "text": "CNCarbon Trust: Global Organization Overview and Net Zero Transition ServicesMonitoringmarket_signal · reportingneeds more dataGovernment fundedRegulator aligned+4 more—T4Government fundedRegulator aligned+4 more⋯",
+        "width": 341,
+        "height": 158.65625,
+        "container": "main"
+      },
+      {
+        "tag": "div",
+        "text": "GLOBALIATA Sustainable Aviation Fuel (SAF) Framework and Net Zero RoadmapMonitoringmarket_signal · fuelsneeds more dataIndustry fundedIndustry incumbent+2 more—T4Industry fundedIndustry incumbent+2 more⋯",
         "width": 341,
         "height": 158.65625,
         "container": "main"
@@ -702,7 +654,8 @@
       }
     ]
   },
-  "document_height": 7669,
+  "document_height": 7655,
+  "tiles": 1,
   "truncated": false,
   "offences": []
 }

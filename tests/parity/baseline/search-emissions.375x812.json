@@ -6,13 +6,13 @@
     "width": 375,
     "height": 812
   },
-  "captured_at": "2026-10-19T20:56:32.998Z",
+  "captured_at": "2026-10-20T11:18:11.327Z",
   "http_status": 200,
   "final_path": "/search?q=emissions",
   "network_idle": true,
   "accessibility": {
     "source": "locator.ariaSnapshot",
-    "tree": "- button \"Notifications\"\n- banner:\n  - button \"Open navigation\"\n  - heading \"Caro's Ledge\" [level=1]\n  - button \"Search\"\n  - link \"Account\":\n    - /url: /profile\n- main:\n  - paragraph: VOL IV · No. 43 · Monday, October 19, 2026\n  - heading \"Search\" [level=1]\n  - text: Results for “emissions”\n  - search:\n    - combobox \"Search or ask across the workspace\"\n    - button \"Ask\"\n  - heading \"Results · 20\" [level=2]\n  - text: Showing the top 20 matches. Narrow the search to see more precise results.\n  - link \"EU Emissions Trading System (ETS) Extension to Maritime Transport\":\n    - /url: /regulations/ff4064ab-9489-4fc4-b3cc-f0f157e71db5\n  - text: EU EU Emissions Trading System (ETS) Extension to Maritime Transport needs more data — T1\n  - link \"United States Regional Operations Profile\":\n    - /url: /operations/f7253668-d923-4a40-91fb-06208ac82478\n  - text: US United States Regional Operations Profile needs more data — T2\n  - link \"Euro 7 Standard\":\n    - /url: /regulations/e0c0151c-734d-4a82-81b8-5ee203669afe\n  - text: EU Euro 7 Standard needs more data — T1\n  - link \"Norway Zero-Emission Shipping\":\n    - /url: /regulations/14590299-51ee-48bd-8625-06d3128a72f1\n  - text: EU Norway Zero-Emission Shipping needs more data — T2\n  - link \"California SB 253 — Climate Corporate Data Accountability Act\":\n    - /url: /regulations/42b8bfee-92ea-4cde-bfe9-a25eb7cb49d9\n  - text: US California SB 253 — Climate Corporate Data Accountability Act needs more data — T1\n  - 'link \"Zero-Emission Requirements for World Heritage Fjords: Implementation Timeline and Compliance Rules Adopted\"':\n    - /url: /regulations/82f09535-ef34-4674-a16c-e7d9753b41bf\n  - text: \"EU Zero-Emission Requirements for World Heritage Fjords: Implementation Timeline and Compliance Rules Adopted needs more data — T2\"\n  - 'link \"EPA Fast Facts: Transportation Accounts for 28% of U.S. Greenhouse Gas Emissions in 2022\"':\n    - /url: /regulations/bd7c3f5a-a877-4800-b973-e208ddfd82df\n  - text: \"US EPA Fast Facts: Transportation Accounts for 28% of U.S. Greenhouse Gas Emissions in 2022 needs more data — T2\"\n  - link \"Regulation (EU) 2026/1030 of the European Parliament and of the Council of 29 April 2026 on the greenhouse gas emissions accounting of transport services (Text with EEA relevance)\":\n    - /url: /regulations/cd1083c9-fd05-47f7-bfed-8354b70a31ac\n  - text: EU Regulation (EU) 2026/1030 of the European Parliament and of the Council of 29 April 2026 on the greenhouse gas emissions accounting of transport services (Text with EEA relevance) needs more data — T1\n  - link \"The Greenhouse Gas Emissions Trading Scheme (Amendment) Regulations 2014\":\n    - /url: /regulations/0c2f19be-e9ba-4948-8861-6b589754b011\n  - text: GLOBAL The Greenhouse Gas Emissions Trading Scheme (Amendment) Regulations 2014 needs more data — T1\n  - link \"Commission Implementing Regulation (EU) 2025/35 of 13 January 2025 implementing Regulation (EU) 2019/1242 of the European Parliament and of the Council by determining the procedures for the in-service verification of the CO2 emissions of heavy-duty vehicles\":\n    - /url: /regulations/5561231f-3e3d-4e6a-90a2-1f3f4baf2f1b\n  - text: EU Commission Implementing Regulation (EU) 2025/35 of 13 January 2025 implementing Regulation (EU) 2019/1242 of the European Parliament and of the Council by determining the procedures for the in-service verification of the CO2 emissions of heavy-duty vehicles needs more data — T1\n  - link \"Commission Delegated Regulation (EU) 2024/3214 of 16 October 2024 amending Regulation (EU) 2015/757 of the European Parliament and of the Council as regards the rules for the monitoring of greenhouse gas emissions from offshore ships and the zero-rating of sustainable fuels\":\n    - /url: /regulations/0b6537ea-1c85-41b9-81ed-1486fd72ea18\n  - text: EU Commission Delegated Regulation (EU) 2024/3214 of 16 October 2024 amending Regulation (EU) 2015/757 of the European Parliament and of the Council as regards the rules for the monitoring of greenhouse gas emissions from offshore ships and the zero-rating of sustainable fuels needs more data — T1\n  - link \"Regulation (EU) 2025/2083 of the European Parliament and of the Council of 8 October 2025 amending Regulation (EU) 2023/956 as regards simplifying and strengthening the carbon border adjustment mechanism (Text with EEA relevance)\":\n    - /url: /regulations/c509a0cd-263d-48fc-8d0b-160f786bdbb0\n  - text: EU Regulation (EU) 2025/2083 of the European Parliament and of the Council of 8 October 2025 amending Regulation (EU) 2023/956 as regards simplifying and strengthening the carbon border adjustment mechanism (Text with EEA relevance) needs more data — T1\n  - link \"MEPC.377(80) - IMO Marine Environment Protection Committee Resolution\":\n    - /url: /regulations/9622fa5d-4e23-44ff-a926-150d41650043\n  - text: GLOBAL MEPC.377(80) - IMO Marine Environment Protection Committee Resolution needs more data — T2\n  - link \"EU ETS for Shipping\":\n    - /url: /regulations/91534b5a-d112-41d7-898b-71846600e5b4\n  - text: EU EU ETS for Shipping needs more data — T2\n  - link \"CountEmissions EU\":\n    - /url: /regulations/7aaecc81-b065-4f32-934b-d4c981269e8b\n  - text: EU CountEmissions EU needs more data — T2\n  - link \"EU CBAM\":\n    - /url: /regulations/51b2c91e-776f-42f5-a799-a957312d4e56\n  - text: EU EU CBAM needs more data — T2\n  - link \"EU Aviation ETS\":\n    - /url: /regulations/56031fd3-d7ae-45e5-a1d0-bde3e3c30383\n  - text: EU EU Aviation ETS needs more data — T2\n  - 'link \"Mission Innovation Shipping Mission: Net-Zero Industries Award 2024 and MI-9 Global Collaboration Framework\"':\n    - /url: /research/9118aab6-bafe-43d8-9944-baf8dc698aab\n  - text: \"AT Mission Innovation Shipping Mission: Net-Zero Industries Award 2024 and MI-9 Global Collaboration Framework needs more data — T3\"\n  - link \"EU Fit for 55 Package\":\n    - /url: /regulations/bf54dc59-ad47-4e2e-9984-cc4cd0206435\n  - text: EU EU Fit for 55 Package needs more data — T1\n  - link \"Iowa DNR Air Quality Programs and Compliance Monitoring Dashboard\":\n    - /url: /regulations/a7d9bc29-1514-4ee9-9177-a4408426498c\n  - text: US Iowa DNR Air Quality Programs and Compliance Monitoring Dashboard needs more data — T2\n  - paragraph: Legend\n  - term: Impact\n  - definition: 8/12\n  - term: Timeline\n  - definition: Passed · next · ahead.\n  - term: Source tier\n  - definition: T1 binding law → T7 overflow / uncategorized.\n- button \"Back to top\"\n- alert"
+    "tree": "- button \"Notifications\"\n- banner:\n  - button \"Open navigation\"\n  - heading \"Caro's Ledge\" [level=1]\n  - button \"Search\"\n  - link \"Account\":\n    - /url: /profile\n- main:\n  - paragraph: VOL IV · No. 43 · Tuesday, October 20, 2026\n  - heading \"Search\" [level=1]\n  - text: Results for “emissions”\n  - search:\n    - combobox \"Search or ask across the workspace\"\n    - button \"Ask\"\n  - heading \"Results · 20\" [level=2]\n  - text: Showing the top 20 matches. Narrow the search to see more precise results.\n  - link \"EU Emissions Trading System (ETS) Extension to Maritime Transport\":\n    - /url: /regulations/ff4064ab-9489-4fc4-b3cc-f0f157e71db5\n  - text: EU EU Emissions Trading System (ETS) Extension to Maritime Transport needs more data — T1\n  - link \"United States Regional Operations Profile\":\n    - /url: /operations/f7253668-d923-4a40-91fb-06208ac82478\n  - text: US United States Regional Operations Profile needs more data — T2\n  - link \"Euro 7 Standard\":\n    - /url: /regulations/e0c0151c-734d-4a82-81b8-5ee203669afe\n  - text: EU Euro 7 Standard needs more data — T1\n  - link \"Norway Zero-Emission Shipping\":\n    - /url: /regulations/14590299-51ee-48bd-8625-06d3128a72f1\n  - text: EU Norway Zero-Emission Shipping needs more data — T2\n  - link \"California SB 253 — Climate Corporate Data Accountability Act\":\n    - /url: /regulations/42b8bfee-92ea-4cde-bfe9-a25eb7cb49d9\n  - text: US California SB 253 — Climate Corporate Data Accountability Act needs more data — T1\n  - 'link \"Zero-Emission Requirements for World Heritage Fjords: Implementation Timeline and Compliance Rules Adopted\"':\n    - /url: /regulations/82f09535-ef34-4674-a16c-e7d9753b41bf\n  - text: \"EU Zero-Emission Requirements for World Heritage Fjords: Implementation Timeline and Compliance Rules Adopted needs more data — T2\"\n  - 'link \"EPA Fast Facts: Transportation Accounts for 28% of U.S. Greenhouse Gas Emissions in 2022\"':\n    - /url: /regulations/bd7c3f5a-a877-4800-b973-e208ddfd82df\n  - text: \"US EPA Fast Facts: Transportation Accounts for 28% of U.S. Greenhouse Gas Emissions in 2022 needs more data — T2\"\n  - link \"Regulation (EU) 2026/1030 of the European Parliament and of the Council of 29 April 2026 on the greenhouse gas emissions accounting of transport services (Text with EEA relevance)\":\n    - /url: /regulations/cd1083c9-fd05-47f7-bfed-8354b70a31ac\n  - text: EU Regulation (EU) 2026/1030 of the European Parliament and of the Council of 29 April 2026 on the greenhouse gas emissions accounting of transport services (Text with EEA relevance) needs more data — T1\n  - link \"The Greenhouse Gas Emissions Trading Scheme (Amendment) Regulations 2014\":\n    - /url: /regulations/0c2f19be-e9ba-4948-8861-6b589754b011\n  - text: GLOBAL The Greenhouse Gas Emissions Trading Scheme (Amendment) Regulations 2014 needs more data — T1\n  - link \"Commission Implementing Regulation (EU) 2025/35 of 13 January 2025 implementing Regulation (EU) 2019/1242 of the European Parliament and of the Council by determining the procedures for the in-service verification of the CO2 emissions of heavy-duty vehicles\":\n    - /url: /regulations/5561231f-3e3d-4e6a-90a2-1f3f4baf2f1b\n  - text: EU Commission Implementing Regulation (EU) 2025/35 of 13 January 2025 implementing Regulation (EU) 2019/1242 of the European Parliament and of the Council by determining the procedures for the in-service verification of the CO2 emissions of heavy-duty vehicles needs more data — T1\n  - link \"Commission Delegated Regulation (EU) 2024/3214 of 16 October 2024 amending Regulation (EU) 2015/757 of the European Parliament and of the Council as regards the rules for the monitoring of greenhouse gas emissions from offshore ships and the zero-rating of sustainable fuels\":\n    - /url: /regulations/0b6537ea-1c85-41b9-81ed-1486fd72ea18\n  - text: EU Commission Delegated Regulation (EU) 2024/3214 of 16 October 2024 amending Regulation (EU) 2015/757 of the European Parliament and of the Council as regards the rules for the monitoring of greenhouse gas emissions from offshore ships and the zero-rating of sustainable fuels needs more data — T1\n  - link \"Regulation (EU) 2025/2083 of the European Parliament and of the Council of 8 October 2025 amending Regulation (EU) 2023/956 as regards simplifying and strengthening the carbon border adjustment mechanism (Text with EEA relevance)\":\n    - /url: /regulations/c509a0cd-263d-48fc-8d0b-160f786bdbb0\n  - text: EU Regulation (EU) 2025/2083 of the European Parliament and of the Council of 8 October 2025 amending Regulation (EU) 2023/956 as regards simplifying and strengthening the carbon border adjustment mechanism (Text with EEA relevance) needs more data — T1\n  - link \"EU ETS for Shipping\":\n    - /url: /regulations/91534b5a-d112-41d7-898b-71846600e5b4\n  - text: EU EU ETS for Shipping needs more data — T2\n  - link \"CountEmissions EU\":\n    - /url: /regulations/7aaecc81-b065-4f32-934b-d4c981269e8b\n  - text: EU CountEmissions EU needs more data — T2\n  - link \"EU Aviation ETS\":\n    - /url: /regulations/56031fd3-d7ae-45e5-a1d0-bde3e3c30383\n  - text: EU EU Aviation ETS needs more data — T2\n  - link \"EU CBAM\":\n    - /url: /regulations/51b2c91e-776f-42f5-a799-a957312d4e56\n  - text: EU EU CBAM needs more data — T2\n  - link \"EU Fit for 55 Package\":\n    - /url: /regulations/bf54dc59-ad47-4e2e-9984-cc4cd0206435\n  - text: EU EU Fit for 55 Package needs more data — T1\n  - link \"UN SDGs 9 & 13\":\n    - /url: /regulations/08b0a1b3-ff0f-4bcb-9b8e-bc05a7c2cb47\n  - text: GLOBAL UN SDGs 9 & 13 needs more data — T3\n  - link \"Iowa DNR Air Quality Programs and Compliance Monitoring Dashboard\":\n    - /url: /regulations/a7d9bc29-1514-4ee9-9177-a4408426498c\n  - text: US Iowa DNR Air Quality Programs and Compliance Monitoring Dashboard needs more data — T2\n  - link \"COMMISSION IMPLEMENTING DECISION (EU) 2016/2320 of 16 December 2016 confirming or amending the provisional calculation of the average specific emissions of CO 2 and specific emissions targets for manufacturers of new light commercial vehicles for the calendar year 2015 pursuant to Regulation (EU) No 510/2011 of the European Parliament and of the Council (notified under document C(2016) 8583)\":\n    - /url: /regulations/0b3317c2-039d-41f5-9133-fa13d80e4445\n  - text: GLOBAL COMMISSION IMPLEMENTING DECISION (EU) 2016/2320 of 16 December 2016 confirming or amending the provisional calculation of the average specific emissions of CO 2 and specific emissions targets for manufacturers of new light commercial vehicles for the calendar year 2015 pursuant to Regulation (EU) No 510/2011 of the European Parliament and of the Council (notified under document C(2016) 8583) needs more data — T1\n  - paragraph: Legend\n  - term: Impact\n  - definition: 8/12\n  - term: Timeline\n  - definition: Passed · next · ahead.\n  - term: Source tier\n  - definition: T1 binding law → T7 overflow / uncategorized.\n- button \"Back to top\"\n- alert"
   },
   "landmarks": [
     {
@@ -125,10 +125,6 @@
     },
     {
       "role": "link",
-      "name": "MEPC.377(80) - IMO Marine Environment Protection Committee Resolution"
-    },
-    {
-      "role": "link",
       "name": "EU ETS for Shipping"
     },
     {
@@ -137,15 +133,11 @@
     },
     {
       "role": "link",
-      "name": "EU CBAM"
-    },
-    {
-      "role": "link",
       "name": "EU Aviation ETS"
     },
     {
       "role": "link",
-      "name": "Mission Innovation Shipping Mission: Net-Zero Industries Award 2024 and MI-9 Global Collaboration Framework"
+      "name": "EU CBAM"
     },
     {
       "role": "link",
@@ -153,7 +145,15 @@
     },
     {
       "role": "link",
+      "name": "UN SDGs 9 & 13"
+    },
+    {
+      "role": "link",
       "name": "Iowa DNR Air Quality Programs and Compliance Monitoring Dashboard"
+    },
+    {
+      "role": "link",
+      "name": "COMMISSION IMPLEMENTING DECISION (EU) 2016/2320 of 16 December 2016 confirming or amending the provisional calculation of the average specific emissions of CO 2 and specific emissions targets for manufacturers of new light commercial vehicles for the calendar year 2015 pursuant to Regulation (EU) No 510/2011 of the European Parliament and of the Council (notified under document C(2016) 8583)"
     },
     {
       "role": "button",
@@ -249,13 +249,6 @@
       },
       {
         "tag": "div",
-        "text": "GLOBALMEPC.377(80) - IMO Marine Environment Protection Committee Resolutiondirective · corridorsneeds more data—T2",
-        "width": 341,
-        "height": 117.65625,
-        "container": "main"
-      },
-      {
-        "tag": "div",
         "text": "EUEU ETS for Shippingregulation · ocean · emissionsneeds more data—T2",
         "width": 341,
         "height": 81.21875,
@@ -270,13 +263,6 @@
       },
       {
         "tag": "div",
-        "text": "EUEU CBAMregulation · air, ocean, road · emissionsneeds more data—T2",
-        "width": 341,
-        "height": 81.21875,
-        "container": "main"
-      },
-      {
-        "tag": "div",
         "text": "EUEU Aviation ETSregulation · air · emissionsneeds more data—T2",
         "width": 341,
         "height": 81.21875,
@@ -284,9 +270,9 @@
       },
       {
         "tag": "div",
-        "text": "ATMission Innovation Shipping Mission: Net-Zero Industries Award 2024 and MI-9 Global Collaboration Frameworkinitiative · researchneeds more data—T3",
+        "text": "EUEU CBAMregulation · air, ocean, road · emissionsneeds more data—T2",
         "width": 341,
-        "height": 135.875,
+        "height": 81.21875,
         "container": "main"
       },
       {
@@ -298,9 +284,23 @@
       },
       {
         "tag": "div",
+        "text": "GLOBALUN SDGs 9 & 13framework · air, ocean, road · reportingneeds more data—T3",
+        "width": 341,
+        "height": 81.21875,
+        "container": "main"
+      },
+      {
+        "tag": "div",
         "text": "USIowa DNR Air Quality Programs and Compliance Monitoring Dashboardguidance · reportingneeds more data—T2",
         "width": 341,
         "height": 99.4375,
+        "container": "main"
+      },
+      {
+        "tag": "div",
+        "text": "GLOBALCOMMISSION IMPLEMENTING DECISION (EU) 2016/2320 of 16 December 2016 confirming or amending the provisional calculation of the average specific emissions of CO 2 and specific emissions targets for manufacturers of new light commercial vehicles for the calendar year 2015 pursuant to Regulation (",
+        "width": 341,
+        "height": 318.0625,
         "container": "main"
       }
     ],
@@ -311,7 +311,8 @@
       }
     ]
   },
-  "document_height": 2921,
+  "document_height": 3067,
+  "tiles": 1,
   "truncated": false,
   "offences": []
 }

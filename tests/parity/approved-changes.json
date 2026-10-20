@@ -335,34 +335,6 @@
       "kind": "control",
       "match": "^link:Filter map to .+ \\(# gaps of #\\)$",
       "ruling": "Register surfaces:11 (tests/derived/coverage.test.ts): the accessible name of a region link states the same quantity as its visible text, \"Filter map to EU member states (0 of 27 jurisdictions covered, 27 gaps)\"; the baseline named it \"(27 gaps of 27)\" while the text read \"0 of 27 covered\". The five links are on the page (capture of run 39406949832: United States sub-national, EU member states, Canada, Australia, Latin America priority). Retire when the baseline is recaptured from production after the R2d merge."
-    },
-    {
-      "id": "k50-claim-link-research-detail",
-      "route": "research-detail",
-      "kind": "control",
-      "match": "^link:[^ ]+ ↗$",
-      "ruling": "K:50 and rule 20 (operator 2026-10-20, the coordinator's ruling on the research-detail red of PR 70): a fact card's source link and tier are read from the claim its paragraph names (a claim marker, migration 0108_data_claim_markers), never inferred from text. The cards the old containment rule linked wrongly (ambiguous text, first match) lose their provenance link by design; only the card provenance links ('host ↗') are covered. Retired by the next baseline recapture after R2f merges."
-    },
-    {
-      "id": "k50-claim-link-regulation-detail",
-      "route": "regulation-detail",
-      "kind": "control",
-      "match": "^link:[^ ]+ ↗$",
-      "ruling": "K:50 and rule 20 (operator 2026-10-20, the coordinator's ruling on the research-detail red of PR 70): a fact card's source link and tier are read from the claim its paragraph names (a claim marker, migration 0108_data_claim_markers), never inferred from text. The cards the old containment rule linked wrongly (ambiguous text, first match) lose their provenance link by design; only the card provenance links ('host ↗') are covered. Retired by the next baseline recapture after R2f merges."
-    },
-    {
-      "id": "k50-claim-link-market-detail",
-      "route": "market-detail",
-      "kind": "control",
-      "match": "^link:[^ ]+ ↗$",
-      "ruling": "K:50 and rule 20 (operator 2026-10-20, the coordinator's ruling on the research-detail red of PR 70): a fact card's source link and tier are read from the claim its paragraph names (a claim marker, migration 0108_data_claim_markers), never inferred from text. The cards the old containment rule linked wrongly (ambiguous text, first match) lose their provenance link by design; only the card provenance links ('host ↗') are covered. Retired by the next baseline recapture after R2f merges."
-    },
-    {
-      "id": "k50-claim-link-operations-detail",
-      "route": "operations-detail",
-      "kind": "control",
-      "match": "^link:[^ ]+ ↗$",
-      "ruling": "K:50 and rule 20 (operator 2026-10-20, the coordinator's ruling on the research-detail red of PR 70): a fact card's source link and tier are read from the claim its paragraph names (a claim marker, migration 0108_data_claim_markers), never inferred from text. The cards the old containment rule linked wrongly (ambiguous text, first match) lose their provenance link by design; only the card provenance links ('host ↗') are covered. Retired by the next baseline recapture after R2f merges."
     }
   ]
 }
