@@ -1,5 +1,5 @@
 /* The one base stylesheet: global rules, the row system, and every part's layout and responsive rule, once. Breakpoints are literals (CSS cannot read a
-   token inside @media): phone 767px, tablet 1023px, tablet-fold 1279px, masthead grid 1440px, narrow box 489px. This is the only file with @media.
+   token inside @media): phone 767px, tablet 1023px, tablet-fold 1279px, rail fold 1439px (the rail sits beside the content from 1440), masthead grid 1440px, narrow box 489px. This is the only file with @media.
    Source: old_repo/src/app/globals.css 144-211, 392-626 and every per-instance <style> template of src/components/ui. */
 
 /* ── global ── */
@@ -273,13 +273,6 @@ button, input, select, textarea { font-family: inherit; }
 .cl-row-tier { display: flex; align-items: center; justify-content: center; text-align: center; min-width: 0; font-size: var(--fs-11); }
 .cl-row-overflow { display: flex; align-items: center; justify-content: center; border-left: 1px solid var(--line-2); position: relative; z-index: 1; }
 .cl-row-grade-mobile, .cl-row-tags-mobile, .cl-row-bias-mobile { display: none; }
-
-
-/* Law 2 / DP-1 (V-9): with the 300 px rail beside it (1280 to 1439 px) the content column is 617 to 777 px, and the fixed columns of the row left the title 117 px. The title column keeps a floor of 160 px (the measure's threshold) and the columns around it
-   yield: the gaps close from 14 to 8 px and impact, due, timeline and tier take less. How the grid is composed at this width is the open look decision V-9 (DESIGN CHANGES OWED); the floor is not. */
-@media (min-width: 1280px) and (max-width: 1439px) {
-  .cl-list-row, .cl-list-row-header { grid-template-columns: 3px 56px minmax(160px, 1fr) 72px 80px 64px 36px 44px; gap: 0 var(--sp-8); }
-}
 
 @media (min-width: 1024px) and (max-width: 1279px) {
   .cl-row-meta-tags { flex-wrap: wrap; row-gap: 4px; }
@@ -590,9 +583,12 @@ button, input, select, textarea { font-family: inherit; }
 .cl-rowtable-cell { min-width: 0; }
 .cl-rowtable-action { white-space: nowrap; }
 
+/* ── responsive: the rail fold (ruling V-9, 2026-10-20): below 1440 px the 300 px rail folds under the content, so every list column keeps its artboard width at 1280 ── */
+@media (max-width: 1439px) {
+  .cl-page-frame, .cl-list-surface-grid { grid-template-columns: minmax(0, 1fr); }
+}
 /* ── responsive: tablet fold ── */
 @media (max-width: 1279px) {
-  .cl-page-frame, .cl-list-surface-grid { grid-template-columns: minmax(0, 1fr); }
   .cl-section-head2-aside { white-space: normal; min-width: 0; text-align: right; }
 }
 @media (max-width: 1100px) {

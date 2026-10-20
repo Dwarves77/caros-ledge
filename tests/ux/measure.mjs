@@ -93,7 +93,7 @@ export function measure(opts) {
     if (width + 1 < Math.min(longest, 120)) out.push(`title narrower than its longest word: ${label(el)} ${Math.round(width)} < ${Math.round(longest)}`);
   }
 
-  // A list row's title column: the 1fr cell of the row grid. At 1024 px and up it keeps a readable measure (V-9: 119 px at 1280 with the filter rail beside it).
+  // A list row's title column: the 1fr cell of the row grid. At 1024 px and up it keeps a readable measure (V-9: 119 px at 1280 with the filter rail beside it; since ruling V-9 of 2026-10-20 the rail folds below 1440, which keeps the measure met).
   if (vw >= 1024) {
     for (const title of document.querySelectorAll('[data-part="list-row"] [data-guard-title]')) {
       if (!title.getClientRects().length) continue;
