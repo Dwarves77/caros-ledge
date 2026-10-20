@@ -69,6 +69,12 @@ test("INV-UI1-5: every entry of the label table is what the facets draw for that
   assert.equal(facetLabel("topic", "EU ETS"), "EU ETS");
   assert.equal(facetLabel("region", "EU"), "EU");
   assert.equal(facetLabel("region", "United Kingdom"), "United Kingdom");
+  // A code (two or three capitals, an optional subdivision) stays as stored; a bare capital word of four letters or more is a name.
+  for (const code of ["US", "GB", "EU", "UN", "US-CA", "GB-ENG", "CA-NS", "CA-NU", "US-FL"]) assert.equal(facetLabel("region", code), code);
+  assert.equal(facetLabel("region", "OECD"), "OECD");
+  assert.equal(facetLabel("region", "ASIA"), "Asia");
+  assert.equal(facetLabel("region", "GLOBAL"), "Global");
+  assert.equal(facetLabel("topic", "road_transport"), "Road transport");
 });
 
 test("U8: the masthead names the next obligation by its title cut at 48 characters with an ellipsis; the title links to the item and carries the whole title", () => {

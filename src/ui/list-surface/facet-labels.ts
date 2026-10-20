@@ -7,6 +7,8 @@ const TABLE = z
   .object({ acronyms: z.array(z.string().regex(/^[A-Z0-9]+$/)), labels: z.record(z.string(), z.record(z.string(), z.string())) })
   .parse(raw);
 const ACRONYMS = new Set(TABLE.acronyms);
+/** A jurisdiction code: two or three capitals and an optional subdivision (US, EU, US-CA, GB-ENG). A bare capital word of four letters or more is a name, not a code. */
+const CODE = /^[A-Z]{2,3}(-[A-Z0-9]{1,4})?$/;
 
 export type FacetLabelGroup = "mode" | "topic" | "region";
 
@@ -19,12 +21,12 @@ function sentenceCase(stored: string): string {
   return words.map((w, i) => (ACRONYMS.has(w.toUpperCase()) ? w.toUpperCase() : i === 0 ? upperFirst(w) : w)).join(" ");
 }
 
-/** The label of a stored facet value: the table's entry, else a region name as stored (a proper name keeps its capitals) unless it is shouted, else sentence case. */
+/** The label of a stored facet value: the table's entry, else a region code as stored, else a region name as stored (a proper name keeps its capitals) unless it is shouted, else sentence case. */
 export function facetLabel(group: FacetLabelGroup, stored: string): string {
   const entry = TABLE.labels[group]?.[keyOf(stored)];
   if (entry) return entry;
   const trimmed = stored.trim();
+  if (group === "region" && CODE.test(trimmed)) return trimmed;
   if (group === "region" && trimmed !== trimmed.toUpperCase()) return upperFirst(trimmed);
-  if (group === "region" && trimmed.length <= 3) return trimmed;
   return sentenceCase(trimmed);
 }
