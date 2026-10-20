@@ -5,6 +5,8 @@ import { isVerbatim } from "@/core/contracts/verbatim";
 import { poolHash } from "@/core/grounding";
 import type { IntakeDeps, MintInput, MintResult } from "@/features/intake/deps";
 
+import { installLedgerRpcs } from "../_support/ledger-rpcs.ts";
+
 import { MemDb, type Row } from "./memdb.ts";
 
 export const NOW = new Date("2026-10-15T12:00:00.000Z");
@@ -91,6 +93,7 @@ export function makeWorld(opts: { itemType?: string; briefGrade?: boolean; pool?
 
 /** The database's gate, reduced to criterion 3 and the "at least one FACT" floor: sets the cached provenance_status like the trigger. */
 export function installProvenanceRpc(db: MemDb): void {
+  installLedgerRpcs(db);
   db.rpcs.validate_item_provenance = (args, d) => {
     const id = args.p_item_id as string;
     const facts = d.rows("section_claim_provenance").filter((c) => c.intelligence_item_id === id && c.claim_kind === "FACT");

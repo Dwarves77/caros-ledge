@@ -3,11 +3,12 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
+import { foldRun } from "@/core/contracts";
 import { scanGateA } from "@/core/grounding";
 import { classTierForHost } from "@/core/sources";
 import { healItem, healQuarantined, rederiveStale } from "@/features/mint";
-import { buildBuckets, buildSourcesIndex, claimNeedsResource, foldRun, locateSpan, planGrounding, planOrphan, planResource, type Capture, type HealClaim } from "@/features/mint/heal/ground";
-import { planBriefHonest, stripClause } from "@/features/mint/heal/brief-honest";
+import { buildBuckets, buildSourcesIndex, claimNeedsResource, locateSpan, planGrounding, planResource, type Capture, type HealClaim } from "@/features/mint/heal/ground";
+import { planBriefHonest } from "@/features/mint/heal/brief-honest";
 import { planReclassify, planRelabelFromFullBrief, planRelabelModal, planRelabelParagraph } from "@/features/mint/heal/label";
 
 import { CELEX_URL, SOURCE, makeDeps, makeWorld, type WorldDb } from "./world.ts";
@@ -80,7 +81,6 @@ test("floors and buckets: a below-floor FACT needs a better source; the own-cano
   assert.deepEqual(planResource(claim({ source_span: "tier text" }), buckets), { outcome: "resourced", newSpan: "tier text", method: "exact", searchId: "t", sourceId: "s3", bucket: "tier_qualifying" });
   assert.equal(planResource(claim({ source_span: "blog text" }), buckets).outcome, "unresourced", "a below-floor capture is never a bucket");
   assert.deepEqual(buildBuckets(item, captures, idx, 2, [cap("corpus text", "corp")], 5).map((b) => b.bucket), ["own_canonical", "tier_qualifying"], "the corpus pool needs the item's own source at the floor");
-  assert.equal(planOrphan({ token: "corpus text", class: "figure" }, buckets).found, true);
 });
 
 test("re-kind, never rewrite (ruling 4): a required-slot FACT becomes the slot's GAP, a findable claim becomes ANALYSIS in place or in the section that holds it, and the rest is refused", () => {
@@ -106,9 +106,6 @@ test("relabelling only prefixes the analysis label: the paragraph, the full-brie
 });
 
 test("the honest strip removes the sentence, or the one isolable middle clause, and is ACCEPTED only when Gate A then finds no orphan", () => {
-  assert.deepEqual(stripClause("Fines are EUR 50 000, due 1 January 2027, and apply to vessels.", "1 January 2027"), { rewritten: "Fines are EUR 50 000, and apply to vessels.", removed: "due 1 January 2027" });
-  assert.equal(stripClause("Fines are EUR 50 000, due 1 January 2027, and apply to vessels.", "EUR 50 000"), null, "the first clause is never guessed at");
-  assert.equal(stripClause("Fines are EUR 50 000 and apply.", "EUR 50"), null);
   const single = "The regime applies to vessels. The penalty is EUR 50 000 per breach. Reports are annual.";
   const accepted = planBriefHonest(single, ["EUR 50"], []);
   assert.equal(accepted.outcome, "accepted");
@@ -117,6 +114,8 @@ test("the honest strip removes the sentence, or the one isolable middle clause, 
   const two = "Fines are EUR 50 000, due 1 January 2027, and apply to vessels.";
   const rejected = planBriefHonest(two, ["EUR 50", "1 January 2027"], []);
   assert.equal(rejected.outcome, "rejected", "the figure could not be stripped, so Gate A would still find an orphan");
+  assert.deepEqual(rejected.perToken.map((t) => t.outcome), ["refused:sentence_carries_other_live_token_no_isolable_clause", "clause"], "the first clause is never guessed at; the isolable middle clause is removed");
+  assert.equal(planBriefHonest("Fines are EUR 50 000 and apply.", ["EUR 50", "apply"], []).perToken[0]?.outcome, "refused:sentence_carries_other_live_token_no_isolable_clause");
   assert.equal(scanGateA(two, []).orphan_count, 2);
   assert.equal(planBriefHonest("Nothing to strip.", ["EUR 5"], []).outcome, "no_op");
 });
@@ -191,17 +190,18 @@ const fetcher = (pages: Record<string, string>) => (async (u: string) => (pages[
 test("rule 18: an orphan figure no capture carries is sourced from a URL the item cites, the page is registered and RATED through the registry (class-table tier), and the figure is grounded verbatim on it", async () => {
   const url = "https://publications.europa.eu/resource/doc/penalties";
   const db = healWorld({ brief: "The penalty is EUR 50 000 per breach.", sections: [{ id: "sec1", item_id: ITEM, section_key: "record_facts", section_order: 2, content_md: `The penalty is EUR 50 000 per breach. See ${url}` }], claims: [...covers, fact("Operators shall report verified annual emissions before 30 April of each year.")], captureText: "Operators shall report verified annual emissions before 30 April of each year. Regulation text only." });
-  const fetchDeps = { fetch: { db: db.client, env: {}, caller: "manual-intake-run", fetchImpl: fetcher({ [url]: PAGE }) } };
+  const fetchDeps = { fetch: { db: db.client, resolveHost: null, throttle: null, env: {}, caller: "manual-intake-run", fetchImpl: fetcher({ [url]: PAGE }) } };
   const r = await heal(db, {}, fetchDeps);
   const expectedTier = classTierForHost("publications.europa.eu");
   assert.ok(expectedTier != null, "the host places in a class");
   const src = db.rows("sources").find((s) => s.url === url);
   assert.ok(src, "the cited page was registered");
   assert.equal(src?.base_tier, expectedTier, "the tier is the class table's, never typed here");
-  const orphan = claimsOf(db).find((c) => String(c.claim_text).startsWith("The captured source text states the figure"));
-  assert.deepEqual([orphan?.claim_kind, orphan?.source_span, orphan?.source_id, orphan?.source_tier_at_grounding], ["FACT", "EUR 50", src?.id, expectedTier]);
+  const orphan = claimsOf(db).find((c) => c.claim_text === "The penalty is EUR 50 000 per breach.");
+  assert.deepEqual([orphan?.claim_kind, orphan?.source_span, orphan?.source_id, orphan?.source_tier_at_grounding], ["FACT", "The penalty is EUR 50 000 per breach of the reporting duty.", src?.id, expectedTier], "the claim is the brief's own sentence, the span the page's verbatim sentence");
+  assert.ok(!claimsOf(db).some((c) => String(c.claim_text).startsWith("The captured source text states")), "no sentence is generated");
   assert.equal(r.counts.orphans_sourced, 1, r.notes.join("; "));
-  assert.ok(PAGE.includes(orphan?.source_span ?? "NO_SPAN"), "INV-003: the figure attaches with its URL and a quote verbatim on the page");
+  assert.ok(PAGE.includes(String(orphan?.source_span ?? "NO_SPAN")), "INV-003: the figure attaches with its URL and a quote verbatim on the page");
   assert.equal(db.rows("agent_run_searches").find((x) => x.id === orphan?.search_result_id)?.result_url, url);
   assert.equal((db.rows("item_gate_a_state")[0] as { orphan_count: number }).orphan_count, 0);
   assert.equal(db.rows("agent_run_searches").filter((x) => x.result_url === url).length, 1, "the cited page is stored as a pool row");
@@ -210,7 +210,7 @@ test("rule 18: an orphan figure no capture carries is sourced from a URL the ite
 test("rule 18: a host the registry never rates (a hosting platform) leaves the figure an orphan and registers nothing; a page that lacks the figure is followed ONE hop to a same-institution link", async () => {
   const platform = "https://consult.citizenspace.com/penalties";
   const db1 = healWorld({ brief: "The penalty is EUR 50 000 per breach.", sections: [{ id: "sec1", item_id: ITEM, section_key: "record_facts", section_order: 2, content_md: `Penalty EUR 50 000. ${platform}` }], claims: [...covers, fact("Operators shall report verified annual emissions before 30 April of each year.")], captureText: "Operators shall report verified annual emissions before 30 April of each year. Regulation text only." });
-  const r1 = await heal(db1, {}, { fetch: { db: db1.client, env: {}, caller: "manual-intake-run", fetchImpl: fetcher({ [platform]: PAGE }) } });
+  const r1 = await heal(db1, {}, { fetch: { db: db1.client, resolveHost: null, throttle: null, env: {}, caller: "manual-intake-run", fetchImpl: fetcher({ [platform]: PAGE }) } });
   assert.equal(r1.counts.orphans_sourced ?? 0, 0);
   assert.equal(db1.rows("sources").filter((s) => s.url === platform).length, 0);
   assert.equal((db1.rows("item_gate_a_state")[0] as { orphan_count: number }).orphan_count, 1, "the figure is still an orphan on the Gate A state");
@@ -219,7 +219,7 @@ test("rule 18: a host the registry never rates (a hosting platform) leaves the f
   const child = "https://publications.europa.eu/resource/doc/penalties-annex";
   const db2 = healWorld({ brief: "The penalty is EUR 50 000 per breach.", sections: [{ id: "sec1", item_id: ITEM, section_key: "record_facts", section_order: 2, content_md: `Penalty EUR 50 000. ${index}` }], claims: [...covers, fact("Operators shall report verified annual emissions before 30 April of each year.")], captureText: "Operators shall report verified annual emissions before 30 April of each year. Regulation text only." });
   const indexPage = `<html><body><p>${"An index page that lists the annexes of the scheme and says nothing about money. ".repeat(5)}</p><a href="${child}">annex</a><a href="https://elsewhere.example/x">out</a></body></html>`;
-  const r2 = await heal(db2, {}, { fetch: { db: db2.client, env: {}, caller: "manual-intake-run", fetchImpl: fetcher({ [index]: indexPage, [child]: PAGE }) } });
+  const r2 = await heal(db2, {}, { fetch: { db: db2.client, resolveHost: null, throttle: null, env: {}, caller: "manual-intake-run", fetchImpl: fetcher({ [index]: indexPage, [child]: PAGE }) } });
   assert.equal(r2.counts.orphans_sourced, 1, r2.notes.join("; "));
   assert.ok(db2.rows("agent_run_searches").some((x) => x.result_url === child), "the one-hop page was captured");
   assert.ok(!db2.rows("agent_run_searches").some((x) => x.result_url === "https://elsewhere.example/x"), "a link outside the institution is never followed");

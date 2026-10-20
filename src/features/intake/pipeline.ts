@@ -16,8 +16,10 @@ import { harvestTimeline } from "@/core/brief/timeline";
 import { validateClaimRecords, validateMetadata, type BriefMetadata } from "@/core/brief/validate";
 import { assertDbValue, bankCandidate, DB_FORMAT_TYPE_VALUES, DB_PRIORITY_VALUES, DB_SIGNAL_BAND_VALUES, DB_URGENCY_TIER_VALUES, toDbSeverity } from "@/core/brief/vocab";
 import type { AdoptedTerms } from "@/core/brief/contract";
-import { boundedRead, fetchAllByIdChunks, fetchAllRows, type Db } from "@/core/db";
+import { fetchAllRows, type Db } from "@/core/db";
 import { groundBrief, poolHash, readPool, readRequiredSlots, uncoveredSlots, type GroundResult } from "@/core/grounding";
+import { reconcileSections } from "@/core/grounding/ledger";
+import { admissibleRows } from "@/core/briefs/admissible";
 import { runResult, type RunResult } from "@/core/intake/result";
 import { stripUrlMarkers } from "@/core/shared/url";
 
@@ -147,16 +149,17 @@ export async function writeSynthesizedBrief(deps: Deps, a: { itemId: string; ite
   const targets = ids(md.related_items).filter((t) => t !== a.itemId);
   let edges = 0;
   if (targets.length) {
-    const existing = await fetchAllByIdChunks(targets, async (slice) => {
-      const r = await sb.from("intelligence_items").select("id").in("id", slice);
-      if (r.error) throw new Error(`related_items existence read failed: ${r.error.message}`);
-      return (r.data ?? []) as { id: string }[];
-    }).catch((e: Error) => e);
-    if (existing instanceof Error) notes.push(existing.message);
-    else if (existing.length) {
-      const up = await sb.from("item_cross_references").upsert(existing.map((x) => ({ source_item_id: a.itemId, target_item_id: x.id, relationship: "related", origin: "agent_semantic" })), { onConflict: "source_item_id,target_item_id", ignoreDuplicates: true });
-      if (up.error) notes.push(`related_items edges not written: ${up.error.message}`);
-      else edges = existing.length;
+    // An asserted id adds intersection strength, so it is an edge only when the item exists, is verified and is not archived (the admissible-row predicate): anything else is named and dropped, never guessed into the graph.
+    const admissible = await admissibleRows.itemIds(sb, targets).catch((e: Error) => e);
+    if (admissible instanceof Error) notes.push(`related_items not checked, no edge written: ${admissible.message}`);
+    else {
+      const dropped = targets.filter((id) => !admissible.has(id));
+      if (dropped.length) notes.push(`related_items dropped (not a verified, unarchived item): ${dropped.slice(0, 5).join(", ")}${dropped.length > 5 ? " and more" : ""}`);
+      if (admissible.size) {
+        const up = await sb.from("item_cross_references").upsert([...admissible].map((id) => ({ source_item_id: a.itemId, target_item_id: id, relationship: "related", origin: "agent_semantic" })), { onConflict: "source_item_id,target_item_id", ignoreDuplicates: true });
+        if (up.error) notes.push(`related_items edges not written: ${up.error.message}`);
+        else edges = admissible.size;
+      }
     }
   }
   const detail = `brief ${a.body.length}ch + metadata (fmt=${md.format_type}, sev=${sev}) from ${a.sourceCount} pool sources`;
@@ -190,9 +193,9 @@ export async function harvestItemTimeline(deps: Deps, itemId: string, opts: { dr
 }
 
 /**
- * Reconcile intelligence_item_sections with the brief BY KEY: surviving keys are updated in place (their section row ids keep the claims
- * pointing at them), new keys inserted, vanished keys deleted (their claims cascade: the section really is gone). A VERIFIED item is never
- * re-sectioned (a section delete would cascade-destroy its claim ledger); only its timeline is harvested.
+ * Reconcile intelligence_item_sections with the brief BY KEY in ONE database transaction (ledger_reconcile_sections): surviving keys are updated in place (their section row ids keep the claims
+ * pointing at them), new keys inserted, vanished keys deleted AFTER every claim they carry is archived to claim_versions (the delete cascades; nothing is destroyed unarchived). A VERIFIED item is
+ * never re-sectioned; only its timeline is harvested.
  */
 export async function sectionBrief(deps: Deps, itemId: string, opts: { dry?: boolean } = {}): Promise<RunResult> {
   const { sb } = deps;
@@ -207,24 +210,16 @@ export async function sectionBrief(deps: Deps, itemId: string, opts: { dry?: boo
   const rows = extractSections(it.full_brief, it.item_type);
   if (!specForItemType(it.item_type)) return runResult("failed", {}, [`no format spec for item_type ${it.item_type}`]);
   if (!rows.length) return runResult("failed", {}, ["no sections extracted"]);
-  const clean = (md: string) => stripUrlMarkers(md) ?? md;
-  const existing = await boundedRead<{ id: string; section_key: string }>((n) => sb.from("intelligence_item_sections").select("id, section_key").eq("item_id", itemId).limit(n), { limit: 100 });
-  if (existing.error) return runResult("failed", {}, [`sections read failed: ${existing.error.message}`]);
   if (opts.dry) return runResult("ok", { sections: rows.length }, ["dry: nothing written"]);
-  const idByKey = new Map(existing.data.map((x) => [x.section_key, x.id]));
-  const keep = new Set(rows.map((x) => x.section_key));
-  const notes: string[] = [];
-  let failed = 0;
-  const note = (e: { message: string } | null, what: string) => void (e && (failed++, notes.push(`${what}: ${e.message}`)));
-  for (const x of existing.data) if (!keep.has(x.section_key)) note((await sb.from("intelligence_item_sections").delete().eq("id", x.id)).error, `delete ${x.section_key}`);
-  for (const s of rows) {
-    const payload = { section_order: s.section_order, content_md: clean(s.content_md), is_conditional: s.is_conditional };
-    const priorId = idByKey.get(s.section_key);
-    note((priorId ? await sb.from("intelligence_item_sections").update(payload).eq("id", priorId) : await sb.from("intelligence_item_sections").insert({ item_id: itemId, section_key: s.section_key, ...payload })).error, `write ${s.section_key}`);
+  const clean = (md: string) => stripUrlMarkers(md) ?? md;
+  let reconciled: Awaited<ReturnType<typeof reconcileSections>>;
+  try {
+    reconciled = await reconcileSections(sb, itemId, rows.map((s) => ({ section_key: s.section_key, section_order: s.section_order, content_md: clean(s.content_md), is_conditional: s.is_conditional })), deps.recorder.now().toISOString());
+  } catch (e) {
+    return runResult("failed", { sections: rows.length, section_writes_failed: rows.length }, [`sections not reconciled, nothing changed: ${message(e)}`]);
   }
   const tl = await harvestItemTimeline(deps, itemId);
-  notes.push(...tl.notes);
-  return runResult(failed || tl.outcome !== "ok" ? "partial" : "ok", { sections: rows.length, section_writes_failed: failed, ...tl.counts }, notes);
+  return runResult(tl.outcome !== "ok" ? "partial" : "ok", { sections: rows.length, section_writes_failed: 0, claims_archived: reconciled.claims_archived, ...tl.counts }, tl.notes);
 }
 
 /** Register (and rate, rule 18) the pool hosts and the brief's cited sources BEFORE grounding, so a corroborator-grounded FACT resolves to a real tier instead of null. Idempotent. */

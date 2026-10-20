@@ -31,7 +31,10 @@
     "result_index",
     "result_content",
     "searched_at",
-    "result_chars"
+    "result_chars",
+    "content_hash",
+    "capture_channel",
+    "number_locale"
    ],
    "uuid": [
     "id"
@@ -2427,6 +2430,18 @@
     }
    ]
   },
+  "migration_log": {
+   "columns": [
+    "file",
+    "applied_at",
+    "self_check"
+   ],
+   "uuid": [],
+   "defaults": {
+    "applied_at": "__now"
+   },
+   "fks": []
+  },
   "moderation_reports": {
    "columns": [
     "id",
@@ -4038,7 +4053,14 @@
     "sitemap_last_walked_at",
     "sitemap_url_count",
     "sitemap_walk_outcome",
-    "feed_last_probed_at"
+    "feed_last_probed_at",
+    "reuse_terms",
+    "collection_state",
+    "collection_detail",
+    "access_requested_at",
+    "access_contact",
+    "publisher_locale",
+    "institution_key"
    ],
    "uuid": [
     "id"
@@ -4086,7 +4108,10 @@
     "scope_topics": [],
     "scope_modes": [],
     "scope_verticals": [],
-    "observed_correctness_count": 0
+    "observed_correctness_count": 0,
+    "reuse_terms": "unknown",
+    "collection_state": "unattempted",
+    "collection_detail": {}
    },
    "fks": [
     {

@@ -348,7 +348,7 @@ test("rows files: p90 below p50 is refused, a missing both is an error, a same-c
 });
 
 test("rows files: an apply (armed) stores the registered source on the grid row and a re-run inserts nothing twice", async () => {
-  const db = memoryDb({ entities: spine("jurisdiction", ["Great Britain"]), sources: [{ id: "src-1", url: "https://eur-lex.europa.eu/", status: "active", base_tier: 1, institution_id: "inst" }] });
+  const db = memoryDb({ entities: spine("jurisdiction", ["Great Britain"]), sources: [{ id: "src-1", url: "https://eur-lex.europa.eu/", status: "active", base_tier: 1, institution_id: "inst" }], agent_run_searches: [{ id: "cap-cited", intelligence_item_id: null, result_url: cite.url, result_content: "the quoted q sentence of the cited page", result_index: 0 }] });
   const d = makeDeps({ db, env: { OPERATIONS_PRODUCER_GRID_QUEUE_ROWS_ENABLED: "1" } });
   const row = { jurisdiction_name: "Great Britain", dso_name: "DSO", capacity_band_mw: "10-20", as_of: "2026-09-01", queue_months_p50: 10, queue_months_p90: 20, citation: cite };
   const armed = ON(gridQueueRows);
@@ -356,6 +356,9 @@ test("rows files: an apply (armed) stores the registered source on the grid row 
   assert.equal(r.outcome, "ok", r.notes.join("|"));
   assert.equal(r.counts.created, 1);
   assert.equal(db.tables.grid_connection_queues?.[0]?.source_id, "src-1");
+  const unchecked = await runProducer(d.deps, { spec: armed, dry: false, text: JSON.stringify([{ ...row, dso_name: "Other DSO", citation: { ...cite, quote: "a sentence the cited page never held" } }]) });
+  assert.equal(unchecked.counts.created, 0, "a quote no stored capture of the cited URL holds writes no row");
+  assert.match(unchecked.notes.join("|"), /quote_not_in_capture/);
   const again = await runProducer(d.deps, { spec: armed, dry: false, text: JSON.stringify([row]) });
   assert.equal(again.counts.created, 0);
   assert.equal(rerouteRows.table, "reroute_events");

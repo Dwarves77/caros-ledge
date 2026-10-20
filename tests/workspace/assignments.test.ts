@@ -81,7 +81,7 @@ test("INV-167 ATTACK assign outside the org: an id from another org refuses the 
 test("INV-167: an unverifiable roster fails closed with a 503 and nothing is written", async () => {
   wire();
   const db = script(seed());
-  db.fail("org_memberships", "select", { message: "roster down" }, { when: (f) => !f.some(([, c]) => c === "user_id") });
+  db.fail("org_memberships", "select", { message: "roster down" }, { when: (call) => !call.filters.some(([, c]) => c === "user_id") });
   const res = await call(POST, "admin", "POST", URL_, { assignees: [TEAMMATE] }, P);
   assert.equal(res.status, 503);
   assert.equal(assigned(db).length, 0);

@@ -1,5 +1,6 @@
 // The functional face of the one shared memory database (tests/_support/memdb.ts): `memoryDb(initial, opts)` returns the client with the tables and the read and write logs the source, producer and connect
 // tests were written against. Rows live in memory, filters apply for real, writes change state, and a test can inject a failure on any (table, op).
+import { installLedgerRpcs } from "./ledger-rpcs.ts";
 import { MemDb, type Op, type Row } from "./memdb.ts";
 
 export type { Row };
@@ -24,6 +25,7 @@ export function memoryDb(
   opts: { schema?: null; storageFail?: string; failures?: Failure[]; unique?: Record<string, string[]>; rpc?: (name: string, args: unknown) => { data?: unknown; error?: { message: string } | null } | undefined } = {},
 ) {
   const mem = new MemDb({ ids: "seq", returnRows: true, ...(opts.schema === null ? { schema: null } : {}), unique: Object.fromEntries(Object.entries(opts.unique ?? {}).map(([t, cols]) => [t, [cols]])) });
+  installLedgerRpcs(mem);
   for (const [t, rows] of Object.entries(initial)) mem.seed(t, rows);
   for (const f of opts.failures ?? []) mem.fail(f.table, f.op, f.message, { ...(f.code ? { code: f.code } : {}), ...(f.when ? { when: (c) => f.when?.({ payload: c.payload, filters: named(c.filters) }) ?? true } : {}) });
   if (opts.storageFail) mem.storageFail = opts.storageFail;

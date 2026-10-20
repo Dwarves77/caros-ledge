@@ -7,11 +7,12 @@ import { detectGaps } from "@/core/flywheel/gaps";
 import { computeMemberHash, lineageFromThemeDelta, resolveBriefForTheme } from "@/core/flywheel/themes";
 import { surfaceOf } from "@/core/routing";
 
-import { figureTokens, type ThemeContext } from "./theme-brief-contract";
+import { admissibleRows, type AdmissibleRows } from "./admissible";
+import { figureCoverage, figureTokens, type ClaimComparator, type ThemeContext } from "./theme-brief-contract";
 
 export interface ThemeRow { id: string; member_ids: string[] | null; dominant_signals?: unknown; surfaces: string[] | null; density?: number | null; convergence?: number | null; pivots?: { id: string }[] | null }
 export interface MemberItem { id: string; title: string | null; item_type: string | null; domain: number | null; jurisdiction_iso: string[] | null; priority: string | null; summary: string | null; added_date: string | null }
-export interface ThemeClaim { id: string; intelligence_item_id: string; claim_kind: string; claim_text: string; source_id: string | null }
+export interface ThemeClaim { id: string; intelligence_item_id: string; claim_kind: string; claim_text: string; source_id: string | null; source_span?: string | null }
 export interface ThemeEvent { id: string; intelligence_item_id: string; event_date: string; date_precision: string; event_kind: string; obligation_text: string; source_span: string | null; confidence: string | null }
 export interface ThemeEdge { source_item_id: string; target_item_id: string; relationship: string | null; origin: string | null; basis: { detail?: string }[] | null; score: number | null }
 export interface ThemeMaterial { items: MemberItem[]; claims: ThemeClaim[]; events: ThemeEvent[]; edges: ThemeEdge[]; jurisdictionWeights: Record<string, unknown> }
@@ -19,7 +20,7 @@ export interface StoredBrief { theme_id: string; member_hash: string; member_cou
 
 const THEME_COLUMNS = "id, member_ids, dominant_signals, surfaces, density, convergence, pivots";
 const MEMBER_COLUMNS = "id, title, item_type, domain, jurisdiction_iso, priority, summary, added_date";
-const CLAIM_COLUMNS = "id, intelligence_item_id, claim_kind, claim_text, source_id";
+const CLAIM_COLUMNS = "id, intelligence_item_id, claim_kind, claim_text, source_id, source_span";
 const EVENT_COLUMNS = "id, intelligence_item_id, event_date, date_precision, event_kind, obligation_text, source_span, confidence";
 const EDGE_COLUMNS = "source_item_id, target_item_id, relationship, origin, basis, score";
 const BRIEF_COLUMNS = "theme_id, member_hash, member_count, title, generated_at, generated_by, member_ids";
@@ -52,20 +53,52 @@ const byIds = <T>(sb: Db, table: string, columns: string, ids: readonly string[]
     return rows;
   }, { manyPerId: true });
 
-/** Members, grounded FACT claims, forward events and intra-theme edges for a set of themes, read once for the union of their members. */
-export async function loadThemeMaterial(sb: Db, themes: readonly ThemeRow[]): Promise<ThemeMaterial> {
+/** Which workspace profile the home jurisdictions come from: one named organisation's, or the union of every workspace's (a theme is corpus-wide, so its gaps are measured against everyone's homes). Never "whichever row comes first". */
+export type HomeScope = { orgId: string } | "all-workspaces";
+/** jurisdiction to weight for the scope. A union takes the larger numeric weight per jurisdiction, rows read in organisation order. A failed read throws. */
+async function loadHomeJurisdictions(sb: Db, scope: HomeScope): Promise<Record<string, unknown>> {
+  const read = scope === "all-workspaces"
+    ? await fetchAllRows<{ org_id: string; jurisdiction_weights: unknown }>((from, to) => sb.from("workspace_settings").select("org_id, jurisdiction_weights").order("org_id", { ascending: true }).range(from, to) as never, { cap: 100_000 })
+    : await (async () => {
+        const r = await sb.from("workspace_settings").select("org_id, jurisdiction_weights").eq("org_id", scope.orgId).maybeSingle();
+        if (r.error) throw new Error(`workspace_settings read failed: ${r.error.message}`);
+        return r.data ? [r.data as { org_id: string; jurisdiction_weights: unknown }] : [];
+      })();
+  const out: Record<string, unknown> = {};
+  for (const row of read) {
+    const w = row.jurisdiction_weights;
+    if (!w || typeof w !== "object" || Array.isArray(w)) continue;
+    for (const [k, v] of Object.entries(w as Record<string, unknown>)) out[k] = typeof v === "number" && typeof out[k] === "number" ? Math.max(v, out[k] as number) : (out[k] ?? v);
+  }
+  return out;
+}
+
+export interface MaterialOpts {
+  homes?: HomeScope;
+  seams?: ThemeBriefSeams;
+}
+/**
+ * The two readers the theme-brief path goes through, behind ONE member: the comparator of a listed claim against its grounded text (R2a's typed figure comparator) and the admissible-row predicate (a local stand-in
+ * until R2d's lands, then it replaces admissibleRows): members, claims and events that fail it never reach the author.
+ */
+export interface ThemeBriefSeams { comparator: ClaimComparator; admissible: AdmissibleRows }
+export const themeBriefSeams: ThemeBriefSeams = { comparator: figureCoverage, admissible: admissibleRows };
+/**
+ * Members, grounded FACT claims, forward events and intra-theme edges for a set of themes, read once for the union of their members, and ONLY admissible rows: a member quarantined or archived since the pass and a suppressed
+ * claim are not material (F:16). The home jurisdictions come from the scope named in `opts.homes` (default: every workspace), never from an arbitrary row (F:17).
+ */
+export async function loadThemeMaterial(sb: Db, themes: readonly ThemeRow[], opts: MaterialOpts = {}): Promise<ThemeMaterial> {
   const memberIds = [...new Set(themes.flatMap((t) => t.member_ids ?? []))].sort();
   if (!memberIds.length) return { items: [], claims: [], events: [], edges: [], jurisdictionWeights: {} };
+  const admissible = (opts.seams ?? themeBriefSeams).admissible;
+  const live = await admissible.itemIds(sb, memberIds);
   const [items, claims, events, edges] = [
-    await byIds<MemberItem>(sb, "intelligence_items", MEMBER_COLUMNS, memberIds, "id", "id"),
-    await byIds<ThemeClaim>(sb, "section_claim_provenance", CLAIM_COLUMNS, memberIds, "intelligence_item_id", "id"),
-    await byIds<ThemeEvent>(sb, "item_forward_events", EVENT_COLUMNS, memberIds, "intelligence_item_id", "id"),
-    await byIds<ThemeEdge>(sb, "item_cross_references", EDGE_COLUMNS, memberIds, "source_item_id", "target_item_id"),
+    (await byIds<MemberItem>(sb, "intelligence_items", MEMBER_COLUMNS, memberIds, "id", "id")).filter((i) => live.has(i.id)),
+    await admissible.claims(sb, (await byIds<ThemeClaim>(sb, "section_claim_provenance", CLAIM_COLUMNS, memberIds, "intelligence_item_id", "id")).filter((c) => c.claim_kind === "FACT")),
+    (await byIds<ThemeEvent>(sb, "item_forward_events", EVENT_COLUMNS, memberIds, "intelligence_item_id", "id")).filter((e) => live.has(e.intelligence_item_id)),
+    (await byIds<ThemeEdge>(sb, "item_cross_references", EDGE_COLUMNS, memberIds, "source_item_id", "target_item_id")).filter((e) => live.has(e.source_item_id) && live.has(e.target_item_id)),
   ];
-  const ws = await sb.from("workspace_settings").select("jurisdiction_weights").limit(1);
-  if (ws.error) throw new Error(`workspace_settings read failed: ${ws.error.message}`);
-  const weights = (ws.data?.[0] as { jurisdiction_weights?: unknown } | undefined)?.jurisdiction_weights;
-  return { items, claims: claims.filter((c) => c.claim_kind === "FACT"), events, edges, jurisdictionWeights: weights && typeof weights === "object" ? (weights as Record<string, unknown>) : {} };
+  return { items, claims, events, edges, jurisdictionWeights: await loadHomeJurisdictions(sb, opts.homes ?? "all-workspaces") };
 }
 
 /** The gaps the connection layer computes for each theme, keyed by theme id: same inputs the corpus pass gives it. */
@@ -81,7 +114,7 @@ export function computeThemeGaps(themes: readonly ThemeRow[], material: ThemeMat
 }
 
 /** The validator's context: themes, per-member claim and event id sets and titles, the gap lists, and the figure tokens the intra-theme edge basis names (system facts the author is told to name). */
-export function buildValidationContext(themes: readonly ThemeRow[], material: ThemeMaterial, gapsByTheme: ThemeContext["gapsByTheme"]): ThemeContext {
+export function buildValidationContext(themes: readonly ThemeRow[], material: ThemeMaterial, gapsByTheme: ThemeContext["gapsByTheme"], seams: ThemeBriefSeams = themeBriefSeams): ThemeContext {
   const themesById: ThemeContext["themesById"] = new Map(themes.map((t) => [t.id, { id: t.id, member_ids: t.member_ids ?? [], surfaces: t.surfaces ?? [] }]));
   const membersById: ThemeContext["membersById"] = new Map(material.items.map((it) => [it.id, { title: it.title, claim_ids: new Set<string>(), event_ids: new Set<string>() }]));
   for (const c of material.claims) membersById.get(c.intelligence_item_id)?.claim_ids.add(c.id);
@@ -93,7 +126,11 @@ export function buildValidationContext(themes: readonly ThemeRow[], material: Th
     for (const e of material.edges) if (members.has(e.source_item_id) && members.has(e.target_item_id)) for (const b of Array.isArray(e.basis) ? e.basis : []) for (const tk of figureTokens(b?.detail)) tokens.add(tk);
     basisTokensByTheme.set(t.id, tokens);
   }
-  return { themesById, membersById, ...(gapsByTheme ? { gapsByTheme } : {}), basisTokensByTheme };
+  const groundedText = new Map<string, readonly string[]>([
+    ...material.claims.map((c): [string, readonly string[]] => [c.id, [c.claim_text, c.source_span ?? ""].filter(Boolean)]),
+    ...material.events.map((e): [string, readonly string[]] => [e.id, [e.obligation_text, e.event_date, e.source_span ?? ""].filter(Boolean)]),
+  ]);
+  return { themesById, membersById, groundedText, comparator: seams.comparator, ...(gapsByTheme ? { gapsByTheme } : {}), basisTokensByTheme };
 }
 
 export interface ThemeNeed { theme: ThemeRow; reason: "no_brief" | "stale" | "superseded"; prior: StoredBrief | null; supersedes_theme_id: string | null }

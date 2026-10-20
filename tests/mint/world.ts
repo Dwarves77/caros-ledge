@@ -43,7 +43,7 @@ export function makeDeps(db: MemDb, over: Partial<MintRunDeps> = {}): { deps: Mi
       deriveKey: (identifier, url) => /CELEX:([0-9A-Z()]+)/.exec(String(url ?? ""))?.[1] ?? identifier,
       sameInstitution: (a, b) => !!a && !!b && new URL(String(a)).hostname === new URL(String(b)).hostname,
     },
-    fetch: { db: db.client, env: {}, caller: "manual-intake-run", fetchImpl: (async () => new Response("", { status: 404 })) as typeof fetch },
+    fetch: { db: db.client, resolveHost: null, throttle: null, env: {}, caller: "manual-intake-run", fetchImpl: (async () => new Response("", { status: 404 })) as typeof fetch },
     isSeriesKey: (id) => id === "oil_bulletin_diesel",
     flushCache: async (tags) => (rec.flushed.push(tags), { error: null }),
     ...over,

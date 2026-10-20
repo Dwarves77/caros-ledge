@@ -2,15 +2,23 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { buildFrontmatter, parseFrontmatter } from "@/core/briefs/frontmatter";
-import { findUncitedFigures, parseRamifications, renderBriefMd } from "@/core/briefs/theme-brief-contract";
+import { admissibleRows } from "@/core/briefs/admissible";
+import { figureCoverage, isValidThemeBrief, parseRamifications } from "@/core/briefs/theme-brief-contract";
 import { computeMemberHash } from "@/core/flywheel/themes";
 import { applyBatch } from "@/features/batches";
+import { loadThemeMaterial, loadThemes } from "@/core/briefs/theme-brief-material";
 import { themeBriefsExporter } from "@/features/batches/kinds/theme-briefs/apply";
 
 import { batchFile, ITEM } from "./world.ts";
 import { CLAIM_A, CLAIM_B, EVENT_B, SECOND, THEME, themeWorld, type World } from "./worlds.ts";
 
 const hash = computeMemberHash([SECOND, ITEM]);
+/** The stored brief text: the title, then the sections in order under their fixed headings (the format the readers show). */
+const HEADINGS: [string, string][] = [["connection", "Connection"], ["meaning", "What it means"], ["ramifications", "Ramifications"], ["watch", "Watch"], ["gaps", "Gaps"]];
+const renderBriefMd = (e: { title: string; sections: Record<string, string> }) => {
+  const parts = [`# ${e.title.trim()}`, ...HEADINGS.filter(([k]) => (e.sections[k] ?? "").trim()).map(([k, h]) => `## ${h}\n\n${(e.sections[k] ?? "").trim()}`)];
+  return `${parts.join("\n\n")}\n`;
+};
 const entry = (over: Record<string, unknown> = {}) => ({
   theme_id: THEME, member_hash: hash, title: "The reporting duty and the surcharge it triggers",
   sections: { connection: "Both items concern the annual reporting duty and how carriers price it.", meaning: "A forwarder should expect the duty to reach the rate card.", ramifications: "### Regulations\nThe duty needs an owner in each operating unit.", watch: "Watch the next dated step.", gaps: "No operations item yet." },
@@ -71,6 +79,53 @@ test("the export lists the themes that need a brief with their bundle; a stale b
   assert.ok(tiny[0] && tiny[0].truncation.chars_used <= 700 * 2, "an over-small budget cuts and counts, it does not silently drop");
 });
 
+test("INV-R2b-5 (F:3): a single payload takes the batch path: an entry that fails validation is refused with the SAME reasons as in a batch, as JSON or markdown, and nothing is written; a valid single entry is written", async () => {
+  const w = themeWorld();
+  const bad = entry({ sections: { ...entry().sections, meaning: "The duty costs EUR 900000 per year." } });
+  const viaBatch = notes(await apply(w, [bad]));
+  const single = (content: string, format?: "md") => applyBatch("theme-briefs", w.deps, { content, ...(format ? { format } : {}), dry: false });
+  const viaSingle = notes(await single(JSON.stringify(bad)));
+  const reason = (s: string) => /section "meaning" states "900000"[^\n]*/.exec(s)?.[0];
+  assert.ok(reason(viaBatch), viaBatch);
+  assert.equal(reason(viaSingle), reason(viaBatch), "the same refusal on both paths");
+  assert.equal((await single(JSON.stringify({ theme_id: THEME, title: "T", brief_md: "body", member_hash: hash }))).outcome, "failed", "the old four-field payload carries no sections or claims and is refused");
+  const md = `${buildFrontmatter({ theme_id: THEME, title: "T", member_hash: hash })}\nA short body.\n`;
+  const viaMd = await single(md, "md");
+  assert.equal(viaMd.outcome, "failed");
+  assert.match(notes(viaMd), /sections must be an object/);
+  assert.equal(stored(w).length, 0, "nothing was written by any refused payload");
+  assert.match(notes(await single("{")), /not JSON/);
+  const ok = await single(JSON.stringify(entry()));
+  assert.equal(ok.counts.applied, 1, notes(ok));
+  assert.deepEqual([stored(w)[0]?.generated_by, stored(w)[0]?.brief_md], ["theme-briefs-single-payload", renderBriefMd(entry() as never)]);
+  assert.equal(stored(w).length, 1, "one row per theme");
+});
+
+test("F:15: an invented figure listed under a REAL claim id is not covered by it; F:16: a quarantined member and a suppressed claim are not brief material; F:17: the home jurisdictions name their source", async () => {
+  const w = themeWorld();
+  const invented = entry({ sections: { ...entry().sections, connection: "The duty carries a fine of EUR 900000 for late filers." }, claims: [{ section: "connection", text: "a fine of EUR 900000", member_id: ITEM, claim_ids: [CLAIM_A] }] });
+  assert.match(notes(await apply(w, [invented])), /the listed text states .*"EUR 900000".* that none of its cited grounded claims states/);
+  const honest = entry({ sections: { ...entry().sections, connection: "Operators shall report verified annual emissions before 30 April." }, claims: [{ section: "connection", text: "report verified annual emissions before 30 April", member_id: ITEM, claim_ids: [CLAIM_A] }] });
+  assert.equal((await apply(w, [honest], true)).counts.valid, 1, "a figure the cited claim states is covered");
+  // F:16: the member quarantined since the pass, then the claim suppressed
+  const themes = await loadThemes(w.db.client, [THEME]);
+  assert.equal((await loadThemeMaterial(w.db.client, themes)).claims.some((c) => c.id === CLAIM_A), true);
+  w.db.seed("fact_suppressions", [{ id: "f2000000-0000-4000-8000-000000000001", item_id: ITEM, target_kind: "fact", target_ref: CLAIM_A, op: "suppress", machine_value: null, created_at: "2026-10-15T00:00:00Z", revoked_at: null }]);
+  const suppressed = await loadThemeMaterial(w.db.client, themes);
+  assert.equal(suppressed.claims.some((c) => c.id === CLAIM_A), false, "a suppressed claim never reaches the author");
+  assert.match(notes(await apply(w, [honest])), /is not a grounded claim of member/);
+  (w.db.rows("intelligence_items").find((r) => r.id === SECOND) as Record<string, unknown>).provenance_status = "quarantined";
+  const quarantined = await loadThemeMaterial(w.db.client, themes);
+  assert.deepEqual(quarantined.items.map((i) => i.id), [ITEM], "a member that is no longer verified is not material");
+  assert.equal(quarantined.claims.some((c) => c.intelligence_item_id === SECOND) || quarantined.events.some((e) => e.intelligence_item_id === SECOND), false);
+  // F:17: two workspaces; the union takes the larger weight, a named org reads its own row, a failed read throws
+  w.db.seed("workspace_settings", [{ id: "w1", org_id: "00000000-0000-4000-8000-0000000000b2", jurisdiction_weights: { EU: 3, US: 1 } }, { id: "w2", org_id: "00000000-0000-4000-8000-0000000000a1", jurisdiction_weights: { EU: 5, GB: 2 } }]);
+  assert.deepEqual((await loadThemeMaterial(w.db.client, themes)).jurisdictionWeights, { EU: 5, GB: 2, US: 1 }, "the default scope is every workspace, never one arbitrary row");
+  assert.deepEqual((await loadThemeMaterial(w.db.client, themes, { homes: { orgId: "00000000-0000-4000-8000-0000000000b2" } })).jurisdictionWeights, { EU: 3, US: 1 });
+  w.db.failWhen = (c) => (c.table === "workspace_settings" ? "boom" : null);
+  await assert.rejects(loadThemeMaterial(w.db.client, themes), /boom|paginated read failed/);
+});
+
 test("the flat frontmatter block round-trips what it can carry and refuses what it cannot (a newline, a comma in an inline-array item, a quoted scalar)", () => {
   const text = buildFrontmatter({ a: "plain", b: ["x", "y"], c: null, d: { json: { k: 1 } } });
   assert.deepEqual(parseFrontmatter(`${text}body`)?.fields, { a: "plain", b: ["x", "y"], c: null, d: { k: 1 } });
@@ -80,10 +135,28 @@ test("the flat frontmatter block round-trips what it can carry and refuses what 
   assert.equal(parseFrontmatter("no block here"), null);
 });
 
-test("the figure rule: a number or an acronym is allowed only inside a listed claim, a labelled analysis paragraph or a heading; ramifications split by surface heading", () => {
-  assert.deepEqual(findUncitedFigures("CBAM costs 5%"), ["5%", "CBAM"]);
-  assert.deepEqual(findUncitedFigures("CBAM costs 5%", { claimTexts: ["CBAM costs 5%"] }), []);
-  assert.deepEqual(findUncitedFigures("*Analytical inference:* CBAM costs 5%"), []);
-  assert.deepEqual(findUncitedFigures("1. First point"), [], "an ordered-list marker is not a figure");
+test("the figure rule: a number or an acronym is allowed only inside a listed claim, a labelled analysis paragraph or a heading; ramifications split by surface heading", async () => {
+  const w = themeWorld();
+  const valid = async (meaning: string) => (await apply(w, [entry({ sections: { ...entry().sections, meaning } })], true)).counts.valid;
+  assert.equal(await valid("*Analytical inference:* The duty costs EUR 900000 per year."), 1, "a labelled analysis paragraph may state a figure");
+  assert.equal(await valid("1. First point about the duty."), 1, "an ordered-list marker is not a figure");
   assert.deepEqual([...parseRamifications("### Research\nx\n### Research\ny").problems], ['duplicate ramifications subsection "Research"']);
+});
+
+test("the comparator: a figure the cited grounded text does not state as the same quantity is returned; one it states is covered", () => {
+  assert.deepEqual(figureCoverage("The duty costs EUR 50 per year.", ["The duty costs EUR 5 per year."]), ["EUR 50"], "EUR 5 never backs EUR 50");
+  assert.deepEqual(figureCoverage("The duty costs EUR 900000 per year.", ["The duty costs EUR 500 per year."]), ["EUR 900000"]);
+  assert.deepEqual(figureCoverage("The duty costs EUR 500 per year.", ["The duty costs EUR 500 per year."]), []);
+});
+
+test("the stand-ins behind the validator: a copy of a validated brief is not a validated brief; admissibleRows keeps verified, unarchived, unsuppressed rows only", async () => {
+  assert.equal(isValidThemeBrief({ theme_id: THEME }), false);
+  assert.equal(isValidThemeBrief(null), false);
+  const w = themeWorld();
+  assert.deepEqual([...(await admissibleRows.itemIds(w.db.client, [ITEM, SECOND, "ghost"]))].sort(), [ITEM, SECOND].sort());
+  (w.db.rows("intelligence_items").find((r) => r.id === SECOND) as Record<string, unknown>).is_archived = true;
+  assert.deepEqual([...(await admissibleRows.itemIds(w.db.client, [ITEM, SECOND]))], [ITEM]);
+  const claim = (id: string, item: string) => ({ id, intelligence_item_id: item, claim_text: "t" });
+  w.db.seed("fact_suppressions", [{ id: "fs1", item_id: ITEM, target_kind: "fact", target_ref: CLAIM_A, op: "suppress", machine_value: null, created_at: "2026-10-15T00:00:00Z", revoked_at: null }]);
+  assert.deepEqual((await admissibleRows.claims(w.db.client, [claim(CLAIM_A, ITEM), claim("c-other", ITEM), claim(CLAIM_B, SECOND)])).map((c) => c.id), ["c-other"], "the suppressed claim and the archived item's claim are out");
 });

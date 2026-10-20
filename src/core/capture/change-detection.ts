@@ -12,14 +12,14 @@ import { outcomeOf, type RunDeps, type RunResult } from "@/core/sources/run-resu
 
 const MIN_FINGERPRINT_CHARS = 200;
 /** Rendered text normalised for fingerprinting: whitespace collapsed, lower-cased. */
-export const normalizeForFingerprint = (text: unknown): string => String(text ?? "").replace(/\s+/g, " ").trim().toLowerCase();
+const normalizeForFingerprint = (text: unknown): string => String(text ?? "").replace(/\s+/g, " ").trim().toLowerCase();
 /** The sha256 fingerprint of rendered text, or null when the capture is too thin to fingerprint honestly (under 200 normalised characters: the error-page band). */
-export function contentFingerprint(text: string | null | undefined): string | null {
+function contentFingerprint(text: string | null | undefined): string | null {
   const norm = normalizeForFingerprint(text);
   return norm.length < MIN_FINGERPRINT_CHARS ? null : createHash("sha256").update(norm).digest("hex");
 }
 /** A change only when both fingerprints exist and differ: a missing prior (first observation) or a missing current (thin or failed capture) is never a change. */
-export const isContentChange = (prevHash: string | null | undefined, nextHash: string | null | undefined): boolean => !!prevHash && !!nextHash && prevHash !== nextHash;
+const isContentChange = (prevHash: string | null | undefined, nextHash: string | null | undefined): boolean => !!prevHash && !!nextHash && prevHash !== nextHash;
 
 export const DEFAULT_CHECK_LIMIT = 10;
 export const MAX_CHECK_LIMIT = 50;

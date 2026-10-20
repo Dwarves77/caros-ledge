@@ -1,19 +1,20 @@
 // Ported from old_repo/supabase/functions/capture-worker/index.ts (lines 222-256)
 // Ported from old_repo/supabase/functions/capture-worker/index.ts (lines 259-581)
 // Ported from old_repo/supabase/functions/capture-worker/index.ts (lines 589-614)
-// The capture contract, in five clauses (ADR-016):
-//   1. A capture is the FULL decoded body of one document, fetched through the shared policy (src/core/fetch/policy.ts), with every transform declared on the run.
-//   2. A non-200, an unsupported type, an error page, a thin body or an unreadable PDF is a recorded failure and is never stored as a capture (INV-184).
+// The capture contract, in six clauses (ADR-016, R2c):
+//   1. A capture is the FULL decoded body of one document, fetched through the shared policy (src/core/fetch/policy.ts) under the one declared identity and the robots.txt of its host, with every transform declared on the run.
+//   2. A non-200, an unsupported type, an error page, a thin body or an unreadable PDF is a recorded failure and is never stored as a capture (INV-184). A paywalled source is refused at capture, before any request.
 //   3. The queue claim is atomic and one open row exists per source; a transient outcome requeues up to MAX_ATTEMPTS and only a permanent one terminalises (INV-185).
 //   4. The only ceiling is the pathological-page sanity bound STORAGE_MAX_CHARS, and binding it is LOUD: a declared transform and a coverage_gap flag, never a quiet trim.
-//   5. Every outcome is read back: a failed claim, idempotency read or write is reported and requeues, never read as "already claimed" or "no duplicate".
-import { fetchDocument, MAX_ATTEMPTS, storageMaxChars, type FetchOutcome } from "../../../src/core/fetch/policy.ts";
+//   5. Every outcome is read back: a failed claim, idempotency read or write is reported and requeues, never read as "already claimed" or "no duplicate". Idempotency is (final URL, content hash).
+//   6. A wall (403, 429, a challenge page, the EUR-Lex 202 gate, a robots.txt disallow) is final for this transport and never retried as another identity: the row is left `refused` for the browser tier on the Actions runner, which
+//      owns the rest of the ladder (browser, substitute publisher, access request). A robots.txt that cannot be read defers the row, never denies it.
+import { guardedFetch, makeHostGate, makeRobotsReader } from "../../../src/core/fetch/guard.ts";
+import { BOT_USER_AGENT, captureLocale, fetchDocument, isWallStatus, MAX_ATTEMPTS, storageMaxChars, type FetchOutcome } from "../../../src/core/fetch/policy.ts";
+import { makeRobotsGate } from "../../../src/core/fetch/robots.ts";
+import { storeCapture, type CaptureChannel, type Db, type Query, type Reply } from "../../../src/core/fetch/store-capture.ts";
 
-export type Reply = PromiseLike<{ data: unknown; error: { message: string; code?: string } | null }>;
-export type Query = Reply & { [method: string]: (...args: unknown[]) => Query };
-export interface Db {
-  from(table: string): Query;
-}
+export type { Db, Query, Reply };
 export interface QueueRow {
   id: string;
   source_id: string;
@@ -22,15 +23,25 @@ export interface QueueRow {
 }
 export interface WorkerDeps {
   db: Db;
+  /** The raw network fetch (absent: the global one). Every request is wrapped by the guard, so a test's fake sits under the same identity, address check and robots.txt as production. */
   fetchImpl?: typeof fetch;
   extractPdf?: (bytes: Uint8Array) => Promise<{ text: string; pages: number | null; title: string | null }>;
   env: Record<string, string | undefined>;
   now: () => number;
+  sleep?: (ms: number) => Promise<void>;
+  resolveHost?: (host: string) => Promise<string[]>;
+}
+export interface ChannelAttempt {
+  channel: CaptureChannel;
+  url: string;
+  status: number | null;
+  reason: string | null;
+  detail: string | null;
 }
 export interface CaptureReport {
   queue_id: string;
   source_id: string;
-  outcome: "captured" | "duplicate_skipped" | "requeued" | "failed" | "skipped";
+  outcome: "captured" | "unchanged" | "requeued" | "refused" | "deferred" | "failed" | "skipped";
   http_status: number | null;
   chars: number | null;
   capture_id: string | null;
@@ -42,6 +53,8 @@ export interface CaptureReport {
   pdf_bytes: number | null;
   detail: string | null;
   url: string | null;
+  channel: CaptureChannel | null;
+  attempts: ChannelAttempt[];
   storage_ceiling_bind?: { collected: number; fullLength: number };
 }
 
@@ -58,10 +71,32 @@ export function isServiceRoleRequest(authorization: string | null, serviceKey: s
 
 const err = (r: { error: { message: string } | null }) => (r.error ? r.error.message : null);
 
+interface Kit {
+  page: typeof fetch;
+  api: typeof fetch;
+}
+const kits = new WeakMap<object, Kit>();
+/** The two guarded GETs of a drain: pages (robots.txt honoured) and a publisher's documented API (identity, address check and gap, no robots check). One robots cache and one host gate for the drain. */
+function kitOf(deps: WorkerDeps): Kit {
+  const held = kits.get(deps);
+  if (held) return held;
+  const sleep = deps.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
+  const base = { userAgent: BOT_USER_AGENT, fetchImpl: deps.fetchImpl ?? fetch, gate: makeHostGate({ now: deps.now, sleep }), upgradeHttp: true, ...(deps.resolveHost ? { resolveHost: deps.resolveHost } : {}) };
+  const robots = makeRobotsGate(makeRobotsReader(base));
+  const kit: Kit = { page: (u, i) => guardedFetch(String(u), i ?? {}, { ...base, robots }), api: (u, i) => guardedFetch(String(u), i ?? {}, base) };
+  kits.set(deps, kit);
+  return kit;
+}
+
 async function record(deps: WorkerDeps, table: string, op: "insert" | "update", payload: Record<string, unknown>, eq?: [string, unknown]): Promise<string | null> {
   const q = deps.db.from(table);
   const base = op === "insert" ? q.insert(payload) : q.update(payload);
   return err(await (eq ? base.eq(eq[0], eq[1]) : base));
+}
+/** The source's collection state and the attempt record behind it (migration 0080); a failed write is reported on the row's detail. */
+async function setSourceState(deps: WorkerDeps, report: CaptureReport, state: "served" | "deferred" | "robots_disallowed" | "refused", extra: Record<string, unknown> = {}): Promise<void> {
+  const e = await record(deps, "sources", "update", { collection_state: state, collection_detail: { at: new Date(deps.now()).toISOString(), attempts: report.attempts, ...extra } }, ["id", report.source_id]);
+  if (e) report.detail = `${report.detail}; source state write failed: ${e}`;
 }
 /** Requeue a TRANSIENT failure (status stays queued so the one-open-row index never wedges the source). No agent_runs row: a retry is not a capture outcome. */
 async function recordRetry(deps: WorkerDeps, row: QueueRow, report: CaptureReport): Promise<void> {
@@ -78,28 +113,38 @@ async function recordFailure(deps: WorkerDeps, row: QueueRow, src: { id: string;
   if (writeErr) report.detail = `${report.detail}; failure record incomplete (${writeErr})`;
 }
 
+/** A wall: the host declined this transport. 401, 403 and 429 (on the page or on robots.txt itself), a challenge page that passed the status check, EUR-Lex's 202 gate and a robots.txt disallow are final here; the browser tier or a substitute owns what follows. */
+export const isWall = (d: Extract<FetchOutcome, { ok: false }>): boolean => d.reason === "robots_disallowed" || (d.reason === "robots_unknown" && d.identityRefused === true) || d.reason === "error_marker" || (d.reason === "non_200" && (isWallStatus(d.status) || d.status === 202));
+/** A deferral: robots.txt could not be read, or the host asked for a longer gap than a drain sleeps. Tried again, never denied. */
+export const isDeferral = (d: Extract<FetchOutcome, { ok: false }>): boolean => d.reason === "robots_unknown" || d.reason === "host_busy";
+
 /** Process one queue row end to end under the contract above. Never throws: every outcome is on the report. */
 export async function processRow(deps: WorkerDeps, row: QueueRow): Promise<CaptureReport> {
   const { db } = deps;
-  const report: CaptureReport = { queue_id: row.id, source_id: row.source_id, outcome: "failed", http_status: null, chars: null, capture_id: null, run_id: null, intelligence_item_id: null, content_type: null, nulls_removed: 0, pdf_pages: null, pdf_bytes: null, detail: null, url: null };
-  const srcRes = await db.from("sources").select("id, url, name").eq("id", row.source_id).single();
-  const src = srcRes.data as { id: string; url: string; name: string } | null;
+  const report: CaptureReport = { queue_id: row.id, source_id: row.source_id, outcome: "failed", http_status: null, chars: null, capture_id: null, run_id: null, intelligence_item_id: null, content_type: null, nulls_removed: 0, pdf_pages: null, pdf_bytes: null, detail: null, url: null, channel: null, attempts: [] };
+  const srcRes = await db.from("sources").select("id, url, name, paywalled, access_method, api_endpoint_url, rss_feed_url, publisher_locale").eq("id", row.source_id).single();
+  const src = srcRes.data as { id: string; url: string; name: string; paywalled: boolean | null; access_method: string | null; api_endpoint_url: string | null; rss_feed_url: string | null; publisher_locale: string | null } | null;
   if (srcRes.error || !src?.url) {
     report.detail = srcRes.error ? `source read failed: ${srcRes.error.message}` : "source row or url missing";
     await recordFailure(deps, row, { id: row.source_id, url: null }, report, deps.now());
     return report;
   }
   report.url = src.url;
+  if (src.paywalled) {
+    report.detail = "paywalled: the source is flagged paywalled and is refused at capture, before any request";
+    await recordFailure(deps, row, src, report, deps.now());
+    return report;
+  }
 
   // Item scoping: exactly one live item on the source links the capture, else it is pool-scoped. A read error requeues; scope is never guessed.
-  const itemsRes = await db.from("intelligence_items").select("id").eq("source_id", src.id).eq("is_archived", false).limit(2);
+  const itemsRes = await db.from("intelligence_items").select("id").eq("source_id", src.id).eq("is_archived", false).limit(50);
   if (itemsRes.error) {
     report.detail = `item-scope read failed: ${itemsRes.error.message}`;
     await recordRetry(deps, row, report);
     return report;
   }
-  const items = itemsRes.data as Array<{ id: string }> | null;
-  const itemId = items && items.length === 1 ? (items[0]?.id ?? null) : null;
+  const items = (itemsRes.data as Array<{ id: string }> | null) ?? [];
+  const itemId = items.length === 1 ? (items[0]?.id ?? null) : null;
   report.intelligence_item_id = itemId;
 
   // Atomic claim: queued or error to fetching only if this call wins the row. A claim error is reported; it is never read as "already claimed".
@@ -118,13 +163,47 @@ export async function processRow(deps: WorkerDeps, row: QueueRow): Promise<Captu
   const attempt = row.attempt_count + 1;
   const runStart = deps.now();
   const ceiling = storageMaxChars(deps.env);
-  const doc: FetchOutcome = await fetchDocument(src.url, { ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}), ...(deps.extractPdf ? { extractPdf: deps.extractPdf } : {}), now: deps.now, maxChars: ceiling });
-  if (!doc.ok) {
-    report.http_status = doc.status;
-    report.content_type = doc.contentType;
-    report.pdf_bytes = doc.pdfBytes;
-    report.detail = doc.detail;
-    if (doc.transient && attempt < MAX_ATTEMPTS) await recordRetry(deps, row, report);
+  const kit = kitOf(deps);
+
+  // The channels in order: a source with a registered API, or whose access method is api or rss, reads its declared channels first (APIs are preferred wherever a publisher offers one); every other source reads its page first and its registered feed after a refusal. The page is the direct channel.
+  const declared: Array<{ channel: "api" | "feed"; url: string }> = [...(src.api_endpoint_url ? [{ channel: "api" as const, url: src.api_endpoint_url }] : []), ...(src.rss_feed_url ? [{ channel: "feed" as const, url: src.rss_feed_url }] : [])];
+  const direct = { channel: "direct" as const, url: src.url };
+  const declaredFirst = !!src.api_endpoint_url || src.access_method === "api" || src.access_method === "rss";
+  const order = declaredFirst ? [...declared, direct] : [direct, ...declared];
+  let doc: Extract<FetchOutcome, { ok: true }> | null = null;
+  let won: CaptureChannel | null = null;
+  let page: Extract<FetchOutcome, { ok: false }> | null = null;
+  let last: Extract<FetchOutcome, { ok: false }> | null = null;
+  for (const step of order) {
+    const out = await fetchDocument(step.url, { fetchImpl: step.channel === "api" ? kit.api : kit.page, ...(deps.extractPdf ? { extractPdf: deps.extractPdf } : {}), now: deps.now, maxChars: ceiling });
+    report.attempts.push({ channel: step.channel, url: step.url, status: out.ok ? out.status : out.status, reason: out.ok ? null : out.reason, detail: out.ok ? null : out.detail });
+    if (out.ok) {
+      doc = out;
+      won = step.channel;
+      break;
+    }
+    last = out;
+    if (step.channel === "direct") page = out;
+  }
+  if (!doc || !won) {
+    const d = page ?? (last as Extract<FetchOutcome, { ok: false }>);
+    report.http_status = d.status;
+    report.content_type = d.contentType;
+    report.pdf_bytes = d.pdfBytes;
+    report.detail = d.detail;
+    if (isWall(d)) {
+      const robots = d.reason === "robots_disallowed";
+      report.outcome = "refused";
+      const e = await record(deps, "pending_first_fetch", "update", { status: "refused", last_error_text: `[${robots ? "robots_disallowed" : "refused"}] ${d.detail}` }, ["id", row.id]);
+      if (e) report.detail = `${report.detail}; queue write failed: ${e}`;
+      await setSourceState(deps, report, robots ? "robots_disallowed" : "refused", robots && d.rule ? { robots_rule: d.rule } : {});
+    } else if (isDeferral(d)) {
+      await setSourceState(deps, report, "deferred");
+      if (attempt < MAX_ATTEMPTS) {
+        await recordRetry(deps, row, report);
+        report.outcome = "deferred";
+      } else await recordFailure(deps, row, src, report, runStart);
+    } else if (d.transient && attempt < MAX_ATTEMPTS) await recordRetry(deps, row, report);
     else await recordFailure(deps, row, src, report, runStart);
     return report;
   }
@@ -134,62 +213,23 @@ export async function processRow(deps: WorkerDeps, row: QueueRow): Promise<Captu
   report.nulls_removed = doc.nullsRemoved;
   report.pdf_pages = doc.pdfPages;
   report.pdf_bytes = doc.pdfBytes;
-
-  // Idempotent per final URL. A read error requeues: it is never read as "no duplicate" and proceeded to insert.
-  const dup = await db.from("agent_run_searches").select("id").eq("result_url", doc.finalUrl).eq("search_query", "capture-worker:first-fetch").limit(1);
-  if (dup.error) {
-    report.detail = `idempotency read failed: ${dup.error.message}`;
-    await recordRetry(deps, row, report);
-    return report;
-  }
-  const existing = dup.data as Array<{ id: string }> | null;
-  if (existing && existing.length > 0) {
-    report.outcome = "duplicate_skipped";
-    report.capture_id = existing[0]?.id ?? null;
-    report.detail = "worker capture already exists for this final URL";
-    const e = await record(deps, "pending_first_fetch", "update", { status: "done", last_error_text: null }, ["id", row.id]);
-    if (e) report.detail = `${report.detail}; queue write failed: ${e}`;
-    return report;
-  }
+  report.channel = won;
 
   const bind = doc.ceilingBind;
   if (bind) report.storage_ceiling_bind = bind;
-  const runIns = await db.from("agent_runs").insert({ source_id: src.id, source_url: src.url, fetch_method: "capture-worker", status: "success", fetch_status: doc.status, fetch_html_bytes: doc.text.length, intelligence_item_id: itemId, errors: doc.declaredTransforms, ended_at: new Date(deps.now()).toISOString(), duration_ms: deps.now() - runStart }).select("id").single();
-  const run = runIns.data as { id: string } | null;
-  if (runIns.error || !run) {
-    report.detail = `agent_runs insert failed: ${runIns.error?.message ?? "no row"}`;
+  const stored = await storeCapture(db, { sourceId: src.id, sourceUrl: src.url, sourceName: src.name, finalUrl: doc.finalUrl, text: doc.text, title: doc.title, httpStatus: doc.status, channel: won, numberLocale: captureLocale(src.publisher_locale, doc.language), itemId, itemIds: items.map((i) => i.id), declaredTransforms: doc.declaredTransforms, ceilingBind: bind, ceiling }, deps.now, runStart);
+  report.capture_id = stored.captureId;
+  report.run_id = stored.runId;
+  if (stored.outcome === "failed") {
+    report.detail = stored.detail;
     await recordRetry(deps, row, report);
     return report;
   }
-  report.run_id = run.id;
-  const capIns = await db.from("agent_run_searches").insert({ agent_run_id: run.id, intelligence_item_id: itemId, search_query: "capture-worker:first-fetch", result_url: doc.finalUrl, result_title: doc.title ?? src.name, result_index: 0, result_content: doc.text, searched_at: new Date(deps.now()).toISOString() }).select("id").single();
-  const cap = capIns.data as { id: string } | null;
-  if (capIns.error || !cap) {
-    report.detail = `capture insert failed: ${capIns.error?.message ?? "no row"}`;
-    await record(deps, "agent_runs", "update", { status: "error" }, ["id", run.id]);
-    await recordRetry(deps, row, report);
-    return report;
-  }
-  report.capture_id = cap.id;
-  // Filed only after the capture landed, so a flag never points at a row that failed to store. The ceiling bind is LOUD: this flag is its signal.
-  let flagNote = "";
-  if (bind) {
-    const fe = await record(deps, "integrity_flags", "insert", {
-      category: "coverage_gap",
-      subject_type: itemId ? "item" : "source",
-      subject_ref: itemId ?? src.id,
-      description: `capture-worker hit the ADR-016 storage ceiling on ${doc.finalUrl}: collected ${bind.collected} of ${bind.fullLength} chars (cap ${ceiling}). The stored capture is the head of the document; the tail was not captured, so any grounding off this row is incomplete.`,
-      recommended_actions: [
-        { action: "Assess whether the tail carries obligations", rationale: "ADR-016: relevance is not pre-identifiable; a qualifying clause can sit anywhere in the document." },
-        { action: "Re-capture in parts or raise STORAGE_MAX_CHARS for this source", rationale: "The ceiling is a pathological-page sanity bound, not an operating cap." },
-      ],
-      created_by: "capture-worker",
-    });
-    if (fe) flagNote = `; ceiling flag insert FAILED: ${fe}`;
-  }
-  const done = await record(deps, "pending_first_fetch", "update", { status: "done", last_error_text: null }, ["id", row.id]);
-  report.outcome = "captured";
-  report.detail = `${doc.isPdf ? `pdf text layer stored (${doc.pdfPages} pages, declared transform)` : "stored verbatim"}, ${itemId ? "item-linked" : "pool-scoped"}${flagNote}${done ? `; queue write failed: ${done}` : ""}`;
+  const done = await record(deps, "pending_first_fetch", "update", { status: "done", last_error_text: stored.outcome === "unchanged" ? "[unchanged] the body is identical to the stored capture" : null }, ["id", row.id]);
+  report.outcome = stored.outcome;
+  report.detail = stored.outcome === "unchanged" ? stored.detail : `${doc.isPdf ? `pdf text layer stored (${doc.pdfPages} pages, declared transform)` : "stored verbatim"}, ${itemId ? "item-linked" : "pool-scoped"}, channel ${won}${stored.detail ? `; ${stored.detail}` : ""}`;
+  if (done) report.detail = `${report.detail}; queue write failed: ${done}`;
+  await setSourceState(deps, report, "served", { channel: won, content_hash: stored.contentHash });
   return report;
 }
 

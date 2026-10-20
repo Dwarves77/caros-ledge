@@ -2,14 +2,14 @@
 // Ported from old_repo/src/lib/sources/seek-more.mjs (lines 1-157)
 // Ported from old_repo/src/lib/sources/seek-more.mjs (lines 199-247)
 // Ported from old_repo/src/lib/sources/primary-fallback.mjs (lines 82-173)
-import type { Db } from "@/core/db";
+
 import { log } from "@/core/shared/log";
 
 import { ECFR_PORTAL_URL, FEDERAL_REGISTER_API_BASE, FEDERAL_REGISTER_PORTAL_URL, apiEndpointFor } from "./api";
 import { BODY_CLASS, classifyBody, targetLangRatio } from "./classify-body";
 
-export const EUR_LEX_PORTAL_URL = "https://eur-lex.europa.eu";
-export const LEGISLATION_UK_PORTAL_URL = "https://www.legislation.gov.uk";
+const EUR_LEX_PORTAL_URL = "https://eur-lex.europa.eu";
+const LEGISLATION_UK_PORTAL_URL = "https://www.legislation.gov.uk";
 
 /** {year, number} from an identifier in any common separator form (2024_1610, 2024/1610, CELEX or ELI embedded); null when none. */
 export function parseYearNumber(s: string | null | undefined): { year: number; number: number } | null {
@@ -19,10 +19,10 @@ export function parseYearNumber(s: string | null | undefined): { year: number; n
   m = str.match(/\b(\d{4})[/_\-\s](\d{1,5})\b/);
   return m ? { year: Number(m[1]), number: Number(m[2]) } : null;
 }
-export const separatorVariants = (year: number, number: number): string[] => [`${year}/${number}`, `${year}_${number}`, `${year}-${number}`, `${year} ${number}`];
-export const toCelex = (year: number, typeLetter: string, number: number): string => `3${year}${typeLetter}${String(number).padStart(4, "0")}`;
+
+const toCelex = (year: number, typeLetter: string, number: number): string => `3${year}${typeLetter}${String(number).padStart(4, "0")}`;
 /** EU document-type letters to try: a known type gives one letter, an unknown gives all three, each a candidate to fetch and verify. */
-export function euTypeLetters(itemType: string | null | undefined, instrumentType?: string | null): string[] {
+function euTypeLetters(itemType: string | null | undefined, instrumentType?: string | null): string[] {
   const t = String(instrumentType || itemType || "").toLowerCase();
   if (/regulation/.test(t)) return ["R"];
   if (/directive/.test(t)) return ["L"];
@@ -33,16 +33,16 @@ const ELI_KIND: Record<string, string> = { R: "reg", L: "dir", D: "dec" };
 
 // eur-lex.europa.eu: every URL that host serves is built here, one named builder per distinct endpoint.
 export const celexTxtHtmlUrl = (celex: string): string => `${EUR_LEX_PORTAL_URL}/legal-content/EN/TXT/HTML/?uri=CELEX:${celex}`;
-export const celexTxtUrl = (celex: string): string => `${EUR_LEX_PORTAL_URL}/legal-content/EN/TXT/?uri=CELEX:${celex}`;
-export const eliPathUrl = (eliPath: string): string => `${EUR_LEX_PORTAL_URL}/eli/${eliPath}`;
-export const eliUrl = (kind: string, year: number | string, num: number | string): string => eliPathUrl(`${kind}/${year}/${num}/oj/eng`);
-export const eurlexSearchUrl = (text: string): string => `${EUR_LEX_PORTAL_URL}/search.html?scope=EURLEX&lang=en&text=${encodeURIComponent(text)}`;
+const celexTxtUrl = (celex: string): string => `${EUR_LEX_PORTAL_URL}/legal-content/EN/TXT/?uri=CELEX:${celex}`;
+const eliPathUrl = (eliPath: string): string => `${EUR_LEX_PORTAL_URL}/eli/${eliPath}`;
+const eliUrl = (kind: string, year: number | string, num: number | string): string => eliPathUrl(`${kind}/${year}/${num}/oj/eng`);
+const eurlexSearchUrl = (text: string): string => `${EUR_LEX_PORTAL_URL}/search.html?scope=EURLEX&lang=en&text=${encodeURIComponent(text)}`;
 export function ojDailyViewUrl(isoDate: string, series = "L"): string {
   const m = String(isoDate).match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (!m) throw new Error(`ojDailyViewUrl: bad ISO date ${isoDate}`);
   return `${EUR_LEX_PORTAL_URL}/oj/daily-view/${series}-series/default.html?ojDate=${m[3]}${m[2]}${m[1]}`;
 }
-export const legislationUkUrl = (path: string): string => `${LEGISLATION_UK_PORTAL_URL}/${path}`;
+const legislationUkUrl = (path: string): string => `${LEGISLATION_UK_PORTAL_URL}/${path}`;
 
 export interface Identity {
   identifier?: string | null;
@@ -76,7 +76,7 @@ export function euCandidates({ identifier, canonicalKey, itemType, instrumentTyp
   return { celex: [...celex], urls: [...new Set(urls)], eliPaths, searchUrls: [...celex].map(eurlexSearchUrl) };
 }
 /** An ELI path already inside a source URL or a bare ELI identifier to the eur-lex ELI URL. */
-export function eliFromIdentity({ identifier, sourceUrl }: Identity = {}): string[] {
+function eliFromIdentity({ identifier, sourceUrl }: Identity = {}): string[] {
   const hay = `${identifier || ""} ${sourceUrl || ""}`;
   const inUrl = hay.match(/\/eli\/((?:reg|dir|dec|regdel|regimpl|dirdel|dirimpl)\/\d{4}\/\d+(?:\/[a-z]+)?)/i);
   if (inUrl?.[1]) return [eliPathUrl(inUrl[1].toLowerCase())];
@@ -84,7 +84,7 @@ export function eliFromIdentity({ identifier, sourceUrl }: Identity = {}): strin
   return bare?.[1] ? [eliPathUrl(bare[1].toLowerCase())] : [];
 }
 /** UK candidates: uksi/ukpga paths (with /made and /contents), the "SI 2023/123" and "2023 No. 123" forms, a bare year/number tried as uksi and ukpga, plus the title search. */
-export function ukCandidates({ identifier, title }: Identity = {}) {
+function ukCandidates({ identifier, title }: Identity = {}) {
   const urls: string[] = [];
   const searchUrls: string[] = [];
   const id = String(identifier || "");
@@ -103,7 +103,7 @@ export function ukCandidates({ identifier, title }: Identity = {}) {
   return { urls: [...new Set(urls)], searchUrls };
 }
 /** US candidates: the Federal Register by document number, plus the FR API and eCFR searches by title. */
-export function usCandidates({ identifier, title }: Identity = {}) {
+function usCandidates({ identifier, title }: Identity = {}) {
   const urls: string[] = [];
   const searchUrls: string[] = [];
   const doc = String(identifier || "").match(/\b(\d{4}-\d{4,6})\b/);
@@ -112,7 +112,7 @@ export function usCandidates({ identifier, title }: Identity = {}) {
   return { urls: [...new Set(urls)], searchUrls };
 }
 /** Norway: a forskrift citation (FOR-YYYY-MM-DD-N, or the bare form when the jurisdiction is Norway) to the lovdata.no URL. */
-export function lovdataCandidates({ identifier, jurisdiction }: Identity = {}): string[] {
+function lovdataCandidates({ identifier, jurisdiction }: Identity = {}): string[] {
   const id = String(identifier || "");
   const isNorway = /\bnorway\b|\bnorwegian\b|^no$/i.test(String(jurisdiction || ""));
   let m = id.match(/^FOR[-\s.](\d{4})[-.](\d{2})[-.](\d{2})[-.](\d+)$/i);
@@ -129,21 +129,11 @@ const GAZETTE_RESOLVERS: Array<{ test: (j: unknown) => boolean; resolve: (id: un
     },
   },
 ];
-export const gazetteCandidates = ({ identifier, jurisdiction }: Identity = {}): string[] => GAZETTE_RESOLVERS.filter((g) => g.test(jurisdiction)).flatMap((g) => g.resolve(identifier));
+const gazetteCandidates = ({ identifier, jurisdiction }: Identity = {}): string[] => GAZETTE_RESOLVERS.filter((g) => g.test(jurisdiction)).flatMap((g) => g.resolve(identifier));
 /** A source URL on an API-routable host is re-offered, so the ladder's API transport reaches it where the HTML answered "Request Access". */
-export const apiCandidates = ({ sourceUrl }: Identity = {}): string[] => (sourceUrl && apiEndpointFor(sourceUrl) ? [sourceUrl] : []);
+const apiCandidates = ({ sourceUrl }: Identity = {}): string[] => (sourceUrl && apiEndpointFor(sourceUrl) ? [sourceUrl] : []);
 
-/** Generic web-search queries, aimed at the official primary: title, jurisdiction, instrument type and identifier variants. */
-export function genericSearchQueries({ title, jurisdiction, instrumentType, identifier }: Identity = {}): string[] {
-  const juris = Array.isArray(jurisdiction) ? jurisdiction[0] : jurisdiction;
-  const yn = parseYearNumber(identifier);
-  const queries: string[] = [];
-  const base = [title, juris, instrumentType].filter(Boolean).join(" ");
-  if (base) queries.push(`${base} official text`, `${base} official gazette OR "official journal"`);
-  if (yn && (title || juris)) for (const v of separatorVariants(yn.year, yn.number)) queries.push(`${[title, juris].filter(Boolean).join(" ")} ${v}`);
-  return [...new Set(queries)].filter(Boolean);
-}
-export function detectScheme({ identifier, canonicalKey, jurisdiction, sourceUrl }: Identity = {}): "eu" | "uk" | "us" | "generic" {
+function detectScheme({ identifier, canonicalKey, jurisdiction, sourceUrl }: Identity = {}): "eu" | "uk" | "us" | "generic" {
   const juris = Array.isArray(jurisdiction) ? jurisdiction[0] : jurisdiction;
   let host = "";
   try {
@@ -191,7 +181,7 @@ export async function generateCandidates(identity: Identity = {}, deps: { webSea
 }
 
 /** Rewrite a known registry URL to the form that returns the ENACTED TEXT (EUR-Lex /TXT soft-404s for many ids; /TXT/HTML/ returns the instrument). */
-export function renderingUrlForPrimary(url: string): string {
+function renderingUrlForPrimary(url: string): string {
   try {
     const u = new URL(String(url));
     if (u.hostname.replace(/^www\./, "").toLowerCase() === "eur-lex.europa.eu") {
@@ -208,7 +198,7 @@ export function renderingUrlForPrimary(url: string): string {
 }
 
 /** A roadblock is a body that is not usable English-language primary content; a bias towards "primary succeeded" keeps a false roadblock from downgrading a thin real primary. */
-export function detectRoadblock(text: string | null | undefined, opts: { status?: number; timedOut?: boolean } = {}): { roadblocked: boolean; reason: string; len: number; langRatio: number } {
+function detectRoadblock(text: string | null | undefined, opts: { status?: number; timedOut?: boolean } = {}): { roadblocked: boolean; reason: string; len: number; langRatio: number } {
   const s = String(text || "");
   const v = classifyBody(s, { status: opts.status ?? 200, timedOut: opts.timedOut ?? false });
   return { roadblocked: v.class !== BODY_CLASS.OK, reason: v.class, len: s.trim().length, langRatio: targetLangRatio(s) };
@@ -274,26 +264,6 @@ export async function fetchPrimaryWithFallback(
     if (!d.roadblocked) return { ok: true, url: u, text: r.text, roadblocked: true, primaryReason: pd.reason, fellBack: true, alternatives };
   }
   return { ok: false, url: primary, text: "", roadblocked: true, primaryReason: pd.reason, fellBack: true, alternatives };
-}
-
-/** The exhaustion record as an integrity_flags row (category source_issue, the attempts in recommended_actions). */
-export function exhaustionFlagRow(itemId: string, record: Array<{ url: string; transport: string; verdict: string; bytes?: number; reason?: string | null; status?: number }>, verdict: { outcome?: string; holdReason?: string | null } = {}) {
-  return {
-    category: "source_issue" as const,
-    subject_type: "item" as const,
-    subject_ref: itemId,
-    status: "open" as const,
-    created_by: "exhaustion_record",
-    description: `Transport exhaustion record: ${record.length} (candidate x transport) attempt(s); outcome ${verdict.outcome ?? "unknown"}${verdict.holdReason ? ` (${verdict.holdReason})` : ""}.`.slice(0, 480),
-    recommended_actions: record.map((a) => ({ url: a.url, transport: a.transport, verdict: a.verdict, bytes: typeof a.bytes === "number" ? a.bytes : null, reason: a.reason ?? null, status: a.status ?? null })),
-  };
-}
-/** Persist the exhaustion record. The insert result is read: a failed write throws, so an exhausted item never reads as recorded when it was not. */
-export async function persistExhaustionRecord(db: Db, itemId: string, record: Parameters<typeof exhaustionFlagRow>[1], verdict: Parameters<typeof exhaustionFlagRow>[2] = {}) {
-  const row = exhaustionFlagRow(itemId, record, verdict);
-  const { error } = await db.from("integrity_flags").insert(row);
-  if (error) throw new Error(`exhaustion record not written for ${itemId}: ${error.message}`);
-  return row;
 }
 
 export interface PoolCapture {

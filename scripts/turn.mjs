@@ -1,5 +1,5 @@
 // The ONE CLI. `node scripts/turn.mjs --stage <sweep|sweep-research|change|capture|intake|connect|propagate|briefs|all|ops> --mode dry|apply [--input '<json keyed by stage>'] [--no-chain]`
-// Exit 0 every stage recorded; 1 a record failed, a credential is missing where the event could carry it, or the run is not a dispatch in CI; 2 self-skipped for lack of credentials where the event cannot carry them (src/core/harness/exit.ts:
+// Exit 0 every stage recorded and none failed; 1 a stage failed, a record failed, a credential is missing where the event could carry it, or the run is not a dispatch in CI; 2 self-skipped for lack of credentials where the event cannot carry them (src/core/harness/exit.ts:
 // a workstation, or a fork PR). It never runs a turn on a push or a pull request: the workflow gives the turn job its secrets on a dispatch only.
 // Apply is refused by the run frame while the scrape cadence is off (rule 16): a dispatch in build mode is always dry, and its rows say so.
 import { appendFileSync } from "node:fs";
@@ -50,5 +50,5 @@ for (const n of result.notes) note("turn", n);
 console.log(table);
 if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${table}\n`);
 if (result.exit === 2) note("turn", `${result.runs[0]?.error ?? "self-skipped: no credentials"}; exit 2`);
-if (result.exit === 1) console.error(`turn: ${result.runs.find((r) => r.exit === 1)?.error ?? "a record failed"}`);
+if (result.exit === 1) console.error(`turn: ${result.runs.find((r) => r.exit === 1)?.error ?? result.runs.find((r) => r.exit === 1)?.row?.error ?? "a record failed"}`);
 process.exit(result.exit);

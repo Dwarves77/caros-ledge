@@ -44,6 +44,9 @@ export function generatedProblems(text) {
   return verify ? verify(text) : [`no verifier for generator ${gen[1]}`];
 }
 
+/** SQL with its comments removed and its string literals emptied: a RAISE EXCEPTION that only a comment or a string mentions is not one the check can reach. */
+const executable = (sql) => sql.replace(/('(?:[^']|'')*')|--[^\n]*|\/\*[\s\S]*?\*\//g, (m, str) => (str ? "''" : " "));
+
 /** The structural problems of a file's self-check. */
 export function selfCheckStructureProblems(file, text) {
   const statements = statementsOf(text);
@@ -52,7 +55,7 @@ export function selfCheckStructureProblems(file, text) {
   const problems = [];
   const lastChange = statements.map((s, i) => (changesDatabase(s) ? i : -1)).filter((i) => i >= 0).at(-1) ?? -1;
   if (lastDo < lastChange) problems.push(`${file}: the last DO block comes before the last change (${statements[lastChange].replace(/\s+/g, " ").slice(0, 60)}...): a self-check must be the last thing the file does`);
-  if (!/\bRAISE\s+EXCEPTION\b/i.test(statements[lastDo])) problems.push(`${file}: the last DO block has no RAISE EXCEPTION: it can only pass`);
+  if (!/\bRAISE\s+EXCEPTION\b/i.test(executable(statements[lastDo]))) problems.push(`${file}: the last DO block has no RAISE EXCEPTION: it can only pass`);
   const id = selfCheckIdOf(text, file);
   if (!noticeIds(statements[lastDo]).includes(id)) problems.push(`${file}: the last DO block does not print \`RAISE NOTICE '${id} OK'\`, the id the file declares`);
   return problems;

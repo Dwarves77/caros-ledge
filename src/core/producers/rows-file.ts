@@ -2,7 +2,8 @@
 // Ported from old_repo/scripts/spec09/lib/operator-rows-contract.mjs (lines 1-245)
 // Ported from old_repo/scripts/spec09/lib/cli-csv-args.mjs (lines 1-22)
 // Reviewed rows files (a citation on every row, the cited source rated by the class table) and the operator CSV contract (two tables, size and row caps,
-// entity references now validated by the producer that calls this).
+// entity references now validated by the producer that calls this). A citation's retrieved_at must be a real date, and its quote must stand on a stored capture of the cited URL that holds it verbatim
+// (registerCitedSource: acceptStoredQuote, the same rule the statutory inputs use): a quote nobody checked against a capture is refused.
 import { z } from "zod";
 
 import { classTierForHost, type HostVerdictRef } from "@/core/sources";
@@ -11,6 +12,7 @@ import { splitCsvText } from "@/core/csv/stream";
 import type { Db } from "@/core/db";
 import { hostOf } from "@/core/shared";
 
+import { acceptStoredQuote, parseVerifiedAt } from "./quote";
 import tables from "./data/operator-tables.json";
 
 export class RowsFileError extends Error {}
@@ -44,6 +46,7 @@ export function requireCitation(row: Record<string, unknown>, index: number, whe
   } catch {
     throw new RowsFileError(`${where}: row[${index}].citation.url is not a valid absolute URL: "${c.url}"`);
   }
+  if (!parseVerifiedAt(c.retrieved_at)) throw new RowsFileError(`${where}: row[${index}].citation.retrieved_at "${String(c.retrieved_at)}" is not a date (YYYY-MM-DD).`);
   return c as unknown as Citation;
 }
 
@@ -52,9 +55,13 @@ export type CitedSource = { refused: true; reason: string; wouldRegisterTier?: n
  * Register a citation as a `sources` row rated through the institution class table, never a hand-typed tier. A host the table cannot classify is refused with the
  * reason (ambiguous hosts are worklisted, SC-13); with no client the answer is the refusal "would register at tier N" so a dry run needs no database.
  */
-export async function registerCitedSource(citation: Pick<Citation, "url" | "title">, deps: { sb: Db | null; verdicts?: ReadonlyMap<string, HostVerdictRef> | null }): Promise<CitedSource> {
+export async function registerCitedSource(citation: Pick<Citation, "url" | "title"> & Partial<Pick<Citation, "quote" | "retrieved_at">>, deps: { sb: Db | null; verdicts?: ReadonlyMap<string, HostVerdictRef> | null }): Promise<CitedSource> {
   const host = hostOf(citation.url);
   if (!host) return { refused: true, reason: `citation.url has no resolvable host: "${citation.url}"` };
+  if (deps.sb && citation.quote !== undefined) {
+    const verdict = await acceptStoredQuote(deps.sb, { url: citation.url, quote: citation.quote, verifiedAt: citation.retrieved_at });
+    if (!verdict.ok) return { refused: true, reason: `${verdict.reason}: ${verdict.detail}` };
+  }
   if (!deps.sb) {
     const tier = classTierForHost(host, citation.title);
     return tier == null

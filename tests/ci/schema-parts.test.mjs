@@ -1,12 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { selfCheckStructureProblems } from "../../scripts/ci/migration-checks.mjs";
 import { shapeDiff } from "../../scripts/ci/schema/shape.mjs";
 import { scopeProblems } from "../../scripts/ci/schema/self-check-scope.mjs";
-import { verdictOf } from "../../scripts/ci/schema/selfcheck-mutants.mjs";
 import { changesDatabase, lastDoIndex, statementsOf } from "../../scripts/ci/schema/statements.mjs";
-import { mutate as breakIt } from "../mutants/transforms/break-the-attacked-thing.mjs";
-import { mutate as stripChange } from "../mutants/transforms/strip-change.mjs";
 
 const TABLES = new Set(["profiles", "intelligence_items"]);
 const check = (body, waivers = {}) => scopeProblems(`DO $$\nDECLARE fixture uuid := gen_random_uuid(); n int;\nBEGIN\n${body}\nEND $$;`, { tables: TABLES, functions: new Set(), waivers });
@@ -50,21 +48,10 @@ test("shapeDiff: equal shapes agree whatever the key order; a role setting that 
   assert.match(shapeDiff(shape, drifted).join("\n"), /this database/, "the default names are production and this database");
 });
 
-test("the self-check mutants: the change removed leaves the last DO block; a file that changes nothing has nothing to remove; an unrecognised file is not broken by guesswork", () => {
-  const text = "BEGIN;\nCREATE TABLE public.t (id int);\nCREATE TEMP TABLE _scratch (id int);\nDO $$ BEGIN RAISE EXCEPTION 'gone'; END $$;\nCOMMIT;\n";
-  const out = stripChange(text);
-  assert.doesNotMatch(out, /CREATE TABLE public\.t/);
-  assert.match(out, /CREATE TEMP TABLE _scratch/, "setup that only serves the check stays");
-  assert.match(out, /RAISE EXCEPTION 'gone'/);
-  assert.equal(stripChange("BEGIN;\nDO $$ BEGIN NULL; END $$;\nCOMMIT;\n"), null);
-  assert.equal(breakIt("DO $$ BEGIN RAISE NOTICE 'no-such-id OK'; END $$;"), null);
-  assert.match(breakIt("-- Self-check 0060-rls-attacks\nDO $$ BEGIN NULL; END $$;"), /DISABLE ROW LEVEL SECURITY/);
-});
-
-test("a self-check mutant is red when the check fails for the missing change (its own RAISE EXCEPTION, or the object it reads is not there); passing is green; a failure unrelated to the change is an error", () => {
-  assert.equal(verdictOf({ code: 0, err: "NOTICE:  x OK\n" }).verdict, "green");
-  assert.equal(verdictOf({ code: 3, err: "psql:<stdin>:9: ERROR:  0060: attack 1 [SQLSTATE P0001]\n" }).verdict, "red");
-  assert.equal(verdictOf({ code: 3, err: 'psql:<stdin>:9: ERROR:  relation "public.t" does not exist [SQLSTATE 42P01]\n' }).verdict, "red", "the check read the object the change makes and it is not there");
-  assert.equal(verdictOf({ code: 3, err: "psql:<stdin>:9: ERROR:  syntax error at or near \"x\" [SQLSTATE 42601]\n" }).verdict, "error", "a mutation that does not parse proves nothing");
-  assert.equal(verdictOf({ code: 3, err: "psql:<stdin>:9: ERROR:  something odd\n" }).verdict, "error", "no SQLSTATE: not attributable");
+test("a self-check whose RAISE EXCEPTION sits only in a comment or a string can only pass, and is refused; one that can raise is accepted", () => {
+  const file = (body) => `-- Self-check 9999-x\nBEGIN;\nCREATE TABLE t (id int);\nDO $$ BEGIN\n${body}\nRAISE NOTICE '9999-x OK';\nEND $$;\nCOMMIT;\n`;
+  for (const body of ["-- RAISE EXCEPTION never", "/* RAISE EXCEPTION never */ NULL;", "PERFORM 'RAISE EXCEPTION';"]) {
+    assert.match(selfCheckStructureProblems("9999_x.sql", file(body)).join("|"), /no RAISE EXCEPTION/, body);
+  }
+  assert.deepEqual(selfCheckStructureProblems("9999_x.sql", file("IF false THEN RAISE EXCEPTION 'it--x'; END IF;")), []);
 });

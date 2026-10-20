@@ -65,7 +65,7 @@ test("UKPN apply: the publisher is registered at its class tier and must be acti
   assert.ok(srcId);
   assert.ok((db.tables.grid_connection_queues ?? []).every((x) => x.source_id === srcId));
   const again = await runProducer(d.deps, { spec: ON(ukpnHeatmap), dry: false, text: bundle([sub({}), sub({ mRID: "S9", name: "Nine" })]) });
-  assert.equal(again.counts.created + again.counts.updated, 0);
+  assert.equal((again.counts.created ?? 0) + (again.counts.updated ?? 0), 0);
   const changed = await runProducer(d.deps, { spec: ON(ukpnHeatmap), dry: false, text: bundle([sub({ demandAvailableCapacity: 1 })]) });
   assert.equal(changed.counts.updated, 1);
   db.tables.sources![0]!.status = "inactive";
@@ -191,7 +191,7 @@ test("state cost facts: grounded verbatim before rated, refused by name otherwis
   assert.equal(db.tables.entity_refs?.[0]?.role, "jurisdiction");
   assert.equal(r.counts.refs_written, 1);
   const again = await runProducer(d.deps, { spec: ON(stateCostFacts), dry: false, text: JSON.stringify([cand()]) });
-  assert.equal(again.counts.created + again.counts.updated, 0);
+  assert.equal((again.counts.created ?? 0) + (again.counts.updated ?? 0), 0);
   assert.equal(again.counts.refs_written ?? 0, 0);
   const noRegion = await runProducer(makeDeps({ db: memoryDb({}), routes }).deps, { spec: ON(stateCostFacts), dry: false, text: JSON.stringify([cand()]) });
   assert.match(noRegion.notes.join(" "), /region code\(s\) not found/);

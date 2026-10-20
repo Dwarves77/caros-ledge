@@ -6,7 +6,7 @@
     "width": 375,
     "height": 812
   },
-  "captured_at": "2026-10-19T03:13:38.927Z",
+  "captured_at": "2026-10-19T20:55:25.795Z",
   "http_status": 200,
   "final_path": "/regulations/g14",
   "network_idle": true,
@@ -17,47 +17,27 @@
   "landmarks": [
     {
       "role": "banner",
-      "name": "☰Regulations⌕J",
+      "name": "",
       "source": "implicit"
     },
     {
       "role": "main",
-      "name": "VOL IV · No. 43 · Regulations / MexicoMexico SEMARNATMexico · Diario Oficial de la Federación (DOF) — Gobierno de México · Air · Ocean · Road⌕⌘KAskImmediate · ≤ 90 daysRegulationT19 sources · T1 primaryPrimary sourceGovernment fundedStandards definingRegulator alignedExport briefShare☆Watch+ Tag⋯ExposureWhereemissions · MexicoWho paysneeds primary-source figureYour lanesneeds primary-source figureNext milestoneNorm enters into force (180 días posteriores a su publicación) · 18 Nov 2026 · in 30 daysTimeline5 milestones · 4 passed · next 18 Nov 20262026-11-18Norm enters into force (180 días posteriores a su publicación)+4 moreNext: Norm enters into force (180 días posteriores a su publicación) · 18 Nov 2026 · in 30 daysS1 SummaryS2 ObligationsS3 RequirementsS4 RegistrationS5 OperationsS6 ComplianceS11 PurposeS12 What it isS13 GuidanceS14 PendingS15 ThresholdsS17 ExemptionsS18 AlternativesS8 SourcesSummaryFull briefS1SummaryGenerated · 30-second readMexico's environmental ministry overseeing packaging regulations, carbon market development, and transport emissions rules.S2Obligations — issues requiring actionVerify with shipper-clients the operating-hour count of machinery at point of import. The norm defines both \"Motor nuevo\" and \"Maquinaria móvil nueva no de carretera\" with a 50-hour ceiling:SCOPEFACT: \"Motor nuevo: es aquel motor que no ha sido objeto de cambio de componente alguno después de haber sido producido y enajenado por parte del fabricante del motor con no más de 50 horas de funcionamiento.\" (numeral 3.21)T1NOM-174-SEMARNAT-2026SEMARNATdiariooficial.gob.mx ↗2026ANALYTICAL INFERENCEOperational implicationEquipment that exceeds 50 operating hours before the point of first alienation or importación definitiva may not qualify as \"nuevo\" under the norm's own definitions, potentially removing both the compliance obligation and the regulatory pathway. This boundary must be verified at transaction level.not citableAt a glanceTopicemissionsImpact assessment—Relevance to youHigh relevanceRelevance to your operation: affects your air/ocean/road operations, your role as freight forwarder/importer/exporter in LATAM, MX.Needs more of your profile to sayOwner & teamAssigneeUnassignedJason6853b368...Last verifiedNot recordedIn this listneeds primary-source figureBack to listLegendImpact8/12TimelinePassed · next · ahead.Source tierT1 binding law → T7 overflow / uncategorized.NotesVisible to your workspace onlyAdd a note for your workspaceAdd note0 / 4,000No notes on this item yet. Notes are visible to your workspace only, never to other organisations.AssignmentsAssign teammates, with a notificationNobody is assigned to this item yet.Assign toJason— Name not setDue date (optional)AssignPick at least one person.How this regulation reaches youObligations not yet decomposedThis regulation has not been broken into individual obligations yet. The dated events below are listed as they were extracted.Recalculation noticesNo recalculations on your team's watchlist in this window.",
+      "name": "",
       "source": "implicit"
     },
     {
       "role": "banner",
-      "name": "VOL IV · No. 43 · Regulations / MexicoMexico SEMARNATMexico · Diario Oficial de la Federación (DOF) — Gobierno de México · Air · Ocean · Road⌕⌘KAskImmediate · ≤ 90 daysRegulationT19 sources · T1 primaryPrimary sourceGovernment fundedStandards definingRegulator alignedExport briefShare☆Watch+ Tag⋯ExposureWhereemissions · MexicoWho paysneeds primary-source figureYour lanesneeds primary-source figureNext milestoneNorm enters into force (180 días posteriores a su publicación) · 18 Nov 2026 · in 30 daysTimeline5 milestones · 4 passed · next 18 Nov 20262026-11-18Norm enters into force (180 días posteriores a su publicación)+4 moreNext: Norm enters into force (180 días posteriores a su publicación) · 18 Nov 2026 · in 30 days",
+      "name": "",
       "source": "implicit"
     },
     {
       "role": "search",
-      "name": "⌕⌘KAsk",
+      "name": "",
       "source": "explicit"
     },
     {
       "role": "navigation",
       "name": "Section index",
-      "source": "implicit"
-    },
-    {
-      "role": "region",
-      "name": "S1SummaryGenerated · 30-second readMexico's environmental ministry overseeing packaging regulations, carbon market development, and transport emissions rules.",
-      "source": "implicit"
-    },
-    {
-      "role": "region",
-      "name": "S2Obligations — issues requiring actionVerify with shipper-clients the operating-hour count of machinery at point of import. The norm defines both \"Motor nuevo\" and \"Maquinaria móvil nueva no de carretera\" with a 50-hour ceiling:SCOPEFACT: \"Motor nuevo: es aquel motor que no ha sido objeto de cambio de componente alguno después de haber sido producido y enajenado por parte del fabricante del motor con no más de 50 horas de funcionamiento.\" (numeral 3.21)T1NOM-174-SEMARNAT-2026SEMARNATdiariooficial.gob.mx ↗2026ANALYTICAL INFERENCEOperational implicationEquipment that exceeds 50 operating hours before the point of first alienation or importación definitiva may not qualify as \"nuevo\" under the norm's own definitions, potentially removing both the compliance obligation and the regulatory pathway. This boundary must be verified at transaction level.not citable",
-      "source": "implicit"
-    },
-    {
-      "role": "region",
-      "name": "NotesVisible to your workspace onlyAdd a note for your workspaceAdd note0 / 4,000No notes on this item yet. Notes are visible to your workspace only, never to other organisations.",
-      "source": "implicit"
-    },
-    {
-      "role": "region",
-      "name": "AssignmentsAssign teammates, with a notificationNobody is assigned to this item yet.Assign toJason— Name not setDue date (optional)AssignPick at least one person.",
       "source": "implicit"
     },
     {
@@ -256,9 +236,11 @@
     }
   ],
   "rows": {
-    "selector": "[data-row], li, tr, article",
-    "limit": 20,
-    "items": []
+    "selector": "[data-part=\"list-row\"], [data-part=\"table-row\"]",
+    "items": [],
+    "containers": []
   },
-  "document_height": 812
+  "document_height": 4164,
+  "truncated": false,
+  "offences": []
 }

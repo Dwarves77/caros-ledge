@@ -1,0 +1,1507 @@
+[
+ {
+  "illustrative": false,
+  "state": "ok",
+  "flags": [],
+  "retrieved": "2026-10-19",
+  "status": "verified",
+  "inputs": [
+   {
+    "name": "l_per_tkm",
+    "unit": "l/tkm",
+    "origin": "printed",
+    "literal": "0.15",
+    "locale": "dp",
+    "value": "0.15",
+    "sigDigits": 2
+   },
+   {
+    "name": "ef_wtw",
+    "unit": "kg CO2e/l",
+    "origin": "printed",
+    "literal": "3.32",
+    "locale": "dp",
+    "value": "3.32",
+    "sigDigits": 3,
+    "attrs": {
+     "boundary": "WTW"
+    }
+   },
+   {
+    "name": "mass",
+    "unit": "t",
+    "origin": "printed",
+    "literal": "0.45",
+    "locale": "dp",
+    "value": "0.45",
+    "sigDigits": 2
+   },
+   {
+    "name": "distance",
+    "unit": "km",
+    "origin": "printed",
+    "literal": "20",
+    "locale": "dp",
+    "value": "20",
+    "sigDigits": 1
+   }
+  ],
+  "outputs": [
+   {
+    "name": "intensity",
+    "unit": "kg CO2e/tkm",
+    "origin": "printed",
+    "literal": "0.498",
+    "locale": "dp",
+    "value": "0.498",
+    "sigDigits": 3,
+    "boundary": "WTW",
+    "gwp_set": "not_stated"
+   },
+   {
+    "name": "consignment",
+    "unit": "kg CO2e",
+    "origin": "printed",
+    "literal": "4.48",
+    "locale": "dp",
+    "value": "4.48",
+    "sigDigits": 3,
+    "rounded": true,
+    "boundary": "WTW",
+    "gwp_set": "not_stated"
+   },
+   {
+    "name": "consignment_exact",
+    "unit": "kg CO2e",
+    "origin": "derived",
+    "value": "4.482",
+    "basis": "mass x distance x intensity, unrounded",
+    "boundary": "WTW",
+    "gwp_set": "not_stated"
+   }
+  ],
+  "relations": [
+   {
+    "type": "product",
+    "factors": [
+     "l_per_tkm",
+     "ef_wtw"
+    ],
+    "result": "intensity"
+   },
+   {
+    "type": "product",
+    "factors": [
+     "mass",
+     "distance",
+     "intensity"
+    ],
+    "result": "consignment"
+   },
+   {
+    "type": "product",
+    "factors": [
+     "mass",
+     "distance",
+     "intensity"
+    ],
+    "result": "consignment_exact"
+   }
+  ],
+  "traps": [
+   {
+    "what": "The final is rounded to two decimals: a recompute gives 4.482 and must be compared within half a unit of the last published digit, never exactly.",
+    "wrong_value": "4.482"
+   },
+   {
+    "what": "The consignment mass is printed as 450kg in one place and 0.45 t in another."
+   }
+  ],
+  "disagreements": [],
+  "id": "T5",
+  "kind": "truth",
+  "framework": "glec",
+  "framework_version": "3.0",
+  "recheck_against": "3.2",
+  "checks": [
+   {
+    "doc": "glec_v3_0",
+    "page": 104,
+    "folio": "104",
+    "section": "Module 4 road example",
+    "tokens": [
+     "0.15 l",
+     "3.32 kg/l",
+     "0.498",
+     "0.45 t",
+     "20 km",
+     "4.48"
+    ]
+   }
+  ]
+ },
+ {
+  "illustrative": false,
+  "state": "ok",
+  "flags": [],
+  "retrieved": "2026-10-19",
+  "status": "verified",
+  "inputs": [
+   {
+    "name": "distance",
+    "unit": "km",
+    "origin": "printed",
+    "literal": "658",
+    "locale": "dp",
+    "value": "658",
+    "sigDigits": 3,
+    "attrs": {
+     "distance_basis": "SFD"
+    }
+   },
+   {
+    "name": "mass",
+    "unit": "t",
+    "origin": "printed",
+    "literal": "1,200",
+    "locale": "dp",
+    "value": "1200",
+    "sigDigits": 2
+   }
+  ],
+  "outputs": [
+   {
+    "name": "activity",
+    "unit": "tkm",
+    "origin": "printed",
+    "literal": "789,600",
+    "locale": "dp",
+    "value": "789600",
+    "sigDigits": 4,
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   }
+  ],
+  "relations": [
+   {
+    "type": "product",
+    "factors": [
+     "distance",
+     "mass"
+    ],
+    "result": "activity"
+   }
+  ],
+  "traps": [
+   {
+    "what": "A tkm figure without a stated distance basis (here the shortest feasible distance) is withheld from comparison."
+   },
+   {
+    "what": "Comma thousands read as a decimal point.",
+    "wrong_value": "789.6"
+   }
+  ],
+  "disagreements": [],
+  "id": "T6",
+  "kind": "truth",
+  "framework": "glec",
+  "framework_version": "3.0",
+  "recheck_against": "3.2",
+  "checks": [
+   {
+    "doc": "glec_v3_0",
+    "page": 104,
+    "folio": "104",
+    "section": "Module 4 route activity example",
+    "tokens": [
+     "658 km",
+     "1,200 t",
+     "789,600 tkm"
+    ]
+   }
+  ]
+ },
+ {
+  "illustrative": false,
+  "state": "ok",
+  "flags": [],
+  "retrieved": "2026-10-19",
+  "status": "verified",
+  "inputs": [
+   {
+    "name": "diesel_l",
+    "unit": "l",
+    "origin": "printed",
+    "literal": "100,000",
+    "locale": "dp",
+    "value": "100000",
+    "sigDigits": 1
+   },
+   {
+    "name": "ef_diesel",
+    "unit": "kg CO2e/l",
+    "origin": "printed",
+    "literal": "3.32",
+    "locale": "dp",
+    "value": "3.32",
+    "sigDigits": 3,
+    "attrs": {
+     "boundary": "WTW"
+    }
+   },
+   {
+    "name": "elec_kwh",
+    "unit": "kWh",
+    "origin": "printed",
+    "literal": "100,000",
+    "locale": "dp",
+    "value": "100000",
+    "sigDigits": 1
+   },
+   {
+    "name": "ef_mj",
+    "unit": "g CO2e/MJ",
+    "origin": "printed",
+    "literal": "97",
+    "locale": "dp",
+    "value": "97",
+    "sigDigits": 2
+   },
+   {
+    "name": "mj_per_kwh",
+    "unit": "MJ/kWh",
+    "origin": "constant",
+    "value": "3.6",
+    "basis": "definition: 1 kWh = 3.6 MJ"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "diesel_total",
+    "unit": "kg CO2e",
+    "origin": "printed",
+    "literal": "332,000",
+    "locale": "dp",
+    "value": "332000",
+    "sigDigits": 3,
+    "boundary": "WTW",
+    "gwp_set": "not_stated"
+   },
+   {
+    "name": "ef_kwh",
+    "unit": "g CO2e/kWh",
+    "origin": "printed",
+    "literal": "349.2",
+    "locale": "dp",
+    "value": "349.2",
+    "sigDigits": 4,
+    "boundary": "WTW",
+    "gwp_set": "not_stated"
+   },
+   {
+    "name": "elec_total",
+    "unit": "kg CO2e",
+    "origin": "printed",
+    "literal": "34,920",
+    "locale": "dp",
+    "value": "34920",
+    "sigDigits": 4,
+    "boundary": "WTW",
+    "gwp_set": "not_stated"
+   },
+   {
+    "name": "hybrid_total",
+    "unit": "kg CO2e",
+    "origin": "printed",
+    "literal": "366,920",
+    "locale": "dp",
+    "value": "366920",
+    "sigDigits": 5,
+    "boundary": "WTW",
+    "gwp_set": "not_stated"
+   }
+  ],
+  "relations": [
+   {
+    "type": "product",
+    "factors": [
+     "diesel_l",
+     "ef_diesel"
+    ],
+    "result": "diesel_total"
+   },
+   {
+    "type": "product",
+    "factors": [
+     "ef_mj",
+     "mj_per_kwh"
+    ],
+    "result": "ef_kwh"
+   },
+   {
+    "type": "product",
+    "factors": [
+     "elec_kwh",
+     "ef_kwh"
+    ],
+    "result": "elec_total",
+    "scale": 0.001
+   },
+   {
+    "type": "sum",
+    "terms": [
+     "diesel_total",
+     "elec_total"
+    ],
+    "total": "hybrid_total"
+   }
+  ],
+  "traps": [
+   {
+    "what": "The unit changes from g to kg to t inside one example; 97 g/MJ and 349.2 g/kWh are one factor in two units.",
+    "wrong_value": "34920000"
+   }
+  ],
+  "disagreements": [],
+  "id": "T7",
+  "kind": "truth",
+  "framework": "glec",
+  "framework_version": "3.0",
+  "recheck_against": "3.2",
+  "checks": [
+   {
+    "doc": "glec_v3_0",
+    "page": 106,
+    "folio": "106",
+    "section": "Module 4 fuel and electricity examples",
+    "tokens": [
+     "100,000 liters",
+     "3.32 kg/l",
+     "332,000 kg",
+     "100,000 kWh",
+     "349.2 g/kWh",
+     "97 g/MJ",
+     "34,920 kg",
+     "366,920 kg"
+    ]
+   }
+  ]
+ },
+ {
+  "illustrative": false,
+  "state": "ok",
+  "flags": [
+   "truncated_intermediate"
+  ],
+  "retrieved": "2026-10-19",
+  "status": "verified",
+  "inputs": [
+   {
+    "name": "tkm",
+    "unit": "tkm",
+    "origin": "printed",
+    "literal": "6,000,000",
+    "locale": "dp",
+    "value": "6000000",
+    "sigDigits": 1
+   },
+   {
+    "name": "trucks",
+    "unit": "trucks",
+    "origin": "printed",
+    "literal": "10",
+    "locale": "dp",
+    "value": "10",
+    "sigDigits": 1
+   },
+   {
+    "name": "ac_charge",
+    "unit": "kg",
+    "origin": "printed",
+    "literal": "1.5",
+    "locale": "dp",
+    "value": "1.5",
+    "sigDigits": 2
+   },
+   {
+    "name": "ac_leak",
+    "unit": "%",
+    "origin": "printed",
+    "literal": "15",
+    "locale": "dp",
+    "value": "15",
+    "sigDigits": 2
+   },
+   {
+    "name": "reefer_charge",
+    "unit": "kg",
+    "origin": "printed",
+    "literal": "5.5",
+    "locale": "dp",
+    "value": "5.5",
+    "sigDigits": 2
+   },
+   {
+    "name": "reefer_leak",
+    "unit": "%",
+    "origin": "printed",
+    "literal": "32.5",
+    "locale": "dp",
+    "value": "32.5",
+    "sigDigits": 3
+   },
+   {
+    "name": "gwp_r134a",
+    "unit": "kg CO2e/kg",
+    "origin": "printed",
+    "literal": "1,430",
+    "locale": "dp",
+    "value": "1430",
+    "sigDigits": 3
+   }
+  ],
+  "outputs": [
+   {
+    "name": "ac_unit_loss",
+    "unit": "kg",
+    "origin": "printed",
+    "literal": "0.225",
+    "locale": "dp",
+    "value": "0.225",
+    "sigDigits": 3,
+    "boundary": "not_stated",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "reefer_unit_loss",
+    "unit": "kg",
+    "origin": "printed",
+    "literal": "1.787",
+    "locale": "dp",
+    "value": "1.787",
+    "sigDigits": 4,
+    "rounded": true,
+    "boundary": "not_stated",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "ac_loss_total",
+    "unit": "kg",
+    "origin": "printed",
+    "literal": "2.25",
+    "locale": "dp",
+    "value": "2.25",
+    "sigDigits": 3,
+    "boundary": "not_stated",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "reefer_loss_total",
+    "unit": "kg",
+    "origin": "printed",
+    "literal": "17.87",
+    "locale": "dp",
+    "value": "17.87",
+    "sigDigits": 4,
+    "boundary": "not_stated",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "loss_total",
+    "unit": "kg",
+    "origin": "printed",
+    "literal": "20.12",
+    "locale": "dp",
+    "value": "20.12",
+    "sigDigits": 4,
+    "boundary": "not_stated",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "ac_unit_co2e",
+    "unit": "kg CO2e",
+    "origin": "printed",
+    "literal": "321.75",
+    "locale": "dp",
+    "value": "321.75",
+    "sigDigits": 5,
+    "boundary": "not_stated",
+    "gwp_set": "not_stated"
+   },
+   {
+    "name": "reefer_unit_co2e",
+    "unit": "kg CO2e",
+    "origin": "printed",
+    "literal": "2,555.41",
+    "locale": "dp",
+    "value": "2555.41",
+    "sigDigits": 6,
+    "boundary": "not_stated",
+    "gwp_set": "not_stated"
+   },
+   {
+    "name": "reefer_unit_co2e_recomputed",
+    "unit": "kg CO2e",
+    "origin": "derived",
+    "value": "2556.125",
+    "basis": "5.5 kg x 32.5% x 1,430 with the unrounded intermediate",
+    "boundary": "not_stated",
+    "gwp_set": "not_stated"
+   },
+   {
+    "name": "per_truck_co2e",
+    "unit": "kg CO2e",
+    "origin": "derived",
+    "value": "2877.16",
+    "basis": "sum of the two printed per-unit figures",
+    "boundary": "not_stated",
+    "gwp_set": "not_stated"
+   },
+   {
+    "name": "total",
+    "unit": "kg CO2e",
+    "origin": "printed",
+    "literal": "28,771.6",
+    "locale": "dp",
+    "value": "28771.6",
+    "sigDigits": 6,
+    "boundary": "not_stated",
+    "gwp_set": "not_stated"
+   },
+   {
+    "name": "intensity",
+    "unit": "kg CO2e/tkm",
+    "origin": "printed",
+    "literal": "0.0048",
+    "locale": "dp",
+    "value": "0.0048",
+    "sigDigits": 2,
+    "rounded": true,
+    "boundary": "not_stated",
+    "gwp_set": "not_stated"
+   }
+  ],
+  "relations": [
+   {
+    "type": "product",
+    "factors": [
+     "ac_charge",
+     "ac_leak"
+    ],
+    "result": "ac_unit_loss",
+    "scale": 0.01
+   },
+   {
+    "type": "product",
+    "factors": [
+     "reefer_charge",
+     "reefer_leak"
+    ],
+    "result": "reefer_unit_loss",
+    "scale": 0.01
+   },
+   {
+    "type": "product",
+    "factors": [
+     "trucks",
+     "ac_unit_loss"
+    ],
+    "result": "ac_loss_total"
+   },
+   {
+    "type": "product",
+    "factors": [
+     "trucks",
+     "reefer_unit_loss"
+    ],
+    "result": "reefer_loss_total"
+   },
+   {
+    "type": "sum",
+    "terms": [
+     "ac_loss_total",
+     "reefer_loss_total"
+    ],
+    "total": "loss_total"
+   },
+   {
+    "type": "product",
+    "factors": [
+     "ac_unit_loss",
+     "gwp_r134a"
+    ],
+    "result": "ac_unit_co2e"
+   },
+   {
+    "type": "product",
+    "factors": [
+     "reefer_unit_loss",
+     "gwp_r134a"
+    ],
+    "result": "reefer_unit_co2e"
+   },
+   {
+    "type": "product",
+    "factors": [
+     "reefer_charge",
+     "reefer_leak",
+     "gwp_r134a"
+    ],
+    "result": "reefer_unit_co2e_recomputed",
+    "scale": 0.01
+   },
+   {
+    "type": "sum",
+    "terms": [
+     "ac_unit_co2e",
+     "reefer_unit_co2e"
+    ],
+    "total": "per_truck_co2e"
+   },
+   {
+    "type": "product",
+    "factors": [
+     "trucks",
+     "per_truck_co2e"
+    ],
+    "result": "total"
+   },
+   {
+    "type": "quotient",
+    "numerator": "total",
+    "denominator": "tkm",
+    "result": "intensity"
+   }
+  ],
+  "traps": [
+   {
+    "what": "The published intermediate 1.787 is a truncation of 1.7875 (printed on the earlier page): recomputing from the unrounded value gives a different final, so rows compare within half a unit of the last published digit per operand.",
+    "wrong_value": "2556.125"
+   },
+   {
+    "what": "The fixed R-134a figure is used with no GWP set stated beside it; a table in the same document prints a different value (D1)."
+   }
+  ],
+  "disagreements": [],
+  "id": "T8",
+  "kind": "truth",
+  "framework": "glec",
+  "framework_version": "3.0",
+  "recheck_against": "3.2",
+  "checks": [
+   {
+    "doc": "glec_v3_0",
+    "page": 106,
+    "folio": "106",
+    "section": "Module 4 refrigerant example",
+    "tokens": [
+     "6,000,000 tkm",
+     "10 trucks",
+     "1.5 kg",
+     "15%",
+     "0.225 kg",
+     "5.5 kg",
+     "32.5%",
+     "1.787 kg",
+     "2.25 kg",
+     "17.87 kg",
+     "20.12 kg",
+     "1,430 kg",
+     "321.75 kg",
+     "2,555.41 kg",
+     "28,771.6 kg",
+     "0.0048 kg"
+    ]
+   },
+   {
+    "doc": "glec_v3_0",
+    "page": 101,
+    "folio": "101",
+    "section": "Module 3 refrigerant loss defaults",
+    "tokens": [
+     "1.5 kg",
+     "15%",
+     "0.225 kg",
+     "5.5 kg",
+     "32.5%",
+     "1.7875 kg"
+    ]
+   }
+  ]
+ },
+ {
+  "illustrative": false,
+  "state": "ok",
+  "flags": [],
+  "retrieved": "2026-10-19",
+  "status": "verified",
+  "inputs": [
+   {
+    "name": "flights",
+    "unit": "flights",
+    "origin": "printed",
+    "literal": "400",
+    "locale": "dp",
+    "value": "400",
+    "sigDigits": 1
+   },
+   {
+    "name": "flight_km",
+    "unit": "km",
+    "origin": "printed",
+    "literal": "1000",
+    "locale": "dp",
+    "value": "1000",
+    "sigDigits": 1
+   },
+   {
+    "name": "fuel_kg",
+    "unit": "kg",
+    "origin": "printed",
+    "literal": "7,000",
+    "locale": "dp",
+    "value": "7000",
+    "sigDigits": 1
+   },
+   {
+    "name": "tkm_toc",
+    "unit": "tkm",
+    "origin": "printed",
+    "literal": "7,160,000",
+    "locale": "dp",
+    "value": "7160000",
+    "sigDigits": 3
+   },
+   {
+    "name": "f_wtt",
+    "unit": "kg CO2e/kg fuel",
+    "origin": "printed",
+    "literal": "0.84",
+    "locale": "dp",
+    "value": "0.84",
+    "sigDigits": 2,
+    "attrs": {
+     "boundary": "WTT"
+    }
+   },
+   {
+    "name": "f_ttw",
+    "unit": "kg CO2e/kg fuel",
+    "origin": "printed",
+    "literal": "3.18",
+    "locale": "dp",
+    "value": "3.18",
+    "sigDigits": 3,
+    "attrs": {
+     "boundary": "TTW"
+    }
+   },
+   {
+    "name": "f_wtw",
+    "unit": "kg CO2e/kg fuel",
+    "origin": "printed",
+    "literal": "4.02",
+    "locale": "dp",
+    "value": "4.02",
+    "sigDigits": 3,
+    "attrs": {
+     "boundary": "WTW"
+    }
+   },
+   {
+    "name": "cons_kg",
+    "unit": "kg",
+    "origin": "printed",
+    "literal": "275",
+    "locale": "dp",
+    "value": "275",
+    "sigDigits": 3
+   },
+   {
+    "name": "cons_t",
+    "unit": "t",
+    "origin": "constant",
+    "value": "0.275",
+    "basis": "275 kg / 1000 (unit identity)"
+   },
+   {
+    "name": "num_wtt",
+    "unit": "kg CO2e",
+    "origin": "derived",
+    "value": "2352000",
+    "basis": "flights x fuel x WTT factor"
+   },
+   {
+    "name": "num_ttw",
+    "unit": "kg CO2e",
+    "origin": "derived",
+    "value": "8904000",
+    "basis": "flights x fuel x TTW factor"
+   },
+   {
+    "name": "num_wtw",
+    "unit": "kg CO2e",
+    "origin": "derived",
+    "value": "11256000",
+    "basis": "flights x fuel x WTW factor"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "i_wtt",
+    "unit": "kg CO2e/tkm",
+    "origin": "printed",
+    "literal": "0.328",
+    "locale": "dp",
+    "value": "0.328",
+    "sigDigits": 3,
+    "rounded": true,
+    "boundary": "WTT",
+    "gwp_set": "not_stated"
+   },
+   {
+    "name": "i_ttw",
+    "unit": "kg CO2e/tkm",
+    "origin": "printed",
+    "literal": "1.244",
+    "locale": "dp",
+    "value": "1.244",
+    "sigDigits": 4,
+    "rounded": true,
+    "boundary": "TTW",
+    "gwp_set": "not_stated"
+   },
+   {
+    "name": "i_wtw",
+    "unit": "kg CO2e/tkm",
+    "origin": "printed",
+    "literal": "1.572",
+    "locale": "dp",
+    "value": "1.572",
+    "sigDigits": 4,
+    "rounded": true,
+    "boundary": "WTW",
+    "gwp_set": "not_stated"
+   },
+   {
+    "name": "activity",
+    "unit": "tkm",
+    "origin": "printed",
+    "literal": "275",
+    "locale": "dp",
+    "value": "275",
+    "sigDigits": 3,
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "e_wtt",
+    "unit": "kg CO2e",
+    "origin": "printed",
+    "literal": "90.2",
+    "locale": "dp",
+    "value": "90.2",
+    "sigDigits": 3,
+    "boundary": "WTT",
+    "gwp_set": "not_stated"
+   },
+   {
+    "name": "e_ttw",
+    "unit": "kg CO2e",
+    "origin": "printed",
+    "literal": "342.1",
+    "locale": "dp",
+    "value": "342.1",
+    "sigDigits": 4,
+    "boundary": "TTW",
+    "gwp_set": "not_stated"
+   },
+   {
+    "name": "e_wtw",
+    "unit": "kg CO2e",
+    "origin": "printed",
+    "literal": "432.3",
+    "locale": "dp",
+    "value": "432.3",
+    "sigDigits": 4,
+    "boundary": "WTW",
+    "gwp_set": "not_stated"
+   }
+  ],
+  "relations": [
+   {
+    "type": "product",
+    "factors": [
+     "flights",
+     "fuel_kg",
+     "f_wtt"
+    ],
+    "result": "num_wtt"
+   },
+   {
+    "type": "product",
+    "factors": [
+     "flights",
+     "fuel_kg",
+     "f_ttw"
+    ],
+    "result": "num_ttw"
+   },
+   {
+    "type": "product",
+    "factors": [
+     "flights",
+     "fuel_kg",
+     "f_wtw"
+    ],
+    "result": "num_wtw"
+   },
+   {
+    "type": "quotient",
+    "numerator": "num_wtt",
+    "denominator": "tkm_toc",
+    "result": "i_wtt"
+   },
+   {
+    "type": "quotient",
+    "numerator": "num_ttw",
+    "denominator": "tkm_toc",
+    "result": "i_ttw"
+   },
+   {
+    "type": "quotient",
+    "numerator": "num_wtw",
+    "denominator": "tkm_toc",
+    "result": "i_wtw"
+   },
+   {
+    "type": "product",
+    "factors": [
+     "cons_t",
+     "flight_km"
+    ],
+    "result": "activity"
+   },
+   {
+    "type": "product",
+    "factors": [
+     "activity",
+     "i_wtt"
+    ],
+    "result": "e_wtt"
+   },
+   {
+    "type": "product",
+    "factors": [
+     "activity",
+     "i_ttw"
+    ],
+    "result": "e_ttw"
+   },
+   {
+    "type": "product",
+    "factors": [
+     "activity",
+     "i_wtw"
+    ],
+    "result": "e_wtw"
+   },
+   {
+    "type": "wtw",
+    "wtt": "f_wtt",
+    "ttw": "f_ttw",
+    "wtw": "f_wtw"
+   },
+   {
+    "type": "wtw",
+    "wtt": "i_wtt",
+    "ttw": "i_ttw",
+    "wtw": "i_wtw"
+   },
+   {
+    "type": "wtw",
+    "wtt": "e_wtt",
+    "ttw": "e_ttw",
+    "wtw": "e_wtw"
+   }
+  ],
+  "traps": [
+   {
+    "what": "A TTW intensity taken as the WTW headline; WTT + TTW must equal WTW within the last published digit or the figure is withheld.",
+    "wrong_value": "1.244"
+   },
+   {
+    "what": "The text requires actual consignment mass, not chargeable weight, where the GHG Protocol allows chargeable mass as an option."
+   }
+  ],
+  "disagreements": [],
+  "id": "T9",
+  "kind": "truth",
+  "framework": "glec",
+  "framework_version": "3.0",
+  "recheck_against": "3.2",
+  "checks": [
+   {
+    "doc": "glec_v3_0",
+    "page": 115,
+    "folio": "115",
+    "section": "Module 4 air example assumptions",
+    "tokens": [
+     "400",
+     "1000 km"
+    ]
+   },
+   {
+    "doc": "glec_v3_0",
+    "page": 116,
+    "folio": "116",
+    "section": "Module 4 air example calculation",
+    "tokens": [
+     "7,000 kg",
+     "7,160,000",
+     "0.84",
+     "3.18",
+     "4.02",
+     "0.328 kg",
+     "1.244 kg",
+     "1.572 kg",
+     "275 kg",
+     "275 tkm",
+     "90.2 kg",
+     "342.1 kg",
+     "432.3 kg"
+    ]
+   }
+  ]
+ },
+ {
+  "illustrative": false,
+  "state": "ok",
+  "flags": [],
+  "retrieved": "2026-10-19",
+  "status": "verified",
+  "inputs": [
+   {
+    "name": "teu",
+    "unit": "TEU",
+    "origin": "printed",
+    "literal": "10",
+    "locale": "dp",
+    "value": "10",
+    "sigDigits": 1
+   },
+   {
+    "name": "distance",
+    "unit": "km",
+    "origin": "printed",
+    "literal": "21,000",
+    "locale": "dp",
+    "value": "21000",
+    "sigDigits": 2
+   },
+   {
+    "name": "ef_teu_km",
+    "unit": "g CO2e/TEU-km",
+    "origin": "printed",
+    "literal": "49.9",
+    "locale": "dp",
+    "value": "49.9",
+    "sigDigits": 3
+   },
+   {
+    "name": "reefer_teu",
+    "unit": "TEU",
+    "origin": "printed",
+    "literal": "5",
+    "locale": "dp",
+    "value": "5",
+    "sigDigits": 1
+   },
+   {
+    "name": "ef_reefer",
+    "unit": "g CO2e/TEU-km",
+    "origin": "printed",
+    "literal": "128.7",
+    "locale": "dp",
+    "value": "128.7",
+    "sigDigits": 4
+   }
+  ],
+  "outputs": [
+   {
+    "name": "total",
+    "unit": "t CO2e",
+    "origin": "printed",
+    "literal": "10.48",
+    "locale": "dp",
+    "value": "10.48",
+    "sigDigits": 4,
+    "rounded": true,
+    "boundary": "not_stated",
+    "gwp_set": "not_stated"
+   },
+   {
+    "name": "total_exact",
+    "unit": "t CO2e",
+    "origin": "derived",
+    "value": "10.479",
+    "basis": "TEU x km x g per TEU-km, in tonnes",
+    "boundary": "not_stated",
+    "gwp_set": "not_stated"
+   },
+   {
+    "name": "reefer_total",
+    "unit": "t CO2e",
+    "origin": "printed",
+    "literal": "13.51",
+    "locale": "dp",
+    "value": "13.51",
+    "sigDigits": 4,
+    "rounded": true,
+    "boundary": "not_stated",
+    "gwp_set": "not_stated"
+   },
+   {
+    "name": "reefer_total_exact",
+    "unit": "t CO2e",
+    "origin": "derived",
+    "value": "13.5135",
+    "basis": "TEU x km x g per TEU-km, in tonnes",
+    "boundary": "not_stated",
+    "gwp_set": "not_stated"
+   }
+  ],
+  "relations": [
+   {
+    "type": "product",
+    "factors": [
+     "teu",
+     "distance",
+     "ef_teu_km"
+    ],
+    "result": "total",
+    "scale": 0.000001
+   },
+   {
+    "type": "product",
+    "factors": [
+     "teu",
+     "distance",
+     "ef_teu_km"
+    ],
+    "result": "total_exact",
+    "scale": 0.000001
+   },
+   {
+    "type": "product",
+    "factors": [
+     "reefer_teu",
+     "distance",
+     "ef_reefer"
+    ],
+    "result": "reefer_total",
+    "scale": 0.000001
+   },
+   {
+    "type": "product",
+    "factors": [
+     "reefer_teu",
+     "distance",
+     "ef_reefer"
+    ],
+    "result": "reefer_total_exact",
+    "scale": 0.000001
+   }
+  ],
+  "traps": [
+   {
+    "what": "The unit is per TEU-km, not per tkm: applying it to tonnes gives a different quantity (conversion needs the cited tonnes per TEU)."
+   },
+   {
+    "what": "Grams to tonnes conversion happens inside the example.",
+    "wrong_value": "10479"
+   }
+  ],
+  "disagreements": [],
+  "id": "T10",
+  "kind": "truth",
+  "framework": "glec",
+  "framework_version": "3.0",
+  "recheck_against": "3.2",
+  "checks": [
+   {
+    "doc": "glec_v3_0",
+    "page": 118,
+    "folio": "118",
+    "section": "Module 4 sea example",
+    "tokens": [
+     "10 TEUs",
+     "21,000 km",
+     "49.9 g",
+     "10.48 tonnes",
+     "5 TEU",
+     "128.7 g",
+     "13.51 tonnes"
+    ]
+   }
+  ]
+ },
+ {
+  "illustrative": false,
+  "state": "ok",
+  "flags": [],
+  "retrieved": "2026-10-19",
+  "status": "verified",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "ft_m",
+    "unit": "m",
+    "origin": "printed",
+    "literal": "0.304 8",
+    "locale": "dp",
+    "value": "0.3048",
+    "sigDigits": 4,
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "yd_m",
+    "unit": "m",
+    "origin": "printed",
+    "literal": "0.914 4",
+    "locale": "dp",
+    "value": "0.9144",
+    "sigDigits": 4,
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "mile_km",
+    "unit": "km",
+    "origin": "printed",
+    "literal": "1.609 344",
+    "locale": "dp",
+    "value": "1.609344",
+    "sigDigits": 7,
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "nmi_km",
+    "unit": "km",
+    "origin": "printed",
+    "literal": "1.852",
+    "locale": "dp",
+    "value": "1.852",
+    "sigDigits": 4,
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "short_ton_t",
+    "unit": "t",
+    "origin": "printed",
+    "literal": "0.907 184 74",
+    "locale": "dp",
+    "value": "0.90718474",
+    "sigDigits": 8,
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "long_ton_t",
+    "unit": "t",
+    "origin": "printed",
+    "literal": "1.016 047",
+    "locale": "dp",
+    "value": "1.016047",
+    "sigDigits": 7,
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "lb_t",
+    "unit": "t",
+    "origin": "printed",
+    "literal": "0.000 453 592",
+    "locale": "dp",
+    "value": "0.000453592",
+    "sigDigits": 6,
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "kg_t",
+    "unit": "t",
+    "origin": "printed",
+    "literal": "0.001",
+    "locale": "dp",
+    "value": "0.001",
+    "sigDigits": 1,
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "usgal_l",
+    "unit": "l",
+    "origin": "printed",
+    "literal": "3.785 411 784",
+    "locale": "dp",
+    "value": "3.785411784",
+    "sigDigits": 10,
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "short_ton_mile_tkm",
+    "unit": "t-km",
+    "origin": "printed",
+    "literal": "1.46",
+    "locale": "dp",
+    "value": "1.46",
+    "sigDigits": 3,
+    "rounded": true,
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "short_ton_mile_exact",
+    "unit": "t-km",
+    "origin": "derived",
+    "value": "1.45997231821056",
+    "basis": "short ton in t x mile in km",
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "teu_light",
+    "unit": "t/TEU",
+    "origin": "printed",
+    "literal": "6",
+    "locale": "dp",
+    "value": "6",
+    "sigDigits": 1,
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "teu_average",
+    "unit": "t/TEU",
+    "origin": "printed",
+    "literal": "10",
+    "locale": "dp",
+    "value": "10",
+    "sigDigits": 1,
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "teu_heavy",
+    "unit": "t/TEU",
+    "origin": "printed",
+    "literal": "14.5",
+    "locale": "dp",
+    "value": "14.5",
+    "sigDigits": 3,
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "teu_empty",
+    "unit": "t/TEU",
+    "origin": "printed",
+    "literal": "2",
+    "locale": "dp",
+    "value": "2",
+    "sigDigits": 1,
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "teu_std_20",
+    "unit": "TEU",
+    "origin": "printed",
+    "literal": "1.0",
+    "locale": "dp",
+    "value": "1.0",
+    "sigDigits": 2,
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "teu_std_40",
+    "unit": "TEU",
+    "origin": "printed",
+    "literal": "2.0",
+    "locale": "dp",
+    "value": "2.0",
+    "sigDigits": 2,
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   },
+   {
+    "name": "teu_hc_40",
+    "unit": "TEU",
+    "origin": "printed",
+    "literal": "2.25",
+    "locale": "dp",
+    "value": "2.25",
+    "sigDigits": 3,
+    "boundary": "not_applicable",
+    "gwp_set": "not_applicable"
+   }
+  ],
+  "relations": [
+   {
+    "type": "product",
+    "factors": [
+     "short_ton_t",
+     "mile_km"
+    ],
+    "result": "short_ton_mile_tkm"
+   },
+   {
+    "type": "product",
+    "factors": [
+     "short_ton_t",
+     "mile_km"
+    ],
+    "result": "short_ton_mile_exact"
+   }
+  ],
+  "traps": [
+   {
+    "what": "Digits are grouped by spaces on both sides of the decimal point: a thousands-space parser reads 0.304 8 as 0.304 and 8.",
+    "wrong_value": "0.304"
+   },
+   {
+    "what": "1.46 is a rounded product of two constants printed above it; loading it as an exact constant propagates the rounding."
+   },
+   {
+    "what": "FEU is not named: the container table gives the 40-foot standard box as 2.0 TEU equivalents, which is the only cited source for FEU = 2 TEU found so far (the market-methods register recorded none)."
+   }
+  ],
+  "disagreements": [],
+  "id": "T11",
+  "kind": "truth",
+  "framework": "glec",
+  "framework_version": "3.0",
+  "recheck_against": "3.2",
+  "checks": [
+   {
+    "doc": "glec_v3_0",
+    "page": 153,
+    "folio": "153",
+    "section": "Annex unit conversions, tables 1 to 4",
+    "tokens": [
+     "0.304 8 0.914 4 1.609 344 1.852",
+     "0.907 184 74 1.016 047",
+     "0.000 453 592 0.001",
+     "3.785 411 784 1.46",
+     "6 10 14.5 2 1.0 2.0 2.25"
+    ]
+   }
+  ]
+ }
+]

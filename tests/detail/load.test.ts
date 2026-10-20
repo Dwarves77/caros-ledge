@@ -123,7 +123,7 @@ test("INV-263: the cross-page block that failed is NAMED, the rest renders", asy
 test("INV-213/271: a source row carries the registry's rating by canonical URL; an unmatched row carries none; the brief's own tier wording is never drawn", async () => {
   const db = world();
   const d = await readDetailItem(as(db), "g14");
-  const base = { ...(d?.resource as object), citedSources: [{ url: "https://press.example.test/a", tier: 2, biasTags: [] }] } as Parameters<typeof sourceEntriesOf>[0];
+  const base = { ...(d?.resource as object), citedSources: [{ url: "https://press.example.test/a", tier: 2, biasTags: [] }] } as unknown as Parameters<typeof sourceEntriesOf>[0];
   const rows = sourceEntriesOf(base);
   assert.deepEqual(rows.map((r) => [r.name, r.tier]), [["EUR-Lex", 5], ["Trade Press", 2], ["Unrated Blog", null]], "the item's source is rated by customerTierOf (override, effective, base); the brief said Tier 1 for all three");
   assert.ok(rows.every((r) => !/tier\s*1/i.test(r.meta)));

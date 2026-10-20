@@ -37,7 +37,7 @@ test("the limit is a positive integer, never above the ceiling of 100", () => {
 test("the census read is every page in a total order: 2,300 rows under a 1,000-row server cap are all returned, narrowed by source and CELEX prefix, archived rows never", async () => {
   const rows = Array.from({ length: 2300 }, (_, i) => ({ id: `c-${String(i).padStart(5, "0")}`, source_id: i % 2 ? SOURCE : "other", document_url: `https://x.example/${i}`, title: "t", instrument_identifier: i % 3 ? `32023R${i}` : `22023R${i}`, dryrun_disposition: "would_mint", is_archived: i === 5, hold_reason: null, notes: null }));
   const db = makeWorld({ capped: true, census: rows });
-  assert.equal(((await db.client.from("census_worklist" as never).select("id")) as { data: unknown[] }).data.length, 1000, "the cap is real: an unranged read stops at 1,000");
+  assert.equal(((await (db.client as unknown as { from(t: string): { select(c: string): Promise<{ data: unknown[] }> } }).from("census_worklist").select("id"))).data.length, 1000, "the cap is real: an unranged read stops at 1,000");
   const all = await selectCensusRows(db.client, {});
   assert.equal(all.length, 2299);
   assert.equal(new Set(all.map((r) => r.id)).size, 2299, "no row repeated at a page boundary");

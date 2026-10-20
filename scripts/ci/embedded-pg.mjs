@@ -1,5 +1,5 @@
 // A throwaway PostgreSQL 15 (the embedded-postgres devDependency) in a temp data dir on a free port, for a workstation with no Docker and no system Postgres. `withEmbeddedPostgres(fn)` starts it, calls
-// `fn(url)` with the bootstrap superuser's URL, and stops it and deletes its directory on every exit path, a signal included. Used by `npm run schema:local` and by the mutants runner's schema gates.
+// `fn(url)` with the bootstrap superuser's URL, and stops it and deletes its directory on every exit path, a signal included. Used by `npm run schema:local`.
 import { mkdtempSync, rmSync } from "node:fs";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
@@ -17,7 +17,7 @@ const freePort = () =>
     });
   });
 
-// The server logs no ERROR (its start-up LOG line, which embedded-postgres waits for, is kept): its log pipe is read by this process, and a caller that blocks the event loop (the mutants runner runs its gates synchronously) would stop reading it, fill the pipe and hang the
+// The server logs no ERROR (its start-up LOG line, which embedded-postgres waits for, is kept): its log pipe is read by this process, and a caller that blocks the event loop would stop reading it, fill the pipe and hang the
 // server inside the next statement that logs an error. Every error a check wants to see comes back to the client.
 export async function withEmbeddedPostgres(fn, log = console.log) {
   const dir = mkdtempSync(join(tmpdir(), "schema-local-"));

@@ -1,0 +1,75 @@
+{
+  "_comment": "R2c C4. The same instrument at another official publisher. `publishers` are the official publishers with the terms page that was READ and the date it was read; `bySchema` maps an identifier scheme to an ordered list of (publisher, URL template, channel kind). An entry whose status is `unverified` is never used: the gate fails closed on it, and `reason` says what was not verified. Credentials are read from the named env variables and the channel self-skips when they are unset (no lane registers an account). Templates take {id} and the named parts of the scheme; {today} is the run date.",
+  "publishers": {
+    "cellar": { "name": "Publications Office of the European Union (Cellar)", "host": "publications.europa.eu", "jurisdiction": "EU", "reuse": "eu_reuse", "status": "verified", "terms": { "url": "https://eur-lex.europa.eu/content/legal-notice/legal-notice.html", "readAt": "2026-10-19", "says": "legal documents on EUR-Lex are reusable under Commission Decision 2011/833/EU; editorial content CC BY 4.0, metadata CC0; the page does not address automated access to Cellar" }, "credential": null, "attribution": "European Union, https://eur-lex.europa.eu, reused under Decision 2011/833/EU" },
+    "legislation_gov_uk": { "name": "legislation.gov.uk (The National Archives)", "host": "www.legislation.gov.uk", "jurisdiction": "GB", "reuse": "open_government", "status": "verified", "terms": { "url": "https://www.legislation.gov.uk/developer/formats", "readAt": "2026-10-19", "says": "all content under the Open Government Licence v3.0 (https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/, read 2026-10-19: free reuse on condition of acknowledging the source); a fair use policy is linked and was not read" }, "credential": null, "attribution": "Contains public sector information licensed under the Open Government Licence v3.0" },
+    "federal_register_api": { "name": "Federal Register API (Office of the Federal Register)", "host": "www.federalregister.gov", "jurisdiction": "US", "reuse": "public_domain", "status": "verified", "terms": { "url": "https://www.federalregister.gov/developers/documentation/api/v1", "readAt": "2026-10-19", "says": "programmatic access to federalregister.gov and ecfr.gov is limited to the developer APIs (the site pages show a CAPTCHA to flagged clients); the API answered keyless under the declared identity" }, "credential": null, "attribution": "Office of the Federal Register, federalregister.gov" },
+    "ecfr_api": { "name": "eCFR API (Office of the Federal Register)", "host": "www.ecfr.gov", "jurisdiction": "US", "reuse": "public_domain", "status": "verified", "terms": { "url": "https://www.federalregister.gov/developers/documentation/api/v1", "readAt": "2026-10-19", "says": "the same notice names the eCFR API as the programmatic path; versioner/v1/titles.json answered keyless under the declared identity" }, "credential": null, "attribution": "Office of the Federal Register, ecfr.gov" },
+    "govinfo": { "name": "GovInfo (U.S. Government Publishing Office)", "host": "www.govinfo.gov", "jurisdiction": "US", "reuse": "public_domain", "status": "verified", "terms": { "url": "https://www.govinfo.gov/about/policies#copyright", "readAt": "2026-10-19", "says": "Public Domain and Copyright Notice: 17 U.S.C. 105, no copyright in works of the U.S. Government; third-party material inside a publication keeps its owner rights" }, "credential": null, "attribution": "U.S. Government Publishing Office, govinfo.gov" },
+    "regulations_gov_api": { "name": "regulations.gov API v4 (api.data.gov key)", "host": "api.regulations.gov", "jurisdiction": "US", "reuse": "public_domain", "status": "verified", "terms": { "url": "https://api.data.gov/docs/developer-manual/", "readAt": "2026-10-19", "says": "a key from api.data.gov signup is required; 1,000 requests per hour per key by default; the DEMO_KEY is 30 per hour and 50 per day per IP and is not used here" }, "credential": { "env": ["REGULATIONS_GOV_API_KEY"], "registration": "https://api.data.gov/signup/", "fields": "first name, last name, e-mail address", "free": true, "terms": "https://api.data.gov/docs/developer-manual/" }, "attribution": "U.S. Government, regulations.gov" },
+    "nysenate": { "name": "New York State Senate Open Legislation API", "host": "legislation.nysenate.gov", "jurisdiction": "US-NY", "reuse": "unknown", "status": "unverified", "reason": "the API documentation page and its terms could not be read (404 at /static/docs/html/); a key is required", "terms": null, "credential": { "env": ["NYSENATE_API_KEY"], "registration": "https://legislation.nysenate.gov/", "fields": "not read", "free": true, "terms": "not read" }, "attribution": "New York State Senate" },
+    "ca_leginfo": { "name": "California Legislative Information (PUBinfo bulk data)", "host": "leginfo.legislature.ca.gov", "jurisdiction": "US-CA", "reuse": "unknown", "status": "unverified", "reason": "bulk data terms and file layout not read; no identifier template verified", "terms": null, "credential": null, "attribution": "California Legislative Counsel" },
+    "or_olis": { "name": "Oregon Legislative Information System web services", "host": "olis.oregonlegislature.gov", "jurisdiction": "US-OR", "reuse": "unknown", "status": "unverified", "reason": "service documentation and terms not read", "terms": null, "credential": null, "attribution": "Oregon Legislative Assembly" },
+    "lovdata": { "name": "Lovdata public data (Norway)", "host": "api.lovdata.no", "jurisdiction": "NO", "reuse": "unknown", "status": "unverified", "reason": "the public data service and its licence were not read; no identifier template verified", "terms": null, "credential": null, "attribution": "Lovdata" },
+    "sejm": { "name": "Sejm API (Poland)", "host": "api.sejm.gov.pl", "jurisdiction": "PL", "reuse": "unknown", "status": "unverified", "reason": "the API documentation and its terms were not read; no identifier template verified", "terms": null, "credential": null, "attribution": "Kancelaria Sejmu" },
+    "eur_lex_ws": { "name": "EUR-Lex web service (SOAP, registered users)", "host": "eur-lex.europa.eu", "jurisdiction": "EU", "reuse": "eu_reuse", "status": "unverified", "reason": "the web service WSDL and its terms were not read; the legal notice says only that registered users may query EUR-Lex through a web service", "terms": null, "credential": { "env": ["EURLEX_WS_USER", "EURLEX_WS_PASSWORD"], "registration": "https://eur-lex.europa.eu/content/help/faq/reuse-contents-eurlex-details.html", "fields": "not read", "free": true, "terms": "https://eur-lex.europa.eu/content/legal-notice/legal-notice.html" }, "attribution": "European Union, https://eur-lex.europa.eu" },
+    "govuk_content": { "name": "GOV.UK content API", "host": "www.gov.uk", "jurisdiction": "GB", "reuse": "open_government", "status": "unverified", "reason": "terms read (https://www.gov.uk/help/terms-conditions, 2026-10-19: Open Government Licence v3.0, the content API itself is not named) and the endpoint answered keyless, but its JSON carries the page body escaped, so a stored copy is not a verbatim copy of the page and a span checked against it could fail; unused until a decoder that returns the page text exists", "terms": null, "credential": null, "attribution": "Contains public sector information licensed under the Open Government Licence v3.0" },
+    "the_gazette": { "name": "The Gazette (UK)", "host": "www.thegazette.co.uk", "jurisdiction": "GB", "reuse": "open_government", "status": "unverified", "reason": "terms and notice URL pattern not read", "terms": null, "credential": null, "attribution": "The Gazette" },
+    "mca": { "name": "Maritime and Coastguard Agency (flag-state republisher of IMO instruments)", "host": "www.gov.uk", "jurisdiction": "GB", "reuse": "open_government", "status": "unverified", "reason": "no stable URL by IMO resolution or circular number was verified", "terms": null, "credential": null, "attribution": "Maritime and Coastguard Agency" },
+    "uscg": { "name": "United States Coast Guard (flag-state republisher of IMO instruments)", "host": "www.dco.uscg.mil", "jurisdiction": "US", "reuse": "public_domain", "status": "unverified", "reason": "no stable URL by IMO resolution or circular number was verified", "terms": null, "credential": null, "attribution": "United States Coast Guard" },
+    "amsa": { "name": "Australian Maritime Safety Authority (flag-state republisher of IMO instruments)", "host": "www.amsa.gov.au", "jurisdiction": "AU", "reuse": "unknown", "status": "unverified", "reason": "no stable URL by IMO resolution or circular number was verified", "terms": null, "credential": null, "attribution": "Australian Maritime Safety Authority" },
+    "easa": { "name": "European Union Aviation Safety Agency (ICAO document republisher)", "host": "www.easa.europa.eu", "jurisdiction": "EU", "reuse": "eu_reuse", "status": "unverified", "reason": "no stable URL by ICAO document number was verified; ICAO documents themselves are sold by ICAO", "terms": null, "credential": null, "attribution": "EASA" },
+    "emsa": { "name": "European Maritime Safety Agency (flag-state republisher of IMO instruments)", "host": "www.emsa.europa.eu", "jurisdiction": "EU", "reuse": "eu_reuse", "status": "unverified", "reason": "no stable URL by IMO resolution or circular number was verified", "terms": null, "credential": null, "attribution": "EMSA" }
+  },
+  "bySchema": {
+    "celex": [
+      { "publisher": "cellar", "kind": "template", "channel": "api", "template": "https://publications.europa.eu/resource/celex/{id}", "headers": { "Accept": "application/xhtml+xml", "Accept-Language": "eng" } },
+      { "publisher": "eur_lex_ws", "kind": "unsupported", "channel": "api", "template": "" }
+    ],
+    "eli": [
+      { "publisher": "cellar", "kind": "template", "channel": "api", "template": "https://publications.europa.eu/resource/eli/{id}", "headers": { "Accept": "application/xhtml+xml", "Accept-Language": "eng" }, "status": "unverified", "reason": "the ELI path on the Cellar resolver was not probed" }
+    ],
+    "oj": [
+      { "publisher": "cellar", "kind": "template", "channel": "api", "template": "https://publications.europa.eu/resource/oj/{code}_{year}_{issue}_{edition}", "headers": { "Accept": "application/xhtml+xml", "Accept-Language": "eng" } }
+    ],
+    "uk_legislation": [
+      { "publisher": "legislation_gov_uk", "kind": "template", "channel": "api", "template": "https://www.legislation.gov.uk/{id}/data.htm" }
+    ],
+    "federal_register": [
+      { "publisher": "federal_register_api", "kind": "federal_register", "channel": "api", "template": "https://www.federalregister.gov/api/v1/documents/{id}.json?fields[]=title&fields[]=raw_text_url" }
+    ],
+    "cfr": [
+      { "publisher": "ecfr_api", "kind": "template", "channel": "api", "template": "https://www.ecfr.gov/api/versioner/v1/full/{today}/title-{title}.xml?part={part}" }
+    ],
+    "public_law": [
+      { "publisher": "govinfo", "kind": "template", "channel": "direct", "template": "https://www.govinfo.gov/content/pkg/PLAW-{congress}publ{number}/html/PLAW-{congress}publ{number}.htm" }
+    ],
+    "regulations_gov_document": [
+      { "publisher": "regulations_gov_api", "kind": "template", "channel": "api", "template": "https://api.regulations.gov/v4/documents/{id}?api_key={key}", "credentialQuery": true }
+    ],
+    "imo_resolution": [
+      { "publisher": "mca", "kind": "unsupported", "channel": "direct", "template": "" },
+      { "publisher": "uscg", "kind": "unsupported", "channel": "direct", "template": "" },
+      { "publisher": "amsa", "kind": "unsupported", "channel": "direct", "template": "" },
+      { "publisher": "emsa", "kind": "unsupported", "channel": "direct", "template": "" }
+    ],
+    "govuk_path": [
+      { "publisher": "govuk_content", "kind": "unsupported", "channel": "api", "template": "" }
+    ],
+    "gazette_notice": [
+      { "publisher": "the_gazette", "kind": "unsupported", "channel": "direct", "template": "" }
+    ],
+    "icao_document": [
+      { "publisher": "easa", "kind": "unsupported", "channel": "direct", "template": "" }
+    ],
+    "state_bill": [
+      { "publisher": "nysenate", "kind": "unsupported", "channel": "api", "template": "" },
+      { "publisher": "ca_leginfo", "kind": "unsupported", "channel": "direct", "template": "" },
+      { "publisher": "or_olis", "kind": "unsupported", "channel": "direct", "template": "" }
+    ],
+    "national_law": [
+      { "publisher": "lovdata", "kind": "unsupported", "channel": "api", "template": "" },
+      { "publisher": "sejm", "kind": "unsupported", "channel": "api", "template": "" }
+    ]
+  }
+}

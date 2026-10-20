@@ -15,7 +15,7 @@ export function extractTitleFromHtml(html: unknown): TitleResult | null {
   return h1 ? { title: h1, origin: "captured_heading" } : null;
 }
 /** True for an Official Journal file name such as "L_2006209EN.01000101.xml". */
-export const isOjFileName = (s: unknown): boolean => /^[A-Z]_\d{7}[A-Z]{2}\.\d{6,}\.xml$/i.test(String(s ?? "").trim());
+const isOjFileName = (s: unknown): boolean => /^[A-Z]_\d{7}[A-Z]{2}\.\d{6,}\.xml$/i.test(String(s ?? "").trim());
 
 const OJ_ACT_TITLE_RE = /\b((?:COMMISSION|COUNCIL|EUROPEAN PARLIAMENT AND (?:OF THE )?COUNCIL|REGULATION|DIRECTIVE|DECISION|RECOMMENDATION)\b[\s\S]{0,400}?\((?:\d{4}\/[A-Z]?\s?\d+(?:\/\d+)?|\d{4}\/\d+\/[A-Z]+)\))/;
 // The act heading wherever it starts, never the page chrome around it (no alternative contains "EUR-Lex" or "Official Journal"); \d{2,4} so a pre-2000 two-digit-year reference keeps its prefix.
@@ -38,7 +38,7 @@ function trimUnbalancedOpenParen(s: string): string {
   return out;
 }
 /** The act title inside an OJ body lead, or null. Tier 1: a heading through its trailing OJ reference. Tier 2: the heading found alone and bounded by the earliest terminator or citation (never cut mid-word, never an unclosed paren). */
-export function extractOjActTitle(text: unknown): string | null {
+function extractOjActTitle(text: unknown): string | null {
   const t = String(text ?? "").replace(/\s+/g, " ");
   const withRef = t.match(OJ_ACT_TITLE_RE)?.[1]?.trim();
   if (withRef && isUsableActTitle(withRef)) return withRef;
@@ -61,7 +61,7 @@ export function extractOjActTitle(text: unknown): string | null {
   return isUsableActTitle(title) ? title : null;
 }
 /** The act title when the lead carries one, else the first ~300 characters with any leading OJ file name removed. */
-export function bodyLeadTitle(text: string): TitleResult | null {
+function bodyLeadTitle(text: string): TitleResult | null {
   const act = extractOjActTitle(text);
   if (act) return { title: act, origin: "captured_body_act_title" };
   const lead = String(text).replace(/^\S+\.xml\s+/i, "").slice(0, 300).trim();

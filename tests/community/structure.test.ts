@@ -79,7 +79,7 @@ test("PROP-098: exactly five customer surfaces, Community co-equal: four item su
 test("PROP-051: no sixth customer surface: every top-level page route is one of the five, the dashboard, or a named utility route", () => {
   const top = new Set(SRC.filter((p) => /^src\/app\/[^/]+\/.*page\.tsx$|^src\/app\/page\.tsx$/.test(p)).map((p) => p.split("/")[2] ?? ""));
   const SURFACES_FIVE = ["regulations", "market", "research", "operations", "community"];
-  const UTILITY = ["admin", "auth", "dashboard", "invitations", "login", "map", "onboarding", "page.tsx", "privacy", "profile", "search", "service-unavailable", "settings", "signup", "watchlist", "workspace"];
+  const UTILITY = ["admin", "auth", "bot", "dashboard", "invitations", "login", "map", "onboarding", "page.tsx", "privacy", "profile", "search", "service-unavailable", "settings", "signup", "watchlist", "workspace"];
   assert.deepEqual([...top].filter((t) => !SURFACES_FIVE.includes(t) && !UTILITY.includes(t)), [], "a new top-level route has to be named as a surface or a utility here");
   for (const s of SURFACES_FIVE) assert.ok(top.has(s));
 });

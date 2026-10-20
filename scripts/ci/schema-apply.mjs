@@ -6,12 +6,9 @@
 //   4. runs the property checks, the generator pins, and compares the finished catalog with the last step's, src/core/db/schema-keys.json with the live primary keys, tests/_support/schema.json with the live columns, and
 //      the database's shape (roles, settings, ACLs) with the production shape.
 // Exit 1 on any error or unexplained difference.
-//   node scripts/ci/schema-apply.mjs [--build-only] [--selfcheck-mutants <transform module>]
-// --build-only stops after the chain and leaves the database for the property mutants (scripts/ci/mutants/schema-group.mjs). --selfcheck-mutants attacks every migration's self-check with the transform's mutation
-// of the file (run before the real file, in a transaction that rolls back) and prints `MUTANT selfcheck:<id> red|green|error <line>` for each; it applies the real chain after, so the next file sees the state it expects.
+//   node scripts/ci/schema-apply.mjs
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
-import { parseArgs } from "node:util";
 
 import { renderJsonData } from "../gen/json-data.mjs";
 import { readSchema } from "../gen/test-schema.mjs";
@@ -20,9 +17,7 @@ import { migrationProblems } from "./migration-checks.mjs";
 import { applyBase, openDatabase, shapeProblems } from "./schema/base.mjs";
 import { diff, runChain, snapshot } from "./schema/chain.mjs";
 import { runDataFiles } from "./schema/data.mjs";
-import { selfCheckMutantHooks } from "./schema/selfcheck-mutants.mjs";
 
-const { values } = parseArgs({ options: { "build-only": { type: "boolean", default: false }, "selfcheck-mutants": { type: "string" } }, strict: true });
 if (!process.env.DATABASE_URL) {
   console.error("DATABASE_URL is required");
   process.exit(1);
@@ -63,17 +58,11 @@ ROLLBACK;`, tuples: true });
   if (!ok) process.exit(1);
 }
 
-const mutantHooks = values["selfcheck-mutants"] ? await selfCheckMutantHooks(ctx, values["selfcheck-mutants"]) : null;
-const chain = runChain(ctx, { hooks: { before: (file, text, state) => { if (file.startsWith("0066_")) proveDuplicateEmailQuery(); mutantHooks?.before(file, text, state); } } });
+const chain = runChain(ctx, { hooks: { before: (file) => { if (file.startsWith("0066_")) proveDuplicateEmailQuery(); } } });
 if (chain.problems.length) fail(chain.problems);
 console.log("migrations applied with zero errors");
-if (values["build-only"]) process.exit(0);
 
-const dataProblems = runDataFiles(ctx, { before: chain.last, ...(mutantHooks ? { hooks: mutantHooks } : {}) });
-if (mutantHooks) {
-  mutantHooks.report();
-  process.exit(0);
-}
+const dataProblems = runDataFiles(ctx, { before: chain.last });
 if (dataProblems.length) fail(dataProblems);
 
 const props = spawnSync("node", ["scripts/ci/properties.mjs"], { stdio: "inherit", env: process.env });

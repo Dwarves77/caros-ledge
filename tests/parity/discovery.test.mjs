@@ -1,8 +1,10 @@
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { discoveryMissOutcome, pathFor, isThrottled, pickDetailHref, retryWaitMs, throttleWaitMs, throttleEvents, THROTTLE_FALLBACK_MS, THROTTLE_CEILING_MS, pinnedPath } from './capture.mjs';
+import { BYPASS_HEADER, bypassHeaders, discoveryMissOutcome, pathFor, isThrottled, pickDetailHref, retryWaitMs, throttleWaitMs, throttleEvents, THROTTLE_FALLBACK_MS, THROTTLE_CEILING_MS, pinnedPath, credentialVerdict, missingCredentials } from './capture.mjs';
 
 const route = (list) => ({ name: 'x-detail', discover: { list, match: '^/x/[^/]+$' } });
 const gates = { full: ['home', 'market'], frame: ['regulations', 'dashboard'] };
@@ -82,4 +84,38 @@ test('the wait is what the server asked for: seconds or an HTTP date; the fallba
   assert.equal(retryWaitMs('garbage', now), THROTTLE_FALLBACK_MS);
   assert.equal(retryWaitMs('999999', now), THROTTLE_CEILING_MS);
   assert.equal(throttleWaitMs([{ status: 429, retryAfter: '4' }, { status: 429, retryAfter: '9' }, { status: 429 }], now), THROTTLE_FALLBACK_MS, 'the longest ask wins');
+});
+
+test('the protection-bypass header goes to the captured origin when the secret is set, and to nobody when it is not or when the request is a third-party one', () => {
+  const origin = 'https://preview.example.test';
+  const env = { VERCEL_AUTOMATION_BYPASS_SECRET: 'value-from-the-environment' };
+  assert.deepEqual(bypassHeaders(`${origin}/login`, origin, env), { [BYPASS_HEADER]: 'value-from-the-environment' });
+  assert.deepEqual(bypassHeaders(`${origin}/api/x?y=1`, origin, env), { [BYPASS_HEADER]: 'value-from-the-environment' });
+  assert.deepEqual(bypassHeaders(`${origin}/login`, origin, {}), {}, 'no secret, no header');
+  assert.deepEqual(bypassHeaders(`${origin}/login`, origin, { VERCEL_AUTOMATION_BYPASS_SECRET: '' }), {}, 'an empty secret is no secret');
+  assert.deepEqual(bypassHeaders('https://elsewhere.example.test/tile.png', origin, env), {}, 'a third party never receives it');
+  assert.deepEqual(bypassHeaders('https://preview.example.test.evil.test/', origin, env), {}, 'a look-alike host never receives it');
+});
+
+test('missing signed-in credentials: a failure naming the variables in CI, a printed skip on a workstation, in a fork pull request and against a local server; nothing missing is fine', () => {
+  const routes = [{ name: 'home' }, { name: 'regulations', auth: 'member' }, { name: 'admin', auth: 'admin' }];
+  const deployed = 'https://preview.example.test';
+  assert.deepEqual(missingCredentials(routes, {}), ['LIVE_SMOKE_EMAIL', 'LIVE_SMOKE_PASSWORD'], 'the admin account is wanted only when PARITY_ADMIN=1');
+  assert.deepEqual(missingCredentials(routes, { PARITY_ADMIN: '1', LIVE_SMOKE_EMAIL: 'a', LIVE_SMOKE_PASSWORD: 'b' }), ['LIVE_ADMIN_EMAIL', 'LIVE_ADMIN_PASSWORD']);
+  const missing = missingCredentials(routes, {});
+  const ci = credentialVerdict({ GITHUB_ACTIONS: 'true', GITHUB_EVENT_NAME: 'push' }, missing, deployed);
+  assert.equal(ci.exit, 1, 'in CI a missing secret is a failure, not a skip');
+  assert.match(ci.message, /LIVE_SMOKE_EMAIL, LIVE_SMOKE_PASSWORD/);
+  assert.equal(credentialVerdict({ CI: 'true' }, missing, deployed).exit, 1);
+  const payload = join(mkdtempSync(join(tmpdir(), 'event-')), 'event.json');
+  writeFileSync(payload, JSON.stringify({ pull_request: { head: { repo: { fork: true } } } }));
+  const fork = credentialVerdict({ GITHUB_ACTIONS: 'true', GITHUB_EVENT_NAME: 'pull_request', GITHUB_EVENT_PATH: payload }, missing, deployed);
+  assert.equal(fork.exit, 2);
+  assert.match(fork.message, /fork/);
+  writeFileSync(payload, JSON.stringify({ pull_request: { head: { repo: { fork: false } } } }));
+  assert.equal(credentialVerdict({ GITHUB_ACTIONS: 'true', GITHUB_EVENT_NAME: 'pull_request', GITHUB_EVENT_PATH: payload }, missing, deployed).exit, 1, 'a pull request from this repository carries the secrets');
+  assert.equal(credentialVerdict({}, missing, deployed).exit, 2, 'a workstation skips');
+  assert.match(credentialVerdict({}, missing, deployed).message, /LIVE_SMOKE_EMAIL/, 'and says what is not set');
+  assert.equal(credentialVerdict({ GITHUB_ACTIONS: 'true' }, missing, 'http://localhost:3100').exit, 2, 'a local server holds no account');
+  assert.equal(credentialVerdict({ GITHUB_ACTIONS: 'true' }, [], deployed).exit, 0);
 });

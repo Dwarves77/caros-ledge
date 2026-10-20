@@ -16,11 +16,11 @@ const V = z
 
 export type BiasDimension = "funding" | "methodology" | "stakeholder";
 const DIMENSIONS: BiasDimension[] = V.dimensions.map((d) => d.dimension);
-export const BIAS_TAG_VOCAB: Readonly<Record<BiasDimension, readonly string[]>> = Object.fromEntries(V.dimensions.map((d) => [d.dimension, d.tags.map((t) => t.tag)])) as Record<BiasDimension, string[]>;
-export const BIAS_TAG_LABELS: Readonly<Record<string, string>> = Object.fromEntries(V.dimensions.flatMap((d) => d.tags.map((t) => [t.tag, t.label])));
-export const BIAS_DIMENSION_LABELS: Readonly<Record<BiasDimension, string>> = Object.fromEntries(V.dimensions.map((d) => [d.dimension, d.label])) as Record<BiasDimension, string>;
+const BIAS_TAG_VOCAB: Readonly<Record<BiasDimension, readonly string[]>> = Object.fromEntries(V.dimensions.map((d) => [d.dimension, d.tags.map((t) => t.tag)])) as Record<BiasDimension, string[]>;
+const BIAS_TAG_LABELS: Readonly<Record<string, string>> = Object.fromEntries(V.dimensions.flatMap((d) => d.tags.map((t) => [t.tag, t.label])));
+
 /** A tag at or above this confidence is high confidence; the 0.65 to 0.79 band is adopted and shown as lower confidence. */
-export const HIGH_CONFIDENCE_THRESHOLD = V.lowerConfidenceBelow;
+const HIGH_CONFIDENCE_THRESHOLD = V.lowerConfidenceBelow;
 export const LOWER_CONFIDENCE_WORDS = "lower confidence";
 
 export interface BiasRow {
@@ -40,7 +40,7 @@ export interface BiasDiscard {
  * Splits a recommendation object { funding?: {tag, confidence}[], methodology?, stakeholder? } into rows to insert (one adoption band, 0.65 and up) and
  * discards that each carry a reason. Never throws on malformed input: a bad session-authored response must not crash the approval flow that calls this.
  */
-export function splitBiasTags(biasTags: unknown): { insertRows: BiasRow[]; discarded: BiasDiscard[] } {
+function splitBiasTags(biasTags: unknown): { insertRows: BiasRow[]; discarded: BiasDiscard[] } {
   const insertRows: BiasRow[] = [];
   const discarded: BiasDiscard[] = [];
   if (biasTags === null || biasTags === undefined) return { insertRows, discarded };
@@ -86,7 +86,7 @@ export function biasTagLabel(tag: unknown): string {
   const spaced = key.replace(/[-_]+/g, " ").trim();
   return spaced ? spaced.charAt(0).toUpperCase() + spaced.slice(1) : "";
 }
-export const isLowerConfidence = (confidence: unknown): boolean => typeof confidence === "number" && Number.isFinite(confidence) && confidence < HIGH_CONFIDENCE_THRESHOLD;
+const isLowerConfidence = (confidence: unknown): boolean => typeof confidence === "number" && Number.isFinite(confidence) && confidence < HIGH_CONFIDENCE_THRESHOLD;
 
 export interface BiasTagInput {
   dimension: string;

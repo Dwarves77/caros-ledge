@@ -36,7 +36,7 @@ export function selfCheckProblem(file, text, notices, notes) {
 }
 
 /**
- * Apply every non-data file in order. `hooks.before(file, text, state)` runs before the real apply (the self-check mutants use it); `log` receives the progress lines.
+ * Apply every non-data file in order. `hooks.before(file, text, state)` runs before the real apply (the duplicate-email proof uses it); `log` receives the progress lines.
  * Returns { problems, unexplained, last, steps } where `steps` maps a file to the snapshot after it.
  */
 export function runChain(ctx, { dir = MIGRATIONS_DIR, log = console.log, hooks = {} } = {}) {

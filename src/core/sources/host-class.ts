@@ -51,7 +51,7 @@ const UNIVERSITY_PREFIX = /(?:^|[^a-z0-9])universit/;
 const norm = (host: string | null | undefined): string => hostOf(host).replace(/\.$/, "");
 
 /** The tier a host's own class names: legal 1, gov 2, intergovernmental analysis 3, or null (never a guess, never a default). */
-export function codifiedTierForHost(host: string | null | undefined): number | null {
+function codifiedTierForHost(host: string | null | undefined): number | null {
   const h = norm(host);
   if (!h) return null;
   if (D.legalPrimary.test(h) || LEGAL_PUBLISHERS.has(h)) return HOST_CLASS_TIER.legal ?? null;
@@ -104,7 +104,7 @@ export interface ResidueClassification {
   rule: ResidueRuleId;
 }
 /** The eight residue rules over the stored registry name plus the host, in their fixed precedence. */
-export function classifyResidueRuling(host: string | null | undefined, name?: string | null): ResidueClassification {
+function classifyResidueRuling(host: string | null | undefined, name?: string | null): ResidueClassification {
   const h = norm(host);
   const n = normalizeName(name);
   if (h) {
@@ -151,7 +151,7 @@ export function classTierForHost(host: string | null | undefined, name?: string 
 const RESIDUE_PRECEDENCE: Readonly<Record<ResidueRuleId, number>> = { legal: 1, academic: 2, association: 3, government: 4, news: 5, analysis: 6, company: 7, worklist: 8 };
 
 /** The class tier over every stored name of one host: the most authoritative rule any name satisfies, never the first row's name alone. */
-export function classTierForHostAcrossNames(host: string | null | undefined, names?: ReadonlyArray<string | null | undefined> | null): number | null {
+function classTierForHostAcrossNames(host: string | null | undefined, names?: ReadonlyArray<string | null | undefined> | null): number | null {
   if (permanentlyUnregisteredClass(host) != null) return null;
   const pre = hostOnlyTier(host);
   if (pre != null) return pre;
@@ -179,7 +179,7 @@ export interface VerdictPlacement {
   batch: string | null;
 }
 /** A committed host verdict names a CLASS from the table; the tier is read from the table, so a verdict mints no tier the table lacks. */
-export function verdictPlacementForHost(host: string | null | undefined, verdicts: ReadonlyMap<string, HostVerdictRef> | null | undefined): VerdictPlacement | null {
+function verdictPlacementForHost(host: string | null | undefined, verdicts: ReadonlyMap<string, HostVerdictRef> | null | undefined): VerdictPlacement | null {
   if (!verdicts || verdicts.size === 0) return null;
   const h = norm(host);
   if (!h || permanentlyUnregisteredClass(h) != null) return null;
@@ -209,9 +209,4 @@ export interface PoolHostDecision {
   /** The deterministic tier to register or inherit at; null for the worklist (never a guessed tier). */
   tier: number | null;
 }
-/** Inherit the institution's tier when it already resolves; else register at the class tier; else worklist. No model output and no default tier enters (INV-176). */
-export function decidePoolHostRegistration(host: string | null | undefined, alreadyResolvesTier: number | null): PoolHostDecision {
-  if (alreadyResolvesTier != null) return { action: "inherit", tier: alreadyResolvesTier };
-  const t = classTierForHost(host);
-  return t != null ? { action: "register", tier: t } : { action: "worklist", tier: null };
-}
+

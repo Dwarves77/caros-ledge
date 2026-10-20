@@ -1,13 +1,12 @@
 name: CI
 
 # The one workflow. Job `changes`: which of the expensive jobs a pull request needs (scripts/ci/changes.mjs); every other event runs everything.
-# Job `ci`: lint, typecheck, build, tests, tree checks, LOC gates, the connection check, the column check, the migration static checks, the mutants registry (npm run gates).
+# Job `ci`: lint, typecheck, build, tests, tree checks, LOC gates, the connection check, the column check, the migration static checks (npm run gates).
 # Job `schema`: supabase/schema.sql applied to an empty Postgres 15, then the migrations (each self-check must print its own OK, each down file is applied and catalog-compared), then the property checks.
-# Job `mutants`: every gate is attacked by a registered mutant (tests/mutants/registry.json) in a scratch copy of the tree and must go red; a mutant that leaves its gate green fails the run.
 # Job `turn`: the turn runtime (scripts/turn.mjs). Dispatch only: it is the one job that holds the service key for a run of the branch it was dispatched on; no pull request or push ever receives it.
 # Job `windows`: the test step alone on Windows (every push to main and dispatch; a pull request that touches scripts/ or tests/).
 # Job `parity`: the built app on the runner, the UX smoke, and the capture compared with tests/parity/baseline (a pull request that touches anything the build reads).
-# Jobs `live` and `preview-parity` (P2-15): on a successful PREVIEW deployment (deployment_status) or a dispatch with only=live. `live` runs the live checks (scripts/ci/live-checks.mjs) with the service key and the admin account, so it checks
+# Jobs `target`, `live` and `preview-parity` (P2-15): on the successful `Vercel` commit status (Vercel posts a commit status and creates no GitHub Deployment, so a deployment event never fires) or a dispatch with only=live. `live` runs the live checks (scripts/ci/live-checks.mjs) with the service key and the admin account, so it checks
 # out MAIN, never the deployed commit: a branch cannot change the script that holds the secrets. `preview-parity` runs the deployed commit's own capture and compare, so it holds the member test account only.
 # Job `report`: after the others (needs, if always), downloads the parity and test artifacts and writes the one job summary and the one PR comment; it polls nothing and never fails the run.
 # Every action is pinned to a commit SHA (the tag it was taken from is the comment): a moved tag cannot change a gate.
@@ -42,12 +41,12 @@ on:
         description: 'Baseline recapture (job baseline): route names, comma separated, or all'
         default: all
       only:
-        description: 'Run one job on a dispatch: baseline (the old-site recapture), turn, live (the live checks and the deployed-preview parity), screens (full-page screenshots of every route at a live_url), or empty for everything but baseline, live and screens'
+        description: 'Run one job on a dispatch: baseline (the old-site recapture), turn, live (the live checks and the deployed-preview parity), screens (full-page screenshots of every route at a live_url), migrate (apply the pending migrations to production), edge-deploy (deploy capture-worker), or empty for everything but baseline, live, screens, migrate and edge-deploy'
         default: ''
       chain:
         description: 'Run the stage downstream stages too (false runs only the named stage)'
         default: 'true'
-  deployment_status:
+  status:
 
 permissions:
   contents: read
@@ -55,19 +54,19 @@ permissions:
 # The event and the run id are in the group: a push to main and a dispatch on main no longer share one pending slot (GitHub keeps one pending run per group, so a pending main push could be dropped).
 # Only a pull request cancels its own earlier run.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.event.deployment.id || github.run_id }}
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   changes:
     name: changes
-    if: github.event_name != 'deployment_status' && (github.event_name != 'workflow_dispatch' || github.event.inputs.only == '')
+    if: github.event_name != 'status' && (github.event_name != 'workflow_dispatch' || github.event.inputs.only == '')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
       parity: ${{ steps.scope.outputs.parity }}
       windows: ${{ steps.scope.outputs.windows }}
-      mutant_classes: ${{ steps.scope.outputs.mutant_classes }}
+      edge: ${{ steps.scope.outputs.edge }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -77,11 +76,12 @@ jobs:
         env:
           EVENT: ${{ github.event_name }}
           BASE: ${{ github.base_ref }}
+          BEFORE: ${{ github.event.before }}
         run: node scripts/ci/changes.mjs
 
   ci:
     name: ci
-    if: github.event_name != 'deployment_status' && (github.event_name != 'workflow_dispatch' || github.event.inputs.only == '')
+    if: github.event_name != 'status' && (github.event_name != 'workflow_dispatch' || github.event.inputs.only == '')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -107,7 +107,7 @@ jobs:
 
   schema:
     name: schema
-    if: github.event_name != 'deployment_status' && (github.event_name != 'workflow_dispatch' || github.event.inputs.only == '')
+    if: github.event_name != 'status' && (github.event_name != 'workflow_dispatch' || github.event.inputs.only == '')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     services:
@@ -132,45 +132,6 @@ jobs:
       - run: npm ci --no-audit # the source-backfill generator imports the classify rules (zod)
       - name: Apply schema.sql to an empty Postgres 15, then the migrations, the down files and the property checks
         run: npm run schema:apply
-
-  mutants:
-    name: mutants
-    needs: changes
-    if: github.event_name != 'deployment_status' && (github.event_name != 'workflow_dispatch' || github.event.inputs.only == '')
-    runs-on: ubuntu-latest
-    # fast ~5 min, slow (a build, a bundle) ~8, schema ~35 (one chain run for every self-check, the property checks, three whole schema jobs): the whole set runs only when the change touches what the classes read.
-    timeout-minutes: 90
-    services:
-      postgres:
-        image: postgres:15.14
-        env:
-          POSTGRES_PASSWORD: postgres
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-    env:
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
-    steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
-        with:
-          node-version: '24'
-          cache: npm
-      - run: npm ci --no-audit
-      - name: Attack every gate with its registered mutants (fast always; slow and schema when the change touches what they read)
-        env:
-          CLASSES: ${{ needs.changes.outputs.mutant_classes }}
-        run: node scripts/ci/mutants.mjs --classes "$CLASSES" --json mutants-report.json
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        if: always()
-        with:
-          name: mutants-report
-          path: mutants-report.json
-          if-no-files-found: ignore
 
   turn:
     name: turn
@@ -205,7 +166,7 @@ jobs:
   windows:
     name: ci-windows
     needs: changes
-    if: github.event_name != 'deployment_status' && (github.event_name != 'workflow_dispatch' || github.event.inputs.only == '') && (github.event_name != 'pull_request' || needs.changes.outputs.windows == 'true')
+    if: github.event_name != 'status' && (github.event_name != 'workflow_dispatch' || github.event.inputs.only == '') && (github.event_name != 'pull_request' || needs.changes.outputs.windows == 'true')
     runs-on: windows-latest
     timeout-minutes: 15
     steps:
@@ -220,7 +181,7 @@ jobs:
   parity:
     name: parity
     needs: changes
-    if: github.event_name != 'deployment_status' && (github.event_name != 'workflow_dispatch' || github.event.inputs.only == '') && (github.event_name != 'pull_request' || needs.changes.outputs.parity == 'true')
+    if: github.event_name != 'status' && (github.event_name != 'workflow_dispatch' || github.event.inputs.only == '') && (github.event_name != 'pull_request' || needs.changes.outputs.parity == 'true')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     # The baseline was captured in this image (old repo parity-baseline.yml), so fonts and hinting render identically and the pixel diff measures the design, not the machine.
@@ -252,6 +213,7 @@ jobs:
         run: |
           UI_FIXTURES=1 npx next start -p 3100 > next-start.log 2>&1 &
           for i in $(seq 1 40); do curl -sf http://localhost:3100/login > /dev/null && break; sleep 1; done
+          curl -sf http://localhost:3100/login > /dev/null || { echo 'the app did not answer on :3100 within 40 s'; tail -n 40 next-start.log; exit 1; }
       # Every step below runs whatever the one before it did (the app having started is the only condition), so one run lists every failure and a pull request needs one run, not one per failing smoke.
       - name: UX smoke (four widths, real fonts)
         if: ${{ !cancelled() && steps.app.outcome == 'success' }}
@@ -296,19 +258,54 @@ jobs:
             parity-report.txt
             next-start.log
 
-  # P2-15: what runs on a deployed URL. A successful PREVIEW deployment (the deployment_status event Vercel posts to GitHub) and a dispatch with only=live both run the live checks (scripts/ci/live-checks.mjs: one live-smoke row per
+  # P2-15: what runs on a deployed URL. The successful `Vercel` commit status (a status event runs the workflow from the default branch) and a dispatch with only=live both run the live checks (scripts/ci/live-checks.mjs: one live-smoke row per
   # check through recordRun) and the parity capture of the deployed preview. The live checks hold the service key, the admin account and the mail key, so this job checks out MAIN (the default branch): the deployed commit is only
   # the thing being looked at, the URL, and its sha is passed as data (LIVE_CODE_SHA) to be written on the ledger row.
+  # The URL under test, derived once: the preview of the status's branch (https://caros-ledge-git-<branch>-dwarves77s-projects.vercel.app, the branch lower-cased with every character outside [a-z0-9] replaced by "-"), or production (https://carosledge.com)
+  # when the status is the default branch's. A dispatch uses its live_url. A status that names no branch cannot be located and fails the run.
+  target:
+    name: target
+    if: (github.event_name == 'status' && github.event.context == 'Vercel' && github.event.state == 'success') || (github.event_name == 'workflow_dispatch' && github.event.inputs.only == 'live')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      url: ${{ steps.url.outputs.url }}
+      production: ${{ steps.url.outputs.production }}
+    steps:
+      - name: Derive the deployed URL
+        id: url
+        env:
+          EVENT: ${{ github.event_name }}
+          BRANCH: ${{ github.event.branches[0].name }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          LIVE_URL: ${{ github.event.inputs.live_url }}
+        run: |
+          if [ "$EVENT" = workflow_dispatch ]; then
+            echo "url=$LIVE_URL" >> "$GITHUB_OUTPUT"
+            echo "production=false" >> "$GITHUB_OUTPUT"
+          elif [ -z "$BRANCH" ]; then
+            echo 'the status names no branch, so the deployed URL cannot be derived'
+            exit 1
+          elif [ "$BRANCH" = "$DEFAULT_BRANCH" ]; then
+            echo "url=https://carosledge.com" >> "$GITHUB_OUTPUT"
+            echo "production=true" >> "$GITHUB_OUTPUT"
+          else
+            slug=$(printf '%s' "$BRANCH" | tr 'A-Z' 'a-z' | sed 's/[^a-z0-9]/-/g')
+            echo "url=https://caros-ledge-git-${slug}-dwarves77s-projects.vercel.app" >> "$GITHUB_OUTPUT"
+            echo "production=false" >> "$GITHUB_OUTPUT"
+          fi
+
   live:
     name: live
-    if: (github.event_name == 'deployment_status' && github.event.deployment_status.state == 'success' && github.event.deployment_status.environment == 'Preview') || (github.event_name == 'workflow_dispatch' && github.event.inputs.only == 'live')
+    needs: target
+    if: (github.event_name == 'status' && github.event.context == 'Vercel' && github.event.state == 'success') || (github.event_name == 'workflow_dispatch' && github.event.inputs.only == 'live')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     container:
       image: mcr.microsoft.com/playwright:v1.61.1-noble
     env:
-      LIVE_BASE_URL: ${{ github.event.deployment_status.environment_url || github.event.inputs.live_url }}
-      LIVE_CODE_SHA: ${{ github.event.deployment.sha || github.sha }}
+      LIVE_BASE_URL: ${{ needs.target.outputs.url }}
+      LIVE_CODE_SHA: ${{ github.event.sha || github.sha }}
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -338,7 +335,8 @@ jobs:
 
   preview-parity:
     name: preview-parity
-    if: (github.event_name == 'deployment_status' && github.event.deployment_status.state == 'success' && github.event.deployment_status.environment == 'Preview') || (github.event_name == 'workflow_dispatch' && github.event.inputs.only == 'live')
+    needs: target
+    if: ((github.event_name == 'status' && github.event.context == 'Vercel' && github.event.state == 'success') || (github.event_name == 'workflow_dispatch' && github.event.inputs.only == 'live')) && needs.target.outputs.production != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     container:
@@ -347,13 +345,13 @@ jobs:
     env:
       LIVE_SMOKE_EMAIL: ${{ secrets.LIVE_SMOKE_EMAIL }}
       LIVE_SMOKE_PASSWORD: ${{ secrets.LIVE_SMOKE_PASSWORD }}
-      PARITY_BASE: ${{ github.event.deployment_status.environment_url || github.event.inputs.live_url }}
+      PARITY_BASE: ${{ needs.target.outputs.url }}
       # A preview sits behind Vercel deployment protection; the capture sends this as x-vercel-protection-bypass (the same designed mechanism as scripts/ci/live-checks.mjs), or it only ever sees the sign-in page.
       VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
-          ref: ${{ github.event.deployment.sha || github.sha }}
+          ref: ${{ github.event.sha || github.sha }}
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: '24'
@@ -443,11 +441,66 @@ jobs:
           name: screens-${{ github.run_id }}
           path: screens
 
+  # The only way a migration reaches production. The database is the record of what it carries (public.migration_log, migration 0078): the pending files (scripts/ci/apply-plan.mjs order, HOLD rows left out, minus the files the log
+  # holds; with no log yet, only 0078) are applied in order with SUPABASE_DB_URL, each file must print its own OK notice, a file's log row is written in its own transaction before its COMMIT, and the first failure stops the run. It commits
+  # nothing and writes nothing to the repository. It holds that one secret, runs on a push to main or a dispatch with only=migrate on main, never on a pull request and never in a fork, and one run at a time.
+  migrate:
+    name: migrate
+    if: github.event.repository.fork == false && github.ref == 'refs/heads/main' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.only == 'migrate'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    concurrency:
+      group: migrate
+      cancel-in-progress: false
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --no-audit
+      - name: Pending migrations
+        run: node scripts/ci/migrate.mjs --pending
+      - name: Apply them in order (stops at the first failure; each file must print its own OK)
+        run: node scripts/ci/migrate.mjs --apply
+
+  # Deploys the Edge Function the repository carries. Runs on a push to main after `migrate` (the schema is ahead of the code) when the push changed supabase/functions or src/core/fetch (the `changes` job's `edge`; a push that
+  # did not has the reason in the `changes` summary), or on a dispatch with only=edge-deploy on main; never on a pull request or in a fork. It holds the one token and checks the deploy by the function list: the version went up and the status is ACTIVE.
+  edge-deploy:
+    name: edge-deploy
+    needs: [changes, migrate]
+    if: ${{ !cancelled() && github.event.repository.fork == false && github.ref == 'refs/heads/main' && ((github.event_name == 'push' && needs.migrate.result == 'success' && needs.changes.outputs.edge == 'true') || (github.event_name == 'workflow_dispatch' && github.event.inputs.only == 'edge-deploy')) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency:
+      group: edge-deploy
+      cancel-in-progress: false
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: '24'
+      - name: Deploy capture-worker, then require a higher version and status ACTIVE
+        shell: bash -eo pipefail {0}
+        run: |
+          if [ -z "$SUPABASE_ACCESS_TOKEN" ]; then echo "missing (exit 1): SUPABASE_ACCESS_TOKEN. A run that can carry it and does not have it has not run; it is a failure, never a skip" >&2; exit 1; fi
+          ref=kwrsbpiseruzbfwjpvsp
+          row() { npx supabase@2 functions list --project-ref "$ref" -o json | node -e 'const f = JSON.parse(require("fs").readFileSync(0, "utf8")).find((x) => x.slug === "capture-worker"); console.log(f ? `${f.version} ${f.status}` : "0 ABSENT")'; }
+          before=$(row)
+          npx supabase@2 functions deploy capture-worker --project-ref "$ref" --use-api
+          after=$(row)
+          printf '### edge-deploy\n\ncapture-worker (version status): before %s, after %s\n' "$before" "$after" | tee -a "$GITHUB_STEP_SUMMARY"
+          [ "${after%% *}" -gt "${before%% *}" ] && [ "${after#* }" = ACTIVE ] || { echo "capture-worker was not deployed: the version did not increase or the status is not ACTIVE" >&2; exit 1; }
+
   # The one writer of the run's record: runs after every job that can run on a pull request or a push, polls nothing, holds no secrets, and never fails the run itself (it reports the others' conclusions).
   report:
     name: report
-    needs: [changes, ci, schema, mutants, turn, windows, parity]
-    if: always() && github.event_name != 'deployment_status'
+    needs: [changes, ci, schema, turn, windows, parity]
+    if: always() && github.event_name != 'status'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:

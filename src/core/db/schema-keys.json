@@ -241,6 +241,9 @@
  "market_series_items": [
   "series_key"
  ],
+ "migration_log": [
+  "file"
+ ],
  "moderation_reports": [
   "id"
  ],
