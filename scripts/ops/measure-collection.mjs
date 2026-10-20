@@ -69,7 +69,8 @@ process.on("unhandledRejection", (e) => console.error(`  unhandled rejection: ${
 process.on("uncaughtException", (e) => console.error(`  uncaught exception: ${e instanceof Error ? e.message : String(e)}`));
 
 const runner = process.env.GITHUB_ACTIONS === "true";
-const deps = { env: process.env, now: () => new Date() };
+// An operator-dispatched measurement is a manual run: it passes the hold as the signed manual caller (src/core/fetch/hold.ts), the same door a manual intake uses.
+const deps = { env: process.env, now: () => new Date(), caller: "manual-intake-run" };
 const get = honestFetch(deps);
 const getApi = honestFetch(deps, { api: true });
 
@@ -104,7 +105,7 @@ async function measure(s) {
   const disallowed = direct.refusal === "robots_disallowed";
   let browser = null;
   if (values.browser && runner && !disallowed && (direct.wall || direct.jsShell || direct.deferred)) {
-    const b = await fetchBrowser(s.url, { env: process.env, now: () => new Date() }, { max: 3_000_000, paywalled: false });
+    const b = await fetchBrowser(s.url, deps, { max: 3_000_000, paywalled: false });
     browser = b.needsHeadless ? "needs_headless" : b.refusal ? b.refusal.reason : classifyBody(b.text, { status: b.status }).class;
     attempts.push({ channel: "browser", status: b.status ?? null, cls: b.needsHeadless ? null : b.text ? classifyBody(b.text, { status: b.status }).class : null, refusal: b.refusal?.reason ?? null });
     if (b.text && isStorableClass(classifyBody(b.text, { status: b.status }).class)) return row("served", "browser");
