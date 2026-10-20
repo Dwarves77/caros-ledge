@@ -21,18 +21,20 @@ function Segments({ n }: { n: number }) {
 
 interface ImpactMeterProps {
   scores?: ImpactScores | null | undefined;
+  /** The sentence naming the input the score is waiting for; the dash is named by it when there is one. */
+  absence?: string | null | undefined;
   total?: number | undefined;
   variant?: "row" | "full";
   valueVisible?: boolean;
 }
 
 /** Twelve segments in four groups of three, one ramp colour at N; unscored draws ONE quiet dash (the cell stays, no outlines, never the word "unscored"). `full` is the per-dimension meter. */
-export function ImpactMeter({ scores, total, variant = "row", valueVisible = false }: ImpactMeterProps) {
+export function ImpactMeter({ scores, absence, total, variant = "row", valueVisible = false }: ImpactMeterProps) {
   if (variant === "full") return <FullVariant scores={scores} />;
   if (total == null && !isImpactScored(scores)) {
     return (
       <span className="cl-impact-unscored">
-        <Absence reason="unscored" variant="dash" label="Impact not scored" />
+        <Absence reason="unscored" variant="dash" label={absence ?? "Impact not scored"} text={absence} />
       </span>
     );
   }

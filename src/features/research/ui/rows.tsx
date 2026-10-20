@@ -67,7 +67,7 @@ export function bandedRows(rows: readonly Resource[], o: BandedOptions): BandedS
         return {
           key: r.id,
           href: withListPosition(f.href, o.list, i + 1, inBand.length, { prev: inBand[i - 1]?.id ?? null, next: inBand[i + 1]?.id ?? null }),
-          band, jurisdiction: f.jurisdiction, title: f.title, meta: o.meta ? o.meta(r) : f.meta, ...(kind ? { kind } : {}), impact: f.impact, due: f.due, timeline: f.timeline, tier: f.tier,
+          band, jurisdiction: f.jurisdiction, title: f.title, meta: o.meta ? o.meta(r) : f.meta, ...(kind ? { kind } : {}), impact: f.impact, impactAbsence: f.impactAbsence, due: f.due, dueAbsence: f.dueAbsence, timeline: f.timeline, tier: f.tier,
           ...(f.biasTags ? { biasTags: f.biasTags } : {}), ...(f.itemGrade ? { itemGrade: f.itemGrade } : {}), overflow: <RowMenu label={o.menuLabel} href={f.href} type={o.list === "operations" ? "operations" : "research"} id={r.id} />,
         };
       }),

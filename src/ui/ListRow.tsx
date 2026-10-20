@@ -27,7 +27,11 @@ export interface ListRowProps {
   meta?: ReactNode;
   kind?: ReactNode;
   impact?: ImpactScores | null;
+  /** The sentence naming the input the impact score is waiting for (IMPACT-1); drawn in place of "Needs more data". */
+  impactAbsence?: string | null | undefined;
   due?: { label: string; days: string } | null;
+  /** Why the due date is empty ("No milestone dates"). */
+  dueAbsence?: string | null | undefined;
   timeline?: TimelineEntry[] | null;
   tier?: number | null;
   /** The last control in the row (the watch star or the overflow menu); it never shares a box with the row link. */
@@ -42,12 +46,14 @@ export interface ListRowProps {
  * The list row: spine, jurisdiction, title with a meta line (kind, grade, meta text, the ONE absence reason, bias chips, tags; on the phone one line: grade, absence, bias as muted text), impact, due with days,
  * timeline, tier and a 44 px overflow cell. The whole row is one link. Phone, tablet, mid and wide layouts and the narrow-box reflow are in base.css.
  */
-export function ListRow({ href, band, jurisdiction, title, meta, kind, impact, due, timeline, tier, overflow, tags, biasTags, itemGrade, minHeight = 56 }: ListRowProps) {
+export function ListRow({ href, band, jurisdiction, title, meta, kind, impact, impactAbsence, due, dueAbsence, timeline, tier, overflow, tags, biasTags, itemGrade, minHeight = 56 }: ListRowProps) {
   const hasBias = hasBiasTags(biasTags);
   const isRecord = itemGrade === "record";
   const rowAbsence: AbsenceReason | null = pickAbsenceReason([tier == null ? "not in primary source" : null, !due || !isImpactScored(impact) ? "pending" : null]);
   const hasTags = !!tags && tags.length > 0;
-  const phoneBias = hasBias ? biasSummary(biasTags, (rowAbsence ? NEEDS_PHRASE[rowAbsence].length : 0) + (isRecord ? GRADE_SHORT.length + 1 : 0)) : [];
+  // The data names the input a value waits for: that sentence replaces the generic "pending" phrase (it never outranks a missing source rating or a connect prompt).
+  const absenceText = rowAbsence === "pending" ? ((!isImpactScored(impact) ? impactAbsence : null) ?? (!due ? dueAbsence : null) ?? null) : null;
+  const phoneBias = hasBias ? biasSummary(biasTags, (rowAbsence ? (absenceText ?? NEEDS_PHRASE[rowAbsence]).length : 0) + (isRecord ? GRADE_SHORT.length + 1 : 0)) : [];
   return (
     <div className="cl-list-row" data-part="list-row" data-part-variant="list" style={{ minHeight, ["--row-band" as string]: band.cssVar }}>
       <span className="cl-row-spine" aria-hidden="true" style={{ background: band.cssVar }} />
@@ -70,7 +76,7 @@ export function ListRow({ href, band, jurisdiction, title, meta, kind, impact, d
                 {meta && <span className="cl-row-meta-text">{meta}</span>}
                 {rowAbsence && (
                   <span className="cl-row-absence-slot">
-                    <Absence reason={rowAbsence} />
+                    <Absence reason={rowAbsence} text={absenceText} />
                   </span>
                 )}
                 {phoneBias.length > 0 && (
@@ -96,7 +102,7 @@ export function ListRow({ href, band, jurisdiction, title, meta, kind, impact, d
         </div>
         <div className="cl-row-line2">
           <span className="cl-row-impact">
-            <ImpactMeter scores={impact} />
+            <ImpactMeter scores={impact} absence={impactAbsence} />
           </span>
           <span className="cl-row-due">
             {due ? (
@@ -106,7 +112,7 @@ export function ListRow({ href, band, jurisdiction, title, meta, kind, impact, d
               </>
             ) : (
               <span className="cl-row-due-dash">
-                <Absence reason={rowAbsence ?? "pending"} variant="dash" />
+                <Absence reason={rowAbsence ?? "pending"} variant="dash" text={dueAbsence} />
               </span>
             )}
           </span>
