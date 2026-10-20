@@ -11,6 +11,9 @@ import { requireUser } from "@/core/http/guard";
 
 import { scripted } from "../_support/fake-clients.ts";
 
+/** The sentence a failed lookup says to the customer (the module keeps it private; this is the contract the tests hold it to). */
+const LOOKUP_SENTENCE = "That could not be read just now. Try again in a moment.";
+
 const DRIVER = 'relation "public.secret_table" does not exist (host db.internal.example:5432)';
 
 test("a LookupError answers the customer's sentence with Retry-After; the driver message is not in the body", async () => {
