@@ -99,7 +99,7 @@ test("the whole turn: every stage records under ONE root, each the next one's up
 
   // intake -> connect: the minted id IS the connected id, and the flywheel left its marks on that item.
   assert.deepEqual(ids("corpus-turn").connected_item_ids, minted);
-  assert.ok(counts("corpus-turn").tag_items_written >= 1 && counts("corpus-turn").term_writes >= 1);
+  assert.ok((counts("corpus-turn").tag_items_written ?? 0) >= 1 && (counts("corpus-turn").term_writes ?? 0) >= 1);
   const events = db.rows("item_forward_events").filter((x) => x.intelligence_item_id === item.id);
   assert.deepEqual(events.map((x) => [x.event_kind, x.event_date]), [["entry_into_force", "2027-01-01"]]);
   const obligation = db.rows("obligations").find((x) => x.intelligence_item_id === item.id) as Row;

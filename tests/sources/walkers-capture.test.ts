@@ -126,16 +126,16 @@ test("capture: parseOjReference reads the series, year and issue; the polite gat
 });
 test("capture: a generic capture goes through the hold gate and returns the cited url; a wall is held, never stored", async () => {
   const w = memoryDb({ system_state: [{ id: true, scrape_cadence: "weekly", scrape_start_date: "2026-01-05", global_processing_paused: false }] });
-  const ok = await capture("https://a.gov/p", { family: "generic" }, { db: w.db, env: {}, sleep: instant, fetchImpl: routed(async () => new Response(`<html><title>Doc</title><body>${prose(40)}</body></html>`, { headers: { "content-type": "text/html" } })).fetch });
+  const ok = await capture("https://a.gov/p", { family: "generic" }, { resolveHost: null, throttle: null, db: w.db, env: {}, sleep: instant, fetchImpl: routed(async () => new Response(`<html><title>Doc</title><body>${prose(40)}</body></html>`, { headers: { "content-type": "text/html" } })).fetch });
   assert.equal(ok.usable, true);
   assert.equal(ok.transport, "direct");
   assert.equal(ok.holdReason, null);
-  const walled = await capture("https://a.gov/p", { family: "generic" }, { db: w.db, env: {}, sleep: instant, fetchImpl: routed(async () => new Response("Just a moment...", { status: 403 })).fetch });
+  const walled = await capture("https://a.gov/p", { family: "generic" }, { resolveHost: null, throttle: null, db: w.db, env: {}, sleep: instant, fetchImpl: routed(async () => new Response("Just a moment...", { status: 403 })).fetch });
   assert.equal(walled.usable, false);
   assert.equal(walled.text, null);
   assert.match(walled.holdReason ?? "", /^capture_blocked$/, "no archive suffix: no archive is ever read");
   const off = memoryDb({ system_state: [{ id: true, scrape_cadence: "off", global_processing_paused: false }] });
-  await assert.rejects(() => capture("https://a.gov/p", { family: "generic" }, { db: off.db, env: {}, fetchImpl: (async () => new Response("x")) as typeof fetch }), /FETCH_HOLD_ENGAGED/);
+  await assert.rejects(() => capture("https://a.gov/p", { family: "generic" }, { resolveHost: null, throttle: null, db: off.db, env: {}, fetchImpl: (async () => new Response("x")) as typeof fetch }), /FETCH_HOLD_ENGAGED/);
 });
 
 test("feed: documents are recognised, candidate urls scoped, and a walk persists what it found", async () => {

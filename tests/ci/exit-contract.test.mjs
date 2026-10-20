@@ -33,7 +33,7 @@ test('the cutover dry run asked for with no database has not run: exit 1 on a wo
 });
 
 test('the turn CLI refuses to run on any CI event but a dispatch (exit 1, not a skip), and the workflow gives it secrets on a dispatch only', () => {
-  for (const event of ['push', 'pull_request', 'deployment_status']) {
+  for (const event of ['push', 'pull_request', 'status']) {
     const r = node(['scripts/turn.mjs', '--stage', 'all', '--mode', 'dry'], { GITHUB_ACTIONS: 'true', GITHUB_EVENT_NAME: event });
     assert.equal(r.status, 1, event);
     assert.match(r.stderr, new RegExp(`a turn runs only on a dispatch \\(this run is a ${event}\\)`));

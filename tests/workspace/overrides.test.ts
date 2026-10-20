@@ -116,7 +116,7 @@ test("INV-166 ATTACK: a body naming archived_by, owner_assigned_by, org_id or it
 test("INV-167: an owner outside the org or a viewer is refused with nothing written; an unverifiable lookup fails closed; null clears", async () => {
   wire();
   const db = script(seed());
-  const ownerLookup = (f: [string, string, unknown][]) => f.some(([, c]) => c === "user_id") && f.some(([, c]) => c === "org_id");
+  const ownerLookup = ({ filters: f }: { filters: [string, string, unknown][] }) => f.some(([, c]) => c === "user_id") && f.some(([, c]) => c === "org_id");
   assert.equal((await call(overridesPost, "member", "POST", O, { itemId: "o3", ownerUserId: USER.otherOrgMember })).status, 403);
   assert.equal((await call(overridesPost, "member", "POST", O, { itemId: "o3", ownerUserId: USER.viewer })).status, 403);
   assert.equal((await call(overridesPost, "member", "POST", O, { itemId: "o3", ownerUserId: "not-a-uuid" })).status, 400);

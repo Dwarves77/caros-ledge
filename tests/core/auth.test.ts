@@ -160,7 +160,7 @@ test("INV-155: revoke is scoped to the URL's org BEFORE the write; the token is 
   try {
     const issuing = fakeDb(() => ({ data: { id: "i2", token_last4: "aaaa", invited_email: "x@y.test", proposed_role: "member", expires_at: "2099-01-01", status: "pending", created_at: "2026-01-01" } }));
     await createInvitation(issuing.db, { orgId: ORG, userId: "u1", email: "x@y.test", role: "member", baseUrl: "https://app.example.test" });
-    issued = String(wrote(issuing.calls, "org_invitations", "insert")[0]?.payload?.token_input);
+    issued = String((wrote(issuing.calls, "org_invitations", "insert")[0]?.payload as { token_input?: unknown } | undefined)?.token_input);
     await createInvitation(fakeDb(() => ({ error: { message: `dup ${TOKEN}`, code: "23505" } })).db, { orgId: ORG, userId: "u1", email: "x@y.test", role: "member", baseUrl: "" }).catch(() => undefined);
   } finally {
     for (const { m, orig } of spies) console[m] = orig;

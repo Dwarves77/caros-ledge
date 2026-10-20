@@ -9,7 +9,6 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { isMain } from "../lib/fs.mjs";
 
 import { trackedOutputProblems } from "./tracked-output.mjs";
-import { appliedMigrations, retiredWaiverProblems } from "./waiver-check.mjs";
 
 // The operator's name is held only as a hash, so the tree itself never contains it.
 const BANNED_TOKEN_HASHES = new Set(["b8809c7a2aba20b78465f21cb521077f856c743bbf5d8dc36064d8283259f4c9"]);
@@ -111,10 +110,6 @@ export function treeProblems() {
     if (/\.(ts|tsx|js|mjs|css)$/.test(f) && /^(src|scripts|tests)\//.test(f)) problems.push(...headerRangeProblems(f, t, old));
     if (f.startsWith("src/")) problems.push(...sourceOriginProblems(f, t, allowed));
   }
-  // Until-migration parity waivers retire themselves once supabase/migrations/APPLIED.json (absent until the cutover) lists their migration.
-  const appliedFile = "supabase/migrations/APPLIED.json";
-  const applied = appliedMigrations(existsSync(appliedFile) ? JSON.parse(readFileSync(appliedFile, "utf8")) : []);
-  problems.push(...retiredWaiverProblems(JSON.parse(readFileSync("tests/parity/approved-changes.json", "utf8")), applied));
   problems.push(...dependencyProblems(JSON.parse(readFileSync("package.json", "utf8"))));
   return problems;
 }

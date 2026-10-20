@@ -99,7 +99,7 @@ test('every gated full route has baseline files, and every standing waiver names
     for (const stem of r.files) await readFile(new URL(`./baseline/${stem}.json`, import.meta.url), 'utf8');
   }
   for (const w of config.approved) {
-    assert.ok(w.ruling || w.kind === 'until-migration', `waiver ${w.id} carries its ruling`);
+    assert.ok(w.ruling, `waiver ${w.id} carries its ruling`);
     assert.ok([...config.gates.full, ...config.gates.frame].includes(w.route), `waiver ${w.id} names a gated route`);
   }
 });

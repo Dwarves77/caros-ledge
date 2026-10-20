@@ -60,7 +60,7 @@ test("the XML strip keeps a CDATA section literal and drops its markup", () => {
 
 test("a Wayback read is forbidden: a refused capture never asks an archive, and the hold carries no archive suffix", async () => {
   const net = routed(async () => new Response("Just a moment...", { status: 403 }));
-  const res = await capture("https://agency.gov/p", { family: "generic" }, { db: open(), env: {}, fetchImpl: net.fetch, sleep: instant, resolveHost: publicHost });
+  const res = await capture("https://agency.gov/p", { family: "generic" }, { throttle: null, db: open(), env: {}, fetchImpl: net.fetch, sleep: instant, resolveHost: publicHost });
   assert.equal(res.usable, false);
   assert.equal(res.holdReason, "capture_blocked");
   assert.ok(!net.calls.some((u) => /archive\.org/.test(u)), "no request went to an archive");
@@ -68,7 +68,7 @@ test("a Wayback read is forbidden: a refused capture never asks an archive, and 
 });
 test("a robots refusal is a hold with its own reason and the rule, not a generic block", async () => {
   const net = routed(async () => new Response("never", { status: 200 }), { "agency.gov": { status: 200, body: "User-agent: *\nDisallow: /p\n" } });
-  const res = await capture("https://agency.gov/p", { family: "generic" }, { db: open(), env: {}, fetchImpl: net.fetch, sleep: instant, resolveHost: publicHost });
+  const res = await capture("https://agency.gov/p", { family: "generic" }, { throttle: null, db: open(), env: {}, fetchImpl: net.fetch, sleep: instant, resolveHost: publicHost });
   assert.equal(res.holdReason, "robots_disallowed");
   assert.equal(res.refusal?.rule, "Disallow: /p");
 });
@@ -103,11 +103,11 @@ test("the Federal Register capture stores the document's raw text, and a documen
   const rawText = "https://www.federalregister.gov/documents/full_text/text/2025/01/02/2024-30001.txt";
   const world = (raw: Response) => routed(async (u) => (u === api ? Response.json({ title: "Emissions rule", abstract: "A summary of the rule.", raw_text_url: rawText }) : raw.clone()));
   const body = `<pre>${"Each operator shall report the emissions of each vessel for the calendar year. ".repeat(10)}</pre>`;
-  const good = await capture(url, { family: "federal_register", key: "2024-30001" }, { db: open(), env: {}, fetchImpl: world(new Response(body)).fetch, sleep: instant, resolveHost: publicHost });
+  const good = await capture(url, { family: "federal_register", key: "2024-30001" }, { throttle: null, db: open(), env: {}, fetchImpl: world(new Response(body)).fetch, sleep: instant, resolveHost: publicHost });
   assert.equal(good.usable, true);
   assert.match(good.text ?? "", /Each operator shall report/);
   assert.doesNotMatch(good.text ?? "", /A summary of the rule/);
-  const none = await capture(url, { family: "federal_register", key: "2024-30001" }, { db: open(), env: {}, fetchImpl: world(new Response("gone", { status: 404 })).fetch, sleep: instant, resolveHost: publicHost });
+  const none = await capture(url, { family: "federal_register", key: "2024-30001" }, { throttle: null, db: open(), env: {}, fetchImpl: world(new Response("gone", { status: 404 })).fetch, sleep: instant, resolveHost: publicHost });
   assert.equal(none.usable, false);
   assert.equal(none.text, null, "the summary is not the document");
 });

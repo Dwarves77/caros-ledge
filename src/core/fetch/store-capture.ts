@@ -3,16 +3,10 @@
 // Import-free for that reason. The idempotency key is (final URL, content hash): the same hash is `unchanged` and writes nothing; a different hash inserts a new capture row, which supersedes the old one by being newer.
 // A fresh body also closes the open stale-snapshot flags of the items on the source; an unchanged body closes none.
 export type Reply = PromiseLike<{ data: unknown; error: { message: string; code?: string } | null }>;
-export interface Query extends Reply {
-  select(columns?: string): Query;
-  eq(column: string, value: unknown): Query;
-  in(column: string, values: unknown[]): Query;
-  order(column: string): Query;
-  limit(n: number): Query;
-  single(): Query;
-}
+/** The query-builder calls the worker makes, each named (an index signature reads as possibly undefined under noUncheckedIndexedAccess). */
+export type Query = Reply & Record<"select" | "insert" | "update" | "eq" | "in" | "order" | "limit" | "single", (...args: unknown[]) => Query>;
 export interface Db {
-  from(table: string): { select(columns?: string): Query; insert(values: unknown): Query; update(values: unknown): Query };
+  from(table: string): Query;
 }
 const CAPTURE_QUERY = "capture-worker:first-fetch";
 const STALE_FLAG_CREATOR = "stale_snapshot_content_changed";

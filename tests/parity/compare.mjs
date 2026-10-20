@@ -8,7 +8,7 @@
 //
 // On a gated route FAIL means: a baseline landmark (role and name), heading, control, list container or list row is missing or reordered; a row at 375 is taller than its baseline row; a list route's baseline
 // holds no rows; the capture holds an offence the layout measure found (a target under the law-2 floor, overflow, a squeezed title); the page was taller than the screenshot ceiling; a pixelExact route's
-// image differs by more than 2 percent, or either image cannot be read. Anything a baseline has that the capture lacks must match an entry of `approved` (a look, security or until-migration ruling).
+// image differs by more than 2 percent, or either image cannot be read. Anything a baseline has that the capture lacks must match an entry of `approved` (a look or security ruling).
 // A baseline written under another capture contract is not compared: the run fails and names the recapture. Exit 0 clean, 1 on any FAIL. No browser is needed: images are read in Node (png.mjs).
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
@@ -62,12 +62,9 @@ function subsequence(baseline, captured, key) {
   return { missing, reordered };
 }
 
-// A waiver of kind 'until-migration' (with `migration` and optionally `on`: landmark, heading or control) covers a difference that exists only because production carries no new migration before the
-// cutover window. It is counted apart from the look/ruling waivers, and tree-checks retires it once supabase/migrations/APPLIED.json lists the migration.
 // Waiver usage: every waiver id that covered a difference in this run lands here, so the report can end with the waivers that covered nothing (a waiver must match a current difference).
 const USED_WAIVERS = new Set();
 const hit = (a) => { if (a) USED_WAIVERS.add(a.id); return a; };
-const untilMigration = (approved, route, kind, text) => hit(approved.find((a) => a.kind === 'until-migration' && a.route === route && (!a.on || a.on === kind) && (a.match === '*' || new RegExp(a.match).test(text))));
 // A waiver of kind 'order' (route, `match` on the control name, ruling) covers a "control reordered" line for a matching control where the old tree left the order unspecified (no secondary key, proven by file:line in the ruling)
 // and the new tree's deterministic rule stands. It waives ORDER ONLY: a missing or renamed control under the same pattern is not reordered, it fails.
 const orderWaived = (approved, route, text) => Boolean(hit(approved.find((a) => a.kind === 'order' && a.route === route && new RegExp(a.match).test(text))));
@@ -78,11 +75,8 @@ const isApproved = (approved, route, kind, text) => Boolean(hit(approved.find((a
 export function compareRecord(route, viewport, base, cap, approved, dataNames = []) {
   const fails = [];
   const used = [];
-  const until = [];
   const sort = (kind, m, line) => {
-    if (isApproved(approved, route, kind, m)) return used.push(line);
-    const w = untilMigration(approved, route, kind, m);
-    return w ? until.push({ line, migration: w.migration }) : fails.push(line);
+    return isApproved(approved, route, kind, m) ? used.push(line) : fails.push(line);
   };
   const check = (kind, baseItems, capItems, key) => {
     const { missing, reordered } = subsequence(baseItems, capItems, key);
@@ -121,7 +115,7 @@ export function compareRecord(route, viewport, base, cap, approved, dataNames = 
       }
     }
   }
-  return { fails, used, until };
+  return { fails, used };
 }
 
 // A frame route proves the shell only: its controls, headings and landmarks are limited to the shell's, the rest is page body that the full gate checks.
@@ -326,10 +320,9 @@ export async function compareRun({ captured, baseline = 'tests/parity/baseline',
         report.push(`${viewport}: ${empty}`);
         routeFail = true;
       }
-      const { fails, used, until } = compareRecord(route.name, viewport, scoped, c, approved, config.dataNames ?? []);
+      const { fails, used } = compareRecord(route.name, viewport, scoped, c, approved, config.dataNames ?? []);
       for (const f of fails) report.push(`${viewport}: ${f}`);
       if (used.length) report.push(`${viewport}: approved differences used: ${used.length}`);
-      for (const m of [...new Set(until.map((u) => u.migration))]) report.push(`${viewport}: waived until migration ${m} is applied in production: ${until.filter((u) => u.migration === m).length}`);
       routeFail ||= fails.length > 0;
       const px = await pixelLine({ stem, viewport, baseline, captured, diffDir, exact: pixelExact.has(route.name), approved, baseTiles: b.tiles ?? 1, capTiles: c.tiles });
       report.push(...px.lines);

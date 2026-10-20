@@ -29,7 +29,7 @@ test("growSources: connection, edges and credibility in one call; a dry run writ
 
 test("verification: an H candidate becomes a source at its CLASS tier, never a guessed one", async () => {
   const w = memoryDb({ system_state: [system], sources: [], provisional_sources: [], source_verifications: [] });
-  const out = await verifyCandidate({ db: w.db, now: NOW, env: {}, sleep: async () => undefined, fetchImpl: (async () => page(prose(60))) as typeof fetch }, { url: "https://www.epa.gov/clean-air", name: "EPA Clean Air", verdict: { relevance: 90, freight: 80, rationale: "freight emissions rules" } });
+  const out = await verifyCandidate({ resolveHost: null, db: w.db, now: NOW, env: {}, sleep: async () => undefined, fetchImpl: (async () => page(prose(60))) as typeof fetch }, { url: "https://www.epa.gov/clean-air", name: "EPA Clean Air", verdict: { relevance: 90, freight: 80, rationale: "freight emissions rules" } });
   assert.equal(out.data?.tier, "H");
   assert.equal(out.data?.action, "auto-approved");
   assert.equal(w.tables.sources?.[0]?.base_tier, 2);
@@ -42,7 +42,7 @@ test("verification: a non-answer is queued, only a 404 is rejected; a host the c
       if (status === "throw") throw new Error("ECONNRESET");
       return new Response("x", { status });
     }) as typeof fetch;
-    return verifyCandidate({ db: w.db, now: NOW, env: {}, sleep: async () => undefined, fetchImpl }, { url, name: "EPA" }).then((r) => ({ r, w }));
+    return verifyCandidate({ resolveHost: null, db: w.db, now: NOW, env: {}, sleep: async () => undefined, fetchImpl }, { url, name: "EPA" }).then((r) => ({ r, w }));
   };
   const dead = await run(404);
   assert.equal(dead.r.data?.action, "rejected");
@@ -52,15 +52,15 @@ test("verification: a non-answer is queued, only a 404 is rejected; a host the c
   assert.equal(walled.w.tables.provisional_sources?.[0]?.provisional_tier, 7);
   assert.equal((await run("throw")).r.data?.action, "queued-provisional");
   const unplaced = memoryDb({ system_state: [system], sources: [], provisional_sources: [], source_verifications: [] });
-  const out = await verifyCandidate({ db: unplaced.db, now: NOW, env: {}, sleep: async () => undefined, fetchImpl: (async () => page(prose(60))) as typeof fetch }, { url: "https://some-unknown-site.example/p", name: "", verdict: { relevance: 95, freight: 95, rationale: "x" } });
+  const out = await verifyCandidate({ resolveHost: null, db: unplaced.db, now: NOW, env: {}, sleep: async () => undefined, fetchImpl: (async () => page(prose(60))) as typeof fetch }, { url: "https://some-unknown-site.example/p", name: "", verdict: { relevance: 95, freight: 95, rationale: "x" } });
   assert.notEqual(out.data?.action, "auto-approved");
   assert.equal(unplaced.tables.sources?.length ?? 0, 0);
 });
 test("verification: the cadence-off hold refuses the probe, and a dry run writes nothing", async () => {
   const off = memoryDb({ system_state: [{ ...system, scrape_cadence: "off" }] });
-  await assert.rejects(() => verifyCandidate({ db: off.db, now: NOW, env: {}, sleep: async () => undefined, fetchImpl: (async () => page("x")) as typeof fetch }, { url: "https://www.epa.gov/p", name: "EPA" }), /FETCH_HOLD_ENGAGED/);
+  await assert.rejects(() => verifyCandidate({ resolveHost: null, db: off.db, now: NOW, env: {}, sleep: async () => undefined, fetchImpl: (async () => page("x")) as typeof fetch }, { url: "https://www.epa.gov/p", name: "EPA" }), /FETCH_HOLD_ENGAGED/);
   const dry = memoryDb({ system_state: [system], sources: [] });
-  const out = await verifyCandidate({ db: dry.db, now: NOW, env: {}, sleep: async () => undefined, fetchImpl: (async () => page(prose(60))) as typeof fetch }, { url: "https://www.epa.gov/p", name: "EPA", dry: true, verdict: { relevance: 90, freight: 80, rationale: "x" } });
+  const out = await verifyCandidate({ resolveHost: null, db: dry.db, now: NOW, env: {}, sleep: async () => undefined, fetchImpl: (async () => page(prose(60))) as typeof fetch }, { url: "https://www.epa.gov/p", name: "EPA", dry: true, verdict: { relevance: 90, freight: 80, rationale: "x" } });
   assert.equal(out.data?.action, "auto-approved");
   assert.equal(dry.writes.filter((x) => x.op !== "select").length, 0);
 });

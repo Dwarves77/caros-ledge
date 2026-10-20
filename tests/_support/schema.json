@@ -2429,6 +2429,18 @@
     }
    ]
   },
+  "migration_log": {
+   "columns": [
+    "file",
+    "applied_at",
+    "self_check"
+   ],
+   "uuid": [],
+   "defaults": {
+    "applied_at": "__now"
+   },
+   "fks": []
+  },
   "moderation_reports": {
    "columns": [
     "id",

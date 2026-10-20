@@ -9,7 +9,7 @@
 --   0058  compared the count of ALL published directory cells with 2 and read single rows by dimension: it failed on production once five organisations shared a live cell. Here every cell is a sector only the fixture uses, so the
 --         assertions hold whatever else the table holds.
 --   0069  asserted `NOT (res->>'trigger_enabled')::boolean` on the result of the function it replaced: 0068's function has no such key, the expression is NULL, an IF on NULL does not fire, and the check passed
---         with 0069's CREATE OR REPLACE removed (the self-check mutant of selfcheck:0069 was green). Here the key must be present, and the function may not take the replica role to plant its fixture.
+--         with 0069's CREATE OR REPLACE removed. Here the key must be present, and the function may not take the replica role to plant its fixture.
 -- The fixtures are inserted inside a sub-transaction that a sentinel rolls back; every row is the file's own.
 --
 -- Reversal: supabase/migrations/down/0073.sql (nothing to undo: the file changes nothing).

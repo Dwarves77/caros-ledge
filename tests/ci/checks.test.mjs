@@ -114,17 +114,14 @@ test('IMP-029: the bundle must EXPORT what the source exports and DECLARE what t
 });
 
 // ---- changes ----
-test('the scope of a change: a push or a dispatch needs everything; a pull request needs what it touches (anything the build reads for the parity job, scripts/ and tests/ for Windows, the database files for the schema mutants)', () => {
-  assert.deepEqual(scopeOf([], 'push'), { parity: true, windows: true, mutant_classes: 'fast,slow,schema' });
-  assert.deepEqual(scopeOf(['docs/x.md'], 'pull_request'), { parity: false, windows: false, mutant_classes: 'fast' });
+test('the scope of a change: a push or a dispatch needs everything; a pull request needs what it touches (anything the build reads for the parity job, scripts/ and tests/ for Windows)', () => {
+  assert.deepEqual(scopeOf([], 'push'), { parity: true, windows: true });
+  assert.deepEqual(scopeOf(['docs/x.md'], 'pull_request'), { parity: false, windows: false });
   assert.equal(scopeOf(['src/core/shared/x.ts'], 'pull_request').parity, true, 'a change to src/core can change what every page renders');
   for (const f of ['package-lock.json', 'next.config.ts', 'tests/_support/memdb.ts', 'supabase/schema.sql', 'public/x.png', '.github/workflows/ci.yml']) assert.equal(scopeOf([f], 'pull_request').parity, true, f);
   assert.equal(scopeOf(['scripts/ci/loc.mjs'], 'pull_request').windows, true);
   assert.equal(scopeOf(['tests/ci/x.test.mjs'], 'pull_request').windows, true);
   assert.equal(scopeOf(['docs/a.md'], 'pull_request').windows, false);
-  assert.equal(scopeOf(['supabase/migrations/0070_x.sql'], 'pull_request').mutant_classes, 'fast,schema');
-  assert.equal(scopeOf(['src/app/page.tsx'], 'pull_request').mutant_classes, 'fast,slow');
-  assert.equal(scopeOf(['tests/mutants/registry.json'], 'pull_request').mutant_classes, 'fast,slow,schema', 'a change to the registry or the runner runs every class');
 });
 
 // ---- gates ----

@@ -1,5 +1,4 @@
-// What a migration statement does, decided once for the static check (migration-checks.mjs: the self-check must come after the last change) and the self-check mutants (the transform that removes the change and keeps the
-// self-check). A statement CHANGES the database when its first keyword is DDL or DML and it is not on a temporary table the file made for its own use.
+// What a migration statement does, decided once for the static check (migration-checks.mjs: the self-check must come after the last change). A statement CHANGES the database when its first keyword is DDL or DML and it is not on a temporary table the file made for its own use.
 import { splitStatements } from "../sql-split.mjs";
 
 const CHANGES = new Set(["CREATE", "ALTER", "DROP", "GRANT", "REVOKE", "INSERT", "UPDATE", "DELETE", "COMMENT", "TRUNCATE", "REINDEX", "REFRESH"]);

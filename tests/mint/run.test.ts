@@ -175,13 +175,13 @@ test("the limit applies to the MINTABLE rows that remain after the held exclusio
 test("a fetch hold DEFERS the row (it stays would_mint, no hold is written, nothing is fetched); a usable capture mints through the free transport", async () => {
   const db = emptyWorld();
   const id = addRow(db, 1, {}, null);
-  const held = makeDeps(db, { fetch: { db: db.client, env: { SCRAPE_HOLD: "engaged" }, caller: null, fetchImpl: (async () => { throw new Error("must not fetch"); }) as typeof fetch } });
+  const held = makeDeps(db, { fetch: { db: db.client, resolveHost: null, throttle: null, env: { SCRAPE_HOLD: "engaged" }, caller: null, fetchImpl: (async () => { throw new Error("must not fetch"); }) as typeof fetch } });
   const r1 = await runMint(held.deps, { mode: "apply" });
   assert.deepEqual([r1.counts.deferred, r1.counts.held ?? 0], [1, 0]);
   assert.equal(census(db, id).dryrun_disposition, "would_mint");
   const html = `<html><head><title>x</title></head><body>${textOf(1).split("\n").map((l) => `<p>${l}</p>`).join("")}</body></html>`;
   const calls: string[] = [];
-  const open = makeDeps(db, { fetch: { db: db.client, env: {}, caller: "manual-intake-run", sleep: async () => undefined, fetchImpl: (async (u: string) => (calls.push(String(u)), new Response(html, { headers: { "content-type": "text/html" } }))) as typeof fetch } });
+  const open = makeDeps(db, { fetch: { db: db.client, resolveHost: null, throttle: null, env: {}, caller: "manual-intake-run", sleep: async () => undefined, fetchImpl: (async (u: string) => (calls.push(String(u)), new Response(html, { headers: { "content-type": "text/html" } }))) as typeof fetch } });
   const r2 = await runMint(open.deps, { mode: "apply" });
   assert.equal(r2.counts.minted, 1, r2.notes.join("; "));
   assert.ok(calls.filter((u) => !u.endsWith("/robots.txt"))[0]?.startsWith("https://publications.europa.eu/resource/celex/"), "Cellar first (robots.txt is asked before it)");

@@ -82,7 +82,7 @@ test("each field degrades on its own: a failed read is null and named in `degrad
 test("an unreadable roster degrades members and overrides together, since overrides need it for owner names", async () => {
   wire();
   const db = script(fill(seed()));
-  db.fail("org_memberships", "select", { message: "roster down" }, { when: (f) => !f.some(([, c]) => c === "user_id") });
+  db.fail("org_memberships", "select", { message: "roster down" }, { when: (call) => !call.filters.some(([, c]) => c === "user_id") });
   const res = await get("admin");
   assert.equal(res.status, 200);
   assert.deepEqual([res.body.members, res.body.overrides], [null, null]);

@@ -81,7 +81,7 @@ test("keys for the registry that has none: the oldest row of an institution take
 });
 test("classify-sources never overwrites a stored role; it fills a NULL once, and sets the rights verdict where the class fixes it", async () => {
   const name = "International Maritime Organization";
-  assert.ok(classifySourceRole(name, "https://www.imo.org/") && classifySourceRole(name, "https://www.imo.org/") !== "operator_set_role");
+  assert.ok(classifySourceRole(name, "https://www.imo.org/"));
   const w = memoryDb({
     sources: [
       { id: "kept", name, url: "https://www.imo.org/", source_role: "operator_set_role", source_type: ["regulator"], jurisdiction_iso: [], scope_topics: [], scope_modes: [], scope_verticals: [], expected_output: null, created_at: "2026-01-01", institution_key: null, reuse_terms: "unknown" },

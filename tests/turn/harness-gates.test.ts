@@ -16,7 +16,7 @@ import { MemDb } from "../_support/memdb.ts";
 const NOW = new Date("2026-10-19T12:00:00.000Z");
 const ROOT = "d0000000-0000-4000-8000-000000000001";
 const uuid = (n: number) => `d0000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
-const row = (n: number, over: Partial<RunRow> = {}): RunRow => ({ id: uuid(n), family: "source-sweep", root_run_id: ROOT, upstream_run_id: null, trigger: "dispatch", mode: "apply", forced_dry: false, outcome: "success", reason: null, inputs: {}, outputs: { counts: { upserted: 1 } }, error: null, code_sha: null, github_run_id: null, started_at: NOW.toISOString(), finished_at: NOW.toISOString(), ...over });
+const row = (n: number, over: Partial<RunRow> = {}): RunRow & Record<string, unknown> => ({ id: uuid(n), family: "source-sweep", root_run_id: ROOT, upstream_run_id: null, trigger: "dispatch", mode: "apply", forced_dry: false, outcome: "success", reason: null, inputs: {}, outputs: { counts: { upserted: 1 } }, error: null, code_sha: null, github_run_id: null, started_at: NOW.toISOString(), finished_at: NOW.toISOString(), ...over });
 const world = (cadence: "off" | "weekly" = "weekly") => new MemDb().seed("system_state", [{ id: true, scrape_cadence: cadence, scrape_start_date: "2026-10-15", global_processing_paused: false }]);
 const harness = (db: MemDb | null, fns: Record<string, FamilyFn>, env: Record<string, string | undefined> = {}, extra: Partial<HarnessDeps> = {}): HarnessDeps => ({ sb: db ? db.client : null, env, now: () => NOW, fns, sleep: async () => undefined, ...extra });
 const ok = (counts: Record<string, number>): FamilyFn => async () => runResult("ok", counts, []);
@@ -31,6 +31,17 @@ test("G7: a stage whose units failed is `partial`, and chainProof is not ok on i
   const clean = world();
   await runChain(["source-sweep", "research-walker"], { mode: "apply", trigger: "dispatch", rootRunId: ROOT }, harness(clean, { "source-sweep": ok({ upserted: 3 }), "research-walker": ok({ minted: 1 }) }));
   assert.equal((await chainProof(clean.client, ROOT, ["source-sweep", "research-walker"])).ok, true, "the same chain with no failed unit is ok");
+});
+
+test("a family that throws, or returns failed, is recorded as failed and exits 1; the chain stops there and every family behind it is recorded refused, so the ledger is complete and the proof is not ok", async () => {
+  for (const broken of [async () => runResult("failed", {}, ["broke"]), async (): Promise<ReturnType<typeof runResult>> => { throw new Error("threw"); }] as FamilyFn[]) {
+    const db = world();
+    const runs = await runChain(["source-sweep", "research-walker", "change-detection"], { mode: "apply", trigger: "dispatch", rootRunId: ROOT }, harness(db, { "source-sweep": broken, "research-walker": ok({ minted: 1 }), "change-detection": ok({ checked: 1 }) }));
+    assert.deepEqual(runs.map((r) => r.exit), [1, 0, 0]);
+    assert.deepEqual(db.rows("harness_runs").map((r) => [r.family, r.outcome, r.reason]), [["source-sweep", "failed", db.rows("harness_runs")[0]!.reason], ["research-walker", "refused", "upstream source-sweep failed"], ["change-detection", "refused", "upstream source-sweep failed"]]);
+    const proof = await chainProof(db.client, ROOT, ["source-sweep", "research-walker", "change-detection"]);
+    assert.deepEqual([proof.ok, proof.missing, proof.failed, [...proof.held].sort()], [false, [], ["source-sweep"], ["change-detection:refused", "research-walker:refused"]]);
+  }
 });
 
 test("G7: a partial mint still minted its items, so the minted ids and THE GATE count it", async () => {
@@ -145,7 +156,7 @@ test("G3: a run that cannot proceed for a missing secret skips only where the ev
   assert.match(fork.message, /fork cannot carry secrets; not set: SUPABASE_SERVICE_ROLE_KEY, WORKER_SECRET/);
   for (const env of [
     { GITHUB_ACTIONS: "true", GITHUB_EVENT_NAME: "pull_request", GITHUB_EVENT_PATH: event(false) }, // a same-repo PR carries secrets
-    { GITHUB_ACTIONS: "true", GITHUB_EVENT_NAME: "deployment_status" },
+    { GITHUB_ACTIONS: "true", GITHUB_EVENT_NAME: "status" },
     { GITHUB_ACTIONS: "true", GITHUB_EVENT_NAME: "workflow_dispatch" },
     { GITHUB_ACTIONS: "true", GITHUB_EVENT_NAME: "push" },
     { GITHUB_ACTIONS: "true", GITHUB_EVENT_NAME: "pull_request" }, // no readable payload: not provably a fork

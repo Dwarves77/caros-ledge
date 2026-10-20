@@ -99,12 +99,12 @@ test("vertical-fit gate: a retired host is refused, an unreadable negative list 
 test("triage: while the cadence is off the hold refuses every fetch, so nothing is recovered and nothing is written without apply", async () => {
   const w = memoryDb({ system_state: [{ id: true, scrape_cadence: "off", global_processing_paused: false }], sources: [{ id: "a", url: "https://epa.gov/x", name: "EPA", base_tier: 2, status: "suspended" }] });
   let calls = 0;
-  const out = await triageSuspended({ db: w.db, now: () => new Date("2026-10-15T00:00:00Z"), env: {}, fetchImpl: (async () => (calls++, new Response("x"))) as typeof fetch, sleep: async () => undefined });
+  const out = await triageSuspended({ resolveHost: null, db: w.db, now: () => new Date("2026-10-15T00:00:00Z"), env: {}, fetchImpl: (async () => (calls++, new Response("x"))) as typeof fetch, sleep: async () => undefined });
   assert.equal(calls, 0);
   assert.equal(out.counts.errored, 1);
   assert.equal(w.wrote("sources", "update").length, 0);
   const down = memoryDb({}, { failures: [{ table: "sources", op: "select", message: "down" }] });
-  assert.equal((await triageSuspended({ db: down.db, now: () => new Date(), env: {} })).outcome, "failed");
+  assert.equal((await triageSuspended({ resolveHost: null, db: down.db, now: () => new Date(), env: {} })).outcome, "failed");
 });
 
 test("change: the reconcile pass records the trigger and stages for live items only, then stamps the queue row; dry writes nothing; a queue read failure fails the pass", async () => {

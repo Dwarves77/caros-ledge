@@ -1,5 +1,5 @@
 // A test per export the core audit (C:119) found no test naming: the gate read's cousins, the streamed byte cap, the access-wall detector, the fetch outcome, the transport order, the held-pool read, the harness proofs and the small
-// pure helpers beside them. Each states what the function promises and plants the input that breaks the promise. (revalidateItem, fetchDocumentApi and fetchHeadless stay on tests/ci/untested-exports.json: the cache stand-in
+// pure helpers beside them. Each states what the function promises and plants the input that breaks the promise. (revalidateItem, fetchDocumentApi and fetchHeadless are not tested here: the cache stand-in
 // swallows revalidateTag and the other two need a live transport.)
 import assert from "node:assert/strict";
 import { test } from "node:test";

@@ -13,7 +13,7 @@ import { installLedgerRpcs } from "../_support/ledger-rpcs.ts";
 import { factClaim, ITEM, makeWorld, OFFICIAL_TEXT, SOURCE, SPAN_FORCE, SPAN_PENALTY, SPAN_REPORT } from "./fixtures.ts";
 import { MemDb } from "./memdb.ts";
 
-const row = (text: string, over: Record<string, unknown> = {}) => ({ id: undefined as string | undefined, section_row_id: "s1", claim_text: text, claim_kind: "FACT", source_span: `span of ${text}`, source_id: SOURCE, search_result_id: "r1", source_tier_at_grounding: 1, ...over });
+const row = (text: string, over: Record<string, unknown> = {}) => ({ section_row_id: "s1", claim_text: text, claim_kind: "FACT", source_span: `span of ${text}`, source_id: SOURCE, search_result_id: "r1", source_tier_at_grounding: 1, ...over });
 
 test("diffLedger is non-destructive: a result has no delete; a claim the new ledger omits is NOT-REPRODUCED, a duplicate collapses", () => {
   const existing = [row("a", { id: "1" }), row("b", { id: "2" })];

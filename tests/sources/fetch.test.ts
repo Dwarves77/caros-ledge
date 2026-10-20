@@ -22,14 +22,14 @@ test("INV-177: a fetch while the cadence is off is refused, and nothing reaches 
   const { db } = state({ scrape_cadence: "off" });
   let calls = 0;
   const fetchImpl = (async () => (calls++, respond(html(prose(30))))) as typeof fetch;
-  await assert.rejects(() => fetchDirect("https://agency.gov/a", { db, env: {}, fetchImpl }, { max: 100_000 }), FetchHoldError);
+  await assert.rejects(() => fetchDirect("https://agency.gov/a", { resolveHost: null, db, env: {}, fetchImpl }, { max: 100_000 }), FetchHoldError);
   assert.equal(calls, 0);
 });
 test("INV-177: a fetch while the env hold is engaged is refused, whatever the cadence", async () => {
   const { db } = state();
   let calls = 0;
   const fetchImpl = (async () => (calls++, respond(html(prose(30))))) as typeof fetch;
-  await assert.rejects(() => fetchDirect("https://agency.gov/a", { db, env: { SCRAPE_HOLD: "1" }, fetchImpl }, { max: 100_000 }), (e: unknown) => e instanceof FetchHoldError && e.reason === "hold_engaged");
+  await assert.rejects(() => fetchDirect("https://agency.gov/a", { resolveHost: null, db, env: { SCRAPE_HOLD: "1" }, fetchImpl }, { max: 100_000 }), (e: unknown) => e instanceof FetchHoldError && e.reason === "hold_engaged");
   assert.equal(calls, 0);
 });
 
@@ -39,7 +39,7 @@ test("INV-177: exactly two signed callers pass an engaged hold or a cadence of o
   for (const caller of ["unit3-remediation", "manual-intake-run"]) assert.deepEqual(await fetchAllowed("https://x.test", caller, { db, env }), { allowed: true, reason: "signed_caller" });
   for (const caller of ["capture-worker", "Unit3-Remediation", "", null, undefined]) assert.equal((await fetchAllowed("https://x.test", caller, { db, env })).allowed, false, String(caller));
   const net = routed(async () => respond(html(prose(30))));
-  const res = await fetchDirect("https://agency.gov/a", { db, env, fetchImpl: net.fetch, sleep: instant, caller: "manual-intake-run" }, { max: 100_000 });
+  const res = await fetchDirect("https://agency.gov/a", { resolveHost: null, db, env, fetchImpl: net.fetch, sleep: instant, caller: "manual-intake-run" }, { max: 100_000 });
   assert.equal(res.status, 200);
   assert.equal(net.calls.length, 1);
 });
@@ -58,7 +58,7 @@ test("INV-177: an open cadence with a lifted hold lets an unsigned caller throug
   const open = state();
   assert.deepEqual(await fetchAllowed("https://x.test", null, { db: open.db, env: {} }), { allowed: true, reason: "lifted" });
   const off = state({ scrape_cadence: "off" });
-  await assert.rejects(() => checkReachability("https://x.test", { db: off.db, env: {}, fetchImpl: (async () => respond("x")) as typeof fetch }), FetchHoldError);
+  await assert.rejects(() => checkReachability("https://x.test", { resolveHost: null, db: off.db, env: {}, fetchImpl: (async () => respond("x")) as typeof fetch }), FetchHoldError);
 });
 test("scrape window: weekly lands on the anchor weekday, monthly clamps a short month, off and unanchored never run", () => {
   assert.equal(scrapeWindowOpen({ cadence: "weekly", startDate: "2026-01-05" }, new Date("2026-10-12T10:00:00Z")), true);
@@ -117,7 +117,7 @@ test("INV-007: a static-text primary is captured in full through the free direct
   const { db } = state();
   const body = html(prose(60));
   const fetchImpl = (async () => respond(body)) as typeof fetch;
-  const res = await fetchDirect("https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32023R0956", { db, env: {}, fetchImpl: routed(fetchImpl as never).fetch, sleep: instant }, { max: 1_000_000 });
+  const res = await fetchDirect("https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32023R0956", { resolveHost: null, db, env: {}, fetchImpl: routed(fetchImpl as never).fetch, sleep: instant }, { max: 1_000_000 });
   assert.equal(res.status, 200);
   assert.ok(res.text.length > 200);
   assert.equal(res.truncated, false);
@@ -159,7 +159,7 @@ test("PROP-103: a size cap never binds silently; the ceiling bind is declared an
 });
 test("PROP-103: the direct transport reports truncation against its own cap", async () => {
   const { db } = state();
-  const res = await fetchDirect("https://agency.gov/a", { db, env: {}, fetchImpl: routed(async () => respond(html(prose(400)))).fetch, sleep: instant }, { max: 1000 });
+  const res = await fetchDirect("https://agency.gov/a", { resolveHost: null, db, env: {}, fetchImpl: routed(async () => respond(html(prose(400)))).fetch, sleep: instant }, { max: 1000 });
   assert.equal(res.truncated, true);
   assert.ok(res.fullLength > 1000);
   assert.equal(res.text.length, 1000);

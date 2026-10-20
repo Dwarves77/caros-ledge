@@ -28,14 +28,18 @@ export class MemDb extends Shared {
   get log(): Logged[] {
     return this.calls;
   }
+  /** A scripted rpc of the workspace world: it answers the data itself (a throw is the error) and is given the signed-in caller (see memClient). */
+  scriptRpc(name: string, fn: (args: Record<string, unknown>, who: Who | null) => unknown): void {
+    this.rpcs[name] = fn as unknown as Shared["rpcs"][string];
+  }
   /** The next injected failure for a call; the workspace world's emulated rpcs ask by (table, op, filters). */
   override takeFailure(first: Parameters<Shared["takeFailure"]>[0] | string, op?: string, filters: [string, string, unknown][] = []): Err {
-    return super.takeFailure(typeof first === "string" ? { table: first, op: op as never, filters } : first);
+    return super.takeFailure(typeof first === "string" ? { table: first, op: op as never, filters, orders: [] } : first);
   }
   /** Inject a failure: `times` matching calls fail (omitted: every one); `when` sees the call's filters. */
-  override fail(table: string, op: Parameters<Shared["fail"]>[1], error: DbError | string = { message: "boom" }, opts: { times?: number; when?: (filters: [string, string, unknown][]) => boolean } = {}): this {
+  override fail(table: string, op: Parameters<Shared["fail"]>[1], error: DbError | string = { message: "boom" }, opts: Parameters<Shared["fail"]>[3] = {}): this {
     const e = typeof error === "string" ? { message: error } : error;
-    return super.fail(table, op, e.message, { ...(e.code ? { code: e.code } : {}), ...(opts.times === undefined ? {} : { times: opts.times }), ...(opts.when ? { when: (c) => opts.when?.(c.filters) ?? true } : {}) });
+    return super.fail(table, op, e.message, { ...(e.code ? { code: e.code } : {}), ...opts });
   }
 }
 
