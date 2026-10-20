@@ -2,12 +2,10 @@
 // Ported from old_repo/scripts/turns/export-questions-for-answers.mjs (lines 19-166)
 // Question answers applied (ADR-044): an answered question is written as an INFERENCE record through the one registration function (never a fact), the question flag is closed naming the inference and the pool it was
 // answered against; an unanswerable one records that outcome on the flag and raises (or refreshes) ONE holdings-need target the research walker reads. A re-apply of the same batch writes nothing new; a changed
-// held pool re-opens the question for a re-answer (the supersedes chain keeps the history). The answered items' cache is flushed in the same run.
+// held pool re-opens the question for a re-answer (the supersedes chain keeps the history).
 import type { Db } from "@/core/db";
 import { holdingsNeedRow, loadOpenNeedTargets, needAction, needOfFlag, parseQuestionRef, type NeedFlag, type ParsedQuestionRef } from "@/core/flags/need-targets";
 import { registerFirstInference } from "@/core/propagation";
-import { itemTag } from "@/core/cache";
-import { runResult } from "@/core/types/run-result";
 import { rowsByIds } from "@/core/db";
 
 import { applyEntries, isObj, type ApplyOpts, type BatchDeps, type BatchExport, type EntrySpec, type Obj } from "../../kit/session-batch";
@@ -110,13 +108,6 @@ const questionAnswersSpec: EntrySpec<QaState, Plan> = {
       if (!ok) bad.push(String(w.entry.subject_ref));
     }
     return bad;
-  },
-  async downstream(deps, _live, written) {
-    const items = [...new Set(written.filter((w) => w.entry.outcome === "answered").map((w) => parseQuestionRef(w.entry.subject_ref)?.itemId).filter((x): x is string => !!x))];
-    if (!items.length) return null;
-    if (!deps.flushCache) return runResult("partial", {}, ["cache flush owed: no flush is wired in this run"]);
-    const f = await deps.flushCache(items.map(itemTag));
-    return f.error ? runResult("partial", {}, [`cache flush: ${f.error}`]) : runResult("ok", { cache_flushed: items.length });
   },
 };
 

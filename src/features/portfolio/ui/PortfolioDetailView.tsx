@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { VOCABULARIES } from "@/core/contracts";
-import { BAND_ORDER, bandFromPriority, type ListRowFields } from "@/core/lists";
+import { BAND_ORDER, bandFromPriority, NEUTRAL_BAND, type ListRowFields } from "@/core/lists";
 import { countNoun } from "@/core/shared";
 import { Button, CardFoot, InlineErrorBanner, Input, ListRow, ListRowHeader, Masthead, Menu, RailCard, SectionCard, SectionHead, StatBlock, StateNote } from "@/ui";
 import { PageFrame } from "@/ui/shell";
@@ -156,7 +156,7 @@ export function PortfolioDetailView({ view, readOnly, dateLabel, nowIso }: { vie
               <SectionHead title={`Corridors and entities · ${entityRows.length}`} aside="Spine entities" />
               <ListRowHeader titleLabel="Name" />
               {entityRows.map((e) => (
-                <ListRow key={e.entityId} href={`/search?q=${encodeURIComponent(e.label)}`} band={bandFromPriority(null)} jurisdiction={(ENTITY_KIND_LABEL[e.entityKind] ?? e.entityKind).slice(0, 5).toUpperCase()} title={e.label} meta={ENTITY_KIND_LABEL[e.entityKind] ?? e.entityKind} overflow={readOnly ? undefined : <Menu label={`Actions for ${e.label}`} items={removeItem(() => void remove({ entityId: e.entityId }))} />} />
+                <ListRow key={e.entityId} href={`/search?q=${encodeURIComponent(e.label)}`} band={NEUTRAL_BAND} jurisdiction="" title={e.label} meta={ENTITY_KIND_LABEL[e.entityKind] ?? e.entityKind} overflow={readOnly ? undefined : <Menu label={`Actions for ${e.label}`} items={removeItem(() => void remove({ entityId: e.entityId }))} />} />
               ))}
               <CardFoot left="Open an entity to search the platform for what it holds about it." right={null} />
             </SectionCard>

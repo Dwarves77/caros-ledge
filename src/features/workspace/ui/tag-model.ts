@@ -14,7 +14,7 @@ export function visibleRows(tags: TagOption[], query: string): TagOption[] {
 }
 
 /** True when some tag's name equals the query exactly, case-insensitively: the comparison the database's generated name_key makes (migration 313), so this never disagrees with the server about what already exists. */
-export function hasExactMatch(tags: TagOption[], query: string): boolean {
+function hasExactMatch(tags: TagOption[], query: string): boolean {
   const q = query.trim().toLowerCase();
   return !q || tags.some((t) => t.name.trim().toLowerCase() === q);
 }

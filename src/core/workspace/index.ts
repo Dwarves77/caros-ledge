@@ -1,12 +1,11 @@
 export { deriveRoleScopeFromComplianceObjectTags, findBand, getWorkspaceProfile, ORG_ROLES, ORG_SIZE_DIMENSIONS, parseOrgProfile, PROFILE_JSON_KEYS, readWorkspaceProfile, validateProfileInput } from "./profile";
 export type { OrgProfile, OrgSize, WorkspaceProfile } from "./profile";
 export { currentObligationObjects, dutyHoldersExcludeForwarder, fetchObligationObjectsForItem, relevanceForItem, summariseObligationBinding } from "./relevance";
-export type { ItemApplicability, ItemRelevance, ObligationBinding, ObligationObject, RelevanceDeps } from "./relevance";
+export type { ItemApplicability, ItemRelevance, ObligationBinding, ObligationObject, RelevanceDeps, RelevanceInput } from "./relevance";
 export { canWrite, collabFail, collabOk, displayNameOf, isOrgAdmin, itemIdFromDetailPath, loadRoster, MAX_ASSIGNEES_PER_REQUEST, nameIndex, namesAfterWrite, NOTE_MAX_LENGTH, orgWatchersOf, readJsonObject, runCollab } from "./roster";
 export type { CollabCtx, CollabItem, CollabResult, RosterMember } from "./roster";
 export { applyWorkspaceSeed, useWorkspaceStore } from "./store";
 export type { WorkspaceSeed } from "./store";
-export type { RelevanceInput } from "./viewer-relevance";
 export { patchWorkspaceSettings } from "./settings";
 export type { PatchResult, SettingsColumn } from "./settings";
 export { ALL_SECTORS, HIGHLIGHTED_SECTOR_IDS, JURISDICTIONS, MODES, REGIONS, regionGroupForLabel } from "./vocabulary";

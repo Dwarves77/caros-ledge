@@ -9,6 +9,6 @@ export { confidenceFromPedigree, lifecycleFromFactorOriginClass, createMethodReg
 export type { MarketMethodDeps, MethodContext, MethodFn, MethodRegistry, MethodResult } from "./methods";
 export { fetchSupersededNotices } from "./notices";
 export type { SupersededNotice } from "./notices";
-export { registerDerivedValue, registerFirstInference, registerInferenceRecord } from "./register";
+export { authorDerivedValue, registerDerivedValue, registerFirstInference, registerInferenceRecord } from "./register";
 export { evaluateSignpostPredicate, fireSignpost } from "./signpost";
 export type { Admissibility, Derivation, InputRef, Lifecycle, OriginClass, Use, Value, Verdict } from "./types";

@@ -15,9 +15,11 @@ import { filterByWindow, WINDOW_OPTIONS } from "@/ui/list-surface/filter-sort";
 import { ShellCommandBar } from "@/ui/shell/CommandBar";
 import { DenominatorLine } from "@/features/coverage";
 import { useTagsFacet } from "@/features/regulations/useTagsFacet";
+import { itemTypeLabel } from "@/features/market/lib/item-type";
+import { severityLabel } from "@/features/market/lib/severity";
 
 import { horizonMetaLabel } from "../model/assessment-view";
-import { NEW_WINDOW_DAYS, SEVERITY_LABELS, severityOf, THEME_KEYS, themeLabel, themeOf } from "../model/taxonomy";
+import { NEW_WINDOW_DAYS, THEME_KEYS, themeLabel, themeOf } from "../model/taxonomy";
 import { UNCLASSIFIED } from "../theme-rules";
 import type { ResearchPageData } from "../read/research-reads";
 
@@ -84,8 +86,8 @@ export function ResearchList({ data, nowIso, chips, denominator, chipsFailed = f
     () =>
       bandedRows(filtered, {
         list: "research", menuLabel: "Research item actions", bandKey: filter.band, now,
-        meta: (r) => [r.type, themeOf(r) ? themeLabel(themeOf(r) as string) : null, r.sub || (r.modes ?? []).join(", "), horizonMetaLabel(assessments?.[r.id])].filter(Boolean).join(" · "),
-        kind: (r) => (r.severity ? SEVERITY_LABELS[severityOf([r.title, r.whatIsIt, r.whyMatters].filter(Boolean).join(" "), r.added, r.severity, now)] : undefined),
+        meta: (r) => [itemTypeLabel(r.type), themeOf(r) ? themeLabel(themeOf(r) as string) : null, r.sub || (r.modes ?? []).join(", "), horizonMetaLabel(assessments?.[r.id])].filter(Boolean).join(" · "),
+        kind: (r) => severityLabel(r.severity) ?? undefined,
       }),
     [filtered, filter.band, now, assessments],
   );

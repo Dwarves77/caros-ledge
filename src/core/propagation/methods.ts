@@ -7,7 +7,7 @@
 // stays reproducible against the code its computed_by names. A method that nothing can dispatch is not registered (signpost_watch was dead). The
 // two market methods call into the market slice through MarketMethodDeps (carbonIntensity, computeSeriesDeltas); P2-08 wires them.
 import { FLOOR } from "./admissible";
-import { INFER_METHOD_ID, INFER_METHOD_VERSION, type StatusToken } from "./register";
+import { INFER_METHOD_ID, INFER_METHOD_VERSION, INFER_METHOD_VERSION_V1, type StatusToken } from "./register";
 import type { Admissibility, Derivation, Lifecycle, OriginClass } from "./types";
 
 export interface ResolvedMethodInput {
@@ -37,6 +37,7 @@ const methodKey = (methodId: string, methodVersion: string): string => `${method
 class MethodRegistry {
   private readonly derived = new Map<string, MethodFn>();
   private readonly inference = new Map<string, InferenceFn>();
+  private readonly newest = new Map<string, string>();
 
   /** Register once. A second registration of the same key (in either table) throws: the key is a promise about the code. */
   register(table: "derived_values", id: string, version: string, fn: MethodFn): void;
@@ -46,6 +47,11 @@ class MethodRegistry {
     if (this.derived.has(key) || this.inference.has(key)) throw new Error(`registerMethod: "${key}" is already registered; a method is never silently overwritten. Register a NEW version for changed behaviour.`);
     if (table === "derived_values") this.derived.set(key, fn as MethodFn);
     else this.inference.set(key, fn as InferenceFn);
+    this.newest.set(`${table}:${id}`, version);
+  }
+  /** The version registered last for a method id: a row computed by an older version is recomputed by this one, and its successor is written under this version. */
+  latestVersion(table: MethodTable, id: string): string | undefined {
+    return this.newest.get(`${table}:${id}`);
   }
   get(table: "derived_values", id: string, version: string): MethodFn | undefined;
   get(table: "inference_records", id: string, version: string): InferenceFn | undefined;
@@ -65,6 +71,9 @@ export interface PriorInferenceRow {
   claim_text: string;
   cited_item_ids: string[];
   trigger_question_ref: string | null;
+  status_token: StatusToken;
+  confidence: number;
+  origin_class: "derived" | "modelled";
 }
 
 /** Recompute an inference against its resolved inputs: HYPOTHESIS at the analysis floor, never self-labelled CONFIRMED (ADR-044). */
@@ -76,6 +85,22 @@ const computeInferFromQuestion: InferenceFn = (ctx) => {
   if ((ctx.inputs ?? []).length > 0 && resolved.length === 0) return { ok: false, reason: "every declared input is unresolvable" };
   const token: StatusToken = "HYPOTHESIS";
   return { ok: true, claimText: `${prior.claim_text} (recomputed against ${resolved.length} resolved input(s)).`, statusToken: token, confidence: FLOOR.analysis, citedItemIds: cited, originClass: "derived", reopenQuestionRef: prior.trigger_question_ref ?? null };
+};
+
+/**
+ * Re-evaluate an inference against the holdings it cites (R2d, I14): the declared inputs arrive resolved through the admissible-row rule, so a cited item that is archived, unverified, suppressed or replaced is
+ * a null row. Every cited item still current: the inference stands, its text, status token and confidence carried over unchanged (a recompute proves nothing it did not check, and never edits what was said).
+ * A cited item gone: the successor is REFUTED, same text, same confidence, same citations, so the history shows what was claimed and when it stopped holding. Never CONFIRMED (ADR-044): a prior CONFIRMED reads as HYPOTHESIS.
+ */
+const reevaluateInference: InferenceFn = (ctx) => {
+  const prior = ctx.priorValue as PriorInferenceRow | null;
+  const cited = Array.isArray(prior?.cited_item_ids) ? prior.cited_item_ids.filter(Boolean) : [];
+  if (!prior || cited.length === 0) return { ok: false, reason: "no prior inference_records row with cited_item_ids to re-evaluate" };
+  if (typeof prior.confidence !== "number" || !Number.isFinite(prior.confidence) || prior.confidence < 0 || prior.confidence > 1) return { ok: false, reason: "the prior inference carries no confidence to carry over" };
+  if (!(ctx.inputs ?? []).length) return { ok: false, reason: "the inference declares no inputs, so there is nothing to re-evaluate it against" };
+  const stands = ctx.inputs.every((i) => i.row !== null);
+  const token: StatusToken = !stands || prior.status_token === "REFUTED" ? "REFUTED" : "HYPOTHESIS";
+  return { ok: true, claimText: prior.claim_text, statusToken: token, confidence: prior.confidence, citedItemIds: cited, originClass: prior.origin_class === "modelled" ? "modelled" : "derived", reopenQuestionRef: prior.trigger_question_ref ?? null };
 };
 
 export const CARBON_METHOD_ID = "carbon_intensity_tkm";
@@ -117,7 +142,7 @@ export interface MarketMethodDeps {
   computeSeriesDeltas(rows: SeriesRow[]): { delta1w?: DeltaWindow | null; latest?: { unit?: string | null; currency?: string | null } | null };
 }
 
-function buildCarbonMethod(deps: Pick<MarketMethodDeps, "carbonIntensity">): MethodFn {
+export function buildCarbonMethod(deps: Pick<MarketMethodDeps, "carbonIntensity">): MethodFn {
   return (ctx) => {
     const ref = ctx.inputs.find((i) => i.table === "emission_factors" && i.row);
     if (!ref?.row) return { ok: false, reason: "no resolvable emission_factors input" };
@@ -155,7 +180,9 @@ export function registerMarketMethods(registry: MethodRegistry, deps: MarketMeth
 /** A registry with the method that needs no other slice. */
 export function createMethodRegistry(): MethodRegistry {
   const r = new MethodRegistry();
-  r.register("inference_records", INFER_METHOD_ID, INFER_METHOD_VERSION, computeInferFromQuestion);
+  // v1 stays registered unchanged (INV-202: the rows it computed stay reproducible); the drain recomputes with the latest version, so a v1 row is re-evaluated by v2 and its successor is written as v2.
+  r.register("inference_records", INFER_METHOD_ID, INFER_METHOD_VERSION_V1, computeInferFromQuestion);
+  r.register("inference_records", INFER_METHOD_ID, INFER_METHOD_VERSION, reevaluateInference);
   return r;
 }
 /** The process-wide registry the drain and authorEdges default to. */

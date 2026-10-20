@@ -5,6 +5,10 @@
 import { log } from "@/core/shared/log";
 import { withErrorCapture } from "@/core/shared/telemetry";
 
+import { DB_SENTENCES, LOOKUP_SENTENCE, statusForDb } from "./failure";
+
+export { LOOKUP_SENTENCE };
+
 /** The one error shape: `{ error: string }` with a status. */
 export class HttpError extends Error {
   readonly status: number;
@@ -19,8 +23,6 @@ export class HttpError extends Error {
     this.headers = headers;
   }
 }
-
-const LOOKUP_SENTENCE = "That could not be read just now. Try again in a moment.";
 
 /** A read behind a guard or a handler failed. Answered 503 with Retry-After and retried by the client: never read as "not a member" or "no workspace". The body carries a customer sentence; the driver's message (`message`) goes to the log only. */
 export class LookupError extends HttpError {
@@ -39,26 +41,18 @@ export function ok(headers: Record<string, string>, body: unknown, status = 200)
   return Response.json(body, { status, headers });
 }
 
-/** Postgres and PostgREST codes to HTTP statuses: the one map. */
-export function statusForDb(code: string | null | undefined): number {
-  switch (code) {
-    case "42501":
-    case "PGRST301":
-      return 403;
-    case "P0002":
-      return 404;
-    case "22023":
-    case "23505":
-      return 409;
-    default:
-      return 500;
-  }
-}
-
-/** A database failure as an HttpError. `messages` replaces the text where the database message is not for users. */
-export function dbError(error: { message: string; code?: string | null }, messages: { forbidden?: string; notFound?: string } = {}): HttpError {
+/**
+ * A database failure as an HttpError. The body is ALWAYS a customer sentence (the caller's `messages` for 403 and 404 where it has a better one, else the table for the status); the driver's code and message are held back for
+ * the log (`answer` logs them), so a constraint name, a table name or a SQL state never reaches a customer (register core:21, workspace-admin-community:19). A transient failure answers 503 with Retry-After.
+ */
+export function dbError(error: { message: string; code?: string | null }, messages: { forbidden?: string; notFound?: string; own?: true } = {}): HttpError {
   const status = statusForDb(error.code);
-  return new HttpError(status, (status === 403 ? messages.forbidden : status === 404 ? messages.notFound : undefined) ?? error.message);
+  // `own`: the call is a function of this schema whose refusals are written for the member (RAISE EXCEPTION 'only an owner may grant the owner role'): its sentence is the answer for the refusal statuses. A table read or write never passes it.
+  const authored = messages.own && (status === 403 || status === 404 || status === 409) ? error.message : undefined;
+  const sentence = (status === 403 ? messages.forbidden : status === 404 ? messages.notFound : undefined) ?? authored ?? DB_SENTENCES[String(status)] ?? (DB_SENTENCES["500"] as string);
+  // The driver's code and message go to the log here, once; the error that travels carries the code and the customer sentence only.
+  log.warn(`[http] database ${error.code ?? "error"} answered ${status}:`, error.message);
+  return new HttpError(status, `database ${error.code ?? "error"}`, status === 503 ? { "Retry-After": "1" } : {}, sentence);
 }
 
 /** An HttpError as its response: the public sentence in the body, the held-back detail in the log. */

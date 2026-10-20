@@ -1,7 +1,8 @@
 // Ported from old_repo/src/lib/data.ts (lines 440-540)
 // Ported from old_repo/src/lib/supabase-server.ts (lines 3210-3251)
 // The Regulations list reader: the shared list read (src/features/lists) scoped to the regulatory domain, with each row's uuid attached (the list payload's id is the legacy id where there is one, and
-// the workspace tags are keyed by uuid). The workspace's own listing RPC when the caller has a workspace, the public one when not. A failed read says so; it never returns a short list as the list.
+// the workspace tags are keyed by uuid). The workspace's own listing RPC when the caller has a workspace, the public one when not. A failed read says so; it never returns a short list as the list, and a failed
+// counts read never makes the first page the whole list (R2d, S:2).
 import type { Db } from "@/core/db";
 import { fetchAllByIdChunks } from "@/core/db";
 import { isUuid } from "@/core/http/parse";
@@ -9,7 +10,7 @@ import { pageSizes, trimRemainder } from "@/core/lists";
 import type { Resource } from "@/core/types";
 import { readListing, readRemainder, readSurfaceCounts, type ListingRpc } from "@/features/lists";
 
-export const REGULATIONS_DOMAIN = 1;
+const REGULATIONS_DOMAIN = 1;
 export type LedgerRow = Resource & { uuid: string | null };
 const rpcFor = (orgId: string | null): ListingRpc => (orgId ? "get_workspace_intelligence_listings" : "get_workspace_intelligence_listings_public");
 
@@ -33,7 +34,9 @@ async function withUuids(db: Db, rows: Resource[]): Promise<LedgerRow[]> {
 export async function readRegulationsFirstPage(db: Db, orgId: string | null) {
   const [page, aggregates] = await Promise.all([readListing(db, { orgId, rpc: rpcFor(orgId), page: { offset: 0, limit: pageSizes.first, domain: REGULATIONS_DOMAIN } }), readSurfaceCounts(db, orgId, "regulations")]);
   const rows = page.failed ? [] : await withUuids(db, page.rows.filter((r) => r.domain === REGULATIONS_DOMAIN).map(trimRemainder));
-  const hasMore = (aggregates?.totalItems ?? rows.length) > rows.length;
+  // The counts failed (aggregates null): a full first page proves nothing about the end of the list, so the remainder is still requested (and the page, seeing no aggregates and more to come, does not print the row count as the total).
+  const fullPage = page.rows.length + page.archived.length >= pageSizes.first;
+  const hasMore = aggregates ? aggregates.totalItems > rows.length : fullPage;
   return { rows, aggregates, hasMore, failed: page.failed, enrichFailed: page.enrichFailed, timelineFailures: page.timelineFailures, overridesFailed: page.overrides === null };
 }
 

@@ -18,12 +18,14 @@ import { jurisLabelOf } from "@/core/jurisdictions";
 import { bandFromPriority } from "@/core/lists";
 import { formatDate, pluralize } from "@/core/shared";
 import type { Resource } from "@/core/types";
-import { Absence, ActionCard, ClaimTierProvider, DetailSubSection, downloadMarkdownBrief, GfmSection, GradeChip, SectionIndex, StateNote, TagChip, type ClaimTierMap } from "@/ui";
-import { AtAGlanceCard, commonActionCardProps, CrossPageSection, crossPagePresence, DetailLayout, DetailMasthead, DetailPageWrapper, DetailRail, DetailSection, FactBlocks, ImpactRailCard, InThisListStat, ItemConnections, ItemWatch, RecordFacts, RelevanceRailCard, SourcesGrid, topRecommendedAction, type CrossPageData } from "@/ui/detail";
+import { ActionCard, ClaimTierProvider, DetailSubSection, downloadMarkdownBrief, GfmSection, GradeChip, SectionIndex, StateNote, TagChip, type ClaimTierMap } from "@/ui";
+import { AtAGlanceCard, commonActionCardProps, CrossPageSection, crossPagePresence, DetailLayout, DetailMasthead, DetailPageWrapper, DetailRail, DetailSection, FactBlocks, ImpactRailCard, InThisListStat, ItemConnections, RecordFacts, RelevanceRailCard, SourcesGrid, topRecommendedAction, type CrossPageData } from "@/ui/detail";
 import { NoticesRail } from "@/ui/figures";
 import { LegendRailCard } from "@/ui/list-surface";
 import { useItemRelevance } from "@/features/regulations/useItemRelevance";
 import { DetailTagRow } from "@/features/workspace/ui/DetailTagRow";
+import { DetailWatch } from "@/features/workspace/ui/DetailWatch";
+import { itemTypeLabel } from "@/features/market/lib/item-type";
 
 import { themeLabel, themeOf } from "../model/taxonomy";
 import type { AssessmentBundle } from "../read/research-reads";
@@ -88,7 +90,7 @@ export function ResearchDetail(p: ResearchDetailProps) {
       extraChips={
         <>
           <GradeChip itemGrade={r.itemGrade} />
-          {r.type && <TagChip>{r.type.replace(/_/g, " ")}</TagChip>}
+          {itemTypeLabel(r.type) && <TagChip>{itemTypeLabel(r.type)}</TagChip>}
           {theme && <TagChip>{themeLabel(theme)}</TagChip>}
           {r.modes && r.modes.length > 0 ? r.modes.slice(0, 2).map((m) => <TagChip key={m}>{m.toUpperCase()}</TagChip>) : <TagChip>All modes</TagChip>}
         </>
@@ -97,7 +99,7 @@ export function ResearchDetail(p: ResearchDetailProps) {
       biasTags={r.biasTags}
       meta={rows.length > 0 ? `${rows.length} source${rows.length === 1 ? "" : "s"}${p.connectionRows.length > 0 ? ` · ${p.connectionRows.length} ${pluralize(p.connectionRows.length, "connection")}` : ""}` : null}
       onExport={() => void downloadMarkdownBrief(r, { filenamePrefix: "research", metaRows: [r.jurisdiction ? `- Jurisdiction: ${r.jurisdiction}` : null, r.type ? `- Type: ${r.type}` : null, r.url ? `- Source: ${r.url}` : null] })}
-      {...commonActionCardProps(r, { tagPopover: <DetailTagRow itemId={r.id} open={tagOpen} onOpenChange={setTagOpen} />, watch: <ItemWatch itemId={r.id} />, onTag: () => setTagOpen((v) => !v) })}
+      {...commonActionCardProps(r, { tagPopover: <DetailTagRow itemId={r.id} open={tagOpen} onOpenChange={setTagOpen} />, watch: <DetailWatch type="research" id={r.id} />, onTag: () => setTagOpen((v) => !v) })}
       where={{ value: jurisLabel }}
     />
   );
@@ -139,7 +141,7 @@ export function ResearchDetail(p: ResearchDetailProps) {
               ) : summaryProse ? (
                 prose(summaryProse)
               ) : (
-                <StateNote>The summary for this finding is not written yet; it needs the finding&apos;s brief.</StateNote>
+                <StateNote>The summary for this finding is not written yet; it needs the finding’s brief.</StateNote>
               )}
               {trajectory && <div style={{ marginTop: 12 }}>{prose(trajectory)}</div>}
               {depth === "full" && unparsedBrief && (
@@ -160,12 +162,12 @@ export function ResearchDetail(p: ResearchDetailProps) {
                     </DetailSubSection>
                   ))
                 ) : (
-                  <StateNote>{p.claimsDegraded ? "Detailed sections for this finding are withheld until the facts load." : "Detailed sections for this finding are not written yet; they need the finding&apos;s brief."}</StateNote>
+                  <StateNote>{p.claimsDegraded ? "Detailed sections for this finding are withheld until the facts load." : "Detailed sections for this finding are not written yet; they need the finding's brief."}</StateNote>
                 )}
               </DetailSection>
             )}
             <DetailSection id="sources" title="Sources" index={5} aside={rows.length > 0 ? `${rows.length} · tier = provenance, never urgency` : undefined}>
-              {rows.length > 0 ? <SourcesGrid rows={rows} /> : <Absence reason="not in primary source" />}
+              {rows.length > 0 ? <SourcesGrid rows={rows} /> : <StateNote>No sources are listed for this item.</StateNote>}
             </DetailSection>
             {(hasRelated || p.related.failed) && (
               <DetailSection id="related" title="Related" index={6} aside={p.related.reason === "match" ? "same theme" : p.related.reason === "source" ? "same source" : undefined}>

@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { cachedRead, type CacheStore } from "@/core/cache";
 import { urgencyScore } from "@/core/urgency/scoring";
 
 const base = { daysToNext: null, jurisdiction: "eu", verticals: [] as string[] };
@@ -42,50 +41,4 @@ test("the sector weight: 1 for no profile, 1 direct, 0.6 for a general rule, 0.3
   assert.equal(sector([], ["fine-art"]), 2.4);
   assert.equal(sector(["luxury-goods"], ["fine-art"]), 1.2, "luxury goods are adjacent to fine art");
   assert.equal(sector(["mining-minerals"], ["fine-art"]), 0.4, "the same item ranks differently for another sector");
-});
-
-/** A map-backed stand-in for the cache underneath: an entry is stored only when the read resolved. */
-function mapStore(): { store: CacheStore; hits: () => number; stored: () => number } {
-  const kept = new Map<string, unknown>();
-  let hit = 0;
-  const store: CacheStore = (fn, key) => async () => {
-    const k = key.join(":");
-    if (kept.has(k)) {
-      hit += 1;
-      return kept.get(k) as never;
-    }
-    const value = await fn();
-    kept.set(k, value);
-    return value;
-  };
-  return { store, hits: () => hit, stored: () => kept.size };
-}
-
-test("cachedRead: a value is read once and kept; a throw is a stated failure and is NOT kept, so the next call reads again", async () => {
-  const m = mapStore();
-  let calls = 0;
-  let fail = true;
-  const read = async () => {
-    calls += 1;
-    if (fail) throw new Error("boom");
-    return { rows: 3 };
-  };
-  const opts = { tags: ["t"], revalidate: 60, store: m.store };
-  assert.deepEqual(await cachedRead(["k"], read, opts), { ok: false, error: "boom", timedOut: false });
-  assert.equal(m.stored(), 0, "a failure is never cached");
-  fail = false;
-  assert.deepEqual(await cachedRead(["k"], read, opts), { ok: true, value: { rows: 3 } });
-  assert.deepEqual(await cachedRead(["k"], read, opts), { ok: true, value: { rows: 3 } });
-  assert.deepEqual([calls, m.hits()], [2, 1], "the third call was a cache hit");
-});
-
-test("cachedRead: a payload carrying _error is the fallback guard's to refuse (never stored), and a read past its deadline is timedOut", async () => {
-  const m = mapStore();
-  let calls = 0;
-  const fallback = await cachedRead(["f"], async () => (calls += 1, { _error: "seed fallback", rows: [] }), { tags: [], revalidate: 60, store: m.store });
-  assert.deepEqual(fallback, { ok: false, error: "seed fallback", timedOut: false });
-  await cachedRead(["f"], async () => (calls += 1, { _error: "seed fallback", rows: [] }), { tags: [], revalidate: 60, store: m.store });
-  assert.equal(calls, 2, "the fallback was read again, never served from the cache");
-  const slow = await cachedRead(["s"], () => new Promise<never>(() => undefined), { tags: [], revalidate: 60, timeoutMs: 20, store: m.store });
-  assert.deepEqual([slow.ok, slow.ok ? null : slow.timedOut], [false, true]);
 });

@@ -3,6 +3,7 @@
 // Ported from old_repo/src/app/api/notices/resolve-watched-entities.ts (lines 1-84)
 // Recalculation notices: the old and new derived values of the entities the WORKSPACE watches, since a date. Watched items and sources map to their entity (the item's instrument, its entity refs,
 // the source's organisation); every read checks its error and the whole read rejects, so an outage never reads as "nothing was recalculated" (INV-263).
+import { admitItems } from "@/core/derived/admissible";
 import type { Db } from "@/core/db";
 import { fetchAllByIdChunks } from "@/core/db";
 import { isUuid } from "@/core/http/parse";
@@ -32,7 +33,7 @@ async function entityIdsOf(db: Db, watched: { item_type: string; item_id: string
     }, { manyPerId: true });
   // A watched item is keyed by the id the page used: its uuid, or its legacy id. Both resolve to the item before its entities are looked up (the old read matched uuids only).
   const keys = of((t) => ITEM_BACKED.has(t));
-  const item = (column: "id" | "legacy_id", list: string[]) => read<{ id: string; instrument_entity_id: string | null }>(list, (s) => db.from("intelligence_items").select("id, instrument_entity_id").in(column, s), "intelligence_items");
+  const item = (column: "id" | "legacy_id", list: string[]) => read<{ id: string; instrument_entity_id: string | null }>(list, (s) => admitItems(db.from("intelligence_items").select("id, instrument_entity_id")).in(column, s), "intelligence_items");
   const found = [...(await item("id", keys.filter((k) => isUuid(k)))), ...(await item("legacy_id", keys.filter((k) => !isUuid(k))))];
   const [refs, bySource, bySeries] = await Promise.all([
     read<{ entity_id: string }>(found.map((i) => i.id), (s) => db.from("entity_refs").select("entity_id").eq("ref_table", "intelligence_items").in("ref_id", s), "entity_refs"),

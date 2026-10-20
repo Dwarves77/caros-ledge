@@ -3,13 +3,13 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { buildOperationsAskContext, regionalFactLine, stateCostLine } from "@/features/operations/ask-context";
+import { regionalFactLine, stateCostLine } from "@/features/operations/ask-context";
 import { DIMENSION_COUNT_WORD, DIMENSIONS, dimensionLabel } from "@/features/operations/model/dimensions";
 import { computeLabourChain, extractLabourChainTerms, type LabourFactLike } from "@/features/operations/model/labour-chain";
 import { checkMatrixEligibility, eligibilityUnavailable, omitNote } from "@/features/operations/model/matrix-eligibility";
-import { buildRegionGrid, factHeadline, formatEnvelopedValue, impliedBaseFact, indexAgainstBase, isEnvelopedFact, toMatrixFact, type OperationsFact } from "@/features/operations/model/region-grid";
+import { buildRegionGrid, formatEnvelopedValue, impliedBaseFact, indexAgainstBase, isEnvelopedFact, toMatrixFact, type OperationsFact } from "@/features/operations/model/region-grid";
 import { regionsForItem } from "@/features/operations/model/region-resolve";
-import { buildStatements, hasVerdictWord, humaniseFactLabel, NEEDS_SECOND_REGION } from "@/features/operations/model/statements";
+import { buildStatements } from "@/features/operations/model/statements";
 
 const fact = (o: Partial<OperationsFact> = {}): OperationsFact => ({
   regionCode: "EU", dimension: "labor_markets", factLabel: "EU - Labour cost", value: "", status: null, trend: null, sourceName: "Eurostat", sourceUrl: null, sourceTier: 1, sourceNote: null, lastUpdated: "2026-01-01", freshness: "current",
@@ -31,6 +31,7 @@ test("INV-229: a number renders as an indexed figure only with value AND unit; t
 });
 
 test("INV-229: the headline splits a figure from prose at 24 characters with a digit; a sentence is never the headline figure", () => {
+  const factHeadline = (f: OperationsFact) => toMatrixFact(f, null);
   assert.equal(factHeadline(fact({ valueNumeric: null, unit: null, value: "EUR 12 / hr" })).figure, "EUR 12 / hr");
   const sentence = factHeadline(fact({ valueNumeric: null, unit: null, value: "EPR compliance costs reached GBP 1.1 billion in 2023 across the market" }));
   assert.equal(sentence.figure, null);
@@ -74,12 +75,12 @@ test("INV-230: a statement needs two regions and a sourced-grade origin; one reg
   assert.deepEqual(labour?.components.map((c) => c.regionCode), ["EU", "US"], "the modelled UK fact is not a component");
   assert.match(labour?.sentence ?? "", /^Labour cost: European Union 40 EUR\/hour \(Eurostat, 2025\), index 100 \(base European Union = 100\); United States 60 EUR\/hour \(BLS, 2025\), index 149 \(base European Union = 100\)\. United Kingdom: not available\.$/);
   const lone = out.statements.find((s) => s.factLabel === "Only here");
-  assert.deepEqual([lone?.sentence, lone?.absence], [null, NEEDS_SECOND_REGION]);
+  assert.deepEqual([lone?.sentence, lone?.absence], [null, "needs a second sourced region"]);
   assert.equal(out.droppedVerdicts, 1, "the 'Cheaper ... hire' label is counted");
   assert.equal(out.statements.some((s) => /cheaper/i.test(s.factLabel)), false);
-  assert.equal(hasVerdictWord("Should you automate"), true);
-  assert.equal(hasVerdictWord("Hiring and recruitment cost"), false, "hiring is a labour-chain term, not advice");
-  assert.equal(humaniseFactLabel("EU - labour_cost", "EU"), "Labour cost");
+  const verdicts = buildStatements({ regions: ROSTER, dimensions: ["labor_markets"], facts: ["EU", "US"].flatMap((regionCode) => ["Should you automate", "Hiring and recruitment cost", "labour_cost"].map((l) => fact({ regionCode, factLabel: `${regionCode} - ${l}` }))) });
+  assert.equal(verdicts.droppedVerdicts, 1, "the verdict label is counted once for the pair of regions");
+  assert.deepEqual(verdicts.statements.map((s) => s.factLabel).sort(), ["Hiring and recruitment cost", "Labour cost"], "hiring is a labour-chain term, not advice; the machine key is humanised");
 });
 
 test("INV-230: an index applies to every component or none (a unit or currency mix gives none); one fact per region by a total order, not by input order", () => {
@@ -159,13 +160,10 @@ test("the seven dimensions, once: the key list, the D numbers from the list's or
   assert.equal(DIMENSION_COUNT_WORD, "seven");
 });
 
-test("the assistant block: the header is computed from the roster against the facts held; an enveloped line states value, origin, as-of and source; a legacy line states its text; nothing is invented", () => {
+test("the assistant lines: an enveloped line states value, origin, as-of and source; a legacy line states its text; a state cost line states its citation; nothing is invented", () => {
   const legacy = fact({ regionCode: "UK", valueNumeric: null, unit: null, value: "GBP 40-42k / yr", status: "stable", trend: "up", sourceName: null, sourceNote: "Office for National Statistics", lastUpdated: "2026-05-28T10:00:00Z" });
-  const block = buildOperationsAskContext({ regionCodes: ["EU", "US", "UK"], regionalFacts: [fact(), legacy], stateCostFacts: [{ stateCode: "US-CA", stateLabel: "California", factLabel: "Minimum wage", value: "16.50", unit: "USD/hour", trend: null, statuteCitation: "Cal. Lab. Code 1182.12", sourceName: null, effectiveDate: "2026-01-01" }] });
-  assert.match(block, /Regions with sourced Operations data: EU, UK\. US: no sourced Operations data yet\./);
-  assert.match(regionalFactLine(fact()), /value: 40.4 EUR\/hour EUR \| origin: official \| derivation: observed \| as of: 2025-01-01 \| source: Eurostat/);
-  assert.match(regionalFactLine(legacy), /value: GBP 40-42k \/ yr \| status: stable \| trend: up \| source: Office for National Statistics \| last updated: 2026-05-28/);
-  assert.match(stateCostLine({ stateCode: "TX", stateLabel: null, factLabel: "x", value: "1", unit: null, trend: null, statuteCitation: null, sourceName: null, effectiveDate: null }), /source: no canonical source on record \| effective: unknown/);
-  assert.match(buildOperationsAskContext({ regionCodes: [], regionalFacts: [], stateCostFacts: [] }), /No Operations region roster available\.[\s\S]*\(none fetched\)[\s\S]*\(none fetched\)/);
-  assert.match(block, /Cal\. Lab\. Code 1182\.12|source: Cal/);
+  assert.ok(regionalFactLine(fact()).includes("value: 40.4 EUR/hour EUR | origin: official | derivation: observed | as of: 2025-01-01 | source: Eurostat"));
+  assert.ok(regionalFactLine(legacy).includes("value: GBP 40-42k / yr | status: stable | trend: up | source: Office for National Statistics | last updated: 2026-05-28"));
+  assert.ok(stateCostLine({ stateCode: "TX", stateLabel: null, factLabel: "x", value: "1", unit: null, trend: null, statuteCitation: null, sourceName: null, effectiveDate: null }).includes("source: no canonical source on record | effective: unknown"));
+  assert.ok(stateCostLine({ stateCode: "US-CA", stateLabel: "California", factLabel: "Minimum wage", value: "16.50", unit: "USD/hour", trend: null, statuteCitation: "Cal. Lab. Code 1182.12", sourceName: null, effectiveDate: "2026-01-01" }).includes("source: Cal. Lab. Code 1182.12 | effective: 2026-01-01"));
 });

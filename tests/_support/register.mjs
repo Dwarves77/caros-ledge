@@ -3,4 +3,4 @@ import { register } from "node:module";
 
 import "./env.mjs";
 
-register("../../scripts/lib/ts-hooks.mjs", import.meta.url, { data: { fakeClients: new URL("./fake-clients.ts", import.meta.url).href, nextCache: new URL("./next-cache.ts", import.meta.url).href } });
+register("../../scripts/lib/ts-hooks.mjs", import.meta.url, { data: { fakeClients: new URL("./fake-clients.ts", import.meta.url).href } });

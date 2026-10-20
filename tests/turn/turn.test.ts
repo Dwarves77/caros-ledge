@@ -85,8 +85,8 @@ test("INV-195 THE GATE: a minted slice nothing connected refuses the next mint; 
   capture(f);
   const first = await apply(f, { stage: "intake", chain: false });
   const item = (ledger(f).find((x) => x.family === "ledger-consume")?.outputs as { ids: { minted_item_ids: string[] } }).ids.minted_item_ids[0] as string;
-  // The fixture's cache flush is not configured and its tag tables are empty: the run minted the item and said so, which is `partial` (some steps failed), not `success`. THE GATE counts a partial mint.
-  assert.equal(first.runs[0]?.row?.outcome, "partial");
+  // The run minted the item and every step it ran finished: `success`. THE GATE counts the mint by the ledger, whatever the outcome.
+  assert.equal(first.runs[0]?.row?.outcome, "success");
   assert.ok(item);
 
   // The slice is minted and unconnected: the ledger says so, and a second mint is refused with the way out.

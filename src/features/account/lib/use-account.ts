@@ -4,6 +4,7 @@
 // Ported from old_repo/src/components/profile/UserProfilePage.tsx (lines 133-257)
 import { useCallback, useEffect, useState } from "react";
 
+import { readFailure } from "@/core/http/failure";
 import { browserClient } from "@/core/db/browser";
 import { requestJson } from "@/core/http/request-json";
 
@@ -62,8 +63,8 @@ export function useAccount(userId: string, orgId: string | null) {
     ]).then(([p, s, o, m]) => {
       if (cancelled) return;
       const errors: AccountState["errors"] = {};
-      if (p.error) errors.profile = p.error.message;
-      if (s?.error) errors.sectors = s.error.message;
+      if (p.error) errors.profile = readFailure(p.error);
+      if (s?.error) errors.sectors = readFailure(s.error);
       if (o && !o.ok) errors.org = o.error ?? "The organisation could not be loaded.";
       const row = p.data as Partial<ProfileRow> | null;
       setState({
@@ -98,7 +99,7 @@ export function useAccount(userId: string, orgId: string | null) {
   /** Asking to be verified is the rpc request_verification (migration 367), which sets 'pending' for the caller only; local state follows the status it returns. */
   const requestVerification = useCallback(async (): Promise<string | null> => {
     const { data, error } = await browserClient().rpc("request_verification");
-    if (error) return error.message;
+    if (error) return readFailure(error);
     if (data === "pending") setState((s) => ({ ...s, profile: { ...s.profile, verifier_status: "pending" } }));
     return null;
   }, []);

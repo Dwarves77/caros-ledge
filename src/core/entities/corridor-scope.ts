@@ -8,7 +8,6 @@ import { parseCorridorName, type CorridorName } from "./kinds";
 import { formatCorridorLabel, nameForJurisdiction } from "./unlocode-names";
 
 const RELATION_TOUCHES_JURISDICTION = "touches_jurisdiction";
-export const CORRIDOR_SCOPE_TAG = "corridor-scope";
 
 export interface CorridorJurisdiction {
   entityId: string;

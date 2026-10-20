@@ -24,7 +24,7 @@ import type { CaptureResult, IntakeDeps, SourcesDeps } from "@/features/intake/d
 import { questionFlagRow } from "@/features/learning";
 import { carbonIntensity } from "@/features/market/lib/carbon";
 import { computeSeriesDeltas } from "@/features/market/lib/deltas";
-import { eeaHdvRoadmaps, carrierEtsSurcharge, ecbFx, eiaPetroleumSpot, euOilBulletin, gridQueueRows, oemRoadmapRows, publishedPriceStatistics, rerouteRows, sbtiTargets } from "@/features/market/producers";
+import { carrierEtsSurcharge, ecbFx, eiaPetroleumSpot, euOilBulletin, gridQueueRows, oemRoadmapRows, publishedPriceStatistics, rerouteRows, sbtiTargets } from "@/features/market/producers";
 import type { MarketSeriesDeps } from "@/features/market/producers/market-series-delta";
 import { readSeriesItemMap } from "@/features/market/producers/market-series-items";
 import { bindMint, type MintCtx } from "@/features/mint";
@@ -33,8 +33,6 @@ import { auxiliaryEnergyRows, blsOews, eurostatElectricity, eurostatLabourCost, 
 import { researchAssessment, researchWalker } from "@/features/research";
 import type { EdgeAuthors } from "@/features/propagation/ops";
 import { holdingsPresent } from "@/features/sources";
-import { assistantDeps } from "@/features/assistant/deps";
-import { dashboardDeps } from "@/features/dashboard/deps";
 import { portfolioDeps } from "@/features/portfolio/deps";
 import type { StatutoryDeps } from "@/features/statutory";
 import { wireWorkspaceDeps, type WorkspaceDeps } from "@/features/workspace/api/deps";
@@ -106,7 +104,7 @@ const UA = { "user-agent": "FSI-turn/1.0 (+turn)", accept: "*/*" };
 const MAX_BYTES = 50 * 1024 * 1024;
 
 /** The catalog every registry entry is checked against: each producer spec by name. */
-const PRODUCER_CATALOG: Catalog = Object.freeze(Object.fromEntries([eeaHdvRoadmaps, carrierEtsSurcharge, ecbFx, eiaPetroleumSpot, euOilBulletin, gridQueueRows, oemRoadmapRows, publishedPriceStatistics, rerouteRows, sbtiTargets, auxiliaryEnergyRows, blsOews, eurostatElectricity, eurostatLabourCost, indexationRows, nesoCarbonIntensity, stateCostFacts, ukpnHeatmap, researchAssessment, researchWalker].map((s) => [s.name, s])));
+const PRODUCER_CATALOG: Catalog = Object.freeze(Object.fromEntries([carrierEtsSurcharge, ecbFx, eiaPetroleumSpot, euOilBulletin, gridQueueRows, oemRoadmapRows, publishedPriceStatistics, rerouteRows, sbtiTargets, auxiliaryEnergyRows, blsOews, eurostatElectricity, eurostatLabourCost, indexationRows, nesoCarbonIntensity, stateCostFacts, ukpnHeatmap, researchAssessment, researchWalker].map((s) => [s.name, s])));
 
 const captureFamily = (url: string) => (parseOjReference(url) ? ("oj_issue" as const) : ("generic" as const));
 
@@ -123,18 +121,26 @@ export function buildDeps(sb: Db, env: Env = process.env, opts: DepsOptions = {}
   // The reference data of the turn, read once per deps: host verdicts for rating a host the class table does not place, and the market series keys (the mint's record_hollow exemption). Both are tables (IMP-054, IMP-084).
   const verdicts = new Map<string, HostVerdictRef>(opts.verdicts ?? []);
   const seriesKeys = new Set<string>();
-  let reference: Promise<string[]> | null = null;
-  const loadReferenceData = (): Promise<string[]> =>
-    (reference ??= (async () => {
-      const notes: string[] = [];
-      if (!opts.verdicts) for (const [host, v] of await loadHostVerdicts(sb, notes)) verdicts.set(host, v);
-      try {
-        for (const [key] of await readSeriesItemMap(sb)) seriesKeys.add(key);
-      } catch (e) {
-        notes.push(`no market series key is known this run: ${e instanceof Error ? e.message : String(e)}`);
-      }
-      return notes;
-    })());
+  let reference: string[] | null = null;
+  /** A load that failed (host_verdicts or the series map unreadable) is returned with its notes and NOT kept: the next call reads again, so one transient failure does not degrade every rating for the life of the deps (C:40). A good load, notes and all, is kept. */
+  const loadReferenceData = async (): Promise<string[]> => {
+    if (reference) return reference;
+    const notes: string[] = [];
+    let failed = false;
+    if (!opts.verdicts) {
+      const read = await loadHostVerdicts(sb, notes);
+      failed = read.failed;
+      for (const [host, v] of read.verdicts) verdicts.set(host, v);
+    }
+    try {
+      for (const [key] of await readSeriesItemMap(sb)) seriesKeys.add(key);
+    } catch (e) {
+      failed = true;
+      notes.push(`no market series key is known this run: ${e instanceof Error ? e.message : String(e)}`);
+    }
+    if (!failed) reference = notes;
+    return notes;
+  };
   const isSeriesKey = (identifier: string | null | undefined): boolean => !!identifier && seriesKeys.has(identifier);
 
   let cached: { resolve: (url: string) => { tier: number | null; sourceId: string | null } } | null = null;
@@ -218,13 +224,7 @@ export function buildDeps(sb: Db, env: Env = process.env, opts: DepsOptions = {}
   const connect = createConnectDeps({ getDb: () => sb, now });
   const mintCtx: MintCtx = { sb, entities, connect, now };
   const intake: IntakeDeps = { sb, sources, mint: bindMint(mintCtx), connect, recorder };
-  const flushCache: MintRunDeps["flushCache"] = async (tags) => {
-    const base = env.NEXT_PUBLIC_APP_URL;
-    if (!base || !env.WORKER_SECRET) return { error: "cache flush not configured: NEXT_PUBLIC_APP_URL and WORKER_SECRET are required" };
-    const res = await doFetch(`${base}/api/revalidate`, { method: "POST", headers: { "content-type": "application/json", "x-worker-secret": env.WORKER_SECRET }, body: JSON.stringify({ tags }), signal: AbortSignal.timeout(20_000) });
-    return { error: res.ok ? null : `revalidate answered HTTP ${res.status}` };
-  };
-  const mintRun: MintRunDeps = { sb, now, entities, connect, recorder, identity, fetch: fetchDeps, isSeriesKey, flushCache };
+  const mintRun: MintRunDeps = { sb, now, entities, connect, recorder, identity, fetch: fetchDeps, isSeriesKey };
 
   const registry = createMethodRegistry();
   // The market slice's own arithmetic is the default (P2-11); a caller passes `market: null` to leave it unwired (the fail-closed test), or its own pair.
@@ -263,7 +263,6 @@ function workspaceWiring(sb: Db): Partial<WorkspaceDeps> {
       return row;
     },
     itemHref: (item) => surfaceHref(surfaceOf(item.type, item.domain), item.id) ?? `/regulations/${encodeURIComponent(item.id)}`,
-    revalidateWorkspaceData: () => void import("next/cache").then((m) => m.revalidateTag("app-data", "max")),
     timePhase,
     withServerTiming,
     portfolio: portfolioDeps(sb),
@@ -286,7 +285,6 @@ const MANIFEST: readonly ManifestEntry[] = [
   ...(["congruence", "sourceRole", "matchExistingSubject"] as const).map((m): ManifestEntry => ({ member: `mintRun.entities.${m}`, status: "wired", present: (d) => fn(d.mintRun.entities[m]) })),
   ...(["deriveKey", "sameInstitution"] as const).map((m): ManifestEntry => ({ member: `mintRun.identity.${m}`, status: "wired", present: (d) => fn(d.mintRun.identity[m]) })),
   { member: "mintRun.isSeriesKey", status: "wired", present: (d) => fn(d.mintRun.isSeriesKey) },
-  { member: "mintRun.flushCache", status: "wired", present: (d) => fn(d.mintRun.flushCache) },
   { member: "producers.recorder", status: "wired", present: (d) => fn(d.producers.recorder.recordRun) },
   { member: "producers.fetch", status: "wired", present: (d) => fn(d.producers.fetch) },
   { member: "learning.questionFlagRow", status: "wired", present: (d) => fn(d.learning.questionFlagRow) },
@@ -294,11 +292,9 @@ const MANIFEST: readonly ManifestEntry[] = [
   { member: "propagation EdgeAuthors (authorCarbonIntensityEdges)", status: "owed", owner: "P2-11 market surface (carbonIntensity)", present: () => false },
   { member: "producers.verdicts (host verdicts as a table, IMP-054)", status: "wired", present: (d) => d.producers.verdicts instanceof Map },
   { member: "loadReferenceData (host_verdicts and market_series_items, read once per turn)", status: "wired", present: (d) => fn(d.loadReferenceData) },
-  ...(["itemHref", "revalidateWorkspaceData", "navCounts", "adminAttention", "timePhase", "withServerTiming"] as const).map((m): ManifestEntry => ({ member: `workspace.${m}`, status: "wired", present: (d) => fn(d.workspace[m]) })),
+  ...(["itemHref", "navCounts", "adminAttention", "timePhase", "withServerTiming"] as const).map((m): ManifestEntry => ({ member: `workspace.${m}`, status: "wired", present: (d) => fn(d.workspace[m]) })),
 
   { member: "workspace.portfolio", status: "wired", present: (d) => d.workspace.portfolio !== undefined },
-  { member: "dashboard.themeChips (the cross-page theme view)", status: "owed", owner: "P2-10 (src/core/themes themeChips)", present: () => dashboardDeps().themeChips !== undefined },
-  { member: "assistant.operationsFacts (the Operations data block)", status: "owed", owner: "P2-12 (src/features/operations/ask-context.ts)", present: () => assistantDeps().operationsFacts !== undefined },
 ];
 
 /** IMP-026: which required members are unwired (refuse), and which are owed to a slice that is not merged (reported). */

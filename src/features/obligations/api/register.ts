@@ -42,7 +42,7 @@ export const GET = route("/api/obligations/register", async (request) => {
     const facets = isFirstLoad || spec.jurisdiction ? await fetchRegisterFacetOptions(auth.client, todayIso) : undefined;
     const { rows, total } = await fetchObligationRegisterPage(auth.client, spec, facets ? { facets } : {});
     const sourceEventCount = isFirstLoad && total === 0 ? await fetchForwardEventCount(auth.client) : undefined;
-    return ok({ ...auth.headers, "Cache-Control": "private, max-age=60, stale-while-revalidate=120" }, { rows, total, sourceEventCount, facetCounts: isFirstLoad ? facets?.counts : undefined });
+    return ok({ ...auth.headers, "Cache-Control": "private, no-store" }, { rows, total, sourceEventCount, facetCounts: isFirstLoad ? facets?.counts : undefined });
   } catch (e) {
     if (e instanceof HttpError) throw e;
     throw new LookupError("obligations register", e);

@@ -3,6 +3,7 @@
 // Ported from old_repo/src/components/search/SearchResultsView.tsx (lines 16-105)
 import { useRouter } from "next/navigation";
 
+import { refusalSentence } from "@/core/http/failure";
 import { bandFromPriority, detailHref, jurisdictionCode, metaLine } from "@/core/lists";
 import { formatNumber } from "@/core/shared";
 import { ListRow, ListRowHeader, Masthead, SectionCard, SectionHead, StateNote } from "@/ui";
@@ -26,7 +27,7 @@ export function SearchResultsView({ q, outcome, maxResults, dateLabel, nowIso }:
           {!outcome.ok ? (
             <div className="cl-pad-16">
               <StateNote tone="error" action={{ label: "Retry", onClick: () => router.refresh() }}>
-                Search is unavailable right now. Nothing was lost; try again.
+                {refusalSentence(outcome.reason)}
               </StateNote>
             </div>
           ) : !q ? (

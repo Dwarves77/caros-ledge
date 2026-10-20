@@ -4,9 +4,6 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { test } from "node:test";
 
-import { fallbackGuard } from "@/core/cache";
-import { isFallbackPayload } from "@/core/cache/fallback-guard";
-import { INTEL_ITEMS_TAG, itemTag } from "@/core/cache/tags";
 import { buildCoverageMatrix, ALL, parseCoverageQuery, surfaceDenominator, matrixToCsv, formatDenominatorLine, UNTAGGED } from "@/core/coverage/matrix";
 import { recordCoverageRequest, validateCoverageRequest } from "@/core/coverage/request";
 import { describeCoverageState } from "@/core/coverage/state";
@@ -105,13 +102,22 @@ test("census: an outage is an error state with no counts, never an empty index t
   await assert.rejects(() => loadCoverage(bad.db), /down|census/i);
   const badCount = memoryDb({ census_worklist: [census("a")] }, { failures: [{ table: "intelligence_items", op: "select", message: "down" }] });
   await assert.rejects(() => loadCoverage(badCount.db), /down|intelligence_items/i, "a failed brief count must not publish 0 verified briefs");
-  const data = (db: ReturnType<typeof memoryDb>["db"]) => makeCoverageData({ db: () => db, now: () => NOW, tag: "coverage" });
+  const data = (db: ReturnType<typeof memoryDb>["db"]) => makeCoverageData({ db: () => db, now: () => NOW, labelOf: (code) => code });
   const m = await data(bad.db).getCoverageMatrix();
   assert.match(m.error ?? "", /Coverage could not be read just now/);
   assert.equal(m.matrix.totals.denominator, 0);
   assert.match((await data(bad.db).getSurfaceDenominator("regulations")).error ?? "", /Coverage could not be read just now/);
   const good = memoryDb({ census_worklist: [census("a")], intelligence_items: [] });
   assert.equal((await data(good.db).getCoverageMatrix()).matrix.totals.numerator, 1);
+});
+test("coverage is read live: a changed census is the next read's matrix, and nothing is held between reads", async () => {
+  const db = memoryDb({ census_worklist: [census("a")], intelligence_items: [] });
+  const data = makeCoverageData({ db: () => db.db, now: () => NOW, labelOf: (code) => code });
+  assert.equal((await data.getCoverageMatrix()).matrix.totals.numerator, 1);
+  db.mem.tables.census_worklist = [census("a"), census("b", { instrument_identifier: "b", document_url: "https://x.test/b" })];
+  assert.equal((await data.getCoverageMatrix()).matrix.totals.numerator, 2, "the second read sees the changed census");
+  db.mem.tables.census_worklist = [];
+  assert.equal((await data.getCoverageMatrix()).matrix.totals.numerator, 0, "and the third sees it emptied");
 });
 test("identifier classification: known schemes are named and an unknown shape is not guessed", () => {
   assert.equal(classifyIdentifier("32023R0956").scheme, "celex");
@@ -145,16 +151,6 @@ test("surface health: a must-have surface with no rows is down, a zero-legal one
 });
 
 // Platform plumbing
-test("cache: tags are derived, a fallback payload is never cacheable", async () => {
-  assert.equal(itemTag("42"), "item:42");
-  assert.equal(INTEL_ITEMS_TAG, "intel-items");
-  assert.equal(isFallbackPayload({ _error: "down" }), true);
-  assert.equal(isFallbackPayload({ rows: [] }), false);
-  const guarded = fallbackGuard.refuse(async () => ({ _error: "down", rows: [] }));
-  await assert.rejects(guarded, (e: unknown) => e instanceof Error && e.name === "FallbackNotCacheable");
-  assert.deepEqual(await fallbackGuard.refuse(async () => ({ rows: [1] }))(), { rows: [1] });
-  assert.deepEqual(await fallbackGuard.readThrough(async () => ({ _error: "down" })), { _error: "down" }, "a read-through returns the fallback to the caller, uncached");
-});
 test("perf: a timed phase returns its result and records even when it throws; the header carries the total and a cold or warm marker", async () => {
   assert.equal(await timePhase("listing_rpc", async () => "r"), "r");
   await assert.rejects(() => timePhase("a b;c", () => { throw new Error("phase failed"); }), /phase failed/);

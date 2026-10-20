@@ -2,6 +2,7 @@
 // Ported from old_repo/src/lib/sources/scrape-schedule.ts (lines 1-59)
 // Ported from old_repo/src/lib/api/pause.ts (lines 7-50)
 import type { Db } from "@/core/db";
+import { isIsoDate } from "@/core/shared/dates";
 
 import { licenceForbidsHost } from "./licence-hosts";
 
@@ -109,7 +110,7 @@ export async function assertFetchAllowed(url: string, caller: string | null | un
 const DAY_MS = 86_400_000;
 function parseYmdUtc(ymd: string): Date | null {
   const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(ymd);
-  if (!m) return null;
+  if (!m || !isIsoDate(ymd.slice(0, 10))) return null;
   const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
   return Number.isNaN(d.getTime()) ? null : d;
 }

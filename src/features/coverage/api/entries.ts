@@ -14,5 +14,5 @@ export const GET = adminRoute("/api/coverage/entries", async (admin, request) =>
   } catch (e) {
     throw new LookupError("coverage entries", e);
   }
-  return reply(admin, { entries, total: entries.length, surface: surface ?? "all" }, 200, { "Cache-Control": "private, max-age=60" });
+  return reply(admin, { entries, total: entries.length, surface: surface ?? "all" }, 200, { "Cache-Control": "private, no-store" });
 });

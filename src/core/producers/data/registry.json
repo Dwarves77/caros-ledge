@@ -9,15 +9,6 @@
     "in_all": true
   },
   {
-    "name": "eea-hdv-co2",
-    "domain_table": "oem_tech_roadmaps",
-    "source": "eea",
-    "licence": "CC BY 4.0 (EEA catalogue record: License CC-BY 4.0, copyright holder DG-CLIMA and the EEA)",
-    "dry_capable": true,
-    "enabled_env": "OEM_PRODUCER_EEA_HDV_ENABLED",
-    "in_all": false
-  },
-  {
     "name": "eia-v2-petroleum-spot",
     "domain_table": "market_series",
     "source": "eia",

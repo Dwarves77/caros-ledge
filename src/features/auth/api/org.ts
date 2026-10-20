@@ -48,6 +48,6 @@ export const PATCH = route<Ctx>("/api/orgs/[org_id]", async (request, { params }
   const patch = await parseJson(request, renameBody);
   if (patch.name === undefined && patch.slug === undefined) throw new HttpError(400, "Provide at least one of name or slug");
   const { data, error } = await auth.client.rpc("rename_org", { p_org_id: orgId, p_name: patch.name ?? null, p_slug: patch.slug ?? null, p_reason: patch.reason ?? null });
-  if (error) throw ["42501", "P0002", "22023", "23505"].includes(error.code ?? "") ? dbError(error, { forbidden: "Only an owner can rename the organization" }) : new LookupError("rename_org", error);
+  if (error) throw ["42501", "P0002", "22023", "23505"].includes(error.code ?? "") ? dbError(error, { forbidden: "Only an owner can rename the organization", own: true }) : new LookupError("rename_org", error);
   return ok(auth.headers, { org: data });
 });

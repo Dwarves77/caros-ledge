@@ -7,9 +7,8 @@ export { ITEM, NOW, OFFICIAL_TEXT, OFFICIAL_URL, SOURCE, SPAN_FORCE, SPAN_PENALT
 
 export function batchWorld(opts: Parameters<typeof makeWorld>[0] = {}) {
   const w = makeWorld(opts);
-  const flushed: string[][] = [];
-  const deps: BatchDeps = { sb: w.db.client, now: () => NOW, intake: w.deps, verdicts: null, flushCache: async (tags) => (flushed.push(tags), { error: null }) };
-  return { ...w, deps, flushed };
+  const deps: BatchDeps = { sb: w.db.client, now: () => NOW, intake: w.deps, verdicts: null };
+  return { ...w, deps };
 }
 
 /** A market_signal_brief body that covers its own figures: every figure and date it states sits inside a quoted span, the requirement sections are labelled, and the timeline section carries a dated entry. */

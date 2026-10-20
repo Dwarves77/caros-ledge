@@ -3,6 +3,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
+import { isAdmissibleItem } from "@/core/derived/admissible";
 import { itemIdColumn, resolveIdRedirect, type IdRedirectDecision, type IdRedirectRow } from "@/core/detail/id-redirect";
 import { isUuid } from "@/core/http/parse";
 import { canonicalSurface, type DetailSurface } from "@/core/lists";
@@ -10,7 +11,7 @@ import { canonicalSurface, type DetailSurface } from "@/core/lists";
 import { memoryDb, type Row } from "../_support/memory-db.ts";
 
 const U = (n: number) => `aaaaaaaa-2000-4000-8000-${String(n).padStart(12, "0")}`;
-const row = (n: number, over: Partial<IdRedirectRow>): IdRedirectRow => ({ id: U(n), legacy_id: null, item_type: "regulation", domain: 1, provenance_status: "verified", ...over });
+const row = (n: number, over: Partial<IdRedirectRow>): IdRedirectRow => ({ id: U(n), legacy_id: null, item_type: "regulation", domain: 1, provenance_status: "verified", is_archived: false, replaced_by: null, ...over });
 const CORPUS: IdRedirectRow[] = [
   row(1, { legacy_id: "g14" }),
   row(2, {}),
@@ -21,17 +22,19 @@ const CORPUS: IdRedirectRow[] = [
   row(7, { provenance_status: "unverified" }),
   row(8, { provenance_status: "quarantined", legacy_id: "q1", item_type: "market_signal", domain: 4 }),
   row(9, { item_type: null, domain: null }),
+  row(10, { is_archived: true, legacy_id: "a1" }),
+  row(11, { replaced_by: U(1), legacy_id: "r1" }),
 ];
 const SURFACES: DetailSurface[] = ["regulations", "market", "operations", "research"];
 const db = memoryDb({ intelligence_items: CORPUS as unknown as Row[] }).db;
-/** The surface that admits a row: only a verified row is admitted, on the surface its raw item_type and domain map to. */
-const admittedSurfaceFor = (r: IdRedirectRow): DetailSurface | null => (r.provenance_status === "verified" ? canonicalSurface({ type: r.item_type, domain: r.domain }) : null);
+/** The surface that admits a row: only an admissible row (verified, not archived, not replaced) is admitted, on the surface its raw item_type and domain map to. */
+const admittedSurfaceFor = (r: IdRedirectRow): DetailSurface | null => (isAdmissibleItem(r) ? canonicalSurface({ type: r.item_type, domain: r.domain }) : null);
 /** The decision the route reaches for a row: the resolver over the corpus database. */
 const resolved = (surface: DetailSurface, r: IdRedirectRow): Promise<IdRedirectDecision> => resolveIdRedirect(db, surface, r.id);
 
 /** The page at /<surface>/<urlId>: the verified row it renders, or none (the route would answer not-found). */
 function pageAt(rows: readonly IdRedirectRow[], surface: string, urlId: string): IdRedirectRow | null {
-  const hits = rows.filter((r) => r.provenance_status === "verified" && (r.legacy_id === urlId || (isUuid(urlId) && r.id === urlId)) && admittedSurfaceFor(r) === surface);
+  const hits = rows.filter((r) => isAdmissibleItem(r) && (r.legacy_id === urlId || (isUuid(urlId) && r.id === urlId)) && admittedSurfaceFor(r) === surface);
   return hits.length === 1 ? (hits[0] as IdRedirectRow) : null;
 }
 /** Every violation of the property over the corpus for a decision function. */
@@ -61,7 +64,7 @@ test("the property catches a broken decision (red first): wrong surface, an unve
     return d.kind === "redirect" ? { kind: "redirect", to: `/regulations/${r.legacy_id || r.id}` } : d;
   };
   assert.ok((await violations(CORPUS, wrongSurface)).some((v) => /redirects to/.test(v)), "a redirect that always lands on /regulations is caught");
-  const admitAll = async (s: DetailSurface, r: IdRedirectRow): Promise<IdRedirectDecision> => (r.provenance_status !== "verified" ? { kind: "render" } : resolved(s, r));
+  const admitAll = async (s: DetailSurface, r: IdRedirectRow): Promise<IdRedirectDecision> => (!isAdmissibleItem(r) ? { kind: "render" } : resolved(s, r));
   assert.ok((await violations(CORPUS, admitAll)).some((v) => /renders nothing/.test(v)), "an unverified item that renders is caught");
   const renderHere = async (): Promise<IdRedirectDecision> => ({ kind: "render" });
   assert.ok((await violations(CORPUS, renderHere)).length > 0, "rendering every item on every surface is caught");

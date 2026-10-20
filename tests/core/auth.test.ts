@@ -18,7 +18,13 @@ import { fakeDb, filterValue, signedIn, signedOut, wrote } from "../_support/fak
 const TOKEN = "a".repeat(64);
 const ORG = "11111111-1111-4111-8111-111111111111";
 
-test("getClaims: verified locally, null for no or bad session, ClaimsUnavailable for an outage", async () => {
+test("getClaims: verified locally, null for no or bad session, ClaimsUnavailable for an outage of any class: a 5xx or 429 under any error name, a network error, an error class this code does not know (C:25)", async () => {
+  const failing = (error: object) => getClaims(fakeDb(undefined, { claims: { data: null, error } }).db);
+  await assert.rejects(failing({ name: "AuthApiError", status: 503, message: "x" }), ClaimsUnavailable);
+  await assert.rejects(failing({ name: "AuthApiError", status: 429, message: "x" }), ClaimsUnavailable);
+  await assert.rejects(failing({ name: "AuthUnknownError", message: "x" }), ClaimsUnavailable);
+  assert.equal(await failing({ name: "AuthApiError", status: 401, message: "invalid JWT" }), null);
+  assert.equal(await failing({ name: "AuthSessionMissingError", message: "x" }), null);
   assert.deepEqual(await getClaims(fakeDb(undefined, { claims: signedIn("u1", "a@b.test") }).db), { userId: "u1", email: "a@b.test" });
   assert.equal(await getClaims(fakeDb(undefined, { claims: signedOut }).db), null);
   assert.equal(await getClaims(fakeDb(undefined, { claims: { data: { claims: {} }, error: null } }).db), null);
@@ -62,7 +68,7 @@ test("sanitizeReturnPath: same-origin paths only, no control characters", () => 
   for (const bad of ["//evil.test", "/\\evil.test", "https://evil.test", "evil", "", null, undefined, "/\t/evil.test", "/\n//evil.test", "/a\rb", "/a\u0000b", "/a\u007fb"]) assert.equal(sanitizeReturnPath(bad as string), "/", JSON.stringify(bad));
 });
 
-test("requirePlatformAdmin: anonymous goes to /login, denied (including a failed read) to /, admitted gets the user", async () => {
+test("requirePlatformAdmin: anonymous goes to /login, denied to /, admitted gets the user; a failed flag read is a LookupError (C:24)", async () => {
   const gate = async (db: ReturnType<typeof fakeDb>["db"]) => {
     scripted.user = () => db;
     try {
@@ -73,7 +79,7 @@ test("requirePlatformAdmin: anonymous goes to /login, denied (including a failed
   };
   assert.match(String(await gate(fakeDb(undefined, { claims: signedOut }).db)), /^NEXT_REDIRECT;[a-z]+;\/login\?redirect=%2Fadmin;/);
   assert.match(String(await gate(fakeDb(undefined, { claims: signedIn("u1"), rpc: () => ({ data: false }) }).db)), /^NEXT_REDIRECT;[a-z]+;\/;/);
-  assert.match(String(await gate(fakeDb(undefined, { claims: signedIn("u1"), rpc: () => ({ error: { message: "x" } }) }).db)), /^NEXT_REDIRECT;[a-z]+;\/;/, "a failed flag read denies");
+  assert.match(String(await gate(fakeDb(undefined, { claims: signedIn("u1"), rpc: () => ({ error: { message: "x" } }) }).db)), /^LookupError: lookup failed at is_platform_admin/, "a failed flag read is a LookupError, never a redirect home that signs an admin out of the page (C:24)");
   assert.deepEqual(await gate(fakeDb(undefined, { claims: signedIn("u1", "a@b.test"), rpc: () => ({ data: true }) }).db), { userId: "u1", email: "a@b.test" });
   assert.equal(await readOwnPlatformAdmin(fakeDb(undefined, { rpc: () => ({ data: "true" }) }).db), false, "only a literal true admits");
   await assert.rejects(readOwnPlatformAdmin(fakeDb(undefined, { rpc: () => ({ error: { message: "x" } }) }).db), LookupError);
@@ -212,11 +218,11 @@ test("invitations: lazy expiry, lookup, accept and decline go through the rpc on
   const accepting = fakeDb(undefined, { rpc: () => ({ data: ORG }) });
   assert.equal(await acceptInvitation(accepting.db, TOKEN), ORG);
   assert.deepEqual(accepting.calls, [], "accept writes nothing itself: no org_memberships insert");
-  const refused = (code: string) => acceptInvitation(fakeDb(undefined, { rpc: () => ({ error: { message: "raw", code } }) }).db, TOKEN).catch((e: HttpError) => [e.status, e.message]);
+  const refused = (code: string) => acceptInvitation(fakeDb(undefined, { rpc: () => ({ error: { message: "raw", code } }) }).db, TOKEN).catch((e: HttpError) => [e.status, e.publicMessage]);
   assert.deepEqual(await refused("42501"), [403, "Not authorized to accept this invitation"]);
   assert.deepEqual(await refused("P0002"), [404, "Invitation not found"]);
-  assert.deepEqual(await refused("22023"), [409, "raw"]);
-  await assert.rejects(declineInvitation(fakeDb(undefined, { rpc: () => ({ error: { message: "x", code: "42501" } }) }).db, TOKEN), (e: unknown) => (e as HttpError).message === "Not authorized to decline this invitation");
+  assert.deepEqual(await refused("22023"), [409, "That conflicts with something already saved. Reload and try again."]);
+  await assert.rejects(declineInvitation(fakeDb(undefined, { rpc: () => ({ error: { message: "x", code: "42501" } }) }).db, TOKEN), (e: unknown) => (e as HttpError).publicMessage === "Not authorized to decline this invitation");
 });
 
 test("pendingInvitationsFor: a failed user lookup is an error, never an empty list", async () => {

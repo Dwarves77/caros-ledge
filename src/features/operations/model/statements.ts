@@ -5,18 +5,18 @@
 import { derivationLabel, formatEnvelopedValue, impliedBaseFact, indexAgainstBase, isEnvelopedFact, originClassLabel, originClassStrength, type OperationsFact } from "./region-grid";
 
 /** The origin classes a statement may state: sourced grade only (never modelled, community or community-corroborated). */
-export const ELIGIBLE_ORIGIN_CLASSES: readonly string[] = ["official", "verified", "partner", "derived"];
+const ELIGIBLE_ORIGIN_CLASSES: readonly string[] = ["official", "verified", "partner", "derived"];
 /** What stands where a statement would be when only one region holds a sourced value. */
-export const NEEDS_SECOND_REGION = "needs a second sourced region";
+const NEEDS_SECOND_REGION = "needs a second sourced region";
 /** Words that pose a decision rather than state a fact (whole words, any case). "Hiring" is a labour-chain term and is not matched. */
-export const VERDICT_PATTERN = /\b(automat(?:e|es|ed|ing)|hire[sd]?|cheap(?:er|est)?|better|worse|superior|inferior|recommend(?:s|ed)?|should|preferable)\b/i;
-export const hasVerdictWord = (text: unknown): boolean => typeof text === "string" && VERDICT_PATTERN.test(text);
+const VERDICT_PATTERN = /\b(automat(?:e|es|ed|ing)|hire[sd]?|cheap(?:er|est)?|better|worse|superior|inferior|recommend(?:s|ed)?|should|preferable)\b/i;
+const hasVerdictWord = (text: unknown): boolean => typeof text === "string" && VERDICT_PATTERN.test(text);
 
 const text = (x: unknown): x is string => typeof x === "string" && x.trim().length > 0;
 const escapeRe = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /** The label a reader sees: producers write "<REGION> <dash> <description>", the prefix is the row's own region, so it is stripped (which lets one label group across regions). */
-export function humaniseFactLabel(raw: string, regionCode?: string): string {
+function humaniseFactLabel(raw: string, regionCode?: string): string {
   let s = typeof raw === "string" ? raw : "";
   if (text(regionCode)) s = s.replace(new RegExp(`^\\s*${escapeRe(regionCode)}\\s*(?:\\u2014|\\u2013|-|:)\\s*`, "i"), "");
   s = s.replace(/_/g, " ").replace(/\s+/g, " ").trim();

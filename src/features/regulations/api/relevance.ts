@@ -2,6 +2,7 @@
 // GET /api/detail/relevance?itemId=: the per-viewer relevance lens and the binding-banner data for one item. BUILD-PLAN ruling 3: signed-in callers only (requireUser also rate-limits per user); the
 // old route answered anonymous readers on an IP limit. Everything runs on the caller's own client (RLS). A failed read is a 503 with Retry-After, never a 200 with nulls: the banner and the badge
 // say "did not load" with Retry, and "no obligations decomposed" stays a different answer.
+import { admitItems } from "@/core/derived/admissible";
 import { currentMembership } from "@/core/auth/membership";
 import { computeApplicability } from "@/core/applicability";
 import { DUTY_HOLDER_CLASSES } from "@/core/contracts/vocabularies";
@@ -12,7 +13,7 @@ import { ALL_SECTORS, fetchObligationObjectsForItem, getWorkspaceProfile, releva
 import { VOCABULARIES } from "@/core/contracts/vocabularies";
 
 /** The lens's three tables and its gate, from their one homes (the applicability gate, the closed vocabularies, the sector list). */
-export const relevanceDeps: RelevanceDeps = {
+const relevanceDeps: RelevanceDeps = {
   computeApplicability,
   dutyHolderClasses: Object.fromEntries(Object.values(DUTY_HOLDER_CLASSES).map((c) => [c.code, { label: c.label, orgRoles: c.orgRoles ?? [] }])),
   bindingPosition: Object.fromEntries(Object.values(VOCABULARIES.binding_position ?? {}).map((p) => [p.code, { code: p.code, label: p.label, note: String((p as { note?: unknown }).note ?? ""), order: p.order ?? 0 }])),
@@ -27,7 +28,7 @@ export const GET = route("/api/detail/relevance", async (request) => {
   const headers = { ...auth.headers, "Cache-Control": "private, no-store" };
   const itemId = new URL(request.url).searchParams.get("itemId");
   if (!itemId) return ok(headers, { relevance: null, binding: null });
-  const { data: item, error } = await auth.client.from("intelligence_items").select(COLUMNS).eq(itemIdColumn(itemId), itemId).eq("provenance_status", "verified").eq("is_archived", false).maybeSingle();
+  const { data: item, error } = await admitItems(auth.client.from("intelligence_items").select(COLUMNS).eq(itemIdColumn(itemId), itemId)).maybeSingle();
   if (error) throw new LookupError("intelligence_items", error);
   if (!item) return ok(headers, { relevance: null, binding: null });
   const row = item as unknown as Record<string, unknown> & { id: string };

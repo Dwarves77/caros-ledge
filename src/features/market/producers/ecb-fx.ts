@@ -5,9 +5,9 @@ import type { Rec } from "@/core/producers/upsert-plan";
 
 import { marketSeriesBase, stampEntity } from "./market-series-delta";
 
-export const ECB_XML_URL = "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml";
-export const CURRENCIES: Readonly<Record<string, string>> = Object.freeze({ USD: "US dollar", GBP: "Pound sterling", CNY: "Chinese yuan renminbi", JPY: "Japanese yen" });
-export const ECB_KEY_PREFIX = "ecb-fx";
+const ECB_XML_URL = "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml";
+const CURRENCIES: Readonly<Record<string, string>> = Object.freeze({ USD: "US dollar", GBP: "Pound sterling", CNY: "Chinese yuan renminbi", JPY: "Japanese yen" });
+const ECB_KEY_PREFIX = "ecb-fx";
 
 const ATTR_RE = /([A-Za-z_][\w:.-]*)\s*=\s*(?:"([^"]*)"|'([^']*)')/g;
 const attrsOf = (s: string): Record<string, string> => Object.fromEntries([...String(s ?? "").matchAll(ATTR_RE)].map((m) => [m[1] as string, (m[2] ?? m[3]) as string]));
@@ -16,7 +16,7 @@ const GESMES = /xmlns:gesmes\s*=\s*(?:"http:\/\/www\.gesmes\.org\/xml\/2002-08-0
 const SENDER = /<gesmes:name>\s*European Central Bank\s*<\/gesmes:name>/;
 
 /** Parse the single-day ECB document. A document that is not recognisably that document yields no rows and the reason; nothing is fabricated. */
-export function parseEcbFxXml(xmlText: string): { rows: Rec[]; warnings: string[] } {
+function parseEcbFxXml(xmlText: string): { rows: Rec[]; warnings: string[] } {
   const text = String(xmlText ?? "");
   const dates: string[] = [];
   const currencies: Record<string, string>[] = [];
@@ -58,7 +58,7 @@ export function parseEcbFxXml(xmlText: string): { rows: Rec[]; warnings: string[
 }
 
 /** The byte count, a content-type and the first 200 characters of a document, for the warning a parse that yields nothing carries. */
-export function formatSourceEvidence(xmlText: string, meta?: { status?: number | null; contentType?: string | null }): string {
+function formatSourceEvidence(xmlText: string, meta?: { status?: number | null; contentType?: string | null }): string {
   const text = String(xmlText ?? "");
   const parts: string[] = [];
   if (meta?.status != null) parts.push(`HTTP ${meta.status}`);

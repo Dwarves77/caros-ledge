@@ -5,10 +5,9 @@
 // Record briefs applied: a validated batch of session-authored full briefs written to record-grade stubs, no model and no fetch. The per-item steps are DATA (STEPS): generate (the injected-brief seam), section,
 // ground (the entry's ledger REPLACES the stub's: the mint verifies a record item, so a non-replacing ground would answer "already verified" and the authored claims would never land; the replaced claims are archived to claim_versions first; the stored provenance_status is read back and reported whatever the verdict, a quarantine is never hidden), grow (the cited sources registered and credited), terms, the structured actions
 // (a real write: the column exists), and the flywheel participation (discovery, forward events and the compliance deadline, obligations, entities and lineage; a failed step is a recorded defect flag). The batch then runs
-// the unscoped flywheel over exactly the applied ids and flushes the public cache, in the same run (rule 17). The IO budget and the cooldown read the ledger. Every write is checked.
+// the unscoped flywheel over exactly the applied ids in the same run (rule 17). The IO budget and the cooldown read the ledger. Every write is checked.
 import { extractRecommendedActions } from "@/core/brief";
 import { stripClaimLedgerBlocks } from "@/core/brief";
-import { INTEL_ITEMS_TAG, itemTag } from "@/core/cache";
 import { stripUrlMarkers } from "@/core/shared/url";
 import type { Db } from "@/core/db";
 import { runResult, worst, type RunResult } from "@/core/types/run-result";
@@ -157,7 +156,7 @@ async function applyItem(deps: BatchDeps, item: Item<RecordPlan>, batch: string,
   return { ref: item.plan.itemId, notes: failed, counts };
 }
 
-/** The unscoped flywheel over exactly the applied ids (tags, terms, then the corpus pass), and the public cache flush. */
+/** The unscoped flywheel over exactly the applied ids (tags, terms, then the corpus pass). */
 async function afterBatch(deps: BatchDeps, ids: string[], o: ApplyOpts): Promise<RunResult> {
   const parts: RunResult[] = [];
   const guard = async (what: string, f: () => Promise<RunResult>) => {
@@ -172,13 +171,7 @@ async function afterBatch(deps: BatchDeps, ids: string[], o: ApplyOpts): Promise
   await guard("term pass", () => termPass(d, { dry: false }));
   await guard("corpus pass", () => corpusPass({ ...d, ...(o.runId ? { runId: o.runId } : {}) }, { dry: false }));
   const notes = parts.flatMap((p) => p.notes);
-  let flushed = 0;
-  if (deps.flushCache) {
-    const f = await deps.flushCache([INTEL_ITEMS_TAG, ...ids.map(itemTag)]);
-    if (f.error) notes.push(`cache flush: ${f.error}`);
-    else flushed = 1;
-  } else notes.push("cache flush owed: no flush is wired in this run");
-  return runResult(worst("ok", ...parts.map((p) => p.outcome), flushed ? "ok" : "partial"), { flywheel_passes: parts.length, cache_flushed: flushed }, notes);
+  return runResult(worst("ok", ...parts.map((p) => p.outcome)), { flywheel_passes: parts.length }, notes);
 }
 
 function recordBriefsSpec(opts: RecordOpts): EntrySpec<RecordLive, RecordPlan> {

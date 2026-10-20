@@ -1,7 +1,7 @@
 // Ported from old_repo/src/components/operations/LabourChain.tsx (lines 42-175)
 // The fully-loaded labour rate, drawn: every term in order with its running subtotal, then the final rate or the named gap. Render-only: the chain arithmetic is ../model/labour-chain, which returns a cause per gap,
 // so a term missing because only an annual figure is held says so (the old chain said "not in primary source" whatever the cause). The rate is drawn only when every term and a positive divisor exist, in one currency.
-import { Absence, SectionHead } from "@/ui";
+import { ABSENCE_DASH, SectionHead } from "@/ui";
 
 import { computeLabourChain, extractLabourChainTerms, type ChainTermResult, type LabourFactLike } from "../model/labour-chain";
 
@@ -21,13 +21,12 @@ function TermRow({ term }: { term: ChainTermResult }) {
         <span className={styles.termValue}>
           <span className={styles.termFigure}>{roundDisplay(term.value.valueNumeric)}</span> <span className={styles.termUnit}>{term.value.unit ?? ""}</span>
           <div className={styles.termCause}>
-            {term.value.sourceKey ?? "unnamed source"}
-            {term.value.referencePeriod ? ` · ${term.value.referencePeriod}` : ""}
+            {[term.value.sourceName, term.value.referencePeriod].filter(Boolean).join(" · ")}
           </div>
         </span>
       ) : (
         <span className={styles.termValue}>
-          <Absence reason="not in primary source" />
+          <span className={styles.termFigure} aria-label="No figure">{ABSENCE_DASH}</span>
           <div className={styles.termCause}>{term.cause}</div>
         </span>
       )}
@@ -48,7 +47,7 @@ export function LabourChain({ facts, regionLabel }: { facts: readonly LabourFact
         <b>= Fully-loaded rate</b>
         {result.suppressed ? (
           <span className={styles.termValue}>
-            <Absence reason="not in primary source" />
+            <span className={styles.termFigure} aria-label="No figure">{ABSENCE_DASH}</span>
             <div className={styles.termCause}>{result.gapReason}</div>
           </span>
         ) : (

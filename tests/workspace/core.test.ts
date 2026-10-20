@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
+import { LookupError } from "@/core/http/errors";
 import { canWrite, isOrgAdmin, itemIdFromDetailPath, loadRoster, orgWatchersOf } from "@/core/workspace/roster";
 import {
   deriveRoleScopeFromComplianceObjectTags,
@@ -65,13 +66,13 @@ test("compliance_object_tags map to org roles; unmapped tags are dropped, never 
 
 // ── profile ──────────────────────────────────────────────────────────────────────────────────────────
 
-test("getWorkspaceProfile: the default for a null org, an absent row and a failed read; the stored profile otherwise; no dead fields", async () => {
+test("getWorkspaceProfile: the default for a null org and an absent row, a LookupError for a failed read (never the default as the viewer's own lens); the stored profile otherwise; no dead fields", async () => {
   const db = seed();
   const client = clientFor(db);
   assert.deepEqual(await getWorkspaceProfile(client, null), DEFAULT_WORKSPACE_PROFILE);
   assert.deepEqual(await getWorkspaceProfile(client, "33333333-3333-4333-8333-333333333333"), DEFAULT_WORKSPACE_PROFILE);
   db.fail("workspace_settings", "select", { message: "down" });
-  assert.deepEqual(await getWorkspaceProfile(client, ORG_A), DEFAULT_WORKSPACE_PROFILE);
+  await assert.rejects(getWorkspaceProfile(client, ORG_A), LookupError);
   db.failures.length = 0;
   Object.assign(db.rows("workspace_settings")[0]!, { sector_profile: ["fine-art"], jurisdiction_weights: { EU: 2 }, profile: { roles: ["importer"], transport_modes: ["air"], org_roles: ["forwarder"], org_size: { headcount_band: "small" } } });
   const profile = await getWorkspaceProfile(client, ORG_A);
@@ -152,7 +153,8 @@ test("obligation grain: lines are ordered by binding position, carry duty holder
   assert.deepEqual(duty?.costSlots.map((s) => [s.slot, s.entries]), [["penalty_exposure", ["EUR 100 per tonne", "Formula: tonnes x 100"]], ["direct_compliance_cost", ["12 EUR, per filing (source: Annex II)"]], ["effort", ["3 person-days, annual"]]]);
   assert.equal(passthrough?.triggers[0]?.label, "Headcount is below Medium (50-249 employees)");
   assert.equal(passthrough?.applicability?.status, "does_not_apply");
-  assert.deepEqual([monitor?.applicability?.status, monitor?.applicability?.missingDimensions, monitor?.triggers[0]?.label], ["needs_profile_input", ["fleet_size"], "fleet_size: 10"]);
+  assert.deepEqual([monitor?.applicability?.status, monitor?.applicability?.missingDimensions, monitor?.triggers[0]?.label], ["needs_profile_input", ["fleet_size"], "A condition your profile does not describe"]);
+  assert.doesNotMatch(String(monitor?.applicability?.reasons), /fleet_size/, "an attribute id is the schema's word, not the customer's (W:59)");
   assert.equal(out.applicability?.grain, "obligation");
   assert.equal(out.applicability?.status, "applies");
 });

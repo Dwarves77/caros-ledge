@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { buildSeriesBoard, type SeriesRow } from "@/features/market/lib/series-board";
-import { envelopeFromFactorRow, envelopeFromPriceStat, envelopeFromSeriesRow, provenanceRows, ratingText } from "@/features/market/lib/provenance";
-import { perSeriesWindow, readDeltaEdges, readMarket, readMarketDetail, readMarketSeries, readPanels, readSourceRatings, section } from "@/features/market/read";
+import { envelopeFromPriceStat, envelopeFromSeriesRow, provenanceRows, ratingText } from "@/features/market/lib/provenance";
+import { readMarket, readMarketDetail, readMarketSeries, section } from "@/features/market/read";
 import { liveFacetCounts } from "@/ui/list-surface/facets";
 import { EMPTY_FILTER_STATE } from "@/ui/list-surface/filter-sort";
 
@@ -30,6 +30,12 @@ function withRpc(db: MemDb, scripts: Record<string, Rpc>) {
   return { client: client as never, calls };
 }
 
+/** The ratings the board rows' sources get: readMarketSeries rates each distinct source key its rows name once. */
+async function ratingsOf(db: MemDb, keys: Array<string | null>) {
+  db.seed("market_series", keys.map((k, i) => point(`rate${i}:x`, "2026-10-15", 1, { source_key: k })));
+  return (await readMarketSeries(db.client)).ratings;
+}
+
 function world(): MemDb {
   const db = new MemDb({}, {});
   db.seed("data_sources", [
@@ -43,22 +49,22 @@ function world(): MemDb {
   return db;
 }
 
-test("INV-262 readSourceRatings: the registry row's tier wins, else the institution class table; licence only where redistribution is permitted", async () => {
+test("INV-262 the source ratings: the registry row's tier wins, else the institution class table; licence only where redistribution is permitted", async () => {
   const db = world();
-  const r = await readSourceRatings(db.client, ["ecb", "eia", "sbti_dashboard", "ecb", null, "nope"]);
+  const r = await ratingsOf(db, ["ecb", "eia", "sbti_dashboard", "ecb", null, "nope"]);
   assert.deepEqual(Object.keys(r).sort(), ["ecb", "eia", "sbti_dashboard"], "an unknown key has no rating entry, a duplicate one entry");
   assert.deepEqual([r.ecb?.tier, r.ecb?.via, r.ecb?.licence], [3, "registry", "ECB legal notice"], "the registered source of the host rates it, not the class table");
   assert.deepEqual([r.eia?.tier, r.eia?.via], [2, "class"], "no registry row: the class table's tier for a government host");
   assert.deepEqual([r.sbti_dashboard?.licence, r.sbti_dashboard?.attribution], [null, null], "a source that does not permit redistribution shows no licence text");
   db.rows("sources")[0]!.tier_override = 1;
-  assert.equal((await readSourceRatings(db.client, ["ecb"])).ecb?.tier, 1, "override first, then effective, then base (customerTierOf)");
+  assert.equal((await ratingsOf(db, ["ecb"])).ecb?.tier, 1, "override first, then effective, then base (customerTierOf)");
   db.fail("data_sources", "select", "down");
-  await assert.rejects(readSourceRatings(db.client, ["ecb"]), /down|failed/);
+  await assert.rejects(ratingsOf(db, ["ecb"]), /down|failed/);
 });
 
 test("INV-262 the envelope of every market figure carries its source's rating, and the drawer always has the rating row", async () => {
   const db = world();
-  const ratings = await readSourceRatings(db.client, ["ecb"]);
+  const ratings = await ratingsOf(db, ["ecb"]);
   const board = buildSeriesBoard(db.rows("market_series") as SeriesRow[]);
   const row = board.groups.find((g) => g.keyPrefix === "ecb-fx")?.series[0];
   assert.ok(row);
@@ -71,14 +77,17 @@ test("INV-262 the envelope of every market figure carries its source's rating, a
   assert.equal(unrated.find((r) => r.label === "Source rating")?.value, "Unrated", "a figure whose source could not be placed says Unrated, the row stays");
   assert.equal(envelopeFromPriceStat({ sourceTier: 4, releasedAt: "2026-10-01" }, ratings.ecb ?? null).sourceTier, 4, "a stored rating is the fact");
   assert.equal(envelopeFromPriceStat({ sourceTier: null }, ratings.ecb ?? null).sourceTier, 3, "no stored rating: the series' source's");
-  assert.equal(envelopeFromFactorRow({ source_key: "ecb", derivation: "observed" }, ratings.ecb ?? null).sourceTier, 3);
   assert.ok(!provenanceRows({ ...env, sourceTier: null }).some((r) => /pending|unscored/i.test(r.value)));
 });
 
-test("perSeriesWindow: each series keeps the year behind ITS OWN latest period, and a quiet series keeps its latest row", () => {
-  const rows = [point("a:x", "2024-01-01", 1), point("a:x", "2025-09-01", 2), point("a:x", "2026-10-01", 3), point("b:y", "2024-02-01", 9)] as SeriesRow[];
-  const kept = perSeriesWindow(rows).map((r) => `${r.series_key}@${r.reference_period}`);
-  assert.deepEqual(kept, ["a:x@2025-09-01", "a:x@2026-10-01", "b:y@2024-02-01"]);
+test("the series window: each series keeps the year behind ITS OWN latest period, a quiet series keeps its latest row, and the count is the series' on record", async () => {
+  const db = world();
+  db.seed("market_series", [point("a:x", "2024-01-01", 1), point("a:x", "2025-09-01", 2), point("a:x", "2026-10-01", 3), point("b:y", "2024-02-01", 9)]);
+  const { board } = await readMarketSeries(db.client);
+  const series = (key: string) => board.unregistered.find((s) => s.seriesKey === key);
+  assert.deepEqual(series("a:x")?.deltas.sparkline.map((p) => p.date), ["2025-09-01", "2026-10-01"]);
+  assert.equal(series("a:x")?.observationCount, 3);
+  assert.deepEqual(series("b:y")?.deltas.sparkline.map((p) => p.date), ["2024-02-01"]);
 });
 
 test("readMarketSeries: the board, the SBTi rows, the ratings, and the lineage only when a service client is given", async () => {
@@ -90,12 +99,12 @@ test("readMarketSeries: the board, the SBTi rows, the ratings, and the lineage o
   db.seed("derivation_edges", [{ from_table: "market_series", from_pk: "ecb-fx:eur-usd@2026-10-15", to_value_id: "d0000000-0000-4000-8000-000000000001", edge_kind: "input", to_table: "derived_values" }]);
   const withEdges = await readMarketSeries(db.client, { edgeDb: db.client });
   assert.deepEqual([...(withEdges.lineage ?? [])], ["ecb-fx:eur-usd@2026-10-15"]);
-  assert.deepEqual([...(await readDeltaEdges(db.client, ["eia-v2:wti@2026-10-12", "ecb-fx:eur-usd@2026-10-15"]))], ["ecb-fx:eur-usd@2026-10-15"], "the eia point has no edge; the check is per row, from market_series only");
+  assert.ok(!(withEdges.lineage ?? new Set()).has("eia-v2:wti@2026-10-12"), "the eia point has no edge; the check is per row, from market_series only");
 });
 
 test("INV-263 readMarket: every part is independent, and a failed read is its own failure, never an empty list or a zero", async () => {
   const db = world();
-  const c = withRpc(db, { get_market_intel_items_public: () => ({ error: { message: "rpc down" } }), get_surface_counts: () => ({ data: { total_items: 0 } }) });
+  const c = withRpc(db, { get_market_intel_items: () => ({ error: { message: "rpc down" } }), get_surface_counts: () => ({ data: { total_items: 0 } }) });
   const r = await readMarket(c.client, { orgId: ORG_A });
   assert.equal(r.signals.ok, false, "the signal list failed and says so");
   assert.equal(r.series.ok, true, "the series part stands");
@@ -112,7 +121,7 @@ test("readMarket: the list is the public market RPC with its counts, and a good 
   const db = world();
   const c = withRpc(db, {
     get_market_intel_items_public: () => ({ data: [{ id: ITEM, legacy_id: null, title: "Diesel", item_type: "market_signal", effective_priority: "HIGH", added_date: "2026-10-01", severity: "cost_alert", source_id: null }] }),
-    get_surface_counts: () => ({ data: { total_items: 1, by_priority: { HIGH: 1 }, by_jurisdiction: {} } }),
+    get_surface_counts: () => ({ data: { total_items: 1, by_priority: { HIGH: 1 }, by_jurisdiction: {}, by_status: {}, by_severity: {}, by_band: {}, total_jurisdictions: 0 } }),
   });
   const r = await readMarket(c.client, { orgId: null });
   assert.ok(r.signals.ok);
@@ -124,9 +133,9 @@ test("the indexation panel shows only the viewer's organisation, and none for a 
   const db = world();
   const clause = (id: string, org: string, ref: string): Row => ({ clause_id: id, contract_ref: ref, corridor_id: null, index_id: "brent", base_value: 100, base_date: "2026-01-01", passthrough_pct: 50, cap_pct: null, floor_pct: null, review_cadence: "quarterly", rounding_rule: "nearest", org_id: org });
   db.seed("indexation_clauses", [clause("c1", ORG_A, "A-1"), clause("c2", ORG_B, "B-1")]);
-  const a = await readPanels(db.client, ORG_A);
+  const a = (await readMarket(withRpc(db, {}).client, { orgId: ORG_A })).panels;
   assert.deepEqual(a.indexation.ok && a.indexation.data.map((c) => c.contract_ref), ["A-1"]);
-  const none = await readPanels(db.client, null);
+  const none = (await readMarket(withRpc(db, {}).client, { orgId: null })).panels;
   assert.deepEqual(none.indexation.ok && none.indexation.data, []);
   assert.ok(db.reads("indexation_clauses").every((c) => c.filters.some(([kind, col]) => kind === "eq" && col === "org_id")), "every indexation read is scoped to an org");
 });
@@ -183,8 +192,8 @@ test("the Region facet is the surface-wide counts of the member's org: CN is off
   const db = world();
   const asked: unknown[] = [];
   const c = withRpc(db, {
-    get_market_intel_items_public: () => ({ data: [{ id: ITEM, legacy_id: null, title: "Diesel", item_type: "market_signal", effective_priority: "HIGH", added_date: "2026-10-01", severity: "cost_alert", source_id: null, jurisdiction_iso: ["EU"], jurisdictions: ["EU"] }] }),
-    get_surface_counts: (args) => (asked.push(args.p_org_id), args.p_org_id === null ? { error: { message: "42501 a null org is the service role's" } } : { data: { total_items: 3, by_jurisdiction: { EU: 1, CN: 2 }, by_priority: { HIGH: 3 } } }),
+    get_market_intel_items: () => ({ data: [{ id: ITEM, legacy_id: null, title: "Diesel", item_type: "market_signal", effective_priority: "HIGH", added_date: "2026-10-01", severity: "cost_alert", source_id: null, jurisdiction_iso: ["EU"], jurisdictions: ["EU"] }] }),
+    get_surface_counts: (args) => (asked.push(args.p_org_id), args.p_org_id === null ? { error: { message: "42501 a null org is the service role's" } } : { data: { total_items: 3, by_jurisdiction: { EU: 1, CN: 2 }, by_priority: { HIGH: 3 }, by_status: {}, by_severity: {}, by_band: {}, total_jurisdictions: 2 } }),
   });
   const r = await readMarket(c.client, { orgId: ORG_A });
   assert.deepEqual(asked, [ORG_A], "the counts are asked for the member's org");

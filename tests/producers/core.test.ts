@@ -2,9 +2,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { readCsvStream, splitCsvText } from "@/core/csv/stream";
+import { splitCsvText } from "@/core/csv/stream";
 import { readDrainSwitch } from "@/core/drain/switch";
-import { openAlexGet, searchWorks, workByDoi } from "@/core/http/openalex";
+import { openAlexGet, workByDoi } from "@/core/http/openalex";
 import { loadProducerRegistry, runRegistered, selectRuns } from "@/core/producers/registry";
 import { entityRefValuesForTable, loadRowsFile, parseOperatorRows, registerCitedSource, requireCitation, resolveEntityByName, RowsFileError, validateEntityRefs } from "@/core/producers/rows-file";
 import { NetworkError, runProducer, type ProducerSpec } from "@/core/producers/runner";
@@ -153,7 +153,6 @@ test("the keyed planner across the four key shapes: create what is new, patch on
     { key: KEYS.seriesPeriod, a: { series_key: "s", reference_period: "2026-01-01", v: 1 }, b: { series_key: "s", reference_period: "2026-01-01", v: 2 }, missing: { series_key: "s", reference_period: null, v: 1 } },
     { key: KEYS.regionDimensionLabel, a: { region_id: "r", dimension: "d", fact_label: "l", v: 1 }, b: { region_id: "r", dimension: "d", fact_label: "l", v: 2 }, missing: { region_id: null, dimension: "d", fact_label: "l", v: 1 } },
     { key: KEYS.dsoSubstationAsOf, a: { dso_name: "x", substation_ref: "S", as_of: "2026-01-01", v: 1 }, b: { dso_name: "x", substation_ref: "S", as_of: "2026-01-01", v: 2 }, missing: { dso_name: "x", substation_ref: null, as_of: "2026-01-01", v: 1 } },
-    { key: KEYS.manufacturerTechSource, a: { manufacturer_id: "m", tech_category: "t", source_id: "s", v: 1 }, b: { manufacturer_id: "m", tech_category: "t", source_id: "s", v: 2 }, missing: { manufacturer_id: "m", tech_category: "t", source_id: null, v: 1 } },
   ];
   for (const c of cases) {
     const existing = [{ id: 7, ...c.a }];
@@ -169,7 +168,7 @@ test("the keyed planner across the four key shapes: create what is new, patch on
 });
 
 test("the registry: closed field set, duplicates and a bad entity id refused, selection by all / registry / only, an entry that disagrees with its spec refused", () => {
-  assert.equal(loadProducerRegistry().length, 7);
+  assert.equal(loadProducerRegistry().length, 6);
   const base = { name: "a-b", domain_table: "market_series", source: "s", licence: "l", dry_capable: true, enabled_env: "A_B", in_all: true };
   assert.throws(() => loadProducerRegistry(undefined, [base, base]), /duplicate/);
   assert.throws(() => loadProducerRegistry(undefined, [{ ...base, extra: 1 }]));
@@ -204,14 +203,7 @@ test("the producer summary: no directory writes nothing; a status outside the se
   assert.throws(() => writeProducerSummary({ producer: "p", status: "weird" as never, rows_changed: 1, edges_authored: null }, { dir: "x" }), /status/);
 });
 
-test("the one CSV reader is chunk-safe: a quote, a CRLF and a multibyte character each split across chunks; a byte limit drops the half record; a quoted newline stays one field", async () => {
-  const text = 'a,b,c\r\n"x, y","say ""hi""",é\r\n1,2,3\n';
-  const all = async (chunks: Array<string | Uint8Array>, o?: { dropTail?: boolean | (() => boolean) }) => { const out: string[][] = []; for await (const r of readCsvStream(chunks, o)) out.push(r); return out; };
-  const whole = await all([text]);
-  assert.deepEqual(whole, [["a", "b", "c"], ["x, y", 'say "hi"', "é"], ["1", "2", "3"]]);
-  const bytes = Buffer.from(text, "utf8");
-  for (const cut of [8, 9, 14, 16, 17, bytes.indexOf(0xc3) + 1, bytes.indexOf(0x0d) + 1]) assert.deepEqual(await all([bytes.subarray(0, cut), bytes.subarray(cut)]), whole, `cut at ${cut}`);
-  assert.deepEqual(await all(["a,b\n1,2\n3,"], { dropTail: true }), [["a", "b"], ["1", "2"]], "the unterminated tail is dropped on a byte-limited read");
+test("the one CSV reader: a quoted newline stays one field and a byte-order mark is dropped from the header", () => {
   assert.deepEqual(splitCsvText('H1,H2\n"line one\nline two",x\n').rows, [["line one\nline two", "x"]]);
   assert.deepEqual(splitCsvText("﻿Name,Age\r\n\r\nA,1\r\n").header, ["name", "age"]);
 });
@@ -228,7 +220,7 @@ test("OpenAlex: the polite mailto comes from the environment (never a literal), 
     return new Response(JSON.stringify({ results: [{ id: "W1" }] }), { status: 200 });
   };
   const deps = { fetch: fetch as never, sleep: async (ms: number) => void sleeps.push(ms), email: "ops@example.test" };
-  assert.deepEqual(await searchWorks({ search: "freight" }, deps), { results: [{ id: "W1" }] });
+  assert.deepEqual(await openAlexGet("/works", { search: "freight" }, deps), { results: [{ id: "W1" }] });
   assert.deepEqual(sleeps, [2000]);
   assert.match(urls[0] as string, /mailto=ops%40example\.test/);
   assert.equal(await workByDoi("doi:10.1/none", deps), null);

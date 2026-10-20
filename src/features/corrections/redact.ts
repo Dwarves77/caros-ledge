@@ -1,6 +1,7 @@
 // Ported from old_repo/src/lib/corrections/suppressed-render.mjs (lines 1-118)
-// Redaction of suppressed claims from rendered text (sections and the full brief). Whitespace and escaped brackets tolerant. The loader
-// reads the fact suppressions the member-readable view exposes (migration 0031) for the items asked, and never reads a claim for an item with no suppression.
+// Redaction of suppressed claims from rendered text: the sections, the full brief and every other text column of the item (`redactDeep`: the summary, key data, the stated intersection summary...). Whitespace and escaped
+// brackets tolerant. A suppressed claim that was expected in a section and is not found there cannot be removed: the section (and the brief, when the brief does not hold it either) is withheld, never shown with the
+// claim in it (INV-270, F:27). The loader reads the fact suppressions the member-readable view exposes (migration 0031) for the items asked, and never reads a claim for an item with no suppression.
 import type { Db } from "@/core/db";
 import { fetchAllByIdChunks } from "@/core/db";
 import { suppressedClaimMatcher } from "@/core/corrections";
@@ -43,7 +44,19 @@ export interface RedactionReport {
   brief_found: boolean | null;
 }
 
-/** The sections and brief with every suppressed claim removed, plus what was found where. Nothing is mutated. */
+/** The text with every suppressed claim removed from every string in it (an array entry that was only the claim is dropped): the derived text columns of an item, wherever the claim was copied to. */
+export function redactDeep<T>(value: T, claims: readonly SuppressedClaim[] | null | undefined): T {
+  if (!claims?.length) return value;
+  const walk = (v: unknown): unknown => {
+    if (typeof v === "string") return claims.reduce((t, c) => removeClaimText(t, c.claim_text).text, v);
+    if (Array.isArray(v)) return v.flatMap((x) => { const w = walk(x); return typeof x === "string" && x.trim() !== "" && typeof w === "string" && w.trim() === "" ? [] : [w]; });
+    if (v && typeof v === "object") return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, walk(x)]));
+    return v;
+  };
+  return walk(value) as T;
+}
+
+/** The sections and brief with every suppressed claim removed, plus what was found where. A section whose suppressed claim is not found in it is emptied, and so is the brief when it does not hold the claim either. Nothing is mutated. */
 export function redactSuppressedClaims<S extends SectionLike>(input: { sections?: readonly S[] | null; fullBrief?: string | null; claims?: readonly SuppressedClaim[] | null }): { sections: S[]; fullBrief: string | null | undefined; report: RedactionReport[] } {
   const outSections = (input.sections ?? []).map((s) => ({ ...s }));
   let brief = input.fullBrief;
@@ -65,6 +78,11 @@ export function redactSuppressedClaims<S extends SectionLike>(input: { sections?
       briefFound = r.found;
     }
     report.push({ claim_id: claim.id, claim_text: claim.claim_text, section_found: sectionFound, brief_found: briefFound });
+    if (sectionFound === false) {
+      const target = outSections.find((s) => s.id !== undefined && String(s.id) === String(claim.section_row_id));
+      if (target) target.content_md = "";
+      if (briefFound !== true && typeof brief === "string") brief = "";
+    }
   }
   return { sections: outSections, fullBrief: brief, report };
 }

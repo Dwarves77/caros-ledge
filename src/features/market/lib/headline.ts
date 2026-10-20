@@ -9,17 +9,17 @@ import { prefixOf, producerFor, producerOrder } from "./registry";
 import type { ProducerGroup, SeriesBoard, SeriesDisplayRow } from "./series-board";
 
 /** The ruling's own order: fuels, carbon (when a series exists), FX, other indices. */
-export const FAMILY_CLASS_ORDER = ["fuel", "carbon", "fx", "index"] as const;
-export const HEADLINE_VISIBLE_CAP = 5;
+const FAMILY_CLASS_ORDER = ["fuel", "carbon", "fx", "index"] as const;
+const HEADLINE_VISIBLE_CAP = 5;
 
 const family = z
   .object({ familyKey: z.string(), familyClass: z.enum(FAMILY_CLASS_ORDER), label: z.string(), freightMode: z.enum(["road", "ocean", "air"]).nullable(), memberNoun: z.string(), memberSeriesKeys: z.array(z.string()).min(1), primarySeriesKey: z.string() })
   .strict();
 export type SeriesFamily = z.infer<typeof family> & { declared?: boolean };
-export const SERIES_FAMILIES: readonly SeriesFamily[] = Object.freeze(z.array(family).parse(raw));
+const SERIES_FAMILIES: readonly SeriesFamily[] = Object.freeze(z.array(family).parse(raw));
 
 /** One series to its family. Never null: an unclaimed series is a family of its own, classed by its producer (or "index" for an unregistered prefix). */
-export function resolveSeriesFamily(seriesKey: string, families: readonly SeriesFamily[] = SERIES_FAMILIES): SeriesFamily & { declared: boolean } {
+function resolveSeriesFamily(seriesKey: string, families: readonly SeriesFamily[] = SERIES_FAMILIES): SeriesFamily & { declared: boolean } {
   const declared = families.find((f) => f.memberSeriesKeys.includes(seriesKey));
   if (declared) return { ...declared, declared: true };
   const familyClass = producerFor(prefixOf(seriesKey))?.familyClass ?? "index";
@@ -47,12 +47,15 @@ export interface HeadlineSelection {
 }
 
 /** True when the series has at least one computed window change. */
-export const hasComputedDelta = (d: SeriesDisplayRow["deltas"] | null | undefined): boolean => !!d && [d.delta1w, d.delta1m, d.deltaYoY].some((w) => typeof w?.value === "number" && Number.isFinite(w.value));
+const hasComputedDelta = (d: SeriesDisplayRow["deltas"] | null | undefined): boolean => !!d && [d.delta1w, d.delta1m, d.deltaYoY].some((w) => typeof w?.value === "number" && Number.isFinite(w.value));
 
 const rank = (c: string): number => {
   const i = (FAMILY_CLASS_ORDER as readonly string[]).indexOf(c);
   return i === -1 ? FAMILY_CLASS_ORDER.length : i;
 };
+
+/** The caption over the headline strip: the cards are families and the total is series, so it says both and never a fraction of one over the other (register surfaces:18). */
+export const headlineCaption = (s: Pick<HeadlineSelection, "cards" | "totalSeries">): string => `${s.cards.length} ${s.cards.length === 1 ? "family" : "families"} from ${s.totalSeries} series`;
 
 export function selectHeadlineSeries(board: Pick<SeriesBoard, "groups" | "unregistered">, o: { cap?: number; families?: readonly SeriesFamily[] } = {}): HeadlineSelection {
   const located = [...board.groups.flatMap((g) => g.series.map((row) => ({ row, group: g }))), ...board.unregistered.map((row) => ({ row, group: null as ProducerGroup | null }))];

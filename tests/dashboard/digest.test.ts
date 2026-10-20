@@ -51,8 +51,8 @@ test("INV-263: a failed read rejects the whole digest; an empty corpus is a real
     await assert.rejects(readDigest(db.client, ORG), new RegExp(`${fn} failed: denied`));
   }
   const backfill = dashboardWorld();
-  backfill.fail("intelligence_items", "select", "down");
-  await assert.rejects(readDigest(backfill.client, ORG), /backfill failed: down/);
+  backfill.rpcs.get_workspace_items_by_ids = () => ({ error: { message: "down" } });
+  await assert.rejects(readDigest(backfill.client, ORG), /get_workspace_items_by_ids failed: down/);
   const changelog = dashboardWorld();
   changelog.fail("item_changelog", "select", "down");
   await assert.rejects(readDigest(changelog.client, ORG), /item_changelog read failed: down/);

@@ -1,16 +1,16 @@
 // Ported from old_repo/src/components/pages/MarketSignalDetailSurface.tsx (lines 757-873)
 // The market signal's detail blocks (spec 02 row 12): the price board and the ratified series figure each with freshness and the rating of their source (INV-262), and the carbon blocks. Pure views of MarketDetailBundle; each part
 // is its own Section, so one failed read is that part's note with Retry. MarketDetailView places them in the detail page's sections.
+import { formatDate } from "@/core/shared";
 import { DerivedFigure } from "@/ui/figures";
 import { DetailSubSection } from "@/ui/ItemGroup";
 
-import { buildCarbonCostPerFeuView, buildCarbonOverlayView, intensityFigure, selectFactor } from "../lib/carbon";
+import { buildCarbonOverlayView, intensityFigure, selectFactor } from "../lib/carbon";
 import { deriveSeriesFreshness } from "../lib/freshness";
 import { envelopeFromPriceStat, envelopeFromSeriesRow, ratingText } from "../lib/provenance";
 import { prefixOf, producerFor } from "../lib/registry";
 import type { MarketDetailBundle } from "../read";
 
-import { CarbonCostOverlay } from "./CarbonCostOverlay";
 import { ProvenanceDrawer } from "./Provenance";
 import { RetryNote } from "./RetryNote";
 import { FreshnessBadge } from "./SeriesFreshness";
@@ -36,9 +36,9 @@ export function PriceBoardBlock({ bundle, nowIso }: MarketBlockProps) {
               <span className={styles.muted}>
                 {" "}
                 · {ratingText(envelopeFromPriceStat(p, seriesFigure.ok ? (seriesFigure.data?.rating ?? null) : null).sourceTier)}
-                {p.releasedAt ? ` · released ${p.releasedAt}` : ""}
+                {p.releasedAt ? ` · released ${formatDate(p.releasedAt.slice(0, 10))}` : ""}
               </span>
-              {p.nextReleaseAt ? <span className={styles.muted}> · next {p.nextReleaseLabel ?? p.nextReleaseAt}</span> : null}
+              {p.nextReleaseAt ? <span className={styles.muted}> · next {p.nextReleaseLabel ?? formatDate(p.nextReleaseAt.slice(0, 10))}</span> : null}
             </li>
           ))}
         </ul>
@@ -68,7 +68,7 @@ export interface CarbonItem {
   modes: readonly string[];
 }
 
-/** The carbon blocks of a corridor signal: the national modal default with its rating, and the per-FEU figure or its named gaps. */
+/** The carbon block of a corridor signal: the national modal default with its rating. (A per-FEU cost waits for a licence-clear distance, payload and carbon-price input; none exists, so none is drawn.) */
 export function CarbonFindings({ bundle, item, nowIso }: MarketBlockProps & { item: CarbonItem }) {
   const { carbon } = bundle;
   if (!carbon.ok) return <RetryNote what="Carbon intensity" />;
@@ -77,18 +77,12 @@ export function CarbonFindings({ bundle, item, nowIso }: MarketBlockProps & { it
   const sel = selectFactor(carbon.data.factors, { mode, jurisdictionIso: item.jurisdictionIso });
   const figure = sel.state === "resolved" ? intensityFigure(sel.factor, nowIso) : null;
   const rating = sel.state === "resolved" && sel.factor.source_key ? (carbon.data.ratings[sel.factor.source_key] ?? null) : null;
-  const perFeu = buildCarbonCostPerFeuView({ jurisdictionIso: item.jurisdictionIso, modes: item.modes, factors: carbon.data.factors, corridorCandidates: carbon.data.corridorCandidates });
   return (
     <>
       <DetailSubSection title={overlay.header} subtitle="National modal default">
         <p className={styles.muted}>{overlay.body}</p>
         {figure ? <DerivedFigure figure={figure} label="Emission intensity" now={new Date(nowIso)} rating={ratingText(rating?.tier)} /> : null}
       </DetailSubSection>
-      {perFeu?.result ? (
-        <CarbonCostOverlay overlays={[{ label: perFeu.label ?? "", corridor: perFeu.result.corridor, entityId: "detail", jurisdictions: [], result: perFeu.result }]} />
-      ) : perFeu?.body ? (
-        <p className={styles.muted}>{perFeu.body}</p>
-      ) : null}
     </>
   );
 }

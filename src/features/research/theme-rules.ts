@@ -23,14 +23,3 @@ export function classifyTheme(text: string | null | undefined): ThemeVerdict {
   return { theme: top.theme, matched: top.matched, reason: "single-best" };
 }
 
-/** Rows of null-theme findings split into classified (theme to write) and residue (to the drain). */
-export function classifyThemes(rows: ReadonlyArray<{ id: string; title?: string | null; text?: string | null }>) {
-  const classified: Array<{ id: string; theme: string; matched: string[] }> = [];
-  const residue: Array<{ id: string; reason: ThemeVerdict["reason"] }> = [];
-  for (const r of rows) {
-    const v = classifyTheme(`${r.title ?? ""} ${r.text ?? ""}`);
-    if (v.theme === UNCLASSIFIED) residue.push({ id: r.id, reason: v.reason });
-    else classified.push({ id: r.id, theme: v.theme, matched: v.matched });
-  }
-  return { classified, residue };
-}

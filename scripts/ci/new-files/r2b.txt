@@ -1,5 +1,4 @@
 # path | reason (files with no "Ported from" header)
-src/core/briefs/admissible.ts | new in R2b: the typed local stub of the admissible-row predicate (verified, not archived, not suppressed) the theme-brief material reads through, until R2d exports the one predicate
 src/core/producers/quote.ts | new in R2b: the one acceptance rule for a quoted source (stored capture id, verbatim, verified_at parses), used by the statutory inputs, the filing-grade derivation and the producer citations
 src/features/statutory/filing-grade.ts | new in R2b: filing-grade years derived from stored-capture quote checks instead of a hand-edited list
 src/features/statutory/data/filing-grade-inputs.json | new in R2b: the evidence rows (stored capture id, verified_at) the filing-grade derivation reads

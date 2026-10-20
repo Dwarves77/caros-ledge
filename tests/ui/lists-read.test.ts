@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { bandFromPriority, canonicalSurface, detailHref, pageSizes, toListRowFields, trimRemainder } from "@/core/lists";
+import { bandFromPriority, canonicalSurface, NEUTRAL_BAND, detailHref, pageSizes, toListRowFields, trimRemainder } from "@/core/lists";
 import type { Resource } from "@/core/types";
 import { navCountSources, readAggregates, readCategory, readListing, readRemainder, readSurfaceTotals } from "@/features/lists";
 import { getNavCounts } from "@/ui/shell/nav-counts.server";
@@ -85,7 +85,7 @@ test("INV-263: counts return null on failure, never zeros; nav counts go blank, 
   const nav = await getNavCounts(navCountSources(bad.db, { orgId: "o", userId: "u" }));
   assert.deepEqual(nav, { regulations: null, market: null, research: null, operations: null, watchlist: null, byPriority: null });
   const good = listDb({
-    rpc: (n) => (n === "get_all_surface_counts" ? { data: { regulations: { verified: 3, total: 30 }, market: { verified: 4, total: 40 }, research: { verified: 5, total: 50 }, operations: { verified: 6, total: 60 } } } : { data: { total_items: 9, by_priority: { CRITICAL: 1, HIGH: 2 } } }),
+    rpc: (n) => (n === "get_all_surface_counts" ? { data: { regulations: { verified: 3, total: 30 }, market: { verified: 4, total: 40 }, research: { verified: 5, total: 50 }, operations: { verified: 6, total: 60 } } } : { data: { total_items: 9, by_priority: { CRITICAL: 1, HIGH: 2 }, by_status: {}, by_jurisdiction: {}, total_jurisdictions: 0 } }),
     from: () => ({ data: null, count: 7 }),
   });
   const n = await getNavCounts(navCountSources(good.db, { orgId: "o", userId: "u" }));
@@ -124,6 +124,7 @@ test("list row fields: impact is the stored score or null, never a keyword guess
   const f = toListRowFields(r, new Date("2026-10-15T12:00:00Z"));
   assert.equal(f.impact, null);
   assert.equal(f.due?.days, "17 days");
-  assert.equal(f.jurisdiction, "GLOBAL");
-  assert.equal(bandFromPriority("nonsense").key, "awareness");
+  assert.equal(f.jurisdiction, "—", "a row that names no jurisdiction shows none (it was GLOBAL)");
+  assert.equal(bandFromPriority("nonsense"), NEUTRAL_BAND, "an unknown priority is the neutral band, never Awareness (S:84)");
+  assert.equal(bandFromPriority(null), NEUTRAL_BAND);
 });

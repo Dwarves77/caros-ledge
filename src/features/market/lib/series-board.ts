@@ -18,6 +18,8 @@ export interface SeriesRow extends SeriesObservation {
   source_ref?: string | null;
   method_version?: string | null;
   n_observations?: number | null;
+  /** How many observations the series has on record, counted before the reader windowed its history (the rows given may be only the recent ones). */
+  observations_on_record?: number;
 }
 export interface SeriesDisplayRow {
   seriesKey: string;
@@ -70,7 +72,7 @@ export function buildSeriesBoard(rows: readonly SeriesRow[], opts: { producers?:
       emptyReason,
       asAtDate: row.as_at_date ?? null,
       referencePeriod: row.reference_period ?? null,
-      observationCount: all.length,
+      observationCount: row.observations_on_record ?? all.length,
       sourceKey: row.source_key ?? null,
       sourceRef: row.source_ref ?? null,
       unit: row.unit ?? null,

@@ -104,12 +104,12 @@ test("the Inferences section: failed it states so with Retry and the section ind
   assert.equal(textOf(renderApp(createElement(InferenceSection, { inferences: null }))), "");
 });
 
-test("the market detail reads the carbon factors and corridor entities only for a signal that draws a carbon block; a corridor signal whose read is refused says so with Retry", async () => {
+test("the market detail reads the carbon factors only for a signal that draws a carbon block; a corridor signal whose read is refused says so with Retry", async () => {
   const skipped = memberWorld();
   const none = await readMarketDetail(skipped.db as Any, { id: "m1", needsCarbon: false });
   assert.equal(none.carbon.ok, false);
-  assert.ok(!skipped.reads().tables.includes("emission_factors") && !skipped.reads().tables.includes("entities"), "no carbon read for a signal that does not draw one");
-  for (const table of ["emission_factors", "entities"]) {
+  assert.ok(!skipped.reads().tables.includes("emission_factors"), "no carbon read for a signal that does not draw one");
+  for (const table of ["emission_factors"]) {
     const w = memberWorld();
     w.failTable(table);
     const d = await readMarketDetail(w.db as Any, { id: "m1" });

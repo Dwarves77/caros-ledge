@@ -3,14 +3,16 @@
 // One item's extraction input: its FACT and GAP claims, its sections and its reference dates (the run date and the brief's own document date, both refused
 // as events when their clause names no commencement verb). The capture pool is read ONLY when a due-date slot claim needs context. Every read destructures
 // its error and throws on it: a failed read is never an empty input (the old reader's warning is a returned count here).
+import { readFactSuppressionsFor } from "@/core/detail/claim-tiers";
+import { admissibleClaims } from "@/core/derived/admissible";
 import type { Db } from "@/core/db";
 import { readAllPoolRows, usableCaptures, type PoolRow } from "@/core/grounding";
 
 import { isDueDateSlotClaim, needsDueDateContext, type ClaimIn } from "./scan";
 import type { SectionIn } from "./extract-forward-events";
 
-export const CLAIM_KIND_FILTER = ["FACT", "GAP"] as const;
-export const CONTEXT_CHARS = 240;
+const CLAIM_KIND_FILTER = ["FACT", "GAP"] as const;
+const CONTEXT_CHARS = 240;
 
 export interface ClaimRow {
   id: string;
@@ -24,26 +26,25 @@ export interface SectionRow {
   section_key: string;
   content_md: string | null;
 }
-export const mapClaimRow = (r: ClaimRow): ClaimIn => ({ claim_id: r.id, kind: r.claim_kind, text: r.claim_text, span: r.source_span ?? null });
-export const mapSectionRow = (r: SectionRow): SectionIn => ({ section_id: r.id, key: r.section_key, md: r.content_md ?? "" });
+const mapClaimRow = (r: ClaimRow): ClaimIn => ({ claim_id: r.id, kind: r.claim_kind, text: r.claim_text, span: r.source_span ?? null });
+const mapSectionRow = (r: SectionRow): SectionIn => ({ section_id: r.id, key: r.section_key, md: r.content_md ?? "" });
 
-export const todayIsoUtc = (now: Date): string => now.toISOString().slice(0, 10);
+const todayIsoUtc = (now: Date): string => now.toISOString().slice(0, 10);
 /** The date the brief was last regenerated (its own document date), or null. */
-export function documentDateIso(itemRow: { last_regenerated_at?: string | Date | null } | null | undefined): string | null {
+function documentDateIso(itemRow: { last_regenerated_at?: string | Date | null } | null | undefined): string | null {
   const raw = itemRow?.last_regenerated_at;
   if (typeof raw === "string" && raw.length >= 10) return raw.slice(0, 10);
   return raw instanceof Date ? raw.toISOString().slice(0, 10) : null;
 }
-export function buildReferenceDates(itemRow: { last_regenerated_at?: string | Date | null } | null | undefined, now: Date): string[] {
+function buildReferenceDates(itemRow: { last_regenerated_at?: string | Date | null } | null | undefined, now: Date): string[] {
   const dates = [todayIsoUtc(now), documentDateIso(itemRow)];
   return dates.filter((d, i): d is string => Boolean(d) && dates.indexOf(d) === i);
 }
 
 /** The usable captures in result_index order (the pool the context is cut from). */
-export { usableCaptures as usableCapturesOrdered };
 
 /** The text before and after the first usable capture that holds the span verbatim. */
-export function buildDueDateContext(span: string, ordered: readonly PoolRow[]): { before: string; after: string; search_id: string } | null {
+function buildDueDateContext(span: string, ordered: readonly PoolRow[]): { before: string; after: string; search_id: string } | null {
   if (typeof span !== "string" || !span) return null;
   for (const capture of ordered) {
     const idx = capture.text.indexOf(span);
@@ -54,16 +55,9 @@ export function buildDueDateContext(span: string, ordered: readonly PoolRow[]): 
 }
 
 /** Attach capture context to the slot claims that carry a date but no deontic language of their own. */
-export function attachDueDateContext(claims: readonly ClaimIn[], poolRows: readonly PoolRow[]): ClaimIn[] {
+function attachDueDateContext(claims: readonly ClaimIn[], poolRows: readonly PoolRow[]): ClaimIn[] {
   const ordered = usableCaptures([...poolRows]);
   return claims.map((claim) => (!isDueDateSlotClaim(claim) || typeof claim.span !== "string" || !claim.span ? claim : { ...claim, context: buildDueDateContext(claim.span, ordered) }));
-}
-
-/** The item ids whose slot claims need context (the cheap pre-pass of a corpus run, so the pool is read only for these). */
-export function itemIdsNeedingContext(claimRows: readonly ClaimRow[]): Set<string> {
-  const ids = new Set<string>();
-  for (const r of claimRows) if (r?.intelligence_item_id != null && needsDueDateContext(mapClaimRow(r))) ids.add(r.intelligence_item_id);
-  return ids;
 }
 
 export interface ExtractionInput {
@@ -80,7 +74,8 @@ export async function readExtractionInput(sb: Db, itemId: string, now: Date): Pr
   if (claimRes.error) throw new Error(`section_claim_provenance read failed: ${claimRes.error.message}`);
   if (sectionRes.error) throw new Error(`intelligence_item_sections read failed: ${sectionRes.error.message}`);
   if (itemRes.error) throw new Error(`intelligence_items read failed: ${itemRes.error.message}`);
-  const mapped = ((claimRes.data ?? []) as ClaimRow[]).map(mapClaimRow);
+  const claimRows = admissibleClaims(((claimRes.data ?? []) as ClaimRow[]).map((r) => ({ ...r, intelligence_item_id: itemId })), await readFactSuppressionsFor(sb, [itemId]));
+  const mapped = claimRows.map(mapClaimRow);
   const poolRows = mapped.some(needsDueDateContext) ? await readAllPoolRows(sb, itemId) : [];
   return { claims: attachDueDateContext(mapped, poolRows), sections: ((sectionRes.data ?? []) as SectionRow[]).map(mapSectionRow), referenceDates: buildReferenceDates(itemRes.data as { last_regenerated_at?: string } | null, now) };
 }

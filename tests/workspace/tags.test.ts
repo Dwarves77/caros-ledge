@@ -2,8 +2,11 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { DELETE as tagsDelete, GET as tagsGet, POST as tagsPost } from "@/features/workspace/api/tags";
-import { attributionText, formatAppliedDate, groupApplicationsByItem, memberDisplayName, normalizeTagName } from "@/features/workspace/api/tag-attribution";
+import { groupApplicationsByItem, loadAuthorNames, normalizeTagName } from "@/features/workspace/api/tag-attribution";
+import { attributionText } from "@/features/workspace/attribution-text";
 import { DELETE as itemsDelete, PUT as itemsPut } from "@/features/workspace/api/tag-items";
+
+import { memoryDb } from "../_support/memory-db.ts";
 
 import type { MemDb, Row } from "./_memdb.ts";
 import { call, E, ITEM_1, ITEM_2, matrix, ORG_A, ORG_B, script, seed, USER } from "./_world.ts";
@@ -143,15 +146,15 @@ test("deleting a tag is org-scoped; an unknown item is a 404; a failed item read
   assert.equal((await call(itemsPut, "member", "PUT", `${T}/${TAG}/items`, { itemId: "o3" }, tagParams)).status, 503);
 });
 
-test("attribution wording: a name, a former member, a member with no name; dates in UTC; an email is never used", () => {
+test("attribution wording: a name, a former member, a member with no name; dates in UTC; an email is never used", async () => {
   const base = { tagId: "t", appliedBy: "u", appliedByName: "Ada Lovelace", appliedAt: "2026-09-03T23:30:00Z" };
   assert.equal(attributionText(base), "applied by Ada Lovelace on 3 Sep 2026");
   assert.equal(attributionText({ ...base, appliedByName: null }), "applied by a workspace member on 3 Sep 2026");
   assert.equal(attributionText({ ...base, appliedBy: null, appliedByName: null, appliedAt: null }), "applied by a former member");
   assert.equal(attributionText(null), null);
-  assert.equal(formatAppliedDate("not a date"), null);
-  assert.equal(memberDisplayName({ full_name: " ", display_name: "Ada" }), "Ada");
-  assert.equal(memberDisplayName({ full_name: null, display_name: null }), null);
+  assert.equal(attributionText({ ...base, appliedAt: "not a date" }), "applied by Ada Lovelace", "an unreadable date is left out");
+  const names = await loadAuthorNames(memoryDb({ profiles: [{ id: "p1", full_name: " ", display_name: "Ada", email: "ada@example.test" }, { id: "p2", full_name: null, display_name: null, email: "x@example.test" }] }).db, ["p1", "p2"]);
+  assert.deepEqual([names.get("p1"), names.get("p2")], ["Ada", null], "the display name when the full name is blank; an email is never a name");
   assert.deepEqual(Object.keys(groupApplicationsByItem([{ tag_id: "t", intelligence_item_id: "i1", created_by: null, created_at: null }], new Map())), ["i1"]);
   assert.equal(normalizeTagName("  a   b "), "a b");
   assert.equal(normalizeTagName(5), null);

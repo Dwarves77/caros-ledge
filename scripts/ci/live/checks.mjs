@@ -110,7 +110,7 @@ export async function adminPages(ctx) {
 /**
  * The key shapes the tree writes into rate_limit_windows (src/core/http/rate-limit.ts checkRateLimit callers), all behind authentication or a worker secret:
  *   user:<uuid>  src/features/auth/api/identity.ts:21     bare <uuid>  src/core/http/guard.ts:51 (every guarded member route)
- *   worker:<route>  health/api/surfaces.ts:30, sources/api/check-sources.ts:22, telemetry/api/revalidate.ts:21
+ *   worker:<route>  health/api/surfaces.ts:30, sources/api/check-sources.ts:22
  * An anonymous caller can only produce what clientKey() makes (rate-limit.ts:~100): `ip:<address>` or `anon:unknown` (auth/api/callback.ts:9), never one of these.
  */
 export const AUTHENTICATED_KEY = /^(user:[0-9a-f-]{36}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|worker:\/.+)$/i;

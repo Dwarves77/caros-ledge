@@ -219,6 +219,8 @@ export interface FallbackResult {
   primaryReason: string;
   fellBack: boolean;
   alternatives: FallbackAlternative[];
+  /** Set when the discovery of alternative candidates itself failed: a failed discovery is a stated failure beside the result, never "no candidates found". */
+  discoveryError?: string;
 }
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
@@ -228,9 +230,9 @@ async function boundedFetch(fetchText: (url: string) => Promise<{ text?: string;
   try {
     const r = await Promise.race([fetchText(url), new Promise<"timeout">((res) => (timer = setTimeout(() => res("timeout"), ms)))]);
     if (r === "timeout") return { text: "", status: 200, timedOut: true };
-    return { text: r?.text || "", status: r?.status || 200, timedOut: false };
+    return { text: r?.text || "", status: r?.status ?? 200, timedOut: false };
   } catch (e) {
-    return { text: "", status: (e as { status?: number } | null)?.status || 0, timedOut: false };
+    return { text: "", status: (e as { status?: number } | null)?.status ?? 0, timedOut: false };
   } finally {
     clearTimeout(timer);
   }
@@ -252,18 +254,20 @@ export async function fetchPrimaryWithFallback(
   alternatives.push({ url: primary, len: pd.len, langRatio: round2(pd.langRatio), reason: pd.reason, role: "declared_primary" });
   if (!pd.roadblocked) return { ok: true, url: primary, text: p.text, roadblocked: false, primaryReason: pd.reason, fellBack: false, alternatives };
   let discovered: string[] = [];
+  let discoveryError: string | undefined;
   try {
     discovered = (await discoverCandidates?.()) || [];
-  } catch {
-    discovered = [];
+  } catch (e) {
+    discoveryError = e instanceof Error ? e.message : String(e);
   }
+  const failure = discoveryError ? { discoveryError } : {};
   for (const u of [...new Set(discovered.filter((x) => typeof x === "string" && /^https?:\/\//i.test(x) && x !== primary))].slice(0, maxCandidates)) {
     const r = await boundedFetch(fetchText, u, perFetchMs);
     const d = detectRoadblock(r.text, { status: r.status, timedOut: r.timedOut });
     alternatives.push({ url: u, len: d.len, langRatio: round2(d.langRatio), reason: d.reason, role: "alternative" });
-    if (!d.roadblocked) return { ok: true, url: u, text: r.text, roadblocked: true, primaryReason: pd.reason, fellBack: true, alternatives };
+    if (!d.roadblocked) return { ok: true, url: u, text: r.text, roadblocked: true, primaryReason: pd.reason, fellBack: true, alternatives, ...failure };
   }
-  return { ok: false, url: primary, text: "", roadblocked: true, primaryReason: pd.reason, fellBack: true, alternatives };
+  return { ok: false, url: primary, text: "", roadblocked: true, primaryReason: pd.reason, fellBack: true, alternatives, ...failure };
 }
 
 export interface PoolCapture {

@@ -27,10 +27,10 @@ const candidate = z.object({
 });
 export type EtsCandidate = z.infer<typeof candidate>;
 
-export const carrierSlug = (name: unknown): string => slugify(String(name ?? "").trim(), 200);
+const carrierSlug = (name: unknown): string => slugify(String(name ?? "").trim(), 200);
 const sourceKeyFor = (host: string): string => `${host.replace(/\./g, "_")}_ets_notice`;
 
-export function buildCarrierEtsSurchargeRow(c: EtsCandidate, source: { source_key: string | null; tier?: number | null }): Rec {
+function buildCarrierEtsSurchargeRow(c: EtsCandidate, source: { source_key: string | null; tier?: number | null }): Rec {
   const lane = c.tradeLane ? `-${carrierSlug(c.tradeLane)}` : "";
   return {
     series_key: `carrier-ets:${carrierSlug(c.carrierName)}${lane}`,
@@ -51,7 +51,7 @@ export interface EtsBand {
   reference_period: unknown;
 }
 /** The cross-carrier band of ONE period in ONE currency: the real observed low, median and high. Fewer than two carriers is not a proxy (null); mixed currencies or periods throw. */
-export function buildEtsProxyBand(carrierRows: readonly Rec[] | null | undefined): EtsBand | null {
+function buildEtsProxyBand(carrierRows: readonly Rec[] | null | undefined): EtsBand | null {
   const rows = (carrierRows ?? []).filter((r) => Number.isFinite(r.value_numeric));
   if (rows.length < 2) return null;
   const currencies = new Set(rows.map((r) => r.currency));

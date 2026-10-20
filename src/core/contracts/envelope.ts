@@ -1,13 +1,11 @@
 // Ported from old_repo/src/lib/contracts/envelope.mjs (lines 1-330)
+import { isIsoDate as isCalendarDay } from "@/core/shared/dates";
+
 import { DERIVATION, ORIGIN_CLASS, OBS_STATUS, REFRESH_PERIOD_DAYS, isMissing } from "./vocabularies";
 
 export { DERIVATION };
 
-/** Derivation classes are DATA (data/vocabularies.json). `contractable` marks classes a customer may put in a contract or filing. */
-export const DERIVATIONS: readonly string[] = Object.keys(DERIVATION);
 export const isContractable = (derivation: string): boolean => DERIVATION[derivation]?.contractable === true;
-/** Only a statutory class may be presented as what the law requires, and only it may carry a penalty figure. */
-export const isStatutory = (derivation: string): boolean => DERIVATION[derivation]?.statutory === true;
 
 export interface AsOf {
   event_date: string;
@@ -23,7 +21,8 @@ export interface Envelope {
   fx_date: string | null;
   basis: string | null;
   derivation: string | null;
-  obs_status: string;
+  /** The observation status (SDMX CL_OBS_STATUS) when the source states one; null when it does not: a missing status never claims a normal, reliable observation. */
+  obs_status: string | null;
   origin_class: string | null;
   as_of: AsOf | null;
   expected_refresh: string | null;
@@ -37,7 +36,8 @@ export interface Envelope {
 export type EnvelopeInput = Partial<Record<keyof Envelope, unknown>>;
 
 const REQUIRED = ["derivation", "unit", "as_of"] as const;
-const isIsoDate = (s: unknown): s is string => typeof s === "string" && /^\d{4}-\d{2}-\d{2}(T|$)/.test(s) && !Number.isNaN(Date.parse(s));
+/** A real calendar day, with or without a time after it: the one strict day test (shared/dates), so 2026-02-30 is refused here as everywhere. */
+const isIsoDate = (s: unknown): s is string => typeof s === "string" && /^\d{4}-\d{2}-\d{2}(T|$)/.test(s) && isCalendarDay(s.slice(0, 10)) && !Number.isNaN(Date.parse(s));
 const stated = (v: unknown): boolean => v !== undefined && v !== null && v !== "";
 const count = (v: unknown): boolean => Number.isInteger(v) && (v as number) >= 0;
 
@@ -70,7 +70,7 @@ function validateEnvelope(env: Record<string, unknown>): string[] {
     else if (typeof env.value === "number" && (env.value < env.low || env.value > env.high)) errors.push("value must lie within [low, high]");
   }
   // INV-173: a missing observation never carries a value (the zero-fill guard).
-  if (env.obs_status !== undefined && isMissing(env.obs_status) && env.value !== undefined && env.value !== null) {
+  if (stated(env.obs_status) && isMissing(env.obs_status) && env.value !== undefined && env.value !== null) {
     errors.push(`obs_status ${String(env.obs_status)} denotes a missing observation but a value is present (zero-fill guard)`);
   }
   return errors;
@@ -88,7 +88,7 @@ export function makeEnvelope(input: EnvelopeInput): Readonly<Envelope> {
     fx_date: pick<string>("fx_date"),
     basis: pick<string>("basis"),
     derivation: pick<string>("derivation"),
-    obs_status: pick<string>("obs_status", "A") as string,
+    obs_status: pick<string>("obs_status"),
     origin_class: pick<string>("origin_class"),
     as_of: pick<AsOf>("as_of"),
     expected_refresh: pick<string>("expected_refresh"),
@@ -133,8 +133,9 @@ export function roundToSampleSupport(value: number | null, n: unknown): number |
 export function formatDelta(delta: unknown, kind: "ratio" | "quantity", digits = 1): string | null {
   if (typeof delta !== "number" || !Number.isFinite(delta)) return null;
   if (kind !== "ratio" && kind !== "quantity") throw new TypeError("formatDelta: kind must be ratio (renders pp) or quantity (renders %)");
-  const sign = delta > 0 ? "+" : delta < 0 ? "−" : "";
-  return `${sign}${Math.abs(delta).toFixed(digits)}${kind === "ratio" ? " pp" : "%"}`;
+  const shown = Math.abs(delta).toFixed(digits);
+  const sign = Number(shown) === 0 ? "" : delta > 0 ? "+" : "−";
+  return `${sign}${shown}${kind === "ratio" ? " pp" : "%"}`;
 }
 
 export interface Propagated {

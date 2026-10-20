@@ -4,11 +4,12 @@
 // Ported from old_repo/src/app/operations/[slug]/page.tsx (lines 127-206)
 // The ONE related-items read of a detail page (the research and operations pages each wrote the same two-query cascade): the items matching the caller's rule first, the items from the same source second, five at
 // most, verified and not archived. A failed read is returned as failed, never as "nothing related".
+import { admitItems } from "@/core/derived/admissible";
 import type { Db } from "@/core/db";
 import { qb, type Qb } from "@/core/db/qb";
 import { log } from "@/core/shared/log";
 
-export const RELATED_LIMIT = 5;
+const RELATED_LIMIT = 5;
 export interface RelatedItem {
   id: string;
   title: string;
@@ -34,7 +35,7 @@ interface Row {
 /** `match` narrows the first query to the caller's rule (a theme, a jurisdiction overlap and an item type); null skips straight to the shared source. */
 export async function relatedItems(db: Db, self: { id: string; sourceId: string | null }, match: ((q: Qb<Row>) => Qb<Row>) | null): Promise<RelatedResult> {
   const read = async (narrow: (q: Qb<Row>) => Qb<Row>): Promise<Row[]> => {
-    const q = qb<Row>(db.from("intelligence_items").select("id, legacy_id, title, summary, added_date, source_id").eq("is_archived", false).eq("provenance_status", "verified").neq("id", self.id));
+    const q = qb<Row>(admitItems(db.from("intelligence_items").select("id, legacy_id, title, summary, added_date, source_id")).neq("id", self.id));
     const { data, error } = await narrow(q).order("added_date", { ascending: false }).order("id", { ascending: true }).limit(RELATED_LIMIT);
     if (error) throw new Error(error.message);
     return data ?? [];

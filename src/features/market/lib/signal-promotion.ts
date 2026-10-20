@@ -3,7 +3,7 @@
 // origin class is the weakest signal state.
 import { citableAsFact } from "@/core/contracts";
 
-export const PROMOTION_STATE = {
+const PROMOTION_STATE = {
   unclassified: { code: "unclassified", label: "Not yet classified", chip: "Not yet classified", order: 1 },
   signal_unconfirmed: { code: "signal_unconfirmed", label: "Signal · unconfirmed", chip: "Unverified · early report", order: 2 },
   signal_corroborated: { code: "signal_corroborated", label: "Signal · corroborated", chip: "Unverified · corroborated", order: 3 },

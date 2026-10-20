@@ -10,9 +10,9 @@ import type { ExtractedEvent } from "./dedupe";
 import { readExtractionInput, type ExtractionInput } from "./read-extraction-input";
 import type { ClaimIn } from "./scan";
 
-export const REFUSED_NOT_IN_SOURCE = "refusedNotInSource: section-kind event's date span is not verbatim in any FACT claim span for this item -- a forward event must be verbatim in its source, the same rule as a FACT claim (D10 class fix)";
+const REFUSED_NOT_IN_SOURCE = "refusedNotInSource: section-kind event's date span is not verbatim in any FACT claim span for this item -- a forward event must be verbatim in its source, the same rule as a FACT claim (D10 class fix)";
 
-export function enforceSectionVerbatimInSource(events: readonly ExtractedEvent[], skipped: readonly SkippedEvent[], claims: readonly ClaimIn[]): { events: ExtractedEvent[]; skipped: SkippedEvent[]; refusedNotInSource: number } {
+function enforceSectionVerbatimInSource(events: readonly ExtractedEvent[], skipped: readonly SkippedEvent[], claims: readonly ClaimIn[]): { events: ExtractedEvent[]; skipped: SkippedEvent[]; refusedNotInSource: number } {
   const factSpans = claims.filter((c) => c?.kind === "FACT" && typeof c.span === "string" && c.span.length > 0).map((c) => c.span as string);
   const kept: ExtractedEvent[] = [];
   const outSkipped = [...skipped];

@@ -1,4 +1,4 @@
-export { corridorScopes, corridorsTouching, CORRIDOR_SCOPE_TAG } from "./corridor-scope";
+export { corridorScopes, corridorsTouching } from "./corridor-scope";
 export type { CorridorScope } from "./corridor-scope";
 export { identifierRow, VALIDATORS } from "./crosswalk";
 export { canonicalJurisdictionCode, corridorSeed, entityId, GENERIC_JURISDICTIONS, hostFromUrl } from "./id";

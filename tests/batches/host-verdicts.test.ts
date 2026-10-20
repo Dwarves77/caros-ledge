@@ -74,7 +74,8 @@ test("loadHostVerdicts returns the committed map the rating reads: a verdict pla
   const w = world();
   await applyBatch("host-verdicts", w.deps, { content: file([entry(), entry({ host: "eur-lex.europa.eu", class: "news" })]), dry: false });
   const notes: string[] = [];
-  const verdicts = await loadHostVerdicts(w.db.db, notes);
+  const { verdicts, failed } = await loadHostVerdicts(w.db.db, notes);
+  assert.equal(failed, false);
   assert.deepEqual([...verdicts.keys()].sort(), ["eur-lex.europa.eu", "unplaced.example"]);
   assert.deepEqual(notes, []);
   const placed = placeHostWithVerdicts("unplaced.example", null, verdicts);
@@ -85,11 +86,12 @@ test("loadHostVerdicts returns the committed map the rating reads: a verdict pla
 
 test("loadHostVerdicts pages through more than one page of verdicts and never passes a partial map off as the whole", async () => {
   const rows = Array.from({ length: 1005 }, (_, i) => ({ host: `h${String(i).padStart(4, "0")}.example`, class: "company", batch_id: "host-verdicts-001" }));
-  assert.equal((await loadHostVerdicts(world({ host_verdicts: rows }).db.db)).size, 1005);
+  assert.equal((await loadHostVerdicts(world({ host_verdicts: rows }).db.db)).verdicts.size, 1005);
   const w = world({ host_verdicts: rows });
   let page = 0;
   w.db.mem.failWhen = (c) => (c.table === "host_verdicts" && (page += 1) === 2 ? "second page down" : null);
   const notes: string[] = [];
-  assert.equal((await loadHostVerdicts(w.db.db, notes)).size, 0);
+  const partial = await loadHostVerdicts(w.db.db, notes);
+  assert.deepEqual([partial.verdicts.size, partial.failed], [0, true], "a failed page is a failed read, not a smaller map");
   assert.match(notes[0] ?? "", /could not be read.*second page down/);
 });

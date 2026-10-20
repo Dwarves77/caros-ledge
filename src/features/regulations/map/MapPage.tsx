@@ -15,7 +15,7 @@ import { LegendRailCard, regionLinkHref } from "@/ui/list-surface";
 import { PageFrame } from "@/ui/shell/PageFrame";
 
 import { centroidOf } from "./centroids";
-import type { RegionCoverage } from "./region-coverage";
+import type { RegionCoverageRead } from "./region-coverage";
 import { chipOfKey, jurisdictionKeyOf, REGION_CHIPS, rollup, type MapItem, type RegionChip } from "./rollup";
 import { RegisterHeader, RegisterRow } from "./RegisterRow";
 
@@ -27,7 +27,7 @@ const REGISTER_ROW_CAP = 12;
 const EU_MEMBERS: ReadonlySet<string> = new Set((TIER1_REGIONS.find((r) => r.id === "eu-members")?.jurisdictions ?? []).map((j) => j.iso));
 const plural = (n: number, one: string, many: string) => `${formatNumber(n)} ${n === 1 ? one : many}`;
 
-export function MapPage({ items, coverage, activeCodes }: { items: MapItem[]; coverage: RegionCoverage[] | null; activeCodes: string[] | null }) {
+export function MapPage({ items, coverage, activeCodes }: { items: MapItem[]; coverage: RegionCoverageRead | null; activeCodes: string[] | null }) {
   const [mode, setMode] = useState<Mode>("all");
   const [band, setBand] = useState<UrgencyBandKey | null>(null);
   const [chips, setChips] = useState<Set<RegionChip>>(new Set());
@@ -46,7 +46,7 @@ export function MapPage({ items, coverage, activeCodes }: { items: MapItem[]; co
   const immediateItems = shown.filter((r) => bandFromPriority(r.priority).key === "immediate").length;
   const register = rows.slice(0, REGISTER_ROW_CAP);
   const markers = useMemo(() => charted.flatMap((r) => ((c) => (c ? [{ key: r.key, label: r.label, count: r.count, tone: r.band.key, lat: c[0], lng: c[1] }] : []))(centroidOf(r.key))), [charted]);
-  const gaps = [...(coverage ?? [])].sort((a, b) => b.gap - a.gap || b.partial - a.partial || a.region.name.localeCompare(b.region.name)).slice(0, 5);
+  const gaps = [...(coverage?.regions ?? [])].sort((a, b) => b.gap - a.gap || b.partial - a.partial || a.region.name.localeCompare(b.region.name)).slice(0, 5);
   const clear = () => (setBand(null), setChips(new Set()));
   const more = rows.length - register.length;
 
@@ -70,20 +70,22 @@ export function MapPage({ items, coverage, activeCodes }: { items: MapItem[]; co
             )}
           </RailCard>
           <RailCard dataAudit="map-coverage-rail" title="Coverage gaps">
-            {coverage === null ? (
-              <StateNote tone="error">The coverage snapshot did not load. Reload the page to try again.</StateNote>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: "var(--fs-12)" }}>
-                {gaps.map((g) => (
-                  <Link key={g.region.id} href={`/map?region=${encodeURIComponent(g.region.id)}`} prefetch={false} aria-label={`Filter map to ${g.region.name} (${g.gap} gaps of ${g.total})`} className="cl-rail-link cl-rail-link--quiet" style={{ display: "flex", justifyContent: "space-between", gap: 10, width: "100%" }}>
+            {coverage === null && <StateNote tone="error">The coverage snapshot did not load, so no coverage count is shown. Reload the page to try again.</StateNote>}
+            {coverage !== null && (coverage.notCollected > 0 || coverage.untyped > 0) && (
+              <p className="cl-detail-link-note">
+                Counts cover collected sources only: {plural(coverage.notCollected, "source is", "sources are")} not yet collected{coverage.untyped > 0 ? ` and ${plural(coverage.untyped, "collected source has", "collected sources have")} no type` : ""}, so {coverage.untyped + coverage.notCollected === 1 ? "it is" : "they are"} not counted.
+              </p>
+            )}
+            <div style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: "var(--fs-12)" }}>
+                {(coverage === null ? TIER1_REGIONS.map((region) => ({ region, covered: null as number | null, partial: 0, gap: 0, total: region.jurisdictions.length })) : gaps).map((g) => (
+                  <Link key={g.region.id} href={`/map?region=${encodeURIComponent(g.region.id)}`} prefetch={false} aria-label={g.covered === null ? `Filter map to ${g.region.name}` : `Filter map to ${g.region.name} (${g.covered} of ${g.total} jurisdictions covered, ${g.gap} ${g.gap === 1 ? "gap" : "gaps"})`} className="cl-rail-link cl-rail-link--quiet" style={{ display: "flex", justifyContent: "space-between", gap: 10, width: "100%" }}>
                     <span style={{ fontWeight: 600, color: "var(--ink)" }}>{g.region.name}</span>
                     <span style={{ color: "var(--ink-3)", whiteSpace: "nowrap" }}>
-                      {g.covered} of {g.total}
+                      {g.covered === null ? "—" : `${g.covered} of ${g.total} covered`}
                     </span>
                   </Link>
                 ))}
-              </div>
-            )}
+            </div>
           </RailCard>
           <LegendRailCard />
         </div>

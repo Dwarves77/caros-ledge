@@ -1,9 +1,12 @@
 // Ported from old_repo/src/lib/market/lead-time-position.mjs (lines 1-96)
 // The lead-time position (INV-257): the SBTi cohort in months. It renders only from at least five rows whose unit is exactly "months" (another unit is excluded, never converted); fewer is "not forecastable" with the observed
 // count and the floor.
-import { prefixOf } from "./registry";
+import { prefixOf, producerFor } from "./registry";
 
 export const DEFAULT_MIN_SAMPLE = 5;
+
+/** The section can hold a row only while rows exist or the producer that writes them does (register surfaces:15: the SBTi producer is registered as not implemented, so the position could only ever say "not forecastable"). */
+export const leadTimeCanHaveRows = (rows: readonly unknown[]): boolean => rows.length > 0 || producerFor("sbti")?.implemented === true;
 
 export interface LeadTimeRow {
   series_key?: string | null;

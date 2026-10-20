@@ -35,7 +35,7 @@ export function jurisdictionKeyOf(r: Pick<MapItem, "jurisdictionIso" | "jurisdic
   if (primary) return countryOf(primary) ?? primary;
   return (r.jurisdiction || "global").toLowerCase();
 }
-export const labelOfKey = (key: string): string => legacyLabelOfIso(key) ?? (JURISDICTIONS.find((j) => j.id === key)?.label ?? (/^[A-Z]{2}$|^(EU|GLOBAL|IMO|ICAO)$/.test(key) ? isoToDisplayLabel(key) : key.toUpperCase()));
+const labelOfKey = (key: string): string => legacyLabelOfIso(key) ?? (JURISDICTIONS.find((j) => j.id === key)?.label ?? (/^[A-Z]{2}$|^(EU|GLOBAL|IMO|ICAO)$/.test(key) ? isoToDisplayLabel(key) : key.toUpperCase()));
 
 const mostUrgent = (items: readonly MapItem[]): UrgencyBand => BAND_ORDER.find((b) => items.some((r) => bandFromPriority(r.priority).key === b.key)) ?? (BAND_ORDER[BAND_ORDER.length - 1] as UrgencyBand);
 

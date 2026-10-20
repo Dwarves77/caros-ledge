@@ -41,8 +41,6 @@ export interface ChangeLogEntry {
 export interface Supersession {
   old: string;
   new: string;
-  oldTitle?: string;
-  newTitle?: string;
   date: string;
   severity: "major" | "minor" | "replacement";
   note: string;

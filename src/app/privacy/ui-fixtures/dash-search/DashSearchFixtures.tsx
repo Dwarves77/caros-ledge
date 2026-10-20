@@ -83,7 +83,7 @@ export function DashSearchFixtures({ screen, titles }: { screen: string; titles:
       {screen === "watchlist-failed" ? <WatchlistSurface watch={null} notices={null} limit={250} dateLabel={DATE} nowIso={NOW} /> : null}
       {screen === "search" ? <SearchResultsView q="emissions" outcome={{ ok: true, rows: SEARCH }} maxResults={20} dateLabel={DATE} nowIso={NOW} /> : null}
       {screen === "search-parity" ? <SearchResultsView q="emissions" outcome={{ ok: true, rows: parityRows }} maxResults={20} dateLabel={DATE} nowIso={NOW} /> : null}
-      {screen === "search-failed" ? <SearchResultsView q="emissions" outcome={{ ok: false, message: "down" }} maxResults={20} dateLabel={DATE} nowIso={NOW} /> : null}
+      {screen === "search-failed" ? <SearchResultsView q="emissions" outcome={{ ok: false, reason: "search_unavailable" }} maxResults={20} dateLabel={DATE} nowIso={NOW} /> : null}
       {screen === "search-empty" ? <SearchResultsView q="zzzz" outcome={{ ok: true, rows: [] }} maxResults={20} dateLabel={DATE} nowIso={NOW} /> : null}
       {screen === "portfolio-index" ? <PortfolioIndexView portfolios={PORTFOLIOS} unavailable={false} readOnly={false} dateLabel={DATE} nowIso={NOW} /> : null}
       {screen === "portfolio-unavailable" ? <PortfolioIndexView portfolios={[]} unavailable readOnly dateLabel={DATE} nowIso={NOW} /> : null}

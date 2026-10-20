@@ -218,8 +218,9 @@ try {
   );
 
   // ── every read the settings and account screens make after hydration (the app's routes and the database REST reads) is refused in turn and must be stated ──
+  // A refused read replaces the controls with its stated failure (the screen says what did not load, with Retry), so the draw is ready when the control OR that statement is there.
   for (const [name, screen, ready] of [['settings', 'settings', 'Show Band tiles'], ['account', 'account', 'Save personal profile']]) {
-    await check(`client reads ${name}`, () => checkClientReads(run, browser, { name, url: url(screen), viewport: [1280, 800], prepare: (page) => install(page, { calls: [], rest: [] }), after: (page) => page.getByRole(ready.startsWith('Show') ? 'switch' : 'button', { name: ready }).waitFor(), ignore: SHELL_READS }));
+    await check(`client reads ${name}`, () => checkClientReads(run, browser, { name, url: url(screen), viewport: [1280, 800], prepare: (page) => install(page, { calls: [], rest: [] }), after: (page) => page.getByRole(ready.startsWith('Show') ? 'switch' : 'button', { name: ready }).or(page.getByText(/did not load|could not be loaded/i)).first().waitFor(), ignore: SHELL_READS }));
   }
 
   // ── fixture parity: the real /settings and /profile screens against the committed baseline ─────────────────────────

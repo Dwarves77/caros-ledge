@@ -50,6 +50,6 @@ const OWN_REFUSALS = new Set(["42501", "P0002", "22023"]);
 export function adminDone<T = Record<string, unknown>>(res: { data: unknown; error: { code?: string | null; message: string } | null }): T {
   const { data, error } = res;
   if (isMissingObject(error)) throw notInstalled(/function\s+(?:public\.)?(\w+)/.exec(error?.message ?? "")?.[1] ?? "an admin function", "0102");
-  if (error) throw OWN_REFUSALS.has(error.code ?? "") ? dbError(error) : new LookupError("admin function", error);
+  if (error) throw OWN_REFUSALS.has(error.code ?? "") ? dbError(error, { own: true }) : new LookupError("admin function", error);
   return data as T;
 }

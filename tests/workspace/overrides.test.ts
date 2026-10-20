@@ -14,7 +14,7 @@ const O = "/api/workspace/overrides";
 let current: MemDb | null = null;
 const script = (db: MemDb): MemDb => (current = baseScript(db));
 const sent = () => (current?.rows("notification_outbox") ?? []).map((r) => ({ userId: r.user_id as string, kind: r.kind as string, payload: r.payload as Record<string, unknown> }));
-const wire = () => wireWorkspaceDeps({ revalidateWorkspaceData: () => undefined });
+const wire = () => wireWorkspaceDeps({});
 const overrides = (db: MemDb) => db.rows("workspace_item_overrides");
 const archive = { itemId: "o3", isArchived: true, archiveReason: "superseded by the 2027 text" };
 const withOverride = (db: MemDb, over: Row = {}) => (db.rows("workspace_item_overrides").push({ org_id: ORG_A, item_id: ITEM_1, ...over }), db);

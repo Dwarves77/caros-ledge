@@ -85,7 +85,7 @@ export async function termPass(deps: TermPassDeps, input: TermPassInput): Promis
     });
     Object.assign(counts, written);
     const vocab = await readAdoptedVocabulary(sb);
-    if (vocab.note) notes.push(vocab.note);
+    if (!vocab.ok) notes.push(vocab.reason);
     const minted = await mintAdoptedTermEntities(sb, vocab.adopted);
     counts.entities_minted = minted.minted;
     if (minted.error) {

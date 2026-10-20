@@ -33,7 +33,7 @@ export const PATCH = route("/api/community/groups/[id]/settings", async (request
   if (!canEditGroup(await groupRole(auth.client, groupId, auth.userId))) throw new HttpError(403, "Only group admins can change a group's settings");
   if (input.privacy !== undefined && input.privacy !== group.privacy) {
     const { error } = await auth.client.rpc("set_group_privacy", { p_group_id: groupId, p_privacy: input.privacy, p_reason: input.privacy_reason || null });
-    if (error) throw ["42501", "22023", "P0002"].includes(error.code ?? "") ? dbError(error) : new LookupError("set_group_privacy", error);
+    if (error) throw ["42501", "22023", "P0002"].includes(error.code ?? "") ? dbError(error, { own: true }) : new LookupError("set_group_privacy", error);
   }
   const { data, error } = Object.keys(update).length ? await auth.client.from("community_groups").update(update).eq("id", groupId).select("id, name, slug, region, privacy, description").maybeSingle() : await auth.client.from("community_groups").select("id, name, slug, region, privacy, description").eq("id", groupId).maybeSingle();
   if (error) throw dbError(error, { forbidden: "You can't change this group's settings" });

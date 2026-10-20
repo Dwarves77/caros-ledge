@@ -21,7 +21,6 @@ src/features/learning/data/emitting-tables/regional_data_facts.json | copied fro
 src/features/learning/data/emitting-tables/signposts.json | copied from old_repo/src/lib/learning/emitting-tables/signposts.json, data
 src/features/learning/data/emitting-tables/statutory_computations.json | copied from old_repo/src/lib/learning/emitting-tables/statutory_computations.json, data
 src/features/learning/index.ts | new in P2-07: barrel for the import surface the brief names, no old counterpart
-src/features/market/producers/data/eea-hdv-classification.json | copied from old_repo/scripts/producers/oem/eea-hdv-classification.json (lines 1-9), data
 src/features/market/producers/data/series-item-map.json | new in P2-07: the ratified series-to-item map as data (series-item-map.mjs lines 1-58), no old counterpart at this shape
 src/features/market/producers/index.ts | new in P2-07: barrel for the import surface the brief names, no old counterpart
 src/features/operations/producers/index.ts | new in P2-07: barrel for the import surface the brief names, no old counterpart

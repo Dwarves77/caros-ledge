@@ -1,0 +1,6 @@
+{
+ "bls-oews-parser@1": "annual",
+ "eurostat-lc-lci-lev-parser@1": "annual",
+ "eurostat-nrg-pc-205-parser@1": "biannual",
+ "neso-carbon-intensity-stats-parser@1": "daily"
+}

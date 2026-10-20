@@ -40,7 +40,7 @@ const bump = (m: Record<string, number>, k: string) => {
 };
 
 /** The pure part: the extractor over each item. */
-export function runExtraction(items: readonly CorpusItem[]): ExtractionRun {
+function runExtraction(items: readonly CorpusItem[]): ExtractionRun {
   const metrics: ExtractionMetrics = { items_processed: items.length, items_with_events: 0, events_emitted: 0, skips: 0, by_kind: {}, by_confidence: {}, by_precision: {}, by_skip_reason: {}, dedupe_dropped: 0, extractor_version: EXTRACTOR_VERSION };
   const run: ExtractionRun = { metrics, allEvents: [], allSkips: [], dedupeDropped: [] };
   items.forEach((item, index) => {

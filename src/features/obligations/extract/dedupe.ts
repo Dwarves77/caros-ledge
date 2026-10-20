@@ -45,7 +45,7 @@ function compareNormalize(text: string): string {
 }
 
 /** The same sentence: equal, or one is a prefix-sharing or contained form of the other (at least 40 characters of agreement). */
-export function sameObligationContent(aText: string, bText: string): boolean {
+function sameObligationContent(aText: string, bText: string): boolean {
   const a = compareNormalize(aText);
   const b = compareNormalize(bText);
   if (!a || !b) return false;

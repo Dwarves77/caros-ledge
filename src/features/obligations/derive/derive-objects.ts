@@ -9,6 +9,8 @@
 import { z } from "zod";
 
 import { DUTY_HOLDER_CLASSES, isValid, LEG_MODE_CODES } from "@/core/contracts/vocabularies";
+import { readFactSuppressionsFor } from "@/core/detail/claim-tiers";
+import { admissibleClaims, admitItems } from "@/core/derived/admissible";
 import { isVerbatim } from "@/core/contracts/verbatim";
 import type { Db } from "@/core/db";
 import { fetchAllByIdChunks } from "@/core/db";
@@ -21,11 +23,10 @@ import { classifyItemBindingPosition, type ItemForClassification } from "./class
 import rulesJson from "./data/object-rules.json";
 import targetsJson from "./data/fueleu-targets.json";
 
-export const OBJECT_DERIVATION_VERSION = "oblig-objects-2026-10-15.1";
-export const FREQUENCIES: ReadonlySet<string> = new Set(["annual", "per_consignment", "per_voyage", "event_triggered"]);
+const FREQUENCIES: ReadonlySet<string> = new Set(["annual", "per_consignment", "per_voyage", "event_triggered"]);
 const MODE_ALIASES: ReadonlySet<string> = new Set(["sea", "maritime", "water", "vessel", "marine", "truck", "lorry", "hgv", "barge", "iww", "inland-waterway", "freighter", "airfreight"]);
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-export const DATE_COLUMNS = ["entry_into_force", "date_of_application", "first_deadline", "enforcement_start", "date_reviewed", "next_review_due"] as const;
+const DATE_COLUMNS = ["entry_into_force", "date_of_application", "first_deadline", "enforcement_start", "date_reviewed", "next_review_due"] as const;
 const MONEY_KEYS = ["amount", "currency", "price", "cost"];
 
 const re = z.string();
@@ -41,7 +42,7 @@ const PINPOINT_RE = new RegExp(rules.pinpoint, "i");
 const DEONTIC_RE = new RegExp(rules.deontic, "i");
 const APPLICATION_RE = new RegExp(rules.datePhrases.date_of_application, "i");
 const ENFORCEMENT_RE = new RegExp(rules.datePhrases.enforcement_start, "i");
-export const FUELEU_TARGETS = targets;
+const FUELEU_TARGETS = targets;
 
 const nz = (s: unknown): string => (typeof s === "string" ? s.trim() : "");
 const norm = (s: unknown): string => nz(s).toLowerCase();
@@ -98,7 +99,7 @@ export interface ObjectItem extends ItemForClassification {
 export type BuildResult = { ok: true; row: Record<string, unknown>; bindingSource: string } | { ok: false; reason: string };
 
 /** One object row from a candidate, or the named refusal. The span must be in the capture of the same instrument item; nothing is guessed. */
-export function buildObjectRow(c: Candidate, ctx: { item: ObjectItem | null; capture: CaptureRow | null; existingForPinpoint: ExistingObject | null; classify?: typeof classifyItemBindingPosition }): BuildResult {
+function buildObjectRow(c: Candidate, ctx: { item: ObjectItem | null; capture: CaptureRow | null; existingForPinpoint: ExistingObject | null; classify?: typeof classifyItemBindingPosition }): BuildResult {
   const { item, capture, existingForPinpoint } = ctx;
   const classify = ctx.classify ?? classifyItemBindingPosition;
   if (!c || typeof c !== "object") return { ok: false, reason: "candidate_not_an_object" };
@@ -152,7 +153,7 @@ export interface ObjectPlan {
   alreadyRegistered: number;
 }
 /** Plan a candidate batch against what is already registered: a repeat of the same text is a no-op, a changed text versions the pinpoint. */
-export function planObligationObjects(candidates: readonly Candidate[], ctx: { itemsById: ReadonlyMap<string, ObjectItem>; capturesById: ReadonlyMap<string, CaptureRow>; existing: readonly ExistingObject[]; classify?: typeof classifyItemBindingPosition }): ObjectPlan {
+function planObligationObjects(candidates: readonly Candidate[], ctx: { itemsById: ReadonlyMap<string, ObjectItem>; capturesById: ReadonlyMap<string, CaptureRow>; existing: readonly ExistingObject[]; classify?: typeof classifyItemBindingPosition }): ObjectPlan {
   const current = currentObligationObjects<ExistingObject>(ctx.existing);
   const byPinpoint = new Map(current.map((o) => [`${o.instrument_item_id}|${norm(o.pinpoint_citation)}`, o]));
   const existingIds = new Set(ctx.existing.map((o) => o.obligation_id));
@@ -189,7 +190,7 @@ export interface EventForDates {
   confidence?: string | null;
 }
 /** The four-date timeline from DAY-precision events only (earliest of each family); a date that is not stated is null. */
-export function timelineFromEvents(events: readonly EventForDates[]): { entry_into_force: string | null; date_of_application: string | null; first_deadline: string | null; enforcement_start: string | null } {
+function timelineFromEvents(events: readonly EventForDates[]): { entry_into_force: string | null; date_of_application: string | null; first_deadline: string | null; enforcement_start: string | null } {
   const days = events.filter((e) => e.date_precision === "day" && /^\d{4}-\d{2}-\d{2}$/.test(e.event_date)).sort((a, b) => (a.event_date < b.event_date ? -1 : a.event_date > b.event_date ? 1 : 0));
   const first = (pred: (e: EventForDates) => boolean): string | null => days.find(pred)?.event_date ?? null;
   return {
@@ -210,7 +211,7 @@ export interface ClaimForObjects {
   intelligence_item_id: string;
 }
 /** FACT claims whose verbatim span names an Article pinpoint, a duty-holder phrase and a deontic verb: one candidate each, in its own capture. */
-export function candidatesFromClaims(item: ObjectItem, claims: readonly ClaimForObjects[], events: readonly EventForDates[]): Candidate[] {
+function candidatesFromClaims(item: ObjectItem, claims: readonly ClaimForObjects[], events: readonly EventForDates[]): Candidate[] {
   const out: Candidate[] = [];
   const timeline = timelineFromEvents(events);
   const value = nz(item.canonical_instrument_key) || nz(item.instrument_identifier) || nz(item.title);
@@ -226,7 +227,7 @@ export function candidatesFromClaims(item: ObjectItem, claims: readonly ClaimFor
 }
 
 /** The FuelEU Article 4(2) trajectory: one candidate per period whose quote is verbatim in a held capture of the instrument; periods whose quote is nowhere held are not produced. */
-export function candidatesFromFueleuTargets(item: ObjectItem, captures: readonly CaptureRow[], events: readonly EventForDates[]): Candidate[] {
+function candidatesFromFueleuTargets(item: ObjectItem, captures: readonly CaptureRow[], events: readonly EventForDates[]): Candidate[] {
   const t = FUELEU_TARGETS.instrument;
   const identity = new RegExp(t.identityPattern, "i");
   if (!identity.test(`${item.canonical_instrument_key ?? ""} ${item.instrument_identifier ?? ""}`)) return [];
@@ -248,16 +249,19 @@ export function candidatesFromFueleuTargets(item: ObjectItem, captures: readonly
 export async function deriveObligationObjects(sb: Db, input: { dry: boolean; itemIds: readonly string[]; extraCandidates?: readonly Candidate[] }): Promise<RunResult<{ plan: ObjectPlan }>> {
   const ids = [...new Set([...input.itemIds, ...(input.extraCandidates ?? []).map((c) => c.instrument_item_id)])];
   const items = await fetchAllByIdChunks<ObjectItem & { id: string }>(ids, async (slice) => {
-    const { data, error } = await sb.from("intelligence_items").select("id, title, is_archived, jurisdiction_iso, instrument_identifier, canonical_instrument_key").in("id", slice);
+    const { data, error } = await admitItems(sb.from("intelligence_items").select("id, title, is_archived, jurisdiction_iso, instrument_identifier, canonical_instrument_key").in("id", slice));
     if (error) throw new Error(`derive-objects: intelligence_items read failed: ${error.message}`);
     return data ?? [];
   });
   const itemsById = new Map(items.filter((i) => !i.is_archived).map((i) => [i.id, i]));
-  const claims = await fetchAllByIdChunks<ClaimForObjects>([...itemsById.keys()], async (slice) => {
-    const { data, error } = await sb.from("section_claim_provenance").select("id, claim_text, claim_kind, source_span, search_result_id, source_id, intelligence_item_id").eq("claim_kind", "FACT").in("intelligence_item_id", slice);
-    if (error) throw new Error(`derive-objects: section_claim_provenance read failed: ${error.message}`);
-    return data ?? [];
-  }, { manyPerId: true });
+  const claims = admissibleClaims(
+    await fetchAllByIdChunks<ClaimForObjects>([...itemsById.keys()], async (slice) => {
+      const { data, error } = await sb.from("section_claim_provenance").select("id, claim_text, claim_kind, source_span, search_result_id, source_id, intelligence_item_id").eq("claim_kind", "FACT").in("intelligence_item_id", slice);
+      if (error) throw new Error(`derive-objects: section_claim_provenance read failed: ${error.message}`);
+      return data ?? [];
+    }, { manyPerId: true }),
+    await readFactSuppressionsFor(sb, [...itemsById.keys()]),
+  );
   const events = await fetchAllByIdChunks<EventForDates & { intelligence_item_id: string }>([...itemsById.keys()], async (slice) => {
     const { data, error } = await sb.from("item_forward_events").select("intelligence_item_id, event_date, date_precision, event_kind, obligation_text, confidence").in("intelligence_item_id", slice);
     if (error) throw new Error(`derive-objects: item_forward_events read failed: ${error.message}`);

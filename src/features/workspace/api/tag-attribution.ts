@@ -4,9 +4,8 @@ import type { Db } from "@/core/db/clients";
 import { fetchAllByIdChunks } from "@/core/db/query";
 import { LookupError } from "@/core/http/errors";
 
-import { attributionText, formatAppliedDate, type TagApplication } from "../attribution-text";
+import type { TagApplication } from "../attribution-text";
 
-export { attributionText, formatAppliedDate };
 export type { TagApplication };
 
 export interface TagLinkRow {
@@ -19,7 +18,7 @@ export interface ItemTagLinkRow extends TagLinkRow {
 }
 
 /** A member's display name: full name, else display name, else null. An email is never used, so a tag tooltip cannot leak an address. */
-export function memberDisplayName(profile: { full_name?: string | null; display_name?: string | null } | null | undefined): string | null {
+function memberDisplayName(profile: { full_name?: string | null; display_name?: string | null } | null | undefined): string | null {
   return profile?.full_name?.trim() || profile?.display_name?.trim() || null;
 }
 

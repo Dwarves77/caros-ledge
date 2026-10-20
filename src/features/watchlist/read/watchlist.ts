@@ -5,6 +5,7 @@
 // The watchlist read: the caller's personal rows and the workspace's team rows (RLS binds both to the caller), one dedup (personal wins), then ONE lookup per table in parallel. Item-backed rows
 // go through the lists' own mapper (timelines, source rating) so a watched row draws exactly what the list draws; a source or a series is labelled by its own name; a row the read gate hides is
 // said to be unavailable, never titled with its raw id. Every read checks its error and the whole read rejects: a failure is never an empty watchlist (INV-263).
+import { admitItems } from "@/core/derived/admissible";
 import type { Db } from "@/core/db";
 import { fetchAllByIdChunks } from "@/core/db";
 import { isUuid } from "@/core/http/parse";
@@ -84,7 +85,7 @@ export async function readWatchlist(db: Db, who: { userId: string; orgId: string
   const uuidKeys = itemKeys.filter((k) => isUuid(k));
   const legacyKeys = itemKeys.filter((k) => !isUuid(k));
   const adders = [...new Set(all.map((r) => r.added_by_user_id).filter((id): id is string => !!id))];
-  const itemRead = (column: "id" | "legacy_id", keys: string[]) => byIds<WorkspaceItemRpcRow>(keys, (slice) => db.from("intelligence_items").select(ITEM_COLUMNS).eq("provenance_status", "verified").in(column, slice), "intelligence_items");
+  const itemRead = (column: "id" | "legacy_id", keys: string[]) => byIds<WorkspaceItemRpcRow>(keys, (slice) => admitItems(db.from("intelligence_items").select(ITEM_COLUMNS)).in(column, slice), "intelligence_items");
   const [byUuid, byLegacy, sources, series, roster] = await Promise.all([
     itemRead("id", uuidKeys),
     itemRead("legacy_id", legacyKeys),

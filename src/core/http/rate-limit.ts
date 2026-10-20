@@ -66,8 +66,6 @@ function localHit(key: string, now: number, limit: number, windowMs: number): { 
   return { allowed: entry.count <= limit, remaining: Math.max(0, limit - entry.count), resetAt: entry.resetAt };
 }
 
-/** A mint run flushes many tags in a burst, so the worker-authenticated flush route gets its own budget (IMP-057), carried through rate_limit_hit as p_limit; user routes keep the default 60. */
-export const WORKER_FLUSH_BUDGET: RateBudget = { limit: 600, windowMs: WINDOW_MS };
 /**
  * Null when allowed, or the 429 response. `now` is injectable so the boundary can be tested; `db` is the shared counter's client (default: the
  * service client when configured; pass null to force the in-memory window). Every caller awaits it.

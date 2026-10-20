@@ -94,7 +94,6 @@
         "src/core/http/rate-limit.ts": 1,
         "src/core/perf/server-timing.ts": 2,
         "src/core/producers/summary.ts": 1,
-        "src/core/propagation/author-edges.ts": 1,
         "src/core/shared/telemetry.ts": 1,
         "src/core/turn/wiring.ts": 1,
         "src/features/account/lib/notification-prefs.ts": 1,
@@ -125,7 +124,6 @@
         "src/features/research/authority-score.ts": 2,
         "src/features/research/model/assess.ts": 1,
         "src/features/sources/api/check-sources.ts": 1,
-        "src/features/telemetry/api/revalidate.ts": 1,
         "src/features/workspace/api/notes.ts": 2,
         "src/features/workspace/api/overrides.ts": 1,
         "src/features/workspace/api/personal-state.ts": 1,
@@ -194,17 +192,9 @@
           "count": 2,
           "reason": "a pattern that matches &nbsp; in captured HTML source, not text shown to a reader: it stays."
         },
-        "src/features/operations/ui/OperationsDetail.tsx": {
-          "count": 1,
-          "reason": "S:4 (CONFIRMED, P0): the not-written note is a string, so the customer reads the characters &apos;. R2d writes the sentence in the typed copy table and this entry goes."
-        },
         "src/features/regulations/map/MapView.tsx": {
           "count": 1,
           "reason": "Leaflet reads its attribution option as HTML, so the entity is decoded there: it stays."
-        },
-        "src/features/research/ui/ResearchDetail.tsx": {
-          "count": 1,
-          "reason": "S:4 (CONFIRMED, P0): the not-written note is a string, so the customer reads the characters &apos;. R2d writes the sentence in the typed copy table and this entry goes."
         }
       }
     },

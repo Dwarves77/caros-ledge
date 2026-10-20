@@ -7,8 +7,8 @@ import { addDaysIso } from "../producers/published-price-statistics";
 import { DELTA_WINDOWS, type DeltaPoint, type SeriesDeltas } from "./deltas";
 
 export type DeltaAbsentState = "no_data_yet" | "not_covered" | "suppressed" | "not_applicable";
-export const DELTA_STATE_OBS_CODE: Readonly<Record<DeltaAbsentState, "H" | "L" | "Q" | "O">> = { no_data_yet: "H", not_covered: "L", suppressed: "Q", not_applicable: "O" };
-export const DELTA_STATE_LABEL: Readonly<Record<DeltaAbsentState, string>> = { no_data_yet: "no data yet", not_covered: "not covered", suppressed: "suppressed", not_applicable: "not applicable" };
+const DELTA_STATE_OBS_CODE: Readonly<Record<DeltaAbsentState, "H" | "L" | "Q" | "O">> = { no_data_yet: "H", not_covered: "L", suppressed: "Q", not_applicable: "O" };
+const DELTA_STATE_LABEL: Readonly<Record<DeltaAbsentState, string>> = { no_data_yet: "no data yet", not_covered: "not covered", suppressed: "suppressed", not_applicable: "not applicable" };
 
 export type WindowKey = "1w" | "1m" | "YoY";
 const WINDOW_DAYS: Record<WindowKey, number> = { "1w": DELTA_WINDOWS.w1, "1m": DELTA_WINDOWS.m1, YoY: DELTA_WINDOWS.yoy };
@@ -36,7 +36,7 @@ export function deltaCellModel(deltas: SeriesDeltas | undefined, window: WindowK
   return { kind: "value", window, arrow, magnitude, fromDate: delta.fromDate, text: `${arrow}${magnitude} ${window}` };
 }
 
-export const SPARKLINE_MAX_POINTS = 60;
+const SPARKLINE_MAX_POINTS = 60;
 export const SPARK_W = 100;
 export const SPARK_H = 24;
 const SPARK_PAD = 2;

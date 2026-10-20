@@ -29,7 +29,6 @@ test("a valid batch applies end to end: the brief, its sections and timeline, it
   assert.deepEqual(w.db.rows("item_changelog").map((c) => [c.item_id, c.change_type, c.field, c.detected_by]), [[ITEM, "UPDATED", "full_brief", "record-briefs"]]);
   assert.equal(w.rec.connects.some((c) => c.startsWith("events:")) && w.rec.connects.some((c) => c.startsWith("obligations:")) && w.rec.connects.some((c) => c.startsWith("entities:")), true, "the flywheel participation ran in the same run");
   assert.deepEqual((r.data as { ids: Record<string, string[]> }).ids.applied_ids, [ITEM]);
-  assert.ok(w.flushed.some((t) => t.includes(`item:${ITEM}`)), "the public cache was flushed for the applied item");
   assert.equal(r.counts.verified, 1);
 });
 

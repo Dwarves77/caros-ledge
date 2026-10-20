@@ -3,6 +3,7 @@
 // Ported from old_repo/scripts/producers/research/research-assessment-producer.mjs (lines 26-288)
 // Ported from old_repo/scripts/producers/research/research-assessment-producer.mjs (lines 311-409)
 // The producer: the live candidates, the OpenAlex source records, the row writes and the signpost writes. The assessment itself is ./model/assess.
+import { admitItems } from "@/core/derived/admissible";
 import { fetchAllByIdChunks, fetchAllRows, type Db } from "@/core/db";
 import { entityId } from "@/core/entities";
 import { workByDoi, type OpenAlexDeps } from "@/core/http/openalex";
@@ -12,7 +13,7 @@ import type { Rec } from "@/core/producers/upsert-plan";
 import { assessItem, extractDoiCandidate, hasChanged, isResearchCandidate, RESEARCH_CANDIDATE_OR, toAssessmentInput, toRow, type AssessInput, type ForwardEvent, type SignpostSpec } from "./model/assess";
 
 /** DOI in the item's text to an OpenAlex work to a source record for the authority score; unresolved is no record, never a guessed one. */
-export async function resolveOpenAlexSourceRecords(input: AssessInput, deps: OpenAlexDeps = {}): Promise<Rec[]> {
+async function resolveOpenAlexSourceRecords(input: AssessInput, deps: OpenAlexDeps = {}): Promise<Rec[]> {
   const doi = extractDoiCandidate(input.text);
   const work = doi ? await workByDoi(doi, deps) : null;
   if (!doi || !work) return [];
@@ -23,7 +24,7 @@ export async function resolveOpenAlexSourceRecords(input: AssessInput, deps: Ope
 
 /** The live candidates: verified, non-archived research items with NO current assessment (the first pass never re-scores; `itemIds` names the items to re-score, current assessment or not), at most `limit`, with their source tier and forward events. */
 export async function fetchLiveCandidates(sb: Db, limit?: number, opts: { itemIds?: readonly string[] } = {}): Promise<AssessInput[]> {
-  const items = await fetchAllRows<Rec>((from, to) => sb.from("intelligence_items").select("id,item_type,domain,added_date,title,what_is_it,why_matters,full_brief,source_id,instrument_entity_id").or(RESEARCH_CANDIDATE_OR).eq("is_archived", false).eq("provenance_status", "verified").order("id", { ascending: true }).range(from, to) as never, { cap: 100_000 });
+  const items = await fetchAllRows<Rec>((from, to) => admitItems(sb.from("intelligence_items").select("id,item_type,domain,added_date,title,what_is_it,why_matters,full_brief,source_id,instrument_entity_id").or(RESEARCH_CANDIDATE_OR)).order("id", { ascending: true }).range(from, to) as never, { cap: 100_000 });
   const only = opts.itemIds ? new Set(opts.itemIds) : null;
   const admitted = items.filter((r) => isResearchCandidate(r.item_type, r.domain) && (!only || only.has(String(r.id))));
   const have = new Set(only ? [] : (await fetchAllByIdChunks(admitted.map((r) => String(r.id)), async (ids) => { const { data, error } = await sb.from("research_assessments_current").select("item_id").in("item_id", ids); if (error) throw new Error(`reading research_assessments_current failed: ${error.message}`); return (data ?? []) as Array<{ item_id: string }>; })).map((r) => r.item_id));

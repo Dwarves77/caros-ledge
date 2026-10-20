@@ -39,7 +39,7 @@ function planBriefs(input: Record<string, unknown>): BriefsPlan {
 }
 
 /** The kit's deps from the turn's: the members it uses, by name. */
-export const batchDeps = (d: BuiltDeps): BatchDeps => ({ sb: d.sb, now: d.now, intake: d.intake, verdicts: d.producers.verdicts ?? null, flushCache: d.mintRun.flushCache });
+export const batchDeps = (d: BuiltDeps): BatchDeps => ({ sb: d.sb, now: d.now, intake: d.intake, verdicts: d.producers.verdicts ?? null });
 
 export async function runBriefs(call: FamilyCall, d: BuiltDeps): Promise<RunResult> {
   const plan = planBriefs(call.input);

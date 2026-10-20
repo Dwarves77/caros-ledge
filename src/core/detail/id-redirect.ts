@@ -2,6 +2,7 @@
 // Ported from old_repo/src/lib/detail/item-id-filter.ts (lines 1-7)
 // A uuid URL renders where it belongs or does not render (INV-269): the owning surface's page, under the item's legacy slug when it has one, else not found. The property (every uuid URL lands
 // on a page that renders that item, or on not-found when no surface admits it) is proven by tests/detail/id-redirect.test.ts over a fixture corpus.
+import { isAdmissibleItem, ITEM_ADMISSIBLE_COLUMNS, type ItemAdmissibility } from "@/core/derived/admissible";
 import type { Db } from "@/core/db";
 import { isUuid } from "@/core/http/parse";
 import { canonicalSurface, detailHref, type DetailSurface } from "@/core/lists";
@@ -10,18 +11,17 @@ const isItemUuid = (value: string): boolean => isUuid(value);
 /** The column a URL id names: `id` for a uuid, `legacy_id` for anything else. */
 export const itemIdColumn = (value: string): "id" | "legacy_id" => (isItemUuid(value) ? "id" : "legacy_id");
 
-const ID_REDIRECT_COLUMNS = "id, legacy_id, item_type, domain, provenance_status";
-export interface IdRedirectRow {
+const ID_REDIRECT_COLUMNS = `id, legacy_id, item_type, domain, ${ITEM_ADMISSIBLE_COLUMNS}`;
+export interface IdRedirectRow extends ItemAdmissibility {
   id: string;
   legacy_id: string | null;
   item_type: string | null;
   domain: number | null;
-  provenance_status: string | null;
 }
 export type IdRedirectDecision = { kind: "render" } | { kind: "redirect"; to: string } | { kind: "not-found" };
 
-/** The surface that admits the row: only a verified row is admitted, on the surface its raw item_type and domain map to. */
-const admittedSurfaceFor = (row: IdRedirectRow): DetailSurface | null => (row.provenance_status === "verified" ? canonicalSurface({ type: row.item_type, domain: row.domain }) : null);
+/** The surface that admits the row: only an admissible row (verified, not archived, not replaced) is admitted, on the surface its raw item_type and domain map to. */
+const admittedSurfaceFor = (row: IdRedirectRow): DetailSurface | null => (isAdmissibleItem(row) ? canonicalSurface({ type: row.item_type, domain: row.domain }) : null);
 
 function decideIdRedirect(surface: DetailSurface, row: IdRedirectRow | null): IdRedirectDecision {
   if (!row) return { kind: "render" };

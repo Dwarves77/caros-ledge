@@ -1,11 +1,13 @@
 // Ported from old_repo/src/lib/forward-events/read-upcoming.mjs (lines 12-231)
-// The upcoming-obligations read: forward events from a date, every kind but `other` by default, joined IN THE QUERY to verified live items, narrowed by the
+// The upcoming-obligations read: forward events from a date, every kind but `other` by default, joined IN THE QUERY to admissible items (core/derived) and minus the events of a suppressed claim, narrowed by the
 // workspace profile or the URL facets (jurisdiction and mode), with the hidden-by-scope count. Fixes: a failed events or item read throws (the old reader
 // folded it into an empty result: B-1564/0058), and the scope filter is applied while paging until the limit is filled (the old overfetch of limit x 5 could
 // starve a scoped read short). "uk" matches GB through the jurisdiction canon.
+import { admitItems } from "@/core/derived/admissible";
 import type { Db } from "@/core/db";
 import { canonicalJurisdictionCode, GENERIC_JURISDICTIONS } from "@/core/entities/id";
 import { qb } from "@/core/db";
+import { notInList, suppressedEventIds } from "@/core/derived/suppressed-events";
 
 import { DEFAULT_KINDS, EVENT_KINDS, type EventKind } from "../kinds";
 
@@ -24,7 +26,7 @@ export function defaultJurisdictionFilter(profileJurisdictions: unknown): string
 
 const canonLower = (code: unknown): string => (canonicalJurisdictionCode(code) ?? "").toLowerCase();
 /** An item matches when any of its ISO codes equals a key or sits under it; no filter keeps everything, an item with no codes matches nothing. */
-export function jurisdictionMatches(itemJurisdictionIso: readonly string[] | null | undefined, filterKeys: readonly string[] | null | undefined): boolean {
+function jurisdictionMatches(itemJurisdictionIso: readonly string[] | null | undefined, filterKeys: readonly string[] | null | undefined): boolean {
   if (!filterKeys || !filterKeys.length) return true;
   if (!Array.isArray(itemJurisdictionIso) || !itemJurisdictionIso.length) return false;
   const keys = filterKeys.map(canonLower).filter(Boolean);
@@ -34,7 +36,7 @@ export function jurisdictionMatches(itemJurisdictionIso: readonly string[] | nul
   });
 }
 /** An item matches the mode filter when it carries one of the modes, or declares none (mode-agnostic). */
-export function modeMatches(itemModes: readonly string[] | null | undefined, modeKeys: readonly string[] | null | undefined): boolean {
+function modeMatches(itemModes: readonly string[] | null | undefined, modeKeys: readonly string[] | null | undefined): boolean {
   if (!modeKeys || !modeKeys.length || !Array.isArray(itemModes) || !itemModes.length) return true;
   const keys = modeKeys.map((k) => String(k ?? "").trim().toLowerCase()).filter(Boolean);
   return itemModes.some((m) => keys.includes(String(m ?? "").trim().toLowerCase()));
@@ -68,7 +70,7 @@ export interface UpcomingSpec {
   from: string;
   limit: number;
 }
-export function buildUpcomingEventsQuerySpec(opts: { itemId?: string | null; kinds?: readonly unknown[]; from?: unknown; limit?: unknown }, todayIso: string): UpcomingSpec {
+function buildUpcomingEventsQuerySpec(opts: { itemId?: string | null; kinds?: readonly unknown[]; from?: unknown; limit?: unknown }, todayIso: string): UpcomingSpec {
   const kinds = Array.isArray(opts.kinds) && opts.kinds.length ? (opts.kinds.filter((k): k is EventKind => (EVENT_KINDS as readonly unknown[]).includes(k))) : [...DEFAULT_KINDS];
   return {
     itemId: opts.itemId ?? null,
@@ -97,7 +99,7 @@ export interface UpcomingEvent {
   item: UpcomingItem;
 }
 /** Events narrowed by scope, up to `limit`; an event whose item is not in the join never reaches here (the join is in the query). */
-export function selectUpcoming(events: readonly UpcomingEvent[], opts: { jurisdictionFilter?: readonly string[] | null; modeFilter?: readonly string[] | null; limit?: number } = {}): UpcomingEvent[] {
+function selectUpcoming(events: readonly UpcomingEvent[], opts: { jurisdictionFilter?: readonly string[] | null; modeFilter?: readonly string[] | null; limit?: number } = {}): UpcomingEvent[] {
   const limit = typeof opts.limit === "number" && opts.limit > 0 ? Math.floor(opts.limit) : Infinity;
   const out: UpcomingEvent[] = [];
   for (const ev of events) {
@@ -121,6 +123,7 @@ export interface UpcomingResult {
 /** Read upcoming events. Pages of the dated, verified-item-joined list are scanned until the scoped list fills (or, when the hidden count is wanted, the list ends or the cap is reached). */
 export async function readUpcoming(sb: Db, opts: { itemId?: string | null; kinds?: readonly unknown[]; from?: unknown; limit?: unknown; jurisdictionFilter?: readonly string[] | null; modeFilter?: readonly string[] | null; countHidden?: boolean }, todayIso: string): Promise<UpcomingResult> {
   const spec = buildUpcomingEventsQuerySpec(opts, todayIso);
+  const suppressed = notInList(await suppressedEventIds(sb));
   const wantAll = opts.countHidden === true;
   const unscoped: UpcomingEvent[] = [];
   let scoped: UpcomingEvent[] = [];
@@ -130,7 +133,8 @@ export async function readUpcoming(sb: Db, opts: { itemId?: string | null; kinds
       truncated = true;
       break;
     }
-    let q = qb(sb.from("item_forward_events").select(SELECT)).gte("event_date", spec.from).in("event_kind", spec.kinds).eq("item.provenance_status", "verified").eq("item.is_archived", false);
+    let q = admitItems(qb(sb.from("item_forward_events").select(SELECT)).gte("event_date", spec.from).in("event_kind", spec.kinds), "item");
+    if (suppressed) q = q.not("id", "in", suppressed);
     if (spec.itemId) q = q.eq("intelligence_item_id", spec.itemId);
     const rows = rowsOf<UpcomingEvent>("item_forward_events", await q.order("event_date", { ascending: true }).order("created_at", { ascending: true }).order("id", { ascending: true }).range(page * PAGE, page * PAGE + PAGE - 1));
     unscoped.push(...rows);

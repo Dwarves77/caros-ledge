@@ -16,7 +16,7 @@ import { withListPosition } from "@/ui/list-surface";
 import type { ListRowProps } from "@/ui/ListRow";
 
 /** The row overflow menu: Open, Copy link and the watchlist's own Watch control (RowWatch, inside the one 44 px overflow). */
-export function RowMenu({ label, href, type, id }: { label: string; href: string; type: WatchlistItemType; id: string }) {
+function RowMenu({ label, href, type, id }: { label: string; href: string; type: WatchlistItemType; id: string }) {
   const router = useRouter();
   const [note, setNote] = useState<{ text: string; error: boolean } | null>(null);
   const copy = async () => {

@@ -4,18 +4,20 @@
 // over exactly those filters (INV-221): three exact counts (upcoming soonest first, past most recent first, undated by id) plan the page across the segments.
 // The verified, live item is joined IN THE QUERY (an inner embed), so the count, the page and the item can never disagree (the old page was cut after the
 // join and its total was not); a failed read throws (the route answers 503), it is never an empty page with a non-zero total.
+import { admitItems } from "@/core/derived/admissible";
 import type { Db } from "@/core/db";
 import { canonicalJurisdictionCode, GENERIC_JURISDICTIONS } from "@/core/entities/id";
 import { isValid } from "@/core/contracts/vocabularies";
 import { qb, type Qb } from "@/core/db";
+import { notInList, suppressedEventIds } from "@/core/derived/suppressed-events";
 
 import { countOf, rowsOf } from "./qb";
 import { fetchRegisterFacetOptions, type RegisterFacets } from "./register-facets";
 
-export const UNCLASSIFIED = "unclassified";
+const UNCLASSIFIED = "unclassified";
 export const DUE_WINDOWS = ["overdue", "30", "90", "365", "undated", "all"] as const;
 export type DueWindow = (typeof DUE_WINDOWS)[number];
-export const OBLIGATION_TEXT_TRIM_LENGTH = 160;
+const OBLIGATION_TEXT_TRIM_LENGTH = 160;
 const ITEM_EMBED = "item:intelligence_items!inner(id, title, legacy_id, jurisdiction_iso)";
 const REGISTER_SELECT = `id, intelligence_item_id, forward_event_id, jurisdiction, modes, binding_position, due_date, date_precision, event_kind, status, item_forward_events(obligation_text), ${ITEM_EMBED}`;
 const ISO_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -54,11 +56,8 @@ export function buildRegisterQuerySpec(opts: SpecInput, todayIso: string): Regis
   return { jurisdiction, mode, bindingPosition, dueWindow, limit, offset, todayIso: today, itemId: opts.itemId ?? null };
 }
 
-/** 0 upcoming (soonest first), 1 past (most recent first), 2 undated (by id). */
-export const nextDueSegment = (dueDate: string | null | undefined, todayIso: string): 0 | 1 | 2 => (dueDate === null || dueDate === undefined ? 2 : dueDate < todayIso ? 1 : 0);
-
 /** Which slices of which segments a page covers, given each segment's exact size. */
-export function planRegisterPageSegments(sizes: readonly number[], offset: number, limit: number): { index: number; from: number; to: number }[] {
+function planRegisterPageSegments(sizes: readonly number[], offset: number, limit: number): { index: number; from: number; to: number }[] {
   const out: { index: number; from: number; to: number }[] = [];
   let skip = Math.max(0, Math.floor(offset) || 0);
   let remaining = Math.max(0, Math.floor(limit) || 0);
@@ -77,7 +76,7 @@ export function planRegisterPageSegments(sizes: readonly number[], offset: numbe
 }
 
 /** The obligation text bounded at READ to 160 characters (never at the write, REG-GRAIN). */
-export function trimObligationText(text: unknown, max = OBLIGATION_TEXT_TRIM_LENGTH): string | null {
+function trimObligationText(text: unknown, max = OBLIGATION_TEXT_TRIM_LENGTH): string | null {
   if (typeof text !== "string") return null;
   const t = text.trim();
   if (!t) return null;
@@ -113,7 +112,7 @@ function flatten(row: Raw): RegisterRow {
 }
 
 /** Jurisdiction codes present in the data that equal the filter or sit under it (`GB` matches `GB` and `GB-ENG`). */
-export function matchingJurisdictionCodes(codes: readonly string[], jurisdiction: string | null): string[] {
+function matchingJurisdictionCodes(codes: readonly string[], jurisdiction: string | null): string[] {
   if (!jurisdiction) return [];
   const needle = jurisdiction.toLowerCase();
   return codes.filter((c) => {
@@ -125,8 +124,9 @@ export function matchingJurisdictionCodes(codes: readonly string[], jurisdiction
 const addDays = (iso: string, days: number): string => new Date(new Date(`${iso}T00:00:00Z`).getTime() + days * 86_400_000).toISOString().slice(0, 10);
 
 /** Every register filter as a query predicate (status active, the item join gate, jurisdiction, mode, binding position, due window). */
-export function applyRegisterFilters(q: Qb, spec: RegisterSpec, jurisdictionCodes: readonly string[] | null): Qb {
-  let b = q.eq("status", "active").eq("item.provenance_status", "verified").eq("item.is_archived", false);
+function applyRegisterFilters(q: Qb, spec: RegisterSpec, jurisdictionCodes: readonly string[] | null, suppressedEvents: string | null = null): Qb {
+  let b = admitItems(q.eq("status", "active"), "item");
+  if (suppressedEvents) b = b.not("forward_event_id", "in", suppressedEvents);
   if (spec.itemId) b = b.eq("intelligence_item_id", spec.itemId);
   if (jurisdictionCodes) b = b.overlaps("jurisdiction", jurisdictionCodes.length ? jurisdictionCodes : ["__no_match__"]);
   if (spec.mode) b = b.overlaps("modes", [spec.mode]);
@@ -153,10 +153,11 @@ const SEGMENTS: readonly { key: string; ascending: boolean; narrow: (q: Qb, spec
 export async function fetchObligationRegisterPage(sb: Db, spec: RegisterSpec, opts: { facets?: RegisterFacets } = {}): Promise<{ rows: RegisterRow[]; total: number }> {
   let jurisdictionCodes: string[] | null = null;
   if (spec.jurisdiction) jurisdictionCodes = matchingJurisdictionCodes((opts.facets ?? (await fetchRegisterFacetOptions(sb, spec.todayIso))).jurisdictions, spec.jurisdiction);
+  const suppressed = notInList(await suppressedEventIds(sb));
   const sizes: number[] = [];
   for (const seg of SEGMENTS) {
     const q = qb(sb.from("obligations").select(`id, ${ITEM_EMBED}`, { count: "exact", head: true }));
-    sizes.push(countOf(`obligations ${seg.key}`, await seg.narrow(applyRegisterFilters(q, spec, jurisdictionCodes), spec)));
+    sizes.push(countOf(`obligations ${seg.key}`, await seg.narrow(applyRegisterFilters(q, spec, jurisdictionCodes, suppressed), spec)));
   }
   const total = sizes.reduce((a, b) => a + b, 0);
   if (total === 0) return { rows: [], total: 0 };
@@ -164,17 +165,9 @@ export async function fetchObligationRegisterPage(sb: Db, spec: RegisterSpec, op
   for (const slice of planRegisterPageSegments(sizes, spec.offset, spec.limit)) {
     const seg = SEGMENTS[slice.index] as (typeof SEGMENTS)[number];
     const q = qb(sb.from("obligations").select(REGISTER_SELECT));
-    const res = await seg.narrow(applyRegisterFilters(q, spec, jurisdictionCodes), spec).order("due_date", { ascending: seg.ascending }).order("id", { ascending: true }).range(slice.from, slice.to);
+    const res = await seg.narrow(applyRegisterFilters(q, spec, jurisdictionCodes, suppressed), spec).order("due_date", { ascending: seg.ascending }).order("id", { ascending: true }).range(slice.from, slice.to);
     raw.push(...rowsOf<Raw>(`obligations ${seg.key} page`, res));
   }
   return { rows: raw.map(flatten), total };
 }
 
-/** The next-due comparator for rows already in memory (used by tests and by callers merging pages). */
-export function compareByNextDue(a: Pick<RegisterRow, "id" | "due_date">, b: Pick<RegisterRow, "id" | "due_date">, todayIso: string): number {
-  const sa = nextDueSegment(a.due_date, todayIso);
-  const sb = nextDueSegment(b.due_date, todayIso);
-  if (sa !== sb) return sa - sb;
-  if (sa === 2 || a.due_date === b.due_date) return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
-  return sa === 0 ? ((a.due_date as string) < (b.due_date as string) ? -1 : 1) : (a.due_date as string) > (b.due_date as string) ? -1 : 1;
-}
