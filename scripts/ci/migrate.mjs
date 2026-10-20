@@ -11,6 +11,7 @@ import { parseArgs } from "node:util";
 
 import pg from "pg";
 
+import { isMissingObject } from "../../src/core/db/absent.ts";
 import { isMain } from "../lib/fs.mjs";
 import { read, selfCheckIdOf } from "../lib/migrations.mjs";
 
@@ -33,7 +34,7 @@ export async function readLog(client) {
     const r = await client.query("SELECT file FROM public.migration_log");
     return new Set(r.rows.map((row) => row.file));
   } catch (e) {
-    if (e.code === "42P01") return null;
+    if (isMissingObject(e)) return null;
     throw e;
   }
 }
