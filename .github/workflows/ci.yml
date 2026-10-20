@@ -41,7 +41,7 @@ on:
         description: 'Baseline recapture (job baseline): route names, comma separated, or all'
         default: all
       only:
-        description: 'Run one job on a dispatch: baseline (the old-site recapture), turn, live (the live checks and the deployed-preview parity), screens (full-page screenshots of every route at a live_url), migrate (apply the pending migrations to production), or empty for everything but baseline, live, screens and migrate'
+        description: 'Run one job on a dispatch: baseline (the old-site recapture), turn, live (the live checks and the deployed-preview parity), screens (full-page screenshots of every route at a live_url), migrate (apply the pending migrations to production), edge-deploy (deploy capture-worker), or empty for everything but baseline, live, screens, migrate and edge-deploy'
         default: ''
       chain:
         description: 'Run the stage downstream stages too (false runs only the named stage)'
@@ -66,6 +66,7 @@ jobs:
     outputs:
       parity: ${{ steps.scope.outputs.parity }}
       windows: ${{ steps.scope.outputs.windows }}
+      edge: ${{ steps.scope.outputs.edge }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -75,6 +76,7 @@ jobs:
         env:
           EVENT: ${{ github.event_name }}
           BASE: ${{ github.base_ref }}
+          BEFORE: ${{ github.event.before }}
         run: node scripts/ci/changes.mjs
 
   ci:
@@ -463,6 +465,36 @@ jobs:
         run: node scripts/ci/migrate.mjs --pending
       - name: Apply them in order (stops at the first failure; each file must print its own OK)
         run: node scripts/ci/migrate.mjs --apply
+
+  # Deploys the Edge Function the repository carries. Runs on a push to main after `migrate` (the schema is ahead of the code) when the push changed supabase/functions or src/core/fetch (the `changes` job's `edge`; a push that
+  # did not has the reason in the `changes` summary), or on a dispatch with only=edge-deploy on main; never on a pull request or in a fork. It holds the one token and checks the deploy by the function list: the version went up and the status is ACTIVE.
+  edge-deploy:
+    name: edge-deploy
+    needs: [changes, migrate]
+    if: ${{ !cancelled() && github.event.repository.fork == false && github.ref == 'refs/heads/main' && ((github.event_name == 'push' && needs.migrate.result == 'success' && needs.changes.outputs.edge == 'true') || (github.event_name == 'workflow_dispatch' && github.event.inputs.only == 'edge-deploy')) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency:
+      group: edge-deploy
+      cancel-in-progress: false
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: '24'
+      - name: Deploy capture-worker, then require a higher version and status ACTIVE
+        shell: bash -eo pipefail {0}
+        run: |
+          if [ -z "$SUPABASE_ACCESS_TOKEN" ]; then echo "missing (exit 1): SUPABASE_ACCESS_TOKEN. A run that can carry it and does not have it has not run; it is a failure, never a skip" >&2; exit 1; fi
+          ref=kwrsbpiseruzbfwjpvsp
+          row() { npx supabase@2 functions list --project-ref "$ref" -o json | node -e 'const f = JSON.parse(require("fs").readFileSync(0, "utf8")).find((x) => x.slug === "capture-worker"); console.log(f ? `${f.version} ${f.status}` : "0 ABSENT")'; }
+          before=$(row)
+          npx supabase@2 functions deploy capture-worker --project-ref "$ref" --use-api
+          after=$(row)
+          printf '### edge-deploy\n\ncapture-worker (version status): before %s, after %s\n' "$before" "$after" | tee -a "$GITHUB_STEP_SUMMARY"
+          [ "${after%% *}" -gt "${before%% *}" ] && [ "${after#* }" = ACTIVE ] || { echo "capture-worker was not deployed: the version did not increase or the status is not ACTIVE" >&2; exit 1; }
 
   # The one writer of the run's record: runs after every job that can run on a pull request or a push, polls nothing, holds no secrets, and never fails the run itself (it reports the others' conclusions).
   report:

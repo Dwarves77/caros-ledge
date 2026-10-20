@@ -115,13 +115,16 @@ test('IMP-029: the bundle must EXPORT what the source exports and DECLARE what t
 
 // ---- changes ----
 test('the scope of a change: a push or a dispatch needs everything; a pull request needs what it touches (anything the build reads for the parity job, scripts/ and tests/ for Windows)', () => {
-  assert.deepEqual(scopeOf([], 'push'), { parity: true, windows: true });
-  assert.deepEqual(scopeOf(['docs/x.md'], 'pull_request'), { parity: false, windows: false });
+  assert.deepEqual(scopeOf([], 'push'), { parity: true, windows: true, edge: false });
+  assert.deepEqual(scopeOf(['docs/x.md'], 'pull_request'), { parity: false, windows: false, edge: false });
   assert.equal(scopeOf(['src/core/shared/x.ts'], 'pull_request').parity, true, 'a change to src/core can change what every page renders');
   for (const f of ['package-lock.json', 'next.config.ts', 'tests/_support/memdb.ts', 'supabase/schema.sql', 'public/x.png', '.github/workflows/ci.yml']) assert.equal(scopeOf([f], 'pull_request').parity, true, f);
   assert.equal(scopeOf(['scripts/ci/loc.mjs'], 'pull_request').windows, true);
   assert.equal(scopeOf(['tests/ci/x.test.mjs'], 'pull_request').windows, true);
   assert.equal(scopeOf(['docs/a.md'], 'pull_request').windows, false);
+  for (const f of ['supabase/functions/capture-worker/index.ts', 'src/core/fetch/safe-fetch.ts']) assert.equal(scopeOf([f], 'push').edge, true, f);
+  assert.equal(scopeOf(['supabase/schema.sql', 'src/core/db/x.ts', 'docs/a.md'], 'push').edge, false, 'a push that changed no function skips the deploy');
+  for (const event of ['pull_request', 'workflow_dispatch']) assert.equal(scopeOf(['supabase/functions/capture-worker/index.ts'], event).edge, false, `${event} never deploys`);
 });
 
 // ---- gates ----
