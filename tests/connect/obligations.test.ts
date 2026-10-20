@@ -5,10 +5,10 @@ import { test } from "node:test";
 
 import type { ConnectDeps } from "@/features/intake";
 import { createConnectDeps } from "@/features/flywheel";
-import { classifyItemBindingPosition, contextFromClaims, deriveRegister, pickComplianceDeadline, selectObligationRailRows, syncComplianceDeadline } from "@/features/obligations";
+import { classifyItemBindingPosition, contextFromClaims, deriveRegister, selectObligationRailRows, syncComplianceDeadline } from "@/features/obligations";
 import { GET as registerGet } from "@/features/obligations/api/register";
 import { GET as upcomingGet } from "@/features/obligations/api/upcoming";
-import { buildRegisterQuerySpec, compareByNextDue, fetchObligationRegisterPage, planRegisterPageSegments } from "@/features/obligations/read/register-read";
+import { buildRegisterQuerySpec, fetchObligationRegisterPage } from "@/features/obligations/read/register-read";
 
 import { scripted } from "../_support/fake-clients.ts";
 import { as, ctx, PERSONAS, userDbFor, type Persona } from "../_support/personas.ts";
@@ -74,13 +74,14 @@ test("deriveRegister: a failed context read fails the run; it does not classify 
 
 test("compliance deadline: the earliest future compliance_deadline, ties by confidence; never nulled when none is left", async () => {
   const rows = [
-    { id: "a", event_date: "2026-10-01", event_kind: "compliance_deadline", confidence: "high" },
-    { id: "b", event_date: "2026-12-01", event_kind: "compliance_deadline", confidence: "medium" },
-    { id: "c", event_date: "2026-12-01", event_kind: "compliance_deadline", confidence: "high" },
-    { id: "d", event_date: "2026-11-01", event_kind: "other", confidence: "high" },
+    { id: "a", intelligence_item_id: "i1", event_date: "2026-10-01", event_kind: "compliance_deadline", confidence: "high" },
+    { id: "b", intelligence_item_id: "i1", event_date: "2026-12-01", event_kind: "compliance_deadline", confidence: "medium" },
+    { id: "c", intelligence_item_id: "i1", event_date: "2026-12-01", event_kind: "compliance_deadline", confidence: "high" },
+    { id: "d", intelligence_item_id: "i1", event_date: "2026-11-01", event_kind: "other", confidence: "high" },
   ];
-  assert.equal(pickComplianceDeadline(rows, TODAY), "2026-12-01");
-  assert.equal(pickComplianceDeadline(rows, "2027-01-01"), null);
+  const picked = world({ item_forward_events: rows });
+  assert.deepEqual(await syncComplianceDeadline(picked.db, "i1", TODAY, { dry: true }), { changed: true, value: "2026-12-01" }, "the earliest future compliance_deadline; the earlier 'other' event is not one");
+  assert.deepEqual(await syncComplianceDeadline(picked.db, "i1", "2027-01-01", { dry: true }), { changed: false, reason: "no future compliance_deadline event" });
   const m = world();
   assert.deepEqual(await syncComplianceDeadline(m.db, "i1", TODAY), { changed: true, value: "2026-12-01" });
   assert.equal((m.tables.intelligence_items as Row[])[0]?.compliance_deadline, "2026-12-01");
@@ -112,9 +113,6 @@ test("register read: next-due order (upcoming soonest, past most recent, undated
   for (let offset = 0; offset < 7; offset += 3) paged.push(...(await fetchObligationRegisterPage(m.db, buildRegisterQuerySpec({ limit: 3, offset }, TODAY))).rows.map((r) => r.id));
   assert.deepEqual(paged, all.rows.map((r) => r.id), "pages tile the list with no gap and no repeat");
   assert.equal((await fetchObligationRegisterPage(m.db, buildRegisterQuerySpec({ limit: 2 }, TODAY))).total, 7, "the total does not depend on the page size");
-  const sorted = [...all.rows].sort((a, b) => compareByNextDue(a, b, TODAY)).map((r) => r.id);
-  assert.deepEqual(sorted, all.rows.map((r) => r.id));
-  assert.deepEqual(planRegisterPageSegments([2, 3, 1], 1, 4), [{ index: 0, from: 1, to: 1 }, { index: 1, from: 0, to: 2 }]);
 });
 
 test("register read: a failed count or page read throws; it is never an empty page with a total", async () => {
@@ -142,6 +140,7 @@ test("persona matrix: the register and upcoming routes answer any signed-in call
     assert.equal((await status(upcomingGet, p, "/api/obligations/upcoming?scope=all")).status, want, `upcoming as ${p}`);
   }
   const res = await status(registerGet, "member", "/api/obligations/register");
+  assert.equal(res.headers.get("cache-control"), "private, no-store", "the register is never a response a browser may reuse");
   const body = (await res.json()) as { rows: unknown[]; total: number };
   assert.equal(body.total, body.rows.length);
   assert.equal(body.total, 7);
@@ -176,9 +175,11 @@ test("createConnectDeps is the ConnectDeps the intake slice takes: four steps, a
 });
 
 test("obligation text is bounded at READ to 160 characters, never at the write", async () => {
-  const { trimObligationText } = await import("@/features/obligations/read/register-read");
-  const long = "x".repeat(300);
-  assert.equal(trimObligationText(long)?.length, 161);
-  assert.equal(trimObligationText("  short  "), "short");
-  assert.equal(trimObligationText("   "), null);
+  const m = connectDb({ obligations: [ob("t1", "2026-11-01", { item_forward_events: { obligation_text: "x".repeat(300) } }), ob("t2", "2026-11-02", { item_forward_events: { obligation_text: "  short  " } }), ob("t3", "2026-11-03", { item_forward_events: { obligation_text: "   " } })] });
+  const rows = (await fetchObligationRegisterPage(m.db, buildRegisterQuerySpec({ limit: 100 }, TODAY))).rows;
+  const text = (id: string) => rows.find((r) => r.id === id)?.obligation_text;
+  assert.equal(text("t1")?.length, 161);
+  assert.equal(text("t2"), "short");
+  assert.equal(text("t3"), null);
+  assert.equal(((m.tables.obligations as Row[])[0]?.item_forward_events as { obligation_text: string }).obligation_text.length, 300, "the stored text is whole");
 });

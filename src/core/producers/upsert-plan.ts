@@ -59,5 +59,4 @@ export const KEYS = {
   seriesPeriod: (r: Rec) => keyOf([r.series_key, r.reference_period]),
   regionDimensionLabel: (r: Rec) => keyOf([r.region_code ?? r.region_id, r.dimension, r.fact_label]),
   dsoSubstationAsOf: (r: Rec) => keyOf([r.dso_name, r.substation_ref, r.as_of], 3),
-  manufacturerTechSource: (r: Rec) => keyOf([r.manufacturer_id, r.tech_category, r.source_id]),
 };

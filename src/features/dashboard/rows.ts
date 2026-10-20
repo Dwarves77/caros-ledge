@@ -4,13 +4,25 @@
 // The Dashboard's row logic, pure: which items the two cards draw, in what order, with what labels. Nothing here reads a clock (the caller passes `now`) or a table. The cards are built from ONE corpus (the
 // due-next read and the by-id backfill of the changed items); an item the read gate does not return is not drawn.
 import { dueInfo, toListRowFields, type ListRowFields } from "@/core/lists";
+import { formatDate } from "@/core/shared";
+import { rowMeta } from "@/features/market/lib/item-type";
 import type { Resource } from "@/core/types";
 import { urgencyScore, type UrgencyContext } from "@/core/urgency/scoring";
 
-export const DUE_NEXT_CAP = 5;
-export const CHANGED_CAP = 6;
+/** The intelligence surfaces the dashboard counts, in order: the ONE list the masthead's "across N surfaces" and the "Across the platform" rail card both read, so the two cannot disagree. */
+export const SURFACES = [
+  { key: "regulations", label: "Regulations", note: "Binding law, agency rules, court decisions", href: "/regulations" },
+  { key: "marketIntel", label: "Market Intel", note: "Price series, corporate moves, capital", href: "/market" },
+  { key: "research", label: "Research", note: "Horizon-scan findings", href: "/research" },
+  { key: "operations", label: "Operations", note: "Regional cost, feasibility, infrastructure", href: "/operations" },
+] as const;
+/** The items the rail card's four counts add up to: the masthead's number is this, so it is the rail's number. */
+export const surfaceItemTotal = (surfaces: Readonly<Record<(typeof SURFACES)[number]["key"], number>>): number => SURFACES.reduce((n, s) => n + surfaces[s.key], 0);
+
+const DUE_NEXT_CAP = 5;
+const CHANGED_CAP = 6;
 /** How many distinct changed items are read in full and ranked; the cards draw CHANGED_CAP of them. */
-export const CANDIDATE_WINDOW = 48;
+const CANDIDATE_WINDOW = 48;
 /** The Due-next card's aside names a week: a row 7 or more days out is past it, and the label then says how far the card reaches. */
 const STATED_WINDOW_DAYS = 7;
 const BUILD_MODE_WINDOW_DAYS = 90;
@@ -67,7 +79,7 @@ export function buildDueNextRows(resources: readonly Resource[], now: Date, cap 
     })
     .sort((a, b) => a.due.daysNum - b.due.daysNum)
     .slice(0, cap)
-    .map(({ r, due }) => ({ ...toListRowFields(r, now), dueDays: due.daysNum }));
+    .map(({ r, due }) => ({ ...toListRowFields(r, now), meta: rowMeta(r), dueDays: due.daysNum }));
 }
 
 /**
@@ -99,16 +111,16 @@ export function buildChangedRows(feed: readonly FeedRow[], candidates: readonly 
     .slice(0, cap)
     .map(({ f, c }): BriefRow => {
       const isUpdated = f.change_kind === "updated";
-      return { ...toListRowFields(c.resource, now), isNew: !isUpdated, isUpdated, updatedField: isUpdated ? changelogField[f.id] : undefined, changeDate: f.change_date ?? f.added_date ?? undefined };
+      return { ...toListRowFields(c.resource, now), meta: rowMeta(c.resource), isNew: !isUpdated, isUpdated, updatedField: isUpdated ? changelogField[f.id] : undefined, changeDate: f.change_date ?? f.added_date ?? undefined };
     });
 }
 
-/** The row's kind and date prefix, computed once: "NEW · first seen this pass", "UPDATED · brief regenerated <date>", "UPDATED · timeline added <date>". */
+/** The row's kind and date prefix, computed once: "New", "Updated · brief updated Oct 13, 2026", "Updated · timeline added Oct 13, 2026" (the date formatted, never the raw database string). */
 export function changeRowPrefix(row: Pick<BriefRow, "isNew" | "isUpdated" | "updatedField" | "changeDate">): string | null {
-  if (row.isNew) return "NEW · first seen this pass";
+  if (row.isNew) return "New";
   if (!row.isUpdated) return null;
-  const what = row.updatedField === "timeline" ? "timeline added" : "brief regenerated";
-  return row.changeDate ? `UPDATED · ${what} ${row.changeDate}` : `UPDATED · ${what}`;
+  const what = row.updatedField === "timeline" ? "timeline added" : "brief updated";
+  return row.changeDate ? `Updated · ${what} ${formatDate(row.changeDate)}` : `Updated · ${what}`;
 }
 
 /** The Due-next aside: the week the card names, extended with how far the SELECTED rows reach when they run past it. */
@@ -122,7 +134,7 @@ export function dueNextWindowLabel(rows: readonly BriefRow[], weekOfLabel: strin
 export type BriefCardState = "rows" | "empty" | "failed";
 export const briefCardState = (rowCount: number, failed: boolean): BriefCardState => (rowCount > 0 ? "rows" : failed ? "failed" : "empty");
 
-/** The "Detection pass" date: the newest change date among the rows the card draws, else the newest changelog date, else "" (never today). */
+/** The date of the latest change: the newest change date among the rows the card draws, else the newest changelog date, else "" (never today). */
 export function computeAuditDate(rows: ReadonlyArray<{ changeDate?: string | null | undefined }>, changelogDate: string | null): string {
   const newest = rows.reduce((best, r) => (r.changeDate && r.changeDate > best ? r.changeDate : best), "");
   return newest || changelogDate || "";

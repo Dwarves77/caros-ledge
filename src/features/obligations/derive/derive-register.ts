@@ -39,7 +39,7 @@ export interface ObligationRow {
   derivation_version: string;
 }
 
-export function deriveObligationRow(event: EventRow, item: ItemRow, ctx: ClassifyContext = {}): ObligationRow {
+function deriveObligationRow(event: EventRow, item: ItemRow, ctx: ClassifyContext = {}): ObligationRow {
   const jurisdiction = Array.isArray(item?.jurisdiction_iso) ? item.jurisdiction_iso.filter(Boolean) : [];
   const modes = Array.isArray(item?.transport_modes) ? [...new Set(item.transport_modes.map((m) => normaliseMode(m)).filter((m): m is string => !!m && LEG_MODE_SET.has(m)))] : [];
   const classified = classifyItemBindingPosition(item, ctx);
@@ -49,7 +49,7 @@ export function deriveObligationRow(event: EventRow, item: ItemRow, ctx: Classif
     due_date: hasDate ? (event.event_date as string) : null, date_precision: hasDate ? (event.date_precision ?? null) : null, event_kind: event.event_kind, status: item?.is_archived ? "archived" : "active", derivation_version: DERIVATION_VERSION,
   };
 }
-export function deriveObligationRows(events: readonly EventRow[], itemsById: ReadonlyMap<string, ItemRow>, ctxByItemId: ReadonlyMap<string, ClassifyContext> = new Map()): ObligationRow[] {
+function deriveObligationRows(events: readonly EventRow[], itemsById: ReadonlyMap<string, ItemRow>, ctxByItemId: ReadonlyMap<string, ClassifyContext> = new Map()): ObligationRow[] {
   const out: ObligationRow[] = [];
   for (const event of events) {
     const item = itemsById.get(event.intelligence_item_id);
@@ -58,12 +58,12 @@ export function deriveObligationRows(events: readonly EventRow[], itemsById: Rea
   return out;
 }
 /** Rows whose forward event has no obligations row yet. */
-export const filterNewRows = (derived: readonly ObligationRow[], existingForwardEventIds: Iterable<string>): ObligationRow[] => {
+const filterNewRows = (derived: readonly ObligationRow[], existingForwardEventIds: Iterable<string>): ObligationRow[] => {
   const seen = new Set(existingForwardEventIds);
   return derived.filter((r) => !seen.has(r.forward_event_id));
 };
 /** Per item: the record-facts position and the duty-holder classes (the item's current objects, plus the Member-State addressee). */
-export function buildContextByItem(claimRows: readonly { intelligence_item_id: string; claim_text: string }[], objectRows: readonly { instrument_item_id: string; obligation_id: string; supersedes?: string | null; duty_holder_class?: string[] | null }[]): Map<string, ClassifyContext> {
+function buildContextByItem(claimRows: readonly { intelligence_item_id: string; claim_text: string }[], objectRows: readonly { instrument_item_id: string; obligation_id: string; supersedes?: string | null; duty_holder_class?: string[] | null }[]): Map<string, ClassifyContext> {
   const texts = new Map<string, string[]>();
   for (const c of claimRows) texts.set(c.intelligence_item_id, [...(texts.get(c.intelligence_item_id) ?? []), c.claim_text]);
   const objs = new Map<string, typeof objectRows[number][]>();

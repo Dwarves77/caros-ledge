@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
+import { DB_SENTENCES } from "@/core/http/failure";
 import { useWorkspaceStore } from "@/core/workspace/store";
 import { PROFILE_TAB_KEYS, resolveInitialProfileTab } from "@/features/account/lib/initial-tab";
 import { profilePatchSchema, saveProfilePatch } from "@/features/account/lib/profile-patch";
@@ -107,7 +108,7 @@ test("a failed read shows the defaults, records why, and holds saving (orgId uns
   db.fail("workspace_settings", "select", { message: "read down" });
   await useSettingsStore.getState().loadFromWorkspace(clientFor(db), ORG_A);
   const failed = useSettingsStore.getState();
-  assert.deepEqual([failed.orgId, failed.loaded, failed.loadError], [null, true, "read down"]);
+  assert.deepEqual([failed.orgId, failed.loaded, failed.loadError], [null, true, DB_SENTENCES["500"]], "the page is told a sentence, not the driver's text");
   failed.toggleSection("BandTiles");
   await useSettingsStore.getState().flush();
   assert.equal(db.writes("workspace_settings").length, 0);
@@ -189,5 +190,5 @@ test("a valid profile patch writes only the caller's own row with the allowed co
   assert.deepEqual(write?.filters, [["eq", "id", USER.member]]);
   assert.deepEqual(Object.keys(write?.payload as object).sort(), ["bio", "full_name", "jurisdiction_overrides", "updated_at"]);
   db.fail("profiles", "update", { message: "refused by policy" });
-  assert.equal(await saveProfilePatch(clientFor(db), USER.member, { bio: "x" }), "refused by policy");
+  assert.equal(await saveProfilePatch(clientFor(db), USER.member, { bio: "x" }), DB_SENTENCES["500"]);
 });

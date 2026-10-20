@@ -1,6 +1,6 @@
 // Ported from old_repo/src/lib/agent/operations-ask-context.mjs (lines 1-142)
-// The Operations data block the Assistant reads (export for P2-13): the sourced-region header (COMPUTED from the roster against the facts held, so it states today's gap and updates itself), one line per regional
-// fact and one per state cost fact. Pure and free: every input is already-read data, nothing here reads the database, a model or the clock. It uses the ONE fact shape of the grid and the statements (camelCase).
+// The Operations lines the Assistant answers with: one line per regional fact and one per state cost fact, each with its source. Pure over already-read facts (the reader is readOperationsAskLines in read/operations-reads).
+// It uses the ONE fact shape of the grid and the statements (camelCase).
 import { isEnvelopedFact, type OperationsFact } from "./model/region-grid";
 import type { StateCostFact } from "./read/operations-reads";
 
@@ -34,23 +34,4 @@ export function stateCostLine(f: StateCostFact): string {
   if (f.trend) bits.push(`trend: ${f.trend}`);
   bits.push(`source: ${f.sourceName ?? f.statuteCitation ?? NO_SOURCE}`, `effective: ${dateOnly(f.effectiveDate) ?? "unknown"}`);
   return `- [${f.stateLabel ? `${f.stateCode} ${f.stateLabel}` : f.stateCode}] ${f.factLabel} — ${bits.join(" | ")}`;
-}
-
-export function buildOperationsAskContext(i: { regionCodes: readonly string[]; regionalFacts: readonly OperationsFact[]; stateCostFacts: readonly StateCostFact[] }): string {
-  const withFacts = new Set(i.regionalFacts.map((f) => f.regionCode));
-  const sourced = i.regionCodes.filter((c) => withFacts.has(c));
-  const unsourced = i.regionCodes.filter((c) => !withFacts.has(c));
-  const header = i.regionCodes.length ? `Regions with sourced Operations data: ${sourced.length ? sourced.join(", ") : "none"}.${unsourced.length ? ` ${unsourced.join(", ")}: no sourced Operations data yet.` : ""}` : "No Operations region roster available.";
-  return [
-    "AVAILABLE OPERATIONS DATA (regional cost/labour/materials/infrastructure facts and per-state cost",
-    "facts from the Operations tables — background reference data, like AVAILABLE SOURCES above, NOT",
-    "individually citable [Item: ...] entries; do not fabricate an [Item: ...] citation for a row below):",
-    header,
-    "",
-    "Regional facts:",
-    i.regionalFacts.map(regionalFactLine).join("\n") || "(none fetched)",
-    "",
-    "Per-state cost facts:",
-    i.stateCostFacts.map(stateCostLine).join("\n") || "(none fetched)",
-  ].join("\n");
 }

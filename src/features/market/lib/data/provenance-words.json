@@ -1,0 +1,21 @@
+{
+ "derivation": {
+  "observed": "Observed",
+  "calculated": "Calculated",
+  "statutory_fixed": "Statutory, fixed",
+  "statutory_formula": "Statutory, by formula",
+  "transacted_index": "Transacted index",
+  "assessed": "Assessed",
+  "interpolated": "Interpolated",
+  "modelled": "Modelled",
+  "estimated": "Estimated"
+ },
+ "origin": {
+  "official": "Official publisher",
+  "verified": "Verified",
+  "derived": "Derived by Caro's Ledge",
+  "modelled": "Modelled",
+  "partner": "Partner",
+  "community": "Community"
+ }
+}

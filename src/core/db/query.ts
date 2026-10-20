@@ -9,7 +9,7 @@ export interface PgError {
 }
 type Response<T> = PromiseLike<{ data: T[] | null; error: PgError | null }>;
 
-export class ReadTimeoutError extends Error {
+class ReadTimeoutError extends Error {
   constructor(ms: number) {
     super(`Supabase read exceeded ${ms}ms`);
     this.name = "ReadTimeoutError";
@@ -17,7 +17,7 @@ export class ReadTimeoutError extends Error {
 }
 
 /** Race a promise against a deadline and always clear the timer. */
-export function withTimeout<T>(promise: PromiseLike<T>, ms: number): Promise<T> {
+function withTimeout<T>(promise: PromiseLike<T>, ms: number): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   return Promise.race([
     promise,

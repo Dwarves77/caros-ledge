@@ -15,7 +15,7 @@ import type { Resource } from "@/core/types";
 import { readCategory, readSurfaceCounts, type WorkspaceAggregates } from "@/features/lists";
 
 import { addDaysIso } from "./producers/published-price-statistics";
-import { buildCarbonCostOverlays, candidatesFromCorridorEntities, type CarbonOverlayEntry, type CorridorCandidate, type FactorRow } from "./lib/carbon";
+import type { FactorRow } from "./lib/carbon";
 import type { LeadTimeRow } from "./lib/lead-time";
 import { prefixOf, producerFor } from "./lib/registry";
 import { buildSeriesBoard, type SeriesBoard, type SeriesDisplayRow, type SeriesRow } from "./lib/series-board";
@@ -38,7 +38,7 @@ const SERIES_COLS = "id, series_key, label, value_numeric, unit, currency, deriv
 const WINDOW_DAYS = 400;
 
 /** Per series, the rows within the window counted back from ITS OWN latest period (never the clock); the latest row is always kept, so a quiet series is still on the board. */
-export function perSeriesWindow(rows: readonly SeriesRow[]): SeriesRow[] {
+function perSeriesWindow(rows: readonly SeriesRow[]): SeriesRow[] {
   const latest = new Map<string, string>();
   for (const r of rows) if (r.reference_period && r.reference_period > (latest.get(r.series_key) ?? "")) latest.set(r.series_key, r.reference_period);
   return rows.filter((r) => {
@@ -48,10 +48,12 @@ export function perSeriesWindow(rows: readonly SeriesRow[]): SeriesRow[] {
   });
 }
 
-/** Every market_series row (a total order, a cap that throws, never a silent truncation), reduced to each series' window. */
-export async function readSeriesRows(db: Db): Promise<SeriesRow[]> {
+/** Every market_series row (a total order, a cap that throws, never a silent truncation), reduced to each series' window; each kept row carries how many observations its series has on record, so the board never prints the window's count as the series' (register surfaces:17). */
+async function readSeriesRows(db: Db): Promise<SeriesRow[]> {
   const rows = await fetchAllRows<SeriesRow>((from, to) => db.from("market_series").select(SERIES_COLS).order("id", { ascending: true }).range(from, to) as never, { cap: 100_000 });
-  return perSeriesWindow(rows);
+  const onRecord = new Map<string, number>();
+  for (const r of rows) onRecord.set(r.series_key, (onRecord.get(r.series_key) ?? 0) + 1);
+  return perSeriesWindow(rows).map((r) => ({ ...r, observations_on_record: onRecord.get(r.series_key) as number }));
 }
 
 interface DataSourceRow {
@@ -76,7 +78,7 @@ interface RegistryTierRow {
  * The rating of each data source: customerTierOf the registry row of its host (override, then effective, then base), else the institution class table's tier for the host; licence and attribution only from the licence gate
  * (a source that does not permit redistribution carries none). A read error throws.
  */
-export async function readSourceRatings(db: Db, sourceKeys: Iterable<string | null | undefined>): Promise<Record<string, SourceRating>> {
+async function readSourceRatings(db: Db, sourceKeys: Iterable<string | null | undefined>): Promise<Record<string, SourceRating>> {
   const keys = [...new Set([...sourceKeys].filter((k): k is string => !!k))];
   if (!keys.length) return {};
   const [sources, licences] = await Promise.all([rowsByIds<DataSourceRow>(db, "data_sources", "source_key, name, url", keys, "source_key", "source_key"), rowsByIds<LicenceRow>(db, "licence_clear_sources", "source_key, licence, attribution", keys, "source_key", "source_key")]);
@@ -96,7 +98,7 @@ export async function readSourceRatings(db: Db, sourceKeys: Iterable<string | nu
 }
 
 /** The series ids whose change has a derivation recorded: the lineage of every 1-week change shown (INV-045). Needs the service client (the edges are not readable by a member); a read error throws. */
-export async function readDeltaEdges(db: Db, seriesIds: readonly string[]): Promise<Set<string>> {
+async function readDeltaEdges(db: Db, seriesIds: readonly string[]): Promise<Set<string>> {
   const edges = await fetchAllByIdChunks<{ from_pk: string }>(
     seriesIds,
     async (slice) => {
@@ -123,12 +125,10 @@ export async function readMarketSeries(db: Db, o: { edgeDb?: Db | null } = {}): 
   const [ratings, lineage] = await Promise.all([readSourceRatings(db, rows.map((r) => r.source_key)), o.edgeDb ? readDeltaEdges(o.edgeDb, shown.map((s) => s.id).filter((i): i is string => !!i)) : Promise.resolve(null)]);
   return { board, leadTime: rows.filter((r) => prefixOf(r.series_key) === "sbti"), ratings, lineage };
 }
-/** The rating of one board row's source (null when it names none or the source is not in the licence register). */
-export const ratingOf = (ratings: Record<string, SourceRating>, row: Pick<SeriesDisplayRow, "sourceKey">): SourceRating | null => (row.sourceKey ? (ratings[row.sourceKey] ?? null) : null);
 
 const FACTOR_COLS = "factor_id, mode, vehicle_class, jurisdiction, quantity_basis, ttw_co2e, wtt_co2e, wtw_co2e, source_key, tier, derivation, origin_class, method_version, n_observations, as_at_date, pedigree";
 /** The modal-default factors in force (superseded ones excluded). */
-export async function readModalFactors(db: Db): Promise<FactorRow[]> {
+async function readModalFactors(db: Db): Promise<FactorRow[]> {
   const r = await boundedRead<FactorRow>((n) => db.from("emission_factors").select(FACTOR_COLS).eq("tier", "modal_default").is("superseded_by", null).order("factor_id", { ascending: true }).limit(n) as never, { limit: 200 });
   if (r.error) throw new Error(`emission_factors read failed: ${r.error.message}`);
   return r.data;
@@ -178,7 +178,7 @@ export interface MarketPanels {
   indexation: Section<IndexationRow[]>;
 }
 /** The three spec 09 panels. Indexation is the viewer's organisation only (and none for a viewer with no organisation). */
-export async function readPanels(db: Db, orgId: string | null): Promise<MarketPanels> {
+async function readPanels(db: Db, orgId: string | null): Promise<MarketPanels> {
   const [oem, reroute, indexation] = await Promise.all([
     section("oem roadmaps", () => panel<OemRow>(db.from("oem_tech_roadmaps").select("roadmap_id, tech_category, commercial_stage, target_year, density_basis, confidence_admiralty, announced_at").order("announced_at", { ascending: false }).limit(PANEL_ROWS) as never, "oem_tech_roadmaps")),
     section("reroute events", () => panel<RerouteRow>(db.from("reroute_events").select("reroute_id, baseline_corridor_id, reroute_corridor_id, cause, fuel_burn_multiplier, effective_from, effective_to").order("effective_from", { ascending: false }).limit(PANEL_ROWS) as never, "reroute_events")),
@@ -190,19 +190,20 @@ export async function readPanels(db: Db, orgId: string | null): Promise<MarketPa
 export interface MarketRead {
   signals: Section<{ rows: Resource[]; aggregates: WorkspaceAggregates | null }>;
   series: Section<MarketSeries>;
-  corridors: Section<CarbonOverlayEntry[]>;
+  /** The names of the corridors that parse, for the panels that cite one. */
+  corridors: Section<Array<{ entityId: string; label: string }>>;
   panels: MarketPanels;
 }
 /** The whole /market page, every part concurrent and independent. `edgeDb` (the service client, when configured) lets the series part check lineage. */
 export async function readMarket(db: Db, o: { orgId?: string | null; edgeDb?: Db | null } = {}): Promise<MarketRead> {
   const [signals, series, corridors, panels] = await Promise.all([
     section("signals", async () => {
-      const [list, aggregates] = await Promise.all([readCategory(db, "get_market_intel_items_public", null, o.orgId ?? null), readSurfaceCounts(db, o.orgId ?? null, "market")]);
+      const [list, aggregates] = await Promise.all([readCategory(db, o.orgId ? "get_market_intel_items" : "get_market_intel_items_public", o.orgId), readSurfaceCounts(db, o.orgId ?? null, "market")]);
       if (list.failed) throw new Error("the public market list RPC failed");
       return { rows: list.resources, aggregates };
     }),
     section("series", () => readMarketSeries(db, { edgeDb: o.edgeDb ?? null })),
-    section("corridors", async () => buildCarbonCostOverlays(await corridorScopes(db), await readModalFactors(db))),
+    section("corridors", async () => (await corridorScopes(db)).filter((c) => c.parsed !== null).map((c) => ({ entityId: c.entityId, label: c.label }))),
     readPanels(db, o.orgId ?? null),
   ]);
   return { signals, series, corridors, panels };
@@ -240,8 +241,7 @@ export interface MarketDetailBundle {
   convergence: Section<{ independent_citers: number; confirmation_count: number } | null>;
   priceBoard: Section<PriceStat[]>;
   seriesFigure: Section<SeriesFigure | null>;
-  carbon: Section<{ factors: FactorRow[]; ratings: Record<string, SourceRating>; corridorCandidates: CorridorCandidate[] }>;
-  related: Section<Resource[]>;
+  carbon: Section<{ factors: FactorRow[]; ratings: Record<string, SourceRating> }>;
 }
 
 /** The series ratified onto an item (the table the ratification writes), or null. */
@@ -256,7 +256,7 @@ export async function readMarketDetail(db: Db, item: { id: string; sourceId?: st
   const uuid = await section("item identity", () => resolveItemUuid(db, item.id));
   const itemUuid = uuid.ok ? uuid.data : null;
   const fail = <T,>(): Section<T> => ({ ok: false, error: "the item could not be identified" });
-  const [convergence, priceBoard, seriesFigure, carbon, related] = await Promise.all([
+  const [convergence, priceBoard, seriesFigure, carbon] = await Promise.all([
     section("convergence", async () => {
       if (!item.sourceId) return null;
       const { data, error } = await db.from("sources").select("independent_citers, confirmation_count").eq("id", item.sourceId).maybeSingle();
@@ -287,14 +287,8 @@ export async function readMarketDetail(db: Db, item: { id: string; sourceId?: st
       ? Promise.resolve<MarketDetailBundle["carbon"]>({ ok: false, error: "not read: this signal draws no carbon block" })
       : section("carbon factors", async () => {
       const factors = await readModalFactors(db);
-      const [ratings, corridors] = await Promise.all([readSourceRatings(db, factors.map((f) => f.source_key)), panel<{ entity_id: string; canonical_name: string }>(db.from("entities").select("entity_id, canonical_name").eq("kind", "corridor").eq("status", "active").limit(500) as never, "entities")]);
-      return { factors, ratings, corridorCandidates: candidatesFromCorridorEntities(corridors).candidates };
-    }),
-    section("related signals", async () => {
-      const list = await readCategory(db, "get_market_intel_items_public");
-      if (list.failed) throw new Error("the public market list RPC failed");
-      return list.resources;
+      return { factors, ratings: await readSourceRatings(db, factors.map((f) => f.source_key)) };
     }),
   ]);
-  return { convergence, priceBoard, seriesFigure, carbon, related };
+  return { convergence, priceBoard, seriesFigure, carbon };
 }

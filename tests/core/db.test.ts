@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { boundedRead, fetchAllByIdChunks, fetchAllRows, ReadTimeoutError, withTimeout } from "@/core/db/query";
+import { boundedRead, fetchAllByIdChunks, fetchAllRows } from "@/core/db/query";
 import SCHEMA_KEYS from "@/core/db/schema-keys.json";
 
 import * as real from "../../src/core/db/clients.ts";
@@ -54,13 +54,13 @@ test("boundedRead: the bound is a hard ceiling of 200 and a failure is a value, 
   assert.equal(slow.error?.timedOut, true);
 });
 
-test("withTimeout clears its timer on success and on failure, and rejects on the deadline", async () => {
+test("a bounded read clears its deadline timer on success and on failure, and reports the deadline as timedOut", async () => {
   const timers = () => process.getActiveResourcesInfo().filter((r) => r === "Timeout").length;
   const before = timers();
-  assert.equal(await withTimeout(Promise.resolve(7), 60_000), 7);
-  await assert.rejects(withTimeout(Promise.reject(new Error("x")), 60_000), /x/);
+  assert.deepEqual((await boundedRead(async () => ({ data: [7], error: null }), { limit: 5, timeoutMs: 60_000 })).data, [7]);
+  assert.match((await boundedRead(() => Promise.reject(new Error("x")), { limit: 5, timeoutMs: 60_000 })).error?.message ?? "", /x/);
   assert.equal(timers(), before);
-  await assert.rejects(withTimeout(new Promise(() => undefined), 5), ReadTimeoutError);
+  assert.equal((await boundedRead(() => new Promise(() => undefined), { limit: 5, timeoutMs: 5 })).error?.timedOut, true);
 });
 
 test("fetchAllRows pages until a short page, throws on any page error, and honours its cap", async () => {

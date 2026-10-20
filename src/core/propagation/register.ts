@@ -56,10 +56,7 @@ function validateRegisterDerivedValueInput(input: RegisterDerivedValueInput): st
   return problems;
 }
 
-export async function registerDerivedValue(sb: Db, input: RegisterDerivedValueInput): Promise<string> {
-  const problems = validateRegisterDerivedValueInput(input);
-  if (problems.length) throw new Error(`registerDerivedValue: invalid input:\n  ${problems.join("\n  ")}`);
-  const { data, error } = await sb.rpc("register_derived_value", {
+const derivedValueArgs = (input: RegisterDerivedValueInput) => ({
     p_entity_id: input.entityId ?? null,
     p_method_id: input.methodId,
     p_method_version: input.methodVersion,
@@ -77,10 +74,25 @@ export async function registerDerivedValue(sb: Db, input: RegisterDerivedValueIn
     p_half_life_days: input.halfLifeDays ?? null,
     p_inputs: input.inputs,
     p_computed_by: input.computedBy,
-    p_supersedes: input.supersedes ?? null,
-  });
+});
+
+export async function registerDerivedValue(sb: Db, input: RegisterDerivedValueInput): Promise<string> {
+  const problems = validateRegisterDerivedValueInput(input);
+  if (problems.length) throw new Error(`registerDerivedValue: invalid input:\n  ${problems.join("\n  ")}`);
+  const { data, error } = await sb.rpc("register_derived_value", { ...derivedValueArgs(input), p_supersedes: input.supersedes ?? null });
   if (error) throw new Error(`registerDerivedValue: register_derived_value RPC failed: ${error.message}`);
   return data as string;
+}
+
+/** Author a derived value once per (method, version, input): the check and the write are one statement (migration 0091), so two workers author one value. `authored` is false when a value of the method already had an edge from an input. */
+export async function authorDerivedValue(sb: Db, input: RegisterDerivedValueInput): Promise<{ valueId: string; authored: boolean }> {
+  const problems = validateRegisterDerivedValueInput(input);
+  if (problems.length) throw new Error(`authorDerivedValue: invalid input:\n  ${problems.join("\n  ")}`);
+  const { data, error } = await sb.rpc("author_derived_value", derivedValueArgs(input));
+  if (error) throw new Error(`authorDerivedValue: author_derived_value RPC failed: ${error.message}`);
+  const row = (Array.isArray(data) ? data[0] : data) as { value_id?: string; authored?: boolean } | null;
+  if (!row?.value_id || typeof row.authored !== "boolean") throw new Error("authorDerivedValue: author_derived_value returned no value id");
+  return { valueId: row.value_id, authored: row.authored };
 }
 
 const STATUS_TOKENS = ["CONFIRMED", "HYPOTHESIS", "REFUTED"] as const;
@@ -136,7 +148,8 @@ export async function registerInferenceRecord(sb: Db, input: RegisterInferenceRe
 }
 
 export const INFER_METHOD_ID = "infer-from-question";
-export const INFER_METHOD_VERSION = "v1";
+export const INFER_METHOD_VERSION_V1 = "v1";
+export const INFER_METHOD_VERSION = "v2";
 const firstInferenceComputedBy = (batch: string): string => `question-answers:${batch}`;
 
 export interface FirstInferenceArgs {

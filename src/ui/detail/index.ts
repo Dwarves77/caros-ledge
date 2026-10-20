@@ -15,5 +15,3 @@ export type { DetailSurfaceSharedProps } from "./shared-props";
 export { SourcesGrid } from "./SourcesGrid";
 export { neighbourHref, useListPosition } from "./useListPosition";
 export type { ListPosition } from "./useListPosition";
-export { ItemWatch } from "./watch";
-export type { WatchApi } from "./watch";

@@ -24,7 +24,7 @@ export const DELETE = route("/api/account", async (request) => {
   await parseJson(request, z.strictObject({ confirm: z.literal(DELETE_PHRASE, { error: `Type "${DELETE_PHRASE}" to confirm.` }) }));
   const { data, error } = await user.client.rpc("delete_own_account");
   if (isMissingObject(error)) throw notYet();
-  if (error) throw OWN_REFUSALS.has(error.code ?? "") ? dbError(error) : new LookupError("delete_own_account", error);
+  if (error) throw OWN_REFUSALS.has(error.code ?? "") ? dbError(error, { own: true }) : new LookupError("delete_own_account", error);
   try {
     await user.client.auth.signOut();
   } catch (e) {
@@ -39,7 +39,7 @@ export const GET_EXPORT = route("/api/account/export", async (request) => {
   if (isRefusal(user)) return user;
   const { data, error } = await user.client.rpc("export_own_account");
   if (isMissingObject(error)) throw notYet();
-  if (error) throw OWN_REFUSALS.has(error.code ?? "") ? dbError(error) : new LookupError("export_own_account", error);
+  if (error) throw OWN_REFUSALS.has(error.code ?? "") ? dbError(error, { own: true }) : new LookupError("export_own_account", error);
   const body = parseWith(accountExport, data, "export");
   return ok({ ...user.headers, "cache-control": "no-store", "content-disposition": 'attachment; filename="caros-ledge-account-export.json"' }, body);
 });

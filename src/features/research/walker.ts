@@ -8,14 +8,14 @@ import { registerCitedSource } from "@/core/producers/rows-file";
 import type { ProducerDeps } from "@/core/producers/deps";
 import type { ParseOut, ProducerCtx, ProducerSpec } from "@/core/producers/runner";
 import { runProducer, type RunInput } from "@/core/producers/runner";
-import { openAlexGet, searchWorks, type OpenAlexDeps } from "@/core/http/openalex";
+import { openAlexGet, type OpenAlexDeps } from "@/core/http/openalex";
 import type { Rec } from "@/core/producers/upsert-plan";
 import { hostOf } from "@/core/shared";
 import { isDoiResolverHost, placeHostWithVerdicts, registerSource, type HostVerdictRef } from "@/core/sources";
 import { mintItem, type MintCtx } from "@/features/mint";
 
-export const RESIDUE_REASON = "awaiting host verdict batch";
-export const MAX_NEEDS = 10;
+const RESIDUE_REASON = "awaiting host verdict batch";
+const MAX_NEEDS = 10;
 const PER_NEED = 5;
 const MINT_NEW = ["minted", "retyped", "linked"];
 
@@ -26,20 +26,17 @@ export interface WalkInput { query?: string; needs?: Need[]; greyLit?: Array<{ n
 export interface WalkCandidate { title: string; sourceUrl: string; publishedDate: string | null; openAlexId?: string | null; forNeed?: string }
 
 /** A work with a landing page (or DOI) and a title; anything else is no candidate. */
-export function normalizeOpenAlexWork(work: Rec | null | undefined): WalkCandidate | null {
+function normalizeOpenAlexWork(work: Rec | null | undefined): WalkCandidate | null {
   const url = ((work?.primary_location as { landing_page_url?: string } | undefined)?.landing_page_url) || (work?.doi as string | undefined) || null;
   return url && work?.title ? { title: String(work.title), sourceUrl: url, publishedDate: (work.publication_date as string) ?? null, openAlexId: (work.id as string) ?? null } : null;
 }
-export async function searchOpenAlexWorks(q: { query: string; perPage?: number }, deps: OpenAlexDeps = {}): Promise<WalkCandidate[]> {
-  const body = await searchWorks({ search: q.query, perPage: q.perPage ?? 10 }, deps);
-  return (body?.results ?? []).map(normalizeOpenAlexWork).filter((c): c is WalkCandidate => c !== null);
-}
+
 /** The first `max` needs by subject ref (a stable order), so a bounded pass is repeatable. */
-export const boundNeeds = (needs: readonly Need[], max = MAX_NEEDS): Need[] => [...needs].sort((a, b) => a.subject_ref.localeCompare(b.subject_ref)).slice(0, max);
+const boundNeeds = (needs: readonly Need[], max = MAX_NEEDS): Need[] => [...needs].sort((a, b) => a.subject_ref.localeCompare(b.subject_ref)).slice(0, max);
 
 export type Placement = { placed: true; host: string; placedBy: "built-in rule" | "host verdict"; tier: number; verdictBatch: string | null } | { placed: false; host: string; reason: string };
 /** Place a work's publisher: a DOI resolver host says nothing about the publisher; the class table, then a committed verdict; else the named residue (never a guessed tier). */
-export function placePublisher(sourceUrl: string, verdicts: ReadonlyMap<string, HostVerdictRef> | null | undefined): Placement {
+function placePublisher(sourceUrl: string, verdicts: ReadonlyMap<string, HostVerdictRef> | null | undefined): Placement {
   const host = hostOf(sourceUrl);
   if (!host) return { placed: false, host: "", reason: "no resolvable host" };
   if (isDoiResolverHost(host)) return { placed: false, host: "", reason: "publisher host unresolved from DOI" };
@@ -48,7 +45,7 @@ export function placePublisher(sourceUrl: string, verdicts: ReadonlyMap<string, 
   return p.via === "verdict" ? { placed: true, host, placedBy: "host verdict", tier: p.tier, verdictBatch: p.verdict?.batch ?? null } : { placed: true, host, placedBy: "built-in rule", tier: p.tier, verdictBatch: null };
 }
 
-export const buildMintSeed = (c: WalkCandidate, o: { sourceId?: string | null } = {}): Rec => ({ title: c.title, source_url: c.sourceUrl, item_type: "research_finding", domain: 7, ...(c.publishedDate ? { added_date: c.publishedDate } : {}), ...(o.sourceId ? { source_id: o.sourceId } : {}) });
+const buildMintSeed = (c: WalkCandidate, o: { sourceId?: string | null } = {}): Rec => ({ title: c.title, source_url: c.sourceUrl, item_type: "research_finding", domain: 7, ...(c.publishedDate ? { added_date: c.publishedDate } : {}), ...(o.sourceId ? { source_id: o.sourceId } : {}) });
 
 const walkerDeps = (ctx: ProducerCtx): WalkerDeps => {
   const d = ctx.deps as WalkerDeps;

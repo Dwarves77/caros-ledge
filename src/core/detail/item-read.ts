@@ -3,10 +3,12 @@
 // The one read of an item for its detail page: explicit columns, the verified and non-archived gate (INV-125), ONE uuid resolution (the old tree resolved the same id six ways), bounded
 // relationship reads, the sections by uuid, and the mapper for every field the four detail surfaces render (including the columns the old mapper never read: recommended actions, the
 // instrument identifier and the last-verified date). The reader is the caller's client: RLS decides what is visible, a failed read throws (never "not found", never an empty block).
+import { admitItems } from "@/core/derived/admissible";
+import { isInstrumentMilestone, timelineDateOf } from "@/core/brief/timeline";
 import type { Db } from "@/core/db";
 import { boundedRead } from "@/core/db/query";
 import { normalizeJurisdictionIsoColumn } from "@/core/jurisdictions";
-import { canonicalSurface, type DetailSurface } from "@/core/lists";
+import { canonicalSurface, requirePriority, type DetailSurface } from "@/core/lists";
 import { surfaceOf } from "@/core/routing";
 import { customerTierOf } from "@/core/sources";
 import type { RelevanceInput } from "@/core/workspace";
@@ -79,7 +81,7 @@ async function readCitedSources(db: Db, itemUuid: string): Promise<Resource["cit
 
 /** One item for its detail page, or null when no verified, non-archived item the reader can see has this id. */
 export async function readDetailItem(db: Db, urlId: string): Promise<DetailRead | null> {
-  const { data: row, error } = await db.from("intelligence_items").select(ITEM_COLUMNS).eq(itemIdColumn(urlId), urlId).eq("provenance_status", "verified").eq("is_archived", false).maybeSingle();
+  const { data: row, error } = await admitItems(db.from("intelligence_items").select(ITEM_COLUMNS)).eq(itemIdColumn(urlId), urlId).maybeSingle();
   if (error) throw new Error(`intelligence_items read failed: ${error.message}`);
   if (!row) return null;
   const r = row as unknown as Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any -- a PostgREST row under an explicit column list
@@ -88,7 +90,7 @@ export async function readDetailItem(db: Db, urlId: string): Promise<DetailRead 
   const src = one<{ name: string | null; base_tier: number | null; effective_tier: number | null; tier_override: number | null }>(r.sources);
 
   const [timelines, changes, disputes, xrefs, sups, bias, cited, sections] = await Promise.all([
-    bounded<{ milestone_date: string | null; label: string | null; is_completed: boolean | null }>("item_timelines", BOUND.timelines, (n) => db.from("item_timelines").select("milestone_date, label, is_completed, sort_order").eq("item_id", uuid).order("sort_order", { ascending: true }).limit(n) as never),
+    bounded<{ milestone_date: string | null; date_precision: string | null; label: string | null; is_completed: boolean | null; sort_order: number | null }>("item_timelines", BOUND.timelines, (n) => db.from("item_timelines").select("milestone_date, date_precision, label, is_completed, sort_order").eq("item_id", uuid).order("sort_order", { ascending: true }).limit(n) as never),
     bounded<{ change_date: string; change_type: "NEW" | "UPDATED"; field: string | null; previous_value: string | null; new_value: string | null; impact: string | null }>("item_changelog", BOUND.changelog, (n) => db.from("item_changelog").select("change_date, change_type, field, previous_value, new_value, impact").eq("item_id", uuid).order("change_date", { ascending: false }).limit(n) as never),
     bounded<{ note: string; disputing_sources: unknown }>("item_disputes", 1, (n) => db.from("item_disputes").select("note, disputing_sources").eq("item_id", uuid).eq("is_active", true).limit(n) as never),
     bounded<{ source_item_id: string; target_item_id: string; relationship: string | null; origin: string | null; basis: ItemConnection["basis"]; score: number | null; source: Embedded | Embedded[] | null; target: Embedded | Embedded[] | null }>(
@@ -117,14 +119,14 @@ export async function readDetailItem(db: Db, urlId: string): Promise<DetailRead 
     url: r.source_url || "",
     note: r.summary || "",
     type: r.item_type || "uncertain",
-    priority: (r.priority || "MODERATE") as Resource["priority"],
+    priority: requirePriority(r.priority, `item ${uuid}`),
     added: r.added_date ?? "",
     reasoning: r.reasoning || "",
     tags: r.tags || [],
     whatIsIt: r.what_is_it || "",
     whyMatters: r.why_matters || "",
     keyData: r.key_data || [],
-    timeline: timelines.map((t) => ({ date: t.milestone_date ?? "", label: t.label ?? "", ...(t.is_completed ? { status: "past" as const } : {}) })),
+    timeline: timelines.filter((t) => isInstrumentMilestone(t.sort_order)).map((t) => ({ date: timelineDateOf(t.milestone_date ?? "", t.date_precision), label: t.label ?? "", ...(t.is_completed ? { status: "past" as const } : {}) })),
     modes: r.transport_modes || [],
     isArchived: r.is_archived === true,
     ...(r.full_brief ? { fullBrief: r.full_brief } : {}),

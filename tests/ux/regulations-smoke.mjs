@@ -15,7 +15,15 @@ const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-headers
 // A 1x1 transparent PNG: the map's tiles, so the smoke never reaches the network.
 const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64');
 
+// The signed-in reader the watch toggle's membership read needs (the page asks /api/watchlist with the session's token); the same cookie the dashboard smoke sets.
+async function signIn(page) {
+  const ref = process.env.NEXT_PUBLIC_SUPABASE_URL ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname.split('.')[0] : 'placeholder';
+  const session = { access_token: 'a.b.c', refresh_token: 'r', token_type: 'bearer', expires_in: 36000, expires_at: Math.floor(Date.now() / 1000) + 36000, user: { id: 'u-1', aud: 'authenticated', email: 'smoke@example.invalid', app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' } };
+  await page.context().addCookies([{ name: `sb-${ref}-auth-token`, value: encodeURIComponent(JSON.stringify(session)), url: base }]);
+}
+
 async function install(page, state) {
+  await signIn(page);
   const json = (route, body, status = 200) => route.fulfill({ status, contentType: 'application/json', headers: CORS, body: JSON.stringify(body) });
   await page.route('**/*.tile.openstreetmap.org/**', (route) => route.fulfill({ status: 200, contentType: 'image/png', body: PNG }));
   await page.route('**/api/**', (route) => {
@@ -25,6 +33,7 @@ async function install(page, state) {
     if (p === '/api/workspace/tags') return json(route, { tags: [], itemTags: {} });
     if (p === '/api/detail/relevance') return state.failRelevance ? json(route, { error: 'down' }, 503) : json(route, { relevance: null, binding: null });
     if (p === '/api/saved-views') return json(route, { views: [] });
+    if (p === '/api/watchlist') return json(route, { watchedIds: [], teamWatchedIds: [], teamAvailable: true });
     if (p === '/api/notices') return json(route, { notices: [], since: '2026-09-16T00:00:00Z' });
     return json(route, { error: `unmocked ${p}` }, 404);
   });

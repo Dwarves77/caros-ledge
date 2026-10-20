@@ -2,5 +2,5 @@
   "derived_values:carbon_intensity_tkm@1.0.0": "1047561df8a8b416f7fddb58d5ba3321d84da0c02901c8ee378c93097afc4b1a",
   "derived_values:market_series_delta@1.0.0": "e5cefad0093758e1905e6b31be3566dca2ee9d2b38acd667df5f818900c3ea89",
   "inference_records:infer-from-question@v1": "c65c7c98ceaaa14e7b98a4dbc25a391b650d61797ca324df279f1ee5e3988b74",
-  "item_impact_scores:impact_scores@1.0.0": "635761351b96270963bce323a71b6d7a413b34a927854af2669f3bd0e5b9d2da"
+  "inference_records:infer-from-question@v2": "9d0cb9324b5b8de7b6a5adfe97b1c8745bdb28b441110ba9342b1761a6ef6612"
 }

@@ -1,4 +1,4 @@
-export { DERIVATION, DERIVATIONS, formatDelta, isContractable, isStatutory, makeEnvelope, roundToSampleSupport, stalenessOf } from "./envelope";
+export { DERIVATION, formatDelta, isContractable, makeEnvelope, roundToSampleSupport, stalenessOf } from "./envelope";
 export type { AsOf, Envelope, EnvelopeInput, Propagated } from "./envelope";
 export { renderEnvelopeColumnsSql, renderFactorCandidateViewSql, renderTierConstraintsSql } from "./factor-tier";
 export type { Factor, Skipped } from "./factor-tier";

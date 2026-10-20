@@ -13,7 +13,7 @@ export interface TagApplication {
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 /** "3 Sep 2026" in UTC, so the same instant reads the same on the server, in the browser and in a test; null when missing or unparseable. */
-export function formatAppliedDate(iso: string | null | undefined): string | null {
+function formatAppliedDate(iso: string | null | undefined): string | null {
   if (!iso) return null;
   const d = new Date(iso);
   return Number.isNaN(d.getTime()) ? null : `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;

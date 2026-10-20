@@ -15,4 +15,4 @@ export const isTeamOnlyScopeViolation = (itemType: string, scope: string): boole
 /** The types that name a row of intelligence_items. */
 export const ITEM_BACKED: ReadonlySet<string> = new Set(["reg", "signal", "research", "operations"]);
 
-export const WATCHLIST_TYPE_LABEL: Record<WatchlistItemType, string> = { source: "Source", reg: "Reg", signal: "Signal", research: "Research", operations: "Operations", market_series: "Series" };
+export const WATCHLIST_TYPE_LABEL: Record<WatchlistItemType, string> = { source: "Source", reg: "Regulation", signal: "Market signal", research: "Research", operations: "Operations", market_series: "Market series" };

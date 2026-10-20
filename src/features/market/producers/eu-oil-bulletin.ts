@@ -13,8 +13,8 @@ import { marketSeriesBase, stampEntity } from "./market-series-delta";
 const PAGE_URL = "https://energy.ec.europa.eu/data-and-analysis/weekly-oil-bulletin_en";
 const ORIGIN = "https://energy.ec.europa.eu";
 const FALLBACK_XLSX = "https://energy.ec.europa.eu/document/download/906e60ca-8b6a-44e7-8589-652854d2fd3f_en?filename=Weekly_Oil_Bulletin_Prices_History_maticni_4web.xlsx";
-export const PRICE_SHEET = "Prices wo taxes";
-export const PRODUCTS: Readonly<Record<string, { label: string; unit: string }>> = Object.freeze({
+const PRICE_SHEET = "Prices wo taxes";
+const PRODUCTS: Readonly<Record<string, { label: string; unit: string }>> = Object.freeze({
   "eurosuper-95": { label: "Euro-Super 95 (EU average, before taxes)", unit: "EUR/1000L" },
   "automotive-diesel": { label: "Automotive gas oil / diesel (EU average, before taxes)", unit: "EUR/1000L" },
   "heating-gas-oil": { label: "Heating gas oil (EU average, before taxes)", unit: "EUR/1000L" },
@@ -39,7 +39,7 @@ export interface BulletinWeek {
   warnings: string[];
 }
 /** The first link containing "Prices_History" on the bulletin page, made absolute; null when none. */
-export function findPricesHistoryLink(html: string): string | null {
+function findPricesHistoryLink(html: string): string | null {
   for (const m of html.matchAll(/href\s*=\s*(?:"([^"]+)"|'([^']+)')/g)) {
     const href = (m[1] ?? m[2]) as string;
     if (/Prices_History/i.test(href)) return /^https?:\/\//i.test(href) ? href : href.startsWith("/") ? ORIGIN + href : `${ORIGIN}/${href}`;
@@ -48,7 +48,7 @@ export function findPricesHistoryLink(html: string): string | null {
 }
 
 /** Resolve the date column and the pre-tax EU columns from header rows 1-3; row 1 (machine id) and row 2 (display text) must agree on the product. */
-export function resolveHeaderBlocks(byRow: Map<number, SheetRow>, shared: readonly string[]) {
+function resolveHeaderBlocks(byRow: Map<number, SheetRow>, shared: readonly string[]) {
   const text = (n: number) => new Map([...(byRow.get(n)?.cells ?? new Map())].map(([c, cell]) => [c, cellText(cell, shared).trim()] as const).filter(([, t]) => t));
   const [r1, r2, r3] = [text(1), text(2), text(3)];
   const cols = [...new Set([...r1.keys(), ...r2.keys(), ...r3.keys()])].sort((a, b) => colNum(a) - colNum(b));
@@ -87,7 +87,7 @@ function weekOf(raw: string | null, type: string): string | null {
 }
 
 /** Every dated data row below the headers, newest first, with the prices that are usable numbers; a missing price is omitted with a warning, never zero-filled. */
-export function extractEuSeries(rows: SheetRow[], shared: readonly string[], header: ReturnType<typeof resolveHeaderBlocks>): BulletinWeek[] {
+function extractEuSeries(rows: SheetRow[], shared: readonly string[], header: ReturnType<typeof resolveHeaderBlocks>): BulletinWeek[] {
   const out: BulletinWeek[] = [];
   for (const row of rows) {
     if (row.rowNum <= 3) continue;
@@ -110,7 +110,7 @@ export function extractEuSeries(rows: SheetRow[], shared: readonly string[], hea
 }
 
 /** The normalised `week_ending;product;price_eur[;n_member_states]` CSV to rows; a bad date, an unknown product and a bad price are each skipped by name. */
-export function parseEuWeeklyOilBulletinCsv(csv: string): { rows: Rec[]; warnings: string[] } {
+function parseEuWeeklyOilBulletinCsv(csv: string): { rows: Rec[]; warnings: string[] } {
   const lines = String(csv ?? "").split(/\r\n|\r|\n/).map((l) => l.trim()).filter((l) => l && !l.startsWith("#"));
   if (!lines.length) return { rows: [], warnings: ["empty input: no header, no data rows"] };
   const header = (lines[0] as string).split(";").map((h) => h.trim());

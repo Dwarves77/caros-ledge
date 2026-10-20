@@ -96,8 +96,6 @@ export interface Doc {
   text?: string;
   /** A binary document (a workbook). */
   bytes?: Buffer;
-  /** A streamed body (the EEA extract); `truncated` is set by the producer when it cut the read. */
-  chunks?: AsyncIterable<Uint8Array>;
   truncated?: boolean;
   meta?: Rec;
 }

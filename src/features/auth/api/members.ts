@@ -31,7 +31,7 @@ const OWN_REFUSALS = new Set(["42501", "P0002", "22023"]);
 
 /** A member-changing function's answer: the row on success, else its refusal through the one status table. The call itself is written at the call site as `user.client.rpc("name", args)`, where the static column check reads its name and arguments. */
 function done(res: { data: unknown; error: { code?: string | null; message: string } | null }, name: string): unknown {
-  if (res.error) throw OWN_REFUSALS.has(res.error.code ?? "") ? dbError(res.error) : new LookupError(name, res.error);
+  if (res.error) throw OWN_REFUSALS.has(res.error.code ?? "") ? dbError(res.error, { own: true }) : new LookupError(name, res.error);
   return res.data;
 }
 

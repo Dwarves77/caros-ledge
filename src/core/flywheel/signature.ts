@@ -6,6 +6,7 @@
 // the domain, so surfaceOf is always called with (item_type, domain). entity_ids are the instrument entity of the item plus the
 // regulation identifiers its title names (the old decisive "shared regulation identifier" signal, now an entity basis); obligation_keys
 // are the ids of the obligation objects the item holds (and the ones they supersede).
+import { admitItems } from "@/core/derived/admissible";
 import type { Db } from "@/core/db";
 import { fetchAllRows } from "@/core/db";
 
@@ -52,7 +53,7 @@ export function entityTokensOf(row: Pick<Signature, "title" | "instrument_entity
 export async function loadSignatures(sb: Db, opts: { ids?: readonly string[]; since?: string; excludeId?: string; withObligations?: boolean } = {}): Promise<Signature[]> {
   const rows = await fetchAllRows<Signature>(
     (from, to) => {
-      let q = sb.from("intelligence_items").select(SIGNATURE_COLUMNS).eq("provenance_status", "verified").eq("is_archived", false);
+      let q = admitItems(sb.from("intelligence_items").select(SIGNATURE_COLUMNS));
       if (opts.excludeId) q = q.neq("id", opts.excludeId);
       if (opts.ids?.length) q = q.in("id", [...opts.ids]);
       if (opts.since) q = q.gte("created_at", opts.since);

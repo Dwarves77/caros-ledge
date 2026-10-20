@@ -28,7 +28,7 @@ export function ObligationsRailCard({ events, failed, nowIso }: { events: readon
       {failed ? (
         <StateNote tone="error">The upcoming obligations did not load. Reload the page to try again.</StateNote>
       ) : rows.length === 0 ? (
-        <Absence reason="not in primary source" />
+        <StateNote>Nothing is due in the next 30 days.</StateNote>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 9, fontSize: "var(--fs-12)" }}>
           {rows.map((ev) => (

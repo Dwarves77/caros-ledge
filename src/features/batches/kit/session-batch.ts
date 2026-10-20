@@ -28,8 +28,6 @@ export interface BatchDeps {
   intake: IntakeDeps;
   /** Committed host verdicts for rating a host the class table does not place. */
   verdicts?: ReadonlyMap<string, HostVerdictRef> | null | undefined;
-  /** The public cache flush (the app's revalidate route); absent means a flush is owed and the run says so. */
-  flushCache?: ((tags: string[]) => Promise<{ error: string | null }>) | undefined;
 }
 export interface ApplyOpts {
   dry: boolean;

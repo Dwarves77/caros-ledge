@@ -1,0 +1,99 @@
+{
+ "exempt": [
+  {
+   "glob": "src/core/grounding/**",
+   "kind": "pipeline",
+   "why": "Grounding, minting and the validation gates read unverified, held and superseded rows on purpose: they are what makes a row verified (R2a and R2b own them)."
+  },
+  {
+   "glob": "src/features/mint/**",
+   "kind": "pipeline",
+   "why": "The mint and its heal read the rows they are minting or healing, verified or not."
+  },
+  {
+   "glob": "src/features/intake/**",
+   "kind": "pipeline",
+   "why": "Intake, quarantine and the change sweep read staged, unverified and archived items on purpose."
+  },
+  {
+   "glob": "src/features/batches/**",
+   "kind": "pipeline",
+   "why": "Batch export and apply read the items a session-authored batch is about, whatever their state."
+  },
+  {
+   "glob": "src/features/learning/**",
+   "kind": "pipeline",
+   "why": "Question generation and signpost scoring read the items they were asked about."
+  },
+  {
+   "glob": "src/features/flywheel/**",
+   "kind": "pipeline",
+   "why": "The flywheel passes (connect, tag, discovery, corpus) read the corpus they are connecting, as pipeline stages."
+  },
+  {
+   "glob": "src/features/sources/**",
+   "kind": "pipeline",
+   "why": "Source classification and change detection read the items of a source to classify and compare them."
+  },
+  {
+   "glob": "src/core/entities/link-entities.ts",
+   "kind": "pipeline",
+   "why": "Entity linking reads the items it links."
+  },
+  {
+   "glob": "src/core/entities/link-items.ts",
+   "kind": "pipeline",
+   "why": "Entity linking reads the items it links."
+  },
+  {
+   "glob": "src/core/tags/adopt.ts",
+   "kind": "pipeline",
+   "why": "Tag adoption reads the items a tag is adopted onto."
+  },
+  {
+   "glob": "src/core/propagation/inference.ts",
+   "kind": "pipeline",
+   "why": "Re-opening a question reads the item the question was about."
+  },
+  {
+   "glob": "src/features/obligations/derive/compliance-deadline.ts",
+   "kind": "pipeline",
+   "why": "Syncs one named item's deadline column from its events; the events it reads exclude a suppressed claim's."
+  },
+  {
+   "glob": "src/features/obligations/extract/read-extraction-input.ts",
+   "kind": "pipeline",
+   "why": "Reads one named item's last-regenerated date for extraction; the claims it reads exclude a suppressed claim."
+  },
+  {
+   "glob": "src/features/admin/**",
+   "kind": "operator",
+   "why": "The admin console reads and corrects any item in any state."
+  },
+  {
+   "glob": "src/features/health/**",
+   "kind": "operator",
+   "why": "The health surface counts items by state."
+  },
+  {
+   "glob": "src/core/propagation/notices.ts",
+   "kind": "history",
+   "why": "A recalculation notice shows the value that was replaced beside the one that replaced it: it reads superseded rows on purpose."
+  },
+  {
+   "glob": "src/features/corrections/api.ts",
+   "kind": "operator",
+   "why": "The admin corrections API lists an item's corrections and finds the ones whose claim is gone: it reads the claims of any item in any state to do it."
+  }
+ ],
+ "owed": [
+  {
+   "file": "src/features/community/api/post.ts",
+   "tables": [
+    "intelligence_items"
+   ],
+   "owner": "R2e",
+   "finding": "reads intelligence_items without the admissible-row predicate (I13); Community is R2e, so the coordinator assigns the edit"
+  }
+ ]
+}

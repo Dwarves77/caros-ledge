@@ -23,6 +23,8 @@ export function activeItems(db: MemDb, orgId: string): Row[] {
 }
 
 export function installWorkspaceReadRpcs(db: MemDb): MemDb {
+  // get_workspace_items_by_ids (migration 0095): the named items the workspace holds, the override laid over the row, an item another replaced absent.
+  db.rpcs.get_workspace_items_by_ids = (a, d) => ({ data: activeItems(d, String(a.p_org_id)).filter((i) => (a.p_ids as string[]).includes(String(i.id)) && (i.replaced_by ?? null) === null) });
   db.rpcs.get_workspace_due_next = (a, d) => {
     const t = today(d);
     const limit = Math.min(Math.max(Number(a.p_limit ?? 24), 1), 100);
@@ -64,7 +66,9 @@ export function installWorkspaceReadRpcs(db: MemDb): MemDb {
   db.rpcs.get_surface_counts = (a, d) => {
     const items = bySurface(activeItems(d, String(a.p_org_id)), String(a.p_surface));
     const by = (key: string) => items.reduce<Record<string, number>>((m, i) => ((m[String(i[key] ?? "none")] = (m[String(i[key] ?? "none")] ?? 0) + 1), m), {});
-    return { data: { total_items: items.length, by_priority: by("effective_priority"), by_status: by("status"), by_jurisdiction: {}, total_jurisdictions: new Set(items.flatMap((i) => (i.jurisdiction_iso as string[] | undefined) ?? [])).size, last_updated_at: null } };
+    // the database leaves a NULL severity or band out of its tally
+    const tally = (key: string) => items.reduce<Record<string, number>>((m, i) => (i[key] == null ? m : ((m[String(i[key])] = (m[String(i[key])] ?? 0) + 1), m)), {});
+    return { data: { total_items: items.length, by_priority: by("effective_priority"), by_severity: tally("severity"), by_band: tally("signal_band"), by_status: by("status"), by_jurisdiction: {}, total_jurisdictions: new Set(items.flatMap((i) => (i.jurisdiction_iso as string[] | undefined) ?? [])).size, last_updated_at: null } };
   };
   db.rpcs.get_all_surface_counts = (a, d) => {
     const scope = d.rows("intelligence_items").filter((i) => {

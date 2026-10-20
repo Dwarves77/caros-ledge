@@ -15,7 +15,7 @@ test("every wired member is present on the built deps, and the owed members are 
   const f = fixture();
   const report = startupCheck(f.d);
   assert.deepEqual(report.missing, []);
-  assert.deepEqual(report.owed.map((o) => o.member).sort(), ["assistant.operationsFacts (the Operations data block)", "dashboard.themeChips (the cross-page theme view)", "propagation EdgeAuthors (authorCarbonIntensityEdges)"].sort());
+  assert.deepEqual(report.owed.map((o) => o.member).sort(), ["propagation EdgeAuthors (authorCarbonIntensityEdges)"].sort());
 });
 
 test("an unwired required member is named, and the start is refused with it in every environment, not only Vercel (IMP-026, G9)", () => {
@@ -80,19 +80,6 @@ test("navCounts: getNavCounts over the lists reads for the member's org and user
   await assert.rejects(Promise.resolve(wiring.adminAttention?.("u1")), /returned no row/);
   f.db.rpcs.admin_attention_counts = () => ({ error: { message: "denied" } });
   await assert.rejects(Promise.resolve(wiring.adminAttention?.("u1")), /admin_attention_counts failed: denied/);
-});
-
-test("the cache flush posts the tags to the app with the worker secret; unconfigured, it says so instead of reporting success", async () => {
-  const calls: { url: string; secret: string | null; body: unknown }[] = [];
-  const fetchImpl = (async (url: string, init: RequestInit) => (calls.push({ url, secret: new Headers(init.headers).get("x-worker-secret"), body: JSON.parse(String(init.body)) }), new Response("{}", { status: 200 }))) as unknown as typeof fetch;
-  const db = new MemDb().client;
-  const armed = buildDeps(db, { NEXT_PUBLIC_APP_URL: "https://app.example.test", WORKER_SECRET: "s3cret" }, { now: () => NOW, fetchImpl });
-  assert.deepEqual(await armed.mintRun.flushCache?.(["intel-items"]), { error: null });
-  assert.deepEqual(calls, [{ url: "https://app.example.test/api/revalidate", secret: "s3cret", body: { tags: ["intel-items"] } }]);
-  const bare = buildDeps(db, {}, { now: () => NOW, fetchImpl });
-  assert.match(String((await bare.mintRun.flushCache?.(["x"]))?.error), /not configured/);
-  const down = buildDeps(db, { NEXT_PUBLIC_APP_URL: "https://app.example.test", WORKER_SECRET: "s" }, { now: () => NOW, fetchImpl: (async () => new Response("", { status: 503 })) as unknown as typeof fetch });
-  assert.match(String((await down.mintRun.flushCache?.(["x"]))?.error), /HTTP 503/);
 });
 
 test("the capture worker is the Edge Function invoked through the service client; its error is a 500 the capture stage reports", async () => {
@@ -160,6 +147,19 @@ test("IMP-054, IMP-084 degraded: the tables absent (production before the cutove
   const down = fixture();
   down.db.fail("host_verdicts", "select", "connection reset");
   assert.match((await down.d.loadReferenceData())[0] ?? "", /host_verdicts could not be read, no committed host verdict applies this run: connection reset/);
+});
+
+test("C:40 (R2d) a reference load that FAILED is not kept for the life of the deps: the next call reads again and the verdicts arrive; a good load is kept", async () => {
+  const f = fixture();
+  f.db.seed("host_verdicts", [{ host: "unplaced.example", class: "association", batch_id: "host-verdicts-001" }]);
+  f.db.fail("host_verdicts", "select", "connection reset", { times: 1 });
+  assert.match((await f.d.loadReferenceData())[0] ?? "", /connection reset/, "the first load failed and says so");
+  assert.equal(f.d.producers.verdicts.size, 0);
+  assert.deepEqual(await f.d.loadReferenceData(), [], "the second call read again");
+  assert.equal(f.d.producers.verdicts.has("unplaced.example"), true, "one transient failure did not degrade every rating after it");
+  const reads = f.db.reads("host_verdicts").length;
+  await f.d.loadReferenceData();
+  assert.equal(f.db.reads("host_verdicts").length, reads, "a good load is kept");
 });
 
 test("IMP-054: a tree that lost producers.verdicts or the reference loader is named by the startup check and refused on Vercel", () => {

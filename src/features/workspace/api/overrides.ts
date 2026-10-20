@@ -1,6 +1,7 @@
 // Ported from old_repo/src/app/api/workspace/overrides/route.ts (lines 36-304)
 import { z } from "zod";
 
+import { admitItems } from "@/core/derived/admissible";
 import { isMissingObject } from "@/core/db/absent";
 import type { Db } from "@/core/db/clients";
 import { dbError, HttpError, LookupError, ok, route } from "@/core/http/errors";
@@ -38,7 +39,7 @@ async function assertOwnerInOrg(db: Db, orgId: string, ownerUserId: string): Pro
 
 /** The text and link of a notice about an item, read on the caller's own client (it is an item they may open). The recipients are the database's to choose, in the same transaction as the write. */
 async function noticeOf(db: Db, itemUuid: string, title: string, text: (name: string) => string): Promise<Record<string, string>> {
-  const { data: item, error } = await db.from("intelligence_items").select("title, legacy_id, item_type, domain").eq("id", itemUuid).maybeSingle();
+  const { data: item, error } = await admitItems(db.from("intelligence_items").select("title, legacy_id, item_type, domain").eq("id", itemUuid)).maybeSingle();
   if (error) throw new LookupError("intelligence_items", error);
   const uiId = item?.legacy_id || itemUuid;
   const link = workspaceDeps().itemHref?.({ id: uiId, type: item?.item_type ?? null, domain: item?.domain ?? null }) ?? `/regulations/${encodeURIComponent(uiId)}`;
@@ -98,7 +99,6 @@ export const POST = route("/api/workspace/overrides", async (request) => {
     const r = await callWriter(db, "archive_item_for_team", { p_org_id: orgId, p_item_id: itemUuid, p_reason: reason, p_note: input.archiveNote ?? null, p_notice: notice });
     [override, queued] = [r.override, (queued ?? 0) + r.queued];
   }
-  workspaceDeps().revalidateWorkspaceData?.();
   return ok(auth.headers, { override, ...(queued === null ? {} : { queued }) });
 });
 
@@ -110,6 +110,5 @@ export const DELETE = route("/api/workspace/overrides", async (request) => {
   const itemUuid = await itemUuidOr404(db, input.itemId);
   const { error } = await db.from("workspace_item_overrides").delete().eq("org_id", auth.membership.orgId).eq("item_id", itemUuid);
   if (error) throw dbError(error);
-  workspaceDeps().revalidateWorkspaceData?.();
   return ok(auth.headers, { success: true });
 });

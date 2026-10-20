@@ -62,8 +62,9 @@ export async function tagPass(deps: TagPassDeps, input: TagPassInput): Promise<R
     readByItem<{ intelligence_item_id: string; result_content: string | null }>(sb, "agent_run_searches", "intelligence_item_id, result_content", "intelligence_item_id", ids),
     readByItem<Correction & { [k: string]: unknown }>(sb, "item_corrections", "*", "item_id", ids),
   ]);
-  const { adopted, note } = await readAdoptedVocabulary(sb);
-  if (note) notes.push(note);
+  const read = await readAdoptedVocabulary(sb);
+  const adopted = read.adopted;
+  if (!read.ok) notes.push(read.reason);
 
   const results: AdoptResult[] = [];
   const touched: string[] = [];

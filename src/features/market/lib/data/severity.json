@@ -1,0 +1,15 @@
+{
+ "action_required": "Action required",
+ "cost_alert": "Cost alert",
+ "window_closing": "Window closing",
+ "competitive_edge": "Competitive edge",
+ "monitoring": "Monitoring",
+ "critical": "Critical",
+ "high": "High",
+ "moderate": "Moderate",
+ "low": "Low",
+ "immediate": "Immediate",
+ "watch": "Watch",
+ "reference": "Reference",
+ "background": "Background"
+}

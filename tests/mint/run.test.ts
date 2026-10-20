@@ -32,7 +32,7 @@ const rejectProvenance = (db: MemDb) => {
   };
 };
 
-test("apply: a verified mint inserts the item with its grounding rows, stamps the census row reconciled, connects ONCE in the same run, records one ledger row, and flushes the cache", async () => {
+test("apply: a verified mint inserts the item with its grounding rows, stamps the census row reconciled, connects ONCE in the same run, records one ledger row", async () => {
   const db = emptyWorld();
   const id = addRow(db, 1);
   const { deps, rec } = makeDeps(db);
@@ -50,8 +50,6 @@ test("apply: a verified mint inserts the item with its grounding rows, stamps th
   assert.equal(rec.connects.filter((c) => c.startsWith("connect:")).length, 1, "rule 17: the flywheel ran in the same run");
   assert.equal(rec.runs.length, 1);
   assert.deepEqual([rec.runs[0]?.family, rec.runs[0]?.itemId, rec.runs[0]?.outcome], ["mint", item.id, "ok"]);
-  assert.equal(rec.flushed.length, 1);
-  assert.ok(rec.flushed[0]?.includes("regulations-detail"));
 });
 
 test("plan (dry) writes nothing and reports what apply would do; apply then does exactly that (dry and apply agree)", async () => {
@@ -64,11 +62,10 @@ test("plan (dry) writes nothing and reports what apply would do; apply then does
   const dry = await runMint(makeDeps(a.db).deps, { mode: "plan" });
   assert.equal(a.db.calls.filter((c) => c.op !== "select").length, 0, "a plan writes nothing at all");
   const b = mk();
-  const { deps, rec } = makeDeps(b.db);
+  const { deps } = makeDeps(b.db);
   const apply = await runMint(deps, { mode: "apply" });
   assert.deepEqual([dry.counts.would_mint, dry.counts.held, dry.counts.screened_out], [apply.counts.minted, apply.counts.held, apply.counts.screened_out]);
   assert.deepEqual(dry.rows.map((x) => [x.rowId, x.outcome === "would_mint" ? "mint" : x.outcome]), apply.rows.map((x) => [x.rowId, x.outcome.startsWith("minted") ? "mint" : x.outcome]));
-  assert.equal(rec.flushed.length, 1);
   assert.equal(dry.outcome, "ok");
 });
 

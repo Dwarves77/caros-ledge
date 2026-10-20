@@ -5,11 +5,12 @@ import { formatNumber } from "@/core/shared";
 import { SectionCard } from "@/ui/SectionCard";
 import { SectionHead } from "@/ui/SectionHead";
 
-import { buildLeadTimePosition, DEFAULT_MIN_SAMPLE, type LeadTimeRow } from "../lib/lead-time";
+import { buildLeadTimePosition, DEFAULT_MIN_SAMPLE, leadTimeCanHaveRows, type LeadTimeRow } from "../lib/lead-time";
 
 import styles from "./market.module.css";
 
 export function LeadTimeChart({ rows, minSample = DEFAULT_MIN_SAMPLE }: { rows: readonly LeadTimeRow[]; minSample?: number }) {
+  if (!leadTimeCanHaveRows(rows)) return null;
   const position = buildLeadTimePosition(rows, { minSample });
   const max = position.forecastable ? Math.max(...position.rows.map((r) => r.months), 1) : 1;
   return (

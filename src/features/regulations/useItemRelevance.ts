@@ -18,7 +18,7 @@ export type RelevanceFetch = { phase: "loading" } | { phase: "failed" } | { phas
 const inflight = new Map<string, Promise<RelevanceResponse | null>>();
 
 /** The relevance response for an item, or null when the call failed. Concurrent callers for one item share one request. */
-export function fetchRelevance(itemId: string): Promise<RelevanceResponse | null> {
+function fetchRelevance(itemId: string): Promise<RelevanceResponse | null> {
   const held = inflight.get(itemId);
   if (held) return held;
   const p = requestJson<RelevanceResponse>(`/api/detail/relevance?itemId=${encodeURIComponent(itemId)}`).then((r) => (r.ok && r.data ? r.data : null));

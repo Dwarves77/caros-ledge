@@ -1,6 +1,7 @@
 // Ported from old_repo/src/components/profile/NotificationPreferences.tsx (lines 29-45)
 // Ported from old_repo/src/components/profile/NotificationPreferences.tsx (lines 109-175)
 // Ported from old_repo/src/components/onboarding/OnboardingWizard.tsx (lines 190-199)
+import { readFailure } from "@/core/http/failure";
 import type { Db } from "@/core/db/clients";
 
 export interface NotificationPrefs {
@@ -29,7 +30,7 @@ const COLUMNS = "enabled, on_mention, on_reply_in_my_threads, on_new_post_in_joi
 /** The reader's preferences. No row yet is the defaults (a new account); a failed read is an error and the defaults are NOT shown as saved settings. */
 export async function readNotificationPrefs(client: Db, userId: string): Promise<{ prefs: NotificationPrefs; error: string | null }> {
   const { data, error } = await client.from("notification_preferences").select(COLUMNS).eq("user_id", userId).maybeSingle();
-  if (error) return { prefs: { ...DEFAULT_NOTIFICATION_PREFS }, error: error.message };
+  if (error) return { prefs: { ...DEFAULT_NOTIFICATION_PREFS }, error: readFailure(error) };
   const d = (data ?? {}) as Partial<NotificationPrefs>;
   return {
     prefs: {
@@ -47,5 +48,5 @@ export async function readNotificationPrefs(client: Db, userId: string): Promise
 /** Write the preferences. `seed` leaves an existing row alone (the onboarding default). Returns the failure message, or null when it landed: a caller rolls its switch back on a message. */
 export async function saveNotificationPrefs(client: Db, userId: string, prefs: NotificationPrefs, opts: { seed?: boolean; now?: () => string } = {}): Promise<string | null> {
   const { error } = await client.from("notification_preferences").upsert({ user_id: userId, ...prefs, updated_at: (opts.now ?? (() => new Date().toISOString()))() }, { onConflict: "user_id", ignoreDuplicates: opts.seed === true });
-  return error ? error.message : null;
+  return error ? readFailure(error) : null;
 }

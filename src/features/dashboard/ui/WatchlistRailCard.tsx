@@ -2,6 +2,7 @@
 // Ported from old_repo/src/components/home/DashboardRailCard.tsx (lines 19-48)
 import Link from "next/link";
 
+import { refusalSentence } from "@/core/http/failure";
 import { formatNumber } from "@/core/shared";
 import { RailCard, RelativeTime, StateNote } from "@/ui";
 import { WATCHLIST_TYPE_LABEL } from "@/features/watchlist/links";
@@ -16,7 +17,7 @@ function Entry({ item }: { item: WatchlistItem }) {
   const body = (
     <>
       <p className={styles.watchKicker}>
-        {item.fields?.jurisdiction ?? WATCHLIST_TYPE_LABEL[item.type].toUpperCase()}
+        {item.fields?.jurisdiction ?? "—"}
         {item.scope === "team" ? <span className={styles.team} title="On the workspace watchlist: every member sees this">Team</span> : null}
       </p>
       <p className={styles.watchTitle}>{item.title}</p>
@@ -36,7 +37,7 @@ export function WatchlistRailCard({ items, onRetry }: { items: WatchlistItem[] |
     return (
       <RailCard title="Watchlist" titleHref="/watchlist" dataAudit="watchlist-rail">
         <StateNote tone="error" action={{ label: "Retry", onClick: onRetry }}>
-          Your watchlist did not load.
+          {refusalSentence("watchlist_rail_unavailable")}
         </StateNote>
       </RailCard>
     );

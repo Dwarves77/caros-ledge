@@ -5,6 +5,7 @@
 import type { Db } from "@/core/db";
 import { fetchAllByIdChunks } from "@/core/db";
 import { rowsByIds } from "@/core/db/reads";
+import { admitItems } from "@/core/derived/admissible";
 import { detailHref } from "@/core/lists";
 import type { SuppressedClaim } from "@/features/corrections";
 import { generateTriggerQuestions } from "@/features/learning";
@@ -44,7 +45,7 @@ export async function readAnswers(db: Db, hits: readonly HitRef[], suppressed: r
   const cited = new Map(
     (
       await fetchAllByIdChunks(citedIds, async (slice) => {
-        const { data, error } = await db.from("intelligence_items").select("id, title, item_type, domain").eq("provenance_status", "verified").eq("is_archived", false).in("id", slice);
+        const { data, error } = await admitItems(db.from("intelligence_items").select("id, title, item_type, domain")).in("id", slice);
         if (error) throw new Error(`cited items read failed: ${error.message}`);
         return (data ?? []) as { id: string; title: string; item_type: string | null; domain: number | null }[];
       })

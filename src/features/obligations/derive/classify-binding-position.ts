@@ -26,8 +26,6 @@ const RULES: readonly Rule[] = file.rules.map((r) => ({
   position: r.position, citation: r.citation, label: r.label, test: new RegExp(r.test.source, r.test.flags),
   generic: r.generic ? { phrase: new RegExp(r.generic.phrase.source, r.generic.phrase.flags), acceptedFor: (item) => (r.generic?.acceptedForJurisdiction === "any" ? true : r.generic?.acceptedForJurisdiction === "EU" ? (item.jurisdictionIso ?? []).includes("EU") : false) } : null,
 }));
-/** The rule table as data (labels and citations), for a surface that explains a classification. */
-export const BINDING_POSITION_RULES: readonly { position: string; citation: string; label: string }[] = RULES.map(({ position, citation, label }) => ({ position, citation, label }));
 
 export interface Classified {
   position: string;
@@ -54,11 +52,11 @@ function matchRules(haystack: string, item: { jurisdictionIso?: readonly string[
 const joinLower = (parts: readonly unknown[]): string => parts.filter((s): s is string => typeof s === "string" && s.length > 0).join(" ").toLowerCase();
 
 /** Identity first: the instrument's legal name, short name and identifiers against the table (no generic phrases, no title). */
-export function classifyInstrumentIdentity(item: { legalInstrument?: string | null; shortName?: string | null; instrumentIdentifiers?: readonly (string | null | undefined)[] }): Classified | null {
+function classifyInstrumentIdentity(item: { legalInstrument?: string | null; shortName?: string | null; instrumentIdentifiers?: readonly (string | null | undefined)[] }): Classified | null {
   return matchRules(joinLower([item?.legalInstrument, item?.shortName, ...(Array.isArray(item?.instrumentIdentifiers) ? item.instrumentIdentifiers : [])]), {});
 }
 /** The title (and names) against the table, where a generic phrase is accepted only for the jurisdictions its rule names. */
-export function classifyBindingPosition(item: { title?: string | null; legalInstrument?: string | null; shortName?: string | null; jurisdictionIso?: readonly string[] | null }): Classified | null {
+function classifyBindingPosition(item: { title?: string | null; legalInstrument?: string | null; shortName?: string | null; jurisdictionIso?: readonly string[] | null }): Classified | null {
   return matchRules(joinLower([item?.title, item?.legalInstrument, item?.shortName]), item);
 }
 

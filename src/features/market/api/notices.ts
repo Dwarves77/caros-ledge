@@ -3,6 +3,7 @@
 // Ported from old_repo/src/app/api/notices/resolve-watched-entities.ts (lines 1-84)
 // GET /api/notices: the recalculation feed of the caller's ORGANISATION watchlist (a recalculation is a shared fact: "a figure your team tracks changed"). BUILD-PLAN ruling 3: signed-in callers only. Superseded derived values are not readable
 // by a member (the raw table has no member policy), so the pairs are read on the caller's own client (migration 0036 grants the member read); a failed read is a 503 with Retry-After, never an empty 200 (an outage must not read as "nothing changed").
+import { admitItems } from "@/core/derived/admissible";
 import { currentMembership } from "@/core/auth/membership";
 import { fetchAllByIdChunks, type Db } from "@/core/db";
 import { formatCorridorLabel, parseCorridorName } from "@/core/entities";
@@ -10,11 +11,11 @@ import { HttpError, LookupError, ok, route } from "@/core/http/errors";
 import { isRefusal, requireUser } from "@/core/http/guard";
 import { fetchSupersededNotices, type SupersededNotice } from "@/core/propagation";
 
-export const DEFAULT_WINDOW_DAYS = 30;
-export const noticesClock = { now: (): Date => new Date() };
+const DEFAULT_WINDOW_DAYS = 30;
+const noticesClock = { now: (): Date => new Date() };
 
 /** `?since=` as an ISO instant; absent or unparseable is the default window before `now` (a malformed value degrades, it does not 400). */
-export function resolveSince(raw: string | null, now: Date): string {
+function resolveSince(raw: string | null, now: Date): string {
   const parsed = raw ? new Date(raw) : null;
   return parsed && !Number.isNaN(parsed.getTime()) ? parsed.toISOString() : new Date(now.getTime() - DEFAULT_WINDOW_DAYS * 86_400_000).toISOString();
 }
@@ -23,7 +24,7 @@ export interface NoticeItem extends SupersededNotice {
   entityLabel: string | null;
 }
 /** A notice with its entity's label: the entity's display name, else the corridor label its name spells, else the name; never blank when the entity is known. */
-export function attachEntityLabels(notices: readonly SupersededNotice[], entities: ReadonlyArray<{ entity_id: string; canonical_name: string; display_name: string | null }>): NoticeItem[] {
+function attachEntityLabels(notices: readonly SupersededNotice[], entities: ReadonlyArray<{ entity_id: string; canonical_name: string; display_name: string | null }>): NoticeItem[] {
   const byId = new Map(entities.map((e) => [e.entity_id, e]));
   return notices.map((n) => {
     const e = n.entityId ? byId.get(n.entityId) : undefined;
@@ -34,7 +35,7 @@ export function attachEntityLabels(notices: readonly SupersededNotice[], entitie
 
 const ITEM_TYPES = new Set(["reg", "signal", "research", "operations"]);
 /** The entities the watched rows are about: an item's instrument entity and its entity refs, a source's organisation. A market series contributes none (it is not an entity's page). A failed read throws. */
-export async function resolveWatchedEntityIds(db: Db, watched: ReadonlyArray<{ item_type: string; item_id: string }>): Promise<string[]> {
+async function resolveWatchedEntityIds(db: Db, watched: ReadonlyArray<{ item_type: string; item_id: string }>): Promise<string[]> {
   const itemIds = [...new Set(watched.filter((w) => ITEM_TYPES.has(w.item_type)).map((w) => w.item_id))];
   const sourceIds = [...new Set(watched.filter((w) => w.item_type === "source").map((w) => w.item_id))];
   const read = async <T,>(label: string, ids: string[], q: (slice: string[]) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>): Promise<T[]> =>
@@ -44,7 +45,7 @@ export async function resolveWatchedEntityIds(db: Db, watched: ReadonlyArray<{ i
       return data ?? [];
     }, { manyPerId: true });
   const [items, refs, sources] = await Promise.all([
-    read<{ instrument_entity_id: string | null }>("intelligence_items", itemIds, (s) => db.from("intelligence_items").select("id, instrument_entity_id").in("id", s)),
+    read<{ instrument_entity_id: string | null }>("intelligence_items", itemIds, (s) => admitItems(db.from("intelligence_items").select("id, instrument_entity_id").in("id", s))),
     read<{ entity_id: string }>("entity_refs", itemIds, (s) => db.from("entity_refs").select("entity_id").eq("ref_table", "intelligence_items").in("ref_id", s)),
     read<{ organisation_entity_id: string | null }>("sources", sourceIds, (s) => db.from("sources").select("id, organisation_entity_id").in("id", s)),
   ]);

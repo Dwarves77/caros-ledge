@@ -137,3 +137,15 @@ test("the platform guide: matched by WHOLE words from the question, best first, 
   assert.equal(matchPassages("severities").length, 0, "a substring is not a word");
   assert.equal(matchPassages("topic category emissions fuels page surface source", 1).length, 1);
 });
+
+test("surfaces:76 (R2d) a failed citation-stats read is a 503 with the customer sentence, not 'no stats'; the hit text carries the suppression in every column it was copied to", async () => {
+  const stats = world();
+  stats.rpcs.get_source_citation_stats = () => ({ error: { message: "stats down" } });
+  const r = await ask("member", "emissions reporting");
+  assert.deepEqual([r.status, r.headers.get("retry-after")], [503, "1"]);
+  assert.equal(JSON.stringify(r.body).includes("stats down"), false, "the driver's text is held back for the log");
+  const copied = world();
+  Object.assign(copied.rows("intelligence_items").find((i) => i.id === ID.a) as Record<string, unknown>, { summary: `Annual duty. ${SECRET}`, intersection_summary: `Linked items. ${SECRET}` });
+  const b = (await ask("member", "emissions reporting")).body as unknown as Body;
+  assert.equal(JSON.stringify(b).includes("EUR 50 000"), false, "the summary and the stated intersection summary are redacted like the excerpt");
+});

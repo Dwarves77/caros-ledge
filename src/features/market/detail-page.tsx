@@ -8,7 +8,7 @@ import { log } from "@/core/shared";
 import { pageSession } from "@/features/account/server/page-session";
 import { PageFailure } from "@/ui/shell/PageFailure";
 
-import { assignBand } from "./lib/signal-band";
+import { bandOf } from "./lib/signal-band";
 import { readMarketDetail } from "./read";
 import { MarketDetailView } from "./ui/MarketDetailView";
 
@@ -20,7 +20,7 @@ export async function MarketDetailRoute({ params }: { params: Promise<{ slug: st
   const db = await userClient();
   const detail = await (async () => {
     await applyIdRedirect("market", id, db);
-    return loadDetail("market", id, ({ db: client, uuid, resource }) => readMarketDetail(client, { id: uuid, sourceId: resource.sourceId ?? null, needsCarbon: assignBand(resource) === "corridor" || resource.itemGrade === "record" }), db);
+    return loadDetail("market", id, ({ db: client, uuid, resource }) => readMarketDetail(client, { id: uuid, sourceId: resource.sourceId ?? null, needsCarbon: bandOf(resource) === "corridor" || resource.itemGrade === "record" }), db);
   })().catch((e: unknown) => {
     unstable_rethrow(e);
     log.warn("[market] detail did not load:", e instanceof Error ? e.message : String(e));

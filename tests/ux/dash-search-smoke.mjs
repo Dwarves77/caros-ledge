@@ -137,7 +137,8 @@ try {
       must(await page.getByRole('button', { name: 'Retry' }).first().isVisible(), 'no Retry');
       must(!/Nothing added or updated/.test(text) && !/No item in this workspace/.test(text), 'a failed read drew an empty-state sentence');
       must((await page.locator('.cl-skel-tile').count()) === 4, 'the band tiles are not blank');
-      must(/needs more data/i.test(text), 'the masthead counts are not the stated absence');
+      must(/The item count did not load/.test(text) && /the jurisdiction count did not load/i.test(text), 'the masthead counts are not stated as not loaded');
+      must(!/pending|needs more data/i.test(text.split('The band counts')[0] ?? ''), 'the masthead drew a placeholder where the count failed');
     }),
   );
 
@@ -203,7 +204,7 @@ try {
       const dialog = page.getByRole('dialog', { name: 'Intelligence Assistant' });
       await dialog.getByText('Platform items · 1').waitFor();
       const t = await dialog.innerText();
-      must(/Inference · HYPOTHESIS · confidence 60%/.test(t), 'the answer is not labelled as an inference with its status and confidence');
+      must(/Inference · Hypothesis · confidence 60%/.test(t), 'the answer is not labelled as an inference with its status and confidence');
       must(/From the platform guide · How sources are weighted/i.test(t), 'the platform guide passage is not shown');
       must((await dialog.locator('.cl-row-tier').first().innerText()).includes('T1'), 'the citation carries no tier chip');
       must(state.calls.filter((c) => c === 'POST /api/ask').length === 1, 'the question was asked more than once');

@@ -18,7 +18,7 @@ const ROADMAP = new RegExp(rules.roadmapBodies, "i");
 const STATUTORY = new RegExp(rules.statutory, "i");
 const DAY = 86_400_000;
 
-export const COMPUTED_BY = "research-assessment-producer@1";
+const COMPUTED_BY = "research-assessment-producer@1";
 export const RESEARCH_CANDIDATE_OR = "domain.eq.7,item_type.eq.research_finding";
 export const isResearchCandidate = (itemType: unknown, domain: unknown): boolean => (typeof domain === "number" ? domain : null) === 7 || itemType === "research_finding";
 
@@ -35,17 +35,18 @@ function maturity(input: AssessInput, ps: typeof TRL, ladder: string) {
   const c = readCorridor(input.text, ps);
   if (!c) return null;
   const evidenceIds = [input.id, ...input.forwardEvents.filter((e) => { const ec = e.obligation_text ? readCorridor(e.obligation_text, ps) : null; return ec && ec.low === c.low && ec.high === c.high; }).map((e) => e.id)];
-  return { ...c, method: `read from the item's own recorded text against the ${ladder} (spec-03 section 2)`, evidenceIds };
+  return { ...c, method: ladder, evidenceIds };
 }
-export const assessTechnicalMaturity = (i: AssessInput) => maturity(i, TRL, "IEA-extended TRL 1-11 ladder");
-export const assessCommercialMaturity = (i: AssessInput) => maturity(i, CRI, "ARENA CRI 1-6 ladder");
+/** The method is a code (assessment-copy.json holds its sentence); the row never carries prose or a specification reference. */
+const assessTechnicalMaturity = (i: AssessInput) => maturity(i, TRL, "text_trl");
+const assessCommercialMaturity = (i: AssessInput) => maturity(i, CRI, "text_cri");
 
 const bandForDate = (d: Date, now: Date): string => { const y = (d.getTime() - now.getTime()) / (365.25 * DAY); return y <= 2 ? "NOW" : y <= 5 ? "NEAR" : y <= 10 ? "MID" : "FAR"; };
 const priorBandFromTrl = (low: number): string => (low >= 10 ? "NOW" : low >= 8 ? "NEAR" : low >= 5 ? "MID" : "FAR");
 export interface Horizon { kind: string; band: string; rule: string; confidence: string; triggerNote: string; anchor?: { eventId: string; eventDate: string } }
 
 /** R1: a dated event whose OWN text names a statutory instrument binds you (high; the item text alone never anchors it); R3: a named institutional roadmap dates it (medium); R4: a prior from technical maturity alone (low); else null (refusal). */
-export function assessHorizon(input: AssessInput, tm: { low: number } | null, now: Date): Horizon | null {
+function assessHorizon(input: AssessInput, tm: { low: number } | null, now: Date): Horizon | null {
   const dated = input.forwardEvents.find((e) => e.event_date && STATUTORY.test(`${e.obligation_text ?? ""} ${e.source_citation ?? ""}`) && !Number.isNaN(new Date(e.event_date).getTime()));
   if (dated?.event_date) return { kind: "obligation", band: bandForDate(new Date(dated.event_date), now), rule: "R1", confidence: "high", triggerNote: `binds on you at ${dated.event_date} because ${dated.obligation_text ?? "a dated statutory instrument named in the event's own text"}`, anchor: { eventId: dated.id, eventDate: dated.event_date } };
   const road = input.forwardEvents.find((e) => e.event_date && (ROADMAP.test(e.source_citation ?? "") || ROADMAP.test(e.obligation_text ?? "")));
@@ -56,12 +57,12 @@ export function assessHorizon(input: AssessInput, tm: { low: number } | null, no
   }
   return tm ? { kind: "availability", band: priorBandFromTrl(tm.low), rule: "R4", confidence: "low", triggerNote: "inferred from maturity, no dated evidence" } : null;
 }
-export const assessEvidenceScore = (i: AssessInput): "limited" | "medium" | "robust" | null => (typeof i.citationCount !== "number" || i.citationCount < 0 ? null : i.citationCount === 0 ? "limited" : i.citationCount < 5 ? "medium" : "robust");
+const assessEvidenceScore = (i: AssessInput): "limited" | "medium" | "robust" | null => (typeof i.citationCount !== "number" || i.citationCount < 0 ? null : i.citationCount === 0 ? "limited" : i.citationCount < 5 ? "medium" : "robust");
 export function extractDoiCandidate(text: string | null | undefined): string | null {
   const m = (text || "").match(/\b10\.\d{4,9}\/[^\s"'<>)\]]+/);
   return m ? m[0].replace(/[.,;]+$/, "") : null;
 }
-export function resolveAuthoritySources(input: AssessInput): Rec[] {
+function resolveAuthoritySources(input: AssessInput): Rec[] {
   const out: Rec[] = (input.sourceRecords ?? []).filter((r) => r && r.sourceId);
   for (const ev of input.forwardEvents) {
     const m = `${ev.source_citation ?? ""} ${ev.obligation_text ?? ""}`.match(ROADMAP);
@@ -70,7 +71,7 @@ export function resolveAuthoritySources(input: AssessInput): Rec[] {
   return out;
 }
 /** Resolved source records are scored; with none, the source tier maps to a single-source distribution (tier 1-2 high, 3-5 medium, 6+ vendor-flagged). A null tier is no score. */
-export function assessAuthorityScore(input: AssessInput, now: Date) {
+function assessAuthorityScore(input: AssessInput, now: Date) {
   const resolved = resolveAuthoritySources(input);
   if (resolved.length) return aggregateAuthorityDistribution(resolved.map((r) => scoreSource(r, { now })));
   const t = input.sourceTier;
@@ -78,7 +79,7 @@ export function assessAuthorityScore(input: AssessInput, now: Date) {
   return t <= 2 ? { highAuthorityIndependent: 1, medium: 0, vendorFlagged: 0 } : t <= 5 ? { highAuthorityIndependent: 0, medium: 1, vendorFlagged: 0 } : { highAuthorityIndependent: 0, medium: 0, vendorFlagged: 1 };
 }
 export interface SignpostSpec { seed: string; itemId: string; forwardEventId: string; watches: string; direction: "confirms"; predicate: Rec; label: string }
-export function assessSignposts(input: AssessInput, horizon: Horizon | null, now: Date): SignpostSpec[] {
+function assessSignposts(input: AssessInput, horizon: Horizon | null, now: Date): SignpostSpec[] {
   if (!horizon?.anchor || !input.entityId) return [];
   const due = new Date(horizon.anchor.eventDate);
   if (Number.isNaN(due.getTime()) || due.getTime() <= now.getTime()) return [];
@@ -92,7 +93,7 @@ export function assessItem(input: AssessInput, opts: { now?: Date } = {}) {
   const horizon = assessHorizon(input, technicalMaturity, now);
   return {
     itemId: input.id, technicalMaturity, commercialMaturity: assessCommercialMaturity(input), horizon,
-    refusalReason: horizon ? null : "not forecastable: no dated statutory instrument, no named institutional roadmap date, and no technical-maturity corridor to prior from (spec-03 section 6's mandatory refusal state).",
+    refusalReason: horizon ? null : "no_dated_basis",
     credibilityEvidenceScore: assessEvidenceScore(input), credibilityAuthorityScore: assessAuthorityScore(input, now),
     statusToken: horizon && (horizon.rule === "R1" || horizon.rule === "R3") ? "CONFIRMED" : "HYPOTHESIS", signposts: assessSignposts(input, horizon, now),
   };

@@ -1,16 +1,16 @@
 // Ported from old_repo/src/app/api/dashboard/coverage/matrix/logic.ts (lines 10-51)
 // Ported from old_repo/src/app/api/dashboard/coverage/matrix/route.ts (lines 1-10)
-import { APP_DATA_TAG } from "@/core/cache";
 import { buildCoverageView, csvFilename, matrixToCsv, parseCoverageQuery } from "@/core/coverage";
 import { serviceClient } from "@/core/db/clients";
+import { countryLabel } from "@/core/jurisdictions";
 import { LookupError, route } from "@/core/http/errors";
 import { isRefusal, requireUser } from "@/core/http/guard";
 import { makeCoverageData } from "@/features/coverage/server";
 
 // GET /api/dashboard/coverage/matrix: the coverage matrix as JSON, as a summary (?summary=1) or as CSV (?format=csv), for a signed-in reader. The census is platform data no workspace owns, so the read is
-// the cached platform read (a failure is never cached). An outage is a 503 the client retries, never an empty matrix that reads as "nothing catalogued" (INV-263).
-const coverage = makeCoverageData({ db: serviceClient, now: () => new Date().toISOString(), tag: APP_DATA_TAG });
-const PRIVATE = "private, max-age=60";
+// a live platform read. An outage is a 503 the client retries, never an empty matrix that reads as "nothing catalogued" (INV-263).
+const coverage = makeCoverageData({ db: serviceClient, now: () => new Date().toISOString(), labelOf: countryLabel });
+const PRIVATE = "private, no-store";
 
 export const GET = route("/api/dashboard/coverage/matrix", async (request) => {
   const auth = await requireUser(request);

@@ -7,7 +7,7 @@ export type SeriesItemEntry = z.infer<typeof entry>;
 export type SeriesItemMap = ReadonlyArray<readonly [string, SeriesItemEntry]>;
 
 /** The series-to-item map from entries keyed by series key, each refused outside the shape (the table's own vocabulary). */
-export const loadSeriesItemMap = (rawMap: unknown): SeriesItemMap => Object.freeze(Object.entries(z.record(z.string(), entry).parse(rawMap)).filter(([k]) => !k.startsWith("_")).map(([k, e]) => Object.freeze([k, e] as const)));
+const loadSeriesItemMap = (rawMap: unknown): SeriesItemMap => Object.freeze(Object.entries(z.record(z.string(), entry).parse(rawMap)).filter(([k]) => !k.startsWith("_")).map(([k, e]) => Object.freeze([k, e] as const)));
 /** Ratified means a minted item id AND the ratified status; anything pending is never a guessed attachment. */
 export const isRatified = (e: SeriesItemEntry | null | undefined): boolean => e != null && !!e.item_id && e.status === "ratified";
 

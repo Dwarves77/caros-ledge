@@ -7,8 +7,6 @@ import type { PortfolioDeps } from "../portfolio/types";
 export interface WorkspaceDeps {
   /** The canonical detail-page href of an item (the item-links owner). */
   itemHref: (item: { id: string; type: string | null; domain: number | null }) => string;
-  /** Invalidate the workspace data cache tag after an override or personal-state write (P1-07 cache tags). */
-  revalidateWorkspaceData: () => void;
   /** getNavCounts over the lists slice's reads, for the signed-in member of an org (the turn wires it: P2-08). */
   navCounts: (who: { orgId: string; userId: string }) => Promise<unknown>;
   /** P1-26 attention counts, asked only for a platform admin. */

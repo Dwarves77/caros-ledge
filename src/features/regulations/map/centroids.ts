@@ -8,7 +8,7 @@ import centroidsJson from "./data/centroids.json";
 const entry = z.tuple([z.number(), z.number(), z.string()]);
 const file = z.object({ countries: z.record(z.string(), entry), groupings: z.record(z.string(), entry) }).parse(centroidsJson);
 
-export const CENTROIDS: Readonly<Record<string, readonly [number, number, string]>> = { ...file.groupings, ...file.countries };
+const CENTROIDS: Readonly<Record<string, readonly [number, number, string]>> = { ...file.groupings, ...file.countries };
 export const centroidOf = (key: string): [number, number] | null => {
   const c = CENTROIDS[key] ?? CENTROIDS[key.toUpperCase()] ?? null;
   return c ? [c[0], c[1]] : null;

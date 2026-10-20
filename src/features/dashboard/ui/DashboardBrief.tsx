@@ -5,19 +5,22 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 
+import { refusalSentence } from "@/core/http/failure";
 import { BAND_ORDER, bandFromPriority } from "@/core/lists";
-import { formatNumber } from "@/core/shared";
+import { formatDate, formatNumber } from "@/core/shared";
 import { CardFoot, ListRow, ListRowHeader, RailCard, SectionCard, SectionHead, SkeletonBandTile, StatBlock, StateNote, BandTile, BandTileRow } from "@/ui";
 import { LegendRailCard, type ThemeChip } from "@/ui/list-surface";
 import { PARAM } from "@/ui/list-surface/url-state";
 import { PageFrame } from "@/ui/shell";
 import type { WatchlistItem } from "@/features/watchlist/read/watchlist";
 import { RowActions } from "@/features/watchlist/ui/RowActions";
+import type { SourceCoverage } from "@/core/derived/source-coverage";
 
-import { briefCardState, changeRowPrefix, type BriefRow } from "../rows";
+import { briefCardState, changeRowPrefix, SURFACES, type BriefRow } from "../rows";
 import type { Counts } from "../read/digest";
 
 import styles from "./dashboard.module.css";
+import { CoverageLedgerCard } from "./CoverageLedgerCard";
 import { WatchlistRailCard } from "./WatchlistRailCard";
 
 export interface DashboardBriefProps {
@@ -36,15 +39,12 @@ export interface DashboardBriefProps {
   counts: Counts | null;
   /** null when the watchlist read failed. */
   watchlist: WatchlistItem[] | null;
-  themes: ThemeChip[];
+  /** The cross-page theme chips; null when the read failed (the strip says so with Retry, never an empty strip). */
+  themes: ThemeChip[] | null;
+  /** null when the source coverage read failed; absent when the caller reads none (a fixture), and then no coverage card is drawn. */
+  coverage?: SourceCoverage | null;
 }
 
-const SURFACE_ROWS = [
-  { key: "regulations", label: "Regulations", note: "Binding law, agency rules, court decisions", href: "/regulations" },
-  { key: "marketIntel", label: "Market Intel", note: "Price series, corporate moves, capital", href: "/market" },
-  { key: "research", label: "Research", note: "Horizon-scan findings", href: "/research" },
-  { key: "operations", label: "Operations", note: "Regional cost, feasibility, infrastructure", href: "/operations" },
-] as const;
 const bandHref = (key: string) => `/regulations?${PARAM.band}=${key}`;
 
 function Rows({ rows, prefix }: { rows: BriefRow[]; prefix: boolean }) {
@@ -70,10 +70,11 @@ export function DashboardBrief(p: DashboardBriefProps) {
   const changedState = briefCardState(p.changedRows.length, p.rowsFailed);
   const failure = (
     <StateNote tone="error" action={{ label: "Retry", onClick: retry }}>
-      The brief did not load. Nothing was changed; try again.
+      {refusalSentence("brief_unavailable")}
     </StateNote>
   );
   const by = p.counts?.regulations.byPriority;
+  const surfaceCounts = p.counts?.surfaces ?? null;
   return (
     <PageFrame
       rail={
@@ -81,20 +82,25 @@ export function DashboardBrief(p: DashboardBriefProps) {
           <SectionCard dataAudit="across-platform-card">
             <div className={styles.pad}>
               <p className={styles.eyebrow}>Across the platform</p>
-              {p.counts === null ? (
+              {surfaceCounts === null ? (
                 <StateNote tone="error" action={{ label: "Retry", onClick: retry }}>
-                  Counts did not load.
+                  {refusalSentence("counts_unavailable")}
                 </StateNote>
               ) : (
                 <div className={styles.stats}>
-                  {SURFACE_ROWS.map((s) => (
+                  {SURFACES.map((s) => (
                     <Link key={s.key} href={s.href} prefetch={false} className={styles.stat}>
-                      <StatBlock layout="row" label={s.label} note={s.note} value={formatNumber(p.counts?.surfaces[s.key] ?? 0)} />
+                      <StatBlock layout="row" label={s.label} note={s.note} value={formatNumber(surfaceCounts[s.key])} />
                     </Link>
                   ))}
                 </div>
               )}
-              {p.themes.length > 0 && (
+              {p.themes === null && (
+                <StateNote tone="error" action={{ label: "Retry", onClick: retry }}>
+                  {refusalSentence("themes_unavailable")}
+                </StateNote>
+              )}
+              {p.themes !== null && p.themes.length > 0 && (
                 <div className={styles.themes}>
                   <p className={styles.eyebrow}>Connected across pages</p>
                   {p.themes.map((t) => (
@@ -109,6 +115,7 @@ export function DashboardBrief(p: DashboardBriefProps) {
               )}
             </div>
           </SectionCard>
+          {p.coverage !== undefined && <CoverageLedgerCard coverage={p.coverage} />}
           <WatchlistRailCard items={p.watchlist} onRetry={retry} />
           <RailCard title="Portfolios" titleHref="/dashboard/portfolio" dataAudit="portfolio-rail-card">
             <p className={styles.note}>Items, corridors and entities your workspace holds together.</p>
@@ -125,7 +132,7 @@ export function DashboardBrief(p: DashboardBriefProps) {
         ))}
         {p.counts === null && (
           <StateNote tone="error" action={{ label: "Retry", onClick: retry }}>
-            The band counts did not load, so the tiles are blank rather than zero.
+            {refusalSentence("band_counts_unavailable")}
           </StateNote>
         )}
         <BandTileRow>{BAND_ORDER.map((band) => (by ? <BandTile key={band.key} band={band} count={by[band.priority]} href={bandHref(band.key)} /> : <SkeletonBandTile key={band.key} />))}</BandTileRow>
@@ -150,11 +157,11 @@ export function DashboardBrief(p: DashboardBriefProps) {
 
         <section>
           <SectionCard dataAudit="what-changed-card">
-            <SectionHead title="What changed" aside={p.auditDate ? `Detection pass ${p.auditDate}` : "No detection pass on record"} />
+            <SectionHead title="What changed" aside={p.auditDate ? `Latest change ${formatDate(p.auditDate)}` : "No change on record"} />
             {p.ratingsFailed && p.changedRows.length + p.dueRows.length > 0 && (
               <div className="cl-pad-16">
                 <StateNote tone="error" action={{ label: "Retry", onClick: retry }}>
-                  Source ratings did not load, so tiers are not shown on these rows.
+                  {refusalSentence("ratings_unavailable")}
                 </StateNote>
               </div>
             )}
@@ -167,7 +174,7 @@ export function DashboardBrief(p: DashboardBriefProps) {
             ) : (
               <>
                 <Rows rows={p.changedRows} prefix />
-                <CardFoot left={`All ${formatNumber(p.totalChanges)} changes in the last ${p.windowDays} days`} leftHref={`/regulations?${PARAM.sort}=newest`} right="NEW = first seen this pass · UPDATED = brief or timeline changed" />
+                <CardFoot left={`All ${formatNumber(p.totalChanges)} changes in the last ${p.windowDays} days`} leftHref={`/regulations?${PARAM.sort}=newest`} right="New = added in this window · Updated = brief or timeline changed" />
               </>
             )}
           </SectionCard>

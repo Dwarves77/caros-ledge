@@ -54,7 +54,7 @@ test('the expensive jobs follow the scope the `changes` job decided on a pull re
   assert.deepEqual(on('push', '', {}, { parity: 'false', windows: 'false' }), ['changes', 'ci', 'migrate', 'parity', 'schema', 'windows'], 'main is never skipped');
 });
 
-test('migrate runs on a push to main and on a dispatch with only=migrate, nowhere else: not on a pull request, a fork, another branch, another dispatch or a status; it holds the one database secret and writes nothing to the repository', () => {
+test('migrate runs on a push to main and on a dispatch with only=migrate on any ref, nowhere else: not on a pull request, a fork, a push to another branch, another dispatch or a status; it holds the one database secret and writes nothing to the repository', () => {
   assert.ok(on('push').includes('migrate'));
   assert.deepEqual(on('workflow_dispatch', 'migrate'), ['migrate']);
   for (const [event, only] of [['pull_request', ''], ['workflow_dispatch', ''], ['workflow_dispatch', 'live'], ['workflow_dispatch', 'turn'], ['status', '']]) assert.ok(!on(event, only, VERCEL_OK).includes('migrate'), `${event} only=${only}`);
@@ -64,8 +64,11 @@ test('migrate runs on a push to main and on a dispatch with only=migrate, nowher
     assert.ok(!on('workflow_dispatch', 'migrate').includes('migrate'));
     where.fork = false;
     where.ref = 'refs/heads/slice/x';
-    assert.ok(!on('push').includes('migrate'), 'a branch other than main never migrates production');
-    assert.ok(!on('workflow_dispatch', 'migrate').includes('migrate'), 'a dispatch from another branch neither');
+    assert.ok(!on('push').includes('migrate'), 'a push to a branch other than main never migrates production');
+    assert.deepEqual(on('workflow_dispatch', 'migrate'), ['migrate'], 'a dispatch on a slice branch applies the pending migrations of that branch ahead of its code (standing rule 3)');
+    assert.ok(!on('workflow_dispatch', 'edge-deploy').includes('migrate'));
+    assert.ok(!on('workflow_dispatch', 'edge-deploy').includes('edge-deploy'), 'the edge deploy stays main-only');
+    assert.ok(!on('pull_request', '').includes('migrate'), 'a pull request on a branch never migrates');
   } finally {
     where.ref = 'refs/heads/main';
     where.fork = false;

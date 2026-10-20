@@ -5,6 +5,8 @@ import { boundedRead } from "@/core/db/query";
 import { LookupError, route } from "@/core/http/errors";
 import { canWrite, collabFail, collabOk, isOrgAdmin, loadRoster, nameIndex, namesAfterWrite, NOTE_MAX_LENGTH, readJsonObject, runCollab, type CollabCtx, type CollabResult } from "@/core/workspace/roster";
 
+import { collabDbFail } from "./collab-db-fail";
+
 // /api/workspace/items/[id]/notes: private-per-workspace notes on one item (migration 358).
 //   GET list (newest first) | POST { body } | PATCH { noteId, body } (author only) | DELETE ?noteId= (soft delete: author, owner or admin)
 // A note is workspace commentary: it feeds no page but this item's own detail page, never the flywheel. Org, role and item are
@@ -35,7 +37,7 @@ function view(row: NoteRow, ctx: CollabCtx, names: Map<string, string>) {
 const viewer = (ctx: CollabCtx) => ({ role: ctx.role, can_write: canWrite(ctx.role) });
 
 /** Validate a note body: { body } or { error }. Any string is accepted and trimmed. */
-export function parseNoteBody(raw: unknown): { body: string } | { error: string } {
+function parseNoteBody(raw: unknown): { body: string } | { error: string } {
   if (typeof raw !== "string") return { error: "Write a note before saving." };
   const body = raw.trim();
   if (!body) return { error: "Write a note before saving." };
@@ -43,7 +45,7 @@ export function parseNoteBody(raw: unknown): { body: string } | { error: string 
   return { body };
 }
 
-export async function listNotes(client: Db, ctx: CollabCtx): Promise<CollabResult> {
+async function listNotes(client: Db, ctx: CollabCtx): Promise<CollabResult> {
   const [notes, roster] = await Promise.all([
     boundedRead<NoteRow>((limit) => client.from("item_notes").select(NOTE_COLUMNS).eq("org_id", ctx.orgId).eq("item_id", ctx.item.id).is("deleted_at", null).order("created_at", { ascending: false }).limit(limit), { limit: LIST_LIMIT }),
     loadRoster(client, ctx.orgId),
@@ -53,12 +55,12 @@ export async function listNotes(client: Db, ctx: CollabCtx): Promise<CollabResul
   return collabOk(200, { notes: notes.data.map((row) => view(row, ctx, names)), truncated: notes.truncated, viewer: viewer(ctx) });
 }
 
-export async function addNote(client: Db, ctx: CollabCtx, input: Record<string, unknown> | null): Promise<CollabResult> {
+async function addNote(client: Db, ctx: CollabCtx, input: Record<string, unknown> | null): Promise<CollabResult> {
   if (!canWrite(ctx.role)) return collabFail(403, "Your role in this workspace can read notes but not add them.");
   const parsed = parseNoteBody(input?.body);
   if ("error" in parsed) return collabFail(400, parsed.error);
   const { data, error } = await client.from("item_notes").insert({ org_id: ctx.orgId, item_id: ctx.item.id, author_user_id: ctx.userId, body: parsed.body }).select(NOTE_COLUMNS).single();
-  if (error) return collabFail(500, error.message);
+  if (error) return collabDbFail(error);
   return collabOk(201, { note: view(data as NoteRow, ctx, await namesAfterWrite(client, ctx.orgId)) });
 }
 
@@ -71,7 +73,7 @@ async function findNote(client: Db, ctx: CollabCtx, noteId: string): Promise<Not
 
 const GONE = "That note no longer exists. Reload to see the current notes.";
 
-export async function editNote(client: Db, ctx: CollabCtx, input: Record<string, unknown> | null): Promise<CollabResult> {
+async function editNote(client: Db, ctx: CollabCtx, input: Record<string, unknown> | null): Promise<CollabResult> {
   const noteId = typeof input?.noteId === "string" ? input.noteId : "";
   if (!noteId) return collabFail(400, "noteId is required.");
   const parsed = parseNoteBody(input?.body);
@@ -81,18 +83,18 @@ export async function editNote(client: Db, ctx: CollabCtx, input: Record<string,
   if (!found) return collabFail(404, GONE);
   if (!isMine(found, ctx)) return collabFail(403, "Only the author can edit a note.");
   const { data, error } = await client.from("item_notes").update({ body: parsed.body, edited_at: new Date().toISOString() }).eq("id", noteId).eq("org_id", ctx.orgId).eq("author_user_id", ctx.userId).select(NOTE_COLUMNS).single();
-  if (error) return collabFail(500, error.message);
+  if (error) return collabDbFail(error);
   return collabOk(200, { note: view(data as NoteRow, ctx, await namesAfterWrite(client, ctx.orgId)) });
 }
 
-export async function deleteNote(client: Db, ctx: CollabCtx, input: { noteId?: string | null }): Promise<CollabResult> {
+async function deleteNote(client: Db, ctx: CollabCtx, input: { noteId?: string | null }): Promise<CollabResult> {
   const noteId = typeof input.noteId === "string" ? input.noteId : "";
   if (!noteId) return collabFail(400, "noteId is required.");
   const found = await findNote(client, ctx, noteId);
   if (!found) return collabFail(404, GONE);
   if (!mayDelete(found, ctx)) return collabFail(403, "Only the author, or a workspace owner or admin, can delete a note.");
   const { error } = await client.from("item_notes").update({ deleted_at: new Date().toISOString() }).eq("id", noteId).eq("org_id", ctx.orgId);
-  if (error) return collabFail(500, error.message);
+  if (error) return collabDbFail(error);
   return collabOk(200, { success: true });
 }
 

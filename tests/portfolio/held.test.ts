@@ -8,6 +8,7 @@ import { portfolioDeps } from "@/features/portfolio/deps";
 import { readHeld } from "@/features/portfolio/read/held";
 import { createPortfolioRequest } from "@/features/portfolio/client";
 
+import { activeItems } from "../_support/workspace-reads.ts";
 import type { MemDb, Row } from "../workspace/_memdb.ts";
 import { call, clientFor, ITEM_1, ITEM_2, ITEM_ARCHIVED, ORG_A, script, seed } from "../workspace/_world.ts";
 
@@ -18,6 +19,8 @@ const SRC = "a1000000-0000-4000-8000-000000000001";
 
 function world(): MemDb {
   const db = script(seed());
+  // the database function (migration 0095) over this world: the workspace's own rows for the named ids
+  db.scriptRpc("get_workspace_items_by_ids", (a) => activeItems(db as never, String(a.p_org_id)).filter((i) => (a.p_ids as string[]).includes(String(i.id)) && (i.replaced_by ?? null) === null));
   db.rows("sources").push({ id: SRC, name: "EUR-Lex", base_tier: 1, tier_override: null, effective_tier: null });
   for (const i of db.rows("intelligence_items")) Object.assign(i, { source_id: SRC, added_date: "2026-01-01", jurisdictions: ["EU"], transport_modes: ["ocean"], summary: "", domain: 1, item_type: "regulation" });
   db.rows("intelligence_items")[0]!.compliance_deadline = "2026-11-01";
@@ -49,13 +52,16 @@ test("held means verified, not archived by the platform and not archived by THIS
   assert.equal(view.rollup.origin.weakest, "official");
 });
 
-test("B-0280: a failed override read rejects the detail; it never makes a workspace-archived member look held", async () => {
+test("B-0280: a failed held read rejects the detail; it never makes a workspace-archived member look held (the override is the database's, in get_workspace_items_by_ids)", async () => {
+  const down = (): never => {
+    throw new Error("down");
+  };
   const db = world();
-  db.fail("workspace_item_overrides", "select", "down");
-  await assert.rejects(readPortfolioDetail(client(db), ORG_A, PF, NOW, portfolioDeps(client(db))), /workspace_item_overrides read failed: down/);
+  db.scriptRpc("get_workspace_items_by_ids", down);
+  await assert.rejects(readPortfolioDetail(client(db), ORG_A, PF, NOW, portfolioDeps(client(db))), /get_workspace_items_by_ids failed: down/);
   const items = world();
-  items.fail("intelligence_items", "select", "down");
-  await assert.rejects(readHeld(client(items), ORG_A, [ITEM_1], NOW), /backfill failed: down/);
+  items.scriptRpc("get_workspace_items_by_ids", down);
+  await assert.rejects(readHeld(client(items), ORG_A, [ITEM_1], NOW), /get_workspace_items_by_ids failed: down/);
 });
 
 test("the detail API answers with the real held layer wired, for a member and not for another workspace", async () => {

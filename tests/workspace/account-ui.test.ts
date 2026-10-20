@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
+import { DB_SENTENCES } from "@/core/http/failure";
 import { requestJson } from "@/core/http/request-json";
 import { queueNotifications } from "@/core/notifications";
 import { ALL_SECTORS, HIGHLIGHTED_SECTOR_IDS, JURISDICTIONS, MODES, REGIONS, regionGroupForLabel } from "@/core/workspace";
@@ -9,7 +10,7 @@ import { DEFAULT_NOTIFICATION_PREFS, readNotificationPrefs, saveNotificationPref
 import { saveProfilePatch } from "@/features/account/lib/profile-patch";
 import { readSettingsData } from "@/features/settings/server/settings-data";
 import { useSettingsStore } from "@/features/settings/state/settings-store";
-import { attributionText, formatAppliedDate } from "@/features/workspace/attribution-text";
+import { attributionText } from "@/features/workspace/attribution-text";
 import { ARCHIVE_REASONS, reasonLabel } from "@/features/workspace/ui/archive-reasons";
 import { clampHighlight, moveHighlight, resolveBackspaceAction, resolveEnterAction, rowCount, showCreateRow, visibleRows } from "@/features/workspace/ui/tag-model";
 import { tokenFrom } from "@/features/onboarding/lib/token";
@@ -65,8 +66,8 @@ test("tag popover: search is case-insensitive, the create row shows only without
 });
 
 test("tag attribution: the wording the chip title and the popover share; a removed account and a nameless member read plainly", () => {
-  assert.equal(formatAppliedDate("2026-09-03T23:59:00Z"), "3 Sep 2026");
-  assert.equal(formatAppliedDate("not a date"), null);
+  assert.equal(attributionText({ tagId: "t", appliedBy: "u", appliedByName: "Pat Lee", appliedAt: "2026-09-03T23:59:00Z" }), "applied by Pat Lee on 3 Sep 2026");
+  assert.equal(attributionText({ tagId: "t", appliedBy: "u", appliedByName: "Pat Lee", appliedAt: "not a date" }), "applied by Pat Lee", "an unreadable date is left out, never printed");
   assert.equal(attributionText({ tagId: "t", appliedBy: "u", appliedByName: "Pat Lee", appliedAt: "2026-09-03T00:00:00Z" }), "applied by Pat Lee on 3 Sep 2026");
   assert.equal(attributionText({ tagId: "t", appliedBy: "u", appliedByName: null, appliedAt: null }), "applied by a workspace member");
   assert.equal(attributionText({ tagId: "t", appliedBy: null, appliedByName: null, appliedAt: "2026-09-03T00:00:00Z" }), "applied by a former member on 3 Sep 2026");
@@ -100,7 +101,7 @@ test("notification preferences: a missing row is the defaults, a failed read is 
   const none = fakeDb(() => ({ data: null }));
   assert.deepEqual(await readNotificationPrefs(none.db, "u1"), { prefs: { ...DEFAULT_NOTIFICATION_PREFS }, error: null });
   const down = fakeDb(() => ({ error: { message: "read down" } }));
-  assert.equal((await readNotificationPrefs(down.db, "u1")).error, "read down");
+  assert.equal((await readNotificationPrefs(down.db, "u1")).error, DB_SENTENCES["500"], "the customer sentence, never the driver's text (W:62)");
   const stored = fakeDb(() => ({ data: { enabled: false, on_mention: false } }));
   const read = await readNotificationPrefs(stored.db, "u1");
   assert.deepEqual([read.prefs.enabled, read.prefs.on_mention, read.prefs.on_new_post_in_joined_groups, read.prefs.on_invite], [false, false, false, true]);
@@ -108,7 +109,7 @@ test("notification preferences: a missing row is the defaults, a failed read is 
   const ok = fakeDb(() => undefined);
   assert.equal(await saveNotificationPrefs(ok.db, "u1", { ...DEFAULT_NOTIFICATION_PREFS }, { seed: true, now: () => "2026-10-16T00:00:00.000Z" }), null);
   const refused = fakeDb(() => ({ error: { message: "permission denied" } }));
-  assert.equal(await saveNotificationPrefs(refused.db, "u1", { ...DEFAULT_NOTIFICATION_PREFS, enabled: false }), "permission denied");
+  assert.equal(await saveNotificationPrefs(refused.db, "u1", { ...DEFAULT_NOTIFICATION_PREFS, enabled: false }), DB_SENTENCES["500"], "a refused save returns the customer sentence; the driver's text is logged");
 });
 
 test("INV-137: the personal profile and the onboarding writers can set only their own columns; job_title is allowed, a privilege column is refused before a request", async () => {
@@ -190,12 +191,13 @@ test("IMP-066, INV-263: the settings page reads ONE bundle (a quarter of the old
   assert.equal(rows[1]?.replacement, null);
   assert.deepEqual([data.supersessions.rows?.[0]?.old.title, data.supersessions.truncated, data.archive.truncated], ["A", true, false]);
 
-  for (const [what, error, expected] of [["a failed bundle", { message: "read down" }, /read down/], ["an absent function (production before the cutover)", { message: "not found", code: "PGRST202" }, /database update \(0038\)/], ["a missing function", { message: "x", code: "42883" }, /0038/]] as const) {
+  for (const [what, error, expected] of [["a failed bundle", { message: "read down" }, /could not be read just now/], ["an absent function (production before the cutover)", { message: "not found", code: "PGRST202" }, /not available yet/], ["a missing function", { message: "x", code: "42883" }, /not available yet/]] as const) {
+    assert.doesNotMatch(JSON.stringify(await readSettingsData(fakeDb(() => undefined, { rpc: () => ({ error }) }).db, { orgId: ORG_A, userId: "u1" })), /0038|read down|database update/, "no migration number and no driver text reaches the page (W:60)");
     const broken = await readSettingsData(fakeDb(() => undefined, { rpc: () => ({ error }) }).db, { orgId: ORG_A, userId: "u1" });
     assert.deepEqual([broken.archive.rows, broken.supersessions.rows], [null, null], what);
     assert.match(broken.archive.error ?? "", expected, what);
     assert.match(broken.supersessions.error ?? "", expected, what);
   }
   const empty = await readSettingsData(fakeDb(() => undefined, { rpc: () => ({ data: null }) }).db, { orgId: null, userId: "u1" });
-  assert.match(empty.archive.error ?? "", /empty/, "no data and no error is a failure, never an empty list");
+  assert.match(empty.archive.error ?? "", /could not be read just now/, "no data and no error is a failure, never an empty list");
 });

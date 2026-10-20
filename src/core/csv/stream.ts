@@ -105,37 +105,6 @@ function makeParser(dropTail: () => boolean) {
   };
 }
 
-type Chunk = string | Uint8Array;
-/**
- * Stream the records of a CSV body. A chunk boundary may fall anywhere (inside a quote, a CRLF or a multibyte character). `dropTail` (a boolean or a function
- * read at the end) omits a final record with no terminating newline, which a byte-limited read must do so a half record is never counted.
- */
-export async function* readCsvStream(chunks: AsyncIterable<Chunk> | Iterable<Chunk>, { dropTail = false }: { dropTail?: boolean | (() => boolean) } = {}): AsyncGenerator<string[]> {
-  const decoder = new TextDecoder("utf-8");
-  const parser = makeParser(typeof dropTail === "function" ? dropTail : () => dropTail);
-  for await (const chunk of chunks) {
-    for (const r of parser.push(typeof chunk === "string" ? chunk : decoder.decode(chunk, { stream: true }))) yield r;
-  }
-  const rest = decoder.decode();
-  if (rest) for (const r of parser.push(rest)) yield r;
-  for (const r of parser.end()) yield r;
-}
-
-/** Pass chunks through until `maxBytes` have been read; the chunk that crosses the limit is cut and `state.truncated` set. */
-export async function* limitBytes(chunks: AsyncIterable<Chunk> | Iterable<Chunk>, maxBytes: number, state: { truncated: boolean }): AsyncGenerator<Uint8Array> {
-  let total = 0;
-  for await (const c of chunks) {
-    const buf = typeof c === "string" ? Buffer.from(c, "utf8") : c;
-    if (total + buf.length > maxBytes) {
-      yield buf.subarray(0, maxBytes - total);
-      state.truncated = true;
-      return;
-    }
-    total += buf.length;
-    yield buf;
-  }
-}
-
 /** A whole CSV text as a trimmed lower-case header row plus data rows; blank lines are skipped. A quoted field containing a newline stays one field. */
 export function splitCsvText(raw: unknown): { header: string[]; rows: string[][] } {
   const parser = makeParser(() => false);

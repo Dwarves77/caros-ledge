@@ -1,4 +1,5 @@
 // Ported from old_repo/src/app/api/workspace/archive-impact/route.ts (lines 30-204)
+import { admitItems } from "@/core/derived/admissible";
 import { currentMembership } from "@/core/auth/membership";
 import { serviceClient } from "@/core/db/clients";
 import { HttpError, LookupError, ok, route } from "@/core/http/errors";
@@ -24,10 +25,10 @@ export const GET = route("/api/workspace/archive-impact", async (request) => {
 
   const db = auth.client;
   // Branch on the shape rather than composing an .or() string from caller input (an injection surface); .eq() parameterises.
-  const itemQuery = db.from("intelligence_items").select("id, legacy_id, title, priority");
+  const itemQuery = admitItems(db.from("intelligence_items").select("id, legacy_id, title, priority"));
   const { data: item, error: itemError } = await (isUuid(itemId) ? itemQuery.eq("id", itemId) : itemQuery.eq("legacy_id", itemId)).maybeSingle();
   if (itemError) throw new LookupError("intelligence_items", itemError);
-  if (!item) throw new HttpError(404, `intelligence_items row not found for itemId=${itemId}`);
+  if (!item) throw new HttpError(404, "That item was not found.");
   const itemUuid = item.id as string;
   const watchKeys = [itemUuid, ...(item.legacy_id ? [item.legacy_id as string] : [])];
 

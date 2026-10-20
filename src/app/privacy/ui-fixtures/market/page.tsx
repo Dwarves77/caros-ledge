@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 
-import { buildCarbonCostOverlays } from "@/features/market/lib/carbon";
 import { buildSeriesBoard, type SeriesRow } from "@/features/market/lib/series-board";
 import type { SourceRating } from "@/features/market/lib/provenance";
 import type { MarketRead } from "@/features/market/read";
@@ -46,7 +45,7 @@ function readFor(state: string): MarketRead {
   return {
     signals: ok({ rows: ROWS, aggregates: { totalItems: ROWS.length, byPriority: { CRITICAL: 5, HIGH: 14, MODERATE: 5, LOW: 12 }, byStatus: {}, byJurisdiction: { GLOBAL: 12, EU: 12, US: 12 }, totalJurisdictions: 3, lastUpdatedAt: null } }),
     series: ok({ board: buildSeriesBoard(SERIES), leadTime: SERIES.filter((s) => s.series_key.startsWith("sbti")), ratings: RATINGS, lineage: null }),
-    corridors: ok(buildCarbonCostOverlays(CORRIDORS, [])),
+    corridors: ok(CORRIDORS.filter((c) => c.parsed !== null).map((c) => ({ entityId: c.entityId, label: c.label }))),
     panels: {
       oem: ok([{ roadmap_id: "o1", tech_category: "battery_electric_hgv", commercial_stage: "series_production", target_year: 2028, density_basis: "pack", confidence_admiralty: "B2", announced_at: day(30) }]),
       reroute: ok([{ reroute_id: "r1", baseline_corridor_id: CORRIDORS[0]?.entityId as string, reroute_corridor_id: CORRIDORS[1]?.entityId as string, cause: "Fixture chokepoint closure", fuel_burn_multiplier: 1.25, effective_from: day(10), effective_to: null }]),

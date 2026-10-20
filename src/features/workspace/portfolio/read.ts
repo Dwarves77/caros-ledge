@@ -1,4 +1,5 @@
 // Ported from old_repo/src/lib/portfolio/read.ts (lines 1-172)
+import { admitItems } from "@/core/derived/admissible";
 import type { Db } from "@/core/db/clients";
 import { fetchAllByIdChunks } from "@/core/db/query";
 import { LookupError } from "@/core/http/errors";
@@ -49,7 +50,7 @@ export async function readPortfolioDetail(client: Db, orgId: string, portfolioId
   const keyRows = await fetchAllByIdChunks(
     itemIds,
     async (slice) => {
-      const { data, error } = await client.from("intelligence_items").select("id, legacy_id, origin_class").in("id", slice);
+      const { data, error } = await admitItems(client.from("intelligence_items").select("id, legacy_id, origin_class").in("id", slice));
       if (error) throw new LookupError("intelligence_items", error);
       return (data ?? []) as KeyRow[];
     },

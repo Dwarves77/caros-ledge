@@ -33,7 +33,7 @@ function isValidCalendarDate(y: number, m: number, d: number): boolean {
 }
 const pad2 = (n: number): string => String(n).padStart(2, "0");
 
-export function parseDateFragment(kind: Kind, groups: readonly string[]): ParsedDate | null {
+function parseDateFragment(kind: Kind, groups: readonly string[]): ParsedDate | null {
   if (kind === "full-en" || kind === "full-pt") {
     const [dayStr, monthName, yearStr] = groups as [string, string, string];
     const day = parseInt(dayStr, 10);

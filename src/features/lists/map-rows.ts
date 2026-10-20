@@ -1,6 +1,8 @@
 // Ported from old_repo/src/lib/supabase-server.ts (lines 985-1180)
 // Ported from old_repo/src/lib/supabase-server.ts (lines 1855-1900)
+import { isInstrumentMilestone, timelineDateOf } from "@/core/brief/timeline";
 import type { Db } from "@/core/db";
+import { requirePriority } from "@/core/lists/bands";
 import type { Resource } from "@/core/types";
 import type { WorkspaceProfile } from "@/core/workspace";
 
@@ -50,6 +52,7 @@ export interface WorkspaceItemRpcRow {
 interface TimelineRow {
   item_id: string;
   milestone_date: string | null;
+  date_precision: string | null;
   label: string | null;
   is_completed: boolean | null;
   sort_order: number | null;
@@ -66,7 +69,7 @@ function baseResourceFields(row: WorkspaceItemRpcRow): Resource {
     url: row.source_url || "",
     note: row.summary || "",
     type: row.item_type || "uncertain",
-    priority: (row.effective_priority || row.priority) as Resource["priority"],
+    priority: requirePriority(row.effective_priority || row.priority, `item ${row.id}`),
     added: row.added_date ?? "",
     reasoning: row.reasoning || "",
     tags: row.tags || [],
@@ -123,7 +126,7 @@ export async function mapRows(db: Db, items: WorkspaceItemRpcRow[], opts: { orgI
   const ids = items.map((i) => i.id);
   for (let i = 0; i < ids.length; i += TIMELINE_CHUNK) {
     try {
-      const { data, error } = await db.from("item_timelines").select("item_id, milestone_date, label, is_completed, sort_order").in("item_id", ids.slice(i, i + TIMELINE_CHUNK));
+      const { data, error } = await db.from("item_timelines").select("item_id, milestone_date, date_precision, label, is_completed, sort_order").in("item_id", ids.slice(i, i + TIMELINE_CHUNK));
       if (error) throw new Error(error.message);
       for (const t of (data ?? []) as TimelineRow[]) byItem.set(t.item_id, [...(byItem.get(t.item_id) ?? []), t]);
     } catch {
@@ -133,7 +136,7 @@ export async function mapRows(db: Db, items: WorkspaceItemRpcRow[], opts: { orgI
   const active: Resource[] = [];
   const archived: Resource[] = [];
   for (const row of items) {
-    const timeline = (byItem.get(row.id) ?? []).sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)).map((t) => ({ date: t.milestone_date ?? "", label: t.label ?? "", ...(t.is_completed ? { status: "past" as const } : {}) }));
+    const timeline = (byItem.get(row.id) ?? []).filter((t) => isInstrumentMilestone(t.sort_order)).sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)).map((t) => ({ date: timelineDateOf(t.milestone_date ?? "", t.date_precision), label: t.label ?? "", ...(t.is_completed ? { status: "past" as const } : {}) }));
     const resource: Resource = { ...baseResourceFields(row), timeline, ...(row.compliance_deadline ? { complianceDeadline: row.compliance_deadline } : {}) };
     (resource.isArchived ? archived : active).push(resource);
   }

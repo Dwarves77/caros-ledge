@@ -1,0 +1,26 @@
+{
+ "status": {
+  "400": "That request was not valid. Check it and try again.",
+  "403": "You do not have access to that.",
+  "404": "That was not found.",
+  "409": "That conflicts with something already saved. Reload and try again.",
+  "500": "Something went wrong on our side. Try again; nothing you have saved was changed.",
+  "503": "That could not be read just now. Try again in a moment."
+ },
+ "refusal": {
+  "coverage_unavailable": "Source coverage did not load.",
+  "admin_coverage_unavailable": "Source collection did not load. Reload to try again.",
+  "masthead_items_unavailable": "The item count did not load",
+  "masthead_jurisdictions_unavailable": "the jurisdiction count did not load",
+  "watch_status_unavailable": "Watch status did not load.",
+  "watchlist_rail_unavailable": "Your watchlist did not load.",
+  "search_unavailable": "Search is unavailable right now. Nothing was lost; try again.",
+  "section_not_available": "This section is not available yet. Try again later.",
+  "tile_unavailable": "Could not load",
+  "brief_unavailable": "The brief did not load. Nothing was changed; try again.",
+  "counts_unavailable": "Counts did not load.",
+  "band_counts_unavailable": "The band counts did not load, so the tiles are blank rather than zero.",
+  "themes_unavailable": "The cross-page themes did not load.",
+  "ratings_unavailable": "Source ratings did not load, so tiers are not shown on these rows."
+ }
+}

@@ -7,6 +7,8 @@ import legacyJson from "./data/legacy-iso.json";
 import { isIso, isoToDisplayLabel } from "./iso";
 
 const TABLE: Readonly<Record<string, string>> = legacyJson;
+/** The first legacy slug of each code, built once (a lookup per row scanned the table). */
+const SLUG_OF_CODE: ReadonlyMap<string, string> = new Map(Object.keys(TABLE).reverse().map((slug) => [TABLE[slug] as string, slug]));
 
 /** The ISO code for a legacy slug, or null for a grouping with no single code (and for anything unknown). */
 const legacyToIso = (slug: string | null | undefined): string | null => (slug ? (TABLE[slug.toLowerCase()] ?? null) : null);
@@ -19,14 +21,14 @@ export function isoCodesOf(row: { jurisdictionIso?: readonly string[] | undefine
   return legacy ? [legacy] : [];
 }
 
-/** A row's jurisdiction in words, ONE derivation (the old tree had three): its codes' labels, else its legacy slug's label, else "Global". */
+/** A row's jurisdiction in words, ONE derivation (the old tree had three): its codes' labels, else its legacy slug's label, else "" (a row that names no jurisdiction is not labelled with one). */
 export function jurisLabelOf(r: { jurisdictionIso?: readonly string[] | null | undefined; jurisdiction?: string | null | undefined }): string {
   if (r.jurisdictionIso && r.jurisdictionIso.length > 0) return r.jurisdictionIso.map(isoToDisplayLabel).join(" · ");
-  return r.jurisdiction ? (JURISDICTIONS.find((j) => j.id === r.jurisdiction)?.label ?? r.jurisdiction) : "Global";
+  return r.jurisdiction ? (JURISDICTIONS.find((j) => j.id === r.jurisdiction)?.label ?? r.jurisdiction) : "";
 }
 
 /** The product label the legacy table gives a code's slug ("EU", "United Kingdom", "Global"), or null when the code has no slug. */
 export function legacyLabelOfIso(code: string): string | null {
-  const slug = Object.keys(TABLE).find((k) => TABLE[k] === code);
+  const slug = SLUG_OF_CODE.get(code);
   return slug ? (JURISDICTIONS.find((j) => j.id === slug)?.label ?? null) : null;
 }

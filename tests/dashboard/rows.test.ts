@@ -2,9 +2,11 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import type { Resource } from "@/core/types";
-import { buildChangedRows, buildDueNextRows, briefCardState, CANDIDATE_WINDOW, changeRowPrefix, computeAuditDate, deriveBriefTitle, dueNextWindowLabel, firstTokenOf, recentChangesWindowDays, selectBriefResources, type Candidate, type FeedRow } from "@/features/dashboard/rows";
+import { buildChangedRows, buildDueNextRows, briefCardState, changeRowPrefix, computeAuditDate, deriveBriefTitle, dueNextWindowLabel, firstTokenOf, recentChangesWindowDays, selectBriefResources, type Candidate, type FeedRow } from "@/features/dashboard/rows";
 
 const NOW = new Date("2026-10-15T12:00:00.000Z");
+/** The brief reads at most this many distinct change ids in full (the window is a product number, written here once as the test's oracle). */
+const CANDIDATE_WINDOW = 48;
 const item = (id: string, over: Partial<Resource> = {}): Resource => ({ id, title: `Title ${id}`, type: "regulation", domain: 1, priority: "HIGH", jurisdiction: "eu", modes: ["ocean"], topic: "emissions", tags: [], timeline: [], ...over }) as unknown as Resource;
 const feed = (id: string, over: Partial<FeedRow> = {}): FeedRow => ({ id, legacy_id: null, title: `Title ${id}`, priority: "HIGH", effective_priority: "HIGH", added_date: "2026-10-14", change_kind: "new", change_date: "2026-10-14", ...over });
 const cand = (id: string, over: Partial<Resource> = {}, verticals: string[] = []): Candidate => ({ uuid: id, resource: item(id, over), verticals });
@@ -47,9 +49,9 @@ test("buildChangedRows: the workspace's sectors and jurisdiction weights change 
 });
 
 test("changeRowPrefix names the kind and the field; dueNextWindowLabel says how far the rows reach", () => {
-  assert.equal(changeRowPrefix({ isNew: true }), "NEW · first seen this pass");
-  assert.equal(changeRowPrefix({ isUpdated: true, updatedField: "timeline", changeDate: "2026-10-13" }), "UPDATED · timeline added 2026-10-13");
-  assert.equal(changeRowPrefix({ isUpdated: true }), "UPDATED · brief regenerated");
+  assert.equal(changeRowPrefix({ isNew: true }), "New");
+  assert.equal(changeRowPrefix({ isUpdated: true, updatedField: "timeline", changeDate: "2026-10-13" }), "Updated · timeline added Oct 13, 2026");
+  assert.equal(changeRowPrefix({ isUpdated: true }), "Updated · brief updated");
   assert.equal(changeRowPrefix({}), null);
   const rows = buildDueNextRows([item("a", { complianceDeadline: "2026-10-16" }), item("b", { complianceDeadline: "2026-11-30" })], NOW);
   assert.equal(dueNextWindowLabel(rows.slice(0, 1), "Oct 15"), "By next binding date · week of Oct 15");

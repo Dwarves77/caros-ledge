@@ -3,6 +3,9 @@
 // THE retrieval: the ranked full-text hits of search_intelligence_items, re-fetched with the customer read gate and kept in rank order, on the CALLER's client (SEC-10: row security binds every
 // entry point alike). The command bar, the results page, the portfolio add card and the Assistant all call this one function. A failed read is a stated failure, never an empty list (INV-263).
 import type { Db } from "@/core/db";
+import { admitItems } from "@/core/derived/admissible";
+import { refusal, type Refusal } from "@/core/http/failure";
+import { log } from "@/core/shared/log";
 import { customerTierOf } from "@/core/sources";
 
 import { MAX_RESULTS, type SearchOutcome, type SearchRow } from "./types";
@@ -27,15 +30,17 @@ export const embeddedTier = (source: Embedded | Embedded[] | null | undefined): 
   return one ? customerTierOf(one) : null;
 };
 
+const failed = (what: string, message: string): Refusal => (log.warn(`[search] ${what} read failed:`, message), refusal("search_unavailable"));
+
 /** The hits for `q`, best first. `select` is the row shape (default: the result row); the rows keep the rpc's rank order and carry only items that pass the read gate. */
 export async function runSearch<R = SearchRow>(db: Db, q: string, opts: { maxRows?: number; select?: string; shape?: (raw: Record<string, unknown>) => R } = {}): Promise<SearchOutcome<R>> {
   const limit = Math.min(Math.max(1, opts.maxRows ?? MAX_RESULTS), MAX_RESULTS);
   const { data: hits, error } = await db.rpc("search_intelligence_items", { q, max_rows: limit });
-  if (error) return { ok: false, message: error.message };
+  if (error) return failed("search_intelligence_items", error.message);
   const ids = ((hits ?? []) as { id: string }[]).map((h) => h.id);
   if (ids.length === 0) return { ok: true, rows: [] };
-  const { data, error: rowError } = await db.from("intelligence_items").select(opts.select ?? RESULT_SELECT).eq("is_archived", false).eq("provenance_status", "verified").in("id", ids);
-  if (rowError) return { ok: false, message: rowError.message };
+  const { data, error: rowError } = await admitItems(db.from("intelligence_items").select(opts.select ?? RESULT_SELECT)).in("id", ids);
+  if (rowError) return failed("intelligence_items", rowError.message);
   const byId = new Map(((data ?? []) as unknown as Record<string, unknown>[]).map((r) => [String(r.id), r]));
   const shape = opts.shape ?? ((r: Record<string, unknown>) => { const { source, ...rest } = r as Raw & Record<string, unknown>; return { ...rest, tier: embeddedTier(source) } as unknown as R; });
   return { ok: true, rows: ids.flatMap((id) => (byId.has(id) ? [shape(byId.get(id) as Record<string, unknown>)] : [])) };

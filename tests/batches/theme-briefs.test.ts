@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { parseFrontmatter } from "@/core/briefs/frontmatter";
-import { admissibleRows } from "@/core/briefs/admissible";
+import { admissibleRows } from "@/core/derived/admissible";
 import { figureCoverage, isValidThemeBrief, parseRamifications } from "@/core/briefs/theme-brief-contract";
 import { computeMemberHash } from "@/core/flywheel/themes";
 import { applyBatch } from "@/features/batches";

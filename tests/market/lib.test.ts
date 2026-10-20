@@ -1,21 +1,19 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { formatFigure, formatRange } from "@/core/figures";
+import { formatFigure } from "@/core/figures";
 import { loadProducerRegistry } from "@/core/producers";
-import { buildCarbonCostPerFeuView, buildCarbonOverlayView, carbonCostPerFeu, carbonIntensity, GAP, resolveItemCorridor, selectFactor, type FactorRow } from "@/features/market/lib/carbon";
+import { buildCarbonOverlayView, carbonIntensity, selectFactor, type FactorRow } from "@/features/market/lib/carbon";
 import { computeSeriesDeltas } from "@/features/market/lib/deltas";
-import { cadenceNameForDays, deriveSeriesFreshness, summarizeBoardFreshness } from "@/features/market/lib/freshness";
-import { selectHeadlineSeries, SERIES_FAMILIES } from "@/features/market/lib/headline";
+import { boardFreshnessSummary, deriveSeriesFreshness } from "@/features/market/lib/freshness";
+import { selectHeadlineSeries } from "@/features/market/lib/headline";
 import { headlineCardView } from "@/features/market/lib/headline-view";
-import { assignBand, deriveSeverity } from "@/features/market/lib/signal-band";
 import { buildLeadTimePosition } from "@/features/market/lib/lead-time";
-import { selectNextDataDrops, summariseCarbonCorridors } from "@/features/market/lib/rail-select";
-import { PRODUCERS, isImplementedSeriesKey, producerFor } from "@/features/market/lib/registry";
+import { selectNextDataDrops } from "@/features/market/lib/rail-select";
+import { PRODUCERS, producerFor } from "@/features/market/lib/registry";
 import { deltaCellModel, sparklineModel } from "@/features/market/lib/ribbon-model";
 import { buildSeriesBoard, type SeriesRow } from "@/features/market/lib/series-board";
 import { derivePromotionState } from "@/features/market/lib/signal-promotion";
-import { buildEtsProxyBand } from "@/features/market/producers";
 
 import { fixture } from "../integration/world.ts";
 
@@ -31,15 +29,6 @@ test("formatFigure: currency symbol, redundant unit prefix stripped, a missing v
     assert.equal(f.text, "—");
     assert.ok(f.emptyReason);
   }
-});
-
-test("formatRange names a missing bound and flags bounds out of order instead of re-sorting them", () => {
-  assert.equal(formatRange(10, 12, 15, null, "EUR"), "€10 – €12 – €15");
-  assert.equal(formatRange(null, 12, 15, null, "EUR"), "€12 – €15 (low not stated)");
-  assert.equal(formatRange(10, null, null, "t", null), "10 t (point and high not stated)");
-  assert.equal(formatRange(null, null, null, null, null), "no figure stated");
-  assert.match(formatRange(15, 12, 10, null, "EUR"), /bounds out of order/);
-  assert.equal(formatRange(1200, 1500, 1800, null, "USD"), "$1,200 – $1,500 – $1,800");
 });
 
 test("INV-252 computeSeriesDeltas: the four cases, and a missing window is never 0", () => {
@@ -103,9 +92,6 @@ test("INV-253 buildSeriesBoard: an unregistered prefix is kept, a not-built prod
 
 test("registry: six producers as data, their runtime side exists, and the implemented flags agree with the keys", () => {
   assert.equal(PRODUCERS.length, 6);
-  assert.equal(isImplementedSeriesKey("ecb-fx:eur-usd"), true);
-  assert.equal(isImplementedSeriesKey("sbti:x"), false);
-  assert.equal(isImplementedSeriesKey("unknown:x"), false);
   assert.equal(producerFor("ecb-fx")?.cadenceDays, 1);
   const catalog = fixture().d.catalog;
   const names = new Set(Object.keys(catalog));
@@ -141,14 +127,9 @@ test("INV-253 selectHeadlineSeries: no-delta series are excluded, families fold 
   // a declared primary that has no delta hands the card to another member, with that member's own label
   const alt = selectHeadlineSeries(buildSeriesBoard([...mk("eia-v2:diesel-no2-low-sulfur-eer-epd2f-pf4-y35ny-dpg", [2, 3], { unit: "USD/GAL", currency: "USD", label: "NY diesel" }), obs("eu-oil-bulletin:automotive-diesel", "2026-03-08", 1400)]));
   assert.deepEqual([alt.cards[0]?.label, alt.cards[0]?.fold.count], ["NY diesel", 0]);
-  assert.ok(SERIES_FAMILIES.every((f) => f.memberSeriesKeys.includes(f.primarySeriesKey)));
 });
 
 test("INV-258 freshness: an off-grid cadence never reads fresher than its source, null is unknown, the worst state governs, empty is unknown", () => {
-  assert.equal(cadenceNameForDays(7), "weekly");
-  assert.equal(cadenceNameForDays(10), "weekly", "a 10-day cadence is judged no fresher than 7 days");
-  assert.equal(cadenceNameForDays(400), "annual");
-  assert.equal(cadenceNameForDays(null), "irregular");
   const row = { as_at_date: "2026-03-01", reference_period: "2026-03-01" };
   assert.equal(deriveSeriesFreshness(row, { cadenceDays: 7 }, "2026-03-05T10:00:00Z").code, "current");
   assert.equal(deriveSeriesFreshness(row, { cadenceDays: 7 }, "2026-03-12").code, "ageing");
@@ -156,8 +137,12 @@ test("INV-258 freshness: an off-grid cadence never reads fresher than its source
   assert.equal(deriveSeriesFreshness(row, { cadenceDays: 7 }, "2026-08-01").code, "frozen");
   assert.equal(deriveSeriesFreshness(row, { cadenceDays: null }, "2026-03-05").code, "unknown");
   assert.equal(deriveSeriesFreshness(row, null, "2026-03-05").code, "unknown");
-  assert.equal(summarizeBoardFreshness([]).worst, "unknown");
-  assert.equal(summarizeBoardFreshness(["current", "stale", "ageing"]).worst, "stale");
+  const board = (asAt: string[]) => ({ groups: [{ state: "populated", cadenceDays: 7, series: asAt.map((d) => ({ asAtDate: d, referencePeriod: d })) }] }) as never;
+  assert.equal(boardFreshnessSummary({ groups: [] }, "2026-03-12").worst, "unknown");
+  const mixed = boardFreshnessSummary(board(["2026-03-10", "2026-03-01", "2025-01-01"]), "2026-03-12");
+  assert.equal(mixed.worst, "frozen", "the worst state governs the panel");
+  assert.equal(mixed.total, 3);
+  assert.equal(deriveSeriesFreshness(row, { cadenceDays: 400 }, "2026-12-01").code, "current", "a 400-day cadence is the annual period, not an irregular one");
 });
 
 test("INV-259 next data drops: latest period plus the registered cadence, omitted when unimplemented, no cadence or no observation", () => {
@@ -205,52 +190,12 @@ test("INV-255 selectFactor: two jurisdictions, GLOBAL, two modes without a mode,
   assert.equal(selectFactor([ROAD, RAIL], {}).state, "no_factor");
 });
 
-test("INV-255 resolveItemCorridor: two corridors in one country set are ambiguous, a different mode is no identity, no direction is invented", () => {
-  const c = (entityId: string, origin: string, dest: string, mode: string) => ({ entityId, origin, dest, mode });
-  const cands = [c("a", "CNSHA", "NLRTM", "ocean"), c("b", "USLAX", "NLRTM", "ocean")];
-  assert.deepEqual(resolveItemCorridor({ jurisdictionIso: ["NL", "CN"], modes: ["ocean"], candidates: cands }), { state: "resolved", corridor: { origin: "CNSHA", dest: "NLRTM", mode: "ocean" }, matchedCandidateIds: ["a"] });
-  assert.equal(resolveItemCorridor({ jurisdictionIso: ["cn", "nl"], modes: ["road"], candidates: cands }).state, "no_corridor_identity");
-  assert.equal(resolveItemCorridor({ jurisdictionIso: ["CN", "NL"], modes: ["ocean", "road"], candidates: cands }).state, "no_corridor_identity");
-  assert.equal(resolveItemCorridor({ jurisdictionIso: ["CN"], modes: ["ocean"], candidates: cands }).state, "no_corridor_identity");
-  const two = resolveItemCorridor({ jurisdictionIso: ["CN", "NL"], modes: ["ocean"], candidates: [...cands, c("c", "CNNGB", "NLRTM", "ocean")] });
-  assert.deepEqual([two.state, two.matchedCandidateIds], ["ambiguous", ["a", "c"]]);
-});
-
-test("INV-254 carbonCostPerFeu: an unprovenanced number throws, each gap is named, a range only with every input, classification by derivation", () => {
-  const corridor = { origin: "CNSHA", dest: "NLRTM", mode: "ocean" };
-  assert.throws(() => carbonCostPerFeu({ corridor, factor: ROAD, distance: { value: 1000, derivation: "observed", basis: "" } }), /basis/);
-  assert.throws(() => carbonCostPerFeu({ corridor, distance: { value: 1000, derivation: "invented", basis: "x" } }), /derivation/);
-  assert.throws(() => carbonCostPerFeu({ corridor, distance: { value: Number.NaN, derivation: "observed", basis: "x" } }), /finite/);
-  const none = carbonCostPerFeu({ corridor });
-  assert.deepEqual(none.ok ? [] : none.gaps, [GAP.NO_FACTOR, GAP.NO_DISTANCE, GAP.NO_PAYLOAD, GAP.NO_CARBON_PRICE]);
-  assert.ok(!/market_series|ttw_co2e|eex-eua/.test(JSON.stringify(GAP)), "no gap sentence names a table, a column or a producer");
-  const partial = carbonCostPerFeu({ corridor, factor: ROAD, distance: { value: 1000, derivation: "observed", basis: "d" } });
-  assert.ok(!partial.ok && partial.gaps.length === 2 && partial.partial.intensity?.valueGPerUnit === 100 && partial.partial.distance?.value === 1000);
-  const price = { value: 80, currency: "EUR", sourceKey: "carrier", asOf: null, derivation: "observed", basis: "notice" };
-  const input = { corridor, factor: ROAD, distance: { value: 1000, derivation: "observed", basis: "d" }, payload: { value: 10, derivation: "observed", basis: "p" }, carbonPrice: price };
-  const ok = carbonCostPerFeu(input);
-  assert.ok(ok.ok);
-  if (ok.ok) {
-    // 100 g/tkm = 0.1 kg/tkm; x 10 t x 1000 km = 1000 kg = 1 t; x 80 = 80
-    assert.deepEqual([ok.low, ok.point, ok.high, ok.classification], [80, 80, 80, "derived"], "every input contractable: no invented band");
-  }
-  const est = carbonCostPerFeu({ ...input, payload: { value: 10, derivation: "estimated", basis: "p" } });
-  assert.ok(est.ok && est.classification === "estimate" && Math.abs(est.low - 72) < 1e-9 && Math.abs(est.high - 88) < 1e-9, "only the non-contractable input varies by the 10 percent convention");
-  const stat = carbonCostPerFeu({ ...input, factor: { ...ROAD, derivation: "statutory_fixed" }, distance: { ...input.distance, derivation: "statutory_fixed" }, payload: { ...input.payload, derivation: "statutory_fixed" }, carbonPrice: { ...price, derivation: "statutory_fixed" } });
-  assert.ok(stat.ok && stat.classification === "statutory");
-});
-
-test("the detail carbon blocks: three honest states, a figure only from a real selection, null when the signal has no corridor identity", () => {
+test("the detail carbon block: three honest states, and a figure only from a real selection", () => {
   assert.equal(buildCarbonOverlayView({ jurisdictionIso: ["US"], factors: [ROAD], mode: "road" }).figure?.value, 0.1);
   const amb = buildCarbonOverlayView({ jurisdictionIso: ["US", "CA"], factors: [ROAD] });
   assert.deepEqual([amb.state, amb.figure], ["ambiguous", null]);
   const none = buildCarbonOverlayView({ jurisdictionIso: ["DE"], factors: [ROAD] });
   assert.ok(none.state === "no_factor" && !/yet|today|pending/i.test(none.body), "no state claim about coverage today");
-  assert.equal(buildCarbonCostPerFeuView({ jurisdictionIso: ["CN"], modes: ["ocean"], factors: [], corridorCandidates: [] }), null);
-  const v = buildCarbonCostPerFeuView({ jurisdictionIso: ["CN", "NL"], modes: ["ocean"], factors: [ROAD], corridorCandidates: [{ entityId: "a", origin: "CNSHA", dest: "NLRTM", mode: "ocean" }] });
-  assert.ok(v?.state === "resolved" && v.label === "Shanghai (CN) → Rotterdam (NL), ocean" && v.result && !v.result.ok);
-  const rail = summariseCarbonCorridors([{ label: "Shanghai (CN) → Rotterdam (NL), ocean", corridor: { origin: "CNSHA", dest: "NLRTM", mode: "ocean" }, result: v?.result as never }, { label: "b", result: v?.result as never }, { label: "c", result: v?.result as never }]);
-  assert.deepEqual(rail.map((r) => [r.label, r.missing]), [["Shanghai – Rotterdam · ocean", 4], ["b", 4]]);
 });
 
 test("INV-256 derivePromotionState: Fact only on a fact-citable origin, two citers promote to corroborated at most, an unknown code is the weakest signal", () => {
@@ -265,11 +210,6 @@ test("INV-256 derivePromotionState: Fact only on a fact-citable origin, two cite
   assert.ok(!/pending|unscored/i.test(JSON.stringify(derivePromotionState({}))));
 });
 
-test("INV-260 the ETS proxy band (P2-07's) still refuses one row and mixed currencies: the carbon price input never blends", () => {
-  assert.equal(buildEtsProxyBand([{ value_numeric: 1, currency: "USD", reference_period: "2026-01-01" }]), null);
-  assert.throws(() => buildEtsProxyBand([{ value_numeric: 1, currency: "USD", reference_period: "p" }, { value_numeric: 2, currency: "EUR", reference_period: "p" }]));
-});
-
 test("a headline card carries its source ref and the rating's url (the baseline shows the ref as a link)", () => {
   const board = buildSeriesBoard([
     ...["2026-08-24", "2026-08-31"].map((d, i) => ({ id: `a${i}`, series_key: "ecb-fx:eur-usd", label: "EUR/USD", reference_period: d, as_at_date: d, value_numeric: 1.05 + i * 0.05, unit: "USD/EUR", currency: "USD", derivation: "observed", origin_class: "official", source_key: "ecb", source_ref: "ECB reference rates, 2026-08-31" })),
@@ -282,13 +222,3 @@ test("a headline card carries its source ref and the rating's url (the baseline 
   assert.match(String(v2.envelope.sourceUrl), /^https:\/\//, "with no rating the producer's own source url applies");
 });
 
-test("the detail page's classifications: the stored column and band win, the keyword pass is the fallback, an unmatched title is a corporate monitor", () => {
-  const base = { title: "Plain title", note: "", priority: "LOW" as const };
-  assert.equal(deriveSeverity({ ...base, severity: "cost_alert" }), "cost");
-  assert.equal(deriveSeverity({ ...base, title: "Deadline for filing" }), "action");
-  assert.equal(deriveSeverity({ ...base, priority: "HIGH" }), "cost");
-  assert.equal(deriveSeverity(base), "monitor");
-  assert.equal(assignBand({ ...base, signalBand: "corridor" }), "corridor");
-  assert.equal(assignBand({ ...base, title: "Diesel spot price rises" }), "price");
-  assert.equal(assignBand(base), "corporate");
-});

@@ -58,12 +58,6 @@ export async function userClient(request?: Request): Promise<Db> {
   }) as unknown as Db;
 }
 
-/** An identity-free client over the anon key: what the public policies let anyone read. No cookies, no session; the only caller is a cached public read (the map). */
-export function anonClient(): Db {
-  const { url, anon } = publicEnv();
-  return createClient(url, anon, { auth: { persistSession: false } });
-}
-
 /** The proxy's request-bound client: cookie writes go to `onCookies` so the proxy can rebuild its response. */
 export function requestClient(
   cookiesIn: { getAll: () => { name: string; value: string }[] },

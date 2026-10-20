@@ -2,14 +2,12 @@
 // Ported from old_repo/scripts/entities/write-entity-scope.mjs (lines 8-150)
 // Corridor entities from the confirmed seeds (data/corridor-seeds.json: the ADR-024 worked example and three Drewry WCI lanes) plus any corridor a market
 // series or regional fact names by the `corridor:ORIGIN-DEST:mode` convention, a display_name backfill, and the corridor-to-jurisdiction entity_scope rows
-// (the UN/LOCODE prefix is the ISO 3166-1 country). The always-empty "item jurisdictions" candidate scan is gone. The corridor-scope cache tag is invalidated
-// after a write, so the Market selector and the Regulations strip see the new corridor without waiting out the TTL (B-1559). A runtime function: no CLI.
-import { revalidateTag } from "next/cache";
+// (the UN/LOCODE prefix is the ISO 3166-1 country). The always-empty "item jurisdictions" candidate scan is gone. The Market selector and the Regulations strip read the
+// corridors live, so a new corridor shows on the next request (B-1559). A runtime function: no CLI.
 import { z } from "zod";
 
 import type { Db } from "@/core/db";
 import { fetchAllRows } from "@/core/db";
-import { CORRIDOR_SCOPE_TAG } from "@/core/entities/corridor-scope";
 import { entityId, corridorSeed } from "@/core/entities/id";
 import { parseCorridorName } from "@/core/entities/kinds";
 import { planJurisdiction } from "@/core/entities/plan";
@@ -19,8 +17,8 @@ import type { RunResult } from "@/core/sources/run-result";
 import seedsJson from "./data/corridor-seeds.json";
 
 const seeds = z.object({ seeds: z.array(z.object({ origin: z.string(), dest: z.string(), mode: z.string(), note: z.string(), sourceUrl: z.string() })) }).parse(seedsJson).seeds;
-export const RELATION_CORRIDOR_JURISDICTION = "touches_jurisdiction";
-export const ATTRIBUTED_BY = "rule:corridor-jurisdiction-unlocode-v1";
+const RELATION_CORRIDOR_JURISDICTION = "touches_jurisdiction";
+const ATTRIBUTED_BY = "rule:corridor-jurisdiction-unlocode-v1";
 const CONVENTION_RE = /^corridor:([A-Za-z]{2}[A-Za-z2-9]{3})-([A-Za-z]{2}[A-Za-z2-9]{3}):([a-z_]+)$/;
 
 export interface CorridorCandidate {
@@ -31,12 +29,12 @@ export interface CorridorCandidate {
   sourceUrl?: string;
   source?: string;
 }
-export function parseCorridorConvention(text: unknown): CorridorCandidate | null {
+function parseCorridorConvention(text: unknown): CorridorCandidate | null {
   const m = CONVENTION_RE.exec(String(text ?? "").trim());
   return m ? { origin: (m[1] as string).toUpperCase(), dest: (m[2] as string).toUpperCase(), mode: m[3] as string } : null;
 }
 /** The derived candidates (de-duplicated), or the confirmed seeds when no live data names a corridor pair. */
-export function resolveCorridorCandidates(input: { marketSeries?: readonly { series_key?: string }[]; regionalFacts?: readonly { fact_label?: string }[] }): { candidates: CorridorCandidate[]; usingFallback: boolean } {
+function resolveCorridorCandidates(input: { marketSeries?: readonly { series_key?: string }[]; regionalFacts?: readonly { fact_label?: string }[] }): { candidates: CorridorCandidate[]; usingFallback: boolean } {
   const derived: CorridorCandidate[] = [];
   for (const r of input.marketSeries ?? []) {
     const hit = parseCorridorConvention(r.series_key);
@@ -51,7 +49,7 @@ export function resolveCorridorCandidates(input: { marketSeries?: readonly { ser
   return unique.size ? { candidates: [...unique.values()], usingFallback: false } : { candidates: seeds.map((s) => ({ ...s })), usingFallback: true };
 }
 
-export function planCorridorEntities(candidates: readonly CorridorCandidate[], existing: ReadonlySet<string>): { entities: { entity_id: string; kind: "corridor"; canonical_name: string; display_name: string; status: "active" }[]; skipped: { candidate: CorridorCandidate; reason: string }[] } {
+function planCorridorEntities(candidates: readonly CorridorCandidate[], existing: ReadonlySet<string>): { entities: { entity_id: string; kind: "corridor"; canonical_name: string; display_name: string; status: "active" }[]; skipped: { candidate: CorridorCandidate; reason: string }[] } {
   const entities: ReturnType<typeof planCorridorEntities>["entities"] = [];
   const skipped: ReturnType<typeof planCorridorEntities>["skipped"] = [];
   for (const c of candidates) {
@@ -65,7 +63,7 @@ export function planCorridorEntities(candidates: readonly CorridorCandidate[], e
   }
   return { entities, skipped };
 }
-export function planDisplayNameBackfill(rows: readonly { entity_id: string; canonical_name: string; display_name?: string | null }[]): { entity_id: string; display_name: string }[] {
+function planDisplayNameBackfill(rows: readonly { entity_id: string; canonical_name: string; display_name?: string | null }[]): { entity_id: string; display_name: string }[] {
   const out: { entity_id: string; display_name: string }[] = [];
   for (const r of rows) {
     const p = r.display_name ? null : parseCorridorName(r.canonical_name);
@@ -74,7 +72,7 @@ export function planDisplayNameBackfill(rows: readonly { entity_id: string; cano
   return out;
 }
 /** Corridor-to-country pairs: the first two letters of each UN/LOCODE endpoint are the ISO 3166-1 country. */
-export function deriveCorridorJurisdictionCodes(corridors: readonly { entity_id: string; canonical_name: string }[]): { isoCodes: string[]; pairs: { corridorEntityId: string; iso: string }[]; skipped: { entity_id: string; reason: string }[] } {
+function deriveCorridorJurisdictionCodes(corridors: readonly { entity_id: string; canonical_name: string }[]): { isoCodes: string[]; pairs: { corridorEntityId: string; iso: string }[]; skipped: { entity_id: string; reason: string }[] } {
   const isoSet = new Set<string>();
   const seen = new Set<string>();
   const pairs: { corridorEntityId: string; iso: string }[] = [];
@@ -161,13 +159,6 @@ export async function seedCorridors(deps: { sb: Db; now: () => Date }, input: { 
         notes.push(`${table} insert failed: ${error.message}`);
       } else if (table === "entity_scope") counts.scope_rows = rows.length;
       else if (table === "entities") counts.jurisdictions_created = rows.length;
-    }
-    if (counts.created || counts.labelled || counts.scope_rows) {
-      try {
-        revalidateTag(CORRIDOR_SCOPE_TAG, "max");
-      } catch {
-        notes.push("corridor-scope cache tag not flushed (no request scope); the cache expires on its TTL");
-      }
     }
   }
   return { counts, outcome: counts.failed ? ((counts.created ?? 0) + (counts.scope_rows ?? 0) > 0 ? "partial" : "failed") : "ok", notes: input.dry ? [...notes, "dry: nothing written"] : notes };

@@ -30,7 +30,7 @@ const ORIGINS = ["community", "community-corroborated", "modelled", "derived", "
 const DERIVATIONS = ["statutory_fixed", "statutory_formula", "observed", "transacted_index", "assessed", "calculated", "interpolated", "modelled", "estimated"];
 const OBS_STATUS = ["A", "P", "E", "I", "F", "B", "D", "U", "V", "G", "M", "O", "L", "H", "Q", "N"];
 
-export function parseOemRoadmapRow(row: Rec, i: number, manufacturers: readonly Entity[]): ParsedRow {
+function parseOemRoadmapRow(row: Rec, i: number, manufacturers: readonly Entity[]): ParsedRow {
   const where = "oem-roadmap-producer";
   const citation = requireCitation(row, i, where);
   need(row, ["manufacturer_name", "tech_category", "commercial_stage", "announced_at"], where, i);
@@ -52,7 +52,7 @@ export function parseOemRoadmapRow(row: Rec, i: number, manufacturers: readonly 
   };
 }
 
-export function parseGridQueueRow(row: Rec, i: number, jurisdictions: readonly Entity[]): ParsedRow {
+function parseGridQueueRow(row: Rec, i: number, jurisdictions: readonly Entity[]): ParsedRow {
   const where = "grid-queue-producer";
   const citation = requireCitation(row, i, where);
   need(row, ["jurisdiction_name", "dso_name", "capacity_band_mw", "as_of"], where, i);
@@ -67,7 +67,7 @@ export function parseGridQueueRow(row: Rec, i: number, jurisdictions: readonly E
   return { refused: false, citation, dbRow: { jurisdiction_id: jurisdictionId, dso_name: String(row.dso_name), capacity_band_mw: String(row.capacity_band_mw), queue_months_p50: p50 ?? null, queue_months_p90: p90 ?? null, as_of: row.as_of, obs_status: obs, source_id: null } };
 }
 
-export function parseRerouteRow(row: Rec, i: number, corridors: readonly Entity[]): ParsedRow {
+function parseRerouteRow(row: Rec, i: number, corridors: readonly Entity[]): ParsedRow {
   const where = "reroute-producer";
   const citation = requireCitation(row, i, where);
   need(row, ["baseline_corridor_name", "reroute_corridor_name", "cause", "fuel_burn_multiplier", "effective_from"], where, i);
@@ -78,12 +78,6 @@ export function parseRerouteRow(row: Rec, i: number, corridors: readonly Entity[
   if (!baseline || !reroute) return refuse(`row[${i}]: corridor(s) not found in the live entity spine (baseline "${row.baseline_corridor_name}" ${baseline ? "found" : "MISSING"}, reroute "${row.reroute_corridor_name}" ${reroute ? "found" : "MISSING"}); minting a corridor entity is out of this producer's write set.`);
   if (baseline === reroute) return refuse(`row[${i}]: baseline and reroute resolved to the SAME corridor entity (${baseline}): not a reroute.`);
   return { refused: false, citation, dbRow: { baseline_corridor_id: baseline, reroute_corridor_id: reroute, cause: String(row.cause), distance_delta_nm: row.distance_delta_nm ?? null, transit_delta_days: row.transit_delta_days ?? null, fuel_burn_multiplier: Number(row.fuel_burn_multiplier), effective_from: row.effective_from, effective_to: row.effective_to ?? null } };
-}
-
-/** A reroute needs a DISTINCT baseline and reroute corridor pair; a count of corridors alone is never "ready" (the pairing must be sourced and dated). */
-export function evaluateCorridorReadiness(corridors: readonly unknown[] | null | undefined): { ready: false; count: number; gap: string } {
-  const n = Array.isArray(corridors) ? corridors.length : 0;
-  return { ready: false, count: n, gap: n < 2 ? `only ${n} corridor entit${n === 1 ? "y" : "ies"} in the spine: a reroute event needs a DISTINCT baseline + reroute pair (2 minimum); minting a corridor is out of this lane's write set.` : `${n} corridor entities exist but no producer-confirmed reroute pairing (cause + fuel_burn_multiplier, sourced and dated) is built this run.` };
 }
 
 interface RowsFileDef {

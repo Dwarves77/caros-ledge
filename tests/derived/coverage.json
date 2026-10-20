@@ -1,0 +1,9 @@
+{
+ "exempt": [
+  { "glob": "src/core/grounding/ground.ts", "why": "Grounding reads a source's tier and the captures it cites; the word 'coverage' there is a span's coverage of a claim, not the registry's." },
+  { "glob": "src/core/turn/stages/sweep.ts", "why": "The sweep stage reads sources to decide what to check; it states no coverage to a customer." },
+  { "glob": "src/features/mint/heal/run.ts", "why": "The heal reads sources to register the page a figure cites; it states no coverage to a customer." },
+  { "glob": "src/features/operations/producers/ukpn-heatmap.ts", "why": "A producer reading its own source row; it states no coverage to a customer." },
+  { "glob": "src/features/operations/read/operations-reads.ts", "why": "Operations coverage is facts per region and dimension (region_dimension_coverage), a count of facts; it reads sources only to rate them." }
+ ]
+}

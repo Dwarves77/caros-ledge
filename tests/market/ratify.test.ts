@@ -18,7 +18,7 @@ const world = (extra: Record<string, Record<string, unknown>[]> = {}) =>
   memoryDb({
     market_series_items: [{ series_key: "a:held", item_id: null, status: "pending" }, { series_key: "a:done", item_id: ITEM_2, status: "ratified" }],
     market_series: [obs("a:held"), obs("a:fresh"), obs("a:done")],
-    intelligence_items: [{ id: ITEM, provenance_status: "verified", is_archived: false }, { id: ITEM_2, provenance_status: "verified", is_archived: false }],
+    intelligence_items: [{ id: ITEM, provenance_status: "verified", is_archived: false, replaced_by: null }, { id: ITEM_2, provenance_status: "verified", is_archived: false, replaced_by: null }],
     ...extra,
   });
 const calls: boolean[] = [];
@@ -34,13 +34,13 @@ test("a minted_verified series is attached to its item and written ratified; the
 });
 
 test("nothing is ratified that should not be: an outcome other than minted_verified, an item that is not live and verified, a series with no observations, one already ratified, a missing item id; each is named and written nowhere", async () => {
-  const w = world({ intelligence_items: [{ id: ITEM, provenance_status: "quarantined", is_archived: false }, { id: ITEM_2, provenance_status: "verified", is_archived: true }] });
+  const w = world({ intelligence_items: [{ id: ITEM, provenance_status: "quarantined", is_archived: false, replaced_by: null }, { id: ITEM_2, provenance_status: "verified", is_archived: true, replaced_by: null }] });
   const r = await ratifySeriesItems({ sb: w.db, downstream }, { dry: false, artifact: art({ id: "a:held", outcome: "minted_unverified", item_id: ITEM }, { id: "a:fresh", outcome: "minted_verified", item_id: ITEM }, { id: "a:nothing", outcome: "minted_verified", item_id: ITEM }, { id: "a:done", outcome: "minted_verified", item_id: ITEM }, { id: "a:held", outcome: "minted_verified" }) });
   assert.equal(r.counts.ratified, 0);
   assert.equal(w.wrote("market_series_items").length, 0);
   const notes = r.notes.join("|");
   for (const re of [/a:held: skipped \((outcome_not_verified|already_ratified)\)/, /a:fresh: skipped \(item_not_live_verified\)/, /a:nothing: skipped \(no_observations_in_market_series\)/, /a:done: skipped \(already_ratified\)/]) assert.match(notes, re);
-  const archived = world({ intelligence_items: [{ id: ITEM, provenance_status: "verified", is_archived: true }] });
+  const archived = world({ intelligence_items: [{ id: ITEM, provenance_status: "verified", is_archived: true, replaced_by: null }] });
   const r2 = await ratifySeriesItems({ sb: archived.db, downstream }, { dry: false, artifact: art({ id: "a:held", outcome: "minted_verified", item_id: ITEM }) });
   assert.match(r2.notes.join("|"), /a:held: skipped \(item_not_live_verified\)/, "an archived item is not live");
 });
@@ -65,7 +65,7 @@ test("the op is dispatched by name with the turn's deps: it ratifies from args.a
   const f = fixture();
   f.db.seed("market_series_items", [{ series_key: "a:held", item_id: null, status: "pending" }]);
   f.db.seed("market_series", [obs("a:held")]);
-  f.db.seed("intelligence_items", [{ id: ITEM, provenance_status: "verified", is_archived: false }]);
+  f.db.seed("intelligence_items", [{ id: ITEM, provenance_status: "verified", is_archived: false, replaced_by: null }]);
   const call: FamilyCall = { mode: "dry", dry: true, input: { ops: { op: "ratify-series-items", args: { artifact: art({ id: "a:held", outcome: "minted_verified", item_id: ITEM }) } } }, runId: "r0000000-0000-4000-8000-000000000001", rootRunId: "r0000000-0000-4000-8000-000000000001", upstream: null };
   const r = await runOps(call, f.d);
   assert.equal(r.notes[0], "op=ratify-series-items");

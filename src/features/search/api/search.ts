@@ -13,6 +13,6 @@ export const GET = route("/api/search", async (request) => {
   const q = (new URL(request.url).searchParams.get("q") ?? "").trim();
   if (q.length < MIN_QUERY_LEN) return ok(auth.headers, { query: q, results: [] });
   const found = await runSearch<SearchRow>(auth.client, q);
-  if (!found.ok) throw new LookupError("search", { message: found.message });
+  if (!found.ok) throw new LookupError("search", { message: found.reason });
   return ok(auth.headers, { query: q, results: found.rows });
 });

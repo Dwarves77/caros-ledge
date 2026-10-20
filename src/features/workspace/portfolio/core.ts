@@ -1,4 +1,5 @@
 // Ported from old_repo/src/lib/portfolio/portfolio-core.mjs (lines 60-386)
+import { admitItems } from "@/core/derived/admissible";
 import type { Db } from "@/core/db/clients";
 import { fetchAllRows } from "@/core/db/query";
 import { dbError, HttpError, LookupError } from "@/core/http/errors";
@@ -25,21 +26,21 @@ const notFound = (what: string) => new HttpError(404, `${what} not found in your
 // ── 1. input rules ──────────────────────────────────────────────────────────────────────────────────
 
 /** Trim and collapse whitespace; null when empty or over the limit (the route answers 400 without a trip). */
-export function normalizePortfolioName(raw: unknown): string | null {
+function normalizePortfolioName(raw: unknown): string | null {
   if (typeof raw !== "string") return null;
   const trimmed = raw.trim().replace(/\s+/g, " ");
   return trimmed.length === 0 || trimmed.length > PORTFOLIO_NAME_MAX ? null : trimmed;
 }
 
 /** "corridor" for cl:corridor:*, "entity" for any other well-formed entity id, null when malformed. */
-export function memberKindForEntityId(entityId: unknown): "corridor" | "entity" | null {
+function memberKindForEntityId(entityId: unknown): "corridor" | "entity" | null {
   if (typeof entityId !== "string" || entityId.length > MAX_ENTITY_ID_LEN) return null;
   const m = ENTITY_ID_RE.exec(entityId);
   return m ? (m[1] === "corridor" ? "corridor" : "entity") : null;
 }
 
 /** One member from a request body: exactly one of `itemId` (a uuid; the route resolves a legacy id first) or `entityId`. */
-export function parseMemberInput(body: unknown): { ok: true; member: MemberInput } | { ok: false; error: string } {
+function parseMemberInput(body: unknown): { ok: true; member: MemberInput } | { ok: false; error: string } {
   const b = body && typeof body === "object" ? (body as Record<string, unknown>) : {};
   const hasItem = typeof b.itemId === "string" && b.itemId.length > 0;
   const hasEntity = typeof b.entityId === "string" && b.entityId.length > 0;
@@ -167,7 +168,7 @@ export async function addMember(client: Db, args: { orgId: string; userId: strin
   let member = parsedMember(args.input);
   await requirePortfolio(client, args.orgId, args.portfolioId);
   if (member.kind === "item") {
-    const { data, error } = await client.from("intelligence_items").select("id").eq("id", member.itemId).eq("provenance_status", "verified").eq("is_archived", false).maybeSingle();
+    const { data, error } = await admitItems(client.from("intelligence_items").select("id").eq("id", member.itemId)).maybeSingle();
     if (error) throw new LookupError("intelligence_items", error);
     if (!data) throw new HttpError(404, "That item is not held by the platform, so it cannot be added.");
   } else {

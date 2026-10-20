@@ -63,7 +63,7 @@ test("the whole turn: every stage records under ONE root, each the next one's up
   for (const f of stages) assert.equal(ledger.filter((x) => x.family === f).length, 1, `${f}: exactly one row`);
   stages.slice(1).forEach((f, i) => assert.equal(by(f).upstream_run_id, by(stages[i] as string).id, `${f} follows ${stages[i]}`));
   assert.deepEqual([...new Set(ledger.map((x) => x.family))].filter((f) => !stages.includes(String(f))).sort(), ["mint", "producers"], "the only other rows are the runtimes' own unit rows");
-  assert.deepEqual(stages.map((f) => by(f).outcome), ["success", "refused", "success", "success", "partial", "success", "success", "success"], "the research walker is held by its reviewed constant: a recorded refusal that does not stop the turn; the intake minted its item and reported steps that failed (the fixture has no cache-flush endpoint and no tag rows), which is `partial`, never `success`");
+  assert.deepEqual(stages.map((f) => by(f).outcome), ["success", "refused", "success", "success", "success", "success", "success", "success"], "the research walker is held by its reviewed constant: a recorded refusal that does not stop the turn; every other stage finished");
   assert.match(String(by("research-walker").reason), /ENABLED constant is false/);
 
   // sweep -> change: the swept sources are the sources the change stage checked; the walked feed landed its link in the portal ledger.
@@ -128,8 +128,8 @@ test("the whole turn: every stage records under ONE root, each the next one's up
 
   // The ledger proofs, read from the ledger alone.
   const chain = await chainProof(db.client, r.rootRunId);
-  // Every stage left a row and none failed, but the intake finished partial (its cache flush and tag steps failed in this fixture): the proof is NOT ok, and it names the family.
-  assert.deepEqual([chain.ok, chain.missing, chain.failed, chain.partial], [false, [], [], ["ledger-consume"]]);
+  // Every stage left a row, none failed and none finished partial: the proof is ok (the walker's refusal is held, below, not a failure).
+  assert.deepEqual([chain.ok, chain.missing, chain.failed, chain.partial], [true, [], [], []]);
   assert.deepEqual(chain.held, ["research-walker:refused"]);
   assert.deepEqual(await mintedIds(db.client), minted, "P2: the minted ids");
   const fly = await flywheelOutcomes(db.client, [r.rootRunId]);
@@ -184,7 +184,7 @@ test("P4: the derived value the turn propagated reads on the Operations panel wi
   const f = fixture({ research: true });
   // The page's list rpc, answered from the minted rows (the database function projects the same columns); a range-able reply like the real client's.
   const listRows = (): unknown[] => f.db.rows("intelligence_items").filter((x) => x.item_type === "research_finding").map((x) => ({ id: x.id, legacy_id: x.legacy_id ?? null, title: x.title, item_type: x.item_type, domain: x.domain, priority: x.priority, added_date: String(x.added_date ?? NOW.toISOString()).slice(0, 10), is_archived: false, effective_archived: false }));
-  const answers: Record<string, () => unknown> = { get_research_items_public: listRows, get_surface_counts: () => ({ total_items: 1 }), get_research_source_coverage: () => [] };
+  const answers: Record<string, () => unknown> = { get_research_items_public: listRows, get_research_items: listRows, get_surface_counts: () => ({ total_items: 1, by_priority: {}, by_status: {}, by_jurisdiction: {}, by_severity: {}, by_band: {}, total_jurisdictions: 0 }), get_research_source_coverage: () => [] };
   const base = f.db.client as unknown as { rpc: (n: string, a?: Record<string, unknown>) => unknown };
   const client = new Proxy(f.db.client as object, { get: (t, k) => (k === "rpc" ? (n: string, a?: Record<string, unknown>) => { const hit = answers[n]; if (!hit) return base.rpc(n, a); const run = Promise.resolve({ data: hit(), error: null }); return Object.assign(run, { range: () => run }); } : Reflect.get(t, k)) }) as typeof f.db.client;
   const r = await runTurn({ stage: "all", mode: "apply", input: { intake: { census: { limit: 5 }, verdicts: { [RESEARCH_URL]: RESEARCH_VERDICT }, maxPromote: 5 }, propagate: { producers: { only: "ecb-fx" } } } }, { d: f.d, env: {}, now: () => NOW });

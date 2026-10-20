@@ -46,7 +46,7 @@ async function uuidsOf(db: Db, listIds: readonly string[]): Promise<Map<string, 
 }
 
 /** The batched current assessments for the rows a page shows: one chunked read of the view, keyed by list id. */
-export async function readAssessmentsFor(db: Db, listIds: readonly string[]): Promise<Record<string, AssessmentView>> {
+async function readAssessmentsFor(db: Db, listIds: readonly string[]): Promise<Record<string, AssessmentView>> {
   const uuid = await uuidsOf(db, listIds);
   const rows = await fetchAllByIdChunks([...uuid.values()], async (slice) => {
     const { data, error } = await db.from("research_assessments_current").select(ASSESSMENT_COLUMNS).in("item_id", slice);
@@ -66,8 +66,9 @@ async function readCoverage(db: Db): Promise<ResearchCoverageCell[]> {
   const { data, error } = await db.rpc("get_research_source_coverage");
   if (error) throw new Error(error.message);
   return ((data ?? []) as Array<{ transport_mode: unknown; jurisdiction_iso: unknown; source_count: unknown }>)
-    .filter((r) => typeof r.transport_mode === "string" && typeof r.jurisdiction_iso === "string")
-    .map((r) => ({ transportMode: r.transport_mode as string, jurisdictionIso: r.jurisdiction_iso as string, sourceCount: typeof r.source_count === "number" ? r.source_count : 0 }));
+    // A cell whose count is not a number is dropped, never drawn as a zero (register surfaces:86).
+    .filter((r) => typeof r.transport_mode === "string" && typeof r.jurisdiction_iso === "string" && typeof r.source_count === "number" && Number.isFinite(r.source_count))
+    .map((r) => ({ transportMode: r.transport_mode as string, jurisdictionIso: r.jurisdiction_iso as string, sourceCount: r.source_count as number }));
 }
 
 const settle = async <T>(what: string, read: () => Promise<T>): Promise<T | null> => {
@@ -82,7 +83,7 @@ const settle = async <T>(what: string, read: () => Promise<T>): Promise<T | null
 /** Everything /research draws: the category-routed public items, the corpus tallies, the source coverage and the batched assessments, each with its own failed state. */
 /** `orgId` is the member's org: get_surface_counts refuses a null org to every caller but the service role (migration 361), and the Region facet is offered from its surface-wide tally. */
 export async function readResearchPage(db: Db, orgId: string | null): Promise<ResearchPageData> {
-  const [category, aggregates, coverage] = await Promise.all([readCategory(db, "get_research_items_public", null, orgId), readSurfaceCounts(db, orgId, "research"), settle("source coverage", () => readCoverage(db))]);
+  const [category, aggregates, coverage] = await Promise.all([readCategory(db, orgId ? "get_research_items" : "get_research_items_public", orgId), readSurfaceCounts(db, orgId, "research"), settle("source coverage", () => readCoverage(db))]);
   const assessments = category.failed ? null : await settle("assessments", () => readAssessmentsFor(db, category.resources.map((r) => r.id)));
   return { rows: category.resources, rowsFailed: category.failed, aggregates, coverage, assessments };
 }

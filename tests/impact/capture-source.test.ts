@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { deriveObligationObjects, extractForwardEvents } from "@/features/obligations";
-import { sameObligationContent } from "@/features/obligations/extract/dedupe";
+import { dedupeEvents } from "@/features/obligations/extract/dedupe";
 import { insertForwardEvents } from "@/features/obligations/extract/write-forward-events";
 import { isVerbatim } from "@/core/contracts/verbatim";
 
@@ -26,9 +26,12 @@ test("the same sentence from a claim and from a capture is one event, the claim-
   assert.equal(out.counts.dedupe_dropped, 1);
 });
 
-test("the same sentence is the same event whether its window opened mid-sentence (an ellipsis) or ended at a full stop", () => {
-  assert.equal(sameObligationContent("…shall enter into force on 1 January 2027 and shall be binding in its entirety…", SENTENCE), true);
-  assert.equal(sameObligationContent("…shall enter into force on 1 January 2027 and shall be binding in its entirety…", "It shall apply from 1 January 2028 to every operator established in the Union."), false);
+test("the same sentence is the same event whether its window opened mid-sentence (an ellipsis) or ended at a full stop; another sentence on the same day is another event", () => {
+  const ev = (text: string, source_kind: "claim" | "capture", confidence: "high" | "medium") => ({ event_date: "2027-01-01", date_precision: "day", event_kind: "entry_into_force" as const, obligation_text: text, source_kind, source_claim_id: null, source_section_id: null, source_span: "1 January 2027", confidence, extractor_version: "t" });
+  const same = dedupeEvents([ev("…shall enter into force on 1 January 2027 and shall be binding in its entirety…", "claim", "high"), ev(SENTENCE, "capture", "medium")]);
+  assert.deepEqual(same.events.map((e) => e.source_kind), ["claim"]);
+  const other = dedupeEvents([ev("…shall enter into force on 1 January 2027 and shall be binding in its entirety…", "claim", "high"), ev("It shall apply from 1 January 2027 to every operator established in the Union.", "capture", "medium")]);
+  assert.equal(other.events.length, 2);
 });
 
 test("a capture-backed row is judged stale only by a caller that lists the captures it holds", async () => {

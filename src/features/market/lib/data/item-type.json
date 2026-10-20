@@ -1,0 +1,14 @@
+{
+ "regulation": "Regulation",
+ "directive": "Directive",
+ "standard": "Standard",
+ "guidance": "Guidance",
+ "technology": "Technology",
+ "market_signal": "Market signal",
+ "regional_data": "Regional data",
+ "research_finding": "Research finding",
+ "innovation": "Innovation",
+ "framework": "Framework",
+ "tool": "Tool",
+ "initiative": "Initiative"
+}

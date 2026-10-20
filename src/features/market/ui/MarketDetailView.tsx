@@ -21,18 +21,19 @@ import type { Resource } from "@/core/types";
 import { joinSegments } from "@/features/regulations/meta";
 import { useItemRelevance } from "@/features/regulations/useItemRelevance";
 import { DetailTagRow } from "@/features/workspace/ui/DetailTagRow";
-import { Absence, ActionCard, ClaimTierProvider, downloadMarkdownBrief, GfmSection, GradeChip, SectionIndex, StateNote, TagChip, type ClaimTierMap } from "@/ui";
-import { AtAGlanceCard, commonActionCardProps, CrossPageSection, crossPagePresence, DetailLayout, DetailMasthead, DetailPageWrapper, DetailRail, DetailSection, FactBlocks, ImpactRailCard, InThisListStat, ItemWatch, RelevanceRailCard, SourcesGrid, topRecommendedAction, type CrossPageData } from "@/ui/detail";
+import { DetailWatch } from "@/features/workspace/ui/DetailWatch";
+import { ActionCard, ClaimTierProvider, downloadMarkdownBrief, GfmSection, GradeChip, SectionIndex, StateNote, TagChip, type ClaimTierMap } from "@/ui";
+import { AtAGlanceCard, commonActionCardProps, CrossPageSection, crossPagePresence, DetailLayout, DetailMasthead, DetailPageWrapper, DetailRail, DetailSection, FactBlocks, ImpactRailCard, InThisListStat, RelevanceRailCard, SourcesGrid, topRecommendedAction, type CrossPageData } from "@/ui/detail";
 import { NoticesRail } from "@/ui/figures";
 import { DetailSubSection } from "@/ui/ItemGroup";
 import { LegendRailCard } from "@/ui/list-surface";
 
-import { assignBand, BAND_LABEL, BAND_NUM, deriveSeverity, SEVERITY_LABEL } from "../lib/signal-band";
+import { bandOf, BAND_LABEL, BAND_NUM } from "../lib/signal-band";
+import { severityLabel } from "../lib/severity";
 import { derivePromotionState } from "../lib/signal-promotion";
 import type { MarketDetailBundle } from "../read";
 
 import { CarbonFindings, PriceBoardBlock } from "./MarketSignalDetail";
-import { RelatedSignalLinks } from "./RelatedSignalLinks";
 import { TrajectoryBars } from "./TrajectoryBars";
 import styles from "./market.module.css";
 
@@ -90,8 +91,9 @@ export function MarketDetailView({ resource: r, sections, claimTiers, claimsDegr
   const retry = () => router.refresh();
   const relevance = useItemRelevance(r.id);
   const band = bandFromPriority(r.priority);
-  const signalBand = assignBand(r);
-  const severity = deriveSeverity(r);
+  const signalBand = bandOf(r);
+  const kind = severityLabel(r.severity);
+  const bandLabel = signalBand ? `B${BAND_NUM[signalBand]} · ${BAND_LABEL[signalBand]}` : null;
   const isRecord = r.itemGrade === "record";
   const [depth, setDepth] = useState<"summary" | "full">("summary");
   const [tagOpen, setTagOpen] = useState(false);
@@ -100,8 +102,7 @@ export function MarketDetailView({ resource: r, sections, claimTiers, claimsDegr
   const citers = bundle.convergence.ok ? (bundle.convergence.data?.independent_citers ?? null) : null;
   const promotion = derivePromotionState({ originClass: r.originClass ?? null, independentCiters: citers });
   const jurisLabel = jurisLabelOf(r);
-  const related = (bundle.related.ok ? bundle.related.data : []).filter((x) => x.id !== r.id && assignBand(x) === signalBand).slice(0, 4);
-  const hasRelated = connectionRows.length > 0 || related.length > 0;
+  const hasRelated = connectionRows.length > 0;
   const presence = crossPagePresence(crossPage);
   const actions = [...recommendedActions].sort((a, b) => (a.timeframe_days ?? 1e9) - (b.timeframe_days ?? 1e9));
   const carbonItem = { jurisdictionIso: r.jurisdictionIso ?? [], modes: r.modes ?? [] };
@@ -118,7 +119,7 @@ export function MarketDetailView({ resource: r, sections, claimTiers, claimsDegr
     ...(presence.inferences ? [{ id: INFERENCES_SECTION_ID, shortName: "Inferences", ord: crossPageOrd("market", INFERENCES_SECTION_ID) }] : []),
   ];
   const note = (what: string) => <StateNote>{claimsDegraded ? `${what} is withheld until the facts load.` : `${what} ${WAITING}`}</StateNote>;
-  const meta = joinSegments([`B${BAND_NUM[signalBand]} · ${BAND_LABEL[signalBand]} · ${jurisLabel}`, r.sourceName, r.added ? formatDate(r.added) : null, citers !== null ? `${citers} independent source${citers === 1 ? "" : "s"} corroborate` : null]);
+  const meta = joinSegments([bandLabel, jurisLabel, r.sourceName, r.added ? formatDate(r.added) : null, citers !== null ? `${citers} independent source${citers === 1 ? "" : "s"} corroborate` : null]);
   const published = r.added ? formatDate(r.added) : null;
   const nextRelease = bundle.priceBoard.ok ? bundle.priceBoard.data.find((p) => p.nextReleaseAt)?.nextReleaseAt : null;
 
@@ -131,18 +132,16 @@ export function MarketDetailView({ resource: r, sections, claimTiers, claimsDegr
       extraChips={
         <>
           <GradeChip itemGrade={r.itemGrade} />
-          <TagChip>{SEVERITY_LABEL[severity]}</TagChip>
+          {kind ? <TagChip>{kind}</TagChip> : null}
           {r.topic ? <TagChip>{r.topic}</TagChip> : null}
-          <TagChip>
-            B{BAND_NUM[signalBand]} · {BAND_LABEL[signalBand]}
-          </TagChip>
+          {bandLabel ? <TagChip>{bandLabel}</TagChip> : null}
         </>
       }
       tier={typeof r.sourceTier === "number" ? r.sourceTier : null}
       biasTags={r.biasTags}
       meta={sourceRows.length > 0 ? `${sourceRows.length} source${sourceRows.length === 1 ? "" : "s"}${citers !== null ? ` · ${citers} corroborating` : ""}` : null}
       onExport={() => void downloadMarkdownBrief(r, { filenamePrefix: "signal", metaRows: [r.jurisdiction ? `- Jurisdiction: ${r.jurisdiction}` : null, r.severity ? `- Severity: ${r.severity}` : null, r.signalBand ? `- Signal band: ${r.signalBand}` : null, r.url ? `- Source: ${r.url}` : null] })}
-      {...commonActionCardProps(r, { tagPopover: <DetailTagRow itemId={r.id} open={tagOpen} onOpenChange={setTagOpen} />, watch: <ItemWatch itemId={r.id} />, onTag: () => setTagOpen((v) => !v) })}
+      {...commonActionCardProps(r, { tagPopover: <DetailTagRow itemId={r.id} open={tagOpen} onOpenChange={setTagOpen} />, watch: <DetailWatch type="signal" id={r.id} />, onTag: () => setTagOpen((v) => !v) })}
       where={{ value: jurisLabel }}
     />
   );
@@ -165,8 +164,8 @@ export function MarketDetailView({ resource: r, sections, claimTiers, claimsDegr
                   <AtAGlanceCard
                     rows={[
                       { label: "Band", value: `${band.label} · ${band.window}` },
-                      { label: "Kind", value: SEVERITY_LABEL[severity] },
-                      { label: "Corporate band", value: `B${BAND_NUM[signalBand]} · ${BAND_LABEL[signalBand]}` },
+                      { label: "Kind", value: kind },
+                      { label: "Corporate band", value: bandLabel },
                       { label: "Jurisdiction", value: jurisLabel },
                       { label: "Topic", value: r.topic },
                       { label: "Status", value: promotion.label },
@@ -235,17 +234,13 @@ export function MarketDetailView({ resource: r, sections, claimTiers, claimsDegr
               </DetailSection>
             )}
             <DetailSection id="sources" title="Sources" index={5} aside={sourceRows.length > 0 ? `${sourceRows.length} · tier = provenance, never urgency` : undefined}>
-              {sourceRows.length > 0 ? <SourcesGrid rows={sourceRows} /> : <Absence reason="not in primary source" />}
+              {sourceRows.length > 0 ? <SourcesGrid rows={sourceRows} /> : <StateNote>No sources are listed for this item.</StateNote>}
             </DetailSection>
             {hasRelated && (
-              <DetailSection id="related" title="Related" aside={BAND_LABEL[signalBand]} index={6}>
+              <DetailSection id="related" title="Related" aside={signalBand ? BAND_LABEL[signalBand] : undefined} index={6}>
                 <ConnectionList rows={connectionRows} />
-                {related.length > 0 && (
-                  <RelatedSignalLinks signals={related} />
-                )}
               </DetailSection>
             )}
-            {!bundle.related.ok && <StateNote tone="error" action={{ label: "Retry", onClick: retry }}>Related signals did not load. Try again.</StateNote>}
             <CrossPageSection surfaceKey="market" surfaceLabel="Market Intel" crossPage={crossPage} onRetry={retry} />
             <NoticesRail />
           </DetailLayout>

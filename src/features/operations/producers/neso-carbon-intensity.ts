@@ -8,10 +8,10 @@ import { KEYS, type Rec } from "@/core/producers/upsert-plan";
 
 import { buildEnvelopeRow, ENVELOPE_PAYLOAD_KEYS, latestPerNaturalKey } from "./regional-envelope";
 
-export const omit = (r: Rec, k: string): Rec => Object.fromEntries(Object.entries(r).filter(([x]) => x !== k));
+const omit = (r: Rec, k: string): Rec => Object.fromEntries(Object.entries(r).filter(([x]) => x !== k));
 const SOURCE_KEY = "neso_carbon_intensity";
-export const REGION_CODE = "UK";
-export const DIMENSION = "grid_intensity";
+const REGION_CODE = "UK";
+const DIMENSION = "grid_intensity";
 const FACT_LABEL = "GB grid carbon intensity, daily average (NESO Carbon Intensity API)";
 const SOURCE_URL = "https://carbonintensity.org.uk/";
 const SOURCE_NAME = "National Energy System Operator (NESO) Carbon Intensity API";
@@ -20,13 +20,13 @@ const DAY = 86_400_000;
 const STAMP = /^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})Z$/;
 
 /** The 14 complete days before `now`, as the API's stats URL (daily blocks). The clock is the caller's. */
-export function buildUrl(now: Date): string {
+function buildUrl(now: Date): string {
   const day0 = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
   const iso = (ms: number) => new Date(ms).toISOString().slice(0, 10);
   return `${API}/intensity/stats/${iso(day0 - 14 * DAY)}T00:00Z/${iso(day0 - DAY)}T23:59Z/24`;
 }
 
-export function parseNesoStats(doc: unknown): { observations: Rec[]; warnings: string[] } {
+function parseNesoStats(doc: unknown): { observations: Rec[]; warnings: string[] } {
   const d = doc as { data?: Array<{ from?: string; to?: string; intensity?: { average?: unknown } }> } | null;
   if (!d || typeof d !== "object" || !Array.isArray(d.data)) throw new Error("parseNesoStats: not a Carbon Intensity stats document (no data array)");
   const observations: Rec[] = [];

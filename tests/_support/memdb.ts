@@ -47,6 +47,8 @@ export interface MemOptions {
   returnRows?: boolean;
 }
 
+/** The ceiling rank migration 0090 gives each stored admissibility (the view derived_values_admissible). */
+const CEILING_RANK: Record<string, number> = { display_only: 0, analysis_ok: 1, calculation_ok: 2, filing_ok: 3 };
 const WITH_ID = new Set(["intelligence_items", "agent_run_searches", "section_claim_provenance", "claim_versions", "intelligence_item_sections", "item_timelines", "integrity_flags", "agent_runs", "staged_updates", "sources", "portal_link_candidates", "disposition_ledger", "item_cross_references", "item_forward_events", "vocabulary_terms", "monitoring_queue", "pending_first_fetch", "propagation_events"]);
 export const SCHEMA: SchemaInfo = schemaJson as SchemaInfo;
 const likeRe = (pat: string, flags = "") => new RegExp(`^${pat.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/[%*]/g, ".*")}$`, flags);
@@ -123,7 +125,10 @@ export class MemDb {
     return this;
   }
   /** Read-only relations computed from the tables (the SQL views): a read of the name answers the computed rows. */
-  views: Record<string, () => Row[]> = {};
+  views: Record<string, () => Row[]> = {
+    // derived_values_admissible (migration 0090): live lifecycles and not stale, with the ceiling rank of the stored admissibility.
+    derived_values_admissible: () => this.rows("derived_values").filter((v) => !["falsified", "obsolete", "superseded"].includes(String(v.lifecycle)) && v.admissibility !== "stale").map((v) => ({ ...v, ceiling_rank: CEILING_RANK[String(v.admissibility)] ?? null })),
+  };
   rows(table: string): Row[] {
     const view = this.views[table];
     return view ? view() : (this.tables[table] ??= []);
@@ -430,6 +435,15 @@ export function installPropagationRpcs(db: MemDb): MemDb {
     d.rows("derived_values").push({ value_id: id, method_id: a.p_method_id, method_version: a.p_method_version, value: a.p_value, admissibility: a.p_admissibility, supersedes: a.p_supersedes, inputs: a.p_inputs, entity_id: a.p_entity_id });
     for (const ref of (a.p_inputs ?? []) as { table: string; pk: string }[]) d.rows("derivation_edges").push({ from_table: ref.table, from_pk: ref.pk, to_table: "derived_values", to_value_id: id });
     return { data: id };
+  };
+  /** author_derived_value (migration 0091): one call checks for a value of the method with an edge from any input and registers otherwise; the database serialises two callers with an advisory lock. */
+  db.rpcs.author_derived_value = (a, d) => {
+    const inputs = (a.p_inputs ?? []) as { table: string; pk: string }[];
+    if (!Array.isArray(a.p_inputs) || inputs.length === 0) return { error: { message: "author_derived_value: inputs must name at least one input", code: "22023" } };
+    const have = d.rows("derived_values").find((v) => v.method_id === a.p_method_id && v.method_version === a.p_method_version && d.rows("derivation_edges").some((e) => e.to_value_id === v.value_id && inputs.some((i) => i.table === e.from_table && i.pk === e.from_pk)));
+    if (have) return { data: [{ value_id: have.value_id, authored: false }] };
+    const made = d.rpcs.register_derived_value!({ ...a, p_supersedes: null }, d);
+    return { data: [{ value_id: made.data, authored: true }] };
   };
   db.rpcs.fire_signpost = (a, d) => {
     const sp = d.rows("signposts").find((s) => s.entity_id === a.p_entity_id);

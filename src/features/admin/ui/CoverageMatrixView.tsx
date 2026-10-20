@@ -4,6 +4,7 @@
 // Ported from old_repo/src/components/admin/CoverageMatrixView.tsx (lines 719-762)
 import { useState } from "react";
 
+import { refusalSentence } from "@/core/http/failure";
 import { formatNumber } from "@/core/shared";
 import { Button, EmptyState, FilterChip, FilterChipGroup, StatBlock, Switch } from "@/ui";
 
@@ -30,8 +31,18 @@ interface Jurisdiction {
   total_sources: number;
   overall_state: OverallState;
 }
+interface SourceLedger {
+  total: number;
+  collected: number;
+  not_collected: number;
+  refused: number;
+  access_requested: number;
+  last_capture_at: string | null;
+}
 interface Payload {
   generated_at: string;
+  /** null when the source_coverage view could not be read. */
+  sources: SourceLedger | null;
   matrix: Cell[];
   jurisdictions: Jurisdiction[];
   item_types: string[];
@@ -86,6 +97,13 @@ export function CoverageMatrixView({ onBulkAdd }: { onBulkAdd: (iso: string) => 
             <EmptyState>No jurisdictions are in scope for this filter.</EmptyState>
           ) : (
             <>
+              {d.sources ? (
+                <p className={styles.note}>
+                  {formatNumber(d.sources.not_collected)} of {formatNumber(d.sources.total)} registered sources not yet collected ({formatNumber(d.sources.collected)} collected, {formatNumber(d.sources.refused)} refused, {formatNumber(d.sources.access_requested)} with access requested).
+                </p>
+              ) : (
+                <p className={styles.note}>{refusalSentence("admin_coverage_unavailable")}</p>
+              )}
               <div className={styles.grid3}>
                 <StatBlock label="Covered" value={formatNumber(count("covered"))} />
                 <StatBlock label="Partial" value={formatNumber(count("partial"))} />
