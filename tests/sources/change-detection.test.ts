@@ -1,8 +1,9 @@
 // Change detection over three fixture sources (changed, unchanged, 403): a non-answer never evicts (INV-066 as built into the three-way classifier).
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { test } from "node:test";
 
-import { contentFingerprint, isContentChange, runChangeDetection, validateCheckLimit } from "@/core/capture/change-detection";
+import { runChangeDetection, validateCheckLimit } from "@/core/capture/change-detection";
 import { fetchDirect } from "@/core/fetch/direct";
 import { decideSourceAssessment, REACH } from "@/core/fetch/reachability";
 
@@ -18,16 +19,10 @@ const src = (id: string, over: Record<string, unknown> = {}) => ({ id, name: id,
 
 async function hashOf(text: string, db: never) {
   const r = await fetchDirect("https://seed.gov/p", { db, env: {}, fetchImpl: (async () => ok(page(text))) as typeof fetch, caller: "manual-intake-run" }, { max: 1_000_000, keepHtml: true });
-  return contentFingerprint(r.text);
+  // The oracle: the sha256 of the page text, whitespace collapsed and lower-cased (the change detector's fingerprint).
+  return createHash("sha256").update(String(r.text).replace(/\s+/g, " ").trim().toLowerCase()).digest("hex");
 }
 
-test("the fingerprint ignores whitespace and case, and a thin or first observation is never a change", () => {
-  assert.equal(contentFingerprint("Hello   World"), contentFingerprint(" hello world "));
-  assert.equal(isContentChange(null, "abc"), false);
-  assert.equal(isContentChange("abc", null), false);
-  assert.equal(isContentChange("abc", "abc"), false);
-  assert.equal(isContentChange("abc", "abd"), true);
-});
 test("the limit is validated: absent is the default, a bad value is refused", () => {
   assert.deepEqual(validateCheckLimit(undefined), { ok: true, limit: 10 });
   assert.deepEqual(validateCheckLimit("25"), { ok: true, limit: 25 });

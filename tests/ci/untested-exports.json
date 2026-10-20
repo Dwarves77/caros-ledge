@@ -123,8 +123,7 @@
    "DEFAULT_CHECK_LIMIT",
    "MAX_CHECK_LIMIT",
    "MONITORING_RESULT",
-   "assessAndUpdateSource",
-   "normalizeForFingerprint"
+   "assessAndUpdateSource"
   ],
   "src/core/census/identity.ts": [
    "UK_TYPES"
