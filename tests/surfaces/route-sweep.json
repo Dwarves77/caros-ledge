@@ -57,6 +57,9 @@
     "/auth/update-password": {
       "exempt": "A client form that sets a new password through the auth service; it reads no table."
     },
+    "/bot": {
+      "exempt": "Static page of the crawler's declared identity; it reads one deployment setting (BOT_CONTACT_EMAIL) and no table."
+    },
     "/community": {
       "swept": "tests/community/pages.test.ts"
     },
