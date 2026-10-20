@@ -1,7 +1,8 @@
 // R2d, I13: the readers in the surfaces' write set take the predicate, each shown on rows that are unverified, archived or replaced (the structure test, readers.test.ts, proves none was forgotten; these prove the
 // ones that matter read the same rows the list reads).
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { join } from "node:path";
 import { test } from "node:test";
 
 import { readItemRows } from "@/features/dashboard/read/items";
@@ -10,6 +11,8 @@ import { rollup } from "@/features/regulations/map/rollup";
 import { relatedItems } from "@/features/research/read/related-items";
 
 import { memoryDb, type Row } from "../_support/memory-db.ts";
+import { renderApp, textOf } from "../_support/render.ts";
+import { memberWorld } from "../_support/sweep-worlds.ts";
 
 const ORG = "11111111-1111-4111-8111-111111111111";
 const item = (id: string, over: Row = {}): Row => ({ id, legacy_id: `l-${id.slice(-2)}`, title: `Item ${id.slice(-2)}`, domain: 1, source_id: "s1", added_date: "2026-10-01", provenance_status: "verified", is_archived: false, replaced_by: null, priority: "MODERATE", ...over });
@@ -72,6 +75,27 @@ test("the map is read live: two reads with changed counts give changed counts an
   assert.deepEqual(await order(), [["FR", 3], ["DE", 1]], "the changed rows are drawn on the next read, in the changed order");
   rows = [row("a1", "DE"), row("f1", "FR")];
   assert.deepEqual(await order(), [["FR", 1], ["DE", 1]], "equal counts tie by label (France before Germany), so the order is total");
-  const src = readFileSync("src/features/regulations/map/read.ts", "utf8").replace(/^\s*\/\/.*$/gm, "");
-  assert.doesNotMatch(src, /unstable_cache|cachedRead|revalidate/i, "a page may not draw a cached count");
+});
+
+test("the dashboard is read live: the same page drawn twice over changed rows shows the changed counts, and the digest and counts reads are not cached", async () => {
+  const w = memberWorld();
+  const draw = async () => textOf(renderApp((await (await import("@/features/dashboard/page")).default()) as never, { path: "/" }));
+  const before = await draw();
+  assert.match(before, /5 items across 4 surfaces/);
+  assert.match(before, /Due next · 5 items/);
+  for (const r of w.db.rows("intelligence_items")) r.is_archived = true;
+  const after = await draw();
+  assert.match(after, /0 items across 4 surfaces/, "the second draw reads the changed rows");
+  assert.match(after, /Due next · 0 items/);
+});
+
+// The structure test (the stand-in for next/cache runs every function, so a draw cannot tell a cached read from a live one; the source can): no module in src keeps a read between requests.
+const walk = (dir: string): string[] => readdirSync(dir).flatMap((n) => { const f = join(dir, n); return statSync(f).isDirectory() ? walk(f) : /\.(ts|tsx)$/.test(n) ? [f] : []; });
+test("no page or reader caches a read: nothing in src uses unstable_cache, a cachedRead wrapper or a revalidate window (the map, the dashboard and the coverage matrix included)", () => {
+  const code = (f: string) => readFileSync(f, "utf8").replace(/^\s*\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, "");
+  const KEEPS_A_READ = /unstable_cache|\bcachedRead\b|revalidate:\s*\d|(?<![-\w])revalidate\s*=/;
+  const offenders = walk("src").filter((f) => KEEPS_A_READ.test(code(f))).map((f) => f.replace(/\\/g, "/"));
+  assert.deepEqual(offenders, [], "a page may not draw a value cached past the data it was read from");
+  for (const f of ["src/features/regulations/map/read.ts", "src/features/dashboard/page.tsx", "src/features/coverage/server/matrix-data.ts"]) assert.ok(readFileSync(f, "utf8").length > 0, f);
+  assert.ok(KEEPS_A_READ.test("x = unstable_cache(fn)") && KEEPS_A_READ.test("{ revalidate: 60 }"), "the planted violations are flagged");
 });

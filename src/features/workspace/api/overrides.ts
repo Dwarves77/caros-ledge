@@ -99,7 +99,6 @@ export const POST = route("/api/workspace/overrides", async (request) => {
     const r = await callWriter(db, "archive_item_for_team", { p_org_id: orgId, p_item_id: itemUuid, p_reason: reason, p_note: input.archiveNote ?? null, p_notice: notice });
     [override, queued] = [r.override, (queued ?? 0) + r.queued];
   }
-  workspaceDeps().revalidateWorkspaceData?.();
   return ok(auth.headers, { override, ...(queued === null ? {} : { queued }) });
 });
 
@@ -111,6 +110,5 @@ export const DELETE = route("/api/workspace/overrides", async (request) => {
   const itemUuid = await itemUuidOr404(db, input.itemId);
   const { error } = await db.from("workspace_item_overrides").delete().eq("org_id", auth.membership.orgId).eq("item_id", itemUuid);
   if (error) throw dbError(error);
-  workspaceDeps().revalidateWorkspaceData?.();
   return ok(auth.headers, { success: true });
 });

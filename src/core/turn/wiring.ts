@@ -269,7 +269,6 @@ function workspaceWiring(sb: Db): Partial<WorkspaceDeps> {
       return row;
     },
     itemHref: (item) => surfaceHref(surfaceOf(item.type, item.domain), item.id) ?? `/regulations/${encodeURIComponent(item.id)}`,
-    revalidateWorkspaceData: () => void import("next/cache").then((m) => m.revalidateTag("app-data", "max")),
     timePhase,
     withServerTiming,
     portfolio: portfolioDeps(sb),
@@ -300,7 +299,7 @@ const MANIFEST: readonly ManifestEntry[] = [
   { member: "propagation EdgeAuthors (authorCarbonIntensityEdges)", status: "owed", owner: "P2-11 market surface (carbonIntensity)", present: () => false },
   { member: "producers.verdicts (host verdicts as a table, IMP-054)", status: "wired", present: (d) => d.producers.verdicts instanceof Map },
   { member: "loadReferenceData (host_verdicts and market_series_items, read once per turn)", status: "wired", present: (d) => fn(d.loadReferenceData) },
-  ...(["itemHref", "revalidateWorkspaceData", "navCounts", "adminAttention", "timePhase", "withServerTiming"] as const).map((m): ManifestEntry => ({ member: `workspace.${m}`, status: "wired", present: (d) => fn(d.workspace[m]) })),
+  ...(["itemHref", "navCounts", "adminAttention", "timePhase", "withServerTiming"] as const).map((m): ManifestEntry => ({ member: `workspace.${m}`, status: "wired", present: (d) => fn(d.workspace[m]) })),
 
   { member: "workspace.portfolio", status: "wired", present: (d) => d.workspace.portfolio !== undefined },
 ];

@@ -15,5 +15,3 @@ export function revalidateItem(id: string): void {
   revalidateTag(INTEL_ITEMS_TAG, "max");
 }
 
-/** The tag on every per-org page-data cache entry (the dashboard digest, the surface counts): a workspace write flushes it. */
-export const APP_DATA_TAG = "app-data";

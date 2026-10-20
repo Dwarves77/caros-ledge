@@ -10,7 +10,6 @@ import { isRefusal, requireUser } from "@/core/http/guard";
 import { parseJson } from "@/core/http/parse";
 import { log } from "@/core/shared/log";
 
-import { workspaceDeps } from "./deps";
 import { itemUuidOr404 } from "./shared";
 
 // The user_item_state writer and reader (dual-scope archive, migration 235). A PERSONAL archive hides an item for the calling user only,
@@ -86,7 +85,6 @@ export const POST = route("/api/workspace/personal-state", async (request) => {
   if (input.archiveNote !== undefined || !input.isArchived) update.archive_note = input.isArchived && typeof input.archiveNote === "string" ? input.archiveNote : null;
   const { data, error } = await db.from("user_item_state").upsert(update, { onConflict: "user_id,item_id" }).select().single();
   if (error) throw dbError(error);
-  workspaceDeps().revalidateWorkspaceData?.();
   return ok(auth.headers, { state: data });
 });
 
@@ -98,6 +96,5 @@ export const DELETE = route("/api/workspace/personal-state", async (request) => 
   const itemUuid = await itemUuidOr404(db, input.itemId);
   const { error } = await db.from("user_item_state").delete().eq("user_id", auth.userId).eq("item_id", itemUuid);
   if (error) throw dbError(error);
-  workspaceDeps().revalidateWorkspaceData?.();
   return ok(auth.headers, { success: true });
 });

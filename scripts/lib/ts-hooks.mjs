@@ -27,7 +27,7 @@ export async function resolve(specifier, context, next) {
   else if (/^\.\.?\//.test(specifier) && context.parentURL?.startsWith(SRC.href)) target = find(new URL(specifier, context.parentURL));
   // Source modules get scripted client factories; a test reaches the real ones by importing the file by its path.
   if (FAKE_CLIENTS && target === REAL_CLIENTS && context.parentURL?.startsWith(SRC.href)) target = FAKE_CLIENTS;
-  // A page drawn in a node test has no incremental cache for unstable_cache: source modules get the stand-in that runs the read (tests only).
+  // A module drawn in a node test has no incremental cache for revalidateTag: source modules get the stand-in (tests only).
   if (NEXT_CACHE && specifier === "next/cache" && context.parentURL?.startsWith(SRC.href)) target = NEXT_CACHE;
   // Node's ESM resolver does not read next's package layout: "next/navigation" is the file next/navigation.js.
   if (!target && /^next\/[a-z-]+$/.test(specifier)) target = `${specifier}.js`;

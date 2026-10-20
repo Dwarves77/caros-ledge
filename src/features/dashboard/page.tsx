@@ -1,5 +1,4 @@
 // Ported from old_repo/src/app/page.tsx (lines 17-142)
-import { APP_DATA_TAG, cachedRead } from "@/core/cache";
 import { userClient } from "@/core/db/clients";
 import { formatLocaleDate } from "@/core/shared";
 import { log } from "@/core/shared/log";
@@ -17,8 +16,6 @@ import { buildChangedRows, buildDueNextRows, computeAuditDate, dueNextWindowLabe
 import { DashboardBrief } from "./ui/DashboardBrief";
 import { DashboardMasthead } from "./ui/DashboardMasthead";
 
-const REVALIDATE_SECONDS = 60;
-
 const settle = async <T,>(what: string, run: () => Promise<T>): Promise<T | null> => {
   try {
     return await run();
@@ -29,7 +26,7 @@ const settle = async <T,>(what: string, run: () => Promise<T>): Promise<T | null
 };
 
 /**
- * The dashboard at `/`: one server instant for every date; the digest and the counts through the one cached read (per workspace, a failure never kept); the watchlist and the reader's name fresh. Every
+ * The dashboard at `/`: one server instant for every date; every read live (nothing on this page is cached: a count the data has since changed is never drawn); Every
  * read reports its own failure to the body, which says so with Retry; a count the page could not read is blank, never zero.
  */
 export default async function DashboardRoute() {
@@ -53,8 +50,8 @@ export default async function DashboardRoute() {
   const db = await userClient();
   const [{ profile, failed: profileFailed }, digest, counts, watch, name, themes, coverage] = await Promise.all([
     readWorkspaceProfile(db, orgId),
-    cachedRead(["dashboard-digest", orgId], () => readDigest(db, orgId), { tags: [APP_DATA_TAG], revalidate: REVALIDATE_SECONDS }),
-    cachedRead(["dashboard-counts", orgId], () => readCounts(db, orgId), { tags: [APP_DATA_TAG], revalidate: REVALIDATE_SECONDS }),
+    settle("digest", () => readDigest(db, orgId)),
+    settle("counts", () => readCounts(db, orgId)),
     settle("watchlist", () => readWatchlist(db, { userId: session.userId, orgId }, WATCHLIST_RAIL_LIMIT, now)),
     settle("profile", async () => {
       const { data, error } = await db.from("profiles").select("full_name, display_name").eq("id", session.userId).maybeSingle();
@@ -65,10 +62,10 @@ export default async function DashboardRoute() {
     settle("source coverage", () => readSourceCoverage(db)),
   ]);
 
-  const d = digest.ok ? digest.value : null;
+  const d = digest;
   const dueRows = d ? buildDueNextRows(d.dueNext, now) : [];
   const changedRows = d ? buildChangedRows(d.feed, d.candidates, d.changelogField, now, { jurisdictionWeights: profile.jurisdictions, sectors: profile.verticals }) : [];
-  const totals = counts.ok ? counts.value : null;
+  const totals = counts;
   return (
     <>
       <div className="cl-list-surface-masthead">
@@ -81,7 +78,7 @@ export default async function DashboardRoute() {
         totalChanges={d ? new Set(d.feed.map((f) => f.id)).size : 0}
         windowDays={d?.windowDays ?? 0}
         auditDate={d ? computeAuditDate(d.feed.map((f) => ({ changeDate: f.change_date ?? f.added_date })), d.lastChangelogDate) : ""}
-        rowsFailed={!digest.ok}
+        rowsFailed={!digest}
         ratingsFailed={d?.ratingsFailed ?? false}
         degraded={[
           ...(profileFailed ? ["Your workspace profile did not load, so this brief is ranked without your sectors and jurisdictions."] : []),
