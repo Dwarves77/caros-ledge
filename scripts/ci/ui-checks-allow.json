@@ -128,7 +128,7 @@
         "src/features/obligations/api/register.ts": 1,
         "src/features/research/authority-score.ts": 2,
         "src/features/research/model/assess.ts": 1,
-        "src/features/sources/api/check-sources.ts": 2,
+        "src/features/sources/api/check-sources.ts": 1,
         "src/features/telemetry/api/revalidate.ts": 1,
         "src/features/workspace/api/notes.ts": 2,
         "src/features/workspace/api/overrides.ts": 1,

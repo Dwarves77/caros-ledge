@@ -32,7 +32,7 @@ function pairKeysFor(a: string, b: string, { yearFirst = false } = {}): string[]
 }
 
 /** Instrument identifiers in a CLEAR instrument context, as normalised pair keys: a CELEX token, "Regulation (EU) n/n" prose, and the trailing "2014/95/EU" form. A bare "2024/1610" counts for nothing. */
-export function scanInstrumentIds(text: string | null | undefined): Set<string> {
+function scanInstrumentIds(text: string | null | undefined): Set<string> {
   const s = String(text || "");
   const found = new Set<string>();
   for (const m of s.matchAll(/\b3(\d{4})[RLD](\d{4})\b/g)) for (const k of pairKeysFor(m[1] ?? "", m[2] ?? "", { yearFirst: true })) found.add(k);
@@ -56,7 +56,7 @@ export interface TargetItem {
 const rawIdOf = (item: TargetItem): string => String(item.identifier || item.instrument_identifier || item.canonicalKey || item.canonical_instrument_key || "").trim();
 
 /** The item's OWN instrument pair keys, derived from its identifier fields and never guessed. */
-export function expectedInstrumentIds(item: TargetItem = {}): Set<string> {
+function expectedInstrumentIds(item: TargetItem = {}): Set<string> {
   const keys = new Set<string>();
   const yn = parseYearNumber(item.canonicalKey || item.canonical_instrument_key) || parseYearNumber(item.identifier || item.instrument_identifier);
   if (yn) keys.add(`${yn.year}/${yn.number}`);
@@ -80,13 +80,13 @@ function rawIdentifierPresent(item: TargetItem, text: string): string | null {
 
 const STOP = new Set(["the", "and", "for", "with", "from", "that", "this", "of", "to", "in", "on", "by", "or", "as", "at", "is", "its", "climate", "greenhouse", "gas", "gases", "regulation", "directive", "act", "law"]);
 /** The fraction of the title's significant tokens present in the capture (generic words removed, so it measures the specific subject). */
-export function subjectOverlap(item: TargetItem, text: string): number {
+function subjectOverlap(item: TargetItem, text: string): number {
   const toks = [...new Set((String(item.title || item.subject || "").toLowerCase().match(/[a-z][a-z0-9]{3,}/g) || []).filter((w) => !STOP.has(w)))];
   if (!toks.length) return 0;
   const t = String(text || "").toLowerCase();
   return toks.filter((w) => t.includes(w)).length / toks.length;
 }
-export const SUBJECT_MATCH_THRESHOLD = 0.6;
+const SUBJECT_MATCH_THRESHOLD = 0.6;
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
 export interface MatchVerdict {
@@ -100,7 +100,7 @@ export interface MatchVerdict {
   url?: string | undefined;
 }
 /** The capture-is-this-instrument verdict. It sets no status: the caller holds or grounds on it. Precision over recall: a false hold is the worst outcome. */
-export function verifyTargetMatch(item: TargetItem = {}, captureText = ""): MatchVerdict {
+function verifyTargetMatch(item: TargetItem = {}, captureText = ""): MatchVerdict {
   const text = String(captureText || "");
   const expected = expectedInstrumentIds(item);
   const inText = scanInstrumentIds(text);
@@ -120,11 +120,9 @@ export function verifyTargetMatch(item: TargetItem = {}, captureText = ""): Matc
   if (score >= SUBJECT_MATCH_THRESHOLD) return { verdict: "match", via: "subject-overlap", score: round2(score), expected: [...expected], foundOwn: [], conflicting, reason: `no identifier signal; subject overlap ${round2(score)} >= ${SUBJECT_MATCH_THRESHOLD}` };
   return { verdict: "unverified", via: "subject-overlap-below-threshold", score: round2(score), expected: [...expected], foundOwn: [], conflicting, reason: `no identifier match and subject overlap ${round2(score)} < ${SUBJECT_MATCH_THRESHOLD}: capture not confirmed to be this instrument` };
 }
-/** Both mismatch and unverified hold. */
-export const targetMatchHolds = (verdict: string): boolean => verdict !== "match";
 
 /** True when the URL itself bears the item's own identifier: a CELEX (with or without its corrigendum suffix), a UK series path, or a literal raw identifier. */
-export function identifierInUrl(item: TargetItem = {}, url = ""): boolean {
+function identifierInUrl(item: TargetItem = {}, url = ""): boolean {
   const raw = rawIdOf(item);
   if (!raw || !url) return false;
   const decoded = decodeUriOrNull(url) ?? String(url);

@@ -1,1 +1,1 @@
-export { assessAndUpdateSource, contentFingerprint, isContentChange, runChangeDetection, validateCheckLimit } from "./change-detection";
+export { assessAndUpdateSource, runChangeDetection, validateCheckLimit } from "./change-detection";

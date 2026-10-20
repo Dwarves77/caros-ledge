@@ -6,17 +6,17 @@
 // Ported from old_repo/src/lib/classification/routing.mjs (lines 64-100)
 import { hostOf } from "@/core/shared";
 
-export const KNOWN_FREE_TEXT_JURISDICTIONS = ["EU", "GLOBAL", "IMO", "ICAO"] as const;
-export const SCOPE_TOPICS = ["regulatory", "finance", "technology", "fuel", "labor", "infrastructure", "environmental", "social", "governance", "transport", "packaging", "customs", "conservation", "materials_science"] as const;
+const KNOWN_FREE_TEXT_JURISDICTIONS = ["EU", "GLOBAL", "IMO", "ICAO"] as const;
+const SCOPE_TOPICS = ["regulatory", "finance", "technology", "fuel", "labor", "infrastructure", "environmental", "social", "governance", "transport", "packaging", "customs", "conservation", "materials_science"] as const;
 /** The leg modes of the transport vocabulary (the contracts slice owns the canonical list; `multimodal` is corridor-only and excluded). */
-export const LEG_MODES = ["road", "rail", "ocean", "inland_waterway", "air"] as const;
-export const SCOPE_MODES = [...LEG_MODES, "all", "none"] as const;
-export const SCOPE_VERTICALS = ["fine_art", "live_events", "luxury", "film_tv", "automotive", "humanitarian", "freight_general", "all", "none"] as const;
-export const SURFACES = ["regulations", "market", "operations", "research"] as const;
-export const AXIS5_OUT_OF_SCOPE = "out_of_scope";
-export const AXIS5_CATEGORIES: readonly string[] = [...SURFACES, AXIS5_OUT_OF_SCOPE];
+const LEG_MODES = ["road", "rail", "ocean", "inland_waterway", "air"] as const;
+
+const SCOPE_VERTICALS = ["fine_art", "live_events", "luxury", "film_tv", "automotive", "humanitarian", "freight_general", "all", "none"] as const;
+const SURFACES = ["regulations", "market", "operations", "research"] as const;
+const AXIS5_OUT_OF_SCOPE = "out_of_scope";
+const AXIS5_CATEGORIES: readonly string[] = [...SURFACES, AXIS5_OUT_OF_SCOPE];
 /** The only sources columns the classify-sources job ever writes. */
-export const APPLICABLE_FIELDS = ["jurisdiction_iso", "scope_topics", "scope_modes", "scope_verticals", "expected_output"] as const;
+type ApplicableField = "jurisdiction_iso" | "scope_topics" | "scope_modes" | "scope_verticals" | "expected_output";
 
 /** Shape, not membership: a supranational sentinel, an ISO 3166-1 alpha-2 country code or a 3166-2 subdivision. */
 export const isValidJurisdictionValue = (value: unknown): boolean => {
@@ -37,7 +37,7 @@ const GOV_HOST_JURISDICTION: ReadonlyArray<[RegExp, string]> = [
   [/(^|\.)gob\.mx$/, "MX"], [/(^|\.)gob\.es$/, "ES"], [/(^|\.)gc\.ca$/, "CA"], [/(^|\.)gov\.au$/, "AU"], [/(^|\.)govt\.nz$/, "NZ"], [/(^|\.)go\.jp$/, "JP"],
   [/(^|\.)gov\.sg$/, "SG"], [/(^|\.)gov\.hk$/, "HK"], [/(^|\.)gov\.in$/, "IN"], [/(^|\.)gov\.cn$/, "CN"], [/(^|\.)gov\.za$/, "ZA"], [/(^|\.)gov\.br$/, "BR"], [/(^|\.)gov\.ie$/, "IE"], [/\.gov$/, "US"],
 ];
-export function classifySourceJurisdiction({ url, sourceRole }: { url?: string | null | undefined; sourceRole?: string | null | undefined }): Classified<string> | null {
+function classifySourceJurisdiction({ url, sourceRole }: { url?: string | null | undefined; sourceRole?: string | null | undefined }): Classified<string> | null {
   const host = hostOf(url);
   if (!host) return null;
   if (sourceRole === "intergovernmental_body" || /\.int$/.test(host)) return { value: "GLOBAL", confidence: "high", basis: sourceRole === "intergovernmental_body" ? "source_role=intergovernmental_body" : "host is a .int treaty-organization domain" };
@@ -53,7 +53,7 @@ const MODE_KEYWORDS: Record<string, RegExp[]> = {
   rail: [/\brail\s*(freight|transport)?\b/i, /\brailway/i, /\btrain\b/i],
 };
 const NO_TRANSPORT_ROLES = new Set(["standards_body", "statistical_data_agency"]);
-export function classifyScopeModes({ name, sourceRole }: { name?: string | null | undefined; sourceRole?: string | null | undefined }): Classified<string[]> | null {
+function classifyScopeModes({ name, sourceRole }: { name?: string | null | undefined; sourceRole?: string | null | undefined }): Classified<string[]> | null {
   const n = String(name || "");
   const matched = LEG_MODES.filter((m) => matchAny(n, MODE_KEYWORDS[m] ?? []));
   if (matched.length > 0) return { value: [...matched], confidence: matched.length === 1 ? "high" : "medium", basis: `name matches mode keyword(s) for ${matched.join(", ")}` };
@@ -73,7 +73,7 @@ const VERTICAL_KEYWORDS: Record<string, RegExp[]> = {
 };
 const CROSS_VERTICAL_ROLES = new Set(["standards_body", "intergovernmental_body"]);
 const FREIGHT_GENERAL_ROLES = new Set(["primary_legal_authority", "trade_press", "industry_association", "industry_data_provider", "vendor_corporate", "statistical_data_agency", "government_press"]);
-export function classifyScopeVerticals({ name, sourceRole }: { name?: string | null | undefined; sourceRole?: string | null | undefined }): Classified<string[]> | null {
+function classifyScopeVerticals({ name, sourceRole }: { name?: string | null | undefined; sourceRole?: string | null | undefined }): Classified<string[]> | null {
   const n = String(name || "");
   const matched = SCOPE_VERTICALS.filter((v) => matchAny(n, VERTICAL_KEYWORDS[v] ?? []));
   if (matched.length > 0) return { value: [...matched], confidence: "high", basis: `name matches vertical keyword(s) for ${matched.join(", ")}` };
@@ -108,7 +108,7 @@ export function topicKeywordMatch(topic: string, name: string | null | undefined
   }
   return null;
 }
-export function classifyScopeTopics({ name, sourceRole }: { name?: string | null | undefined; sourceRole?: string | null | undefined }): Classified<string[]> | null {
+function classifyScopeTopics({ name, sourceRole }: { name?: string | null | undefined; sourceRole?: string | null | undefined }): Classified<string[]> | null {
   const matched = new Set<string>(SCOPE_TOPICS.filter((t) => matchAny(String(name || ""), TOPIC_KEYWORDS[t] ?? [])));
   if (sourceRole && REGULATORY_TOPIC_ROLES.has(sourceRole)) matched.add("regulatory");
   if (matched.size === 0) return null;
@@ -128,12 +128,12 @@ const RAW_BY_ROLE: Record<string, Record<string, number> | null> = {
   vendor_corporate: { regulations: 0, research: 0, market: 85, operations: 0, out_of_scope: 10 },
   government_press: null,
 };
-export function normalizeDistribution(raw: Record<string, number> | null | undefined): Record<string, number> {
+function normalizeDistribution(raw: Record<string, number> | null | undefined): Record<string, number> {
   const total = AXIS5_CATEGORIES.reduce((s, c) => s + (raw?.[c] ?? 0), 0);
   return Object.fromEntries(AXIS5_CATEGORIES.map((c) => [c, total > 0 ? (raw?.[c] ?? 0) / total : 0]));
 }
 /** The default Axis-5 distribution for a role, or null for an unknown role and for government_press ("varies": never guessed). */
-export function expectedOutputForRole(role: string | null | undefined): Record<string, number> | null {
+function expectedOutputForRole(role: string | null | undefined): Record<string, number> | null {
   const raw = role ? RAW_BY_ROLE[role] : undefined;
   return raw ? normalizeDistribution(raw) : null;
 }
@@ -186,7 +186,7 @@ export interface AxisSource {
   expected_output?: unknown;
 }
 export interface AxisProposal {
-  field: (typeof APPLICABLE_FIELDS)[number];
+  field: ApplicableField;
   value: unknown;
   confidence: "high" | "medium";
   basis: string;

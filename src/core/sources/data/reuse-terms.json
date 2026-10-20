@@ -1,0 +1,8 @@
+{
+  "_comment": "R2c C6. The rights verdict the class table fixes, per host. Only hosts whose terms page was read are listed (publishers-by-scheme.json carries the page and the date); every other host is `unknown`, never guessed. A span from an unknown or prohibited source is capped at quotation.json's length and carries the registry's attribution.",
+  "rules": [
+    { "pattern": "(^|\\.)europa\\.eu$", "terms": "eu_reuse", "read": "https://eur-lex.europa.eu/content/legal-notice/legal-notice.html (2026-10-19): legal documents reusable under Commission Decision 2011/833/EU" },
+    { "pattern": "(^|\\.)gov\\.uk$", "terms": "open_government", "read": "https://www.legislation.gov.uk/developer/formats and https://www.gov.uk/help/terms-conditions (2026-10-19): Open Government Licence v3.0" },
+    { "pattern": "(^|\\.)(federalregister\\.gov|ecfr\\.gov|govinfo\\.gov|regulations\\.gov)$", "terms": "public_domain", "read": "https://www.govinfo.gov/about/policies#copyright (2026-10-19): 17 U.S.C. 105, no copyright in works of the U.S. Government" }
+  ]
+}

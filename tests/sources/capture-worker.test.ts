@@ -3,7 +3,10 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { drain, isServiceRoleRequest, processRow, type WorkerDeps } from "../../supabase/functions/capture-worker/process.ts";
+import { storeCapture } from "../../src/core/fetch/store-capture.ts";
+import { captureLocale, documentLanguage, isWallStatus } from "../../src/core/fetch/policy.ts";
 import { memoryDb, type Failure } from "../_support/memory-db.ts";
+import { instant, routed } from "../_support/net.ts";
 
 const URL1 = "https://agency.gov/rule";
 const prose = (n: number) => "The regulation requires operators to report greenhouse gas emissions under the scheme each year. ".repeat(n);
@@ -18,8 +21,9 @@ function world(opts: { items?: number; failures?: Failure[]; extra?: Record<stri
   );
 }
 function deps(db: unknown, fetchImpl: typeof fetch, env: Record<string, string> = {}, extra: Partial<WorkerDeps> = {}): WorkerDeps & { calls: number } {
-  const d = { db, env, now: () => Date.parse("2026-10-15T10:00:00Z"), calls: 0, ...extra } as WorkerDeps & { calls: number };
-  d.fetchImpl = (async (...a: Parameters<typeof fetch>) => (d.calls++, fetchImpl(...a))) as typeof fetch;
+  const d = { db, env, now: () => Date.parse("2026-10-15T10:00:00Z"), calls: 0, sleep: instant, ...extra } as WorkerDeps & { calls: number };
+  const net = routed(async (...a) => (d.calls++, fetchImpl(...a)));
+  d.fetchImpl = net.fetch;
   return d;
 }
 const row = (attempt_count = 0) => ({ id: "q-1", source_id: "src-1", status: "queued", attempt_count });
@@ -72,7 +76,7 @@ test("PROP-103: binding the storage ceiling is loud: a declared transform, the r
 test("PROP-103: under the ceiling no flag is filed", async () => {
   const w = world();
   await processRow(deps(w.db, (async () => respond(page(prose(80)))) as typeof fetch), row());
-  assert.equal(w.tables.integrity_flags, undefined);
+  assert.equal((w.tables.integrity_flags ?? []).filter((f) => f.category === "coverage_gap").length, 0);
 });
 test("a PDF is stored as its text layer with the extraction declared", async () => {
   const w = world();
@@ -83,13 +87,17 @@ test("a PDF is stored as its text layer with the extraction declared", async () 
   const errors = w.tables.agent_runs?.[0]?.errors as Array<{ declared_transform: string }>;
   assert.ok(errors.some((t) => t.declared_transform === "pdf-text-extraction"));
 });
-test("PROP-065: an error page is a recorded failure and nothing is stored", async () => {
+test("PROP-065 / INV-R2c-3: an error page is a wall, final for this transport: nothing is stored, the row is left refused for the browser tier, never retried as another identity", async () => {
   const w = world();
-  const rep = await processRow(deps(w.db, (async () => respond(page(`Attention Required! | Cloudflare ${prose(40)}`))) as typeof fetch), row());
-  assert.equal(rep.outcome, "failed");
+  const net: string[] = [];
+  const d = deps(w.db, (async (_u: string, init: RequestInit) => (net.push(new Headers(init.headers).get("user-agent") ?? ""), respond(page(`Attention Required! | Cloudflare ${prose(40)}`)))) as never);
+  const rep = await processRow(d, row());
+  assert.equal(rep.outcome, "refused");
   assert.equal(w.tables.agent_run_searches, undefined);
-  assert.equal(w.tables.pending_first_fetch?.[0]?.status, "error");
-  assert.equal(w.tables.agent_runs?.[0]?.status, "error");
+  assert.equal(w.tables.pending_first_fetch?.[0]?.status, "refused");
+  assert.equal(w.tables.sources?.[0]?.collection_state, "refused");
+  assert.equal(d.calls, 1, "one request: no retry");
+  assert.deepEqual(net, ["CarosLedge/1.0 (+https://carosledge.com/bot)"]);
 });
 test("a permanent non-200 fails at once; a transient 503 requeues", async () => {
   const gone = world();
@@ -132,13 +140,80 @@ test("an idempotency read error requeues and never inserts", async () => {
   assert.equal(w.wrote("agent_runs", "insert").length, 0);
   assert.equal(w.wrote("agent_run_searches", "insert").length, 0);
 });
-test("a second capture of the same final URL is skipped as a duplicate and the queue row closes", async () => {
-  const w = world({ extra: { agent_run_searches: [{ id: "cap-0", result_url: URL1, search_query: "capture-worker:first-fetch" }] } });
-  const rep = await processRow(deps(w.db, (async () => respond(page(prose(80)))) as typeof fetch), row());
-  assert.equal(rep.outcome, "duplicate_skipped");
-  assert.equal(rep.capture_id, "cap-0");
-  assert.equal(w.wrote("agent_runs", "insert").length, 0);
-  assert.equal(w.tables.pending_first_fetch?.[0]?.status, "done");
+test("INV-R2c-7: a requeued refresh with an unchanged body reports unchanged and writes no capture; with a changed body it captures a new row and closes the stale flag", async () => {
+  const body = page(prose(80));
+  const first = world();
+  assert.equal((await processRow(deps(first.db, (async () => respond(body)) as typeof fetch), row())).outcome, "captured");
+  const hash = first.tables.agent_run_searches?.[0]?.content_hash as string;
+  assert.match(hash, /^[0-9a-f]{64}$/);
+  const again = world({ extra: { agent_run_searches: [{ id: "cap-0", result_url: URL1, search_query: "capture-worker:first-fetch", content_hash: hash }], integrity_flags: [{ id: "f1", subject_type: "item", subject_ref: "item-0", created_by: "stale_snapshot_content_changed", status: "open" }] } });
+  const same = await processRow(deps(again.db, (async () => respond(body)) as typeof fetch), row());
+  assert.equal(same.outcome, "unchanged");
+  assert.equal(same.capture_id, "cap-0");
+  assert.equal(again.wrote("agent_runs", "insert").length, 0);
+  assert.equal(again.tables.pending_first_fetch?.[0]?.status, "done");
+  assert.equal(again.tables.integrity_flags?.[0]?.status, "open", "an unchanged body does not close the stale flag");
+  const changed = world({ extra: { agent_run_searches: [{ id: "cap-0", result_url: URL1, search_query: "capture-worker:first-fetch", content_hash: hash }], integrity_flags: [{ id: "f1", subject_type: "item", subject_ref: "item-0", created_by: "stale_snapshot_content_changed", status: "open" }] } });
+  const fresh = await processRow(deps(changed.db, (async () => respond(page(prose(80) + " An amendment adds Article 9."))) as typeof fetch), row());
+  assert.equal(fresh.outcome, "captured");
+  assert.equal(changed.wrote("agent_run_searches", "insert").length, 1);
+  assert.equal(changed.tables.integrity_flags?.[0]?.status, "resolved", "a fresh body closes the stale flag");
+});
+test("INV-R2c-6: a paywalled row is refused at capture before any request", async () => {
+  const w = world({ extra: { sources: [{ id: "src-1", url: URL1, name: "Agency Rule", paywalled: true }] } });
+  const d = deps(w.db, (async () => respond(page(prose(80)))) as typeof fetch);
+  const rep = await processRow(d, row());
+  assert.equal(rep.outcome, "failed");
+  assert.match(rep.detail ?? "", /paywalled/);
+  assert.equal(d.calls, 0);
+  assert.equal(w.tables.agent_run_searches, undefined);
+});
+test("INV-R2c-2: a planted robots Disallow stops the GET, records the rule on the source and leaves the row refused", async () => {
+  const w = world();
+  const net = routed(async () => respond(page(prose(80))), { "agency.gov": { status: 200, body: "User-agent: *\nDisallow: /rule\n" } });
+  const d = { ...deps(w.db, (async () => respond("never")) as typeof fetch), fetchImpl: net.fetch };
+  const rep = await processRow(d, row());
+  assert.equal(rep.outcome, "refused");
+  assert.equal(net.calls.length, 0, "the page was never requested");
+  assert.equal(w.tables.sources?.[0]?.collection_state, "robots_disallowed");
+  assert.match(JSON.stringify(w.tables.sources?.[0]?.collection_detail), /Disallow: \/rule/);
+  assert.equal(w.tables.pending_first_fetch?.[0]?.status, "refused");
+});
+test("a robots.txt that cannot be read defers the row (requeued, source deferred); it is never read as allowed or denied", async () => {
+  const w = world();
+  const net = routed(async () => respond(page(prose(80))), { "agency.gov": { status: 503 } });
+  const rep = await processRow({ ...deps(w.db, (async () => respond("never")) as typeof fetch), fetchImpl: net.fetch }, row());
+  assert.equal(rep.outcome, "deferred");
+  assert.equal(net.calls.length, 0);
+  assert.equal(w.tables.pending_first_fetch?.[0]?.status, "queued");
+  assert.equal(w.tables.sources?.[0]?.collection_state, "deferred");
+});
+test("a host that refuses the declared identity robots.txt itself (403) is left refused for the browser tier to re-read; a robots.txt that fails with a 5xx is deferred", async () => {
+  const w = world();
+  const net = routed(async () => respond(page(prose(80))), { "agency.gov": { status: 403 } });
+  const rep = await processRow({ ...deps(w.db, (async () => respond("never")) as typeof fetch), fetchImpl: net.fetch }, row());
+  assert.equal(rep.outcome, "refused");
+  assert.equal(net.calls.length, 0);
+  assert.equal(w.tables.pending_first_fetch?.[0]?.status, "refused");
+  assert.equal(w.tables.sources?.[0]?.collection_state, "refused");
+});
+test("INV-R2c-4: a refused page with a registered feed is read from the feed and the attempt record names both channels", async () => {
+  const w = world({ extra: { sources: [{ id: "src-1", url: URL1, name: "Agency Rule", rss_feed_url: "https://agency.gov/feed.xml", access_method: "scrape" }] } });
+  const feed = `<?xml version="1.0"?><rss><channel>${Array.from({ length: 12 }, (_, i) => `<item><title>Rule update ${i}</title><link>https://agency.gov/rule/${i}</link><description>${prose(2)}</description></item>`).join("")}</channel></rss>`;
+  const net = routed(async (url) => (url.endsWith("/feed.xml") ? respond(feed, { type: "application/rss+xml" }) : respond("denied", { status: 403 })));
+  const rep = await processRow({ ...deps(w.db, (async () => respond("never")) as typeof fetch), fetchImpl: net.fetch }, row());
+  assert.equal(rep.outcome, "captured");
+  assert.equal(rep.channel, "feed");
+  assert.deepEqual(rep.attempts.map((a) => `${a.channel}:${a.status}`), ["direct:403", "feed:200"]);
+  assert.equal(w.tables.agent_run_searches?.[0]?.capture_channel, "feed");
+  assert.equal(w.tables.sources?.[0]?.collection_state, "served");
+});
+test("INV-R2c-1: no request, robots.txt included, carries a user agent other than the declared one", async () => {
+  const w = world();
+  const net = routed(async () => respond(page(prose(80))));
+  await processRow({ ...deps(w.db, (async () => respond("never")) as typeof fetch), fetchImpl: net.fetch }, row());
+  assert.ok(net.agents.length >= 2);
+  assert.deepEqual([...new Set(net.agents)], ["CarosLedge/1.0 (+https://carosledge.com/bot)"]);
 });
 test("a failed capture insert marks the run errored and requeues, so a flag never points at a missing row", async () => {
   const w = world({ failures: [{ table: "agent_run_searches", op: "insert", message: "disk" }] });
@@ -180,4 +255,38 @@ test("INV-138: only a service-role bearer reaches the worker", () => {
   assert.equal(isServiceRoleRequest(null, "svc-key"), false);
   assert.equal(isServiceRoleRequest("Bearer ", ""), false, "an unset key admits no one");
   assert.equal(isServiceRoleRequest("Bearer anon-key", undefined), false);
+});
+
+test("number_locale: the publisher's declared locale, else the document's lang attribute, else Content-Language, else null (never a guess)", async () => {
+  const stored = async (src: Record<string, unknown>, html: string, headers: Record<string, string> = {}) => {
+    const w = world({ extra: { sources: [{ id: "src-1", url: URL1, name: "Agency Rule", ...src }] } });
+    const rep = await processRow(deps(w.db, (async () => new Response(html, { headers: { "content-type": "text/html", ...headers } })) as typeof fetch), row());
+    assert.equal(rep.outcome, "captured");
+    return w.tables.agent_run_searches?.[0]?.number_locale;
+  };
+  const body = page(prose(80));
+  assert.equal(await stored({ publisher_locale: "en-GB" }, body.replace("<html>", '<html lang="de">')), "en-GB", "the registry's declared locale wins");
+  assert.equal(await stored({}, body.replace("<html>", '<html lang="de-at">')), "de-AT");
+  assert.equal(await stored({}, body, { "content-language": "fr-FR, en" }), "fr-FR");
+  assert.equal(await stored({}, body), null, "a document that declares nothing is null, not a guess");
+  assert.equal(documentLanguage("nonsense language", '<html lang="english">'), null);
+  assert.equal(captureLocale("en_gb", null), "en-GB");
+  assert.equal(captureLocale("not a locale", "pt-br"), "pt-BR");
+});
+test("a wall status is 401, 403 or 429 and nothing else", () => {
+  for (const s of [401, 403, 429]) assert.equal(isWallStatus(s), true, String(s));
+  for (const s of [200, 202, 404, 410, 500, 503, null, undefined]) assert.equal(isWallStatus(s), false, String(s));
+});
+test("storeCapture: the same final URL and hash is unchanged, a different body captures, and the channel and locale are recorded", async () => {
+  const w = world();
+  const clock = () => Date.parse("2026-10-15T10:00:00Z");
+  const one = { sourceId: "src-1", sourceUrl: URL1, sourceName: "Agency Rule", finalUrl: URL1, text: page(prose(50)), title: "The Rule", httpStatus: 200, channel: "browser" as const, numberLocale: "fr-FR", itemId: null, itemIds: [] as string[], declaredTransforms: [], ceilingBind: null, ceiling: 1_000_000 };
+  const first = await storeCapture(w.db as never, one, clock, clock());
+  assert.equal(first.outcome, "captured");
+  const row0 = w.tables.agent_run_searches?.[0];
+  assert.deepEqual([row0?.capture_channel, row0?.number_locale, row0?.content_hash], ["browser", "fr-FR", first.contentHash]);
+  assert.equal((await storeCapture(w.db as never, one, clock, clock())).outcome, "unchanged");
+  assert.equal(w.tables.agent_run_searches?.length, 1);
+  assert.equal((await storeCapture(w.db as never, { ...one, text: page(prose(51)) }, clock, clock())).outcome, "captured");
+  assert.equal(w.tables.agent_run_searches?.length, 2);
 });

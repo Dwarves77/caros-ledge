@@ -7,7 +7,6 @@
 // Ported from old_repo/src/lib/trust.ts (lines 1266-1606)
 // Ported from old_repo/src/lib/sources/tier-override-guard.mjs (lines 1-36)
 import type { Db } from "@/core/db";
-import { fetchAllRows } from "@/core/db";
 import { getScrapeState } from "@/core/fetch/hold";
 
 import movement from "./data/tier-movement.json";
@@ -24,7 +23,7 @@ const DAYS_PER_MONTH = 30.44;
 const clampTier = (n: number): SourceTier => Math.max(1, Math.min(7, n)) as SourceTier;
 
 /** The multiplier in [0, 1] for a citation's age: 1 now, 0.5 at one half-life, 0.25 at two. Applies to the citation network only, never to base_tier. */
-export function applyRecencyDecay(detectedAt: Date, now: number, halfLifeMonths: number = CFG.halfLifeMonths): number {
+function applyRecencyDecay(detectedAt: Date, now: number, halfLifeMonths: number = CFG.halfLifeMonths): number {
   return Math.pow(0.5, (now - detectedAt.getTime()) / (MS_PER_DAY * DAYS_PER_MONTH) / halfLifeMonths);
 }
 
@@ -34,7 +33,7 @@ export interface CitationEdgeRow {
   detected_at: string;
 }
 /** The tier-weighted, decayed citation sum into one source and the promotion verdict (T7 weighs 0; a citer not found is skipped). */
-export function scoreCitationEdges(rows: CitationEdgeRow[], tierById: Map<string, number>, now: number, halfLifeMonths: number = CFG.halfLifeMonths) {
+function scoreCitationEdges(rows: CitationEdgeRow[], tierById: Map<string, number>, now: number, halfLifeMonths: number = CFG.halfLifeMonths) {
   let weighted_sum = 0;
   for (const row of rows) {
     const tier = tierById.get(row.citing_source_id);
@@ -73,7 +72,7 @@ export interface DemotionEvaluation {
 const daysSince = (iso: string, now: Date): number => Math.floor((now.getTime() - new Date(iso).getTime()) / MS_PER_DAY);
 
 /** Promotion eligibility against the structural base_tier (promotion never reads the dynamic signal, so there is no feedback loop). T1 cannot be promoted. */
-export function evaluatePromotion(s: Evaluable, now: Date): PromotionEvaluation | null {
+function evaluatePromotion(s: Evaluable, now: Date): PromotionEvaluation | null {
   if (s.base_tier === 1) return null;
   const c = PROMOTION.find((x) => x.from_tier === s.base_tier);
   if (!c) return null;
@@ -103,7 +102,7 @@ export function evaluatePromotion(s: Evaluable, now: Date): PromotionEvaluation 
 }
 
 /** Demotion: ANY single trigger fires it. `suppress` holds triggers aside (the cadence hold, rule 16) so they are counted as held and contribute nothing. */
-export function evaluateDemotion(s: Evaluable, now: Date, opts: { suppress?: readonly string[] } = {}): DemotionEvaluation {
+function evaluateDemotion(s: Evaluable, now: Date, opts: { suppress?: readonly string[] } = {}): DemotionEvaluation {
   const m = s.trust_metrics;
   const fired: DemotionEvaluation["triggers_fired"] = [];
   const held: string[] = [];
@@ -152,7 +151,7 @@ export interface OpinionMovement {
   reason: string;
 }
 /** The one-step movement the tier opinions argue for: 3 or more non-dismissed opinions in the window from at least 2 distinct opiners, class-table opinions excluded. */
-export function opinionMovement(baseTier: number, opinions: TierOpinionRow[], now: Date): OpinionMovement {
+function opinionMovement(baseTier: number, opinions: TierOpinionRow[], now: Date): OpinionMovement {
   const since = now.getTime() - CFG.opinionWindowDays * MS_PER_DAY;
   const counted = opinions.filter((o) => o.dismissed_at == null && !movement.nonEvidenceOpinionSources.includes(o.opinion_source ?? "") && new Date(o.opined_at).getTime() >= since && o.opined_tier >= 1 && o.opined_tier <= 7);
   const distinct = new Set(counted.map((o) => o.opining_source_id).filter((id): id is string => !!id)).size;
@@ -177,7 +176,7 @@ export interface OutcomeMovement extends OutcomeTally {
   reason: string;
 }
 /** The one-step movement a source's scored prediction outcomes argue for (ADR-044): refuted over held moves toward demotion; held with no refuted, toward promotion. */
-export function outcomeMovement(tally: OutcomeTally | null | undefined): OutcomeMovement {
+function outcomeMovement(tally: OutcomeTally | null | undefined): OutcomeMovement {
   const held = tally?.held ?? 0;
   const refuted = tally?.refuted ?? 0;
   const partial = tally?.partial ?? 0;
@@ -193,7 +192,7 @@ export interface OutcomeRow {
   outcome: string;
   scored_at: string;
 }
-export function tallyOutcomes(rows: OutcomeRow[], now: Date): Map<string, OutcomeTally> {
+function tallyOutcomes(rows: OutcomeRow[], now: Date): Map<string, OutcomeTally> {
   const since = now.getTime() - CFG.outcomeWindowDays * MS_PER_DAY;
   const out = new Map<string, OutcomeTally>();
   for (const r of rows) {
@@ -232,7 +231,7 @@ export interface TierMovementDecision {
 }
 
 /** THE effective_tier calculator. tier_override wins; else clamp(base_tier + clamp(sum of evidence deltas, -1, +1)). An override reports itself but `changed` is false: an automatic writer never writes over it. */
-export function decideEffectiveTier(input: { base_tier: SourceTier; effective_tier: SourceTier | null; tier_override: SourceTier | null; evidence: TierEvidence }): TierMovementDecision {
+function decideEffectiveTier(input: { base_tier: SourceTier; effective_tier: SourceTier | null; tier_override: SourceTier | null; evidence: TierEvidence }): TierMovementDecision {
   const { base_tier, effective_tier, tier_override, evidence } = input;
   const before_tier = effective_tier ?? base_tier;
   const deltas = { citation: evidence.citation_promote ? -1 : 0, promotion: evidence.promotion?.eligible ? -1 : 0, demotion: evidence.demotion?.triggered ? 1 : 0, opinion: evidence.opinion.delta as number, outcome: (evidence.outcome?.delta ?? 0) as number };
@@ -261,12 +260,12 @@ export function decideEffectiveTier(input: { base_tier: SourceTier; effective_ti
 }
 
 /** The Evaluable view of a sources row, with the prior-blended overall score. */
-export function evaluableFromRow(s: TierSourceRow): Evaluable {
+function evaluableFromRow(s: TierSourceRow): Evaluable {
   const metrics = trustMetricsFromRow(s);
   return { base_tier: s.base_tier as SourceTier, status: s.status ?? undefined, created_at: s.created_at, last_substantive_change: s.last_substantive_change, update_frequency: s.update_frequency ?? "ad-hoc", trust_metrics: metrics, trust_overall: computeOverallScore(metrics, s.base_tier) };
 }
 /** Promotion and demotion over one sources row. While the scrape cadence is off the no_substantive_update trigger is held: scan timestamps cannot advance, so it would fire on every unscanned source (rule 16). */
-export function evaluateTierEvidenceForRow(s: TierSourceRow, now: Date, opts: { scrapeCadence?: string | null } = {}) {
+function evaluateTierEvidenceForRow(s: TierSourceRow, now: Date, opts: { scrapeCadence?: string | null } = {}) {
   const e = evaluableFromRow(s);
   return { promotion: evaluatePromotion(e, now), demotion: evaluateDemotion(e, now, { suppress: opts.scrapeCadence === "off" ? movement.cadenceHeldTriggers : [] }) };
 }
@@ -276,15 +275,6 @@ export interface TierMovementReaders {
   readOpinions(sinceIso: string): Promise<TierOpinionRow[]>;
   readCitations(): Promise<CitationEdgeRow[]>;
   readOutcomes?(sinceIso: string): Promise<OutcomeRow[]>;
-}
-/** The readers over the database: every list a whole-table read through fetchAllRows with a total order, so a failed page throws and nothing reads as empty. */
-export function tierMovementReaders(db: Db): Required<TierMovementReaders> {
-  return {
-    readSources: () => fetchAllRows<TierSourceRow>((from, to) => db.from("sources").select(TIER_SOURCE_COLUMNS).order("id", { ascending: true }).range(from, to) as never, { cap: 100_000 }),
-    readOpinions: (sinceIso) => fetchAllRows<TierOpinionRow>((from, to) => db.from("source_tier_opinions").select("target_source_id, opined_tier, opining_source_id, opined_at, dismissed_at, opinion_source").is("dismissed_at", null).gte("opined_at", sinceIso).order("id", { ascending: true }).range(from, to) as never, { cap: 500_000 }),
-    readCitations: () => fetchAllRows<CitationEdgeRow>((from, to) => db.from("source_citations").select("citing_source_id, cited_source_id, detected_at").order("id", { ascending: true }).range(from, to) as never, { cap: 1_000_000 }),
-    readOutcomes: (sinceIso) => fetchAllRows<OutcomeRow>((from, to) => db.from("source_reliability_ledger").select("source_id, outcome, scored_at").gte("scored_at", sinceIso).order("id", { ascending: true }).range(from, to) as never, { cap: 1_000_000 }),
-  };
 }
 
 export interface TierMovementPlan {
@@ -296,57 +286,6 @@ export interface TierMovementPlan {
   outcome_driven_movements: number;
   /** The error text when the outcome read failed: the run continues without outcome evidence and says so. */
   outcome_read_error: string | null;
-}
-/** Decides every source and returns the ones that move. Reads through the injected readers; writes nothing. */
-export async function planTierMovements(readers: TierMovementReaders, opts: { now: Date; scrapeCadence?: string | null; halfLifeMonths?: number }): Promise<TierMovementPlan> {
-  const { now } = opts;
-  const halfLife = opts.halfLifeMonths ?? CFG.halfLifeMonths;
-  const sources = await readers.readSources();
-  const [opinions, citations] = await Promise.all([readers.readOpinions(new Date(now.getTime() - CFG.opinionWindowDays * MS_PER_DAY).toISOString()), readers.readCitations()]);
-  let tallies = new Map<string, OutcomeTally>();
-  let outcome_read_error: string | null = null;
-  if (readers.readOutcomes) {
-    try {
-      tallies = tallyOutcomes(await readers.readOutcomes(new Date(now.getTime() - CFG.outcomeWindowDays * MS_PER_DAY).toISOString()), now);
-    } catch (e) {
-      outcome_read_error = e instanceof Error ? e.message : String(e);
-    }
-  }
-  const group = <T, K extends string>(rows: T[], key: (r: T) => K | undefined) => rows.reduce((m, r) => {
-    const k = key(r);
-    if (k) m.set(k, [...(m.get(k) ?? []), r]);
-    return m;
-  }, new Map<K, T[]>());
-  const opinionsByTarget = group(opinions, (o) => o.target_source_id);
-  const citationsByCited = group(citations, (c) => c.cited_source_id);
-  const tierById = new Map(sources.map((s) => [s.id, s.effective_tier ?? s.base_tier]));
-  const plan: TierMovementPlan = { scanned: sources.length, override_held: 0, held_cadence_off: 0, skipped: [], movements: [], outcome_driven_movements: 0, outcome_read_error };
-  for (const row of sources) {
-    if (row.processing_paused === true) {
-      plan.skipped.push({ source_id: row.id, reason: "processing_paused" });
-      continue;
-    }
-    if (row.base_tier < 1 || row.base_tier > 7) {
-      plan.skipped.push({ source_id: row.id, reason: `out-of-range base_tier=${row.base_tier}` });
-      continue;
-    }
-    const edges = citationsByCited.get(row.id) ?? [];
-    const cited = edges.length === 0 ? { should_promote: false, reasoning: "no citations" } : scoreCitationEdges(edges, tierById, now.getTime(), halfLife);
-    const { promotion, demotion } = evaluateTierEvidenceForRow(row, now, { scrapeCadence: opts.scrapeCadence ?? null });
-    if (demotion.held_triggers?.length) plan.held_cadence_off += 1;
-    const decision = decideEffectiveTier({
-      base_tier: row.base_tier as SourceTier,
-      effective_tier: row.effective_tier == null ? null : (row.effective_tier as SourceTier),
-      tier_override: row.tier_override == null ? null : (row.tier_override as SourceTier),
-      evidence: { citation_promote: cited.should_promote, citation_reasoning: cited.reasoning, promotion, demotion, opinion: opinionMovement(row.base_tier, opinionsByTarget.get(row.id) ?? [], now), outcome: readers.readOutcomes && !outcome_read_error ? outcomeMovement(tallies.get(row.id)) : undefined },
-    });
-    if (decision.override_held) plan.override_held += 1;
-    if (decision.changed) {
-      plan.movements.push({ source_id: row.id, name: row.name ?? null, decision });
-      if (decision.outcome_driven) plan.outcome_driven_movements += 1;
-    }
-  }
-  return plan;
 }
 
 /**

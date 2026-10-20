@@ -4,17 +4,18 @@ import { allRows } from "@/core/db";
 import { fetchPrimaryWithFallback, generateCandidates } from "@/core/fetch/candidates";
 import { fetchDirect, type FetchDeps } from "@/core/fetch/direct";
 import { assertFetchAllowed } from "@/core/fetch/hold";
-import { PRIMARY_HEADERS } from "@/core/fetch/policy";
+import { honestFetch } from "@/core/fetch/honest";
+import { DECLARED_HEADERS } from "@/core/fetch/policy";
 import { hostOf } from "@/core/shared";
 import { classTierForHost } from "@/core/sources/host-class";
 import { officialnessOf } from "@/core/sources/officialness";
 import { outcomeOf, type RunDeps, type RunResult } from "@/core/sources/run-result";
 
-export const DEFAULT_TIME_BUDGET_MIN = 20;
-export const MAX_CONCURRENCY = 4;
-export const DEFAULT_CONCURRENCY = 4;
+const DEFAULT_TIME_BUDGET_MIN = 20;
+const MAX_CONCURRENCY = 4;
+const DEFAULT_CONCURRENCY = 4;
 /** Per-host politeness: never under one second between hits on the same host. */
-export const DEFAULT_HOST_INTERVAL_MS = 1000;
+const DEFAULT_HOST_INTERVAL_MS = 1000;
 const DEFAULT_PER_FETCH_MS = 20_000;
 const MAX_SOURCES = 5000;
 
@@ -38,7 +39,7 @@ export interface TriageInput {
 }
 
 /** Per-host politeness: waitTurn resolves only once the minimum interval has passed since the last resolved turn for that host. */
-export function createHostThrottle({ minIntervalMs = DEFAULT_HOST_INTERVAL_MS, now, sleep }: { minIntervalMs?: number; now: () => number; sleep: (ms: number) => Promise<void> }) {
+function createHostThrottle({ minIntervalMs = DEFAULT_HOST_INTERVAL_MS, now, sleep }: { minIntervalMs?: number; now: () => number; sleep: (ms: number) => Promise<void> }) {
   const lastHitAt = new Map<string, number>();
   return async (host: string): Promise<void> => {
     const elapsed = now() - (lastHitAt.get(host) ?? -Infinity);
@@ -69,7 +70,7 @@ export async function runBounded<T, R>(items: T[], worker: (item: T) => Promise<
   return results;
 }
 /** An alternative qualifies at the source's floor iff its host classifies to a KNOWN tier (never a guess) at least as authoritative as the floor. */
-export const qualifiesAtFloor = (hostTier: number | null, floorTier: number | null): boolean => hostTier != null && (floorTier == null || hostTier <= floorTier);
+const qualifiesAtFloor = (hostTier: number | null, floorTier: number | null): boolean => hostTier != null && (floorTier == null || hostTier <= floorTier);
 
 export type TriageOutcome = "recovered" | "alternative_found" | "still_inaccessible";
 export interface Dossier {
@@ -83,7 +84,7 @@ export interface Dossier {
   evidence: Record<string, unknown>;
 }
 /** sources.fetch_status for a dossier, inside the column's CHECK: recovered is ok; a roadblock carries its reason; no determinate reason leaves it unchanged. */
-export function fetchStatusForDossier(d: Pick<Dossier, "outcome" | "probe">): "ok" | "cdn_block" | "soft_404" | "blocked" | null {
+function fetchStatusForDossier(d: Pick<Dossier, "outcome" | "probe">): "ok" | "cdn_block" | "soft_404" | "blocked" | null {
   if (d.outcome === "recovered") return "ok";
   const reason = (d.probe?.primary?.reason as string | undefined) ?? null;
   if (!reason || reason === "ok") return null;
@@ -91,7 +92,7 @@ export function fetchStatusForDossier(d: Pick<Dossier, "outcome" | "probe">): "o
 }
 
 /** The ladder over one suspended source: a HEAD probe, the declared primary, a bounded alternative search, then same-floor qualification. Never promotes on content alone. */
-export async function triageOneSource(source: SuspendedSource, deps: TriageDeps & { throttle: (host: string) => Promise<void>; perFetchMs: number }): Promise<Dossier> {
+async function triageOneSource(source: SuspendedSource, deps: TriageDeps & { throttle: (host: string) => Promise<void>; perFetchMs: number }): Promise<Dossier> {
   const { throttle, perFetchMs } = deps;
   const url = source.url;
   const probeLog = new Map<string, { status: number; finalUrl?: string }>();
@@ -105,7 +106,7 @@ export async function triageOneSource(source: SuspendedSource, deps: TriageDeps 
   await assertFetchAllowed(url, deps.caller, deps);
   let head: Dossier["probe"]["head"];
   try {
-    const r = await (deps.fetchImpl ?? fetch)(url, { method: "HEAD", headers: PRIMARY_HEADERS, redirect: "follow", signal: AbortSignal.timeout(perFetchMs) });
+    const r = await honestFetch(deps)(url, { method: "HEAD", headers: DECLARED_HEADERS, redirect: "follow", signal: AbortSignal.timeout(perFetchMs) });
     head = { status: r.status, finalUrl: r.url || url };
   } catch (e) {
     head = { status: null, finalUrl: url, err: (e as Error).message };
@@ -135,7 +136,7 @@ export async function triageOneSource(source: SuspendedSource, deps: TriageDeps 
 }
 
 /** Write fetch_status for the dossiers with a determinate status, one guarded group at a time; every write reads its error. */
-export async function applyFetchStatus(db: Db, dossiers: Dossier[], stampIso: string): Promise<{ updated: number; errors: string[] }> {
+async function applyFetchStatus(db: Db, dossiers: Dossier[], stampIso: string): Promise<{ updated: number; errors: string[] }> {
   const groups = new Map<string, string[]>();
   for (const d of dossiers) {
     const status = fetchStatusForDossier(d);

@@ -31,7 +31,7 @@ export function discoveredFeedLinks(html: string, base: string): string[] {
   return out;
 }
 /** Common feed paths a site may serve without declaring a `<link rel="alternate">`. */
-export const FEED_CANDIDATE_PATHS = ["/feed", "/rss", "/rss.xml", "/atom.xml", "/feed.xml", "/index.xml"] as const;
+const FEED_CANDIDATE_PATHS = ["/feed", "/rss", "/rss.xml", "/atom.xml", "/feed.xml", "/index.xml"] as const;
 /** The ordered feed-candidate URLs for a source: path-scoped first (when registered under a path, not the bare origin), then bare-origin; deduped. */
 export function feedCandidateUrls(sourceUrl: string, scopePath = ""): string[] {
   const origin = new URL(sourceUrl).origin;
@@ -45,7 +45,7 @@ export interface FeedEntry {
   published: string | null;
 }
 /** RSS 2.0 `<item>` and Atom `<entry>` blocks as rows. https links only; an entry without a resolvable link is dropped. */
-export function parseFeedEntries(xml: string): FeedEntry[] {
+function parseFeedEntries(xml: string): FeedEntry[] {
   const out: FeedEntry[] = [];
   for (const b of String(xml ?? "").match(/<(?:item|entry)[\s>][\s\S]*?<\/(?:item|entry)>/gi) ?? []) {
     let link = inner(b, "link");

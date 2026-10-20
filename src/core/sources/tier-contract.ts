@@ -18,7 +18,7 @@ export const TIER_LABELS: Readonly<Record<number, string>> = Object.freeze(Objec
 export const HOST_CLASS_TIER: Readonly<Record<string, number>> = Object.freeze({ ...tierContract.classTier });
 export const TIER_WEIGHTS: Readonly<Record<number, number>> = Object.freeze(Object.fromEntries(Object.entries(tierContract.citationWeights).map(([k, v]) => [Number(k), v])));
 
-export const SOURCE_TIER_MIN = Math.min(...tierContract.tiers.map((t) => t.tier));
+const SOURCE_TIER_MIN = Math.min(...tierContract.tiers.map((t) => t.tier));
 export const SOURCE_TIER_MAX = Math.max(...tierContract.tiers.map((t) => t.tier));
 
 /** True when `cls` is a class the table carries (own-property check, so "toString" is never a class). */
