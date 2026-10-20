@@ -9,7 +9,6 @@ import { createElement } from "react";
 import { headlineCaption } from "@/features/market/lib/headline";
 import { leadTimeCanHaveRows } from "@/features/market/lib/lead-time";
 import { readMarketSeries } from "@/features/market/read";
-import { CarbonCostOverlay } from "@/features/market/ui/CarbonCostOverlay";
 import { LeadTimeChart } from "@/features/market/ui/LeadTimeChart";
 import { MarketRail } from "@/features/market/ui/Rails";
 import { bandOf, BAND_LABEL } from "@/features/market/lib/signal-band";
@@ -48,15 +47,11 @@ test("surfaces:19 one severity vocabulary: a label for each of the thirteen stor
 
 // ---- the sections and counts ----
 const draw = (el: ReturnType<typeof createElement>) => textOf(renderApp(el));
-const gapOnly = { label: "Shanghai → Rotterdam", corridor: { origin: "CNSHA", dest: "NLRTM", mode: "sea" }, entityId: "e1", jurisdictions: [], result: { ok: false as const, gaps: ["no corridor routing distance available yet"], partial: { intensity: null, distance: null, payload: null, carbonPrice: null } } };
 
-test("surfaces:14 the carbon-cost section and its rail card are not drawn while every corridor can only list gaps; the gap sentences (licence wording) reach no customer", () => {
-  assert.equal(draw(createElement(CarbonCostOverlay, { overlays: [gapOnly] as never })), "");
-  const rail = draw(createElement(MarketRail, { carbon: [{ label: "CNSHA-NLRTM", fullLabel: "Shanghai → Rotterdam", missing: 3, point: null, currency: null }], drops: [], board: null }));
+test("surfaces:14 no carbon-cost section or rail card is drawn while no licence-clear distance, payload or carbon-price input exists: the feature is not in the tree, so no gap sentence (licence wording) can reach a customer", () => {
+  const rail = draw(createElement(MarketRail, { drops: [], board: null }));
   assert.doesNotMatch(rail, /Carbon cost per FEU|input.* missing|licence/i);
-  const withFigure = draw(createElement(MarketRail, { carbon: [{ label: "CNSHA-NLRTM", fullLabel: "Shanghai → Rotterdam", missing: 0, point: 96, currency: "EUR" }], drops: [], board: null }));
-  assert.match(withFigure, /Carbon cost per FEU/);
-  assert.match(withFigure, /EUR 96/);
+  for (const f of ["src/features/market/ui/MarketView.tsx", "src/features/market/ui/Rails.tsx", "src/features/market/ui/MarketSignalDetail.tsx"]) assert.doesNotMatch(readFileSync(f, "utf8"), /Carbon cost per FEU|CarbonCostOverlay/, f);
 });
 
 test("surfaces:15 the lead-time section is drawn only when rows exist or the producer that writes them is implemented; the SBTi producer is registered as not implemented", () => {

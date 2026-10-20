@@ -15,7 +15,7 @@ import type { Resource } from "@/core/types";
 import { readCategory, readSurfaceCounts, type WorkspaceAggregates } from "@/features/lists";
 
 import { addDaysIso } from "./producers/published-price-statistics";
-import { buildCarbonCostOverlays, candidatesFromCorridorEntities, type CarbonOverlayEntry, type CorridorCandidate, type FactorRow } from "./lib/carbon";
+import type { FactorRow } from "./lib/carbon";
 import type { LeadTimeRow } from "./lib/lead-time";
 import { prefixOf, producerFor } from "./lib/registry";
 import { buildSeriesBoard, type SeriesBoard, type SeriesDisplayRow, type SeriesRow } from "./lib/series-board";
@@ -190,7 +190,8 @@ async function readPanels(db: Db, orgId: string | null): Promise<MarketPanels> {
 export interface MarketRead {
   signals: Section<{ rows: Resource[]; aggregates: WorkspaceAggregates | null }>;
   series: Section<MarketSeries>;
-  corridors: Section<CarbonOverlayEntry[]>;
+  /** The names of the corridors that parse, for the panels that cite one. */
+  corridors: Section<Array<{ entityId: string; label: string }>>;
   panels: MarketPanels;
 }
 /** The whole /market page, every part concurrent and independent. `edgeDb` (the service client, when configured) lets the series part check lineage. */
@@ -202,7 +203,7 @@ export async function readMarket(db: Db, o: { orgId?: string | null; edgeDb?: Db
       return { rows: list.resources, aggregates };
     }),
     section("series", () => readMarketSeries(db, { edgeDb: o.edgeDb ?? null })),
-    section("corridors", async () => buildCarbonCostOverlays(await corridorScopes(db), await readModalFactors(db))),
+    section("corridors", async () => (await corridorScopes(db)).filter((c) => c.parsed !== null).map((c) => ({ entityId: c.entityId, label: c.label }))),
     readPanels(db, o.orgId ?? null),
   ]);
   return { signals, series, corridors, panels };
@@ -240,7 +241,7 @@ export interface MarketDetailBundle {
   convergence: Section<{ independent_citers: number; confirmation_count: number } | null>;
   priceBoard: Section<PriceStat[]>;
   seriesFigure: Section<SeriesFigure | null>;
-  carbon: Section<{ factors: FactorRow[]; ratings: Record<string, SourceRating>; corridorCandidates: CorridorCandidate[] }>;
+  carbon: Section<{ factors: FactorRow[]; ratings: Record<string, SourceRating> }>;
 }
 
 /** The series ratified onto an item (the table the ratification writes), or null. */
@@ -286,8 +287,7 @@ export async function readMarketDetail(db: Db, item: { id: string; sourceId?: st
       ? Promise.resolve<MarketDetailBundle["carbon"]>({ ok: false, error: "not read: this signal draws no carbon block" })
       : section("carbon factors", async () => {
       const factors = await readModalFactors(db);
-      const [ratings, corridors] = await Promise.all([readSourceRatings(db, factors.map((f) => f.source_key)), panel<{ entity_id: string; canonical_name: string }>(db.from("entities").select("entity_id, canonical_name").eq("kind", "corridor").eq("status", "active").limit(500) as never, "entities")]);
-      return { factors, ratings, corridorCandidates: candidatesFromCorridorEntities(corridors).candidates };
+      return { factors, ratings: await readSourceRatings(db, factors.map((f) => f.source_key)) };
     }),
   ]);
   return { convergence, priceBoard, seriesFigure, carbon };

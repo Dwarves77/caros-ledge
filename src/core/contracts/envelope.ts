@@ -5,11 +5,7 @@ import { DERIVATION, ORIGIN_CLASS, OBS_STATUS, REFRESH_PERIOD_DAYS, isMissing } 
 
 export { DERIVATION };
 
-/** Derivation classes are DATA (data/vocabularies.json). `contractable` marks classes a customer may put in a contract or filing. */
-export const DERIVATIONS: readonly string[] = Object.keys(DERIVATION);
 export const isContractable = (derivation: string): boolean => DERIVATION[derivation]?.contractable === true;
-/** Only a statutory class may be presented as what the law requires, and only it may carry a penalty figure. */
-export const isStatutory = (derivation: string): boolean => DERIVATION[derivation]?.statutory === true;
 
 export interface AsOf {
   event_date: string;

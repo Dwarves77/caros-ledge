@@ -5,13 +5,12 @@ import { formatDate } from "@/core/shared";
 import { DerivedFigure } from "@/ui/figures";
 import { DetailSubSection } from "@/ui/ItemGroup";
 
-import { buildCarbonCostPerFeuView, buildCarbonOverlayView, intensityFigure, selectFactor } from "../lib/carbon";
+import { buildCarbonOverlayView, intensityFigure, selectFactor } from "../lib/carbon";
 import { deriveSeriesFreshness } from "../lib/freshness";
 import { envelopeFromPriceStat, envelopeFromSeriesRow, ratingText } from "../lib/provenance";
 import { prefixOf, producerFor } from "../lib/registry";
 import type { MarketDetailBundle } from "../read";
 
-import { CarbonCostOverlay } from "./CarbonCostOverlay";
 import { ProvenanceDrawer } from "./Provenance";
 import { RetryNote } from "./RetryNote";
 import { FreshnessBadge } from "./SeriesFreshness";
@@ -69,7 +68,7 @@ export interface CarbonItem {
   modes: readonly string[];
 }
 
-/** The carbon blocks of a corridor signal: the national modal default with its rating, and the per-FEU figure or its named gaps. */
+/** The carbon block of a corridor signal: the national modal default with its rating. (A per-FEU cost waits for a licence-clear distance, payload and carbon-price input; none exists, so none is drawn.) */
 export function CarbonFindings({ bundle, item, nowIso }: MarketBlockProps & { item: CarbonItem }) {
   const { carbon } = bundle;
   if (!carbon.ok) return <RetryNote what="Carbon intensity" />;
@@ -78,18 +77,12 @@ export function CarbonFindings({ bundle, item, nowIso }: MarketBlockProps & { it
   const sel = selectFactor(carbon.data.factors, { mode, jurisdictionIso: item.jurisdictionIso });
   const figure = sel.state === "resolved" ? intensityFigure(sel.factor, nowIso) : null;
   const rating = sel.state === "resolved" && sel.factor.source_key ? (carbon.data.ratings[sel.factor.source_key] ?? null) : null;
-  const perFeu = buildCarbonCostPerFeuView({ jurisdictionIso: item.jurisdictionIso, modes: item.modes, factors: carbon.data.factors, corridorCandidates: carbon.data.corridorCandidates });
   return (
     <>
       <DetailSubSection title={overlay.header} subtitle="National modal default">
         <p className={styles.muted}>{overlay.body}</p>
         {figure ? <DerivedFigure figure={figure} label="Emission intensity" now={new Date(nowIso)} rating={ratingText(rating?.tier)} /> : null}
       </DetailSubSection>
-      {perFeu?.result ? (
-        <CarbonCostOverlay overlays={[{ label: perFeu.label ?? "", corridor: perFeu.result.corridor, entityId: "detail", jurisdictions: [], result: perFeu.result }]} />
-      ) : perFeu?.body ? (
-        <p className={styles.muted}>{perFeu.body}</p>
-      ) : null}
     </>
   );
 }

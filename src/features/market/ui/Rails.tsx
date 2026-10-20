@@ -2,35 +2,19 @@
 // Ported from old_repo/src/components/market/MarketIntelLedger.tsx (lines 329-353)
 // The market rail, in artboard 04's order after the Filters card the list surface draws first: Carbon cost per FEU (only while a corridor has a figure), Next data drops, Legend, then Sources tracked (an app card the artboard does not draw, kept after the last designed card).
 // Each card is a read of the same board the page already holds: no second request, no second computation.
-import { formatDate, formatNumber } from "@/core/shared";
+import { formatDate } from "@/core/shared";
 import { RailCard } from "@/ui";
 import { LegendRailCard } from "@/ui/list-surface";
 
-import type { CarbonRailRow, NextDrop } from "../lib/rail-select";
+import type { NextDrop } from "../lib/rail-select";
 import type { SeriesBoard } from "../lib/series-board";
 
 import { RetryNote } from "./RetryNote";
 import styles from "./market.module.css";
 
-export function MarketRail({ carbon, drops, board }: { carbon: CarbonRailRow[] | null; drops: NextDrop[] | null; board: SeriesBoard | null }) {
+export function MarketRail({ drops, board }: { drops: NextDrop[] | null; board: SeriesBoard | null }) {
   return (
     <>
-      {carbon !== null && !carbon.some((c) => c.point !== null) ? null : (
-      <RailCard title="Carbon cost per FEU" dataAudit="carbon-rail">
-        {carbon === null ? (
-          <RetryNote what="Corridor costs" />
-        ) : (
-          <div className={styles.railRows}>
-            {carbon.map((c) => (
-              <div key={c.fullLabel} className={styles.railRow} title={c.fullLabel}>
-                <span className={styles.railName}>{c.label}</span>
-                <span className={styles.railValue}>{c.point !== null ? `${c.currency ?? ""} ${formatNumber(c.point, { maximumFractionDigits: 0 })}`.trim() : null}</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </RailCard>
-      )}
       <RailCard title="Next data drops" dataAudit="next-drops-rail">
         {drops === null ? (
           <RetryNote what="Data drop dates" />

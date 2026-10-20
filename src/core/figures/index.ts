@@ -1,1 +1,1 @@
-export { formatFigure, formatRange, sensitivityBand } from "./format";
+export { formatFigure } from "./format";

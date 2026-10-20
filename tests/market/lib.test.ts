@@ -1,15 +1,15 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { formatFigure, formatRange } from "@/core/figures";
+import { formatFigure } from "@/core/figures";
 import { loadProducerRegistry } from "@/core/producers";
-import { buildCarbonCostPerFeuView, buildCarbonOverlayView, carbonCostPerFeu, carbonIntensity, selectFactor, type FactorRow } from "@/features/market/lib/carbon";
+import { buildCarbonOverlayView, carbonIntensity, selectFactor, type FactorRow } from "@/features/market/lib/carbon";
 import { computeSeriesDeltas } from "@/features/market/lib/deltas";
 import { boardFreshnessSummary, deriveSeriesFreshness } from "@/features/market/lib/freshness";
 import { selectHeadlineSeries } from "@/features/market/lib/headline";
 import { headlineCardView } from "@/features/market/lib/headline-view";
 import { buildLeadTimePosition } from "@/features/market/lib/lead-time";
-import { selectNextDataDrops, summariseCarbonCorridors } from "@/features/market/lib/rail-select";
+import { selectNextDataDrops } from "@/features/market/lib/rail-select";
 import { PRODUCERS, producerFor } from "@/features/market/lib/registry";
 import { deltaCellModel, sparklineModel } from "@/features/market/lib/ribbon-model";
 import { buildSeriesBoard, type SeriesRow } from "@/features/market/lib/series-board";
@@ -29,15 +29,6 @@ test("formatFigure: currency symbol, redundant unit prefix stripped, a missing v
     assert.equal(f.text, "—");
     assert.ok(f.emptyReason);
   }
-});
-
-test("formatRange names a missing bound and flags bounds out of order instead of re-sorting them", () => {
-  assert.equal(formatRange(10, 12, 15, null, "EUR"), "€10 – €12 – €15");
-  assert.equal(formatRange(null, 12, 15, null, "EUR"), "€12 – €15 (low not stated)");
-  assert.equal(formatRange(10, null, null, "t", null), "10 t (point and high not stated)");
-  assert.equal(formatRange(null, null, null, null, null), "no figure stated");
-  assert.match(formatRange(15, 12, 10, null, "EUR"), /bounds out of order/);
-  assert.equal(formatRange(1200, 1500, 1800, null, "USD"), "$1,200 – $1,500 – $1,800");
 });
 
 test("INV-252 computeSeriesDeltas: the four cases, and a missing window is never 0", () => {
@@ -199,54 +190,12 @@ test("INV-255 selectFactor: two jurisdictions, GLOBAL, two modes without a mode,
   assert.equal(selectFactor([ROAD, RAIL], {}).state, "no_factor");
 });
 
-test("INV-255 the corridor a signal means: two corridors in one country set are ambiguous, a different mode is no identity, no direction is invented", () => {
-  const c = (entityId: string, origin: string, dest: string, mode: string) => ({ entityId, origin, dest, mode });
-  const cands = [c("a", "CNSHA", "NLRTM", "ocean"), c("b", "USLAX", "NLRTM", "ocean")];
-  const view = (jurisdictionIso: string[], modes: string[], corridorCandidates = cands) => buildCarbonCostPerFeuView({ jurisdictionIso, modes, factors: [], corridorCandidates });
-  const one = view(["NL", "CN"], ["ocean"]);
-  assert.ok(one?.state === "resolved" && one.result?.corridor.origin === "CNSHA" && one.result.corridor.dest === "NLRTM" && one.result.corridor.mode === "ocean");
-  assert.equal(view(["cn", "nl"], ["road"]), null);
-  assert.equal(view(["CN", "NL"], ["ocean", "road"]), null);
-  assert.equal(view(["CN"], ["ocean"]), null);
-  const two = view(["CN", "NL"], ["ocean"], [...cands, c("c", "CNNGB", "NLRTM", "ocean")]);
-  assert.deepEqual([two?.state, two?.result, two?.label], ["ambiguous", null, null]);
-});
-
-test("INV-254 carbonCostPerFeu: an unprovenanced number throws, each gap is named, a range only with every input, classification by derivation", () => {
-  const corridor = { origin: "CNSHA", dest: "NLRTM", mode: "ocean" };
-  assert.throws(() => carbonCostPerFeu({ corridor, factor: ROAD, distance: { value: 1000, derivation: "observed", basis: "" } }), /basis/);
-  assert.throws(() => carbonCostPerFeu({ corridor, distance: { value: 1000, derivation: "invented", basis: "x" } }), /derivation/);
-  assert.throws(() => carbonCostPerFeu({ corridor, distance: { value: Number.NaN, derivation: "observed", basis: "x" } }), /finite/);
-  const none = carbonCostPerFeu({ corridor });
-  assert.equal(none.ok ? 0 : none.gaps.length, 4, "no factor, no distance, no payload, no carbon price: each gap named");
-  assert.ok(!/market_series|ttw_co2e|eex-eua/.test(JSON.stringify(none.ok ? [] : none.gaps)), "no gap sentence names a table, a column or a producer");
-  const partial = carbonCostPerFeu({ corridor, factor: ROAD, distance: { value: 1000, derivation: "observed", basis: "d" } });
-  assert.ok(!partial.ok && partial.gaps.length === 2 && partial.partial.intensity?.valueGPerUnit === 100 && partial.partial.distance?.value === 1000);
-  const price = { value: 80, currency: "EUR", sourceKey: "carrier", asOf: null, derivation: "observed", basis: "notice" };
-  const input = { corridor, factor: ROAD, distance: { value: 1000, derivation: "observed", basis: "d" }, payload: { value: 10, derivation: "observed", basis: "p" }, carbonPrice: price };
-  const ok = carbonCostPerFeu(input);
-  assert.ok(ok.ok);
-  if (ok.ok) {
-    // 100 g/tkm = 0.1 kg/tkm; x 10 t x 1000 km = 1000 kg = 1 t; x 80 = 80
-    assert.deepEqual([ok.low, ok.point, ok.high, ok.classification], [80, 80, 80, "derived"], "every input contractable: no invented band");
-  }
-  const est = carbonCostPerFeu({ ...input, payload: { value: 10, derivation: "estimated", basis: "p" } });
-  assert.ok(est.ok && est.classification === "estimate" && Math.abs(est.low - 72) < 1e-9 && Math.abs(est.high - 88) < 1e-9, "only the non-contractable input varies by the 10 percent convention");
-  const stat = carbonCostPerFeu({ ...input, factor: { ...ROAD, derivation: "statutory_fixed" }, distance: { ...input.distance, derivation: "statutory_fixed" }, payload: { ...input.payload, derivation: "statutory_fixed" }, carbonPrice: { ...price, derivation: "statutory_fixed" } });
-  assert.ok(stat.ok && stat.classification === "statutory");
-});
-
-test("the detail carbon blocks: three honest states, a figure only from a real selection, null when the signal has no corridor identity", () => {
+test("the detail carbon block: three honest states, and a figure only from a real selection", () => {
   assert.equal(buildCarbonOverlayView({ jurisdictionIso: ["US"], factors: [ROAD], mode: "road" }).figure?.value, 0.1);
   const amb = buildCarbonOverlayView({ jurisdictionIso: ["US", "CA"], factors: [ROAD] });
   assert.deepEqual([amb.state, amb.figure], ["ambiguous", null]);
   const none = buildCarbonOverlayView({ jurisdictionIso: ["DE"], factors: [ROAD] });
   assert.ok(none.state === "no_factor" && !/yet|today|pending/i.test(none.body), "no state claim about coverage today");
-  assert.equal(buildCarbonCostPerFeuView({ jurisdictionIso: ["CN"], modes: ["ocean"], factors: [], corridorCandidates: [] }), null);
-  const v = buildCarbonCostPerFeuView({ jurisdictionIso: ["CN", "NL"], modes: ["ocean"], factors: [ROAD], corridorCandidates: [{ entityId: "a", origin: "CNSHA", dest: "NLRTM", mode: "ocean" }] });
-  assert.ok(v?.state === "resolved" && v.label === "Shanghai (CN) → Rotterdam (NL), ocean" && v.result && !v.result.ok);
-  const rail = summariseCarbonCorridors([{ label: "Shanghai (CN) → Rotterdam (NL), ocean", corridor: { origin: "CNSHA", dest: "NLRTM", mode: "ocean" }, result: v?.result as never }, { label: "b", result: v?.result as never }, { label: "c", result: v?.result as never }]);
-  assert.deepEqual(rail.map((r) => [r.label, r.missing]), [["Shanghai – Rotterdam · ocean", 4], ["b", 4]]);
 });
 
 test("INV-256 derivePromotionState: Fact only on a fact-citable origin, two citers promote to corroborated at most, an unknown code is the weakest signal", () => {

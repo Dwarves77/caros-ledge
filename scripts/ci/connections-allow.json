@@ -27,9 +27,6 @@
       "effectiveAnonymous",
       "idWithheld"
     ],
-    "src/features/market/lib/carbon.ts": [
-      "carbonCostPerFeu"
-    ],
     "src/features/market/producers/eea-hdv-roadmaps.ts": [
       "aggregateHdvCsv",
       "classifyGroup",

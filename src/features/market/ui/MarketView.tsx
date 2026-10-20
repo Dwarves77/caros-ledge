@@ -9,10 +9,9 @@ import { DenominatorLine } from "@/features/coverage";
 import { NoticesRail } from "@/ui/figures";
 import { ThemeStrip, type ThemeChip } from "@/ui/list-surface";
 
-import { selectNextDataDrops, summariseCarbonCorridors } from "../lib/rail-select";
+import { selectNextDataDrops } from "../lib/rail-select";
 import type { MarketRead } from "../read";
 
-import { CarbonCostOverlay } from "./CarbonCostOverlay";
 import { HeadlineSeries } from "./HeadlineSeries";
 import { LeadTimeChart } from "./LeadTimeChart";
 import { MarketLedger } from "./MarketLedger";
@@ -45,7 +44,7 @@ export function MarketView({ read, nowIso, coverage, chips }: MarketViewProps) {
           nowIso={nowIso}
           seriesCount={board ? board.totalObservedSeries : null}
           headline={board && series.ok ? <HeadlineSeries board={board} ratings={series.data.ratings} nowIso={nowIso} /> : <RetryNote what="The headline series" />}
-          rail={<MarketRail carbon={corridors.ok ? summariseCarbonCorridors(corridors.data) : null} drops={board ? selectNextDataDrops(board, { now: new Date(nowIso) }) : null} board={board} />}
+          rail={<MarketRail drops={board ? selectNextDataDrops(board, { now: new Date(nowIso) }) : null} board={board} />}
           belowRows={
             <>
               {chips === null ? <RetryNote what="The theme strip" /> : <ThemeStrip chips={chips} />}
@@ -54,7 +53,7 @@ export function MarketView({ read, nowIso, coverage, chips }: MarketViewProps) {
           }
         />
       </Suspense>
-      {corridors.ok ? <CarbonCostOverlay overlays={corridors.data} /> : <div className={styles.band}><RetryNote what="Carbon cost per FEU" /></div>}
+      {!corridors.ok && <div className={styles.band}><RetryNote what="Corridor names" /></div>}
       {series.ok ? <LeadTimeChart rows={series.data.leadTime} /> : <div className={styles.band}><RetryNote what="The lead-time position" /></div>}
       <Suspense fallback={null}>
         <PolicyTimeline />

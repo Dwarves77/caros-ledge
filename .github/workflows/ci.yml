@@ -41,7 +41,7 @@ on:
         description: 'Baseline recapture (job baseline): route names, comma separated, or all'
         default: all
       only:
-        description: 'Run one job on a dispatch: baseline (the old-site recapture), turn, live (the live checks and the deployed-preview parity), screens (full-page screenshots of every route at a live_url), migrate (apply the pending migrations to production), edge-deploy (deploy capture-worker), or empty for everything but baseline, live, screens, migrate and edge-deploy'
+        description: 'Run one job on a dispatch: baseline (the old-site recapture), turn, live (the live checks and the deployed-preview parity), screens (full-page screenshots of every route at a live_url), migrate (apply the pending migrations to production), edge-deploy (deploy capture-worker), or empty for everything but baseline, live, screens, migrate and edge-deploy; migrate applies the pending migrations of the ref the dispatch is on, so the DDL of a slice branch can reach production ahead of its code'
         default: ''
       chain:
         description: 'Run the stage downstream stages too (false runs only the named stage)'
@@ -443,10 +443,10 @@ jobs:
 
   # The only way a migration reaches production. The database is the record of what it carries (public.migration_log, migration 0078): the pending files (scripts/ci/apply-plan.mjs order, HOLD rows left out, minus the files the log
   # holds; with no log yet, only 0078) are applied in order with SUPABASE_DB_URL, each file must print its own OK notice, a file's log row is written in its own transaction before its COMMIT, and the first failure stops the run. It commits
-  # nothing and writes nothing to the repository. It holds that one secret, runs on a push to main or a dispatch with only=migrate on main, never on a pull request and never in a fork, and one run at a time.
+  # nothing and writes nothing to the repository. It holds that one secret, runs on a push to main or on a dispatch with only=migrate on ANY ref (standing rule 3: the DDL goes before the code, so a coordinator dispatch on a slice branch applies that branch's pending migrations ahead of its code), never on a pull request, never on a push to a branch and never in a fork, and one run at a time. A dispatch needs write access to the repository; the run's log names the ref.
   migrate:
     name: migrate
-    if: github.event.repository.fork == false && github.ref == 'refs/heads/main' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.only == 'migrate'))
+    if: github.event.repository.fork == false && ((github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'workflow_dispatch' && github.event.inputs.only == 'migrate'))
     runs-on: ubuntu-latest
     timeout-minutes: 30
     concurrency:

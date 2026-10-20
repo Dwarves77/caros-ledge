@@ -101,7 +101,93 @@
     "Text only, not matching waivers. Retired 2026-10-19 (P2-15p) when the baseline became the new production site: the differences against the old site no longer exist, so their waivers are gone; the look decisions stay recorded here.",
     "ux-laws.md law 2 (binding, DP-2): every control is at least 44 px. Artboard 16 draws 36 px auth fields (DESIGN CHANGES OWED 1); the artboard-01 privacy nav card rows are 44 px (pitch 46) where the artboard draws about 42 (OWED 10); the nav cap draws no band split while counts are unknown (rule 2 / INV-263, OWED 11). Structure still gates.",
     "facet-row-desktop (operator 2026-10-18, on Claude Design's recommendation, WCAG 2.5.8): law 2 exception for the desktop Filters card only; facet rows keep a 24 px target on a 32 px pitch (24 px with 8 px clear) on desktop and 44 px on the phone (DESIGN CHANGES OWED 2).",
-    "Retired with the same change: the single-main landmark (ASSEMBLY H.1, the shell supplies the one main), SEC-5 assignee names, tie-order and row-height waivers, and the settings, profile, market, research and map look waivers; each was a difference from the old site only."
+    "Retired with the same change: the single-main landmark (ASSEMBLY H.1, the shell supplies the one main), SEC-5 assignee names, tie-order and row-height waivers, and the settings, profile, market, research and map look waivers; each was a difference from the old site only.",
+    "R2d (2026-10-20): the approved entries named r2d-* record three look/behaviour decisions the system ruled (rule 20): no jurisdiction is an em dash, the item type is words, and the market detail's Related corpus scan is removed. The neutral band for an unknown priority needs no entry: the compare reads no band colour and the tile counts compare as numbers (no unknown-priority row exists in the baseline account). Nothing else is waived."
   ],
-  "approved": []
+  "approved": [
+    {
+      "id": "r2d-jurisdiction-none-regulations",
+      "route": "regulations",
+      "kind": "row",
+      "match": "^div:GLOBAL",
+      "ruling": "Rule 20 (system drives design), register core:88: a row that names no jurisdiction shows an em dash, not \"GLOBAL\" (that asserted a scope nothing stated). Covers only a baseline row whose key starts with GLOBAL. Retire this entry when the baseline is recaptured from production after the R2d merge (as the r2e-privacy-generated waiver was)."
+    },
+    {
+      "id": "r2d-jurisdiction-none-market",
+      "route": "market",
+      "kind": "row",
+      "match": "^div:GLOBAL",
+      "ruling": "Rule 20 (system drives design), register core:88: a row that names no jurisdiction shows an em dash, not \"GLOBAL\" (that asserted a scope nothing stated). Covers only a baseline row whose key starts with GLOBAL. Retire this entry when the baseline is recaptured from production after the R2d merge (as the r2e-privacy-generated waiver was)."
+    },
+    {
+      "id": "r2d-jurisdiction-none-research",
+      "route": "research",
+      "kind": "row",
+      "match": "^div:GLOBAL",
+      "ruling": "Rule 20 (system drives design), register core:88: a row that names no jurisdiction shows an em dash, not \"GLOBAL\" (that asserted a scope nothing stated). Covers only a baseline row whose key starts with GLOBAL. Retire this entry when the baseline is recaptured from production after the R2d merge (as the r2e-privacy-generated waiver was)."
+    },
+    {
+      "id": "r2d-jurisdiction-none-operations",
+      "route": "operations",
+      "kind": "row",
+      "match": "^div:GLOBAL",
+      "ruling": "Rule 20 (system drives design), register core:88: a row that names no jurisdiction shows an em dash, not \"GLOBAL\" (that asserted a scope nothing stated). Covers only a baseline row whose key starts with GLOBAL. Retire this entry when the baseline is recaptured from production after the R2d merge (as the r2e-privacy-generated waiver was)."
+    },
+    {
+      "id": "r2d-jurisdiction-none-search-emissions",
+      "route": "search-emissions",
+      "kind": "row",
+      "match": "^div:GLOBAL",
+      "ruling": "Rule 20 (system drives design), register core:88: a row that names no jurisdiction shows an em dash, not \"GLOBAL\" (that asserted a scope nothing stated). Covers only a baseline row whose key starts with GLOBAL. Retire this entry when the baseline is recaptured from production after the R2d merge (as the r2e-privacy-generated waiver was)."
+    },
+    {
+      "id": "r2d-type-words-regulations",
+      "route": "regulations",
+      "kind": "row",
+      "match": "(regulation|directive|standard|guidance|technology|market_signal|regional_data|research_finding|innovation|framework|tool|initiative)( ·|needs more data)",
+      "ruling": "Rule 20, register I16 / INV-R2d-4 (customer strings): the item type is drawn in words (\"Market signal\", \"Regional data\"), never as the stored code (\"market_signal\"). Covers only a baseline row whose key carries one of the twelve stored item types followed by the meta separator. Retire this entry when the baseline is recaptured from production after the R2d merge (as the r2e-privacy-generated waiver was)."
+    },
+    {
+      "id": "r2d-type-words-market",
+      "route": "market",
+      "kind": "row",
+      "match": "(regulation|directive|standard|guidance|technology|market_signal|regional_data|research_finding|innovation|framework|tool|initiative)( ·|needs more data)",
+      "ruling": "Rule 20, register I16 / INV-R2d-4 (customer strings): the item type is drawn in words (\"Market signal\", \"Regional data\"), never as the stored code (\"market_signal\"). Covers only a baseline row whose key carries one of the twelve stored item types followed by the meta separator. Retire this entry when the baseline is recaptured from production after the R2d merge (as the r2e-privacy-generated waiver was)."
+    },
+    {
+      "id": "r2d-type-words-research",
+      "route": "research",
+      "kind": "row",
+      "match": "(regulation|directive|standard|guidance|technology|market_signal|regional_data|research_finding|innovation|framework|tool|initiative)( ·|needs more data)",
+      "ruling": "Rule 20, register I16 / INV-R2d-4 (customer strings): the item type is drawn in words (\"Market signal\", \"Regional data\"), never as the stored code (\"market_signal\"). Covers only a baseline row whose key carries one of the twelve stored item types followed by the meta separator. Retire this entry when the baseline is recaptured from production after the R2d merge (as the r2e-privacy-generated waiver was)."
+    },
+    {
+      "id": "r2d-type-words-operations",
+      "route": "operations",
+      "kind": "row",
+      "match": "(regulation|directive|standard|guidance|technology|market_signal|regional_data|research_finding|innovation|framework|tool|initiative)( ·|needs more data)",
+      "ruling": "Rule 20, register I16 / INV-R2d-4 (customer strings): the item type is drawn in words (\"Market signal\", \"Regional data\"), never as the stored code (\"market_signal\"). Covers only a baseline row whose key carries one of the twelve stored item types followed by the meta separator. Retire this entry when the baseline is recaptured from production after the R2d merge (as the r2e-privacy-generated waiver was)."
+    },
+    {
+      "id": "r2d-type-words-search-emissions",
+      "route": "search-emissions",
+      "kind": "row",
+      "match": "(regulation|directive|standard|guidance|technology|market_signal|regional_data|research_finding|innovation|framework|tool|initiative)( ·|needs more data)",
+      "ruling": "Rule 20, register I16 / INV-R2d-4 (customer strings): the item type is drawn in words (\"Market signal\", \"Regional data\"), never as the stored code (\"market_signal\"). Covers only a baseline row whose key carries one of the twelve stored item types followed by the meta separator. Retire this entry when the baseline is recaptured from production after the R2d merge (as the r2e-privacy-generated waiver was)."
+    },
+    {
+      "id": "r2d-related-links-market-detail",
+      "route": "market-detail",
+      "kind": "control",
+      "match": "^link:.+(Action required|Cost alert|Window closing|Competitive edge|Monitoring|Critical|High|Moderate|Low|Immediate|Watch|Reference|Background)$",
+      "ruling": "Rule 20, register surfaces:28 and I13: the market detail's Related section no longer scans the whole market corpus for signals of the same band; the Connected intelligence section (the flywheel's connections) is the only cross-page link set. Covers only a baseline link whose name ends in a severity word (the removed Related links). Retire this entry when the baseline is recaptured from production after the R2d merge (as the r2e-privacy-generated waiver was)."
+    },
+    {
+      "id": "r2d-related-heading-market-detail",
+      "route": "market-detail",
+      "kind": "heading",
+      "match": "^2:Related$",
+      "ruling": "Same ruling as r2d-related-links-market-detail: a signal with no flywheel connection has no Related section. Retire this entry when the baseline is recaptured from production after the R2d merge (as the r2e-privacy-generated waiver was)."
+    }
+  ]
 }
