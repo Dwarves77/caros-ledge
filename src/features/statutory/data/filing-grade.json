@@ -1,4 +1,40 @@
 {
-  "targetYears": [2025],
-  "reason": "Only the 2025 limit (Article 4(2)) was read in a full browser against EUR-Lex CELEX:32023R1805. The 2030-2050 rows were confirmed by text extraction (the constants file says so) and are one rung below filing grade until a browser re-read; a row for those years refuses at the filing gate."
+ "_generated": "Derived by deriveInstrument from filing-grade-inputs.json and data/captures/*.txt (tests/statutory/regenerate.mjs writes it). Never edited by hand: the drift guard in tests/statutory/filing-grade.test.ts fails when this file differs from the derivation.",
+ "instruments": {
+  "fueleu-maritime-annex-iv": {
+   "years": [],
+   "refusals": [
+    {
+     "year": 2025,
+     "reason": "no_capture_id",
+     "detail": "the quote names no stored capture: a quote nobody checked against a capture is not accepted"
+    },
+    {
+     "year": 2030,
+     "reason": "no_capture_id",
+     "detail": "the quote names no stored capture: a quote nobody checked against a capture is not accepted"
+    },
+    {
+     "year": 2035,
+     "reason": "no_capture_id",
+     "detail": "the quote names no stored capture: a quote nobody checked against a capture is not accepted"
+    },
+    {
+     "year": 2040,
+     "reason": "no_capture_id",
+     "detail": "the quote names no stored capture: a quote nobody checked against a capture is not accepted"
+    },
+    {
+     "year": 2045,
+     "reason": "no_capture_id",
+     "detail": "the quote names no stored capture: a quote nobody checked against a capture is not accepted"
+    },
+    {
+     "year": 2050,
+     "reason": "no_capture_id",
+     "detail": "the quote names no stored capture: a quote nobody checked against a capture is not accepted"
+    }
+   ]
+  }
+ }
 }

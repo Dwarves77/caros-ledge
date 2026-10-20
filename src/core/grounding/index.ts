@@ -1,6 +1,6 @@
 export { crossItemAuditGate, hasValidWaiver, hostTierViolationCount, readAllSources, readOpenDataAuditBlock, scoreItemClaims } from "./audit-gate";
 export type { AuditResult, ResolvedSource, ResolveSource } from "./audit-gate";
-export { citedHostGate, partitionCitedByHost } from "./cited-hosts";
+export { citedHostGate } from "./cited-hosts";
 export { GROUND_CONFIG } from "./config";
 export type { TruncEvent } from "./config";
 export { openFlagOnce } from "./flags";

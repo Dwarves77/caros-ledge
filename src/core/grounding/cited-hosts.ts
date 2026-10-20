@@ -17,7 +17,7 @@ const CITED_URL = /https?:\/\/[^\s)\]}"'<>]+/g;
 export interface CitedGateResult { stubbed: number; novel: Map<string, string>; notes: string[] }
 
 /** Partition cited URLs by whether their host (or institution) is known. */
-export function partitionCitedByHost<T extends { host: string; institution: string | null }>(cited: T[], knownHosts: Set<string>, knownInstitutions: Set<string>): { allowed: T[]; novel: T[] } {
+function partitionCitedByHost<T extends { host: string; institution: string | null }>(cited: T[], knownHosts: Set<string>, knownInstitutions: Set<string>): { allowed: T[]; novel: T[] } {
   const allowed: T[] = [];
   const novel: T[] = [];
   for (const c of cited) {

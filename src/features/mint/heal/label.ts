@@ -14,10 +14,10 @@ import { locateSpan, type HealClaim } from "./ground";
 const LABEL_RE = analysisLabelRe("per the workspace's reading");
 const FACT_MARKER = /^\*{0,2}FACT:\*{0,2}\s*/i;
 const SLOT_MARKER = /^\[([a-z0-9_]+)\]\s/i;
-export const DEFAULT_LABEL = "*Analytical inference:* ";
+const DEFAULT_LABEL = "*Analytical inference:* ";
 export interface Sec { id: string; section_key?: string; content_md: string | null }
 
-export const slotKeyOf = (claimText: string): string | null => SLOT_MARKER.exec(claimText)?.[1] ?? null;
+const slotKeyOf = (claimText: string): string | null => SLOT_MARKER.exec(claimText)?.[1] ?? null;
 
 function paragraphs(text: string): { parts: string[]; seps: string[] } {
   const parts: string[] = [];

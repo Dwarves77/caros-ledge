@@ -1,0 +1,6 @@
+{
+ "_purpose": "The evidence a filing-grade year rests on, one row per instrument: the STORED capture (agent_run_searches id) of the instrument's text and the day it was verified. data/filing-grade.json is derived from these rows and the exported capture texts (data/captures/<capture_id>.txt) and is never edited by hand; tests/statutory/filing-grade.test.ts regenerates it and fails on any difference. A null capture_id means no capture of the instrument is stored yet, so no year is filing grade.",
+ "instruments": [
+  { "id": "fueleu-maritime-annex-iv", "capture_id": null, "verified_at": null }
+ ]
+}

@@ -1,0 +1,7 @@
+{
+ "_purpose": "Every place in src that writes the claim table other than through the ledger module (src/core/grounding/ledger.ts, whose only door to the table is the ledger_* database functions). A new entry needs the register row that owes its removal.",
+ "writers": {
+  "src/core/grounding/ground.ts": "writes mint_hold_reason alone (the S-CONFLATE hold); never an attribution column. Checked by the test below.",
+  "src/features/intake/write-item.ts": "the mint's first insert of a record item's claims: pool rows first, then claims, in the mint saga; owed to R3b's one mint_record_item function (register D:42). Its claims stand on the item's own source capture; the removal is a data row here, not a note."
+ }
+}

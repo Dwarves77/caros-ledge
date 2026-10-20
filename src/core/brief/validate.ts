@@ -223,7 +223,7 @@ export interface PoolLink { id: string; result_url: string | null; result_conten
 /**
  * Attribute each FACT to the row whose CAPTURE contains its span: first among the rows sharing the cited URL, then any row of
  * the pool (the claim's source_url is re-pointed to that row's URL, so the attribution is honest). Only when no capture contains
- * the span does the URL match apply, and criterion 3 then refuses honestly. ONE case rule, the database's (isVerbatim): the old
+ * the span does the claim stay unattributed (search_result_id null), and criterion 3 then refuses honestly. ONE case rule, the database's (isVerbatim): the old
  * code matched case-sensitively here and case-insensitively in the kept filter, so a span could be kept and then fail to attribute.
  */
 export function crossLinkClaimSources(claims: ClaimRecord[], searches: PoolLink[]): ClaimRecord[] {
@@ -237,6 +237,8 @@ export function crossLinkClaimSources(claims: ClaimRecord[], searches: PoolLink[
       const hit = sameUrl.find((s) => contains(s, span)) ?? searches.find((s) => contains(s, span));
       if (hit) return { ...c, search_result_id: hit.id, source_url: hit.result_url ?? c.source_url };
     }
+    // No capture holds a FACT's span: it is attributed to NONE (the old code pointed it at the last capture of the same URL, a source that does not contain it; the database then refuses it honestly).
+    if (span) return { ...c, search_result_id: null };
     const last = sameUrl[sameUrl.length - 1];
     return last ? { ...c, search_result_id: last.id } : { ...c, search_result_id: c.search_result_id ?? null };
   });

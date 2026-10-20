@@ -4,8 +4,11 @@
 // floor, or unresolved, is re-homed to a floor-qualifying source THE ITEM ALREADY HOLDS when the span is verbatim in that stored capture,
 // the capture is not an error body, and the capture is a primary instrument (officialness path a). Nothing is fetched and nothing is
 // authored; a codified host that is not yet registered is registered and rated first (SC-13 / rule 18) through the sources dependency.
-// Every write is checked, and the item is read back: a re-home that did not flip the item is reported as such, never as a success.
+// The re-home of an item is ONE ledger transaction (ledger_apply_ops): each failing FACT is stood on the floor capture that holds its span, with the source and tier of THAT capture's host and its capture id
+// (the old writer set the floor source's tier and left the span on the below-floor capture), the prior state archived to claim_versions first; a refusal leaves the item as it was. Every write is checked, and
+// the item is read back: a re-home that did not flip the item is reported as such, never as a success.
 import { fetchAllRows, type Db } from "@/core/db";
+import { applyLedgerOps, reattributeClaim, type LedgerOp } from "@/core/grounding/ledger";
 import { authorityFloorFor, floorPool, readPool, reattributeToFloor } from "@/core/grounding/pool";
 import { runResult, type RunResult } from "@/core/intake/result";
 import { hostOf } from "@/core/shared/url";
@@ -15,7 +18,7 @@ import type { SourcesDeps } from "../deps";
 export type RehomeOutcome = "WOULD-FLIP" | "VERIFIED-FREE" | "REHOMED-STILL-QUARANTINED" | "RESIDUAL-ACQUIRE" | "NO-FACTS" | "NON-TIER-FAILURE" | "EXEMPT" | "ERROR";
 export interface RehomeDecision { key: string; itemId: string; outcome: RehomeOutcome; detail: string; rehomed?: number }
 export type RehomeResult = RunResult & { decisions: RehomeDecision[] };
-interface Capture { url: string; text: string; tier: number | null; sourceId: string | null; host: string; needsRegister: boolean }
+interface Capture { id: string; url: string; text: string; tier: number | null; sourceId: string | null; host: string; needsRegister: boolean }
 interface FactRow { id: string; source_span: string | null; source_id: string | null; source_tier_at_grounding: number | null; claim_kind: string }
 type Deps = { sb: Db; sources: Pick<SourcesDeps, "resolveSource" | "classTierForHost" | "registerAndRate" | "classifyBody" | "officialness">; now: () => Date };
 
@@ -64,7 +67,7 @@ export async function rehomeQuarantined(deps: Deps, input: { apply?: boolean; li
         const host = hostOf(p.url);
         const codified = r?.tier == null ? sources.classTierForHost(host) : null;
         if (sources.classifyBody(p.text).errorBody) continue;
-        captures.push({ url: p.url, text: p.text, tier: r?.tier ?? codified, sourceId: r?.sourceId ?? null, host, needsRegister: r?.tier == null && codified != null });
+        captures.push({ id: p.id, url: p.url, text: p.text, tier: r?.tier ?? codified, sourceId: r?.sourceId ?? null, host, needsRegister: r?.tier == null && codified != null });
       }
       const ordered = floorPool(captures, floor).filter((c) => sources.officialness(c.url, c.text, { hostTier: c.tier, floorTier: floor }).path === "a");
       const homes: { claimId: string; target: Capture }[] = [];
@@ -82,17 +85,23 @@ export async function rehomeQuarantined(deps: Deps, input: { apply?: boolean; li
         done("WOULD-FLIP", `${homes.length}/${failing.length} failing spans re-home to a held primary`, homes.length);
         continue;
       }
+      const registered = new Map<string, string>();
+      const ops: LedgerOp[] = [];
       for (const h of homes) {
         if (h.target.needsRegister) {
           const reg = await sources.registerAndRate(h.target.url);
           if (!reg.sourceId) throw new Error(`could not register ${h.target.host}${reg.refused ? ` (${reg.refused})` : ""}`);
-          h.target.sourceId = reg.sourceId;
-          h.target.tier = reg.tier ?? h.target.tier;
+          registered.set(h.target.url, reg.sourceId);
           h.target.needsRegister = false;
         }
-        const upd = await sb.from("section_claim_provenance").update({ source_id: h.target.sourceId, source_tier_at_grounding: h.target.tier }).eq("id", h.claimId);
-        if (upd.error) throw new Error(`re-attribution write failed for claim ${h.claimId}: ${upd.error.message}`);
+        const claim = facts.find((f) => f.id === h.claimId) as FactRow;
+        const resolve = async (url: string) => {
+          const hit = registered.has(url) ? { sourceId: registered.get(url) as string } : await sources.resolveSource(url);
+          return hit?.sourceId ? { sourceId: hit.sourceId } : null;
+        };
+        ops.push(await reattributeClaim({ id: h.claimId }, { id: h.target.id, url: h.target.url }, claim.source_span as string, { resolve }, "rehome:floor"));
       }
+      await applyLedgerOps(sb, it.id, ops, deps.now().toISOString());
       const touch = await sb.from("intelligence_items").update({ updated_at: deps.now().toISOString() }).eq("id", it.id);
       if (touch.error) throw new Error(`item touch failed: ${touch.error.message}`);
       const fin = await sb.from("intelligence_items").select("provenance_status").eq("id", it.id).maybeSingle();
