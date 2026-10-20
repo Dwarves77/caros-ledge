@@ -8,6 +8,8 @@
 // `validation_failed:5:record_hollow` and a reopen by that reason still finds it.
 import { z } from "zod";
 
+import { isVerbatim } from "@/core/contracts/verbatim";
+
 import data from "./data/preflight.json";
 import type { RecordPayload } from "./types";
 
@@ -47,12 +49,13 @@ function fold(s: string): string {
   return out;
 }
 interface Compared { strict: boolean; fuzzy: boolean; substitution: { class: string; span_char: string; reference_char: string; window: string } | null }
-interface Ref { raw: string; lower: string; folded: string }
-const prepare = (raw: string): Ref => ({ raw, lower: raw.toLowerCase(), folded: fold(raw) });
+interface Ref { raw: string; folded: string }
+const prepare = (raw: string): Ref => ({ raw, folded: fold(raw) });
+/** `strict` is the database verdict; `fuzzy` only locates a candidate after folding, to name the slip when the verdict refuses. */
 function compare(span: string, ref: Ref): Compared {
   const s = span.trim();
   const reference = ref.raw;
-  const strict = s.length > 0 && ref.lower.includes(s.toLowerCase());
+  const strict = isVerbatim(reference, s);
   const at = s.length > 0 ? ref.folded.indexOf(fold(s)) : -1;
   let substitution: Compared["substitution"] = null;
   if (!strict && at !== -1) {
@@ -111,8 +114,8 @@ export function preflight(payload: RecordPayload, opts: { isSeriesKey: (identifi
 
   if (item.grade === "record") {
     for (const c of claims) if (c.claim_kind !== "FACT" && c.claim_kind !== "GAP") failures.push({ criterion: "kit", reason: "record_grade_forbidden_claim_kind", claim: c.claim_text, claim_kind: c.claim_kind });
-    const brief = String(item.full_brief ?? "").toLowerCase();
-    for (const c of claims) if (c.claim_kind === "FACT" && c.source_span?.trim() && !brief.includes(c.source_span.trim().toLowerCase())) failures.push({ criterion: "kit", reason: "record_grade_full_brief_not_extractive", claim: c.claim_text, source_span: c.source_span });
+    const brief = String(item.full_brief ?? "");
+    for (const c of claims) if (c.claim_kind === "FACT" && c.source_span?.trim() && !isVerbatim(brief, c.source_span)) failures.push({ criterion: "kit", reason: "record_grade_full_brief_not_extractive", claim: c.claim_text, source_span: c.source_span });
     // Hollow: a record whose only FACT is the title (or none) carries no extracted information. A registered market series is exempt (its substance is the series rows).
     const substantive = claims.filter((c) => c.claim_kind === "FACT" && !c.claim_text.trim().toLowerCase().startsWith("[title]")).length;
     const seriesBacked = item.item_type === "market_signal" && opts.isSeriesKey(item.instrument_identifier as string | null);

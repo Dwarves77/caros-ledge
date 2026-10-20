@@ -1,0 +1,65 @@
+{
+  "_": "INV-R2f-1: exactly one verbatim verdict (isVerbatim, src/core/contracts/verbatim.ts) and every comparison of a span with a capture calls it. A tolerant search may LOCATE (indexOfInsensitive, the healer's locateSpan) and the candidate is re-checked by the verdict; no file keeps its own case-folded substring test of a span. The patterns are data, read by tests/r2f/verdict.test.ts.",
+  "verdict": {
+    "name": "isVerbatim",
+    "file": "src/core/contracts/verbatim.ts"
+  },
+  "singleDeclarations": [
+    "isVerbatim",
+    "assertVerbatim"
+  ],
+  "comparers": [
+    "src/core/brief/timeline.ts",
+    "src/features/batches/kinds/question-answers/validate.ts",
+    "src/features/intake/quarantine/resolver.ts",
+    "src/features/intake/record-facts/extract.ts",
+    "src/features/mint/heal/brief-honest.ts",
+    "src/features/mint/heal/ground.ts",
+    "src/features/mint/heal/run.ts",
+    "src/features/mint/preflight.ts",
+    "src/features/obligations/derive/derive-objects.ts",
+    "src/features/obligations/extract/extract-forward-events.ts",
+    "src/features/obligations/extract/verbatim-in-source.ts",
+    "src/features/obligations/extract/window.ts",
+    "src/features/sources/snapshot-verify.ts"
+  ],
+  "forbiddenInComparers": [
+    {
+      "label": "a case-folded text searched for a needle",
+      "pattern": "toLowerCase\\(\\)\\s*\\.\\s*(?:includes|indexOf)\\("
+    },
+    {
+      "label": "a needle case-folded inside includes or indexOf",
+      "pattern": "\\.(?:includes|indexOf)\\([^;]*\\.toLowerCase\\(\\)"
+    },
+    {
+      "label": "the database rule spelled out in code",
+      "pattern": "position\\(\\s*lower\\(\\s*btrim"
+    },
+    {
+      "label": "a verbatim assertion of its own",
+      "pattern": "function\\s+(?:assert|is|check)\\w*[vV]erbatim\\w*\\s*\\("
+    }
+  ],
+  "forbiddenInSrc": [
+    {
+      "label": "a capture-like text case-folded and searched",
+      "pattern": "\\b(?:capture\\w*|result_content|capturedText|fullText|poolText|hay\\w*|\\w*Capture)\\b[\\w.?!\\[\\]()]*\\.toLowerCase\\(\\)\\s*\\.\\s*(?:includes|indexOf)\\("
+    },
+    {
+      "label": "a span, quote or needle case-folded inside includes or indexOf",
+      "pattern": "\\.(?:includes|indexOf)\\([^;]*\\b(?:span|quote|verbatim_text|source_span|needle)\\w*[^;]*\\.toLowerCase\\(\\)"
+    },
+    {
+      "label": "a span case-folded and searched",
+      "pattern": "\\b(?:span|quote|source_span|verbatim_text)\\w*(?:\\(\\))?\\.toLowerCase\\(\\)\\s*\\.\\s*(?:includes|indexOf)\\("
+    },
+    {
+      "label": "the database rule spelled out in code",
+      "pattern": "position\\(\\s*lower\\(\\s*btrim"
+    }
+  ],
+  "allowedFiles": [
+    "src/core/contracts/verbatim.ts"
+  ]
+}

@@ -70,6 +70,8 @@ const props = spawnSync("node", ["scripts/ci/properties.mjs"], { stdio: "inherit
 const pins = spawnSync("node", ["--import", "./tests/_support/register.mjs", "scripts/ci/checks/generator-pins.mjs"], { stdio: "inherit", env: process.env });
 // G11: the in-memory database every test runs over answers filters and the 1000-row cut as this database does.
 const memdb = spawnSync("node", ["--import", "./tests/_support/register.mjs", "scripts/ci/checks/memdb-conformance.mjs"], { stdio: "inherit", env: process.env });
+// R2f: the JavaScript verbatim rule and URL canonicaliser and their SQL mirrors give one answer on the fixture rows.
+const parity = spawnSync("node", ["--import", "./tests/_support/register.mjs", "scripts/ci/checks/js-sql-parity.mjs"], { stdio: "inherit", env: process.env });
 const last = snapshot(ctx);
 const drift = diff(chain.last, last);
 for (const l of drift.slice(0, 20)) console.error(`unexplained after the property checks: ${l}`);
@@ -88,4 +90,4 @@ if (schemaDiff) console.error("tests/_support/schema.json differs from the live 
 const shape = shapeProblems(ctx);
 for (const p of shape) console.error(`production shape: ${p}`);
 console.log(`catalog diff: ${diff(step0, last).length} object changes across the migrations, ${chain.unexplained} unexplained class(es), ${drift.length} drifted after the checks, ${keyDiff.length} schema-keys difference(s), ${schemaDiff} test-schema difference(s), ${shape.length} production-shape difference(s)`);
-process.exit((props.status ?? 1) || (pins.status ?? 1) || (memdb.status ?? 1) || chain.unexplained || drift.length || keyDiff.length || schemaDiff || shape.length ? 1 : 0);
+process.exit((props.status ?? 1) || (pins.status ?? 1) || (memdb.status ?? 1) || (parity.status ?? 1) || chain.unexplained || drift.length || keyDiff.length || schemaDiff || shape.length ? 1 : 0);

@@ -145,7 +145,7 @@ test("INV-160 end to end: ground forces a slot FACT only on a confirmation that 
   assert.equal(w.db.rows("section_claim_provenance").filter((c) => c.claim_kind === "GAP").length, 1, "the slot is an honest GAP");
 });
 
-test("mint gates: S-CONFLATE is a HARD hold, S-NUMERIC a SOFT flag, below-floor and generic-source are counted", () => {
+test("mint gates: S-CONFLATE and S-NUMERIC are HOLDS (the ids come back), below-floor and generic-source are counted", () => {
   const span = "Regulation (EU) 2023/1805 sets the FuelEU maritime requirements for ships.";
   const conflated = ["Regulation 2023/1805 applies", "Regulation 2022/999 applies", "ReFuelEU applies"].map((t, i) => ({ id: `f${i}`, claim_kind: "FACT", claim_text: t, source_span: span, source_id: SOURCE, source_tier_at_grounding: 1 }));
   const rep = mintGates(conflated, { itemFloor: 2 });

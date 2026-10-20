@@ -7,7 +7,7 @@ import type { RefusalReason } from "./policy";
 
 /** The ladder's own classes beside the body classes: the browser tier ran nowhere, or a policy refused a channel before or after it ran. */
 const NEEDS_HEADLESS = "needs_headless" as const;
-const POLICY_CLASSES = ["robots_disallowed", "robots_unknown", "paywalled", "interactive_challenge", "gated", "private_address", "host_busy"] as const;
+const POLICY_CLASSES = ["licence_forbids", "robots_disallowed", "robots_unknown", "paywalled", "interactive_challenge", "gated", "private_address", "host_busy"] as const;
 type PolicyClass = (typeof POLICY_CLASSES)[number];
 export type AttemptClass = BodyClass | typeof NEEDS_HEADLESS | PolicyClass;
 /** A channel name is the transport of an attempt: api, feed, sitemap, direct, browser, substitute (and the in-run cache). */
@@ -73,6 +73,8 @@ export interface SubstituteHit {
   result: TransportResult;
 }
 export interface LadderDeps {
+  /** The licence register's verdict on a host (licenceForbidsHost): the key of the entry that bars collecting from it, or null. Asked first for every candidate; a barred one is recorded as a refused attempt with the key and no channel is tried. */
+  licence: (hostname: string) => string | null;
   /** Every rung is a member of the ladder; a rung the caller does not run is a typed null, never an omission. */
   cacheGet: ((url: string) => Maybe<{ text?: string }>) | null;
   apiFetch: ((url: string) => Maybe<TransportResult>) | null;
@@ -142,6 +144,17 @@ export async function escalateFetch(urls: string | string[], deps: LadderDeps): 
 
   let notFoundSeen = false;
   for (const url of candidates) {
+    const barred = (() => {
+      try {
+        return deps.licence(new URL(url).hostname);
+      } catch {
+        return null;
+      }
+    })();
+    if (barred) {
+      attempts.push({ url, transport: "direct", class: "licence_forbids", verdict: "refused", status: 0, bytes: 0, reason: "licence_forbids", detail: `the licence register (${barred}) bars collecting from this host: no channel was tried` });
+      continue;
+    }
     if (deps.cacheGet) {
       const hit = await deps.cacheGet(url);
       if (hit?.text && isOk(note(url, "cache", hit))) return win(url, "cache", hit);
@@ -183,6 +196,7 @@ export async function escalateFetch(urls: string | string[], deps: LadderDeps): 
     }
   }
   const seed = candidates[0];
+  if (attempts.length && attempts.every((a) => a.class === "licence_forbids")) return done("no_reachable_source", { url: seed, holdReason: "LICENCE_FORBIDS" });
   const refusals = attempts.filter((a) => WALLS.has(a.class));
   if (attempts.some((a) => DEFERRALS.has(a.class))) return done("deferred", { url: seed, holdReason: "DEFERRED" });
   // The browser tier did not run (off the Actions runner): the ladder is not exhausted, so nothing is requested of the publisher yet.

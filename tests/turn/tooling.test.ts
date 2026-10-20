@@ -169,7 +169,7 @@ test("the lint rule (IMP-106): outside the coverage feature, a path into its ser
 test("the number rule beside isVerbatim: a figure folds only when its value is unchanged, and a match never starts or ends inside a longer number", () => {
   assert.equal(normalizeNumeric("1,200,000").chars, "1200000");
   assert.equal(normalizeNumeric("1 200 000").chars, "1200000");
-  assert.equal(normalizeNumeric("12.345").chars, "12.345", "a single ambiguous separator never folds");
+  assert.equal(normalizeNumeric("12.345").chars, "12.345", "alone, a point and three digits is a decimal under the default locale; 12,345 is a different value");
   assert.equal(insideLongerNumber("total 12,345 units", 9, 12), true, "345 inside 12,345");
   assert.equal(insideLongerNumber("total 12,345 units", 6, 12), false);
 });

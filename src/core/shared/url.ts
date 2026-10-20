@@ -1,19 +1,12 @@
 // Ported from old_repo/src/lib/agent/url-canon.mjs (lines 5-22)
 // Ported from old_repo/src/lib/entities/host-from-url.mjs (lines 1-10)
+import { canonicalizeUrl } from "@/core/parse";
 
 /** Remove trailing markdown markers glued onto a URL (`*`, backtick). */
 export const stripUrlMarkers = (s: string): string => s.replace(/(https?:\/\/[^\s)\]}"'<>*`]+)[*`]+/g, "$1");
 
-/** The one citation-URL canonicaliser; a JS mirror of the database function canonicalize_citation_url. Null stays null. */
-export function canonicalUrl(u: string | null | undefined): string | null {
-  if (u == null) return null;
-  return String(u)
-    .trim()
-    .toLowerCase()
-    .replace(/[*`]+$/, "")
-    .replace(/^(https?:\/\/)www\./, "$1")
-    .replace(/[/.,;:]+$/, "");
-}
+/** The one citation-URL canonicaliser: the parse module's canonicalizeUrl (https, host without www, path and query CASE KEPT, query sorted without tracking parameters), mirrored in the database as canonicalize_citation_url. Null stays null. */
+export const canonicalUrl = (u: string | null | undefined): string | null => canonicalizeUrl(u);
 
 /** decodeURIComponent that answers null for a malformed % sequence instead of throwing: the caller states what it does without a decoded form. */
 export function decodeUriOrNull(s: string): string | null {

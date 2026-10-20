@@ -1,8 +1,8 @@
 // New in R2c: no old counterpart (the old tree followed redirects with no address check and sent a browser identity, register rows C:39 and D:49).
-// The one fetch primitive's guard. Import-free, so the Edge Function (Deno) and the Node transports share it by relative path. Every GET goes through guardedFetch: the declared identity (never another), a refusal of private,
+// The one fetch primitive's guard. Import-free, so the Edge Function (Deno) and the Node transports share it by relative path. Every GET goes through guardedFetch: the licence register's verdict on the host (before anything else), the declared identity (never another), a refusal of private,
 // loopback and link-local addresses before the first hop and after every redirect, the robots verdict of every URL asked, and the per-host gap. A refusal is a thrown FetchRefusalError that carries a typed reason.
 
-export type GuardReason = "robots_disallowed" | "robots_unknown" | "private_address" | "bad_scheme" | "too_many_redirects" | "host_busy";
+export type GuardReason = "licence_forbids" | "robots_disallowed" | "robots_unknown" | "private_address" | "bad_scheme" | "too_many_redirects" | "host_busy";
 export interface GuardRefusal {
   reason: GuardReason;
   /** A transient refusal is retried on a later run (robots unknown, a host that asked for a long gap); a permanent one is recorded on the source. */
@@ -10,6 +10,8 @@ export interface GuardRefusal {
   detail: string;
   /** The robots rule that matched, for robots_disallowed. */
   rule?: string;
+  /** The licence register key that bars the host, for licence_forbids. */
+  registerKey?: string;
   /** Milliseconds until the host may be asked again, for host_busy. */
   retryAfterMs?: number;
   /** For robots_unknown: the host answered robots.txt itself with 401, 403 or 429, so the declared identity was refused and the browser tier may re-read it as a person's browser would. */
@@ -70,6 +72,8 @@ function isPrivateAddress(addr: string): boolean {
 const NAME_REFUSED = /^(localhost|.*\.localhost|.*\.local|.*\.internal|.*\.localdomain|metadata|metadata\.google\.internal)$/i;
 
 export interface GuardOptions {
+  /** The licence register's verdict on a host: the key of the entry that bars collecting from it, or null (licenceForbidsHost, src/core/fetch/licence-hosts.ts). Required: a caller cannot leave the register out. It is asked before robots.txt and before any address is resolved. */
+  licence: (hostname: string) => string | null;
   /** The one declared identity (BOT_USER_AGENT, or the SEC fair-access string for sec.gov); it replaces any user-agent a caller passed. */
   userAgent: string;
   fetchImpl?: typeof fetch;
@@ -111,6 +115,8 @@ export async function guardedFetch(input: string, init: RequestInit, g: GuardOpt
   for (let hop = 0; hop <= max; hop++) {
     const url = new URL(current);
     if (url.protocol !== "https:" && url.protocol !== "http:") throw new FetchRefusalError({ reason: "bad_scheme", transient: false, detail: `refused ${url.protocol} (only http and https are fetched)` });
+    const barred = g.licence(url.hostname);
+    if (barred) throw new FetchRefusalError({ reason: "licence_forbids", transient: false, detail: `refused ${url.host}: the licence register (${barred}) bars collecting from this host`, registerKey: barred });
     await assertPublicHost(url, g.resolveHost);
     let delay: number | null = null;
     if (g.robots) {

@@ -23,6 +23,7 @@ import type { ResolvedSource, ResolveSource } from "./audit-gate";
 import { citedHostGate } from "./cited-hosts";
 import { GROUND_CONFIG } from "./config";
 import { openFlagOnce } from "./flags";
+import type { FactClaim } from "./gate-a-scan";
 import { buildCitationEdges, buildGateARow, clearGateAState, derivedCoveredTokens, mergeNullTierAggregate, mintGates, summarizeNullTierAggregate, upsertGateAState, type GateFact, type NullTierAggregate } from "./gates";
 import { applyLedgerDiff, diffLedger, ledgerRegression, summarizeLedger, type ClaimRow } from "./ledger";
 import { authorityFloorFor, floorPool, readAllPoolRows, reattributeToFloor, type PoolRow } from "./pool";
@@ -65,7 +66,6 @@ export interface GroundResult extends RunResult {
 interface ItemRow { id: string; item_type: string; source_id: string | null; source_url: string | null; full_brief: string | null; title: string | null; instrument_type: string | null; instrument_identifier: string | null; canonical_instrument_key: string | null; jurisdiction_iso: string | null; provenance_status: string | null }
 const NONE: ResolvedSource = { tier: null, institution: null, sourceId: null };
 const ITEM_COLUMNS = "id, item_type, source_id, source_url, full_brief, title, instrument_type, instrument_identifier, canonical_instrument_key, jurisdiction_iso, provenance_status";
-type Fact = { claim_text: string; source_span: string };
 
 function failed(detail: string, notes: string[], counts: Record<string, number> = {}, extra: Partial<GroundResult> = {}): GroundResult {
   return { ...runResult("failed", counts, [detail, ...notes]), ok: false, valid: false, detail, reasons: [], provenance: null, kept: 0, dropped: 0, slotCandidates: {}, relabels: [], ...extra };
@@ -239,7 +239,10 @@ async function ground(deps: GroundDeps, input: GroundInput): Promise<GroundResul
   }
 
   // ---- Gate A (before the claim writes, so criterion 7 finds current state), then the non-destructive apply ---------
-  const factsOf = (rows: { claim_kind: string; claim_text: string | null; source_span: string | null }[]): Fact[] => rows.filter((c) => c.claim_kind === "FACT").map((c) => ({ claim_text: c.claim_text ?? "", source_span: c.source_span ?? "" }));
+  // A FACT is read under the number locale its own capture declares (agent_run_searches.number_locale), so a figure the capture prints as "1.200,5" is never read as 1.2.
+  const localeOf = new Map(allRows.map((r) => [r.id, r.number_locale]));
+  const factsOf = (rows: { claim_kind: string; claim_text: string | null; source_span: string | null; search_result_id?: string | null }[]): FactClaim[] =>
+    rows.filter((c) => c.claim_kind === "FACT").map((c) => ({ claim_text: c.claim_text ?? "", source_span: c.source_span ?? "", locale: localeOf.get(c.search_result_id ?? "") ?? null }));
   const derivedCovered = await derivedCoveredTokens(sb, itemId);
   if (!dry) {
     const ga = await upsertGateAState(sb, buildGateARow({ itemId, fullBrief: it.full_brief, factClaims: factsOf([...prior, ...incoming]), derivedCovered, nowIso }));
@@ -250,7 +253,7 @@ async function ground(deps: GroundDeps, input: GroundInput): Promise<GroundResul
   Object.assign(counts, { claims_added: applyRes.applied.added, claims_changed: applyRes.applied.changed, claims_unchanged: applyRes.applied.unchanged, claims_kept_not_reproduced: applyRes.applied.notReproduced, claims_versioned: applyRes.applied.versioned, claims_archived: applyRes.applied.archived, claim_writes_failed: applyRes.applied.failed });
   if (applyRes.applied.failed > 0 && !dry) {
     // Phantom coverage: the Gate A state was computed from the in-memory set. Rescan against what actually persisted; if that cannot complete, blank it so criterion 7 quarantines.
-    const persisted = await fetchAllRows<ClaimRow>((from, to) => sb.from("section_claim_provenance").select("id, claim_kind, claim_text, source_span, source_id, source_tier_at_grounding").eq("intelligence_item_id", itemId).order("id", { ascending: true }).range(from, to), { cap: 20_000 }).catch(() => null);
+    const persisted = await fetchAllRows<ClaimRow>((from, to) => sb.from("section_claim_provenance").select("id, claim_kind, claim_text, source_span, source_id, search_result_id, source_tier_at_grounding").eq("intelligence_item_id", itemId).order("id", { ascending: true }).range(from, to), { cap: 20_000 }).catch(() => null);
     const w = persisted ? await upsertGateAState(sb, buildGateARow({ itemId, fullBrief: it.full_brief, factClaims: factsOf(persisted), derivedCovered: await derivedCoveredTokens(sb, itemId), nowIso })) : { error: "persisted-claims read failed" };
     if (w.error) { const c = await clearGateAState(sb, itemId); notes.push(`gate-a reconcile failed (${w.error}); state ${c.error ? `NOT cleared (${c.error})` : "cleared (fail-closed)"}`); }
   }
@@ -258,13 +261,16 @@ async function ground(deps: GroundDeps, input: GroundInput): Promise<GroundResul
   // ---- mint gates, citation edges, null-tier surfacing -----------------------------------------------------------
   const gateFacts: GateFact[] = applyRes.touchedFacts;
   const report = mintGates(gateFacts, { itemFloor, suspendedSourceIds: suspended.map((s) => s.id) });
-  Object.assign(counts, { mint_hold_conflate: report.conflateHeldIds.length, mint_flag_numeric: report.numericFacts.length });
+  // Both gates are HOLDS (a FACT with mint_hold_reason set fails criterion 3 of validate_item_provenance): a claim that trips both keeps S-CONFLATE, which names the wrong source; a re-ground clears and re-judges both.
+  const conflated = new Set(report.conflateHeldIds);
+  const holds: [string, string[]][] = [["S-CONFLATE", report.conflateHeldIds], ["S-NUMERIC", report.numericHeldIds.filter((id) => !conflated.has(id))]];
+  Object.assign(counts, { mint_hold_conflate: holds[0]?.[1].length ?? 0, mint_hold_numeric: holds[1]?.[1].length ?? 0 });
   if (!dry) {
-    if (report.conflateHeldIds.length) {
-      const h = await sb.from("section_claim_provenance").update({ mint_hold_reason: "S-CONFLATE" }).in("id", report.conflateHeldIds);
-      if (h.error) notes.push(`S-CONFLATE hold update failed: ${h.error.message}`);
+    for (const [reason, ids] of holds) {
+      if (!ids.length) continue;
+      const h = await sb.from("section_claim_provenance").update({ mint_hold_reason: reason }).in("id", ids);
+      if (h.error) notes.push(`${reason} hold update failed: ${h.error.message}`);
     }
-    if (report.numericFacts.length) push(await openFlagOnce(sb, { category: "data_quality", subject_type: "item", subject_ref: itemId, created_by: "mint_gate_s_numeric", description: `S-NUMERIC soft hold: ${report.numericFacts.length} FACT claim(s) carry a figure absent from their stored span. Sample: ${report.numericFacts.slice(0, 2).map((f) => String(f.claim_text).slice(0, 80)).join(" | ")}` }));
     if (citedIds.size) {
       const e = await sb.from("intelligence_item_citations").upsert(buildCitationEdges(itemId, citedIds, nowIso), { onConflict: "intelligence_item_id,source_id,origin", ignoreDuplicates: true });
       if (e.error) notes.push(`citation edges not written: ${e.error.message}`);

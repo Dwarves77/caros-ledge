@@ -337,7 +337,12 @@
    "url": "https://ghgprotocol.org/terms-use",
    "verifiedOn": "2026-10-20",
    "blocker": "The site Terms of Use bar reproduction, derivative works and any public or commercial use of GHG Protocol Content; the only carve-out names two other publications under CC BY 4.0, not the Scope 3 technical guidance chapters. The same Terms bar robots, spiders and scrapers.",
-   "note": "READ 2026-10-20 at https://ghgprotocol.org/terms-use. [quote]You may not modify, frame, reproduce, archive, sell, lease, rent, exchange, create derivative works from, publish by hard copy or electronic means, publicly perform, display, disseminate, distribute, broadcast, retransmit, circulate to any third party or on any third-party web site, or otherwise use the Services or the GHG Protocol Content for any public or commercial purpose except as specifically permitted by these Terms[/quote] The sentence continues with the one exception: the Potential Emissions from Fossil Fuel Reserves and the Estimating and Reporting Avoided Emissions publications, published under CC BY 4.0. Scope 3 Calculation Guidance chapters 4 and 9 (ghgp_cat4, ghgp_cat9) are not those publications, and neither PDF carries a licence statement of its own (checked 2026-10-20). Section 1 also says: You also agree that you will not use any robot, spider, rover, scraper, other data mining technology or automatic or manual process to monitor, cache, frame, mask, extract data from, copy or distribute the Services or GHG Protocol Content. Not upgraded by analogy with any other host. The method is not the text: figures, units and locators in the golden rows are the corpus's own checks."
+   "quote": "You may not modify, frame, reproduce, archive, sell, lease, rent, exchange, create derivative works from, publish by hard copy or electronic means, publicly perform, display, disseminate, distribute, broadcast, retransmit, circulate to any third party or on any third-party web site, or otherwise use the Services or the GHG Protocol Content for any public or commercial purpose except as specifically permitted by these Terms",
+   "termsReadOn": "2026-10-20",
+   "note": "READ 2026-10-20 at https://ghgprotocol.org/terms-use. The sentence continues with the one exception: the Potential Emissions from Fossil Fuel Reserves and the Estimating and Reporting Avoided Emissions publications, published under CC BY 4.0. Scope 3 Calculation Guidance chapters 4 and 9 (ghgp_cat4, ghgp_cat9) are not those publications, and neither PDF carries a licence statement of its own (checked 2026-10-20). Section 1 also says: You also agree that you will not use any robot, spider, rover, scraper, other data mining technology or automatic or manual process to monitor, cache, frame, mask, extract data from, copy or distribute the Services or GHG Protocol Content. Not upgraded by analogy with any other host. The method is not the text: figures, units and locators in the golden rows are the corpus's own checks.",
+   "hosts": [
+    "ghgprotocol.org"
+   ]
   },
   "ecotransit_org": {
    "key": "ecotransit_org",
@@ -348,7 +353,12 @@
    "url": "https://www.ecotransit.org/en/imprint/",
    "verifiedOn": "2026-10-20",
    "blocker": "The imprint reserves German copyright and requires prior written consent for any duplication, processing, distribution or utilisation beyond the scope of copyright law; no reuse licence is granted. The Methodology Report adds that use or reproduction of data, diagrams or formulas needs express written permission.",
-   "note": "READ 2026-10-20 at https://www.ecotransit.org/en/imprint/ (section Copyright). [quote]Any duplication, processing, distribution or any form of utilisation beyond the scope of copyright law shall require the prior written consent of the author or authors in question.[/quote] The Methodology Report Version 4.1 (ecotransit_41) itself states in its Intellectual Property paragraph that reference to its contents is permitted with acknowledgement of the source, and that the use or reproduction of data, diagrams or formulas requires the express written permission of the authors or publishers, requestable at info@ecotransit.world. Reference is not redistribution: no factor, table or formula may be embedded or re-served without that permission. Not upgraded by analogy with any other host."
+   "quote": "Any duplication, processing, distribution or any form of utilisation beyond the scope of copyright law shall require the prior written consent of the author or authors in question.",
+   "termsReadOn": "2026-10-20",
+   "note": "READ 2026-10-20 at https://www.ecotransit.org/en/imprint/ (section Copyright). The Methodology Report Version 4.1 (ecotransit_41) itself states in its Intellectual Property paragraph that reference to its contents is permitted with acknowledgement of the source, and that the use or reproduction of data, diagrams or formulas requires the express written permission of the authors or publishers, requestable at info@ecotransit.world. Reference is not redistribution: no factor, table or formula may be embedded or re-served without that permission. Not upgraded by analogy with any other host.",
+   "hosts": [
+    "ecotransit.org"
+   ]
   },
   "consilium_europa_eu": {
    "key": "consilium_europa_eu",
@@ -369,7 +379,9 @@
    "attribution": "Source: European Commission, DG Climate Action. © European Union, reused under Decision 2011/833/EU (CC BY 4.0); changes indicated.",
    "url": "https://commission.europa.eu/legal-notice_en",
    "verifiedOn": "2026-10-20",
-   "note": "READ 2026-10-20 at https://commission.europa.eu/legal-notice_en, the Commission legal notice that the footer of climate.ec.europa.eu links as its Legal notice. [quote]Unless otherwise indicated (e.g. in individual copyright notices), content owned by the EU on this website is licensed under the Creative Commons Attribution 4.0 International (CC BY 4.0) licence. This means that reuse is allowed, provided appropriate credit is given and changes are indicated.[/quote] Scope read from the same notice: the licence covers content owned by the EU; it excludes third-party works, content that depicts identifiable private individuals, and logos, trade marks and other industrial property. The page reducing-emissions-shipping-sector_en carries no individual copyright notice of its own (checked 2026-10-20). Reuse is therefore CC BY 4.0 under the Commission reuse Decision (2011/833/EU), with credit and changes indicated."
+   "quote": "Unless otherwise indicated (e.g. in individual copyright notices), content owned by the EU on this website is licensed under the Creative Commons Attribution 4.0 International (CC BY 4.0) licence. This means that reuse is allowed, provided appropriate credit is given and changes are indicated.",
+   "termsReadOn": "2026-10-20",
+   "note": "READ 2026-10-20 at https://commission.europa.eu/legal-notice_en, the Commission legal notice that the footer of climate.ec.europa.eu links as its Legal notice. Scope read from the same notice: the licence covers content owned by the EU; it excludes third-party works, content that depicts identifiable private individuals, and logos, trade marks and other industrial property. The page reducing-emissions-shipping-sector_en carries no individual copyright notice of its own (checked 2026-10-20). Reuse is therefore CC BY 4.0 under the Commission reuse Decision (2011/833/EU), with credit and changes indicated."
   },
   "ec_taxation_customs_europa_eu": {
    "key": "ec_taxation_customs_europa_eu",
@@ -379,7 +391,9 @@
    "attribution": "Source: European Commission, DG Taxation and Customs Union. © European Union, reused under Decision 2011/833/EU (CC BY 4.0); changes indicated.",
    "url": "https://commission.europa.eu/legal-notice_en",
    "verifiedOn": "2026-10-20",
-   "note": "READ 2026-10-20 at https://commission.europa.eu/legal-notice_en, the Commission legal notice that the footer of taxation-customs.ec.europa.eu links as its Legal notice. [quote]Unless otherwise indicated (e.g. in individual copyright notices), content owned by the EU on this website is licensed under the Creative Commons Attribution 4.0 International (CC BY 4.0) licence. This means that reuse is allowed, provided appropriate credit is given and changes are indicated.[/quote] Scope read from the same notice: the licence covers content owned by the EU; it excludes third-party works, content that depicts identifiable private individuals, and logos, trade marks and other industrial property. The CBAM Guidance Document 3 PDF carries no individual copyright notice of its own (checked 2026-10-20). Reuse is therefore CC BY 4.0 under the Commission reuse Decision (2011/833/EU), with credit and changes indicated. CARVE-OUT READ IN THE DOCUMENT, not covered by this verdict: Guidance Document 3 Annex II default values for electricity are based on licensed IEA data, and its footnote 79 says any further use or redistribution of the data is permitted for noncommercial purposes only. Those IEA-based defaults are never embedded under this entry (the golden rows that cite cbam_guidance_3 cite pages 22, 42 and 43, which carry no IEA statement; checked 2026-10-20). iea_datasets stays prohibited."
+   "quote": "Unless otherwise indicated (e.g. in individual copyright notices), content owned by the EU on this website is licensed under the Creative Commons Attribution 4.0 International (CC BY 4.0) licence. This means that reuse is allowed, provided appropriate credit is given and changes are indicated.",
+   "termsReadOn": "2026-10-20",
+   "note": "READ 2026-10-20 at https://commission.europa.eu/legal-notice_en, the Commission legal notice that the footer of taxation-customs.ec.europa.eu links as its Legal notice. Scope read from the same notice: the licence covers content owned by the EU; it excludes third-party works, content that depicts identifiable private individuals, and logos, trade marks and other industrial property. The CBAM Guidance Document 3 PDF carries no individual copyright notice of its own (checked 2026-10-20). Reuse is therefore CC BY 4.0 under the Commission reuse Decision (2011/833/EU), with credit and changes indicated. CARVE-OUT READ IN THE DOCUMENT, not covered by this verdict: Guidance Document 3 Annex II default values for electricity are based on licensed IEA data, and its footnote 79 says any further use or redistribution of the data is permitted for noncommercial purposes only. Those IEA-based defaults are never embedded under this entry (the golden rows that cite cbam_guidance_3 cite pages 22, 42 and 43, which carry no IEA statement; checked 2026-10-20). iea_datasets stays prohibited."
   },
   "mardep_gov_hk": {
    "key": "mardep_gov_hk",
@@ -390,7 +404,12 @@
    "url": "https://www.mardep.gov.hk/en/important-notices/index.html",
    "verifiedOn": "2026-10-20",
    "blocker": "Re-dissemination is allowed for non-commercial use only; commercial reproduction, adaptation, distribution or dissemination is prohibited without prior written authorization from the Marine Department. Caro's Ledge is a commercial product.",
-   "note": "READ 2026-10-20 at https://www.mardep.gov.hk/en/important-notices/index.html (Copyright Notice), the page the site footer links as Important Notices. [quote]Any other reproduction, adaptation, distribution, dissemination or making available of the information available within this website for commercial use is strictly prohibited unless prior written authorization is obtained from the Marine Department.[/quote] The grant it limits: information may be re-disseminated or reproduced provided the Marine Department is acknowledged and the use is non-commercial. This is the Marine Department's own notice for its own copy of the resolution (MEPC.338(76), served as an annex to a Merchant Shipping Information Note); it says nothing about IMO's rights, which were not read and are not assumed. Not upgraded by analogy with any other host."
+   "quote": "Any other reproduction, adaptation, distribution, dissemination or making available of the information available within this website for commercial use is strictly prohibited unless prior written authorization is obtained from the Marine Department.",
+   "termsReadOn": "2026-10-20",
+   "note": "READ 2026-10-20 at https://www.mardep.gov.hk/en/important-notices/index.html (Copyright Notice), the page the site footer links as Important Notices. The grant it limits: information may be re-disseminated or reproduced provided the Marine Department is acknowledged and the use is non-commercial. This is the Marine Department's own notice for its own copy of the resolution (MEPC.338(76), served as an annex to a Merchant Shipping Information Note); it says nothing about IMO's rights, which were not read and are not assumed. Not upgraded by analogy with any other host.",
+   "hosts": [
+    "mardep.gov.hk"
+   ]
   },
   "icao_int": {
    "key": "icao_int",
@@ -401,7 +420,12 @@
    "url": "https://www.icao.int/terms-and-conditions",
    "verifiedOn": "2026-10-20",
    "blocker": "The site Terms and Conditions permit download and copying for the user's personal, non-commercial use, with no right to resell or redistribute or to compile or create derivative works. The Copyright Notice (https://www.icao.int/copyright-notice) reserves all rights and requires written permission from ICAO.",
-   "note": "READ 2026-10-20 at https://www.icao.int/terms-and-conditions. [quote]for the User’s personal, non-commercial use, without any right to resell or redistribute them or to compile or create derivative works therefrom[/quote] Also read 2026-10-20 at https://www.icao.int/copyright-notice: all rights reserved; no material may be used, reproduced or transmitted except as provided in the site Terms and Conditions, without permission in writing from ICAO. Both CORSIA documents (the newsletter and the Aviation Climate Week presentation) are Materials from the Site under these terms; neither is expressly attributed to a third party. Not upgraded by analogy with any other host."
+   "quote": "for the User’s personal, non-commercial use, without any right to resell or redistribute them or to compile or create derivative works therefrom",
+   "termsReadOn": "2026-10-20",
+   "note": "READ 2026-10-20 at https://www.icao.int/terms-and-conditions. Also read 2026-10-20 at https://www.icao.int/copyright-notice: all rights reserved; no material may be used, reproduced or transmitted except as provided in the site Terms and Conditions, without permission in writing from ICAO. Both CORSIA documents (the newsletter and the Aviation Climate Week presentation) are Materials from the Site under these terms; neither is expressly attributed to a third party. Not upgraded by analogy with any other host.",
+   "hosts": [
+    "icao.int"
+   ]
   },
   "mcga_gov_uk": {
    "key": "mcga_gov_uk",
@@ -411,7 +435,9 @@
    "attribution": "Contains public sector information licensed under the Open Government Licence v3.0.",
    "url": "https://www.gov.uk/help/terms-conditions",
    "verifiedOn": "2026-10-20",
-   "note": "READ 2026-10-20 at https://www.gov.uk/help/terms-conditions. [quote]Most content on GOV.UK is subject to Crown copyright protection and is published under the Open Government Licence (OGL), which also sets out which content is exempt.[/quote] The MGN 683 (M+F) publication page itself states: This publication is licensed under the terms of the Open Government Licence v3.0 except where otherwise stated, and adds that third-party copyright information needs permission from its holders. The OGL v3.0 text (https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/, read 2026-10-20) says You are free to exploit the Information commercially and non-commercially, and gives the default attribution statement used above when the provider specifies none; the MGN page specifies none beyond the Crown copyright line. This entry covers MCA-authored text only, not the IMO or other third-party text the notice quotes."
+   "quote": "Most content on GOV.UK is subject to Crown copyright protection and is published under the Open Government Licence (OGL), which also sets out which content is exempt.",
+   "termsReadOn": "2026-10-20",
+   "note": "READ 2026-10-20 at https://www.gov.uk/help/terms-conditions. The MGN 683 (M+F) publication page itself states: This publication is licensed under the terms of the Open Government Licence v3.0 except where otherwise stated, and adds that third-party copyright information needs permission from its holders. The OGL v3.0 text (https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/, read 2026-10-20) says You are free to exploit the Information commercially and non-commercially, and gives the default attribution statement used above when the provider specifies none; the MGN page specifies none beyond the Crown copyright line. This entry covers MCA-authored text only, not the IMO or other third-party text the notice quotes."
   },
   "cbp_gov": {
    "key": "cbp_gov",
@@ -421,7 +447,9 @@
    "attribution": "Source: U.S. Customs and Border Protection.",
    "url": "https://www.cbp.gov/site-policy-notices/copyright-notice",
    "verifiedOn": "2026-10-20",
-   "note": "READ 2026-10-20 at https://www.cbp.gov/site-policy-notices/copyright-notice. [quote]Unless a copyright is indicated, information on the U.S. Customs and Border Protection website is in the public domain and may be reproduced, published or otherwise used without the permission of the CBP.[/quote] The same notice asks only that CBP be cited as the source, and says a copyright indicated on a photo, graphic or other material needs permission from its original source. The Section 232 FAQ page carries no copyright indication (checked 2026-10-20). The notice does not name 17 U.S.C. 105; that provision is not relied on here."
+   "quote": "Unless a copyright is indicated, information on the U.S. Customs and Border Protection website is in the public domain and may be reproduced, published or otherwise used without the permission of the CBP.",
+   "termsReadOn": "2026-10-20",
+   "note": "READ 2026-10-20 at https://www.cbp.gov/site-policy-notices/copyright-notice. The same notice asks only that CBP be cited as the source, and says a copyright indicated on a photo, graphic or other material needs permission from its original source. The Section 232 FAQ page carries no copyright indication (checked 2026-10-20). The notice does not name 17 U.S.C. 105; that provision is not relied on here."
   }
  }
 }

@@ -31,13 +31,13 @@ export interface SuppressedClaimRef {
   item_id: string;
 }
 
-/** The map from a claim's text to its rating: the source's override, else its base tier (null when the claim has no source). */
+/** The map from a claim's id to its rating: the source's override, else its base tier (null when the claim has no source). Two claims with the same text keep their own entries. */
 function buildClaimTierMap(rows: readonly ClaimRow[] | null | undefined): ClaimTierMap {
   const map: ClaimTierMap = {};
   for (const row of rows ?? []) {
     if (!row || typeof row.claim_text !== "string") continue;
     const src = Array.isArray(row.sources) ? (row.sources[0] ?? null) : row.sources;
-    map[row.claim_text] = { tier: src ? (src.tier_override ?? src.base_tier ?? null) : null, sourceName: src?.name ?? null, sourceUrl: src?.url ?? null };
+    map[row.id] = { tier: src ? (src.tier_override ?? src.base_tier ?? null) : null, sourceName: src?.name ?? null, sourceUrl: src?.url ?? null, text: row.claim_text };
   }
   return map;
 }

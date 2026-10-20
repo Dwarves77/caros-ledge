@@ -1,7 +1,7 @@
 // Ported from old_repo/src/lib/detail/fact-paragraphs.ts (lines 1-161)
 // Ported from old_repo/src/lib/detail/fact-card-model.ts (lines 1-478)
 // A fact-document section's markdown to the fact-card models the kit draws: paragraph classes, lead-in kinds, embedded sentences, provenance, claim nodes, the figure lead, same-kind
-// merging, and the record-grade model. One regex set (the old tree kept two). The tier match itself (withClaimTiers, resolveClaimTier) is the kit's, re-exported by the barrel.
+// merging, and the record-grade model. One regex set (the old tree kept two). The tier read itself (withClaimTiers, by claim id) is the kit's, re-exported by the barrel.
 import { stripClaimLedgerBlocks } from "@/core/brief";
 import { hostOf } from "@/core/shared";
 import type { ClaimNode, FactCardModel } from "@/ui";
@@ -18,6 +18,8 @@ export interface FactParagraph {
   text: string;
   source?: ParsedSource | null;
   label?: string | null;
+  /** The grounded claim the paragraph states, when the surface binds one (section_claim_provenance.id). */
+  claimId?: string | null;
 }
 
 const ANALYSIS: Array<{ token: string; humanized: string }> = [
@@ -185,7 +187,7 @@ export function deriveFactCardModels(paragraph: FactParagraph): FactCardModel[] 
     const s = paragraph.kind === "fact" && paragraph.source && pieces.length === 1 ? paragraph.source : null;
     const claim = toClaimNodes(extracted.text);
     if (claim.length === 0) continue;
-    models.push({ kind: piece.kind, qualifier: piece.qualifier, figureLead: figureLeadFor(piece.kind, claim), figureSubLabel: null, claim, provenance: s ? { source: s.title, org: s.issuer, accessed: s.date, href: s.url, tier: null } : (extracted.provenance ?? null) });
+    models.push({ kind: piece.kind, qualifier: piece.qualifier, figureLead: figureLeadFor(piece.kind, claim), figureSubLabel: null, claim, ...(paragraph.claimId ? { claimId: paragraph.claimId } : {}), provenance: s ? { source: s.title, org: s.issuer, accessed: s.date, href: s.url, tier: null } : (extracted.provenance ?? null) });
   }
   return models;
 }
@@ -195,7 +197,7 @@ export function mergeAdjacentSameKind(models: FactCardModel[]): FactCardModel[] 
   const out: FactCardModel[] = [];
   for (const m of models) {
     const prev = out[out.length - 1];
-    if (prev && prev.kind === m.kind) prev.additionalClaims = [...(prev.additionalClaims ?? []), { claim: m.claim, provenance: m.provenance ?? null }];
+    if (prev && prev.kind === m.kind) prev.additionalClaims = [...(prev.additionalClaims ?? []), { claim: m.claim, ...(m.claimId ? { claimId: m.claimId } : {}), provenance: m.provenance ?? null }];
     else out.push({ ...m });
   }
   return out;

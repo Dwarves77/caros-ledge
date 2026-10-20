@@ -37,9 +37,9 @@ test("url: the single canonicaliser and hostOf", () => {
     ["https://www.consilium.europa.eu/en/policies/fit-for-55/.*", "https://consilium.europa.eu/en/policies/fit-for-55"],
     ["https://www.imo.org", "https://imo.org"],
     ["https://icapcarbonaction.com/", "https://icapcarbonaction.com"],
-    ["https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32023R1805*", "https://eur-lex.europa.eu/legal-content/en/txt/?uri=celex%3a32023r1805"],
+    ["https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32023R1805*", "https://eur-lex.europa.eu/legal-content/EN/TXT?uri=CELEX%3A32023R1805"],
   ];
-  for (const [polluted, clean] of fixtures) assert.equal(canonicalUrl(polluted), clean.toLowerCase());
+  for (const [polluted, clean] of fixtures) assert.equal(canonicalUrl(polluted), clean, "the path and the query keep their case");
   assert.equal(canonicalUrl(null), null);
   assert.equal(stripUrlMarkers("see https://a.test/x* and `https://b.test/y`"), "see https://a.test/x and `https://b.test/y");
   assert.equal(hostOf("https://www.Example.org/path?q=1"), "example.org");

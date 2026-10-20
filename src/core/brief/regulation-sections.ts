@@ -221,35 +221,46 @@ export function extractRecommendedActions(fullBrief: string | null | undefined, 
 }
 
 // ---- record-grade claim lines ----------------------------------------------------------------------------
-export interface ClaimTierInfo { tier: number | null; sourceName: string | null; sourceUrl: string | null }
+export interface ClaimTierInfo { tier: number | null; sourceName: string | null; sourceUrl: string | null; /** the claim's own text, for the exact line match below */ text?: string }
 export interface RecordFactRow { slotKey: string; label: string; kind: "FACT" | "GAP"; text: string; span: string | null; rawLine: string; tier: number | null; sourceName: string | null; sourceUrl: string | null }
 export interface ParsedRecordSections { facts: RecordFactRow[]; gaps: RecordFactRow[]; slotFieldCount: number; sourceUrl: string | null }
 /** The sentence every record-grade GAP claim ends with; the writer (record-facts) and this reader share this one constant. */
 export const GAP_MARKER = "A full-brief regrounding will re-examine this gap when this item upgrades from record to brief.";
 
 /** One `[slot_key] sentence «span»` line; a GAP never looks up a tier (it has no source to rate). */
-function parseClaimLine(line: string, claimTiers?: Record<string, ClaimTierInfo>): RecordFactRow | null {
+function parseClaimLine(line: string, byText?: ReadonlyMap<string, ClaimTierInfo | null>): RecordFactRow | null {
   const trimmed = line.trim();
   const m = /^\[([a-z0-9_]+)\]\s*(.*)$/i.exec(trimmed);
   if (!m) return null;
   const slotKey = m[1] ?? "";
   const rest = m[2] ?? "";
   const gap = rest.includes(GAP_MARKER);
-  const info = !gap && claimTiers ? (claimTiers[trimmed] ?? null) : null;
+  const info = !gap && byText ? (byText.get(trimmed) ?? null) : null;
   const spans = [...rest.matchAll(/«([^»]*)»/g)];
   const spaced = slotKey.replace(/_/g, " ").trim();
   return { slotKey, label: spaced.charAt(0).toUpperCase() + spaced.slice(1), kind: gap ? "GAP" : "FACT", text: rest.trim(), span: gap ? null : (spans[spans.length - 1]?.[1] ?? null), rawLine: trimmed, tier: info?.tier ?? null, sourceName: info?.sourceName ?? null, sourceUrl: info?.sourceUrl ?? null };
 }
-const claimLines = (contentMd: string, tiers?: Record<string, ClaimTierInfo>): RecordFactRow[] =>
-  String(contentMd ?? "").split(/\r?\n/).flatMap((raw) => parseClaimLine(raw.replace(/^-\s+/, ""), tiers) ?? []);
+const claimLines = (contentMd: string, byText?: ReadonlyMap<string, ClaimTierInfo | null>): RecordFactRow[] =>
+  String(contentMd ?? "").split(/\r?\n/).flatMap((raw) => parseClaimLine(raw.replace(/^-\s+/, ""), byText) ?? []);
+/** The claims by their EXACT line (the record-grade line is the claim's whole text); two claims with the same line and different ratings are ambiguous and draw none. */
+function claimsByLine(claimTiers: Record<string, ClaimTierInfo> | undefined): Map<string, ClaimTierInfo | null> {
+  const out = new Map<string, ClaimTierInfo | null>();
+  for (const info of Object.values(claimTiers ?? {})) {
+    if (typeof info.text !== "string") continue;
+    const held = out.get(info.text);
+    out.set(info.text, held === undefined || (held && held.tier === info.tier && held.sourceName === info.sourceName) ? info : null);
+  }
+  return out;
+}
 
 /** A record-grade item's section rows to render-ready facts and gaps; null when neither identity nor record_facts is present. */
 export function parseRecordSections(rows: { section_key: string; content_md: string }[] | null | undefined, claimTiers?: Record<string, ClaimTierInfo>): ParsedRecordSections | null {
   const list = Array.isArray(rows) ? rows : [];
   const by = (k: string) => list.find((r) => r.section_key === k);
   if (!by("identity") && !by("record_facts")) return null;
-  const slotRows = by("record_facts") ? claimLines(by("record_facts")?.content_md ?? "", claimTiers) : [];
-  const identity = by("identity") ? claimLines(by("identity")?.content_md ?? "", claimTiers) : [];
+  const byLine = claimsByLine(claimTiers);
+  const slotRows = by("record_facts") ? claimLines(by("record_facts")?.content_md ?? "", byLine) : [];
+  const identity = by("identity") ? claimLines(by("identity")?.content_md ?? "", byLine) : [];
   const src = by("sources_and_citations");
   return { facts: [...identity, ...slotRows].filter((r) => r.kind === "FACT"), gaps: slotRows.filter((r) => r.kind === "GAP"), slotFieldCount: slotRows.length, sourceUrl: src ? (/^Source:\s*(\S+)\s*$/m.exec(src.content_md)?.[1] ?? null) : null };
 }

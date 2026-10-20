@@ -1,0 +1,7 @@
+{
+  "eurlex": ["eur-lex.europa.eu"],
+  "uk_legislation": ["legislation.gov.uk"],
+  "federal_register": ["federalregister.gov"],
+  "us_code": ["govinfo.gov", "ecfr.gov"],
+  "gazette": ["thegazette.co.uk", "gazzettaufficiale.it", "boe.es", "legifrance.gouv.fr", "bundesanzeiger.de", "bgbl.de", "dziennikustaw.gov.pl", "officielebekendmakingen.nl", "ejustice.just.fgov.be"]
+}

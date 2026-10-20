@@ -131,7 +131,9 @@ function deadlineTokens(text: string, counts: SkipCounts, verdict: LocaleVerdict
   return [...out];
 }
 
-export interface GateAScan { scanned_hash: string; gate_a_version: string; orphan_count: number; orphans: { token: string; class: "figure" | "deadline"; reason?: string }[]; counts: SkipCounts }
+/** A Gate A orphan as stored in item_gate_a_state.orphans: a figure carries its typed reading (exact value, unit, kind) so a page shows it without parsing the brief again; a figure the parser refused carries the reason instead. */
+export interface Orphan { token: string; class: "figure" | "deadline"; value?: string; unit?: string; kind?: string; reason?: string }
+export interface GateAScan { scanned_hash: string; gate_a_version: string; orphan_count: number; orphans: Orphan[]; counts: SkipCounts }
 export interface FactClaim { claim_text: string; source_span: string; /** the number locale of the capture the span comes from, when it declares one */ locale?: string | null }
 /**
  * scanBrief: orphans are factual tokens absent from every FACT claim (literal arm) and from every valid DERIVED claim (`derivedCovered`). A figure is covered only by an EQUAL typed
@@ -150,8 +152,8 @@ export function scanGateA(fullBrief: string | null | undefined, factClaims: Fact
   });
   const figureBacked = (f: FigureToken): boolean => (f.figure !== null && claims.some((c) => c.typed.some((t) => figuresEqual(t, f.figure as Figure)))) || derivedCovered.has(norm(f.token));
   const deadlineBacked = (tk: string): boolean => claims.some((c) => containsNumeral(c.doc, tk)) || derivedCovered.has(norm(tk));
-  const orphans = [
-    ...figures.filter((f) => !figureBacked(f)).map((f) => ({ token: f.token, class: "figure" as const, ...(f.reason ? { reason: f.reason } : {}) })),
+  const orphans: Orphan[] = [
+    ...figures.filter((f) => !figureBacked(f)).map((f) => ({ token: f.token, class: "figure" as const, ...(f.figure ? { value: f.figure.value, unit: f.figure.unit, kind: f.figure.kind } : {}), ...(f.reason ? { reason: f.reason } : {}) })),
     ...deadlines.filter((t) => !deadlineBacked(t)).map((token) => ({ token, class: "deadline" as const })),
   ];
   return { scanned_hash: md5(fullBrief), gate_a_version: GATE_A_VERSION, orphan_count: orphans.length, orphans, counts };

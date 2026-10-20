@@ -5,6 +5,7 @@ export { GROUND_CONFIG } from "./config";
 export type { TruncEvent } from "./config";
 export { openFlagOnce } from "./flags";
 export { scanGateA } from "./gate-a-scan";
+export type { FactClaim, Orphan } from "./gate-a-scan";
 export { buildCitationEdges, buildGateARow, clearGateAState, derivedCoveredTokens, mergeNullTierAggregate, mintGates, summarizeNullTierAggregate, upsertGateAState } from "./gates";
 export { groundBrief } from "./ground";
 export type { GroundDeps, GroundInput, GroundResult, GroundSources, TargetIdentity, TargetMatch } from "./ground";

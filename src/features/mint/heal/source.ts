@@ -8,13 +8,14 @@
 // is found on it (the old pass registered first, then looked).
 import type { Db } from "@/core/db";
 import { capture, FetchHoldError, type CaptureResult } from "@/core/fetch";
+import type { Orphan } from "@/core/grounding";
 import { institutionKey, registerAndRate } from "@/core/sources";
 import { canonicalUrl } from "@/core/shared";
 import type { LedgerOp } from "@/core/grounding/ledger";
 
 import type { CaptureDeps } from "../deps";
 
-import { briefSentenceOf, findOwningSection, locateSpan, NO_VERBATIM_SPAN, supportingSentence, type Capture, type HealClaim, type HealSource, type IndexCache, type Orphan, type SourcesIndex } from "./ground";
+import { briefSentenceOf, findOwningSection, locateSpan, NO_VERBATIM_SPAN, supportingSentence, type Capture, type HealClaim, type HealSource, type IndexCache, type SourcesIndex } from "./ground";
 
 const MAX_CANDIDATES_PER_ORPHAN = 5;
 const MAX_ATTEMPTS_PER_ITEM = 25;

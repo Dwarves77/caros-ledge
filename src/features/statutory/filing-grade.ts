@@ -6,6 +6,7 @@
 import { z } from "zod";
 
 import { acceptQuote, type QuoteVerdict } from "@/core/producers/quote";
+import { reuseTermsForHost, type ReuseTerms } from "@/core/sources/reuse-terms";
 
 import constants from "./data/fueleu-annex-i-iv-constants.json";
 import inputsJson from "./data/filing-grade-inputs.json";
@@ -17,6 +18,8 @@ export interface FilingInstrument {
   /** The stored capture (agent_run_searches id) of the instrument's text, or null when none is stored yet. */
   captureId: string | null;
   verifiedAt: string | null;
+  /** The rights verdict of the instrument's publisher (the class table's verdict for its URL): an instrument of a source with unknown or prohibited terms is quoted only up to the cap. */
+  reuseTerms: ReuseTerms;
   /** Target year to every quote that year's limit rests on. */
   yearQuotes: Readonly<Record<string, readonly string[]>>;
 }
@@ -27,14 +30,14 @@ export function deriveInstrument(i: FilingInstrument, captureText: string | null
   const years: number[] = [];
   const refusals: FilingGrade["refusals"] = [];
   for (const [year, quotes] of Object.entries(i.yearQuotes).sort(([a], [b]) => Number(a) - Number(b))) {
-    const verdicts: QuoteVerdict[] = quotes.map((quote) => acceptQuote({ quote, verifiedAt: i.verifiedAt, captureId: i.captureId, captureText, now }));
+    const verdicts: QuoteVerdict[] = quotes.map((quote) => acceptQuote({ quote, verifiedAt: i.verifiedAt, captureId: i.captureId, captureText, reuseTerms: i.reuseTerms, now }));
     const bad = verdicts.find((v) => !v.ok);
     if (!bad && verdicts.length) years.push(Number(year));
     else refusals.push({ year: Number(year), reason: bad && !bad.ok ? bad.reason : "no_quote", detail: bad && !bad.ok ? bad.detail : "the year lists no quote" });
   }
   return { years, refusals };
 }
-const evidence = z.object({ instruments: z.array(z.object({ id: z.string(), capture_id: z.string().nullable(), verified_at: z.string().nullable() })) }).parse(inputsJson);
+const evidence = z.object({ instruments: z.array(z.object({ id: z.string(), source_url: z.string(), capture_id: z.string().nullable(), verified_at: z.string().nullable() })) }).parse(inputsJson);
 const fueleu = z.object({
   reference_value: z.object({ source: z.object({ quote: z.string() }).loose() }).loose(),
   ghg_intensity_limit_by_period: z.object({ periods: z.array(z.object({ from_date: z.string(), quote: z.string() })) }),
@@ -44,5 +47,5 @@ const FUELEU_YEAR_QUOTES: FilingInstrument["yearQuotes"] = Object.fromEntries(fu
 
 /** The instruments the derivation covers: each evidence row of data/filing-grade-inputs.json with its quotes. A row naming an instrument that has no quotes defined here is a defect the drift test reports. */
 export function filingInstruments(): FilingInstrument[] {
-  return evidence.instruments.map((e) => ({ id: e.id, captureId: e.capture_id, verifiedAt: e.verified_at, yearQuotes: e.id === FUELEU_INSTRUMENT ? FUELEU_YEAR_QUOTES : {} }));
+  return evidence.instruments.map((e) => ({ id: e.id, captureId: e.capture_id, verifiedAt: e.verified_at, reuseTerms: reuseTermsForHost(e.source_url), yearQuotes: e.id === FUELEU_INSTRUMENT ? FUELEU_YEAR_QUOTES : {} }));
 }

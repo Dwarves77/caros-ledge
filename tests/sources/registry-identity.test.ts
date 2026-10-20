@@ -146,6 +146,11 @@ const MAY_NAME_THEM: Record<string, string> = {
   "src/features/sources/collect.ts": "the runner job that finishes the ladder and records the state",
   "src/features/sources/snapshots.ts": "raw_fetches.content_hash, an older table",
   "src/core/capture/change-detection.ts": "a note inside a trust event, not a column",
+  "src/core/producers/quote.ts": "acceptStoredQuote reads the rights verdict of the quoted page's registry row before it accepts a quote (R2f F10); a producer path, not a page",
+  "src/core/grounding/pool.ts": "the grounding pass reads the number locale its capture declares (R2f); a pass, not a page",
+  "src/core/grounding/ground.ts": "the grounding pass reads each FACT under its capture's number locale (R2f)",
+  "src/features/mint/heal/ground.ts": "the healer reads a capture under its declared number locale (R2f)",
+  "src/features/mint/heal/run.ts": "the healer selects the number locale with the captures it reads (R2f)",
 };
 const sourceFiles = (dir: string): string[] => readdirSync(dir).flatMap((n) => (statSync(join(dir, n)).isDirectory() ? sourceFiles(join(dir, n)) : /\.(ts|tsx)$/.test(n) ? [join(dir, n).replace(/\\/g, "/")] : []));
 
