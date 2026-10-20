@@ -160,11 +160,11 @@ export async function capture(url: string, opts: { family?: CaptureFamily; key?:
     const env: Env = { usable: res.status === 200 && isStorableClass(classifyBody(res.text, { status: res.status }).class) && res.text.length > 200, status: res.status || null, html: res.html ?? "", text: res.text, endpoint: res.finalUrl ?? url, title: res.title ? { title: res.title, origin: "captured_title" } : null };
     attempts.push(attemptOf(env, "direct", res.text));
     if (env.usable) return done(env, "direct");
-    last = { ...env, refusal: res.refusal && /^(robots_|private_address|host_busy)/.test(res.refusal.reason) ? { reason: res.refusal.reason as GuardRefusal["reason"], transient: res.refusal.transient, detail: res.refusal.detail, ...(res.refusal.rule ? { rule: res.refusal.rule } : {}) } : null };
+    last = { ...env, refusal: res.refusal && /^(licence_forbids|robots_|private_address|host_busy)/.test(res.refusal.reason) ? { reason: res.refusal.reason as GuardRefusal["reason"], transient: res.refusal.transient, detail: res.refusal.detail, ...(res.refusal.rule ? { rule: res.refusal.rule } : {}), ...(res.refusal.registerKey ? { registerKey: res.refusal.registerKey } : {}) } : null };
   }
 
   const why = last?.refusal?.reason;
-  return held(why === "robots_disallowed" ? "robots_disallowed" : why === "robots_unknown" || why === "host_busy" ? "robots_deferred" : why === "private_address" ? "private_address" : last ? unusableReason(last) : "capture_blocked", last ?? { status: null, endpoint: null });
+  return held(why === "licence_forbids" ? "licence_forbids" : why === "robots_disallowed" ? "robots_disallowed" : why === "robots_unknown" || why === "host_busy" ? "robots_deferred" : why === "private_address" ? "private_address" : last ? unusableReason(last) : "capture_blocked", last ?? { status: null, endpoint: null });
 }
 
 /** A rate-limited gate bound to one politeness gap (default 1,000 ms), shared across every fetch of a run. The clock and the sleep are injected. */

@@ -7,7 +7,8 @@ import { dedupeEvents, sameObligationContent } from "@/features/obligations/extr
 import { EXTRACTOR_VERSION, extractForwardEvents } from "@/features/obligations/extract/extract-forward-events";
 import { RULES } from "@/features/obligations/extract/rules";
 import { needsDueDateContext, scanText } from "@/features/obligations/extract/scan";
-import { assertVerbatim, normalizeObligationText, selectDateCell, unwrapRecordFactsTemplate } from "@/features/obligations/extract/window";
+import { assertVerbatim } from "@/core/contracts/verbatim";
+import { normalizeObligationText, selectDateCell, unwrapRecordFactsTemplate } from "@/features/obligations/extract/window";
 import type { ClaimIn } from "@/features/obligations/extract/scan";
 
 const read = (name: string) => JSON.parse(readFileSync(new URL(`./fixtures/${name}`, import.meta.url), "utf8"));
@@ -152,7 +153,7 @@ test("normalizeObligationText is idempotent; selectDateCell picks the explaining
     assert.equal(normalizeObligationText(once, { dateSpan: "1 May 2029" }), once, raw);
   }
   assert.equal(selectDateCell("| 1 May 2029 | Operators shall register their ships | x |", "1 May 2029"), "Operators shall register their ships");
-  assert.throws(() => assertVerbatim("abc", "abd"), /not a verbatim substring/);
+  assert.throws(() => assertVerbatim("abc", "abd"), /not a substring/);
   assert.throws(() => assertVerbatim("abc", ""), /empty/);
 });
 

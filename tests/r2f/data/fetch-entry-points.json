@@ -1,0 +1,27 @@
+{
+  "_": "F8: the licence register drives collection. A file that reaches the network through one of the primitives below must consult the register itself (the token `licence`) or pass the hold gate first (`assertFetchAllowed(`, which asks the register before the hold, for every caller). A file in `exempt` reaches only our own deployment or a vendor API we are a customer of, or reaches the network only through a primitive that consults. tests/r2f/licence.test.ts reads this file.",
+  "primitives": [
+    { "label": "the guarded GET", "pattern": "\\bguardedFetch\\(" },
+    { "label": "the honest fetch", "pattern": "\\bhonestFetch\\(" },
+    { "label": "a browser launch", "pattern": "chromium\\.launch\\(" },
+    { "label": "a browser navigation", "pattern": "\\.goto\\(" },
+    { "label": "the injected fetch called directly", "pattern": "fetchImpl\\)? \\?\\? fetch\\)?\\(" }
+  ],
+  "consults": ["assertFetchAllowed(", "licence"],
+  "roots": ["src", "supabase/functions", "scripts"],
+  "exempt": {
+    "scripts/ci/live-checks.mjs": "reads our own deployment (the preview and production origins) and the accounts it is given",
+    "scripts/ops/measure-collection.mjs": "reaches the network only through honestFetch (the guard asks the register) and fetchBrowser (the hold gate asks it)",
+    "src/core/http/authed-fetch.ts": "the app's own API with the member's session",
+    "src/core/shared/email.ts": "the e-mail vendor's API, not a source of regulatory text"
+  },
+  "entryPoints": [
+    { "file": "src/core/fetch/guard.ts", "token": "g.licence(" },
+    { "file": "src/core/fetch/hold.ts", "token": "licenceForbidsHost(" },
+    { "file": "src/core/fetch/ladder.ts", "token": "deps.licence(" },
+    { "file": "src/core/fetch/honest.ts", "token": "licence: licenceForbidsHost" },
+    { "file": "supabase/functions/capture-worker/process.ts", "token": "licenceForbidsHost(hostOf(src.url))" },
+    { "file": "src/features/sources/collect.ts", "token": "licence: licenceForbidsHost" },
+    { "file": "tests/golden/_docs.ts", "token": "licenceForbidsHost(" }
+  ]
+}

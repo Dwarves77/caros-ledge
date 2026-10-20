@@ -3,7 +3,7 @@
 // otherwise HYPOTHESIS. Cited items are verified, not archived, not Community-only and inside the export's reach; `cited_item_ids` equals the evidence item set; a figure in the answer comes from an evidence span, the
 // question or a cited title. An unanswerable entry says what holding would answer the question and nothing else. An answer authored against a stale held pool is refused (INV-207).
 import { figureTokens } from "@/core/briefs/theme-brief-contract";
-import { assertVerbatim } from "@/core/contracts/verbatim";
+import { assertVerbatim, isVerbatim } from "@/core/contracts/verbatim";
 
 import { isObj, nonEmpty, poolHashError, type EntryResult } from "../../kit/session-batch";
 
@@ -15,7 +15,6 @@ const CEILINGS = { answer: 1500, missing: 600, source_span: 600, evidence_entrie
 const MIN_SPAN_CHARS = 20;
 const UUID_RE = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
 const absent = (x: unknown): boolean => x === undefined || x === null || x === "" || (Array.isArray(x) && x.length === 0);
-const normalise = (s: unknown): string => String(s ?? "").replace(/\s+/g, " ").trim().toLowerCase();
 
 export interface QuestionLive {
   open: boolean;
@@ -32,10 +31,9 @@ export interface QaLive { questions: Map<string, QuestionLive>; done(entry: Reco
 function sentencesOf(text: string): string[] {
   return String(text ?? "").split(/(?<=[.!?])\s+|\n+/).map((s) => s.trim().replace(/^[\s"'(\[]+|[\s"')\].!?;:,]+$/g, "")).filter((s) => s.length > 0);
 }
-/** The CONFIRMED rule: the sentences that are NOT a (whitespace-collapsed, case-folded) substring of some evidence span; empty means CONFIRMED is allowed. A paraphrase is never CONFIRMED however faithful. */
+/** The CONFIRMED rule: the sentences that are not a whole quotation of some evidence span (at least MIN_SPAN_CHARS long and verbatim in it by the database's rule); empty means CONFIRMED is allowed. "Yes." is never a quotation of a span that contains "yes", and a paraphrase is never CONFIRMED however faithful. */
 function unquotedSentences(answer: string, spans: readonly string[]): string[] {
-  const hay = spans.map(normalise);
-  return sentencesOf(answer).filter((sent) => !hay.some((h) => h.includes(normalise(sent))));
+  return sentencesOf(answer).filter((sent) => sent.length < MIN_SPAN_CHARS || !spans.some((span) => isVerbatim(span, sent)));
 }
 
 /** Validate ONE entry: the refusal reasons, or `done` when the work is already recorded. */

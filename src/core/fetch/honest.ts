@@ -5,6 +5,7 @@ import { lookup } from "node:dns/promises";
 
 import type { FetchDeps } from "./direct";
 import { guardedFetch, makeHostGate, makeRobotsReader, type GuardOptions } from "./guard";
+import { licenceForbidsHost } from "./licence-hosts";
 import { BOT_USER_AGENT } from "./policy";
 import { makeRobotsGate } from "./robots";
 
@@ -46,7 +47,7 @@ function kitFor(deps: HonestDeps): Kit {
   if (held) return held;
   const now = () => (deps.now ? deps.now().getTime() : performance.now());
   const sleep = deps.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
-  const base: Omit<GuardOptions, "userAgent" | "robots"> = { fetchImpl: raw, resolveHost: deps.resolveHost ?? nodeResolve, gate: makeHostGate({ now, sleep }), upgradeHttp: true };
+  const base: Omit<GuardOptions, "userAgent" | "robots"> = { licence: licenceForbidsHost, fetchImpl: raw, resolveHost: deps.resolveHost ?? nodeResolve, gate: makeHostGate({ now, sleep }), upgradeHttp: true };
   const robots = makeRobotsGate(makeRobotsReader({ ...base, userAgent: BOT_USER_AGENT }), undefined, { now, ttlMs: ROBOTS_TTL_MS });
   const kit = { base, robots };
   kits.set(raw, kit);

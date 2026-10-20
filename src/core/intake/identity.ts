@@ -1,7 +1,13 @@
 // Ported from old_repo/scripts/mint/export-census-rows.mjs (lines 25-292)
 // Document identity from a census row and its source: the CELEX sector map, the UK series identifier (the URL path ONLY), the
 // Federal Register document number and type, and the registered-institution fallback. Pure and deterministic; the two helpers it
-// needs from other slices (canonical-key derivation, institution equality) arrive as parameters.
+// needs from other slices (canonical-key derivation, institution equality) arrive as parameters. A host belongs to a publisher family by EQUALITY with a listed domain or by being a subdomain of it (hostMatches), never by a substring.
+import { z } from "zod";
+
+import { hostMatches } from "@/core/parse";
+import { hostOf } from "@/core/shared";
+
+import hostsJson from "./data/publisher-hosts.json";
 
 /** CELEX sector digit to the letter-to-item_type map valid for that sector. A CELEX Decision is a binding act (Article 288 TFEU): regulation. */
 const CELEX_SECTOR_LETTER_MAP: Readonly<Record<string, Readonly<Record<string, string>>>> = {
@@ -44,6 +50,14 @@ function classifyFrDocType(frType: string | null | undefined): { itemType: strin
   const t = String(frType ?? "").trim().toLowerCase();
   return t === "rule" ? { itemType: "regulation", hold: null } : t === "proposed rule" ? { itemType: "initiative", hold: null } : { itemType: null, hold: "item_type_unmapped" };
 }
+const FAMILIES = ["eurlex", "uk_legislation", "federal_register", "us_code", "gazette"] as const;
+export type HostFamily = (typeof FAMILIES)[number];
+const PUBLISHER_HOSTS = z.object(Object.fromEntries(FAMILIES.map((f) => [f, z.array(z.string().min(3)).min(1)])) as Record<HostFamily, z.ZodArray<z.ZodString>>).parse(hostsJson);
+/** The publisher family a URL (or bare host) belongs to, or null. */
+export function hostFamily(url: string | null | undefined): HostFamily | null {
+  const host = hostOf(url);
+  return host ? (FAMILIES.find((f) => PUBLISHER_HOSTS[f].some((d) => hostMatches(host, d))) ?? null) : null;
+}
 const hostnameOf = (url: string | null | undefined): string | null => {
   try {
     return new URL(String(url)).hostname.toLowerCase();
@@ -53,9 +67,8 @@ const hostnameOf = (url: string | null | undefined): string | null => {
 };
 /** Which source family a URL belongs to; null means held identity_unmapped_source with the host recorded. */
 export function classifyHost(url: string | null | undefined): "eurlex" | "uk_legislation" | "federal_register" | null {
-  const host = hostnameOf(url);
-  if (!host) return null;
-  return host.endsWith("eur-lex.europa.eu") ? "eurlex" : host.endsWith("legislation.gov.uk") ? "uk_legislation" : host.endsWith("federalregister.gov") ? "federal_register" : null;
+  const family = hostFamily(url);
+  return family === "eurlex" || family === "uk_legislation" || family === "federal_register" ? family : null;
 }
 
 export interface CensusRow { document_url?: string | null; instrument_identifier?: string | null }

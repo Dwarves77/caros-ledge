@@ -58,7 +58,9 @@ export function ownIdentifiers(r: { instrument_identifier?: string | null; title
 
 
 
-const TRACKING = new Set(IDENT_FILE.trackingParams);
+/** The query parameters that only track a visit; canonicalizeUrl drops them and so does its SQL mirror. */
+export const TRACKING_PARAMS: readonly string[] = IDENT_FILE.trackingParams;
+const TRACKING = new Set(TRACKING_PARAMS);
 /** One canonical URL: https, host lower-cased without www and default port, path and query CASE KEPT, query sorted and stripped of tracking parameters, no fragment, no trailing slash. */
 export function canonicalizeUrl(raw: string | null | undefined): string | null {
   if (raw == null) return null;
@@ -82,4 +84,69 @@ export function indexOfInsensitive(text: string, needle: string): { index: numbe
   if (!needle) return null;
   const m = new RegExp(escapeRe(needle), "iu").exec(text);
   return m ? { index: m.index, length: m[0].length } : null;
+}
+
+/** True when `host` is `domain` or a subdomain of it: "gov.uk" and "www.gov.uk" match "gov.uk", "notgov.uk" and "gov.uk.example.com" do not. */
+export function hostMatches(host: string | null | undefined, domain: string): boolean {
+  const h = String(host ?? "").toLowerCase().replace(/\.$/, "");
+  const d = domain.toLowerCase();
+  return h !== "" && d !== "" && (h === d || h.endsWith(`.${d}`));
+}
+
+/**
+ * public.canonicalize_citation_url and its two form-encoding helpers: the database mirror of canonicalizeUrl, GENERATED from the same data (the tracking parameters). Migration 0107 carries this text; a test regenerates and diffs it,
+ * and schema:local runs the function and canonicalizeUrl over one list of URLs and they agree. The mirror covers absolute URLs with an ASCII host and a path that holds no dot segments or characters the URL standard re-encodes;
+ * a URL it cannot read is returned trimmed, exactly as canonicalizeUrl returns it.
+ */
+export function renderCanonicalizeUrlSql(): string {
+  const tracking = IDENT_FILE.trackingParams.map((p) => `'${p.replace(/'/g, "''")}'`).join(", ");
+  return `CREATE OR REPLACE FUNCTION public.canonical_form_decode(s text) RETURNS text
+    LANGUAGE sql IMMUTABLE STRICT
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+  SELECT coalesce(convert_from(string_agg(CASE WHEN r.a[1] ~ '^%[0-9A-Fa-f]{2}$' THEN decode(substr(r.a[1], 2), 'hex') ELSE convert_to(replace(r.a[1], '+', ' '), 'UTF8') END, ''::bytea ORDER BY r.n), 'UTF8'), '')
+    FROM regexp_matches(s, '%[0-9A-Fa-f]{2}|[^%]+|%', 'g') WITH ORDINALITY AS r(a, n)
+$$;
+
+CREATE OR REPLACE FUNCTION public.canonical_form_encode(s text) RETURNS text
+    LANGUAGE sql IMMUTABLE STRICT
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+  SELECT coalesce(string_agg(CASE WHEN c.ch ~ '^[A-Za-z0-9*._-]$' THEN c.ch WHEN c.ch = ' ' THEN '+' ELSE regexp_replace(upper(encode(convert_to(c.ch, 'UTF8'), 'hex')), '(..)', '%\\1', 'g') END, '' ORDER BY c.n), '')
+    FROM regexp_split_to_table(s, '') WITH ORDINALITY AS c(ch, n)
+$$;
+
+CREATE OR REPLACE FUNCTION public.canonicalize_citation_url(u text) RETURNS text
+    LANGUAGE plpgsql IMMUTABLE STRICT
+    SET search_path TO 'public', 'extensions', 'pg_temp'
+    AS $$
+DECLARE
+  v_t text;
+  m text[];
+  v_host text;
+  v_port text;
+  v_path text;
+  v_qs text;
+BEGIN
+  v_t := regexp_replace(regexp_replace(regexp_replace(u, '^\\s+|\\s+$', '', 'g'), '[*\`]+$', ''), '[.,;:]+$', '');
+  m := regexp_match(v_t, '^[A-Za-z][A-Za-z0-9+.-]*://([^/?#]*)([^?#]*)(?:\\?([^#]*))?(?:#.*)?$');
+  IF m IS NULL THEN RETURN v_t; END IF;
+  v_host := lower(regexp_replace(m[1], '^.*@', ''));
+  v_port := (regexp_match(v_host, ':(\\d+)$'))[1];
+  v_host := regexp_replace(regexp_replace(v_host, ':\\d*$', ''), '^www\\.', '');
+  IF v_host = '' THEN RETURN v_t; END IF;
+  IF v_port IS NOT NULL THEN v_port := (v_port::bigint)::text; IF v_port IN ('80', '443') THEN v_port := NULL; END IF; END IF;
+  v_path := CASE WHEN length(m[2]) > 1 THEN regexp_replace(m[2], '/+$', '') ELSE '' END;
+  IF m[3] IS NOT NULL THEN
+    SELECT string_agg(public.canonical_form_encode(q.k) || '=' || public.canonical_form_encode(q.v), '&' ORDER BY q.k COLLATE "C", q.v COLLATE "C")
+      INTO v_qs
+      FROM (SELECT public.canonical_form_decode(split_part(p, '=', 1)) AS k, public.canonical_form_decode(CASE WHEN strpos(p, '=') = 0 THEN '' ELSE substr(p, strpos(p, '=') + 1) END) AS v
+              FROM unnest(string_to_array(m[3], '&')) AS p WHERE p <> '') q
+     WHERE lower(q.k) NOT IN (${tracking});
+  END IF;
+  RETURN 'https://' || v_host || coalesce(':' || v_port, '') || v_path || CASE WHEN v_qs IS NULL OR v_qs = '' THEN '' ELSE '?' || v_qs END;
+EXCEPTION WHEN character_not_in_repertoire OR invalid_text_representation OR numeric_value_out_of_range THEN
+  RETURN v_t;
+END;
+$$;`;
 }

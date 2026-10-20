@@ -16,17 +16,24 @@ import { CELEX_URL, SOURCE, makeDeps, makeWorld, type WorldDb } from "./world.ts
 const cap = (text: string, id = "cap1"): Capture => ({ id, result_url: CELEX_URL, result_content: text });
 const claim = (over: Partial<HealClaim>): HealClaim => ({ id: "c1", claim_kind: "FACT", claim_text: "t", source_span: null, source_id: null, search_result_id: null, section_row_id: null, ...over });
 
-test("INV-298: the numeric fold is by VALUE: thousands groups fold, a decimal comma folds to a point, and an ambiguous single separator never folds", () => {
-  const f = (s: string) => normalizeNumeric(s).chars;
-  assert.deepEqual(["1 200 000", "1,200,000", "1.200.000", "1 200"].map(f), ["1200000", "1200000", "1200000", "1200"]);
-  assert.deepEqual(["35,5", "35.5", "0,75"].map(f), ["35.5", "35.5", "0.75"]);
-  assert.deepEqual(["1.234,56", "1,234.56"].map(f), ["1234.56", "1234.56"], "a thousands group then a decimal");
-  assert.equal(f("12.345"), "12.345", "one point and three digits: decimal or thousands, so it stays literal");
-  assert.equal(f("12,345"), "12,345");
+test("INV-298: the numeric fold is by VALUE, read through the parse module under the locale of the text that prints the number", () => {
+  const f = (s: string, locale?: string) => normalizeNumeric(s, locale).chars;
+  assert.deepEqual(["1 200 000", "1,200,000", "1.200.000", "1 200"].map((s) => f(s)), ["1200000", "1200000", "1200000", "1200"]);
+  assert.deepEqual(["35,5", "35.5", "0,75"].map((s) => f(s)), ["35.5", "35.5", "0.75"]);
+  assert.deepEqual(["1.234,56", "1,234.56"].map((s) => f(s)), ["1234.56", "1234.56"], "a thousands group then a decimal");
+  assert.equal(f("12.345"), "12.345", "alone, one point and three digits read as a decimal point");
+  assert.equal(f("12,345"), "12345", "alone, one comma and three digits read as thousands");
   assert.notEqual(f("12.345"), f("12,345"), "the two never fold onto one value");
+  assert.equal(f("12.345", "de"), "12345", "the capture declares German: the point is the thousands separator");
+  assert.equal(f("12,345", "de-AT"), "12.345", "a BCP-47 tag reads by its language: the comma is the decimal separator");
   assert.equal(f("5 12"), "5 12", "a space before a non-thousands group is two numbers");
+  assert.equal(f("EUR 15 million"), f("€15 million"), "a figure folds to its value and unit, whichever way the currency is printed");
+  assert.notEqual(f("EUR 15 million"), f("EUR 150 million"));
   const r = normalizeNumeric("1,200,000");
   assert.equal(r.map.length, r.chars.length + 1, "every folded character maps back to the capture, plus the end");
+  assert.equal(r.ends.length, r.chars.length);
+  assert.equal(normalizeNumeric("1,2,3,4 and 5", "en").refused === null, false, "a number the parser cannot read refuses the view");
+  assert.equal(normalizeNumeric("see 1.200,5 and 1,200.5").refused === null, false, "a text that mixes two conventions has no locale: refused, not guessed");
 });
 
 test("INV-298: a tolerant match never changes the figure: 12.345 does not ground on 12,345, 345 does not ground inside 12,345, 12 does not ground inside 12.5", () => {

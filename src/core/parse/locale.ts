@@ -69,7 +69,10 @@ const readers = (literal: string): string[] => Object.keys(LOCALES).filter((l) =
 
 /** The locale of one document: declared wins; else the majority of the unambiguous literals; no evidence uses the stated default; a split with no majority is refused. */
 export function resolveLocale(text: string, declared?: string | null): LocaleVerdict {
-  if (declared) return LOCALES[declared] ? { locale: declared, basis: "declared" } : { locale: null, reason: `declared locale ${declared} is not a known locale` };
+  if (declared) {
+    const known = LOCALES[declared] ? declared : declared.split("-")[0] ?? declared; // a BCP-47 tag ("de-AT", "pt-BR") is read by its language
+    return LOCALES[known] ? { locale: known, basis: "declared" } : { locale: null, reason: `declared locale ${declared} is not a known locale` };
+  }
   const all = Object.keys(LOCALES);
   const tally = new Map<string, number>();
   let voting = 0;

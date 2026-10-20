@@ -1,0 +1,24 @@
+{
+  "_": "One item, its FACT and ANALYSIS claims and one section of nine paragraphs, with the markdown each paragraph must come out as. The rule (core/brief/claim-marker.ts): a paragraph names the ONE FACT claim whose text (24 characters or more) is verbatim in it; none, two different claims, an already marked paragraph, a record-grade `[slot]` line and a blank paragraph bind nothing. tests/r2f/markers.test.ts runs bindClaimMarkers over it; scripts/gen/claim-marker-fixture.mjs writes the rollback-test fixture and assertions of migration 0108_data_claim_markers from it (a test regenerates and diffs them), so the JavaScript rule and the SQL rule are proven on the same cases.",
+  "claims": [
+    { "id": "01080000-0000-4000-8000-000000000001", "kind": "FACT", "text": "Operators shall report verified annual emissions before 30 April of each year." },
+    { "id": "01080000-0000-4000-8000-000000000002", "kind": "FACT", "text": "A penalty of up to EUR 50 000 applies to an operator that fails to report." },
+    { "id": "01080000-0000-4000-8000-000000000003", "kind": "FACT", "text": "A penalty of up to EUR 50 000 applies to an operator that fails to report." },
+    { "id": "01080000-0000-4000-8000-000000000004", "kind": "FACT", "text": "EU rule" },
+    { "id": "01080000-0000-4000-8000-000000000005", "kind": "ANALYSIS", "text": "Expect enforcement to start in the second year of the scheme." },
+    { "id": "01080000-0000-4000-8000-000000000006", "kind": "FACT", "text": "The scheme enters into force on 1 January 2027 for all operators." }
+  ],
+  "paragraphs": [
+    { "name": "one claim states it", "md": "**SCOPE** Operators shall report verified annual emissions before 30 April of each year. Source: EUR-Lex, Regulation, 2026 https://eur-lex.europa.eu/x", "expected": "<!-- claim:01080000-0000-4000-8000-000000000001 -->\n**SCOPE** Operators shall report verified annual emissions before 30 April of each year. Source: EUR-Lex, Regulation, 2026 https://eur-lex.europa.eu/x" },
+    { "name": "two claims with the same text: ambiguous, no marker", "md": "**PENALTY** A penalty of up to EUR 50 000 applies to an operator that fails to report. Source: EUR-Lex, Regulation, 2026 https://eur-lex.europa.eu/x", "expected": "**PENALTY** A penalty of up to EUR 50 000 applies to an operator that fails to report. Source: EUR-Lex, Regulation, 2026 https://eur-lex.europa.eu/x" },
+    { "name": "no claim in the paragraph", "md": "A paragraph of plain prose that no claim states.", "expected": "A paragraph of plain prose that no claim states." },
+    { "name": "a claim text under 24 characters binds nothing", "md": "The EU rule applies to ships calling at Union ports.", "expected": "The EU rule applies to ships calling at Union ports." },
+    { "name": "already marked: left as it is, even if it states another claim", "md": "<!-- claim:01080000-0000-4000-8000-000000000001 -->\nA penalty of up to EUR 50 000 applies to an operator that fails to report. Source: x https://x.test/a", "expected": "<!-- claim:01080000-0000-4000-8000-000000000001 -->\nA penalty of up to EUR 50 000 applies to an operator that fails to report. Source: x https://x.test/a" },
+    { "name": "two different claims in one paragraph: ambiguous", "md": "Operators shall report verified annual emissions before 30 April of each year. The scheme enters into force on 1 January 2027 for all operators.", "expected": "Operators shall report verified annual emissions before 30 April of each year. The scheme enters into force on 1 January 2027 for all operators." },
+    { "name": "a record-grade slot line takes no marker", "md": "[effective_date] The scheme enters into force on 1 January 2027 for all operators.", "expected": "[effective_date] The scheme enters into force on 1 January 2027 for all operators." },
+    { "name": "an ANALYSIS claim is not a fact: no marker", "md": "Analytical inference: Expect enforcement to start in the second year of the scheme.", "expected": "Analytical inference: Expect enforcement to start in the second year of the scheme." },
+    { "name": "case does not matter (the database rule)", "md": "THE SCHEME ENTERS INTO FORCE ON 1 JANUARY 2027 FOR ALL OPERATORS. Source: x https://x.test/b", "expected": "<!-- claim:01080000-0000-4000-8000-000000000006 -->\nTHE SCHEME ENTERS INTO FORCE ON 1 JANUARY 2027 FOR ALL OPERATORS. Source: x https://x.test/b" }
+  ],
+  "separators": ["\n\n", "\n  \n", "\n\n\n", "\n\n", "\n \n", "\n\n", "\n\n", "\n\n"],
+  "expectedCounts": { "marked": 2, "unmarked": 5, "already": 1, "skipped": 1 }
+}

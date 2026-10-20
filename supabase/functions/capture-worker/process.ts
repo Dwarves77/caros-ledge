@@ -3,13 +3,14 @@
 // Ported from old_repo/supabase/functions/capture-worker/index.ts (lines 589-614)
 // The capture contract, in six clauses (ADR-016, R2c):
 //   1. A capture is the FULL decoded body of one document, fetched through the shared policy (src/core/fetch/policy.ts) under the one declared identity and the robots.txt of its host, with every transform declared on the run.
-//   2. A non-200, an unsupported type, an error page, a thin body or an unreadable PDF is a recorded failure and is never stored as a capture (INV-184). A paywalled source is refused at capture, before any request.
+//   2. A non-200, an unsupported type, an error page, a thin body or an unreadable PDF is a recorded failure and is never stored as a capture (INV-184). A paywalled source, and a source on a host the licence register bars (src/core/fetch/licence-hosts.ts), is refused at capture, before any request.
 //   3. The queue claim is atomic and one open row exists per source; a transient outcome requeues up to MAX_ATTEMPTS and only a permanent one terminalises (INV-185).
 //   4. The only ceiling is the pathological-page sanity bound STORAGE_MAX_CHARS, and binding it is LOUD: a declared transform and a coverage_gap flag, never a quiet trim.
 //   5. Every outcome is read back: a failed claim, idempotency read or write is reported and requeues, never read as "already claimed" or "no duplicate". Idempotency is (final URL, content hash).
 //   6. A wall (403, 429, a challenge page, the EUR-Lex 202 gate, a robots.txt disallow) is final for this transport and never retried as another identity: the row is left `refused` for the browser tier on the Actions runner, which
 //      owns the rest of the ladder (browser, substitute publisher, access request). A robots.txt that cannot be read defers the row, never denies it.
 import { guardedFetch, makeHostGate, makeRobotsReader } from "../../../src/core/fetch/guard.ts";
+import { licenceForbidsHost } from "../../../src/core/fetch/licence-hosts.ts";
 import { BOT_USER_AGENT, captureLocale, fetchDocument, isWallStatus, MAX_ATTEMPTS, storageMaxChars, type FetchOutcome } from "../../../src/core/fetch/policy.ts";
 import { makeRobotsGate } from "../../../src/core/fetch/robots.ts";
 import { storeCapture, type CaptureChannel, type Db, type Query, type Reply } from "../../../src/core/fetch/store-capture.ts";
@@ -70,6 +71,14 @@ export function isServiceRoleRequest(authorization: string | null, serviceKey: s
 }
 
 const err = (r: { error: { message: string } | null }) => (r.error ? r.error.message : null);
+/** The host name of a URL ("" when it does not parse): the register names hosts, not URLs. */
+const hostOf = (url: string): string => {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return "";
+  }
+};
 
 interface Kit {
   page: typeof fetch;
@@ -81,7 +90,7 @@ function kitOf(deps: WorkerDeps): Kit {
   const held = kits.get(deps);
   if (held) return held;
   const sleep = deps.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
-  const base = { userAgent: BOT_USER_AGENT, fetchImpl: deps.fetchImpl ?? fetch, gate: makeHostGate({ now: deps.now, sleep }), upgradeHttp: true, ...(deps.resolveHost ? { resolveHost: deps.resolveHost } : {}) };
+  const base = { licence: licenceForbidsHost, userAgent: BOT_USER_AGENT, fetchImpl: deps.fetchImpl ?? fetch, gate: makeHostGate({ now: deps.now, sleep }), upgradeHttp: true, ...(deps.resolveHost ? { resolveHost: deps.resolveHost } : {}) };
   const robots = makeRobotsGate(makeRobotsReader(base));
   const kit: Kit = { page: (u, i) => guardedFetch(String(u), i ?? {}, { ...base, robots }), api: (u, i) => guardedFetch(String(u), i ?? {}, base) };
   kits.set(deps, kit);
@@ -132,6 +141,15 @@ export async function processRow(deps: WorkerDeps, row: QueueRow): Promise<Captu
   report.url = src.url;
   if (src.paywalled) {
     report.detail = "paywalled: the source is flagged paywalled and is refused at capture, before any request";
+    await recordFailure(deps, row, src, report, deps.now());
+    return report;
+  }
+
+  // The licence register binds the worker as it binds every fetch: a publisher whose terms bar automated access is refused before any request, and the refusal is recorded with the register key.
+  const barred = licenceForbidsHost(hostOf(src.url));
+  if (barred) {
+    report.attempts.push({ channel: "direct", url: src.url, status: null, reason: "licence_forbids", detail: `the licence register (${barred}) bars collecting from this host` });
+    report.detail = `licence_forbids [${barred}]: the licence register bars collecting from this host; refused at capture, before any request`;
     await recordFailure(deps, row, src, report, deps.now());
     return report;
   }

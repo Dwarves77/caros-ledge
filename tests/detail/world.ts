@@ -13,6 +13,8 @@ export const NOW_ISO = "2026-10-15T12:00:00.000Z";
 const claim = (id: string, text: string, src: string, over: Row = {}): Row => ({ id, intelligence_item_id: REG, claim_text: text, claim_kind: "FACT", source_id: src, section_row_id: "cccccccc-1000-4000-8000-000000000003", ...over });
 
 export const CLAIM_KEPT = "Operators shall submit a verified annual emissions report to the competent authority before 31 March of each year.";
+export const CLAIM_KEPT_ID = "dddddddd-1000-4000-8000-000000000001";
+export const CLAIM_SUPPRESSED_ID = "dddddddd-1000-4000-8000-000000000002";
 export const CLAIM_SUPPRESSED = "A penalty of 4,000 euro per tonne applies to every operator in every case without exception.";
 
 export function world(): MemDb {
@@ -33,7 +35,7 @@ export function world(): MemDb {
   s3.id = "cccccccc-1000-4000-8000-000000000003";
   s3.content_md = `**ACTION REQUIRED** Register with the competent authority.\n\n${CLAIM_KEPT} Source: EUR-Lex, Regulation 2023/9999, 2026 https://eur-lex.europa.eu/doc\n\n${CLAIM_SUPPRESSED} Source: Trade Press, 2026`;
   db.seed("intelligence_item_sections", sections);
-  db.seed("section_claim_provenance", [claim("dddddddd-1000-4000-8000-000000000001", CLAIM_KEPT, SRC_T1), claim("dddddddd-1000-4000-8000-000000000002", CLAIM_SUPPRESSED, SRC_T3), claim("dddddddd-1000-4000-8000-000000000003", "an analysis claim", SRC_T3, { claim_kind: "ANALYSIS" })]);
+  db.seed("section_claim_provenance", [claim(CLAIM_KEPT_ID, CLAIM_KEPT, SRC_T1), claim(CLAIM_SUPPRESSED_ID, CLAIM_SUPPRESSED, SRC_T3), claim("dddddddd-1000-4000-8000-000000000003", "an analysis claim", SRC_T3, { claim_kind: "ANALYSIS" })]);
   db.seed("item_timelines", [{ id: "eeeeeeee-1000-4000-8000-000000000001", item_id: REG, milestone_date: "2026-03-31", label: "First report due", is_completed: true, sort_order: 1 }]);
   db.seed("item_changelog", [{ id: "eeeeeeee-1000-4000-8000-000000000002", item_id: REG, change_date: "2026-05-01", change_type: "UPDATED", field: "x", impact: "Reporting now covers rail operators." }]);
   db.seed("item_cross_references", [{ id: "eeeeeeee-1000-4000-8000-000000000003", source_item_id: REG, target_item_id: MKT, relationship: "related", origin: "manual", basis: null, score: null, source: { id: REG, legacy_id: "g14", item_type: "regulation", domain: 1 }, target: { id: MKT, legacy_id: null, item_type: "market_signal", domain: 4 } }]);

@@ -6,6 +6,7 @@ import { test } from "node:test";
 import { fetchDirect } from "@/core/fetch/direct";
 import { honestFetch, robotsGateFor } from "@/core/fetch/honest";
 import { guardedFetch, makeHostGate, makeRobotsReader } from "@/core/fetch/guard";
+import { licenceForbidsHost } from "@/core/fetch/licence-hosts";
 import { fetchDocument, BOT_USER_AGENT } from "@/core/fetch/policy";
 import { interpretRobotsAnswer, makeRobotsGate, verdictFor } from "@/core/fetch/robots";
 
@@ -105,13 +106,13 @@ test("INV-R2c-1: every request, robots.txt included, carries the one declared us
   assert.ok(sec.agents.includes("Example Co admin@example.test"));
   // A caller that passes its own User-Agent is overridden by the guard.
   const forged = routed(async () => html(page));
-  await guardedFetch("https://agency.gov/x", { headers: { "User-Agent": "Mozilla/5.0 forged" } }, { userAgent: BOT_USER_AGENT, fetchImpl: forged.fetch, resolveHost: publicHost });
+  await guardedFetch("https://agency.gov/x", { headers: { "User-Agent": "Mozilla/5.0 forged" } }, { licence: licenceForbidsHost, userAgent: BOT_USER_AGENT, fetchImpl: forged.fetch, resolveHost: publicHost });
   assert.deepEqual(forged.agents, [BOT_USER_AGENT]);
 });
 test("INV-R2c-3: a 403 on the declared identity is final: one request, no retry with other headers", async () => {
   const seen: Array<string | null> = [];
   const impl = (async (_u: string, init: RequestInit) => (seen.push(new Headers(init.headers).get("user-agent")), html("denied", 403))) as unknown as typeof fetch;
-  const guarded = (u: string, init: RequestInit) => guardedFetch(u, init, { userAgent: BOT_USER_AGENT, fetchImpl: impl, resolveHost: publicHost });
+  const guarded = (u: string, init: RequestInit) => guardedFetch(u, init, { licence: licenceForbidsHost, userAgent: BOT_USER_AGENT, fetchImpl: impl, resolveHost: publicHost });
   const out = await fetchDocument("https://agency.gov/a", { fetchImpl: guarded as typeof fetch });
   assert.equal(out.ok, false);
   assert.equal(out.ok === false && out.status, 403);
@@ -125,13 +126,13 @@ test("INV-R2c-10: a redirect to the metadata address is refused, before any requ
     return u.startsWith("https://agency.gov") ? new Response(null, { status: 302, headers: { location: "http://169.254.169.254/latest/meta-data/" } }) : html("secrets");
   }) as unknown as typeof fetch;
   await assert.rejects(
-    () => guardedFetch("https://agency.gov/a", {}, { userAgent: BOT_USER_AGENT, fetchImpl: impl, resolveHost: publicHost, upgradeHttp: false }),
+    () => guardedFetch("https://agency.gov/a", {}, { licence: licenceForbidsHost, userAgent: BOT_USER_AGENT, fetchImpl: impl, resolveHost: publicHost, upgradeHttp: false }),
     (e: unknown) => reasonOf(e) === "private_address",
   );
   assert.deepEqual(seen, ["https://agency.gov/a"], "the metadata address was never requested");
 });
 test("the guard refuses private, loopback, link-local and mapped addresses, reserved names, other schemes, and a host that resolves to one", async () => {
-  const g = { userAgent: BOT_USER_AGENT, fetchImpl: (async () => html("x")) as unknown as typeof fetch };
+  const g = { licence: licenceForbidsHost, userAgent: BOT_USER_AGENT, fetchImpl: (async () => html("x")) as unknown as typeof fetch };
   const host = (a: string) => (a.includes(":") ? `[${a}]` : a);
   for (const a of ["10.0.0.1", "127.0.0.1", "169.254.169.254", "172.16.5.5", "192.168.1.1", "100.64.0.1", "0.0.0.0", "::1", "fe80::1", "fd00::1", "::ffff:127.0.0.1", "::ffff:7f00:1", "64:ff9b::a00:1", "2001:db8::1", "::", "224.0.0.1"]) await assert.rejects(() => guardedFetch(`http://${host(a)}/a`, {}, g), (e: unknown) => reasonOf(e) === "private_address", a);
   for (const a of ["93.184.216.34", "8.8.8.8", "2606:4700:4700::1111", "172.32.0.1"]) assert.equal((await guardedFetch(`http://${host(a)}/a`, {}, g)).status, 200, a);
@@ -143,10 +144,10 @@ test("the guard refuses private, loopback, link-local and mapped addresses, rese
 test("redirects are followed by hand with each hop checked, and a loop ends", async () => {
   let n = 0;
   const loop = (async () => (n++, new Response(null, { status: 302, headers: { location: "https://agency.gov/again" } }))) as unknown as typeof fetch;
-  await assert.rejects(() => guardedFetch("https://agency.gov/a", {}, { userAgent: BOT_USER_AGENT, fetchImpl: loop, resolveHost: publicHost, maxRedirects: 3 }), (e: unknown) => reasonOf(e) === "too_many_redirects");
+  await assert.rejects(() => guardedFetch("https://agency.gov/a", {}, { licence: licenceForbidsHost, userAgent: BOT_USER_AGENT, fetchImpl: loop, resolveHost: publicHost, maxRedirects: 3 }), (e: unknown) => reasonOf(e) === "too_many_redirects");
   assert.equal(n, 4);
   const hop = (async (u: string) => (u.endsWith("/a") ? new Response(null, { status: 301, headers: { location: "/b" } }) : html("final"))) as unknown as typeof fetch;
-  const res = await guardedFetch("https://agency.gov/a", {}, { userAgent: BOT_USER_AGENT, fetchImpl: hop, resolveHost: publicHost });
+  const res = await guardedFetch("https://agency.gov/a", {}, { licence: licenceForbidsHost, userAgent: BOT_USER_AGENT, fetchImpl: hop, resolveHost: publicHost });
   assert.equal(res.url, "https://agency.gov/b");
   assert.equal(await res.text(), "final");
 });
@@ -155,9 +156,9 @@ test("the robots reader asks robots.txt under the same guard and the host gate k
   let clock = 0;
   const sleeps: number[] = [];
   const gate = makeHostGate({ now: () => clock, sleep: async (ms) => void (sleeps.push(ms), (clock += ms)) });
-  const read = makeRobotsReader({ userAgent: BOT_USER_AGENT, fetchImpl: net.fetch, resolveHost: publicHost, gate });
+  const read = makeRobotsReader({ licence: licenceForbidsHost, userAgent: BOT_USER_AGENT, fetchImpl: net.fetch, resolveHost: publicHost, gate });
   const robots = makeRobotsGate(read);
-  const g = { userAgent: BOT_USER_AGENT, fetchImpl: net.fetch, resolveHost: publicHost, gate, robots };
+  const g = { licence: licenceForbidsHost, userAgent: BOT_USER_AGENT, fetchImpl: net.fetch, resolveHost: publicHost, gate, robots };
   await guardedFetch("https://agency.gov/one", {}, g);
   assert.ok(sleeps.length >= 1 && sleeps.every((s) => s <= 1000), `the robots read and the page keep the one-second gap (slept ${sleeps})`);
   await assert.rejects(() => guardedFetch("https://agency.gov/two", {}, g), (e: unknown) => reasonOf(e) === "host_busy", "a 120 s Crawl-delay is deferred, never slept");

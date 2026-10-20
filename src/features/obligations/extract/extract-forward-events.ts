@@ -4,9 +4,10 @@
 // events are high confidence, section-backed medium; the source span is the date text alone and verbatim in its source (ADR-016). A due-date slot claim
 // whose span yields no event is rescued with the capture context around it. Every drop is recorded: a claim with no span and a section with no text land
 // in `skipped` with a reason instead of vanishing (the old loop `continue`d silently, against its own rule).
+import { assertVerbatim } from "@/core/contracts/verbatim";
+
 import { dedupeEvents, type DroppedEvent, type ExtractedEvent } from "./dedupe";
 import { finerDuePrecision, isDueDateSlotClaim, rescueSlotDateWithContext, scanText, slotDatePrecision, type ClaimIn, type Hit } from "./scan";
-import { assertVerbatim } from "./window";
 
 export const EXTRACTOR_VERSION = "fe1-2026-09-13.1";
 export interface SectionIn {

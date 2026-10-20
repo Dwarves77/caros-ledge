@@ -8,13 +8,14 @@
 // SEARCH is tolerant: the stored span is always a byte-exact slice of the capture (ADR-016), and a heal never rewrites a claim's text.
 import { z } from "zod";
 
-import { authorityFloorFor } from "@/core/grounding";
+import { authorityFloorFor, type Orphan } from "@/core/grounding";
 import { canonicalUrl } from "@/core/shared";
-import { insideLongerNumber, isVerbatim, normalizeNumeric, type Indexed } from "@/core/contracts";
+import { insideLongerNumber, isVerbatim, normalizeNumeric, type Indexed, type NumericView } from "@/core/contracts";
+import { indexOfInsensitive } from "@/core/parse";
 
 import orphanRules from "./data/orphan.json";
 
-export interface Capture { id: string; result_url: string | null; result_content: string; html?: string | null }
+export interface Capture { id: string; result_url: string | null; result_content: string; html?: string | null; /** the BCP-47 number locale the capture declares (agent_run_searches.number_locale) */ number_locale?: string | null }
 export interface HealClaim { id: string; claim_kind: string; claim_text: string; source_span: string | null; source_id: string | null; search_result_id: string | null; section_row_id: string | null; basis_claim_id?: string | null; source_tier_at_grounding?: number | null }
 export interface HealSource { id: string; url: string | null; base_tier: number | null; institution_id: string | null; tier_override?: number | null; status?: string | null }
 export interface SourcesIndex { byId: Map<string, HealSource>; byCanonUrl: Map<string, HealSource> }
@@ -63,26 +64,33 @@ function normalizeWithMap(text: string): Indexed {
   return { chars, map };
 }
 
-interface CapIndex { text: string; lower: string; structural: Indexed; structuralLower: string; numeric: Indexed }
+interface CapIndex { text: string; structural: Indexed; structuralLower: string; numeric: NumericView }
+/** The positions a search hit in a normalised text takes back to the original: `map` starts and, for the numeric view, `ends`. */
+type Positions = Indexed & { ends?: number[] };
 export type IndexCache = Map<string, CapIndex>;
 const indexOf = (cap: Capture, cache: IndexCache): CapIndex => {
   let idx = cache.get(cap.id);
   if (!idx) {
     const structural = normalizeWithMap(cap.result_content);
-    idx = { text: cap.result_content, lower: cap.result_content.toLowerCase(), structural, structuralLower: structural.chars.toLowerCase(), numeric: normalizeNumeric(cap.result_content) };
+    idx = { text: cap.result_content, structural, structuralLower: structural.chars.toLowerCase(), numeric: normalizeNumeric(cap.result_content, cap.number_locale) };
     cache.set(cap.id, idx);
   }
   return idx;
 };
 
-/** Every occurrence of `n` in `hay` in order; the first whose original slice is not inside a longer number wins. `map` takes a position in `hay` back to the original text (null: identity). */
-function scan(hay: string, n: string, map: number[] | null, text: string, method: string): Located | null {
+/**
+ * Every occurrence of `n` in `hay` in order; the first that clears the checks wins: its original slice is not inside a longer number, it does not begin or end inside one folded stretch (a figure folded to its value), and
+ * the database's verbatim verdict accepts it (a search only locates; the verdict decides). `view` takes a position in `hay` back to the original text (null: identity).
+ */
+function scan(hay: string, n: string, view: Positions | null, text: string, method: string): Located | null {
   for (let at = n ? hay.indexOf(n) : -1; at !== -1; at = hay.indexOf(n, at + 1)) {
-    const from = map ? map[at] : at;
-    const to = map ? map[at + n.length] : at + n.length;
+    const last = at + n.length - 1;
+    const from = view ? view.map[at] : at;
+    const to = !view ? at + n.length : view.ends ? view.ends[last] : view.map[at + n.length];
     if (from == null || to == null || to <= from || insideLongerNumber(text, from, to)) continue;
-    const span = map ? text.slice(from, to).trim() : text.slice(from, to);
-    if (span) return { span, method };
+    if (view && ((at > 0 && view.map[at - 1] === from) || (view.ends ? view.ends[last + 1] === to : view.map[last] === to))) continue;
+    const span = view ? text.slice(from, to).trim() : text.slice(from, to);
+    if (span && isVerbatim(text, span)) return { span, method };
   }
   return null;
 }
@@ -90,9 +98,10 @@ function locateCore(needle: string, idx: CapIndex): Located | null {
   const exact = scan(idx.text, needle, null, idx.text, "exact");
   if (exact) return exact;
   const n = normalizeWithMap(needle).chars;
-  const structural = scan(idx.structural.chars, n, idx.structural.map, idx.text, "normalized") ?? scan(idx.structuralLower, n.toLowerCase(), idx.structural.map, idx.text, "normalized_ci");
+  const structural = scan(idx.structural.chars, n, idx.structural, idx.text, "normalized") ?? scan(idx.structuralLower, n.toLowerCase(), idx.structural, idx.text, "normalized_ci");
   if (structural || !/\d/.test(needle)) return structural;
-  return scan(idx.numeric.chars, normalizeNumeric(needle).chars, idx.numeric.map, idx.text, "numeric_tolerant");
+  const folded = normalizeNumeric(needle);
+  return folded.refused ? null : scan(idx.numeric.chars, folded.chars, idx.numeric, idx.text, "numeric_tolerant");
 }
 /** The first byte-exact slice of the capture that carries `needle`, by exact, normalised, then value-preserving numeric match. */
 export function locateSpan(needle: string, cap: Capture, cache: IndexCache = new Map()): Located | null {
@@ -163,8 +172,7 @@ export function planResource(claim: HealClaim, buckets: Bucket[], cache: IndexCa
   return { outcome: "unresourced" };
 }
 
-export interface Orphan { token: string; class: "figure" | "deadline" }
-export const findOwningSection = <S extends { content_md: string | null }>(token: string, sections: S[]): S | null => sections.find((s) => (s.content_md ?? "").toLowerCase().includes(token.toLowerCase())) ?? null;
+export const findOwningSection = <S extends { content_md: string | null }>(token: string, sections: S[]): S | null => sections.find((s) => indexOfInsensitive(s.content_md ?? "", token) !== null) ?? null;
 
 // ---- a Gate A orphan is grounded by a SENTENCE, never by the bare figure -----------------------------------------------------------------------------------------------
 // The old heal wrote the claim 'The captured source text states the figure X' with the figure itself as the span: true of any capture that held the string anywhere, so a '10%' in an unrelated paragraph backed any '10%'
@@ -178,8 +186,8 @@ const endsAt = (text: string, i: number): boolean => text[i] === "!" || text[i] 
 /** The brief's own sentence that states the figure (the claim text of the grounded orphan), or null when the brief has none. */
 export function briefSentenceOf(token: string, fullBrief: string | null | undefined): string | null {
   const text = fullBrief ?? "";
-  const at = text.toLowerCase().indexOf(token.toLowerCase());
-  return at < 0 ? null : sentenceAround(text, at, at + token.length) || null;
+  const at = indexOfInsensitive(text, token);
+  return at === null ? null : sentenceAround(text, at.index, at.index + at.length) || null;
 }
 const contentWords = (s: string, drop: Set<string>): Set<string> => new Set((s.toLowerCase().match(new RegExp(`\\p{L}{${rules.minWordLength},}`, "gu")) ?? []).filter((w) => !drop.has(w)));
 /** True when the capture's sentence and the brief's sentence say the same thing: the brief's content words (the figure's own words aside) are shared above the stated overlap. */

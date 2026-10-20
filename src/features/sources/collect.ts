@@ -8,6 +8,7 @@ import { closeBrowser, fetchBrowser, type BrowserDeps } from "@/core/fetch/headl
 import { fetchAllowed } from "@/core/fetch/hold";
 import { honestFetch, robotsGateFor } from "@/core/fetch/honest";
 import { escalateFetch, type SubstituteHit, type TransportName } from "@/core/fetch/ladder";
+import { licenceForbidsHost } from "@/core/fetch/licence-hosts";
 import { captureLocale, fetchDocument, storageMaxChars } from "@/core/fetch/policy";
 import { storeCapture, type CaptureChannel, type Db as StoreDb } from "@/core/fetch/store-capture";
 import { hostOf } from "@/core/shared";
@@ -85,6 +86,7 @@ export async function collectRefused(deps: CollectDeps, input: { limit?: number;
         source: { api_endpoint_url: src.api_endpoint_url, rss_feed_url: src.rss_feed_url, sitemap_url: src.sitemap_url, access_method: src.access_method, paywalled: !!src.paywalled },
         skip: ["direct", "api", "feed"] as TransportName[],
         max: 10_000_000,
+        licence: licenceForbidsHost,
         cacheGet: null,
         apiFetch: null,
         feedFetch: null,

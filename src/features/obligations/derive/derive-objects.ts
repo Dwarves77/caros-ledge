@@ -9,6 +9,7 @@
 import { z } from "zod";
 
 import { DUTY_HOLDER_CLASSES, isValid, LEG_MODE_CODES } from "@/core/contracts/vocabularies";
+import { isVerbatim } from "@/core/contracts/verbatim";
 import type { Db } from "@/core/db";
 import { fetchAllByIdChunks } from "@/core/db";
 import { entityId } from "@/core/entities/id";
@@ -106,8 +107,7 @@ export function buildObjectRow(c: Candidate, ctx: { item: ObjectItem | null; cap
   if (!capture) return { ok: false, reason: "capture_missing" };
   if (capture.intelligence_item_id !== c.instrument_item_id) return { ok: false, reason: "capture_not_of_instrument" };
   if (!nz(c.pinpoint_citation)) return { ok: false, reason: "pinpoint_blank" };
-  const span = norm(c.verbatim_text);
-  if (!span || typeof capture.result_content !== "string" || !capture.result_content.toLowerCase().includes(span)) return { ok: false, reason: "span_not_verbatim" };
+  if (!isVerbatim(capture.result_content, nz(c.verbatim_text))) return { ok: false, reason: "span_not_verbatim" };
   if (c.status !== undefined && c.status !== null && c.status !== "not_assessed") return { ok: false, reason: "status_not_writer_owned" };
   const classes = Array.isArray(c.duty_holder_class) ? c.duty_holder_class.filter((x) => typeof x === "string" && x.trim()) : [];
   if (!classes.length) return { ok: false, reason: "duty_holder_missing" };
@@ -233,7 +233,7 @@ export function candidatesFromFueleuTargets(item: ObjectItem, captures: readonly
   const timeline = timelineFromEvents(events);
   const out: Candidate[] = [];
   for (const p of FUELEU_TARGETS.periods) {
-    const capture = captures.find((c) => typeof c.result_content === "string" && c.result_content.toLowerCase().includes(norm(p.quote)));
+    const capture = captures.find((c) => isVerbatim(c.result_content, p.quote));
     if (!capture) continue;
     out.push({
       instrument_item_id: item.id, capture_id: capture.id, pinpoint_citation: `${t.pinpointBase}, from ${p.from_date}`, verbatim_text: p.quote, duty_holder_class: t.dutyHolderClass,

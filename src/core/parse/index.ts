@@ -2,9 +2,9 @@
 export { containsNumeral, figuresEqual, stateFigure } from "./compare";
 export { findFigures, isFigure } from "./figure";
 export type { Figure } from "./figure";
-export { canonicalizeUrl, findIdentifiers, indexOfInsensitive, mentionsIdentifier, ownIdentifiers, sameIdentifier } from "./identifiers";
+export { canonicalizeUrl, findIdentifiers, hostMatches, indexOfInsensitive, mentionsIdentifier, ownIdentifiers, renderCanonicalizeUrlSql, sameIdentifier, TRACKING_PARAMS } from "./identifiers";
 export type { Identifier } from "./identifiers";
-export { resolveLocale } from "./locale";
+export { interpretNumber, resolveLocale, scanNumbers } from "./locale";
 export type { LocaleVerdict } from "./locale";
 export { isTrajectoryUnit, kindOf } from "./unit";
 export { contentWords, hasWord } from "./words";

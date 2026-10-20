@@ -11,7 +11,7 @@ import { fetchAllByIdChunks, fetchAllRows, type Db } from "@/core/db";
 import { LookupError } from "@/core/http/errors";
 import { containsNumeral, figuresEqual, findFigures, findIdentifiers, isFigure, mentionsIdentifier, resolveLocale } from "@/core/parse";
 
-import { norm, scanGateA } from "./gate-a-scan";
+import { norm, scanGateA, type FactClaim } from "./gate-a-scan";
 
 // ---- defect signatures ----------------------------------------------------------------------------------------
 const REUSE_MIN = 3;
@@ -29,7 +29,7 @@ function extractIdentifiers(claim: string | null | undefined): Set<string> {
 }
 /** Does the span name this identifier? By EQUALITY on the normalised key: 2019/88 is not in a span that says 2019/883. */
 function spanHasIdentifier(span: string, id: string): boolean {
-  return id.startsWith("NAME:") ? span.toLowerCase().includes(id.slice(5)) : mentionsIdentifier(span, { key: id, type: null });
+  return id.startsWith("NAME:") ? isVerbatim(span, id.slice(5)) : mentionsIdentifier(span, { key: id, type: null });
 }
 /** S-CONFLATE: one span reused by REUSE_MIN or more FACTs naming two or more distinct instruments, some absent from the span. */
 function detectConflate(facts: FactLike[]): DefectHit[] {
@@ -103,7 +103,7 @@ export function mintGates(facts: GateFact[], ctx: { itemFloor: number | null; su
 // ---- Gate A state: the one writer, and the Gate B derived coverage ----------------------------------------------
 export interface GateARow { intelligence_item_id: string; scanned_hash: string; orphan_count: number; orphans: unknown[]; gate_a_version: string; scanned_at: string }
 /** The item_gate_a_state row every writer builds (the SAME scanner, the SAME six fields). Pure. */
-export function buildGateARow(a: { itemId: string; fullBrief: string | null | undefined; factClaims: { claim_text: string; source_span: string }[]; derivedCovered?: Set<string>; nowIso: string }): GateARow {
+export function buildGateARow(a: { itemId: string; fullBrief: string | null | undefined; factClaims: FactClaim[]; derivedCovered?: Set<string>; nowIso: string }): GateARow {
   const ga = scanGateA(a.fullBrief ?? "", a.factClaims, a.derivedCovered);
   return { intelligence_item_id: a.itemId, scanned_hash: ga.scanned_hash, orphan_count: ga.orphan_count, orphans: ga.orphans, gate_a_version: ga.gate_a_version, scanned_at: a.nowIso };
 }
