@@ -6,13 +6,13 @@
     "width": 375,
     "height": 812
   },
-  "captured_at": "2026-10-19T20:54:54.568Z",
+  "captured_at": "2026-10-20T11:16:31.052Z",
   "http_status": 200,
   "final_path": "/signup",
   "network_idle": true,
   "accessibility": {
     "source": "locator.ariaSnapshot",
-    "tree": "- text: Caro's Ledge Freight Sustainability Intelligence VOL IV · No. 43 · Monday, October 19, 2026 Every item, one of four urgency bands Immediate ≤ 90 days Action ≤ 6 months Monitor 6–12 months Awareness background For informational purposes only. Not legal advice. Regulations move fast, always verify with official sources before acting.\n- link \"Privacy\":\n  - /url: /privacy\n- banner:\n  - paragraph: VOL IV · No. 43 · Monday, October 19, 2026\n  - heading \"Create account\" [level=1]\n- link \"Sign in\":\n  - /url: /login\n- link \"Create account\":\n  - /url: /signup\n- text: Work email\n- textbox \"smoke@example.invalid\"\n- text: Password\n- textbox \"At least 8 characters\"\n- text: Confirm password\n- textbox \"Re-enter password\"\n- button \"Create account\"\n- paragraph: Invited to a workspace? Open the invitation link in your email, it signs you in and joins the workspace in one step.\n- alert"
+    "tree": "- text: Caro's Ledge Freight Sustainability Intelligence VOL IV · No. 43 · Tuesday, October 20, 2026 Every item, one of four urgency bands Immediate ≤ 90 days Action ≤ 6 months Monitor 6–12 months Awareness background For informational purposes only. Not legal advice. Regulations move fast, always verify with official sources before acting.\n- link \"Privacy\":\n  - /url: /privacy\n- banner:\n  - paragraph: VOL IV · No. 43 · Tuesday, October 20, 2026\n  - heading \"Create account\" [level=1]\n- link \"Sign in\":\n  - /url: /login\n- link \"Create account\":\n  - /url: /signup\n- text: Work email\n- textbox \"smoke@example.invalid\"\n- text: Password\n- textbox \"At least 8 characters\"\n- text: Confirm password\n- textbox \"Re-enter password\"\n- button \"Create account\"\n- paragraph: Invited to a workspace? Open the invitation link in your email, it signs you in and joins the workspace in one step.\n- alert"
   },
   "landmarks": [
     {
@@ -63,6 +63,7 @@
     "containers": []
   },
   "document_height": 887,
+  "tiles": 1,
   "truncated": false,
   "offences": []
 }

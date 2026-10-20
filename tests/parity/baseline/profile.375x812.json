@@ -6,13 +6,13 @@
     "width": 375,
     "height": 812
   },
-  "captured_at": "2026-10-19T20:56:51.488Z",
+  "captured_at": "2026-10-20T11:18:32.740Z",
   "http_status": 200,
   "final_path": "/profile",
   "network_idle": true,
   "accessibility": {
     "source": "locator.ariaSnapshot",
-    "tree": "- button \"Notifications\"\n- banner:\n  - button \"Open navigation\"\n  - heading \"Account\" [level=1]\n  - button \"Search\"\n  - link \"Account\":\n    - /url: /profile\n- main:\n  - paragraph: VOL IV · No. 43 · Monday, October 19, 2026 · Personal\n  - heading \"Account\" [level=1]\n  - text: smoke@example.invalid · Dietl / Rockit · Member · member since Oct 2026\n  - search:\n    - combobox \"Search or ask across the workspace\"\n    - button \"Ask\"\n  - navigation \"Account sections\":\n    - button \"Personal\"\n    - button \"Organization\"\n    - button \"Members & roles · 2\"\n    - button \"Sector profile · 6\"\n    - button \"Jurisdictions\"\n    - button \"Verifier badge\"\n    - button \"Activity\"\n    - link \"Settings\":\n      - /url: /settings\n  - region \"Personal profile\":\n    - heading \"Personal profile\" [level=2]\n    - text: Visible to your workspace Full name\n    - textbox \"Full name\":\n      - /placeholder: Your name\n    - text: Headshot URL\n    - textbox \"Headshot URL\":\n      - /placeholder: https://…\n    - text: Work email\n    - textbox \"Work email\" [disabled]: smoke@example.invalid\n    - paragraph: The address you sign in with.\n    - text: Bio\n    - textbox \"Bio\":\n      - /placeholder: A short bio for the community\n    - button \"Save personal profile\"\n  - complementary:\n    - text: Sectors followed 6 6 highlighted niches Home jurisdictions 0 None followed yet Member since Oct 2026 Dietl / Rockit · member Plan Enterprise Billing, owner only\n    - region \"Quick links\":\n      - paragraph: Quick links\n      - link \"Dashboard\":\n        - /url: /\n      - link \"Settings · notifications, briefing schedule\":\n        - /url: /settings\n      - link \"Watchlist\":\n        - /url: /watchlist\n- button \"Back to top\"\n- alert"
+    "tree": "- button \"Notifications\"\n- banner:\n  - button \"Open navigation\"\n  - heading \"Account\" [level=1]\n  - button \"Search\"\n  - link \"Account\":\n    - /url: /profile\n- main:\n  - paragraph: VOL IV · No. 43 · Tuesday, October 20, 2026 · Personal\n  - heading \"Account\" [level=1]\n  - text: smoke@example.invalid · Dietl / Rockit · Member · member since Oct 2026\n  - search:\n    - combobox \"Search or ask across the workspace\"\n    - button \"Ask\"\n  - navigation \"Account sections\":\n    - button \"Personal\"\n    - button \"Organization\"\n    - button \"Members & roles · 2\"\n    - button \"Sector profile · 6\"\n    - button \"Jurisdictions\"\n    - button \"Verifier badge\"\n    - button \"Activity\"\n    - link \"Settings\":\n      - /url: /settings\n  - region \"Personal profile\":\n    - heading \"Personal profile\" [level=2]\n    - text: Visible to your workspace Full name\n    - textbox \"Full name\":\n      - /placeholder: Your name\n    - text: Headshot URL\n    - textbox \"Headshot URL\":\n      - /placeholder: https://…\n    - text: Work email\n    - textbox \"Work email\" [disabled]: smoke@example.invalid\n    - paragraph: The address you sign in with.\n    - text: Bio\n    - textbox \"Bio\":\n      - /placeholder: A short bio for the community\n    - button \"Save personal profile\"\n  - complementary:\n    - text: Sectors followed 6 6 highlighted niches Home jurisdictions 0 None followed yet Member since Oct 2026 Dietl / Rockit · member Plan Enterprise Billing, owner only\n    - region \"Quick links\":\n      - paragraph: Quick links\n      - link \"Dashboard\":\n        - /url: /\n      - link \"Settings · notifications, briefing schedule\":\n        - /url: /settings\n      - link \"Watchlist\":\n        - /url: /watchlist\n- button \"Back to top\"\n- alert"
   },
   "landmarks": [
     {
@@ -170,6 +170,7 @@
     "containers": []
   },
   "document_height": 1413,
+  "tiles": 1,
   "truncated": false,
   "offences": []
 }

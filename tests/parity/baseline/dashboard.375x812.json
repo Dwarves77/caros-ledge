@@ -6,13 +6,13 @@
     "width": 375,
     "height": 812
   },
-  "captured_at": "2026-10-19T20:55:03.000Z",
+  "captured_at": "2026-10-20T11:16:40.714Z",
   "http_status": 200,
   "final_path": "/",
   "network_idle": true,
   "accessibility": {
     "source": "locator.ariaSnapshot",
-    "tree": "- button \"Notifications\"\n- banner:\n  - button \"Open navigation\"\n  - heading \"Dashboard\" [level=1]\n  - button \"Search\"\n  - link \"Account\":\n    - /url: /profile\n- main:\n  - paragraph: VOL IV · No. 43 · Monday, October 19, 2026\n  - heading \"smoke'S BRIEF\" [level=1]\n  - text: \"1,439 items across 5 surfaces · 62 jurisdictions · scoped to Dietl / Rockit Verticals: Fine Art & Museum Logistics, Live Events & Touring, Luxury Goods & High Value, Film, TV & Media Production, Automotive & Motorsport, Humanitarian & NGO Cargo\"\n  - search:\n    - combobox \"Search or ask across the workspace\"\n    - button \"Ask\"\n  - link \"Immediate — ≤ 90 days, 21 items\":\n    - /url: /regulations?band=immediate\n    - text: Immediate ≤ 90 days 21\n  - link \"Action — ≤ 6 months, 24 items\":\n    - /url: /regulations?band=action\n    - text: Action ≤ 6 months 24\n  - link \"Monitor — 6–12 months, 1,002 items\":\n    - /url: /regulations?band=monitor\n    - text: Monitor 6–12 months 1,002\n  - link \"Awareness — background, 273 items\":\n    - /url: /regulations?band=awareness\n    - text: Awareness background 273\n  - heading \"Due next · 5 items\" [level=2]\n  - text: By next binding date · week of Oct 19, reaching to Nov 29, 2026\n  - link \"IEA Electricity Price Data for Large Industrial Customers (2019-2024)\":\n    - /url: /operations/3f11f1fc-5b1f-422a-93bc-a34f6b3c9f3b\n  - text: EU IEA Electricity Price Data for Large Industrial Customers (2019-2024) needs more data Oct 30, 2026 11 days T2\n  - group \"Source bias tags\": Government funded Regulator aligned +3 more\n  - button \"Actions for IEA Electricity Price Data for Large Industrial Customers (2019-2024)\"\n  - 'link \"Alternative Fuels Data Center: Federal and State Laws and Incentives Database\"':\n    - /url: /regulations/4a108d70-0062-4c46-a090-151683f202a6\n  - text: \"US Alternative Fuels Data Center: Federal and State Laws and Incentives Database needs more data Nov 15, 2026 27 days T2\"\n  - group \"Source bias tags\": Government funded Regulator aligned +1 more\n  - 'button \"Actions for Alternative Fuels Data Center: Federal and State Laws and Incentives Database\"'\n  - link \"Mexico SEMARNAT\":\n    - /url: /regulations/g14\n  - text: MX Mexico SEMARNAT needs more data Nov 18, 2026 30 days T1\n  - group \"Source bias tags\": Government funded Regulator aligned +1 more\n  - button \"Actions for Mexico SEMARNAT\"\n  - link \"Regulation (EU) 2024/1157 on shipments of waste\":\n    - /url: /regulations/68af8b45-fbbf-4ba1-add8-2c1761d2d120\n  - text: GLOBAL Regulation (EU) 2024/1157 on shipments of waste needs more data Nov 21, 2026 33 days T1\n  - group \"Source bias tags\": Government funded Regulator aligned +1 more\n  - button \"Actions for Regulation (EU) 2024/1157 on shipments of waste\"\n  - link \"Euro 7 Standard\":\n    - /url: /regulations/l2\n  - text: EU Euro 7 Standard needs more data Nov 29, 2026 41 days T1\n  - group \"Source bias tags\": Government funded Regulator aligned +2 more\n  - button \"Actions for Euro 7 Standard\"\n  - link \"All 21 immediate\":\n    - /url: /regulations?band=immediate\n  - text: then 24 action · 1,002 monitor\n  - heading \"What changed\" [level=2]\n  - text: Detection pass 2026-09-18\n  - link \"Commission Delegated Regulation (EU) 2024/3214 of 16 October 2024 amending Regulation (EU) 2015/757 of the European Parliament and of the Council as regards the rules for the monitoring of greenhouse gas emissions from offshore ships and the zero-rating of sustainable fuels\":\n    - /url: /regulations/0b6537ea-1c85-41b9-81ed-1486fd72ea18\n  - text: EU Commission Delegated Regulation (EU) 2024/3214 of 16 October 2024 amending Regulation (EU) 2015/757 of the European Parliament and of the Council as regards the rules for the monitoring of greenhouse gas emissions from offshore ships and the zero-rating of sustainable fuels needs more data Dec 31, 2026 73 days T1\n  - button \"Actions for Commission Delegated Regulation (EU) 2024/3214 of 16 October 2024 amending Regulation (EU) 2015/757 of the European Parliament and of the Council as regards the rules for the monitoring of greenhouse gas emissions from offshore ships and the zero-rating of sustainable fuels\"\n  - link \"Directive (EU) 2025/794 of the European Parliament and of the Council of 14 April 2025 amending Directives (EU) 2022/2464 and (EU) 2024/1760 as regards the dates from which Member States are to apply certain corporate sustainability reporting and due diligence requirements (Text with EEA relevance)\":\n    - /url: /regulations/6cdc920f-6110-412a-b4f8-7b6c7fabdda5\n  - text: EU Directive (EU) 2025/794 of the European Parliament and of the Council of 14 April 2025 amending Directives (EU) 2022/2464 and (EU) 2024/1760 as regards the dates from which Member States are to apply certain corporate sustainability reporting and due diligence requirements (Text with EEA relevance) needs more data Jan 1, 2027 74 days T1\n  - button \"Actions for Directive (EU) 2025/794 of the European Parliament and of the Council of 14 April 2025 amending Directives (EU) 2022/2464 and (EU) 2024/1760 as regards the dates from which Member States are to apply certain corporate sustainability reporting and due diligence requirements (Text with EEA relevance)\"\n  - link \"Regulation (EU) 2025/2083 of the European Parliament and of the Council of 8 October 2025 amending Regulation (EU) 2023/956 as regards simplifying and strengthening the carbon border adjustment mechanism (Text with EEA relevance)\":\n    - /url: /regulations/c509a0cd-263d-48fc-8d0b-160f786bdbb0\n  - text: EU Regulation (EU) 2025/2083 of the European Parliament and of the Council of 8 October 2025 amending Regulation (EU) 2023/956 as regards simplifying and strengthening the carbon border adjustment mechanism (Text with EEA relevance) needs more data Jan 1, 2027 74 days T1\n  - button \"Actions for Regulation (EU) 2025/2083 of the European Parliament and of the Council of 8 October 2025 amending Regulation (EU) 2023/956 as regards simplifying and strengthening the carbon border adjustment mechanism (Text with EEA relevance)\"\n  - link \"COMMISSION IMPLEMENTING REGULATION (EU) 2025/2621 of 16 December 2025 laying down rules for the application of Regulation (EU) 2023/956 of the European Parliament and the Council as regards the establishment of default values (Text with EEA relevance) ANNEX I Default values for goods imported into the customs territory of the Union, except for electricity ANNEX II Default values for indirect emissions of goods listed in Annex I of Regulation (EU) 2023/956 and not listed in Annex II of that Regulation ANNEX III Default values for electricity imported into the customs territory of the Union ANNEX IV Default values for precursor for which the country of production cannot be identified\":\n    - /url: /regulations/7dabbe8a-2ba9-4242-8a51-57495e56993f\n  - text: EU COMMISSION IMPLEMENTING REGULATION (EU) 2025/2621 of 16 December 2025 laying down rules for the application of Regulation (EU) 2023/956 of the European Parliament and the Council as regards the establishment of default values (Text with EEA relevance) ANNEX I Default values for goods imported into the customs territory of the Union, except for electricity ANNEX II Default values for indirect emissions of goods listed in Annex I of Regulation (EU) 2023/956 and not listed in Annex II of that Regulation ANNEX III Default values for electricity imported into the customs territory of the Union ANNEX IV Default values for precursor for which the country of production cannot be identified needs more data Jan 1, 2027 74 days T1\n  - group \"Source bias tags\": Government funded Regulator aligned +1 more\n  - button \"Actions for COMMISSION IMPLEMENTING REGULATION (EU) 2025/2621 of 16 December 2025 laying down rules for the application of Regulation (EU) 2023/956 of the European Parliament and the Council as regards the establishment of default values (Text with EEA relevance) ANNEX I Default values for goods imported into the customs territory of the Union, except for electricity ANNEX II Default values for indirect emissions of goods listed in Annex I of Regulation (EU) 2023/956 and not listed in Annex II of that Regulation ANNEX III Default values for electricity imported into the customs territory of the Union ANNEX IV Default values for precursor for which the country of production cannot be identified\"\n  - 'link \"Alternative Fuels Data Center: Federal and State Laws and Incentives Database\"':\n    - /url: /regulations/4a108d70-0062-4c46-a090-151683f202a6\n  - text: \"US Alternative Fuels Data Center: Federal and State Laws and Incentives Database needs more data Nov 15, 2026 27 days T2\"\n  - group \"Source bias tags\": Government funded Regulator aligned +1 more\n  - 'button \"Actions for Alternative Fuels Data Center: Federal and State Laws and Incentives Database\"'\n  - link \"California SB 253 — Climate Corporate Data Accountability Act\":\n    - /url: /regulations/w4_ca_sb253\n  - text: US-CA California SB 253 — Climate Corporate Data Accountability Act needs more data Jan 1, 2027 74 days T1\n  - group \"Source bias tags\": Government funded Regulator aligned +1 more\n  - button \"Actions for California SB 253 — Climate Corporate Data Accountability Act\"\n  - link \"All 500 changes in the last 90 days\":\n    - /url: /regulations?sort=newest\n  - text: NEW = first seen this pass · UPDATED = brief or timeline changed\n  - paragraph: Across the platform\n  - link \"Regulations Binding law, agency rules, court decisions 1,320\":\n    - /url: /regulations\n  - link \"Market Intel Price series, corporate moves, capital 54\":\n    - /url: /market\n  - link \"Research Horizon-scan findings 39\":\n    - /url: /research\n  - link \"Operations Regional cost, feasibility, infrastructure 26\":\n    - /url: /operations\n  - link \"Watchlist →\":\n    - /url: /watchlist\n  - text: Nothing watched yet. Watch any regulation, source, or market signal to see its updates here.\n  - link \"Browse what to watch →\":\n    - /url: /regulations\n  - link \"Portfolios →\":\n    - /url: /dashboard/portfolio\n  - paragraph: Items, corridors and entities your workspace holds together.\n  - paragraph: Legend\n  - term: Impact\n  - definition: 8/12\n  - term: Timeline\n  - definition: Passed · next · ahead.\n  - term: Source tier\n  - definition: T1 binding law → T7 overflow / uncategorized.\n- button \"Back to top\"\n- alert"
+    "tree": "- button \"Notifications\"\n- banner:\n  - button \"Open navigation\"\n  - heading \"Dashboard\" [level=1]\n  - button \"Search\"\n  - link \"Account\":\n    - /url: /profile\n- main:\n  - paragraph: VOL IV · No. 43 · Tuesday, October 20, 2026\n  - heading \"smoke'S BRIEF\" [level=1]\n  - text: \"1,413 items across 5 surfaces · 53 jurisdictions · scoped to Dietl / Rockit Verticals: Fine Art & Museum Logistics, Live Events & Touring, Luxury Goods & High Value, Film, TV & Media Production, Automotive & Motorsport, Humanitarian & NGO Cargo\"\n  - search:\n    - combobox \"Search or ask across the workspace\"\n    - button \"Ask\"\n  - link \"Immediate — ≤ 90 days, 20 items\":\n    - /url: /regulations?band=immediate\n    - text: Immediate ≤ 90 days 20\n  - link \"Action — ≤ 6 months, 24 items\":\n    - /url: /regulations?band=action\n    - text: Action ≤ 6 months 24\n  - link \"Monitor — 6–12 months, 1,002 items\":\n    - /url: /regulations?band=monitor\n    - text: Monitor 6–12 months 1,002\n  - link \"Awareness — background, 270 items\":\n    - /url: /regulations?band=awareness\n    - text: Awareness background 270\n  - heading \"Due next · 5 items\" [level=2]\n  - text: By next binding date · week of Oct 20, reaching to Nov 30, 2026\n  - link \"IEA Electricity Price Data for Large Industrial Customers (2019-2024)\":\n    - /url: /operations/3f11f1fc-5b1f-422a-93bc-a34f6b3c9f3b\n  - text: EU IEA Electricity Price Data for Large Industrial Customers (2019-2024) needs more data Oct 30, 2026 10 days T2\n  - group \"Source bias tags\": Government funded Regulator aligned +3 more\n  - button \"Actions for IEA Electricity Price Data for Large Industrial Customers (2019-2024)\"\n  - 'link \"Alternative Fuels Data Center: Federal and State Laws and Incentives Database\"':\n    - /url: /regulations/4a108d70-0062-4c46-a090-151683f202a6\n  - text: \"US Alternative Fuels Data Center: Federal and State Laws and Incentives Database needs more data Nov 15, 2026 26 days T2\"\n  - group \"Source bias tags\": Government funded Regulator aligned +1 more\n  - 'button \"Actions for Alternative Fuels Data Center: Federal and State Laws and Incentives Database\"'\n  - link \"Regulation (EU) 2024/1157 on shipments of waste\":\n    - /url: /regulations/68af8b45-fbbf-4ba1-add8-2c1761d2d120\n  - text: GLOBAL Regulation (EU) 2024/1157 on shipments of waste needs more data Nov 21, 2026 32 days T1\n  - group \"Source bias tags\": Government funded Regulator aligned +1 more\n  - button \"Actions for Regulation (EU) 2024/1157 on shipments of waste\"\n  - link \"Euro 7 Standard\":\n    - /url: /regulations/l2\n  - text: EU Euro 7 Standard needs more data Nov 29, 2026 40 days T1\n  - group \"Source bias tags\": Government funded Regulator aligned +2 more\n  - button \"Actions for Euro 7 Standard\"\n  - link \"Council Implementing Decision (EU) 2026/1295 of 4 June 2026 authorising Sweden to apply reduced rates of excise duty to gas oil and unleaded petrol used as motor fuels, in accordance with Article 19 of Directive 2003/96/EC\":\n    - /url: /regulations/30d68025-cc44-4386-8073-8335a029c25a\n  - text: EU Council Implementing Decision (EU) 2026/1295 of 4 June 2026 authorising Sweden to apply reduced rates of excise duty to gas oil and unleaded petrol used as motor fuels, in accordance with Article 19 of Directive 2003/96/EC needs more data Nov 30, 2026 41 days T1\n  - button \"Actions for Council Implementing Decision (EU) 2026/1295 of 4 June 2026 authorising Sweden to apply reduced rates of excise duty to gas oil and unleaded petrol used as motor fuels, in accordance with Article 19 of Directive 2003/96/EC\"\n  - link \"All 20 immediate\":\n    - /url: /regulations?band=immediate\n  - text: then 24 action · 1,002 monitor\n  - heading \"What changed\" [level=2]\n  - text: Detection pass 2026-09-18\n  - link \"Commission Delegated Regulation (EU) 2024/3214 of 16 October 2024 amending Regulation (EU) 2015/757 of the European Parliament and of the Council as regards the rules for the monitoring of greenhouse gas emissions from offshore ships and the zero-rating of sustainable fuels\":\n    - /url: /regulations/0b6537ea-1c85-41b9-81ed-1486fd72ea18\n  - text: EU Commission Delegated Regulation (EU) 2024/3214 of 16 October 2024 amending Regulation (EU) 2015/757 of the European Parliament and of the Council as regards the rules for the monitoring of greenhouse gas emissions from offshore ships and the zero-rating of sustainable fuels needs more data Dec 31, 2026 72 days T1\n  - button \"Actions for Commission Delegated Regulation (EU) 2024/3214 of 16 October 2024 amending Regulation (EU) 2015/757 of the European Parliament and of the Council as regards the rules for the monitoring of greenhouse gas emissions from offshore ships and the zero-rating of sustainable fuels\"\n  - link \"Directive (EU) 2025/794 of the European Parliament and of the Council of 14 April 2025 amending Directives (EU) 2022/2464 and (EU) 2024/1760 as regards the dates from which Member States are to apply certain corporate sustainability reporting and due diligence requirements (Text with EEA relevance)\":\n    - /url: /regulations/6cdc920f-6110-412a-b4f8-7b6c7fabdda5\n  - text: EU Directive (EU) 2025/794 of the European Parliament and of the Council of 14 April 2025 amending Directives (EU) 2022/2464 and (EU) 2024/1760 as regards the dates from which Member States are to apply certain corporate sustainability reporting and due diligence requirements (Text with EEA relevance) needs more data Jan 1, 2027 73 days T1\n  - button \"Actions for Directive (EU) 2025/794 of the European Parliament and of the Council of 14 April 2025 amending Directives (EU) 2022/2464 and (EU) 2024/1760 as regards the dates from which Member States are to apply certain corporate sustainability reporting and due diligence requirements (Text with EEA relevance)\"\n  - link \"Regulation (EU) 2025/2083 of the European Parliament and of the Council of 8 October 2025 amending Regulation (EU) 2023/956 as regards simplifying and strengthening the carbon border adjustment mechanism (Text with EEA relevance)\":\n    - /url: /regulations/c509a0cd-263d-48fc-8d0b-160f786bdbb0\n  - text: EU Regulation (EU) 2025/2083 of the European Parliament and of the Council of 8 October 2025 amending Regulation (EU) 2023/956 as regards simplifying and strengthening the carbon border adjustment mechanism (Text with EEA relevance) needs more data Jan 1, 2027 73 days T1\n  - button \"Actions for Regulation (EU) 2025/2083 of the European Parliament and of the Council of 8 October 2025 amending Regulation (EU) 2023/956 as regards simplifying and strengthening the carbon border adjustment mechanism (Text with EEA relevance)\"\n  - link \"COMMISSION IMPLEMENTING REGULATION (EU) 2025/2621 of 16 December 2025 laying down rules for the application of Regulation (EU) 2023/956 of the European Parliament and the Council as regards the establishment of default values (Text with EEA relevance) ANNEX I Default values for goods imported into the customs territory of the Union, except for electricity ANNEX II Default values for indirect emissions of goods listed in Annex I of Regulation (EU) 2023/956 and not listed in Annex II of that Regulation ANNEX III Default values for electricity imported into the customs territory of the Union ANNEX IV Default values for precursor for which the country of production cannot be identified\":\n    - /url: /regulations/7dabbe8a-2ba9-4242-8a51-57495e56993f\n  - text: EU COMMISSION IMPLEMENTING REGULATION (EU) 2025/2621 of 16 December 2025 laying down rules for the application of Regulation (EU) 2023/956 of the European Parliament and the Council as regards the establishment of default values (Text with EEA relevance) ANNEX I Default values for goods imported into the customs territory of the Union, except for electricity ANNEX II Default values for indirect emissions of goods listed in Annex I of Regulation (EU) 2023/956 and not listed in Annex II of that Regulation ANNEX III Default values for electricity imported into the customs territory of the Union ANNEX IV Default values for precursor for which the country of production cannot be identified needs more data Jan 1, 2027 73 days T1\n  - group \"Source bias tags\": Government funded Regulator aligned +1 more\n  - button \"Actions for COMMISSION IMPLEMENTING REGULATION (EU) 2025/2621 of 16 December 2025 laying down rules for the application of Regulation (EU) 2023/956 of the European Parliament and the Council as regards the establishment of default values (Text with EEA relevance) ANNEX I Default values for goods imported into the customs territory of the Union, except for electricity ANNEX II Default values for indirect emissions of goods listed in Annex I of Regulation (EU) 2023/956 and not listed in Annex II of that Regulation ANNEX III Default values for electricity imported into the customs territory of the Union ANNEX IV Default values for precursor for which the country of production cannot be identified\"\n  - link \"California SB 253 — Climate Corporate Data Accountability Act\":\n    - /url: /regulations/w4_ca_sb253\n  - text: US-CA California SB 253 — Climate Corporate Data Accountability Act needs more data Jan 1, 2027 73 days T1\n  - group \"Source bias tags\": Government funded Regulator aligned +1 more\n  - button \"Actions for California SB 253 — Climate Corporate Data Accountability Act\"\n  - 'link \"Alternative Fuels Data Center: Federal and State Laws and Incentives Database\"':\n    - /url: /regulations/4a108d70-0062-4c46-a090-151683f202a6\n  - text: \"US Alternative Fuels Data Center: Federal and State Laws and Incentives Database needs more data Nov 15, 2026 26 days T2\"\n  - group \"Source bias tags\": Government funded Regulator aligned +1 more\n  - 'button \"Actions for Alternative Fuels Data Center: Federal and State Laws and Incentives Database\"'\n  - link \"All 500 changes in the last 90 days\":\n    - /url: /regulations?sort=newest\n  - text: NEW = first seen this pass · UPDATED = brief or timeline changed\n  - paragraph: Across the platform\n  - link \"Regulations Binding law, agency rules, court decisions 1,316\":\n    - /url: /regulations\n  - link \"Market Intel Price series, corporate moves, capital 36\":\n    - /url: /market\n  - link \"Research Horizon-scan findings 37\":\n    - /url: /research\n  - link \"Operations Regional cost, feasibility, infrastructure 24\":\n    - /url: /operations\n  - link \"Watchlist →\":\n    - /url: /watchlist\n  - text: Nothing watched yet. Watch any regulation, source, or market signal to see its updates here.\n  - link \"Browse what to watch →\":\n    - /url: /regulations\n  - link \"Portfolios →\":\n    - /url: /dashboard/portfolio\n  - paragraph: Items, corridors and entities your workspace holds together.\n  - paragraph: Legend\n  - term: Impact\n  - definition: 8/12\n  - term: Timeline\n  - definition: Passed · next · ahead.\n  - term: Source tier\n  - definition: T1 binding law → T7 overflow / uncategorized.\n- button \"Back to top\"\n- alert"
   },
   "landmarks": [
     {
@@ -81,7 +81,7 @@
     },
     {
       "role": "link",
-      "name": "Immediate — ≤ 90 days, 21 items"
+      "name": "Immediate — ≤ 90 days, 20 items"
     },
     {
       "role": "link",
@@ -93,7 +93,7 @@
     },
     {
       "role": "link",
-      "name": "Awareness — background, 273 items"
+      "name": "Awareness — background, 270 items"
     },
     {
       "role": "link",
@@ -113,14 +113,6 @@
     },
     {
       "role": "link",
-      "name": "Mexico SEMARNAT"
-    },
-    {
-      "role": "button",
-      "name": "Actions for Mexico SEMARNAT"
-    },
-    {
-      "role": "link",
       "name": "Regulation (EU) 2024/1157 on shipments of waste"
     },
     {
@@ -137,7 +129,15 @@
     },
     {
       "role": "link",
-      "name": "All 21 immediate"
+      "name": "Council Implementing Decision (EU) 2026/1295 of 4 June 2026 authorising Sweden to apply reduced rates of excise duty to gas oil and unleaded petrol used as motor fuels, in accordance with Article 19 of Directive 2003/96/EC"
+    },
+    {
+      "role": "button",
+      "name": "Actions for Council Implementing Decision (EU) 2026/1295 of 4 June 2026 authorising Sweden to apply reduced rates of excise duty to gas oil and unleaded petrol used as motor fuels, in accordance with Article 19 of Directive 2003/96/EC"
+    },
+    {
+      "role": "link",
+      "name": "All 20 immediate"
     },
     {
       "role": "link",
@@ -173,14 +173,6 @@
     },
     {
       "role": "link",
-      "name": "Alternative Fuels Data Center: Federal and State Laws and Incentives Database"
-    },
-    {
-      "role": "button",
-      "name": "Actions for Alternative Fuels Data Center: Federal and State Laws and Incentives Database"
-    },
-    {
-      "role": "link",
       "name": "California SB 253 — Climate Corporate Data Accountability Act"
     },
     {
@@ -189,23 +181,31 @@
     },
     {
       "role": "link",
+      "name": "Alternative Fuels Data Center: Federal and State Laws and Incentives Database"
+    },
+    {
+      "role": "button",
+      "name": "Actions for Alternative Fuels Data Center: Federal and State Laws and Incentives Database"
+    },
+    {
+      "role": "link",
       "name": "All 500 changes in the last 90 days"
     },
     {
       "role": "link",
-      "name": "RegulationsBinding law, agency rules, court decisions1,320"
+      "name": "RegulationsBinding law, agency rules, court decisions1,316"
     },
     {
       "role": "link",
-      "name": "Market IntelPrice series, corporate moves, capital54"
+      "name": "Market IntelPrice series, corporate moves, capital36"
     },
     {
       "role": "link",
-      "name": "ResearchHorizon-scan findings39"
+      "name": "ResearchHorizon-scan findings37"
     },
     {
       "role": "link",
-      "name": "OperationsRegional cost, feasibility, infrastructure26"
+      "name": "OperationsRegional cost, feasibility, infrastructure24"
     },
     {
       "role": "link",
@@ -229,37 +229,37 @@
     "items": [
       {
         "tag": "div",
-        "text": "EUIEA Electricity Price Data for Large Industrial Customers (2019-2024)regional_dataneeds more dataGovernment fundedRegulator aligned+3 moreOct 30, 202611 daysT2Government fundedRegulator aligned+3 more⋯",
+        "text": "EUIEA Electricity Price Data for Large Industrial Customers (2019-2024)regional_dataneeds more dataGovernment fundedRegulator aligned+3 moreOct 30, 202610 daysT2Government fundedRegulator aligned+3 more⋯",
         "width": 341,
         "height": 140.4375,
         "container": "due-next-card"
       },
       {
         "tag": "div",
-        "text": "USAlternative Fuels Data Center: Federal and State Laws and Incentives Databaseguidance · fuelsneeds more dataGovernment fundedRegulator aligned+1 moreNov 15, 202627 daysT2Government fundedRegulator aligned+1 more⋯",
+        "text": "USAlternative Fuels Data Center: Federal and State Laws and Incentives Databaseguidance · fuelsneeds more dataGovernment fundedRegulator aligned+1 moreNov 15, 202626 daysT2Government fundedRegulator aligned+1 more⋯",
         "width": 341,
         "height": 158.65625,
         "container": "due-next-card"
       },
       {
         "tag": "div",
-        "text": "MXMexico SEMARNATregulation · air, ocean, road · emissionsneeds more dataGovernment fundedRegulator aligned+1 moreNov 18, 202630 daysT1Government fundedRegulator aligned+1 more⋯",
-        "width": 341,
-        "height": 122.21875,
-        "container": "due-next-card"
-      },
-      {
-        "tag": "div",
-        "text": "GLOBALRegulation (EU) 2024/1157 on shipments of wasteregulationneeds more dataGovernment fundedRegulator aligned+1 moreNov 21, 202633 daysT1Government fundedRegulator aligned+1 more⋯",
+        "text": "GLOBALRegulation (EU) 2024/1157 on shipments of wasteregulationneeds more dataGovernment fundedRegulator aligned+1 moreNov 21, 202632 daysT1Government fundedRegulator aligned+1 more⋯",
         "width": 341,
         "height": 140.4375,
         "container": "due-next-card"
       },
       {
         "tag": "div",
-        "text": "EUEuro 7 Standardregulation · road · transportneeds more dataGovernment fundedRegulator aligned+2 moreNov 29, 202641 daysT1Government fundedRegulator aligned+2 more⋯",
+        "text": "EUEuro 7 Standardregulation · road · transportneeds more dataGovernment fundedRegulator aligned+2 moreNov 29, 202640 daysT1Government fundedRegulator aligned+2 more⋯",
         "width": 341,
         "height": 122.21875,
+        "container": "due-next-card"
+      },
+      {
+        "tag": "div",
+        "text": "EUCouncil Implementing Decision (EU) 2026/1295 of 4 June 2026 authorising Sweden to apply reduced rates of excise duty to gas oil and unleaded petrol used as motor fuels, in accordance with Article 19 of Directive 2003/96/ECframework · roadneeds more dataNov 30, 202641 daysT1⋯",
+        "width": 341,
+        "height": 190.53125,
         "container": "due-next-card"
       },
       {
@@ -278,7 +278,7 @@
       },
       {
         "tag": "div",
-        "text": "EURegulation (EU) 2025/2083 of the European Parliament and of the Council of 8 October 2025 amending Regulation (EU) 2023/956 as regards simplifying and strengthening the carbon border adjustment mechanism (Text with EEA relevance)NEW · first seen this pass · regulationneeds more dataJan 1, 202774 d",
+        "text": "EURegulation (EU) 2025/2083 of the European Parliament and of the Council of 8 October 2025 amending Regulation (EU) 2023/956 as regards simplifying and strengthening the carbon border adjustment mechanism (Text with EEA relevance)NEW · first seen this pass · regulationneeds more dataJan 1, 202773 d",
         "width": 341,
         "height": 190.53125,
         "container": "what-changed-card"
@@ -292,14 +292,14 @@
       },
       {
         "tag": "div",
-        "text": "USAlternative Fuels Data Center: Federal and State Laws and Incentives DatabaseUPDATED · brief regenerated 2026-09-13 · guidance · fuelsneeds more dataGovernment fundedRegulator aligned+1 moreNov 15, 202627 daysT2Government fundedRegulator aligned+1 more⋯",
+        "text": "US-CACalifornia SB 253 — Climate Corporate Data Accountability ActUPDATED · brief regenerated 2026-09-18 · regulation · road, ocean, air, rail · reportingneeds more dataGovernment fundedRegulator aligned+1 moreJan 1, 202773 daysT1Government fundedRegulator aligned+1 more⋯",
         "width": 341,
         "height": 158.65625,
         "container": "what-changed-card"
       },
       {
         "tag": "div",
-        "text": "US-CACalifornia SB 253 — Climate Corporate Data Accountability ActUPDATED · brief regenerated 2026-09-18 · regulation · road, ocean, air, rail · reportingneeds more dataGovernment fundedRegulator aligned+1 moreJan 1, 202774 daysT1Government fundedRegulator aligned+1 more⋯",
+        "text": "USAlternative Fuels Data Center: Federal and State Laws and Incentives DatabaseUPDATED · brief regenerated 2026-09-13 · guidance · fuelsneeds more dataGovernment fundedRegulator aligned+1 moreNov 15, 202626 daysT2Government fundedRegulator aligned+1 more⋯",
         "width": 341,
         "height": 158.65625,
         "container": "what-changed-card"
@@ -316,7 +316,8 @@
       }
     ]
   },
-  "document_height": 3771,
+  "document_height": 3840,
+  "tiles": 1,
   "truncated": false,
   "offences": []
 }
