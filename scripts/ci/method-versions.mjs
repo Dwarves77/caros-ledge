@@ -31,7 +31,8 @@ function declarationsOf(files) {
       ts.forEachChild(n, visit);
     };
     visit(node);
-    decls.set(name, { text: printer.printNode(ts.EmitHint.Unspecified, node, sf), refs, node });
+    // The `export` keyword is not behaviour: exporting or unexporting a helper the method reaches does not change the method.
+    decls.set(name, { text: printer.printNode(ts.EmitHint.Unspecified, node, sf).replace(/^export\s+(?:default\s+)?/, ""), refs, node });
   };
   for (const [file, text] of files) {
     const sf = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true);

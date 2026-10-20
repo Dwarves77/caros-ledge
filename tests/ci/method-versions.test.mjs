@@ -31,6 +31,13 @@ test("the unchanged code passes; a comment or a layout change is not a change", 
   assert.deepEqual(versionProblems(currentMethods(files(reflowed)).methods, recorded), []);
 });
 
+test("an export keyword on a helper the method reaches is not part of the method: exporting or unexporting it is not an edit", () => {
+  const exported = METHODS("scale()", '"1"', "export function scale() { return 2; }");
+  const local = METHODS("scale()", '"1"', "function scale() { return 2; }");
+  assert.deepEqual(versionProblems(currentMethods(files(local)).methods, recordedFrom(exported)), []);
+  assert.deepEqual(versionProblems(currentMethods(files(exported)).methods, recordedFrom(local)), []);
+});
+
 test("planted: a method edit with no version bump fails, naming the key", () => {
   const recorded = recordedFrom(METHODS("FACTOR"));
   const edited = currentMethods(files(METHODS("FACTOR + 1"))).methods;

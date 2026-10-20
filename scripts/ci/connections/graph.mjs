@@ -60,6 +60,7 @@ export function analyse(path, text) {
   // Value uses of local names: every identifier that is not part of an import declaration, an export specifier, a declaration's own name, a property name or a type reference.
   const uses = new Map(); // local name -> count
   const members = new Map(); // namespace local -> Set of member names read; "*" when the namespace is used as a whole
+  const memberHits = new Map(); // namespace local -> how many identifier uses are `local.member` (every other use is the namespace used as a whole)
   const visit = (node) => {
     if (ts.isImportDeclaration(node) || ts.isTypeNode(node) || ts.isInterfaceDeclaration(node) || ts.isTypeAliasDeclaration(node)) return;
     if (ts.isCallExpression(node) && node.expression.kind === ts.SyntaxKind.ImportKeyword && node.arguments[0] && ts.isStringLiteral(node.arguments[0])) {
@@ -76,6 +77,7 @@ export function analyse(path, text) {
       const set = members.get(node.expression.text) ?? new Set();
       set.add(node.name.text);
       members.set(node.expression.text, set);
+      memberHits.set(node.expression.text, (memberHits.get(node.expression.text) ?? 0) + 1);
     }
     if (ts.isIdentifier(node)) {
       const p = node.parent;
@@ -89,7 +91,7 @@ export function analyse(path, text) {
     ts.forEachChild(node, visit);
   };
   visit(sf);
-  return { exports, reexports, imports, dynamicSpecs, uses, members };
+  return { exports, reexports, imports, dynamicSpecs, uses, members, memberHits };
 }
 
 /**
@@ -125,6 +127,21 @@ export function buildGraph(texts, extraRoots = []) {
     }
     return f.exports.has(name) ? [file, name] : null;
   };
+  // Every name a module offers its importers: its own exports, the names it re-exports (`export { a as b } from`), and what its `export *` targets offer. A namespace import (`import * as m`, `await import(spec)`) reaches all of them.
+  const visibleNames = (file, seen = new Set()) => {
+    const out = new Set();
+    const f = info.get(file);
+    if (!f || seen.has(file)) return out;
+    seen.add(file);
+    for (const name of f.exports.keys()) out.add(name);
+    for (const r of f.reexports) {
+      if (r.names === "*") {
+        const target = resolveSpecifier(file, r.spec, files);
+        if (target) for (const name of visibleNames(target, seen)) out.add(name);
+      } else for (const [as] of r.names) out.add(as);
+    }
+    return out;
+  };
   for (const [file, f] of info) {
     const out = new Set();
     for (const imp of f.imports) {
@@ -135,9 +152,8 @@ export function buildGraph(texts, extraRoots = []) {
         if (b.typeOnly) continue;
         if (b.imported === "*") {
           const names = f.members.get(b.local);
-          const all = !names || (f.uses.get(b.local) ?? 0) > names.size;
-          for (const [name] of info.get(target).exports) if (all || names.has(name)) { const d = defining(target, name); if (d) markUsed(d[0], d[1], file); }
-          for (const r of info.get(target).reexports) if (r.names === "*") for (const [name] of info.get(resolveSpecifier(target, r.spec, files))?.exports ?? []) if (all || names.has(name)) { const d = defining(target, name); if (d) markUsed(d[0], d[1], file); }
+          const all = !names || (f.uses.get(b.local) ?? 0) > (f.memberHits.get(b.local) ?? 0);
+          for (const name of visibleNames(target)) if (all || names.has(name)) { const d = defining(target, name); if (d) markUsed(d[0], d[1], file); }
         } else if ((f.uses.get(b.local) ?? 0) > 0) {
           const d = defining(target, b.imported);
           if (d) markUsed(d[0], d[1], file);
@@ -148,7 +164,7 @@ export function buildGraph(texts, extraRoots = []) {
       const target = resolveSpecifier(file, spec, files);
       if (!target) continue;
       out.add(target);
-      for (const [name] of info.get(target).exports) { const d = defining(target, name); if (d) markUsed(d[0], d[1], file); }
+      for (const name of visibleNames(target)) { const d = defining(target, name); if (d) markUsed(d[0], d[1], file); }
     }
     for (const r of f.reexports) {
       const target = resolveSpecifier(file, r.spec, files);
