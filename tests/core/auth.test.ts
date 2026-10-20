@@ -201,11 +201,11 @@ test("invitations: lazy expiry, lookup, accept and decline go through the rpc on
   const accepting = fakeDb(undefined, { rpc: () => ({ data: ORG }) });
   assert.equal(await acceptInvitation(accepting.db, TOKEN), ORG);
   assert.deepEqual(accepting.calls, [], "accept writes nothing itself: no org_memberships insert");
-  const refused = (code: string) => acceptInvitation(fakeDb(undefined, { rpc: () => ({ error: { message: "raw", code } }) }).db, TOKEN).catch((e: HttpError) => [e.status, e.message]);
+  const refused = (code: string) => acceptInvitation(fakeDb(undefined, { rpc: () => ({ error: { message: "raw", code } }) }).db, TOKEN).catch((e: HttpError) => [e.status, e.publicMessage]);
   assert.deepEqual(await refused("42501"), [403, "Not authorized to accept this invitation"]);
   assert.deepEqual(await refused("P0002"), [404, "Invitation not found"]);
-  assert.deepEqual(await refused("22023"), [409, "raw"]);
-  await assert.rejects(declineInvitation(fakeDb(undefined, { rpc: () => ({ error: { message: "x", code: "42501" } }) }).db, TOKEN), (e: unknown) => (e as HttpError).message === "Not authorized to decline this invitation");
+  assert.deepEqual(await refused("22023"), [409, "That conflicts with something already saved. Reload and try again."]);
+  await assert.rejects(declineInvitation(fakeDb(undefined, { rpc: () => ({ error: { message: "x", code: "42501" } }) }).db, TOKEN), (e: unknown) => (e as HttpError).publicMessage === "Not authorized to decline this invitation");
 });
 
 test("pendingInvitationsFor: a failed user lookup is an error, never an empty list", async () => {

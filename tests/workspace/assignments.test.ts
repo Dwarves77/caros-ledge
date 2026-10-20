@@ -119,7 +119,7 @@ test("IMP-115: the assignment and its notices are one database call; a notice th
   db.fail("notification_outbox", "insert", { message: "outbox down" }, { times: 1 });
   const failed = await call(POST, "admin", "POST", URL_, { assignees: [TEAMMATE] }, P);
   assert.equal(failed.status, 500);
-  assert.match(String(failed.body.error), /outbox down/);
+  assert.equal(failed.body.error, "Something went wrong on our side. Try again; nothing you have saved was changed.", "the driver's text is held back for the log");
   assert.equal(assigned(db).length, 0, "no assignment survives a notice that was not queued");
   assert.equal(sent().length, 0);
   const queued = await call(POST, "admin", "POST", URL_, { assignees: [USER.owner] }, P);

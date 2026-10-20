@@ -206,9 +206,9 @@ test("backfill-lineage-edges: snapshot before any write, typed edge inserted, ma
 
 test("seed-derived-values: a source that may not be re-served is counted, not seeded; a refusal is counted; dry writes nothing", async () => {
   const rows = [
-    { factor_id: "f1", quantity_basis: "tkm", ttw_co2e: 1, wtw_co2e: 2, wtt_co2e: 1, source_key: "desnz_ghg_factors", origin_class: "official", pedigree: 1 },
-    { factor_id: "f2", quantity_basis: "tkm", ttw_co2e: 1, wtw_co2e: 2, wtt_co2e: 1, source_key: "glec_framework", origin_class: "official", pedigree: 1 },
-    { factor_id: "f3", quantity_basis: "bad", ttw_co2e: null, wtw_co2e: null, wtt_co2e: null, source_key: "desnz_ghg_factors", origin_class: "official", pedigree: 1 },
+    { factor_id: "f1", quantity_basis: "tkm", ttw_co2e: 1, wtw_co2e: 2, wtt_co2e: 1, source_key: "desnz_ghg_factors", origin_class: "official", pedigree: 1, superseded_by: null },
+    { factor_id: "f2", quantity_basis: "tkm", ttw_co2e: 1, wtw_co2e: 2, wtt_co2e: 1, source_key: "glec_framework", origin_class: "official", pedigree: 1, superseded_by: null },
+    { factor_id: "f3", quantity_basis: "bad", ttw_co2e: null, wtw_co2e: null, wtt_co2e: null, source_key: "desnz_ghg_factors", origin_class: "official", pedigree: 1, superseded_by: null },
   ];
   const carbonIntensity = (f: { quantity_basis: string }) => (f.quantity_basis === "tkm" ? ({ ok: true, valueGPerUnit: 5, unit: "g/tkm" } as const) : ({ ok: false, reason: "x" } as const));
   const dry = connectDb({ emission_factors: rows });
@@ -218,7 +218,7 @@ test("seed-derived-values: a source that may not be re-served is counted, not se
   assert.equal((d.counts.licence_blocked ?? 0) + (d.counts.refused ?? 0) + (d.counts.would_create ?? 0), 3);
   assert.equal(d.counts.licence_blocked, 1, "a licence-gated source is not clear to re-serve");
   const regs: unknown[] = [];
-  const live = connectDb({ emission_factors: rows }, { rpc: (n, a) => (regs.push([n, a]), { data: "v1" }) });
+  const live = connectDb({ emission_factors: rows }, { rpc: (n, a) => (regs.push([n, a]), { data: [{ value_id: "v1", authored: true }] }) });
   const r = await seedDerivedValues({ sb: live.db, now: () => NOW, carbonIntensity }, { dry: false });
   assert.equal(r.outcome, "ok");
   assert.equal(r.counts.created, d.counts.would_create);

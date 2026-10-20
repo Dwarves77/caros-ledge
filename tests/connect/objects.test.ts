@@ -8,7 +8,7 @@ import { buildObjectRow, candidatesFromClaims, candidatesFromFueleuTargets, deri
 import { connectDb } from "./world.ts";
 
 type Row = Record<string, unknown>;
-const ITEM = { id: "i1", title: "Guidance", is_archived: false, jurisdiction_iso: ["EU"], instrument_identifier: "Regulation (EU) 2026/1030", canonical_instrument_key: null };
+const ITEM = { id: "i1", title: "Guidance", provenance_status: "verified", replaced_by: null, is_archived: false, jurisdiction_iso: ["EU"], instrument_identifier: "Regulation (EU) 2026/1030", canonical_instrument_key: null };
 const CAPTURE = { id: "c1", intelligence_item_id: "i1", result_content: "Article 5(1) Carriers shall report the emissions of each voyage to the authority.", result_url: "https://eur-lex.europa.eu/x", result_index: 0 };
 const candidate = (over: Partial<Candidate> = {}): Candidate => ({ instrument_item_id: "i1", capture_id: "c1", pinpoint_citation: "Article 5(1)", verbatim_text: "Carriers shall report the emissions of each voyage", duty_holder_class: ["carrier"], applicability_trigger: { attribute: "instrument_in_scope", value: "x" }, ...over });
 const build = (c: Candidate, over: Record<string, unknown> = {}) => buildObjectRow(c, { item: ITEM, capture: CAPTURE, existingForPinpoint: null, ...over } as never);
@@ -66,7 +66,7 @@ test("candidatesFromClaims: a FACT with an Article pinpoint, a duty holder and a
   assert.deepEqual([got[0]?.pinpoint_citation, got[0]?.duty_holder_class], ["Article 5(1)", ["carrier"]]);
 });
 
-const FUELEU = { id: "f1", title: "FuelEU Maritime", is_archived: false, jurisdiction_iso: ["EU"], instrument_identifier: "Regulation (EU) 2023/1805", canonical_instrument_key: "32023R1805" };
+const FUELEU = { id: "f1", title: "FuelEU Maritime", provenance_status: "verified", replaced_by: null, is_archived: false, jurisdiction_iso: ["EU"], instrument_identifier: "Regulation (EU) 2023/1805", canonical_instrument_key: "32023R1805" };
 const heldPeriods = (n: number) => `Article 4(2) ${FUELEU_TARGETS.periods.slice(0, n).map((p) => p.quote).join(" ")}`;
 
 test("FuelEU 2030-2050 targets are data: six periods, each produced only when its quote is verbatim in a held capture", () => {

@@ -16,7 +16,7 @@ const dv = (id: string, over: Row = {}): Row => ({ value_id: id, entity_id: ENTI
 function useWorld(o: { failValues?: boolean } = {}) {
   const user = new MemDb({}, {
     org_watchlist: [{ id: "w1", org_id: "11111111-1111-4111-8111-111111111111", item_type: "signal", item_id: ITEM }, { id: "w2", org_id: "22222222-2222-4222-8222-222222222222", item_type: "signal", item_id: "other-org-item" }],
-    intelligence_items: [{ id: ITEM, title: "Diesel", domain: 4, instrument_entity_id: ENTITY }],
+    intelligence_items: [{ id: ITEM, title: "Diesel", domain: 4, instrument_entity_id: ENTITY, provenance_status: "verified", replaced_by: null }],
   });
   user.seed("derived_values", [dv("old", { invalidated_by_event: 7, admissibility: "stale", value: 1 }), dv("new", { supersedes: "old", value: 2, computed_at: "2026-10-14T00:00:00Z" })]);
   user.seed("entities", [{ entity_id: ENTITY, canonical_name: "CNSHA-NLRTM:ocean", kind: "corridor", status: "active", display_name: null }]);

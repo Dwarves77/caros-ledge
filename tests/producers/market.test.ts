@@ -47,7 +47,7 @@ test("ECB golden (run 22's regression): a single-quoted document with attributes
 const mkMarket = () => {
   const mem = memoryDb(
     { market_series: [{ id: "ms-prior", series_key: "ecb-fx:eur-usd", reference_period: "2026-10-07", as_at_date: "2026-10-07", value_numeric: 1.05, unit: "USD/EUR", currency: "USD", origin_class: "official" }] },
-    { rpc: (name, args) => (name === "register_derived_value" ? (((mem.tables.derived_values ??= []).push({ value_id: "dv1", ...(args as object) }), ((args as { p_inputs: Array<{ table: string; pk: string }> }).p_inputs).forEach((i) => (mem.tables.derivation_edges ??= []).push({ from_table: i.table, from_pk: i.pk, to_table: "derived_values", to_value_id: "dv1" }))), { data: "dv1" }) : {}) },
+    { rpc: (name, args) => ((name === "register_derived_value" || name === "author_derived_value") ? (((mem.tables.derived_values ??= []).push({ value_id: "dv1", ...(args as object) }), ((args as { p_inputs: Array<{ table: string; pk: string }> }).p_inputs).forEach((i) => (mem.tables.derivation_edges ??= []).push({ from_table: i.table, from_pk: i.pk, to_table: "derived_values", to_value_id: "dv1" }))), { data: name === "author_derived_value" ? [{ value_id: "dv1", authored: true }] : "dv1" }) : {}) },
   );
   return mem;
 };

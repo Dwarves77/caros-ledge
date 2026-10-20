@@ -75,8 +75,8 @@ test("parse: one UUID shape, one email validator, a malformed body is a 400", as
 
 test("errors: one status map for database codes, one shape for refusals", async () => {
   assert.deepEqual([statusForDb("42501"), statusForDb("PGRST301"), statusForDb("P0002"), statusForDb("22023"), statusForDb("23505"), statusForDb("XX"), statusForDb(null)], [403, 403, 404, 409, 409, 500, 500]);
-  assert.equal(dbError({ message: "raw", code: "42501" }, { forbidden: "no" }).message, "no");
-  assert.equal(dbError({ message: "raw", code: "22023" }, { forbidden: "no" }).message, "raw");
+  assert.equal(dbError({ message: "raw", code: "42501" }, { forbidden: "no" }).publicMessage, "no");
+  assert.equal(dbError({ message: "raw", code: "22023" }, { forbidden: "no" }).publicMessage, "That conflicts with something already saved. Reload and try again.", "a status the caller has no sentence for answers the table's sentence, never the driver's text");
   const handler = route("/t", async () => {
     throw new HttpError(418, "teapot");
   });

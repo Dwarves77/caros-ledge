@@ -137,15 +137,16 @@ export async function runPropagationDrain(deps: DrainDeps, input: DrainInput): P
     idOf: (r) => r.value_id,
     eventIds,
     async recompute(row) {
-      const fn = registry.get("derived_values", row.method_id, row.method_version);
-      if (!fn) return { kind: "unknown" };
+      const version = registry.latestVersion("derived_values", row.method_id);
+      const fn = version ? registry.get("derived_values", row.method_id, version) : undefined;
+      if (!version || !fn) return { kind: "unknown" };
       const out = await fn({ entityId: row.entity_id, inputs: await resolveInputs(sb, row.inputs ?? []), priorValue: row, now: deps.now() });
       if (!out.ok) return { kind: "refused" };
       const to = await registerDerivedValue(sb, {
-        entityId: row.entity_id, methodId: row.method_id, methodVersion: row.method_version, value: out.value ?? null, valueLow: out.valueLow ?? null, valueHigh: out.valueHigh ?? null,
+        entityId: row.entity_id, methodId: row.method_id, methodVersion: version, value: out.value ?? null, valueLow: out.valueLow ?? null, valueHigh: out.valueHigh ?? null,
         unit: out.unit ?? row.unit ?? null, currency: out.currency ?? row.currency ?? null, derivation: out.derivation, originClass: out.originClass, lifecycle: out.lifecycle,
         admissibility: out.admissibility, confidence: out.confidence, assertedAt: deps.now().toISOString(), halfLifeDays: out.halfLifeDays ?? null, inputs: row.inputs ?? [],
-        computedBy: `${row.method_id}@${row.method_version}`, supersedes: row.value_id,
+        computedBy: `${row.method_id}@${version}`, supersedes: row.value_id,
       });
       return { kind: "done", to };
     },
@@ -156,14 +157,15 @@ export async function runPropagationDrain(deps: DrainDeps, input: DrainInput): P
     idOf: (r) => r.inference_id,
     eventIds,
     async recompute(row) {
-      const fn = registry.get("inference_records", row.method_id, row.method_version);
-      if (!fn) return { kind: "unknown" };
+      const version = registry.latestVersion("inference_records", row.method_id);
+      const fn = version ? registry.get("inference_records", row.method_id, version) : undefined;
+      if (!version || !fn) return { kind: "unknown" };
       const declared = await resolveInferenceDeclaredInputs(sb, row.inference_id);
       const out = await fn({ entityId: row.subject_id, inputs: await resolveInputs(sb, declared), priorValue: { inference_id: row.inference_id, claim_text: row.claim_text, cited_item_ids: row.cited_item_ids, trigger_question_ref: row.trigger_question_ref, status_token: row.status_token, confidence: row.confidence, origin_class: row.origin_class }, now: deps.now() });
       if (!out.ok) return { kind: "refused" };
       const to = await registerInferenceRecord(sb, {
         subjectId: row.subject_id, claimText: out.claimText, statusToken: out.statusToken, confidence: out.confidence, citedItemIds: out.citedItemIds, originClass: out.originClass,
-        methodId: row.method_id, methodVersion: out.methodVersion ?? row.method_version, computedBy: `${row.method_id}@${out.methodVersion ?? row.method_version}`, triggerQuestionRef: row.trigger_question_ref, inputs: declared, supersedes: row.inference_id,
+        methodId: row.method_id, methodVersion: version, computedBy: `${row.method_id}@${version}`, triggerQuestionRef: row.trigger_question_ref, inputs: declared, supersedes: row.inference_id,
       });
       return { kind: "done", to, reopen: out.reopenQuestionRef ?? null };
     },
