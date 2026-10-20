@@ -278,17 +278,29 @@ try {
     });
   }
 
-  // V-9, law 2 / DP-1: on the real routes the nav card (252 px) and the rail (300 px) leave a list 617 px at 1280, and the row once left its title 117 px. The research fixture has the rail but no nav card, so it is narrowed by the
-  // nav card's width and every row title must keep the measure's floor at 1280 and across the band the floor covers (1280 to 1439).
-  for (const width of [1280, 1360, 1439]) {
-    await check(`list title floor beside the rail at ${width}`, async () => {
+  // V-9 (ruling 2026-10-20): below 1440 px the rail is folded, under the content and not beside it, so a list keeps its artboard width: 948 px at 1280 (the viewport less the nav card's 252 and the page's 2 x 40), and every row title is at least
+  // its longest word wide, at the measure's 160 px floor, with no horizontal overflow. From 1440 px the rail sits beside the content again. The research fixture has the rail but no nav card, so it is narrowed by the nav card's width.
+  for (const width of [1280, 1360, 1439, 1440]) {
+    const folded = width < 1440;
+    await check(`the rail is ${folded ? 'folded under' : 'beside'} the list at ${width}, titles keep their width`, async () => {
       const { ctx, page } = await open(browser, `${base}/privacy/ui-fixtures/surfaces?screen=research`, [width, 900]);
       try {
         await page.evaluate((w) => { document.querySelector('[data-fx]').style.width = `${w - 252}px`; }, width);
-        const titles = await page.$$eval('[data-part="list-row"] [data-guard-title]', (els) => els.map((e) => Math.round(e.getBoundingClientRect().width)));
-        must(titles.length >= 5, `the fixture draws ${titles.length} row titles`);
-        must(Math.min(...titles) >= 160, `a row title is ${Math.min(...titles)} px wide at ${width} px beside the rail and the nav card: the floor is 160`);
-        const offences = (await measurePage(page, { rows: false })).filter((o) => o.includes('title'));
+        const at = await page.evaluate(() => {
+          const box = (sel) => { const r = document.querySelector(sel).getBoundingClientRect(); return { left: Math.round(r.left), top: Math.round(r.top), right: Math.round(r.right), bottom: Math.round(r.bottom), width: Math.round(r.width) }; };
+          return { col: box('.cl-list-surface-col'), rail: box('.cl-list-surface-rail'), titles: [...document.querySelectorAll('[data-part="list-row"] [data-guard-title]')].map((e) => Math.round(e.getBoundingClientRect().width)), overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth };
+        });
+        must(at.titles.length >= 5, `the fixture draws ${at.titles.length} row titles`);
+        if (folded) {
+          must(at.rail.top >= at.col.bottom - 1, `the rail starts at y ${at.rail.top}, above the end of the list column at y ${at.col.bottom}: it is beside the list, not folded`);
+          must(at.rail.left === at.col.left, `the folded rail is at x ${at.rail.left}, not under the list column at x ${at.col.left}`);
+          must(at.col.width === width - 252 - 80, `the list column is ${at.col.width} px wide at ${width}: the folded rail leaves ${width - 252 - 80}`);
+        } else {
+          must(at.rail.left >= at.col.right && at.rail.top <= at.col.top + 1, `at ${width} the rail is not beside the list: rail x ${at.rail.left} y ${at.rail.top}, column to x ${at.col.right} from y ${at.col.top}`);
+        }
+        must(Math.min(...at.titles) >= 160, `a row title is ${Math.min(...at.titles)} px wide at ${width}: the floor is 160`);
+        must(at.overflow <= 0, `the page overflows sideways by ${at.overflow} px at ${width}`);
+        const offences = (await measurePage(page, { rows: false })).filter((o) => o.includes('title') || o.includes('overflow'));
         must(offences.length === 0, `the measure reports ${offences[0]}`);
       } finally {
         await ctx.close();
