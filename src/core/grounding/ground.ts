@@ -12,6 +12,7 @@
 // target match, resolver tier stamp, official floor pool, the kept filter, slot coverage (a FACT only on the author's confirmation),
 // floor-first re-attribution, dominance (INV-158), Gate A and B, the non-destructive apply, mint gates, citation edges and
 // validate_item_provenance. A `dry` run computes every stage and writes nothing.
+import { bindClaimMarkers } from "@/core/brief/claim-marker";
 import { ANALYSIS_LABELS } from "@/core/brief/vocab";
 import { crossLinkClaimSources, type ClaimRecord } from "@/core/brief/validate";
 import { isVerbatim } from "@/core/contracts/verbatim";
@@ -25,7 +26,7 @@ import { GROUND_CONFIG } from "./config";
 import { openFlagOnce } from "./flags";
 import type { FactClaim } from "./gate-a-scan";
 import { buildCitationEdges, buildGateARow, clearGateAState, derivedCoveredTokens, mergeNullTierAggregate, mintGates, summarizeNullTierAggregate, upsertGateAState, type GateFact, type NullTierAggregate } from "./gates";
-import { applyLedgerDiff, diffLedger, ledgerRegression, summarizeLedger, type ClaimRow } from "./ledger";
+import { applyLedgerDiff, applyLedgerOps, diffLedger, ledgerRegression, summarizeLedger, type ClaimRow } from "./ledger";
 import { authorityFloorFor, floorPool, readAllPoolRows, reattributeToFloor, type PoolRow } from "./pool";
 import { decideSlotClaim, nominateForSlot, readRequiredSlots, type Nomination } from "./slots";
 
@@ -256,6 +257,18 @@ async function ground(deps: GroundDeps, input: GroundInput): Promise<GroundResul
     const persisted = await fetchAllRows<ClaimRow>((from, to) => sb.from("section_claim_provenance").select("id, claim_kind, claim_text, source_span, source_id, search_result_id, source_tier_at_grounding").eq("intelligence_item_id", itemId).order("id", { ascending: true }).range(from, to), { cap: 20_000 }).catch(() => null);
     const w = persisted ? await upsertGateAState(sb, buildGateARow({ itemId, fullBrief: it.full_brief, factClaims: factsOf(persisted), derivedCovered: await derivedCoveredTokens(sb, itemId), nowIso })) : { error: "persisted-claims read failed" };
     if (w.error) { const c = await clearGateAState(sb, itemId); notes.push(`gate-a reconcile failed (${w.error}); state ${c.error ? `NOT cleared (${c.error})` : "cleared (fail-closed)"}`); }
+  }
+
+  // ---- name the claim in each fact paragraph (K:50): the claims now have their ids, so the paragraph that states one is marked with it and the render never compares text -----------------------------------
+  if (!dry) {
+    const facts = await fetchAllRows<{ id: string; claim_text: string }>((from, to) => sb.from("section_claim_provenance").select("id, claim_text").eq("intelligence_item_id", itemId).eq("claim_kind", "FACT").order("id", { ascending: true }).range(from, to), { cap: 20_000 }).catch((e: Error) => e);
+    if (facts instanceof Error) notes.push(`claim markers not written: the claim read failed (${facts.message})`);
+    else {
+      const bound = secs.map((s) => ({ s, b: bindClaimMarkers(s.content_md ?? "", facts) }));
+      Object.assign(counts, { paragraphs_marked: bound.reduce((n, x) => n + x.b.marked, 0), paragraphs_unmarked: bound.reduce((n, x) => n + x.b.unmarked, 0) });
+      const ops = bound.filter((x) => x.b.markdown !== (x.s.content_md ?? "")).map((x) => ({ op: "section_content" as const, id: x.s.id, content_md: x.b.markdown }));
+      if (ops.length) await applyLedgerOps(sb, itemId, ops, nowIso).catch((e: Error) => void notes.push(`claim markers not written: ${e.message}`));
+    }
   }
 
   // ---- mint gates, citation edges, null-tier surfacing -----------------------------------------------------------

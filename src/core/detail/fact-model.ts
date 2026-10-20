@@ -2,7 +2,7 @@
 // Ported from old_repo/src/lib/detail/fact-card-model.ts (lines 1-478)
 // A fact-document section's markdown to the fact-card models the kit draws: paragraph classes, lead-in kinds, embedded sentences, provenance, claim nodes, the figure lead, same-kind
 // merging, and the record-grade model. One regex set (the old tree kept two). The tier read itself (withClaimTiers, by claim id) is the kit's, re-exported by the barrel.
-import { stripClaimLedgerBlocks } from "@/core/brief";
+import { claimIdOfParagraph, stripClaimLedgerBlocks, withoutClaimMarker } from "@/core/brief";
 import { hostOf } from "@/core/shared";
 import type { ClaimNode, FactCardModel } from "@/ui";
 
@@ -82,10 +82,14 @@ function classifyParagraph(paragraph: string): FactParagraph {
   return m && before ? { kind: "fact", text: stripFactLabel(before), source: parseSourceCitation(m.citation) } : { kind: "prose", text };
 }
 
-/** A section's markdown to classified paragraphs; the claim-ledger blocks never reach a customer. */
+/** A section's markdown to classified paragraphs; the claim-ledger blocks never reach a customer. A paragraph that names its claim (`<!-- claim:<uuid> -->` on its first line, core/brief/claim-marker.ts) carries the id; one that does not carries none. */
 export function parseFactParagraphs(markdown: string | null | undefined): FactParagraph[] {
   const md = stripClaimLedgerBlocks(markdown);
-  return md.trim() ? md.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean).map(classifyParagraph) : [];
+  if (!md.trim()) return [];
+  return md.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean).map((p) => {
+    const claimId = claimIdOfParagraph(p);
+    return { ...classifyParagraph(withoutClaimMarker(p).trim()), ...(claimId ? { claimId } : {}) };
+  });
 }
 
 const LEAD_IN_KINDS = ["ACTION REQUIRED", "LEGAL CONFIRMATION REQUIRED", "DEADLINE", "BASELINE TARGET", "NATIONAL TARGET", "SCOPE", "PENALTY", "DEFINITION"] as const;

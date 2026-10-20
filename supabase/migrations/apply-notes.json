@@ -134,6 +134,15 @@
       "profiles": "a whole-table invariant (no avatar address that is not https remains); the fixture's rows are asserted by the same file"
     }
   },
+  "0108_data_claim_markers": {
+    "consumer": "src/core/detail/fact-model.ts parseFactParagraphs and src/ui/FactCard.tsx (a fact card reads its tier and source link by the claim id its paragraph names)",
+    "after": "0106 (public.is_verbatim) and the paragraphs of every item already grounded",
+    "assert": "scripts/ci/fixtures/data-0108-markers.assert.sql",
+    "unscopedReads": {
+      "intelligence_item_sections": "the file's own counts over every section (paragraphs marked and unmarked, markers naming a claim of their item) are whole-table by design; the assertions about the fixture's section are scripts/ci/fixtures/data-0108-markers.assert.sql",
+      "section_claim_provenance": "the same whole-table check: every marker names a FACT claim of the item whose section carries it"
+    }
+  },
   "0078_migration_log": {
     "unscopedReads": {
       "migration_log": "asserts the whole seed: its size is the invariant, and the table is empty before this file creates it"
