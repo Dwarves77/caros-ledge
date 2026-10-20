@@ -1,0 +1,5 @@
+{
+  "_comment": "R2f F10 (R2c C6). A quote taken from a source whose reuse terms are in `cappedTerms` is accepted only up to `maxChars` characters: a sentence, never a page. Every other verdict (open_government, eu_reuse, public_domain, licensed) quotes without a cap. The length is the platform's own quotation allowance, not a legal reading of any publisher's terms; a publisher whose terms were read and allow more is given a verdict that is not capped (data/reuse-terms.json in core/sources).",
+  "cappedTerms": ["unknown", "prohibited"],
+  "maxChars": 300
+}

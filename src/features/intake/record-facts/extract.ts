@@ -12,6 +12,9 @@
 import { GAP_MARKER } from "@/core/brief/regulation-sections";
 import { assertVerbatim } from "@/core/contracts/verbatim";
 import { VOCABULARIES, normaliseMode } from "@/core/contracts/vocabularies";
+import { nameForJurisdiction } from "@/core/entities/unlocode-names";
+import { hostFamily } from "@/core/intake/identity";
+import { indexOfInsensitive } from "@/core/parse";
 
 import { BINDING_PRIORITY, BINDING_TRIGGERS, DUE_DATE_TRIGGERS, EU_ACT_SLOTS, FAMILY_SLOTS, MARKET_FAMILY, REGULATION_FAMILY, SLOT_TRIGGERS, URL_BEARING_SLOTS } from "./triggers";
 
@@ -78,9 +81,9 @@ const stated = (span: string) => `The captured source states, verbatim: «${span
 /** The identity FACT: the item's own title located verbatim in the captured text (case-insensitive; the span is cut from the SOURCE so its casing is the source's own). */
 function extractIdentityFact(a: { title: string | null | undefined; capturedText: string | null | undefined; sourceUrl: string | null }): RecordClaim | null {
   if (!a.title || !a.capturedText) return null;
-  const idx = a.capturedText.toLowerCase().indexOf(a.title.toLowerCase());
-  if (idx === -1) return null;
-  const span = a.capturedText.slice(idx, idx + a.title.length);
+  const found = indexOfInsensitive(a.capturedText, a.title);
+  if (!found) return null;
+  const span = a.capturedText.slice(found.index, found.index + found.length);
   return claim("title", "identity", { capturedText: a.capturedText, sourceUrl: a.sourceUrl }, { span, text: `The captured source's own text carries this item's title verbatim: «${span}»` });
 }
 
@@ -94,12 +97,15 @@ const bindingClaim = (ctx: Ctx): RecordClaim => {
   return claim("binding_position", "record_facts", ctx, null, "No verbatim applicability language naming a duty-holder class was located in the captured source text for this record-grade item.");
 };
 
-const LOCODE_PAIR = /\b([A-Z]{2}[A-Z0-9]{3})\s?(?:[-–—]|to|>)\s?([A-Z]{2}[A-Z0-9]{3})\b/g;
+const LOCODE_PAIR = /\b([A-Z]{2}[A-Z2-9]{3})\s?(?:[-–—]|to|>)\s?([A-Z]{2}[A-Z2-9]{3})\b/g;
+/** A UN/LOCODE is an ISO 3166-1 country code and a three-character location: five capital letters that merely look like one ("TRADE", "CARGO") name no country. */
+const isLocode = (code: string | undefined): boolean => !!code && nameForJurisdiction(code.slice(0, 2)) !== null;
 const MODE_WORD = /\b(ocean|sea|maritime|water|vessel|marine|road|truck|lorry|hgv|rail|air|freighter|airfreight|inland[- ]waterway|barge|iww)\b/i;
 /** A literal UN/LOCODE pair with a transport-mode word in its neighbourhood; a port NAME is never geocoded into a code. */
 const corridorClaim = (ctx: Ctx): RecordClaim => {
   const text = ctx.capturedText;
   for (const m of text.matchAll(LOCODE_PAIR)) {
+    if (!isLocode(m[1]) || !isLocode(m[2])) continue;
     const start = Math.max(0, (m.index ?? 0) - 80);
     const window = text.slice(start, Math.min(text.length, (m.index ?? 0) + m[0].length + 80));
     const mode = normaliseMode(MODE_WORD.exec(window)?.[0]);
@@ -136,16 +142,6 @@ export function buildRecordSlotClaim(slotKey: string, ctx: Ctx): RecordClaim {
   }
 }
 
-/** True when the URL's host is eur-lex.europa.eu or a subdomain: the gate for the EU-act self-description slots, independent of (possibly mis-bucketed) item_type. */
-function isEurlexHost(sourceUrl: string | null | undefined): boolean {
-  try {
-    const host = new URL(String(sourceUrl ?? "")).hostname.toLowerCase();
-    return host === "eur-lex.europa.eu" || host.endsWith(".eur-lex.europa.eu");
-  } catch {
-    return false;
-  }
-}
-
 /**
  * Every claim a record-grade payload needs: the identity FACT when locatable, then ONE claim per slot, in order: the required slots, the
  * item family's additions (binding position and due date for the regulation family, corridor identity for the market family, the three
@@ -156,7 +152,7 @@ export function buildRecordFacts(a: { title: string | null | undefined; sourceUr
   const slots: string[] = [...(a.requiredSlots ?? [])];
   const family = REGULATION_FAMILY.has(String(a.itemType)) ? "regulation" : MARKET_FAMILY.has(String(a.itemType)) ? "market" : String(a.itemType);
   slots.push(...(FAMILY_SLOTS[family] ?? []));
-  if (isEurlexHost(a.sourceUrl)) slots.push(...EU_ACT_SLOTS);
+  if (hostFamily(a.sourceUrl) === "eurlex") slots.push(...EU_ACT_SLOTS);
   const identity = extractIdentityFact({ title: a.title, capturedText: a.capturedText, sourceUrl: a.sourceUrl });
   return [...(identity ? [identity] : []), ...[...new Set(slots)].map((s) => buildRecordSlotClaim(s, ctx))];
 }

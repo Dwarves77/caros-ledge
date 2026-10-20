@@ -153,18 +153,19 @@ test("INV-263: a failed search says it failed; it is never an empty result", asy
   assert.deepEqual(await runSearch(res(true, { results: [] }), "carbon"), { phase: "ok", rows: [] });
 });
 
-test("claim tiers: exact and contained matches, an ambiguous card gets no tier, record-grade cards are untouched", () => {
-  const long = "The regulation applies to all vessels above 5,000 gross tonnage from 1 January 2027.";
-  const map = { [`[scope] ${long}`]: { tier: 2, sourceName: "IMO", sourceUrl: "https://imo.org/x" }, "A different claim that is long enough to match nothing here at all.": { tier: 4, sourceName: "Press", sourceUrl: null } };
-  const tierOf = (text: string, tiers: Record<string, { tier: number; sourceName: string; sourceUrl: string | null }>) => withClaimTiers({ kind: "SCOPE", claim: [{ text }] } as FactCardModel, tiers).provenance?.tier ?? null;
-  assert.equal(tierOf(long, map), 2);
-  assert.equal(tierOf("short", map), null);
-  const clash = { a: { tier: 2, sourceName: "A", sourceUrl: null }, b: { tier: 3, sourceName: "B", sourceUrl: null } };
-  const text = "Both entries contain this same long enough sentence for containment.";
-  assert.equal(tierOf(text, { [text]: clash.a, [`${text} extra`]: clash.b }), null);
-  const model: FactCardModel = { kind: "SCOPE", claim: [{ text: long }] };
-  assert.equal(withClaimTiers(model, map).provenance?.tier, 2);
-  assert.equal(withClaimTiers({ ...model, kind: "ANALYTICAL INFERENCE" }, map).provenance, undefined);
-  assert.equal(withClaimTiers({ ...model, recordGrade: true }, map).provenance, undefined);
+test("F7 (K:50): a card's tier is read from the claim row by the claim id; no text is ever compared, an ambiguous or missing id draws none, inference and record-grade cards are untouched", () => {
+  const text = "The regulation applies to all vessels above 5,000 gross tonnage from 1 January 2027.";
+  const map = { c1: { tier: 2, sourceName: "IMO", sourceUrl: "https://imo.org/x", text }, c2: { tier: 4, sourceName: "Press", sourceUrl: null, text }, c3: { tier: null, sourceName: null, sourceUrl: null } };
+  const tierOf = (model: FactCardModel) => withClaimTiers(model, map).provenance?.tier ?? null;
+  assert.equal(tierOf({ kind: "SCOPE", claim: [{ text }], claimId: "c1" }), 2, "the id names the claim");
+  assert.equal(tierOf({ kind: "SCOPE", claim: [{ text }], claimId: "c2" }), 4, "two claims with the same text keep their own sources");
+  assert.equal(tierOf({ kind: "SCOPE", claim: [{ text }] }), null, "the same text without an id draws no tier");
+  assert.equal(tierOf({ kind: "SCOPE", claim: [{ text: "something else entirely" }], claimId: "c1" }), 2, "the card text does not matter: the row does");
+  assert.equal(tierOf({ kind: "SCOPE", claim: [{ text }], claimId: "nope" }), null, "an id the map does not hold");
+  assert.equal(tierOf({ kind: "SCOPE", claim: [{ text }], claimId: "c3" }), null, "a claim with no rated source");
+  const merged = withClaimTiers({ kind: "SCOPE", claim: [{ text: "a" }], claimId: "c1", additionalClaims: [{ claim: [{ text: "b" }], claimId: "c2" }, { claim: [{ text: "c" }] }] }, map);
+  assert.deepEqual([merged.provenance?.tier, merged.additionalClaims?.map((c) => c.provenance?.tier ?? null)], [2, [4, null]], "each merged claim reads its own row");
+  assert.equal(withClaimTiers({ kind: "ANALYTICAL INFERENCE", claim: [{ text }], claimId: "c1" }, map).provenance, undefined);
+  assert.equal(withClaimTiers({ kind: "SCOPE", claim: [{ text }], claimId: "c1", recordGrade: true, provenance: { tier: 3 } }, map).provenance?.tier, 3);
   assert.equal(sixWordHeadline("one two three four five six seven eight"), "one two three four five six");
 });

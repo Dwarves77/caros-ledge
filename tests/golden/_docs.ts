@@ -3,6 +3,8 @@ import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "no
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import { licenceForbidsHost } from "@/core/fetch/licence-hosts";
+
 /** The honest identity every golden-corpus fetch declares (R6a): one request per second per host, a shared on-disk cache so a test run does not refetch. */
 const GOLDEN_UA = "CarosLedge/1.0 (+https://carosledge.com/bot)";
 const CACHE = join(tmpdir(), "caros-golden-cache");
@@ -54,6 +56,9 @@ async function fetchOnce(url: string, format: "pdf" | "html"): Promise<FetchedDo
 
 /** The pages of a document as text (a PDF per page, a web page as one). A failed fetch is a stated reason, never an empty page. */
 export function getDoc(url: string, format: "pdf" | "html"): Promise<FetchedDoc> {
+  // The licence register binds the golden tests as it binds the ladder and the worker: a host it bars is never asked, whatever documents.json says.
+  const barred = licenceForbidsHost(new URL(url).hostname);
+  if (barred) return Promise.resolve({ ok: false, reason: `licence_forbids: the licence register (${barred}) bars collecting from this host` });
   let p = memo.get(url);
   if (!p) memo.set(url, (p = fetchOnce(url, format)));
   return p;

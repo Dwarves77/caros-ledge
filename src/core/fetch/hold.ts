@@ -4,6 +4,8 @@
 import type { Db } from "@/core/db";
 import { isIsoDate } from "@/core/shared/dates";
 
+import { licenceForbidsHost } from "./licence-hosts";
+
 export type ScrapeCadence = "off" | "weekly" | "monthly";
 export interface ScrapeSchedule {
   cadence: ScrapeCadence;
@@ -50,12 +52,21 @@ function holdEngaged(env: Record<string, string | undefined> = process.env): boo
   return !LIFTED.has(String(env.SCRAPE_HOLD ?? "").trim().toLowerCase());
 }
 
+/** The host of a URL, lower-case; empty when it does not parse (then no register entry can name it). */
+function hostnameOf(url: string): string {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return "";
+  }
+}
+
 export class FetchHoldError extends Error {
   readonly url: string;
   readonly caller: string | null;
   readonly reason: FetchDecision["reason"];
   constructor(url: string, caller: string | null, reason: FetchDecision["reason"]) {
-    super(`FETCH_HOLD_ENGAGED (${reason}): refusing to fetch ${url}${caller ? `; caller '${caller}' is not a signed authorized caller` : ""}. The hold gates autonomous and scheduled fetching.`);
+    super(`FETCH_HOLD_ENGAGED (${reason}): refusing to fetch ${url}${reason === "licence_forbids" ? ": the licence register bars collecting from this host, for every caller" : caller ? `; caller '${caller}' is not a signed authorized caller` : ""}. The hold gates autonomous and scheduled fetching.`);
     this.name = "FetchHoldError";
     this.url = url;
     this.caller = caller;
@@ -64,7 +75,9 @@ export class FetchHoldError extends Error {
 }
 export interface FetchDecision {
   allowed: boolean;
-  reason: "lifted" | "signed_caller" | "hold_engaged" | "cadence_off" | "emergency_stop";
+  reason: "lifted" | "signed_caller" | "hold_engaged" | "cadence_off" | "emergency_stop" | "licence_forbids";
+  /** For licence_forbids: the licence register key that bars the host. */
+  registerKey?: string;
 }
 export interface HoldDeps {
   db: Db;
@@ -72,10 +85,13 @@ export interface HoldDeps {
 }
 
 /**
- * Whether a fetch of `url` may reach the network (INV-177). Refused while the env hold is engaged or the cadence is off or unreadable, except for
+ * Whether a fetch of `url` may reach the network (INV-177). Refused for a host the licence register bars (R2f F8), and while the env hold is engaged or the cadence is off or unreadable, except for
  * one of the two signed callers; the emergency stop refuses everyone. The decision is data: callers that refuse use assertFetchAllowed.
  */
-export async function fetchAllowed(_url: string, caller: string | null | undefined, deps: HoldDeps): Promise<FetchDecision> {
+export async function fetchAllowed(url: string, caller: string | null | undefined, deps: HoldDeps): Promise<FetchDecision> {
+  // The licence register comes first and binds every caller, signed or not: a publisher whose terms bar automated access is never asked, whatever the hold says.
+  const barred = licenceForbidsHost(hostnameOf(url));
+  if (barred) return { allowed: false, reason: "licence_forbids", registerKey: barred };
   const state = await getScrapeState(deps.db);
   if (state.emergencyPaused) return { allowed: false, reason: "emergency_stop" };
   const engaged = holdEngaged(deps.env);

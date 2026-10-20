@@ -2,6 +2,7 @@
 // Ported from old_repo/src/lib/forward-events/read-and-extract.mjs (lines 333-338)
 // The D10 class fix: a section-backed event survives only if its date span is verbatim in a FACT claim span of the same item (a forward event must be
 // verbatim in its source, the same rule as a FACT claim). Every refusal is returned as a named skip and counted; claim-backed events are verbatim by construction.
+import { isVerbatim } from "@/core/contracts/verbatim";
 import type { Db } from "@/core/db";
 
 import { extractForwardEvents, type SkippedEvent } from "./extract-forward-events";
@@ -17,7 +18,7 @@ function enforceSectionVerbatimInSource(events: readonly ExtractedEvent[], skipp
   const outSkipped = [...skipped];
   let refused = 0;
   for (const event of events) {
-    if (event.source_kind !== "section" || factSpans.some((span) => span.includes(event.source_span))) {
+    if (event.source_kind !== "section" || factSpans.some((span) => isVerbatim(span, event.source_span))) {
       kept.push(event);
       continue;
     }

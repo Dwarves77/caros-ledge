@@ -135,7 +135,7 @@ export async function readBodyCapped(resp: Response, capBytes: number): Promise<
   return out;
 }
 
-export type RefusalReason = "non_200" | "unsupported_type" | "too_large" | "too_small" | "error_marker" | "pdf_failed" | "pdf_unavailable" | "network" | "robots_disallowed" | "robots_unknown" | "private_address" | "bad_scheme" | "too_many_redirects" | "host_busy" | "paywalled" | "raw_text_unavailable" | "interactive_challenge" | "gated" | "browser_launch_failed";
+export type RefusalReason = "licence_forbids" | "non_200" | "unsupported_type" | "too_large" | "too_small" | "error_marker" | "pdf_failed" | "pdf_unavailable" | "network" | "robots_disallowed" | "robots_unknown" | "private_address" | "bad_scheme" | "too_many_redirects" | "host_busy" | "paywalled" | "raw_text_unavailable" | "interactive_challenge" | "gated" | "browser_launch_failed";
 export interface FetchRefusal {
   ok: false;
   reason: RefusalReason;
@@ -148,6 +148,8 @@ export interface FetchRefusal {
   detail: string;
   /** The robots.txt rule that disallowed the URL, for robots_disallowed. */
   rule?: string;
+  /** The licence register key that bars the host, for licence_forbids. */
+  registerKey?: string;
   /** For robots_unknown: robots.txt itself refused the declared identity (401, 403, 429); the browser tier may re-read it. */
   identityRefused?: boolean;
 }
@@ -266,8 +268,8 @@ export async function fetchDocument(url: string, opts: FetchDocumentOptions): Pr
     const language = documentLanguage(resp.headers.get("content-language"), isPdf ? null : text);
     return { ok: true, status: 200, finalUrl, contentType, text, fullLength, title, isPdf, pdfPages, pdfBytes: isPdf ? bytes.byteLength : null, language, nullsRemoved, ceilingBind, declaredTransforms };
   } catch (e) {
-    const g = (e as { fetchRefusal?: { reason: RefusalReason; transient: boolean; detail: string; rule?: string; identityRefused?: boolean } } | null)?.fetchRefusal;
-    if (g) return { ...refusal(g.reason, g.transient, null, contentType, finalUrl, g.detail), ...(g.rule ? { rule: g.rule } : {}), ...(g.identityRefused ? { identityRefused: true } : {}) };
+    const g = (e as { fetchRefusal?: { reason: RefusalReason; transient: boolean; detail: string; rule?: string; registerKey?: string; identityRefused?: boolean } } | null)?.fetchRefusal;
+    if (g) return { ...refusal(g.reason, g.transient, null, contentType, finalUrl, g.detail), ...(g.rule ? { rule: g.rule } : {}), ...(g.registerKey ? { registerKey: g.registerKey } : {}), ...(g.identityRefused ? { identityRefused: true } : {}) };
     return refusal("network", true, null, contentType, finalUrl, `fetch error: ${(e as Error).message}`);
   }
 }

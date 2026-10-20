@@ -1,3 +1,5 @@
+export { bindClaimMarkers, claimIdOfParagraph, withoutClaimMarker } from "./claim-marker";
+export type { BindResult } from "./claim-marker";
 export { BRIEF_EXTRA_FIELDS, BRIEF_FIELDS, CAPS, CLAIM_KINDS, COMPLIANCE_OBJECTS, CONTRACT_VERSION, FORMATS, SIGNAL_BANDS, THEMES, TOPIC_TAGS } from "./contract";
 export type { AdoptedTerms, BriefField, FormatDef, SectionDef } from "./contract";
 export { extractRecommendedActions, GAP_MARKER, parseRecordSections, parseRegulationSections, splitKeyDateFacts } from "./regulation-sections";

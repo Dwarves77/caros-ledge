@@ -22,11 +22,6 @@ const R2G = {
 } as const;
 const KEYS = Object.keys(R2G) as Array<keyof typeof R2G>;
 
-/** The sentence an entry quotes from the publisher's notice: the text between [quote] and [/quote] in its note. */
-function quotedSentence(note: string | undefined): string | null {
-  const m = /\[quote\]([\s\S]+?)\[\/quote\]/.exec(note ?? "");
-  return m ? (m[1] as string) : null;
-}
 /** Whitespace, curly quotes and non-breaking spaces folded, so a page's typography never decides a match. */
 const fold = (s: string): string => s.replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/ /g, " ").replace(/\s+/g, " ").trim();
 
@@ -38,12 +33,13 @@ test("INV-R2g-1 (static): every new entry is registered with the verdict its own
     assert.match(e.verifiedOn ?? "", /^\d{4}-\d{2}-\d{2}$/, `${k} carries the date read`);
     if (e.redistribution === "unverified") {
       assert.ok(e.blocker && e.blocker.length > 40, `${k}: an unverified entry states why the notice could not be read`);
-      assert.equal(quotedSentence(e.note), null, `${k}: nothing is quoted from a notice that was not read`);
+      assert.equal((e.quote ?? null), null, `${k}: nothing is quoted from a notice that was not read`);
       continue;
     }
     assert.match(e.url ?? "", /^https:\/\//, `${k} terms URL`);
-    const q = quotedSentence(e.note);
-    assert.ok(q && q.length > 40, `${k}: the sentence that grants or withholds reuse is quoted in the note`);
+    const q = (e.quote ?? null);
+    assert.match(e.termsReadOn ?? "", /^\d{4}-\d{2}-\d{2}$/, `${k}: the quote carries the day the terms were read`);
+    assert.ok(q && q.length > 40, `${k}: the sentence that grants or withholds reuse is the entry's quote`);
     if (e.redistribution === "permitted") assert.ok(e.attribution && e.licence, `${k}: a permitted entry carries its licence and the attribution text it requires`);
     else assert.ok(e.blocker && e.attribution === null, `${k}: a prohibited entry states its blocker and no attribution`);
   }
@@ -52,7 +48,7 @@ test("INV-R2g-1 (static): every new entry is registered with the verdict its own
 test("INV-R2g-1 (live): every quoted sentence is on its terms URL today; a fetch failure is a skipped subtest, never a pass", async (t) => {
   for (const k of KEYS) {
     const e = SOURCE_LICENCES[k]!;
-    const q = quotedSentence(e.note);
+    const q = (e.quote ?? null);
     if (!q) continue;
     await t.test(k, async (sub) => {
       // A publisher whose terms forbid robots is not fetched, the terms page included: the hosts are those of the documents marked fetch: false.

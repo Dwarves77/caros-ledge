@@ -17,10 +17,10 @@ import { committedFilingGrade, derivedFilingGrade, exportedCaptures, headerOf } 
 const NOW = new Date("2026-10-20T00:00:00Z");
 const TEXT = "Article 4(2). The limit referred to in paragraph 1 shall be calculated by reducing the reference value of 91,16 grams of CO2 equivalent per MJ by the following percentage: — 2 % from 1 January 2025; — 6 % from 1 January 2030;";
 const REF = "The limit referred to in paragraph 1 shall be calculated by reducing the reference value of 91,16 grams of CO2 equivalent per MJ by the following percentage:";
-const instrument = (over: Partial<FilingInstrument> = {}): FilingInstrument => ({ id: "fixture-instrument", captureId: "cap-1", verifiedAt: "2026-10-01", yearQuotes: { "2025": [REF, "— 2 % from 1 January 2025;"], "2030": [REF, "— 6 % from 1 January 2030;"], "2035": [REF, "— 14,5 % from 1 January 2035;"] }, ...over });
+const instrument = (over: Partial<FilingInstrument> = {}): FilingInstrument => ({ id: "fixture-instrument", captureId: "cap-1", verifiedAt: "2026-10-01", reuseTerms: "eu_reuse", yearQuotes: { "2025": [REF, "— 2 % from 1 January 2025;"], "2030": [REF, "— 6 % from 1 January 2030;"], "2035": [REF, "— 14,5 % from 1 January 2035;"] }, ...over });
 
 test("acceptQuote: a quote stands only on a stored capture id whose text holds it verbatim, with a verified_at that parses; every refusal names its reason", () => {
-  const base = { quote: REF, verifiedAt: "2026-10-01", captureId: "cap-1", captureText: TEXT, now: NOW };
+  const base = { quote: REF, verifiedAt: "2026-10-01", captureId: "cap-1", captureText: TEXT, reuseTerms: "eu_reuse" as const, now: NOW };
   assert.deepEqual(acceptQuote(base), { ok: true, captureId: "cap-1", verifiedAt: "2026-10-01" });
   assert.equal(acceptQuote({ ...base, quote: REF.toUpperCase() }).ok, true, "criterion 3 is case-insensitive");
   const refusal = (over: Record<string, unknown>) => { const v = acceptQuote({ ...base, ...over } as never); return v.ok ? "accepted" : v.reason; };

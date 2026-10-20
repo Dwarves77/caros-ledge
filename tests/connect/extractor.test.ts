@@ -7,7 +7,8 @@ import { dedupeEvents } from "@/features/obligations/extract/dedupe";
 import { EXTRACTOR_VERSION, extractForwardEvents } from "@/features/obligations/extract/extract-forward-events";
 import { RULES } from "@/features/obligations/extract/rules";
 import { needsDueDateContext, scanText } from "@/features/obligations/extract/scan";
-import { assertVerbatim, clauseAround, normalizeObligationText } from "@/features/obligations/extract/window";
+import { assertVerbatim } from "@/core/contracts/verbatim";
+import { clauseAround, normalizeObligationText } from "@/features/obligations/extract/window";
 import type { ClaimIn } from "@/features/obligations/extract/scan";
 
 const read = (name: string) => JSON.parse(readFileSync(new URL(`./fixtures/${name}`, import.meta.url), "utf8"));
@@ -152,7 +153,7 @@ test("normalizeObligationText is idempotent; a table row is read as its explaini
   }
   const row = "| 1 May 2029 | Operators shall register their ships | x |";
   assert.deepEqual(clauseAround(row, row.indexOf("1 May 2029"), row.indexOf("1 May 2029") + 10, undefined, undefined, "1 May 2029"), { text: "Operators shall register their ships…" });
-  assert.throws(() => assertVerbatim("abc", "abd"), /not a verbatim substring/);
+  assert.throws(() => assertVerbatim("abc", "abd"), /not a substring/);
   assert.throws(() => assertVerbatim("abc", ""), /empty/);
 });
 

@@ -108,7 +108,7 @@ function buildObjectRow(c: Candidate, ctx: { item: ObjectItem | null; capture: C
   if (!capture) return { ok: false, reason: "capture_missing" };
   if (capture.intelligence_item_id !== c.instrument_item_id) return { ok: false, reason: "capture_not_of_instrument" };
   if (!nz(c.pinpoint_citation)) return { ok: false, reason: "pinpoint_blank" };
-  if (!isVerbatim(capture.result_content, c.verbatim_text)) return { ok: false, reason: "span_not_verbatim" };
+  if (!isVerbatim(capture.result_content, nz(c.verbatim_text))) return { ok: false, reason: "span_not_verbatim" };
   if (c.status !== undefined && c.status !== null && c.status !== "not_assessed") return { ok: false, reason: "status_not_writer_owned" };
   const classes = Array.isArray(c.duty_holder_class) ? c.duty_holder_class.filter((x) => typeof x === "string" && x.trim()) : [];
   if (!classes.length) return { ok: false, reason: "duty_holder_missing" };

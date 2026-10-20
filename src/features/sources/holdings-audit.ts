@@ -1,17 +1,14 @@
 // Ported from old_repo/src/lib/sources/holdings-audit.mjs (lines 1-134)
 // Ported from old_repo/src/lib/sources/holdings-audit.mjs (lines 157-176)
 import { toText } from "@/core/fetch/classify-body";
+import { hostFamily, type HostFamily } from "@/core/intake/identity";
 
 export type PublisherShape = "eur-lex" | "legislation.gov.uk" | "federal-register" | "gazette" | "other";
-/** Registrable-domain to publisher shape; only the four shapes the operator named carry structural markers. */
+const SHAPE_OF: Record<HostFamily, PublisherShape> = { eurlex: "eur-lex", uk_legislation: "legislation.gov.uk", federal_register: "federal-register", us_code: "federal-register", gazette: "gazette" };
+/** The publisher shape of a URL's host (the families are data: core/intake/data/publisher-hosts.json); only the four shapes the operator named carry structural markers. */
 export function detectPublisherShape(url: string | null | undefined): PublisherShape {
-  const u = String(url || "").toLowerCase();
-  if (!u) return "other";
-  if (/eur-lex\.europa\.eu|\beurlex\b/.test(u)) return "eur-lex";
-  if (/legislation\.gov\.uk/.test(u)) return "legislation.gov.uk";
-  if (/federalregister\.gov|govinfo\.gov|ecfr\.gov/.test(u)) return "federal-register";
-  if (/gazette|gazzetta|boe\.es|legifrance|bundesanzeiger|staatsblad|dziennik|gesetzblatt/.test(u)) return "gazette";
-  return "other";
+  const family = hostFamily(url);
+  return family ? SHAPE_OF[family] : "other";
 }
 /** Clean visible text: scripts, styles and comments removed, then the one `toText`. */
 export const extractCleanText = (body: string | null | undefined): string =>

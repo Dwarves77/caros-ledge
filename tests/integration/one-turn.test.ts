@@ -236,7 +236,7 @@ test("P2-10: the item the turn minted and verified renders on /regulations and o
   const stored = db.rows("intelligence_item_sections").filter((x) => x.item_id === itemId);
   assert.deepEqual(detail.sections.map((x) => x.id).sort(), stored.map((x) => String(x.id)).sort(), "every stored section reaches the page, once");
   const facts = db.rows("section_claim_provenance").filter((x) => x.intelligence_item_id === itemId && x.claim_kind === "FACT");
-  assert.ok(facts.length > 0 && facts.every((f) => detail.claimTiers[String(f.claim_text)]?.tier === 1), "each FACT claim carries its source's rating: COALESCE(override, base) of the registered source (base tier 1)");
+  assert.ok(facts.length > 0 && facts.every((f) => detail.claimTiers[String(f.id)]?.tier === 1), "each FACT claim carries its source's rating: COALESCE(override, base) of the registered source (base tier 1)");
   assert.equal(detail.resource.sourceTier ?? null, 1, "the capture's source rating is the registry's, drawn on the item");
   assert.deepEqual(await loadDetail("market", itemId, undefined, db.client), { notFound: true }, "the same item is not found on another surface");
 });

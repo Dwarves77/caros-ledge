@@ -1,7 +1,7 @@
 // Ported from old_repo/src/lib/detail/fact-card-model.ts (lines 41-90)
 // Ported from old_repo/src/lib/detail/fact-card-model.ts (lines 480-572)
 // Ported from old_repo/src/lib/agent/parse-record-sections.ts (lines 10-18)
-// The fact-card prop types and the per-claim tier match. INV-126/213: a claim's tier is the caller's map (COALESCE(tier_override, base_tier)); this module only matches, never derives, never reads effective_tier.
+// The fact-card prop types and the per-claim tier read. INV-126/213: a claim's tier is the caller's map (COALESCE(tier_override, base_tier)) read by the claim's ID; this module never infers a claim from its text, never derives a tier, never reads effective_tier.
 
 export interface ClaimNode {
   text: string;
@@ -23,9 +23,11 @@ export interface FactCardModel {
   figureSubLabel?: string | null;
   claim: ClaimNode[];
   provenance?: FactCardProvenance | null;
-  /** A merged card: every later same-kind claim of the run, each its own paragraph and provenance line. */
-  additionalClaims?: { claim: ClaimNode[]; provenance?: FactCardProvenance | null }[];
-  /** A record-grade card: its tier is matched by the exact claim line upstream, so the containment match leaves it alone. */
+  /** The grounded claim this card states (section_claim_provenance.id); its tier is read from the claim map by this id. A card with no id draws no tier. */
+  claimId?: string | null;
+  /** A merged card: every later same-kind claim of the run, each its own paragraph, claim id and provenance line. */
+  additionalClaims?: { claim: ClaimNode[]; claimId?: string | null; provenance?: FactCardProvenance | null }[];
+  /** A record-grade card: its tier arrives with the row, so the claim map leaves it alone. */
   recordGrade?: boolean;
 }
 /** The operations matrix density, already resolved by the operations feature (the kit does no region-grid arithmetic). */
@@ -51,52 +53,26 @@ export interface ClaimTierInfo {
   tier: number | null;
   sourceName: string | null;
   sourceUrl: string | null;
+  /** The claim's own text, for the record-grade line match (core/brief parseRecordSections); the tier of a card is never read from it. */
+  text?: string;
 }
+/** The surface's claims by claim id. */
 export type ClaimTierMap = Record<string, ClaimTierInfo>;
 
-const MIN_CONTAINED = 24;
-const DASHES = String.fromCharCode(0x2014, 0x2013, 0x2d);
-const FACT_LABEL_RE = new RegExp(`^(?:[^:\\n]{0,120}?\\s+[${DASHES}]\\s+)?fact:\\s*`, "i");
-const SLOT_PREFIX_RE = /^\[[a-z0-9_]+\]\s*/i;
-const QUOTE_EDGE_RE = /^["'“”‘’]+|["'“”‘’]+$/g;
-
-/** Slot prefix, FACT label, emphasis markers, edge quotes and whitespace runs removed; lower-cased. */
-const normalizeClaimText = (raw: string): string =>
-  String(raw ?? "").replace(/\*+/g, "").trim().replace(SLOT_PREFIX_RE, "").replace(FACT_LABEL_RE, "").replace(QUOTE_EDGE_RE, "").replace(/\s+/g, " ").trim().toLowerCase();
-
-function claimsMatch(card: string, entry: string): boolean {
-  if (!card || !entry) return false;
-  if (card === entry) return true;
-  const [short, long] = card.length <= entry.length ? [card, entry] : [entry, card];
-  return short.length >= MIN_CONTAINED && long.includes(short);
-}
-
-/** The one rated source a claim resolves to, or null (no match, a match with no tier, or matches that disagree: an ambiguous card gets no tier). */
-function resolveClaimTier(claimText: string, claimTiers: ClaimTierMap | null | undefined): ClaimTierInfo | null {
-  const card = normalizeClaimText(claimText);
-  if (!claimTiers || !card) return null;
-  let found: ClaimTierInfo | null = null;
-  for (const [key, info] of Object.entries(claimTiers)) {
-    if (!info || typeof info.tier !== "number" || !claimsMatch(card, normalizeClaimText(key))) continue;
-    if (found && (found.tier !== info.tier || (found.sourceName ?? null) !== (info.sourceName ?? null))) return null;
-    found = info;
-  }
-  return found;
-}
-
-function withTier(nodes: ClaimNode[], provenance: FactCardProvenance | null | undefined, claimTiers: ClaimTierMap): FactCardProvenance | null {
+/** The tier of the claim a card names, read from its row: no id, or an id the map does not hold, or a claim with no rated source, leaves the provenance as it was. */
+function withTier(claimId: string | null | undefined, provenance: FactCardProvenance | null | undefined, claimTiers: ClaimTierMap): FactCardProvenance | null {
   if (typeof provenance?.tier === "number") return provenance;
-  const info = resolveClaimTier(nodes.map((n) => n.text).join(" "), claimTiers);
-  return info ? { source: provenance?.source ?? info.sourceName ?? null, org: provenance?.org ?? null, href: provenance?.href ?? info.sourceUrl ?? null, accessed: provenance?.accessed ?? null, tier: info.tier } : (provenance ?? null);
+  const info = claimId ? claimTiers[claimId] : undefined;
+  return info && typeof info.tier === "number" ? { source: provenance?.source ?? info.sourceName ?? null, org: provenance?.org ?? null, href: provenance?.href ?? info.sourceUrl ?? null, accessed: provenance?.accessed ?? null, tier: info.tier } : (provenance ?? null);
 }
 
-/** Attach each claim's grounded-source tier to a card model; inference and record-grade cards are returned untouched. Pure. */
+/** Attach each claim's grounded-source tier to a card model by its claim id; inference and record-grade cards are returned untouched. Pure. */
 export function withClaimTiers(model: FactCardModel, claimTiers: ClaimTierMap | null | undefined): FactCardModel {
   if (!claimTiers || model.kind === "ANALYTICAL INFERENCE" || model.recordGrade) return model;
   return {
     ...model,
-    provenance: withTier(model.claim, model.provenance, claimTiers),
-    ...(model.additionalClaims ? { additionalClaims: model.additionalClaims.map((c) => ({ claim: c.claim, provenance: withTier(c.claim, c.provenance, claimTiers) })) } : {}),
+    provenance: withTier(model.claimId, model.provenance, claimTiers),
+    ...(model.additionalClaims ? { additionalClaims: model.additionalClaims.map((c) => ({ ...c, provenance: withTier(c.claimId, c.provenance, claimTiers) })) } : {}),
   };
 }
 

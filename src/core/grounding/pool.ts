@@ -13,18 +13,18 @@ import { LookupError } from "@/core/http/errors";
 
 import { GROUND_CONFIG } from "./config";
 
-export interface PoolRow { id: string; url: string; text: string; index: number }
+export interface PoolRow { id: string; url: string; text: string; index: number; /** the BCP-47 number locale the capture declares, or null */ number_locale?: string | null }
 export interface TierSource { url: string; text: string; tier: number | null }
 
 /** Every pool row of the item, stubs included, ordered by result_index; a failed or over-long read fails loud (never an empty pool). */
 export async function readAllPoolRows(sb: Db, itemId: string): Promise<PoolRow[]> {
-  const r = await boundedRead<{ id: string; result_url: string | null; result_content: string | null; result_index: number | null }>(
-    (limit) => sb.from("agent_run_searches").select("id, result_url, result_content, result_index").eq("intelligence_item_id", itemId).order("result_index", { ascending: true }).order("id", { ascending: true }).limit(limit),
+  const r = await boundedRead<{ id: string; result_url: string | null; result_content: string | null; result_index: number | null; number_locale: string | null }>(
+    (limit) => sb.from("agent_run_searches").select("id, result_url, result_content, result_index, number_locale").eq("intelligence_item_id", itemId).order("result_index", { ascending: true }).order("id", { ascending: true }).limit(limit),
     { limit: GROUND_CONFIG.MAX_ITEM_ROWS },
   );
   if (r.error) throw new LookupError("agent_run_searches", r.error);
   if (r.truncated) throw new LookupError("agent_run_searches", { message: `pool of ${itemId} reached the ${GROUND_CONFIG.MAX_ITEM_ROWS}-row bound` });
-  return r.data.filter((x) => typeof x.result_url === "string").map((x) => ({ id: x.id, url: x.result_url as string, text: x.result_content ?? "", index: x.result_index ?? 0 }));
+  return r.data.filter((x) => typeof x.result_url === "string").map((x) => ({ id: x.id, url: x.result_url as string, text: x.result_content ?? "", index: x.result_index ?? 0, number_locale: x.number_locale }));
 }
 
 /** Rows that carry real content (over the usable-capture floor), in result_index order: the pool the author reads and the hash covers. */

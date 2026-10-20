@@ -8,7 +8,6 @@ import { crossPageOrd, indexFor, SECTION_INDEX } from "@/core/detail/section-ind
 import { formatTrajectoryStep, pickCurrentStepIndex, withObligationEvents } from "@/core/detail/timeline";
 import { countryGroupForIso, countryOf, isIso, isoCodesOf, isoToDisplayLabel, jurisdictionTier, jurisLabelOf, TIER1, TIER1_REGIONS, TIER2 } from "@/core/jurisdictions";
 import { themeAnalysisView, themeChips, themeForItem } from "@/core/themes";
-import { withClaimTiers } from "@/ui/claim-tier";
 import { classifyMilestones, collapseTimeline } from "@/ui/timeline-math";
 import { coverageLineModel } from "@/features/regulations/coverage-line";
 import { isIdLabel } from "@/ui/detail/collab/collab-client";
@@ -141,14 +140,6 @@ test("fact model: a paragraph that quotes several people, each with a Source lin
   assert.equal(model?.provenance?.source, "Packaging World");
   assert.ok((model?.provenance?.org ?? "").length < 40, `the issuer is ${(model?.provenance?.org ?? "").length} characters`);
   assert.ok(!(model?.claim ?? []).some((n) => n.text.includes("*")), "no raw asterisks reach the claim");
-});
-
-test("claim tiers: two matches with different tiers draw none, a record-grade card keeps its own tier", () => {
-  const model = { kind: "SCOPE", claim: [{ text: "Operators shall submit a verified annual emissions report before 31 March." }], provenance: { tier: null } };
-  const map = { "Operators shall submit a verified annual emissions report before 31 March.": { tier: 1, sourceName: "A", sourceUrl: null } };
-  assert.equal(withClaimTiers(model as never, map).provenance?.tier, 1);
-  assert.equal(withClaimTiers(model as never, { ...map, "Operators shall submit a verified annual emissions report before 31 March. Extra words follow here.": { tier: 3, sourceName: "B", sourceUrl: null } }).provenance?.tier, null, "ambiguous");
-  assert.equal(withClaimTiers({ ...model, recordGrade: true, provenance: { tier: 2 } } as never, map).provenance?.tier, 2);
 });
 
 test("theme views: the item's theme, the chips of a surface, the analysis when no brief exists, the label when no brief names a theme", () => {

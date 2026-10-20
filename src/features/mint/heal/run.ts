@@ -18,6 +18,7 @@ import { applyLedgerOps, reattributeClaim, sourceForCapture, type AttributionCtx
 import { runResult, type RunResult } from "@/core/intake/result";
 import { buildResolver, registerAndRate, type SourceRow } from "@/core/sources";
 import { buildRecordSlotClaim } from "@/features/intake";
+import { indexOfInsensitive } from "@/core/parse";
 import { canonicalUrl } from "@/core/shared";
 
 import type { CaptureDeps } from "../deps";
@@ -60,7 +61,7 @@ export async function healItem(deps: HealDeps, input: HealItemInput): Promise<He
     if (!r.data) return fail(new Error(`item ${input.itemId} not found`));
     item = r.data as ItemRow;
     const cache: IndexCache = new Map();
-    const captures = await all<Capture>(sb, "agent_run_searches", "id, result_url, result_content", "intelligence_item_id", input.itemId);
+    const captures = await all<Capture>(sb, "agent_run_searches", "id, result_url, result_content, number_locale", "intelligence_item_id", input.itemId);
     const sourceRows = deps.registry ?? (await readRegistry(sb));
     const idx = buildSourcesIndex(sourceRows);
     const resolver = buildResolver(sourceRows.filter((s) => !!s.url) as SourceRow[]);
@@ -134,7 +135,7 @@ export async function healItem(deps: HealDeps, input: HealItemInput): Promise<He
     // 3. required slots no claim covers yet
     const required = (await readRequiredSlots(sb, item.item_type)).map((s) => s.slot_key);
     const best = captures.filter((c) => c.result_content.trim().length > 200).sort((a, b) => b.result_content.length - a.result_content.length)[0];
-    const covered = (k: string) => claims.some((c) => (c.claim_kind === "FACT" || c.claim_kind === "GAP") && c.claim_text.toLowerCase().includes(k.toLowerCase()));
+    const covered = (k: string) => claims.some((c) => (c.claim_kind === "FACT" || c.claim_kind === "GAP") && indexOfInsensitive(c.claim_text, k) !== null);
     for (const slot of required.filter((k) => !covered(k))) {
       if (!best) { bump("slots_held_no_capture"); continue; }
       const sc = buildRecordSlotClaim(slot, { capturedText: best.result_content, sourceUrl: item.source_url });
@@ -200,7 +201,7 @@ export async function healItem(deps: HealDeps, input: HealItemInput): Promise<He
 
     // 8. Gate A orphans: a sentence of a held capture that says what the brief says (buckets first), then source-and-rate; one with no such sentence is withheld (no_verbatim_span)
     const derived = await derivedCoveredTokens(sb, item.id);
-    const facts = () => claims.filter((c) => c.claim_kind === "FACT").map((c) => ({ claim_text: c.claim_text, source_span: c.source_span ?? "" }));
+    const facts = () => claims.filter((c) => c.claim_kind === "FACT").map((c) => ({ claim_text: c.claim_text, source_span: c.source_span ?? "", locale: captureById(c.search_result_id)?.number_locale ?? null }));
     let orphans = scanGateA(item.full_brief, facts(), derived).orphans;
     for (const o of orphans) {
       const sentence = briefSentenceOf(o.token, item.full_brief);
@@ -223,7 +224,7 @@ export async function healItem(deps: HealDeps, input: HealItemInput): Promise<He
     // 9. the opt-in honest strip
     let restore: HealItemResult["restore"];
     if (unprovable.length) {
-      const plan = planBriefHonest(item.full_brief, unprovable, claims.filter((c) => c.claim_kind === "FACT"), derived);
+      const plan = planBriefHonest(item.full_brief, unprovable, facts(), derived);
       steps.brief_honest = plan.outcome;
       if (plan.outcome === "accepted" && input.stripUnprovable && !dry) {
         ops.push({ op: "brief", full_brief: plan.newFullBrief });

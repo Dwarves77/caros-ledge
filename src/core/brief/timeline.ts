@@ -11,6 +11,9 @@
 // Ported from old_repo/src/lib/agent/derived-consistency.mjs (lines 1-47)
 // Dates: the normaliser with its precision, the section parser, the row builder, the harvest, the eight-step derivation for an
 // undated item (ADR-030: no item without a date) and the annual-rule consistency check. The month table is in vocab.ts, once.
+import { isVerbatim } from "@/core/contracts/verbatim";
+import { indexOfInsensitive } from "@/core/parse";
+
 import { findTimelineSection, specForItemType } from "./sections";
 import { MONTH_NAMES, MONTHS, MONTHS_ANY_RE } from "./vocab";
 
@@ -197,8 +200,8 @@ const UK_BOUNDARY = /^\s*(?:part\s+1\b|1\.\s)|\bregulation\s+1\b|\bsection\s+1\b
 const UK_MAX = 1500;
 /** The item's OWN front matter: from its title when locatable, to the first substantive-body marker or a fixed ceiling. */
 function ukFrontMatterWindow(fullText: string, title: string | null | undefined): string {
-  const idx = title?.trim() ? fullText.toLowerCase().indexOf(title.trim().toLowerCase()) : -1;
-  const rest = fullText.slice(Math.max(0, idx));
+  const found = title?.trim() ? indexOfInsensitive(fullText, title.trim()) : null;
+  const rest = fullText.slice(found?.index ?? 0);
   const b = UK_BOUNDARY.exec(rest);
   return rest.slice(0, Math.min(b ? b.index : UK_MAX, UK_MAX));
 }
@@ -255,7 +258,6 @@ const CAPTURED_FALLBACK_SORT_ORDER = 999;
 const RECORDED_FALLBACK_SORT_ORDER = 1000;
 /** The sort order the title-derived captured and recorded fallbacks take (below): they say when the pipeline saw the item, not when the instrument was dated, so no reader shows them as a milestone. */
 export const isInstrumentMilestone = (sortOrder: number | null | undefined): boolean => (sortOrder ?? 0) < CAPTURED_FALLBACK_SORT_ORDER;
-const containsCi = (text: string | null | undefined, token: string | null | undefined): boolean => !!text && !!token && text.toLowerCase().includes(token.toLowerCase());
 
 /**
  * First hit wins: title (verified against the capture), Federal Register path, legislation.gov.uk, earliest forward event,
@@ -269,7 +271,7 @@ export function deriveTimeline(input: DeriveInput): { result: Derived | null; at
     return { result: { token: h.token, iso: h.iso, precision: h.precision, baseLabel, source: step, ...(h.form ? { form: h.form } : {}) }, attempts };
   };
   const title = extractTitleDate(input.title);
-  if (title && containsCi(input.capturedText, title.token)) return done("title", title, "Adopted (from the instrument title)");
+  if (title && isVerbatim(input.capturedText, title.token)) return done("title", title, "Adopted (from the instrument title)");
   attempts.push(title ? { step: "title", outcome: "miss-not-in-capture", token: title.token } : { step: "title", outcome: "no-token-in-title" });
   const fr = extractFederalRegisterDate(input.sourceUrl);
   if (fr) return done("federal_register", fr, "Published in the Federal Register");

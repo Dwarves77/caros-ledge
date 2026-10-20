@@ -6,12 +6,6 @@
 // treats `;` as a terminator); both share the decimal-point rule. Exact behaviour parity with the old extractor is proven by a golden over the live fixture.
 import { MONTH_EN_ALT, MONTH_PT_ALT } from "./date-grammar";
 
-/** ADR-016: every emitted span is a verbatim substring of its source. Throws otherwise. */
-export function assertVerbatim(sourceText: string, span: string): void {
-  if (typeof span !== "string" || span.length === 0) throw new Error("forward-events: empty source_span");
-  if (!sourceText.includes(span)) throw new Error(`forward-events: source_span is not a verbatim substring of its source text: ${JSON.stringify(span)}`);
-}
-
 const SENTENCE_OPEN_RE = /[A-Z0-9"'“‘«(]/;
 const isDecimalPoint = (text: string, i: number): boolean => /\d/.test(text[i - 1] || "") && /\d/.test(text[i + 1] || "");
 function isGenuineTerminatorAt(text: string, i: number): boolean {

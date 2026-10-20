@@ -12,7 +12,7 @@ import { sourceEntriesOf } from "@/core/detail/sources-parse";
 import { clientFor, script } from "../workspace/_world.ts";
 import { seed } from "../workspace/_world.ts";
 
-import { ARCHIVED, CLAIM_KEPT, CLAIM_SUPPRESSED, MKT, REG, SRC_T1, SRC_T3, UNVERIFIED, world } from "./world.ts";
+import { ARCHIVED, CLAIM_KEPT, CLAIM_KEPT_ID, CLAIM_SUPPRESSED, CLAIM_SUPPRESSED_ID, MKT, REG, SRC_T1, SRC_T3, UNVERIFIED, world } from "./world.ts";
 
 const as = (db: ReturnType<typeof world>) => db.client as never;
 
@@ -40,20 +40,23 @@ test("one uuid resolution: every read after the item takes the uuid (the old pag
 test("INV-080/175/213: a claim's rating is the source's override else its base tier, never effective_tier; a claim with no source carries no rating", async () => {
   const db = world();
   const { tiers } = await readClaims(as(db), REG);
-  assert.equal(tiers[CLAIM_KEPT]?.tier, 1, "base tier 1, effective tier 5 ignored");
+  assert.equal(tiers[CLAIM_KEPT_ID]?.tier, 1, "base tier 1, effective tier 5 ignored");
+  assert.equal(tiers[CLAIM_KEPT_ID]?.text, CLAIM_KEPT, "the claim carries its own text; the map is keyed by its id");
   db.seed("section_claim_provenance", [
     { id: "dddddddd-1000-4000-8000-0000000000a1", intelligence_item_id: REG, claim_text: "an override claim", claim_kind: "FACT", source_id: SRC_T3, section_row_id: null },
     { id: "dddddddd-1000-4000-8000-0000000000a2", intelligence_item_id: REG, claim_text: "an unsourced claim", claim_kind: "FACT", source_id: null, section_row_id: null },
+    { id: "dddddddd-1000-4000-8000-0000000000a3", intelligence_item_id: REG, claim_text: "an override claim", claim_kind: "FACT", source_id: SRC_T1, section_row_id: null },
   ]);
   const seeded = (await readClaims(as(db), REG)).tiers;
-  assert.equal(seeded["an override claim"]?.tier, 2, "override beats base");
-  assert.equal(seeded["an unsourced claim"]?.tier, null);
+  assert.equal(seeded["dddddddd-1000-4000-8000-0000000000a1"]?.tier, 2, "override beats base");
+  assert.equal(seeded["dddddddd-1000-4000-8000-0000000000a2"]?.tier, null);
+  assert.equal(seeded["dddddddd-1000-4000-8000-0000000000a3"]?.tier, 1, "two claims with the same text keep their own sources: the map is by id, so neither overwrites the other");
 });
 
 test("INV-270: a suppressed claim is absent from the tier map and its text is removed from the sections, per request", async () => {
   const db = world();
   const { tiers, suppressed } = await readClaims(as(db), REG);
-  assert.equal(CLAIM_SUPPRESSED in tiers, false);
+  assert.equal(CLAIM_SUPPRESSED_ID in tiers, false);
   assert.deepEqual(suppressed.map((s) => s.claim_text), [CLAIM_SUPPRESSED]);
   const d = await loadDetail("regulations", "g14", undefined, as(db));
   assert.ok(!d.notFound);

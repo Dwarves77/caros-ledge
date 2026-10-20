@@ -1,0 +1,5 @@
+# path | reason (files with no "Ported from" header)
+src/core/fetch/licence-hosts.ts | new in R2f: the hosts the licence register bars collecting from, generated from the register (the old tree had no rights check before a fetch)
+src/core/intake/data/publisher-hosts.json | new in R2f: the publisher host families as data (the old tree matched hosts by substring in two places)
+src/core/producers/data/quotation.json | new in R2f: the quotation cap for a source whose reuse terms are unknown or prohibited (the old tree had no rights verdict and no cap)
+src/core/brief/claim-marker.ts | new in R2f: the claim marker a fact paragraph carries so a card reads its claim by id (the old tree matched card text against claim text by containment)
