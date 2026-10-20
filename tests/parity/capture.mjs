@@ -123,7 +123,7 @@ export function pathFor(route, site) {
 // What a discovery miss means. A list route declared frame-only in approved-changes.json (`gates.frame`) has no detail links yet, so the detail
 // route is skipped; a list route in `gates.full`, or one nobody declared, is expected to have links, so a miss is an error.
 // A route the baseline has never captured (no files for it in baseline/index.json: the old site had no link to find) cannot fail as if a baseline existed: the miss is reported as skipped, "baseline owed". Once the
-// baseline carries files for the route, a miss fails as before. Data-driven and self-retiring, the way an until-migration waiver is.
+// baseline carries files for the route, a miss fails as before. Data-driven and self-retiring.
 export function discoveryMissOutcome(route, gates, baselineIndex) {
   if (baselineIndex) {
     const entry = (baselineIndex.routes ?? []).find((r) => r.name === route.name);

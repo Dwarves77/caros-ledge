@@ -119,7 +119,7 @@ test("INV-166 ATTACK: a body naming author_user_id, org_id or item_id never chan
   assert.notEqual(row.created_at, "1999-01-01");
 });
 
-const rosterRead = (filters: [string, string, unknown][]) => !filters.some(([, col]) => col === "user_id");
+const rosterRead = ({ filters }: { filters: [string, string, unknown][] }) => !filters.some(([, col]) => col === "user_id");
 
 test("a roster that cannot be read fails the list with a 503 and never shows an empty roster; after a write it only drops names", async () => {
   const db = script(withNote(seed()));

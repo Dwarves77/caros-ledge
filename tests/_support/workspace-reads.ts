@@ -27,7 +27,7 @@ export function installWorkspaceReadRpcs(db: MemDb): MemDb {
     const t = today(d);
     const limit = Math.min(Math.max(Number(a.p_limit ?? 24), 1), 100);
     const dated = activeItems(d, String(a.p_org_id))
-      .map((i) => {
+      .map((i): Row => {
         const dates = [i.compliance_deadline && String(i.compliance_deadline) >= t ? String(i.compliance_deadline) : null, ...d.rows("item_timelines").filter((x) => x.item_id === i.id && String(x.milestone_date) >= t).map((x) => String(x.milestone_date))].filter((x): x is string => !!x);
         return { ...i, next_binding_date: dates.sort()[0] ?? null };
       })

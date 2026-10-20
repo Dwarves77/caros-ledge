@@ -47,7 +47,7 @@ test("adversarial writer: manual, foreign-origin and tombstoned pairs are skippe
   assert.equal(r.refreshed, 1);
   assert.equal(r.inserted, 1);
   assert.deepEqual(snaps, [1], "the prior own-origin row is snapshotted before the overwrite");
-  const rows = m.tables.item_cross_references as EdgeRow[];
+  const rows = m.tables.item_cross_references as unknown as EdgeRow[];
   assert.equal(rows.find((x) => x.target_item_id === "b")?.relationship, "supersedes");
   assert.equal(rows.find((x) => x.target_item_id === "b")?.origin, "manual");
   assert.equal(rows.find((x) => x.target_item_id === "c")?.origin, "entity_extraction");
@@ -78,13 +78,13 @@ test("IMP-047: with a harness run id the prior rows are stored in edge_snapshots
   assert.equal(snaps.length, 1);
   assert.deepEqual([snaps[0]?.run_id, snaps[0]?.table_name], [RUN, "item_cross_references"]);
   assert.deepEqual((snaps[0]?.rows as EdgeRow[]).map((x) => x.score), [0.3, 0.3, 0.3], "the snapshot holds the state BEFORE the refresh");
-  assert.ok((m.tables.item_cross_references as EdgeRow[]).every((x) => x.score === 0.9), "and the rows were then refreshed");
+  assert.ok((m.tables.item_cross_references as unknown as EdgeRow[]).every((x) => x.score === 0.9), "and the rows were then refreshed");
   const chunked = memoryDb({});
   await edgeSnapshotSink(chunked.db, RUN, 2)("item_cross_references", prior(5) as EdgeRow[]);
   assert.deepEqual((chunked.tables.edge_snapshots as Record<string, unknown[]>[]).map((x) => (x.rows as unknown[]).length), [2, 2, 1]);
   const down = memoryDb({ item_cross_references: prior(1), item_corrections: [] }, { unique: { item_cross_references: ["source_item_id", "target_item_id"] }, failures: [{ table: "edge_snapshots", op: "insert", message: "disk full" }] });
   await assert.rejects(writeDiscoveredEdges(down.db, [edge("a", "t0", "provenance_discovery", { score: 0.9 })], { runId: RUN }), /edge snapshot write failed: disk full/);
-  assert.equal((down.tables.item_cross_references as EdgeRow[])[0]?.score, 0.3, "nothing was overwritten without its evidence");
+  assert.equal((down.tables.item_cross_references as unknown as EdgeRow[])[0]?.score, 0.3, "nothing was overwritten without its evidence");
   const none = memoryDb({ item_cross_references: prior(1), item_corrections: [] }, { unique: { item_cross_references: ["source_item_id", "target_item_id"] } });
   await writeDiscoveredEdges(none.db, [edge("a", "t0", "provenance_discovery", { score: 0.9 })], {});
   assert.equal(none.tables.edge_snapshots, undefined, "no run id and no sink: no snapshot, as before");

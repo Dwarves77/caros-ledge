@@ -1,4 +1,4 @@
-// The cutover tooling (P2-15 PART A): the apply plan, the APPLIED.json writer, the table export, the Edge Function bundle check, and the structure rules the single homes depend on. Each tool is tried with its failure planted.
+// The cutover tooling (P2-15 PART A): the apply plan, the table export, the Edge Function bundle check, and the structure rules the single homes depend on. Each tool is tried with its failure planted.
 import assert from "node:assert/strict";
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -12,11 +12,7 @@ import { DECLARED } from "../../scripts/ci/edge-bundle.mjs";
 // @ts-expect-error plain .mjs modules
 import { borrowedRowProblems, migrationProblems } from "../../scripts/ci/migration-checks.mjs";
 // @ts-expect-error plain .mjs modules
-import { appliedMigrations, retiredWaiverProblems } from "../../scripts/ci/waiver-check.mjs";
-// @ts-expect-error plain .mjs modules
 import { exportRows, renderExport, runExport } from "../../scripts/cutover/export-table.mjs";
-// @ts-expect-error plain .mjs modules
-import { appliedDocument } from "../../scripts/cutover/write-applied.mjs";
 
 const MIGRATIONS = "supabase/migrations";
 const sqlFiles = readdirSync(MIGRATIONS).filter((f) => /^\d{4}_.+\.sql$/.test(f)).sort();
@@ -34,13 +30,6 @@ test("APPLY.md lists every migration file once: the schema files in name order, 
   assert.deepEqual(held, ["0066_profiles_email_lower_unique", "0067_drop_coverage_gap_census_findings"]);
   assert.match(text, /duplicate-emails\.sql/);
   assert.match(text, /export-table\.mjs coverage_gap_census_findings/);
-  // The waiver section is derived from approved-changes.json at this moment, never a literal: "N ... name <migration>" lines while waivers stand, "- none" once they are retired.
-  const stood: Record<string, number> = {};
-  for (const a of JSON.parse(readFileSync("tests/parity/approved-changes.json", "utf8")).approved.filter((w: { kind: string }) => w.kind === "until-migration")) stood[a.migration] = (stood[a.migration] ?? 0) + 1;
-  const expectedWaiverLines = Object.keys(stood).length
-    ? Object.entries(stood).map(([m, c]) => `- ${c} \`until-migration\` waiver(s) in tests/parity/approved-changes.json name ${m}: once APPLIED.json lists ${m} the tree check fails until they are deleted, and zero may remain.`)
-    : ["- none"];
-  assert.deepEqual(text.split("## Parity waivers this plan retires\n\n")[1]?.split("\n").filter(Boolean), expectedWaiverLines, "the waiver section equals what the waivers say now");
 });
 
 test("the plan is generated, so it cannot drift: a file added without a README row, an APPLY.md that differs, and a data file with no consumer note are each a problem", () => {
@@ -79,7 +68,7 @@ test("a self-check that borrows a live row, or guards its assertions behind the 
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
-  assert.deepEqual(migrationProblems(MIGRATIONS).filter((p) => /borrows a live row|IS NOT NULL THEN/.test(p)), [], "no merged migration borrows a live row");
+  assert.deepEqual(migrationProblems(MIGRATIONS).filter((p: string) => /borrows a live row|IS NOT NULL THEN/.test(p)), [], "no merged migration borrows a live row");
 });
 
 test("a file's self-check and rollback are read from the file, not typed: the id its OK notice prints or its Self-check header names; the down file, or the irreversible marker with its recovery; a prose header is no rollback", () => {
@@ -99,51 +88,6 @@ test("a file's self-check and rollback are read from the file, not typed: the id
   }
   const unnamed = sqlFiles.filter((f) => selfCheckOf(readFileSync(`${MIGRATIONS}/${f}`, "utf8")) === "none");
   assert.deepEqual(unnamed, ["0030_data_market_series_items.sql"], "every other file ends in a self-check that names itself; this one prints none and the plan says so");
-});
-
-// ---- APPLIED.json ----
-test("APPLIED.json is written from the run's list of applied files as the 4-digit numbers the waivers name; a name that is not a file, or an empty list, is refused; once it lists 0031 the waivers of 0031 fail the tree check", () => {
-  const ok = appliedDocument(["0031_member_detail_reads.sql", "0030_data_market_series_items", "", "0031_member_detail_reads.sql"], sqlFiles);
-  assert.deepEqual([ok.problems, ok.doc], [[], { applied: ["0030", "0031"] }]);
-  assert.match(appliedDocument(["0031_member_detail_reads.sql", "0999_nope.sql"], sqlFiles).problems.join("|"), /0999_nope\.sql is not a file/);
-  assert.match(appliedDocument([""], sqlFiles).problems.join("|"), /names no migration/);
-  // The expectation is derived from APPLIED.json's presence and contents, not from a phase.
-  type Waivers = { approved: { id: string; kind: string; migration?: string }[] };
-  const waiverStateProblems = (dir: string, cfg: Waivers): string[] => {
-    const files = readdirSync(dir).filter((f) => /^\d{4}_.+\.sql$/.test(f));
-    const numbers = new Set(files.map((f) => f.slice(0, 4)));
-    const waivers = cfg.approved.filter((a) => a.kind === "until-migration");
-    if (!existsSync(`${dir}/APPLIED.json`)) return waivers.filter((a) => !numbers.has(String(a.migration))).map((a) => `waiver ${a.id} names ${a.migration}, which is not a migration in the directory`);
-    const applied = appliedMigrations(JSON.parse(readFileSync(`${dir}/APPLIED.json`, "utf8")));
-    return [
-      ...[...applied].filter((n) => !numbers.has(n)).map((n) => `APPLIED.json lists ${n}, which is not a migration in the directory`),
-      ...retiredWaiverProblems(cfg, applied),
-    ];
-  };
-  const fixture = (withApplied: string[] | null) => {
-    const d = mkdtempSync(join(tmpdir(), "waiver-"));
-    writeFileSync(join(d, "0031_x.sql"), "-- fixture\n");
-    if (withApplied) writeFileSync(join(d, "APPLIED.json"), JSON.stringify({ applied: withApplied }));
-    return d;
-  };
-  const standing: Waivers = { approved: [{ id: "w1", kind: "until-migration", migration: "0031" }] };
-  const dangling: Waivers = { approved: [{ id: "w2", kind: "until-migration", migration: "0099" }] };
-  const none: Waivers = { approved: [{ id: "p1", kind: "other" }] };
-  const absent = fixture(null);
-  const present = fixture(["0031"]);
-  const phantom = fixture(["0031", "0099"]);
-  try {
-    assert.deepEqual(waiverStateProblems(absent, standing), [], "APPLIED.json absent: a waiver naming a migration that exists stands");
-    assert.equal(waiverStateProblems(absent, dangling).length, 1, "APPLIED.json absent: a waiver naming a migration that is not in the directory is refused");
-    assert.equal(waiverStateProblems(present, standing).length, 1, "APPLIED.json present: a waiver naming a listed migration is refused (zero may remain)");
-    assert.deepEqual(waiverStateProblems(present, none), [], "APPLIED.json present: no until-migration waiver left is clean");
-    assert.equal(waiverStateProblems(phantom, none).length, 1, "APPLIED.json present: an entry that is not a file is refused");
-  } finally {
-    for (const d of [absent, present, phantom]) rmSync(d, { recursive: true, force: true });
-  }
-  const config = JSON.parse(readFileSync("tests/parity/approved-changes.json", "utf8"));
-  assert.deepEqual(waiverStateProblems(MIGRATIONS, config), [], "the real directory and waivers agree with whether APPLIED.json exists");
-  assert.equal(retiredWaiverProblems(standing, appliedMigrations(ok.doc)).length, 1, "a waiver of 0031 fails the check once 0031 is listed");
 });
 
 // ---- the export ----

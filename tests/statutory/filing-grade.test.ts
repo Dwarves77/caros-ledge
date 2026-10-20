@@ -54,7 +54,7 @@ test("INV-R2b-4 (drift guard): data/filing-grade.json equals the derivation from
   assert.deepEqual(committed.instruments, derived.instruments, "run `node --import ./tests/_support/register.mjs tests/statutory/regenerate.mjs`; never edit the file");
   // the attack: a person adds 2025 to the committed file by hand
   const handTyped = structuredClone(committed);
-  handTyped.instruments[FUELEU_INSTRUMENT].years = [2025];
+  (handTyped.instruments[FUELEU_INSTRUMENT] as { years: number[] }).years = [2025];
   assert.notDeepEqual(handTyped.instruments, derived.instruments, "a hand-typed filing-grade year is not what the derivation yields");
   // every instrument the file lists is derived from an evidence row, and no capture file is orphaned
   assert.deepEqual(Object.keys(committed.instruments).sort(), filingInstruments().map((i) => i.id).sort());
@@ -76,10 +76,10 @@ test("the statutory row's source block: verified_at must be a date; and each inp
   const deps = (sb: unknown) => ({ sb: sb as never, now: () => NOW, statutory: { computeStatutory: () => ({ result: 10, resultUnit: "EUR" }), formulaVersion: "v1", statuteCitation: "c", unitPriceEurPerTVlsfoe: 1 } as never });
   const refused = await statutoryRun(deps(db), { dry: true, file: { rows: [{ ...row, ghgIntensityActual: { ...row.ghgIntensityActual, source: block({ quote: "The limit is 99 grams per MJ." }) } }] } });
   assert.equal(refused.counts.refused, 1);
-  assert.equal(refused.data.perItem[0]?.outcome, "refused-quote");
-  assert.match(refused.data.perItem[0]?.detail ?? "", /ghgIntensityActual: quote_not_in_capture/);
+  assert.equal(refused.data?.perItem[0]?.outcome, "refused-quote");
+  assert.match(refused.data?.perItem[0]?.detail ?? "", /ghgIntensityActual: quote_not_in_capture/);
   const accepted = await statutoryRun(deps(db), { dry: true, file: { rows: [row] } });
-  assert.equal(accepted.counts.refused ?? 0, 0, accepted.data.perItem[0]?.detail ?? "");
+  assert.equal(accepted.counts.refused ?? 0, 0, accepted.data?.perItem[0]?.detail ?? "");
   const proof = await verifyRowQuotes(db.client, row, NOW);
   assert.deepEqual(proof, { ok: true, captureIds: { ghgIntensityActual: "cap-9", energyUsedMJ: "cap-9", consecutiveDeficitYears: "cap-9" } });
   const verdict = await acceptStoredQuote(db.client, { url: block().url, quote: REF, verifiedAt: "2026-10-01", now: NOW });

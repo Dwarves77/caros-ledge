@@ -76,7 +76,7 @@ export function transport(over: Record<string, () => Response> = {}): { fetchImp
 }
 
 /** The market slice's own arithmetic, the real functions the production wiring passes (P2-11). */
-export const MARKET: MarketMethodDeps = { carbonIntensity, computeSeriesDeltas };
+export const MARKET: MarketMethodDeps = { carbonIntensity, computeSeriesDeltas: (rows) => computeSeriesDeltas(rows as never) };
 
 /** The database triggers the schema carries, as stand-ins: a write to a figure table emits a propagation event (the outbox), an item update does too. */
 function installTriggers(db: MemDb, itemEvents: boolean): void {

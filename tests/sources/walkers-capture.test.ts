@@ -193,7 +193,7 @@ test("titles: a captured title is used, a not-in-force banner is detected from t
 test("cache: an entry is fresh inside its host's ttl and stale after; a rule host holds longer than the default", () => {
   const store = new Map();
   cachePut(store, "https://www.A.gov/x/", { text: "t" }, 1000);
-  assert.equal(cacheGet(store, "https://a.gov/x", 1000)?.payload.text, "t", "the key is canonical");
+  assert.equal((cacheGet(store, "https://a.gov/x", 1000)?.payload as { text: string } | undefined)?.text, "t", "the key is canonical");
   assert.equal(cacheGet(store, "https://a.gov/x", 1000 + 10 * 365 * 86_400_000), null, "stale after its ttl");
   assert.ok(ttlForUrl("https://eur-lex.europa.eu/x") > ttlForUrl("https://unknown.example/"));
 });

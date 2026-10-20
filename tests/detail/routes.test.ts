@@ -45,7 +45,7 @@ test("/api/listings/rest: signed-in callers only, a named list only, the rows tr
   // The listing reader ranges the rpc the way PostgREST does; the in-memory client answers a plain promise, so the stand-in adds `range`.
   const user = scripted.user;
   scripted.user = (request) => {
-    const client = user(request) as unknown as { rpc: (n: string, a?: unknown) => Promise<unknown> };
+    const client = user!(request) as unknown as { rpc: (n: string, a?: unknown) => Promise<unknown> };
     const rpc = client.rpc.bind(client);
     client.rpc = (n, a) => Object.assign(rpc(n, a), { range: () => rpc(n, a) });
     return client as never;

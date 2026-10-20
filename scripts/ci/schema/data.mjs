@@ -33,12 +33,11 @@ export function rollbackTest(ctx, name, text, { assertFile = null, before, log }
 }
 
 /** Every data file in order, then the generated 0016 sample. Returns the problems. */
-export function runDataFiles(ctx, { before, log = console.log, dir = MIGRATIONS_DIR, hooks = null }) {
+export function runDataFiles(ctx, { before, log = console.log, dir = MIGRATIONS_DIR }) {
   const notes = applyNotes(dir);
   const problems = [];
   for (const file of migrationFiles(dir).filter(isData)) {
     const text = readFileSync(`${dir}/${file}`, "utf8").replace(/\r\n/g, NL);
-    hooks?.data(file, text);
     problems.push(...rollbackTest(ctx, file, text, { assertFile: notes[file.replace(/\.sql$/, "")]?.assert ?? null, before, log }));
   }
   const gen = spawnSync(process.execPath, ["--import", "./tests/_support/register.mjs", "scripts/gen/source-backfill-sql.mjs", "scripts/ci/fixtures/sources-export-sample.json", "the sample export"], { encoding: "utf8", maxBuffer: 1 << 26 });
