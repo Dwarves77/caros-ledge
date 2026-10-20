@@ -4,16 +4,22 @@
   "publisher": "GHG Protocol (WRI and WBCSD)",
   "url": "https://ghgprotocol.org/sites/default/files/standards_supporting/Chapter4.pdf",
   "format": "pdf",
-  "licence_keys": [],
-  "note": "Reuse terms not read; recorded terms_unverified."
+  "licence_keys": [
+   "ghgprotocol_org"
+  ],
+  "fetch": false,
+  "note": "Automated fetch stopped: the publisher's Terms of Use bar robots, spiders and scrapers (register entry ghgprotocol_org, R2g). The rows keep their locators from the 2026-10-19 read; a person re-checks them."
  },
  "ghgp_cat9": {
   "title": "Technical Guidance for Calculating Scope 3 Emissions, Category 9 Downstream Transportation and Distribution",
   "publisher": "GHG Protocol (WRI and WBCSD)",
   "url": "https://ghgprotocol.org/sites/default/files/standards_supporting/Chapter9.pdf",
   "format": "pdf",
-  "licence_keys": [],
-  "note": "Reuse terms not read; recorded terms_unverified."
+  "licence_keys": [
+   "ghgprotocol_org"
+  ],
+  "fetch": false,
+  "note": "Automated fetch stopped: the publisher's Terms of Use bar robots, spiders and scrapers (register entry ghgprotocol_org, R2g). The rows keep their locators from the 2026-10-19 read; a person re-checks them."
  },
  "glec_v3_0": {
   "title": "GLEC Framework for Logistics Emissions Accounting and Reporting v3.0",
@@ -44,16 +50,19 @@
   "publisher": "IVE mbH with ifeu, INFRAS and Fraunhofer IML",
   "url": "https://www.ecotransit.org/wp-content/uploads/EcoTransIT_World_Methodology_Report_Version_4.1-1.pdf",
   "format": "pdf",
-  "licence_keys": [],
-  "published": "2026",
-  "note": "Reuse terms not read; recorded terms_unverified."
+  "licence_keys": [
+   "ecotransit_org"
+  ],
+  "published": "2026"
  },
  "mrv_annex_council": {
   "title": "Annexes 1 and 2 to the Commission Delegated Regulation amending Regulation (EU) 2015/757, C(2023) 6728 final (Council document 14573/23 ADD 1)",
   "publisher": "European Commission, transmitted to the Council of the EU",
   "url": "https://data.consilium.europa.eu/doc/document/ST-14573-2023-ADD-1/en/pdf",
   "format": "pdf",
-  "licence_keys": [],
+  "licence_keys": [
+   "consilium_europa_eu"
+  ],
   "published": "2023-10-12",
   "note": "Council-register copy with placeholder article numbers; the OJ text (EUR-Lex) answers HTTP 202 with an empty body to a non-browser client."
  },
@@ -62,7 +71,9 @@
   "publisher": "European Commission, DG Climate Action",
   "url": "https://climate.ec.europa.eu/areas-action/transport-decarbonisation/reducing-emissions-shipping-sector_en",
   "format": "html",
-  "licence_keys": [],
+  "licence_keys": [
+   "ec_climate_europa_eu"
+  ],
   "published": "2026-05-06",
   "note": "Page states it was last updated on 6 May 2026. The older /eu-action/ path redirects here."
  },
@@ -71,7 +82,9 @@
   "publisher": "European Commission, DG Taxation and Customs Union",
   "url": "https://taxation-customs.ec.europa.eu/document/download/29b9eec7-1a4b-4eb6-ab85-96a0c9e35fd0_en?filename=Guidance%20No.%203%20-%20CBAM%20methods%20for%20the%20calculation%20of%20emissions%20embedded%20in%20goods.pdf",
   "format": "pdf",
-  "licence_keys": [],
+  "licence_keys": [
+   "ec_taxation_customs_europa_eu"
+  ],
   "published": "2026-08-14",
   "note": "The Commission's own copy; byte-identical to the third-party mirror the research register read."
  },
@@ -80,7 +93,9 @@
   "publisher": "IMO Marine Environment Protection Committee (copy served by the Hong Kong Marine Department)",
   "url": "https://www.mardep.gov.hk/filemanager/en/share/msnote/pdf/msin2302anx13.pdf",
   "format": "pdf",
-  "licence_keys": [],
+  "licence_keys": [
+   "mardep_gov_hk"
+  ],
   "published": "2021-06-17",
   "note": "A flag-administration copy of the IMO text; the IMO page itself was not read."
  },
@@ -89,7 +104,9 @@
   "publisher": "ICAO",
   "url": "https://www.icao.int/sites/default/files/environmental-protection/CORSIA/Newsletter/CORSIAnewsletter_OCT2025.pdf",
   "format": "pdf",
-  "licence_keys": [],
+  "licence_keys": [
+   "icao_int"
+  ],
   "published": "2025-10"
  },
  "icao_acw_2026_corsia": {
@@ -97,7 +114,9 @@
   "publisher": "ICAO",
   "url": "https://www.icao.int/sites/default/files/environmental-protection/Meetings/ICAO%20Aviation%20Climate%20Week%202026/Presentations/Implementing-Aviation-s-Global-Market-based-Measure-CORSIA.pdf",
   "format": "pdf",
-  "licence_keys": [],
+  "licence_keys": [
+   "icao_int"
+  ],
   "published": "2026",
   "note": "The register's URL form without the Meetings/ path answers 404; this is the path the ICAO presentations page links."
  },
@@ -106,7 +125,9 @@
   "publisher": "UK Maritime and Coastguard Agency (GOV.UK)",
   "url": "https://www.gov.uk/government/publications/mgn-683-mf-imo-carbon-reduction-measures/mgn-683-mf-imo-carbon-reduction-measures",
   "format": "html",
-  "licence_keys": [],
+  "licence_keys": [
+   "mcga_gov_uk"
+  ],
   "published": "2023-04-03"
  },
  "cbp_232_faq": {
@@ -114,7 +135,9 @@
   "publisher": "U.S. Customs and Border Protection",
   "url": "https://www.cbp.gov/trade/programs-administration/entry-summary/232-tariffs-aluminum-and-steel-faqs",
   "format": "html",
-  "licence_keys": [],
+  "licence_keys": [
+   "cbp_gov"
+  ],
   "published": "2026-09-21",
   "note": "Page footer: Last Modified Sep 21, 2026."
  }

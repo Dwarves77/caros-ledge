@@ -130,7 +130,7 @@
     "folio": "30",
     "section": "Average cargo net weight",
     "tokens": [
-     "10.0 tonnes per TEU"
+     "10.0 tonnes"
     ]
    },
    {
@@ -140,10 +140,10 @@
     "section": "Light and heavy cargo net weights",
     "tokens": [
      "6.0 tonnes/TEU",
-     "14.5 tonnes per TEU",
-     "6 metric tonnes/TEU",
-     "10 metric tonnes/TEU",
-     "14.5 metric tonnes/TEU"
+     "14.5 tonnes",
+     "6",
+     "10",
+     "14.5"
     ]
    },
    {
@@ -152,7 +152,7 @@
     "folio": "32",
     "section": "Maximum net weight per TEU",
     "tokens": [
-     "16.1 tonnes per TEU"
+     "16.1 tonnes"
     ]
    },
    {
@@ -161,7 +161,7 @@
     "folio": "33",
     "section": "Distance adjustment factor",
     "tokens": [
-     "DAF of 15 percent"
+     "15"
     ]
    },
    {
@@ -170,7 +170,7 @@
     "folio": "94",
     "section": "Air freight distance",
     "tokens": [
-     "adds 95 kilometres"
+     "95 kilometres"
     ]
    }
   ]
