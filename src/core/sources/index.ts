@@ -13,8 +13,6 @@ export { backfillInstitutionKeys, pickInstitutionRow, readSourceByUrl, registerA
 export type { BirthProfile } from "./register";
 export { reuseTermsForHost } from "./reuse-terms";
 export type { ReuseTerms } from "./reuse-terms";
-export { identifiersOf, substituteCandidates } from "./publishers";
-export type { Identifier } from "./publishers";
 export type { RegisterAndRateResult } from "./register";
 export type { RunDeps, RunResult } from "./run-result";
 export { verifyPoolTargetMatch, verifyPoolTargetMatch as matchTarget } from "./target-match";
