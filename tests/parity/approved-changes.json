@@ -103,34 +103,5 @@
     "facet-row-desktop (operator 2026-10-18, on Claude Design's recommendation, WCAG 2.5.8): law 2 exception for the desktop Filters card only; facet rows keep a 24 px target on a 32 px pitch (24 px with 8 px clear) on desktop and 44 px on the phone (DESIGN CHANGES OWED 2).",
     "Retired with the same change: the single-main landmark (ASSEMBLY H.1, the shell supplies the one main), SEC-5 assignee names, tie-order and row-height waivers, and the settings, profile, market, research and map look waivers; each was a difference from the old site only."
   ],
-  "approved": [
-    {
-      "id": "k50-claim-link-research-detail",
-      "route": "research-detail",
-      "kind": "control",
-      "match": "^link:[^ ]+ ↗$",
-      "ruling": "K:50 and rule 20 (operator 2026-10-20, the coordinator's ruling on the research-detail red of PR 70): a fact card's source link and tier are read from the claim its paragraph names (a claim marker, migration 0108_data_claim_markers), never inferred from text. The cards the old containment rule linked wrongly (ambiguous text, first match) lose their provenance link by design; only the card provenance links ('host ↗') are covered. Retired by the next baseline recapture after R2f merges."
-    },
-    {
-      "id": "k50-claim-link-regulation-detail",
-      "route": "regulation-detail",
-      "kind": "control",
-      "match": "^link:[^ ]+ ↗$",
-      "ruling": "K:50 and rule 20 (operator 2026-10-20, the coordinator's ruling on the research-detail red of PR 70): a fact card's source link and tier are read from the claim its paragraph names (a claim marker, migration 0108_data_claim_markers), never inferred from text. The cards the old containment rule linked wrongly (ambiguous text, first match) lose their provenance link by design; only the card provenance links ('host ↗') are covered. Retired by the next baseline recapture after R2f merges."
-    },
-    {
-      "id": "k50-claim-link-market-detail",
-      "route": "market-detail",
-      "kind": "control",
-      "match": "^link:[^ ]+ ↗$",
-      "ruling": "K:50 and rule 20 (operator 2026-10-20, the coordinator's ruling on the research-detail red of PR 70): a fact card's source link and tier are read from the claim its paragraph names (a claim marker, migration 0108_data_claim_markers), never inferred from text. The cards the old containment rule linked wrongly (ambiguous text, first match) lose their provenance link by design; only the card provenance links ('host ↗') are covered. Retired by the next baseline recapture after R2f merges."
-    },
-    {
-      "id": "k50-claim-link-operations-detail",
-      "route": "operations-detail",
-      "kind": "control",
-      "match": "^link:[^ ]+ ↗$",
-      "ruling": "K:50 and rule 20 (operator 2026-10-20, the coordinator's ruling on the research-detail red of PR 70): a fact card's source link and tier are read from the claim its paragraph names (a claim marker, migration 0108_data_claim_markers), never inferred from text. The cards the old containment rule linked wrongly (ambiguous text, first match) lose their provenance link by design; only the card provenance links ('host ↗') are covered. Retired by the next baseline recapture after R2f merges."
-    }
-  ]
+  "approved": []
 }

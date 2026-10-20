@@ -6,13 +6,13 @@
     "width": 1280,
     "height": 900
   },
-  "captured_at": "2026-10-19T20:56:35.297Z",
+  "captured_at": "2026-10-20T11:18:14.219Z",
   "http_status": 200,
   "final_path": "/watchlist",
   "network_idle": true,
   "accessibility": {
     "source": "locator.ariaSnapshot",
-    "tree": "- complementary:\n  - link \"Caro's Ledge Freight Sustainability Intelligence\":\n    - /url: /\n    - heading \"Caro's Ledge\" [level=1]\n    - paragraph: Freight Sustainability Intelligence\n  - navigation:\n    - paragraph: Brief\n    - link \"Dashboard\":\n      - /url: /\n    - link \"Watchlist\":\n      - /url: /watchlist\n    - paragraph: Intelligence\n    - link \"Regulations\":\n      - /url: /regulations\n    - link \"Market Intel\":\n      - /url: /market\n    - link \"Research\":\n      - /url: /research\n    - link \"Operations\":\n      - /url: /operations\n    - link \"Map\":\n      - /url: /map\n    - paragraph: Network\n    - link \"Community\":\n      - /url: /community\n  - button \"Open account menu\": Account Dietl / Rockit\n- button \"Notifications\"\n- main:\n  - paragraph: VOL IV · No. 43 · Monday, October 19, 2026\n  - heading \"Watchlist\" [level=1]\n  - text: 0 watched · personal · 0 shared by the workspace\n  - search:\n    - combobox \"Search or ask across the workspace\"\n    - button \"Ask\"\n  - heading \"Watched · 0\" [level=2]\n  - text: Sorted by next date Nothing watched yet. Watch an item from its ⋯ menu on any list page, or the Watch button on a detail page, to follow it here.\n  - link \"Browse what to watch →\":\n    - /url: /regulations\n  - text: Watch an item from its ⋯ menu on any list page, or the Watch button on a detail page.\n  - link \"Browse regulations →\":\n    - /url: /regulations\n  - heading \"Recalculation notices\" [level=2]\n  - text: Since Sep 19, 2026 No recalculations on watched items in this window.\n  - paragraph: Share with workspace\n  - paragraph: A shared watchlist puts the same rows on every member's dashboard. Team-watch any row to add it.\n  - paragraph: Legend\n  - term: Impact\n  - definition: 8/12\n  - term: Timeline\n  - definition: Passed · next · ahead.\n  - term: Source tier\n  - definition: T1 binding law → T7 overflow / uncategorized.\n- button \"Back to top\"\n- alert"
+    "tree": "- complementary:\n  - link \"Caro's Ledge Freight Sustainability Intelligence\":\n    - /url: /\n    - heading \"Caro's Ledge\" [level=1]\n    - paragraph: Freight Sustainability Intelligence\n  - navigation:\n    - paragraph: Brief\n    - link \"Dashboard\":\n      - /url: /\n    - link \"Watchlist\":\n      - /url: /watchlist\n    - paragraph: Intelligence\n    - link \"Regulations\":\n      - /url: /regulations\n    - link \"Market Intel\":\n      - /url: /market\n    - link \"Research\":\n      - /url: /research\n    - link \"Operations\":\n      - /url: /operations\n    - link \"Map\":\n      - /url: /map\n    - paragraph: Network\n    - link \"Community\":\n      - /url: /community\n  - button \"Open account menu\": Account Dietl / Rockit\n- button \"Notifications\"\n- main:\n  - paragraph: VOL IV · No. 43 · Tuesday, October 20, 2026\n  - heading \"Watchlist\" [level=1]\n  - text: 0 watched · personal · 0 shared by the workspace\n  - search:\n    - combobox \"Search or ask across the workspace\"\n    - button \"Ask\"\n  - heading \"Watched · 0\" [level=2]\n  - text: Sorted by next date Nothing watched yet. Watch an item from its ⋯ menu on any list page, or the Watch button on a detail page, to follow it here.\n  - link \"Browse what to watch →\":\n    - /url: /regulations\n  - text: Watch an item from its ⋯ menu on any list page, or the Watch button on a detail page.\n  - link \"Browse regulations →\":\n    - /url: /regulations\n  - heading \"Recalculation notices\" [level=2]\n  - text: Since Sep 20, 2026 No recalculations on watched items in this window.\n  - paragraph: Share with workspace\n  - paragraph: A shared watchlist puts the same rows on every member's dashboard. Team-watch any row to add it.\n  - paragraph: Legend\n  - term: Impact\n  - definition: 8/12\n  - term: Timeline\n  - definition: Passed · next · ahead.\n  - term: Source tier\n  - definition: T1 binding law → T7 overflow / uncategorized.\n- button \"Back to top\"\n- alert"
   },
   "landmarks": [
     {
@@ -131,6 +131,7 @@
     "containers": []
   },
   "document_height": 900,
+  "tiles": 1,
   "truncated": false,
   "offences": []
 }

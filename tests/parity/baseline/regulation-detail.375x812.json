@@ -1,18 +1,18 @@
 {
   "route": "regulation-detail",
-  "path": "/regulations/g14",
+  "path": "/regulations/68af8b45-fbbf-4ba1-add8-2c1761d2d120",
   "auth": "member",
   "viewport": {
     "width": 375,
     "height": 812
   },
-  "captured_at": "2026-10-19T20:55:25.795Z",
+  "captured_at": "2026-10-20T11:16:55.981Z",
   "http_status": 200,
-  "final_path": "/regulations/g14",
+  "final_path": "/regulations/68af8b45-fbbf-4ba1-add8-2c1761d2d120",
   "network_idle": true,
   "accessibility": {
     "source": "locator.ariaSnapshot",
-    "tree": "- button \"Notifications\"\n- banner:\n  - button \"Open navigation\"\n  - heading \"Regulations\" [level=1]\n  - button \"Search\"\n  - link \"Account\":\n    - /url: /profile\n- main:\n  - paragraph: VOL IV · No. 43 · Regulations / Mexico\n  - heading \"Mexico SEMARNAT\" [level=1]\n  - text: Mexico · Diario Oficial de la Federación (DOF) — Gobierno de México · Air · Ocean · Road\n  - search:\n    - combobox \"Search or ask across the workspace\"\n    - button \"Ask\"\n  - text: Immediate · ≤ 90 days Regulation T1 9 sources · T1 primary\n  - group \"Source bias tags\": Primary source Government funded Standards defining Regulator aligned\n  - button \"Export brief\"\n  - button \"Share\"\n  - button \"Watch\" [disabled]\n  - button \"+ Tag\"\n  - button \"Regulation actions\"\n  - paragraph: Exposure\n  - paragraph: Where\n  - text: emissions · Mexico\n  - paragraph: Who pays\n  - text: needs primary-source figure\n  - paragraph: Your lanes\n  - text: needs primary-source figure\n  - paragraph: Next milestone\n  - text: Norm enters into force (180 días posteriores a su publicación) · 18 Nov 2026 · in 30 days\n  - paragraph: Timeline\n  - text: 5 milestones · 4 passed · next 18 Nov 2026\n  - 'img \"Milestone timeline: 5 milestones, 4 passed\"': 2026-11-18 Norm enters into force (180 días posteriores a su publicación)\n  - link \"+4 more\":\n    - /url: \"#obligation-register\"\n  - text: \"Next: Norm enters into force (180 días posteriores a su publicación) · 18 Nov 2026 · in 30 days\"\n  - navigation \"Section index\":\n    - link \"S1 Summary\":\n      - /url: \"#summary\"\n    - link \"S2 Obligations\":\n      - /url: \"#obligations\"\n    - link \"S3 Requirements\":\n      - /url: \"#requirements\"\n    - link \"S4 Registration\":\n      - /url: \"#registration\"\n    - link \"S5 Operations\":\n      - /url: \"#operations\"\n    - link \"S6 Compliance\":\n      - /url: \"#compliance\"\n    - link \"S11 Purpose\":\n      - /url: \"#purpose\"\n    - link \"S12 What it is\":\n      - /url: \"#what-it-is\"\n    - link \"S13 Guidance\":\n      - /url: \"#guidance\"\n    - link \"S14 Pending\":\n      - /url: \"#pending-events\"\n    - link \"S15 Thresholds\":\n      - /url: \"#thresholds\"\n    - link \"S17 Exemptions\":\n      - /url: \"#exemptions\"\n    - link \"S18 Alternatives\":\n      - /url: \"#alternatives\"\n    - link \"S8 Sources\":\n      - /url: \"#sources\"\n    - group \"Summary depth\":\n      - button \"Summary\" [pressed]\n      - button \"Full brief\"\n  - text: S1\n  - heading \"Summary\" [level=2]\n  - text: Generated · 30-second read\n  - paragraph: Mexico's environmental ministry overseeing packaging regulations, carbon market development, and transport emissions rules.\n  - text: S2\n  - heading \"Obligations — issues requiring action\" [level=2]\n  - paragraph: \"Verify with shipper-clients the operating-hour count of machinery at point of import. The norm defines both \\\"Motor nuevo\\\" and \\\"Maquinaria móvil nueva no de carretera\\\" with a 50-hour ceiling:\"\n  - paragraph: SCOPE\n  - paragraph: \"FACT: \\\"Motor nuevo: es aquel motor que no ha sido objeto de cambio de componente alguno después de haber sido producido y enajenado por parte del fabricante del motor con no más de 50 horas de funcionamiento.\\\" (numeral 3.21)\"\n  - paragraph: T1 NOM-174-SEMARNAT-2026\n  - paragraph: SEMARNAT\n  - link \"diariooficial.gob.mx\":\n    - /url: http://diariooficial.gob.mx/normasOficiales/9561/semarnat/semarnat.html\n  - paragraph: \"2026\"\n  - paragraph: ANALYTICAL INFERENCE\n  - paragraph: Operational implication\n  - paragraph: Equipment that exceeds 50 operating hours before the point of first alienation or importación definitiva may not qualify as \"nuevo\" under the norm's own definitions, potentially removing both the compliance obligation and the regulatory pathway. This boundary must be verified at transaction level.\n  - paragraph: not citable\n  - paragraph: At a glance\n  - text: Topic emissions\n  - paragraph: Impact assessment\n  - text: —\n  - paragraph: Relevance to you\n  - text: High relevance\n  - paragraph: \"Relevance to your operation: affects your air/ocean/road operations, your role as freight forwarder/importer/exporter in LATAM, MX.\"\n  - paragraph: Needs more of your profile to say\n  - paragraph: Owner & team\n  - paragraph: Assignee\n  - combobox \"Assign owner\":\n    - option \"Unassigned\" [selected]\n    - option \"Jason\"\n    - option \"6853b368...\"\n  - paragraph: Last verified\n  - paragraph: Not recorded\n  - paragraph: In this list\n  - paragraph: needs primary-source figure\n  - link \"Back to list\":\n    - /url: /regulations\n  - paragraph: Legend\n  - term: Impact\n  - definition: 8/12\n  - term: Timeline\n  - definition: Passed · next · ahead.\n  - term: Source tier\n  - definition: T1 binding law → T7 overflow / uncategorized.\n  - heading \"Notes\" [level=2]\n  - text: Visible to your workspace only Add a note for your workspace\n  - textbox \"Add a note for your workspace\":\n    - /placeholder: Which lanes or clients this touches, who is on it, what was decided\n  - button \"Add note\" [disabled]\n  - text: 0 / 4,000\n  - status\n  - paragraph: No notes on this item yet. Notes are visible to your workspace only, never to other organisations.\n  - heading \"Assignments\" [level=2]\n  - text: Assign teammates, with a notification\n  - paragraph: Nobody is assigned to this item yet.\n  - status\n  - group \"Assign to\":\n    - text: Assign to\n    - button \"Jason\"\n    - button \"connect ↗ Name not set\": — Name not set\n  - text: Due date (optional)\n  - textbox \"Due date (optional)\"\n  - button \"Assign\" [disabled]\n  - text: Pick at least one person.\n  - region \"How this regulation reaches you\":\n    - heading \"How this regulation reaches you\" [level=2]\n    - paragraph: Obligations not yet decomposed\n    - paragraph: This regulation has not been broken into individual obligations yet. The dated events below are listed as they were extracted.\n  - region \"Recalculation notices\":\n    - text: Recalculation notices\n    - paragraph: No recalculations on your team's watchlist in this window.\n- button \"Back to top\"\n- alert"
+    "tree": "- button \"Notifications\"\n- banner:\n  - button \"Open navigation\"\n  - heading \"Regulations\" [level=1]\n  - button \"Search\"\n  - link \"Account\":\n    - /url: /profile\n- main:\n  - paragraph: VOL IV · No. 43 · Regulations / Global\n  - heading \"Regulation (EU) 2024/1157 on shipments of waste\" [level=1]\n  - text: Global · EUR-Lex\n  - search:\n    - combobox \"Search or ask across the workspace\"\n    - button \"Ask\"\n  - text: Immediate · ≤ 90 days Regulation T1 9 sources · T1 primary\n  - group \"Source bias tags\": Primary source Government funded Factual reporting Regulator aligned\n  - button \"Export brief\"\n  - button \"Share\"\n  - button \"Watch\" [disabled]\n  - button \"+ Tag\"\n  - button \"Regulation actions\"\n  - paragraph: Exposure\n  - paragraph: Where\n  - text: Global\n  - paragraph: Who pays\n  - text: needs primary-source figure\n  - paragraph: Your lanes\n  - text: needs primary-source figure\n  - paragraph: Next milestone\n  - text: Plastic waste B3011 export to non-OECD countries prohibited (Article 39(1)(d)) · 21 Nov 2026 · in 32 days\n  - paragraph: Timeline\n  - text: 15 milestones · 9 passed · next 21 Nov 2026\n  - 'img \"Milestone timeline: 15 milestones, 9 passed\"': 2026-11-21 Plastic waste B3011 export to non-OECD countries prohibited (Article 39(1)(d)) 2026-11-21 Commission to adopt first list of non-OECD authorised countries for non-hazardous waste exports 2026-12-31 Green-listed waste paper procedures permitted until this date (transitional) 2027-05-21 Articles 38(2)(b), 40, 44(2)(a), 46, 47 apply (export audit obligations, non-hazardous waste export rules)\n  - link \"+11 more\":\n    - /url: \"#obligation-register\"\n  - text: \"Next: Plastic waste B3011 export to non-OECD countries prohibited (Article 39(1)(d)) · 21 Nov 2026 · in 32 days\"\n  - paragraph: Connections\n  - link \"Referenced by · regulations COMMISSION DELEGATED REGULATION (EU) 2024/3230 of 18 October 2024 amending Regulation (EU) 2024/1157 of the European Parliament and of the Council as regards changes on shipments of electrical and electronic waste agreed under the Basel Convention (Text with EEA relevance) ANNEX Amendments to Regulation (EU) 2024/1157 as regards changes on shipments of electrical and electronic waste agreed under the Basel Convention\":\n    - /url: /regulations/338491e0-792c-4b57-98cd-67877050918e\n    - paragraph: Referenced by · regulations\n    - paragraph: COMMISSION DELEGATED REGULATION (EU) 2024/3230 of 18 October 2024 amending Regulation (EU) 2024/1157 of the European Parliament and of the Council as regards changes on shipments of electrical and electronic waste agreed under the Basel Convention (Text with EEA relevance) ANNEX Amendments to Regulation (EU) 2024/1157 as regards changes on shipments of electrical and electronic waste agreed under the Basel Convention\n  - link:\n    - /url: /regulations/8f33333f-363b-4784-99ea-d68f6a86daeb\n    - paragraph: References · regulations\n    - paragraph: COMMISSION DELEGATED REGULATION (EU) 2024/2571 of 19 July 2024 supplementing Regulation (EU) 2024/1157 of the European Parliament and of the Council by establishing the information to be provided in the certificate confirming the completion of a subsequent interim or non-interim recovery operation or a subsequent interim or non-interim disposal operation (Text with EEA relevance) ANNEX I Information to be provided in a certificate confirming completion of a subsequent interim or non-interim recovery operation or a subsequent interim or non-interim disposal operation in accordance with Article 15(5) of Regulation (EU) 2024/1157 Certificate confirming completion of a subsequent interim or non-interim recovery operation or a subsequent interim or non-interim disposal operation in accordance with Article 15(5) of Regulation (EU) 2024/1157 ANNEX II Instructions for completing the certificate in accordance with Article 15(5) of Regulation (EU) 2024/1157\n  - link \"Referenced by · regulations COMMISSION DECISION (EU) 2026/681 of 20 March 2026 entrusting the European Anti-Fraud Office (OLAF) with certain enforcement actions under Regulation (EU) 2024/1157 of the European Parliament and of the Council on shipments of waste\":\n    - /url: /regulations/654a1fd6-b7c8-49aa-83c2-e12b0c211243\n    - paragraph: Referenced by · regulations\n    - paragraph: COMMISSION DECISION (EU) 2026/681 of 20 March 2026 entrusting the European Anti-Fraud Office (OLAF) with certain enforcement actions under Regulation (EU) 2024/1157 of the European Parliament and of the Council on shipments of waste\n  - link \"Referenced by · regulations Directive 2003/87/EC of the European Parliament and of the Council of 13 October 2003 establishing a scheme for greenhouse gas emission allowance trading within the Community and amending Council Directive 96/61/EC (Text with EEA relevance)\":\n    - /url: /regulations/0053d552-1856-4796-8873-968894400956\n    - paragraph: Referenced by · regulations\n    - paragraph: Directive 2003/87/EC of the European Parliament and of the Council of 13 October 2003 establishing a scheme for greenhouse gas emission allowance trading within the Community and amending Council Directive 96/61/EC (Text with EEA relevance)\n  - group: 6 more connections below\n  - navigation \"Section index\":\n    - link \"S1 Summary\":\n      - /url: \"#summary\"\n    - link \"S2 Obligations\":\n      - /url: \"#obligations\"\n    - link \"S3 Requirements\":\n      - /url: \"#requirements\"\n    - link \"S4 Registration\":\n      - /url: \"#registration\"\n    - link \"S5 Operations\":\n      - /url: \"#operations\"\n    - link \"S6 Compliance\":\n      - /url: \"#compliance\"\n    - link \"S11 Purpose\":\n      - /url: \"#purpose\"\n    - link \"S12 What it is\":\n      - /url: \"#what-it-is\"\n    - link \"S13 Guidance\":\n      - /url: \"#guidance\"\n    - link \"S14 Pending\":\n      - /url: \"#pending-events\"\n    - link \"S15 Thresholds\":\n      - /url: \"#thresholds\"\n    - link \"S17 Exemptions\":\n      - /url: \"#exemptions\"\n    - link \"S8 Sources\":\n      - /url: \"#sources\"\n    - link \"S9 Connected\":\n      - /url: \"#across-pages\"\n    - group \"Summary depth\":\n      - button \"Summary\" [pressed]\n      - button \"Full brief\"\n  - text: S1\n  - heading \"Summary\" [level=2]\n  - text: Generated · 30-second read\n  - paragraph: Regulation (EU) 2024/1157 of the European Parliament and of the Council of 11 April 2024 on shipments of waste, which amends Regulations (EU) No 1257/2013 and (EU) 2020/1056 and repeals Regulation (EC) No 1013/2006, and is the primary EU instrument governing transboundary movement of waste intra-EU, on export, on import, and in transit, referencing the Basel Convention of 22 March 1989 and the related OECD Council Decision on transboundary waste movements. It applies within the European Union.\n  - text: S2\n  - heading \"Obligations — issues requiring action\" [level=2]\n  - paragraph:\n    - strong: \"Action:\"\n    - text: Assess all current and planned export flows of waste to non-OECD countries, including recyclables classified as waste, against the prohibition and listing requirements of Articles 39–43.\n  - paragraph: ANALYTICAL INFERENCE\n  - paragraph: Operational implication\n  - paragraph: From 21 May 2027, exports of non-hazardous (green-listed) waste to non-OECD countries will be prohibited unless the destination country has been included in the Commission's list of authorised countries established under Article 41. The deadline for non-OECD countries to submit their initial inclusion requests was 21 February 2025.\n  - paragraph: From 21 November 2026 (earlier than the general export-rules date), exports of plastic waste classified under entry B3011 to non-OECD countries are prohibited under Article 39(1)(d).\n  - paragraph: Industry bodies have flagged that many non-OECD countries were not ready by the 21 February 2025 request deadline, and that existing business relationships for recycled material exports could be disrupted if the first authorised-country list (planned for adoption by 21 November 2026) does not include key destination countries.\n  - paragraph: not citable\n  - paragraph: not citable\n  - paragraph: not citable\n  - text: S9\n  - heading \"Connected intelligence\" [level=2]\n  - text: Intersections and theme analysis\n  - paragraph: Theme analysis\n  - paragraph: 847 items across Regulations, Market Intel, Research, Operations\n  - text: A brief for this theme has not been written yet, so what this connection means is not stated here.\n  - paragraph: Other items in this theme\n  - paragraph: Market Intel · 6\n  - 'link \"Aviation Week: Sustainability\"':\n    - /url: /market/a8\n    - paragraph: \"Aviation Week: Sustainability\"\n  - link \"Carbon Allowance Price Intelligence\":\n    - /url: /market/carbon-allowance-price-intelligence\n    - paragraph: Carbon Allowance Price Intelligence\n  - link \"E-Fuel Alliance\":\n    - /url: /market/r26\n    - paragraph: E-Fuel Alliance\n  - link \"First Movers Coalition - WEF Global Sustainability Initiative\":\n    - /url: /market/7ae06612-5467-40ca-a9b3-e6dc14601b44\n    - paragraph: First Movers Coalition - WEF Global Sustainability Initiative\n  - link \"IATA Sustainable Aviation Fuel (SAF) Framework and Net Zero Roadmap\":\n    - /url: /market/5fec12c6-23be-4a7f-b2d3-4b8e9faadc22\n    - paragraph: IATA Sustainable Aviation Fuel (SAF) Framework and Net Zero Roadmap\n  - link \"Maritime Carbon Intelligence\":\n    - /url: /market/r36\n    - paragraph: Maritime Carbon Intelligence\n  - paragraph: Research · 5\n  - 'link \"Embedding Social Vulnerability in UK Climate Adaptation Policy: Tyndall Centre Research into Government Decision-Making\"':\n    - /url: /research/a7fd2700-de27-4cc1-b5e6-442fdf8a66ad\n    - paragraph: \"Embedding Social Vulnerability in UK Climate Adaptation Policy: Tyndall Centre Research into Government Decision-Making\"\n  - link \"ITF International Transport Forum\":\n    - /url: /research/g31\n    - paragraph: ITF International Transport Forum\n  - 'link \"Transportation 2050: Pathways for Decarbonization and Climate Resilience in Latin America and the Caribbean\"':\n    - /url: /research/68af10b5-66a2-4fc1-b62b-89bd7fbf12a6\n    - paragraph: \"Transportation 2050: Pathways for Decarbonization and Climate Resilience in Latin America and the Caribbean\"\n  - link \"Tyndall Centre for Climate Research — Transport Decarbonisation\":\n    - /url: /research/tyndall-centre-for-climate-research-transport-decarbonisation\n    - paragraph: Tyndall Centre for Climate Research — Transport Decarbonisation\n  - link \"World Resources Institute\":\n    - /url: /research/r4\n    - paragraph: World Resources Institute\n  - paragraph: Operations · 5\n  - link \"EU Core Markets Regional Operations Profile\":\n    - /url: /operations/eu-core-markets-regional-operations-profile\n    - paragraph: EU Core Markets Regional Operations Profile\n  - link \"IEA Electricity Price Data for Large Industrial Customers (2019-2024)\":\n    - /url: /operations/3f11f1fc-5b1f-422a-93bc-a34f6b3c9f3b\n    - paragraph: IEA Electricity Price Data for Large Industrial Customers (2019-2024)\n  - link \"Industrial Electricity Tariff Benchmarks by Jurisdiction\":\n    - /url: /operations/industrial-electricity-tariff-benchmarks-by-jurisdiction\n    - paragraph: Industrial Electricity Tariff Benchmarks by Jurisdiction\n  - link \"Japan Regional Operations Profile\":\n    - /url: /operations/japan-regional-operations-profile\n    - paragraph: Japan Regional Operations Profile\n  - link \"United Kingdom Regional Operations Profile\":\n    - /url: /operations/united-kingdom-regional-operations-profile\n    - paragraph: United Kingdom Regional Operations Profile\n  - paragraph: Regulations (this page) · 827\n  - link \"Directive 2003/87/EC of the European Parliament and of the Council of 13 October 2003 establishing a scheme for greenhouse gas emission allowance trading within the Community and amending Council Directive 96/61/EC (Text with EEA relevance)\":\n    - /url: /regulations/0053d552-1856-4796-8873-968894400956\n    - paragraph: Directive 2003/87/EC of the European Parliament and of the Council of 13 October 2003 establishing a scheme for greenhouse gas emission allowance trading within the Community and amending Council Directive 96/61/EC (Text with EEA relevance)\n  - link \"Council Regulation (EC) No 1420/1999 of 29 April 1999 establishing common rules and procedures to apply to shipments to certain non-OECD countries of certain types of waste\":\n    - /url: /regulations/00a2452a-677e-4556-9ef2-c5749ab5f005\n    - paragraph: Council Regulation (EC) No 1420/1999 of 29 April 1999 establishing common rules and procedures to apply to shipments to certain non-OECD countries of certain types of waste\n  - 'link \"Final Act of the International Conference and Decision by the Energy Charter Conference in respect of the amendment to the trade-related provisions of the Energy Charter Treaty - Joint Declarations - Annex I: Amendment to the Trade-Related Provisions of the Energy Charter Treaty - Annex II: Decisions in connection with the Adoption of the Amendment to the Trade-Related Provisions of the Energy Charter Treaty\"':\n    - /url: /regulations/01936f81-7f2f-419a-af3c-681c1d577b6a\n    - paragraph: \"Final Act of the International Conference and Decision by the Energy Charter Conference in respect of the amendment to the trade-related provisions of the Energy Charter Treaty - Joint Declarations - Annex I: Amendment to the Trade-Related Provisions of the Energy Charter Treaty - Annex II: Decisions in connection with the Adoption of the Amendment to the Trade-Related Provisions of the Energy Charter Treaty\"\n  - 'link \"2000/532/EC: Commission Decision of 3 May 2000 replacing Decision 94/3/EC establishing a list of wastes pursuant to Article 1(a) of Council Directive 75/442/EEC on waste and Council Decision 94/904/EC establishing a list of hazardous waste pursuant to Article 1(4) of Council Directive 91/689/EEC on hazardous waste (notified under document number C(2000) 1147)\"':\n    - /url: /regulations/7af4c993-223b-49ce-af26-019edf16be58\n    - paragraph: \"2000/532/EC: Commission Decision of 3 May 2000 replacing Decision 94/3/EC establishing a list of wastes pursuant to Article 1(a) of Council Directive 75/442/EEC on waste and Council Decision 94/904/EC establishing a list of hazardous waste pursuant to Article 1(4) of Council Directive 91/689/EEC on hazardous waste (notified under document number C(2000) 1147)\"\n  - 'link \"2000/728/EC: Commission Decision of 10 November 2000 establishing the application and annual fees of the Community Eco-label (notified under document number C(2000) 3279)\"':\n    - /url: /regulations/321b425e-1979-4e63-b977-f9f39d45f2e3\n    - paragraph: \"2000/728/EC: Commission Decision of 10 November 2000 establishing the application and annual fees of the Community Eco-label (notified under document number C(2000) 3279)\"\n  - 'link \"2000/729/EC: Commission Decision of 10 November 2000 on a standard contract covering the terms of use of the Community Eco-label (notified under document number C(2000) 3278)\"':\n    - /url: /regulations/97c37bb0-a017-4312-a3f0-98a174e2062d\n    - paragraph: \"2000/729/EC: Commission Decision of 10 November 2000 on a standard contract covering the terms of use of the Community Eco-label (notified under document number C(2000) 3278)\"\n  - link \"and 821 more on Regulations\":\n    - /url: /regulations\n    - paragraph: and 821 more on Regulations\n  - paragraph: Impact assessment\n  - text: —\n  - paragraph: Relevance to you\n  - text: High relevance\n  - paragraph: \"Relevance to your operation: affects your operations across modes, your role as freight forwarder/importer/exporter.\"\n  - paragraph: Needs more of your profile to say\n  - paragraph: Owner & team\n  - paragraph: Assignee\n  - combobox \"Assign owner\":\n    - option \"Unassigned\" [selected]\n    - option \"Jason\"\n    - option \"6853b368...\"\n  - paragraph: Last verified\n  - paragraph: Not recorded\n  - paragraph: In this list\n  - paragraph: needs primary-source figure\n  - link \"Back to list\":\n    - /url: /regulations\n  - paragraph: Legend\n  - term: Impact\n  - definition: 8/12\n  - term: Timeline\n  - definition: Passed · next · ahead.\n  - term: Source tier\n  - definition: T1 binding law → T7 overflow / uncategorized.\n  - heading \"Notes\" [level=2]\n  - text: Visible to your workspace only Add a note for your workspace\n  - textbox \"Add a note for your workspace\":\n    - /placeholder: Which lanes or clients this touches, who is on it, what was decided\n  - button \"Add note\" [disabled]\n  - text: 0 / 4,000\n  - status\n  - paragraph: No notes on this item yet. Notes are visible to your workspace only, never to other organisations.\n  - heading \"Assignments\" [level=2]\n  - text: Assign teammates, with a notification\n  - paragraph: Nobody is assigned to this item yet.\n  - status\n  - group \"Assign to\":\n    - text: Assign to\n    - button \"Jason\"\n    - button \"connect ↗ Name not set\": — Name not set\n  - text: Due date (optional)\n  - textbox \"Due date (optional)\"\n  - button \"Assign\" [disabled]\n  - text: Pick at least one person.\n  - region \"How this regulation reaches you\":\n    - heading \"How this regulation reaches you\" [level=2]\n    - paragraph: Obligations not yet decomposed\n    - paragraph: This regulation has not been broken into individual obligations yet. The dated events below are listed as they were extracted.\n  - region \"Obligation register\":\n    - heading \"Obligation register\" [level=2]\n    - text: 19 obligations Obligation Position Due\n    - paragraph: Compliance deadline · In order to be included in the list of countries to which exports are authorised adopted by 21 November 2026, the countries to which the OECD Decision does not…\n    - text: Not classified November 21, 2026\n    - paragraph: Compliance deadline · The list referred to in paragraph 1 shall be adopted by 21 November 2026, unless no country submits a request pursuant to Article 42(1) or no country complies w…\n    - text: Not classified November 21, 2026\n    - paragraph: Compliance deadline · Commission delegated act establishing the list of countries to which exports of non-hazardous waste from the Union for recovery are authorised (Article 41(1)).…\n    - text: Not classified November 21, 2026\n    - paragraph: Compliance deadline · By 21 May 2027, the Commission shall adopt an implementing act establishing detailed criteria for the uniform application of the conditions laid down in paragra…\n    - text: Not classified May 21, 2027\n    - paragraph: Compliance deadline · Exporter Audit Obligation (Article 46, from 21 May 2027) The notifier or person who arranges the shipment intending to export waste from the Union \"shall ensure…\n    - text: Not classified May 21, 2027\n    - paragraph: Compliance deadline · Articles 38(2) point (b), Article 40, Article 44(2) point (a), and Articles 46 and 47 from 21 May 2027, except for Article 40(3)(b) which shall apply from 21 Ma…\n    - text: Not classified May 21, 2027\n    - paragraph: Compliance deadline · From 21 May 2027, exporters that commission audits under Article 46 must notify the Commission, which establishes and maintains a public register.\n    - text: Not classified May 21, 2027\n    - paragraph: Compliance deadline · Commission implementing act on detailed criteria for Article 11(1)(a) conditions for disposal shipments. Regulation states the Commission \"shall, by 21 May 2027…\n    - text: Not classified May 21, 2027\n    - paragraph: Compliance deadline · Audit Commissioning Infrastructure (Export Operations, from 21 May 2027) Exporters must have a process to commission, acquire, and verify third-party audits of…\n    - text: Not classified May 21, 2027\n    - paragraph: Review / report · By 31 December 2035, the Commission shall, taking into account, inter alia, the reports drawn up in accordance with Article 73, and the review referred to in Ar…\n    - text: Not classified December 31, 2035\n    - paragraph: \"Other · Operational implication: As of 21 May 2026, information and documents for waste shipments subject to the prior written notification and consent (PIC) procedure…\"\n    - text: Not classified May 21, 2026\n    - paragraph: Entry into force · Articles 38(2) point (b), Article 40, Article 44(2) point (a), and Articles 46 and 47 from 21 May 2027, except for Article 40(3)(b) which shall apply from 21 Ma…\n    - text: Not classified May 21, 2026\n    - paragraph: Entry into force · It shall apply from 21 May 2026.\n    - text: Not classified May 21, 2026\n    - paragraph: Compliance deadline · Establishes the technical interoperability requirements for the DIWASS central electronic system that all operators must connect to for PIC waste shipments from…\n    - text: Not classified May 21, 2026\n    - paragraph: Compliance deadline · All information and documents for PIC shipments and general information shipments within the EU must be submitted and exchanged electronically via the DIWASS hu…\n    - text: Not classified May 21, 2026\n    - paragraph: Compliance deadline · The Commission shall by 21 May 2026 assess whether countries to which the OECD Decision applies and which import significant volumes of plastic waste from the U…\n    - text: Not classified May 21, 2026\n    - paragraph: Compliance deadline · Verify that all documentary, IT, and staff workflows are capable of submitting and exchanging shipment notifications and movement documents electronically via t…\n    - text: Not classified May 21, 2026\n    - paragraph: Compliance deadline · In order to be included in the list of countries to which exports are authorised adopted by 21 November 2026, the countries to which the OECD Decision does not…\n    - text: Not classified February 21, 2025\n    - paragraph: Other · Regulation (EC) No 1013/2006 is repealed with effect from 20 May 2024.\n    - text: Not classified May 20, 2024\n  - region \"Recalculation notices\":\n    - text: Recalculation notices\n    - paragraph: No recalculations on your team's watchlist in this window.\n- button \"Back to top\"\n- alert"
   },
   "landmarks": [
     {
@@ -47,6 +47,11 @@
     },
     {
       "role": "region",
+      "name": "Obligation register",
+      "source": "implicit"
+    },
+    {
+      "role": "region",
       "name": "Recalculation notices",
       "source": "implicit"
     }
@@ -58,7 +63,7 @@
     },
     {
       "level": 1,
-      "text": "Mexico SEMARNAT"
+      "text": "Regulation (EU) 2024/1157 on shipments of waste"
     },
     {
       "level": 2,
@@ -67,6 +72,10 @@
     {
       "level": 2,
       "text": "Obligations — issues requiring action"
+    },
+    {
+      "level": 2,
+      "text": "Connected intelligence"
     },
     {
       "level": 2,
@@ -79,6 +88,10 @@
     {
       "level": 2,
       "text": "How this regulation reaches you"
+    },
+    {
+      "level": 2,
+      "text": "Obligation register"
     }
   ],
   "controls": [
@@ -128,7 +141,47 @@
     },
     {
       "role": "link",
-      "name": "+4 more"
+      "name": "+11 more"
+    },
+    {
+      "role": "link",
+      "name": "Referenced by · regulationsCOMMISSION DELEGATED REGULATION (EU) 2024/3230 of 18 October 2024 amending Regulation (EU) 2024/1157 of the European Parliament and of the Council as regards changes on shipments of electrical and electronic waste agreed under the Basel Convention (Text with EEA relevance) ANNEX Amendments to Regulation (EU) 2024/1157 as regards changes on shipments of electrical and electronic waste agreed under the Basel Convention"
+    },
+    {
+      "role": "link",
+      "name": "References · regulationsCOMMISSION DELEGATED REGULATION (EU) 2024/2571 of 19 July 2024 supplementing Regulation (EU) 2024/1157 of the European Parliament and of the Council by establishing the information to be provided in the certificate confirming the completion of a subsequent interim or non-interim recovery operation or a subsequent interim or non-interim disposal operation (Text with EEA relevance) ANNEX I Information to be provided in a certificate confirming completion of a subsequent interim or non-interim recovery operation or a subsequent interim or non-interim disposal operation in accordance with Article 15(5) of Regulation (EU) 2024/1157 Certificate confirming completion of a subsequent interim or non-interim recovery operation or a subsequent interim or non-interim disposal operation in accordance with Article 15(5) of Regulation (EU) 2024/1157 ANNEX II Instructions for completing the certificate in accordance with Article 15(5) of Regulation (EU) 2024/1157"
+    },
+    {
+      "role": "link",
+      "name": "Referenced by · regulationsCOMMISSION DECISION (EU) 2026/681 of 20 March 2026 entrusting the European Anti-Fraud Office (OLAF) with certain enforcement actions under Regulation (EU) 2024/1157 of the European Parliament and of the Council on shipments of waste"
+    },
+    {
+      "role": "link",
+      "name": "Referenced by · regulationsDirective 2003/87/EC of the European Parliament and of the Council of 13 October 2003 establishing a scheme for greenhouse gas emission allowance trading within the Community and amending Council Directive 96/61/EC (Text with EEA relevance)"
+    },
+    {
+      "role": "link",
+      "name": "Referenced by · regulationsRegulation (EU) 2025/2083 of the European Parliament and of the Council of 8 October 2025 amending Regulation (EU) 2023/956 as regards simplifying and strengthening the carbon border adjustment mechanism (Text with EEA relevance)"
+    },
+    {
+      "role": "link",
+      "name": "References · regulationsCommission Delegated Regulation (EU) 2024/3214 of 16 October 2024 amending Regulation (EU) 2015/757 of the European Parliament and of the Council as regards the rules for the monitoring of greenhouse gas emissions from offshore ships and the zero-rating of sustainable fuels"
+    },
+    {
+      "role": "link",
+      "name": "References · regulationsDecision No 377/2013/EU of the European Parliament and of the Council of 24 April 2013 derogating temporarily from Directive 2003/87/EC establishing a scheme for greenhouse gas emission allowance trading within the Community (Text with EEA relevance)"
+    },
+    {
+      "role": "link",
+      "name": "References · regulationsEU CBAM"
+    },
+    {
+      "role": "link",
+      "name": "References · regulationsEU ETS for Shipping"
+    },
+    {
+      "role": "link",
+      "name": "References · regulationsEU Battery Regulation (Regulation (EU) 2023/1542)"
     },
     {
       "role": "link",
@@ -180,11 +233,11 @@
     },
     {
       "role": "link",
-      "name": "S18 Alternatives"
+      "name": "S8 Sources"
     },
     {
       "role": "link",
-      "name": "S8 Sources"
+      "name": "S9 Connected"
     },
     {
       "role": "button",
@@ -196,7 +249,95 @@
     },
     {
       "role": "link",
-      "name": "diariooficial.gob.mx ↗"
+      "name": "Aviation Week: Sustainability"
+    },
+    {
+      "role": "link",
+      "name": "Carbon Allowance Price Intelligence"
+    },
+    {
+      "role": "link",
+      "name": "E-Fuel Alliance"
+    },
+    {
+      "role": "link",
+      "name": "First Movers Coalition - WEF Global Sustainability Initiative"
+    },
+    {
+      "role": "link",
+      "name": "IATA Sustainable Aviation Fuel (SAF) Framework and Net Zero Roadmap"
+    },
+    {
+      "role": "link",
+      "name": "Maritime Carbon Intelligence"
+    },
+    {
+      "role": "link",
+      "name": "Embedding Social Vulnerability in UK Climate Adaptation Policy: Tyndall Centre Research into Government Decision-Making"
+    },
+    {
+      "role": "link",
+      "name": "ITF International Transport Forum"
+    },
+    {
+      "role": "link",
+      "name": "Transportation 2050: Pathways for Decarbonization and Climate Resilience in Latin America and the Caribbean"
+    },
+    {
+      "role": "link",
+      "name": "Tyndall Centre for Climate Research — Transport Decarbonisation"
+    },
+    {
+      "role": "link",
+      "name": "World Resources Institute"
+    },
+    {
+      "role": "link",
+      "name": "EU Core Markets Regional Operations Profile"
+    },
+    {
+      "role": "link",
+      "name": "IEA Electricity Price Data for Large Industrial Customers (2019-2024)"
+    },
+    {
+      "role": "link",
+      "name": "Industrial Electricity Tariff Benchmarks by Jurisdiction"
+    },
+    {
+      "role": "link",
+      "name": "Japan Regional Operations Profile"
+    },
+    {
+      "role": "link",
+      "name": "United Kingdom Regional Operations Profile"
+    },
+    {
+      "role": "link",
+      "name": "Directive 2003/87/EC of the European Parliament and of the Council of 13 October 2003 establishing a scheme for greenhouse gas emission allowance trading within the Community and amending Council Directive 96/61/EC (Text with EEA relevance)"
+    },
+    {
+      "role": "link",
+      "name": "Council Regulation (EC) No 1420/1999 of 29 April 1999 establishing common rules and procedures to apply to shipments to certain non-OECD countries of certain types of waste"
+    },
+    {
+      "role": "link",
+      "name": "Final Act of the International Conference and Decision by the Energy Charter Conference in respect of the amendment to the trade-related provisions of the Energy Charter Treaty - Joint Declarations - Annex I: Amendment to the Trade-Related Provisions of the Energy Charter Treaty - Annex II: Decisions in connection with the Adoption of the Amendment to the Trade-Related Provisions of the Energy Charter Treaty"
+    },
+    {
+      "role": "link",
+      "name": "2000/532/EC: Commission Decision of 3 May 2000 replacing Decision 94/3/EC establishing a list of wastes pursuant to Article 1(a) of Council Directive 75/442/EEC on waste and Council Decision 94/904/EC establishing a list of hazardous waste pursuant to Article 1(4) of Council Directive 91/689/EEC on hazardous waste (notified under document number C(2000) 1147)"
+    },
+    {
+      "role": "link",
+      "name": "2000/728/EC: Commission Decision of 10 November 2000 establishing the application and annual fees of the Community Eco-label (notified under document number C(2000) 3279)"
+    },
+    {
+      "role": "link",
+      "name": "2000/729/EC: Commission Decision of 10 November 2000 on a standard contract covering the terms of use of the Community Eco-label (notified under document number C(2000) 3278)"
+    },
+    {
+      "role": "link",
+      "name": "and 821 more on Regulations"
     },
     {
       "role": "combobox",
@@ -237,10 +378,150 @@
   ],
   "rows": {
     "selector": "[data-part=\"list-row\"], [data-part=\"table-row\"]",
-    "items": [],
-    "containers": []
+    "items": [
+      {
+        "tag": "div",
+        "text": "Compliance deadline · In order to be included in the list of countries to which exports are authorised adopted by 21 November 2026, the countries to which the OECD Decision does not…Not classifiedNovember 21, 2026",
+        "width": 1782.1875,
+        "height": 48,
+        "container": "Obligation register"
+      },
+      {
+        "tag": "div",
+        "text": "Compliance deadline · The list referred to in paragraph 1 shall be adopted by 21 November 2026, unless no country submits a request pursuant to Article 42(1) or no country complies w…Not classifiedNovember 21, 2026",
+        "width": 1764.1875,
+        "height": 48,
+        "container": "Obligation register"
+      },
+      {
+        "tag": "div",
+        "text": "Compliance deadline · Commission delegated act establishing the list of countries to which exports of non-hazardous waste from the Union for recovery are authorised (Article 41(1)).…Not classifiedNovember 21, 2026",
+        "width": 1755.1875,
+        "height": 48,
+        "container": "Obligation register"
+      },
+      {
+        "tag": "div",
+        "text": "Compliance deadline · By 21 May 2027, the Commission shall adopt an implementing act establishing detailed criteria for the uniform application of the conditions laid down in paragra…Not classifiedMay 21, 2027",
+        "width": 1769.59375,
+        "height": 48,
+        "container": "Obligation register"
+      },
+      {
+        "tag": "div",
+        "text": "Compliance deadline · Exporter Audit Obligation (Article 46, from 21 May 2027) The notifier or person who arranges the shipment intending to export waste from the Union \"shall ensure…Not classifiedMay 21, 2027",
+        "width": 1764.1875,
+        "height": 48,
+        "container": "Obligation register"
+      },
+      {
+        "tag": "div",
+        "text": "Compliance deadline · Articles 38(2) point (b), Article 40, Article 44(2) point (a), and Articles 46 and 47 from 21 May 2027, except for Article 40(3)(b) which shall apply from 21 Ma…Not classifiedMay 21, 2027",
+        "width": 1692.1875,
+        "height": 48,
+        "container": "Obligation register"
+      },
+      {
+        "tag": "div",
+        "text": "Compliance deadline · From 21 May 2027, exporters that commission audits under Article 46 must notify the Commission, which establishes and maintains a public register.Not classifiedMay 21, 2027",
+        "width": 1652.59375,
+        "height": 48,
+        "container": "Obligation register"
+      },
+      {
+        "tag": "div",
+        "text": "Compliance deadline · Commission implementing act on detailed criteria for Article 11(1)(a) conditions for disposal shipments. Regulation states the Commission \"shall, by 21 May 2027…Not classifiedMay 21, 2027",
+        "width": 1771.390625,
+        "height": 48,
+        "container": "Obligation register"
+      },
+      {
+        "tag": "div",
+        "text": "Compliance deadline · Audit Commissioning Infrastructure (Export Operations, from 21 May 2027) Exporters must have a process to commission, acquire, and verify third-party audits of…Not classifiedMay 21, 2027",
+        "width": 1785.796875,
+        "height": 48,
+        "container": "Obligation register"
+      },
+      {
+        "tag": "div",
+        "text": "Review / report · By 31 December 2035, the Commission shall, taking into account, inter alia, the reports drawn up in accordance with Article 73, and the review referred to in Ar…Not classifiedDecember 31, 2035",
+        "width": 1697.59375,
+        "height": 48,
+        "container": "Obligation register"
+      },
+      {
+        "tag": "div",
+        "text": "Other · Operational implication: As of 21 May 2026, information and documents for waste shipments subject to the prior written notification and consent (PIC) procedure…Not classifiedMay 21, 2026",
+        "width": 1632.796875,
+        "height": 48,
+        "container": "Obligation register"
+      },
+      {
+        "tag": "div",
+        "text": "Entry into force · Articles 38(2) point (b), Article 40, Article 44(2) point (a), and Articles 46 and 47 from 21 May 2027, except for Article 40(3)(b) which shall apply from 21 Ma…Not classifiedMay 21, 2026",
+        "width": 1632.796875,
+        "height": 48,
+        "container": "Obligation register"
+      },
+      {
+        "tag": "div",
+        "text": "Entry into force · It shall apply from 21 May 2026.Not classifiedMay 21, 2026",
+        "width": 541.5,
+        "height": 48,
+        "container": "Obligation register"
+      },
+      {
+        "tag": "div",
+        "text": "Compliance deadline · Establishes the technical interoperability requirements for the DIWASS central electronic system that all operators must connect to for PIC waste shipments from…Not classifiedMay 21, 2026",
+        "width": 1794.796875,
+        "height": 48,
+        "container": "Obligation register"
+      },
+      {
+        "tag": "div",
+        "text": "Compliance deadline · All information and documents for PIC shipments and general information shipments within the EU must be submitted and exchanged electronically via the DIWASS hu…Not classifiedMay 21, 2026",
+        "width": 1825.390625,
+        "height": 48,
+        "container": "Obligation register"
+      },
+      {
+        "tag": "div",
+        "text": "Compliance deadline · The Commission shall by 21 May 2026 assess whether countries to which the OECD Decision applies and which import significant volumes of plastic waste from the U…Not classifiedMay 21, 2026",
+        "width": 1830.796875,
+        "height": 48,
+        "container": "Obligation register"
+      },
+      {
+        "tag": "div",
+        "text": "Compliance deadline · Verify that all documentary, IT, and staff workflows are capable of submitting and exchanging shipment notifications and movement documents electronically via t…Not classifiedMay 21, 2026",
+        "width": 1789.390625,
+        "height": 48,
+        "container": "Obligation register"
+      },
+      {
+        "tag": "div",
+        "text": "Compliance deadline · In order to be included in the list of countries to which exports are authorised adopted by 21 November 2026, the countries to which the OECD Decision does not…Not classifiedFebruary 21, 2025",
+        "width": 1782.1875,
+        "height": 48,
+        "container": "Obligation register"
+      },
+      {
+        "tag": "div",
+        "text": "Other · Regulation (EC) No 1013/2006 is repealed with effect from 20 May 2024.Not classifiedMay 20, 2024",
+        "width": 806.59375,
+        "height": 48,
+        "container": "Obligation register"
+      }
+    ],
+    "containers": [
+      {
+        "label": "Obligation register",
+        "count": 19
+      }
+    ]
   },
-  "document_height": 4164,
+  "document_height": 7818,
+  "tiles": 1,
   "truncated": false,
   "offences": []
 }

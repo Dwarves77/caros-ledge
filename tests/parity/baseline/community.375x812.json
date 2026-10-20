@@ -6,13 +6,13 @@
     "width": 375,
     "height": 812
   },
-  "captured_at": "2026-10-19T20:56:42.471Z",
+  "captured_at": "2026-10-20T11:18:22.178Z",
   "http_status": 200,
   "final_path": "/community",
   "network_idle": true,
   "accessibility": {
     "source": "locator.ariaSnapshot",
-    "tree": "- button \"Notifications\"\n- banner:\n  - button \"Open navigation\"\n  - heading \"Community\" [level=1]\n  - button \"Search\"\n  - link \"Account\":\n    - /url: /profile\n- main:\n  - paragraph: VOL IV · No. 43 · Monday, October 19, 2026\n  - heading \"Community\" [level=1]\n  - text: 7 regional rooms · 1,429 active items across them · you are in 0 · peer signal is unverified until a verifier signs off\n  - search:\n    - combobox \"Search or ask across the workspace\"\n    - button \"Ask\"\n  - button \"Global room 54 Research · Fuels · Emissions no discussions yet\" [pressed]\n  - button \"EU room 1,000 Transport · Maritime · Aviation no discussions yet\"\n  - button \"United States room 66 Transport · Infrastructure · Reporting no discussions yet\"\n  - button \"United Kingdom room 275 Research · Transport · Emissions no discussions yet\"\n  - button \"Asia–Pacific room 24 Emissions · Corridors · Transport no discussions yet\"\n  - button \"Latin America room 6 Emissions · Transport · Research no discussions yet\"\n  - button \"Middle East & Africa room 4 Corridors no discussions yet\"\n  - button \"+ New vertical group\"\n  - heading \"Global room\" [level=2]\n  - text: 0 discussions · 0 shown · 1 member here Be first in the Global room. No discussions here yet, post what you saw on the ground this week.\n  - button \"Start a discussion\"\n  - heading \"New post · Global\" [level=2]\n  - text: Posts to the Global room\n  - textbox \"Post to the Global room\" [disabled]:\n    - /placeholder: Ask the Global room, a lane observation, a handler question, a document worth sharing…\n  - button \"What did you see on the ground in Global room this week?\" [disabled]\n  - button \"Any handler, berth or documentation behaviour worth flagging in Global room?\" [disabled]\n  - text: What is this about? Choose 1 to 10 entities\n  - searchbox \"What is this about? Choose 1 to 10 entities\" [disabled]\n  - paragraph: Bind this post to at least one corridor, jurisdiction, instrument, technology or organisation before posting.\n  - paragraph: Join the room to post.\n  - button \"Post\" [disabled]\n  - button \"Join room\"\n  - text: Who’s here · Global room 1 Jason Owner\n  - paragraph:\n    - text: Presence comes from profile home jurisdictions. Grow the network by\n    - link \"workspace invitation\":\n      - /url: /profile\n    - text: .\n  - paragraph: Verifier sign-off\n  - paragraph:\n    - text: A verifier checks a post’s claim against a primary document and marks it signed off in the room. You are\n    - link \"not a verifier\":\n      - /url: /profile\n    - text: .\n  - paragraph: Your open requests · none\n  - paragraph: Why post here\n  - paragraph: \"The ledger prints what’s verified. The room holds what operators know first: handler capacity, berth behaviour, what a regulator said on a call. Community is a social place, not a source of information.\"\n  - paragraph: Vertical groups\n  - button \"+ New group\"\n  - paragraph: No vertical groups yet. Rooms are regional; a group cuts across them by cargo vertical (fine art, live events, automotive…). Start one and invite peers wherever they operate.\n  - link \"Browse all groups →\":\n    - /url: /community/browse\n  - link \"Moderation queue\":\n    - /url: /community/moderation\n- button \"Back to top\"\n- alert"
+    "tree": "- button \"Notifications\"\n- banner:\n  - button \"Open navigation\"\n  - heading \"Community\" [level=1]\n  - button \"Search\"\n  - link \"Account\":\n    - /url: /profile\n- main:\n  - paragraph: VOL IV · No. 43 · Tuesday, October 20, 2026\n  - heading \"Community\" [level=1]\n  - text: 7 regional rooms · 1,404 active items across them · you are in 0 · peer signal is unverified until a verifier signs off\n  - search:\n    - combobox \"Search or ask across the workspace\"\n    - button \"Ask\"\n  - button \"Global room 41 Research · Fuels · Emissions no discussions yet\" [pressed]\n  - button \"EU room 999 Transport · Maritime · Aviation no discussions yet\"\n  - button \"United States room 64 Transport · Infrastructure · Reporting no discussions yet\"\n  - button \"United Kingdom room 275 Research · Transport · Emissions no discussions yet\"\n  - button \"Asia–Pacific room 18 Emissions · Transport · Corridors no discussions yet\"\n  - button \"Latin America room 5 Transport · Research · Infrastructure no discussions yet\"\n  - button \"Middle East & Africa room 2 — no discussions yet\"\n  - button \"+ New vertical group\"\n  - heading \"Global room\" [level=2]\n  - text: 0 discussions · 0 shown · 1 member here Be first in the Global room. No discussions here yet, post what you saw on the ground this week.\n  - button \"Start a discussion\"\n  - heading \"New post · Global\" [level=2]\n  - text: Posts to the Global room\n  - textbox \"Post to the Global room\" [disabled]:\n    - /placeholder: Ask the Global room, a lane observation, a handler question, a document worth sharing…\n  - button \"What did you see on the ground in Global room this week?\" [disabled]\n  - button \"Any handler, berth or documentation behaviour worth flagging in Global room?\" [disabled]\n  - text: What is this about? Choose 1 to 10 entities\n  - searchbox \"What is this about? Choose 1 to 10 entities\" [disabled]\n  - paragraph: Bind this post to at least one corridor, jurisdiction, instrument, technology or organisation before posting.\n  - paragraph: Join the room to post.\n  - button \"Post\" [disabled]\n  - button \"Join room\"\n  - text: Who’s here · Global room 1 Jason Owner\n  - paragraph:\n    - text: Presence comes from profile home jurisdictions. Grow the network by\n    - link \"workspace invitation\":\n      - /url: /profile\n    - text: .\n  - paragraph: Verifier sign-off\n  - paragraph:\n    - text: A verifier checks a post’s claim against a primary document and marks it signed off in the room. You are\n    - link \"not a verifier\":\n      - /url: /profile\n    - text: .\n  - paragraph: Your open requests · none\n  - paragraph: Why post here\n  - paragraph: \"The ledger prints what’s verified. The room holds what operators know first: handler capacity, berth behaviour, what a regulator said on a call. Community is a social place, not a source of information.\"\n  - paragraph: Vertical groups\n  - button \"+ New group\"\n  - paragraph: No vertical groups yet. Rooms are regional; a group cuts across them by cargo vertical (fine art, live events, automotive…). Start one and invite peers wherever they operate.\n  - link \"Browse all groups →\":\n    - /url: /community/browse\n  - link \"Moderation queue\":\n    - /url: /community/moderation\n- button \"Back to top\"\n- alert"
   },
   "landmarks": [
     {
@@ -81,15 +81,15 @@
     },
     {
       "role": "button",
-      "name": "Global room54Research · Fuels · Emissionsno discussions yet"
+      "name": "Global room41Research · Fuels · Emissionsno discussions yet"
     },
     {
       "role": "button",
-      "name": "EU room1,000Transport · Maritime · Aviationno discussions yet"
+      "name": "EU room999Transport · Maritime · Aviationno discussions yet"
     },
     {
       "role": "button",
-      "name": "United States room66Transport · Infrastructure · Reportingno discussions yet"
+      "name": "United States room64Transport · Infrastructure · Reportingno discussions yet"
     },
     {
       "role": "button",
@@ -97,15 +97,15 @@
     },
     {
       "role": "button",
-      "name": "Asia–Pacific room24Emissions · Corridors · Transportno discussions yet"
+      "name": "Asia–Pacific room18Emissions · Transport · Corridorsno discussions yet"
     },
     {
       "role": "button",
-      "name": "Latin America room6Emissions · Transport · Researchno discussions yet"
+      "name": "Latin America room5Transport · Research · Infrastructureno discussions yet"
     },
     {
       "role": "button",
-      "name": "Middle East & Africa room4Corridorsno discussions yet"
+      "name": "Middle East & Africa room2—no discussions yet"
     },
     {
       "role": "button",
@@ -170,6 +170,7 @@
     "containers": []
   },
   "document_height": 2451,
+  "tiles": 1,
   "truncated": false,
   "offences": []
 }
