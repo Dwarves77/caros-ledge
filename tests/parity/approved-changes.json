@@ -225,6 +225,13 @@
       "ruling": "I16 (customer strings), same ruling as r2d-type-words-operations: item ee2cfe81-afc8-492f-b03b-2ed9c94400cc, Nova Scotia Government News Feed (item_type regional_data), is on the page in the same place; its 80-character row key ends inside the stored type code, so the lower-case stored word of the baseline (\"guidance\", \"market_signal\", \"regional_data\") and the words now drawn (\"Guidance\", \"Market signal\", \"Regional data\") differ in that cut. Verified, current, unarchived: it is not excluded by the admissible predicate. Retire when the baseline is recaptured from production after the R2d merge."
     },
     {
+      "id": "r2d-type-cut-colorado-dot",
+      "route": "operations",
+      "kind": "row",
+      "match": "^div:USColorado DOT Environmental Programs and Construction Updates - May #regional_d",
+      "ruling": "I16 (customer strings), same ruling as r2d-type-words-operations: item 67434312-05ce-4e90-b8ca-5aec18ea2ed9, Colorado DOT Environmental Programs and Construction Updates - May 2026 (item_type regional_data, domain 3, jurisdiction US), is on the page in the same place; its 80-character row key ends inside the stored type code, so the lower-case stored word of the baseline (\"guidance\", \"market_signal\", \"regional_data\") and the words now drawn (\"Guidance\", \"Market signal\", \"Regional data\") differ in that cut. Verified, current, unarchived: it is not excluded by the admissible predicate. Retire when the baseline is recaptured from production after the R2d merge."
+    },
+    {
       "id": "r2d-type-cut-iea",
       "route": "operations",
       "kind": "row",
