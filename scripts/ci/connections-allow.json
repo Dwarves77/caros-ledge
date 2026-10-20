@@ -4,9 +4,6 @@
     "src/core/auth/claims.ts": [
       "ClaimsUnavailable"
     ],
-    "src/core/auth/invitations.ts": [
-      "inviteRole"
-    ],
     "src/core/auth/platform-admin.ts": [
       "decidePlatformAdmin",
       "isPlatformAdmin"
@@ -640,11 +637,7 @@
       "GET"
     ],
     "src/features/admin/api/coverage.ts": [
-      "GET",
-      "tierOf"
-    ],
-    "src/features/admin/api/deps.ts": [
-      "setAdminDeps"
+      "GET"
     ],
     "src/features/admin/api/forward-events.ts": [
       "GET"
@@ -672,14 +665,10 @@
       "GET"
     ],
     "src/features/admin/api/run-intake.ts": [
-      "MAX_CANDIDATES",
       "POST"
     ],
     "src/features/admin/api/runtime.ts": [
       "GET"
-    ],
-    "src/features/admin/api/shared.ts": [
-      "headCount"
     ],
     "src/features/admin/api/source-controls.ts": [
       "commitTierChange",
@@ -715,12 +704,6 @@
     "src/features/admin/api/users.ts": [
       "GET"
     ],
-    "src/features/admin/corrections/CorrectionRow.tsx": [
-      "textOf"
-    ],
-    "src/features/admin/corrections/model.ts": [
-      "OPS_BY_KIND"
-    ],
     "src/features/admin/pages.tsx": [
       "AdminRoute",
       "FactorsRoute",
@@ -728,21 +711,6 @@
       "ItemCorrectionsRoute",
       "PartsRoute",
       "WorkspacePartsRoute"
-    ],
-    "src/features/admin/read/sources.ts": [
-      "SOURCE_COLUMNS"
-    ],
-    "src/features/admin/ui/BriefFlagsView.tsx": [
-      "ageDays"
-    ],
-    "src/features/admin/ui/StagedTransitView.tsx": [
-      "MODES"
-    ],
-    "src/features/admin/ui/WorkspacesOverview.tsx": [
-      "memberDisplayName"
-    ],
-    "src/features/admin/ui/panel-kit.tsx": [
-      "ConfirmDialog"
     ],
     "src/features/assistant/api/ask.ts": [
       "POST"
@@ -971,15 +939,6 @@
       "authorIdForRow",
       "effectiveAnonymous",
       "idWithheld"
-    ],
-    "src/features/community/lib/labels.ts": [
-      "MODERATION_ACTIONS"
-    ],
-    "src/features/community/lib/org-key.ts": [
-      "isFreeMailDomain"
-    ],
-    "src/features/community/lib/rooms.ts": [
-      "isRoomMember"
     ],
     "src/features/community/pages/Directory.tsx": [
       "DirectoryPage"

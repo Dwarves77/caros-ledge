@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { test } from "node:test";
 
 import { ClaimsUnavailable } from "@/core/auth/claims";
-import { answer, HttpError, LOOKUP_SENTENCE, LookupError, route } from "@/core/http/errors";
+import { answer, HttpError, LookupError, route } from "@/core/http/errors";
 import { requireUser } from "@/core/http/guard";
 
 import { scripted } from "../_support/fake-clients.ts";

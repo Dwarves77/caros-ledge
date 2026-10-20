@@ -20,7 +20,7 @@ export class HttpError extends Error {
   }
 }
 
-export const LOOKUP_SENTENCE = "That could not be read just now. Try again in a moment.";
+const LOOKUP_SENTENCE = "That could not be read just now. Try again in a moment.";
 
 /** A read behind a guard or a handler failed. Answered 503 with Retry-After and retried by the client: never read as "not a member" or "no workspace". The body carries a customer sentence; the driver's message (`message`) goes to the log only. */
 export class LookupError extends HttpError {

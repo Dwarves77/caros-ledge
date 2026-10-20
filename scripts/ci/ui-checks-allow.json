@@ -219,7 +219,7 @@
           "reason": "the sentence is the validation issue for the caller's own input, written for the caller; the typed parsers (R2a) replace it."
         },
         "src/features/admin/api/bulk-import.ts": 1,
-        "src/features/admin/api/shared.ts": 2,
+        "src/features/admin/api/shared.ts": 1,
         "src/features/admin/api/source-controls.ts": 1,
         "src/features/admin/api/source-decisions.ts": 1,
         "src/features/community/api/posts.ts": {
