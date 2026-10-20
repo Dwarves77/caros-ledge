@@ -29,11 +29,10 @@ async function load(request: Request, params: Ctx["params"]): Promise<Response |
 /** The function's own refusals (not allowed, not found, a rule it keeps) carry sentences written for the customer; anything else is a failed write the customer is told to retry, with the driver text in the log. */
 const OWN_REFUSALS = new Set(["42501", "P0002", "22023"]);
 
-/** A member-changing function's answer: the row on success, else its refusal through the one status table. */
-async function act(user: UserContext, name: string, args: Record<string, unknown>): Promise<unknown> {
-  const { data, error } = await user.client.rpc(name, args);
-  if (error) throw OWN_REFUSALS.has(error.code ?? "") ? dbError(error) : new LookupError(name, error);
-  return data;
+/** A member-changing function's answer: the row on success, else its refusal through the one status table. The call itself is written at the call site as `user.client.rpc("name", args)`, where the static column check reads its name and arguments. */
+function done(res: { data: unknown; error: { code?: string | null; message: string } | null }, name: string): unknown {
+  if (res.error) throw OWN_REFUSALS.has(res.error.code ?? "") ? dbError(res.error) : new LookupError(name, res.error);
+  return res.data;
 }
 
 /** GET: the member list (bounded; `truncated` says when the bound was hit) and what the caller may do here, for a member or a platform admin. E-mail addresses reach owners and admins of this organisation only. */
@@ -59,7 +58,7 @@ export const PATCH = route<Ctx>("/api/orgs/[org_id]/members", async (request, { 
   const ctx = await load(request, params);
   if (isRefusal(ctx)) return ctx;
   const body = await parseJson(request, patchBody);
-  return ok(ctx.user.headers, { membership: await act(ctx.user, "set_member_role", { p_org_id: ctx.orgId, p_membership_id: body.membership_id, p_role: body.role, p_reason: body.reason ?? null }) });
+  return ok(ctx.user.headers, { membership: done(await ctx.user.client.rpc("set_member_role", { p_org_id: ctx.orgId, p_membership_id: body.membership_id, p_role: body.role, p_reason: body.reason ?? null }), "set_member_role") });
 });
 
 /** POST: ban a member from this organisation (an org-scoped ban): the ban row, the removal and the event are one transaction. */
@@ -67,7 +66,7 @@ export const POST = route<Ctx>("/api/orgs/[org_id]/members", async (request, { p
   const ctx = await load(request, params);
   if (isRefusal(ctx)) return ctx;
   const body = await parseJson(request, banBody);
-  await act(ctx.user, "ban_member", { p_org_id: ctx.orgId, p_membership_id: body.membership_id, p_reason: body.reason ?? null });
+  done(await ctx.user.client.rpc("ban_member", { p_org_id: ctx.orgId, p_membership_id: body.membership_id, p_reason: body.reason ?? null }), "ban_member");
   return ok(ctx.user.headers, { success: true, membership_id: body.membership_id });
 });
 
@@ -76,7 +75,7 @@ export const DELETE = route<Ctx>("/api/orgs/[org_id]/members", async (request, {
   const ctx = await load(request, params);
   if (isRefusal(ctx)) return ctx;
   const membershipId = parseWith(uuid, new URL(request.url).searchParams.get("membership_id"), "membership_id");
-  await act(ctx.user, "remove_member", { p_org_id: ctx.orgId, p_membership_id: membershipId, p_reason: null });
+  done(await ctx.user.client.rpc("remove_member", { p_org_id: ctx.orgId, p_membership_id: membershipId, p_reason: null }), "remove_member");
   return ok(ctx.user.headers, { success: true, membership_id: membershipId });
 });
 

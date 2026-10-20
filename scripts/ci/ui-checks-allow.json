@@ -89,7 +89,7 @@
       "reason": "a wall-clock read (Date.now() or new Date() with no argument) outside the injected clock (C:48, S:95): each moves to deps.now, and a duration uses performance.now.",
       "files": {
         "src/core/auth/invitations.ts": 2,
-        "src/core/auth/orgs.ts": 2,
+        "src/core/auth/orgs.ts": 1,
         "src/core/http/backoff.ts": 1,
         "src/core/http/rate-limit.ts": 1,
         "src/core/perf/server-timing.ts": 2,
@@ -105,7 +105,6 @@
         "src/features/admin/api/corpus-turns.ts": 1,
         "src/features/admin/api/coverage.ts": 1,
         "src/features/admin/api/forward-events.ts": 1,
-        "src/features/admin/api/integrity-flags.ts": 2,
         "src/features/admin/api/overview.ts": 1,
         "src/features/admin/api/pause-global.ts": 2,
         "src/features/admin/api/run-intake.ts": 1,
@@ -113,7 +112,6 @@
         "src/features/admin/api/source-decisions.ts": 3,
         "src/features/admin/api/statutory-rows.ts": 1,
         "src/features/admin/api/tier-opinions.ts": 1,
-        "src/features/admin/api/triage.ts": 1,
         "src/features/admin/pages.tsx": 4,
         "src/features/auth/ui/AuthFrame.tsx": 1,
         "src/features/community/api/notifications.ts": 2,
@@ -216,18 +214,14 @@
       "owner": "R4a",
       "reason": "a driver or database message passed as the HttpError sentence (E14): typed sentences for the customer replace them.",
       "files": {
-        "src/core/auth/invitations.ts": 5,
-        "src/core/auth/orgs.ts": 1,
         "src/core/http/parse.ts": {
           "count": 1,
           "reason": "the sentence is the validation issue for the caller's own input, written for the caller; the typed parsers (R2a) replace it."
         },
         "src/features/admin/api/bulk-import.ts": 1,
-        "src/features/admin/api/corpus-turns.ts": 1,
         "src/features/admin/api/shared.ts": 2,
         "src/features/admin/api/source-controls.ts": 1,
         "src/features/admin/api/source-decisions.ts": 1,
-        "src/features/auth/api/members.ts": 1,
         "src/features/community/api/posts.ts": {
           "count": 1,
           "reason": "the sentence comes from the project's own rpc (SQLSTATE 22023) and is written for the caller; R4a gives it a typed code."

@@ -10,7 +10,7 @@ import { canonicalUrl } from "@/core/shared";
 
 import { PLATFORM_CATEGORIES, PLATFORM_STATUSES } from "../vocab";
 
-import { adminAct, adminRoute, boundedInt, reasonOf, reply } from "./shared";
+import { adminDone, adminRoute, boundedInt, reasonOf, reply } from "./shared";
 
 type Category = (typeof PLATFORM_CATEGORIES)[number];
 type Status = (typeof PLATFORM_STATUSES)[number];
@@ -71,7 +71,7 @@ const patchBody = z.object({ id: uuid, status: z.enum(PLATFORM_STATUSES), reason
 export const PATCH = adminRoute("/api/admin/integrity-flags", async (admin, request) => {
   if (new URL(request.url).searchParams.get("platform") !== "1") throw new HttpError(405, "PATCH is only supported on the platform surface (?platform=1)");
   const body = await parseJson(request, patchBody);
-  return reply(admin, { item: await adminAct(admin, "admin_set_flag_status", { p_flag_id: body.id, p_status: body.status, p_reason: body.reason }) });
+  return reply(admin, { item: adminDone(await admin.client.rpc("admin_set_flag_status", { p_flag_id: body.id, p_status: body.status, p_reason: body.reason })) });
 });
 
 const resolveBody = z.object({ action: z.enum(["replace_url", "mark_resolved"]), reason: reasonOf, newSourceUrl: z.string().trim().max(2000).nullish() });
@@ -94,6 +94,6 @@ export const resolveBriefFlag = adminRoute<{ params: Promise<{ id: string }> }>(
   const body = await parseJson(request, resolveBody);
   const next = body.action === "replace_url" ? httpUrl(body.newSourceUrl ?? "") : null;
   if (body.action === "replace_url" && !next) throw new HttpError(400, "newSourceUrl must be an http or https address");
-  const done = await adminAct<{ resolved_at: string }>(admin, "admin_resolve_brief_flag", { p_item_id: id, p_action: body.action, p_new_url: next, p_reason: body.reason });
+  const done = adminDone<{ resolved_at: string }>(await admin.client.rpc("admin_resolve_brief_flag", { p_item_id: id, p_action: body.action, p_new_url: next, p_reason: body.reason }));
   return reply(admin, { success: true, itemId: id, action: body.action, resolvedAt: done.resolved_at });
 });

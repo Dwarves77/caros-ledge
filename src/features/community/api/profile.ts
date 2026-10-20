@@ -60,7 +60,7 @@ export const POST_VERIFY = route("/api/community/profile/verify", async (request
   if (!domain) throw new HttpError(400, "Your account has no email address to verify against");
   const { salt } = resolveOrganisationSalt();
   if (!salt) throw new HttpError(503, "Verification is not available right now", { "Retry-After": "60" });
-  const proof = await checkDomainProof(auth.userId, domain, salt);
+  const proof = await checkDomainProof(auth.userId, domain, salt, () => new Date());
   if (!proof.ok && proof.reason === "lookup_failed") throw new HttpError(503, "Your domain's records could not be read just now. Try again in a minute.", { "Retry-After": "60" });
   if (!proof.ok) throw new HttpError(409, `The record was not found at ${proofRecord(auth.userId, domain, salt).host}. Publish it, allow a few minutes for DNS to update, and check again.`);
   const { organisationKey, reason } = deriveOrganisationKey({ domain, verified: true, salt });

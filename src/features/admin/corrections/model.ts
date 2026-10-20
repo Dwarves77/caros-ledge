@@ -1,10 +1,10 @@
 // Ported from old_repo/src/components/admin/corrections/model.mjs (lines 1-196)
-import { EDGE_RELATIONSHIPS, OPS_BY_KIND, TAG_COLUMNS, validateCorrectionInput } from "@/core/corrections/model";
+import { EDGE_RELATIONSHIPS, TAG_COLUMNS, validateCorrectionInput } from "@/core/corrections/model";
 import { requestJson, type JsonResult } from "@/core/http/request-json";
 
 import type { CorrectionData, TargetKind } from "./types";
 
-export { EDGE_RELATIONSHIPS, OPS_BY_KIND, TAG_COLUMNS };
+export { EDGE_RELATIONSHIPS, TAG_COLUMNS };
 export const KIND_FILTERS = ["fact", "tag", "connection", "section_text", "full_brief"] as const;
 export const STATE_FILTERS = ["active", "revoked", "orphaned"] as const;
 export type CorrectionState = (typeof STATE_FILTERS)[number];

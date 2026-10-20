@@ -20,7 +20,7 @@ interface RpcRow {
   has_critical: boolean;
 }
 /** The tier a jurisdiction has in the one jurisdiction list: 1 must cover, 2 should cover, 3 any other code that parses, null a code that does not. */
-export const tierOf = (iso: string): 1 | 2 | 3 | null => jurisdictionTier(iso);
+const tierOf = (iso: string): 1 | 2 | 3 | null => jurisdictionTier(iso);
 /** The country segment of a code, so a sub-national row groups under its country and a supranational code under itself. */
 const countryGroup = (iso: string): string => countryGroupForIso(iso);
 

@@ -12,7 +12,7 @@ import type { PostView } from "./types";
 export const POST_COLUMNS = "id, group_id, parent_post_id, author_user_id, title, body, created_at, last_reply_at, reply_count, anonymous, signed_off_at";
 
 /** The primary document each signed-off post was checked against (the request row the decision closed); a post signed off with none recorded has no entry and shows no badge. A failed read is a 503, never "no document". */
-export async function loadSignoffDocs(db: Db, postIds: string[]): Promise<Map<string, string>> {
+async function loadSignoffDocs(db: Db, postIds: string[]): Promise<Map<string, string>> {
   if (postIds.length === 0) return new Map();
   const { data, error } = await db.from("community_post_signoff_requests").select("post_id, primary_doc_url").in("post_id", postIds).eq("status", "signed_off");
   if (error) throw new LookupError("sign-off documents", error);

@@ -14,7 +14,7 @@ import type { MemberRow, OrgRow } from "../read/dashboard";
 import styles from "./admin.module.css";
 
 /** A member renders by name, never by id: full name, display name, e-mail, else the absence of a profile. */
-export function memberDisplayName(m: Pick<MemberRow, "user">): string {
+function memberDisplayName(m: Pick<MemberRow, "user">): string {
   const u = m.user;
   return u?.full_name?.trim() || u?.display_name?.trim() || u?.email?.trim() || "(no profile)";
 }

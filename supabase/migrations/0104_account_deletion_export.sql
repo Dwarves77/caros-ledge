@@ -55,7 +55,9 @@ BEGIN
   SELECT count(*) INTO posts FROM public.community_posts WHERE author_user_id = uid;
   PERFORM public.record_admin_event(NULL, 'account_deleted', 'account', 'self', NULL,
     jsonb_build_object('organisations_deleted', orgs_deleted, 'memberships_removed', memberships, 'groups_deleted', groups_deleted, 'groups_handed_over', groups_handed, 'posts_kept_unattributed', posts));
+  PERFORM set_config('caros.admin_events_scrub', 'on', true);
   UPDATE public.admin_events SET target_id = 'deleted-member' WHERE target_kind = 'member' AND target_id = uid::text;
+  PERFORM set_config('caros.admin_events_scrub', 'off', true);
   DELETE FROM auth.users WHERE id = uid;
   RETURN jsonb_build_object('deleted', true, 'organisations_deleted', orgs_deleted, 'memberships_removed', memberships, 'groups_deleted', groups_deleted, 'groups_handed_over', groups_handed, 'posts_kept_unattributed', posts);
 END;

@@ -2,6 +2,7 @@
 // The row policies are emulated in the world (tests/community/_world.ts), so a handler that leans on a policy is proven against it, not against a permissive stub.
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import dns from "node:dns/promises";
 
 import { PATCH as settings } from "@/features/community/api/group-settings";
 import { PATCH_MUTE, PATCH_STAR } from "@/features/community/api/group-prefs";
@@ -17,7 +18,6 @@ import { GET as entityThreads, GET_ENTITIES } from "@/features/community/api/ent
 import { POST_DECIDE, POST_REQUEST, POST_WITHDRAW } from "@/features/community/api/signoff";
 import { GET_REPORTS, POST_ACT, POST_REPORT } from "@/features/community/api/moderation";
 import { GET as listNotifications, GET_COUNTS, POST as markAll, POST_ONE } from "@/features/community/api/notifications";
-import { dns } from "@/features/community/lib/domain-proof";
 import { GET as getProfile, GET_VERIFY, POST_VERIFY, PUT as putProfile } from "@/features/community/api/profile";
 import { GET as search } from "@/features/community/api/search";
 

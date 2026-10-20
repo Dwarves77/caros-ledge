@@ -9,9 +9,9 @@
 --     both answer for auth.uid() only (no parameter names another user) and the pseudo-role platform_admin is answered by is_platform_admin(). Every function of 0101 decides through them and nothing else; the members route hands org_actions to the UI.
 -- Not applied to production before the cutover window.
 --
--- Reversal: DROP FUNCTION public.org_can(uuid, text); DROP FUNCTION public.org_actions(uuid); DROP FUNCTION public.record_admin_event(uuid, text, text, text, text, jsonb); DROP TABLE public.admin_events; DROP TABLE public.org_role_actions.
+-- Reversal: DROP TABLE public.admin_events (its triggers go with it); DROP FUNCTION public.admin_events_guard(); DROP FUNCTION public.org_can(uuid, text); DROP FUNCTION public.org_actions(uuid); DROP FUNCTION public.record_admin_event(uuid, text, text, text, text, jsonb); DROP TABLE public.admin_events; DROP TABLE public.org_role_actions.
 
--- catalog: relation, column, constraint, index, policy, function, acl
+-- catalog: relation, column, constraint, index, policy, function, trigger, acl
 
 BEGIN;
 
@@ -105,12 +105,36 @@ $$;
 REVOKE ALL ON FUNCTION public.record_admin_event(uuid, text, text, text, text, jsonb) FROM PUBLIC, anon, authenticated, service_role;
 COMMENT ON FUNCTION public.record_admin_event(uuid, text, text, text, text, jsonb) IS 'R2e migration 0100. The one writer of admin_events: the actor is auth.uid(), never an argument. No client role can execute it; only the SECURITY DEFINER functions that make the change call it, inside their own transaction.';
 
+-- Append-only, enforced where the data lives (a revoked grant is a presence check; this is the refusal): no UPDATE or DELETE or TRUNCATE succeeds on admin_events, for any role including the table's owner, except the two changes the
+-- design needs. (1) A deleted account or organisation nulls the reference the row held (the foreign keys' own ON DELETE SET NULL; the act stays, the person does not). (2) delete_own_account scrubs the identifier of the person it
+-- erased from target_id and detail, and only while it declares so (caros.admin_events_scrub, transaction-local). The trigger is ENABLE ALWAYS, so a session that sets session_replication_role = replica does not switch it off.
+CREATE FUNCTION public.admin_events_guard() RETURNS trigger
+  LANGUAGE plpgsql SET search_path = public, pg_temp
+  AS $$
+BEGIN
+  IF TG_OP = 'UPDATE'
+     AND NEW.id = OLD.id AND NEW.created_at = OLD.created_at AND NEW.action = OLD.action AND NEW.target_kind = OLD.target_kind AND NEW.reason IS NOT DISTINCT FROM OLD.reason
+     AND (NEW.actor_id IS NOT DISTINCT FROM OLD.actor_id OR NEW.actor_id IS NULL)
+     AND (NEW.org_id IS NOT DISTINCT FROM OLD.org_id OR NEW.org_id IS NULL)
+     AND ((NEW.target_id = OLD.target_id AND NEW.detail = OLD.detail) OR coalesce(current_setting('caros.admin_events_scrub', true), '') = 'on') THEN
+    RETURN NEW;
+  END IF;
+  RAISE EXCEPTION 'admin_events is append-only: % is refused', TG_OP USING ERRCODE = '42501';
+END;
+$$;
+REVOKE ALL ON FUNCTION public.admin_events_guard() FROM PUBLIC, anon, authenticated, service_role;
+CREATE TRIGGER admin_events_append_only BEFORE UPDATE OR DELETE ON public.admin_events FOR EACH ROW EXECUTE FUNCTION public.admin_events_guard();
+CREATE TRIGGER admin_events_no_truncate BEFORE TRUNCATE ON public.admin_events FOR EACH STATEMENT EXECUTE FUNCTION public.admin_events_guard();
+ALTER TABLE public.admin_events ENABLE ALWAYS TRIGGER admin_events_append_only;
+ALTER TABLE public.admin_events ENABLE ALWAYS TRIGGER admin_events_no_truncate;
+COMMENT ON FUNCTION public.admin_events_guard() IS 'R2e migration 0100. The append-only rule of admin_events: refuses UPDATE, DELETE and TRUNCATE for every role, except nulling actor_id or org_id and the declared scrub of a deleted member''s identifier.';
+
 -- Self-check 0100-admin-events: shape and access, then attacks in a fixture that rolls back. No client role writes admin_events or runs record_admin_event; org_can answers by role (owner, admin, member, viewer, a stranger, a platform
 -- admin, no session) for the seeded actions and says false for an unknown action; a platform admin reads every event, an organisation's owner reads that organisation's events only, a member and a stranger read none.
 DO $$
 DECLARE
   org uuid := gen_random_uuid(); orgb uuid := gen_random_uuid(); uo uuid := gen_random_uuid(); ua uuid := gen_random_uuid(); um uuid := gen_random_uuid(); uv uuid := gen_random_uuid(); ub uuid := gen_random_uuid(); up uuid := gen_random_uuid();
-  ev uuid; n int;
+  ev uuid; n int; replica boolean := true;
 BEGIN
   IF NOT (SELECT relrowsecurity FROM pg_class WHERE oid = 'public.admin_events'::regclass) OR NOT (SELECT relrowsecurity FROM pg_class WHERE oid = 'public.org_role_actions'::regclass) THEN RAISE EXCEPTION '0100-admin-events: RLS is off'; END IF;
   IF has_table_privilege('anon', 'public.admin_events', 'SELECT') OR has_table_privilege('authenticated', 'public.admin_events', 'INSERT') OR has_table_privilege('authenticated', 'public.admin_events', 'UPDATE')
@@ -163,6 +187,26 @@ BEGIN
     PERFORM set_config('request.jwt.claim.sub', '', true);
     IF public.org_can(org, 'read_roster') THEN RAISE EXCEPTION '0100-admin-events: a caller with no session can act'; END IF;
     RESET ROLE;
+    -- THE ATTACK (rule 15): the table's owner, the role that holds every privilege, is refused too; so is a session that switches triggers off. Each attempt must fail with 42501 and leave the row as it was.
+    BEGIN UPDATE public.admin_events SET reason = 'rewritten' WHERE id = ev; RAISE EXCEPTION '0100-admin-events: the owner edited an event''s reason';
+    EXCEPTION WHEN SQLSTATE '42501' THEN NULL; END;
+    BEGIN UPDATE public.admin_events SET actor_id = ua WHERE id = ev; RAISE EXCEPTION '0100-admin-events: the owner re-attributed an event to another person';
+    EXCEPTION WHEN SQLSTATE '42501' THEN NULL; END;
+    BEGIN UPDATE public.admin_events SET detail = '{"forged":true}'::jsonb WHERE id = ev; RAISE EXCEPTION '0100-admin-events: the owner rewrote an event''s detail';
+    EXCEPTION WHEN SQLSTATE '42501' THEN NULL; END;
+    BEGIN DELETE FROM public.admin_events WHERE id = ev; RAISE EXCEPTION '0100-admin-events: the owner deleted an event';
+    EXCEPTION WHEN SQLSTATE '42501' THEN NULL; END;
+    BEGIN TRUNCATE public.admin_events; RAISE EXCEPTION '0100-admin-events: the owner truncated the event table';
+    EXCEPTION WHEN SQLSTATE '42501' THEN NULL; END;
+    BEGIN SET LOCAL session_replication_role = replica; EXCEPTION WHEN insufficient_privilege THEN replica := false; END;
+    IF replica THEN
+      BEGIN UPDATE public.admin_events SET reason = 'rewritten' WHERE id = ev; RAISE EXCEPTION '0100-admin-events: switching triggers off (session_replication_role = replica) allowed an edit';
+      EXCEPTION WHEN SQLSTATE '42501' THEN NULL; END;
+      BEGIN DELETE FROM public.admin_events WHERE id = ev; RAISE EXCEPTION '0100-admin-events: switching triggers off allowed a delete';
+      EXCEPTION WHEN SQLSTATE '42501' THEN NULL; END;
+      SET LOCAL session_replication_role = origin;
+    END IF;
+    IF (SELECT reason FROM public.admin_events WHERE id = ev) IS DISTINCT FROM 'seed' OR (SELECT actor_id FROM public.admin_events WHERE id = ev) IS DISTINCT FROM uo THEN RAISE EXCEPTION '0100-admin-events: an attack changed the event'; END IF;
     -- The account an event names can be deleted without losing the event: the actor nulls out.
     DELETE FROM public.org_memberships WHERE org_id = org AND user_id = uo;
     DELETE FROM public.profiles WHERE id = uo;

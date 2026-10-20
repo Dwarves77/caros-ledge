@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
 import { requestJson, type JsonResult } from "@/core/http/request-json";
-import { Button, Dialog, ErrorState, FormField, Input, SectionCard, SectionHead, SkeletonListRow, StateNote, Toast } from "@/ui";
+import { Button, ErrorState, FormField, Input, SectionCard, SectionHead, SkeletonListRow, StateNote, Toast } from "@/ui";
 
 import styles from "./admin.module.css";
 
@@ -84,24 +84,6 @@ export function Panel({ title, aside, onRefresh, children, id }: { title: string
       <SectionHead title={title} aside={onRefresh ? <span className={styles.actions}>{aside}<Button variant="ghost" size="sm" onClick={onRefresh}>Refresh</Button></span> : aside} />
       <div className={styles.body}>{children}</div>
     </SectionCard>
-  );
-}
-
-/** A destructive action as words, with the phrase typed to confirm (the kit Dialog: Esc, focus kept, focus returned). */
-export function ConfirmDialog({ open, title, body, phrase, action, pending, onConfirm, onClose }: { open: boolean; title: string; body: ReactNode; phrase?: string; action: string; pending?: boolean; onConfirm: () => void; onClose: () => void }) {
-  const [typed, setTyped] = useState("");
-  const ready = !phrase || typed.trim() === phrase;
-  return (
-    <Dialog open={open} onClose={pending ? () => undefined : onClose} title={title}>
-      <div className={styles.stack}>
-        <div className={styles.note}>{body}</div>
-        {phrase ? <FormField label={`Type "${phrase}" to confirm`}>{(c) => <Input {...c} value={typed} onChange={(e) => setTyped(e.target.value)} placeholder={phrase} />}</FormField> : null}
-        <div className={styles.actions}>
-          <Button variant="secondary" onClick={onClose} disabled={pending}>Cancel</Button>
-          <Button variant="danger" onClick={onConfirm} disabled={!ready || pending}>{pending ? "Working..." : action}</Button>
-        </div>
-      </div>
-    </Dialog>
   );
 }
 

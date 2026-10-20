@@ -1,14 +1,12 @@
 // New in R2e (M3). Domain ownership, performed and recorded: the member publishes a DNS TXT record at `_caros-ledge.<domain>` whose value is derived from their id, the domain and the server-only organisation salt; the route reads it.
-// A name on a list proves nothing (mailinator.com was "verified"); control of a domain's DNS does, and a free-mail provider's domain can never carry the record. `dns` is the one seam a test replaces.
+// A name on a list proves nothing (mailinator.com was "verified"); control of a domain's DNS does, and a free-mail provider's domain can never carry the record. The resolver is called as `dns.resolveTxt` on the default export of node:dns/promises, so a test replaces that one property and no test reaches the network.
 import { createHmac } from "node:crypto";
-import { resolveTxt } from "node:dns/promises";
+import dns from "node:dns/promises";
 
-export const PROOF_LABEL = "_caros-ledge";
+const PROOF_LABEL = "_caros-ledge";
 const VALUE_PREFIX = "caros-ledge-verification=";
 /** How long a lookup may take before it is a failed lookup (a retry), not an absent record. */
 const LOOKUP_MS = 5000;
-
-export const dns = { resolveTxt: (host: string): Promise<string[][]> => resolveTxt(host) };
 
 const tokenOf = (userId: string, domain: string, salt: string): string => createHmac("sha256", salt).update(`verify:${userId}:${domain.toLowerCase()}`, "utf8").digest("hex").slice(0, 32);
 
@@ -18,7 +16,7 @@ export const proofRecord = (userId: string, domain: string, salt: string): { hos
 export type ProofResult = { ok: true; evidence: { host: string; checked_at: string } } | { ok: false; reason: "not_found" | "lookup_failed" };
 
 /** Read the record. A name with no such record (ENOTFOUND, ENODATA) is a definite absence; any other failure, a timeout included, is a failed lookup. */
-export async function checkDomainProof(userId: string, domain: string, salt: string, now: () => Date = () => new Date()): Promise<ProofResult> {
+export async function checkDomainProof(userId: string, domain: string, salt: string, now: () => Date): Promise<ProofResult> {
   const want = proofRecord(userId, domain, salt);
   let records: string[][];
   try {

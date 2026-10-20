@@ -29,7 +29,7 @@ interface FlagsPayload {
 }
 
 /** Whole days since an instant, from the request's own clock reading. Pure. */
-export const ageDays = (iso: string | null, nowMs: number): number | null => (iso ? Math.max(0, Math.round((nowMs - Date.parse(iso)) / 86_400_000)) : null);
+const ageDays = (iso: string | null, nowMs: number): number | null => (iso ? Math.max(0, Math.round((nowMs - Date.parse(iso)) / 86_400_000)) : null);
 
 /**
  * Per-brief integrity flags: briefs whose agent could not verify the source. An operator may resolve (with a reason), replace the source address (stored canonical, with a reason), or ask for a re-capture, which opens

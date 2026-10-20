@@ -21,22 +21,16 @@ export function YourData() {
   async function download() {
     setBusy(true);
     setStatus(null);
-    try {
-      const res = await fetch("/api/account/export", { credentials: "same-origin" });
-      if (res.status === 401) return setStatus({ tone: "error", text: "Sign in to download your data." });
-      if (!res.ok) return setStatus({ tone: "error", text: "Your data could not be prepared just now. Try again in a moment." });
-      const url = URL.createObjectURL(new Blob([await res.text()], { type: "application/json" }));
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = "caros-ledge-account-export.json";
-      link.click();
-      URL.revokeObjectURL(url);
-      setStatus({ tone: "note", text: "Your data was downloaded as caros-ledge-account-export.json." });
-    } catch {
-      setStatus({ tone: "error", text: "Your data could not be downloaded. Check your connection and try again." });
-    } finally {
-      setBusy(false);
-    }
+    const r = await requestJson<unknown>("/api/account/export");
+    setBusy(false);
+    if (!r.ok) return setStatus({ tone: "error", text: r.status === 401 ? "Sign in to download your data." : "Your data could not be prepared just now. Try again in a moment." });
+    const url = URL.createObjectURL(new Blob([JSON.stringify(r.data, null, 2)], { type: "application/json" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "caros-ledge-account-export.json";
+    link.click();
+    URL.revokeObjectURL(url);
+    setStatus({ tone: "note", text: "Your data was downloaded as caros-ledge-account-export.json." });
   }
   async function remove() {
     setBusy(true);

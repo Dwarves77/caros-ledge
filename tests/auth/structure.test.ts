@@ -65,7 +65,7 @@ const OWN_RECORD: Record<string, string> = {
   "corpus-turns.ts#POST": "admin_events through admin_request_corpus_turns (the sweep branch dispatches a turn and writes the harness ledger)",
 };
 
-test("INV-R2e-2: every admin write handler is one of the six acts that write an event through a database function (adminAct), or is listed with the record it already writes; a new write handler with neither fails", () => {
+test("INV-R2e-2: every admin write handler is one of the six acts that write an event through a database function (adminDone), or is listed with the record it already writes; a new write handler with neither fails", () => {
   const dir = "src/features/admin/api";
   const writes: string[] = [];
   for (const f of readdirSync(dir).filter((n) => n.endsWith(".ts"))) {
@@ -75,16 +75,16 @@ test("INV-R2e-2: every admin write handler is one of the six acts that write an 
       const start = m.index ?? 0;
       const next = text.indexOf("export const ", start + 10);
       const block = text.slice(start, next < 0 ? undefined : next);
-      const writing = /\.(?:insert|update|upsert|delete)\(|\.rpc\(|writeTrustEvent|applyTierOverride|runTurn\(|adminAct[<(]/.test(block) || /\bPOST\b|\bPATCH\b|\bPUT\b|\bDELETE\b/.test(m[1] ?? "");
+      const writing = /\.(?:insert|update|upsert|delete)\(|\.rpc\(|writeTrustEvent|applyTierOverride|runTurn\(|adminDone[<(]/.test(block) || /\bPOST\b|\bPATCH\b|\bPUT\b|\bDELETE\b/.test(m[1] ?? "");
       if (!writing) continue;
-      const read = !/\.(?:insert|update|upsert|delete)\(|writeTrustEvent|applyTierOverride|runTurn\(|adminAct[<(]|\.rpc\(/.test(block);
+      const read = !/\.(?:insert|update|upsert|delete)\(|writeTrustEvent|applyTierOverride|runTurn\(|adminDone[<(]|\.rpc\(/.test(block);
       if (read) continue;
       writes.push(`${f}#${m[1]}`);
     }
   }
-  const events = new Set(writes.filter((w) => code(`${dir}/${w.split("#")[0]}`).split(`export const ${w.split("#")[1]} = adminRoute`)[1]?.split("export const ")[0]?.includes("adminAct")));
+  const events = new Set(writes.filter((w) => code(`${dir}/${w.split("#")[0]}`).split(`export const ${w.split("#")[1]} = adminRoute`)[1]?.split("export const ")[0]?.includes("adminDone")));
   const covered = (w: string): boolean => events.has(w) || w in OWN_RECORD || w.split("#")[0]! in OWN_RECORD;
-  assert.deepEqual(writes.filter((w) => !covered(w)), [], "an adminRoute write handler writes an admin_events row (adminAct) or names the record it writes here");
+  assert.deepEqual(writes.filter((w) => !covered(w)), [], "an adminRoute write handler writes an admin_events row (adminDone) or names the record it writes here");
   for (const six of ["source-controls.ts#pauseSource", "source-controls.ts#setVisibility", "integrity-flags.ts#PATCH", "integrity-flags.ts#resolveBriefFlag", "triage.ts#triageRejection", "triage.ts#resolveJurisdictionReview", "pause-global.ts#POST"]) assert.ok(events.has(six), `${six} writes its event`);
   assert.ok(Object.keys(OWN_RECORD).every((k) => k.includes("#") || readdirSync(dir).includes(k)), "every listed file exists");
 });

@@ -6,7 +6,7 @@ import { nextScrapeDate, type ScrapeCadence } from "@/core/fetch/hold";
 import { HttpError, LookupError } from "@/core/http/errors";
 import { parseJson } from "@/core/http/parse";
 
-import { adminAct, adminRoute, reasonOf, reply } from "./shared";
+import { adminDone, adminRoute, reasonOf, reply } from "./shared";
 
 interface StateRow {
   scrape_cadence?: string | null;
@@ -44,6 +44,6 @@ export const POST = adminRoute("/api/admin/sources/pause-global", async (admin, 
   if (b.paused === undefined && b.cadence === undefined && b.judgement_drain === undefined) throw new HttpError(400, "provide `cadence` (off|weekly|monthly), `paused` (boolean) and/or `judgement_drain` (off|on)");
   const now = new Date();
   const anchored = b.cadence !== undefined && b.cadence !== "off";
-  await adminAct(admin, "admin_set_hold", { p_paused: b.paused ?? null, p_cadence: b.cadence ?? null, p_start_date: anchored ? (b.start_date ?? now.toISOString()).slice(0, 10) : null, p_clear_start: b.cadence === "off" && b.start_date === null, p_judgement_drain: b.judgement_drain ?? null, p_reason: b.reason });
+  adminDone(await admin.client.rpc("admin_set_hold", { p_paused: b.paused ?? null, p_cadence: b.cadence ?? null, p_start_date: anchored ? (b.start_date ?? now.toISOString()).slice(0, 10) : null, p_clear_start: b.cadence === "off" && b.start_date === null, p_judgement_drain: b.judgement_drain ?? null, p_reason: b.reason }));
   return reply(admin, { success: true, ...(await readHold(admin.service(), now)) });
 });

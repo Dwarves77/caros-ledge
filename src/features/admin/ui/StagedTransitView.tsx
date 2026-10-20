@@ -31,7 +31,7 @@ interface Mode {
   describe: (f: Failure) => string;
 }
 /** The five reviewer-facing modes of a provenance-gate failure (validate_item_provenance criteria 2 to 5). */
-export const MODES: readonly Mode[] = [
+const MODES: readonly Mode[] = [
   { key: "ungrounded_url", label: "Ungrounded URLs", match: (f) => f.criterion === 2 && f.reason === "ungrounded_url", describe: (f) => f.url || "(address missing)" },
   { key: "unverified_span", label: "Unverified FACT spans", match: (f) => f.criterion === 3, describe: (f) => `${f.claim ? `"${cut(f.claim, 90)}": ` : ""}${f.reason === "fact_below_authority_floor" ? `below the tier floor (tier ${f.source_tier_at_grounding ?? "unrated"}, ${f.priority ?? "no priority"})` : (spanReason[f.reason] ?? f.reason)}` },
   { key: "unlabeled", label: "Unlabeled or mislabeled analysis", match: (f) => f.criterion === 4 && (f.reason === "analysis_missing_label_syntax" || f.reason === "unlabeled_assertion"), describe: (f) => (f.reason === "unlabeled_assertion" ? `unlabeled strong-modal assertion${f.section_row_id ? ` (section ${f.section_row_id.slice(0, 8)})` : ""}` : `analysis without a closed-set label${f.claim ? `: "${cut(f.claim, 90)}"` : ""}`) },

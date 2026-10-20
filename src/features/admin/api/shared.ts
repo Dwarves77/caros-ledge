@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { isMissingObject } from "@/core/db/absent";
 import type { Db } from "@/core/db";
-import { dbError, HttpError, LOOKUP_SENTENCE, LookupError, ok, route } from "@/core/http/errors";
+import { dbError, HttpError, LookupError, ok, route } from "@/core/http/errors";
 import { isRefusal, requireAdmin, type AdminContext } from "@/core/http/guard";
 
 export type { AdminContext };
@@ -34,13 +34,6 @@ export async function writeTrustEvent(db: Db, e: { sourceId: string; type: "tier
   if (error) throw new HttpError(500, `the audit row was not written: ${error.message}`);
 }
 
-/** The count of a head query, or an honest failure (never a zero for an unreadable count). */
-export async function headCount(q: PromiseLike<{ count: number | null; error: { message: string } | null }>, what: string): Promise<number> {
-  const { count, error } = await q;
-  if (error || typeof count !== "number") throw new HttpError(503, `${what} could not be counted${error ? `: ${error.message}` : ""}`, { "Retry-After": "1" }, LOOKUP_SENTENCE);
-  return count;
-}
-
 /** The stated block for a function a pending migration adds: a 503 that names the function and the migration, not a thrown page and not a zero. */
 export const notInstalled = (fn: string, migration: string): HttpError => new HttpError(503, `${fn} is not installed on this database yet (migration ${migration} has not been applied here)`);
 
@@ -51,12 +44,12 @@ export const reasonOf = z.string().trim().min(1, "A reason is required: say why 
 const OWN_REFUSALS = new Set(["42501", "P0002", "22023"]);
 
 /**
- * One admin act: a database function (migration 0102) called on the admin's OWN client, so the actor is the session, a platform-admin check runs inside it as well as in the guard, and the change and its admin_events row are one
- * transaction. A function a pending migration adds is the stated block, not a thrown page.
+ * The answer of one admin database function (migration 0102), called at the call site as `admin.client.rpc("name", args)` on the admin's OWN client so the actor is the session, a platform-admin check runs inside it as well as in the
+ * guard, and the change and its admin_events row are one transaction. This turns the response into the data or the right refusal; a function a pending migration adds is the stated block, not a thrown page.
  */
-export async function adminAct<T = Record<string, unknown>>(admin: AdminContext, fn: string, args: Record<string, unknown>): Promise<T> {
-  const { data, error } = await admin.client.rpc(fn, args);
-  if (isMissingObject(error)) throw notInstalled(fn, "0102");
-  if (error) throw OWN_REFUSALS.has(error.code ?? "") ? dbError(error) : new LookupError(fn, error);
+export function adminDone<T = Record<string, unknown>>(res: { data: unknown; error: { code?: string | null; message: string } | null }): T {
+  const { data, error } = res;
+  if (isMissingObject(error)) throw notInstalled(/function\s+(?:public\.)?(\w+)/.exec(error?.message ?? "")?.[1] ?? "an admin function", "0102");
+  if (error) throw OWN_REFUSALS.has(error.code ?? "") ? dbError(error) : new LookupError("admin function", error);
   return data as T;
 }

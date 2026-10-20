@@ -12,7 +12,7 @@ import type { CorrectionData } from "./types";
 
 const SHOW_CHARS = 280;
 /** The text a value object carries, first of the known fields. Pure. */
-export function textOf(value: Record<string, unknown> | null | undefined): string {
+function textOf(value: Record<string, unknown> | null | undefined): string {
   for (const k of ["claim_text", "content_md", "text", "source_span", "relationship"]) {
     const v = value?.[k];
     if (typeof v === "string" && v.trim()) return v;

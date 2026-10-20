@@ -239,11 +239,6 @@
       "PRIMARY_ARTIFACT_TYPES",
       "STUDY_BACKED_TYPES"
     ],
-    "src/core/entities/unlocode-names.ts": [
-      "JURISDICTION_NAMES",
-      "UNLOCODE_NAMES",
-      "unlocodeName"
-    ],
     "src/core/figures/format.ts": [
       "CURRENCY_SYMBOL",
       "UNCERTAINTY_PCT",
@@ -743,9 +738,6 @@
     "src/features/admin/ui/StagedTransitView.tsx": [
       "MODES"
     ],
-    "src/features/admin/ui/TierDisagreementsView.tsx": [
-      "defaultReason"
-    ],
     "src/features/admin/ui/WorkspacesOverview.tsx": [
       "memberDisplayName"
     ],
@@ -952,7 +944,6 @@
     ],
     "src/features/community/api/profile.ts": [
       "GET",
-      "POST_VERIFY",
       "PUT"
     ],
     "src/features/community/api/replies.ts": [
@@ -1938,8 +1929,7 @@
     "src/features/intake/pipeline.ts#harvestItemTimeline": "a runtime entry with no caller (rule 17): the owning slice wires it into the turn or deletes it"
   },
   "tables": {
-    "data_sources": "seeded by the SQL renderDataSourceSeedSql generates (src/core/contracts), which scripts/ci/checks/generator-pins.mjs executes against the schema; the producers only read it. The check reads no write of a generated seed",
-    "auxiliary_energy_profiles": "written by the operator-rows producer (src/features/operations/producers/operator-rows.ts), which takes the table name as an argument of operatorRowsSpec(\"auxiliary_energy_profiles\", ...); a call with the table as an argument is not a write the check reads"
+    "data_sources": "seeded by the SQL renderDataSourceSeedSql generates (src/core/contracts), which scripts/ci/checks/generator-pins.mjs executes against the schema; the producers only read it. The check reads no write of a generated seed"
   },
   "settings": {},
   "routes": {},

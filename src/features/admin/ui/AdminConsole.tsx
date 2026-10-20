@@ -31,7 +31,7 @@ import { IssuesRail } from "./IssuesRail";
 import { JurisdictionReviewView } from "./JurisdictionReviewView";
 import { PartFailure } from "./panel-kit";
 import { ResearchPipelineView } from "./ResearchPipelineView";
-import { AssumptionRegisterView, ErrorGroupsView, InferencesView } from "./RuntimeViews";
+import { AdminEventsView, AssumptionRegisterView, ErrorGroupsView, InferencesView } from "./RuntimeViews";
 import { StagedTransitView } from "./StagedTransitView";
 import { StatutoryRowsUpload } from "./StatutoryRowsUpload";
 import { TierDisagreementsView } from "./TierDisagreementsView";
@@ -124,7 +124,7 @@ export function AdminConsole({ userId, userEmail, nowIso, initial }: { userId: s
       return <JurisdictionReviewView />;
     }
     if (section === "Research pipeline") return <ResearchPipelineView />;
-    return sub === "Assumptions" ? <AssumptionRegisterView /> : sub === "Inferences" ? <InferencesView /> : <ErrorGroupsView />;
+    return sub === "Assumptions" ? <AssumptionRegisterView /> : sub === "Inferences" ? <InferencesView /> : sub === "Admin events" ? <AdminEventsView /> : <ErrorGroupsView />;
   };
   return (
     <div data-admin-console="">

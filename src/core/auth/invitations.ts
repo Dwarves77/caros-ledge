@@ -13,7 +13,7 @@ import { email as emailSchema } from "@/core/http/parse";
 import { sendInvitationEmail, type EmailResult } from "@/core/shared/email";
 
 export const inviteToken = z.string().regex(/^[0-9a-f]{64}$/i, "token must be 64 hex characters");
-export const inviteRole = z.enum(["admin", "member", "viewer"]);
+const inviteRole = z.enum(["admin", "member", "viewer"]);
 export const inviteBody = z.object({ email: emailSchema, role: inviteRole.default("member") });
 
 const FIELDS = "id, invited_email, proposed_role, status, created_at, expires_at, accepted_at, declined_at, revoked_at, invited_by_user_id, token_last4";

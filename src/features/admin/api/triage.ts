@@ -9,7 +9,7 @@ import { parseJson, uuid } from "@/core/http/parse";
 
 import { JURISDICTION_ACTIONS, REJECTION_ACTIONS } from "../vocab";
 
-import { adminAct, adminRoute, reasonOf, reply, text } from "./shared";
+import { adminDone, adminRoute, reasonOf, reply, text } from "./shared";
 
 const TRIAGE_BOUND = 200;
 
@@ -37,7 +37,7 @@ const rejectionBody = z.object({ id: uuid, action: z.enum(REJECTION_ACTIONS), re
 /** Stamp an ingest rejection triaged (admin_triage_rejection, migration 0102): who, when, what and the operator's reason, with the event. Only the stamp is written, never an item (INV-284); a row already triaged answers 409 and a missing one 404 (INV-289). */
 export const triageRejection = adminRoute("/api/admin/triage/ingest-rejections", async (admin, request) => {
   const body = await parseJson(request, rejectionBody);
-  const done = await adminAct<{ triaged_at: string }>(admin, "admin_triage_rejection", { p_id: body.id, p_action: body.action, p_reason: body.reason });
+  const done = adminDone<{ triaged_at: string }>(await admin.client.rpc("admin_triage_rejection", { p_id: body.id, p_action: body.action, p_reason: body.reason }));
   return reply(admin, { success: true, id: body.id, triage_action: body.action, triaged_at: done.triaged_at });
 });
 
@@ -55,6 +55,6 @@ export const resolveJurisdictionReview = adminRoute("/api/admin/triage/pending-j
   const body = await parseJson(request, jurisdictionBody);
   const value = text(body.resolution_value);
   if (body.action === "manually-classify" && !value) throw new HttpError(400, "resolution_value is required for manually-classify");
-  const data = await adminAct(admin, "admin_resolve_jurisdiction_review", { p_review_id: body.id, p_action: body.action, p_resolution: body.action === "manually-classify" ? value : null, p_reason: body.reason });
+  const data = adminDone(await admin.client.rpc("admin_resolve_jurisdiction_review", { p_review_id: body.id, p_action: body.action, p_resolution: body.action === "manually-classify" ? value : null, p_reason: body.reason }));
   return reply(admin, { success: true, id: body.id, action: body.action, ...data });
 });

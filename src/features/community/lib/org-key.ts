@@ -13,7 +13,7 @@ const FREE_MAIL: ReadonlySet<string> = new Set(z.array(z.string().min(3)).min(1)
 const ORG_SALT_HKDF_INFO = "caros-ledge/community-organisation-key/v1";
 const normalise = (domain: unknown): string => String(domain ?? "").trim().toLowerCase().replace(/^@/, "");
 
-export const isFreeMailDomain = (domain: unknown): boolean => FREE_MAIL.has(normalise(domain));
+const isFreeMailDomain = (domain: unknown): boolean => FREE_MAIL.has(normalise(domain));
 
 /** The domain half of an address (lower-cased); null unless it is `local@domain` with a dot in the domain. */
 export function domainFromEmail(email: string | null | undefined): string | null {

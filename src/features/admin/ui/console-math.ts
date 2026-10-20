@@ -18,7 +18,7 @@ export const SECTIONS: readonly SectionDef[] = [
   { name: "Ingest", sub: "Staged updates, flags and rejections, dispatch.", tabs: ["Flags & rejections", "Staged updates", "Dispatch", "Statutory rows", "Corrections"] },
   { name: "Coverage", sub: "Jurisdiction review, coverage matrix, gap analysis.", tabs: ["Jurisdiction review", "Coverage matrix", "Catalogue"] },
   { name: "Research pipeline", sub: "Machine-gated items and their status.", tabs: ["Pipeline"] },
-  { name: "Runtime", sub: "First-party error tracking, assumption register, inferences.", tabs: ["Errors", "Assumptions", "Inferences"] },
+  { name: "Runtime", sub: "First-party error tracking, assumption register, inferences, the record of privileged acts.", tabs: ["Errors", "Assumptions", "Inferences", "Admin events"] },
 ];
 
 export type Counts = { held: number; factors: number; disagreements: number; harnessRuns: number; errors: number };

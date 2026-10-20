@@ -15,7 +15,7 @@ import { dbError, HttpError, LookupError } from "@/core/http/errors";
 import { parseJson, parseWith, uuid } from "@/core/http/parse";
 import { notUnderTierOverride } from "@/core/sources/tier-writers";
 
-import { adminAct, adminRoute, reasonOf, reply, text, writeTrustEvent } from "./shared";
+import { adminDone, adminRoute, reasonOf, reply, text, writeTrustEvent } from "./shared";
 
 type Ctx = { params: Promise<{ id: string }> };
 const idOf = async (ctx: Ctx): Promise<string> => parseWith(uuid, (await ctx.params).id, "source id");
@@ -33,7 +33,7 @@ const switchBody = z.object({ reason: reasonOf });
 export const pauseSource = adminRoute<Ctx>("/api/admin/sources/[id]/pause", async (admin, request, ctx) => {
   const { paused, reason } = await parseJson(request, switchBody.extend({ paused: z.boolean() }));
   const id = await idOf(ctx);
-  await adminAct(admin, "admin_set_source_switch", { p_source_id: id, p_switch: "processing_paused", p_value: paused, p_reason: reason });
+  adminDone(await admin.client.rpc("admin_set_source_switch", { p_source_id: id, p_switch: "processing_paused", p_value: paused, p_reason: reason }));
   return reply(admin, { success: true, sourceId: id, paused });
 });
 
@@ -41,7 +41,7 @@ export const pauseSource = adminRoute<Ctx>("/api/admin/sources/[id]/pause", asyn
 export const setVisibility = adminRoute<Ctx>("/api/admin/sources/[id]/visibility", async (admin, request, ctx) => {
   const { admin_only, reason } = await parseJson(request, switchBody.extend({ admin_only: z.boolean() }));
   const id = await idOf(ctx);
-  await adminAct(admin, "admin_set_source_switch", { p_source_id: id, p_switch: "admin_only", p_value: admin_only, p_reason: reason });
+  adminDone(await admin.client.rpc("admin_set_source_switch", { p_source_id: id, p_switch: "admin_only", p_value: admin_only, p_reason: reason }));
   return reply(admin, { success: true, sourceId: id, admin_only });
 });
 

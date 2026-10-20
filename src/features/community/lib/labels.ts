@@ -27,7 +27,6 @@ export const SENSITIVE_FIELD_LABELS: Readonly<Record<string, string>> = Object.f
 export const REPORT_REASONS = V.reportReasons;
 export const REPORT_REASON_IDS: readonly string[] = V.reportReasons.map((r) => r.id);
 export const REPORT_REASON_SHORT: Readonly<Record<string, string>> = Object.fromEntries(V.reportReasons.map((r) => [r.id, r.short]));
-export const MODERATION_ACTIONS = V.moderationActions as readonly ModerationAction[];
 export type ModerationAction = "dismiss" | "warn" | "remove" | "mute" | "ban";
 
 /** The community region codes (profiles, groups, member regions): the core vocabulary's, one list. */

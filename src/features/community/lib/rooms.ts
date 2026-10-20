@@ -46,4 +46,3 @@ export function roomForJurisdiction(jur: string | null | undefined): RoomKey | n
 export const homeJurisdictionsInRoom = (homes: readonly string[] | null | undefined, key: RoomKey): boolean => !!homes && homes.some((j) => roomForJurisdiction(j) === key);
 
 /** The one meaning of "you belong to this room": a membership row. A home jurisdiction is a hint for the default room, never a membership claim. */
-export const isRoomMember = (room: { joined: boolean }): boolean => room.joined;

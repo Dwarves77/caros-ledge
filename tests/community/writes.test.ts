@@ -2,6 +2,7 @@
 import assert from "node:assert/strict";
 import { createHmac } from "node:crypto";
 import { test } from "node:test";
+import dns from "node:dns/promises";
 
 import { POST_INVITE } from "@/features/community/api/group-invitations";
 import { POST as join } from "@/features/community/api/group-join";
@@ -17,8 +18,7 @@ import { POST_DECIDE, POST_REQUEST, POST_WITHDRAW } from "@/features/community/a
 import { GET_VERIFY, POST_VERIFY, PUT as putProfile } from "@/features/community/api/profile";
 import { kAnonymity, K_ANONYMITY_FLOOR, refuseSensitiveText } from "@/features/community/lib/antitrust";
 import { MAX_ENTITY_IDS, validateEntityIds } from "@/features/community/lib/entity-binding";
-import { deriveOrganisationKey, isFreeMailDomain, resolveOrganisationSalt } from "@/features/community/lib/org-key";
-import { dns } from "@/features/community/lib/domain-proof";
+import { deriveOrganisationKey, resolveOrganisationSalt } from "@/features/community/lib/org-key";
 
 import { scripted } from "../_support/fake-clients.ts";
 
@@ -209,7 +209,7 @@ test("INV-235: the organisation key is an HMAC-SHA256 of the domain under a serv
   assert.equal(deriveOrganisationKey({ domain: "gmail.com", verified: true, salt }).organisationKey, null);
   assert.equal(deriveOrganisationKey({ domain: "acme.example", verified: false, salt }).organisationKey, null);
   assert.equal(deriveOrganisationKey({ domain: "acme.example", verified: true, salt: "" }).organisationKey, null);
-  assert.equal(isFreeMailDomain("outlook.com"), true);
+  assert.equal(deriveOrganisationKey({ domain: "outlook.com", verified: true, salt }).organisationKey, null, "a free-mail domain is never an organisation");
   assert.deepEqual(resolveOrganisationSalt({}), { salt: null, source: null });
   assert.equal(resolveOrganisationSalt({ COMMUNITY_ORG_SALT: salt }).source, "COMMUNITY_ORG_SALT");
   assert.equal(resolveOrganisationSalt({ WORKER_SECRET: "worker-secret-worker-secret" }).source, "derived-from-WORKER_SECRET");

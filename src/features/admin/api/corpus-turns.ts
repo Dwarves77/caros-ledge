@@ -9,7 +9,7 @@ import { parseJson, parseWith, uuid } from "@/core/http/parse";
 import { runTurn } from "@/core/turn";
 
 import { adminDeps } from "./deps";
-import { adminAct, adminRoute, reasonOf, reply } from "./shared";
+import { adminDone, adminRoute, reasonOf, reply } from "./shared";
 
 const OPEN_BOUND = 200;
 
@@ -19,7 +19,7 @@ export const GET = adminRoute("/api/admin/corpus-turn-requests", async (admin, r
   if (q.get("preview")) {
     const scope = q.get("preview") === "source" ? "source" : "all";
     const sourceId = scope === "source" ? parseWith(uuid, q.get("source_id"), "source_id") : null;
-    return reply(admin, await adminAct(admin, "admin_corpus_turn_preview", { p_scope: scope, p_source_id: sourceId }));
+    return reply(admin, adminDone(await admin.client.rpc("admin_corpus_turn_preview", { p_scope: scope, p_source_id: sourceId })));
   }
   const db = admin.service();
   const page = await boundedRead<{ id: string; intelligence_item_id: string; reason: string; requested_at: string }>((n) => qb<{ id: string; intelligence_item_id: string; reason: string; requested_at: string }>(db.from("corpus_turn_requests").select("id, intelligence_item_id, reason, requested_at")).is("consumed_at", null).order("requested_at", { ascending: true }).order("id", { ascending: true }).limit(n), { limit: OPEN_BOUND });
@@ -49,6 +49,6 @@ export const POST = adminRoute("/api/admin/corpus-turn-requests", async (admin, 
     return reply(admin, { ok: result.exit === 0, dispatched: "sweep-research", query, mode: result.resolved.mode, reason: result.resolved.reason, outcome: run?.row?.outcome ?? null, counts: run?.result?.counts ?? {}, notes: run?.result?.notes ?? [], rootRunId: result.rootRunId });
   }
   const scoped = "all" in b ? { p_scope: "all", p_source_id: null, p_item_id: null } : "sourceId" in b ? { p_scope: "source", p_source_id: b.sourceId, p_item_id: null } : { p_scope: "item", p_source_id: null, p_item_id: b.itemId };
-  const done = await adminAct<{ inserted: number; already_open: number; total_live: number }>(admin, "admin_request_corpus_turns", { ...scoped, p_reason: b.reason });
+  const done = adminDone<{ inserted: number; already_open: number; total_live: number }>(await admin.client.rpc("admin_request_corpus_turns", { ...scoped, p_reason: b.reason }));
   return reply(admin, { ok: true, ...done, ...("itemId" in b ? { already_open: done.already_open > 0 } : {}) });
 });
