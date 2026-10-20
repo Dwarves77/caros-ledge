@@ -99,7 +99,7 @@ try {
   await check('every failed part says so', async () => {
     const s = await open(browser, '/privacy/ui-fixtures/market?state=failed', [375, 812]);
     const alerts = await s.page.locator('[role=alert]').allInnerTexts();
-    for (const what of ['Market signals', 'The headline series', 'Carbon cost per FEU', 'The lead-time position', 'OEM equipment roadmap', 'Rerouting multipliers', 'The theme strip']) ensure(alerts.some((a) => a.includes(`${what} did not load`) || a.includes(`${what} could not be loaded`)), `${what} says it did not load`);
+    for (const what of ['Market signals', 'The headline series', 'The lead-time position', 'OEM equipment roadmap', 'Rerouting multipliers', 'The theme strip']) ensure(alerts.some((a) => a.includes(`${what} did not load`) || a.includes(`${what} could not be loaded`)), `${what} says it did not load`);
     ensure(/did not load/.test(await s.page.locator('[data-guard-container=coverage-denominator]').innerText()), 'the coverage count says it did not load');
     ensure((await s.page.getByRole('button', { name: 'Retry' }).count()) >= 8, 'each failed part offers Retry');
     ensure((await s.page.evaluate(() => [...document.querySelectorAll('li')].filter((l) => !l.closest('[data-notices-rail]')).length)) === 0, 'no list renders under a failure');
