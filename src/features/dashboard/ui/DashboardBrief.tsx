@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 
+import { refusalSentence } from "@/core/http/failure";
 import { BAND_ORDER, bandFromPriority } from "@/core/lists";
 import { formatDate, formatNumber } from "@/core/shared";
 import { CardFoot, ListRow, ListRowHeader, RailCard, SectionCard, SectionHead, SkeletonBandTile, StatBlock, StateNote, BandTile, BandTileRow } from "@/ui";
@@ -68,7 +69,7 @@ export function DashboardBrief(p: DashboardBriefProps) {
   const changedState = briefCardState(p.changedRows.length, p.rowsFailed);
   const failure = (
     <StateNote tone="error" action={{ label: "Retry", onClick: retry }}>
-      The brief did not load. Nothing was changed; try again.
+      {refusalSentence("brief_unavailable")}
     </StateNote>
   );
   const by = p.counts?.regulations.byPriority;
@@ -82,7 +83,7 @@ export function DashboardBrief(p: DashboardBriefProps) {
               <p className={styles.eyebrow}>Across the platform</p>
               {surfaceCounts === null ? (
                 <StateNote tone="error" action={{ label: "Retry", onClick: retry }}>
-                  Counts did not load.
+                  {refusalSentence("counts_unavailable")}
                 </StateNote>
               ) : (
                 <div className={styles.stats}>
@@ -125,7 +126,7 @@ export function DashboardBrief(p: DashboardBriefProps) {
         ))}
         {p.counts === null && (
           <StateNote tone="error" action={{ label: "Retry", onClick: retry }}>
-            The band counts did not load, so the tiles are blank rather than zero.
+            {refusalSentence("band_counts_unavailable")}
           </StateNote>
         )}
         <BandTileRow>{BAND_ORDER.map((band) => (by ? <BandTile key={band.key} band={band} count={by[band.priority]} href={bandHref(band.key)} /> : <SkeletonBandTile key={band.key} />))}</BandTileRow>
@@ -154,7 +155,7 @@ export function DashboardBrief(p: DashboardBriefProps) {
             {p.ratingsFailed && p.changedRows.length + p.dueRows.length > 0 && (
               <div className="cl-pad-16">
                 <StateNote tone="error" action={{ label: "Retry", onClick: retry }}>
-                  Source ratings did not load, so tiers are not shown on these rows.
+                  {refusalSentence("ratings_unavailable")}
                 </StateNote>
               </div>
             )}

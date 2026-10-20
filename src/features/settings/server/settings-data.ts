@@ -3,6 +3,7 @@
 // The /settings page's whole read is ONE call: load_settings_bundle (migration 0038) answers the team archive, the personal archive, the replacements of the archived items and the supersessions together.
 import { isMissingObject } from "@/core/db/absent";
 import { LOOKUP_SENTENCE } from "@/core/http/errors";
+import { refusalSentence } from "@/core/http/failure";
 import { log } from "@/core/shared/log";
 import type { Db } from "@/core/db/clients";
 import { detailHref } from "@/core/lists";
@@ -52,7 +53,7 @@ export async function readSettingsData(db: Db, who: { orgId: string | null; user
   const { data, error } = await db.rpc("load_settings_bundle", { p_org_id: who.orgId, p_user_id: who.userId, p_limit: LIMIT });
   if (error || !data) {
     log.warn("[settings] load_settings_bundle failed:", error?.message ?? "the bundle was empty");
-    const sentence = isMissingObject(error) ? "This section is not available yet. Try again later." : LOOKUP_SENTENCE;
+    const sentence = isMissingObject(error) ? refusalSentence("section_not_available") : LOOKUP_SENTENCE;
     return { archive: failed(sentence), supersessions: failed(sentence) };
   }
   const b = data as Bundle;

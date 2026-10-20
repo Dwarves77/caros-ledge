@@ -30,7 +30,7 @@ SELECT s.id AS source_id,
        greatest(c.last_capture_at, w.last_capture_at) AS last_capture_at,
        CASE
          WHEN coalesce(i.items_count, 0) >= 1 THEN 'collected'
-         WHEN s.collection_state = 'access_requested' THEN 'uncollected'
+         WHEN s.collection_state = 'access_requested' THEN 'access_requested'
          WHEN s.collection_state IN ('refused', 'robots_disallowed') THEN 'refused'
          ELSE 'uncollected'
        END AS state

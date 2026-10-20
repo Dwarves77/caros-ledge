@@ -48,7 +48,9 @@ export function ok(headers: Record<string, string>, body: unknown, status = 200)
 export function dbError(error: { message: string; code?: string | null }, messages: { forbidden?: string; notFound?: string } = {}): HttpError {
   const status = statusForDb(error.code);
   const sentence = (status === 403 ? messages.forbidden : status === 404 ? messages.notFound : undefined) ?? DB_SENTENCES[String(status)] ?? (DB_SENTENCES["500"] as string);
-  return new HttpError(status, `database ${error.code ?? "error"}: ${error.message}`, status === 503 ? { "Retry-After": "1" } : {}, sentence);
+  // The driver's code and message go to the log here, once; the error that travels carries the code and the customer sentence only.
+  log.warn(`[http] database ${error.code ?? "error"} answered ${status}:`, error.message);
+  return new HttpError(status, `database ${error.code ?? "error"}`, status === 503 ? { "Retry-After": "1" } : {}, sentence);
 }
 
 /** An HttpError as its response: the public sentence in the body, the held-back detail in the log. */

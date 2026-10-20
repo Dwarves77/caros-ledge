@@ -4,6 +4,7 @@
 // Ported from old_repo/src/components/admin/CoverageMatrixView.tsx (lines 719-762)
 import { useState } from "react";
 
+import { refusalSentence } from "@/core/http/failure";
 import { formatNumber } from "@/core/shared";
 import { Button, EmptyState, FilterChip, FilterChipGroup, StatBlock, Switch } from "@/ui";
 
@@ -101,7 +102,7 @@ export function CoverageMatrixView({ onBulkAdd }: { onBulkAdd: (iso: string) => 
                   {formatNumber(d.sources.not_collected)} of {formatNumber(d.sources.total)} registered sources not yet collected ({formatNumber(d.sources.collected)} collected, {formatNumber(d.sources.refused)} refused, {formatNumber(d.sources.access_requested)} with access requested).
                 </p>
               ) : (
-                <p className={styles.note}>Source collection did not load. Reload to try again.</p>
+                <p className={styles.note}>{refusalSentence("admin_coverage_unavailable")}</p>
               )}
               <div className={styles.grid3}>
                 <StatBlock label="Covered" value={formatNumber(count("covered"))} />

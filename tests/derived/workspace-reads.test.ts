@@ -5,6 +5,7 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
 import { statusWord } from "@/core/detail/status-words";
+import { log } from "@/core/shared/log";
 import { readFailure, DB_SENTENCES } from "@/core/http/failure";
 import { cleanPreContractBriefText } from "@/ui/detail/CrossPageSection";
 import { readMarket } from "@/features/market/read";
@@ -67,17 +68,17 @@ test("INV-272 a status token is drawn in words, an unknown one in none", () => {
 });
 
 test("I16 a browser-client failure reaches the page as the table's sentence for its class, never the driver's text, a constraint or a code", () => {
-  const log: unknown[][] = [];
-  const warn = console.warn;
-  console.warn = (...a: unknown[]) => void log.push(a);
+  const logged: unknown[][] = [];
+  const warn = log.warn;
+  log.warn = (...a: Parameters<typeof log.warn>) => void logged.push(a);
   try {
     assert.equal(readFailure({ message: 'duplicate key value violates unique constraint "profiles_pkey"', code: "23505" }), DB_SENTENCES["409"]);
     assert.equal(readFailure({ message: "canceling statement due to statement timeout", code: "57014" }), DB_SENTENCES["503"]);
     assert.equal(readFailure({ message: "permission denied for table secret", code: "42501" }), DB_SENTENCES["403"]);
     assert.equal(readFailure({ message: "boom" }), DB_SENTENCES["500"]);
   } finally {
-    console.warn = warn;
+    log.warn = warn;
   }
-  assert.equal(log.length, 4, "the driver's message is logged, once per failure");
-  assert.ok(log.every((l) => /database/.test(String(l[0]))));
+  assert.equal(logged.length, 4, "the driver's message is logged, once per failure");
+  assert.ok(logged.every((l) => /database/.test(String(l[0]))));
 });

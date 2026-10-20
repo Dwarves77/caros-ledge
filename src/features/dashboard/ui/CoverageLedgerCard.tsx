@@ -4,6 +4,7 @@
 // sources alone; a failed read is a stated failure with Retry.
 import { useRouter } from "next/navigation";
 
+import { refusalSentence } from "@/core/http/failure";
 import { formatDate, formatNumber } from "@/core/shared";
 import { RailCard, StateNote } from "@/ui";
 import { notCollected, type SourceCoverage } from "@/core/derived/source-coverage";
@@ -18,7 +19,7 @@ export function CoverageLedgerCard({ coverage }: { coverage: SourceCoverage | nu
     <RailCard title="Source coverage" dataAudit="coverage-ledger-card" titleHref="/dashboard/coverage">
       {coverage === null ? (
         <StateNote tone="error" action={{ label: "Retry", onClick: () => router.refresh() }}>
-          Source coverage did not load.
+          {refusalSentence("coverage_unavailable")}
         </StateNote>
       ) : coverage.total === 0 ? (
         <StateNote>No sources are registered yet.</StateNote>

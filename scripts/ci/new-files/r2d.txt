@@ -6,7 +6,7 @@ src/core/derived/source-coverage.ts | new in R2d: the source_coverage view's rea
 src/core/derived/suppressed-events.ts | new in R2d: the forward events an admin took out by suppressing the claim they came from (flywheel:21)
 src/core/detail/status-words.ts | new in R2d: the status token of an inference in the words a customer reads, importable by a client component (INV-272)
 src/core/http/failure.ts | new in R2d: the table of customer sentences by status and the browser-client read failure sentence (I16)
-src/core/http/data/db-sentences.json | new in R2d: the customer sentence for each status a database failure answers; data for failure.ts
+src/core/http/data/sentences.json | new in R2d: the ONE table of customer sentences: one per status a database failure answers and one per stated refusal of a read; data for failure.ts
 src/core/jurisdictions/data/subdivisions.json | new in R2d: the subdivision names the tier table lists by code alone (core:41); data for iso.ts
 src/features/dashboard/ui/CoverageLedgerCard.tsx | new in R2d: the dashboard's source coverage card, from the source_coverage view (addendum A)
 src/features/market/lib/data/item-type.json | new in R2d: the one customer word for each stored item type (surfaces:20); data for item-type.ts

@@ -1,4 +1,5 @@
 // Ported from old_repo/src/components/dashboard/DashboardMasthead.tsx (lines 51-90)
+import { refusalSentence } from "@/core/http/failure";
 import { formatNumber } from "@/core/shared";
 import { ALL_SECTORS } from "@/core/workspace";
 import { Absence, Masthead } from "@/ui";
@@ -16,7 +17,7 @@ export function DashboardMasthead({ firstName, orgName, sectors, itemCount, juri
   const dek = (
     <>
       <div>
-        {noWorkspace ? null : `${itemCount === null ? "The item count did not load" : `${formatNumber(itemCount)} items across ${SURFACES.length} surfaces`} · ${jurisdictionCount === null ? "the jurisdiction count did not load" : `${formatNumber(jurisdictionCount)} jurisdictions`} · `}scoped to {orgName || <Absence reason="not in primary source" />}
+        {noWorkspace ? null : `${itemCount === null ? refusalSentence("masthead_items_unavailable") : `${formatNumber(itemCount)} items across ${SURFACES.length} surfaces`} · ${jurisdictionCount === null ? refusalSentence("masthead_jurisdictions_unavailable") : `${formatNumber(jurisdictionCount)} jurisdictions`} · `}scoped to {orgName || <Absence reason="not in primary source" />}
       </div>
       <div>Verticals: {verticals.length > 0 ? verticals.join(", ") : <Absence reason="not in primary source" />}</div>
     </>

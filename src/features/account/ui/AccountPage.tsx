@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { useState } from "react";
 
+import { refusalSentence } from "@/core/http/failure";
 import { formatLocaleDate, formatNumber } from "@/core/shared";
 import type { OrgRole } from "@/core/types";
 import { RailCard, SectionCard, StatBlock, StateNote } from "@/ui";
@@ -67,10 +68,10 @@ export function AccountPage({ userId, userEmail, orgId, orgName, role, nowIso, i
         <>
           <SectionCard padding="14px 16px">
             <div className={styles.statGrid}>
-              <StatBlock label="Sectors followed" loading={account.loading} value={formatNumber(sectors.length)} note={errors.sectors ? "Could not load" : highlightedCount(sectors) > 0 ? `${highlightedCount(sectors)} highlighted niches` : "No highlighted niches yet"} />
-              <StatBlock label="Home jurisdictions" value={errors.profile ? "—" : formatNumber(jurisdictions.length)} note={errors.profile ? "Could not load" : jurisdictions.length > 0 ? jurisdictions.slice(0, 3).join(" · ") : "None followed yet"} />
-              <StatBlock label="Member since" value={since ?? "—"} note={errors.profile ? "Could not load" : orgName ? `${orgName}${role ? ` · ${role}` : ""}` : since ? workspaceLabel(identityStatus, "Not in a workspace") : "Join date not recorded"} />
-              <StatBlock label="Plan" value={org ? capitalize(org.org.plan) : "—"} note={errors.org ? "Could not load" : "Billing, owner only"} />
+              <StatBlock label="Sectors followed" loading={account.loading} value={formatNumber(sectors.length)} note={errors.sectors ? refusalSentence("tile_unavailable") : highlightedCount(sectors) > 0 ? `${highlightedCount(sectors)} highlighted niches` : "No highlighted niches yet"} />
+              <StatBlock label="Home jurisdictions" value={errors.profile ? "—" : formatNumber(jurisdictions.length)} note={errors.profile ? refusalSentence("tile_unavailable") : jurisdictions.length > 0 ? jurisdictions.slice(0, 3).join(" · ") : "None followed yet"} />
+              <StatBlock label="Member since" value={since ?? "—"} note={errors.profile ? refusalSentence("tile_unavailable") : orgName ? `${orgName}${role ? ` · ${role}` : ""}` : since ? workspaceLabel(identityStatus, "Not in a workspace") : "Join date not recorded"} />
+              <StatBlock label="Plan" value={org ? capitalize(org.org.plan) : "—"} note={errors.org ? refusalSentence("tile_unavailable") : "Billing, owner only"} />
             </div>
           </SectionCard>
           <section aria-label="Quick links">
