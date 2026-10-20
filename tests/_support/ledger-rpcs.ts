@@ -44,7 +44,7 @@ function write(db: MemDb, table: string, op: Op, payload: unknown): void {
   if (injected) throw new Refusal(injected, "XX000");
   db.calls.push(call);
 }
-const after = (db: MemDb, table: string, op: Op, payload: unknown): void => db.afterWrite?.({ table, op, payload, filters: [] }, db);
+const after = (db: MemDb, table: string, op: Op, payload: unknown): void => db.afterWrite?.({ table, op, payload, filters: [], orders: [] }, db);
 
 function archive(db: MemDb, old: Row, reason: string, proof: unknown, note: unknown, now: unknown): number {
   const rows = db.rows("claim_versions");
