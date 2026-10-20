@@ -28,6 +28,3 @@ export function facetLabel(group: FacetLabelGroup, stored: string): string {
   if (group === "region" && trimmed.length <= 3) return trimmed;
   return sentenceCase(trimmed);
 }
-
-/** The table, for the one test that reads it against what the facets draw. */
-export const FACET_LABEL_TABLE = TABLE.labels;

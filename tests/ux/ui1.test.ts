@@ -8,7 +8,8 @@ import { createElement } from "react";
 import { BAND_ORDER } from "@/core/lists";
 import type { Resource } from "@/core/types";
 import { liveFacetCounts } from "@/ui/list-surface";
-import { FACET_LABEL_TABLE, facetLabel } from "@/ui/list-surface/facet-labels";
+import { facetLabel } from "@/ui/list-surface/facet-labels";
+import table from "@/ui/list-surface/facet-labels.json";
 import { EMPTY_FILTER_STATE } from "@/ui/list-surface/filter-sort";
 import { NextObligationLine } from "@/features/regulations/NextObligationLine";
 import { ListRow } from "@/ui/ListRow";
@@ -58,7 +59,7 @@ test("INV-UI1-5: facet labels are sentence case from the one label table; the st
 });
 
 test("INV-UI1-5: every entry of the label table is what the facets draw for that stored value, in any stored case", () => {
-  for (const [group, entries] of Object.entries(FACET_LABEL_TABLE)) {
+  for (const [group, entries] of Object.entries(table.labels)) {
     for (const [key, label] of Object.entries(entries)) {
       assert.match(label, /^[A-Z]/, `${group}.${key} is sentence case`);
       for (const stored of [key, key.toUpperCase(), key.replace(/ /g, "_"), key.charAt(0).toUpperCase() + key.slice(1)]) assert.equal(facetLabel(group as "mode" | "topic" | "region", stored), label, `${group}: ${stored}`);
