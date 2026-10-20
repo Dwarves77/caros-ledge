@@ -38,7 +38,7 @@ export function renderReadme(rows: readonly GoldenRow[]): string {
     "",
     table("licence class (worst over cited documents)", count(all, rowLicence)),
     "",
-    "Documents whose reuse terms are recorded as `terms_unverified` (not in the source-licence register):",
+    "Documents whose register verdict is `unverified`, or that have no register entry (`terms_unverified`):",
     "",
     ...unverifiedDocs,
     "",

@@ -84,7 +84,8 @@ test("structure: no quotation marks, and probes against a licence-red document a
 
 test("every document is registered with a licence class; no register entry means terms_unverified, never open", () => {
   assert.equal(licenceClass("glec_v3_0"), "prohibited");
-  assert.equal(licenceClass("ghgp_cat4"), "terms_unverified");
+  assert.equal(licenceClass("ghgp_cat4"), "prohibited", "the GHG Protocol Terms of Use withhold reuse (R2g)");
+  assert.equal(licenceClass("mrv_annex_council"), "terms_unverified", "the Council notice could not be read (R2g)");
   for (const k of Object.keys(DOCUMENTS)) assert.ok(["prohibited", "conditional", "terms_unverified", "permitted"].includes(licenceClass(k)));
 });
 
