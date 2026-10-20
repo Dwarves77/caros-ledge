@@ -6,7 +6,6 @@
 import { admitItems } from "@/core/derived/admissible";
 import type { Db } from "@/core/db";
 import { fetchAllRows, qb } from "@/core/db";
-
 import { notInList, suppressedEventIds } from "@/core/derived/suppressed-events";
 
 export const UNCLASSIFIED_KEY = "unclassified";

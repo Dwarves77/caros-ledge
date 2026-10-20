@@ -71,6 +71,11 @@
    "where": "src/features/regulations/map/MapView.tsx",
    "shape": "entity-in-a-js-string",
    "why": "The map tile attribution is an HTML fragment the map library renders as HTML, where the entity is decoded."
+  },
+  {
+   "where": "src/features/admin/ui/RuntimeViews.tsx",
+   "shape": "status-token-in-a-sentence",
+   "why": "The platform admin console lists the inference ledger with the stored status token beside the claim: an operator surface (DP-1), not a customer page."
   }
  ]
 }

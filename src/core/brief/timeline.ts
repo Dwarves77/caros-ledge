@@ -16,7 +16,17 @@ import { MONTH_NAMES, MONTHS, MONTHS_ANY_RE } from "./vocab";
 
 export interface Normalised { iso: string; precision: string }
 export interface TimelineEntry { date: string; label: string; source: string | null }
-export interface TimelineRow { milestone_date: string; label: string; is_completed: boolean; sort_order: number }
+/** `date_precision` is how exact `milestone_date` is (a period start is sort order only): the readers show a year or a month for it and never a day (0094). */
+export interface TimelineRow { milestone_date: string; date_precision: string; label: string; is_completed: boolean; sort_order: number }
+
+/** The precisions whose date is a real day: a due-date count may be drawn from them and from no other. */
+const EXACT_DAY = new Set(["day", "qualified"]);
+const isExactDay = (precision: string | null | undefined): boolean => EXACT_DAY.has(String(precision));
+/** The date text a reader hands a row: the whole day for an exact one, the month for a month, the year for anything coarser (a quarter, a half, "early 2027", a range): never a day that was not stated. */
+export function timelineDateOf(milestoneDate: string, precision: string | null | undefined): string {
+  if (isExactDay(precision)) return milestoneDate;
+  return precision === "month" ? milestoneDate.slice(0, 7) : milestoneDate.slice(0, 4);
+}
 
 const pad = (n: number) => String(n).padStart(2, "0");
 const iso = (y: number, m: number, d: number) => `${y}-${pad(m)}-${pad(d)}`;
@@ -67,7 +77,7 @@ export function toIsoDate(token: string | null | undefined): Normalised | null {
  */
 export function buildTimelineRows(entries: TimelineEntry[] | null | undefined, todayIso: string): { rows: TimelineRow[]; skipped: { date: string; label: string; reason: string }[] } {
   const skipped: { date: string; label: string; reason: string }[] = [];
-  const parsed: { milestone_date: string; label: string }[] = [];
+  const parsed: { milestone_date: string; date_precision: string; label: string }[] = [];
   for (const e of entries ?? []) {
     if (!e?.label?.trim()) {
       skipped.push({ date: e?.date ?? "", label: e?.label ?? "", reason: "empty label" });
@@ -79,7 +89,7 @@ export function buildTimelineRows(entries: TimelineEntry[] | null | undefined, t
       continue;
     }
     const base = e.source ? `${e.label.trim()} (${e.source.trim()})` : e.label.trim();
-    parsed.push({ milestone_date: norm.iso, label: (norm.precision === "day" ? base : `${e.date.trim()} — ${base}`).slice(0, 500) });
+    parsed.push({ milestone_date: norm.iso, date_precision: norm.precision, label: (norm.precision === "day" ? base : `${e.date.trim()} — ${base}`).slice(0, 500) });
   }
   parsed.sort((a, b) => (a.milestone_date < b.milestone_date ? -1 : a.milestone_date > b.milestone_date ? 1 : 0));
   const seen = new Set<string>();
@@ -222,15 +232,20 @@ export function extractForwardEventDate(events: DeriveInput["forwardEvents"]): (
   const obligation = String(earliest.obligation_text ?? "").trim();
   return { token: compact(earliest.event_date, precision), iso: earliest.event_date, precision, baseLabel: obligation ? `${kind}: ${obligation}` : kind };
 }
-/** Step 6: a dateline in the first 400 characters (Published DD Month YYYY, a bare date) or a <time datetime> tag. */
-export function extractDatelineDate(capturedText: string | null | undefined): Hit | null {
+const PUBLISHED_LABEL = "Published (from the source page)";
+/**
+ * Step 6: a date the page introduces with a publication marker (Published, Dated, Issued) or a <time datetime> tag is labelled Published. A bare "D Month YYYY" in the first 400 characters is any date
+ * (an amended instrument's, an entry into force, a cited item's): it is used when nothing better exists and says only that it was found on the page (F:13).
+ */
+export function extractDatelineDate(capturedText: string | null | undefined): (Hit & { baseLabel: string }) | null {
   if (!capturedText) return null;
   const w = capturedText.slice(0, 400);
-  const pub = /\bPublished\s+(\d{1,2}(?:st|nd|rd|th)?\s+[A-Za-z]+\s+\d{4})\b/i.exec(w);
+  const marked = /\b(?:Published|Dated|Issued)(?:\s+on)?\s*:?\s+(\d{1,2}(?:st|nd|rd|th)?\s+[A-Za-z]+\s+\d{4})\b/i.exec(w);
   const bare = /\b(\d{1,2}(?:st|nd|rd|th)?\s+[A-Za-z]+\s+\d{4})\b/i.exec(w);
   const tag = /<time\b[^>]*\bdatetime=["']([^"']+)["'][^>]*>/i.exec(capturedText);
   const dt = tag ? /^(\d{4}-\d{2}-\d{2})/.exec(tag[1] ?? "")?.[1] : undefined;
-  return (pub ? hit(pub[1] ?? "", pub[1]) : null) ?? (bare ? hit(bare[1] ?? "", bare[1]) : null) ?? (dt ? hit(dt, dt) : null);
+  const found = (h: Hit | null, baseLabel: string) => (h ? { ...h, baseLabel } : null);
+  return found(marked ? hit(marked[1] ?? "", marked[1]) : null, PUBLISHED_LABEL) ?? found(dt ? hit(dt, dt) : null, PUBLISHED_LABEL) ?? found(bare ? hit(bare[1] ?? "", bare[1]) : null, "Date found on the source page");
 }
 const dayOf = (ts: string | null | undefined): Hit | null => {
   const d = /^(\d{4}-\d{2}-\d{2})/.exec(ts ?? "")?.[1];
@@ -238,6 +253,8 @@ const dayOf = (ts: string | null | undefined): Hit | null => {
 };
 export const CAPTURED_FALLBACK_SORT_ORDER = 999;
 export const RECORDED_FALLBACK_SORT_ORDER = 1000;
+/** The sort order the title-derived captured and recorded fallbacks take (below): they say when the pipeline saw the item, not when the instrument was dated, so no reader shows them as a milestone. */
+export const isInstrumentMilestone = (sortOrder: number | null | undefined): boolean => (sortOrder ?? 0) < CAPTURED_FALLBACK_SORT_ORDER;
 const containsCi = (text: string | null | undefined, token: string | null | undefined): boolean => !!text && !!token && text.toLowerCase().includes(token.toLowerCase());
 
 /** The longest usable capture (over 200 trimmed characters) among the item's captures, whole row, or null. */
@@ -270,7 +287,7 @@ export function deriveTimeline(input: DeriveInput): { result: Derived | null; at
   if (fe) return done("forward_event", fe, fe.baseLabel);
   attempts.push({ step: "forward_event", outcome: "no-events" });
   const dl = extractDatelineDate(input.capturedText);
-  if (dl) return done("dateline", dl, "Published (from the source page)");
+  if (dl) return done("dateline", dl, dl.baseLabel);
   attempts.push({ step: "dateline", outcome: "no-match" });
   const cap = dayOf(input.bestCapture?.searched_at);
   if (cap) return done("captured", cap, "Captured (source page retrieved on this date; not the instrument's own date)");
@@ -283,7 +300,7 @@ export function deriveTimeline(input: DeriveInput): { result: Derived | null; at
 /** A derivation as the item_timelines row (the precision-honest label), the captured and recorded fallbacks sorting last. */
 export function derivedTimelineRow(d: Derived, todayIso: string): TimelineRow {
   const label = (d.precision === "day" ? d.baseLabel : `${d.token} - ${d.baseLabel}`).slice(0, 500);
-  return { milestone_date: d.iso, label, is_completed: d.iso < todayIso, sort_order: d.source === "recorded" ? RECORDED_FALLBACK_SORT_ORDER : d.source === "captured" ? CAPTURED_FALLBACK_SORT_ORDER : 0 };
+  return { milestone_date: d.iso, date_precision: d.precision, label, is_completed: d.iso < todayIso, sort_order: d.source === "recorded" ? RECORDED_FALLBACK_SORT_ORDER : d.source === "captured" ? CAPTURED_FALLBACK_SORT_ORDER : 0 };
 }
 
 // ---- Gate B: annual-rule consistency of a derived date --------------------------------------------------------

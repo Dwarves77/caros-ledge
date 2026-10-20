@@ -4,7 +4,6 @@
 // trend, as-of date, freshness and the rating of its source. ONE methodology drawer under the strip; the panel is the worst freshness on the board. Everything it shows comes from headlineCardView.
 import Link from "next/link";
 
-import { formatNumber } from "@/core/shared";
 import { TierChip } from "@/ui";
 import { SectionCard } from "@/ui/SectionCard";
 

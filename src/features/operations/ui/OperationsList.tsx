@@ -14,7 +14,6 @@ import { filterRows, LegendRailCard, liveFacetCounts, ListSurface, ThemeStrip, u
 import { ShellCommandBar } from "@/ui/shell/CommandBar";
 import { DenominatorLine } from "@/features/coverage";
 import { useTagsFacet } from "@/features/regulations/useTagsFacet";
-
 import { rowMeta } from "@/features/market/lib/item-type";
 
 import { bandedRows } from "../../research/ui/rows";

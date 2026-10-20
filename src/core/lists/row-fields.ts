@@ -37,13 +37,13 @@ export const watchTypeForItem = (item: { type?: string | null; domain?: number |
 
 export function jurisdictionCode(r: { jurisdictionIso?: string[] | undefined; jurisdiction?: string | undefined }): string {
   const iso = r.jurisdictionIso?.[0];
-  return iso ? iso.toUpperCase() : r.jurisdiction ? r.jurisdiction.toUpperCase() : "GLOBAL";
+  return iso ? iso.toUpperCase() : r.jurisdiction ? r.jurisdiction.toUpperCase() : "—";
 }
 
-/** The nearest future date among the deadline and the timeline, by UTC day. */
+/** The nearest future date among the deadline and the timeline, by UTC day. Only a stated day counts: a timeline entry the reader gave as a year or a month ("2027", "2027-03") is a period, not a due date (F:12). */
 export function dueInfo(r: Resource, now: Date): DueInfo | null {
   const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
-  const raws = [r.complianceDeadline, ...(r.timeline ?? []).map((t) => t.date)].filter((x): x is string => !!x);
+  const raws = [r.complianceDeadline, ...(r.timeline ?? []).map((t) => t.date)].filter((x): x is string => !!x && /^\d{4}-\d{2}-\d{2}(?:T|$)/.test(x));
   let best: number | null = null;
   for (const raw of raws) {
     const ms = new Date(raw + (raw.length === 10 ? "T00:00:00Z" : "")).getTime();

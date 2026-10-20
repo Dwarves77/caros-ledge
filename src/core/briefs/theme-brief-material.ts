@@ -6,8 +6,8 @@ import { fetchAllByIdChunks, fetchAllRows } from "@/core/db";
 import { detectGaps } from "@/core/flywheel/gaps";
 import { computeMemberHash, lineageFromThemeDelta, resolveBriefForTheme } from "@/core/flywheel/themes";
 import { surfaceOf } from "@/core/routing";
+import { admissibleRows, type AdmissibleRows } from "@/core/derived/admissible";
 
-import { admissibleRows, type AdmissibleRows } from "./admissible";
 import { figureCoverage, figureTokens, type ClaimComparator, type ThemeContext } from "./theme-brief-contract";
 
 export interface ThemeRow { id: string; member_ids: string[] | null; dominant_signals?: unknown; surfaces: string[] | null; density?: number | null; convergence?: number | null; pivots?: { id: string }[] | null }
@@ -78,8 +78,8 @@ export interface MaterialOpts {
   seams?: ThemeBriefSeams;
 }
 /**
- * The two readers the theme-brief path goes through, behind ONE member: the comparator of a listed claim against its grounded text (R2a's typed figure comparator) and the admissible-row predicate (a local stand-in
- * until R2d's lands, then it replaces admissibleRows): members, claims and events that fail it never reach the author.
+ * The two readers the theme-brief path goes through, behind ONE member: the comparator of a listed claim against its grounded text (R2a's typed figure comparator) and the admissible-row predicate
+ * (core/derived/admissible.ts, the one every reader takes): members, claims and events that fail it never reach the author.
  */
 export interface ThemeBriefSeams { comparator: ClaimComparator; admissible: AdmissibleRows }
 export const themeBriefSeams: ThemeBriefSeams = { comparator: figureCoverage, admissible: admissibleRows };

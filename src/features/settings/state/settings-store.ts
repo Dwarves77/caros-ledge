@@ -5,6 +5,7 @@
 // Ported from old_repo/src/stores/settingsStore.ts (lines 206-261)
 import { create } from "zustand";
 
+import { readFailure } from "@/core/http/failure";
 import { browserClient } from "@/core/db/browser";
 import type { Db } from "@/core/db/clients";
 import { log } from "@/core/shared/log";
@@ -175,7 +176,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => {
       // A failed read shows the defaults for this session and leaves orgId unset, so no save can overwrite the stored row with them.
       if (error) {
         log.warn(`[settings-store] workspace_settings read failed (defaults shown, saves held): ${error.message}`);
-        set({ orgId: null, loaded: true, loadError: error.message });
+        set({ orgId: null, loaded: true, loadError: readFailure(error) });
         return;
       }
       if (!data) {

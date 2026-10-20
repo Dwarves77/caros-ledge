@@ -45,10 +45,9 @@ test("surfaces:32 the profile reads the region roster once, and a failed roster 
   await assert.rejects(route(), /refused by the page sweep/);
 });
 
-test("surfaces:1 and 38 the Watch control is live or absent, never dead: the kit's provider-less ItemWatch is used nowhere in the features, and a membership read that failed is a stated failure with Retry, not a disabled control that looks unwatched", async () => {
-  const { readdirSync, readFileSync, statSync } = await import("node:fs");
-  const walk = (d: string): string[] => readdirSync(d).flatMap((n) => { const p = `${d}/${n}`; return statSync(p).isDirectory() ? walk(p) : /\.tsx?$/.test(n) ? [p] : []; });
-  assert.deepEqual(walk("src/features").filter((f) => /^import[^\n]*\bItemWatch\b/m.test(readFileSync(f, "utf8"))), [], "ItemWatch reads a context nothing provides");
+test("surfaces:1 and 38 the Watch control is live or absent, never dead: the kit's provider-less ItemWatch is deleted, and a membership read that failed is a stated failure with Retry, not a disabled control that looks unwatched", async () => {
+  const { existsSync } = await import("node:fs");
+  assert.equal(existsSync("src/ui/detail/watch.tsx"), false, "ItemWatch read a context nothing provides: every detail page drew a permanently disabled Watch");
   const { createElement } = await import("react");
   const { DetailWatch } = await import("@/features/workspace/ui/DetailWatch");
   const { loadMembership, resetMembership } = await import("@/features/watchlist/membership");

@@ -31,10 +31,10 @@ const SRC = "b0000000-0000-4000-8000-000000000001";
 const regions: Row[] = [{ id: R_EU, code: "EU", label: "European Union", display_order: 1, iso_codes: ["DE", "FR"] }, { id: R_US, code: "US", label: "United States", display_order: 2, iso_codes: ["US-CA"] }];
 const roster: OperationsRegion[] = [{ id: R_EU, code: "EU", label: "European Union", displayOrder: 1, isoCodes: ["DE", "FR"] }, { id: R_US, code: "US", label: "United States", displayOrder: 2, isoCodes: ["US-CA"] }];
 const sources: Row = { id: SRC, name: "Eurostat", url: "https://ec.europa.eu/eurostat", base_tier: 1, tier_override: null, effective_tier: null };
-const factRow = (o: Row = {}): Row => ({ id: "f0000000-0000-4000-8000-000000000001", region_id: R_EU, dimension: "labor_markets", fact_label: "EU - Labour cost", value: "40.4 EUR/hour", value_numeric: "40.4", unit: "EUR/hour", currency: "EUR", derivation: "observed", origin_class: "official", source_key: "eurostat", source_ref: "lc", n_observations: null, method_version: "v1", as_at_date: "2025-01-01", reference_period: "2025", last_updated: "2025-01-01", source_id: SRC, status: null, trend: "up", source_note: null, ...o });
+const factRow = (o: Row = {}): Row => ({ id: "f0000000-0000-4000-8000-000000000001", region_id: R_EU, dimension: "labor_markets", fact_label: "EU - Labour cost", value: "40.4 EUR/hour", value_numeric: "40.4", unit: "EUR/hour", currency: "EUR", derivation: "observed", origin_class: "official", source_key: "eurostat", source_ref: "lc", n_observations: null, method_version: "eurostat-lc-lci-lev-parser@1", as_at_date: "2025-01-01", reference_period: "2025", last_updated: "2025-01-01", source_id: SRC, status: null, trend: "up", source_note: null, ...o });
 
 test("INV-263: the facts carry the registered source's customer tier, a numeric envelope, and a freshness DERIVED from the row's date against the injected instant (1.8 years old against an annual cadence is ageing)", async () => {
-  const { db } = memoryDb({ regions, sources: [sources], regional_data_facts: [factRow(), factRow({ id: "f0000000-0000-4000-8000-000000000002", region_id: "ffffffff-ffff-4fff-8fff-ffffffffffff" }), factRow({ id: "f0000000-0000-4000-8000-000000000003", last_updated: "2026-09-01", trend: "sideways", source_id: null })] });
+  const { db } = memoryDb({ regions, sources: [sources], regional_data_facts: [factRow(), factRow({ id: "f0000000-0000-4000-8000-000000000002", region_id: "ffffffff-ffff-4fff-8fff-ffffffffffff" }), factRow({ id: "f0000000-0000-4000-8000-000000000003", last_updated: "2026-09-01", as_at_date: "2026-09-01", trend: "sideways", source_id: null })] });
   const facts = await readFacts(db, roster, NOW);
   assert.equal(facts.length, 2, "a fact whose region is not on the roster is dropped, not given a placeholder code");
   const f = facts.find((x) => x.sourceName === "Eurostat");
@@ -44,7 +44,7 @@ test("INV-263: the facts carry the registered source's customer tier, a numeric 
 });
 
 test("INV-263: every Operations read fails on its own; the roster failing leaves coverage and facts null (not empty), a facts failure leaves the roster, the list rows and the tallies standing", async () => {
-  const rpc = (name: string) => (name === "get_operations_items_public" ? { data: [] } : name === "get_surface_counts" ? { data: { total_items: 0 } } : undefined);
+  const rpc = (name: string) => (name === "get_operations_items" ? { data: [] } : name === "get_surface_counts" ? { data: { total_items: 0 } } : undefined);
   const base = { regions, region_dimension_coverage: [], regional_data_facts: [], state_cost_facts: [], intelligence_items: [], derived_values: [] };
   const rosterDown = world(base, rpc, [{ table: "regions", op: "select", message: "boom" }]);
   const a = await readOperationsPage(rosterDown, NOW, "org-1");
@@ -53,7 +53,7 @@ test("INV-263: every Operations read fails on its own; the roster failing leaves
   const factsDown = world(base, rpc, [{ table: "regional_data_facts", op: "select", message: "boom" }]);
   const b = await readOperationsPage(factsDown, NOW, "org-1");
   assert.deepEqual([b.roster?.length, b.facts, Array.isArray(b.coverage)], [2, null, true]);
-  const rowsDown = world(base, (name) => (name === "get_operations_items_public" ? { data: null, error: { message: "rpc down" } } : rpc(name)));
+  const rowsDown = world(base, (name) => (name === "get_operations_items" ? { data: null, error: { message: "rpc down" } } : rpc(name)));
   assert.equal((await readOperationsPage(rowsDown, NOW, "org-1")).rowsFailed, true, "a failed list is a failure, not an empty list");
 });
 
@@ -64,7 +64,7 @@ test("the regulation count per region counts only the verified items the routing
     { id: "c0000000-0000-4000-8000-000000000003", item_type: "regional_data", domain: 3, jurisdictions: ["EU"], jurisdiction_iso: null, is_archived: false, provenance_status: "verified" },
     { id: "c0000000-0000-4000-8000-000000000004", item_type: "regulation", domain: 1, jurisdictions: ["EU"], jurisdiction_iso: null, is_archived: false, provenance_status: "unverified" },
   ];
-  const db = world({ regions, region_dimension_coverage: [], regional_data_facts: [], state_cost_facts: [], intelligence_items: items, derived_values: [] }, (n) => (n === "get_operations_items_public" ? { data: [] } : n === "get_surface_counts" ? { data: { total_items: 0 } } : undefined));
+  const db = world({ regions, region_dimension_coverage: [], regional_data_facts: [], state_cost_facts: [], intelligence_items: items, derived_values: [] }, (n) => (n === "get_operations_items" ? { data: [] } : n === "get_surface_counts" ? { data: { total_items: 0 } } : undefined));
   assert.deepEqual((await readOperationsPage(db, NOW, "org-1")).linkedRegulations, { EU: 2, US: 1 });
 });
 
@@ -98,7 +98,7 @@ test("the recalculated figures are the CURRENT rows resting on Operations inputs
   assert.deepEqual(f.inputs.map((i) => [i.label, i.period, i.sourceName]), [["EUR/USD", "2026-10-15", "European Central Bank"]]);
   assert.equal(typeof f.tier, "number", "rated through the publisher's host class");
   assert.doesNotMatch(JSON.stringify(f), /market_series|derived_values|market_series_delta|obligations/, "no table or method name reaches a customer string");
-  await assert.rejects(readDerivedFigures(memoryDb({}, { failures: [{ table: "derived_values", op: "select", message: "boom" }] }).db), /boom/, "a failed read throws; the page marks the panel failed");
+  await assert.rejects(readDerivedFigures(memoryDb({}, { failures: [{ table: "derived_values_admissible", op: "select", message: "boom" }] }).db), /boom/, "a failed read throws; the page marks the panel failed");
 });
 
 test("a figure with an input that cannot be rated is an absence, never a tier: the weakest rating among the inputs, null when any input is unrated", async () => {
@@ -117,7 +117,7 @@ test("the batch of assessments is keyed by the LIST id: a legacy id is looked up
 
 test("INV-263: the Research page reports a failed list, failed coverage and failed assessments separately; the assessments are not read when the list failed", async () => {
   const rows = [{ id: U1, legacy_id: null, title: "T", item_type: "research_finding", domain: 7, priority: "LOW", added_date: "2026-10-01", is_archived: false, effective_archived: false }];
-  const rpc = (name: string) => (name === "get_research_items_public" ? { data: rows } : name === "get_surface_counts" ? { data: { total_items: 1 } } : name === "get_research_source_coverage" ? { data: [{ transport_mode: "ocean", jurisdiction_iso: "EU", source_count: 3 }, { transport_mode: 5, jurisdiction_iso: "EU", source_count: 1 }] } : undefined);
+  const rpc = (name: string) => (name === "get_research_items" ? { data: rows } : name === "get_surface_counts" ? { data: { total_items: 1 } } : name === "get_research_source_coverage" ? { data: [{ transport_mode: "ocean", jurisdiction_iso: "EU", source_count: 3 }, { transport_mode: 5, jurisdiction_iso: "EU", source_count: 1 }] } : undefined);
   const tables = (assessments: Row[] = [ROW(U1)]) => ({ intelligence_items: [], research_assessments_current: assessments, sources: [], source_bias_tags: [] });
   const ok = await readResearchPage(world(tables(), rpc), "org-1");
   assert.deepEqual([ok.rowsFailed, ok.rows.length, ok.coverage, Object.keys(ok.assessments ?? {})], [false, 1, [{ transportMode: "ocean", jurisdictionIso: "EU", sourceCount: 3 }], [U1]]);
@@ -125,7 +125,7 @@ test("INV-263: the Research page reports a failed list, failed coverage and fail
   assert.deepEqual([covDown.coverage, covDown.rows.length], [null, 1]);
   const asDown = await readResearchPage(world(tables([]), rpc, [{ table: "research_assessments_current", op: "select", message: "boom" }]), "org-1");
   assert.deepEqual([asDown.assessments, asDown.rows.length], [null, 1]);
-  const listDown = await readResearchPage(world(tables([]), (n) => (n === "get_research_items_public" ? { data: null, error: { message: "rpc down" } } : rpc(n))), "org-1");
+  const listDown = await readResearchPage(world(tables([]), (n) => (n === "get_research_items" ? { data: null, error: { message: "rpc down" } } : rpc(n))), "org-1");
   assert.deepEqual([listDown.rowsFailed, listDown.rows, listDown.assessments], [true, [], null]);
 });
 
@@ -177,10 +177,10 @@ test("persona read: the raw assessments table is not a client read (row level se
 // The Region facet is offered from the SURFACE-WIDE tally (get_surface_counts), never from the rows the first page happens to hold. The database function refuses a null org to every caller but the service role
 // (migration 361), so a page read on the member's own client must pass the member's org; the old page read it on the service client with a null org.
 test("a jurisdiction with items in the surface counts but no row on the first page is still offered, with its count, in the old order (count descending, then label)", async () => {
-  const counts = { total_items: 9, by_jurisdiction: { GLOBAL: 4, EU: 3, OECD: 1, AU: 1 }, by_priority: { LOW: 9 } };
+  const counts = { total_items: 9, by_jurisdiction: { GLOBAL: 4, EU: 3, OECD: 1, AU: 1 }, by_priority: { LOW: 9 }, by_status: {}, by_severity: {}, by_band: {}, total_jurisdictions: 4 };
   const rpcFor = (name: string, args: Record<string, unknown>): RpcReply => {
     if (name === "get_surface_counts") return args.p_org_id == null ? { data: null, error: { message: "org_id is required" } } : { data: counts };
-    if (name === "get_research_items_public") return { data: [{ id: U1, legacy_id: null, title: "T", item_type: "research_finding", domain: 7, priority: "LOW", added_date: "2026-10-01", is_archived: false, effective_archived: false, jurisdictions: ["GLOBAL"] }] };
+    if (name === "get_research_items") return { data: [{ id: U1, legacy_id: null, title: "T", item_type: "research_finding", domain: 7, priority: "LOW", added_date: "2026-10-01", is_archived: false, effective_archived: false, jurisdictions: ["GLOBAL"] }] };
     return undefined;
   };
   const m = memoryDb({ intelligence_items: [], research_assessments_current: [], sources: [], source_bias_tags: [] });

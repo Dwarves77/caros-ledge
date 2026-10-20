@@ -4,7 +4,6 @@
 // NEVER nulled when no future event exists (INV-220); the Dashboard's Due next reads the column. ONE writer: the update goes through the Db handed in
 // (the service client, or a guarded one), and a read or write error throws.
 import type { Db } from "@/core/db";
-
 import { notInList, suppressedEventIds } from "@/core/derived/suppressed-events";
 
 export const COMPLIANCE_DEADLINE_EVENT_KIND = "compliance_deadline";

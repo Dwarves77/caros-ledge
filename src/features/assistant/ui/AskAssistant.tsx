@@ -3,6 +3,7 @@
 // Ported from old_repo/src/components/AskAssistant.tsx (lines 63-227, 235-528)
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 
+import { statusWord } from "@/core/detail/status-words";
 import { bandFromPriority } from "@/core/lists";
 import { authedFetch } from "@/core/http/authed-fetch";
 import { formatLocaleDate, formatNumber } from "@/core/shared";
@@ -66,7 +67,7 @@ function Answer({ a }: { a: AskResponse }) {
               <p className={styles.q}>{x.question}</p>
               <p className={styles.text}>{x.text}</p>
               <p className={styles.meta}>
-                Inference · {x.statusToken}
+                Inference{statusWord(x.statusToken) ? ` · ${statusWord(x.statusToken)}` : ""}
                 {x.confidence != null ? ` · confidence ${Math.round(x.confidence * 100)}%` : ""} · on {x.itemTitle}
               </p>
               {x.cited.map((c) => (

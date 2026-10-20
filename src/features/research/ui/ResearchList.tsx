@@ -15,11 +15,10 @@ import { filterByWindow, WINDOW_OPTIONS } from "@/ui/list-surface/filter-sort";
 import { ShellCommandBar } from "@/ui/shell/CommandBar";
 import { DenominatorLine } from "@/features/coverage";
 import { useTagsFacet } from "@/features/regulations/useTagsFacet";
-
-import { horizonMetaLabel } from "../model/assessment-view";
 import { itemTypeLabel } from "@/features/market/lib/item-type";
 import { severityLabel } from "@/features/market/lib/severity";
 
+import { horizonMetaLabel } from "../model/assessment-view";
 import { NEW_WINDOW_DAYS, THEME_KEYS, themeLabel, themeOf } from "../model/taxonomy";
 import { UNCLASSIFIED } from "../theme-rules";
 import type { ResearchPageData } from "../read/research-reads";

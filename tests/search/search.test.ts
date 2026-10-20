@@ -50,10 +50,10 @@ test("runSearch keeps the rpc's rank order and bounds the rows it asks for (1 to
 test("INV-263: a failed rpc or a failed re-fetch is a stated failure, never an empty list; no hit is a real empty result", async () => {
   const bad = world();
   bad.rpcs.search_intelligence_items = () => ({ error: { message: "rpc down" } });
-  assert.deepEqual(await runSearch(bad.client, "emissions"), { ok: false, message: "rpc down" });
+  assert.deepEqual(await runSearch(bad.client, "emissions"), { ok: false, reason: "unavailable" }, "the driver's message goes to the log and never into the outcome (surfaces:81)");
   const refetch = world();
   refetch.fail("intelligence_items", "select", "rows down");
-  assert.deepEqual(await runSearch(refetch.client, "emissions"), { ok: false, message: "rows down" });
+  assert.deepEqual(await runSearch(refetch.client, "emissions"), { ok: false, reason: "unavailable" });
   assert.deepEqual(await runSearch(world().client, "zzzz"), { ok: true, rows: [] });
 });
 

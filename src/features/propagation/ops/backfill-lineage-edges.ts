@@ -33,7 +33,7 @@ export async function backfillLineageEdges(deps: { sb: Db; now: () => Date }, in
   const edges = await readTable<{ source_item_id: string; target_item_id: string; origin: string | null; relationship: string }>(sb, "item_cross_references", "source_item_id,target_item_id,origin,relationship", "id");
   const snapshot = snapshotEdgeState(edges);
   const adoptedRead = await readAdoptedVocabulary(sb);
-  const notes: string[] = adoptedRead.note ? [adoptedRead.note] : [];
+  const notes: string[] = adoptedRead.ok ? [] : [adoptedRead.reason];
   let targets = input.itemId ? corpus.filter((c) => c.id === input.itemId) : corpus;
   if (input.limit) targets = targets.slice(0, input.limit);
   const counts: Record<string, number> = { scanned: 0, short: 0, inserted: 0, upgraded: 0, skipped_foreign: 0, conflicts: 0, unchanged: 0, skipped_tombstoned: 0, flags: 0, failed: 0, prior_edges: snapshot.count };

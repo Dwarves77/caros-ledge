@@ -1,10 +1,22 @@
 // Ported from old_repo/src/lib/workspace/relevance.mjs (lines 1-280)
 // Ported from old_repo/src/lib/workspace/profile.ts (lines 103-127)
 import type { Db } from "@/core/db/clients";
+import { LookupError } from "@/core/http/errors";
 import { boundedRead, MAX_BOUND } from "@/core/db/query";
 import { resolveItemUuid } from "@/core/shared/ids";
 
 import { deriveRoleScopeFromComplianceObjectTags, findBand, ORG_ROLES, ORG_SIZE_DIMENSIONS, type OrgProfile, type WorkspaceProfile } from "./profile";
+
+/** The subset of intelligence_items columns the lens reads. */
+export interface RelevanceInput {
+  title?: string | null;
+  transport_modes?: string[] | null;
+  jurisdictions?: string[] | null;
+  jurisdiction_iso?: string[] | null;
+  topic_tags?: string[] | null;
+  operational_scenario_tags?: string[] | null;
+  compliance_object_tags?: string[] | null;
+}
 
 export interface ItemApplicability {
   status: "applies" | "does_not_apply" | "needs_profile_input";
@@ -100,7 +112,7 @@ function triggerLabel(trigger: { attribute?: string; value?: string; comparison?
     const band = findBand(attribute, value);
     return `${dim.label} is ${trigger.comparison === "below" ? "below" : "at least"} ${band ? band.label : value}`;
   }
-  return `${attribute}: ${value}`;
+  return "A condition your profile does not describe";
 }
 
 /** One object's gate inputs: the roles its duty-holder classes map to plus an org_role trigger, a size trigger, or an unsupported attribute. */
@@ -122,7 +134,7 @@ function objectApplicability(object: ObligationObject, orgProfile: OrgProfile, d
   if (g.unsupported && result.status !== "does_not_apply") {
     return {
       status: "needs_profile_input",
-      reasons: [...(result.status === "needs_profile_input" ? result.reasons : []), `This obligation applies by "${g.unsupported}", which your profile does not hold yet.`],
+      reasons: [...(result.status === "needs_profile_input" ? result.reasons : []), "This obligation applies by a condition your profile does not hold."],
       missingDimensions: uniq([...result.missingDimensions, g.unsupported]),
     };
   }
@@ -138,6 +150,12 @@ function aggregateApplicability(results: ItemApplicability[]): ItemApplicability
 
 const SLOT_LABELS: Record<string, string> = { penalty_exposure: "Penalty exposure", direct_compliance_cost: "Direct compliance cost", effort: "Effort (person-days, not money)" };
 
+/** One direct-cost entry: the fields it has, in order, never the word undefined for one it lacks. */
+const directCostLine = (d: { amount?: number; currency?: string; basis?: string; source?: string }): string => {
+  const base = [`${d.amount}${d.currency ? ` ${d.currency}` : ""}`, d.basis].filter(Boolean).join(", ");
+  return d.source ? `${base} (source: ${d.source})` : base;
+};
+
 /** The three cost slots of spec 01 section 3.4, carried separately and never merged; a slot with nothing to show is omitted. */
 function costSlotsFor(objects: ObligationObject[]) {
   const penalty: string[] = [];
@@ -147,7 +165,7 @@ function costSlotsFor(objects: ObligationObject[]) {
     if (typeof o.statutory_maximum === "string" && o.statutory_maximum.trim()) penalty.push(o.statutory_maximum.trim());
     if (typeof o.cost_formula === "string" && o.cost_formula.trim()) penalty.push(`Formula: ${o.cost_formula.trim()}`);
     const d = o.direct_compliance_cost;
-    if (d && typeof d === "object" && typeof d.amount === "number") direct.push(`${d.amount} ${d.currency}, ${d.basis} (source: ${d.source})`);
+    if (d && typeof d === "object" && typeof d.amount === "number") direct.push(directCostLine(d));
     const e = o.effort;
     if (e && typeof e === "object" && typeof e.person_days === "number") effort.push(`${e.person_days} person-days, ${e.recurrence}`);
   }
@@ -220,8 +238,8 @@ export async function fetchObligationObjectsForItem(client: Db, itemId: string, 
   const uuid = await resolveItemUuid(client, itemId);
   if (!uuid) return [];
   const read = await boundedRead((n) => client.from("obligation_objects").select(OBLIGATION_OBJECT_COLUMNS).eq("instrument_item_id", uuid).limit(n), { limit });
-  if (read.error) throw new Error(read.error.message);
-  if (read.truncated) throw new Error(`obligation objects for ${uuid} reached the ${limit}-row bound; the list would be incomplete`);
+  if (read.error) throw new LookupError("obligation_objects", read.error);
+  if (read.truncated) throw new LookupError("obligation_objects", { message: `obligation objects for ${uuid} reached the ${limit}-row bound; the list would be incomplete` });
   return currentObligationObjects<ObligationObject>(read.data);
 }
 

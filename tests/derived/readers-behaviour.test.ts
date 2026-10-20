@@ -17,10 +17,16 @@ const C = "a0000000-0000-4000-8000-000000000003";
 const D = "a0000000-0000-4000-8000-000000000004";
 const mixed = (): Row[] => [item(A), item(B, { provenance_status: "unverified" }), item(C, { is_archived: true }), item(D, { replaced_by: A })];
 
-test("the dashboard's by-id backfill returns only admissible items: an unverified, archived or replaced item is not drawn", async () => {
-  const m = memoryDb({ intelligence_items: mixed() });
-  const rows = await readItemRows(m.db, [A, B, C, D]);
-  assert.deepEqual(rows.map((r) => r.id), [A]);
+test("I13, surfaces:80: the dashboard's by-id backfill and the portfolio's held read are the workspace's own rows, from get_workspace_items_by_ids (migration 0095): the org and the ids go to the database in chunks, the database says which items the workspace holds and at what priority, and a failed chunk rejects", async () => {
+  const calls: Array<{ name: string; args: { p_org_id: string; p_ids: string[] } }> = [];
+  const ids = Array.from({ length: 250 }, (_, i) => `b0000000-0000-4000-8000-${String(i).padStart(12, "0")}`);
+  const m = memoryDb({}, { rpc: (name, args) => (calls.push({ name, args: args as never }), { data: (args as { p_ids: string[] }).p_ids.slice(0, 1).map((id) => ({ id, effective_priority: "HIGH" })) }) });
+  const rows = await readItemRows(m.db, ORG, ids);
+  assert.ok(calls.length >= 2 && calls.every((c) => c.name === "get_workspace_items_by_ids" && c.args.p_org_id === ORG && c.args.p_ids.length <= 150), "one call per chunk, never a table read");
+  assert.equal(rows.length, calls.length);
+  assert.ok(rows.every((r) => r.effective_priority === "HIGH"), "the priority is the database's, not merged by hand");
+  assert.equal(m.reads.filter((l) => l.table === "intelligence_items" || l.table === "workspace_item_overrides").length, 0, "the overrides are not read here any more");
+  await assert.rejects(readItemRows(memoryDb({}, { rpc: () => ({ error: { message: "down" } }) }).db, ORG, [A]), /get_workspace_items_by_ids failed: down/);
 });
 
 test("the research related-items read takes admissible items only", async () => {

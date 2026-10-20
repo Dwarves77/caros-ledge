@@ -4,7 +4,7 @@
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
-import { BAND_ORDER, bandFromPriority } from "@/core/lists";
+import { bandFromPriority, NEUTRAL_BAND } from "@/core/lists";
 import { countNoun } from "@/core/shared";
 import { CardFoot, ListRowHeader, RailCard, RelativeTime, SectionHead, StateNote } from "@/ui";
 import type { ListRowProps } from "@/ui/ListRow";
@@ -38,7 +38,7 @@ function rowOf(item: WatchlistItem, position: number, total: number): Row {
   const meta = (
     <span>
       {WATCHLIST_TYPE_LABEL[item.type]}
-      {item.scope === "team" && item.addedBy ? ` · added by ${item.addedBy}` : ""} · watched <RelativeTime iso={item.watchedAt} /> · {item.scope}
+      {item.scope === "team" && item.addedBy ? ` · added by ${item.addedBy}` : ""} · watched <RelativeTime iso={item.watchedAt} /> · {SCOPE_LABEL[item.scope]}
     </span>
   );
   return {
@@ -121,7 +121,7 @@ export function WatchlistSurface({ watch, notices, limit, dateLabel, nowIso }: W
       onSelectBand={() => undefined}
       facetGroups={groups}
       flat
-      rowsByBand={[{ band: BAND_ORDER[0] ?? bandFromPriority(null), rows, total: rows.length }]}
+      rowsByBand={[{ band: NEUTRAL_BAND, rows, total: rows.length }]}
       perBandCap={rows.length}
       emptyState={emptyState}
       cardHead={

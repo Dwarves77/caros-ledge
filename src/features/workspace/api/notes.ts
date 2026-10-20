@@ -1,10 +1,11 @@
 // Ported from old_repo/src/lib/workspace/item-notes.mjs (lines 1-132)
 // Ported from old_repo/src/app/api/workspace/items/[id]/notes/route.ts (lines 15-37)
-import { collabDbFail } from "./collab-db-fail";
 import type { Db } from "@/core/db/clients";
 import { boundedRead } from "@/core/db/query";
 import { LookupError, route } from "@/core/http/errors";
 import { canWrite, collabFail, collabOk, isOrgAdmin, loadRoster, nameIndex, namesAfterWrite, NOTE_MAX_LENGTH, readJsonObject, runCollab, type CollabCtx, type CollabResult } from "@/core/workspace/roster";
+
+import { collabDbFail } from "./collab-db-fail";
 
 // /api/workspace/items/[id]/notes: private-per-workspace notes on one item (migration 358).
 //   GET list (newest first) | POST { body } | PATCH { noteId, body } (author only) | DELETE ?noteId= (soft delete: author, owner or admin)

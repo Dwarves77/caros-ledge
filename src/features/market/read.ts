@@ -199,7 +199,7 @@ export interface MarketRead {
 export async function readMarket(db: Db, o: { orgId?: string | null; edgeDb?: Db | null } = {}): Promise<MarketRead> {
   const [signals, series, corridors, panels] = await Promise.all([
     section("signals", async () => {
-      const [list, aggregates] = await Promise.all([readCategory(db, "get_market_intel_items_public"), readSurfaceCounts(db, o.orgId ?? null, "market")]);
+      const [list, aggregates] = await Promise.all([readCategory(db, o.orgId ? "get_market_intel_items" : "get_market_intel_items_public", o.orgId), readSurfaceCounts(db, o.orgId ?? null, "market")]);
       if (list.failed) throw new Error("the public market list RPC failed");
       return { rows: list.resources, aggregates };
     }),
@@ -243,7 +243,6 @@ export interface MarketDetailBundle {
   priceBoard: Section<PriceStat[]>;
   seriesFigure: Section<SeriesFigure | null>;
   carbon: Section<{ factors: FactorRow[]; ratings: Record<string, SourceRating>; corridorCandidates: CorridorCandidate[] }>;
-  related: Section<Resource[]>;
 }
 
 /** The series ratified onto an item (the table the ratification writes), or null. */
@@ -258,7 +257,7 @@ export async function readMarketDetail(db: Db, item: { id: string; sourceId?: st
   const uuid = await section("item identity", () => resolveItemUuid(db, item.id));
   const itemUuid = uuid.ok ? uuid.data : null;
   const fail = <T,>(): Section<T> => ({ ok: false, error: "the item could not be identified" });
-  const [convergence, priceBoard, seriesFigure, carbon, related] = await Promise.all([
+  const [convergence, priceBoard, seriesFigure, carbon] = await Promise.all([
     section("convergence", async () => {
       if (!item.sourceId) return null;
       const { data, error } = await db.from("sources").select("independent_citers, confirmation_count").eq("id", item.sourceId).maybeSingle();
@@ -292,11 +291,6 @@ export async function readMarketDetail(db: Db, item: { id: string; sourceId?: st
       const [ratings, corridors] = await Promise.all([readSourceRatings(db, factors.map((f) => f.source_key)), panel<{ entity_id: string; canonical_name: string }>(db.from("entities").select("entity_id, canonical_name").eq("kind", "corridor").eq("status", "active").limit(500) as never, "entities")]);
       return { factors, ratings, corridorCandidates: candidatesFromCorridorEntities(corridors).candidates };
     }),
-    section("related signals", async () => {
-      const list = await readCategory(db, "get_market_intel_items_public");
-      if (list.failed) throw new Error("the public market list RPC failed");
-      return list.resources;
-    }),
   ]);
-  return { convergence, priceBoard, seriesFigure, carbon, related };
+  return { convergence, priceBoard, seriesFigure, carbon };
 }

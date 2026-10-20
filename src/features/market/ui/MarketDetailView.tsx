@@ -22,7 +22,7 @@ import { joinSegments } from "@/features/regulations/meta";
 import { useItemRelevance } from "@/features/regulations/useItemRelevance";
 import { DetailTagRow } from "@/features/workspace/ui/DetailTagRow";
 import { DetailWatch } from "@/features/workspace/ui/DetailWatch";
-import { Absence, ActionCard, ClaimTierProvider, downloadMarkdownBrief, GfmSection, GradeChip, SectionIndex, StateNote, TagChip, type ClaimTierMap } from "@/ui";
+import { ActionCard, ClaimTierProvider, downloadMarkdownBrief, GfmSection, GradeChip, SectionIndex, StateNote, TagChip, type ClaimTierMap } from "@/ui";
 import { AtAGlanceCard, commonActionCardProps, CrossPageSection, crossPagePresence, DetailLayout, DetailMasthead, DetailPageWrapper, DetailRail, DetailSection, FactBlocks, ImpactRailCard, InThisListStat, RelevanceRailCard, SourcesGrid, topRecommendedAction, type CrossPageData } from "@/ui/detail";
 import { NoticesRail } from "@/ui/figures";
 import { DetailSubSection } from "@/ui/ItemGroup";
@@ -34,7 +34,6 @@ import { derivePromotionState } from "../lib/signal-promotion";
 import type { MarketDetailBundle } from "../read";
 
 import { CarbonFindings, PriceBoardBlock } from "./MarketSignalDetail";
-import { RelatedSignalLinks } from "./RelatedSignalLinks";
 import { TrajectoryBars } from "./TrajectoryBars";
 import styles from "./market.module.css";
 
@@ -103,8 +102,7 @@ export function MarketDetailView({ resource: r, sections, claimTiers, claimsDegr
   const citers = bundle.convergence.ok ? (bundle.convergence.data?.independent_citers ?? null) : null;
   const promotion = derivePromotionState({ originClass: r.originClass ?? null, independentCiters: citers });
   const jurisLabel = jurisLabelOf(r);
-  const related = (bundle.related.ok ? bundle.related.data : []).filter((x) => signalBand !== null && x.id !== r.id && bandOf(x) === signalBand).slice(0, 4);
-  const hasRelated = connectionRows.length > 0 || related.length > 0;
+  const hasRelated = connectionRows.length > 0;
   const presence = crossPagePresence(crossPage);
   const actions = [...recommendedActions].sort((a, b) => (a.timeframe_days ?? 1e9) - (b.timeframe_days ?? 1e9));
   const carbonItem = { jurisdictionIso: r.jurisdictionIso ?? [], modes: r.modes ?? [] };
@@ -241,12 +239,8 @@ export function MarketDetailView({ resource: r, sections, claimTiers, claimsDegr
             {hasRelated && (
               <DetailSection id="related" title="Related" aside={signalBand ? BAND_LABEL[signalBand] : undefined} index={6}>
                 <ConnectionList rows={connectionRows} />
-                {related.length > 0 && (
-                  <RelatedSignalLinks signals={related} />
-                )}
               </DetailSection>
             )}
-            {!bundle.related.ok && <StateNote tone="error" action={{ label: "Retry", onClick: retry }}>Related signals did not load. Try again.</StateNote>}
             <CrossPageSection surfaceKey="market" surfaceLabel="Market Intel" crossPage={crossPage} onRetry={retry} />
             <NoticesRail />
           </DetailLayout>

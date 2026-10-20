@@ -4,6 +4,8 @@
 import { z } from "zod";
 
 import countriesJson from "./data/countries.json";
+import subdivisionsJson from "./data/subdivisions.json";
+import tiersJson from "./data/tiers.json";
 
 const COUNTRIES = z.record(z.string().regex(/^[A-Z]{2}$/), z.string().min(1)).parse(countriesJson);
 
@@ -30,12 +32,14 @@ export function countryOf(code: string): string | null {
 /** A country code's name from the table; the code itself when the table has none (never a guess). */
 export const countryLabel = (code: string): string => COUNTRIES[code] ?? code;
 
-const SUBDIVISIONS: Readonly<Record<string, string>> = {
-  "US-CA": "California", "US-NY": "New York", "US-TX": "Texas", "US-FL": "Florida", "US-WA": "Washington", "US-OR": "Oregon", "US-IL": "Illinois", "US-NJ": "New Jersey", "US-MA": "Massachusetts",
-  "US-PA": "Pennsylvania", "US-GA": "Georgia", "US-MI": "Michigan", "US-OH": "Ohio", "US-NV": "Nevada", "US-AZ": "Arizona", "GB-ENG": "England", "GB-SCT": "Scotland", "GB-WLS": "Wales",
-  "GB-NIR": "Northern Ireland", "CA-ON": "Ontario", "CA-QC": "Quebec", "CA-BC": "British Columbia", "CA-AB": "Alberta", "CN-11": "Beijing", "CN-31": "Shanghai", "CN-44": "Guangdong",
-  "CN-33": "Zhejiang", "AU-NSW": "New South Wales", "AU-VIC": "Victoria", "AU-QLD": "Queensland", "AU-WA": "Western Australia",
-};
+/**
+ * Subdivision names: the named jurisdictions of the priority regions (data/tiers.json: the fifty states, the provinces, the nations) plus the subdivisions the tier table lists by code alone (data/subdivisions.json). One
+ * source of names, so the coverage view and a row label cannot disagree, and no state shows as a raw code (register core:41). tests/derived asserts every subdivision the tier table lists has a name here.
+ */
+const SUBDIVISIONS: Readonly<Record<string, string>> = Object.freeze({
+  ...Object.fromEntries((tiersJson as { tier1Regions: { jurisdictions: { iso: string; name: string }[] }[] }).tier1Regions.flatMap((r) => r.jurisdictions).filter((j) => j.iso.includes("-")).map((j) => [j.iso, j.name])),
+  ...z.record(z.string().regex(/^[A-Z]{2}-[A-Z0-9]{1,3}$/), z.string().min(1)).parse(subdivisionsJson),
+});
 
 /** "California, United States", "Germany", "European Union"; "" for an empty code and the code itself for one the tables do not know. */
 export function isoToDisplayLabel(code: string): string {

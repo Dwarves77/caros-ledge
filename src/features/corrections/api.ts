@@ -92,15 +92,16 @@ export async function revokeCorrection(sb: Db, input: { itemId: string; correcti
   return reply(200, { id: input.correctionId, item_id: input.itemId, revoked: true });
 }
 
-/** True when the detail cache was flushed; false outside a request scope (a script or a test), where there is no cache and the correction itself has already succeeded. */
-function flushDetailCache(itemId: string): boolean {
+/** "fresh" when the detail cache was flushed, "stale" when the flush threw: the correction has been recorded either way, and a page cached before it may show the suppressed claim until the entry expires (INV-270), so the answer says so. */
+function flushDetailCache(itemId: string): "fresh" | "stale" {
   try {
     revalidateItem(itemId);
-    return true;
+    return "fresh";
   } catch {
-    return false;
+    return "stale";
   }
 }
+const withCache = (out: Reply, itemId: string): Reply => ({ ...out, body: { ...(out.body as object), cache: flushDetailCache(itemId) } });
 const send = (r: Reply, headers: Record<string, string>): Response => Response.json(r.body, { status: r.status, headers });
 async function readBody(request: Request): Promise<unknown> {
   try {
@@ -127,8 +128,7 @@ export const POST = route<ItemCtx>("/api/admin/items/[id]/corrections", async (r
   const body = await readBody(request);
   if (body === undefined) return send(fail(400, "invalid_json", "Invalid JSON body"), auth.headers);
   const out = await createCorrection(auth.service(), { itemId: id, userId: auth.userId, body });
-  if (out.status === 201) flushDetailCache(id);
-  return send(out, auth.headers);
+  return send(out.status === 201 ? withCache(out, id) : out, auth.headers);
 });
 
 export const REVOKE = route<RevokeCtx>("/api/admin/items/[id]/corrections/[correctionId]/revoke", async (request, ctx) => {
@@ -136,6 +136,5 @@ export const REVOKE = route<RevokeCtx>("/api/admin/items/[id]/corrections/[corre
   if (isRefusal(auth)) return auth;
   const { id, correctionId } = await ctx.params;
   const out = await revokeCorrection(auth.service(), { itemId: id, correctionId, userId: auth.userId, body: await readBody(request) });
-  if (out.status === 200) flushDetailCache(id);
-  return send(out, auth.headers);
+  return send(out.status === 200 ? withCache(out, id) : out, auth.headers);
 });

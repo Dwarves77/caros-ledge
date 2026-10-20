@@ -2,6 +2,7 @@
 // Ported from old_repo/src/lib/supabase-server.ts (lines 4372-4393)
 // What a customer sees of the inference records (INV-272, ADR-039(a), ADR-044 decision 3): only the allowlisted method, only the current row (no successor), only a claim whose every
 // shown citation is an item the reader can open, at most five. Read per request, never cached with the item bundle, on the caller's own client.
+import { admitItems } from "@/core/derived/admissible";
 import type { Db } from "@/core/db";
 import { fetchAllByIdChunks } from "@/core/db";
 import { detailHref } from "@/core/lists";
@@ -111,7 +112,7 @@ export async function readCustomerInferences(db: Db, itemUuid: string): Promise<
   const cited = await fetchAllByIdChunks(
     claims.flatMap((c) => c.citedItemIds),
     async (slice) => {
-      const r = await db.from("intelligence_items").select("id, legacy_id, title, item_type, domain").eq("is_archived", false).eq("provenance_status", "verified").in("id", slice);
+      const r = await admitItems(db.from("intelligence_items").select("id, legacy_id, title, item_type, domain")).in("id", slice);
       if (r.error) throw new Error(`cited items read failed: ${r.error.message}`);
       return (r.data ?? []) as Array<{ id: string; legacy_id: string | null; title: string; item_type: string | null; domain: number | null }>;
     },

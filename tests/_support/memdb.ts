@@ -47,6 +47,8 @@ export interface MemOptions {
   returnRows?: boolean;
 }
 
+/** The ceiling rank migration 0090 gives each stored admissibility (the view derived_values_admissible). */
+const CEILING_RANK: Record<string, number> = { display_only: 0, analysis_ok: 1, calculation_ok: 2, filing_ok: 3 };
 const WITH_ID = new Set(["intelligence_items", "agent_run_searches", "section_claim_provenance", "claim_versions", "intelligence_item_sections", "item_timelines", "integrity_flags", "agent_runs", "staged_updates", "sources", "portal_link_candidates", "disposition_ledger", "item_cross_references", "item_forward_events", "vocabulary_terms", "monitoring_queue", "pending_first_fetch", "propagation_events"]);
 export const SCHEMA: SchemaInfo = schemaJson as SchemaInfo;
 const likeRe = (pat: string, flags = "") => new RegExp(`^${pat.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/[%*]/g, ".*")}$`, flags);
@@ -123,7 +125,10 @@ export class MemDb {
     return this;
   }
   /** Read-only relations computed from the tables (the SQL views): a read of the name answers the computed rows. */
-  views: Record<string, () => Row[]> = {};
+  views: Record<string, () => Row[]> = {
+    // derived_values_admissible (migration 0090): live lifecycles and not stale, with the ceiling rank of the stored admissibility.
+    derived_values_admissible: () => this.rows("derived_values").filter((v) => !["falsified", "obsolete", "superseded"].includes(String(v.lifecycle)) && v.admissibility !== "stale").map((v) => ({ ...v, ceiling_rank: CEILING_RANK[String(v.admissibility)] ?? null })),
+  };
   rows(table: string): Row[] {
     const view = this.views[table];
     return view ? view() : (this.tables[table] ??= []);
@@ -440,8 +445,6 @@ export function installPropagationRpcs(db: MemDb): MemDb {
     const made = d.rpcs.register_derived_value!({ ...a, p_supersedes: null }, d);
     return { data: [{ value_id: made.data, authored: true }] };
   };
-  const RANK: Record<string, number> = { display_only: 0, analysis_ok: 1, calculation_ok: 2, filing_ok: 3 };
-  db.views.derived_values_admissible = () => db.rows("derived_values").filter((v) => !["falsified", "obsolete", "superseded"].includes(String(v.lifecycle)) && v.admissibility !== "stale").map((v) => ({ ...v, ceiling_rank: RANK[String(v.admissibility)] ?? null }));
   db.rpcs.fire_signpost = (a, d) => {
     const sp = d.rows("signposts").find((s) => s.entity_id === a.p_entity_id);
     if (!sp) return { error: { message: "signpost not found" } };

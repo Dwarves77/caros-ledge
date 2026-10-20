@@ -19,9 +19,10 @@ import { inputRefs, isOperationsFigure, OPERATIONS_INPUT_TABLES, toDerivedFigure
 import { DIMENSIONS } from "../model/dimensions";
 import { checkMatrixEligibility, eligibilityUnavailable, type MatrixEligibility } from "../model/matrix-eligibility";
 import type { CoverageRow, Freshness, OperationsFact } from "../model/region-grid";
-import cadenceJson from "./data/cadence.json";
 import { regionsForItem, type ItemJurisdictions } from "../model/region-resolve";
 import type { AuxiliaryEnergyRow, GridIntensity, GridQueueRow } from "../model/spec09";
+
+import cadenceJson from "./data/cadence.json";
 
 const warn = (what: string, e: unknown): void => log.warn(`[operations-reads] ${what} failed:`, e instanceof Error ? e.message : String(e));
 const settle = async <T>(what: string, read: () => Promise<T>): Promise<T | null> => {
@@ -180,7 +181,7 @@ export interface OperationsPageData {
 export async function readOperationsPage(db: Db, nowIso: string, orgId: string | null): Promise<OperationsPageData> {
   const roster = await settle("the region roster", () => readRoster(db));
   const [category, aggregates, coverage, facts, stateCosts, linkedRegulations, derived] = await Promise.all([
-    readCategory(db, "get_operations_items_public"), readSurfaceCounts(db, orgId, "operations"),
+    readCategory(db, orgId ? "get_operations_items" : "get_operations_items_public", orgId), readSurfaceCounts(db, orgId, "operations"),
     roster ? settle("coverage", () => readCoverage(db, roster)) : null, roster ? settle("facts", () => readFacts(db, roster, nowIso)) : null,
     settle("state cost facts", () => readStateCosts(db)), roster ? settle("linked regulations", () => readLinkedRegulations(db, roster)) : null, settle("recomputed figures", () => readDerivedFigures(db)),
   ]);

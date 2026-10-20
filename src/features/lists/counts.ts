@@ -15,17 +15,31 @@ export interface WorkspaceAggregates {
   byBand?: Record<string, number>;
 }
 
-const nums = (m: unknown): Record<string, number> => Object.fromEntries(Object.entries((m ?? {}) as Record<string, unknown>).map(([k, v]) => [k, Number(v ?? 0)]));
+const count = (v: unknown): number | null => (typeof v === "number" && Number.isFinite(v) ? v : null);
+/** A tally object from the database: every value a number. A key the database left out is a group with no items (a count of zero is the database's to say); a value that is not a number is a malformed reply. */
+function tally(m: unknown): Record<string, number> | null {
+  if (!m || typeof m !== "object" || Array.isArray(m)) return null;
+  const out: Record<string, number> = {};
+  for (const [k, v] of Object.entries(m)) {
+    const n = count(v);
+    if (n === null) return null;
+    out[k] = n;
+  }
+  return out;
+}
 
-function mapAggregates(data: unknown): WorkspaceAggregates {
+/** The reply as aggregates, or null when a field the database always sends is missing or not a number: a malformed reply is a failed read, never a page of zeros (S:85). */
+function mapAggregates(data: unknown): WorkspaceAggregates | null {
   const raw = data as Record<string, unknown>;
-  const bp = nums(raw.by_priority);
+  const [totalItems, totalJurisdictions] = [count(raw.total_items), count(raw.total_jurisdictions)];
+  const [bp, byStatus, byJurisdiction] = [tally(raw.by_priority), tally(raw.by_status), tally(raw.by_jurisdiction)];
+  if (totalItems === null || totalJurisdictions === null || !bp || !byStatus || !byJurisdiction) return null;
   return {
-    totalItems: Number(raw.total_items ?? 0),
+    totalItems,
     byPriority: { CRITICAL: bp.CRITICAL ?? 0, HIGH: bp.HIGH ?? 0, MODERATE: bp.MODERATE ?? 0, LOW: bp.LOW ?? 0 },
-    byStatus: nums(raw.by_status),
-    byJurisdiction: nums(raw.by_jurisdiction),
-    totalJurisdictions: Number(raw.total_jurisdictions ?? 0),
+    byStatus,
+    byJurisdiction,
+    totalJurisdictions,
     lastUpdatedAt: typeof raw.last_updated_at === "string" ? raw.last_updated_at : null,
   };
 }
@@ -46,7 +60,9 @@ export async function readSurfaceCounts(db: Db, orgId: string | null, surface: s
     const { data, error } = await db.rpc("get_surface_counts", { p_org_id: orgId, p_surface: surface });
     if (error || !data) return null;
     const raw = data as Record<string, unknown>;
-    return { ...mapAggregates(data), bySeverity: nums(raw.by_severity), byBand: nums(raw.by_band) };
+    const base = mapAggregates(data);
+    const [bySeverity, byBand] = [tally(raw.by_severity), tally(raw.by_band)];
+    return base && bySeverity && byBand ? { ...base, bySeverity, byBand } : null;
   } catch {
     return null;
   }

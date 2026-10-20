@@ -1,6 +1,7 @@
 // Ported from old_repo/src/lib/supabase-server.ts (lines 4236-4423)
 // The cross-page reads: the stated intersection summary, the theme analysis (members by page, the brief, the lineage of a dissolved theme), the inferences a customer may read, and the theme
 // chips of a list page. Every read is on the caller's client (RLS) and bounded; a failed block is NAMED in `degraded` so the page says it did not load, never an absent section (INV-263).
+import { admitItems } from "@/core/derived/admissible";
 import type { Db } from "@/core/db";
 import { fetchAllByIdChunks, fetchAllRows } from "@/core/db";
 import { buildIntersectionView, lineageFromThemeDelta, type ConnectionIn, type ResourceLookup } from "@/core/flywheel";
@@ -30,12 +31,12 @@ async function readLineage(db: Db) {
   return data?.length ? lineageFromThemeDelta((data[0] as { theme_delta: never }).theme_delta) : [];
 }
 
-/** Verified, non-archived items by uuid (the readers' own RLS applies on top). */
+/** Admissible items by uuid: verified, not archived, not replaced (the readers' own RLS applies on top). */
 export const readVerifiedItemsByIds = (db: Db, ids: readonly string[]): Promise<MemberRow[]> =>
   fetchAllByIdChunks(
     ids,
     async (slice) => {
-      const r = await db.from("intelligence_items").select("id, legacy_id, title, item_type, domain").eq("is_archived", false).eq("provenance_status", "verified").in("id", slice);
+      const r = await admitItems(db.from("intelligence_items").select("id, legacy_id, title, item_type, domain")).in("id", slice);
       if (r.error) throw new Error(`intelligence_items read failed: ${r.error.message}`);
       return (r.data ?? []) as MemberRow[];
     },

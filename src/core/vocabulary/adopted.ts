@@ -42,16 +42,17 @@ export function groupAdoptedTerms(rows: readonly { kind?: string; term_key?: str
   return out;
 }
 
-/** The adopted terms. A read failure returns the empty vocabulary plus a note, so the caller can surface it. */
-export async function readAdoptedVocabulary(sb: Db): Promise<{ adopted: AdoptedVocabulary; note: string | null }> {
+/** The adopted terms, or the failure typed: `ok: false` carries the empty vocabulary (the readers fall back to the code vocabularies) and the reason, which the caller must put in its notes. */
+export type AdoptedRead = { ok: true; adopted: AdoptedVocabulary } | { ok: false; adopted: AdoptedVocabulary; reason: string };
+export async function readAdoptedVocabulary(sb: Db): Promise<AdoptedRead> {
   try {
     const rows = await fetchAllRows<{ kind: string; term_key: string; label: string | null; status: string }>(
       (from, to) => sb.from("vocabulary_terms").select("kind, term_key, label, status").eq("status", "adopted").order("id", { ascending: true }).range(from, to),
       { cap: 100_000 },
     );
-    return { adopted: groupAdoptedTerms(rows), note: null };
+    return { ok: true, adopted: groupAdoptedTerms(rows) };
   } catch (e) {
-    return { adopted: emptyAdopted(), note: `adopted terms unreadable (${e instanceof Error ? e.message : String(e)}); readers use the code vocabularies only` };
+    return { ok: false, adopted: emptyAdopted(), reason: `adopted terms unreadable (${e instanceof Error ? e.message : String(e)}); readers use the code vocabularies only` };
   }
 }
 

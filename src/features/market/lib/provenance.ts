@@ -4,7 +4,6 @@
 import { tierLabelOf } from "@/core/sources";
 
 import wordsJson from "./data/provenance-words.json";
-
 import type { FactorRow } from "./carbon";
 import type { Producer } from "./registry";
 import type { SeriesDisplayRow } from "./series-board";

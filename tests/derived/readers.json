@@ -84,73 +84,14 @@
    "glob": "src/core/propagation/notices.ts",
    "kind": "history",
    "why": "A recalculation notice shows the value that was replaced beside the one that replaced it: it reads superseded rows on purpose."
+  },
+  {
+   "glob": "src/features/corrections/api.ts",
+   "kind": "operator",
+   "why": "The admin corrections API lists an item's corrections and finds the ones whose claim is gone: it reads the claims of any item in any state to do it."
   }
  ],
  "owed": [
-  {
-   "file": "src/core/detail/cross-page-read.ts",
-   "tables": [
-    "intelligence_items"
-   ],
-   "owner": "R2d-gap",
-   "finding": "reads intelligence_items without the admissible-row predicate (I13); core/detail is the detail loader every surface shares; outside the R2d write set, so the coordinator assigns the edit"
-  },
-  {
-   "file": "src/core/detail/id-redirect.ts",
-   "tables": [
-    "intelligence_items"
-   ],
-   "owner": "R2d-gap",
-   "finding": "reads intelligence_items without the admissible-row predicate (I13); core/detail is the detail loader every surface shares; outside the R2d write set, so the coordinator assigns the edit"
-  },
-  {
-   "file": "src/core/detail/inference-view.ts",
-   "tables": [
-    "intelligence_items"
-   ],
-   "owner": "R2d-gap",
-   "finding": "reads intelligence_items without the admissible-row predicate (I13); core/detail is the detail loader every surface shares; outside the R2d write set, so the coordinator assigns the edit"
-  },
-  {
-   "file": "src/core/detail/item-read.ts",
-   "tables": [
-    "intelligence_items"
-   ],
-   "owner": "R2d-gap",
-   "finding": "reads intelligence_items without the admissible-row predicate (I13); core/detail is the detail loader every surface shares; outside the R2d write set, so the coordinator assigns the edit"
-  },
-  {
-   "file": "src/core/flywheel/signature.ts",
-   "tables": [
-    "intelligence_items"
-   ],
-   "owner": "R2d-gap",
-   "finding": "reads intelligence_items without the admissible-row predicate (I13); core/flywheel is outside the R2d write set, so the coordinator assigns the edit"
-  },
-  {
-   "file": "src/core/flywheel/view-model.ts",
-   "tables": [
-    "intelligence_items"
-   ],
-   "owner": "R2d-gap",
-   "finding": "reads intelligence_items without the admissible-row predicate (I13); core/flywheel is outside the R2d write set, so the coordinator assigns the edit"
-  },
-  {
-   "file": "src/core/workspace/roster.ts",
-   "tables": [
-    "intelligence_items"
-   ],
-   "owner": "R2d-gap",
-   "finding": "reads intelligence_items without the admissible-row predicate (I13); core/workspace is outside the R2d write set, so the coordinator assigns the edit"
-  },
-  {
-   "file": "src/features/assistant/read/answers.ts",
-   "tables": [
-    "intelligence_items"
-   ],
-   "owner": "R2d-gap",
-   "finding": "reads intelligence_items without the admissible-row predicate (I13); the Assistant is outside the R2d write set, so the coordinator assigns the edit"
-  },
   {
    "file": "src/features/community/api/post.ts",
    "tables": [
@@ -158,38 +99,6 @@
    ],
    "owner": "R2e",
    "finding": "reads intelligence_items without the admissible-row predicate (I13); Community is R2e, so the coordinator assigns the edit"
-  },
-  {
-   "file": "src/features/corrections/api.ts",
-   "tables": [
-    "section_claim_provenance"
-   ],
-   "owner": "R2d-gap",
-   "finding": "reads section_claim_provenance without the admissible-row predicate (I13); corrections (redaction and flush) is outside the R2d write set, so the coordinator assigns the edit"
-  },
-  {
-   "file": "src/features/search/run-search.ts",
-   "tables": [
-    "intelligence_items"
-   ],
-   "owner": "R2d-gap",
-   "finding": "reads intelligence_items without the admissible-row predicate (I13); Search is outside the R2d write set, so the coordinator assigns the edit"
-  },
-  {
-   "file": "src/features/watchlist/read/notices.ts",
-   "tables": [
-    "intelligence_items"
-   ],
-   "owner": "R2d-gap",
-   "finding": "reads intelligence_items without the admissible-row predicate (I13); the watchlist is outside the R2d write set, so the coordinator assigns the edit"
-  },
-  {
-   "file": "src/features/watchlist/read/watchlist.ts",
-   "tables": [
-    "intelligence_items"
-   ],
-   "owner": "R2d-gap",
-   "finding": "reads intelligence_items without the admissible-row predicate (I13); the watchlist is outside the R2d write set, so the coordinator assigns the edit"
   }
  ]
 }

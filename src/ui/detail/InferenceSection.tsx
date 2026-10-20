@@ -3,15 +3,13 @@
 import Link from "next/link";
 
 import { pickVisibleInferences, type InferenceClaimView, type InferenceView } from "@/core/detail/inference-view";
+import { statusWord } from "@/core/detail/status-words";
 
 import { TagChip } from "../Chips";
 import { SectionCard } from "../SectionCard";
 import { StateNote } from "../StateNote";
 
 import { DetailSection } from "./DetailShell";
-
-/** The status token in words (INV-272): a customer never reads CONFIRMED or HYPOTHESIS as code. */
-const STATUS_WORDS: Record<string, string> = { CONFIRMED: "Confirmed", HYPOTHESIS: "Hypothesis", REFUTED: "Refuted" };
 
 /** Display admissibility: a refuted claim and a claim that cites nothing are never shown. */
 export const admissibleForDisplay = (v: Pick<InferenceClaimView, "statusToken" | "citedItemIds">): boolean => v.statusToken !== "REFUTED" && v.citedItemIds.length > 0;
@@ -20,7 +18,7 @@ function InferenceClaim({ v, titles, hrefs }: { v: InferenceClaimView; titles: R
   return (
     <SectionCard className="cl-inference" dataAttributes={{ "data-figure-kind": "inference", "data-origin-class": v.originClass === "modelled" ? "modelled" : "derived" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <TagChip>{STATUS_WORDS[v.statusToken] ?? v.statusToken}</TagChip>
+        {statusWord(v.statusToken) && <TagChip>{statusWord(v.statusToken)}</TagChip>}
         <span className="cl-inference-meta">{v.originClass === "modelled" ? "modelled" : "derived"}</span>
       </div>
       <p style={{ fontSize: "var(--fs-13)", margin: "8px 0 0", overflowWrap: "anywhere" }}>{v.claimText}</p>

@@ -385,7 +385,7 @@ test("INV-047: display rows derive only from RATIFIED entries with an observatio
 test("INV-047: an apply writes a display row only for an item that is live and verified; any other attachment is refused by name; the series, the item and the cadence come from the market_series_items table", async () => {
   const ids = SEEDED_SERIES.map((r) => r.item_id as string);
   const market = SEEDED_SERIES.slice(0, 2).map((r, i) => ({ id: `m${i}`, series_key: r.series_key, reference_period: "2026-10-12", label: `L${i}`, value_numeric: 1500, unit: "EUR/1000L", currency: "EUR", as_at_date: "2026-10-12" }));
-  const db = memoryDb({ market_series_items: SEEDED_SERIES, market_series: market, intelligence_items: [{ id: ids[0], provenance_status: "verified", is_archived: false }, { id: ids[1], provenance_status: "unverified", is_archived: false }] });
+  const db = memoryDb({ market_series_items: SEEDED_SERIES, market_series: market, intelligence_items: [{ id: ids[0], provenance_status: "verified", is_archived: false, replaced_by: null }, { id: ids[1], provenance_status: "unverified", is_archived: false, replaced_by: null }] });
   const d = makeDeps({ db, env: { MARKET_PRODUCER_PUBLISHED_STATS_ENABLED: "1" } });
   const r = await runProducer(d.deps, { spec: ON(publishedPriceStatistics), dry: false });
   assert.equal(r.outcome, "partial");

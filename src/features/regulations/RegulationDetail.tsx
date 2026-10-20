@@ -17,7 +17,7 @@ import { formatDate } from "@/core/shared";
 import type { ChangeLogEntry, Dispute, Resource } from "@/core/types";
 import type { RecommendedAction } from "@/core/brief";
 import { useWorkspaceStore } from "@/core/workspace/store";
-import { Absence, ActionCard, ClaimTierProvider, downloadMarkdownBrief, GfmSection, GradeChip, SectionIndex, StateNote, type ClaimTierMap } from "@/ui";
+import { ActionCard, ClaimTierProvider, downloadMarkdownBrief, GfmSection, GradeChip, SectionIndex, StateNote, type ClaimTierMap } from "@/ui";
 import { AtAGlanceCard, commonActionCardProps, CrossPageSection, crossPagePresence, DetailLayout, DetailMasthead, DetailPageWrapper, DetailRail, DetailSection, FactBlocks, ImpactRailCard, InThisListStat, ItemConnections, RecordFacts, RelevanceRailCard, RequirementTrajectory, SourcesGrid, topRecommendedAction, type CrossPageData, type DetailSurfaceSharedProps } from "@/ui/detail";
 import { LegendRailCard } from "@/ui/list-surface";
 import { DetailTagRow } from "@/features/workspace/ui/DetailTagRow";

@@ -16,4 +16,5 @@ export interface SearchRow {
   /** The source's customer tier, or null when the item has no rated source. */
   tier: number | null;
 }
-export type SearchOutcome<R> = { ok: true; rows: R[] } | { ok: false; message: string };
+/** A failed read says only that it failed (`reason`): the driver's message goes to the log in runSearch and never travels to the page (S:81). */
+export type SearchOutcome<R> = { ok: true; rows: R[] } | { ok: false; reason: "unavailable" };

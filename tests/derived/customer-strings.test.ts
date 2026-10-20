@@ -50,8 +50,10 @@ test("I16 dbError: every status answers the table's customer sentence, the drive
 const walk = (dir: string): string[] => readdirSync(dir).flatMap((n) => { const p = join(dir, n); return statSync(p).isDirectory() ? walk(p) : /\.(ts|tsx)$/.test(n) ? [p] : []; });
 const norm = (p: string): string => relative(".", p).replace(/\\/g, "/");
 /** String literals that are not JSX attribute values: a JS string, where an entity is NOT decoded. */
-function jsStrings(text: string): string[] {
+function jsStrings(source: string): string[] {
   const out: string[] = [];
+  // a comment is documentation: a backtick pair in a JSDoc block is not a template literal a customer reads
+  const text = source.replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, " ")).replace(/(^|[^:"'`])\/\/[^\n]*/g, "$1");
   const rx = /(^|[^A-Za-z0-9_-])(["'`])((?:\\.|(?!\2)[^\\\n])*)\2/g;
   for (let m = rx.exec(text); m; m = rx.exec(text)) {
     const before = text.slice(Math.max(0, m.index), m.index + m[1]!.length);
@@ -97,4 +99,36 @@ test("the table is made of findings: every shape carries a reason and every owed
   for (const o of OWED) assert.ok(/^R[\w-]+/.test(o.owner) && o.finding.length > 20, `${o.where} ${o.shape}`);
   for (const e of EXEMPT) assert.ok(e.why.length > 20, e.where);
   assert.ok(new HttpError(500, "x") instanceof Error);
+});
+
+// ---- INV-R2d-4, the source half: a customer sentence in a component never carries a status token, an ISO timestamp or a Postgres error code ----
+const SENTENCE_RULES: { id: string; re: RegExp }[] = [
+  { id: "status-token-in-a-sentence", re: /\b(?:HYPOTHESIS|CONFIRMED|REFUTED)\b/ },
+  { id: "iso-timestamp", re: /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/ },
+  { id: "postgres-code", re: /\b(?:23505|23503|23502|23514|42P01|42501|42703|40001|40P01|57014|22023|22P02|PGRST\d{3}|SQLSTATE)\b/ },
+];
+/** A string a person reads is a sentence: it holds a space. A bare token compared in code ("REFUTED") is not one. */
+const isSentence = (s: string): boolean => /\S\s+\S/.test(s);
+/** JSX text a person reads (between a tag and the next tag or expression) that holds a status token, and a stored token printed through an expression (`{x.statusToken}`). */
+const JSX_TEXT_TOKEN = />([^<>{}]*\b(?:HYPOTHESIS|CONFIRMED|REFUTED)\b[^<>{}]*)[<{]/g;
+const TOKEN_EXPRESSION = /\{[A-Za-z_.?!]*(?:statusToken|status_token)\}/g;
+function sentenceViolations(text: string): string[] {
+  const inStrings = jsStrings(text).filter(isSentence).flatMap((s) => SENTENCE_RULES.filter((r) => r.re.test(s)).map((r) => `${r.id}: ${s.slice(0, 70)}`));
+  const inJsx = [...text.matchAll(JSX_TEXT_TOKEN)].map((m) => `status-token-in-a-sentence: ${(m[1] ?? "").trim().slice(0, 70)}`);
+  const printed = [...text.matchAll(TOKEN_EXPRESSION)].map((m) => `status-token-in-a-sentence: ${m[0]}`);
+  return [...inStrings, ...inJsx, ...printed];
+}
+
+test("INV-R2d-4 lint: no sentence in a component carries a status token, an ISO timestamp or a Postgres code (planted violations must be flagged)", () => {
+  const planted = ['const a = "Inference · HYPOTHESIS";', "const b = `Updated 2026-10-13T10:00:00Z`;", 'const c = "failed with 23505 on the table";', 'if (x.status_token === "REFUTED") return null;', 'const ok = "Source ratings did not load.";', "<p>Inference · {x.statusToken}</p>", "<p>Verdict: HYPOTHESIS on this item</p>"];
+  assert.deepEqual(planted.map((p) => sentenceViolations(p).length), [1, 1, 1, 0, 0, 1, 1], "the lint flags a sentence with a token, a timestamp or a code, and leaves a bare comparison alone");
+  const found: string[] = [];
+  for (const root of ["src/features", "src/ui"]) {
+    for (const p of walk(root)) {
+      if (!p.endsWith(".tsx")) continue;
+      for (const v of sentenceViolations(readFileSync(p, "utf8"))) found.push(`${norm(p)}: ${v}`);
+    }
+  }
+  const exempt = EXEMPT.filter((e) => SENTENCE_RULES.some((r) => r.id === e.shape)).map((e) => e.where);
+  assert.deepEqual(found.filter((f) => !exempt.some((w) => f.startsWith(`${w}:`))), [], "write the customer's words, or give the file an exempt entry with its reason (an operator console)");
 });

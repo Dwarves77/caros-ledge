@@ -439,9 +439,6 @@
     "src/core/propagation/admissible.ts": [
       "effectiveConfidence"
     ],
-    "src/core/propagation/author-edges.ts": [
-      "hasBeenAuthored"
-    ],
     "src/core/propagation/drain.ts": [
       "DEFAULT_BATCH",
       "PK_COLUMN",
@@ -452,8 +449,6 @@
       "reopenQuestionForRecompute"
     ],
     "src/core/propagation/methods.ts": [
-      "MethodRegistry",
-      "buildCarbonMethod",
       "buildMarketDeltaMethod",
       "computeInferFromQuestion",
       "lifecycleFromOriginClasses",
@@ -618,9 +613,6 @@
     "src/core/workspace/settings.ts": [
       "JSONB_COLUMNS",
       "REPLACE_COLUMNS"
-    ],
-    "src/core/workspace/viewer-relevance.ts": [
-      "getViewerRelevanceForItem"
     ],
     "src/features/account/lib/profile-patch.ts": [
       "profilePatchSchema"
@@ -1155,9 +1147,6 @@
     ],
     "src/features/dashboard/page.tsx": [
       "default"
-    ],
-    "src/features/dashboard/read/items.ts": [
-      "BACKFILL_COLUMNS"
     ],
     "src/features/dashboard/rows.ts": [
       "CANDIDATE_WINDOW",
@@ -1731,7 +1720,6 @@
       "summarizePredicate"
     ],
     "src/features/research/model/taxonomy.ts": [
-      "SEVERITY_COLUMN_TO_KEY",
       "THEME_LABELS"
     ],
     "src/features/research/page.tsx": [
@@ -1842,8 +1830,6 @@
       "TEAM_ONLY_TYPES"
     ],
     "src/features/watchlist/membership.ts": [
-      "loadMembership",
-      "membershipOf",
       "resetMembership",
       "setWatch"
     ],
@@ -1967,9 +1953,6 @@
     ],
     "src/ui/detail/RecordFacts.tsx": [
       "RecordFactCard"
-    ],
-    "src/ui/detail/watch.tsx": [
-      "WatchContext"
     ],
     "src/ui/figures/Figures.tsx": [
       "EstimatedFigure",

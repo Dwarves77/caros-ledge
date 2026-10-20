@@ -7,6 +7,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { readFailure } from "@/core/http/failure";
 import { browserClient } from "@/core/db/browser";
 import { BAND_ORDER } from "@/core/lists";
 import { ALL_SECTORS, HIGHLIGHTED_SECTOR_IDS, JURISDICTIONS, MODES, patchWorkspaceSettings } from "@/core/workspace";
@@ -55,7 +56,7 @@ export function OnboardingWizard({ userId, orgId, byPriority }: { userId: string
       .maybeSingle()
       .then(({ data, error: readError }) => {
         if (cancelled) return;
-        if (readError) setProfileError(readError.message);
+        if (readError) setProfileError(readFailure(readError));
         else {
           if (data?.transport_mode_overrides?.length) setModes(data.transport_mode_overrides);
           if (data?.jurisdiction_overrides?.length) setJurisdictions(data.jurisdiction_overrides);
@@ -151,7 +152,7 @@ export function OnboardingWizard({ userId, orgId, byPriority }: { userId: string
                 <StateNote tone="error">The workspace counts did not load. Your choices still save.</StateNote>
               )}
             </div>
-            {profileError ? <StateNote tone="error">Your saved choices did not load ({profileError}). What you pick here replaces them.</StateNote> : null}
+            {profileError ? <StateNote tone="error">Your saved choices did not load. {profileError} What you pick here replaces them.</StateNote> : null}
           </>
         ) : null}
 

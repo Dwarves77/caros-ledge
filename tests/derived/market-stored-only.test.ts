@@ -4,11 +4,25 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
+import { createElement } from "react";
+
+import { headlineCaption } from "@/features/market/lib/headline";
+import { leadTimeCanHaveRows } from "@/features/market/lib/lead-time";
+import { buildSeriesBoard } from "@/features/market/lib/series-board";
+import { readSeriesRows } from "@/features/market/read";
+import { CarbonCostOverlay } from "@/features/market/ui/CarbonCostOverlay";
+import { LeadTimeChart } from "@/features/market/ui/LeadTimeChart";
+import { MarketRail } from "@/features/market/ui/Rails";
 import { bandOf, BAND_LABEL } from "@/features/market/lib/signal-band";
-import { SEVERITY_LABEL, SEVERITY_VALUES, severityLabel } from "@/features/market/lib/severity";
+import { severityLabel } from "@/features/market/lib/severity";
+import severityJson from "@/features/market/lib/data/severity.json";
+
+import { memoryDb } from "../_support/memory-db.ts";
+import { renderApp, textOf } from "../_support/render.ts";
+
 
 test("surfaces:3 the kind and the band are the stored columns, or nothing: the keyword tables are gone and a signal without a column has no kind and no band", () => {
-  const unclassified = { title: "Deadline for the cost surcharge on the Suez route", note: "price rises at the port", priority: "HIGH", severity: undefined, signalBand: undefined };
+  const unclassified: { title: string; note: string; priority: string; severity?: string; signalBand?: "price" | "corporate" | "corridor" } = { title: "Deadline for the cost surcharge on the Suez route", note: "price rises at the port", priority: "HIGH" };
   assert.equal(severityLabel(unclassified.severity), null, "the old keyword pass called this 'Action required' or 'Cost alert'");
   assert.equal(bandOf(unclassified), null, "the old pass said 'Corridors and routes' (B3) from the words, and 'corporate' when none matched");
   assert.equal(bandOf({ signalBand: "corridor" }), "corridor");
@@ -29,24 +43,11 @@ test("surfaces:19 one severity vocabulary: a label for each of the thirteen stor
   const check = /intelligence_items_severity_check CHECK \(\(\(severity IS NULL\) OR \(severity = ANY \(ARRAY\[([^\]]*)\]/.exec(sql)?.[1] ?? "";
   const stored = [...check.matchAll(/'([a-z_]+)'::text/g)].map((m) => m[1]);
   assert.equal(stored.length, 13);
-  assert.deepEqual([...SEVERITY_VALUES].sort(), [...stored].sort(), "the vocabulary covers exactly the values the column admits");
-  assert.equal(new Set(Object.values(SEVERITY_LABEL)).size, 13, "no two stored values share a word");
+  assert.deepEqual(Object.keys(severityJson).sort(), [...stored].sort(), "the vocabulary covers exactly the values the column admits");
+  assert.equal(new Set(Object.values(severityJson)).size, 13, "no two stored values share a word");
 });
 
 // ---- the sections and counts ----
-import { createElement } from "react";
-
-import { headlineCaption } from "@/features/market/lib/headline";
-import { leadTimeCanHaveRows } from "@/features/market/lib/lead-time";
-import { buildSeriesBoard } from "@/features/market/lib/series-board";
-import { readSeriesRows } from "@/features/market/read";
-import { CarbonCostOverlay } from "@/features/market/ui/CarbonCostOverlay";
-import { LeadTimeChart } from "@/features/market/ui/LeadTimeChart";
-import { MarketRail } from "@/features/market/ui/Rails";
-
-import { memoryDb } from "../_support/memory-db.ts";
-import { renderApp, textOf } from "../_support/render.ts";
-
 const draw = (el: ReturnType<typeof createElement>) => textOf(renderApp(el));
 const gapOnly = { label: "Shanghai → Rotterdam", corridor: { origin: "CNSHA", dest: "NLRTM", mode: "sea" }, entityId: "e1", jurisdictions: [], result: { ok: false as const, gaps: ["no corridor routing distance available yet"], partial: { intensity: null, distance: null, payload: null, carbonPrice: null } } };
 

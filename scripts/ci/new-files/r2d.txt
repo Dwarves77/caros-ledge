@@ -1,0 +1,20 @@
+# R2d surfaces and readers: files with no old counterpart (the old tree had no admissible-row predicate, no ceiling gate, no source-coverage view and no customer-sentence table)
+src/core/derived/admissible.ts | new in R2d: the ONE admissible-row predicate (verified, not archived, not replaced, not suppressed) every reader takes: admissibleRows, admitItems, isAdmissibleItem (I13)
+src/core/derived/ceiling.ts | new in R2d: assertUse, the one function that refuses a use above the stored derivation ceiling and a superseded value (I14)
+src/core/derived/current-input.ts | new in R2d: a derivation input is read through the same rule the readers use; a value that is no longer current resolves to null (flywheel:8)
+src/core/derived/source-coverage.ts | new in R2d: the source_coverage view's reader behind the dashboard ledger, the map and the admin card (addendum A)
+src/core/derived/suppressed-events.ts | new in R2d: the forward events an admin took out by suppressing the claim they came from (flywheel:21)
+src/core/detail/status-words.ts | new in R2d: the status token of an inference in the words a customer reads, importable by a client component (INV-272)
+src/core/http/failure.ts | new in R2d: the table of customer sentences by status and the browser-client read failure sentence (I16)
+src/core/http/data/db-sentences.json | new in R2d: the customer sentence for each status a database failure answers; data for failure.ts
+src/core/jurisdictions/data/subdivisions.json | new in R2d: the subdivision names the tier table lists by code alone (core:41); data for iso.ts
+src/features/dashboard/ui/CoverageLedgerCard.tsx | new in R2d: the dashboard's source coverage card, from the source_coverage view (addendum A)
+src/features/market/lib/data/item-type.json | new in R2d: the one customer word for each stored item type (surfaces:20); data for item-type.ts
+src/features/market/lib/data/provenance-words.json | new in R2d: the customer word for each provenance field a drawer printed as a column name (surfaces:66); data for provenance.ts
+src/features/market/lib/data/severity.json | new in R2d: the one customer word for each stored severity value (surfaces:19); data for severity.ts
+src/features/market/lib/item-type.ts | new in R2d: the item-type label table reader and the list row's meta line (surfaces:20)
+src/features/market/lib/severity.ts | new in R2d: the severity label table reader (surfaces:19)
+src/features/operations/read/data/cadence.json | new in R2d: the cadence each regional producer registered, by method version (surfaces:12); data for operations-reads.ts
+src/features/research/model/data/assessment-copy.json | new in R2d: the customer sentence for each assessment refusal code (surfaces:5); data for assessment-view.ts
+src/features/workspace/api/collab-db-fail.ts | new in R2d: a failed collaboration write answered with the table's sentence, the driver's text logged (W:19)
+src/features/workspace/ui/DetailWatch.tsx | new in R2d: the live Watch control of a detail page, a stated failure with Retry when the membership read failed (surfaces:1, 38)

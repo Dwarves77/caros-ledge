@@ -20,6 +20,26 @@
     }
    ]
   },
+  "admissible_claims": {
+   "columns": [
+    "id",
+    "section_row_id",
+    "intelligence_item_id",
+    "claim_text",
+    "claim_kind",
+    "source_span",
+    "source_id",
+    "search_result_id",
+    "source_tier_at_grounding",
+    "extracted_at",
+    "verified_at",
+    "mint_hold_reason",
+    "basis_claim_id"
+   ],
+   "uuid": [],
+   "defaults": {},
+   "fks": []
+  },
   "agent_run_searches": {
    "columns": [
     "id",
@@ -2287,7 +2307,8 @@
     "label",
     "is_completed",
     "sort_order",
-    "created_at"
+    "created_at",
+    "date_precision"
    ],
    "uuid": [
     "id"
@@ -2295,7 +2316,8 @@
    "defaults": {
     "is_completed": false,
     "sort_order": 0,
-    "created_at": "__now"
+    "created_at": "__now",
+    "date_precision": "day"
    },
    "fks": [
     {

@@ -1,6 +1,7 @@
 // Ported from old_repo/src/lib/sources/source-growth.ts (lines 1-584)
 // Ported from old_repo/src/lib/sources/tier-opinion-writer.ts (lines 1-92)
 // Ported from old_repo/src/lib/sources/cited-host-gate.mjs (lines 1-19)
+import { parseNewSources } from "@/core/brief/sections";
 import type { Db } from "@/core/db";
 import { hostOf } from "@/core/shared";
 import { classTierForHost } from "@/core/sources/host-class";
@@ -147,25 +148,6 @@ async function recordCitations(db: Db, edges: Array<{ citing_source_id: string; 
 }
 
 /** Parse the brief's "New Sources Identified" table. A row's tier is its EXPLICIT tier cell or absent; a blocked row becomes a candidate with a reason. */
-function parseNewSourcesFromBrief(brief: string): CitedSourceInput[] {
-  const m = (brief || "").match(/#+\s*New Sources Identified[\s\S]*?(?=\n#+\s|\s*$)/i);
-  if (!m) return [];
-  const out: CitedSourceInput[] = [];
-  for (const line of m[0].split("\n")) {
-    if (!line.trim().startsWith("|")) continue;
-    const cells = line.split("|").map((s) => s.trim()).filter(Boolean);
-    if (cells.length < 2) continue;
-    const urlCell = cells.find((c) => /https?:\/\//.test(c));
-    const url = urlCell ? (urlCell.match(/https?:\/\/[^\s)|]+/) || [])[0] : undefined;
-    if (!url) continue;
-    const name = (cells[0] ?? "").replace(/\*+/g, "");
-    if (/^source name$/i.test(name)) continue;
-    const tierCell = cells.find((c) => /^\(?[1-7]\)?$/.test(c));
-    out.push({ name, url, ...(tierCell ? { tier_estimate: parseInt(tierCell.replace(/\D/g, ""), 10) } : {}), rejection_reason: /cloudflare|blocked|\b403\b|captcha|access denied/i.test(line) ? "cloudflare_block" : null });
-  }
-  return out;
-}
-
 /** Recompute convergence for a CITED source from its edges (syndication collapsed) and write the compounded credibility columns. Every read and the write throw on error. */
 async function compoundSourceCredibility(db: Db, citedSourceId: string) {
   const pre = await db.from("sources").select("independent_citers, trust_score_citation").eq("id", citedSourceId).maybeSingle();
@@ -238,7 +220,7 @@ export interface GrowInput {
 export async function growSources(deps: RunDeps, input: GrowInput): Promise<RunResult> {
   const { db, now } = deps;
   const notes: string[] = [];
-  const cited = parseNewSourcesFromBrief(input.brief);
+  const cited = parseNewSources(input.brief);
   const registered = await registerCitedSources(db, cited, { skipTierOpinions: true, ...(input.dry ? { dry: true } : {}) });
   const failed = registered.filter((r) => r.registered === "lookup_failed" || r.error);
   for (const f of failed) notes.push(`${f.url}: ${f.error}`);

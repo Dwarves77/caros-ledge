@@ -40,13 +40,15 @@ export function toDate(input: string | Date | null | undefined): Date | null {
 
 const UNITS: [string, number][] = [["y", 365 * 86_400_000], ["mo", 30 * 86_400_000], ["w", 7 * 86_400_000], ["d", 86_400_000], ["h", 3_600_000], ["m", 60_000]];
 
-/** "5m ago", "3d ago", "just now"; empty for an unparseable input. */
+/** "5m ago", "3d ago", "in 2w" for a date ahead, "just now" inside a minute; empty for an unparseable input. */
 export function formatRelativeCompact(input: string | Date | null | undefined, now: Date | number = Date.now()): string {
   const d = toDate(input);
   if (!d) return "";
   const diff = (typeof now === "number" ? now : now.getTime()) - d.getTime();
-  const unit = UNITS.find(([, ms]) => diff >= ms);
-  return unit ? `${Math.floor(diff / unit[1])}${unit[0]} ago` : "just now";
+  const unit = UNITS.find(([, ms]) => Math.abs(diff) >= ms);
+  if (!unit) return "just now";
+  const n = Math.floor(Math.abs(diff) / unit[1]);
+  return diff < 0 ? `in ${n}${unit[0]}` : `${n}${unit[0]} ago`;
 }
 
 /** "5 min ago", "in 3 days": long form, past and future. */

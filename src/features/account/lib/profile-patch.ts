@@ -3,6 +3,7 @@
 // Ported from old_repo/src/components/onboarding/NoWorkspaceLanding.tsx (lines 94-109)
 import { z } from "zod";
 
+import { readFailure } from "@/core/http/failure";
 import type { Db } from "@/core/db/clients";
 
 /**
@@ -28,5 +29,5 @@ export async function saveProfilePatch(client: Db, userId: string, patch: unknow
   const parsed = profilePatchSchema.safeParse(patch);
   if (!parsed.success) return `Invalid profile change: ${parsed.error.issues[0]?.message ?? "invalid"}`;
   const { error } = await client.from("profiles").update({ ...parsed.data, updated_at: new Date().toISOString() }).eq("id", userId);
-  return error ? error.message : null;
+  return error ? readFailure(error) : null;
 }

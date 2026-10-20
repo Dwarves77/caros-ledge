@@ -73,7 +73,7 @@ test("assessment rules: R1 a dated statutory instrument (CONFIRMED), R3 a named 
   assert.deepEqual([r4.horizon?.rule, r4.horizon?.band, r4.statusToken, r4.technicalMaturity?.low], ["R4", "NEAR", "HYPOTHESIS", 8]);
   const refused = assessItem(input({ text: "nothing forecastable here" }), { now: NOWD });
   assert.equal(refused.horizon, null);
-  assert.match(refused.refusalReason ?? "", /not forecastable/);
+  assert.equal(refused.refusalReason, "no_dated_basis", "the producer stores a reason code, not prose (surfaces:5)");
   assert.equal(refused.statusToken, "HYPOTHESIS");
   assert.equal(assessItem(input({ citationCount: 0 })).credibilityEvidenceScore, "limited");
   assert.equal(assessItem(input({ citationCount: 7 })).credibilityEvidenceScore, "robust");
@@ -135,7 +135,7 @@ test("INV-249: a failed insert restores the flipped row (never zero current rows
   const ok = memoryDb({});
   const r = await runProducer(makeDeps({ db: ok, env: ASSESS_ENV }).deps, { spec: armed, dry: false, text: JSON.stringify([input({ text: "nothing forecastable" })]) });
   assert.equal(r.counts.written, 1);
-  assert.match(String(ok.tables.research_assessments?.[0]?.refusal_reason), /not forecastable/);
+  assert.equal(ok.tables.research_assessments?.[0]?.refusal_reason, "no_dated_basis");
   assert.equal(toRow(assessItem(input({ text: "x" }), { now: NOWD })).computed_by, "research-assessment-producer@1");
 });
 

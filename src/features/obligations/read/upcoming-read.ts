@@ -7,12 +7,12 @@ import { admitItems } from "@/core/derived/admissible";
 import type { Db } from "@/core/db";
 import { canonicalJurisdictionCode, GENERIC_JURISDICTIONS } from "@/core/entities/id";
 import { qb } from "@/core/db";
+import { notInList, suppressedEventIds } from "@/core/derived/suppressed-events";
 
 import { DEFAULT_KINDS, EVENT_KINDS, type EventKind } from "../kinds";
 
 
 import { rowsOf } from "./qb";
-import { notInList, suppressedEventIds } from "@/core/derived/suppressed-events";
 
 const ISO_RE = /^\d{4}-\d{2}-\d{2}$/;
 const csvKeys = (v: unknown): string[] => (Array.isArray(v) ? v : typeof v === "string" ? v.split(",") : []).map((x) => String(x ?? "").trim().toLowerCase()).filter(Boolean);

@@ -1,7 +1,7 @@
 // P2-15j: structures the retired parity waivers hid. The parity gate (tests/parity/compare.mjs) reads landmarks (role and name) in order, every list row (`[data-part="list-row"]`) and controls by name; each test pins one class of defect it found,
 // on the same first paint a reader gets (static markup, no effects run).
 //  1. every detail page ends with the Recalculation notices region the old pages drew (regulation, research, operations, market);
-//  2. the timeline track and the related-signals links keep the markup the old page drew (G2 retired the sampler these were bent to: the gate no longer samples `li`, so the markup is free to be semantic);
+//  2. the timeline track keeps the markup the old page drew (G2 retired the sampler these were bent to: the gate no longer samples `li`, so the markup is free to be semantic);
 //  3. an empty Spec09 panel on Operations offers its Request coverage control (the old page drew it twice).
 import assert from "node:assert/strict";
 import { test } from "node:test";
@@ -10,7 +10,6 @@ import { createElement, type ReactNode } from "react";
 
 import { Timeline } from "@/ui/Timeline";
 import { bandOf } from "@/core/lists";
-import { RelatedSignalLinks } from "@/features/market/ui/RelatedSignalLinks";
 import { RequestableCoverageState } from "@/features/coverage";
 
 import { renderApp } from "../_support/render.ts";
@@ -48,11 +47,6 @@ test("the timeline track keeps the markup the old page drew: an image-role track
   assert.match(out, /role="img"/);
   assert.equal(count(out, "cl-tl-marker"), 2);
   assert.equal(count(out, "cl-tl-line"), 1);
-});
-
-test("the related signals are one link each", () => {
-  const out = renderApp(createElement(RelatedSignalLinks, { signals: [{ id: "m2", title: "Second signal", priority: "HIGH" } as never, { id: "m3", title: "Third signal", priority: "LOW" } as never] }));
-  assert.equal(count(out, "<a "), 2);
 });
 
 test("a not-covered Spec09 panel on Operations offers Request coverage", async () => {

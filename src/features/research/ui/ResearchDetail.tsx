@@ -18,21 +18,20 @@ import { jurisLabelOf } from "@/core/jurisdictions";
 import { bandFromPriority } from "@/core/lists";
 import { formatDate, pluralize } from "@/core/shared";
 import type { Resource } from "@/core/types";
-import { Absence, ActionCard, ClaimTierProvider, DetailSubSection, downloadMarkdownBrief, GfmSection, GradeChip, SectionIndex, StateNote, TagChip, type ClaimTierMap } from "@/ui";
+import { ActionCard, ClaimTierProvider, DetailSubSection, downloadMarkdownBrief, GfmSection, GradeChip, SectionIndex, StateNote, TagChip, type ClaimTierMap } from "@/ui";
 import { AtAGlanceCard, commonActionCardProps, CrossPageSection, crossPagePresence, DetailLayout, DetailMasthead, DetailPageWrapper, DetailRail, DetailSection, FactBlocks, ImpactRailCard, InThisListStat, ItemConnections, RecordFacts, RelevanceRailCard, SourcesGrid, topRecommendedAction, type CrossPageData } from "@/ui/detail";
 import { NoticesRail } from "@/ui/figures";
 import { LegendRailCard } from "@/ui/list-surface";
 import { useItemRelevance } from "@/features/regulations/useItemRelevance";
 import { DetailTagRow } from "@/features/workspace/ui/DetailTagRow";
 import { DetailWatch } from "@/features/workspace/ui/DetailWatch";
+import { itemTypeLabel } from "@/features/market/lib/item-type";
 
 import { themeLabel, themeOf } from "../model/taxonomy";
 import type { AssessmentBundle } from "../read/research-reads";
 import type { RelatedResult } from "../read/related-items";
 
 import { AssessmentCard, AssessmentHistory, DissentPanel, SignpostList } from "./AssessmentRail";
-import { itemTypeLabel } from "@/features/market/lib/item-type";
-
 import { CredibilityChips } from "./CredibilityChips";
 import styles from "./research.module.css";
 import { ThemeBriefCard } from "./ThemeBriefCard";

@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import type { Db } from "@/core/db/clients";
 import { describeError } from "@/core/db/clients";
+import { LookupError } from "@/core/http/errors";
 import { log } from "@/core/shared/log";
 
 import vocabulary from "./data/org-vocabulary.json";
@@ -145,7 +146,9 @@ export async function readWorkspaceProfile(client: Db, orgId: string | null): Pr
   };
 }
 
-/** The viewer's workspace profile for the callers that rank in the background (relevance, upcoming obligations): the default on a failed read, which is logged. */
+/** The viewer's workspace profile for the callers that rank (relevance, upcoming obligations). A failed read is a LookupError to the caller's failure state, never the default profile presented as the viewer's own lens (W:20). */
 export async function getWorkspaceProfile(client: Db, orgId: string | null): Promise<WorkspaceProfile> {
-  return (await readWorkspaceProfile(client, orgId)).profile;
+  const read = await readWorkspaceProfile(client, orgId);
+  if (read.failed) throw new LookupError("workspace_settings", { message: "the workspace profile could not be read" });
+  return read.profile;
 }

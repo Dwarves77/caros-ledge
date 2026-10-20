@@ -2,15 +2,12 @@
 // Ported from old_repo/src/app/api/invitations/[token]/decline/route.ts (lines 24-38)
 // Ported from old_repo/src/app/api/orgs/[org_id]/invitations/[id]/route.ts (lines 41-55)
 // Ported from old_repo/src/lib/api/route-guard.ts (lines 30-37)
-import { z } from "zod";
-
 import { log } from "@/core/shared/log";
 import { withErrorCapture } from "@/core/shared/telemetry";
 
-import sentencesJson from "./data/db-sentences.json";
+import { DB_SENTENCES, LOOKUP_SENTENCE, statusForDb } from "./failure";
 
-/** The customer sentence for each status a database failure answers (data/db-sentences.json): a driver message is never one of them. */
-const DB_SENTENCES = z.record(z.string(), z.string().min(1)).parse(sentencesJson);
+export { LOOKUP_SENTENCE, statusForDb };
 
 /** The one error shape: `{ error: string }` with a status. */
 export class HttpError extends Error {
@@ -27,8 +24,6 @@ export class HttpError extends Error {
   }
 }
 
-export const LOOKUP_SENTENCE = DB_SENTENCES["503"] as string;
-
 /** A read behind a guard or a handler failed. Answered 503 with Retry-After and retried by the client: never read as "not a member" or "no workspace". The body carries a customer sentence; the driver's message (`message`) goes to the log only. */
 export class LookupError extends HttpError {
   constructor(step: string, cause: unknown) {
@@ -44,29 +39,6 @@ export function refuse(status: number, message: string, headers: Record<string, 
 /** A success body with the caller's rate-limit headers. */
 export function ok(headers: Record<string, string>, body: unknown, status = 200): Response {
   return Response.json(body, { status, headers });
-}
-
-/** Codes that mean "the database could not answer now" (timeout, serialisation failure, deadlock, lock or connection limits, the 08 connection class): 503 with Retry-After, not a defect. */
-const TRANSIENT = new Set(["57014", "40001", "40P01", "55P03", "53300"]);
-/** Codes that mean the request itself was malformed (invalid text representation, not-null, check, length). */
-const INVALID = new Set(["22P02", "22001", "23502", "23514"]);
-
-/** Postgres and PostgREST codes to HTTP statuses: the one map. */
-export function statusForDb(code: string | null | undefined): number {
-  if (code && (TRANSIENT.has(code) || code.startsWith("08"))) return 503;
-  if (code && INVALID.has(code)) return 400;
-  switch (code) {
-    case "42501":
-    case "PGRST301":
-      return 403;
-    case "P0002":
-      return 404;
-    case "22023":
-    case "23505":
-      return 409;
-    default:
-      return 500;
-  }
 }
 
 /**

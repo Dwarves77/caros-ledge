@@ -9,10 +9,10 @@ import type { Db } from "@/core/db";
 import { canonicalJurisdictionCode, GENERIC_JURISDICTIONS } from "@/core/entities/id";
 import { isValid } from "@/core/contracts/vocabularies";
 import { qb, type Qb } from "@/core/db";
+import { notInList, suppressedEventIds } from "@/core/derived/suppressed-events";
 
 import { countOf, rowsOf } from "./qb";
 import { fetchRegisterFacetOptions, type RegisterFacets } from "./register-facets";
-import { notInList, suppressedEventIds } from "@/core/derived/suppressed-events";
 
 export const UNCLASSIFIED = "unclassified";
 export const DUE_WINDOWS = ["overdue", "30", "90", "365", "undated", "all"] as const;

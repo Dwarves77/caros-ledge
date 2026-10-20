@@ -16,7 +16,7 @@ function Entry({ item }: { item: WatchlistItem }) {
   const body = (
     <>
       <p className={styles.watchKicker}>
-        {item.fields?.jurisdiction ?? WATCHLIST_TYPE_LABEL[item.type].toUpperCase()}
+        {item.fields?.jurisdiction ?? "—"}
         {item.scope === "team" ? <span className={styles.team} title="On the workspace watchlist: every member sees this">Team</span> : null}
       </p>
       <p className={styles.watchTitle}>{item.title}</p>

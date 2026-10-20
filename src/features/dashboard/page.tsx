@@ -9,9 +9,9 @@ import { PageFailure } from "@/ui/shell/PageFailure";
 import { readWatchlist, WATCHLIST_RAIL_LIMIT } from "@/features/watchlist/read/watchlist";
 import { StateNote } from "@/ui";
 import { PageFrame } from "@/ui/shell";
+import { readSourceCoverage } from "@/core/derived/source-coverage";
 
 import { dashboardDeps } from "./deps";
-import { readSourceCoverage } from "@/core/derived/source-coverage";
 import { readCounts, readDigest } from "./read/digest";
 import { buildChangedRows, buildDueNextRows, computeAuditDate, dueNextWindowLabel, firstTokenOf, surfaceItemTotal } from "./rows";
 import { DashboardBrief } from "./ui/DashboardBrief";

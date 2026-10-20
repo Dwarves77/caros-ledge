@@ -95,7 +95,7 @@ test("readMarketSeries: the board, the SBTi rows, the ratings, and the lineage o
 
 test("INV-263 readMarket: every part is independent, and a failed read is its own failure, never an empty list or a zero", async () => {
   const db = world();
-  const c = withRpc(db, { get_market_intel_items_public: () => ({ error: { message: "rpc down" } }), get_surface_counts: () => ({ data: { total_items: 0 } }) });
+  const c = withRpc(db, { get_market_intel_items: () => ({ error: { message: "rpc down" } }), get_surface_counts: () => ({ data: { total_items: 0 } }) });
   const r = await readMarket(c.client, { orgId: ORG_A });
   assert.equal(r.signals.ok, false, "the signal list failed and says so");
   assert.equal(r.series.ok, true, "the series part stands");
@@ -112,7 +112,7 @@ test("readMarket: the list is the public market RPC with its counts, and a good 
   const db = world();
   const c = withRpc(db, {
     get_market_intel_items_public: () => ({ data: [{ id: ITEM, legacy_id: null, title: "Diesel", item_type: "market_signal", effective_priority: "HIGH", added_date: "2026-10-01", severity: "cost_alert", source_id: null }] }),
-    get_surface_counts: () => ({ data: { total_items: 1, by_priority: { HIGH: 1 }, by_jurisdiction: {} } }),
+    get_surface_counts: () => ({ data: { total_items: 1, by_priority: { HIGH: 1 }, by_jurisdiction: {}, by_status: {}, by_severity: {}, by_band: {}, total_jurisdictions: 0 } }),
   });
   const r = await readMarket(c.client, { orgId: null });
   assert.ok(r.signals.ok);
@@ -183,8 +183,8 @@ test("the Region facet is the surface-wide counts of the member's org: CN is off
   const db = world();
   const asked: unknown[] = [];
   const c = withRpc(db, {
-    get_market_intel_items_public: () => ({ data: [{ id: ITEM, legacy_id: null, title: "Diesel", item_type: "market_signal", effective_priority: "HIGH", added_date: "2026-10-01", severity: "cost_alert", source_id: null, jurisdiction_iso: ["EU"], jurisdictions: ["EU"] }] }),
-    get_surface_counts: (args) => (asked.push(args.p_org_id), args.p_org_id === null ? { error: { message: "42501 a null org is the service role's" } } : { data: { total_items: 3, by_jurisdiction: { EU: 1, CN: 2 }, by_priority: { HIGH: 3 } } }),
+    get_market_intel_items: () => ({ data: [{ id: ITEM, legacy_id: null, title: "Diesel", item_type: "market_signal", effective_priority: "HIGH", added_date: "2026-10-01", severity: "cost_alert", source_id: null, jurisdiction_iso: ["EU"], jurisdictions: ["EU"] }] }),
+    get_surface_counts: (args) => (asked.push(args.p_org_id), args.p_org_id === null ? { error: { message: "42501 a null org is the service role's" } } : { data: { total_items: 3, by_jurisdiction: { EU: 1, CN: 2 }, by_priority: { HIGH: 3 }, by_status: {}, by_severity: {}, by_band: {}, total_jurisdictions: 2 } }),
   });
   const r = await readMarket(c.client, { orgId: ORG_A });
   assert.deepEqual(asked, [ORG_A], "the counts are asked for the member's org");

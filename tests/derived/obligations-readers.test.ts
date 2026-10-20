@@ -104,7 +104,7 @@ test("flywheel:23: no obligation object is derived for an unverified item, nor f
       fact_suppressions: suppressions,
     });
   const live = await deriveObligationObjects(base({}, []).db, { dry: true, itemIds: [LIVE] });
-  assert.ok(live.counts.candidates >= 1, "the fixture yields a candidate when nothing is wrong");
+  assert.ok((live.counts.candidates ?? 0) >= 1, "the fixture yields a candidate when nothing is wrong");
   const unverified = await deriveObligationObjects(base({ provenance_status: "unverified" }, []).db, { dry: true, itemIds: [LIVE] });
   assert.equal(unverified.counts.candidates, 0);
   const suppressed = await deriveObligationObjects(base({}, [suppress(C1, LIVE, claimText)]).db, { dry: true, itemIds: [LIVE] });

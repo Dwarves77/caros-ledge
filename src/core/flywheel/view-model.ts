@@ -5,6 +5,7 @@
 // are the routing module's, not a copy), supersession rows, the cross-page intersection view, the lookup of verified linked items, and the candidate
 // block handed to a brief author. Relationship vocabulary and specificity come from edges.ts (one table, drift-checked against the CHECK).
 import type { Db } from "@/core/db";
+import { admitItems } from "@/core/derived/admissible";
 import { fetchAllByIdChunks } from "@/core/db";
 import { isUuid } from "@/core/http/parse";
 import { SURFACE_LABELS, SURFACE_ORDER, surfaceHref } from "@/core/routing";
@@ -67,22 +68,21 @@ export function buildConnectionRows(connections: readonly ConnectionIn[] | null 
 export interface Supersession {
   old: string;
   new: string;
-  oldTitle?: string;
-  newTitle?: string;
 }
-/** Superseded-by / Supersedes rows for one item, always on the Regulations surface (supersession is a regulatory fact). */
+/** Superseded-by / Supersedes rows for one item, always on the Regulations surface (supersession is a regulatory fact). An item the verified lookup does not hold has no row: no title from the raw id, no rating, no link to a page that 404s (F:14). */
 export function buildSupersessionRows(supersessions: readonly Supersession[] | null | undefined, selfId: string, lookup: ResourceLookup | null | undefined): ConnectionRow[] {
   const seen = new Set<string>();
   const rows: ConnectionRow[] = [];
-  const add = (id: string, fallbackTitle: string | undefined, label: string) => {
+  const add = (id: string, label: string) => {
     const ref = lookup?.[id];
-    rows.push({ id, title: ref?.title || fallbackTitle || id, priority: ref?.priority ?? "MODERATE", label, surface: "regulations", href: surfaceHref("regulations", id), origin: "manual", discovered: false, basisSummary: [], score: null });
+    if (!ref) return;
+    rows.push({ id, title: ref.title, priority: ref.priority, label, surface: "regulations", href: surfaceHref("regulations", id), origin: "manual", discovered: false, basisSummary: [], score: null });
     seen.add(id);
   };
   for (const s of supersessions ?? []) {
     if (!s) continue;
-    if (s.old === selfId && s.new && !seen.has(s.new)) add(s.new, s.newTitle, "Superseded by");
-    else if (s.new === selfId && s.old && !seen.has(s.old)) add(s.old, s.oldTitle, "Supersedes");
+    if (s.old === selfId && s.new && !seen.has(s.new)) add(s.new, "Superseded by");
+    else if (s.new === selfId && s.old && !seen.has(s.old)) add(s.old, "Supersedes");
   }
   return rows;
 }
@@ -152,7 +152,7 @@ export async function buildResourceLookup(sb: Db, relatedIds: readonly string[])
   const lookup: ResourceLookup = {};
   const read = async (column: "id" | "legacy_id", list: string[]) => {
     const rows = await fetchAllByIdChunks<{ id: string; legacy_id: string | null; title: string; priority: string }>(list, async (slice) => {
-      const { data, error } = await sb.from("intelligence_items").select("id, legacy_id, title, priority").eq("is_archived", false).eq("provenance_status", "verified").in(column, slice);
+      const { data, error } = await admitItems(sb.from("intelligence_items").select("id, legacy_id, title, priority")).in(column, slice);
       if (error) throw new Error(`resource lookup failed: ${error.message}`);
       return data ?? [];
     }, { manyPerId: true });

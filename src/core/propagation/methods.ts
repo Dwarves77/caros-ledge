@@ -92,7 +92,7 @@ export const computeInferFromQuestion: InferenceFn = (ctx) => {
  * a null row. Every cited item still current: the inference stands, its text, status token and confidence carried over unchanged (a recompute proves nothing it did not check, and never edits what was said).
  * A cited item gone: the successor is REFUTED, same text, same confidence, same citations, so the history shows what was claimed and when it stopped holding. Never CONFIRMED (ADR-044): a prior CONFIRMED reads as HYPOTHESIS.
  */
-export const reevaluateInference: InferenceFn = (ctx) => {
+const reevaluateInference: InferenceFn = (ctx) => {
   const prior = ctx.priorValue as PriorInferenceRow | null;
   const cited = Array.isArray(prior?.cited_item_ids) ? prior.cited_item_ids.filter(Boolean) : [];
   if (!prior || cited.length === 0) return { ok: false, reason: "no prior inference_records row with cited_item_ids to re-evaluate" };

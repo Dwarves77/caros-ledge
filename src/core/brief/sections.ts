@@ -211,8 +211,8 @@ export function stripClaimLedgerBlocks(text: string | null | undefined): string 
   return original.replace(new RegExp(`${LEDGER_OPEN}[\\s\\S]*?${LEDGER_CLOSE}`, "g"), "").replace(new RegExp(`${LEDGER_OPEN}[\\s\\S]*$`), "").replace(new RegExp(LEDGER_CLOSE, "g"), "").replace(/\s+$/, "");
 }
 
-export interface CitedSource { name: string; url: string; tier_estimate: number; rejection_reason: string | null }
-/** The rows of the brief's "New Sources Identified" table (name, url, tier estimate); a blocked row is carried with its reason. */
+export interface CitedSource { name: string; url: string; tier_estimate: number | null; rejection_reason: string | null }
+/** The rows of the brief's "New Sources Identified" table (name, url, tier estimate); a blocked row is carried with its reason. A row that states no tier has none (null): the tier comes from the class table, never a default (F:31, rule 18). */
 export function parseNewSources(brief: string | null | undefined): CitedSource[] {
   const m = /#+\s*New Sources Identified[\s\S]*?(?=\n#+\s|\s*$)/i.exec(brief ?? "");
   if (!m) return [];
@@ -225,7 +225,7 @@ export function parseNewSources(brief: string | null | undefined): CitedSource[]
     const name = (cells[0] ?? "").replace(/\*+/g, "");
     if (cells.length < 2 || !url || /^source name$/i.test(name)) continue;
     const tierCell = cells.find((c) => /^\(?[1-7]\)?$/.test(c));
-    out.push({ name, url, tier_estimate: tierCell ? parseInt(tierCell.replace(/\D/g, ""), 10) : 5, rejection_reason: /cloudflare|blocked|\b403\b|captcha|access denied/i.test(line) ? "cloudflare_block" : null });
+    out.push({ name, url, tier_estimate: tierCell ? parseInt(tierCell.replace(/\D/g, ""), 10) : null, rejection_reason: /cloudflare|blocked|\b403\b|captcha|access denied/i.test(line) ? "cloudflare_block" : null });
   }
   return out;
 }

@@ -3,6 +3,7 @@
 // Ported from old_repo/src/app/api/workspace/bootstrap/logic.ts (lines 72-114)
 // Ported from old_repo/src/app/api/workspace/archive-impact/route.ts (lines 93-124)
 // Ported from old_repo/src/app/api/workspace/overrides/route.ts (lines 195-211)
+import { admitItems } from "@/core/derived/admissible";
 import type { Db } from "@/core/db/clients";
 import { fetchAllRows } from "@/core/db/query";
 import { LookupError, refuse } from "@/core/http/errors";
@@ -158,11 +159,8 @@ export async function runCollab(request: Request, context: { params: Promise<{ i
     return refuse(400, "Invalid item id");
   }
   const client = auth.client;
-  const { data: item, error } = await client
-    .from("intelligence_items")
-    .select("id, legacy_id, title, item_type, domain")
+  const { data: item, error } = await admitItems(client.from("intelligence_items").select("id, legacy_id, title, item_type, domain"))
     .eq(isUuid(itemKey) ? "id" : "legacy_id", itemKey)
-    .eq("provenance_status", "verified")
     .maybeSingle();
   if (error) throw new LookupError("intelligence_items", error);
   if (!item) return refuse(404, "That item was not found.");

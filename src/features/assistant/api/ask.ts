@@ -5,7 +5,7 @@ import { LookupError, ok, route } from "@/core/http/errors";
 import { isRefusal, requireUser } from "@/core/http/guard";
 import { parseJson } from "@/core/http/parse";
 import { detailHref, jurisdictionCode, metaLine } from "@/core/lists";
-import { loadSuppressedClaims, redactSuppressedClaims } from "@/features/corrections";
+import { loadSuppressedClaims, redactDeep, redactSuppressedClaims } from "@/features/corrections";
 import { embeddedTier, runSearch } from "@/features/search/run-search";
 
 import { assistantDeps } from "../deps";
@@ -59,7 +59,7 @@ export const POST = route(NAME, async (request) => {
   if (isRefusal(auth)) return auth;
   const { question } = await parseJson(request, body);
   const found = await runSearch<Raw>(auth.client, question, { maxRows: HIT_LIMIT, select: SELECT, shape: (r) => r as unknown as Raw });
-  if (!found.ok) throw new LookupError("search", { message: found.message });
+  if (!found.ok) throw new LookupError("search", { message: found.reason });
   const rows = found.rows;
   const passages = matchPassages(question).map(({ id, heading, text }) => ({ id, heading, text }));
   const reply = (r: Partial<AskResponse>) => ok(auth.headers, { question, hits: [], answers: [], passages, operations: [], disclaimer: ASK_DISCLAIMER, empty: rows.length === 0, ...r });
@@ -70,7 +70,8 @@ export const POST = route(NAME, async (request) => {
   });
   const sourceIds = [...new Set(rows.map((r) => r.source_id).filter((id): id is string => !!id))];
   const stats = sourceIds.length ? await auth.client.rpc("get_source_citation_stats", { source_ids: sourceIds }) : { data: [], error: null };
-  const statOf = new Map(((stats.error ? [] : stats.data) as { source_id: string; citation_count: number | null; recency: string | null }[]).map((s) => [s.source_id, s]));
+  if (stats.error) throw new LookupError("citation stats", stats.error);
+  const statOf = new Map((stats.data as { source_id: string; citation_count: number | null; recency: string | null }[]).map((s) => [s.source_id, s]));
   const hits = rows.map((r): AskHit => {
     const src = Array.isArray(r.source) ? (r.source[0] ?? null) : r.source;
     const mine = suppressed.filter((c) => c.item_id === r.id);
@@ -84,9 +85,9 @@ export const POST = route(NAME, async (request) => {
       jurisdiction: jurisdictionCode({ jurisdiction: r.jurisdictions?.[0] ?? undefined }),
       meta: metaLine({ type: r.item_type, modes: r.transport_modes ?? undefined, topic: r.category ?? undefined }),
       tier: embeddedTier(src),
-      summary: clip(r.summary, INTERSECTION_CHARS),
+      summary: clip(redactDeep(r.summary, mine), INTERSECTION_CHARS),
       excerpt: clip(brief, EXCERPT_CHARS),
-      intersection: clip(r.intersection_summary, INTERSECTION_CHARS),
+      intersection: clip(redactDeep(r.intersection_summary, mine), INTERSECTION_CHARS),
       relatedCount: r.related_items?.length ?? 0,
       source: src || r.source_url ? { name: src?.name ?? null, url: r.source_url ?? src?.url ?? null, citationCount: stat?.citation_count ?? null, recency: stat?.recency ?? null } : null,
     };

@@ -50,7 +50,7 @@ export async function readDigest(db: Db, orgId: string): Promise<Digest> {
   const [due, feed] = await Promise.all([rpc<Raw>(db, "get_workspace_due_next", { p_org_id: orgId, p_limit: DUE_NEXT_READ }), rpc<FeedRow>(db, "get_workspace_recent_changes", { p_org_id: orgId, p_days: windowDays })]);
   const { changeIds } = selectBriefResources(due.map((d) => d.id), feed);
   const wanted = [...new Set([...due.map((d) => d.id), ...changeIds])];
-  const backfill = await readItemRows(db, wanted);
+  const backfill = await readItemRows(db, orgId, wanted);
   const raw = new Map(backfill.map((r) => [r.id, r]));
   const feedById = new Map(feed.map((f) => [f.id, f]));
   const dueRows = due.map((d) => ({ ...raw.get(d.id), ...d }) as Raw);

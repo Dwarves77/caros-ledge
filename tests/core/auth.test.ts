@@ -18,7 +18,13 @@ import { fakeDb, filterValue, signedIn, signedOut, wrote } from "../_support/fak
 const TOKEN = "a".repeat(64);
 const ORG = "11111111-1111-4111-8111-111111111111";
 
-test("getClaims: verified locally, null for no or bad session, ClaimsUnavailable for an outage", async () => {
+test("getClaims: verified locally, null for no or bad session, ClaimsUnavailable for an outage of any class: a 5xx or 429 under any error name, a network error, an error class this code does not know (C:25)", async () => {
+  const failing = (error: object) => getClaims(fakeDb(undefined, { claims: { data: null, error } }).db);
+  await assert.rejects(failing({ name: "AuthApiError", status: 503, message: "x" }), ClaimsUnavailable);
+  await assert.rejects(failing({ name: "AuthApiError", status: 429, message: "x" }), ClaimsUnavailable);
+  await assert.rejects(failing({ name: "AuthUnknownError", message: "x" }), ClaimsUnavailable);
+  assert.equal(await failing({ name: "AuthApiError", status: 401, message: "invalid JWT" }), null);
+  assert.equal(await failing({ name: "AuthSessionMissingError", message: "x" }), null);
   assert.deepEqual(await getClaims(fakeDb(undefined, { claims: signedIn("u1", "a@b.test") }).db), { userId: "u1", email: "a@b.test" });
   assert.equal(await getClaims(fakeDb(undefined, { claims: signedOut }).db), null);
   assert.equal(await getClaims(fakeDb(undefined, { claims: { data: { claims: {} }, error: null } }).db), null);
@@ -79,10 +85,10 @@ test("sanitizeReturnPath: same-origin paths only, no control characters", () => 
   for (const bad of ["//evil.test", "/\\evil.test", "https://evil.test", "evil", "", null, undefined, "/\t/evil.test", "/\n//evil.test", "/a\rb", "/a\u0000b", "/a\u007fb"]) assert.equal(sanitizeReturnPath(bad as string), "/", JSON.stringify(bad));
 });
 
-test("decidePlatformAdmin: anonymous, denied (including a failed read) and admitted", async () => {
+test("decidePlatformAdmin: anonymous, denied and admitted; a failed flag read is a LookupError, never a denial that sends an admin home (C:24)", async () => {
   assert.deepEqual(await decidePlatformAdmin(fakeDb(undefined, { claims: signedOut }).db), { kind: "anonymous" });
   assert.deepEqual(await decidePlatformAdmin(fakeDb(undefined, { claims: signedIn("u1"), rpc: () => ({ data: false }) }).db), { kind: "denied", userId: "u1" });
-  assert.deepEqual(await decidePlatformAdmin(fakeDb(undefined, { claims: signedIn("u1"), rpc: () => ({ error: { message: "x" } }) }).db), { kind: "denied", userId: "u1" });
+  await assert.rejects(decidePlatformAdmin(fakeDb(undefined, { claims: signedIn("u1"), rpc: () => ({ error: { message: "x" } }) }).db), LookupError);
   assert.deepEqual(await decidePlatformAdmin(fakeDb(undefined, { claims: signedIn("u1", "a@b.test"), rpc: () => ({ data: true }) }).db), { kind: "admitted", userId: "u1", email: "a@b.test" });
   assert.equal(await readOwnPlatformAdmin(fakeDb(undefined, { rpc: () => ({ data: "true" }) }).db), false, "only a literal true admits");
   await assert.rejects(readOwnPlatformAdmin(fakeDb(undefined, { rpc: () => ({ error: { message: "x" } }) }).db), LookupError);

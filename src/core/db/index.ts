@@ -1,5 +1,5 @@
 export { isMissingObject } from "./absent";
-export { anonClient, bearerToken, describeError, isServiceConfigured, isSupabaseConfigured, missingServiceEnv, requestClient, serviceClient, userClient } from "./clients";
+export { bearerToken, describeError, isServiceConfigured, isSupabaseConfigured, missingServiceEnv, requestClient, serviceClient, userClient } from "./clients";
 export type { Db } from "./clients";
 export { boundedRead, exactCount, fetchAllByIdChunks, fetchAllRows, keyset, MAX_BOUND, ReadTimeoutError, unwrap, withTimeout } from "./query";
 export type { Page, ReadError, ReadResult } from "./query";

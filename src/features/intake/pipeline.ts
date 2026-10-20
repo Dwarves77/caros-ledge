@@ -19,7 +19,7 @@ import type { AdoptedTerms } from "@/core/brief/contract";
 import { fetchAllRows, type Db } from "@/core/db";
 import { groundBrief, poolHash, readPool, readRequiredSlots, uncoveredSlots, type GroundResult } from "@/core/grounding";
 import { reconcileSections } from "@/core/grounding/ledger";
-import { admissibleRows } from "@/core/briefs/admissible";
+import { admissibleRows } from "@/core/derived/admissible";
 import { runResult, type RunResult } from "@/core/intake/result";
 import { stripUrlMarkers } from "@/core/shared/url";
 

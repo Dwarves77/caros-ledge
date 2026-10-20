@@ -13,7 +13,7 @@ import type { ClaimTierMap } from "@/ui";
 import type { ChangeLogEntry, Dispute, ItemConnection, Resource, Supersession } from "@/core/types";
 import type { RelevanceInput } from "@/core/workspace";
 import type { RecommendedAction } from "@/core/brief";
-import { redactSuppressedClaims } from "@/features/corrections";
+import { redactDeep, redactSuppressedClaims } from "@/features/corrections";
 
 import { readClaims } from "./claim-tiers";
 import { readCrossPage, type CrossPage } from "./cross-page-read";
@@ -64,14 +64,15 @@ export async function loadDetail<ItemScoped = undefined>(surface: DetailSurface,
     buildResourceLookup(client, relatedIds),
     loadItemScoped ? loadItemScoped({ db: client, uuid, resource, connections, supersessions }) : Promise.resolve(undefined as ItemScoped),
   ]);
-  const crossPage = await readCrossPage(client, uuid, surface, item.intersectionSummary, connections, lookup);
   // INV-270 fails closed: without the suppressions the text is withheld (a named degraded block), never rendered unredacted and never read as 'nothing suppressed'.
   const claims = claimsRead.ok ? claimsRead : { tiers: {} as ClaimTierMap, suppressed: [] };
+  // Every text column of the page, not the sections and the brief alone: the claim was copied to the summary, the key data, the stated intersection summary and the theme brief (F:27).
+  const crossPage = redactDeep(await readCrossPage(client, uuid, surface, redactDeep(item.intersectionSummary, claims.suppressed), connections, lookup), claims.suppressed);
   const redacted = claimsRead.ok ? redactSuppressedClaims({ sections: item.sections, fullBrief: resource.fullBrief ?? null, claims: claims.suppressed }) : { sections: [] as SectionRow[], fullBrief: "" };
   return {
     notFound: false,
     uuid,
-    resource: redacted.fullBrief === (resource.fullBrief ?? null) ? resource : { ...resource, fullBrief: redacted.fullBrief ?? "" },
+    resource: redactDeep(redacted.fullBrief === (resource.fullBrief ?? null) ? resource : { ...resource, fullBrief: redacted.fullBrief ?? "" }, claims.suppressed),
     connections,
     supersessions,
     changelog: item.changelog,

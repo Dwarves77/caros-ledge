@@ -4,8 +4,8 @@ import { z } from "zod";
 
 import raw from "./data/severity.json";
 
-export const SEVERITY_LABEL: Readonly<Record<string, string>> = Object.freeze(z.record(z.string(), z.string().min(1)).parse(raw));
-export const SEVERITY_VALUES: readonly string[] = Object.freeze(Object.keys(SEVERITY_LABEL));
+const SEVERITY_LABEL: Readonly<Record<string, string>> = Object.freeze(z.record(z.string(), z.string().min(1)).parse(raw));
+
 
 /** The customer word of a stored severity, or null (an unclassified item has no kind). */
 export const severityLabel = (stored: string | null | undefined): string | null => (typeof stored === "string" ? (Object.hasOwn(SEVERITY_LABEL, stored) ? (SEVERITY_LABEL[stored] as string) : null) : null);

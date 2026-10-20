@@ -64,7 +64,7 @@ test("legacy slugs map to a code only where a row has no jurisdiction_iso; a gro
   assert.deepEqual(isoCodesOf({ jurisdiction: "nordic" }), []);
   assert.equal(jurisLabelOf({ jurisdictionIso: ["DE", "FR"] }), "Germany · France");
   assert.equal(jurisLabelOf({ jurisdiction: "uk" }), "United Kingdom");
-  assert.equal(jurisLabelOf({}), "Global");
+  assert.equal(jurisLabelOf({}), "", "a row that names no jurisdiction is not labelled with one (it was \"Global\")");
 });
 
 test("computeApplicability: no scope applies; an unset role or size is needs-input, never assumed; a role mismatch and a size below the threshold do not apply", () => {

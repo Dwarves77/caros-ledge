@@ -132,7 +132,7 @@ test("flywheel:32: authorEdges has no wall-clock fallback: a caller that passes 
 test("flywheel:10: the seed op authors one value per CURRENT factor through the one path; a second run creates nothing and a superseded factor creates nothing", async () => {
   const { m, registry } = authorWorld([FACTOR("F1"), FACTOR("F2"), FACTOR("F-old", { superseded_by: "F2" })]);
   void registry;
-  const deps = { sb: m.db, now: () => NOW, carbonIntensity: (f: Row) => ({ ok: true as const, valueGPerUnit: Number(f.ttw_co2e ?? 0) * 2, unit: "g/tkm" }) };
+  const deps = { sb: m.db, now: () => NOW, carbonIntensity: (f: { ttw_co2e: unknown }) => ({ ok: true as const, valueGPerUnit: Number(f.ttw_co2e ?? 0) * 2, unit: "g/tkm" }) };
   const first = await seedDerivedValues(deps, { dry: false });
   assert.equal(first.counts.created, 2);
   assert.deepEqual((m.tables.derived_values as Row[]).map((v) => (v.inputs as { pk: string }[])[0]?.pk).sort(), ["F1", "F2"]);

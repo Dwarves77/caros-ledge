@@ -79,7 +79,9 @@ test("the statutory row's source block: verified_at must be a date; and each inp
   assert.equal(refused.data?.perItem[0]?.outcome, "refused-quote");
   assert.match(refused.data?.perItem[0]?.detail ?? "", /ghgIntensityActual: quote_not_in_capture/);
   const accepted = await statutoryRun(deps(db), { dry: true, file: { rows: [row] } });
-  assert.equal(accepted.counts.refused ?? 0, 0, accepted.data?.perItem[0]?.detail ?? "");
+  // the quotes stand; what refuses the row now is the ceiling (R2d, I14): 2025 has no filing-grade evidence in this database, so its target is stored calculation_ok and a filing use is refused. It was admitted before the gate compared the use with the ceiling.
+  assert.equal(accepted.data?.perItem[0]?.outcome, "refused-inadmissible");
+  assert.match(accepted.data?.perItem[0]?.detail ?? "", /ghgIntensityTarget: above its ceiling \(calculation_ok\)/);
   const proof = await verifyRowQuotes(db.client, row, NOW);
   assert.deepEqual(proof, { ok: true, captureIds: { ghgIntensityActual: "cap-9", energyUsedMJ: "cap-9", consecutiveDeficitYears: "cap-9" } });
   const verdict = await acceptStoredQuote(db.client, { url: block().url, quote: REF, verifiedAt: "2026-10-01", now: NOW });

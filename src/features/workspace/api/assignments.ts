@@ -1,6 +1,5 @@
 // Ported from old_repo/src/lib/workspace/item-assignments.mjs (lines 25-223)
 // Ported from old_repo/src/app/api/workspace/items/[id]/assignments/route.ts (lines 19-41)
-import { collabDbFail } from "./collab-db-fail";
 import { isMissingObject } from "@/core/db/absent";
 import type { Db } from "@/core/db/clients";
 import { boundedRead } from "@/core/db/query";
@@ -9,6 +8,7 @@ import { isUuid } from "@/core/http/parse";
 import { isIsoDate } from "@/core/shared/dates";
 import { canWrite, collabFail, collabOk, isOrgAdmin, loadRoster, MAX_ASSIGNEES_PER_REQUEST, nameIndex, namesAfterWrite, readJsonObject, runCollab, type CollabCtx, type CollabResult } from "@/core/workspace/roster";
 
+import { collabDbFail } from "./collab-db-fail";
 import { workspaceDeps } from "./deps";
 
 // /api/workspace/items/[id]/assignments: multi-person assignment of one item (migration 359).

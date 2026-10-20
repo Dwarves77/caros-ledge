@@ -13,9 +13,9 @@ import { PARAM } from "@/ui/list-surface/url-state";
 import { PageFrame } from "@/ui/shell";
 import type { WatchlistItem } from "@/features/watchlist/read/watchlist";
 import { RowActions } from "@/features/watchlist/ui/RowActions";
+import type { SourceCoverage } from "@/core/derived/source-coverage";
 
 import { briefCardState, changeRowPrefix, SURFACES, type BriefRow } from "../rows";
-import type { SourceCoverage } from "@/core/derived/source-coverage";
 import type { Counts } from "../read/digest";
 
 import styles from "./dashboard.module.css";

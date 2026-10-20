@@ -16,7 +16,7 @@ const EXTRA: Row[] = [
   { id: "aaaaaaaa-0000-4000-8000-000000000012", legacy_id: "r1", title: "Green corridor feasibility study", item_type: "research_finding", domain: 7, provenance_status: "verified", is_archived: false, priority: "MODERATE", origin_class: "official" },
   { id: "aaaaaaaa-0000-4000-8000-000000000013", legacy_id: "o1", title: "Rotterdam shore power", item_type: "regional_data", domain: 3, provenance_status: "verified", is_archived: false, priority: "MODERATE", origin_class: "official" },
 ];
-const SURFACE_DOMAINS: Record<string, number[]> = { get_workspace_intelligence_listings: [1], get_workspace_intelligence_listings_public: [1], get_market_intel_items_public: [2, 4], get_research_items_public: [7], get_operations_items_public: [3, 6] };
+const SURFACE_DOMAINS: Record<string, number[]> = { get_workspace_intelligence_listings: [1], get_workspace_intelligence_listings_public: [1], get_market_intel_items_public: [2, 4], get_research_items_public: [7], get_operations_items_public: [3, 6], get_market_intel_items: [2, 4], get_research_items: [7], get_operations_items: [3, 6] };
 
 /** The member's client over the database: the signed-in claims, and an rpc the page can range (PostgREST's rpc builder is chainable; the stand-in answers the whole list for any range). */
 function memberClient(db: MemDb): Any {
@@ -58,7 +58,6 @@ export function memberWorld(): SweepWorld & { db: MemDb } {
   void ORG;
   scripted.user = () => memberClient(db);
   scripted.service = null;
-  scripted.anon = () => db; // the public reads (the map, the cached lists) are the same rows read without an identity
   return {
     db,
     reads: () => ({ tables: [...new Set(db.reads().map((c) => c.table))], rpcs: [...new Set(db.rpcCalls.map((c) => c.name))] }),

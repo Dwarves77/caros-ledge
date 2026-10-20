@@ -1,20 +1,16 @@
 // Ported from old_repo/src/lib/propagation/admissible-for.ts (lines 1-39)
 // Ported from old_repo/src/lib/propagation/effective-confidence.mjs (lines 15-36)
 // Ported from old_repo/src/lib/entities/decisions.mjs (lines 27-31)
-// The ONE gate (spec 08 section 3.3): a figure is admissible for a use only when its lifecycle is not falsified or obsolete, it is not stale,
-// it is not community in a calculation or filing, its observation status is not missing, its derivation is contractable for filing, and its
-// decayed confidence clears the floor (analysis 0.50, calculation 0.75, filing 0.90; display has none). Eight refusals, in this order: a falsified, obsolete or superseded lifecycle; stale; a use above the stored
-// ceiling (R2d, I14: display < analysis < calculation < filing, the same rule as the SQL view derived_values_admissible, migration 0090); community in a calculation or filing; missing; non-contractable; decayed.
+// The ONE gate (spec 08 section 3.3): a figure is admissible for a use only when assertUse (core/derived/ceiling.ts, I14: a live lifecycle, not stale, the use at or below the stored ceiling
+// display < analysis < calculation < filing, the same rule as the SQL view derived_values_admissible, migration 0090) admits it, it is not community in a calculation or filing, its observation status is
+// not missing, its derivation is contractable for filing, and its decayed confidence clears the floor (analysis 0.50, calculation 0.75, filing 0.90; display has none).
+import { assertUse } from "@/core/derived/ceiling";
 import { isContractable } from "@/core/contracts/envelope";
 import { isMissing } from "@/core/contracts/vocabularies";
 
-import type { Admissibility, Use, Value, Verdict } from "./types";
+import type { Use, Value, Verdict } from "./types";
 
 export const FLOOR = Object.freeze({ analysis: 0.5, calculation: 0.75, filing: 0.9 });
-
-/** The uses, lowest to highest: a stored ceiling admits its own rank and every rank below it. */
-export const USE_RANK: Readonly<Record<Use, number>> = Object.freeze({ display: 0, analysis: 1, calculation: 2, filing: 3 });
-const CEILING_RANK: Readonly<Record<Exclude<Admissibility, "stale">, number>> = Object.freeze({ display_only: 0, analysis_ok: 1, calculation_ok: 2, filing_ok: 3 });
 
 /** base x 0.5^(age / half-life), rounded to three places; no decay when the half-life is null. Throws on a non-finite base or a bad date. */
 export function effectiveConfidence(base: number, assertedAt: string | Date, halfLifeDays: number | null | undefined, now: string | Date): number {
@@ -32,11 +28,8 @@ export function effectiveConfidence(base: number, assertedAt: string | Date, hal
 const refuse = (reason: string): Verdict => ({ ok: false, reason });
 
 export function admissibleFor(v: Value, use: Use, now: Date): Verdict {
-  if (v.lifecycle === "falsified" || v.lifecycle === "obsolete") return refuse("lifecycle");
-  if (v.lifecycle === "superseded") return refuse("superseded: a newer value stands in its place");
-  if (v.admissibility === "stale") return refuse("pending recompute");
-  const ceiling = CEILING_RANK[v.admissibility as Exclude<Admissibility, "stale">];
-  if (ceiling === undefined || USE_RANK[use] > ceiling) return refuse(`above its ceiling (${v.admissibility})`);
+  const allowed = assertUse(v, use);
+  if (!allowed.ok) return refuse(allowed.reason);
   if (use === "filing" || use === "calculation") {
     if (v.originClass === "community" || v.originClass === "community-corroborated") return refuse("community is never admissible in a calculation, at any corroboration level");
     if (v.obsStatus && isMissing(v.obsStatus)) return refuse("missing is not zero");

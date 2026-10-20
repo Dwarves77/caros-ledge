@@ -7,7 +7,7 @@
 -- Reversal: restore the view body of schema.sql (without ceiling_rank and the superseded test); DROP FUNCTION public.derived_values_for_use(text).
 -- Not applied to production before the cutover window.
 
--- catalog: column, function
+-- catalog: relation, column, function
 
 BEGIN;
 
@@ -38,6 +38,8 @@ CREATE OR REPLACE VIEW public.derived_values_admissible WITH (security_invoker =
     CASE d.admissibility WHEN 'display_only' THEN 0 WHEN 'analysis_ok' THEN 1 WHEN 'calculation_ok' THEN 2 WHEN 'filing_ok' THEN 3 END AS ceiling_rank
    FROM public.derived_values d
   WHERE d.lifecycle <> ALL (ARRAY['falsified'::text, 'obsolete'::text, 'superseded'::text]) AND d.admissibility <> 'stale'::text;
+
+COMMENT ON VIEW public.derived_values_admissible IS 'Spec 08 §3.3''s second enforcement point: the derived values that are live (not falsified, obsolete or superseded) and not stale, with effective_confidence pre-computed and ceiling_rank (0 display_only .. 3 filing_ok) so a caller reads the use ceiling in SQL (R2d migration 0090; derived_values_for_use(p_use) applies it). Runs with the caller''s rights (security_invoker).';
 
 CREATE FUNCTION public.derived_values_for_use(p_use text) RETURNS SETOF public.derived_values_admissible
   LANGUAGE plpgsql STABLE SET search_path = public, pg_temp
@@ -76,7 +78,7 @@ BEGIN
     IF n <> 1 OR NOT EXISTS (SELECT 1 FROM public.derived_values_for_use('filing') WHERE method_id = tag AND method_version = 'ok-filing') THEN RAISE EXCEPTION '0090-derived-values-ceiling: filing serves % rows, expected only the filing_ok one', n; END IF;
     failed := false;
     BEGIN
-      PERFORM 1 FROM public.derived_values_for_use('everything');
+      PERFORM 1 FROM public.derived_values_for_use('everything') WHERE method_id = tag;
     EXCEPTION WHEN SQLSTATE '22023' THEN failed := true;
     END;
     IF NOT failed THEN RAISE EXCEPTION '0090-derived-values-ceiling: an unknown use did not raise'; END IF;

@@ -26,14 +26,16 @@ export interface CrossPageData {
 export type IntersectionView = NonNullable<ReturnType<typeof buildIntersectionView>>;
 type Group = IntersectionView["groups"][number];
 
-/** The statistics and weights a pre-contract theme brief carried in its prose are not a customer's to read; the structured sections never carry them. */
+/**
+ * The statistics and weights a pre-contract theme brief carried in its prose are not a customer's to read; the structured sections never carry them. Only a number the prose labels (density, a dominant
+ * signal weight, "scores") is removed: a bare 0.xxx or 1.xxx is a figure the brief states (1.250 EUR, 0.875 kg) and is left alone (I7, the scrubber deleted it).
+ */
 export function cleanPreContractBriefText(md: string): string {
   const num = String.raw`\d+(?:\.\d+)?`;
   return md
     .replace(new RegExp(String.raw`^[ \t]*\*\*\d+ members?\b[^\n]*?density ${num}\*\*[ \t]*\r?\n?`, "gim"), "")
     .replace(new RegExp(String.raw`[ \t]*\(?\s*(?:dominant signal weight|density) ${num}\s*\)?`, "gi"), "")
     .replace(/[ \t]+scores[ \t]+[01]\.\d{3}\b/gi, "")
-    .replace(/(?<![\d.])[01]\.\d{3}(?!\d|\.\d|%)/g, "")
     .replace(/[ \t]+([,.;:)])/g, "$1")
     .replace(/\(\s*\)/g, "")
     .replace(/[ \t]{2,}/g, " ")

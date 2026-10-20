@@ -6,8 +6,9 @@ import { useRouter } from "next/navigation";
 
 import { formatDate, formatNumber } from "@/core/shared";
 import { RailCard, StateNote } from "@/ui";
-
 import { notCollected, type SourceCoverage } from "@/core/derived/source-coverage";
+
+import styles from "./dashboard.module.css";
 
 const sources = (n: number): string => `${formatNumber(n)} ${n === 1 ? "source" : "sources"}`;
 
@@ -22,14 +23,14 @@ export function CoverageLedgerCard({ coverage }: { coverage: SourceCoverage | nu
       ) : coverage.total === 0 ? (
         <StateNote>No sources are registered yet.</StateNote>
       ) : (
-        <div data-part="coverage-ledger">
-          <p>
+        <div data-part="coverage-ledger" className={styles.ledger}>
+          <p className={styles.note}>
             {formatNumber(coverage.byState.collected)} of {sources(coverage.total)} collected.
           </p>
-          <p>{sources(notCollected(coverage))} not yet collected.</p>
-          {coverage.byState.refused > 0 && <p>{sources(coverage.byState.refused)} refused automated access.</p>}
-          {coverage.byState.access_requested > 0 && <p>Access requested for {sources(coverage.byState.access_requested)}.</p>}
-          {coverage.lastCaptureAt && <p>Latest capture {formatDate(coverage.lastCaptureAt.slice(0, 10))}.</p>}
+          <p className={styles.note}>{sources(notCollected(coverage))} not yet collected.</p>
+          {coverage.byState.refused > 0 && <p className={styles.note}>{sources(coverage.byState.refused)} refused automated access.</p>}
+          {coverage.byState.access_requested > 0 && <p className={styles.note}>Access requested for {sources(coverage.byState.access_requested)}.</p>}
+          {coverage.lastCaptureAt && <p className={styles.note}>Latest capture {formatDate(coverage.lastCaptureAt.slice(0, 10))}.</p>}
         </div>
       )}
     </RailCard>

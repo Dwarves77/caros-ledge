@@ -1,5 +1,7 @@
 // Ported from old_repo/src/app/api/admin/coverage/route.ts (lines 62-299)
+import { notCollected, readSourceCoverage } from "@/core/derived/source-coverage";
 import { LookupError } from "@/core/http/errors";
+import { log } from "@/core/shared/log";
 import { countryGroupForIso, countryLabel, jurisdictionTier, subnational, TIER1, TIER2 } from "@/core/jurisdictions";
 
 import { adminRoute, reply } from "./shared";
@@ -72,5 +74,10 @@ export const GET = adminRoute("/api/admin/coverage", async (admin, request) => {
   const { data, error } = await admin.service().rpc("coverage_matrix");
   if (error) throw new LookupError("coverage_matrix", error);
   const nowMs = Date.now();
-  return reply(admin, { generated_at: new Date(nowMs).toISOString(), ...buildAdminMatrix(Array.isArray(data) ? (data as RpcRow[]) : [], nowMs, { tier: t === 1 || t === 2 || t === 3 ? t : null, country }) });
+  // The sources beside the matrix come from the source_coverage view (R2d addendum A): how many are collected and how many are not yet. A failed read is `null`, which the card states.
+  const sources = await readSourceCoverage(admin.service()).then(
+    (c) => ({ total: c.total, collected: c.byState.collected, not_collected: notCollected(c), refused: c.byState.refused, access_requested: c.byState.access_requested, last_capture_at: c.lastCaptureAt }),
+    (e: unknown) => (log.warn("[admin coverage] source_coverage read failed:", e instanceof Error ? e.message : String(e)), null),
+  );
+  return reply(admin, { generated_at: new Date(nowMs).toISOString(), sources, ...buildAdminMatrix(Array.isArray(data) ? (data as RpcRow[]) : [], nowMs, { tier: t === 1 || t === 2 || t === 3 ? t : null, country }) });
 });

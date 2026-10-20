@@ -65,7 +65,7 @@ export async function linkItems(sb: Db, itemId: string, opts: LinkOptions = {}):
   if (!adopted) {
     const r = await readAdoptedVocabulary(sb);
     adopted = r.adopted;
-    if (r.note) notes.push(r.note);
+    if (!r.ok) notes.push(r.reason);
   }
   const writes = planLinkWrites(content, corpus, itemId, adopted);
   assertMoatBoundary(writes);

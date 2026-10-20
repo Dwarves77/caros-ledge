@@ -38,9 +38,21 @@ const AWARENESS = BAND_ORDER[3] as UrgencyBand;
 
 export const bandOf = (key: UrgencyBandKey): UrgencyBand => BAND_ORDER.find((b) => b.key === key) ?? AWARENESS;
 
-/** An unknown or missing priority renders Awareness: never a guessed band and never an invented fifth. */
+/**
+ * The spine of a row that carries no urgency of its own (an entity, a source, a series, a priority the row does not hold): neutral grey, in no band group and in no band count. The kit's row type asks
+ * for a band, so `key` and `priority` are the lowest band's; nothing groups by them and every colour is neutral (S:84, F:54).
+ */
+export const NEUTRAL_BAND: UrgencyBand = Object.freeze({ ...AWARENESS, label: "No priority", window: "", hex: "#7A6E6C", cssVar: "var(--ink-3)", tintCssVar: "var(--tag)", borderCssVar: "var(--line-2)" });
+
+/** The band of a stored priority. A missing or unknown priority is the neutral band, never Awareness: a priority nobody set is not the lowest urgency. */
 export function bandFromPriority(priority: PlatformPriority | string | null | undefined): UrgencyBand {
-  return (priority ? BY_PRIORITY.get(priority) : undefined) ?? AWARENESS;
+  return (priority ? BY_PRIORITY.get(priority) : undefined) ?? NEUTRAL_BAND;
+}
+
+/** The stored priority, or a thrown refusal: the column is a closed set the database enforces, so a row without one is a malformed read, never a row at some default priority (S:84, closed enums refuse at load). */
+export function requirePriority(value: unknown, what: string): PlatformPriority {
+  if (typeof value === "string" && BY_PRIORITY.has(value)) return value as PlatformPriority;
+  throw new Error(`${what} carries no valid priority (${JSON.stringify(value)})`);
 }
 
 /** Days to the next binding date to a band (the same windows the priority pipeline uses). */

@@ -163,6 +163,19 @@ test("IMP-054, IMP-084 degraded: the tables absent (production before the cutove
   assert.match((await down.d.loadReferenceData())[0] ?? "", /host_verdicts could not be read, no committed host verdict applies this run: connection reset/);
 });
 
+test("C:40 (R2d) a reference load that FAILED is not kept for the life of the deps: the next call reads again and the verdicts arrive; a good load is kept", async () => {
+  const f = fixture();
+  f.db.seed("host_verdicts", [{ host: "unplaced.example", class: "association", batch_id: "host-verdicts-001" }]);
+  f.db.fail("host_verdicts", "select", "connection reset", { times: 1 });
+  assert.match((await f.d.loadReferenceData())[0] ?? "", /connection reset/, "the first load failed and says so");
+  assert.equal(f.d.producers.verdicts.size, 0);
+  assert.deepEqual(await f.d.loadReferenceData(), [], "the second call read again");
+  assert.equal(f.d.producers.verdicts.has("unplaced.example"), true, "one transient failure did not degrade every rating after it");
+  const reads = f.db.reads("host_verdicts").length;
+  await f.d.loadReferenceData();
+  assert.equal(f.db.reads("host_verdicts").length, reads, "a good load is kept");
+});
+
 test("IMP-054: a tree that lost producers.verdicts or the reference loader is named by the startup check and refused on Vercel", () => {
   const f = fixture();
   assert.equal(MANIFEST.find((e) => e.member === VERDICTS_MEMBER)?.status, "wired");

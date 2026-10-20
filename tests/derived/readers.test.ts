@@ -15,8 +15,8 @@ const REGISTRY = registry as { exempt: Exempt[]; owed: Owed[] };
 
 /** table -> what a compliant customer reader must contain for it. */
 const GOVERNED: Record<string, RegExp> = {
-  intelligence_items: /\badmitItems\(|\bisAdmissibleItem\b|\bcurrentInputRow\b/,
-  section_claim_provenance: /\badmissibleClaims\(|\bisAdmissibleClaim\(|\bsuppressedClaimMatcher\(|\bbuildClaimTierMap\b/,
+  intelligence_items: /\badmitItems\(|\bisAdmissibleItem\b|\bcurrentInputRow\b|\badmissibleRows\.itemIds\(/,
+  section_claim_provenance: /\badmissibleClaims\(|\bisAdmissibleClaim\(|\badmissibleRows\.claims\(|\bsuppressedClaimMatcher\(|\bbuildClaimTierMap\b/,
   emission_factors: /\badmitFactors\(|\bisAdmissibleFactor\b|\.is\("superseded_by", null\)/,
   derived_values: /derived_values_admissible|derived_values_for_use|\badmissibleFor\(/,
   inference_records: /\bisCurrentInference\(|\.eq\("admissibility", "current"\)/,

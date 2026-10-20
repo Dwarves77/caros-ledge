@@ -4,7 +4,7 @@ import { z } from "zod";
 
 import raw from "./data/item-type.json";
 
-export const ITEM_TYPE_LABEL: Readonly<Record<string, string>> = Object.freeze(z.record(z.string(), z.string().min(1)).parse(raw));
+const ITEM_TYPE_LABEL: Readonly<Record<string, string>> = Object.freeze(z.record(z.string(), z.string().min(1)).parse(raw));
 
 export const itemTypeLabel = (stored: string | null | undefined): string | null => (typeof stored === "string" && Object.hasOwn(ITEM_TYPE_LABEL, stored) ? (ITEM_TYPE_LABEL[stored] as string) : null);
 

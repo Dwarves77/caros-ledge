@@ -1,9 +1,9 @@
 // IMP-113: the ratification as a turn op. A series is attached to the item that is its figure (market_series_items) only when a mint reached `minted_verified` for it; this reads the mint artifact (per_item: the series key as
 // `id`, the outcome, the minted item id), decides each series with ratifySeriesItemMap (the one rule), checks the item is live and verified, writes the ratified rows, and calls the published-price-statistics producer in the SAME
 // run (rule 17: the display rows are what the attachment is for). Called by the `ratify-series-items` op (src/core/turn/ops.ts); writes market_series_items; a dry run plans and writes nothing.
-import { isAdmissibleItem, ITEM_ADMISSIBLE_COLUMNS, type ItemAdmissibility } from "@/core/derived/admissible";
 import { z } from "zod";
 
+import { isAdmissibleItem, ITEM_ADMISSIBLE_COLUMNS, type ItemAdmissibility } from "@/core/derived/admissible";
 import { boundedRead, type Db } from "@/core/db";
 import type { RunResult } from "@/core/types/run-result";
 import { runResult, worst } from "@/core/types/run-result";

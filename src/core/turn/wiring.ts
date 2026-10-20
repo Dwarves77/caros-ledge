@@ -123,18 +123,26 @@ export function buildDeps(sb: Db, env: Env = process.env, opts: DepsOptions = {}
   // The reference data of the turn, read once per deps: host verdicts for rating a host the class table does not place, and the market series keys (the mint's record_hollow exemption). Both are tables (IMP-054, IMP-084).
   const verdicts = new Map<string, HostVerdictRef>(opts.verdicts ?? []);
   const seriesKeys = new Set<string>();
-  let reference: Promise<string[]> | null = null;
-  const loadReferenceData = (): Promise<string[]> =>
-    (reference ??= (async () => {
-      const notes: string[] = [];
-      if (!opts.verdicts) for (const [host, v] of await loadHostVerdicts(sb, notes)) verdicts.set(host, v);
-      try {
-        for (const [key] of await readSeriesItemMap(sb)) seriesKeys.add(key);
-      } catch (e) {
-        notes.push(`no market series key is known this run: ${e instanceof Error ? e.message : String(e)}`);
-      }
-      return notes;
-    })());
+  let reference: string[] | null = null;
+  /** A load that failed (host_verdicts or the series map unreadable) is returned with its notes and NOT kept: the next call reads again, so one transient failure does not degrade every rating for the life of the deps (C:40). A good load, notes and all, is kept. */
+  const loadReferenceData = async (): Promise<string[]> => {
+    if (reference) return reference;
+    const notes: string[] = [];
+    let failed = false;
+    if (!opts.verdicts) {
+      const read = await loadHostVerdicts(sb, notes);
+      failed = read.failed;
+      for (const [host, v] of read.verdicts) verdicts.set(host, v);
+    }
+    try {
+      for (const [key] of await readSeriesItemMap(sb)) seriesKeys.add(key);
+    } catch (e) {
+      failed = true;
+      notes.push(`no market series key is known this run: ${e instanceof Error ? e.message : String(e)}`);
+    }
+    if (!failed) reference = notes;
+    return notes;
+  };
   const isSeriesKey = (identifier: string | null | undefined): boolean => !!identifier && seriesKeys.has(identifier);
 
   let cached: { resolve: (url: string) => { tier: number | null; sourceId: string | null } } | null = null;

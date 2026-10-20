@@ -24,15 +24,11 @@ export async function isPlatformAdmin(userId: string, service: Db): Promise<bool
 
 export type PlatformAdminDecision = { kind: "anonymous" } | { kind: "denied"; userId: string } | { kind: "admitted"; userId: string; email: string };
 
-/** The page gate's decision, separate from the redirect so it can be tested. A flag read error denies. */
+/** The page gate's decision, separate from the redirect so it can be tested. A failed flag read throws LookupError to the page's failure state: it is never "not an admin" (C:24, W:20). */
 export async function decidePlatformAdmin(client: ClaimsClient & Pick<Db, "rpc">): Promise<PlatformAdminDecision> {
   const claims = await getClaims(client);
   if (!claims) return { kind: "anonymous" };
-  try {
-    return (await readOwnPlatformAdmin(client)) ? { kind: "admitted", userId: claims.userId, email: claims.email ?? "" } : { kind: "denied", userId: claims.userId };
-  } catch {
-    return { kind: "denied", userId: claims.userId };
-  }
+  return (await readOwnPlatformAdmin(client)) ? { kind: "admitted", userId: claims.userId, email: claims.email ?? "" } : { kind: "denied", userId: claims.userId };
 }
 
 /** Server-component gate: no session goes to /login, a non-admin to /, an admin gets `{ userId, email }`. */

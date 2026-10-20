@@ -4,7 +4,7 @@
 import type { Db } from "@/core/db";
 import { exactCount, fetchAllRows, qb } from "@/core/db";
 
-export const COVERAGE_STATES = ["collected", "uncollected", "refused", "access_requested"] as const;
+const COVERAGE_STATES = ["collected", "uncollected", "refused", "access_requested"] as const;
 export type CoverageSourceState = (typeof COVERAGE_STATES)[number];
 
 export interface SourceCoverage {

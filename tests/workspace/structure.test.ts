@@ -39,10 +39,7 @@ test("the old URLs are kept: every workspace route is a thin re-export of its fe
   }
 });
 
-test("PROP-011: the per-viewer lens reads on the viewer's own client and never builds a client or reads the service key itself", () => {
-  const lens = text("src/core/workspace/viewer-relevance.ts");
-  assert.doesNotMatch(lens, /serviceClient/);
-  assert.doesNotMatch(lens, /createClient|createServerClient|SUPABASE_SERVICE_ROLE_KEY/);
+test("PROP-011: nothing under the workspace slices builds a client or reads the service key itself", () => {
   for (const f of [...files("src/core/workspace"), ...files("src/features/workspace"), ...files("src/features/settings"), ...files("src/features/account")]) {
     assert.doesNotMatch(text(f), /createClient\(|createServerClient\(|createBrowserClient\(|SUPABASE_SERVICE_ROLE_KEY/, f);
   }
@@ -50,7 +47,7 @@ test("PROP-011: the per-viewer lens reads on the viewer's own client and never b
 
 test("the interface the brief names exists", () => {
   has(core, [
-    "getWorkspaceProfile", "DEFAULT_WORKSPACE_PROFILE", "ORG_ROLES", "ORG_SIZE_DIMENSIONS", "findBand", "parseOrgProfile", "validateProfileInput", "relevanceForItem", "getViewerRelevanceForItem", "computeItemRelevance",
+    "getWorkspaceProfile", "DEFAULT_WORKSPACE_PROFILE", "ORG_ROLES", "ORG_SIZE_DIMENSIONS", "findBand", "parseOrgProfile", "validateProfileInput", "relevanceForItem", "computeItemRelevance",
     "summariseObligationBinding", "currentObligationObjects", "dutyHoldersExcludeForwarder", "fetchObligationObjectsForItem", "runCollab", "loadRoster", "orgWatchersOf", "canWrite", "isOrgAdmin", "useWorkspaceStore", "applyWorkspaceSeed",
     "patchWorkspaceSettings", "ALL_SECTORS", "JURISDICTIONS", "MODES", "REGIONS",
   ]);
