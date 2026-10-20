@@ -14,28 +14,26 @@ import type { RunResult } from "@/core/types/run-result";
 
 import { applyForwardEvents } from "../kinds/forward-events/apply";
 import { forwardEventsExporter } from "../kinds/forward-events/export";
-import { applyHostVerdicts, hostVerdictsSpec } from "../kinds/host-verdicts/apply";
+import { applyHostVerdicts } from "../kinds/host-verdicts/apply";
 import { hostVerdictsExporter } from "../kinds/host-verdicts/export";
 import { applyLedgerVerdicts, ledgerVerdictsExporter } from "../kinds/ledger-verdicts/apply";
-import { applyNeedsSearch, needsSearchSpec } from "../kinds/needs-search/apply";
+import { applyNeedsSearch } from "../kinds/needs-search/apply";
 import { needsExporter } from "../kinds/needs-search/needs";
-import { applyQuestionAnswers, questionAnswersSpec, questionExporter } from "../kinds/question-answers/apply";
-import { applyRecordBriefs, recordBriefsSpec } from "../kinds/record-briefs/apply";
+import { applyQuestionAnswers, questionExporter } from "../kinds/question-answers/apply";
+import { applyRecordBriefs } from "../kinds/record-briefs/apply";
 import { recordBriefsExporter } from "../kinds/record-briefs/export";
 import { applyScreenVerdicts, screenVerdictsExporter } from "../kinds/screen-verdicts/apply";
 import { applyThemeBriefs, themeBriefsExporter } from "../kinds/theme-briefs/apply";
-import { forwardEventsSpec } from "../kinds/forward-events/apply";
-import { themeBriefsSpec } from "../kinds/theme-briefs/apply";
 
-import { validateEntries, type ApplyOpts, type BatchDeps, type BatchExport, type EntrySpec, type Obj, type Verdict } from "./session-batch";
+import { type ApplyOpts, type BatchDeps, type BatchExport, type Obj } from "./session-batch";
 
-export const BATCH_KINDS = ["record-briefs", "question-answers", "needs-search", "forward-events", "theme-briefs", "screen-verdicts", "ledger-verdicts", "host-verdicts"] as const;
+const BATCH_KINDS = ["record-briefs", "question-answers", "needs-search", "forward-events", "theme-briefs", "screen-verdicts", "ledger-verdicts", "host-verdicts"] as const;
 export type BatchKindId = (typeof BATCH_KINDS)[number];
-export const isBatchKind = (k: string): k is BatchKindId => (BATCH_KINDS as readonly string[]).includes(k);
+const isBatchKind = (k: string): k is BatchKindId => (BATCH_KINDS as readonly string[]).includes(k);
 
 /** The key that names an item in a kind's export (the drain's `idKey`). */
 const ID_KEY: Readonly<Record<BatchKindId, string>> = { "record-briefs": "id", "question-answers": "subject_ref", "needs-search": "need_id", "forward-events": "id", "theme-briefs": "theme_id", "screen-verdicts": "census_id", "ledger-verdicts": "candidate_id", "host-verdicts": "host" };
-export const DEFAULT_PART_CHARS = 3_000_000;
+const DEFAULT_PART_CHARS = 3_000_000;
 export interface ExportInput { outDir?: string; limit?: number; charBudget?: number; ids?: readonly string[]; mode?: string; runId?: string; repoRoot?: string }
 export interface ExportOpts { limit: number; mode: string; ids?: readonly string[]; charBudget?: number }
 
@@ -61,7 +59,7 @@ export function drainExporters(deps: BatchDeps): Record<string, Exporter> {
 }
 
 /** Group items into numbered parts so no part's size exceeds `budget`, in input order. An item over the budget on its own goes alone and is flagged oversize (it is exported whole, never cut). Pure. */
-export function chunkByCharBudget<T>(items: readonly T[], budget: number): { part: number; items: T[]; oversize?: true }[] {
+function chunkByCharBudget<T>(items: readonly T[], budget: number): { part: number; items: T[]; oversize?: true }[] {
   const parts: { items: T[]; oversize?: true }[] = [];
   let cur: T[] = [];
   let size = 0;
@@ -86,7 +84,7 @@ export function chunkByCharBudget<T>(items: readonly T[], budget: number): { par
 }
 
 /** The directory an export may write to: absolute-resolved and OUTSIDE the repository (a bundle holds pool text, which never belongs in the tree). */
-export function scratchDir(kind: string, input: ExportInput): string {
+function scratchDir(kind: string, input: ExportInput): string {
   const root = resolve(input.repoRoot ?? process.cwd());
   const out = resolve(input.outDir ?? join(tmpdir(), "caros-batches", `${kind}-${input.runId ?? "export"}`));
   const rel = relative(root, out);
@@ -121,21 +119,6 @@ export async function exportBatch(kind: string, deps: BatchDeps, input: ExportIn
   const key = ID_KEY[kind];
   const ids = res.items.map((i) => String((i as Obj)[key] ?? "")).filter(Boolean);
   return { ...runResult("ok", { exported: res.items.length, parts: paths.length, residue: res.residue?.length ?? 0 }, [`${kind}: ${res.items.length} item(s) exported to ${paths.length} part file(s) under ${dir}`]), data: { ids: { exported_ids: ids, parts: paths }, summary: res.summary ?? null } };
-}
-
-const SPECS: Readonly<Record<string, (o: ApplyOpts) => EntrySpec<never, never>>> = {
-  "record-briefs": (o) => recordBriefsSpec(o) as never,
-  "question-answers": () => questionAnswersSpec as never,
-  "needs-search": () => needsSearchSpec as never,
-  "forward-events": () => forwardEventsSpec as never,
-  "theme-briefs": () => themeBriefsSpec as never,
-  "host-verdicts": () => hostVerdictsSpec as never,
-};
-/** Validate a batch file against live material already loaded (`live` is what the kind's loader returns). Pure. A kind with no entry-by-entry validator (the two verdict files) has its own reader. */
-export function validateBatch(kind: string, file: unknown, live: unknown): Verdict<unknown> {
-  const spec = SPECS[kind]?.({ dry: true });
-  if (!spec) throw new Error(`validateBatch: "${kind}" has no entry validator (kinds: ${Object.keys(SPECS).join(", ")})`);
-  return validateEntries(spec as EntrySpec<unknown, unknown>, file, live);
 }
 
 /**

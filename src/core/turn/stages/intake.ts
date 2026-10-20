@@ -14,9 +14,9 @@ import type { MintRunInput } from "@/features/mint";
 import { gateRefusal, readSliceState } from "../gate";
 import type { BuiltDeps } from "../wiring";
 
-export const INTAKE_DEFAULT_LIMIT = 25;
-export const INTAKE_MAX_PROMOTE = 50;
-export const INTAKE_CEILING = 200;
+const INTAKE_DEFAULT_LIMIT = 25;
+const INTAKE_MAX_PROMOTE = 50;
+const INTAKE_CEILING = 200;
 
 export interface IntakePlan {
   limit: number;
@@ -26,7 +26,7 @@ export interface IntakePlan {
   census: MintRunInput | null;
 }
 /** Validate the stage input. The promote cap is enforced, never clamped: a request above the ceiling is an error. Pure. */
-export function planIntake(input: Record<string, unknown>): { plan: IntakePlan; errors: string[] } {
+function planIntake(input: Record<string, unknown>): { plan: IntakePlan; errors: string[] } {
   const errors: string[] = [];
   const limit = typeof input.limit === "number" ? Math.floor(input.limit) : INTAKE_DEFAULT_LIMIT;
   const maxPromote = typeof input.maxPromote === "number" ? Math.floor(input.maxPromote) : INTAKE_MAX_PROMOTE;

@@ -21,12 +21,12 @@ import signposts from "./data/emitting-tables/signposts.json";
 import statutory_computations from "./data/emitting-tables/statutory_computations.json";
 import { generateTriggerQuestions, TRIGGER_EVENT_TYPES, writeQuestions, type QuestionDeps, type QuestionItem, type TriggerQuestion } from "./trigger-questions";
 
-export const MAX_ITEMS_PER_EVENT = 25;
+const MAX_ITEMS_PER_EVENT = 25;
 const entry = z.object({ table_name: z.string().min(1), type: z.string().min(1), label: z.string().min(1), byKind: z.record(z.string(), z.string()).default({}), describe: z.literal("identity").optional() }).strict();
 export type EmittingTable = z.infer<typeof entry>;
 /** Every registered emitting table; the file name must equal its table_name. */
 const FILES: Record<string, unknown> = { derived_values, emission_factors, entity_aliases, entity_relations, estimated_values, grid_connection_queues, market_series, obligation_objects, oem_tech_roadmaps, regional_data_facts, signposts, statutory_computations };
-export const EMITTING_TABLES: Readonly<Record<string, EmittingTable>> = Object.freeze(
+const EMITTING_TABLES: Readonly<Record<string, EmittingTable>> = Object.freeze(
   Object.fromEntries(Object.entries(FILES).map(([name, raw]) => {
     const e = entry.parse(raw);
     if (e.table_name !== name) throw new Error(`emitting-tables/${name}.json: table_name "${e.table_name}" differs from the filename`);
@@ -39,14 +39,14 @@ export interface ChangeEvent { eventId: string | number; tableName: string; rowP
 const KIND_VERB: Record<string, string> = { insert: "was added", update: "was revised", delete: "was removed", supersede: "was superseded" };
 
 /** The trigger event type of an outbox row; null when its table is not registered or its type is not a trigger event. */
-export function eventTypeForOutboxRow(row: { table_name: string; change_kind?: string | null }): string | null {
+function eventTypeForOutboxRow(row: { table_name: string; change_kind?: string | null }): string | null {
   const e = EMITTING_TABLES[row.table_name];
   if (!e) return null;
   const type = (row.change_kind && e.byKind[row.change_kind]) || e.type;
   return (TRIGGER_EVENT_TYPES as readonly string[]).includes(type) ? type : null;
 }
 /** The change in words, stated in the question. An alias or relation change is an identity revision. */
-export function describeChange(ev: ChangeEvent, entityName: string | null): string {
+function describeChange(ev: ChangeEvent, entityName: string | null): string {
   const e = EMITTING_TABLES[ev.tableName];
   const who = entityName ? `${entityName} (${ev.entityId})` : String(ev.entityId);
   if (e?.describe === "identity") return `the identity of ${who} changed (alias or relation): re-resolve mentions and roll-ups that name it`;
@@ -110,16 +110,3 @@ export async function runQuestionsOnChange(deps: ChangeDeps, input: { dry?: bool
   return { ...runResult(outcome, { ...c, ...written.counts }, [...notes, ...written.notes]), failedEventIds: failed };
 }
 
-const OUTBOX_COLS = "event_id,table_name,row_pk,entity_id,change_kind,occurred_at";
-/** Replay reader: outbox rows by id list or by event-id range, ordered by id. Throws on any read error. */
-export async function readOutboxEvents(sb: Db, q: { ids: readonly (string | number)[] } | { from: number; to: number }): Promise<ChangeEvent[]> {
-  const rows = "ids" in q
-    ? await fetchAllByIdChunks(q.ids.map(String), async (slice) => {
-        const { data, error } = await sb.from("propagation_events").select(OUTBOX_COLS).in("event_id", slice);
-        if (error) throw new Error(`propagation_events read failed: ${error.message}`);
-        return (data ?? []) as Rec[];
-      })
-    : await fetchAllRows<Rec>((a, b) => sb.from("propagation_events").select(OUTBOX_COLS).gte("event_id", q.from).lte("event_id", q.to).order("event_id", { ascending: true }).range(a, b) as never, { cap: 500_000 });
-  return rows.map((r) => ({ eventId: r.event_id as string | number, tableName: String(r.table_name), rowPk: (r.row_pk as string) ?? null, entityId: (r.entity_id as string) ?? null, changeKind: (r.change_kind as string) ?? null, occurredAt: String(r.occurred_at) })).sort((a, b) => Number(a.eventId) - Number(b.eventId));
-}
-type Rec = Record<string, unknown>;

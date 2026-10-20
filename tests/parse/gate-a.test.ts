@@ -3,14 +3,14 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { containsToken, extractFactualTokens, scanGateA } from "@/core/grounding/gate-a-scan";
-import { detectNumeric, mintGates } from "@/core/grounding/gates";
+import { scanGateA } from "@/core/grounding/gate-a-scan";
+import { mintGates } from "@/core/grounding/gates";
 import { decideSlotClaim, nominateForSlot, uncoveredSlots } from "@/core/grounding/slots";
 
 const fact = (claim_text: string, source_span = claim_text, locale?: string) => ({ claim_text, source_span, ...(locale ? { locale } : {}) });
 
 test("the tokenizer probe: standards-style prose is read whole (the old tokenizer dropped or truncated all six)", () => {
-  const figures = (t: string, locale?: string) => extractFactualTokens(t, undefined, locale ? { locale } : {}).figures;
+  const figures = (t: string, locale?: string) => scanGateA(t, [], new Set(), locale ? { locale } : {}).orphans.filter((o) => o.class === "figure").map((o) => o.token);
   assert.deepEqual(figures("0,863 t CO2/t clinker"), ["0,863 t CO2/t clinker"], "was []");
   assert.deepEqual(figures("49.9 g CO2e/TEU-km"), ["49.9 g CO2e/TEU-km"], "was []");
   assert.deepEqual(figures("144 900 t clinker"), ["144 900 t"], "was []");
@@ -24,10 +24,8 @@ test("INV-R2a-4: EUR 5 in the brief is NOT backed by a FACT that says EUR 50 (th
   assert.equal(scanGateA("The fee is €50 per tonne.", [fact("The fee is €50 per tonne", "€50 per tonne")]).orphan_count, 0);
   assert.equal(scanGateA("A fund of €15 million.", [fact("A fund of €150 million")]).orphan_count, 1);
   assert.equal(scanGateA("A fund of €15 million.", [fact("A fund of EUR 15 000 000")]).orphan_count, 0, "the same quantity in another spelling is backed");
-  assert.equal(containsToken("the fee is €50 per tonne", "€5"), false);
-  assert.equal(containsToken("the fee is €50 per tonne", "€50"), true);
-  assert.equal(containsToken("15.5% of fleet", "15%"), false);
-  assert.equal(containsToken("115% of fleet", "15%"), false);
+  assert.equal(scanGateA("15% of fleet.", [fact("15.5% of fleet")]).orphan_count, 1);
+  assert.equal(scanGateA("15% of fleet.", [fact("115% of fleet")]).orphan_count, 1);
 });
 
 test("a figure is backed inside ONE claim, not by digits scattered across the joined corpus", () => {
@@ -55,16 +53,19 @@ test("deadline tokens are covered at a numeral boundary: 30 June 2025 is not ins
 });
 
 test("S-NUMERIC compares typed figures: a ten-fold error and a different scale are caught, a respelling is not", () => {
-  const hit = detectNumeric({ id: "f", claim_text: "A fund of €15 million", source_span: "a fund of €150 million" });
-  assert.ok(hit && hit.signature === "S-NUMERIC" && /15 million/.test(hit.rationale), JSON.stringify(hit));
-  assert.ok(detectNumeric({ claim_text: "EUR 75 000 applies", source_span: "EUR 50 000 applies" }));
-  assert.equal(detectNumeric({ claim_text: "EUR 75 000 applies", source_span: "up to EUR 75,000 applies" }), null);
-  assert.equal(detectNumeric({ claim_text: "a fee of 5%", source_span: "a fee of 5 per cent" }), null);
-  assert.ok(detectNumeric({ claim_text: "a fee of 5%", source_span: "a fee of 15 per cent" }), "5 is not inside 15");
-  assert.ok(detectNumeric({ claim_text: "applies from 2027", source_span: "applies from 20270" }), "an obligation year stands at a numeral boundary");
-  assert.equal(detectNumeric({ claim_text: "applies from 2027", source_span: "Applies from 2027." }), null);
-  const unreadable = detectNumeric({ claim_text: "A subsidy of €5m", source_span: "A subsidy of €5m" });
-  assert.ok(unreadable && /cannot be read/.test(unreadable.rationale), "unreadable is a miss, not a pass");
+  const cases: [string, string, string, boolean][] = [
+    ["ten-fold", "A fund of €15 million", "a fund of €150 million", true],
+    ["a different amount", "EUR 75 000 applies", "EUR 50 000 applies", true],
+    ["a respelling of the amount", "EUR 75 000 applies", "up to EUR 75,000 applies", false],
+    ["a respelling of the percentage", "a fee of 5%", "a fee of 5 per cent", false],
+    ["5 is not inside 15", "a fee of 5%", "a fee of 15 per cent", true],
+    ["an obligation year stands at a numeral boundary", "applies from 2027", "applies from 20270", true],
+    ["the year in its own sentence", "applies from 2027", "Applies from 2027.", false],
+    ["unreadable is a miss, not a pass", "A subsidy of €5m", "A subsidy of €5m", true],
+  ];
+  const facts = cases.map(([, claim_text, source_span], i) => ({ id: `f${i}`, claim_kind: "FACT", claim_text, source_span, source_id: "s", source_tier_at_grounding: 1 }));
+  const held = new Set(mintGates(facts, { itemFloor: 2 }).numericHeldIds);
+  cases.forEach(([what, , , expectHeld], i) => assert.equal(held.has(`f${i}`), expectHeld, what));
 });
 
 test("S-NUMERIC is a HARD hold: the held ids come back beside the S-CONFLATE ids", () => {

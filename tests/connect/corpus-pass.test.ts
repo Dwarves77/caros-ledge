@@ -3,8 +3,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { corpusPass, sharedEntityEdges } from "@/features/flywheel/corpus-pass";
-import { regulationEntityTokens } from "@/core/flywheel/signature";
+import { corpusPass } from "@/features/flywheel/corpus-pass";
 
 import { connectDb as memoryDb } from "./world.ts";
 
@@ -70,13 +69,17 @@ test("a failed item read rejects; it is never an empty corpus that dissolves eve
   assert.equal(m.writes.filter((w) => w.op !== "select").length, 0);
 });
 
-test("shared-entity edges: two items naming one regulation identifier, no edge between them, get both directions", () => {
-  const items = [{ id: "a", title: "Regulation (EU) 2023/1805 on fuels" }, { id: "b", title: "Guidance on 2023/1805" }, { id: "c", title: "Unrelated" }];
-  const out = sharedEntityEdges(items, [], regulationEntityTokens);
-  assert.equal(out.length, 2);
-  assert.deepEqual(out.map((e) => `${e.source_item_id}>${e.target_item_id}`).sort(), ["a>b", "b>a"]);
-  assert.equal(out[0]?.basis?.[0]?.weight, 0.85);
-  assert.equal(sharedEntityEdges(items, [{ source_item_id: "b", target_item_id: "a" }], regulationEntityTokens).length, 0, "an existing edge in either direction suppresses it");
+test("shared-entity edges: two items naming one regulation identifier, no edge between them, get both directions", async () => {
+  const items = [item("a", { title: "Regulation (EU) 2023/1805 on fuels" }), item("b", { title: "Guidance on 2023/1805" }), item("c", { title: "Unrelated" })];
+  const sharedOf = (m: ReturnType<typeof world>) => (m.tables.item_cross_references as Row[]).filter((e) => (e.basis as { signal?: string }[] | null)?.[0]?.signal === "shared_entity");
+  const m = memoryDb({ intelligence_items: items, workspace_settings: [{ jurisdiction_weights: {} }] }, { unique: { item_cross_references: ["source_item_id", "target_item_id"] } });
+  const out = await corpusPass({ sb: m.db, now: () => NOW }, { dry: false });
+  assert.equal(out.counts.shared_entity_edges, 2);
+  assert.deepEqual(sharedOf(m).map((e) => `${e.source_item_id}>${e.target_item_id}`).sort(), ["a>b", "b>a"]);
+  assert.equal((sharedOf(m)[0]?.basis as { weight?: number }[])[0]?.weight, 0.85);
+  const held = memoryDb({ intelligence_items: items, workspace_settings: [{ jurisdiction_weights: {} }], item_cross_references: [{ id: "x1", source_item_id: "b", target_item_id: "a", relationship: "related", origin: "provenance_discovery", score: 0.3, basis: [] }] }, { unique: { item_cross_references: ["source_item_id", "target_item_id"] } });
+  const suppressed = await corpusPass({ sb: held.db, now: () => NOW }, { dry: false });
+  assert.equal(suppressed.counts.shared_entity_edges, 0, "an existing edge in either direction suppresses it");
 });
 
 test("IMP-047: the pass's run id reaches the default snapshot sink: the prior edge rows are in edge_snapshots under that run, taken before the refresh", async () => {

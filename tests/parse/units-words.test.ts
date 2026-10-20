@@ -3,14 +3,13 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { aliasAlternation, escapeRe, GAS_ALTERNATION, GAS_BY_ALIAS, IDENT_FILE, LOCALES, MINUS_CLASS, QUALIFIER_FILE, SCALE_ALTERNATION, SCALE_BY_WORD, SEP_CLASS, SPACE_CLASS, UNIT_BY_ID, UNITS, unitOfAlias, unitsOfDim } from "@/core/parse/data";
-import { addDec, decToString, mulDec, parseDec, shiftDec } from "@/core/parse/decimal";
+import { decToString, mulDec, parseDec, shiftDec } from "@/core/parse/decimal";
 import { canonicalRatio, isTrajectoryUnit, matchUnit, moneyBefore } from "@/core/parse/unit";
 import { contentWords, hasWord } from "@/core/parse/words";
 
 const dec = (s: string) => parseDec(s) as NonNullable<ReturnType<typeof parseDec>>;
 
-test("decimal arithmetic is exact: 0.1 + 0.2 is 0.3, a scale word shifts the digits", () => {
-  assert.equal(decToString(addDec(dec("0.1"), dec("0.2"))), "0.3");
+test("decimal arithmetic is exact: a product has no float error, a scale word shifts the digits", () => {
   assert.equal(decToString(mulDec(dec("1.5"), dec("2"))), "3");
   assert.equal(decToString(shiftDec(dec("2.5"), 6)), "2500000");
 });

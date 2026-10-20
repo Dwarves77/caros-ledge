@@ -23,7 +23,7 @@ const DEFAULT_OBLIGATION_SEED = "fueleu-maritime-annex-iv-penalty";
 const periods = z.object({ ghg_intensity_limit_by_period: z.object({ periods: z.array(z.object({ from_date: z.string(), reduction_percent: z.number(), target_gco2e_per_mj: z.number(), quote: z.string() })) }), reference_value: z.object({ value: z.number(), unit: z.string() }) }).loose().parse(constants);
 const FUELEU_REFERENCE_GCO2E_PER_MJ = periods.reference_value.value;
 /** Target year to the Article 4(2) limit in gCO2eq/MJ, from the transcribed table (reference x (1 - reduction)). */
-export const SUPPORTED_TARGET_YEARS: Readonly<Record<string, number>> = Object.freeze(Object.fromEntries(periods.ghg_intensity_limit_by_period.periods.map((p) => [p.from_date.slice(0, 4), FUELEU_REFERENCE_GCO2E_PER_MJ * (1 - p.reduction_percent / 100)])));
+const SUPPORTED_TARGET_YEARS: Readonly<Record<string, number>> = Object.freeze(Object.fromEntries(periods.ghg_intensity_limit_by_period.periods.map((p) => [p.from_date.slice(0, 4), FUELEU_REFERENCE_GCO2E_PER_MJ * (1 - p.reduction_percent / 100)])));
 const FILING_GRADE_YEARS: ReadonlySet<string> = new Set((z.object({ instruments: z.record(z.string(), z.object({ years: z.array(z.number()) }).loose()) }).loose().parse(filingGrade).instruments[FUELEU_INSTRUMENT]?.years ?? []).map(String));
 const ARTICLE_4_2_CITATION = "Regulation (EU) 2023/1805, Article 4(2) (reference value 91.16 gCO2eq/MJ, reduced by the stated percentage from the stated date) and recital 23 (2020 fleet-average baseline, Regulation (EU) 2015/757 MRV data). Verified against EUR-Lex CELEX:32023R1805.";
 
@@ -60,7 +60,7 @@ export interface ParsedStatutoryRow {
 }
 
 /** Problems with a source block: all four fields, and a host that resolves to a codified class tier (an unrated host is worklisted, never given a guessed tier). */
-export function validateSourceBlock(source: unknown, where: string): string[] {
+function validateSourceBlock(source: unknown, where: string): string[] {
   if (!source || typeof source !== "object") return [`${where}: missing a \`source\` block ({url, article, quote, verified_at}), refused, not guessed (rule 18).`];
   const block = source as Rec;
   const violations: string[] = [];

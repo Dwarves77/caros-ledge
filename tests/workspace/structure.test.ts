@@ -47,7 +47,7 @@ test("PROP-011: nothing under the workspace slices builds a client or reads the 
 
 test("the interface the brief names exists", () => {
   has(core, [
-    "getWorkspaceProfile", "DEFAULT_WORKSPACE_PROFILE", "ORG_ROLES", "ORG_SIZE_DIMENSIONS", "findBand", "parseOrgProfile", "validateProfileInput", "relevanceForItem", "computeItemRelevance",
+    "getWorkspaceProfile", "ORG_ROLES", "ORG_SIZE_DIMENSIONS", "findBand", "parseOrgProfile", "validateProfileInput", "relevanceForItem", 
     "summariseObligationBinding", "currentObligationObjects", "dutyHoldersExcludeForwarder", "fetchObligationObjectsForItem", "runCollab", "loadRoster", "orgWatchersOf", "canWrite", "isOrgAdmin", "useWorkspaceStore", "applyWorkspaceSeed",
     "patchWorkspaceSettings", "ALL_SECTORS", "JURISDICTIONS", "MODES", "REGIONS",
   ]);

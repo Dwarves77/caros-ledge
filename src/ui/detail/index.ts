@@ -9,7 +9,7 @@ export { FactBlocks } from "./FactBlocks";
 export { InferenceSection } from "./InferenceSection";
 export { ItemConnections, RelevanceRailCard } from "./ItemConnections";
 export type { RelevanceState } from "./ItemConnections";
-export { RecordFactCard, RecordFacts } from "./RecordFacts";
+export { RecordFacts } from "./RecordFacts";
 export { RequirementTrajectory } from "./RequirementTrajectory";
 export type { DetailSurfaceSharedProps } from "./shared-props";
 export { SourcesGrid } from "./SourcesGrid";

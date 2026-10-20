@@ -8,7 +8,7 @@ import { workerAuthGuard } from "@/core/http/guard";
 import { parseJson } from "@/core/http/parse";
 import { checkRateLimit, WORKER_FLUSH_BUDGET } from "@/core/http/rate-limit";
 
-export const MAX_TAGS = 50;
+const MAX_TAGS = 50;
 const body = z.object({ tags: z.array(z.string().min(1)).min(1).max(MAX_TAGS) });
 
 /**

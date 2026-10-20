@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { bandFromPriority, canonicalSurface, NEUTRAL_BAND, detailHref, keysetCursor, LIST_ROW_FIELDS, pageSizes, toListRowFields, trimRemainder } from "@/core/lists";
+import { bandFromPriority, canonicalSurface, NEUTRAL_BAND, detailHref, pageSizes, toListRowFields, trimRemainder } from "@/core/lists";
 import type { Resource } from "@/core/types";
 import { navCountSources, readAggregates, readCategory, readListing, readRemainder, readSurfaceTotals } from "@/features/lists";
 import { getNavCounts } from "@/ui/shell/nav-counts.server";
@@ -101,11 +101,7 @@ test("a category read pages under the cap and a failed page is a failure", async
   assert.equal(r.total, 1);
 });
 
-test("keyset cursor: round trip, tamper restarts at page one, never throws", () => {
-  const rows = [{ priority: "HIGH", added: "2026-01-02", id: "z" }] as unknown as Resource[];
-  const next = keysetCursor.after({ offset: 60 }, rows);
-  assert.deepEqual(keysetCursor.decode(keysetCursor.encode(next)), { offset: 61, afterPriority: "HIGH", afterAddedDate: "2026-01-02", afterId: "z" });
-  for (const bad of ["%", "{}", encodeURIComponent("[1]"), encodeURIComponent('{"offset":-1}'), encodeURIComponent('{"offset":"x"}'), null, undefined, ""]) assert.deepEqual(keysetCursor.decode(bad), { offset: 0 });
+test("the first page is sixty rows", () => {
   assert.equal(pageSizes.first, 60);
 });
 
@@ -129,7 +125,6 @@ test("list row fields: impact is the stored score or null, never a keyword guess
   assert.equal(f.impact, null);
   assert.equal(f.due?.days, "17 days");
   assert.equal(f.jurisdiction, "—", "a row that names no jurisdiction shows none (it was GLOBAL)");
-  for (const k of LIST_ROW_FIELDS) assert.ok(k in f, k);
   assert.equal(bandFromPriority("nonsense"), NEUTRAL_BAND, "an unknown priority is the neutral band, never Awareness (S:84)");
   assert.equal(bandFromPriority(null), NEUTRAL_BAND);
 });

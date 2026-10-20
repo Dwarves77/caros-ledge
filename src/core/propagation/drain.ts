@@ -48,10 +48,10 @@ export interface DrainDetail {
   processedEvents: ProcessedEvent[];
   questionsReopened: number;
 }
-export const DEFAULT_BATCH = 500;
+const DEFAULT_BATCH = 500;
 
 /** The primary-key column per input table (a table not listed resolves to a null row, which a method refuses on). */
-export const PK_COLUMN: Readonly<Record<string, string>> = {
+const PK_COLUMN: Readonly<Record<string, string>> = {
   emission_factors: "factor_id", market_series: "id", regional_data_facts: "id", derived_values: "value_id", statutory_computations: "computation_id",
   estimated_values: "estimate_id", state_cost_facts: "id", inference_records: "inference_id", intelligence_items: "id", section_claim_provenance: "id",
 };
@@ -73,7 +73,7 @@ export async function resolveInputs(sb: Db, inputs: readonly InputRef[]): Promis
 }
 
 /** The declared inputs of an inference: its derivation_edges rows. A failed read throws. */
-export async function resolveInferenceDeclaredInputs(sb: Db, inferenceId: string): Promise<InputRef[]> {
+async function resolveInferenceDeclaredInputs(sb: Db, inferenceId: string): Promise<InputRef[]> {
   const { data, error } = await sb.from("derivation_edges").select("from_table,from_pk").eq("to_table", "inference_records").eq("to_value_id", inferenceId);
   if (error) throw new Error(`derivation_edges read failed for inference ${inferenceId}: ${error.message}`);
   return ((data ?? []) as { from_table: string; from_pk: string }[]).map((e) => ({ table: e.from_table, pk: e.from_pk, version: null }));

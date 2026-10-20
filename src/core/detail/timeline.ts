@@ -3,9 +3,7 @@
 // The detail page's timeline arithmetic. Classification, the 4/4 collapse, the next-milestone clause and the obligation-event merge are the kit's (src/ui/timeline-math, one copy: the
 // action card draws from them); this file adds the requirement-trajectory step and the helpers the page needs. Nothing here reads the clock: `nowIso` is the request's one instant.
 import type { TimelineEntry } from "@/core/types";
-import { classifyMilestones, collapseTimeline, mergeObligationEvents, nextMilestoneClause } from "@/ui/timeline-math";
-
-export { classifyMilestones as classifyTimeline, collapseTimeline, mergeObligationEvents, nextMilestoneClause };
+import { mergeObligationEvents } from "@/ui/timeline-math";
 
 export interface TrajectoryStep {
   date: string;

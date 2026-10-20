@@ -50,7 +50,8 @@ test("surfaces:1 and 38 the Watch control is live or absent, never dead: the kit
   assert.equal(existsSync("src/ui/detail/watch.tsx"), false, "ItemWatch read a context nothing provides: every detail page drew a permanently disabled Watch");
   const { createElement } = await import("react");
   const { DetailWatch } = await import("@/features/workspace/ui/DetailWatch");
-  const { loadMembership, resetMembership } = await import("@/features/watchlist/membership");
+  const { loadMembership } = await import("@/features/watchlist/watch-store");
+  const { resetMembership } = await import("../_support/watch-store.ts");
   resetMembership();
   await loadMembership("reg", (async () => { throw new Error("down"); }) as never);
   const failed = textOf(renderApp(createElement(DetailWatch, { type: "reg", id: "o3" })));

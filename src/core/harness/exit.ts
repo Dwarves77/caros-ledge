@@ -5,7 +5,7 @@ import { appendFileSync, readFileSync } from "node:fs";
 
 type Env = Record<string, string | undefined>;
 
-export const EXIT = Object.freeze({ ok: 0, failed: 1, skipped: 2 } as const);
+const EXIT = Object.freeze({ ok: 0, failed: 1, skipped: 2 } as const);
 export type Exit = (typeof EXIT)[keyof typeof EXIT];
 
 export const isCi = (env: Env): boolean => env.CI === "true" || env.GITHUB_ACTIONS === "true";

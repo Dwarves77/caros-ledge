@@ -3,7 +3,7 @@ export { BAND_ORDER, bandFromPriority, bandOf, classifyByDays, NEUTRAL_BAND, req
 export type { PlatformPriority, UrgencyBand, UrgencyBandKey } from "./bands";
 export { canonicalSurface, detailHref } from "./item-links";
 export type { DetailSurface } from "./item-links";
-export { keysetCursor, pageSizes, trimRemainder } from "./pagination";
+export { pageSizes, trimRemainder } from "./pagination";
 export type { ListingCursor } from "./pagination";
-export { dueInfo, jurisdictionCode, LIST_ROW_FIELDS, metaLine, toListRowFields, watchTypeForItem } from "./row-fields";
+export { dueInfo, jurisdictionCode, metaLine, toListRowFields } from "./row-fields";
 export type { DueInfo, ListRowFields, ListWatchType } from "./row-fields";

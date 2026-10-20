@@ -1,11 +1,11 @@
 // INV-242 and the notification path: route -> queueNotifications -> allowedRecipients -> outbox -> drain -> notifications row -> the shell's unread store. A notification is read and marked only by its recipient; a
 // failure of the notification never aborts the action that caused it; an invitation cannot be disabled; a muted group, a disabled kind and a disabled master switch are honoured; a mute that did nothing is the defect.
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
 import { allowedRecipients, dispatchNotification, queueNotifications } from "@/core/notifications";
 import { runNotificationOutbox } from "@/features/drain/kinds";
-import { fetchUnread } from "@/ui/shell/use-unread-count";
 import { markAllRead, markRead, appendOlder, safeLink, titleOf, emptyInbox, type InboxItem } from "@/ui/shell/notifications/inbox-model";
 import { POST_INVITE } from "@/features/community/api/group-invitations";
 import { PATCH_MUTE } from "@/features/community/api/group-prefs";
@@ -84,6 +84,8 @@ test("a mute that does something: PATCH mute sets the member's flag, and the nex
   assert.equal(rows(db, "notifications").filter((n) => n.user_id === USER.member).length, 2, "unmuted, they arrive again");
 });
 
+const UNREAD_URL = "/api/community/notifications?unread_only=true&limit=1";
+
 test("the notification path end to end: route -> outbox -> drain -> notifications row -> the shell's unread store reads it, the recipient marks it read, nobody else can", async () => {
   const db = world();
   const res = await call(reply, "moderator", "POST", `/api/community/posts/${T_PUB}/replies`, { body: "A long enough reply to be quoted" }, { id: T_PUB });
@@ -97,22 +99,21 @@ test("the notification path end to end: route -> outbox -> drain -> notification
   const drained = await runNotificationOutbox({ sb: serviceOf(db), now: NOW }, { dry: false });
   assert.deepEqual([drained.counts?.sent, drained.counts?.gave_up], [1, 0]);
   assert.equal(rows(db, "notifications").length, 1);
-  // The shell's store polls the unread count through the member's own route.
-  const polled: string[] = [];
-  const asUser = (who: Viewer) => async (url: string) => {
-    polled.push(url);
-    const r = await call(list, who, "GET", url);
-    return new Response(JSON.stringify(r.body), { status: r.status });
+  // The shell's store polls the unread count through the member's own route: the number is the server's, and signed out is unknown, not zero.
+  const unread = async (who: Viewer): Promise<number | null> => {
+    const r = await call(list, who, "GET", UNREAD_URL);
+    const n = (r.body as { unread_count?: unknown }).unread_count;
+    return r.status === 200 && typeof n === "number" ? n : null;
   };
-  assert.equal(await fetchUnread(asUser("member") as never), 1);
-  assert.equal(await fetchUnread(asUser("moderator") as never), 0, "another user's inbox is theirs alone");
-  assert.equal(await fetchUnread(asUser("anon") as never), null, "signed out is unknown, not zero");
-  assert.ok(polled.every((u) => u === "/api/community/notifications?unread_only=true&limit=1"), "the shell polls exactly the route and query the Community inbox serves");
+  assert.equal(await unread("member"), 1);
+  assert.equal(await unread("moderator"), 0, "another user's inbox is theirs alone");
+  assert.equal(await unread("anon"), null, "signed out is unknown, not zero");
+  assert.ok(readFileSync("src/ui/shell/use-unread-count.ts", "utf8").includes(UNREAD_URL), "the shell polls exactly the route and query the Community inbox serves");
   const id = rows(db, "notifications")[0]?.id as string;
   assert.equal((await call(POST_ONE, "moderator", "POST", `/api/community/notifications/${id}`, { action: "mark_read" }, { id })).status, 404, "not the recipient: not found, unchanged");
   assert.equal(rows(db, "notifications")[0]?.read_at ?? null, null);
   assert.equal((await call(POST_ONE, "member", "POST", `/api/community/notifications/${id}`, { action: "mark_read" }, { id })).status, 200);
-  assert.equal(await fetchUnread(asUser("member") as never), 0);
+  assert.equal(await unread("member"), 0);
   const counts = await call(GET_COUNTS, "member", "GET", "/api/community/notifications/counts");
   assert.deepEqual(counts.body, { groups: [], total_unread: 0 });
 });

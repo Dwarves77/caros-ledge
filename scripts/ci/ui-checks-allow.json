@@ -94,7 +94,7 @@
         "src/core/http/rate-limit.ts": 1,
         "src/core/perf/server-timing.ts": 2,
         "src/core/producers/summary.ts": 1,
-        "src/core/shared/dates.ts": 2,
+        "src/core/propagation/author-edges.ts": 1,
         "src/core/shared/telemetry.ts": 1,
         "src/core/turn/wiring.ts": 1,
         "src/features/account/lib/notification-prefs.ts": 1,
@@ -119,7 +119,6 @@
         "src/features/community/lib/roster.ts": 1,
         "src/features/coverage/server/data.ts": 1,
         "src/features/dashboard/api/coverage-matrix.ts": 1,
-        "src/features/flywheel/connect.ts": 1,
         "src/features/health/api/surfaces.ts": 2,
         "src/features/market/api/notices.ts": 1,
         "src/features/obligations/api/register.ts": 1,
@@ -184,7 +183,7 @@
         "src/ui/shell/TopBar.tsx": 1,
         "src/ui/shell/identity-seed.ts": 3,
         "src/ui/shell/notifications/NotificationsBell.tsx": 1,
-        "src/ui/shell/use-bootstrap.ts": 1
+        "src/ui/shell/bootstrap-store.ts": 1
       }
     },
     "entity-in-string": {
@@ -195,9 +194,17 @@
           "count": 2,
           "reason": "a pattern that matches &nbsp; in captured HTML source, not text shown to a reader: it stays."
         },
+        "src/features/operations/ui/OperationsDetail.tsx": {
+          "count": 1,
+          "reason": "S:4 (CONFIRMED, P0): the not-written note is a string, so the customer reads the characters &apos;. R2d writes the sentence in the typed copy table and this entry goes."
+        },
         "src/features/regulations/map/MapView.tsx": {
           "count": 1,
           "reason": "Leaflet reads its attribution option as HTML, so the entity is decoded there: it stays."
+        },
+        "src/features/research/ui/ResearchDetail.tsx": {
+          "count": 1,
+          "reason": "S:4 (CONFIRMED, P0): the not-written note is a string, so the customer reads the characters &apos;. R2d writes the sentence in the typed copy table and this entry goes."
         }
       }
     },

@@ -27,8 +27,8 @@ interface Payload {
   intersections: Pair[];
   stats: { total: number; explicit_count: number; by_band: Record<string, number> };
 }
-export const SIGNAL_WORDS: Record<string, string> = { shared_source: "Shared source", shared_scenario: "Shared scenario", shared_compliance_object: "Shared compliance object", shared_jurisdiction_topic: "Shared jurisdiction and topic" };
-export const SCORE_FLOORS = [0.3, 0.5, 0.9] as const;
+const SIGNAL_WORDS: Record<string, string> = { shared_source: "Shared source", shared_scenario: "Shared scenario", shared_compliance_object: "Shared compliance object", shared_jurisdiction_topic: "Shared jurisdiction and topic" };
+const SCORE_FLOORS = [0.3, 0.5, 0.9] as const;
 
 /** Pairs of items the flywheel connected: the score band, the basis (why), and a link to each item. A failed read is the failure with Retry, never an empty list. */
 export function ConnectionPairsView() {

@@ -84,11 +84,11 @@
       "diagnostics": {
         "firstFailure": {
           "status": 307,
-          "url": "https://caros-ledge-a3mlaj6ek-dwarves77s-projects.vercel.app/research"
+          "url": "https://carosledge.com/operations"
         },
         "navigations": 4,
         "navigationPaths": [
-          "https://caros-ledge-a3mlaj6ek-dwarves77s-projects.vercel.app/privacy"
+          "https://carosledge.com/privacy"
         ]
       }
     },

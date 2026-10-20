@@ -23,7 +23,7 @@ export interface BriefsPlan {
 }
 
 /** The batch or the export from the stage input, or the reason it is neither. Pure. */
-export function planBriefs(input: Record<string, unknown>): BriefsPlan {
+function planBriefs(input: Record<string, unknown>): BriefsPlan {
   const none = { batch: null, export: null };
   if (input.batch !== undefined && input.export !== undefined) return { ...none, error: "give a batch to apply or an export to run, not both" };
   if (input.export !== undefined) {

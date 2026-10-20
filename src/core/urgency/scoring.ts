@@ -12,13 +12,13 @@ import weightsJson from "./data/weights.json";
 const weights = z.object({ jurisdictionWeights: z.record(z.string(), z.number().min(0).max(1)), sectorAdjacency: z.record(z.string(), z.array(z.string())) }).parse(weightsJson);
 
 /** Platform default jurisdiction weights (a workspace overrides them through workspace_settings.jurisdiction_weights). */
-export const JURISDICTION_WEIGHTS: Readonly<Record<string, number>> = Object.freeze(weights.jurisdictionWeights);
+const JURISDICTION_WEIGHTS: Readonly<Record<string, number>> = Object.freeze(weights.jurisdictionWeights);
 const ADJACENT: Readonly<Record<string, readonly string[]>> = weights.sectorAdjacency;
 const LOW_WEIGHT = 1;
 const PRIORITY_WEIGHT: Readonly<Record<string, number>> = { CRITICAL: 4, HIGH: 3, MODERATE: 2, LOW: LOW_WEIGHT };
 /** The weight of a jurisdiction no table names. */
-export const UNLISTED_JURISDICTION_WEIGHT = 0.5;
-export const SECTOR_WEIGHT = { direct: 1, passThrough: 0.6, adjacent: 0.3, none: 0.1 } as const;
+const UNLISTED_JURISDICTION_WEIGHT = 0.5;
+const SECTOR_WEIGHT = { direct: 1, passThrough: 0.6, adjacent: 0.3, none: 0.1 } as const;
 
 export interface UrgencyInput {
   priority: string | null | undefined;
@@ -37,7 +37,7 @@ export interface UrgencyContext {
 }
 
 /** How much the workspace's sectors care about an item: 1 when its verticals name an active sector, 0.6 for a general rule, 0.3 when a vertical is adjacent to an active sector, else 0.1. */
-export function sectorWeight(verticals: readonly string[] | null | undefined, sectors: readonly string[] | null | undefined): number {
+function sectorWeight(verticals: readonly string[] | null | undefined, sectors: readonly string[] | null | undefined): number {
   if (!sectors || sectors.length === 0) return 1;
   const own = verticals ?? [];
   if (own.length === 0) return SECTOR_WEIGHT.passThrough;

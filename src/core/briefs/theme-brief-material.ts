@@ -82,7 +82,7 @@ export interface MaterialOpts {
  * (core/derived/admissible.ts, the one every reader takes): members, claims and events that fail it never reach the author.
  */
 export interface ThemeBriefSeams { comparator: ClaimComparator; admissible: AdmissibleRows }
-export const themeBriefSeams: ThemeBriefSeams = { comparator: figureCoverage, admissible: admissibleRows };
+const themeBriefSeams: ThemeBriefSeams = { comparator: figureCoverage, admissible: admissibleRows };
 /**
  * Members, grounded FACT claims, forward events and intra-theme edges for a set of themes, read once for the union of their members, and ONLY admissible rows: a member quarantined or archived since the pass and a suppressed
  * claim are not material (F:16). The home jurisdictions come from the scope named in `opts.homes` (default: every workspace), never from an arbitrary row (F:17).

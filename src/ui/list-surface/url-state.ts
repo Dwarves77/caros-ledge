@@ -16,9 +16,9 @@ export interface ListUrlState {
   extras: Record<string, string>;
 }
 
-export const bandFromParam = (v: string | null | undefined): UrgencyBandKey | null => BAND_ORDER.find((b) => b.key === v)?.key ?? null;
-export const sortFromParam = (v: string | null | undefined): ListSortKey | null => SORT_KEYS.find((k) => k === v) ?? null;
-export const windowFromParam = (v: string | null | undefined): ListWindowKey | null => WINDOW_OPTIONS.find((o) => o.key === v)?.key ?? null;
+const bandFromParam = (v: string | null | undefined): UrgencyBandKey | null => BAND_ORDER.find((b) => b.key === v)?.key ?? null;
+const sortFromParam = (v: string | null | undefined): ListSortKey | null => SORT_KEYS.find((k) => k === v) ?? null;
+const windowFromParam = (v: string | null | undefined): ListWindowKey | null => WINDOW_OPTIONS.find((o) => o.key === v)?.key ?? null;
 
 /** Read a list's whole state from the query string; an unknown band, sort or window reads as unset. */
 export function parseListUrl(params: URLSearchParams | null | undefined, extraKeys: readonly string[] = []): ListUrlState {
@@ -55,7 +55,7 @@ export function serializeListUrl(state: Partial<ListUrlState> & { filter?: RowFi
 }
 
 /** Region codes: upper-cased, deduplicated, shape-checked. */
-export function normalizeRegionCodes(raw: readonly string[] | null | undefined): string[] {
+function normalizeRegionCodes(raw: readonly string[] | null | undefined): string[] {
   const seen = new Set<string>();
   for (const c of raw ?? []) {
     const up = String(c ?? "").trim().toUpperCase();

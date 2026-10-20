@@ -21,7 +21,7 @@ export interface SectionRow { section_key: string; section_order: number; conten
 export interface FormatSpec extends FormatDef { extract(fullBrief: string): SectionRow[] }
 
 /** Strip bold/italic wrappers, a leading "Section N <sep>" and a leading "N." or "N)" from a heading payload. */
-export function normaliseHeading(raw: string): string {
+function normaliseHeading(raw: string): string {
   return raw.trim().replace(/^\*+\s*/, "").replace(/\s*\*+$/, "").replace(/^section\s+\d+\s*[—–\-:.)]+\s*/i, "").replace(/^\d+\s*[.)]\s*/, "").trim();
 }
 /** Heading equality: case-insensitive, whitespace-folded, -ize/-ise tolerant. */
@@ -81,7 +81,7 @@ function walk(fullBrief: string, match: (payload: string) => boolean): Extracted
   return { heading: found, contentMarkdown, firstParagraphs, hasContent: firstParagraphs.length > 0 && firstParagraphs.reduce((n, p) => n + p.length, 0) > 50 };
 }
 /** The section whose heading carries the NUMBER `key`, whatever the heading text. */
-export const extractSectionByNumber = (fullBrief: string, key: string): ExtractedSection | null => (fullBrief && key != null ? walk(fullBrief, (p) => headingNumber(p) === String(key)) : null);
+const extractSectionByNumber = (fullBrief: string, key: string): ExtractedSection | null => (fullBrief && key != null ? walk(fullBrief, (p) => headingNumber(p) === String(key)) : null);
 /** The section whose normalised heading equals `headingText`. */
 export const extractSectionByHeading = (fullBrief: string, headingText: string): ExtractedSection | null => {
   if (!fullBrief || !headingText) return null;
@@ -157,7 +157,7 @@ export function stripSourcesSection(md: string | null | undefined): string {
 const LEDGER_NAME = "CLAIM_PROVENANCE_LEDGER";
 const LEDGER_OPEN = `<<<${LEDGER_NAME}`;
 const LEDGER_CLOSE = `${LEDGER_NAME}>>>`;
-export const JSON_LITERAL_MAX_PROSE_CHARS = 40;
+const JSON_LITERAL_MAX_PROSE_CHARS = 40;
 const MARKER_PATTERNS = [
   { id: "sentinel-open", re: /<<</g },
   { id: "claim-ledger", re: new RegExp(LEDGER_NAME, "g") },

@@ -22,7 +22,7 @@ export interface RecalculationNoticeItem extends SupersededNotice {
 export type NoticesState = { status: "loading" } | { status: "failed"; error: string } | { status: "ready"; notices: RecalculationNoticeItem[]; since: string | null };
 
 /** The feed behind every notices surface (this rail, the watchlist): one call, a distinct failed state, a Retry. */
-export function useRecalculationNotices(): NoticesState & { retry: () => void } {
+function useRecalculationNotices(): NoticesState & { retry: () => void } {
   const [state, setState] = useState<NoticesState>({ status: "loading" });
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
@@ -71,7 +71,7 @@ function NoticeRow({ n }: { n: RecalculationNoticeItem }) {
 }
 
 /** The notices as a list, or the honest empty line. */
-export function RecalculationNotice({ notices, emptyMessage = "No recalculations in this window." }: { notices: RecalculationNoticeItem[]; emptyMessage?: string }) {
+function RecalculationNotice({ notices, emptyMessage = "No recalculations in this window." }: { notices: RecalculationNoticeItem[]; emptyMessage?: string }) {
   if (notices.length === 0) {
     return (
       <p className={`cl-absence ${styles.empty}`} data-figure-kind="recalculation-notice-empty">

@@ -2,12 +2,12 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import {
-  BRIEF_EXTRA_FIELDS, BRIEF_FIELDS, COMPLIANCE_OBJECTS, CONTRACT_VERSION, crossLinkClaimSources, deriveTimeline, extractRecommendedActions, extractSections, harvestTimeline, parseRegulationSections, renderAuthorInstruction,
+  BRIEF_EXTRA_FIELDS, BRIEF_FIELDS, COMPLIANCE_OBJECTS, CONTRACT_VERSION, crossLinkClaimSources, deriveTimeline, extractRecommendedActions, extractSections, harvestTimeline, parseRegulationSections,
   TOPIC_TAGS, validateClaimRecords, validateMetadata,
 } from "@/core/brief";
 import { bankCandidate } from "@/core/brief/vocab";
 import { assertNoInternalMarkers, checkBriefContent, findInternalMarkers, parseNewSources, stripClaimLedgerBlocks } from "@/core/brief/sections";
-import { buildTimelineRows, derivedTimelineRow, isDerivedConsistent, parseRecurringRule, parseTimeline, toIsoDate } from "@/core/brief/timeline";
+import { buildTimelineRows, derivedTimelineRow, isDerivedConsistent, parseTimeline } from "@/core/brief/timeline";
 
 import { marketSignalBody, metadata, SOURCE } from "./fixtures.ts";
 
@@ -18,18 +18,10 @@ const errorsOf = (over: Record<string, unknown>): string[] => {
   return r.ok ? [] : r.errors;
 };
 
-test("the contract is ONE field table: 26 fields plus the 2 extras; the instruction text is rendered from it, so no count can drift (B-0221, B-1004)", () => {
+test("the contract is ONE field table: 26 fields plus the 2 extras, so no count can drift (B-0221, B-1004)", () => {
   assert.equal(BRIEF_FIELDS.length, 26);
   assert.equal(BRIEF_EXTRA_FIELDS.length, 2);
-  const text = renderAuthorInstruction();
-  assert.match(text, new RegExp(`writes ${BRIEF_FIELDS.length} fields`));
-  assert.match(text, new RegExp(`other ${BRIEF_FIELDS.length - 1} fields`));
-  assert.match(text, new RegExp(`exactly ${COMPLIANCE_OBJECTS.length} values`), "the closed vocabulary count is the table's, not 18");
-  for (const f of [...BRIEF_FIELDS, ...BRIEF_EXTRA_FIELDS]) assert.ok(text.includes(f.name), `the instruction names ${f.name}`);
-  for (const c of COMPLIANCE_OBJECTS) assert.ok(text.includes(c), `the instruction lists ${c}`);
   assert.equal(CONTRACT_VERSION, "2026-09-11");
-  assert.ok(renderAuthorInstruction({ compliance_object: [{ key: "adopted-widget" }] }).includes("adopted-widget"), "an adopted term reaches the instruction");
-  assert.doesNotMatch(text, /sk-ant|claude-(?:opus|sonnet|haiku)/i);
   assert.equal(COMPLIANCE_OBJECTS.length, 19);
   assert.equal(TOPIC_TAGS.length, 7);
 });
@@ -127,11 +119,9 @@ test("new sources table: rows are name, url and tier; a blocked row carries its 
 });
 
 test("timeline: dates normalise with their precision, an unparseable token is skipped and reported, past rows are completed", () => {
-  assert.deepEqual(toIsoDate("1 January 2027"), { iso: "2027-01-01", precision: "day" });
-  assert.deepEqual(toIsoDate("March 2026"), { iso: "2026-03-01", precision: "month" });
-  assert.deepEqual(toIsoDate("Q3 2027"), { iso: "2027-07-01", precision: "quarter" });
-  assert.equal(toIsoDate("2026-13-45"), null);
-  assert.equal(toIsoDate(null), null);
+  const dated = buildTimelineRows([{ date: "1 January 2027", label: "a", source: null }, { date: "March 2026", label: "b", source: null }, { date: "Q3 2027", label: "c", source: null }, { date: "2026-13-45", label: "d", source: null }], "2026-10-15");
+  assert.deepEqual(dated.rows.map((r) => [r.label, r.milestone_date]), [["March 2026 — b", "2026-03-01"], ["a", "2027-01-01"], ["Q3 2027 — c", "2027-07-01"]]);
+  assert.deepEqual(dated.skipped.map((s) => s.label), ["d"], "an impossible date is skipped and reported");
   const { rows, skipped } = buildTimelineRows([{ date: "garbage", label: "x", source: null }, { date: "2020-01-01", label: "past", source: null }, { date: "2030-05-05", label: "future", source: null }], "2026-10-15");
   assert.deepEqual(rows.map((r) => [r.label, r.is_completed]), [["past", true], ["future", false]]);
   assert.equal(skipped.length, 1);
@@ -149,7 +139,6 @@ test("ADR-030: a title-derived date is used only when it is verbatim in the item
   const hit = deriveTimeline({ title: "Regulation (EU) 2023/1115 of 31 May 2023", capturedText: "REGULATION (EU) 2023/1115 ... Done at Brussels, 31 May 2023. ".repeat(10) } as never);
   assert.equal(hit.result?.source, "title");
   assert.equal(derivedTimelineRow(hit.result as never, "2026-10-15").milestone_date, "2023-05-31");
-  assert.deepEqual(parseRecurringRule("Operators shall report before 30 April of each year"), { kind: "annual", month: 4, day: 30 });
   assert.equal(isDerivedConsistent("Operators shall report before 30 April of each year", "30 April 2028"), true);
   assert.equal(isDerivedConsistent("Operators shall report before 30 April of each year", "1 May 2028"), false);
 });

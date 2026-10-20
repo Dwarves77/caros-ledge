@@ -2,17 +2,17 @@
 // (deps, input) entries that return counts, an outcome and notes; none of them reads the wall clock except through deps.now or exits the process.
 export { applyPayload, holdRow, isReopenTarget, reconcileRow, reopenHeldRows } from "./apply";
 export { buildPayload } from "./build-payload";
-export { canonicalDomainOverride, runGates, sourceLinkDecision, unconditionalDomain } from "./gates";
+export { runGates } from "./gates";
 export type { ConnectDeps, CorpusRow, EntityDeps, MintRunDeps, RecorderDeps } from "./deps";
 export { healItem, healQuarantined, rederiveStale } from "./heal/run";
 export type { HealDeps, HealItemInput, HealItemResult, HealSweepInput } from "./heal/run";
 export { bindMint, mintItem } from "./mint-item";
 export type { MintCtx, MintDetail, MintRequest } from "./mint-item";
-export { preflight, tagPresence } from "./preflight";
+export { preflight } from "./preflight";
 export { runMint } from "./run";
 export type { MintRunInput, MintRunResult } from "./run";
-export { classifyRelevance, isMintable, loadReviewedVerdicts, reconcileRecordItems, screenVerdictFor } from "./screen";
-export { buildHeldIndex, isHeld, LIMIT_CEILING, readHolders, resolveLimit, sameInstrumentIdentity, selectCensusRows } from "./select";
+export { loadReviewedVerdicts, screenVerdictFor } from "./screen";
+export { buildHeldIndex, isHeld, readHolders, resolveLimit, selectCensusRows } from "./select";
 export { HOLD_STAGES } from "./types";
 export type { CensusRow, ExportRow, Hold, MintInput, MintResult, RecordPayload, Screen } from "./types";
 export { classifyMintOutcome } from "@/features/intake/write-item";

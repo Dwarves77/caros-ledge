@@ -10,6 +10,5 @@ src/core/parse/index.ts | new in R2a: the parse module's public surface
 src/core/parse/data/units.json | rule table as data (WAVE-2-COMMON): units, GLEC annex constants, gases, scales; lifted from the methods register section 5 (U2, U3); JSON cannot carry a header
 src/core/parse/data/locales.json | rule table as data: number conventions (U1); JSON cannot carry a header
 src/core/parse/data/identifier-schemes.json | rule table as data: instrument, CELEX, bill and ISO identifier schemes, year ranges, tracking parameters (U12, I3); JSON cannot carry a header
-src/core/parse/data/missing-tokens.json | rule table as data: TBM, N/A, dash, not_set, M (U10); JSON cannot carry a header
 src/core/parse/data/qualifiers.json | rule table as data: boundary, GWP set, basis, category, method and framework phrases (U4, U5, U8, U9, U13); JSON cannot carry a header
 src/core/parse/data/stopwords.json | rule table as data: stop words for slot coverage (D:74); JSON cannot carry a header

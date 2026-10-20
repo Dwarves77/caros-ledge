@@ -30,7 +30,7 @@ const tierOf = (s: Pick<SourceRow, "base_tier">): number | null => s.base_tier ?
 const msg = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
 /** The item row for a payload (provenance_status is never written here: the trigger derives it, depth-1, for a new row). */
-export function buildItemRow(payload: BuiltPayload["payload"], c: { sourceId: string; domain: number }): Record<string, unknown> {
+function buildItemRow(payload: BuiltPayload["payload"], c: { sourceId: string; domain: number }): Record<string, unknown> {
   const i = payload.item as Record<string, unknown>;
   return {
     title: i.title, domain: c.domain, item_type: i.item_type, source_id: c.sourceId, source_url: i.source_url, priority: i.priority ?? "MODERATE", full_brief: i.full_brief,

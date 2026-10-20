@@ -10,7 +10,7 @@ export interface AuthedFetchDeps {
   fetchImpl?: typeof fetch;
 }
 
-export const AUTH_REQUIRED_ERROR = "Authentication required";
+const AUTH_REQUIRED_ERROR = "Authentication required";
 
 async function accessToken(client: SessionSource): Promise<string | null> {
   const { data } = await client.auth.getSession();

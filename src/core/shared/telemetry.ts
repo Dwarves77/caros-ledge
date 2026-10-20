@@ -31,15 +31,11 @@ function normalise(message: string, stack: string): string {
   return `${text.replace(/\s+/g, " ").trim()}\n${frames.join("|")}`;
 }
 
-export function stackHash(side: string, message: string, stack: string): string {
+function stackHash(side: string, message: string, stack: string): string {
   return createHash("sha256").update(`${side}\n${normalise(message, stack)}`, "utf8").digest("hex");
 }
 
 let unavailableNoted = false;
-/** Test seam: forget that the missing-key line was written. */
-export const resetTelemetryNotice = (): void => {
-  unavailableNoted = false;
-};
 
 /** Write one error_events row (deduplicated by stack hash, release, side and route). No PII is stored: emails in a message are redacted. Never throws. */
 export async function captureError(input: CaptureErrorInput, client?: Db): Promise<void> {

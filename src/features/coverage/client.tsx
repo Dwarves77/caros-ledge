@@ -14,15 +14,9 @@ export interface CoverageCallResult {
 }
 
 /** "Request coverage": one coverage_gap flag for the page path the gap is on. */
-export async function requestCoverageRequest(input: { subjectRef: string; label: string }): Promise<CoverageCallResult> {
+async function requestCoverageRequest(input: { subjectRef: string; label: string }): Promise<CoverageCallResult> {
   const r = await requestJson<{ already?: boolean }>("/api/dashboard/coverage/request", { method: "POST", body: input });
   return r.ok ? { ok: true, already: r.data?.already === true } : { ok: false, error: r.error ?? "Could not record that. Try again." };
-}
-
-/** The per-data-class totals the portfolio-add line reads (summary=1 keeps the payload small). */
-export async function fetchCoverageSummary(): Promise<{ ok: true; dataClasses: { code: string; label: string; numerator: number; denominator: number }[] } | { ok: false; error: string }> {
-  const r = await requestJson<{ dataClasses?: { code: string; label: string; numerator: number; denominator: number }[] }>("/api/dashboard/coverage/matrix?summary=1");
-  return r.ok ? { ok: true, dataClasses: r.data?.dataClasses ?? [] } : { ok: false, error: r.error ?? "Coverage is not available right now." };
 }
 
 /** Download the CSV for the current axes as a file (a Blob and a clicked object-URL anchor, revoked after). */

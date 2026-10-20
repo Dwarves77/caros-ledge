@@ -145,16 +145,6 @@ export async function loadCoverage(db: Db, surface?: CoverageSurface): Promise<{
   return { entries, counts };
 }
 
-export const INITIAL_CAP = 60;
-/** The page-side read: exact counts and the initial entry slice. An outage is `_error`, never an empty index that reads as zero coverage. */
-export async function getCoverageIndex(db: Db, surface?: CoverageSurface): Promise<{ entries: CoverageIndexEntry[]; cap: number; counts: CoverageCounts | null; _error?: string }> {
-  try {
-    const { entries, counts } = await loadCoverage(db, surface);
-    return { entries: entries.slice(0, INITIAL_CAP), cap: INITIAL_CAP, counts };
-  } catch (e) {
-    return { entries: [], cap: INITIAL_CAP, counts: null, _error: `Coverage index temporarily unavailable: ${(e as Error).message}` };
-  }
-}
 /** The full per-surface entry list for the admin route; throws on error so the route answers with a status. Read-only content: no promote or action field. */
 export async function getCoverageEntries(db: Db, surface?: CoverageSurface): Promise<CoverageIndexEntry[]> {
   return (await loadCoverage(db, surface)).entries;

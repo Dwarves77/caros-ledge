@@ -6,7 +6,6 @@
 // and the author's instruction text, so a count or a vocabulary cannot drift between them again (B-0221, B-1004).
 import { z } from "zod";
 
-import instructionJson from "./data/author-instruction.json";
 import contractJson from "./data/contract.json";
 
 const field = z.object({
@@ -37,10 +36,8 @@ const contract = z.object({
   fields: z.array(field),
   formats: z.array(format),
 });
-const instruction = z.array(z.union([z.object({ text: z.string() }), z.object({ render: z.string() })]));
 
 const C = contract.parse(contractJson);
-const INSTRUCTION = instruction.parse(instructionJson);
 
 export type BriefField = z.infer<typeof field>;
 export type SectionDef = z.infer<typeof section>;
@@ -58,7 +55,6 @@ export const SEVERITIES = C.severity;
 export const PRIORITIES: readonly string[] = C.priorities;
 export const URGENCY_TIERS: readonly string[] = C.urgencyTiers.map((u) => u.value);
 export const DB_SEVERITY_EXTRA: readonly string[] = C.dbSeverityExtra;
-export const THEME_CANDIDATE_MAP: Readonly<Record<string, string>> = C.themeCandidateMap;
 export const CAPS = C.caps;
 export const MENTIONED_TERMS_CONTRACT = C.mentionedTerms;
 export const CLAIM_KINDS: readonly string[] = C.claimKinds;
@@ -78,64 +74,4 @@ export interface AdoptedTerms {
   scenario?: { key: string }[];
 }
 
-const list = (items: string[]) => items.join("\n");
-const bullets = (rows: [string, string][]) => rows.map(([a, b]) => `- ${a}${b ? ` — ${b}` : ""}`).join("\n");
 
-/** The named renders: each is built from the table, never typed a second time. */
-function renderNamed(name: string, adopted: AdoptedTerms | undefined): string {
-  switch (name) {
-    case "severity_labels":
-      return bullets(C.severity.map((s) => [s.label, `${s.meaning}`]));
-    case "format_selection":
-      return bullets(C.formats.map((f) => [f.itemTypes.join(", "), `${f.formatType} (${f.sections.length} sections, ${f.sections.filter((s) => s.conditional).length} conditional)`]));
-    case "fields":
-      return bullets(C.fields.map((f) => [f.name, f.description.replace("{{CONTRACT_VERSION}}", C.version)]));
-    case "severity_priority_map":
-      return bullets(C.severity.map((s) => [s.label, `→ ${s.priority}`]));
-    case "format_derivation":
-      return bullets(C.formats.map((f) => [f.itemTypes.join(", "), `→ ${f.formatType}`]));
-    case "topic_tags":
-      return bullets(C.topicTags.map((t) => [t.tag, t.meaning]));
-    case "signal_bands":
-      return bullets(C.signalBands.map((b) => [b.band, b.meaning]));
-    case "scenario_glossary":
-      return list(C.scenarioGlossary.map((g) => `${g.group}: ${g.values.join(", ")}`)) + (adopted?.scenario?.length ? `\nAdopted by recurrence (also held, prefer when they fit): ${adopted.scenario.map((e) => e.key).join(", ")}` : "");
-    case "compliance_objects":
-      return list(C.complianceObjects.map((g) => `${g.group}: ${g.values.join(", ")}`)) + (adopted?.compliance_object?.length ? `\nAdopted by recurrence (also held): ${adopted.compliance_object.map((e) => e.key).join(", ")}` : "");
-    default:
-      throw new Error(`author instruction: unknown render ${name}`);
-  }
-}
-
-const COUNT = C.scenarioGlossary.reduce((n, g) => n + g.values.length, 0);
-function fill(text: string, adopted: AdoptedTerms | undefined): string {
-  const themes = [...C.themes, ...(adopted?.theme ?? []).map((e) => e.key.trim().replace(/\s+/g, "_"))];
-  const map: Record<string, string> = {
-    CONTRACT_VERSION: C.version,
-    FIELD_COUNT: String(BRIEF_FIELDS.length),
-    FIELD_COUNT_META: String(BRIEF_FIELDS.length - 1),
-    TOPIC_COUNT: String(TOPIC_TAGS.length),
-    TOPIC_MAX: String(C.caps.topicTags),
-    SIGNAL_COUNT: String(SIGNAL_BANDS.length),
-    THEME_COUNT: String(C.themes.length),
-    THEMES: themes.join(", "),
-    SCENARIO_COUNT: String(COUNT),
-    SCENARIO_MAX: String(C.caps.scenarioTags),
-    COMPLIANCE_COUNT: String(COMPLIANCE_OBJECTS.length),
-    COMPLIANCE_MAX: String(C.caps.complianceTags),
-    MENTIONED_KINDS: C.mentionedTerms.kinds.join(" | "),
-    MENTIONED_TEXT_MAX: String(C.mentionedTerms.textMax),
-    MENTIONED_MAX: String(C.mentionedTerms.max),
-    CLAIM_KINDS: C.claimKinds.join(", "),
-  };
-  return text.replace(/\{\{([A-Z_]+)\}\}/g, (_, k: string) => {
-    const v = map[k];
-    if (v === undefined) throw new Error(`author instruction: unknown placeholder ${k}`);
-    return v;
-  });
-}
-
-/** The author's instruction text, rendered from the table (the replacement for buildSystemPrompt). Adopted terms join the glossary and the themes. */
-export function renderAuthorInstruction(adopted?: AdoptedTerms): string {
-  return INSTRUCTION.map((p) => ("text" in p ? fill(p.text, adopted) : renderNamed(p.render, adopted))).join("\n").replace(/\n{3,}/g, "\n\n");
-}

@@ -172,6 +172,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => {
     },
 
     async loadFromWorkspace(client, orgId) {
+      provider = () => client; // every later write goes through the client the settings were read with
       const { data, error } = await client.from("workspace_settings").select("home_sections, default_export_format, alert_config, default_filters, profile, sector_profile").eq("org_id", orgId).maybeSingle();
       // A failed read shows the defaults for this session and leaves orgId unset, so no save can overwrite the stored row with them.
       if (error) {
@@ -208,8 +209,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => {
  * Load the settings ONCE per org, from the workspace store's org id (the loader call B-0665 was missing), and again only when the org
  * changes. Returns the unsubscribe. `clientFor` supplies the RLS-bound browser client (a test passes a fake).
  */
-export function bindSettingsToWorkspace(clientFor: () => Db = browserClient): () => void {
-  provider = clientFor;
+function bindSettingsToWorkspace(clientFor: () => Db = browserClient): () => void {
   let loadingFor: string | null = null;
   const loadFor = (orgId: string | null) => {
     if (!orgId) return;

@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
-import { buildTimelineRows, deriveTimeline, extractDatelineDate, isInstrumentMilestone, timelineDateOf, toIsoDate } from "@/core/brief/timeline";
+import { buildTimelineRows, deriveTimeline, isInstrumentMilestone, timelineDateOf } from "@/core/brief/timeline";
 import { dueInfo, toListRowFields } from "@/core/lists";
 import type { Resource } from "@/core/types";
 import { mapRows, type WorkspaceItemRpcRow } from "@/features/lists";
@@ -22,7 +22,7 @@ test("F:12 the writer stores how exact each date is: a year, a quarter, early 20
   // every precision the parser can produce is one the column's CHECK admits
   const sql = readFileSync("supabase/migrations/0094_item_timelines_date_precision.sql", "utf8");
   const admitted = /ARRAY\[([^\]]*)\]/.exec(sql)?.[1]?.match(/'([a-z]+)'/g)?.map((s) => s.slice(1, -1)) ?? [];
-  for (const token of ["2027", "Q3 2027", "H2 2027", "early 2027", "30 June 2027", "by 31 December 2027", "March 2027", "2027-03", "1 March 2027 to 30 June 2027"]) assert.ok(admitted.includes(toIsoDate(token)?.precision ?? "?"), token);
+  for (const precision of Object.values(byLabel)) assert.ok(admitted.includes(precision as string), `${precision} is admitted by the column CHECK`);
 });
 
 test("F:12 a reader hands a row the date at the precision it was written: the whole day for a day, the month for a month, the year for anything coarser, and never a day for a precision it does not know", () => {
@@ -65,12 +65,13 @@ test("F:12 and F:42 the list reader draws a year as a year, and the captured and
 });
 
 test("F:13 a date the page introduces with a publication marker is labelled Published; a bare date is labelled for what it is, and a later effective date never becomes the publication date", () => {
-  const marked = extractDatelineDate("Regulation (EU) 2026/1 enters into force on 1 January 2030.\nPublished 5 May 2026\nBody text.");
-  assert.deepEqual([marked?.token, marked?.iso, marked?.baseLabel], ["5 May 2026", "2026-05-05", "Published (from the source page)"]);
-  const bare = extractDatelineDate("Amended by the Council on 3 March 2025.\nRegulation text follows.");
+  const dateline = (capturedText: string) => deriveTimeline({ title: "Guidance", capturedText }).result;
+  const marked = dateline("Regulation (EU) 2026/1 enters into force on 1 January 2030.\nPublished 5 May 2026\nBody text.");
+  assert.deepEqual([marked?.iso, marked?.baseLabel], ["2026-05-05", "Published (from the source page)"]);
+  const bare = dateline("Amended by the Council on 3 March 2025.\nRegulation text follows.");
   assert.equal(bare?.iso, "2025-03-03");
   assert.equal(bare?.baseLabel, "Date found on the source page", "the old step called any bare date 'Published'");
-  const tag = extractDatelineDate('<h1>Guidance</h1><time datetime="2026-04-02T10:00:00Z">2 April</time> and 1 January 2030');
+  const tag = dateline('<h1>Guidance</h1><time datetime="2026-04-02T10:00:00Z">2 April</time> and 1 January 2030');
   assert.deepEqual([tag?.iso, tag?.baseLabel], ["2026-04-02", "Published (from the source page)"]);
   const derived = deriveTimeline({ title: "Guidance", capturedText: "Effective 1 January 2030. Published 5 May 2026.", bestCapture: { searched_at: "2026-10-01T00:00:00Z" } });
   assert.equal(derived.result?.baseLabel, "Published (from the source page)");

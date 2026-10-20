@@ -4,7 +4,6 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { test } from "node:test";
 
-import { themeBriefSeams } from "@/core/briefs/theme-brief-material";
 import { admissibleRows, isAdmissibleItem } from "@/core/derived/admissible";
 
 import { memoryDb, type Row } from "../_support/memory-db.ts";
@@ -50,7 +49,7 @@ test("admissibleRows.claims drops the claims of an inadmissible item and the cla
 
 test("S3: R2b's local stand-in is deleted and the theme-brief seam points at the one predicate", () => {
   assert.equal(existsSync("src/core/briefs/admissible.ts"), false);
-  assert.equal(themeBriefSeams.admissible, admissibleRows);
+  assert.match(readFileSync("src/core/briefs/theme-brief-material.ts", "utf8"), /themeBriefSeams: ThemeBriefSeams = { comparator: figureCoverage, admissible: admissibleRows }/, "the theme brief reads the one predicate");
 });
 
 test("the SQL twin of the claim rule (migration 0093) says what the TypeScript says: admissible items only, suppressions read through fact_suppressions, an id match before a text match, the newest correction deciding, a revoked one ignored", () => {

@@ -1,8 +1,8 @@
 // Ported from old_repo/src/lib/health/gate-a-gauges.mjs (lines 1-121)
 
-export const ALARM_GAUGES = ["invariant_violations", "briefless_verified", "no_gatestate_verified", "verified_failing_revalidation"] as const;
+const ALARM_GAUGES = ["invariant_violations", "briefless_verified", "no_gatestate_verified", "verified_failing_revalidation"] as const;
 const INFO_GAUGES = ["verified_gen_ver_null_info"] as const;
-export const GAUGE_NAMES: readonly string[] = [...ALARM_GAUGES, ...INFO_GAUGES];
+const GAUGE_NAMES: readonly string[] = [...ALARM_GAUGES, ...INFO_GAUGES];
 const EMPTY_PREFIX = "gate_a_health cache empty";
 const STALE_RE = /^gate_a_health cache stale since (.+)$/;
 
@@ -22,7 +22,7 @@ function ageText(since: string, now: Date): string | null {
 }
 
 /** One gate_a_health() result as five gauges {value, state, computed_at, reason}, never a bare null. not_computed (cache empty or stale: the refresh is deliberately unscheduled) is the expected build-mode state. */
-export function shapeGateAHealth({ data = null, error = null, thrown = null, now }: { data?: unknown; error?: { message: string } | null; thrown?: string | null; now: Date }): Record<string, Gauge> {
+function shapeGateAHealth({ data = null, error = null, thrown = null, now }: { data?: unknown; error?: { message: string } | null; thrown?: string | null; now: Date }): Record<string, Gauge> {
   if (thrown) return allGauges("unreadable", `gate_a_health threw: ${thrown}`, null);
   if (error) return allGauges("unreadable", `gate_a_health rpc error: ${error.message}`, null);
   if (!data || typeof data !== "object" || Array.isArray(data)) return allGauges("unreadable", "gate_a_health returned no object", null);
@@ -50,33 +50,4 @@ export async function readGateAHealth(db: { rpc: (name: string) => PromiseLike<{
   } catch (e) {
     return shapeGateAHealth({ thrown: e instanceof Error ? e.message : "threw", now });
   }
-}
-/** The probe verdict over the endpoint's gate_a object: fail on an unreadable gauge or a computed alarm above 0; not_computed warns. */
-export function decideGateAProbe(gate_a: unknown): { fail: boolean; lines: string[] } {
-  const lines: string[] = [];
-  let fail = false;
-  let notComputed = 0;
-  for (const n of ALARM_GAUGES) {
-    const g = (gate_a && typeof gate_a === "object" ? (gate_a as Record<string, Gauge | undefined>)[n] : undefined) as Gauge | undefined;
-    if (!g || typeof g !== "object" || typeof g.state !== "string") {
-      lines.push(`ERROR gate_a.${n} state=unreadable (gauge absent or old shape: a bare value where {value,state} is expected), fail-closed`);
-      fail = true;
-    } else if (g.state === "computed") {
-      if (!Number.isInteger(g.value) || (g.value as number) < 0) {
-        lines.push(`ERROR gate_a.${n} state=unreadable (computed with value ${JSON.stringify(g.value)}), fail-closed`);
-        fail = true;
-      } else if ((g.value as number) > 0) {
-        lines.push(`ERROR gate_a.${n} state=computed ALARM value=${g.value} (must be 0)`);
-        fail = true;
-      } else lines.push(`ok gate_a.${n} state=computed value=0 computed_at=${g.computed_at}`);
-    } else if (g.state === "not_computed") {
-      notComputed++;
-      lines.push(`WARNING gate_a.${n} state=not_computed: ${g.reason}`);
-    } else {
-      lines.push(`ERROR gate_a.${n} state=${g.state}: ${g.reason ?? "no reason given"}, fail-closed`);
-      fail = true;
-    }
-  }
-  if (!fail && notComputed > 0) lines.push(`WARNING ${notComputed} of ${ALARM_GAUGES.length} Gate A alarms are not_computed, not zero: the assertion did not run on live counts`);
-  return { fail, lines };
 }

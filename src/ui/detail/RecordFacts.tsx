@@ -12,7 +12,7 @@ import { ItemGroup } from "../ItemGroup";
 import { SectionLabel } from "../SectionLabel";
 import { StateNote } from "../StateNote";
 
-export function RecordFactCard({ fact }: { fact: RecordFactRow }) {
+function RecordFactCard({ fact }: { fact: RecordFactRow }) {
   const model = fact.kind === "FACT" ? deriveRecordFactCardModel(fact) : null;
   if (model) return <FactCard model={model} />;
   return (

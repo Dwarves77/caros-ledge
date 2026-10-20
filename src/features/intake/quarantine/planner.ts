@@ -14,7 +14,7 @@ import { runResult, type RunResult } from "@/core/intake/result";
 import { HOLD_TYPES, resolveQuarantined } from "./resolver";
 
 export const DWELL_BOUND_DAYS = 14;
-export const DEFERRAL_WINDOW_DAYS = 14;
+const DEFERRAL_WINDOW_DAYS = 14;
 const DAY_MS = 24 * 60 * 60 * 1000;
 const DEFAULT_OWNER = "intake-session";
 const MIN_REASON_LEN = 30;
@@ -26,7 +26,7 @@ export type DeferralVerdict = { ok: true } | { ok: false; error: string };
 const text = (v: unknown): v is string => typeof v === "string" && v.trim().length > 0;
 
 /** Read and write validity of a deferral. The date must be in the future AND within the dwell bound from `now`. */
-export function isValidDeferral(payload: unknown, now: Date): DeferralVerdict {
+function isValidDeferral(payload: unknown, now: Date): DeferralVerdict {
   if (!payload || typeof payload !== "object") return { ok: false, error: "deferral payload missing or not an object" };
   const { reason, deferred_until, owner, resolution_event } = payload as Record<string, unknown>;
   if (!text(reason)) return { ok: false, error: "deferral.reason is required (the blocker and the disposition path)" };
@@ -48,7 +48,7 @@ export interface QFlag { subject_ref: string; created_at: string; created_by?: s
 export interface Dwell { enqueueMissing: QItem[]; undispositioned: (QItem & { ageDays: number; resurrected: boolean })[]; deferred: (QItem & { ageDays: number; deferral: Deferral })[]; withinBound: (QItem & { ageDays: number })[] }
 
 /** The dwell clock is the earliest open flag per item. Past the bound with no valid, unexpired deferral is undispositioned (the hard tripwire). */
-export function computeQuarantineDwell(a: { items: QItem[]; flags: QFlag[]; now: Date }): Dwell {
+function computeQuarantineDwell(a: { items: QItem[]; flags: QFlag[]; now: Date }): Dwell {
   const nowMs = a.now.getTime();
   const enqueuedAt = new Map<string, number>();
   for (const f of a.flags) {
@@ -99,7 +99,7 @@ const REASON_CLASS = {
 export type ReasonClass = keyof typeof REASON_CLASS;
 
 /** One deferral candidate for a reason class; it must satisfy isValidDeferral (a programming error otherwise). */
-export function buildDeferralCandidate(itemId: string, key: ReasonClass, now: Date): Deferral & { item_id: string; reason_class: ReasonClass } {
+function buildDeferralCandidate(itemId: string, key: ReasonClass, now: Date): Deferral & { item_id: string; reason_class: ReasonClass } {
   const cls = REASON_CLASS[key];
   if (!cls) throw new Error(`unknown reason class '${key}'`);
   const payload: Deferral = { reason: cls.reason, deferred_until: new Date(now.getTime() + DEFERRAL_WINDOW_DAYS * DAY_MS - 1000).toISOString(), owner: DEFAULT_OWNER, resolution_event: cls.resolution_event };
@@ -112,7 +112,7 @@ export interface CheapDecision { outcome: string }
 export interface PlanRow { item_id: string; legacy_id: string | null; disposition: "within_bound" | "already_deferred" | "enqueue_missing" | "deferral_candidate"; ageDays?: number; deferred_until?: string; reason_class?: ReasonClass; resurrected?: boolean; cheap_verify_outcome?: string | null }
 
 /** Classify every live-quarantined item into a planned disposition. Pure. */
-export function planDispositions(a: { items: QItem[]; flags: QFlag[]; cheapDecisionByItemId: ReadonlyMap<string, CheapDecision>; now: Date }) {
+function planDispositions(a: { items: QItem[]; flags: QFlag[]; cheapDecisionByItemId: ReadonlyMap<string, CheapDecision>; now: Date }) {
   const dwell = computeQuarantineDwell({ items: a.items, flags: a.flags, now: a.now });
   const byId = new Map(a.items.map((i) => [i.id, i]));
   const plan: PlanRow[] = [];

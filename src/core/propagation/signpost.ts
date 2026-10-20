@@ -41,15 +41,6 @@ export function evaluateSignpostPredicate(predicate: SignpostPredicate, watchedR
 }
 
 export type Direction = "confirms" | "refutes" | "delays";
-/** The lifecycle after a firing (spec 08 section 3.1, ADR-039): refutes falsifies, delays stalls, confirms advances toward corroborated and never to verified; terminal states stay. */
-export function nextLifecycleState(current: Lifecycle, direction: Direction): Lifecycle {
-  if (current === "falsified" || current === "superseded" || current === "obsolete") return current;
-  if (direction === "refutes") return "falsified";
-  if (direction === "delays") return "stalled";
-  if (current === "emerging") return "strengthening";
-  if (current === "strengthening") return "corroborated";
-  return current;
-}
 
 export interface FireResult {
   fired: true;

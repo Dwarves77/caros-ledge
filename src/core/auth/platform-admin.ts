@@ -14,18 +14,10 @@ export async function readOwnPlatformAdmin(client: Pick<Db, "rpc">): Promise<boo
   return data === true;
 }
 
-/** Another user's flag, read on the service client. A failed read throws LookupError; it is never read as "not an admin". */
-export async function isPlatformAdmin(userId: string, service: Db): Promise<boolean> {
-  if (!userId) return false;
-  const { data, error } = await service.from("profiles").select("is_platform_admin").eq("id", userId).maybeSingle();
-  if (error) throw new LookupError("profiles.is_platform_admin", error);
-  return data?.is_platform_admin === true;
-}
-
 export type PlatformAdminDecision = { kind: "anonymous" } | { kind: "denied"; userId: string } | { kind: "admitted"; userId: string; email: string };
 
 /** The page gate's decision, separate from the redirect so it can be tested. A failed flag read throws LookupError to the page's failure state: it is never "not an admin" (C:24, W:20). */
-export async function decidePlatformAdmin(client: ClaimsClient & Pick<Db, "rpc">): Promise<PlatformAdminDecision> {
+async function decidePlatformAdmin(client: ClaimsClient & Pick<Db, "rpc">): Promise<PlatformAdminDecision> {
   const claims = await getClaims(client);
   if (!claims) return { kind: "anonymous" };
   return (await readOwnPlatformAdmin(client)) ? { kind: "admitted", userId: claims.userId, email: claims.email ?? "" } : { kind: "denied", userId: claims.userId };

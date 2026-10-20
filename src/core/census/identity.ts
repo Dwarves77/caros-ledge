@@ -2,7 +2,7 @@
 const CELEX_RE = /^[0-9CE]\d{4}[A-Z]{1,2}\d{2,4}(?:\(\d{2}\))?$/;
 const ELI_RE = /\beli\/[a-z_]+\/\d{4}\/[0-9a-z_-]+/i;
 /** The legislation.gov.uk series codes: the one UK vocabulary, reused by target matching and the census, never re-enumerated. */
-export const UK_TYPES: ReadonlySet<string> = new Set(["uksi", "ukpga", "ukla", "ukcm", "ukmo", "asp", "asc", "anaw", "mwa", "nia", "nisr", "ssi", "wsi", "apni", "aosp", "aep", "gbla", "mnia", "apgb", "aip"]);
+const UK_TYPES: ReadonlySet<string> = new Set(["uksi", "ukpga", "ukla", "ukcm", "ukmo", "asp", "asc", "anaw", "mwa", "nia", "nisr", "ssi", "wsi", "apni", "aosp", "aep", "gbla", "mnia", "apgb", "aip"]);
 
 export type IdentifierScheme = "celex" | "eli" | "uk-legislation" | "generic" | "none";
 /** An instrument identifier's scheme, whether its shape checks out, and its normalised form. A generic or empty identifier falls to URL-only identity. */

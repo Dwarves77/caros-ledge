@@ -7,8 +7,8 @@ export interface JsonResult<T> {
   error: string | null;
 }
 
-export const SIGNED_OUT_MESSAGE = "You are signed out. Sign in and try again.";
-export const UNREACHABLE_MESSAGE = "The request could not be sent. Check your connection and try again.";
+const SIGNED_OUT_MESSAGE = "You are signed out. Sign in and try again.";
+const UNREACHABLE_MESSAGE = "The request could not be sent. Check your connection and try again.";
 
 /**
  * The one browser call to the app's own routes: it never throws, so a network failure is a result the screen shows (B-0163: a fetch outside a try left

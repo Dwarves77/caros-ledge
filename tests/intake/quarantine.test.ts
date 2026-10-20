@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { eraseQuarantined, idStamp, planQuarantine, rehomeQuarantined, resolveQuarantined } from "@/features/intake";
-import { DEFERRAL_WINDOW_DAYS, DWELL_BOUND_DAYS, buildDeferralCandidate, computeQuarantineDwell, isValidDeferral, planDispositions, type ReasonClass } from "@/features/intake/quarantine/planner";
 import { HOLD_TYPES } from "@/features/intake/quarantine/resolver";
 
 import { installLedgerRpcs } from "../_support/ledger-rpcs.ts";
@@ -16,51 +15,81 @@ const ahead = (days: number) => new Date(NOW.getTime() + days * DAY).toISOString
 const deferral = (over: Record<string, unknown> = {}) => ({ reason: "Needs-acquire: held pending a re-ground through the injected-brief seam by a session.", deferred_until: ahead(10), owner: "intake-session", resolution_event: "a session-authored ledger is grounded for this item", ...over });
 const flag = (id: string, daysAgo: number, over: Record<string, unknown> = {}) => ({ subject_ref: id, created_at: ago(daysAgo), created_by: "investigation", recommended_actions: [], ...over });
 
-test("INV-002 / INV-054 / ruling 3: a deferral is valid only with a named blocker, a disposition path, a checkable event, a real owner, a future date INSIDE the 14-day bound", () => {
-  assert.equal(DWELL_BOUND_DAYS, 14);
-  assert.equal(DEFERRAL_WINDOW_DAYS, 14);
-  assert.deepEqual(isValidDeferral(deferral(), NOW), { ok: true });
-  assert.deepEqual(isValidDeferral(deferral({ deferred_until: ahead(14) }), NOW).ok, true, "exactly at the bound");
-  const bad = (over: Record<string, unknown>) => isValidDeferral(deferral(over), NOW);
-  assert.match(String((bad({ deferred_until: ahead(30) }) as { error: string }).error), /beyond the 14-day dwell bound/, "the old 30-day window is refused");
-  assert.match(String((bad({ deferred_until: ago(1) }) as { error: string }).error), /not in the future/);
-  assert.match(String((bad({ deferred_until: "someday" }) as { error: string }).error), /does not parse/);
-  assert.match(String((bad({ reason: "blocked" }) as { error: string }).error), /too short/);
-  assert.match(String((bad({ reason: "This is a long enough reason that names nothing at all about the path forward." }) as { error: string }).error), /names no disposition path/);
-  assert.match(String((bad({ resolution_event: "" }) as { error: string }).error), /resolution_event is required/);
-  assert.match(String((bad({ owner: "TBD" }) as { error: string }).error), /placeholder/);
-  assert.equal(isValidDeferral(null, NOW).ok, false);
-});
+/** The plan the planner reaches over a world whose quarantined items and open flags are the given ones (every item is a clone of the world's one). */
+const planOf = async (flagsFor: (id: string) => Record<string, unknown>[], ids: string[], over: (id: string) => Record<string, unknown> = () => ({})) => {
+  const w = makeWorld({ itemType: "regulation" });
+  const base = w.db.rows("intelligence_items")[0] as Record<string, unknown>;
+  w.db.rows("intelligence_items").length = 0;
+  w.db.seed("intelligence_items", ids.map((id) => ({ ...base, id, legacy_id: id, ...over(id) })));
+  w.db.seed("integrity_flags", ids.flatMap((id) => flagsFor(id).map((f) => ({ status: "open", subject_type: "item", ...f }))));
+  const r = await planQuarantine({ sb: w.deps.sb, now: () => NOW }, {});
+  return Object.fromEntries(r.plan.map((row) => [row.item_id, row]));
+};
+const ID = (n: number) => `a0000000-0000-4000-8000-00000000010${n}`;
 
-test("INV-055 / proof 8: the dwell classifier: within bound, enqueue-missing, deferred, and undispositioned (resurrected when a deferral once existed)", () => {
-  const items = [{ id: "within" }, { id: "missing" }, { id: "undisp" }, { id: "deferred" }, { id: "expired" }, { id: "toolong" }];
-  const flags = [
-    flag("within", 3),
-    flag("undisp", 30),
-    flag("deferred", 30), flag("deferred", 20, { created_by: "disposition_deferred", recommended_actions: [{ action: "defer", deferral: deferral() }] }),
-    flag("expired", 40), flag("expired", 30, { created_by: "disposition_deferred", recommended_actions: [{ action: "defer", deferral: deferral({ deferred_until: "2000-01-01T00:00:00Z" }) }] }),
-    flag("toolong", 40), flag("toolong", 10, { created_by: "disposition_deferred", recommended_actions: [{ action: "defer", deferral: deferral({ deferred_until: ahead(60) }) }] }),
+test("INV-002 / INV-054 / ruling 3: a deferral counts only with a named blocker, a disposition path, a checkable event, a real owner, a future date INSIDE the 14-day bound", async () => {
+  const variants: [string, Record<string, unknown> | null, boolean][] = [
+    ["valid", deferral(), true],
+    ["exactly at the bound", deferral({ deferred_until: ahead(14) }), true],
+    ["the old 30-day window", deferral({ deferred_until: ahead(30) }), false],
+    ["not in the future", deferral({ deferred_until: ago(1) }), false],
+    ["does not parse", deferral({ deferred_until: "someday" }), false],
+    ["too short a reason", deferral({ reason: "blocked" }), false],
+    ["names no disposition path", deferral({ reason: "This is a long enough reason that names nothing at all about the path forward." }), false],
+    ["no resolution event", deferral({ resolution_event: "" }), false],
+    ["a placeholder owner", deferral({ owner: "TBD" }), false],
+    ["no payload at all", null, false],
   ];
-  const d = computeQuarantineDwell({ items, flags, now: NOW });
-  assert.deepEqual(d.withinBound.map((i) => i.id), ["within"]);
-  assert.deepEqual(d.enqueueMissing.map((i) => i.id), ["missing"]);
-  assert.deepEqual(d.deferred.map((i) => i.id), ["deferred"]);
-  assert.deepEqual(d.undispositioned.map((i) => [i.id, i.resurrected]), [["undisp", false], ["expired", true], ["toolong", true]]);
-  assert.ok(d.undispositioned.every((i) => i.ageDays > 14));
+  const ids = variants.map((_, i) => ID(i));
+  const plan = await planOf((id) => {
+    const [, payload] = variants[ids.indexOf(id)] as [string, Record<string, unknown> | null, boolean];
+    return [flag(id, 30), flag(id, 20, { created_by: "disposition_deferred", recommended_actions: payload ? [{ action: "defer", deferral: payload }] : [] })];
+  }, ids);
+  variants.forEach(([what, , valid], i) => assert.equal(plan[ids[i] as string]?.disposition, valid ? "already_deferred" : "deferral_candidate", what));
 });
 
-test("INV-114 / proof 8: every live-quarantined item has a planned disposition with a named reason class for each resolver outcome; every class builds a VALID deferral", () => {
-  const items = [{ id: "a", item_type: "regulation" }, { id: "b", item_type: "regulation" }, { id: "c", item_type: "regulation" }, { id: "d", item_type: "regulation" }, { id: "e", item_type: "technology" }, { id: "f", item_type: "regulation" }];
-  const flags = items.map((i) => flag(i.id, 30));
-  const decisions = new Map([["a", { outcome: "needs-acquire" }], ["b", { outcome: "cheap-ok-still-quarantined" }], ["c", { outcome: "error" }], ["d", { outcome: "stale-snapshot" }]]);
-  const { plan, counts, deferralCandidates } = planDispositions({ items, flags, cheapDecisionByItemId: decisions, now: NOW });
-  const cls = Object.fromEntries(plan.map((p) => [p.item_id, p.reason_class]));
-  assert.deepEqual(cls, { a: "needs_acquire", b: "provenance_gate_insufficient", c: "verify_error", d: "stale_snapshot", e: "held_type_q2_gate", f: "needs_acquire" });
-  assert.equal(deferralCandidates.length, 6);
-  assert.equal(counts["deferral_candidate:needs_acquire"], 2);
-  for (const c of deferralCandidates) assert.equal(isValidDeferral(c, NOW).ok, true, `${c.reason_class} builds a valid deferral`);
-  for (const k of ["needs_acquire", "stale_snapshot", "held_type_q2_gate", "provenance_gate_insufficient", "verify_error"] as ReasonClass[]) assert.ok(buildDeferralCandidate("x", k, NOW).deferred_until < ahead(15));
-  assert.throws(() => buildDeferralCandidate("x", "nope" as ReasonClass, NOW), /unknown reason class/);
+test("INV-055 / proof 8: the dwell classes: within bound, enqueue-missing, deferred, and undispositioned (resurrected when a deferral once existed)", async () => {
+  const names = ["within", "missing", "undisp", "deferred", "expired", "toolong"];
+  const ids = names.map((_, i) => ID(i));
+  const at = (name: string) => ids[names.indexOf(name)] as string;
+  const plan = await planOf((id) => {
+    const n = names[ids.indexOf(id)];
+    const deferralFlag = (payload: Record<string, unknown>) => flag(id, 20, { created_by: "disposition_deferred", recommended_actions: [{ action: "defer", deferral: payload }] });
+    if (n === "within") return [flag(id, 3)];
+    if (n === "undisp") return [flag(id, 30)];
+    if (n === "deferred") return [flag(id, 30), deferralFlag(deferral())];
+    if (n === "expired") return [flag(id, 40), deferralFlag(deferral({ deferred_until: "2000-01-01T00:00:00Z" }))];
+    if (n === "toolong") return [flag(id, 40), deferralFlag(deferral({ deferred_until: ahead(60) }))];
+    return [];
+  }, ids);
+  assert.equal(plan[at("within")]?.disposition, "within_bound");
+  assert.equal(plan[at("missing")]?.disposition, "enqueue_missing");
+  assert.equal(plan[at("deferred")]?.disposition, "already_deferred");
+  for (const n of ["undisp", "expired", "toolong"]) assert.equal(plan[at(n)]?.disposition, "deferral_candidate", n);
+  assert.deepEqual(["undisp", "expired", "toolong"].map((n) => plan[at(n)]?.resurrected), [false, true, true]);
+  assert.ok(["undisp", "expired", "toolong"].every((n) => (plan[at(n)]?.ageDays ?? 0) > 14));
+});
+
+test("INV-114 / proof 8: every live-quarantined item has a planned disposition with a named reason class for each resolver outcome; every class builds a VALID deferral", async () => {
+  const names = ["acquire", "held", "gate"];
+  const ids = names.map((_, i) => ID(i));
+  const at = (name: string) => ids[names.indexOf(name)] as string;
+  const w = makeWorld({ itemType: "regulation" });
+  const base = w.db.rows("intelligence_items")[0] as Record<string, unknown>;
+  const cap = w.db.rows("agent_run_searches")[0];
+  w.db.rows("intelligence_items").length = 0;
+  w.db.seed("intelligence_items", ids.map((id) => ({ ...base, id, legacy_id: id, item_type: id === at("held") ? "technology" : "regulation" })));
+  w.db.seed("integrity_flags", ids.map((id) => ({ status: "open", subject_type: "item", ...flag(id, 30) })));
+  // "gate": its FACT span is still verbatim in the stored capture, so the cheap re-verify passes while the item stays quarantined; the others have no FACT claim to verify.
+  w.db.seed("section_claim_provenance", [{ intelligence_item_id: at("gate"), claim_kind: "FACT", claim_text: "c", source_span: SPAN_REPORT, search_result_id: cap?.id }]);
+  const r = await planQuarantine({ sb: w.deps.sb, now: () => NOW }, { apply: true });
+  const cls = Object.fromEntries(r.plan.map((p) => [p.item_id, p.reason_class]));
+  assert.deepEqual(cls, { [at("acquire")]: "needs_acquire", [at("held")]: "held_type_q2_gate", [at("gate")]: "provenance_gate_insufficient" });
+  assert.equal(r.deferralCandidates.length, 3);
+  assert.equal(r.counts["deferral_candidate:needs_acquire"], 1);
+  assert.equal(r.counts.deferrals_written, 3, "every class builds a deferral the planner's own validity rule accepts, and each is written");
+  const again = await planQuarantine({ sb: w.deps.sb, now: () => NOW }, {});
+  assert.deepEqual(again.plan.map((p) => p.disposition), ["already_deferred", "already_deferred", "already_deferred"], "what was written reads back as a valid deferral");
   assert.ok(HOLD_TYPES.has("research_finding") && !HOLD_TYPES.has("regulation"));
 });
 
@@ -79,7 +108,6 @@ test("INV-021: planQuarantine is dry by default (no flag written); apply writes 
   assert.equal(applied.counts.deferrals_written, 1);
   const written = w.db.rows("integrity_flags").filter((f) => f.created_by === "disposition_deferred");
   assert.equal(written.length, 1);
-  assert.equal(isValidDeferral((written[0]?.recommended_actions as { deferral: unknown }[])[0]?.deferral, NOW).ok, true);
   const again = await planQuarantine({ sb: w.deps.sb, now: () => NOW }, { apply: true });
   assert.equal(again.counts.deferral_candidates, 0, "the item is already deferred");
   assert.equal(again.counts.already_deferred, 1);

@@ -7,12 +7,12 @@ import { assertVerbatim } from "@/core/contracts/verbatim";
 
 import { isObj, nonEmpty, poolHashError, type EntryResult } from "../../kit/session-batch";
 
-export const OUTCOMES = ["answered", "unanswerable_from_holdings"] as const;
+const OUTCOMES = ["answered", "unanswerable_from_holdings"] as const;
 /** The status tokens an ANSWER may carry. REFUTED is not an answer to a question. */
 const ANSWER_STATUS_TOKENS = ["HYPOTHESIS", "CONFIRMED"];
-export const CEILINGS = { answer: 1500, missing: 600, source_span: 600, evidence_entries: 8 } as const;
+const CEILINGS = { answer: 1500, missing: 600, source_span: 600, evidence_entries: 8 } as const;
 /** A span shorter than this is not evidence of anything. */
-export const MIN_SPAN_CHARS = 20;
+const MIN_SPAN_CHARS = 20;
 const UUID_RE = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
 const absent = (x: unknown): boolean => x === undefined || x === null || x === "" || (Array.isArray(x) && x.length === 0);
 const normalise = (s: unknown): string => String(s ?? "").replace(/\s+/g, " ").trim().toLowerCase();
@@ -29,11 +29,11 @@ export interface QuestionLive {
 export interface QaLive { questions: Map<string, QuestionLive>; done(entry: Record<string, unknown>): boolean }
 
 /** The sentences of an answer, closing punctuation and quote marks stripped, blank ones dropped. An abbreviation splits too, which only makes the quotation test finer, never looser. */
-export function sentencesOf(text: string): string[] {
+function sentencesOf(text: string): string[] {
   return String(text ?? "").split(/(?<=[.!?])\s+|\n+/).map((s) => s.trim().replace(/^[\s"'(\[]+|[\s"')\].!?;:,]+$/g, "")).filter((s) => s.length > 0);
 }
 /** The CONFIRMED rule: the sentences that are NOT a (whitespace-collapsed, case-folded) substring of some evidence span; empty means CONFIRMED is allowed. A paraphrase is never CONFIRMED however faithful. */
-export function unquotedSentences(answer: string, spans: readonly string[]): string[] {
+function unquotedSentences(answer: string, spans: readonly string[]): string[] {
   const hay = spans.map(normalise);
   return sentencesOf(answer).filter((sent) => !hay.some((h) => h.includes(normalise(sent))));
 }

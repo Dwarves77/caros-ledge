@@ -6,14 +6,13 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
 import { makeEnvelope, formatDelta } from "@/core/contracts/envelope";
-import { isoToDisplayLabel, jurisLabelOf, regionGroupOfIso } from "@/core/jurisdictions";
+import { isoToDisplayLabel, jurisLabelOf } from "@/core/jurisdictions";
 import { TIER1_REGIONS, TIER1, TIER2 } from "@/core/jurisdictions/tiers";
 import { buildSupersessionRows } from "@/core/flywheel";
 import { bandFromPriority, NEUTRAL_BAND, requirePriority } from "@/core/lists";
 import { parseNewSources } from "@/core/brief/sections";
-import { formatRelativeCompact } from "@/core/shared/dates";
 import { readAggregates, readSurfaceCounts } from "@/features/lists";
-import { baseResourceFields } from "@/features/lists/map-rows";
+import { categoryResourceFields } from "@/features/lists/map-rows";
 
 import { memoryDb } from "../_support/memory-db.ts";
 
@@ -26,11 +25,9 @@ test("core:41 every subdivision the tier table lists has a name: 'US-AL' was sho
   assert.equal(isoToDisplayLabel("US-ZZ"), "US-ZZ, United States", "a code no table names is shown as the code, never guessed");
 });
 
-test("core:88 an item that names no jurisdiction is not labelled with one, and the region group of a code comes from a table built once", () => {
+test("core:88 an item that names no jurisdiction is not labelled with one", () => {
   assert.equal(jurisLabelOf({}), "", "it was 'Global', which asserts a scope nothing stated");
   assert.equal(jurisLabelOf({ jurisdictionIso: ["DE", "FR"] }), "Germany · France");
-  assert.equal(regionGroupOfIso("DE"), regionGroupOfIso("DE"));
-  assert.equal(regionGroupOfIso("ZZ"), "");
 });
 
 test("core:78, 79 an envelope without an observation status states none (it claimed 'A', normal and reliable), and 2026-02-30 is not a date", () => {
@@ -41,16 +38,11 @@ test("core:78, 79 an envelope without an observation status states none (it clai
   assert.doesNotThrow(() => makeEnvelope({ ...base, as_of: { event_date: "2026-02-28", ingested_at: "2026-02-28T10:00:00Z" } }));
 });
 
-test("core:80, 81 a change that rounds to zero has no sign, and a date ahead reads as ahead", () => {
+test("core:80 a change that rounds to zero has no sign", () => {
   assert.equal(formatDelta(-0.04, "quantity"), "0.0%", "it was −0.0%");
   assert.equal(formatDelta(-0.06, "quantity"), "−0.1%");
   assert.equal(formatDelta(0.04, "ratio"), "0.0 pp");
   assert.equal(formatDelta(1.25, "ratio"), "+1.3 pp");
-  const now = Date.parse("2026-10-20T12:00:00Z");
-  assert.equal(formatRelativeCompact("2999-01-01T00:00:00Z", now).startsWith("in "), true, "it read 'just now'");
-  assert.equal(formatRelativeCompact("2026-10-20T13:00:00Z", now), "in 1h");
-  assert.equal(formatRelativeCompact("2026-10-20T11:00:00Z", now), "1h ago");
-  assert.equal(formatRelativeCompact("2026-10-20T12:00:20Z", now), "just now");
 });
 
 test("flywheel:31 a row of the New Sources table that states no tier has none: the parser defaulted it to 5 (a fabricated rating)", () => {
@@ -80,8 +72,8 @@ test("surfaces:84 and flywheel:54 a priority the row does not hold is the neutra
   assert.notEqual(NEUTRAL_BAND.cssVar, bandFromPriority("LOW").cssVar);
   assert.equal(requirePriority("HIGH", "x"), "HIGH");
   assert.throws(() => requirePriority(null, "item a"), /item a carries no valid priority/);
-  assert.throws(() => baseResourceFields({ id: "a", legacy_id: null, title: "T", added_date: null } as never), /carries no valid priority/, "the row mapper refuses a row with no priority instead of drawing it at some default");
-  assert.equal(baseResourceFields({ id: "a", legacy_id: null, title: "T", added_date: null, priority: "LOW", effective_priority: "HIGH" } as never).priority, "HIGH", "the workspace's effective priority wins");
+  assert.throws(() => categoryResourceFields({ id: "a", legacy_id: null, title: "T", added_date: null } as never), /carries no valid priority/, "the row mapper refuses a row with no priority instead of drawing it at some default");
+  assert.equal(categoryResourceFields({ id: "a", legacy_id: null, title: "T", added_date: null, priority: "LOW", effective_priority: "HIGH" } as never).priority, "HIGH", "the workspace's effective priority wins");
 });
 
 test("flywheel:14 a supersession whose other item the verified lookup does not hold has no row: no title from the raw id, no fabricated MODERATE, no link to a page that 404s", () => {

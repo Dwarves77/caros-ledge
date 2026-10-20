@@ -34,17 +34,3 @@ export const SkeletonBandTile = () => (
   </div>
 );
 
-export const SkeletonStatBlock = () => (
-  <div aria-hidden="true" className="cl-skel-stat">
-    <span className="cl-skel" style={box(10, 70)} />
-    <span className="cl-skel" style={box(26, 40)} />
-  </div>
-);
-
-export const SkeletonRailDateRow = () => (
-  <div aria-hidden="true" className="cl-skel-date">
-    <span className="cl-skel cl-skel-date-spine" />
-    <span className="cl-skel" style={box(12, 44)} />
-    <span className="cl-skel" style={box(12, "80%")} />
-  </div>
-);

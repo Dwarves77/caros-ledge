@@ -8,7 +8,7 @@ import type { PortfolioDeps } from "@/features/workspace/portfolio/types";
 
 import { readHeld } from "./read/held";
 
-export const corridorLabel = (canonicalName: string): string | null => {
+const corridorLabel = (canonicalName: string): string | null => {
   const p = parseCorridorName(canonicalName);
   return p ? formatCorridorLabel({ origin: p.origin, dest: p.dest, mode: p.mode }) : null;
 };

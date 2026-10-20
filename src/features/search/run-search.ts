@@ -14,7 +14,7 @@ export { MAX_RESULTS, MIN_QUERY_LEN } from "./types";
 export type { SearchOutcome, SearchRow } from "./types";
 
 /** The columns a result row draws, with the rating of the row's own source (INV-213: the tier is the source's, never derived from the text). */
-export const RESULT_SELECT = "id, title, item_type, domain, priority, jurisdictions, transport_modes, topic:category, source:sources!source_id(base_tier, effective_tier, tier_override)";
+const RESULT_SELECT = "id, title, item_type, domain, priority, jurisdictions, transport_modes, topic:category, source:sources!source_id(base_tier, effective_tier, tier_override)";
 
 
 interface Embedded {

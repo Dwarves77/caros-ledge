@@ -7,25 +7,13 @@
 import { createHash } from "node:crypto";
 
 import { MONTHS_FULL_RE } from "@/core/brief/vocab";
-import { containsNumeral, figuresEqual, findFigures, isFigure, isRefusal, isTrajectoryUnit, parseFigure, resolveLocale, stateFigure, type Figure, type LocaleVerdict } from "@/core/parse";
+import { containsNumeral, figuresEqual, findFigures, isFigure, isTrajectoryUnit, resolveLocale, type Figure, type LocaleVerdict } from "@/core/parse";
 
-export const GATE_A_VERSION = "2026-10-20.1";
-export const md5 = (s: unknown): string => createHash("md5").update(String(s ?? ""), "utf8").digest("hex");
+const GATE_A_VERSION = "2026-10-20.1";
+const md5 = (s: unknown): string => createHash("md5").update(String(s ?? ""), "utf8").digest("hex");
 
 export const norm = (s: unknown): string => String(s || "").replace(/\s+/g, " ").toLowerCase();
 export interface ScanOptions { locale?: string | null }
-/**
- * The one coverage decision: does `haystack` state `token`? A figure token (a number with its unit) is covered by an EQUAL figure (value, unit, scale: the one comparator in
- * @/core/parse), read whole, so EUR 5 is not backed by EUR 50; any other token (a date, a year) is covered at a numeral boundary on both sides. Never a substring.
- */
-export function containsToken(haystack: unknown, token: unknown, opts: ScanOptions = {}): boolean {
-  const t = String(token ?? "").trim();
-  const h = String(haystack ?? "");
-  if (!t) return false;
-  const p = parseFigure(t, opts);
-  if (isFigure(p) && p.literal === t) return stateFigure(h, p, opts);
-  return isRefusal(p) && p.unreadable ? false : containsNumeral(h, t);
-}
 
 export interface SkipCounts { metadata_stamp: number; boilerplate: number; heading_or_list_ordinal: number; instrument_citation: number; citation_url: number; nested_token: number }
 const freshCounts = (): SkipCounts => ({ metadata_stamp: 0, boilerplate: 0, heading_or_list_ordinal: 0, instrument_citation: 0, citation_url: 0, nested_token: 0 });
@@ -142,12 +130,6 @@ function deadlineTokens(text: string, counts: SkipCounts, verdict: LocaleVerdict
   }
   return [...out];
 }
-
-/** All Gate A tokens in prose: figures (typed, one locale for the document) and context-aware deadline dates. */
-export const extractFactualTokens = (fullBrief: string | null | undefined, counts: SkipCounts = freshCounts(), opts: ScanOptions = {}): { figures: string[]; deadlines: string[] } => {
-  const text = String(fullBrief || "");
-  return { figures: figureTokens(text, counts, resolveLocale(text, opts.locale)).map((f) => f.token), deadlines: deadlineTokens(text, counts, resolveLocale(text, opts.locale)) };
-};
 
 export interface GateAScan { scanned_hash: string; gate_a_version: string; orphan_count: number; orphans: { token: string; class: "figure" | "deadline"; reason?: string }[]; counts: SkipCounts }
 export interface FactClaim { claim_text: string; source_span: string; /** the number locale of the capture the span comes from, when it declares one */ locale?: string | null }

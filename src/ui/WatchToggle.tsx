@@ -27,7 +27,7 @@ export interface WatchToggleProps {
 }
 
 /** Every string the toggle shows or titles, in one table. */
-export const WATCH_COPY = {
+const WATCH_COPY = {
   failed: "Save failed. Click to retry.",
   watching: "Watching. Click to unwatch.",
   idle: "Watch this item on your dashboard watchlist",

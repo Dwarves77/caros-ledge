@@ -30,10 +30,8 @@ export interface ListRowFields {
   itemGrade?: Resource["itemGrade"];
   watchType: ListWatchType;
 }
-/** The field set a list row reads; a reader that cannot fill one of these must say so, not omit it. */
-export const LIST_ROW_FIELDS = ["id", "href", "priority", "jurisdiction", "title", "meta", "impact", "due", "timeline", "tier", "watchType"] as const satisfies readonly (keyof ListRowFields)[];
 
-export const watchTypeForItem = (item: { type?: string | null; domain?: number | null }): ListWatchType => WATCH_TYPE[canonicalSurface(item)];
+const watchTypeForItem = (item: { type?: string | null; domain?: number | null }): ListWatchType => WATCH_TYPE[canonicalSurface(item)];
 
 export function jurisdictionCode(r: { jurisdictionIso?: string[] | undefined; jurisdiction?: string | undefined }): string {
   const iso = r.jurisdictionIso?.[0];

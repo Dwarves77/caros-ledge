@@ -14,11 +14,7 @@ import type { BasisEntry } from "./discover";
 import { basisDetailText, basisEntryKey, buildIntersectionEntry, isCrossSurface, isIntersectionEntry, type IntersectionDetail, type IntersectionPair } from "./intersections";
 import { CONFIG } from "./config";
 
-export const RELATIONSHIPS: readonly string[] = relationships.order;
 export const RELATIONSHIP_LABEL: Readonly<Record<string, string>> = relationships.label;
-/** Index in the specificity order: lower is more specific (supersedes) and wins over related. */
-export const relationshipSpecificity = (r: string): number => RELATIONSHIPS.indexOf(r);
-export const THEME_MEMBERSHIP = relationships.themeMembership;
 
 export const DISCOVERY_ORIGIN = "provenance_discovery";
 export interface EdgeRow {
@@ -30,8 +26,8 @@ export interface EdgeRow {
   basis?: BasisEntry[] | null;
   score?: number | null;
 }
-export const pairKey = (s: string, t: string): string => `${s}|${t}`;
-export const canonKey = (a: string, b: string): string => (a < b ? `${a}|${b}` : `${b}|${a}`);
+const pairKey = (s: string, t: string): string => `${s}|${t}`;
+const canonKey = (a: string, b: string): string => (a < b ? `${a}|${b}` : `${b}|${a}`);
 const stableJson = (x: unknown): string => JSON.stringify(x, (_k, v) => (v && typeof v === "object" && !Array.isArray(v) ? Object.fromEntries(Object.entries(v as Record<string, unknown>).sort(([a], [b]) => (a < b ? -1 : 1))) : v));
 const basisOf = (r: { basis?: unknown }): BasisEntry[] => (Array.isArray(r.basis) ? (r.basis as BasisEntry[]) : []);
 
@@ -64,7 +60,7 @@ export interface DiscoveredWriteResult {
 }
 
 /** The existing rows for exactly these pairs (grouped by source, targets in id chunks). */
-export async function readEdgesForPairs(sb: Db, pairs: readonly { source_item_id: string; target_item_id: string }[]): Promise<Map<string, EdgeRow>> {
+async function readEdgesForPairs(sb: Db, pairs: readonly { source_item_id: string; target_item_id: string }[]): Promise<Map<string, EdgeRow>> {
   const bySource = new Map<string, Set<string>>();
   for (const p of pairs) bySource.set(p.source_item_id, (bySource.get(p.source_item_id) ?? new Set()).add(p.target_item_id));
   const out = new Map<string, EdgeRow>();
@@ -146,7 +142,7 @@ export interface IntersectionPlan {
 }
 
 /** Plan the intersection basis entries over the existing rows: append to a row without changing its relationship, origin or score; drop an entry no longer holding. */
-export function planIntersectionEdges(existingRows: readonly EdgeRow[], pairs: readonly Pick<IntersectionPair, "a" | "b" | "shared_scenarios" | "shared_objects" | "strength" | "tier">[], tombstones?: Set<string>): IntersectionPlan {
+function planIntersectionEdges(existingRows: readonly EdgeRow[], pairs: readonly Pick<IntersectionPair, "a" | "b" | "shared_scenarios" | "shared_objects" | "strength" | "tier">[], tombstones?: Set<string>): IntersectionPlan {
   const byKey = new Map<string, EdgeRow>();
   for (const r of existingRows) byKey.set(pairKey(r.source_item_id, r.target_item_id), r);
   const plan: IntersectionPlan = { inserts: [], updates: [], removals: [], deletes: [], unchanged: 0, skippedManual: 0, skippedTombstoned: 0 };
@@ -192,7 +188,7 @@ export function planIntersectionEdges(existingRows: readonly EdgeRow[], pairs: r
 }
 
 /** The edge rows as they would stand after the plan (what a dry run clusters over). */
-export function projectEdgeRows(existingRows: readonly EdgeRow[], plan: IntersectionPlan): EdgeRow[] {
+function projectEdgeRows(existingRows: readonly EdgeRow[], plan: IntersectionPlan): EdgeRow[] {
   const drop = new Set(plan.deletes.map((r) => pairKey(r.source_item_id, r.target_item_id)));
   const patched = new Map<string, BasisEntry[]>();
   for (const u of [...plan.updates, ...plan.removals]) patched.set(pairKey(u.row.source_item_id, u.row.target_item_id), u.basis);
@@ -244,23 +240,8 @@ export async function writeIntersectionEdges(sb: Db, pairs: readonly Intersectio
   return out;
 }
 
-/** The collapsed pairs touching these items (either end), or every pair when no ids are given. A failed read throws. */
-export async function readPairs(sb: Db, opts: { itemIds?: readonly string[] } = {}): Promise<PairView[]> {
-  if (!opts.itemIds) return [...collapsePairs(await readAllEdges(sb)).values()];
-  const byId = new Map<string, EdgeRow>();
-  for (const column of ["source_item_id", "target_item_id"] as const) {
-    const rows = await fetchAllByIdChunks<EdgeRow>(opts.itemIds, async (slice) => {
-      const { data, error } = await sb.from("item_cross_references").select("id, source_item_id, target_item_id, relationship, origin, basis, score").in(column, slice);
-      if (error) throw new Error(`readPairs: item_cross_references read failed: ${error.message}`);
-      return (data ?? []) as EdgeRow[];
-    }, { manyPerId: true });
-    for (const r of rows) byId.set(String(r.id ?? pairKey(r.source_item_id, r.target_item_id)), r);
-  }
-  return [...collapsePairs([...byId.values()]).values()];
-}
-
 /** The score band of a pair; an unscored (explicitly linked) pair is "explicit". */
-export function bandOf(score: number | null | undefined): "strong" | "medium" | "weak" | "explicit" {
+function bandOf(score: number | null | undefined): "strong" | "medium" | "weak" | "explicit" {
   if (score == null || !Number.isFinite(score)) return "explicit";
   return score >= CONFIG.pairBands.strong ? "strong" : score >= CONFIG.pairBands.medium ? "medium" : "weak";
 }
@@ -274,7 +255,7 @@ export interface PairView {
   intersection: { scenarios: string[]; objects: string[]; strength: number; tier: string } | null;
 }
 /** Collapse both directions of each edge to one pair (ADR-018): the best discovery score, the union of the basis, whether a person or an extractor linked it. */
-export function collapsePairs(edgeRows: readonly Pick<EdgeRow, "source_item_id" | "target_item_id" | "origin" | "score" | "basis">[] | null | undefined): Map<string, PairView> {
+function collapsePairs(edgeRows: readonly Pick<EdgeRow, "source_item_id" | "target_item_id" | "origin" | "score" | "basis">[] | null | undefined): Map<string, PairView> {
   const pairs = new Map<string, PairView>();
   for (const e of edgeRows ?? []) {
     const s = e?.source_item_id;

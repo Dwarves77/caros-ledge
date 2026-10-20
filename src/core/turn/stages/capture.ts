@@ -8,7 +8,7 @@ import { runResult } from "@/core/types/run-result";
 
 import type { BuiltDeps } from "../wiring";
 
-export const CAPTURE_MAX_LIMIT = 10;
+const CAPTURE_MAX_LIMIT = 10;
 interface Report {
   queue_id: string;
   source_id: string;
@@ -17,7 +17,7 @@ interface Report {
   detail: string | null;
 }
 
-export function planCapture(input: Record<string, unknown>, upstreamIds: readonly string[]): { limit: number; sourceIds: string[] } {
+function planCapture(input: Record<string, unknown>, upstreamIds: readonly string[]): { limit: number; sourceIds: string[] } {
   const own = Array.isArray(input.sourceIds) ? input.sourceIds.filter((x): x is string => typeof x === "string") : [];
   return { limit: Math.min(typeof input.limit === "number" ? Math.floor(input.limit) : 3, CAPTURE_MAX_LIMIT), sourceIds: [...new Set([...upstreamIds, ...own])] };
 }

@@ -1,10 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
+import { LookupError } from "@/core/http/errors";
 import { canWrite, isOrgAdmin, itemIdFromDetailPath, loadRoster, orgWatchersOf } from "@/core/workspace/roster";
 import {
-  DEFAULT_ORG_PROFILE,
-  DEFAULT_WORKSPACE_PROFILE,
   deriveRoleScopeFromComplianceObjectTags,
   findBand,
   getWorkspaceProfile,
@@ -14,12 +13,17 @@ import {
   PROFILE_JSON_KEYS,
   validateProfileInput,
 } from "@/core/workspace/profile";
-import { computeItemRelevance, currentObligationObjects, dutyHoldersExcludeForwarder, fetchObligationObjectsForItem, relevanceForItem, summariseObligationBinding } from "@/core/workspace/relevance";
-import { LookupError } from "@/core/http/errors";
-
+import { currentObligationObjects, dutyHoldersExcludeForwarder, fetchObligationObjectsForItem, relevanceForItem, summariseObligationBinding } from "@/core/workspace/relevance";
 
 import { relevanceDeps } from "./_deps.ts";
 import { clientFor, ITEM_1, ORG_A, ORG_B, seed, USER } from "./_world.ts";
+
+/** The documented defaults: nothing invented for an unset org profile; a general freight operator, worldwide, for a viewer with no profile. */
+const DEFAULT_ORG_PROFILE = { orgRoles: [], orgSize: { headcount_band: null, revenue_band: null, shipment_volume_band: null } };
+const DEFAULT_WORKSPACE_PROFILE = { roles: ["freight operator"], transportModes: ["air", "ocean", "road"], verticals: [], jurisdictions: { global: 1 }, orgRoles: [], orgSize: DEFAULT_ORG_PROFILE.orgSize };
+/** The lens over a profile written in the lens's own keys: the workspace profile it is built from, field for field. */
+const computeItemRelevance = (item: Record<string, unknown>, p: Record<string, unknown>, deps: Parameters<typeof relevanceForItem>[2]) =>
+  relevanceForItem(item, { transportModes: p.transport_modes, jurisdictions: p.jurisdictions, verticals: p.verticals, roles: p.roles, orgRoles: p.orgRoles, orgSize: p.orgSize } as never, deps);
 
 // ── profile-contract ─────────────────────────────────────────────────────────────────────────────────
 
@@ -65,8 +69,8 @@ test("compliance_object_tags map to org roles; unmapped tags are dropped, never 
 test("getWorkspaceProfile: the default for a null org and an absent row, a LookupError for a failed read (never the default as the viewer's own lens); the stored profile otherwise; no dead fields", async () => {
   const db = seed();
   const client = clientFor(db);
-  assert.equal(await getWorkspaceProfile(client, null), DEFAULT_WORKSPACE_PROFILE);
-  assert.equal(await getWorkspaceProfile(client, "33333333-3333-4333-8333-333333333333"), DEFAULT_WORKSPACE_PROFILE);
+  assert.deepEqual(await getWorkspaceProfile(client, null), DEFAULT_WORKSPACE_PROFILE);
+  assert.deepEqual(await getWorkspaceProfile(client, "33333333-3333-4333-8333-333333333333"), DEFAULT_WORKSPACE_PROFILE);
   db.fail("workspace_settings", "select", { message: "down" });
   await assert.rejects(getWorkspaceProfile(client, ORG_A), LookupError);
   db.failures.length = 0;

@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { buildHeldIndex, isHeld, readHolders, resolveLimit, sameInstrumentIdentity, selectCensusRows } from "@/features/mint";
+import { buildHeldIndex, isHeld, readHolders, resolveLimit, selectCensusRows } from "@/features/mint";
 
 import { SOURCE, makeWorld } from "./world.ts";
 
@@ -23,9 +23,6 @@ test("INV-293: a URL is held only for the SAME instrument identity; two labelled
   assert.equal(q(null).held, true, "unlabelled payload: presumed the same document");
   const unlabelledHolder = buildHeldIndex([holder("b", { source_url: "https://bulletin.example/oil", instrument_identifier: null })]);
   assert.equal(isHeld({ url: "https://bulletin.example/oil", key: null, instrumentIdentifier: "petrol" }, unlabelledHolder).held, true, "unlabelled holder: presumed the same document");
-  assert.equal(sameInstrumentIdentity("  A ", "a"), true);
-  assert.equal(sameInstrumentIdentity("a", "b"), false);
-  assert.equal(sameInstrumentIdentity("", null), true);
 });
 
 test("the limit is a positive integer, never above the ceiling of 100", () => {

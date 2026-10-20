@@ -11,7 +11,7 @@ const SCRIPT = resolve("scripts/ci/connections.mjs");
  * A minimal tree: a runtime entry (src/features/x/run.ts), the turn registry, a root file under src/core/turn that `rootBody` fills, a script that calls the root file's `go`, and the data files and directories
  * the check reads. The toy tree's own exports are named in the allow file so the only offender left is the one the test is about.
  */
-function tree(rootBody, allowedExports = {}, mainBody = 'import { go } from "../src/core/turn/root.ts";\ngo();\n') {
+function tree(rootBody, allowedExports = {}, mainBody = 'import { go } from "../src/core/turn/root.ts";\ngo();\n', extraFiles = {}) {
   const dir = mkdtempSync(join(tmpdir(), "conn-"));
   const put = (rel, text) => {
     mkdirSync(dirname(join(dir, rel)), { recursive: true });
@@ -25,6 +25,7 @@ function tree(rootBody, allowedExports = {}, mainBody = 'import { go } from "../
   put("src/core/turn/registry.ts", "export const STAGES = [] as const;\n");
   put("src/features/x/run.ts", 'import type { RunResult } from "@/core/types/run-result";\nexport async function runX(): Promise<RunResult> {\n  return { counts: {}, outcome: "ok", notes: [] };\n}\n');
   put("src/core/turn/root.ts", rootBody);
+  for (const [rel, text] of Object.entries(extraFiles)) put(rel, text);
   return spawnSync(process.execPath, [SCRIPT], { cwd: dir, encoding: "utf8" });
 }
 
@@ -53,4 +54,33 @@ test("a dynamic import that destructures names uses those names and no others; a
   const partly = tree(root, {}, 'const { go } = await import("../src/core/turn/root.ts");\ngo();\n');
   assert.equal(partly.status, 1);
   assert.match(partly.stderr, /root\.ts:3: other is an export with no caller/);
+});
+
+test("a route file that re-exports a handler is the handler's caller; a handler no route names stays uncalled", () => {
+  const root = 'import { runX } from "@/features/x/run";\nexport const go = () => runX();\n';
+  const run = (routeBody) =>
+    tree(root, {}, undefined, {
+      "src/features/y/api/handler.ts": "export async function GET(): Promise<number> {\n  return 1;\n}\n",
+      "src/app/api/y/route.ts": routeBody,
+    });
+  const wired = run('export { GET } from "@/features/y/api/handler";\n');
+  assert.doesNotMatch(wired.stderr, /handler\.ts/, wired.stderr);
+  const unwired = run("export const dynamic = 'force-dynamic';\n");
+  assert.match(unwired.stderr, /handler\.ts:1: GET is an export with no caller/);
+});
+
+test("a namespace or dynamic import of a barrel reaches the names the barrel re-exports; a re-exported name nothing reaches stays uncalled", () => {
+  const root = 'import { runX } from "@/features/x/run";\nexport const go = () => runX();\n';
+  const files = { "src/core/turn/barrel.ts": 'export { thing, other } from "./inner";\n', "src/core/turn/inner.ts": "export const thing = (): number => 1;\nexport const other = (): number => 2;\n" };
+  const run = (main) => tree(root, {}, main, files);
+  const reached = run('import { go } from "../src/core/turn/root.ts";\ngo();\nconst c = await import("../src/core/turn/barrel.ts");\nc.thing();\nc.other();\n');
+  assert.equal(reached.status, 0, reached.stderr);
+  const partly = run('import { go } from "../src/core/turn/root.ts";\ngo();\nconst c = await import("../src/core/turn/barrel.ts");\nc.thing();\n');
+  assert.equal(partly.status, 1);
+  assert.match(partly.stderr, /inner\.ts:2: other is an export with no caller/);
+  const repeated = run('import { go } from "../src/core/turn/root.ts";\ngo();\nconst c = await import("../src/core/turn/barrel.ts");\nc.thing();\nc.thing();\n');
+  assert.equal(repeated.status, 1, "a member read twice is still one member: the namespace is not used as a whole");
+  assert.match(repeated.stderr, /inner\.ts:2: other is an export with no caller/);
+  const whole = run('import { go } from "../src/core/turn/root.ts";\ngo();\nconst c = await import("../src/core/turn/barrel.ts");\nvoid Object.keys(c);\n');
+  assert.equal(whole.status, 0, whole.stderr);
 });

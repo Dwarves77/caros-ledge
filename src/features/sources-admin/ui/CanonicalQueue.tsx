@@ -42,7 +42,7 @@ interface Payload {
 const ISSUES: Record<string, string> = { stale_url: "Stale address", missing_link: "Missing link", missing_source: "Missing source", thin_match: "Thin match" };
 
 /** The candidates a bulk approve would act on: high confidence and verified, with a host the class table can place or a source already in the registry. Pure. */
-export const bulkEligible = (groups: readonly Group[]): Candidate[] => groups.flatMap((g) => g.candidates).filter((c) => c.confidence === "high" && c.verified && (c.classification.tier !== null || c.existing_source_id !== null));
+const bulkEligible = (groups: readonly Group[]): Candidate[] => groups.flatMap((g) => g.candidates).filter((c) => c.confidence === "high" && c.verified && (c.classification.tier !== null || c.existing_source_id !== null));
 
 /** The canonical source issues: items whose source is stale or missing, with candidate replacements. An override surface (the gates already ruled where they could); a candidate is approved at the class table's tier, edited first, or rejected. Bulk approve says what it will do and what it will leave for individual review. */
 export function CanonicalQueue() {

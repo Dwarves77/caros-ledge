@@ -20,7 +20,7 @@ export interface ForwardLive { items: Map<string, ItemLive>; tickets: Map<string
 export interface ForwardPlan { itemId: string; events: ExtractedEvent[]; ticketIds: string[] }
 
 /** One event checked against the table's CHECKs and the item's own material; the refusal reasons. */
-export function validateEvent(ev: unknown, at: string, item: ItemLive): string[] {
+function validateEvent(ev: unknown, at: string, item: ItemLive): string[] {
   if (!isObj(ev)) return [`${at}: not an object`];
   const errs: string[] = [];
   for (const k of REQUIRED) if (!nonEmpty(ev[k])) errs.push(`${at}: ${k} missing or not a non-empty string`);
@@ -46,7 +46,7 @@ export function validateEvent(ev: unknown, at: string, item: ItemLive): string[]
   return errs;
 }
 
-export const forwardEventsSpec: EntrySpec<ForwardLive, ForwardPlan> = {
+const forwardEventsSpec: EntrySpec<ForwardLive, ForwardPlan> = {
   kind: "forward-events",
   batchRe: /^forward-events-[A-Za-z0-9._-]+$/,
   ceiling: 200,

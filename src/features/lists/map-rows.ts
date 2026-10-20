@@ -57,7 +57,7 @@ interface TimelineRow {
 const TIMELINE_CHUNK = 150;
 
 /** The fields every list row reads, from one RPC row. An absent item_type is "uncertain", never a regulation. */
-export function baseResourceFields(row: WorkspaceItemRpcRow): Resource {
+function baseResourceFields(row: WorkspaceItemRpcRow): Resource {
   return {
     id: row.legacy_id || row.id,
     cat: row.transport_modes?.[0] || "global",

@@ -31,16 +31,3 @@ export const InlineErrorBanner = ({ message, children }: { message: string; chil
   </div>
 );
 
-/** The seed-fallback banner: the data on screen is not live. On the warning tokens that exist (the action band's tint and border). */
-export function SystemErrorBanner({ message, reason }: { message?: string | undefined; reason?: string | undefined }) {
-  if (!message) return null;
-  return (
-    <div role="status" aria-live="polite" className="cl-system-error">
-      <span aria-hidden="true">⚠</span>
-      <span>
-        <b>{message}</b>
-        {reason && <span className="cl-system-error-reason">{reason}</span>}
-      </span>
-    </div>
-  );
-}

@@ -4,15 +4,18 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
+import { createElement } from "react";
+
 import { statusWord } from "@/core/detail/status-words";
 import { log } from "@/core/shared/log";
 import { readFailure, DB_SENTENCES } from "@/core/http/failure";
-import { cleanPreContractBriefText } from "@/ui/detail/CrossPageSection";
+import { CrossPageSection } from "@/ui/detail/CrossPageSection";
 import { readMarket } from "@/features/market/read";
 import { readOperationsPage } from "@/features/operations/read/operations-reads";
 import { readResearchPage } from "@/features/research/read/research-reads";
 
 import { memoryDb } from "../_support/memory-db.ts";
+import { renderApp, textOf } from "../_support/render.ts";
 
 const ORG = "11111111-1111-4111-8111-111111111111";
 const NOW = new Date("2026-10-20T12:00:00Z");
@@ -57,7 +60,8 @@ test("migrations 0095 and 0096 gate on the one item rule and assert membership; 
 });
 
 test("I7 the pre-contract brief scrubber removes a labelled statistic and leaves a figure the brief states: '1.250 EUR' was deleted with the weights", () => {
-  const out = cleanPreContractBriefText("The levy is 1.250 EUR per tonne (density 0.412) and the weight is 0.875 kg. Item scores 0.731.");
+  const theme = { memberCount: 1, pages: [], hasBrief: true, title: "Levy theme", stale: false, supersedesThemeId: null, briefMd: "The levy is 1.250 EUR per tonne (density 0.412) and the weight is 0.875 kg. Item scores 0.731.", sections: null, membersByPage: [], absence: null, ramificationsMissing: false };
+  const out = textOf(renderApp(createElement(CrossPageSection, { surfaceKey: "regulations", surfaceLabel: "Regulations", crossPage: { theme } as never })));
   assert.match(out, /1\.250 EUR per tonne/);
   assert.match(out, /0\.875 kg/);
   assert.doesNotMatch(out, /density 0\.412|scores 0\.731/);

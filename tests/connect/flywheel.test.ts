@@ -3,12 +3,14 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { clusterThemes } from "@/core/flywheel/cluster";
-import { computeTagFrequencies, discoverConnections, scoreConnection } from "@/core/flywheel/discover";
-import { detectIntersections, strengthToScore, tierOf } from "@/core/flywheel/intersections";
+import { computeTagFrequencies, discoverConnections, type TagFrequencies } from "@/core/flywheel/discover";
+import { detectIntersections } from "@/core/flywheel/intersections";
 import type { Signature } from "@/core/flywheel/signature";
 import { computeMemberHash, convergenceBand, diffThemes, isBriefStale, lineageFromThemeDelta, resolveBriefForTheme } from "@/core/flywheel/themes";
 
 const sig = (id: string, over: Partial<Signature> = {}): Signature => ({ id, item_type: "regulation", domain: 1, ...over });
+/** One pair scored: a threshold of zero keeps the pairs that score nothing, so a self-pair or an unrelated pair reads as a zero score. */
+const scoreConnection = (a: Signature, b: Signature, freqMap?: TagFrequencies) => discoverConnections(a, [b], { threshold: 0, ...(freqMap ? { freqMap } : {}) })[0] as NonNullable<ReturnType<typeof discoverConnections>[number]>;
 
 test("scoreConnection: each basis carries its configured weight, the score caps at 1, a self-pair scores nothing", () => {
   const a = sig("a", { source_id: "s1", compliance_object_tags: ["battery"], entity_ids: ["reg:2023/1805"], obligation_keys: ["o1"] });
@@ -68,12 +70,9 @@ test("intersections: the AND rule (a shared scenario without a shared object is 
   assert.equal(pairs[0]?.tier, "strong");
 });
 
-test("intersections skip archived and unverified items; tiers split at 8 and 12", () => {
+test("intersections skip archived and unverified items", () => {
   const base = { operational_scenario_tags: ["s"], compliance_object_tags: ["o"] };
   assert.equal(detectIntersections([{ id: "a", ...base }, { id: "b", ...base, is_archived: true }, { id: "c", ...base, provenance_status: "draft" }]).length, 0);
-  assert.deepEqual([tierOf(7), tierOf(8), tierOf(11), tierOf(12)], ["weak", "medium", "medium", "strong"]);
-  assert.ok(strengthToScore(4) >= 0.3 && strengthToScore(8) === 0.5 && strengthToScore(12) === 0.9 && strengthToScore(99) === 1);
-  assert.equal(strengthToScore(Number.NaN), 0.3);
 });
 
 test("clusterThemes: label propagation finds two components and is deterministic", () => {

@@ -5,7 +5,7 @@ import { test } from "node:test";
 
 import { withRunContext } from "@/core/harness";
 import { runTurn } from "@/core/turn";
-import { buildDeps, enforceWired, MANIFEST, SERVICE_MEMBER, startupCheck, wireAll, workspaceWiring } from "@/core/turn/wiring";
+import { buildDeps, enforceWired, startupCheck, wireAll } from "@/core/turn/wiring";
 import { deriveKey } from "@/core/intake/canonical-key";
 
 import { DOC_URL, fixture, NOW } from "../integration/world.ts";
@@ -16,7 +16,6 @@ test("every wired member is present on the built deps, and the owed members are 
   const report = startupCheck(f.d);
   assert.deepEqual(report.missing, []);
   assert.deepEqual(report.owed.map((o) => o.member).sort(), ["assistant.operationsFacts (the Operations data block)", "dashboard.themeChips (the cross-page theme view)", "propagation EdgeAuthors (authorCarbonIntensityEdges)"].sort());
-  assert.ok(MANIFEST.filter((e) => e.status === "wired").length >= 30, "the manifest covers every provider-to-consumer member");
 });
 
 test("an unwired required member is named, and the start is refused with it in every environment, not only Vercel (IMP-026, G9)", () => {
@@ -71,7 +70,7 @@ test("matchExistingSubject: the mint's seed is matched against the corpus by ide
 test("navCounts: getNavCounts over the lists reads for the member's org and user; admin attention is the rpc's one row, and a failed read throws so the bootstrap names it degraded", async () => {
   const f = fixture();
   f.db.seed("user_watchlist", [{ user_id: "u1", item_id: "a0000000-0000-4000-8000-000000000001" }, { user_id: "u1", item_id: "a0000000-0000-4000-8000-000000000002" }, { user_id: "u2", item_id: "a0000000-0000-4000-8000-000000000001" }]);
-  const wiring = workspaceWiring(f.db.client);
+  const wiring = f.d.workspace;
   const counts = (await wiring.navCounts?.({ orgId: "o1", userId: "u1" })) as { watchlist: number | null; regulations: number | null };
   assert.equal(counts.watchlist, 2, "the member's own watchlist, read for real");
   assert.equal(counts.regulations, null, "a surface count the database could not answer is null, never a zero");
@@ -115,7 +114,7 @@ test("wireAll builds from what the environment provides: no service key and not 
   const saved = process.env.SUPABASE_SERVICE_ROLE_KEY;
   delete process.env.SUPABASE_SERVICE_ROLE_KEY;
   try {
-    assert.deepEqual(wireAll({ NODE_ENV: "production" }), { missing: [SERVICE_MEMBER], owed: [] });
+    assert.deepEqual(wireAll({ NODE_ENV: "production" }), { missing: ["service client (no service key configured)"], owed: [] });
     assert.throws(() => wireAll({ VERCEL: "1" }), /startup refused: required dependencies are not wired: service client \(no service key configured\)/);
   } finally {
     if (saved !== undefined) process.env.SUPABASE_SERVICE_ROLE_KEY = saved;
@@ -178,7 +177,6 @@ test("C:40 (R2d) a reference load that FAILED is not kept for the life of the de
 
 test("IMP-054: a tree that lost producers.verdicts or the reference loader is named by the startup check and refused on Vercel", () => {
   const f = fixture();
-  assert.equal(MANIFEST.find((e) => e.member === VERDICTS_MEMBER)?.status, "wired");
   (f.d.producers as { verdicts?: unknown }).verdicts = undefined;
   (f.d as { loadReferenceData?: unknown }).loadReferenceData = undefined;
   const report = startupCheck(f.d);

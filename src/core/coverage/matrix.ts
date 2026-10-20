@@ -3,17 +3,17 @@ import { formatNumber } from "@/core/shared";
 
 import vocab from "./data/coverage.json";
 
-export const MATRIX_SCHEMA_VERSION = 1;
+const MATRIX_SCHEMA_VERSION = 1;
 /** The "no filter" token for each axis. */
 export const ALL = "all";
 export const UNTAGGED = "untagged";
 /** Upper case like every geography code, so a link round-trips through parseCoverageQuery. */
-export const UNKNOWN_GEOGRAPHY = "UNKNOWN";
+const UNKNOWN_GEOGRAPHY = "UNKNOWN";
 
 const MODES = [...vocab.modes].sort((a, b) => a.order - b.order);
 const MODE_ALIASES = vocab.modeAliases as Record<string, string>;
 /** The canonical transport mode for a token or alias, or null when unrecognised. Never guesses. */
-export function normaliseMode(value: unknown): string | null {
+function normaliseMode(value: unknown): string | null {
   if (value === null || value === undefined) return null;
   const raw = String(value).trim().toLowerCase().replace(/[\s-]+/g, "_");
   if (MODES.some((m) => m.code === raw)) return raw;
@@ -21,7 +21,7 @@ export function normaliseMode(value: unknown): string | null {
 }
 
 /** Data classes in display order. */
-export const DATA_CLASSES = [
+const DATA_CLASSES = [
   { code: "regulations", label: "Regulations" },
   { code: "operations", label: "Operations" },
   { code: "market_intel", label: "Market Intel" },
@@ -29,7 +29,7 @@ export const DATA_CLASSES = [
 ] as const;
 const UNTAGGED_CLASS = { code: UNTAGGED, label: "Not tagged to a surface" };
 const UNTAGGED_MODE = { code: UNTAGGED, label: "Mode not tagged" };
-export const DEFINITIONS = {
+const DEFINITIONS = {
   denominator: "Instruments the discovery census catalogued as relevant to freight sustainability, in this cell. A catalogued instrument is a pointer to a primary source, not a grounded brief.",
   numerator: "Catalogued instruments whose identity resolved to a registered primary source and that scored firm-core relevance (dual-verified). Still a pointer, not a grounded brief.",
   numerator_one_line: "A cell's figure is the catalogued instruments that are dual-verified (firm-core relevance and a resolved, registered primary source) over all instruments catalogued in that cell.",
@@ -48,7 +48,7 @@ export interface CoverageEntry {
   checkedAt?: string | null;
 }
 /** An entry is in the numerator when it is dual-verified: firm-core relevance AND identity verified. */
-export const isNumerator = (e: Pick<CoverageEntry, "relevance" | "identity">): boolean => e.relevance === "firm" && e.identity === "verified";
+const isNumerator = (e: Pick<CoverageEntry, "relevance" | "identity">): boolean => e.relevance === "firm" && e.identity === "verified";
 const classesOf = (e: CoverageEntry): string[] => {
   const known = Array.isArray(e.surfaces) ? e.surfaces.filter((s) => DATA_CLASS_CODES.has(s)) : [];
   return known.length ? [...new Set(known)] : [UNTAGGED];
@@ -59,7 +59,7 @@ const modesOf = (e: CoverageEntry): string[] => {
 };
 /** A geography code, upper-cased. A `|` is replaced so the cell key (which joins on `|`) can never be corrupted by a code. */
 const geographyOf = (e: CoverageEntry): string => (typeof e.jurisdiction === "string" ? e.jurisdiction.trim().toUpperCase().replace(/\|/g, "/") : "") || UNKNOWN_GEOGRAPHY;
-export const cellKey = (mode: string, dataClass: string, geography: string): string => `${mode}|${dataClass}|${geography}`;
+const cellKey = (mode: string, dataClass: string, geography: string): string => `${mode}|${dataClass}|${geography}`;
 
 /** FNV-1a 32-bit, hex: deterministic and client-safe; the matrix version is a content hash. */
 function fnv1a(text: string): string {

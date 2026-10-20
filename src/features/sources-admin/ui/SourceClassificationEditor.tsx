@@ -38,13 +38,13 @@ export interface EditorSeed {
 const list = (v: string): string[] => v.split(/[,|;]+/).map((s) => s.trim()).filter(Boolean);
 
 /** The editor's opening state: the tier is the CLASS TABLE's for this host and name (never a model's), and the other axes are what the candidate was found for. Pure. */
-export function seedDraft(seed: EditorSeed): { draft: ClassificationDraft; classTier: number | null } {
+function seedDraft(seed: EditorSeed): { draft: ClassificationDraft; classTier: number | null } {
   const classTier = classTierForHost(hostOf(seed.url), seed.name);
   return { classTier, draft: { assignedTier: seed.tier ?? classTier, domains: seed.domains ?? [], jurisdictions: seed.jurisdictions ?? [], transport_modes: seed.transport_modes ?? [], topic_tags: seed.topic_tags ?? [], reviewerNotes: "" } };
 }
 
 /** The stored bias tags in words, from the drafts the registry already holds (a tag outside the vocabulary is humanised, never dropped). Pure. */
-export function biasPreview(tags: unknown): string[] {
+function biasPreview(tags: unknown): string[] {
   if (!tags || typeof tags !== "object") return [];
   return Object.values(tags as Record<string, unknown>).flatMap((v) => (Array.isArray(v) ? v.map((e) => `${biasTagLabel((e as { tag?: unknown }).tag)}${typeof (e as { confidence?: unknown }).confidence === "number" ? ` ${Math.round(((e as { confidence: number }).confidence) * 100)}%` : ""}`) : []));
 }

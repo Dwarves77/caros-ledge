@@ -6,7 +6,7 @@ import { create } from "zustand";
 
 import { authedFetch } from "@/core/http/authed-fetch";
 
-export const UNREAD_POLL_MS = 60_000;
+const UNREAD_POLL_MS = 60_000;
 const PATH = "/api/community/notifications?unread_only=true&limit=1";
 
 interface UnreadState {
@@ -16,7 +16,7 @@ interface UnreadState {
 const useUnreadStore = create<UnreadState>(() => ({ count: null }));
 
 /** Fetch the unread count once; a non-answer leaves the count unknown rather than zero. */
-export async function fetchUnread(fetchImpl: typeof authedFetch = authedFetch): Promise<number | null> {
+async function fetchUnread(fetchImpl: typeof authedFetch = authedFetch): Promise<number | null> {
   try {
     const res = await fetchImpl(PATH, { cache: "no-store" });
     if (!res.ok) return null;

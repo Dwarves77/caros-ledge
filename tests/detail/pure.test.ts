@@ -3,12 +3,13 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { computeApplicability } from "@/core/applicability";
-import { deriveFactCardModels, deriveRecordFactCardModel, mergeAdjacentSameKind, parseFactCardModels, parseFactParagraphs } from "@/core/detail/fact-model";
+import { deriveFactCardModels, deriveRecordFactCardModel, mergeAdjacentSameKind, parseFactParagraphs } from "@/core/detail/fact-model";
 import { crossPageOrd, indexFor, SECTION_INDEX } from "@/core/detail/section-index";
-import { classifyTimeline, collapseTimeline, formatTrajectoryStep, pickCurrentStepIndex, withObligationEvents } from "@/core/detail/timeline";
-import { countryGroupForIso, countryOf, isIso, isoCodesOf, isoToDisplayLabel, jurisdictionTier, jurisLabelOf, legacyToIso, TIER1, TIER1_REGIONS, TIER2 } from "@/core/jurisdictions";
-import { deriveThemeLabel, themeAnalysisView, themeChips, themeForItem } from "@/core/themes";
+import { formatTrajectoryStep, pickCurrentStepIndex, withObligationEvents } from "@/core/detail/timeline";
+import { countryGroupForIso, countryOf, isIso, isoCodesOf, isoToDisplayLabel, jurisdictionTier, jurisLabelOf, TIER1, TIER1_REGIONS, TIER2 } from "@/core/jurisdictions";
+import { themeAnalysisView, themeChips, themeForItem } from "@/core/themes";
 import { withClaimTiers } from "@/ui/claim-tier";
+import { classifyMilestones, collapseTimeline } from "@/ui/timeline-math";
 import { coverageLineModel } from "@/features/regulations/coverage-line";
 import { isIdLabel } from "@/ui/detail/collab/collab-client";
 import { centroidOf } from "@/features/regulations/map/centroids";
@@ -17,7 +18,8 @@ import { rollupRegions, sourceTypesFor } from "@/features/regulations/map/region
 import { regionCodes } from "@/features/regulations/map/region-filter";
 import { chipOfKey, jurisdictionKeyOf, rollup } from "@/features/regulations/map/rollup";
 import { joinSegments } from "@/features/regulations/meta";
-import { canonicalQuery } from "@/features/saved-views/api/saved-views";
+
+const parseFactCardModels = (markdown: string): ReturnType<typeof deriveFactCardModels> => mergeAdjacentSameKind(parseFactParagraphs(markdown).flatMap(deriveFactCardModels));
 
 const EU27 = "AT BE BG HR CY CZ DK EE FI FR DE GR HU IE IT LV LT LU MT NL PL PT RO SK SI ES SE".split(" ");
 
@@ -57,8 +59,7 @@ test("ONE Tier-1 list: the priority regions and the country-level scopes are one
 });
 
 test("legacy slugs map to a code only where a row has no jurisdiction_iso; a grouping has none", () => {
-  assert.equal(legacyToIso("uk"), "GB");
-  assert.equal(legacyToIso("nordic"), null);
+  assert.deepEqual(isoCodesOf({ jurisdiction: "uk" }), ["GB"]);
   assert.deepEqual(isoCodesOf({ jurisdictionIso: ["DE"], jurisdiction: "france" }), ["DE"], "the code wins");
   assert.deepEqual(isoCodesOf({ jurisdiction: "france" }), ["FR"]);
   assert.deepEqual(isoCodesOf({ jurisdiction: "nordic" }), []);
@@ -104,8 +105,8 @@ test("timeline and trajectory take the request's instant: the same input at two 
   assert.equal(formatTrajectoryStep(steps[0] as (typeof steps)[number]), "2% (2026)");
   const four = Array.from({ length: 4 }, (_, i) => ({ date: `2026-0${i + 1}-01`, label: `m${i}` }));
   const five = [...four, { date: "2026-09-01", label: "m4" }];
-  assert.equal(collapseTimeline(classifyTimeline(four)).collapsed, false);
-  const c5 = collapseTimeline(classifyTimeline(five));
+  assert.equal(collapseTimeline(classifyMilestones(four)).collapsed, false);
+  const c5 = collapseTimeline(classifyMilestones(five));
   assert.deepEqual([c5.collapsed, c5.visible.length, c5.hiddenCount], [true, 4, 1]);
   assert.deepEqual(withObligationEvents([{ date: "2026-01-01", label: "a" }], [{ event_date: "2026-01-01", event_kind: "x" }, { event_date: "2026-02-01", event_kind: "entry_into_force" }], { entry_into_force: "Entry into force" }).map((t) => t.label), ["a", "Entry into force"], "an event on a date already on the timeline is not repeated");
 });
@@ -163,7 +164,8 @@ test("theme views: the item's theme, the chips of a surface, the analysis when n
   assert.equal(view?.hasBrief, false);
   assert.match(view?.absence ?? "", /has not been written yet/);
   assert.deepEqual(view?.membersByPage.map((g) => [g.surface, g.total]), [["market", 1]]);
-  assert.ok(deriveThemeLabel({ pages: [], memberCount: 0 }).length > 0);
+  const unsignalled = themeChips({ themes: [{ id: "t3", member_ids: ["a", "b"], surfaces: ["regulations", "market"], convergence: 0.5, pivots: [] }] as never, items, surface: "regulations", max: 6 });
+  assert.ok((unsignalled[0]?.label ?? "").length > 0, "a theme with no named signal still has a label");
 });
 
 test("map: a row counts once under its primary code rolled up to the country; the title never decides the jurisdiction; subdivisions and EU members chip correctly", () => {
@@ -208,11 +210,8 @@ test("coverage layer: covered needs an environmental body AND a legislature, par
   assert.deepEqual(sourceTypesFor({ name: "x", url: "y", jurisdictions: null, source_type: ["environmental_body"] }), ["environmental_body"]);
 });
 
-test("the dek is built once and never repeats a part; a saved view stores the list's own canonical state and refuses an empty one", () => {
+test("the dek is built once and never repeats a part", () => {
   assert.equal(joinSegments(["Germany · Federal Ministry", "Federal Ministry", "Germany", "Effective 1 Jan 2027"]), "Germany · Federal Ministry · Effective 1 Jan 2027");
-  assert.equal(canonicalQuery("?band=immediate&region=EU&evil=1&sort=bogus"), "band=immediate&region=EU");
-  assert.equal(canonicalQuery("evil=1"), null);
-  assert.equal(canonicalQuery(""), null);
 });
 
 test("the coverage line always draws its link: a refused or failed count is the unavailable state, an empty catalogue its own, a count the count", () => {

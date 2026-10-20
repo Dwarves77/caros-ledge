@@ -22,7 +22,7 @@ export interface CrossPage {
   degraded: string[];
 }
 
-export const readThemes = (db: Db): Promise<ThemeRow[]> => fetchAllRows<ThemeRow>((from, to) => db.from("connection_themes").select(THEME_COLUMNS).order("id", { ascending: true }).range(from, to) as never, { cap: CAP });
+const readThemes = (db: Db): Promise<ThemeRow[]> => fetchAllRows<ThemeRow>((from, to) => db.from("connection_themes").select(THEME_COLUMNS).order("id", { ascending: true }).range(from, to) as never, { cap: CAP });
 const readBriefs = (db: Db): Promise<BriefRow[]> => fetchAllRows<BriefRow>((from, to) => db.from("theme_briefs").select(BRIEF_COLUMNS).order("theme_id", { ascending: true }).range(from, to) as never, { cap: CAP });
 
 async function readLineage(db: Db) {
@@ -32,7 +32,7 @@ async function readLineage(db: Db) {
 }
 
 /** Admissible items by uuid: verified, not archived, not replaced (the readers' own RLS applies on top). */
-export const readVerifiedItemsByIds = (db: Db, ids: readonly string[]): Promise<MemberRow[]> =>
+const readVerifiedItemsByIds = (db: Db, ids: readonly string[]): Promise<MemberRow[]> =>
   fetchAllByIdChunks(
     ids,
     async (slice) => {
@@ -53,7 +53,7 @@ async function readTheme(db: Db, itemUuid: string, surface: string): Promise<The
 }
 
 /** The inferences a customer may read for an item, per request. */
-export const readFreshInferences = (db: Db, itemUuid: string): Promise<InferenceView | null> => readCustomerInferences(db, itemUuid);
+const readFreshInferences = (db: Db, itemUuid: string): Promise<InferenceView | null> => readCustomerInferences(db, itemUuid);
 
 /** The cross-page analysis of one item: each block read on its own, so one failing block does not take the others down. */
 export async function readCrossPage(db: Db, itemUuid: string, surface: string, intersectionSummary: string | null, connections: readonly ConnectionIn[], lookup: ResourceLookup): Promise<CrossPage> {

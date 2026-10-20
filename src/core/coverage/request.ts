@@ -1,10 +1,10 @@
 // Ported from old_repo/src/lib/coverage/request-coverage.mjs (lines 1-71)
 import type { Db } from "@/core/db";
 
-export const COVERAGE_REQUEST_CREATED_BY = "coverage-request-route";
-export const COVERAGE_REQUEST_CATEGORY = "coverage_gap";
-export const COVERAGE_REQUEST_SUBJECT_TYPE = "surface";
-export const OPEN_STATUSES = ["open", "in_review"] as const;
+const COVERAGE_REQUEST_CREATED_BY = "coverage-request-route";
+const COVERAGE_REQUEST_CATEGORY = "coverage_gap";
+const COVERAGE_REQUEST_SUBJECT_TYPE = "surface";
+const OPEN_STATUSES = ["open", "in_review"] as const;
 const MAX_REF = 200;
 const MAX_LABEL = 120;
 // A path on this site: a leading slash, then path, query and fragment characters only. No scheme, no host, no dot segments, no protocol-relative start.
@@ -23,7 +23,7 @@ export function validateCoverageRequest(body: unknown): { ok: true; value: { sub
   return { ok: true, value: { subjectRef: rawRef, label } };
 }
 /** The integrity_flags row for a validated request; nothing from the caller is copied raw except the two validated strings. */
-export function buildCoverageGapFlag({ subjectRef, label }: { subjectRef: string; label: string }) {
+function buildCoverageGapFlag({ subjectRef, label }: { subjectRef: string; label: string }) {
   return {
     category: COVERAGE_REQUEST_CATEGORY,
     subject_type: COVERAGE_REQUEST_SUBJECT_TYPE,

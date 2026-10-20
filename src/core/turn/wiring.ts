@@ -106,7 +106,7 @@ const UA = { "user-agent": "FSI-turn/1.0 (+turn)", accept: "*/*" };
 const MAX_BYTES = 50 * 1024 * 1024;
 
 /** The catalog every registry entry is checked against: each producer spec by name. */
-export const PRODUCER_CATALOG: Catalog = Object.freeze(Object.fromEntries([eeaHdvRoadmaps, carrierEtsSurcharge, ecbFx, eiaPetroleumSpot, euOilBulletin, gridQueueRows, oemRoadmapRows, publishedPriceStatistics, rerouteRows, sbtiTargets, auxiliaryEnergyRows, blsOews, eurostatElectricity, eurostatLabourCost, indexationRows, nesoCarbonIntensity, stateCostFacts, ukpnHeatmap, researchAssessment, researchWalker].map((s) => [s.name, s])));
+const PRODUCER_CATALOG: Catalog = Object.freeze(Object.fromEntries([eeaHdvRoadmaps, carrierEtsSurcharge, ecbFx, eiaPetroleumSpot, euOilBulletin, gridQueueRows, oemRoadmapRows, publishedPriceStatistics, rerouteRows, sbtiTargets, auxiliaryEnergyRows, blsOews, eurostatElectricity, eurostatLabourCost, indexationRows, nesoCarbonIntensity, stateCostFacts, ukpnHeatmap, researchAssessment, researchWalker].map((s) => [s.name, s])));
 
 const captureFamily = (url: string) => (parseOjReference(url) ? ("oj_issue" as const) : ("generic" as const));
 
@@ -259,7 +259,7 @@ export function buildDeps(sb: Db, env: Env = process.env, opts: DepsOptions = {}
 }
 
 /** The workspace handlers' cross-slice members. `portfolio` is the held-items read layer (P2-13); the pages read it with the caller's own client, the API route with this one. */
-export function workspaceWiring(sb: Db): Partial<WorkspaceDeps> {
+function workspaceWiring(sb: Db): Partial<WorkspaceDeps> {
   return {
     navCounts: (who) => getNavCounts(navCountSources(sb, who)),
     // The same counts the old admin attention route read: one rpc, one row. A failed read throws, so the bootstrap names it degraded and the shell shows "unknown", never a zero.
@@ -286,7 +286,7 @@ export interface ManifestEntry {
 }
 const fn = (v: unknown): boolean => typeof v === "function";
 /** Every provider-to-consumer member this module is responsible for. `wired` members are checked at startup; `owed` members name the slice that supplies them. */
-export const MANIFEST: readonly ManifestEntry[] = [
+const MANIFEST: readonly ManifestEntry[] = [
   ...(["resolveSource", "registerAndRate", "matchTarget", "officialness", "classifyBody", "classTierForHost", "holdingsGate", "fetchAllowed", "capture"] as const).map((m): ManifestEntry => ({ member: `intake.sources.${m}`, status: "wired", present: (d) => fn(d.intake.sources[m]) })),
   { member: "intake.mint.mintItem", status: "wired", present: (d) => fn(d.intake.mint.mintItem) },
   ...(["connect", "extractAndInsertForwardEvents", "deriveObligations", "linkEntities"] as const).map((m): ManifestEntry => ({ member: `intake.connect.${m}`, status: "wired", present: (d) => fn(d.intake.connect[m]) })),
@@ -323,7 +323,7 @@ export function enforceWired(report: { missing: string[] }): void {
 }
 
 let wiredOnce = false;
-export const SERVICE_MEMBER = "service client (no service key configured)";
+const SERVICE_MEMBER = "service client (no service key configured)";
 
 /** Wire the app's deps once at startup: the workspace handlers' members and the intake route's factory. Deps are built from what the environment provides: without a service key nothing service-dependent is wired (isServiceConfigured is the only test, serviceClient is never called to decide) and the report names it; on Vercel that refuses to start. */
 export function wireAll(env: Env = process.env): { missing: string[]; owed: { member: string; owner: string }[] } {

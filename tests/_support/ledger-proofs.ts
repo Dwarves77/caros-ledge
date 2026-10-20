@@ -1,9 +1,8 @@
 // The operator proofs as queries over the one ledger (harness.md section 8, "Proof that the module works"): P1 chain, P2 minted ids, P3 flywheel outcomes, P4 change, P5 smoke by code_sha. P6 is CI.
 import { fetchAllRows, type Db } from "@/core/db";
-
-import { FAMILIES } from "./families";
-import { countsOf } from "./outcome";
-import type { RunRow } from "./record";
+import { FAMILIES } from "@/core/harness/families";
+import { countsOf } from "@/core/harness/outcome";
+import type { RunRow } from "@/core/harness/record";
 
 type Ledger = Pick<RunRow, "id" | "family" | "root_run_id" | "upstream_run_id" | "mode" | "outcome" | "outputs" | "code_sha" | "started_at">;
 const COLUMNS = "id,family,root_run_id,upstream_run_id,mode,outcome,outputs,code_sha,started_at";

@@ -93,7 +93,7 @@ export interface EntrySpec<L, P> {
 }
 
 /** The structural problems of the file as a whole (empty when it can be read entry by entry). */
-export function fileShapeErrors(json: unknown, spec: Pick<EntrySpec<never, never>, "batchRe" | "ceiling">): string[] {
+function fileShapeErrors(json: unknown, spec: Pick<EntrySpec<never, never>, "batchRe" | "ceiling">): string[] {
   if (!isObj(json)) return ["file is not a JSON object"];
   const problems: string[] = [];
   if (!nonEmpty(json.batch) || !spec.batchRe.test(json.batch)) problems.push(`batch must match ${spec.batchRe} (got ${JSON.stringify(json.batch)})`);
@@ -105,7 +105,7 @@ export function fileShapeErrors(json: unknown, spec: Pick<EntrySpec<never, never
 }
 
 /** Validate a whole batch against the live material. Pure. A structural problem fails the whole file; a problem in one entry refuses that entry only; a repeated key is refused. */
-export function validateEntries<L, P>(spec: EntrySpec<L, P>, file: unknown, live: L): Verdict<P> {
+function validateEntries<L, P>(spec: EntrySpec<L, P>, file: unknown, live: L): Verdict<P> {
   const fileErrors = fileShapeErrors(file, spec);
   const verdict: Verdict<P> = { fileErrors, valid: [], refused: [], alreadyApplied: [] };
   if (fileErrors.length || !isObj(file)) return verdict;

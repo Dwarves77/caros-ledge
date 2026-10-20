@@ -17,5 +17,4 @@ export function detectPublisherShape(url: string | null | undefined): PublisherS
 export const extractCleanText = (body: string | null | undefined): string =>
   toText(String(body || "").replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, " ").replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, " ").replace(/<!--[\s\S]*?-->/g, " ")).replace(/&nbsp;/gi, " ").replace(/&amp;/gi, "&").replace(/&[a-z]+;/gi, " ").replace(/\s+/g, " ").trim();
 
-export type Completeness = "NO-KNOWN-DEFECT" | "TRUNCATED" | "FURNITURE" | "STUB";
 

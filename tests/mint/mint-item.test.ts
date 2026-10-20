@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import type { MintDeps } from "@/features/intake";
-import { bindMint, canonicalDomainOverride, mintItem, sourceLinkDecision, unconditionalDomain, type MintCtx, type MintRequest } from "@/features/mint";
+import { bindMint, mintItem, type MintCtx, type MintRequest } from "@/features/mint";
 
 import type { MemCall } from "../intake/memdb.ts";
 
@@ -96,12 +96,6 @@ test("a news item duplicating an existing subject is minted as a market_signal l
 });
 
 test("domain and format_type: an unconditional type is re-domained and stamped; a conditional type keeps its domain; a preset format_type stands", async () => {
-  assert.equal(unconditionalDomain("regulation"), 1);
-  assert.equal(unconditionalDomain("market_signal"), 4);
-  for (const conditional of ["framework", "tool", "initiative"]) assert.equal(unconditionalDomain(conditional), null, conditional);
-  assert.equal(canonicalDomainOverride("regulation", 4), 1);
-  assert.equal(canonicalDomainOverride("regulation", 1), null);
-  assert.equal(canonicalDomainOverride("framework", 4), null);
   const db = makeWorld();
   const { ctx } = ctxOf(db);
   const r = await mintItem(req({ seed: seed({ domain: 4 }) }), ctx, { dry: false });
@@ -114,10 +108,6 @@ test("domain and format_type: an unconditional type is re-domained and stamped; 
 });
 
 test("source-link invariant: a source-less seed is refused, a registered URL links, a preset source_id is trusted; no auto-registration", async () => {
-  assert.deepEqual(sourceLinkDecision({ source_id: "s" }, null), { kind: "preset" });
-  assert.deepEqual(sourceLinkDecision({ source_url: "https://a.example" }, "s9"), { kind: "link", sourceId: "s9" });
-  assert.equal(sourceLinkDecision({ source_url: "https://a.example" }, null).kind, "reject");
-  assert.equal(sourceLinkDecision({}, null).kind, "reject");
   const db = makeWorld();
   const { ctx } = ctxOf(db);
   const unsourced = await mintItem(req({ seed: seed({ source_id: undefined, source_url: "https://unregistered.example/doc", canonical_instrument_key: null, instrument_identifier: "U" }) }), ctx, { dry: false });

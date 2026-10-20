@@ -9,7 +9,6 @@ import { test } from "node:test";
 
 import { scanGateA } from "@/core/grounding";
 import { runTurn } from "@/core/turn";
-import { readBriefQueue } from "@/features/batches";
 
 import { fixture, NOW } from "../integration/world.ts";
 
@@ -57,7 +56,6 @@ test("the turn mints, the stage exports the stub, a session authors from the exp
   const exRow = f.db.rows("harness_runs").find((r) => r.family === "brief-apply" && r.id === ex.rootRunId) as { outputs: { ids: Record<string, string[]> }; outcome: string };
   assert.deepEqual(exRow.outputs.ids.exported_ids, [minted.id]);
   assert.doesNotMatch(JSON.stringify(exRow.outputs), /Operators shall report/, "the ledger row carries ids and paths, not pool text");
-  assert.deepEqual((await readBriefQueue(f.db.client)).map((q) => q.ids), [[minted.id]], "the export is the pending queue");
   const part = JSON.parse(readFileSync(exRow.outputs.ids.parts?.[0] as string, "utf8")) as { items: { id: string; source_pool_hash: string; pool: { url: string; text: string }[]; required_slots: { slot_key: string }[] }[] };
   const stub = part.items[0] as (typeof part.items)[number];
   assert.deepEqual(stub.required_slots.map((s) => s.slot_key).sort(), ["binding_position", "due_date"]);
@@ -87,7 +85,6 @@ test("the turn mints, the stage exports the stub, a session authors from the exp
   assert.ok(facts.length >= 4 && facts.every((c) => pool.some((p) => p.id === c.search_result_id) && String(pool[0]?.result_content).toLowerCase().includes(String(c.source_span).toLowerCase())), "every FACT is verbatim in the capture the turn stored");
   assert.ok(f.db.rows("claim_versions").length >= 1, "the stub's claims the ledger replaced were archived first");
   assert.equal(f.db.rows("intelligence_changes").filter((c) => c.item_id === stub.id).length, 1, "the customer-visible change is recorded once");
-  assert.deepEqual(await readBriefQueue(f.db.client), [], "an applied export leaves the queue");
 
   // RE-APPLY: nothing new, the stage records a no-op (the cooldown does not apply: nothing is left to write).
   const writes = f.db.writes().length;

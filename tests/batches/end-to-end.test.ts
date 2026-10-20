@@ -6,8 +6,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 
-import { computeMemberHash } from "@/core/flywheel/themes";
-import { applyBatch, BATCH_KINDS, exportBatch } from "@/features/batches";
+import { applyBatch, exportBatch } from "@/features/batches";
 
 import { batchFile, goodBody, claims, ITEM, metadata, NOW, SPAN_FORCE, SPAN_REPORT } from "./world.ts";
 import { CLAIM, feWorld, hostWorld, ledgerFile, ledgerWorld, needsWorld, qaWorld, recordWorld, REF, screenWorld, themeWorld, THEME, verdict, T_FLAG, type World } from "./worlds.ts";
@@ -64,8 +63,9 @@ for (const c of CASES) {
   });
 }
 
-test("every kind in the kit has a case here", () => {
-  assert.deepEqual(CASES.map((c) => c.kind).sort(), [...BATCH_KINDS].sort());
-  void NOW;
-  void computeMemberHash;
+test("every kind in the kit has a case here", async () => {
+  const note = (await exportBatch("mystery", recordWorld().deps)).notes[0] ?? "";
+  const kinds = /\(kinds: ([^)]*)\)/.exec(note)?.[1]?.split(", ") ?? [];
+  assert.equal(kinds.length, 8, note);
+  assert.deepEqual(CASES.map((c) => c.kind).sort(), [...kinds].sort());
 });

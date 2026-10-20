@@ -11,7 +11,7 @@ import { isObj, nonEmpty, type EntryResult } from "../../kit/session-batch";
 
 import { parseAppliedNote, RESOLVED_BY, type FullFlag, type Need } from "./needs";
 
-export const CEILINGS = { url: 2000, institution: 200, why_authoritative: 600, entries: 200 } as const;
+const CEILINGS = { url: 2000, institution: 200, why_authoritative: 600, entries: 200 } as const;
 const HOST_VERDICT_SOURCE = "session-lane";
 /** A host the way the class table normalises it: no www, lower case, no trailing dot. */
 export const normalizeVerdictHost = (host: unknown): string => String(host || "").trim().toLowerCase().replace(/^www\./, "").replace(/\.$/, "");

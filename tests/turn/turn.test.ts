@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { gateRefusal, planTurn, runTurn, sliceState, STAGES } from "@/core/turn";
+import { gateRefusal, readSliceState, runTurn, STAGES } from "@/core/turn";
 
 import { DOC_TEXT, DOC_URL, fixture, NOW } from "../integration/world.ts";
 
@@ -11,11 +11,13 @@ const apply = (f: ReturnType<typeof fixture>, over: Partial<Parameters<typeof ru
 const ledger = (f: ReturnType<typeof fixture>) => f.db.rows("harness_runs");
 const capture = (f: ReturnType<typeof fixture>) => f.db.seed("agent_run_searches", [{ intelligence_item_id: null, result_url: DOC_URL, result_content: DOC_TEXT, result_index: 0, search_query: "capture-worker:first-fetch" }]);
 
-test("the plan: all stages in order; one stage runs it and its downstream; chain false runs only that stage; an unknown stage is an error", () => {
-  assert.deepEqual(planTurn("all"), [...STAGES]);
-  assert.deepEqual(planTurn("connect"), ["connect", "propagate", "briefs"]);
-  assert.deepEqual(planTurn("connect", false), ["connect"]);
-  assert.throws(() => planTurn("nope" as never), /unknown stage/);
+test("the plan: all stages in order; one stage runs it and its downstream; chain false runs only that stage; an unknown stage is an error", async () => {
+  const f = fixture();
+  const planOf = async (stage: string, chain?: boolean) => (await runTurn({ stage: stage as never, mode: "dry", ...(chain === false ? { chain: false } : {}), input: {} }, { d: f.d, env: {}, now: () => NOW })).plan;
+  assert.deepEqual(await planOf("all"), [...STAGES]);
+  assert.deepEqual(await planOf("connect"), ["connect", "propagate", "briefs"]);
+  assert.deepEqual(await planOf("connect", false), ["connect"]);
+  await assert.rejects(() => planOf("nope"), /unknown stage/);
 });
 
 test("rule 16 drill: cadence off and mode apply requested: the whole turn is dry, zero network calls, zero writes outside the ledger, and every row says why", async () => {
@@ -88,7 +90,7 @@ test("INV-195 THE GATE: a minted slice nothing connected refuses the next mint; 
   assert.ok(item);
 
   // The slice is minted and unconnected: the ledger says so, and a second mint is refused with the way out.
-  const state = sliceState(ledger(f) as never);
+  const state = await readSliceState(f.db.client);
   assert.deepEqual(state.unconnected, [item]);
   assert.match(String(gateRefusal(state)), /turn --stage connect/);
   const blocked = await apply(f, { stage: "intake", chain: false });
@@ -101,7 +103,7 @@ test("INV-195 THE GATE: a minted slice nothing connected refuses the next mint; 
   const row = closed.runs[0]?.row;
   assert.equal(row?.outcome, "success");
   assert.deepEqual((row?.outputs as { ids: { connected_item_ids: string[] } }).ids.connected_item_ids, [item]);
-  assert.deepEqual(sliceState(ledger(f) as never).unconnected, []);
+  assert.deepEqual((await readSliceState(f.db.client)).unconnected, []);
   const again = await apply(f, { stage: "intake", chain: false });
   assert.notEqual(again.runs[0]?.row?.outcome, "refused", "the gate is open once the slice is connected");
 });
@@ -122,5 +124,5 @@ test("a dry run never trips the gate and never reads it as connected: THE GATE r
   const f = fixture();
   capture(f);
   await runTurn({ stage: "intake", mode: "dry", chain: false, input }, { d: f.d, env: {}, now: () => NOW });
-  assert.deepEqual(sliceState(ledger(f) as never), { unconnected: [], unrecoverable: [] });
+  assert.deepEqual(await readSliceState(f.db.client), { unconnected: [], unrecoverable: [] });
 });

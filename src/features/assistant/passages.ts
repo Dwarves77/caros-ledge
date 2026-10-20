@@ -7,7 +7,7 @@ import passagesJson from "./data/skill-passages.json";
 
 const passage = z.object({ id: z.string().min(1), heading: z.string().min(1), keywords: z.array(z.string().min(1)).min(1), text: z.string().min(1) });
 export type SkillPassage = z.infer<typeof passage>;
-export const SKILL_PASSAGES: readonly SkillPassage[] = Object.freeze(z.array(passage).min(1).parse(passagesJson));
+const SKILL_PASSAGES: readonly SkillPassage[] = Object.freeze(z.array(passage).min(1).parse(passagesJson));
 
 const words = (text: string): Set<string> => new Set(text.toLowerCase().match(/[a-z][a-z0-9]+/g) ?? []);
 

@@ -2,5 +2,5 @@
 // The one tier clamp: the vocabulary's own ceiling, never a literal (B-2144).
 import { SOURCE_TIER_MAX } from "@/core/sources";
 
-export const TIER_MAX: number = SOURCE_TIER_MAX;
+const TIER_MAX: number = SOURCE_TIER_MAX;
 export const clampTier = (tier: number): number => Math.max(1, Math.min(TIER_MAX, Math.round(tier)));

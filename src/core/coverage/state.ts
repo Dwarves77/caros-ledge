@@ -2,9 +2,9 @@
 import vocab from "./data/coverage.json";
 
 /** The kinds of action a treatment can carry; the component maps each to one control. */
-export const COVERAGE_ACTION = { request: "request", widen: "widen", retry: "retry", status: "status" } as const;
+const COVERAGE_ACTION = { request: "request", widen: "widen", retry: "retry", status: "status" } as const;
 export type CoverageStateCode = keyof typeof vocab.states;
-export const isCoverageState = (value: unknown): value is CoverageStateCode => typeof value === "string" && Object.prototype.hasOwnProperty.call(vocab.states, value);
+const isCoverageState = (value: unknown): value is CoverageStateCode => typeof value === "string" && Object.prototype.hasOwnProperty.call(vocab.states, value);
 
 const nonEmpty = (value: unknown): string | null => (typeof value === "string" && value.trim().length > 0 ? value.trim() : null);
 const plural = (n: number, noun: string): string => `${n} ${noun}${n === 1 ? "" : "s"}`;

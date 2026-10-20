@@ -51,14 +51,13 @@ export const OBS_STATUS = get("obs_status");
 export const ORIGIN_CLASS = get("origin_class");
 export const DERIVATION = get("derivation");
 export const FRESHNESS = get("freshness");
-export const TRANSPORT_MODES = get("transport_mode");
+const TRANSPORT_MODES = get("transport_mode");
 export const DUTY_HOLDER_CLASSES = get("duty_holder_class");
 export const PEDIGREE_AXES: readonly string[] = data.pedigree_axes;
 export const REFRESH_PERIOD_DAYS: Readonly<Record<string, number | null>> = data.refresh_period_days;
 
 const byOrder = (a: VocabEntry, b: VocabEntry) => (a.order ?? 0) - (b.order ?? 0);
 const modes = Object.values(TRANSPORT_MODES).sort(byOrder);
-export const MODE_CODES: readonly string[] = modes.map((m) => m.code);
 /** Modes a single leg, and therefore an emission factor, may carry (excludes `multimodal`). */
 export const LEG_MODE_CODES: readonly string[] = modes.filter((m) => !m.corridorOnly).map((m) => m.code);
 
@@ -83,16 +82,6 @@ export function weakestOriginClass(codes: Iterable<string> | null | undefined): 
 }
 
 export const citableAsFact = (code: string): boolean => ORIGIN_CLASS[code]?.citableAsFact === true;
-export const admissibleInCalculation = (code: string): boolean => ORIGIN_CLASS[code]?.admissibleInCalculation === true;
-
-/** Errors for a pedigree score: all five axes present, each an integer 1..5. Empty means valid. */
-export function validatePedigree(p: unknown): string[] {
-  if (!p || typeof p !== "object") return ["pedigree must be an object with all five axes"];
-  return PEDIGREE_AXES.filter((axis) => {
-    const v = (p as Record<string, unknown>)[axis];
-    return !(Number.isInteger(v) && (v as number) >= 1 && (v as number) <= 5);
-  }).map((axis) => `${axis} must be an integer 1..5`);
-}
 
 /** Canonical transport mode (`ocean` is canonical; `sea` and `maritime` are input aliases, never stored), or null. Never guesses. */
 export function normaliseMode(value: unknown): string | null {

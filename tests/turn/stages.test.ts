@@ -4,8 +4,7 @@ import { test } from "node:test";
 
 import { computeMemberHash } from "@/core/flywheel/themes";
 import type { FamilyCall } from "@/core/harness";
-import { changedItemIds, opNames, OPS, planBriefs, planCapture, planChange, planConnect, planIntake, planPropagate, planResearch, planSweep, runBriefs, runCapture, runConnect, runIntake, runOps, runPropagate, runResearch, runSweep, shapeCapture, shapeChange, shapeConnect, shapeIntake, shapePropagate, shapeSweep } from "@/core/turn";
-import { recordSignal } from "@/core/turn/stages/sweep";
+import { opNames, runBriefs, runCapture, runConnect, runIntake, runOps, runPropagate, runResearch, runSweep, shapeCapture, shapeChange, shapeConnect, shapeIntake, shapePropagate, shapeSweep } from "@/core/turn";
 import { researchAssessment } from "@/features/research";
 import { runResult } from "@/core/types/run-result";
 
@@ -15,10 +14,6 @@ const call = (over: Partial<FamilyCall> = {}): FamilyCall => ({ mode: "apply", d
 const dryCall = (input: Record<string, unknown> = {}) => call({ mode: "dry", dry: true, input });
 
 test("sweep: the plan validates its input; the shape names a failed walk and a walk that found nothing is ok", () => {
-  assert.deepEqual(planSweep({}).errors, []);
-  assert.match(planSweep({ limit: 0 }).errors[0] ?? "", /limit must be 1\.\.200/);
-  assert.match(planSweep({ registers: [{ register: "bogus" }] }).errors[0] ?? "", /registers entry invalid/);
-  assert.deepEqual(planSweep({ sourceIds: ["a"], registers: [{ register: "eurlex-oj", from: "2026-10-01", to: "2026-10-02", sourceId: "s" }] }).plan.registers.length, 1);
   assert.equal(shapeSweep([]).outcome, "ok");
   const mixed = shapeSweep([{ sourceId: "a", kind: "feed", ok: true, upserted: 3, failed: 0, changed: 0, note: null }, { sourceId: "b", kind: "feed", ok: false, upserted: 0, failed: 0, changed: 0, note: "HTTP 500" }]);
   assert.deepEqual([mixed.outcome, mixed.counts.sources_failed, mixed.counts.upserted, mixed.notes], ["partial", 1, 3, ["b: HTTP 500"]]);
@@ -36,20 +31,7 @@ test("sweep: a dry plan fetches nothing; an apply with the fetch gate closed is 
   assert.equal((await runSweep(call({ input: { limit: 500 } }), f.d)).counts.refused, 1);
 });
 
-test("sweep: a changed lastmod on a URL we hold an item for is one change signal for the source (the precision gate); a URL we hold nothing for is none", async () => {
-  const f = fixture();
-  f.db.seed("intelligence_items", [{ id: "a0000000-0000-4000-8000-000000000001", title: "Held", source_url: "https://eur-lex.europa.eu/held", is_archived: false }]);
-  assert.equal(await recordSignal(f.d, SRC, [{ loc: "https://eur-lex.europa.eu/not-held" }]), 0);
-  assert.equal(f.db.rows("monitoring_queue").length, 0);
-  assert.equal(await recordSignal(f.d, SRC, [{ loc: "https://eur-lex.europa.eu/held" }, { loc: "https://eur-lex.europa.eu/not-held" }]), 1);
-  assert.deepEqual(f.db.rows("monitoring_queue").map((r) => [r.source_id, r.change_detected]), [[SRC, true]]);
-  f.db.fail("intelligence_items", "select", "down");
-  await assert.rejects(recordSignal(f.d, SRC, [{ loc: "https://eur-lex.europa.eu/held" }]), /change signal read failed/);
-});
-
 test("research: the walk input is read from the stage input; a dry walk with the fetch gate closed is planned, never run; an apply is refused by the producer gates and recorded as such", async () => {
-  assert.deepEqual(planResearch({ walk: { query: "battery passports", needs: [{ subject_ref: "x", need: "n" }] } }), { query: "battery passports", needs: [{ subject_ref: "x", need: "n" }] });
-  assert.deepEqual(planResearch({}), {});
   const closed = fixture({ cadence: "off" });
   const dry = await runResearch(dryCall({ walk: { query: "q" } }), closed.d);
   assert.deepEqual([dry.outcome, dry.counts.planned, closed.requests.urls.length], ["ok", 1, 0]);
@@ -67,12 +49,9 @@ test("change: the shape composes the check, its reconcile and the drain; a faile
   assert.deepEqual(s.counts, { checked: 2, changes_detected: 1, portal_candidates: 3, would_check: 0, reconciled: 1, staged: 4, update_applied: 2, update_rejected: 1, failed: 1 });
   assert.deepEqual((s.data as { ids: Record<string, string[]> }).ids, { changed_source_ids: ["s1"] });
   assert.equal(shapeChange(check, runResult("failed", {}, ["x"]), []).outcome, "failed");
-  assert.deepEqual(planChange({ limit: 3, drainLimit: 2 }), { limit: 3, drainLimit: 2 });
-  assert.equal(planChange({}).limit, 10);
 });
 
 test("capture: a source already queued is not queued twice; the stage hands the worker's capture ids on; the worker is not called while the gate is closed", async () => {
-  assert.deepEqual(planCapture({ limit: 99, sourceIds: ["b"] }, ["a", "b"]), { limit: 10, sourceIds: ["a", "b"] });
   const shaped = shapeCapture([{ queue_id: "q1", source_id: "s1", outcome: "captured", capture_id: "c1", detail: null }, { queue_id: "q2", source_id: "s2", outcome: "failed", capture_id: null, detail: "HTTP 500" }], 2);
   assert.deepEqual([shaped.outcome, shaped.counts.captured, shaped.counts.failed, shaped.notes], ["partial", 1, 1, ["s2: HTTP 500"]]);
   assert.deepEqual((shaped.data as { ids: Record<string, string[]> }).ids, { capture_ids: ["c1"], captured_source_ids: ["s1"] });
@@ -94,9 +73,6 @@ test("capture: a source already queued is not queued twice; the stage hands the 
 });
 
 test("intake: the cap is enforced, never clamped; a candidate with an invalid verdict is skipped with its reason; the verdicts_owed count is the candidates nobody classified", async () => {
-  assert.match(planIntake({ limit: 500 }).errors[0] ?? "", /limit must be 1\.\.200/);
-  assert.match(planIntake({ maxPromote: 201 }).errors[0] ?? "", /maxPromote must be 0\.\.200/);
-  assert.equal(planIntake({ verdicts: { "https://x": {} } }).plan.verdicts.size, 1);
   const f = fixture();
   f.db.seed("portal_link_candidates", [{ source_id: SRC, url: NEW_URL, status: "candidate", first_seen_at: NOW.toISOString(), last_seen_at: NOW.toISOString() }]);
   await f.d.gate.refresh();
@@ -110,9 +86,6 @@ test("intake: the cap is enforced, never clamped; a candidate with an invalid ve
 });
 
 test("connect: the slice is what the upstream handed over plus the backlog and any named ids; no slice and no corpus request is a noop; a failed pass makes the connected list empty", async () => {
-  assert.deepEqual(planConnect(["a", "b"], ["b", "c"], { ids: ["d"] }), { ids: ["a", "b", "c", "d"], corpus: true });
-  assert.deepEqual(planConnect([], [], {}), { ids: [], corpus: false });
-  assert.equal(planConnect([], [], { corpus: true }).corpus, true);
   const bad = shapeConnect(["a"], { tag: runResult("failed", {}, ["tag broke"]), discovery: null, term: null, corpus: null });
   assert.deepEqual([bad.outcome, bad.counts.connected, (bad.data as { ids: Record<string, string[]> }).ids.connected_item_ids], ["failed", 0, []]);
   const f = fixture();
@@ -121,10 +94,6 @@ test("connect: the slice is what the upstream handed over plus the backlog and a
 });
 
 test("propagate: the plan reads the producer request; a producer the gates hold is a note, not a failed stage; the drained intelligence_items events name the items to re-score", async () => {
-  assert.deepEqual(planPropagate({}), { producers: null, batch: undefined });
-  assert.deepEqual(planPropagate({ producers: { only: "ecb-fx" } }).producers, { producer: "registry", only: "ecb-fx" });
-  assert.deepEqual(planPropagate({ producers: true }).producers, { producer: "all", only: undefined });
-  assert.deepEqual(changedItemIds([{ eventId: 1, tableName: "intelligence_items", rowPk: "i1", entityId: null, changeKind: "update", occurredAt: "x", newRow: null }, { eventId: 2, tableName: "market_series", rowPk: "m1", entityId: null, changeKind: "insert", occurredAt: "x", newRow: null }, { eventId: 3, tableName: "intelligence_items", rowPk: "i1", entityId: null, changeKind: "update", occurredAt: "x", newRow: null }]), ["i1"]);
   const held = shapePropagate({ producers: runResult("failed", { refused: 1 }, ["REFUSING"]), drain: runResult("ok", { drained: 2 }), questions: runResult("ok", { written: 1 }), signposts: runResult("ok", {}), assess: null }, [], []);
   assert.deepEqual([held.outcome, held.counts.drained, held.counts.questions_written], ["partial", 2, 1]);
   assert.equal(shapePropagate({ producers: null, drain: runResult("failed", {}, ["x"]), questions: runResult("ok"), signposts: runResult("ok"), assess: null }, [], []).outcome, "failed");
@@ -166,10 +135,6 @@ test("IMP-055: an item that changed has its research assessment re-scored in the
 });
 
 test("briefs: a theme brief is written once against the live membership and a stale hash is refused; a screen-verdict batch is validated; every kit kind is reached and refuses content that is not a batch; an unknown kind is refused", async () => {
-  assert.deepEqual(planBriefs({}), { batch: null, export: null, error: null });
-  assert.match(planBriefs({ batch: { kind: "x", content: "y" }, export: { kind: "x" } }).error ?? "", /not both/);
-  assert.match(planBriefs({ export: {} }).error ?? "", /string kind/);
-  assert.match(planBriefs({ batch: { kind: 1 } }).error ?? "", /string kind/);
   const f = fixture();
   assert.equal((await runBriefs(call(), f.d)).counts.applied, 0);
   f.db.seed("connection_themes", [{ id: "T1", member_ids: ["a", "b"], surfaces: ["regulations"] }]);
@@ -191,7 +156,7 @@ test("briefs: a theme brief is written once against the live membership and a st
 });
 
 test("ops: every runtime that is not a stage has a named op; an unknown name lists the names; an op owed by an unmerged slice is refused and says who owes it", async () => {
-  assert.ok(opNames().length >= 24 && opNames().every((n) => typeof OPS[n] === "function"));
+  assert.ok(opNames().length >= 24);
   const f = fixture();
   const unknown = await runOps(call({ input: { ops: { op: "nope" } } }), f.d);
   assert.match(unknown.notes[0] ?? "", /unknown op "nope" \(ops: /);

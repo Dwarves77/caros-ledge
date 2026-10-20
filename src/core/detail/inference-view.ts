@@ -7,11 +7,11 @@ import type { Db } from "@/core/db";
 import { fetchAllByIdChunks } from "@/core/db";
 import { detailHref } from "@/core/lists";
 
-export const CUSTOMER_INFERENCE_METHOD_IDS: readonly string[] = ["infer-from-question"];
-export const INFERENCE_READ_CAP = 20;
-export const MAX_VISIBLE_INFERENCES = 5;
+const CUSTOMER_INFERENCE_METHOD_IDS: readonly string[] = ["infer-from-question"];
+const INFERENCE_READ_CAP = 20;
+const MAX_VISIBLE_INFERENCES = 5;
 /** The four product questions in the words a customer reads, keyed by the token a trigger-question ref ends in. */
-export const PRODUCT_QUESTION_WORDS: Readonly<Record<string, string>> = {
+const PRODUCT_QUESTION_WORDS: Readonly<Record<string, string>> = {
   what: "What changed?",
   affects_me: "Does this apply to me?",
   comply: "What must be done in response, and by when?",
@@ -47,22 +47,15 @@ export interface InferenceView {
   hrefs: Record<string, string>;
 }
 
-export function questionInWords(ref: unknown): string | null {
+function questionInWords(ref: unknown): string | null {
   if (typeof ref !== "string" || !ref.trim()) return null;
   const token = ref.trim().split(":").pop() ?? "";
   return PRODUCT_QUESTION_WORDS[token] ?? null;
 }
-export const isCustomerInferenceMethod = (methodId: unknown): boolean => typeof methodId === "string" && CUSTOMER_INFERENCE_METHOD_IDS.includes(methodId);
-
-/** The rows no other row supersedes. */
-export function currentInferenceRows<T extends { inference_id?: unknown; supersedes?: unknown }>(rows: readonly T[] | null | undefined): T[] {
-  const list = rows ?? [];
-  const superseded = new Set(list.map((r) => r?.supersedes).filter((x): x is string => typeof x === "string"));
-  return list.filter((r) => !!r && typeof r.inference_id === "string" && !superseded.has(r.inference_id));
-}
+const isCustomerInferenceMethod = (methodId: unknown): boolean => typeof methodId === "string" && CUSTOMER_INFERENCE_METHOD_IDS.includes(methodId);
 
 /** Rows to views: current, admissible, allowlisted, cited, newest first, capped. */
-export function selectCurrentInferences(rows: readonly InferenceRow[] | null | undefined, supersededIds: ReadonlySet<string> = new Set()): InferenceClaimView[] {
+function selectCurrentInferences(rows: readonly InferenceRow[] | null | undefined, supersededIds: ReadonlySet<string> = new Set()): InferenceClaimView[] {
   const out: InferenceClaimView[] = [];
   for (const r of rows ?? []) {
     if (!r || typeof r.inference_id !== "string" || typeof r.claim_text !== "string" || !r.claim_text.trim()) continue;
@@ -83,7 +76,7 @@ export function selectCurrentInferences(rows: readonly InferenceRow[] | null | u
 }
 
 /** A claim keeps only the citations the reader can open (a title is known), and is dropped when none remain. */
-export function restrictToVisibleCitations(views: readonly InferenceClaimView[], titles: Record<string, string>): InferenceClaimView[] {
+function restrictToVisibleCitations(views: readonly InferenceClaimView[], titles: Record<string, string>): InferenceClaimView[] {
   return views.map((v) => ({ ...v, citedItemIds: v.citedItemIds.filter((id) => typeof titles[id] === "string" && titles[id].trim()) })).filter((v) => v.citedItemIds.length > 0);
 }
 export const pickVisibleInferences = <T>(views: readonly T[] | null | undefined, isAdmissible: (v: T) => boolean): T[] => (views ?? []).filter(isAdmissible).slice(0, MAX_VISIBLE_INFERENCES);

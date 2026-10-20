@@ -2,7 +2,7 @@
 // A figure carries its literal, its exact decimal value (scale applied), its unit and kind, the significant digits the source printed, and the
 // qualifiers the source states beside it: boundary (WTW/WTT/TTW), GWP set, distance and mass basis, Scope 3 category, method, hub kind, framework.
 // Locale is decided once per document (locale.ts); the unit set, scales and qualifier phrases are data (./data).
-import { LOCALES, MINUS_CLASS, MISSING_FILE, QUALIFIER_FILE, SCALE_ALTERNATION, SCALE_BY_WORD } from "./data";
+import { LOCALES, MINUS_CLASS, QUALIFIER_FILE, SCALE_ALTERNATION, SCALE_BY_WORD } from "./data";
 import { decToString, parseDec, shiftDec, sigDigitsOf, type Dec } from "./decimal";
 import { interpretNumber, resolveLocale, scanNumbers, type Interpreted, type LocaleVerdict, type NumberToken } from "./locale";
 import { kindOf, matchUnit, moneyBefore, type UnitParts } from "./unit";
@@ -40,11 +40,9 @@ export interface Hit { start: number; end: number; result: Figure | Refusal }
 export interface ParseOptions { locale?: string | null; verdict?: LocaleVerdict; /** a table that declares what a token means (the IMO dash is "not_set") overrides the data default for that literal */ missingAs?: Record<string, string> }
 
 export const isFigure = (p: Parsed): p is Figure => "value" in p;
-export const isRefusal = (p: Parsed): p is Refusal => "refused" in p;
 
 const SCALE = new RegExp(`^\\s?(?<sc>${SCALE_ALTERNATION})(?![A-Za-z0-9])`, "i");
 const MINUS_BEFORE = new RegExp(`(?:^|[\\s(])[${MINUS_CLASS}]$`);
-const MISSING = new Map(MISSING_FILE.tokens.map((t) => [t.literal, t.kind] as const));
 const QUALIFIED_DIMS = new Set(QUALIFIER_FILE.qualifiedDims);
 const FIELDS = Object.entries(QUALIFIER_FILE.fields).map(([field, values]) => ({ field, values: Object.entries(values).map(([value, pats]) => ({ value, re: new RegExp(pats.join("|"), "gi") })) }));
 
@@ -146,14 +144,3 @@ export function findFigures(text: string, opts: ParseOptions = {}): Hit[] {
   return hits;
 }
 
-/** One figure from one cell or sentence: a typed missing value ("TBM", "N/A", a dash, "not_set", "M"), a figure, or a refusal naming why not. */
-export function parseFigure(text: string, opts: ParseOptions = {}): Parsed {
-  const t = text.trim();
-  const miss = opts.missingAs?.[t] ?? MISSING.get(t);
-  if (miss) return { missing: miss, literal: t };
-  const hits = findFigures(t, opts);
-  const first = hits[0];
-  if (!first) return { refused: true, reason: "no figure with a unit from the closed set", literal: t };
-  if (hits.length > 1) return { refused: true, reason: `${hits.length} figures in one cell: parse one figure at a time`, literal: t };
-  return first.result;
-}

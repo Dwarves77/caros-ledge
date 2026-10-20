@@ -15,7 +15,7 @@ const WRITTEN = /(written|inserted|minted|raised|closed)$/;
 const sumWritten = (counts: Record<string, number>): number => Object.entries(counts).reduce((n, [k, v]) => n + (WRITTEN.test(k) && Number.isFinite(v) ? v : 0), 0);
 
 /** The slice to connect: what the upstream handed over plus the backlog. Pure. */
-export function planConnect(upstreamIds: readonly string[], backlog: readonly string[], input: Record<string, unknown>): { ids: string[]; corpus: boolean } {
+function planConnect(upstreamIds: readonly string[], backlog: readonly string[], input: Record<string, unknown>): { ids: string[]; corpus: boolean } {
   const own = Array.isArray(input.ids) ? input.ids.filter((x): x is string => typeof x === "string") : [];
   const ids = [...new Set([...upstreamIds, ...backlog, ...own])];
   return { ids, corpus: ids.length > 0 || input.corpus === true };

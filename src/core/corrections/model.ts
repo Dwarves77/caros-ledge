@@ -5,7 +5,7 @@ import type { Db } from "@/core/db";
 import { fetchAllByIdChunks, fetchAllRows } from "@/core/db";
 import { isUuid } from "@/core/http/parse";
 
-export const TARGET_KINDS = ["fact", "tag", "connection", "section_text", "full_brief"] as const;
+const TARGET_KINDS = ["fact", "tag", "connection", "section_text", "full_brief"] as const;
 export type TargetKind = (typeof TARGET_KINDS)[number];
 const OPS_BY_KIND: Readonly<Record<TargetKind, readonly string[]>> = {
   fact: ["suppress", "replace"],
@@ -38,7 +38,7 @@ export interface ClaimRef {
 }
 
 /** `topic_tags:emissions` to its column and tag; null when the ref is not that shape. */
-export function parseTagRef(ref: unknown): { column: TagColumn; tag: string } | null {
+function parseTagRef(ref: unknown): { column: TagColumn; tag: string } | null {
   if (typeof ref !== "string") return null;
   const i = ref.indexOf(":");
   if (i <= 0) return null;
@@ -47,7 +47,7 @@ export function parseTagRef(ref: unknown): { column: TagColumn; tag: string } | 
   return (TAG_COLUMNS as readonly string[]).includes(column) && tag.trim() !== "" ? { column: column as TagColumn, tag } : null;
 }
 
-export const activeCorrections = (rows: readonly Correction[] | null | undefined): Correction[] => (rows ?? []).filter((r) => r && (r.revoked_at === null || r.revoked_at === undefined));
+const activeCorrections = (rows: readonly Correction[] | null | undefined): Correction[] => (rows ?? []).filter((r) => r && (r.revoked_at === null || r.revoked_at === undefined));
 
 const newer = (a: Correction, b: Correction): boolean => {
   const ta = Date.parse(a.created_at ?? "") || 0;

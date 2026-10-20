@@ -8,9 +8,9 @@ import { readDrainSwitch, type DrainSwitchState } from "@/core/drain/switch";
 
 import { DEFAULT_MODE, DRAIN_KINDS, KIND_ORDER, kindModes, nextBatchPath, resolveKind, type DrainKind, type ExportResult, type Exporter, type Item } from "./kinds";
 
-export const PLAN_SCHEMA = "judgement-drain-plan-1";
+const PLAN_SCHEMA = "judgement-drain-plan-1";
 const LEASE_LANE = "judgement-drain";
-export const LEASE_STALE_SECONDS = 3 * 60 * 60;
+const LEASE_STALE_SECONDS = 3 * 60 * 60;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const DATE_KEYS = ["created_at", "first_seen_at", "discovered_at", "pending_since"];
 
@@ -33,7 +33,7 @@ export interface DrainPlan {
   totals: { kinds_planned: number; batches: number; items: number; leases_held: number };
 }
 
-export function earliestPending(items: readonly Item[]): string | null {
+function earliestPending(items: readonly Item[]): string | null {
   let best: string | null = null;
   for (const it of items) for (const k of DATE_KEYS) {
     const v = it?.[k];
@@ -42,12 +42,12 @@ export function earliestPending(items: readonly Item[]): string | null {
   return best;
 }
 /** Oldest pending first; kinds with no dated item after those with one; ties by the fixed kind order. */
-export function orderKinds<T extends { id: string; earliest: string | null }>(rows: readonly T[]): T[] {
+function orderKinds<T extends { id: string; earliest: string | null }>(rows: readonly T[]): T[] {
   const rank = (id: string) => { const i = KIND_ORDER.indexOf(id); return i === -1 ? KIND_ORDER.length : i; };
   return [...rows].sort((a, b) => (a.earliest && b.earliest && a.earliest !== b.earliest ? Date.parse(a.earliest) - Date.parse(b.earliest) : a.earliest && !b.earliest ? -1 : !a.earliest && b.earliest ? 1 : rank(a.id) - rank(b.id)));
 }
 /** Items whose committed verdict is under a prompt_version other than the live one, oldest first. */
-export function selectStaleItems(items: readonly Item[], currentVersion: string): Item[] {
+function selectStaleItems(items: readonly Item[], currentVersion: string): Item[] {
   const t = (v: unknown) => { const n = Date.parse(String(v)); return Number.isNaN(n) ? Infinity : n; };
   return items.filter((it) => typeof it?.verdict_prompt_version === "string" && it.verdict_prompt_version !== currentVersion).sort((a, b) => t(a.first_seen_at) - t(b.first_seen_at) || String(a.candidate_id ?? a.id ?? "").localeCompare(String(b.candidate_id ?? b.id ?? "")));
 }

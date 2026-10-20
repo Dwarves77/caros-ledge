@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { cachedRead, type CacheStore } from "@/core/cache";
-import { JURISDICTION_WEIGHTS, sectorWeight, urgencyScore } from "@/core/urgency/scoring";
+import { urgencyScore } from "@/core/urgency/scoring";
 
 const base = { daysToNext: null, jurisdiction: "eu", verticals: [] as string[] };
 
@@ -28,7 +28,6 @@ test("the time weight is 365 / days capped at 5 and floored at one day; no date 
 
 test("the jurisdiction weight: platform default, a workspace override on top, 0.5 for one no table names, case-insensitive", () => {
   const at = (jurisdiction: string | null, ctx = {}) => urgencyScore({ priority: "CRITICAL", daysToNext: null, jurisdiction, verticals: [] }, ctx);
-  assert.equal(JURISDICTION_WEIGHTS.eu, 1);
   assert.equal(at("EU"), 4);
   assert.equal(at("US"), 3.8, "us weighs 0.9: 4 x (0.5 + 0.9 x 0.5)");
   assert.equal(at("atlantis"), 3, "an unlisted jurisdiction weighs 0.5: 4 x (0.5 + 0.5 x 0.5)");
@@ -37,12 +36,12 @@ test("the jurisdiction weight: platform default, a workspace override on top, 0.
 });
 
 test("the sector weight: 1 for no profile, 1 direct, 0.6 for a general rule, 0.3 adjacent, 0.1 unrelated", () => {
-  assert.equal(sectorWeight(["fine-art"], []), 1);
-  assert.equal(sectorWeight(["fine-art"], ["fine-art", "pharma"]), 1);
-  assert.equal(sectorWeight([], ["fine-art"]), 0.6);
-  assert.equal(sectorWeight(["luxury-goods"], ["fine-art"]), 0.3, "luxury goods are adjacent to fine art");
-  assert.equal(sectorWeight(["mining-minerals"], ["fine-art"]), 0.1);
-  assert.equal(urgencyScore({ ...base, priority: "CRITICAL", verticals: ["mining-minerals"] }, { sectors: ["fine-art"] }), 0.4, "the same item ranks differently for another sector");
+  const sector = (verticals: string[], sectors: string[]) => urgencyScore({ ...base, priority: "CRITICAL", verticals }, { sectors });
+  assert.equal(sector(["fine-art"], []), 4);
+  assert.equal(sector(["fine-art"], ["fine-art", "pharma"]), 4);
+  assert.equal(sector([], ["fine-art"]), 2.4);
+  assert.equal(sector(["luxury-goods"], ["fine-art"]), 1.2, "luxury goods are adjacent to fine art");
+  assert.equal(sector(["mining-minerals"], ["fine-art"]), 0.4, "the same item ranks differently for another sector");
 });
 
 /** A map-backed stand-in for the cache underneath: an entry is stored only when the read resolved. */

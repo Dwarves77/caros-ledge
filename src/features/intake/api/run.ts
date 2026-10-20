@@ -12,7 +12,7 @@ import { parseJson } from "@/core/http/parse";
 import type { IntakeDeps } from "../deps";
 import { startBriefWorkflow, type InjectedBrief } from "../workflow";
 
-export const COOLDOWN_MS = 60 * 60 * 1000;
+const COOLDOWN_MS = 60 * 60 * 1000;
 
 /** P2-08 wires the real dependency graph; until then the route answers 503 rather than running against nothing. */
 let factory: ((sb: Db) => IntakeDeps) | null = null;

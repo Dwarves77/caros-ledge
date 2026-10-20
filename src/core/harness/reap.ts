@@ -5,8 +5,8 @@ import type { Db } from "@/core/db";
 /** The reason a started run's row carries until it concludes. Legacy rows (outcome `unknown`, migration 0008) carry no such reason and are never touched. */
 export const IN_PROGRESS = "in progress";
 /** Longer than a job may run (30 minutes) and than the brief-apply in-flight guard waits (60), so a run still going is never reaped. */
-export const RUN_LEASE_MS = 2 * 60 * 60 * 1000;
-export const CRASHED = "crashed";
+const RUN_LEASE_MS = 2 * 60 * 60 * 1000;
+const CRASHED = "crashed";
 
 /** Close the started-and-never-concluded rows older than the lease. Returns how many were closed; a failed update throws (an unreapable ledger is not a quiet one). */
 export async function reapStaleRuns(sb: Db, now: Date, leaseMs: number = RUN_LEASE_MS): Promise<number> {

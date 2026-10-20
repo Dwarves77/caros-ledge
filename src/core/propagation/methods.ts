@@ -32,9 +32,9 @@ export type MethodFn = (ctx: MethodContext) => Promise<MethodResult> | MethodRes
 export type InferenceFn = (ctx: MethodContext) => Promise<InferenceResult> | InferenceResult;
 export type MethodTable = "derived_values" | "inference_records";
 
-export const methodKey = (methodId: string, methodVersion: string): string => `${methodId}@${methodVersion}`;
+const methodKey = (methodId: string, methodVersion: string): string => `${methodId}@${methodVersion}`;
 
-export class MethodRegistry {
+class MethodRegistry {
   private readonly derived = new Map<string, MethodFn>();
   private readonly inference = new Map<string, InferenceFn>();
   private readonly newest = new Map<string, string>();
@@ -77,7 +77,7 @@ export interface PriorInferenceRow {
 }
 
 /** Recompute an inference against its resolved inputs: HYPOTHESIS at the analysis floor, never self-labelled CONFIRMED (ADR-044). */
-export const computeInferFromQuestion: InferenceFn = (ctx) => {
+const computeInferFromQuestion: InferenceFn = (ctx) => {
   const prior = ctx.priorValue as PriorInferenceRow | null;
   const cited = Array.isArray(prior?.cited_item_ids) ? prior.cited_item_ids.filter(Boolean) : [];
   if (!prior || cited.length === 0) return { ok: false, reason: "no prior inference_records row with cited_item_ids to recompute from" };
@@ -114,7 +114,7 @@ export function confidenceFromPedigree(pedigree: number | null | undefined): num
 }
 export const lifecycleFromFactorOriginClass = (originClass: string | null | undefined): "verified" | "corroborated" => (originClass === "official" || originClass === "verified" ? "verified" : "corroborated");
 /** Verified only when EVERY input is official or verified. */
-export const lifecycleFromOriginClasses = (classes: readonly (string | null | undefined)[]): "verified" | "corroborated" => (classes.length > 0 && classes.every((oc) => oc === "official" || oc === "verified") ? "verified" : "corroborated");
+const lifecycleFromOriginClasses = (classes: readonly (string | null | undefined)[]): "verified" | "corroborated" => (classes.length > 0 && classes.every((oc) => oc === "official" || oc === "verified") ? "verified" : "corroborated");
 
 export interface FactorRow {
   factor_id?: string;
@@ -153,7 +153,7 @@ export function buildCarbonMethod(deps: Pick<MarketMethodDeps, "carbonIntensity"
   };
 }
 
-export function buildMarketDeltaMethod(deps: Pick<MarketMethodDeps, "computeSeriesDeltas">): MethodFn {
+function buildMarketDeltaMethod(deps: Pick<MarketMethodDeps, "computeSeriesDeltas">): MethodFn {
   return (ctx) => {
     const rows = ctx.inputs.map((i) => i.row).filter((r): r is SeriesRow => Boolean(r));
     if (rows.length < 2) return { ok: false, reason: `fewer than 2 resolvable market_series inputs (got ${rows.length})` };
@@ -168,6 +168,8 @@ export function buildMarketDeltaMethod(deps: Pick<MarketMethodDeps, "computeSeri
     return { ok: true, value: d.value, unit: deltas.latest?.unit ?? null, currency: deltas.latest?.currency ?? null, derivation: "calculated", originClass: "derived", lifecycle: lifecycleFromOriginClasses(rows.map((r) => r.origin_class)), admissibility: "calculation_ok", confidence: 0.9, halfLifeDays: null };
   };
 }
+
+export type { MethodRegistry };
 
 /** Register the two market methods on a registry once the market slice's functions are at hand. */
 export function registerMarketMethods(registry: MethodRegistry, deps: MarketMethodDeps): void {

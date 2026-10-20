@@ -13,7 +13,7 @@ import { assertPoolRowShape } from "./write-item";
 import { startBriefWorkflow, type InjectedBrief } from "./workflow";
 
 export type CycleMode = "plan" | "apply";
-export const MANUAL_INTAKE_CALLER = "manual-intake-run";
+const MANUAL_INTAKE_CALLER = "manual-intake-run";
 export interface IntakeCandidate {
   title: string;
   source_url: string;

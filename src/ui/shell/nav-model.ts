@@ -19,13 +19,12 @@ const NAV = z
   })
   .parse(navJson);
 
-export type NavCountKey = NonNullable<z.infer<typeof item>["countKey"]>;
 export const APP_NAME = NAV.appName;
 export const APP_TAGLINE = NAV.tagline;
 export const SECTIONS = NAV.sections;
 
 /** True when `pathname` is `route` or a path under it ("/auth/callback" is under "/auth"; "/author" is not). */
-export const underRoute = (pathname: string, route: string): boolean => (route === "/" ? pathname === "/" : pathname === route || pathname.startsWith(`${route}/`));
+const underRoute = (pathname: string, route: string): boolean => (route === "/" ? pathname === "/" : pathname === route || pathname.startsWith(`${route}/`));
 export const isActivePath = (pathname: string, href: string): boolean => underRoute(pathname, href);
 
 // Longest href first, so "/map" never shadows a longer match.

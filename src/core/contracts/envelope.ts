@@ -1,7 +1,7 @@
 // Ported from old_repo/src/lib/contracts/envelope.mjs (lines 1-330)
 import { isIsoDate as isCalendarDay } from "@/core/shared/dates";
 
-import { DERIVATION, FRESHNESS, ORIGIN_CLASS, OBS_STATUS, REFRESH_PERIOD_DAYS, isMissing } from "./vocabularies";
+import { DERIVATION, ORIGIN_CLASS, OBS_STATUS, REFRESH_PERIOD_DAYS, isMissing } from "./vocabularies";
 
 export { DERIVATION };
 
@@ -126,7 +126,7 @@ export function stalenessOf(env: { expected_refresh?: string | null; as_of?: Par
 }
 
 /** Significant figures a sample of size `n` honestly supports: none or 0 gives 1, under 5 gives 2, under 30 gives 3, else 4. */
-export const significantFigures = (n: unknown): number => (!Number.isInteger(n) || (n as number) <= 0 ? 1 : (n as number) < 5 ? 2 : (n as number) < 30 ? 3 : 4);
+const significantFigures = (n: unknown): number => (!Number.isInteger(n) || (n as number) <= 0 ? 1 : (n as number) < 5 ? 2 : (n as number) < 30 ? 3 : 4);
 
 export function roundToSampleSupport(value: number | null, n: unknown): number | null {
   if (typeof value !== "number" || !Number.isFinite(value) || value === 0) return value;
@@ -151,35 +151,3 @@ export interface Propagated {
   notes: string[];
 }
 
-/** INV-173: an aggregate takes the weakest origin_class, the least contractable derivation and the worst freshness of its inputs. */
-export function propagateEnvelope(envelopes: (Partial<Envelope> | null | undefined)[] | null | undefined, nowIso: string): Propagated {
-  const list = (envelopes ?? []).filter((e): e is Partial<Envelope> => !!e);
-  const notes: string[] = [];
-  if (!list.length) return { origin_class: null, derivation: null, freshness: "unknown", count: 0, notes };
-  let origin: string | null = null;
-  for (const e of list) {
-    const entry = ORIGIN_CLASS[String(e.origin_class)];
-    if (!entry) {
-      origin = "community";
-      notes.push(`unknown origin_class ${String(e.origin_class)}: aggregate falls to community`);
-      break;
-    }
-    if (origin === null || (entry.strength ?? 0) < (ORIGIN_CLASS[origin]?.strength ?? 0)) origin = entry.code;
-  }
-  let derivation: string | null = null;
-  for (const e of list) {
-    const d = DERIVATION[String(e.derivation)];
-    if (!d) {
-      derivation = "estimated";
-      notes.push(`unknown derivation ${String(e.derivation)}: aggregate falls to estimated`);
-      break;
-    }
-    if (derivation === null || (d.order ?? 0) > (DERIVATION[derivation]?.order ?? 0)) derivation = d.code;
-  }
-  let worst = "current";
-  for (const e of list) {
-    const f = stalenessOf(e, nowIso);
-    if ((FRESHNESS[f]?.order ?? 0) > (FRESHNESS[worst]?.order ?? 0)) worst = f;
-  }
-  return { origin_class: origin, derivation, freshness: worst, count: list.length, notes };
-}

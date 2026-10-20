@@ -9,7 +9,7 @@ import type { WalkInput } from "@/features/research/walker";
 import type { BuiltDeps } from "../wiring";
 
 /** The walk input from the stage input: a topic query, the open needs and the grey-literature sources. Pure. */
-export function planResearch(input: Record<string, unknown>): WalkInput {
+function planResearch(input: Record<string, unknown>): WalkInput {
   const w = (input.walk ?? {}) as Record<string, unknown>;
   return { ...(typeof w.query === "string" ? { query: w.query } : {}), ...(Array.isArray(w.needs) ? { needs: w.needs as NonNullable<WalkInput["needs"]> } : {}), ...(Array.isArray(w.greyLit) ? { greyLit: w.greyLit as NonNullable<WalkInput["greyLit"]> } : {}) };
 }

@@ -22,7 +22,7 @@ export async function acquireLease(sb: Db, itemId: string, holder: string, lane:
   const r = first(data);
   return { acquired: r?.acquired === true, curHolder: (r?.cur_holder as string | null) ?? null };
 }
-export async function heartbeatLease(sb: Db, itemId: string, holder: string): Promise<boolean> {
+async function heartbeatLease(sb: Db, itemId: string, holder: string): Promise<boolean> {
   const { data, error } = (await sb.rpc("heartbeat_mutation_lease", { p_item: itemId, p_holder: holder })) as LeaseRpc;
   if (error) throw new Error(`heartbeat_mutation_lease failed (${itemId}): ${error.message}`);
   return first(data)?.still_held === true;
@@ -37,7 +37,7 @@ export interface KeyedItem { id: string; legacy_id: string | null; title: string
 const COLUMNS = "id, legacy_id, title, item_type, instrument_type, instrument_identifier, canonical_instrument_key, jurisdiction_iso, source_id, provenance_status";
 
 /** ONE keyed lookup: a full id, an exact legacy_id, or a legacy_id prefix that names exactly one item. */
-export async function resolveItemKey(sb: Db, key: string): Promise<{ item: KeyedItem | null; error: string | null }> {
+async function resolveItemKey(sb: Db, key: string): Promise<{ item: KeyedItem | null; error: string | null }> {
   const read = (q: (n: number) => PromiseLike<{ data: KeyedItem[] | null; error: { message: string } | null }>) => boundedRead<KeyedItem>(q as never, { limit: 3 });
   if (isUuid(key as unknown)) {
     const r = await read((n) => sb.from("intelligence_items").select(COLUMNS).eq("id", key).limit(n));

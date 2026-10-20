@@ -3,9 +3,11 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { admittedSurfaceFor, decideIdRedirect, isItemUuid, itemIdColumn, type IdRedirectDecision, type IdRedirectRow } from "@/core/detail/id-redirect";
-import { isAdmissibleItem } from "@/core/derived/admissible";
-import type { DetailSurface } from "@/core/lists";
+import { itemIdColumn, resolveIdRedirect, type IdRedirectDecision, type IdRedirectRow } from "@/core/detail/id-redirect";
+import { isUuid } from "@/core/http/parse";
+import { canonicalSurface, type DetailSurface } from "@/core/lists";
+
+import { memoryDb, type Row } from "../_support/memory-db.ts";
 
 const U = (n: number) => `aaaaaaaa-2000-4000-8000-${String(n).padStart(12, "0")}`;
 const row = (n: number, over: Partial<IdRedirectRow>): IdRedirectRow => ({ id: U(n), legacy_id: null, item_type: "regulation", domain: 1, provenance_status: "verified", is_archived: false, replaced_by: null, ...over });
@@ -23,18 +25,23 @@ const CORPUS: IdRedirectRow[] = [
   row(11, { replaced_by: U(1), legacy_id: "r1" }),
 ];
 const SURFACES: DetailSurface[] = ["regulations", "market", "operations", "research"];
+const db = memoryDb({ intelligence_items: CORPUS as unknown as Row[] }).db;
+/** The surface that admits a row: only a verified row is admitted, on the surface its raw item_type and domain map to. */
+const admittedSurfaceFor = (r: IdRedirectRow): DetailSurface | null => (r.provenance_status === "verified" ? canonicalSurface({ type: r.item_type, domain: r.domain }) : null);
+/** The decision the route reaches for a row: the resolver over the corpus database. */
+const resolved = (surface: DetailSurface, r: IdRedirectRow): Promise<IdRedirectDecision> => resolveIdRedirect(db, surface, r.id);
 
 /** The page at /<surface>/<urlId>: the verified row it renders, or none (the route would answer not-found). */
 function pageAt(rows: readonly IdRedirectRow[], surface: string, urlId: string): IdRedirectRow | null {
-  const hits = rows.filter((r) => isAdmissibleItem(r) && (r.legacy_id === urlId || (isItemUuid(urlId) && r.id === urlId)) && admittedSurfaceFor(r) === surface);
+  const hits = rows.filter((r) => r.provenance_status === "verified" && (r.legacy_id === urlId || (isUuid(urlId) && r.id === urlId)) && admittedSurfaceFor(r) === surface);
   return hits.length === 1 ? (hits[0] as IdRedirectRow) : null;
 }
 /** Every violation of the property over the corpus for a decision function. */
-function violations(rows: readonly IdRedirectRow[], decide: (s: DetailSurface, r: IdRedirectRow | null) => IdRedirectDecision): string[] {
+async function violations(rows: readonly IdRedirectRow[], decide: (s: DetailSurface, r: IdRedirectRow) => Promise<IdRedirectDecision>): Promise<string[]> {
   const out: string[] = [];
   for (const r of rows)
     for (const surface of SURFACES) {
-      const d = decide(surface, r);
+      const d = await decide(surface, r);
       const at = `/${surface}/${r.id}`;
       if (d.kind === "render") {
         if (pageAt(rows, surface, r.id)?.id !== r.id) out.push(`${at}: renders nothing`);
@@ -46,26 +53,27 @@ function violations(rows: readonly IdRedirectRow[], decide: (s: DetailSurface, r
   return out;
 }
 
-test("the id-redirect property holds over every item on every surface", () => {
-  assert.deepEqual(violations(CORPUS, decideIdRedirect), []);
+test("the id-redirect property holds over every item on every surface", async () => {
+  assert.deepEqual(await violations(CORPUS, resolved), []);
 });
 
-test("the property catches a broken decision (red first): wrong surface, an unverified item admitted, a market item rendered on /regulations", () => {
-  const wrongSurface = (s: DetailSurface, r: IdRedirectRow | null): IdRedirectDecision => (r && decideIdRedirect(s, r).kind === "redirect" ? { kind: "redirect", to: `/regulations/${r.legacy_id || r.id}` } : decideIdRedirect(s, r));
-  assert.ok(violations(CORPUS, wrongSurface).some((v) => /redirects to/.test(v)), "a redirect that always lands on /regulations is caught");
-  const admitAll = (s: DetailSurface, r: IdRedirectRow | null): IdRedirectDecision => (r && !isAdmissibleItem(r) ? { kind: "render" } : decideIdRedirect(s, r));
-  assert.ok(violations(CORPUS, admitAll).some((v) => /renders nothing/.test(v)), "an unverified item that renders is caught");
-  const renderHere = (_s: DetailSurface, r: IdRedirectRow | null): IdRedirectDecision => (r ? { kind: "render" } : { kind: "not-found" });
-  assert.ok(violations(CORPUS, renderHere).length > 0, "rendering every item on every surface is caught");
+test("the property catches a broken decision (red first): wrong surface, an unverified item admitted, a market item rendered on /regulations", async () => {
+  const wrongSurface = async (s: DetailSurface, r: IdRedirectRow): Promise<IdRedirectDecision> => {
+    const d = await resolved(s, r);
+    return d.kind === "redirect" ? { kind: "redirect", to: `/regulations/${r.legacy_id || r.id}` } : d;
+  };
+  assert.ok((await violations(CORPUS, wrongSurface)).some((v) => /redirects to/.test(v)), "a redirect that always lands on /regulations is caught");
+  const admitAll = async (s: DetailSurface, r: IdRedirectRow): Promise<IdRedirectDecision> => (r.provenance_status !== "verified" ? { kind: "render" } : resolved(s, r));
+  assert.ok((await violations(CORPUS, admitAll)).some((v) => /renders nothing/.test(v)), "an unverified item that renders is caught");
+  const renderHere = async (): Promise<IdRedirectDecision> => ({ kind: "render" });
+  assert.ok((await violations(CORPUS, renderHere)).length > 0, "rendering every item on every surface is caught");
 });
 
-test("a uuid URL for an item with a legacy slug redirects to the slug; an item with none renders at its uuid; an unverified, an archived and a replaced item are not found", () => {
-  assert.deepEqual(decideIdRedirect("regulations", CORPUS[0] as IdRedirectRow), { kind: "redirect", to: "/regulations/g14" });
-  assert.deepEqual(decideIdRedirect("regulations", CORPUS[1] as IdRedirectRow), { kind: "render" });
-  assert.deepEqual(decideIdRedirect("regulations", CORPUS[2 + 4] as IdRedirectRow), { kind: "not-found" });
-  assert.deepEqual(decideIdRedirect("regulations", CORPUS[9] as IdRedirectRow), { kind: "not-found" }, "an archived item");
-  assert.deepEqual(decideIdRedirect("regulations", CORPUS[10] as IdRedirectRow), { kind: "not-found" }, "an item another replaced");
-  assert.deepEqual(decideIdRedirect("regulations", null), { kind: "render" });
+test("a uuid URL for an item with a legacy slug redirects to the slug; an item with none renders at its uuid; an unverified item is not found", async () => {
+  assert.deepEqual(await resolved("regulations", CORPUS[0] as IdRedirectRow), { kind: "redirect", to: "/regulations/g14" });
+  assert.deepEqual(await resolved("regulations", CORPUS[1] as IdRedirectRow), { kind: "render" });
+  assert.deepEqual(await resolved("regulations", CORPUS[2 + 4] as IdRedirectRow), { kind: "not-found" });
+  assert.deepEqual(await resolveIdRedirect(db, "regulations", "g14"), { kind: "render" }, "a legacy slug renders as it is");
   assert.equal(itemIdColumn(U(1)), "id");
   assert.equal(itemIdColumn("g14"), "legacy_id");
 });

@@ -7,7 +7,7 @@ import type { Db } from "@/core/db";
 import { fetchAllByIdChunks, fetchAllRows } from "@/core/db";
 import { entityId } from "@/core/entities/id";
 
-export const ADOPTED_KINDS = ["standard", "material", "theme", "scenario", "compliance_object", "term"] as const;
+const ADOPTED_KINDS = ["standard", "material", "theme", "scenario", "compliance_object", "term"] as const;
 export type AdoptedKind = (typeof ADOPTED_KINDS)[number];
 export interface AdoptedEntry {
   key: string;
@@ -26,9 +26,9 @@ export function normaliseTermKey(text: unknown): string {
     .replace(/[\s"'`)\]}.,;:]+$/, "");
 }
 
-export const emptyAdopted = (): AdoptedVocabulary => Object.fromEntries(ADOPTED_KINDS.map((k) => [k, []])) as unknown as AdoptedVocabulary;
+const emptyAdopted = (): AdoptedVocabulary => Object.fromEntries(ADOPTED_KINDS.map((k) => [k, []])) as unknown as AdoptedVocabulary;
 
-export function groupAdoptedTerms(rows: readonly { kind?: string; term_key?: string; label?: string | null; status?: string }[] | null | undefined): AdoptedVocabulary {
+function groupAdoptedTerms(rows: readonly { kind?: string; term_key?: string; label?: string | null; status?: string }[] | null | undefined): AdoptedVocabulary {
   const out = emptyAdopted();
   const seen = new Set<string>();
   for (const r of rows ?? []) {
@@ -59,10 +59,10 @@ export async function readAdoptedVocabulary(sb: Db): Promise<AdoptedRead> {
 export const adoptedKeys = (adopted: Partial<AdoptedVocabulary> | undefined, kind: AdoptedKind): string[] => (adopted?.[kind] ?? []).map((e) => e.key);
 export const adoptedEntries = (adopted: Partial<AdoptedVocabulary> | undefined, kind: AdoptedKind): AdoptedEntry[] => adopted?.[kind] ?? [];
 
-export const ADOPTED_ENTITY_KINDS = { standard: "instrument", material: "material" } as const;
+const ADOPTED_ENTITY_KINDS = { standard: "instrument", material: "material" } as const;
 
 /** Entities for adopted standards and materials not yet held. */
-export function planAdoptedTermEntities(adopted: Partial<AdoptedVocabulary>, existingEntityIds: ReadonlySet<string> = new Set()): { entities: { entity_id: string; kind: string; canonical_name: string; status: "active" }[]; byTerm: Map<string, string> } {
+function planAdoptedTermEntities(adopted: Partial<AdoptedVocabulary>, existingEntityIds: ReadonlySet<string> = new Set()): { entities: { entity_id: string; kind: string; canonical_name: string; status: "active" }[]; byTerm: Map<string, string> } {
   const entities: { entity_id: string; kind: string; canonical_name: string; status: "active" }[] = [];
   const byTerm = new Map<string, string>();
   for (const [termKind, entityKind] of Object.entries(ADOPTED_ENTITY_KINDS) as [AdoptedKind, "instrument" | "material"][]) {

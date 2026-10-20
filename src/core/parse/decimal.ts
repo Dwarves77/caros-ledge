@@ -26,10 +26,6 @@ export function cmpDec(a: Dec, b: Dec): -1 | 0 | 1 {
   const [x, y] = align(a, b);
   return x < y ? -1 : x > y ? 1 : 0;
 }
-export function addDec(a: Dec, b: Dec): Dec {
-  const [x, y, s] = align(a, b);
-  return { n: x + y, s };
-}
 export const mulDec = (a: Dec, b: Dec): Dec => ({ n: a.n * b.n, s: a.s + b.s });
 /** a times 10^exp (exp >= 0): a scale word such as "million" */
 export const shiftDec = (a: Dec, exp: number): Dec => ({ n: a.n * pow10(exp), s: a.s });

@@ -3,11 +3,11 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { identifierRow, SCHEMES, VALIDATORS } from "@/core/entities/crosswalk";
+import { identifierRow, VALIDATORS } from "@/core/entities/crosswalk";
 import { canonicalJurisdictionCode, corridorSeed, entityId, hostFromUrl } from "@/core/entities/id";
 import { assertEntityId, parseCorridorName } from "@/core/entities/kinds";
 import { LINEAGE_GAP_CREATED_BY, partitionLineageWrites, planLineageGapTargets } from "@/core/entities/lineage";
-import { assertMoatBoundary, classifyRelationship, detectMentions, planLinkWrites } from "@/core/entities/mentions";
+import { assertMoatBoundary, planLinkWrites } from "@/core/entities/mentions";
 import { distinctNormalized, planJurisdiction } from "@/core/entities/plan";
 import { congruence, sourceRole } from "@/core/entities/source-role";
 import { formatCorridorLabel } from "@/core/entities/unlocode-names";
@@ -45,7 +45,6 @@ test("jurisdiction aliases: UK is GB, EL is GR", () => {
 });
 
 test("the crosswalk validates check digits and refuses a blank asserter or an unknown scheme", () => {
-  assert.equal(SCHEMES.length, 17);
   assert.equal(VALIDATORS.LEI("5493001KJTIIGC8Y1R12"), true);
   assert.equal(VALIDATORS.LEI("5493001KJTIIGC8Y1R13"), false);
   assert.equal(VALIDATORS.IMO_SHIP("9074729"), true);
@@ -77,13 +76,12 @@ test("INV-206 partition: manual and foreign generic claims are skipped, a differ
 });
 
 test("mentions: identifiers, the lineage cue decides the type, the moat boundary admits only edges and flags", () => {
-  const ms = detectMentions("This amends Regulation (EU) 2023/1805 and cites 2024/825.");
-  assert.ok(ms.some((m) => m.canonical.includes("2023/1805")));
-  assert.equal(classifyRelationship("This Regulation, amending Regulation (EU) 2023/1805, ...", "Regulation (EU) 2023/1805", "T").relationship, "amends");
-  assert.equal(classifyRelationship("See Regulation (EU) 2023/1805.", "Regulation (EU) 2023/1805", "T").relationship, "related");
   const corpus = [{ id: "p", title: "FuelEU Maritime", instrument_identifier: "Regulation (EU) 2023/1805" }, { id: "s", title: "Guidance", instrument_identifier: null }];
-  const writes = planLinkWrites("This guidance, implementing Regulation (EU) 2023/1805, covers ships.", corpus, "s");
-  assert.equal(writes.find((w) => w.table === "item_cross_references")?.row.relationship, "implements");
+  const typed = (text: string) => planLinkWrites(text, corpus, "s").find((w) => w.table === "item_cross_references")?.row;
+  assert.equal(typed("This amends Regulation (EU) 2023/1805 and cites 2024/825.")?.target_item_id, "p", "the identifier in the text is the item that holds it");
+  assert.equal(typed("This Regulation, amending Regulation (EU) 2023/1805, ...")?.relationship, "amends");
+  assert.equal(typed("See Regulation (EU) 2023/1805.")?.relationship, "related");
+  assert.equal(typed("This guidance, implementing Regulation (EU) 2023/1805, covers ships.")?.relationship, "implements");
   assert.throws(() => assertMoatBoundary([{ table: "section_claim_provenance" }]), /moat boundary/);
 });
 

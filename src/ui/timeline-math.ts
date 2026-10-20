@@ -40,9 +40,9 @@ const utcMidnight = (iso: string): number => {
   return Date.UTC(y ?? 1970, (m || 1) - 1, d || 1);
 };
 /** Whole UTC days from `fromIso` to `targetIso`; both are passed in (nothing reads the clock). */
-export const daysBetween = (targetIso: string, fromIso: string): number => Math.round((utcMidnight(targetIso) - utcMidnight(fromIso)) / 86_400_000);
+const daysBetween = (targetIso: string, fromIso: string): number => Math.round((utcMidnight(targetIso) - utcMidnight(fromIso)) / 86_400_000);
 
-export function daysPhrase(days: number): string {
+function daysPhrase(days: number): string {
   if (days === 0) return "today";
   if (days > 0) return `in ${days} day${days === 1 ? "" : "s"}`;
   return `${Math.abs(days)} day${Math.abs(days) === 1 ? "" : "s"} ago`;

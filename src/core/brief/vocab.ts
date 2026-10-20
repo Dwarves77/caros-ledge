@@ -5,21 +5,20 @@
 // labels and the month table.
 import { CAPS, DB_SEVERITY_EXTRA, PRIORITIES, SEVERITIES, SIGNAL_BANDS, THEMES, URGENCY_TIERS, FORMAT_TYPES, type AdoptedTerms } from "./contract";
 
-export const SEVERITY_DISPLAY_TO_DB: Readonly<Record<string, string>> = Object.fromEntries(SEVERITIES.map((s) => [s.label, s.db]));
+const SEVERITY_DISPLAY_TO_DB: Readonly<Record<string, string>> = Object.fromEntries(SEVERITIES.map((s) => [s.label, s.db]));
 export const SEVERITY_TO_PRIORITY: Readonly<Record<string, string>> = Object.fromEntries(SEVERITIES.map((s) => [s.label, s.priority]));
-export const SEVERITY_DB_TO_DISPLAY: Readonly<Record<string, string>> = Object.fromEntries(SEVERITIES.map((s) => [s.db, s.label]));
 
 export const DB_SEVERITY_VALUES: ReadonlySet<string> = new Set([...SEVERITIES.map((s) => s.db), ...DB_SEVERITY_EXTRA]);
 export const DB_PRIORITY_VALUES: ReadonlySet<string> = new Set(PRIORITIES);
 export const DB_URGENCY_TIER_VALUES: ReadonlySet<string> = new Set(URGENCY_TIERS);
 export const DB_FORMAT_TYPE_VALUES: ReadonlySet<string> = new Set(FORMAT_TYPES);
 export const DB_SIGNAL_BAND_VALUES: ReadonlySet<string> = new Set(SIGNAL_BANDS);
-export const DB_THEME_VALUES: ReadonlySet<string> = new Set(THEMES);
+const DB_THEME_VALUES: ReadonlySet<string> = new Set(THEMES);
 
 /** The stored token of an adopted theme: whitespace runs become one underscore. */
-export const themeToken = (key: string): string => String(key ?? "").trim().replace(/\s+/g, "_");
+const themeToken = (key: string): string => String(key ?? "").trim().replace(/\s+/g, "_");
 export const adoptedThemeTokens = (adopted: AdoptedTerms | undefined): string[] => (adopted?.theme ?? []).map((e) => themeToken(e.key));
-export const adoptedKeys = (adopted: AdoptedTerms | undefined, kind: keyof AdoptedTerms): string[] => (adopted?.[kind] ?? []).map((e) => e.key);
+const adoptedKeys = (adopted: AdoptedTerms | undefined, kind: keyof AdoptedTerms): string[] => (adopted?.[kind] ?? []).map((e) => e.key);
 
 /** The agent's display severity to the DB form. A DB-form value passes through; anything else is a contract break and throws. */
 export function toDbSeverity(value: string | null | undefined): string | null {
@@ -29,7 +28,6 @@ export function toDbSeverity(value: string | null | undefined): string | null {
   if (DB_SEVERITY_VALUES.has(value)) return value;
   throw new Error(`unmappable severity "${value}" (expected a display label or a db-form value)`);
 }
-export const toDisplaySeverity = (value: string | null | undefined): string | null => (value == null || value === "" ? null : (SEVERITY_DB_TO_DISPLAY[value] ?? value));
 
 /**
  * Candidate banking at the write boundary (capture, never drop): a vocabulary value is HELD, anything else is a CANDIDATE the
@@ -43,8 +41,6 @@ export function bankCandidate(kind: "compliance_object" | "theme", value: string
   const lc = value.toLowerCase();
   return adoptedKeys(adopted, "compliance_object").some((k) => k.toLowerCase() === lc) ? { held: lc, candidate: null } : { held: null, candidate: value.length <= CAPS.candidateMaxLength ? value : null };
 }
-export const toDbTheme = (value: string | null | undefined, adopted?: AdoptedTerms): string | null => bankCandidate("theme", value, adopted).held;
-export const toThemeCandidate = (value: string | null | undefined, adopted?: AdoptedTerms): string | null => bankCandidate("theme", value, adopted).candidate;
 
 /** Defensive check for the pass-through enum fields: a violation means parser/DB drift, so it throws with the field named. */
 export function assertDbValue(field: string, value: string | null | undefined, allowed: ReadonlySet<string>, nullable = true): void {
@@ -56,14 +52,12 @@ export function assertDbValue(field: string, value: string | null | undefined, a
 }
 
 /** The closed ANALYSIS label vocabulary: tokens, the lowercase match form, and the key form. One home. */
-export const ANALYSIS_LABEL_TOKENS: readonly string[] = ["*Analytical inference:*", "*Industry interpretation:*", "*Operational implication:*"];
+const ANALYSIS_LABEL_TOKENS: readonly string[] = ["*Analytical inference:*", "*Industry interpretation:*", "*Operational implication:*"];
 export const ANALYSIS_LABELS: readonly string[] = ANALYSIS_LABEL_TOKENS.map((t) => t.replace(/[*:]/g, "").toLowerCase());
 export const LEGAL_CALLOUT = "*Legal Confirmation Required:*";
 /** Criterion 4's two patterns, one home: a paragraph that carries an ANALYSIS label (any extra label a caller accepts is added by name), and the modal verbs that state an obligation. */
 export const analysisLabelRe = (...extra: string[]): RegExp => new RegExp(`\\*?(${[...extra, ...ANALYSIS_LABELS].join("|")})(\\s*\\([^)]*\\))?:\\*?`, "i");
 export const MODAL_RE = /\b(requires|must|mandates|obligates|prohibits|applies to)\b/i;
-/** The locked sentinel a research card states when no assessment grounds a planning-assumption shift (spec 03S1). */
-export const PLANNING_ASSUMPTION_SHIFT_ABSENCE = "no shift grounded";
 
 /** The one month table: full and abbreviated English names to 1..12. */
 export const MONTHS: Readonly<Record<string, number>> = {

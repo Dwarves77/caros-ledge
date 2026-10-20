@@ -4,11 +4,15 @@ import { test } from "node:test";
 import { z } from "zod";
 
 import { dbError, HttpError, ok, route, statusForDb } from "@/core/http/errors";
-import { checkRateLimit, clientKey, MAX_REQUESTS, rateLimitHeaders, WINDOW_MS, WORKER_FLUSH_BUDGET } from "@/core/http/rate-limit";
+import { checkRateLimit, clientKey, rateLimitHeaders, WORKER_FLUSH_BUDGET } from "@/core/http/rate-limit";
 import { email, isUuid, parseJson, uuid } from "@/core/http/parse";
 import { authedFetch, authHeaders } from "@/core/http/authed-fetch";
 
 import { fakeDb } from "../_support/fake-db.ts";
+
+/** The documented default budget: 60 requests per 60 seconds per key. */
+const MAX_REQUESTS = 60;
+const WINDOW_MS = 60_000;
 
 test("rate limit (per-instance fallback): a fixed window of 60 per key, 429 with Retry-After on the 61st, a new window resets", async () => {
   const t0 = 1_000_000;

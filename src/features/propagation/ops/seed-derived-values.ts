@@ -6,8 +6,8 @@ import { mayEmbedAsSeed } from "@/core/contracts";
 import { admitFactors } from "@/core/derived/admissible";
 import type { Db } from "@/core/db";
 import { fetchAllRows } from "@/core/db";
-import { authorEdges, buildCarbonMethod, MethodRegistry, type MarketMethodDeps } from "@/core/propagation";
-import { CARBON_METHOD_ID, CARBON_METHOD_VERSION } from "@/core/propagation/methods";
+import { authorEdges, createMethodRegistry, type MarketMethodDeps } from "@/core/propagation";
+import { buildCarbonMethod, CARBON_METHOD_ID, CARBON_METHOD_VERSION } from "@/core/propagation/methods";
 import type { RunResult } from "@/core/sources/run-result";
 
 export { CARBON_METHOD_ID, CARBON_METHOD_VERSION };
@@ -25,7 +25,7 @@ interface FactorRow {
 
 export async function seedDerivedValues(deps: { sb: Db; now: () => Date; carbonIntensity: MarketMethodDeps["carbonIntensity"] }, input: { dry: boolean }): Promise<RunResult> {
   const rows = await fetchAllRows<FactorRow>((from, to) => admitFactors(deps.sb.from("emission_factors").select("factor_id,quantity_basis,ttw_co2e,wtw_co2e,wtt_co2e,source_key,origin_class,pedigree")).order("factor_id", { ascending: true }).range(from, to), { cap: 200_000 });
-  const registry = new MethodRegistry();
+  const registry = createMethodRegistry();
   registry.register("derived_values", CARBON_METHOD_ID, CARBON_METHOD_VERSION, buildCarbonMethod({ carbonIntensity: deps.carbonIntensity }));
   const counts: Record<string, number> = { total: rows.length, licence_blocked: 0, refused: 0, would_create: 0, created: 0, already: 0, failed: 0 };
   const bump = (k: string): void => void (counts[k] = (counts[k] ?? 0) + 1);

@@ -41,7 +41,7 @@ export async function readLinkCorpus(sb: Db): Promise<CorpusRow[]> {
 }
 
 /** Whether an open flag of this producer exists for the item (a failed read throws: the link step never inserts blind). */
-export async function hasOpenFlag(sb: Db, subjectRef: string, createdBy: string): Promise<boolean> {
+async function hasOpenFlag(sb: Db, subjectRef: string, createdBy: string): Promise<boolean> {
   const { data, error } = await sb.from("integrity_flags").select("id").eq("subject_ref", subjectRef).eq("created_by", createdBy).eq("status", "open").limit(1);
   if (error) throw new Error(`integrity_flags open-check failed for ${subjectRef}/${createdBy}: ${error.message}`);
   return (data ?? []).length > 0;

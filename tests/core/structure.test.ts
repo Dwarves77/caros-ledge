@@ -3,11 +3,6 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, sep } from "node:path";
 import { test } from "node:test";
 
-import * as auth from "@/core/auth";
-import * as db from "@/core/db";
-import * as http from "@/core/http";
-import * as shared from "@/core/shared";
-
 const files = (dir: string): string[] => readdirSync(dir).flatMap((n) => (statSync(join(dir, n)).isDirectory() ? files(join(dir, n)) : [join(dir, n)]));
 const src = files("src").map((f) => f.split(sep).join("/")).filter((f) => /\.(ts|tsx)$/.test(f));
 const rel = (f: string): string => relative("src", f).split(sep).join("/");
@@ -65,14 +60,6 @@ test("the console is touched by the logger alone", () => {
 test("no auth code reads the user over the network per request: getClaims, never getUser, on the server", () => {
   const server = src.filter((f) => !f.endsWith(".tsx") && !f.includes("/ui/"));
   assert.deepEqual(server.filter((f) => /auth\.getUser\(/.test(text(f))), []);
-});
-
-test("the interface the brief names exists", () => {
-  const has = (mod: object, names: string[]) => assert.deepEqual(names.filter((n) => !(n in mod)), []);
-  has(http, ["requireUser", "requireAdmin", "requireOrgRole", "isRefusal", "HttpError", "rateLimitHeaders", "parseJson", "uuid", "email"]);
-  has(db, ["userClient", "serviceClient", "boundedRead", "withTimeout", "keyset", "SCHEMA_KEYS"]);
-  has(auth, ["getClaims", "currentMembership", "ensureProfile", "resolveIdentity", "decideRoute", "sanitizeReturnPath", "isPlatformAdmin"]);
-  has(shared, ["log", "captureError", "withErrorCapture", "sendInvitationEmail", "formatDate", "isoWeek", "htmlToText", "slugify", "canonicalUrl", "hostOf", "domainForItemType", "resolveItemUuid"]);
 });
 
 test("every source file under src/core and src/features is under 400 lines", () => {

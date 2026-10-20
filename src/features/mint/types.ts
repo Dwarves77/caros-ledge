@@ -81,7 +81,6 @@ export interface RowResult {
 
 /** The `<stage>:` prefixes a mint hold carries; reopen refuses any hold outside them. */
 export const HOLD_STAGES = ["validation_failed", "screen", "capture", "identity", "held", "source"] as const;
-export const HOLD_PREFIX = "validation_failed:";
 
 // P2-04 exports the dependency interface, not the input and result types; they are derived from it so the one mint function satisfies it exactly.
 export type MintInput = Parameters<MintDeps["mintItem"]>[0];
