@@ -99,3 +99,20 @@ test("INV-R2e-2: every function of migrations 0101 to 0103 that changes membersh
     assert.match(body, /record_admin_event\(/, `${name} writes its event`);
   }
 });
+
+test("consent is a row written in the join transaction: every migration function that inserts a membership also inserts its membership_consents row, and no client role is granted a write on the table", () => {
+  const files = readdirSync("supabase/migrations").filter((f) => /^0\d{3}_.+\.sql$/.test(f) && f >= "0100" && !f.includes("_data_"));
+  const joiners: string[] = [];
+  for (const f of files) {
+    for (const m of read(`supabase/migrations/${f}`).matchAll(/CREATE (?:OR REPLACE )?FUNCTION public\.(\w+)\([\s\S]*?\n\$\$;/g)) {
+      const body = m[0];
+      if (!/INSERT INTO public\.org_memberships/.test(body.replace(/\n\s*--[^\n]*/g, ""))) continue;
+      joiners.push(m[1] as string);
+      assert.match(body, /INSERT INTO public\.membership_consents/, `${m[1]} inserts a membership with no consent row`);
+    }
+  }
+  assert.deepEqual(joiners.sort(), ["accept_invitation_by_id", "create_org_for_self"], "the only ways to join are the acceptance and the creation of one's own organisation");
+  const ddl = read("supabase/migrations/0101_membership_authority_rpcs.sql");
+  assert.match(ddl, /REVOKE ALL ON TABLE public\.membership_consents FROM PUBLIC, anon, authenticated, service_role;\s*GRANT SELECT ON TABLE public\.membership_consents TO authenticated, service_role;/, "the table is read-only to every client role");
+  assert.doesNotMatch(read("src/features/auth/api/members.ts") + read("src/core/auth/invitations.ts"), /membership_consents/, "no route writes consent: the database functions do");
+});

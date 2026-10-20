@@ -103,5 +103,12 @@
     "facet-row-desktop (operator 2026-10-18, on Claude Design's recommendation, WCAG 2.5.8): law 2 exception for the desktop Filters card only; facet rows keep a 24 px target on a 32 px pitch (24 px with 8 px clear) on desktop and 44 px on the phone (DESIGN CHANGES OWED 2).",
     "Retired with the same change: the single-main landmark (ASSEMBLY H.1, the shell supplies the one main), SEC-5 assignee names, tie-order and row-height waivers, and the settings, profile, market, research and map look waivers; each was a difference from the old site only."
   ],
-  "approved": []
+  "approved": [
+    {
+      "id": "r2e-privacy-generated",
+      "route": "privacy",
+      "kind": "pixel",
+      "ruling": "R2e M4 (coordinator brief, REMEDIATION-2026-10-19 privacy ruling): the processor, retention and rights lists are generated from the code (src/features/legal/data, held equal to the tree by tests/legal/privacy.test.ts) and the page gains the access, portability and deletion controls, so it is longer than the baseline. Structure still gates: every baseline heading and control must remain. The baseline image is recaptured after merge (baseline job)."
+    }
+  ]
 }

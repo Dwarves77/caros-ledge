@@ -9,14 +9,42 @@
 --   set_priority_override(org, item, priority, reason) and restore_team_item(org, item, reason): a workspace-wide change of every member's urgency or visibility is an owner or admin act with a stated reason and an event.
 -- Rules kept from the guard: only an owner grants or removes the owner role; nobody changes or removes themselves; the last owner is never demoted, removed or banned (22023, a 409 to the caller); a member is looked up INSIDE the
 -- organisation named, so another organisation's membership id is not found (P0002). invite_member never looks at accounts: an e-mail with an account and one without answer identically (the oracle is gone), and a registered
--- invitee is added only by accept_invitation_by_id, which also refuses a second organisation (22023) and records the join. Tag delete (workspace_tags_org_delete) now needs the tag's creator or an owner or admin.
+-- invitee is added only by accept_invitation_by_id, which also refuses a second organisation (22023) and records the join AND the person's consent to it (membership_consents, the same transaction). Tag delete (workspace_tags_org_delete) now needs the tag's creator or an owner or admin.
 -- Not applied to production before the cutover window.
 --
--- Reversal: restore accept_invitation_by_id, revoke_invitation and create_org_for_self from 0028 and schema.sql; restore policy workspace_tags_org_delete from schema.sql; DROP the nine new functions.
+-- Reversal: DROP TABLE public.membership_consents (after restoring the two functions that write it); restore accept_invitation_by_id, revoke_invitation and create_org_for_self from 0028 and schema.sql; restore policy workspace_tags_org_delete from schema.sql; DROP the nine new functions.
 
--- catalog: function, policy
+-- catalog: relation, column, constraint, index, function, policy, acl
 
 BEGIN;
+
+-- Consent is a ROW, written in the transaction that joins: membership_consents. No client role writes it (no INSERT, UPDATE or DELETE grant); accept_invitation_by_id and create_org_for_self, which are the only ways a person
+-- joins an organisation, insert it in the same transaction as the membership, so a join with no consent row cannot happen and a consent with no join rolls back with it. A person reads their own rows (and the export returns them);
+-- a platform admin reads all. It goes with the account (ON DELETE CASCADE) and with the organisation.
+CREATE TABLE public.membership_consents (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  org_id uuid NOT NULL,
+  invitation_id uuid,
+  role text NOT NULL,
+  basis text NOT NULL,
+  consented_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT membership_consents_user_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE,
+  CONSTRAINT membership_consents_org_fkey FOREIGN KEY (org_id) REFERENCES public.organizations(id) ON DELETE CASCADE,
+  CONSTRAINT membership_consents_invitation_fkey FOREIGN KEY (invitation_id) REFERENCES public.org_invitations(id) ON DELETE SET NULL,
+  CONSTRAINT membership_consents_basis_check CHECK (basis IN ('invitation_accepted', 'organisation_created')),
+  CONSTRAINT membership_consents_role_check CHECK (role IN ('owner', 'admin', 'member', 'viewer'))
+);
+ALTER TABLE public.membership_consents ADD CONSTRAINT membership_consents_pkey PRIMARY KEY (id);
+CREATE INDEX membership_consents_user_idx ON public.membership_consents (user_id, consented_at DESC);
+CREATE INDEX membership_consents_org_idx ON public.membership_consents (org_id);
+CREATE INDEX membership_consents_invitation_idx ON public.membership_consents (invitation_id);
+COMMENT ON TABLE public.membership_consents IS 'R2e migration 0101. One row per join: who consented to belong to which organisation, in what role, on what basis (accepting an invitation, or creating the organisation), and when. Written only inside accept_invitation_by_id and create_org_for_self.';
+ALTER TABLE public.membership_consents ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE public.membership_consents FROM PUBLIC, anon, authenticated, service_role;
+GRANT SELECT ON TABLE public.membership_consents TO authenticated, service_role;
+CREATE POLICY membership_consents_read ON public.membership_consents FOR SELECT TO authenticated USING (user_id = (SELECT auth.uid()) OR (SELECT public.is_platform_admin()));
+CREATE POLICY membership_consents_service_read ON public.membership_consents FOR SELECT TO service_role USING (true);
 
 CREATE FUNCTION public.set_member_role(p_org_id uuid, p_membership_id uuid, p_role text, p_reason text DEFAULT NULL) RETURNS jsonb
   LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp
@@ -163,6 +191,7 @@ BEGIN
   ON CONFLICT (org_id, user_id) DO UPDATE SET role = EXCLUDED.role
     WHERE (org_memberships.role = 'viewer' AND EXCLUDED.role IN ('member', 'admin')) OR (org_memberships.role = 'member' AND EXCLUDED.role = 'admin')
   RETURNING id INTO v_membership;
+  INSERT INTO public.membership_consents (user_id, org_id, invitation_id, role, basis) VALUES (v_caller_id, v_invitation.org_id, v_invitation.id, v_invitation.proposed_role, 'invitation_accepted');
   UPDATE public.org_invitations SET status = 'accepted', accepted_at = now(), accepted_by_user_id = v_caller_id WHERE id = v_invitation.id;
   PERFORM public.record_admin_event(v_invitation.org_id, 'invitation_accepted', 'invitation', v_invitation.id::text, NULL, jsonb_build_object('role', v_invitation.proposed_role, 'membership_written', v_membership IS NOT NULL));
   RETURN v_invitation.org_id;
@@ -183,6 +212,7 @@ BEGIN
   v_slug := v_slug || '-' || encode(gen_random_bytes(3), 'hex');
   INSERT INTO public.organizations (name, slug, plan) VALUES (trim(p_org_name), v_slug, 'free') RETURNING id INTO v_org_id;
   INSERT INTO public.org_memberships (org_id, user_id, role) VALUES (v_org_id, v_caller_id, 'owner');
+  INSERT INTO public.membership_consents (user_id, org_id, role, basis) VALUES (v_caller_id, v_org_id, 'owner', 'organisation_created');
   INSERT INTO public.workspace_settings (org_id) VALUES (v_org_id);
   PERFORM public.record_admin_event(v_org_id, 'org_created', 'organization', v_org_id::text, NULL, '{}'::jsonb);
   RETURN v_org_id;
@@ -264,8 +294,8 @@ COMMENT ON FUNCTION public.restore_team_item(uuid, uuid, text) IS 'R2e migration
 DO $$
 DECLARE
   org uuid := gen_random_uuid(); orgb uuid := gen_random_uuid(); uo uuid := gen_random_uuid(); uo2 uuid := gen_random_uuid(); ua uuid := gen_random_uuid(); um uuid := gen_random_uuid(); um2 uuid := gen_random_uuid(); uv uuid := gen_random_uuid();
-  ub uuid := gen_random_uuid(); up uuid := gen_random_uuid(); ux uuid := gen_random_uuid();
-  mo uuid; mo2 uuid; ma uuid; mm uuid; mm2 uuid; mv uuid; mb uuid; res jsonb; res2 jsonb; n int; inv uuid; inv2 uuid; tok text := repeat('a', 64); tok2 text := repeat('b', 64); tok3 text := repeat('c', 64); tg uuid; tg2 uuid; it uuid;
+  ub uuid := gen_random_uuid(); up uuid := gen_random_uuid(); ux uuid := gen_random_uuid(); uc uuid := gen_random_uuid();
+  mo uuid; mo2 uuid; inv3 uuid; ma uuid; mm uuid; mm2 uuid; mv uuid; mb uuid; res jsonb; res2 jsonb; n int; inv uuid; inv2 uuid; tok text := repeat('a', 64); tok2 text := repeat('b', 64); tok3 text := repeat('c', 64); tg uuid; tg2 uuid; it uuid;
   ev_before int;
 BEGIN
   IF has_function_privilege('anon', 'public.set_member_role(uuid, uuid, text, text)', 'EXECUTE') OR has_function_privilege('anon', 'public.invite_member(uuid, text, text, text)', 'EXECUTE') OR has_function_privilege('anon', 'public.org_roster(uuid, integer)', 'EXECUTE') THEN
@@ -273,9 +303,9 @@ BEGIN
   END IF;
   BEGIN
     INSERT INTO auth.users (id, email) VALUES (uo, 'o-0101@invalid.example'), (uo2, 'o2-0101@invalid.example'), (ua, 'a-0101@invalid.example'), (um, 'm-0101@invalid.example'), (um2, 'm2-0101@invalid.example'), (uv, 'v-0101@invalid.example'), (ub, 'b-0101@invalid.example'),
-      (up, 'p-0101@invalid.example'), (ux, 'x-0101@invalid.example');
+      (up, 'p-0101@invalid.example'), (ux, 'x-0101@invalid.example'), (uc, 'c-0101@invalid.example');
     INSERT INTO public.profiles (id, email, full_name) VALUES (uo, 'o-0101@invalid.example', 'Olive Owner'), (uo2, 'o2-0101@invalid.example', 'Otto Owner'), (ua, 'a-0101@invalid.example', 'Ada Admin'), (um, 'm-0101@invalid.example', 'Mia Member'),
-      (um2, 'm2-0101@invalid.example', NULL), (uv, 'v-0101@invalid.example', 'Vic Viewer'), (ub, 'b-0101@invalid.example', 'Bo Other'), (up, 'p-0101@invalid.example', 'Pat Platform'), (ux, 'x-0101@invalid.example', 'Xi Joiner');
+      (um2, 'm2-0101@invalid.example', NULL), (uv, 'v-0101@invalid.example', 'Vic Viewer'), (ub, 'b-0101@invalid.example', 'Bo Other'), (up, 'p-0101@invalid.example', 'Pat Platform'), (ux, 'x-0101@invalid.example', 'Xi Joiner'), (uc, 'c-0101@invalid.example', 'Cy Consent');
     UPDATE public.profiles SET is_platform_admin = true WHERE id = up;
     INSERT INTO public.organizations (id, name, slug) VALUES (org, 'selfcheck-0101', 'selfcheck-0101-' || org), (orgb, 'selfcheck-0101-b', 'selfcheck-0101-b-' || orgb);
     INSERT INTO public.org_memberships (org_id, user_id, role) VALUES (org, uo, 'owner'), (org, ua, 'admin'), (org, um, 'member'), (org, um2, 'member'), (org, uv, 'viewer'), (orgb, ub, 'owner');
@@ -385,6 +415,20 @@ BEGIN
     IF (SELECT count(*) FROM public.org_memberships WHERE user_id = ux) <> 1 OR (SELECT count(*) FROM public.admin_events WHERE action = 'invitation_accepted' AND actor_id = ux AND target_id = inv::text) <> 1 THEN
       RAISE EXCEPTION '0101-membership-rpcs: acceptance did not write exactly one membership and one event';
     END IF;
+    IF (SELECT count(*) FROM public.membership_consents WHERE user_id = ux AND org_id = org AND invitation_id = inv AND basis = 'invitation_accepted' AND role = 'member') <> 1 THEN
+      RAISE EXCEPTION '0101-membership-rpcs: acceptance did not record the consent';
+    END IF;
+    -- consent is read by the person it belongs to and by nobody else; no client role writes it
+    SET LOCAL ROLE authenticated;
+    PERFORM set_config('request.jwt.claim.sub', ux::text, true);
+    SELECT count(*) INTO n FROM public.membership_consents;
+    IF n <> 1 THEN RAISE EXCEPTION '0101-membership-rpcs: the joiner reads % consent rows, expected their own 1', n; END IF;
+    BEGIN INSERT INTO public.membership_consents (user_id, org_id, role, basis) VALUES (ux, orgb, 'member', 'invitation_accepted'); RAISE EXCEPTION '0101-membership-rpcs: a member wrote their own consent row';
+    EXCEPTION WHEN SQLSTATE '42501' THEN NULL; END;
+    PERFORM set_config('request.jwt.claim.sub', um::text, true);
+    SELECT count(*) INTO n FROM public.membership_consents WHERE user_id = ux;
+    IF n <> 0 THEN RAISE EXCEPTION '0101-membership-rpcs: another member reads the joiner''s consent'; END IF;
+    RESET ROLE;
     -- a second organisation is refused for an account that already belongs to one
     INSERT INTO public.org_invitations (org_id, invited_email, invited_by_user_id, proposed_role, token_input) VALUES (orgb, 'x-0101@invalid.example', ub, 'member', repeat('d', 64)) RETURNING id INTO inv;
     SET LOCAL ROLE authenticated;
@@ -455,11 +499,17 @@ BEGIN
     BEGIN PERFORM public.ban_member(org, mm2, 'x'); RAISE EXCEPTION '0101-membership-rpcs: ban_member survived a refused event'; EXCEPTION WHEN check_violation THEN NULL; END;
     BEGIN PERFORM public.invite_member(org, 'attack-0101@invalid.example', 'member', repeat('f', 64)); RAISE EXCEPTION '0101-membership-rpcs: invite_member survived a refused event'; EXCEPTION WHEN check_violation THEN NULL; END;
     BEGIN PERFORM public.set_priority_override(org, it, 'LOW', 'x'); RAISE EXCEPTION '0101-membership-rpcs: set_priority_override survived a refused event'; EXCEPTION WHEN check_violation THEN NULL; END;
+    RESET ROLE;
+    INSERT INTO public.org_invitations (org_id, invited_email, invited_by_user_id, proposed_role, token_input) VALUES (org, 'c-0101@invalid.example', uo, 'member', repeat('9', 64)) RETURNING id INTO inv3;
+    SET LOCAL ROLE authenticated;
+    PERFORM set_config('request.jwt.claim.sub', uc::text, true);
+    BEGIN PERFORM public.accept_invitation_by_id(inv3); RAISE EXCEPTION '0101-membership-rpcs: accept_invitation_by_id survived a refused event'; EXCEPTION WHEN check_violation THEN NULL; END;
     PERFORM set_config('request.jwt.claim.sub', uo::text, true);
     BEGIN PERFORM public.rename_org(org, 'Attack Rename', NULL, NULL); RAISE EXCEPTION '0101-membership-rpcs: rename_org survived a refused event'; EXCEPTION WHEN check_violation THEN NULL; END;
     RESET ROLE;
     IF (SELECT role FROM public.org_memberships WHERE id = mm2) <> 'member' OR NOT EXISTS (SELECT 1 FROM public.org_memberships WHERE id = mm2) OR EXISTS (SELECT 1 FROM public.org_member_bans WHERE org_id = org AND user_id = um2)
        OR EXISTS (SELECT 1 FROM public.org_invitations WHERE invited_email = 'attack-0101@invalid.example') OR (SELECT priority_override FROM public.workspace_item_overrides WHERE org_id = org AND item_id = it) <> 'HIGH'
+       OR EXISTS (SELECT 1 FROM public.org_memberships WHERE user_id = uc) OR EXISTS (SELECT 1 FROM public.membership_consents WHERE user_id = uc) OR (SELECT status FROM public.org_invitations WHERE id = inv3) <> 'pending'
        OR (SELECT name FROM public.organizations WHERE id = org) = 'Attack Rename' OR (SELECT count(*) FROM public.admin_events WHERE org_id IN (org, orgb)) <> ev_before THEN
       RAISE EXCEPTION '0101-membership-rpcs: a change survived its refused event';
     END IF;

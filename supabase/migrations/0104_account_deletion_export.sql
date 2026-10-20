@@ -6,7 +6,7 @@
 --     oldest other admin, else its oldest other member (made an admin), else it is deleted with its last member. An organisation the member is the sole member of is deleted with them; one they solely OWN while others belong is
 --     refused with the sentence that says who must be made owner first (22023). A platform administrator account is removed by another administrator (22023). The invitations the member issued and the sign-off requests they made
 --     are deleted (their foreign keys restrict); an invitation another member issued TO them stays as that member's record with the address redacted and a pending one revoked. One admin_events row (counts only, no person) is written first; verification events that name the member as their target are scrubbed.
---   export_own_account(): the member's own rows as one jsonb (profile, memberships, invitations received, watchlist, per-user item state, saved views, notifications and preferences, notes, assignments, tags, community profile,
+--   export_own_account(): the member's own rows as one jsonb (profile, memberships, the consents they gave, invitations received, watchlist, per-user item state, saved views, notifications and preferences, notes, assignments, tags, community profile,
 --     groups, posts, sign-off requests, reports filed, acts performed). Rows that name other people (invitations they issued, who they assigned) are counted, never listed. Each section is bounded at 5000 rows.
 -- Not applied to production before the cutover window.
 --
@@ -73,6 +73,7 @@ BEGIN
   RETURN jsonb_build_object(
     'profile', (SELECT to_jsonb(p) FROM public.profiles p WHERE p.id = uid),
     'memberships', (SELECT coalesce(jsonb_agg(jsonb_build_object('org_id', m.org_id, 'org_name', o.name, 'role', m.role, 'joined_at', m.created_at) ORDER BY m.created_at, m.id), '[]'::jsonb) FROM public.org_memberships m JOIN public.organizations o ON o.id = m.org_id WHERE m.user_id = uid),
+    'consents', (SELECT coalesce(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM (SELECT o.name AS org_name, c.role, c.basis, c.consented_at FROM public.membership_consents c JOIN public.organizations o ON o.id = c.org_id WHERE c.user_id = uid ORDER BY c.consented_at, c.id LIMIT 5000) t),
     'invitations_received', (SELECT coalesce(jsonb_agg(jsonb_build_object('org_name', o.name, 'proposed_role', i.proposed_role, 'status', i.status, 'created_at', i.created_at) ORDER BY i.created_at, i.id), '[]'::jsonb) FROM public.org_invitations i JOIN public.organizations o ON o.id = i.org_id WHERE i.invited_email = v_email),
     'invitations_issued_count', (SELECT count(*) FROM public.org_invitations WHERE invited_by_user_id = uid),
     'watchlist', (SELECT coalesce(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM (SELECT org_id, item_type, item_id, created_at FROM public.user_watchlist WHERE user_id = uid ORDER BY created_at, id LIMIT 5000) t),
@@ -115,6 +116,7 @@ BEGIN
     INSERT INTO public.organizations (id, name, slug) VALUES (orga, 'selfcheck-0104-a', 'selfcheck-0104-a-' || orga), (orgs, 'selfcheck-0104-shared', 'selfcheck-0104-s-' || orgs), (orgb, 'selfcheck-0104-b', 'selfcheck-0104-b-' || orgb);
     INSERT INTO public.org_memberships (org_id, user_id, role) VALUES (orga, a, 'owner'), (orgs, a, 'owner'), (orgs, b, 'member'), (orgb, b, 'owner');
     INSERT INTO public.intelligence_items (title, domain, provenance_status, is_archived) VALUES ('selfcheck-0104', 1, 'verified', false) RETURNING id INTO it;
+    INSERT INTO public.membership_consents (user_id, org_id, role, basis) VALUES (a, orga, 'owner', 'organisation_created'), (a, orgs, 'owner', 'organisation_created'), (b, orgs, 'member', 'invitation_accepted'), (b, orgb, 'owner', 'organisation_created');
     INSERT INTO public.user_watchlist (user_id, org_id, item_type, item_id) VALUES (a, orga, 'reg', 'x-a'), (b, orgb, 'reg', 'x-b');
     INSERT INTO public.item_notes (org_id, item_id, author_user_id, body) VALUES (orga, it, a, 'note of A'), (orgb, it, b, 'note of B');
     INSERT INTO public.saved_views (user_id, surface, name, query) VALUES (a, 'regulations', 'A view', 'q=a'), (b, 'regulations', 'B view', 'q=b');
@@ -135,7 +137,7 @@ BEGIN
     PERFORM set_config('request.jwt.claim.sub', a::text, true);
     ex := public.export_own_account();
     RESET ROLE;
-    IF ex -> 'profile' ->> 'full_name' <> 'Ann A' OR jsonb_array_length(ex -> 'watchlist') <> 1 OR jsonb_array_length(ex -> 'notes') <> 1 OR jsonb_array_length(ex -> 'community' -> 'posts') <> 1 OR jsonb_array_length(ex -> 'memberships') <> 2
+    IF ex -> 'profile' ->> 'full_name' <> 'Ann A' OR jsonb_array_length(ex -> 'watchlist') <> 1 OR jsonb_array_length(ex -> 'notes') <> 1 OR jsonb_array_length(ex -> 'community' -> 'posts') <> 1 OR jsonb_array_length(ex -> 'memberships') <> 2 OR jsonb_array_length(ex -> 'consents') <> 2
        OR jsonb_array_length(ex -> 'invitations_received') <> 1 OR (ex ->> 'invitations_issued_count')::int <> 1 THEN RAISE EXCEPTION '0104-account: the export is not the caller''s rows: %', ex; END IF;
     IF ex::text LIKE '%' || b::text || '%' OR ex::text LIKE '%b-0104@invalid.example%' OR ex::text LIKE '%someone-0104%' OR ex::text LIKE '%note of B%' OR ex::text LIKE '%by B%' THEN RAISE EXCEPTION '0104-account: the export carries another member''s data'; END IF;
     SET LOCAL ROLE authenticated;
@@ -153,14 +155,14 @@ BEGIN
     UPDATE public.org_memberships SET role = 'owner' WHERE org_id = orgs AND user_id = b;
     SELECT jsonb_build_object('wl', (SELECT count(*) FROM public.user_watchlist WHERE user_id = b), 'notes', (SELECT count(*) FROM public.item_notes WHERE author_user_id = b), 'views', (SELECT count(*) FROM public.saved_views WHERE user_id = b),
       'prefs', (SELECT count(*) FROM public.notification_preferences WHERE user_id = b), 'cmp', (SELECT count(*) FROM public.community_member_profiles WHERE user_id = b), 'posts', (SELECT count(*) FROM public.community_posts WHERE author_user_id = b),
-      'mem', (SELECT count(*) FROM public.org_memberships WHERE user_id = b), 'inv', (SELECT count(*) FROM public.org_invitations WHERE invited_by_user_id = b), 'orgb', (SELECT count(*) FROM public.organizations WHERE id = orgb),
+      'mem', (SELECT count(*) FROM public.org_memberships WHERE user_id = b), 'cons', (SELECT count(*) FROM public.membership_consents WHERE user_id = b), 'inv', (SELECT count(*) FROM public.org_invitations WHERE invited_by_user_id = b), 'orgb', (SELECT count(*) FROM public.organizations WHERE id = orgb),
       'prof', (SELECT count(*) FROM public.profiles WHERE id = b), 'user', (SELECT count(*) FROM auth.users WHERE id = b), 'gm', (SELECT count(*) FROM public.community_group_members WHERE user_id = b)) INTO before_b;
     SET LOCAL ROLE authenticated;
     PERFORM set_config('request.jwt.claim.sub', a::text, true);
     res := public.delete_own_account();
     RESET ROLE;
     IF (res ->> 'organisations_deleted')::int <> 1 OR (res ->> 'groups_deleted')::int <> 1 OR (res ->> 'groups_handed_over')::int <> 1 OR (res ->> 'posts_kept_unattributed')::int <> 1 THEN RAISE EXCEPTION '0104-account: the counts are wrong: %', res; END IF;
-    IF EXISTS (SELECT 1 FROM auth.users WHERE id = a) OR EXISTS (SELECT 1 FROM public.profiles WHERE id = a) OR EXISTS (SELECT 1 FROM public.org_memberships WHERE user_id = a) OR EXISTS (SELECT 1 FROM public.user_watchlist WHERE user_id = a)
+    IF EXISTS (SELECT 1 FROM auth.users WHERE id = a) OR EXISTS (SELECT 1 FROM public.profiles WHERE id = a) OR EXISTS (SELECT 1 FROM public.org_memberships WHERE user_id = a) OR EXISTS (SELECT 1 FROM public.membership_consents WHERE user_id = a) OR EXISTS (SELECT 1 FROM public.user_watchlist WHERE user_id = a)
        OR EXISTS (SELECT 1 FROM public.item_notes WHERE author_user_id = a) OR EXISTS (SELECT 1 FROM public.notification_preferences WHERE user_id = a) OR EXISTS (SELECT 1 FROM public.community_member_profiles WHERE user_id = a)
        OR EXISTS (SELECT 1 FROM public.org_invitations WHERE invited_by_user_id = a OR invited_email = 'a-0104@invalid.example') OR NOT EXISTS (SELECT 1 FROM public.org_invitations WHERE invited_by_user_id = b AND invited_email LIKE 'deleted-member-%@deleted.invalid' AND status = 'revoked') OR EXISTS (SELECT 1 FROM public.organizations WHERE id = orga) OR EXISTS (SELECT 1 FROM public.community_groups WHERE id = gb)
        OR EXISTS (SELECT 1 FROM public.community_post_signoff_requests WHERE post_id = pa) THEN RAISE EXCEPTION '0104-account: something of A''s remains'; END IF;
@@ -172,7 +174,7 @@ BEGIN
     END IF;
     SELECT jsonb_build_object('wl', (SELECT count(*) FROM public.user_watchlist WHERE user_id = b), 'notes', (SELECT count(*) FROM public.item_notes WHERE author_user_id = b), 'views', (SELECT count(*) FROM public.saved_views WHERE user_id = b),
       'prefs', (SELECT count(*) FROM public.notification_preferences WHERE user_id = b), 'cmp', (SELECT count(*) FROM public.community_member_profiles WHERE user_id = b), 'posts', (SELECT count(*) FROM public.community_posts WHERE author_user_id = b),
-      'mem', (SELECT count(*) FROM public.org_memberships WHERE user_id = b), 'inv', (SELECT count(*) FROM public.org_invitations WHERE invited_by_user_id = b), 'orgb', (SELECT count(*) FROM public.organizations WHERE id = orgb),
+      'mem', (SELECT count(*) FROM public.org_memberships WHERE user_id = b), 'cons', (SELECT count(*) FROM public.membership_consents WHERE user_id = b), 'inv', (SELECT count(*) FROM public.org_invitations WHERE invited_by_user_id = b), 'orgb', (SELECT count(*) FROM public.organizations WHERE id = orgb),
       'prof', (SELECT count(*) FROM public.profiles WHERE id = b), 'user', (SELECT count(*) FROM auth.users WHERE id = b), 'gm', (SELECT count(*) FROM public.community_group_members WHERE user_id = b)) INTO after_b;
     IF before_b IS DISTINCT FROM after_b THEN RAISE EXCEPTION '0104-account: deleting A touched B: % then %', before_b, after_b; END IF;
     PERFORM set_config('request.jwt.claim.sub', '', true);

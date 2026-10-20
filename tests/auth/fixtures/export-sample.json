@@ -47,6 +47,20 @@
   "linkedin_workplace_verified": false,
   "linkedin_verification_checked_at": null
  },
+ "consents": [
+  {
+   "role": "owner",
+   "basis": "organisation_created",
+   "org_name": "selfcheck-0104-a",
+   "consented_at": "2026-10-20T09:00:00.000000+00:00"
+  },
+  {
+   "role": "owner",
+   "basis": "organisation_created",
+   "org_name": "selfcheck-0104-shared",
+   "consented_at": "2026-10-20T09:00:00.000000+00:00"
+  }
+ ],
  "community": {
   "posts": [
    {

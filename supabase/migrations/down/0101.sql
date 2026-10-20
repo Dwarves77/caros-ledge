@@ -1,4 +1,4 @@
--- Down for 0101: the eight new functions go; revoke_invitation and create_org_for_self return to their schema.sql bodies and accept_invitation_by_id to its 0028 body; the tag-delete policy returns to its baseline.
+-- Down for 0101: the consent table goes last, after the two functions that write it return to their old bodies; the eight new functions go; revoke_invitation and create_org_for_self return to their schema.sql bodies and accept_invitation_by_id to its 0028 body; the tag-delete policy returns to its baseline.
 DROP FUNCTION public.set_member_role(uuid, uuid, text, text);
 DROP FUNCTION public.remove_member(uuid, uuid, text);
 DROP FUNCTION public.ban_member(uuid, uuid, text);
@@ -159,3 +159,4 @@ $$;
 
 DROP POLICY workspace_tags_org_delete ON public.workspace_tags;
 CREATE POLICY workspace_tags_org_delete ON public.workspace_tags FOR DELETE TO authenticated, service_role USING ((public.user_can_write_in_org(org_id) OR (( SELECT auth.role() AS role) = 'service_role'::text)));
+DROP TABLE public.membership_consents;

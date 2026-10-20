@@ -2461,6 +2461,40 @@
     }
    ]
   },
+  "membership_consents": {
+   "columns": [
+    "id",
+    "user_id",
+    "org_id",
+    "invitation_id",
+    "role",
+    "basis",
+    "consented_at"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "consented_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "invitation_id",
+     "table": "org_invitations",
+     "ref": "id"
+    },
+    {
+     "column": "org_id",
+     "table": "organizations",
+     "ref": "id"
+    },
+    {
+     "column": "user_id",
+     "table": "users",
+     "ref": "id"
+    }
+   ]
+  },
   "migration_log": {
    "columns": [
     "file",

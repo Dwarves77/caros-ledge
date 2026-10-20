@@ -244,6 +244,9 @@
  "market_series_items": [
   "series_key"
  ],
+ "membership_consents": [
+  "id"
+ ],
  "migration_log": [
   "file"
  ],
