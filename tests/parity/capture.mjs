@@ -21,7 +21,7 @@ import { chromium } from 'playwright';
 
 import { measurePage } from '../ux/measure.mjs';
 
-import { CAPTURE_CONTRACT, CAPTURE_VIEWPORTS as VIEWPORTS, ROW_SELECTOR, SCREEN_MAX_HEIGHT } from './contract.mjs';
+import { CAPTURE_CONTRACT, CAPTURE_VIEWPORTS as VIEWPORTS, ITEM_PATH, ROW_SELECTOR, SCREEN_MAX_HEIGHT } from './contract.mjs';
 
 export { SCREEN_MAX_HEIGHT };
 // A page that navigates its main frame more often than this after goto is looping (a reload on every auth event, a redirect cycle).
@@ -68,14 +68,28 @@ function parseArgs(argv) {
   return args;
 }
 
-// Resolves after network idle; false when the page never went idle within the budget (recorded, not fatal).
-async function settle(page) {
-  try {
-    await page.waitForLoadState('networkidle', { timeout: 20000 });
-    return true;
-  } catch {
-    return false;
-  }
+// A page is SETTLED when the network is idle and every list on it has finished loading (`[data-list-state]` is "ready", "failed" or "idle", src/ui/list-surface/ListSurface.tsx). settle() waits for network idle (NETWORK_BUDGET_MS), then for the
+// list state (LIST_BUDGET_MS in all, polling), then for network idle again; it returns { settled, reason } and the reason names what was still going. A page that did not settle is compared as nothing (compare.mjs fails it with this reason):
+// a half-loaded list is not the page.
+export const NETWORK_BUDGET_MS = 20000;
+export const LIST_BUDGET_MS = 60000;
+const LIST_SETTLED = ['ready', 'failed', 'idle'];
+/** The origins of the requests a page has started and not finished (a path or query can carry an identifier, so only the origin is kept). */
+export function watchPending(page) {
+  const pending = new Set();
+  const done = (r) => pending.delete(r);
+  page.on('request', (r) => pending.add(r));
+  page.on('requestfinished', done);
+  page.on('requestfailed', done);
+  return () => [...new Set([...pending].map((r) => new URL(r.url()).origin))];
+}
+const idle = (page, ms) => page.waitForLoadState('networkidle', { timeout: ms }).then(() => true, () => false);
+export async function settle(page, pending = () => [], budgets = { network: NETWORK_BUDGET_MS, list: LIST_BUDGET_MS }) {
+  const started = Date.now();
+  await idle(page, budgets.network);
+  const listed = await page.waitForFunction((ok) => { const el = document.querySelector('[data-list-state]'); return !el || ok.includes(el.getAttribute('data-list-state')); }, LIST_SETTLED, { timeout: Math.max(budgets.list - (Date.now() - started), 1), polling: 250 }).then(() => true, () => false);
+  if (!listed) return { settled: false, reason: `list state loading after ${budgets.list / 1000} s` };
+  return (await idle(page, budgets.network)) ? { settled: true, reason: null } : { settled: false, reason: `network busy after ${budgets.network / 1000} s: ${pending().join(', ') || 'no request pending'}` };
 }
 
 // A deployed preview sits behind Vercel's deployment protection; the project's automation bypass secret (VERCEL_AUTOMATION_BYPASS_SECRET, the same variable scripts/ci/live-checks.mjs reads) lets the capture
@@ -156,6 +170,14 @@ export function pinnedPath(route, baselineIndex, site) {
   return entry && (entry.files ?? []).length && typeof entry.path === 'string' && entry.path.startsWith('/') ? entry.path : null;
 }
 
+// The baseline pinned an item; the item can stop existing (archived, unverified, re-keyed) while the page's design has not changed. A pinned path whose page is the app's not-found page is not a page to compare: the route is
+// rediscovered from its list, and the item (data) is compared by the slots it fills (compare.mjs), as every item is.
+export async function pinnedResolves(page, base, path) {
+  const response = await page.goto(new URL(path, base).href, { waitUntil: 'load', timeout: 60000 });
+  await settle(page);
+  return (response?.status() ?? 0) < 400 && (await page.locator('h1.cl-notfound-title').count()) === 0;
+}
+
 // Resolves a `discover` route: the first same-origin link on the list page whose pathname matches and is not excluded.
 async function discover(page, base, route, gates, baselineIndex) {
   const { list, match } = route.discover;
@@ -171,7 +193,7 @@ async function discover(page, base, route, gates, baselineIndex) {
 }
 
 // Runs in the page. Helpers live inside so the whole function serialises as one unit. Exported so the UX smoke records its fixture pages the same way (`{ rowSelector: ROW_SELECTOR }`).
-export function domSummary({ rowSelector }) {
+export function domSummary({ rowSelector, itemPath = null, itemPage = false }) {
   const clean = (s) => (s || '').replace(/\s+/g, ' ').trim();
   const rendered = (el) => el.getClientRects().length > 0;
   const accName = (el) => {
@@ -213,6 +235,21 @@ export function domSummary({ rowSelector }) {
     return null;
   };
 
+  // An item (contract.mjs ITEM_PATH): a link to an item's detail route or to another origin, anything inside a list row.
+  const itemRoute = itemPath ? new RegExp(itemPath) : null;
+  const isItemLink = (el) => {
+    if (!itemRoute || el.tagName.toLowerCase() !== 'a' || !el.hasAttribute('href')) return false;
+    try {
+      const url = new URL(el.href, location.href);
+      return /^https?:$/.test(url.protocol) && (url.origin !== location.origin || itemRoute.test(url.pathname));
+    } catch {
+      return false;
+    }
+  };
+  const inRow = (el) => Boolean(itemRoute && rowSelector && el.closest(rowSelector));
+  const inItemSection = (el) => Boolean(itemPage && el.closest('#related, #across-pages, [data-guard-container="cross-page"], [data-part="item-connections"]'));
+  const isItem = (el) => isItemLink(el) || inRow(el) || inItemSection(el);
+
   const landmarks = [];
   const landmarkSelector = 'header, nav, main, footer, aside, form, section, [role=banner], [role=navigation], [role=main], [role=contentinfo], [role=complementary], [role=region], [role=search], [role=form]';
   for (const el of document.querySelectorAll(landmarkSelector)) {
@@ -230,7 +267,8 @@ export function domSummary({ rowSelector }) {
   for (const el of document.querySelectorAll('h1, h2, h3, h4, h5, h6, [role=heading]')) {
     if (!rendered(el)) continue;
     const level = el.getAttribute('aria-level') ?? (/^H[1-6]$/.test(el.tagName) ? el.tagName.slice(1) : null);
-    headings.push({ level: level === null ? null : Number(level), text: clean(el.textContent) });
+    const item = inRow(el) || (itemPage && level === '1' && Boolean(el.closest('main')));
+    headings.push({ level: level === null ? null : Number(level), text: clean(el.textContent), ...(item ? { item: true } : {}) });
   }
 
   const controls = [];
@@ -239,7 +277,7 @@ export function domSummary({ rowSelector }) {
     if (!rendered(el)) continue;
     const role = roleOf(el);
     if (!role) continue;
-    controls.push({ role, name: accName(el) });
+    controls.push({ role, name: accName(el), ...(isItem(el) ? { item: true } : {}) });
   }
 
   // Every list row on the page, none dropped, in document order, with the container it sits in (the nearest labelled region, else the page): a list's rows are compared with the baseline's, container by container.
@@ -254,7 +292,8 @@ export function domSummary({ rowSelector }) {
     if (!rendered(el)) continue;
     const box = el.getBoundingClientRect();
     const container = containerOf(el);
-    rows.push({ tag: el.tagName.toLowerCase(), text: clean(el.textContent).slice(0, 300), width: box.width, height: box.height, container });
+    const item = [...el.querySelectorAll('a[href]')].some(isItemLink);
+    rows.push({ tag: el.tagName.toLowerCase(), text: clean(el.textContent).slice(0, 300), width: box.width, height: box.height, container, ...(item ? { item: true } : {}) });
     const seen = containers.find((c) => c.label === container);
     if (seen) seen.count += 1;
     else containers.push({ label: container, count: 1 });
@@ -350,10 +389,16 @@ export async function wholePageScreenshot(page, viewport, file) {
   return { tiles, truncated: count > MAX_TILES };
 }
 
+// A capture that did not settle is taken once more before it is recorded as a failure (a slow read can finish on the second look); the second result stands, settled or not.
 async function captureOne(browser, base, route, path, viewport, storage, out, diag) {
+  let unsettledOnce = false;
   for (let attempt = 1; ; attempt += 1) {
     const result = await captureAttempt(browser, base, route, path, viewport, storage, out, diag);
-    if (result.throttled.length === 0) return result.stem;
+    if (result.throttled.length === 0 && !result.settle.settled && !unsettledOnce) {
+      unsettledOnce = true;
+      continue;
+    }
+    if (result.throttled.length === 0) return { stem: result.stem, settle: result.settle };
     const waitMs = throttleWaitMs(result.throttled);
     diag.throttle = [...(diag.throttle ?? []), ...result.throttled.map((e) => ({ route: route.name, path, viewport: `${viewport.width}x${viewport.height}`, attempt, status: e.status, waitMs }))];
     if (attempt >= THROTTLE_ATTEMPTS) throw new Error(`throttled on every one of ${THROTTLE_ATTEMPTS} attempts (${route.name} ${path} at ${viewport.width}x${viewport.height}): the page was never captured whole`);
@@ -367,6 +412,7 @@ async function captureAttempt(browser, base, route, path, viewport, storage, out
   await installBypass(context, new URL(base).origin);
   try {
     const page = await context.newPage();
+    const pending = watchPending(page);
     const before = diag.navigations;
     const bare = (u) => { const x = new URL(u); return `${x.origin}${x.pathname}`; };
     const statuses = [];
@@ -381,13 +427,13 @@ async function captureAttempt(browser, base, route, path, viewport, storage, out
       if (diag.navigationPaths.length < 10 && !diag.navigationPaths.includes(path)) diag.navigationPaths.push(path);
     });
     const response = await page.goto(new URL(path, base).href, { waitUntil: 'load', timeout: 60000 });
-    const networkIdle = await settle(page);
+    const settled = await settle(page, pending);
     if (diag.navigations - before > NAVIGATION_CEILING) {
       throw new Error(`navigation loop: ${diag.navigations - before} navigations, paths: ${JSON.stringify(diag.navigationPaths)}`);
     }
     const finalUrl = new URL(page.url());
     await hydrated(page);
-    const dom = await page.evaluate(domSummary, { rowSelector: ROW_SELECTOR });
+    const dom = await page.evaluate(domSummary, { rowSelector: ROW_SELECTOR, itemPath: ITEM_PATH, itemPage: Boolean(route.discover) });
     const accessibility = await accessibilitySnapshot(page);
     // The layout measure (law 2 targets, overflow, titles) runs on every route at every width the capture visits; the compare fails on what it finds.
     const offences = await measurePage(page, { scope: 'body *' });
@@ -400,7 +446,8 @@ async function captureAttempt(browser, base, route, path, viewport, storage, out
       captured_at: new Date().toISOString(),
       http_status: response?.status() ?? null,
       final_path: `${finalUrl.pathname}${finalUrl.search}`,
-      network_idle: networkIdle,
+      settled: settled.settled,
+      settle_reason: settled.reason,
       accessibility,
       ...dom,
       tiles,
@@ -408,7 +455,7 @@ async function captureAttempt(browser, base, route, path, viewport, storage, out
       offences,
     };
     await writeFile(join(out, `${stem}.json`), `${JSON.stringify(record, null, 2)}\n`);
-    return { stem, throttled: throttleEvents(statuses) };
+    return { stem, throttled: throttleEvents(statuses), settle: settled };
   } finally {
     await context.close();
   }
@@ -515,10 +562,16 @@ async function main() {
       }
       try {
         for (const viewport of VIEWPORTS) {
-          entry.files.push(await captureOne(browser, base, route, entry.path, viewport, storage, out, entry.diagnostics));
+          const one = await captureOne(browser, base, route, entry.path, viewport, storage, out, entry.diagnostics);
+          entry.files.push(one.stem);
+          if (!one.settle.settled) {
+            entry.settled = false;
+            entry.settle_reason = [entry.settle_reason, `${viewport.width}x${viewport.height}: ${one.settle.reason}`].filter(Boolean).join('; ');
+          }
         }
+        entry.settled ??= true;
         entry.status = 'ok';
-        console.log(`captured ${route.name}`);
+        console.log(entry.settled ? `captured ${route.name}` : `captured ${route.name}, NOT SETTLED: ${entry.settle_reason}`);
       } catch (err) {
         entry.status = 'error';
         entry.error = err.message;
