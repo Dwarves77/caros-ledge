@@ -34,7 +34,6 @@
         "src/ui/StateNote.tsx": 1,
         "src/ui/detail/DetailShell.tsx": 1,
         "src/ui/detail/InferenceSection.tsx": 4,
-        "src/ui/detail/ItemConnections.tsx": 1,
         "src/ui/detail/RecordFacts.tsx": 4,
         "src/ui/detail/SourcesGrid.tsx": 1,
         "src/ui/detail/collab/ItemAssignBlock.tsx": 3

@@ -581,6 +581,56 @@
     ],
     "origin": "monitoring_only rule (an instrument addressed to the Member States)",
     "definition": "A Member State of the European Union, as the addressee of an instrument."
+   },
+   "distributor": {
+    "code": "distributor",
+    "label": "Distributor",
+    "order": 16,
+    "orgRoles": [
+     "distributor"
+    ],
+    "origin": "supply chain role attribution",
+    "definition": "Entity in the supply chain other than the manufacturer or importer who makes a product available."
+   },
+   "packer_filler": {
+    "code": "packer_filler",
+    "label": "Packer / filler",
+    "order": 17,
+    "orgRoles": [
+     "packer"
+    ],
+    "origin": "supply chain role attribution",
+    "definition": "Entity that puts products into packaging or fills packaging for transport."
+   },
+   "operator": {
+    "code": "operator",
+    "label": "Operator",
+    "order": 18,
+    "orgRoles": [
+     "operator"
+    ],
+    "origin": "supply chain role attribution",
+    "definition": "Transport operator or vehicle/fleet operator."
+   },
+   "rating_provider": {
+    "code": "rating_provider",
+    "label": "Rating provider",
+    "order": 19,
+    "orgRoles": [
+     "rating_provider"
+    ],
+    "origin": "supply chain role attribution",
+    "definition": "Provider of ESG or sustainability ratings and assessments."
+   },
+   "undertaking": {
+    "code": "undertaking",
+    "label": "Undertaking",
+    "order": 20,
+    "orgRoles": [
+     "undertaking"
+    ],
+    "origin": "supply chain role attribution",
+    "definition": "Commercial undertaking subject to statutory reporting or compliance."
    }
   },
   "freshness": {

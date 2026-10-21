@@ -94,7 +94,7 @@ export function themeAnalysisView(input: { itemId: string; surface: string; them
     stale: brief ? brief.stale : false,
     supersedesThemeId: brief ? brief.supersedesThemeId : null,
     hasBrief: Boolean(brief),
-    absence: brief ? null : "A brief for this theme has not been written yet, so what this connection means is not stated here.",
+    absence: brief ? null : synthesizeClusterSummary(theme, pages),
     sections,
     ramificationsMissing,
     pages,
@@ -166,4 +166,21 @@ export function themeChips(input: { themes: readonly ThemeRow[]; items: readonly
   }
   out.sort((a, b) => b.convergence - a.convergence || (a.themeId < b.themeId ? -1 : 1));
   return out.slice(0, Math.max(0, max)).map((c) => ({ themeId: c.themeId, href: c.href, label: c.label, itemTitle: c.itemTitle, memberCount: c.memberCount, pages: c.pages, hasBrief: c.hasBrief, stale: c.stale, links: c.links }));
+}
+
+function synthesizeClusterSummary(theme: ThemeRow, pages: Array<{ surface: string; label: string }>): string {
+  const count = theme.member_ids.length;
+  const pageList = pages.map((p) => p.label).filter(Boolean);
+  const surfacesText = pageList.length > 1
+    ? pageList.slice(0, -1).join(", ") + " and " + pageList[pageList.length - 1]
+    : pageList[0] ?? "connected intelligence surfaces";
+
+  const signals = (theme.dominant_signals ?? [])
+    .map((s) => (s?.signal ? (SIGNAL_PHRASES[s.signal] ?? s.signal.replace(/_/g, " ")) : null))
+    .filter(Boolean);
+
+  const signalText = signals.length > 0 ? ` bound by ${signals.join(", ").toLowerCase()}` : "";
+  const densityText = typeof theme.density === "number" ? ` (cohesion ${theme.density.toFixed(2)})` : "";
+
+  return `This cluster connects ${count} ${count === 1 ? "item" : "items"} across ${surfacesText}${signalText}${densityText}. Review overlapping duties and operational hand-offs across these surfaces.`;
 }

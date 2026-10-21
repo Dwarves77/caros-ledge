@@ -2,6 +2,7 @@
 // Ported from old_repo/src/components/shell/RelevanceBadge.tsx (lines 1-46)
 import Link from "next/link";
 
+import { normalizeDisplayTitle } from "@/core/fetch/titles";
 import type { ConnectionRow } from "@/core/flywheel/view-model";
 import type { ItemRelevance } from "@/core/workspace";
 
@@ -15,20 +16,56 @@ const BAND_WORDS: Record<ItemRelevance["band"], string> = { high: "High relevanc
 const APPLIES_WORDS: Record<string, string> = { applies: "Applies to your organisation", does_not_apply: "Does not apply to your organisation", needs_profile_input: "Needs more of your profile to say" };
 
 /** The connections strip of the masthead card: superseded-by, supersedes and the items this one is linked to, each a link on its own surface; the rest behind a closed disclosure. */
+function formatConnectionContext(r: ConnectionRow): string {
+  if (r.basisSummary && r.basisSummary.length > 0) {
+    const signals = r.basisSummary.map((b) => b.signal.replace(/_/g, " ")).join(", ");
+    return `Bound by ${signals}`;
+  }
+  switch (r.label.toLowerCase()) {
+    case "supersedes":
+      return "Replaces prior statutory provisions";
+    case "superseded by":
+      return "Succeeded by newer legislation";
+    case "implements":
+      return "Technical execution of parent framework";
+    case "implemented by":
+      return "Carried out by implementing legislation";
+    case "amends":
+      return "Modifies text or scope";
+    case "amended by":
+      return "Updated by subsequent amendment";
+    default:
+      return r.surface && r.surface !== "uncategorized"
+        ? `Cross-surface reference to ${r.surface}`
+        : "Direct reference in primary source";
+  }
+}
+
+/** The connections strip of the masthead card: superseded-by, supersedes and the items this one is linked to, each a link on its own surface; the rest behind a closed disclosure. */
 export function ItemConnections({ rows }: { rows: ConnectionRow[] }) {
   const linked = rows.filter((r) => r.href);
   if (linked.length === 0) return null;
-  const item = (r: ConnectionRow) => (
-    <Link key={`${r.id}-${r.label}`} href={r.href as string} prefetch={false} className="cl-detail-link" title={r.title} data-discovered={r.discovered ? "true" : undefined}>
-      <p className="cl-detail-label" style={{ margin: 0 }}>
-        {r.label}
-        {r.surface && r.surface !== "uncategorized" ? ` · ${r.surface}` : ""}
-      </p>
-      <p data-guard-title className="cl-detail-link-title">
-        {r.title}
-      </p>
-    </Link>
-  );
+  const item = (r: ConnectionRow) => {
+    const { title: displayTitle, subtitle } = normalizeDisplayTitle(r.title);
+    const contextLine = formatConnectionContext(r);
+    return (
+      <Link key={`${r.id}-${r.label}`} href={r.href as string} prefetch={false} className="cl-detail-link" title={r.title} data-discovered={r.discovered ? "true" : undefined}>
+        <p className="cl-detail-label" style={{ margin: 0 }}>
+          {r.label}
+          {r.surface && r.surface !== "uncategorized" ? ` · ${r.surface}` : ""}
+        </p>
+        <p data-guard-title className="cl-detail-link-title">
+          {displayTitle}
+        </p>
+        {subtitle && <p className="cl-detail-link-note">{subtitle}</p>}
+        {contextLine && (
+          <p className="cl-detail-link-context">
+            {contextLine}
+          </p>
+        )}
+      </Link>
+    );
+  };
   return (
     <div data-part="item-connections">
       <p className="cl-detail-label">Connections</p>
@@ -57,7 +94,7 @@ export function RelevanceRailCard({ state }: { state: RelevanceState }) {
       ) : (
         <>
           <TagChip>{BAND_WORDS[state.relevance.band]}</TagChip>
-          <p style={{ fontSize: "var(--fs-12)", color: "var(--ink-2)", margin: "8px 0 0" }}>{state.relevance.summary}</p>
+          <p style={{ fontSize: "var(--fs-12)", color: "var(--ink-2)", margin: "var(--sp-8) 0 0" }}>{state.relevance.summary}</p>
           {state.relevance.applicability && <p className="cl-detail-link-note">{APPLIES_WORDS[state.relevance.applicability.status] ?? ""}</p>}
         </>
       )}

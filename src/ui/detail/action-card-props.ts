@@ -8,14 +8,36 @@ import type { Resource } from "@/core/types";
 import { shareResource } from "../actions";
 
 export function commonActionCardProps(r: Resource, parts: { tagPopover: ReactNode; watch: ReactNode; onTag: () => void }) {
+  // Derive whoPays from costMechanism or whoIsBound/topic/type
+  let whoPaysVal: string | null = r.costMechanism || null;
+  if (!whoPaysVal) {
+    const bound = (r as unknown as { whoIsBound?: string[] | string | null }).whoIsBound;
+    if (bound) {
+      if (Array.isArray(bound) && bound.length > 0) {
+        whoPaysVal = `Obligated: ${bound.join(", ")}`;
+      } else if (typeof bound === "string" && bound.trim()) {
+        whoPaysVal = `Obligated: ${bound.trim()}`;
+      }
+    } else if (r.topic && r.type) {
+      whoPaysVal = `${r.type} targeting ${r.topic} duty holders`;
+    } else if (r.topic) {
+      whoPaysVal = `Duty holders in ${r.topic}`;
+    }
+  }
+
+  // Derive yourLanes from modes and jurisdiction
+  const modeStr = r.modes && r.modes.length > 0 ? r.modes.map((m) => m.charAt(0).toUpperCase() + m.slice(1).toLowerCase()).join(", ") : null;
+  const jurisStr = r.jurisdiction || (r.jurisdictionIso && r.jurisdictionIso.length > 0 ? r.jurisdictionIso.join(", ") : null);
+  const lanesVal = [jurisStr, modeStr].filter(Boolean).join(" · ") || null;
+
   return {
     tagPopover: parts.tagPopover,
     watch: parts.watch,
     onTag: parts.onTag,
     onShare: () => void shareResource(r),
     exportDisabled: !(r.fullBrief || r.url),
-    whoPays: { value: r.costMechanism || null },
-    yourLanes: { value: null, absenceReason: "not in primary source" as const },
+    whoPays: whoPaysVal ? { value: whoPaysVal } : { value: null, absenceReason: "pending" as const },
+    yourLanes: lanesVal ? { value: lanesVal } : { value: null, absenceReason: "connect data" as const },
     timeline: r.timeline,
   };
 }

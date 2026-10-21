@@ -5,6 +5,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { normalizeDisplayTitle } from "@/core/fetch/titles";
 import { hasBiasTags, type BiasTagInput } from "@/core/sources";
 import type { UrgencyBand } from "@/core/lists";
 import type { ImpactScores, TimelineEntry } from "@/core/types";
@@ -47,6 +48,7 @@ export interface ListRowProps {
  * timeline, tier and a 44 px overflow cell. The whole row is one link. Phone, tablet, mid and wide layouts and the narrow-box reflow are in base.css.
  */
 export function ListRow({ href, band, jurisdiction, title, meta, kind, impact, impactAbsence, due, dueAbsence, timeline, tier, overflow, tags, biasTags, itemGrade, minHeight = 56 }: ListRowProps) {
+  const { title: displayTitle, subtitle } = normalizeDisplayTitle(title);
   const hasBias = hasBiasTags(biasTags);
   const isRecord = itemGrade === "record";
   const rowAbsence: AbsenceReason | null = pickAbsenceReason([tier == null ? "not in primary source" : null, !due || !isImpactScored(impact) ? "pending" : null]);
@@ -57,14 +59,15 @@ export function ListRow({ href, band, jurisdiction, title, meta, kind, impact, i
   return (
     <div className="cl-list-row" data-part="list-row" data-part-variant="list" style={{ minHeight, ["--row-band" as string]: band.cssVar }}>
       <span className="cl-row-spine" aria-hidden="true" style={{ background: band.cssVar }} />
-      {href && <Link href={href} prefetch={false} className="cl-row-link" aria-label={title} />}
+      {href && <Link href={href} prefetch={false} className="cl-row-link" aria-label={displayTitle} />}
       <div className="cl-row-content">
         <div className="cl-row-line1">
           <span className="cl-row-juris">{jurisdiction}</span>
           <span className="cl-row-title">
             <span data-guard-title className="cl-row-title-text">
-              {title}
+              {displayTitle}
             </span>
+            {subtitle && <span className="cl-row-subtitle">({subtitle})</span>}
             {(meta || kind || rowAbsence || hasBias || isRecord || hasTags) && (
               <span className="cl-row-meta-tags">
                 {kind && <TagChip variant="row">{kind}</TagChip>}

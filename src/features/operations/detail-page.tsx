@@ -6,6 +6,8 @@ import { pageSession } from "@/features/account/server/page-session";
 import { log } from "@/core/shared";
 import { PageFailure } from "@/ui/shell";
 import { relatedItems } from "@/features/research/read/related-items";
+import { userClient } from "@/core/db";
+import { KIND_LABELS, readUpcoming } from "@/features/obligations";
 
 import { readDerivedFigures, readItemRegionInputs, readMatrixEligibility, readSpec09 } from "./read/operations-reads";
 import { regionsForItem } from "./model/region-resolve";
@@ -38,5 +40,11 @@ export async function OperationsDetailRoute({ params }: { params: Promise<{ slug
   if ("failed" in session) return <PageFailure what="This profile" />;
   const d = await loadDetail("operations", id, loadProfile(session.orgId), undefined, session.orgId);
   if (d.notFound) notFound();
-  return <OperationsDetail resource={d.resource} sections={d.sections} claimTiers={d.claimTiers} claimsDegraded={d.claimsDegraded} recommendedActions={d.recommendedActions} connectionRows={d.connectionRows} crossPage={d.crossPage} related={d.itemScoped.related} eligibility={d.itemScoped.eligibility} spec09={d.itemScoped.spec09} derived={d.itemScoped.derived} nowIso={session.nowIso} />;
+  const today = session.nowIso.slice(0, 10);
+  const db = await userClient();
+  const events = await readUpcoming(db, { itemId: d.uuid, limit: 20 }, today).catch((e: unknown) => {
+    log.warn("[operations] obligation events read failed:", e instanceof Error ? e.message : String(e));
+    return null;
+  });
+  return <OperationsDetail resource={d.resource} sections={d.sections} claimTiers={d.claimTiers} claimsDegraded={d.claimsDegraded} recommendedActions={d.recommendedActions} connectionRows={d.connectionRows} crossPage={d.crossPage} related={d.itemScoped.related} eligibility={d.itemScoped.eligibility} spec09={d.itemScoped.spec09} derived={d.itemScoped.derived} events={events?.events ?? []} eventsFailed={events === null} kindLabels={KIND_LABELS} nowIso={session.nowIso} />;
 }

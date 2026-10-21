@@ -77,7 +77,12 @@ export function extractEurlexTitle(html: unknown): TitleResult | null {
 /** A Cellar XHTML act: the `p.oj-doc-ti` lines joined by a space; older acts: the first <strong> after a legacy "EUR-Lex - CELEX" <title>; else the body lead (never <title>, which is the OJ file name here). */
 export function extractCellarTitle(html: unknown): TitleResult | null {
   const h = String(html ?? "");
-  const parts = [...h.matchAll(/<p[^>]*class="[^"]*\boj-doc-ti\b[^"]*"[^>]*>([\s\S]*?)<\/p>/gi)].map((m) => toText(m[1])).filter(Boolean);
+  const rawParts = [...h.matchAll(/<p[^>]*class="[^"]*\boj-doc-ti\b[^"]*"[^>]*>([\s\S]*?)<\/p>/gi)].map((m) => toText(m[1])).filter(Boolean);
+  const parts: string[] = [];
+  for (const part of rawParts) {
+    if (/^ANNEX(E)?\b/i.test(part.trim())) break;
+    parts.push(part);
+  }
   if (parts.length) return { title: parts.join(" "), origin: "cellar_doc_title" };
   if (/<title[^>]*>\s*EUR-Lex\s*-\s*[0-9A-Z()]+\s*-\s*[A-Z]{2}\s*<\/title>/i.test(h)) {
     const t = toText(h.match(/<strong[^>]*>([\s\S]*?)<\/strong>/i)?.[1] ?? "");
@@ -122,4 +127,89 @@ export function detectNotInForce(capturedText: unknown): { span: string; statusT
   const m = String(capturedText ?? "").match(FORCE_INDICATOR_RE);
   const statusText = m?.[1]?.trim();
   return m && statusText ? { span: m[0], statusText, notInForce: /^no longer in force\b/i.test(statusText) } : null;
+}
+
+
+const PRESERVED_ACRONYMS = new Set([
+  "EU", "EC", "EEC", "EUR", "EEA", "CBAM", "ETS", "IMO", "ESG",
+  "GHG", "LNG", "PFAS", "PCR", "US", "USA", "EPA", "CARB", "UK",
+  "UN", "ISO", "EN",
+  "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X",
+  "XI", "XII", "XIII", "XIV", "XV", "XVI", "XVII", "XVIII", "XIX", "XX",
+]);
+
+const LOWERCASE_TITLE_WORDS = new Set([
+  "a", "an", "the", "and", "but", "or", "for", "nor", "on", "at",
+  "to", "from", "by", "of", "in", "with", "as", "into", "onto", "over",
+]);
+
+/**
+ * Normalizes document titles for clear display across all platform surfaces:
+ * - Strips trailing appended Annex blocks (e.g. "ANNEX I ... ANNEX III") into an explicit subtitle ("Includes Annexes I–III").
+ * - Converts shouting all-caps EUR-Lex / catalogue titles into clean title case while preserving core domain acronyms and Roman numerals.
+ * - Preserves existing mixed-case or formatted titles intact.
+ */
+export function normalizeDisplayTitle(rawTitle: string): { title: string; subtitle: string | null } {
+  let title = String(rawTitle ?? "").trim();
+  if (!title) return { title: "", subtitle: null };
+
+  let subtitle: string | null = null;
+  const annexMatch = title.match(/(?:[\s—–,;:-]+|^)(ANNEX(?:ES)?|ANNEXE(?:S)?)\b([\s\S]*)$/i);
+  if (annexMatch && annexMatch.index !== undefined) {
+    const tail = annexMatch[0];
+    const residual = tail
+      .replace(/\b(annex(?:es)?|annexe(?:s)?|and|to|through|part|parts)\b/gi, "")
+      .replace(/[IVXLCDM\d\s,;—–\-\.\(\)]/gi, "");
+    if (!/[a-z]/i.test(residual)) {
+      const tokens = tail.match(/\b([IVXLCDM]+|\d+)\b/gi);
+      if (tokens && tokens.length > 0) {
+        const first = tokens[0]?.toUpperCase();
+        const last = tokens[tokens.length - 1]?.toUpperCase();
+        if (first && last) {
+          subtitle = tokens.length === 1 || first === last ? `Includes Annex ${first}` : `Includes Annexes ${first}–${last}`;
+        } else {
+          subtitle = "Includes Annex";
+        }
+      } else {
+        subtitle = "Includes Annex";
+      }
+      title = title.slice(0, annexMatch.index).trim().replace(/[\s—–,;:-]+$/, "");
+    }
+  }
+
+  const upper = (title.match(/[A-Z]/g) ?? []).length;
+  const lower = (title.match(/[a-z]/g) ?? []).length;
+  const isShouting = (upper >= 8 && lower === 0) || (upper >= 15 && upper / (upper + lower) > 0.8);
+
+  if (isShouting) {
+    const tokens = title.split(/(\s+|[—–\-\/])/);
+    let isStart = true;
+    title = tokens
+      .map((w) => {
+        if (/^\s+$/.test(w) || /^[—–\-\/]$/.test(w)) {
+          if (/[—–\-]/.test(w)) isStart = true;
+          return w;
+        }
+        const match = w.match(/^([^a-zA-Z0-9]*)([a-zA-Z0-9]+)([^a-zA-Z0-9]*)$/);
+        if (!match) return w;
+        const pre = match[1] ?? "";
+        const core = match[2] ?? "";
+        const post = match[3] ?? "";
+        if (!core) return w;
+        const upperCore = core.toUpperCase();
+        let resCore: string;
+        if (PRESERVED_ACRONYMS.has(upperCore)) {
+          resCore = upperCore;
+        } else if (!isStart && LOWERCASE_TITLE_WORDS.has(core.toLowerCase())) {
+          resCore = core.toLowerCase();
+        } else {
+          resCore = core.charAt(0).toUpperCase() + core.slice(1).toLowerCase();
+        }
+        isStart = false;
+        return pre + resCore + post;
+      })
+      .join("");
+  }
+
+  return { title, subtitle };
 }

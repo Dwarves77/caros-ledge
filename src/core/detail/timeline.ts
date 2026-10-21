@@ -3,7 +3,7 @@
 // The detail page's timeline arithmetic. Classification, the 4/4 collapse, the next-milestone clause and the obligation-event merge are the kit's (src/ui/timeline-math, one copy: the
 // action card draws from them); this file adds the requirement-trajectory step and the helpers the page needs. Nothing here reads the clock: `nowIso` is the request's one instant.
 import type { TimelineEntry } from "@/core/types";
-import { mergeObligationEvents } from "@/ui/timeline-math";
+import { mergeObligationEvents, type ObligationEventInput } from "@/ui/timeline-math";
 
 export interface TrajectoryStep {
   date: string;
@@ -32,4 +32,4 @@ export function formatTrajectoryStep(step: TrajectoryStep): string {
 }
 
 /** The page timeline: the stored milestones with the obligation events merged in by date. */
-export const withObligationEvents = (timeline: TimelineEntry[], events: Array<{ event_date: string; event_kind: string }>, kindLabels: Record<string, string>): TimelineEntry[] => mergeObligationEvents(timeline, events, kindLabels);
+export const withObligationEvents = (timeline: TimelineEntry[], events: Array<ObligationEventInput>, kindLabels: Record<string, string>): TimelineEntry[] => mergeObligationEvents(timeline, events, kindLabels);

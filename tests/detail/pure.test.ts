@@ -152,7 +152,7 @@ test("theme views: the item's theme, the chips of a surface, the analysis when n
   assert.match(chips[0]?.label ?? "", /^Shared source across /);
   const view = themeAnalysisView({ itemId: "a", surface: "regulations", themes: themes as never, briefs: [], members: items });
   assert.equal(view?.hasBrief, false);
-  assert.match(view?.absence ?? "", /has not been written yet/);
+  assert.match(view?.absence ?? "", /This cluster connects 2 items across/);
   assert.deepEqual(view?.membersByPage.map((g) => [g.surface, g.total]), [["market", 1]]);
   const unsignalled = themeChips({ themes: [{ id: "t3", member_ids: ["a", "b"], surfaces: ["regulations", "market"], convergence: 0.5, pivots: [] }] as never, items, surface: "regulations", max: 6 });
   assert.ok((unsignalled[0]?.label ?? "").length > 0, "a theme with no named signal still has a label");

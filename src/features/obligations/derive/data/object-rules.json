@@ -1,23 +1,86 @@
 {
   "phrases": [
-    { "class": "ism_company", "pattern": "\\bshipping compan(?:y|ies)\\b|\\bshipowners?\\b" },
-    { "class": "carrier", "pattern": "\\bcarriers?\\b" },
-    { "class": "shipper", "pattern": "\\bshippers?\\b|\\bconsignors?\\b" },
-    { "class": "forwarder", "pattern": "\\b(?:freight )?forwarders?\\b" },
-    { "class": "nvocc", "pattern": "\\bNVOCCs?\\b|non-vessel[- ]operating common carriers?" },
-    { "class": "aircraft_operator", "pattern": "\\baircraft operators?\\b" },
-    { "class": "fuel_supplier", "pattern": "\\bfuel suppliers?\\b" },
-    { "class": "producer", "pattern": "\\bproducers?\\b|\\bmanufacturers?\\b" },
-    { "class": "importer_of_record", "pattern": "\\bimporters?\\b" },
-    { "class": "exporter", "pattern": "\\bexporters?\\b" },
-    { "class": "packaging_user", "pattern": "\\busers? of (?:transport|grouped) packaging\\b" },
-    { "class": "trader", "pattern": "\\btraders?\\b" },
-    { "class": "member_state", "pattern": "\\bMember States?\\b" }
+    {
+      "class": "ism_company",
+      "pattern": "\\bshipping compan(?:y|ies)\\b|\\bshipowners?\\b"
+    },
+    {
+      "class": "carrier",
+      "pattern": "\\bcarriers?\\b|\\btransport operators?\\b|\\boperators?\\b"
+    },
+    {
+      "class": "shipper",
+      "pattern": "\\bshippers?\\b|\\bconsignors?\\b"
+    },
+    {
+      "class": "forwarder",
+      "pattern": "\\b(?:freight )?forwarders?\\b"
+    },
+    {
+      "class": "nvocc",
+      "pattern": "\\bNVOCCs?\\b|non-vessel[- ]operating common carriers?"
+    },
+    {
+      "class": "aircraft_operator",
+      "pattern": "\\baircraft operators?\\b"
+    },
+    {
+      "class": "fuel_supplier",
+      "pattern": "\\bfuel suppliers?\\b"
+    },
+    {
+      "class": "producer",
+      "pattern": "\\bproducers?\\b|\\bmanufacturers?\\b"
+    },
+    {
+      "class": "importer_of_record",
+      "pattern": "\\bimporters?\\b"
+    },
+    {
+      "class": "exporter",
+      "pattern": "\\bexporters?\\b"
+    },
+    {
+      "class": "packaging_user",
+      "pattern": "\\busers? of (?:transport|grouped) packaging\\b"
+    },
+    {
+      "class": "trader",
+      "pattern": "\\btraders?\\b"
+    },
+    {
+      "class": "member_state",
+      "pattern": "\\bMember States?\\b"
+    },
+    {
+      "class": "distributor",
+      "pattern": "\\bdistributors?\\b"
+    },
+    {
+      "class": "packer_filler",
+      "pattern": "\\b(?:packers?|fillers?)\\b"
+    },
+    {
+      "class": "rating_provider",
+      "pattern": "\\b(?:ESG )?rating providers?\\b"
+    },
+    {
+      "class": "undertaking",
+      "pattern": "\\bundertakings?\\b"
+    }
   ],
   "pinpoint": "\\b(?:Article|Art\\.)\\s+\\d+[a-z]?(?:\\(\\d+\\))?(?:\\([a-z]\\))?",
   "deontic": "\\b(?:shall|must|is required to|are required to)\\b",
   "crossReference": "^[^.;\\n]{0,48}?\\b(?:of|to|in|under)\\s+(?:the\\s+)?(?:Directive|Regulation|Decision|Treaty|Council|Commission|Convention|Annex)",
-  "window": { "maxSentence": 400, "pinpointLookBack": 200, "headingOverlap": 16, "subjectDistance": 80 },
+  "window": {
+    "maxSentence": 400,
+    "pinpointLookBack": 200,
+    "headingOverlap": 16,
+    "subjectDistance": 80
+  },
   "triggerAttribute": "instrument_in_scope",
-  "datePhrases": { "date_of_application": "\\bappl(?:y|ies|ication)\\b", "enforcement_start": "\\b(?:enforce(?:ment|d)?|penalt(?:y|ies))\\b" }
+  "datePhrases": {
+    "date_of_application": "\\bappl(?:y|ies|ication)\\b",
+    "enforcement_start": "\\b(?:enforce(?:ment|d)?|penalt(?:y|ies))\\b"
+  }
 }

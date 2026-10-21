@@ -74,14 +74,60 @@ export function greenPercent(states: TimelineDotState[]): number {
   return states.length > 0 && states.every((s) => s === "passed") ? 100 : 0;
 }
 
-/** Event rows merged into a timeline by date: a date already on the timeline is not repeated. */
-export function mergeObligationEvents(timeline: TimelineEntry[], events: Array<{ event_date: string; event_kind: string }>, kindLabels: Record<string, string>): TimelineEntry[] {
-  const seen = new Set(timeline.map((t) => t.date));
+function summarizeObligationText(text: string, fallback: string): string {
+  const t = String(text ?? "").trim().replace(/\s+/g, " ");
+  if (!t) return fallback;
+  if (t.length <= 48) return t;
+  const firstSentence = t.split(/(?<=[.!?])\s+/)[0] ?? t;
+  if (firstSentence.length <= 48) return firstSentence;
+  const truncated = firstSentence.slice(0, 48);
+  const lastSpace = truncated.lastIndexOf(" ");
+  return (lastSpace > 20 ? truncated.slice(0, lastSpace) : truncated).trim() + "…";
+}
+
+export interface ObligationEventInput {
+  event_date: string;
+  event_kind: string;
+  obligation_text?: string | null;
+  source_claim_id?: string | null;
+  source_section_id?: string | null;
+}
+
+/** Event rows merged into a timeline by date: a date already on the timeline is not repeated. Preserves obligation_text, claimId, and builds concise label. */
+export function mergeObligationEvents(
+  timeline: TimelineEntry[],
+  events: Array<ObligationEventInput>,
+  kindLabels: Record<string, string>
+): TimelineEntry[] {
+  const seen = new Map<string, number>();
+  timeline.forEach((t, i) => seen.set(t.date, i));
   const merged = [...timeline];
   for (const ev of events) {
-    if (!ev.event_date || seen.has(ev.event_date)) continue;
-    seen.add(ev.event_date);
-    merged.push({ date: ev.event_date, label: kindLabels[ev.event_kind] ?? ev.event_kind });
+    if (!ev.event_date) continue;
+    const existingIndex = seen.get(ev.event_date);
+    if (existingIndex !== undefined) {
+      const existing = merged[existingIndex];
+      if (existing && !existing.detail && ev.obligation_text) {
+        merged[existingIndex] = {
+          ...existing,
+          detail: ev.obligation_text,
+          claimId: existing.claimId ?? ev.source_claim_id ?? null,
+          sectionId: existing.sectionId ?? ev.source_section_id ?? null,
+          kind: existing.kind ?? ev.event_kind,
+        };
+      }
+      continue;
+    }
+    seen.set(ev.event_date, merged.length);
+    const label = summarizeObligationText(ev.obligation_text ?? "", kindLabels[ev.event_kind] ?? ev.event_kind);
+    merged.push({
+      date: ev.event_date,
+      label,
+      detail: ev.obligation_text || undefined,
+      claimId: ev.source_claim_id ?? null,
+      sectionId: ev.source_section_id ?? null,
+      kind: ev.event_kind,
+    });
   }
   return merged;
 }

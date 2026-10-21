@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { normalizeDisplayTitle } from "@/core/fetch/titles";
 import { pickVisibleInferences, type InferenceView } from "@/core/detail/inference-view";
 import { CONNECTED_SECTION_ID, crossPageOrd, INFERENCES_SECTION_ID } from "@/core/detail/section-index";
 import type { buildIntersectionView } from "@/core/flywheel/view-model";
@@ -50,14 +51,18 @@ const Block = ({ label, children }: { label: string; children: ReactNode }) => (
     {children}
   </div>
 );
-const RowLink = ({ href, title, note }: { href: string; title: string; note?: string | undefined }) => (
-  <Link href={href} prefetch={false} className="cl-detail-link">
-    <p data-guard-title className="cl-detail-link-title">
-      {title}
-    </p>
-    {note && <p className="cl-detail-link-note">{note}</p>}
-  </Link>
-);
+const RowLink = ({ href, title, note }: { href: string; title: string; note?: string | undefined }) => {
+  const { title: displayTitle, subtitle } = normalizeDisplayTitle(title);
+  const secondary = [subtitle, note].filter(Boolean).join(" · ");
+  return (
+    <Link href={href} prefetch={false} className="cl-detail-link">
+      <p data-guard-title className="cl-detail-link-title">
+        {displayTitle}
+      </p>
+      {secondary && <p className="cl-detail-link-note">{secondary}</p>}
+    </Link>
+  );
+};
 
 function GroupList({ groups }: { groups: Group[] }) {
   return (
@@ -130,13 +135,13 @@ function ThemeAnalysis({ theme, surfaceLabel, first }: { theme: ThemeAnalysisVie
       {theme.membersByPage.length > 0 && (
         <Block label="Other items in this theme">
           {theme.membersByPage.map((g) => (
-            <div key={g.surface} className="cl-detail-block">
+            <div key={g.surface} className="cl-detail-block" style={{ marginBottom: "var(--sp-14)" }}>
               <Label>
                 {g.label}
-                {g.samePage ? " (this page)" : ""} · {g.total}
+                {g.samePage ? " (this page)" : ""} · {g.total} {g.total === 1 ? "item" : "items"}
               </Label>
               {g.items.map((it) => (
-                <RowLink key={it.id} href={it.href} title={it.title} />
+                <RowLink key={it.id} href={it.href} title={it.title} note={g.label} />
               ))}
               {g.moreHref && <RowLink href={g.moreHref} title={`and ${g.total - g.items.length} more on ${g.label}`} />}
             </div>

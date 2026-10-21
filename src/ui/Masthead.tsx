@@ -2,6 +2,8 @@
 // Ported from old_repo/src/lib/render-now.ts (lines 1-11)
 import type { ReactNode } from "react";
 
+import { normalizeDisplayTitle } from "@/core/fetch/titles";
+
 import { weekOfIso } from "./iso-week";
 import { SectionCard } from "./SectionCard";
 import { StateNote } from "./StateNote";
@@ -25,6 +27,7 @@ interface MastheadProps {
 
 /** The frame masthead: the VOL and ISO-week line, the Anton title, a dek, the command bar slot, a notice and the action and connections slots. */
 export function Masthead({ title, size = "list", dek, dateLabel, nowIso, volume = "IV", commandBar, eyebrowSuffix, notice, actionSlot, connectionsSlot }: MastheadProps) {
+  const { title: displayTitle, subtitle } = normalizeDisplayTitle(title);
   return (
     <SectionCard as="header" className="cl-masthead" dataAttributes={commandBar ? { "data-masthead-size": size, "data-masthead-cmdbar": "" } : { "data-masthead-size": size }}>
       <div className="cl-masthead-body">
@@ -35,8 +38,9 @@ export function Masthead({ title, size = "list", dek, dateLabel, nowIso, volume 
         <div className="cl-masthead-row">
           <div className="cl-masthead-titleblock">
             <h1 data-guard-title data-guard-display="page-title" className="cl-masthead-title">
-              {title}
+              {displayTitle}
             </h1>
+            {subtitle && <p className="cl-masthead-subtitle">{subtitle}</p>}
             {dek && <div className="cl-masthead-dek">{dek}</div>}
           </div>
           {commandBar && <div className="cl-masthead-cmdbar">{commandBar}</div>}

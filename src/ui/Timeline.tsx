@@ -1,6 +1,9 @@
+"use client";
+
 // Ported from old_repo/src/components/ui/Timeline.tsx (lines 40-170)
 // Ported from old_repo/src/components/ui/Timeline.tsx (lines 180-375)
 import Link from "next/link";
+import { useState } from "react";
 
 import type { UrgencyBand } from "@/core/lists";
 import { pluralize } from "@/core/shared";
@@ -34,10 +37,11 @@ function Header({ total, passed, nextDate }: { total: number; passed: number; ne
 
 /**
  * The action-card timeline: ONE markup. Wide it is a dot track with date above and label below each marker; on the phone the same markers reflow to a
- * vertical stack (grid in base.css). A label is not a focus stop (a tab stop per marker was a defect, B-1965); the full text rides in `title` and the callout's Full schedule action is the keyboard route. The callout states the next milestone; it never asserts that obligations are
- * current from the entry list alone (B-1964).
+ * vertical stack (grid in base.css). Markers are interactive buttons: clicking a milestone expands an inline context bar below the timeline showing
+ * verbatim details, kind, and quick navigation / search actions.
  */
 export function Timeline({ entries, band, nowIso, onFullSchedule, fullScheduleHref, moreMarkersHref }: TimelineProps) {
+  const [selected, setSelected] = useState<number | null>(null);
   const list = entries ?? [];
   if (list.length === 0) {
     return (
@@ -53,13 +57,26 @@ export function Timeline({ entries, band, nowIso, onFullSchedule, fullScheduleHr
   const clause = nextMilestoneClause(classified, nowIso);
   const lastDate = list[list.length - 1]?.date ?? "";
   const action = onFullSchedule ? { label: "Full schedule ↓", onClick: onFullSchedule } : fullScheduleHref ? { label: "Full schedule ↓", href: fullScheduleHref } : undefined;
+
+  const selectedMilestone = selected !== null ? visible.find((c) => c.index === selected) : null;
+  const selectedEntry = selectedMilestone?.entry ?? null;
+
   return (
     <div data-part="timeline" className="cl-tl">
       <Header total={counts.total} passed={counts.passed} nextDate={counts.nextDate} />
       <div role="img" aria-label={`Milestone timeline: ${counts.total} milestones, ${counts.passed} passed`} className="cl-tl-track" style={{ ["--tl-n" as string]: visible.length, ["--tl-green" as string]: `${greenPercent(visible.map((c) => c.state))}%` }}>
         <div aria-hidden="true" className="cl-tl-line" />
         {visible.map(({ entry, state, index }, i) => (
-          <div key={index} className="cl-tl-marker" data-state={state} style={{ ["--c" as string]: i + 1 }}>
+          <button
+            key={index}
+            type="button"
+            className="cl-tl-marker"
+            data-state={state}
+            aria-pressed={selected === index}
+            aria-label={`${entry.label} · ${entry.date}`}
+            onClick={() => setSelected(selected === index ? null : index)}
+            style={{ ["--c" as string]: i + 1 }}
+          >
             <span className="cl-tl-date">{entry.date}</span>
             <span className="cl-tl-dotcell">
               <TimelineDot state={state} bandHex={band.hex} size={state === "next" ? 12 : 8} ring={3} />
@@ -67,7 +84,7 @@ export function Timeline({ entries, band, nowIso, onFullSchedule, fullScheduleHr
             <span title={entry.label} className="cl-tl-label">
               {entry.label}
             </span>
-          </div>
+          </button>
         ))}
       </div>
       {collapsed && hiddenCount > 0 &&
@@ -80,6 +97,49 @@ export function Timeline({ entries, band, nowIso, onFullSchedule, fullScheduleHr
             +{hiddenCount} more
           </span>
         ))}
+      {selectedEntry && (
+        <div data-part="timeline-context" className="cl-tl-context">
+          <div className="cl-tl-context-head">
+            <span className="cl-tl-context-tag">
+              {selectedEntry.date} {selectedEntry.kind ? ` · ${selectedEntry.kind.replace(/_/g, " ")}` : ""}
+            </span>
+            <button
+              type="button"
+              onClick={() => setSelected(null)}
+              className="cl-tl-context-close"
+              aria-label="Close milestone details"
+            >
+              Close ✕
+            </button>
+          </div>
+          <p className="cl-tl-context-body">
+            {selectedEntry.detail ?? selectedEntry.label}
+          </p>
+          <div className="cl-tl-context-actions">
+            <a href="#obligations" className="cl-tl-context-link cl-tl-context-link--brand">
+              View in obligations ↓
+            </a>
+            <a href="#summary" className="cl-tl-context-link">
+              Summary ↵
+            </a>
+            <a
+              href={`?q=${encodeURIComponent(selectedEntry.date)}`}
+              onClick={(e) => {
+                const askInput = document.querySelector<HTMLInputElement>("input[data-guard-search], input[type='search']");
+                if (askInput) {
+                  e.preventDefault();
+                  askInput.value = selectedEntry.date;
+                  askInput.focus();
+                  askInput.dispatchEvent(new Event("input", { bubbles: true }));
+                }
+              }}
+              className="cl-tl-context-link"
+            >
+              Research {selectedEntry.date} →
+            </a>
+          </div>
+        </div>
+      )}
       <div className="cl-tl-callout">
         {clause ? (
           <StateNote band={band} {...(action ? { action } : {})}>
