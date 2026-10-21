@@ -3,6 +3,9 @@ import { notFound } from "next/navigation";
 
 import { applyIdRedirect, loadDetail, type ItemScopedCtx } from "@/core/detail";
 import { pageSession } from "@/features/account/server/page-session";
+import { userClient } from "@/core/db";
+import { log } from "@/core/shared";
+import { KIND_LABELS, readUpcoming } from "@/features/obligations";
 import { PageFailure } from "@/ui/shell";
 
 import { readAssessmentBundle } from "./read/research-reads";
@@ -26,5 +29,11 @@ export async function ResearchDetailRoute({ params }: { params: Promise<{ slug: 
   if ("failed" in session) return <PageFailure what="This finding" />;
   const d = await loadDetail("research", id, loadFinding, undefined, session.orgId);
   if (d.notFound) notFound();
-  return <ResearchDetail resource={d.resource} sections={d.sections} claimTiers={d.claimTiers} claimsDegraded={d.claimsDegraded} recommendedActions={d.recommendedActions} connectionRows={d.connectionRows} crossPage={d.crossPage} related={d.itemScoped.related} assessment={d.itemScoped.assessment} nowIso={session.nowIso} />;
+  const today = session.nowIso.slice(0, 10);
+  const db = await userClient();
+  const events = await readUpcoming(db, { itemId: d.uuid, limit: 20 }, today).catch((e: unknown) => {
+    log.warn("[research] obligation events read failed:", e instanceof Error ? e.message : String(e));
+    return null;
+  });
+  return <ResearchDetail resource={d.resource} sections={d.sections} claimTiers={d.claimTiers} claimsDegraded={d.claimsDegraded} recommendedActions={d.recommendedActions} connectionRows={d.connectionRows} crossPage={d.crossPage} related={d.itemScoped.related} assessment={d.itemScoped.assessment} events={events?.events ?? []} eventsFailed={events === null} kindLabels={KIND_LABELS} nowIso={session.nowIso} />;
 }

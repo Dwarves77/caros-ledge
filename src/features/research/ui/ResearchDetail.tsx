@@ -11,7 +11,9 @@ import { useMemo, useState } from "react";
 import type { RecommendedAction } from "@/core/brief";
 import { parseRecordSections, splitKeyDateFacts, stripSourcesSection } from "@/core/brief";
 import type { SectionRow } from "@/core/detail/item-read";
+import { withObligationEvents } from "@/core/detail/timeline";
 import { CONNECTED_SECTION_ID, crossPageOrd, INFERENCES_SECTION_ID } from "@/core/detail/section-index";
+import type { ObligationEventInput } from "@/ui/timeline-math";
 import { sourceEntriesOf } from "@/core/detail/sources-parse";
 import type { ConnectionRow } from "@/core/flywheel/view-model";
 import { jurisLabelOf } from "@/core/jurisdictions";
@@ -47,6 +49,9 @@ export interface ResearchDetailProps {
   crossPage: CrossPageData;
   related: RelatedResult;
   assessment: AssessmentBundle;
+  events?: ObligationEventInput[];
+  eventsFailed?: boolean;
+  kindLabels?: Record<string, string>;
   nowIso: string;
 }
 
@@ -55,6 +60,7 @@ const HEADINGS: Readonly<Record<string, string>> = { "1": "What the research fou
 
 export function ResearchDetail(p: ResearchDetailProps) {
   const { resource: r, nowIso } = p;
+  const timeline = useMemo(() => withObligationEvents(r.timeline ?? [], p.events ?? [], p.kindLabels ?? {}), [r.timeline, p.events, p.kindLabels]);
   const router = useRouter();
   const relevance = useItemRelevance(r.id);
   const band = bandFromPriority(r.priority);
@@ -100,6 +106,7 @@ export function ResearchDetail(p: ResearchDetailProps) {
       meta={rows.length > 0 ? `${rows.length} source${rows.length === 1 ? "" : "s"}${p.connectionRows.length > 0 ? ` · ${p.connectionRows.length} ${pluralize(p.connectionRows.length, "connection")}` : ""}` : null}
       onExport={() => void downloadMarkdownBrief(r, { filenamePrefix: "research", metaRows: [r.jurisdiction ? `- Jurisdiction: ${r.jurisdiction}` : null, r.type ? `- Type: ${r.type}` : null, r.url ? `- Source: ${r.url}` : null] })}
       {...commonActionCardProps(r, { tagPopover: <DetailTagRow itemId={r.id} open={tagOpen} onOpenChange={setTagOpen} />, watch: <DetailWatch type="research" id={r.id} />, onTag: () => setTagOpen((v) => !v) })}
+      timeline={timeline}
       where={{ value: jurisLabel }}
     />
   );
@@ -112,6 +119,11 @@ export function ResearchDetail(p: ResearchDetailProps) {
           {p.claimsDegraded && (
             <StateNote tone="error" action={{ label: "Retry", onClick: () => router.refresh() }}>
               The facts of this finding did not load, so none is shown. Nothing was changed; try again.
+            </StateNote>
+          )}
+          {p.eventsFailed && (
+            <StateNote tone="error" action={{ label: "Retry", onClick: () => router.refresh() }}>
+              The dated obligations failed to load, so the timeline shows only the stored milestones.
             </StateNote>
           )}
           <SectionIndex sections={index} depth={depth} onDepthChange={setDepth} />

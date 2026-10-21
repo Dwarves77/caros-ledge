@@ -4,7 +4,11 @@
 export interface TimelineEntry {
   date: string;
   label: string;
-  status?: "past" | "current" | "future";
+  status?: "past" | "current" | "future" | undefined;
+  detail?: string | undefined;
+  claimId?: string | null | undefined;
+  sectionId?: string | null | undefined;
+  kind?: string | undefined;
 }
 
 export interface ImpactScores {

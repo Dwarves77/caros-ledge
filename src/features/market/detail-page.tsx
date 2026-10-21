@@ -6,6 +6,7 @@ import { userClient } from "@/core/db";
 import { applyIdRedirect, loadDetail } from "@/core/detail";
 import { log } from "@/core/shared";
 import { pageSession } from "@/features/account/server/page-session";
+import { KIND_LABELS, readUpcoming } from "@/features/obligations";
 import { PageFailure } from "@/ui/shell/PageFailure";
 
 import { bandOf } from "./lib/signal-band";
@@ -18,16 +19,25 @@ export async function MarketDetailRoute({ params }: { params: Promise<{ slug: st
   const session = await pageSession(`/market/${slug}`);
   if ("failed" in session) return <PageFailure what="This signal" />;
   const db = await userClient();
-  const detail = await (async () => {
+  const today = session.nowIso.slice(0, 10);
+  const data = await (async () => {
     await applyIdRedirect("market", id, db);
-    return loadDetail("market", id, ({ db: client, uuid, resource }) => readMarketDetail(client, { id: uuid, sourceId: resource.sourceId ?? null, needsCarbon: bandOf(resource) === "corridor" || resource.itemGrade === "record" }), db, session.orgId);
+    const detail = await loadDetail("market", id, ({ db: client, uuid, resource }) => readMarketDetail(client, { id: uuid, sourceId: resource.sourceId ?? null, needsCarbon: bandOf(resource) === "corridor" || resource.itemGrade === "record" }), db, session.orgId);
+    if (detail.notFound) return "missing" as const;
+    const events = await readUpcoming(db, { itemId: detail.uuid, limit: 20 }, today).catch((e: unknown) => {
+      unstable_rethrow(e);
+      log.warn("[market] obligation events read failed:", e instanceof Error ? e.message : String(e));
+      return null;
+    });
+    return { detail, events };
   })().catch((e: unknown) => {
     unstable_rethrow(e);
     log.warn("[market] detail did not load:", e instanceof Error ? e.message : String(e));
     return null;
   });
-  if (detail === null) return <PageFailure what="This signal" />;
-  if (detail.notFound) notFound();
+  if (data === null) return <PageFailure what="This signal" />;
+  if (data === "missing") notFound();
+  const { detail, events } = data;
   return (
     <MarketDetailView
       resource={detail.resource}
@@ -38,6 +48,9 @@ export async function MarketDetailRoute({ params }: { params: Promise<{ slug: st
       crossPage={detail.crossPage}
       connectionRows={detail.connectionRows}
       bundle={detail.itemScoped}
+      events={events?.events ?? []}
+      eventsFailed={events === null}
+      kindLabels={KIND_LABELS}
       nowIso={session.nowIso}
     />
   );

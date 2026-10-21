@@ -10,7 +10,9 @@ import { useMemo, useState } from "react";
 
 import type { RecommendedAction } from "@/core/brief";
 import { stripSourcesSection } from "@/core/brief";
+import { withObligationEvents } from "@/core/detail/timeline";
 import { CONNECTED_SECTION_ID, crossPageOrd, INFERENCES_SECTION_ID } from "@/core/detail/section-index";
+import type { ObligationEventInput } from "@/ui/timeline-math";
 import { sourceEntriesOf } from "@/core/detail/sources-parse";
 import type { SectionRow } from "@/core/detail/item-read";
 import type { ConnectionRow } from "@/core/flywheel";
@@ -46,6 +48,9 @@ export interface MarketDetailViewProps {
   crossPage: CrossPageData;
   connectionRows: ConnectionRow[];
   bundle: MarketDetailBundle;
+  events?: ObligationEventInput[];
+  eventsFailed?: boolean;
+  kindLabels?: Record<string, string>;
   nowIso: string;
 }
 
@@ -86,7 +91,8 @@ function ConnectionList({ rows }: { rows: ConnectionRow[] }) {
 
 const WAITING = "appears here once the signal brief is generated.";
 
-export function MarketDetailView({ resource: r, sections, claimTiers, claimsDegraded, recommendedActions, crossPage, connectionRows, bundle, nowIso }: MarketDetailViewProps) {
+export function MarketDetailView({ resource: r, sections, claimTiers, claimsDegraded, recommendedActions, crossPage, connectionRows, bundle, events, eventsFailed, kindLabels, nowIso }: MarketDetailViewProps) {
+  const timeline = useMemo(() => withObligationEvents(r.timeline ?? [], events ?? [], kindLabels ?? {}), [r.timeline, events, kindLabels]);
   const router = useRouter();
   const retry = () => router.refresh();
   const relevance = useItemRelevance(r.id);
@@ -142,6 +148,7 @@ export function MarketDetailView({ resource: r, sections, claimTiers, claimsDegr
       meta={sourceRows.length > 0 ? `${sourceRows.length} source${sourceRows.length === 1 ? "" : "s"}${citers !== null ? ` · ${citers} corroborating` : ""}` : null}
       onExport={() => void downloadMarkdownBrief(r, { filenamePrefix: "signal", metaRows: [r.jurisdiction ? `- Jurisdiction: ${r.jurisdiction}` : null, r.severity ? `- Severity: ${r.severity}` : null, r.signalBand ? `- Signal band: ${r.signalBand}` : null, r.url ? `- Source: ${r.url}` : null] })}
       {...commonActionCardProps(r, { tagPopover: <DetailTagRow itemId={r.id} open={tagOpen} onOpenChange={setTagOpen} />, watch: <DetailWatch type="signal" id={r.id} />, onTag: () => setTagOpen((v) => !v) })}
+      timeline={timeline}
       where={{ value: jurisLabel }}
     />
   );
@@ -154,6 +161,11 @@ export function MarketDetailView({ resource: r, sections, claimTiers, claimsDegr
           {claimsDegraded && (
             <StateNote tone="error" action={{ label: "Retry", onClick: retry }}>
               The facts of this signal did not load, so none is shown. Nothing was changed; try again.
+            </StateNote>
+          )}
+          {eventsFailed && (
+            <StateNote tone="error" action={{ label: "Retry", onClick: retry }}>
+              The dated obligations failed to load, so the timeline shows only the stored milestones.
             </StateNote>
           )}
           <SectionIndex sections={index} depth={depth} onDepthChange={setDepth} />
