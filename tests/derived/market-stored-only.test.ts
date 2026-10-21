@@ -48,10 +48,16 @@ test("surfaces:19 one severity vocabulary: a label for each of the thirteen stor
 // ---- the sections and counts ----
 const draw = (el: ReturnType<typeof createElement>) => textOf(renderApp(el));
 
-test("surfaces:14 no carbon-cost section or rail card is drawn while no licence-clear distance, payload or carbon-price input exists: the feature is not in the tree, so no gap sentence (licence wording) can reach a customer", () => {
-  const rail = draw(createElement(MarketRail, { drops: [], board: null }));
-  assert.doesNotMatch(rail, /Carbon cost per FEU|input.* missing|licence/i);
-  for (const f of ["src/features/market/ui/MarketView.tsx", "src/features/market/ui/Rails.tsx", "src/features/market/ui/MarketSignalDetail.tsx"]) assert.doesNotMatch(readFileSync(f, "utf8"), /Carbon cost per FEU|CarbonCostOverlay/, f);
+test("surfaces:14 (reversed 2026-10-20, CARBON-1) the carbon cost section and rail card stay on the page when an input is missing: they name the missing input and the licence wording never reaches a customer", () => {
+  const row = { label: "Shanghai – Rotterdam · ocean", fullLabel: "Shanghai (CN) → Rotterdam (NL), ocean", point: null, currency: null, missing: ["carbon price", "payload per FEU"] };
+  const rail = draw(createElement(MarketRail, { carbon: [row], drops: [], board: null }));
+  assert.match(rail, /Carbon cost per FEU/);
+  assert.match(rail, /missing: carbon price, payload per FEU/, "the card says which inputs the figure waits for");
+  assert.doesNotMatch(rail, /licence/i);
+  assert.match(draw(createElement(MarketRail, { carbon: [], drops: [], board: null })), /No corridors are tracked/, "no corridor is a stated absence, not a missing card");
+  assert.match(draw(createElement(MarketRail, { carbon: null, drops: [], board: null })), /Corridor costs/, "a failed read is the retry note");
+  assert.match(readFileSync("src/features/market/ui/MarketView.tsx", "utf8"), /CarbonCostSection/, "the page draws the section");
+  assert.doesNotMatch(readFileSync("src/features/market/ui/CarbonCostSection.tsx", "utf8"), /licence/i);
 });
 
 test("surfaces:15 the lead-time section is drawn only when rows exist or the producer that writes them is implemented; the SBTi producer is registered as not implemented", () => {

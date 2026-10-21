@@ -7,14 +7,14 @@
 import { useRouter } from "next/navigation";
 import { useMemo, useState, type ReactNode } from "react";
 
-import { BAND_ORDER, bandFromPriority, bandOf, detailHref, dueInfo, jurisdictionCode, toListRowFields, type UrgencyBandKey } from "@/core/lists";
+import { BAND_ORDER, bandFromPriority, detailHref, dueInfo, jurisdictionCode, toListRowFields, type UrgencyBandKey } from "@/core/lists";
 import { rowMeta } from "@/features/market/lib/item-type";
 import { formatLocaleDate, formatNumber } from "@/core/shared";
 import type { WorkspaceAggregates } from "@/features/lists";
 import { mergeWithOverrides, useItemStateStore } from "@/features/workspace/state";
 import { requestJson } from "@/core/http/request-json";
 import { StateNote } from "@/ui";
-import { filterRows, isFilterActive, liveFacetCounts, ListSurface, SortRow, sortResourceRows, ThemeStrip, useListRows, useListUrlState, withListPosition, type FacetGroup, type ListSortKey, type ThemeChip } from "@/ui/list-surface";
+import { filterRows, liveFacetCounts, ListSurface, SortRow, sortResourceRows, ThemeStrip, useListRows, useListUrlState, withListPosition, type FacetGroup, type ListSortKey, type ThemeChip } from "@/ui/list-surface";
 import { DetailWatch } from "@/features/workspace/ui/DetailWatch";
 import { ShellCommandBar } from "@/ui/shell/CommandBar";
 import { SavedViews } from "@/features/saved-views/SavedViews";
@@ -57,20 +57,14 @@ export function RegulationsLedger({ initial, aggregates, hasMore, nowIso, chips,
   const tagged = (id: string) => tagsFacet.matches(uuids.get(id) ?? id);
   const filtered = useMemo(() => sortResourceRows(filterRows(active, url.filter).filter((r) => tagged(r.id)), sortKey, now), [active, url.filter, sortKey, now, tagsFacet.matches, uuids]); // eslint-disable-line react-hooks/exhaustive-deps -- `tagged` closes over matches and uuids
   const counts = useMemo(() => liveFacetCounts(active, url.filter, { ...(aggregates ? { byPriority: aggregates.byPriority as unknown as Record<string, number>, byJurisdiction: aggregates.byJurisdiction, totalItems: aggregates.totalItems } : {}) }), [active, url.filter, aggregates]);
-  // While the remainder is loading (or failed) the rows in hand are part of the list, so no count is drawn from them (INV-263): the corpus figures answer only a question that is the whole corpus (no filter but the band, no workspace tag),
-  // and every other count is left undrawn until the rest arrives.
-  const partial = remainder.state === "loading" || remainder.state === "failed";
-  const corpusAnswers = aggregates !== null && !tagsFacet.selected && !isFilterActive({ ...url.filter, band: null });
-  const known = (corpus: number | undefined, rows: number): number | null => (!partial ? rows : corpusAnswers && corpus !== undefined ? corpus : null);
-  const bandCounts = aggregates && (!partial || corpusAnswers) ? (Object.fromEntries(BAND_ORDER.map((b) => [b.key, partial ? (aggregates.byPriority[b.priority] ?? 0) : (counts.band.find((o) => o.key === b.key)?.count ?? 0)])) as Record<UrgencyBandKey, number>) : null;
-  const uncounted = (options: FacetGroup["options"]): FacetGroup["options"] => (partial ? options.map((o) => ({ ...o, countLabel: "" })) : options);
+  const bandCounts = aggregates ? (Object.fromEntries(counts.band.map((o) => [o.key, o.count])) as Record<UrgencyBandKey, number>) : null;
 
   const group = (key: string, label: string, options: FacetGroup["options"], selected: string | null, set: (v: string | null) => void): FacetGroup => ({ key, label, options, selected, onSelect: set });
   const facetGroups: FacetGroup[] = [
-    group("mode", "Mode", uncounted(counts.mode), url.filter.mode, (v) => url.setFacet("mode", v)),
-    group("region", "Jurisdiction", aggregates && !counts.liveSelection ? counts.region : uncounted(counts.region), url.filter.region, (v) => url.setFacet("region", v)),
-    group("topic", "Topic", uncounted(counts.topic), url.filter.topic, (v) => url.setFacet("topic", v)),
-    group("tier", "Source tier", uncounted(counts.tier), url.filter.tier, (v) => url.setFacet("tier", v)),
+    group("mode", "Mode", counts.mode, url.filter.mode, (v) => url.setFacet("mode", v)),
+    group("region", "Jurisdiction", counts.region, url.filter.region, (v) => url.setFacet("region", v)),
+    group("topic", "Topic", counts.topic, url.filter.topic, (v) => url.setFacet("topic", v)),
+    group("tier", "Source tier", counts.tier, url.filter.tier, (v) => url.setFacet("tier", v)),
   ];
   const tagGroup = group("workspace-tags", "Workspace tags", tagsFacet.tags.map((t) => ({ value: t.id, label: t.name, count: t.itemCount })), tagsFacet.selected, tagsFacet.setSelected);
 
@@ -78,7 +72,7 @@ export function RegulationsLedger({ initial, aggregates, hasMore, nowIso, chips,
     const inBand = url.filter.band && url.filter.band !== band.key ? [] : filtered.filter((r) => bandFromPriority(r.priority).key === band.key);
     return {
       band,
-      total: known(url.filter.band && url.filter.band !== band.key ? 0 : aggregates?.byPriority[band.priority], inBand.length),
+      total: inBand.length,
       rows: inBand.map((r, i) => {
         const due = dueInfo(r, now);
         const fields = toListRowFields(r, now);
@@ -106,11 +100,12 @@ export function RegulationsLedger({ initial, aggregates, hasMore, nowIso, chips,
     };
   });
 
-  // The list's count is the corpus figure for the question asked, or the rows once all have arrived; null while the rest loads and no figure answers (the scope line and the sort row then say so and draw no total).
-  const total = known(url.filter.band ? aggregates?.byPriority[bandOf(url.filter.band).priority] : aggregates?.totalItems, counts.total);
-  const jurisdictions = partial ? (corpusAnswers && !url.filter.band ? aggregates?.totalJurisdictions ?? null : null) : counts.liveSelection ? counts.region.length : aggregates?.totalJurisdictions || counts.region.length;
+  const total = counts.total;
+  // The count is the list's only when the counts read answered, the first page was not the whole of it (no more to come), or the remainder has arrived; otherwise it is what is shown so far.
+  const exact = aggregates !== null || !hasMore || remainder.state === "ready";
+  const jurisdictions = counts.liveSelection ? counts.region.length : aggregates?.totalJurisdictions || counts.region.length;
   const next = useMemo(() => active.reduce<{ days: number; label: string; title: string; href: string } | null>((best, r) => (((d) => (d && (!best || d.daysNum < best.days) ? { days: d.daysNum, label: d.label, title: r.title, href: detailHref(r) } : best))(dueInfo(r, now))), null), [active, now]);
-  const scope = [total === null ? (remainder.state === "loading" ? "loading the full list" : "part of the list shown") : `${formatNumber(total)} active`, jurisdictions === null ? null : `${formatNumber(jurisdictions)} jurisdictions`, aggregates?.lastUpdatedAt ? `last sync ${formatLocaleDate(new Date(aggregates.lastUpdatedAt), { month: "short", day: "numeric", timeZone: "UTC" })}` : null].filter(Boolean).join(" · ");
+  const scope = [exact ? `${formatNumber(total)} active` : `${formatNumber(total)} shown, the list is longer`, `${formatNumber(jurisdictions)} jurisdictions`, aggregates?.lastUpdatedAt ? `last sync ${formatLocaleDate(new Date(aggregates.lastUpdatedAt), { month: "short", day: "numeric", timeZone: "UTC" })}` : null].filter(Boolean).join(" · ");
   const dek = (
     <>
       {scope}
@@ -154,7 +149,7 @@ export function RegulationsLedger({ initial, aggregates, hasMore, nowIso, chips,
         <SortRow
           countLabel={
             <>
-              <b style={{ color: "var(--ink)" }}>{formatNumber(total ?? filtered.length)}</b> regulations{total === null ? " shown, the rest is loading" : ""} · {flat ? "flat" : "grouped by band"}
+              <b style={{ color: "var(--ink)" }}>{formatNumber(total)}</b> regulations{exact ? "" : " shown"} · {flat ? "flat" : "grouped by band"}
             </>
           }
           linkLabel={flat ? "Group by band" : "Show as one list"}
@@ -172,7 +167,6 @@ export function RegulationsLedger({ initial, aggregates, hasMore, nowIso, chips,
       onExpandBand={(key) => setExpanded((s) => new Set(s).add(key))}
       loadingMoreRows={remainder.loadingMore}
       remainderFailed={remainder.failed}
-      listState={remainder.state}
       onRetryRemainder={remainder.retry}
       stateNote={remainder.loadingMore ? <StateNote>Loading the rest of the regulations in the background.</StateNote> : null}
       belowRows={

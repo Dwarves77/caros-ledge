@@ -33,10 +33,10 @@ test("binding position: identity first, then the record-facts claim, then the ti
 
 const world = (extra: Record<string, Row[]> = {}) =>
   connectDb({
-    intelligence_items: [{ id: "i1", title: "FuelEU Maritime", item_type: "regulation", jurisdiction_iso: ["EU"], transport_modes: ["ocean", "multimodal"], is_archived: false, instrument_identifier: null, canonical_instrument_key: null, compliance_deadline: null }],
+    intelligence_items: [{ id: "i1", title: "FuelEU Maritime", jurisdiction_iso: ["EU"], transport_modes: ["ocean", "multimodal"], is_archived: false, instrument_identifier: null, canonical_instrument_key: null, compliance_deadline: null }],
     item_forward_events: [
-      { id: "e1", intelligence_item_id: "i1", event_date: "2026-12-01", date_precision: "day", event_kind: "compliance_deadline", confidence: "high", source_claim_id: "claim-1" },
-      { id: "e2", intelligence_item_id: "i1", event_date: null, date_precision: null, event_kind: "other", confidence: "high", source_claim_id: null },
+      { id: "e1", intelligence_item_id: "i1", event_date: "2026-12-01", date_precision: "day", event_kind: "compliance_deadline", confidence: "high" },
+      { id: "e2", intelligence_item_id: "i1", event_date: null, date_precision: null, event_kind: "other", confidence: "high" },
     ],
     section_claim_provenance: [],
     obligation_objects: [],
@@ -72,29 +72,16 @@ test("deriveRegister: a failed context read fails the run; it does not classify 
   assert.equal(bad.wrote("obligations", "insert").length, 0);
 });
 
-test("compliance deadline: the earliest future claim-grounded compliance_deadline, ties by confidence; refuses ungrounded or non-binding deadlines and records the reason (TURN-2 F2)", async () => {
+test("compliance deadline: the earliest future compliance_deadline, ties by confidence; never nulled when none is left", async () => {
   const rows = [
-    { id: "a", intelligence_item_id: "i1", event_date: "2026-10-01", event_kind: "compliance_deadline", confidence: "high", source_claim_id: "claim-a" },
-    { id: "b", intelligence_item_id: "i1", event_date: "2026-12-01", event_kind: "compliance_deadline", confidence: "medium", source_claim_id: "claim-b" },
-    { id: "c", intelligence_item_id: "i1", event_date: "2026-12-01", event_kind: "compliance_deadline", confidence: "high", source_claim_id: "claim-c" },
-    { id: "d", intelligence_item_id: "i1", event_date: "2026-11-01", event_kind: "other", confidence: "high", source_claim_id: "claim-d" },
+    { id: "a", intelligence_item_id: "i1", event_date: "2026-10-01", event_kind: "compliance_deadline", confidence: "high" },
+    { id: "b", intelligence_item_id: "i1", event_date: "2026-12-01", event_kind: "compliance_deadline", confidence: "medium" },
+    { id: "c", intelligence_item_id: "i1", event_date: "2026-12-01", event_kind: "compliance_deadline", confidence: "high" },
+    { id: "d", intelligence_item_id: "i1", event_date: "2026-11-01", event_kind: "other", confidence: "high" },
   ];
   const picked = world({ item_forward_events: rows });
   assert.deepEqual(await syncComplianceDeadline(picked.db, "i1", TODAY, { dry: true }), { changed: true, value: "2026-12-01" }, "the earliest future compliance_deadline; the earlier 'other' event is not one");
   assert.deepEqual(await syncComplianceDeadline(picked.db, "i1", "2027-01-01", { dry: true }), { changed: false, reason: "no future compliance_deadline event" });
-  const ungrounded = world({
-    item_forward_events: [
-      { id: "u1", intelligence_item_id: "i1", event_date: "2026-12-01", event_kind: "compliance_deadline", confidence: "medium", source_claim_id: null },
-    ],
-  });
-  assert.deepEqual(await syncComplianceDeadline(ungrounded.db, "i1", TODAY), { changed: false, reason: "refused: compliance_deadline event has no source_claim_id" });
-  assert.equal((ungrounded.tables.intelligence_items as Row[])[0]?.compliance_deadline, null);
-  const researchWorld = world({
-    intelligence_items: [{ id: "i1", title: "IEA Global EV Outlook 2024", item_type: "research_finding", jurisdiction_iso: ["EU"], transport_modes: ["road"], is_archived: false, instrument_identifier: null, canonical_instrument_key: null, compliance_deadline: "2030-01-01" }],
-    item_forward_events: [{ id: "r1", intelligence_item_id: "i1", event_date: "2030-01-01", event_kind: "compliance_deadline", confidence: "high", source_claim_id: "claim-r1" }],
-  });
-  assert.deepEqual(await syncComplianceDeadline(researchWorld.db, "i1", TODAY), { changed: false, reason: "non-binding item type has no compliance_deadline" });
-  assert.equal((researchWorld.tables.intelligence_items as Row[])[0]?.compliance_deadline, null, "clears bogus compliance_deadline on non-binding item");
   const m = world();
   assert.deepEqual(await syncComplianceDeadline(m.db, "i1", TODAY), { changed: true, value: "2026-12-01" });
   assert.equal((m.tables.intelligence_items as Row[])[0]?.compliance_deadline, "2026-12-01");

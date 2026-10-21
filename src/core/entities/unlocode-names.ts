@@ -5,4 +5,4 @@
 import { nameTable } from "./unlocode-table";
 import raw from "./data/unlocode-names.json";
 
-export const { unlocodeName, nameForJurisdiction, formatCorridorLabel, formatCorridorLabelCompact, sources: nameSources } = nameTable(raw);
+export const { unlocodeName, nameForJurisdiction, portPosition, formatCorridorLabel, formatCorridorLabelCompact, sources: nameSources } = nameTable(raw);

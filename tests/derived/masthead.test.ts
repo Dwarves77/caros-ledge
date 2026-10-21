@@ -37,6 +37,6 @@ test("surfaces:6 a refused surface-counts or aggregates read: the masthead says 
     assert.match(text, STATED, rpc);
     assert.doesNotMatch(text, /\d items across \d surfaces/, `${rpc}: no count is printed`);
     assert.match(text, /The item count did not load/, rpc);
-    assert.doesNotMatch(text, /needs more data/, rpc);
+    assert.doesNotMatch(text, /needs more data/i, rpc);
   }
 });

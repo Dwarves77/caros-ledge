@@ -8,6 +8,7 @@
 // rating of the source it cites (INV-262): the registry row of the source's host when one exists, else the institution class table. Tables read: intelligence_items (through the public RPC), market_series, data_sources,
 // licence_clear_sources, sources, emission_factors, entities and entity_scope (corridors), published_price_statistics, market_series_items, oem_tech_roadmaps, reroute_events, indexation_clauses, derivation_edges (lineage, service client).
 import { boundedRead, fetchAllByIdChunks, fetchAllRows, rowsByIds, type Db } from "@/core/db";
+import { readCarbonInputs, type CarbonStore } from "@/core/derived/carbon";
 import { corridorScopes } from "@/core/entities";
 import { classTierForHost, customerTierOf, readSourceByUrl } from "@/core/sources";
 import { hostOf, log, resolveItemUuid } from "@/core/shared";
@@ -190,23 +191,26 @@ async function readPanels(db: Db, orgId: string | null): Promise<MarketPanels> {
 export interface MarketRead {
   signals: Section<{ rows: Resource[]; aggregates: WorkspaceAggregates | null }>;
   series: Section<MarketSeries>;
-  /** The names of the corridors that parse, for the panels that cite one. */
-  corridors: Section<Array<{ entityId: string; label: string }>>;
+  /** The corridors that parse, with their names (the panels that cite one) and their ends (the carbon cost per FEU). */
+  corridors: Section<Array<{ entityId: string; label: string; parsed: { origin: string; dest: string; mode: string } }>>;
+  /** What the propagate stage recorded for the carbon cost per FEU and its four inputs. */
+  carbon: Section<CarbonStore>;
   panels: MarketPanels;
 }
 /** The whole /market page, every part concurrent and independent. `edgeDb` (the service client, when configured) lets the series part check lineage. */
 export async function readMarket(db: Db, o: { orgId?: string | null; edgeDb?: Db | null } = {}): Promise<MarketRead> {
-  const [signals, series, corridors, panels] = await Promise.all([
+  const [signals, series, corridors, carbon, panels] = await Promise.all([
     section("signals", async () => {
       const [list, aggregates] = await Promise.all([readCategory(db, o.orgId ? "get_market_intel_items" : "get_market_intel_items_public", o.orgId), readSurfaceCounts(db, o.orgId ?? null, "market")]);
       if (list.failed) throw new Error("the public market list RPC failed");
       return { rows: list.resources, aggregates };
     }),
     section("series", () => readMarketSeries(db, { edgeDb: o.edgeDb ?? null })),
-    section("corridors", async () => (await corridorScopes(db)).filter((c) => c.parsed !== null).map((c) => ({ entityId: c.entityId, label: c.label }))),
+    section("corridors", async () => (await corridorScopes(db)).flatMap((c) => (c.parsed ? [{ entityId: c.entityId, label: c.label, parsed: c.parsed }] : []))),
+    section("carbon cost per FEU", () => readCarbonInputs(db)),
     readPanels(db, o.orgId ?? null),
   ]);
-  return { signals, series, corridors, panels };
+  return { signals, series, corridors, carbon, panels };
 }
 
 export interface PriceStat {

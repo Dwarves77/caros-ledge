@@ -65,3 +65,19 @@ test("no auth code reads the user over the network per request: getClaims, never
 test("every source file under src/core and src/features is under 400 lines", () => {
   for (const f of src) assert.ok(text(f).split("\n").length <= 400, `${f} is over 400 lines`);
 });
+
+// INV-CBN-1 (CARBON-1): no price, distance, payload or intensity is a constant anywhere in src. Each is read from the store (the derived values the propagate stage writes), so a number bound to a name that says what it is
+// is the defect: a declaration (`const carbonPrice = 85`) or an object member (`payloadTonnes: 14`). The physical constants and unit conversions live in propagation/data/carbon.json under names that are not these.
+const CARBON_NAME = "(?:price|distance|payload|intensity)";
+const CARBON_DECLARATION = new RegExp(String.raw`\b(?:const|let|var)\s+\w*${CARBON_NAME}\w*\s*(?::[^=;]+)?=\s*-?\d`, "i");
+const CARBON_MEMBER = new RegExp(String.raw`^\s*["']?\w*${CARBON_NAME}\w*["']?\s*:\s*-?\d`, "i");
+const constantsOf = (source: string): string[] => source.split("\n").filter((l) => !/^\s*(\/\/|\*)/.test(l) && (CARBON_DECLARATION.test(l) || CARBON_MEMBER.test(l))).map((l) => l.trim());
+
+test("INV-CBN-1: no constant for the carbon price, the distance, the payload or the intensity exists in src", () => {
+  assert.deepEqual(src.flatMap((f) => constantsOf(text(f)).map((l) => `${f}: ${l}`)), []);
+  assert.equal(constantsOf("export const CARBON_PRICE_EUR_T = 85;").length, 1, "a planted constant price is found");
+  assert.equal(constantsOf("const corridorDistanceKm: number = 9000;").length, 1, "a typed declaration is found");
+  assert.equal(constantsOf("const x = { payloadTonnes: 14 };\n  payloadTonnes: 14,").length, 1, "an object member is found");
+  assert.equal(constantsOf("  defaultIntensity: 16,").length, 1);
+  assert.equal(constantsOf("const priceBoard = fetchBoard(1);\nconst distanceLabel = 'km';").length, 0, "a name with no number bound to it is not one");
+});

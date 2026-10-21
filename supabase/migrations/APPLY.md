@@ -96,7 +96,7 @@ Rules: schema first, in name order; a row marked HOLD waits for the step it name
 | 81 | 0110_forward_events_capture_source | schema | `supabase db query --linked -f supabase/migrations/0110_forward_events_capture_source.sql` | 0110-forward-events-capture | down/0110.sql, applied and catalog-compared by the schema job | in order |
 | 82 | 0111_item_obligation_scan | schema | `supabase db query --linked -f supabase/migrations/0111_item_obligation_scan.sql` | 0111-obligation-scan | down/0111.sql, applied and catalog-compared by the schema job | in order |
 | 83 | 0112_item_impact_scores | schema | `supabase db query --linked -f supabase/migrations/0112_item_impact_scores.sql` | 0112-impact-scores | down/0112.sql, applied and catalog-compared by the schema job | in order |
-| 84 | 0113_forward_events_target_kind | schema | `supabase db query --linked -f supabase/migrations/0113_forward_events_target_kind.sql` | 0113-forward-events-target | down/0113.sql, applied and catalog-compared by the schema job | in order |
+| 84 | 0120_carbon_inputs | schema | `supabase db query --linked -f supabase/migrations/0120_carbon_inputs.sql` | 0120-carbon-inputs | down/0120.sql, applied and catalog-compared by the schema job | in order |
 
 ## Phase 2: data files, after the schema (each runs with its consumer)
 

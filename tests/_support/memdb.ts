@@ -432,7 +432,7 @@ export function installPropagationRpcs(db: MemDb): MemDb {
   };
   db.rpcs.register_derived_value = (a, d) => {
     const id = `00000000-0000-4000-9000-${String(++n).padStart(12, "0")}`;
-    d.rows("derived_values").push({ value_id: id, method_id: a.p_method_id, method_version: a.p_method_version, value: a.p_value, admissibility: a.p_admissibility, supersedes: a.p_supersedes, inputs: a.p_inputs, entity_id: a.p_entity_id });
+    d.rows("derived_values").push({ value_id: id, method_id: a.p_method_id, method_version: a.p_method_version, value: a.p_value, value_low: a.p_value_low, value_high: a.p_value_high, unit: a.p_unit, currency: a.p_currency, derivation: a.p_derivation, origin_class: a.p_origin_class, lifecycle: a.p_lifecycle, admissibility: a.p_admissibility, base_confidence: a.p_base_confidence, asserted_at: a.p_asserted_at, supersedes: a.p_supersedes, inputs: a.p_inputs, entity_id: a.p_entity_id, computed_by: a.p_computed_by });
     for (const ref of (a.p_inputs ?? []) as { table: string; pk: string }[]) d.rows("derivation_edges").push({ from_table: ref.table, from_pk: ref.pk, to_table: "derived_values", to_value_id: id });
     return { data: id };
   };

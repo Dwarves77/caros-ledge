@@ -68,7 +68,7 @@ export interface CarbonItem {
   modes: readonly string[];
 }
 
-/** The carbon block of a corridor signal: the national modal default with its rating. (A per-FEU cost waits for a licence-clear distance, payload and carbon-price input; none exists, so none is drawn.) */
+/** The carbon block of a corridor signal: the national modal default with its rating. (The per-FEU cost is the Market page's section: its inputs are derived values the propagate stage writes.) */
 export function CarbonFindings({ bundle, item, nowIso }: MarketBlockProps & { item: CarbonItem }) {
   const { carbon } = bundle;
   if (!carbon.ok) return <RetryNote what="Carbon intensity" />;

@@ -357,6 +357,29 @@
     }
    ]
   },
+  "carbon_inputs": {
+   "columns": [
+    "scope",
+    "input",
+    "value_id",
+    "absent_reason",
+    "basis",
+    "source_tier",
+    "method_version",
+    "computed_at"
+   ],
+   "uuid": [],
+   "defaults": {
+    "computed_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "value_id",
+     "table": "derived_values",
+     "ref": "value_id"
+    }
+   ]
+  },
   "census_worklist": {
    "columns": [
     "id",

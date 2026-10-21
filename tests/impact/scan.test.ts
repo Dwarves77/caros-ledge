@@ -101,35 +101,3 @@ test("the extract-backfill op, the instrument that sized the backlog, plans the 
   assert.deepEqual([applied.counts.inserted, db.rows("item_forward_events").map((e) => e.source_kind)], [1, ["capture"]]);
   assert.equal((await extractBackfill({ sb: db.client, now: () => NOW }, { dry: false })).counts.scope, 0, "an item that holds an event is out of the backfill's scope");
 });
-
-test("TURN-2 F1+F2: non-binding items quarantined by stale compliance_deadline are re-scanned, their bogus deadlines and compliance_deadline events are cleared, target events are emitted, and they return to verified", async () => {
-  const targetCapture = `${[
-    "IEA Global EV Outlook 2024.",
-    "In the Net Zero Emissions by 2050 (NZE) Scenario, emissions must fall by 2030.",
-  ].join("\n")}\n${"Reference methodology and empirical analysis across global freight corridors. ".repeat(4)}`;
-  const db = world(
-    [item(I1, { item_type: "research_finding", provenance_status: "quarantined", compliance_deadline: "2030-01-01", source_url: "https://eur-lex.example.test/1" })],
-    [capture(C1, I1, targetCapture)],
-    {
-      item_obligation_scan: [{ item_id: I1, scanned_at: "2026-10-20T17:20:00.000Z", extractor_version: "fe2-2026-10-20.1", derivation_version: "old", events: 1, objects: 0 }],
-      item_forward_events: [{ id: "bad-ev-1", intelligence_item_id: I1, event_date: "2030-01-01", date_precision: "year", event_kind: "compliance_deadline", obligation_text: "emissions must fall by 2030", source_kind: "capture", source_capture_id: C1, source_span: "2030", confidence: "medium", extractor_version: "fe2-2026-10-20.1" }],
-      obligations: [{ id: "bad-ob-1", intelligence_item_id: I1, forward_event_id: "bad-ev-1", jurisdiction: ["EU"], modes: [], binding_position: null, due_date: "2030-01-01", date_precision: "year", event_kind: "compliance_deadline", status: "active", derivation_version: "old" }],
-    }
-  );
-  db.rpcs.ledger_apply_ops = () => ({ data: { claims: 1, removed: 0, sections: 1 } });
-  db.afterWrite = (c, d) => {
-    if (c.table === "intelligence_items" && c.op === "update") {
-      const row = d.rows("intelligence_items").find((r) => r.id === I1);
-      if (row && row.compliance_deadline === null) row.provenance_status = "verified";
-    }
-  };
-  const r = await run(db);
-  assert.equal(r.outcome, "ok");
-  assert.equal(r.counts.scanned, 1);
-  const healedItem = db.rows("intelligence_items").find((row) => row.id === I1);
-  assert.equal(healedItem?.compliance_deadline, null, "bogus compliance_deadline cleared");
-  assert.equal(healedItem?.provenance_status, "verified", "item re-validated back to verified");
-  const events = db.rows("item_forward_events").filter((e) => e.intelligence_item_id === I1);
-  assert.equal(events.filter((e) => e.event_kind === "compliance_deadline").length, 0, "stale compliance_deadline events purged");
-  assert.ok(events.some((e) => e.event_kind === "target" && e.event_date === "2030-01-01"), "target sentence emitted as kind 'target'");
-});

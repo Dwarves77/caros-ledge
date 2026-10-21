@@ -13,6 +13,13 @@
    "retrievedOn": "2026-10-19",
    "terms": "https://www.wikidata.org/wiki/Wikidata:Licensing",
    "note": "English labels of the items that carry an ISO 3166-1 alpha-2 code (P297) and no end date (P576)."
+  },
+  "wikidata-positions": {
+   "source": "wikidata",
+   "url": "https://query.wikidata.org/sparql",
+   "retrievedOn": "2026-10-20",
+   "terms": "https://www.wikidata.org/wiki/Wikidata:Licensing",
+   "note": "The position of a port is P625 of the Wikidata item whose P1566 (GeoNames ID) equals the port place geonameId, the mean of the points where an item carries several, rounded to 4 decimals. Six ports have no item linked to their GeoNames id (ESALG, ESBCN, HKHKG, THLCH, TWKEL, VNHPH) and carry no position."
   }
  },
  "ports": {
@@ -21,147 +28,252 @@
    "countryIso": "AE",
    "geonameId": 292968,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 24.4511,
+    "lon": 54.3969,
+    "source": "wikidata"
+   }
   },
   "ARBUE": {
    "place": "Buenos Aires",
    "countryIso": "AR",
    "geonameId": 3435910,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": -34.5997,
+    "lon": -58.3819,
+    "source": "wikidata"
+   }
   },
   "AUBNE": {
    "place": "Brisbane",
    "countryIso": "AU",
    "geonameId": 2174003,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": -27.4678,
+    "lon": 153.0278,
+    "source": "wikidata"
+   }
   },
   "AUMEL": {
    "place": "Melbourne",
    "countryIso": "AU",
    "geonameId": 2158177,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": -37.8142,
+    "lon": 144.9631,
+    "source": "wikidata"
+   }
   },
   "AUSYD": {
    "place": "Sydney",
    "countryIso": "AU",
    "geonameId": 2147714,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": -33.8678,
+    "lon": 151.21,
+    "source": "wikidata"
+   }
   },
   "BEANR": {
    "place": "Antwerp",
    "countryIso": "BE",
    "geonameId": 2803138,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 51.2206,
+    "lon": 4.4003,
+    "source": "wikidata"
+   }
   },
   "BRSSA": {
    "place": "Salvador",
    "countryIso": "BR",
    "geonameId": 3450554,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": -12.9831,
+    "lon": -38.4928,
+    "source": "wikidata"
+   }
   },
   "BRSSZ": {
    "place": "Santos",
    "countryIso": "BR",
    "geonameId": 3449433,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": -23.9608,
+    "lon": -46.3336,
+    "source": "wikidata"
+   }
   },
   "CAHAL": {
    "place": "Halifax",
    "countryIso": "CA",
    "geonameId": 6324729,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 44.65,
+    "lon": -63.6,
+    "source": "wikidata"
+   }
   },
   "CAMTR": {
    "place": "Montréal",
    "countryIso": "CA",
    "geonameId": 6077243,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 45.5033,
+    "lon": -73.5868,
+    "source": "wikidata"
+   }
   },
   "CAVAN": {
    "place": "Vancouver",
    "countryIso": "CA",
    "geonameId": 6173331,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 49.2608,
+    "lon": -123.1139,
+    "source": "wikidata"
+   }
   },
   "CLSAI": {
    "place": "San Antonio",
    "countryIso": "CL",
    "geonameId": 3872395,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": -33.5809,
+    "lon": -71.6132,
+    "source": "wikidata"
+   }
   },
   "CLVAP": {
    "place": "Valparaíso",
    "countryIso": "CL",
    "geonameId": 3868626,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": -33.0461,
+    "lon": -71.6197,
+    "source": "wikidata"
+   }
   },
   "CNQZH": {
    "place": "Qinzhou",
    "countryIso": "CN",
    "geonameId": 1797551,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 21.95,
+    "lon": 108.6167,
+    "source": "wikidata"
+   }
   },
   "CNSHA": {
    "place": "Shanghai",
    "countryIso": "CN",
    "geonameId": 1796236,
    "source": "geonames",
-   "aliasBasis": "caros-ledge-seed"
+   "aliasBasis": "caros-ledge-seed",
+   "position": {
+    "lat": 31.2177,
+    "lon": 121.457,
+    "source": "wikidata"
+   }
   },
   "COCTG": {
    "place": "Cartagena",
    "countryIso": "CO",
    "geonameId": 3687238,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 10.3997,
+    "lon": -75.5144,
+    "source": "wikidata"
+   }
   },
   "DEBRV": {
    "place": "Bremerhaven",
    "countryIso": "DE",
    "geonameId": 2944368,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 53.55,
+    "lon": 8.5833,
+    "source": "wikidata"
+   }
   },
   "DEHAM": {
    "place": "Hamburg",
    "countryIso": "DE",
    "geonameId": 2911298,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 53.55,
+    "lon": 10,
+    "source": "wikidata"
+   }
   },
   "DJJIB": {
    "place": "Djibouti",
    "countryIso": "DJ",
    "geonameId": 223817,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 11.595,
+    "lon": 43.1481,
+    "source": "wikidata"
+   }
   },
   "EGALY": {
    "place": "Alexandria",
    "countryIso": "EG",
    "geonameId": 361058,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 31.1975,
+    "lon": 29.8925,
+    "source": "wikidata"
+   }
   },
   "EGPSD": {
    "place": "Port Said",
    "countryIso": "EG",
    "geonameId": 358619,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 31.2625,
+    "lon": 32.3061,
+    "source": "wikidata"
+   }
   },
   "ESALG": {
    "place": "Algeciras",
@@ -182,42 +294,72 @@
    "countryIso": "ES",
    "geonameId": 2509954,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 39.4657,
+    "lon": -0.3651,
+    "source": "wikidata"
+   }
   },
   "FRLEH": {
    "place": "Le Havre",
    "countryIso": "FR",
    "geonameId": 3003796,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 49.4942,
+    "lon": 0.1081,
+    "source": "wikidata"
+   }
   },
   "FRMRS": {
    "place": "Marseille",
    "countryIso": "FR",
    "geonameId": 2995469,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 43.2968,
+    "lon": 5.3787,
+    "source": "wikidata"
+   }
   },
   "GBFXT": {
    "place": "Felixstowe",
    "countryIso": "GB",
    "geonameId": 2649579,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 51.9639,
+    "lon": 1.3514,
+    "source": "wikidata"
+   }
   },
   "GHTEM": {
    "place": "Tema",
    "countryIso": "GH",
    "geonameId": 2294700,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 5.6682,
+    "lon": -0.0166,
+    "source": "wikidata"
+   }
   },
   "GRPIR": {
    "place": "Piraeus",
    "countryIso": "GR",
    "geonameId": 255274,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 37.943,
+    "lon": 23.6469,
+    "source": "wikidata"
+   }
   },
   "HKHKG": {
    "place": "Hong Kong",
@@ -231,203 +373,348 @@
    "countryIso": "ID",
    "geonameId": 1642911,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": -6.1753,
+    "lon": 106.8269,
+    "source": "wikidata"
+   }
   },
   "IDSUB": {
    "place": "Surabaya",
    "countryIso": "ID",
    "geonameId": 1625822,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": -7.2463,
+    "lon": 112.7378,
+    "source": "wikidata"
+   }
   },
   "INMAA": {
    "place": "Chennai",
    "countryIso": "IN",
    "geonameId": 1264527,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 13.0825,
+    "lon": 80.275,
+    "source": "wikidata"
+   }
   },
   "INMUN": {
    "place": "Mundra",
    "countryIso": "IN",
    "geonameId": 1262497,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 22.85,
+    "lon": 69.73,
+    "source": "wikidata"
+   }
   },
   "ITGOA": {
    "place": "Genoa",
    "countryIso": "IT",
    "geonameId": 3176219,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 44.4129,
+    "lon": 8.9573,
+    "source": "wikidata"
+   }
   },
   "ITNAP": {
    "place": "Naples",
    "countryIso": "IT",
    "geonameId": 3172394,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 40.8563,
+    "lon": 14.2464,
+    "source": "wikidata"
+   }
   },
   "JPNGO": {
    "place": "Nagoya",
    "countryIso": "JP",
    "geonameId": 1856057,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 35.1814,
+    "lon": 136.9064,
+    "source": "wikidata"
+   }
   },
   "JPTYO": {
    "place": "Tokyo",
    "countryIso": "JP",
    "geonameId": 1850147,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 35.6894,
+    "lon": 139.6917,
+    "source": "wikidata"
+   }
   },
   "JPUKB": {
    "place": "Kobe",
    "countryIso": "JP",
    "geonameId": 1859171,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 34.6902,
+    "lon": 135.1954,
+    "source": "wikidata"
+   }
   },
   "JPYOK": {
    "place": "Yokohama",
    "countryIso": "JP",
    "geonameId": 1848354,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 35.4503,
+    "lon": 139.6342,
+    "source": "wikidata"
+   }
   },
   "KEMBA": {
    "place": "Mombasa",
    "countryIso": "KE",
    "geonameId": 186301,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": -4.05,
+    "lon": 39.6667,
+    "source": "wikidata"
+   }
   },
   "KRPUS": {
    "place": "Busan",
    "countryIso": "KR",
    "geonameId": 1838524,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 35.1414,
+    "lon": 129.0576,
+    "source": "wikidata"
+   }
   },
   "LKCMB": {
    "place": "Colombo",
    "countryIso": "LK",
    "geonameId": 1248991,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 6.9267,
+    "lon": 79.8606,
+    "source": "wikidata"
+   }
   },
   "MATNG": {
    "place": "Tangier",
    "countryIso": "MA",
    "geonameId": 2530335,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 35.7673,
+    "lon": -5.7998,
+    "source": "wikidata"
+   }
   },
   "MTMAR": {
    "place": "Marsaxlokk",
    "countryIso": "MT",
    "geonameId": 2562247,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 35.8417,
+    "lon": 14.5514,
+    "source": "wikidata"
+   }
   },
   "MXVER": {
    "place": "Veracruz",
    "countryIso": "MX",
    "geonameId": 3514783,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 19.1903,
+    "lon": -96.1533,
+    "source": "wikidata"
+   }
   },
   "MYPKG": {
    "place": "Pelabuhan Klang",
    "countryIso": "MY",
    "geonameId": 1734769,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 3.0159,
+    "lon": 101.3604,
+    "source": "wikidata"
+   }
   },
   "MYTPP": {
    "place": "Tanjung Pelepas",
    "countryIso": "MY",
    "geonameId": 1732725,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 1.3663,
+    "lon": 103.5484,
+    "source": "wikidata"
+   }
   },
   "NGAPP": {
    "place": "Apapa",
    "countryIso": "NG",
    "geonameId": 2349656,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 6.4489,
+    "lon": 3.3589,
+    "source": "wikidata"
+   }
   },
   "NGLOS": {
    "place": "Lagos",
    "countryIso": "NG",
    "geonameId": 2332459,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 6.4561,
+    "lon": 3.3936,
+    "source": "wikidata"
+   }
   },
   "NLRTM": {
    "place": "Rotterdam",
    "countryIso": "NL",
    "geonameId": 2747891,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 51.92,
+    "lon": 4.48,
+    "source": "wikidata"
+   }
   },
   "NZAKL": {
    "place": "Auckland",
    "countryIso": "NZ",
    "geonameId": 2193733,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": -36.8492,
+    "lon": 174.7653,
+    "source": "wikidata"
+   }
   },
   "OMSLL": {
    "place": "Şalālah",
    "countryIso": "OM",
    "geonameId": 286621,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 17.0197,
+    "lon": 54.0897,
+    "source": "wikidata"
+   }
   },
   "PABLB": {
    "place": "Balboa",
    "countryIso": "PA",
    "geonameId": 3714426,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 8.9571,
+    "lon": -79.5593,
+    "source": "wikidata"
+   }
   },
   "PECLL": {
    "place": "Callao",
    "countryIso": "PE",
    "geonameId": 3946083,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": -12.0522,
+    "lon": -77.1392,
+    "source": "wikidata"
+   }
   },
   "PHMNL": {
    "place": "Manila",
    "countryIso": "PH",
    "geonameId": 1701668,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 14.5958,
+    "lon": 120.9772,
+    "source": "wikidata"
+   }
   },
   "PKKHI": {
    "place": "Karachi",
    "countryIso": "PK",
    "geonameId": 1174872,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 24.86,
+    "lon": 67.01,
+    "source": "wikidata"
+   }
   },
   "SAJED": {
    "place": "Jeddah",
    "countryIso": "SA",
    "geonameId": 105343,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 21.5292,
+    "lon": 39.1611,
+    "source": "wikidata"
+   }
   },
   "SGSIN": {
    "place": "Singapore",
    "countryIso": "SG",
    "geonameId": 1880252,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 1.2897,
+    "lon": 103.8501,
+    "source": "wikidata"
+   }
   },
   "THLCH": {
    "place": "Laem Chabang",
@@ -441,14 +728,24 @@
    "countryIso": "TR",
    "geonameId": 311046,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 38.4127,
+    "lon": 27.1384,
+    "source": "wikidata"
+   }
   },
   "TRMER": {
    "place": "Mersin",
    "countryIso": "TR",
    "geonameId": 304531,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 36.8,
+    "lon": 34.6167,
+    "source": "wikidata"
+   }
   },
   "TWKEL": {
    "place": "Keelung",
@@ -462,77 +759,132 @@
    "countryIso": "TW",
    "geonameId": 1673820,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 22.615,
+    "lon": 120.2975,
+    "source": "wikidata"
+   }
   },
   "TZDAR": {
    "place": "Dar es Salaam",
    "countryIso": "TZ",
    "geonameId": 160263,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": -6.8161,
+    "lon": 39.2803,
+    "source": "wikidata"
+   }
   },
   "USCHS": {
    "place": "Charleston",
    "countryIso": "US",
    "geonameId": 4574324,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 32.7833,
+    "lon": -79.9319,
+    "source": "wikidata"
+   }
   },
   "USHOU": {
    "place": "Houston",
    "countryIso": "US",
    "geonameId": 4699066,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 29.7628,
+    "lon": -95.3831,
+    "source": "wikidata"
+   }
   },
   "USLAX": {
    "place": "Los Angeles",
    "countryIso": "US",
    "geonameId": 5368361,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 34.0522,
+    "lon": -118.2437,
+    "source": "wikidata"
+   }
   },
   "USMIA": {
    "place": "Miami",
    "countryIso": "US",
    "geonameId": 4164138,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 25.7742,
+    "lon": -80.1936,
+    "source": "wikidata"
+   }
   },
   "USNYC": {
    "place": "New York City",
    "countryIso": "US",
    "geonameId": 5128581,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 40.7128,
+    "lon": -74.0061,
+    "source": "wikidata"
+   }
   },
   "USOAK": {
    "place": "Oakland",
    "countryIso": "US",
    "geonameId": 5378538,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 37.8,
+    "lon": -122.25,
+    "source": "wikidata"
+   }
   },
   "USORF": {
    "place": "Norfolk",
    "countryIso": "US",
    "geonameId": 4776222,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 36.8469,
+    "lon": -76.2853,
+    "source": "wikidata"
+   }
   },
   "USSAV": {
    "place": "Savannah",
    "countryIso": "US",
    "geonameId": 4221552,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 32.0508,
+    "lon": -81.1039,
+    "source": "wikidata"
+   }
   },
   "USSEA": {
    "place": "Seattle",
    "countryIso": "US",
    "geonameId": 5809844,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 47.605,
+    "lon": -122.33,
+    "source": "wikidata"
+   }
   },
   "VNHPH": {
    "place": "Haiphong",
@@ -546,14 +898,24 @@
    "countryIso": "VN",
    "geonameId": 1566083,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": 10.7756,
+    "lon": 106.7019,
+    "source": "wikidata"
+   }
   },
   "ZACPT": {
    "place": "Cape Town",
    "countryIso": "ZA",
    "geonameId": 3369157,
    "source": "geonames",
-   "aliasBasis": "geonames-unlc"
+   "aliasBasis": "geonames-unlc",
+   "position": {
+    "lat": -33.9253,
+    "lon": 18.4239,
+    "source": "wikidata"
+   }
   }
  },
  "countries": {

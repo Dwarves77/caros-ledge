@@ -29,6 +29,10 @@
  "canonical_source_candidates": [
   "id"
  ],
+ "carbon_inputs": [
+  "scope",
+  "input"
+ ],
  "census_worklist": [
   "id"
  ],

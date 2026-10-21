@@ -18,7 +18,7 @@ import { parseDoc } from "../producers/support.ts";
 import { renderApp, textOf } from "../_support/render.ts";
 
 const draw = (el: ReturnType<typeof createElement>) => textOf(renderApp(el));
-const MISSING_SOURCE = /needs primary-source figure/;
+const MISSING_SOURCE = /needs primary-source figure/i;
 
 test("surfaces:7 an empty list says what is true: nothing due in 30 days is not a missing primary-source figure", () => {
   const text = draw(createElement(ObligationsRailCard, { events: [], failed: false, nowIso: "2026-10-19T00:00:00Z" }));

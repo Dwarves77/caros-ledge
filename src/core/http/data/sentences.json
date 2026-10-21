@@ -22,5 +22,12 @@
   "band_counts_unavailable": "The band counts did not load, so the tiles are blank rather than zero.",
   "themes_unavailable": "The cross-page themes did not load.",
   "ratings_unavailable": "Source ratings did not load, so tiers are not shown on these rows."
+ },
+ "impactAbsence": {
+  "obligations": "No obligations extracted yet",
+  "cost": "No cost figure yet",
+  "operational": "No modes or scenarios recorded",
+  "client": "No workspace profile yet",
+  "due": "No milestone dates"
  }
 }

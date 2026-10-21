@@ -3,7 +3,7 @@
 // candidate-only rules (as of, since) become events only when a deontic clause follows and the clause is not a status phrase. One `emit` decides hit or
 // skip for all three paths (the old loop copied it three times). Also the due-date slot helpers: the finer of the extractor's and the slot's precision wins
 // (never quarter), and a slot span with no event of its own is rescued by re-scanning the capture text around the span.
-import { isBindingInstrumentType, type EventKind } from "../kinds";
+import type { EventKind } from "../kinds";
 
 import { tryParseDateAt, tryParseDateOrBareYearAt, type DateMatch } from "./date-grammar";
 import { AIM_WORDS, CANDIDATE_ONLY_RULES, DEONTIC, isStatusOnlyClause, refuseForReferenceDate, REFERENCE_DATE_SKIP_REASON, RULES, STATUS_ONLY_SKIP_REASON, type Rule } from "./rules";
@@ -38,9 +38,8 @@ function findTrailingToDate(text: string, pos: number): { parsed: DateMatch; mat
   return parsed ? { parsed, matchStart: pos + m[0].length } : null;
 }
 
-export function scanText(text: string, options: { referenceDates?: readonly string[]; itemType?: string | null } = {}): ScanResult {
+export function scanText(text: string, options: { referenceDates?: readonly string[] } = {}): ScanResult {
   const referenceDates = options.referenceDates ?? [];
-  const bindingAllowed = options.itemType == null ? true : isBindingInstrumentType(options.itemType);
   const hits: Hit[] = [];
   const skips: ScanSkip[] = [];
   const claimed: [number, number][] = [];
@@ -75,25 +74,16 @@ export function scanText(text: string, options: { referenceDates?: readonly stri
       }
       if (overlaps(m.index, spanEnd)) continue;
       let kind = rule.kind;
-      const windowText = text.slice(sentenceStart(text, m.index), spanEnd + 220);
       if (rule.name === "by-year-target" || rule.name === "from-year") {
-        if (AIM_WORDS.test(windowText)) kind = "target";
-        else if (DEONTIC.test(windowText)) kind = "compliance_deadline";
+        const w = text.slice(sentenceStart(text, m.index), spanEnd + 220);
+        if (DEONTIC.test(w)) kind = "compliance_deadline";
+        else if (AIM_WORDS.test(w)) kind = "other";
         else {
           skips.push({ reason: `date after '${rule.name === "from-year" ? "from" : "by"}' with no deontic ('shall'/'must') or aim/target language nearby — ambiguous whether this is a bound obligation`, span: text.slice(Math.max(0, m.index - 20), spanEnd + 40).trim() });
           continue;
         }
       }
-      if (rule.phaseOverride && kind !== "target" && (findTrailingForClause(text, spanEnd) || nearPeriodLanguage(text, m.index, spanEnd))) kind = "phase_step";
-      if (kind === "compliance_deadline") {
-        if (AIM_WORDS.test(windowText) && !bindingAllowed) {
-          kind = "target";
-        } else if (!bindingAllowed) {
-          skips.push({ reason: "non_binding_instrument_no_compliance_deadline: research, analysis, market-signal and initiative items never receive a compliance_deadline", span: text.slice(Math.max(0, m.index - 20), spanEnd + 40).trim() });
-          claimed.push([m.index, spanEnd]);
-          continue;
-        }
-      }
+      if (rule.phaseOverride && (findTrailingForClause(text, spanEnd) || nearPeriodLanguage(text, m.index, spanEnd))) kind = "phase_step";
       emit(rule.name, kind, parsed, m.index, spanStart, spanEnd);
       if (rule.windowEnd) {
         const w = findTrailingToDate(text, spanEnd);
@@ -159,9 +149,10 @@ export function finerDuePrecision(extractorPrecision: string, slotPrecision: str
 }
 
 /** A slot span whose own scan found no event is re-scanned with the capture text around it; a hit counts only if its date lies inside the span. */
-export function rescueSlotDateWithContext(claimSpan: string, context: { before: string; after: string } | null | undefined, referenceDates: readonly string[], itemType?: string | null): Hit | null {
+export function rescueSlotDateWithContext(claimSpan: string, context: { before: string; after: string } | null | undefined, referenceDates: readonly string[]): Hit | null {
   if (typeof claimSpan !== "string" || !claimSpan || !context || typeof context.before !== "string" || typeof context.after !== "string") return null;
   const start = context.before.length;
-  const { hits } = scanText(context.before + claimSpan + context.after, { referenceDates, ...(itemType !== undefined ? { itemType } : {}) });
+  const { hits } = scanText(context.before + claimSpan + context.after, { referenceDates });
   return hits.find((h) => h.spanStart >= start && h.spanEnd <= start + claimSpan.length) ?? null;
 }
+
