@@ -32,7 +32,33 @@ const DATE_COLUMNS = ["entry_into_force", "date_of_application", "first_deadline
 const MONEY_KEYS = ["amount", "currency", "price", "cost"];
 
 const re = z.string();
-const rules = z.object({ phrases: z.array(z.object({ class: z.string(), pattern: re })), pinpoint: re, deontic: re, crossReference: re, window: z.object({ maxSentence: z.number(), pinpointLookBack: z.number(), headingOverlap: z.number(), subjectDistance: z.number() }), triggerAttribute: z.string(), datePhrases: z.object({ date_of_application: re, enforcement_start: re }) }).parse(rulesJson);
+const rules = z.object({
+  phrases: z.array(z.object({ class: z.string(), pattern: re })),
+  pinpoint: re,
+  deontic: re,
+  crossReference: re,
+  window: z.object({ maxSentence: z.number(), pinpointLookBack: z.number(), headingOverlap: z.number(), subjectDistance: z.number() }),
+  triggerAttribute: z.string(),
+  datePhrases: z.object({ date_of_application: re, enforcement_start: re }),
+  thresholds: z.record(z.string(), re).optional(),
+  exemptions: z.record(z.string(), re).optional(),
+  complianceArtifacts: z.record(z.string(), re).optional(),
+  labelingMarking: z.record(z.string(), re).optional(),
+}).parse(rulesJson);
+const rx = (s?: string): RegExp => (s ? new RegExp(s, "i") : /(?:)/);
+const THRESHOLD_EMPTY_SPACE = rx(rules.thresholds?.emptySpace);
+const THRESHOLD_RECYCLED = rx(rules.thresholds?.recycledContent);
+const THRESHOLD_DEMINIMIS = rx(rules.thresholds?.deMinimisWeight);
+const THRESHOLD_TONNAGE = rx(rules.thresholds?.tonnageCutoff);
+const EXEMPT_B2B = rx(rules.exemptions?.b2bTransport);
+const EXEMPT_CRITICAL = rx(rules.exemptions?.criticalFactors);
+const EXEMPT_CLOSED_LOOP = rx(rules.exemptions?.closedLoop);
+const ARTIFACT_DOC = rx(rules.complianceArtifacts?.declarationOfConformity);
+const ARTIFACT_CONFORMITY = rx(rules.complianceArtifacts?.conformityAssessment);
+const ARTIFACT_REGISTER = rx(rules.complianceArtifacts?.producerRegister);
+const LABEL_SORTING = rx(rules.labelingMarking?.sorting);
+const LABEL_REUSABLE = rx(rules.labelingMarking?.reusableSystem);
+const LABEL_QR = rx(rules.labelingMarking?.qrDataCarrier);
 const targets = z.object({
   instrument: z.object({ celex: z.string(), identityPattern: z.string(), pinpointBase: z.string(), dutyHolderClass: z.array(z.string()), applicabilityAttribute: z.string(), jurisdiction: z.array(z.string()), mode: z.array(z.string()) }),
   referenceValue: z.object({ value: z.number(), unit: z.string(), quote: z.string() }),
@@ -54,52 +80,18 @@ const norm = (s: unknown): string => nz(s).toLowerCase();
 const nullable = <T>(v: T | undefined): T | null => (v === undefined ? null : v);
 
 export interface Candidate {
-  instrument_item_id: string;
-  capture_id: string;
-  pinpoint_citation: string;
-  verbatim_text: string;
-  plain_language?: string | null;
-  binding_position?: string | null;
-  duty_holder_class: string[];
+  instrument_item_id: string; capture_id: string; pinpoint_citation: string; verbatim_text: string;
+  plain_language?: string | null; binding_position?: string | null; duty_holder_class: string[];
   applicability_trigger: { attribute: string; value: string; comparison?: string };
-  jurisdiction?: string[] | null;
-  mode?: string[] | null;
-  vertical?: string[] | null;
-  frequency?: string | null;
-  entry_into_force?: string | null;
-  date_of_application?: string | null;
-  first_deadline?: string | null;
-  enforcement_start?: string | null;
-  evidence_required?: string | null;
-  retention_period?: string | null;
-  sanction_class?: string | null;
-  severity_score?: number | null;
-  statutory_maximum?: string | null;
-  cost_formula?: string | null;
-  direct_compliance_cost?: Record<string, unknown> | null;
-  effort?: Record<string, unknown> | null;
-  status?: string | null;
-  date_reviewed?: string | null;
-  next_review_due?: string | null;
-  source_id?: string | null;
+  jurisdiction?: string[] | null; mode?: string[] | null; vertical?: string[] | null; frequency?: string | null;
+  entry_into_force?: string | null; date_of_application?: string | null; first_deadline?: string | null; enforcement_start?: string | null;
+  evidence_required?: string | null; retention_period?: string | null; sanction_class?: string | null; severity_score?: number | null;
+  statutory_maximum?: string | null; cost_formula?: string | null; direct_compliance_cost?: Record<string, unknown> | null;
+  effort?: Record<string, unknown> | null; status?: string | null; date_reviewed?: string | null; next_review_due?: string | null; source_id?: string | null;
 }
-export interface CaptureRow {
-  id: string;
-  intelligence_item_id: string;
-  result_content: string | null;
-}
-export interface ExistingObject {
-  obligation_id: string;
-  instrument_item_id: string;
-  pinpoint_citation: string;
-  verbatim_text: string;
-  version: number;
-  supersedes?: string | null;
-}
-export interface ObjectItem extends ItemForClassification {
-  id: string;
-  is_archived?: boolean | null;
-}
+export interface CaptureRow { id: string; intelligence_item_id: string; result_content: string | null; }
+export interface ExistingObject { obligation_id: string; instrument_item_id: string; pinpoint_citation: string; verbatim_text: string; version: number; supersedes?: string | null; }
+export interface ObjectItem extends ItemForClassification { id: string; is_archived?: boolean | null; }
 
 export type BuildResult = { ok: true; row: Record<string, unknown>; bindingSource: string } | { ok: false; reason: string };
 
@@ -217,13 +209,61 @@ export interface ClaimForObjects {
 }
 const instrumentValue = (item: ObjectItem): string => nz(item.canonical_instrument_key) || nz(item.instrument_identifier) || nz(item.title);
 
+function extractTrigger(span: string, fallbackValue: string): { attribute: string; value: string; comparison?: string } {
+  if (THRESHOLD_EMPTY_SPACE.test(span)) return { attribute: "void_space_ratio", value: THRESHOLD_EMPTY_SPACE.exec(span)?.[1]?.trim() ?? "50%", comparison: "<=" };
+  if (THRESHOLD_RECYCLED.test(span)) { const m = THRESHOLD_RECYCLED.exec(span); return { attribute: "recycled_content", value: m?.[1]?.trim() ?? m?.[2]?.trim() ?? "30%", comparison: ">=" }; }
+  if (THRESHOLD_DEMINIMIS.test(span)) return { attribute: "de_minimis_weight", value: THRESHOLD_DEMINIMIS.exec(span)?.[1]?.trim() ?? "< 5%", comparison: "<" };
+  if (THRESHOLD_TONNAGE.test(span)) return { attribute: "tonnage_cutoff", value: THRESHOLD_TONNAGE.exec(span)?.[0] ?? "tonnage", comparison: ">=" };
+  if (EXEMPT_B2B.test(span)) return { attribute: "exemption_scope", value: "b2b_transport_packaging" };
+  if (EXEMPT_CLOSED_LOOP.test(span)) return { attribute: "exemption_scope", value: "reusable_closed_loop" };
+  if (EXEMPT_CRITICAL.test(span)) return { attribute: "exemption_scope", value: "critical_performance_factors" };
+  if (LABEL_SORTING.test(span)) return { attribute: "labeling_marking_class", value: "material_composition_sorting" };
+  if (LABEL_REUSABLE.test(span) || LABEL_QR.test(span)) return { attribute: "labeling_marking_class", value: "reusable_qr_data_carrier" };
+  return { attribute: rules.triggerAttribute, value: fallbackValue };
+}
+
+function extractArtifacts(span: string): string | null {
+  const artifacts: string[] = [];
+  if (ARTIFACT_DOC.test(span)) artifacts.push("EU Declaration of Conformity (Annex VIII)");
+  if (ARTIFACT_CONFORMITY.test(span)) artifacts.push("Conformity Assessment / technical documentation (Annex VII)");
+  if (ARTIFACT_REGISTER.test(span)) artifacts.push("National producer register enrollment");
+  return artifacts.length > 0 ? artifacts.join("; ") : null;
+}
+
 /** One candidate from a span that names an Article pinpoint, a duty-holder phrase and a deontic verb, in the capture that holds it; null when it names none. */
 function dutyCandidate(item: ObjectItem, span: string, captureId: string, sourceId: string | null, timeline: ReturnType<typeof timelineFromEvents>): Candidate | null {
   const value = instrumentValue(item);
   const pin = PINPOINT_RE.exec(span)?.[0];
   const holders = [...new Set(PHRASES.filter((p) => p.re.test(span)).map((p) => p.class))];
   if (!value || !pin || !holders.length || !DEONTIC_RE.test(span)) return null;
-  return { instrument_item_id: item.id, capture_id: captureId, pinpoint_citation: pin.replace(/\s+/g, " "), verbatim_text: span, duty_holder_class: holders, applicability_trigger: { attribute: rules.triggerAttribute, value }, ...timeline, source_id: sourceId };
+
+  const applicability_trigger = extractTrigger(span, value);
+  const evidence_required = extractArtifacts(span);
+  const plain_language = evidence_required || applicability_trigger.attribute !== rules.triggerAttribute
+    ? [
+        holders.length > 0 ? `${holders.map((h) => h.replace(/_/g, " ")).join(", ")} obligation:` : "",
+        applicability_trigger.attribute === "void_space_ratio" ? `Maximum ${applicability_trigger.value} void/empty space ratio requirement.`
+        : applicability_trigger.attribute === "recycled_content" ? `Minimum ${applicability_trigger.value} recycled content requirement.`
+        : applicability_trigger.attribute === "de_minimis_weight" ? `De minimis exemption for packaging under 5% by weight.`
+        : applicability_trigger.attribute === "tonnage_cutoff" ? `Threshold cutoff: ${applicability_trigger.value}.`
+        : applicability_trigger.attribute === "exemption_scope" ? `Statutory exemption for ${applicability_trigger.value.replace(/_/g, " ")}.`
+        : applicability_trigger.attribute === "labeling_marking_class" ? `Marking requirement: ${applicability_trigger.value.replace(/_/g, " ")}.` : "",
+        evidence_required ? `Required compliance artifact: ${evidence_required}.` : "",
+      ].filter(Boolean).join(" ")
+    : null;
+
+  return {
+    instrument_item_id: item.id,
+    capture_id: captureId,
+    pinpoint_citation: pin.replace(/\s+/g, " "),
+    verbatim_text: span,
+    duty_holder_class: holders,
+    applicability_trigger,
+    evidence_required,
+    plain_language,
+    ...timeline,
+    source_id: sourceId
+  };
 }
 
 /** FACT claims whose verbatim span names an Article pinpoint, a duty-holder phrase and a deontic verb: one candidate each, in its own capture. */

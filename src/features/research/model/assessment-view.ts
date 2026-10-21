@@ -55,6 +55,13 @@ export interface Corridor {
   label: string;
   method: string | null;
 }
+
+export interface AssessmentForwardOutlook {
+  stance: "Act/Invest Today" | "Wait/Stage";
+  horizon: string;
+  guidance: string;
+}
+
 export interface AssessmentView {
   id: string;
   itemId: string;
@@ -69,11 +76,90 @@ export interface AssessmentView {
   anchored: boolean;
   lifecycleState: string | null;
   computedAt: string;
+  forwardOutlook: AssessmentForwardOutlook | null;
 }
 
 /** The stored method is a code; its sentence is in assessment-copy.json, and a stored value that is not a known code (an older row's prose) is not printed. */
 const methodWords = (m: string | null): string | null => (m !== null && Object.hasOwn(COPY.method, m) ? (COPY.method[m] as string) : null);
 const corridor = (prefix: "TRL" | "CRI", low: number | null, high: number | null, method: string | null): Corridor | null => (low != null && high != null ? { low, high, label: corridorLabel(prefix, low, high), method: methodWords(method) } : null);
+
+function deriveAssessmentForwardOutlook(row: AssessmentRow): AssessmentForwardOutlook | null {
+  if (row.refusal_reason) return null;
+  const band = row.horizon_band;
+  const kind = row.horizon_kind ?? "availability";
+  const tmHigh = row.technical_maturity_high;
+  const cmHigh = row.commercial_maturity_high;
+
+  if (band === "NOW") {
+    if (kind === "obligation") {
+      return {
+        stance: "Act/Invest Today",
+        horizon: "0–12m",
+        guidance: "Immediate statutory obligation takes effect within 2 years. Ensure operational compliance systems and audit readiness are deployed today.",
+      };
+    }
+    if (tmHigh != null && tmHigh >= 8 && cmHigh != null && cmHigh >= 4) {
+      return {
+        stance: "Act/Invest Today",
+        horizon: "0–12m",
+        guidance: "Commercial-ready solution with high technical maturity available now. Deploy immediately into active operations or fleet procurement.",
+      };
+    }
+    return {
+      stance: "Act/Invest Today",
+      horizon: "1–2y",
+      guidance: "Near-term availability window. Initiate pilot demonstration and infrastructure staging today to de-risk full adoption.",
+    };
+  }
+
+  if (band === "NEAR") {
+    if (kind === "obligation") {
+      return {
+        stance: "Act/Invest Today",
+        horizon: "1–2y",
+        guidance: "Upcoming statutory mandate within 2 to 5 years. Initiate capital budgeting, vendor qualification, and trial runs ahead of enforcement.",
+      };
+    }
+    if (tmHigh != null && tmHigh >= 7) {
+      return {
+        stance: "Wait/Stage",
+        horizon: "2–5y",
+        guidance: "Solution in demonstration or early commercialization. Stage procurement roadmaps and monitor commercial scale milestones before committing full capital.",
+      };
+    }
+    return {
+      stance: "Wait/Stage",
+      horizon: "2–5y",
+      guidance: "Emerging capability in testing. Track signposts and technology maturation before committing capital.",
+    };
+  }
+
+  if (band === "MID") {
+    return {
+      stance: "Wait/Stage",
+      horizon: "2–5y",
+      guidance: "Medium-term transition horizon (5 to 10 years). Monitor institutional roadmaps and demonstration outcomes; do not commit operational capital today.",
+    };
+  }
+
+  if (band === "FAR") {
+    return {
+      stance: "Wait/Stage",
+      horizon: ">5y",
+      guidance: "Long-term horizon beyond 10 years. Track fundamental research breakthroughs and policy signals without near-term operational changes.",
+    };
+  }
+
+  if (tmHigh != null && tmHigh >= 8 && cmHigh != null && cmHigh >= 4) {
+    return {
+      stance: "Act/Invest Today",
+      horizon: "0–12m",
+      guidance: "Commercially mature technology available today. Review integration feasibility.",
+    };
+  }
+
+  return null;
+}
 
 export function selectAssessmentView(row: AssessmentRow | null | undefined): AssessmentView | null {
   if (!row) return null;
@@ -91,6 +177,7 @@ export function selectAssessmentView(row: AssessmentRow | null | undefined): Ass
     anchored: horizon?.rule === "R1" || horizon?.rule === "R3",
     lifecycleState: row.lifecycle_state,
     computedAt: row.computed_at,
+    forwardOutlook: deriveAssessmentForwardOutlook(row),
   };
 }
 export function selectAssessmentViewsByItemId(rows: readonly AssessmentRow[]): Map<string, AssessmentView> {

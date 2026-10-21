@@ -132,6 +132,33 @@ function ThemeAnalysis({ theme, surfaceLabel, first }: { theme: ThemeAnalysisVie
           <StateNote>{theme.absence}</StateNote>
         </div>
       )}
+      {theme.forwardOutlook && (
+        <Block label="Forward outlook (Act/Invest Today vs. Wait/Stage)">
+          <div style={{ fontSize: "var(--fs-13)", lineHeight: 1.6, color: "var(--ink-2)" }}>
+            <p style={{ fontWeight: 600, color: "var(--ink)", margin: "0 0 var(--sp-6)" }}>
+              {theme.forwardOutlook.headline}
+            </p>
+            <p style={{ margin: "0 0 var(--sp-8)" }}>
+              {theme.forwardOutlook.guidance}
+            </p>
+            {theme.forwardOutlook.crossSurfaceHandoff && (
+              <p style={{ margin: "0 0 var(--sp-8)", fontStyle: "italic" }}>
+                <span style={{ fontWeight: 600, fontStyle: "normal" }}>Cross-surface handoff:</span> {theme.forwardOutlook.crossSurfaceHandoff}
+              </p>
+            )}
+            {theme.forwardOutlook.horizons.length > 0 && (
+              <ul style={{ margin: "var(--sp-6) 0 0", paddingLeft: "var(--sp-18)" }}>
+                {theme.forwardOutlook.horizons.map((h, i) => (
+                  <li key={i} style={{ marginBottom: "var(--sp-4)" }}>
+                    <span style={{ fontWeight: 600, color: "var(--ink)" }}>{h.horizon} ({h.surfaces.join(", ") || "all surfaces"}):</span>{" "}
+                    {h.guidance}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </Block>
+      )}
       {theme.membersByPage.length > 0 && (
         <Block label="Other items in this theme">
           {theme.membersByPage.map((g) => (

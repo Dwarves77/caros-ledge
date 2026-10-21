@@ -82,5 +82,27 @@
   "datePhrases": {
     "date_of_application": "\\bappl(?:y|ies|ication)\\b",
     "enforcement_start": "\\b(?:enforce(?:ment|d)?|penalt(?:y|ies))\\b"
+  },
+  "thresholds": {
+    "percent": "\\b(\\d+(?:\\.\\d+)?)\\s*(?:%|percent)\\b",
+    "emptySpace": "\\b(?:max(?:imum)?\\s+)?(?:empty|void)\\s+space(?:\\s+ratio)?(?:\\s+of)?(?:\\s+max(?:imum)?)?\\s*(?:not\\s+exceed(?:ing)?\\s*)?(\\d+(?:\\.\\d+)?\\s*(?:%|percent))\\b",
+    "recycledContent": "\\b(?:at\\s+least\\s+)?(\\d+(?:\\.\\d+)?\\s*(?:%|percent))\\s+(?:post-consumer\\s+)?recycled\\s+(?:plastic\\s+)?content\\b|\\b(?:post-consumer\\s+)?recycled\\s+(?:plastic\\s+)?content(?:\\s+of)?(?:\\s+at\\s+least)?\\s*(\\d+(?:\\.\\d+)?\\s*(?:%|percent))\\b",
+    "deMinimisWeight": "\\b(?:less\\s+than|<)\\s*(\\d+(?:\\.\\d+)?\\s*(?:%|percent))(?:\\s+(?:of|by)\\s+weight)?\\b|\\bde\\s+minimis\\b",
+    "tonnageCutoff": "\\b(\\d+(?:[.,]\\d+)?)\\s*(?:tonnes?|tons?|gross\\s+tonnage|GT)\\b"
+  },
+  "exemptions": {
+    "b2bTransport": "\\b(?:exempt(?:ed|ion)?|derogat(?:ion|e)|except(?:ed)?)\\s+(?:for|from|with\\s+respect\\s+to\\s+)?(?:B2B\\s+(?:transport\\s+)?packaging|transport\\s+packaging|reusable\\s+transport\\s+packaging)\\b",
+    "criticalFactors": "\\b(?:custom-made|product[-\\s]protection|critical\\s+performance\\s+factors?|essential\\s+requirements?|dangerous\\s+goods)\\b",
+    "closedLoop": "\\b(?:reusable\\s+closed-loop\\s+systems?|closed[-\\s]loop\\s+systems?|system\\s+for\\s+reuse)\\b"
+  },
+  "complianceArtifacts": {
+    "declarationOfConformity": "\\b(?:EU\\s+)?declaration\\s+of\\s+conformity(?:\\s*(?:\\(|in\\s+accordance\\s+with\\s+)?(?:Annex\\s+VIII|annex\\s+8)\\)?)?\\b",
+    "conformityAssessment": "\\b(?:conformity\\s+assessment|technical\\s+documentation)(?:\\s*(?:\\(|in\\s+accordance\\s+with\\s+)?(?:Annex\\s+VII|annex\\s+7)\\)?)?\\b",
+    "producerRegister": "\\b(?:national\\s+)?producer\\s+register(?:\\s+established|\\s+enrollment|\\s+registration|\\s+registered\\s+with\\s+the\\s+register)?\\b|\\bregister\\s+of\\s+producers\\b"
+  },
+  "labelingMarking": {
+    "sorting": "\\b(?:material\\s+composition(?:\\s+sorting)?(?:\\s+marking|\\s+labels?)?|sorting\\s+labels?|harmonised\\s+label(?:ling)?)\\b",
+    "reusableSystem": "\\b(?:reusable\\s+(?:packaging\\s+)?labels?|circular\\s+system\\s+labels?|reusability\\s+label)\\b",
+    "qrDataCarrier": "\\b(?:QR\\s+code|digital\\s+data\\s+carrier|data\\s+carrier|RFID)\\b"
   }
 }

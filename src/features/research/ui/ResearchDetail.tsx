@@ -57,6 +57,7 @@ export interface ResearchDetailProps {
 
 /** The stored findings sections and the headings they render under. */
 const HEADINGS: Readonly<Record<string, string>> = { "1": "What the research found", "2": "Why it matters operationally", "3": "Strategy & claims", "4": "Talking points", "5": "What does not resolve", "6": "Sources" };
+const PENDING_REGULATORY_KINDS = new Set(["implementing_act_due", "delegated_act_due", "guidance_expected"]);
 
 export function ResearchDetail(p: ResearchDetailProps) {
   const { resource: r, nowIso } = p;
@@ -74,6 +75,8 @@ export function ResearchDetail(p: ResearchDetailProps) {
   const rows = useMemo(() => sourceEntriesOf(r), [r]);
   const parsed = useMemo(() => (isRecord ? parseRecordSections(p.sections, p.claimTiers) : null), [isRecord, p.sections, p.claimTiers]);
   const split = parsed ? splitKeyDateFacts(parsed.facts) : { dateFacts: [], otherFacts: [] };
+  const pendingEvents = useMemo(() => (p.events ?? []).filter((e) => PENDING_REGULATORY_KINDS.has(e.event_kind)), [p.events]);
+  const hasPendingOrUnresolved = !!r.doesNotResolve || pendingEvents.length > 0;
   const summaryProse = r.whatIsIt || r.note || r.whyMatters || null;
   const unparsedBrief = !isRecord && known.length === 0 && r.fullBrief ? stripSourcesSection(r.fullBrief) : "";
   const presence = crossPagePresence(p.crossPage);
@@ -167,12 +170,56 @@ export function ResearchDetail(p: ResearchDetailProps) {
             </DetailSection>
             {!isRecord && (
               <DetailSection id="findings" title="Substantive findings" index={2}>
-                {known.length > 0 ? (
-                  known.map((s, i) => (
-                    <DetailSubSection key={s.section_key} title={HEADINGS[s.section_key] as string} first={i === 0}>
-                      <FactBlocks markdown={s.content_md} />
-                    </DetailSubSection>
-                  ))
+                {known.length > 0 || hasPendingOrUnresolved ? (
+                  <>
+                    {known.map((s, i) => (
+                      <DetailSubSection key={s.section_key} title={HEADINGS[s.section_key] as string} first={i === 0}>
+                        <FactBlocks markdown={s.content_md} />
+                        {s.section_key === "5" && (
+                          <>
+                            {r.doesNotResolve && (
+                              <p style={{ fontSize: "var(--fs-13)", lineHeight: 1.6, marginTop: "var(--sp-8)", color: "var(--ink-2)" }}>{r.doesNotResolve}</p>
+                            )}
+                            {pendingEvents.length > 0 && (
+                              <div style={{ marginTop: "var(--sp-8)" }}>
+                                <p className="cl-detail-label" style={{ marginBottom: "var(--sp-4)" }}>Pending regulatory triggers</p>
+                                <ul style={{ margin: 0, paddingLeft: "var(--sp-18)", fontSize: "var(--fs-13)", lineHeight: 1.6, color: "var(--ink-2)" }}>
+                                  {pendingEvents.map((ev, idx) => (
+                                    <li key={idx}>
+                                      <span style={{ fontWeight: 600, color: "var(--ink)" }}>{ev.event_date ? formatDate(ev.event_date) : "Pending"}:</span>{" "}
+                                      {(p.kindLabels && p.kindLabels[ev.event_kind]) || ev.event_kind}
+                                      {ev.obligation_text ? ` — ${ev.obligation_text}` : ""}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </DetailSubSection>
+                    ))}
+                    {!known.some((s) => s.section_key === "5") && hasPendingOrUnresolved && (
+                      <DetailSubSection key="5" title={HEADINGS["5"] as string} first={known.length === 0}>
+                        {r.doesNotResolve && (
+                          <p style={{ fontSize: "var(--fs-13)", lineHeight: 1.6, color: "var(--ink-2)", margin: "0 0 var(--sp-8)" }}>{r.doesNotResolve}</p>
+                        )}
+                        {pendingEvents.length > 0 && (
+                          <div>
+                            <p className="cl-detail-label" style={{ marginBottom: "var(--sp-4)" }}>Pending regulatory triggers</p>
+                            <ul style={{ margin: 0, paddingLeft: "var(--sp-18)", fontSize: "var(--fs-13)", lineHeight: 1.6, color: "var(--ink-2)" }}>
+                              {pendingEvents.map((ev, idx) => (
+                                <li key={idx}>
+                                  <span style={{ fontWeight: 600, color: "var(--ink)" }}>{ev.event_date ? formatDate(ev.event_date) : "Pending"}:</span>{" "}
+                                  {(p.kindLabels && p.kindLabels[ev.event_kind]) || ev.event_kind}
+                                  {ev.obligation_text ? ` — ${ev.obligation_text}` : ""}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </DetailSubSection>
+                    )}
+                  </>
                 ) : (
                   <StateNote>{p.claimsDegraded ? "Detailed sections for this finding are withheld until the facts load." : "Detailed sections for this finding are not written yet; they need the finding's brief."}</StateNote>
                 )}
