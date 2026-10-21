@@ -243,7 +243,7 @@ test("P2-10: the item the turn minted and verified renders on /regulations and o
   assert.deepEqual(await loadDetail("market", itemId, undefined, db.client), { notFound: true }, "the same item is not found on another surface");
 });
 
-// Ã¢â€â‚¬Ã¢â€â‚¬ P2-16: Community on the same database as the turn Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// ── P2-16: Community on the same database as the turn ───────────────────────────────────────────────────────────
 // Community is social only (ADR-041): nothing it holds feeds another surface. What the turn wrote reaches Community the one allowed way: the rooms read the ledger's verified items (the room of an item's jurisdiction),
 // a thread binds to the entities the turn minted, and a member may cite a live item. The member journey then runs end to end on this database through the real routes, the real notification path (route, outbox, drain,
 // notifications row, the shell's unread count) and the same row policies the schema job proves in 0062.
