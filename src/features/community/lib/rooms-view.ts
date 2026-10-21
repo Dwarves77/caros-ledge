@@ -1,8 +1,8 @@
 // Ported from old_repo/src/app/community/page.tsx (lines 44-120)
 // Ported from old_repo/src/app/community/page.tsx (lines 246-451)
-// The rooms home's view models, pure: which verified ledger items sit in which room (by jurisdiction, then ISO code), the room's counts, its three leading themes and two live items, its threads with their sign-off
+// The rooms home's view models, pure: which verified ledger items sit in which room (by jurisdiction, then ISO code), the room's three leading topic words and two citable items (no ledger count: Community is social only), its threads with their sign-off
 // state and authors, and who is here. The old page built all of this inline in a 419-line component with its own surface-route and label maps; the surface route is the core one (detailHref).
-import { bandFromPriority, canonicalSurface, detailHref } from "@/core/lists";
+import { canonicalSurface, detailHref } from "@/core/lists";
 import { isUuid } from "@/core/http/parse";
 import type { Resource } from "@/core/types";
 
@@ -52,10 +52,6 @@ export interface RoomVM {
   joined: boolean;
   /** A hint for the default room (a home jurisdiction falls here); never a membership claim. */
   youHere: boolean;
-  itemCount: number;
-  itemCountKnown: boolean;
-  /** The band colour of the room's most urgent item. */
-  accent: string;
   themes: string[];
   liveItems: LiveItem[];
   threads: ThreadVM[];
@@ -92,8 +88,6 @@ export interface RosterInput {
 }
 export interface RoomsInput {
   resources: Resource[];
-  /** The ledger read failed: the counts are unknown, not zero. */
-  resourcesFailed: boolean;
   threadsFailed: boolean;
   /** room slug -> its group. */
   groups: ReadonlyMap<string, { id: string; name: string; member_count: number }>;
@@ -179,9 +173,6 @@ export function buildRooms(i: RoomsInput): RoomVM[] {
       groupId: group?.id ?? null,
       joined: group ? i.joinedGroupIds.has(group.id) : false,
       youHere: homeJurisdictionsInRoom(me.homes, def.key),
-      itemCount: inRoom.length,
-      itemCountKnown: !i.resourcesFailed,
-      accent: bandFromPriority(inRoom[0]?.priority).cssVar,
       themes,
       liveItems,
       threads: group ? (threadsByGroup.get(group.id) ?? []) : [],

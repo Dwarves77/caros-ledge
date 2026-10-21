@@ -1,13 +1,14 @@
 "use client";
 
 // Ported from old_repo/src/components/community/CommunityRooms.tsx (lines 196-1185)
-// The regional rooms home: seven room tiles (a wrapping grid, each a button that names the room, its item count, its leading themes and its activity), the selected room's discussion table with in-place disclosure, the
+// The regional rooms home: seven room tiles (a wrapping grid, each a button that names the room, its discussion count, its leading topic words and its activity), the selected room's discussion table with in-place disclosure, the
 // composer, join and leave, and the rail (who is here, verifier sign-off, why post here, vertical groups). The composer BINDS ENTITIES through the same picker the group feed uses (the old rooms composer sent no entity ids,
 // which the route refuses, so no post from here could ever succeed: the second wiring defect), and every action goes through a route and says its failure in the one Toast.
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
+import { refusalSentence } from "@/core/http/failure";
 import { formatNumber } from "@/core/shared";
 import { Absence, Button, CardFoot, Menu, RelativeTime, RowTable, SectionCard, SectionHead, StateNote, Textarea } from "@/ui";
 
@@ -148,7 +149,7 @@ export function RoomsIndex({ rooms: initial, seeded, verticalGroups: initialGrou
           <Absence reason="connect data" />
           <span>
             Opened by {t.isYou ? "you" : t.author?.anonymous ? "Anonymous member" : (t.author?.name ?? "a member")}
-            {t.author?.company && !t.author.anonymous ? ` · ${t.author.company}` : ""}
+            {t.author?.company && !t.author.anonymous ? ` Â· ${t.author.company}` : ""}
           </span>
           {t.signedOffAt && <SignedOffMark docUrl={t.signedOffDocUrl} />}
         </span>
@@ -196,13 +197,13 @@ export function RoomsIndex({ rooms: initial, seeded, verticalGroups: initialGrou
                 >
                   <span className={styles.tileHead}>
                     <span className={styles.tileName}>{r.name}</span>
-                    <span className={styles.tileCount} style={{ color: r.accent }}>{r.itemCountKnown ? formatNumber(r.itemCount) : "—"}</span>
+                    <span className={styles.tileCount}>{r.threadsKnown ? formatNumber(n) : "â€”"}</span>
                   </span>
-                  <span className={styles.tileThemes}>{r.themes.length > 0 ? r.themes.join(" · ") : "—"}</span>
+                  <span className={styles.tileThemes}>{r.themes.length > 0 ? r.themes.join(" Â· ") : "â€”"}</span>
                   <span className={styles.tileActivity}>
                     {r.joined && <b>Joined</b>}
-                    {r.joined && " · "}
-                    {!r.threadsKnown ? "—" : n === 0 ? "no discussions yet" : `${n} discussion${n > 1 ? "s" : ""}${last ? " · " : ""}`}
+                    {r.joined && " Â· "}
+                    {!r.threadsKnown ? refusalSentence("discussions_unavailable") : n === 0 ? "no discussions yet" : `${n} discussion${n > 1 ? "s" : ""}${last ? " Â· " : ""}`}
                     {r.threadsKnown && n > 0 && last ? <RelativeTime iso={last} /> : null}
                   </span>
                 </button>
@@ -214,7 +215,7 @@ export function RoomsIndex({ rooms: initial, seeded, verticalGroups: initialGrou
           </div>
 
           <SectionCard dataAudit="room-index">
-            <SectionHead title={roomName} aside={`${threads.length} discussion${threads.length === 1 ? "" : "s"} · ${threads.length} shown · ${selected.roster.length} member${selected.roster.length === 1 ? "" : "s"} here`} />
+            <SectionHead title={roomName} aside={`${threads.length} discussion${threads.length === 1 ? "" : "s"} Â· ${threads.length} shown Â· ${selected.roster.length} member${selected.roster.length === 1 ? "" : "s"} here`} />
             {threads.length > 0 && <RowTable columns={[{ label: "Juris.", width: "64px" }, { label: "Discussion", width: "minmax(0,1fr)" }, { label: "Replies", width: "96px" }, { label: "Last activity", width: "120px" }, { label: "", width: "44px" }]} rows={rows} metrics={{ paddingLeft: 14, rowMinHeight: 56, ruleAfterLastRow: true }} />}
             <CardFoot
               left={threads.length === 0 ? `Be first in the ${roomName}. No discussions here yet, post what you saw on the ground this week.` : "Threads link to ledger items; the ledger keeps the scoring."}
@@ -223,9 +224,9 @@ export function RoomsIndex({ rooms: initial, seeded, verticalGroups: initialGrou
           </SectionCard>
 
           <SectionCard dataAudit="new-post">
-            <SectionHead title={`New post · ${selected.short}`} aside={`Posts to the ${roomName}`} />
+            <SectionHead title={`New post Â· ${selected.short}`} aside={`Posts to the ${roomName}`} />
             <div className={styles.pad}>
-              <Textarea ref={composer} value={draft} onChange={(e) => setDraft(e.target.value)} aria-label={`Post to the ${roomName}`} placeholder={`Ask the ${roomName}, a lane observation, a handler question, a document worth sharing…`} disabled={!canPost} rows={3} maxLength={LIMITS.postBody} />
+              <Textarea ref={composer} value={draft} onChange={(e) => setDraft(e.target.value)} aria-label={`Post to the ${roomName}`} placeholder={`Ask the ${roomName}, a lane observation, a handler question, a document worth sharingâ€¦`} disabled={!canPost} rows={3} maxLength={LIMITS.postBody} />
               <div className={styles.promptRow}>
                 {starters(roomName).map((s) => (
                   <Button key={s} variant="ghost" size="sm" disabled={!selected.joined} onClick={() => setDraft(s)}>
@@ -243,7 +244,7 @@ export function RoomsIndex({ rooms: initial, seeded, verticalGroups: initialGrou
               <div className={styles.composerFoot}>
                 <span />
                 <Button variant={selected.joined ? "secondary" : "primary"} disabled={busy || !selected.groupId} onClick={() => void toggleJoin()}>
-                  {selected.joined ? "Joined · leave room" : "Join room"}
+                  {selected.joined ? "Joined Â· leave room" : "Join room"}
                 </Button>
               </div>
             </div>
@@ -254,7 +255,7 @@ export function RoomsIndex({ rooms: initial, seeded, verticalGroups: initialGrou
           <SectionCard dataAudit="whos-here">
             <div className={styles.railPad}>
               <div className={styles.railHead}>
-                <span className={styles.eyebrow}>Who&rsquo;s here · {roomName}</span>
+                <span className={styles.eyebrow}>Who&rsquo;s here Â· {roomName}</span>
                 <span className={styles.muted}>{selected.roster.length}</span>
               </div>
               {selected.roster.length === 0 ? (

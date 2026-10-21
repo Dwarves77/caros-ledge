@@ -212,7 +212,7 @@
    "flags": "i"
   },
   "AIM_WORDS": {
-   "source": "\\b(aim|aims|aiming|target|targets|targeting|committed|commit|commits|striving|strive|goal|plan to|planning to|ambition)\\b",
+   "source": "\\b(aim|aims|aiming|target|targets|targeting|committed|commit|commits|striving|strive|goal|plan to|planning to|ambition|net[-\\s]+zero|scenario|pathway|trajectory|outlook)\\b",
    "flags": "i"
   },
   "COMMENCEMENT_CLAUSE_RE": {

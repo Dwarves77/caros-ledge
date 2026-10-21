@@ -71,6 +71,11 @@
    "why": "Reads one named item's last-regenerated date for extraction; the claims it reads exclude a suppressed claim."
   },
   {
+   "glob": "src/features/obligations/jobs/scan-backlog.ts",
+   "kind": "pipeline",
+   "why": "The connect stage's backlog scan heals items quarantined by a prior extractor's bogus compliance_deadline and re-validates their required slots."
+  },
+  {
    "glob": "src/features/admin/**",
    "kind": "operator",
    "why": "The admin console reads and corrects any item in any state."
