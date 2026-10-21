@@ -19,3 +19,10 @@ export const CAPTURE_VIEWPORTS = [
 
 /** The tallest a screenshot is allowed to be; a page taller than this is recorded `truncated` and fails the compare. */
 export const SCREEN_MAX_HEIGHT = 16000;
+
+/**
+ * What is an ITEM on a page, as the capture marks it (`item: true` on a control, a heading or a row): a link to an item's detail route, a link to another origin (a source), anything inside a list row, and the
+ * item's own title on a detail page. An item is data and its slot is design: compare.mjs compares the slots (how many sections draw items, whether a section draws none) and never which item sits in one.
+ * The sub-pages that share an item route's shape are named in the pattern so they stay exact.
+ */
+export const ITEM_PATH = '^/(regulations|market|research|operations)/(?!register$|series$)[^/]+$';

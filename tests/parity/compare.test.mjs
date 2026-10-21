@@ -112,3 +112,54 @@ test('one waiver may name several kinds: it covers a missing control and a missi
   assert.deepEqual(compareRecord('regulations', '1280x900', b, rec([], ['Row one needs more data']), waiver).fails, ['control missing: button:Other']);
   assert.equal(compareRecord('market', '1280x900', b, rec([{ role: 'button', name: 'Other' }], []), waiver).fails.length, 2, 'another route is not covered');
 });
+
+test('D4: items A to E against F to J in the same slots passes; an Action band with no items fails; a changed masthead fails', () => {
+  const bandPage = (masthead, actionItems, monitorItems, marked = true) => ({
+    landmarks: [{ role: 'main', name: '' }],
+    headings: [
+      { level: 1, text: masthead },
+      ...actionItems.map((t) => ({ level: 3, text: t, ...(marked ? { item: true } : {}) })),
+      ...monitorItems.map((t) => ({ level: 3, text: t, ...(marked ? { item: true } : {}) })),
+    ],
+    controls: [
+      { role: 'button', name: 'Export ledger' },
+      ...actionItems.flatMap((t) => [
+        { role: 'link', name: t, ...(marked ? { item: true } : {}) },
+        { role: 'button', name: 'Watch', ...(marked ? { item: true } : {}) },
+      ]),
+      { role: 'button', name: 'All 12 action →' },
+      ...monitorItems.flatMap((t) => [
+        { role: 'link', name: t, ...(marked ? { item: true } : {}) },
+        { role: 'button', name: 'Watch', ...(marked ? { item: true } : {}) },
+      ]),
+      { role: 'button', name: 'All 16 monitor →' },
+    ],
+    rows: {
+      containers: [
+        ...(actionItems.length ? [{ label: 'Action', count: actionItems.length }] : []),
+        ...(monitorItems.length ? [{ label: 'Monitor', count: monitorItems.length }] : []),
+      ],
+      items: [
+        ...actionItems.map((t) => ({ tag: 'div', text: `${t} · Tier 1 · due in 30d`, width: 800, height: 52, container: 'Action', ...(marked ? { item: true } : {}) })),
+        ...monitorItems.map((t) => ({ tag: 'div', text: `${t} · Tier 2 · due in 90d`, width: 800, height: 52, container: 'Monitor', ...(marked ? { item: true } : {}) })),
+      ],
+    },
+  });
+
+  const base = bandPage('Regulations ledger', ['Item A', 'Item B', 'Item C'], ['Item D', 'Item E'], false);
+  const moved = bandPage('Regulations ledger', ['Item F', 'Item G', 'Item H'], ['Item I', 'Item J'], true);
+  // Red-first: without item marks (pre-D4), the moved corpus fails on every item heading, link and row.
+  assert.equal(compareRecord('regulations', '1280x900', base, bandPage('Regulations ledger', ['Item F', 'Item G', 'Item H'], ['Item I', 'Item J'], false), []).fails.length > 0, true);
+  // 1. Items A to E against F to J in the same slots passes.
+  const ok = compareRecord('regulations', '1280x900', base, moved, []);
+  assert.deepEqual(ok.fails, []);
+  assert.equal(ok.shaped > 0, true);
+  // 2. An Action band with no items fails.
+  const emptyAction = bandPage('Regulations ledger', [], ['Item F', 'Item G', 'Item H', 'Item I', 'Item J'], true);
+  const emptyFails = compareRecord('regulations', '1280x900', base, emptyAction, []).fails;
+  assert.equal(emptyFails.some((f) => f.includes('item section empty') && f.includes('All # action →')), true);
+  // 3. A changed masthead fails.
+  const badMasthead = bandPage('Wrong masthead title', ['Item F', 'Item G', 'Item H'], ['Item I', 'Item J'], true);
+  assert.deepEqual(compareRecord('regulations', '1280x900', base, badMasthead, []).fails, ['heading missing: 1:Regulations ledger']);
+
+});

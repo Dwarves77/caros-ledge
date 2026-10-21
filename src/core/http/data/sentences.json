@@ -21,7 +21,8 @@
   "counts_unavailable": "Counts did not load.",
   "band_counts_unavailable": "The band counts did not load, so the tiles are blank rather than zero.",
   "themes_unavailable": "The cross-page themes did not load.",
-  "ratings_unavailable": "Source ratings did not load, so tiers are not shown on these rows."
+  "ratings_unavailable": "Source ratings did not load, so tiers are not shown on these rows.",
+  "discussions_unavailable": "discussions could not be loaded"
  },
  "impactAbsence": {
   "obligations": "No obligations extracted yet",

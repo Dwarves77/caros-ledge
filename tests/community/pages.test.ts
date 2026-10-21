@@ -107,8 +107,8 @@ test("INV-263 /community: each block that fails says so inside the page; the res
   assert.match(threads.text, /Pending invitations/, "the invitation panel still draws");
   assert.match(threads.text, /Retry/);
   const ledger = await room((db) => db.rpcFail.set("get_workspace_intelligence_listings", { message: "down" }));
-  assert.match(ledger.text, /ledger counts could not be loaded/i);
-  assert.match(ledger.text, /· — active item/, "the header dash, not '0 active items'");
+  assert.match(ledger.text, /ledger topics and citable items could not be loaded/i);
+  assert.doesNotMatch(ledger.text, /active item/i);
   const groups = await room((db) => db.fail("community_groups", "select", "down"));
   assert.match(groups.text, /regional rooms could not be loaded/i);
   assert.doesNotMatch(groups.text, /not open yet/, "a failed read is not 'the rooms are not open yet'");

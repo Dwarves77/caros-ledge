@@ -1,6 +1,5 @@
 // New in P2-16: the seven Community screens as presentation, apart from the reads that feed them. The pages read and hand the data in; the UX smoke's fixture route hands in fixed data, so the screen a member sees is the
 // one the smoke measures (at 375 and 1440 px, and against the parity baseline), not a copy of it.
-import { formatNumber } from "@/core/shared";
 import { Masthead, SectionCard, SectionHead } from "@/ui";
 import { PageFrame } from "@/ui/shell";
 import { ShellCommandBar } from "@/ui/shell/CommandBar";
@@ -23,15 +22,13 @@ import { ToastProvider } from "../ui/toast";
 
 /** /community: the masthead, your invitations and groups, and the seven rooms. The page keeps the platform nav (the Community sidebar is for the sub-pages). */
 export function RoomsScreen({ home, dateLabel, nowIso }: { home: RoomsHome; dateLabel: string; nowIso: string }) {
-  const total = home.rooms.reduce((n, r) => n + r.itemCount, 0);
-  const known = home.rooms.every((r) => r.itemCountKnown);
   const dek = (
     <span>
       {home.rooms.length} regional room{home.rooms.length === 1 ? "" : "s"}
       {home.seeded ? (
         <>
           {" "}
-          · <b>{known ? formatNumber(total) : "—"}</b> active item{total === 1 ? "" : "s"} across them · you are in <b>{home.rooms.filter((r) => r.joined).length}</b>
+          · you are in <b>{home.rooms.filter((r) => r.joined).length}</b>
         </>
       ) : null}{" "}
       · peer signal is unverified until a verifier signs off

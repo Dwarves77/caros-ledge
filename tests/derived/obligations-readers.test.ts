@@ -68,8 +68,8 @@ test("flywheel:21: a failed read of the suppressions fails /upcoming, the regist
 test("flywheel:21: the deadline column is the earliest event that survives suppression, not the suppressed one", async () => {
   const m = memoryDb({
     intelligence_items: [item(LIVE, { compliance_deadline: null })],
-    section_claim_provenance: [claim(C1, LIVE, "The wrong deadline.")],
-    item_forward_events: [event(E1, LIVE, C1, { event_date: "2026-11-01" }), event(E3, LIVE, null, { event_date: "2026-12-15" })],
+    section_claim_provenance: [claim(C1, LIVE, "The wrong deadline."), claim(C2, LIVE, "The surviving deadline.")],
+    item_forward_events: [event(E1, LIVE, C1, { event_date: "2026-11-01" }), event(E3, LIVE, C2, { event_date: "2026-12-15" })],
     fact_suppressions: [suppress(C1, LIVE, "The wrong deadline.")],
   });
   const r = await syncComplianceDeadline(m.db, LIVE, TODAY);

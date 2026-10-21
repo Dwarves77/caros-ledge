@@ -44,7 +44,9 @@ export async function readRegulationsFirstPage(db: Db, orgId: string | null, pro
 
 /** Everything after the first page, trimmed. A failure is reported as one, never as a short list. */
 export async function readRegulationsRemainder(db: Db, orgId: string | null): Promise<{ rows: LedgerRow[]; failed: boolean }> {
-  const rest = await readRemainder(db, { orgId, rpc: rpcFor(orgId), firstPageSize: pageSizes.first, domain: REGULATIONS_DOMAIN });
+  // The corpus total (the counts the page reads) lets the pages be read together; a failed counts read is no total, and the walk stays sequential.
+  const counts = await readSurfaceCounts(db, orgId, "regulations");
+  const rest = await readRemainder(db, { orgId, rpc: rpcFor(orgId), firstPageSize: pageSizes.first, domain: REGULATIONS_DOMAIN, ...(counts ? { total: counts.totalItems } : {}) });
   if (rest.failed) return { rows: [], failed: true };
   return { rows: await withUuids(db, rest.rows.filter((r) => r.domain === REGULATIONS_DOMAIN).map(trimRemainder)), failed: false };
 }

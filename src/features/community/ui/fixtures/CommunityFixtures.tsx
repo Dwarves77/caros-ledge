@@ -41,7 +41,7 @@ const ROOM_GROUPS = new Map(ROOMS.map((r, i) => [r.slug, { id: `00000000-0000-40
 function homeFor(state: string): RoomsHome {
   const failed = state === "failed";
   const threads = state === "threads";
-  const rooms = buildRooms({ resources: failed ? [] : RESOURCES, resourcesFailed: failed, threadsFailed: failed, groups: ROOM_GROUPS, joinedGroupIds: new Set(threads ? [ROOM_GROUPS.get("room-eu")?.id ?? ""] : []), posts: threads ? POSTS : [], signoffs: [{ id: "00000000-0000-4000-8000-0000000005a1", post_id: POSTS[0]?.id ?? "", requested_by: ME, status: "pending" as const, created_at: day(1) }].filter(() => threads), requesterNames: new Map([[ME, "Smoke Member"]]), me: { userId: ME, homes: threads ? ["eu"] : [] }, roster: [{ id: ME, name: "Smoke Member", homes: threads ? ["eu"] : [], isOwner: false }] });
+  const rooms = buildRooms({ resources: failed ? [] : RESOURCES, threadsFailed: failed, groups: ROOM_GROUPS, joinedGroupIds: new Set(threads ? [ROOM_GROUPS.get("room-eu")?.id ?? ""] : []), posts: threads ? POSTS : [], signoffs: [{ id: "00000000-0000-4000-8000-0000000005a1", post_id: POSTS[0]?.id ?? "", requested_by: ME, status: "pending" as const, created_at: day(1) }].filter(() => threads), requesterNames: new Map([[ME, "Smoke Member"]]), me: { userId: ME, homes: threads ? ["eu"] : [] }, roster: [{ id: ME, name: "Smoke Member", homes: threads ? ["eu"] : [], isOwner: false }] });
   return {
     me: { name: "Smoke Member", avatarUrl: null, verifierStatus: "none", workspaceRole: null, homes: ["eu"], orgId: null },
     rooms,
@@ -49,7 +49,7 @@ function homeFor(state: string): RoomsHome {
     verticalGroups: failed ? null : GROUPS.slice(0, 3).map((g) => ({ id: g.id, slug: g.slug, name: g.name, vertical: "fine-art", verticalLabel: "Fine Art & Museum Logistics", description: g.description ?? null, memberCount: g.member_count, youOwn: g.id === GROUPS[0]?.id })),
     memberships: SHELL.memberships,
     invitations: SHELL.invitations,
-    failures: failed ? ["The latest discussions could not be loaded.", "The ledger counts could not be loaded."] : [],
+    failures: failed ? ["The latest discussions could not be loaded.", "The ledger topics and citable items could not be loaded."] : [],
   };
 }
 

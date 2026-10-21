@@ -40,7 +40,8 @@ export interface ListSurfaceProps {
   aboveRows?: ReactNode;
   sortRow?: ReactNode;
   flat?: boolean;
-  rowsByBand: Array<{ band: UrgencyBand; rows: SectionRow[]; total: number }>;
+  /** `total` is null while the list is part-read and the corpus figure is not known: the header says "showing N" with no total, and the band has no "All N" button (INV-263 applies to counts). */
+  rowsByBand: Array<{ band: UrgencyBand; rows: SectionRow[]; total: number | null }>;
   perBandCap: number;
   onExpandBand?: (key: UrgencyBandKey) => void;
   expandedBands?: Set<UrgencyBandKey>;
@@ -48,6 +49,8 @@ export interface ListSurfaceProps {
   loadingMoreRows?: boolean;
   /** The remainder read failed: the surface says so and offers Retry; it never presents the first page as the whole list (INV-263). */
   remainderFailed?: boolean;
+  /** The remainder's state, drawn as `data-list-state` on the list root so a reader (and the parity capture) can tell a settled list from a loading one. "idle": there is no remainder. */
+  listState?: "idle" | "loading" | "ready" | "failed";
   onRetryRemainder?: () => void;
   emptyState?: ReactNode;
   /** One titled card around the rows (or the empty state), with a head above and a foot below: the watchlist's Watched card. Rows are flat inside it. */
@@ -79,7 +82,8 @@ function FilterSheet({ open, onClose, groups }: { open: boolean; onClose: () => 
               </FilterChip>
               {g.options.map((o) => (
                 <FilterChip key={o.value} active={g.selected === o.value} onClick={() => g.onSelect(o.value)}>
-                  {o.label} · {o.countLabel ?? formatNumber(o.count)}
+                  {o.label}
+                  {(o.countLabel ?? formatNumber(o.count)) !== "" && ` · ${o.countLabel ?? formatNumber(o.count)}`}
                 </FilterChip>
               ))}
             </FilterChipGroup>
@@ -90,9 +94,9 @@ function FilterSheet({ open, onClose, groups }: { open: boolean; onClose: () => 
   );
 }
 
-const transition = (sections: Array<{ band: UrgencyBand; total: number }>, i: number): string => {
+const transition = (sections: Array<{ band: UrgencyBand; total: number | null }>, i: number): string => {
   const next = sections[i + 1];
-  return next ? `then ${next.band.label} · ${formatNumber(next.total)}` : "end of list";
+  return next ? `then ${next.band.label}${next.total === null ? "" : ` · ${formatNumber(next.total)}`}` : "end of list";
 };
 
 /**
@@ -102,7 +106,7 @@ const transition = (sections: Array<{ band: UrgencyBand; total: number }>, i: nu
 export function ListSurface(p: ListSurfaceProps) {
   const [sheet, setSheet] = useState(false);
   const groups = useMemo(() => [...p.facetGroups, ...(p.secondaryFacetGroups ?? [])], [p.facetGroups, p.secondaryFacetGroups]);
-  const sections = useMemo(() => p.rowsByBand.filter((s) => s.total > 0), [p.rowsByBand]);
+  const sections = useMemo(() => p.rowsByBand.filter((s) => (s.total === null ? s.rows.length > 0 : s.total > 0)), [p.rowsByBand]);
   const anyRows = p.rowsByBand.some((s) => s.rows.length > 0);
   const flatRows = useMemo(() => p.rowsByBand.flatMap((s) => s.rows), [p.rowsByBand]);
   return (
@@ -110,7 +114,7 @@ export function ListSurface(p: ListSurfaceProps) {
       <div className="cl-list-surface-masthead">
         <Masthead title={p.title} dek={p.dek} dateLabel={p.dateLabel} nowIso={p.nowIso} commandBar={p.commandBar} />
       </div>
-      <div className={`cl-list-surface-grid${groups.length > 0 ? " cl-list-surface-grid--mobile-facets" : ""}`}>
+      <div data-list-state={p.listState ?? "idle"} className={`cl-list-surface-grid${groups.length > 0 ? " cl-list-surface-grid--mobile-facets" : ""}`}>
         <div className="cl-list-surface-col">
           {p.bands !== false && (
             <BandTileRow>
@@ -172,11 +176,11 @@ export function ListSurface(p: ListSurfaceProps) {
               const foot = p.sectionFoot?.(s.band.key, sections[i + 1]?.band.key ?? null);
               return (
                 <SectionCard key={s.band.key} suppressRuleForBandGrouping>
-                  <BandGroupHeader band={s.band} right={<span className="cl-band-showing">showing {formatNumber(visible.length)} of {formatNumber(s.total)}</span>} />
+                  <BandGroupHeader band={s.band} right={<span className="cl-band-showing">{s.total === null ? `showing ${formatNumber(visible.length)}${p.listState === "failed" ? "" : " · loading the rest"}` : `showing ${formatNumber(visible.length)} of ${formatNumber(s.total)}`}</span>} />
                   <Rows rows={visible} />
                   {p.loadingMoreRows && <SkeletonListRow />}
                   <div data-audit="band-foot" className="cl-band-foot">
-                    {s.total > visible.length && p.onExpandBand ? (
+                    {s.total !== null && s.total > visible.length && p.onExpandBand ? (
                       <button type="button" className="cl-band-foot-link" onClick={() => p.onExpandBand?.(s.band.key)}>
                         All {formatNumber(s.total)} {s.band.label.toLowerCase()} →
                       </button>

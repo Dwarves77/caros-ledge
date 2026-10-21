@@ -41,8 +41,6 @@ function buildReferenceDates(itemRow: { last_regenerated_at?: string | Date | nu
   return dates.filter((d, i): d is string => Boolean(d) && dates.indexOf(d) === i);
 }
 
-/** The usable captures in result_index order (the pool the context is cut from). */
-
 /** The text before and after the first usable capture that holds the span verbatim. */
 function buildDueDateContext(span: string, ordered: readonly PoolRow[]): { before: string; after: string; search_id: string } | null {
   if (typeof span !== "string" || !span) return null;
@@ -66,18 +64,26 @@ export interface ExtractionInput {
   /** The item's usable captures: its primary text, scanned for the dates the brief never quoted. */
   captures: CaptureIn[];
   referenceDates: string[];
+  itemType?: string | null;
 }
 export async function readExtractionInput(sb: Db, itemId: string, now: Date): Promise<ExtractionInput> {
   const [claimRes, sectionRes, itemRes] = await Promise.all([
     sb.from("section_claim_provenance").select("id, claim_kind, claim_text, source_span").eq("intelligence_item_id", itemId).in("claim_kind", [...CLAIM_KIND_FILTER]).order("id", { ascending: true }),
     sb.from("intelligence_item_sections").select("id, section_key, content_md").eq("item_id", itemId).order("id", { ascending: true }),
-    sb.from("intelligence_items").select("last_regenerated_at").eq("id", itemId).maybeSingle(),
+    sb.from("intelligence_items").select("item_type, last_regenerated_at").eq("id", itemId).maybeSingle(),
   ]);
   if (claimRes.error) throw new Error(`section_claim_provenance read failed: ${claimRes.error.message}`);
   if (sectionRes.error) throw new Error(`intelligence_item_sections read failed: ${sectionRes.error.message}`);
   if (itemRes.error) throw new Error(`intelligence_items read failed: ${itemRes.error.message}`);
+  const itemRow = itemRes.data as { item_type?: string | null; last_regenerated_at?: string | null } | null;
   const claimRows = admissibleClaims(((claimRes.data ?? []) as ClaimRow[]).map((r) => ({ ...r, intelligence_item_id: itemId })), await readFactSuppressionsFor(sb, [itemId]));
   const mapped = claimRows.map(mapClaimRow);
   const poolRows = await readAllPoolRows(sb, itemId);
-  return { claims: attachDueDateContext(mapped, poolRows), captures: usableCaptures(poolRows).map((r) => ({ capture_id: r.id, text: r.text })), sections: ((sectionRes.data ?? []) as SectionRow[]).map(mapSectionRow), referenceDates: buildReferenceDates(itemRes.data as { last_regenerated_at?: string } | null, now) };
+  return {
+    claims: attachDueDateContext(mapped, poolRows),
+    captures: usableCaptures(poolRows).map((r) => ({ capture_id: r.id, text: r.text })),
+    sections: ((sectionRes.data ?? []) as SectionRow[]).map(mapSectionRow),
+    referenceDates: buildReferenceDates(itemRow, now),
+    ...(itemRow?.item_type !== undefined ? { itemType: itemRow.item_type } : {}),
+  };
 }

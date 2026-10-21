@@ -1,6 +1,6 @@
 // Ported from old_repo/src/app/community/page.tsx (lines 134-451)
 // The rooms home's reader, on the caller's own client: it reads the seven room groups, the member's memberships, the vertical groups, the rooms' latest threads with their sign-off requests and authors, the same-organisation
-// roster, and the verified ledger through the SHARED list read (the machine-written half of Community: the items the intake and mint stages wrote). Tables: community_groups, community_group_members,
+// roster, and the verified ledger through the SHARED list read (system to Community, for each room's topic words and the items a post can cite; never a count). Tables: community_groups, community_group_members,
 // community_posts, community_post_signoff_requests, community_group_invitations, profiles (my_profile and the same-organisation rows), intelligence_items (through the listing rpc and a uuid lookup), and the identity rpc.
 // A read that fails is a stated failure of its own block (the others still draw), never an empty list and never a zero (INV-263).
 import { LookupError } from "@/core/http/errors";
@@ -83,7 +83,7 @@ export async function readRoomsHome(db: Db, session: { userId: string; email: st
   const groups = groupsRes.ok ? groupsRes.value : [];
   if (!groupsRes.ok) failures.push("The regional rooms could not be loaded.");
   if (!verticalRes.ok) failures.push("The vertical groups could not be loaded.");
-  if (!ledgerRes.ok) failures.push("The ledger counts could not be loaded.");
+  if (!ledgerRes.ok) failures.push("The ledger topics and citable items could not be loaded.");
   if (!rosterRes.ok) failures.push("Who is in each room could not be loaded.");
 
   // The threads of the rooms and their sign-off requests; authors and requesters through the identity rpc.
@@ -122,7 +122,6 @@ export async function readRoomsHome(db: Db, session: { userId: string; email: st
   if (rosterRes.ok && !roster.some((p) => p.id === session.userId)) roster.push({ id: session.userId, name: me.name, homes: me.homes, isOwner: me.workspaceRole === "owner" });
   const rooms = buildRooms({
     resources,
-    resourcesFailed: !ledgerRes.ok,
     threadsFailed,
     groups: new Map(groups.map((g) => [g.slug, { id: g.id, name: g.name, member_count: g.member_count ?? 0 }])),
     joinedGroupIds: new Set(memberships.map((m) => m.group_id)),
