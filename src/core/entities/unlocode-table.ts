@@ -4,7 +4,8 @@ import { z } from "zod";
 
 import { licenceGate } from "@/core/contracts/source-licence";
 
-const port = z.object({ place: z.string().min(1), countryIso: z.string().regex(/^[A-Z]{2}$/), geonameId: z.number().int().positive(), source: z.string().min(1), aliasBasis: z.enum(["geonames-unlc", "caros-ledge-seed"]) });
+const position = z.object({ lat: z.number().min(-90).max(90), lon: z.number().min(-180).max(180), source: z.string().min(1) });
+const port = z.object({ place: z.string().min(1), countryIso: z.string().regex(/^[A-Z]{2}$/), geonameId: z.number().int().positive(), source: z.string().min(1), aliasBasis: z.enum(["geonames-unlc", "caros-ledge-seed"]), position: position.optional() });
 const country = z.object({ name: z.string().min(1), source: z.string().min(1) });
 const provenance = z.object({ source: z.string().min(1), url: z.string().url(), retrievedOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), terms: z.string().url(), note: z.string() });
 const file = z.object({ provenance: z.record(z.string(), provenance), ports: z.record(z.string().regex(/^[A-Z]{2}[A-Z2-9]{3}$/), port), countries: z.record(z.string().regex(/^[A-Z]{2}$/), country) });
@@ -28,11 +29,16 @@ export function nameTable(data: unknown) {
   return {
     unlocodeName: (code: unknown): string | null => portOf(code)?.place ?? null,
     nameForJurisdiction: (iso: unknown): string | null => served(t.countries[key(iso)])?.name ?? null,
+    /** Where the port is, from the entry's own position source through the same gate; null for a code the table does not hold, a port with no position, or a source the register forbids. */
+    portPosition: (code: unknown): { lat: number; lon: number } | null => {
+      const p = portOf(code)?.position;
+      return p && licenceGate(p.source).ok ? { lat: p.lat, lon: p.lon } : null;
+    },
     /** "Shanghai (CN) → Rotterdam (NL), ocean" */
     formatCorridorLabel: ({ origin, dest, mode }: Ends): string => `${place(origin, true)} → ${place(dest, true)}${String(mode ?? "").trim() ? `, ${String(mode).trim()}` : ""}`,
     /** "Shanghai – Rotterdam · ocean" */
     formatCorridorLabelCompact: ({ origin, dest, mode }: Ends): string => `${place(origin, false)} – ${place(dest, false)}${String(mode ?? "").trim() ? ` · ${String(mode).trim()}` : ""}`,
     /** The data sources the table's entries name, for the credit lines a surface prints beside a name (the register's `attribution`, through attributionsFor). */
-    sources: (): string[] => [...new Set([...Object.values(t.ports).map((e) => e.source), ...Object.values(t.countries).map((e) => e.source)])].sort(),
+    sources: (): string[] => [...new Set([...Object.values(t.ports).flatMap((e) => [e.source, ...(e.position ? [e.position.source] : [])]), ...Object.values(t.countries).map((e) => e.source)])].sort(),
   };
 }

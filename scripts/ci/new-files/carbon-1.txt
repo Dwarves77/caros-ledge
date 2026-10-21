@@ -1,0 +1,5 @@
+# path | reason (files with no "Ported from" header)
+src/core/propagation/carbon-rules.ts | new in CARBON-1: the carbon cost's rules as validated data (series read, units accepted, filing rating, physical constants, the words of every absence); the old tree took distance, payload and price as inputs nothing supplied
+src/core/propagation/data/carbon.json | new in CARBON-1: the data behind carbon_price_eur_t, corridor_distance_km, feu_payload_tonnes and carbon_cost_per_feu (hashed with the methods)
+src/core/derived/carbon.ts | new in CARBON-1: the reader of carbon_inputs and the derived values it points at (the Market page's carbon cost and its four inputs, or the sentence saying why one is missing)
+src/features/market/lib/carbon-run.ts | new in CARBON-1: the propagate stage's carbon step; settles the four inputs and the cost of every corridor through the registered methods and writes the derived values and carbon_inputs

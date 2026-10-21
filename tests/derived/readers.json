@@ -51,6 +51,11 @@
    "why": "Tag adoption reads the items a tag is adopted onto."
   },
   {
+   "glob": "src/features/market/lib/carbon-run.ts",
+   "kind": "pipeline",
+   "why": "The carbon step of the propagate stage writes the derived values it computes and retires the one each replaces; it reads the current values only through core/derived/carbon.ts, which takes derived_values_admissible."
+  },
+  {
    "glob": "src/core/propagation/inference.ts",
    "kind": "pipeline",
    "why": "Re-opening a question reads the item the question was about."

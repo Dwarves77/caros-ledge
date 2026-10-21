@@ -77,19 +77,14 @@ export async function readListing(db: Db, opts: { orgId?: string | null; rpc: Li
   return { rows: mapped.active, archived: mapped.archived, overrides, failed: false, timelineFailures: mapped.timelineFailures, enrichFailed: !enriched, message: null };
 }
 
-/**
- * The remainder after the first page, requested explicitly: a failure is a FAILURE for the caller to say, never a short list. With the corpus `total` (the caller's counts read) the pages are read together and concatenated in offset order;
- * the walk then continues from where they end while the last page is full, so a total that is too small drops no row. Without a total the walk is sequential.
- */
-export async function readRemainder(db: Db, opts: { orgId?: string | null; rpc: ListingRpc; firstPageSize: number; domain?: number; pageSize?: number; total?: number }): Promise<{ rows: Resource[]; failed: boolean }> {
+/** The remainder after the first page, requested explicitly: a failure is a FAILURE for the caller to say, never a short list. */
+export async function readRemainder(db: Db, opts: { orgId?: string | null; rpc: ListingRpc; firstPageSize: number; domain?: number; pageSize?: number }): Promise<{ rows: Resource[]; failed: boolean }> {
   const size = opts.pageSize ?? 500;
-  const page = (offset: number) => readListing(db, { ...(opts.orgId ? { orgId: opts.orgId } : {}), rpc: opts.rpc, page: { offset, limit: size, ...(opts.domain !== undefined ? { domain: opts.domain } : {}) } });
-  const upFront = opts.total === undefined ? 0 : Math.max(0, Math.ceil((opts.total - opts.firstPageSize) / size));
-  const pages = await Promise.all(Array.from({ length: upFront }, (_, i) => page(opts.firstPageSize + i * size)));
-  const full = (r: ListingRead) => r.rows.length + r.archived.length >= size;
-  for (let last = pages.at(-1); !last || full(last); ) {
-    last = await page(opts.firstPageSize + pages.length * size);
-    pages.push(last);
+  const rows: Resource[] = [];
+  for (let offset = opts.firstPageSize; ; offset += size) {
+    const r = await readListing(db, { ...(opts.orgId ? { orgId: opts.orgId } : {}), rpc: opts.rpc, page: { offset, limit: size, ...(opts.domain !== undefined ? { domain: opts.domain } : {}) } });
+    if (r.failed) return { rows: [], failed: true };
+    rows.push(...r.rows);
+    if (r.rows.length + r.archived.length < size) return { rows, failed: false };
   }
-  return pages.some((p) => p.failed) ? { rows: [], failed: true } : { rows: pages.flatMap((p) => p.rows), failed: false };
 }

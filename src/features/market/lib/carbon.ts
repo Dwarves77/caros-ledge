@@ -4,8 +4,12 @@
 // Ported from old_repo/src/lib/market/resolve-item-corridor.mjs (lines 24-135)
 // Ported from old_repo/src/lib/market/carbon-overlay-view.mjs (lines 1-195)
 // Ported from old_repo/src/app/market/page.tsx (lines 72-114)
-// The market side of the carbon methods. ONE factor selector (INV-255: an exact single match or a named state, never a pick among several), ONE headline pick (tank-to-wheel, then well-to-wheel, then well-to-tank), and the
+// The market side of the carbon methods, and the cards of the carbon cost per FEU (every number on a card is a derived value the propagate stage wrote; a missing one is the sentence saying why). ONE factor selector (INV-255: an exact single match or a named state, never a pick among several), ONE headline pick (tank-to-wheel, then well-to-wheel, then well-to-tank), and the
 // per-FEU arithmetic (INV-254): a range only when factor, distance, payload and carbon price are all present, each number carrying a derivation and a basis; a missing input is a named gap and nothing is invented.
+import { assertUse } from "@/core/derived/ceiling";
+import type { CarbonInputName, CarbonState, CarbonStore } from "@/core/derived/carbon";
+import { formatCorridorLabelCompact } from "@/core/entities";
+import { CARBON } from "@/core/propagation/carbon-rules";
 import { CARBON_METHOD_ID, CARBON_METHOD_VERSION, confidenceFromPedigree, lifecycleFromFactorOriginClass } from "@/core/propagation/methods";
 import type { Value } from "@/core/propagation/types";
 
@@ -26,11 +30,6 @@ export interface FactorRow {
   n_observations?: number | null;
   as_at_date?: string | null;
   pedigree?: number | null;
-}
-export interface Corridor {
-  origin: string;
-  dest: string;
-  mode: string;
 }
 
 const KG_TO_G = 1000;
@@ -117,3 +116,24 @@ export function buildCarbonOverlayView({ jurisdictionIso, factors, mode = null }
   };
 }
 
+
+const FEU_INPUTS = ["distance", "intensity", "payload", "price"] as const satisfies readonly CarbonInputName[];
+const unwritten = (): CarbonState => ({ valueId: null, pointer: null, value: null, reason: CARBON.absence.unwritten, basis: "", sourceTier: null, methodVersion: "", computedAt: "" });
+export interface CarbonCard {
+  entityId: string;
+  label: string;
+  compact: string;
+  cost: CarbonState;
+  /** Statutory only when the ceiling admits the cost for a filing, i.e. every input was filing-grade; display otherwise. */
+  grade: "statutory" | "display" | null;
+  inputs: ReadonlyArray<{ input: (typeof FEU_INPUTS)[number]; label: string; state: CarbonState }>;
+}
+/** One card per corridor that parsed: its cost and its four inputs from the store, the stated absence where the stage has written nothing yet. */
+export function buildCarbonCards(corridors: ReadonlyArray<{ entityId: string; label: string; parsed: { origin: string; dest: string; mode: string } }>, store: CarbonStore): CarbonCard[] {
+  return corridors.map((c) => {
+    const scopeOf = (input: CarbonInputName): string => (input === "price" || input === "payload" ? "market" : input === "intensity" ? `mode:${c.parsed.mode}` : c.entityId);
+    const stateOf = (input: CarbonInputName): CarbonState => store[scopeOf(input)]?.[input] ?? unwritten();
+    const cost = stateOf("cost");
+    return { entityId: c.entityId, label: c.label, compact: formatCorridorLabelCompact(c.parsed), cost, grade: cost.value ? (assertUse(cost.value, "filing").ok ? "statutory" : "display") : null, inputs: FEU_INPUTS.map((input) => ({ input, label: CARBON.labels[input], state: stateOf(input) })) };
+  });
+}

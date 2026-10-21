@@ -9,7 +9,7 @@ import { assertVerbatim } from "@/core/contracts/verbatim";
 import { dedupeEvents, type DroppedEvent, type ExtractedEvent } from "./dedupe";
 import { finerDuePrecision, isDueDateSlotClaim, rescueSlotDateWithContext, scanText, slotDatePrecision, type ClaimIn, type Hit } from "./scan";
 
-export const EXTRACTOR_VERSION = "fe2-2026-10-20.2";
+export const EXTRACTOR_VERSION = "fe2-2026-10-20.1";
 export interface SectionIn {
   section_id: string;
   key?: string;
@@ -32,7 +32,6 @@ export interface ExtractInput {
   sections?: readonly SectionIn[];
   captures?: readonly CaptureIn[];
   referenceDates?: readonly string[];
-  itemType?: string | null;
 }
 export interface ExtractOutput {
   events: ExtractedEvent[];
@@ -50,8 +49,6 @@ const toEvent = (h: Pick<Hit, "iso" | "kind" | "obligationText" | "dateSpan">, p
 
 export function extractForwardEvents(input: ExtractInput): ExtractOutput {
   const referenceDates = input?.referenceDates ?? [];
-  const itemType = input?.itemType;
-  const scanOpts = { referenceDates, ...(itemType !== undefined ? { itemType } : {}) };
   const events: ExtractedEvent[] = [];
   const skipped: SkippedEvent[] = [];
   const claimSkip = (claimId: string, reason: string, text: string) => skipped.push({ source_kind: "claim", source_claim_id: claimId, source_section_id: null, reason, text });
@@ -63,7 +60,7 @@ export function extractForwardEvents(input: ExtractInput): ExtractOutput {
       continue;
     }
     const text = claim.span;
-    const { hits, skips } = scanText(text, scanOpts);
+    const { hits, skips } = scanText(text, { referenceDates });
     const slot = isDueDateSlotClaim(claim);
     for (const s of skips) claimSkip(claim.claim_id, s.reason, s.span);
     for (const h of hits) {
@@ -74,7 +71,7 @@ export function extractForwardEvents(input: ExtractInput): ExtractOutput {
       if (skips.length === 0) claimSkip(claim.claim_id, "relative_deadline_no_calendar_date", text);
       else if (!claim.context) claimSkip(claim.claim_id, "calendar_date_deontic_context_unavailable", text);
       else {
-        const rescued = rescueSlotDateWithContext(claim.span, claim.context, referenceDates, itemType);
+        const rescued = rescueSlotDateWithContext(claim.span, claim.context, referenceDates);
         if (rescued) {
           assertVerbatim(claim.context.before + claim.span + claim.context.after, rescued.dateSpan);
           events.push(toEvent(rescued, finerDuePrecision(rescued.precision, slotDatePrecision(claim)), { kind: "claim", claimId: claim.claim_id }));
@@ -88,7 +85,7 @@ export function extractForwardEvents(input: ExtractInput): ExtractOutput {
       skipped.push({ source_kind: "section", source_claim_id: null, source_section_id: section.section_id, reason: "section_has_no_text", text: "" });
       continue;
     }
-    const { hits, skips } = scanText(text, scanOpts);
+    const { hits, skips } = scanText(text, { referenceDates });
     for (const s of skips) skipped.push({ source_kind: "section", source_claim_id: null, source_section_id: section.section_id, reason: s.reason, text: s.span });
     for (const h of hits) {
       assertVerbatim(text, h.dateSpan);
@@ -97,7 +94,7 @@ export function extractForwardEvents(input: ExtractInput): ExtractOutput {
   }
   // The item's own captures are scanned last: a date a brief claim or section already carries is that one (claim-backed preferred), and a duty the brief never quoted is still found in the primary text.
   for (const capture of input?.captures ?? []) {
-    const { hits, skips } = scanText(capture.text, scanOpts);
+    const { hits, skips } = scanText(capture.text, { referenceDates });
     for (const s of skips) skipped.push({ source_kind: "capture", source_claim_id: null, source_section_id: null, reason: s.reason, text: s.span });
     for (const h of hits) {
       assertVerbatim(capture.text, h.dateSpan);

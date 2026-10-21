@@ -9,7 +9,7 @@
 // On a gated route FAIL means: a baseline landmark (role and name), heading, control, list container or list row is missing or reordered; a row at 375 is taller than its baseline row; a list route's baseline
 // holds no rows; the capture holds an offence the layout measure found (a target under the law-2 floor, overflow, a squeezed title); the page was taller than the screenshot ceiling; a pixelExact route's
 // image differs by more than 2 percent, or either image cannot be read. Anything a baseline has that the capture lacks must match an entry of `approved` (a look or security ruling).
-// A route whose capture did not settle (`settled: false` in its index entry) fails with the capture's reason and compares nothing. A baseline written under another capture contract is not compared: the run fails and names the recapture. Exit 0 clean, 1 on any FAIL. No browser is needed: images are read in Node (png.mjs).
+// A baseline written under another capture contract is not compared: the run fails and names the recapture. Exit 0 clean, 1 on any FAIL. No browser is needed: images are read in Node (png.mjs).
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 
@@ -47,21 +47,19 @@ const readJson = async (p) => JSON.parse(await readFile(p, 'utf8'));
 const readOpt = async (p) => readJson(p).catch((e) => (e.code === 'ENOENT' ? null : Promise.reject(e)));
 
 // Ordered-subsequence check: every baseline item must appear in the capture, in the baseline's order. Returns the missing and the out-of-order items.
-function subsequence(baseline, captured, key, excuse = null) {
+function subsequence(baseline, captured, key) {
   const want = baseline.map(key);
-  const have = captured.map((x) => (excuse && x.item === true ? '\0' : key(x)));
+  const have = captured.map(key);
   const missing = [];
   const reordered = [];
-  const missingAt = [];
-  const reorderedAt = [];
   let at = 0;
-  want.forEach((w, i) => {
+  for (const w of want) {
     const found = have.indexOf(w, at);
     if (found >= 0) at = found + 1;
-    else if (have.includes(w)) { reordered.push(w); reorderedAt.push(i); }
-    else { missing.push(w); missingAt.push(i); }
-  });
-  return { missing, reordered, missingAt, reorderedAt };
+    else if (have.includes(w)) reordered.push(w);
+    else missing.push(w);
+  }
+  return { missing, reordered };
 }
 
 // Waiver usage: every waiver id that covered a difference in this run lands here, so the report can end with the waivers that covered nothing (a waiver must match a current difference).
@@ -75,55 +73,24 @@ const isApproved = (approved, route, kind, text) => Boolean(hit(approved.find((a
 
 // `dataNames` ({route, match, keep, reason}): a control whose name is derived from live data (a count, then words drawn from the corpus) is compared by its stable prefix `keep`, on both sides, before the
 // subsequence check. Counts are already normalised; words derived from data are the same class. The reason is recorded in the report line.
-// An ITEM is data and its slot is design (D4). The capture marks what is an item (`item: true`, contract.mjs ITEM_PATH): a link to an item's detail route or to a source, anything inside a list row, a list row that holds an item link, the
-// item's own title on a detail page. Which item sits in a slot is never compared; the slots are: a baseline item control that the capture lacks is excused only while the capture draws at least one item in the same section (a section is
-// the stretch of controls up to a band's "All N <band> →" button, the whole page where there is none), and a section that drew items at the baseline and draws none now fails, by name. Row furniture (a row's own buttons) is excused by
-// the same key being drawn on a capture item. A baseline record has no marks (it was written without them), so the marks of the capture decide, and a capture with none (an older one) compares exactly as before.
-const FOOT = /^button:All # .+ →$/;
-const sectionsOf = (keys) => {
-  const out = new Array(keys.length);
-  let next = 'page';
-  for (let i = keys.length - 1; i >= 0; i -= 1) {
-    if (FOOT.test(keys[i])) next = keys[i];
-    out[i] = next;
-  }
-  return out;
-};
-const countBy = (list) => list.reduce((m, k) => m.set(k, (m.get(k) ?? 0) + 1), new Map());
-
 export function compareRecord(route, viewport, base, cap, approved, dataNames = []) {
   const fails = [];
   const used = [];
-  let shaped = 0;
   const sort = (kind, m, line) => {
     return isApproved(approved, route, kind, m) ? used.push(line) : fails.push(line);
   };
-  // `excuse` ({missing(i, key), reordered(i, key)} -> true when the difference is only which item sits in a slot) is the item rule of the kind being checked.
-  const check = (kind, baseItems, capItems, key, excuse = null) => {
-    const { missing, reordered, missingAt, reorderedAt } = subsequence(baseItems, capItems, key, excuse);
-    missing.forEach((m, n) => (excuse?.missing(missingAt[n], m) ? (shaped += 1) : sort(kind, m, `${kind} missing: ${m}`)));
-    reordered.forEach((m, n) => {
-      if (excuse?.reordered(reorderedAt[n], m)) shaped += 1;
-      else if (kind === 'control' && orderWaived(approved, route, m)) used.push(`${kind} reordered: ${m}`);
+  const check = (kind, baseItems, capItems, key) => {
+    const { missing, reordered } = subsequence(baseItems, capItems, key);
+    for (const m of missing) sort(kind, m, `${kind} missing: ${m}`);
+    for (const m of reordered) {
+      if (kind === 'control' && orderWaived(approved, route, m)) used.push(`${kind} reordered: ${m}`);
       else sort(kind, m, `${kind} reordered: ${m}`);
-    });
+    }
   };
   // A landmark is its role and its name: a region renamed or swapped for another of the same role is a difference, and a missing one is told apart from a reordered one.
   check('landmark', base.landmarks ?? [], cap.landmarks ?? [], (l) => `${l.role}:${uncount(l.name)}`);
   // Counts are data, not design: every integer run in a name ("+ 18 more", "GLOBAL16", "Regulations1,320") compares as "#".
-  const headKey = (h) => `${h.level}:${uncount(h.text)}`;
-  const headItems = (cap.headings ?? []).filter((h) => h.item === true).map(headKey);
-
-
-  // The item headings the capture draws that the baseline does not hold: each stands in for one baseline heading that is gone.
-  const headSpare = [...headItems];
-  check('heading', base.headings ?? [], cap.headings ?? [], headKey, {
-    missing: (i, k) => {
-      const at = headSpare.findIndex((s) => s.split(':')[0] === k.split(':')[0]);
-      return at >= 0 && headSpare.splice(at, 1).length > 0;
-    },
-    reordered: (i, k) => headItems.includes(k),
-  });
+  check('heading', base.headings ?? [], cap.headings ?? [], (h) => `${h.level}:${uncount(h.text)}`);
   const names = dataNames.filter((d) => d.route === route);
   const stable = (name) => {
     for (const d of names) if (new RegExp(d.match).test(name)) return name.match(new RegExp(d.keep))?.[0] ?? name;
@@ -131,37 +98,14 @@ export function compareRecord(route, viewport, base, cap, approved, dataNames = 
   };
   const ctl = (c) => `${c.role}:${stable(uncount(c.name))}`;
   if (names.length && (base.controls ?? []).some((c) => names.some((d) => new RegExp(d.match).test(uncount(c.name))))) used.push(`data names: ${names[0].reason}`);
-  const capControls = cap.controls ?? [];
-  const baseKeys = (base.controls ?? []).map(ctl);
-  const capKeys = capControls.map(ctl);
-  const baseSection = sectionsOf(baseKeys);
-  const capSection = sectionsOf(capKeys);
-  const itemsIn = countBy(capKeys.map((k, i) => (capControls[i].item === true && !k.startsWith('button:') ? capSection[i] : null)).filter(Boolean));
-  const itemKeys = new Set(capKeys.filter((_, i) => capControls[i].item === true));
-  const emptied = new Set();
-  check('control', base.controls ?? [], capControls, ctl, {
-    missing: (i, k) => {
-      if (k.startsWith('button:')) return itemKeys.has(k);
-      if (!k.startsWith('link:') || itemKeys.size === 0) return false;
-      if ((itemsIn.get(baseSection[i]) ?? 0) > 0) return true;
-      emptied.add(baseSection[i]);
-      return true;
-    },
-    reordered: (i, k) => itemKeys.has(k),
-  });
-  for (const section of emptied) fails.push(`item section empty: the baseline drew item links in ${section === 'page' ? 'the page' : `the section ending "${section.replace(/^button:/, '')}"`} and the capture draws none`);
+  check('control', base.controls ?? [], cap.controls ?? [], ctl);
   const baseRows = base.rows?.items ?? [];
   const capRows = cap.rows?.items ?? [];
   // The lists themselves: each baseline container that held rows still exists, in order, and its rows are all there, in the baseline's order.
   check('list container', (base.rows?.containers ?? []).filter((c) => c.count > 0), cap.rows?.containers ?? [], (c) => uncount(c.label));
   // A row key carries live counts too ("2/7 sourced · 985 regs"): the same normalisation as names.
   const rowKey = (r) => `${r.tag}:${uncount(r.text).slice(0, 80)}`;
-  const itemRows = capRows.filter((r) => r.item === true);
-  const itemRowKeys = new Set(itemRows.map(rowKey));
-  check('row', baseRows, capRows, rowKey, {
-    missing: (i) => itemRows.some((r) => r.container === baseRows[i].container),
-    reordered: (i, k) => itemRowKeys.has(k),
-  });
+  check('row', baseRows, capRows, rowKey);
   if (viewport.startsWith('375')) {
     const byText = new Map(capRows.map((r) => [rowKey(r), r.height]));
     for (const r of baseRows) {
@@ -172,7 +116,7 @@ export function compareRecord(route, viewport, base, cap, approved, dataNames = 
       }
     }
   }
-  return { fails, used, shaped };
+  return { fails, used };
 }
 
 // A frame route proves the shell only: its controls, headings and landmarks are limited to the shell's, the rest is page body that the full gate checks.
@@ -346,12 +290,6 @@ export async function compareRun({ captured, baseline = 'tests/parity/baseline',
       result(isGated ? 'FAIL' : 'ERROR', `capture ${cap.status}: ${cap.error}`);
       continue;
     }
-    // A page that had not finished loading when it was photographed is not the page: nothing of it is compared (its controls, rows and headings would read as missing), and the reason the capture recorded is the failure.
-    if (cap.settled === false) {
-      failed ||= isGated;
-      result(isGated ? 'FAIL' : 'ERROR', `the capture did not settle, so nothing of it is compared: ${cap.settle_reason ?? 'no reason recorded'}`);
-      continue;
-    }
     const approved = config.approved.filter((a) => a.route === route.name);
     const report = [];
     let routeFail = false;
@@ -383,9 +321,8 @@ export async function compareRun({ captured, baseline = 'tests/parity/baseline',
         report.push(`${viewport}: ${empty}`);
         routeFail = true;
       }
-      const { fails, used, shaped } = compareRecord(route.name, viewport, scoped, c, approved, config.dataNames ?? []);
+      const { fails, used } = compareRecord(route.name, viewport, scoped, c, approved, config.dataNames ?? []);
       for (const f of fails) report.push(`${viewport}: ${f}`);
-      if (shaped) report.push(`${viewport}: items compared by slot, not by name: ${shaped}`);
       if (used.length) report.push(`${viewport}: approved differences used: ${used.length}`);
       routeFail ||= fails.length > 0;
       const px = await pixelLine({ stem, viewport, baseline, captured, diffDir, exact: pixelExact.has(route.name), approved, baseTiles: b.tiles ?? 1, capTiles: c.tiles });

@@ -12,15 +12,14 @@ import { memberWorld } from "../_support/sweep-worlds.ts";
 const drawn = async (path: string, render: () => Promise<ReactNode>): Promise<string> => textOf(renderApp((await render()) as never, { path }));
 const regulation = (n: number) => ({ id: `ffffffff-0000-4000-8000-${String(n).padStart(12, "0")}`, legacy_id: `reg-${n}`, title: `Regulation ${n}`, item_type: "regulation", domain: 1, provenance_status: "verified", is_archived: false, priority: "MODERATE", origin_class: "official", added_date: "2026-10-01" });
 
-test("surfaces:2 the counts RPC failing on a full first page never prints the 60 rows as the whole list: the dek says the rest is loading, and the page still asks for the rest", async () => {
+test("surfaces:2 the counts RPC failing on a full first page never prints the 60 rows as the whole list: the dek says the list is longer, and the page still asks for the rest", async () => {
   const w = memberWorld();
   w.db.seed("intelligence_items", Array.from({ length: 75 }, (_, i) => regulation(i + 1)));
   w.failRpc("get_surface_counts");
   const text = await drawn("/regulations", async () => (await import("@/features/regulations/pages")).RegulationsIndex());
   assert.match(text, STATED);
   assert.doesNotMatch(text, /\b\d+ active\b/, "the first page is not the list");
-  assert.match(text, /loading the full list/, "the dek says the rest is loading and draws no number for it");
-  assert.doesNotMatch(text, /showing \d+ of \d+|All \d+ /, "no band draws the rows in hand as its total");
+  assert.match(text, /\d+ shown, the list is longer/);
   const { readRegulationsFirstPage } = await import("@/features/regulations/list-read");
   const first = await readRegulationsFirstPage((await import("../_support/fake-clients.ts")).scripted.user!() as never, "11111111-1111-4111-8111-111111111111");
   assert.equal(first.aggregates, null);

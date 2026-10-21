@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 
 import { buildSeriesBoard, type SeriesRow } from "@/features/market/lib/series-board";
 import type { SourceRating } from "@/features/market/lib/provenance";
+import type { CarbonState, CarbonStore } from "@/core/derived/carbon";
 import type { MarketRead } from "@/features/market/read";
 import { MarketView } from "@/features/market/ui/MarketView";
 import type { Resource } from "@/core/types";
@@ -37,15 +38,24 @@ const CORRIDORS = ["CNSHA-NLRTM:ocean", "USLAX-CNSHA:ocean", "NLRTM-DEHAM:road",
   const [origin, dest] = route.split("-") as [string, string];
   return { entityId: `cl:corridor:${String(i).padStart(16, "0")}`, canonicalName: name, displayName: null, label: `${origin} to ${dest}, ${mode}`, parsed: { origin, dest, mode }, jurisdictions: [{ entityId: `j${i}`, code: origin.slice(0, 2), name: null }] };
 });
+// A store as the propagate stage leaves it: the first corridor has all four inputs and a cost, the second lacks a port position, the rest have never been written.
+const state = (value: number | null, unit: string | null, currency: string | null, reason?: string): CarbonState => ({ valueId: value === null ? null : "v", pointer: value === null ? null : "v", basis: "fixture", sourceTier: null, methodVersion: "fixture@1.0.0", computedAt: NOW, ...(value === null ? { value: null, reason: reason ?? "fixture" } : { reason: null, value: { valueId: "v", value, unit, currency, admissibility: "display_only", lifecycle: "corroborated", derivation: "estimated", originClass: "derived", methodVersion: "1.0.0", inputs: [] } }) }) as never;
+const CARBON: CarbonStore = {
+  market: { price: state(70, "EUR/tCO2e", "EUR"), payload: state(14, "t/FEU", null) },
+  "mode:ocean": { intensity: state(16, "gCO2e/tonne-km", null) },
+  [CORRIDORS[0]?.entityId as string]: { distance: state(9100, "km", null), cost: state(14300, "EUR/FEU", "EUR") },
+  [CORRIDORS[1]?.entityId as string]: { distance: state(null, null, null, "no port position recorded for USLAX"), cost: state(null, null, null, "missing: distance (no port position recorded for USLAX)") },
+};
 const ok = <T,>(data: T) => ({ ok: true as const, data });
 const bad = { ok: false as const, error: "fixture: read failed" };
 
 function readFor(state: string): MarketRead {
-  if (state === "failed") return { signals: bad, series: bad, corridors: bad, panels: { oem: bad, reroute: bad, indexation: bad } };
+  if (state === "failed") return { signals: bad, series: bad, corridors: bad, carbon: bad, panels: { oem: bad, reroute: bad, indexation: bad } };
   return {
     signals: ok({ rows: ROWS, aggregates: { totalItems: ROWS.length, byPriority: { CRITICAL: 5, HIGH: 14, MODERATE: 5, LOW: 12 }, byStatus: {}, byJurisdiction: { GLOBAL: 12, EU: 12, US: 12 }, totalJurisdictions: 3, lastUpdatedAt: null } }),
     series: ok({ board: buildSeriesBoard(SERIES), leadTime: SERIES.filter((s) => s.series_key.startsWith("sbti")), ratings: RATINGS, lineage: null }),
-    corridors: ok(CORRIDORS.filter((c) => c.parsed !== null).map((c) => ({ entityId: c.entityId, label: c.label }))),
+    corridors: ok(CORRIDORS.flatMap((c) => (c.parsed ? [{ entityId: c.entityId, label: c.label, parsed: c.parsed }] : []))),
+    carbon: ok(CARBON),
     panels: {
       oem: ok([{ roadmap_id: "o1", tech_category: "battery_electric_hgv", commercial_stage: "series_production", target_year: 2028, density_basis: "pack", confidence_admiralty: "B2", announced_at: day(30) }]),
       reroute: ok([{ reroute_id: "r1", baseline_corridor_id: CORRIDORS[0]?.entityId as string, reroute_corridor_id: CORRIDORS[1]?.entityId as string, cause: "Fixture chokepoint closure", fuel_burn_multiplier: 1.25, effective_from: day(10), effective_to: null }]),

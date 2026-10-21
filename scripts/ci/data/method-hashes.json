@@ -1,5 +1,9 @@
 {
+  "derived_values:carbon_cost_per_feu@1.0.0": "08f76313cd69bf57e8753b7f158f623f73475c0fd63c8079fb56aae69013cd10",
   "derived_values:carbon_intensity_tkm@1.0.0": "1047561df8a8b416f7fddb58d5ba3321d84da0c02901c8ee378c93097afc4b1a",
+  "derived_values:carbon_price_eur_t@1.0.0": "e4a9cb3fc6ca647232b0e9925170cb6aad2091632d8fc2652952a5b3ba05a18f",
+  "derived_values:corridor_distance_km@1.0.0": "d1fee356eee72a99caaca7df67fe4991eaf5031a0fbe05c4f99515c1239646ad",
+  "derived_values:feu_payload_tonnes@1.0.0": "5a58d9311f92ddba3b1f0446dbddda470e2bd0bf3ca6f437dd679da02f864f15",
   "derived_values:market_series_delta@1.0.0": "e5cefad0093758e1905e6b31be3566dca2ee9d2b38acd667df5f818900c3ea89",
   "inference_records:infer-from-question@v1": "c65c7c98ceaaa14e7b98a4dbc25a391b650d61797ca324df279f1ee5e3988b74",
   "inference_records:infer-from-question@v2": "9d0cb9324b5b8de7b6a5adfe97b1c8745bdb28b441110ba9342b1761a6ef6612",

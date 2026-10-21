@@ -1,0 +1,19 @@
+{
+  "filingMaxTier": 2,
+  "observedConfidence": 0.95,
+  "price": { "seriesPrefix": "eex-eua", "units": ["EUR/tCO2", "EUR/tCO2e", "EUR/t"], "unit": "EUR/tCO2e", "currency": "EUR" },
+  "payload": { "seriesPrefix": "feu-payload", "units": ["t/FEU", "tonnes/FEU"], "unit": "t/FEU", "currency": null },
+  "distance": { "earthRadiusKm": 6371.0088, "admissibility": "calculation_ok", "confidence": 0.9, "basis": "great-circle, not routed" },
+  "cost": { "unit": "EUR/FEU", "gramsPerTonne": 1000000, "intensityUnit": "gCO2e/tonne-km", "basis": "distance x emission intensity x payload per FEU x carbon price" },
+  "labels": { "price": "Carbon price", "distance": "Distance", "payload": "Payload per FEU", "intensity": "Emission intensity", "cost": "Carbon cost per FEU" },
+  "absence": {
+    "price": "no ETS price series captured",
+    "payload": "no permitted payload default captured",
+    "distance": "no port position recorded for {codes}",
+    "intensity": "no modal-default emission factor for the {mode} mode",
+    "intensityMany": "more than one modal-default factor for the {mode} mode, so none is picked",
+    "cost": "missing: {inputs}",
+    "unwritten": "not computed yet: the propagate stage of the turn writes it",
+    "pending": "recomputing: an input changed"
+  }
+}

@@ -72,11 +72,11 @@ test("a weekday prefix is skipped, a citation number is never a year, month-year
   assert.equal(tryParseDateAt("March 2029", 0)?.precision, "month");
 });
 
-test("a bare-year `by` with no deontic or aim word is a skip with a reason, never a guessed kind; an aim word makes it `target`", () => {
+test("a bare-year `by` with no deontic or aim word is a skip with a reason, never a guessed kind; an aim word makes it `other`", () => {
   const skipped = ev("The report is dated by 2030.");
   assert.equal(skipped.hits.length, 0);
   assert.match(skipped.skips[0]?.reason ?? "", /no deontic/);
-  assert.equal(ev("The Union aims to cut emissions by 2040.").hits[0]?.kind, "target");
+  assert.equal(ev("The Union aims to cut emissions by 2040.").hits[0]?.kind, "other");
 });
 
 test("`shall apply from X to Y` emits the window end as `other`; `for <segment>` and transitional language reclassify to phase_step", () => {
@@ -161,31 +161,5 @@ test("the extractor is pure: it imports no client, no network, no model", () => 
   for (const f of ["date-grammar", "window", "rules", "scan", "dedupe", "extract-forward-events"]) {
     const src = readFileSync(new URL(`../../src/features/obligations/extract/${f}.ts`, import.meta.url), "utf8");
     assert.doesNotMatch(src, /from "@\/core\/db|supabase|fetch\(|anthropic|openai/i, f);
-  }
-});
-
-test("TURN-2 F1: target sentences become forward events of kind `target`, never `compliance_deadline`, and research or analysis items never get a `compliance_deadline`", () => {
-  const targetSentences = [
-    "In the Net Zero Emissions by 2050 (NZE) Scenario, emissions must fall rapidly by 2030.",
-    "The Carbon Trust helps organisations achieve net zero by 2050 and sets interim targets by 2030.",
-    "First Movers Coalition members commit to purchasing zero-emission freight services by 2040.",
-    "The UK Climate Change Act sets a legally binding target to reach net zero by 2050.",
-  ];
-  for (const sentence of targetSentences) {
-    const { hits } = scanText(sentence);
-    assert.ok(hits.length >= 1, `expected a hit in: ${sentence}`);
-    assert.ok(hits.every((h) => h.kind === "target"), `expected every hit to be 'target' in: ${sentence}, got ${JSON.stringify(hits.map((h) => h.kind))}`);
-  }
-  const nonBindingTypes = ["research_finding", "market_signal", "initiative", "funding_program", "case_study"];
-  for (const itemType of nonBindingTypes) {
-    const out = extractForwardEvents({
-      itemType,
-      claims: [{ claim_id: "c-res", kind: "FACT", text: "x", span: "Operators must submit the report no later than 31 March 2030." }],
-      sections: [{ section_id: "s-res", md: "By 1 May 2029, operators shall register." }],
-      captures: [{ capture_id: "cap-res", text: "In the Net Zero by 2050 pathway, operators must cut emissions by 2030." }],
-    });
-    assert.equal(out.events.filter((e) => e.event_kind === "compliance_deadline").length, 0, `${itemType} must never emit compliance_deadline`);
-    assert.ok(out.events.some((e) => e.event_kind === "target" && e.event_date === "2030-01-01"), `${itemType} still emits target events`);
-    assert.ok(out.skipped.some((s) => s.reason.startsWith("non_binding_instrument_no_compliance_deadline")), `${itemType} records skip reason when refusing a compliance_deadline`);
   }
 });

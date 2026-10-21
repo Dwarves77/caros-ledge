@@ -9,6 +9,7 @@
 import { scoreImpact, type ImpactInput, type ImpactScore } from "@/core/impact/score";
 
 import { FLOOR } from "./admissible";
+import { CARBON } from "./carbon-rules";
 import { INFER_METHOD_ID, INFER_METHOD_VERSION, INFER_METHOD_VERSION_V1, type StatusToken } from "./register";
 import type { Admissibility, Derivation, Lifecycle, OriginClass } from "./types";
 
@@ -25,7 +26,7 @@ export interface MethodContext {
   now: Date;
 }
 export type MethodResult =
-  | { ok: true; value?: number | null; valueLow?: number | null; valueHigh?: number | null; unit?: string | null; currency?: string | null; derivation: Derivation; originClass: OriginClass; lifecycle: Lifecycle; admissibility: Admissibility; confidence: number; halfLifeDays?: number | null }
+  | { ok: true; value?: number | null; valueLow?: number | null; valueHigh?: number | null; unit?: string | null; currency?: string | null; derivation: Derivation; originClass: OriginClass; lifecycle: Lifecycle; admissibility: Admissibility; confidence: number; halfLifeDays?: number | null; basis?: string }
   | { ok: false; reason: string };
 export type InferenceResult =
   | { ok: true; claimText: string; statusToken: StatusToken; confidence: number; citedItemIds: string[]; originClass: "derived" | "modelled"; reopenQuestionRef?: string | null }
@@ -182,6 +183,74 @@ function buildMarketDeltaMethod(deps: Pick<MarketMethodDeps, "computeSeriesDelta
   };
 }
 
+export const PRICE_METHOD_ID = "carbon_price_eur_t", PRICE_METHOD_VERSION = "1.0.0";
+export const DISTANCE_METHOD_ID = "corridor_distance_km", DISTANCE_METHOD_VERSION = "1.0.0";
+export const PAYLOAD_METHOD_ID = "feu_payload_tonnes", PAYLOAD_METHOD_VERSION = "1.0.0";
+export const COST_METHOD_ID = "carbon_cost_per_feu", COST_METHOD_VERSION = "1.0.0";
+
+/** A dated observation of a market series as a method input; `source_tier` is the rating of its source (the stage reads it). */
+interface ObservedRow {
+  series_key: string;
+  value_numeric: number | string | null;
+  unit: string | null;
+  currency: string | null;
+  derivation: Derivation;
+  origin_class: OriginClass;
+  as_at_date: string | null;
+  reference_period: string | null;
+  source_tier?: number | null;
+}
+const refuse = (reason: string): MethodResult => ({ ok: false, reason });
+const dateOf = (r: ObservedRow): string => r.as_at_date ?? r.reference_period ?? "";
+
+/** The latest dated observation among the rows given (the carbon price, the payload default), in the unit the rules accept; the rating of its source decides whether the value may serve a filing. */
+function buildObservedMethod(spec: { units: readonly string[]; unit: string; currency: string | null }): MethodFn {
+  return (ctx) => {
+    const latest = ctx.inputs.map((i) => i.row as ObservedRow | null).filter((r): r is ObservedRow => !!r).sort((a, b) => dateOf(b).localeCompare(dateOf(a)))[0];
+    if (!latest) return refuse("no observation supplied");
+    const value = Number(latest.value_numeric);
+    if (!Number.isFinite(value) || value <= 0) return refuse(`the latest observation of ${latest.series_key} holds no positive number`);
+    if (!spec.units.includes(String(latest.unit))) return refuse(`${latest.series_key} is in "${latest.unit}", not ${spec.units.join(" or ")}`);
+    if (spec.currency && latest.currency !== spec.currency) return refuse(`${latest.series_key} is in ${latest.currency}, not ${spec.currency}`);
+    const tier = latest.source_tier ?? null;
+    return { ok: true, value, unit: spec.unit, currency: spec.currency, derivation: latest.derivation, originClass: latest.origin_class, lifecycle: lifecycleFromFactorOriginClass(latest.origin_class), admissibility: tier !== null && tier <= CARBON.filingMaxTier ? "filing_ok" : "display_only", confidence: CARBON.observedConfidence, halfLifeDays: null, basis: `${latest.series_key}, observed ${dateOf(latest)}` };
+  };
+}
+
+const radians = (degrees: number): number => (degrees * Math.PI) / 180;
+/** The great-circle distance between the two ports of a corridor (inputs: origin then destination, each row a position or null). An end with no position refuses and names its code. */
+const corridorDistance: MethodFn = (ctx) => {
+  if (ctx.inputs.length !== 2) return refuse("a corridor has an origin and a destination");
+  const missing = ctx.inputs.filter((i) => !i.row).map((i) => i.pk);
+  if (missing.length) return refuse(CARBON.absence.distance.replace("{codes}", missing.join(", ")));
+  const [a, b] = ctx.inputs.map((i) => i.row as { lat: number; lon: number }) as [{ lat: number; lon: number }, { lat: number; lon: number }];
+  const h = Math.sin(radians(b.lat - a.lat) / 2) ** 2 + Math.cos(radians(a.lat)) * Math.cos(radians(b.lat)) * Math.sin(radians(b.lon - a.lon) / 2) ** 2;
+  const km = 2 * CARBON.distance.earthRadiusKm * Math.asin(Math.min(1, Math.sqrt(h)));
+  return { ok: true, value: Math.round(km * 10) / 10, unit: "km", derivation: "calculated", originClass: "derived", lifecycle: "corroborated", admissibility: CARBON.distance.admissibility, confidence: CARBON.distance.confidence, halfLifeDays: null, basis: `${CARBON.distance.basis}: ${ctx.inputs[0]?.pk} to ${ctx.inputs[1]?.pk}` };
+};
+
+/** The derived values the cost is computed from, as the rows the store holds them. */
+interface ValueRow {
+  method_id: string;
+  value: number | string | null;
+  unit: string | null;
+  currency: string | null;
+  admissibility: Admissibility;
+  base_confidence: number | string;
+}
+/** distance x intensity x payload x price, from the four derived values (inputs: any order, found by method). Statutory-grade only when every input is filing-grade; otherwise display-grade, and the ceiling refuses it for a filing. */
+const costPerFeu: MethodFn = (ctx) => {
+  const rows = ctx.inputs.map((i) => i.row as ValueRow | null);
+  const [price, km, tonnes, grams] = [PRICE_METHOD_ID, DISTANCE_METHOD_ID, PAYLOAD_METHOD_ID, CARBON_METHOD_ID].map((id) => rows.find((r) => r?.method_id === id) ?? null);
+  if (!price || !km || !tonnes || !grams) return refuse("the cost needs the price, the distance, the payload and the intensity");
+  if (grams.unit !== CARBON.cost.intensityUnit) return refuse(`the intensity is in "${grams.unit}", not ${CARBON.cost.intensityUnit}`);
+  const value = Number(km.value) * (Number(grams.value) / CARBON.cost.gramsPerTonne) * Number(tonnes.value) * Number(price.value);
+  if (!Number.isFinite(value)) return refuse("an input holds no number");
+  const inputs = [price, km, tonnes, grams];
+  const filing = inputs.every((r) => r.admissibility === "filing_ok");
+  return { ok: true, value, unit: CARBON.cost.unit, currency: price.currency, derivation: filing ? "calculated" : "estimated", originClass: "derived", lifecycle: filing ? "verified" : "corroborated", admissibility: filing ? "filing_ok" : "display_only", confidence: Math.min(...inputs.map((r) => Number(r.base_confidence))), halfLifeDays: null, basis: CARBON.cost.basis };
+};
+
 export type { MethodRegistry };
 
 /** Register the two market methods on a registry once the market slice's functions are at hand. */
@@ -197,6 +266,11 @@ export function createMethodRegistry(): MethodRegistry {
   r.register("inference_records", INFER_METHOD_ID, INFER_METHOD_VERSION_V1, computeInferFromQuestion);
   r.register("inference_records", INFER_METHOD_ID, INFER_METHOD_VERSION, reevaluateInference);
   r.register("item_impact_scores", IMPACT_METHOD_ID, IMPACT_METHOD_VERSION, scoreImpact);
+  // The carbon cost per FEU (CARBON-1): the four inputs and the cost, each written by the propagate stage with its version, basis and ceiling.
+  r.register("derived_values", PRICE_METHOD_ID, PRICE_METHOD_VERSION, buildObservedMethod(CARBON.price));
+  r.register("derived_values", PAYLOAD_METHOD_ID, PAYLOAD_METHOD_VERSION, buildObservedMethod(CARBON.payload));
+  r.register("derived_values", DISTANCE_METHOD_ID, DISTANCE_METHOD_VERSION, corridorDistance);
+  r.register("derived_values", COST_METHOD_ID, COST_METHOD_VERSION, costPerFeu);
   return r;
 }
 /** The process-wide registry the drain and authorEdges default to. */

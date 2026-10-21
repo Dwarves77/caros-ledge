@@ -184,7 +184,7 @@
    "attribution": null,
    "url": "https://www.wikidata.org/wiki/Wikidata:Licensing",
    "verifiedOn": "2026-10-19",
-   "note": "Carries UN/LOCODE values as statements under CC0. Useful as an ALIAS RESOLVER: we resolve a customer-supplied LOCODE to our own node key without publishing the LOCODE list ourselves. Terms re-read 2026-10-19 with the honest identity CarosLedge/1.0: all structured data (main, Property, Lexeme and EntitySchema namespaces) is released into the public domain under Creative Commons Zero. Serves the ISO 3166-1 country names of src/core/entities/data/unlocode-names.json (R2e M6), read from the query service; no credit is required."
+   "note": "Carries UN/LOCODE values as statements under CC0. Useful as an ALIAS RESOLVER: we resolve a customer-supplied LOCODE to our own node key without publishing the LOCODE list ourselves. Terms re-read 2026-10-19 with the honest identity CarosLedge/1.0: all structured data (main, Property, Lexeme and EntitySchema namespaces) is released into the public domain under Creative Commons Zero. Serves the ISO 3166-1 country names of src/core/entities/data/unlocode-names.json (R2e M6), read from the query service; no credit is required. It also serves the port positions (P625, matched by the GeoNames id) of the same file (CARBON-1, 2026-10-20), under the same CC0 terms."
   },
   "emsa_thetis_mrv": {
    "key": "emsa_thetis_mrv",
