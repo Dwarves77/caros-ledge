@@ -171,7 +171,7 @@ try {
     const text = await bodyText(s.page);
     ensure(/could not be loaded/i.test(text), 'no stated failure');
     ensure(!/no discussions yet/i.test(text), 'a failed thread read drew "no discussions yet"');
-    ensure(/· — active item/.test(text.replace(/\s+/g, ' ')), 'the header count is not a dash');
+    ensure(/discussions could not be loaded/i.test(text) && !/active item/i.test(text), 'the tile failure is not stated or the header still draws an active item count');
     await s.ctx.close();
   });
 
