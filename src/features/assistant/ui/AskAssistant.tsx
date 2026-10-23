@@ -7,7 +7,7 @@ import { statusWord } from "@/core/detail/status-words";
 import { bandFromPriority } from "@/core/lists";
 import { authedFetch } from "@/core/http/authed-fetch";
 import { formatLocaleDate, formatNumber } from "@/core/shared";
-import { tierLabelOf } from "@/core/sources";
+import { tierLabelOf } from "@/core/sources/tier-contract";
 import { Button, Input, ListRow, SourceLink, StateNote } from "@/ui";
 import { OPEN_ASK_EVENT } from "@/ui/shell/command-bar";
 

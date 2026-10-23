@@ -24,6 +24,7 @@
     "gates": "node scripts/ci/gates.mjs",
     "prepare": "node scripts/prepare.mjs",
     "ui-checks": "node scripts/ci/ui-checks.mjs",
+    "client-walk": "node scripts/ci/checks/client-walk.mjs",
     "parity": "node tests/parity/capture.mjs --base http://localhost:3100 --out parity-capture && node tests/parity/compare.mjs --captured parity-capture",
     "edge-bundle": "node scripts/ci/edge-bundle.mjs",
     "workflow-yaml": "node scripts/ci/workflow-yaml.mjs",

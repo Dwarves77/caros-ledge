@@ -12,8 +12,6 @@ import { isUuid } from "@/core/http/parse";
 import { log } from "@/core/shared/log";
 import type { OrgRole } from "@/core/types";
 
-export const NOTE_MAX_LENGTH = 4000;
-export const MAX_ASSIGNEES_PER_REQUEST = 25;
 /** A roster past this is refused rather than cut off: a name picker that silently drops members is wrong. */
 const ROSTER_CAP = 1000;
 
@@ -97,20 +95,6 @@ export async function orgWatchersOf(client: Db, orgId: string, itemKeys: string[
   const row = (data as { watcher_ids: string[] | null; on_team_watchlist: boolean | null }[] | null)?.[0];
   if (!row) throw new LookupError("org_watchers", new Error("no row returned"));
   return { watcherIds: row.watcher_ids ?? [], onTeamWatchlist: row.on_team_watchlist === true };
-}
-
-const DETAIL_PATH_RE = /^\/(?:regulations|market|operations|research)\/([^/]+)\/?$/;
-
-/** The item id a detail page addresses, read from its own pathname; null on any other path. */
-export function itemIdFromDetailPath(pathname: unknown): string | null {
-  if (typeof pathname !== "string") return null;
-  const m = DETAIL_PATH_RE.exec(pathname);
-  if (!m?.[1]) return null;
-  try {
-    return decodeURIComponent(m[1]) || null;
-  } catch {
-    return null;
-  }
 }
 
 export interface CollabItem {

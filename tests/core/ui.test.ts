@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { createIdentityLoader, IDENTITY_ERROR_SEED, nextIdentityRetryDelay, resolveAuthSeed, shouldApplySeed, shouldShowAdminNav, type AuthSeed } from "@/features/auth/ui/identity-loader";
-import { classifySignUpResult } from "@/features/auth/ui/signup-result";
+import { authSentence, isAlreadyRegistered } from "@/features/auth/ui/auth-sentences";
 
 const body = (over: Record<string, unknown> = {}) => ({ user: { id: "u1", email: "a@b.test" }, orgId: "o1", orgName: "Acme", role: "owner", sectors: [], workspaceSectors: ["air"], isPlatformAdmin: true, ...over });
 
@@ -98,10 +98,19 @@ test("identity seed: signed-out identity has an unknown org, a malformed body is
   assert.equal(shouldShowAdminNav({ status: "error", isPlatformAdmin: true }), false);
 });
 
-test("classifySignUpResult: error, already registered (empty identities), confirmation sent", () => {
-  assert.equal(classifySignUpResult({ error: new Error("x") }), "error");
-  assert.equal(classifySignUpResult({ data: { user: { identities: [] } } }), "already_registered");
-  assert.equal(classifySignUpResult({ data: { user: { identities: [{}] } } }), "confirmation_sent");
-  assert.equal(classifySignUpResult({ data: { user: null } }), "confirmation_sent");
-  assert.equal(classifySignUpResult(null), "confirmation_sent");
+test("sign-in failures: a wrong password, an unknown address and an unconfirmed address answer one sentence; every other failure answers the unavailable sentence", () => {
+  const invalid = authSentence({ message: "Invalid login credentials", code: "invalid_credentials" });
+  assert.equal(invalid, "That e-mail and password do not match.");
+  assert.equal(authSentence({ message: "Email not confirmed", code: "email_not_confirmed" }), invalid, "an unconfirmed address reads as a wrong password");
+  assert.equal(authSentence({ message: "Invalid login credentials" }), invalid, "the message alone classifies when a client sends no code");
+  assert.equal(authSentence({ message: "Email not confirmed" }), invalid);
+  assert.equal(authSentence({ message: "Signups not allowed for otp" }), "Sign-in is not available right now; try again in a minute.");
+  assert.equal(authSentence({ message: "Email rate limit exceeded", code: "over_email_send_rate_limit" }), "Sign-in is not available right now; try again in a minute.");
+  assert.equal(authSentence({}), "Sign-in is not available right now; try again in a minute.");
+});
+
+test("sign-up: an already-registered address is never told apart (an error naming it counts as a sent confirmation)", () => {
+  assert.equal(isAlreadyRegistered({ message: "User already registered", code: "user_already_exists" }), true);
+  assert.equal(isAlreadyRegistered({ message: "User already registered" }), true);
+  assert.equal(isAlreadyRegistered({ message: "Password should be at least 8 characters", code: "weak_password" }), false);
 });

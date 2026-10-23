@@ -4,7 +4,7 @@
 // is not used here. The roster comes from org_roster, which gives an e-mail only to an owner or admin of this organisation and never falls back to one as a name.
 import { z } from "zod";
 
-import { createInvitation } from "@/core/auth/invitations";
+import { createInvitation, inviteBaseUrl } from "@/core/auth/invitations";
 import { currentMembership } from "@/core/auth/membership";
 import { dbError, HttpError, LookupError, ok, route } from "@/core/http/errors";
 import { isRefusal, requireUser, type UserContext } from "@/core/http/guard";
@@ -95,6 +95,6 @@ export const PUT = route<Ctx>("/api/orgs/[org_id]/members", async (request, { pa
   const ctx = await load(request, params);
   if (isRefusal(ctx)) return ctx;
   const body = await parseJson(request, addBody);
-  await createInvitation(ctx.user.client, { orgId: ctx.orgId, userId: ctx.user.userId, email: body.email, role: body.role, baseUrl: process.env.NEXT_PUBLIC_APP_URL || request.headers.get("origin") || "" });
+  await createInvitation(ctx.user.client, { orgId: ctx.orgId, userId: ctx.user.userId, email: body.email, role: body.role, baseUrl: inviteBaseUrl() });
   return ok(ctx.user.headers, { status: "invited" }, 202);
 });

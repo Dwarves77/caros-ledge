@@ -4,7 +4,7 @@
 // shown citation is an item the reader can open, at most five. Read per request, never cached with the item bundle, on the caller's own client.
 import { admitItems } from "@/core/derived/admissible";
 import type { Db } from "@/core/db";
-import { fetchAllByIdChunks } from "@/core/db";
+import { fetchAllByIdChunks } from "@/core/db/query";
 import { detailHref } from "@/core/lists";
 
 const CUSTOMER_INFERENCE_METHOD_IDS: readonly string[] = ["infer-from-question"];

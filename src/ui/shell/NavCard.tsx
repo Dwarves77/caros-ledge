@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 
 import { formatNumber } from "@/core/shared";
 import { useAuth } from "@/features/auth/ui/AuthProvider";
-import { useWorkspaceStore } from "@/core/workspace";
+import { useWorkspaceStore } from "@/core/workspace/store";
 
 import { BandGradientRule } from "../BandParts";
 

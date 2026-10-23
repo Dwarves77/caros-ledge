@@ -1,7 +1,7 @@
 // Ported from old_repo/src/lib/applicability/compute-applicability.mjs (lines 1-90)
 // The applicability gate: does an obligation reach an organisation, given the roles it holds and its size bands. It is the function P2-02's RelevanceDeps.computeApplicability names.
 // An unset profile dimension is "needs profile input", never an assumed default; an obligation that names an unknown dimension cannot gate anything (it fails open on the gate itself).
-import { findBand, ORG_SIZE_DIMENSIONS, type OrgProfile } from "@/core/workspace/profile";
+import { findBand, ORG_SIZE_DIMENSIONS, type OrgProfile } from "@/core/workspace/org-profile";
 import type { ItemApplicability, Obligation } from "@/core/workspace/relevance";
 
 type Check = "pass" | "fail" | "needs_input";

@@ -2,7 +2,7 @@
 // The correction model: the newest active correction per target decides; tombstoned pairs and removed tags never come back; suppressed
 // facts never render. Every reader fails closed (a failed read throws, it is never an empty list). Pure planners first, readers last.
 import type { Db } from "@/core/db";
-import { fetchAllByIdChunks, fetchAllRows } from "@/core/db";
+import { fetchAllByIdChunks, fetchAllRows } from "@/core/db/query";
 import { isUuid } from "@/core/http/parse";
 
 const TARGET_KINDS = ["fact", "tag", "connection", "section_text", "full_brief"] as const;

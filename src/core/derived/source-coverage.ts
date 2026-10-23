@@ -2,7 +2,8 @@
 // The source coverage ledger, read from the `source_coverage` view (migration 0092) and nowhere else: how many public sources are collected (hold at least one admissible item), refused, access-requested or not yet
 // collected, and when the newest capture was made. The number of sources alone is never a coverage figure. A failed read throws; the view absent (production before the cutover) is the same stated failure.
 import type { Db } from "@/core/db";
-import { exactCount, fetchAllRows, qb } from "@/core/db";
+import { exactCount, fetchAllRows } from "@/core/db/query";
+import { qb } from "@/core/db/qb";
 
 const COVERAGE_STATES = ["collected", "uncollected", "refused", "access_requested"] as const;
 export type CoverageSourceState = (typeof COVERAGE_STATES)[number];

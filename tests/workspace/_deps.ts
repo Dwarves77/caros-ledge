@@ -1,4 +1,4 @@
-import { findBand, ORG_SIZE_DIMENSIONS, type OrgProfile } from "@/core/workspace/profile";
+import { findBand, ORG_SIZE_DIMENSIONS, type OrgProfile } from "@/core/workspace/org-profile";
 import type { ItemApplicability, Obligation, RelevanceDeps } from "@/core/workspace/relevance";
 
 // Stand-ins for the three things the lens receives from slices that are not merged here. They follow the old files' behaviour

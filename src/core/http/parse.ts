@@ -2,7 +2,7 @@
 // Ported from old_repo/src/app/api/orgs/[org_id]/invitations/route.ts (lines 23-41)
 import { z } from "zod";
 
-import { HttpError } from "./errors";
+import { HttpError } from "./http-error";
 
 /** The one UUID shape (any 8-4-4-4-12 hex, as the old UUID_RE accepted). */
 export const uuid = z.guid();

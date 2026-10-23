@@ -88,6 +88,7 @@ export function AuthProvider({ children, onSeed }: { children: ReactNode; onSeed
       setUser: (user) => setUser(user as User | null),
       loader: () => loaderRef.current,
       identityHasUser: () => knownUserRef.current !== null,
+      identityUserId: () => knownUserRef.current?.id ?? null,
       pathname: () => window.location.pathname,
       navigate: (to) => void (window.location.href = to),
     });

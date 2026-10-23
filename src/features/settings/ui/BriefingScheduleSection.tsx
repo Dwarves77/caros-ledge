@@ -3,7 +3,7 @@
 // Ported from old_repo/src/components/settings/BriefingScheduleSection.tsx (lines 67-306)
 import { useState, useSyncExternalStore } from "react";
 
-import { JURISDICTIONS } from "@/core/workspace";
+import { JURISDICTIONS } from "@/core/workspace/vocabulary";
 import { useWorkspaceStore } from "@/core/workspace/store";
 import { Button, ChoiceChip, FormField, InlineErrorBanner, Input, Segmented, Toast, type SegmentedOption } from "@/ui";
 

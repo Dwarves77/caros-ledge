@@ -1,6 +1,6 @@
 // Ported from old_repo/src/components/detail/SourcesGrid.tsx (lines 1-161)
 import type { SourceRow } from "@/core/detail/sources-parse";
-import { hasBiasTags } from "@/core/sources";
+import { hasBiasTags } from "@/core/sources/bias-tags";
 
 import { Absence } from "../Absence";
 import { BiasChips } from "../BiasChips";

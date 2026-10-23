@@ -96,10 +96,14 @@ test("telemetry/error: the report is stored without a user scope", async () => {
   assert.equal(String(row.message).includes("a@b.test"), false, "emails are redacted");
 });
 
-test("version: public, read-only, build metadata only", async () => {
+test("version: public, read-only, the commit and the environment and nothing else (no branch, no repository)", async () => {
   process.env.VERCEL_GIT_COMMIT_SHA = "abc123";
+  process.env.VERCEL_GIT_COMMIT_REF = "sec/app";
+  process.env.VERCEL_GIT_REPO_SLUG = "caros-ledge";
   const res = version();
   assert.equal(res.status, 200);
-  assert.deepEqual(Object.keys((await res.json()) as object).sort(), ["commit", "env", "ref", "repo"]);
+  assert.deepEqual(Object.keys((await res.json()) as object).sort(), ["commit", "env"]);
   delete process.env.VERCEL_GIT_COMMIT_SHA;
+  delete process.env.VERCEL_GIT_COMMIT_REF;
+  delete process.env.VERCEL_GIT_REPO_SLUG;
 });

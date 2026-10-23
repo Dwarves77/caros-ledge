@@ -1,7 +1,7 @@
 // Ported from old_repo/src/components/dashboard/DashboardMasthead.tsx (lines 51-90)
 import { refusalSentence } from "@/core/http/failure";
 import { formatNumber } from "@/core/shared";
-import { ALL_SECTORS } from "@/core/workspace";
+import { ALL_SECTORS } from "@/core/workspace/vocabulary";
 import { Absence, Masthead } from "@/ui";
 import { ShellCommandBar } from "@/ui/shell";
 
