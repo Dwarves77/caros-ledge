@@ -43,9 +43,12 @@ async function rpc<T>(db: Db, fn: string, args: Record<string, unknown>): Promis
   return (data ?? []) as T[];
 }
 
-/** The digest for one workspace. Rejects when any read fails. */
-export async function readDigest(db: Db, orgId: string): Promise<Digest> {
-  const { state: scrape, unreadable: holdUnknown } = await readScrapeStateOrClosed(db);
+/**
+ * The digest for one workspace. Rejects when any read fails. The collection hold (system_state) is the operator's, not the workspace's: no policy lets a signed-in account read it (migration 0121 removed the dead grant), so the page
+ * passes `hold`, the client that may (the service client, built lazily); without it the caller's client is asked, which is how the tests, whose one database holds every table, run.
+ */
+export async function readDigest(db: Db, orgId: string, hold: Db | (() => Db) = db): Promise<Digest> {
+  const { state: scrape, unreadable: holdUnknown } = await readScrapeStateOrClosed(hold);
   const windowDays = recentChangesWindowDays(scrape.cadence);
   const [due, feed] = await Promise.all([rpc<Raw>(db, "get_workspace_due_next", { p_org_id: orgId, p_limit: DUE_NEXT_READ }), rpc<FeedRow>(db, "get_workspace_recent_changes", { p_org_id: orgId, p_days: windowDays })]);
   const { changeIds } = selectBriefResources(due.map((d) => d.id), feed);

@@ -1,5 +1,5 @@
 // Ported from old_repo/src/app/page.tsx (lines 17-142)
-import { userClient } from "@/core/db/clients";
+import { serviceClient, userClient } from "@/core/db/clients";
 import { formatLocaleDate } from "@/core/shared";
 import { log } from "@/core/shared/log";
 import { readWorkspaceProfile } from "@/core/workspace";
@@ -50,7 +50,7 @@ export default async function DashboardRoute() {
   const db = await userClient();
   const [{ profile, failed: profileFailed }, digest, counts, watch, name, themes, coverage] = await Promise.all([
     readWorkspaceProfile(db, orgId),
-    settle("digest", () => readDigest(db, orgId)),
+    settle("digest", () => readDigest(db, orgId, serviceClient)),
     settle("counts", () => readCounts(db, orgId)),
     settle("watchlist", () => readWatchlist(db, { userId: session.userId, orgId }, WATCHLIST_RAIL_LIMIT, now)),
     settle("profile", async () => {

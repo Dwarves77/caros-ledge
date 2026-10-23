@@ -6,7 +6,7 @@ import { GET as assignmentsGet } from "@/features/workspace/api/assignments";
 import { GET as bootstrapGet } from "@/features/workspace/api/bootstrap";
 import { wireWorkspaceDeps } from "@/features/workspace/api/deps";
 import { GET as notesGet } from "@/features/workspace/api/notes";
-import { DELETE as overridesDelete, POST as overridesPost } from "@/features/workspace/api/overrides";
+import { POST as overridesPost } from "@/features/workspace/api/overrides";
 import { GET as personalGet, POST as personalPost } from "@/features/workspace/api/personal-state";
 import { GET as portfoliosGet } from "@/features/workspace/api/portfolios";
 import { GET as tagsGet, POST as tagsPost } from "@/features/workspace/api/tags";
@@ -48,9 +48,9 @@ test("no service key: a member's bootstrap, personal state, roster, overrides, t
 test("no service key: the member's own writes (personal archive, override, tag) answer 200 on the caller's client", async () => {
   const db = world();
   assert.equal((await call(personalPost, "member", "POST", "/api/workspace/personal-state", { itemId: "o3", isArchived: false })).status, 200);
-  assert.equal((await call(overridesPost, "member", "POST", "/api/workspace/overrides", { itemId: "o3", priorityOverride: "LOW" })).status, 200);
-  assert.equal(db.rows("workspace_item_overrides").find((o) => o.org_id === ORG_A)?.priority_override, "LOW");
-  assert.equal((await call(overridesDelete, "member", "DELETE", "/api/workspace/overrides", { itemId: "o3" })).status, 200);
+  assert.equal((await call(overridesPost, "member", "POST", "/api/workspace/overrides", { itemId: "o3", dismiss: true })).status, 200);
+  assert.ok(db.rows("workspace_item_overrides").find((o) => o.org_id === ORG_A)?.dismissed_at);
+  assert.equal((await call(overridesPost, "member", "POST", "/api/workspace/overrides", { itemId: "o3", priorityOverride: "LOW", reason: "r" })).status, 403, "a workspace priority is an owner or admin act");
   assert.equal((await call(tagsPost, "member", "POST", "/api/workspace/tags", { name: "Fresh" })).status, 200);
 });
 

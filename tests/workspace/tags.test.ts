@@ -25,7 +25,7 @@ const tagParams = { id: TAG };
 test("persona matrix: tags GET, POST, DELETE and the tag-items PUT, DELETE", async () => {
   await matrix("tags GET", async (p) => (await call(tagsGet, p, "GET", T)).status, E(401, 200, 200, 200, 200, 200, 403));
   await matrix("tags POST", async (p) => (await call(tagsPost, p, "POST", T, { name: "Fresh" })).status, E(401, 403, 200, 200, 200, 200, 403));
-  await matrix("tags DELETE", async (p, db) => (db.rows("workspace_tags").push({ id: TAG, org_id: ORG_A, name: "Priority" }), (await call(tagsDelete, p, "DELETE", T, { tagId: TAG })).status), E(401, 403, 200, 200, 200, 200, 403));
+  await matrix("tags DELETE", async (p, db) => (db.rows("workspace_tags").push({ id: TAG, org_id: ORG_A, name: "Priority" }), (await call(tagsDelete, p, "DELETE", T, { tagId: TAG })).status), E(401, 403, 200, 200, 200, 404, 403));
   // The tag belongs to org A: org B's member gets a 404, never an apply through a guessed id.
   await matrix("tag items PUT", async (p, db) => (db.rows("workspace_tags").push({ id: TAG, org_id: ORG_A, name: "Priority" }), (await call(itemsPut, p, "PUT", `${T}/${TAG}/items`, { itemId: "o3" }, tagParams)).status), E(401, 403, 200, 200, 200, 404, 403));
   await matrix("tag items DELETE", async (p) => (await call(itemsDelete, p, "DELETE", `${T}/${TAG}/items`, { itemId: "o3" }, tagParams)).status, E(401, 403, 200, 200, 200, 200, 403));
@@ -130,10 +130,21 @@ test("INV-149 ATTACK: org B cannot apply, remove or delete org A's tag through a
   link(db);
   assert.equal((await call(itemsPut, "otherOrgMember", "PUT", `${T}/${TAG}/items`, { itemId: "o4" }, tagParams)).status, 404);
   await call(itemsDelete, "otherOrgMember", "DELETE", `${T}/${TAG}/items`, { itemId: "o3" }, tagParams);
-  await call(tagsDelete, "otherOrgMember", "DELETE", T, { tagId: TAG });
+  assert.equal((await call(tagsDelete, "otherOrgMember", "DELETE", T, { tagId: TAG })).status, 404, "nothing was deleted, so the answer is not a success");
   assert.equal(db.rows("item_workspace_tags").length, 1);
   assert.ok(db.rows("workspace_tags").some((r) => r.id === TAG));
   assert.equal(db.writes("item_workspace_tags").length, 1, "only the (no-op) org-filtered delete reached the table");
+});
+
+test("DELETE answers 404 when nothing was deleted (a guessed id, another org's tag, the delete policy's silent refusal looks the same), 200 and the row gone when something was", async () => {
+  const db = world();
+  const miss = await call(tagsDelete, "member", "DELETE", T, { tagId: "ffffffff-ffff-4fff-8fff-ffffffffffff" });
+  assert.deepEqual([miss.status, typeof miss.body.error], [404, "string"]);
+  assert.equal((await call(tagsDelete, "member", "DELETE", T, { tagId: TAG_B })).status, 404, "another org's tag by its real id");
+  assert.deepEqual(db.rows("workspace_tags").map((r) => r.id).sort(), [TAG, TAG_B].sort());
+  assert.equal((await call(tagsDelete, "member", "DELETE", T, { tagId: TAG })).status, 200);
+  assert.deepEqual(db.rows("workspace_tags").map((r) => r.id), [TAG_B]);
+  assert.equal((await call(tagsDelete, "member", "DELETE", T, { tagId: TAG })).status, 404, "the same delete a second time deleted nothing");
 });
 
 test("deleting a tag is org-scoped; an unknown item is a 404; a failed item read is a 503", async () => {

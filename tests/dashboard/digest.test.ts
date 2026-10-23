@@ -44,6 +44,20 @@ test("a window with a cadence is 7 days; an empty feed reads the newest changelo
   assert.deepEqual([empty.feed.length, empty.lastChangelogDate], [0, "2026-03-01"]);
 });
 
+test("0121: the hold is read on the hold client, never the caller's (authenticated holds no grant on system_state); an unavailable hold client says the hold is unknown and the digest still draws", async () => {
+  const user = dashboardWorld();
+  user.fail("system_state", "select", "permission denied for table system_state");
+  const hold = dashboardWorld();
+  (hold.rows("system_state")[0] as Record<string, unknown>).scrape_cadence = "weekly";
+  const d = await readDigest(user.client, ORG, hold.client);
+  assert.deepEqual([d.windowDays, d.holdUnknown], [7, false]);
+  assert.equal(user.calls.filter((c) => c.table === "system_state").length, 0, "the caller's client never asked");
+  const none = await readDigest(user.client, ORG, () => {
+    throw new Error("SUPABASE_SERVICE_ROLE_KEY is not configured");
+  });
+  assert.deepEqual([none.windowDays, none.holdUnknown, none.dueNext.length > 0], [90, true, true]);
+});
+
 test("INV-263: a failed read rejects the whole digest; an empty corpus is a real digest, not a failure", async () => {
   for (const fn of ["get_workspace_due_next", "get_workspace_recent_changes"]) {
     const db = dashboardWorld();

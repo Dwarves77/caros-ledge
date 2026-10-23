@@ -3,8 +3,6 @@
 // Ported from old_repo/src/app/api/invitations/[token]/route.ts (lines 11-50)
 // Ported from old_repo/src/app/api/invitations/mine/route.ts (lines 7-63)
 // Ported from old_repo/src/app/api/invitations/[token]/accept/route.ts (lines 24-39)
-import { randomBytes } from "node:crypto";
-
 import { z } from "zod";
 
 import type { Db } from "@/core/db/clients";
@@ -30,24 +28,25 @@ export const inviteBody = z.object({ email: emailSchema, role: inviteRole.defaul
 const FIELDS = "id, invited_email, proposed_role, status, created_at, expires_at, accepted_at, declined_at, revoked_at, invited_by_user_id, token_last4";
 
 /**
- * Issue an invitation as the caller through invite_member (migration 0101): who may is org_can, the invitation and its admin_events row are one transaction, and the database never looks at accounts, so an e-mail with an
- * account and one without answer identically. The token is generated here and exists only in this request: it is passed as token_input, which the database hashes and clears (migration 0018), so the stored row holds
- * sha256(token) and the last four characters and nothing else. The raw token is returned once, inside invite_url, and is never logged. The e-mail names the organisation and who invited you (read before anything is written);
- * its result is honest: not configured is `configured: false`, and the caller shows the copy-link flow.
+ * Issue an invitation as the caller through invite_member (migrations 0101 and 0121): who may is org_can, the invitation and its admin_events row are one transaction, and the database never looks at accounts, so an e-mail
+ * with an account and one without answer identically. The database generates the token (32 random bytes, 64 hex characters: the caller chooses nothing), hashes and clears it (migration 0018), so the stored row holds
+ * sha256(token) and the last four characters, and returns it once; it lives in this request, goes into invite_url and the e-mail, and is never logged. The e-mail names the organisation and who invited you (read before
+ * anything is written); its result is honest: not configured is `configured: false`, and the caller shows the copy-link flow.
  */
 export async function createInvitation(client: Db, input: { orgId: string; userId: string; email: string; role: string; baseUrl: string }): Promise<{ invitation: Record<string, unknown>; emailDelivery: EmailResult }> {
   const [org, inviter] = await Promise.all([client.from("organizations").select("name").eq("id", input.orgId).maybeSingle(), client.from("profiles").select("full_name, display_name").eq("id", input.userId).maybeSingle()]);
   if (org.error) throw new LookupError("organizations", org.error);
   if (inviter.error) throw new LookupError("profiles", inviter.error);
-  const token = randomBytes(32).toString("hex");
-  const { data, error } = await client.rpc("invite_member", { p_org_id: input.orgId, p_email: input.email, p_role: input.role, p_token: token });
+  const { data, error } = await client.rpc("invite_member", { p_org_id: input.orgId, p_email: input.email, p_role: input.role });
   if (error?.code === "23505") throw new HttpError(409, "A pending invitation already exists for this email + org");
   if (error) throw dbError(error, { forbidden: "Only org admins can invite members" });
-  if (!data) throw new HttpError(403, "Only org admins can invite members");
+  const minted = inviteToken.safeParse(data);
+  if (!minted.success) throw new LookupError("invite_member", "the function returned no token");
+  const token = minted.data;
   const inviteUrl = `${input.baseUrl}/invitations/${token}`;
   const who = (inviter.data?.full_name || inviter.data?.display_name || "").trim();
   const emailDelivery = await sendInvitationEmail({ to: input.email, inviteUrl, proposedRole: input.role, ...(org.data?.name ? { orgName: org.data.name } : {}), ...(who ? { invitedBy: who } : {}) });
-  return { invitation: { ...(data as Record<string, unknown>), invite_url: inviteUrl }, emailDelivery };
+  return { invitation: { invited_email: input.email, proposed_role: input.role, invite_url: inviteUrl }, emailDelivery };
 }
 
 /** An org's invitations, newest first (bounded at 200); a pending one past its expiry reads as expired. */

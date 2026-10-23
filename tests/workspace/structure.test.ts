@@ -12,7 +12,7 @@ const text = (f: string) => readFileSync(f, "utf8");
 const has = (mod: object, names: string[]) => assert.deepEqual(names.filter((n) => !(n in mod)), []);
 
 const ROUTES: Record<string, { feature: string; methods: string[] }> = {
-  "src/app/api/workspace/overrides/route.ts": { feature: "overrides", methods: ["POST", "DELETE"] },
+  "src/app/api/workspace/overrides/route.ts": { feature: "overrides", methods: ["POST"] },
   "src/app/api/workspace/personal-state/route.ts": { feature: "personal-state", methods: ["GET", "POST", "DELETE"] },
   "src/app/api/workspace/archive-impact/route.ts": { feature: "archive-impact", methods: ["GET"] },
   "src/app/api/workspace/bootstrap/route.ts": { feature: "bootstrap", methods: ["GET"] },

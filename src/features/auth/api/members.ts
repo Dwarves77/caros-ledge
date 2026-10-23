@@ -1,5 +1,5 @@
 // Ported from old_repo/src/app/api/orgs/[org_id]/members/route.ts (lines 10-619)
-// The members of an organisation. Every write is ONE database function on the CALLER'S client (set_member_role, remove_member, ban_member, invite_member: migrations 0101): the actor is the session, who may is org_can (one
+// The members of an organisation. Every write is ONE database function on the CALLER'S client (set_member_role, remove_member, ban_member, invite_member: migration 0101; leave_org: 0121): the actor is the session, who may is org_can (one
 // decision, in the database), the SEC-3b rules and the admin_events row are in the same transaction. This route decides nothing about roles: a refusal is the function's, mapped through the one status table, and the service client
 // is not used here. The roster comes from org_roster, which gives an e-mail only to an owner or admin of this organisation and never falls back to one as a name.
 import { z } from "zod";
@@ -77,6 +77,14 @@ export const DELETE = route<Ctx>("/api/orgs/[org_id]/members", async (request, {
   const membershipId = parseWith(uuid, new URL(request.url).searchParams.get("membership_id"), "membership_id");
   done(await ctx.user.client.rpc("remove_member", { p_org_id: ctx.orgId, p_membership_id: membershipId, p_reason: null }), "remove_member");
   return ok(ctx.user.headers, { success: true, membership_id: membershipId });
+});
+
+/** POST /leave: the caller leaves the organisation of the URL (leave_org, migration 0121: there was no policy for it). The last owner cannot (409, with the function's sentence); a caller who is not a member is a 404. 204, no body. */
+export const leave = route<Ctx>("/api/orgs/[org_id]/leave", async (request, { params }) => {
+  const ctx = await load(request, params);
+  if (isRefusal(ctx)) return ctx;
+  done(await ctx.user.client.rpc("leave_org", { p_org_id: ctx.orgId }), "leave_org");
+  return new Response(null, { status: 204, headers: ctx.user.headers });
 });
 
 /**
