@@ -52,7 +52,7 @@ test("POST invitations and PUT members with NEXT_PUBLIC_APP_URL unset: 500 with 
 });
 
 test("POST invitations builds the link from NEXT_PUBLIC_APP_URL even when the request names another origin", async () => {
-  script(fakeDb(), undefined, (rpc) => (rpc === "invite_member" ? { data: { id: "i", token_last4: "abcd", invited_email: "x@y.test", proposed_role: "member", expires_at: "2099-01-01", status: "pending", created_at: "2026-01-01" } } : undefined));
+  script(fakeDb(), undefined, (rpc) => (rpc === "invite_member" ? { data: "ab".repeat(32) } : undefined));
   const res = await POST(as("owner", `/api/orgs/${ORG_A}/invitations`, { method: "POST", body: json({ email: "x@y.test", role: "member" }), headers: { origin: "https://evil.example" } }), ctx({ org_id: ORG_A }) as never);
   assert.equal(res.status, 201);
   const link = (await res.json()).invitation.invite_url as string;
