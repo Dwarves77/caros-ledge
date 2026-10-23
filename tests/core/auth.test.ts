@@ -148,35 +148,26 @@ test("INV-155: revoke is scoped to the URL's org BEFORE the write; the token is 
   await assert.rejects(revokeInvitation(denied.db, ORG, "i1"), (e: unknown) => e instanceof HttpError && e.status === 403);
 
   const logged: string[] = [];
-  let issued = "";
+  const issued = "5e".repeat(32);
   const spies = (["log", "info", "warn", "error", "debug"] as const).map((m) => ({ m, orig: console[m] }));
   for (const { m } of spies) console[m] = (...a: unknown[]) => void logged.push(a.map(String).join(" "));
   try {
-    const issuing = fakeDb(undefined, { rpc: () => ({ data: { id: "i2", token_last4: "aaaa", invited_email: "x@y.test", proposed_role: "member", expires_at: "2099-01-01", status: "pending", created_at: "2026-01-01" } }) });
+    const issuing = fakeDb(undefined, { rpc: () => ({ data: issued }) });
     await createInvitation(issuing.db, { orgId: ORG, userId: "u1", email: "x@y.test", role: "member", baseUrl: "https://app.example.test" });
-    issued = String((issuing.rpcs[0]?.args as { p_token: string }).p_token);
     await createInvitation(fakeDb(undefined, { rpc: () => ({ error: { message: `dup ${TOKEN}`, code: "23505" } }) }).db, { orgId: ORG, userId: "u1", email: "x@y.test", role: "member", baseUrl: "" }).catch(() => undefined);
   } finally {
     for (const { m, orig } of spies) console[m] = orig;
   }
   assert.equal(logged.filter((l) => l.includes(TOKEN) || l.includes(issued)).length, 0, "the token reached no log line");
-  assert.match(issued, /^[0-9a-f]{64}$/, "the generated token was captured");
 });
 
-test("IMP-009 and R2e: issue generates the token, passes it to invite_member once, returns the URL once, and the row carries token_last4 and no token; the e-mail names the organisation and who invited", async () => {
-  const row = { id: "i2", token_last4: "beef", invited_email: "x@y.test", proposed_role: "viewer", expires_at: "2099-01-01", status: "pending", created_at: "2026-01-01" };
-  const issued = fakeDb((c) => (c.table === "organizations" ? { data: { name: "Acme Freight" } } : c.table === "profiles" ? { data: { full_name: "Ada Admin", display_name: null } } : undefined), { rpc: () => ({ data: row }) });
+test("IMP-009 and 0121: the database function mints the token and returns it once; the code passes none, e-mails the returned value, and answers with the URL only; the e-mail names the organisation and who invited", async () => {
+  const minted = "beef".repeat(16);
+  const issued = fakeDb((c) => (c.table === "organizations" ? { data: { name: "Acme Freight" } } : c.table === "profiles" ? { data: { full_name: "Ada Admin", display_name: null } } : undefined), { rpc: () => ({ data: minted }) });
   const { invitation, emailDelivery } = await createInvitation(issued.db, { orgId: ORG, userId: "u1", email: "x@y.test", role: "viewer", baseUrl: "https://app.example.test" });
-  const args = issued.rpcs[0]?.args as Record<string, unknown>;
-  const token = String(args.p_token);
-  assert.match(token, /^[0-9a-f]{64}$/, "a 32-byte hex token is generated in code and handed to the database function as p_token");
-  assert.deepEqual(args, { p_org_id: ORG, p_email: "x@y.test", p_role: "viewer", p_token: token });
-  assert.equal(issued.rpcs[0]?.name, "invite_member");
+  assert.deepEqual(issued.rpcs[0], { name: "invite_member", args: { p_org_id: ORG, p_email: "x@y.test", p_role: "viewer" } }, "the caller does not choose the token: there is no p_token to send");
   assert.equal(wrote(issued.calls, "org_invitations", "insert").length, 0, "the invitation is not a table write from here");
-  assert.equal(invitation.invite_url, `https://app.example.test/invitations/${token}`);
-  assert.equal("token" in invitation, false);
-  assert.equal("token_input" in invitation, false);
-  assert.equal(invitation.token_last4, "beef");
+  assert.deepEqual(invitation, { invited_email: "x@y.test", proposed_role: "viewer", invite_url: `https://app.example.test/invitations/${minted}` });
   assert.deepEqual(emailDelivery, { delivered: false, configured: false, reason: "No email provider is configured on this deployment." });
   const sent: string[] = [];
   const env = { RESEND_API_KEY: "re_test", INVITATION_FROM_EMAIL: "invites@mail.example.test" };
@@ -198,14 +189,13 @@ test("IMP-009 and R2e: issue generates the token, passes it to invite_member onc
     else process.env.INVITATION_FROM_EMAIL = realFrom;
   }
   assert.match(sent[0] ?? "", /Ada Admin has invited you to join the Acme Freight workspace/, "W:6: the e-mail names who invited and to what");
-  const again = fakeDb(undefined, { rpc: () => ({ data: { id: "i3", token_last4: "cafe" } }) });
-  await createInvitation(again.db, { orgId: ORG, userId: "u1", email: "z@y.test", role: "member", baseUrl: "" });
-  assert.notEqual((again.rpcs[0]?.args as { p_token: string }).p_token, token, "every invitation gets a fresh token");
+  const mailed = sent.map((body) => /invitations\/([0-9a-f]+)/.exec(body)?.[1]);
+  assert.deepEqual(mailed, [minted], "the e-mail carries the token the function returned");
   const status = async (error: { message: string; code?: string }) => createInvitation(fakeDb(undefined, { rpc: () => ({ error }) }).db, { orgId: ORG, userId: "u", email: "a@b.test", role: "member", baseUrl: "" }).catch((e: HttpError) => e.status);
   assert.equal(await status({ message: "dup", code: "23505" }), 409);
   assert.equal(await status({ message: "rls", code: "42501" }), 403);
   assert.equal(await status({ message: "boom" }), 500);
-  await assert.rejects(createInvitation(fakeDb(undefined, { rpc: () => ({ data: null }) }).db, { orgId: ORG, userId: "u", email: "a@b.test", role: "member", baseUrl: "" }), (e: unknown) => (e as HttpError).status === 403);
+  for (const data of [null, {}, "short", "G".repeat(64)]) await assert.rejects(createInvitation(fakeDb(undefined, { rpc: () => ({ data }) }).db, { orgId: ORG, userId: "u", email: "a@b.test", role: "member", baseUrl: "" }), LookupError, `a function answer that is not a token (${JSON.stringify(data)}) is never mailed`);
   await assert.rejects(createInvitation(fakeDb((c) => (c.table === "organizations" ? { error: { message: "down" } } : undefined)).db, { orgId: ORG, userId: "u", email: "a@b.test", role: "member", baseUrl: "" }), LookupError);
 });
 

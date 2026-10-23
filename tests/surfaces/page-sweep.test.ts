@@ -32,7 +32,8 @@ const member = (name: string, path: string, render: () => Promise<ReactNode>): S
 /** The console's own copy holds "could not" in a sentence about sources the gates could not place; it is masked before the text is read for a stated failure. */
 const admin = (name: string, path: string, render: () => Promise<ReactNode>): Swept => ({ name, draw: () => drawn(path, render), fallsBack: ADMIN_BIT, world: adminWorld, staticCopy: ["could not place on their own"] });
 const PAGES: Swept[] = [
-  member("/", "/", async () => (await import("@/features/dashboard/page")).default()),
+  // The collection hold (system_state) is read on the service client: no policy lets a signed-in account read it (migration 0121 removed the dead grant), so the dashboard draws over the service world, like the coverage matrix.
+  { ...member("/", "/", async () => (await import("@/features/dashboard/page")).default()), world: serviceWorld },
   member("/watchlist", "/watchlist", async () => (await import("@/features/watchlist/page")).default()),
   member("/search", "/search", async () => (await import("@/features/search/page")).default({ searchParams: Promise.resolve({ q: "fuel" }) })),
   member("/settings", "/settings", async () => (await import("@/features/settings/page")).default()),

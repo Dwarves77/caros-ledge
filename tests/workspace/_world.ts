@@ -106,6 +106,30 @@ function installSqlObjects(db: MemDb): void {
     const to = [...new Set([...watchers, ...(owner ? [owner] : [])])].filter((u) => u !== uid).sort();
     return commit(p_org_id, p_item_id, { is_archived: true, archive_reason: p_reason, ...(p_note == null ? {} : { archive_note: p_note }), archived_at: db.tick(), archived_by: uid }, to.map((user_id) => ({ user_id, kind: "archive", payload: { ...p_notice, item_id: p_item_id, archived_by: uid } })));
   });
+  // set_priority_override, restore_team_item (migration 0101) and set_item_dismissal (0121): the table takes no client write, so each is the only way to these columns. The gate, the reason and the override write as one unit.
+  db.scriptRpc("set_priority_override", (args, who) => {
+    const { p_org_id, p_item_id, p_priority, p_reason } = args as { p_org_id: string; p_item_id: string; p_priority: string | null; p_reason: string };
+    const uid = caller(who);
+    if (!["owner", "admin"].includes(roleOf(p_org_id, uid) ?? "")) throw raise("a workspace-wide priority needs the admin or owner role", "42501");
+    if (!String(p_reason ?? "").trim()) throw raise("a reason is required to change the priority for the workspace", "22023");
+    if (!db.rows("intelligence_items").some((i) => i.id === p_item_id)) throw raise("no such item", "P0002");
+    return commit(p_org_id, p_item_id, { priority_override: p_priority }, []).override;
+  });
+  db.scriptRpc("restore_team_item", (args, who) => {
+    const { p_org_id, p_item_id, p_reason } = args as { p_org_id: string; p_item_id: string; p_reason: string };
+    const uid = caller(who);
+    if (!["owner", "admin"].includes(roleOf(p_org_id, uid) ?? "")) throw raise("restoring a workspace archive needs the admin or owner role", "42501");
+    if (!String(p_reason ?? "").trim()) throw raise("a reason is required to restore an item for the workspace", "22023");
+    if (!override(p_org_id, p_item_id)?.is_archived) throw raise("that item is not archived for the workspace", "P0002");
+    return commit(p_org_id, p_item_id, { is_archived: false, archived_at: null, archived_by: null, archive_reason: null, archive_note: null }, []).override;
+  });
+  db.scriptRpc("set_item_dismissal", (args, who) => {
+    const { p_org_id, p_item_id, p_dismissed } = args as { p_org_id: string; p_item_id: string; p_dismissed: boolean };
+    const uid = caller(who);
+    if (!["owner", "admin", "member"].includes(roleOf(p_org_id, uid) ?? "")) throw raise("a viewer can read this workspace but cannot dismiss an item", "42501");
+    if (!db.rows("intelligence_items").some((i) => i.id === p_item_id)) throw raise("no such item", "P0002");
+    return commit(p_org_id, p_item_id, { dismissed_at: p_dismissed ? db.tick() : null }, []).override;
+  });
   db.scriptRpc("assign_item", (args, who) => {
     const { p_org_id, p_item_id, p_owner_user_id, p_notice } = args as { p_org_id: string; p_item_id: string; p_owner_user_id: string | null; p_notice: Record<string, unknown> | null };
     const uid = caller(who);

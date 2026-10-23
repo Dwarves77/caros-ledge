@@ -103,7 +103,7 @@ export function ArchiveDialog({ itemId, title, onClose, onArchived }: { itemId: 
             <input type="radio" name="archive-scope" checked={teamSelected} onChange={() => setScope("workspace")} disabled={submitting || !canTeam} />
             <span>
               <b>My whole team</b>
-              <span className={styles.scopeNote}>{canTeam ? "Hides it for everyone in your workspace. Watchers and the assigned owner are notified, and any member can restore it." : "Only an admin or owner can archive for the whole team. You can still archive it just for yourself."}</span>
+              <span className={styles.scopeNote}>{canTeam ? "Hides it for everyone in your workspace. Watchers and the assigned owner are notified, and an owner or admin can restore it." : "Only an admin or owner can archive for the whole team. You can still archive it just for yourself."}</span>
             </span>
           </label>
         </fieldset>

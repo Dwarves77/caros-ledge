@@ -9,6 +9,8 @@ export interface MenuItem {
   key: string;
   label: string;
   onSelect: () => void;
+  /** Drawn and focusable but not selectable: the label says why (aria-disabled, so arrow keys still reach it and a screen reader reads it). */
+  disabled?: boolean;
 }
 
 /**
@@ -72,7 +74,9 @@ export function Menu({ label, items, extra }: { label: string; items: MenuItem[]
               type="button"
               role="menuitem"
               className="cl-menu-item"
+              aria-disabled={it.disabled || undefined}
               onClick={() => {
+                if (it.disabled) return;
                 setOpen(false);
                 it.onSelect();
               }}

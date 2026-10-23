@@ -3,7 +3,7 @@ import { test } from "node:test";
 
 import { GET as impactGet } from "@/features/workspace/api/archive-impact";
 import { wireWorkspaceDeps } from "@/features/workspace/api/deps";
-import { DELETE as overridesDelete, POST as overridesPost } from "@/features/workspace/api/overrides";
+import { POST as overridesPost } from "@/features/workspace/api/overrides";
 import { DELETE as personalDelete, GET as personalGet, POST as personalPost } from "@/features/workspace/api/personal-state";
 
 import type { MemDb, Row } from "./_memdb.ts";
@@ -19,12 +19,61 @@ const overrides = (db: MemDb) => db.rows("workspace_item_overrides");
 const archive = { itemId: "o3", isArchived: true, archiveReason: "superseded by the 2027 text" };
 const withOverride = (db: MemDb, over: Row = {}) => (db.rows("workspace_item_overrides").push({ org_id: ORG_A, item_id: ITEM_1, ...over }), db);
 
-test("persona matrix: overrides POST (priority), POST (team archive), DELETE", async () => {
+const priority = { itemId: "o3", priorityOverride: "HIGH", reason: "the board asked for it" };
+const restore = { itemId: "o3", isArchived: false, reason: "archived by mistake" };
+
+test("persona matrix: overrides POST (priority), POST (restore), POST (team archive), POST (dismiss)", async () => {
   wire();
-  await matrix("overrides POST priority", async (p) => (await call(overridesPost, p, "POST", O, { itemId: "o3", priorityOverride: "HIGH" })).status, E(401, 403, 200, 200, 200, 200, 403));
+  // Migration 0121: a workspace-wide priority and the restore of a team archive are owner or admin acts with a stated reason (set_priority_override, restore_team_item); org B's owner acts inside org B.
+  await matrix("overrides POST priority", async (p) => (await call(overridesPost, p, "POST", O, priority)).status, E(401, 403, 403, 200, 200, 200, 403));
+  await matrix("overrides POST restore", async (p, db) => (withOverride(db, { is_archived: true }), (await call(overridesPost, p, "POST", O, restore)).status), E(401, 403, 403, 200, 200, 404, 403));
   // INV-165: only an owner or admin archives for the team; org B's owner archives inside org B.
   await matrix("overrides POST team archive", async (p) => (await call(overridesPost, p, "POST", O, archive)).status, E(401, 403, 403, 200, 200, 200, 403));
-  await matrix("overrides DELETE", async (p, db) => (withOverride(db), (await call(overridesDelete, p, "DELETE", O, { itemId: "o3" })).status), E(401, 403, 200, 200, 200, 200, 403));
+  // A dismissal stays a member's act (set_item_dismissal): the table takes no client write, the function is the way.
+  await matrix("overrides POST dismiss", async (p) => (await call(overridesPost, p, "POST", O, { itemId: "o3", dismiss: true })).status, E(401, 403, 200, 200, 200, 200, 403));
+});
+
+test("0121: a priority goes through set_priority_override with the reason, a restore through restore_team_item; the table is never written by the route", async () => {
+  wire();
+  const db = script(withOverride(seed(), { is_archived: true, archived_by: USER.admin, archive_reason: "x", archive_note: "n", archived_at: "2026-01-01T00:00:00Z" }));
+  for (const op of ["insert", "update", "upsert", "delete"] as const) db.fail("workspace_item_overrides", op, { message: "permission denied for table workspace_item_overrides", code: "42501" });
+  const set = await call(overridesPost, "admin", "POST", O, priority);
+  assert.equal(set.status, 200);
+  assert.deepEqual(db.rpcCalls.map((c) => [c.name, c.args]), [["set_priority_override", { p_org_id: ORG_A, p_item_id: ITEM_1, p_priority: "HIGH", p_reason: "the board asked for it" }]]);
+  assert.equal(overrides(db)[0]?.priority_override, "HIGH");
+  assert.equal((await call(overridesPost, "admin", "POST", O, { itemId: "o3", priorityOverride: null, reason: "back to the platform default" })).status, 200);
+  assert.equal(overrides(db)[0]?.priority_override, null);
+  assert.equal(db.rpcCalls.at(-1)?.args.p_priority, null, "null is the platform default, still with a reason");
+  db.rpcCalls.length = 0;
+  assert.equal((await call(overridesPost, "owner", "POST", O, restore)).status, 200);
+  assert.deepEqual(db.rpcCalls.map((c) => [c.name, c.args]), [["restore_team_item", { p_org_id: ORG_A, p_item_id: ITEM_1, p_reason: "archived by mistake" }]]);
+  const row = overrides(db)[0] as Row;
+  assert.deepEqual([row.is_archived, row.archived_by, row.archived_at, row.archive_reason, row.archive_note], [false, null, null, null, null], "the restore function clears the archive fields; the route sends none of them");
+});
+
+test("0121: a priority or a restore without a reason is a 400 and reaches no function; a reason is 1 to 2000 characters", async () => {
+  wire();
+  const db = script(seed());
+  for (const body of [{ itemId: "o3", priorityOverride: "HIGH" }, { itemId: "o3", priorityOverride: "HIGH", reason: "   " }, { itemId: "o3", priorityOverride: "HIGH", reason: "x".repeat(2001) }, { itemId: "o3", isArchived: false }, { itemId: "o3", isArchived: false, reason: "" }]) {
+    assert.equal((await call(overridesPost, "admin", "POST", O, body)).status, 400, JSON.stringify(body).slice(0, 80));
+  }
+  assert.equal(db.rpcCalls.length, 0);
+  assert.equal((await call(overridesPost, "admin", "POST", O, { ...priority, reason: "x".repeat(2000) })).status, 200);
+});
+
+test("0121 ATTACK: a member's priority or restore is refused by the function (403, the database's sentence), changes nothing, and a body naming archived_by cannot reach the table", async () => {
+  wire();
+  const db = script(withOverride(seed(), { is_archived: true, archive_reason: "x" }));
+  const before = JSON.stringify(overrides(db));
+  const refused = await call(overridesPost, "member", "POST", O, priority);
+  assert.deepEqual([refused.status, String(refused.body.error)], [403, "a workspace-wide priority needs the admin or owner role"]);
+  assert.equal((await call(overridesPost, "member", "POST", O, restore)).status, 403);
+  assert.equal((await call(overridesPost, "viewer", "POST", O, priority)).status, 403);
+  assert.equal(JSON.stringify(overrides(db)), before);
+  assert.equal(db.writes("workspace_item_overrides").length, 0);
+  const forged = await call(overridesPost, "member", "POST", O, { itemId: "o3", priorityOverride: "LOW", reason: "r", archived_by: USER.owner, is_archived: true, owner_user_id: USER.otherOrgMember });
+  assert.equal(forged.status, 403);
+  assert.equal(JSON.stringify(overrides(db)), before);
 });
 
 test("INV-165: a member's team archive is refused and nothing is written; a missing or blank reason is a 400", async () => {
@@ -80,7 +129,13 @@ test("IMP-065 degraded: the writer absent (production before the cutover) is a 5
     assert.deepEqual([res.status, res.headers.get("retry-after")], [503, "30"]);
   }
   assert.equal(db.writes("workspace_item_overrides").length, 0);
-  assert.equal((await call(overridesPost, "admin", "POST", O, { itemId: "o3", priorityOverride: "LOW" })).status, 200, "a plain upsert needs no writer");
+  for (const input of [priority, restore, { itemId: "o3", dismiss: true }]) {
+    delete db.rpcs.set_priority_override;
+    delete db.rpcs.restore_team_item;
+    delete db.rpcs.set_item_dismissal;
+    assert.deepEqual([(await call(overridesPost, "admin", "POST", O, input)).status], [503], `${JSON.stringify(input)} without its function`);
+  }
+  assert.equal(db.writes("workspace_item_overrides").length, 0, "no second way to write: the table is not touched");
 });
 
 test("INV-165, INV-166 at the writer: the rpc itself refuses a member, a viewer, a stranger and a blank reason with nothing written, and stamps the actor from the session whatever it is told", async () => {
@@ -92,15 +147,6 @@ test("INV-165, INV-166 at the writer: the rpc itself refuses a member, a viewer,
   assert.equal(db.writes("workspace_item_overrides").length, 0);
   assert.equal((await rpc("admin", { p_archived_by: USER.owner })).error, null);
   assert.equal(overrides(db)[0]?.archived_by, USER.admin);
-});
-
-test("restore is ungated: a member un-archives a team archive and archived_by is cleared", async () => {
-  wire();
-  const db = script(withOverride(seed(), { is_archived: true, archived_by: USER.admin, archive_reason: "x", archived_at: "2026-01-01T00:00:00Z" }));
-  const res = await call(overridesPost, "member", "POST", O, { itemId: "o3", isArchived: false, archiveReason: null, archiveNote: null });
-  assert.equal(res.status, 200);
-  const row = overrides(db)[0] as Row;
-  assert.deepEqual([row.is_archived, row.archived_by, row.archived_at, row.archive_reason], [false, null, null, null]);
 });
 
 test("INV-166 ATTACK: a body naming archived_by, owner_assigned_by, org_id or item_id never changes what is stamped", async () => {
@@ -131,27 +177,42 @@ test("INV-167: an owner outside the org or a viewer is refused with nothing writ
   assert.deepEqual([overrides(db)[0]?.owner_user_id, overrides(db)[0]?.owner_assigned_by, overrides(db)[0]?.owner_assigned_at], [null, null, null]);
 });
 
-test("dismissal and priority: dismiss stamps dismissed_at, restore clears it; notes are refused; bad input and unknown items are refused", async () => {
+test("dismissal: dismiss stamps dismissed_at and restore clears it through set_item_dismissal, leaving the priority alone; notes and an unknown item are refused; bad input is a 400", async () => {
   wire();
-  const db = script(seed());
-  await call(overridesPost, "member", "POST", O, { itemId: "o3", dismiss: true, priorityOverride: null });
+  const db = script(withOverride(seed(), { priority_override: "CRITICAL" }));
+  assert.equal((await call(overridesPost, "member", "POST", O, { itemId: "o3", dismiss: true })).status, 200);
   assert.ok(overrides(db)[0]?.dismissed_at);
-  await call(overridesPost, "member", "POST", O, { itemId: "o3", dismissedAt: null });
+  assert.deepEqual(db.rpcCalls.map((c) => [c.name, c.args]), [["set_item_dismissal", { p_org_id: ORG_A, p_item_id: ITEM_1, p_dismissed: true }]]);
+  assert.equal(overrides(db)[0]?.priority_override, "CRITICAL", "a dismissal is not a priority change");
+  assert.equal((await call(overridesPost, "member", "POST", O, { itemId: "o3", dismissedAt: null })).status, 200);
   assert.equal(overrides(db)[0]?.dismissed_at, null);
+  assert.equal((await call(overridesPost, "member", "POST", O, { itemId: "o3", dismissedAt: "2026-10-01T00:00:00Z" })).status, 200);
+  assert.ok(overrides(db)[0]?.dismissed_at);
   assert.equal((await call(overridesPost, "member", "POST", O, { itemId: "o3", notes: "moved" })).status, 400);
   assert.equal((await call(overridesPost, "member", "POST", O, {})).status, 400);
-  assert.equal((await call(overridesPost, "member", "POST", O, { itemId: "nope" })).status, 404);
+  assert.equal((await call(overridesPost, "member", "POST", O, { itemId: "o3" })).status, 400, "a body that changes nothing is a 400, not an empty write");
+  assert.equal((await call(overridesPost, "member", "POST", O, { itemId: "nope", dismiss: true })).status, 404);
   assert.equal(overrides(db).length, 1);
 });
 
-test("a failed item read is a 503, never a 404; a failed upsert is an error status, never a success", async () => {
+test("a priority that clears a dismissal does both, in that order, each through its function", async () => {
+  wire();
+  const db = script(withOverride(seed(), { dismissed_at: "2026-10-01T00:00:00Z" }));
+  assert.equal((await call(overridesPost, "admin", "POST", O, { ...priority, dismissedAt: null })).status, 200);
+  assert.deepEqual(db.rpcCalls.map((c) => c.name), ["set_priority_override", "set_item_dismissal"]);
+  assert.deepEqual([overrides(db)[0]?.priority_override, overrides(db)[0]?.dismissed_at], ["HIGH", null]);
+});
+
+test("a failed item read is a 503, never a 404; a function that fails is an error status, never a success", async () => {
   wire();
   const db = script(seed());
   db.fail("intelligence_items", "select", { message: "down" });
-  assert.equal((await call(overridesPost, "member", "POST", O, { itemId: "o3", priorityOverride: "LOW" })).status, 503);
+  assert.equal((await call(overridesPost, "admin", "POST", O, priority)).status, 503);
   db.failures.length = 0;
-  db.fail("workspace_item_overrides", "upsert", { message: "write refused", code: "42501" });
-  assert.equal((await call(overridesPost, "member", "POST", O, { itemId: "o3", priorityOverride: "LOW" })).status, 403);
+  db.rpcFail.set("set_priority_override", { message: "write refused", code: "42501" });
+  assert.equal((await call(overridesPost, "admin", "POST", O, priority)).status, 403);
+  db.rpcFail.set("set_priority_override", { message: "boom", code: "XX000" });
+  assert.equal((await call(overridesPost, "admin", "POST", O, priority)).status, 500);
 });
 
 // ── personal state ───────────────────────────────────────────────────────────────────────────────────

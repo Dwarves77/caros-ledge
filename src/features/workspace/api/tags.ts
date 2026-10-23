@@ -109,7 +109,9 @@ export const DELETE = route("/api/workspace/tags", async (request) => {
   const auth = await requireOrgRole(request, "member");
   if (isRefusal(auth)) return auth;
   const input = await parseJson(request, deleteBody);
-  const { error } = await auth.client.from("workspace_tags").delete().eq("id", input.tagId).eq("org_id", auth.membership.orgId);
+  // The delete policy (migration 0101) keeps a tag from a member who did not make it and is not an owner or admin, and says so with zero rows, not an error: a delete that removed nothing is a 404, never a success.
+  const { data, error } = await auth.client.from("workspace_tags").delete().eq("id", input.tagId).eq("org_id", auth.membership.orgId).select("id");
   if (error) throw dbError(error);
+  if (!data?.length) throw new HttpError(404, "Tag not found, or you may not delete it. A member deletes the tags they made; an owner or admin deletes any.");
   return ok(auth.headers, { success: true });
 });
