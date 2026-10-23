@@ -229,6 +229,20 @@ test("the plan names the environment NAMES that are missing and never runs half-
   const inCi = planRun({ env: full, base: "https://x.test", record: true, ci: true });
   assert.deepEqual([inCi.skipped, inCi.run.includes("admin-pages"), inCi.missing.sort()], [[], true, ["LIVE_ADMIN_EMAIL", "LIVE_ADMIN_PASSWORD"]]);
   assert.equal(skipVerdict({ GITHUB_ACTIONS: "true" }, inCi.missing).exit, 1);
+  // Audit 2.3.10: on a branch preview (adminPages false) the production admin account never signs in, whatever is set, in CI, and even when the dispatch named the check; nothing is then missing for it.
+  const adminEnv = { ...full, LIVE_ADMIN_EMAIL: "a", LIVE_ADMIN_PASSWORD: "p" };
+  for (const only of [undefined, "admin-pages"]) {
+    const preview = planRun({ only, env: adminEnv, base: "https://x.test", record: true, ci: true, adminPages: false });
+    assert.deepEqual([preview.run.includes("admin-pages"), preview.skipped.map((s: Any) => s.check), preview.missing], [false, ["admin-pages"], []], `only=${only}`);
+  }
+  assert.deepEqual(planRun({ env: full, base: "https://x.test", record: true, ci: true, adminPages: false }).missing, [], "a preview run needs no admin name");
+});
+
+test("the live checks send the protection bypass to the target origin only: no context-wide header, and the shared route-scoped installer is the one the browser context gets", () => {
+  const source = readFileSync("scripts/ci/live-checks.mjs", "utf8");
+  assert.doesNotMatch(source, /extraHTTPHeaders/);
+  assert.match(source, /import \{[^}]*installBypass[^}]*\} from "\.\/live\/bypass\.mjs"/);
+  assert.match(source, /await installBypass\(ctx, base, env\)/);
 });
 
 test("the script follows the one exit-code contract: a workstation with no credentials skips (exit 2) and names what is missing, never a value; a CI event that can carry secrets, or a named check, fails (exit 1) and lists the names; only a fork PR skips in CI", () => {

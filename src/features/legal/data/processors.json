@@ -47,7 +47,7 @@
       }
     }
   ],
-  "libraries": ["@tanstack/react-query", "@tanstack/react-virtual", "leaflet", "next", "react", "react-dom", "react-markdown", "remark-gfm", "unpdf", "zod", "zustand"],
+  "libraries": ["@tanstack/react-query", "@tanstack/react-virtual", "leaflet", "next", "react", "react-dom", "react-markdown", "remark-gfm", "undici", "unpdf", "zod", "zustand"],
   "publicHosts": ["api.bls.gov", "api.carbonintensity.org.uk", "api.eia.gov", "api.openalex.org", "carbonintensity.org.uk", "creativecommons.org", "doi.org", "ec.europa.eu", "energy.ec.europa.eu", "eur-lex.europa.eu", "files.sciencebasedtargets.org", "lovdata.no", "publications.europa.eu", "www.ecb.europa.eu", "www.ecfr.gov", "www.eia.gov", "www.federalregister.gov", "www.gesmes.org", "www.irishstatutebook.ie", "www.legislation.gov.uk", "www.openstreetmap.org"],
   "ownHosts": ["carosledge.com"]
 }

@@ -7,7 +7,7 @@ import { fetchDirect } from "@/core/fetch/direct";
 import { honestFetch, robotsGateFor } from "@/core/fetch/honest";
 import { guardedFetch, makeHostGate, makeRobotsReader } from "@/core/fetch/guard";
 import { licenceForbidsHost } from "@/core/fetch/licence-hosts";
-import { fetchDocument, BOT_USER_AGENT } from "@/core/fetch/policy";
+import { fetchDocument, BOT_USER_AGENT, readBodyCapped } from "@/core/fetch/policy";
 import { interpretRobotsAnswer, makeRobotsGate, verdictFor } from "@/core/fetch/robots";
 
 import { memoryDb } from "../_support/memory-db.ts";
@@ -156,7 +156,7 @@ test("the robots reader asks robots.txt under the same guard and the host gate k
   let clock = 0;
   const sleeps: number[] = [];
   const gate = makeHostGate({ now: () => clock, sleep: async (ms) => void (sleeps.push(ms), (clock += ms)) });
-  const read = makeRobotsReader({ licence: licenceForbidsHost, userAgent: BOT_USER_AGENT, fetchImpl: net.fetch, resolveHost: publicHost, gate });
+  const read = makeRobotsReader({ licence: licenceForbidsHost, userAgent: BOT_USER_AGENT, fetchImpl: net.fetch, resolveHost: publicHost, gate }, readBodyCapped);
   const robots = makeRobotsGate(read);
   const g = { licence: licenceForbidsHost, userAgent: BOT_USER_AGENT, fetchImpl: net.fetch, resolveHost: publicHost, gate, robots };
   await guardedFetch("https://agency.gov/one", {}, g);

@@ -98,14 +98,20 @@ class BodyTooLargeError extends Error {
   }
 }
 
-/** Read a body as a stream and abort the instant the running total crosses `capBytes`: a pathological download is refused mid-stream, never fully buffered. */
-export async function readBodyCapped(resp: Response, capBytes: number): Promise<Uint8Array> {
+/**
+ * Read a body as a stream and stop the instant the running total crosses `capBytes`: a pathological download is never fully buffered. By default it is refused (BodyTooLargeError); with `truncate` the first `capBytes` are
+ * returned and the rest of the stream is cancelled unread (a robots.txt larger than the cap: RFC 9309 parses what fits).
+ */
+export async function readBodyCapped(resp: Response, capBytes: number, truncate = false): Promise<Uint8Array> {
   const declared = Number(resp.headers.get("content-length"));
-  if (Number.isFinite(declared) && declared > capBytes) throw new BodyTooLargeError(declared);
+  if (!truncate && Number.isFinite(declared) && declared > capBytes) throw new BodyTooLargeError(declared);
   const reader = resp.body?.getReader();
   if (!reader) {
     const buf = new Uint8Array(await resp.arrayBuffer());
-    if (buf.byteLength > capBytes) throw new BodyTooLargeError(buf.byteLength);
+    if (buf.byteLength > capBytes) {
+      if (truncate) return buf.subarray(0, capBytes);
+      throw new BodyTooLargeError(buf.byteLength);
+    }
     return buf;
   }
   const chunks: Uint8Array[] = [];
@@ -114,6 +120,12 @@ export async function readBodyCapped(resp: Response, capBytes: number): Promise<
     const { done, value } = await reader.read();
     if (done) break;
     if (!value) continue;
+    if (total + value.byteLength > capBytes && truncate) {
+      chunks.push(value.subarray(0, capBytes - total));
+      total = capBytes;
+      await reader.cancel().catch(() => undefined);
+      break;
+    }
     total += value.byteLength;
     if (total > capBytes) {
       let cancelError: unknown;
@@ -135,7 +147,58 @@ export async function readBodyCapped(resp: Response, capBytes: number): Promise<
   return out;
 }
 
-export type RefusalReason = "licence_forbids" | "non_200" | "unsupported_type" | "too_large" | "too_small" | "error_marker" | "pdf_failed" | "pdf_unavailable" | "network" | "robots_disallowed" | "robots_unknown" | "private_address" | "bad_scheme" | "too_many_redirects" | "host_busy" | "paywalled" | "raw_text_unavailable" | "interactive_challenge" | "gated" | "browser_launch_failed";
+/** The PDF budget (audit 2.4): a document longer than this is refused before any text is read, and an extraction that outlasts the deadline is abandoned. Both are stated outcomes, never a hang. */
+const MAX_PDF_PAGES = 400;
+const PDF_EXTRACT_TIMEOUT_MS = 30_000;
+class PdfBudgetError extends Error {
+  readonly reason: "pdf_too_large" | "pdf_timeout";
+  constructor(reason: "pdf_too_large" | "pdf_timeout", detail: string) {
+    super(detail);
+    this.name = "PdfBudgetError";
+    this.reason = reason;
+  }
+}
+/** The shape of the PDF reader a runtime supplies (unpdf): the proxy reports its page count before any text is extracted. */
+export interface PdfLib<P extends { numPages: number; destroy?: () => unknown }> {
+  getDocumentProxy(bytes: Uint8Array): Promise<P>;
+  extractText(pdf: P, opts: { mergePages: true }): Promise<{ totalPages: number; text: unknown }>;
+  getMeta(pdf: P): Promise<{ info?: unknown }>;
+}
+/**
+ * PDF bytes to text under the budget, for both runtimes: the page count is read from the proxy and `pdf_too_large` is thrown before extractText runs; the whole extraction races a deadline and `pdf_timeout` is thrown
+ * when it loses (the proxy is destroyed so the abandoned work stops). Returns the text as the reader gave it; a runtime collapses whitespace if it wants.
+ */
+export async function extractPdfBudgeted<P extends { numPages: number; destroy?: () => unknown }>(bytes: Uint8Array, lib: PdfLib<P>, opts: { timeoutMs?: number } = {}): Promise<{ text: string; pages: number | null; title: string | null; metaError: string | null }> {
+  let proxy: P | null = null;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const work = (async () => {
+    const pdf = (proxy = await lib.getDocumentProxy(bytes));
+    if (pdf.numPages > MAX_PDF_PAGES) throw new PdfBudgetError("pdf_too_large", `the pdf has ${pdf.numPages} pages, over the ${MAX_PDF_PAGES}-page budget: not read`);
+    const { totalPages, text } = await lib.extractText(pdf, { mergePages: true });
+    let title: string | null = null;
+    let metaError: string | null = null;
+    try {
+      const t = ((await lib.getMeta(pdf)).info as Record<string, unknown> | undefined)?.Title;
+      if (typeof t === "string" && t.trim().length > 0) title = t.trim().slice(0, 500);
+    } catch (e) {
+      metaError = e instanceof Error ? e.message : String(e);
+    }
+    return { text: typeof text === "string" ? text : String(text ?? ""), pages: totalPages, title, metaError };
+  })();
+  const deadline = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new PdfBudgetError("pdf_timeout", `pdf text extraction did not finish in ${(opts.timeoutMs ?? PDF_EXTRACT_TIMEOUT_MS) / 1000} s: abandoned`)), opts.timeoutMs ?? PDF_EXTRACT_TIMEOUT_MS);
+  });
+  try {
+    return await Promise.race([work, deadline]);
+  } finally {
+    clearTimeout(timer);
+    work.catch(() => undefined);
+    // Release the proxy on every exit (the pdf.js worker holds the document's memory until destroyed); not awaited, so a hung worker cannot hold the refusal back.
+    void Promise.resolve((proxy as P | null)?.destroy?.()).catch(() => undefined);
+  }
+}
+
+export type RefusalReason = "licence_forbids" | "non_200" | "unsupported_type" | "too_large" | "too_small" | "error_marker" | "pdf_failed" | "pdf_unavailable" | "network" | "robots_disallowed" | "robots_unknown" | "private_address" | "bad_scheme" | "too_many_redirects" | "host_busy" | "paywalled" | "raw_text_unavailable" | "interactive_challenge" | "gated" | "browser_launch_failed" | "pdf_too_large" | "pdf_timeout";
 export interface FetchRefusal {
   ok: false;
   reason: RefusalReason;
@@ -236,6 +299,7 @@ export async function fetchDocument(url: string, opts: FetchDocumentOptions): Pr
         title = out.title;
         pdfMetaError = out.metaError ?? null;
       } catch (e) {
+        if (e instanceof PdfBudgetError) return refusal(e.reason, false, 200, contentType, finalUrl, `${e.message}, NOT stored`, bytes.byteLength);
         return refusal("pdf_failed", false, 200, contentType, finalUrl, `pdf extraction failed: ${(e as Error).message}, NOT stored`, bytes.byteLength);
       }
     } else {
