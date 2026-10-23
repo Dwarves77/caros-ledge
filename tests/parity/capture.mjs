@@ -19,6 +19,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { chromium } from 'playwright';
 
+import { installBypass } from '../../scripts/ci/live/bypass.mjs';
 import { measurePage } from '../ux/measure.mjs';
 
 import { CAPTURE_CONTRACT, CAPTURE_VIEWPORTS as VIEWPORTS, ITEM_PATH, ROW_SELECTOR, SCREEN_MAX_HEIGHT } from './contract.mjs';
@@ -92,21 +93,6 @@ export async function settle(page, pending = () => [], budgets = { network: NETW
   return (await idle(page, budgets.network)) ? { settled: true, reason: null } : { settled: false, reason: `network busy after ${budgets.network / 1000} s: ${pending().join(', ') || 'no request pending'}` };
 }
 
-// A deployed preview sits behind Vercel's deployment protection; the project's automation bypass secret (VERCEL_AUTOMATION_BYPASS_SECRET, the same variable scripts/ci/live-checks.mjs reads) lets the capture
-// through. The header goes to the captured origin only: never to a third party the page happens to call (the database, the map tiles).
-export const BYPASS_HEADER = 'x-vercel-protection-bypass';
-export function bypassHeaders(url, origin, env = process.env) {
-  const secret = env.VERCEL_AUTOMATION_BYPASS_SECRET;
-  return secret && new URL(url).origin === origin ? { [BYPASS_HEADER]: secret } : {};
-}
-export async function installBypass(context, origin, env = process.env) {
-  if (!env.VERCEL_AUTOMATION_BYPASS_SECRET) return;
-  await context.route('**/*', (route) => {
-    const extra = bypassHeaders(route.request().url(), origin, env);
-    return Object.keys(extra).length ? route.continue({ headers: { ...route.request().headers(), ...extra } }) : route.fallback();
-  });
-}
-
 // The shell sets data-hydrated on <html> when it has hydrated (src/ui/shell/Hydrated.tsx). A page that never does is a capture error: it would be measured as server markup with no handlers.
 async function hydrated(page) {
   await page.waitForFunction(() => document.documentElement.dataset.hydrated === 'true', null, { timeout: 20000 });
@@ -114,7 +100,7 @@ async function hydrated(page) {
 
 async function signIn(browser, base, email, password) {
   const context = await browser.newContext();
-  await installBypass(context, new URL(base).origin);
+  await installBypass(context, base);
   try {
     const page = await context.newPage();
     await page.goto(new URL('/login', base).href, { waitUntil: 'load', timeout: 60000 });
@@ -409,7 +395,7 @@ async function captureOne(browser, base, route, path, viewport, storage, out, di
 async function captureAttempt(browser, base, route, path, viewport, storage, out, diag) {
   const stem = `${route.name}.${viewport.width}x${viewport.height}`;
   const context = await browser.newContext({ viewport, storageState: route.auth ? storage[route.auth] : undefined });
-  await installBypass(context, new URL(base).origin);
+  await installBypass(context, base);
   try {
     const page = await context.newPage();
     const pending = watchPending(page);

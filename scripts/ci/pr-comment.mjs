@@ -1,12 +1,13 @@
 // The `report` job's one writer: it reads the other jobs' conclusions (NEEDS, the needs context as JSON), the parity artifact and the test output (downloaded into PARITY_DIR and RESULTS_DIR),
 // writes ONE job summary, and posts or updates ONE PR comment (found by an HTML marker, so a rerun updates it). Nothing waits on anything: the job runs after the others have finished.
 // It reports; it never fails the run itself. A thing it cannot read is printed as that exact error, never a generic note.
-// Env: NEEDS, REPO, RUN_ID, PR (pull requests only), GH_TOKEN, PARITY_DIR, RESULTS_DIR, GITHUB_STEP_SUMMARY (set by the runner). DRY=1 prints the body and posts nothing.
+// Env: NEEDS, REPO, RUN_ID, PR (pull requests only), GH_TOKEN, PARITY_DIR, RESULTS_DIR, LOC_ROOT (the directory whose src/ the code-line table counts; default the working directory), GITHUB_STEP_SUMMARY (set by the runner). DRY=1 prints the body and posts nothing.
 import { execFileSync } from "node:child_process";
 import { appendFileSync, existsSync, readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const { NEEDS = "{}", REPO, PR, RUN_ID, PARITY_DIR = "parity-artifact", RESULTS_DIR = "results-artifact", DRY, GITHUB_STEP_SUMMARY } = process.env;
+const { NEEDS = "{}", REPO, PR, RUN_ID, PARITY_DIR = "parity-artifact", RESULTS_DIR = "results-artifact", LOC_ROOT, DRY, GITHUB_STEP_SUMMARY } = process.env;
 const MARKER = "<!-- ci-report -->";
 const gh = (args, input) => execFileSync("gh", ["api", ...args], { encoding: "utf8", input, maxBuffer: 1 << 26 });
 
@@ -46,7 +47,8 @@ function parityTable(rows) {
 
 function locLine() {
   try {
-    return execFileSync("node", ["scripts/ci/loc.mjs"], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+    // This script and loc.mjs are the default branch's; LOC_ROOT is the checkout of the tree under report, read as data (loc.mjs counts lines under its working directory's src/ and runs nothing in it).
+    return execFileSync("node", [join(dirname(fileURLToPath(import.meta.url)), "loc.mjs")], { encoding: "utf8", cwd: LOC_ROOT || undefined, stdio: ["ignore", "pipe", "ignore"] }).trim();
   } catch (e) {
     return String(e.stdout ?? "").trim() || fail("the loc table", e);
   }

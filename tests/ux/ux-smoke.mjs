@@ -9,7 +9,8 @@ import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { BYPASS_HEADER, installBypass, wholePageScreenshot } from '../parity/capture.mjs';
+import { BYPASS_HEADER, installBypass } from '../../scripts/ci/live/bypass.mjs';
+import { wholePageScreenshot } from '../parity/capture.mjs';
 import { ROW_SELECTOR } from '../parity/contract.mjs';
 
 import { sweepClientReads } from './client-sweep.mjs';
@@ -244,7 +245,7 @@ try {
     await check(`capture bypass header ${present ? 'present' : 'absent'}`, async () => {
       const ctx = await browser.newContext();
       try {
-        await installBypass(ctx, new URL(base).origin, { VERCEL_AUTOMATION_BYPASS_SECRET: secret });
+        await installBypass(ctx, base, { VERCEL_AUTOMATION_BYPASS_SECRET: secret });
         const page = await ctx.newPage();
         const seen = [];
         page.on('request', (r) => void (new URL(r.url()).origin === new URL(base).origin && seen.push(r)));
