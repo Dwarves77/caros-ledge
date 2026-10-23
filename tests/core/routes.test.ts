@@ -73,7 +73,7 @@ test("persona matrix: invitations (RLS decides who may issue), revoke, token rou
   script(
     world(),
     (c) => (c.table === "org_invitations" && c.op === "insert" ? { data: invite } : c.table === "org_invitations" && c.columns?.includes("org_id") ? { data: { id: filterValue(c, "eq:id"), org_id: filterValue(c, "eq:id") === INVITE_A ? ORG_A : ORG_B, status: "pending" } } : c.table === "org_invitations" ? { data: [] } : undefined),
-    (name) => (name === "create_org_for_self" ? { data: ORG_A } : name === "invite_member" ? { data: invite } : undefined), // who may invite is org_can in the database (migration 0101 proves it), so the fake accepts every signed-in caller
+    (name) => (name === "create_org_for_self" ? { data: ORG_A } : name === "invite_member" ? { data: "ab".repeat(32) } : undefined), // who may invite is org_can in the database (migration 0101 proves it), so the fake accepts every signed-in caller
   );
   const orgParams = { org_id: ORG_A };
   await matrix("invitations GET", (p) => call(invitationsGet, p, `/api/orgs/${ORG_A}/invitations`, {}, orgParams), E(401, 200, 200, 200, 200, 200, 200));

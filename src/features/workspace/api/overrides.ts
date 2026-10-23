@@ -11,11 +11,13 @@ import { isUuid, parseJson } from "@/core/http/parse";
 import { workspaceDeps } from "./deps";
 import { itemUuidOr404 } from "./shared";
 
-// POST   { itemId, priorityOverride?, isArchived?, archiveReason?, archiveNote?, dismissedAt? | dismiss?, ownerUserId? }
-//        writes (org_id, item_id) of workspace_item_overrides. A WORKSPACE archive is the team-wide hide, so it is gated:
-//        owner or admin only, a reason required, archived_by stamped from the session (INV-165, INV-166), and it and an assignment run as one database call each with their notices queued in the same transaction (0037). Restore is ungated.
-// DELETE { itemId } removes the row.
-// Attribution (archived_by, owner_assigned_by) is built from the session; a body carrying those names is ignored.
+// POST   { itemId, priorityOverride?, isArchived?, archiveReason?, archiveNote?, dismissedAt? | dismiss?, ownerUserId?, reason? }
+//        The table takes no client write (migration 0121): every change is ONE database function on the caller's client, which decides who may and writes in one transaction.
+//        priorityOverride (including null, the platform default) is set_priority_override and isArchived:false is restore_team_item: owner or admin acts that carry a required `reason` (1 to 2000 characters), written with the
+//        act to admin_events (migration 0101). A WORKSPACE archive is the team-wide hide, so it is gated the same way: owner or admin only, a reason required, archived_by stamped from the session (INV-165, INV-166), and it and an
+//        assignment run as one database call each with their notices queued in the same transaction (0037). dismissedAt or dismiss is set_item_dismissal (0121): a member's act, dismissed_at only.
+// Attribution (archived_by, owner_assigned_by) is built from the session; a body carrying those names is ignored. There is no DELETE: the row is never removed by a client.
+const reasonText = z.string().trim().min(1).max(2000);
 const body = z.looseObject({
   itemId: z.string().min(1),
   priorityOverride: z.string().nullable().optional(),
@@ -25,8 +27,8 @@ const body = z.looseObject({
   dismissedAt: z.string().nullable().optional(),
   dismiss: z.boolean().optional(),
   ownerUserId: z.string().nullable().optional(),
+  reason: reasonText.optional(),
 });
-const deleteBody = z.object({ itemId: z.string().min(1) });
 
 /** The owner must hold a membership in the CALLER'S org and be able to write there (INV-167); an unverifiable lookup is a 503. */
 async function assertOwnerInOrg(db: Db, orgId: string, ownerUserId: string): Promise<void> {
@@ -46,13 +48,17 @@ async function noticeOf(db: Db, itemUuid: string, title: string, text: (name: st
   return { title, body: text(item?.title || "an item"), link };
 }
 
-/** archive_item_for_team / assign_item (migrations 0037): the override write and its outbox rows in ONE transaction. An absent function (42883 / PGRST202: production before the cutover) is a 503 with Retry, never a second way to write. */
-async function callWriter(db: Db, name: "archive_item_for_team" | "assign_item", args: Record<string, unknown>): Promise<{ override: unknown; queued: number }> {
+type Writer = "archive_item_for_team" | "assign_item" | "set_priority_override" | "restore_team_item" | "set_item_dismissal";
+
+/** One of the writers (migrations 0037, 0101, 0121): the override write and, where there is one, its outbox rows or event in ONE transaction. An absent function (42883 / PGRST202: production before the cutover) is a 503 with Retry, never a second way to write; the function's own refusals (not allowed, no such row) carry its sentence. */
+async function callWriter(db: Db, name: Writer, args: Record<string, unknown>): Promise<unknown> {
   const { data, error } = await db.rpc(name, args);
   if (isMissingObject(error)) throw new HttpError(503, "This change cannot be saved until the database update that supports it is applied. Try again shortly.", { "Retry-After": "30" });
-  if (error) throw dbError(error);
-  return data as { override: unknown; queued: number };
+  if (error) throw dbError(error, { own: true });
+  return data;
 }
+
+type Written = { override: unknown; queued: number };
 
 export const POST = route("/api/workspace/overrides", async (request) => {
   const auth = await requireOrgRole(request, "member");
@@ -68,47 +74,31 @@ export const POST = route("/api/workspace/overrides", async (request) => {
     if (!(input.archiveReason ?? "").trim()) throw new HttpError(400, "archiveReason is required to archive for the workspace");
     if (role !== "owner" && role !== "admin") throw new HttpError(403, "Workspace archive requires the admin or owner role. You can archive it just for yourself instead.");
   }
+  // A workspace-wide change of urgency or visibility says why; the sentence is written with the act (set_priority_override, restore_team_item).
+  const prioritising = input.priorityOverride !== undefined;
+  const restoring = input.isArchived === false;
+  if ((prioritising || restoring) && input.reason === undefined) throw new HttpError(400, "reason is required (1 to 2000 characters) to change the priority or restore an archived item for the workspace");
+  const dismissal = input.dismissedAt !== undefined ? input.dismissedAt !== null : input.dismiss;
   const ownerUserId = input.ownerUserId || null;
   if (input.ownerUserId !== undefined && ownerUserId) await assertOwnerInOrg(db, orgId, ownerUserId);
-
-  // Priority, dismissal and restore stay plain upserts; the archive and the assignment go through the rpcs, which stamp the attribution from the session and notify in the same transaction.
-  const now = new Date().toISOString();
-  const update: Record<string, unknown> = { org_id: orgId, item_id: itemUuid, updated_at: now };
-  if (input.priorityOverride !== undefined) update.priority_override = input.priorityOverride;
-  if (input.isArchived === false) Object.assign(update, { is_archived: false, archived_at: null, archived_by: null });
-  if (!archiving && input.archiveReason !== undefined) update.archive_reason = input.archiveReason;
-  if (!archiving && input.archiveNote !== undefined) update.archive_note = input.archiveNote;
-  if (input.dismissedAt !== undefined) update.dismissed_at = input.dismissedAt;
-  else if (input.dismiss !== undefined) update.dismissed_at = input.dismiss ? now : null;
+  if (!archiving && !restoring && (input.archiveReason !== undefined || input.archiveNote !== undefined)) throw new HttpError(400, "archiveReason and archiveNote belong to an archive: name isArchived: true with them.");
+  if (!prioritising && !restoring && !archiving && dismissal === undefined && input.ownerUserId === undefined) throw new HttpError(400, "Nothing to change: name a priority, an archive, a restore, a dismissal or an owner.");
 
   let override: unknown = null;
   let queued: number | null = null;
-  if (Object.keys(update).length > 3 || (!archiving && input.ownerUserId === undefined)) {
-    const { data, error } = await db.from("workspace_item_overrides").upsert(update, { onConflict: "org_id,item_id" }).select().single();
-    if (error) throw dbError(error);
-    override = data;
-  }
+  if (prioritising) override = await callWriter(db, "set_priority_override", { p_org_id: orgId, p_item_id: itemUuid, p_priority: input.priorityOverride, p_reason: input.reason });
+  if (restoring) override = await callWriter(db, "restore_team_item", { p_org_id: orgId, p_item_id: itemUuid, p_reason: input.reason });
+  if (dismissal !== undefined) override = await callWriter(db, "set_item_dismissal", { p_org_id: orgId, p_item_id: itemUuid, p_dismissed: dismissal });
   if (input.ownerUserId !== undefined) {
     const notice = ownerUserId ? await noticeOf(db, itemUuid, "Item assigned to you", (name) => `"${name}" was assigned to you as its owner.`) : null;
-    const r = await callWriter(db, "assign_item", { p_org_id: orgId, p_item_id: itemUuid, p_owner_user_id: ownerUserId, p_notice: notice });
+    const r = (await callWriter(db, "assign_item", { p_org_id: orgId, p_item_id: itemUuid, p_owner_user_id: ownerUserId, p_notice: notice })) as Written;
     [override, queued] = [r.override, r.queued];
   }
   if (archiving) {
     const reason = input.archiveReason ?? "";
-    const notice = await noticeOf(db, itemUuid, "Item archived for the workspace", (name) => `"${name}" was archived for your whole workspace${reason ? `, reason: ${reason}` : ""}. Any member can restore it from Settings, Archive.`);
-    const r = await callWriter(db, "archive_item_for_team", { p_org_id: orgId, p_item_id: itemUuid, p_reason: reason, p_note: input.archiveNote ?? null, p_notice: notice });
+    const notice = await noticeOf(db, itemUuid, "Item archived for the workspace", (name) => `"${name}" was archived for your whole workspace${reason ? `, reason: ${reason}` : ""}. An owner or admin can restore it from Settings, Archive.`);
+    const r = (await callWriter(db, "archive_item_for_team", { p_org_id: orgId, p_item_id: itemUuid, p_reason: reason, p_note: input.archiveNote ?? null, p_notice: notice })) as Written;
     [override, queued] = [r.override, (queued ?? 0) + r.queued];
   }
   return ok(auth.headers, { override, ...(queued === null ? {} : { queued }) });
-});
-
-export const DELETE = route("/api/workspace/overrides", async (request) => {
-  const auth = await requireOrgRole(request, "member");
-  if (isRefusal(auth)) return auth;
-  const input = await parseJson(request, deleteBody);
-  const db = auth.client;
-  const itemUuid = await itemUuidOr404(db, input.itemId);
-  const { error } = await db.from("workspace_item_overrides").delete().eq("org_id", auth.membership.orgId).eq("item_id", itemUuid);
-  if (error) throw dbError(error);
-  return ok(auth.headers, { success: true });
 });

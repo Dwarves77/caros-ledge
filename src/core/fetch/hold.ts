@@ -25,9 +25,10 @@ export async function readScrapeState(db: Db): Promise<ScrapeState> {
   return { cadence: (data?.scrape_cadence as ScrapeCadence | undefined) ?? "off", startDate: (data?.scrape_start_date as string | null | undefined) ?? null, emergencyPaused: !!data?.global_processing_paused };
 }
 /** The same read, failing CLOSED (a read error counts as off) and saying so: `unreadable` is true when the state is the fail-closed one, so a page can state that the hold is unknown. */
-export async function readScrapeStateOrClosed(db: Db): Promise<{ state: ScrapeState; unreadable: boolean }> {
+export async function readScrapeStateOrClosed(db: Db | (() => Db)): Promise<{ state: ScrapeState; unreadable: boolean }> {
   try {
-    return { state: await readScrapeState(db), unreadable: false };
+    // A client that is built lazily (the service client, which a deployment may not configure) is built inside the try: failing to build it is an unreadable hold, like a failing read.
+    return { state: await readScrapeState(typeof db === "function" ? db() : db), unreadable: false };
   } catch {
     return { state: FAIL_CLOSED, unreadable: true };
   }

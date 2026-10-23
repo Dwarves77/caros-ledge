@@ -60,12 +60,14 @@ interface ItemStateStore {
    * error message (null on success). The workspace archive can legitimately refuse (403 role gate, 400 missing reason) and the dialog
    * must show the server's own wording.
    */
-  updatePriority: (id: string, priority: Resource["priority"]) => Promise<string | null>;
+  /** A workspace-wide priority is an owner or admin act and carries the sentence that says why (set_priority_override). */
+  updatePriority: (id: string, priority: Resource["priority"], reason: string) => Promise<string | null>;
   setOwner: (id: string, ownerUserId: string | null, ownerName: string | null) => Promise<string | null>;
   dismissResource: (id: string) => Promise<string | null>;
   restoreDismissed: (id: string) => Promise<string | null>;
   archiveResource: (id: string, reason: string, note: string) => Promise<string | null>;
-  restoreResource: (id: string) => Promise<string | null>;
+  /** Restoring a team archive is an owner or admin act and carries its reason (restore_team_item). */
+  restoreResource: (id: string, reason: string) => Promise<string | null>;
   archivePersonal: (id: string, note: string) => Promise<string | null>;
   restorePersonal: (id: string) => Promise<string | null>;
 }
@@ -117,18 +119,18 @@ export const useItemStateStore = create<ItemStateStore>((set, get) => {
     },
 
     // Setting a priority on a dismissed item clears the dismissal in the same write.
-    updatePriority: (id, priority) => write(id, { priorityOverride: priority, dismissedAt: null }, { priorityOverride: priority, dismissedAt: null }),
+    updatePriority: (id, priority, reason) => write(id, { priorityOverride: priority, dismissedAt: null }, { priorityOverride: priority, reason, dismissedAt: null }),
     // The server also enforces that the assignee is a writer in the caller's org (a 403 rolls the assignment back).
     setOwner: (id, ownerUserId, ownerName) => write(id, { ownerUserId, ownerName: ownerUserId === null ? null : ownerName }, { ownerUserId }),
-    // Dismiss hides the item from the active view into the stash and clears the priority override, so a restore returns it to its platform column.
+    // Dismiss hides the item from the active view into the stash. It leaves the priority alone: a priority is an owner's or admin's act with a reason, and a member's dismissal does not erase it (migration 0121).
     dismissResource: (id) => {
       const now = new Date().toISOString();
-      return write(id, { dismissedAt: now, priorityOverride: null }, { dismissedAt: now, priorityOverride: null });
+      return write(id, { dismissedAt: now }, { dismissedAt: now });
     },
     restoreDismissed: (id) => write(id, { dismissedAt: null }, { dismissedAt: null }),
     // WORKSPACE archive through the override layer: the platform item stays untouched.
     archiveResource: (id, reason, note) => write(id, { isArchived: true, archiveReason: reason, archiveNote: note, archivedAt: new Date().toISOString() }, { isArchived: true, archiveReason: reason, archiveNote: note }),
-    restoreResource: (id) => write(id, { isArchived: false, archiveReason: null, archiveNote: null, archivedAt: null }, { isArchived: false, archiveReason: null, archiveNote: null }),
+    restoreResource: (id, reason) => write(id, { isArchived: false, archiveReason: null, archiveNote: null, archivedAt: null }, { isArchived: false, reason }),
     // PERSONAL archive: this user only, no role gate, no required reason, no notification fan-out.
     archivePersonal: (id, note) => optimistic("personalState", id, { itemId: id, isArchived: true, archiveNote: note || null, archivedAt: new Date().toISOString() }, { path: PERSONAL_PATH, payload: { itemId: id, isArchived: true, archiveNote: note || null } }),
     restorePersonal: (id) => optimistic("personalState", id, null, { path: PERSONAL_PATH, payload: { itemId: id, isArchived: false, archiveNote: null } }),

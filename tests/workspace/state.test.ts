@@ -70,10 +70,10 @@ const state = () => useItemStateStore.getState();
 test("a write is applied at once, persisted with exactly the changed fields, and resolves null on success", async () => {
   reset();
   const sent = transport(ok);
-  const pending = state().updatePriority("o3", "HIGH");
+  const pending = state().updatePriority("o3", "HIGH", "the board asked");
   assert.equal(state().overrides.get("o3")?.priorityOverride, "HIGH");
   assert.equal(await pending, null);
-  assert.deepEqual(sent, [{ path: "/api/workspace/overrides", method: "POST", body: { itemId: "o3", priorityOverride: "HIGH", dismissedAt: null } }]);
+  assert.deepEqual(sent, [{ path: "/api/workspace/overrides", method: "POST", body: { itemId: "o3", priorityOverride: "HIGH", reason: "the board asked", dismissedAt: null } }]);
 });
 
 test("a refused workspace archive is rolled back and the server's own wording is returned verbatim", async () => {
@@ -91,7 +91,8 @@ test("a successful archive keeps the optimistic row with a date; restore clears 
   assert.equal(await state().archiveResource("o3", "stale", "n"), null);
   assert.deepEqual([state().overrides.get("o3")?.isArchived, state().overrides.get("o3")?.archiveReason, typeof state().overrides.get("o3")?.archivedAt], [true, "stale", "string"]);
   assert.deepEqual(sent[0]?.body, { itemId: "o3", isArchived: true, archiveReason: "stale", archiveNote: "n" });
-  assert.equal(await state().restoreResource("o3"), null);
+  assert.equal(await state().restoreResource("o3", "archived by mistake"), null);
+  assert.deepEqual(sent[1]?.body, { itemId: "o3", isArchived: false, reason: "archived by mistake" }, "a team restore carries its reason and nothing the function clears itself");
   assert.deepEqual([state().overrides.get("o3")?.isArchived, state().overrides.get("o3")?.archivedAt, state().overrides.get("o3")?.archiveReason], [false, null, null]);
 });
 
@@ -109,16 +110,17 @@ test("personal archive and restore: ungated, the entry follows the write, and a 
   assert.equal(state().personalState.has("o3"), false);
 });
 
-test("owner, dismiss and restore-dismissed write the fields they change; dismiss clears the priority override", async () => {
+test("owner, dismiss and restore-dismissed write the fields they change; a dismissal leaves the priority override alone", async () => {
   reset();
   const sent = transport(ok);
   await state().setOwner("o3", "u1", "Ada");
   assert.deepEqual([state().overrides.get("o3")?.ownerName, sent[0]?.body], ["Ada", { itemId: "o3", ownerUserId: "u1" }]);
   await state().setOwner("o3", null, "ignored");
   assert.equal(state().overrides.get("o3")?.ownerName, null);
-  await state().updatePriority("o3", "HIGH");
+  await state().updatePriority("o3", "HIGH", "r");
   await state().dismissResource("o3");
-  assert.deepEqual([state().overrides.get("o3")?.priorityOverride, typeof state().overrides.get("o3")?.dismissedAt], [null, "string"]);
+  assert.deepEqual([state().overrides.get("o3")?.priorityOverride, typeof state().overrides.get("o3")?.dismissedAt], ["HIGH", "string"]);
+  assert.deepEqual(Object.keys(sent.at(-1)?.body ?? {}).sort(), ["dismissedAt", "itemId"], "the dismissal sends the dismissal only");
   await state().restoreDismissed("o3");
   assert.equal(state().overrides.get("o3")?.dismissedAt, null);
 });
@@ -126,12 +128,12 @@ test("owner, dismiss and restore-dismissed write the fields they change; dismiss
 test("signed out, a non-JSON failure and a network exception each give a plain message and roll back", async () => {
   reset();
   transport(ok, false);
-  assert.equal(await state().updatePriority("o3", "LOW"), "You are signed out. Sign in and try again.");
+  assert.equal(await state().updatePriority("o3", "LOW", "r"), "You are signed out. Sign in and try again.");
   assert.equal(state().overrides.has("o3"), false);
   transport(() => new Response("<html>bad gateway</html>", { status: 502 }));
-  assert.equal(await state().updatePriority("o3", "LOW"), "Request failed (502).");
+  assert.equal(await state().updatePriority("o3", "LOW", "r"), "Request failed (502).");
   transport(() => new Error("offline"));
-  assert.equal(await state().updatePriority("o3", "LOW"), "Network error. Your change was not saved.");
+  assert.equal(await state().updatePriority("o3", "LOW", "r"), "Network error. Your change was not saved.");
   assert.equal(state().overrides.has("o3"), false);
 });
 

@@ -1,0 +1,2 @@
+# path | reason (files with no "Ported from" header)
+src/app/api/orgs/[org_id]/leave/route.ts | new in the workspace direct-writes slice (migration 0121): POST /api/orgs/[org_id]/leave, a member's own exit through leave_org (the old tree had no way to leave an organisation)

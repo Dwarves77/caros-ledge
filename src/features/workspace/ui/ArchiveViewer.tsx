@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { formatDate } from "@/core/shared";
+import { useWorkspaceStore } from "@/core/workspace/store";
+import { useReason } from "@/features/admin/ui/reason-dialog";
 import { Button, EmptyState, FormField, Input, Select, Toast } from "@/ui";
 
 import type { ArchiveRow } from "../archive-types";
@@ -23,6 +25,8 @@ const keyOf = (row: ArchiveRow) => `${row.scope}:${row.itemId}`;
 export function ArchiveViewer({ rows }: { rows: ArchiveRow[] }) {
   const restoreResource = useItemStateStore((s) => s.restoreResource);
   const restorePersonal = useItemStateStore((s) => s.restorePersonal);
+  const canRestoreTeam = ["owner", "admin"].includes(useWorkspaceStore((s) => s.userRole) ?? "");
+  const { ask, node: reasonNode } = useReason();
   const [search, setSearch] = useState("");
   const [reason, setReason] = useState("");
   const [gone, setGone] = useState<ReadonlySet<string>>(new Set());
@@ -40,8 +44,11 @@ export function ArchiveViewer({ rows }: { rows: ArchiveRow[] }) {
   async function restore(row: ArchiveRow) {
     const key = keyOf(row);
     setFailure(null);
+    // Restoring a team archive is an owner or admin act and says why (restore_team_item, migration 0121); restoring your own archive asks nothing.
+    const why = row.scope === "personal" ? "" : await ask({ title: "Restore for the whole team", body: <>This puts &ldquo;{row.title}&rdquo; back in everyone&rsquo;s active views.</>, action: "Restore for the team" });
+    if (why === null) return;
     setBusy(key);
-    const message = row.scope === "personal" ? await restorePersonal(row.itemId) : await restoreResource(row.itemId);
+    const message = row.scope === "personal" ? await restorePersonal(row.itemId) : await restoreResource(row.itemId, why);
     setBusy(null);
     if (message) return setFailure({ key, message });
     setGone((prev) => new Set(prev).add(key));
@@ -89,13 +96,14 @@ export function ArchiveViewer({ rows }: { rows: ArchiveRow[] }) {
                       </Link>
                     ) : null}
                   </p>
+                  {!personal && !canRestoreTeam ? <p className={styles.archiveMeta}>An owner or admin restores a team archive</p> : null}
                   {failure?.key === key ? (
                     <p role="alert" className={styles.rowError}>
                       {failure.message}
                     </p>
                   ) : null}
                 </div>
-                <Button variant="secondary" size="sm" disabled={busy !== null} aria-label={personal ? `Restore ${row.title} for yourself` : `Restore ${row.title} for the whole team`} onClick={() => void restore(row)}>
+                <Button variant="secondary" size="sm" disabled={busy !== null || (!personal && !canRestoreTeam)} aria-label={personal ? `Restore ${row.title} for yourself` : `Restore ${row.title} for the whole team`} onClick={() => void restore(row)}>
                   {busy === key ? "Restoring..." : "Restore"}
                 </Button>
               </li>
@@ -103,6 +111,7 @@ export function ArchiveViewer({ rows }: { rows: ArchiveRow[] }) {
           })}
         </ul>
       )}
+      {reasonNode}
       <Toast message={toast ?? ""} visible={toast !== null} onDismiss={() => setToast(null)} />
     </div>
   );
