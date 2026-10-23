@@ -379,28 +379,12 @@
       "ruling": "Brief UI-1 (operator 2026-10-20, \"Fix the UI. Make it correct\"; the code decides the look, the ratified UX laws stand): the list surfaces read cleanly. The unscored impact meter is one dash, an absence reads in sentence case, source bias is one muted line on the phone, band tiles name their window whole (\"background\" is \"later\"), and facet labels are sentence case from one label table, so a baseline band-tile or facet-checkbox name and a baseline row key (its text carries the old absence and bias words) differ by design. Covers only a baseline band tile button, a facet checkbox or facet chip (a single-word button on the phone) and a row key. Retire this entry when the baseline is recaptured from production right after the UI-1 merge."
     },
     {
-      "id": "ctx1-title-type-home",
-      "route": "home",
-      "kind": "pixel",
-      "viewport": "1280x900",
-      "maxDiff": 0.023,
-      "ruling": "CTX-1 (PR 82, 560335e: \"use readable sans-serif headers\"): the masthead title of a page is Plus Jakarta bold in sentence case at line-height 1.2, where the baseline PNG, shot before that merge, draws it in Anton capitals at 1.05 (src/ui/base.css .cl-masthead-title). The title card is about 5 px taller, so the whole sign-in column, centred in its pane, sits 2 to 3 px elsewhere and every glyph of it differs by design; the left pane is unchanged. Measured against the pre-merge build on one machine (c43e2f8 against 560335e, 1280x900): all of the added diff lies in the right half, x 769..1149, y 186..743. The left pane (identity panel, date line) does not differ. Covers the 1280x900 image only and only up to maxDiff: a diff beyond it is this change plus another one and fails. Structure (landmarks, headings, controls) still gates at both widths, and 375x812 is under the threshold. Retire this entry when the baseline PNGs of home, login and signup are recaptured from production (the baseline job; tests/parity/baseline/README.md), as r2e-privacy-generated was."
-    },
-    {
-      "id": "ctx1-title-type-login",
-      "route": "login",
-      "kind": "pixel",
-      "viewport": "1280x900",
-      "maxDiff": 0.023,
-      "ruling": "CTX-1 (PR 82, 560335e: \"use readable sans-serif headers\"): the masthead title of a page is Plus Jakarta bold in sentence case at line-height 1.2, where the baseline PNG, shot before that merge, draws it in Anton capitals at 1.05 (src/ui/base.css .cl-masthead-title). The title card is about 5 px taller, so the whole sign-in column, centred in its pane, sits 2 to 3 px elsewhere and every glyph of it differs by design; the left pane is unchanged. Measured against the pre-merge build on one machine (c43e2f8 against 560335e, 1280x900): all of the added diff lies in the right half, x 769..1149, y 186..743. The left pane (identity panel, date line) does not differ. Covers the 1280x900 image only and only up to maxDiff: a diff beyond it is this change plus another one and fails. Structure (landmarks, headings, controls) still gates at both widths, and 375x812 is under the threshold. Retire this entry when the baseline PNGs of home, login and signup are recaptured from production (the baseline job; tests/parity/baseline/README.md), as r2e-privacy-generated was."
-    },
-    {
       "id": "ctx1-title-type-signup",
       "route": "signup",
       "kind": "pixel",
       "viewport": "1280x900",
-      "maxDiff": 0.025,
-      "ruling": "CTX-1 (PR 82, 560335e: \"use readable sans-serif headers\"): the masthead title of a page is Plus Jakarta bold in sentence case at line-height 1.2, where the baseline PNG, shot before that merge, draws it in Anton capitals at 1.05 (src/ui/base.css .cl-masthead-title). The title card is about 5 px taller, so the whole sign-in column, centred in its pane, sits 2 to 3 px elsewhere and every glyph of it differs by design; the left pane is unchanged. Measured against the pre-merge build on one machine (c43e2f8 against 560335e, 1280x900): all of the added diff lies in the right half, x 769..1149, y 186..743. The left pane (identity panel, date line) does not differ. Covers the 1280x900 image only and only up to maxDiff: a diff beyond it is this change plus another one and fails. Structure (landmarks, headings, controls) still gates at both widths, and 375x812 is under the threshold. Retire this entry when the baseline PNGs of home, login and signup are recaptured from production (the baseline job; tests/parity/baseline/README.md), as r2e-privacy-generated was."
+      "maxDiff": 0.0225,
+      "ruling": "CTX-1 (PR 82, 560335e: \"use readable sans-serif headers\"): the masthead title of a page is Plus Jakarta bold in sentence case at line-height 1.2, where the baseline PNG, shot before that merge, draws it in Anton capitals at 1.05 (src/ui/base.css .cl-masthead-title). The title card is about 5 px taller, so the whole sign-in column, centred in its pane, sits 2 to 3 px elsewhere and every glyph of it differs by design; the left pane is unchanged. Run 39900340328 (PR 88) measured home and login at 1.91%, under the threshold with the clock pinned, so only signup (2.07%) needs this entry. Measured against the pre-merge build on one machine (c43e2f8 against 560335e, 1280x900): all of the added diff lies in the right half, x 769..1149, y 186..743. The left pane (identity panel, date line) does not differ. Covers the 1280x900 image only and only up to maxDiff: a diff beyond it is this change plus another one and fails. Structure (landmarks, headings, controls) still gates at both widths, and 375x812 is under the threshold. Retire this entry when the baseline PNGs of home, login and signup are recaptured from production (the baseline job; tests/parity/baseline/README.md), as r2e-privacy-generated was."
     }
   ]
 }
