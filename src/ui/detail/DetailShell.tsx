@@ -10,7 +10,7 @@ import type { ReactNode } from "react";
 
 import type { RecommendedAction } from "@/core/brief";
 import type { UrgencyBand } from "@/core/lists";
-import { itemIdFromDetailPath } from "@/core/workspace/roster";
+import { itemIdFromDetailPath } from "@/core/workspace/paths";
 import type { ImpactScores } from "@/core/types";
 
 import { ImpactMeter } from "../ImpactMeter";

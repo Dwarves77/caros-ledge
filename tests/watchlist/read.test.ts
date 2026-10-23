@@ -4,7 +4,8 @@ import { test } from "node:test";
 import { useWatchMembership } from "@/features/watchlist/membership";
 import { readNotices } from "@/features/watchlist/read/notices";
 import { loadMembership, setWatch } from "@/features/watchlist/watch-store";
-import { byNextDate, readWatchlist } from "@/features/watchlist/read/watchlist";
+import { byNextDate } from "@/features/watchlist/order";
+import { readWatchlist } from "@/features/watchlist/read/watchlist";
 
 import { MemDb } from "../_support/memdb.ts";
 import { membershipOf, resetMembership } from "../_support/watch-store.ts";

@@ -19,6 +19,7 @@ export const STEPS = [
   { name: "Tests (output kept for the report job)", cmd: "test", capture: "test-output.txt" },
   { name: "Tree checks", cmd: "tree-checks" },
   { name: "UI checks", cmd: "ui-checks" },
+  { name: "Client bundle walk (no \"use client\" file reaches a server-only module, node:crypto or a secret; audit 2026-10-23 2.4)", cmd: "client-walk" },
   { name: "LOC gates", cmd: "loc" },
   { name: "Connection check (nothing runs alone)", cmd: "connections" },
   { name: "Column check (every select, filter, write payload and rpc in src names a column or function the database defines)", cmd: "columns" },

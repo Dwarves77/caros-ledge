@@ -3,7 +3,8 @@
 import type { Db } from "@/core/db/clients";
 import { boundedRead } from "@/core/db/query";
 import { LookupError, route } from "@/core/http/errors";
-import { canWrite, collabFail, collabOk, isOrgAdmin, loadRoster, nameIndex, namesAfterWrite, NOTE_MAX_LENGTH, readJsonObject, runCollab, type CollabCtx, type CollabResult } from "@/core/workspace/roster";
+import { canWrite, collabFail, collabOk, isOrgAdmin, loadRoster, nameIndex, namesAfterWrite, readJsonObject, runCollab, type CollabCtx, type CollabResult } from "@/core/workspace/roster";
+import { NOTE_MAX_LENGTH } from "@/core/workspace/limits";
 
 import { collabDbFail } from "./collab-db-fail";
 

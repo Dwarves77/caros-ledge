@@ -3,7 +3,7 @@
 // Ported from old_repo/src/app/layout.tsx (lines 31-76)
 import type { ReactNode } from "react";
 
-import { applyWorkspaceSeed } from "@/core/workspace";
+import { applyWorkspaceSeed } from "@/core/workspace/store";
 import { AuthProvider } from "@/features/auth/ui/AuthProvider";
 
 import { AppShell } from "./AppShell";

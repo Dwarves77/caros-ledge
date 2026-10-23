@@ -6,6 +6,8 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 import { log } from "@/core/shared/log";
 
+import { cookieOptions } from "./cookie-options";
+
 export type Db = SupabaseClient;
 
 function publicEnv(): { url: string; anon: string } {
@@ -44,6 +46,7 @@ export async function userClient(request?: Request): Promise<Db> {
   const { cookies } = await import("next/headers");
   const store = await cookies();
   return createServerClient(url, anon, {
+    cookieOptions: cookieOptions(),
     cookies: {
       getAll: () => store.getAll(),
       setAll(list) {
@@ -64,7 +67,7 @@ export function requestClient(
   onCookies: NonNullable<CookieMethodsServer["setAll"]>,
 ): Db {
   const { url, anon } = publicEnv();
-  return createServerClient(url, anon, { cookies: { getAll: () => cookiesIn.getAll(), setAll: onCookies } }) as unknown as Db;
+  return createServerClient(url, anon, { cookieOptions: cookieOptions(), cookies: { getAll: () => cookiesIn.getAll(), setAll: onCookies } }) as unknown as Db;
 }
 
 let cachedService: Db | null = null;

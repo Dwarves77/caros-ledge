@@ -1,5 +1,5 @@
 // New in the clean-room tree (UI-1 U3): the phone form of a row's source-bias chips, as data so it renders on the server and the tests read it without a browser.
-import { biasChips, type BiasTagInput } from "@/core/sources";
+import { biasChips, type BiasTagInput } from "@/core/sources/bias-tags";
 
 /** Characters one phone meta line holds at 11 px under the title, beside the jurisdiction code (measured at 375: the narrowest line is 207 px, about 36 characters; the budget keeps a margin so a label is never cut). */
 const META_LINE_BUDGET = 34;

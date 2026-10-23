@@ -38,22 +38,6 @@ export function AuthErrorBanner({ message }: { message: string }) {
   );
 }
 
-export function AuthAlreadyRegisteredNotice({ redirect }: { redirect?: string | null }) {
-  return (
-    <div className={styles.notice}>
-      <AuthErrorBanner message="This email address already has an account." />
-      <div className={styles.noticeLinks}>
-        <a href={`/login${suffixFor(redirect)}`} className={styles.link}>
-          Sign in
-        </a>
-        <a href="/auth/reset-password" className={styles.link}>
-          Reset your password
-        </a>
-      </div>
-    </div>
-  );
-}
-
 export function AuthDivider() {
   return (
     <div className={styles.divider}>

@@ -3,7 +3,7 @@
 // Ported from old_repo/src/components/detail/ItemNotesBlock.tsx (lines 1-297)
 import { useEffect, useState } from "react";
 
-import { NOTE_MAX_LENGTH } from "@/core/workspace";
+import { NOTE_MAX_LENGTH } from "@/core/workspace/limits";
 import { formatNumber } from "@/core/shared";
 
 import { ActionButton } from "../../ActionRow";

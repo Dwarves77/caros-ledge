@@ -1,6 +1,6 @@
 // Ported from old_repo/src/components/profile/UserProfilePage.tsx (lines 71-80)
 // Ported from old_repo/src/components/profile/UserProfilePage.tsx (lines 110-111)
-import { ALL_SECTORS, HIGHLIGHTED_SECTOR_IDS, JURISDICTIONS } from "@/core/workspace";
+import { ALL_SECTORS, HIGHLIGHTED_SECTOR_IDS, JURISDICTIONS } from "@/core/workspace/vocabulary";
 
 const SECTOR_LABEL = new Map<string, string>(ALL_SECTORS.map((s) => [s.id, s.label]));
 const JURISDICTION_LABEL = new Map<string, string>(JURISDICTIONS.map((j) => [j.id, j.label]));

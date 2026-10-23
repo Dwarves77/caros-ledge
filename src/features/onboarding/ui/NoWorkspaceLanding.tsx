@@ -6,7 +6,8 @@ import { useEffect, useId, useState, type FormEvent, type ReactNode } from "reac
 import { browserClient } from "@/core/db/browser";
 import { requestJson } from "@/core/http/request-json";
 import { formatLocaleDate } from "@/core/shared";
-import { ALL_SECTORS, ORG_SIZE_DIMENSIONS, REGIONS } from "@/core/workspace";
+import { ORG_SIZE_DIMENSIONS } from "@/core/workspace/org-profile";
+import { ALL_SECTORS, REGIONS } from "@/core/workspace/vocabulary";
 import { saveProfilePatch } from "@/features/account/lib/profile-patch";
 import { AuthFrame } from "@/features/auth/ui/AuthFrame";
 import { Button, ChoiceChip, EmptyState, FormField, InlineErrorBanner, Input, Select, StateNote } from "@/ui";

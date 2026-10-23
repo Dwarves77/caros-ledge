@@ -4,10 +4,12 @@
 import { useState, type FormEvent } from "react";
 
 import { browserClient } from "@/core/db/browser";
+import { log } from "@/core/shared/log";
 
 import styles from "./auth.module.css";
 import { AuthErrorBanner, AuthField } from "./AuthPanel";
 import { AuthFrame, AuthMasthead } from "./AuthFrame";
+import { authSentence } from "./auth-sentences";
 
 export default function ResetPasswordPage() {
   const [email, setEmail] = useState("");
@@ -21,7 +23,10 @@ export default function ResetPasswordPage() {
     setLoading(true);
     const { error: failure } = await browserClient().auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent("/auth/update-password")}` });
     setLoading(false);
-    if (failure) return setError(failure.message);
+    if (failure) {
+      log.warn("[auth] password reset failed:", failure.message);
+      return setError(authSentence(failure));
+    }
     setSent(true);
   };
 

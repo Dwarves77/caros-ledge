@@ -5,7 +5,8 @@ import { LookupError } from "@/core/http/errors";
 import { boundedRead, MAX_BOUND } from "@/core/db/query";
 import { resolveItemUuid } from "@/core/shared/ids";
 
-import { deriveRoleScopeFromComplianceObjectTags, findBand, ORG_ROLES, ORG_SIZE_DIMENSIONS, type OrgProfile, type WorkspaceProfile } from "./profile";
+import { deriveRoleScopeFromComplianceObjectTags, findBand, ORG_ROLES, ORG_SIZE_DIMENSIONS, type OrgProfile } from "./org-profile";
+import type { WorkspaceProfile } from "./profile";
 
 /** The subset of intelligence_items columns the lens reads. */
 export interface RelevanceInput {

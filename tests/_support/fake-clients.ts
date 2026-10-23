@@ -4,8 +4,8 @@ import * as real from "../../src/core/db/clients.ts";
 export const { bearerToken, describeError, isServiceConfigured, isSupabaseConfigured, missingServiceEnv } = real;
 
 type Factory<T> = (request?: Request) => T | Promise<T>;
-/** What the next call to userClient() and serviceClient() returns; a test sets these. */
-export const scripted: { user: Factory<unknown> | null; service: Factory<unknown> | null } = { user: null, service: null };
+/** What the next call to userClient(), serviceClient() and requestClient() returns; a test sets these. */
+export const scripted: { user: Factory<unknown> | null; service: Factory<unknown> | null; request: (() => unknown) | null } = { user: null, service: null, request: null };
 
 export async function userClient(request?: Request) {
   if (!scripted.user) throw new Error("test did not script userClient");
@@ -16,5 +16,6 @@ export function serviceClient() {
   return scripted.service() as never;
 }
 export function requestClient(): never {
-  throw new Error("requestClient is not scripted");
+  if (!scripted.request) throw new Error("requestClient is not scripted");
+  return scripted.request() as never;
 }

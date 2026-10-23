@@ -8,9 +8,20 @@ import { randomBytes } from "node:crypto";
 import { z } from "zod";
 
 import type { Db } from "@/core/db/clients";
+import { appBaseUrl } from "@/core/http/app-url";
 import { dbError, HttpError, LookupError } from "@/core/http/errors";
+import { DB_SENTENCES } from "@/core/http/failure";
 import { email as emailSchema } from "@/core/http/parse";
 import { sendInvitationEmail, type EmailResult } from "@/core/shared/email";
+
+/** The origin an invitation link is built on, for a route: an unset or unusable NEXT_PUBLIC_APP_URL is the route's 500 sentence (the cause goes to the log), asked BEFORE anything is written. */
+export function inviteBaseUrl(): string {
+  try {
+    return appBaseUrl();
+  } catch (e) {
+    throw new HttpError(500, e instanceof Error ? e.message : "app url", {}, DB_SENTENCES["500"] as string);
+  }
+}
 
 export const inviteToken = z.string().regex(/^[0-9a-f]{64}$/i, "token must be 64 hex characters");
 const inviteRole = z.enum(["admin", "member", "viewer"]);

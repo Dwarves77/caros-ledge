@@ -240,7 +240,7 @@
         "src/features/account/ui/account.module.css": 19,
         "src/features/admin/ui/admin.module.css": 30,
         "src/features/assistant/ui/assistant.module.css": 17,
-        "src/features/auth/ui/auth.module.css": 48,
+        "src/features/auth/ui/auth.module.css": 45,
         "src/features/community/ui/community.module.css": 93,
         "src/features/coverage/ui/coverage.module.css": 9,
         "src/features/dashboard/ui/dashboard.module.css": 12,

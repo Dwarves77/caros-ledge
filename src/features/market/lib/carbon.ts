@@ -8,7 +8,7 @@
 // per-FEU arithmetic (INV-254): a range only when factor, distance, payload and carbon price are all present, each number carrying a derivation and a basis; a missing input is a named gap and nothing is invented.
 import { assertUse } from "@/core/derived/ceiling";
 import type { CarbonInputName, CarbonState, CarbonStore } from "@/core/derived/carbon";
-import { formatCorridorLabelCompact } from "@/core/entities";
+import { formatCorridorLabelCompact } from "@/core/entities/unlocode-names";
 import { CARBON } from "@/core/propagation/carbon-rules";
 import { CARBON_METHOD_ID, CARBON_METHOD_VERSION, confidenceFromPedigree, lifecycleFromFactorOriginClass } from "@/core/propagation/methods";
 import type { Value } from "@/core/propagation/types";
