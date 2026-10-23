@@ -3,26 +3,17 @@
 // Ported from old_repo/supabase/functions/capture-worker/index.ts (lines 589-614)
 // The capture worker: an Edge Function that stays an Edge Function. The contract and the logic are in process.ts (five clauses, ADR-016); the fetch policy is src/core/fetch/policy.ts,
 // imported relatively so this runtime and the Node transports share one policy. It reads no gate and no kill switch: the harness dispatcher is the one invoker and reads both before any call.
-import { createClient } from "jsr:@supabase/supabase-js@2";
-import { extractText, getDocumentProxy, getMeta } from "npm:unpdf@0";
+import { createClient } from "jsr:@supabase/supabase-js@2.118.0";
+import { extractText, getDocumentProxy, getMeta } from "npm:unpdf@1.9.1";
+
+import { extractPdfBudgeted } from "../../../src/core/fetch/policy.ts";
 
 import { drain, isServiceRoleRequest, type Db, type WorkerDeps } from "./process.ts";
 
 const json = (obj: unknown, status = 200): Response => new Response(JSON.stringify(obj), { status, headers: { "Content-Type": "application/json" } });
 
-async function extractPdf(bytes: Uint8Array) {
-  const pdf = await getDocumentProxy(bytes);
-  const { totalPages, text } = await extractText(pdf, { mergePages: true });
-  let title: string | null = null;
-  let metaError: string | null = null;
-  try {
-    const t = (await getMeta(pdf))?.info as Record<string, unknown> | undefined;
-    if (typeof t?.Title === "string" && t.Title.trim().length > 0) title = t.Title.trim().slice(0, 500);
-  } catch (e) {
-    metaError = e instanceof Error ? e.message : String(e);
-  }
-  return { text: typeof text === "string" ? text : String(text ?? ""), pages: totalPages, title, metaError };
-}
+/** PDF text under the budget (policy.ts): over MAX_PDF_PAGES it is refused before extractText runs, and an extraction that outlasts 30 s is abandoned; both are stated outcomes. */
+const extractPdf = (bytes: Uint8Array) => extractPdfBudgeted(bytes, { getDocumentProxy, extractText, getMeta });
 
 /** The addresses a host name resolves to, for the guard's private-address check. A name that does not resolve returns none: the fetch then fails on its own and says so. */
 async function resolveHost(host: string): Promise<string[]> {

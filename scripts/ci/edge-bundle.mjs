@@ -1,7 +1,7 @@
 // IMP-029: the capture-worker Edge Function bundles. supabase/functions/capture-worker/index.ts imports the fetch policy of src/core/fetch/policy.ts by a relative path (../../../src/core/fetch/policy.ts), so the Node
 // transports and the worker share one policy; this proves the bundler accepts that import and that the policy lands in the bundle. The Supabase CLI has no build command (2.95.4 and 2.121.0 were read: functions list, delete,
 // download, deploy, new, serve), and `deploy` needs a linked project, so the proof is Deno's own bundler (the Edge runtime is Deno) on the same entry point, with a config that names no project and no node_modules
-// (scripts/ci/deno-bundle.json). Deno comes from npm at a pinned version (a devDependency would put its 100 MB binary in every job's install; the one job that bundles downloads it). The policy module moves only if this fails (the brief's fallback); it has not been needed.
+// (scripts/ci/deno-bundle.json) and the function's own deno.lock, frozen: the two remote imports carry exact versions in index.ts and every package they pull in is held by an integrity hash, so the bundle (and what the deploy ships) cannot drift. Deno comes from npm at a pinned version (a devDependency would put its 100 MB binary in every job's install; the one job that bundles downloads it). The policy module moves only if this fails (the brief's fallback); it has not been needed.
 // What is asserted is structure, never a substring: the bundle of process.ts must EXPORT exactly the values its source exports (the export map), and the bundle of index.ts must DECLARE (as a top-level function) every
 // name the worker takes from the policy and from the PDF reader. A comment or string that mentions a name satisfies neither.
 //   node scripts/ci/edge-bundle.mjs            exit 0 bundled, 1 refused or the structure is wrong
@@ -15,6 +15,8 @@ import { isMain } from "../lib/fs.mjs";
 export const DENO = "deno@2.5.6";
 export const ENTRY = "supabase/functions/capture-worker/index.ts";
 export const PROCESS = "supabase/functions/capture-worker/process.ts";
+/** The lock the function's remote imports (npm:unpdf, jsr:@supabase/supabase-js and their dependencies) are pinned by, with integrity hashes. `--frozen` makes a changed pin or a missing entry a refusal, never a quiet rewrite. */
+export const LOCK = "supabase/functions/capture-worker/deno.lock";
 /** The names the entry's bundle must declare: the policy's fetch (from the relative import), the storage cap, the worker's request check, and the PDF text extraction (the bundler suffixes a clashing name with `$<n>`). */
 export const DECLARED = ["fetchDocument", "storageMaxChars", "isServiceRoleRequest", "extractText"];
 
@@ -46,7 +48,7 @@ export function bundleProblems({ entry, process: proc, processSource }) {
 }
 
 function bundle(entry, out) {
-  const r = spawnSync("npx", ["--yes", DENO, "bundle", "--no-lock", "--config", "scripts/ci/deno-bundle.json", "--platform", "deno", entry, "-o", out], { encoding: "utf8", shell: process.platform === "win32", maxBuffer: 1 << 26 });
+  const r = spawnSync("npx", ["--yes", DENO, "bundle", `--lock=${LOCK}`, "--frozen", "--config", "scripts/ci/deno-bundle.json", "--platform", "deno", entry, "-o", out], { encoding: "utf8", shell: process.platform === "win32", maxBuffer: 1 << 26 });
   if (r.status !== 0) return `deno bundle refused ${entry} (exit ${r.status}): ${String(r.stderr).split("\n").filter((l) => /error/i.test(l)).slice(0, 3).join(" | ") || String(r.stderr).slice(-300)}`;
   return null;
 }

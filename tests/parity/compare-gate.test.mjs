@@ -7,6 +7,7 @@ import { join, resolve } from 'node:path';
 import test from 'node:test';
 
 import { compareRun, gateProblems } from './compare.mjs';
+import { encodePng } from './png.mjs';
 import { listRow, record, solid, VIEWPORTS, world } from './world.mjs';
 
 const ROUTES = [{ name: 'home' }, { name: 'regulations', auth: 'member' }];
@@ -132,16 +133,43 @@ test('a pixel diff over the threshold on a pixelExact route is red; an unreadabl
   assert.match(text(missing), /capture image missing/);
 });
 
-test('a pixel waiver covers the diff it names and nothing else', async () => {
-  const config = { gates: { pixelExact: ['home'] }, approved: [{ id: 'look-1', route: 'home', kind: 'pixel', ruling: 'a look ruling' }] };
-  const w = world({ routes: [{ name: 'home' }], config });
+// A solid image pair whose share of differing pixels is exactly `share` (a black band over the first rows of a white page), written into the world for every viewport.
+const withDiff = (w, share) => {
+  const height = 100;
+  const band = Math.round(share * height);
+  const page = (rows) => {
+    const rgba = new Uint8ClampedArray(40 * height * 4).fill(255);
+    for (let i = 0; i < 40 * rows; i += 1) rgba.set([0, 0, 0, 255], i * 4);
+    return encodePng({ width: 40, height, rgba });
+  };
   for (const v of VIEWPORTS) {
-    writeFileSync(join(w.baseline, `home.${v}.png`), solid(40, 30, [250, 250, 250]));
-    writeFileSync(join(w.captured, `home.${v}.png`), solid(40, 30, [0, 0, 0]));
+    writeFileSync(join(w.baseline, `home.${v}.png`), page(0));
+    writeFileSync(join(w.captured, `home.${v}.png`), page(band));
   }
+};
+const waiver = (over = {}) => ({ id: 'look-1', route: 'home', kind: 'pixel', maxDiff: 0.05, ruling: 'a look ruling, with the PR that made the change and the recapture that retires this waiver', ...over });
+
+test('a pixel waiver covers the diff it names, up to its ceiling, and nothing else', async () => {
+  const w = world({ routes: [{ name: 'home' }], config: { gates: { pixelExact: ['home'] }, approved: [waiver()] } });
+  withDiff(w, 0.04);
   const r = await run(w);
   assert.equal(r.failed, false, text(r));
-  assert.match(text(r), /over, waived by an approved change/);
+  assert.match(text(r), /pixel diff 4\.00% \(threshold 2%\) over, waived by an approved change up to 5%/);
+});
+
+test('a pixel waiver stops at its ceiling: a diff above it fails and says the waiver was exceeded, so the waiver cannot hide a further change', async () => {
+  const w = world({ routes: [{ name: 'home' }], config: { gates: { pixelExact: ['home'] }, approved: [waiver()] } });
+  withDiff(w, 0.07);
+  const r = await run(w);
+  assert.equal(r.failed, true);
+  assert.match(text(r), /pixel diff 7\.00% \(threshold 2%\) over its waiver ceiling of 5% GATE/);
+});
+
+test('a pixel waiver names its ceiling: one without a number between the threshold and 100 percent is a problem with the gate itself', () => {
+  const routes = [{ name: 'home' }];
+  const problems = (entry) => gateProblems(routes, { gates: { full: ['home'], frame: [], pixelExact: ['home'], lists: [] }, exempt: [], skippable: [], listEmpty: [], approved: [entry] });
+  assert.deepEqual(problems(waiver()), []);
+  for (const maxDiff of [undefined, 'a lot', 0.02, 0.01, 1.5]) assert.match(problems(waiver({ maxDiff })).join('|'), /pixel waiver look-1 needs a maxDiff between 0\.02 and 1/);
 });
 
 test('the layout offences a capture carries fail its route, wherever the baseline agrees; a record that never measured its layout, or says nothing of truncation, fails too', async () => {
