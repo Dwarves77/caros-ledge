@@ -17,6 +17,12 @@ export const CAPTURE_VIEWPORTS = [
   { width: 375, height: 812 },
 ];
 
+/**
+ * The instant a signed-out route is captured at (the page's clock, pinned by capture.mjs freezeClock): noon UTC on the day the baseline was shot (tests/parity/baseline/README.md, 2026-10-20), so the date and ISO week the signed-out
+ * mastheads print are the baseline PNG's and a later capture differs from it by design alone. Moving it moves every signed-out PNG: change it only together with a recapture of the baseline.
+ */
+export const CAPTURE_NOW = '2026-10-20T12:00:00.000Z';
+
 /** The tallest a screenshot is allowed to be; a page taller than this is recorded `truncated` and fails the compare. */
 export const SCREEN_MAX_HEIGHT = 16000;
 
