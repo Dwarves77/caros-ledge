@@ -8,7 +8,7 @@
 //
 // On a gated route FAIL means: a baseline landmark (role and name), heading, control, list container or list row is missing or reordered; a row at 375 is taller than its baseline row; a list route's baseline
 // holds no rows; the capture holds an offence the layout measure found (a target under the law-2 floor, overflow, a squeezed title); the page was taller than the screenshot ceiling; a pixelExact route's
-// image differs by more than 2 percent, or either image cannot be read. Anything a baseline has that the capture lacks must match an entry of `approved` (a look or security ruling).
+// image differs by more than 2 percent (a `pixel` entry of `approved` waives that for one viewport up to its own `maxDiff` ceiling, never beyond), or either image cannot be read. Anything a baseline has that the capture lacks must match an entry of `approved` (a look or security ruling).
 // A route whose capture did not settle (`settled: false` in its index entry) fails with the capture's reason and compares nothing. A baseline written under another capture contract is not compared: the run fails and names the recapture. Exit 0 clean, 1 on any FAIL. No browser is needed: images are read in Node (png.mjs).
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
@@ -222,6 +222,10 @@ export function gateProblems(routes, config) {
   for (const [what, list] of [['gates.pixelExact', pixelExact], ['gates.lists', lists]]) for (const n of list) if (!gated.has(n)) problems.push(`${what} names ${n}, which is not a gated route`);
   for (const n of skippable) if (!gated.has(n)) problems.push(`skippable names ${n}, which is not a gated route`);
   for (const n of listEmpty) if (!lists.includes(n)) problems.push(`listEmpty names ${n}, which is not in gates.lists`);
+  // A pixel waiver is bounded: without a ceiling it would hide every later change to the route's look along with the one it names.
+  for (const a of Array.isArray(config.approved) ? config.approved : []) {
+    if (a?.kind === 'pixel' && !(typeof a.maxDiff === 'number' && a.maxDiff > PIXEL_THRESHOLD && a.maxDiff <= 1)) problems.push(`approved: pixel waiver ${a.id} needs a maxDiff between ${PIXEL_THRESHOLD} and 1 (the largest diff its ruling covers)`);
+  }
   return problems;
 }
 
@@ -262,11 +266,14 @@ async function pixelLine({ stem, viewport, baseline, captured, diffDir, exact, a
   }
   const ratio = differing / area;
   const over = ratio > PIXEL_THRESHOLD;
-  // A pixel waiver counts as used only when the diff is over the threshold on a gated route (the only case it changes the verdict).
+  // A pixel waiver counts as used only when the diff is over the threshold on a gated route (the only case it changes the verdict). It holds up to its `maxDiff` and no further: a diff above the ceiling is the waived change plus
+  // something else, and fails.
   const pixelWaiver = approved.find((x) => x.kind === 'pixel' && (x.viewport === undefined || x.viewport === viewport));
   if (over && exact) hit(pixelWaiver);
-  const tail = over && exact ? (pixelWaiver ? ' over, waived by an approved change' : ' GATE') : '';
-  return { lines: [`${viewport}: pixel diff ${(ratio * 100).toFixed(2)}% (threshold ${PIXEL_THRESHOLD * 100}%${baseTiles > 1 ? `, ${baseTiles} tiles` : ''})${tail}`], fail: over && exact && !pixelWaiver };
+  const beyond = Boolean(pixelWaiver) && ratio > pixelWaiver.maxDiff;
+  const waived = Boolean(pixelWaiver) && !beyond;
+  const tail = over && exact ? (waived ? ` over, waived by an approved change up to ${pixelWaiver.maxDiff * 100}%` : beyond ? ` over its waiver ceiling of ${pixelWaiver.maxDiff * 100}% GATE` : ' GATE') : '';
+  return { lines: [`${viewport}: pixel diff ${(ratio * 100).toFixed(2)}% (threshold ${PIXEL_THRESHOLD * 100}%${baseTiles > 1 ? `, ${baseTiles} tiles` : ''})${tail}`], fail: over && exact && !waived };
 }
 
 /** What a capture record says about itself, whatever the baseline holds: the offences its layout measure found, a page whose foot no screenshot tile reaches. */

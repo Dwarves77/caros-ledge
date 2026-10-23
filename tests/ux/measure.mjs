@@ -104,10 +104,19 @@ export function measure(opts) {
 
   // Targets.
   const SEL = 'a[href],button,input:not([type=hidden]),select,textarea,[role=button],[role=tab],[role=menuitem],[role=option],summary,[tabindex]:not([tabindex="-1"])';
+  // A control inside a closed <details> (its <summary> aside) is not drawn and cannot be hit, yet Chromium answers getBoundingClientRect for it with the box it would have if the disclosure were open (content-visibility: hidden still lays
+  // it out on demand), which lies over whatever the page draws below. It is neither a target nor a neighbour; it is measured when the reader opens the disclosure.
+  const inClosedDisclosure = (el) => {
+    for (let d = el.parentElement?.closest('details:not([open])'); d; d = d.parentElement?.closest('details:not([open])')) {
+      const summary = [...d.children].find((c) => c.tagName === 'SUMMARY');
+      if (!summary?.contains(el)) return true;
+    }
+    return false;
+  };
   const visible = (el) => {
     const r = el.getBoundingClientRect();
     const cs = getComputedStyle(el);
-    return r.width >= 2 && r.height >= 2 && cs.visibility !== 'hidden' && cs.display !== 'none' && !el.closest('[inert]') && el.getAttribute('tabindex') !== '-1';
+    return r.width >= 2 && r.height >= 2 && cs.visibility !== 'hidden' && cs.display !== 'none' && !el.closest('[inert]') && el.getAttribute('tabindex') !== '-1' && !inClosedDisclosure(el);
   };
   const boxOf = (el) => {
     if (el.matches('input[type=checkbox],input[type=radio]')) el = el.closest('label') || el;

@@ -22,7 +22,7 @@ import { chromium } from 'playwright';
 import { installBypass } from '../../scripts/ci/live/bypass.mjs';
 import { measurePage } from '../ux/measure.mjs';
 
-import { CAPTURE_CONTRACT, CAPTURE_VIEWPORTS as VIEWPORTS, ITEM_PATH, ROW_SELECTOR, SCREEN_MAX_HEIGHT } from './contract.mjs';
+import { CAPTURE_CONTRACT, CAPTURE_NOW, CAPTURE_VIEWPORTS as VIEWPORTS, ITEM_PATH, ROW_SELECTOR, SCREEN_MAX_HEIGHT } from './contract.mjs';
 
 export { SCREEN_MAX_HEIGHT };
 // A page that navigates its main frame more often than this after goto is looping (a reload on every auth event, a redirect cycle).
@@ -32,6 +32,14 @@ const ACCOUNTS = { member: ['LIVE_SMOKE_EMAIL', 'LIVE_SMOKE_PASSWORD'], admin: [
 export function missingCredentials(routes, env) {
   const accounts = new Set(routes.map((r) => r.auth).filter((a) => a && (a !== 'admin' || env.PARITY_ADMIN === '1')));
   return [...accounts].flatMap((a) => ACCOUNTS[a].filter((name) => !env[name]));
+}
+
+/**
+ * Pins the page's clock to CAPTURE_NOW for a signed-out route (Date only: timers keep running, so settling and hydration are unaffected). The signed-out mastheads print the visitor's date and ISO week from the browser's clock, and the
+ * baseline PNGs were shot on one day; a signed-in route's date is the server's (the pin would change nothing there) and its session is checked against the real clock, so it is left alone.
+ */
+export async function freezeClock(context, route) {
+  if (!route.auth) await context.clock.setFixedTime(new Date(CAPTURE_NOW));
 }
 
 const isFork = (env) => {
@@ -396,6 +404,7 @@ async function captureAttempt(browser, base, route, path, viewport, storage, out
   const stem = `${route.name}.${viewport.width}x${viewport.height}`;
   const context = await browser.newContext({ viewport, storageState: route.auth ? storage[route.auth] : undefined });
   await installBypass(context, base);
+  await freezeClock(context, route);
   try {
     const page = await context.newPage();
     const pending = watchPending(page);

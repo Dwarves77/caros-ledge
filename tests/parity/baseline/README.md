@@ -17,3 +17,6 @@ Counts and data-derived option sets drift (the compare gate treats integer runs 
 
 The job passes `--site old` (a route with `oldPath` in routes.json is captured there; routes.json carries none now, so every route is captured at its `path`). Compare treats integer runs in names as data.
 
+## Owed: recapture of home, login and signup (CTX-1)
+
+PR 82 (560335e) changed the masthead title from Anton capitals to sentence-case sans bold, so the 1280x900 images of home, login and signup, shot before it, differ by about 2 percent by design. Until they are recaptured the three bounded pixel waivers `ctx1-title-type-home`, `-login` and `-signup` in approved-changes.json (each with a `maxDiff` ceiling) carry the gate. To retire them: dispatch `CI` with `only` = `baseline` and `routes` = `home,login,signup`, replace the six PNGs (both widths) from the artifact, update the date and run id above, delete the three waivers (the report's `unused waivers:` line names them once the diff is back under 2 percent), and open a PR. The capture pins a signed-out page's clock to `CAPTURE_NOW` (contract.mjs, 2026-10-20 12:00 UTC), so the date and ISO week these pages print are the same in a recapture and in every later capture.
