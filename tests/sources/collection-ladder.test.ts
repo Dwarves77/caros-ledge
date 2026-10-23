@@ -83,10 +83,12 @@ function fakeBrowser(script: (url: string) => { status: number; html: string | s
   const log = { launches: 0, gotos: [] as Array<{ url: string; waitUntil: string }>, clicks: 0, closed: 0 };
   const browser: BrowserLike = {
     newContext: async () => ({
+      route: async () => undefined,
       newPage: async () => {
         let cur = "";
         let n = 0;
         return {
+          on: () => undefined,
           goto: async (u: string, o: { waitUntil: "networkidle"; timeout: number }) => (log.gotos.push({ url: u, waitUntil: o.waitUntil }), (cur = u), (n = 0), { status: () => script(u).status }),
           content: async () => {
             const h = script(cur).html;

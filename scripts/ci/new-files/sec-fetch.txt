@@ -1,0 +1,3 @@
+# path | reason (files with no "Ported from" header)
+src/core/fetch/browser-guard.ts | new in the 2026-10-23 security pass (audit 2.3.15): the browser tier's per-request address check (route handler, response record, host-resolver rules); the old tree let Chromium follow redirects and load subresources unchecked
+src/core/fetch/pin.ts | new in the 2026-10-23 security pass (audit 2.3.14): connect to the address the guard vetted (undici Agent with a pinned lookup); the old tree resolved the name a second time at connect

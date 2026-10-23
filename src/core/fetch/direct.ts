@@ -4,7 +4,7 @@
 import { toText } from "./classify-body";
 import { assertFetchAllowed, type HoldDeps } from "./hold";
 import { honestFetch } from "./honest";
-import { cleanCtl, fetchDocument, type FetchDocumentOptions, type FetchRefusal } from "./policy";
+import { cleanCtl, extractPdfBudgeted, fetchDocument, type FetchDocumentOptions, type FetchRefusal, type PdfLib } from "./policy";
 
 export interface FetchDeps extends HoldDeps {
   /** A signed caller name (see AUTHORIZED_HOLD_CALLERS); absent for every scheduled or pipeline path. */
@@ -37,24 +37,14 @@ export interface TransportResult {
   channel?: "api" | "feed" | "sitemap" | "direct" | "browser" | "substitute";
 }
 
-/** PDF bytes to text with whitespace collapsed (unpdf's serverless pdf.js). Throws on a non-PDF or an empty text layer: a corrupt PDF is a roadblock, not content. */
-export async function extractPdfText(bytes: Uint8Array): Promise<{ text: string; pages: number | null; title: string | null; metaError: string | null }> {
-  const { extractText, getDocumentProxy, getMeta } = await import("unpdf");
+/** PDF bytes to text with whitespace collapsed (unpdf's serverless pdf.js), under the page and time budget (extractPdfBudgeted). Throws on a non-PDF, an empty text layer or an over-budget document: a corrupt PDF is a roadblock, not content. `lib` is the reader (unpdf by default). */
+export async function extractPdfText(bytes: Uint8Array, lib?: PdfLib<{ numPages: number; destroy?: () => unknown }>, opts: { timeoutMs?: number } = {}): Promise<{ text: string; pages: number | null; title: string | null; metaError: string | null }> {
   const owned = new Uint8Array(bytes.byteLength);
   owned.set(bytes);
-  const pdf = await getDocumentProxy(owned);
-  const { text, totalPages } = await extractText(pdf, { mergePages: true });
-  const full = String(text || "").replace(/\s+/g, " ").trim();
+  const out = await extractPdfBudgeted(owned, lib ?? ((await import("unpdf")) as unknown as PdfLib<{ numPages: number; destroy?: () => unknown }>), opts);
+  const full = out.text.replace(/\s+/g, " ").trim();
   if (!full) throw new Error("pdf extracted to empty text");
-  let title: string | null = null;
-  let metaError: string | null = null;
-  try {
-    const t = ((await getMeta(pdf)).info as Record<string, unknown> | undefined)?.Title;
-    if (typeof t === "string" && t.trim()) title = t.trim().slice(0, 500);
-  } catch (e) {
-    metaError = e instanceof Error ? e.message : String(e);
-  }
-  return { text: full, pages: totalPages, title, metaError };
+  return { ...out, text: full };
 }
 
 /**

@@ -40,6 +40,7 @@
     "react-dom": "19.2.3",
     "react-markdown": "^10.1.0",
     "remark-gfm": "^4.0.1",
+    "undici": "^7.30.1",
     "unpdf": "^1.9.0",
     "zod": "^4.6.7",
     "zustand": "^5.0.15"
@@ -71,6 +72,7 @@
     "@types/node": "Node types for scripts and next.config.ts.",
     "@types/react": "React types.",
     "@types/react-dom": "React DOM types.",
+    "undici": "The Agent whose connect lookup returns the address the guard vetted (audit 2.3.14): Node's global fetch accepts it as a dispatcher, and the built-in cannot be constructed without the package.",
     "unpdf": "PDF text extraction (pdf.js, serverless build) for the direct transport, held-pool reads and the mint capture; the Edge Function loads its own copy via npm: specifier.",
     "zustand": "Client state stores (workspace identity, per-item state, dashboard settings) that the shell and every surface read, and the admin source registry filter (features/sources/store.ts); the same major as the old tree.",
     "playwright": "headless transport on the Actions runner and the parity gate; never bundled (dynamic import, browser installed only on the runner).",
