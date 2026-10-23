@@ -6,7 +6,8 @@ import { lookup } from "node:dns/promises";
 import type { FetchDeps } from "./direct";
 import { guardedFetch, makeHostGate, makeRobotsReader, type GuardOptions } from "./guard";
 import { licenceForbidsHost } from "./licence-hosts";
-import { BOT_USER_AGENT } from "./policy";
+import { pinnedFetch } from "./pin";
+import { BOT_USER_AGENT, readBodyCapped } from "./policy";
 import { makeRobotsGate } from "./robots";
 
 export type RobotsGate = ReturnType<typeof makeRobotsGate>;
@@ -33,13 +34,10 @@ function secFairAccessUaForUrl(url: string, env: Record<string, string | undefin
   return ua && ua.trim().length > 0 ? ua : null;
 }
 
-const resolved = new Map<string, Promise<string[]>>();
-/** The addresses of a host, asked once per process: the guard checks each hop, and a run asks about the same few hosts many times. */
-const nodeResolve = (host: string): Promise<string[]> => {
-  let held = resolved.get(host);
-  if (!held) resolved.set(host, (held = lookup(host, { all: true }).then((all) => all.map((a) => a.address))));
-  return held;
-};
+/** The addresses of a host, asked fresh every time (no cache: the answer the guard vets is the one the request is pinned to, for that one fetch). `lookupImpl` is the resolver (dns.lookup by default). */
+const nodeResolve = (host: string, lookupImpl: typeof lookup = lookup): Promise<string[]> => lookupImpl(host, { all: true }).then((all) => all.map((a) => a.address));
+/** The resolver a run uses: the injected one, else the system's. The browser tier's route guard asks the same. */
+export const resolverFor = (deps: Pick<HonestDeps, "resolveHost">): ((host: string) => Promise<string[]>) => deps.resolveHost ?? nodeResolve;
 
 function kitFor(deps: HonestDeps): Kit {
   const raw = deps.fetchImpl ?? fetch;
@@ -47,8 +45,8 @@ function kitFor(deps: HonestDeps): Kit {
   if (held) return held;
   const now = () => (deps.now ? deps.now().getTime() : performance.now());
   const sleep = deps.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
-  const base: Omit<GuardOptions, "userAgent" | "robots"> = { licence: licenceForbidsHost, fetchImpl: raw, resolveHost: deps.resolveHost ?? nodeResolve, gate: makeHostGate({ now, sleep }), upgradeHttp: true };
-  const robots = makeRobotsGate(makeRobotsReader({ ...base, userAgent: BOT_USER_AGENT }), undefined, { now, ttlMs: ROBOTS_TTL_MS });
+  const base: Omit<GuardOptions, "userAgent" | "robots"> = { licence: licenceForbidsHost, fetchImpl: raw, resolveHost: resolverFor(deps), fetchPinned: pinnedFetch(raw), gate: makeHostGate({ now, sleep }), upgradeHttp: true };
+  const robots = makeRobotsGate(makeRobotsReader({ ...base, userAgent: BOT_USER_AGENT }, readBodyCapped), undefined, { now, ttlMs: ROBOTS_TTL_MS });
   const kit = { base, robots };
   kits.set(raw, kit);
   return kit;

@@ -54,7 +54,7 @@ function groups6(addr: string): number[] | null {
   return all.length === 8 && nums.every((n) => Number.isInteger(n) && n >= 0 && n <= 0xffff) ? nums : null;
 }
 /** Is this address (IPv4 or IPv6 literal) one a public crawler must never request: private, loopback, link-local, unique-local, multicast, documentation or reserved, including IPv4 mapped or translated into IPv6? An unparseable literal is refused. */
-function isPrivateAddress(addr: string): boolean {
+export function isPrivateAddress(addr: string): boolean {
   const four = v4(addr);
   if (four) return isPrivateV4(four);
   const g = groups6(addr);
@@ -86,22 +86,40 @@ export interface GuardOptions {
   maxRedirects?: number;
   /** Rewrite an http Location to https (Cellar's 303 points at plain http). */
   upgradeHttp?: boolean;
+  /**
+   * Connect to the vetted addresses (audit 2.3.14, DNS rebinding): when the host is a name that was resolved and vetted, the request is made through this instead of `fetchImpl`, handed exactly the list the check approved, so the
+   * socket layer never resolves the name a second time. The Node transport builds an undici Agent whose connect lookup returns that list; the Host header and the TLS server name stay the host name. An empty list (the name did not resolve) fails the connect.
+   */
+  fetchPinned?: (url: string, init: RequestInit, vetted: readonly string[]) => Promise<Response>;
+  /**
+   * For a runtime that cannot hook the connect (the Edge Function): resolve the name again immediately before the request and refuse with private_address when any address of the second answer is not in the vetted set.
+   * Applied on every hop. Needs `resolveHost`.
+   */
+  reresolve?: boolean;
 }
 
-/** Throw a private_address refusal when the URL's host is a private literal, a reserved name, or resolves to any private address. */
-async function assertPublicHost(url: URL, resolveHost?: GuardOptions["resolveHost"]): Promise<void> {
-  const host = url.hostname.replace(/^\[|\]$/g, "");
+/** Reads a response body to at most `capBytes`, truncating (policy.ts readBodyCapped). Passed in, because this module has no imports and is shared by relative path with the Edge Function. */
+export type BodyReader = (res: Response, capBytes: number, truncate?: boolean) => Promise<Uint8Array>;
+
+/**
+ * Throw a private_address refusal when the URL's host is a private literal, a reserved name, or resolves to any private address. Returns the vetted addresses of a name (possibly none: it did not resolve), or null for a literal
+ * or when no resolver is given, where there is nothing to pin.
+ */
+export async function assertPublicHost(url: URL, resolveHost?: GuardOptions["resolveHost"]): Promise<string[] | null> {
+  // A fully qualified name ("localhost.") is the same name: the reserved-name test and the resolver see it without the dot.
+  const host = url.hostname.replace(/^\[|\]$/g, "").replace(/\.$/, "");
   const refuse = (why: string) => new FetchRefusalError({ reason: "private_address", transient: false, detail: `refused ${url.origin}: ${why}` });
   if (v4(host) || host.includes(":")) {
     if (isPrivateAddress(host)) throw refuse(`${host} is a private, loopback or link-local address`);
-    return;
+    return null;
   }
   if (NAME_REFUSED.test(host)) throw refuse(`${host} is a reserved local name`);
-  if (!resolveHost) return;
+  if (!resolveHost) return null;
   // A name that cannot be resolved cannot be connected to: the request then fails with the network's own error. Only an answer that names a private address is a refusal.
   const addrs = await resolveHost(host).then((a) => a, () => [] as string[]);
   const bad = addrs.find((a) => isPrivateAddress(a));
   if (bad) throw refuse(`${host} resolves to ${bad}, a private, loopback or link-local address`);
+  return addrs;
 }
 
 /**
@@ -117,7 +135,7 @@ export async function guardedFetch(input: string, init: RequestInit, g: GuardOpt
     if (url.protocol !== "https:" && url.protocol !== "http:") throw new FetchRefusalError({ reason: "bad_scheme", transient: false, detail: `refused ${url.protocol} (only http and https are fetched)` });
     const barred = g.licence(url.hostname);
     if (barred) throw new FetchRefusalError({ reason: "licence_forbids", transient: false, detail: `refused ${url.host}: the licence register (${barred}) bars collecting from this host`, registerKey: barred });
-    await assertPublicHost(url, g.resolveHost);
+    const vetted = await assertPublicHost(url, g.resolveHost);
     let delay: number | null = null;
     if (g.robots) {
       const v = await g.robots(current);
@@ -126,9 +144,15 @@ export async function guardedFetch(input: string, init: RequestInit, g: GuardOpt
       delay = v.crawlDelaySec;
     }
     if (g.gate) await g.gate(url.host, delay);
+    if (g.reresolve && vetted && g.resolveHost) {
+      const again = await g.resolveHost(url.hostname.replace(/^\[|\]$/g, "").replace(/\.$/, "")).then((a) => a, () => [] as string[]);
+      const moved = again.find((a) => !vetted.includes(a));
+      if (moved) throw new FetchRefusalError({ reason: "private_address", transient: false, detail: `refused ${url.origin}: the name now resolves to ${moved}, which the address check did not vet (DNS answer changed between the check and the connect)` });
+    }
     const headers = new Headers(init.headers);
     headers.set("User-Agent", g.userAgent);
-    const res = await doFetch(current, { ...init, headers, redirect: "manual" });
+    const req: RequestInit = { ...init, headers, redirect: "manual" };
+    const res = await (g.fetchPinned && vetted ? g.fetchPinned(current, req, vetted) : doFetch(current, req));
     const location = res.headers.get("location");
     if ([301, 302, 303, 307, 308].includes(res.status) && location) {
       if (hop === max) break;
@@ -157,10 +181,11 @@ export function makeHostGate({ minGapMs = 1000, maxWaitMs = 20_000, now, sleep }
 }
 
 /** The reader a robots gate calls for `<origin>/robots.txt`: the same guard (identity, address check, gap) but no robots check on itself. A guard refusal is thrown to the gate, which reports the host `unknown`. */
-export function makeRobotsReader(g: Omit<GuardOptions, "robots">): (robotsUrl: string) => Promise<{ status: number; text: string; contentType: string | null }> {
+export function makeRobotsReader(g: Omit<GuardOptions, "robots">, readBody: BodyReader): (robotsUrl: string) => Promise<{ status: number; text: string; contentType: string | null }> {
   return async (robotsUrl) => {
     const res = await guardedFetch(robotsUrl, { headers: { Accept: "text/plain,*/*;q=0.5" }, signal: AbortSignal.timeout(20_000) }, g);
-    const bytes = new Uint8Array(await res.arrayBuffer()).subarray(0, 512 * 1024);
+    // At most 512 KiB is read (RFC 9309 parses what fits), and the rest of the stream is cancelled unread: a hostile host cannot make the reader buffer its answer.
+    const bytes = await readBody(res, 512 * 1024, true);
     return { status: res.status, text: new TextDecoder("utf-8", { fatal: false }).decode(bytes), contentType: res.headers.get("content-type") };
   };
 }

@@ -11,7 +11,7 @@
 //      owns the rest of the ladder (browser, substitute publisher, access request). A robots.txt that cannot be read defers the row, never denies it.
 import { guardedFetch, makeHostGate, makeRobotsReader } from "../../../src/core/fetch/guard.ts";
 import { licenceForbidsHost } from "../../../src/core/fetch/licence-hosts.ts";
-import { BOT_USER_AGENT, captureLocale, fetchDocument, isWallStatus, MAX_ATTEMPTS, storageMaxChars, type FetchOutcome } from "../../../src/core/fetch/policy.ts";
+import { BOT_USER_AGENT, captureLocale, fetchDocument, isWallStatus, MAX_ATTEMPTS, readBodyCapped, storageMaxChars, type FetchOutcome } from "../../../src/core/fetch/policy.ts";
 import { makeRobotsGate } from "../../../src/core/fetch/robots.ts";
 import { storeCapture, type CaptureChannel, type Db, type Query, type Reply } from "../../../src/core/fetch/store-capture.ts";
 
@@ -90,8 +90,8 @@ function kitOf(deps: WorkerDeps): Kit {
   const held = kits.get(deps);
   if (held) return held;
   const sleep = deps.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
-  const base = { licence: licenceForbidsHost, userAgent: BOT_USER_AGENT, fetchImpl: deps.fetchImpl ?? fetch, gate: makeHostGate({ now: deps.now, sleep }), upgradeHttp: true, ...(deps.resolveHost ? { resolveHost: deps.resolveHost } : {}) };
-  const robots = makeRobotsGate(makeRobotsReader(base));
+  const base = { licence: licenceForbidsHost, userAgent: BOT_USER_AGENT, fetchImpl: deps.fetchImpl ?? fetch, gate: makeHostGate({ now: deps.now, sleep }), upgradeHttp: true, ...(deps.resolveHost ? { resolveHost: deps.resolveHost, reresolve: true } : {}) };
+  const robots = makeRobotsGate(makeRobotsReader(base, readBodyCapped));
   const kit: Kit = { page: (u, i) => guardedFetch(String(u), i ?? {}, { ...base, robots }), api: (u, i) => guardedFetch(String(u), i ?? {}, base) };
   kits.set(deps, kit);
   return kit;
