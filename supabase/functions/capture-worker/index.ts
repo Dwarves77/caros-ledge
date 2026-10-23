@@ -3,8 +3,8 @@
 // Ported from old_repo/supabase/functions/capture-worker/index.ts (lines 589-614)
 // The capture worker: an Edge Function that stays an Edge Function. The contract and the logic are in process.ts (five clauses, ADR-016); the fetch policy is src/core/fetch/policy.ts,
 // imported relatively so this runtime and the Node transports share one policy. It reads no gate and no kill switch: the harness dispatcher is the one invoker and reads both before any call.
-import { createClient } from "jsr:@supabase/supabase-js@2";
-import { extractText, getDocumentProxy, getMeta } from "npm:unpdf@0";
+import { createClient } from "jsr:@supabase/supabase-js@2.118.0";
+import { extractText, getDocumentProxy, getMeta } from "npm:unpdf@1.9.1";
 
 import { drain, isServiceRoleRequest, type Db, type WorkerDeps } from "./process.ts";
 

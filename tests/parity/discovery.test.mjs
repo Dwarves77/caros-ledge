@@ -4,7 +4,9 @@ import { join } from 'node:path';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { BYPASS_HEADER, bypassHeaders, discoveryMissOutcome, pathFor, isThrottled, pickDetailHref, retryWaitMs, throttleWaitMs, throttleEvents, THROTTLE_FALLBACK_MS, THROTTLE_CEILING_MS, pinnedPath, credentialVerdict, missingCredentials } from './capture.mjs';
+import { BYPASS_HEADER, bypassHeaders, installBypass } from '../../scripts/ci/live/bypass.mjs';
+
+import { discoveryMissOutcome, pathFor, isThrottled, pickDetailHref, retryWaitMs, throttleWaitMs, throttleEvents, THROTTLE_FALLBACK_MS, THROTTLE_CEILING_MS, pinnedPath, credentialVerdict, missingCredentials } from './capture.mjs';
 
 const route = (list) => ({ name: 'x-detail', discover: { list, match: '^/x/[^/]+$' } });
 const gates = { full: ['home', 'market'], frame: ['regulations', 'dashboard'] };
@@ -95,6 +97,23 @@ test('the protection-bypass header goes to the captured origin when the secret i
   assert.deepEqual(bypassHeaders(`${origin}/login`, origin, { VERCEL_AUTOMATION_BYPASS_SECRET: '' }), {}, 'an empty secret is no secret');
   assert.deepEqual(bypassHeaders('https://elsewhere.example.test/tile.png', origin, env), {}, 'a third party never receives it');
   assert.deepEqual(bypassHeaders('https://preview.example.test.evil.test/', origin, env), {}, 'a look-alike host never receives it');
+});
+
+test('installBypass registers one route that adds the header to the target origin and falls through for every other origin; with no secret it registers nothing; a base URL with a path or a trailing slash is the same origin', async () => {
+  const run = async (base, url, env) => {
+    let handler = null;
+    await installBypass({ route: async (_glob, fn) => { handler = fn; } }, base, env);
+    if (!handler) return 'no route';
+    let outcome = null;
+    handler({ request: () => ({ url: () => url, headers: () => ({ accept: 'x' }) }), continue: (o) => { outcome = o.headers; }, fallback: () => { outcome = 'fallback'; } });
+    return outcome;
+  };
+  const env = { VERCEL_AUTOMATION_BYPASS_SECRET: 'value-from-the-environment' };
+  assert.deepEqual(await run('https://preview.example.test', 'https://preview.example.test/api/x', env), { accept: 'x', [BYPASS_HEADER]: 'value-from-the-environment' });
+  assert.deepEqual(await run('https://preview.example.test/', 'https://preview.example.test/login', env), { accept: 'x', [BYPASS_HEADER]: 'value-from-the-environment' }, 'a trailing slash is still the origin');
+  assert.equal(await run('https://preview.example.test', 'https://abc.supabase.co/rest/v1/items', env), 'fallback', 'the database never receives it');
+  assert.equal(await run('https://preview.example.test', 'https://preview.example.test.evil.test/', env), 'fallback');
+  assert.equal(await run('https://preview.example.test', 'https://preview.example.test/login', {}), 'no route');
 });
 
 test('missing signed-in credentials: a failure naming the variables in CI, a printed skip on a workstation, in a fork pull request and against a local server; nothing missing is fine', () => {

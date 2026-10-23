@@ -7,7 +7,7 @@
 // A missing credential follows the one exit-code contract (src/core/harness/exit.ts): exit 2 (a skip) only where the event cannot carry secrets, a pull request from a fork; on a deployment, a dispatch, a check named with --only and every other
 // CI event it is exit 1, and the message and the job summary list the environment NAMES that are missing, never a value. Exit 1 also when a check failed or a row could not be recorded.
 // Environment names: LIVE_BASE_URL (or --base), NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, LIVE_SMOKE_EMAIL, LIVE_SMOKE_PASSWORD, LIVE_ADMIN_EMAIL, LIVE_ADMIN_PASSWORD,
-// VERCEL_AUTOMATION_BYPASS_SECRET (sent as x-vercel-protection-bypass when the preview is behind Vercel deployment protection), and for invitation-email RESEND_API_KEY and INVITATION_FROM_EMAIL. LIVE_CODE_SHA is the deployed commit (data: the
+// VERCEL_AUTOMATION_BYPASS_SECRET (sent as x-vercel-protection-bypass, to the target origin only, when the preview is behind Vercel deployment protection), LIVE_ADMIN_PAGES ("off" skips admin-pages: the workflow sets it on a branch preview), and for invitation-email RESEND_API_KEY and INVITATION_FROM_EMAIL. LIVE_CODE_SHA is the deployed commit (data: the
 // scripts run are the default branch's), written on every ledger row as its code_sha.
 import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
@@ -15,6 +15,7 @@ import { register } from "node:module";
 import { parseArgs } from "node:util";
 import { pathToFileURL } from "node:url";
 
+import { bypassHeaders, installBypass } from "./live/bypass.mjs";
 import { CHECKS, DEFAULT_CHECKS, missingNames, NEEDS, RUNNERS } from "./live/checks.mjs";
 
 /** The checks that need the signed-in member. */
@@ -22,8 +23,11 @@ const MEMBER_CHECKS = new Set(["member-reads", "sign-in", "pages", "notification
 /** The checks that read or write the database with the service key. */
 const SERVICE_CHECKS = new Set(["member-reads", "identity-anonymous", "provenance-trigger", "notification-drain", "production-shape"]);
 
-/** Which checks run, which are skipped for lack of an account, and which environment names are missing for the rest. A check the caller named (`only`) is never skipped, and neither is any check in CI (`ci`, from isCi in src/core/harness/exit.ts): a check that cannot run is then a missing name, which the exit contract turns into exit 1 (a fork PR excepted). Pure. */
-export function planRun({ only, env, base, record, ci = false }) {
+/**
+ * Which checks run, which are skipped, and which environment names are missing for the rest. A check the caller named (`only`) is never skipped for lack of an account, and neither is any check in CI (`ci`, from isCi in src/core/harness/exit.ts): a check that cannot run is then a missing name, which the exit contract turns into exit 1 (a fork PR excepted).
+ * The admin console is checked only where the workflow allows it (`adminPages`): production, or a dispatch that chose its target. A preview of a branch runs that branch's code on the production database, so the production admin account never signs in to it (audit 2.3.10); the check is then skipped by name, whatever is set. Pure.
+ */
+export function planRun({ only, env, base, record, ci = false, adminPages = true }) {
   const wanted = only ? only.split(",").map((s) => s.trim()).filter(Boolean) : DEFAULT_CHECKS;
   const unknown = wanted.filter((c) => !CHECKS.includes(c));
   if (unknown.length) return { error: `unknown check(s): ${unknown.join(", ")} (checks: ${CHECKS.join(", ")})` };
@@ -34,6 +38,10 @@ export function planRun({ only, env, base, record, ci = false }) {
   if (record) missingNames(NEEDS.record, env).forEach((n) => missing.add(n));
   for (const c of wanted) {
     const gaps = [];
+    if (c === "admin-pages" && !adminPages) {
+      skipped.push({ check: c, missing: [], reason: "the admin account signs in to production or a dispatch's chosen target only, never to a branch preview" });
+      continue;
+    }
     if (c === "admin-pages") gaps.push(...missingNames(NEEDS.admin, env));
     if (MEMBER_CHECKS.has(c)) gaps.push(...missingNames(NEEDS.member, env));
     if (SERVICE_CHECKS.has(c)) gaps.push(...missingNames(NEEDS.record, env));
@@ -83,12 +91,13 @@ async function main() {
     console.error("live-checks: --phase must be before or after");
     process.exit(1);
   }
-  const plan = planRun({ only: values.only, env, base, record: !values["no-record"], ci: isCi(env) });
+  // LIVE_ADMIN_PAGES is set by the workflow: "off" on a branch preview (a status event that is not the default branch), "on" otherwise. Unset (a workstation) is on.
+  const plan = planRun({ only: values.only, env, base, record: !values["no-record"], ci: isCi(env), adminPages: env.LIVE_ADMIN_PAGES !== "off" });
   if (plan.error) {
     console.error(`live-checks: ${plan.error}`);
     process.exit(1);
   }
-  for (const s of plan.skipped) console.log(`skipped ${s.check}: set ${s.missing.join(", ")} to run it`);
+  for (const s of plan.skipped) console.log(`skipped ${s.check}: ${s.reason ?? `set ${s.missing.join(", ")} to run it`}`);
   const verdict = skipVerdict(env, plan.missing, Boolean(values.only));
   if (verdict.message) {
     console.log(`live-checks: ${verdict.message}`);
@@ -99,7 +108,8 @@ async function main() {
   const { recordLiveSmoke } = await import("../../src/core/harness/live-smoke.ts");
   const { runNotificationOutbox } = await import("../../src/features/drain/kinds.ts");
   const { sendInvitationEmail } = await import("../../src/core/shared/email.ts");
-  const bypass = env.VERCEL_AUTOMATION_BYPASS_SECRET ? { "x-vercel-protection-bypass": env.VERCEL_AUTOMATION_BYPASS_SECRET } : {};
+  // The bypass header goes to the target origin only (scripts/ci/live/bypass.mjs): the pages call the database and other origins, and none of them may receive the secret.
+  const bypass = bypassHeaders(base, base, env);
   const service = env.SUPABASE_SERVICE_ROLE_KEY ? createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } }) : null;
   let member = null;
   let browser = null;
@@ -109,7 +119,8 @@ async function main() {
     if (contexts[as]) return contexts[as];
     const { chromium } = await import("playwright");
     browser ??= await chromium.launch();
-    const ctx = await browser.newContext({ extraHTTPHeaders: bypass });
+    const ctx = await browser.newContext();
+    await installBypass(ctx, base, env);
     const page = await ctx.newPage();
     await page.goto(`${base}/login`, { waitUntil: "load", timeout: 60000 });
     await page.fill('input[type="email"]', accounts[as][0]);
