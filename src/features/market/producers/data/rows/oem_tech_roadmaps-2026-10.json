@@ -1,0 +1,83 @@
+{
+  "rows": [
+    {
+      "manufacturer_name": "daimlertruck.com",
+      "tech_category": "heavy_battery",
+      "commercial_stage": "mass_series_production",
+      "announced_at": "2024-11-19",
+      "origin_class": "verified",
+      "citation": {
+        "url": "https://www.daimlertruck.com/en/newsroom/pressrelease/daimler-truck-powertrain-plants-start-of-production-of-key-components-for-series-production-of-the-battery-electric-mercedes-benz-eactros-600-52916643",
+        "title": "Daimler Truck Powertrain plants: start of production of key components for series production of the battery-electric Mercedes-Benz eActros 600",
+        "retrieved_at": "2026-10-24",
+        "quote": "Just before the start of series production of the new battery-electric eActros 600 at the Mercedes-Benz plant in Wörth on November 22, production of key components has started at the Gaggenau, Kassel and Mannheim plants."
+      }
+    },
+    {
+      "manufacturer_name": "daimlertruck.com",
+      "tech_category": "megawatt_charging",
+      "commercial_stage": "pilot_demonstration",
+      "announced_at": "2024-09-15",
+      "origin_class": "verified",
+      "citation": {
+        "url": "https://www.daimlertruck.com/en/newsroom/pressrelease/iaa-transportation-2024-daimler-truck-puts-the-focus-on-co2-neutral-long-distance-haulage-start-of-series-production-of-the-mercedes-benz-eactros-600-in-november-52830013",
+        "title": "IAA Transportation 2024: Daimler Truck puts the focus on CO2-neutral long-distance haulage; start of series production of the Mercedes-Benz eActros 600 in November",
+        "retrieved_at": "2026-10-24",
+        "quote": "In April this year, developers from Mercedes-Benz Trucks successfully charged for the first time a prototype of the eActros 600 at a charging station with an output of one megawatt"
+      }
+    },
+    {
+      "manufacturer_name": "daimlertruck.com",
+      "tech_category": "hydrogen_fcell",
+      "commercial_stage": "pilot_demonstration",
+      "announced_at": "2024-09-15",
+      "origin_class": "verified",
+      "citation": {
+        "url": "https://www.daimlertruck.com/en/newsroom/pressrelease/iaa-transportation-2024-daimler-truck-puts-the-focus-on-co2-neutral-long-distance-haulage-start-of-series-production-of-the-mercedes-benz-eactros-600-in-november-52830013",
+        "title": "IAA Transportation 2024: Daimler Truck puts the focus on CO2-neutral long-distance haulage; start of series production of the Mercedes-Benz eActros 600 in November",
+        "retrieved_at": "2026-10-24",
+        "quote": "road-legal prototype Mercedes-Benz GenH2 Truck last year completed a trip of 1,047 kilometers"
+      }
+    },
+    {
+      "manufacturer_name": "volvotrucks.com",
+      "tech_category": "heavy_battery",
+      "commercial_stage": "mass_series_production",
+      "announced_at": "2026-09-14",
+      "origin_class": "verified",
+      "citation": {
+        "url": "https://www.volvotrucks.com/en-en/news-stories/press-releases/2026/sep/volvo-starts-series-production-of-electric-trucks-with-up-to-700.html",
+        "title": "Volvo starts series production of electric trucks with up to 700 km range",
+        "retrieved_at": "2026-10-24",
+        "quote": "Volvo Trucks has now started series production of its new generation of heavy-duty electric trucks, including the Volvo FH Aero Electric with extended range"
+      }
+    },
+    {
+      "manufacturer_name": "neste.com",
+      "tech_category": "saf_refinery",
+      "commercial_stage": "mass_series_production",
+      "announced_at": "2025-04-09",
+      "target_year": 2027,
+      "origin_class": "verified",
+      "citation": {
+        "url": "https://www.neste.com/news/neste-started-producing-sustainable-aviation-fuel-saf-at-its-renewables-refinery-in-rotterdam-the-netherlands",
+        "title": "Neste started producing sustainable aviation fuel (SAF) at its renewables refinery in Rotterdam, the Netherlands",
+        "retrieved_at": "2026-10-24",
+        "quote": "The refinery has been modified to enable Neste to produce up to 500,000 tons of SAF per annum."
+      }
+    },
+    {
+      "manufacturer_name": "wartsila.com",
+      "tech_category": "ammonia_engine",
+      "commercial_stage": "announced",
+      "announced_at": "2026-07-16",
+      "origin_class": "verified",
+      "citation": {
+        "url": "https://www.wartsila.com/gbr/media/news/16-07-2026-two-new-gas-carriers-to-stay-ahead-of-environmental-standards-with-wartsila-25-ammonia-engine-3772647",
+        "title": "Two new gas carriers to stay ahead of environmental standards with Wärtsilä 25 Ammonia engine",
+        "retrieved_at": "2026-10-24",
+        "quote": "Wärtsilä will supply its Wärtsilä 25 Ammonia auxiliary engine, together with a NO x reducer (SCR) and gas valve unit (GVU), for two new 51,350 m 3 capacity midsize LPG/liquid ammonia carrier vessels."
+      }
+    }
+  ]
+}

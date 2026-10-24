@@ -1,0 +1,1 @@
+src/features/market/producers/data/rows/oem_tech_roadmaps-2026-10.json | new in ARM-1: the reviewed OEM roadmap rows, each quoted verbatim from the manufacturer's own page; data authored from captured sources, no old file

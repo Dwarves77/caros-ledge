@@ -140,8 +140,8 @@ export const euOilBulletin: ProducerSpec = {
   name: "eu-weekly-oil-bulletin",
   ...marketSeriesBase("eu-oil-bulletin"),
   licenceKey: "ec_weekly_oil_bulletin",
-  enabled: false,
-  enabledRuling: "operator 2026-10-04: no data population before every build layer is complete (ADR-023: flipping this is a reviewed code change)",
+  enabled: true,
+  enabledRuling: "operator 2026-10-23: population hold lifted for the structured-data producers (ADR-023 code change; rulings file 2026-10-23 and 2026-10-24)",
   killSwitchEnv: "MARKET_PRODUCER_EU_OIL_BULLETIN_ENABLED",
   async fetchDoc(ctx): Promise<Doc> {
     if (ctx.input.since && !/^\d{4}-\d{2}-\d{2}$/.test(ctx.input.since)) throw new StructureError(`since "${ctx.input.since}" is not a well-formed YYYY-MM-DD date`);

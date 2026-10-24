@@ -46,8 +46,8 @@ export const researchAssessment: ProducerSpec = {
   name: "research-assessment",
   table: "research_assessments",
   licenceKey: null,
-  enabled: false,
-  enabledRuling: "operator 2026-10-04: no data population before every build layer is complete (ADR-023)",
+  enabled: true,
+  enabledRuling: "operator 2026-10-23: population hold lifted for the structured-data producers (ADR-023 code change; rulings file 2026-10-23 and 2026-10-24)",
   killSwitchEnv: "RESEARCH_ASSESSMENT_PRODUCER_ENABLED",
   gap: "no assessment candidates: pass candidate inputs, or run with a database client to read the live research items",
   /** The document is the JSON array of assessment inputs; with a client and no injected input the live candidates are read (bounded by input.limit). */

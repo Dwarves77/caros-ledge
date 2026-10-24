@@ -58,8 +58,8 @@ export const eiaPetroleumSpot: ProducerSpec = {
   name: "eia-v2-petroleum-spot",
   ...marketSeriesBase("eia-v2"),
   licenceKey: "eia",
-  enabled: false,
-  enabledRuling: "operator 2026-10-04: no data population before every build layer is complete (ADR-023: flipping this is a reviewed code change)",
+  enabled: true,
+  enabledRuling: "operator 2026-10-23: population hold lifted for the structured-data producers (ADR-023 code change; rulings file 2026-10-23 and 2026-10-24)",
   killSwitchEnv: "MARKET_PRODUCER_EIA_V2_ENABLED",
   keyEnv: EIA_KEY_ENV,
   async fetchDoc(ctx) {

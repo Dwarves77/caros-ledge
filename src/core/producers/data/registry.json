@@ -55,5 +55,104 @@
     "dry_capable": true,
     "enabled_env": "OPERATIONS_PRODUCER_UKPN_HEATMAP_ENABLED",
     "in_all": false
+  },
+  {
+    "name": "oem-roadmap-rows",
+    "domain_table": "oem_tech_roadmaps",
+    "source": "reviewed_rows_file",
+    "licence": "Reviewed rows file: every row cites a stored capture of a page the class table rates",
+    "dry_capable": true,
+    "enabled_env": "OEM_PRODUCER_ROWS_FILE_ENABLED",
+    "in_all": false
+  },
+  {
+    "name": "grid-queue-rows",
+    "domain_table": "grid_connection_queues",
+    "source": "reviewed_rows_file",
+    "licence": "Reviewed rows file: every row cites a stored capture of a page the class table rates",
+    "dry_capable": true,
+    "enabled_env": "OPERATIONS_PRODUCER_GRID_QUEUE_ROWS_ENABLED",
+    "in_all": false
+  },
+  {
+    "name": "reroute-rows",
+    "domain_table": "reroute_events",
+    "source": "reviewed_rows_file",
+    "licence": "Reviewed rows file: every row cites a stored capture of a page the class table rates",
+    "dry_capable": true,
+    "enabled_env": "MARKET_PRODUCER_REROUTE_ROWS_ENABLED",
+    "in_all": false
+  },
+  {
+    "name": "operator-rows-auxiliary-energy-profiles",
+    "domain_table": "auxiliary_energy_profiles",
+    "source": "operator_rows_csv",
+    "licence": "Operator-supplied external-source CSV, org-stamped by the caller",
+    "dry_capable": true,
+    "enabled_env": "OPERATIONS_PRODUCER_AUX_ENERGY_ROWS_ENABLED",
+    "in_all": false
+  },
+  {
+    "name": "operator-rows-indexation-clauses",
+    "domain_table": "indexation_clauses",
+    "source": "operator_rows_csv",
+    "licence": "Operator-supplied external-source CSV, org-stamped by the caller",
+    "dry_capable": true,
+    "enabled_env": "MARKET_PRODUCER_INDEXATION_ROWS_ENABLED",
+    "in_all": false
+  },
+  {
+    "name": "bls-oews",
+    "domain_table": "regional_data_facts",
+    "source": "bls",
+    "licence": "US public domain",
+    "dry_capable": true,
+    "enabled_env": "REGIONAL_PRODUCER_BLS_OEWS_ENABLED",
+    "in_all": false
+  },
+  {
+    "name": "eurostat-lc-lci-lev",
+    "domain_table": "regional_data_facts",
+    "source": "eurostat",
+    "licence": "CC BY 4.0 (Decision 2011/833/EU)",
+    "dry_capable": true,
+    "enabled_env": "REGIONAL_PRODUCER_EUROSTAT_LC_LCI_LEV_ENABLED",
+    "in_all": false
+  },
+  {
+    "name": "eurostat-nrg-pc-205",
+    "domain_table": "regional_data_facts",
+    "source": "eurostat",
+    "licence": "CC BY 4.0 (Decision 2011/833/EU)",
+    "dry_capable": true,
+    "enabled_env": "REGIONAL_PRODUCER_EUROSTAT_NRG_PC_205_ENABLED",
+    "in_all": false
+  },
+  {
+    "name": "state-cost-facts",
+    "domain_table": "state_cost_facts",
+    "source": "session_candidates",
+    "licence": "Session-authored candidates, each grounded verbatim in its own capture and rated by the class table",
+    "dry_capable": true,
+    "enabled_env": null,
+    "in_all": false
+  },
+  {
+    "name": "refresh-published-price-statistics",
+    "domain_table": "published_price_statistics",
+    "source": "market_series",
+    "licence": "Derived from the stored market_series rows; carries their sources' licences",
+    "dry_capable": true,
+    "enabled_env": "MARKET_PRODUCER_PUBLISHED_STATS_ENABLED",
+    "in_all": false
+  },
+  {
+    "name": "research-assessment",
+    "domain_table": "research_assessments",
+    "source": "stored_research_items",
+    "licence": "Derived from stored research items and their forward events",
+    "dry_capable": true,
+    "enabled_env": "RESEARCH_ASSESSMENT_PRODUCER_ENABLED",
+    "in_all": false
   }
 ]

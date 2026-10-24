@@ -3,10 +3,12 @@
 // Stage 7, propagate: the producers (when asked), the outbox drain, the questions the drained changes raise, the signposts they fire, the re-scoring of the research assessments whose item changed, the impact scores of the items the connect stage read
 // (and the backlog whose inputs changed since they were scored), and the carbon cost per FEU of every corridor with its four inputs (each a derived value, recomputed when an input changed).
 // Everything after the drain works from the events the drain just processed, so one change reaches every consumer in the same run.
+import { readFileSync } from "node:fs";
+
 import type { FamilyCall } from "@/core/harness";
 import { scoreItems } from "@/core/impact/run";
 import { runPropagationDrain, reopener } from "@/core/propagation";
-import { loadProducerRegistry, runProducer, runRegistered, selectRuns } from "@/core/producers";
+import { citedPages, loadProducerRegistry, runProducer, runRegistered, selectRuns } from "@/core/producers";
 import type { RunResult } from "@/core/types/run-result";
 import { runResult, worst } from "@/core/types/run-result";
 import { buildEntityItemsReader, buildSignpostStepDeps, runQuestionsOnChange, runSignpostStep } from "@/features/learning";
@@ -15,18 +17,23 @@ import { fetchLiveCandidates } from "@/features/research";
 
 import type { BuiltDeps } from "../wiring";
 
+import { captureCited } from "./capture";
+
 const PROPAGATE_CALLER = "turn-propagate";
 type DrainData = NonNullable<Awaited<ReturnType<typeof runPropagationDrain>>["data"]>;
 type Processed = DrainData["processedEvents"][number];
 
+/** A reviewed rows file is read only from the producers' own data/rows directories. */
+const ROWS_FILE = /^src\/features\/(?:market|operations|statutory)\/producers\/data\/rows\/[\w.-]+\.(?:json|csv)$/;
 export interface PropagatePlan {
-  producers: { producer: string; only: string | undefined } | null;
+  producers: { producer: string; only: string | undefined; rowsFile: string | undefined; orgId: string | undefined } | null;
   batch: number | undefined;
 }
 function planPropagate(input: Record<string, unknown>): PropagatePlan {
   const p = input.producers && typeof input.producers === "object" ? (input.producers as Record<string, unknown>) : input.producers === true ? {} : null;
   const only = typeof p?.only === "string" ? p.only : undefined;
-  return { producers: p ? { producer: only ? "registry" : typeof p.producer === "string" ? p.producer : "all", only } : null, batch: typeof input.batch === "number" ? input.batch : undefined };
+  const str = (v: unknown) => (typeof v === "string" ? v : undefined);
+  return { producers: p ? { producer: only ? "registry" : str(p.producer) ?? "all", only, rowsFile: str(p.rowsFile), orgId: str(p.orgId) } : null, batch: typeof input.batch === "number" ? input.batch : undefined };
 }
 
 /** The ids of the items among the drained events: their research assessments are re-scored (IMP-055). Pure. */
@@ -52,7 +59,13 @@ export function shapePropagate(parts: { producers: RunResult | null; drain: RunR
 
 /** A producer run fetches its document, dry or not, so it runs only while the fetch gate is open (the analysis stages apply with the cadence off; fetching is what rule 16 holds); with the cadence off it is planned (selected and named), never fetched. */
 async function runProducers(call: FamilyCall, d: BuiltDeps, p: NonNullable<PropagatePlan["producers"]>): Promise<RunResult> {
-  if (await d.gate.refresh()) return runRegistered(d.producers, { catalog: d.catalog, producer: p.producer, only: p.only, mode: call.mode });
+  if (await d.gate.refresh()) {
+    if (p.rowsFile && !ROWS_FILE.test(p.rowsFile)) return runResult("failed", { refused: 1 }, [`refused: rowsFile "${p.rowsFile}" is not a file under a producer's data/rows directory`]);
+    const text = p.rowsFile ? readFileSync(p.rowsFile, "utf8") : undefined;
+    const cited = text !== undefined && !call.dry ? await captureCited(d, citedPages(text)) : null;
+    const r = await runRegistered(d.producers, { catalog: d.catalog, producer: p.producer, only: p.only, mode: call.mode, ...(text !== undefined ? { input: { text, ...(p.orgId ? { orgId: p.orgId } : {}) } } : {}) });
+    return cited ? { ...r, counts: { ...r.counts, ...pick(cited, "capture_") }, notes: [...cited.notes, ...r.notes] } : r;
+  }
   try {
     const picked = selectRuns(loadProducerRegistry(d.catalog), { producer: p.producer, only: p.only });
     return runResult("ok", { selected: picked.length }, [`dry: ${picked.map((e) => e.name).join(", ") || "no producer"} planned, not fetched: the fetch gate is closed`]);

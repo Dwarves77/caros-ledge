@@ -1,0 +1,55 @@
+{
+  "dispatches": [
+    { "producer": "ecb-fx" },
+    { "producer": "eia-v2-petroleum-spot" },
+    { "producer": "eu-weekly-oil-bulletin" },
+    { "producer": "refresh-published-price-statistics" },
+    { "producer": "neso-carbon-intensity" },
+    { "producer": "ukpn-capacity-heatmap" },
+    { "producer": "bls-oews" },
+    { "producer": "eurostat-lc-lci-lev" },
+    { "producer": "eurostat-nrg-pc-205" },
+    { "producer": "oem-roadmap-rows", "rowsFile": "src/features/market/producers/data/rows/oem_tech_roadmaps-2026-10.json" },
+    { "producer": "research-assessment" }
+  ],
+  "tables": {
+    "market_series": { "armed": ["ecb-fx", "eia-v2-petroleum-spot", "eu-weekly-oil-bulletin"] },
+    "market_series_items": { "absent": [{ "source": "mint artifact (ops ratify-series-items)", "reason": "ratification attaches a series to a minted item and needs a mint artifact; item minting stays held (the operator 2026-10-04 hold stands for minting)" }] },
+    "published_price_statistics": { "armed": ["refresh-published-price-statistics"] },
+    "grid_connection_queues": {
+      "armed": ["ukpn-capacity-heatmap", "grid-queue-rows"],
+      "absent": [
+        { "source": "NESO connections register and queue statistics (neso.energy)", "reason": "publishes generation and storage queue MW and connection dates, no demand-side queue months at p50 or p90, the two columns the table requires one of" },
+        { "source": "SSEN and National Grid connections-reform timeline pages", "reason": "state process dates (Gate 2 offer deadlines), not a queue duration in months for a capacity band" },
+        { "source": "Rijksoverheid and Netbeheer Nederland congestion pages", "reason": "state priority rules and counts of waiting parties; the only duration found (45 weeks, small consumers, 2025) is a mean reported by BNNVARA, not a p50 or p90 and not a primary source" },
+        { "source": "SPEN, NGED heatmaps and ENTSO-E congestion maps", "reason": "no page stating queue months was found; heatmaps carry headroom MW, which the UKPN producer already maps with queue months NULL and obs_status L (ruling 2026-10-08)" }
+      ]
+    },
+    "regional_data_facts": { "armed": ["neso-carbon-intensity", "bls-oews", "eurostat-lc-lci-lev", "eurostat-nrg-pc-205"] },
+    "state_cost_facts": { "armed": ["state-cost-facts"] },
+    "oem_tech_roadmaps": { "armed": ["oem-roadmap-rows"] },
+    "reroute_events": {
+      "armed": ["reroute-rows"],
+      "absent": [
+        { "source": "Maersk customer advisories (maersk.com)", "reason": "capture refused: the host answers with response headers over the HTTP client limit (HeadersOverflowError), so no stored capture can exist" },
+        { "source": "Hapag-Lloyd and CMA CGM advisories", "reason": "capture refused: HTTP 403 to the declared identity" },
+        { "source": "MSC and ONE advisory index pages", "reason": "the pages load but state no reroute with a corridor, cause, dates and surcharge" },
+        { "source": "Suez Canal Authority and Panama Canal Authority notices", "reason": "the Suez page carries no notice text; the Panama advisories path answers 404" },
+        { "source": "corridor model", "reason": "a Suez-to-Cape reroute joins the same origin-destination pair, and corridor identity is ORIGIN-DEST:mode, so baseline and reroute resolve to one entity and the driver refuses it by design; fuel_burn_multiplier is a required derived figure no advisory states as a number" }
+      ]
+    },
+    "indexation_clauses": { "armed": ["operator-rows-indexation-clauses"], "absent": [{ "source": "carrier tariff conditions and BAF or ETS surcharge formulas", "reason": "no published tariff states base_value, base_date and passthrough_pct (contract terms), a contract is customer data, and the table is org-stamped by the caller with no org named" }] },
+    "auxiliary_energy_profiles": { "armed": ["operator-rows-auxiliary-energy-profiles"], "absent": [{ "source": "reefer and auxiliary energy specifications (Carrier, Thermo King, Daikin)", "reason": "no spec page states duty_cycle and hours_typical (operator assumptions, required columns) and the table is org-stamped by the caller with no org named" }] },
+    "statutory_computations": {
+      "absent": [
+        { "source": "EUR-Lex captures: EU ETS maritime phase-in, FuelEU Article 4(2) and Article 23, ReFuelEU Annex I, CBAM definitive-period factors", "reason": "the writer (features/statutory/rows.ts) computes the FuelEU Annex IV penalty for a named vessel from three vessel-specific inputs no instrument states, and computeStatutory is not implemented in this tree (ops statutory-run answers owed, core/turn/ops.ts); a schedule has no formula and no column to land in" }
+      ]
+    },
+    "research_assessments_current": { "armed": ["research-assessment"] },
+    "signposts": { "armed": ["research-assessment"] },
+    "vocabulary_terms": { "turnPass": "connect corpus term pass" },
+    "vocabulary_mentions": { "turnPass": "connect corpus term pass" },
+    "entity_refs": { "armed": ["state-cost-facts"] }
+  },
+  "stillDisabled": ["carrier-ets-surcharge", "sbti-target-dashboard", "research-walker"]
+}

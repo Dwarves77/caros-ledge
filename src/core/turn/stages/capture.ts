@@ -2,7 +2,11 @@
 // Ported from old_repo/scripts/turns/run-fetch-drain.mjs (lines 268-391)
 // Stage 4, capture: the sources the change stage found changed are queued (one open row per source), then the capture worker drains the queue and stores each whole document.
 // The worker reads no gate of its own: this stage reads the gate first, and the worker call carries a timeout.
+import { capture } from "@/core/fetch";
+import { storageMaxChars } from "@/core/fetch/policy";
+import { storeCapture, type Db as StoreDb } from "@/core/fetch/store-capture";
 import type { FamilyCall } from "@/core/harness";
+import { registerAndRate } from "@/core/sources/register";
 import type { RunResult } from "@/core/types/run-result";
 import { runResult } from "@/core/types/run-result";
 
@@ -29,6 +33,25 @@ export function shapeCapture(reports: readonly Report[], queued: number): RunRes
   const counts = { queued, processed: reports.length, captured: by("captured").length, duplicate_skipped: by("duplicate_skipped").length, requeued: by("requeued").length, failed };
   const outcome = failed === 0 ? "ok" : failed < reports.length ? "partial" : "failed";
   return { ...runResult(outcome, counts, by("failed").map((r) => `${r.source_id}: ${r.detail ?? "failed"}`)), data: { ids: { capture_ids: by("captured").map((r) => r.capture_id).filter((x): x is string => !!x), captured_source_ids: by("captured").map((r) => r.source_id) } } };
+}
+
+/** Rule 17 for a reviewed rows file: each cited page is rated through the class table, captured by the one capture path and stored by the one writer, so the producer's quote check (acceptStoredQuote) finds the capture it verifies against. Never fetches a page twice for one hash. */
+export async function captureCited(d: BuiltDeps, cited: readonly { url: string; title: string }[]): Promise<RunResult> {
+  const counts = { cited: cited.length, captured: 0, unchanged: 0, failed: 0 };
+  const notes: string[] = [];
+  for (const { url, title } of cited) {
+    const rated = await registerAndRate(d.sb, url, { name: title });
+    const got = "source_id" in rated ? await capture(url, {}, d.fetch) : null;
+    if (!got?.usable || !got.text || !("source_id" in rated)) {
+      counts.failed += 1;
+      notes.push(`${url}: ${"source_id" in rated ? (got?.holdReason ?? "no usable capture") : `not registered (${rated.status})`}`);
+      continue;
+    }
+    const s = await storeCapture(d.sb as unknown as StoreDb, { sourceId: rated.source_id, sourceUrl: url, sourceName: title, finalUrl: url, text: got.text, title: got.title, httpStatus: got.status ?? 200, channel: got.channel ?? "direct", numberLocale: null, itemId: null, itemIds: [], declaredTransforms: [{ declared_transform: "rows-file-citation", at: d.now().toISOString() }], ceilingBind: null, ceiling: storageMaxChars(d.env) }, () => d.now().getTime(), d.now().getTime());
+    if (s.outcome === "failed") notes.push(`${url}: ${s.detail}`);
+    counts[s.outcome === "captured" ? "captured" : s.outcome === "unchanged" ? "unchanged" : "failed"] += 1;
+  }
+  return runResult(counts.failed ? (counts.failed < cited.length ? "partial" : "failed") : "ok", counts, notes);
 }
 
 export async function runCapture(call: FamilyCall, d: BuiltDeps): Promise<RunResult> {

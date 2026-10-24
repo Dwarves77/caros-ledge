@@ -30,6 +30,23 @@ export function loadRowsFile(text: string, label = "rows file"): Record<string, 
   return rows as Record<string, unknown>[];
 }
 
+/** The distinct pages a JSON rows file cites ({url, title} of each row's citation); a CSV or any other text cites none. */
+export function citedPages(text: string): { url: string; title: string }[] {
+  let rows: unknown;
+  try {
+    rows = JSON.parse(text);
+  } catch {
+    return [];
+  }
+  const list = Array.isArray(rows) ? rows : (rows as { rows?: unknown } | null)?.rows;
+  const byUrl = new Map<string, string>();
+  for (const r of Array.isArray(list) ? list : []) {
+    const c = (r as { citation?: { url?: unknown; title?: unknown } } | null)?.citation;
+    if (typeof c?.url === "string" && !byUrl.has(c.url)) byUrl.set(c.url, String(c.title ?? c.url));
+  }
+  return [...byUrl].map(([url, title]) => ({ url, title }));
+}
+
 export interface Citation {
   url: string;
   title: string;

@@ -15,11 +15,11 @@ const rowKey = (table: string) => (r: Rec): string => JSON.stringify([r.org_id, 
 
 function operatorRowsSpec(table: "auxiliary_energy_profiles" | "indexation_clauses", pk: string, killSwitchEnv: string): ProducerSpec {
   return {
-    name: `operator-rows-${table}`,
+    name: `operator-rows-${table.replaceAll("_", "-")}`,
     table,
     licenceKey: null,
-    enabled: false,
-    enabledRuling: "operator 2026-10-04: no data population before every build layer is complete",
+    enabled: true,
+    enabledRuling: "operator 2026-10-23: population hold lifted for the structured-data producers (ADR-023 code change; rulings file 2026-10-23 and 2026-10-24)",
     killSwitchEnv,
     gap: GAP,
     async fetchDoc() {

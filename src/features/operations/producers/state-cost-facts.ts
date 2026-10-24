@@ -1,7 +1,7 @@
 // Ported from old_repo/scripts/producers/regional/state-cost-facts-producer.mjs (lines 17-233)
 // Ported from old_repo/src/lib/regional/state-cost-facts-envelope.mjs (lines 1-109)
 // US state cost facts (minimum wage, industrial electricity). Each candidate is grounded verbatim in its own capture BEFORE its host is rated by the class table; an
-// ungrounded or unrated candidate is refused by name. A write authors the jurisdiction entity, identifier and ref of every state touched (rule 17). HELD: enabled false.
+// ungrounded or unrated candidate is refused by name. A write authors the jurisdiction entity, identifier and ref of every state touched (rule 17). Armed 2026-10-23 (the licence gate and the kill switch still decide a write).
 import { z } from "zod";
 
 import { groundCandidate } from "@/core/contracts";
@@ -37,8 +37,8 @@ export const stateCostFacts: ProducerSpec = {
   name: "state-cost-facts",
   table: "state_cost_facts",
   licenceKey: null,
-  enabled: false,
-  enabledRuling: "R14 hold (operator 2026-09-25 'build the producer'; no population before every layer, 2026-10-04): proven on fixtures only",
+  enabled: true,
+  enabledRuling: "operator 2026-10-23: population hold lifted for the structured-data producers (ADR-023 code change; rulings file 2026-10-23 and 2026-10-24)",
   killSwitchEnv: null,
   gap: "no state cost candidates supplied; the input is a session-authored candidates file",
   async fetchDoc() {

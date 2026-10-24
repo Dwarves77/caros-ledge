@@ -70,9 +70,9 @@ function formatSourceEvidence(xmlText: string, meta?: { status?: number | null; 
 export const ecbFx: ProducerSpec = {
   name: "ecb-fx",
   ...marketSeriesBase(ECB_KEY_PREFIX),
-  licenceKey: null,
-  enabled: false,
-  enabledRuling: "operator 2026-10-04: no data population before every build layer is complete (ADR-023: flipping this is a reviewed code change)",
+  licenceKey: "ecb",
+  enabled: true,
+  enabledRuling: "operator 2026-10-23: population hold lifted for the structured-data producers (ADR-023 code change; rulings file 2026-10-23 and 2026-10-24)",
   killSwitchEnv: "MARKET_PRODUCER_ECB_FX_ENABLED",
   async fetchDoc(ctx) {
     const res = await ctx.get(ECB_XML_URL, { headers: { accept: "application/xml, text/xml" } });

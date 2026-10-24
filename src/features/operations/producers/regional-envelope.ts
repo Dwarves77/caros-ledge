@@ -148,7 +148,7 @@ async function resolveRegions(ctx: ProducerCtx, rows: Rec[]): Promise<{ rows: Re
 
 function envelopeSpec(o: { name: string; licenceKey: string; killSwitchEnv: string; sourceKey: string; fetchDoc: ProducerSpec["fetchDoc"]; parseDoc(text: string, ctx: ProducerCtx): Promise<Rec[]> | Rec[] }): ProducerSpec {
   return {
-    name: o.name, table: "regional_data_facts", licenceKey: o.licenceKey, enabled: false, enabledRuling: "operator 2026-10-04: no data population before every build layer is complete", killSwitchEnv: o.killSwitchEnv,
+    name: o.name, table: "regional_data_facts", licenceKey: o.licenceKey, enabled: true, enabledRuling: "operator 2026-10-23: population hold lifted for the structured-data producers (ADR-023 code change; rulings file 2026-10-23 and 2026-10-24)", killSwitchEnv: o.killSwitchEnv,
     fetchDoc: o.fetchDoc,
     async parse(doc, ctx): Promise<ParseOut<Rec>> {
       const observations = await o.parseDoc(doc.text ?? "", ctx);

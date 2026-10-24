@@ -102,8 +102,8 @@ function rowsFileSpec(def: RowsFileDef): ProducerSpec {
     name: def.name,
     table: def.table,
     licenceKey: null,
-    enabled: false,
-    enabledRuling: "operator 2026-10-04: no data population before every build layer is complete; the driver is proven on fixtures",
+    enabled: true,
+    enabledRuling: "operator 2026-10-23: population hold lifted for the structured-data producers (ADR-023 code change; rulings file 2026-10-23 and 2026-10-24)",
     killSwitchEnv: def.killSwitchEnv,
     gap: def.gap,
     async fetchDoc() {
