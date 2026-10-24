@@ -5,13 +5,13 @@
     { "code": "MID", "toYears": 10 },
     { "code": "FAR", "toYears": null }
   ],
-  "tokens": [
-    { "token": "0-6m", "band": "NOW", "toYears": 0.5 },
-    { "token": "6-18m", "band": "NOW", "toYears": 1.5 },
-    { "token": "18-24m", "band": "NOW", "toYears": 2 },
-    { "token": "2-5y", "band": "NEAR", "toYears": 5 },
-    { "token": "5-10y", "band": "MID", "toYears": 10 },
-    { "token": ">10y", "band": "FAR", "toYears": null }
+  "windows": [
+    { "token": "0-6m", "toMonths": 6, "bands": ["NOW"] },
+    { "token": "6-18m", "toMonths": 18, "bands": ["NOW"] },
+    { "token": "18-36m", "toMonths": 36, "bands": ["NOW", "NEAR"] },
+    { "token": "3-5y", "toMonths": 60, "bands": ["NEAR"] },
+    { "token": "5-10y", "toMonths": 120, "bands": ["MID"] },
+    { "token": ">10y", "toMonths": null, "bands": ["FAR"] }
   ],
   "unplaced": "unplaced",
   "excludedEventKinds": ["target", "other"]

@@ -1,38 +1,36 @@
-// New in CTX-5 (ADR-050). The shape of data/horizons.json: parsing refuses a file that is missing a key or whose table is inconsistent, so a half-written file stops the process at startup.
-// The bands are the ones the research assessment implements (NOW to 2 years, NEAR to 5, MID to 10, FAR beyond; tests/contracts/horizon-bands.test.ts derives them from assess.ts), and every theme token
-// lies inside exactly one band: the last token of a band ends where the band ends.
+// New in CTX-5 (ADR-050). The shape of data/horizons.json: parsing refuses a file that is missing a key or whose tables disagree, so a half-written file stops the process at startup.
+// Two separate axes. The windows (0-6m, 6-18m, 18-36m, ...) are the product's own vocabulary for how far ahead a theme member looks. The bands are the research assessment's (NOW to 2 years, NEAR to 5,
+// MID to 10, FAR beyond; tests/contracts/horizon-bands.test.ts derives them from assess.ts). A window need not nest inside a band: each window lists the bands its month range overlaps, and the schema
+// computes that overlap from the window's months and the band boundaries and refuses a file whose list disagrees (18-36m overlaps NOW and NEAR).
 import { z } from "zod";
 
-const upper = z.number().positive().nullable();
 const SCHEMA = z
   .object({
-    bands: z.array(z.object({ code: z.string().min(1), toYears: upper })).min(1),
-    tokens: z.array(z.object({ token: z.string().min(1), band: z.string().min(1), toYears: upper })).min(1),
+    bands: z.array(z.object({ code: z.string().min(1), toYears: z.number().positive().nullable() })).min(1),
+    windows: z.array(z.object({ token: z.string().min(1), toMonths: z.number().positive().nullable(), bands: z.array(z.string().min(1)).min(1) })).min(1),
     unplaced: z.string().min(1),
     excludedEventKinds: z.array(z.string().min(1)).min(1),
   })
   .superRefine((h, ctx) => {
     const fail = (message: string) => ctx.addIssue({ code: "custom", message });
-    const ascending = (rows: ReadonlyArray<{ toYears: number | null }>, what: string) =>
-      rows.forEach((r, i) => {
-        const prev = i > 0 ? rows[i - 1]?.toYears : 0;
-        if ((r.toYears === null) !== (i === rows.length - 1)) fail(`${what}: only the last row is open-ended`);
-        else if (r.toYears !== null && prev !== null && prev !== undefined && r.toYears <= prev) fail(`${what}: toYears must ascend`);
+    const ascending = (ends: ReadonlyArray<number | null>, what: string) =>
+      ends.forEach((to, i) => {
+        const prev = i > 0 ? ends[i - 1] : 0;
+        if ((to === null) !== (i === ends.length - 1)) fail(`${what}: only the last row is open-ended`);
+        else if (to !== null && prev !== null && prev !== undefined && to <= prev) fail(`${what}: ends must ascend`);
       });
-    ascending(h.bands, "bands");
-    ascending(h.tokens, "tokens");
-    const names = [...h.bands.map((b) => b.code), ...h.tokens.map((t) => t.token), h.unplaced];
-    if (new Set(names).size !== names.length) fail("a band code, token or the unplaced token is named twice");
-    let at = 0;
-    for (const t of h.tokens) {
-      const idx = h.bands.findIndex((b) => b.code === t.band);
-      if (idx < 0 || idx < at) fail(`token ${t.token} names band ${t.band}, which is unknown or out of order`);
-      at = Math.max(at, idx);
-    }
-    for (const b of h.bands) {
-      const last = h.tokens.filter((t) => t.band === b.code).at(-1);
-      if (!last || last.toYears !== b.toYears) fail(`band ${b.code} must end where its last token ends`);
-    }
+    ascending(h.bands.map((b) => b.toYears), "bands");
+    ascending(h.windows.map((w) => w.toMonths), "windows");
+    const names = [...h.bands.map((b) => b.code), ...h.windows.map((w) => w.token), h.unplaced];
+    if (new Set(names).size !== names.length) fail("a band code, window token or the unplaced token is named twice");
+    h.windows.forEach((w, i) => {
+      const from = i === 0 ? 0 : (h.windows[i - 1]?.toMonths ?? 0);
+      const computed = h.bands.filter((b, k) => {
+        const bFrom = k === 0 ? 0 : (h.bands[k - 1]?.toYears ?? 0) * 12;
+        return from < (b.toYears === null ? Infinity : b.toYears * 12) && (w.toMonths === null || w.toMonths > bFrom);
+      });
+      if (computed.map((b) => b.code).join() !== w.bands.join()) fail(`window ${w.token} lists bands [${w.bands}] but its months overlap [${computed.map((b) => b.code)}]`);
+    });
   });
 
 export type Horizons = z.infer<typeof SCHEMA>;

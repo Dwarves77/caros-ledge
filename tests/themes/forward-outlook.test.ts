@@ -33,7 +33,7 @@ test("the forward outlook is structure: horizon tokens, member ids, surfaces, pi
           { eventId: "ev-2", itemId: "reg", date: "2027-09-01", precision: "day", kind: "compliance_deadline" },
         ],
       },
-      { horizon: "18-24m", memberIds: ["ops"], surfaces: ["operations"], pivotIds: [], triggers: [] },
+      { horizon: "18-36m", memberIds: ["ops"], surfaces: ["operations"], pivotIds: [], triggers: [] },
       { horizon: "MID", memberIds: ["res"], surfaces: ["research"], pivotIds: ["res"], triggers: [] },
       { horizon: "unplaced", memberIds: ["bare"], surfaces: ["market"], pivotIds: [], triggers: [] },
     ],
@@ -50,14 +50,14 @@ test("a member with no recorded horizon, event or deadline is unplaced, never pl
   assert.deepEqual(view?.forwardOutlook.horizons.map((h) => [h.horizon, h.memberIds]), [["unplaced", ["a", "b"]]]);
 });
 
-test("the token edges come from the data file, counted in years of 365.25 days from asOf", () => {
+test("the window edges come from the data file, counted in months of 365.25/12 days from asOf", () => {
   const ids = ["a", "b", "c", "d", "e"];
   const theme: ThemeRow = { id: "t", member_ids: ids };
   const members: MemberRow[] = ids.map((id) => ({ id, legacy_id: id, title: id, item_type: "regulation", domain: 1, ...(id === "e" ? { horizon_band: "FAR" } : {}) }));
   const day = (id: string, event_date: string): ThemeEventRow => ({ id: `ev-${id}`, intelligence_item_id: id, event_date, date_precision: "day", event_kind: "compliance_deadline" });
-  const events = [day("a", "2027-04-24"), day("b", "2027-04-26"), day("c", "2028-10-23"), day("d", "2028-10-24")];
+  const events = [day("a", "2027-04-24"), day("b", "2027-04-26"), day("c", "2029-10-23"), day("d", "2029-10-24")];
   const view = themeAnalysisView({ itemId: "a", surface: "regulations", themes: [theme], briefs: [], members, events, asOfIso: AS_OF });
-  assert.deepEqual(view?.forwardOutlook.horizons.map((h) => [h.horizon, h.memberIds]), [["0-6m", ["a"]], ["6-18m", ["b"]], ["18-24m", ["c"]], ["2-5y", ["d"]], ["FAR", ["e"]]]);
+  assert.deepEqual(view?.forwardOutlook.horizons.map((h) => [h.horizon, h.memberIds]), [["0-6m", ["a"]], ["6-18m", ["b"]], ["18-36m", ["c"]], ["3-5y", ["d"]], ["FAR", ["e"]]]);
 });
 
 test("horizons.json missing a key, or naming a token outside its own lists, is refused at load", () => {
@@ -65,8 +65,8 @@ test("horizons.json missing a key, or naming a token outside its own lists, is r
     const without = Object.fromEntries(Object.entries(horizonsJson).filter(([k]) => k !== key));
     assert.throws(() => parseHorizons(without), `a file without ${key} must be refused`);
   }
-  assert.throws(() => parseHorizons({ ...horizonsJson, tokens: horizonsJson.tokens.map((t) => (t.token === "18-24m" ? { ...t, toYears: 3 } : t)) }), "a band must end where its last token ends");
-  assert.throws(() => parseHorizons({ ...horizonsJson, tokens: horizonsJson.tokens.map((t) => (t.token === "2-5y" ? { ...t, band: "NOW" } : t)) }), "a token cannot sit in an earlier band");
+  assert.throws(() => parseHorizons({ ...horizonsJson, windows: horizonsJson.windows.map((w) => (w.token === "18-36m" ? { ...w, bands: ["NOW"] } : w)) }), "a window must list exactly the bands its months overlap");
+  assert.throws(() => parseHorizons({ ...horizonsJson, windows: horizonsJson.windows.map((w) => (w.token === "3-5y" ? { ...w, bands: ["NEAR", "MID"] } : w)) }), "a window cannot list a band it does not overlap");
   assert.doesNotThrow(() => parseHorizons(horizonsJson));
 });
 

@@ -1,5 +1,6 @@
-// The band table the assessment code implements (src/features/research/model/assess.ts bandForDate: NOW up to 2 years, NEAR to 5, MID to 10, FAR beyond) is the one the theme horizons and the assessment
-// stance rules are built on. The band is derived here from assess.ts itself at the boundary years, so a data file that drifts from the code is red.
+// The band table the assessment code implements (src/features/research/model/assess.ts bandForDate: NOW up to 2 years, NEAR to 5, MID to 10, FAR beyond) is the single source the theme windows' band lists
+// and the assessment stance rules are built on. The band is derived here from assess.ts itself at the boundary years, so a data file that drifts from the code is red. The windows (0-6m, 6-18m, 18-36m, ...)
+// are the product's own axis and need not nest inside a band.
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
@@ -18,15 +19,18 @@ function assessBand(years: number): string {
   assert.ok(horizon, `no horizon at ${years} years`);
   return horizon.band;
 }
-const upTo = <T extends { toYears: number | null }>(rows: readonly T[], years: number): T | undefined => rows.find((r) => r.toYears === null || years <= r.toYears);
+const bandAt = (years: number): string | undefined => horizonsJson.bands.find((b) => b.toYears === null || years <= b.toYears)?.code;
+const windowAt = (years: number) => horizonsJson.windows.find((w) => w.toMonths === null || years * 12 <= w.toMonths);
 
-test("horizons.json carries the band-to-years table assess.ts implements, and every theme token sits inside exactly one band", () => {
+test("horizons.json carries the band-to-years table assess.ts implements, and every window lists the bands it overlaps", () => {
   const derived = YEARS.map((y) => [y, assessBand(y)] as const);
   assert.deepEqual(derived, [[1, "NOW"], [2, "NOW"], [3, "NEAR"], [5, "NEAR"], [6, "MID"], [10, "MID"], [11, "FAR"]], "assess.ts changed its bands: the data files must follow");
   for (const [y, band] of derived) {
-    assert.equal(upTo(horizonsJson.bands, y)?.code, band, `horizons.json band at ${y} years`);
-    assert.equal(upTo(horizonsJson.tokens, y)?.band, band, `horizons.json token at ${y} years sits in ${band}`);
+    assert.equal(bandAt(y), band, `horizons.json band at ${y} years`);
+    assert.ok(windowAt(y)?.bands.includes(band), `the window at ${y} years lists ${band}`);
   }
+  assert.deepEqual(horizonsJson.windows.find((w) => w.token === "18-36m")?.bands, ["NOW", "NEAR"], "18-36m straddles the 2-year NOW line");
+  assert.deepEqual(horizonsJson.windows.map((w) => w.token), ["0-6m", "6-18m", "18-36m", "3-5y", "5-10y", ">10y"]);
   assert.deepEqual(horizonsJson.bands.map((b) => b.code), ["NOW", "NEAR", "MID", "FAR"]);
 });
 

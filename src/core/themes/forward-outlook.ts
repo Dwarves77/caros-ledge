@@ -1,6 +1,6 @@
 // New in CTX-5 (no old source). The forward view of a theme as STRUCTURE only (ADR-050: a reader authors sentences, code classifies and lists): which members sit in which horizon, on which surfaces,
 // which are the theme's pivots, and the dated forward events that place them. Every string out is an id from the input, a horizon token from data/horizons.json, a surface key, or an event field.
-// The horizon of a member is a recorded theme token, else the token of its earliest dated event or compliance deadline against `asOfIso` (years of 365.25 days, as the assessment counts them), else its recorded band alone, else `unplaced`; never guessed from its page.
+// The horizon of a member is a recorded window token, else the window of its earliest dated event or compliance deadline against `asOfIso` (months of 365.25/12 days, as the assessment counts years), else its recorded band alone, else `unplaced`; never guessed from its page.
 import { SURFACE_ORDER, surfaceOf } from "@/core/routing";
 
 import horizonsJson from "./data/horizons.json";
@@ -35,25 +35,23 @@ export interface ThemeForwardOutlook {
   horizons: ThemeHorizonOutlook[];
 }
 
-const YEAR_MS = 365.25 * 86_400_000;
+const MONTH_MS = (365.25 / 12) * 86_400_000;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}/;
-/** The keys a member can sit under, in reading order: per band its tokens (a dated member), then the band itself (a member that records only a band), and last the unplaced key. */
-const ORDER = [...HORIZONS.bands.flatMap((b) => [...HORIZONS.tokens.filter((t) => t.band === b.code).map((t) => t.token), b.code]), HORIZONS.unplaced];
+/** The keys a member can sit under, in reading order: the windows (a dated member), then the bands (a member that records only a research band), and last the unplaced key. */
+const ORDER = [...HORIZONS.windows.map((w) => w.token), ...HORIZONS.bands.map((b) => b.code), HORIZONS.unplaced];
 
-/** A recorded horizon string as a key: a theme token (en dash read as a hyphen) or a stored band code; null when it is neither. */
+/** A recorded horizon string as a key: a window token (en dash read as a hyphen) or a stored band code; null when it is neither. */
 function recorded(v: unknown): string | null {
   const s = String(v ?? "").trim().replace(/–/g, "-");
-  const hit = [s, s.toUpperCase()].find((k) => HORIZONS.tokens.some((t) => t.token === k) || HORIZONS.bands.some((b) => b.code === k));
-  return hit ?? null;
+  return [s, s.toUpperCase()].find((k) => HORIZONS.windows.some((w) => w.token === k) || HORIZONS.bands.some((b) => b.code === k)) ?? null;
 }
 
 function horizonOf(m: ForwardMember, events: readonly ThemeEventRow[], asOfIso: string): string {
   const stored = recorded(m.horizon ?? m.horizon_band);
-  const isToken = stored !== null && HORIZONS.tokens.some((t) => t.token === stored);
-  if (isToken) return stored;
+  if (stored !== null && HORIZONS.windows.some((w) => w.token === stored)) return stored;
   const first = [...events.map((e) => e.event_date), m.compliance_deadline].filter((d): d is string => typeof d === "string" && DATE_RE.test(d)).sort()[0];
-  const years = first ? (Date.parse(first) - Date.parse(asOfIso)) / YEAR_MS : NaN;
-  if (Number.isFinite(years)) return (HORIZONS.tokens.find((t) => t.toYears === null || years <= t.toYears) as { token: string }).token;
+  const months = first ? (Date.parse(first) - Date.parse(asOfIso)) / MONTH_MS : NaN;
+  if (Number.isFinite(months)) return (HORIZONS.windows.find((w) => w.toMonths === null || months <= w.toMonths) as { token: string }).token;
   return stored ?? HORIZONS.unplaced;
 }
 

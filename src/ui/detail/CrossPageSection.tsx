@@ -46,7 +46,7 @@ function cleanPreContractBriefText(md: string): string {
 }
 
 /** One short label per horizon token (the token's own words; no sentence about an item). */
-const HORIZON_LABEL: Readonly<Record<string, string>> = { "0-6m": "Within 6 months", "6-18m": "6 to 18 months", "18-24m": "18 to 24 months", NOW: "Within 2 years (band only)", "2-5y": "2 to 5 years", NEAR: "2 to 5 years (band only)", "5-10y": "5 to 10 years", MID: "5 to 10 years (band only)", ">10y": "Beyond 10 years", FAR: "Beyond 10 years (band only)", unplaced: "No dated event on file (written by the obligations stage)" };
+const HORIZON_LABEL: Readonly<Record<string, string>> = { "0-6m": "Within 6 months", "6-18m": "6 to 18 months", "18-36m": "18 to 36 months", NOW: "Within 2 years (band only)", "3-5y": "3 to 5 years", NEAR: "2 to 5 years (band only)", "5-10y": "5 to 10 years", MID: "5 to 10 years (band only)", ">10y": "Beyond 10 years", FAR: "Beyond 10 years (band only)", unplaced: "No dated event on file (written by the obligations stage)" };
 
 const Label = ({ children }: { children: ReactNode }) => <p className="cl-detail-label">{children}</p>;
 const Block = ({ label, children }: { label: string; children: ReactNode }) => (
