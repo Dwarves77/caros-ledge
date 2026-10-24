@@ -2,10 +2,11 @@
 // The cross-page reads: the stated intersection summary, the theme analysis (members by page, the brief, the lineage of a dissolved theme), the inferences a customer may read, and the theme
 // chips of a list page. Every read is on the caller's client (RLS) and bounded; a failed block is NAMED in `degraded` so the page says it did not load, never an absent section (INV-263).
 import { admitItems } from "@/core/derived/admissible";
+import { notInList, suppressedEventIds } from "@/core/derived/suppressed-events";
 import type { Db } from "@/core/db";
 import { fetchAllByIdChunks, fetchAllRows } from "@/core/db";
 import { buildIntersectionView, lineageFromThemeDelta, type ConnectionIn, type ResourceLookup } from "@/core/flywheel";
-import { themeAnalysisView, themeChips, themeForItem, type BriefRow, type MemberRow, type ThemeAnalysisView, type ThemeRow } from "@/core/themes";
+import { HORIZONS, themeAnalysisView, themeChips, themeForItem, type BriefRow, type MemberRow, type ThemeAnalysisView, type ThemeEventRow, type ThemeRow } from "@/core/themes";
 
 import { readCustomerInferences, type InferenceView } from "./inference-view";
 
@@ -36,30 +37,46 @@ const readVerifiedItemsByIds = (db: Db, ids: readonly string[]): Promise<MemberR
   fetchAllByIdChunks(
     ids,
     async (slice) => {
-      const r = await admitItems(db.from("intelligence_items").select("id, legacy_id, title, item_type, domain")).in("id", slice);
+      const r = await admitItems(db.from("intelligence_items").select("id, legacy_id, title, item_type, domain, compliance_deadline")).in("id", slice);
       if (r.error) throw new Error(`intelligence_items read failed: ${r.error.message}`);
       return (r.data ?? []) as MemberRow[];
     },
     { chunk: 100, manyPerId: true },
   );
 
+/** The dated forward events of the theme's members from `fromIso` on (a suppressed claim's events and the kinds the customer reads leave out are not read). Throws on a failed read. */
+async function readMemberEvents(db: Db, ids: readonly string[], fromIso: string): Promise<ThemeEventRow[]> {
+  const suppressed = notInList(await suppressedEventIds(db));
+  return fetchAllByIdChunks<ThemeEventRow>(
+    ids,
+    async (slice) => {
+      let q = db.from("item_forward_events").select("id, intelligence_item_id, event_date, date_precision, event_kind").gte("event_date", fromIso).in("intelligence_item_id", slice).not("event_kind", "in", `(${HORIZONS.excludedEventKinds.join(",")})`);
+      if (suppressed) q = q.not("id", "in", suppressed);
+      const r = await q;
+      if (r.error) throw new Error(`item_forward_events read failed: ${r.error.message}`);
+      return (r.data ?? []) as ThemeEventRow[];
+    },
+    { chunk: 100, manyPerId: true },
+  );
+}
+
 /** The theme block of one item: null when the item belongs to no theme. Throws on a failed read. */
-async function readTheme(db: Db, itemUuid: string, surface: string): Promise<ThemeAnalysisView | null> {
+async function readTheme(db: Db, itemUuid: string, surface: string, asOfIso: string): Promise<ThemeAnalysisView | null> {
   const themes = await readThemes(db);
   const theme = themeForItem(themes, itemUuid);
   if (!theme) return null;
-  const [briefs, lineage, members] = await Promise.all([readBriefs(db), readLineage(db), readVerifiedItemsByIds(db, theme.member_ids)]);
-  return themeAnalysisView({ itemId: itemUuid, surface, themes, briefs, lineage, members });
+  const [briefs, lineage, members, events] = await Promise.all([readBriefs(db), readLineage(db), readVerifiedItemsByIds(db, theme.member_ids), readMemberEvents(db, theme.member_ids, asOfIso.slice(0, 10))]);
+  return themeAnalysisView({ itemId: itemUuid, surface, themes, briefs, lineage, members, events, asOfIso });
 }
 
 /** The inferences a customer may read for an item, per request. */
 const readFreshInferences = (db: Db, itemUuid: string): Promise<InferenceView | null> => readCustomerInferences(db, itemUuid);
 
 /** The cross-page analysis of one item: each block read on its own, so one failing block does not take the others down. */
-export async function readCrossPage(db: Db, itemUuid: string, surface: string, intersectionSummary: string | null, connections: readonly ConnectionIn[], lookup: ResourceLookup): Promise<CrossPage> {
+export async function readCrossPage(db: Db, itemUuid: string, surface: string, intersectionSummary: string | null, connections: readonly ConnectionIn[], lookup: ResourceLookup, asOfIso: string): Promise<CrossPage> {
   const degraded: string[] = [];
   const [theme, inferences] = await Promise.all([
-    readTheme(db, itemUuid, surface).catch(() => (degraded.push("themes"), null)),
+    readTheme(db, itemUuid, surface, asOfIso).catch(() => (degraded.push("themes"), null)),
     readFreshInferences(db, itemUuid).catch(() => (degraded.push("inferences"), null)),
   ]);
   return { intersections: buildIntersectionView(connections, lookup, { currentSurface: surface, summary: intersectionSummary }), intersectionSummary, theme, inferences, degraded };

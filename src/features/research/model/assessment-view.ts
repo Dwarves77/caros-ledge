@@ -3,8 +3,22 @@
 // Ported from old_repo/src/lib/research/read-signposts.mjs (lines 79-107)
 // The render-ready view of a stored assessment: ONE column list and ONE corridor label rule (the old tree had three of each), the horizon words, the signposts with the watched entity's name and the
 // append-only history entries. Pure: a reader supplies rows, a component draws the view; nothing here fetches or reads a clock.
-import copyJson from "./data/assessment-copy.json";
+import { z } from "zod";
 
+import copyJson from "./data/assessment-copy.json";
+import stanceJson from "./data/assessment-stance.json";
+
+const STANCE = z
+  .object({
+    stances: z.array(z.string().min(1)).min(1),
+    horizons: z.array(z.string().min(1)).min(1),
+    rules: z.array(z.object({ band: z.string().optional(), kind: z.string().optional(), technicalHighAtLeast: z.number().optional(), commercialHighAtLeast: z.number().optional(), stance: z.string(), horizon: z.string() })).min(1),
+  })
+  .superRefine((d, ctx) => {
+    for (const r of d.rules) if (!d.stances.includes(r.stance) || !d.horizons.includes(r.horizon)) ctx.addIssue({ code: "custom", message: `rule names a stance or horizon outside the lists: ${r.stance} ${r.horizon}` });
+    for (const r of d.rules) if (r.band !== undefined && r.band !== r.horizon) ctx.addIssue({ code: "custom", message: `a ${r.band} rule must name the ${r.band} horizon, not ${r.horizon}` });
+  })
+  .parse(stanceJson);
 const COPY = copyJson as { refusal: Record<string, string>; genericRefusal: string; method: Record<string, string> };
 export const ASSESSMENT_COLUMNS =
   "id, item_id, supersedes, is_current, lifecycle_state, technical_maturity_low, technical_maturity_high, technical_maturity_method, commercial_maturity_low, commercial_maturity_high, commercial_maturity_method, horizon_kind, horizon_band, horizon_rule, horizon_confidence, horizon_trigger_note, refusal_reason, credibility_evidence_score, credibility_authority_score, status_token, computed_at";
@@ -55,6 +69,13 @@ export interface Corridor {
   label: string;
   method: string | null;
 }
+
+/** The classification of a stored assessment into a stance token and the horizon band it was read for, by the ordered rules in data/assessment-stance.json; no sentence. A UI copy table words each token. */
+export interface AssessmentForwardOutlook {
+  stance: string;
+  horizon: string;
+}
+
 export interface AssessmentView {
   id: string;
   itemId: string;
@@ -69,11 +90,24 @@ export interface AssessmentView {
   anchored: boolean;
   lifecycleState: string | null;
   computedAt: string;
+  forwardOutlook: AssessmentForwardOutlook | null;
 }
 
 /** The stored method is a code; its sentence is in assessment-copy.json, and a stored value that is not a known code (an older row's prose) is not printed. */
 const methodWords = (m: string | null): string | null => (m !== null && Object.hasOwn(COPY.method, m) ? (COPY.method[m] as string) : null);
 const corridor = (prefix: "TRL" | "CRI", low: number | null, high: number | null, method: string | null): Corridor | null => (low != null && high != null ? { low, high, label: corridorLabel(prefix, low, high), method: methodWords(method) } : null);
+
+function deriveAssessmentForwardOutlook(row: AssessmentRow): AssessmentForwardOutlook | null {
+  if (row.refusal_reason) return null;
+  const hit = STANCE.rules.find(
+    (r) =>
+      (r.band === undefined || r.band === row.horizon_band) &&
+      (r.kind === undefined || r.kind === row.horizon_kind) &&
+      (r.technicalHighAtLeast === undefined || (row.technical_maturity_high !== null && row.technical_maturity_high >= r.technicalHighAtLeast)) &&
+      (r.commercialHighAtLeast === undefined || (row.commercial_maturity_high !== null && row.commercial_maturity_high >= r.commercialHighAtLeast)),
+  );
+  return hit ? { stance: hit.stance, horizon: hit.horizon } : null;
+}
 
 export function selectAssessmentView(row: AssessmentRow | null | undefined): AssessmentView | null {
   if (!row) return null;
@@ -91,6 +125,7 @@ export function selectAssessmentView(row: AssessmentRow | null | undefined): Ass
     anchored: horizon?.rule === "R1" || horizon?.rule === "R3",
     lifecycleState: row.lifecycle_state,
     computedAt: row.computed_at,
+    forwardOutlook: deriveAssessmentForwardOutlook(row),
   };
 }
 export function selectAssessmentViewsByItemId(rows: readonly AssessmentRow[]): Map<string, AssessmentView> {

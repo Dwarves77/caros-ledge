@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { normalizeDisplayTitle } from "@/core/fetch/titles";
+import { formatDate } from "@/core/shared";
 import { pickVisibleInferences, type InferenceView } from "@/core/detail/inference-view";
 import { CONNECTED_SECTION_ID, crossPageOrd, INFERENCES_SECTION_ID } from "@/core/detail/section-index";
 import type { buildIntersectionView } from "@/core/flywheel/view-model";
@@ -44,6 +45,9 @@ function cleanPreContractBriefText(md: string): string {
     .trim();
 }
 
+/** One short label per horizon token (the token's own words; no sentence about an item). */
+const HORIZON_LABEL: Readonly<Record<string, string>> = { "0-6m": "Within 6 months", "6-18m": "6 to 18 months", "18-36m": "18 to 36 months", NOW: "Within 2 years (band only)", "3-5y": "3 to 5 years", NEAR: "2 to 5 years (band only)", "5-10y": "5 to 10 years", MID: "5 to 10 years (band only)", ">10y": "Beyond 10 years", FAR: "Beyond 10 years (band only)", unplaced: "No dated event on file (written by the obligations stage)" };
+
 const Label = ({ children }: { children: ReactNode }) => <p className="cl-detail-label">{children}</p>;
 const Block = ({ label, children }: { label: string; children: ReactNode }) => (
   <div className="cl-detail-block">
@@ -82,7 +86,7 @@ function GroupList({ groups }: { groups: Group[] }) {
   );
 }
 
-function ThemeAnalysis({ theme, surfaceLabel, first }: { theme: ThemeAnalysisView; surfaceLabel: string; first: boolean }) {
+function ThemeAnalysis({ theme, surfaceLabel, first, kindLabels }: { theme: ThemeAnalysisView; surfaceLabel: string; first: boolean; kindLabels: Readonly<Record<string, string>> }) {
   const pageNames = theme.pages.map((p) => p.label).join(", ");
   const s = theme.sections;
   const staleNote = theme.supersedesThemeId ? "Stale: this synthesis was written for an earlier version of this theme and its membership has changed since." : "Stale: this theme's membership has changed since the synthesis was written.";
@@ -132,6 +136,26 @@ function ThemeAnalysis({ theme, surfaceLabel, first }: { theme: ThemeAnalysisVie
           <StateNote>{theme.absence}</StateNote>
         </div>
       )}
+      {theme.forwardOutlook.horizons.length > 0 && (
+        <Block label="Members by horizon">
+          <ul style={{ margin: 0, paddingLeft: "var(--sp-18)", fontSize: "var(--fs-13)", lineHeight: 1.6, color: "var(--ink-2)" }}>
+            {theme.forwardOutlook.horizons.map((h) => (
+              <li key={h.horizon}>
+                <span style={{ fontWeight: 600, color: "var(--ink)" }}>{HORIZON_LABEL[h.horizon] ?? h.horizon}</span> · {h.memberIds.length} {h.memberIds.length === 1 ? "item" : "items"} · {h.surfaces.map((k) => theme.pages.find((p) => p.surface === k)?.label ?? k).join(", ")}
+                {h.triggers.length > 0 && (
+                  <ul style={{ margin: 0, paddingLeft: "var(--sp-18)" }}>
+                    {h.triggers.map((t) => (
+                      <li key={t.eventId}>
+                        {formatDate(t.date)} · {kindLabels[t.kind] ?? t.kind}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </li>
+            ))}
+          </ul>
+        </Block>
+      )}
       {theme.membersByPage.length > 0 && (
         <Block label="Other items in this theme">
           {theme.membersByPage.map((g) => (
@@ -173,7 +197,7 @@ export function crossPagePresence(crossPage?: CrossPageData | null): { connected
 }
 
 /** "Connected intelligence" (intersections and the theme analysis) and the Inferences section; the view is computed once here from the rows the page read. */
-export function CrossPageSection({ surfaceKey, surfaceLabel, crossPage, onRetry }: { surfaceKey: string; surfaceLabel: string; crossPage?: CrossPageData | null; onRetry?: () => void }) {
+export function CrossPageSection({ surfaceKey, surfaceLabel, crossPage, onRetry, kindLabels = {} }: { surfaceKey: string; surfaceLabel: string; crossPage?: CrossPageData | null; onRetry?: () => void; kindLabels?: Readonly<Record<string, string>> }) {
   const view = crossPage?.intersections ?? null;
   const theme = crossPage?.theme ?? null;
   const themesFailed = crossPage?.degraded?.includes("themes") ?? false;
@@ -201,7 +225,7 @@ export function CrossPageSection({ surfaceKey, surfaceLabel, crossPage, onRetry 
               )}
             </DetailSubSection>
           )}
-          {theme && <ThemeAnalysis theme={theme} surfaceLabel={surfaceLabel} first={!view} />}
+          {theme && <ThemeAnalysis theme={theme} surfaceLabel={surfaceLabel} first={!view} kindLabels={kindLabels} />}
           {themesFailed && (
             <div className="cl-detail-block">
               <StateNote tone="error" {...(onRetry ? { action: { label: "Retry", onClick: onRetry } } : {})}>

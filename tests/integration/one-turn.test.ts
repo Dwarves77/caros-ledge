@@ -232,7 +232,7 @@ test("P2-10: the item the turn minted and verified renders on /regulations and o
   assert.ok(list.rows.some((r) => r.uuid === itemId), "the minted item is on the Regulations list");
 
   // The detail: found by its uuid (or legacy id), every stored section carried once, the claims rated by their source, the item's source rated by the registry.
-  const detail = await loadDetail("regulations", String(item.legacy_id ?? itemId), undefined, db.client);
+  const detail = await loadDetail("regulations", String(item.legacy_id ?? itemId), undefined, db.client, null, "2026-10-24T00:00:00Z");
   assert.ok(!detail.notFound, "the minted item has a detail page");
   if (detail.notFound) return;
   const stored = db.rows("intelligence_item_sections").filter((x) => x.item_id === itemId);
@@ -240,7 +240,7 @@ test("P2-10: the item the turn minted and verified renders on /regulations and o
   const facts = db.rows("section_claim_provenance").filter((x) => x.intelligence_item_id === itemId && x.claim_kind === "FACT");
   assert.ok(facts.length > 0 && facts.every((f) => detail.claimTiers[String(f.id)]?.tier === 1), "each FACT claim carries its source's rating: COALESCE(override, base) of the registered source (base tier 1)");
   assert.equal(detail.resource.sourceTier ?? null, 1, "the capture's source rating is the registry's, drawn on the item");
-  assert.deepEqual(await loadDetail("market", itemId, undefined, db.client), { notFound: true }, "the same item is not found on another surface");
+  assert.deepEqual(await loadDetail("market", itemId, undefined, db.client, null, "2026-10-24T00:00:00Z"), { notFound: true }, "the same item is not found on another surface");
 });
 
 // ── P2-16: Community on the same database as the turn ───────────────────────────────────────────────────────────
@@ -358,7 +358,7 @@ test("IMPACT-1: connect reads the backlog, propagate scores what it read, and th
   // the list draws the stored scores plus the workspace's client score; the second turn finds nothing left to read or score.
   const { active } = await mapRows(f.db.client, [{ id: ITEM, legacy_id: null, title: "Voyage emissions reporting", item_type: "regulation", effective_priority: "HIGH", added_date: "2026-01-01", transport_modes: ["ocean"], jurisdiction_iso: ["EU"] }], { orgId: ORG });
   assert.deepEqual(active[0]?.impactScores, { cost: 0, compliance: 1, client: 2, operational: 3 });
-  const detail = await loadDetail("regulations", ITEM, undefined, f.db.client, ORG);
+  const detail = await loadDetail("regulations", ITEM, undefined, f.db.client, ORG, "2026-10-24T00:00:00Z");
   assert.ok(!detail.notFound);
   if (!detail.notFound) assert.deepEqual(detail.resource.impactScores, { cost: 0, compliance: 1, client: 2, operational: 3 }, "the detail rail reads the same stored scores");
   const again = await runTurn({ stage: "connect", mode: "apply" }, { d: f.d, env: {}, now: () => NOW });

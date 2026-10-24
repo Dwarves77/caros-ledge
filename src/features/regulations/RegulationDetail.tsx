@@ -18,7 +18,7 @@ import type { ChangeLogEntry, Dispute, Resource } from "@/core/types";
 import type { RecommendedAction } from "@/core/brief";
 import { useWorkspaceStore } from "@/core/workspace/store";
 import { ActionCard, ClaimTierProvider, downloadMarkdownBrief, GfmSection, GradeChip, SectionIndex, StateNote, type ClaimTierMap } from "@/ui";
-import { AtAGlanceCard, commonActionCardProps, CrossPageSection, crossPagePresence, DetailLayout, DetailMasthead, DetailPageWrapper, DetailRail, DetailSection, FactBlocks, ImpactRailCard, InThisListStat, ItemConnections, RecordFacts, RelevanceRailCard, RequirementTrajectory, SourcesGrid, topRecommendedAction, type CrossPageData, type DetailSurfaceSharedProps } from "@/ui/detail";
+import { AtAGlanceCard, commonActionCardProps, CrossPageSection, crossPagePresence, DetailLayout, DetailMasthead, DetailPageWrapper, DetailRail, DetailSection, FactBlocks, PendingTriggers, pendingTriggers, ImpactRailCard, InThisListStat, ItemConnections, RecordFacts, RelevanceRailCard, RequirementTrajectory, SourcesGrid, topRecommendedAction, type CrossPageData, type DetailSurfaceSharedProps } from "@/ui/detail";
 import { LegendRailCard } from "@/ui/list-surface";
 import { DetailTagRow } from "@/features/workspace/ui/DetailTagRow";
 import { DetailWatch } from "@/features/workspace/ui/DetailWatch";
@@ -31,6 +31,8 @@ import type { RelevanceFetch } from "./useItemRelevance";
 export interface ObligationEvent {
   event_date: string;
   event_kind: string;
+  obligation_text?: string | null;
+  source_span?: string | null;
 }
 interface Props extends Omit<DetailSurfaceSharedProps, "relevance"> {
   resource: Resource;
@@ -84,8 +86,10 @@ export function RegulationDetail(p: Props) {
   const [depth, setDepth] = useState<"summary" | "full">("summary");
   const [tagOpen, setTagOpen] = useState(false);
   const rows = useMemo(() => sourceEntriesOf(r), [r]);
+  const pendingEvents = useMemo(() => pendingTriggers(p.events), [p.events]);
   const stored = useMemo(() => new Map(p.sections.filter((s) => s.section_key in HEADINGS && (s.content_md || "").trim()).map((s) => [s.section_key, s])), [p.sections]);
-  const factSections = isRecord ? [] : SECTION_INDEX.filter((e) => e.key && stored.has(e.key));
+  const hasPendingSection = stored.has("6") || !!r.doesNotResolve || pendingEvents.length > 0;
+  const factSections = isRecord ? [] : SECTION_INDEX.filter((e) => e.key && (stored.has(e.key) || (e.key === "6" && hasPendingSection)));
   const unparsedBrief = !isRecord && factSections.length === 0 && r.fullBrief ? stripSourcesSection(r.fullBrief) : "";
   const presence = crossPagePresence(p.crossPage);
   const present = new Set(["summary", "sources", ...(hasPenalties(r) ? ["penalties"] : []), ...factSections.map((e) => e.id), ...(presence.connected ? [CONNECTED_SECTION_ID] : []), ...(presence.inferences ? [INFERENCES_SECTION_ID] : [])]);
@@ -169,7 +173,7 @@ export function RegulationDetail(p: Props) {
                   tags={r.tags}
                 />
               ) : (
-                <BriefSummary r={r} changelog={p.changelog} dispute={p.dispute} trajectory={trajectory || r.conversionTrigger || null} />
+                <BriefSummary r={r} changelog={p.changelog} dispute={p.dispute} trajectory={trajectory || r.conversionTrigger || null} doesNotResolve={r.doesNotResolve} pendingEvents={pendingEvents} kindLabels={p.kindLabels} />
               )}
               {depth === "full" && unparsedBrief && (
                 <div style={{ marginTop: 16, paddingTop: 14, borderTop: "1px solid var(--line-3)" }}>
@@ -179,11 +183,25 @@ export function RegulationDetail(p: Props) {
             </DetailSection>
             {factSections
               .filter((e) => depth === "full" || e.key === "3")
-              .map((e) => (
-                <DetailSection key={e.id} id={e.id} title={HEADINGS[e.key as string] as string} index={e.ord ?? null}>
-                  <FactBlocks markdown={stored.get(e.key as string)?.content_md} {...(depth === "summary" ? { maxGroups: 1 } : {})} />
-                </DetailSection>
-              ))}
+              .map((e) => {
+                const storedContent = stored.get(e.key as string)?.content_md;
+                return (
+                  <DetailSection key={e.id} id={e.id} title={HEADINGS[e.key as string] as string} index={e.ord ?? null}>
+                    {storedContent && <FactBlocks markdown={storedContent} {...(depth === "summary" ? { maxGroups: 1 } : {})} />}
+                    {e.key === "6" && (
+                      <>
+                        {r.doesNotResolve && (
+                          <div style={{ marginTop: storedContent ? "var(--sp-12)" : 0 }}>
+                            <p className="cl-detail-label">Does not resolve</p>
+                            <p style={{ fontSize: "var(--fs-13)", lineHeight: 1.6, color: "var(--ink-2)" }}>{r.doesNotResolve}</p>
+                          </div>
+                        )}
+                        <PendingTriggers events={pendingEvents} kindLabels={p.kindLabels ?? {}} />
+                      </>
+                    )}
+                  </DetailSection>
+                );
+              })}
             {depth === "full" && hasPenalties(r) && (
               <DetailSection id="penalties" title="Penalties" aside="From the regulatory brief" index={7}>
                 <PenaltyFacts r={r} />
@@ -194,7 +212,7 @@ export function RegulationDetail(p: Props) {
                 {rows.length > 0 ? <SourcesGrid rows={rows} /> : <StateNote>No sources are listed for this item.</StateNote>}
               </DetailSection>
             )}
-            <CrossPageSection surfaceKey="regulations" surfaceLabel="Regulations" crossPage={p.crossPage} onRetry={() => router.refresh()} />
+            <CrossPageSection surfaceKey="regulations" surfaceLabel="Regulations" crossPage={p.crossPage} onRetry={() => router.refresh()} kindLabels={p.kindLabels ?? {}} />
           </DetailLayout>
         </DetailPageWrapper>
       </div>
@@ -216,7 +234,7 @@ function PenaltyFacts({ r }: { r: Resource }) {
   );
 }
 
-function BriefSummary({ r, changelog, dispute, trajectory }: { r: Resource; changelog: ChangeLogEntry[]; dispute: Dispute | null; trajectory?: ReactNode }) {
+function BriefSummary({ r, changelog, dispute, trajectory, doesNotResolve, pendingEvents = [], kindLabels = {} }: { r: Resource; changelog: ChangeLogEntry[]; dispute: Dispute | null; trajectory?: ReactNode; doesNotResolve?: string | undefined; pendingEvents?: ObligationEvent[]; kindLabels?: Record<string, string> }) {
   const shortText = r.whatIsIt || r.note || "";
   if (!shortText && !r.fullBrief) return <StateNote>The narrative brief for this regulation has not been written yet. The details elsewhere on this page are accurate.</StateNote>;
   const changes = changelog.map((c) => c.impact).filter((s): s is string => !!s);
@@ -244,6 +262,15 @@ function BriefSummary({ r, changelog, dispute, trajectory }: { r: Resource; chan
           <StateNote>{dispute.note}</StateNote>
         </div>
       )}
+      {doesNotResolve && (
+        <div style={{ marginTop: "var(--sp-10)" }}>
+          <p className="cl-detail-label">What does not resolve</p>
+          <p style={{ fontSize: "var(--fs-13)", lineHeight: 1.6, margin: "0 0 var(--sp-6)", color: "var(--ink-2)" }}>
+            {doesNotResolve}
+          </p>
+        </div>
+      )}
+      <PendingTriggers events={pendingEvents} kindLabels={kindLabels} />
     </>
   );
 }

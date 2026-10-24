@@ -8,7 +8,7 @@
 // same item: a date is never invented.
 import { z } from "zod";
 
-import { DUTY_HOLDER_CLASSES, isValid, LEG_MODE_CODES } from "@/core/contracts/vocabularies";
+import { DUTY_HOLDER_CLASSES, isMissing, isValid, LEG_MODE_CODES, OBS_STATUS } from "@/core/contracts/vocabularies";
 import { readFactSuppressionsFor } from "@/core/detail/claim-tiers";
 import { admissibleClaims, admitItems } from "@/core/derived/admissible";
 import { isVerbatim } from "@/core/contracts/verbatim";
@@ -32,7 +32,21 @@ const DATE_COLUMNS = ["entry_into_force", "date_of_application", "first_deadline
 const MONEY_KEYS = ["amount", "currency", "price", "cost"];
 
 const re = z.string();
-const rules = z.object({ phrases: z.array(z.object({ class: z.string(), pattern: re })), pinpoint: re, deontic: re, crossReference: re, window: z.object({ maxSentence: z.number(), pinpointLookBack: z.number(), headingOverlap: z.number(), subjectDistance: z.number() }), triggerAttribute: z.string(), datePhrases: z.object({ date_of_application: re, enforcement_start: re }) }).parse(rulesJson);
+const rules = z.object({
+  phrases: z.array(z.object({ class: z.string(), pattern: re })),
+  pinpoint: re,
+  deontic: re,
+  crossReference: re,
+  window: z.object({ maxSentence: z.number(), pinpointLookBack: z.number(), headingOverlap: z.number(), subjectDistance: z.number() }),
+  triggerAttribute: z.string(),
+  datePhrases: z.object({ date_of_application: re, enforcement_start: re }),
+  triggerClassifiers: z.array(z.object({ attribute: z.string(), comparison: z.string().optional(), token: z.string().optional(), pattern: re })),
+  artifactClasses: z.array(z.object({ class: z.string(), pattern: re })),
+  absence: z.string(),
+}).parse(rulesJson);
+if (!OBS_STATUS[rules.absence] || OBS_STATUS[rules.absence]?.isPresent !== false) throw new Error(`object-rules.json absence "${rules.absence}" is not a missing code of the obs_status vocabulary`);
+const TRIGGER_CLASSIFIERS = rules.triggerClassifiers.map((c) => ({ ...c, re: new RegExp(c.pattern, "i") }));
+const ARTIFACT_CLASSES = rules.artifactClasses.map((c) => ({ class: c.class, re: new RegExp(c.pattern, "i") }));
 const targets = z.object({
   instrument: z.object({ celex: z.string(), identityPattern: z.string(), pinpointBase: z.string(), dutyHolderClass: z.array(z.string()), applicabilityAttribute: z.string(), jurisdiction: z.array(z.string()), mode: z.array(z.string()) }),
   referenceValue: z.object({ value: z.number(), unit: z.string(), quote: z.string() }),
@@ -54,52 +68,18 @@ const norm = (s: unknown): string => nz(s).toLowerCase();
 const nullable = <T>(v: T | undefined): T | null => (v === undefined ? null : v);
 
 export interface Candidate {
-  instrument_item_id: string;
-  capture_id: string;
-  pinpoint_citation: string;
-  verbatim_text: string;
-  plain_language?: string | null;
-  binding_position?: string | null;
-  duty_holder_class: string[];
-  applicability_trigger: { attribute: string; value: string; comparison?: string };
-  jurisdiction?: string[] | null;
-  mode?: string[] | null;
-  vertical?: string[] | null;
-  frequency?: string | null;
-  entry_into_force?: string | null;
-  date_of_application?: string | null;
-  first_deadline?: string | null;
-  enforcement_start?: string | null;
-  evidence_required?: string | null;
-  retention_period?: string | null;
-  sanction_class?: string | null;
-  severity_score?: number | null;
-  statutory_maximum?: string | null;
-  cost_formula?: string | null;
-  direct_compliance_cost?: Record<string, unknown> | null;
-  effort?: Record<string, unknown> | null;
-  status?: string | null;
-  date_reviewed?: string | null;
-  next_review_due?: string | null;
-  source_id?: string | null;
+  instrument_item_id: string; capture_id: string; pinpoint_citation: string; verbatim_text: string;
+  plain_language?: string | null; binding_position?: string | null; duty_holder_class: string[];
+  applicability_trigger: { attribute: string; value: string; comparison?: string; obs_status?: string };
+  jurisdiction?: string[] | null; mode?: string[] | null; vertical?: string[] | null; frequency?: string | null;
+  entry_into_force?: string | null; date_of_application?: string | null; first_deadline?: string | null; enforcement_start?: string | null;
+  evidence_required?: string | null; retention_period?: string | null; sanction_class?: string | null; severity_score?: number | null;
+  statutory_maximum?: string | null; cost_formula?: string | null; direct_compliance_cost?: Record<string, unknown> | null;
+  effort?: Record<string, unknown> | null; status?: string | null; date_reviewed?: string | null; next_review_due?: string | null; source_id?: string | null;
 }
-export interface CaptureRow {
-  id: string;
-  intelligence_item_id: string;
-  result_content: string | null;
-}
-export interface ExistingObject {
-  obligation_id: string;
-  instrument_item_id: string;
-  pinpoint_citation: string;
-  verbatim_text: string;
-  version: number;
-  supersedes?: string | null;
-}
-export interface ObjectItem extends ItemForClassification {
-  id: string;
-  is_archived?: boolean | null;
-}
+export interface CaptureRow { id: string; intelligence_item_id: string; result_content: string | null; }
+export interface ExistingObject { obligation_id: string; instrument_item_id: string; pinpoint_citation: string; verbatim_text: string; version: number; supersedes?: string | null; }
+export interface ObjectItem extends ItemForClassification { id: string; is_archived?: boolean | null; }
 
 export type BuildResult = { ok: true; row: Record<string, unknown>; bindingSource: string } | { ok: false; reason: string };
 
@@ -121,6 +101,7 @@ function buildObjectRow(c: Candidate, ctx: { item: ObjectItem | null; capture: C
   if (unknown) return { ok: false, reason: `duty_holder_unknown:${unknown}` };
   const t = c.applicability_trigger;
   if (!(t && typeof t === "object" && !Array.isArray(t) && nz(t.attribute) && nz(t.value) && typeof t.attribute === "string" && typeof t.value === "string")) return { ok: false, reason: "trigger_malformed" };
+  if (t.obs_status !== undefined && (!isMissing(t.obs_status) || t.value !== t.obs_status)) return { ok: false, reason: "trigger_obs_status_invalid" };
   if (c.frequency != null && !FREQUENCIES.has(c.frequency)) return { ok: false, reason: "frequency_invalid" };
   if (Array.isArray(c.mode) && c.mode.some((m) => MODE_ALIASES.has(m) || !LEG_MODE_CODES.includes(m))) return { ok: false, reason: "mode_alias" };
   for (const col of DATE_COLUMNS) if (c[col] != null && !(typeof c[col] === "string" && DATE_RE.test(c[col] as string))) return { ok: false, reason: `date_malformed:${col}` };
@@ -142,7 +123,7 @@ function buildObjectRow(c: Candidate, ctx: { item: ObjectItem | null; capture: C
   const row = {
     obligation_id: entityId("obligation", `${c.instrument_item_id}|${norm(c.pinpoint_citation)}|v${version}`), instrument_item_id: c.instrument_item_id, version, supersedes: existingForPinpoint ? existingForPinpoint.obligation_id : null,
     pinpoint_citation: c.pinpoint_citation, verbatim_text: c.verbatim_text, plain_language: nullable(c.plain_language), binding_position: position, duty_holder_class: classes,
-    applicability_trigger: { attribute: t.attribute, value: t.value, ...(t.comparison ? { comparison: t.comparison } : {}) },
+    applicability_trigger: { attribute: t.attribute, value: t.value, ...(t.comparison ? { comparison: t.comparison } : {}), ...(t.obs_status ? { obs_status: t.obs_status } : {}) },
     jurisdiction: nullable(c.jurisdiction), mode: nullable(c.mode), vertical: nullable(c.vertical), frequency: nullable(c.frequency),
     entry_into_force: nullable(c.entry_into_force), date_of_application: nullable(c.date_of_application), first_deadline: nullable(c.first_deadline), enforcement_start: nullable(c.enforcement_start),
     evidence_required: nullable(c.evidence_required), retention_period: nullable(c.retention_period), sanction_class: nullable(c.sanction_class), severity_score: nullable(c.severity_score), statutory_maximum: nullable(c.statutory_maximum),
@@ -217,13 +198,32 @@ export interface ClaimForObjects {
 }
 const instrumentValue = (item: ObjectItem): string => nz(item.canonical_instrument_key) || nz(item.instrument_identifier) || nz(item.title);
 
-/** One candidate from a span that names an Article pinpoint, a duty-holder phrase and a deontic verb, in the capture that holds it; null when it names none. */
+/** The first classifier whose pattern is in the span, as a trigger: the value is the span's own text (the first capture group) or the classifier's token; a threshold whose value the span does not state is the stated absence, never a typed number. */
+function classifyTrigger(span: string, fallbackValue: string): Candidate["applicability_trigger"] {
+  for (const c of TRIGGER_CLASSIFIERS) {
+    const m = c.re.exec(span);
+    if (!m) continue;
+    const comparison = c.comparison ? { comparison: c.comparison } : {};
+    if (c.token) return { attribute: c.attribute, value: c.token, ...comparison };
+    const stated = m.slice(1).find((g) => g !== undefined)?.trim();
+    return stated ? { attribute: c.attribute, value: stated, ...comparison } : { attribute: c.attribute, value: rules.absence, obs_status: rules.absence, ...comparison };
+  }
+  return { attribute: rules.triggerAttribute, value: fallbackValue };
+}
+
+/** The compliance artifacts the span names: the class from the data file and the name exactly as the span writes it. Stored as JSON text in evidence_required; null when the span names none. */
+function extractArtifacts(span: string): string | null {
+  const found = ARTIFACT_CLASSES.flatMap((c) => { const name = c.re.exec(span)?.[0]; return name ? [{ class: c.class, name }] : []; });
+  return found.length ? JSON.stringify(found) : null;
+}
+
+/** One candidate from a span that names an Article pinpoint, a duty-holder phrase and a deontic verb, in the capture that holds it; null when it names none. Code never writes a sentence: plain_language is the reader's. */
 function dutyCandidate(item: ObjectItem, span: string, captureId: string, sourceId: string | null, timeline: ReturnType<typeof timelineFromEvents>): Candidate | null {
   const value = instrumentValue(item);
   const pin = PINPOINT_RE.exec(span)?.[0];
   const holders = [...new Set(PHRASES.filter((p) => p.re.test(span)).map((p) => p.class))];
   if (!value || !pin || !holders.length || !DEONTIC_RE.test(span)) return null;
-  return { instrument_item_id: item.id, capture_id: captureId, pinpoint_citation: pin.replace(/\s+/g, " "), verbatim_text: span, duty_holder_class: holders, applicability_trigger: { attribute: rules.triggerAttribute, value }, ...timeline, source_id: sourceId };
+  return { instrument_item_id: item.id, capture_id: captureId, pinpoint_citation: pin.replace(/\s+/g, " "), verbatim_text: span, duty_holder_class: holders, applicability_trigger: classifyTrigger(span, value), evidence_required: extractArtifacts(span), plain_language: null, ...timeline, source_id: sourceId };
 }
 
 /** FACT claims whose verbatim span names an Article pinpoint, a duty-holder phrase and a deontic verb: one candidate each, in its own capture. */
@@ -324,7 +324,7 @@ export async function deriveObligationObjects(sb: Db, input: { dry: boolean; ite
     candidates.push(...fromClaims, ...candidatesFromCaptures(item, held, own, withdrawn(item.id)).filter((c) => !taken.has(norm(c.pinpoint_citation))), ...candidatesFromFueleuTargets(item, held, own));
   }
   const capturesById = new Map(captures.map((c) => [c.id, c]));
-  const missing = [...new Set(candidates.map((c) => c.capture_id))].filter((id) => !capturesById.has(id));
+  const missing = [...new Set(candidates.map((c) => c.capture_id))].filter((id) => id && !capturesById.has(id));
   for (const c of await fetchAllByIdChunks<CaptureRow>(missing, async (slice) => {
     const { data, error } = await sb.from("agent_run_searches").select("id, intelligence_item_id, result_content").in("id", slice);
     if (error) throw new Error(`derive-objects: agent_run_searches read failed: ${error.message}`);
