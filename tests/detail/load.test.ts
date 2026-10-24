@@ -25,14 +25,14 @@ test("INV-125: only a verified, non-archived item reads; a market item is not fo
   const byUuid = await readDetailItem(as(db), REG);
   assert.equal(byLegacy?.uuid, REG);
   assert.equal(byUuid?.resource.id, "g14");
-  assert.deepEqual(await loadDetail("regulations", MKT, undefined, as(db)), { notFound: true }, "a market item at /regulations");
-  const reg = await loadDetail("market", REG, undefined, as(db));
+  assert.deepEqual(await loadDetail("regulations", MKT, undefined, as(db), null, "2026-10-24T00:00:00Z"), { notFound: true }, "a market item at /regulations");
+  const reg = await loadDetail("market", REG, undefined, as(db), null, "2026-10-24T00:00:00Z");
   assert.deepEqual(reg, { notFound: true }, "a regulation at /market");
 });
 
 test("one uuid resolution: every read after the item takes the uuid (the old page resolved the same id six ways)", async () => {
   const db = world();
-  await loadDetail("regulations", "g14", undefined, as(db));
+  await loadDetail("regulations", "g14", undefined, as(db), null, "2026-10-24T00:00:00Z");
   const legacyLookups = db.reads("intelligence_items").filter((c) => c.filters.some(([k, , v]) => k === "eq" && v === "g14"));
   assert.equal(legacyLookups.length, 1, "the legacy id is looked up once");
 });
@@ -58,7 +58,7 @@ test("INV-270: a suppressed claim is absent from the tier map and its text is re
   const { tiers, suppressed } = await readClaims(as(db), REG);
   assert.equal(CLAIM_SUPPRESSED_ID in tiers, false);
   assert.deepEqual(suppressed.map((s) => s.claim_text), [CLAIM_SUPPRESSED]);
-  const d = await loadDetail("regulations", "g14", undefined, as(db));
+  const d = await loadDetail("regulations", "g14", undefined, as(db), null, "2026-10-24T00:00:00Z");
   assert.ok(!d.notFound);
   if (d.notFound) return;
   const s3 = d.sections.find((s) => s.section_key === "3");
@@ -66,13 +66,13 @@ test("INV-270: a suppressed claim is absent from the tier map and its text is re
   assert.ok(!s3?.content_md.includes("4,000 euro"), "the suppressed claim text is gone");
   // A revoked suppression shows the claim again (the next request, no cache between).
   db.rows("item_corrections")[0]!.revoked_at = "2026-09-02T00:00:00Z";
-  const again = await loadDetail("regulations", "g14", undefined, as(db));
+  const again = await loadDetail("regulations", "g14", undefined, as(db), null, "2026-10-24T00:00:00Z");
   assert.ok(!again.notFound && again.sections.find((s) => s.section_key === "3")?.content_md.includes("4,000 euro"));
 });
 
 test("INV-270 fails closed into a named degraded block: a refused suppression read, a refused claims read or an absent view withholds the facts and the page still loads; nothing renders unredacted", async () => {
   const check = async (db: ReturnType<typeof world>) => {
-    const d = await loadDetail("regulations", "g14", undefined, as(db));
+    const d = await loadDetail("regulations", "g14", undefined, as(db), null, "2026-10-24T00:00:00Z");
     assert.ok(!d.notFound);
     if (d.notFound) return;
     assert.equal(d.claimsDegraded, true, "the page says the facts did not load");
@@ -91,7 +91,7 @@ test("INV-270 fails closed into a named degraded block: a refused suppression re
   const absent = world();
   absent.fail("fact_suppressions", "select", "relation \"public.fact_suppressions\" does not exist", { code: "42P01" }); // the production database before the migration
   await check(absent);
-  const healthy = await loadDetail("regulations", "g14", undefined, as(world()));
+  const healthy = await loadDetail("regulations", "g14", undefined, as(world()), null, "2026-10-24T00:00:00Z");
   assert.ok(!healthy.notFound && healthy.claimsDegraded === false);
 });
 
@@ -117,7 +117,7 @@ test("INV-272: an inference shows only if current, allowlisted, cited by an item
 test("INV-263: the cross-page block that failed is NAMED, the rest renders", async () => {
   const db = world();
   db.fail("inference_records", "select", "down");
-  const d = await loadDetail("regulations", "g14", undefined, as(db));
+  const d = await loadDetail("regulations", "g14", undefined, as(db), null, "2026-10-24T00:00:00Z");
   assert.ok(!d.notFound);
   if (d.notFound) return;
   assert.deepEqual(d.crossPage.degraded, ["inferences"]);

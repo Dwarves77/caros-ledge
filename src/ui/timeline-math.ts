@@ -86,9 +86,11 @@ function summarizeObligationText(text: string, fallback: string): string {
 }
 
 export interface ObligationEventInput {
+  id?: string;
   event_date: string;
   event_kind: string;
   obligation_text?: string | null;
+  source_span?: string | null;
   source_claim_id?: string | null;
   source_section_id?: string | null;
 }

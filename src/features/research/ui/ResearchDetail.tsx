@@ -21,7 +21,7 @@ import { bandFromPriority } from "@/core/lists";
 import { formatDate, pluralize } from "@/core/shared";
 import type { Resource } from "@/core/types";
 import { ActionCard, ClaimTierProvider, DetailSubSection, downloadMarkdownBrief, GfmSection, GradeChip, SectionIndex, StateNote, TagChip, type ClaimTierMap } from "@/ui";
-import { AtAGlanceCard, commonActionCardProps, CrossPageSection, crossPagePresence, DetailLayout, DetailMasthead, DetailPageWrapper, DetailRail, DetailSection, FactBlocks, ImpactRailCard, InThisListStat, ItemConnections, RecordFacts, RelevanceRailCard, SourcesGrid, topRecommendedAction, type CrossPageData } from "@/ui/detail";
+import { AtAGlanceCard, commonActionCardProps, CrossPageSection, crossPagePresence, DetailLayout, DetailMasthead, DetailPageWrapper, DetailRail, DetailSection, FactBlocks, PendingTriggers, pendingTriggers, ImpactRailCard, InThisListStat, ItemConnections, RecordFacts, RelevanceRailCard, SourcesGrid, topRecommendedAction, type CrossPageData } from "@/ui/detail";
 import { NoticesRail } from "@/ui/figures";
 import { LegendRailCard } from "@/ui/list-surface";
 import { useItemRelevance } from "@/features/regulations/useItemRelevance";
@@ -57,7 +57,6 @@ export interface ResearchDetailProps {
 
 /** The stored findings sections and the headings they render under. */
 const HEADINGS: Readonly<Record<string, string>> = { "1": "What the research found", "2": "Why it matters operationally", "3": "Strategy & claims", "4": "Talking points", "5": "What does not resolve", "6": "Sources" };
-const PENDING_REGULATORY_KINDS = new Set(["implementing_act_due", "delegated_act_due", "guidance_expected"]);
 
 export function ResearchDetail(p: ResearchDetailProps) {
   const { resource: r, nowIso } = p;
@@ -75,7 +74,7 @@ export function ResearchDetail(p: ResearchDetailProps) {
   const rows = useMemo(() => sourceEntriesOf(r), [r]);
   const parsed = useMemo(() => (isRecord ? parseRecordSections(p.sections, p.claimTiers) : null), [isRecord, p.sections, p.claimTiers]);
   const split = parsed ? splitKeyDateFacts(parsed.facts) : { dateFacts: [], otherFacts: [] };
-  const pendingEvents = useMemo(() => (p.events ?? []).filter((e) => PENDING_REGULATORY_KINDS.has(e.event_kind)), [p.events]);
+  const pendingEvents = useMemo(() => pendingTriggers(p.events), [p.events]);
   const hasPendingOrUnresolved = !!r.doesNotResolve || pendingEvents.length > 0;
   const summaryProse = r.whatIsIt || r.note || r.whyMatters || null;
   const unparsedBrief = !isRecord && known.length === 0 && r.fullBrief ? stripSourcesSection(r.fullBrief) : "";
@@ -180,20 +179,7 @@ export function ResearchDetail(p: ResearchDetailProps) {
                             {r.doesNotResolve && (
                               <p style={{ fontSize: "var(--fs-13)", lineHeight: 1.6, marginTop: "var(--sp-8)", color: "var(--ink-2)" }}>{r.doesNotResolve}</p>
                             )}
-                            {pendingEvents.length > 0 && (
-                              <div style={{ marginTop: "var(--sp-8)" }}>
-                                <p className="cl-detail-label" style={{ marginBottom: "var(--sp-4)" }}>Pending regulatory triggers</p>
-                                <ul style={{ margin: 0, paddingLeft: "var(--sp-18)", fontSize: "var(--fs-13)", lineHeight: 1.6, color: "var(--ink-2)" }}>
-                                  {pendingEvents.map((ev, idx) => (
-                                    <li key={idx}>
-                                      <span style={{ fontWeight: 600, color: "var(--ink)" }}>{ev.event_date ? formatDate(ev.event_date) : "Pending"}:</span>{" "}
-                                      {(p.kindLabels && p.kindLabels[ev.event_kind]) || ev.event_kind}
-                                      {ev.obligation_text ? ` — ${ev.obligation_text}` : ""}
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
+                            <PendingTriggers events={pendingEvents} kindLabels={p.kindLabels ?? {}} />
                           </>
                         )}
                       </DetailSubSection>
@@ -203,20 +189,7 @@ export function ResearchDetail(p: ResearchDetailProps) {
                         {r.doesNotResolve && (
                           <p style={{ fontSize: "var(--fs-13)", lineHeight: 1.6, color: "var(--ink-2)", margin: "0 0 var(--sp-8)" }}>{r.doesNotResolve}</p>
                         )}
-                        {pendingEvents.length > 0 && (
-                          <div>
-                            <p className="cl-detail-label" style={{ marginBottom: "var(--sp-4)" }}>Pending regulatory triggers</p>
-                            <ul style={{ margin: 0, paddingLeft: "var(--sp-18)", fontSize: "var(--fs-13)", lineHeight: 1.6, color: "var(--ink-2)" }}>
-                              {pendingEvents.map((ev, idx) => (
-                                <li key={idx}>
-                                  <span style={{ fontWeight: 600, color: "var(--ink)" }}>{ev.event_date ? formatDate(ev.event_date) : "Pending"}:</span>{" "}
-                                  {(p.kindLabels && p.kindLabels[ev.event_kind]) || ev.event_kind}
-                                  {ev.obligation_text ? ` — ${ev.obligation_text}` : ""}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
+                        <PendingTriggers events={pendingEvents} kindLabels={p.kindLabels ?? {}} />
                       </DetailSubSection>
                     )}
                   </>
@@ -242,7 +215,7 @@ export function ResearchDetail(p: ResearchDetailProps) {
                 )}
               </DetailSection>
             )}
-            <CrossPageSection surfaceKey="research" surfaceLabel="Research" crossPage={p.crossPage} onRetry={() => router.refresh()} />
+            <CrossPageSection surfaceKey="research" surfaceLabel="Research" crossPage={p.crossPage} onRetry={() => router.refresh()} kindLabels={p.kindLabels ?? {}} />
             <NoticesRail />
           </DetailLayout>
         </DetailPageWrapper>

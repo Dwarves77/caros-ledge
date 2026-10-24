@@ -8,7 +8,7 @@
 // same item: a date is never invented.
 import { z } from "zod";
 
-import { DUTY_HOLDER_CLASSES, isValid, LEG_MODE_CODES } from "@/core/contracts/vocabularies";
+import { DUTY_HOLDER_CLASSES, isMissing, isValid, LEG_MODE_CODES, OBS_STATUS } from "@/core/contracts/vocabularies";
 import { readFactSuppressionsFor } from "@/core/detail/claim-tiers";
 import { admissibleClaims, admitItems } from "@/core/derived/admissible";
 import { isVerbatim } from "@/core/contracts/verbatim";
@@ -40,25 +40,13 @@ const rules = z.object({
   window: z.object({ maxSentence: z.number(), pinpointLookBack: z.number(), headingOverlap: z.number(), subjectDistance: z.number() }),
   triggerAttribute: z.string(),
   datePhrases: z.object({ date_of_application: re, enforcement_start: re }),
-  thresholds: z.record(z.string(), re).optional(),
-  exemptions: z.record(z.string(), re).optional(),
-  complianceArtifacts: z.record(z.string(), re).optional(),
-  labelingMarking: z.record(z.string(), re).optional(),
+  triggerClassifiers: z.array(z.object({ attribute: z.string(), comparison: z.string().optional(), token: z.string().optional(), pattern: re })),
+  artifactClasses: z.array(z.object({ class: z.string(), pattern: re })),
+  absence: z.string(),
 }).parse(rulesJson);
-const rx = (s?: string): RegExp => (s ? new RegExp(s, "i") : /(?:)/);
-const THRESHOLD_EMPTY_SPACE = rx(rules.thresholds?.emptySpace);
-const THRESHOLD_RECYCLED = rx(rules.thresholds?.recycledContent);
-const THRESHOLD_DEMINIMIS = rx(rules.thresholds?.deMinimisWeight);
-const THRESHOLD_TONNAGE = rx(rules.thresholds?.tonnageCutoff);
-const EXEMPT_B2B = rx(rules.exemptions?.b2bTransport);
-const EXEMPT_CRITICAL = rx(rules.exemptions?.criticalFactors);
-const EXEMPT_CLOSED_LOOP = rx(rules.exemptions?.closedLoop);
-const ARTIFACT_DOC = rx(rules.complianceArtifacts?.declarationOfConformity);
-const ARTIFACT_CONFORMITY = rx(rules.complianceArtifacts?.conformityAssessment);
-const ARTIFACT_REGISTER = rx(rules.complianceArtifacts?.producerRegister);
-const LABEL_SORTING = rx(rules.labelingMarking?.sorting);
-const LABEL_REUSABLE = rx(rules.labelingMarking?.reusableSystem);
-const LABEL_QR = rx(rules.labelingMarking?.qrDataCarrier);
+if (!OBS_STATUS[rules.absence] || OBS_STATUS[rules.absence]?.isPresent !== false) throw new Error(`object-rules.json absence "${rules.absence}" is not a missing code of the obs_status vocabulary`);
+const TRIGGER_CLASSIFIERS = rules.triggerClassifiers.map((c) => ({ ...c, re: new RegExp(c.pattern, "i") }));
+const ARTIFACT_CLASSES = rules.artifactClasses.map((c) => ({ class: c.class, re: new RegExp(c.pattern, "i") }));
 const targets = z.object({
   instrument: z.object({ celex: z.string(), identityPattern: z.string(), pinpointBase: z.string(), dutyHolderClass: z.array(z.string()), applicabilityAttribute: z.string(), jurisdiction: z.array(z.string()), mode: z.array(z.string()) }),
   referenceValue: z.object({ value: z.number(), unit: z.string(), quote: z.string() }),
@@ -82,7 +70,7 @@ const nullable = <T>(v: T | undefined): T | null => (v === undefined ? null : v)
 export interface Candidate {
   instrument_item_id: string; capture_id: string; pinpoint_citation: string; verbatim_text: string;
   plain_language?: string | null; binding_position?: string | null; duty_holder_class: string[];
-  applicability_trigger: { attribute: string; value: string; comparison?: string };
+  applicability_trigger: { attribute: string; value: string; comparison?: string; obs_status?: string };
   jurisdiction?: string[] | null; mode?: string[] | null; vertical?: string[] | null; frequency?: string | null;
   entry_into_force?: string | null; date_of_application?: string | null; first_deadline?: string | null; enforcement_start?: string | null;
   evidence_required?: string | null; retention_period?: string | null; sanction_class?: string | null; severity_score?: number | null;
@@ -113,6 +101,7 @@ function buildObjectRow(c: Candidate, ctx: { item: ObjectItem | null; capture: C
   if (unknown) return { ok: false, reason: `duty_holder_unknown:${unknown}` };
   const t = c.applicability_trigger;
   if (!(t && typeof t === "object" && !Array.isArray(t) && nz(t.attribute) && nz(t.value) && typeof t.attribute === "string" && typeof t.value === "string")) return { ok: false, reason: "trigger_malformed" };
+  if (t.obs_status !== undefined && (!isMissing(t.obs_status) || t.value !== t.obs_status)) return { ok: false, reason: "trigger_obs_status_invalid" };
   if (c.frequency != null && !FREQUENCIES.has(c.frequency)) return { ok: false, reason: "frequency_invalid" };
   if (Array.isArray(c.mode) && c.mode.some((m) => MODE_ALIASES.has(m) || !LEG_MODE_CODES.includes(m))) return { ok: false, reason: "mode_alias" };
   for (const col of DATE_COLUMNS) if (c[col] != null && !(typeof c[col] === "string" && DATE_RE.test(c[col] as string))) return { ok: false, reason: `date_malformed:${col}` };
@@ -134,7 +123,7 @@ function buildObjectRow(c: Candidate, ctx: { item: ObjectItem | null; capture: C
   const row = {
     obligation_id: entityId("obligation", `${c.instrument_item_id}|${norm(c.pinpoint_citation)}|v${version}`), instrument_item_id: c.instrument_item_id, version, supersedes: existingForPinpoint ? existingForPinpoint.obligation_id : null,
     pinpoint_citation: c.pinpoint_citation, verbatim_text: c.verbatim_text, plain_language: nullable(c.plain_language), binding_position: position, duty_holder_class: classes,
-    applicability_trigger: { attribute: t.attribute, value: t.value, ...(t.comparison ? { comparison: t.comparison } : {}) },
+    applicability_trigger: { attribute: t.attribute, value: t.value, ...(t.comparison ? { comparison: t.comparison } : {}), ...(t.obs_status ? { obs_status: t.obs_status } : {}) },
     jurisdiction: nullable(c.jurisdiction), mode: nullable(c.mode), vertical: nullable(c.vertical), frequency: nullable(c.frequency),
     entry_into_force: nullable(c.entry_into_force), date_of_application: nullable(c.date_of_application), first_deadline: nullable(c.first_deadline), enforcement_start: nullable(c.enforcement_start),
     evidence_required: nullable(c.evidence_required), retention_period: nullable(c.retention_period), sanction_class: nullable(c.sanction_class), severity_score: nullable(c.severity_score), statutory_maximum: nullable(c.statutory_maximum),
@@ -209,61 +198,32 @@ export interface ClaimForObjects {
 }
 const instrumentValue = (item: ObjectItem): string => nz(item.canonical_instrument_key) || nz(item.instrument_identifier) || nz(item.title);
 
-function extractTrigger(span: string, fallbackValue: string): { attribute: string; value: string; comparison?: string } {
-  if (THRESHOLD_EMPTY_SPACE.test(span)) return { attribute: "void_space_ratio", value: THRESHOLD_EMPTY_SPACE.exec(span)?.[1]?.trim() ?? "50%", comparison: "<=" };
-  if (THRESHOLD_RECYCLED.test(span)) { const m = THRESHOLD_RECYCLED.exec(span); return { attribute: "recycled_content", value: m?.[1]?.trim() ?? m?.[2]?.trim() ?? "30%", comparison: ">=" }; }
-  if (THRESHOLD_DEMINIMIS.test(span)) return { attribute: "de_minimis_weight", value: THRESHOLD_DEMINIMIS.exec(span)?.[1]?.trim() ?? "< 5%", comparison: "<" };
-  if (THRESHOLD_TONNAGE.test(span)) return { attribute: "tonnage_cutoff", value: THRESHOLD_TONNAGE.exec(span)?.[0] ?? "tonnage", comparison: ">=" };
-  if (EXEMPT_B2B.test(span)) return { attribute: "exemption_scope", value: "b2b_transport_packaging" };
-  if (EXEMPT_CLOSED_LOOP.test(span)) return { attribute: "exemption_scope", value: "reusable_closed_loop" };
-  if (EXEMPT_CRITICAL.test(span)) return { attribute: "exemption_scope", value: "critical_performance_factors" };
-  if (LABEL_SORTING.test(span)) return { attribute: "labeling_marking_class", value: "material_composition_sorting" };
-  if (LABEL_REUSABLE.test(span) || LABEL_QR.test(span)) return { attribute: "labeling_marking_class", value: "reusable_qr_data_carrier" };
+/** The first classifier whose pattern is in the span, as a trigger: the value is the span's own text (the first capture group) or the classifier's token; a threshold whose value the span does not state is the stated absence, never a typed number. */
+function classifyTrigger(span: string, fallbackValue: string): Candidate["applicability_trigger"] {
+  for (const c of TRIGGER_CLASSIFIERS) {
+    const m = c.re.exec(span);
+    if (!m) continue;
+    const comparison = c.comparison ? { comparison: c.comparison } : {};
+    if (c.token) return { attribute: c.attribute, value: c.token, ...comparison };
+    const stated = m.slice(1).find((g) => g !== undefined)?.trim();
+    return stated ? { attribute: c.attribute, value: stated, ...comparison } : { attribute: c.attribute, value: rules.absence, obs_status: rules.absence, ...comparison };
+  }
   return { attribute: rules.triggerAttribute, value: fallbackValue };
 }
 
+/** The compliance artifacts the span names: the class from the data file and the name exactly as the span writes it. Stored as JSON text in evidence_required; null when the span names none. */
 function extractArtifacts(span: string): string | null {
-  const artifacts: string[] = [];
-  if (ARTIFACT_DOC.test(span)) artifacts.push("EU Declaration of Conformity (Annex VIII)");
-  if (ARTIFACT_CONFORMITY.test(span)) artifacts.push("Conformity Assessment / technical documentation (Annex VII)");
-  if (ARTIFACT_REGISTER.test(span)) artifacts.push("National producer register enrollment");
-  return artifacts.length > 0 ? artifacts.join("; ") : null;
+  const found = ARTIFACT_CLASSES.flatMap((c) => { const name = c.re.exec(span)?.[0]; return name ? [{ class: c.class, name }] : []; });
+  return found.length ? JSON.stringify(found) : null;
 }
 
-/** One candidate from a span that names an Article pinpoint, a duty-holder phrase and a deontic verb, in the capture that holds it; null when it names none. */
+/** One candidate from a span that names an Article pinpoint, a duty-holder phrase and a deontic verb, in the capture that holds it; null when it names none. Code never writes a sentence: plain_language is the reader's. */
 function dutyCandidate(item: ObjectItem, span: string, captureId: string, sourceId: string | null, timeline: ReturnType<typeof timelineFromEvents>): Candidate | null {
   const value = instrumentValue(item);
   const pin = PINPOINT_RE.exec(span)?.[0];
   const holders = [...new Set(PHRASES.filter((p) => p.re.test(span)).map((p) => p.class))];
   if (!value || !pin || !holders.length || !DEONTIC_RE.test(span)) return null;
-
-  const applicability_trigger = extractTrigger(span, value);
-  const evidence_required = extractArtifacts(span);
-  const plain_language = evidence_required || applicability_trigger.attribute !== rules.triggerAttribute
-    ? [
-        holders.length > 0 ? `${holders.map((h) => h.replace(/_/g, " ")).join(", ")} obligation:` : "",
-        applicability_trigger.attribute === "void_space_ratio" ? `Maximum ${applicability_trigger.value} void/empty space ratio requirement.`
-        : applicability_trigger.attribute === "recycled_content" ? `Minimum ${applicability_trigger.value} recycled content requirement.`
-        : applicability_trigger.attribute === "de_minimis_weight" ? `De minimis exemption for packaging under 5% by weight.`
-        : applicability_trigger.attribute === "tonnage_cutoff" ? `Threshold cutoff: ${applicability_trigger.value}.`
-        : applicability_trigger.attribute === "exemption_scope" ? `Statutory exemption for ${applicability_trigger.value.replace(/_/g, " ")}.`
-        : applicability_trigger.attribute === "labeling_marking_class" ? `Marking requirement: ${applicability_trigger.value.replace(/_/g, " ")}.` : "",
-        evidence_required ? `Required compliance artifact: ${evidence_required}.` : "",
-      ].filter(Boolean).join(" ")
-    : null;
-
-  return {
-    instrument_item_id: item.id,
-    capture_id: captureId,
-    pinpoint_citation: pin.replace(/\s+/g, " "),
-    verbatim_text: span,
-    duty_holder_class: holders,
-    applicability_trigger,
-    evidence_required,
-    plain_language,
-    ...timeline,
-    source_id: sourceId
-  };
+  return { instrument_item_id: item.id, capture_id: captureId, pinpoint_citation: pin.replace(/\s+/g, " "), verbatim_text: span, duty_holder_class: holders, applicability_trigger: classifyTrigger(span, value), evidence_required: extractArtifacts(span), plain_language: null, ...timeline, source_id: sourceId };
 }
 
 /** FACT claims whose verbatim span names an Article pinpoint, a duty-holder phrase and a deontic verb: one candidate each, in its own capture. */
@@ -364,7 +324,7 @@ export async function deriveObligationObjects(sb: Db, input: { dry: boolean; ite
     candidates.push(...fromClaims, ...candidatesFromCaptures(item, held, own, withdrawn(item.id)).filter((c) => !taken.has(norm(c.pinpoint_citation))), ...candidatesFromFueleuTargets(item, held, own));
   }
   const capturesById = new Map(captures.map((c) => [c.id, c]));
-  const missing = [...new Set(candidates.map((c) => c.capture_id))].filter((id) => !capturesById.has(id));
+  const missing = [...new Set(candidates.map((c) => c.capture_id))].filter((id) => id && !capturesById.has(id));
   for (const c of await fetchAllByIdChunks<CaptureRow>(missing, async (slice) => {
     const { data, error } = await sb.from("agent_run_searches").select("id, intelligence_item_id, result_content").in("id", slice);
     if (error) throw new Error(`derive-objects: agent_run_searches read failed: ${error.message}`);

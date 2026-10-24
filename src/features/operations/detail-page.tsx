@@ -38,7 +38,7 @@ export async function OperationsDetailRoute({ params }: { params: Promise<{ slug
   await applyIdRedirect("operations", id);
   const session = await pageSession(`/operations/${encodeURIComponent(id)}`);
   if ("failed" in session) return <PageFailure what="This profile" />;
-  const d = await loadDetail("operations", id, loadProfile(session.orgId), undefined, session.orgId);
+  const d = await loadDetail("operations", id, loadProfile(session.orgId), undefined, session.orgId, session.nowIso);
   if (d.notFound) notFound();
   const today = session.nowIso.slice(0, 10);
   const db = await userClient();

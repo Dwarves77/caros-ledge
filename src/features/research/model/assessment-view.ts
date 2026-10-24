@@ -3,8 +3,21 @@
 // Ported from old_repo/src/lib/research/read-signposts.mjs (lines 79-107)
 // The render-ready view of a stored assessment: ONE column list and ONE corridor label rule (the old tree had three of each), the horizon words, the signposts with the watched entity's name and the
 // append-only history entries. Pure: a reader supplies rows, a component draws the view; nothing here fetches or reads a clock.
-import copyJson from "./data/assessment-copy.json";
+import { z } from "zod";
 
+import copyJson from "./data/assessment-copy.json";
+import stanceJson from "./data/assessment-stance.json";
+
+const STANCE = z
+  .object({
+    stances: z.array(z.string().min(1)).min(1),
+    horizons: z.array(z.string().min(1)).min(1),
+    rules: z.array(z.object({ band: z.string().optional(), kind: z.string().optional(), technicalHighAtLeast: z.number().optional(), commercialHighAtLeast: z.number().optional(), stance: z.string(), horizon: z.string() })).min(1),
+  })
+  .superRefine((d, ctx) => {
+    for (const r of d.rules) if (!d.stances.includes(r.stance) || !d.horizons.includes(r.horizon)) ctx.addIssue({ code: "custom", message: `rule names a stance or horizon outside the lists: ${r.stance} ${r.horizon}` });
+  })
+  .parse(stanceJson);
 const COPY = copyJson as { refusal: Record<string, string>; genericRefusal: string; method: Record<string, string> };
 export const ASSESSMENT_COLUMNS =
   "id, item_id, supersedes, is_current, lifecycle_state, technical_maturity_low, technical_maturity_high, technical_maturity_method, commercial_maturity_low, commercial_maturity_high, commercial_maturity_method, horizon_kind, horizon_band, horizon_rule, horizon_confidence, horizon_trigger_note, refusal_reason, credibility_evidence_score, credibility_authority_score, status_token, computed_at";
@@ -56,10 +69,10 @@ export interface Corridor {
   method: string | null;
 }
 
+/** The classification of a stored assessment into a stance token and a horizon token by the ordered rules in data/assessment-stance.json; no sentence. A UI copy table words each token. */
 export interface AssessmentForwardOutlook {
-  stance: "Act/Invest Today" | "Wait/Stage";
+  stance: string;
   horizon: string;
-  guidance: string;
 }
 
 export interface AssessmentView {
@@ -85,80 +98,14 @@ const corridor = (prefix: "TRL" | "CRI", low: number | null, high: number | null
 
 function deriveAssessmentForwardOutlook(row: AssessmentRow): AssessmentForwardOutlook | null {
   if (row.refusal_reason) return null;
-  const band = row.horizon_band;
-  const kind = row.horizon_kind ?? "availability";
-  const tmHigh = row.technical_maturity_high;
-  const cmHigh = row.commercial_maturity_high;
-
-  if (band === "NOW") {
-    if (kind === "obligation") {
-      return {
-        stance: "Act/Invest Today",
-        horizon: "0–12m",
-        guidance: "Immediate statutory obligation takes effect within 2 years. Ensure operational compliance systems and audit readiness are deployed today.",
-      };
-    }
-    if (tmHigh != null && tmHigh >= 8 && cmHigh != null && cmHigh >= 4) {
-      return {
-        stance: "Act/Invest Today",
-        horizon: "0–12m",
-        guidance: "Commercial-ready solution with high technical maturity available now. Deploy immediately into active operations or fleet procurement.",
-      };
-    }
-    return {
-      stance: "Act/Invest Today",
-      horizon: "1–2y",
-      guidance: "Near-term availability window. Initiate pilot demonstration and infrastructure staging today to de-risk full adoption.",
-    };
-  }
-
-  if (band === "NEAR") {
-    if (kind === "obligation") {
-      return {
-        stance: "Act/Invest Today",
-        horizon: "1–2y",
-        guidance: "Upcoming statutory mandate within 2 to 5 years. Initiate capital budgeting, vendor qualification, and trial runs ahead of enforcement.",
-      };
-    }
-    if (tmHigh != null && tmHigh >= 7) {
-      return {
-        stance: "Wait/Stage",
-        horizon: "2–5y",
-        guidance: "Solution in demonstration or early commercialization. Stage procurement roadmaps and monitor commercial scale milestones before committing full capital.",
-      };
-    }
-    return {
-      stance: "Wait/Stage",
-      horizon: "2–5y",
-      guidance: "Emerging capability in testing. Track signposts and technology maturation before committing capital.",
-    };
-  }
-
-  if (band === "MID") {
-    return {
-      stance: "Wait/Stage",
-      horizon: "2–5y",
-      guidance: "Medium-term transition horizon (5 to 10 years). Monitor institutional roadmaps and demonstration outcomes; do not commit operational capital today.",
-    };
-  }
-
-  if (band === "FAR") {
-    return {
-      stance: "Wait/Stage",
-      horizon: ">5y",
-      guidance: "Long-term horizon beyond 10 years. Track fundamental research breakthroughs and policy signals without near-term operational changes.",
-    };
-  }
-
-  if (tmHigh != null && tmHigh >= 8 && cmHigh != null && cmHigh >= 4) {
-    return {
-      stance: "Act/Invest Today",
-      horizon: "0–12m",
-      guidance: "Commercially mature technology available today. Review integration feasibility.",
-    };
-  }
-
-  return null;
+  const hit = STANCE.rules.find(
+    (r) =>
+      (r.band === undefined || r.band === row.horizon_band) &&
+      (r.kind === undefined || r.kind === row.horizon_kind) &&
+      (r.technicalHighAtLeast === undefined || (row.technical_maturity_high !== null && row.technical_maturity_high >= r.technicalHighAtLeast)) &&
+      (r.commercialHighAtLeast === undefined || (row.commercial_maturity_high !== null && row.commercial_maturity_high >= r.commercialHighAtLeast)),
+  );
+  return hit ? { stance: hit.stance, horizon: hit.horizon } : null;
 }
 
 export function selectAssessmentView(row: AssessmentRow | null | undefined): AssessmentView | null {

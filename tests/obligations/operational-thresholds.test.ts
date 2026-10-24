@@ -178,25 +178,21 @@ test("compliance artifacts & labeling: derives Annex VIII DoC, technical docs, a
   const result = await deriveObligationObjects(db, { dry: true, itemIds: ["i-ppwr"] });
   const plan = (result.data as { plan: { toInsert: Array<{ row: Row }> } }).plan;
 
-  // 1. Annex VIII DoC
-  const docCandidate = plan.toInsert.find((x) => String(x.row.pinpoint_citation).includes("33(1)"));
-  assert.ok(docCandidate, "Annex VIII DoC candidate must be derived");
-  assert.equal(typeof docCandidate.row.evidence_required, "string");
-  assert.match(String(docCandidate.row.evidence_required), /Declaration of Conformity/i);
-  assert.match(String(docCandidate.row.evidence_required), /Annex VIII/i);
+  const artifactsOf = (pin: string): Array<{ class: string; name: string }> => {
+    const cand = plan.toInsert.find((x) => String(x.row.pinpoint_citation).includes(pin));
+    assert.ok(cand, `candidate ${pin} must be derived`);
+    assert.equal(cand.row.plain_language, null, "code never composes plain language");
+    return JSON.parse(String(cand.row.evidence_required)) as Array<{ class: string; name: string }>;
+  };
 
-  // 2. Annex VII Technical Documentation
-  const techDocsCandidate = plan.toInsert.find((x) => String(x.row.pinpoint_citation).includes("34(2)"));
-  assert.ok(techDocsCandidate, "Annex VII technical docs candidate must be derived");
-  assert.equal(typeof techDocsCandidate.row.evidence_required, "string");
-  assert.match(String(techDocsCandidate.row.evidence_required), /technical documentation/i);
-  assert.match(String(techDocsCandidate.row.evidence_required), /Annex VII/i);
+  // 1. Annex VIII DoC: the class from the data file, the name exactly as the span writes it
+  assert.deepEqual(artifactsOf("33(1)"), [{ class: "declaration_of_conformity", name: "EU declaration of conformity in accordance with Annex VIII" }]);
 
-  // 3. Producer Register
-  const regCandidate = plan.toInsert.find((x) => String(x.row.pinpoint_citation).includes("39(1)"));
-  assert.ok(regCandidate, "Producer register candidate must be derived");
-  assert.equal(typeof regCandidate.row.evidence_required, "string");
-  assert.match(String(regCandidate.row.evidence_required), /producer register/i);
+  // 2. Annex VII technical documentation
+  assert.deepEqual(artifactsOf("34(2)"), [{ class: "conformity_assessment_technical_documentation", name: "technical documentation in accordance with Annex VII" }]);
+
+  // 3. Producer register: the span says "register of producers", so that is the name written (no fixed artifact name)
+  assert.deepEqual(artifactsOf("39(1)"), [{ class: "producer_register", name: "register of producers" }]);
 
   // 4. Labeling & Marking
   const labelCandidate = plan.toInsert.find((x) => String(x.row.pinpoint_citation).includes("11(1)"));
@@ -204,4 +200,32 @@ test("compliance artifacts & labeling: derives Annex VIII DoC, technical docs, a
   const labelTrigger = labelCandidate.row.applicability_trigger as { attribute: string; value: string };
   assert.equal(labelTrigger.attribute, "labeling_marking_class");
   assert.equal(labelTrigger.value, "material_composition_sorting");
+});
+
+test("a threshold the capture does not state is the stated absence, never a typed number", async () => {
+  const span = "Article 6(1) Manufacturers shall ensure packaging meets the de minimis rule.";
+  const db = connectDb({
+    intelligence_items: [ITEM],
+    agent_run_searches: [{ id: "c-nov", intelligence_item_id: "i-ppwr", result_content: span, result_url: "https://eur-lex.europa.eu/ppwr", result_index: 0 }],
+    section_claim_provenance: [{ id: "claim-nov", claim_kind: "FACT", source_span: span, search_result_id: "c-nov", intelligence_item_id: "i-ppwr" }],
+    item_forward_events: [],
+    obligation_objects: [],
+  }).db;
+  const result = await deriveObligationObjects(db, { dry: true, itemIds: ["i-ppwr"] });
+  const row = (result.data as { plan: { toInsert: Array<{ row: Row }> } }).plan.toInsert[0]?.row as Row;
+  assert.deepEqual(row.applicability_trigger, { attribute: "de_minimis_weight", value: "M", comparison: "<", obs_status: "M" });
+  assert.equal(row.plain_language, null);
+  assert.equal(row.evidence_required, null);
+});
+
+test("a candidate with no capture is refused, never written", async () => {
+  const db = connectDb({ intelligence_items: [ITEM], agent_run_searches: [], section_claim_provenance: [], item_forward_events: [], obligation_objects: [] }).db;
+  const result = await deriveObligationObjects(db, {
+    dry: true,
+    itemIds: ["i-ppwr"],
+    extraCandidates: [{ instrument_item_id: "i-ppwr", capture_id: undefined as never, pinpoint_citation: "Article 6(1)", verbatim_text: "Article 6(1) Manufacturers shall ensure x.", duty_holder_class: ["manufacturer"], applicability_trigger: { attribute: "recycled_content", value: "35%" } }],
+  });
+  const plan = (result.data as { plan: { toInsert: unknown[]; refused: Array<{ reason: string }> } }).plan;
+  assert.equal(plan.toInsert.length, 0);
+  assert.deepEqual(plan.refused.map((r) => r.reason), ["capture_missing"]);
 });

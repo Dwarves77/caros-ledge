@@ -6,6 +6,8 @@ import { SURFACE_HEADING, parseRamifications } from "@/core/briefs/theme-brief-c
 import { resolveBriefForTheme } from "@/core/flywheel";
 import { SURFACE_LABELS, SURFACE_ORDER, surfaceOf } from "@/core/routing";
 
+import { deriveThemeForwardOutlook, type ThemeEventRow } from "./forward-outlook";
+
 export interface ThemeRow {
   id: string;
   member_ids: string[];
@@ -34,23 +36,8 @@ export interface MemberRow {
   horizon?: string | null;
   horizon_band?: string | null;
   compliance_deadline?: string | null;
-  priority?: string | null;
 }
 
-export interface ThemeHorizonOutlook {
-  horizon: "0–12m" | "1–2y" | "2–5y";
-  guidance: string;
-  memberCount: number;
-  surfaces: string[];
-}
-
-export interface ThemeForwardOutlook {
-  stance: "Act/Invest Today" | "Wait/Stage";
-  headline: string;
-  guidance: string;
-  horizons: ThemeHorizonOutlook[];
-  crossSurfaceHandoff: string | null;
-}
 type Lineage = { prior_id: string; new_id: string }[];
 
 const MAX_MEMBERS_PER_PAGE = 6;
@@ -62,129 +49,6 @@ const label = (s: string): string | undefined => SURFACE_LABELS[s];
 
 export const themeForItem = (themes: readonly ThemeRow[] | null | undefined, itemId: string | null | undefined): ThemeRow | null => (itemId && themes ? (themes.find((t) => t && Array.isArray(t.member_ids) && t.member_ids.includes(itemId)) ?? null) : null);
 
-function classifyMemberHorizon(m: MemberRow, surface: string, asOfIso: string): "0–12m" | "1–2y" | "2–5y" {
-  const h = (m.horizon ?? m.horizon_band ?? "").toUpperCase();
-  if (h.includes("12M") || h === "NOW" || h.includes("0-12") || h.includes("0–12")) return "0–12m";
-  if (h.includes("1-2") || h.includes("1–2") || h.includes("1Y") || h.includes("2Y") || h === "NEAR") return "1–2y";
-  if (h.includes("2-5") || h.includes("2–5") || h === "MID" || h === "FAR") return "2–5y";
-
-  if (m.compliance_deadline) {
-    const days = Math.round((Date.parse(m.compliance_deadline) - Date.parse(asOfIso)) / 86_400_000);
-    if (days <= 365) return "0–12m";
-    if (days <= 730) return "1–2y";
-    return "2–5y";
-  }
-
-  if (surface === "operations") return "0–12m";
-  if (surface === "regulations") {
-    if (m.priority === "CRITICAL" || m.priority === "HIGH") return "0–12m";
-    return "1–2y";
-  }
-  if (surface === "market") return "1–2y";
-  if (surface === "research") return "2–5y";
-
-  return "1–2y";
-}
-
-function deriveThemeForwardOutlook(input: {
-  theme: ThemeRow;
-  spannedSurfaces: Set<string>;
-  members: readonly MemberRow[];
-  ownSurface: string | null;
-  asOfIso?: string | undefined;
-}): ThemeForwardOutlook {
-  const { theme, spannedSurfaces, members, ownSurface, asOfIso = "2026-10-21" } = input;
-  const themeMembers = members.filter((m) => m && theme.member_ids.includes(m.id));
-
-  const buckets: Record<"0–12m" | "1–2y" | "2–5y", { members: MemberRow[]; surfaces: Set<string> }> = {
-    "0–12m": { members: [], surfaces: new Set() },
-    "1–2y": { members: [], surfaces: new Set() },
-    "2–5y": { members: [], surfaces: new Set() },
-  };
-
-  for (const m of themeMembers) {
-    const s = surfaceOf(m.item_type, m.domain);
-    const h = classifyMemberHorizon(m, s, asOfIso);
-    buckets[h].members.push(m);
-    if (label(s)) buckets[h].surfaces.add(s);
-  }
-
-  let crossSurfaceHandoff: string | null = null;
-  if (spannedSurfaces.has("regulations") && spannedSurfaces.has("operations")) {
-    crossSurfaceHandoff = "Statutory mandate on Regulations triggers direct operational execution and compliance data tracking on Operations.";
-  } else if (spannedSurfaces.has("regulations") && spannedSurfaces.has("market")) {
-    crossSurfaceHandoff = "Regulatory penalty thresholds and mandate timelines directly drive market cost mechanisms and price benchmarks.";
-  } else if (spannedSurfaces.has("research") && spannedSurfaces.has("operations")) {
-    crossSurfaceHandoff = "Research maturity corridors inform fleet technology trials and operational pilot deployment.";
-  } else if (spannedSurfaces.has("research") && spannedSurfaces.has("regulations")) {
-    crossSurfaceHandoff = "Research findings provide evidence base for upcoming delegated acts and regulatory standard reviews.";
-  } else if (spannedSurfaces.size > 1) {
-    const names = [...spannedSurfaces].map((s) => label(s) ?? s);
-    crossSurfaceHandoff = `Cross-surface coordination across ${names.join(" and ")} ensures synchronized transition timing.`;
-  }
-
-  const hasImmediate = buckets["0–12m"].members.length > 0;
-  const hasNear = buckets["1–2y"].members.length > 0;
-
-  let stance: "Act/Invest Today" | "Wait/Stage";
-  let headline: string;
-  let guidance: string;
-
-  if (hasImmediate) {
-    stance = "Act/Invest Today";
-    headline = "Act/Invest Today: Immediate operational execution and statutory compliance within 0–12m";
-    guidance = "Immediate action required for near-term mandates and operational touchpoints. Stage capital investments for 1–2y and 2–5y transitions in parallel.";
-  } else if (hasNear) {
-    stance = "Act/Invest Today";
-    headline = "Act/Invest Today: Stage procurement and trial runs for 1–2y transition";
-    guidance = "Prepare operational workflows, budget capital allocations, and qualify vendors ahead of the 1–2 year milestone window.";
-  } else {
-    stance = "Wait/Stage";
-    headline = "Wait/Stage: Monitor signposts and evaluate pilot outcomes for 2–5y horizon";
-    guidance = "No immediate 0–12m statutory penalties or cutoffs. Track regulatory updates and research signposts before committing full capital.";
-  }
-
-  const horizons: ThemeHorizonOutlook[] = [];
-  const horizonOrder: Array<"0–12m" | "1–2y" | "2–5y"> = ["0–12m", "1–2y", "2–5y"];
-
-  for (const h of horizonOrder) {
-    const b = buckets[h];
-    if (b.members.length === 0) continue;
-    let hGuidance = "";
-    if (h === "0–12m") {
-      hGuidance = "Execute compliance checklists, update contracts, and audit operational readiness.";
-    } else if (h === "1–2y") {
-      hGuidance = "Stage procurement specifications, test alternative fuels/materials, and verify supplier readiness.";
-    } else {
-      hGuidance = "Track regulatory signposts, assess commercial scale milestones, and defer capital lock-in.";
-    }
-    horizons.push({
-      horizon: h,
-      guidance: hGuidance,
-      memberCount: b.members.length,
-      surfaces: [...b.surfaces].map((s) => label(s) ?? s),
-    });
-  }
-
-  if (horizons.length === 0) {
-    const s = ownSurface && label(ownSurface) ? label(ownSurface)! : "this surface";
-    horizons.push({
-      horizon: "1–2y",
-      guidance: "Review connected intelligence and verify alignment across operational and regulatory milestones.",
-      memberCount: theme.member_ids.length,
-      surfaces: [s],
-    });
-  }
-
-  return {
-    stance,
-    headline,
-    guidance,
-    horizons,
-    crossSurfaceHandoff,
-  };
-}
-
 /** The brief that explains the item's theme: exact, or inherited from a dissolved theme (always stale). */
 function briefForItem(itemId: string, themes: readonly ThemeRow[], briefs: readonly BriefRow[], lineage: Lineage) {
   const theme = themeForItem(themes, itemId);
@@ -195,8 +59,8 @@ function briefForItem(itemId: string, themes: readonly ThemeRow[], briefs: reado
 }
 
 /** The theme analysis of one item on one surface: members by page (other pages first), the brief's sections, and the absence worded when there is no brief. */
-export function themeAnalysisView(input: { itemId: string; surface: string; themes: readonly ThemeRow[]; briefs: readonly BriefRow[]; lineage?: Lineage; members?: readonly MemberRow[]; asOfIso?: string | undefined }) {
-  const { itemId, surface, themes, briefs, lineage = [], members = [], asOfIso } = input;
+export function themeAnalysisView(input: { itemId: string; surface: string; themes: readonly ThemeRow[]; briefs: readonly BriefRow[]; lineage?: Lineage; members?: readonly MemberRow[]; events?: readonly ThemeEventRow[]; asOfIso: string }) {
+  const { itemId, surface, themes, briefs, lineage = [], members = [], events = [], asOfIso } = input;
   const theme = themeForItem(themes, itemId);
   if (!theme) return null;
   const brief = briefForItem(itemId, themes, briefs, lineage);
@@ -241,7 +105,7 @@ export function themeAnalysisView(input: { itemId: string; surface: string; them
     ramificationsMissing,
     pages,
     membersByPage,
-    forwardOutlook: deriveThemeForwardOutlook({ theme, spannedSurfaces: spanned, members, ownSurface: own, asOfIso }),
+    forwardOutlook: deriveThemeForwardOutlook({ memberIds: theme.member_ids, pivotIds: (theme.pivots ?? []).map((p) => p?.id).filter((id): id is string => typeof id === "string"), members, events, asOfIso }),
   };
 }
 export type ThemeAnalysisView = NonNullable<ReturnType<typeof themeAnalysisView>>;

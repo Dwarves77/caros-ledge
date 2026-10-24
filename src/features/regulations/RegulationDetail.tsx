@@ -18,7 +18,7 @@ import type { ChangeLogEntry, Dispute, Resource } from "@/core/types";
 import type { RecommendedAction } from "@/core/brief";
 import { useWorkspaceStore } from "@/core/workspace/store";
 import { ActionCard, ClaimTierProvider, downloadMarkdownBrief, GfmSection, GradeChip, SectionIndex, StateNote, type ClaimTierMap } from "@/ui";
-import { AtAGlanceCard, commonActionCardProps, CrossPageSection, crossPagePresence, DetailLayout, DetailMasthead, DetailPageWrapper, DetailRail, DetailSection, FactBlocks, ImpactRailCard, InThisListStat, ItemConnections, RecordFacts, RelevanceRailCard, RequirementTrajectory, SourcesGrid, topRecommendedAction, type CrossPageData, type DetailSurfaceSharedProps } from "@/ui/detail";
+import { AtAGlanceCard, commonActionCardProps, CrossPageSection, crossPagePresence, DetailLayout, DetailMasthead, DetailPageWrapper, DetailRail, DetailSection, FactBlocks, PendingTriggers, pendingTriggers, ImpactRailCard, InThisListStat, ItemConnections, RecordFacts, RelevanceRailCard, RequirementTrajectory, SourcesGrid, topRecommendedAction, type CrossPageData, type DetailSurfaceSharedProps } from "@/ui/detail";
 import { LegendRailCard } from "@/ui/list-surface";
 import { DetailTagRow } from "@/features/workspace/ui/DetailTagRow";
 import { DetailWatch } from "@/features/workspace/ui/DetailWatch";
@@ -32,8 +32,8 @@ export interface ObligationEvent {
   event_date: string;
   event_kind: string;
   obligation_text?: string | null;
+  source_span?: string | null;
 }
-const PENDING_REGULATORY_KINDS = new Set(["implementing_act_due", "delegated_act_due", "guidance_expected"]);
 interface Props extends Omit<DetailSurfaceSharedProps, "relevance"> {
   resource: Resource;
   changelog: ChangeLogEntry[];
@@ -86,7 +86,7 @@ export function RegulationDetail(p: Props) {
   const [depth, setDepth] = useState<"summary" | "full">("summary");
   const [tagOpen, setTagOpen] = useState(false);
   const rows = useMemo(() => sourceEntriesOf(r), [r]);
-  const pendingEvents = useMemo(() => (p.events ?? []).filter((e) => PENDING_REGULATORY_KINDS.has(e.event_kind)), [p.events]);
+  const pendingEvents = useMemo(() => pendingTriggers(p.events), [p.events]);
   const stored = useMemo(() => new Map(p.sections.filter((s) => s.section_key in HEADINGS && (s.content_md || "").trim()).map((s) => [s.section_key, s])), [p.sections]);
   const hasPendingSection = stored.has("6") || !!r.doesNotResolve || pendingEvents.length > 0;
   const factSections = isRecord ? [] : SECTION_INDEX.filter((e) => e.key && (stored.has(e.key) || (e.key === "6" && hasPendingSection)));
@@ -196,20 +196,7 @@ export function RegulationDetail(p: Props) {
                             <p style={{ fontSize: "var(--fs-13)", lineHeight: 1.6, color: "var(--ink-2)" }}>{r.doesNotResolve}</p>
                           </div>
                         )}
-                        {pendingEvents.length > 0 && (
-                          <div style={{ marginTop: storedContent || r.doesNotResolve ? "var(--sp-12)" : 0 }}>
-                            <p className="cl-detail-label">Pending regulatory triggers</p>
-                            <ul style={{ margin: "var(--sp-4) 0 0", paddingLeft: "var(--sp-18)", fontSize: "var(--fs-13)", lineHeight: 1.6, color: "var(--ink-2)" }}>
-                              {pendingEvents.map((ev, i) => (
-                                <li key={i}>
-                                  <span style={{ fontWeight: 600, color: "var(--ink)" }}>{ev.event_date ? formatDate(ev.event_date) : "Pending"}:</span>{" "}
-                                  {(p.kindLabels && p.kindLabels[ev.event_kind]) || ev.event_kind}
-                                  {ev.obligation_text ? ` — ${ev.obligation_text}` : ""}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
+                        <PendingTriggers events={pendingEvents} kindLabels={p.kindLabels ?? {}} />
                       </>
                     )}
                   </DetailSection>
@@ -225,7 +212,7 @@ export function RegulationDetail(p: Props) {
                 {rows.length > 0 ? <SourcesGrid rows={rows} /> : <StateNote>No sources are listed for this item.</StateNote>}
               </DetailSection>
             )}
-            <CrossPageSection surfaceKey="regulations" surfaceLabel="Regulations" crossPage={p.crossPage} onRetry={() => router.refresh()} />
+            <CrossPageSection surfaceKey="regulations" surfaceLabel="Regulations" crossPage={p.crossPage} onRetry={() => router.refresh()} kindLabels={p.kindLabels ?? {}} />
           </DetailLayout>
         </DetailPageWrapper>
       </div>
@@ -283,20 +270,7 @@ function BriefSummary({ r, changelog, dispute, trajectory, doesNotResolve, pendi
           </p>
         </div>
       )}
-      {pendingEvents.length > 0 && (
-        <div style={{ marginTop: "var(--sp-10)" }}>
-          <p className="cl-detail-label">Pending regulatory triggers</p>
-          <ul style={{ margin: "var(--sp-4) 0 0", paddingLeft: "var(--sp-18)", fontSize: "var(--fs-13)", lineHeight: 1.6, color: "var(--ink-2)" }}>
-            {pendingEvents.map((ev, i) => (
-              <li key={i}>
-                <span style={{ fontWeight: 600, color: "var(--ink)" }}>{ev.event_date ? formatDate(ev.event_date) : "Pending"}:</span>{" "}
-                {kindLabels[ev.event_kind] || ev.event_kind}
-                {ev.obligation_text ? ` — ${ev.obligation_text}` : ""}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      <PendingTriggers events={pendingEvents} kindLabels={kindLabels} />
     </>
   );
 }

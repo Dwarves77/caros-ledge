@@ -1,0 +1,7 @@
+{
+  "order": ["0-12m", "1-2y", "2-5y"],
+  "unplaced": "unplaced",
+  "bandToken": { "NOW": "0-12m", "NEAR": "1-2y", "MID": "2-5y", "FAR": "2-5y" },
+  "cutoffDays": { "0-12m": 365, "1-2y": 730 },
+  "excludedEventKinds": ["target", "other"]
+}

@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { normalizeDisplayTitle } from "@/core/fetch/titles";
+import { formatDate } from "@/core/shared";
 import { pickVisibleInferences, type InferenceView } from "@/core/detail/inference-view";
 import { CONNECTED_SECTION_ID, crossPageOrd, INFERENCES_SECTION_ID } from "@/core/detail/section-index";
 import type { buildIntersectionView } from "@/core/flywheel/view-model";
@@ -44,6 +45,9 @@ function cleanPreContractBriefText(md: string): string {
     .trim();
 }
 
+/** One short label per horizon token (the token's own words; no sentence about an item). */
+export const HORIZON_LABEL: Readonly<Record<string, string>> = { "0-12m": "Within 12 months", "1-2y": "1 to 2 years", "2-5y": "2 to 5 years", ">5y": "Beyond 5 years", unplaced: "No dated event on file (written by the obligations stage)" };
+
 const Label = ({ children }: { children: ReactNode }) => <p className="cl-detail-label">{children}</p>;
 const Block = ({ label, children }: { label: string; children: ReactNode }) => (
   <div className="cl-detail-block">
@@ -82,7 +86,7 @@ function GroupList({ groups }: { groups: Group[] }) {
   );
 }
 
-function ThemeAnalysis({ theme, surfaceLabel, first }: { theme: ThemeAnalysisView; surfaceLabel: string; first: boolean }) {
+function ThemeAnalysis({ theme, surfaceLabel, first, kindLabels }: { theme: ThemeAnalysisView; surfaceLabel: string; first: boolean; kindLabels: Readonly<Record<string, string>> }) {
   const pageNames = theme.pages.map((p) => p.label).join(", ");
   const s = theme.sections;
   const staleNote = theme.supersedesThemeId ? "Stale: this synthesis was written for an earlier version of this theme and its membership has changed since." : "Stale: this theme's membership has changed since the synthesis was written.";
@@ -132,31 +136,24 @@ function ThemeAnalysis({ theme, surfaceLabel, first }: { theme: ThemeAnalysisVie
           <StateNote>{theme.absence}</StateNote>
         </div>
       )}
-      {theme.forwardOutlook && (
-        <Block label="Forward outlook (Act/Invest Today vs. Wait/Stage)">
-          <div style={{ fontSize: "var(--fs-13)", lineHeight: 1.6, color: "var(--ink-2)" }}>
-            <p style={{ fontWeight: 600, color: "var(--ink)", margin: "0 0 var(--sp-6)" }}>
-              {theme.forwardOutlook.headline}
-            </p>
-            <p style={{ margin: "0 0 var(--sp-8)" }}>
-              {theme.forwardOutlook.guidance}
-            </p>
-            {theme.forwardOutlook.crossSurfaceHandoff && (
-              <p style={{ margin: "0 0 var(--sp-8)", fontStyle: "italic" }}>
-                <span style={{ fontWeight: 600, fontStyle: "normal" }}>Cross-surface handoff:</span> {theme.forwardOutlook.crossSurfaceHandoff}
-              </p>
-            )}
-            {theme.forwardOutlook.horizons.length > 0 && (
-              <ul style={{ margin: "var(--sp-6) 0 0", paddingLeft: "var(--sp-18)" }}>
-                {theme.forwardOutlook.horizons.map((h, i) => (
-                  <li key={i} style={{ marginBottom: "var(--sp-4)" }}>
-                    <span style={{ fontWeight: 600, color: "var(--ink)" }}>{h.horizon} ({h.surfaces.join(", ") || "all surfaces"}):</span>{" "}
-                    {h.guidance}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+      {theme.forwardOutlook.horizons.length > 0 && (
+        <Block label="Members by horizon">
+          <ul style={{ margin: 0, paddingLeft: "var(--sp-18)", fontSize: "var(--fs-13)", lineHeight: 1.6, color: "var(--ink-2)" }}>
+            {theme.forwardOutlook.horizons.map((h) => (
+              <li key={h.horizon}>
+                <span style={{ fontWeight: 600, color: "var(--ink)" }}>{HORIZON_LABEL[h.horizon] ?? h.horizon}</span> · {h.memberIds.length} {h.memberIds.length === 1 ? "item" : "items"} · {h.surfaces.map((k) => theme.pages.find((p) => p.surface === k)?.label ?? k).join(", ")}
+                {h.triggers.length > 0 && (
+                  <ul style={{ margin: 0, paddingLeft: "var(--sp-18)" }}>
+                    {h.triggers.map((t) => (
+                      <li key={t.eventId}>
+                        {formatDate(t.date)} · {kindLabels[t.kind] ?? t.kind}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </li>
+            ))}
+          </ul>
         </Block>
       )}
       {theme.membersByPage.length > 0 && (
@@ -200,7 +197,7 @@ export function crossPagePresence(crossPage?: CrossPageData | null): { connected
 }
 
 /** "Connected intelligence" (intersections and the theme analysis) and the Inferences section; the view is computed once here from the rows the page read. */
-export function CrossPageSection({ surfaceKey, surfaceLabel, crossPage, onRetry }: { surfaceKey: string; surfaceLabel: string; crossPage?: CrossPageData | null; onRetry?: () => void }) {
+export function CrossPageSection({ surfaceKey, surfaceLabel, crossPage, onRetry, kindLabels = {} }: { surfaceKey: string; surfaceLabel: string; crossPage?: CrossPageData | null; onRetry?: () => void; kindLabels?: Readonly<Record<string, string>> }) {
   const view = crossPage?.intersections ?? null;
   const theme = crossPage?.theme ?? null;
   const themesFailed = crossPage?.degraded?.includes("themes") ?? false;
@@ -228,7 +225,7 @@ export function CrossPageSection({ surfaceKey, surfaceLabel, crossPage, onRetry 
               )}
             </DetailSubSection>
           )}
-          {theme && <ThemeAnalysis theme={theme} surfaceLabel={surfaceLabel} first={!view} />}
+          {theme && <ThemeAnalysis theme={theme} surfaceLabel={surfaceLabel} first={!view} kindLabels={kindLabels} />}
           {themesFailed && (
             <div className="cl-detail-block">
               <StateNote tone="error" {...(onRetry ? { action: { label: "Retry", onClick: onRetry } } : {})}>

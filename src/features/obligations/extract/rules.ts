@@ -29,12 +29,12 @@ const file = z.object({
     AIM_WORDS: re,
     COMMENCEMENT_CLAUSE_RE: re,
     STATUS_ONLY_RE: re,
-    IMPLEMENTING_ACT: re.optional(),
-    DELEGATED_ACT: re.optional(),
-    AWAITING_REGULATION: re.optional(),
-    REGULATOR_SUBJECT: re.optional(),
-    REGULATOR_ACTION: re.optional(),
-    GUIDANCE_EXPECTED: re.optional(),
+    IMPLEMENTING_ACT: re,
+    DELEGATED_ACT: re,
+    AWAITING_REGULATION: re,
+    REGULATOR_SUBJECT: re,
+    REGULATOR_ACTION: re,
+    GUIDANCE_EXPECTED: re,
   }),
 }).parse(raw);
 const compile = (r: z.infer<typeof re>): RegExp => new RegExp(r.source, r.flags);
@@ -60,12 +60,12 @@ export const RULES: readonly Rule[] = file.rules.map(build);
 export const CANDIDATE_ONLY_RULES: readonly Rule[] = file.candidateOnly.map(build);
 export const DEONTIC = compile(file.patterns.DEONTIC);
 export const AIM_WORDS = compile(file.patterns.AIM_WORDS);
-export const IMPLEMENTING_ACT = file.patterns.IMPLEMENTING_ACT ? compile(file.patterns.IMPLEMENTING_ACT) : /\b(?:implementing\s+(?:acts?|regulations?|technical\s+standards?|measures?))\b/i;
-export const DELEGATED_ACT = file.patterns.DELEGATED_ACT ? compile(file.patterns.DELEGATED_ACT) : /\b(?:delegated\s+(?:acts?|regulations?))\b/i;
-export const AWAITING_REGULATION = file.patterns.AWAITING_REGULATION ? compile(file.patterns.AWAITING_REGULATION) : /\bawaiting\s+(?:European\s+|EU\s+)?(?:regulations?|rules?|guidance|standards?|acts?|criteria|methodolog(?:y|ies))\b/i;
-export const REGULATOR_SUBJECT = file.patterns.REGULATOR_SUBJECT ? compile(file.patterns.REGULATOR_SUBJECT) : /\b(?:the\s+)?(?:Commission|regulators?|agenc(?:y|ies)|authorit(?:y|ies)|Member\s+States|IMO|EPA|CARB|ECHA|ESMA|EBA)\b/i;
-export const REGULATOR_ACTION = file.patterns.REGULATOR_ACTION ? compile(file.patterns.REGULATOR_ACTION) : /\b(?:adopt(?:s|ing)?|establish(?:es|ing)?|specif(?:y|ies|ying)|lay\s+down|publish(?:es|ing)?|develop(?:s|ing)?|issue(?:s|ing)?|determin(?:e|es|ing))\b/i;
-export const GUIDANCE_EXPECTED = file.patterns.GUIDANCE_EXPECTED ? compile(file.patterns.GUIDANCE_EXPECTED) : /\b(?:technical\s+standards?|assessment\s+criteria|guidelines?|guidance)\b/i;
+export const IMPLEMENTING_ACT = compile(file.patterns.IMPLEMENTING_ACT);
+export const DELEGATED_ACT = compile(file.patterns.DELEGATED_ACT);
+export const AWAITING_REGULATION = compile(file.patterns.AWAITING_REGULATION);
+export const REGULATOR_SUBJECT = compile(file.patterns.REGULATOR_SUBJECT);
+export const REGULATOR_ACTION = compile(file.patterns.REGULATOR_ACTION);
+export const GUIDANCE_EXPECTED = compile(file.patterns.GUIDANCE_EXPECTED);
 const COMMENCEMENT_CLAUSE_RE = compile(file.patterns.COMMENCEMENT_CLAUSE_RE);
 const STATUS_ONLY_RE = compile(file.patterns.STATUS_ONLY_RE);
 
