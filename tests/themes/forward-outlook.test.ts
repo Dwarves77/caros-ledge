@@ -10,7 +10,7 @@ const AS_OF = "2026-10-24T00:00:00Z";
 const THEME: ThemeRow = { id: "theme-1", member_ids: ["reg", "ops", "res", "bare"], surfaces: ["regulations", "operations", "research"], pivots: [{ id: "reg" }, { id: "res" }] };
 const MEMBERS: MemberRow[] = [
   { id: "reg", legacy_id: "reg", title: "Packaging mandate", item_type: "regulation", domain: 1 },
-  { id: "ops", legacy_id: "ops", title: "Sorting run", item_type: "regional_data", domain: 3, compliance_deadline: "2028-06-01" },
+  { id: "ops", legacy_id: "ops", title: "Sorting run", item_type: "regional_data", domain: 3, compliance_deadline: "2028-09-01" },
   { id: "res", legacy_id: "res", title: "Solid-state battery research", item_type: "research_finding", domain: 7, horizon_band: "MID" },
   { id: "bare", legacy_id: "bare", title: "No dates anywhere", item_type: "market_signal", domain: 4 },
 ];
@@ -24,7 +24,7 @@ test("the forward outlook is structure: horizon tokens, member ids, surfaces, pi
   assert.deepEqual(view?.forwardOutlook, {
     horizons: [
       {
-        horizon: "0-12m",
+        horizon: "0-6m",
         memberIds: ["reg"],
         surfaces: ["regulations"],
         pivotIds: ["reg"],
@@ -33,8 +33,8 @@ test("the forward outlook is structure: horizon tokens, member ids, surfaces, pi
           { eventId: "ev-2", itemId: "reg", date: "2027-09-01", precision: "day", kind: "compliance_deadline" },
         ],
       },
-      { horizon: "1-2y", memberIds: ["ops"], surfaces: ["operations"], pivotIds: [], triggers: [] },
-      { horizon: "2-5y", memberIds: ["res"], surfaces: ["research"], pivotIds: ["res"], triggers: [] },
+      { horizon: "18-24m", memberIds: ["ops"], surfaces: ["operations"], pivotIds: [], triggers: [] },
+      { horizon: "MID", memberIds: ["res"], surfaces: ["research"], pivotIds: ["res"], triggers: [] },
       { horizon: "unplaced", memberIds: ["bare"], surfaces: ["market"], pivotIds: [], triggers: [] },
     ],
   });
@@ -50,16 +50,14 @@ test("a member with no recorded horizon, event or deadline is unplaced, never pl
   assert.deepEqual(view?.forwardOutlook.horizons.map((h) => [h.horizon, h.memberIds]), [["unplaced", ["a", "b"]]]);
 });
 
-test("the cutoffs come from the data file: a date 365 days out is 0-12m, 366 is 1-2y, 731 is 2-5y", () => {
-  const theme: ThemeRow = { id: "t", member_ids: ["a", "b", "c"] };
-  const members: MemberRow[] = ["a", "b", "c"].map((id) => ({ id, legacy_id: id, title: id, item_type: "regulation", domain: 1 }));
-  const events: ThemeEventRow[] = [
-    { id: "e1", intelligence_item_id: "a", event_date: "2027-10-24", date_precision: "day", event_kind: "compliance_deadline" },
-    { id: "e2", intelligence_item_id: "b", event_date: "2027-10-25", date_precision: "day", event_kind: "compliance_deadline" },
-    { id: "e3", intelligence_item_id: "c", event_date: "2028-10-25", date_precision: "day", event_kind: "compliance_deadline" },
-  ];
-  const view = themeAnalysisView({ itemId: "a", surface: "regulations", themes: [theme], briefs: [], members, events, asOfIso: "2026-10-24T00:00:00Z" });
-  assert.deepEqual(view?.forwardOutlook.horizons.map((h) => [h.horizon, h.memberIds]), [["0-12m", ["a"]], ["1-2y", ["b"]], ["2-5y", ["c"]]]);
+test("the token edges come from the data file, counted in years of 365.25 days from asOf", () => {
+  const ids = ["a", "b", "c", "d", "e"];
+  const theme: ThemeRow = { id: "t", member_ids: ids };
+  const members: MemberRow[] = ids.map((id) => ({ id, legacy_id: id, title: id, item_type: "regulation", domain: 1, ...(id === "e" ? { horizon_band: "FAR" } : {}) }));
+  const day = (id: string, event_date: string): ThemeEventRow => ({ id: `ev-${id}`, intelligence_item_id: id, event_date, date_precision: "day", event_kind: "compliance_deadline" });
+  const events = [day("a", "2027-04-24"), day("b", "2027-04-26"), day("c", "2028-10-23"), day("d", "2028-10-24")];
+  const view = themeAnalysisView({ itemId: "a", surface: "regulations", themes: [theme], briefs: [], members, events, asOfIso: AS_OF });
+  assert.deepEqual(view?.forwardOutlook.horizons.map((h) => [h.horizon, h.memberIds]), [["0-6m", ["a"]], ["6-18m", ["b"]], ["18-24m", ["c"]], ["2-5y", ["d"]], ["FAR", ["e"]]]);
 });
 
 test("horizons.json missing a key, or naming a token outside its own lists, is refused at load", () => {
@@ -67,7 +65,8 @@ test("horizons.json missing a key, or naming a token outside its own lists, is r
     const without = Object.fromEntries(Object.entries(horizonsJson).filter(([k]) => k !== key));
     assert.throws(() => parseHorizons(without), `a file without ${key} must be refused`);
   }
-  assert.throws(() => parseHorizons({ ...horizonsJson, bandToken: { NOW: "soon" } }));
+  assert.throws(() => parseHorizons({ ...horizonsJson, tokens: horizonsJson.tokens.map((t) => (t.token === "18-24m" ? { ...t, toYears: 3 } : t)) }), "a band must end where its last token ends");
+  assert.throws(() => parseHorizons({ ...horizonsJson, tokens: horizonsJson.tokens.map((t) => (t.token === "2-5y" ? { ...t, band: "NOW" } : t)) }), "a token cannot sit in an earlier band");
   assert.doesNotThrow(() => parseHorizons(horizonsJson));
 });
 
@@ -80,13 +79,13 @@ test("assessment stance: a stance token and a horizon token from the rules file,
     refusal_reason: null, credibility_evidence_score: null, credibility_authority_score: null, status_token: "CONFIRMED", computed_at: "2026-10-21T00:00:00Z",
   };
   const outlook = (patch: Partial<AssessmentRow>) => selectAssessmentView({ ...base, ...patch })?.forwardOutlook;
-  assert.deepEqual(outlook({ horizon_band: "NOW", horizon_kind: "obligation" }), { stance: "act_today", horizon: "0-12m" });
-  assert.deepEqual(outlook({ horizon_band: "NOW", horizon_kind: "availability", technical_maturity_high: 9, commercial_maturity_high: 5 }), { stance: "act_today", horizon: "0-12m" });
-  assert.deepEqual(outlook({ horizon_band: "NOW", horizon_kind: "availability", technical_maturity_high: 6, commercial_maturity_high: 2 }), { stance: "act_today", horizon: "1-2y" });
-  assert.deepEqual(outlook({ horizon_band: "NEAR", horizon_kind: "obligation" }), { stance: "act_today", horizon: "1-2y" });
-  assert.deepEqual(outlook({ horizon_band: "NEAR", horizon_kind: "availability", technical_maturity_high: 7 }), { stance: "wait_stage", horizon: "2-5y" });
-  assert.deepEqual(outlook({ horizon_band: "MID" }), { stance: "wait_stage", horizon: "2-5y" });
-  assert.deepEqual(outlook({ horizon_band: "FAR" }), { stance: "wait_stage", horizon: ">5y" });
+  assert.deepEqual(outlook({ horizon_band: "NOW", horizon_kind: "obligation" }), { stance: "act_today", horizon: "NOW" });
+  assert.deepEqual(outlook({ horizon_band: "NOW", horizon_kind: "availability", technical_maturity_high: 6, commercial_maturity_high: 2 }), { stance: "act_today", horizon: "NOW" });
+  assert.deepEqual(outlook({ horizon_band: "NEAR", horizon_kind: "obligation" }), { stance: "act_today", horizon: "NEAR" });
+  assert.deepEqual(outlook({ horizon_band: "NEAR", horizon_kind: "availability", technical_maturity_high: 7 }), { stance: "wait_stage", horizon: "NEAR" });
+  assert.deepEqual(outlook({ horizon_band: "MID" }), { stance: "wait_stage", horizon: "MID" });
+  assert.deepEqual(outlook({ horizon_band: "FAR" }), { stance: "wait_stage", horizon: "FAR" });
+  assert.deepEqual(outlook({ technical_maturity_high: 9, commercial_maturity_high: 5 }), { stance: "act_today", horizon: "NOW" });
   assert.equal(outlook({ technical_maturity_high: 5 }), null, "no band and no mature corridor classifies nothing");
   assert.equal(outlook({ refusal_reason: "no_dated_basis" }), null);
 });

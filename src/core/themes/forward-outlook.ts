@@ -1,6 +1,6 @@
 // New in CTX-5 (no old source). The forward view of a theme as STRUCTURE only (ADR-050: a reader authors sentences, code classifies and lists): which members sit in which horizon, on which surfaces,
 // which are the theme's pivots, and the dated forward events that place them. Every string out is an id from the input, a horizon token from data/horizons.json, a surface key, or an event field.
-// The horizon of a member comes from its own recorded band or, failing that, its earliest dated event or compliance deadline against `asOfIso`; a member with neither is `unplaced`, never guessed from its page.
+// The horizon of a member is a recorded theme token, else the token of its earliest dated event or compliance deadline against `asOfIso` (years of 365.25 days, as the assessment counts them), else its recorded band alone, else `unplaced`; never guessed from its page.
 import { SURFACE_ORDER, surfaceOf } from "@/core/routing";
 
 import horizonsJson from "./data/horizons.json";
@@ -35,22 +35,26 @@ export interface ThemeForwardOutlook {
   horizons: ThemeHorizonOutlook[];
 }
 
-const DAY_MS = 86_400_000;
+const YEAR_MS = 365.25 * 86_400_000;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}/;
+/** The keys a member can sit under, in reading order: per band its tokens (a dated member), then the band itself (a member that records only a band), and last the unplaced key. */
+const ORDER = [...HORIZONS.bands.flatMap((b) => [...HORIZONS.tokens.filter((t) => t.band === b.code).map((t) => t.token), b.code]), HORIZONS.unplaced];
 
-/** A recorded horizon string as a horizon token: the token itself (en dash read as a hyphen) or a stored band; null when it is neither. */
-function recordedToken(v: unknown): string | null {
-  const s = String(v ?? "").trim().replace(/\u2013/g, "-");
-  return HORIZONS.order.includes(s) ? s : (HORIZONS.bandToken[s.toUpperCase()] ?? null);
+/** A recorded horizon string as a key: a theme token (en dash read as a hyphen) or a stored band code; null when it is neither. */
+function recorded(v: unknown): string | null {
+  const s = String(v ?? "").trim().replace(/–/g, "-");
+  const hit = [s, s.toUpperCase()].find((k) => HORIZONS.tokens.some((t) => t.token === k) || HORIZONS.bands.some((b) => b.code === k));
+  return hit ?? null;
 }
 
 function horizonOf(m: ForwardMember, events: readonly ThemeEventRow[], asOfIso: string): string {
-  const recorded = recordedToken(m.horizon ?? m.horizon_band);
-  if (recorded) return recorded;
+  const stored = recorded(m.horizon ?? m.horizon_band);
+  const isToken = stored !== null && HORIZONS.tokens.some((t) => t.token === stored);
+  if (isToken) return stored;
   const first = [...events.map((e) => e.event_date), m.compliance_deadline].filter((d): d is string => typeof d === "string" && DATE_RE.test(d)).sort()[0];
-  const days = first ? Math.round((Date.parse(first) - Date.parse(asOfIso)) / DAY_MS) : NaN;
-  if (!Number.isFinite(days)) return HORIZONS.unplaced;
-  return HORIZONS.order.slice(0, -1).find((t) => days <= (HORIZONS.cutoffDays[t] as number)) ?? (HORIZONS.order[HORIZONS.order.length - 1] as string);
+  const years = first ? (Date.parse(first) - Date.parse(asOfIso)) / YEAR_MS : NaN;
+  if (Number.isFinite(years)) return (HORIZONS.tokens.find((t) => t.toYears === null || years <= t.toYears) as { token: string }).token;
+  return stored ?? HORIZONS.unplaced;
 }
 
 export function deriveThemeForwardOutlook(input: { memberIds: readonly string[]; pivotIds: readonly string[]; members: readonly ForwardMember[]; events: readonly ThemeEventRow[]; asOfIso: string }): ThemeForwardOutlook {
@@ -62,7 +66,7 @@ export function deriveThemeForwardOutlook(input: { memberIds: readonly string[];
     buckets.set(h, [...(buckets.get(h) ?? []), m]);
   }
   const pivots = new Set(input.pivotIds);
-  const horizons = [...HORIZONS.order, HORIZONS.unplaced].flatMap((h): ThemeHorizonOutlook[] => {
+  const horizons = ORDER.flatMap((h): ThemeHorizonOutlook[] => {
     const members = buckets.get(h);
     if (!members?.length) return [];
     const ids = new Set(members.map((m) => m.id));

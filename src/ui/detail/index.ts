@@ -2,7 +2,7 @@
 export { commonActionCardProps } from "./action-card-props";
 export { ItemAssignBlock } from "./collab/ItemAssignBlock";
 export { ItemNotesBlock } from "./collab/ItemNotesBlock";
-export { crossPagePresence, CrossPageSection, HORIZON_LABEL } from "./CrossPageSection";
+export { crossPagePresence, CrossPageSection } from "./CrossPageSection";
 export type { CrossPageData } from "./CrossPageSection";
 export { PendingTriggers, pendingTriggers } from "./PendingTriggers";
 export type { PendingEvent } from "./PendingTriggers";

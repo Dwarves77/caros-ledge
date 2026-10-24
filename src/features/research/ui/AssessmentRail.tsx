@@ -8,7 +8,6 @@
 // producer, a table or a specification.
 import { formatDate } from "@/core/shared";
 import { SectionCard, TagChip } from "@/ui";
-import { HORIZON_LABEL } from "@/ui/detail";
 
 import { HORIZON_BAND_WORDS, HORIZON_KIND_WORDS, HORIZON_RULE_WORDS, refusalText, type AssessmentView, type HistoryEntry, type SignpostView } from "../model/assessment-view";
 import type { AssessmentBundle } from "../read/research-reads";
@@ -52,7 +51,7 @@ export function AssessmentCard({ assessment, failed }: { assessment: AssessmentV
             <>
               <Kv label="Horizon">{`${HORIZON_BAND_WORDS[assessment.horizon.band] ?? assessment.horizon.band} · ${HORIZON_KIND_WORDS[assessment.horizon.kind]?.toLowerCase() ?? assessment.horizon.kind} · read from ${HORIZON_RULE_WORDS[assessment.horizon.rule] ?? assessment.horizon.rule}${assessment.horizon.confidence ? ` · ${assessment.horizon.confidence} confidence` : ""}`}</Kv>
               {assessment.horizon.triggerNote && <Kv label="Basis">{assessment.horizon.triggerNote}</Kv>}
-              {assessment.forwardOutlook && <Kv label="Stance">{`${STANCE_LABEL[assessment.forwardOutlook.stance] ?? assessment.forwardOutlook.stance} · ${HORIZON_LABEL[assessment.forwardOutlook.horizon] ?? assessment.forwardOutlook.horizon}`}</Kv>}
+              {assessment.forwardOutlook && <Kv label="Stance">{`${STANCE_LABEL[assessment.forwardOutlook.stance] ?? assessment.forwardOutlook.stance} · ${HORIZON_BAND_WORDS[assessment.forwardOutlook.horizon] ?? assessment.forwardOutlook.horizon}`}</Kv>}
             </>
           ) : (
             <Kv label="Horizon">{`Not forecastable: ${refusalText(assessment.refusalReason)}`}</Kv>

@@ -1,7 +1,18 @@
 {
-  "order": ["0-12m", "1-2y", "2-5y"],
+  "bands": [
+    { "code": "NOW", "toYears": 2 },
+    { "code": "NEAR", "toYears": 5 },
+    { "code": "MID", "toYears": 10 },
+    { "code": "FAR", "toYears": null }
+  ],
+  "tokens": [
+    { "token": "0-6m", "band": "NOW", "toYears": 0.5 },
+    { "token": "6-18m", "band": "NOW", "toYears": 1.5 },
+    { "token": "18-24m", "band": "NOW", "toYears": 2 },
+    { "token": "2-5y", "band": "NEAR", "toYears": 5 },
+    { "token": "5-10y", "band": "MID", "toYears": 10 },
+    { "token": ">10y", "band": "FAR", "toYears": null }
+  ],
   "unplaced": "unplaced",
-  "bandToken": { "NOW": "0-12m", "NEAR": "1-2y", "MID": "2-5y", "FAR": "2-5y" },
-  "cutoffDays": { "0-12m": 365, "1-2y": 730 },
   "excludedEventKinds": ["target", "other"]
 }

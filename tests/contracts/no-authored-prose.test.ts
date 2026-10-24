@@ -58,7 +58,7 @@ test("the theme forward outlook carries only input ids and dates, horizon tokens
   assert.ok(view);
   const a: Allowed = {
     inputs: new Set(["reg", "ops", "ev-1", "2027-01-01", "day", "compliance_deadline"]),
-    tokens: new Set([...horizonsJson.order, horizonsJson.unplaced, ...SURFACE_ORDER]),
+    tokens: new Set([...horizonsJson.bands.map((b) => b.code), ...horizonsJson.tokens.map((t) => t.token), horizonsJson.unplaced, ...SURFACE_ORDER]),
     spans: [],
   };
   assert.deepEqual(offenders(view.forwardOutlook, a), []);

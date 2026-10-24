@@ -1,14 +1,12 @@
 {
   "stances": ["act_today", "wait_stage"],
-  "horizons": ["0-12m", "1-2y", "2-5y", ">5y"],
+  "horizons": ["NOW", "NEAR", "MID", "FAR"],
   "rules": [
-    { "band": "NOW", "kind": "obligation", "stance": "act_today", "horizon": "0-12m" },
-    { "band": "NOW", "technicalHighAtLeast": 8, "commercialHighAtLeast": 4, "stance": "act_today", "horizon": "0-12m" },
-    { "band": "NOW", "stance": "act_today", "horizon": "1-2y" },
-    { "band": "NEAR", "kind": "obligation", "stance": "act_today", "horizon": "1-2y" },
-    { "band": "NEAR", "stance": "wait_stage", "horizon": "2-5y" },
-    { "band": "MID", "stance": "wait_stage", "horizon": "2-5y" },
-    { "band": "FAR", "stance": "wait_stage", "horizon": ">5y" },
-    { "technicalHighAtLeast": 8, "commercialHighAtLeast": 4, "stance": "act_today", "horizon": "0-12m" }
+    { "band": "NOW", "stance": "act_today", "horizon": "NOW" },
+    { "band": "NEAR", "kind": "obligation", "stance": "act_today", "horizon": "NEAR" },
+    { "band": "NEAR", "stance": "wait_stage", "horizon": "NEAR" },
+    { "band": "MID", "stance": "wait_stage", "horizon": "MID" },
+    { "band": "FAR", "stance": "wait_stage", "horizon": "FAR" },
+    { "technicalHighAtLeast": 8, "commercialHighAtLeast": 4, "stance": "act_today", "horizon": "NOW" }
   ]
 }

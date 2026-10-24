@@ -16,6 +16,7 @@ const STANCE = z
   })
   .superRefine((d, ctx) => {
     for (const r of d.rules) if (!d.stances.includes(r.stance) || !d.horizons.includes(r.horizon)) ctx.addIssue({ code: "custom", message: `rule names a stance or horizon outside the lists: ${r.stance} ${r.horizon}` });
+    for (const r of d.rules) if (r.band !== undefined && r.band !== r.horizon) ctx.addIssue({ code: "custom", message: `a ${r.band} rule must name the ${r.band} horizon, not ${r.horizon}` });
   })
   .parse(stanceJson);
 const COPY = copyJson as { refusal: Record<string, string>; genericRefusal: string; method: Record<string, string> };
@@ -69,7 +70,7 @@ export interface Corridor {
   method: string | null;
 }
 
-/** The classification of a stored assessment into a stance token and a horizon token by the ordered rules in data/assessment-stance.json; no sentence. A UI copy table words each token. */
+/** The classification of a stored assessment into a stance token and the horizon band it was read for, by the ordered rules in data/assessment-stance.json; no sentence. A UI copy table words each token. */
 export interface AssessmentForwardOutlook {
   stance: string;
   horizon: string;
