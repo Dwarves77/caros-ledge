@@ -4,17 +4,28 @@ import { NextResponse, type NextRequest } from "next/server";
 import { ClaimsUnavailable, getClaims } from "@/core/auth/claims";
 import { decideRoute } from "@/core/auth/route-policy";
 import { requestClient } from "@/core/db/clients";
+import { contentSecurityPolicy, supabaseOriginOf } from "@/core/http/csp";
 import { log } from "@/core/shared/log";
 
-/** The Next proxy: build the request-bound client, verify the session locally, apply decideRoute. */
+/**
+ * The Next proxy: build the request-bound client, verify the session locally, apply decideRoute. Every response carries the Content-Security-Policy (audit 2.3.8), built here because the project's origin
+ * is read from the environment at request time.
+ */
 export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   if (decideRoute({ pathname, authenticated: false }).action === "scanner-404") return new NextResponse(null, { status: 404 });
 
-  let response = NextResponse.next({ request });
+  const csp = contentSecurityPolicy({ supabaseOrigin: supabaseOriginOf(process.env.NEXT_PUBLIC_SUPABASE_URL), production: process.env.NODE_ENV === "production" });
+  const secured = <R extends NextResponse>(res: R): R => {
+    res.headers.set("Content-Security-Policy", csp);
+    return res;
+  };
+  const next = () => secured(NextResponse.next({ request }));
+
+  let response = next();
   const client = requestClient(request.cookies, (cookiesToSet) => {
     cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-    response = NextResponse.next({ request });
+    response = next();
     cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
   });
 
@@ -35,14 +46,14 @@ export async function proxy(request: NextRequest) {
     case "scanner-404":
       return new NextResponse(null, { status: 404 });
     case "redirect-home":
-      return NextResponse.redirect(new URL("/", request.url));
+      return secured(NextResponse.redirect(new URL("/", request.url)));
     case "redirect-login": {
       const url = new URL("/login", request.url);
       url.searchParams.set("redirect", decision.redirectTo);
-      return NextResponse.redirect(url);
+      return secured(NextResponse.redirect(url));
     }
     case "service-unavailable": {
-      const res = NextResponse.rewrite(new URL("/service-unavailable", request.url), { status: 503 });
+      const res = secured(NextResponse.rewrite(new URL("/service-unavailable", request.url), { status: 503 }));
       res.headers.set("Retry-After", "10");
       return res;
     }

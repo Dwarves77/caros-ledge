@@ -3,7 +3,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { DELETE, GET, PATCH, POST, PUT } from "@/features/auth/api/members";
+import { DELETE, GET, leave, PATCH, POST, PUT } from "@/features/auth/api/members";
 
 import { fakeDb, type Reply } from "../_support/fake-db.ts";
 import { as, ctx, json, MEMBERSHIP_ID, ORG_A, PERSONAS, script, type Persona } from "../_support/personas.ts";
@@ -95,16 +95,41 @@ test("the function's refusals map through the one table: not allowed 403 with it
   assert.doesNotMatch(odd.text, /duplicate key|org_memberships_pkey/);
 });
 
+test("0121: POST /leave is leave_org on the caller's client for the URL's organisation: 204 with no body, the database's refusals through the one table (the last owner 409, not a member 404), a malformed id 400, signed out 401", async () => {
+  const calls: { name: string; args: Record<string, unknown> }[] = [];
+  const { service, run } = world((name, args) => {
+    calls.push({ name, args });
+    return { data: null };
+  });
+  const LEAVE = `/api/orgs/${ORG_A}/leave`;
+  const res = await run(leave, "member", { method: "POST" }, LEAVE);
+  assert.deepEqual([res.status, res.text], [204, ""]);
+  assert.deepEqual(calls, [{ name: "leave_org", args: { p_org_id: ORG_A } }]);
+  for (const [code, message, status] of [["22023", "the last owner cannot leave; transfer ownership first", 409], ["P0002", "you are not a member of this organisation", 404]] as const) {
+    const refused = await world(() => ({ error: { message, code } })).run(leave, "owner", { method: "POST" }, LEAVE);
+    assert.deepEqual([refused.status, body(refused).error], [status, message]);
+  }
+  assert.equal((await world(() => ({ error: { message: "relation public.org_memberships is down", code: "XX000" } })).run(leave, "member", { method: "POST" }, LEAVE)).status, 503);
+  assert.equal((await run(leave, "anon", { method: "POST" }, LEAVE)).status, 401);
+  assert.equal(calls.length, 1, "a signed-out request reached no function");
+  assert.equal(service.calls.length + service.rpcs.length, 0, "leaving runs on the caller's client, never the service client");
+  const bad = await (async () => {
+    const w = world(() => ({ data: null }));
+    const r = await leave(as("member", "/x", { method: "POST" }), { params: Promise.resolve({ org_id: "nope" }) } as never);
+    return [r.status, w.service.rpcs.length];
+  })();
+  assert.deepEqual(bad, [400, 0]);
+});
+
 // ── INV-R2e-1: the invitation answers the same for a registered and an unregistered address ───────────────────────────────
 
 test("INV-R2e-1: PUT is an invitation the invitee accepts: the response is byte-identical for a registered and an unregistered address, and no account is looked up or joined", async () => {
-  const invite = { id: "i1", token_last4: "beef", invited_email: "x@example.test", proposed_role: "member", expires_at: "2099-01-01", status: "pending", created_at: "2026-01-01" };
   const asked: string[] = [];
   const one = (registered: boolean) => {
-    const w = world((name, args) => {
+    const w = world((name) => {
       asked.push(name);
       if (name === "profiles_by_email") return { data: registered ? [{ id: "u-registered" }] : [] };
-      return name === "invite_member" ? { data: { ...invite, invited_email: (args as { p_email: string }).p_email } } : undefined;
+      return name === "invite_member" ? { data: "ab".repeat(32) } : undefined;
     });
     return w;
   };

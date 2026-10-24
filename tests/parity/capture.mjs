@@ -19,9 +19,10 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { chromium } from 'playwright';
 
+import { installBypass } from '../../scripts/ci/live/bypass.mjs';
 import { measurePage } from '../ux/measure.mjs';
 
-import { CAPTURE_CONTRACT, CAPTURE_VIEWPORTS as VIEWPORTS, ITEM_PATH, ROW_SELECTOR, SCREEN_MAX_HEIGHT } from './contract.mjs';
+import { CAPTURE_CONTRACT, CAPTURE_NOW, CAPTURE_VIEWPORTS as VIEWPORTS, ITEM_PATH, ROW_SELECTOR, SCREEN_MAX_HEIGHT } from './contract.mjs';
 
 export { SCREEN_MAX_HEIGHT };
 // A page that navigates its main frame more often than this after goto is looping (a reload on every auth event, a redirect cycle).
@@ -31,6 +32,14 @@ const ACCOUNTS = { member: ['LIVE_SMOKE_EMAIL', 'LIVE_SMOKE_PASSWORD'], admin: [
 export function missingCredentials(routes, env) {
   const accounts = new Set(routes.map((r) => r.auth).filter((a) => a && (a !== 'admin' || env.PARITY_ADMIN === '1')));
   return [...accounts].flatMap((a) => ACCOUNTS[a].filter((name) => !env[name]));
+}
+
+/**
+ * Pins the page's clock to CAPTURE_NOW for a signed-out route (Date only: timers keep running, so settling and hydration are unaffected). The signed-out mastheads print the visitor's date and ISO week from the browser's clock, and the
+ * baseline PNGs were shot on one day; a signed-in route's date is the server's (the pin would change nothing there) and its session is checked against the real clock, so it is left alone.
+ */
+export async function freezeClock(context, route) {
+  if (!route.auth) await context.clock.setFixedTime(new Date(CAPTURE_NOW));
 }
 
 const isFork = (env) => {
@@ -92,21 +101,6 @@ export async function settle(page, pending = () => [], budgets = { network: NETW
   return (await idle(page, budgets.network)) ? { settled: true, reason: null } : { settled: false, reason: `network busy after ${budgets.network / 1000} s: ${pending().join(', ') || 'no request pending'}` };
 }
 
-// A deployed preview sits behind Vercel's deployment protection; the project's automation bypass secret (VERCEL_AUTOMATION_BYPASS_SECRET, the same variable scripts/ci/live-checks.mjs reads) lets the capture
-// through. The header goes to the captured origin only: never to a third party the page happens to call (the database, the map tiles).
-export const BYPASS_HEADER = 'x-vercel-protection-bypass';
-export function bypassHeaders(url, origin, env = process.env) {
-  const secret = env.VERCEL_AUTOMATION_BYPASS_SECRET;
-  return secret && new URL(url).origin === origin ? { [BYPASS_HEADER]: secret } : {};
-}
-export async function installBypass(context, origin, env = process.env) {
-  if (!env.VERCEL_AUTOMATION_BYPASS_SECRET) return;
-  await context.route('**/*', (route) => {
-    const extra = bypassHeaders(route.request().url(), origin, env);
-    return Object.keys(extra).length ? route.continue({ headers: { ...route.request().headers(), ...extra } }) : route.fallback();
-  });
-}
-
 // The shell sets data-hydrated on <html> when it has hydrated (src/ui/shell/Hydrated.tsx). A page that never does is a capture error: it would be measured as server markup with no handlers.
 async function hydrated(page) {
   await page.waitForFunction(() => document.documentElement.dataset.hydrated === 'true', null, { timeout: 20000 });
@@ -114,7 +108,7 @@ async function hydrated(page) {
 
 async function signIn(browser, base, email, password) {
   const context = await browser.newContext();
-  await installBypass(context, new URL(base).origin);
+  await installBypass(context, base);
   try {
     const page = await context.newPage();
     await page.goto(new URL('/login', base).href, { waitUntil: 'load', timeout: 60000 });
@@ -409,7 +403,8 @@ async function captureOne(browser, base, route, path, viewport, storage, out, di
 async function captureAttempt(browser, base, route, path, viewport, storage, out, diag) {
   const stem = `${route.name}.${viewport.width}x${viewport.height}`;
   const context = await browser.newContext({ viewport, storageState: route.auth ? storage[route.auth] : undefined });
-  await installBypass(context, new URL(base).origin);
+  await installBypass(context, base);
+  await freezeClock(context, route);
   try {
     const page = await context.newPage();
     const pending = watchPending(page);

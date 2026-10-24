@@ -4,7 +4,7 @@
 // the view `admissible_claims` (0093) and `derived_values_admissible` (0090). tests/derived/readers.test.ts lists every file that reads these tables and fails when a customer reader does not import this module.
 import { suppressedClaimMatcher, type ClaimRef, type Correction } from "@/core/corrections";
 import type { Db } from "@/core/db";
-import { fetchAllByIdChunks } from "@/core/db";
+import { fetchAllByIdChunks } from "@/core/db/query";
 import type { Qb } from "@/core/db/qb";
 import { readFactSuppressionsFor } from "@/core/detail/claim-tiers";
 

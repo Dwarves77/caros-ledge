@@ -2,17 +2,18 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { LookupError } from "@/core/http/errors";
-import { canWrite, isOrgAdmin, itemIdFromDetailPath, loadRoster, orgWatchersOf } from "@/core/workspace/roster";
+import { itemIdFromDetailPath } from "@/core/workspace/paths";
+import { canWrite, isOrgAdmin, loadRoster, orgWatchersOf } from "@/core/workspace/roster";
 import {
   deriveRoleScopeFromComplianceObjectTags,
   findBand,
-  getWorkspaceProfile,
   ORG_ROLES,
   ORG_SIZE_DIMENSIONS,
   parseOrgProfile,
   PROFILE_JSON_KEYS,
   validateProfileInput,
-} from "@/core/workspace/profile";
+} from "@/core/workspace/org-profile";
+import { getWorkspaceProfile } from "@/core/workspace/profile";
 import { currentObligationObjects, dutyHoldersExcludeForwarder, fetchObligationObjectsForItem, relevanceForItem, summariseObligationBinding } from "@/core/workspace/relevance";
 
 import { relevanceDeps } from "./_deps.ts";

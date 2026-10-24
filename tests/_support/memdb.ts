@@ -398,7 +398,7 @@ class Query {
     } else if (this.op === "delete") {
       const gone = new Set(matching());
       db.tables[this.table] = rows.filter((r) => !gone.has(r));
-      return { data: db.opts.returnRows ? [...gone].map((r) => ({ ...r })) : null, error: null, count: null };
+      return { data: this.returning || db.opts.returnRows ? [...gone].map((r) => ({ ...r })) : null, error: null, count: null };
     } else {
       // A select that embeds resolves the join BEFORE it filters, the way PostgREST does, so a filter on `embed.column` sees the related row; `!inner` drops a row with no related row.
       const inner = [...this.columns.matchAll(/(?:(\w+):)?(\w+)!inner\(/g)].map((m) => m[1] ?? m[2] ?? "");

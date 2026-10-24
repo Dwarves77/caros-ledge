@@ -230,6 +230,8 @@ button, input, select, textarea { font-family: inherit; }
 .cl-menu-pop { position: absolute; top: 44px; right: 0; z-index: 40; min-width: 180px; display: block; padding: 6px; border-radius: 8px; border: 1px solid var(--line-1); background: var(--card); box-shadow: var(--shadow-pop); }
 .cl-menu-item { display: block; width: 100%; min-height: 44px; text-align: left; padding: 0 10px; border: none; border-radius: 6px; background: none; font-size: var(--fs-125); font-weight: 600; color: var(--ink); cursor: pointer; }
 .cl-menu-item:hover { background: var(--tag); }
+.cl-menu-item[aria-disabled="true"] { cursor: default; font-weight: 400; opacity: 0.75; }
+.cl-menu-item[aria-disabled="true"]:hover { background: none; }
 .cl-dialog { position: fixed; inset: 0; z-index: 80; display: flex; }
 .cl-dialog-scrim { position: absolute; inset: 0; background: var(--scrim); }
 .cl-dialog-panel { position: relative; display: flex; flex-direction: column; background: var(--card); box-shadow: var(--shadow-pop); max-height: 100%; outline: none; }

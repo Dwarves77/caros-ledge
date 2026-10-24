@@ -9,7 +9,8 @@ import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { BYPASS_HEADER, installBypass, wholePageScreenshot } from '../parity/capture.mjs';
+import { BYPASS_HEADER, installBypass } from '../../scripts/ci/live/bypass.mjs';
+import { wholePageScreenshot } from '../parity/capture.mjs';
 import { ROW_SELECTOR } from '../parity/contract.mjs';
 
 import { sweepClientReads } from './client-sweep.mjs';
@@ -244,7 +245,7 @@ try {
     await check(`capture bypass header ${present ? 'present' : 'absent'}`, async () => {
       const ctx = await browser.newContext();
       try {
-        await installBypass(ctx, new URL(base).origin, { VERCEL_AUTOMATION_BYPASS_SECRET: secret });
+        await installBypass(ctx, base, { VERCEL_AUTOMATION_BYPASS_SECRET: secret });
         const page = await ctx.newPage();
         const seen = [];
         page.on('request', (r) => void (new URL(r.url()).origin === new URL(base).origin && seen.push(r)));
@@ -279,6 +280,31 @@ try {
       }
     });
   }
+
+  // A control inside a CLOSED disclosure is not drawn, but Chromium still lays it out when a script asks for its box (content-visibility: hidden), at coordinates that lie over whatever the page draws below the disclosure. The measure
+  // once counted such a control as a neighbour: a connections strip of 19 rows (4 shown, 15 behind "N more connections below") put a hidden row 5 px from a 24 px source link and failed operations-detail at 375 for a gap no reader sees
+  // (parity run 39895582108). The plant is the same disclosure twice: closed, with the link 5 px under the row's laid-out box (not an offence: nothing is drawn there), and open, with the link 5 px under the row (an offence: the row is drawn).
+  await check('measure counts a control in an open disclosure as a neighbour and a control in a closed one as nothing', async () => {
+    const { ctx, page } = await open(browser, `${base}/privacy/ui-fixtures`, [375, 812]);
+    try {
+      must((await measurePage(page, { rows: true })).length === 0, 'the healthy fixture page is not clean, so the plant proves nothing');
+      const plant = (isOpen, gap) => page.evaluate(({ isOpen, gap }) => {
+        document.querySelector('[data-planted-disclosure]')?.remove();
+        const box = document.createElement('div');
+        box.setAttribute('data-planted-disclosure', '');
+        box.innerHTML = `<details${isOpen ? ' open' : ''}><summary style="display:flex;align-items:center;min-height:44px">1 more connection below</summary><a href="#row" style="display:block;height:44px">row</a></details><a href="#source" style="display:flex;align-items:center;width:72px;height:24px;margin-top:${gap}px">source</a>`;
+        document.querySelector('[data-fx]').append(box);
+      }, { isOpen, gap });
+      const clear = async () => (await measurePage(page, { rows: false })).filter((o) => o.includes('px clear of'));
+      await plant(false, 49);
+      const closed = await clear();
+      must(closed.length === 0, `a control inside a closed disclosure was measured as a neighbour: ${closed[0]}`);
+      await plant(true, 5);
+      must((await clear()).length > 0, 'an open disclosure with a link 5 px under its row was planted and the measure reported no "px clear of"');
+    } finally {
+      await ctx.close();
+    }
+  });
 
   // V-9 (ruling 2026-10-20): below 1440 px the rail is folded, under the content and not beside it, so a list keeps its artboard width: 948 px at 1280 (the viewport less the nav card's 252 and the page's 2 x 40), and every row title is at least
   // its longest word wide, at the measure's 160 px floor, with no horizontal overflow. From 1440 px the rail sits beside the content again. The research fixture has the rail but no nav card, so it is narrowed by the nav card's width.

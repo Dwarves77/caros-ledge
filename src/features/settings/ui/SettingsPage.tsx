@@ -5,7 +5,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { formatNumber } from "@/core/shared";
-import { ALL_SECTORS } from "@/core/workspace";
+import { ALL_SECTORS } from "@/core/workspace/vocabulary";
 import { BAND_ORDER } from "@/core/lists";
 import { AccountFrame, accountTabs } from "@/features/account/ui/AccountFrame";
 import { NotificationPreferences } from "@/features/account/ui/NotificationPreferences";

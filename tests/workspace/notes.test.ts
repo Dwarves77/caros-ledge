@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { NOTE_MAX_LENGTH } from "@/core/workspace/roster";
+import { NOTE_MAX_LENGTH } from "@/core/workspace/limits";
 import { DELETE, GET, PATCH, POST } from "@/features/workspace/api/notes";
 
 import type { MemDb } from "./_memdb.ts";

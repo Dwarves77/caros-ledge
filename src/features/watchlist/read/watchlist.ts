@@ -43,8 +43,6 @@ export interface WatchlistRead {
   /** Some rows' milestone read failed: they carry no timeline and the surface says so. */
   timelinesFailed: boolean;
 }
-/** Next date first (an undated row after the dated), the most recent watch first among equals: the order the card's aside states. */
-export const byNextDate = (a: WatchlistItem, b: WatchlistItem): number => (a.dueDays ?? Infinity) - (b.dueDays ?? Infinity) || b.watchedAt.localeCompare(a.watchedAt);
 
 interface WatchRow {
   item_type: WatchlistItemType;

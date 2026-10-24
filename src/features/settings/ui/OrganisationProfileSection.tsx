@@ -3,7 +3,7 @@
 // Ported from old_repo/src/components/settings/OrganisationProfileSection.tsx (lines 58-286)
 import { useState } from "react";
 
-import { ORG_ROLES, ORG_SIZE_DIMENSIONS, PROFILE_JSON_KEYS, parseOrgProfile, validateProfileInput, type OrgProfile } from "@/core/workspace";
+import { ORG_ROLES, ORG_SIZE_DIMENSIONS, PROFILE_JSON_KEYS, parseOrgProfile, validateProfileInput, type OrgProfile } from "@/core/workspace/org-profile";
 import { useWorkspaceStore } from "@/core/workspace/store";
 import { Button, ChoiceChip, FormCard, FormField, InlineErrorBanner, Toast } from "@/ui";
 

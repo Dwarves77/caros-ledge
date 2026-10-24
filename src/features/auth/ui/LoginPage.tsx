@@ -6,10 +6,12 @@ import { useState, type FormEvent } from "react";
 
 import { sanitizeReturnPath } from "@/core/auth/route-policy";
 import { browserClient } from "@/core/db/browser";
+import { log } from "@/core/shared/log";
 
 import styles from "./auth.module.css";
 import { AuthDivider, AuthErrorBanner, AuthField, AuthTabs, CheckEmailPanel } from "./AuthPanel";
 import { AuthFrame, AuthMasthead } from "./AuthFrame";
+import { authSentence } from "./auth-sentences";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -27,7 +29,8 @@ export default function LoginPage() {
     setLoading(true);
     const { error: failure } = await browserClient().auth.signInWithPassword({ email, password });
     if (failure) {
-      setError(failure.message);
+      log.warn("[auth] sign-in failed:", failure.message);
+      setError(authSentence(failure));
       setLoading(false);
       return;
     }
@@ -41,7 +44,10 @@ export default function LoginPage() {
     setMagicLoading(true);
     const { error: failure } = await browserClient().auth.signInWithOtp({ email, options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirect)}` } });
     setMagicLoading(false);
-    if (failure) return setError(failure.message);
+    if (failure) {
+      log.warn("[auth] magic link failed:", failure.message);
+      return setError(authSentence(failure));
+    }
     setMagicSent(true);
   };
 

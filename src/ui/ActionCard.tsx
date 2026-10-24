@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import type { UrgencyBand } from "@/core/lists";
-import { hasBiasTags, type BiasTagInput } from "@/core/sources";
+import { hasBiasTags, type BiasTagInput } from "@/core/sources/bias-tags";
 import type { TimelineEntry } from "@/core/types";
 
 import { Absence } from "./Absence";

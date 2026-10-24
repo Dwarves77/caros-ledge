@@ -52,7 +52,7 @@ export interface IdentityLoaderDeps {
 export interface IdentityLoader {
   start: () => void;
   /** `manual` is the Retry control or a sign-in seen from another tab; an automatic re-arm (focus, visibility) waits out the cooldown after a failure. */
-  rearm: (manual?: boolean) => void;
+  rearm: (manual?: boolean, replace?: boolean) => void;
   stop: () => void;
   status: () => IdentityStatus;
 }
@@ -125,9 +125,10 @@ export function createIdentityLoader(deps: IdentityLoaderDeps): IdentityLoader {
       if (stopped || inFlight || timer !== null || attempts > 0) return;
       void attempt();
     },
-    rearm(manual = false) {
-      // An errored round re-arms; so does a resolved-with-no-user identity when a session appears (another tab signed in), fetched in place.
-      const signedInElsewhere = manual && status === "resolved" && resolvedWithoutUser;
+    rearm(manual = false, replace = false) {
+      // An errored round re-arms; so does a resolved-with-no-user identity when a session appears (another tab signed in), fetched in place;
+      // so does a resolved identity the caller says belongs to a user who has since been replaced (`replace`: another tab signed in as someone else).
+      const signedInElsewhere = manual && status === "resolved" && (resolvedWithoutUser || replace);
       if (stopped || (status !== "error" && !signedInElsewhere) || inFlight || timer !== null) return;
       if (signedInElsewhere) status = "pending";
       if (!manual && now() - failedAt < IDENTITY_REARM_COOLDOWN_MS) return;

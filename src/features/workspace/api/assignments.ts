@@ -6,7 +6,8 @@ import { boundedRead } from "@/core/db/query";
 import { dbError, HttpError, LookupError, route } from "@/core/http/errors";
 import { isUuid } from "@/core/http/parse";
 import { isIsoDate } from "@/core/shared/dates";
-import { canWrite, collabFail, collabOk, isOrgAdmin, loadRoster, MAX_ASSIGNEES_PER_REQUEST, nameIndex, namesAfterWrite, readJsonObject, runCollab, type CollabCtx, type CollabResult } from "@/core/workspace/roster";
+import { canWrite, collabFail, collabOk, isOrgAdmin, loadRoster, nameIndex, namesAfterWrite, readJsonObject, runCollab, type CollabCtx, type CollabResult } from "@/core/workspace/roster";
+import { MAX_ASSIGNEES_PER_REQUEST } from "@/core/workspace/limits";
 
 import { collabDbFail } from "./collab-db-fail";
 import { workspaceDeps } from "./deps";

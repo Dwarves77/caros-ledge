@@ -6,11 +6,12 @@ import { useEffect, useState, type FormEvent } from "react";
 
 import { sanitizeReturnPath } from "@/core/auth/route-policy";
 import { browserClient } from "@/core/db/browser";
+import { log } from "@/core/shared/log";
 
 import styles from "./auth.module.css";
-import { AuthAlreadyRegisteredNotice, AuthErrorBanner, AuthField, AuthTabs, CheckEmailPanel } from "./AuthPanel";
+import { AuthErrorBanner, AuthField, AuthTabs, CheckEmailPanel } from "./AuthPanel";
 import { AuthFrame, AuthMasthead } from "./AuthFrame";
-import { classifySignUpResult } from "./signup-result";
+import { isAlreadyRegistered } from "./auth-sentences";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -22,7 +23,6 @@ export default function SignupPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [alreadyRegistered, setAlreadyRegistered] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
 
   // A signed-in visitor has no use for this form: straight home, one hop (the old page went via /login, which then bounced home).
@@ -44,15 +44,15 @@ export default function SignupPage() {
   const handleSignup = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
-    setAlreadyRegistered(false);
     if (password.length < 8) return setError("Password must be at least 8 characters.");
     if (password !== confirmPassword) return setError("Passwords do not match.");
     setLoading(true);
     const result = await browserClient().auth.signUp({ email, password, options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirect ?? "/onboarding")}` } });
-    const outcome = classifySignUpResult(result);
-    if (outcome === "error") setError(result.error?.message ?? "Sign up failed.");
-    else if (outcome === "already_registered") setAlreadyRegistered(true);
-    else setSubmitted(true);
+    // Every accepted address gets the same "check your e-mail" panel: an empty identities list (Supabase's answer for an address that has an account) is not told apart from a new one.
+    if (result.error && !isAlreadyRegistered(result.error)) {
+      log.warn("[auth] sign-up failed:", result.error.message);
+      setError(result.error.message);
+    } else setSubmitted(true);
     setLoading(false);
   };
 
@@ -74,7 +74,6 @@ export default function SignupPage() {
         ) : (
           <>
             {error && <AuthErrorBanner message={error} />}
-            {alreadyRegistered && <AuthAlreadyRegisteredNotice redirect={redirect} />}
             <form onSubmit={handleSignup} className={styles.form}>
               <AuthField label="Work email">
                 <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" className={styles.input} placeholder="name@company.com" />

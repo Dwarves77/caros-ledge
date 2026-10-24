@@ -9,7 +9,7 @@ import { parse } from 'yaml';
 
 const workflow = parse(readFileSync('.github/workflows/ci.yml', 'utf8'));
 const jobs = workflow.jobs;
-const VARIABLES = ['ev', 'only', 'sctx', 'sstate', 'production', 'ref', 'isFork', 'parityScope', 'windowsScope', 'edgeScope', 'migrateResult'];
+const VARIABLES = ['ev', 'only', 'sctx', 'sstate', 'production', 'ref', 'isFork', 'parityScope', 'windowsScope', 'edgeScope', 'migrateResult', 'sender', 'targetUrl', 'startsWith'];
 // The ref the run is on and whether the repository is a fork (a test sets them for one case and puts them back).
 const where = { ref: 'refs/heads/main', fork: false };
 // Evaluates a job's `if` for an event, the dispatch input `only`, a status event's context and state, whether the target job derived production, and the scope the `changes` job decided (the expressions use only ==, !=, &&, || and parentheses on those values).
@@ -23,6 +23,8 @@ const runs = (job, event, only = '', status = {}, scope = { parity: 'true', wind
     .replaceAll('github.ref', 'ref')
     .replaceAll('github.event.context', 'sctx')
     .replaceAll('github.event.state', 'sstate')
+    .replaceAll('github.event.sender.login', 'sender')
+    .replaceAll('github.event.target_url', 'targetUrl')
     .replaceAll('needs.target.outputs.production', 'production')
     .replaceAll('needs.changes.outputs.parity', 'parityScope')
     .replaceAll('needs.changes.outputs.windows', 'windowsScope')
@@ -30,10 +32,22 @@ const runs = (job, event, only = '', status = {}, scope = { parity: 'true', wind
     .replaceAll('needs.migrate.result', 'migrateResult')
     .replaceAll('==', '===')
     .replaceAll('!=', '!==');
-  return Function(...VARIABLES, `return (${expr});`)(event, only, status.context ?? '', status.state ?? '', production, where.ref, where.fork, scope.parity, scope.windows, scope.edge ?? 'false', migrateResult);
+  return Function(...VARIABLES, `return (${expr});`)(event, only, status.context ?? '', status.state ?? '', production, where.ref, where.fork, scope.parity, scope.windows, scope.edge ?? 'false', migrateResult, status.sender ?? '', status.target_url ?? '', (value, prefix) => String(value).startsWith(prefix));
 };
-const on = (event, only, status, scope, production, migrateResult) => Object.keys(jobs).filter((j) => j !== 'report' && runs(j, event, only, status, scope, production, migrateResult)).sort();
-const VERCEL_OK = { context: 'Vercel', state: 'success' };
+// The jobs that run: a job whose `if` holds AND whose needs all ran (a job with no status function in its `if` is skipped with a skipped need; edge-deploy's `!cancelled()` states its own rule on needs.migrate.result).
+const on = (event, only, status, scope, production, migrateResult) => {
+  const ran = new Set();
+  for (let pass = 0; pass < Object.keys(jobs).length; pass += 1) {
+    for (const j of Object.keys(jobs)) {
+      if (j === 'report' || ran.has(j) || !runs(j, event, only, status, scope, production, migrateResult)) continue;
+      const needs = [jobs[j].needs ?? []].flat();
+      if (String(jobs[j].if).includes('!cancelled()') || needs.every((n) => ran.has(n))) ran.add(j);
+    }
+  }
+  return [...ran].sort();
+};
+// The status Vercel really posts (read with `gh api repos/Dwarves77/caros-ledge/commits/<sha>/statuses`): creator vercel[bot], target_url on vercel.com.
+const VERCEL_OK = { context: 'Vercel', state: 'success', sender: 'vercel[bot]', target_url: 'https://vercel.com/dwarves77s-projects/caros-ledge/ByMHeLDZdiCHgaD8tZqnooCRd1jQ' };
 
 test('a dispatch with only empty runs everything but baseline, live and screens; only=baseline runs baseline alone; only=turn runs turn alone; only=live runs the live checks and the deployed-preview parity alone', () => {
   assert.deepEqual(on('workflow_dispatch', ''), ['changes', 'ci', 'parity', 'schema', 'turn', 'windows']);
@@ -101,7 +115,9 @@ test('edge-deploy runs on a push to main that changed the function (edge output 
   assert.deepEqual([...secretsOf('edge-deploy')], ['SUPABASE_ACCESS_TOKEN']);
   for (const job of Object.keys(jobs).filter((j) => j !== 'edge-deploy')) assert.ok(!secretsOf(job).has('SUPABASE_ACCESS_TOKEN'), `${job} must not hold the deploy token`);
   const run = jobs['edge-deploy'].steps.map((s) => String(s.run ?? '')).join('\n');
-  assert.match(run, /npx supabase@2 functions deploy capture-worker --project-ref "\$ref" --use-api/);
+  assert.match(run, /npx --no-install supabase@2\.121\.0 functions deploy capture-worker --project-ref "\$ref" --use-api/);
+  assert.doesNotMatch(run, /supabase@2 /, 'the CLI is never invoked by a floating major');
+  assert.equal(JSON.parse(readFileSync('package.json', 'utf8')).devDependencies.supabase, '2.121.0', 'the version the job invokes is the devDependency the lockfile covers');
   assert.match(run, /ref=kwrsbpiseruzbfwjpvsp/);
   assert.match(run, /missing \(exit 1\): SUPABASE_ACCESS_TOKEN/);
 });
@@ -109,7 +125,10 @@ test('edge-deploy runs on a push to main that changed the function (edge output 
 test('the live jobs run on the successful Vercel commit status and on nothing else: not on a failed, pending or other-context status, not on a push, a pull request or a deployment event; a production status skips the preview parity', () => {
   assert.deepEqual(on('status', '', VERCEL_OK), ['live', 'preview-parity', 'target']);
   assert.deepEqual(on('status', '', VERCEL_OK, undefined, 'true'), ['live', 'target'], 'the default branch is production: live runs against it, the preview parity does not');
-  for (const status of [{ context: 'Vercel', state: 'failure' }, { context: 'Vercel', state: 'pending' }, { context: 'Vercel', state: 'error' }, { context: 'Vercel Preview Comments', state: 'success' }, { context: 'ci', state: 'success' }, {}]) assert.deepEqual(on('status', '', status), [], JSON.stringify(status));
+  for (const status of [{ ...VERCEL_OK, state: 'failure' }, { ...VERCEL_OK, state: 'pending' }, { ...VERCEL_OK, state: 'error' }, { ...VERCEL_OK, context: 'Vercel Preview Comments' }, { ...VERCEL_OK, context: 'ci' }, {}]) assert.deepEqual(on('status', '', status), [], JSON.stringify(status));
+  // Audit 2.3.10 / 2.4: anyone with statuses:write can post a status named Vercel. Only the Vercel app (sender vercel[bot]) with a link into vercel.com starts the live jobs; `live` and `preview-parity` need `target`, so a spoof starts none of them.
+  for (const spoof of [{ ...VERCEL_OK, sender: 'some-collaborator' }, { ...VERCEL_OK, sender: 'vercel-bot' }, { ...VERCEL_OK, sender: '' }, { ...VERCEL_OK, target_url: 'https://evil.example/https://vercel.com/' }, { ...VERCEL_OK, target_url: 'http://vercel.com/x' }, { ...VERCEL_OK, target_url: 'https://vercel.com.evil.example/x' }, { ...VERCEL_OK, target_url: '' }]) assert.deepEqual(on('status', '', spoof), [], JSON.stringify(spoof));
+  assert.deepEqual([jobs.live.needs, jobs['preview-parity'].needs], ['target', 'target']);
   for (const event of ['push', 'pull_request', 'deployment_status']) assert.ok(!on(event, '', VERCEL_OK).some((j) => ['live', 'preview-parity', 'target'].includes(j)), event);
   assert.ok(workflow.on && 'status' in workflow.on && !('deployment_status' in workflow.on), 'the workflow listens for status, not for a deployment event Vercel never posts');
   assert.match(String(jobs.report.if), /'status'/, 'the report job does not run for a status event');
@@ -139,9 +158,9 @@ test('the deployed URL is derived from the status: the branch lower-cased, every
   assert.deepEqual([jobs['preview-parity'].needs, jobs['preview-parity'].env.PARITY_BASE], ['target', '${{ needs.target.outputs.url }}']);
 });
 
-test('the preview-parity job checks out the DEPLOYED commit (its own capture and compare) and passes the preview URL; the live job checks out the default branch and gets the deployed sha as data', () => {
+test('the preview-parity job and the live job check out the DEFAULT BRANCH (a branch cannot change the scripts that hold the member account and the bypass secret); the deployed sha is data', () => {
   const checkout = (name) => jobs[name].steps.find((s) => String(s.uses).startsWith('actions/checkout'));
-  assert.match(String(checkout('preview-parity').with.ref), /github\.event\.sha/);
+  assert.match(String(checkout('preview-parity').with.ref), /github\.event\.repository\.default_branch/);
   assert.match(String(jobs.live.env.LIVE_CODE_SHA), /github\.event\.sha/);
   assert.match(String(checkout('live').with.ref), /github\.event\.repository\.default_branch/);
 });
@@ -232,4 +251,37 @@ test('the parity job runs every smoke, the capture and the compare whatever an e
   const smokes = steps.filter((s) => /tests\/ux\/.*-smoke\.mjs/.test(String(s.run ?? '')));
   assert.equal(smokes.length, 7);
   for (const s of [...smokes, ...steps.filter((x) => /parity\/(capture|compare)\.mjs/.test(String(x.run ?? '')))]) assert.match(String(s.if), /!cancelled\(\)/, s.name);
+});
+
+test('audit 2.3.10: the production admin account reaches the live job only for production or a dispatch, never for a branch preview', () => {
+  const when = "(needs.target.outputs.production == 'true' || github.event_name == 'workflow_dispatch')";
+  for (const name of ['LIVE_ADMIN_EMAIL', 'LIVE_ADMIN_PASSWORD']) assert.ok(String(jobs.live.env[name]).includes(when) && String(jobs.live.env[name]).endsWith("|| '' }}"), name);
+  assert.ok(String(jobs.live.env.LIVE_ADMIN_PAGES).includes(when) && String(jobs.live.env.LIVE_ADMIN_PAGES).includes("'on' || 'off'"));
+});
+
+test('audit 2.3.12 and 2.3.13: migrate and turn run in the production environment (the required reviewers sit there); no other job names an environment', () => {
+  assert.equal(jobs.migrate.environment, 'production');
+  assert.equal(jobs.turn.environment, 'production');
+  assert.deepEqual(Object.keys(jobs).filter((j) => jobs[j].environment !== undefined).sort(), ['migrate', 'turn']);
+});
+
+test('every upload-artifact keeps its artifact 3 days', () => {
+  const uploads = Object.values(jobs).flatMap((j) => (j.steps ?? []).filter((s) => String(s.uses).startsWith('actions/upload-artifact')));
+  assert.ok(uploads.length >= 5);
+  for (const u of uploads) assert.equal(u.with['retention-days'], 3, u.with.name);
+});
+
+test('only the report job holds a token that writes to a pull request, and it runs the default branch\'s scripts with the tree under report beside them as data', () => {
+  for (const [name, job] of Object.entries(jobs)) assert.equal(job.permissions?.['pull-requests'], name === 'report' ? 'write' : undefined, name);
+  const checkouts = jobs.report.steps.filter((s) => String(s.uses).startsWith('actions/checkout'));
+  assert.match(String(checkouts[0].with.ref), /github\.event\.repository\.default_branch/);
+  assert.equal(checkouts[1].with.path, 'pr-tree');
+  assert.equal(checkouts[1].with['persist-credentials'], false);
+  assert.equal(jobs.report.steps.find((s) => String(s.run).includes('pr-comment.mjs')).env.LOC_ROOT, 'pr-tree');
+});
+
+test('no install runs a package install script: every npm ci and every npm install in a job is --ignore-scripts', () => {
+  const installs = Object.entries(jobs).flatMap(([name, job]) => (job.steps ?? []).flatMap((s) => String(s.run ?? '').split('\n').filter((l) => /\bnpm (ci|install)\b/.test(l)).map((l) => [name, l])));
+  assert.ok(installs.length >= 10);
+  for (const [name, line] of installs) assert.match(line, /--ignore-scripts/, `${name}: ${line.trim()}`);
 });

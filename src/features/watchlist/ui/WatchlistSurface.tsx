@@ -13,7 +13,8 @@ import { ShellCommandBar } from "@/ui/shell";
 
 import { WATCHLIST_TYPE_LABEL, type WatchlistItemType, type WatchlistScope } from "../links";
 import type { NoticesRead } from "../read/notices";
-import { byNextDate, type WatchlistItem, type WatchlistRead } from "../read/watchlist";
+import { byNextDate } from "../order";
+import type { WatchlistItem, WatchlistRead } from "../read/watchlist";
 
 import { NoticesCard } from "./NoticesCard";
 import { RowActions } from "./RowActions";

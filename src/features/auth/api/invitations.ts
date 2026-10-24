@@ -1,5 +1,5 @@
 // Ported from old_repo/src/app/api/orgs/[org_id]/invitations/route.ts (lines 14-154)
-import { createInvitation, inviteBody, listInvitations } from "@/core/auth/invitations";
+import { createInvitation, inviteBaseUrl, inviteBody, listInvitations } from "@/core/auth/invitations";
 import { ok, route } from "@/core/http/errors";
 import { isRefusal, requireUser } from "@/core/http/guard";
 import { parseJson, parseWith, uuid } from "@/core/http/parse";
@@ -12,7 +12,7 @@ export const POST = route<Ctx>("/api/orgs/[org_id]/invitations", async (request,
   const user = await requireUser(request);
   if (isRefusal(user)) return user;
   const body = await parseJson(request, inviteBody);
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || request.headers.get("origin") || "";
+  const baseUrl = inviteBaseUrl();
   const { invitation, emailDelivery } = await createInvitation(user.client, { orgId, userId: user.userId, email: body.email, role: body.role, baseUrl });
   return ok(user.headers, { invitation, email_delivery: emailDelivery }, 201);
 });

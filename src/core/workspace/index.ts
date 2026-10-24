@@ -1,8 +1,12 @@
-export { deriveRoleScopeFromComplianceObjectTags, findBand, getWorkspaceProfile, ORG_ROLES, ORG_SIZE_DIMENSIONS, parseOrgProfile, PROFILE_JSON_KEYS, readWorkspaceProfile, validateProfileInput } from "./profile";
-export type { OrgProfile, OrgSize, WorkspaceProfile } from "./profile";
+export { deriveRoleScopeFromComplianceObjectTags, findBand, ORG_ROLES, ORG_SIZE_DIMENSIONS, parseOrgProfile, PROFILE_JSON_KEYS, validateProfileInput } from "./org-profile";
+export type { OrgProfile, OrgSize } from "./org-profile";
+export { getWorkspaceProfile, readWorkspaceProfile } from "./profile";
+export type { WorkspaceProfile } from "./profile";
 export { currentObligationObjects, dutyHoldersExcludeForwarder, fetchObligationObjectsForItem, relevanceForItem, summariseObligationBinding } from "./relevance";
 export type { ItemApplicability, ItemRelevance, ObligationBinding, ObligationObject, RelevanceDeps, RelevanceInput } from "./relevance";
-export { canWrite, collabFail, collabOk, displayNameOf, isOrgAdmin, itemIdFromDetailPath, loadRoster, MAX_ASSIGNEES_PER_REQUEST, nameIndex, namesAfterWrite, NOTE_MAX_LENGTH, orgWatchersOf, readJsonObject, runCollab } from "./roster";
+export { canWrite, collabFail, collabOk, displayNameOf, isOrgAdmin, loadRoster, nameIndex, namesAfterWrite, orgWatchersOf, readJsonObject, runCollab } from "./roster";
+export { MAX_ASSIGNEES_PER_REQUEST, NOTE_MAX_LENGTH } from "./limits";
+export { itemIdFromDetailPath } from "./paths";
 export type { CollabCtx, CollabItem, CollabResult, RosterMember } from "./roster";
 export { applyWorkspaceSeed, useWorkspaceStore } from "./store";
 export type { WorkspaceSeed } from "./store";

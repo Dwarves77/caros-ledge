@@ -3,23 +3,29 @@
 // It runs only where a person could: robots.txt allows the URL (or the host publishes none), the source is not paywalled, the page shows no login or paywall gate, no CAPTCHA or other interactive challenge is presented (it is
 // recorded and the ladder moves on; this tier never solves, clicks through or waits one out), and one navigation per host goes at most every 3 to 5 seconds, serialised per host. Elsewhere (off the runner, no browser installed)
 // it returns needsHeadless and the ladder records the exhaustion; nothing metered is ever called.
+import { browserLaunchOptions, makeRouteGuard, type ResponseLike, type RouteGuard, type RouteLike } from "./browser-guard";
 import { BODY_CLASS, detectAccessWall, INTERACTIVE_CHALLENGE_RE, toText, WALL_MAX_CHARS } from "./classify-body";
 import { type FetchDeps, type TransportResult } from "./direct";
 import { decodeEntities, stripTags } from "./entities";
 import { assertFetchAllowed } from "./hold";
-import { robotsGateFor } from "./honest";
+import { resolverFor, robotsGateFor } from "./honest";
 import { documentLanguage, type RefusalReason } from "./policy";
 import { interpretRobotsAnswer, verdictFor, type RobotsVerdict } from "./robots";
 
+export type { ResponseLike, RouteLike };
 const BROWSER_PACE_MS = { min: 3000, max: 5000 } as const;
 export interface PageLike {
   goto(url: string, opts: { waitUntil: "networkidle"; timeout: number }): Promise<{ status(): number } | null>;
+  /** The record of every response, redirect hops included (the route guard reads the address each was served from). */
+  on(event: "response", listener: (response: ResponseLike) => void): void;
   content(): Promise<string>;
   url(): string;
   waitForTimeout(ms: number): Promise<void>;
   close(): Promise<void>;
 }
 export interface BrowserContextLike {
+  /** Intercept every request of the context: the address check of the browser tier (browser-guard.ts). */
+  route(url: string, handler: (route: RouteLike) => Promise<void>): Promise<void>;
   newPage(): Promise<PageLike>;
   close(): Promise<void>;
 }
@@ -39,13 +45,14 @@ export interface BrowserCtx {
 interface Session {
   browser: BrowserLike | null;
   contexts: Map<string, BrowserContextLike>;
+  guards: Map<string, RouteGuard>;
   lastAt: Map<string, number>;
   turns: Map<string, Promise<unknown>>;
 }
 const sessions = new WeakMap<object, Session>();
 const sessionOf = (deps: object): Session => {
   let s = sessions.get(deps);
-  if (!s) sessions.set(deps, (s = { browser: null, contexts: new Map(), lastAt: new Map(), turns: new Map() }));
+  if (!s) sessions.set(deps, (s = { browser: null, contexts: new Map(), guards: new Map(), lastAt: new Map(), turns: new Map() }));
   return s;
 };
 
@@ -62,7 +69,7 @@ async function browserOf(deps: BrowserDeps, s: Session): Promise<BrowserLike> {
   // A person's browser has a window: the full browser (on the runner, under a virtual display) announces itself as Chrome; the windowless build announces itself as HeadlessChrome, which is how many publishers' firewalls
   // single it out. No user agent is set either way; the browser says what it is. Without any display the windowless build is the only one that can start.
   const windowed = process.platform !== "linux" || Boolean(deps.env?.DISPLAY);
-  return (s.browser = (await chromium.launch({ headless: !windowed })) as unknown as BrowserLike);
+  return (s.browser = (await chromium.launch(browserLaunchOptions(windowed))) as unknown as BrowserLike);
 }
 
 /** Close the run's browser and its per-host contexts. The caller that fetched calls it once at the end of the run. */
@@ -81,9 +88,11 @@ const paceFor = (host: string, turn: number): number => {
   return BROWSER_PACE_MS.min + (h % (BROWSER_PACE_MS.max - BROWSER_PACE_MS.min + 1));
 };
 
+const clockOf = (deps: BrowserDeps): (() => number) => () => (deps.now ? deps.now().getTime() : performance.now());
+
 /** Run `job` as this host's next turn: one at a time, at least 3 to 5 seconds after the host's previous navigation. */
 async function onHostTurn<T>(deps: BrowserDeps, s: Session, host: string, job: () => Promise<T>): Promise<T> {
-  const now = () => (deps.now ? deps.now().getTime() : performance.now());
+  const now = clockOf(deps);
   const sleep = deps.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
   const run = (s.turns.get(host) ?? Promise.resolve()).then(async () => {
     const last = s.lastAt.get(host);
@@ -132,8 +141,18 @@ export async function fetchBrowser(url: string, deps: BrowserDeps, opts: Browser
   let context = s.contexts.get(target.host);
   try {
     if (!context) {
-      context = await (await browserOf(deps, s)).newContext();
+      const created = await (await browserOf(deps, s)).newContext();
+      // Every request of the context, redirect hops and subresources included, passes the address check before it leaves the browser (audit 2.3.15).
+      const guard = makeRouteGuard(resolverFor(deps), clockOf(deps));
+      try {
+        await created.route("**/*", guard.handler);
+      } catch (e) {
+        await created.close().catch(() => undefined);
+        throw e;
+      }
+      context = created;
       s.contexts.set(target.host, context);
+      s.guards.set(target.host, guard);
     }
   } catch (e) {
     return isAbsent(e) ? result(max, 0, { needsHeadless: true }) : refused(max, "browser_launch_failed", true, `the browser could not be started: ${e instanceof Error ? e.message : String(e)}`);
@@ -141,8 +160,18 @@ export async function fetchBrowser(url: string, deps: BrowserDeps, opts: Browser
   const verdict = await verdictForBrowser(deps, s, target, context);
   if (verdict.status === "disallowed") return refused(max, "robots_disallowed", false, `robots.txt of ${target.host} disallows ${target.pathname}${verdict.rule ? ` (${verdict.rule})` : ""}: the browser tier honours it`, verdict.rule ?? undefined);
   if (verdict.status === "unknown") return refused(max, "robots_unknown", true, `robots.txt of ${target.host} could not be read (${verdict.reason ?? "unknown"}): deferred, not denied`);
+  const guard = s.guards.get(target.host) as RouteGuard;
   return onHostTurn(deps, s, target.host, async () => {
     const page = await (context as BrowserContextLike).newPage();
+    guard.reset();
+    const pending: Array<Promise<void>> = [];
+    page.on("response", (r) => void pending.push(guard.watch(r)));
+    const left = async (): Promise<TransportResult | null> => {
+      await Promise.all(pending.splice(0));
+      const final = guard.violations.length === 0 && page.url() ? await guard.check(page.url()) : null;
+      if (final) guard.violations.push(`the page ended at ${page.url()}: ${final}`);
+      return guard.violations.length > 0 ? refused(max, "private_address", false, `the browser left the vetted public addresses, nothing stored: ${guard.violations.slice(0, 3).join("; ")}`) : null;
+    };
     try {
       const res = await page.goto(url, { waitUntil: "networkidle", timeout: opts.timeoutMs ?? 45_000 });
       let html = await page.content();
@@ -152,6 +181,8 @@ export async function fetchBrowser(url: string, deps: BrowserDeps, opts: Browser
         if (again.length === html.length) break;
         html = again;
       }
+      const escaped = await left();
+      if (escaped) return escaped;
       const status = res?.status() ?? 200;
       const text = toText(html);
       const gate = detectAccessWall(text);
@@ -159,6 +190,8 @@ export async function fetchBrowser(url: string, deps: BrowserDeps, opts: Browser
       if (gate?.class === BODY_CLASS.LOGIN_WALL || gate?.class === BODY_CLASS.REQUEST_ACCESS) return refused(max, "gated", false, `the page is a login or access gate (${gate.class}): the browser tier does not enter one`);
       return { status, text: text.slice(0, max), truncated: text.length > max, fullLength: text.length, cap: max, finalUrl: page.url(), contentType: "text/html", html, language: documentLanguage(null, html), channel: "browser" } satisfies TransportResult;
     } catch (e) {
+      const escaped = await left();
+      if (escaped) return escaped;
       return refused(max, "network", true, `browser navigation failed: ${e instanceof Error ? e.message : String(e)}`);
     } finally {
       await page.close();

@@ -6,23 +6,9 @@ import { log } from "@/core/shared/log";
 import { withErrorCapture } from "@/core/shared/telemetry";
 
 import { DB_SENTENCES, LOOKUP_SENTENCE, statusForDb } from "./failure";
+import { HttpError } from "./http-error";
 
-export { LOOKUP_SENTENCE };
-
-/** The one error shape: `{ error: string }` with a status. */
-export class HttpError extends Error {
-  readonly status: number;
-  readonly headers: Record<string, string>;
-  /** What the response body says. It is `message` unless a subclass holds a driver sentence back for the log. */
-  readonly publicMessage: string;
-  constructor(status: number, message: string, headers: Record<string, string> = {}, publicMessage?: string) {
-    super(message);
-    this.publicMessage = publicMessage ?? message;
-    this.name = "HttpError";
-    this.status = status;
-    this.headers = headers;
-  }
-}
+export { HttpError, LOOKUP_SENTENCE };
 
 /** A read behind a guard or a handler failed. Answered 503 with Retry-After and retried by the client: never read as "not a member" or "no workspace". The body carries a customer sentence; the driver's message (`message`) goes to the log only. */
 export class LookupError extends HttpError {

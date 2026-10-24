@@ -5,7 +5,7 @@
 import { useMemo, useState } from "react";
 
 import { formatNumber } from "@/core/shared";
-import { tierScaleSpan } from "@/core/sources";
+import { tierScaleSpan } from "@/core/sources/tier-contract";
 
 import { ImpactMeter } from "../ImpactMeter";
 import { RailCard } from "../SmallParts";

@@ -1,7 +1,7 @@
 // Ported from old_repo/src/components/market/SeriesProvenance.tsx (lines 1-170)
 // The envelope of a figure (spec 00 section 2) from each of the three kinds of market figure, WITH the rating of the source it cites (CLAUDE.md rule 18, INV-262): a series observation, an emission factor and a published
 // price statistic all carry it. The drawer draws only the fields a figure has; a field it lacks stays out, never padded.
-import { tierLabelOf } from "@/core/sources";
+import { tierLabelOf } from "@/core/sources/tier-contract";
 
 import wordsJson from "./data/provenance-words.json";
 import type { Producer } from "./registry";

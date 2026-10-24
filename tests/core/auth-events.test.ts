@@ -24,6 +24,7 @@ function mount(identity: { id: string } | null, pathname = "/dashboard") {
     setUser: (u) => log.users.push(u),
     loader: () => loader,
     identityHasUser: () => known !== null,
+    identityUserId: () => known?.id ?? null,
     pathname: () => pathname,
     navigate: (to) => log.hrefs.push(to),
   });
@@ -71,4 +72,24 @@ test("identity resolved WITH a user is never re-fetched by SIGNED_IN events", as
   m.emit("SIGNED_IN", SESSION);
   await settle();
   assert.equal(m.log.fetches, 1);
+});
+
+test("identity resolved as user A, then another tab signs in as user C (SIGNED_IN, TOKEN_REFRESHED, USER_UPDATED): identity is re-fetched and the tab goes home", async () => {
+  for (const event of ["SIGNED_IN", "TOKEN_REFRESHED", "USER_UPDATED"]) {
+    const m = mount({ id: "u1" });
+    await settle();
+    m.emit(event, { user: { id: "u3" } });
+    await settle();
+    assert.deepEqual([m.log.fetches, m.log.hrefs], [2, ["/"]], event);
+  }
+});
+
+test("the same user's token refresh or profile update re-fetches nothing and navigates nowhere", async () => {
+  const m = mount({ id: "u1" });
+  await settle();
+  m.emit("TOKEN_REFRESHED", SESSION);
+  m.emit("USER_UPDATED", SESSION);
+  m.emit("SIGNED_IN", SESSION);
+  await settle();
+  assert.deepEqual([m.log.fetches, m.log.hrefs], [1, []]);
 });

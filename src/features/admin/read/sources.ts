@@ -1,5 +1,5 @@
 // Ported from old_repo/src/lib/supabase-server.ts (lines 271-575)
-import { allRows } from "@/core/db";
+import { allRows } from "@/core/db/reads";
 import type { Db } from "@/core/db";
 import type { IntelligenceDomain, ProvisionalSource, SourceStatus, SourceTier } from "@/core/sources/types";
 
