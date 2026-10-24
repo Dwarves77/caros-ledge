@@ -27,7 +27,7 @@ export async function ResearchDetailRoute({ params }: { params: Promise<{ slug: 
   await applyIdRedirect("research", id);
   const session = await pageSession(`/research/${encodeURIComponent(id)}`);
   if ("failed" in session) return <PageFailure what="This finding" />;
-  const d = await loadDetail("research", id, loadFinding, undefined, session.orgId);
+  const d = await loadDetail("research", id, loadFinding, undefined, session.orgId, session.nowIso);
   if (d.notFound) notFound();
   const today = session.nowIso.slice(0, 10);
   const db = await userClient();

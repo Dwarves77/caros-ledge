@@ -53,8 +53,9 @@ export interface DetailBundle<ItemScoped> {
 /**
  * The detail of one item on one surface, or `{ notFound: true }` when no verified, non-archived item the reader can see has this id on THIS surface (a market item at /regulations is not found).
  * A failed read throws: the route's error boundary says so with Retry; it is never read as "not found" or as an empty block.
+ * `asOfIso` (the page session's clock) is required: the theme view places a member in a horizon by its dated events against it, and there is no default date.
  */
-export async function loadDetail<ItemScoped = undefined>(surface: DetailSurface, id: string, loadItemScoped?: (ctx: ItemScopedCtx) => Promise<ItemScoped>, db?: Db, orgId: string | null = null): Promise<DetailBundle<ItemScoped> | { notFound: true }> {
+export async function loadDetail<ItemScoped = undefined>(surface: DetailSurface, id: string, loadItemScoped: ((ctx: ItemScopedCtx) => Promise<ItemScoped>) | undefined, db: Db | undefined, orgId: string | null, asOfIso: string): Promise<DetailBundle<ItemScoped> | { notFound: true }> {
   const client = db ?? (await userClient());
   const item = await readDetailItem(client, id);
   if (!item || item.canonicalSurface !== surface) return { notFound: true };
@@ -70,7 +71,7 @@ export async function loadDetail<ItemScoped = undefined>(surface: DetailSurface,
   // INV-270 fails closed: without the suppressions the text is withheld (a named degraded block), never rendered unredacted and never read as 'nothing suppressed'.
   const claims = claimsRead.ok ? claimsRead : { tiers: {} as ClaimTierMap, suppressed: [] };
   // Every text column of the page, not the sections and the brief alone: the claim was copied to the summary, the key data, the stated intersection summary and the theme brief (F:27).
-  const crossPage = redactDeep(await readCrossPage(client, uuid, surface, redactDeep(item.intersectionSummary, claims.suppressed), connections, lookup), claims.suppressed);
+  const crossPage = redactDeep(await readCrossPage(client, uuid, surface, redactDeep(item.intersectionSummary, claims.suppressed), connections, lookup, asOfIso), claims.suppressed);
   const redacted = claimsRead.ok ? redactSuppressedClaims({ sections: item.sections, fullBrief: resource.fullBrief ?? null, claims: claims.suppressed }) : { sections: [] as SectionRow[], fullBrief: "" };
   return {
     notFound: false,

@@ -32,6 +32,7 @@ test("themeAnalysisView: synthesizes informative cluster summary when no brief e
     themes,
     briefs: [],
     members,
+    asOfIso: "2026-10-24T00:00:00Z",
   });
 
   assert.ok(view);

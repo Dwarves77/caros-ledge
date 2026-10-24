@@ -21,7 +21,7 @@ import { bandFromPriority } from "@/core/lists";
 import { formatDate, pluralize } from "@/core/shared";
 import type { Resource } from "@/core/types";
 import { ActionCard, ClaimTierProvider, DetailSubSection, downloadMarkdownBrief, GfmSection, GradeChip, SectionIndex, StateNote, TagChip, type ClaimTierMap } from "@/ui";
-import { AtAGlanceCard, commonActionCardProps, CrossPageSection, crossPagePresence, DetailLayout, DetailMasthead, DetailPageWrapper, DetailRail, DetailSection, FactBlocks, ImpactRailCard, InThisListStat, ItemConnections, RecordFacts, RelevanceRailCard, SourcesGrid, topRecommendedAction, type CrossPageData } from "@/ui/detail";
+import { AtAGlanceCard, commonActionCardProps, CrossPageSection, crossPagePresence, DetailLayout, DetailMasthead, DetailPageWrapper, DetailRail, DetailSection, FactBlocks, PendingTriggers, pendingTriggers, ImpactRailCard, InThisListStat, ItemConnections, RecordFacts, RelevanceRailCard, SourcesGrid, topRecommendedAction, type CrossPageData } from "@/ui/detail";
 import { NoticesRail } from "@/ui/figures";
 import { LegendRailCard } from "@/ui/list-surface";
 import { useItemRelevance } from "@/features/regulations/useItemRelevance";
@@ -74,6 +74,8 @@ export function ResearchDetail(p: ResearchDetailProps) {
   const rows = useMemo(() => sourceEntriesOf(r), [r]);
   const parsed = useMemo(() => (isRecord ? parseRecordSections(p.sections, p.claimTiers) : null), [isRecord, p.sections, p.claimTiers]);
   const split = parsed ? splitKeyDateFacts(parsed.facts) : { dateFacts: [], otherFacts: [] };
+  const pendingEvents = useMemo(() => pendingTriggers(p.events), [p.events]);
+  const hasPendingOrUnresolved = !!r.doesNotResolve || pendingEvents.length > 0;
   const summaryProse = r.whatIsIt || r.note || r.whyMatters || null;
   const unparsedBrief = !isRecord && known.length === 0 && r.fullBrief ? stripSourcesSection(r.fullBrief) : "";
   const presence = crossPagePresence(p.crossPage);
@@ -167,12 +169,30 @@ export function ResearchDetail(p: ResearchDetailProps) {
             </DetailSection>
             {!isRecord && (
               <DetailSection id="findings" title="Substantive findings" index={2}>
-                {known.length > 0 ? (
-                  known.map((s, i) => (
-                    <DetailSubSection key={s.section_key} title={HEADINGS[s.section_key] as string} first={i === 0}>
-                      <FactBlocks markdown={s.content_md} />
-                    </DetailSubSection>
-                  ))
+                {known.length > 0 || hasPendingOrUnresolved ? (
+                  <>
+                    {known.map((s, i) => (
+                      <DetailSubSection key={s.section_key} title={HEADINGS[s.section_key] as string} first={i === 0}>
+                        <FactBlocks markdown={s.content_md} />
+                        {s.section_key === "5" && (
+                          <>
+                            {r.doesNotResolve && (
+                              <p style={{ fontSize: "var(--fs-13)", lineHeight: 1.6, marginTop: "var(--sp-8)", color: "var(--ink-2)" }}>{r.doesNotResolve}</p>
+                            )}
+                            <PendingTriggers events={pendingEvents} kindLabels={p.kindLabels ?? {}} />
+                          </>
+                        )}
+                      </DetailSubSection>
+                    ))}
+                    {!known.some((s) => s.section_key === "5") && hasPendingOrUnresolved && (
+                      <DetailSubSection key="5" title={HEADINGS["5"] as string} first={known.length === 0}>
+                        {r.doesNotResolve && (
+                          <p style={{ fontSize: "var(--fs-13)", lineHeight: 1.6, color: "var(--ink-2)", margin: "0 0 var(--sp-8)" }}>{r.doesNotResolve}</p>
+                        )}
+                        <PendingTriggers events={pendingEvents} kindLabels={p.kindLabels ?? {}} />
+                      </DetailSubSection>
+                    )}
+                  </>
                 ) : (
                   <StateNote>{p.claimsDegraded ? "Detailed sections for this finding are withheld until the facts load." : "Detailed sections for this finding are not written yet; they need the finding's brief."}</StateNote>
                 )}
@@ -195,7 +215,7 @@ export function ResearchDetail(p: ResearchDetailProps) {
                 )}
               </DetailSection>
             )}
-            <CrossPageSection surfaceKey="research" surfaceLabel="Research" crossPage={p.crossPage} onRetry={() => router.refresh()} />
+            <CrossPageSection surfaceKey="research" surfaceLabel="Research" crossPage={p.crossPage} onRetry={() => router.refresh()} kindLabels={p.kindLabels ?? {}} />
             <NoticesRail />
           </DetailLayout>
         </DetailPageWrapper>

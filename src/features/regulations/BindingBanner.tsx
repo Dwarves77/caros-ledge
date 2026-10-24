@@ -5,12 +5,23 @@
 // whether it applies to the reader's organisation, and the three cost slots kept apart. An item with no decomposed obligations says so; a failed load says so with Retry.
 import Link from "next/link";
 
+import { OBS_STATUS } from "@/core/contracts/vocabularies";
 import type { ObligationBinding } from "@/core/workspace";
 import { Button, SectionCard } from "@/ui";
 
 import type { RelevanceFetch } from "./useItemRelevance";
 
 const STATUS_TEXT = { applies: "Applies to your organisation", does_not_apply: "Does not apply to your organisation", needs_profile_input: "Needs your organisation profile" } as const;
+/** One short label per classified attribute, comparison, token and artifact class (the data-file tokens in words; never a sentence about the regulation). */
+const ATTRIBUTE_LABEL: Readonly<Record<string, string>> = { void_space_ratio: "Void space ratio", recycled_content: "Recycled content", de_minimis_weight: "De minimis weight", tonnage_cutoff: "Tonnage cutoff", exemption_scope: "Exemption scope", labeling_marking_class: "Marking class" };
+const COMPARISON_LABEL: Readonly<Record<string, string>> = { "<=": "at most", ">=": "at least", "<": "below" };
+const TOKEN_LABEL: Readonly<Record<string, string>> = { b2b_transport_packaging: "B2B transport packaging", reusable_closed_loop: "Reusable closed-loop systems", critical_performance_factors: "Critical performance factors", material_composition_sorting: "Material composition and sorting", reusable_qr_data_carrier: "Reusable system, QR code or data carrier" };
+const ARTIFACT_LABEL: Readonly<Record<string, string>> = { declaration_of_conformity: "Declaration of conformity", conformity_assessment_technical_documentation: "Conformity assessment or technical documentation", producer_register: "Producer register" };
+
+type Trigger = ObligationBinding["lines"][number]["triggers"][number];
+/** A classified trigger as its parts: the attribute's label, the comparison, and the value as the text states it, the token's label, or the stated absence from the obs_status vocabulary. */
+const statedValue = (t: Trigger): string => (t.obsStatus ? (OBS_STATUS[t.obsStatus]?.label ?? t.obsStatus) : `${t.comparison ? `${COMPARISON_LABEL[t.comparison] ?? t.comparison} ` : ""}${(t.value && TOKEN_LABEL[t.value]) || t.value || ""}`);
+
 const muted = { fontSize: "var(--fs-125)", color: "var(--ink-3)", margin: 0, lineHeight: 1.45, overflowWrap: "anywhere" } as const;
 
 function Line({ line }: { line: ObligationBinding["lines"][number] }) {
@@ -32,6 +43,25 @@ function Line({ line }: { line: ObligationBinding["lines"][number] }) {
           <strong>In scope because: </strong>
           {line.triggers.map((t) => t.label).join("; ")}
         </p>
+      )}
+      {line.triggers.some((t) => t.attribute in ATTRIBUTE_LABEL) && (
+        <ul style={{ ...muted, paddingLeft: "var(--sp-18)" }}>
+          {line.triggers.filter((t) => t.attribute in ATTRIBUTE_LABEL).map((t) => (
+            <li key={`${t.attribute}|${t.value}`}>
+              <strong>{ATTRIBUTE_LABEL[t.attribute]}: </strong>
+              {statedValue(t)}
+            </li>
+          ))}
+        </ul>
+      )}
+      {line.artifacts.length > 0 && (
+        <ul style={{ ...muted, paddingLeft: "var(--sp-18)" }}>
+          {line.artifacts.map((a) => (
+            <li key={`${a.class}|${a.name}`}>
+              <strong>{ARTIFACT_LABEL[a.class] ?? a.class}: </strong>“{a.name}”
+            </li>
+          ))}
+        </ul>
       )}
       {line.applicability && line.applicability.status !== "applies" && line.applicability.reasons.length > 0 && <p style={muted}>{line.applicability.reasons.join(" ")}</p>}
       {line.costSlots.map((slot) => (

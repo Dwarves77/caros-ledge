@@ -6,6 +6,8 @@ import { SURFACE_HEADING, parseRamifications } from "@/core/briefs/theme-brief-c
 import { resolveBriefForTheme } from "@/core/flywheel";
 import { SURFACE_LABELS, SURFACE_ORDER, surfaceOf } from "@/core/routing";
 
+import { deriveThemeForwardOutlook, type ThemeEventRow } from "./forward-outlook";
+
 export interface ThemeRow {
   id: string;
   member_ids: string[];
@@ -31,7 +33,11 @@ export interface MemberRow {
   title: string;
   item_type: string | null;
   domain: number | null;
+  horizon?: string | null;
+  horizon_band?: string | null;
+  compliance_deadline?: string | null;
 }
+
 type Lineage = { prior_id: string; new_id: string }[];
 
 const MAX_MEMBERS_PER_PAGE = 6;
@@ -53,8 +59,8 @@ function briefForItem(itemId: string, themes: readonly ThemeRow[], briefs: reado
 }
 
 /** The theme analysis of one item on one surface: members by page (other pages first), the brief's sections, and the absence worded when there is no brief. */
-export function themeAnalysisView(input: { itemId: string; surface: string; themes: readonly ThemeRow[]; briefs: readonly BriefRow[]; lineage?: Lineage; members?: readonly MemberRow[] }) {
-  const { itemId, surface, themes, briefs, lineage = [], members = [] } = input;
+export function themeAnalysisView(input: { itemId: string; surface: string; themes: readonly ThemeRow[]; briefs: readonly BriefRow[]; lineage?: Lineage; members?: readonly MemberRow[]; events?: readonly ThemeEventRow[]; asOfIso: string }) {
+  const { itemId, surface, themes, briefs, lineage = [], members = [], events = [], asOfIso } = input;
   const theme = themeForItem(themes, itemId);
   if (!theme) return null;
   const brief = briefForItem(itemId, themes, briefs, lineage);
@@ -99,6 +105,7 @@ export function themeAnalysisView(input: { itemId: string; surface: string; them
     ramificationsMissing,
     pages,
     membersByPage,
+    forwardOutlook: deriveThemeForwardOutlook({ memberIds: theme.member_ids, pivotIds: (theme.pivots ?? []).map((p) => p?.id).filter((id): id is string => typeof id === "string"), members, events, asOfIso }),
   };
 }
 export type ThemeAnalysisView = NonNullable<ReturnType<typeof themeAnalysisView>>;

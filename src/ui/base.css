@@ -797,7 +797,7 @@ textarea.cl-input { padding: 10px; resize: vertical; }
 .cl-detail-link { display: block; min-height: 44px; padding: 10px 0; border-bottom: 1px solid var(--line-3); text-decoration: none; color: inherit; }
 .cl-detail-link-title { font-size: 15px; font-weight: 700; line-height: 1.35; color: var(--ink); margin: 0; overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
 /* The connections strip in the masthead card: padded like the action card above it, cards in a grid (the old page: 2px brand edge, kind label over a title clamped to two lines), never full-bleed. */
-.cl-masthead-slot [data-part="item-connections"] { padding: 14px 20px 16px; }
+.cl-masthead-slot [data-part="item-connections"] { margin-top: var(--sp-10); padding: 14px 20px 16px; }
 .cl-conn-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: 10px; margin-top: 6px; }
 .cl-conn-grid > .cl-detail-link { border-bottom: 0; border-left: 2px solid var(--brand); padding: 8px 12px; min-width: 0; }
 .cl-detail-link-note { font-size: var(--fs-11); line-height: 1.5; color: var(--ink-2); margin: 3px 0 0; }

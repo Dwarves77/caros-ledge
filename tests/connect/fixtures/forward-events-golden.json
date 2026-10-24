@@ -356,7 +356,7 @@
      {
       "event_date": "2027-07-10",
       "date_precision": "day",
-      "event_kind": "compliance_deadline",
+      "event_kind": "implementing_act_due",
       "obligation_text": "By 10 July 2027, ESMA shall establish and operate a European single access point (ESA…",
       "source_kind": "claim",
       "source_claim_id": "13ef742e-7837-41ab-abdd-d239e83338f5",
@@ -380,7 +380,7 @@
      {
       "event_date": "2015-12-31",
       "date_precision": "day",
-      "event_kind": "compliance_deadline",
+      "event_kind": "implementing_act_due",
       "obligation_text": "In order to facilitate a uniform application of Annex V, the Commission shall, by 31 December 2015, by means of implementing acts, establish an indicative compendium of environmental goods and services and of the economic activities to be covered by Annex V…",
       "source_kind": "claim",
       "source_claim_id": "1410f030-c409-47a8-9b0a-90f6658507a1",
@@ -658,7 +658,7 @@
      {
       "event_date": "2025-09-27",
       "date_precision": "day",
-      "event_kind": "compliance_deadline",
+      "event_kind": "implementing_act_due",
       "obligation_text": "By 27 September 2025 the Commission shall, by means of implementing acts, specify the desi…",
       "source_kind": "claim",
       "source_claim_id": "24730186-6a2c-4392-b6da-e476c02628d9",
@@ -701,7 +701,7 @@
      {
       "event_date": "2025-09-14",
       "date_precision": "day",
-      "event_kind": "compliance_deadline",
+      "event_kind": "implementing_act_due",
       "obligation_text": "Member States shall bring into force the laws, regulations and administrative provisions necessary to comply with this Directive by 14 September 2025 at the latest.",
       "source_kind": "claim",
       "source_claim_id": "2b605681-ebca-4130-8b04-dea9b45a6e86",
@@ -829,7 +829,7 @@
      {
       "event_date": "2026-04-18",
       "date_precision": "day",
-      "event_kind": "compliance_deadline",
+      "event_kind": "implementing_act_due",
       "obligation_text": "The first report of this kind should be submitted by 18 April 2026 and should cover information related to the first reference period, from 2 August 2021 to 31 December 2025.",
       "source_kind": "claim",
       "source_claim_id": "343f2bd4-8246-4399-8a8e-2c7dce010b0c",
@@ -991,7 +991,7 @@
      {
       "event_date": "2027-07-06",
       "date_precision": "day",
-      "event_kind": "compliance_deadline",
+      "event_kind": "implementing_act_due",
       "obligation_text": "The Member States concerned shall notify to the Commission by 6 July 2027 the provisions of their laws which they adopt pursuant to this paragraph and, without delay, any subsequent amendment to, or amendment affecting, those laws.",
       "source_kind": "claim",
       "source_claim_id": "42b54f32-7d47-4f8c-aaaf-db12033ee6ae",
@@ -1151,7 +1151,7 @@
      {
       "event_date": "2020-01-05",
       "date_precision": "day",
-      "event_kind": "compliance_deadline",
+      "event_kind": "implementing_act_due",
       "obligation_text": "The European Chemicals Agency shall establish a database for the data to be submitted to it pursuant to point (i) of paragraph 1 by 5 January 2020 and maintain it.",
       "source_kind": "claim",
       "source_claim_id": "545ced0d-d8ac-4aaa-bf55-116161e5a2d3",
@@ -1183,7 +1183,7 @@
      {
       "event_date": "2027-07-31",
       "date_precision": "day",
-      "event_kind": "compliance_deadline",
+      "event_kind": "implementing_act_due",
       "obligation_text": "By 31 July 2027, the Commission shall develop the common online interface for the Eur…",
       "source_kind": "claim",
       "source_claim_id": "559a8806-758d-46ff-ade3-0ac2f659a9a9",
@@ -1255,7 +1255,7 @@
      {
       "event_date": "2020-12-31",
       "date_precision": "day",
-      "event_kind": "compliance_deadline",
+      "event_kind": "delegated_act_due",
       "obligation_text": "The Commission shall adopt the delegated act referred to in paragraph 3 by 31 December 2020, with a view to ensuring its application from 1 January 2022.",
       "source_kind": "claim",
       "source_claim_id": "593066d8-92ca-4c5a-9fb2-7b094d679e84",
@@ -1354,7 +1354,7 @@
      {
       "event_date": "2007-07-04",
       "date_precision": "day",
-      "event_kind": "compliance_deadline",
+      "event_kind": "implementing_act_due",
       "obligation_text": "By 4 July 2007, the Commission shall adopt the measures for the implementation of Ar…",
       "source_kind": "claim",
       "source_claim_id": "62807fdb-e67a-4daa-9d2c-81ed6490a003",
@@ -1473,7 +1473,7 @@
      {
       "event_date": "2016-12-31",
       "date_precision": "day",
-      "event_kind": "compliance_deadline",
+      "event_kind": "implementing_act_due",
       "obligation_text": "Member States shall adopt and publish, by 31 December 2016 at the latest, the laws, regulations and administrative provisions necessary to comply with this Directive.",
       "source_kind": "claim",
       "source_claim_id": "69163189-7022-4644-a575-60d0015e44b9",
@@ -1717,7 +1717,7 @@
      {
       "event_date": "2001-01-01",
       "date_precision": "day",
-      "event_kind": "compliance_deadline",
+      "event_kind": "implementing_act_due",
       "obligation_text": "Member States shall bring into force the laws, regulations and administrative provisions necessary to comply with this Directive by 1 January 2001 at the latest.",
       "source_kind": "claim",
       "source_claim_id": "82962579-3318-4e49-928e-eb0ae403ba25",
@@ -2204,7 +2204,7 @@
      {
       "event_date": "2013-09-30",
       "date_precision": "day",
-      "event_kind": "compliance_deadline",
+      "event_kind": "implementing_act_due",
       "obligation_text": "Member States shall bring into force the laws, regulations and administrative provisions necessary to comply with this Directive by 30 September 2013 at the latest.",
       "source_kind": "claim",
       "source_claim_id": "b3b2cc2e-5d0b-42fe-81f3-53731319046f",
@@ -2284,7 +2284,7 @@
      {
       "event_date": "2020-12-30",
       "date_precision": "day",
-      "event_kind": "compliance_deadline",
+      "event_kind": "implementing_act_due",
       "obligation_text": "By 30 December 2020, the ESAs shall develop, through the Joint Committee, draft regulator…",
       "source_kind": "claim",
       "source_claim_id": "baf88995-4af3-4ace-a773-14c5394ece80",
@@ -2334,7 +2334,7 @@
      {
       "event_date": "2018-06-06",
       "date_precision": "day",
-      "event_kind": "compliance_deadline",
+      "event_kind": "implementing_act_due",
       "obligation_text": "Member States shall adopt and publish by 6 June 2018 the laws, regulations and administrative provisions necessary to comply with this Directive.",
       "source_kind": "claim",
       "source_claim_id": "c026751c-fde5-43cd-9786-6b772247dbfb",
@@ -2501,7 +2501,7 @@
      {
       "event_date": "2028-04-10",
       "date_precision": "day",
-      "event_kind": "compliance_deadline",
+      "event_kind": "implementing_act_due",
       "obligation_text": "By 10 April 2028, Member States shall adopt and publish the measures necessary to comp…",
       "source_kind": "claim",
       "source_claim_id": "cc0953de-c42f-4b9b-8fad-3523cd5403cc",
@@ -2525,7 +2525,7 @@
      {
       "event_date": "2023-06-30",
       "date_precision": "day",
-      "event_kind": "compliance_deadline",
+      "event_kind": "implementing_act_due",
       "obligation_text": "(2) The Commission is required to adopt by 30 June 2023 a first set of standards specifying the information that undertakings are to report in accordance with Article 19a(1) and (2), and Article 29a(1) and (2) of th…",
       "source_kind": "claim",
       "source_claim_id": "cdf59f16-ff02-4753-b158-57f9d1e2649f",
@@ -2754,7 +2754,7 @@
      {
       "event_date": "2022-08-21",
       "date_precision": "day",
-      "event_kind": "compliance_deadline",
+      "event_kind": "implementing_act_due",
       "obligation_text": "Member States shall adopt and publish, by 21 August 2022 at the latest, the laws, regulations and administrative provisions necessary to comply with this Directive.",
       "source_kind": "claim",
       "source_claim_id": "da6c77af-85ed-421e-8527-80f2c6287fc5",
@@ -2916,7 +2916,7 @@
      {
       "event_date": "2021-12-31",
       "date_precision": "day",
-      "event_kind": "compliance_deadline",
+      "event_kind": "implementing_act_due",
       "obligation_text": "Member States shall bring into force the laws, regulations and administrative provisions necessary to comply with this Directive by 31 December 2021 at the latest.",
       "source_kind": "claim",
       "source_claim_id": "e65db152-1007-4eee-ae64-2ab19d55636f",
@@ -3543,7 +3543,7 @@
      {
       "event_date": "2027-07-10",
       "date_precision": "day",
-      "event_kind": "compliance_deadline",
+      "event_kind": "implementing_act_due",
       "obligation_text": "By 10 July 2027, ESMA shall establish and operate a European single access point (ESA…",
       "source_kind": "claim",
       "source_claim_id": "13ef742e-7837-41ab-abdd-d239e83338f5",
@@ -3833,7 +3833,7 @@
      {
       "event_date": "2025-09-27",
       "date_precision": "day",
-      "event_kind": "compliance_deadline",
+      "event_kind": "implementing_act_due",
       "obligation_text": "By 27 September 2025 the Commission shall, by means of implementing acts, specify the desi…",
       "source_kind": "claim",
       "source_claim_id": "24730186-6a2c-4392-b6da-e476c02628d9",
@@ -4322,7 +4322,7 @@
      {
       "event_date": "2027-07-31",
       "date_precision": "day",
-      "event_kind": "compliance_deadline",
+      "event_kind": "implementing_act_due",
       "obligation_text": "By 31 July 2027, the Commission shall develop the common online interface for the Eur…",
       "source_kind": "claim",
       "source_claim_id": "559a8806-758d-46ff-ade3-0ac2f659a9a9",
@@ -4487,7 +4487,7 @@
      {
       "event_date": "2007-07-04",
       "date_precision": "day",
-      "event_kind": "compliance_deadline",
+      "event_kind": "implementing_act_due",
       "obligation_text": "By 4 July 2007, the Commission shall adopt the measures for the implementation of Ar…",
       "source_kind": "claim",
       "source_claim_id": "62807fdb-e67a-4daa-9d2c-81ed6490a003",
@@ -5351,7 +5351,7 @@
      {
       "event_date": "2020-12-30",
       "date_precision": "day",
-      "event_kind": "compliance_deadline",
+      "event_kind": "implementing_act_due",
       "obligation_text": "By 30 December 2020, the ESAs shall develop, through the Joint Committee, draft regulator…",
       "source_kind": "claim",
       "source_claim_id": "baf88995-4af3-4ace-a773-14c5394ece80",
@@ -5550,7 +5550,7 @@
      {
       "event_date": "2028-04-10",
       "date_precision": "day",
-      "event_kind": "compliance_deadline",
+      "event_kind": "implementing_act_due",
       "obligation_text": "By 10 April 2028, Member States shall adopt and publish the measures necessary to comp…",
       "source_kind": "claim",
       "source_claim_id": "cc0953de-c42f-4b9b-8fad-3523cd5403cc",

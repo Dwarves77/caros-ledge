@@ -22,7 +22,7 @@ export async function MarketDetailRoute({ params }: { params: Promise<{ slug: st
   const today = session.nowIso.slice(0, 10);
   const data = await (async () => {
     await applyIdRedirect("market", id, db);
-    const detail = await loadDetail("market", id, ({ db: client, uuid, resource }) => readMarketDetail(client, { id: uuid, sourceId: resource.sourceId ?? null, needsCarbon: bandOf(resource) === "corridor" || resource.itemGrade === "record" }), db, session.orgId);
+    const detail = await loadDetail("market", id, ({ db: client, uuid, resource }) => readMarketDetail(client, { id: uuid, sourceId: resource.sourceId ?? null, needsCarbon: bandOf(resource) === "corridor" || resource.itemGrade === "record" }), db, session.orgId, session.nowIso);
     if (detail.notFound) return "missing" as const;
     const events = await readUpcoming(db, { itemId: detail.uuid, limit: 20 }, today).catch((e: unknown) => {
       unstable_rethrow(e);
