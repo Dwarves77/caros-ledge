@@ -450,28 +450,6 @@
    "quote": "Unless a copyright is indicated, information on the U.S. Customs and Border Protection website is in the public domain and may be reproduced, published or otherwise used without the permission of the CBP.",
    "termsReadOn": "2026-10-20",
    "note": "READ 2026-10-20 at https://www.cbp.gov/site-policy-notices/copyright-notice. The same notice asks only that CBP be cited as the source, and says a copyright indicated on a photo, graphic or other material needs permission from its original source. The Section 232 FAQ page carries no copyright indication (checked 2026-10-20). The notice does not name 17 U.S.C. 105; that provision is not relied on here."
-  },
-  "ecb": {
-   "key": "ecb",
-   "name": "European Central Bank (euro foreign exchange reference rates)",
-   "redistribution": "permitted",
-   "licence": "ECB website copyright notice: free use, source cited, modifications stated",
-   "attribution": "Source: European Central Bank",
-   "url": "https://www.ecb.europa.eu/services/using-our-site/disclaimer/html/index.en.html",
-   "verifiedOn": "2026-10-24",
-   "quote": "When such information is distributed or reproduced, it must appear accurately and the ECB must be cited as the source.",
-   "termsReadOn": "2026-10-24",
-   "note": "The notice also requires that a modification be stated explicitly. The page sets no separate terms for the euro foreign exchange reference rates and disclaims liability for reliance on them."
-  },
-  "ukpn_ltds_capacity_heatmap": {
-   "key": "ukpn_ltds_capacity_heatmap",
-   "name": "UK Power Networks, Long Term Development Statement Capacity Heatmap",
-   "redistribution": "permitted",
-   "licence": "CC BY 4.0",
-   "attribution": "Source: UK Power Networks, Long Term Development Statement Capacity Heatmap, CC BY 4.0",
-   "url": "https://ukpowernetworks.opendatasoft.com/explore/dataset/ukpn-capacity-heatmap/",
-   "verifiedOn": "2026-10-24",
-   "note": "Read from the catalogue metadata license field (metas.default.license = CC BY 4.0, license_url https://creativecommons.org/licenses/by/4.0/) on 2026-10-24; the producer re-checks that field and each release file's rights on every run and refuses the data on a mismatch."
   }
  }
 }
