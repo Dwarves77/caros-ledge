@@ -1,0 +1,575 @@
+{
+ "_note": "ARM-2 S1: the instruments' own published schedules, one row per instrument, formula and scenario; every quote is verbatim from the EUR-Lex text and contains its figure.",
+ "rows": [
+  {
+   "instrument": "32003L0087",
+   "obligation": "EU ETS maritime phase-in of the surrender requirement, Directive 2003/87/EC Article 3gb",
+   "formula_id": "ets_maritime_phase_in",
+   "scenario_key": "2024",
+   "statute_citation": "Directive 2003/87/EC, Article 3gb (phase-in of requirements for maritime transport)",
+   "result": 40,
+   "result_unit": "% of verified emissions reported for the year",
+   "citation": {
+    "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02003L0087-20240301",
+    "title": "Directive 2003/87/EC, consolidated text of 01.03.2024 (EUR-Lex)",
+    "retrieved_at": "2026-10-24",
+    "quote": "(a) 40 % of verified emissions reported for 2024 that would be subject to surrender requirements in accordance with Article 12"
+   }
+  },
+  {
+   "instrument": "32003L0087",
+   "obligation": "EU ETS maritime phase-in of the surrender requirement, Directive 2003/87/EC Article 3gb",
+   "formula_id": "ets_maritime_phase_in",
+   "scenario_key": "2025",
+   "statute_citation": "Directive 2003/87/EC, Article 3gb (phase-in of requirements for maritime transport)",
+   "result": 70,
+   "result_unit": "% of verified emissions reported for the year",
+   "citation": {
+    "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02003L0087-20240301",
+    "title": "Directive 2003/87/EC, consolidated text of 01.03.2024 (EUR-Lex)",
+    "retrieved_at": "2026-10-24",
+    "quote": "(b) 70 % of verified emissions reported for 2025 that would be subject to surrender requirements in accordance with Article 12"
+   }
+  },
+  {
+   "instrument": "32003L0087",
+   "obligation": "EU ETS maritime phase-in of the surrender requirement, Directive 2003/87/EC Article 3gb",
+   "formula_id": "ets_maritime_phase_in",
+   "scenario_key": "2026",
+   "statute_citation": "Directive 2003/87/EC, Article 3gb (phase-in of requirements for maritime transport)",
+   "result": 100,
+   "result_unit": "% of verified emissions reported for the year",
+   "citation": {
+    "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02003L0087-20240301",
+    "title": "Directive 2003/87/EC, consolidated text of 01.03.2024 (EUR-Lex)",
+    "retrieved_at": "2026-10-24",
+    "quote": "(c) 100 % of verified emissions reported for 2026 and each year thereafter in accordance with Article 12"
+   }
+  },
+  {
+   "instrument": "32023R1805",
+   "obligation": "FuelEU Maritime Article 4(2) GHG intensity limit on the energy used on board",
+   "formula_id": "fueleu_reference_value",
+   "scenario_key": "reference",
+   "statute_citation": "Regulation (EU) 2023/1805, Article 4(2)",
+   "result": 91.16,
+   "result_unit": "grams of CO2 equivalent per MJ",
+   "citation": {
+    "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32023R1805",
+    "title": "Regulation (EU) 2023/1805 FuelEU Maritime (EUR-Lex)",
+    "retrieved_at": "2026-10-24",
+    "quote": "reference value of 91,16 grams of CO 2 equivalent per MJ"
+   }
+  },
+  {
+   "instrument": "32023R1805",
+   "obligation": "FuelEU Maritime Article 4(2) GHG intensity limit on the energy used on board",
+   "formula_id": "fueleu_intensity_reduction",
+   "scenario_key": "2025",
+   "statute_citation": "Regulation (EU) 2023/1805, Article 4(2)",
+   "result": 2,
+   "result_unit": "% reduction of the reference value",
+   "citation": {
+    "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32023R1805",
+    "title": "Regulation (EU) 2023/1805 FuelEU Maritime (EUR-Lex)",
+    "retrieved_at": "2026-10-24",
+    "quote": "2 % from 1 January 2025"
+   }
+  },
+  {
+   "instrument": "32023R1805",
+   "obligation": "FuelEU Maritime Article 4(2) GHG intensity limit on the energy used on board",
+   "formula_id": "fueleu_intensity_reduction",
+   "scenario_key": "2030",
+   "statute_citation": "Regulation (EU) 2023/1805, Article 4(2)",
+   "result": 6,
+   "result_unit": "% reduction of the reference value",
+   "citation": {
+    "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32023R1805",
+    "title": "Regulation (EU) 2023/1805 FuelEU Maritime (EUR-Lex)",
+    "retrieved_at": "2026-10-24",
+    "quote": "6 % from 1 January 2030"
+   }
+  },
+  {
+   "instrument": "32023R1805",
+   "obligation": "FuelEU Maritime Article 4(2) GHG intensity limit on the energy used on board",
+   "formula_id": "fueleu_intensity_reduction",
+   "scenario_key": "2035",
+   "statute_citation": "Regulation (EU) 2023/1805, Article 4(2)",
+   "result": 14.5,
+   "result_unit": "% reduction of the reference value",
+   "citation": {
+    "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32023R1805",
+    "title": "Regulation (EU) 2023/1805 FuelEU Maritime (EUR-Lex)",
+    "retrieved_at": "2026-10-24",
+    "quote": "14,5 % from 1 January 2035"
+   }
+  },
+  {
+   "instrument": "32023R1805",
+   "obligation": "FuelEU Maritime Article 4(2) GHG intensity limit on the energy used on board",
+   "formula_id": "fueleu_intensity_reduction",
+   "scenario_key": "2040",
+   "statute_citation": "Regulation (EU) 2023/1805, Article 4(2)",
+   "result": 31,
+   "result_unit": "% reduction of the reference value",
+   "citation": {
+    "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32023R1805",
+    "title": "Regulation (EU) 2023/1805 FuelEU Maritime (EUR-Lex)",
+    "retrieved_at": "2026-10-24",
+    "quote": "31 % from 1 January 2040"
+   }
+  },
+  {
+   "instrument": "32023R1805",
+   "obligation": "FuelEU Maritime Article 4(2) GHG intensity limit on the energy used on board",
+   "formula_id": "fueleu_intensity_reduction",
+   "scenario_key": "2045",
+   "statute_citation": "Regulation (EU) 2023/1805, Article 4(2)",
+   "result": 62,
+   "result_unit": "% reduction of the reference value",
+   "citation": {
+    "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32023R1805",
+    "title": "Regulation (EU) 2023/1805 FuelEU Maritime (EUR-Lex)",
+    "retrieved_at": "2026-10-24",
+    "quote": "62 % from 1 January 2045"
+   }
+  },
+  {
+   "instrument": "32023R1805",
+   "obligation": "FuelEU Maritime Article 4(2) GHG intensity limit on the energy used on board",
+   "formula_id": "fueleu_intensity_reduction",
+   "scenario_key": "2050",
+   "statute_citation": "Regulation (EU) 2023/1805, Article 4(2)",
+   "result": 80,
+   "result_unit": "% reduction of the reference value",
+   "citation": {
+    "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32023R1805",
+    "title": "Regulation (EU) 2023/1805 FuelEU Maritime (EUR-Lex)",
+    "retrieved_at": "2026-10-24",
+    "quote": "80 % from 1 January 2050"
+   }
+  },
+  {
+   "instrument": "32023R1805",
+   "obligation": "FuelEU Maritime Article 23 penalty and the Annex IV Part B formula",
+   "formula_id": "fueleu_penalty_basis",
+   "scenario_key": "eur_per_t_vlsfoe",
+   "statute_citation": "Regulation (EU) 2023/1805, Annex IV Part B (formula referred to in Article 23(2))",
+   "result": 2400,
+   "result_unit": "EUR per equivalent metric ton of VLSFO",
+   "citation": {
+    "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32023R1805",
+    "title": "Regulation (EU) 2023/1805 FuelEU Maritime (EUR-Lex)",
+    "retrieved_at": "2026-10-24",
+    "quote": "2 400 8. Is the amount to be paid in EUR per equivalent metric ton of VLSFO"
+   }
+  },
+  {
+   "instrument": "32023R1805",
+   "obligation": "FuelEU Maritime Article 23 penalty and the Annex IV Part B formula",
+   "formula_id": "fueleu_penalty_basis",
+   "scenario_key": "mj_per_t_vlsfo",
+   "statute_citation": "Regulation (EU) 2023/1805, Annex IV Part B (formula referred to in Article 23(2))",
+   "result": 41000,
+   "result_unit": "MJ per metric ton of VLSFO",
+   "citation": {
+    "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32023R1805",
+    "title": "Regulation (EU) 2023/1805 FuelEU Maritime (EUR-Lex)",
+    "retrieved_at": "2026-10-24",
+    "quote": "41 000 6. Is 1 metric ton of VLSFO that is equivalent to 41 000 MJ"
+   }
+  },
+  {
+   "instrument": "32023R1805",
+   "obligation": "FuelEU Maritime Article 23 penalty and the Annex IV Part B formula",
+   "formula_id": "fueleu_penalty_basis",
+   "scenario_key": "berth_non_compliance",
+   "statute_citation": "Regulation (EU) 2023/1805, Article 23(5)",
+   "result": 1.5,
+   "result_unit": "EUR",
+   "citation": {
+    "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32023R1805",
+    "title": "Regulation (EU) 2023/1805 FuelEU Maritime (EUR-Lex)",
+    "retrieved_at": "2026-10-24",
+    "quote": "the multiplication of EUR 1,5 by the established total electrical power demand of the ship at berth"
+   }
+  },
+  {
+   "instrument": "32023R2405",
+   "obligation": "ReFuelEU Aviation Annex I minimum shares of sustainable aviation fuel referred to in Article 4",
+   "formula_id": "refueleu_saf_share",
+   "scenario_key": "2025",
+   "statute_citation": "Regulation (EU) 2023/2405, Annex I",
+   "result": 2,
+   "result_unit": "% minimum share of SAF",
+   "citation": {
+    "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32023R2405",
+    "title": "Regulation (EU) 2023/2405 ReFuelEU Aviation (EUR-Lex)",
+    "retrieved_at": "2026-10-24",
+    "quote": "From 1 January 2025, each year a minimum share of 2 % of SAF"
+   }
+  },
+  {
+   "instrument": "32023R2405",
+   "obligation": "ReFuelEU Aviation Annex I minimum shares of sustainable aviation fuel referred to in Article 4",
+   "formula_id": "refueleu_saf_share",
+   "scenario_key": "2030",
+   "statute_citation": "Regulation (EU) 2023/2405, Annex I",
+   "result": 6,
+   "result_unit": "% minimum share of SAF",
+   "citation": {
+    "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32023R2405",
+    "title": "Regulation (EU) 2023/2405 ReFuelEU Aviation (EUR-Lex)",
+    "retrieved_at": "2026-10-24",
+    "quote": "From 1 January 2030, each year a minimum share of 6 % of SAF"
+   }
+  },
+  {
+   "instrument": "32023R2405",
+   "obligation": "ReFuelEU Aviation Annex I minimum shares of sustainable aviation fuel referred to in Article 4",
+   "formula_id": "refueleu_saf_share",
+   "scenario_key": "2035",
+   "statute_citation": "Regulation (EU) 2023/2405, Annex I",
+   "result": 20,
+   "result_unit": "% minimum share of SAF",
+   "citation": {
+    "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32023R2405",
+    "title": "Regulation (EU) 2023/2405 ReFuelEU Aviation (EUR-Lex)",
+    "retrieved_at": "2026-10-24",
+    "quote": "From 1 January 2035, each year a minimum share of 20 % of SAF"
+   }
+  },
+  {
+   "instrument": "32023R2405",
+   "obligation": "ReFuelEU Aviation Annex I minimum shares of sustainable aviation fuel referred to in Article 4",
+   "formula_id": "refueleu_saf_share",
+   "scenario_key": "2040",
+   "statute_citation": "Regulation (EU) 2023/2405, Annex I",
+   "result": 34,
+   "result_unit": "% minimum share of SAF",
+   "citation": {
+    "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32023R2405",
+    "title": "Regulation (EU) 2023/2405 ReFuelEU Aviation (EUR-Lex)",
+    "retrieved_at": "2026-10-24",
+    "quote": "From 1 January 2040, each year a minimum share of 34 % of SAF"
+   }
+  },
+  {
+   "instrument": "32023R2405",
+   "obligation": "ReFuelEU Aviation Annex I minimum shares of sustainable aviation fuel referred to in Article 4",
+   "formula_id": "refueleu_saf_share",
+   "scenario_key": "2045",
+   "statute_citation": "Regulation (EU) 2023/2405, Annex I",
+   "result": 42,
+   "result_unit": "% minimum share of SAF",
+   "citation": {
+    "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32023R2405",
+    "title": "Regulation (EU) 2023/2405 ReFuelEU Aviation (EUR-Lex)",
+    "retrieved_at": "2026-10-24",
+    "quote": "From 1 January 2045, each year a minimum share of 42 % of SAF"
+   }
+  },
+  {
+   "instrument": "32023R2405",
+   "obligation": "ReFuelEU Aviation Annex I minimum shares of sustainable aviation fuel referred to in Article 4",
+   "formula_id": "refueleu_saf_share",
+   "scenario_key": "2050",
+   "statute_citation": "Regulation (EU) 2023/2405, Annex I",
+   "result": 70,
+   "result_unit": "% minimum share of SAF",
+   "citation": {
+    "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32023R2405",
+    "title": "Regulation (EU) 2023/2405 ReFuelEU Aviation (EUR-Lex)",
+    "retrieved_at": "2026-10-24",
+    "quote": "From 1 January 2050, each year a minimum share of 70 % of SAF"
+   }
+  },
+  {
+   "instrument": "32023R2405",
+   "obligation": "ReFuelEU Aviation Annex I minimum shares of sustainable aviation fuel referred to in Article 4",
+   "formula_id": "refueleu_synthetic_share",
+   "scenario_key": "2030-2031_average",
+   "statute_citation": "Regulation (EU) 2023/2405, Annex I",
+   "result": 1.2,
+   "result_unit": "% average share of synthetic aviation fuels over the period",
+   "citation": {
+    "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32023R2405",
+    "title": "Regulation (EU) 2023/2405 ReFuelEU Aviation (EUR-Lex)",
+    "retrieved_at": "2026-10-24",
+    "quote": "for the period from 1 January 2030 until 31 December 2031, an average share over the period of 1,2 % of synthetic aviation fuels"
+   }
+  },
+  {
+   "instrument": "32023R2405",
+   "obligation": "ReFuelEU Aviation Annex I minimum shares of sustainable aviation fuel referred to in Article 4",
+   "formula_id": "refueleu_synthetic_share",
+   "scenario_key": "2030-2031_annual_minimum",
+   "statute_citation": "Regulation (EU) 2023/2405, Annex I",
+   "result": 0.7,
+   "result_unit": "% minimum share of synthetic aviation fuels each year",
+   "citation": {
+    "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32023R2405",
+    "title": "Regulation (EU) 2023/2405 ReFuelEU Aviation (EUR-Lex)",
+    "retrieved_at": "2026-10-24",
+    "quote": "each year a minimum share of 0,7 % of synthetic aviation fuels"
+   }
+  },
+  {
+   "instrument": "32023R2405",
+   "obligation": "ReFuelEU Aviation Annex I minimum shares of sustainable aviation fuel referred to in Article 4",
+   "formula_id": "refueleu_synthetic_share",
+   "scenario_key": "2032-2034_average",
+   "statute_citation": "Regulation (EU) 2023/2405, Annex I",
+   "result": 2.0,
+   "result_unit": "% average share of synthetic aviation fuels over the period",
+   "citation": {
+    "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32023R2405",
+    "title": "Regulation (EU) 2023/2405 ReFuelEU Aviation (EUR-Lex)",
+    "retrieved_at": "2026-10-24",
+    "quote": "for the period from 1 January 2032 until 31 December 2034, an average share over the period of 2,0 % of synthetic aviation fuels"
+   }
+  },
+  {
+   "instrument": "32023R2405",
+   "obligation": "ReFuelEU Aviation Annex I minimum shares of sustainable aviation fuel referred to in Article 4",
+   "formula_id": "refueleu_synthetic_share",
+   "scenario_key": "2032-2033_annual_minimum",
+   "statute_citation": "Regulation (EU) 2023/2405, Annex I",
+   "result": 1.2,
+   "result_unit": "% minimum share of synthetic aviation fuels each year",
+   "citation": {
+    "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32023R2405",
+    "title": "Regulation (EU) 2023/2405 ReFuelEU Aviation (EUR-Lex)",
+    "retrieved_at": "2026-10-24",
+    "quote": "of which each year a minimum share of 1,2 % from 1 January 2032 until 31 December 2033"
+   }
+  },
+  {
+   "instrument": "32023R2405",
+   "obligation": "ReFuelEU Aviation Annex I minimum shares of sustainable aviation fuel referred to in Article 4",
+   "formula_id": "refueleu_synthetic_share",
+   "scenario_key": "2034_annual_minimum",
+   "statute_citation": "Regulation (EU) 2023/2405, Annex I",
+   "result": 2.0,
+   "result_unit": "% minimum share of synthetic aviation fuels",
+   "citation": {
+    "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32023R2405",
+    "title": "Regulation (EU) 2023/2405 ReFuelEU Aviation (EUR-Lex)",
+    "retrieved_at": "2026-10-24",
+    "quote": "a minimum share of 2,0 % from 1 January 2034 until 31 December 2034 of synthetic aviation fuels"
+   }
+  },
+  {
+   "instrument": "32023R2405",
+   "obligation": "ReFuelEU Aviation Annex I minimum shares of sustainable aviation fuel referred to in Article 4",
+   "formula_id": "refueleu_synthetic_share",
+   "scenario_key": "2035",
+   "statute_citation": "Regulation (EU) 2023/2405, Annex I",
+   "result": 5,
+   "result_unit": "% minimum share of synthetic aviation fuels",
+   "citation": {
+    "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32023R2405",
+    "title": "Regulation (EU) 2023/2405 ReFuelEU Aviation (EUR-Lex)",
+    "retrieved_at": "2026-10-24",
+    "quote": "From 1 January 2035, each year a minimum share of 20 % of SAF, of which a minimum share of 5 % of synthetic aviation fuels"
+   }
+  },
+  {
+   "instrument": "32023R2405",
+   "obligation": "ReFuelEU Aviation Annex I minimum shares of sustainable aviation fuel referred to in Article 4",
+   "formula_id": "refueleu_synthetic_share",
+   "scenario_key": "2040",
+   "statute_citation": "Regulation (EU) 2023/2405, Annex I",
+   "result": 10,
+   "result_unit": "% minimum share of synthetic aviation fuels",
+   "citation": {
+    "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32023R2405",
+    "title": "Regulation (EU) 2023/2405 ReFuelEU Aviation (EUR-Lex)",
+    "retrieved_at": "2026-10-24",
+    "quote": "From 1 January 2040, each year a minimum share of 34 % of SAF, of which a minimum share of 10 % of synthetic aviation fuels"
+   }
+  },
+  {
+   "instrument": "32023R2405",
+   "obligation": "ReFuelEU Aviation Annex I minimum shares of sustainable aviation fuel referred to in Article 4",
+   "formula_id": "refueleu_synthetic_share",
+   "scenario_key": "2045",
+   "statute_citation": "Regulation (EU) 2023/2405, Annex I",
+   "result": 15,
+   "result_unit": "% minimum share of synthetic aviation fuels",
+   "citation": {
+    "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32023R2405",
+    "title": "Regulation (EU) 2023/2405 ReFuelEU Aviation (EUR-Lex)",
+    "retrieved_at": "2026-10-24",
+    "quote": "From 1 January 2045, each year a minimum share of 42 % of SAF, of which a minimum share of 15 % of synthetic aviation fuels"
+   }
+  },
+  {
+   "instrument": "32023R2405",
+   "obligation": "ReFuelEU Aviation Annex I minimum shares of sustainable aviation fuel referred to in Article 4",
+   "formula_id": "refueleu_synthetic_share",
+   "scenario_key": "2050",
+   "statute_citation": "Regulation (EU) 2023/2405, Annex I",
+   "result": 35,
+   "result_unit": "% minimum share of synthetic aviation fuels",
+   "citation": {
+    "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32023R2405",
+    "title": "Regulation (EU) 2023/2405 ReFuelEU Aviation (EUR-Lex)",
+    "retrieved_at": "2026-10-24",
+    "quote": "From 1 January 2050, each year a minimum share of 70 % of SAF, of which a minimum share of 35 % of synthetic aviation fuels"
+   }
+  },
+  {
+   "instrument": "32023R0956",
+   "obligation": "CBAM factor on free allocation under the EU ETS, Directive 2003/87/EC Article 10a(1a), for the application of Regulation (EU) 2023/956",
+   "formula_id": "cbam_phaseout_factor",
+   "scenario_key": "2026",
+   "statute_citation": "Directive 2003/87/EC, Article 10a(1a), second subparagraph (CBAM factor)",
+   "result": 97.5,
+   "result_unit": "% CBAM factor applied to free allocation",
+   "citation": {
+    "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02003L0087-20240301",
+    "title": "Directive 2003/87/EC, consolidated text of 01.03.2024 (EUR-Lex)",
+    "retrieved_at": "2026-10-24",
+    "quote": "97,5 % in 2026"
+   }
+  },
+  {
+   "instrument": "32023R0956",
+   "obligation": "CBAM factor on free allocation under the EU ETS, Directive 2003/87/EC Article 10a(1a), for the application of Regulation (EU) 2023/956",
+   "formula_id": "cbam_phaseout_factor",
+   "scenario_key": "2027",
+   "statute_citation": "Directive 2003/87/EC, Article 10a(1a), second subparagraph (CBAM factor)",
+   "result": 95,
+   "result_unit": "% CBAM factor applied to free allocation",
+   "citation": {
+    "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02003L0087-20240301",
+    "title": "Directive 2003/87/EC, consolidated text of 01.03.2024 (EUR-Lex)",
+    "retrieved_at": "2026-10-24",
+    "quote": "95 % in 2027"
+   }
+  },
+  {
+   "instrument": "32023R0956",
+   "obligation": "CBAM factor on free allocation under the EU ETS, Directive 2003/87/EC Article 10a(1a), for the application of Regulation (EU) 2023/956",
+   "formula_id": "cbam_phaseout_factor",
+   "scenario_key": "2028",
+   "statute_citation": "Directive 2003/87/EC, Article 10a(1a), second subparagraph (CBAM factor)",
+   "result": 90,
+   "result_unit": "% CBAM factor applied to free allocation",
+   "citation": {
+    "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02003L0087-20240301",
+    "title": "Directive 2003/87/EC, consolidated text of 01.03.2024 (EUR-Lex)",
+    "retrieved_at": "2026-10-24",
+    "quote": "90 % in 2028"
+   }
+  },
+  {
+   "instrument": "32023R0956",
+   "obligation": "CBAM factor on free allocation under the EU ETS, Directive 2003/87/EC Article 10a(1a), for the application of Regulation (EU) 2023/956",
+   "formula_id": "cbam_phaseout_factor",
+   "scenario_key": "2029",
+   "statute_citation": "Directive 2003/87/EC, Article 10a(1a), second subparagraph (CBAM factor)",
+   "result": 77.5,
+   "result_unit": "% CBAM factor applied to free allocation",
+   "citation": {
+    "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02003L0087-20240301",
+    "title": "Directive 2003/87/EC, consolidated text of 01.03.2024 (EUR-Lex)",
+    "retrieved_at": "2026-10-24",
+    "quote": "77,5 % in 2029"
+   }
+  },
+  {
+   "instrument": "32023R0956",
+   "obligation": "CBAM factor on free allocation under the EU ETS, Directive 2003/87/EC Article 10a(1a), for the application of Regulation (EU) 2023/956",
+   "formula_id": "cbam_phaseout_factor",
+   "scenario_key": "2030",
+   "statute_citation": "Directive 2003/87/EC, Article 10a(1a), second subparagraph (CBAM factor)",
+   "result": 51.5,
+   "result_unit": "% CBAM factor applied to free allocation",
+   "citation": {
+    "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02003L0087-20240301",
+    "title": "Directive 2003/87/EC, consolidated text of 01.03.2024 (EUR-Lex)",
+    "retrieved_at": "2026-10-24",
+    "quote": "51,5 % in 2030"
+   }
+  },
+  {
+   "instrument": "32023R0956",
+   "obligation": "CBAM factor on free allocation under the EU ETS, Directive 2003/87/EC Article 10a(1a), for the application of Regulation (EU) 2023/956",
+   "formula_id": "cbam_phaseout_factor",
+   "scenario_key": "2031",
+   "statute_citation": "Directive 2003/87/EC, Article 10a(1a), second subparagraph (CBAM factor)",
+   "result": 39,
+   "result_unit": "% CBAM factor applied to free allocation",
+   "citation": {
+    "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02003L0087-20240301",
+    "title": "Directive 2003/87/EC, consolidated text of 01.03.2024 (EUR-Lex)",
+    "retrieved_at": "2026-10-24",
+    "quote": "39 % in 2031"
+   }
+  },
+  {
+   "instrument": "32023R0956",
+   "obligation": "CBAM factor on free allocation under the EU ETS, Directive 2003/87/EC Article 10a(1a), for the application of Regulation (EU) 2023/956",
+   "formula_id": "cbam_phaseout_factor",
+   "scenario_key": "2032",
+   "statute_citation": "Directive 2003/87/EC, Article 10a(1a), second subparagraph (CBAM factor)",
+   "result": 26.5,
+   "result_unit": "% CBAM factor applied to free allocation",
+   "citation": {
+    "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02003L0087-20240301",
+    "title": "Directive 2003/87/EC, consolidated text of 01.03.2024 (EUR-Lex)",
+    "retrieved_at": "2026-10-24",
+    "quote": "26,5 % in 2032"
+   }
+  },
+  {
+   "instrument": "32023R0956",
+   "obligation": "CBAM factor on free allocation under the EU ETS, Directive 2003/87/EC Article 10a(1a), for the application of Regulation (EU) 2023/956",
+   "formula_id": "cbam_phaseout_factor",
+   "scenario_key": "2033",
+   "statute_citation": "Directive 2003/87/EC, Article 10a(1a), second subparagraph (CBAM factor)",
+   "result": 14,
+   "result_unit": "% CBAM factor applied to free allocation",
+   "citation": {
+    "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02003L0087-20240301",
+    "title": "Directive 2003/87/EC, consolidated text of 01.03.2024 (EUR-Lex)",
+    "retrieved_at": "2026-10-24",
+    "quote": "14 % in 2033"
+   }
+  },
+  {
+   "instrument": "32023R0956",
+   "obligation": "CBAM definitive period of Regulation (EU) 2023/956",
+   "formula_id": "cbam_definitive_period",
+   "scenario_key": "start_year",
+   "statute_citation": "Regulation (EU) 2023/956, Article 36 (application of Articles 4, 6 to 9, 15, 19 to 27 and 31)",
+   "result": 2026,
+   "result_unit": "calendar year",
+   "citation": {
+    "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32023R0956",
+    "title": "Regulation (EU) 2023/956 CBAM (EUR-Lex)",
+    "retrieved_at": "2026-10-24",
+    "quote": "Articles 21 to 27 and 31 shall apply from 1 January 2026"
+   }
+  },
+  {
+   "instrument": "32023R0956",
+   "obligation": "CBAM definitive period of Regulation (EU) 2023/956",
+   "formula_id": "cbam_definitive_period",
+   "scenario_key": "transitional_end_year",
+   "statute_citation": "Regulation (EU) 2023/956, Article 32 (scope of the transitional period)",
+   "result": 2025,
+   "result_unit": "calendar year",
+   "citation": {
+    "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32023R0956",
+    "title": "Regulation (EU) 2023/956 CBAM (EUR-Lex)",
+    "retrieved_at": "2026-10-24",
+    "quote": "During the transitional period from 1 October 2023 until 31 December 2025"
+   }
+  }
+ ]
+}

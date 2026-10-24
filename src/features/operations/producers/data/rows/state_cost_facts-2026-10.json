@@ -1,0 +1,31 @@
+{
+ "_note": "ARM-2 S5: state fuel excise rates from the state tax authority's own page; each span_text is verbatim in the page's markup (the producer grounds it before the host is rated).",
+ "rows": [
+  {
+   "state_code": "CA",
+   "state_label": "California",
+   "region_code": "US-CA",
+   "dimension": "operational_cost",
+   "unit": "USD per gallon",
+   "effective_date": "2026-07-01",
+   "source_url": "https://cdtfa.ca.gov/taxes-and-fees/fuel-tax-and-fee-guides/diesel-fuel-and-motor-vehicle-fuel-tax/industry-topics.htm",
+   "source_name": "California Department of Tax and Fee Administration, Diesel Fuel and Motor Vehicle Fuel Tax: industry topics",
+   "fact_label": "State diesel fuel excise tax",
+   "value": "0.482",
+   "span_text": "The state diesel fuel excise tax (July 1, 2026, through June 30, 2027) is 48.2 cents ($0.482) per gallon."
+  },
+  {
+   "state_code": "CA",
+   "state_label": "California",
+   "region_code": "US-CA",
+   "dimension": "operational_cost",
+   "unit": "USD per gallon",
+   "effective_date": "2026-07-01",
+   "source_url": "https://cdtfa.ca.gov/taxes-and-fees/fuel-tax-and-fee-guides/diesel-fuel-and-motor-vehicle-fuel-tax/industry-topics.htm",
+   "source_name": "California Department of Tax and Fee Administration, Diesel Fuel and Motor Vehicle Fuel Tax: industry topics",
+   "fact_label": "State motor vehicle fuel excise tax",
+   "value": "0.634",
+   "span_text": "The state motor vehicle fuel tax (July 1, 2026 through June 30, 2027) is 63.4 cents ($0.634) per gallon."
+  }
+ ]
+}

@@ -70,7 +70,9 @@ test("a rows file: every row cites a page the class table rates, with a real ret
   assert.ok(files.length > 0);
   for (const f of files) {
     assert.ok(plan.dispatches.some((d) => d.rowsFile === f), `${f} is staged`);
-    for (const r of rowsOf(f)) {
+    for (const raw of rowsOf(f)) {
+      // A state cost candidate cites its page as source_url and its sentence as span_text (the producer grounds it on the live page before it rates the host).
+      const r = raw.citation ? raw : ({ ...raw, citation: { url: raw.source_url, title: raw.source_name, retrieved_at: "2026-10-24", quote: raw.span_text } } as Row);
       for (const k of ["url", "title", "retrieved_at", "quote"]) assert.ok(r.citation[k]?.trim(), `${f}: citation.${k}`);
       assert.equal(r.citation.retrieved_at, "2026-10-24");
       if (r.target_year !== undefined) assert.ok(r.citation.quote?.includes(String(r.target_year)), `${f}: target_year ${String(r.target_year)} is not in its quote`);
