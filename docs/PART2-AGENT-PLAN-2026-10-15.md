@@ -1,6 +1,6 @@
 # Part 2 agent plan (2026-10-15): building the approved plan with Sonnet and Haiku at Fable's instruction
 
-Governs the execution of docs/plans/rebuild/BUILD-PLAN-2026-10-12.md (approved by the operator 2026-10-15). Fable
+Governs the execution of docs/BUILD-PLAN-2026-10-12.md (approved by the operator 2026-10-15). Fable
 (the coordinator) writes every brief, reads every slice's diff before merge, merges, and rules; Sonnet lanes build;
 Haiku lanes do mechanical work only. Inputs per slice: the module's Part 1 register (section 8 file list, section 7
 file verdicts, the invariants it enforces), ASSEMBLY-INPUTS-2026-10-12.md (interfaces D, duplicates E, defects H),
@@ -47,8 +47,8 @@ Wave 0 (now)
   properties,new-files}.mjs, ci.yml as section 2, schema/schema.sql (H-1's output), README (what the tree is, the
   rules, the proofs), docs/ with BUILD-PLAN and this plan copied in. Proof: `ci` green on the empty tree including
   the schema proof against a fresh Postgres. LOC budget 600.
-- H-1 schema file (Haiku): docs/plans/rebuild/schema-2026-10-12.sql minus the dead objects named in
-  docs/plans/rebuild/part1/schema.md section 8 (by exact object name), plus the additions schema.md lists as SQL
+- H-1 schema file (Haiku): dotfiles/docs/plans/rebuild/schema-2026-10-12.sql minus the dead objects named in
+  dotfiles/docs/plans/rebuild/part1/schema.md section 8 (by exact object name), plus the additions schema.md lists as SQL
   verbatim; counts before and after; the diff as the PR body. Lands as schema/schema.sql in P2-00's branch.
 - H-2 parity baseline (Haiku, in the OLD repo): .github/workflows/parity-baseline.yml, workflow_dispatch, Playwright
   v1.61.1 image, signs in with LIVE_SMOKE_EMAIL/PASSWORD, captures every route in tests/parity/routes.json at 1280
@@ -167,7 +167,7 @@ done better in ANY way let's discuss it")
 
 Every lane report carries an IMPROVEMENTS block: anything the lane saw that could be done better (a mechanism, a
 model, a query, a flow, a design element, a rule), each as `what | why better | cost | what it touches`. Fable
-collects them after each wave into docs/plans/rebuild/IMPROVEMENTS.md with a recommendation per item and brings the
+collects them after each wave into dotfiles/docs/plans/rebuild/IMPROVEMENTS.md with a recommendation per item and brings the
 list to the operator for discussion; none is applied without the operator's word and none is dropped silently.
 Improvements inside a slice's own budget that change no design and no interface (a cleaner algorithm, a missing
 index, a bounded read) are built in and reported, not held.
