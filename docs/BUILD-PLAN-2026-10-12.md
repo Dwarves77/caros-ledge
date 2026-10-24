@@ -1,7 +1,7 @@
 # Caro's Ledge clean-room build plan (2026-10-12)
 
 Assembled by the coordinator from the 26 Part 1 registers under docs/plans/rebuild/part1/ (25 merged; schema.md in
-flight from lane P1-11), docs/plans/rebuild/data-invariants.md (292 invariants), protected-properties.md (179
+flight from lane P1-11), dotfiles/docs/plans/rebuild/data-invariants.md (292 invariants), protected-properties.md (179
 properties), the production schema dump (schema-2026-10-12.sql) and the operator's rulings of 2026-10-11/12. This is
 the document the operator approves before any file exists in the new tree. Module-level figures come from the
 registers' section 2; file-level rows live in each register's section 8 and are not repeated here.
@@ -68,7 +68,7 @@ Each item names the duplicates the registers found across modules and the ONE ho
    src/core/turn/run-turn.ts (stages sweep, change, capture, intake, connect, propagate, briefs) and
    src/core/harness/record.ts (recordRun, chain hand-off, one harness_runs table). Saves ~5,000.
 7. One tier vocabulary. Six versions of the tier contract, a third host-authority table, five copies of hostOf, two
-   URL canonicalisers, two scrape holds (one fails open). New: src/core/sources/tiers.ts reading the institution
+   URL canonicalisers, two scrape holds (one fails open). New: one tier module (planned as sources/tiers.ts, not built under that name) reading the institution
    class table, one hostOf, one canonicaliser, one hold that fails closed. Saves ~1,500.
 8. One source decision. Three copies of approve/reject/defer in admin routes (710 lines), two recommend-classification
    routes sharing 206 lines, a second tier write path (base_tier) beside tier_override. New: one decideSourceCandidate,

@@ -19,6 +19,7 @@
     "tree-checks": "node scripts/ci/tree-checks.mjs",
     "connections": "node scripts/ci/connections.mjs",
     "columns": "node scripts/ci/columns.mjs",
+    "verify:citations": "node scripts/ci/verify-citations.mjs",
     "method-versions": "node scripts/ci/method-versions.mjs",
     "turn": "node scripts/turn.mjs",
     "gates": "node scripts/ci/gates.mjs",

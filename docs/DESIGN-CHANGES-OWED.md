@@ -6,7 +6,7 @@ Where the build departs from an artboard because the system needs something the 
 
 Compiled from the DESIGN CHANGES OWED lists of the merged PR bodies, PR 16 onward (PRs 1 to 15 and 18 to 20, 22, 23, 26, 29, 30, 32 to 35 and 37 carry no list). One row per change; a change several PRs name is one row naming them all. Status of every row below is the ruling of 2026-10-18; see the line under the heading.
 
-Rulings cited: **law 2** is `docs/design/ux-laws.md` law 2 (interactive targets) and the operator's 2026-10-16 standard of 44 px on every control; **INV-262** every headline figure carries its source's rating; **INV-263** a failed read is stated with Retry, never an empty list or a zero; **ruling 10** is BUILD-PLAN-2026-10-12 ruling 10 (the five fact-document sections that never displayed now do); **rule 2** never fabricate (no number where none is known).
+Rulings cited: **law 2** is `dotfiles/docs/design/ux-laws.md` law 2 (interactive targets) and the operator's 2026-10-16 standard of 44 px on every control; **INV-262** every headline figure carries its source's rating; **INV-263** a failed read is stated with Retry, never an empty list or a zero; **ruling 10** is BUILD-PLAN-2026-10-12 ruling 10 (the five fact-document sections that never displayed now do); **rule 2** never fabricate (no number where none is known).
 
 | # | PR | artboard | what the build does that the artboard does not draw | ruling | status |
 |---|---|---|---|---|---|
