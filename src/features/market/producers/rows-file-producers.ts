@@ -6,7 +6,7 @@
 // host is rated by the class table; a figure whose source cannot be rated is refused by name; an entity is resolved by exact canonical name and never minted. With no
 // rows file the run records the gap and writes nothing (INV-121).
 import { fetchAllRows, type Db } from "@/core/db";
-import { entitiesByKind } from "@/core/entities";
+import { entitiesByKind, entityId, planOrganisation, planOrganisationFkUpdates } from "@/core/entities";
 import { loadRowsFile, registerCitedSource, requireCitation, resolveEntityByName, RowsFileError, type Citation } from "@/core/producers/rows-file";
 import type { ParseOut, ProducerCtx, ProducerSpec } from "@/core/producers/runner";
 import { keyOf, type Rec } from "@/core/producers/upsert-plan";
@@ -43,12 +43,15 @@ function parseOemRoadmapRow(row: Rec, i: number, manufacturers: readonly Entity[
   const derivation = (row.derivation as string | undefined) ?? "observed";
   oneOf(derivation, DERIVATIONS, "derivation", where, i);
   if (row.confidence_admiralty != null && !/^[A-F][1-6]$/.test(String(row.confidence_admiralty))) throw new RowsFileError(`${where}: row[${i}].confidence_admiralty "${row.confidence_admiralty}" must match ^[A-F][1-6]$.`);
-  const manufacturerId = resolveEntityByName(manufacturers, String(row.manufacturer_name));
+  const known = resolveEntityByName(manufacturers, String(row.manufacturer_name));
+  // A manufacturer named by its own rated citation host is minted on apply by the organisation path (mintOrganisation); any other unknown name is refused.
+  const minted = !known && hostOf(citation.url) === String(row.manufacturer_name);
+  const manufacturerId = known ?? (minted ? entityId("organisation", String(row.manufacturer_name)) : null);
   if (!manufacturerId) return refuse(`row[${i}]: manufacturer "${row.manufacturer_name}" not found in the live entities(kind='organisation') spine; minting one is out of this producer's write set.`);
   return {
     refused: false,
     citation,
-    dbRow: { manufacturer_id: manufacturerId, tech_category: row.tech_category, commercial_stage: row.commercial_stage, target_year: row.target_year ?? null, energy_density_wh_kg: row.energy_density_wh_kg ?? null, density_basis: row.density_basis ?? null, c_rate_max: row.c_rate_max ?? null, usable_kwh: row.usable_kwh ?? null, announced_at: row.announced_at, source_id: null, origin_class: origin, derivation, confidence_admiralty: row.confidence_admiralty ?? null },
+    dbRow: { manufacturer_id: manufacturerId, tech_category: row.tech_category, commercial_stage: row.commercial_stage, target_year: row.target_year ?? null, energy_density_wh_kg: row.energy_density_wh_kg ?? null, density_basis: row.density_basis ?? null, c_rate_max: row.c_rate_max ?? null, usable_kwh: row.usable_kwh ?? null, announced_at: row.announced_at, source_id: null, origin_class: origin, derivation, confidence_admiralty: row.confidence_admiralty ?? null, ...(minted ? { __mint: citation.url } : {}) },
   };
 }
 
@@ -96,14 +99,30 @@ async function readEntities(sb: Db | null, kind: string): Promise<Entity[]> {
   return sb ? entitiesByKind(sb, kind) : [];
 }
 
+/** The existing organisation path (planOrganisation: the entity and its HOST identifier, then the source row's organisation_entity_id) for a manufacturer whose name is its rated citation host; never a hand-typed entity row, and a second call finds it held. */
+async function mintOrganisation(sb: Db, url: string, sourceId: string, now: Date): Promise<void> {
+  const id = entityId("organisation", hostOf(url) as string);
+  const [ents, idents] = await Promise.all([sb.from("entities").select("entity_id").eq("entity_id", id), sb.from("entity_identifiers").select("entity_id, scheme, value").eq("entity_id", id)]);
+  for (const r of [ents, idents]) if (r.error) throw new Error(`reading the organisation ${id} failed: ${r.error.message}`);
+  const plan = planOrganisation([url], { existingEntityIds: new Set((ents.data ?? []).map((e) => e.entity_id)), existingIdentifierKeys: new Set((idents.data ?? []).map((i) => `${i.entity_id}|${i.scheme}|${i.value}`)), assertedBy: "producer:rows-file", now });
+  for (const [table, list] of [["entities", plan.entities], ["entity_identifiers", plan.identifiers]] as const) {
+    const { error } = list.length ? await sb.from(table).insert(list as never) : { error: null };
+    if (error) throw new Error(`insert into ${table} failed: ${error.message}`);
+  }
+  for (const u of planOrganisationFkUpdates([{ id: sourceId, url }], plan.byHost)) {
+    const { error } = await sb.from("sources").update({ organisation_entity_id: u.organisation_entity_id }).eq("id", u.id).is("organisation_entity_id", null);
+    if (error) throw new Error(`linking source ${u.id} to its organisation failed: ${error.message}`);
+  }
+}
+
 /** The one rows-file driver: parse every row (a bad row is refused by name, never fatal to the others), rate the citation host, insert only rows not already present. */
 function rowsFileSpec(def: RowsFileDef): ProducerSpec {
   return {
     name: def.name,
     table: def.table,
     licenceKey: null,
-    enabled: false,
-    enabledRuling: "operator 2026-10-04: no data population before every build layer is complete; the driver is proven on fixtures",
+    enabled: true,
+    enabledRuling: "operator 2026-10-23: population hold lifted for the structured-data producers (ADR-023 code change; rulings file 2026-10-23 and 2026-10-24)",
     killSwitchEnv: def.killSwitchEnv,
     gap: def.gap,
     async fetchDoc() {
@@ -140,11 +159,14 @@ function rowsFileSpec(def: RowsFileDef): ProducerSpec {
       const kept: Rec[] = [];
       const refused: string[] = [];
       for (const row of rows) {
-        const { __i, ...dbRow } = row as Rec & { __i: number };
+        const { __i, __mint, ...dbRow } = row as Rec & { __i: number; __mint?: string };
         const c = citations[String(__i)] as Citation;
         const reg = await registerCitedSource(c, { sb: ctx.sb });
         if (reg.refused) refused.push(`row[${__i}]: citation refused: ${reg.reason}`);
-        else kept.push(def.storesSource ? { ...dbRow, source_id: reg.source_id } : dbRow);
+        else {
+          if (__mint) await mintOrganisation(ctx.sb as Db, __mint, reg.source_id, ctx.now());
+          kept.push(def.storesSource ? { ...dbRow, source_id: reg.source_id } : dbRow);
+        }
       }
       return { rows: kept, refused };
     },

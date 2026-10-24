@@ -87,8 +87,8 @@ export const publishedPriceStatistics: ProducerSpec = {
   name: "refresh-published-price-statistics",
   table: "published_price_statistics",
   licenceKey: null,
-  enabled: false,
-  enabledRuling: "operator 2026-10-04: no data population before every build layer is complete",
+  enabled: true,
+  enabledRuling: "operator 2026-10-23: population hold lifted for the structured-data producers (ADR-023 code change; rulings file 2026-10-23 and 2026-10-24)",
   killSwitchEnv: "MARKET_PRODUCER_PUBLISHED_STATS_ENABLED",
   /** A dry run reads nothing (it has no database); an apply reads the ratified attachments from market_series_items and the observations of those series from market_series. An absent table throws, so the run is "failed" and mints nothing. */
   async fetchDoc(ctx: ProducerCtx) {

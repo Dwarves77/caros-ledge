@@ -1,6 +1,6 @@
 // Ported from old_repo/scripts/producers/regional/neso-carbon-intensity-producer.mjs (lines 12-176)
 // NESO Carbon Intensity API: the last 14 complete days of GB daily-average grid intensity into regional_data_facts (dimension grid_intensity), envelope first
-// (coordinator ruling A, 2026-10-08). Blocks must be midnight-to-midnight; a misaligned block is skipped by name. HELD: enabled false.
+// (coordinator ruling A, 2026-10-08). Blocks must be midnight-to-midnight; a misaligned block is skipped by name. Armed 2026-10-23 (the licence gate and the kill switch still decide a write).
 import { fetchAllRows, type Db } from "@/core/db";
 import { registerCitedSource } from "@/core/producers/rows-file";
 import type { ParseOut, ProducerCtx, ProducerSpec } from "@/core/producers/runner";
@@ -50,8 +50,8 @@ export const nesoCarbonIntensity: ProducerSpec = {
   name: "neso-carbon-intensity",
   table: "regional_data_facts",
   licenceKey: "neso_carbon_intensity",
-  enabled: false,
-  enabledRuling: "coordinator ruling A (2026-10-08) holds it; no population before every build layer (2026-10-04)",
+  enabled: true,
+  enabledRuling: "operator 2026-10-23: population hold lifted for the structured-data producers (ADR-023 code change; rulings file 2026-10-23 and 2026-10-24)",
   killSwitchEnv: "REGIONAL_PRODUCER_NESO_CARBON_INTENSITY_ENABLED",
   async fetchDoc(ctx: ProducerCtx) {
     return { text: await (await ctx.get(buildUrl(ctx.now()), { headers: { accept: "application/json" } })).text() };

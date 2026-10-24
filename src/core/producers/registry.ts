@@ -9,7 +9,7 @@ import { runResult, type RunResult } from "@/core/intake/result";
 
 import raw from "./data/registry.json";
 import type { ProducerDeps } from "./deps";
-import { runProducer, type ProducerSpec } from "./runner";
+import { runProducer, type ProducerSpec, type RunInput } from "./runner";
 
 const entry = z
   .object({
@@ -72,7 +72,7 @@ export function selectRuns(entries: readonly RegistryEntry[], sel: { producer: s
  * Run the selected producers in registry order, in-process, stopping at the first failed one. The entity a run stamps comes from its registry entry ONLY: an
  * ambient entity in the caller's environment never reaches an entry that declares none. Dry unless `mode` is "apply".
  */
-export async function runRegistered(deps: ProducerDeps, o: { catalog: Catalog; producer?: string; only?: string | undefined; mode?: "dry" | "apply"; since?: string | null; entries?: readonly RegistryEntry[] }): Promise<RunResult> {
+export async function runRegistered(deps: ProducerDeps, o: { catalog: Catalog; producer?: string; only?: string | undefined; mode?: "dry" | "apply"; since?: string | null; entries?: readonly RegistryEntry[]; input?: Pick<RunInput, "text" | "orgId"> }): Promise<RunResult> {
   let runs: RegistryEntry[];
   try {
     runs = selectRuns(o.entries ?? loadProducerRegistry(o.catalog), { producer: o.producer ?? "all", only: o.only });
@@ -84,7 +84,7 @@ export async function runRegistered(deps: ProducerDeps, o: { catalog: Catalog; p
   let outcome: RunResult["outcome"] = "ok";
   for (const e of runs) {
     const spec = (o.catalog as Record<string, ProducerSpec>)[e.name] as ProducerSpec;
-    const res = await runProducer(deps, { spec, dry: o.mode !== "apply", since: e.accepts_since ? (o.since ?? null) : null, entityId: e.entity_id ?? null });
+    const res = await runProducer(deps, { spec, dry: o.mode !== "apply", since: e.accepts_since ? (o.since ?? null) : null, entityId: e.entity_id ?? null, ...(o.input ?? {}) });
     counts.ran = (counts.ran ?? 0) + 1;
     counts[`${e.name}.parsed`] = res.counts.parsed ?? 0;
     notes.push(...res.notes);

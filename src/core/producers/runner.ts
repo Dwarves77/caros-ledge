@@ -5,7 +5,7 @@
 // Ported from old_repo/scripts/producers/oem/eea-hdv-co2-producer.mjs (lines 49-57)
 // ONE runner replacing the thirteen CLI skeletons: dry by default, kill switch read first, licence gate, credentials, truncation; every dependency injected.
 import type { Db } from "@/core/db";
-import { SOURCE_LICENCES, licenceGate } from "@/core/contracts";
+import { licenceGate } from "@/core/contracts";
 import { runResult, type RunResult } from "@/core/intake/result";
 
 import type { FetchFn, ProducerDeps } from "./deps";
@@ -136,12 +136,11 @@ export interface ProducerSpec<R extends Rec = Rec> {
   after?(ctx: ProducerCtx, written: { rows: R[]; created: R[]; updated: Rec[] }): Promise<Record<string, number>>;
 }
 
-/** The licence block of a spec: an explicit one, else the register's refusal for a source it records as prohibited. */
+/** The licence block of a spec: an explicit one, else the register's refusal for any source whose verdict is not `permitted` (conditional, unverified, prohibited or unregistered: INV-ARM-1). A file-fed spec names no key. */
 function licenceBlockOf(spec: Pick<ProducerSpec, "licenceKey" | "licenceBlock">): string | null {
   if (spec.licenceBlock) return spec.licenceBlock;
-  if (!spec.licenceKey || SOURCE_LICENCES[spec.licenceKey]?.redistribution !== "prohibited") return null;
-  const g = licenceGate(spec.licenceKey);
-  return g.ok ? null : g.reason;
+  const g = spec.licenceKey ? licenceGate(spec.licenceKey) : null;
+  return g && !g.ok ? g.reason : null;
 }
 
 const errMsg = (e: unknown): string => (e instanceof Error ? e.message : String(e));

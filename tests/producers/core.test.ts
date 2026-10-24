@@ -81,12 +81,12 @@ test("INV-046: the kill switch (and every gate) is read BEFORE the first fetch: 
   assert.equal(mem.writes.length, 0);
 });
 
-test("INV-245: a prohibited-redistribution source (the register's sbti_dashboard) is licence-blocked whatever the other gates say; an unregistered or permitted key is not", async () => {
+test("INV-245: a prohibited-redistribution source (the register's sbti_dashboard) is licence-blocked whatever the other gates say; a permitted key or no key is not (an unregistered key is refused too: INV-ARM-1, tests/producers/arm.test.ts)", async () => {
   const gate = async (licenceKey: string | null) => runProducer(makeDeps({ env: { T_ON: "1" } }).deps, { spec: spec({ licenceKey }), dry: false, text: "doc" });
   const prohibited = await gate("sbti_dashboard");
   assert.equal(prohibited.outcome, "failed");
   assert.match(prohibited.notes[0] as string, /prohibited/);
-  for (const open of ["eia", null, "nope_not_registered"]) assert.equal((await gate(open)).outcome, "ok", String(open));
+  for (const open of ["eia", null]) assert.equal((await gate(open)).outcome, "ok", String(open));
 });
 
 test("an apply that passes every gate writes through the keyed plan, records the run once, and a missing key (the EIA free key) is a credentials refusal", async () => {
@@ -168,7 +168,7 @@ test("the keyed planner across the four key shapes: create what is new, patch on
 });
 
 test("the registry: closed field set, duplicates and a bad entity id refused, selection by all / registry / only, an entry that disagrees with its spec refused", () => {
-  assert.equal(loadProducerRegistry().length, 6);
+  assert.equal(loadProducerRegistry().length, 17);
   const base = { name: "a-b", domain_table: "market_series", source: "s", licence: "l", dry_capable: true, enabled_env: "A_B", in_all: true };
   assert.throws(() => loadProducerRegistry(undefined, [base, base]), /duplicate/);
   assert.throws(() => loadProducerRegistry(undefined, [{ ...base, extra: 1 }]));

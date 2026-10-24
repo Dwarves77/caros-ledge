@@ -190,7 +190,7 @@ test("state cost facts: grounded verbatim before rated, refused by name otherwis
   assert.match(t, /refused_ungrounded: no span_text supplied/);
   const db = memoryDb({ regions: [{ id: "r-ca", code: "US-CA" }] });
   const d = makeDeps({ db, routes, env: {} });
-  const held = await runProducer(d.deps, { spec: stateCostFacts, dry: false, text: JSON.stringify([cand()]) });
+  const held = await runProducer(d.deps, { spec: { ...stateCostFacts, enabled: false }, dry: false, text: JSON.stringify([cand()]) });
   assert.match(held.notes[0] as string, /ENABLED constant is false/);
   const r = await runProducer(d.deps, { spec: ON(stateCostFacts), dry: false, text: JSON.stringify([cand()]) });
   assert.equal(r.outcome, "ok", r.notes.join("|"));

@@ -73,8 +73,8 @@ export const ukpnHeatmap: ProducerSpec = {
   name: "ukpn-capacity-heatmap",
   table: "grid_connection_queues",
   licenceKey: null,
-  enabled: false,
-  enabledRuling: "operator 2026-10-04: no data population before every build layer is complete (ADR-023: flipping this is a reviewed code change)",
+  enabled: true,
+  enabledRuling: "operator 2026-10-23: population hold lifted for the structured-data producers (ADR-023 code change; rulings file 2026-10-23 and 2026-10-24)",
   killSwitchEnv: "OPERATIONS_PRODUCER_UKPN_HEATMAP_ENABLED",
   /** The document is `{ meta, files: [{ title, json }] }`: fetched from the portal catalogue, or injected as recorded input. */
   async fetchDoc(ctx: ProducerCtx) {
