@@ -72,7 +72,7 @@ function mapHeatmapFile(file: Rec, o: { sourceId?: string | null } = {}) {
 export const ukpnHeatmap: ProducerSpec = {
   name: "ukpn-capacity-heatmap",
   table: "grid_connection_queues",
-  licenceKey: null,
+  licenceKey: "ukpn_ltds_capacity_heatmap",
   enabled: true,
   enabledRuling: "operator 2026-10-23: population hold lifted for the structured-data producers (ADR-023 code change; rulings file 2026-10-23 and 2026-10-24)",
   killSwitchEnv: "OPERATIONS_PRODUCER_UKPN_HEATMAP_ENABLED",
