@@ -28,12 +28,14 @@ const ROWS_FILE = /^src\/features\/(?:market|operations|statutory)\/producers\/d
 export interface PropagatePlan {
   producers: { producer: string; only: string | undefined; rowsFile: string | undefined; orgId: string | undefined } | null;
   batch: number | undefined;
+  /** The operator ruling that carries ONE run past the closed fetch gate (rule 16 stays: nothing in system_state changes); empty when none. */
+  exception: string;
 }
 function planPropagate(input: Record<string, unknown>): PropagatePlan {
   const p = input.producers && typeof input.producers === "object" ? (input.producers as Record<string, unknown>) : input.producers === true ? {} : null;
   const only = typeof p?.only === "string" ? p.only : undefined;
   const str = (v: unknown) => (typeof v === "string" ? v : undefined);
-  return { producers: p ? { producer: only ? "registry" : str(p.producer) ?? "all", only, rowsFile: str(p.rowsFile), orgId: str(p.orgId) } : null, batch: typeof input.batch === "number" ? input.batch : undefined };
+  return { producers: p ? { producer: only ? "registry" : str(p.producer) ?? "all", only, rowsFile: str(p.rowsFile), orgId: str(p.orgId) } : null, batch: typeof input.batch === "number" ? input.batch : undefined, exception: str(input.cadence_exception)?.trim() ?? "" };
 }
 
 /** The ids of the items among the drained events: their research assessments are re-scored (IMP-055). Pure. */
@@ -57,18 +59,21 @@ export function shapePropagate(parts: { producers: RunResult | null; drain: RunR
   return { ...runResult(outcome, counts, notes), data: { ids: { drained_event_ids: events.map((e) => String(e.eventId)), reassessed_item_ids: [...itemIds], scored_item_ids: parts.impact?.data?.ids.scored_item_ids ?? [] } } };
 }
 
-/** A producer run fetches its document, dry or not, so it runs only while the fetch gate is open (the analysis stages apply with the cadence off; fetching is what rule 16 holds); with the cadence off it is planned (selected and named), never fetched. */
-async function runProducers(call: FamilyCall, d: BuiltDeps, p: NonNullable<PropagatePlan["producers"]>): Promise<RunResult> {
-  if (await d.gate.refresh()) {
+/** A producer run fetches its document, dry or not, so it runs only while the fetch gate is open (the analysis stages apply with the cadence off; fetching is what rule 16 holds); with the cadence off it is planned (selected and named), never fetched. A named ruling opens the gate for an APPLY call only; a dry call records it and fetches nothing. */
+async function runProducers(call: FamilyCall, d: BuiltDeps, p: NonNullable<PropagatePlan["producers"]>, exception: string): Promise<RunResult> {
+  const ruled = !call.dry && exception !== "";
+  const covered = (): string => { try { return selectRuns(loadProducerRegistry(d.catalog), { producer: p.producer, only: p.only }).map((e) => e.name).join(", "); } catch { return p.only ?? p.producer; } };
+  const ruling = exception ? [`cadence exception ${ruled ? "in force for this call only" : "recorded (dry: nothing fetched)"}: "${exception}"; producers covered: ${covered()}`] : [];
+  if ((await d.gate.refresh()) || ruled) {
     if (p.rowsFile && !ROWS_FILE.test(p.rowsFile)) return runResult("failed", { refused: 1 }, [`refused: rowsFile "${p.rowsFile}" is not a file under a producer's data/rows directory`]);
     const text = p.rowsFile ? readFileSync(p.rowsFile, "utf8") : undefined;
-    const cited = text !== undefined && !call.dry ? await captureCited(d, citedPages(text)) : null;
+    const cited = text !== undefined && !call.dry ? await captureCited(d, citedPages(text), ruled) : null;
     const r = await runRegistered(d.producers, { catalog: d.catalog, producer: p.producer, only: p.only, mode: call.mode, ...(text !== undefined ? { input: { text, ...(p.orgId ? { orgId: p.orgId } : {}) } } : {}) });
-    return cited ? { ...r, counts: { ...r.counts, ...pick(cited, "capture_") }, notes: [...cited.notes, ...r.notes] } : r;
+    return { ...r, counts: { ...r.counts, ...(cited ? pick(cited, "capture_") : {}), ...(ruled ? { cadence_exception: 1 } : {}) }, notes: [...ruling, ...(cited?.notes ?? []), ...r.notes] };
   }
   try {
     const picked = selectRuns(loadProducerRegistry(d.catalog), { producer: p.producer, only: p.only });
-    return runResult("ok", { selected: picked.length }, [`dry: ${picked.map((e) => e.name).join(", ") || "no producer"} planned, not fetched: the fetch gate is closed`]);
+    return runResult("ok", { selected: picked.length }, [`dry: ${picked.map((e) => e.name).join(", ") || "no producer"} planned, not fetched: the fetch gate is closed`, ...ruling]);
   } catch (e) {
     return runResult("failed", { selected: 0 }, [e instanceof Error ? e.message : String(e)]);
   }
@@ -77,7 +82,7 @@ async function runProducers(call: FamilyCall, d: BuiltDeps, p: NonNullable<Propa
 export async function runPropagate(call: FamilyCall, d: BuiltDeps): Promise<RunResult> {
   const plan = planPropagate(call.input);
   const sb = d.sb;
-  const producers = plan.producers ? await runProducers(call, d, plan.producers) : null;
+  const producers = plan.producers ? await runProducers(call, d, plan.producers, plan.exception) : null;
   const drain = await runPropagationDrain({ sb, now: d.now, registry: d.registry, reopenQuestion: reopener(sb, d.learning) }, { dry: call.dry, caller: PROPAGATE_CALLER, ...(plan.batch ? { batch: plan.batch } : {}) });
   if (drain.outcome === "failed" && !drain.data?.eventsConsidered && drain.notes.length) return drain;
   const events = drain.data?.processedEvents ?? [];

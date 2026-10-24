@@ -48,6 +48,9 @@ on:
       chain:
         description: 'Run the stage downstream stages too (false runs only the named stage)'
         default: 'true'
+      producer_env:
+        description: 'Turn job: comma-separated NAME=1 pairs for producer kill switches, this run only (each NAME must end in _ENABLED; anything else fails the run)'
+        default: ''
   status:
 
 permissions:
@@ -153,6 +156,17 @@ jobs:
       - run: npm ci --no-audit --ignore-scripts
       - name: Playwright Chromium (the headless transport runs on the runner)
         run: npx playwright install --with-deps chromium
+      - name: Producer kill switches (this run only)
+        env:
+          PRODUCER_ENV: ${{ github.event.inputs.producer_env }}
+        run: |
+          IFS=',' read -r -d '' -a pairs < <(printf %s "$PRODUCER_ENV") || true
+          for pair in "${pairs[@]}"; do
+            pair="${pair// /}"
+            [ -n "$pair" ] || continue
+            [[ "$pair" =~ ^[A-Z0-9_]+_ENABLED=1$ ]] || { echo "::error::producer_env: '$pair' is not NAME_ENABLED=1"; exit 1; }
+            echo "$pair" >> "$GITHUB_ENV"
+          done
       - name: Turn
         env:
           TURN_STAGE: ${{ github.event.inputs.stage }}

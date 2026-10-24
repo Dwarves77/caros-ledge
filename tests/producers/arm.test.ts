@@ -12,9 +12,9 @@ import { citedPages } from "@/core/producers/rows-file";
 import { runProducer, type ProducerSpec } from "@/core/producers/runner";
 import { hostOf } from "@/core/shared";
 import { classTierForHost } from "@/core/sources";
-import { runPropagate } from "@/core/turn";
+import { runPropagate, runTurn } from "@/core/turn";
 
-import { fixture } from "../integration/world.ts";
+import { fixture, NOW } from "../integration/world.ts";
 
 import { makeDeps } from "./support.ts";
 
@@ -73,6 +73,7 @@ test("a rows file: every row cites a page the class table rates, with a real ret
     for (const r of rowsOf(f)) {
       for (const k of ["url", "title", "retrieved_at", "quote"]) assert.ok(r.citation[k]?.trim(), `${f}: citation.${k}`);
       assert.equal(r.citation.retrieved_at, "2026-10-24");
+      if (r.target_year !== undefined) assert.ok(r.citation.quote?.includes(String(r.target_year)), `${f}: target_year ${String(r.target_year)} is not in its quote`);
       assert.notEqual(classTierForHost(hostOf(r.citation.url as string) as string, r.citation.title), null, r.citation.url);
     }
   }
@@ -114,4 +115,81 @@ test("a page that refuses capture leaves its rows refused by name and nothing wr
   assert.match(r.notes.join("|"), /quote_not_in_capture/);
   const out = await runPropagate(call({ input: { producers: { only: "oem-roadmap-rows", rowsFile: "package.json" } } }), f.d);
   assert.match(out.notes.join("|"), /not a file under a producer's data\/rows directory/);
+});
+
+test("a manufacturer named by its rated citation host is minted once by the organisation path on apply (entity, HOST identifier, the source linked) and the row resolves; a dry run mints nothing", async () => {
+  const rows = rowsOf(OEM);
+  const hosts = [...new Set(rows.map((r) => r.manufacturer_name as string))];
+  const unknown = "neste.com";
+  assert.ok(hosts.includes(unknown));
+  const pages = new Map<string, string>();
+  for (const r of rows) pages.set(r.citation.url as string, `${pages.get(r.citation.url as string) ?? ""}
+${r.citation.quote}`);
+  const filler = "Notice. This page is provided for information and is reproduced here for the fixture. ".repeat(20);
+  const routes = Object.fromEntries([...pages].map(([url, quote]) => [url, () => new Response(`${filler}
+${quote}
+${filler}`, { status: 200, headers: { "content-type": "text/plain; charset=utf-8" } })]));
+  const f = fixture({ routes });
+  Object.assign(f.d.producers.env, { OEM_PRODUCER_ROWS_FILE_ENABLED: "1" });
+  f.db.seed("entities", hosts.filter((h) => h !== unknown).map((m, i) => ({ entity_id: `cl:organisation:${String(i).padStart(16, "0")}`, kind: "organisation", canonical_name: m })));
+  const input = { producers: { only: "oem-roadmap-rows", rowsFile: OEM } };
+  const dry = await runPropagate(call({ mode: "dry", dry: true, input }), f.d);
+  assert.equal(dry.counts["producers_oem-roadmap-rows.parsed"], rows.length, "the unknown host parses as a row to be minted");
+  assert.equal(f.db.rows("entities").filter((e) => e.kind === "organisation").length, hosts.length - 1, "dry mints nothing");
+  await runPropagate(call({ input }), f.d);
+  const orgs = f.db.rows("entities").filter((e) => e.kind === "organisation");
+  assert.equal(orgs.length, hosts.length, "exactly one organisation entity was minted");
+  const minted = orgs.find((e) => e.canonical_name === unknown);
+  assert.ok(minted);
+  assert.equal(f.db.rows("entity_identifiers").filter((i) => i.entity_id === minted.entity_id && i.scheme === "HOST" && i.value === unknown).length, 1);
+  assert.ok(f.db.rows("sources").some((s) => s.organisation_entity_id === minted.entity_id), "the rated source is linked to the minted organisation");
+  assert.equal(f.db.rows("oem_tech_roadmaps").length, rows.length);
+  assert.ok(f.db.rows("oem_tech_roadmaps").some((r) => r.manufacturer_id === minted.entity_id));
+  await runPropagate(call({ input }), f.d);
+  assert.equal(f.db.rows("entities").filter((e) => e.kind === "organisation").length, hosts.length, "a second apply mints nothing");
+});
+
+const RULING = "operator 2026-10-23 ruling 1: population hold lifted for the structured-data producers (rulings-2026-10-11.md)";
+const turn = (f: ReturnType<typeof fixture>, mode: "dry" | "apply", propagate: Record<string, unknown>) => runTurn({ stage: "propagate", mode, chain: false, input: { propagate } }, { d: f.d, env: {}, now: () => NOW });
+const ECB = "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml";
+
+test("a cadence exception carries one ruling into one apply run: without it the producers step stays planned, with it the producer fetches and the ledger row records the text and the producers covered; a dry call only records it; system_state is never touched", async () => {
+  const closed = fixture({ cadence: "off" });
+  const before = JSON.stringify(closed.db.rows("system_state"));
+  await turn(closed, "apply", { producers: { only: "ecb-fx" } });
+  assert.equal(closed.requests.urls.length, 0, "no exception: planned, not fetched");
+  await turn(closed, "apply", { producers: { only: "ecb-fx" }, cadence_exception: "   " });
+  assert.equal(closed.requests.urls.length, 0, "a blank exception is none");
+  await turn(closed, "dry", { producers: { only: "ecb-fx" }, cadence_exception: RULING });
+  assert.equal(closed.requests.urls.length, 0, "dry: recorded, nothing fetches");
+  const dryRow = closed.db.rows("harness_runs").find((r) => r.family === "propagation" && r.mode === "dry" && (r.inputs as Record<string, unknown>).cadence_exception === RULING);
+  assert.match(JSON.stringify(dryRow?.outputs), /cadence exception recorded \(dry: nothing fetched\)/);
+  const r = await turn(closed, "apply", { producers: { only: "ecb-fx" }, cadence_exception: RULING });
+  assert.ok(closed.requests.urls.includes(ECB), "the ruled apply fetched");
+  const row = closed.db.rows("harness_runs").find((x) => x.family === "propagation" && x.mode === "apply" && (x.inputs as Record<string, unknown>).cadence_exception === RULING);
+  assert.ok(row, "the ledger row carries the ruling in its inputs");
+  assert.match(JSON.stringify(row?.outputs), /cadence exception in force for this call only: .*operator 2026-10-23 ruling 1.*producers covered: ecb-fx/);
+  assert.equal(r.runs.length, 1);
+  assert.equal(JSON.stringify(closed.db.rows("system_state")), before, "the exception never changes system_state");
+  assert.equal(closed.db.rows("system_state")[0]?.scrape_cadence, "off");
+});
+
+test("a ruled apply under a closed gate also captures the cited pages, so a rows file lands with its quotes verified", async () => {
+  const rows = rowsOf(OEM);
+  const pages = new Map<string, string>();
+  for (const r of rows) pages.set(r.citation.url as string, `${pages.get(r.citation.url as string) ?? ""}
+${r.citation.quote}`);
+  const filler = "Notice. This page is provided for information and is reproduced here for the fixture. ".repeat(20);
+  const routes = Object.fromEntries([...pages].map(([url, quote]) => [url, () => new Response(`${filler}
+${quote}
+${filler}`, { status: 200, headers: { "content-type": "text/plain; charset=utf-8" } })]));
+  const f = fixture({ cadence: "off", routes });
+  Object.assign(f.d.producers.env, { OEM_PRODUCER_ROWS_FILE_ENABLED: "1" });
+  const none = await turn(f, "apply", { producers: { only: "oem-roadmap-rows", rowsFile: OEM } });
+  assert.equal(none.exit, 0);
+  assert.equal(f.db.rows("oem_tech_roadmaps").length, 0, "closed gate, no exception: nothing captured, nothing written");
+  assert.equal(f.requests.urls.length, 0);
+  await turn(f, "apply", { producers: { only: "oem-roadmap-rows", rowsFile: OEM }, cadence_exception: RULING });
+  assert.equal(f.db.rows("oem_tech_roadmaps").length, rows.length);
+  assert.equal(f.db.rows("system_state")[0]?.scrape_cadence, "off");
 });

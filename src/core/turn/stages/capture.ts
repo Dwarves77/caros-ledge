@@ -36,12 +36,14 @@ export function shapeCapture(reports: readonly Report[], queued: number): RunRes
 }
 
 /** Rule 17 for a reviewed rows file: each cited page is rated through the class table, captured by the one capture path and stored by the one writer, so the producer's quote check (acceptStoredQuote) finds the capture it verifies against. Never fetches a page twice for one hash. */
-export async function captureCited(d: BuiltDeps, cited: readonly { url: string; title: string }[]): Promise<RunResult> {
+export async function captureCited(d: BuiltDeps, cited: readonly { url: string; title: string }[], ruled = false): Promise<RunResult> {
+  // A ruled run (an operator dispatch carrying a cadence exception) fetches as the manual run: the one signed caller of an operator-fired run, so the hold's two doors stay two.
+  const fetchDeps = ruled ? { ...d.fetch, caller: "manual-intake-run" } : d.fetch;
   const counts = { cited: cited.length, captured: 0, unchanged: 0, failed: 0 };
   const notes: string[] = [];
   for (const { url, title } of cited) {
     const rated = await registerAndRate(d.sb, url, { name: title });
-    const got = "source_id" in rated ? await capture(url, {}, d.fetch) : null;
+    const got = "source_id" in rated ? await capture(url, {}, fetchDeps) : null;
     if (!got?.usable || !got.text || !("source_id" in rated)) {
       counts.failed += 1;
       notes.push(`${url}: ${"source_id" in rated ? (got?.holdReason ?? "no usable capture") : `not registered (${rated.status})`}`);
