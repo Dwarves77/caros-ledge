@@ -6,6 +6,7 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { test } from "node:test";
 
 import { licenceGate } from "@/core/contracts";
+import { entityId } from "@/core/entities";
 import { citedPages } from "@/core/producers/rows-file";
 import { runProducer, type ProducerSpec } from "@/core/producers/runner";
 import { captureCited } from "@/core/turn/stages/capture";
@@ -65,6 +66,32 @@ test("S1: the statutory schedules parse dry with no refusal, then apply writes o
   }
   assert.equal(f.db.rows("entity_identifiers").filter((i) => i.scheme === "CELEX").length, 4, "the four instruments, authored by the instrument path");
   assert.ok(written.every((r) => f.db.rows("entities").some((e) => e.entity_id === r.obligation_id && e.kind === "obligation")));
+});
+
+test("S1 links a schedule row to the obligation its instrument already holds for the cited article (the current version), mints one only where none exists, and a second apply mints nothing", async () => {
+  const rows = rowsOf(STAT);
+  const f = fixture({ routes: routesFor(rows) });
+  Object.assign(f.d.producers.env, { STATUTORY_PRODUCER_SCHEDULES_ENABLED: "1" });
+  const [ets, cbam] = [entityId("instrument", "32003L0087"), entityId("instrument", "32023R0956")];
+  const held = (o: Record<string, unknown>) => ({ version: 1, supersedes: null, ...o });
+  f.db.seed("obligation_objects", [
+    held({ obligation_id: "cl:obligation:00000000000000a1", instrument_entity_id: ets, pinpoint_citation: "Article 3gb" }),
+    held({ obligation_id: "cl:obligation:00000000000000b1", instrument_entity_id: cbam, pinpoint_citation: "Article 32" }),
+    held({ obligation_id: "cl:obligation:00000000000000b2", instrument_entity_id: cbam, pinpoint_citation: "Article 32", version: 2, supersedes: "cl:obligation:00000000000000b1" }),
+    held({ obligation_id: "cl:obligation:00000000000000c1", instrument_entity_id: ets, pinpoint_citation: "Article 12" }),
+  ]);
+  await applyText(f, "statutory-schedules", textOf(rows));
+  const written = f.db.rows("statutory_computations");
+  const of = (formula: string) => written.filter((r) => r.formula_id === formula);
+  assert.deepEqual([...new Set(of("ets_maritime_phase_in").map((r) => r.obligation_id))], ["cl:obligation:00000000000000a1"], "the three Article 3gb rows link to the instrument's own obligation");
+  assert.deepEqual(of("cbam_definitive_period").map((r) => [r.scenario_key, r.obligation_id]).sort(), [["start_year", entityId("obligation", "CBAM definitive period of Regulation (EU) 2023/956")], ["transitional_end_year", "cl:obligation:00000000000000b2"]], "Article 32 links to the current version; Article 36 has none and is minted");
+  assert.ok(of("fueleu_intensity_reduction").every((r) => String(r.obligation_id) === entityId("obligation", "FuelEU Maritime Article 4(2) GHG intensity limit on the energy used on board")), "an instrument with no object for the article gets a minted obligation");
+  assert.equal(written.filter((r) => (r.inputs as Array<Record<string, unknown>>)[0]?.linked_obligation_id).length, 4, "the linked rows say so in their inputs");
+  const minted = f.db.rows("entities").filter((e) => e.kind === "obligation").length;
+  assert.equal(minted, 5, "FuelEU Article 4(2), FuelEU Article 23, ReFuelEU Annex I, CBAM factor, CBAM definitive period: the linked rows mint none");
+  await applyText(f, "statutory-schedules", textOf(rows));
+  assert.equal(f.db.rows("entities").filter((e) => e.kind === "obligation").length, minted, "a second apply mints nothing");
+  assert.equal(f.db.rows("statutory_computations").length, rows.length);
 });
 
 test("INV-ARM-5: a planted row whose quote paraphrases the figure is refused at parse, a planted row whose quote is not on the capture is refused at apply, and the genuine row beside them is written", async () => {

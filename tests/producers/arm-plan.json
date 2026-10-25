@@ -103,6 +103,12 @@
     "state_cost_facts": {
       "armed": [
         "state-cost-facts"
+      ],
+      "absent": [
+        {
+          "source": "Ohio Department of Taxation, Motor Fuel Dealer page (tax.ohio.gov/business/motor-fuel-tax/motor-fuel-dealer) and the motor fuel tax holiday notice",
+          "reason": "state the diesel rate ($0.47 per gallon, reduced to $0.0001 from 2026-10-04 to 2027-01-02) but answer HTTP 404 to the declared identity and load only in the browser tier; the producer grounds each span on a plain GET, so no span can be grounded on them; the 2016 MF-2 instructions PDF is out of date"
+        }
       ]
     },
     "oem_tech_roadmaps": {

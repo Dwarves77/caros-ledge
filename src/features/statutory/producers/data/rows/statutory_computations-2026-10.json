@@ -3,6 +3,7 @@
  "rows": [
   {
    "instrument": "32003L0087",
+   "article": "Article 3gb",
    "obligation": "EU ETS maritime phase-in of the surrender requirement, Directive 2003/87/EC Article 3gb",
    "formula_id": "ets_maritime_phase_in",
    "scenario_key": "2024",
@@ -18,6 +19,7 @@
   },
   {
    "instrument": "32003L0087",
+   "article": "Article 3gb",
    "obligation": "EU ETS maritime phase-in of the surrender requirement, Directive 2003/87/EC Article 3gb",
    "formula_id": "ets_maritime_phase_in",
    "scenario_key": "2025",
@@ -33,6 +35,7 @@
   },
   {
    "instrument": "32003L0087",
+   "article": "Article 3gb",
    "obligation": "EU ETS maritime phase-in of the surrender requirement, Directive 2003/87/EC Article 3gb",
    "formula_id": "ets_maritime_phase_in",
    "scenario_key": "2026",
@@ -48,6 +51,7 @@
   },
   {
    "instrument": "32023R1805",
+   "article": "Article 4(2)",
    "obligation": "FuelEU Maritime Article 4(2) GHG intensity limit on the energy used on board",
    "formula_id": "fueleu_reference_value",
    "scenario_key": "reference",
@@ -63,6 +67,7 @@
   },
   {
    "instrument": "32023R1805",
+   "article": "Article 4(2)",
    "obligation": "FuelEU Maritime Article 4(2) GHG intensity limit on the energy used on board",
    "formula_id": "fueleu_intensity_reduction",
    "scenario_key": "2025",
@@ -78,6 +83,7 @@
   },
   {
    "instrument": "32023R1805",
+   "article": "Article 4(2)",
    "obligation": "FuelEU Maritime Article 4(2) GHG intensity limit on the energy used on board",
    "formula_id": "fueleu_intensity_reduction",
    "scenario_key": "2030",
@@ -93,6 +99,7 @@
   },
   {
    "instrument": "32023R1805",
+   "article": "Article 4(2)",
    "obligation": "FuelEU Maritime Article 4(2) GHG intensity limit on the energy used on board",
    "formula_id": "fueleu_intensity_reduction",
    "scenario_key": "2035",
@@ -108,6 +115,7 @@
   },
   {
    "instrument": "32023R1805",
+   "article": "Article 4(2)",
    "obligation": "FuelEU Maritime Article 4(2) GHG intensity limit on the energy used on board",
    "formula_id": "fueleu_intensity_reduction",
    "scenario_key": "2040",
@@ -123,6 +131,7 @@
   },
   {
    "instrument": "32023R1805",
+   "article": "Article 4(2)",
    "obligation": "FuelEU Maritime Article 4(2) GHG intensity limit on the energy used on board",
    "formula_id": "fueleu_intensity_reduction",
    "scenario_key": "2045",
@@ -138,6 +147,7 @@
   },
   {
    "instrument": "32023R1805",
+   "article": "Article 4(2)",
    "obligation": "FuelEU Maritime Article 4(2) GHG intensity limit on the energy used on board",
    "formula_id": "fueleu_intensity_reduction",
    "scenario_key": "2050",
@@ -153,6 +163,7 @@
   },
   {
    "instrument": "32023R1805",
+   "article": "Annex IV Part B",
    "obligation": "FuelEU Maritime Article 23 penalty and the Annex IV Part B formula",
    "formula_id": "fueleu_penalty_basis",
    "scenario_key": "eur_per_t_vlsfoe",
@@ -168,6 +179,7 @@
   },
   {
    "instrument": "32023R1805",
+   "article": "Annex IV Part B",
    "obligation": "FuelEU Maritime Article 23 penalty and the Annex IV Part B formula",
    "formula_id": "fueleu_penalty_basis",
    "scenario_key": "mj_per_t_vlsfo",
@@ -183,6 +195,7 @@
   },
   {
    "instrument": "32023R1805",
+   "article": "Article 23(5)",
    "obligation": "FuelEU Maritime Article 23 penalty and the Annex IV Part B formula",
    "formula_id": "fueleu_penalty_basis",
    "scenario_key": "berth_non_compliance",
@@ -198,6 +211,7 @@
   },
   {
    "instrument": "32023R2405",
+   "article": "Annex I",
    "obligation": "ReFuelEU Aviation Annex I minimum shares of sustainable aviation fuel referred to in Article 4",
    "formula_id": "refueleu_saf_share",
    "scenario_key": "2025",
@@ -213,6 +227,7 @@
   },
   {
    "instrument": "32023R2405",
+   "article": "Annex I",
    "obligation": "ReFuelEU Aviation Annex I minimum shares of sustainable aviation fuel referred to in Article 4",
    "formula_id": "refueleu_saf_share",
    "scenario_key": "2030",
@@ -228,6 +243,7 @@
   },
   {
    "instrument": "32023R2405",
+   "article": "Annex I",
    "obligation": "ReFuelEU Aviation Annex I minimum shares of sustainable aviation fuel referred to in Article 4",
    "formula_id": "refueleu_saf_share",
    "scenario_key": "2035",
@@ -243,6 +259,7 @@
   },
   {
    "instrument": "32023R2405",
+   "article": "Annex I",
    "obligation": "ReFuelEU Aviation Annex I minimum shares of sustainable aviation fuel referred to in Article 4",
    "formula_id": "refueleu_saf_share",
    "scenario_key": "2040",
@@ -258,6 +275,7 @@
   },
   {
    "instrument": "32023R2405",
+   "article": "Annex I",
    "obligation": "ReFuelEU Aviation Annex I minimum shares of sustainable aviation fuel referred to in Article 4",
    "formula_id": "refueleu_saf_share",
    "scenario_key": "2045",
@@ -273,6 +291,7 @@
   },
   {
    "instrument": "32023R2405",
+   "article": "Annex I",
    "obligation": "ReFuelEU Aviation Annex I minimum shares of sustainable aviation fuel referred to in Article 4",
    "formula_id": "refueleu_saf_share",
    "scenario_key": "2050",
@@ -288,6 +307,7 @@
   },
   {
    "instrument": "32023R2405",
+   "article": "Annex I",
    "obligation": "ReFuelEU Aviation Annex I minimum shares of sustainable aviation fuel referred to in Article 4",
    "formula_id": "refueleu_synthetic_share",
    "scenario_key": "2030-2031_average",
@@ -303,6 +323,7 @@
   },
   {
    "instrument": "32023R2405",
+   "article": "Annex I",
    "obligation": "ReFuelEU Aviation Annex I minimum shares of sustainable aviation fuel referred to in Article 4",
    "formula_id": "refueleu_synthetic_share",
    "scenario_key": "2030-2031_annual_minimum",
@@ -318,6 +339,7 @@
   },
   {
    "instrument": "32023R2405",
+   "article": "Annex I",
    "obligation": "ReFuelEU Aviation Annex I minimum shares of sustainable aviation fuel referred to in Article 4",
    "formula_id": "refueleu_synthetic_share",
    "scenario_key": "2032-2034_average",
@@ -333,6 +355,7 @@
   },
   {
    "instrument": "32023R2405",
+   "article": "Annex I",
    "obligation": "ReFuelEU Aviation Annex I minimum shares of sustainable aviation fuel referred to in Article 4",
    "formula_id": "refueleu_synthetic_share",
    "scenario_key": "2032-2033_annual_minimum",
@@ -348,6 +371,7 @@
   },
   {
    "instrument": "32023R2405",
+   "article": "Annex I",
    "obligation": "ReFuelEU Aviation Annex I minimum shares of sustainable aviation fuel referred to in Article 4",
    "formula_id": "refueleu_synthetic_share",
    "scenario_key": "2034_annual_minimum",
@@ -363,6 +387,7 @@
   },
   {
    "instrument": "32023R2405",
+   "article": "Annex I",
    "obligation": "ReFuelEU Aviation Annex I minimum shares of sustainable aviation fuel referred to in Article 4",
    "formula_id": "refueleu_synthetic_share",
    "scenario_key": "2035",
@@ -378,6 +403,7 @@
   },
   {
    "instrument": "32023R2405",
+   "article": "Annex I",
    "obligation": "ReFuelEU Aviation Annex I minimum shares of sustainable aviation fuel referred to in Article 4",
    "formula_id": "refueleu_synthetic_share",
    "scenario_key": "2040",
@@ -393,6 +419,7 @@
   },
   {
    "instrument": "32023R2405",
+   "article": "Annex I",
    "obligation": "ReFuelEU Aviation Annex I minimum shares of sustainable aviation fuel referred to in Article 4",
    "formula_id": "refueleu_synthetic_share",
    "scenario_key": "2045",
@@ -408,6 +435,7 @@
   },
   {
    "instrument": "32023R2405",
+   "article": "Annex I",
    "obligation": "ReFuelEU Aviation Annex I minimum shares of sustainable aviation fuel referred to in Article 4",
    "formula_id": "refueleu_synthetic_share",
    "scenario_key": "2050",
@@ -423,6 +451,7 @@
   },
   {
    "instrument": "32023R0956",
+   "article": "Article 10a(1a) of Directive 2003/87/EC",
    "obligation": "CBAM factor on free allocation under the EU ETS, Directive 2003/87/EC Article 10a(1a), for the application of Regulation (EU) 2023/956",
    "formula_id": "cbam_phaseout_factor",
    "scenario_key": "2026",
@@ -438,6 +467,7 @@
   },
   {
    "instrument": "32023R0956",
+   "article": "Article 10a(1a) of Directive 2003/87/EC",
    "obligation": "CBAM factor on free allocation under the EU ETS, Directive 2003/87/EC Article 10a(1a), for the application of Regulation (EU) 2023/956",
    "formula_id": "cbam_phaseout_factor",
    "scenario_key": "2027",
@@ -453,6 +483,7 @@
   },
   {
    "instrument": "32023R0956",
+   "article": "Article 10a(1a) of Directive 2003/87/EC",
    "obligation": "CBAM factor on free allocation under the EU ETS, Directive 2003/87/EC Article 10a(1a), for the application of Regulation (EU) 2023/956",
    "formula_id": "cbam_phaseout_factor",
    "scenario_key": "2028",
@@ -468,6 +499,7 @@
   },
   {
    "instrument": "32023R0956",
+   "article": "Article 10a(1a) of Directive 2003/87/EC",
    "obligation": "CBAM factor on free allocation under the EU ETS, Directive 2003/87/EC Article 10a(1a), for the application of Regulation (EU) 2023/956",
    "formula_id": "cbam_phaseout_factor",
    "scenario_key": "2029",
@@ -483,6 +515,7 @@
   },
   {
    "instrument": "32023R0956",
+   "article": "Article 10a(1a) of Directive 2003/87/EC",
    "obligation": "CBAM factor on free allocation under the EU ETS, Directive 2003/87/EC Article 10a(1a), for the application of Regulation (EU) 2023/956",
    "formula_id": "cbam_phaseout_factor",
    "scenario_key": "2030",
@@ -498,6 +531,7 @@
   },
   {
    "instrument": "32023R0956",
+   "article": "Article 10a(1a) of Directive 2003/87/EC",
    "obligation": "CBAM factor on free allocation under the EU ETS, Directive 2003/87/EC Article 10a(1a), for the application of Regulation (EU) 2023/956",
    "formula_id": "cbam_phaseout_factor",
    "scenario_key": "2031",
@@ -513,6 +547,7 @@
   },
   {
    "instrument": "32023R0956",
+   "article": "Article 10a(1a) of Directive 2003/87/EC",
    "obligation": "CBAM factor on free allocation under the EU ETS, Directive 2003/87/EC Article 10a(1a), for the application of Regulation (EU) 2023/956",
    "formula_id": "cbam_phaseout_factor",
    "scenario_key": "2032",
@@ -528,6 +563,7 @@
   },
   {
    "instrument": "32023R0956",
+   "article": "Article 10a(1a) of Directive 2003/87/EC",
    "obligation": "CBAM factor on free allocation under the EU ETS, Directive 2003/87/EC Article 10a(1a), for the application of Regulation (EU) 2023/956",
    "formula_id": "cbam_phaseout_factor",
    "scenario_key": "2033",
@@ -543,6 +579,7 @@
   },
   {
    "instrument": "32023R0956",
+   "article": "Article 36",
    "obligation": "CBAM definitive period of Regulation (EU) 2023/956",
    "formula_id": "cbam_definitive_period",
    "scenario_key": "start_year",
@@ -558,6 +595,7 @@
   },
   {
    "instrument": "32023R0956",
+   "article": "Article 32",
    "obligation": "CBAM definitive period of Regulation (EU) 2023/956",
    "formula_id": "cbam_definitive_period",
    "scenario_key": "transitional_end_year",

@@ -209,6 +209,23 @@ test("state cost facts: grounded verbatim before rated, refused by name otherwis
   assert.match(noRegion.notes.join(" "), /region code\(s\) not found/);
 });
 
+test("state cost facts: a span is grounded on the text layer of a published PDF rate schedule and on the visible text of a page whose table cells carry tags; a span in neither is refused", async () => {
+  const content = "BT /F1 12 Tf 72 700 Td (Diesel 55.8 cents per gallon) Tj ET";
+  const pdf = ["%PDF-1.4", "1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj", "2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj", "3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]/Contents 4 0 R/Resources<</Font<</F1 5 0 R>>>>>>endobj", `4 0 obj<</Length ${content.length}>>stream`, content, "endstream endobj", "5 0 obj<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>endobj", "trailer<</Root 1 0 R/Size 6>>", "%%EOF", ""].join(String.fromCharCode(10));
+  const routes = {
+    "https://eur-lex.europa.eu/rates.pdf": () => new Response(new TextEncoder().encode(pdf), { status: 200, headers: { "content-type": "application/pdf" } }),
+    "https://eur-lex.europa.eu/rates.html": () => new Response("<table><tr><td>Diesel</td> <td>47 cents per gallon</td></tr></table>", { status: 200, headers: { "content-type": "text/html" } }),
+  };
+  const c = (o: object) => cand({ dimension: "operational_cost", fact_label: "Diesel tax", value: "0.558", unit: "USD per gallon", ...o });
+  const r = await runProducer(makeDeps({ noDb: true, routes }).deps, { spec: stateCostFacts, text: JSON.stringify([
+    c({ source_url: "https://eur-lex.europa.eu/rates.pdf", span_text: "Diesel 55.8 cents per gallon" }),
+    c({ source_url: "https://eur-lex.europa.eu/rates.html", fact_label: "Diesel tax html", span_text: "Diesel 47 cents per gallon" }),
+    c({ source_url: "https://eur-lex.europa.eu/rates.pdf", fact_label: "Not in the pdf", span_text: "Diesel 99 cents per gallon" }),
+  ]) });
+  assert.equal(r.counts.parsed, 2, r.notes.join("|"));
+  assert.match(r.notes.join("|"), /Not in the pdf: refused_ungrounded/);
+});
+
 // ---- operator rows ----
 test("operator rows: the org is stamped by the caller (never read from the CSV), a rejected row is named, an unknown entity reference is refused at apply, identical rows are not inserted twice", async () => {
   const csv = "load_type,kw_draw,duty_cycle,hours_typical,node_id,org_id\nreefer_genset,12,0.5,10,cl:node:known,evil-org\nreefer_genset,12,2,10,,\nreefer_genset,8,0.5,4,cl:node:unknown,\n";
