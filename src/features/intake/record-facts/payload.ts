@@ -4,21 +4,24 @@
 // ungrounded Gate A token; a body carrying an internal marker is refused) and the payload shape the write sequence consumes. The
 // research profile is the same builder over the research_finding item type: its three always-present signals and its unified trigger
 // table come from buildRecordFacts, so there is no second append and no duplicate claim for the evidence and authority slots.
+import { z } from "zod";
+
 import { assertNoInternalMarkers } from "@/core/brief/sections";
 
+import stubData from "./data/stub-brief.json";
 import { buildRecordFacts, type RecordClaim } from "./extract";
 
-/** The marker a stub catalogue record opens with: the ONE string a consumer checks to tell a stub from a full brief. */
-const STUB_BRIEF_MARKER = "Catalogue record: extracted facts only, full brief pending.";
+/** The stub brief's fixed strings (data/stub-brief.json): `marker` opens a stub catalogue record and is the ONE string a consumer checks to tell a stub from a full brief; the headings are tokens, not sentences. */
+export const STUB = z.object({ marker: z.string(), factsHeading: z.string(), gapsHeading: z.string() }).parse(stubData);
 
 /** item.full_brief for a record-grade payload: boilerplate plus each claim's own text, FACTs first then GAPs. */
 function buildRecordFullBrief(a: { sourceUrl: string; claims: RecordClaim[] }): string {
   const lines = (kind: "FACT" | "GAP") => a.claims.filter((c) => c.claim_kind === kind).map((c) => `- ${c.claim_text}`);
   const facts = lines("FACT");
   const gaps = lines("GAP");
-  const parts = [`*${STUB_BRIEF_MARKER}*`];
-  if (facts.length) parts.push("", "## Verbatim facts", "", ...facts);
-  if (gaps.length) parts.push("", "## Not stated in the captured source", "", ...gaps);
+  const parts = [`*${STUB.marker}*`];
+  if (facts.length) parts.push("", `## ${STUB.factsHeading}`, "", ...facts);
+  if (gaps.length) parts.push("", `## ${STUB.gapsHeading}`, "", ...gaps);
   parts.push("", `Source: ${a.sourceUrl}`);
   return assertNoInternalMarkers(parts.join("\n"), "buildRecordFullBrief");
 }

@@ -9,7 +9,7 @@
 // structured side-fields the old extractor lifted onto the payload (binding_position, due_date, date_precision, corridor_identity,
 // research_credibility) are NOT computed here (coordinator ruling 2): no column holds them, and binding position and dates are
 // derived from forward events downstream.
-import { GAP_MARKER } from "@/core/brief/regulation-sections";
+import { ABSENCE_TOKEN } from "@/core/brief/regulation-sections";
 import { assertVerbatim } from "@/core/contracts/verbatim";
 import { VOCABULARIES, normaliseMode } from "@/core/contracts/vocabularies";
 import { nameForJurisdiction } from "@/core/entities/unlocode-names";
@@ -67,14 +67,13 @@ function walk(triggers: readonly RegExp[], text: string, accept: (span: string) 
 }
 
 // Span delimiters are guillemets, never straight quotes: the unicode-integrity scan reads a straight quote against a curly one as a transcription slip.
-const slotWords = (slotKey: string) => slotKey.replace(/_/g, " ");
-/** THE claim constructor: a FACT (span verified verbatim first) or an honest GAP; nothing else builds a claim. */
-function claim(slotKey: string, section: RecordClaim["section_key"], ctx: Ctx, found: { span: string; text: string } | null, gapText?: string): RecordClaim {
+/** THE claim constructor: a FACT (span verified verbatim first) or an honest GAP, which is the slot id and the absence token and no sentence (ADR-050); nothing else builds a claim. */
+function claim(slotKey: string, section: RecordClaim["section_key"], ctx: Ctx, found: { span: string; text: string } | null): RecordClaim {
   if (found) {
     assertVerbatim(ctx.capturedText, found.span);
     return { section_key: section, claim_kind: "FACT", claim_text: `[${slotKey}] ${found.text}`, source_span: found.span, source_url: ctx.sourceUrl, slot_key: slotKey };
   }
-  return { section_key: section, claim_kind: "GAP", claim_text: `[${slotKey}] ${gapText ?? `No verbatim ${slotWords(slotKey)} statement was located in the captured source text for this record-grade item.`} ${GAP_MARKER}`, source_span: null, source_url: null, slot_key: slotKey };
+  return { section_key: section, claim_kind: "GAP", claim_text: `[${slotKey}] ${ABSENCE_TOKEN}`, source_span: null, source_url: null, slot_key: slotKey };
 }
 const stated = (span: string) => `The captured source states, verbatim: «${span}»`;
 
@@ -94,7 +93,7 @@ const bindingClaim = (ctx: Ctx): RecordClaim => {
     const hit = label ? walk(BINDING_TRIGGERS[code] ?? [], ctx.capturedText, (s) => isProseSpan(s, { slotKey: "binding_position" })) : null;
     if (hit) return claim("binding_position", "record_facts", ctx, { span: hit.span, text: `The captured source's own applicability language places this item at «${code}» (${label}), from the passage: «${hit.span}»` });
   }
-  return claim("binding_position", "record_facts", ctx, null, "No verbatim applicability language naming a duty-holder class was located in the captured source text for this record-grade item.");
+  return claim("binding_position", "record_facts", ctx, null);
 };
 
 const LOCODE_PAIR = /\b([A-Z]{2}[A-Z2-9]{3})\s?(?:[-–—]|to|>)\s?([A-Z]{2}[A-Z2-9]{3})\b/g;
@@ -111,7 +110,7 @@ const corridorClaim = (ctx: Ctx): RecordClaim => {
     const mode = normaliseMode(MODE_WORD.exec(window)?.[0]);
     if (mode) return claim("corridor_identity", "record_facts", ctx, { span: window.trim(), text: `The captured source names a lane between «${m[1]}» and «${m[2]}» by ${mode}, verbatim: «${window.trim()}»` });
   }
-  return claim("corridor_identity", "record_facts", ctx, null, "No verbatim UN/LOCODE port-pair and mode were located together in the captured source text, so no corridor is stated.");
+  return claim("corridor_identity", "record_facts", ctx, null);
 };
 
 // The EUR-Lex legal-status widget. A bare scan for "no longer in force" misfires on recital prose and the site-wide filter label, so the
@@ -120,12 +119,12 @@ const FORCE_INDICATOR = /<p[^>]*class="[^"]*\bforceIndicator\b[^"]*"[^>]*>[\s\S]
 const inForceClaim = (ctx: Ctx): RecordClaim => {
   const m = FORCE_INDICATOR.exec(ctx.capturedText);
   const status = m?.[1]?.trim();
-  return m && status ? claim("in_force_status", "record_facts", ctx, { span: m[0], text: `The EUR-Lex page's own legal-status indicator states, verbatim: «${status}»` }) : claim("in_force_status", "record_facts", ctx, null, "No EUR-Lex legal-status indicator markup was located in the captured source text.");
+  return m && status ? claim("in_force_status", "record_facts", ctx, { span: m[0], text: `The EUR-Lex page's own legal-status indicator states, verbatim: «${status}»` }) : claim("in_force_status", "record_facts", ctx, null);
 };
 
 const dueClaim = (ctx: Ctx): RecordClaim => {
   const hit = walk(DUE_DATE_TRIGGERS, ctx.capturedText, (s) => isProseSpan(s));
-  return claim("due_date", "record_facts", ctx, hit ? { span: hit.span, text: `The captured source states a due date, verbatim: «${hit.span}»` } : null, "No verbatim due-date statement was located in the captured source text for this record-grade item.");
+  return claim("due_date", "record_facts", ctx, hit ? { span: hit.span, text: `The captured source states a due date, verbatim: «${hit.span}»` } : null);
 };
 
 /** One required-slot claim: a specialised extractor where one exists, else the trigger table, else an honest GAP. */
