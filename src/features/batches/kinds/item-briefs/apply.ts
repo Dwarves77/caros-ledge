@@ -80,7 +80,9 @@ const STEPS: ReadonlyArray<readonly [string, Step]> = [
     const it = await itemRow(c.deps.sb, c.itemId);
     if (!it?.source_id || !it.full_brief) return { outcome: "grow_failed: the item has no source or brief to grow from", ok: false };
     const { cited, citedSourceIds } = collectEntryCitations(c.entry);
-    return fromResult(await growSources({ db: c.deps.sb, now: c.deps.now }, { citedSourceId: it.source_id, brief: it.full_brief, extra: { cited, citedSourceIds, intelligenceItemId: c.itemId } }));
+    const g = await growSources({ db: c.deps.sb, now: c.deps.now }, { citedSourceId: it.source_id, brief: it.full_brief, extra: { cited, citedSourceIds, intelligenceItemId: c.itemId } });
+    // The discovery counts are the ledger's: how many sources the brief cites, how many were new, how many citation edges were recorded.
+    return { ...fromResult(g), counts: Object.fromEntries(Object.entries(g.counts).map(([k, n]) => [`grow_${k}`, n])) };
   }],
   ["terms", async (c) => {
     const terms = isObj(c.entry.metadata) ? c.entry.metadata.mentioned_terms : null;
@@ -202,12 +204,19 @@ function itemBriefsSpec(opts: RecordOpts): EntrySpec<RecordLive, RecordPlan> {
     async readBack(deps, _live, written) {
       const rows = await rowsByIds<{ id: string; item_grade: string | null; full_brief: string | null }>(deps.sb, "intelligence_items", "id, item_grade, full_brief", written.map((w) => w.plan.itemId));
       const ok = new Set(rows.filter((r) => r.item_grade === "brief" && !!r.full_brief).map((r) => r.id));
-      return written.filter((w) => !ok.has(w.plan.itemId)).map((w) => w.plan.itemId);
+      // INV-FLY-1 (ADR-050): a section row of an applied item is a slice of its batch entry's body. Section text that no entry states was written by something else and fails the read-back.
+      const sections = await rowsByIds<{ item_id: string; content_md: string | null }>(deps.sb, "intelligence_item_sections", "id, item_id, content_md", written.map((w) => w.plan.itemId), "item_id");
+      const body = new Map(written.map((w) => [w.plan.itemId, flat(w.entry.body)]));
+      const foreign = new Set(sections.filter((s) => flat(s.content_md) !== "" && !(body.get(s.item_id) ?? "").includes(flat(s.content_md))).map((s) => s.item_id));
+      return written.filter((w) => !ok.has(w.plan.itemId) || foreign.has(w.plan.itemId)).map((w) => w.plan.itemId);
     },
     downstream: (deps, _live, written, o) => afterBatch(deps, written.map((w) => w.plan.itemId), o),
     guard: (deps, o) => preflight(deps, { ...(o.runId ? { runId: o.runId } : {}), ...(opts.cooldownMinutes !== undefined ? { cooldownMinutes: opts.cooldownMinutes } : {}) }),
   };
 }
+
+/** Text as compared between a section and its entry's body: URL markers and claim markers gone, runs of whitespace one space. */
+const flat = (s: unknown): string => String(stripUrlMarkers(typeof s === "string" ? s : "") ?? "").replace(/<!--\s*claim:[0-9a-fA-F-]{36}\s*-->/g, " ").replace(/\s+/g, " ").trim();
 
 /** The body as the write site stores it (hygiene applied), so a re-apply of the same batch is recognised as already applied. */
 const stored = (s: string | null | undefined): string => stripClaimLedgerBlocks(stripUrlMarkers(String(s ?? "").trim()) ?? "").replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "").trim();

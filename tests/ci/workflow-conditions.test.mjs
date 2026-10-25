@@ -30,6 +30,7 @@ const runs = (job, event, only = '', status = {}, scope = { parity: 'true', wind
     .replaceAll('needs.changes.outputs.windows', 'windowsScope')
     .replaceAll('needs.changes.outputs.edge', 'edgeScope')
     .replaceAll('needs.changes.outputs.plans', 'plansScope')
+    .replaceAll('needs.changes.result', "'success'")
     .replaceAll('needs.migrate.result', 'migrateResult')
     .replaceAll('==', '===')
     .replaceAll('!=', '!==');
@@ -304,4 +305,19 @@ test('RUN-1: ruled-runs runs on a push to main that changed a pending plan, afte
     where.ref = 'refs/heads/main';
     where.fork = false;
   }
+});
+
+test('parity waits for migrate on a push to main (rule 3: the schema is ahead of the code parity reads) and runs as before everywhere else', () => {
+  assert.deepEqual(jobs.parity.needs, ['changes', 'migrate']);
+  assert.ok(on('push', '', {}, undefined, '', 'success').includes('parity'), 'a push to main: parity runs after a successful migrate');
+  for (const result of ['failure', 'skipped', 'cancelled']) assert.ok(!on('push', '', {}, undefined, '', result).includes('parity'), `a push whose migrate is ${result} skips parity`);
+  assert.deepEqual(on('pull_request', '', {}, undefined, '', 'skipped'), ['changes', 'ci', 'parity', 'schema', 'windows'], 'a pull request: migrate is skipped and parity still runs');
+  assert.ok(on('workflow_dispatch', '', {}, undefined, '', 'skipped').includes('parity'), 'a dispatch with only empty: migrate is skipped and parity still runs');
+  assert.ok(!on('pull_request', '', {}, { parity: 'false', windows: 'true' }, '', 'skipped').includes('parity'), 'the scope still skips parity on a pull request');
+  for (const only of ['baseline', 'turn', 'live', 'screens', 'edge-deploy']) assert.ok(!on('workflow_dispatch', only).includes('parity'), `only=${only} runs no parity`);
+});
+
+test('a change to ci.yml is in the parity scope, so the workflow edit that orders parity after migrate is itself checked by parity', async () => {
+  const { PARITY } = await import('../../scripts/ci/changes.mjs');
+  assert.ok(PARITY.test('.github/workflows/ci.yml'));
 });

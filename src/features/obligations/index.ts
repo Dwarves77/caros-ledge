@@ -9,6 +9,7 @@ export { EXTRACTOR_VERSION, extractForwardEvents } from "./extract/extract-forwa
 export { readExtractionInput } from "./extract/read-extraction-input";
 export { isDueDateSlotClaim } from "./extract/scan";
 export { readAndExtractForwardEvents } from "./extract/verbatim-in-source";
+export { resolvePendingTriggers } from "./extract/resolve-pending";
 export { forwardEventKey, insertForwardEvents } from "./extract/write-forward-events";
 export { deriveObligationsJob } from "./jobs/derive-obligations";
 export { extractBackfill } from "./jobs/extract-backfill";
