@@ -22,6 +22,10 @@ export interface GetOptions {
   range?: [number, number];
   method?: string;
   body?: string;
+  /** Read the whole body inside the attempt: a connection reset mid-body is a network error and is retried like one (the answer is a buffered Response). */
+  buffer?: boolean;
+  /** The timeout of each attempt in ms (default 30 000): a large document gets longer than a JSON feed. */
+  timeoutMs?: number;
 }
 export type Getter = (url: string, opts?: GetOptions) => Promise<Response>;
 
@@ -38,8 +42,8 @@ function makeGetter(fetchFn: FetchFn, o: { timeoutMs?: number; backoffMs?: reado
     for (let attempt = 0; attempt <= backoff.length; attempt += 1) {
       if (attempt > 0) await sleep(backoff[attempt - 1] as number);
       try {
-        const res = await fetchFn(url, { method: opts.method, headers, body: opts.body, signal: AbortSignal.timeout(o.timeoutMs ?? 30_000) });
-        if (res.ok) return res;
+        const res = await fetchFn(url, { method: opts.method, headers, body: opts.body, signal: AbortSignal.timeout(opts.timeoutMs ?? o.timeoutMs ?? 30_000) });
+        if (res.ok) return opts.buffer ? new Response(await res.arrayBuffer(), { status: res.status, headers: res.headers }) : res;
         last = `HTTP ${res.status} ${res.statusText ?? ""}`.trim();
         if (res.status !== 429 && res.status < 500) break;
       } catch (e) {

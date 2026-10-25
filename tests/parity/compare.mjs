@@ -117,7 +117,19 @@ export function compareRecord(route, viewport, base, cap, approved, dataNames = 
 
   // The item headings the capture draws that the baseline does not hold: each stands in for one baseline heading that is gone.
   const headSpare = [...headItems];
-  check('heading', base.headings ?? [], cap.headings ?? [], headKey, {
+  // `conditional` entries of kind 'heading' ({route, kind, under, match, reason}): the headings of a block that exists only while its data does (the theme brief inside "Connected intelligence"). A baseline heading below the `under` heading
+  // (until the next heading of that level or higher) that matches and that the capture does not draw is ignored; one the capture draws is compared in its place as before. `route` is a name or a list of names.
+  const baseHeadings = [];
+  let anchor = null;
+  const drawn = new Set((cap.headings ?? []).map(headKey));
+  for (const h of base.headings ?? []) {
+    if (anchor && h.level <= anchor.level) anchor = null;
+    const rule = anchor && conditional.find((d) => d.kind === 'heading' && [].concat(d.route).includes(route) && d.under === anchor.key && new RegExp(d.match).test(headKey(h)));
+    if (rule && !drawn.has(headKey(h))) { used.push(`conditional: ${rule.reason}`); continue; }
+    baseHeadings.push(h);
+    if (conditional.some((d) => d.kind === 'heading' && d.under === headKey(h))) anchor = { key: headKey(h), level: h.level };
+  }
+  check('heading', baseHeadings, cap.headings ?? [], headKey, {
     missing: (i, k) => {
       const at = headSpare.findIndex((s) => s.split(':')[0] === k.split(':')[0]);
       return at >= 0 && headSpare.splice(at, 1).length > 0;
@@ -139,7 +151,7 @@ export function compareRecord(route, viewport, base, cap, approved, dataNames = 
   const kept = new Map();
   for (const c of base.controls ?? []) {
     const k = ctl(c);
-    const rule = conditional.find((d) => d.route === route && new RegExp(d.match).test(k));
+    const rule = conditional.find((d) => d.kind !== 'heading' && [].concat(d.route).includes(route) && new RegExp(d.match).test(k));
     const seen = kept.get(k) ?? 0;
     if (rule && seen >= capKeys.filter((x) => x === k).length) { used.push(`conditional: ${rule.reason}`); continue; }
     if (rule) kept.set(k, seen + 1);
@@ -234,6 +246,12 @@ export function gateProblems(routes, config) {
   for (const [what, list] of [['gates.pixelExact', pixelExact], ['gates.lists', lists]]) for (const n of list) if (!gated.has(n)) problems.push(`${what} names ${n}, which is not a gated route`);
   for (const n of skippable) if (!gated.has(n)) problems.push(`skippable names ${n}, which is not a gated route`);
   for (const n of listEmpty) if (!lists.includes(n)) problems.push(`listEmpty names ${n}, which is not in gates.lists`);
+  // A conditional entry names real routes, says why in a sentence, and (kind 'heading') the heading it sits under: an entry that cannot match anything would only hide a difference.
+  for (const [n, d] of (Array.isArray(config.conditional) ? config.conditional : []).entries()) {
+    for (const r of [].concat(d?.route)) if (!known.has(r)) problems.push(`conditional[${n}]: ${JSON.stringify(r)} is not a route in routes.json`);
+    if (typeof d?.reason !== 'string' || d.reason.trim().length < MIN_REASON) problems.push(`conditional[${n}]: carries no reason (at least ${MIN_REASON} characters)`);
+    if (typeof d?.match !== 'string' || (d.kind === 'heading' && typeof d.under !== 'string')) problems.push(`conditional[${n}]: needs a match${d?.kind === 'heading' ? ' and an under heading' : ''}`);
+  }
   // A pixel waiver is bounded: without a ceiling it would hide every later change to the route's look along with the one it names.
   for (const a of Array.isArray(config.approved) ? config.approved : []) {
     if (a?.kind === 'pixel' && !(typeof a.maxDiff === 'number' && a.maxDiff > PIXEL_THRESHOLD && a.maxDiff <= 1)) problems.push(`approved: pixel waiver ${a.id} needs a maxDiff between ${PIXEL_THRESHOLD} and 1 (the largest diff its ruling covers)`);
