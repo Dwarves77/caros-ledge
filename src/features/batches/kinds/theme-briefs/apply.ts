@@ -9,6 +9,7 @@ import { parseFrontmatter } from "@/core/briefs/frontmatter";
 import { parseThemeBriefEntry, type ThemeContext, type ValidThemeBrief } from "@/core/briefs/theme-brief-contract";
 import { buildThemeBundle, buildValidationContext, computeThemeGaps, loadBriefs, loadLineage, loadThemeMaterial, loadThemes, themesNeedingBrief, type ThemeRow } from "@/core/briefs/theme-brief-material";
 import type { Db } from "@/core/db";
+import { readPackets, type Packet } from "@/core/digest/packets-client";
 import { applyThemeBrief } from "@/features/flywheel";
 import { rowsByIds } from "@/core/db";
 
@@ -72,7 +73,9 @@ export async function applyThemeBriefs(deps: BatchDeps, input: { content: string
   return applyThemeBriefBatch(deps, isObj(parsed) && Array.isArray(parsed.entries) ? parsed : wrap(parsed), o);
 }
 
-/** The export: themes that need a brief with their bundle. */
+/** The export: themes that need a brief with their bundle and, declared in the bundle type, the pattern packet of each (read through readPackets; PENDING CONNECT-2 PR B the list is empty and the summary says so). Until the packet validator
+ * of DIGEST-1 PR B replaces it, the bundle keeps the theme material the live validator (parseThemeBriefEntry) checks an entry against. */
+export type ThemeBundle = ReturnType<typeof buildThemeBundle> & { packets: Packet[] };
 export function themeBriefsExporter(sb: Db, o: { charBudget?: number } = {}) {
   return async ({ limit }: { limit: number }): Promise<BatchExport> => {
     try {
@@ -81,9 +84,10 @@ export function themeBriefsExporter(sb: Db, o: { charBudget?: number } = {}) {
       const chosen = needs.slice(0, limit);
       const material = await loadThemeMaterial(sb, chosen.map((n) => n.theme));
       const gaps = computeThemeGaps(chosen.map((n) => n.theme), material);
-      const items = chosen.map((n) => buildThemeBundle(n, material, gaps.get(n.theme.id), { charBudget: o.charBudget ?? DEFAULT_CHAR_BUDGET }));
+      const packetRead = await readPackets(chosen.map((n) => n.theme.id));
+      const items = chosen.map((n): ThemeBundle => ({ ...buildThemeBundle(n, material, gaps.get(n.theme.id), { charBudget: o.charBudget ?? DEFAULT_CHAR_BUDGET }), packets: packetRead.packets.filter((p) => p.id === n.theme.id) }));
       const by = (r: string) => needs.filter((n) => n.reason === r).length;
-      return { ok: true, items: items as never, source: { type: "table", table: "connection_themes" }, summary: { themes: themes.length, needing_brief: needs.length, no_brief: by("no_brief"), stale: by("stale"), superseded: by("superseded"), exported: items.length, not_exported_over_limit: needs.length - items.length } };
+      return { ok: true, items: items as never, source: { type: "table", table: "connection_themes" }, summary: { themes: themes.length, needing_brief: needs.length, no_brief: by("no_brief"), stale: by("stale"), superseded: by("superseded"), exported: items.length, not_exported_over_limit: needs.length - items.length, packets: packetRead.marker ?? "read" } };
     } catch (e) {
       return { ok: false, items: [], error: (e as Error).message };
     }
