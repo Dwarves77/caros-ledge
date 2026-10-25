@@ -1,0 +1,99 @@
+{
+  "ruling": "operator 2026-10-23 ruling 1: population hold lifted for the structured-data producers (rulings-2026-10-11.md)",
+  "steps": [
+    {
+      "name": "statutory-schedules-dry",
+      "stage": "propagate",
+      "mode": "dry",
+      "input": {
+        "propagate": {
+          "producers": {
+            "only": "statutory-schedules",
+            "rowsFile": "src/features/statutory/producers/data/rows/statutory_computations-2026-10.json"
+          },
+          "cadence_exception": "operator 2026-10-23 ruling 1: population hold lifted for the structured-data producers (rulings-2026-10-11.md)"
+        }
+      },
+      "producer_env": []
+    },
+    {
+      "name": "statutory-schedules",
+      "stage": "propagate",
+      "mode": "apply",
+      "input": {
+        "propagate": {
+          "producers": {
+            "only": "statutory-schedules",
+            "rowsFile": "src/features/statutory/producers/data/rows/statutory_computations-2026-10.json"
+          },
+          "cadence_exception": "operator 2026-10-23 ruling 1: population hold lifted for the structured-data producers (rulings-2026-10-11.md)"
+        }
+      },
+      "producer_env": [
+        "STATUTORY_PRODUCER_SCHEDULES_ENABLED=1"
+      ]
+    },
+    {
+      "name": "reroute-rows-dry",
+      "stage": "propagate",
+      "mode": "dry",
+      "input": {
+        "propagate": {
+          "producers": {
+            "only": "reroute-rows",
+            "rowsFile": "src/features/market/producers/data/rows/reroute_events-2026-10.json"
+          },
+          "cadence_exception": "operator 2026-10-23 ruling 1: population hold lifted for the structured-data producers (rulings-2026-10-11.md)"
+        }
+      },
+      "producer_env": []
+    },
+    {
+      "name": "reroute-rows",
+      "stage": "propagate",
+      "mode": "apply",
+      "input": {
+        "propagate": {
+          "producers": {
+            "only": "reroute-rows",
+            "rowsFile": "src/features/market/producers/data/rows/reroute_events-2026-10.json"
+          },
+          "cadence_exception": "operator 2026-10-23 ruling 1: population hold lifted for the structured-data producers (rulings-2026-10-11.md)"
+        }
+      },
+      "producer_env": [
+        "MARKET_PRODUCER_REROUTE_ROWS_ENABLED=1"
+      ]
+    },
+    {
+      "name": "state-cost-facts-dry",
+      "stage": "propagate",
+      "mode": "dry",
+      "input": {
+        "propagate": {
+          "producers": {
+            "only": "state-cost-facts",
+            "rowsFile": "src/features/operations/producers/data/rows/state_cost_facts-2026-10.json"
+          },
+          "cadence_exception": "operator 2026-10-23 ruling 1: population hold lifted for the structured-data producers (rulings-2026-10-11.md)"
+        }
+      },
+      "producer_env": []
+    },
+    {
+      "name": "state-cost-facts",
+      "stage": "propagate",
+      "mode": "apply",
+      "input": {
+        "propagate": {
+          "producers": {
+            "only": "state-cost-facts",
+            "rowsFile": "src/features/operations/producers/data/rows/state_cost_facts-2026-10.json"
+          },
+          "cadence_exception": "operator 2026-10-23 ruling 1: population hold lifted for the structured-data producers (rulings-2026-10-11.md)"
+        }
+      },
+      "producer_env": []
+    }
+  ]
+}
