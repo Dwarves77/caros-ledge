@@ -89,8 +89,8 @@ export async function runRegistered(deps: ProducerDeps, o: { catalog: Catalog; p
     counts[`${e.name}.parsed`] = res.counts.parsed ?? 0;
     notes.push(...res.notes);
     if (res.outcome === "failed") {
-      notes.push(`registry producer ${e.name} failed; stopping`);
-      return runResult("failed", counts, notes);
+      // The ledger names a failed run by its first note: the failing producer's own notes lead, the header and the earlier producers' notes follow.
+      return runResult("failed", counts, [...res.notes, `registry producer ${e.name} failed; stopping`, ...notes.slice(0, notes.length - res.notes.length)]);
     }
     if (res.outcome === "partial") outcome = "partial";
   }

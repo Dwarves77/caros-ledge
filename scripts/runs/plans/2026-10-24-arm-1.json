@@ -1,5 +1,5 @@
 {
-  "revision": 2,
+  "revision": 3,
   "ruling": "operator 2026-10-23 ruling 1: population hold lifted for the structured-data producers (rulings-2026-10-11.md)",
   "steps": [
     {
@@ -30,7 +30,8 @@
       },
       "producer_env": [
         "MARKET_PRODUCER_ECB_FX_ENABLED=1"
-      ]
+      ],
+      "on_failure": "continue"
     },
     {
       "name": "eu-weekly-oil-bulletin",
@@ -46,7 +47,8 @@
       },
       "producer_env": [
         "MARKET_PRODUCER_EU_OIL_BULLETIN_ENABLED=1"
-      ]
+      ],
+      "on_failure": "continue"
     },
     {
       "name": "neso-carbon-intensity",
@@ -62,7 +64,8 @@
       },
       "producer_env": [
         "REGIONAL_PRODUCER_NESO_CARBON_INTENSITY_ENABLED=1"
-      ]
+      ],
+      "on_failure": "continue"
     },
     {
       "name": "ukpn-capacity-heatmap",
@@ -78,7 +81,8 @@
       },
       "producer_env": [
         "OPERATIONS_PRODUCER_UKPN_HEATMAP_ENABLED=1"
-      ]
+      ],
+      "on_failure": "continue"
     },
     {
       "name": "bls-oews",
@@ -94,7 +98,8 @@
       },
       "producer_env": [
         "REGIONAL_PRODUCER_BLS_OEWS_ENABLED=1"
-      ]
+      ],
+      "on_failure": "continue"
     },
     {
       "name": "eurostat-lc-lci-lev",
@@ -110,7 +115,8 @@
       },
       "producer_env": [
         "REGIONAL_PRODUCER_EUROSTAT_LC_LCI_LEV_ENABLED=1"
-      ]
+      ],
+      "on_failure": "continue"
     },
     {
       "name": "eurostat-nrg-pc-205",
@@ -126,7 +132,8 @@
       },
       "producer_env": [
         "REGIONAL_PRODUCER_EUROSTAT_NRG_PC_205_ENABLED=1"
-      ]
+      ],
+      "on_failure": "continue"
     },
     {
       "name": "eia-v2-petroleum-spot",
@@ -142,7 +149,8 @@
       },
       "producer_env": [
         "MARKET_PRODUCER_EIA_V2_ENABLED=1"
-      ]
+      ],
+      "on_failure": "continue"
     },
     {
       "name": "oem-roadmap-rows",

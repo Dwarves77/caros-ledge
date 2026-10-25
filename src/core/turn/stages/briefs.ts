@@ -6,7 +6,7 @@
 import type { FamilyCall } from "@/core/harness";
 import { scoreItems } from "@/core/impact/run";
 import type { RunResult } from "@/core/types/run-result";
-import { runResult, worst } from "@/core/types/run-result";
+import { leadWithFailures, runResult, worst } from "@/core/types/run-result";
 import { applyBatch, applyCommitted, exportBatch } from "@/features/batches";
 import type { BatchDeps, ExportInput } from "@/features/batches";
 import { resolvePendingTriggers } from "@/features/obligations";
@@ -65,7 +65,7 @@ async function downstream(call: FamilyCall, d: BuiltDeps, r: RunResult, itemIds:
   const resolved = (triggers.data as { ids?: { resolved_event_ids?: string[] } } | undefined)?.ids?.resolved_event_ids ?? [];
   const scored = (scores.data as { ids?: { scored_item_ids?: string[] } } | undefined)?.ids?.scored_item_ids ?? [];
   const pick = (p: RunResult, prefix: string) => Object.fromEntries(Object.entries(p.counts).map(([k, n]) => [`${prefix}${k}`, n]));
-  return { ...r, outcome: worst(r.outcome, scores.outcome, triggers.outcome), counts: { ...r.counts, ...pick(scores, ""), ...pick(triggers, "triggers_") }, notes: [...r.notes, ...scores.notes, ...triggers.notes], data: { ...(r.data as object | undefined), ids: { ...ids, scored_item_ids: scored, resolved_event_ids: resolved } } };
+  return { ...r, outcome: worst(r.outcome, scores.outcome, triggers.outcome), counts: { ...r.counts, ...pick(scores, ""), ...pick(triggers, "triggers_") }, notes: leadWithFailures([r, scores, triggers]), data: { ...(r.data as object | undefined), ids: { ...ids, scored_item_ids: scored, resolved_event_ids: resolved } } };
 }
 
 export async function runBriefs(call: FamilyCall, d: BuiltDeps): Promise<RunResult> {

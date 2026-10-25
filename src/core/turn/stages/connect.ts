@@ -6,7 +6,7 @@
 import { edgeSnapshotSink } from "@/core/flywheel/edges";
 import type { FamilyCall } from "@/core/harness";
 import type { RunResult } from "@/core/types/run-result";
-import { runResult, worst } from "@/core/types/run-result";
+import { leadWithFailures, runResult, worst } from "@/core/types/run-result";
 import { READING } from "@/core/impact/rules";
 import { corpusPass, discoverForItems, tagPass, termPass } from "@/features/flywheel";
 import { resolvePendingTriggers, scanBacklog } from "@/features/obligations";
@@ -33,7 +33,7 @@ export function shapeConnect(ids: readonly string[], parts: { tag: RunResult | n
     edges_written: (parts.discovery?.counts.written ?? 0) + (parts.corpus?.counts.intersection_inserted ?? 0) + (parts.corpus?.counts.shared_entity_written ?? 0),
     term_writes: parts.term ? sumWritten(parts.term.counts) : 0, themes: parts.corpus?.counts.themes ?? 0, ...(parts.scan?.counts ?? {}), ...Object.fromEntries(Object.entries(parts.triggers?.counts ?? {}).map(([k, n]) => [`triggers_${k}`, n])),
   };
-  return { ...runResult(outcome, counts, list.flatMap((p) => p.notes)), data: { ids: { connected_item_ids: outcome === "failed" ? [] : [...ids], scanned_item_ids: parts.scan?.data?.ids.scanned_item_ids ?? [] } } };
+  return { ...runResult(outcome, counts, leadWithFailures(list)), data: { ids: { connected_item_ids: outcome === "failed" ? [] : [...ids], scanned_item_ids: parts.scan?.data?.ids.scanned_item_ids ?? [] } } };
 }
 
 export async function runConnect(call: FamilyCall, d: BuiltDeps): Promise<RunResult> {

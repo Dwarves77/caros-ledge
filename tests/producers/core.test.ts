@@ -299,3 +299,16 @@ test("spec09 labels: a missing value always carries a reason, an unknown derivat
   assert.throws(() => labelled(null, "calculated"), TypeError);
   assert.equal(labelled(3, "calculated", { extra: 1 }).extra, 1);
 });
+
+test("FIX-NOOP-1: a 5xx is retried three times after the first attempt, spaced by the runner's configured back-off (5 s, 15 s, 45 s), then fails naming the status", async () => {
+  const sleeps: number[] = [];
+  let n = 0;
+  const d = makeDeps({});
+  d.deps.sleep = async (ms: number) => void sleeps.push(ms);
+  d.deps.fetch = (async () => (++n, new Response("down", { status: 503, statusText: "Service Unavailable" }))) as never;
+  const r = await runProducer(d.deps, { spec: spec({ fetchDoc: async (ctx) => ({ text: await (await ctx.get("https://h/x")).text() }) }) });
+  assert.equal(r.outcome, "failed");
+  assert.match(r.notes.join(" "), /HTTP 503/);
+  assert.equal(n, 4);
+  assert.deepEqual(sleeps, [5000, 15000, 45000]);
+});

@@ -1,6 +1,6 @@
 // `node scripts/runs/execute.mjs <plan.json>...`: runs the steps of each committed plan IN ORDER, every one as the turn job would (scripts/turn.mjs --stage --mode --input), stops at the first failure,
 // writes scripts/runs/results/<plan>.json (step, outcome, ledger row ids, counts, refusals: a workflow artifact, never committed) and the per-step table to the job summary.
-// Idempotence is in the ledger (INV-RUN-3): every step's stage input carries ruled_plan "<plan file>#<step>", which the harness records on the run row; a step with a success apply row for that key is skipped, a failed one runs again.
+// Idempotence is in the ledger (INV-RUN-3): every step's stage input carries ruled_plan "<plan file>#<step>", which the harness records on the run row; a step with a success apply row for that key is skipped, a failed one runs again. A step may carry on_failure "continue" (default "stop"): its failure is recorded and the plan goes on.
 // Nothing here bypasses the turn: the emergency stop, the licence register and the producers' own gates bind inside scripts/turn.mjs; a step the stop forced dry is a failure, never a pass.
 import { spawnSync } from "node:child_process";
 import { appendFileSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
@@ -52,6 +52,11 @@ export async function executePlan(plan, planPath, { invoke = invokeTurn, applied
     const input = { ...step.input, [step.stage]: { ...step.input[step.stage], ruled_plan: key } };
     const args = ["scripts/turn.mjs", "--stage", step.stage, "--mode", step.mode, "--input", JSON.stringify(input), ...(step.chain ? [] : ["--no-chain"])];
     const done = summarise(step, invoke({ args, env: { ...pairs(step.producer_env), TURN_RULED_PLAN: planPath } }));
+    if (done.outcome !== "ok" && step.on_failure === "continue") {
+      results.steps.push({ ...done, continued: true });
+      results.outcome = "partial";
+      continue;
+    }
     results.steps.push(done);
     if (done.outcome !== "ok") {
       results.outcome = "failed";
@@ -59,6 +64,17 @@ export async function executePlan(plan, planPath, { invoke = invokeTurn, applied
     }
   }
   return { ...results, finished_at: now().toISOString() };
+}
+
+/** The job's exit code: 1 only when a stop step failed. A continue step's failure is in the ledger and the summary, and the next push of the plan retries it (it has no success row). */
+export const exitCodeOf = (results) => (results.outcome === "failed" ? 1 : 0);
+
+/** The per-step table of the job summary, the failed steps first. */
+export function summaryTable(results) {
+  const failed = (s) => s.outcome !== "ok" && s.outcome !== "already-applied";
+  const steps = [...results.steps.filter(failed), ...results.steps.filter((s) => !failed(s))];
+  const note = (s) => `${s.continued ? "continued (on_failure continue); " : ""}${String(s.note ?? s.error ?? "")}`.replace(/\|/g, "/");
+  return [`### Ruled run ${results.plan}: ${results.outcome}`, "", `ruling: ${results.ruling}`, "", "| step | mode | outcome | root run | refusals | note |", "|---|---|---|---|---|---|", ...steps.map((s) => `| ${s.step} | ${s.mode} | ${s.outcome} | ${s.root_run_id ?? "-"} | ${s.refusals ?? "-"} | ${note(s)} |`)].join("\n");
 }
 
 if (isMain(import.meta.url)) {
@@ -72,10 +88,10 @@ if (isMain(import.meta.url)) {
     const results = await executePlan(parsePlan(readFileSync(path, "utf8")), path, { applied });
     mkdirSync("scripts/runs/results", { recursive: true });
     writeFileSync(`scripts/runs/results/${results.plan}.json`, `${JSON.stringify(results, null, 2)}\n`);
-    const table = [`### Ruled run ${results.plan}: ${results.outcome}`, "", `ruling: ${results.ruling}`, "", "| step | mode | outcome | root run | refusals | note |", "|---|---|---|---|---|---|", ...results.steps.map((s) => `| ${s.step} | ${s.mode} | ${s.outcome} | ${s.root_run_id ?? "-"} | ${s.refusals ?? "-"} | ${String(s.note ?? s.error ?? "").replace(/\|/g, "/")} |`)].join("\n");
+    const table = summaryTable(results);
     console.log(table);
     if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${table}\n`);
-    failed = results.outcome !== "ok";
+    failed = exitCodeOf(results) !== 0;
   }
   process.exit(failed ? 1 : 0);
 }
