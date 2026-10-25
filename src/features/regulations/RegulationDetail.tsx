@@ -169,7 +169,7 @@ export function RegulationDetail(p: Props) {
                   leadNote="This item was captured directly from its source document rather than synthesized into a brief. Every fact below is quoted verbatim from that source."
                   dateFacts={split.dateFacts}
                   otherFacts={split.otherFacts}
-                  gapsLine={parsed && parsed.slotFieldCount > 0 ? `${parsed.gaps.length} of ${parsed.slotFieldCount} record fields not stated by the source` : undefined}
+                  gapsLine={parsed && parsed.slotFieldCount > 0 ? <>{`${parsed.gaps.length} of ${parsed.slotFieldCount} record fields not stated by the source`}{parsed.gaps.map((g) => <span key={g.slotKey} style={{ display: "block" }}>{g.label}: {g.text}</span>)}</> : undefined}
                   tags={r.tags}
                 />
               ) : (
