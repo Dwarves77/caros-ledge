@@ -31,6 +31,11 @@
    "why": "The flywheel passes (connect, tag, discovery, corpus) read the corpus they are connecting, as pipeline stages."
   },
   {
+   "glob": "src/core/flywheel/patterns/run.ts",
+   "kind": "pipeline",
+   "why": "The connect stage's pattern step reads the pattern values it wrote earlier, stale and superseded ones included, to supersede or retire them; it is the writer of those rows, not a reader of them."
+  },
+  {
    "glob": "src/features/sources/**",
    "kind": "pipeline",
    "why": "Source classification and change detection read the items of a source to classify and compare them."
