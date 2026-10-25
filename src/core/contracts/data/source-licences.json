@@ -450,6 +450,28 @@
    "quote": "Unless a copyright is indicated, information on the U.S. Customs and Border Protection website is in the public domain and may be reproduced, published or otherwise used without the permission of the CBP.",
    "termsReadOn": "2026-10-20",
    "note": "READ 2026-10-20 at https://www.cbp.gov/site-policy-notices/copyright-notice. The same notice asks only that CBP be cited as the source, and says a copyright indicated on a photo, graphic or other material needs permission from its original source. The Section 232 FAQ page carries no copyright indication (checked 2026-10-20). The notice does not name 17 U.S.C. 105; that provision is not relied on here."
+  },
+  "ecb": {
+   "key": "ecb",
+   "name": "European Central Bank — euro foreign exchange reference rates",
+   "redistribution": "permitted",
+   "licence": "ECB copyright notice (ecb.europa.eu, entire website): free use of the information obtained directly from the website, provided it appears accurately and the ECB is cited as the source",
+   "attribution": "Source: European Central Bank",
+   "url": "https://www.ecb.europa.eu/services/disclaimer/html/index.en.html",
+   "verifiedOn": "2026-10-24",
+   "quote": "users of this website may make free use of the information obtained directly from it subject to the following conditions: When such information is distributed or reproduced, it must appear accurately and the ECB must be cited as the source.",
+   "termsReadOn": "2026-10-24",
+   "note": "Euro foreign exchange reference rates (market_series, four currencies). The notice was read on 2026-10-24 on the ECB's Disclaimer & copyright page (Copyright section), which replaces the migration 281 row's unconfirmed transcription. Two conditions bind us: modified data (a rate converted or averaged) must be stated as modified, and the ECB must be cited as the source with the data. The exception for named-author documents (Working Papers, Occasional Papers) does not touch the rates."
+  },
+  "ukpn_ltds_capacity_heatmap": {
+   "key": "ukpn_ltds_capacity_heatmap",
+   "name": "UK Power Networks, Long Term Development Statement (LTDS) Capacity Heatmap",
+   "redistribution": "permitted",
+   "licence": "CC BY 4.0",
+   "attribution": "Source: UK Power Networks, Long Term Development Statement Capacity Heatmap, CC BY 4.0",
+   "url": "https://ukpowernetworks.opendatasoft.com/explore/dataset/ukpn-capacity-heatmap/",
+   "verifiedOn": "2026-10-24",
+   "note": "Per-substation demand headroom and constraint for the three UKPN licence areas (grid_connection_queues, queue months NULL by ruling 2026-10-08). The licence is the catalogue metadata field metas.default.license of the dataset, read on 2026-10-24 as CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/) with publisher UK Power Networks; the producer re-checks that field and each release file's rights before it maps a row and refuses on any other value."
   }
  }
 }

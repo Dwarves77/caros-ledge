@@ -1,55 +1,238 @@
 {
   "dispatches": [
-    { "producer": "ecb-fx" },
-    { "producer": "eia-v2-petroleum-spot" },
-    { "producer": "eu-weekly-oil-bulletin" },
-    { "producer": "refresh-published-price-statistics" },
-    { "producer": "neso-carbon-intensity" },
-    { "producer": "ukpn-capacity-heatmap" },
-    { "producer": "bls-oews" },
-    { "producer": "eurostat-lc-lci-lev" },
-    { "producer": "eurostat-nrg-pc-205" },
-    { "producer": "oem-roadmap-rows", "rowsFile": "src/features/market/producers/data/rows/oem_tech_roadmaps-2026-10.json" },
-    { "producer": "research-assessment" }
+    {
+      "producer": "ecb-fx"
+    },
+    {
+      "producer": "eia-v2-petroleum-spot"
+    },
+    {
+      "producer": "eu-weekly-oil-bulletin"
+    },
+    {
+      "producer": "refresh-published-price-statistics"
+    },
+    {
+      "producer": "neso-carbon-intensity"
+    },
+    {
+      "producer": "ukpn-capacity-heatmap"
+    },
+    {
+      "producer": "bls-oews"
+    },
+    {
+      "producer": "eurostat-lc-lci-lev"
+    },
+    {
+      "producer": "eurostat-nrg-pc-205"
+    },
+    {
+      "producer": "oem-roadmap-rows",
+      "rowsFile": "src/features/market/producers/data/rows/oem_tech_roadmaps-2026-10.json"
+    },
+    {
+      "producer": "statutory-schedules",
+      "rowsFile": "src/features/statutory/producers/data/rows/statutory_computations-2026-10.json"
+    },
+    {
+      "producer": "reroute-rows",
+      "rowsFile": "src/features/market/producers/data/rows/reroute_events-2026-10.json"
+    },
+    {
+      "producer": "research-assessment"
+    },
+    {
+      "producer": "state-cost-facts",
+      "rowsFile": "src/features/operations/producers/data/rows/state_cost_facts-2026-10.json"
+    }
   ],
   "tables": {
-    "market_series": { "armed": ["ecb-fx", "eia-v2-petroleum-spot", "eu-weekly-oil-bulletin"] },
-    "market_series_items": { "absent": [{ "source": "mint artifact (ops ratify-series-items)", "reason": "ratification attaches a series to a minted item and needs a mint artifact; item minting stays held (the operator 2026-10-04 hold stands for minting)" }] },
-    "published_price_statistics": { "armed": ["refresh-published-price-statistics"] },
+    "market_series": {
+      "armed": [
+        "ecb-fx",
+        "eia-v2-petroleum-spot",
+        "eu-weekly-oil-bulletin"
+      ]
+    },
+    "market_series_items": {
+      "absent": [
+        {
+          "source": "mint artifact (ops ratify-series-items)",
+          "reason": "ratification attaches a series to a minted item and needs a mint artifact; item minting stays held (the operator 2026-10-04 hold stands for minting)"
+        }
+      ]
+    },
+    "published_price_statistics": {
+      "armed": [
+        "refresh-published-price-statistics"
+      ]
+    },
     "grid_connection_queues": {
-      "armed": ["ukpn-capacity-heatmap", "grid-queue-rows"],
+      "armed": [
+        "ukpn-capacity-heatmap",
+        "grid-queue-rows"
+      ],
       "absent": [
-        { "source": "NESO connections register and queue statistics (neso.energy)", "reason": "publishes generation and storage queue MW and connection dates, no demand-side queue months at p50 or p90, the two columns the table requires one of" },
-        { "source": "SSEN and National Grid connections-reform timeline pages", "reason": "state process dates (Gate 2 offer deadlines), not a queue duration in months for a capacity band" },
-        { "source": "Rijksoverheid and Netbeheer Nederland congestion pages", "reason": "state priority rules and counts of waiting parties; the only duration found (45 weeks, small consumers, 2025) is a mean reported by BNNVARA, not a p50 or p90 and not a primary source" },
-        { "source": "SPEN, NGED heatmaps and ENTSO-E congestion maps", "reason": "no page stating queue months was found; heatmaps carry headroom MW, which the UKPN producer already maps with queue months NULL and obs_status L (ruling 2026-10-08)" }
+        {
+          "source": "NESO connections register and queue statistics (neso.energy)",
+          "reason": "publishes generation and storage queue MW and connection dates, no demand-side queue months at p50 or p90, the two columns the table requires one of"
+        },
+        {
+          "source": "SSEN and National Grid connections-reform timeline pages",
+          "reason": "state process dates (Gate 2 offer deadlines), not a queue duration in months for a capacity band"
+        },
+        {
+          "source": "Rijksoverheid and Netbeheer Nederland congestion pages",
+          "reason": "state priority rules and counts of waiting parties; the only duration found (45 weeks, small consumers, 2025) is a mean reported by BNNVARA, not a p50 or p90 and not a primary source"
+        },
+        {
+          "source": "SPEN, NGED heatmaps and ENTSO-E congestion maps",
+          "reason": "no page stating queue months was found; heatmaps carry headroom MW, which the UKPN producer already maps with queue months NULL and obs_status L (ruling 2026-10-08)"
+        }
       ]
     },
-    "regional_data_facts": { "armed": ["neso-carbon-intensity", "bls-oews", "eurostat-lc-lci-lev", "eurostat-nrg-pc-205"] },
-    "state_cost_facts": { "armed": ["state-cost-facts"] },
-    "oem_tech_roadmaps": { "armed": ["oem-roadmap-rows"] },
+    "regional_data_facts": {
+      "armed": [
+        "neso-carbon-intensity",
+        "bls-oews",
+        "eurostat-lc-lci-lev",
+        "eurostat-nrg-pc-205"
+      ]
+    },
+    "state_cost_facts": {
+      "armed": [
+        "state-cost-facts"
+      ],
+      "absent": [
+        {
+          "source": "Ohio Department of Taxation, Motor Fuel Dealer page (tax.ohio.gov/business/motor-fuel-tax/motor-fuel-dealer) and the motor fuel tax holiday notice",
+          "reason": "state the diesel rate ($0.47 per gallon, reduced to $0.0001 from 2026-10-04 to 2027-01-02) but answer HTTP 404 to the declared identity and load only in the browser tier; the producer grounds each span on a plain GET, so no span can be grounded on them; the 2016 MF-2 instructions PDF is out of date"
+        }
+      ]
+    },
+    "oem_tech_roadmaps": {
+      "armed": [
+        "oem-roadmap-rows"
+      ]
+    },
     "reroute_events": {
-      "armed": ["reroute-rows"],
+      "armed": [
+        "reroute-rows"
+      ],
       "absent": [
-        { "source": "Maersk customer advisories (maersk.com)", "reason": "capture refused: the host answers with response headers over the HTTP client limit (HeadersOverflowError), so no stored capture can exist" },
-        { "source": "Hapag-Lloyd and CMA CGM advisories", "reason": "capture refused: HTTP 403 to the declared identity" },
-        { "source": "MSC and ONE advisory index pages", "reason": "the pages load but state no reroute with a corridor, cause, dates and surcharge" },
-        { "source": "Suez Canal Authority and Panama Canal Authority notices", "reason": "the Suez page carries no notice text; the Panama advisories path answers 404" },
-        { "source": "corridor model", "reason": "a Suez-to-Cape reroute joins the same origin-destination pair, and corridor identity is ORIGIN-DEST:mode, so baseline and reroute resolve to one entity and the driver refuses it by design; fuel_burn_multiplier is a required derived figure no advisory states as a number" }
+        {
+          "source": "Maersk, Hapag-Lloyd, CMA CGM and MSC advisories on structural changes of named services (AE5, AE12, AE15, AE19, ME2, ME11, IMX, MECL, NE4, SE1, IEX, Jade, Tiger, Albatros, Himalaya, Indusa)",
+          "reason": "the advisories name services and sailings, and the rotations they print carry no Shanghai-to-Rotterdam or Shanghai-to-Genoa pair except AE11; the corridor entities in production are the four CNSHA lanes (NLRTM, ITGOA, USNYC, USLAX), so these events join no corridor and no row is written for them"
+        },
+        {
+          "source": "ONE customer advisory on the Cape of Good Hope service routes (2024-09-12)",
+          "reason": "the page prints the Cape rotations of the 2025 product (FE4 Shanghai to Rotterdam, MS2 Shanghai to Genoa) but no effective date; the date sits on a sibling press release, and a row cites one page"
+        },
+        {
+          "source": "Suez Canal Authority navigation circulars (periodical 28/2026 and the circular index)",
+          "reason": "the page loads (HTTP 200) but its stored text is the site template and navigation; the circular body is not in the markup, so no notice text exists to quote"
+        },
+        {
+          "source": "Panama Canal Authority advisories to shipping (A-25-2026)",
+          "reason": "the advisory states a maximum draft and transit slots for the Neopanamax locks, not a route change of any corridor"
+        },
+        {
+          "source": "transit time and distance figures of the advisories",
+          "reason": "Hapag-Lloyd states 7 to 14 days and Maersk 1 to 3 weeks and about 4,000 miles: ranges and an unstated mile, so transit_delta_days and distance_delta_nm stay empty rather than take a midpoint; fuel_burn_multiplier is derived later and never typed"
+        },
+        {
+          "source": "CNSHA-USNYC and CNSHA-USLAX reroutes",
+          "reason": "no advisory read names a Shanghai-to-New York or Shanghai-to-Los Angeles reroute: the transpacific lane is not a Suez or Cape choice and no Panama notice states a reroute"
+        }
       ]
     },
-    "indexation_clauses": { "armed": ["operator-rows-indexation-clauses"], "absent": [{ "source": "carrier tariff conditions and BAF or ETS surcharge formulas", "reason": "no published tariff states base_value, base_date and passthrough_pct (contract terms), a contract is customer data, and the table is org-stamped by the caller with no org named" }] },
-    "auxiliary_energy_profiles": { "armed": ["operator-rows-auxiliary-energy-profiles"], "absent": [{ "source": "reefer and auxiliary energy specifications (Carrier, Thermo King, Daikin)", "reason": "no spec page states duty_cycle and hours_typical (operator assumptions, required columns) and the table is org-stamped by the caller with no org named" }] },
+    "indexation_clauses": {
+      "armed": [
+        "operator-rows-indexation-clauses"
+      ],
+      "absent": [
+        {
+          "source": "Maersk Bunker Adjustment Factor notice (2025-12-01, effective 2026-01-01)",
+          "reason": "states the Platts VLSFO review average (461,54 USD/TON), the review window and the effective date of each quarter, but no passthrough_pct and no rounding_rule, and no index entity exists for the Platts series; base_value and base_date are an average and a date of effect, not a contract base"
+        },
+        {
+          "source": "Hapag-Lloyd Marine Fuel Recovery notice (Q3 2026, 2026-05-31)",
+          "reason": "states that the Q3 levels apply from 1 July 2026 and that the values sit in the Surcharge Finder; it prints no formula, base value, passthrough_pct or rounding_rule"
+        },
+        {
+          "source": "CMA CGM Bunker Adjustment Factor formula notice",
+          "reason": "the page answered but its robots.txt could not be read by the browser tier (HTTP 403), so it was deferred and nothing was captured; the formula (fuel price per ton times a trade coefficient) is a search-result summary only"
+        },
+        {
+          "source": "MSC Bunker Recovery Charge advisories",
+          "reason": "state a per-trade charge for a period; no formula, base value or passthrough_pct is published, and a tariff table is not a contract clause with an index"
+        }
+      ]
+    },
+    "auxiliary_energy_profiles": {
+      "armed": [
+        "operator-rows-auxiliary-energy-profiles"
+      ],
+      "absent": [
+        {
+          "source": "Thermo King Magnum+ operator's manual (TK 61110-4-OP)",
+          "reason": "states net cooling capacity and power in kW at five setpoints (11.55 kW at 21.1 C down to 6.03 kW at -35 C, 460 V 60 Hz) and the compressor motor rating, but no duty_cycle and no hours_typical, and the load_type vocabulary has no value for a container refrigeration unit's electric draw (reefer_genset names a genset)"
+        },
+        {
+          "source": "Daikin LXE series specifications",
+          "reason": "states a maximum power consumption of 13.5 kW and cooling capacities; no duty_cycle, no hours_typical and no setpoint-to-power table"
+        },
+        {
+          "source": "Carrier Transicold PrimeLINE technical publication T-372 (introduction)",
+          "reason": "states supply voltage and refrigerant options; the stored text holds no kW figure, duty_cycle or hours_typical"
+        }
+      ]
+    },
     "statutory_computations": {
+      "armed": [
+        "statutory-schedules"
+      ],
       "absent": [
-        { "source": "EUR-Lex captures: EU ETS maritime phase-in, FuelEU Article 4(2) and Article 23, ReFuelEU Annex I, CBAM definitive-period factors", "reason": "the writer (features/statutory/rows.ts) computes the FuelEU Annex IV penalty for a named vessel from three vessel-specific inputs no instrument states, and computeStatutory is not implemented in this tree (ops statutory-run answers owed, core/turn/ops.ts); a schedule has no formula and no column to land in" }
+        {
+          "source": "Directive 2003/87/EC Article 10a(1a): the CBAM factor from 2034",
+          "reason": "the text says 'From 2034, no CBAM factor shall apply'; it states an absence of a factor, not a number with a unit, so no figure can be quoted and no row is written for 2034"
+        },
+        {
+          "source": "Regulation (EU) 2023/1805 Article 23(2): the multiplier for consecutive deficit periods",
+          "reason": "stated as the formula 1 + (n -1)/10 over the number of consecutive reporting periods of a ship, a rule over a vessel's history and not a figure of the schedule; it stays with computeStatutory"
+        },
+        {
+          "source": "Regulation (EU) 2023/1805 Article 5(3): the 2 % RFNBO subtarget from 2034",
+          "reason": "applies only if the RFNBO share is below 1 % for the reporting period 2031, a condition the instrument leaves to a later monitoring result, so it is not an unconditional schedule figure and no row is written"
+        }
       ]
     },
-    "research_assessments_current": { "armed": ["research-assessment"] },
-    "signposts": { "armed": ["research-assessment"] },
-    "vocabulary_terms": { "turnPass": "connect corpus term pass" },
-    "vocabulary_mentions": { "turnPass": "connect corpus term pass" },
-    "entity_refs": { "armed": ["state-cost-facts"] }
+    "research_assessments_current": {
+      "armed": [
+        "research-assessment"
+      ]
+    },
+    "signposts": {
+      "armed": [
+        "research-assessment"
+      ]
+    },
+    "vocabulary_terms": {
+      "turnPass": "connect corpus term pass"
+    },
+    "vocabulary_mentions": {
+      "turnPass": "connect corpus term pass"
+    },
+    "entity_refs": {
+      "armed": [
+        "state-cost-facts"
+      ]
+    }
   },
-  "stillDisabled": ["carrier-ets-surcharge", "sbti-target-dashboard", "research-walker"]
+  "stillDisabled": [
+    "carrier-ets-surcharge",
+    "sbti-target-dashboard",
+    "research-walker"
+  ]
 }

@@ -52,6 +52,8 @@ export interface Citation {
   title: string;
   retrieved_at: string;
   quote: string;
+  /** Further sentences of the same page that support the row's other columns (a date, a corridor): each must stand verbatim on the same capture. */
+  also?: string[];
 }
 /** Every row REQUIRES a citation block (rule 18: a figure with no source is never published). Throws naming exactly what is missing; never guesses. */
 export function requireCitation(row: Record<string, unknown>, index: number, where: string): Citation {

@@ -6,6 +6,8 @@ import { z } from "zod";
 
 import { groundCandidate } from "@/core/contracts";
 import { fetchAllRows, type Db } from "@/core/db";
+import { toText } from "@/core/fetch";
+import { extractPdfText } from "@/core/fetch/direct";
 import { planJurisdiction, planJurisdictionRefs, regionCodes } from "@/core/entities";
 import { loadRowsFile, registerCitedSource } from "@/core/producers/rows-file";
 import type { ParseOut, ProducerCtx, ProducerSpec } from "@/core/producers/runner";
@@ -25,6 +27,10 @@ const originClassForTier = (tier: unknown): "official" | "verified" | null => (t
 function parseNumericValue(value: unknown): number | null {
   const s = String(value ?? "").trim();
   return /^-?\d+(\.\d+)?$/.test(s) ? Number(s) : null;
+}
+/** The text a span is grounded on: the visible text of a page (tags and entities gone, whitespace collapsed, as a capture holds it) or the text layer of a published PDF rate schedule (the repo's one PDF text path), never the raw bytes. */
+async function pageText(res: Response): Promise<string> {
+  return /pdf/i.test(res.headers.get("content-type") ?? "") ? (await extractPdfText(new Uint8Array(await res.arrayBuffer()))).text : toText(await res.text());
 }
 const naturalKey = (r: Rec): string | null => keyOf([r.state_code, r.dimension, r.fact_label]);
 const UPDATE_FIELDS = ["value", "value_numeric", "unit", "trend", "source_id", "statute_citation", "effective_date", "origin_class"] as const;
@@ -56,7 +62,7 @@ export const stateCostFacts: ProducerSpec = {
       }
       const c = p.data;
       const id = `${c.state_code}|${c.dimension}|${c.fact_label}`;
-      const g = groundCandidate({ span_text: c.span_text ?? null }, await ctx.get(c.source_url).then((r) => r.text(), () => null));
+      const g = groundCandidate({ span_text: c.span_text ?? null }, await ctx.get(c.source_url).then(pageText).catch(() => null));
       if (!g.ok) {
         warnings.push(`${id}: refused_ungrounded: ${g.reason}`);
         continue;
