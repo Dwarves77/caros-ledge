@@ -1,6 +1,6 @@
 // Ported from old_repo/scripts/turns/record-briefs/schema.mjs (lines 101-330)
 // Ported from old_repo/scripts/turns/record-briefs/schema.mjs (lines 548-1051)
-// The record-briefs validator: one entry (a full brief, its metadata and its claim ledger) checked against the item's LIVE pool before any write. The eight mirrors refuse what the ground step would quarantine,
+// The item-briefs validator: one entry (a full brief, its metadata and its claim ledger) checked against the item's LIVE pool before any write. The eight mirrors refuse what the ground step would quarantine,
 // naming the exact token or section: Gate A (a figure or date no FACT covers), criterion 4 (an unlabelled requirement), the per-format timeline, claim-section attachment, depth accounting, qualification accounting,
 // the numeric figure (decimals kept), and criterion 5 (a required slot without a covering FACT or, where its description allows, GAP). Section boundaries come from the REAL format registry
 // (core/brief FORMAT_SPECS), so the old second copy of the section list and its drift test are gone. Pure: the caller supplies the live material.

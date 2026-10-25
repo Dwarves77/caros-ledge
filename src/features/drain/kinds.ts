@@ -1,26 +1,29 @@
 // Ported from old_repo/scripts/drain/kinds.mjs (lines 1-221)
 // Ported from old_repo/scripts/research/backfill-themes.mjs (lines 28-40)
-// The judgement drain's kinds: the six queues of ADR-044 decision 1 plus `theme-classification` (the residue of the free theme rules) and `screen-verdict` (the ambiguous
+// The judgement drain's kinds: the seven digest kinds of the one registry (src/core/digest/kinds.ts, DIGEST-1) plus `theme-classification` (the residue of the free theme rules) and `screen-verdict` (the ambiguous
 // relevance holds P2-05 banks). Each kind names an exporter FUNCTION (plan.ts calls it in-process) and the apply STEP P2-08's dispatcher runs on merge (the old
 // workflow filenames are gone). The two exporters this slice owns are here; the other six are supplied through deps by the slices that own their queues.
 import { z } from "zod";
 
 import { fetchAllRows, type Db } from "@/core/db";
+import { DIGEST_KINDS, type DigestKind } from "@/core/digest/kinds";
 import { runResult, type RunResult } from "@/core/intake/result";
 import { dispatchNotification } from "@/core/notifications";
 
 import raw from "./data/kinds.json";
 
-const modeSchema = z.object({ label: z.string() });
-const kind = z.object({ id: z.string(), label: z.string(), batchDir: z.string(), batchRe: z.string(), batchPrefix: z.string(), applyStep: z.string(), namesFile: z.boolean(), batchSize: z.number().int().positive(), maxBatchesPerRun: z.number().int().positive(), idKey: z.string(), leaseKey: z.string().nullable(), modes: z.record(z.string(), modeSchema).optional() }).strict();
-const file = z.object({ order: z.array(z.string()), kinds: z.array(kind) }).superRefine((f, ctx) => {
-  if (f.kinds.map((k) => k.id).join() !== f.order.join()) ctx.addIssue({ code: "custom", message: "order must list every kind once, in kind order" });
+const kind = z.object({ id: z.string(), label: z.string(), batchDir: z.string(), batchRe: z.string(), batchPrefix: z.string(), applyStep: z.string(), namesFile: z.boolean(), batchSize: z.number().int().positive(), maxBatchesPerRun: z.number().int().positive(), idKey: z.string(), leaseKey: z.string().nullable() }).strict();
+const file = z.object({ kinds: z.array(kind) }).superRefine((f, ctx) => {
   for (const k of f.kinds) if (!k.batchDir || /\.\./.test(k.batchDir)) ctx.addIssue({ code: "custom", message: `kind ${k.id}: batchDir must be a clean relative path` });
 });
 const parsed = file.parse(raw);
-export type DrainKind = Omit<z.infer<typeof kind>, "batchRe"> & { batchRe: RegExp };
-export const DRAIN_KINDS: readonly DrainKind[] = Object.freeze(parsed.kinds.map((k) => Object.freeze({ ...k, batchRe: new RegExp(k.batchRe) })));
-export const KIND_ORDER: readonly string[] = Object.freeze(parsed.order);
+type Own = Omit<z.infer<typeof kind>, "batchRe"> & { batchRe: RegExp };
+/** A drain kind: the seven digest kinds come from the one registry (core/digest); the three below it (theme classification, screen verdicts, the notification outbox) are the drain's own and carry no authoring guide. */
+export type DrainKind = Own & { modes?: Record<string, { label: string }> | undefined; authoringGuide: DigestKind["authoringGuide"] | null; applyPending: string | null };
+const own: DrainKind[] = parsed.kinds.map((k) => ({ ...k, batchRe: new RegExp(k.batchRe), authoringGuide: null, applyPending: null }));
+const digest: DrainKind[] = DIGEST_KINDS.map((k) => ({ id: k.id, label: k.label, batchDir: k.batchDir, batchRe: k.batchRe, batchPrefix: k.batchPrefix, applyStep: k.applyStep, namesFile: k.namesFile, batchSize: k.batchSize, maxBatchesPerRun: k.maxBatchesPerRun, idKey: k.idKey, leaseKey: k.leaseKey, modes: k.modes, authoringGuide: k.authoringGuide, applyPending: k.applyPending }));
+export const DRAIN_KINDS: readonly DrainKind[] = Object.freeze([...digest, ...own].map((k) => Object.freeze(k)));
+export const KIND_ORDER: readonly string[] = Object.freeze(DRAIN_KINDS.map((k) => k.id));
 export const DEFAULT_MODE = "pending";
 
 const kindById = (id: string): DrainKind | null => DRAIN_KINDS.find((k) => k.id === id) ?? null;
