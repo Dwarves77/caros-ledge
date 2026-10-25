@@ -197,3 +197,19 @@ test("S4: ecb-fx and the UKPN heatmap name a licence key the register holds as p
   assert.equal(onDisk(ARM2_MIGRATION_FILE), renderArm2Migration(), "0125 drifted from the register; regenerate with GOLDEN_WRITE_MIGRATION=1 npm test");
   assert.equal(onDisk(ARM2_DOWN_FILE), renderArm2Down());
 });
+
+test("FIX-QUOTE-1: a rows file asks the database once per distinct (url, quote), not once per row and quote, and the written rows are the same", async () => {
+  const rows = rowsOf(REROUTE);
+  const asked = rows.flatMap((r) => [r.citation.quote, ...(r.citation.also ?? [])].map((q) => JSON.stringify([r.citation.url, q])));
+  assert.ok(new Set(asked).size < asked.length, "the file repeats a (url, quote) across rows, or the test shows nothing");
+  const f = fixture({ routes: routesFor(rows) });
+  Object.assign(f.d.producers.env, { MARKET_PRODUCER_REROUTE_ROWS_ENABLED: "1" });
+  f.db.seed("entities", corridors);
+  const real = f.d.producers.sb as NonNullable<typeof f.d.producers.sb>;
+  let rpc = 0;
+  f.d.producers.sb = new Proxy(real, { get: (t, p, r) => (p === "rpc" ? (...a: unknown[]) => ((rpc += (a[0] === "capture_holding_quote" ? 1 : 0)), (t.rpc as (...x: unknown[]) => unknown).apply(t, a)) : Reflect.get(t, p, r)) });
+  const { cap, run } = await applyText(f, "reroute-rows", textOf(rows));
+  assert.equal(cap.counts.failed, 0, cap.notes.join("|"));
+  assert.equal(f.db.rows("reroute_events").length, rows.length, run.notes.join("|"));
+  assert.equal(rpc, new Set(asked).size, `${asked.length} quote checks, ${new Set(asked).size} distinct`);
+});

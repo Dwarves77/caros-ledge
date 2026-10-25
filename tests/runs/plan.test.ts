@@ -24,7 +24,7 @@ test("a plan may carry an integer revision of 2 or more (FIX-EDGES-1: the re-run
 });
 
 test("INV-RUN-1: an apply propagate step without the ruling's cadence_exception is refused (absent, blank, or any other text); a dry step and a non-propagate apply step need none", () => {
-  for (const input of [{ propagate: { producers: { only: "ecb-fx" } } }, { propagate: { cadence_exception: "  ", producers: {} } }, { propagate: { cadence_exception: "another ruling" } }, {}]) {
+  for (const input of [{ propagate: { producers: { only: "ecb-fx" } } }, { propagate: { cadence_exception: "  ", producers: {} } }, { propagate: { cadence_exception: "another ruling", producers: {} } }, { propagate: { producers: {} } }]) {
     assert.throws(() => parsePlan(plan({ steps: [step({ input })] })), /cadence_exception/, JSON.stringify(input));
   }
   parsePlan(plan({ steps: [step({ mode: "dry", input: { propagate: { producers: { only: "ecb-fx" } } }, producer_env: [] })] }));
@@ -72,4 +72,17 @@ test("a producers.only that is not an entry of the registry is refused (a typo w
   assert.throws(() => parsePlan(plan({ steps: [step({ input: input("ecb-fxx") })] })), /ecb-fxx.*registry.json/);
   assert.throws(() => parsePlan(plan({ steps: [step({ mode: "dry", input: input("nope"), producer_env: [] })] })), /registry.json/);
   parsePlan(plan({ steps: [step({ input: input("ecb-fx") })] }));
+});
+
+test("the ruling's cadence_exception is required on an apply propagate step that fetches (its input carries `producers`) and refused as a false claim on an apply step that fetches nothing (a derive or retokenise pass, a connect step, a propagate step with no producers)", () => {
+  // Steps that fetch nothing need none.
+  parsePlan(plan({ steps: [step({ input: { propagate: { derive: { only: "x" } } }, producer_env: [] })] }));
+  parsePlan(plan({ steps: [step({ input: {}, producer_env: [] })] }));
+  parsePlan(plan({ steps: [step({ stage: "connect", input: { connect: { corpus: true } }, producer_env: [] })] }));
+  // A cadence_exception on a step that fetches nothing claims an exception it cannot use.
+  for (const s of [step({ input: { propagate: { cadence_exception: RULING } }, producer_env: [] }), step({ stage: "connect", input: { connect: { cadence_exception: RULING } }, producer_env: [] })]) {
+    assert.throws(() => parsePlan(plan({ steps: [s] })), /cadence_exception.*(fetch|false)/i, JSON.stringify(s.input));
+  }
+  // The steps that fetch still need the ruling.
+  assert.throws(() => parsePlan(plan({ steps: [step({ input: { propagate: { producers: { only: "ecb-fx" } } } })] })), /cadence_exception/);
 });
