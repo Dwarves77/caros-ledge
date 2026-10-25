@@ -1,0 +1,35 @@
+{
+  "ruling": "DERIVE-2 brief (coordinator, 2026-10-25): fill the null mode, statutory maximum and cost formula of the existing obligation objects from their own verbatim spans; the steps fetch nothing, so no scrape cadence is exercised (rule 16 stands) and the cadence_exception key only satisfies INV-RUN-1 for an apply propagate step",
+  "steps": [
+    {
+      "name": "derive-2-dry",
+      "stage": "propagate",
+      "mode": "dry",
+      "input": {
+        "propagate": {
+          "derive": {
+            "only": "modes-and-maximum",
+            "batch": 2000
+          }
+        }
+      },
+      "producer_env": []
+    },
+    {
+      "name": "derive-2",
+      "stage": "propagate",
+      "mode": "apply",
+      "input": {
+        "propagate": {
+          "derive": {
+            "only": "modes-and-maximum",
+            "batch": 2000
+          },
+          "cadence_exception": "DERIVE-2 brief (coordinator, 2026-10-25): fill the null mode, statutory maximum and cost formula of the existing obligation objects from their own verbatim spans; the steps fetch nothing, so no scrape cadence is exercised (rule 16 stands) and the cadence_exception key only satisfies INV-RUN-1 for an apply propagate step"
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    }
+  ]
+}

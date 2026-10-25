@@ -9,6 +9,7 @@ import { worst } from "@/core/intake/result";
 import type { RunResult } from "@/core/sources/run-result";
 
 import { deriveObligationObjects, type Candidate } from "../derive/derive-objects";
+import { fillObjectFields } from "../derive/fill-fields";
 import { deriveRegister } from "../derive/derive-register";
 
 /** Items per derivation read. */
@@ -38,5 +39,13 @@ export async function deriveObligationsJob(deps: { sb: Db }, input: DeriveJobInp
     add("objects", await deriveObligationObjects(deps.sb, { dry: input.dry, itemIds: slice }));
   }
   if (input.extraCandidates?.length) add("objects", await deriveObligationObjects(deps.sb, { dry: input.dry, itemIds: [], extraCandidates: input.extraCandidates }));
+  // The whole-corpus replay also fills the null mode, maximum and formula of every object, a bounded batch at a time (the turn's propagate stage does one batch per turn).
+  for (let after: string | null = null; !input.itemIds; ) {
+    const r = await fillObjectFields(deps.sb, { dry: input.dry, after });
+    add("fill", r);
+    const cursor: string[] = r.data?.ids.derive_cursor ?? [];
+    if (r.outcome === "failed" || cursor.length !== 2) break;
+    after = cursor[0] as string;
+  }
   return { counts, outcome: worst("ok", ...outcomes), notes: [...new Set(notes)] };
 }

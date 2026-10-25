@@ -1,0 +1,5 @@
+# path | reason (files with no "Ported from" header)
+src/features/obligations/derive/mode.ts | new in DERIVE-2: classifyMode, the transport mode(s) a verbatim span or its instrument names, from the modeClassifiers data rules
+src/features/obligations/derive/maximum.ts | new in DERIVE-2: the statutory maximum and cost formula a verbatim span states, grounded in the span, from the statutoryMaximum data rules
+src/features/obligations/derive/fill-fields.ts | new in DERIVE-2: the in-turn backfill of the null mode, statutory maximum and cost formula of obligation objects (derive-objects.ts is at the 400-line cap)
+src/core/parse/data/statutory-units.json | new in DERIVE-2: the one data map statutoryUnit reads (forms: first match wins, exact forms match the whole text; shared with CONNECT-2 PR A)
