@@ -6,7 +6,7 @@ import { runProducer } from "@/core/producers";
 import { surfaceOf } from "@/core/routing";
 import type { RunResult } from "@/core/types/run-result";
 import { runResult } from "@/core/types/run-result";
-import { drainExporters } from "@/features/batches";
+import { committedNames, drainExporters } from "@/features/batches";
 import { finishDrain, leaseDeps, planDrain, runNotificationOutbox } from "@/features/drain";
 import { groundInjected, eraseQuarantined, idStamp, planQuarantine, rehomeQuarantined, resolveQuarantined } from "@/features/intake";
 import { triggerQuestionsForItem } from "@/features/learning";
@@ -36,7 +36,7 @@ async function ratifyOp(c: FamilyCall, d: BuiltDeps, a: Args): Promise<RunResult
 /** One judgement-drain planning pass: the switch is read first (off plans nothing), each kind's exporter is the batch kit's own, leases are taken on a live run and every one is released before the row is written; a dry run takes none. */
 async function planDrainOp(c: FamilyCall, d: BuiltDeps, a: Args): Promise<RunResult> {
   const lease = leaseDeps(d.sb);
-  const deps = { ...lease, exporters: drainExporters(batchDeps(d)), listBatchDir: () => [], now: d.now };
+  const deps = { ...lease, exporters: drainExporters(batchDeps(d)), listBatchDir: (k: { batchDir: string }) => committedNames(typeof a.batchRoot === "string" ? a.batchRoot : process.cwd(), k.batchDir), now: d.now };
   const plan = await planDrain(deps, { runId: c.runId, dry: c.dry, ...(typeof a.limit === "number" ? { limit: a.limit } : {}), ...(typeof a.kind === "string" ? { kindId: a.kind } : {}), ...(typeof a.mode === "string" ? { mode: a.mode } : {}) });
   const { run } = await finishDrain(deps, plan);
   const m = run.metrics;

@@ -53,8 +53,12 @@ async function authorMarketSeriesDeltaEdges(sb: Db, seriesKeys: Iterable<string>
   const cutoff = cutoffDate.toISOString().slice(0, 10);
   for (const seriesKey of keys) {
     try {
-      const rows = await fetchAllRows<SeriesRowLite>((from, to) => sb.from("market_series").select(SELECT).eq("series_key", seriesKey).gte("reference_period", cutoff).order("id", { ascending: true }).range(from, to) as never, { cap: 5000 });
-      t(`${seriesKey}: ${rows.length} row(s) in the ${LOOKBACK_DAYS}-day window (cutoff ${cutoff})`);
+      const inWindow = await fetchAllRows<SeriesRowLite>((from, to) => sb.from("market_series").select(SELECT).eq("series_key", seriesKey).gte("reference_period", cutoff).order("id", { ascending: true }).range(from, to) as never, { cap: 5000 });
+      // The comparator is the nearest observation at or before the window start (INV-252), however old: a series observed every few weeks has its prior outside any fixed window, and reading only the window made it look like a first observation (FIX-EDGES-1).
+      const before = await sb.from("market_series").select(SELECT).eq("series_key", seriesKey).lt("reference_period", cutoff).order("reference_period", { ascending: false }).limit(1) as unknown as { data: SeriesRowLite[] | null; error: { message: string } | null };
+      if (before.error) throw new Error(`market_series prior read failed for ${seriesKey}: ${before.error.message}`);
+      const rows = [...(before.data ?? []), ...inWindow];
+      t(`${seriesKey}: ${inWindow.length} row(s) in the ${LOOKBACK_DAYS}-day window (cutoff ${cutoff}) and ${before.data?.length ?? 0} prior to it`);
       if (rows.length < 2) {
         counts.insufficientHistory += 1;
         continue;

@@ -1,0 +1,17 @@
+{
+ "itemsPerTurn": 25,
+ "rules": [
+  {
+   "kind": "implementing_act_due",
+   "re": { "source": "(?:Commission\\s+)?Implementing\\s+(?:Regulation|Decision|Directive)\\s*\\((?:EU|EC|EEC)\\)\\s*(?:No\\.?\\s*)?(?:\\d{4}\\/\\d+|\\d+\\/\\d{4})", "flags": "gi" }
+  },
+  {
+   "kind": "delegated_act_due",
+   "re": { "source": "(?:Commission\\s+)?Delegated\\s+(?:Regulation|Decision|Directive)\\s*\\((?:EU|EC|EEC)\\)\\s*(?:No\\.?\\s*)?(?:\\d{4}\\/\\d+|\\d+\\/\\d{4})", "flags": "gi" }
+  },
+  {
+   "kind": "guidance_expected",
+   "re": { "source": "\\b(?:guidance|guidelines)\\b[^.\\n]{0,120}?\\b(?:was|were|has been|have been)\\s+(?:published|issued|adopted)\\b", "flags": "gi" }
+  }
+ ]
+}

@@ -182,17 +182,21 @@ export async function applyEntries<L, P>(spec: EntrySpec<L, P>, deps: BatchDeps,
     counts.not_applied_io_budget = todo.length - written.length - (counts.write_failures as number);
     notes.push(`${spec.kind}: io budget of ${budget} byte(s) reached after ${spent}; stopped before ${stoppedAt} (resume with the remaining entries)`);
   }
+  let unreadable: string[] = [];
   if (spec.readBack && written.length) {
     try {
       const bad = await spec.readBack(deps, live, written, batch as string);
+      unreadable = bad;
       counts.read_back_failures = bad.length;
       for (const k of bad) notes.push(`${spec.kind} ${k}: read-back failed: the stored result does not match what was written`);
     } catch (e) {
       counts.read_back_failures = written.length;
+      unreadable = written.map((w) => w.key ?? String(w.index));
       notes.push(`${spec.kind}: read-back could not run: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
-  data.ids = { applied_ids: written.map((w) => w.key ?? String(w.index)) };
+  // The keys whose stored result failed the read-back are named apart: the turn's downstream never runs over them.
+  data.ids = { applied_ids: written.map((w) => w.key ?? String(w.index)), ...(unreadable.length ? { read_back_failed_ids: unreadable } : {}) };
   let down: RunResult | null = null;
   if (spec.downstream && written.length) {
     try {

@@ -4,11 +4,13 @@ name: CI
 # Job `ci`: lint, typecheck, build, tests, tree checks, LOC gates, the connection check, the column check, the migration static checks (npm run gates).
 # Job `schema`: supabase/schema.sql applied to an empty Postgres 15, then the migrations (each self-check must print its own OK, each down file is applied and catalog-compared), then the property checks.
 # Job `turn`: the turn runtime (scripts/turn.mjs). Dispatch only: it is the one job that holds the service key for a run of the branch it was dispatched on; no pull request or push ever receives it.
+# Job `ruled-runs` (RUN-1): a push to main that changed a plan file under scripts/runs/plans/ runs that plan's turn steps in order (scripts/runs/execute.mjs), with the turn job's environment and secrets, after `migrate`. A production run is a plan in a pull request; nobody dispatches it. It is the only job that holds the service key on a push, and only on main: a pull request never reaches it.
+# Each step carries ruled_plan "<plan file>#<step>" in its stage input; the ledger (harness_runs) says which steps already have a success apply row, and those are skipped, so a changed plan is safe to re-run. Nothing is committed back to main: the results are the `ruled-run-results` artifact and the job summary.
 # Job `windows`: the test step alone on Windows (every push to main and dispatch; a pull request that touches scripts/ or tests/).
 # Job `parity`: the built app on the runner, the UX smoke, and the capture compared with tests/parity/baseline (a pull request that touches anything the build reads).
 # Jobs `target`, `live` and `preview-parity` (P2-15): on the successful `Vercel` commit status posted by the Vercel app (sender vercel[bot], target_url on vercel.com; Vercel posts a commit status and creates no GitHub Deployment, so a deployment event never fires) or a dispatch with only=live. `live` runs the live checks
 # (scripts/ci/live-checks.mjs) with the service key, and the admin account on production or a dispatch only, so it checks out MAIN, never the deployed commit: a branch cannot change the script that holds the secrets. `preview-parity` runs MAIN's capture and compare against the deployed URL and holds the member test account only.
-# Jobs `migrate` and `turn` run in the `production` environment (required reviewers). No job runs a package install script (npm ci --ignore-scripts); the Supabase CLI of `edge-deploy` is a devDependency at an exact version.
+# Jobs `migrate`, `turn` and `ruled-runs` run in the `production` environment (required reviewers, if the repository sets any). No job runs a package install script (npm ci --ignore-scripts); the Supabase CLI of `edge-deploy` is a devDependency at an exact version.
 # Job `report`: after the others (needs, if always), downloads the parity and test artifacts and writes the one job summary and the one PR comment with the default branch's scripts; it polls nothing and never fails the run.
 # Artifacts live 3 days (retention-days on every upload): the report job reads them in the same run and a person looks within hours; admin-console screenshots and next-start.log are not kept for the 90-day default.
 # Every action is pinned to a commit SHA (the tag it was taken from is the comment): a moved tag cannot change a gate.
@@ -72,6 +74,7 @@ jobs:
       parity: ${{ steps.scope.outputs.parity }}
       windows: ${{ steps.scope.outputs.windows }}
       edge: ${{ steps.scope.outputs.edge }}
+      plans: ${{ steps.scope.outputs.plans }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -178,6 +181,43 @@ jobs:
           [ -n "$input" ] || input='{}'
           node scripts/turn.mjs --stage "${TURN_STAGE:-all}" --mode "${TURN_MODE:-dry}" --input "$input" ${TURN_NO_CHAIN:+--no-chain}
 
+  ruled-runs:
+    name: ruled-runs
+    needs: [changes, migrate]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.event.repository.fork == false && needs.changes.outputs.plans != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    # Same `production` environment and secrets as `turn`. If the environment has required reviewers (a repository setting), the job waits for one and runs nothing meanwhile.
+    environment: production
+    concurrency:
+      group: ruled-runs
+      cancel-in-progress: false
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      WORKER_SECRET: ${{ secrets.WORKER_SECRET }}
+      EIA_API_KEY: ${{ secrets.EIA_API_KEY }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --no-audit --ignore-scripts
+      - name: Playwright Chromium (the headless transport runs on the runner)
+        run: npx playwright install --with-deps chromium
+      - name: Run the plans in order (stops at the first failed step)
+        env:
+          PLANS: ${{ needs.changes.outputs.plans }}
+        run: node scripts/runs/execute.mjs $PLANS
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          retention-days: 3
+          name: ruled-run-results
+          path: scripts/runs/results
+          if-no-files-found: ignore
+
   windows:
     name: ci-windows
     needs: changes
@@ -195,8 +235,9 @@ jobs:
 
   parity:
     name: parity
-    needs: changes
-    if: github.event_name != 'status' && (github.event_name != 'workflow_dispatch' || github.event.inputs.only == '') && (github.event_name != 'pull_request' || needs.changes.outputs.parity == 'true')
+    # Rule 3 (DDL before code) as a gate: parity reads production live, so on a push to main it starts only after `migrate` succeeded (a failed or skipped migrate skips it rather than reading a half-applied schema). On a pull request and on a dispatch `migrate` is skipped and parity runs exactly as before.
+    needs: [changes, migrate]
+    if: ${{ !cancelled() && needs.changes.result == 'success' && github.event_name != 'status' && (github.event_name != 'workflow_dispatch' || github.event.inputs.only == '') && (github.event_name != 'pull_request' || needs.changes.outputs.parity == 'true') && (github.event_name != 'push' || needs.migrate.result == 'success') }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     # The baseline was captured in this image (old repo parity-baseline.yml), so fonts and hinting render identically and the pixel diff measures the design, not the machine.

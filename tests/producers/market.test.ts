@@ -17,6 +17,7 @@ import { gridQueueRows, oemRoadmapRows, rerouteRows } from "@/features/market/pr
 import { sbtiTargets } from "@/features/market/producers/sbti-targets";
 import { readSheet } from "@/core/producers/xlsx";
 
+import { installPropagationRpcs } from "../_support/memdb.ts";
 import { memoryDb } from "../_support/memory-db.ts";
 import { SEEDED_SERIES } from "../market/series-rows.ts";
 
@@ -78,6 +79,57 @@ test("INV-045/243: an apply writes only inside its own namespace, plans create o
   const again = await runProducer(withMarket(d.deps) as never, { spec: ON(ecbFx), dry: false, text: ECB });
   assert.equal(again.counts.created, 0);
   assert.equal(again.counts.updated, 0);
+});
+
+// FIX-EDGES-1 (ruled run 40152169626): production held an observation of every ecb-fx series from 2026-08-28; the new write was 2026-10-14 against a clock of 2026-10-15. The edge author read only the 21-day window, so the
+// prior observation (47 days back) was outside the read, the series looked like a first observation, and a run that wrote 4 rows authored 0 edges.
+const SPARSE_PRIORS = [
+  { id: "ms-usd-aug", series_key: "ecb-fx:eur-usd", reference_period: "2026-08-28", as_at_date: "2026-08-28", value_numeric: 1.18, unit: "USD/EUR", currency: "USD", origin_class: "official" },
+  { id: "ms-gbp-aug", series_key: "ecb-fx:eur-gbp", reference_period: "2026-08-28", as_at_date: "2026-08-28", value_numeric: 0.86, unit: "GBP/EUR", currency: "GBP", origin_class: "official" },
+];
+const propagationDb = (rows: Record<string, unknown>[]) => {
+  const mem = memoryDb({ market_series: rows.map((r) => ({ ...r })) });
+  installPropagationRpcs(mem.mem);
+  return mem;
+};
+const ecbRun = async (mem: ReturnType<typeof memoryDb>) => {
+  const d = makeDeps({ db: mem, env: { MARKET_PRODUCER_ECB_FX_ENABLED: "1" } });
+  return runProducer(withMarket(d.deps) as never, { spec: ON(ecbFx), dry: false, text: ECB });
+};
+
+test("FIX-EDGES-1: a series whose prior observation lies outside the 21-day window still authors its delta edge (one edge per written row)", async () => {
+  const mem = propagationDb(SPARSE_PRIORS);
+  const r = await ecbRun(mem);
+  assert.equal(r.outcome, "ok", r.notes.join("|"));
+  assert.equal(r.counts.created, 2);
+  assert.equal(r.counts.edges_authored, 2, "USD and GBP each author a delta against their 2026-08-28 observation");
+  assert.equal(r.counts.edges_insufficient_history, 0);
+  const edges = mem.tables.derivation_edges ?? [];
+  assert.equal(edges.length, 4, "two inputs (latest and prior) per authored value");
+  const priorIds = new Set(SPARSE_PRIORS.map((p) => p.id));
+  assert.ok([...priorIds].every((id) => edges.some((e) => e.from_pk === id)), "the old observation is an input of the edge");
+});
+
+test("FIX-EDGES-1: a re-run over rows that already exist writes 0 rows, and authors edges only where absent (INV-ARM-3)", async () => {
+  // the state the failed production run left: the new rows landed, no edge was authored
+  const landed = [
+    { id: "ms-usd-oct", series_key: "ecb-fx:eur-usd", reference_period: "2026-10-14", as_at_date: "2026-10-14", value_numeric: 1.09, unit: "USD/EUR", currency: "USD", origin_class: "official", label: "EUR/USD — ECB euro foreign exchange reference rate (US dollar)", derivation: "observed", source_key: "ecb", source_ref: "ECB euro foreign exchange reference rates, 2026-10-14", n_observations: null, method_version: null },
+    { id: "ms-gbp-oct", series_key: "ecb-fx:eur-gbp", reference_period: "2026-10-14", as_at_date: "2026-10-14", value_numeric: 0.87, unit: "GBP/EUR", currency: "GBP", origin_class: "official", label: "EUR/GBP — ECB euro foreign exchange reference rate (Pound sterling)", derivation: "observed", source_key: "ecb", source_ref: "ECB euro foreign exchange reference rates, 2026-10-14", n_observations: null, method_version: null },
+  ];
+  const mem = propagationDb([...SPARSE_PRIORS, ...landed]);
+  const first = await ecbRun(mem);
+  assert.equal(first.outcome, "ok", first.notes.join("|"));
+  assert.equal(first.counts.created, 0);
+  assert.equal(first.counts.edges_authored, 2, "edges for rows that landed without them");
+  const rows = mem.tables.market_series?.length;
+  const edges = mem.tables.derivation_edges?.length;
+  const again = await ecbRun(mem);
+  assert.equal(again.outcome, "ok", again.notes.join("|"));
+  assert.equal(again.counts.created, 0);
+  assert.equal(again.counts.edges_authored, 0);
+  assert.equal(again.counts.edges_already, 2, "present edges are not authored twice");
+  assert.equal(mem.tables.market_series?.length, rows);
+  assert.equal(mem.tables.derivation_edges?.length, edges);
 });
 
 test("INV-045: rows landed but no edge authored fails the run CLOSED; an unwired downstream fails closed too", async () => {

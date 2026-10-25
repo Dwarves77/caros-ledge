@@ -215,6 +215,31 @@
    },
    "fks": []
   },
+  "applied_batches": {
+   "columns": [
+    "batch_id",
+    "kind",
+    "status",
+    "file_hash",
+    "run_id",
+    "counts",
+    "reasons",
+    "recorded_at"
+   ],
+   "uuid": [],
+   "defaults": {
+    "counts": {},
+    "reasons": [],
+    "recorded_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "run_id",
+     "table": "harness_runs",
+     "ref": "id"
+    }
+   ]
+  },
   "assumption_register": {
    "columns": [
     "id",
@@ -2291,7 +2316,10 @@
     "confidence",
     "extractor_version",
     "created_at",
-    "source_capture_id"
+    "source_capture_id",
+    "resolved_at",
+    "resolved_capture_id",
+    "resolved_span"
    ],
    "uuid": [
     "id"
@@ -2303,6 +2331,11 @@
     {
      "column": "intelligence_item_id",
      "table": "intelligence_items",
+     "ref": "id"
+    },
+    {
+     "column": "resolved_capture_id",
+     "table": "agent_run_searches",
      "ref": "id"
     },
     {
