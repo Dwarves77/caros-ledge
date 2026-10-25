@@ -30,13 +30,17 @@ export function invokeTurn({ args, env }) {
   }
 }
 
-/** What a step reports: its rows (family, ledger id, mode, outcome, counts) and the refusals they carry. Pure. */
+/** An apply row that did not write because the run was refused (a gate said REFUSING: no key, kill switch off, licence, byte-limited read), whatever outcome the ledger gave it (a producer refusal is recorded as a noop). A dry row never writes, so it is never this. */
+const refusedApply = (r) => r.mode !== "dry" && (r.outcome === "refused" || /REFUSING/.test(String(r.reason ?? "")));
+
+/** What a step reports: its rows (family, ledger id, mode, outcome, counts) and the refusals they carry. A step with a refused apply row is `refused`, never `ok`, and carries the reason. Pure. */
 function summarise(step, out) {
   const rows = out.result?.runs ?? [];
   const forced = step.mode === "apply" && rows.some((r) => r.forced_dry);
   const refusals = rows.reduce((n, r) => n + (r.counts?.refused ?? 0) + (r.outcome === "refused" ? 1 : 0), 0);
-  const outcome = out.status !== 0 ? "failed" : forced ? "forced-dry" : "ok";
-  return { step: step.name, stage: step.stage, mode: step.mode, outcome, exit: out.status, root_run_id: out.result?.root_run_id ?? null, refusals, rows, ...(out.error ? { error: out.error } : {}) };
+  const refused = step.mode === "apply" ? rows.find(refusedApply) : undefined;
+  const outcome = out.status !== 0 ? "failed" : forced ? "forced-dry" : refused ? "refused" : "ok";
+  return { step: step.name, stage: step.stage, mode: step.mode, outcome, exit: out.status, root_run_id: out.result?.root_run_id ?? null, refusals, rows, ...(outcome === "refused" ? { note: String(refused.reason ?? refused.outcome) } : {}), ...(out.error ? { error: out.error } : {}) };
 }
 
 /** Runs `plan` (already parsed) step by step. `invoke({args, env})` is the turn call and `applied(key)` the ledger question; both are injected so a test starts no process and reads no database. */

@@ -321,3 +321,7 @@ test('a change to ci.yml is in the parity scope, so the workflow edit that order
   const { PARITY } = await import('../../scripts/ci/changes.mjs');
   assert.ok(PARITY.test('.github/workflows/ci.yml'));
 });
+
+test('FIX-QUOTE-1: the ruled-runs job receives the free EIA key as the turn job does (a ruled apply of eia-v2-petroleum-spot refuses without a key)', () => {
+  assert.match(String(jobs['ruled-runs'].env.EIA_API_KEY), /secrets\.EIA_API_KEY/);
+});

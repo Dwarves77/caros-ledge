@@ -61,13 +61,18 @@ async function reuseTermsOf(sb: Db, url: string): Promise<ReuseTerms> {
   return ((read.data as { reuse_terms?: ReuseTerms | null } | null)?.reuse_terms ?? reuseTermsForHost(url));
 }
 
-/** The online form: the database names the newest stored capture of the URL that holds the quote (capture_holding_quote, migration 0077); acceptQuote re-checks its text. `texts` caches capture text for a run. */
-export async function acceptStoredQuote(sb: Db, i: { url: string; quote: string; verifiedAt: unknown; now?: Date }, texts: Map<string, string> = new Map()): Promise<QuoteVerdict> {
+/** The online form: the database names the newest stored capture of the URL that holds the quote (capture_holding_quote, migration 0077, narrowed to the cited URL by 0132); acceptQuote re-checks its text. A run passes `texts` (capture text by capture id) and `found` (the capture id, or null, by url and quote): the database is asked once per distinct (url, quote) and each capture is read once. */
+export async function acceptStoredQuote(sb: Db, i: { url: string; quote: string; verifiedAt: unknown; now?: Date }, texts: Map<string, string> = new Map(), found: Map<string, string | null> = new Map()): Promise<QuoteVerdict> {
   const day = parseVerifiedAt(i.verifiedAt, i.now);
   if (!day) return { ok: false, reason: "verified_at_unparseable", detail: `verified_at ${JSON.stringify(i.verifiedAt)} is not a date` };
-  const found = await sb.rpc("capture_holding_quote", { p_url: i.url, p_quote: i.quote });
-  if (found.error) throw new Error(`capture_holding_quote failed: ${found.error.message}`);
-  const captureId = typeof found.data === "string" ? found.data : null;
+  const key = JSON.stringify([i.url, i.quote]);
+  let captureId = found.get(key);
+  if (captureId === undefined) {
+    const asked = await sb.rpc("capture_holding_quote", { p_url: i.url, p_quote: i.quote });
+    if (asked.error) throw new Error(`capture_holding_quote failed: ${asked.error.message}`);
+    captureId = typeof asked.data === "string" ? asked.data : null;
+    found.set(key, captureId);
+  }
   if (!captureId) return { ok: false, reason: "quote_not_in_capture", detail: `no stored capture of ${i.url} holds the quote verbatim` };
   let text = texts.get(captureId);
   if (text === undefined) {
