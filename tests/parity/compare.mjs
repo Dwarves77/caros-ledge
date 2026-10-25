@@ -91,7 +91,7 @@ const sectionsOf = (keys) => {
 };
 const countBy = (list) => list.reduce((m, k) => m.set(k, (m.get(k) ?? 0) + 1), new Map());
 
-export function compareRecord(route, viewport, base, cap, approved, dataNames = []) {
+export function compareRecord(route, viewport, base, cap, approved, dataNames = [], conditional = []) {
   const fails = [];
   const used = [];
   let shaped = 0;
@@ -132,14 +132,26 @@ export function compareRecord(route, viewport, base, cap, approved, dataNames = 
   const ctl = (c) => `${c.role}:${stable(uncount(c.name))}`;
   if (names.length && (base.controls ?? []).some((c) => names.some((d) => new RegExp(d.match).test(uncount(c.name))))) used.push(`data names: ${names[0].reason}`);
   const capControls = cap.controls ?? [];
-  const baseKeys = (base.controls ?? []).map(ctl);
   const capKeys = capControls.map(ctl);
+  // `conditional` ({route, match, reason}): a control that exists only while some data does (a panel's "Request coverage" while the panel is empty). It is compared when present on both sides and ignored when absent on either:
+  // the baseline keeps at most as many copies of a matching control as the capture draws (the first ones, so a copy that is drawn still holds its place), and a capture's extra copies are not in the baseline to miss.
+  const baseControls = [];
+  const kept = new Map();
+  for (const c of base.controls ?? []) {
+    const k = ctl(c);
+    const rule = conditional.find((d) => d.route === route && new RegExp(d.match).test(k));
+    const seen = kept.get(k) ?? 0;
+    if (rule && seen >= capKeys.filter((x) => x === k).length) { used.push(`conditional: ${rule.reason}`); continue; }
+    if (rule) kept.set(k, seen + 1);
+    baseControls.push(c);
+  }
+  const baseKeys = baseControls.map(ctl);
   const baseSection = sectionsOf(baseKeys);
   const capSection = sectionsOf(capKeys);
   const itemsIn = countBy(capKeys.map((k, i) => (capControls[i].item === true && !k.startsWith('button:') ? capSection[i] : null)).filter(Boolean));
   const itemKeys = new Set(capKeys.filter((_, i) => capControls[i].item === true));
   const emptied = new Set();
-  check('control', base.controls ?? [], capControls, ctl, {
+  check('control', baseControls, capControls, ctl, {
     missing: (i, k) => {
       if (k.startsWith('button:')) return itemKeys.has(k);
       if (!k.startsWith('link:') || itemKeys.size === 0) return false;
@@ -390,7 +402,7 @@ export async function compareRun({ captured, baseline = 'tests/parity/baseline',
         report.push(`${viewport}: ${empty}`);
         routeFail = true;
       }
-      const { fails, used, shaped } = compareRecord(route.name, viewport, scoped, c, approved, config.dataNames ?? []);
+      const { fails, used, shaped } = compareRecord(route.name, viewport, scoped, c, approved, config.dataNames ?? [], config.conditional ?? []);
       for (const f of fails) report.push(`${viewport}: ${f}`);
       if (shaped) report.push(`${viewport}: items compared by slot, not by name: ${shaped}`);
       if (used.length) report.push(`${viewport}: approved differences used: ${used.length}`);
