@@ -191,3 +191,58 @@ P4: the 20 ratchets due within 90 days (by instrument and due date; obligation i
 - [CONFIRMED] `research_assessments_current.entity_id` is null on every row: the writer of that table files no entity, so P5 and the technology side of P3 reach nothing.
 - [CONFIRMED] P2 and P5 both wait on a quantity the producers do not yet fill (`target_year`, `queue_months_p50`, an EUR/tCO2e abatement cost).
 - [CONFIRMED] DERIVE-2 raised `obligation_objects.mode` from 0 to 527 rows; the one P4 start it feeds is blocked by the strength floor at 53 days, not by the join.
+
+## R4: the mining and the five detectors, run once for real (2026-10-25, production project kwrsbpiseruzbfwjpvsp, ruled plan scripts/runs/plans/2026-10-26-connect-2a.json, main 3218fef)
+
+Four steps ran from the `ruled-runs` job of main's push run 40243970494; each row is in `harness_runs` under `inputs->>'ruled_plan'`. Status tokens: rule 14.
+
+| step | ledger run id | family | mode | outcome | what it counted |
+|---|---|---|---|---|---|
+| couplings-dry | fc95d0fb-4213-45b0-8cba-f7e8e56d168d | propagation | dry | success | nothing written |
+| couplings-apply | a09ec94a-e4db-4b83-8b39-dce3a431073b | propagation | apply | partial | 30 seed pages cited: 19 captured, 11 failed (capture_thin on transport.ec.europa.eu pages, robots_deferred on imo.org, others); 47 couplings, 6 refused; 37 entities, 147 aliases, 48 relations written; 34,037 claims read, 8,592 claim refs planned; 14,305 refs written; 195 events drained |
+| patterns-dry | 8246cbd3-f3e4-4de1-8a22-f64d2dcfc819 | corpus-turn | dry | success | nothing written |
+| patterns-apply | 64a761a9-0874-49cd-83f6-d756dfc84ffb | corpus-turn | apply | noop (see finding 3) | 19 patterns, all velocity, 19 new; refs_read 14,305, relations_read 48 |
+
+### Production read-back after the run
+
+- [CONFIRMED] `entity_refs` with `basis` and `method_version` both non-null: 14,305 (of 17,206 rows; the other 2,901 are the earlier unmined rows). By ref_table: section_claim_provenance 8,592; obligation_objects 3,146; grid_connection_queues 1,934; item_forward_events 187; regional_data_facts 275; state_cost_facts 92; statutory_computations 46; emission_factors 13; oem_tech_roadmaps 11; market_series 6; reroute_events 3.
+- [CONFIRMED] `entity_relations`: 48 (all `asserted_by = coupling/seed`; the 57 relations of couplings.json minus those whose couplings were refused).
+- [CONFIRMED] `derived_values` by pattern method: pattern_velocity_burst 19 (lifecycle emerging, method version 1.1.0); pattern_mandate_capacity, pattern_lead_lag, pattern_cross_modal, pattern_penalty_abatement 0. `derivation_edges` into them: 843.
+- [CONFIRMED] Claim resolution after mining, the R3 population (non-GAP claims of items added in the last 270 days, 22,945): 5,985 reach at least one entity, 26.09 %. R3's emulation said 24.19 %. All 34,037 claims: 6,391, 18.78 %.
+
+### Patterns found: 19 against an expected 0
+
+R3 predicted 0 for every detector; the run found 19 for P1 and 0 for P2 to P5. [CONFIRMED] the difference is the real mining against the emulation: R3 judged a window claim to have one tier and one surface, and the detector's distinct test is max(tier count, surface count) >= 2, which a second surface (research, market, operations) in the window meets. The P2 to P5 zeros stand for the reasons R3 gives (those joins still wait on `target_year`, `queue_months_p50`, an entity on the research assessments and an EUR/tCO2e cost).
+
+All 19 rows (the sample asked for is 20; there are 19), window 90 days, baseline 180 days, evidence capped at 50 members each:
+
+| entity | kind | share ratio | admissibility | window claims | baseline claims | surfaces in the evidence | sources in evidence |
+|---|---|---|---|---|---|---|---|
+| LU | jurisdiction | 29.59 | analysis_ok | 104 | 3 | regulations+research | 30 |
+| eur-lex.europa.eu | organisation | 20.58 | analysis_ok | 1,061 | 44 | regulations | 3 |
+| 32008L0068 | instrument | 20.20 | analysis_ok | 71 | 3 | regulations | 18 |
+| EU | jurisdiction | 15.09 | analysis_ok | 725 | 41 | regulations | 5 |
+| HR | jurisdiction | 13.23 | analysis_ok | 62 | 4 | regulations | 15 |
+| IT | jurisdiction | 11.10 | analysis_ok | 52 | 4 | regulations | 15 |
+| CH | jurisdiction | 9.50 | display_only | 89 | 8 | regulations+research | 16 |
+| AT | jurisdiction | 9.39 | analysis_ok | 44 | 4 | regulations+research | 13 |
+| ES | jurisdiction | 8.11 | analysis_ok | 38 | 4 | regulations+research | 10 |
+| BE | jurisdiction | 6.61 | display_only | 62 | 8 | market+regulations | 8 |
+| GB | jurisdiction | 5.69 | analysis_ok | 80 | 12 | regulations | 11 |
+| IE | jurisdiction | 5.43 | analysis_ok | 70 | 11 | regulations | 6 |
+| DK | jurisdiction | 5.24 | analysis_ok | 43 | 7 | regulations | 9 |
+| FI | jurisdiction | 4.91 | analysis_ok | 23 | 4 | operations+regulations | 7 |
+| FR | jurisdiction | 4.61 | analysis_ok | 54 | 10 | market+regulations | 17 |
+| IS | jurisdiction | 2.67 | analysis_ok | 25 | 8 | regulations | 12 |
+| PL | jurisdiction | 2.19 | analysis_ok | 36 | 14 | regulations | 13 |
+| 32015R0757 | instrument | 1.83 | analysis_ok | 15 | 7 | regulations | 6 |
+| DE | jurisdiction | 1.51 | analysis_ok | 69 | 39 | regulations+research | 8 |
+
+(Window and baseline counts are the key edge's summary; the surfaces and sources columns are of the capped evidence rows, so a pattern whose second surface lies outside the 50 shown reads one surface here.)
+
+### Findings this measurement adds
+
+1. [CONFIRMED] by a read of the evidence rows and the mining basis: the entities are real name matches (the bases read `how: name` with spans on Italy, Iceland, Luxembourg), so the resolver is not false-matching two-letter codes. Two of the 19 are noise on their face: LU, where 2 of 3 sampled basis rows are the signing-place formula "Done at Luxembourg" (the place of signature, not a subject), and eur-lex.europa.eu, the publisher host of every regulations source, which is not a subject any customer acts on. That is 2 of 19 (10.5 %) judged noise by the lane from the evidence rows; 17 are not judged noise.
+2. [CONFIRMED] the corpus was added in bulk: items per `added_date` month are 83, 5, 32, 205, 1, 13, 632, 1,704 (Feb to Sep 2026), so the 90-day window (from 27 July) holds the August and September batches and the 180-day baseline holds the Feb to July months. [HYPOTHESIS, unverified] a share-of-flow burst between two intake batches measures the composition of the batches (EUR-Lex jurisdictional acts) rather than the world's attention, which would make most of the 16 jurisdiction rows an intake artefact. The test that settles it: re-run P1 with the window and baseline measured on the date of the cited source (capture date or the act's own date) instead of the item's `added_date`; if the 19 collapse, the detector needs that change, a producer-side finding, not a threshold edit.
+3. [CONFIRMED] the ledger row of patterns-apply reads outcome `noop` while it wrote 19 `derived_values` and 843 `derivation_edges`. [HYPOTHESIS, unverified] the recorder derives the outcome from count keys ending in written/inserted/minted/raised/closed and the pattern counts are named `patterns_new`; the test is to read the recorder's classification and run a fixture turn with a pattern. Owner: the connect stage and the recorder (INTERFACE GAP, no edit made here).
+4. [CONFIRMED] couplings-apply is `partial` for a stated reason: 11 of the 30 seed pages did not capture (`capture_thin` on four transport.ec.europa.eu pages, `robots_deferred` on imo.org, and others the ledger note truncates), so 6 of 47 couplings were refused and their relations not written (48 of 57). The refusals close when those pages capture through the browser tier; the plan can be re-run under a new revision once that is fixed.
