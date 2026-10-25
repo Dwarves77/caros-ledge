@@ -160,5 +160,10 @@
     "unscopedReads": {
       "obligation_objects": "a whole-table invariant (no row carries the artifact list in both columns); the assertions about the fixture's rows are scripts/ci/fixtures/data-0129-evidence-artifacts.assert.sql"
     }
+  },
+  "0133_entity_refs_ref_table_state_cost_facts": {
+    "unscopedReads": {
+      "state_cost_facts": "a whole-table invariant (no operational_cost fact is left under a bare two-letter state code after the repair); the CHECK assertions are scoped to the fixture entity"
+    }
   }
 }

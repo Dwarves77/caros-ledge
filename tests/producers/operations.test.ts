@@ -180,7 +180,7 @@ test("INV-244: a region code absent from regions FAILS the run (never guessed); 
 });
 
 // ---- state cost facts ----
-const cand = (o: object = {}) => ({ state_code: "CA", state_label: "California", region_code: "US-CA", dimension: "labor", fact_label: "Minimum wage", value: "16.50", unit: "USD/hour", source_url: "https://eur-lex.europa.eu/mw", source_name: "State labour department", span_text: "minimum wage is $16.50 per hour", ...o });
+const cand = (o: object = {}) => ({ state_code: "US-CA", state_label: "California", region_code: "US-CA", dimension: "labor", fact_label: "Minimum wage", value: "16.50", unit: "USD/hour", source_url: "https://eur-lex.europa.eu/mw", source_name: "State labour department", span_text: "minimum wage is $16.50 per hour", ...o });
 test("state cost facts: grounded verbatim before rated, refused by name otherwise; a write authors the state's jurisdiction entity, identifier and ref (rule 17); origin class from the tier", async () => {
   const routes = { "https://eur-lex.europa.eu/mw": "In 2026 the minimum wage is $16.50 per hour statewide." };
   const dry = await runProducer(makeDeps({ noDb: true, routes }).deps, { spec: stateCostFacts, text: JSON.stringify([cand(), cand({ fact_label: "Paraphrase", span_text: "pay floor of sixteen fifty" }), cand({ fact_label: "Gone", span_text: null }), cand({ fact_label: "Bad host", source_url: "https://www.mondaq.com/x", span_text: "minimum wage" })]) });
@@ -199,7 +199,7 @@ test("state cost facts: grounded verbatim before rated, refused by name otherwis
   assert.equal(db.tables.state_cost_facts?.[0]?.value_numeric, 16.5);
   assert.ok(db.tables.state_cost_facts?.[0]?.source_id);
   assert.equal(db.tables.state_cost_facts?.[0]?.origin_class, "official", "a government publisher's tier is an official origin");
-  assert.equal(db.tables.entities?.[0]?.entity_id, entityId("jurisdiction", "CA"));
+  assert.equal(db.tables.entities?.[0]?.entity_id, entityId("jurisdiction", "US-CA"));
   assert.equal(db.tables.entity_refs?.[0]?.role, "jurisdiction");
   assert.equal(r.counts.refs_written, 1);
   const again = await runProducer(d.deps, { spec: ON(stateCostFacts), dry: false, text: JSON.stringify([cand()]) });
@@ -207,6 +207,34 @@ test("state cost facts: grounded verbatim before rated, refused by name otherwis
   assert.equal(again.counts.refs_written ?? 0, 0);
   const noRegion = await runProducer(makeDeps({ db: memoryDb({}), routes }).deps, { spec: ON(stateCostFacts), dry: false, text: JSON.stringify([cand()]) });
   assert.match(noRegion.notes.join(" "), /region code\(s\) not found/);
+});
+
+test("state cost facts: a rerun over rows that already exist writes their entity refs (and the refs of the state's other facts), and never a duplicate row or ref (arm-2 rerun, INV-ARM-3)", async () => {
+  const routes = { "https://eur-lex.europa.eu/mw": "In 2026 the minimum wage is $16.50 per hour statewide." };
+  const db = memoryDb({ regions: [{ id: "r-ca", code: "US-CA" }], state_cost_facts: [{ id: "f-nj", state_code: "US-NJ", dimension: "labor_markets", fact_label: "Minimum wage", value: "15.49" }] });
+  const d = makeDeps({ db, routes, env: {} });
+  const text = JSON.stringify([cand()]);
+  await runProducer(d.deps, { spec: ON(stateCostFacts), dry: false, text });
+  // The first run died after its rows were written (the allowed-table CHECK refused the refs): the rows stand, the refs do not.
+  db.tables.entity_refs = [];
+  const rerun = await runProducer(d.deps, { spec: ON(stateCostFacts), dry: false, text });
+  assert.equal(rerun.outcome, "ok", rerun.notes.join("|"));
+  assert.equal((rerun.counts.created ?? 0) + (rerun.counts.updated ?? 0), 0, "the existing row is matched, not rewritten");
+  assert.equal(db.tables.state_cost_facts?.length, 2);
+  const facts = db.tables.state_cost_facts ?? [];
+  const refs = db.tables.entity_refs ?? [];
+  assert.deepEqual(refs.map((r) => r.ref_id).sort(), facts.map((f) => f.id).sort(), "every fact of a state the producer knows ends with its ref, the matched one and the other fact of the table");
+  assert.ok(refs.every((r) => r.ref_table === "state_cost_facts" && r.role === "jurisdiction"));
+  const third = await runProducer(d.deps, { spec: ON(stateCostFacts), dry: false, text });
+  assert.equal(third.counts.refs_written ?? 0, 0);
+  assert.equal(db.tables.entity_refs?.length, 2);
+});
+
+test("state cost facts: a bare two-letter state_code is refused (CA is Canada, IL Israel, PA Panama in the entity spine); the code is the ISO 3166-2 subdivision, US-CA", async () => {
+  const routes = { "https://eur-lex.europa.eu/mw": "In 2026 the minimum wage is $16.50 per hour statewide." };
+  const r = await runProducer(makeDeps({ noDb: true, routes }).deps, { spec: stateCostFacts, text: JSON.stringify([cand({ state_code: "CA" }), cand({ fact_label: "ok" })]) });
+  assert.equal(r.counts.parsed, 1);
+  assert.match(r.notes.join("|"), /candidate refused: state_code must be an ISO 3166-2 subdivision code/);
 });
 
 test("state cost facts: a span is grounded on the text layer of a published PDF rate schedule and on the visible text of a page whose table cells carry tags; a span in neither is refused", async () => {

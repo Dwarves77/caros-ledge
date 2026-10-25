@@ -16,7 +16,7 @@ import { hostOf } from "@/core/shared";
 import { classTierForHost } from "@/core/sources";
 
 const candidate = z.object({
-  state_code: z.string().min(2), state_label: z.string().min(1), region_code: z.string().min(1), dimension: z.string().min(1), fact_label: z.string().min(1),
+  state_code: z.string().regex(/^[A-Z]{2}-[A-Z0-9]{1,3}$/, "state_code must be an ISO 3166-2 subdivision code such as US-CA (a bare two-letter code is a country in the entity spine)"), state_label: z.string().min(1), region_code: z.string().min(1), dimension: z.string().min(1), fact_label: z.string().min(1),
   value: z.union([z.string(), z.number()]), unit: z.string().nullish(), trend: z.string().nullish(), statute_citation: z.string().nullish(), effective_date: z.string().nullish(),
   source_url: z.string().url(), source_name: z.string().nullish(), span_text: z.string().nullish(),
 });
@@ -103,12 +103,12 @@ export const stateCostFacts: ProducerSpec = {
     patchable: UPDATE_FIELDS,
     pk: "id",
   },
-  /** Rule 17: the jurisdiction entity, identifier and ref of every state written, planned by the entity planners and inserted (idempotent against what exists). */
-  async after(ctx, written) {
+  /** Rule 17: the jurisdiction entity, identifier and ref of every state fact, planned by the entity planners and inserted (idempotent against what exists). Every fact of the table is covered, not only the rows this run created or changed: a run that died after its rows landed (or a fact an earlier producer wrote) is completed by the next. */
+  async after(ctx) {
     const sb = ctx.sb as Db;
-    const codes = [...new Set([...written.created, ...written.updated].map((r) => String(r.state_code)))];
+    const facts = await fetchAllRows<{ id: string; state_code: string }>((from, to) => sb.from("state_cost_facts").select("id, state_code").order("id", { ascending: true }).range(from, to) as never, { cap: 50_000 });
+    const codes = [...new Set(facts.map((f) => f.state_code))];
     if (!codes.length) return { entities_written: 0, refs_written: 0 };
-    const facts = await fetchAllRows<{ id: string; state_code: string }>((from, to) => sb.from("state_cost_facts").select("id, state_code").in("state_code", codes).order("id", { ascending: true }).range(from, to) as never, { cap: 50_000 });
     const asserted = "producer:state-cost-facts";
     const ids = new Set<string>();
     const idents = new Set<string>();
