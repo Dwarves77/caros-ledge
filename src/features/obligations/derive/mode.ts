@@ -7,7 +7,7 @@ import { LEG_MODE_CODES } from "@/core/contracts/vocabularies";
 import rulesJson from "./data/object-rules.json";
 
 const classifier = z.object({ id: z.string().min(1), pattern: z.string().min(1), modes: z.array(z.string()).min(1), on: z.enum(["span", "instrument"]), consignment_wide: z.boolean().optional() });
-export const MODE_CLASSIFIERS = z.array(classifier).min(1).parse(rulesJson.modeClassifiers).map((c) => ({ ...c, re: new RegExp(c.pattern, "i") }));
+const MODE_CLASSIFIERS = z.array(classifier).min(1).parse(rulesJson.modeClassifiers).map((c) => ({ ...c, re: new RegExp(c.pattern, "i") }));
 for (const c of MODE_CLASSIFIERS) {
   const alien = c.modes.find((m) => !LEG_MODE_CODES.includes(m));
   if (alien) throw new Error(`object-rules.json modeClassifiers "${c.id}": "${alien}" is not a leg mode of the transport_mode vocabulary`);

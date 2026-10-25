@@ -7,7 +7,7 @@ import { statutoryUnit } from "@/core/parse/unit";
 import rulesJson from "./data/object-rules.json";
 
 const rule = z.object({ id: z.string().min(1), kind: z.enum(["maximum", "formula"]), pattern: z.string().min(1) });
-export const MAXIMUM_RULES = z.array(rule).min(1).parse(rulesJson.statutoryMaximum).map((r) => ({ ...r, re: new RegExp(r.pattern, "i") }));
+const MAXIMUM_RULES = z.array(rule).min(1).parse(rulesJson.statutoryMaximum).map((r) => ({ ...r, re: new RegExp(r.pattern, "i") }));
 
 const FIGURE = /\d(?:[\d.,\s]*\d)?/g;
 const norm = (s: string): string => s.replace(/\s+/g, " ").trim().toLowerCase();

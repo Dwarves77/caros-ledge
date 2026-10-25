@@ -8,10 +8,10 @@ import horizonsJson from "@/core/themes/data/horizons.json";
 import { themeAnalysisView, type MemberRow, type ThemeEventRow, type ThemeRow } from "@/core/themes";
 import { SURFACE_ORDER } from "@/core/routing";
 import { DUTY_HOLDER_CLASSES, VOCABULARIES } from "@/core/contracts/vocabularies";
-import { STATUTORY_UNIT_TOKENS } from "@/core/parse/unit";
+import unitFile from "@/core/parse/data/statutory-units.json" with { type: "json" };
 import objectRules from "@/features/obligations/derive/data/object-rules.json";
 import { deriveObligationObjects } from "@/features/obligations";
-import { planFill } from "@/features/obligations/derive/fill-fields";
+import { fillObjectFields } from "@/features/obligations/derive/fill-fields";
 import assessmentCopy from "@/features/research/model/data/assessment-copy.json";
 import stanceRules from "@/features/research/model/data/assessment-stance.json";
 import { selectAssessmentView, selectSignpostView, type AssessmentRow } from "@/features/research/model/assessment-view";
@@ -116,10 +116,10 @@ test("the obligation-object derive path writes spans, ids, dates and data-file t
   // INV-DRV-3: mode, statutory_maximum and cost_formula are vocabulary tokens or the span's own words; the backfill's plan row adds only rule ids, the rules' own `on` values, unit tokens and the absence token.
   const shipping = rows.find((r) => String(r.pinpoint_citation) === "Article 40(1)");
   assert.deepEqual([shipping?.mode, shipping?.statutory_maximum, shipping?.cost_formula], [["ocean"], "fines of up to EUR 2 000 per tonne of carbon dioxide", "fines of up to EUR 2 000 per tonne of carbon dioxide, calculated as the excess multiplied by the price"]);
-  const planRows = [planFill({ obligation_id: "i-ppwr", instrument_item_id: "i-ppwr", verbatim_text: text[4] as string, mode: null, statutory_maximum: null, cost_formula: null }, { title: item.title }), planFill({ obligation_id: "i-ppwr", instrument_item_id: "i-ppwr", verbatim_text: text[0] as string, mode: null, statutory_maximum: null, cost_formula: null }, { title: "A plain notice" }),
-    planFill({ obligation_id: "i-ppwr", instrument_item_id: "i-ppwr", verbatim_text: text[3] as string, mode: null, statutory_maximum: null, cost_formula: null }, { title: "A plain notice" }),
-  ];
-  const planAllowed: Allowed = { inputs: new Set(["i-ppwr"]), tokens: new Set([...a.tokens, ...objectRules.modeClassifiers.flatMap((c) => [c.id, c.on]), ...STATUTORY_UNIT_TOKENS]), spans: [text.join("\n")] };
+  const objectRow = (n: number, verbatim_text: string) => ({ obligation_id: `cl:obligation:${String(n).padStart(16, "0")}`, instrument_item_id: "i-ppwr", verbatim_text, mode: null, statutory_maximum: null, cost_formula: null });
+  const filled = await fillObjectFields(connectDb({ intelligence_items: [{ ...item, title: "A plain notice" }], obligation_objects: [4, 0, 3].map((i, n) => objectRow(n + 1, text[i] as string)) }).db, { dry: true, after: null });
+  const planRows = (filled.data as { plan: Array<{ obligation_id: string; modeAbsence: string | null }> }).plan;
+  const planAllowed: Allowed = { inputs: new Set(["i-ppwr", ...planRows.map((r) => r.obligation_id)]), tokens: new Set([...a.tokens, ...objectRules.modeClassifiers.flatMap((c) => [c.id, c.on]), ...unitFile.forms.map((f) => f.unit)]), spans: [text.join("\n")] };
   assert.equal(planRows[2]?.modeAbsence, objectRules.absence, "a span no rule reads carries the stated absence token on its plan row");
   assert.deepEqual(offenders(planRows, planAllowed), []);
   assert.deepEqual(offenders({ statutory_maximum: "a fine of two thousand euros", mode: ["ocean"] }, planAllowed), ["a fine of two thousand euros"], "a planted template sentence is named");

@@ -4,6 +4,7 @@
 import { z } from "zod";
 
 import { fetchAllByIdChunks, type Db } from "@/core/db";
+import { admitItems } from "@/core/derived/admissible";
 import type { RunResult } from "@/core/types/run-result";
 
 import rulesJson from "./data/object-rules.json";
@@ -29,7 +30,7 @@ export interface FillPlanRow {
 }
 
 /** Pure: what to write for one object. A non-null column is never in the patch. */
-export function planFill(row: FillRow, instrument: { title?: string | null | undefined; identifier?: string | null | undefined }): FillPlanRow {
+function planFill(row: FillRow, instrument: { title?: string | null | undefined; identifier?: string | null | undefined }): FillPlanRow {
   const verdict = classifyMode(row.verbatim_text, instrument);
   const stated = extractStatutory(row.verbatim_text);
   const patch: FillPlanRow["patch"] = {
@@ -51,7 +52,7 @@ export async function fillObjectFields(sb: Db, input: { dry: boolean; batch?: nu
   if (read.error) return { counts: {}, outcome: "failed", notes: [`derive: obligation_objects read failed: ${read.error.message}`] };
   const rows = (read.data ?? []) as FillRow[];
   const items = await fetchAllByIdChunks<{ id: string; title: string | null; instrument_identifier: string | null }>(rows.map((r) => r.instrument_item_id), async (slice) => {
-    const { data, error } = await sb.from("intelligence_items").select("id, title, instrument_identifier").in("id", slice);
+    const { data, error } = await admitItems(sb.from("intelligence_items").select("id, title, instrument_identifier").in("id", slice));
     if (error) throw new Error(`derive: intelligence_items read failed: ${error.message}`);
     return data ?? [];
   });

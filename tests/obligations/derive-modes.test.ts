@@ -5,17 +5,22 @@ import { test } from "node:test";
 
 import type { FamilyCall } from "@/core/harness";
 import { LEG_MODE_CODES } from "@/core/contracts/vocabularies";
-import { STATUTORY_UNIT_TOKENS, statutoryUnit } from "@/core/parse/unit";
+import unitFile from "@/core/parse/data/statutory-units.json" with { type: "json" };
+import { statutoryUnit } from "@/core/parse/unit";
 import { deriveObligationObjects, type Candidate } from "@/features/obligations";
-import { cursorAfter, fillObjectFields, planFill, type FillRow } from "@/features/obligations/derive/fill-fields";
-import { extractStatutory, groundingRefusal, MAXIMUM_RULES } from "@/features/obligations/derive/maximum";
-import { classifyMode, MODE_CLASSIFIERS } from "@/features/obligations/derive/mode";
+import rules from "@/features/obligations/derive/data/object-rules.json" with { type: "json" };
+import { cursorAfter, fillObjectFields } from "@/features/obligations/derive/fill-fields";
+import { extractStatutory, groundingRefusal } from "@/features/obligations/derive/maximum";
+import { classifyMode } from "@/features/obligations/derive/mode";
 import { runPropagate } from "@/core/turn";
 
 import { fixture } from "../integration/world.ts";
 import { connectDb } from "../connect/world.ts";
 
 type Row = Record<string, unknown>;
+const MODE_CLASSIFIERS = rules.modeClassifiers as Array<{ id: string; on: "span" | "instrument"; modes: string[]; consignment_wide?: boolean }>;
+const MAXIMUM_RULES = rules.statutoryMaximum.map((r) => ({ ...r, re: new RegExp(r.pattern, "i") }));
+const STATUTORY_UNIT_TOKENS = [...new Set(unitFile.forms.map((f) => f.unit))];
 const NONE = { title: "A plain notice", identifier: null };
 
 /** Per mode rule: a span (or, for an instrument rule, a title) it reads, and one it must not. */
@@ -54,16 +59,16 @@ test("INV-DRV-5: every leg mode has a rule and two planted spans that classify t
   assert.deepEqual(classifyMode("Article 1 Aircraft operators and shipping companies shall report.", NONE).modes, ["ocean", "air"], "a span naming two modes is their union in vocabulary order");
 });
 
-test("INV-DRV-1: no match is no mode (never a default); the span wins over the instrument; a title-only match is counted as from the instrument", () => {
+test("INV-DRV-1: no match is no mode (never a default); the span wins over the instrument; a title-only match is counted as from the instrument", async () => {
   assert.deepEqual(classifyMode(SPAN_SPAN, NONE), { modes: [], ruleIds: [], from: null, matched: [], consignmentWide: false });
   const titled = classifyMode(SPAN_SPAN, { title: "FuelEU Maritime initiative" });
   assert.deepEqual([titled.modes, titled.from], [["ocean"], "instrument"]);
   const both = classifyMode("Article 3 Aircraft operators shall monitor emissions.", { title: "FuelEU Maritime initiative" });
   assert.deepEqual([both.modes, both.from], [["air"], "span"]);
-  const row: FillRow = { obligation_id: "o1", instrument_item_id: "i1", verbatim_text: SPAN_SPAN, mode: null, statutory_maximum: null, cost_formula: null };
-  const none = planFill(row, NONE);
+  const plan = async (row: Row, title: string) => ((await fillObjectFields(connectDb({ intelligence_items: [{ ...ITEM, title }], obligation_objects: [row], agent_run_searches: [CAPTURE] }).db, { dry: true, after: null })).data as { plan: Array<{ patch: Row; modeAbsence: string | null }> }).plan[0] as { patch: Row; modeAbsence: string | null };
+  const none = await plan(OBJ(1), "A plain notice");
   assert.deepEqual([none.patch, none.modeAbsence], [{}, "M"], "the absence token is on the plan row; the table gets nothing");
-  assert.deepEqual(planFill({ ...row, mode: ["ocean"] }, { title: "Directive on rail transport safety" }).patch, {}, "a mode already there is kept");
+  assert.deepEqual((await plan(OBJ(1, { mode: ["ocean"] }), "Directive on rail transport safety")).patch, {}, "a mode already there is kept");
 });
 
 /** Per maximum or formula rule: a span it reads and one it must not. */

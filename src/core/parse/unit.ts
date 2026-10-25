@@ -79,11 +79,9 @@ export const canonicalRatio = (value: Dec, p: UnitParts): { num: Dec; den: Dec }
 // Shared with CONNECT-2 PR A (facts.ts reads the same map); add a form to the data, never a second normaliser.
 const unitForms = z.object({ forms: z.array(z.object({ form: z.string().min(1), unit: z.string().min(1), exact: z.boolean().optional() })).min(1) }).parse(statutoryUnits);
 export type UnitForm = (typeof unitForms.forms)[number];
-export const DEFAULT_FORMS: readonly UnitForm[] = unitForms.forms;
+const DEFAULT_FORMS: readonly UnitForm[] = unitForms.forms;
 const compile = (forms: readonly UnitForm[]) => forms.map((f) => ({ unit: f.unit, re: new RegExp(f.exact ? `^(?:${f.form})$` : f.form, "i") }));
 const DEFAULT_COMPILED = compile(DEFAULT_FORMS);
-/** Every unit token the default forms can produce, for the coverage test. */
-export const STATUTORY_UNIT_TOKENS: readonly string[] = [...new Set(DEFAULT_FORMS.map((f) => f.unit))];
 export function statutoryUnit(raw: string, forms: readonly UnitForm[] = DEFAULT_FORMS): string | null {
   const text = raw.trim();
   return (forms === DEFAULT_FORMS ? DEFAULT_COMPILED : compile(forms)).find((f) => f.re.test(text))?.unit ?? null;
