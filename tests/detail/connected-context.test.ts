@@ -8,7 +8,7 @@ import { ItemConnections } from "@/ui/detail/ItemConnections";
 
 import { renderApp } from "../_support/render.ts";
 
-test("themeAnalysisView: synthesizes informative cluster summary when no brief exists", () => {
+test("themeAnalysisView: with no brief the cluster is structure (ids, surface keys, signal tokens, counts), not a sentence", () => {
   const themes = [
     {
       id: "t1",
@@ -37,10 +37,7 @@ test("themeAnalysisView: synthesizes informative cluster summary when no brief e
 
   assert.ok(view);
   assert.equal(view.hasBrief, false);
-  assert.notEqual(view.absence, "A brief for this theme has not been written yet, so what this connection means is not stated here.");
-  assert.match(view.absence ?? "", /This cluster connects 3 items across/);
-  assert.match(view.absence ?? "", /bound by/i);
-  assert.match(view.absence ?? "", /cohesion 0\.82/);
+  assert.deepEqual(view.cluster, { memberIds: ["item-a", "item-b", "item-c"], pivotIds: [], surfaces: ["regulations", "market"], signals: ["shared_source", "shared_scenario"], memberCount: 3, surfaceCount: 2, density: 0.82 });
 });
 
 test("ItemConnections: explains why and how items connect via rendered context lines", () => {

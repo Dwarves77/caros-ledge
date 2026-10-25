@@ -54,6 +54,7 @@ export function world({ routes, config = {}, base = {}, cap = {}, baseIndex = {}
     frameLandmarks: {},
     frameHeadings: [],
     dataNames: [],
+    conditional: [],
     approved: [],
     ...config,
     gates: { full, frame: [], pixelExact: [], lists: [], ...config.gates },
