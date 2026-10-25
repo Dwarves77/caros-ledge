@@ -7,7 +7,7 @@ import { runChangeDetection } from "@/core/capture";
 import type { ChangeDetectionDeps } from "@/core/capture/change-detection";
 import type { FamilyCall } from "@/core/harness";
 import type { RunResult } from "@/core/types/run-result";
-import { worst } from "@/core/types/run-result";
+import { leadWithFailures, worst } from "@/core/types/run-result";
 import { drainChangeSweepUpdates, persistPortalCandidates } from "@/features/intake";
 import { reconcileChanges, writeSnapshot } from "@/features/sources";
 import { extractPortalLinks } from "@/features/sources/walkers/portal-links";
@@ -25,7 +25,7 @@ function planChange(input: Record<string, unknown>): { limit: number; drainLimit
 export function shapeChange(check: RunResult, drain: RunResult, changedSourceIds: readonly string[]): RunResult {
   const recon = (check.data as { reconcile?: RunResult | null } | undefined)?.reconcile ?? null;
   const counts = { checked: check.counts.checked ?? 0, changes_detected: check.counts.changes_detected ?? 0, portal_candidates: check.counts.portal_candidates ?? 0, would_check: check.counts.would_check ?? 0, reconciled: recon?.counts.processed ?? 0, staged: recon?.counts.staged ?? 0, update_applied: drain.counts.approved ?? 0, update_rejected: drain.counts.rejected ?? 0, failed: (check.counts.failed ?? 0) + (drain.counts.stamp_failed ?? 0) };
-  return { counts, outcome: worst(check.outcome, drain.outcome), notes: [...check.notes, ...drain.notes], data: { ids: { changed_source_ids: [...changedSourceIds] } } };
+  return { counts, outcome: worst(check.outcome, drain.outcome), notes: leadWithFailures([check, drain]), data: { ids: { changed_source_ids: [...changedSourceIds] } } };
 }
 
 export async function runChange(call: FamilyCall, d: BuiltDeps): Promise<RunResult> {
