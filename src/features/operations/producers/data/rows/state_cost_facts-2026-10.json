@@ -2,7 +2,7 @@
  "_note": "ARM-2 S5: state diesel and motor fuel tax rates, each span verbatim in the page's text (the producer grounds it on the page or PDF text before the host is rated). Region US: the regions table holds ASIA, EU, UAE, UK and US; the state is state_code.",
  "rows": [
   {
-   "state_code": "CA",
+   "state_code": "US-CA",
    "state_label": "California",
    "region_code": "US",
    "dimension": "operational_cost",
@@ -15,7 +15,7 @@
    "effective_date": "2026-07-01"
   },
   {
-   "state_code": "CA",
+   "state_code": "US-CA",
    "state_label": "California",
    "region_code": "US",
    "dimension": "operational_cost",
@@ -28,7 +28,7 @@
    "effective_date": "2026-07-01"
   },
   {
-   "state_code": "TX",
+   "state_code": "US-TX",
    "state_label": "Texas",
    "region_code": "US",
    "dimension": "operational_cost",
@@ -41,7 +41,7 @@
    "statute_citation": "Texas Tax Code 162.202"
   },
   {
-   "state_code": "FL",
+   "state_code": "US-FL",
    "state_label": "Florida",
    "region_code": "US",
    "dimension": "operational_cost",
@@ -54,7 +54,7 @@
    "effective_date": "2026-01-01"
   },
   {
-   "state_code": "FL",
+   "state_code": "US-FL",
    "state_label": "Florida",
    "region_code": "US",
    "dimension": "operational_cost",
@@ -67,7 +67,7 @@
    "effective_date": "2026-01-01"
   },
   {
-   "state_code": "NY",
+   "state_code": "US-NY",
    "state_label": "New York",
    "region_code": "US",
    "dimension": "operational_cost",
@@ -80,7 +80,7 @@
    "effective_date": "2026-01-01"
   },
   {
-   "state_code": "NY",
+   "state_code": "US-NY",
    "state_label": "New York",
    "region_code": "US",
    "dimension": "operational_cost",
@@ -93,7 +93,7 @@
    "effective_date": "2026-01-01"
   },
   {
-   "state_code": "WA",
+   "state_code": "US-WA",
    "state_label": "Washington",
    "region_code": "US",
    "dimension": "operational_cost",
@@ -106,7 +106,7 @@
    "effective_date": "2026-07-01"
   },
   {
-   "state_code": "PA",
+   "state_code": "US-PA",
    "state_label": "Pennsylvania",
    "region_code": "US",
    "dimension": "operational_cost",
@@ -119,7 +119,7 @@
    "effective_date": "2026-01-01"
   },
   {
-   "state_code": "IL",
+   "state_code": "US-IL",
    "state_label": "Illinois",
    "region_code": "US",
    "dimension": "operational_cost",
