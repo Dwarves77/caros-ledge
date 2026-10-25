@@ -1274,7 +1274,9 @@
     "entity_id",
     "role",
     "asserted_by",
-    "asserted_at"
+    "asserted_at",
+    "basis",
+    "method_version"
    ],
    "uuid": [],
    "defaults": {

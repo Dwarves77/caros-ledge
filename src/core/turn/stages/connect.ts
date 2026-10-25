@@ -4,6 +4,7 @@
 // then discovery for the slice, the term pass, the corpus pass, and last the reading of the backlog: every verified item not yet read at the current versions has its source text extracted and its obligations derived, oldest first, a bounded number per
 // turn (IMPACT-1; the propagate stage behind scores what was read). A slice whose ids are gone refuses; the stage never writes a zero outcome over it.
 import { edgeSnapshotSink } from "@/core/flywheel/edges";
+import { runPatterns } from "@/core/flywheel/patterns";
 import type { FamilyCall } from "@/core/harness";
 import type { RunResult } from "@/core/types/run-result";
 import { runResult, worst } from "@/core/types/run-result";
@@ -25,13 +26,13 @@ function planConnect(upstreamIds: readonly string[], backlog: readonly string[],
 }
 
 /** The passes' results become one: counts namespaced by pass (the scan's own counts are the stage's: extracted, derived, refused), the outcome the worst, the connected and scanned ids the hand-off to propagate. Pure. */
-export function shapeConnect(ids: readonly string[], parts: { tag: RunResult | null; discovery: RunResult | null; term: RunResult | null; corpus: RunResult | null; scan?: RunResult<{ ids: { scanned_item_ids: string[] } }> | null }): RunResult {
+export function shapeConnect(ids: readonly string[], parts: { tag: RunResult | null; discovery: RunResult | null; term: RunResult | null; corpus: RunResult | null; patterns?: RunResult | null; scan?: RunResult<{ ids: { scanned_item_ids: string[] } }> | null }): RunResult {
   const list = Object.values(parts).filter((p): p is RunResult => p !== null && p !== undefined);
   const outcome = worst("ok", ...list.map((p) => p.outcome));
   const counts: Record<string, number> = {
     slice: ids.length, connected: outcome === "failed" ? 0 : ids.length, tag_items_written: parts.tag?.counts.items_written ?? 0,
     edges_written: (parts.discovery?.counts.written ?? 0) + (parts.corpus?.counts.intersection_inserted ?? 0) + (parts.corpus?.counts.shared_entity_written ?? 0),
-    term_writes: parts.term ? sumWritten(parts.term.counts) : 0, themes: parts.corpus?.counts.themes ?? 0, ...(parts.scan?.counts ?? {}),
+    term_writes: parts.term ? sumWritten(parts.term.counts) : 0, themes: parts.corpus?.counts.themes ?? 0, ...(parts.patterns?.counts ?? {}), ...(parts.scan?.counts ?? {}),
   };
   return { ...runResult(outcome, counts, list.flatMap((p) => p.notes)), data: { ids: { connected_item_ids: outcome === "failed" ? [] : [...ids], scanned_item_ids: parts.scan?.data?.ids.scanned_item_ids ?? [] } } };
 }
@@ -52,6 +53,8 @@ export async function runConnect(call: FamilyCall, d: BuiltDeps): Promise<RunRes
   const discovery = ids.length ? await discoverForItems(snap, { ids, dry: call.dry }) : null;
   const term = corpus ? await termPass(deps, { dry: call.dry }) : null;
   const pass = corpus ? await corpusPass(snap, { dry: call.dry }) : null;
+  // the five pattern detectors run every turn after the corpus pass (CONNECT-2): the joined input is read from the spine the propagate stage's seed and ref passes keep
+  const patterns = await runPatterns(deps, { dry: call.dry });
   const scan = await scanBacklog(deps, { dry: call.dry, sliceIds: ids, limit: typeof call.input.scan_limit === "number" ? call.input.scan_limit : READING.backlog.scanPerTurn });
-  return shapeConnect(ids, { tag, discovery, term, corpus: pass, scan });
+  return shapeConnect(ids, { tag, discovery, term, corpus: pass, patterns, scan });
 }

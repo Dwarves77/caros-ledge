@@ -1,0 +1,1856 @@
+{
+ "version": "1.0.0",
+ "classes": {
+  "mode": {
+   "kind": "asset",
+   "role": "cites_mode",
+   "rank": 5,
+   "text": false
+  },
+  "hub": {
+   "kind": "node",
+   "role": "cites_hub",
+   "rank": 4,
+   "text": false
+  },
+  "feedstock": {
+   "kind": "material",
+   "role": "cites_feedstock",
+   "rank": 1
+  },
+  "carrier": {
+   "kind": "material",
+   "role": "cites_carrier",
+   "rank": 2
+  },
+  "node": {
+   "kind": "node",
+   "role": "cites_node",
+   "rank": 3
+  },
+  "corridor": {
+   "kind": "asset",
+   "role": "cites_corridor",
+   "rank": 4
+  },
+  "instrument": {
+   "kind": "instrument",
+   "role": "cites_instrument",
+   "rank": 0
+  },
+  "mandate": {
+   "kind": "instrument",
+   "role": "cites_instrument",
+   "rank": 0
+  },
+  "attribute": {
+   "kind": "method",
+   "role": "cites_attribute",
+   "rank": 6
+  },
+  "window": {
+   "kind": "method",
+   "role": "cites_window",
+   "rank": 6,
+   "text": false
+  }
+ },
+ "entities": [
+  {
+   "key": "mode:air",
+   "class": "mode",
+   "name": "Air freight",
+   "aliases": [],
+   "modes": [
+    "air"
+   ],
+   "scenarios": [],
+   "citation": {
+    "url": "https://transport.ec.europa.eu/transport-modes/air/environment/refueleu-aviation_en",
+    "title": "ReFuelEU Aviation, European Commission",
+    "retrieved_at": "2026-10-24",
+    "quote": "Transport modes Air Road Rail Maritime Inland waterways"
+   }
+  },
+  {
+   "key": "mode:ocean",
+   "class": "mode",
+   "name": "Ocean freight",
+   "aliases": [],
+   "modes": [
+    "ocean"
+   ],
+   "scenarios": [],
+   "citation": {
+    "url": "https://transport.ec.europa.eu/transport-modes/air/environment/refueleu-aviation_en",
+    "title": "ReFuelEU Aviation, European Commission",
+    "retrieved_at": "2026-10-24",
+    "quote": "Transport modes Air Road Rail Maritime Inland waterways"
+   }
+  },
+  {
+   "key": "mode:road",
+   "class": "mode",
+   "name": "Road freight",
+   "aliases": [],
+   "modes": [
+    "road"
+   ],
+   "scenarios": [],
+   "citation": {
+    "url": "https://transport.ec.europa.eu/transport-modes/air/environment/refueleu-aviation_en",
+    "title": "ReFuelEU Aviation, European Commission",
+    "retrieved_at": "2026-10-24",
+    "quote": "Transport modes Air Road Rail Maritime Inland waterways"
+   }
+  },
+  {
+   "key": "mode:rail",
+   "class": "mode",
+   "name": "Rail freight",
+   "aliases": [],
+   "modes": [
+    "rail"
+   ],
+   "scenarios": [],
+   "citation": {
+    "url": "https://transport.ec.europa.eu/transport-modes/air/environment/refueleu-aviation_en",
+    "title": "ReFuelEU Aviation, European Commission",
+    "retrieved_at": "2026-10-24",
+    "quote": "Transport modes Air Road Rail Maritime Inland waterways"
+   }
+  },
+  {
+   "key": "mode:inland_waterway",
+   "class": "mode",
+   "name": "Inland waterway freight",
+   "aliases": [],
+   "modes": [
+    "inland_waterway"
+   ],
+   "scenarios": [],
+   "citation": {
+    "url": "https://transport.ec.europa.eu/transport-modes/air/environment/refueleu-aviation_en",
+    "title": "ReFuelEU Aviation, European Commission",
+    "retrieved_at": "2026-10-24",
+    "quote": "Transport modes Air Road Rail Maritime Inland waterways"
+   }
+  },
+  {
+   "key": "hub:seaport",
+   "class": "hub",
+   "name": "Seaport",
+   "aliases": [],
+   "modes": [
+    "ocean"
+   ],
+   "scenarios": [
+    "vessel-port-call"
+   ],
+   "citation": {
+    "url": "https://en.wikipedia.org/wiki/Bunkering",
+    "title": "Bunkering, Wikipedia",
+    "retrieved_at": "2026-10-24",
+    "quote": "Bunkering operations take place at seaports"
+   }
+  },
+  {
+   "key": "hub:airport",
+   "class": "hub",
+   "name": "Airport",
+   "aliases": [],
+   "modes": [
+    "air"
+   ],
+   "scenarios": [
+    "air-fueling"
+   ],
+   "citation": {
+    "url": "https://transport.ec.europa.eu/transport-modes/air/environment/refueleu-aviation_en",
+    "title": "ReFuelEU Aviation, European Commission",
+    "retrieved_at": "2026-10-24",
+    "quote": "supplied at EU airports"
+   }
+  },
+  {
+   "key": "feed:lipid",
+   "class": "feedstock",
+   "name": "Lipid feedstock",
+   "aliases": [
+    "lipid feedstock",
+    "lipid feedstocks",
+    "lipids",
+    "oils and fats",
+    "vegetable oil",
+    "vegetable oils"
+   ],
+   "modes": [
+    "air",
+    "road",
+    "ocean"
+   ],
+   "scenarios": [
+    "SAF-blending",
+    "ocean-fuel-blend-mandate"
+   ],
+   "citation": {
+    "url": "https://transport.ec.europa.eu/transport-modes/air/environment/refueleu-aviation_en",
+    "title": "ReFuelEU Aviation, European Commission",
+    "retrieved_at": "2026-10-24",
+    "quote": "Biofuels produced from oils and fats"
+   }
+  },
+  {
+   "key": "feed:uco",
+   "class": "feedstock",
+   "name": "Used cooking oil",
+   "aliases": [
+    "UCO",
+    "used cooking oil",
+    "waste cooking oil",
+    "yellow grease"
+   ],
+   "modes": [
+    "air",
+    "road",
+    "ocean"
+   ],
+   "scenarios": [
+    "SAF-blending"
+   ],
+   "citation": {
+    "url": "https://en.wikipedia.org/wiki/Renewable_diesel",
+    "title": "Renewable diesel, Wikipedia",
+    "retrieved_at": "2026-10-24",
+    "quote": "used cooking oil"
+   }
+  },
+  {
+   "key": "feed:tallow",
+   "class": "feedstock",
+   "name": "Tallow",
+   "aliases": [
+    "tallow",
+    "animal fat",
+    "animal fats"
+   ],
+   "modes": [
+    "air",
+    "road",
+    "ocean"
+   ],
+   "scenarios": [
+    "SAF-blending"
+   ],
+   "citation": {
+    "url": "https://en.wikipedia.org/wiki/Tallow",
+    "title": "Tallow, Wikipedia",
+    "retrieved_at": "2026-10-24",
+    "quote": "is a rendered form of beef"
+   }
+  },
+  {
+   "key": "feed:lignocellulosic",
+   "class": "feedstock",
+   "name": "Lignocellulosic biomass",
+   "aliases": [
+    "lignocellulosic",
+    "lignocellulose",
+    "cellulosic biomass"
+   ],
+   "modes": [
+    "air",
+    "road",
+    "ocean"
+   ],
+   "scenarios": [
+    "SAF-blending"
+   ],
+   "citation": {
+    "url": "https://en.wikipedia.org/wiki/Lignocellulosic_biomass",
+    "title": "Lignocellulosic biomass, Wikipedia",
+    "retrieved_at": "2026-10-24",
+    "quote": "Lignocellulose consists of three components"
+   }
+  },
+  {
+   "key": "feed:residues",
+   "class": "feedstock",
+   "name": "Waste and residue feedstock",
+   "aliases": [
+    "waste and residues",
+    "agricultural residues",
+    "forestry residues"
+   ],
+   "modes": [
+    "air",
+    "road",
+    "ocean"
+   ],
+   "scenarios": [
+    "SAF-blending"
+   ],
+   "citation": {
+    "url": "https://transport.ec.europa.eu/transport-modes/air/environment/refueleu-aviation_en",
+    "title": "ReFuelEU Aviation, European Commission",
+    "retrieved_at": "2026-10-24",
+    "quote": "Advanced biofuels from waste and residues"
+   }
+  },
+  {
+   "key": "carrier:hvo",
+   "class": "carrier",
+   "name": "HVO",
+   "aliases": [
+    "HVO",
+    "hydrotreated vegetable oil",
+    "renewable diesel"
+   ],
+   "modes": [
+    "road",
+    "ocean"
+   ],
+   "scenarios": [
+    "truck-CO2-standard",
+    "ocean-fuel-blend-mandate"
+   ],
+   "citation": {
+    "url": "https://en.wikipedia.org/wiki/Renewable_diesel",
+    "title": "Renewable diesel, Wikipedia",
+    "retrieved_at": "2026-10-24",
+    "quote": "is a biofuel made by the hydrocracking or hydrogenation of vegetable oil or animal fat"
+   }
+  },
+  {
+   "key": "carrier:hefa_saf",
+   "class": "carrier",
+   "name": "HEFA-SAF",
+   "aliases": [
+    "HEFA-SAF",
+    "HEFA",
+    "hydroprocessed esters and fatty acids",
+    "SAF",
+    "sustainable aviation fuel"
+   ],
+   "modes": [
+    "air"
+   ],
+   "scenarios": [
+    "SAF-blending",
+    "air-fueling"
+   ],
+   "citation": {
+    "url": "https://en.wikipedia.org/wiki/Sustainable_aviation_fuel",
+    "title": "Sustainable aviation fuel, Wikipedia",
+    "retrieved_at": "2026-10-24",
+    "quote": "is a biofuel used to power aircraft"
+   }
+  },
+  {
+   "key": "carrier:efuels",
+   "class": "carrier",
+   "name": "E-fuels",
+   "aliases": [
+    "e-fuel",
+    "e-fuels",
+    "synthetic fuel",
+    "synthetic fuels",
+    "synthetic aviation fuels",
+    "RFNBO",
+    "RFNBOs",
+    "power-to-liquid"
+   ],
+   "modes": [
+    "air",
+    "ocean",
+    "road"
+   ],
+   "scenarios": [
+    "SAF-blending",
+    "ocean-fuel-blend-mandate"
+   ],
+   "citation": {
+    "url": "https://transport.ec.europa.eu/transport-modes/air/environment/refueleu-aviation_en",
+    "title": "ReFuelEU Aviation, European Commission",
+    "retrieved_at": "2026-10-24",
+    "quote": "Synthetic aviation fuels from renewable hydrogen and captured carbon"
+   }
+  },
+  {
+   "key": "carrier:bio_lng",
+   "class": "carrier",
+   "name": "Bio-LNG",
+   "aliases": [
+    "bio-LNG",
+    "liquefied biomethane",
+    "biomethane",
+    "bio-CNG"
+   ],
+   "modes": [
+    "ocean",
+    "road"
+   ],
+   "scenarios": [
+    "ocean-fuel-blend-mandate",
+    "ocean-bunkering"
+   ],
+   "citation": {
+    "url": "https://en.wikipedia.org/wiki/Biogas",
+    "title": "Biogas, Wikipedia",
+    "retrieved_at": "2026-10-24",
+    "quote": "upgraded to biomethane for use in vehicles or natural gas distribution systems"
+   }
+  },
+  {
+   "key": "carrier:bio_methanol",
+   "class": "carrier",
+   "name": "Bio-methanol",
+   "aliases": [
+    "bio-methanol",
+    "e-methanol",
+    "renewable methanol",
+    "green methanol"
+   ],
+   "modes": [
+    "ocean"
+   ],
+   "scenarios": [
+    "ocean-fuel-blend-mandate",
+    "ocean-bunkering"
+   ],
+   "citation": {
+    "url": "https://en.wikipedia.org/wiki/Methanol_economy",
+    "title": "Methanol economy, Wikipedia",
+    "retrieved_at": "2026-10-24",
+    "quote": "renewable methanol is mainly produced of fermented biomass as well as municipal solid waste (bio-methanol) and of renewable electricity (e-methanol)"
+   }
+  },
+  {
+   "key": "carrier:green_ammonia",
+   "class": "carrier",
+   "name": "Green ammonia",
+   "aliases": [
+    "green ammonia",
+    "renewable ammonia"
+   ],
+   "modes": [
+    "ocean"
+   ],
+   "scenarios": [
+    "ocean-fuel-blend-mandate",
+    "ocean-bunkering"
+   ],
+   "citation": {
+    "url": "https://en.wikipedia.org/wiki/Green_ammonia",
+    "title": "Green ammonia, Wikipedia",
+    "retrieved_at": "2026-10-24",
+    "quote": "ammonia produced by using green hydrogen"
+   }
+  },
+  {
+   "key": "carrier:renewable_electricity",
+   "class": "carrier",
+   "name": "Renewable electricity",
+   "aliases": [
+    "renewable electricity",
+    "renewable power",
+    "green electricity"
+   ],
+   "modes": [
+    "road",
+    "ocean",
+    "rail"
+   ],
+   "scenarios": [
+    "road-charging-infrastructure",
+    "vessel-shore-power"
+   ],
+   "citation": {
+    "url": "https://en.wikipedia.org/wiki/Renewable_energy",
+    "title": "Renewable energy, Wikipedia",
+    "retrieved_at": "2026-10-24",
+    "quote": "renewable natural resources"
+   }
+  },
+  {
+   "key": "carrier:bio_bunkers",
+   "class": "carrier",
+   "name": "Bio-bunkers",
+   "aliases": [
+    "bio-bunkers",
+    "bio-bunker",
+    "marine biofuel",
+    "marine biofuels",
+    "biofuel bunkers"
+   ],
+   "modes": [
+    "ocean"
+   ],
+   "scenarios": [
+    "ocean-bunkering",
+    "ocean-fuel-blend-mandate"
+   ],
+   "citation": {
+    "url": "https://transport.ec.europa.eu/transport-modes/maritime/decarbonising-maritime-transport-fueleu-maritime_en",
+    "title": "FuelEU Maritime, European Commission",
+    "retrieved_at": "2026-10-24",
+    "quote": "promotes the use of renewable, low-carbon fuels and clean energy technologies for ships"
+   }
+  },
+  {
+   "key": "node:shore_power",
+   "class": "node",
+   "name": "Shore power",
+   "aliases": [
+    "shore power",
+    "shore-side electricity",
+    "onshore power supply",
+    "on-shore power supply",
+    "OPS",
+    "cold ironing"
+   ],
+   "modes": [
+    "ocean"
+   ],
+   "scenarios": [
+    "vessel-shore-power",
+    "airport-shore-power"
+   ],
+   "citation": {
+    "url": "https://transport.ec.europa.eu/transport-modes/maritime/decarbonising-maritime-transport-fueleu-maritime_en",
+    "title": "FuelEU Maritime, European Commission",
+    "retrieved_at": "2026-10-24",
+    "quote": "must use on-shore power supply (OPS) or alternative zero-emission technologies"
+   }
+  },
+  {
+   "key": "node:hdv_charging",
+   "class": "node",
+   "name": "HDV charging",
+   "aliases": [
+    "HDV charging",
+    "heavy-duty charging",
+    "truck charging",
+    "megawatt charging",
+    "MCS"
+   ],
+   "modes": [
+    "road"
+   ],
+   "scenarios": [
+    "road-charging-infrastructure",
+    "drayage"
+   ],
+   "citation": {
+    "url": "https://transport.ec.europa.eu/transport-themes/clean-transport/alternative-fuels-sustainable-mobility-europe/alternative-fuels-infrastructure_en",
+    "title": "Alternative fuels infrastructure, European Commission",
+    "retrieved_at": "2026-10-24",
+    "quote": "recharging stations are in place for heavy-duty vehicles in urban nodes"
+   }
+  },
+  {
+   "key": "node:reefer_plugs",
+   "class": "node",
+   "name": "Reefer plugs",
+   "aliases": [
+    "reefer plugs",
+    "reefer plug",
+    "reefer",
+    "reefers",
+    "reefer containers"
+   ],
+   "modes": [
+    "ocean",
+    "road"
+   ],
+   "scenarios": [
+    "vessel-port-call"
+   ],
+   "citation": {
+    "url": "https://en.wikipedia.org/wiki/Refrigerated_container",
+    "title": "Refrigerated container, Wikipedia",
+    "retrieved_at": "2026-10-24",
+    "quote": "A refrigerated container or reefer is an intermodal container"
+   }
+  },
+  {
+   "key": "node:grid_queues",
+   "class": "node",
+   "name": "Grid connection queues",
+   "aliases": [
+    "grid connection queue",
+    "grid connection queues",
+    "connections queue",
+    "interconnection queue",
+    "grid queue"
+   ],
+   "modes": [
+    "road",
+    "ocean"
+   ],
+   "scenarios": [
+    "road-charging-infrastructure",
+    "vessel-shore-power"
+   ],
+   "citation": {
+    "url": "https://www.neso.energy/industry-information/connections/connections-reform",
+    "title": "Connections reform, NESO",
+    "retrieved_at": "2026-10-24",
+    "quote": "transformation of the previous connections queue into"
+   }
+  },
+  {
+   "key": "node:bunkering",
+   "class": "node",
+   "name": "Bunkering",
+   "aliases": [
+    "bunkering"
+   ],
+   "modes": [
+    "ocean"
+   ],
+   "scenarios": [
+    "ocean-bunkering"
+   ],
+   "citation": {
+    "url": "https://www.imo.org/en/MediaCentre/HotTopics/Pages/Reducing-greenhouse-gas-emissions-from-ships.aspx",
+    "title": "Reducing greenhouse gas emissions from ships, IMO",
+    "retrieved_at": "2026-10-24",
+    "quote": "safe and efficient bunkering of alternative low-carbon and zero-carbon fuels"
+   }
+  },
+  {
+   "key": "node:saf_blending",
+   "class": "node",
+   "name": "SAF blending",
+   "aliases": [
+    "SAF blending",
+    "SAF blend mandate",
+    "SAF mandate",
+    "blending mandate"
+   ],
+   "modes": [
+    "air"
+   ],
+   "scenarios": [
+    "SAF-blending"
+   ],
+   "citation": {
+    "url": "https://transport.ec.europa.eu/transport-modes/air/environment/refueleu-aviation_en",
+    "title": "ReFuelEU Aviation, European Commission",
+    "retrieved_at": "2026-10-24",
+    "quote": "gradually increase the share of SAF blended into the conventional aviation fuel supplied at EU airports"
+   }
+  },
+  {
+   "key": "corridor:ocean_to_sea_air",
+   "class": "corridor",
+   "name": "Ocean to sea-air shift",
+   "aliases": [
+    "sea-air",
+    "sea air",
+    "sea-to-air"
+   ],
+   "modes": [
+    "ocean",
+    "air"
+   ],
+   "scenarios": [],
+   "citation": {
+    "url": "https://www.kuehne-nagel.com/us/services/air-freight/sea-air",
+    "title": "Sea-air logistics, Kuehne+Nagel",
+    "retrieved_at": "2026-10-24",
+    "quote": "combines the cost efficiency of ocean freight with the speed of air freight"
+   }
+  },
+  {
+   "key": "corridor:sea_air_to_air",
+   "class": "corridor",
+   "name": "Sea-air to air shift",
+   "aliases": [
+    "air-sea",
+    "sea-air to air"
+   ],
+   "modes": [
+    "ocean",
+    "air"
+   ],
+   "scenarios": [],
+   "citation": {
+    "url": "https://www.kuehne-nagel.com/us/services/air-freight/sea-air",
+    "title": "Sea-air logistics, Kuehne+Nagel",
+    "retrieved_at": "2026-10-24",
+    "quote": "Cargo is first transported by sea to a major hub port and then transferred to air transport"
+   }
+  },
+  {
+   "key": "corridor:rail_road",
+   "class": "corridor",
+   "name": "Rail and road shift",
+   "aliases": [
+    "modal shift to rail",
+    "shift from road to rail",
+    "road-to-rail"
+   ],
+   "modes": [
+    "rail",
+    "road"
+   ],
+   "scenarios": [],
+   "citation": {
+    "url": "https://en.wikipedia.org/wiki/Rail_freight_transport",
+    "title": "Rail freight transport, Wikipedia",
+    "retrieved_at": "2026-10-24",
+    "quote": "Rail freight transport is the use of railways and trains to transport cargo"
+   }
+  },
+  {
+   "key": "corridor:inland_waterway",
+   "class": "corridor",
+   "name": "Inland waterway shift",
+   "aliases": [
+    "modal shift to inland waterways",
+    "shift to inland waterway transport",
+    "road-to-water"
+   ],
+   "modes": [
+    "inland_waterway",
+    "road"
+   ],
+   "scenarios": [],
+   "citation": {
+    "url": "https://transport.ec.europa.eu/transport-modes/inland-waterways_en",
+    "title": "Inland waterways, European Commission",
+    "retrieved_at": "2026-10-24",
+    "quote": "to facilitate its integration into the intermodal logistics chain"
+   }
+  },
+  {
+   "key": "instrument:32023R2405",
+   "class": "instrument",
+   "name": "32023R2405",
+   "aliases": [
+    "ReFuelEU Aviation",
+    "ReFuelEU"
+   ],
+   "modeAgnostic": false,
+   "citation": {
+    "url": "https://transport.ec.europa.eu/transport-modes/air/environment/refueleu-aviation_en",
+    "title": "ReFuelEU Aviation, European Commission",
+    "retrieved_at": "2026-10-24",
+    "quote": "ReFuelEU Aviation Regulation (EU) 2023/2405"
+   }
+  },
+  {
+   "key": "instrument:32023R1805",
+   "class": "instrument",
+   "name": "32023R1805",
+   "aliases": [
+    "FuelEU Maritime",
+    "FuelEU"
+   ],
+   "modeAgnostic": false,
+   "citation": {
+    "url": "https://transport.ec.europa.eu/transport-modes/maritime/decarbonising-maritime-transport-fueleu-maritime_en",
+    "title": "FuelEU Maritime, European Commission",
+    "retrieved_at": "2026-10-24",
+    "quote": "regulation (EU) 2023/1805"
+   }
+  },
+  {
+   "key": "instrument:32023R1804",
+   "class": "instrument",
+   "name": "32023R1804",
+   "aliases": [
+    "AFIR",
+    "Alternative Fuels Infrastructure Regulation"
+   ],
+   "modeAgnostic": false,
+   "citation": {
+    "url": "https://transport.ec.europa.eu/transport-themes/clean-transport/alternative-fuels-sustainable-mobility-europe/alternative-fuels-infrastructure_en",
+    "title": "Alternative fuels infrastructure, European Commission",
+    "retrieved_at": "2026-10-24",
+    "quote": "Regulation (EU) 2023/1804 on the deployment of alternative fuels infrastructure"
+   }
+  },
+  {
+   "key": "instrument:32023L2413",
+   "class": "instrument",
+   "name": "32023L2413",
+   "aliases": [
+    "RED III"
+   ],
+   "modeAgnostic": false,
+   "citation": {
+    "url": "https://energy.ec.europa.eu/topics/renewable-energy/renewable-energy-directive-targets-and-rules/renewable-energy-directive_en",
+    "title": "Renewable Energy Directive, European Commission",
+    "retrieved_at": "2026-10-24",
+    "quote": "amending Directive EU/2023/2413"
+   }
+  },
+  {
+   "key": "instrument:32018L2001",
+   "class": "instrument",
+   "name": "32018L2001",
+   "aliases": [
+    "RED II"
+   ],
+   "modeAgnostic": false,
+   "citation": {
+    "url": "https://energy.ec.europa.eu/topics/renewable-energy/renewable-energy-directive-targets-and-rules/renewable-energy-directive_en",
+    "title": "Renewable Energy Directive, European Commission",
+    "retrieved_at": "2026-10-24",
+    "quote": "(EU/2018/2001) was revised in 2023"
+   }
+  },
+  {
+   "key": "instrument:32025R0040",
+   "class": "mandate",
+   "name": "32025R0040",
+   "aliases": [
+    "PPWR",
+    "Packaging and Packaging Waste Regulation"
+   ],
+   "modeAgnostic": true,
+   "citation": {
+    "url": "https://environment.ec.europa.eu/topics/waste-and-recycling/packaging-waste_en",
+    "title": "Packaging waste, European Commission",
+    "retrieved_at": "2026-10-24",
+    "quote": "Regulation (EU) 2025/40 on packaging and packaging waste"
+   }
+  },
+  {
+   "key": "instrument:32023R0956",
+   "class": "mandate",
+   "name": "32023R0956",
+   "aliases": [
+    "CBAM",
+    "Carbon Border Adjustment Mechanism"
+   ],
+   "modeAgnostic": true,
+   "citation": {
+    "url": "https://taxation-customs.ec.europa.eu/carbon-border-adjustment-mechanism_en",
+    "title": "Carbon Border Adjustment Mechanism, European Commission",
+    "retrieved_at": "2026-10-24",
+    "quote": "cement, iron and steel, aluminium, fertilisers, electricity and hydrogen"
+   }
+  },
+  {
+   "key": "instrument:ISO14083",
+   "class": "mandate",
+   "name": "ISO 14083",
+   "aliases": [
+    "ISO 14083",
+    "ISO14083"
+   ],
+   "modeAgnostic": true,
+   "citation": {
+    "url": "https://standards.iteh.ai/catalog/standards/iso/5c1639be-66c2-4f14-993a-ee2b9d6c1a52/iso-14083-2023",
+    "title": "ISO 14083:2023, ISO standard catalogue",
+    "retrieved_at": "2026-10-24",
+    "quote": "establishes a common methodology for the quantification and reporting of greenhouse gas (GHG) emissions arising from the operation of transport chains of passengers and freight"
+   }
+  },
+  {
+   "key": "attr:void_space_ratio",
+   "class": "attribute",
+   "name": "void_space_ratio",
+   "aliases": [
+    "void space ratio",
+    "empty space ratio"
+   ],
+   "unit": "%",
+   "citation": {
+    "url": "https://en.wikipedia.org/wiki/Packaging_waste",
+    "title": "Packaging waste, Wikipedia",
+    "retrieved_at": "2026-10-24",
+    "quote": "non-functional headspace"
+   }
+  },
+  {
+   "key": "attr:recycled_content",
+   "class": "attribute",
+   "name": "recycled_content",
+   "aliases": [
+    "recycled content"
+   ],
+   "unit": "%",
+   "citation": {
+    "url": "https://environment.ec.europa.eu/topics/waste-and-recycling/packaging-waste_en",
+    "title": "Packaging waste, European Commission",
+    "retrieved_at": "2026-10-24",
+    "quote": "transparency in calculating recycled content in new single-use polyethylene terephthalate (PET) bottles"
+   }
+  },
+  {
+   "key": "attr:ghg_intensity",
+   "class": "attribute",
+   "name": "ghg_intensity",
+   "aliases": [
+    "GHG intensity",
+    "greenhouse gas intensity"
+   ],
+   "unit": "gCO2e/MJ",
+   "citation": {
+    "url": "https://transport.ec.europa.eu/transport-modes/maritime/decarbonising-maritime-transport-fueleu-maritime_en",
+    "title": "FuelEU Maritime, European Commission",
+    "retrieved_at": "2026-10-24",
+    "quote": "on a well-to-wake (WtW) basis"
+   }
+  },
+  {
+   "key": "attr:abatement_cost_per_tco2e",
+   "class": "attribute",
+   "name": "abatement_cost_per_tco2e",
+   "aliases": [
+    "abatement cost",
+    "marginal abatement cost"
+   ],
+   "unit": "EUR/tCO2e",
+   "citation": {
+    "url": "https://en.wikipedia.org/wiki/Marginal_abatement_cost",
+    "title": "Marginal abatement cost, Wikipedia",
+    "retrieved_at": "2026-10-24",
+    "quote": "measures the cost of reducing one more unit of pollution"
+   }
+  },
+  {
+   "key": "attr:tonnage_cutoff",
+   "class": "attribute",
+   "name": "tonnage_cutoff",
+   "aliases": [
+    "gross tonnage",
+    "5,000 gross tonnage"
+   ],
+   "unit": "GT",
+   "citation": {
+    "url": "https://transport.ec.europa.eu/transport-modes/maritime/decarbonising-maritime-transport-fueleu-maritime_en",
+    "title": "FuelEU Maritime, European Commission",
+    "retrieved_at": "2026-10-24",
+    "quote": "intensity of the energy used by ships above 5,000 gross tonnage"
+   }
+  },
+  {
+   "key": "window:0-6m",
+   "class": "window",
+   "name": "0-6m",
+   "aliases": [],
+   "fromMonths": 0,
+   "toMonths": 6
+  },
+  {
+   "key": "window:6-18m",
+   "class": "window",
+   "name": "6-18m",
+   "aliases": [],
+   "fromMonths": 6,
+   "toMonths": 18
+  },
+  {
+   "key": "window:18-36m",
+   "class": "window",
+   "name": "18-36m",
+   "aliases": [],
+   "fromMonths": 18,
+   "toMonths": 36
+  }
+ ],
+ "relations": [
+  {
+   "parent": "feed:lipid",
+   "child": "carrier:hefa_saf",
+   "relation": "feedstock_of",
+   "citations": [
+    {
+     "url": "https://transport.ec.europa.eu/transport-modes/air/environment/refueleu-aviation_en",
+     "title": "ReFuelEU Aviation, European Commission",
+     "retrieved_at": "2026-10-24",
+     "quote": "Biofuels produced from oils and fats"
+    }
+   ]
+  },
+  {
+   "parent": "feed:lipid",
+   "child": "carrier:hvo",
+   "relation": "feedstock_of",
+   "citations": [
+    {
+     "url": "https://en.wikipedia.org/wiki/Renewable_diesel",
+     "title": "Renewable diesel, Wikipedia",
+     "retrieved_at": "2026-10-24",
+     "quote": "hydrogenation of vegetable oil or animal fat"
+    }
+   ]
+  },
+  {
+   "parent": "feed:tallow",
+   "child": "carrier:hvo",
+   "relation": "feedstock_of",
+   "citations": [
+    {
+     "url": "https://en.wikipedia.org/wiki/Renewable_diesel",
+     "title": "Renewable diesel, Wikipedia",
+     "retrieved_at": "2026-10-24",
+     "quote": "hydrogenation of vegetable oil or animal fat"
+    }
+   ]
+  },
+  {
+   "parent": "feed:tallow",
+   "child": "carrier:hefa_saf",
+   "relation": "feedstock_of",
+   "citations": [
+    {
+     "url": "https://en.wikipedia.org/wiki/Sustainable_aviation_fuel",
+     "title": "Sustainable aviation fuel, Wikipedia",
+     "retrieved_at": "2026-10-24",
+     "quote": "waste oils, palm oil"
+    }
+   ]
+  },
+  {
+   "parent": "feed:uco",
+   "child": "carrier:hvo",
+   "relation": "feedstock_of",
+   "citations": [
+    {
+     "url": "https://en.wikipedia.org/wiki/Renewable_diesel",
+     "title": "Renewable diesel, Wikipedia",
+     "retrieved_at": "2026-10-24",
+     "quote": "used cooking oil"
+    }
+   ]
+  },
+  {
+   "parent": "feed:uco",
+   "child": "carrier:hefa_saf",
+   "relation": "feedstock_of",
+   "citations": [
+    {
+     "url": "https://en.wikipedia.org/wiki/Sustainable_aviation_fuel",
+     "title": "Sustainable aviation fuel, Wikipedia",
+     "retrieved_at": "2026-10-24",
+     "quote": "waste oils, palm oil"
+    }
+   ]
+  },
+  {
+   "parent": "feed:lignocellulosic",
+   "child": "carrier:bio_methanol",
+   "relation": "feedstock_of",
+   "citations": [
+    {
+     "url": "https://en.wikipedia.org/wiki/Methanol_economy",
+     "title": "Methanol economy, Wikipedia",
+     "retrieved_at": "2026-10-24",
+     "quote": "fermented biomass"
+    }
+   ]
+  },
+  {
+   "parent": "feed:residues",
+   "child": "carrier:hefa_saf",
+   "relation": "feedstock_of",
+   "citations": [
+    {
+     "url": "https://transport.ec.europa.eu/transport-modes/air/environment/refueleu-aviation_en",
+     "title": "ReFuelEU Aviation, European Commission",
+     "retrieved_at": "2026-10-24",
+     "quote": "Advanced biofuels from waste and residues"
+    }
+   ]
+  },
+  {
+   "parent": "carrier:hefa_saf",
+   "child": "carrier:hvo",
+   "relation": "competes_for_feedstock",
+   "citations": [
+    {
+     "url": "https://en.wikipedia.org/wiki/Sustainable_aviation_fuel",
+     "title": "Sustainable aviation fuel, Wikipedia",
+     "retrieved_at": "2026-10-24",
+     "quote": "waste oils, palm oil"
+    },
+    {
+     "url": "https://en.wikipedia.org/wiki/Renewable_diesel",
+     "title": "Renewable diesel, Wikipedia",
+     "retrieved_at": "2026-10-24",
+     "quote": "hydrogenation of vegetable oil or animal fat"
+    }
+   ]
+  },
+  {
+   "parent": "carrier:bio_bunkers",
+   "child": "carrier:hefa_saf",
+   "relation": "competes_for_feedstock",
+   "citations": [
+    {
+     "url": "https://transport.ec.europa.eu/transport-modes/maritime/decarbonising-maritime-transport-fueleu-maritime_en",
+     "title": "FuelEU Maritime, European Commission",
+     "retrieved_at": "2026-10-24",
+     "quote": "promotes the use of renewable, low-carbon fuels and clean energy technologies for ships"
+    },
+    {
+     "url": "https://en.wikipedia.org/wiki/Sustainable_aviation_fuel",
+     "title": "Sustainable aviation fuel, Wikipedia",
+     "retrieved_at": "2026-10-24",
+     "quote": "waste oils, palm oil"
+    }
+   ]
+  },
+  {
+   "parent": "carrier:bio_bunkers",
+   "child": "carrier:hvo",
+   "relation": "competes_for_feedstock",
+   "citations": [
+    {
+     "url": "https://transport.ec.europa.eu/transport-modes/maritime/decarbonising-maritime-transport-fueleu-maritime_en",
+     "title": "FuelEU Maritime, European Commission",
+     "retrieved_at": "2026-10-24",
+     "quote": "promotes the use of renewable, low-carbon fuels and clean energy technologies for ships"
+    },
+    {
+     "url": "https://en.wikipedia.org/wiki/Renewable_diesel",
+     "title": "Renewable diesel, Wikipedia",
+     "retrieved_at": "2026-10-24",
+     "quote": "hydrogenation of vegetable oil or animal fat"
+    }
+   ]
+  },
+  {
+   "parent": "carrier:hefa_saf",
+   "child": "mode:air",
+   "relation": "fuel_for_mode",
+   "citations": [
+    {
+     "url": "https://transport.ec.europa.eu/transport-modes/air/environment/refueleu-aviation_en",
+     "title": "ReFuelEU Aviation, European Commission",
+     "retrieved_at": "2026-10-24",
+     "quote": "gradually increase the share of SAF blended into the conventional aviation fuel"
+    }
+   ]
+  },
+  {
+   "parent": "carrier:efuels",
+   "child": "mode:air",
+   "relation": "fuel_for_mode",
+   "citations": [
+    {
+     "url": "https://transport.ec.europa.eu/transport-modes/air/environment/refueleu-aviation_en",
+     "title": "ReFuelEU Aviation, European Commission",
+     "retrieved_at": "2026-10-24",
+     "quote": "Synthetic aviation fuels from renewable hydrogen and captured carbon"
+    }
+   ]
+  },
+  {
+   "parent": "carrier:bio_bunkers",
+   "child": "mode:ocean",
+   "relation": "fuel_for_mode",
+   "citations": [
+    {
+     "url": "https://transport.ec.europa.eu/transport-modes/maritime/decarbonising-maritime-transport-fueleu-maritime_en",
+     "title": "FuelEU Maritime, European Commission",
+     "retrieved_at": "2026-10-24",
+     "quote": "promotes the use of renewable, low-carbon fuels and clean energy technologies for ships"
+    }
+   ]
+  },
+  {
+   "parent": "carrier:hvo",
+   "child": "mode:road",
+   "relation": "fuel_for_mode",
+   "citations": [
+    {
+     "url": "https://en.wikipedia.org/wiki/Renewable_diesel",
+     "title": "Renewable diesel, Wikipedia",
+     "retrieved_at": "2026-10-24",
+     "quote": "any diesel engine"
+    }
+   ]
+  },
+  {
+   "parent": "carrier:bio_lng",
+   "child": "mode:road",
+   "relation": "fuel_for_mode",
+   "citations": [
+    {
+     "url": "https://en.wikipedia.org/wiki/Biogas",
+     "title": "Biogas, Wikipedia",
+     "retrieved_at": "2026-10-24",
+     "quote": "as a vehicle fuel"
+    }
+   ]
+  },
+  {
+   "parent": "carrier:renewable_electricity",
+   "child": "mode:ocean",
+   "relation": "fuel_for_mode",
+   "citations": [
+    {
+     "url": "https://transport.ec.europa.eu/transport-modes/maritime/decarbonising-maritime-transport-fueleu-maritime_en",
+     "title": "FuelEU Maritime, European Commission",
+     "retrieved_at": "2026-10-24",
+     "quote": "connect to onshore power supply for their electrical power needs while moored at the quayside"
+    }
+   ]
+  },
+  {
+   "parent": "carrier:renewable_electricity",
+   "child": "mode:road",
+   "relation": "fuel_for_mode",
+   "citations": [
+    {
+     "url": "https://transport.ec.europa.eu/transport-themes/clean-transport/alternative-fuels-sustainable-mobility-europe/alternative-fuels-infrastructure_en",
+     "title": "Alternative fuels infrastructure, European Commission",
+     "retrieved_at": "2026-10-24",
+     "quote": "recharging stations are in place for heavy-duty vehicles in urban nodes"
+    }
+   ]
+  },
+  {
+   "parent": "node:hdv_charging",
+   "child": "node:shore_power",
+   "relation": "shares_grid_zone",
+   "citations": [
+    {
+     "url": "https://transport.ec.europa.eu/transport-themes/clean-transport/alternative-fuels-sustainable-mobility-europe/alternative-fuels-infrastructure_en",
+     "title": "Alternative fuels infrastructure, European Commission",
+     "retrieved_at": "2026-10-24",
+     "quote": "recharging stations are in place for heavy-duty vehicles in urban nodes"
+    },
+    {
+     "url": "https://transport.ec.europa.eu/transport-themes/clean-transport/alternative-fuels-sustainable-mobility-europe/alternative-fuels-infrastructure_en",
+     "title": "Alternative fuels infrastructure, European Commission",
+     "retrieved_at": "2026-10-24",
+     "quote": "deployment of shore-side electricity supply for larger seagoing container and passenger ships in maritime ports"
+    }
+   ]
+  },
+  {
+   "parent": "node:grid_queues",
+   "child": "node:hdv_charging",
+   "relation": "shares_grid_zone",
+   "citations": [
+    {
+     "url": "https://www.neso.energy/industry-information/connections/connections-reform",
+     "title": "Connections reform, NESO",
+     "retrieved_at": "2026-10-24",
+     "quote": "transformation of the previous connections queue into"
+    },
+    {
+     "url": "https://transport.ec.europa.eu/transport-themes/clean-transport/alternative-fuels-sustainable-mobility-europe/alternative-fuels-infrastructure_en",
+     "title": "Alternative fuels infrastructure, European Commission",
+     "retrieved_at": "2026-10-24",
+     "quote": "recharging stations are in place for heavy-duty vehicles in urban nodes"
+    }
+   ]
+  },
+  {
+   "parent": "node:grid_queues",
+   "child": "node:shore_power",
+   "relation": "shares_grid_zone",
+   "citations": [
+    {
+     "url": "https://www.neso.energy/industry-information/connections/connections-reform",
+     "title": "Connections reform, NESO",
+     "retrieved_at": "2026-10-24",
+     "quote": "transformation of the previous connections queue into"
+    },
+    {
+     "url": "https://transport.ec.europa.eu/transport-themes/clean-transport/alternative-fuels-sustainable-mobility-europe/alternative-fuels-infrastructure_en",
+     "title": "Alternative fuels infrastructure, European Commission",
+     "retrieved_at": "2026-10-24",
+     "quote": "deployment of shore-side electricity supply for larger seagoing container and passenger ships in maritime ports"
+    }
+   ]
+  },
+  {
+   "parent": "node:bunkering",
+   "child": "hub:seaport",
+   "relation": "serves_hub",
+   "citations": [
+    {
+     "url": "https://en.wikipedia.org/wiki/Bunkering",
+     "title": "Bunkering, Wikipedia",
+     "retrieved_at": "2026-10-24",
+     "quote": "Bunkering operations take place at seaports"
+    }
+   ]
+  },
+  {
+   "parent": "node:shore_power",
+   "child": "hub:seaport",
+   "relation": "serves_hub",
+   "citations": [
+    {
+     "url": "https://transport.ec.europa.eu/transport-modes/maritime/decarbonising-maritime-transport-fueleu-maritime_en",
+     "title": "FuelEU Maritime, European Commission",
+     "retrieved_at": "2026-10-24",
+     "quote": "must use on-shore power supply"
+    }
+   ]
+  },
+  {
+   "parent": "node:saf_blending",
+   "child": "hub:airport",
+   "relation": "serves_hub",
+   "citations": [
+    {
+     "url": "https://transport.ec.europa.eu/transport-modes/air/environment/refueleu-aviation_en",
+     "title": "ReFuelEU Aviation, European Commission",
+     "retrieved_at": "2026-10-24",
+     "quote": "supplied at EU airports"
+    }
+   ]
+  },
+  {
+   "parent": "corridor:ocean_to_sea_air",
+   "child": "mode:ocean",
+   "relation": "corridor_links",
+   "citations": [
+    {
+     "url": "https://www.kuehne-nagel.com/us/services/air-freight/sea-air",
+     "title": "Sea-air logistics, Kuehne+Nagel",
+     "retrieved_at": "2026-10-24",
+     "quote": "Cargo is first transported by sea to a major hub port"
+    }
+   ]
+  },
+  {
+   "parent": "corridor:ocean_to_sea_air",
+   "child": "mode:air",
+   "relation": "corridor_links",
+   "citations": [
+    {
+     "url": "https://www.kuehne-nagel.com/us/services/air-freight/sea-air",
+     "title": "Sea-air logistics, Kuehne+Nagel",
+     "retrieved_at": "2026-10-24",
+     "quote": "transferred to air transport for the final leg"
+    }
+   ]
+  },
+  {
+   "parent": "corridor:sea_air_to_air",
+   "child": "mode:air",
+   "relation": "corridor_links",
+   "citations": [
+    {
+     "url": "https://www.kuehne-nagel.com/us/services/air-freight/sea-air",
+     "title": "Sea-air logistics, Kuehne+Nagel",
+     "retrieved_at": "2026-10-24",
+     "quote": "transferred to air transport for the final leg"
+    }
+   ]
+  },
+  {
+   "parent": "corridor:rail_road",
+   "child": "mode:rail",
+   "relation": "corridor_links",
+   "citations": [
+    {
+     "url": "https://en.wikipedia.org/wiki/Rail_freight_transport",
+     "title": "Rail freight transport, Wikipedia",
+     "retrieved_at": "2026-10-24",
+     "quote": "Rail freight transport is the use of railways and trains to transport cargo"
+    }
+   ]
+  },
+  {
+   "parent": "corridor:inland_waterway",
+   "child": "mode:inland_waterway",
+   "relation": "corridor_links",
+   "citations": [
+    {
+     "url": "https://transport.ec.europa.eu/transport-modes/inland-waterways_en",
+     "title": "Inland waterways, European Commission",
+     "retrieved_at": "2026-10-24",
+     "quote": "to facilitate its integration into the intermodal logistics chain"
+    }
+   ]
+  },
+  {
+   "parent": "instrument:32023R2405",
+   "child": "carrier:hefa_saf",
+   "relation": "implements",
+   "citations": [
+    {
+     "url": "https://transport.ec.europa.eu/transport-modes/air/environment/refueleu-aviation_en",
+     "title": "ReFuelEU Aviation, European Commission",
+     "retrieved_at": "2026-10-24",
+     "quote": "ReFuelEU Aviation Regulation (EU) 2023/2405"
+    }
+   ]
+  },
+  {
+   "parent": "instrument:32023R2405",
+   "child": "node:saf_blending",
+   "relation": "implements",
+   "citations": [
+    {
+     "url": "https://transport.ec.europa.eu/transport-modes/air/environment/refueleu-aviation_en",
+     "title": "ReFuelEU Aviation, European Commission",
+     "retrieved_at": "2026-10-24",
+     "quote": "gradually increase the share of SAF blended into the conventional aviation fuel supplied at EU airports"
+    }
+   ]
+  },
+  {
+   "parent": "instrument:32023R1805",
+   "child": "carrier:bio_bunkers",
+   "relation": "implements",
+   "citations": [
+    {
+     "url": "https://transport.ec.europa.eu/transport-modes/maritime/decarbonising-maritime-transport-fueleu-maritime_en",
+     "title": "FuelEU Maritime, European Commission",
+     "retrieved_at": "2026-10-24",
+     "quote": "promotes the use of renewable, low-carbon fuels and clean energy technologies for ships"
+    }
+   ]
+  },
+  {
+   "parent": "instrument:32023R1805",
+   "child": "node:shore_power",
+   "relation": "implements",
+   "citations": [
+    {
+     "url": "https://transport.ec.europa.eu/transport-modes/maritime/decarbonising-maritime-transport-fueleu-maritime_en",
+     "title": "FuelEU Maritime, European Commission",
+     "retrieved_at": "2026-10-24",
+     "quote": "must use on-shore power supply (OPS) or alternative zero-emission technologies"
+    }
+   ]
+  },
+  {
+   "parent": "instrument:32023R1804",
+   "child": "node:shore_power",
+   "relation": "implements",
+   "citations": [
+    {
+     "url": "https://transport.ec.europa.eu/transport-themes/clean-transport/alternative-fuels-sustainable-mobility-europe/alternative-fuels-infrastructure_en",
+     "title": "Alternative fuels infrastructure, European Commission",
+     "retrieved_at": "2026-10-24",
+     "quote": "deployment of shore-side electricity supply for larger seagoing container and passenger ships in maritime ports"
+    }
+   ]
+  },
+  {
+   "parent": "instrument:32023R1804",
+   "child": "node:hdv_charging",
+   "relation": "implements",
+   "citations": [
+    {
+     "url": "https://transport.ec.europa.eu/transport-themes/clean-transport/alternative-fuels-sustainable-mobility-europe/alternative-fuels-infrastructure_en",
+     "title": "Alternative fuels infrastructure, European Commission",
+     "retrieved_at": "2026-10-24",
+     "quote": "recharging stations are in place for heavy-duty vehicles in urban nodes"
+    }
+   ]
+  },
+  {
+   "parent": "instrument:32023L2413",
+   "child": "instrument:32018L2001",
+   "relation": "amends",
+   "citations": [
+    {
+     "url": "https://energy.ec.europa.eu/topics/renewable-energy/renewable-energy-directive-targets-and-rules/renewable-energy-directive_en",
+     "title": "Renewable Energy Directive, European Commission",
+     "retrieved_at": "2026-10-24",
+     "quote": "amending Directive EU/2023/2413"
+    }
+   ]
+  },
+  {
+   "parent": "instrument:32025R0040",
+   "child": "mode:air",
+   "relation": "consignment_wide",
+   "citations": [
+    {
+     "url": "https://environment.ec.europa.eu/topics/waste-and-recycling/packaging-waste_en",
+     "title": "Packaging waste, European Commission",
+     "retrieved_at": "2026-10-24",
+     "quote": "Regulation (EU) 2025/40 on packaging and packaging waste"
+    }
+   ]
+  },
+  {
+   "parent": "instrument:32023R0956",
+   "child": "mode:air",
+   "relation": "consignment_wide",
+   "citations": [
+    {
+     "url": "https://taxation-customs.ec.europa.eu/carbon-border-adjustment-mechanism_en",
+     "title": "Carbon Border Adjustment Mechanism, European Commission",
+     "retrieved_at": "2026-10-24",
+     "quote": "cement, iron and steel, aluminium, fertilisers, electricity and hydrogen"
+    }
+   ]
+  },
+  {
+   "parent": "instrument:ISO14083",
+   "child": "mode:air",
+   "relation": "consignment_wide",
+   "citations": [
+    {
+     "url": "https://standards.iteh.ai/catalog/standards/iso/5c1639be-66c2-4f14-993a-ee2b9d6c1a52/iso-14083-2023",
+     "title": "ISO 14083:2023, ISO standard catalogue",
+     "retrieved_at": "2026-10-24",
+     "quote": "establishes a common methodology for the quantification and reporting of greenhouse gas (GHG) emissions arising from the operation of transport chains of passengers and freight"
+    }
+   ]
+  },
+  {
+   "parent": "instrument:32025R0040",
+   "child": "mode:ocean",
+   "relation": "consignment_wide",
+   "citations": [
+    {
+     "url": "https://environment.ec.europa.eu/topics/waste-and-recycling/packaging-waste_en",
+     "title": "Packaging waste, European Commission",
+     "retrieved_at": "2026-10-24",
+     "quote": "Regulation (EU) 2025/40 on packaging and packaging waste"
+    }
+   ]
+  },
+  {
+   "parent": "instrument:32023R0956",
+   "child": "mode:ocean",
+   "relation": "consignment_wide",
+   "citations": [
+    {
+     "url": "https://taxation-customs.ec.europa.eu/carbon-border-adjustment-mechanism_en",
+     "title": "Carbon Border Adjustment Mechanism, European Commission",
+     "retrieved_at": "2026-10-24",
+     "quote": "cement, iron and steel, aluminium, fertilisers, electricity and hydrogen"
+    }
+   ]
+  },
+  {
+   "parent": "instrument:ISO14083",
+   "child": "mode:ocean",
+   "relation": "consignment_wide",
+   "citations": [
+    {
+     "url": "https://standards.iteh.ai/catalog/standards/iso/5c1639be-66c2-4f14-993a-ee2b9d6c1a52/iso-14083-2023",
+     "title": "ISO 14083:2023, ISO standard catalogue",
+     "retrieved_at": "2026-10-24",
+     "quote": "establishes a common methodology for the quantification and reporting of greenhouse gas (GHG) emissions arising from the operation of transport chains of passengers and freight"
+    }
+   ]
+  },
+  {
+   "parent": "instrument:32025R0040",
+   "child": "mode:road",
+   "relation": "consignment_wide",
+   "citations": [
+    {
+     "url": "https://environment.ec.europa.eu/topics/waste-and-recycling/packaging-waste_en",
+     "title": "Packaging waste, European Commission",
+     "retrieved_at": "2026-10-24",
+     "quote": "Regulation (EU) 2025/40 on packaging and packaging waste"
+    }
+   ]
+  },
+  {
+   "parent": "instrument:32023R0956",
+   "child": "mode:road",
+   "relation": "consignment_wide",
+   "citations": [
+    {
+     "url": "https://taxation-customs.ec.europa.eu/carbon-border-adjustment-mechanism_en",
+     "title": "Carbon Border Adjustment Mechanism, European Commission",
+     "retrieved_at": "2026-10-24",
+     "quote": "cement, iron and steel, aluminium, fertilisers, electricity and hydrogen"
+    }
+   ]
+  },
+  {
+   "parent": "instrument:ISO14083",
+   "child": "mode:road",
+   "relation": "consignment_wide",
+   "citations": [
+    {
+     "url": "https://standards.iteh.ai/catalog/standards/iso/5c1639be-66c2-4f14-993a-ee2b9d6c1a52/iso-14083-2023",
+     "title": "ISO 14083:2023, ISO standard catalogue",
+     "retrieved_at": "2026-10-24",
+     "quote": "establishes a common methodology for the quantification and reporting of greenhouse gas (GHG) emissions arising from the operation of transport chains of passengers and freight"
+    }
+   ]
+  },
+  {
+   "parent": "instrument:32025R0040",
+   "child": "mode:rail",
+   "relation": "consignment_wide",
+   "citations": [
+    {
+     "url": "https://environment.ec.europa.eu/topics/waste-and-recycling/packaging-waste_en",
+     "title": "Packaging waste, European Commission",
+     "retrieved_at": "2026-10-24",
+     "quote": "Regulation (EU) 2025/40 on packaging and packaging waste"
+    }
+   ]
+  },
+  {
+   "parent": "instrument:32023R0956",
+   "child": "mode:rail",
+   "relation": "consignment_wide",
+   "citations": [
+    {
+     "url": "https://taxation-customs.ec.europa.eu/carbon-border-adjustment-mechanism_en",
+     "title": "Carbon Border Adjustment Mechanism, European Commission",
+     "retrieved_at": "2026-10-24",
+     "quote": "cement, iron and steel, aluminium, fertilisers, electricity and hydrogen"
+    }
+   ]
+  },
+  {
+   "parent": "instrument:ISO14083",
+   "child": "mode:rail",
+   "relation": "consignment_wide",
+   "citations": [
+    {
+     "url": "https://standards.iteh.ai/catalog/standards/iso/5c1639be-66c2-4f14-993a-ee2b9d6c1a52/iso-14083-2023",
+     "title": "ISO 14083:2023, ISO standard catalogue",
+     "retrieved_at": "2026-10-24",
+     "quote": "establishes a common methodology for the quantification and reporting of greenhouse gas (GHG) emissions arising from the operation of transport chains of passengers and freight"
+    }
+   ]
+  },
+  {
+   "parent": "instrument:32025R0040",
+   "child": "mode:inland_waterway",
+   "relation": "consignment_wide",
+   "citations": [
+    {
+     "url": "https://environment.ec.europa.eu/topics/waste-and-recycling/packaging-waste_en",
+     "title": "Packaging waste, European Commission",
+     "retrieved_at": "2026-10-24",
+     "quote": "Regulation (EU) 2025/40 on packaging and packaging waste"
+    }
+   ]
+  },
+  {
+   "parent": "instrument:32023R0956",
+   "child": "mode:inland_waterway",
+   "relation": "consignment_wide",
+   "citations": [
+    {
+     "url": "https://taxation-customs.ec.europa.eu/carbon-border-adjustment-mechanism_en",
+     "title": "Carbon Border Adjustment Mechanism, European Commission",
+     "retrieved_at": "2026-10-24",
+     "quote": "cement, iron and steel, aluminium, fertilisers, electricity and hydrogen"
+    }
+   ]
+  },
+  {
+   "parent": "instrument:ISO14083",
+   "child": "mode:inland_waterway",
+   "relation": "consignment_wide",
+   "citations": [
+    {
+     "url": "https://standards.iteh.ai/catalog/standards/iso/5c1639be-66c2-4f14-993a-ee2b9d6c1a52/iso-14083-2023",
+     "title": "ISO 14083:2023, ISO standard catalogue",
+     "retrieved_at": "2026-10-24",
+     "quote": "establishes a common methodology for the quantification and reporting of greenhouse gas (GHG) emissions arising from the operation of transport chains of passengers and freight"
+    }
+   ]
+  }
+ ],
+ "columns": [
+  {
+   "table": "obligation_objects",
+   "pk": "obligation_id",
+   "maps": [
+    {
+     "column": "instrument_entity_id",
+     "by": "entity"
+    },
+    {
+     "column": "mode",
+     "by": "mode"
+    }
+   ]
+  },
+  {
+   "table": "statutory_computations",
+   "pk": "computation_id",
+   "maps": [
+    {
+     "column": "entity_id",
+     "by": "entity"
+    },
+    {
+     "column": "formula_id",
+     "by": "alias"
+    },
+    {
+     "column": "scenario_key",
+     "by": "alias"
+    }
+   ]
+  },
+  {
+   "table": "market_series",
+   "pk": "id",
+   "maps": [
+    {
+     "column": "entity_id",
+     "by": "entity"
+    },
+    {
+     "column": "series_key",
+     "by": "alias"
+    },
+    {
+     "column": "label",
+     "by": "alias"
+    }
+   ]
+  },
+  {
+   "table": "emission_factors",
+   "pk": "factor_id",
+   "maps": [
+    {
+     "column": "energy_carrier",
+     "by": "alias"
+    },
+    {
+     "column": "mode",
+     "by": "mode"
+    },
+    {
+     "column": "corridor_id",
+     "by": "entity"
+    }
+   ]
+  },
+  {
+   "table": "grid_connection_queues",
+   "pk": "queue_id",
+   "maps": [
+    {
+     "column": "jurisdiction_id",
+     "by": "entity"
+    },
+    {
+     "column": "dso_name",
+     "by": "alias"
+    },
+    {
+     "by": "const",
+     "entity": "node:grid_queues"
+    }
+   ]
+  },
+  {
+   "table": "oem_tech_roadmaps",
+   "pk": "roadmap_id",
+   "maps": [
+    {
+     "column": "manufacturer_id",
+     "by": "entity"
+    },
+    {
+     "column": "tech_category",
+     "by": "map",
+     "map": {
+      "megawatt_charging": "node:hdv_charging",
+      "heavy_battery": "carrier:renewable_electricity",
+      "saf_refinery": "carrier:hefa_saf",
+      "methanol_dualfuel": "carrier:bio_methanol",
+      "ammonia_engine": "carrier:green_ammonia",
+      "reefer_electrification": "node:reefer_plugs"
+     }
+    }
+   ]
+  },
+  {
+   "table": "reroute_events",
+   "pk": "reroute_id",
+   "maps": [
+    {
+     "column": "baseline_corridor_id",
+     "by": "entity"
+    },
+    {
+     "column": "reroute_corridor_id",
+     "by": "entity"
+    },
+    {
+     "column": "cause",
+     "by": "alias"
+    }
+   ]
+  },
+  {
+   "table": "regional_data_facts",
+   "pk": "id",
+   "maps": [
+    {
+     "column": "region_id",
+     "by": "refs",
+     "refTable": "regions"
+    },
+    {
+     "column": "dimension",
+     "by": "alias"
+    },
+    {
+     "column": "fact_label",
+     "by": "alias"
+    }
+   ]
+  },
+  {
+   "table": "state_cost_facts",
+   "pk": "id",
+   "maps": [
+    {
+     "column": "region_id",
+     "by": "refs",
+     "refTable": "regions"
+    },
+    {
+     "column": "fact_label",
+     "by": "alias"
+    }
+   ]
+  },
+  {
+   "table": "research_assessments_current",
+   "pk": "id",
+   "maps": [
+    {
+     "column": "entity_id",
+     "by": "entity"
+    }
+   ]
+  },
+  {
+   "table": "indexation_clauses",
+   "pk": "clause_id",
+   "maps": [
+    {
+     "column": "corridor_id",
+     "by": "entity"
+    },
+    {
+     "column": "index_id",
+     "by": "alias"
+    }
+   ]
+  },
+  {
+   "table": "item_forward_events",
+   "pk": "id",
+   "maps": [
+    {
+     "column": "source_claim_id",
+     "by": "refs",
+     "refTable": "section_claim_provenance"
+    }
+   ]
+  }
+ ]
+}

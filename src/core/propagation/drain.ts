@@ -54,6 +54,7 @@ const DEFAULT_BATCH = 500;
 const PK_COLUMN: Readonly<Record<string, string>> = {
   emission_factors: "factor_id", market_series: "id", regional_data_facts: "id", derived_values: "value_id", statutory_computations: "computation_id",
   estimated_values: "estimate_id", state_cost_facts: "id", inference_records: "inference_id", intelligence_items: "id", section_claim_provenance: "id",
+  obligation_objects: "obligation_id", oem_tech_roadmaps: "roadmap_id", grid_connection_queues: "queue_id", reroute_events: "reroute_id", research_assessments: "id", indexation_clauses: "clause_id", item_forward_events: "id",
 };
 
 /** Resolve declared inputs to their current rows. A MISSING row, and a row that is no longer current (superseded, archived, unverified, suppressed, stale), is a null row; a failed READ throws (it is never read as missing). */
@@ -61,13 +62,14 @@ export async function resolveInputs(sb: Db, inputs: readonly InputRef[]): Promis
   const out: ResolvedMethodInput[] = [];
   for (const ref of inputs) {
     const col = PK_COLUMN[ref.table];
+    const extra = { ...(ref.kind ? { kind: ref.kind } : {}), ...(ref.entities ? { entities: ref.entities } : {}), ...(ref.relation ? { relation: ref.relation } : {}), ...(ref.surface ? { surface: ref.surface } : {}), ...(ref.at ? { at: ref.at } : {}) };
     if (!col) {
-      out.push({ table: ref.table, pk: ref.pk, version: ref.version ?? null, row: null });
+      out.push({ table: ref.table, pk: ref.pk, version: ref.version ?? null, row: null, ...extra });
       continue;
     }
     const { data, error } = await sb.from(ref.table).select("*").eq(col, ref.pk).maybeSingle();
     if (error) throw new Error(`resolve input ${ref.table}/${ref.pk}: ${error.message}`);
-    out.push({ table: ref.table, pk: ref.pk, version: ref.version ?? null, row: await currentInputRow(sb, ref.table, (data ?? null) as Record<string, unknown> | null) });
+    out.push({ table: ref.table, pk: ref.pk, version: ref.version ?? null, row: await currentInputRow(sb, ref.table, (data ?? null) as Record<string, unknown> | null), ...extra });
   }
   return out;
 }

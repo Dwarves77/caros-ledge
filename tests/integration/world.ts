@@ -10,6 +10,7 @@ import type { Catalog } from "@/core/producers";
 
 import { drain, type WorkerDeps } from "../../supabase/functions/capture-worker/process.ts";
 import { MemDb, installPortalLedgerRpc, installPropagationRpcs, type Row } from "../_support/memdb.ts";
+import { couplingRoutes } from "../_support/coupling-pages.ts";
 import { OFFICIAL_TEXT } from "../intake/fixtures.ts";
 import { installProvenanceRpc } from "../intake/fixtures.ts";
 
@@ -64,6 +65,7 @@ export function transport(over: Record<string, () => Response> = {}): { fetchImp
     [DOC_URL]: () => new Response(DOC_TEXT, { status: 200, headers: { "content-type": "text/plain; charset=utf-8" } }),
     [NEW_URL]: () => new Response(NEW_TEXT, { status: 200, headers: { "content-type": "text/plain; charset=utf-8" } }),
     "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml": () => new Response(ECB_XML, { status: 200, headers: { "content-type": "application/xml" } }),
+    ...couplingRoutes(),
     ...over,
   };
   const fetchImpl = (async (input: RequestInfo | URL) => {
