@@ -56,9 +56,9 @@ async function rewriteItem(db: Db, id: string, o: { dry: boolean; nowIso: string
   const lines = brief.n + sections.reduce((n, s) => n + s.n, 0) + gaps.length;
   if (o.dry || lines === 0) return lines;
   const ops: LedgerOp[] = [
-    ...(brief.n > 0 ? [{ op: "brief" as const, full_brief: brief.out ?? "" }] : []),
-    ...sections.map((s) => ({ op: "section_content" as const, id: s.id, content_md: s.out })),
-    ...gaps.map((c) => ({ op: "claim" as const, claim_id: c.id, row: { claim_text: c.out }, note: "MINT-1 retokenise" })),
+    ...(brief.n > 0 ? [{ op: "brief" as const, full_brief: brief.out ?? "", keep_updated_at: true }] : []),
+    ...sections.map((s) => ({ op: "section_content" as const, id: s.id, content_md: s.out, keep_updated_at: true })),
+    ...gaps.map((c) => ({ op: "claim" as const, claim_id: c.id, row: { claim_text: c.out }, note: "MINT-1 retokenise", keep_updated_at: true })),
   ];
   const facts = claims.filter((c) => c.claim_kind === "FACT").map((c) => ({ claim_text: c.claim_text, source_span: c.source_span ?? "" }));
   const state = async (fullBrief: string | null) => upsertGateAState(db, buildGateARow({ itemId: id, fullBrief, factClaims: facts, derivedCovered: await derivedCoveredTokens(db, id), nowIso: o.nowIso }));

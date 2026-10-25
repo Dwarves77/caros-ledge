@@ -184,7 +184,7 @@ jobs:
   ruled-runs:
     name: ruled-runs
     needs: [changes, migrate]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.event.repository.fork == false && needs.changes.outputs.plans != ''
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.event.repository.fork == false && needs.changes.outputs.plans != '' && needs.migrate.result == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     # Same `production` environment and secrets as `turn`. If the environment has required reviewers (a repository setting), the job waits for one and runs nothing meanwhile.

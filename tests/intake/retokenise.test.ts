@@ -44,6 +44,7 @@ test("INV-MINT-2 the backfill rewrites every legacy line once, keeps Gate A curr
   assert.equal(first.outcome, "ok");
   assert.deepEqual(first.counts, { items_scanned: 1, items_rewritten: 1, items_failed: 0, lines_rewritten: 6, remaining: 0 });
   const [item] = rows(w, "intelligence_items");
+  assert.deepEqual(rows(w, "intelligence_items").map((i) => i.updated_at), ["2026-10-01T00:00:00Z", "2026-10-01T00:00:00Z"], "a token rewrite is not an update: updated_at is as it was after the FIRST pass (migration 0130 keep_updated_at)");
   assert.match(String(item?.full_brief), new RegExp(`- \\[penalty_summary\\] ${ABSENCE_TOKEN}\\n- \\[due_date\\] ${ABSENCE_TOKEN}\\n`));
   assert.doesNotMatch(String(item?.full_brief), /A full-brief regrounding/);
   assert.ok(String(item?.full_brief).includes(FACT), "a FACT line is untouched");
@@ -114,4 +115,14 @@ test("INV-MINT-3 a record page shows the label beside each slot and the counts l
   assert.doesNotMatch(text, /full-brief regrounding/);
   const gap = /<p[^>]*>[^<]*1 of 2 record fields.*?<\/p>/s.exec(html)?.[0] ?? "";
   assert.ok(gap && !/<(?:a|button|input|select)\b/.test(gap), "the absence lines add no interactive target");
+});
+
+test("a ledger call without keep_updated_at still stamps updated_at, as every other writer does", async () => {
+  const w = world();
+  const r = await (w.db as { rpc: (n: string, a: unknown) => Promise<{ error: unknown }> }).rpc("ledger_apply_ops", { p_item_id: "i1", p_ops: [{ op: "brief", full_brief: "changed" }], p_now: null });
+  assert.equal(r.error, null);
+  assert.notEqual(rows(w, "intelligence_items")[0]?.updated_at, "2026-10-01T00:00:00Z");
+  const kept = await (w.db as { rpc: (n: string, a: unknown) => Promise<{ error: unknown }> }).rpc("ledger_apply_ops", { p_item_id: "i2", p_ops: [{ op: "brief", full_brief: "changed", keep_updated_at: true }], p_now: null });
+  assert.equal(kept.error, null);
+  assert.equal(rows(w, "intelligence_items")[1]?.updated_at, "2026-10-01T00:00:00Z");
 });
