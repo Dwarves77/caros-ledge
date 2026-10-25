@@ -1,8 +1,9 @@
 // The ONE CLI. `node scripts/turn.mjs --stage <sweep|sweep-research|change|capture|intake|connect|propagate|briefs|all|ops> --mode dry|apply [--input '<json keyed by stage>'] [--no-chain]`
 // Exit 0 every stage recorded and none failed; 1 a stage failed, a record failed, a credential is missing where the event could carry it, or the run is not a dispatch in CI; 2 self-skipped for lack of credentials where the event cannot carry them (src/core/harness/exit.ts:
-// a workstation, or a fork PR). It never runs a turn on a push or a pull request: the workflow gives the turn job its secrets on a dispatch only.
+// a workstation, or a fork PR). It never runs a turn on a push or a pull request: the workflow gives the turn job its secrets on a dispatch only. The one exception is a RULED run (scripts/runs/execute.mjs, TURN_RULED_PLAN
+// set): the `ruled-runs` job runs a committed plan on a push to main, and only there; the run frame, the emergency stop and the licence register bind it exactly as a dispatch. TURN_RESULT_FILE: where to write the result as JSON.
 // Apply is refused by the run frame while the scrape cadence is off (rule 16): a dispatch in build mode is always dry, and its rows say so.
-import { appendFileSync } from "node:fs";
+import { appendFileSync, writeFileSync } from "node:fs";
 import { register } from "node:module";
 import { parseArgs } from "node:util";
 
@@ -17,7 +18,8 @@ const note = (title, msg) => console.log(process.env.GITHUB_ACTIONS ? `::notice 
 
 const { values } = parseArgs({ options: { stage: { type: "string" }, mode: { type: "string", default: "dry" }, input: { type: "string", default: "{}" }, "no-chain": { type: "boolean", default: false } }, strict: true, allowPositionals: false });
 const event = process.env.GITHUB_EVENT_NAME;
-if (event && event !== "workflow_dispatch") fail(`a turn runs only on a dispatch (this run is a ${event}); the workflow gives the turn job its secrets on a dispatch only`);
+const ruled = Boolean(process.env.TURN_RULED_PLAN) && event === "push" && process.env.GITHUB_REF === "refs/heads/main";
+if (event && event !== "workflow_dispatch" && !ruled) fail(`a turn runs only on a dispatch (this run is a ${event}); the workflow gives the turn job its secrets on a dispatch only`);
 // Past this line the sources are needed (a pull request run stops above and installs nothing).
 const { STAGES, runTurn, opNames } = await import("../src/core/turn/index.ts");
 const { buildDeps, enforceWired, startupCheck } = await import("../src/core/turn/wiring.ts");
@@ -51,4 +53,5 @@ console.log(table);
 if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${table}\n`);
 if (result.exit === 2) note("turn", `${result.runs[0]?.error ?? "self-skipped: no credentials"}; exit 2`);
 if (result.exit === 1) console.error(`turn: ${result.runs.find((r) => r.exit === 1)?.error ?? result.runs.find((r) => r.exit === 1)?.row?.error ?? "a record failed"}`);
+if (process.env.TURN_RESULT_FILE) writeFileSync(process.env.TURN_RESULT_FILE, JSON.stringify({ root_run_id: result.rootRunId, resolved: result.resolved, exit: result.exit, runs: result.runs.map((r) => ({ family: r.row?.family ?? null, id: r.row?.id ?? null, mode: r.row?.mode ?? null, forced_dry: r.row?.forced_dry ?? false, outcome: r.row?.outcome ?? null, reason: r.row?.reason ?? null, counts: r.row?.outputs?.counts ?? {}, error: r.error ?? r.row?.error ?? null })) }));
 process.exit(result.exit);

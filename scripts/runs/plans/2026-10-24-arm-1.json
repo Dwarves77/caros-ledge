@@ -1,0 +1,208 @@
+{
+  "ruling": "operator 2026-10-23 ruling 1: population hold lifted for the structured-data producers (rulings-2026-10-11.md)",
+  "steps": [
+    {
+      "name": "ecb-fx-dry",
+      "stage": "propagate",
+      "mode": "dry",
+      "input": {
+        "propagate": {
+          "producers": {
+            "only": "ecb-fx"
+          },
+          "cadence_exception": "operator 2026-10-23 ruling 1: population hold lifted for the structured-data producers (rulings-2026-10-11.md)"
+        }
+      },
+      "producer_env": []
+    },
+    {
+      "name": "ecb-fx",
+      "stage": "propagate",
+      "mode": "apply",
+      "input": {
+        "propagate": {
+          "producers": {
+            "only": "ecb-fx"
+          },
+          "cadence_exception": "operator 2026-10-23 ruling 1: population hold lifted for the structured-data producers (rulings-2026-10-11.md)"
+        }
+      },
+      "producer_env": [
+        "MARKET_PRODUCER_ECB_FX_ENABLED=1"
+      ]
+    },
+    {
+      "name": "eu-weekly-oil-bulletin",
+      "stage": "propagate",
+      "mode": "apply",
+      "input": {
+        "propagate": {
+          "producers": {
+            "only": "eu-weekly-oil-bulletin"
+          },
+          "cadence_exception": "operator 2026-10-23 ruling 1: population hold lifted for the structured-data producers (rulings-2026-10-11.md)"
+        }
+      },
+      "producer_env": [
+        "MARKET_PRODUCER_EU_OIL_BULLETIN_ENABLED=1"
+      ]
+    },
+    {
+      "name": "neso-carbon-intensity",
+      "stage": "propagate",
+      "mode": "apply",
+      "input": {
+        "propagate": {
+          "producers": {
+            "only": "neso-carbon-intensity"
+          },
+          "cadence_exception": "operator 2026-10-23 ruling 1: population hold lifted for the structured-data producers (rulings-2026-10-11.md)"
+        }
+      },
+      "producer_env": [
+        "REGIONAL_PRODUCER_NESO_CARBON_INTENSITY_ENABLED=1"
+      ]
+    },
+    {
+      "name": "ukpn-capacity-heatmap",
+      "stage": "propagate",
+      "mode": "apply",
+      "input": {
+        "propagate": {
+          "producers": {
+            "only": "ukpn-capacity-heatmap"
+          },
+          "cadence_exception": "operator 2026-10-23 ruling 1: population hold lifted for the structured-data producers (rulings-2026-10-11.md)"
+        }
+      },
+      "producer_env": [
+        "OPERATIONS_PRODUCER_UKPN_HEATMAP_ENABLED=1"
+      ]
+    },
+    {
+      "name": "bls-oews",
+      "stage": "propagate",
+      "mode": "apply",
+      "input": {
+        "propagate": {
+          "producers": {
+            "only": "bls-oews"
+          },
+          "cadence_exception": "operator 2026-10-23 ruling 1: population hold lifted for the structured-data producers (rulings-2026-10-11.md)"
+        }
+      },
+      "producer_env": [
+        "REGIONAL_PRODUCER_BLS_OEWS_ENABLED=1"
+      ]
+    },
+    {
+      "name": "eurostat-lc-lci-lev",
+      "stage": "propagate",
+      "mode": "apply",
+      "input": {
+        "propagate": {
+          "producers": {
+            "only": "eurostat-lc-lci-lev"
+          },
+          "cadence_exception": "operator 2026-10-23 ruling 1: population hold lifted for the structured-data producers (rulings-2026-10-11.md)"
+        }
+      },
+      "producer_env": [
+        "REGIONAL_PRODUCER_EUROSTAT_LC_LCI_LEV_ENABLED=1"
+      ]
+    },
+    {
+      "name": "eurostat-nrg-pc-205",
+      "stage": "propagate",
+      "mode": "apply",
+      "input": {
+        "propagate": {
+          "producers": {
+            "only": "eurostat-nrg-pc-205"
+          },
+          "cadence_exception": "operator 2026-10-23 ruling 1: population hold lifted for the structured-data producers (rulings-2026-10-11.md)"
+        }
+      },
+      "producer_env": [
+        "REGIONAL_PRODUCER_EUROSTAT_NRG_PC_205_ENABLED=1"
+      ]
+    },
+    {
+      "name": "eia-v2-petroleum-spot",
+      "stage": "propagate",
+      "mode": "apply",
+      "input": {
+        "propagate": {
+          "producers": {
+            "only": "eia-v2-petroleum-spot"
+          },
+          "cadence_exception": "operator 2026-10-23 ruling 1: population hold lifted for the structured-data producers (rulings-2026-10-11.md)"
+        }
+      },
+      "producer_env": [
+        "MARKET_PRODUCER_EIA_V2_ENABLED=1"
+      ]
+    },
+    {
+      "name": "oem-roadmap-rows",
+      "stage": "propagate",
+      "mode": "apply",
+      "input": {
+        "propagate": {
+          "producers": {
+            "only": "oem-roadmap-rows",
+            "rowsFile": "src/features/market/producers/data/rows/oem_tech_roadmaps-2026-10.json"
+          },
+          "cadence_exception": "operator 2026-10-23 ruling 1: population hold lifted for the structured-data producers (rulings-2026-10-11.md)"
+        }
+      },
+      "producer_env": [
+        "OEM_PRODUCER_ROWS_FILE_ENABLED=1"
+      ]
+    },
+    {
+      "name": "refresh-published-price-statistics",
+      "stage": "propagate",
+      "mode": "apply",
+      "input": {
+        "propagate": {
+          "producers": {
+            "only": "refresh-published-price-statistics"
+          },
+          "cadence_exception": "operator 2026-10-23 ruling 1: population hold lifted for the structured-data producers (rulings-2026-10-11.md)"
+        }
+      },
+      "producer_env": [
+        "MARKET_PRODUCER_PUBLISHED_STATS_ENABLED=1"
+      ]
+    },
+    {
+      "name": "research-assessment",
+      "stage": "propagate",
+      "mode": "apply",
+      "input": {
+        "propagate": {
+          "producers": {
+            "only": "research-assessment"
+          },
+          "cadence_exception": "operator 2026-10-23 ruling 1: population hold lifted for the structured-data producers (rulings-2026-10-11.md)"
+        }
+      },
+      "producer_env": [
+        "RESEARCH_ASSESSMENT_PRODUCER_ENABLED=1"
+      ]
+    },
+    {
+      "name": "connect-term-pass",
+      "stage": "connect",
+      "mode": "apply",
+      "input": {
+        "connect": {
+          "corpus": true,
+          "scan_limit": 0
+        }
+      },
+      "producer_env": []
+    }
+  ]
+}
