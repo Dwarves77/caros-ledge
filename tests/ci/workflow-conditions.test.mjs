@@ -294,6 +294,10 @@ test('RUN-1: ruled-runs runs on a push to main that changed a pending plan, afte
   const pending = { parity: 'true', windows: 'true', edge: 'false', plans: 'scripts/runs/plans/2026-10-24-arm-1.json' };
   assert.ok(on('push', '', {}, pending).includes('ruled-runs'));
   assert.ok(!on('push').includes('ruled-runs'), 'a push that changed no plan runs nothing');
+  assert.deepEqual(jobs['ruled-runs'].needs, ['changes', 'migrate']);
+  assert.ok(!on('push', '', {}, pending, '', 'failure').includes('ruled-runs'), 'a failed migrate holds the plan back: the DDL is applied before a plan that depends on it, in the same push');
+  assert.ok(!on('push', '', {}, pending, '', 'skipped').includes('ruled-runs'), 'a skipped migrate holds the plan back too');
+  assert.ok(!/always\(\)|cancelled\(\)/.test(String(jobs['ruled-runs'].if)), 'no status function in the condition: success() stays over the needs');
   for (const [event, only] of [['pull_request', ''], ['workflow_dispatch', ''], ['workflow_dispatch', 'turn'], ['status', '']]) assert.ok(!on(event, only, VERCEL_OK, pending).includes('ruled-runs'), `${event} only=${only}`);
   try {
     where.ref = 'refs/heads/slice/x';

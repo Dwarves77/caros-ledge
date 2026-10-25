@@ -4,6 +4,8 @@
 // a record-facts FACT wrapper is unwrapped to the quoted passage that contains the date and a GAP wrapper is skipped. Two boundary scans stay distinct
 // because they answer different questions (clauseStart: where the DISPLAYED clause opens; sentenceStart: where the DEONTIC look-behind opens, and it
 // treats `;` as a terminator); both share the decimal-point rule. Exact behaviour parity with the old extractor is proven by a golden over the live fixture.
+import { ABSENCE_TOKEN } from "@/core/brief";
+
 import { MONTH_EN_ALT, MONTH_PT_ALT } from "./date-grammar";
 
 const SENTENCE_OPEN_RE = /[A-Z0-9"'“‘«(]/;
@@ -135,7 +137,8 @@ export function normalizeObligationText(raw: unknown, opts: { dateSpan?: string 
 const RECORD_FACTS_GENERIC_RE = /^\[[a-z][a-z0-9_]*\]\s+The captured source states, verbatim: /i;
 const RECORD_FACTS_DUE_DATE_RE = /^\[due_date\]\s+The captured source states a due date(?:\s*\(date_precision:\s*(?:day|month|quarter|year)\))?,\s*verbatim: /i;
 const RECORD_FACTS_BINDING_POSITION_RE = /^\[binding_position\]\s+The captured source's own applicability language places this item at /i;
-const RECORD_FACTS_GAP_RE = /^\[[a-z][a-z0-9_]*\]\s+(?:No verbatim [\s\S]*?\.|[\s\S]*?applicability language[\s\S]*?\.)\s*A full-brief regrounding will re-examine this gap when this item upgrades from record to brief\.?/i;
+// A GAP line is `[slot] <absence token>` (MINT-1); the sentence form is read until the backfill reports zero.
+const RECORD_FACTS_GAP_RE = new RegExp(String.raw`^\[[a-z][a-z0-9_]*\]\s+(?:${ABSENCE_TOKEN}\s*$|(?:No verbatim [\s\S]*?\.|[\s\S]*?applicability language[\s\S]*?\.)\s*A full-brief regrounding will re-examine this gap when this item upgrades from record to brief\.?)`, "i");
 
 function findGuillemetPairs(text: string): { start: number; end: number }[] {
   const stack: number[] = [];

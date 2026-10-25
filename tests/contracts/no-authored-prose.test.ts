@@ -7,7 +7,10 @@ import { entityId } from "@/core/entities/id";
 import horizonsJson from "@/core/themes/data/horizons.json";
 import { themeAnalysisView, type MemberRow, type ThemeEventRow, type ThemeRow } from "@/core/themes";
 import { SURFACE_ORDER } from "@/core/routing";
+import { ABSENCE_TOKEN } from "@/core/brief";
 import { DUTY_HOLDER_CLASSES, VOCABULARIES } from "@/core/contracts/vocabularies";
+import stubBrief from "@/features/intake/record-facts/data/stub-brief.json";
+import { buildRecordPayload } from "@/features/intake/record-facts/payload";
 import objectRules from "@/features/obligations/derive/data/object-rules.json";
 import { deriveObligationObjects } from "@/features/obligations";
 import assessmentCopy from "@/features/research/model/data/assessment-copy.json";
@@ -128,4 +131,26 @@ test("INV-CTX6-1 the signpost predicate is a kind token and its own parameters, 
   const predicates = [{ op: "date_passed", by: "2027-01-01", basis: "movement_by_date" }, { op: "date_passed" }, { op: "threshold", metric: "capacity_mw", gte: 40 }, { op: "threshold" }, { op: "count_gte", relation: "pilots", n: 3 }, { op: "count_gte" }, { op: "teleport" }, null];
   const a: Allowed = { inputs: new Set(["2027-01-01", "capacity_mw", "pilots"]), tokens: new Set(Object.keys(assessmentCopy.predicate)), spans: [] };
   for (const predicate of predicates) assert.deepEqual(offenders(selectSignpostView({ ...base, predicate } as never, () => null).predicate, a), [], JSON.stringify(predicate));
+});
+
+/** The strings a stored mint is made of: each line of a text field with its list, heading and emphasis marks removed, a `[slot_key]` prefix split off as its own id. */
+const mintStrings = (v: unknown): string[] =>
+  leaves(v).flatMap((s) => s.split("\n")).map((l) => l.trim().replace(/^(?:-\s+|##\s+)/, "").replace(/^\*(.*)\*$/, "$1").replace(/^Source:\s+/, "")).filter(Boolean).flatMap((l) => {
+    const m = /^\[([a-z0-9_]+)\]\s*(.*)$/.exec(l);
+    return m ? [m[1] ?? "", m[2] ?? ""].filter(Boolean) : [l];
+  });
+
+test("INV-MINT-1 the record mint stores ids, the absence token, its headings and verbatim spans, never a sentence of its own", () => {
+  const captured = "A short note about nothing in particular, written for this fixture.";
+  const url = "https://example.test/doc";
+  const slots = ["effective_date", "penalty_summary", "jurisdictional_scope"];
+  const p = buildRecordPayload({ sourceUrl: url, itemType: "regulation", title: "Zorblax Framework Instrument", source: { id: "s1" }, capturedText: captured, requiredSlots: slots });
+  assert.ok(p.claims.length >= slots.length && p.claims.every((c) => c.claim_kind === "GAP"), "the fixture matches no trigger, so every claim is a stated absence");
+  const a: Allowed = {
+    inputs: new Set([url, "identity", "record_facts", "sources_and_citations", "GAP", ...p.claims.map((c) => c.slot_key)]),
+    tokens: new Set([ABSENCE_TOKEN, stubBrief.marker, stubBrief.factsHeading, stubBrief.gapsHeading]),
+    spans: [captured],
+  };
+  assert.deepEqual(offenders(mintStrings({ sections: p.sections, claims: p.claims, full_brief: p.item.full_brief }), a), []);
+  assert.deepEqual(offenders(mintStrings("[effective_date] No verbatim effective date statement was located in the captured source text for this record-grade item."), a), ["No verbatim effective date statement was located in the captured source text for this record-grade item."]);
 });

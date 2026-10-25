@@ -130,7 +130,7 @@ export function installLedgerRpcs(db: MemDb): void {
         write(d, "intelligence_item_sections", "update", o);
         s.content_md = o.content_md;
         out.sections += 1;
-      } else if (o.op === "brief") { write(d, "intelligence_items", "update", { full_brief: o.full_brief }); Object.assign(d.rows("intelligence_items").find((i) => i.id === itemId) as Row, { full_brief: o.full_brief }); }
+      } else if (o.op === "brief") { write(d, "intelligence_items", "update", { full_brief: o.full_brief }); Object.assign(d.rows("intelligence_items").find((i) => i.id === itemId) as Row, { full_brief: o.full_brief }, o.keep_updated_at === true ? {} : { updated_at: d.now }); } // update_updated_at() (0130): stamped unless the op keeps it
       else throw new Refusal(`unknown ledger op ${String(o.op)}`);
     }
     return out;

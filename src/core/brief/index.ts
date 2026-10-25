@@ -2,7 +2,7 @@ export { bindClaimMarkers, claimIdOfParagraph, withoutClaimMarker } from "./clai
 export type { BindResult } from "./claim-marker";
 export { BRIEF_EXTRA_FIELDS, BRIEF_FIELDS, CAPS, CLAIM_KINDS, COMPLIANCE_OBJECTS, CONTRACT_VERSION, FORMATS, SIGNAL_BANDS, THEMES, TOPIC_TAGS } from "./contract";
 export type { AdoptedTerms, BriefField, FormatDef, SectionDef } from "./contract";
-export { extractRecommendedActions, GAP_MARKER, parseRecordSections, parseRegulationSections, splitKeyDateFacts } from "./regulation-sections";
+export { extractRecommendedActions, ABSENCE_TOKEN, LEGACY_GAP_LINE, parseRecordSections, parseRegulationSections, splitKeyDateFacts } from "./regulation-sections";
 export type { ActionListItem, ClaimTierInfo, ObligationRow, ParsedRecordSections, RecommendedAction, RecordFactRow, RegulationSection, RegulationSectionKey, SourceEntry } from "./regulation-sections";
 export { assertNoInternalMarkers, checkBriefContent, extractSectionByHeading, extractSections, findInternalMarkers, findTimelineSection, FORMAT_SPECS, parseNewSources, specForItemType, stripClaimLedgerBlocks, stripSourcesSection } from "./sections";
 export type { CitedSource, ExtractedSection, FormatSpec, SectionRow } from "./sections";

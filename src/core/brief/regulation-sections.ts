@@ -4,6 +4,9 @@
 // Ported from old_repo/src/lib/agent/source-entry-filter.mjs (lines 1-38)
 // The structured parsers the detail surfaces read (P2-10 imports them from here): the seven regulation sections, the record-grade
 // claim lines, the "do now" recommended actions, and the placeholder-name filter (the F-1 header-echo class).
+import { OBS_STATUS } from "@/core/contracts/vocabularies";
+
+import copy from "./data/record-copy.json";
 import { extractSectionByHeading, sectionWithRole, specForItemType } from "./sections";
 import { parseTimeline, type TimelineEntry } from "./timeline";
 
@@ -224,21 +227,26 @@ export function extractRecommendedActions(fullBrief: string | null | undefined, 
 export interface ClaimTierInfo { tier: number | null; sourceName: string | null; sourceUrl: string | null; /** the claim's own text, for the exact line match below */ text?: string }
 export interface RecordFactRow { slotKey: string; label: string; kind: "FACT" | "GAP"; text: string; span: string | null; rawLine: string; tier: number | null; sourceName: string | null; sourceUrl: string | null }
 export interface ParsedRecordSections { facts: RecordFactRow[]; gaps: RecordFactRow[]; slotFieldCount: number; sourceUrl: string | null }
-/** The sentence every record-grade GAP claim ends with; the writer (record-facts) and this reader share this one constant. */
-export const GAP_MARKER = "A full-brief regrounding will re-examine this gap when this item upgrades from record to brief.";
+/** The record-grade absence token (ADR-050): an obs_status code that denotes an absent observation, named in data and checked here at import. A GAP line is `[slot_key] <token>`, nothing else; the UI copy map gives the token its label. */
+export const ABSENCE_TOKEN: string = (() => {
+  if (OBS_STATUS[copy.absence.code]?.isPresent !== false) throw new Error(`record-copy.json: ${copy.absence.code} is not an absent obs_status code`);
+  return copy.absence.code;
+})();
+/** The sentence-form GAP line the mint wrote before MINT-1: kept only so the reader and the backfill (retokeniseRecordGaps) recognise what is still stored. Retired when the backfill reports zero. */
+export const LEGACY_GAP_LINE = /^([ \t]*(?:-[ \t]+)?)\[([a-z][a-z0-9_]*)\][ \t]+[^\n]*?A full-brief regrounding will re-examine this gap when this item upgrades from record to brief\.[ \t]*$/m;
 
-/** One `[slot_key] sentence «span»` line; a GAP never looks up a tier (it has no source to rate). */
+/** One `[slot_key] sentence «span»` or `[slot_key] <token>` line; a GAP never looks up a tier (it has no source to rate) and reads as the copy map's label whichever form is stored. */
 function parseClaimLine(line: string, byText?: ReadonlyMap<string, ClaimTierInfo | null>): RecordFactRow | null {
   const trimmed = line.trim();
   const m = /^\[([a-z0-9_]+)\]\s*(.*)$/i.exec(trimmed);
   if (!m) return null;
   const slotKey = m[1] ?? "";
   const rest = m[2] ?? "";
-  const gap = rest.includes(GAP_MARKER);
+  const gap = rest.trim() === ABSENCE_TOKEN || LEGACY_GAP_LINE.test(trimmed);
   const info = !gap && byText ? (byText.get(trimmed) ?? null) : null;
   const spans = [...rest.matchAll(/«([^»]*)»/g)];
   const spaced = slotKey.replace(/_/g, " ").trim();
-  return { slotKey, label: spaced.charAt(0).toUpperCase() + spaced.slice(1), kind: gap ? "GAP" : "FACT", text: rest.trim(), span: gap ? null : (spans[spans.length - 1]?.[1] ?? null), rawLine: trimmed, tier: info?.tier ?? null, sourceName: info?.sourceName ?? null, sourceUrl: info?.sourceUrl ?? null };
+  return { slotKey, label: spaced.charAt(0).toUpperCase() + spaced.slice(1), kind: gap ? "GAP" : "FACT", text: gap ? copy.absence.label : rest.trim(), span: gap ? null : (spans[spans.length - 1]?.[1] ?? null), rawLine: trimmed, tier: info?.tier ?? null, sourceName: info?.sourceName ?? null, sourceUrl: info?.sourceUrl ?? null };
 }
 const claimLines = (contentMd: string, byText?: ReadonlyMap<string, ClaimTierInfo | null>): RecordFactRow[] =>
   String(contentMd ?? "").split(/\r?\n/).flatMap((raw) => parseClaimLine(raw.replace(/^-\s+/, ""), byText) ?? []);

@@ -76,12 +76,13 @@ const rowArgs = (row: ClaimRow): Record<string, unknown> => Object.fromEntries(R
 const ticket = (id: string, row: ClaimRow): FactTicket => ({ id, claim_kind: "FACT", claim_text: row.claim_text ?? null, source_span: row.source_span ?? null, source_id: row.source_id ?? null, source_tier_at_grounding: row.source_tier_at_grounding ?? null });
 
 // ---- the ONE writer of a claim's attribution (source_id, tier, search_result_id, source_span) ----------------------------------------
-export type LedgerOp =
+/** `keep_updated_at` (migration 0130): the op leaves the item's updated_at as it was, for a rewrite of how a stored line is written that no reader should see as an update. */
+export type LedgerOp = (
   | { op: "claim"; claim_id: string | null; row: Record<string, unknown>; note?: string }
   | { op: "remove"; claim_id: string; reason: "proven_inaccurate" | "superseded_by_record_briefs" | "orphaned_no_prose_referent"; proof?: unknown; note?: string }
   | { op: "section_insert"; id: string; section_key: string; section_order: number; content_md: string; is_conditional: boolean }
   | { op: "section_content"; id: string; content_md: string }
-  | { op: "brief"; full_brief: string };
+  | { op: "brief"; full_brief: string }) & { keep_updated_at?: boolean };
 
 /** An ordered list of ledger writes applied as ONE transaction (ledger_apply_ops): each claim change is archived to claim_versions first, and a refusal anywhere leaves the item exactly as it was. */
 export function applyLedgerOps(sb: Db, itemId: string, ops: readonly LedgerOp[], nowIso: string | null): Promise<{ claims: number; removed: number; sections: number }> {
