@@ -73,7 +73,7 @@ export interface Candidate {
   applicability_trigger: { attribute: string; value: string; comparison?: string; obs_status?: string };
   jurisdiction?: string[] | null; mode?: string[] | null; vertical?: string[] | null; frequency?: string | null;
   entry_into_force?: string | null; date_of_application?: string | null; first_deadline?: string | null; enforcement_start?: string | null;
-  evidence_required?: string | null; retention_period?: string | null; sanction_class?: string | null; severity_score?: number | null;
+  evidence_required?: string | null; evidence_artifacts?: Array<{ class: string; name: string }> | null; retention_period?: string | null; sanction_class?: string | null; severity_score?: number | null;
   statutory_maximum?: string | null; cost_formula?: string | null; direct_compliance_cost?: Record<string, unknown> | null;
   effort?: Record<string, unknown> | null; status?: string | null; date_reviewed?: string | null; next_review_due?: string | null; source_id?: string | null;
 }
@@ -126,7 +126,7 @@ function buildObjectRow(c: Candidate, ctx: { item: ObjectItem | null; capture: C
     applicability_trigger: { attribute: t.attribute, value: t.value, ...(t.comparison ? { comparison: t.comparison } : {}), ...(t.obs_status ? { obs_status: t.obs_status } : {}) },
     jurisdiction: nullable(c.jurisdiction), mode: nullable(c.mode), vertical: nullable(c.vertical), frequency: nullable(c.frequency),
     entry_into_force: nullable(c.entry_into_force), date_of_application: nullable(c.date_of_application), first_deadline: nullable(c.first_deadline), enforcement_start: nullable(c.enforcement_start),
-    evidence_required: nullable(c.evidence_required), retention_period: nullable(c.retention_period), sanction_class: nullable(c.sanction_class), severity_score: nullable(c.severity_score), statutory_maximum: nullable(c.statutory_maximum),
+    evidence_required: nullable(c.evidence_required), evidence_artifacts: nullable(c.evidence_artifacts), retention_period: nullable(c.retention_period), sanction_class: nullable(c.sanction_class), severity_score: nullable(c.severity_score), statutory_maximum: nullable(c.statutory_maximum),
     cost_formula: nullable(c.cost_formula), direct_compliance_cost: nullable(c.direct_compliance_cost), effort: nullable(c.effort), status: "not_assessed",
     date_reviewed: nullable(c.date_reviewed), next_review_due: nullable(c.next_review_due), source_id: nullable(c.source_id), capture_id: c.capture_id,
   };
@@ -211,10 +211,10 @@ function classifyTrigger(span: string, fallbackValue: string): Candidate["applic
   return { attribute: rules.triggerAttribute, value: fallbackValue };
 }
 
-/** The compliance artifacts the span names: the class from the data file and the name exactly as the span writes it. Stored as JSON text in evidence_required; null when the span names none. */
-function extractArtifacts(span: string): string | null {
+/** The compliance artifacts the span names: the class from the data file and the name exactly as the span writes it. Stored in evidence_artifacts (jsonb, 0126); null when the span names none. */
+function extractArtifacts(span: string): Array<{ class: string; name: string }> | null {
   const found = ARTIFACT_CLASSES.flatMap((c) => { const name = c.re.exec(span)?.[0]; return name ? [{ class: c.class, name }] : []; });
-  return found.length ? JSON.stringify(found) : null;
+  return found.length ? found : null;
 }
 
 /** One candidate from a span that names an Article pinpoint, a duty-holder phrase and a deontic verb, in the capture that holds it; null when it names none. Code never writes a sentence: plain_language is the reader's. */
@@ -223,7 +223,7 @@ function dutyCandidate(item: ObjectItem, span: string, captureId: string, source
   const pin = PINPOINT_RE.exec(span)?.[0];
   const holders = [...new Set(PHRASES.filter((p) => p.re.test(span)).map((p) => p.class))];
   if (!value || !pin || !holders.length || !DEONTIC_RE.test(span)) return null;
-  return { instrument_item_id: item.id, capture_id: captureId, pinpoint_citation: pin.replace(/\s+/g, " "), verbatim_text: span, duty_holder_class: holders, applicability_trigger: classifyTrigger(span, value), evidence_required: extractArtifacts(span), plain_language: null, ...timeline, source_id: sourceId };
+  return { instrument_item_id: item.id, capture_id: captureId, pinpoint_citation: pin.replace(/\s+/g, " "), verbatim_text: span, duty_holder_class: holders, applicability_trigger: classifyTrigger(span, value), evidence_artifacts: extractArtifacts(span), plain_language: null, ...timeline, source_id: sourceId };
 }
 
 /** FACT claims whose verbatim span names an Article pinpoint, a duty-holder phrase and a deontic verb: one candidate each, in its own capture. */

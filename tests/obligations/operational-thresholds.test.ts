@@ -182,7 +182,7 @@ test("compliance artifacts & labeling: derives Annex VIII DoC, technical docs, a
     const cand = plan.toInsert.find((x) => String(x.row.pinpoint_citation).includes(pin));
     assert.ok(cand, `candidate ${pin} must be derived`);
     assert.equal(cand.row.plain_language, null, "code never composes plain language");
-    return JSON.parse(String(cand.row.evidence_required)) as Array<{ class: string; name: string }>;
+    return cand.row.evidence_artifacts as Array<{ class: string; name: string }>;
   };
 
   // 1. Annex VIII DoC: the class from the data file, the name exactly as the span writes it
@@ -215,7 +215,7 @@ test("a threshold the capture does not state is the stated absence, never a type
   const row = (result.data as { plan: { toInsert: Array<{ row: Row }> } }).plan.toInsert[0]?.row as Row;
   assert.deepEqual(row.applicability_trigger, { attribute: "de_minimis_weight", value: "M", comparison: "<", obs_status: "M" });
   assert.equal(row.plain_language, null);
-  assert.equal(row.evidence_required, null);
+  assert.equal(row.evidence_artifacts, null);
 });
 
 test("a candidate with no capture is refused, never written", async () => {

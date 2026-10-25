@@ -147,5 +147,13 @@
     "unscopedReads": {
       "migration_log": "asserts the whole seed: its size is the invariant, and the table is empty before this file creates it"
     }
+  },
+  "0127_data_evidence_artifacts_move": {
+    "consumer": "src/features/obligations/derive/derive-objects.ts (writes evidence_artifacts) and src/core/workspace/relevance.ts (reads it)",
+    "after": "0126",
+    "assert": "scripts/ci/fixtures/data-0127-evidence-artifacts.assert.sql",
+    "unscopedReads": {
+      "obligation_objects": "a whole-table invariant (no row carries the artifact list in both columns); the assertions about the fixture's rows are scripts/ci/fixtures/data-0127-evidence-artifacts.assert.sql"
+    }
   }
 }

@@ -56,7 +56,7 @@ export interface ObligationObject {
   binding_position?: string | null;
   duty_holder_class?: string[] | null;
   applicability_trigger?: { attribute?: string; value?: string; comparison?: string; obs_status?: string } | null;
-  evidence_required?: string | null;
+  evidence_artifacts?: Array<{ class?: unknown; name?: unknown }> | null;
   statutory_maximum?: string | null;
   cost_formula?: string | null;
   direct_compliance_cost?: { amount?: number; currency?: string; basis?: string; source?: string } | null;
@@ -108,18 +108,10 @@ export function dutyHoldersExcludeForwarder(classes: unknown, dutyHolderClasses:
   return !list.some((c) => (dutyHolderClasses[c]?.orgRoles ?? []).includes("forwarder"));
 }
 
-/** The artifacts stored on the objects (a JSON list of class and verbatim name in evidence_required); text that is not that list names none. */
+/** The artifacts stored on the objects (evidence_artifacts: a list of class and verbatim name; the 0126 CHECK keeps the column to that shape, a value that is not a list names none). */
 function artifactsOf(objects: readonly ObligationObject[]): { class: string; name: string }[] {
   const out = new Map<string, { class: string; name: string }>();
-  for (const o of objects) {
-    let list: unknown;
-    try {
-      list = typeof o.evidence_required === "string" ? JSON.parse(o.evidence_required) : null;
-    } catch {
-      continue;
-    }
-    for (const a of Array.isArray(list) ? list : []) if (typeof a?.class === "string" && typeof a?.name === "string") out.set(`${a.class}|${a.name}`, { class: a.class, name: a.name });
-  }
+  for (const o of objects) for (const a of Array.isArray(o.evidence_artifacts) ? o.evidence_artifacts : []) if (typeof a?.class === "string" && typeof a?.name === "string") out.set(`${a.class}|${a.name}`, { class: a.class, name: a.name });
   return [...out.values()];
 }
 
@@ -246,7 +238,7 @@ export function currentObligationObjects<T extends { obligation_id?: string; sup
 }
 
 const OBLIGATION_OBJECT_COLUMNS =
-  "obligation_id, version, supersedes, pinpoint_citation, binding_position, duty_holder_class, applicability_trigger, evidence_required, statutory_maximum, cost_formula, direct_compliance_cost, effort";
+  "obligation_id, version, supersedes, pinpoint_citation, binding_position, duty_holder_class, applicability_trigger, evidence_artifacts, statutory_maximum, cost_formula, direct_compliance_cost, effort";
 
 /**
  * An item's current obligation objects through an INJECTED client (request-scoped, RLS applies). `itemId` is a uuid or a legacy id.
