@@ -38,7 +38,7 @@ test("INV-CN2-1: every pattern value names its evidence: member, evidence or key
     assert.ok(mine.length >= 1, `${String(p.method_id)} has evidence edges`);
     assert.ok(mine.every((e) => ["member", "evidence", "key"].includes(String(e.edge_kind))));
     assert.equal(new Set(mine.map((e) => `${String(e.from_table)}/${String(e.from_pk)}/${String(e.edge_kind)}`)).size, mine.length, "one edge per evidence row");
-    assert.equal(p.method_version, "1.1.0");
+    assert.equal(p.method_version, p.method_id === "pattern_penalty_abatement" ? "1.2.0" : "1.1.0");
     assert.ok(["analysis_ok", "display_only"].includes(String(p.admissibility)), "graded");
   }
   const velocity = patterns(f).find((p) => p.method_id === "pattern_velocity_burst");

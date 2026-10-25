@@ -47,3 +47,14 @@ test("a ratchet's figure is read in the canonical unit from the obligation's own
   assert.equal(f?.qty, 2400);
   assert.equal(f?.unit, "EUR/t");
 });
+
+test("review F1: a pattern resting on a display_only abatement cost is graded display_only, one resting on an analysis_ok cost analysis_ok", async () => {
+  const { factOf, gradeOf } = await import("@/core/flywheel/patterns");
+  const row = (admissibility: string) => ({ value_id: "a1", asserted_at: "2026-10-01", value: 95, unit: "EUR/tCO2e", admissibility, lifecycle: "verified" });
+  const shown = factOf("derived_values", row("display_only"), ["e1"]) as Fact;
+  const fine = factOf("derived_values", row("analysis_ok"), ["e1"]) as Fact;
+  assert.equal(shown.displayOnly, true);
+  assert.equal(fine.displayOnly, undefined);
+  assert.equal(gradeOf([shown, fine]), "display_only", "any display-grade evidence grades the pattern down");
+  assert.equal(gradeOf([fine]), "analysis_ok");
+});

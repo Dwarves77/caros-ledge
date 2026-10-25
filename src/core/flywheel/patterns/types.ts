@@ -18,6 +18,8 @@ export interface Fact {
   due: string | null;
   source: string | null;
   tier: number | null;
+  /** A derived value the evidence rests on that is display-grade (admissibility display_only): the pattern is graded down with it. */
+  displayOnly?: true;
   qty: number | null;
   unit: string | null;
   /** The row held a quantity whose unit the unit map does not state: the quantity is left out, never guessed. */

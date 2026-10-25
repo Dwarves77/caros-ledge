@@ -39,10 +39,10 @@ export function factOf(table: string, row: Row, entities: readonly string[], ove
   const due = s.due ? asDay(row[s.due]) : s.dueYear && asNumber(row[s.dueYear]) ? `${asNumber(row[s.dueYear])}-01-01` : s.dueMonthsAfterAt && at && asNumber(row[s.dueMonthsAfterAt]) !== null ? plusMonths(at, asNumber(row[s.dueMonthsAfterAt]) as number) : null;
   return {
     table, pk: String(row[s.pk]), role: s.role, entities: [...entities], modes: [...new Set(entities.flatMap((e) => couplingById(e)?.modes ?? []))].sort(), surface: over.surface ?? s.surface ?? "unknown", at, due,
-    source: s.source ? asText(row[s.source]) : null, tier: s.tier ? asNumber(row[s.tier]) : null, qty, unit: qty === null ? null : compared ? canonical : figure ? figure.unit : s.qty?.unit ?? (s.qty?.unitColumn ? asText(row[s.qty.unitColumn]) : null), ...(unitUnknown ? { unitUnknown: true } : {}), trl: s.trl ? asNumber(row[s.trl]) : null,
+    source: s.source ? asText(row[s.source]) : null, tier: s.tier ? asNumber(row[s.tier]) : null, qty, unit: qty === null ? null : compared ? canonical : figure ? figure.unit : s.qty?.unit ?? (s.qty?.unitColumn ? asText(row[s.qty.unitColumn]) : null), ...(unitUnknown ? { unitUnknown: true } : {}), ...(table === "derived_values" && row.admissibility === "display_only" ? { displayOnly: true as const } : {}), trl: s.trl ? asNumber(row[s.trl]) : null,
     kind: s.kind ? asText(row[s.kind]) : null, group: s.group ? asText(row[s.group]) : null,
   };
 }
 
-/** analysis_ok when every rated piece of evidence is at the analysis tier or better, display_only when any is below it. */
-export const gradeOf = (facts: readonly Pick<Fact, "tier">[]): "analysis_ok" | "display_only" => (facts.every((f) => f.tier === null || f.tier <= PATTERNS.analysisMaxTier) ? "analysis_ok" : "display_only");
+/** analysis_ok when every rated piece of evidence is at the analysis tier or better and no derived value in it is display-grade, display_only when any is below it. */
+export const gradeOf = (facts: readonly Pick<Fact, "tier" | "displayOnly">[]): "analysis_ok" | "display_only" => (facts.every((f) => !f.displayOnly && (f.tier === null || f.tier <= PATTERNS.analysisMaxTier)) ? "analysis_ok" : "display_only");

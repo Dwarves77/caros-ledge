@@ -1,7 +1,7 @@
 -- 0134 connect_2_spine: the ontology spine takes the claims, the typed tables and the five pattern detectors (CONNECT-2 PR A).
 --
 -- entity_refs gains `basis jsonb` and `method_version text` with CHECK ((basis IS NULL) = (method_version IS NULL)): every ref the mining writes carries the claim id and span, the column and value, or the tag it came from, and the version of the rule that read it
--- (a ref with a method and no basis, or a basis and no method, is refused; the 2,878 refs that exist keep null in both). The tables the mining reads are admitted to entity_refs.ref_table, the nine coupling relations to entity_relations.relation, and the tables a pattern
+-- (a ref with a method and no basis, or a basis and no method, is refused; the 2,878 refs that exist keep null in both). The entity_refs.ref_table allow-list is 0133's and 0134 admits nothing there; the nine coupling relations to entity_relations.relation, and the tables a pattern
 -- cites as evidence to derivation_edges.from_table. A derivation edge now has a kind ('input' for every edge written so far; 'member', 'evidence' or 'key' for a pattern's), set from the optional `kind` of each input by register_derived_value. A derived value whose method id
 -- begins `pattern_` cannot be committed without at least one derivation edge naming it (a deferred constraint trigger: the register function writes the value and its edges in one transaction). entity_relations keeps its cycle trigger; the seeds run from a lower class rank
 -- to a higher one, so the table holds no cycle.
@@ -12,15 +12,16 @@
 
 BEGIN;
 
-ALTER TABLE public.entity_refs ADD COLUMN basis jsonb, ADD COLUMN method_version text;
+ALTER TABLE public.entity_refs ADD COLUMN IF NOT EXISTS basis jsonb, ADD COLUMN IF NOT EXISTS method_version text;
+ALTER TABLE public.entity_refs DROP CONSTRAINT IF EXISTS entity_refs_basis_with_method_check, DROP CONSTRAINT IF EXISTS entity_refs_basis_is_object_check;
 ALTER TABLE public.entity_refs
   ADD CONSTRAINT entity_refs_basis_with_method_check CHECK ((basis IS NULL) = (method_version IS NULL)),
   ADD CONSTRAINT entity_refs_basis_is_object_check CHECK (basis IS NULL OR jsonb_typeof(basis) = 'object');
 
-ALTER TABLE public.entity_relations DROP CONSTRAINT entity_relations_relation_values;
+ALTER TABLE public.entity_relations DROP CONSTRAINT IF EXISTS entity_relations_relation_values;
 ALTER TABLE public.entity_relations ADD CONSTRAINT entity_relations_relation_values CHECK ((relation = ANY (ARRAY['group_of'::text, 'legal_entity_of'::text, 'operating_identity_of'::text, 'feedstock_of'::text, 'fuel_for_mode'::text, 'competes_for_feedstock'::text, 'shares_grid_zone'::text, 'serves_hub'::text, 'corridor_links'::text, 'implements'::text, 'amends'::text, 'consignment_wide'::text])));
 
-ALTER TABLE public.derivation_edges DROP CONSTRAINT derivation_edges_from_table_allowed;
+ALTER TABLE public.derivation_edges DROP CONSTRAINT IF EXISTS derivation_edges_from_table_allowed, DROP CONSTRAINT IF EXISTS derivation_edges_edge_kind_allowed;
 ALTER TABLE public.derivation_edges ADD CONSTRAINT derivation_edges_from_table_allowed CHECK ((from_table = ANY (ARRAY['emission_factors'::text, 'market_series'::text, 'regional_data_facts'::text, 'derived_values'::text, 'statutory_computations'::text, 'estimated_values'::text, 'state_cost_facts'::text, 'inference_records'::text, 'intelligence_items'::text, 'section_claim_provenance'::text, 'obligation_objects'::text, 'oem_tech_roadmaps'::text, 'grid_connection_queues'::text, 'reroute_events'::text, 'research_assessments'::text, 'indexation_clauses'::text, 'item_forward_events'::text])));
 ALTER TABLE public.derivation_edges ADD CONSTRAINT derivation_edges_edge_kind_allowed CHECK ((edge_kind = ANY (ARRAY['input'::text, 'member'::text, 'evidence'::text, 'key'::text])));
 
@@ -61,12 +62,17 @@ BEGIN
   END IF;
   RETURN NULL;
 END $function$;
+DROP TRIGGER IF EXISTS derived_values_pattern_evidence_trg ON public.derived_values;
 CREATE CONSTRAINT TRIGGER derived_values_pattern_evidence_trg AFTER INSERT ON public.derived_values DEFERRABLE INITIALLY DEFERRED FOR EACH ROW WHEN (NEW.method_id LIKE 'pattern\_%') EXECUTE FUNCTION public.assert_pattern_has_evidence();
 
 -- every table a derivation edge admits reaches the outbox (the property derivation-input-outbox): the four evidence tables that had no propagation trigger get one, so a changed evidence row marks the patterns that cite it stale.
+DROP TRIGGER IF EXISTS propagation_outbox_trg ON public.indexation_clauses;
 CREATE TRIGGER propagation_outbox_trg AFTER INSERT OR DELETE OR UPDATE ON public.indexation_clauses FOR EACH ROW EXECUTE FUNCTION public.emit_propagation_event('clause_id');
+DROP TRIGGER IF EXISTS propagation_outbox_trg ON public.item_forward_events;
 CREATE TRIGGER propagation_outbox_trg AFTER INSERT OR DELETE OR UPDATE ON public.item_forward_events FOR EACH ROW EXECUTE FUNCTION public.emit_propagation_event('id');
+DROP TRIGGER IF EXISTS propagation_outbox_trg ON public.reroute_events;
 CREATE TRIGGER propagation_outbox_trg AFTER INSERT OR DELETE OR UPDATE ON public.reroute_events FOR EACH ROW EXECUTE FUNCTION public.emit_propagation_event('reroute_id');
+DROP TRIGGER IF EXISTS propagation_outbox_trg ON public.research_assessments;
 CREATE TRIGGER propagation_outbox_trg AFTER INSERT OR DELETE OR UPDATE ON public.research_assessments FOR EACH ROW EXECUTE FUNCTION public.emit_propagation_event('id');
 
 -- Self-check 0134-connect-2-spine: the new columns and the CHECK, and attacks: a ref with a method and no basis, a basis and no method, a basis that is not an object and a table outside the list are refused and a ref with both is kept; a relation outside the twelve is refused
