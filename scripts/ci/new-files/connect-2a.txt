@@ -16,3 +16,7 @@ src/core/flywheel/patterns/load.ts | new in CONNECT-2 PR A: the reads that join 
 src/core/flywheel/patterns/method.ts | new in CONNECT-2 PR A: a detector as a registered derivation method, recomputed by the propagation drain
 src/core/flywheel/patterns/run.ts | new in CONNECT-2 PR A: the connect stage's pattern step; records each pattern as a derived value with one edge per evidence row
 src/core/flywheel/patterns/types.ts | new in CONNECT-2 PR A: the shapes of facts, evidence and patterns
+src/core/coupling/alias-rules.ts | new in CONNECT-2A-b: what may be an alias (four characters, a letter, not on the stoplist) and how a phrase is read
+src/core/coupling/aliases.ts | new in CONNECT-2A-b: the alias seeds loader, each alias grounded on its page
+src/core/coupling/data/alias-seeds.json | new in CONNECT-2A-b: the short names found in the most frequent unresolved phrases, with their pages and verbatim quotes
+src/core/coupling/data/resolver.json | new in CONNECT-2A-b: the alias length floor and the stoplist
