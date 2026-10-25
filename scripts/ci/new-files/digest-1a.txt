@@ -1,0 +1,4 @@
+# path | reason (files with no "Ported from" header)
+src/core/digest/data/kinds.json | new in DIGEST-1 PR A: the seven digest kinds as data (the old registry's shape, kinds.mjs lines 1-221, with item-briefs renamed from record-briefs and admin-opportunity-findings added); no old counterpart at this shape
+src/core/digest/packets-client.ts | new in DIGEST-1 PR A: the one door to the pattern packets (CONNECT-2 PR B), answering an empty list and a stated marker until src/core/digest/packets.ts lands; no old counterpart
+src/features/batches/kinds/admin-opportunity-findings/export.ts | new in DIGEST-1 PR A: the admin kind's export (patterns grouped by the three lenses of HOW-TO-LOOK point 5); the kind did not exist in the old tree

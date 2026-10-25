@@ -214,16 +214,16 @@ test("INV-106: with the switch off the plan is empty and NOTHING else is read (n
 
 test("INV-248: every planned item is leased once per uuid by the run holder; a non-uuid key and an item leased by another holder are NAMED residue; batches number from the committed directory; a dry plan takes no lease", async () => {
   const items = [{ id: U(1), title: "a" }, { id: U(1), title: "dup uuid" }, { id: "not-a-uuid" }, { id: U(2) }, { id: U(3) }];
-  const d = drainDeps({ exporters: { "record-briefs": ex(items) }, held: { [U(3)]: "drain-other" }, existing: { "record-briefs": ["record-briefs-001.json", "record-briefs-007a.json", "README.md"] } });
-  const plan = await planDrain(d.deps, { runId: "r2", kindId: "record-briefs" });
+  const d = drainDeps({ exporters: { "item-briefs": ex(items) }, held: { [U(3)]: "drain-other" }, existing: { "item-briefs": ["item-briefs-001.json", "item-briefs-007a.json", "README.md"] } });
+  const plan = await planDrain(d.deps, { runId: "r2", kindId: "item-briefs" });
   const k = plan.kinds[0]!;
   assert.deepEqual(d.leased, [U(1), U(2)], "one lease per uuid even when two items share it");
   assert.equal(plan.leases.every((l) => l.holder === "drain-r2"), true);
   assert.deepEqual(k.residue.lease_held.map((r) => [r.id, r.holder, r.reason]), [["not-a-uuid", null, "lease key is not a uuid"], [U(3), "drain-other", "leased by another session"]]);
-  assert.equal(k.batches[0]?.batch_path, "drain/batches/record-briefs/record-briefs-008.json");
+  assert.equal(k.batches[0]?.batch_path, "drain/batches/item-briefs/item-briefs-008.json");
   assert.deepEqual(k.batches[0]?.item_ids, [U(1), U(1), U(2)]);
-  const dry = drainDeps({ exporters: { "record-briefs": ex(items) } });
-  const dp = await planDrain(dry.deps, { runId: "r3", kindId: "record-briefs", dry: true });
+  const dry = drainDeps({ exporters: { "item-briefs": ex(items) } });
+  const dp = await planDrain(dry.deps, { runId: "r3", kindId: "item-briefs", dry: true });
   assert.equal(dry.leased.length, 0);
   assert.equal(dp.dry, true);
   assert.equal(dp.kinds[0]?.would_lease, 3, "a dry plan cannot know the holders, so it counts the distinct uuids it would try");
@@ -269,12 +269,12 @@ test("finishDrain releases every lease the plan took, records a release that thr
   assert.equal(fin.run.perItem.length, 2);
 });
 
-test("the kinds: eight, each with an exporter id and an apply step (no workflow filenames), one batch per kind per run, a batch path maps back to its kind", () => {
-  assert.deepEqual(KIND_ORDER, ["ledger-verdicts", "host-verdicts", "needs-search", "question-answers", "theme-briefs", "record-briefs", "theme-classification", "screen-verdict", "notification-outbox"]);
+test("the kinds: ten, each with an exporter id and an apply step (no workflow filenames), one batch per kind per run, a batch path maps back to its kind", () => {
+  assert.deepEqual(KIND_ORDER, ["ledger-verdicts", "host-verdicts", "needs-search", "question-answers", "theme-briefs", "item-briefs", "admin-opportunity-findings", "theme-classification", "screen-verdict", "notification-outbox"]);
   assert.ok(DRAIN_KINDS.every((k) => k.applyStep && k.maxBatchesPerRun === 1 && !JSON.stringify(k).includes(".yml")));
   assert.equal(resolveKind("screen")?.id, "screen-verdict");
   assert.equal(resolveKind("theme"), null, "an ambiguous prefix names no kind");
-  assert.equal(resolveKind("record-briefs")?.id, "record-briefs");
+  assert.equal(resolveKind("item-briefs")?.id, "item-briefs");
 });
 
 test("IMP-039: the screen-verdict kind exports the ambiguous holds P2-05 banked and its apply step writes a session batch into screen_verdicts, refusing a bad row by name", async () => {

@@ -1,0 +1,220 @@
+{
+ "kinds": [
+  {
+   "id": "ledger-verdicts",
+   "label": "Portal link candidate verdicts",
+   "exporter": "ledger-verdicts",
+   "authoringGuide": {
+    "schema": "docs/authoring/ledger-verdicts.md",
+    "skills": [
+     "source-credibility-model",
+     "caros-ledge-surface-contracts"
+    ]
+   },
+   "validator": "src/features/batches/kinds/ledger-verdicts/apply.ts#applyLedgerVerdicts",
+   "batchDir": "drain/batches/ledger-verdicts",
+   "batchRe": "^ledger-verdicts-\\d{3}\\.json$",
+   "batchPrefix": "ledger-verdicts",
+   "leaseKey": "candidate_id",
+   "idKey": "candidate_id",
+   "applyPath": "src/features/batches/kinds/ledger-verdicts/apply.ts#applyLedgerVerdicts",
+   "applyStep": "ledger-consume",
+   "applyPending": null,
+   "needsPackets": false,
+   "namesFile": false,
+   "batchSize": 300,
+   "maxBatchesPerRun": 1,
+   "modes": {
+    "stale": {
+     "label": "Candidates owed a re-authored verdict (committed verdicts all under an older prompt_version)"
+    }
+   }
+  },
+  {
+   "id": "host-verdicts",
+   "label": "Unplaced host class verdicts",
+   "exporter": "host-verdicts",
+   "authoringGuide": {
+    "schema": "docs/authoring/host-verdicts.md",
+    "skills": [
+     "source-credibility-model",
+     "vocabulary-source-tiers"
+    ]
+   },
+   "validator": "src/features/batches/kinds/needs-search/validate.ts#validateHostVerdictEntry",
+   "batchDir": "drain/batches/host-verdicts",
+   "batchRe": "^host-verdicts-\\d{3}\\.json$",
+   "batchPrefix": "host-verdicts",
+   "leaseKey": null,
+   "idKey": "host",
+   "applyPath": "src/features/batches/kinds/host-verdicts/apply.ts#applyHostVerdicts",
+   "applyStep": "host-verdicts",
+   "applyPending": null,
+   "needsPackets": false,
+   "namesFile": false,
+   "batchSize": 150,
+   "maxBatchesPerRun": 1
+  },
+  {
+   "id": "needs-search",
+   "label": "Source URLs for open needs",
+   "exporter": "needs-search",
+   "authoringGuide": {
+    "schema": "docs/authoring/needs-search.md",
+    "skills": [
+     "reference-priority-source-registry",
+     "source-credibility-model"
+    ]
+   },
+   "validator": "src/features/batches/kinds/needs-search/validate.ts#validateNeedEntry",
+   "batchDir": "drain/batches/needs-search",
+   "batchRe": "^needs-search-\\d{3}\\.json$",
+   "batchPrefix": "needs-search",
+   "leaseKey": "need_id",
+   "idKey": "need_id",
+   "applyPath": "src/features/batches/kinds/needs-search/apply.ts#applyNeedsSearch",
+   "applyStep": "needs-search",
+   "applyPending": null,
+   "needsPackets": false,
+   "namesFile": true,
+   "batchSize": 40,
+   "maxBatchesPerRun": 1
+  },
+  {
+   "id": "question-answers",
+   "label": "Open question answers",
+   "exporter": "question-answers",
+   "authoringGuide": {
+    "schema": "docs/authoring/question-answers.md",
+    "skills": [
+     "rule-source-traceability-per-claim",
+     "rule-no-speculation-as-fact",
+     "rule-cause-and-effect-chain"
+    ]
+   },
+   "validator": "src/features/batches/kinds/question-answers/validate.ts#validateAnswerEntry",
+   "batchDir": "drain/batches/question-answers",
+   "batchRe": "^question-answers-\\d{3}\\.json$",
+   "batchPrefix": "question-answers",
+   "leaseKey": "item_id",
+   "idKey": "subject_ref",
+   "applyPath": "src/features/batches/kinds/question-answers/apply.ts#applyQuestionAnswers",
+   "applyStep": "question-answers",
+   "applyPending": null,
+   "needsPackets": false,
+   "namesFile": true,
+   "batchSize": 40,
+   "maxBatchesPerRun": 1
+  },
+  {
+   "id": "theme-briefs",
+   "label": "Theme briefs (cross-surface)",
+   "exporter": "theme-briefs",
+   "authoringGuide": {
+    "schema": "docs/authoring/theme-briefs.md",
+    "skills": [
+     "environmental-policy-and-innovation",
+     "rule-cause-and-effect-chain",
+     "rule-no-speculation-as-fact",
+     "rule-source-traceability-per-claim",
+     "rule-workspace-anchored-output",
+     "vocabulary-severity-labels"
+    ]
+   },
+   "validator": "src/core/briefs/theme-brief-contract.ts#parseThemeBriefEntry",
+   "batchDir": "drain/batches/theme-briefs",
+   "batchRe": "^theme-briefs-\\d{3}\\.json$",
+   "batchPrefix": "theme-briefs",
+   "leaseKey": "theme_id",
+   "idKey": "theme_id",
+   "applyPath": "src/features/batches/kinds/theme-briefs/apply.ts#applyThemeBriefs",
+   "applyStep": "theme-briefs",
+   "applyPending": null,
+   "needsPackets": true,
+   "namesFile": true,
+   "batchSize": 15,
+   "maxBatchesPerRun": 1
+  },
+  {
+   "id": "item-briefs",
+   "label": "Item briefs (the format the item type demands)",
+   "exporter": "item-briefs",
+   "authoringGuide": {
+    "schema": "docs/authoring/item-briefs.md",
+    "skills": [
+     "environmental-policy-and-innovation",
+     "analysis-construction-spec",
+     "rule-cause-and-effect-chain",
+     "rule-workspace-anchored-output",
+     "rule-source-traceability-per-claim",
+     "rule-no-speculation-as-fact",
+     "rule-no-regulatory-inferences-as-fact",
+     "vocabulary-severity-labels"
+    ],
+    "byFormat": {
+     "regulatory_fact_document": "writer-regulatory-fact-document",
+     "market_signal_brief": "writer-market-signal-brief",
+     "research_summary": "writer-research-summary",
+     "operations_profile": "writer-operations-profile",
+     "technology_profile": "writer-technology-profile"
+    }
+   },
+   "validator": "src/features/batches/kinds/item-briefs/validate.ts#validateRecordBriefEntry",
+   "batchDir": "drain/batches/item-briefs",
+   "batchRe": "^item-briefs-\\d{3}[a-z0-9-]*\\.json$",
+   "batchPrefix": "item-briefs",
+   "leaseKey": "id",
+   "idKey": "id",
+   "applyPath": "src/features/batches/kinds/item-briefs/apply.ts#applyItemBriefs",
+   "applyStep": "brief-apply",
+   "applyPending": null,
+   "needsPackets": true,
+   "namesFile": true,
+   "batchSize": 40,
+   "maxBatchesPerRun": 1
+  },
+  {
+   "id": "admin-opportunity-findings",
+   "label": "Admin capital and bottleneck findings (platform admin only)",
+   "exporter": "admin-opportunity-findings",
+   "authoringGuide": {
+    "schema": "docs/authoring/admin-opportunity-findings.md",
+    "skills": [
+     "rule-no-speculation-as-fact",
+     "rule-internal-vs-external-surface",
+     "rule-no-regulatory-inferences-as-fact",
+     "rule-cause-and-effect-chain",
+     "rule-source-traceability-per-claim",
+     "source-credibility-model"
+    ]
+   },
+   "validator": null,
+   "batchDir": "drain/batches/admin-opportunity-findings",
+   "batchRe": "^admin-opportunity-findings-\\d{3}\\.json$",
+   "batchPrefix": "admin-opportunity-findings",
+   "leaseKey": "pattern_value_id",
+   "idKey": "pattern_value_id",
+   "applyPath": null,
+   "applyStep": "admin-findings",
+   "applyPending": "DIGEST-1 PR B: the validator that refuses an id outside the packet, the second reader and the apply into admin_opportunity_findings",
+   "needsPackets": true,
+   "namesFile": true,
+   "batchSize": 15,
+   "maxBatchesPerRun": 1,
+   "windowDays": 180,
+   "lensOfMethod": {
+    "pattern_mandate_capacity": "supply_demand_bottleneck",
+    "pattern_penalty_abatement": "penalty_abatement_crossover",
+    "pattern_lead_lag": "capital_offtake_grant"
+   },
+   "conditionalMethods": [
+    "pattern_velocity_burst",
+    "pattern_cross_modal"
+   ],
+   "memberLens": {
+    "capacity": "supply_demand_bottleneck",
+    "capital": "capital_offtake_grant"
+   }
+  }
+ ]
+}
