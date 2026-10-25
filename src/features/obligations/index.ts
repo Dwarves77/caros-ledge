@@ -1,4 +1,5 @@
 export { deriveObligationObjects } from "./derive/derive-objects";
+export { cursorAfter, FILL_ONLY, fillObjectFields } from "./derive/fill-fields";
 export type { Candidate } from "./derive/derive-objects";
 export { classifyItemBindingPosition, contextFromClaims } from "./derive/classify-binding-position";
 export { syncComplianceDeadline } from "./derive/compliance-deadline";

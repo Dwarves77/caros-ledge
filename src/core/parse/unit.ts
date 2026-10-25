@@ -2,7 +2,10 @@
 // matchers from it and answers three questions: which unit starts here, are two quantities the same kind, and what is one worth in another unit.
 // Kinds never convert implicitly: tonne-km is not TEU-km, a per-litre intensity is not a per-MJ one; a cross-kind request is refused, and the
 // only bridge between two activity bases is a NAMED data row (tonnes per TEU, with its source), passed explicitly.
+import { z } from "zod";
+
 import { aliasAlternation, escapeRe, GAS_ALTERNATION, GAS_BY_ALIAS, UNIT_BY_ID, UNIT_FILE, UNITS, unitOfAlias, unitsOfDim, type Unit } from "./data";
+import statutoryUnits from "./data/statutory-units.json";
 import { mulDec, parseDec, type Dec } from "./decimal";
 
 /** Unit ids of a quantity: a plain unit (n), or a ratio n[ gas]/d. */
@@ -71,3 +74,15 @@ export function moneyBefore(before: string): { unit: string; length: number } | 
 export const canonicalRatio = (value: Dec, p: UnitParts): { num: Dec; den: Dec } => ({ num: mulDec(value, factorOf(p.n)), den: p.d ? factorOf(p.d) : ONE });
 
 
+
+// The unit token of a statutory figure, read from its verbatim text through ONE data map (./data/statutory-units.json): the first form that matches wins, an `exact` form must match the whole text, and text no form knows is null, never a guess.
+// Shared with CONNECT-2 PR A (facts.ts reads the same map); add a form to the data, never a second normaliser.
+const unitForms = z.object({ forms: z.array(z.object({ form: z.string().min(1), unit: z.string().min(1), exact: z.boolean().optional() })).min(1) }).parse(statutoryUnits);
+export type UnitForm = (typeof unitForms.forms)[number];
+const DEFAULT_FORMS: readonly UnitForm[] = unitForms.forms;
+const compile = (forms: readonly UnitForm[]) => forms.map((f) => ({ unit: f.unit, re: new RegExp(f.exact ? `^(?:${f.form})$` : f.form, "i") }));
+const DEFAULT_COMPILED = compile(DEFAULT_FORMS);
+export function statutoryUnit(raw: string, forms: readonly UnitForm[] = DEFAULT_FORMS): string | null {
+  const text = raw.trim();
+  return (forms === DEFAULT_FORMS ? DEFAULT_COMPILED : compile(forms)).find((f) => f.re.test(text))?.unit ?? null;
+}
