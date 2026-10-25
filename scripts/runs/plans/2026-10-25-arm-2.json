@@ -1,6 +1,6 @@
 {
-  "revision": 2,
-  "ruling": "operator 2026-10-23 ruling 1: population hold lifted for the structured-data producers (rulings-2026-10-11.md)",
+  "revision": 3,
+  "ruling": "operator 2026-10-23 ruling 1: population hold lifted for the structured-data producers (rulings-2026-10-11.md). Revision 3 (FIX-REFS-1): entity_refs admits state_cost_facts (migration 0133) and the state-cost-facts rows carry ISO 3166-2 state codes, so the state-cost-facts step reruns and writes the refs of its ten rows.",
   "steps": [
     {
       "name": "statutory-schedules-dry",
@@ -12,7 +12,7 @@
             "only": "statutory-schedules",
             "rowsFile": "src/features/statutory/producers/data/rows/statutory_computations-2026-10.json"
           },
-          "cadence_exception": "operator 2026-10-23 ruling 1: population hold lifted for the structured-data producers (rulings-2026-10-11.md)"
+          "cadence_exception": "operator 2026-10-23 ruling 1: population hold lifted for the structured-data producers (rulings-2026-10-11.md). Revision 3 (FIX-REFS-1): entity_refs admits state_cost_facts (migration 0133) and the state-cost-facts rows carry ISO 3166-2 state codes, so the state-cost-facts step reruns and writes the refs of its ten rows."
         }
       },
       "producer_env": []
@@ -27,7 +27,7 @@
             "only": "statutory-schedules",
             "rowsFile": "src/features/statutory/producers/data/rows/statutory_computations-2026-10.json"
           },
-          "cadence_exception": "operator 2026-10-23 ruling 1: population hold lifted for the structured-data producers (rulings-2026-10-11.md)"
+          "cadence_exception": "operator 2026-10-23 ruling 1: population hold lifted for the structured-data producers (rulings-2026-10-11.md). Revision 3 (FIX-REFS-1): entity_refs admits state_cost_facts (migration 0133) and the state-cost-facts rows carry ISO 3166-2 state codes, so the state-cost-facts step reruns and writes the refs of its ten rows."
         }
       },
       "producer_env": [
@@ -44,7 +44,7 @@
             "only": "reroute-rows",
             "rowsFile": "src/features/market/producers/data/rows/reroute_events-2026-10.json"
           },
-          "cadence_exception": "operator 2026-10-23 ruling 1: population hold lifted for the structured-data producers (rulings-2026-10-11.md)"
+          "cadence_exception": "operator 2026-10-23 ruling 1: population hold lifted for the structured-data producers (rulings-2026-10-11.md). Revision 3 (FIX-REFS-1): entity_refs admits state_cost_facts (migration 0133) and the state-cost-facts rows carry ISO 3166-2 state codes, so the state-cost-facts step reruns and writes the refs of its ten rows."
         }
       },
       "producer_env": []
@@ -59,7 +59,7 @@
             "only": "reroute-rows",
             "rowsFile": "src/features/market/producers/data/rows/reroute_events-2026-10.json"
           },
-          "cadence_exception": "operator 2026-10-23 ruling 1: population hold lifted for the structured-data producers (rulings-2026-10-11.md)"
+          "cadence_exception": "operator 2026-10-23 ruling 1: population hold lifted for the structured-data producers (rulings-2026-10-11.md). Revision 3 (FIX-REFS-1): entity_refs admits state_cost_facts (migration 0133) and the state-cost-facts rows carry ISO 3166-2 state codes, so the state-cost-facts step reruns and writes the refs of its ten rows."
         }
       },
       "producer_env": [
@@ -76,7 +76,7 @@
             "only": "state-cost-facts",
             "rowsFile": "src/features/operations/producers/data/rows/state_cost_facts-2026-10.json"
           },
-          "cadence_exception": "operator 2026-10-23 ruling 1: population hold lifted for the structured-data producers (rulings-2026-10-11.md)"
+          "cadence_exception": "operator 2026-10-23 ruling 1: population hold lifted for the structured-data producers (rulings-2026-10-11.md). Revision 3 (FIX-REFS-1): entity_refs admits state_cost_facts (migration 0133) and the state-cost-facts rows carry ISO 3166-2 state codes, so the state-cost-facts step reruns and writes the refs of its ten rows."
         }
       },
       "producer_env": []
@@ -91,7 +91,7 @@
             "only": "state-cost-facts",
             "rowsFile": "src/features/operations/producers/data/rows/state_cost_facts-2026-10.json"
           },
-          "cadence_exception": "operator 2026-10-23 ruling 1: population hold lifted for the structured-data producers (rulings-2026-10-11.md)"
+          "cadence_exception": "operator 2026-10-23 ruling 1: population hold lifted for the structured-data producers (rulings-2026-10-11.md). Revision 3 (FIX-REFS-1): entity_refs admits state_cost_facts (migration 0133) and the state-cost-facts rows carry ISO 3166-2 state codes, so the state-cost-facts step reruns and writes the refs of its ten rows."
         }
       },
       "producer_env": []
