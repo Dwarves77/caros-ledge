@@ -17,6 +17,12 @@ test("a well-formed plan parses; chain defaults to false", () => {
   assert.equal(p.steps[0].chain, false);
 });
 
+test("a plan may carry an integer revision of 2 or more (FIX-EDGES-1: the re-run marker); a fractional, zero or one revision is refused", () => {
+  assert.equal(parsePlan(plan({ revision: 2 })).revision, 2);
+  assert.equal(parsePlan(plan()).revision, undefined);
+  for (const bad of [0, 1, 2.5, "2"]) assert.throws(() => parsePlan(plan({ revision: bad })), /revision|Invalid/, String(bad));
+});
+
 test("INV-RUN-1: an apply propagate step without the ruling's cadence_exception is refused (absent, blank, or any other text); a dry step and a non-propagate apply step need none", () => {
   for (const input of [{ propagate: { producers: { only: "ecb-fx" } } }, { propagate: { cadence_exception: "  ", producers: {} } }, { propagate: { cadence_exception: "another ruling" } }, {}]) {
     assert.throws(() => parsePlan(plan({ steps: [step({ input })] })), /cadence_exception/, JSON.stringify(input));

@@ -23,6 +23,8 @@ const Step = z.strictObject({
 export const Plan = z
   .strictObject({
     ruling: z.string().min(1).refine((s) => s.trim() === s, "the ruling has no leading or trailing space"),
+    /** Bumped when a plan is re-run after a fix: the push that changes the file starts the job, and the ledger still skips every step that already succeeded. */
+    revision: z.number().int().min(2).optional(),
     steps: z.array(Step).min(1),
   })
   // INV-RUN-1: the ruling travels with every apply that fetches (propagate): the stage opens its producers only for a call that carries the ruling text, and the ledger row records it.
