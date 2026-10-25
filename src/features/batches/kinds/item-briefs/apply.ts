@@ -176,10 +176,10 @@ async function afterBatch(deps: BatchDeps, ids: string[], o: ApplyOpts): Promise
   return runResult(worst("ok", ...parts.map((p) => p.outcome)), { flywheel_passes: parts.length }, notes);
 }
 
-function recordBriefsSpec(opts: RecordOpts): EntrySpec<RecordLive, RecordPlan> {
+function itemBriefsSpec(opts: RecordOpts): EntrySpec<RecordLive, RecordPlan> {
   return {
-    kind: "record-briefs",
-    batchRe: /^record-briefs-[A-Za-z0-9._-]+$/,
+    kind: "item-briefs",
+    batchRe: /^item-briefs-[A-Za-z0-9._-]+$/,
     ceiling: 200,
     keyOf: (e) => (typeof e.item_id === "string" ? e.item_id : null),
     async load(deps, file) {
@@ -222,10 +222,10 @@ const flat = (s: unknown): string => String(stripUrlMarkers(typeof s === "string
 const stored = (s: string | null | undefined): string => stripClaimLedgerBlocks(stripUrlMarkers(String(s ?? "").trim()) ?? "").replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "").trim();
 const sameBrief = (storedBrief: string | null | undefined, body: string): boolean => !!storedBrief && stored(storedBrief) === stored(body);
 
-/** Apply one record-briefs batch (the budget and the window arrive as options; the cooldown reads the ledger). */
-export async function applyRecordBriefs(deps: BatchDeps, file: unknown, o: RecordOpts): Promise<RunResult> {
+/** Apply one item-briefs batch (the budget and the window arrive as options; the cooldown reads the ledger). */
+export async function applyItemBriefs(deps: BatchDeps, file: unknown, o: RecordOpts): Promise<RunResult> {
   const opts: RecordOpts = { ...o, budgetBytes: o.budgetBytes ?? budgetBytes(o.ioBudgetMb) };
-  const r = await applyEntries(recordBriefsSpec(opts), deps, file, opts);
+  const r = await applyEntries(itemBriefsSpec(opts), deps, file, opts);
   if (r.counts.not_applied_io_budget) r.notes.push(`stop_reason=${BUDGET_STOP_REASON}`);
   return r;
 }

@@ -2,3 +2,4 @@
 src/features/batches/committed.ts | new in FLY-1 (ADR-050): the committed session batches the briefs stage applies each turn, the applied_batches ledger and the corrections file; the old tree applied a batch when a workflow was dispatched on its merge
 src/features/obligations/extract/resolve-pending.ts | new in FLY-1 (ADR-050): resolves a pending regulatory trigger from a later capture that states the act or the guidance; the old tree never resolved one
 src/features/obligations/extract/data/resolution-rules.json | new in FLY-1 (ADR-050): the statement patterns per pending trigger kind and the items-per-turn bound, as validated data
+src/core/digest/corrections.ts | new in FLY-1 (ADR-050): the zod shape of <batch>.corrections.json, written by the briefs stage next to a held batch and read by the next drain plan (DIGEST-1 PR B)

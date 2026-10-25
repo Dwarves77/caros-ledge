@@ -1,6 +1,6 @@
 // Ported from old_repo/scripts/turns/theme-briefs/artifact.mjs (lines 1-41)
 // Stage 8, briefs: the session-batch kit (FLY-1, ADR-050: the applier of the batches the judgement drain commits). With no input it reads the committed batch files under drain/batches/ (`batchRoot`, default the working directory)
-// that the applied_batches ledger has not recorded and applies them; an input names either a batch to apply (`batch: { kind, content, format?, options? }`: record-briefs, question-answers, needs-search, forward-events, theme-briefs, screen-verdicts or
+// that the applied_batches ledger has not recorded and applies them; an input names either a batch to apply (`batch: { kind, content, format?, options? }`: item-briefs, question-answers, needs-search, forward-events, theme-briefs, screen-verdicts or
 // ledger-verdicts, each validated whole before it is written) or an export to hand a session (`export: { kind, outDir?, limit?, ids? }`: the bundle goes to a scratch directory, never the repo). The kit's apply ends by
 // calling its own downstream in the same run; the row this stage returns is the run's record.
 import type { FamilyCall } from "@/core/harness";
@@ -47,7 +47,7 @@ export const batchDeps = (d: BuiltDeps): BatchDeps => ({ sb: d.sb, now: d.now, i
 /** The ids the downstream runs over: the item ids a batch of an item-keyed kind applied, less the ones whose read-back failed. */
 const itemIdsOf = (kind: string | null, r: RunResult): string[] => {
   const ids = ((r.data as { ids?: Record<string, string[]> } | undefined)?.ids ?? {});
-  return kind === null ? ids.item_ids ?? [] : kind === "record-briefs" || kind === "forward-events" ? (ids.applied_ids ?? []).filter((x) => !(ids.read_back_failed_ids ?? []).includes(x)) : [];
+  return kind === null ? ids.item_ids ?? [] : kind === "item-briefs" || kind === "forward-events" ? (ids.applied_ids ?? []).filter((x) => !(ids.read_back_failed_ids ?? []).includes(x)) : [];
 };
 
 /**

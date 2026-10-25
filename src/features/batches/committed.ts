@@ -9,20 +9,29 @@ import { join } from "node:path";
 import { rowsByIds } from "@/core/db";
 import type { RunOutcome, RunResult } from "@/core/types/run-result";
 import { runResult, worst } from "@/core/types/run-result";
-import { resolveKind } from "@/features/drain";
+import { correctionsFile } from "@/core/digest/corrections";
+import { digestKind } from "@/core/digest/kinds";
 
 import { applyBatch, type BatchKindId } from "./kit/dispatch";
 import type { BatchData, BatchDeps } from "./kit/session-batch";
 
 /** The order a turn applies kinds in: verdicts and searches first, the briefs they feed next, the events and themes read the briefs. */
-const ORDER: readonly BatchKindId[] = ["ledger-verdicts", "host-verdicts", "screen-verdicts", "needs-search", "question-answers", "record-briefs", "forward-events", "theme-briefs"];
+const ORDER: readonly BatchKindId[] = ["ledger-verdicts", "host-verdicts", "screen-verdicts", "needs-search", "question-answers", "item-briefs", "forward-events", "theme-briefs"];
 /** The kinds whose entries are keyed by an item id: the downstream (scores, pending triggers) runs over these. */
-const ITEM_KEYED: ReadonlySet<string> = new Set(["record-briefs", "forward-events"]);
+const ITEM_KEYED: ReadonlySet<string> = new Set(["item-briefs", "forward-events"]);
 
-/** A kit kind's directory and file-name pattern: the drain's kind table names them (the drain commits the same files); forward-events is no drain queue, so its directory is its own. */
+/** The two kit kinds that are no digest queue: the drain commits screen verdicts under drain/batches/screen-verdict, and forward-events has a directory of its own. */
+const OWN_LAYOUT: Readonly<Record<string, { dir: string; re: RegExp }>> = {
+  "screen-verdicts": { dir: "drain/batches/screen-verdict", re: /^screen-verdict-\d{3}\.json$/ },
+  "forward-events": { dir: "drain/batches/forward-events", re: /^forward-events-\d{3}[a-z0-9-]*\.json$/ },
+};
+/** A kit kind's directory and file-name pattern: the digest registry (src/core/digest/kinds.ts) names them for its kinds. */
 function layoutOf(kind: BatchKindId): { dir: string; re: RegExp } {
-  const k = kind === "forward-events" ? null : resolveKind(kind === "screen-verdicts" ? "screen-verdict" : kind);
-  return k ? { dir: k.batchDir, re: k.batchRe } : { dir: `drain/batches/${kind}`, re: /^forward-events-\d{3}[a-z0-9-]*\.json$/ };
+  const k = digestKind(kind);
+  const own = OWN_LAYOUT[kind];
+  if (k) return { dir: k.batchDir, re: k.batchRe };
+  if (own) return own;
+  throw new Error(`batch kind ${kind} has no committed layout`);
 }
 
 interface CommittedFile { kind: BatchKindId; id: string; dir: string; content: string; hash: string }
@@ -75,8 +84,8 @@ export async function applyCommitted(deps: BatchDeps, input: { root: string; dry
     const seen = ledger.get(f.id);
     if (seen && (seen.status === "applied" || seen.file_hash === f.hash)) { n.skipped += 1; continue; }
     let named: unknown;
-    try { named = (JSON.parse(f.content) as { batch?: unknown }).batch; } catch { named = undefined; }
-    const r = (named === f.id
+    try { named = (JSON.parse(f.content) as { batch?: unknown }).batch; } catch { named = null; }
+    const r = (named === undefined || named === f.id
       ? await applyBatch(f.kind, deps, { content: f.content, dry: input.dry, ...(input.runId ? { runId: input.runId } : {}) })
       : runResult("failed", { refused: 1, file_refused: 1 }, [`the file is not a batch named ${f.id} (its batch field is ${JSON.stringify(named)})`])) as RunResult<BatchData>;
     sum(counts, r.counts);
@@ -95,7 +104,7 @@ export async function applyCommitted(deps: BatchDeps, input: { root: string; dry
     try {
       const w = await deps.sb.from("applied_batches").upsert({ batch_id: f.id, kind: f.kind, status: verdict, file_hash: f.hash, run_id: input.runId ?? null, counts: r.counts, reasons, recorded_at: deps.now().toISOString() }, { onConflict: "batch_id" });
       if (w.error) throw new Error(w.error.message);
-      if (verdict === "held") writeFileSync(corrections, `${JSON.stringify({ batch: f.id, kind: f.kind, held_at: deps.now().toISOString(), file_hash: f.hash, refused: r.data?.residue ?? [], notes: r.notes }, null, 2)}\n`, "utf8");
+      if (verdict === "held") writeFileSync(corrections, `${JSON.stringify(correctionsFile.parse({ batch: f.id, kind: f.kind, held_at: deps.now().toISOString(), file_hash: f.hash, refused: r.data?.residue ?? [], notes: r.notes }), null, 2)}\n`, "utf8");
       else if (existsSync(corrections)) unlinkSync(corrections);
     } catch (e) {
       outcome = worst(outcome, "partial");

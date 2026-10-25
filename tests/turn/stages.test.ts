@@ -151,7 +151,7 @@ test("briefs: a theme brief is written once against the live membership and a st
   assert.match(badJson.notes[0] ?? "", /not JSON/);
   const partial = await runBriefs(call({ input: { batch: { kind: "screen-verdicts", content: JSON.stringify({ verdicts: [{ census_id: CENSUS, verdict: "on_vertical", basis: "b" }, { census_id: "nope", verdict: "on_vertical", basis: "b" }] }) } } }), f.d);
   assert.deepEqual([partial.outcome, partial.counts.applied, partial.counts.refused], ["partial", 1, 1]);
-  for (const kind of ["record-briefs", "question-answers", "needs-search", "forward-events", "ledger-verdicts"]) assert.match((await runBriefs(call({ input: { batch: { kind, content: "x" } } }), f.d)).notes[0] ?? "", /batch is not JSON/, kind);
+  for (const kind of ["item-briefs", "question-answers", "needs-search", "forward-events", "ledger-verdicts"]) assert.match((await runBriefs(call({ input: { batch: { kind, content: "x" } } }), f.d)).notes[0] ?? "", /batch is not JSON/, kind);
   assert.match((await runBriefs(call({ input: { batch: { kind: "mystery", content: "x" } } }), f.d)).notes[0] ?? "", /unknown batch kind/);
 });
 

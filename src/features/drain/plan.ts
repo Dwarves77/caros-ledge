@@ -25,7 +25,7 @@ export interface DrainDeps {
 }
 export interface PlanLease { kind: string; id: string; lease_id: string; holder: string; released: boolean; release_error?: string | null }
 export interface PlanKind {
-  kind: string; mode: string; label: string; pending_exported: number; export_error: string | null; source: unknown; earliest_pending: string | null; apply_step: string; authoring_guide: string | null; batch_size: number;
+  kind: string; mode: string; label: string; pending_exported: number; export_error: string | null; source: unknown; earliest_pending: string | null; apply_step: string; apply_pending: string | null; authoring_guide: DrainKind["authoringGuide"]; batch_size: number;
   batches: Array<{ batch_path: string; item_ids: string[]; count: number }>; residue: { lease_held: Array<{ id: string; holder: string | null; reason: string }>; over_cap: number; not_stale?: number }; would_lease?: number;
 }
 export interface DrainPlan {
@@ -62,7 +62,7 @@ async function exportQueue(deps: DrainDeps, kind: DrainKind, opts: { limit: numb
   }
 }
 
-export async function planDrain(deps: DrainDeps, input: { runId: string; limit?: number | null; kindId?: string | null; mode?: string; dry?: boolean }): Promise<DrainPlan> {
+export async function planDrain(deps: DrainDeps, input: { runId: string; limit?: number | null; kindId?: string | null; mode?: string; dry?: boolean; /** Plan only these kinds (the command passes the kinds it has an exporter for); absent, every kind. */ kinds?: readonly string[] }): Promise<DrainPlan> {
   const { runId, limit = null, kindId = null, mode = DEFAULT_MODE, dry = false } = input;
   const holder = `drain-${runId}`;
   const only = kindId ? resolveKind(kindId) : null;
@@ -76,7 +76,7 @@ export async function planDrain(deps: DrainDeps, input: { runId: string; limit?:
   if (!sw.on) return { ...head, drain: "off", kinds: [], leases: [], totals: { kinds_planned: 0, batches: 0, items: 0, leases_held: 0 } };
 
   const raw: Array<{ id: string; kind: DrainKind; items: Item[]; source: unknown; error: string | null; notStale: number; earliest: string | null }> = [];
-  for (const kind of only ? [only] : DRAIN_KINDS) {
+  for (const kind of only ? [only] : DRAIN_KINDS.filter((k) => !input.kinds || input.kinds.includes(k.id))) {
     const res = await exportQueue(deps, kind, { limit: limit ?? kind.batchSize * kind.maxBatchesPerRun, mode });
     let items = res.ok ? res.items : [];
     let error = res.ok ? null : (res.error ?? "export failed");
@@ -95,51 +95,63 @@ export async function planDrain(deps: DrainDeps, input: { runId: string; limit?:
   }
   const leases: PlanLease[] = [];
   const kinds: PlanKind[] = [];
-  for (const r of orderKinds(raw)) {
-    const { kind } = r;
-    const take = r.items.slice(0, kind.batchSize * kind.maxBatchesPerRun);
-    const entry: PlanKind = { kind: kind.id, mode, label: kind.label, pending_exported: r.items.length + r.notStale, export_error: r.error, source: r.source, earliest_pending: r.earliest, apply_step: kind.applyStep, authoring_guide: null, batch_size: kind.batchSize, batches: [], residue: { lease_held: [], over_cap: Math.max(0, r.items.length - take.length), ...(mode === "stale" ? { not_stale: r.notStale } : {}) } };
-    const existing = deps.listBatchDir(kind);
-    const wouldLease = new Set<string>();
-    const batches: string[][] = [];
-    let current: string[] = [];
-    for (const item of take) {
-      const id = String(item?.[kind.idKey] ?? "");
-      if (!id) continue;
-      const leaseId = kind.leaseKey ? String(item?.[kind.leaseKey] ?? "") : "";
-      if (leaseId) {
-        if (!UUID.test(leaseId)) { entry.residue.lease_held.push({ id, holder: null, reason: "lease key is not a uuid" }); continue; }
-        if (dry) wouldLease.add(leaseId);
-        else if (!leases.some((l) => l.lease_id === leaseId)) {
-          const got = await deps.acquire(leaseId, holder, LEASE_LANE, LEASE_STALE_SECONDS);
-          if (!got.acquired && got.cur_holder !== holder) { entry.residue.lease_held.push({ id, holder: got.cur_holder ?? null, reason: "leased by another session" }); continue; }
-          if (got.acquired) leases.push({ kind: kind.id, id, lease_id: leaseId, holder, released: false });
+  try {
+    for (const r of orderKinds(raw)) {
+      const { kind } = r;
+      const take = kind.applyPending ? [] : r.items.slice(0, kind.batchSize * kind.maxBatchesPerRun); // a kind whose apply is pending is counted, never leased or batched
+      const entry: PlanKind = { kind: kind.id, mode, label: kind.label, pending_exported: r.items.length + r.notStale, export_error: r.error, source: r.source, earliest_pending: r.earliest, apply_step: kind.applyStep, apply_pending: kind.applyPending, authoring_guide: kind.authoringGuide, batch_size: kind.batchSize, batches: [], residue: { lease_held: [], over_cap: kind.applyPending ? 0 : Math.max(0, r.items.length - take.length), ...(mode === "stale" ? { not_stale: r.notStale } : {}) } };
+      const existing = deps.listBatchDir(kind);
+      const wouldLease = new Set<string>();
+      const batches: string[][] = [];
+      let current: string[] = [];
+      for (const item of take) {
+        const id = String(item?.[kind.idKey] ?? "");
+        if (!id) continue;
+        const leaseId = kind.leaseKey ? String(item?.[kind.leaseKey] ?? "") : "";
+        if (leaseId) {
+          if (!UUID.test(leaseId)) { entry.residue.lease_held.push({ id, holder: null, reason: "lease key is not a uuid" }); continue; }
+          if (dry) wouldLease.add(leaseId);
+          else if (!leases.some((l) => l.lease_id === leaseId)) {
+            const got = await deps.acquire(leaseId, holder, LEASE_LANE, LEASE_STALE_SECONDS);
+            if (!got.acquired && got.cur_holder !== holder) { entry.residue.lease_held.push({ id, holder: got.cur_holder ?? null, reason: "leased by another session" }); continue; }
+            if (got.acquired) leases.push({ kind: kind.id, id, lease_id: leaseId, holder, released: false });
+          }
+        }
+        current.push(id);
+        if (current.length >= kind.batchSize) {
+          batches.push(current);
+          current = [];
         }
       }
-      current.push(id);
-      if (current.length >= kind.batchSize) {
-        batches.push(current);
-        current = [];
-      }
+      if (current.length) batches.push(current);
+      entry.batches = batches.map((ids, i) => ({ batch_path: nextBatchPath(kind, existing, i), item_ids: ids, count: ids.length }));
+      if (dry) entry.would_lease = wouldLease.size;
+      kinds.push(entry);
     }
-    if (current.length) batches.push(current);
-    entry.batches = batches.map((ids, i) => ({ batch_path: nextBatchPath(kind, existing, i), item_ids: ids, count: ids.length }));
-    if (dry) entry.would_lease = wouldLease.size;
-    kinds.push(entry);
+  } catch (e) {
+    // INV-DIG-4: a failure part way through (a lease call, a directory listing) releases every lease already taken before it is raised; a release that also fails is said in the error.
+    const stuck = (await releaseLeases(deps, leases)).filter((l) => !l.released).length;
+    throw stuck ? new Error(`${(e as Error).message} (${stuck} lease(s) taken before the failure could not be released; they go stale after ${LEASE_STALE_SECONDS / 3600} hours)`) : e;
   }
   const planned = kinds.filter((k) => k.batches.length);
   return { ...head, drain: "on", ...(dry ? { dry: true as const } : {}), kinds, leases, totals: { kinds_planned: planned.length, batches: planned.reduce((a, k) => a + k.batches.length, 0), items: planned.reduce((a, k) => a + k.batches.reduce((b, x) => b + x.count, 0), 0), leases_held: leases.length } };
 }
 
-/** Release every lease the plan took (a release that throws is recorded, never lost) and build the run body the harness records. */
-export async function finishDrain(deps: Pick<DrainDeps, "release" | "now">, plan: DrainPlan, prs: Readonly<Record<string, string>> = {}) {
-  const leases: PlanLease[] = [];
-  for (const l of plan.leases) {
+/** Release each lease and keep the answer: a release that throws is recorded on the lease, never lost and never raised (a stale lease is claimable anyway). */
+async function releaseLeases(deps: Pick<DrainDeps, "release">, taken: readonly PlanLease[]): Promise<PlanLease[]> {
+  const out: PlanLease[] = [];
+  for (const l of taken) {
     let released = false;
     let release_error: string | null = null;
     try { released = await deps.release(l.lease_id, l.holder); } catch (e) { release_error = (e as Error).message; }
-    leases.push({ ...l, released, release_error });
+    out.push({ ...l, released, release_error });
   }
+  return out;
+}
+
+/** Release every lease the plan took (a release that throws is recorded, never lost) and build the run body the harness records. */
+export async function finishDrain(deps: Pick<DrainDeps, "release" | "now">, plan: DrainPlan, prs: Readonly<Record<string, string>> = {}) {
+  const leases = await releaseLeases(deps, plan.leases);
   const done = { ...plan, leases };
   const perItem = done.kinds.flatMap((k) => k.batches.flatMap((b) => b.item_ids.map((id) => ({ id: `${k.kind}:${id}`, outcome: "planned", verdict: `batch ${b.batch_path}`, evidence_refs: [b.batch_path], error: null }))));
   const defects: Array<{ description: string; root_cause: string; fix_ref: null }> = [];

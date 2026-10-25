@@ -5,6 +5,9 @@
  "admin_events": [
   "id"
  ],
+ "admin_opportunity_findings": [
+  "id"
+ ],
  "agent_run_searches": [
   "id"
  ],
@@ -25,6 +28,9 @@
  ],
  "brief_apply_runs": [
   "run_id"
+ ],
+ "brief_reviews": [
+  "id"
  ],
  "bulk_imports": [
   "id"

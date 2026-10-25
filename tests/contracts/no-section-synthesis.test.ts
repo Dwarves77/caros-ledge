@@ -8,6 +8,7 @@ import { join } from "node:path";
 import { test } from "node:test";
 
 import { runTurn } from "@/core/turn";
+import { correctionsFile } from "@/core/digest/corrections";
 import { committedNames } from "@/features/batches";
 import { nextBatchPath, resolveKind } from "@/features/drain";
 import { resolvePendingTriggers } from "@/features/obligations";
@@ -38,17 +39,17 @@ function plant(f: Awaited<ReturnType<typeof minted>>["f"], itemId: unknown): voi
   f.db.rows("item_forward_events").push({ id: EVENT, intelligence_item_id: itemId, event_date: "2027-01-01", date_precision: "year", event_kind: "implementing_act_due", obligation_text: "The Commission shall adopt implementing acts by 2027.", source_kind: "section", source_span: "2027", confidence: "medium", extractor_version: "fly-1-test", created_at: "2026-10-01T00:00:00.000Z", resolved_at: null, resolved_capture_id: null, resolved_span: null });
   f.db.rows("agent_run_searches").push({ id: LATER, agent_run_id: null, intelligence_item_id: itemId, result_url: "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32027R0055", result_title: null, result_index: 1, result_content: `${ACT} laying down detailed rules for the annual report was adopted and published. ${"Notice. This text is provided for information. ".repeat(30)}`, searched_at: "2026-10-14T00:00:00.000Z", result_chars: 1500 });
 }
-/** Export the stub through the stage, author a batch from it, and commit it as record-briefs-001 under a fresh root. */
+/** Export the stub through the stage, author a batch from it, and commit it as item-briefs-001 under a fresh root. */
 async function commit(f: Awaited<ReturnType<typeof minted>>["f"], over: { a2?: string; newSources?: string } = {}): Promise<string> {
   const out = mkdtempSync(join(tmpdir(), "caros-fly1-out-"));
-  const ex = await runTurn({ stage: "briefs", mode: "apply", input: { briefs: { export: { kind: "record-briefs", outDir: out } } } }, { d: f.d, env: {}, now: () => NOW });
+  const ex = await runTurn({ stage: "briefs", mode: "apply", input: { briefs: { export: { kind: "item-briefs", outDir: out } } } }, { d: f.d, env: {}, now: () => NOW });
   const row = f.db.rows("harness_runs").find((r) => r.id === ex.rootRunId) as { outputs: { ids: Record<string, string[]> } };
   const stub = (JSON.parse(readFileSync(row.outputs.ids.parts?.[0] as string, "utf8")) as { items: { id: string; source_pool_hash: string }[] }).items[0] as { id: string; source_pool_hash: string };
   const a2 = over.a2 ?? A2;
   const entry = { item_id: stub.id, source_pool_hash: stub.source_pool_hash, body: regulatoryBody(over.newSources), metadata: metadata({ format_type: "regulatory_fact_document", signal_band: null, sources_used: [] }), claims: [fact(A1, "8", "binding_position"), fact(a2, "8", "due_date"), fact(A3, "8"), fact(A4, "14")] };
   const root = mkdtempSync(join(tmpdir(), "caros-fly1-"));
-  mkdirSync(join(root, "drain/batches/record-briefs"), { recursive: true });
-  writeFileSync(join(root, "drain/batches/record-briefs/record-briefs-001.json"), JSON.stringify({ batch: "record-briefs-001", generated_at: NOW.toISOString(), authored_by: "session-lane", entries: [entry] }));
+  mkdirSync(join(root, "drain/batches/item-briefs"), { recursive: true });
+  writeFileSync(join(root, "drain/batches/item-briefs/item-briefs-001.json"), JSON.stringify({ batch: "item-briefs-001", generated_at: NOW.toISOString(), authored_by: "session-lane", entries: [entry] }));
   return root;
 }
 const briefs = async (f: Awaited<ReturnType<typeof minted>>["f"], root: string) => {
@@ -88,7 +89,7 @@ test("INV-FLY-3 and INV-FLY-4: a committed batch applies on the fixture turn wit
   assert.deepEqual([ev.resolved_capture_id, ev.resolved_span, ev.resolved_at], [LATER, ACT, NOW.toISOString()]);
   assert.deepEqual(row.outputs.ids.resolved_event_ids, [EVENT]);
   const ledger = f.db.rows("applied_batches");
-  assert.deepEqual(ledger.map((l) => [l.batch_id, l.kind, l.status]), [["record-briefs-001", "record-briefs", "applied"]]);
+  assert.deepEqual(ledger.map((l) => [l.batch_id, l.kind, l.status]), [["item-briefs-001", "item-briefs", "applied"]]);
 
   // INV-FLY-4: the same batch on the next turn is read, found in the ledger, and nothing is written but the turn's own ledger row.
   const writes = f.db.writes().length;
@@ -108,14 +109,15 @@ test("INV-FLY-2: a batch with one span altered so it is not verbatim in its capt
   assert.equal(JSON.stringify(f.db.rows("intelligence_item_sections")), sectionsBefore, "no section was written");
   assert.ok(f.db.writes().slice(before).every((w) => ["harness_runs", "applied_batches"].includes(w.table)), "the held batch wrote only its ledger row");
   const ledger = f.db.rows("applied_batches")[0] as Row;
-  assert.deepEqual([ledger.batch_id, ledger.status], ["record-briefs-001", "held"]);
+  assert.deepEqual([ledger.batch_id, ledger.status], ["item-briefs-001", "held"]);
   assert.match(JSON.stringify(ledger.reasons), /not a verbatim substring of the item's pool text/);
-  const corrections = JSON.parse(readFileSync(join(root, "drain/batches/record-briefs/record-briefs-001.corrections.json"), "utf8")) as { batch: string; refused: { key: string; errors: string[] }[] };
-  assert.equal(corrections.batch, "record-briefs-001");
+  const corrections = JSON.parse(readFileSync(join(root, "drain/batches/item-briefs/item-briefs-001.corrections.json"), "utf8")) as { batch: string; refused: { key: string; errors: string[] }[] };
+  assert.equal(corrections.batch, "item-briefs-001");
+  assert.doesNotThrow(() => correctionsFile.parse(corrections), "the corrections file has the shape DIGEST-1 reads");
   // the next drain plan numbers after the committed batch (the corrections file takes no number) and finds the corrections beside it.
-  const names = committedNames(root, "drain/batches/record-briefs");
-  assert.deepEqual(names.sort(), ["record-briefs-001.corrections.json", "record-briefs-001.json"]);
-  assert.equal(nextBatchPath(resolveKind("record-briefs") as NonNullable<ReturnType<typeof resolveKind>>, names), "drain/batches/record-briefs/record-briefs-002.json");
+  const names = committedNames(root, "drain/batches/item-briefs");
+  assert.deepEqual(names.sort(), ["item-briefs-001.corrections.json", "item-briefs-001.json"]);
+  assert.equal(nextBatchPath(resolveKind("item-briefs") as NonNullable<ReturnType<typeof resolveKind>>, names), "drain/batches/item-briefs/item-briefs-002.json");
   assert.match(corrections.refused[0]?.errors.join(" ") ?? "", /not a verbatim substring/);
   assert.equal(row.outputs.ids.scored_item_ids, undefined, "no downstream ran over a held brief");
 });
@@ -170,7 +172,7 @@ test("dry: a committed batch is validated and planned the same and nothing is wr
   assert.deepEqual([c.batches_found, c.batches_applied, c.valid, c.applied], [1, 1, 1, 0]);
   assert.ok(f.db.writes().slice(before).every((w) => w.table === "harness_runs"), "only the run ledger moved");
   assert.deepEqual(f.db.rows("applied_batches"), []);
-  assert.equal(existsSync(join(root, "drain/batches/record-briefs/record-briefs-001.corrections.json")), false);
+  assert.equal(existsSync(join(root, "drain/batches/item-briefs/item-briefs-001.corrections.json")), false);
 });
 
 test("0126: a ledger that cannot be read applies nothing and says so; a resolution write that fails is counted, not hidden", async () => {
