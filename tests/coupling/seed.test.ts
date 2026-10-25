@@ -69,3 +69,16 @@ test("the relations run from a lower class rank to a higher one, so the vocabula
 test("the entity ids stored in couplings.json are the ids the spine mints for the same kind and name", () => {
   for (const c of COUPLINGS) assert.equal(c.entityId, entityId(c.kind, c.name), c.key);
 });
+
+test("join completeness (scope review G2): every entity that sits on a leg names its legs with a quote, carries a relation, and every corridor links every mode it names", () => {
+  const withoutLegs = new Set(["attribute", "window"]);
+  const related = new Set(COUPLING_RELATIONS.flatMap((r) => [r.parent, r.child]));
+  const legs = COUPLINGS.filter((c) => !withoutLegs.has(c.class));
+  assert.deepEqual(legs.filter((c) => !(c.modeAgnostic || c.modes?.length)).map((c) => c.key), [], "an entity with no mode and not mode-agnostic can never join a leg");
+  assert.deepEqual(legs.filter((c) => !related.has(c.key)).map((c) => c.key), [], "an entity with no relation is a dead end for every pattern");
+  assert.deepEqual(legs.filter((c) => c.class === "instrument" && !c.modesCitation).map((c) => c.key), [], "an instrument carries the quote that names its legs");
+  for (const corridor of COUPLINGS.filter((c) => c.class === "corridor")) {
+    const linked = new Set(COUPLING_RELATIONS.filter((r) => r.parent === corridor.key && r.relation === "corridor_links").map((r) => r.child.replace(/^mode:/, "")));
+    assert.deepEqual((corridor.modes ?? []).filter((m) => !linked.has(m)), [], `${corridor.key} names modes it does not link`);
+  }
+});

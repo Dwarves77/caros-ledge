@@ -7,6 +7,6 @@ const FILLER = "Notice. This page is provided for information and is reproduced 
 
 export function couplingRoutes(): Record<string, () => Response> {
   const quotes = new Map<string, Set<string>>();
-  for (const c of [...COUPLINGS.map((x) => x.citation), ...COUPLING_RELATIONS.flatMap((r) => r.citations), ...ALIAS_SEEDS.map((a) => a.citation), ...ACRONYMS.map((a) => a.citation)]) if (c) quotes.set(c.url, (quotes.get(c.url) ?? new Set()).add(c.quote));
+  for (const c of [...COUPLINGS.flatMap((x) => [x.citation, x.modesCitation]), ...COUPLING_RELATIONS.flatMap((r) => r.citations), ...ALIAS_SEEDS.map((a) => a.citation), ...ACRONYMS.map((a) => a.citation)]) if (c) quotes.set(c.url, (quotes.get(c.url) ?? new Set()).add(c.quote));
   return Object.fromEntries([...quotes].map(([url, qs]) => [url, () => new Response(`${[...qs].join("\n")}\n${FILLER}`, { status: 200, headers: { "content-type": "text/plain; charset=utf-8" } })]));
 }

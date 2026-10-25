@@ -15,7 +15,7 @@ type Cite = NonNullable<Coupling["citation"]>;
 const pageKey = (c: Cite): string => `${c.url}\n${c.quote}`;
 
 /** The pages the vocabulary is taken from: what the propagate stage captures before the seeds pass. */
-export const seedPages = (): { url: string; title: string }[] => [...new Map([...COUPLINGS.map((c) => c.citation), ...COUPLING_RELATIONS.flatMap((r) => r.citations), ...ALIAS_SEEDS.map((a) => a.citation), ...ACRONYMS.map((a) => a.citation)].filter((c): c is Cite => !!c).map((c) => [c.url, { url: c.url, title: c.title }])).values()];
+export const seedPages = (): { url: string; title: string }[] => [...new Map([...COUPLINGS.flatMap((c) => [c.citation, c.modesCitation]), ...COUPLING_RELATIONS.flatMap((r) => r.citations), ...ALIAS_SEEDS.map((a) => a.citation), ...ACRONYMS.map((a) => a.citation)].filter((c): c is Cite => !!c).map((c) => [c.url, { url: c.url, title: c.title }])).values()];
 
 /** Write the rows the table does not hold yet (by key), in chunks; the count is rows added, so a second run counts none. */
 async function addNew(sb: Db, table: string, rows: Row[], order: readonly string[], key: (r: Row) => string, notes: string[]): Promise<number> {
@@ -36,13 +36,13 @@ export async function seedCouplings(deps: { sb: Db; now: () => Date }, input: { 
   const notes: string[] = [];
   const counts: Record<string, number> = { seed_couplings: COUPLINGS.length, seed_relations: COUPLING_RELATIONS.length, seed_refused: 0, seed_entities_written: 0, seed_aliases_written: 0, seed_relations_written: 0 };
   const verdict = new Map<string, { source_id: string } | { reason: string }>();
-  for (const c of [...COUPLINGS.map((x) => x.citation), ...COUPLING_RELATIONS.flatMap((r) => r.citations), ...ALIAS_SEEDS.map((a) => a.citation), ...ACRONYMS.map((a) => a.citation)]) {
+  for (const c of [...COUPLINGS.flatMap((x) => [x.citation, x.modesCitation]), ...COUPLING_RELATIONS.flatMap((r) => r.citations), ...ALIAS_SEEDS.map((a) => a.citation), ...ACRONYMS.map((a) => a.citation)]) {
     if (!c || verdict.has(pageKey(c)) || input.dry) continue;
     const got = await registerCitedSource(c, { sb });
     verdict.set(pageKey(c), got.refused ? { reason: `${c.url}: ${got.reason}` } : { source_id: got.source_id });
   }
   const accepted = (c: Cite | undefined) => (c ? verdict.get(pageKey(c)) : undefined);
-  const live = COUPLINGS.filter((c) => c.class === "window" || input.dry || (accepted(c.citation) && "source_id" in (accepted(c.citation) as object)));
+  const live = COUPLINGS.filter((c) => c.class === "window" || input.dry || ([c.citation, c.modesCitation].every((q) => !q || (accepted(q) && "source_id" in (accepted(q) as object)))));
   const have = new Set(live.map((c) => c.key));
   for (const v of verdict.values()) if ("reason" in v) notes.push(`refused: ${v.reason}`);
   counts.seed_refused = COUPLINGS.length - live.length;

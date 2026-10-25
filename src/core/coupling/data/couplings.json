@@ -813,6 +813,16 @@
     "ReFuelEU"
    ],
    "modeAgnostic": false,
+   "modes": [
+    "air"
+   ],
+   "modesCitation": {
+    "url": "https://transport.ec.europa.eu/transport-modes/air/environment/refueleu-aviation_en",
+    "title": "ReFuelEU Aviation, European Commission",
+    "retrieved_at": "2026-10-24",
+    "quote": "Aircraft operators departing from EU airports must refuel with the aviation fuel necessary to operate the flight",
+    "sourceClass": "primary"
+   },
    "citation": {
     "url": "https://transport.ec.europa.eu/transport-modes/air/environment/refueleu-aviation_en",
     "title": "ReFuelEU Aviation, European Commission",
@@ -831,6 +841,16 @@
     "FuelEU"
    ],
    "modeAgnostic": false,
+   "modes": [
+    "ocean"
+   ],
+   "modesCitation": {
+    "url": "https://transport.ec.europa.eu/transport-modes/maritime/decarbonising-maritime-transport-fueleu-maritime_en",
+    "title": "FuelEU Maritime, European Commission",
+    "retrieved_at": "2026-10-24",
+    "quote": "intensity of the energy used by ships above 5,000 gross tonnage calling at European ports",
+    "sourceClass": "primary"
+   },
    "citation": {
     "url": "https://transport.ec.europa.eu/transport-modes/maritime/decarbonising-maritime-transport-fueleu-maritime_en",
     "title": "FuelEU Maritime, European Commission",
@@ -849,6 +869,19 @@
     "Alternative Fuels Infrastructure Regulation"
    ],
    "modeAgnostic": false,
+   "modes": [
+    "road",
+    "ocean",
+    "inland_waterway",
+    "air"
+   ],
+   "modesCitation": {
+    "url": "https://transport.ec.europa.eu/transport-themes/clean-transport/alternative-fuels-sustainable-mobility-europe/alternative-fuels-infrastructure_en",
+    "title": "Alternative fuels infrastructure, European Commission",
+    "retrieved_at": "2026-10-24",
+    "quote": "for road vehicles, vessels and stationary aircraft",
+    "sourceClass": "primary"
+   },
    "citation": {
     "url": "https://transport.ec.europa.eu/transport-themes/clean-transport/alternative-fuels-sustainable-mobility-europe/alternative-fuels-infrastructure_en",
     "title": "Alternative fuels infrastructure, European Commission",
@@ -865,7 +898,21 @@
    "aliases": [
     "RED III"
    ],
-   "modeAgnostic": false,
+   "modeAgnostic": true,
+   "modes": [
+    "air",
+    "ocean",
+    "road",
+    "rail",
+    "inland_waterway"
+   ],
+   "modesCitation": {
+    "url": "https://energy.ec.europa.eu/topics/renewable-energy/renewable-energy-directive-targets-and-rules/renewable-energy-directive_en",
+    "title": "Renewable Energy Directive, European Commission",
+    "retrieved_at": "2026-10-24",
+    "quote": "sector-specific targets for renewables in heating and cooling, transport, industry",
+    "sourceClass": "primary"
+   },
    "citation": {
     "url": "https://energy.ec.europa.eu/topics/renewable-energy/renewable-energy-directive-targets-and-rules/renewable-energy-directive_en",
     "title": "Renewable Energy Directive, European Commission",
@@ -882,7 +929,21 @@
    "aliases": [
     "RED II"
    ],
-   "modeAgnostic": false,
+   "modeAgnostic": true,
+   "modes": [
+    "air",
+    "ocean",
+    "road",
+    "rail",
+    "inland_waterway"
+   ],
+   "modesCitation": {
+    "url": "https://energy.ec.europa.eu/topics/renewable-energy/renewable-energy-directive-targets-and-rules/renewable-energy-directive_en",
+    "title": "Renewable Energy Directive, European Commission",
+    "retrieved_at": "2026-10-24",
+    "quote": "sector-specific targets for renewables in heating and cooling, transport, industry",
+    "sourceClass": "primary"
+   },
    "citation": {
     "url": "https://energy.ec.europa.eu/topics/renewable-energy/renewable-energy-directive-targets-and-rules/renewable-energy-directive_en",
     "title": "Renewable Energy Directive, European Commission",
@@ -1502,6 +1563,69 @@
      "retrieved_at": "2026-10-24",
      "quote": "transferred to air transport for the final leg",
      "sourceClass": "primary"
+    }
+   ]
+  },
+  {
+   "parent": "corridor:sea_air_to_air",
+   "child": "mode:ocean",
+   "relation": "corridor_links",
+   "citations": [
+    {
+     "url": "https://www.kuehne-nagel.com/us/services/air-freight/sea-air",
+     "title": "Sea-air logistics, Kuehne+Nagel",
+     "retrieved_at": "2026-10-24",
+     "quote": "Cargo is first transported by sea to a major hub port",
+     "sourceClass": "primary"
+    }
+   ]
+  },
+  {
+   "parent": "carrier:lng",
+   "child": "mode:ocean",
+   "relation": "fuel_for_mode",
+   "citations": [
+    {
+     "url": "https://en.wikipedia.org/wiki/Liquefied_natural_gas",
+     "title": "Liquefied natural gas, Wikipedia",
+     "retrieved_at": "2026-10-24",
+     "quote": "the world's first large-scale passenger ship to be powered with liquefied natural gas",
+     "sourceClass": "reference"
+    },
+    {
+     "url": "https://transport.ec.europa.eu/transport-themes/clean-transport/alternative-fuels-sustainable-mobility-europe/alternative-fuels-infrastructure_en",
+     "title": "Alternative fuels infrastructure, European Commission",
+     "retrieved_at": "2026-10-24",
+     "quote": "liquified methane refuelling points in maritime TEN-T ports",
+     "sourceClass": "primary"
+    }
+   ]
+  },
+  {
+   "parent": "carrier:green_ammonia",
+   "child": "mode:ocean",
+   "relation": "fuel_for_mode",
+   "citations": [
+    {
+     "url": "https://en.wikipedia.org/wiki/Green_ammonia",
+     "title": "Green ammonia, Wikipedia",
+     "retrieved_at": "2026-10-24",
+     "quote": "Green ammonia is considered as a potential fuel for new ships",
+     "sourceClass": "reference"
+    }
+   ]
+  },
+  {
+   "parent": "node:reefer_plugs",
+   "child": "hub:seaport",
+   "relation": "serves_hub",
+   "citations": [
+    {
+     "url": "https://en.wikipedia.org/wiki/Refrigerated_container",
+     "title": "Refrigerated container, Wikipedia",
+     "retrieved_at": "2026-10-24",
+     "quote": "a container ship , or on a quay",
+     "sourceClass": "reference"
     }
    ]
   },
