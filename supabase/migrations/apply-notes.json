@@ -152,5 +152,13 @@
     "unscopedReads": {
       "reroute_events": "the guard refuses a table that already holds rows (none is given a route by guess): it reads the whole table by design; the self-check's own assertions are scoped to the fixture corridors"
     }
+  },
+  "0129_data_evidence_artifacts_move": {
+    "consumer": "src/features/obligations/derive/derive-objects.ts (writes evidence_artifacts) and src/core/workspace/relevance.ts (reads it)",
+    "after": "0128",
+    "assert": "scripts/ci/fixtures/data-0129-evidence-artifacts.assert.sql",
+    "unscopedReads": {
+      "obligation_objects": "a whole-table invariant (no row carries the artifact list in both columns); the assertions about the fixture's rows are scripts/ci/fixtures/data-0129-evidence-artifacts.assert.sql"
+    }
   }
 }

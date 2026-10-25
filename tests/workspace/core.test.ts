@@ -167,6 +167,12 @@ test("obligation grain beats the item grain in the lens; no objects is not decom
   assert.equal(summariseObligationBinding(undefined, {}, relevanceDeps).decomposed, false);
 });
 
+test("the binding lines read the artifacts from evidence_artifacts, de-duplicated; a value that is not a list names none", () => {
+  const doc = { class: "declaration_of_conformity", name: "EU declaration of conformity" };
+  const out = summariseObligationBinding([{ ...OBJECTS[0], evidence_artifacts: [doc, doc, { class: "x" }] }, { ...OBJECTS[1], evidence_artifacts: "not a list" as never }], { orgRoles: ["forwarder"] }, relevanceDeps);
+  assert.deepEqual(out.lines.flatMap((l) => l.artifacts), [doc]);
+});
+
 test("dutyHoldersExcludeForwarder is the monitoring_only test; currentObligationObjects drops superseded versions", () => {
   assert.equal(dutyHoldersExcludeForwarder(["carrier", "port_authority"], relevanceDeps.dutyHolderClasses), true);
   assert.equal(dutyHoldersExcludeForwarder(["carrier", "nvocc"], relevanceDeps.dutyHolderClasses), false);
