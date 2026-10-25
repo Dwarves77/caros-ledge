@@ -1,6 +1,10 @@
 {
   "forms": [
     { "form": "eur per equivalent metric ton of vlsfo", "unit": "EUR/t" },
+    { "form": "€ per tonne of co2e", "unit": "EUR/tCO2e" },
+    { "form": "€ per tco2e", "unit": "EUR/tCO2e" },
+    { "form": "€ per gj", "unit": "EUR/GJ" },
+    { "form": "€ per tonne", "unit": "EUR/t" },
     { "form": "eur per tonne of co2e", "unit": "EUR/tCO2e" },
     { "form": "eur per tonne of co2", "unit": "EUR/tCO2e" },
     { "form": "eur per tonne co2e", "unit": "EUR/tCO2e" },

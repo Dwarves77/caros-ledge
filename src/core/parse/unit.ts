@@ -74,7 +74,7 @@ export const canonicalRatio = (value: Dec, p: UnitParts): { num: Dec; den: Dec }
 
 
 /** The tokens of a unit as stored or as prose: letters and digits starting with a letter (so "2 400" falls away and "tCO2e" stays one token), and the percent sign. */
-const unitTokens = (s: string): string[] => s.toLowerCase().replace(/€/g, " eur ").match(/%|\p{L}[\p{L}\p{N}]*/gu) ?? [];
+const unitTokens = (s: string): string[] => s.toLowerCase().match(/%|\p{Sc}|\p{L}[\p{L}\p{N}]*/gu) ?? [];
 export interface StatutoryForm { form: string; unit: string; exact?: boolean }
 const longestFirst = (forms: readonly StatutoryForm[]): StatutoryForm[] => [...forms].sort((a, b) => b.form.length - a.form.length);
 const STATUTORY_FORMS = longestFirst(statutoryUnitsJson.forms);
