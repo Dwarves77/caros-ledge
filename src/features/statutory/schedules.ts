@@ -17,11 +17,18 @@ function figuresIn(quote: string): number[] {
   return [...numbers(/\d{1,3}(?: \d{3})+(?:,\d+)?/g), ...numbers(/\d+(?:[.,]\d+)?/g)];
 }
 
+/** The instrument an EUR-Lex page is, from the CELEX in its URL: a consolidated text (0YYYYTNNNN-date) is of the instrument 3YYYYTNNNN. Null for a URL that names no CELEX. */
+function citedInstrument(url: string): string | null {
+  return /[?&]uri=CELEX:([\w()-]+)/i.exec(url)?.[1]?.replace(/^0(\d{4}[A-Z]\d{4}).*$/, "3$1") ?? null;
+}
+
 function parseScheduleRow(row: Rec, i: number): ParsedRow {
   const where = "statutory-schedule-producer";
   const citation = requireCitation(row, i, where);
   need(row, ["instrument", "article", "obligation", "formula_id", "scenario_key", "statute_citation", "result", "result_unit"], where, i);
   if (!/^[a-z][a-z0-9_]*$/.test(String(row.formula_id))) throw new RowsFileError(`${where}: row[${i}].formula_id "${row.formula_id}" must be lower-case words joined by underscores.`);
+  const cited = citedInstrument(citation.url);
+  if (cited && cited !== String(row.instrument)) return refuse(`row[${i}] (${row.formula_id} ${row.scenario_key}): keyed to instrument ${row.instrument} but its article is quoted from ${cited}; a schedule row belongs to the instrument whose article it cites.`);
   const result = Number(row.result);
   if (!Number.isFinite(result)) throw new RowsFileError(`${where}: row[${i}].result "${row.result}" is not a number.`);
   if (!figuresIn(citation.quote).includes(result)) return refuse(`row[${i}] (${row.formula_id} ${row.scenario_key}): the quote does not contain the figure ${result}; a figure is transcribed in the instrument's own words, never paraphrased.`);

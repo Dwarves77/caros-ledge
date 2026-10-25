@@ -8,10 +8,12 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { isAbsolute, join, relative, resolve } from "node:path";
 import { tmpdir } from "node:os";
 
+import { digestKind } from "@/core/digest/kinds";
 import type { Exporter } from "@/features/drain";
 import { runResult } from "@/core/types/run-result";
 import type { RunResult } from "@/core/types/run-result";
 
+import { adminFindingsExporter } from "../kinds/admin-opportunity-findings/export";
 import { applyForwardEvents } from "../kinds/forward-events/apply";
 import { forwardEventsExporter } from "../kinds/forward-events/export";
 import { applyHostVerdicts } from "../kinds/host-verdicts/apply";
@@ -20,19 +22,19 @@ import { applyLedgerVerdicts, ledgerVerdictsExporter } from "../kinds/ledger-ver
 import { applyNeedsSearch } from "../kinds/needs-search/apply";
 import { needsExporter } from "../kinds/needs-search/needs";
 import { applyQuestionAnswers, questionExporter } from "../kinds/question-answers/apply";
-import { applyRecordBriefs } from "../kinds/record-briefs/apply";
-import { recordBriefsExporter } from "../kinds/record-briefs/export";
+import { applyItemBriefs } from "../kinds/item-briefs/apply";
+import { itemBriefsExporter } from "../kinds/item-briefs/export";
 import { applyScreenVerdicts, screenVerdictsExporter } from "../kinds/screen-verdicts/apply";
 import { applyThemeBriefs, themeBriefsExporter } from "../kinds/theme-briefs/apply";
 
 import { type ApplyOpts, type BatchDeps, type BatchExport, type Obj } from "./session-batch";
 
-const BATCH_KINDS = ["record-briefs", "question-answers", "needs-search", "forward-events", "theme-briefs", "screen-verdicts", "ledger-verdicts", "host-verdicts"] as const;
+const BATCH_KINDS = ["item-briefs", "question-answers", "needs-search", "forward-events", "theme-briefs", "screen-verdicts", "ledger-verdicts", "host-verdicts", "admin-opportunity-findings"] as const;
 export type BatchKindId = (typeof BATCH_KINDS)[number];
 const isBatchKind = (k: string): k is BatchKindId => (BATCH_KINDS as readonly string[]).includes(k);
 
 /** The key that names an item in a kind's export (the drain's `idKey`). */
-const ID_KEY: Readonly<Record<BatchKindId, string>> = { "record-briefs": "id", "question-answers": "subject_ref", "needs-search": "need_id", "forward-events": "id", "theme-briefs": "theme_id", "screen-verdicts": "census_id", "ledger-verdicts": "candidate_id", "host-verdicts": "host" };
+const ID_KEY: Readonly<Record<BatchKindId, string>> = { "item-briefs": "id", "admin-opportunity-findings": "pattern_value_id", "question-answers": "subject_ref", "needs-search": "need_id", "forward-events": "id", "theme-briefs": "theme_id", "screen-verdicts": "census_id", "ledger-verdicts": "candidate_id", "host-verdicts": "host" };
 const DEFAULT_PART_CHARS = 3_000_000;
 export interface ExportInput { outDir?: string; limit?: number; charBudget?: number; ids?: readonly string[]; mode?: string; runId?: string; repoRoot?: string }
 export interface ExportOpts { limit: number; mode: string; ids?: readonly string[]; charBudget?: number }
@@ -40,7 +42,8 @@ export interface ExportOpts { limit: number; mode: string; ids?: readonly string
 const exporterOf = (kind: BatchKindId, deps: BatchDeps): ((o: ExportOpts) => Promise<BatchExport>) => {
   const budget = (o: ExportOpts) => (o.charBudget ? { charBudget: o.charBudget } : {});
   switch (kind) {
-    case "record-briefs": return recordBriefsExporter(deps.sb, deps.now);
+    case "item-briefs": return itemBriefsExporter(deps.sb, deps.now);
+    case "admin-opportunity-findings": return adminFindingsExporter(deps.sb, deps.now);
     case "question-answers": return (o) => questionExporter(deps.sb, budget(o))(o);
     case "needs-search": return needsExporter(deps.sb);
     case "forward-events": return forwardEventsExporter(deps.sb, deps.now);
@@ -50,12 +53,12 @@ const exporterOf = (kind: BatchKindId, deps: BatchDeps): ((o: ExportOpts) => Pro
     case "host-verdicts": return hostVerdictsExporter(deps.sb);
   }
 };
-const DEFAULT_LIMIT: Readonly<Record<BatchKindId, number>> = { "record-briefs": 40, "question-answers": 100, "needs-search": 100, "forward-events": 100, "theme-briefs": 15, "screen-verdicts": 60, "ledger-verdicts": 100, "host-verdicts": 150 };
+const DEFAULT_LIMIT: Readonly<Record<BatchKindId, number>> = { "item-briefs": 40, "admin-opportunity-findings": 15, "question-answers": 100, "needs-search": 100, "forward-events": 100, "theme-briefs": 15, "screen-verdicts": 60, "ledger-verdicts": 100, "host-verdicts": 150 };
 
 /** The exporters the judgement drain takes (`DrainDeps.exporters`), keyed by the drain's kind ids: the drain's `screen-verdict` is this kit's `screen-verdicts`. */
 export function drainExporters(deps: BatchDeps): Record<string, Exporter> {
   const e = (k: BatchKindId): Exporter => (o) => exporterOf(k, deps)({ ...o });
-  return { "record-briefs": e("record-briefs"), "question-answers": e("question-answers"), "needs-search": e("needs-search"), "theme-briefs": e("theme-briefs"), "ledger-verdicts": e("ledger-verdicts"), "host-verdicts": e("host-verdicts"), "screen-verdict": e("screen-verdicts") };
+  return { "item-briefs": e("item-briefs"), "admin-opportunity-findings": e("admin-opportunity-findings"), "question-answers": e("question-answers"), "needs-search": e("needs-search"), "theme-briefs": e("theme-briefs"), "ledger-verdicts": e("ledger-verdicts"), "host-verdicts": e("host-verdicts"), "screen-verdict": e("screen-verdicts") };
 }
 
 /** Group items into numbered parts so no part's size exceeds `budget`, in input order. An item over the budget on its own goes alone and is flagged oversize (it is exported whole, never cut). Pure. */
@@ -136,12 +139,13 @@ export async function applyBatch(kind: string, deps: BatchDeps, input: { content
     return runResult("failed", { refused: 1 }, [`${kind} batch is not JSON: ${(e as Error).message}`]);
   }
   switch (kind) {
-    case "record-briefs": return applyRecordBriefs(deps, file, o);
+    case "item-briefs": return applyItemBriefs(deps, file, o);
     case "question-answers": return applyQuestionAnswers(deps, file, o);
     case "needs-search": return applyNeedsSearch(deps, file, o);
     case "forward-events": return applyForwardEvents(deps, file, o);
     case "screen-verdicts": return applyScreenVerdicts(deps, file, o);
     case "ledger-verdicts": return applyLedgerVerdicts(deps, file, o);
     case "host-verdicts": return applyHostVerdicts(deps, file, o);
+    case "admin-opportunity-findings": return runResult("failed", { refused: 1 }, [`refused: ${kind} has no validator or apply yet: ${digestKind(kind)?.applyPending ?? "unregistered"}`]);
   }
 }

@@ -1,17 +1,17 @@
-# record-briefs: a session's full-brief batch for record-grade items
+# item-briefs: a session's full-brief batch for record-grade items
 
 A record-grade item holds only the facts the mint lifted from its capture. A session reads the item's stored pool, writes the full brief, its metadata and its claim ledger, and the kit validates the whole batch against the live pool before anything is written. Nothing is sent to a model; the session is the author.
 
 ## Export, author, apply
 
 1. Export (read only, to a scratch directory outside the repository):
-   `node scripts/turn.mjs --stage briefs --mode apply --input '{"briefs":{"export":{"kind":"record-briefs","outDir":"<dir outside the repo>","limit":40}}}'`
+   `node scripts/turn.mjs --stage briefs --mode apply --input '{"briefs":{"export":{"kind":"item-briefs","outDir":"<dir outside the repo>","limit":40}}}'`
    Add `"ids":["<uuid>", ...]` to reach named items, including a quarantined one (a quarantined item is resolved, never left); an id that cannot be exported is named with its reason (`archived`, `not_found`) in each part's `residue`. Without `ids` the export is the next verified record-grade items in id order.
-2. Read each part file's `items`: `pool` is the ONLY text you may cite, `source_pool_hash` is echoed back unchanged, `required_slots` lists each slot with its description, `forward_events` and `timelines` must reach the brief, `claims` and `sections` are what the item already holds.
-3. Write the batch file and apply it: `--input` carries the file text as `batch.content` (for example `jq -n --rawfile c batch.json '{briefs:{batch:{kind:"record-briefs",content:$c}}}'`). Run it dry first (`--mode dry`): the answer lists every refusal and writes nothing.
+2. Read each part file's `items` (the item's joined material is in the bundle: `obligation_objects`, `scores` (priority, severity, urgency tier and the impact scores), `sources` with their tiers and `bias_tags`, `authoring_skills` (the writer skill of the item's format first), and `packets`, the pattern packet of every derived pattern the item is a member of, so the relationship sections are written from joined tables, never from the item alone; the part's `summary` carries the workspace role vocabulary and says `packets: PENDING CONNECT-2 PR B` while the packets are not built, in which case a section that needs a packet is omitted with the skill's note): `pool` is the ONLY text you may cite, `source_pool_hash` is echoed back unchanged, `required_slots` lists each slot with its description, `forward_events` and `timelines` must reach the brief, `claims` and `sections` are what the item already holds.
+3. Write the batch file and apply it: `--input` carries the file text as `batch.content` (for example `jq -n --rawfile c batch.json '{briefs:{batch:{kind:"item-briefs",content:$c}}}'`). Run it dry first (`--mode dry`): the answer lists every refusal and writes nothing.
 
 ```json
-{ "batch": "record-briefs-001", "generated_at": "<ISO>", "authored_by": "session-lane",
+{ "batch": "item-briefs-001", "generated_at": "<ISO>", "authored_by": "session-lane",
   "entries": [ { "item_id": "<uuid>", "source_pool_hash": "<echo>", "body": "<markdown>",
     "metadata": { "<the 26-field contract, core/brief>": "..." },
     "claims": [ { "section": "<canonical key of the format, e.g. 8>", "claim_kind": "FACT", "claim_text": "[slot_key] <text>", "source_span": "<verbatim from the pool>", "source_url": "<pool url>", "slot_key": "binding_position" } ] } ] }
@@ -19,7 +19,7 @@ A record-grade item holds only the facts the mint lifted from its capture. A ses
 
 ## What is refused, before any write (each reason names the item and the token or section)
 
-- The file as a whole: a batch name that is not `record-briefs-...`, `authored_by` other than `session-lane`, a bad `generated_at`, `entries` not an array (nothing is applied).
+- The file as a whole: a batch name that is not `item-briefs-...`, `authored_by` other than `session-lane`, a bad `generated_at`, `entries` not an array (nothing is applied).
 - A stale pool (INV-207): `source_pool_hash` differs from the item's current pool. Re-export and re-author.
 - An item at brief grade without `options.allowBriefOverwrite`.
 - Body: under 600 characters, a fetch-failure explanation, an internal marker, a required slot the prose never addresses.

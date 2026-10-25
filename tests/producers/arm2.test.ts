@@ -94,6 +94,19 @@ test("S1 links a schedule row to the obligation its instrument already holds for
   assert.equal(f.db.rows("statutory_computations").length, rows.length);
 });
 
+test("a schedule row belongs to the instrument whose article it cites: every row of the file is keyed to the CELEX of its page, and a planted row keyed to another instrument is refused", async () => {
+  const rows = rowsOf(STAT);
+  const celexOf = (url: string): string => (/CELEX:([\w-]+)/.exec(url)?.[1] ?? "").replace(/^0(\d{4}[A-Z]\d{4}).*$/, "3$1");
+  assert.deepEqual(rows.filter((r) => r.instrument !== celexOf(r.citation.url)).map((r) => `${String(r.formula_id)} ${String(r.scenario_key)}`), [], "no row is keyed to an instrument other than the one its page is");
+  const f = fixture({ routes: routesFor(rows) });
+  const spec = f.d.catalog["statutory-schedules"] as ProducerSpec;
+  assert.equal((await runProducer(f.d.producers, { spec, dry: true, text: textOf(rows) })).counts.refused_rows_parse, 0);
+  const planted = { ...(rows[0] as Row), instrument: "32023R0956" };
+  const r = await runProducer(f.d.producers, { spec, dry: true, text: textOf([planted]) });
+  assert.equal(r.counts.parsed, 0);
+  assert.match(r.notes.join("|"), /keyed to instrument 32023R0956 but its article is quoted from 32003L0087/);
+});
+
 test("INV-ARM-5: a planted row whose quote paraphrases the figure is refused at parse, a planted row whose quote is not on the capture is refused at apply, and the genuine row beside them is written", async () => {
   const real = rowsOf(STAT);
   const good = real[0] as Row;

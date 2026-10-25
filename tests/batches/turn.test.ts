@@ -51,7 +51,7 @@ test("the turn mints, the stage exports the stub, a session authors from the exp
 
   // EXPORT through the stage: ids and part paths on the run's row, never pool text.
   const out = mkdtempSync(join(tmpdir(), "caros-turn-"));
-  const ex = await runTurn({ stage: "briefs", mode: "apply", input: { briefs: { export: { kind: "record-briefs", outDir: out } } } }, { d: f.d, env: {}, now: () => NOW });
+  const ex = await runTurn({ stage: "briefs", mode: "apply", input: { briefs: { export: { kind: "item-briefs", outDir: out } } } }, { d: f.d, env: {}, now: () => NOW });
   assert.equal(ex.exit, 0);
   const exRow = f.db.rows("harness_runs").find((r) => r.family === "brief-apply" && r.id === ex.rootRunId) as { outputs: { ids: Record<string, string[]> }; outcome: string };
   assert.deepEqual(exRow.outputs.ids.exported_ids, [minted.id]);
@@ -66,11 +66,11 @@ test("the turn mints, the stage exports the stub, a session authors from the exp
     item_id: stub.id, source_pool_hash: stub.source_pool_hash, body: regulatoryBody(), metadata: metadata({ format_type: "regulatory_fact_document", signal_band: null }),
     claims: [fact(A1, "8", "binding_position"), fact(A2, "8", "due_date"), fact(A3, "8"), fact(A4, "14")],
   };
-  const file = JSON.stringify({ batch: "record-briefs-001", generated_at: NOW.toISOString(), authored_by: "session-lane", entries: [entry] });
-  const dry = await runTurn({ stage: "briefs", mode: "dry", input: { briefs: { batch: { kind: "record-briefs", content: file } } } }, { d: f.d, env: {}, now: () => NOW });
+  const file = JSON.stringify({ batch: "item-briefs-001", generated_at: NOW.toISOString(), authored_by: "session-lane", entries: [entry] });
+  const dry = await runTurn({ stage: "briefs", mode: "dry", input: { briefs: { batch: { kind: "item-briefs", content: file } } } }, { d: f.d, env: {}, now: () => NOW });
   assert.equal(dry.exit, 0);
   assert.equal((f.db.rows("intelligence_items").find((r) => r.id === stub.id) as Record<string, unknown>).item_grade, "record", "a dry stage wrote nothing");
-  const run = await runTurn({ stage: "briefs", mode: "apply", input: { briefs: { batch: { kind: "record-briefs", content: file } } } }, { d: f.d, env: {}, now: () => NOW });
+  const run = await runTurn({ stage: "briefs", mode: "apply", input: { briefs: { batch: { kind: "item-briefs", content: file } } } }, { d: f.d, env: {}, now: () => NOW });
   assert.equal(run.exit, 0);
   const row = f.db.rows("harness_runs").find((r) => r.family === "brief-apply" && r.id === run.rootRunId) as { outcome: string; outputs: { counts: Record<string, number>; ids: Record<string, string[]>; notes: string[] } };
   // The applied rows are written and the flywheel passes that follow ran: `success`.
@@ -87,7 +87,7 @@ test("the turn mints, the stage exports the stub, a session authors from the exp
 
   // RE-APPLY: nothing new, the stage records a no-op (the cooldown does not apply: nothing is left to write).
   const writes = f.db.writes().length;
-  const again = await runTurn({ stage: "briefs", mode: "apply", input: { briefs: { batch: { kind: "record-briefs", content: file } } } }, { d: f.d, env: {}, now: () => NOW });
+  const again = await runTurn({ stage: "briefs", mode: "apply", input: { briefs: { batch: { kind: "item-briefs", content: file } } } }, { d: f.d, env: {}, now: () => NOW });
   assert.equal(again.exit, 0);
   const rec = f.db.rows("harness_runs").find((r) => r.family === "brief-apply" && r.id === again.rootRunId) as { outcome: string };
   assert.equal(rec.outcome, "noop");
