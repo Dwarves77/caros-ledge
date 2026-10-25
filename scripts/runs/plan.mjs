@@ -30,14 +30,16 @@ export const Plan = z
     steps: z.array(Step).min(1),
   })
   // INV-RUN-1: the ruling travels with every apply that fetches: a propagate step whose input carries `producers` (the stage opens its producers only for a call that carries the ruling text, and the ledger row records it).
-  // A step that fetches nothing (a derive or retokenise pass, any other stage, a propagate step with no producers) has no cadence to except: the key there is a false claim and is refused.
+  // A step that fetches nothing (a derive or retokenise pass, any other stage) has no cadence to except: the key there is a false claim and is refused. An apply propagate step with no producers still captures the pages the coupling seeds cite (runCouplings, CONNECT-2), so it may carry the ruling, and a wrong one is refused.
   .superRefine((p, ctx) => {
     p.steps.forEach((s, i) => {
       if (s.mode !== "apply") return;
       const given = s.input[s.stage]?.cadence_exception;
       const fetches = s.stage === "propagate" && s.input.propagate?.producers !== undefined;
+      const seedCapture = s.stage === "propagate" && !fetches && given !== undefined;
+      if (seedCapture && given !== p.ruling) ctx.addIssue({ code: "custom", path: ["steps", i, "input"], message: `step "${s.name}": input.propagate.cadence_exception must equal the plan's ruling` });
       if (fetches && given !== p.ruling) ctx.addIssue({ code: "custom", path: ["steps", i, "input"], message: `step "${s.name}": an apply propagate step that fetches (input.propagate.producers) needs input.propagate.cadence_exception equal to the plan's ruling` });
-      if (!fetches && given !== undefined) ctx.addIssue({ code: "custom", path: ["steps", i, "input"], message: `step "${s.name}": cadence_exception is a false claim on a step that fetches nothing (only an apply propagate step with input.propagate.producers fetches): remove it` });
+      if (!fetches && !seedCapture && given !== undefined) ctx.addIssue({ code: "custom", path: ["steps", i, "input"], message: `step "${s.name}": cadence_exception is a false claim on a step that fetches nothing (only an apply propagate step with input.propagate.producers fetches): remove it` });
     });
   })
   .superRefine((p, ctx) => {

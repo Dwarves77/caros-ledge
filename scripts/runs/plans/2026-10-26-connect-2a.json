@@ -1,0 +1,51 @@
+{
+  "ruling": "coordinator 2026-10-25: CONNECT-2 PR A merged 6f714e8 after scope-reviewer LAUNCH; the mining and the five detectors run once for real under rule 17; scrape cadence stays off; no producers fetch in this plan",
+  "steps": [
+    {
+      "name": "couplings-dry",
+      "stage": "propagate",
+      "mode": "dry",
+      "input": {
+        "propagate": {}
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "couplings-apply",
+      "stage": "propagate",
+      "mode": "apply",
+      "input": {
+        "propagate": {
+          "cadence_exception": "coordinator 2026-10-25: CONNECT-2 PR A merged 6f714e8 after scope-reviewer LAUNCH; the mining and the five detectors run once for real under rule 17; scrape cadence stays off; no producers fetch in this plan"
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "patterns-dry",
+      "stage": "connect",
+      "mode": "dry",
+      "input": {
+        "connect": {
+          "scan_limit": 0
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "patterns-apply",
+      "stage": "connect",
+      "mode": "apply",
+      "input": {
+        "connect": {
+          "scan_limit": 0
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    }
+  ]
+}
