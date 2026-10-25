@@ -3,7 +3,7 @@ export type { OrgProfile, OrgSize } from "./org-profile";
 export { getWorkspaceProfile, readWorkspaceProfile } from "./profile";
 export type { WorkspaceProfile } from "./profile";
 export { currentObligationObjects, dutyHoldersExcludeForwarder, fetchObligationObjectsForItem, relevanceForItem, summariseObligationBinding } from "./relevance";
-export type { ItemApplicability, ItemRelevance, ObligationBinding, ObligationObject, RelevanceDeps, RelevanceInput } from "./relevance";
+export type { ItemApplicability, ItemRelevance, ObligationBinding, ObligationObject, PenaltyView, RelevanceDeps, RelevanceInput } from "./relevance";
 export { canWrite, collabFail, collabOk, displayNameOf, isOrgAdmin, loadRoster, nameIndex, namesAfterWrite, orgWatchersOf, readJsonObject, runCollab } from "./roster";
 export { MAX_ASSIGNEES_PER_REQUEST, NOTE_MAX_LENGTH } from "./limits";
 export { itemIdFromDetailPath } from "./paths";

@@ -1,0 +1,134 @@
+{
+  "ruling": "DERIVE-3 brief (coordinator, 2026-10-25, scope reviewer LAUNCH 2026-10-25): bind the captures of the instruments' own pages to their items, derive the penalty provisions of every item-bound capture as obligation objects, fill the sanction class of the existing objects and re-score the items read; the steps fetch nothing, so no scrape cadence is exercised (rule 16 stands) and no step carries a cadence_exception (the plan validator refuses the key on a step that fetches nothing)",
+  "steps": [
+    {
+      "name": "bind-instrument-captures-dry",
+      "stage": "connect",
+      "mode": "dry",
+      "input": {
+        "connect": {
+          "scan_limit": 0
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "bind-instrument-captures",
+      "stage": "connect",
+      "mode": "apply",
+      "input": {
+        "connect": {
+          "scan_limit": 0
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "derive-penalties-dry",
+      "stage": "connect",
+      "mode": "dry",
+      "input": {
+        "connect": {
+          "scan_limit": 500
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "derive-penalties-01",
+      "stage": "connect",
+      "mode": "apply",
+      "input": {
+        "connect": {
+          "scan_limit": 500
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "derive-penalties-02",
+      "stage": "connect",
+      "mode": "apply",
+      "input": {
+        "connect": {
+          "scan_limit": 500
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "derive-penalties-03",
+      "stage": "connect",
+      "mode": "apply",
+      "input": {
+        "connect": {
+          "scan_limit": 500
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "derive-penalties-04",
+      "stage": "connect",
+      "mode": "apply",
+      "input": {
+        "connect": {
+          "scan_limit": 500
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "fill-and-rescore-01",
+      "stage": "propagate",
+      "mode": "apply",
+      "input": {
+        "propagate": {
+          "derive": {
+            "only": "modes-and-maximum",
+            "batch": 5000
+          }
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "rescore-02",
+      "stage": "propagate",
+      "mode": "apply",
+      "input": {
+        "propagate": {}
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "rescore-03",
+      "stage": "propagate",
+      "mode": "apply",
+      "input": {
+        "propagate": {}
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "rescore-04",
+      "stage": "propagate",
+      "mode": "apply",
+      "input": {
+        "propagate": {}
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    }
+  ]
+}

@@ -48,6 +48,8 @@ export interface RelevanceDeps {
   dutyHolderClasses: Readonly<Record<string, { label: string; orgRoles: readonly string[] }>>;
   bindingPosition: Readonly<Record<string, { code: string; label: string; note: string; order: number }>>;
   sectors: readonly SectorDefinition[];
+  /** The label of each sanction class token (data: obligations/derive/data/sanction-classes.json), a noun phrase. */
+  sanctionLabels: Readonly<Record<string, string>>;
 }
 
 export interface ObligationObject {
@@ -57,6 +59,11 @@ export interface ObligationObject {
   duty_holder_class?: string[] | null;
   applicability_trigger?: { attribute?: string; value?: string; comparison?: string; obs_status?: string } | null;
   evidence_artifacts?: Array<{ class?: unknown; name?: unknown }> | null;
+  pinpoint_citation?: string | null;
+  sanction_class?: string | null;
+  enforcement_start?: string | null;
+  /** The statutory schedule rows written for this obligation (statutory_computations), read with the objects. */
+  computations?: Array<{ result?: number | string | null; result_unit?: string | null; scenario_key?: string | null }> | null;
   statutory_maximum?: string | null;
   cost_formula?: string | null;
   direct_compliance_cost?: { amount?: number; currency?: string; basis?: string; source?: string } | null;
@@ -76,11 +83,15 @@ export interface BindingLine {
   objectCount: number;
   costSlots: { slot: string; label: string; entries: string[] }[];
 }
+/** One penalty object as the page reads it: its pinpoint and the columns, the sanction as its data-file label. */
+export interface PenaltyView { pinpoint: string; sanction: string | null; maximum: string | null; formula: string | null; start: string | null; basis: string[] }
 export interface ObligationBinding {
   decomposed: boolean;
   objectCount: number;
   applicability: (ItemApplicability & { grain: "obligation" }) | null;
   lines: BindingLine[];
+  /** The objects that state a penalty (a sanction class, a maximum or a formula): the Penalties section reads these first. */
+  penalties: PenaltyView[];
 }
 export interface ItemRelevance {
   band: "high" | "medium" | "low";
@@ -168,13 +179,25 @@ const directCostLine = (d: { amount?: number; currency?: string; basis?: string;
 };
 
 /** The three cost slots of spec 01 section 3.4, carried separately and never merged; a slot with nothing to show is omitted. */
-function costSlotsFor(objects: ObligationObject[]) {
+const filled = (s: unknown): s is string => typeof s === "string" && s.trim() !== "";
+/** The schedule rows of a penalty object as columns: the result and its unit, in the order read; no connective words. */
+const basisOf = (o: ObligationObject): string[] => (Array.isArray(o.computations) ? o.computations : []).flatMap((c) => (c.result != null && filled(c.result_unit) ? [`${c.result} ${c.result_unit}`] : []));
+const isPenalty = (o: ObligationObject): boolean => filled(o.sanction_class) || filled(o.statutory_maximum) || filled(o.cost_formula);
+
+/** The penalty objects as the page reads them (D4): pinpoint, sanction label, maximum, formula, enforcement start and the statutory schedule rows joined on obligation_id. Pure. */
+function penaltyViews(objects: readonly ObligationObject[], sanctionLabels: RelevanceDeps["sanctionLabels"]): PenaltyView[] {
+  return objects.filter(isPenalty).map((o) => ({ pinpoint: o.pinpoint_citation ?? "", sanction: filled(o.sanction_class) ? (sanctionLabels[o.sanction_class] ?? o.sanction_class) : null, maximum: filled(o.statutory_maximum) ? o.statutory_maximum.trim() : null, formula: filled(o.cost_formula) ? o.cost_formula.trim() : null, start: filled(o.enforcement_start) ? o.enforcement_start : null, basis: basisOf(o) }));
+}
+
+function costSlotsFor(objects: ObligationObject[], sanctionLabels: RelevanceDeps["sanctionLabels"]) {
   const penalty: string[] = [];
   const direct: string[] = [];
   const effort: string[] = [];
   for (const o of objects) {
-    if (typeof o.statutory_maximum === "string" && o.statutory_maximum.trim()) penalty.push(o.statutory_maximum.trim());
-    if (typeof o.cost_formula === "string" && o.cost_formula.trim()) penalty.push(`Formula: ${o.cost_formula.trim()}`);
+    if (isPenalty(o)) {
+      const v = penaltyViews([o], sanctionLabels)[0] as PenaltyView;
+      penalty.push(...[v.sanction, v.maximum, v.formula ? `Formula: ${v.formula}` : null].filter(filled), ...v.basis);
+    }
     const d = o.direct_compliance_cost;
     if (d && typeof d === "object" && typeof d.amount === "number") direct.push(directCostLine(d));
     const e = o.effort;
@@ -194,7 +217,7 @@ function costSlotsFor(objects: ObligationObject[]) {
 /** Summarise an item's obligation objects for the binding banner and the gate. Pure. */
 export function summariseObligationBinding(objects: unknown, orgProfile: Partial<OrgProfile>, deps: RelevanceDeps): ObligationBinding {
   const list = (Array.isArray(objects) ? objects : []).filter((o): o is ObligationObject => !!o && typeof o === "object");
-  if (!list.length) return { decomposed: false, objectCount: 0, applicability: null, lines: [] };
+  if (!list.length) return { decomposed: false, objectCount: 0, applicability: null, lines: [], penalties: [] };
   const profile: OrgProfile = { orgRoles: arr(orgProfile.orgRoles), orgSize: orgProfile.orgSize && typeof orgProfile.orgSize === "object" ? orgProfile.orgSize : DEFAULT_SIZE };
   const perObject = list.map((o) => ({ object: o, applicability: objectApplicability(o, profile, deps) }));
   const order = Object.values(deps.bindingPosition)
@@ -223,11 +246,11 @@ export function summariseObligationBinding(objects: unknown, orgProfile: Partial
       applicability: aggregateApplicability(group.map((p) => p.applicability)),
       objectCount: group.length,
       artifacts: artifactsOf(group.map((p) => p.object)),
-      costSlots: costSlotsFor(group.map((p) => p.object)),
+      costSlots: costSlotsFor(group.map((p) => p.object), deps.sanctionLabels),
     };
   });
   const applicability = aggregateApplicability(perObject.map((p) => p.applicability));
-  return { decomposed: true, objectCount: list.length, applicability: applicability ? { ...applicability, grain: "obligation" } : null, lines };
+  return { decomposed: true, objectCount: list.length, applicability: applicability ? { ...applicability, grain: "obligation" } : null, lines, penalties: penaltyViews(list, deps.sanctionLabels) };
 }
 
 /** Keep only the current version of each object: drop any row another row names in `supersedes`. Pure. */
@@ -238,7 +261,7 @@ export function currentObligationObjects<T extends { obligation_id?: string; sup
 }
 
 const OBLIGATION_OBJECT_COLUMNS =
-  "obligation_id, version, supersedes, pinpoint_citation, binding_position, duty_holder_class, applicability_trigger, evidence_artifacts, statutory_maximum, cost_formula, direct_compliance_cost, effort";
+  "obligation_id, version, supersedes, pinpoint_citation, binding_position, duty_holder_class, applicability_trigger, evidence_artifacts, sanction_class, enforcement_start, statutory_maximum, cost_formula, direct_compliance_cost, effort";
 
 /**
  * An item's current obligation objects through an INJECTED client (request-scoped, RLS applies). `itemId` is a uuid or a legacy id.
@@ -252,7 +275,13 @@ export async function fetchObligationObjectsForItem(client: Db, itemId: string, 
   const read = await boundedRead((n) => client.from("obligation_objects").select(OBLIGATION_OBJECT_COLUMNS).eq("instrument_item_id", uuid).limit(n), { limit });
   if (read.error) throw new LookupError("obligation_objects", read.error);
   if (read.truncated) throw new LookupError("obligation_objects", { message: `obligation objects for ${uuid} reached the ${limit}-row bound; the list would be incomplete` });
-  return currentObligationObjects<ObligationObject>(read.data);
+  const current = currentObligationObjects<ObligationObject>(read.data);
+  // D4: the statutory schedule rows of the current objects (the join the penalty slot and the Penalties section read), through the same client
+  const ids = current.flatMap((o) => (o.obligation_id ? [o.obligation_id] : []));
+  const rows = ids.length ? await boundedRead((n) => client.from("statutory_computations").select("obligation_id, result, result_unit, scenario_key").in("obligation_id", ids).order("scenario_key", { ascending: true }).limit(n), { limit }) : null;
+  if (rows?.error) throw new LookupError("statutory_computations", rows.error);
+  if (rows?.truncated) throw new LookupError("statutory_computations", { message: `statutory computations for ${uuid} reached the ${limit}-row bound; the list would be incomplete` });
+  return current.map((o) => ({ ...o, computations: ((rows?.data ?? []) as unknown as Array<{ obligation_id: string; result: number | string | null; result_unit: string | null; scenario_key: string | null }>).filter((c) => c.obligation_id === o.obligation_id) }));
 }
 
 // Import/export/customs signals: the forwarder, importer and exporter roles all engage.

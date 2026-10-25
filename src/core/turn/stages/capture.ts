@@ -2,7 +2,7 @@
 // Ported from old_repo/scripts/turns/run-fetch-drain.mjs (lines 268-391)
 // Stage 4, capture: the sources the change stage found changed are queued (one open row per source), then the capture worker drains the queue and stores each whole document.
 // The worker reads no gate of its own: this stage reads the gate first, and the worker call carries a timeout.
-import { capture } from "@/core/fetch";
+import { capture, itemForCitedUrl } from "@/core/fetch";
 import { classifyBody, isStorableClass } from "@/core/fetch/classify-body";
 import { closeBrowser, fetchBrowser, type BrowserDeps } from "@/core/fetch/headless";
 import { storageMaxChars } from "@/core/fetch/policy";
@@ -61,8 +61,14 @@ export async function captureCited(d: BuiltDeps, cited: readonly { url: string; 
       notes.push(`${url}: ${"source_id" in rated ? (got?.holdReason ?? "no usable capture") : `not registered (${rated.status})`}`);
       continue;
     }
-    const s = await storeCapture(d.sb as unknown as StoreDb, { sourceId: rated.source_id, sourceUrl: url, sourceName: title, finalUrl: url, text: got.text, title: got.title, httpStatus: got.status ?? 200, channel: got.channel ?? "direct", numberLocale: null, itemId: null, itemIds: [], declaredTransforms: [{ declared_transform: "rows-file-citation", at: d.now().toISOString() }], ceilingBind: null, ceiling: storageMaxChars(d.env) }, () => d.now().getTime(), d.now().getTime());
+    // DERIVE-3 D3: a page that names one live instrument item by its CELEX, ELI or source URL is stored with that item (the obligation guard refuses an object on a capture bound to no item)
+    const itemId = await itemForCitedUrl(d.sb, url);
+    const s = await storeCapture(d.sb as unknown as StoreDb, { sourceId: rated.source_id, sourceUrl: url, sourceName: title, finalUrl: url, text: got.text, title: got.title, httpStatus: got.status ?? 200, channel: got.channel ?? "direct", numberLocale: null, itemId, itemIds: [], declaredTransforms: [{ declared_transform: "rows-file-citation", at: d.now().toISOString() }], ceilingBind: null, ceiling: storageMaxChars(d.env) }, () => d.now().getTime(), d.now().getTime());
     if (s.outcome === "failed") notes.push(`${url}: ${s.detail}`);
+    else if (itemId && s.captureId) {
+      const bound = await d.sb.from("agent_run_searches").update({ intelligence_item_id: itemId }).eq("id", s.captureId).is("intelligence_item_id", null);
+      if (bound.error) notes.push(`${url}: binding the held capture to its item failed: ${bound.error.message}`);
+    }
     counts[s.outcome === "captured" ? "captured" : s.outcome === "unchanged" ? "unchanged" : "failed"] += 1;
   }
   await closeBrowser(browserDeps);

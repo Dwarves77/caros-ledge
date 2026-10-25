@@ -2,6 +2,7 @@
 // The lens's three tables and its gate, from their one homes (the applicability gate, the closed vocabularies, the sector list): the detail relevance route and the list readers (a row's client score) read the same deps.
 import { computeApplicability } from "@/core/applicability";
 import { DUTY_HOLDER_CLASSES, VOCABULARIES } from "@/core/contracts/vocabularies";
+import sanctionJson from "@/features/obligations/derive/data/sanction-classes.json";
 
 import type { RelevanceDeps } from "./relevance";
 import { ALL_SECTORS } from "./vocabulary";
@@ -11,4 +12,5 @@ export const relevanceDeps: RelevanceDeps = {
   dutyHolderClasses: Object.fromEntries(Object.values(DUTY_HOLDER_CLASSES).map((c) => [c.code, { label: c.label, orgRoles: c.orgRoles ?? [] }])),
   bindingPosition: Object.fromEntries(Object.values(VOCABULARIES.binding_position ?? {}).map((p) => [p.code, { code: p.code, label: p.label, note: String((p as { note?: unknown }).note ?? ""), order: p.order ?? 0 }])),
   sectors: ALL_SECTORS,
+  sanctionLabels: Object.fromEntries(sanctionJson.classes.map((c) => [c.token, c.label])),
 };
