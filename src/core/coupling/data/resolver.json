@@ -1,0 +1,4 @@
+{
+  "minLength": 4,
+  "stop": ["chad", "turkey", "jersey", "georgia", "jordan", "guinea", "niger", "commission", "union", "regulation", "regulations", "directive", "member", "states", "energy", "transport", "freight", "carbon", "emissions", "government", "authority", "agency", "council", "office", "ports", "port", "law", "act", "annex", "article", "decision", "parties", "party", "agreement", "committee", "state", "european", "international", "national", "general", "official", "journal", "marine", "maritime", "road", "rail", "air", "sea", "water", "fuel", "fuels", "power", "electricity", "oil", "gas", "waste", "standard", "standards", "code", "order", "rules", "scheme", "system", "systems", "service", "services", "this decision", "this regulation", "this directive", "the commission", "the decision", "the regulation", "the directive", "member states", "member state"]
+}

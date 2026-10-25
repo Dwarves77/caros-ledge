@@ -1,7 +1,7 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "analysisMaxTier": 3,
-  "velocity": { "windowsDays": [30, 90], "baselineDays": 180, "minBaseline": 3, "minSources": 3, "minDistinct": 2, "excludeKinds": ["GAP"], "excludeClasses": ["mode", "hub", "attribute", "window"], "confidence": 0.6 },
+  "velocity": { "windowsDays": [30, 90], "baselineDays": 180, "minBaseline": 3, "maxEvidence": 50, "minSources": 3, "minDistinct": 2, "excludeKinds": ["GAP"], "excludeClasses": ["mode", "hub", "attribute", "window"], "confidence": 0.6 },
   "mandateCapacity": { "confidence": 0.7 },
   "leadLag": { "triggerKinds": ["implementing_act_due", "delegated_act_due", "guidance_expected", "phase_step"], "leadDays": [60, 180], "moveWindowDays": 90, "minMove": 0.05, "confidence": 0.6 },
   "crossModal": { "relations": { "feedstock_of": 1, "competes_for_feedstock": 0.8, "shares_grid_zone": 0.6, "corridor_links": 0.5 }, "recencyDays": 90, "minStrength": 0.3, "minMove": 0.05, "confidence": 0.5 },

@@ -40,7 +40,7 @@ export function plant(f: Fixture): void {
     claimWithItem("research", "Green ammonia offtake agreements were announced by three producers.", ago(14), src(3), 3),
     ...[120, 125, 130].map((d, n) => claimWithItem("reg", "Green ammonia offtake agreements were announced by three producers.", ago(d), src(4 + n * 40), 1)),
     // the claim a pending trigger rests on, and the recent rows the cross-modal cases land on
-    claimWithItem("reg", "HVO deliveries to road fleets widened.", ago(200), src(5), 1, "FACT", HVO_CLAIM),
+    claimWithItem("reg", "Hydrotreated vegetable oil deliveries to road fleets widened.", ago(200), src(5), 1, "FACT", HVO_CLAIM),
     claimWithItem("market", "Lignocellulosic residues were contracted for methanol output.", ago(10), src(6), 2),
     claimWithItem("market", "HEFA output rose at two refiners.", ago(10), src(7), 2),
     claimWithItem("market", "HDV charging sites opened at two depots.", ago(10), src(8), 2),
@@ -58,7 +58,7 @@ export function plant(f: Fixture): void {
   db.seed("oem_tech_roadmaps", [{ roadmap_id: uuid(400), manufacturer_id: null, tech_category: "saf_refinery", commercial_stage: "announced", target_year: 2029, announced_at: null, source_id: src(20), origin_class: "official", derivation: "assessed" }]);
   db.seed("item_forward_events", [{ id: uuid(500), intelligence_item_id: ITEM.reg, event_date: new Date(NOW.getTime() + 100 * 86_400_000).toISOString().slice(0, 10), date_precision: "day", event_kind: "phase_step", obligation_text: "next phase", source_kind: "claim", source_claim_id: HVO_CLAIM, source_span: "x", confidence: "high", extractor_version: "fixture" }]);
   db.seed("market_series", [
-    point(1, "HVO spot price", "fixture:hvo-spot", 100, ago(70)), point(2, "HVO spot price", "fixture:hvo-spot", 110, ago(10)),
+    point(1, "Hydrotreated vegetable oil spot price", "fixture:hvo-spot", 100, ago(70)), point(2, "Hydrotreated vegetable oil spot price", "fixture:hvo-spot", 110, ago(10)),
     point(3, "Bio-methanol price", "fixture:bio-methanol", 200, ago(60)), point(4, "Bio-methanol price", "fixture:bio-methanol", 220, ago(10)),
     point(5, "Shore power tariff", "fixture:shore-power", 50, ago(60)), point(6, "Shore power tariff", "fixture:shore-power", 55, ago(10)),
   ]);

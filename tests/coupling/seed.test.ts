@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { COUPLING_RELATIONS, COUPLINGS, couplingByKey } from "@/core/coupling";
+import { ALIAS_SEEDS } from "@/core/coupling/aliases";
 import { entityId } from "@/core/entities";
 import { seedCouplings } from "@/core/coupling";
 
@@ -17,7 +18,7 @@ test("the propagate stage captures the cited pages and seeds every coupling, eac
   assert.equal(r.exit, 0);
   const counts = (f.db.rows("harness_runs").find((x) => x.family === "propagation")?.outputs as { counts: Record<string, number> }).counts;
   assert.equal(counts.seed_refused, 0);
-  assert.equal(counts.seed_entities_written, COUPLINGS.length + 0, "every coupling is an entity (the instruments are new in the fixture)");
+  assert.equal(counts.seed_entities_written, COUPLINGS.length + ALIAS_SEEDS.length, "every coupling is an entity, and so is every alias target the spine did not hold (all new in the fixture)");
   assert.equal(counts.seed_relations_written, COUPLING_RELATIONS.length);
   const aliases = f.db.rows("entity_aliases");
   assert.ok(aliases.length > COUPLINGS.length);
@@ -38,7 +39,7 @@ test("a second run writes nothing, and a dry run plans without writing", async (
   const again = await seedCouplings({ sb: f.d.sb, now: () => NOW }, { dry: false });
   assert.deepEqual([again.counts.seed_entities_written, again.counts.seed_aliases_written, again.counts.seed_relations_written], [0, 0, 0]);
   const dry = await seedCouplings({ sb: f.d.sb, now: () => NOW }, { dry: true });
-  assert.equal(dry.counts.seed_entities_planned, COUPLINGS.length);
+  assert.equal(dry.counts.seed_entities_planned, COUPLINGS.length + ALIAS_SEEDS.length);
   assert.deepEqual([f.db.rows("entities").length, f.db.rows("entity_aliases").length, f.db.rows("entity_relations").length], before);
 });
 

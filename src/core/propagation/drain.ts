@@ -62,7 +62,7 @@ export async function resolveInputs(sb: Db, inputs: readonly InputRef[]): Promis
   const out: ResolvedMethodInput[] = [];
   for (const ref of inputs) {
     const col = PK_COLUMN[ref.table];
-    const extra = { ...(ref.kind ? { kind: ref.kind } : {}), ...(ref.entities ? { entities: ref.entities } : {}), ...(ref.relation ? { relation: ref.relation } : {}), ...(ref.surface ? { surface: ref.surface } : {}), ...(ref.at ? { at: ref.at } : {}) };
+    const extra = { ...(ref.kind ? { kind: ref.kind } : {}), ...(ref.entities ? { entities: ref.entities } : {}), ...(ref.relation ? { relation: ref.relation } : {}), ...(ref.surface ? { surface: ref.surface } : {}), ...(ref.at ? { at: ref.at } : {}), ...(ref.summary ? { summary: ref.summary } : {}) };
     if (!col) {
       out.push({ table: ref.table, pk: ref.pk, version: ref.version ?? null, row: null, ...extra });
       continue;

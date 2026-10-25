@@ -83,7 +83,8 @@ async function runProducers(call: FamilyCall, d: BuiltDeps, p: NonNullable<Propa
 /** The coupling vocabulary and the refs mined over the corpus (CONNECT-2): the cited pages are captured while the fetch gate is open (a ruled run opens it for one call), then the seeds are written from the captures held, then every claim, typed row and tag is mined into entity_refs. */
 async function runCouplings(call: FamilyCall, d: BuiltDeps, exception: string): Promise<RunResult> {
   const ruled = !call.dry && exception !== "";
-  const capture = !call.dry && ((await d.gate.refresh()) || ruled) ? await captureCited(d, seedPages(), ruled) : null;
+  // a cited page the licence register bars, or a fetch that throws, is a note on the run, not the end of it: the seeds that page grounds are refused and counted
+  const capture = !call.dry && ((await d.gate.refresh()) || ruled) ? await captureCited(d, seedPages(), ruled).catch((e: unknown) => runResult("partial", {}, [e instanceof Error ? e.message : String(e)])) : null;
   const seeded = await seedCouplings({ sb: d.sb, now: d.now }, { dry: call.dry });
   const mined = await mineRefs({ sb: d.sb, now: d.now }, { dry: call.dry });
   return runResult(worst(seeded.outcome, mined.outcome, capture?.outcome === "failed" ? "partial" : "ok"), { ...pick(capture, "seed_capture_"), ...seeded.counts, ...mined.counts }, [...(capture?.notes ?? []), ...seeded.notes, ...mined.notes]);

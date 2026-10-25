@@ -7,11 +7,12 @@ import { createHash } from "node:crypto";
 
 import { normaliseMode } from "@/core/contracts/vocabularies";
 import type { Db } from "@/core/db";
+import { nameForJurisdiction } from "@/core/entities/unlocode-names";
 import type { RunResult } from "@/core/types/run-result";
 
 import { COLUMNS, couplingByKey, couplingById, couplingsForScenario, roleOf, type ColumnMap } from "./coupling";
 import { readAll, type Row } from "./read";
-import { buildResolver, resolveText, type Resolver } from "./resolve";
+import { buildResolver, resolveText, type NameSource, type Resolver } from "./resolve";
 
 const REFS_VERSION = "refs@1.0.0";
 const REFS_ASSERTED_BY = "coupling/refs";
@@ -39,6 +40,8 @@ export interface MineContext {
   resolver: Resolver;
   /** The entities that exist: a ref to any other is refused by the foreign key, so none is planned. */
   known: ReadonlySet<string>;
+  /** The kind of each entity that exists, for the counts by kind. */
+  kinds: ReadonlyMap<string, string>;
   /** The refs held so far, `${ref_table}|${ref_id}` to entity ids: what a `refs` mapping copies. */
   held: Map<string, string[]>;
 }
@@ -110,14 +113,24 @@ export async function writeRefs(sb: Db, refs: readonly RefRow[], held: ReadonlyS
 export async function mineRefs(deps: { sb: Db; now: () => Date }, input: { dry: boolean }): Promise<RunResult<{ ids: Record<string, string[]> }>> {
   const { sb } = deps;
   const notes: string[] = [];
-  const [entities, aliases, existing] = await Promise.all([
-    readAll<{ entity_id: string; kind: string; canonical_name: string }>(sb, "entities", "entity_id,kind,canonical_name", ["entity_id"]),
+  const [entities, aliases, identifiers, titled, existing] = await Promise.all([
+    readAll<{ entity_id: string; kind: string; canonical_name: string; display_name: string | null }>(sb, "entities", "entity_id,kind,canonical_name,display_name", ["entity_id"]),
     readAll<{ entity_id: string; alias: string }>(sb, "entity_aliases", "entity_id,alias", ["entity_id", "alias", "alias_kind", "asserted_by"]),
+    readAll<{ entity_id: string; value: string }>(sb, "entity_identifiers", "entity_id,value", ["entity_id", "scheme", "value"]),
+    readAll<{ instrument_entity_id: string; title: string }>(sb, "intelligence_items", "id,instrument_entity_id,title", ["id"], (q) => q.not("instrument_entity_id", "is", null)),
     readAll<{ ref_table: string; ref_id: string; entity_id: string; role: string }>(sb, "entity_refs", "ref_table,ref_id,entity_id,role", ["ref_table", "ref_id", "entity_id", "role"]),
   ]);
   const held = new Map<string, string[]>();
   for (const r of existing) held.set(`${r.ref_table}|${r.ref_id}`, [...(held.get(`${r.ref_table}|${r.ref_id}`) ?? []), r.entity_id]);
-  const ctx: MineContext = { resolver: buildResolver(aliases, entities.filter((e) => e.kind === "instrument")), known: new Set(entities.map((e) => e.entity_id)), held };
+  // every name the spine holds: the aliases, each entity's canonical and display name (a jurisdiction's by its country name), its identifiers, and the title of the instrument an item carries
+  const names: NameSource[] = [
+    ...aliases.map((a) => ({ entity_id: a.entity_id, name: a.alias, how: "alias" as const })),
+    ...entities.filter((e) => e.kind !== "obligation").flatMap((e) => [e.canonical_name, e.display_name, e.kind === "jurisdiction" ? nameForJurisdiction(e.canonical_name) : null].flatMap((name) => (name ? [{ entity_id: e.entity_id, name, how: "name" as const }] : []))),
+    ...identifiers.map((i) => ({ entity_id: i.entity_id, name: i.value, how: "name" as const })),
+    ...titled.map((i) => ({ entity_id: i.instrument_entity_id, name: i.title.replace(/^The /, ""), how: "name" as const })),
+  ];
+  const resolver = buildResolver(names, entities.filter((e) => e.kind === "instrument"));
+  const ctx: MineContext = { resolver, known: new Set(entities.map((e) => e.entity_id)), held, kinds: new Map(entities.map((e) => [e.entity_id, e.kind])) };
   const heldKeys = new Set(existing.map(refKey));
   const plan: RefRow[] = [];
   const take = (refs: RefRow[]) => {
@@ -128,7 +141,8 @@ export async function mineRefs(deps: { sb: Db; now: () => Date }, input: { dry: 
   const claims = await readAll<{ id: string; claim_text: string; claim_kind: string }>(sb, "section_claim_provenance", "id,claim_text,claim_kind", ["id"]);
   const fromClaims = claimRefs(claims, ctx);
   take(fromClaims.refs);
-  const counts: Record<string, number> = { claims: claims.length, claims_resolved: fromClaims.resolved, refs_claims_planned: fromClaims.refs.length };
+  const counts: Record<string, number> = { claims: claims.length, claims_resolved: fromClaims.resolved, refs_claims_planned: fromClaims.refs.length, resolver_names: resolver.phrases.size, resolver_names_ambiguous: resolver.ambiguous };
+  for (const r of fromClaims.refs) counts[`claim_refs_${ctx.kinds.get(r.entity_id) ?? "coupling"}`] = (counts[`claim_refs_${ctx.kinds.get(r.entity_id) ?? "coupling"}`] ?? 0) + 1;
   for (const [kind, n] of Object.entries(fromClaims.unresolved)) counts[`claims_unresolved_${kind.toLowerCase()}`] = n;
   for (const map of COLUMNS) {
     const columns = [map.pk, ...map.maps.flatMap((m) => (m.column ? [m.column] : []))];

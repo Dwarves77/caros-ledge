@@ -34,6 +34,8 @@ export interface Evidence {
   entities: string[];
   /** The relation a cross-modal pattern crossed. */
   relation?: Relation;
+  /** On a capped pattern's one summary edge: how many rows the pattern stands on and the window they were read over. */
+  summary?: Record<string, number>;
 }
 export interface Pattern {
   kind: PatternKind;

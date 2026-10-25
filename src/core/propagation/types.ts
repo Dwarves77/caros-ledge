@@ -21,6 +21,8 @@ export interface InputRef {
   surface?: string;
   /** The day a claim counts from (its item's added date), which the claim row does not hold. */
   at?: string;
+  /** The counts a capped pattern's summary edge carries. */
+  summary?: Record<string, number>;
 }
 
 /** A derived value as a figure component or the gate sees it. */

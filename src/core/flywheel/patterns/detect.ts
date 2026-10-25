@@ -47,7 +47,11 @@ function velocity(i: PatternInput): Pattern[] {
       // the share of the corpus's flow the entity holds in the window against the share it held before; a window or baseline with no flow defines none
       const [shareNow, shareBefore] = [members.length / inWindow, Math.max(base.length, 1) / inBaseline];
       if (i.flow ? !inWindow || !inBaseline || shareNow <= base.length / inBaseline : i.carry === undefined) continue;
-      out.push({ kind: "velocity", key: `${entity}|${w}`, entity, value: i.flow ? shareNow / shareBefore : (i.carry as number), unit: "ratio", evidence: [...members.map((f) => ev(f, "member")), ...base.map((f) => ev(f, "key"))] });
+      // the pattern stands on every member, but its edges are the most recent ones (patterns.json caps them) and one summary edge, on the latest baseline claim, with the counts and the windows
+      const kept = [...members].sort((a, b) => String(b.at).localeCompare(String(a.at)) || a.pk.localeCompare(b.pk)).slice(0, c.maxEvidence);
+      const summary = { members: members.length, baseline: base.length, windowDays: w, baselineDays: c.baselineDays };
+      const anchor = latestFact(base);
+      out.push({ kind: "velocity", key: `${entity}|${w}`, entity, value: i.flow ? shareNow / shareBefore : (i.carry as number), unit: "ratio", evidence: [...kept.map((f) => ev(f, "member")), ...(anchor ? [{ ...ev(anchor, "key"), summary }] : [])] });
       break;
     }
   }

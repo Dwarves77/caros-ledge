@@ -11,7 +11,7 @@ export const PATTERNS = z
   .object({
     version: z.string().min(1),
     analysisMaxTier: z.number().int().min(1).max(7),
-    velocity: z.object({ windowsDays: z.array(dayCount).min(1), baselineDays: dayCount, minBaseline: dayCount, minSources: dayCount, minDistinct: dayCount, excludeKinds: z.array(z.string()), excludeClasses: z.array(z.string()), confidence: confidenceScale }).strict(),
+    velocity: z.object({ windowsDays: z.array(dayCount).min(1), baselineDays: dayCount, minBaseline: dayCount, maxEvidence: dayCount, minSources: dayCount, minDistinct: dayCount, excludeKinds: z.array(z.string()), excludeClasses: z.array(z.string()), confidence: confidenceScale }).strict(),
     mandateCapacity: z.object({ confidence: confidenceScale }).strict(),
     leadLag: z.object({ triggerKinds: z.array(z.string()).min(1), leadDays: z.tuple([dayCount, dayCount]), moveWindowDays: dayCount, minMove: z.number().positive(), confidence: confidenceScale }).strict(),
     crossModal: z.object({ relations: z.record(z.string(), z.number().positive().max(1)), recencyDays: dayCount, minStrength: z.number().min(0).max(1), minMove: z.number().positive(), confidence: confidenceScale }).strict(),
