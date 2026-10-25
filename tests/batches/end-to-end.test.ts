@@ -6,6 +6,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 
+import { digestKind } from "@/core/digest/kinds";
 import { applyBatch, exportBatch } from "@/features/batches";
 
 import { batchFile, goodBody, claims, ITEM, metadata, NOW, SPAN_FORCE, SPAN_REPORT } from "./world.ts";
@@ -16,7 +17,7 @@ interface Case { kind: string; world(): World; author(items: Item[], w: World): 
 
 const mutations = (w: World) => w.db.writes().length;
 const CASES: Case[] = [
-  { kind: "record-briefs", world: recordWorld, author: (items) => batchFile("record-briefs", [{ item_id: items[0]?.id, source_pool_hash: items[0]?.source_pool_hash, body: goodBody(), metadata: metadata(), claims: claims() }]), applied: (w) => w.db.rows("intelligence_items").filter((r) => r.item_grade === "brief").length },
+  { kind: "item-briefs", world: recordWorld, author: (items) => batchFile("item-briefs", [{ item_id: items[0]?.id, source_pool_hash: items[0]?.source_pool_hash, body: goodBody(), metadata: metadata(), claims: claims() }]), applied: (w) => w.db.rows("intelligence_items").filter((r) => r.item_grade === "brief").length },
   { kind: "question-answers", world: qaWorld, author: (items) => batchFile("question-answers", [{ subject_ref: REF, outcome: "answered", pool_hash: items[0]?.pool_hash, status_token: "CONFIRMED", confidence: 0.9, answer: SPAN_REPORT, cited_item_ids: [ITEM], evidence: [{ item_id: ITEM, claim_ids: [], source_span: SPAN_REPORT }] }]), applied: (w) => w.db.rows("inference_records").length },
   { kind: "needs-search", world: needsWorld, author: (items) => batchFile("needs-search", [{ need_id: items.find((i) => i.need_id === T_FLAG)?.need_id, url: "https://www.imo.org/en/OurWork/Environment/EEXI.aspx", institution: "International Maritime Organization", why_authoritative: "The IMO publishes the guidelines", confidence: 0.9 }]), applied: (w) => w.db.rows("census_worklist").length },
   { kind: "forward-events", world: feWorld, author: (items) => batchFile("forward-events", [{ item_id: items[0]?.id, ticket_ids: items[0]?.ticket_ids, events: [{ event_date: "2027-01-01", date_precision: "day", event_kind: "entry_into_force", obligation_text: "The Regulation enters into force on 1 January 2027.", source_kind: "claim", source_claim_id: ((items[0]?.claims as Item[])[0] as Item).claim_id ?? CLAIM, source_section_id: null, source_span: SPAN_FORCE, confidence: "high", extractor_version: "e2e" }] }]), applied: (w) => w.db.rows("item_forward_events").length },
@@ -65,7 +66,8 @@ for (const c of CASES) {
 
 test("every kind in the kit has a case here", async () => {
   const note = (await exportBatch("mystery", recordWorld().deps)).notes[0] ?? "";
-  const kinds = /\(kinds: ([^)]*)\)/.exec(note)?.[1]?.split(", ") ?? [];
+  // A kind whose apply is pending (the admin kind until DIGEST-1 PR B) has no apply to run end to end: tests/digest/exporters.test.ts proves its export and its refusal.
+  const kinds = (/\(kinds: ([^)]*)\)/.exec(note)?.[1]?.split(", ") ?? []).filter((k) => !digestKind(k)?.applyPending);
   assert.equal(kinds.length, 8, note);
   assert.deepEqual(CASES.map((c) => c.kind).sort(), [...kinds].sort());
 });

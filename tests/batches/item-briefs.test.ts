@@ -2,13 +2,13 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { applyBatch } from "@/features/batches";
-import { validateRecordBriefEntry } from "@/features/batches/kinds/record-briefs/validate";
+import { validateRecordBriefEntry } from "@/features/batches/kinds/item-briefs/validate";
 
 import { batchFile, batchWorld, claims, factClaim, goodBody, ITEM, metadata, NOW, OFFICIAL_TEXT, OFFICIAL_URL, poolHashOf, recordEntry, SPAN_REPORT } from "./world.ts";
 
 type World = ReturnType<typeof batchWorld>;
 const apply = (w: World, entries: unknown[], o: { dry?: boolean; options?: Record<string, unknown>; file?: Record<string, unknown> } = {}) =>
-  applyBatch("record-briefs", w.deps, { content: JSON.stringify(batchFile("record-briefs", entries, o.file)), dry: o.dry ?? false, runId: "run-1", ...(o.options ? { options: o.options } : {}) });
+  applyBatch("item-briefs", w.deps, { content: JSON.stringify(batchFile("item-briefs", entries, o.file)), dry: o.dry ?? false, runId: "run-1", ...(o.options ? { options: o.options } : {}) });
 const item = (w: World) => w.db.rows("intelligence_items").find((r) => r.id === ITEM) as Record<string, unknown>;
 const refusals = (r: Awaited<ReturnType<typeof apply>>) => r.notes.join("\n");
 
@@ -54,7 +54,7 @@ test("INV-210: a structural defect refuses the whole file; a defective entry is 
     assert.equal(r.outcome, "failed");
     assert.equal(r.counts.file_refused, 1, JSON.stringify(bad));
   }
-  const notArray = await applyBatch("record-briefs", w.deps, { content: JSON.stringify({ batch: "record-briefs-001", generated_at: NOW.toISOString(), authored_by: "session-lane", entries: "x" }), dry: false });
+  const notArray = await applyBatch("item-briefs", w.deps, { content: JSON.stringify({ batch: "item-briefs-001", generated_at: NOW.toISOString(), authored_by: "session-lane", entries: "x" }), dry: false });
   assert.equal(notArray.counts.file_refused, 1);
   assert.equal(w.db.writes("intelligence_items").length, 0, "no structural defect wrote anything");
   const second = "a0000000-0000-4000-8000-000000000002";
@@ -152,7 +152,7 @@ test("the apply refuses inside the cooldown (read from harness_runs) and runs af
   assert.equal(held.outcome, "failed");
   assert.match(refusals(held), /cooldown/);
   assert.equal(w.db.writes("intelligence_items").length, 0);
-  const own = await applyBatch("record-briefs", w.deps, { content: JSON.stringify(batchFile("record-briefs", [recordEntry(w.db)])), dry: false, runId: "prev-1" });
+  const own = await applyBatch("item-briefs", w.deps, { content: JSON.stringify(batchFile("item-briefs", [recordEntry(w.db)])), dry: false, runId: "prev-1" });
   assert.equal(own.counts.applied, 1, "the firing's own ledger row is not its previous run");
 
   const w2 = batchWorld();
@@ -161,13 +161,13 @@ test("the apply refuses inside the cooldown (read from harness_runs) and runs af
   w2.db.seed("agent_run_searches", [{ intelligence_item_id: second, result_url: OFFICIAL_URL, result_content: OFFICIAL_TEXT, result_index: 0 }]);
   const bytes = (id: string) => w2.db.rows("agent_run_searches").filter((r) => r.intelligence_item_id === id && String(r.result_content).trim().length > 200).reduce((n, r) => n + Buffer.byteLength(String(r.result_content)), 0);
   const entries = [recordEntry(w2.db), recordEntry(w2.db, { item_id: second, source_pool_hash: poolHashOf(w2.db, second) })];
-  const stopped = await applyBatch("record-briefs", w2.deps, { content: JSON.stringify(batchFile("record-briefs", entries)), dry: false, options: { budgetBytes: bytes(ITEM) * 2 + 1 } });
+  const stopped = await applyBatch("item-briefs", w2.deps, { content: JSON.stringify(batchFile("item-briefs", entries)), dry: false, options: { budgetBytes: bytes(ITEM) * 2 + 1 } });
   assert.equal(stopped.counts.applied, 1, refusals(stopped));
   assert.equal(stopped.counts.not_applied_io_budget, 1);
   assert.match(refusals(stopped), /io budget of \d+ byte\(s\) reached/);
   assert.equal(stopped.outcome, "partial");
   assert.equal((w2.db.rows("intelligence_items").find((r) => r.id === second) as Record<string, unknown>).item_grade, "record", "the entry past the budget was not applied");
-  const resumed = await applyBatch("record-briefs", w2.deps, { content: JSON.stringify(batchFile("record-briefs", entries)), dry: false, options: { afterKey: ITEM } });
+  const resumed = await applyBatch("item-briefs", w2.deps, { content: JSON.stringify(batchFile("item-briefs", entries)), dry: false, options: { afterKey: ITEM } });
   assert.equal(resumed.counts.applied, 1, "the next dispatch resumes after the last applied key");
 });
 

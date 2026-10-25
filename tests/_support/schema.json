@@ -52,6 +52,41 @@
     }
    ]
   },
+  "admin_opportunity_findings": {
+   "columns": [
+    "id",
+    "lens",
+    "window",
+    "pattern_value_id",
+    "title",
+    "sourced_finding_md",
+    "inferences",
+    "signpost_inference_ids",
+    "claim_provenance",
+    "review_score",
+    "review_reasons",
+    "created_at",
+    "superseded_by"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "created_at": "__now"
+   },
+   "fks": [
+    {
+     "column": "pattern_value_id",
+     "table": "derived_values",
+     "ref": "value_id"
+    },
+    {
+     "column": "superseded_by",
+     "table": "admin_opportunity_findings",
+     "ref": "id"
+    }
+   ]
+  },
   "admissible_claims": {
    "columns": [
     "id",
@@ -271,6 +306,27 @@
    "defaults": {
     "bytes_read": 0,
     "items_applied": 0
+   },
+   "fks": []
+  },
+  "brief_reviews": {
+   "columns": [
+    "id",
+    "kind",
+    "subject_id",
+    "batch",
+    "score",
+    "reasons",
+    "residue",
+    "reviewed_by",
+    "reviewed_at"
+   ],
+   "uuid": [
+    "id"
+   ],
+   "defaults": {
+    "residue": false,
+    "reviewed_at": "__now"
    },
    "fks": []
   },
