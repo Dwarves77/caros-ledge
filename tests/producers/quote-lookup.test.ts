@@ -64,7 +64,7 @@ test("with no cache every call asks (the shape the statutory rows path and the c
 test("the verbatim rule is unchanged: a quote the capture does not hold is refused, by the database answer and again from the cache, and a refusal is not turned into an acceptance by the cache", async () => {
   const w = world();
   const cache = { texts: new Map<string, string>(), found: new Map<string, string | null>() };
-  for (const _ of [0, 1]) {
+  for (let asked = 0; asked < 2; asked += 1) {
     const v = await ask(w.sb, "a limit of 99 grams per MJ", cache);
     assert.deepEqual([v.ok, v.ok ? null : v.reason], [false, "quote_not_in_capture"]);
   }
