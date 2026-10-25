@@ -34,7 +34,7 @@ import { researchAssessment, researchWalker } from "@/features/research";
 import type { EdgeAuthors } from "@/features/propagation/ops";
 import { holdingsPresent } from "@/features/sources";
 import { portfolioDeps } from "@/features/portfolio/deps";
-import type { StatutoryDeps } from "@/features/statutory";
+import { statutorySchedules, type StatutoryDeps } from "@/features/statutory";
 import { wireWorkspaceDeps, type WorkspaceDeps } from "@/features/workspace/api/deps";
 
 type Env = Record<string, string | undefined>;
@@ -104,7 +104,7 @@ const UA = { "user-agent": "FSI-turn/1.0 (+turn)", accept: "*/*" };
 const MAX_BYTES = 50 * 1024 * 1024;
 
 /** The catalog every registry entry is checked against: each producer spec by name. */
-const PRODUCER_CATALOG: Catalog = Object.freeze(Object.fromEntries([carrierEtsSurcharge, ecbFx, eiaPetroleumSpot, euOilBulletin, gridQueueRows, oemRoadmapRows, publishedPriceStatistics, rerouteRows, sbtiTargets, auxiliaryEnergyRows, blsOews, eurostatElectricity, eurostatLabourCost, indexationRows, nesoCarbonIntensity, stateCostFacts, ukpnHeatmap, researchAssessment, researchWalker].map((s) => [s.name, s])));
+const PRODUCER_CATALOG: Catalog = Object.freeze(Object.fromEntries([carrierEtsSurcharge, ecbFx, eiaPetroleumSpot, euOilBulletin, gridQueueRows, oemRoadmapRows, publishedPriceStatistics, rerouteRows, sbtiTargets, auxiliaryEnergyRows, blsOews, eurostatElectricity, eurostatLabourCost, indexationRows, nesoCarbonIntensity, stateCostFacts, ukpnHeatmap, researchAssessment, researchWalker, statutorySchedules].map((s) => [s.name, s])));
 
 const captureFamily = (url: string) => (parseOjReference(url) ? ("oj_issue" as const) : ("generic" as const));
 

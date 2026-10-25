@@ -3707,7 +3707,9 @@
     "fuel_burn_multiplier",
     "effective_from",
     "effective_to",
-    "created_at"
+    "created_at",
+    "route_via",
+    "source_id"
    ],
    "uuid": [
     "reroute_id"
@@ -3725,6 +3727,11 @@
      "column": "reroute_corridor_id",
      "table": "entities",
      "ref": "entity_id"
+    },
+    {
+     "column": "source_id",
+     "table": "sources",
+     "ref": "id"
     }
    ]
   },

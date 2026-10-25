@@ -17,15 +17,18 @@ function pinnedLookup(addresses: readonly string[]): (hostname: string, options:
   };
 }
 
+/** The response-header limit of the client: undici's own is 16 KiB, which a publisher that answers with long cookie headers (maersk.com, about 16.6 KiB) overflows (UND_ERR_HEADERS_OVERFLOW), so no page of it could be read. */
+const MAX_HEADER_BYTES = 65_536;
+
 /** An Agent that connects only to `addresses` for any host name it is asked to open. One per request: the vetted answer lives for one fetch. `tls` is extra connect options (a test's CA). */
-function pinnedAgent(addresses: readonly string[], tls: Partial<buildConnector.BuildOptions>): Agent {
-  return new Agent({ connect: { ...tls, lookup: pinnedLookup(addresses) } as buildConnector.BuildOptions });
+function pinnedAgent(addresses: readonly string[], tls: Partial<buildConnector.BuildOptions>, maxHeaderSize: number): Agent {
+  return new Agent({ maxHeaderSize, connect: { ...tls, lookup: pinnedLookup(addresses) } as buildConnector.BuildOptions });
 }
 
 /** A `fetchPinned` for the guard over a raw fetch: the request goes through a fresh pinned Agent, closed once its response is done (gracefully, so a streaming body finishes) and destroyed if the request fails. */
-export function pinnedFetch(raw: typeof fetch, tls: Partial<buildConnector.BuildOptions> = {}): (url: string, init: RequestInit, vetted: readonly string[]) => Promise<Response> {
+export function pinnedFetch(raw: typeof fetch, tls: Partial<buildConnector.BuildOptions> = {}, maxHeaderSize: number = MAX_HEADER_BYTES): (url: string, init: RequestInit, vetted: readonly string[]) => Promise<Response> {
   return async (url, init, vetted) => {
-    const agent = pinnedAgent(vetted, tls);
+    const agent = pinnedAgent(vetted, tls, maxHeaderSize);
     try {
       const res = await raw(url, { ...init, dispatcher: agent } as RequestInit);
       void agent.close().catch(() => undefined);
