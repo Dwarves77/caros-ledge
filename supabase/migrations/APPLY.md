@@ -101,13 +101,13 @@ Rules: schema first, in name order; a row marked HOLD waits for the step it name
 | 86 | 0120_carbon_inputs | schema | `supabase db query --linked -f supabase/migrations/0120_carbon_inputs.sql` | 0120-carbon-inputs | down/0120.sql, applied and catalog-compared by the schema job | in order |
 | 87 | 0121_workspace_direct_writes_closed | schema | `supabase db query --linked -f supabase/migrations/0121_workspace_direct_writes_closed.sql` | 0121 | down/0121.sql, applied and catalog-compared by the schema job | in order |
 | 88 | 0122_digest_tables | schema | `supabase db query --linked -f supabase/migrations/0122_digest_tables.sql` | 0122-digest-tables | down/0122.sql, applied and catalog-compared by the schema job | in order |
-| 89 | 0123_connect_2_spine | schema | `supabase db query --linked -f supabase/migrations/0123_connect_2_spine.sql` | 0123-connect-2-spine | down/0123.sql, applied and catalog-compared by the schema job | in order |
-| 90 | 0124_reroute_route_via | schema | `supabase db query --linked -f supabase/migrations/0124_reroute_route_via.sql` | 0124-reroute-route-via | down/0124.sql, applied and catalog-compared by the schema job | in order |
-| 91 | 0125_licence_register_ecb_ukpn | schema | `supabase db query --linked -f supabase/migrations/0125_licence_register_ecb_ukpn.sql` | 0125-licence-register-ecb-ukpn | down/0125.sql, applied and catalog-compared by the schema job | in order |
-| 92 | 0126_applied_batches_and_trigger_resolution | schema | `supabase db query --linked -f supabase/migrations/0126_applied_batches_and_trigger_resolution.sql` | 0126-applied-batches | down/0126.sql, applied and catalog-compared by the schema job | in order |
-| 93 | 0128_obligation_evidence_artifacts | schema | `supabase db query --linked -f supabase/migrations/0128_obligation_evidence_artifacts.sql` | 0128-evidence-artifacts | down/0128.sql, applied and catalog-compared by the schema job | in order |
-| 94 | 0130_keep_updated_at | schema | `supabase db query --linked -f supabase/migrations/0130_keep_updated_at.sql` | 0130-keep-updated-at | down/0130.sql, applied and catalog-compared by the schema job | in order |
-| 95 | 0132_capture_quote_narrowed_and_indexed | schema | `supabase db query --linked -f supabase/migrations/0132_capture_quote_narrowed_and_indexed.sql` | 0132-capture-quote-narrowed | down/0132.sql, applied and catalog-compared by the schema job | in order |
+| 89 | 0124_reroute_route_via | schema | `supabase db query --linked -f supabase/migrations/0124_reroute_route_via.sql` | 0124-reroute-route-via | down/0124.sql, applied and catalog-compared by the schema job | in order |
+| 90 | 0125_licence_register_ecb_ukpn | schema | `supabase db query --linked -f supabase/migrations/0125_licence_register_ecb_ukpn.sql` | 0125-licence-register-ecb-ukpn | down/0125.sql, applied and catalog-compared by the schema job | in order |
+| 91 | 0126_applied_batches_and_trigger_resolution | schema | `supabase db query --linked -f supabase/migrations/0126_applied_batches_and_trigger_resolution.sql` | 0126-applied-batches | down/0126.sql, applied and catalog-compared by the schema job | in order |
+| 92 | 0128_obligation_evidence_artifacts | schema | `supabase db query --linked -f supabase/migrations/0128_obligation_evidence_artifacts.sql` | 0128-evidence-artifacts | down/0128.sql, applied and catalog-compared by the schema job | in order |
+| 93 | 0130_keep_updated_at | schema | `supabase db query --linked -f supabase/migrations/0130_keep_updated_at.sql` | 0130-keep-updated-at | down/0130.sql, applied and catalog-compared by the schema job | in order |
+| 94 | 0132_capture_quote_narrowed_and_indexed | schema | `supabase db query --linked -f supabase/migrations/0132_capture_quote_narrowed_and_indexed.sql` | 0132-capture-quote-narrowed | down/0132.sql, applied and catalog-compared by the schema job | in order |
+| 95 | 0134_connect_2_spine | schema | `supabase db query --linked -f supabase/migrations/0134_connect_2_spine.sql` | 0134-connect-2-spine | down/0134.sql, applied and catalog-compared by the schema job | in order |
 
 ## Phase 2: data files, after the schema (each runs with its consumer)
 

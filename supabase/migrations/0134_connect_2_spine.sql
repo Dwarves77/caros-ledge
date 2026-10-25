@@ -1,4 +1,4 @@
--- 0123 connect_2_spine: the ontology spine takes the claims, the typed tables and the five pattern detectors (CONNECT-2 PR A).
+-- 0134 connect_2_spine: the ontology spine takes the claims, the typed tables and the five pattern detectors (CONNECT-2 PR A).
 --
 -- entity_refs gains `basis jsonb` and `method_version text` with CHECK ((basis IS NULL) = (method_version IS NULL)): every ref the mining writes carries the claim id and span, the column and value, or the tag it came from, and the version of the rule that read it
 -- (a ref with a method and no basis, or a basis and no method, is refused; the 2,878 refs that exist keep null in both). The tables the mining reads are admitted to entity_refs.ref_table, the nine coupling relations to entity_relations.relation, and the tables a pattern
@@ -6,7 +6,7 @@
 -- begins `pattern_` cannot be committed without at least one derivation edge naming it (a deferred constraint trigger: the register function writes the value and its edges in one transaction). entity_relations keeps its cycle trigger; the seeds run from a lower class rank
 -- to a higher one, so the table holds no cycle.
 --
--- Reversal: down/0123.sql returns the constraints and the function and drops the triggers and the columns.
+-- Reversal: down/0134.sql returns the constraints and the function and drops the triggers and the columns.
 
 -- catalog: column, constraint, function, trigger
 
@@ -16,8 +16,6 @@ ALTER TABLE public.entity_refs ADD COLUMN basis jsonb, ADD COLUMN method_version
 ALTER TABLE public.entity_refs
   ADD CONSTRAINT entity_refs_basis_with_method_check CHECK ((basis IS NULL) = (method_version IS NULL)),
   ADD CONSTRAINT entity_refs_basis_is_object_check CHECK (basis IS NULL OR jsonb_typeof(basis) = 'object');
-ALTER TABLE public.entity_refs DROP CONSTRAINT entity_refs_ref_table_allowed;
-ALTER TABLE public.entity_refs ADD CONSTRAINT entity_refs_ref_table_allowed CHECK ((ref_table = ANY (ARRAY['intelligence_items'::text, 'regions'::text, 'section_claim_provenance'::text, 'obligation_objects'::text, 'statutory_computations'::text, 'market_series'::text, 'emission_factors'::text, 'grid_connection_queues'::text, 'oem_tech_roadmaps'::text, 'reroute_events'::text, 'regional_data_facts'::text, 'state_cost_facts'::text, 'research_assessments_current'::text, 'indexation_clauses'::text, 'item_forward_events'::text])));
 
 ALTER TABLE public.entity_relations DROP CONSTRAINT entity_relations_relation_values;
 ALTER TABLE public.entity_relations ADD CONSTRAINT entity_relations_relation_values CHECK ((relation = ANY (ARRAY['group_of'::text, 'legal_entity_of'::text, 'operating_identity_of'::text, 'feedstock_of'::text, 'fuel_for_mode'::text, 'competes_for_feedstock'::text, 'shares_grid_zone'::text, 'serves_hub'::text, 'corridor_links'::text, 'implements'::text, 'amends'::text, 'consignment_wide'::text])));
@@ -71,77 +69,77 @@ CREATE TRIGGER propagation_outbox_trg AFTER INSERT OR DELETE OR UPDATE ON public
 CREATE TRIGGER propagation_outbox_trg AFTER INSERT OR DELETE OR UPDATE ON public.reroute_events FOR EACH ROW EXECUTE FUNCTION public.emit_propagation_event('reroute_id');
 CREATE TRIGGER propagation_outbox_trg AFTER INSERT OR DELETE OR UPDATE ON public.research_assessments FOR EACH ROW EXECUTE FUNCTION public.emit_propagation_event('id');
 
--- Self-check 0123-connect-2-spine: the new columns and the CHECK, and attacks: a ref with a method and no basis, a basis and no method, a basis that is not an object and a table outside the list are refused and a ref with both is kept; a relation outside the twelve is refused
+-- Self-check 0134-connect-2-spine: the new columns and the CHECK, and attacks: a ref with a method and no basis, a basis and no method, a basis that is not an object and a table outside the list are refused and a ref with both is kept; a relation outside the twelve is refused
 -- and a coupling relation kept; an edge of a kind outside the four and from a table outside the list are refused and a 'member' edge from a newly admitted table is kept; a pattern value with no edge is refused when its transaction would commit, and with an edge is kept;
 -- an input with no kind still writes the edge kind 'input'; the four evidence tables carry a propagation trigger.
 DO $$
-DECLARE v_a text := 'cl:node:0123000000000001'; v_b text := 'cl:asset:0123000000000002'; v_v uuid; v_p uuid; n int;
+DECLARE v_a text := 'cl:node:0134000000000001'; v_b text := 'cl:asset:0134000000000002'; v_v uuid; v_p uuid; n int;
 BEGIN
   IF (SELECT string_agg(column_name, ',' ORDER BY column_name) FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'entity_refs') <> 'asserted_at,asserted_by,basis,entity_id,method_version,ref_id,ref_table,role' THEN
-    RAISE EXCEPTION '0123-connect-2-spine: unexpected entity_refs columns';
+    RAISE EXCEPTION '0134-connect-2-spine: unexpected entity_refs columns';
   END IF;
   IF (SELECT count(*) FROM pg_trigger WHERE tgname = 'propagation_outbox_trg' AND tgrelid IN ('public.indexation_clauses'::regclass, 'public.item_forward_events'::regclass, 'public.reroute_events'::regclass, 'public.research_assessments'::regclass)) <> 4 THEN
-    RAISE EXCEPTION '0123-connect-2-spine: an evidence table has no propagation trigger';
+    RAISE EXCEPTION '0134-connect-2-spine: an evidence table has no propagation trigger';
   END IF;
   BEGIN
-    INSERT INTO public.entities (entity_id, kind, canonical_name, status) VALUES (v_a, 'node', 'selfcheck node 0123', 'active'), (v_b, 'asset', 'selfcheck asset 0123', 'active');
-    INSERT INTO public.entity_refs (ref_table, ref_id, entity_id, role, asserted_by, basis, method_version) VALUES ('section_claim_provenance', gen_random_uuid(), v_a, 'cites_node', 'selfcheck-0123', '{"claim_id":"x","span":[0,1]}'::jsonb, 'refs@1.0.0');
-    INSERT INTO public.entity_refs (ref_table, ref_id, entity_id, role, asserted_by) VALUES ('regions', gen_random_uuid(), v_a, 'jurisdiction', 'selfcheck-0123');
+    INSERT INTO public.entities (entity_id, kind, canonical_name, status) VALUES (v_a, 'node', 'selfcheck node 0134', 'active'), (v_b, 'asset', 'selfcheck asset 0134', 'active');
+    INSERT INTO public.entity_refs (ref_table, ref_id, entity_id, role, asserted_by, basis, method_version) VALUES ('section_claim_provenance', gen_random_uuid(), v_a, 'cites_node', 'selfcheck-0134', '{"claim_id":"x","span":[0,1]}'::jsonb, 'refs@1.0.0');
+    INSERT INTO public.entity_refs (ref_table, ref_id, entity_id, role, asserted_by) VALUES ('regions', gen_random_uuid(), v_a, 'jurisdiction', 'selfcheck-0134');
     BEGIN
-      INSERT INTO public.entity_refs (ref_table, ref_id, entity_id, role, asserted_by, method_version) VALUES ('market_series', gen_random_uuid(), v_a, 'cites_node', 'selfcheck-0123', 'refs@1.0.0');
-      RAISE EXCEPTION '0123-connect-2-spine: a ref with a method and no basis was accepted';
+      INSERT INTO public.entity_refs (ref_table, ref_id, entity_id, role, asserted_by, method_version) VALUES ('market_series', gen_random_uuid(), v_a, 'cites_node', 'selfcheck-0134', 'refs@1.0.0');
+      RAISE EXCEPTION '0134-connect-2-spine: a ref with a method and no basis was accepted';
     EXCEPTION WHEN check_violation THEN NULL;
     END;
     BEGIN
-      INSERT INTO public.entity_refs (ref_table, ref_id, entity_id, role, asserted_by, basis) VALUES ('market_series', gen_random_uuid(), v_a, 'cites_node', 'selfcheck-0123', '{"column":"series_key"}'::jsonb);
-      RAISE EXCEPTION '0123-connect-2-spine: a ref with a basis and no method was accepted';
+      INSERT INTO public.entity_refs (ref_table, ref_id, entity_id, role, asserted_by, basis) VALUES ('market_series', gen_random_uuid(), v_a, 'cites_node', 'selfcheck-0134', '{"column":"series_key"}'::jsonb);
+      RAISE EXCEPTION '0134-connect-2-spine: a ref with a basis and no method was accepted';
     EXCEPTION WHEN check_violation THEN NULL;
     END;
     BEGIN
-      INSERT INTO public.entity_refs (ref_table, ref_id, entity_id, role, asserted_by, basis, method_version) VALUES ('market_series', gen_random_uuid(), v_a, 'cites_node', 'selfcheck-0123', '[1]'::jsonb, 'refs@1.0.0');
-      RAISE EXCEPTION '0123-connect-2-spine: a basis that is not an object was accepted';
+      INSERT INTO public.entity_refs (ref_table, ref_id, entity_id, role, asserted_by, basis, method_version) VALUES ('market_series', gen_random_uuid(), v_a, 'cites_node', 'selfcheck-0134', '[1]'::jsonb, 'refs@1.0.0');
+      RAISE EXCEPTION '0134-connect-2-spine: a basis that is not an object was accepted';
     EXCEPTION WHEN check_violation THEN NULL;
     END;
     BEGIN
-      INSERT INTO public.entity_refs (ref_table, ref_id, entity_id, role, asserted_by, basis, method_version) VALUES ('workspace_settings', gen_random_uuid(), v_a, 'cites_node', 'selfcheck-0123', '{"x":1}'::jsonb, 'refs@1.0.0');
-      RAISE EXCEPTION '0123-connect-2-spine: a ref table outside the list was accepted';
+      INSERT INTO public.entity_refs (ref_table, ref_id, entity_id, role, asserted_by, basis, method_version) VALUES ('workspace_settings', gen_random_uuid(), v_a, 'cites_node', 'selfcheck-0134', '{"x":1}'::jsonb, 'refs@1.0.0');
+      RAISE EXCEPTION '0134-connect-2-spine: a ref table outside the list was accepted';
     EXCEPTION WHEN check_violation THEN NULL;
     END;
-    INSERT INTO public.entity_relations (parent_entity_id, child_entity_id, relation, asserted_by) VALUES (v_a, v_b, 'serves_hub', 'selfcheck-0123');
+    INSERT INTO public.entity_relations (parent_entity_id, child_entity_id, relation, asserted_by) VALUES (v_a, v_b, 'serves_hub', 'selfcheck-0134');
     BEGIN
-      INSERT INTO public.entity_relations (parent_entity_id, child_entity_id, relation, asserted_by) VALUES (v_b, v_a, 'bogus_relation', 'selfcheck-0123');
-      RAISE EXCEPTION '0123-connect-2-spine: a relation outside the twelve was accepted';
+      INSERT INTO public.entity_relations (parent_entity_id, child_entity_id, relation, asserted_by) VALUES (v_b, v_a, 'bogus_relation', 'selfcheck-0134');
+      RAISE EXCEPTION '0134-connect-2-spine: a relation outside the twelve was accepted';
     EXCEPTION WHEN check_violation THEN NULL;
     END;
-    v_v := public.register_derived_value(v_a, 'selfcheck_0123', '1.0.0', 1, NULL, NULL, 'ratio', NULL, 'calculated', 'derived', 'emerging', 'analysis_ok', 0.5, now(), NULL,
-      '[{"table":"oem_tech_roadmaps","pk":"selfcheck-0123","kind":"member"},{"table":"obligation_objects","pk":"selfcheck-0123","kind":"key"},{"table":"market_series","pk":"selfcheck-0123"}]'::jsonb, 'selfcheck-0123');
+    v_v := public.register_derived_value(v_a, 'selfcheck_0134', '1.0.0', 1, NULL, NULL, 'ratio', NULL, 'calculated', 'derived', 'emerging', 'analysis_ok', 0.5, now(), NULL,
+      '[{"table":"oem_tech_roadmaps","pk":"selfcheck-0134","kind":"member"},{"table":"obligation_objects","pk":"selfcheck-0134","kind":"key"},{"table":"market_series","pk":"selfcheck-0134"}]'::jsonb, 'selfcheck-0134');
     SELECT count(*) INTO n FROM public.derivation_edges WHERE to_value_id = v_v AND ((from_table = 'oem_tech_roadmaps' AND edge_kind = 'member') OR (from_table = 'obligation_objects' AND edge_kind = 'key') OR (from_table = 'market_series' AND edge_kind = 'input'));
-    IF n <> 3 THEN RAISE EXCEPTION '0123-connect-2-spine: the register function wrote % of the 3 edge kinds asked for', n; END IF;
+    IF n <> 3 THEN RAISE EXCEPTION '0134-connect-2-spine: the register function wrote % of the 3 edge kinds asked for', n; END IF;
     BEGIN
-      INSERT INTO public.derivation_edges (from_table, from_pk, to_value_id, edge_kind) VALUES ('oem_tech_roadmaps', 'selfcheck-0123-b', v_v, 'bogus');
-      RAISE EXCEPTION '0123-connect-2-spine: an edge kind outside the four was accepted';
+      INSERT INTO public.derivation_edges (from_table, from_pk, to_value_id, edge_kind) VALUES ('oem_tech_roadmaps', 'selfcheck-0134-b', v_v, 'bogus');
+      RAISE EXCEPTION '0134-connect-2-spine: an edge kind outside the four was accepted';
     EXCEPTION WHEN check_violation THEN NULL;
     END;
     BEGIN
-      INSERT INTO public.derivation_edges (from_table, from_pk, to_value_id, edge_kind) VALUES ('workspace_settings', 'selfcheck-0123', v_v, 'member');
-      RAISE EXCEPTION '0123-connect-2-spine: an edge from a table outside the list was accepted';
+      INSERT INTO public.derivation_edges (from_table, from_pk, to_value_id, edge_kind) VALUES ('workspace_settings', 'selfcheck-0134', v_v, 'member');
+      RAISE EXCEPTION '0134-connect-2-spine: an edge from a table outside the list was accepted';
     EXCEPTION WHEN check_violation THEN NULL;
     END;
     BEGIN
       INSERT INTO public.derived_values (value_id, entity_id, method_id, method_version, value, unit, derivation, origin_class, lifecycle, admissibility, base_confidence, asserted_at, inputs, computed_at, computed_by)
-        VALUES (gen_random_uuid(), v_a, 'pattern_selfcheck', '1.0.0', 1, 'ratio', 'calculated', 'derived', 'emerging', 'analysis_ok', 0.5, now(), '[]'::jsonb, now(), 'selfcheck-0123');
+        VALUES (gen_random_uuid(), v_a, 'pattern_selfcheck', '1.0.0', 1, 'ratio', 'calculated', 'derived', 'emerging', 'analysis_ok', 0.5, now(), '[]'::jsonb, now(), 'selfcheck-0134');
       SET CONSTRAINTS public.derived_values_pattern_evidence_trg IMMEDIATE;
-      RAISE EXCEPTION '0123-connect-2-spine: a pattern value with no evidence edge was accepted';
+      RAISE EXCEPTION '0134-connect-2-spine: a pattern value with no evidence edge was accepted';
     EXCEPTION WHEN check_violation THEN NULL;
     END;
     SET CONSTRAINTS public.derived_values_pattern_evidence_trg DEFERRED;
-    v_p := public.register_derived_value(v_a, 'pattern_selfcheck', '1.0.0', 1, NULL, NULL, 'ratio', NULL, 'calculated', 'derived', 'emerging', 'analysis_ok', 0.5, now(), NULL, '[{"table":"item_forward_events","pk":"selfcheck-0123","kind":"evidence"}]'::jsonb, 'selfcheck-0123');
+    v_p := public.register_derived_value(v_a, 'pattern_selfcheck', '1.0.0', 1, NULL, NULL, 'ratio', NULL, 'calculated', 'derived', 'emerging', 'analysis_ok', 0.5, now(), NULL, '[{"table":"item_forward_events","pk":"selfcheck-0134","kind":"evidence"}]'::jsonb, 'selfcheck-0134');
     SET CONSTRAINTS public.derived_values_pattern_evidence_trg IMMEDIATE;
-    IF NOT EXISTS (SELECT 1 FROM public.derived_values WHERE value_id = v_p) THEN RAISE EXCEPTION '0123-connect-2-spine: a pattern value with an evidence edge was not kept'; END IF;
+    IF NOT EXISTS (SELECT 1 FROM public.derived_values WHERE value_id = v_p) THEN RAISE EXCEPTION '0134-connect-2-spine: a pattern value with an evidence edge was not kept'; END IF;
     RAISE EXCEPTION USING ERRCODE = 'P0099', MESSAGE = 'selfcheck fixture rolled back';
   EXCEPTION WHEN SQLSTATE 'P0099' THEN NULL;
   END;
-  RAISE NOTICE '0123-connect-2-spine OK';
+  RAISE NOTICE '0134-connect-2-spine OK';
 END $$;
 
 COMMIT;

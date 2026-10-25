@@ -1,4 +1,4 @@
--- Down for 0123_connect_2_spine: the pattern trigger and its function go, register_derived_value returns to writing every edge as 'input', the three allow-lists return to their 0010 and baseline lists, and entity_refs loses basis and method_version (the schema job applies this file in a transaction that rolls back and compares the catalog snapshots).
+-- Down for 0134_connect_2_spine: the pattern trigger and its function go, register_derived_value returns to writing every edge as 'input', the three allow-lists return to their 0010 and baseline lists, and entity_refs loses basis and method_version (the schema job applies this file in a transaction that rolls back and compares the catalog snapshots).
 DROP TRIGGER propagation_outbox_trg ON public.indexation_clauses;
 DROP TRIGGER propagation_outbox_trg ON public.item_forward_events;
 DROP TRIGGER propagation_outbox_trg ON public.reroute_events;
@@ -35,7 +35,5 @@ ALTER TABLE public.derivation_edges DROP CONSTRAINT derivation_edges_from_table_
 ALTER TABLE public.derivation_edges ADD CONSTRAINT derivation_edges_from_table_allowed CHECK ((from_table = ANY (ARRAY['emission_factors'::text, 'market_series'::text, 'regional_data_facts'::text, 'derived_values'::text, 'statutory_computations'::text, 'estimated_values'::text, 'state_cost_facts'::text, 'inference_records'::text, 'intelligence_items'::text, 'section_claim_provenance'::text])));
 ALTER TABLE public.entity_relations DROP CONSTRAINT entity_relations_relation_values;
 ALTER TABLE public.entity_relations ADD CONSTRAINT entity_relations_relation_values CHECK ((relation = ANY (ARRAY['group_of'::text, 'legal_entity_of'::text, 'operating_identity_of'::text])));
-ALTER TABLE public.entity_refs DROP CONSTRAINT entity_refs_ref_table_allowed;
-ALTER TABLE public.entity_refs ADD CONSTRAINT entity_refs_ref_table_allowed CHECK ((ref_table = ANY (ARRAY['intelligence_items'::text, 'regions'::text])));
 ALTER TABLE public.entity_refs DROP CONSTRAINT entity_refs_basis_is_object_check, DROP CONSTRAINT entity_refs_basis_with_method_check;
 ALTER TABLE public.entity_refs DROP COLUMN basis, DROP COLUMN method_version;

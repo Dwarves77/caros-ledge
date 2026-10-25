@@ -24,7 +24,7 @@ Claims naming a country, an organisation or a standard other than ISO 14083 reac
 
 | detector | production count | sample | false positives on the sample | status |
 |---|---|---|---|---|
-| P1 velocity | 1 | 1 row below | 0 of 1 judged noise | merged to fire after the thresholds were re-derived; the first pass fired 6 and 5 were noise |
+| P1 velocity | 1 [REFUTED 2026-10-25, see R3: 0] | 1 row below | 0 of 1 judged noise | merged to fire after the thresholds were re-derived; the first pass fired 6 and 5 were noise |
 | P2 mandate and capacity | PENDING ARM-2 | none | n/a | `oem_tech_roadmaps` and `grid_connection_queues` hold 0 rows; no ratchet carries a quantity (`statutory_maximum` is null on all 1,868 obligations); 35 dated ratchets sit inside the 36-month horizon and wait for a capacity row |
 | P3 lead and lag | 0 | the 4 triggers below | n/a | 4 `phase_step` events fall 60 to 180 days out (all the Brazil PNCA item, SAF), 2 rest on a source claim (one names SAF in its first 170 characters, the other states the percentage ladder); no move exists on a shared entity: the 10 non-absence claims on the vocabulary added in the last 90 days are all /regulations, no market series label resolves to a coupling |
 | P4 cross-modal | 0 | none | n/a | `obligation_objects.mode` is empty on all 1,868 rows, so no mode entity is filed and the corridor_links path never opens; 0 claims in 90 days name a modal-shift corridor; 20 ratchets fall due within 90 days |
@@ -98,3 +98,96 @@ Not listed: EEC, ELI, TIR, CII, EUR (no seeded entity, or not an entity).
 | total | 2,000 | 119 (5.95 %) | 283 (14.15 %) | 341 (17.05 %) |
 
 72 claims reach an entity through an acronym; the Brazil PNCA claim (the SAF phase step the P3 triggers rest on) resolves to HEFA-SAF again. Top unresolved after this change: Member States 106, LOCODE 47, No EUR 28, This Decision 25, This Regulation 19, Member State 18, EUR 15, The Decision 15, ELI 14, Contracting Parties 12, European Parliament 11, The Commission 10, HAS ADOPTED THIS DECISION 10, Annex II 8, The Regulation 8, GAP 7, TIR 7, Annex III 7; EEC (20) is also unresolved and has no seeded entity.
+
+## R3: the five detectors re-measured after the ruled runs (2026-10-25, branch merged onto origin/main b9047dd, read-only on production)
+
+Production (project kwrsbpiseruzbfwjpvsp) was read with `select` only. Production holds neither migration 0134 (this PR) nor any mined `entity_refs` with a method version nor any `entity_relations` (0 rows), so the detectors, run as written, would read no facts from it. Every figure below is therefore the SQL EMULATION of the same rules: refs are mined inside the query (the rules of `resolveText`), relations come from couplings.json (57), and each detector's join and threshold is applied as detect.ts states it. The emulated resolver is a phrase match on token boundaries without longest-phrase shadowing, so shares are a floor to within a few claims. Status tokens: rule 14.
+
+Rows landed since the first measurement, as read now: oem_tech_roadmaps 6, reroute_events 3, statutory_computations 38, research_assessments_current 38, grid_connection_queues 967, market_series 2,757, regional_data_facts 92, item_forward_events 5,382, obligation_objects 1,868 (mode filled on 527, first_deadline on 1,590, statutory_maximum on 1), derived_values 44.
+
+### Claim-resolution share
+
+[CONFIRMED] by query (SQL emulation, full population, not a sample): of the 22,945 non-GAP claims of items added in the last 270 days (the population P1 reads, window plus baseline), 5,550 reach at least one entity: 24.19 %. Sources of the match in the emulation: the coupling vocabulary and its ten listed acronyms, the alias seeds, jurisdictions by country name, organisations by host, the title of the instrument an item carries, and instrument numbers by equality against the 1,497 CELEX identifiers. 683 entities hold at least one claim in the last 90 days. The first measurement's 17.05 % was the first 2,000 claims by id of all kinds, with a smaller name set, so the two figures are not the same base; on the first base the vocabulary alone gave 5.95 %.
+
+### Yield per detector
+
+| detector | rows considered | patterns found | why zero (table and key) |
+|---|---|---|---|
+| P1 velocity | 22,945 claims (12,379 in the 90-day window, 10,566 in the 180-day baseline); 683 entities with a window claim | 0 | the minimum of two distinct tiers or surfaces: every window claim has source tier 1 and surface regulations (`section_claim_provenance.source_tier_at_grounding`), so 681 of 683 entities cannot pass; the two with two tiers (32003L0087, commission.europa.eu) fall below their own baseline share (0.75, 0.93). The RED II pattern of the first measurement is [REFUTED]: it counted item types, which the detector does not; RED II has tiers = 1 |
+| P2 mandate and capacity | 313 ratchets (35 due inside 36 months, 278 undated) of 1,868; 1,065 capacity rows (6 roadmaps, 967 grid queues, 92 regional facts) | 0 | a join that reaches but has nothing to compare: `oem_tech_roadmaps.target_year` is null on 6 of 6 (no due, no quantity); `grid_connection_queues.queue_months_p50` is null on 967 of 967 (no due) and a ratchet reaches node:grid_queues only through a verbatim text that names shore power, HDV charging or a grid queue, which 0 of 1,868 obligations do; the one ratchet with a quantity (`statutory_maximum` = EUR 40 per tonne of CO2e, EUR/tCO2e) meets capacities in MW |
+| P3 lead and lag | 4 `phase_step` triggers 60 to 180 days out (no other trigger kind exists in `item_forward_events`), 2 with a source claim; 101 move candidate rows in the last 90 days (1 roadmap, 1 reroute, 38 research assessments, 1 regional fact, 60 series rows) | 0 | no move on a shared entity: 0 of the 12,379 window claims are on a surface other than regulations; the one roadmap (heavy_battery, entity carrier:renewable_electricity) and the one reroute (corridor ids outside the vocabulary) do not touch the triggers' entities (HEFA-SAF through the acronym SAF; attr:ghg_intensity through GHG); the 38 research assessments carry no entity; the 6 market series filed under EU hold one observation date, so they define no move |
+| P4 cross-modal | 20 ratchets due within 90 days of today; 38 claims in the window name PPWR, CBAM or ISO 14083, 2 name a modal shift | 0 | strength below the floor: the only start with a mode (one obligation naming all five legs) falls 53 days out, strength 0.5 x (1 - 53/90) = 0.205 against `crossModal.minStrength` 0.3; the other 19 carry neither a mode nor a vocabulary term and their instruments (`obligation_objects.instrument_entity_id`) have no relation. 0 obligations of PPWR, CBAM or ISO 14083 fall due in the window |
+| P5 penalty and abatement | 38 technology rows (14 with a TRL, 10 at TRL 8 or 9), 38 ceilings, 0 abatement costs | 0 | two joins that do not reach: `research_assessments_current.entity_id` is null on 38 of 38, so a technology fact has no entity and reaches nothing; and no `derived_values` row is in EUR/tCO2e (the 44 rows are carbon_intensity_tkm in gCO2e/tonne-km, market_series_delta in EUR/1000L, EUR/tonne and exchange pairs, corridor_distance_km), so no abatement fact exists. The 38 ceilings are shares (pct) and years, not EUR/tCO2e |
+
+Status of the figures: all [CONFIRMED] by query as emulation; P1's tier finding is [CONFIRMED] against `detect.ts` (distinct = max(tier count, surface count), minDistinct 2) and the data; the first measurement's P1 row is corrected in place above.
+
+What the data would need for each detector to find something (a producer finding, not a detector change): P1 a second tier or surface in a window (claims from market, research or operations items, or sources below tier 1); P2 a `target_year` on the roadmaps and a `queue_months_p50` on the queues; P3 a claim on a non-regulations surface or a dated move on the trigger entities; P4 an obligation with a mode inside 36 days of its due date; P5 `entity_id` on `research_assessments_current` and a derived EUR/tCO2e cost.
+
+### 20-row samples
+
+P1: the 20 entities with most claims in the window (all pass the source test; the failing test is named).
+
+| entity | window claims | sources | tiers | baseline | share ratio | fails |
+|---|---|---|---|---|---|---|
+| eur-lex.europa.eu (organisation) | 1,064 | 399 | 1 | 44 | 20.64 | tier |
+| EU (jurisdiction) | 773 | 296 | 1 | 41 | 16.09 | tier |
+| 32003L0087 (EU ETS) | 106 | 15 | 2 | 121 | 0.75 | share |
+| LU | 103 | 74 | 1 | 3 | 29.30 | tier |
+| GB | 83 | 23 | 1 | 12 | 5.90 | tier |
+| CH | 83 | 32 | 1 | 7 | 10.12 | tier |
+| 32008L0068 | 70 | 23 | 1 | 3 | 19.92 | tier |
+| imo.org (organisation) | 68 | 21 | 1 | 185 | 0.31 | tier, share |
+| DE | 67 | 16 | 1 | 34 | 1.68 | tier |
+| HR | 62 | 19 | 1 | 4 | 13.23 | tier |
+| BE | 61 | 15 | 1 | 6 | 8.68 | tier |
+| NL | 59 | 17 | 1 | 6 | 8.39 | tier |
+| IE | 57 | 16 | 1 | 8 | 6.08 | tier |
+| FR | 56 | 19 | 1 | 9 | 5.31 | tier |
+| 32018L2001 (RED II) | 52 | 8 | 1 | 9 | 4.93 | tier |
+| IT | 48 | 15 | 1 | 4 | 10.24 | tier |
+| AT | 46 | 14 | 1 | 4 | 9.82 | tier |
+| commission.europa.eu (organisation) | 46 | 16 | 2 | 42 | 0.93 | share |
+| RO | 40 | 15 | 1 | 1 | 34.14 | tier, baseline |
+| HU | 40 | 11 | 1 | 0 | 34.14 | tier, baseline |
+
+P2: 6 roadmap rows and 14 queue rows (queue ids by first 8 characters; all 967 queue rows have jurisdiction GB, as_of 2026-05-29, queue_months_p50 null, demand_available_mw set).
+
+| row | key | due | quantity |
+|---|---|---|---|
+| roadmap 5df98e5a | megawatt_charging (node:hdv_charging) | null (target_year null) | none |
+| roadmap 6d473917 | heavy_battery (carrier:renewable_electricity) | null | none |
+| roadmap 70c8d5a8 | saf_refinery (carrier:hefa_saf) | null | none |
+| roadmap 89143b12 | ammonia_engine (carrier:green_ammonia) | null | none |
+| roadmap 9bcb9e05 | hydrogen_fcell (no mapped entity) | null | none |
+| roadmap daa8edc8 | heavy_battery (carrier:renewable_electricity) | null | none |
+| queue 002a7a1d, 003d1145, 00779e4a, 008c1555, 00eeb180, 0172281f, 01a3dfe2 | node:grid_queues, GB | null | 11.9, 38.4, 7, 9.6, 10.1, 6.5, 23.3 MW |
+| queue 02157916, 023f019c, 02474393, 027b8fa0, 02c5c15a, 02ece36b, 033bb239 | node:grid_queues, GB | null | 9.6, 17.6, 12.9, 8.2, 8.4, 5.7, 7.5 MW |
+
+P3: the 4 triggers, the move rows of the window and the series labels (20 rows in all, counting each of the 12 labels).
+
+| row | detail | outcome |
+|---|---|---|
+| trigger bf214060 | phase_step 2027-01-01, Brazil PNCA, claim names SAF | entity HEFA-SAF; no move in its neighbourhood |
+| trigger e13b85ba | phase_step 2027-01-01, same item, claim names GHG | entity attr:ghg_intensity; no neighbour, no move |
+| trigger e234dc17 | phase_step 2027-01-01, same item, no source claim | no entity, no join |
+| trigger 7ca0c4c5 | phase_step 2027-01-01, same item, no source claim | no entity, no join |
+| roadmap daa8edc8 | announced 2026-09-14, heavy_battery | entity carrier:renewable_electricity, not near either trigger |
+| reroute 92d35ddc | effective 2026-09-19, corridor cl:corridor:b624b607add73ba4 | corridor outside the vocabulary |
+| market_series labels (12 rows): Automotive gas oil / diesel (EU), Brent crude oil spot, EUR/CNY, EUR/GBP, EUR/JPY, Euro-Super 95 (EU), EUR/USD, Heating gas oil (EU), Heavy fuel oil 3.5%S (EU), Kerosene-type jet fuel spot, LPG motor fuel (EU), No. 2 diesel ultra-low sulfur spot | 60 rows in the window over 16 keys; 6 filed to EU on one date | no label names a vocabulary entity; no second observation, so no move |
+| regional_data_facts (1 row), research_assessments_current (38 rows) in the window | no entity | no join |
+
+P4: the 20 ratchets due within 90 days (by instrument and due date; obligation ids start with their first hex characters).
+
+| rows | due (days from today) | instrument entity | modes | vocabulary term in the text |
+|---|---|---|---|---|
+| 5c11a230 (1 row) | 2026-12-17 (+53) | a60435a713ae77bc | road, rail, ocean, inland_waterway, air | none |
+| 24238471, f8844807, b6ea3ce4, 55effd9c, e30c892b, 366fc3ae, 80c7d1a7, afd16d46, cc7c7509, c762215c, dcfa6a29 (11 rows) | 2026-12-17 (+53) | a60435a713ae77bc | none | none |
+| 78c726cb, cb7e9446, 4722016a, 758856b6, 9584376c (5 rows) | 2027-01-01 (+68) | 0d579d543d287cd7 | none | none |
+| ab225a27, 635b1781, 5a342471 (3 rows) | 2026-07-31 (-86) | fea72fbf2cf0fdf1 | none | none |
+
+### Findings this measurement adds
+
+- [CONFIRMED] P1 cannot fire while the corpus has one tier and one surface in a window: `velocity.minDistinct` 2 is met only by an entity cited by sources of two tiers, and only 2 of 683 entities in the window have two. This is a property of the corpus (every window claim is a regulations claim from a tier 1 source), not of the detector.
+- [CONFIRMED] `research_assessments_current.entity_id` is null on every row: the writer of that table files no entity, so P5 and the technology side of P3 reach nothing.
+- [CONFIRMED] P2 and P5 both wait on a quantity the producers do not yet fill (`target_year`, `queue_months_p50`, an EUR/tCO2e abatement cost).
+- [CONFIRMED] DERIVE-2 raised `obligation_objects.mode` from 0 to 527 rows; the one P4 start it feeds is blocked by the strength floor at 53 days, not by the join.
