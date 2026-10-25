@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 // @ts-expect-error plain .mjs module
-import { executePlan, ledgerLookup } from "../../scripts/runs/execute.mjs";
+import { executePlan, exitCodeOf, ledgerLookup, summaryTable } from "../../scripts/runs/execute.mjs";
 // @ts-expect-error plain .mjs module
 import { parsePlan } from "../../scripts/runs/plan.mjs";
 
@@ -108,4 +108,48 @@ test("the ledger lookup asks harness_runs for an apply-mode success row with thi
   assert.deepEqual(hit.eqs, [["from", "harness_runs"], ["mode", "apply"], ["outcome", "success"], ["inputs->>ruled_plan", "p.json#s"]]);
   assert.equal(await ledgerLookup(fake({ data: [], error: null }).sb)("p.json#s"), null);
   await assert.rejects(() => ledgerLookup(fake({ data: null, error: { message: "boom" } }).sb)("p.json#s"), /boom/);
+});
+
+const mkOn = (modes: Record<string, string>) => {
+  const plan = JSON.parse(JSON.stringify(mk(["a", "b", "c"])));
+  for (const st of plan.steps) if (modes[st.name]) st.on_failure = modes[st.name];
+  return parsePlan(JSON.stringify(plan));
+};
+
+test("on_failure: a plan step defaults to stop; the value is validated", () => {
+  assert.equal(mk(["a"]).steps[0].on_failure, "stop");
+  assert.throws(() => mkOn({ a: "shrug" }), /on_failure/);
+});
+
+test("on_failure continue: a failed continue step is recorded, the next steps run, the job exits 0, and the summary lists the failed step first", async () => {
+  const t = turn("a");
+  const r = await executePlan(mkOn({ a: "continue" }), PATH, { invoke: t.invoke, now: NOW });
+  assert.deepEqual(t.calls.map(onlyOf), ["a", "b", "c"]);
+  assert.deepEqual(r.steps.map((s: { step: string; outcome: string }) => [s.step, s.outcome]), [["a", "failed"], ["b", "ok"], ["c", "ok"]]);
+  assert.equal(r.outcome, "partial");
+  assert.equal(exitCodeOf(r), 0);
+  const rows = summaryTable(r).split("\n").filter((l: string) => l.startsWith("| ") && !l.startsWith("| step") && !l.startsWith("|---"));
+  assert.match(rows[0], /^\| a \|.*failed/);
+  assert.match(summaryTable(r), /continued/);
+});
+
+test("on_failure stop: a failed stop step halts the plan and the job exits 1, even after an earlier continue failure", async () => {
+  const t = turn("b");
+  const r = await executePlan(mkOn({ a: "continue" }), PATH, { invoke: turn("a").invoke, now: NOW });
+  assert.equal(exitCodeOf(r), 0);
+  const r2 = await executePlan(mkOn({ a: "continue" }), PATH, { invoke: t.invoke, now: NOW });
+  assert.deepEqual(t.calls.map(onlyOf), ["a", "b"]);
+  assert.equal(r2.outcome, "failed");
+  assert.equal(exitCodeOf(r2), 1);
+  const both = turn("a");
+  const r3 = await executePlan(mkOn({ a: "continue", b: "stop" }), PATH, { invoke: (x: never) => { const o = both.invoke(x); return stepOf((x as { args: string[] }).args) === "b" ? { ...o, status: 1 } : o; }, now: NOW });
+  assert.equal(exitCodeOf(r3), 1);
+});
+
+test("on_failure continue: a continue step whose ledger holds a success row is still skipped", async () => {
+  const t = turn();
+  const r = await executePlan(mkOn({ a: "continue" }), PATH, { invoke: t.invoke, now: NOW, applied: ONLY_A });
+  assert.deepEqual(t.calls.map(onlyOf), ["b", "c"]);
+  assert.equal(r.steps[0].outcome, "already-applied");
+  assert.equal(r.outcome, "ok");
 });
