@@ -2,6 +2,9 @@
 // The method-version gate hashes both files with the detectors that read them, so editing a threshold without registering a new method version turns the gate red. No quantity, rate, price or factor is typed in code: each is read from the store or from these files.
 import { z } from "zod";
 
+// the unit map of the parse module is read here too, so the method-version gate hashes it with the detectors whose facts it reads
+import statutoryUnitsJson from "../../parse/data/statutory-units.json";
+
 import factsJson from "./data/facts.json";
 import patternsJson from "./data/patterns.json";
 
@@ -25,5 +28,6 @@ const quantitySpec = z.object({ column: columnName.optional(), unit: columnName.
 const factSpecSchema = z
   .object({ role: z.enum(["claim", "ratchet", "capacity", "series", "trigger", "tech", "move", "ceiling", "abatement"]), pk: columnName, edge: columnName.optional(), surface: columnName.optional(), at: columnName.optional(), due: columnName.optional(), dueYear: columnName.optional(), dueMonthsAfterAt: columnName.optional(), qty: quantitySpec.optional(), source: columnName.optional(), tier: columnName.optional(), kind: columnName.optional(), trl: columnName.optional(), group: columnName.optional(), item: columnName.optional() })
   .strict();
+export const UNIT_FORMS = statutoryUnitsJson.forms;
 export type FactSpec = z.infer<typeof factSpecSchema>;
 export const FACT_SPECS: Readonly<Record<string, FactSpec>> = z.record(z.string(), factSpecSchema).parse(factsJson);

@@ -28,7 +28,7 @@ const item = (id: string, type: keyof typeof TYPE): Row => ({ id, title: `fixtur
 export const claim = (item_id: string, text: string, extracted: string, source: string, tier: number | null, kind = "FACT", id = uuid(++c)): Row => ({ id, intelligence_item_id: item_id, claim_text: text, claim_kind: kind, source_span: text, source_id: source, source_tier_at_grounding: tier, extracted_at: `${extracted}T09:00:00Z` });
 
 export const HVO_CLAIM = uuid(900);
-export const OBLIGATION = { air: "cl:obligation:00000000000000a1", ocean: "cl:obligation:00000000000000a2" };
+export const OBLIGATION = { air: "cl:obligation:00000000000000a1", ocean: "cl:obligation:00000000000000a2", road: "cl:obligation:00000000000000a4", uco: "cl:obligation:00000000000000a6" };
 
 /** Plant the data of the five patterns (and of the four relation kinds of the cross-modal one) into the fixture database. */
 export function plant(f: Fixture): void {
@@ -45,6 +45,10 @@ export function plant(f: Fixture): void {
     claimWithItem("market", "HEFA output rose at two refiners.", ago(10), src(7), 2),
     claimWithItem("market", "HDV charging sites opened at two depots.", ago(10), src(8), 2),
     claimWithItem("market", "Sea-air capacity tightened on the Gulf lanes.", ago(10), src(9), 2),
+    // the landings of the mode-agnostic mandate and of the two corridors that now link road
+    claimWithItem("market", "The PPWR sets recycled packaging duties for every consignment.", ago(10), src(10), 2),
+    claimWithItem("market", "Modal shift to rail was announced for the Alpine corridor.", ago(10), src(11), 2),
+    claimWithItem("market", "Modal shift to inland waterways was announced for the Rhine.", ago(10), src(12), 2),
     // the corpus's flow: claims that name nothing in the vocabulary, before and after the window
     ...Array.from({ length: 12 }, (_, n) => claimWithItem("reg", "General background with no coupling named.", ago(60 + n * 7), src(30 + n), 1)),
   ];
@@ -54,6 +58,9 @@ export function plant(f: Fixture): void {
     // P2: a dated ratchet of the ReFuelEU instrument; P4 (corridor_links): an ocean-wide ratchet inside the recency window
     { obligation_id: OBLIGATION.air, instrument_item_id: ITEM.reg, instrument_entity_id: E("instrument:32023R2405"), first_deadline: new Date(NOW.getTime() + 100 * 86_400_000).toISOString().slice(0, 10), mode: ["air"], applicability_trigger: {} },
     { obligation_id: OBLIGATION.ocean, instrument_item_id: ITEM.reg, instrument_entity_id: null, first_deadline: new Date(NOW.getTime() + 30 * 86_400_000).toISOString().slice(0, 10), mode: ["ocean"], applicability_trigger: {} },
+    // a road-wide ratchet inside the recency window (P4 over the road links), and a duty whose own text names a seeded feedstock and no entity column does (P2 through the verbatim text)
+    { obligation_id: OBLIGATION.road, instrument_item_id: ITEM.reg, instrument_entity_id: null, first_deadline: new Date(NOW.getTime() + 30 * 86_400_000).toISOString().slice(0, 10), mode: ["road"], applicability_trigger: {} },
+    { obligation_id: OBLIGATION.uco, instrument_item_id: ITEM.reg, instrument_entity_id: null, first_deadline: new Date(NOW.getTime() + 100 * 86_400_000).toISOString().slice(0, 10), mode: [], verbatim_text: "Operators shall source used cooking oil only from certified collectors.", applicability_trigger: {} },
   ]);
   db.seed("oem_tech_roadmaps", [{ roadmap_id: uuid(400), manufacturer_id: null, tech_category: "saf_refinery", commercial_stage: "announced", target_year: 2029, announced_at: null, source_id: src(20), origin_class: "official", derivation: "assessed" }]);
   db.seed("item_forward_events", [{ id: uuid(500), intelligence_item_id: ITEM.reg, event_date: new Date(NOW.getTime() + 100 * 86_400_000).toISOString().slice(0, 10), date_precision: "day", event_kind: "phase_step", obligation_text: "next phase", source_kind: "claim", source_claim_id: HVO_CLAIM, source_span: "x", confidence: "high", extractor_version: "fixture" }]);

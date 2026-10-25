@@ -5,7 +5,7 @@ import { test } from "node:test";
 
 import { PATTERN_METHODS } from "@/core/propagation/methods";
 
-import { connect, countsOf, E, patternFixture, patterns, propagate } from "./_world.ts";
+import { connect, countsOf, E, OBLIGATION, patternFixture, patterns, propagate } from "./_world.ts";
 
 const byMethod = (rows: Record<string, unknown>[]) => Object.fromEntries(Object.values(PATTERN_METHODS).map((m) => [m.id, rows.filter((r) => r.method_id === m.id).length]));
 
@@ -14,14 +14,18 @@ test("INV-CN2-5: the planted data yields exactly one pattern per kind and one cr
   assert.equal((await propagate(f)).exit, 0);
   assert.equal((await connect(f)).exit, 0);
   const rows = patterns(f);
-  assert.deepEqual(byMethod(rows), { pattern_velocity_burst: 1, pattern_mandate_capacity: 1, pattern_lead_lag: 1, pattern_cross_modal: 4, pattern_penalty_abatement: 1 });
+  assert.deepEqual(byMethod(rows), { pattern_velocity_burst: 1, pattern_mandate_capacity: 2, pattern_lead_lag: 1, pattern_cross_modal: 8, pattern_penalty_abatement: 1 });
   const cross = rows.filter((r) => r.method_id === "pattern_cross_modal").map((r) => String(r.computed_by).split("|")[1]).sort();
-  assert.deepEqual(cross, ["competes_for_feedstock", "corridor_links", "feedstock_of", "shares_grid_zone"]);
+  assert.deepEqual(cross, ["competes_for_feedstock", "consignment_wide", "consignment_wide", "corridor_links", "corridor_links", "corridor_links", "feedstock_of", "shares_grid_zone"]);
+  // the three join fixes: a duty's own text files it under a feedstock, so it meets the capacity row under the carrier that feedstock supplies (P2); a mode-agnostic mandate and the two corridors that link road each carry a spill from a road ratchet (P4)
+  const keys = rows.filter((r) => r.method_id === "pattern_cross_modal").map((r) => String(r.computed_by));
+  for (const target of ["instrument:32025R0040", "corridor:rail_road", "corridor:inland_waterway"]) assert.ok(keys.some((k) => k.includes(`|${OBLIGATION.road}|`) || (k.includes(OBLIGATION.road) && k.endsWith(E(target)))), target);
+  assert.ok(rows.some((r) => r.method_id === "pattern_mandate_capacity" && String(r.computed_by).includes(OBLIGATION.uco)), "the used-cooking-oil duty meets the roadmap under HEFA-SAF");
   const anchor = (id: string) => rows.find((r) => r.method_id === id)?.entity_id;
   assert.equal(anchor("pattern_velocity_burst"), E("carrier:green_ammonia"));
   assert.equal(anchor("pattern_penalty_abatement"), E("carrier:bio_methanol"));
-  assert.equal(countsOf(f, "corpus-turn").patterns, 8, "the stage's ledger row carries the count per kind");
-  assert.deepEqual([countsOf(f, "corpus-turn").patterns_velocity, countsOf(f, "corpus-turn").patterns_crossModal], [1, 4]);
+  assert.equal(countsOf(f, "corpus-turn").patterns, 13, "the stage's ledger row carries the count per kind");
+  assert.deepEqual([countsOf(f, "corpus-turn").patterns_velocity, countsOf(f, "corpus-turn").patterns_crossModal], [1, 8]);
 });
 
 test("INV-CN2-1: every pattern value names its evidence: member, evidence or key edges, one per evidence row, and the method version is recorded", async () => {
@@ -70,12 +74,13 @@ test("the invalidation DAG: a changed evidence row marks the patterns citing it 
   await propagate(f);
   await connect(f);
   const mandate = () => patterns(f).filter((p) => p.method_id === "pattern_mandate_capacity");
+  const before = mandate().length;
   const first = mandate()[0];
   // the roadmap row changes but the collision stands: the drain recomputes it by the method that found it
   touch(f, "oem_tech_roadmaps", OEM, 9001);
   await propagate(f);
   const after = mandate();
-  assert.equal(after.length, 2, "the stale value is kept, its successor is a new row");
+  assert.equal(after.length, before * 2, "each stale value is kept, its successor is a new row");
   const successor = after.find((p) => p.supersedes === first?.value_id);
   assert.ok(successor, "the recomputed pattern supersedes the stale one");
   assert.equal(successor?.method_version, "1.1.0");

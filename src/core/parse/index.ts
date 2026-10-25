@@ -6,5 +6,6 @@ export { canonicalizeUrl, findIdentifiers, hostMatches, indexOfInsensitive, ment
 export type { Identifier } from "./identifiers";
 export { interpretNumber, resolveLocale, scanNumbers } from "./locale";
 export type { LocaleVerdict } from "./locale";
-export { isTrajectoryUnit, kindOf } from "./unit";
+export { isTrajectoryUnit, kindOf, statutoryUnit } from "./unit";
+export type { StatutoryForm } from "./unit";
 export { contentWords, hasWord } from "./words";

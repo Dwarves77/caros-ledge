@@ -901,6 +901,13 @@
     "Packaging and Packaging Waste Regulation"
    ],
    "modeAgnostic": true,
+   "modes": [
+    "air",
+    "ocean",
+    "road",
+    "rail",
+    "inland_waterway"
+   ],
    "citation": {
     "url": "https://environment.ec.europa.eu/topics/waste-and-recycling/packaging-waste_en",
     "title": "Packaging waste, European Commission",
@@ -919,6 +926,13 @@
     "Carbon Border Adjustment Mechanism"
    ],
    "modeAgnostic": true,
+   "modes": [
+    "air",
+    "ocean",
+    "road",
+    "rail",
+    "inland_waterway"
+   ],
    "citation": {
     "url": "https://taxation-customs.ec.europa.eu/carbon-border-adjustment-mechanism_en",
     "title": "Carbon Border Adjustment Mechanism, European Commission",
@@ -937,6 +951,13 @@
     "ISO14083"
    ],
    "modeAgnostic": true,
+   "modes": [
+    "air",
+    "ocean",
+    "road",
+    "rail",
+    "inland_waterway"
+   ],
    "citation": {
     "url": "https://standards.iteh.ai/catalog/standards/iso/5c1639be-66c2-4f14-993a-ee2b9d6c1a52/iso-14083-2023",
     "title": "ISO 14083:2023, ISO standard catalogue",
@@ -1513,6 +1534,34 @@
    ]
   },
   {
+   "parent": "corridor:inland_waterway",
+   "child": "mode:road",
+   "relation": "corridor_links",
+   "citations": [
+    {
+     "url": "https://transport.ec.europa.eu/transport-modes/inland-waterways_en",
+     "title": "Inland waterways, European Commission",
+     "retrieved_at": "2026-10-24",
+     "quote": "The potential for increasing the modal share of inland waterway transport is significant",
+     "sourceClass": "primary"
+    }
+   ]
+  },
+  {
+   "parent": "corridor:rail_road",
+   "child": "mode:road",
+   "relation": "corridor_links",
+   "citations": [
+    {
+     "url": "https://en.wikipedia.org/wiki/Rail_freight_transport",
+     "title": "Rail freight transport, Wikipedia",
+     "retrieved_at": "2026-10-24",
+     "quote": "many governments have been stimulating the switch of freight from trucks onto trains",
+     "sourceClass": "reference"
+    }
+   ]
+  },
+  {
    "parent": "instrument:32023R2405",
    "child": "carrier:hefa_saf",
    "relation": "implements",
@@ -1833,6 +1882,10 @@
     {
      "column": "mode",
      "by": "mode"
+    },
+    {
+     "column": "verbatim_text",
+     "by": "alias"
     }
    ]
   },

@@ -61,19 +61,20 @@ function claimRefs(claims: readonly { id: string; claim_text: string; claim_kind
 }
 
 /** The entities one row of a typed table names, with the column and value each came from. Pure. */
-function rowEntities(map: ColumnMap, row: Row, c: MineContext): { entity: string; column: string | null; value: unknown }[] {
-  const out: { entity: string; column: string | null; value: unknown }[] = [];
+function rowEntities(map: ColumnMap, row: Row, c: MineContext): { entity: string; column: string | null; value: unknown; span?: [number, number] }[] {
+  const out: { entity: string; column: string | null; value: unknown; span?: [number, number] }[] = [];
   for (const m of map.maps) {
     const value = m.column ? row[m.column] : null;
     const values = Array.isArray(value) ? value : [value];
-    const add = (entity: string | undefined) => entity && c.known.has(entity) && out.push({ entity, column: m.column ?? null, value });
+    const add = (entity: string | undefined, found?: { value: unknown; span: [number, number] }) => entity && c.known.has(entity) && out.push({ entity, column: m.column ?? null, value: found?.value ?? value, ...(found ? { span: found.span } : {}) });
     if (m.by === "const") add(couplingByKey(m.entity ?? "")?.entityId);
     else if (m.by === "refs") for (const e of c.held.get(`${m.refTable}|${String(value)}`) ?? []) add(e);
     else
       for (const v of values) {
         if (v === null || v === undefined || v === "") continue;
         if (m.by === "entity") add(ENTITY_ID_SHAPE.test(String(v)) ? String(v) : undefined);
-        else if (m.by === "alias") for (const hit of resolveText(String(v), c.resolver)) add(hit.entityId);
+        // a text column (a label, a duty's verbatim text) is resolved like a claim; the basis keeps the words that matched and where, not the whole text
+        else if (m.by === "alias") for (const hit of resolveText(String(v), c.resolver)) add(hit.entityId, { value: String(v).slice(hit.span[0], hit.span[1]), span: hit.span });
         else if (m.by === "mode") add(couplingByKey(`mode:${normaliseMode(v)}`)?.entityId);
         else if (m.by === "map") add(couplingByKey(m.map?.[String(v)] ?? "")?.entityId);
       }
@@ -86,7 +87,7 @@ function columnRefs(map: ColumnMap, rows: readonly Row[], c: MineContext): RefRo
   const refs: RefRow[] = [];
   for (const row of rows) {
     const pk = String(row[map.pk]);
-    for (const e of rowEntities(map, row, c)) refs.push(refRow(map.table, UUID_SHAPE.test(pk) ? pk : uuidOf(pk), e.entity, { table: map.table, pk, column: e.column, value: e.value ?? null }));
+    for (const e of rowEntities(map, row, c)) refs.push(refRow(map.table, UUID_SHAPE.test(pk) ? pk : uuidOf(pk), e.entity, { table: map.table, pk, column: e.column, value: e.value ?? null, ...(e.span ? { span: e.span } : {}) }));
   }
   return refs;
 }

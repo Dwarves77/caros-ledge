@@ -20,6 +20,8 @@ export interface Fact {
   tier: number | null;
   qty: number | null;
   unit: string | null;
+  /** The row held a quantity whose unit the unit map does not state: the quantity is left out, never guessed. */
+  unitUnknown?: true;
   trl: number | null;
   /** A claim's kind, a forward event's kind. */
   kind: string | null;

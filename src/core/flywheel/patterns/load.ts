@@ -1,11 +1,12 @@
 // New in CONNECT-2 PR A (scripts/ci/new-files/connect-2a.txt): the reads of the connect stage's pattern step. Joins what the spine holds into the input the five detectors read: the entity refs the mining wrote (claims, typed rows, tags), the coupling relations (both directions), and for every table with a
 // fact spec the rows that carry a ref, each as a fact filed under its entities. Every read is paged under a total order and throws on error; a table with no rows yields no facts and the detectors run over what is there.
 import { couplingByKey, RELATIONS, uuidOf, type Relation } from "@/core/coupling";
+import { statutoryUnit } from "@/core/parse";
 import { readAll, type Row } from "@/core/coupling/read";
 import type { Db } from "@/core/db";
 import { surfaceOf } from "@/core/routing";
 
-import { FACT_SPECS, PATTERNS } from "./config";
+import { FACT_SPECS, PATTERNS, UNIT_FORMS } from "./config";
 import { factOf } from "./facts";
 import type { Fact, PatternInput } from "./types";
 
@@ -63,9 +64,10 @@ export async function loadPatternInput(sb: Db, now: Date): Promise<{ input: Patt
   }
   // the derived abatement costs: the current derived values in the unit the abatement attribute is measured in, each filed under its own entity
   const unit = couplingByKey("attr:abatement_cost_per_tco2e")?.unit;
-  const abatement = unit ? await readAll<Row>(sb, "derived_values", `${columnsOf("derived_values")},entity_id,admissibility,lifecycle`, ["value_id"], (q) => q.eq("unit", unit)) : [];
-  const live = abatement.filter((r) => r.entity_id && r.admissibility !== "stale" && !["falsified", "obsolete", "superseded"].includes(String(r.lifecycle)));
+  const abatement = unit ? await readAll<Row>(sb, "derived_values", `${columnsOf("derived_values")},entity_id,admissibility,lifecycle`, ["value_id"], (q) => q.not("unit", "is", null)) : [];
+  const live = abatement.filter((r) => r.entity_id && statutoryUnit(String(r.unit), UNIT_FORMS) === unit && r.admissibility !== "stale" && !["falsified", "obsolete", "superseded"].includes(String(r.lifecycle)));
   facts.push(...live.flatMap((r) => factOf("derived_values", r, [String(r.entity_id)]) ?? []));
   counts.facts_derived_values = live.length;
+  counts.facts_unit_unknown = facts.filter((f) => f.unitUnknown).length;
   return { input: { now, facts, related: (e) => near.get(e) ?? [], flow }, counts };
 }
