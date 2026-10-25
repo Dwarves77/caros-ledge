@@ -1,7 +1,7 @@
 // Cutover dry run: the remaining migration files, in apply order, as ONE transaction on the database DATABASE_URL names (the direct connection), ending in ROLLBACK.
 // It proves the chain on production's real schema and data before the window resumes; nothing is kept. There is no --commit: the real apply stays file-by-file through the runner in supabase/migrations/APPLY.md.
 //   DATABASE_URL=<direct url> node scripts/cutover/dry-run.mjs [--from 0004] [file ...]
-// With no file names the list is APPLY.md's: the schema files from --from (default 0004) in name order minus the rows apply-notes.json holds, then the data files in name order. Names may be given with or without .sql.
+// With no file names the list is the apply plan's (scripts/ci/apply-plan.mjs): the schema files from --from (default 0004) in name order minus the rows apply-notes.json holds, then the data files in name order. Names may be given with or without .sql.
 // Each file's own first `BEGIN;` and last `COMMIT;` are stripped (a file framed any other way is refused), and `cutover-dry-run: <file>` is raised between files so the first failure names its file.
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { register } from "node:module";
@@ -37,7 +37,7 @@ export function buildScript(files) {
   return parts.join("\n");
 }
 
-/** The ordered file names APPLY.md lists from `from`: schema files minus HOLD rows, then data files. Pure given the directory listing and notes. */
+/** The ordered file names the apply plan lists from `from`: schema files minus HOLD rows, then data files. Pure given the directory listing and notes. */
 export function planFiles(names, notes, from = "0004") {
   const all = names.filter((f) => /^\d{4}_.+\.sql$/.test(f)).sort();
   const held = (f) => Boolean(notes[f.replace(/\.sql$/, "")]?.hold);

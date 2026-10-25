@@ -12,6 +12,7 @@ import { readFileSync } from "node:fs";
 
 import { renderJsonData } from "../gen/json-data.mjs";
 import { readSchema } from "../gen/test-schema.mjs";
+import { defaultBase } from "../lib/migrations.mjs";
 
 import { migrationProblems } from "./migration-checks.mjs";
 import { applyBase, openDatabase, shapeProblems } from "./schema/base.mjs";
@@ -28,7 +29,7 @@ const fail = (problems) => {
 };
 
 // Static checks, before any database work.
-const staticProblems = migrationProblems();
+const staticProblems = migrationProblems("supabase/migrations", { base: defaultBase() });
 if (staticProblems.length) fail(staticProblems);
 
 const ctx = await openDatabase(process.env.DATABASE_URL);
