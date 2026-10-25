@@ -272,7 +272,7 @@ test("rows files: a citation is refused by name, an unclassifiable host is refus
   assert.equal(db.writes.length, 0, "no rows file records a gap and never an invented row");
 });
 
-test("rows files: p90 below p50 is refused, a missing both is an error, a same-corridor reroute is refused, an unresolved corridor is never minted", async () => {
+test("rows files: p90 below p50 is refused, a missing both is an error, a same-corridor reroute by another route is a row, a typed multiplier is refused, an unresolved corridor is never minted", async () => {
   const j = spine("jurisdiction", ["Great Britain"]);
   const run = (spec: ProducerSpec, entities: Array<Record<string, unknown>>, row: object) => runProducer(makeDeps({ db: memoryDb({ entities }) }).deps, { spec, text: JSON.stringify([row]) });
   const g = (o: object) => ({ jurisdiction_name: "Great Britain", dso_name: "DSO", capacity_band_mw: "10-20", as_of: "2026-09-01", queue_months_p50: 10, queue_months_p90: 20, citation: cite, ...o });
@@ -285,15 +285,15 @@ test("rows files: p90 below p50 is refused, a missing both is an error, a same-c
   assert.match(none.notes.join("|"), /at least one of/);
   assert.match((await run(gridQueueRows, j, g({ queue_months_p50: -1 }))).notes.join("|"), /must be >= 0/);
   const c = spine("corridor", ["A-B:ocean", "A-C:ocean"]);
-  const rr = (o: object) => ({ baseline_corridor_name: "A-B:ocean", reroute_corridor_name: "A-C:ocean", cause: "closure", fuel_burn_multiplier: 1.3, effective_from: "2026-01-01", citation: cite, ...o });
+  const rr = (o: object) => ({ baseline_corridor_name: "A-B:ocean", reroute_corridor_name: "A-C:ocean", route_via: "cape_of_good_hope", cause: "closure", effective_from: "2026-01-01", citation: cite, ...o });
   assert.equal((await run(rerouteRows, c, rr({}))).counts.parsed, 1);
-  const same = await run(rerouteRows, c, rr({ reroute_corridor_name: "A-B:ocean" }));
-  assert.equal(same.counts.parsed, 0);
-  assert.match(same.notes.join("|"), /SAME corridor/);
+  assert.equal((await run(rerouteRows, c, rr({ reroute_corridor_name: "A-B:ocean" }))).counts.parsed, 1, "Suez and the Cape of one port pair are one corridor entity");
+  assert.equal((await run(rerouteRows, c, rr({ reroute_corridor_name: undefined }))).counts.parsed, 1, "no reroute name means the same corridor");
+  assert.match((await run(rerouteRows, c, rr({ route_via: "sea" }))).notes.join("|"), /route_via "sea" is not one of/);
   const miss = await run(rerouteRows, c, rr({ reroute_corridor_name: "Z-Z:air" }));
   assert.equal(miss.counts.parsed, 0);
   assert.match(miss.notes.join("|"), /MISSING/);
-  assert.match((await run(rerouteRows, c, rr({ fuel_burn_multiplier: 0 }))).notes.join("|"), /must be > 0/);
+  assert.match((await run(rerouteRows, c, rr({ fuel_burn_multiplier: 1.3 }))).notes.join("|"), /typed fuel_burn_multiplier \(1\.3\) is refused/);
   assert.match((await run(rerouteRows, c, rr({ effective_to: "2025-01-01" }))).notes.join("|"), /before effective_from/);
 });
 

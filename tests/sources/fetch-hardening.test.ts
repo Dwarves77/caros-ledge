@@ -149,6 +149,18 @@ test("the pinned connect goes to the vetted address whatever the name resolves t
     server.close();
   }
 });
+test("ARM-2: a publisher whose response headers pass 16 KiB (maersk.com answers with about 16.6 KiB) is read through the pinned fetcher, and the old client limit refuses it", async () => {
+  const server = createHttp((_req, res) => (res.setHeader("X-Cookies", "c".repeat(20_000)), res.end("long headers")));
+  await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
+  const port = (server.address() as AddressInfo).port;
+  try {
+    const res = await pin.pinnedFetch(fetch)(`http://long.invalid:${port}/`, {}, ["127.0.0.1"]);
+    assert.equal(await res.text(), "long headers");
+    await assert.rejects(() => pin.pinnedFetch(fetch, {}, 16_384)(`http://long.invalid:${port}/`, {}, ["127.0.0.1"]), (e: unknown) => (e as { cause?: { code?: string } }).cause?.code === "UND_ERR_HEADERS_OVERFLOW");
+  } finally {
+    server.close();
+  }
+});
 test("the pinned connect to an empty list fails as an unresolvable name and resolves nothing", async () => {
   await assert.rejects(
     () => pin.pinnedFetch(fetch)("http://nothing.invalid/", {}, []),

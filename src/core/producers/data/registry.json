@@ -84,6 +84,15 @@
     "in_all": false
   },
   {
+    "name": "statutory-schedules",
+    "domain_table": "statutory_computations",
+    "source": "reviewed_rows_file",
+    "licence": "Reviewed rows file: every row cites a stored capture of the instrument page the class table rates",
+    "dry_capable": true,
+    "enabled_env": "STATUTORY_PRODUCER_SCHEDULES_ENABLED",
+    "in_all": false
+  },
+  {
     "name": "operator-rows-auxiliary-energy-profiles",
     "domain_table": "auxiliary_energy_profiles",
     "source": "operator_rows_csv",
