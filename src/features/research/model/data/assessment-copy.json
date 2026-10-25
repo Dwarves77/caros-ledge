@@ -6,5 +6,15 @@
  "method": {
   "text_trl": "read from the finding's recorded text against the technology readiness ladder",
   "text_cri": "read from the finding's recorded text against the commercial readiness ladder"
+ },
+ "predicate": {
+  "none": "no condition recorded",
+  "movement_by_date": "expects a recorded change on what it watches by {by}",
+  "date_passed": "fires once a recorded date has passed",
+  "threshold": "fires once {metric} reaches {gte}",
+  "threshold_bare": "fires once a measure crosses its threshold",
+  "count_gte": "fires once {n} or more {relation} are recorded",
+  "count_bare": "fires once a count reaches its floor",
+  "unrecognised": "condition not recognised"
  }
 }

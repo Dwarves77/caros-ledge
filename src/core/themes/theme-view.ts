@@ -6,6 +6,7 @@ import { SURFACE_HEADING, parseRamifications } from "@/core/briefs/theme-brief-c
 import { resolveBriefForTheme } from "@/core/flywheel";
 import { SURFACE_LABELS, SURFACE_ORDER, surfaceOf } from "@/core/routing";
 
+import signalLabels from "./data/signal-labels.json";
 import { deriveThemeForwardOutlook, type ThemeEventRow } from "./forward-outlook";
 
 export interface ThemeRow {
@@ -43,7 +44,7 @@ type Lineage = { prior_id: string; new_id: string }[];
 const MAX_MEMBERS_PER_PAGE = 6;
 const MAX_CHIP_MEMBER_LINKS = 3;
 const MAX_THEME_LABEL_CHARS = 56;
-const SIGNAL_PHRASES: Record<string, string> = { shared_source: "Shared source", shared_scenario: "Shared scenarios", shared_compliance_object: "Shared obligated parties", shared_jurisdiction_topic: "Shared jurisdiction and topic" };
+const SIGNAL_PHRASES: Record<string, string> = signalLabels;
 const trim = (x: unknown): string | null => (typeof x === "string" && x.trim() ? x.trim() : null);
 const label = (s: string): string | undefined => SURFACE_LABELS[s];
 
@@ -58,7 +59,27 @@ function briefForItem(itemId: string, themes: readonly ThemeRow[], briefs: reado
   return b ? { title: b.title, briefMd: b.brief_md, generatedAt: b.generated_at ?? null, stale: resolved.stale, supersedesThemeId: resolved.supersedes_theme_id, sections: b.sections && typeof b.sections === "object" && !Array.isArray(b.sections) ? b.sections : null } : null;
 }
 
-/** The theme analysis of one item on one surface: members by page (other pages first), the brief's sections, and the absence worded when there is no brief. */
+/** What a theme with no brief is made of, as data: the member and pivot ids, the surface keys it spans, the signal tokens and the counts. The page words it; no sentence is composed here (ADR-050). */
+export interface ClusterSummary {
+  memberIds: string[];
+  pivotIds: string[];
+  surfaces: string[];
+  signals: string[];
+  memberCount: number;
+  surfaceCount: number;
+  density: number | null;
+}
+const clusterOf = (theme: ThemeRow, pages: ReadonlyArray<{ surface: string }>): ClusterSummary => ({
+  memberIds: theme.member_ids,
+  pivotIds: (theme.pivots ?? []).map((p) => p?.id).filter((id): id is string => typeof id === "string"),
+  surfaces: pages.map((p) => p.surface),
+  signals: (theme.dominant_signals ?? []).map((x) => x?.signal).filter((x): x is string => typeof x === "string" && x.trim() !== ""),
+  memberCount: theme.member_ids.length,
+  surfaceCount: pages.length,
+  density: typeof theme.density === "number" ? theme.density : null,
+});
+
+/** The theme analysis of one item on one surface: members by page (other pages first), the brief's sections, and the cluster's structure when there is no brief. */
 export function themeAnalysisView(input: { itemId: string; surface: string; themes: readonly ThemeRow[]; briefs: readonly BriefRow[]; lineage?: Lineage; members?: readonly MemberRow[]; events?: readonly ThemeEventRow[]; asOfIso: string }) {
   const { itemId, surface, themes, briefs, lineage = [], members = [], events = [], asOfIso } = input;
   const theme = themeForItem(themes, itemId);
@@ -100,7 +121,7 @@ export function themeAnalysisView(input: { itemId: string; surface: string; them
     stale: brief ? brief.stale : false,
     supersedesThemeId: brief ? brief.supersedesThemeId : null,
     hasBrief: Boolean(brief),
-    absence: brief ? null : synthesizeClusterSummary(theme, pages),
+    cluster: brief ? null : clusterOf(theme, pages),
     sections,
     ramificationsMissing,
     pages,
@@ -173,21 +194,4 @@ export function themeChips(input: { themes: readonly ThemeRow[]; items: readonly
   }
   out.sort((a, b) => b.convergence - a.convergence || (a.themeId < b.themeId ? -1 : 1));
   return out.slice(0, Math.max(0, max)).map((c) => ({ themeId: c.themeId, href: c.href, label: c.label, itemTitle: c.itemTitle, memberCount: c.memberCount, pages: c.pages, hasBrief: c.hasBrief, stale: c.stale, links: c.links }));
-}
-
-function synthesizeClusterSummary(theme: ThemeRow, pages: Array<{ surface: string; label: string }>): string {
-  const count = theme.member_ids.length;
-  const pageList = pages.map((p) => p.label).filter(Boolean);
-  const surfacesText = pageList.length > 1
-    ? pageList.slice(0, -1).join(", ") + " and " + pageList[pageList.length - 1]
-    : pageList[0] ?? "connected intelligence surfaces";
-
-  const signals = (theme.dominant_signals ?? [])
-    .map((s) => (s?.signal ? (SIGNAL_PHRASES[s.signal] ?? s.signal.replace(/_/g, " ")) : null))
-    .filter(Boolean);
-
-  const signalText = signals.length > 0 ? ` bound by ${signals.join(", ").toLowerCase()}` : "";
-  const densityText = typeof theme.density === "number" ? ` (cohesion ${theme.density.toFixed(2)})` : "";
-
-  return `This cluster connects ${count} ${count === 1 ? "item" : "items"} across ${surfacesText}${signalText}${densityText}. Review overlapping duties and operational hand-offs across these surfaces.`;
 }

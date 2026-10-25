@@ -10,8 +10,9 @@ import { SURFACE_ORDER } from "@/core/routing";
 import { DUTY_HOLDER_CLASSES, VOCABULARIES } from "@/core/contracts/vocabularies";
 import objectRules from "@/features/obligations/derive/data/object-rules.json";
 import { deriveObligationObjects } from "@/features/obligations";
+import assessmentCopy from "@/features/research/model/data/assessment-copy.json";
 import stanceRules from "@/features/research/model/data/assessment-stance.json";
-import { selectAssessmentView, type AssessmentRow } from "@/features/research/model/assessment-view";
+import { selectAssessmentView, selectSignpostView, type AssessmentRow } from "@/features/research/model/assessment-view";
 
 import { connectDb } from "../connect/world.ts";
 
@@ -108,4 +109,23 @@ test("the obligation-object derive path writes spans, ids, dates and data-file t
   };
   assert.deepEqual(offenders(rows, a), []);
   assert.ok(rows.every((r) => r.plain_language === null), "plain_language is the reader's, never composed by code");
+});
+
+test("INV-CTX6-1 the cluster summary carries ids, surface keys and signal tokens, never a sentence", () => {
+  const theme: ThemeRow = { id: "t1", member_ids: ["reg", "ops", "mkt"], surfaces: ["regulations", "operations"], pivots: [{ id: "reg" }], dominant_signals: [{ signal: "shared_source", weight: 2 }], density: 0.82 };
+  const members: MemberRow[] = [
+    { id: "reg", legacy_id: "reg", title: "Packaging Mandate", item_type: "regulation", domain: 1 },
+    { id: "ops", legacy_id: "ops", title: "Warehouse Sorting Run", item_type: "regional_data", domain: 3 },
+  ];
+  const view = themeAnalysisView({ itemId: "reg", surface: "regulations", themes: [theme], briefs: [], members, asOfIso: "2026-10-24T00:00:00Z" });
+  assert.ok(view);
+  const a: Allowed = { inputs: new Set(["reg", "ops", "mkt"]), tokens: new Set([...SURFACE_ORDER, "shared_source"]), spans: [] };
+  assert.deepEqual(offenders(view.cluster, a), []);
+});
+
+test("INV-CTX6-1 the signpost predicate is a kind token and its own parameters, never a sentence", () => {
+  const base = { entity_id: "cl:signpost:aa", assessment_id: "a1", watches: "cl:instrument:bb", direction: "confirms", fired_at: null };
+  const predicates = [{ op: "date_passed", by: "2027-01-01", basis: "movement_by_date" }, { op: "date_passed" }, { op: "threshold", metric: "capacity_mw", gte: 40 }, { op: "threshold" }, { op: "count_gte", relation: "pilots", n: 3 }, { op: "count_gte" }, { op: "teleport" }, null];
+  const a: Allowed = { inputs: new Set(["2027-01-01", "capacity_mw", "pilots"]), tokens: new Set(Object.keys(assessmentCopy.predicate)), spans: [] };
+  for (const predicate of predicates) assert.deepEqual(offenders(selectSignpostView({ ...base, predicate } as never, () => null).predicate, a), [], JSON.stringify(predicate));
 });

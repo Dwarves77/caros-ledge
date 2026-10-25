@@ -71,7 +71,7 @@ export function SurfaceFixtures({ screen: requested }: { screen: string }) {
               <AssessmentCard assessment={ASSESS} failed={false} />
               <AssessmentCard assessment={null} failed={false} />
               <DissentPanel assessment={ASSESS} />
-              <SignpostList signposts={[{ entityId: "s1", watches: "w", watchesLabel: "FuelEU Maritime", direction: "confirms", summary: "expects a recorded change on what it watches by 2027-01-01", firedAt: null }]} />
+              <SignpostList signposts={[{ entityId: "s1", watches: "w", watchesLabel: "FuelEU Maritime", direction: "confirms", predicate: { kind: "movement_by_date", by: "2027-01-01", metric: null, gte: null, relation: null, n: null }, firedAt: null }]} />
               <AssessmentHistory bundle={{ history: [{ id: "a1", supersedes: "a0", computedAt: "2026-10-01T00:00:00Z", isCurrent: true, lifecycleState: null, technicalLabel: "TRL 6-7", commercialLabel: null, horizonBand: "NEAR", anchored: true }], historyComplete: false }} />
               <ThemeBriefCard brief={{ title: "Maritime decarbonisation", memberCount: 4, stale: true }} />
             </section>
