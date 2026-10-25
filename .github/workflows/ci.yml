@@ -235,8 +235,9 @@ jobs:
 
   parity:
     name: parity
-    needs: changes
-    if: github.event_name != 'status' && (github.event_name != 'workflow_dispatch' || github.event.inputs.only == '') && (github.event_name != 'pull_request' || needs.changes.outputs.parity == 'true')
+    # Rule 3 (DDL before code) as a gate: parity reads production live, so on a push to main it starts only after `migrate` succeeded (a failed or skipped migrate skips it rather than reading a half-applied schema). On a pull request and on a dispatch `migrate` is skipped and parity runs exactly as before.
+    needs: [changes, migrate]
+    if: ${{ !cancelled() && needs.changes.result == 'success' && github.event_name != 'status' && (github.event_name != 'workflow_dispatch' || github.event.inputs.only == '') && (github.event_name != 'pull_request' || needs.changes.outputs.parity == 'true') && (github.event_name != 'push' || needs.migrate.result == 'success') }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     # The baseline was captured in this image (old repo parity-baseline.yml), so fonts and hinting render identically and the pixel diff measures the design, not the machine.
