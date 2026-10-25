@@ -91,9 +91,7 @@ test('migrate runs on a push to main and on a dispatch with only=migrate on any 
   assert.deepEqual([...secretsOf('migrate')], ['SUPABASE_DB_URL']);
   for (const job of Object.keys(jobs).filter((j) => j !== 'migrate')) assert.ok(!secretsOf(job).has('SUPABASE_DB_URL'), `${job} must not hold the database secret`);
   assert.equal(jobs.migrate.permissions, undefined, 'migrate writes nothing to the repository: it takes the workflow default (read)');
-  // RUN-1: `ruled-runs` alone writes the repository (its results and the plan's applied flag, one commit, skip token); every other job takes the read default.
-  for (const job of Object.keys(jobs).filter((j) => j !== 'ruled-runs')) assert.notEqual(jobs[job].permissions?.contents, 'write', `${job} must not write the repository`);
-  assert.equal(jobs['ruled-runs'].permissions.contents, 'write');
+  for (const job of Object.keys(jobs)) assert.notEqual(jobs[job].permissions?.contents, 'write', `${job} must not write the repository: main is protected and nothing in CI commits`);
 });
 
 test('edge-deploy runs on a push to main that changed the function (edge output true) after a successful migrate, and on a dispatch with only=edge-deploy; nowhere else; it needs migrate and holds only SUPABASE_ACCESS_TOKEN', () => {
@@ -294,7 +292,7 @@ test('no install runs a package install script: every npm ci and every npm insta
 test('RUN-1: ruled-runs runs on a push to main that changed a pending plan, after migrate, and on nothing else: not without a pending plan, not on a pull request, a dispatch, a status, another ref or a fork', () => {
   const pending = { parity: 'true', windows: 'true', edge: 'false', plans: 'scripts/runs/plans/2026-10-24-arm-1.json' };
   assert.ok(on('push', '', {}, pending).includes('ruled-runs'));
-  assert.ok(!on('push').includes('ruled-runs'), 'a push with no pending plan (an applied plan, the results commit) runs nothing');
+  assert.ok(!on('push').includes('ruled-runs'), 'a push that changed no plan runs nothing');
   for (const [event, only] of [['pull_request', ''], ['workflow_dispatch', ''], ['workflow_dispatch', 'turn'], ['status', '']]) assert.ok(!on(event, only, VERCEL_OK, pending).includes('ruled-runs'), `${event} only=${only}`);
   try {
     where.ref = 'refs/heads/slice/x';

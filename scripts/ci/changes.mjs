@@ -6,7 +6,7 @@
 //   plans    a push to main that changed a ruled-run plan (scripts/runs/plans/*.json) whose `applied` is not true: the paths, space separated, for the `ruled-runs` job (INV-RUN-3: the results commit flips `applied`, so a plan runs once);
 //   node scripts/ci/changes.mjs   reads EVENT, BASE (the pull request's base branch) and BEFORE (the push's previous head) from the environment and writes parity, windows, edge and plans to $GITHUB_OUTPUT.
 import { execFileSync } from "node:child_process";
-import { appendFileSync, readFileSync } from "node:fs";
+import { appendFileSync, existsSync } from "node:fs";
 
 import { isMain } from "../lib/fs.mjs";
 
@@ -22,18 +22,8 @@ export function scopeOf(files, event) {
 }
 
 const PLAN = /^scripts\/runs\/plans\/[\w.-]+\.json$/;
-/** The changed plans still to run. `read(path)` is the file's text or null when it is gone; a plan that cannot be parsed is pending, so the job fails on it loudly instead of skipping it. */
-export function pendingPlans(files, read) {
-  return files.filter((f) => {
-    const text = PLAN.test(f) ? read(f) : null;
-    if (text === null) return false;
-    try {
-      return JSON.parse(text).applied !== true;
-    } catch {
-      return true;
-    }
-  });
-}
+/** The changed plans that still exist (a deleted plan runs nothing); `exists(path)` says whether the file is there. */
+export const pendingPlans = (files, exists) => files.filter((f) => PLAN.test(f) && exists(f));
 
 if (isMain(import.meta.url)) {
   const { EVENT = "", BASE = "", BEFORE = "" } = process.env;
@@ -41,7 +31,7 @@ if (isMain(import.meta.url)) {
   const files = range ? execFileSync("git", ["diff", "--name-only", range], { encoding: "utf8" }).split("\n").filter(Boolean) : [];
   const scope = scopeOf(files, EVENT);
   console.log(`changes: ${EVENT || "(no event)"}, ${files.length} file(s): ${JSON.stringify(scope)}`);
-  const plans = EVENT === "push" ? pendingPlans(files, (f) => { try { return readFileSync(f, "utf8"); } catch { return null; } }) : [];
+  const plans = EVENT === "push" ? pendingPlans(files, existsSync) : [];
   console.log(`changes: pending plans: ${plans.join(" ") || "none"}`);
   if (EVENT === "push" && !scope.edge && process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, "edge-deploy skipped: this push changes nothing under supabase/functions or src/core/fetch.\n");
   if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, Object.entries({ ...scope, plans: plans.join(" ") }).map(([k, v]) => `${k}=${v}\n`).join(""));

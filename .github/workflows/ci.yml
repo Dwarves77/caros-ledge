@@ -4,8 +4,8 @@ name: CI
 # Job `ci`: lint, typecheck, build, tests, tree checks, LOC gates, the connection check, the column check, the migration static checks (npm run gates).
 # Job `schema`: supabase/schema.sql applied to an empty Postgres 15, then the migrations (each self-check must print its own OK, each down file is applied and catalog-compared), then the property checks.
 # Job `turn`: the turn runtime (scripts/turn.mjs). Dispatch only: it is the one job that holds the service key for a run of the branch it was dispatched on; no pull request or push ever receives it.
-# Job `ruled-runs` (RUN-1): a push to main that changed a plan file under scripts/runs/plans/ with `applied: false` runs that plan's turn steps in order (scripts/runs/execute.mjs), with the turn job's environment and secrets, after `migrate`. A production run is a plan in a pull request; nobody dispatches it.
-# It writes scripts/runs/results/<plan>.json, uploads it, and commits it back to main with the plan's `applied: true` (a plan runs once). It is the only job that holds the service key on a push, and only on main: a pull request never reaches it.
+# Job `ruled-runs` (RUN-1): a push to main that changed a plan file under scripts/runs/plans/ runs that plan's turn steps in order (scripts/runs/execute.mjs), with the turn job's environment and secrets, after `migrate`. A production run is a plan in a pull request; nobody dispatches it. It is the only job that holds the service key on a push, and only on main: a pull request never reaches it.
+# Each step carries ruled_plan "<plan file>#<step>" in its stage input; the ledger (harness_runs) says which steps already have a success apply row, and those are skipped, so a changed plan is safe to re-run. Nothing is committed back to main: the results are the `ruled-run-results` artifact and the job summary.
 # Job `windows`: the test step alone on Windows (every push to main and dispatch; a pull request that touches scripts/ or tests/).
 # Job `parity`: the built app on the runner, the UX smoke, and the capture compared with tests/parity/baseline (a pull request that touches anything the build reads).
 # Jobs `target`, `live` and `preview-parity` (P2-15): on the successful `Vercel` commit status posted by the Vercel app (sender vercel[bot], target_url on vercel.com; Vercel posts a commit status and creates no GitHub Deployment, so a deployment event never fires) or a dispatch with only=live. `live` runs the live checks
@@ -192,8 +192,6 @@ jobs:
     concurrency:
       group: ruled-runs
       cancel-in-progress: false
-    permissions:
-      contents: write
     env:
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -219,17 +217,6 @@ jobs:
           name: ruled-run-results
           path: scripts/runs/results
           if-no-files-found: ignore
-      - name: Commit the results and the applied flag back to main
-        if: always()
-        run: |
-          git config user.name Claude
-          git config user.email noreply@anthropic.com
-          git add scripts/runs
-          git diff --cached --quiet && { echo "nothing to commit"; exit 0; }
-          names=$(git diff --cached --name-only -- scripts/runs/results | xargs -n1 basename | sed 's/\.json$//' | paste -sd, -)
-          git commit -m "runs: $names results [skip ci]" -m "The skip token is the one allowed use: this commit changes no code, and a run it started would hold the production secrets for nothing."
-          git pull --rebase origin main
-          git push origin HEAD:main || { git push origin "HEAD:refs/heads/runs-results-$GITHUB_RUN_ID"; echo "::warning::main refused the results commit (branch protection); it is on runs-results-$GITHUB_RUN_ID and in the artifact"; }
 
   windows:
     name: ci-windows
