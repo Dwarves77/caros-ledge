@@ -151,7 +151,7 @@ export function ResearchDetail(p: ResearchDetailProps) {
           >
             <DetailSection id="summary" title="Summary" index={1}>
               {isRecord ? (
-                <RecordFacts leadNote="This finding was captured directly from its source document rather than synthesized into a research summary. Every fact below is quoted verbatim." dateFacts={split.dateFacts} otherFacts={split.otherFacts} tags={r.tags} />
+                <RecordFacts leadNote="This finding was captured directly from its source document rather than synthesized into a research summary. Every fact below is quoted verbatim." dateFacts={split.dateFacts} otherFacts={split.otherFacts} gapsLine={parsed && parsed.slotFieldCount > 0 ? <>{`${parsed.gaps.length} of ${parsed.slotFieldCount} record fields not stated by the source`}{parsed.gaps.map((g) => <span key={g.slotKey} style={{ display: "block" }}>{g.label}: {g.text}</span>)}</> : undefined} tags={r.tags} />
               ) : summaryProse ? (
                 prose(summaryProse)
               ) : (

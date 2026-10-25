@@ -9,6 +9,7 @@ import type { RunResult } from "@/core/types/run-result";
 import { leadWithFailures, runResult, worst } from "@/core/types/run-result";
 import { applyBatch, applyCommitted, exportBatch } from "@/features/batches";
 import type { BatchDeps, ExportInput } from "@/features/batches";
+import { retokeniseRecordGaps } from "@/features/intake/record-facts/retokenise";
 import { resolvePendingTriggers } from "@/features/obligations";
 
 import type { BuiltDeps } from "../wiring";
@@ -68,7 +69,7 @@ async function downstream(call: FamilyCall, d: BuiltDeps, r: RunResult, itemIds:
   return { ...r, outcome: worst(r.outcome, scores.outcome, triggers.outcome), counts: { ...r.counts, ...pick(scores, ""), ...pick(triggers, "triggers_") }, notes: leadWithFailures([r, scores, triggers]), data: { ...(r.data as object | undefined), ids: { ...ids, scored_item_ids: scored, resolved_event_ids: resolved } } };
 }
 
-export async function runBriefs(call: FamilyCall, d: BuiltDeps): Promise<RunResult> {
+async function applyBriefs(call: FamilyCall, d: BuiltDeps): Promise<RunResult> {
   const plan = planBriefs(call.input);
   if (plan.error) return runResult("failed", { refused: 1 }, [plan.error]);
   const deps = batchDeps(d);
@@ -81,4 +82,18 @@ export async function runBriefs(call: FamilyCall, d: BuiltDeps): Promise<RunResu
   }
   const r = await applyBatch(plan.batch.kind, deps, { content: plan.batch.content, ...(plan.batch.format ? { format: plan.batch.format } : {}), dry: call.dry, runId: call.runId, ...(plan.batch.options ? { options: plan.batch.options } : {}) });
   return downstream(call, d, { ...r, counts: { applied: r.counts.written ?? 0, ...r.counts } }, itemIdsOf(plan.batch.kind, r));
+}
+
+/**
+ * The stage: the session-batch kit above, then MINT-1's backfill of the record mint's old absence sentences to the token (ADR-050), bounded per turn (200 items, `retokenise: { limit }` to change the bound);
+ * an input of `retokenise: { limit }` alone runs only the backfill. An export hands a session its bundle and runs nothing else.
+ */
+export async function runBriefs(call: FamilyCall, d: BuiltDeps): Promise<RunResult> {
+  const run = (limit: unknown) => retokeniseRecordGaps(d.sb, { limit: typeof limit === "number" ? limit : 200, dry: call.dry, now: d.now });
+  const only = call.input.retokenise as { limit?: unknown } | undefined;
+  if (only !== undefined) return run(only?.limit);
+  const applied = await applyBriefs(call, d);
+  if (call.input.export !== undefined || applied.counts.refused) return applied;
+  const tokens = await run(undefined);
+  return { ...applied, outcome: worst(applied.outcome, tokens.outcome), counts: { ...applied.counts, ...tokens.counts }, notes: leadWithFailures([applied, tokens]) };
 }

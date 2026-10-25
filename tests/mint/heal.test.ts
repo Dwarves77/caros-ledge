@@ -94,7 +94,7 @@ test("re-kind, never rewrite (ruling 4): a required-slot FACT becomes the slot's
   const sections = [{ id: "s1", content_md: "Operators must file within 30 days of the notice." }, { id: "s2", content_md: "Another paragraph about vessels." }];
   const slot = planReclassify(claim({ claim_text: "[binding_position] The captured source states, verbatim: «x»" }), sections, ["binding_position"], CELEX_URL);
   assert.equal(slot.kind, "gap");
-  assert.match(slot.kind === "gap" ? slot.claim_text : "", /^\[binding_position\] No verbatim/);
+  assert.equal(slot.kind === "gap" ? slot.claim_text : "", "[binding_position] M");
   assert.deepEqual(planReclassify(claim({ claim_text: "must file within 30 days", section_row_id: "s1" }), sections, [], null), { kind: "analysis", sectionId: "s1", moved: false });
   assert.deepEqual(planReclassify(claim({ claim_text: "about vessels", section_row_id: "s1" }), sections, [], null), { kind: "analysis", sectionId: "s2", moved: true });
   assert.deepEqual(planReclassify(claim({ claim_text: "a sentence in no section" }), sections, [], null), { kind: "refused", reason: "claim_text_not_found_verbatim_in_any_section" });
@@ -188,7 +188,7 @@ test("heal: a required-slot FACT that cannot be proven becomes the slot's GAP", 
   await heal(db);
   const slot = claimsOf(db).find((c) => String(c.claim_text).startsWith("[binding_position]"))!;
   assert.deepEqual([slot.claim_kind, slot.source_span, slot.source_id, slot.search_result_id], ["GAP", null, null, null]);
-  assert.match(String(slot.claim_text), /No verbatim/);
+  assert.match(String(slot.claim_text), /^\[[a-z_]+\] M$/);
 });
 
 const PAGE = `<html><head><title>Penalty schedule</title></head><body><p>${"The schedule of penalties under the scheme is set out below for operators of cargo aircraft. ".repeat(4)} The penalty is EUR 50 000 per breach of the reporting duty.</p></body></html>`;
