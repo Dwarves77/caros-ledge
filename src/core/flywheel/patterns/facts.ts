@@ -1,6 +1,6 @@
 // New in CONNECT-2 PR A (scripts/ci/new-files/connect-2a.txt): the adapter from a stored row to the fact a detector reads (spec per table in data/facts.json), and the grade of a pattern's evidence. Pure: the same function builds the facts the connect stage detects over and the
 // facts the propagation drain re-reads when an evidence row changes, so a pattern is recomputed by the code that found it.
-import { couplingById } from "@/core/coupling";
+import { couplingById } from "@/core/coupling/coupling";
 import { findFigures, isFigure } from "@/core/parse";
 
 import { FACT_SPECS, PATTERNS, type FactSpec } from "./config";

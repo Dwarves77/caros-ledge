@@ -1,9 +1,9 @@
 // New in CONNECT-2 PR A (scripts/ci/new-files/connect-2a.txt): the coupling vocabulary as validated data. couplings.json holds every coupling the operator named (feedstocks, energy carriers, infrastructure nodes, modal-shift corridors, consignment-wide mandates,
 // quantitative attributes with their units, time windows, the modes and hubs they connect) each with the published page and verbatim quote it is taken from, and the column-to-entity mapping the typed tables are mined through. Nothing here is a number the
-// store should hold: a window is a horizon definition, an attribute carries the unit it is measured in, and no price, rate or factor appears. Logic is in seed.ts, resolve.ts and refs.ts; this file only validates, indexes and answers.
+// store should hold: the entity ids are stored (the browser-safe detectors cannot hash; a test holds them equal to entityId()); a window is a horizon definition, an attribute carries the unit it is measured in, and no price, rate or factor appears. Logic is in seed.ts, resolve.ts and refs.ts; this file only validates, indexes and answers.
 import { z } from "zod";
 
-import { entityId, type EntityKind } from "@/core/entities";
+import type { EntityKind } from "@/core/entities/kinds";
 
 import couplingsJson from "./data/couplings.json";
 
@@ -14,7 +14,7 @@ const schemaText = z.string().min(1);
 const schemaCitation = z.object({ url: z.url(), title: schemaText, retrieved_at: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), quote: schemaText }).strict();
 const schemaClass = z.object({ kind: z.enum(["material", "node", "asset", "instrument", "method"]), role: schemaText, rank: z.number().int().min(0), text: z.boolean().optional() }).strict();
 const schemaEntity = z
-  .object({ key: schemaText, class: schemaText, name: schemaText, aliases: z.array(schemaText), modes: z.array(schemaText).optional(), scenarios: z.array(schemaText).optional(), modeAgnostic: z.boolean().optional(), unit: schemaText.optional(), fromMonths: z.number().int().optional(), toMonths: z.number().int().optional(), citation: schemaCitation.optional() })
+  .object({ key: schemaText, class: schemaText, name: schemaText, aliases: z.array(schemaText), modes: z.array(schemaText).optional(), scenarios: z.array(schemaText).optional(), modeAgnostic: z.boolean().optional(), entityId: z.string().regex(/^cl:[a-z_]+:[0-9a-f]{16}$/), unit: schemaText.optional(), fromMonths: z.number().int().optional(), toMonths: z.number().int().optional(), citation: schemaCitation.optional() })
   .strict();
 const schemaRelation = z.object({ parent: schemaText, child: schemaText, relation: z.enum(RELATIONS), citations: z.array(schemaCitation).min(1) }).strict();
 const schemaMap = z.object({ column: schemaText.optional(), by: z.enum(["entity", "alias", "mode", "map", "const", "refs"]), map: z.record(z.string(), z.string()).optional(), entity: schemaText.optional(), refTable: schemaText.optional() }).strict();
@@ -25,7 +25,6 @@ export type ColumnMap = z.infer<typeof schemaColumn>;
 export interface Coupling extends CouplingEntity {
   /** Whether the entity is named in text (its name and aliases resolve); a mode, a hub or a window is filed by column and relation only. */
   named: boolean;
-  entityId: string;
   kind: EntityKind;
   role: string;
 }
@@ -49,7 +48,7 @@ if (fileProblems.length) throw new Error(`couplings.json: ${fileProblems.join(";
 export const COUPLING_VERSION = couplingFile.version;
 export const COUPLINGS: readonly Coupling[] = couplingFile.entities.map((e) => {
   const c = couplingFile.classes[e.class] as z.infer<typeof schemaClass>;
-  return { ...e, kind: c.kind, role: c.role, named: c.text !== false, entityId: entityId(c.kind, e.name) };
+  return { ...e, kind: c.kind, role: c.role, named: c.text !== false };
 });
 export const COLUMNS: readonly ColumnMap[] = couplingFile.columns;
 export const COUPLING_RELATIONS = couplingFile.relations;

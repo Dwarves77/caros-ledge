@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { COUPLING_RELATIONS, COUPLINGS, couplingByKey } from "@/core/coupling";
+import { entityId } from "@/core/entities";
 import { seedCouplings } from "@/core/coupling";
 
 import { fixture, NOW } from "../integration/world.ts";
@@ -61,4 +62,8 @@ test("the relations run from a lower class rank to a higher one, so the vocabula
   // within a rank the pairs are ordered one way only: no pair appears in both directions
   const pairs = new Set(COUPLING_RELATIONS.map((r) => `${r.parent}>${r.child}`));
   for (const r of COUPLING_RELATIONS) assert.ok(!pairs.has(`${r.child}>${r.parent}`), `${r.parent} and ${r.child} relate both ways`);
+});
+
+test("the entity ids stored in couplings.json are the ids the spine mints for the same kind and name", () => {
+  for (const c of COUPLINGS) assert.equal(c.entityId, entityId(c.kind, c.name), c.key);
 });

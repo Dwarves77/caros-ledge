@@ -5,7 +5,7 @@
 //   P3 lead and lag: a pending trigger a set number of days out and a move on a shared entity in the days before.
 //   P4 cross-modal: a mandate or a move in one mode's entity and recent rows in a mode the entity's relation (feedstock, competition, grid zone, corridor) carries it to.
 //   P5 penalty and abatement: a technology at the maturity floor whose derived abatement cost crosses, or comes within the band of, a statutory ceiling in the same unit.
-import { couplingById, WINDOWS, type Relation } from "@/core/coupling";
+import { couplingById, WINDOWS, type Relation } from "@/core/coupling/coupling";
 
 import { PATTERNS } from "./config";
 import type { Evidence, Fact, Pattern, PatternInput } from "./types";

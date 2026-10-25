@@ -70,7 +70,8 @@
     "title": "ReFuelEU Aviation, European Commission",
     "retrieved_at": "2026-10-24",
     "quote": "Transport modes Air Road Rail Maritime Inland waterways"
-   }
+   },
+   "entityId": "cl:asset:2fd6ccdc874cab67"
   },
   {
    "key": "mode:ocean",
@@ -86,7 +87,8 @@
     "title": "ReFuelEU Aviation, European Commission",
     "retrieved_at": "2026-10-24",
     "quote": "Transport modes Air Road Rail Maritime Inland waterways"
-   }
+   },
+   "entityId": "cl:asset:52f1ba0e5a3e12c5"
   },
   {
    "key": "mode:road",
@@ -102,7 +104,8 @@
     "title": "ReFuelEU Aviation, European Commission",
     "retrieved_at": "2026-10-24",
     "quote": "Transport modes Air Road Rail Maritime Inland waterways"
-   }
+   },
+   "entityId": "cl:asset:b77d0e3c8b0c915c"
   },
   {
    "key": "mode:rail",
@@ -118,7 +121,8 @@
     "title": "ReFuelEU Aviation, European Commission",
     "retrieved_at": "2026-10-24",
     "quote": "Transport modes Air Road Rail Maritime Inland waterways"
-   }
+   },
+   "entityId": "cl:asset:ef11d42b632123d0"
   },
   {
    "key": "mode:inland_waterway",
@@ -134,7 +138,8 @@
     "title": "ReFuelEU Aviation, European Commission",
     "retrieved_at": "2026-10-24",
     "quote": "Transport modes Air Road Rail Maritime Inland waterways"
-   }
+   },
+   "entityId": "cl:asset:32e6dd8e48c05b84"
   },
   {
    "key": "hub:seaport",
@@ -152,7 +157,8 @@
     "title": "Bunkering, Wikipedia",
     "retrieved_at": "2026-10-24",
     "quote": "Bunkering operations take place at seaports"
-   }
+   },
+   "entityId": "cl:node:808d1902f383b1c7"
   },
   {
    "key": "hub:airport",
@@ -170,7 +176,8 @@
     "title": "ReFuelEU Aviation, European Commission",
     "retrieved_at": "2026-10-24",
     "quote": "supplied at EU airports"
-   }
+   },
+   "entityId": "cl:node:7f440f59d02bad70"
   },
   {
    "key": "feed:lipid",
@@ -198,7 +205,8 @@
     "title": "ReFuelEU Aviation, European Commission",
     "retrieved_at": "2026-10-24",
     "quote": "Biofuels produced from oils and fats"
-   }
+   },
+   "entityId": "cl:material:aba0d2b214f2a369"
   },
   {
    "key": "feed:uco",
@@ -223,7 +231,8 @@
     "title": "Renewable diesel, Wikipedia",
     "retrieved_at": "2026-10-24",
     "quote": "used cooking oil"
-   }
+   },
+   "entityId": "cl:material:9796702590ae69b1"
   },
   {
    "key": "feed:tallow",
@@ -247,7 +256,8 @@
     "title": "Tallow, Wikipedia",
     "retrieved_at": "2026-10-24",
     "quote": "is a rendered form of beef"
-   }
+   },
+   "entityId": "cl:material:8fffe0f4c2aa6116"
   },
   {
    "key": "feed:lignocellulosic",
@@ -271,7 +281,8 @@
     "title": "Lignocellulosic biomass, Wikipedia",
     "retrieved_at": "2026-10-24",
     "quote": "Lignocellulose consists of three components"
-   }
+   },
+   "entityId": "cl:material:c64972963cb3fcd4"
   },
   {
    "key": "feed:residues",
@@ -295,7 +306,8 @@
     "title": "ReFuelEU Aviation, European Commission",
     "retrieved_at": "2026-10-24",
     "quote": "Advanced biofuels from waste and residues"
-   }
+   },
+   "entityId": "cl:material:574d0c61bd7fd91e"
   },
   {
    "key": "carrier:hvo",
@@ -319,7 +331,8 @@
     "title": "Renewable diesel, Wikipedia",
     "retrieved_at": "2026-10-24",
     "quote": "is a biofuel made by the hydrocracking or hydrogenation of vegetable oil or animal fat"
-   }
+   },
+   "entityId": "cl:material:7478cefbcb917285"
   },
   {
    "key": "carrier:hefa_saf",
@@ -344,7 +357,8 @@
     "title": "Sustainable aviation fuel, Wikipedia",
     "retrieved_at": "2026-10-24",
     "quote": "is a biofuel used to power aircraft"
-   }
+   },
+   "entityId": "cl:material:36f86f3cc4407e6d"
   },
   {
    "key": "carrier:efuels",
@@ -374,7 +388,8 @@
     "title": "ReFuelEU Aviation, European Commission",
     "retrieved_at": "2026-10-24",
     "quote": "Synthetic aviation fuels from renewable hydrogen and captured carbon"
-   }
+   },
+   "entityId": "cl:material:a7de1ca4d206c116"
   },
   {
    "key": "carrier:bio_lng",
@@ -399,7 +414,8 @@
     "title": "Biogas, Wikipedia",
     "retrieved_at": "2026-10-24",
     "quote": "upgraded to biomethane for use in vehicles or natural gas distribution systems"
-   }
+   },
+   "entityId": "cl:material:ab4a85c6c0c6fd32"
   },
   {
    "key": "carrier:bio_methanol",
@@ -423,7 +439,8 @@
     "title": "Methanol economy, Wikipedia",
     "retrieved_at": "2026-10-24",
     "quote": "renewable methanol is mainly produced of fermented biomass as well as municipal solid waste (bio-methanol) and of renewable electricity (e-methanol)"
-   }
+   },
+   "entityId": "cl:material:b409fbb9b2fe3eee"
   },
   {
    "key": "carrier:green_ammonia",
@@ -445,7 +462,8 @@
     "title": "Green ammonia, Wikipedia",
     "retrieved_at": "2026-10-24",
     "quote": "ammonia produced by using green hydrogen"
-   }
+   },
+   "entityId": "cl:material:7bb5045f00dddffa"
   },
   {
    "key": "carrier:renewable_electricity",
@@ -470,7 +488,8 @@
     "title": "Renewable energy, Wikipedia",
     "retrieved_at": "2026-10-24",
     "quote": "renewable natural resources"
-   }
+   },
+   "entityId": "cl:material:30c70bed12414928"
   },
   {
    "key": "carrier:bio_bunkers",
@@ -495,7 +514,8 @@
     "title": "FuelEU Maritime, European Commission",
     "retrieved_at": "2026-10-24",
     "quote": "promotes the use of renewable, low-carbon fuels and clean energy technologies for ships"
-   }
+   },
+   "entityId": "cl:material:6f1ceccf2f5fe812"
   },
   {
    "key": "node:shore_power",
@@ -521,7 +541,8 @@
     "title": "FuelEU Maritime, European Commission",
     "retrieved_at": "2026-10-24",
     "quote": "must use on-shore power supply (OPS) or alternative zero-emission technologies"
-   }
+   },
+   "entityId": "cl:node:4aa80df87d7188f6"
   },
   {
    "key": "node:hdv_charging",
@@ -546,7 +567,8 @@
     "title": "Alternative fuels infrastructure, European Commission",
     "retrieved_at": "2026-10-24",
     "quote": "recharging stations are in place for heavy-duty vehicles in urban nodes"
-   }
+   },
+   "entityId": "cl:node:24b83f7af01a9a05"
   },
   {
    "key": "node:reefer_plugs",
@@ -571,7 +593,8 @@
     "title": "Refrigerated container, Wikipedia",
     "retrieved_at": "2026-10-24",
     "quote": "A refrigerated container or reefer is an intermodal container"
-   }
+   },
+   "entityId": "cl:node:e880b21d1acbb4f9"
   },
   {
    "key": "node:grid_queues",
@@ -597,7 +620,8 @@
     "title": "Connections reform, NESO",
     "retrieved_at": "2026-10-24",
     "quote": "transformation of the previous connections queue into"
-   }
+   },
+   "entityId": "cl:node:9ddd95bcf6855e4b"
   },
   {
    "key": "node:bunkering",
@@ -617,7 +641,8 @@
     "title": "Reducing greenhouse gas emissions from ships, IMO",
     "retrieved_at": "2026-10-24",
     "quote": "safe and efficient bunkering of alternative low-carbon and zero-carbon fuels"
-   }
+   },
+   "entityId": "cl:node:45cf3c0145bb7adf"
   },
   {
    "key": "node:saf_blending",
@@ -640,7 +665,8 @@
     "title": "ReFuelEU Aviation, European Commission",
     "retrieved_at": "2026-10-24",
     "quote": "gradually increase the share of SAF blended into the conventional aviation fuel supplied at EU airports"
-   }
+   },
+   "entityId": "cl:node:6777c671111b4d81"
   },
   {
    "key": "corridor:ocean_to_sea_air",
@@ -661,7 +687,8 @@
     "title": "Sea-air logistics, Kuehne+Nagel",
     "retrieved_at": "2026-10-24",
     "quote": "combines the cost efficiency of ocean freight with the speed of air freight"
-   }
+   },
+   "entityId": "cl:asset:e7853e0a5af85678"
   },
   {
    "key": "corridor:sea_air_to_air",
@@ -681,7 +708,8 @@
     "title": "Sea-air logistics, Kuehne+Nagel",
     "retrieved_at": "2026-10-24",
     "quote": "Cargo is first transported by sea to a major hub port and then transferred to air transport"
-   }
+   },
+   "entityId": "cl:asset:7ca3ebd43d833613"
   },
   {
    "key": "corridor:rail_road",
@@ -702,7 +730,8 @@
     "title": "Rail freight transport, Wikipedia",
     "retrieved_at": "2026-10-24",
     "quote": "Rail freight transport is the use of railways and trains to transport cargo"
-   }
+   },
+   "entityId": "cl:asset:fec701586a10c507"
   },
   {
    "key": "corridor:inland_waterway",
@@ -723,7 +752,8 @@
     "title": "Inland waterways, European Commission",
     "retrieved_at": "2026-10-24",
     "quote": "to facilitate its integration into the intermodal logistics chain"
-   }
+   },
+   "entityId": "cl:asset:fa5cc310536dc62d"
   },
   {
    "key": "instrument:32023R2405",
@@ -739,7 +769,8 @@
     "title": "ReFuelEU Aviation, European Commission",
     "retrieved_at": "2026-10-24",
     "quote": "ReFuelEU Aviation Regulation (EU) 2023/2405"
-   }
+   },
+   "entityId": "cl:instrument:1e073ab18e92de25"
   },
   {
    "key": "instrument:32023R1805",
@@ -755,7 +786,8 @@
     "title": "FuelEU Maritime, European Commission",
     "retrieved_at": "2026-10-24",
     "quote": "regulation (EU) 2023/1805"
-   }
+   },
+   "entityId": "cl:instrument:02eb79daf48ec2ca"
   },
   {
    "key": "instrument:32023R1804",
@@ -771,7 +803,8 @@
     "title": "Alternative fuels infrastructure, European Commission",
     "retrieved_at": "2026-10-24",
     "quote": "Regulation (EU) 2023/1804 on the deployment of alternative fuels infrastructure"
-   }
+   },
+   "entityId": "cl:instrument:4071cf5d182e141b"
   },
   {
    "key": "instrument:32023L2413",
@@ -786,7 +819,8 @@
     "title": "Renewable Energy Directive, European Commission",
     "retrieved_at": "2026-10-24",
     "quote": "amending Directive EU/2023/2413"
-   }
+   },
+   "entityId": "cl:instrument:8d00532ee05cc710"
   },
   {
    "key": "instrument:32018L2001",
@@ -801,7 +835,8 @@
     "title": "Renewable Energy Directive, European Commission",
     "retrieved_at": "2026-10-24",
     "quote": "(EU/2018/2001) was revised in 2023"
-   }
+   },
+   "entityId": "cl:instrument:ccc8f633a5dd1823"
   },
   {
    "key": "instrument:32025R0040",
@@ -817,7 +852,8 @@
     "title": "Packaging waste, European Commission",
     "retrieved_at": "2026-10-24",
     "quote": "Regulation (EU) 2025/40 on packaging and packaging waste"
-   }
+   },
+   "entityId": "cl:instrument:a59c19e08e8938a8"
   },
   {
    "key": "instrument:32023R0956",
@@ -833,7 +869,8 @@
     "title": "Carbon Border Adjustment Mechanism, European Commission",
     "retrieved_at": "2026-10-24",
     "quote": "cement, iron and steel, aluminium, fertilisers, electricity and hydrogen"
-   }
+   },
+   "entityId": "cl:instrument:52ac5c4553c73cbf"
   },
   {
    "key": "instrument:ISO14083",
@@ -849,7 +886,8 @@
     "title": "ISO 14083:2023, ISO standard catalogue",
     "retrieved_at": "2026-10-24",
     "quote": "establishes a common methodology for the quantification and reporting of greenhouse gas (GHG) emissions arising from the operation of transport chains of passengers and freight"
-   }
+   },
+   "entityId": "cl:instrument:a7a6acbd2f2e61e9"
   },
   {
    "key": "attr:void_space_ratio",
@@ -865,7 +903,8 @@
     "title": "Packaging waste, Wikipedia",
     "retrieved_at": "2026-10-24",
     "quote": "non-functional headspace"
-   }
+   },
+   "entityId": "cl:method:f8e110f5659ca727"
   },
   {
    "key": "attr:recycled_content",
@@ -880,7 +919,8 @@
     "title": "Packaging waste, European Commission",
     "retrieved_at": "2026-10-24",
     "quote": "transparency in calculating recycled content in new single-use polyethylene terephthalate (PET) bottles"
-   }
+   },
+   "entityId": "cl:method:90820c60a35a0970"
   },
   {
    "key": "attr:ghg_intensity",
@@ -896,7 +936,8 @@
     "title": "FuelEU Maritime, European Commission",
     "retrieved_at": "2026-10-24",
     "quote": "on a well-to-wake (WtW) basis"
-   }
+   },
+   "entityId": "cl:method:bcd01a61afdbec3f"
   },
   {
    "key": "attr:abatement_cost_per_tco2e",
@@ -912,7 +953,8 @@
     "title": "Marginal abatement cost, Wikipedia",
     "retrieved_at": "2026-10-24",
     "quote": "measures the cost of reducing one more unit of pollution"
-   }
+   },
+   "entityId": "cl:method:c96af1f546b98a0b"
   },
   {
    "key": "attr:tonnage_cutoff",
@@ -928,7 +970,8 @@
     "title": "FuelEU Maritime, European Commission",
     "retrieved_at": "2026-10-24",
     "quote": "intensity of the energy used by ships above 5,000 gross tonnage"
-   }
+   },
+   "entityId": "cl:method:05dababb8b1145cf"
   },
   {
    "key": "window:0-6m",
@@ -936,7 +979,8 @@
    "name": "0-6m",
    "aliases": [],
    "fromMonths": 0,
-   "toMonths": 6
+   "toMonths": 6,
+   "entityId": "cl:method:9c6e5ad5973f81ba"
   },
   {
    "key": "window:6-18m",
@@ -944,7 +988,8 @@
    "name": "6-18m",
    "aliases": [],
    "fromMonths": 6,
-   "toMonths": 18
+   "toMonths": 18,
+   "entityId": "cl:method:2383b485cff5b01c"
   },
   {
    "key": "window:18-36m",
@@ -952,7 +997,8 @@
    "name": "18-36m",
    "aliases": [],
    "fromMonths": 18,
-   "toMonths": 36
+   "toMonths": 36,
+   "entityId": "cl:method:de617189c3d54540"
   }
  ],
  "relations": [
