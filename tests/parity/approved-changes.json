@@ -1,5 +1,5 @@
 {
-  "_about": "The parity gate's configuration (tests/parity/compare.mjs). `gates` names what the gate holds: `full` routes are compared whole (landmarks by role and name, headings, controls, list containers and rows, row heights at 375); `frame` routes only for the shell the slice draws (frameControls, frameHeadings); `pixelExact` routes also gate on the 2 percent pixel diff; `lists` routes must have rows in their baseline. Every name in routes.json is gated or listed in `exempt` with a reason (gateProblems, tested). A gated route that is not compared is a FAIL unless `skippable` names it with a reason; the report ends `compared N of M gated routes`. `listEmpty` names a list route whose baseline account legitimately holds no rows. `approved` lists the differences from the baseline that a ruling allows, each with its ruling; nothing else may differ. It is empty because the baseline is the new production site (2026-10-19); a waiver must match a current difference, and the report ends with the `unused waivers:` line. `rulings` is text only.",
+  "_about": "The parity gate's configuration (tests/parity/compare.mjs). `gates` names what the gate holds: `full` routes are compared whole (landmarks by role and name, headings, controls, list containers and rows, row heights at 375); `frame` routes only for the shell the slice draws (frameControls, frameHeadings); `pixelExact` routes also gate on the 2 percent pixel diff; `lists` routes must have rows in their baseline. Every name in routes.json is gated or listed in `exempt` with a reason (gateProblems, tested). A gated route that is not compared is a FAIL unless `skippable` names it with a reason; the report ends `compared N of M gated routes`. `listEmpty` names a list route whose baseline account legitimately holds no rows. `approved` lists the differences from the baseline that a ruling allows, each with its ruling; nothing else may differ. It is empty because the baseline is the new production site (2026-10-19); a waiver must match a current difference, and the report ends with the `unused waivers:` line. `conditional` ({route, match, reason}) names a control that exists only while some data does (an empty panel's Request coverage): compared when present on both sides, ignored when absent on either. `rulings` is text only.",
   "gates": {
     "full": [
       "home",
@@ -82,6 +82,13 @@
   "frameHeadings": [
     "Caro's Ledge",
     "This page doesn't exist"
+  ],
+  "conditional": [
+    {
+      "route": "operations-detail",
+      "match": "^button:Request coverage$",
+      "reason": "coordinator 2026-10-25: a panel's Request coverage action is its absence state (auxiliary energy loads, grid connection queue) and exists only while the panel has no data; ARM-1 populated grid_connection_queues, so the grid panel draws rows and its button is gone. Compared when present on both sides, ignored when absent on either; design unchanged"
+    }
   ],
   "dataNames": [
     {
