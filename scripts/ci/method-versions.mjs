@@ -16,8 +16,8 @@ import ts from "typescript";
 import { isMain, walk } from "../lib/fs.mjs";
 
 export const HASH_FILE = "scripts/ci/data/method-hashes.json";
-// A method's code is the registration, every value declaration it reaches and every JSON table those declarations import (a threshold in data/rules.json is part of the method). The methods live in propagation; the impact score's pure code and rules in impact.
-const DIRS = ["src/core/propagation", "src/core/impact"];
+// A method's code is the registration, every value declaration it reaches and every JSON table those declarations import (a threshold in data/rules.json is part of the method). The methods live in propagation; the impact score's pure code and rules in impact; the five pattern detectors, their thresholds and fact adapters in flywheel/patterns, and the coupling vocabulary they read in coupling.
+export const DIRS = ["src/core/propagation", "src/core/impact", "src/core/flywheel/patterns", "src/core/coupling"];
 const TABLES = new Set(["derived_values", "inference_records", "item_impact_scores"]);
 
 const sha = (text) => createHash("sha256").update(text).digest("hex");

@@ -13,6 +13,16 @@ export interface InputRef {
   table: string;
   pk: string;
   version?: string | null;
+  /** The edge kind the input is registered under (default 'input'; a pattern's evidence is 'member', 'evidence' or 'key'). */
+  kind?: string;
+  /** What a pattern's recompute needs of an evidence row besides its columns: the entities it is filed under and the relation a cross-modal pattern crossed. */
+  entities?: string[];
+  relation?: string;
+  surface?: string;
+  /** The day a claim counts from (its item's added date), which the claim row does not hold. */
+  at?: string;
+  /** The counts a capped pattern's summary edge carries. */
+  summary?: Record<string, number>;
 }
 
 /** A derived value as a figure component or the gate sees it. */

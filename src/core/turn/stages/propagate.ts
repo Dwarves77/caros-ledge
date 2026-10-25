@@ -5,6 +5,7 @@
 // Everything after the drain works from the events the drain just processed, so one change reaches every consumer in the same run.
 import { readFileSync } from "node:fs";
 
+import { mineRefs, seedCouplings, seedPages } from "@/core/coupling";
 import { FAMILIES, type FamilyCall } from "@/core/harness";
 import { scoreItems } from "@/core/impact/run";
 import { runPropagationDrain, reopener } from "@/core/propagation";
@@ -48,7 +49,7 @@ const changedItemIds = (events: readonly Processed[]): string[] => [...new Set(e
 const pick = (r: RunResult | null, prefix: string): Record<string, number> => Object.fromEntries(Object.entries(r?.counts ?? {}).map(([k, v]) => [`${prefix}${k}`, v]));
 
 /** One result from the five steps. A producer the gates refused is a note, not a failed stage: the drain and its consumers still ran. Pure. */
-export function shapePropagate(parts: { producers: RunResult | null; drain: RunResult; questions: RunResult; signposts: RunResult; assess: RunResult | null; derive?: RunResult<{ ids: { derive_cursor: string[] } }> | null; impact?: RunResult<{ ids: { scored_item_ids: string[] } }> | null; carbon?: RunResult | null }, events: readonly Processed[], itemIds: readonly string[]): RunResult {
+export function shapePropagate(parts: { producers: RunResult | null; drain: RunResult; questions: RunResult; signposts: RunResult; assess: RunResult | null; derive?: RunResult<{ ids: { derive_cursor: string[] } }> | null; impact?: RunResult<{ ids: { scored_item_ids: string[] } }> | null; carbon?: RunResult | null; couplings?: RunResult | null }, events: readonly Processed[], itemIds: readonly string[]): RunResult {
   const held = (r: RunResult) => (r.counts.refused ?? 0) > 0 || r.notes.some((n) => n.includes("REFUSING"));
   const soft = (r: RunResult | null) => (r && r.outcome === "failed" && held(r) ? { ...r, outcome: "partial" as const } : r);
   const producers = soft(parts.producers);
@@ -56,10 +57,10 @@ export function shapePropagate(parts: { producers: RunResult | null; drain: RunR
   const counts: Record<string, number> = {
     drained: parts.drain.counts.drained ?? 0, recomputed: parts.drain.counts.recomputed ?? 0, invalidated: parts.drain.counts.invalidated ?? 0, events: parts.drain.counts.events ?? 0,
     questions_written: parts.questions.counts.written ?? 0, scored: parts.signposts.counts.scored ?? 0, signposts_fired: parts.signposts.counts.signposts_fired ?? 0, assessed_written: assess?.counts.written ?? 0,
-    ...pick(producers, "producers_"), ...pick(assess, "assess_"), ...pick(parts.derive ?? null, "derive_"), ...(parts.impact?.counts ?? {}), ...(parts.carbon?.counts ?? {}),
+    ...pick(producers, "producers_"), ...pick(assess, "assess_"), ...pick(parts.derive ?? null, "derive_"), ...(parts.impact?.counts ?? {}), ...(parts.carbon?.counts ?? {}), ...(parts.couplings?.counts ?? {}),
   };
-  const outcome = worst(parts.drain.outcome, parts.questions.outcome, parts.signposts.outcome, producers?.outcome ?? "ok", assess?.outcome ?? "ok", parts.impact?.outcome ?? "ok", parts.carbon?.outcome ?? "ok", parts.derive?.outcome ?? "ok");
-  const notes = leadWithFailures([parts.derive ?? null, parts.drain, parts.questions, parts.signposts, producers, assess, parts.impact ?? null, parts.carbon ?? null]);
+  const outcome = worst(parts.drain.outcome, parts.questions.outcome, parts.signposts.outcome, producers?.outcome ?? "ok", assess?.outcome ?? "ok", parts.impact?.outcome ?? "ok", parts.carbon?.outcome ?? "ok", parts.derive?.outcome ?? "ok", parts.couplings?.outcome ?? "ok");
+  const notes = leadWithFailures([parts.derive ?? null, parts.drain, parts.questions, parts.signposts, producers, assess, parts.impact ?? null, parts.carbon ?? null, parts.couplings ?? null]);
   return { ...runResult(outcome, counts, notes), data: { ids: { drained_event_ids: events.map((e) => String(e.eventId)), reassessed_item_ids: [...itemIds], scored_item_ids: parts.impact?.data?.ids.scored_item_ids ?? [], ...(parts.derive?.data ? { derive_cursor: parts.derive.data.ids.derive_cursor } : {}) } } };
 }
 
@@ -83,6 +84,16 @@ async function runProducers(call: FamilyCall, d: BuiltDeps, p: NonNullable<Propa
   }
 }
 
+/** The coupling vocabulary and the refs mined over the corpus (CONNECT-2): the cited pages are captured while the fetch gate is open (a ruled run opens it for one call), then the seeds are written from the captures held, then every claim, typed row and tag is mined into entity_refs. */
+async function runCouplings(call: FamilyCall, d: BuiltDeps, exception: string): Promise<RunResult> {
+  const ruled = !call.dry && exception !== "";
+  // a cited page the licence register bars, or a fetch that throws, is a note on the run, not the end of it: the seeds that page grounds are refused and counted
+  const capture = !call.dry && ((await d.gate.refresh()) || ruled) ? await captureCited(d, seedPages(), ruled).catch((e: unknown) => runResult("partial", {}, [e instanceof Error ? e.message : String(e)])) : null;
+  const seeded = await seedCouplings({ sb: d.sb, now: d.now }, { dry: call.dry });
+  const mined = await mineRefs({ sb: d.sb, now: d.now }, { dry: call.dry });
+  return runResult(worst(seeded.outcome, mined.outcome, capture?.outcome === "failed" ? "partial" : "ok"), { ...pick(capture, "seed_capture_"), ...seeded.counts, ...mined.counts }, [...(capture?.notes ?? []), ...seeded.notes, ...mined.notes]);
+}
+
 /** DERIVE-2: one bounded batch of obligation objects after the cursor the last apply turn left in its ledger row (dry rows never advance it). Runs before the drain, so the changes it writes are drained in the same run. */
 async function runDerive(call: FamilyCall, d: BuiltDeps, p: NonNullable<PropagatePlan["derive"]>): Promise<RunResult<{ ids: { derive_cursor: string[] } }>> {
   const failed = (note: string) => ({ counts: {}, outcome: "failed" as const, notes: [note] });
@@ -98,6 +109,7 @@ export async function runPropagate(call: FamilyCall, d: BuiltDeps): Promise<RunR
   const plan = planPropagate(call.input);
   const sb = d.sb;
   const producers = plan.producers ? await runProducers(call, d, plan.producers, plan.exception) : null;
+  const couplings = await runCouplings(call, d, plan.exception);
   const derive = plan.derive ? await runDerive(call, d, plan.derive) : null;
   const drain = await runPropagationDrain({ sb, now: d.now, registry: d.registry, reopenQuestion: reopener(sb, d.learning) }, { dry: call.dry, caller: PROPAGATE_CALLER, ...(plan.batch ? { batch: plan.batch } : {}) });
   if (drain.outcome === "failed" && !drain.data?.eventsConsidered && drain.notes.length) return drain;
@@ -112,5 +124,5 @@ export async function runPropagate(call: FamilyCall, d: BuiltDeps): Promise<RunR
   }
   const impact = await scoreItems({ sb, now: d.now, registry: d.registry }, { dry: call.dry, readIds: call.upstream?.ids.scanned_item_ids ?? [] });
   const carbon = await produceCarbonInputs({ sb, now: d.now, registry: d.registry }, { dry: call.dry });
-  return shapePropagate({ producers, derive, drain, questions, signposts, assess, impact, carbon }, events, itemIds);
+  return shapePropagate({ producers, derive, drain, questions, signposts, assess, impact, carbon, couplings }, events, itemIds);
 }

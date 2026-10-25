@@ -1,11 +1,12 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
-import { currentMethods, HASH_FILE, versionProblems } from "../../scripts/ci/method-versions.mjs";
+import { walk } from "../../scripts/lib/fs.mjs";
+import { currentMethods, DIRS, HASH_FILE, versionProblems } from "../../scripts/ci/method-versions.mjs";
 
 const METHODS = (body, version = '"1"', extra = "") => `
 const ID = "double";
@@ -90,4 +91,24 @@ test("planted: a threshold in a JSON table the method imports is part of the met
 test("THIS repository: every registered method is recorded and unchanged under its version", () => {
   assert.doesNotThrow(() => execFileSync(process.execPath, ["scripts/ci/method-versions.mjs"], { encoding: "utf8", stdio: "pipe" }));
   assert.ok(Object.keys(JSON.parse(readFileSync(HASH_FILE, "utf8"))).length >= 3);
+});
+
+test("INV-CN2-2: the five pattern detectors are registered under the gate, and a threshold edited in patterns.json without a new method version turns it red", () => {
+  const treeOf = (root) => new Map(DIRS.flatMap((d) => walk(join(root, d), (n) => /\.ts$/.test(n))).map((f) => [f, readFileSync(f, "utf8")]));
+  const real = currentMethods(treeOf("."));
+  for (const id of ["pattern_velocity_burst", "pattern_mandate_capacity", "pattern_lead_lag", "pattern_cross_modal", "pattern_penalty_abatement"]) assert.ok(real.methods.has(`derived_values:${id}@${id === "pattern_penalty_abatement" ? "1.2.0" : "1.1.0"}`), `${id} is registered`);
+  const recorded = Object.fromEntries([...real.methods].map(([k, m]) => [k, m.hash]));
+  assert.deepEqual(versionProblems(real.methods, recorded), []);
+  const copyWith = (file, edit) => {
+    const root = mkdtempSync(join(tmpdir(), "cn2-"));
+    for (const d of DIRS) cpSync(d, join(root, d), { recursive: true });
+    writeFileSync(join(root, file), edit(readFileSync(join(root, file), "utf8")));
+    return versionProblems(currentMethods(treeOf(root)).methods, recorded).join("\n");
+  };
+  // one threshold moved (minSources 3 to 4), the version left at 1.1.0
+  assert.match(copyWith("src/core/flywheel/patterns/data/patterns.json", (t) => t.replace('"minSources": 3', '"minSources": 4')), /derived_values:pattern_velocity_burst@1.1.0: the code its registration runs changed and its version did not/);
+  // a detector edited: the arithmetic of the burst
+  assert.match(copyWith("src/core/flywheel/patterns/detect.ts", (t) => t.replace("shareNow <= base.length / inBaseline", "shareNow < base.length / inBaseline")), /pattern_velocity_burst@1.1.0/);
+  // the vocabulary a detector reads is part of it: a mode moved in couplings.json
+  assert.match(copyWith("src/core/coupling/data/couplings.json", (t) => t.replace(/"modes": \[\s*"road",\s*"ocean"\s*\]/, '"modes": ["road"]')), /pattern_cross_modal@1\.1\.0/);
 });

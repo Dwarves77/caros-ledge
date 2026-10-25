@@ -4,6 +4,7 @@
 // The tag pass (ADR-025, no human gate, no two-step queue): for each target item derive tags by rule from its own grounded text, drop the ones an admin
 // removed, decide each (high adopts; medium adopts with vocabulary and evidence re-confirmed), write the merged tag columns, record the decision as a flag
 // born resolved, then run connection discovery for every item whose tags changed (rule 17: new tags are new connections).
+import { COUPLINGS, tagRefs, writeRefs, type RefRow } from "@/core/coupling";
 import type { Db } from "@/core/db";
 import { fetchAllRows, rowsByIds } from "@/core/db";
 import { SIGNATURE_CAP } from "@/core/flywheel/signature";
@@ -68,11 +69,17 @@ export async function tagPass(deps: TagPassDeps, input: TagPassInput): Promise<R
 
   const results: AdoptResult[] = [];
   const touched: string[] = [];
+  // the coupling keys of each item's scenario tags (CONNECT-2): the couplings that list a tag the item carries, written as refs with the tag as basis
+  const couplingIds = COUPLINGS.map((c) => c.entityId);
+  const held = await rowsByIds<{ entity_id: string }>(sb, "entities", "entity_id", couplingIds, "entity_id", "entity_id");
+  const known = new Set(held.map((e) => e.entity_id));
+  const couplingRefs: RefRow[] = [];
   for (const item of targets) {
     const wide = assembleTagInput({ ...item, sections: sections.get(item.id) ?? [], claims: claims.get(item.id) ?? [], searchResults: searches.get(item.id) ?? [] }, { adopted });
     const derived = deriveTags(wide, adopted);
     const r = await adoptTags(sb, item, derived.proposals, { now: deps.now(), adopted, dry: input.dry, corrections: (corrections.get(item.id) ?? []) as Correction[] });
     results.push(r);
+    couplingRefs.push(...tagRefs(item.id, r.merge.patch.operational_scenario_tags ?? item.operational_scenario_tags ?? [], known));
     if (derived.proposals.length) counts.with_proposals = (counts.with_proposals ?? 0) + 1;
     counts.adopted = (counts.adopted ?? 0) + r.decisions.filter((d) => d.decision === "adopt").length;
     counts.declined = (counts.declined ?? 0) + r.decisions.filter((d) => d.decision === "decline").length;
@@ -87,6 +94,8 @@ export async function tagPass(deps: TagPassDeps, input: TagPassInput): Promise<R
       notes.push(...r.notes);
     }
   }
+  counts.coupling_refs = couplingRefs.length;
+  if (!input.dry && couplingRefs.length) counts.coupling_refs_offered = await writeRefs(sb, couplingRefs, null, notes);
   if (!input.dry && input.discover !== false) {
     for (const id of touched) {
       try {

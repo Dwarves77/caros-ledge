@@ -81,3 +81,20 @@ test("INV-CBN-1: no constant for the carbon price, the distance, the payload or 
   assert.equal(constantsOf("  defaultIntensity: 16,").length, 1);
   assert.equal(constantsOf("const priceBoard = fetchBoard(1);\nconst distanceLabel = 'km';").length, 0, "a name with no number bound to it is not one");
 });
+
+// INV-CN2-3 (CONNECT-2): no quantity, rate, price or factor is a constant in the coupling vocabulary or the pattern detectors. Each is read from the store (a stored row's value, the unit of a derived value) or from the validated data files (a threshold in patterns.json, a window in
+// couplings.json); a number bound to a name that says what it is, in code, is the defect: a declaration (`const abatementCost = 90`) or an object member (`tonnageCutoff: 5000`).
+const CN2_NAME = "(?:quantit|rate|price|factor|tonnage|abatement|cost|intensity|ratio|ceiling|cutoff|threshold|volume|capacity)";
+const CN2_DECLARATION = new RegExp(String.raw`\b(?:const|let|var)\s+\w*${CN2_NAME}\w*\s*(?::[^=;]+)?=\s*-?\d`, "i");
+const CN2_MEMBER = new RegExp(String.raw`^\s*["']?\w*${CN2_NAME}\w*["']?\s*:\s*-?\d`, "i");
+const cn2Constants = (source: string): string[] => source.split("\n").filter((l) => !/^\s*(\/\/|\*)/.test(l) && (CN2_DECLARATION.test(l) || CN2_MEMBER.test(l))).map((l) => l.trim());
+
+test("INV-CN2-3: no typed quantity, rate, price or factor in src/core/coupling or the pattern detectors", () => {
+  const scope = src.filter((f) => /^src\/core\/(coupling|flywheel\/patterns)\//.test(f));
+  assert.ok(scope.length >= 10, "the scope is read from the tree");
+  assert.deepEqual(scope.flatMap((f) => cn2Constants(text(f)).map((l) => `${f}: ${l}`)), []);
+  assert.equal(cn2Constants("const abatementCost = 90;").length, 1, "a planted constant abatement cost is found");
+  assert.equal(cn2Constants("export const TONNAGE_CUTOFF: number = 5000;").length, 1, "a typed declaration is found");
+  assert.equal(cn2Constants("const limits = {\n  gridCapacity: 40,\n};").length, 1, "an object member is found");
+  assert.equal(cn2Constants("const ratioOfBase = base.length / w;\nconst priceLabel = 'EUR';").length, 0, "a name with no number bound to it is not one");
+});

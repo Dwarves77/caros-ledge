@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { readdirSync, readFileSync } from "node:fs";
 import { test } from "node:test";
 
+import { ACRONYMS, ALIAS_SEEDS } from "@/core/coupling/aliases";
 import { licenceGate } from "@/core/contracts";
 import type { FamilyCall } from "@/core/harness";
 import { acceptStoredQuote } from "@/core/producers/quote";
@@ -139,7 +140,9 @@ ${filler}`, { status: 200, headers: { "content-type": "text/plain; charset=utf-8
   assert.equal(dry.counts["producers_oem-roadmap-rows.parsed"], rows.length, "the unknown host parses as a row to be minted");
   assert.equal(f.db.rows("entities").filter((e) => e.kind === "organisation").length, hosts.length - 1, "dry mints nothing");
   await runPropagate(call({ input }), f.d);
-  const orgs = f.db.rows("entities").filter((e) => e.kind === "organisation");
+  // the alias seeds of the propagate stage also name organisations (the Official Journal's host, the IMO, the Commission): they are not the manufacturer path's mints
+  const seeded = new Set([...ALIAS_SEEDS.map((x) => x.target.name), ...ACRONYMS.flatMap((x) => ("name" in x.entity ? [x.entity.name] : []))]);
+  const orgs = f.db.rows("entities").filter((e) => e.kind === "organisation" && !seeded.has(String(e.canonical_name)));
   assert.equal(orgs.length, hosts.length, "exactly one organisation entity was minted");
   const minted = orgs.find((e) => e.canonical_name === unknown);
   assert.ok(minted);
@@ -148,7 +151,7 @@ ${filler}`, { status: 200, headers: { "content-type": "text/plain; charset=utf-8
   assert.equal(f.db.rows("oem_tech_roadmaps").length, rows.length);
   assert.ok(f.db.rows("oem_tech_roadmaps").some((r) => r.manufacturer_id === minted.entity_id));
   await runPropagate(call({ input }), f.d);
-  assert.equal(f.db.rows("entities").filter((e) => e.kind === "organisation").length, hosts.length, "a second apply mints nothing");
+  assert.equal(f.db.rows("entities").filter((e) => e.kind === "organisation" && !seeded.has(String(e.canonical_name))).length, hosts.length, "a second apply mints nothing");
 });
 
 const RULING = "operator 2026-10-23 ruling 1: population hold lifted for the structured-data producers (rulings-2026-10-11.md)";

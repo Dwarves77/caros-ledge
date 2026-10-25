@@ -1,0 +1,23 @@
+# path | reason (files with no "Ported from" header)
+src/core/coupling/coupling.ts | new in CONNECT-2 PR A: the coupling vocabulary (feedstocks, carriers, nodes, modal-shift corridors, consignment-wide mandates, attributes, windows) as validated data with its indexes; the old tree had one regulation-number regex as its only cross-item relation
+src/core/coupling/data/couplings.json | new in CONNECT-2 PR A: the couplings the operator named, each with the published page and verbatim quote it is taken from, and the column-to-entity mapping of the typed tables
+src/core/coupling/index.ts | new in CONNECT-2 PR A: the public surface of the coupling module
+src/core/coupling/read.ts | new in CONNECT-2 PR A: the one paged read of the seed and ref passes
+src/core/coupling/refs.ts | new in CONNECT-2 PR A: entity-ref mining over the claims, the typed tables and the scenario tags, each ref with its basis and the version of the rule
+src/core/coupling/resolve.ts | new in CONNECT-2 PR A: the text resolver of the spine (instrument identifiers by equality, aliases on word boundaries)
+src/core/coupling/seed.ts | new in CONNECT-2 PR A: the seeds pass; writes the vocabulary as entities, aliases and relations grounded on captured pages
+src/core/flywheel/patterns/config.ts | new in CONNECT-2 PR A: the detector thresholds and the per-table fact adapters as validated data
+src/core/flywheel/patterns/data/facts.json | new in CONNECT-2 PR A: the per-table adapters from a stored row to a detector fact (hashed with the methods)
+src/core/flywheel/patterns/data/patterns.json | new in CONNECT-2 PR A: the thresholds of the five detectors and their version (hashed with the methods)
+src/core/flywheel/patterns/detect.ts | new in CONNECT-2 PR A: the five pure pattern detectors
+src/core/flywheel/patterns/facts.ts | new in CONNECT-2 PR A: the fact adapter and the grade of a pattern's evidence
+src/core/flywheel/patterns/index.ts | new in CONNECT-2 PR A: the public surface of the pattern engine
+src/core/flywheel/patterns/load.ts | new in CONNECT-2 PR A: the reads that join the spine into the detectors' input
+src/core/flywheel/patterns/method.ts | new in CONNECT-2 PR A: a detector as a registered derivation method, recomputed by the propagation drain
+src/core/flywheel/patterns/run.ts | new in CONNECT-2 PR A: the connect stage's pattern step; records each pattern as a derived value with one edge per evidence row
+src/core/flywheel/patterns/types.ts | new in CONNECT-2 PR A: the shapes of facts, evidence and patterns
+src/core/coupling/alias-rules.ts | new in CONNECT-2A-b: what may be an alias (four characters, a letter, not on the stoplist) and how a phrase is read
+src/core/coupling/aliases.ts | new in CONNECT-2A-b: the alias seeds loader, each alias grounded on its page
+src/core/coupling/data/alias-seeds.json | new in CONNECT-2A-b: the short names found in the most frequent unresolved phrases, with their pages and verbatim quotes
+src/core/coupling/data/resolver.json | new in CONNECT-2A-b: the alias length floor and the stoplist
+tests/coupling/units.test.ts | new in CONNECT-2 PR A scope review G3: every listed form normalises, an unknown unit is excluded, a planted P5 pair in two spellings matches
