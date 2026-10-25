@@ -4,12 +4,12 @@
 // A name that may not be an alias (alias-rules.ts) or that names two entities is dropped when the resolver is built, never guessed. The claims pass, the typed-column pass and the tag pass all resolve through this one function.
 import { findIdentifiers, sameIdentifier } from "@/core/parse";
 
-import { admitAlias, phraseOf } from "./alias-rules";
+import { admitAlias, isAcronym, phraseOf } from "./alias-rules";
 
 export interface Match {
   entityId: string;
   /** alias: a row of entity_aliases; name: a canonical or display name, an identifier or a title; identifier: an instrument number stated in the text. */
-  how: "alias" | "name" | "identifier";
+  how: "alias" | "name" | "identifier" | "acronym";
   /** [start, end) in the text resolved. */
   span: [number, number];
 }
@@ -22,14 +22,21 @@ export interface Resolver {
   /** phrase to entity (null: the phrase names two entities and resolves none) and how the name was learned. */
   phrases: Map<string, { entityId: string | null; how: "alias" | "name" }>;
   longest: number;
+  /** The listed uppercase acronyms (alias rows whose text is on the list in resolver.json) to their entity, null when two entities claim one; matched case-sensitively as a whole word. */
+  acronyms: Map<string, string | null>;
   instruments: Map<string, { entityId: string; type: string | null }[]>;
 }
 
 /** The resolver over every name source and the instrument entities (canonical names that are CELEX ids state their own identifier). Returns the count of names dropped for ambiguity beside it. */
 export function buildResolver(names: Iterable<NameSource>, instruments: readonly { entity_id: string; canonical_name: string }[]): Resolver & { ambiguous: number } {
   const phrases: Resolver["phrases"] = new Map();
+  const acronyms: Resolver["acronyms"] = new Map();
   let longest = 1;
   for (const n of names) {
+    if (n.how === "alias" && isAcronym(n.name)) {
+      acronyms.set(n.name, acronyms.has(n.name) && acronyms.get(n.name) !== n.entity_id ? null : n.entity_id);
+      continue;
+    }
     if (!admitAlias(n.name)) continue;
     const p = phraseOf(n.name);
     const held = phrases.get(p);
@@ -42,7 +49,7 @@ export function buildResolver(names: Iterable<NameSource>, instruments: readonly
     const own = findIdentifiers(i.canonical_name).find((f) => f.kind === "instrument");
     if (own) index.set(own.key, [...(index.get(own.key) ?? []), { entityId: i.entity_id, type: own.type }]);
   }
-  return { phrases, longest, instruments: index, ambiguous: [...phrases.values()].filter((v) => v.entityId === null).length };
+  return { phrases, longest, acronyms, instruments: index, ambiguous: [...phrases.values()].filter((v) => v.entityId === null).length + [...acronyms.values()].filter((v) => v === null).length };
 }
 
 /** Every entity the text names, once each (the first mention): instrument numbers by equality, then names as the longest exact phrase at each position. Pure. */
@@ -52,7 +59,7 @@ export function resolveText(text: string, r: Resolver): Match[] {
     if (f.kind !== "instrument") continue;
     for (const hit of r.instruments.get(f.key) ?? []) if (sameIdentifier(f, { key: f.key, type: hit.type }) && !out.has(hit.entityId)) out.set(hit.entityId, { entityId: hit.entityId, how: "identifier", span: [f.start, f.end] });
   }
-  const tokens = [...text.matchAll(/[\p{L}\p{N}]+/gu)].map((m) => ({ t: m[0].toLowerCase(), start: m.index, end: m.index + m[0].length }));
+  const tokens = [...text.matchAll(/[\p{L}\p{N}]+/gu)].map((m) => ({ t: m[0].toLowerCase(), raw: m[0], start: m.index, end: m.index + m[0].length }));
   for (let i = 0; i < tokens.length; ) {
     let step = 1;
     for (let n = Math.min(r.longest, tokens.length - i); n >= 1; n -= 1) {
@@ -62,6 +69,8 @@ export function resolveText(text: string, r: Resolver): Match[] {
       step = n;
       break;
     }
+    const acr = step === 1 ? r.acronyms.get((tokens[i] as { raw: string }).raw) : undefined;
+    if (acr && !out.has(acr) && !r.phrases.has((tokens[i] as { t: string }).t)) out.set(acr, { entityId: acr, how: "acronym", span: [(tokens[i] as { start: number }).start, (tokens[i] as { end: number }).end] });
     i += step;
   }
   return [...out.values()];

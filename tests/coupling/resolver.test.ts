@@ -3,9 +3,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { ALIAS_SEEDS } from "@/core/coupling/aliases";
+import { ACRONYMS, ALIAS_SEEDS } from "@/core/coupling/aliases";
 import { COUPLINGS, mineRefs } from "@/core/coupling";
-import { admitAlias } from "@/core/coupling/alias-rules";
+import { admitAlias, isAcronym } from "@/core/coupling/alias-rules";
 import { buildResolver, resolveText, type NameSource } from "@/core/coupling/resolve";
 import { entityId } from "@/core/entities";
 
@@ -79,8 +79,8 @@ test("the alias seeds are written with the page they come from and resolve their
   f.db.seed("section_claim_provenance", [c]);
   await propagate(f);
   const rows = f.db.rows("entity_aliases").filter((a) => a.alias_kind === "short_name");
-  assert.equal(rows.length, ALIAS_SEEDS.reduce((n, s) => n + s.aliases.length, 0));
-  for (const r of rows) {
+  assert.equal(rows.length, ALIAS_SEEDS.reduce((n, s) => n + s.aliases.length, 0) + ACRONYMS.length, "the alias seeds and the listed acronyms");
+  for (const r of rows.filter((x) => !(x.provenance as { acronym_of?: string }).acronym_of)) {
     assert.ok(r.source_id, `${String(r.alias)} carries its source`);
     assert.equal((r.provenance as { citation: { sourceClass: string } }).citation.sourceClass, "primary");
   }
@@ -92,4 +92,31 @@ test("every citation carries its source class: an encyclopaedia page is a refere
   const cites = [...COUPLINGS.flatMap((c) => (c.citation ? [c.citation] : [])), ...ALIAS_SEEDS.map((a) => a.citation)];
   for (const c of cites) assert.equal(c.sourceClass, /wikipedia\.org/.test(c.url) ? "reference" : "primary", c.url);
   assert.ok(cites.some((c) => c.sourceClass === "reference") && cites.some((c) => c.sourceClass === "primary"));
+});
+
+test("a listed uppercase acronym resolves case-sensitively as a whole word and nothing else does", () => {
+  const SAF = COUPLINGS.find((c) => c.key === "carrier:hefa_saf")?.entityId as string;
+  assert.ok(isAcronym("SAF") && !isAcronym("saf") && !isAcronym("SAP"));
+  const names: NameSource[] = [name(SAF, "SAF", "alias")];
+  assert.deepEqual(resolve("SAF, as the mandate calls it, grows.", names).map((m) => [m.entityId, m.how]), [[SAF, "acronym"]]);
+  assert.deepEqual(resolve("saf, Saf, SAFE, SAFs, Safran and SAF2 name nothing", names), [], "no lower case, no longer word, no plural, no substring");
+  assert.equal(resolve("the use of SAF/HEFA", names)[0]?.entityId, SAF, "a slash is a word boundary");
+  assert.deepEqual(resolve("SAF", [name(SAF, "SAF", "alias"), name(HOST, "SAF", "alias")]), [], "an acronym two entities claim resolves none");
+  assert.deepEqual(resolve("SAF", [name(SAF, "SAF", "name")]), [], "only an alias row grounded by the seeds pass is an acronym, never a canonical name");
+  assert.deepEqual(resolve("XYZ", [name(SAF, "XYZ", "alias")]), [], "an unlisted three-letter alias is refused");
+  for (const a of ACRONYMS) assert.match(a.acronym, /^[A-Z][A-Z0-9]{2}$/);
+  for (const must of ["HVO", "SAF", "UCO", "OPS", "MCS", "IMO", "EPA", "GHG", "LNG"]) assert.ok(ACRONYMS.some((a) => a.acronym === must), must);
+});
+
+test("the Brazil PNCA claim of the yield file reaches carrier HEFA-SAF again through SAF", async () => {
+  const f = fixture();
+  const pnca = claim(ITEM.reg, "Os operadores aéreos ficam obrigados a reduzir as emissões de GEE em suas operações domésticas por meio do uso de SAF, conforme os seguintes percentuais", "2026-10-01", "b1000000-0000-4000-8000-000000000043", 1);
+  f.db.seed("section_claim_provenance", [pnca]);
+  await propagate(f);
+  const SAF = COUPLINGS.find((c) => c.key === "carrier:hefa_saf")?.entityId;
+  const ref = f.db.rows("entity_refs").find((r) => r.ref_id === pnca.id && r.entity_id === SAF);
+  assert.ok(ref, "resolved");
+  assert.deepEqual([(ref?.basis as { how: string }).how, (ref?.basis as { span: number[] }).span], ["acronym", [String(pnca.claim_text).indexOf("SAF"), String(pnca.claim_text).indexOf("SAF") + 3]]);
+  const row = f.db.rows("entity_aliases").find((a) => a.alias === "SAF");
+  assert.ok(row?.source_id && (row.provenance as { citation: { quote: string } }).citation.quote.includes("sustainable aviation fuel (SAF)"), "the acronym is grounded on the page that states its expansion");
 });

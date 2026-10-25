@@ -1,8 +1,12 @@
 // New in CONNECT-2 PR A (scripts/ci/new-files/connect-2a.txt): what may be an alias, and how a phrase is read. A name or alias shorter than four characters, one with no letter, or one that is a dictionary word or a generic term of the corpus (the stoplist in data/resolver.json) resolves nothing:
-// "Union", "Commission" and "Act" name no entity, and a three-letter acronym names several. Matching is on the phrase: lower case, the letters and digits of the text in order, everything between them one space.
+// "Union", "Commission" and "Act" name no entity, and a three-letter acronym names several. The one exception is the acronym listed in data/resolver.json with the entity it expands to and the page that says so: it is matched on its own, CASE-SENSITIVELY, as one whole word (SAF is SAF, never saf, SAFE or Safran). Matching is on the phrase: lower case, the letters and digits of the text in order, everything between them one space.
 import rules from "./data/resolver.json";
 
 const stop = new Set(rules.stop);
+const acronyms = new Set(rules.acronyms.map((a) => a.acronym));
+
+/** Whether the text is one of the listed uppercase acronyms (exact, case-sensitive). */
+export const isAcronym = (s: string): boolean => acronyms.has(s);
 
 /** The phrase a name or a text reads as: its letters and digits, lower case, single spaces. */
 export const phraseOf = (s: string): string => (s.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? []).join(" ");

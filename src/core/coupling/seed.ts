@@ -7,7 +7,7 @@ import { registerCitedSource } from "@/core/producers";
 import type { RunResult } from "@/core/types/run-result";
 
 import { readAll, type Row } from "./read";
-import { ALIAS_SEEDS, ALIAS_VERSION } from "./aliases";
+import { ACRONYMS, ALIAS_SEEDS, ALIAS_VERSION } from "./aliases";
 import { COUPLING_RELATIONS, COUPLING_VERSION, COUPLINGS, type Coupling } from "./coupling";
 
 const SEED_ASSERTED_BY = "coupling/seed";
@@ -15,12 +15,13 @@ type Cite = NonNullable<Coupling["citation"]>;
 const pageKey = (c: Cite): string => `${c.url}\n${c.quote}`;
 
 /** The pages the vocabulary is taken from: what the propagate stage captures before the seeds pass. */
-export const seedPages = (): { url: string; title: string }[] => [...new Map([...COUPLINGS.map((c) => c.citation), ...COUPLING_RELATIONS.flatMap((r) => r.citations), ...ALIAS_SEEDS.map((a) => a.citation)].filter((c): c is Cite => !!c).map((c) => [c.url, { url: c.url, title: c.title }])).values()];
+export const seedPages = (): { url: string; title: string }[] => [...new Map([...COUPLINGS.map((c) => c.citation), ...COUPLING_RELATIONS.flatMap((r) => r.citations), ...ALIAS_SEEDS.map((a) => a.citation), ...ACRONYMS.map((a) => a.citation)].filter((c): c is Cite => !!c).map((c) => [c.url, { url: c.url, title: c.title }])).values()];
 
 /** Write the rows the table does not hold yet (by key), in chunks; the count is rows added, so a second run counts none. */
 async function addNew(sb: Db, table: string, rows: Row[], order: readonly string[], key: (r: Row) => string, notes: string[]): Promise<number> {
   const held = new Set((await readAll(sb, table, order.join(","), order)).map(key));
-  const fresh = rows.filter((r) => !held.has(key(r)));
+  const seen = new Set<string>();
+  const fresh = rows.filter((r) => !held.has(key(r)) && !seen.has(key(r)) && seen.add(key(r)));
   let written = 0;
   for (let i = 0; i < fresh.length; i += 200) {
     const { error } = await sb.from(table).insert(fresh.slice(i, i + 200));
@@ -35,7 +36,7 @@ export async function seedCouplings(deps: { sb: Db; now: () => Date }, input: { 
   const notes: string[] = [];
   const counts: Record<string, number> = { seed_couplings: COUPLINGS.length, seed_relations: COUPLING_RELATIONS.length, seed_refused: 0, seed_entities_written: 0, seed_aliases_written: 0, seed_relations_written: 0 };
   const verdict = new Map<string, { source_id: string } | { reason: string }>();
-  for (const c of [...COUPLINGS.map((x) => x.citation), ...COUPLING_RELATIONS.flatMap((r) => r.citations), ...ALIAS_SEEDS.map((a) => a.citation)]) {
+  for (const c of [...COUPLINGS.map((x) => x.citation), ...COUPLING_RELATIONS.flatMap((r) => r.citations), ...ALIAS_SEEDS.map((a) => a.citation), ...ACRONYMS.map((a) => a.citation)]) {
     if (!c || verdict.has(pageKey(c)) || input.dry) continue;
     const got = await registerCitedSource(c, { sb });
     verdict.set(pageKey(c), got.refused ? { reason: `${c.url}: ${got.reason}` } : { source_id: got.source_id });
@@ -73,6 +74,17 @@ export async function seedCouplings(deps: { sb: Db; now: () => Date }, input: { 
     } else entities.push({ entity_id: a.entityId, kind: a.target.kind, canonical_name: a.target.name, status: "active" });
     for (const alias of a.aliases) aliases.push({ entity_id: a.entityId, alias, alias_kind: "short_name", asserted_by: SEED_ASSERTED_BY, source_id: v?.source_id ?? null, provenance: { alias_version: ALIAS_VERSION, citation: a.citation } });
   }
+  // the listed acronyms: a three-letter alias row per acronym, grounded on the page that states its expansion; the resolver reads it case-sensitively, as a whole word
+  for (const a of ACRONYMS) {
+    const v = accepted(a.citation) as { source_id: string } | undefined;
+    const coupled = "key" in a.entity ? COUPLINGS.some((c) => c.key === (a.entity as { key: string }).key && (input.dry || have.has(c.key))) : true;
+    if (!coupled || (!input.dry && !v)) {
+      aliasRefused += 1;
+      continue;
+    }
+    if (!("key" in a.entity)) entities.push({ entity_id: a.entityId, kind: a.entity.kind, canonical_name: a.entity.name, status: "active" });
+    aliases.push({ entity_id: a.entityId, alias: a.acronym, alias_kind: "short_name", asserted_by: SEED_ASSERTED_BY, source_id: v?.source_id ?? null, provenance: { alias_version: ALIAS_VERSION, acronym_of: a.expansion, citation: a.citation } });
+  }
   counts.seed_alias_refused = aliasRefused;
   counts.seed_refused += aliasRefused;
   const keyId = (k: string) => COUPLINGS.find((c) => c.key === k)?.entityId as string;
@@ -80,7 +92,7 @@ export async function seedCouplings(deps: { sb: Db; now: () => Date }, input: { 
     const ok = input.dry ? r.citations : r.citations.filter((c) => "source_id" in (accepted(c) ?? {}));
     return ok.length ? [{ parent_entity_id: keyId(r.parent), child_entity_id: keyId(r.child), relation: r.relation, asserted_by: SEED_ASSERTED_BY, source_id: input.dry ? null : (accepted(ok[0]) as { source_id: string }).source_id, provenance: { coupling_version: COUPLING_VERSION, citations: ok } }] : [];
   });
-  Object.assign(counts, { seed_entities_planned: entities.length, seed_aliases_planned: aliases.length, seed_relations_planned: relations.length });
+  Object.assign(counts, { seed_entities_planned: new Set(entities.map((e) => (e as { entity_id: string }).entity_id)).size, seed_aliases_planned: aliases.length, seed_relations_planned: relations.length });
   if (input.dry) return { counts, outcome: "ok", notes: [...notes, "dry: nothing written, no page checked"] };
 
   const k = (...cols: string[]) => (r: Row) => cols.map((c) => String(r[c])).join("|");

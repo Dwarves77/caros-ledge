@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { COUPLING_RELATIONS, COUPLINGS, couplingByKey } from "@/core/coupling";
-import { ALIAS_SEEDS } from "@/core/coupling/aliases";
+import { ACRONYMS, ALIAS_SEEDS } from "@/core/coupling/aliases";
 import { entityId } from "@/core/entities";
 import { seedCouplings } from "@/core/coupling";
 
@@ -18,7 +18,7 @@ test("the propagate stage captures the cited pages and seeds every coupling, eac
   assert.equal(r.exit, 0);
   const counts = (f.db.rows("harness_runs").find((x) => x.family === "propagation")?.outputs as { counts: Record<string, number> }).counts;
   assert.equal(counts.seed_refused, 0);
-  assert.equal(counts.seed_entities_written, COUPLINGS.length + ALIAS_SEEDS.length, "every coupling is an entity, and so is every alias target the spine did not hold (all new in the fixture)");
+  assert.equal(counts.seed_entities_written, new Set([...COUPLINGS.map((c) => c.entityId), ...ALIAS_SEEDS.map((a) => a.entityId), ...ACRONYMS.map((a) => a.entityId)]).size, "every coupling is an entity, and so is every alias and acronym target the spine did not hold (all new in the fixture)");
   assert.equal(counts.seed_relations_written, COUPLING_RELATIONS.length);
   const aliases = f.db.rows("entity_aliases");
   assert.ok(aliases.length > COUPLINGS.length);
@@ -39,7 +39,7 @@ test("a second run writes nothing, and a dry run plans without writing", async (
   const again = await seedCouplings({ sb: f.d.sb, now: () => NOW }, { dry: false });
   assert.deepEqual([again.counts.seed_entities_written, again.counts.seed_aliases_written, again.counts.seed_relations_written], [0, 0, 0]);
   const dry = await seedCouplings({ sb: f.d.sb, now: () => NOW }, { dry: true });
-  assert.equal(dry.counts.seed_entities_planned, COUPLINGS.length + ALIAS_SEEDS.length);
+  assert.equal(dry.counts.seed_entities_planned, new Set([...COUPLINGS.map((c) => c.entityId), ...ALIAS_SEEDS.map((a) => a.entityId), ...ACRONYMS.map((a) => a.entityId)]).size);
   assert.deepEqual([f.db.rows("entities").length, f.db.rows("entity_aliases").length, f.db.rows("entity_relations").length], before);
 });
 
@@ -49,7 +49,8 @@ test("planted: a page whose capture does not hold the quote refuses its coupling
   await propagate(f);
   const counts = (f.db.rows("harness_runs").find((x) => x.family === "propagation")?.outputs as { counts: Record<string, number> }).counts;
   const gone = COUPLINGS.filter((c) => c.citation?.url === url).length;
-  assert.equal(counts.seed_refused, gone);
+  const acronyms = ACRONYMS.filter((a) => a.citation.url === url).length;
+  assert.equal(counts.seed_refused, gone + acronyms, "the couplings and the acronyms the page grounds");
   assert.ok(gone > 0);
   assert.ok(!f.db.rows("entities").some((e) => e.entity_id === E("carrier:hvo")), "the refused coupling is not an entity");
   assert.ok(!f.db.rows("entity_relations").some((x) => x.child_entity_id === E("carrier:hvo") || x.parent_entity_id === E("carrier:hvo")), "no relation rests on it");

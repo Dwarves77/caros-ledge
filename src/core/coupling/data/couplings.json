@@ -404,6 +404,30 @@
    "entityId": "cl:material:a7de1ca4d206c116"
   },
   {
+   "key": "carrier:lng",
+   "class": "carrier",
+   "name": "Liquefied natural gas",
+   "aliases": [
+    "fossil LNG"
+   ],
+   "modes": [
+    "ocean",
+    "road"
+   ],
+   "scenarios": [
+    "ocean-bunkering",
+    "ocean-fuel-blend-mandate"
+   ],
+   "citation": {
+    "url": "https://en.wikipedia.org/wiki/Liquefied_natural_gas",
+    "title": "Liquefied natural gas, Wikipedia",
+    "retrieved_at": "2026-10-24",
+    "quote": "Liquefied natural gas",
+    "sourceClass": "reference"
+   },
+   "entityId": "cl:material:c8be4653bfad0c74"
+  },
+  {
    "key": "carrier:bio_lng",
    "class": "carrier",
    "name": "Bio-LNG",

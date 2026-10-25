@@ -82,3 +82,19 @@ Alias seeds written (6 aliases, 5 targets, 4 pages, all primary): "Official Jour
 
 Top unresolved phrases after the change, by claims containing them (generic words the stoplist refuses are shown because they rank): Member States 106, LOCODE 47, No EUR 28, This Decision 25, EEC 20, Member State 19, This Regulation 19, The Decision 15, EUR 15, ELI 14, Contracting Parties 12, European Parliament 11, The Commission 11, EPA 10, HAS ADOPTED THIS DECISION 10, SAF 9, Annex II 8, GAP 8, GHG 8, The Regulation 8.
 The next alias batch: European Parliament (europarl.europa.eu answered 403), LOCODE (UN/LOCODE is licence-barred), Contracting Parties (the agreement named in each claim), and the acronyms EEC, ELI, EPA, GHG, TIR, UAE, IMO, SAF, which the four-character rule refuses and which need their full names as the aliases.
+
+## R1b: the listed uppercase acronyms (2026-10-25, same 2,000 claims)
+
+[CONFIRMED] by query (SQL emulation; the acronym match is case-sensitive on whole words, exactly the rule of the resolver). The four-character floor stays for phrase matching. `data/resolver.json` now lists ten three-letter acronyms, each with the entity it expands to, the expansion and the page and verbatim quote that states it (the seeds pass writes one alias row per acronym with that source; the resolver reads only grounded rows, case-sensitively, as a whole word, so "saf", "SAFE", "SAFs" and "Safran" are not SAF):
+HVO (carrier HVO), SAF (HEFA-SAF), UCO (used cooking oil), OPS (shore power), MCS (HDV charging), IMO (organisation imo.org), EPA (organisation epa.gov), GHG (attribute ghg_intensity), LNG (new carrier Liquefied natural gas), UAE (jurisdiction AE). Seven rest on a reference page (Wikipedia: HVO, UCO, SAF, MCS, EPA, LNG, UAE, marked `reference` in the stored provenance); OPS, IMO and GHG rest on primary EC and IMO pages.
+Not listed: EEC, ELI, TIR, CII, EUR (no seeded entity, or not an entity).
+
+| claim_kind | claims | vocabulary alone | + spine names and alias seeds | + acronyms |
+|---|---|---|---|---|
+| FACT | 1,280 | 104 | 242 | 292 |
+| GAP | 625 | 8 | 18 | 22 |
+| ANALYSIS | 85 | 7 | 23 | 27 |
+| DERIVED | 10 | 0 | 0 | 0 |
+| total | 2,000 | 119 (5.95 %) | 283 (14.15 %) | 341 (17.05 %) |
+
+72 claims reach an entity through an acronym; the Brazil PNCA claim (the SAF phase step the P3 triggers rest on) resolves to HEFA-SAF again. Top unresolved after this change: Member States 106, LOCODE 47, No EUR 28, This Decision 25, This Regulation 19, Member State 18, EUR 15, The Decision 15, ELI 14, Contracting Parties 12, European Parliament 11, The Commission 10, HAS ADOPTED THIS DECISION 10, Annex II 8, The Regulation 8, GAP 7, TIR 7, Annex III 7; EEC (20) is also unresolved and has no seeded entity.
