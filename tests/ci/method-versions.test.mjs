@@ -96,7 +96,7 @@ test("THIS repository: every registered method is recorded and unchanged under i
 test("INV-CN2-2: the five pattern detectors are registered under the gate, and a threshold edited in patterns.json without a new method version turns it red", () => {
   const treeOf = (root) => new Map(DIRS.flatMap((d) => walk(join(root, d), (n) => /\.ts$/.test(n))).map((f) => [f, readFileSync(f, "utf8")]));
   const real = currentMethods(treeOf("."));
-  for (const id of ["pattern_velocity_burst", "pattern_mandate_capacity", "pattern_lead_lag", "pattern_cross_modal", "pattern_penalty_abatement"]) assert.ok(real.methods.has(`derived_values:${id}@1.1.0`), `${id} is registered`);
+  for (const id of ["pattern_velocity_burst", "pattern_mandate_capacity", "pattern_lead_lag", "pattern_cross_modal", "pattern_penalty_abatement"]) assert.ok(real.methods.has(`derived_values:${id}@${id === "pattern_penalty_abatement" ? "1.2.0" : "1.1.0"}`), `${id} is registered`);
   const recorded = Object.fromEntries([...real.methods].map(([k, m]) => [k, m.hash]));
   assert.deepEqual(versionProblems(real.methods, recorded), []);
   const copyWith = (file, edit) => {
