@@ -106,11 +106,14 @@ async function readEntities(sb: Db | null, kind: string | null): Promise<Entity[
   return sb && kind ? entitiesByKind(sb, kind) : [];
 }
 
+/** What one run has learned about its quotes: the text of each capture read and the capture each (url, quote) found, so the database is asked once per distinct (url, quote) and a capture is read once (FIX-QUOTE-1). */
+type QuoteCache = { texts: Map<string, string>; found: Map<string, string | null> };
+
 /** The quote and every further quote of a citation must stand verbatim on a stored capture of the cited URL: the capture id of the first, or the first refusal. */
-async function checkQuotes(sb: Db, c: Citation): Promise<{ captureId: string } | { reason: string }> {
+async function checkQuotes(sb: Db, c: Citation, cache: QuoteCache): Promise<{ captureId: string } | { reason: string }> {
   let first = "";
   for (const quote of [c.quote, ...(c.also ?? [])]) {
-    const v = await acceptStoredQuote(sb, { url: c.url, quote, verifiedAt: c.retrieved_at });
+    const v = await acceptStoredQuote(sb, { url: c.url, quote, verifiedAt: c.retrieved_at }, cache.texts, cache.found);
     if (!v.ok) return { reason: `${v.reason}: ${v.detail}` };
     first ||= v.captureId;
   }
@@ -176,10 +179,11 @@ export function rowsFileSpec(def: RowsFileDef): ProducerSpec {
       const citations = ctx.state.citations as Record<string, Citation>;
       const kept: Rec[] = [];
       const refused: string[] = [];
+      const cache: QuoteCache = { texts: new Map(), found: new Map() };
       for (const row of rows) {
         const { __i, __mint, ...dbRow } = row as Rec & { __i: number; __mint?: string };
         const c = citations[String(__i)] as Citation;
-        const proof = await checkQuotes(ctx.sb as Db, c);
+        const proof = await checkQuotes(ctx.sb as Db, c, cache);
         const reg = "reason" in proof ? null : await registerCitedSource({ url: c.url, title: c.title }, { sb: ctx.sb });
         if ("reason" in proof) refused.push(`row[${__i}]: citation refused: ${proof.reason}`);
         else if (reg?.refused) refused.push(`row[${__i}]: citation refused: ${reg.reason}`);

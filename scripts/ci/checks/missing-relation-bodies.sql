@@ -14,5 +14,5 @@ WHERE r.rel NOT IN ('select', 'only', 'lateral', 'values', 'set')
   AND NOT EXISTS (SELECT 1 FROM pg_proc f WHERE f.proname = r.rel)
   AND r.rel <> ALL (coalesce(r.args, '{}'))
   AND r.src !~* ('\m' || r.rel || '\s*:=')
-  AND NOT EXISTS (SELECT 1 FROM regexp_matches(r.src, '(\w+)\s*(?:\([^()]*\))?\s+as\s*(?:not\s+materialized\s*)?\(', 'gi') c WHERE lower(c[1]) = r.rel)
+  AND NOT EXISTS (SELECT 1 FROM regexp_matches(r.src, '(\w+)\s*(?:\([^()]*\))?\s+as\s*(?:(?:not\s+)?materialized\s*)?\(', 'gi') c WHERE lower(c[1]) = r.rel)
 ORDER BY 1;

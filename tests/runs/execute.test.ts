@@ -153,3 +153,44 @@ test("on_failure continue: a continue step whose ledger holds a success row is s
   assert.equal(r.steps[0].outcome, "already-applied");
   assert.equal(r.outcome, "ok");
 });
+
+/** A turn whose exit is 0 for every step but whose ledger row for `refusing` is a noop that says REFUSING (a producer the gates would not let write: no key, kill switch off, licence). */
+function refusing(name: string, mode: "apply" | "dry" = "apply") {
+  const t = turn();
+  const invoke = (x: { args: string[]; env: Record<string, string> }) => {
+    const o = t.invoke(x);
+    return stepOf(x.args) === name ? { ...o, result: { ...o.result, runs: [{ family: "propagation", id: `row-${name}`, mode, outcome: "noop", reason: `${REAL[name]}: REFUSING: apply requires database credentials and any declared key; none found`, counts: {} }] } } : o;
+  };
+  return { calls: t.calls, invoke };
+}
+
+test("a step whose ledger outcome is a noop that says REFUSING is reported refused, not ok, with the reason in the note; it is a failure for the plan like any other", async () => {
+  const t = refusing("b");
+  const r = await executePlan(mk(["a", "b", "c"]), PATH, { invoke: t.invoke, now: NOW });
+  assert.deepEqual(r.steps.map((s: { step: string; outcome: string }) => [s.step, s.outcome]), [["a", "ok"], ["b", "refused"]]);
+  assert.match(r.steps[1].note, /REFUSING: apply requires database credentials/);
+  assert.deepEqual([t.calls.length, r.outcome, exitCodeOf(r)], [2, "failed", 1], "a stop step that was refused halts the plan");
+  assert.match(summaryTable(r).split("\n").find((l: string) => l.startsWith("| b |")) ?? "", /\| refused \|.*REFUSING/);
+});
+
+test("a refused continue step: the plan goes on, the outcome is partial, the job exits 0, and the table lists the step first as refused (continued)", async () => {
+  const t = refusing("b");
+  const r = await executePlan(mkOn({ b: "continue" }), PATH, { invoke: t.invoke, now: NOW });
+  assert.deepEqual(t.calls.map(onlyOf), ["a", "b", "c"]);
+  assert.deepEqual(r.steps.map((s: { step: string; outcome: string }) => s.outcome), ["ok", "refused", "ok"]);
+  assert.deepEqual([r.outcome, exitCodeOf(r)], ["partial", 0]);
+  const rows = summaryTable(r).split("\n").filter((l: string) => l.startsWith("| ") && !l.startsWith("| step") && !l.startsWith("|---"));
+  assert.match(rows[0], /^\| b \|.*refused.*continued/);
+});
+
+test("a ledger row with outcome refused is refused too; a dry step that says REFUSING, and an apply step whose rows were refused one by one (counts.refused), are not", async () => {
+  const outcomeRefused = async (outcome: string, mode: "apply" | "dry", counts: Record<string, number>) => {
+    const t = turn("", { outcome, mode, counts, reason: outcome === "success" ? "3 rows refused one by one" : "REFUSING: x" });
+    const plan = mk(["a"]);
+    plan.steps[0].mode = mode;
+    return (await executePlan(plan, PATH, { invoke: t.invoke, now: NOW })).steps[0].outcome;
+  };
+  assert.equal(await outcomeRefused("refused", "apply", {}), "refused");
+  assert.equal(await outcomeRefused("noop", "dry", {}), "ok", "a dry run never writes, so a refusal to write is not its failure");
+  assert.equal(await outcomeRefused("success", "apply", { refused: 3 }), "ok", "rows refused one by one are counted in refusals; the step still wrote");
+});
