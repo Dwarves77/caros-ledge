@@ -74,15 +74,26 @@ test("a producers.only that is not an entry of the registry is refused (a typo w
   parsePlan(plan({ steps: [step({ input: input("ecb-fx") })] }));
 });
 
-test("the ruling's cadence_exception is required on an apply propagate step that fetches (its input carries `producers`) and refused as a false claim on an apply step that fetches nothing (a derive or retokenise pass, a connect step, a propagate step with no producers)", () => {
+test("the ruling's cadence_exception is required on an apply propagate step that fetches (its input carries `producers`) and refused as a false claim on an apply step that fetches nothing (a derive or retokenise pass, a connect step)", () => {
   // Steps that fetch nothing need none.
   parsePlan(plan({ steps: [step({ input: { propagate: { derive: { only: "x" } } }, producer_env: [] })] }));
   parsePlan(plan({ steps: [step({ input: {}, producer_env: [] })] }));
   parsePlan(plan({ steps: [step({ stage: "connect", input: { connect: { corpus: true } }, producer_env: [] })] }));
+  // The seed pages the coupling step captures are a fetch of an apply propagate step with no producers: the ruling may ride there, and only the plan's own text.
+  parsePlan(plan({ steps: [step({ input: { propagate: { cadence_exception: RULING } }, producer_env: [] })] }));
+  assert.throws(() => parsePlan(plan({ steps: [step({ input: { propagate: { cadence_exception: "another ruling" } }, producer_env: [] })] })), /cadence_exception.*equal/);
   // A cadence_exception on a step that fetches nothing claims an exception it cannot use.
-  for (const s of [step({ input: { propagate: { cadence_exception: RULING } }, producer_env: [] }), step({ stage: "connect", input: { connect: { cadence_exception: RULING } }, producer_env: [] })]) {
+  for (const s of [step({ stage: "connect", input: { connect: { cadence_exception: RULING } }, producer_env: [] })]) {
     assert.throws(() => parsePlan(plan({ steps: [s] })), /cadence_exception.*(fetch|false)/i, JSON.stringify(s.input));
   }
   // The steps that fetch still need the ruling.
   assert.throws(() => parsePlan(plan({ steps: [step({ input: { propagate: { producers: { only: "ecb-fx" } } } })] })), /cadence_exception/);
+});
+
+test("the CONNECT-2A plan parses: couplings and patterns, dry then apply, the ruling on the apply propagate step that captures the seed pages", () => {
+  const p = parsePlan(readFileSync("scripts/runs/plans/2026-10-26-connect-2a.json", "utf8"));
+  assert.deepEqual(p.steps.map((s: { name: string }) => s.name), ["couplings-dry", "couplings-apply", "patterns-dry", "patterns-apply"]);
+  assert.deepEqual(p.steps.map((s: { stage: string }) => s.stage), ["propagate", "propagate", "connect", "connect"]);
+  assert.ok(p.steps.every((s: { producer_env: string[]; input: Record<string, { producers?: unknown }> }) => s.producer_env.length === 0 && s.input.propagate?.producers === undefined), "no producer runs in this plan");
+  assert.equal(p.steps[1].input.propagate.cadence_exception, p.ruling);
 });
