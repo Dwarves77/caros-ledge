@@ -211,7 +211,7 @@ function classifyTrigger(span: string, fallbackValue: string): Candidate["applic
   return { attribute: rules.triggerAttribute, value: fallbackValue };
 }
 
-/** The compliance artifacts the span names: the class from the data file and the name exactly as the span writes it. Stored in evidence_artifacts (jsonb, 0126); null when the span names none. */
+/** The compliance artifacts the span names: the class from the data file and the name exactly as the span writes it. Stored in evidence_artifacts (jsonb, 0128); null when the span names none. */
 function extractArtifacts(span: string): Array<{ class: string; name: string }> | null {
   const found = ARTIFACT_CLASSES.flatMap((c) => { const name = c.re.exec(span)?.[0]; return name ? [{ class: c.class, name }] : []; });
   return found.length ? found : null;

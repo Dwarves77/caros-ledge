@@ -108,7 +108,7 @@ export function dutyHoldersExcludeForwarder(classes: unknown, dutyHolderClasses:
   return !list.some((c) => (dutyHolderClasses[c]?.orgRoles ?? []).includes("forwarder"));
 }
 
-/** The artifacts stored on the objects (evidence_artifacts: a list of class and verbatim name; the 0126 CHECK keeps the column to that shape, a value that is not a list names none). */
+/** The artifacts stored on the objects (evidence_artifacts: a list of class and verbatim name; the 0128 CHECK keeps the column to that shape, a value that is not a list names none). */
 function artifactsOf(objects: readonly ObligationObject[]): { class: string; name: string }[] {
   const out = new Map<string, { class: string; name: string }>();
   for (const o of objects) for (const a of Array.isArray(o.evidence_artifacts) ? o.evidence_artifacts : []) if (typeof a?.class === "string" && typeof a?.name === "string") out.set(`${a.class}|${a.name}`, { class: a.class, name: a.name });
