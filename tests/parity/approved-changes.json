@@ -88,6 +88,18 @@
       "route": "operations-detail",
       "match": "^button:Request coverage$",
       "reason": "coordinator 2026-10-25: a panel's Request coverage action is its absence state (auxiliary energy loads, grid connection queue) and exists only while the panel has no data; ARM-1 populated grid_connection_queues, so the grid panel draws rows and its button is gone. Compared when present on both sides, ignored when absent on either; design unchanged"
+    },
+    {
+      "route": "market",
+      "match": "^button:Request coverage$",
+      "reason": "coordinator 2026-10-25: each spec 09 panel's Request coverage action is its absence state and exists only while that panel has no rows (old tree OemRoadmapPanelView.tsx:19-24, ReroutingPanelView.tsx:20-24, IndexationPanelView.tsx:29-33 at 646fb098c; new tree src/features/market/ui/Spec09Panels.tsx Body, rows.length === 0); the baseline holds three, and ruled-runs of main run 40222359593 populated oem_tech_roadmaps (6 rows, 18:42:31) and reroute_events (3 rows, 18:45:15) during the parity job, so two buttons are gone. Compared when present on both sides, ignored when absent on either; design unchanged"
+    },
+    {
+      "route": ["regulation-detail", "market-detail", "research-detail", "operations-detail"],
+      "kind": "heading",
+      "under": "2:Connected intelligence",
+      "match": "^[3-6]:",
+      "reason": "coordinator 2026-10-25: the theme brief inside Connected intelligence is the item's theme brief text (its own headings), drawn only while the item's theme has a brief (old tree CrossPageSection.tsx:156-161 and 192-195 at 646fb098c; new tree src/ui/detail/CrossPageSection.tsx:102 and 136-139, src/core/themes/theme-view.ts:57-59 and 123). The theme recompute of main run 40222359593 (connection_theme_runs 2b8a3546, 18:43) moved the market baseline item into theme 0053d552 (849 members, no brief). Compared when present on both sides, ignored when absent on either; design unchanged"
     }
   ],
   "dataNames": [

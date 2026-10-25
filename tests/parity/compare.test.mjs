@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
-import { compareRecord, scopeFrame } from './compare.mjs';
+import { compareRecord, gateProblems, scopeFrame } from './compare.mjs';
 
 const config = JSON.parse(await readFile(new URL('./approved-changes.json', import.meta.url), 'utf8'));
 const NAMES = { complementary: 'Side', navigation: 'Platform', banner: '', search: 'Search the ledger', main: '' };
@@ -186,4 +186,41 @@ test('conditional: a data-conditional control is compared when present on both s
   assert.equal(real.controls.filter((c) => c.name === RC).length, 2, 'the baseline holds the two buttons');
   assert.deepEqual(compareRecord('operations-detail', '1280x900', real, { ...real, controls: keep }, [], config.dataNames ?? [], config.conditional ?? []).fails, [], 'the committed config covers the production case');
   assert.equal(compareRecord('operations-detail', '1280x900', real, { ...real, controls: real.controls.filter((c, i) => i !== 14) }, [], config.dataNames ?? [], config.conditional ?? []).fails.length, 1, 'a removed ordinary control fails under the committed config');
+});
+
+// PARITY-4 (main run 40222359593): the ruled runs wrote production while the parity job read it. Market lost two of its three absence-state buttons (oem_tech_roadmaps and reroute_events filled), and market-detail lost the
+// theme brief's own headings (the 18:43 theme recompute put the baseline item into a theme with no brief). Both are data the baseline predates; the committed config must cover them and nothing else.
+test('conditional: the production case of main run 40222359593 passes under the committed config, and a changed neighbour still fails', async () => {
+  const read = async (name) => JSON.parse(await readFile(new URL(`./baseline/${name}.1280x900.json`, import.meta.url), 'utf8'));
+  const run = (route, b, c) => compareRecord(route, '1280x900', b, c, [], config.dataNames ?? [], config.conditional ?? []).fails;
+  const market = await read('market');
+  const rc = market.controls.map((c, i) => (c.name === 'Request coverage' ? i : -1)).filter((i) => i >= 0);
+  assert.equal(rc.length, 3, 'the baseline holds the three buttons');
+  assert.deepEqual(run('market', market, { ...market, controls: market.controls.filter((c, i) => i !== rc[0] && i !== rc[1]) }), [], 'two panels filled');
+  assert.deepEqual(run('market', market, { ...market, controls: market.controls.filter((c, i) => !rc.includes(i)) }), [], 'all three filled');
+  assert.equal(run('market', market, { ...market, controls: market.controls.filter((c) => c.name !== 'Back to top') }).length, 1, 'an ordinary control still fails');
+
+  const detail = await read('market-detail');
+  const at = detail.headings.findIndex((h) => h.text === 'Connected intelligence');
+  const brief = detail.headings.filter((h, i) => i > at && h.level === 4 && i < detail.headings.findIndex((x, j) => j > at && x.level === 2 && x.text === 'Notes'));
+  assert.equal(brief.length, 5, 'the baseline draws the theme brief headings');
+  const without = detail.headings.filter((h) => !brief.includes(h));
+  assert.deepEqual(run('market-detail', detail, { ...detail, headings: without }), [], 'no theme brief: its headings are not owed');
+  assert.deepEqual(run('market-detail', detail, detail), [], 'a theme brief drawn as before');
+  assert.equal(run('market-detail', detail, { ...detail, headings: without.filter((h) => h.text !== 'Connected intelligence') }).length, 1, 'the section heading itself is still owed');
+  assert.equal(run('market-detail', detail, { ...detail, headings: without.filter((h) => h.text !== 'Sources') }).length, 1, 'a heading outside the section is still owed');
+  const drawnBackwards = [...without.slice(0, at + 1), ...brief.slice().reverse(), ...without.slice(at + 1)];
+  assert.ok(run('market-detail', detail, { ...detail, headings: drawnBackwards }).length > 0, 'a drawn brief is held to its order');
+  assert.equal(run('market', detail, { ...detail, headings: without }).length, 5, 'per route');
+});
+
+test('gateProblems: a conditional entry names real routes, a reason, a match, and for a heading the heading it sits under', () => {
+  const routes = [{ name: 'a' }, { name: 'b' }];
+  const good = { gates: { full: ['a', 'b'], frame: [], pixelExact: [], lists: [] }, exempt: [], skippable: [], listEmpty: [], conditional: [{ route: ['a', 'b'], kind: 'heading', under: '2:X', match: '^4:', reason: 'a long enough reason to stand' }, { route: 'a', match: '^button:Y$', reason: 'a long enough reason to stand' }] };
+  assert.deepEqual(gateProblems(routes, good), []);
+  const bad = (entry) => gateProblems(routes, { ...good, conditional: [entry] }).join('|');
+  assert.match(bad({ ...good.conditional[0], route: ['a', 'ghost'] }), /"ghost" is not a route/);
+  assert.match(bad({ ...good.conditional[0], reason: 'short' }), /carries no reason/);
+  assert.match(bad({ ...good.conditional[0], under: undefined }), /needs a match and an under heading/);
+  assert.match(bad({ ...good.conditional[1], match: undefined }), /needs a match/);
 });

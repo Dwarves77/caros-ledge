@@ -4,12 +4,32 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { licenceForbidsHost } from "@/core/fetch/licence-hosts";
+import { runProducer, type ProducerSpec } from "@/core/producers/runner";
 
 /** The honest identity every golden-corpus fetch declares (R6a): one request per second per host, a shared on-disk cache so a test run does not refetch. */
 const GOLDEN_UA = "CarosLedge/1.0 (+https://carosledge.com/bot)";
 const CACHE = join(tmpdir(), "caros-golden-cache");
 const TTL_MS = 6 * 3600 * 1000;
 const lastByHost = new Map<string, number>();
+// The producers' one fetch policy (runner.ts makeGetter, reached through a dry runProducer): a reset socket, a timeout or a 5xx, also while the body is read, is retried after 5, 15 and 45 seconds; a 4xx is not.
+const net = { fetch: ((url: string, init?: RequestInit) => fetch(url, init)) as unknown as typeof fetch, sleep: (ms: number) => new Promise<void>((r) => setTimeout(r, ms)) };
+/** The test seam: the golden fetches go through this fetch and sleep, so a planted socket reset or 404 is answered without the network. */
+export const routeGoldenFetchThrough = (fetchFn: typeof fetch, sleep: (ms: number) => Promise<void>): void => void Object.assign(net, { fetch: fetchFn, sleep });
+
+/** The bytes of a document, or the stated reason it could not be read. */
+async function download(url: string): Promise<{ bytes: Uint8Array } | { reason: string }> {
+  let got: Uint8Array | null = null;
+  const spec: ProducerSpec = {
+    name: "golden-fetch", table: "none", licenceKey: null, enabled: false, killSwitchEnv: null,
+    fetchDoc: async (ctx) => {
+      got = new Uint8Array(await (await ctx.get(url, { headers: { "User-Agent": GOLDEN_UA }, buffer: true, timeoutMs: 90_000 })).arrayBuffer());
+      return { text: "fetched" };
+    },
+    parse: () => ({ rows: [], warnings: [] }),
+  };
+  const run = await runProducer({ fetch: (u: string, i: never) => net.fetch(u, i), sleep: (ms: number) => net.sleep(ms), env: {}, sb: null } as never, { spec, dry: true });
+  return got ? { bytes: got } : { reason: run.notes.join("; ").replace(/^golden-fetch: /, "") };
+}
 
 export type FetchedDoc = { ok: true; pages: string[]; bytes: number } | { ok: false; reason: string };
 const memo = new Map<string, Promise<FetchedDoc>>();
@@ -34,14 +54,9 @@ async function fetchOnce(url: string, format: "pdf" | "html"): Promise<FetchedDo
   if (existsSync(file) && Date.now() - statSync(file).mtimeMs < TTL_MS) bytes = readFileSync(file);
   else {
     await pace(new URL(url).host);
-    let res: Response;
-    try {
-      res = await fetch(url, { headers: { "User-Agent": GOLDEN_UA }, redirect: "follow", signal: AbortSignal.timeout(90_000) });
-    } catch (e) {
-      return { ok: false, reason: `network: ${e instanceof Error ? e.message : String(e)}` };
-    }
-    if (!res.ok) return { ok: false, reason: `HTTP ${res.status}` };
-    bytes = new Uint8Array(await res.arrayBuffer());
+    const dl = await download(url);
+    if ("reason" in dl) return { ok: false, reason: dl.reason };
+    bytes = dl.bytes;
     if (!bytes.length) return { ok: false, reason: "empty body" };
     mkdirSync(CACHE, { recursive: true });
     writeFileSync(file, bytes);
