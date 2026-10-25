@@ -1,0 +1,6 @@
+# path | reason (files with no "Ported from" header)
+src/core/themes/forward-outlook.ts | new in CTX-5 (ADR-050): the forward view of a theme as structure only (horizon tokens, member ids, dated events); replaces the sentence-writing outlook the first CTX-5 commit put in theme-view.ts
+src/core/themes/horizons.ts | new in CTX-5 (ADR-050): the zod shape of data/horizons.json, so a file missing a key refuses at startup
+src/ui/detail/PendingTriggers.tsx | new in CTX-5 (ADR-050): the one list of pending regulatory triggers (date, kind label, verbatim text) the regulation and research pages share
+src/core/themes/data/horizons.json | new in CTX-5 (ADR-050): the horizon tokens, band map and day cutoffs the theme forward view reads (data, not code)
+src/features/research/model/data/assessment-stance.json | new in CTX-5 (ADR-050): the ordered rules that classify a stored assessment into a stance token and a horizon token

@@ -45,7 +45,7 @@ test("the detail page carries the suppression into the summary, the key data and
   const db = world();
   const reg = db.rows("intelligence_items").find((i) => i.id === REG)!;
   Object.assign(reg, { summary: `Summary. ${CLAIM_SUPPRESSED}`, key_data: [CLAIM_SUPPRESSED, "kept key figure"], intersection_summary: `Linked. ${CLAIM_SUPPRESSED}` });
-  const d = await loadDetail("regulations", "g14", undefined, dbOf(db));
+  const d = await loadDetail("regulations", "g14", undefined, dbOf(db), null, "2026-10-24T00:00:00Z");
   assert.ok(!d.notFound);
   if (d.notFound) return;
   assert.ok(!JSON.stringify(d).includes("4,000 euro"), "the suppressed text is in no column of the bundle");
@@ -54,7 +54,7 @@ test("the detail page carries the suppression into the summary, the key data and
   const lost = world();
   const s3 = lost.rows("intelligence_item_sections").find((s) => s.id === SECTION)!;
   s3.content_md = `${CLAIM_KEPT} A penalty of four thousand euro per tonne applies.`;
-  const withheld = await loadDetail("regulations", "g14", undefined, dbOf(lost));
+  const withheld = await loadDetail("regulations", "g14", undefined, dbOf(lost), null, "2026-10-24T00:00:00Z");
   assert.ok(!withheld.notFound);
   if (withheld.notFound) return;
   assert.equal(withheld.sections.find((s) => s.id === SECTION)?.content_md, "", "the section whose suppressed claim is not found in it is withheld");

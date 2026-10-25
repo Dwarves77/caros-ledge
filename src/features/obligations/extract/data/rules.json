@@ -222,6 +222,30 @@
   "STATUS_ONLY_RE": {
    "source": "^\\s*(in force|current|updated|last updated|valid|accessed|retrieved)\\s+(as of|since)\\s*[.!?]?\\s*$",
    "flags": "i"
+  },
+  "IMPLEMENTING_ACT": {
+   "source": "\\b(?:implementing\\s+(?:acts?|regulations?|technical\\s+standards?|measures?))\\b",
+   "flags": "i"
+  },
+  "DELEGATED_ACT": {
+   "source": "\\b(?:delegated\\s+(?:acts?|regulations?))\\b",
+   "flags": "i"
+  },
+  "AWAITING_REGULATION": {
+   "source": "\\bawaiting\\s+(?:European\\s+|EU\\s+)?(?:regulations?|rules?|guidance|standards?|acts?|criteria|methodolog(?:y|ies))\\b",
+   "flags": "i"
+  },
+  "REGULATOR_SUBJECT": {
+   "source": "\\b(?:the\\s+)?(?:Commission|regulators?|agenc(?:y|ies)|authorit(?:y|ies)|Member\\s+States|IMO|EPA|CARB|ECHA|ESMA|EBA)\\b",
+   "flags": "i"
+  },
+  "REGULATOR_ACTION": {
+   "source": "\\b(?:adopt(?:s|ing)?|establish(?:es|ing)?|specif(?:y|ies|ying)|lay\\s+down|publish(?:es|ing)?|develop(?:s|ing)?|issue(?:s|ing)?|determin(?:e|es|ing))\\b",
+   "flags": "i"
+  },
+  "GUIDANCE_EXPECTED": {
+   "source": "\\b(?:technical\\s+standards?|assessment\\s+criteria|guidelines?|guidance)\\b",
+   "flags": "i"
   }
  }
 }

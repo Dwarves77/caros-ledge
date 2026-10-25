@@ -21,7 +21,22 @@ const rule = z.object({
   requireDeonticWithin: z.number().optional(),
   requireDeonticOrAimWithin: z.number().optional(),
 });
-const file = z.object({ rules: z.array(rule), candidateOnly: z.array(rule), patterns: z.object({ DEONTIC: re, AIM_WORDS: re, COMMENCEMENT_CLAUSE_RE: re, STATUS_ONLY_RE: re }) }).parse(raw);
+const file = z.object({
+  rules: z.array(rule),
+  candidateOnly: z.array(rule),
+  patterns: z.object({
+    DEONTIC: re,
+    AIM_WORDS: re,
+    COMMENCEMENT_CLAUSE_RE: re,
+    STATUS_ONLY_RE: re,
+    IMPLEMENTING_ACT: re,
+    DELEGATED_ACT: re,
+    AWAITING_REGULATION: re,
+    REGULATOR_SUBJECT: re,
+    REGULATOR_ACTION: re,
+    GUIDANCE_EXPECTED: re,
+  }),
+}).parse(raw);
 const compile = (r: z.infer<typeof re>): RegExp => new RegExp(r.source, r.flags);
 
 export interface Rule {
@@ -45,6 +60,12 @@ export const RULES: readonly Rule[] = file.rules.map(build);
 export const CANDIDATE_ONLY_RULES: readonly Rule[] = file.candidateOnly.map(build);
 export const DEONTIC = compile(file.patterns.DEONTIC);
 export const AIM_WORDS = compile(file.patterns.AIM_WORDS);
+export const IMPLEMENTING_ACT = compile(file.patterns.IMPLEMENTING_ACT);
+export const DELEGATED_ACT = compile(file.patterns.DELEGATED_ACT);
+export const AWAITING_REGULATION = compile(file.patterns.AWAITING_REGULATION);
+export const REGULATOR_SUBJECT = compile(file.patterns.REGULATOR_SUBJECT);
+export const REGULATOR_ACTION = compile(file.patterns.REGULATOR_ACTION);
+export const GUIDANCE_EXPECTED = compile(file.patterns.GUIDANCE_EXPECTED);
 const COMMENCEMENT_CLAUSE_RE = compile(file.patterns.COMMENCEMENT_CLAUSE_RE);
 const STATUS_ONLY_RE = compile(file.patterns.STATUS_ONLY_RE);
 

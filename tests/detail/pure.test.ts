@@ -150,7 +150,7 @@ test("theme views: the item's theme, the chips of a surface, the analysis when n
   const chips = themeChips({ themes: themes as never, items, surface: "regulations", max: 6 });
   assert.deepEqual(chips.map((c) => [c.themeId, c.href, c.hasBrief]), [["t1", "/regulations/g1", false]]);
   assert.match(chips[0]?.label ?? "", /^Shared source across /);
-  const view = themeAnalysisView({ itemId: "a", surface: "regulations", themes: themes as never, briefs: [], members: items });
+  const view = themeAnalysisView({ itemId: "a", surface: "regulations", themes: themes as never, briefs: [], members: items, asOfIso: "2026-10-24T00:00:00Z" });
   assert.equal(view?.hasBrief, false);
   assert.match(view?.absence ?? "", /This cluster connects 2 items across/);
   assert.deepEqual(view?.membersByPage.map((g) => [g.surface, g.total]), [["market", 1]]);

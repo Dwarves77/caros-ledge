@@ -186,7 +186,7 @@ export function OperationsDetail(p: OperationsDetailProps) {
             <DetailSection id="sources" title="Sources" index={5} aside={rows.length > 0 ? `${rows.length} · tier = provenance, never urgency` : undefined}>
               {rows.length > 0 ? <SourcesGrid rows={rows} /> : <StateNote>No sources are listed for this item.</StateNote>}
             </DetailSection>
-            <CrossPageSection surfaceKey="operations" surfaceLabel="Operations" crossPage={p.crossPage} onRetry={retry} />
+            <CrossPageSection surfaceKey="operations" surfaceLabel="Operations" crossPage={p.crossPage} onRetry={retry} kindLabels={p.kindLabels ?? {}} />
             <NoticesRail />
           </DetailLayout>
         </DetailPageWrapper>

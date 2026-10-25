@@ -6,7 +6,7 @@
 import { isBindingInstrumentType, type EventKind } from "../kinds";
 
 import { tryParseDateAt, tryParseDateOrBareYearAt, type DateMatch } from "./date-grammar";
-import { AIM_WORDS, CANDIDATE_ONLY_RULES, DEONTIC, isStatusOnlyClause, refuseForReferenceDate, REFERENCE_DATE_SKIP_REASON, RULES, STATUS_ONLY_SKIP_REASON, type Rule } from "./rules";
+import { AIM_WORDS, AWAITING_REGULATION, CANDIDATE_ONLY_RULES, DELEGATED_ACT, DEONTIC, GUIDANCE_EXPECTED, IMPLEMENTING_ACT, isStatusOnlyClause, refuseForReferenceDate, REFERENCE_DATE_SKIP_REASON, REGULATOR_ACTION, REGULATOR_SUBJECT, RULES, STATUS_ONLY_SKIP_REASON, type Rule } from "./rules";
 import { clauseAround, sentenceStart } from "./window";
 
 export interface Hit {
@@ -78,15 +78,31 @@ export function scanText(text: string, options: { referenceDates?: readonly stri
       const windowText = text.slice(sentenceStart(text, m.index), spanEnd + 220);
       if (rule.name === "by-year-target" || rule.name === "from-year") {
         if (AIM_WORDS.test(windowText)) kind = "target";
-        else if (DEONTIC.test(windowText)) kind = "compliance_deadline";
-        else {
+        else if (AWAITING_REGULATION.test(windowText)) kind = "guidance_expected";
+        else if (DEONTIC.test(windowText)) {
+          if (DELEGATED_ACT.test(windowText) && (REGULATOR_SUBJECT.test(windowText) || REGULATOR_ACTION.test(windowText))) kind = "delegated_act_due";
+          else if (IMPLEMENTING_ACT.test(windowText) && (REGULATOR_SUBJECT.test(windowText) || REGULATOR_ACTION.test(windowText))) kind = "implementing_act_due";
+          else if (REGULATOR_SUBJECT.test(windowText) && REGULATOR_ACTION.test(windowText)) {
+            if (GUIDANCE_EXPECTED.test(windowText)) kind = "guidance_expected";
+            else kind = "implementing_act_due";
+          } else kind = "compliance_deadline";
+        } else {
           skips.push({ reason: `date after '${rule.name === "from-year" ? "from" : "by"}' with no deontic ('shall'/'must') or aim/target language nearby — ambiguous whether this is a bound obligation`, span: text.slice(Math.max(0, m.index - 20), spanEnd + 40).trim() });
           continue;
         }
       }
-      if (rule.phaseOverride && kind !== "target" && (findTrailingForClause(text, spanEnd) || nearPeriodLanguage(text, m.index, spanEnd))) kind = "phase_step";
+      if (rule.phaseOverride && kind !== "target" && kind !== "implementing_act_due" && kind !== "delegated_act_due" && kind !== "guidance_expected" && (findTrailingForClause(text, spanEnd) || nearPeriodLanguage(text, m.index, spanEnd))) kind = "phase_step";
       if (kind === "compliance_deadline") {
-        if (AIM_WORDS.test(windowText) && !bindingAllowed) {
+        if (DELEGATED_ACT.test(windowText) && (REGULATOR_SUBJECT.test(windowText) || REGULATOR_ACTION.test(windowText))) {
+          kind = "delegated_act_due";
+        } else if (IMPLEMENTING_ACT.test(windowText) && (REGULATOR_SUBJECT.test(windowText) || REGULATOR_ACTION.test(windowText))) {
+          kind = "implementing_act_due";
+        } else if (AWAITING_REGULATION.test(windowText)) {
+          kind = "guidance_expected";
+        } else if (REGULATOR_SUBJECT.test(windowText) && REGULATOR_ACTION.test(windowText)) {
+          if (GUIDANCE_EXPECTED.test(windowText)) kind = "guidance_expected";
+          else kind = "implementing_act_due";
+        } else if (AIM_WORDS.test(windowText) && !bindingAllowed) {
           kind = "target";
         } else if (!bindingAllowed) {
           skips.push({ reason: "non_binding_instrument_no_compliance_deadline: research, analysis, market-signal and initiative items never receive a compliance_deadline", span: text.slice(Math.max(0, m.index - 20), spanEnd + 40).trim() });

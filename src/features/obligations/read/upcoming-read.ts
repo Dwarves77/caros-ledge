@@ -94,6 +94,7 @@ export interface UpcomingEvent {
   date_precision: string;
   event_kind: string;
   obligation_text: string;
+  source_span: string;
   source_kind: string;
   confidence: string;
   item: UpcomingItem;
@@ -112,7 +113,7 @@ function selectUpcoming(events: readonly UpcomingEvent[], opts: { jurisdictionFi
 
 const PAGE = 100;
 const MAX_PAGES = 20;
-const SELECT = "id, intelligence_item_id, event_date, date_precision, event_kind, obligation_text, source_kind, confidence, item:intelligence_items!inner(id, title, legacy_id, jurisdiction_iso, transport_modes)";
+const SELECT = "id, intelligence_item_id, event_date, date_precision, event_kind, obligation_text, source_span, source_kind, confidence, item:intelligence_items!inner(id, title, legacy_id, jurisdiction_iso, transport_modes)";
 
 export interface UpcomingResult {
   events: UpcomingEvent[];

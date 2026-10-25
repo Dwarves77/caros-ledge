@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -142,7 +142,8 @@ test('the deployed URL is derived from the status: the branch lower-cased, every
     try {
       const out = join(dir, 'out');
       writeFileSync(out, '');
-      const r = spawnSync('bash', ['-c', step.run], { env: { PATH: process.env.PATH, EVENT: 'status', DEFAULT_BRANCH: 'main', LIVE_URL: '', BRANCH: '', ...env, GITHUB_OUTPUT: out }, encoding: 'utf8' });
+      const bashCmd = process.platform === 'win32' && existsSync('C:\\Program Files\\Git\\bin\\bash.exe') ? 'C:\\Program Files\\Git\\bin\\bash.exe' : 'bash';
+      const r = spawnSync(bashCmd, ['-c', step.run], { env: { PATH: process.env.PATH, EVENT: 'status', DEFAULT_BRANCH: 'main', LIVE_URL: '', BRANCH: '', ...env, GITHUB_OUTPUT: out }, encoding: 'utf8' });
       return { status: r.status, out: readFileSync(out, 'utf8').trim().split('\n').filter(Boolean) };
     } finally {
       rmSync(dir, { recursive: true, force: true });

@@ -253,7 +253,7 @@ export function MarketDetailView({ resource: r, sections, claimTiers, claimsDegr
                 <ConnectionList rows={connectionRows} />
               </DetailSection>
             )}
-            <CrossPageSection surfaceKey="market" surfaceLabel="Market Intel" crossPage={crossPage} onRetry={retry} />
+            <CrossPageSection surfaceKey="market" surfaceLabel="Market Intel" crossPage={crossPage} onRetry={retry} kindLabels={kindLabels ?? {}} />
             <NoticesRail />
           </DetailLayout>
         </DetailPageWrapper>

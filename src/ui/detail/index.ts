@@ -4,6 +4,8 @@ export { ItemAssignBlock } from "./collab/ItemAssignBlock";
 export { ItemNotesBlock } from "./collab/ItemNotesBlock";
 export { crossPagePresence, CrossPageSection } from "./CrossPageSection";
 export type { CrossPageData } from "./CrossPageSection";
+export { PendingTriggers, pendingTriggers } from "./PendingTriggers";
+export type { PendingEvent } from "./PendingTriggers";
 export { AtAGlanceCard, DetailLayout, DetailMasthead, DetailPageWrapper, DetailRail, DetailSection, ImpactRailCard, InThisListStat, topRecommendedAction } from "./DetailShell";
 export { FactBlocks } from "./FactBlocks";
 export { InferenceSection } from "./InferenceSection";
