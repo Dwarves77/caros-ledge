@@ -17,6 +17,7 @@ import { gridQueueRows, oemRoadmapRows, rerouteRows } from "@/features/market/pr
 import { sbtiTargets } from "@/features/market/producers/sbti-targets";
 import { readSheet } from "@/core/producers/xlsx";
 
+import { installPropagationRpcs } from "../_support/memdb.ts";
 import { memoryDb } from "../_support/memory-db.ts";
 import { SEEDED_SERIES } from "../market/series-rows.ts";
 
@@ -78,6 +79,57 @@ test("INV-045/243: an apply writes only inside its own namespace, plans create o
   const again = await runProducer(withMarket(d.deps) as never, { spec: ON(ecbFx), dry: false, text: ECB });
   assert.equal(again.counts.created, 0);
   assert.equal(again.counts.updated, 0);
+});
+
+// FIX-EDGES-1 (ruled run 40152169626): production held an observation of every ecb-fx series from 2026-08-28; the new write was 2026-10-14 against a clock of 2026-10-15. The edge author read only the 21-day window, so the
+// prior observation (47 days back) was outside the read, the series looked like a first observation, and a run that wrote 4 rows authored 0 edges.
+const SPARSE_PRIORS = [
+  { id: "ms-usd-aug", series_key: "ecb-fx:eur-usd", reference_period: "2026-08-28", as_at_date: "2026-08-28", value_numeric: 1.18, unit: "USD/EUR", currency: "USD", origin_class: "official" },
+  { id: "ms-gbp-aug", series_key: "ecb-fx:eur-gbp", reference_period: "2026-08-28", as_at_date: "2026-08-28", value_numeric: 0.86, unit: "GBP/EUR", currency: "GBP", origin_class: "official" },
+];
+const propagationDb = (rows: Record<string, unknown>[]) => {
+  const mem = memoryDb({ market_series: rows.map((r) => ({ ...r })) });
+  installPropagationRpcs(mem.mem);
+  return mem;
+};
+const ecbRun = async (mem: ReturnType<typeof memoryDb>) => {
+  const d = makeDeps({ db: mem, env: { MARKET_PRODUCER_ECB_FX_ENABLED: "1" } });
+  return runProducer(withMarket(d.deps) as never, { spec: ON(ecbFx), dry: false, text: ECB });
+};
+
+test("FIX-EDGES-1: a series whose prior observation lies outside the 21-day window still authors its delta edge (one edge per written row)", async () => {
+  const mem = propagationDb(SPARSE_PRIORS);
+  const r = await ecbRun(mem);
+  assert.equal(r.outcome, "ok", r.notes.join("|"));
+  assert.equal(r.counts.created, 2);
+  assert.equal(r.counts.edges_authored, 2, "USD and GBP each author a delta against their 2026-08-28 observation");
+  assert.equal(r.counts.edges_insufficient_history, 0);
+  const edges = mem.tables.derivation_edges ?? [];
+  assert.equal(edges.length, 4, "two inputs (latest and prior) per authored value");
+  const priorIds = new Set(SPARSE_PRIORS.map((p) => p.id));
+  assert.ok([...priorIds].every((id) => edges.some((e) => e.from_pk === id)), "the old observation is an input of the edge");
+});
+
+test("FIX-EDGES-1: a re-run over rows that already exist writes 0 rows, and authors edges only where absent (INV-ARM-3)", async () => {
+  // the state the failed production run left: the new rows landed, no edge was authored
+  const landed = [
+    { id: "ms-usd-oct", series_key: "ecb-fx:eur-usd", reference_period: "2026-10-14", as_at_date: "2026-10-14", value_numeric: 1.09, unit: "USD/EUR", currency: "USD", origin_class: "official", label: "EUR/USD — ECB euro foreign exchange reference rate (US dollar)", derivation: "observed", source_key: "ecb", source_ref: "ECB euro foreign exchange reference rates, 2026-10-14", n_observations: null, method_version: null },
+    { id: "ms-gbp-oct", series_key: "ecb-fx:eur-gbp", reference_period: "2026-10-14", as_at_date: "2026-10-14", value_numeric: 0.87, unit: "GBP/EUR", currency: "GBP", origin_class: "official", label: "EUR/GBP — ECB euro foreign exchange reference rate (Pound sterling)", derivation: "observed", source_key: "ecb", source_ref: "ECB euro foreign exchange reference rates, 2026-10-14", n_observations: null, method_version: null },
+  ];
+  const mem = propagationDb([...SPARSE_PRIORS, ...landed]);
+  const first = await ecbRun(mem);
+  assert.equal(first.outcome, "ok", first.notes.join("|"));
+  assert.equal(first.counts.created, 0);
+  assert.equal(first.counts.edges_authored, 2, "edges for rows that landed without them");
+  const rows = mem.tables.market_series?.length;
+  const edges = mem.tables.derivation_edges?.length;
+  const again = await ecbRun(mem);
+  assert.equal(again.outcome, "ok", again.notes.join("|"));
+  assert.equal(again.counts.created, 0);
+  assert.equal(again.counts.edges_authored, 0);
+  assert.equal(again.counts.edges_already, 2, "present edges are not authored twice");
+  assert.equal(mem.tables.market_series?.length, rows);
+  assert.equal(mem.tables.derivation_edges?.length, edges);
 });
 
 test("INV-045: rows landed but no edge authored fails the run CLOSED; an unwired downstream fails closed too", async () => {
@@ -272,7 +324,7 @@ test("rows files: a citation is refused by name, an unclassifiable host is refus
   assert.equal(db.writes.length, 0, "no rows file records a gap and never an invented row");
 });
 
-test("rows files: p90 below p50 is refused, a missing both is an error, a same-corridor reroute is refused, an unresolved corridor is never minted", async () => {
+test("rows files: p90 below p50 is refused, a missing both is an error, a same-corridor reroute by another route is a row, a typed multiplier is refused, an unresolved corridor is never minted", async () => {
   const j = spine("jurisdiction", ["Great Britain"]);
   const run = (spec: ProducerSpec, entities: Array<Record<string, unknown>>, row: object) => runProducer(makeDeps({ db: memoryDb({ entities }) }).deps, { spec, text: JSON.stringify([row]) });
   const g = (o: object) => ({ jurisdiction_name: "Great Britain", dso_name: "DSO", capacity_band_mw: "10-20", as_of: "2026-09-01", queue_months_p50: 10, queue_months_p90: 20, citation: cite, ...o });
@@ -285,15 +337,15 @@ test("rows files: p90 below p50 is refused, a missing both is an error, a same-c
   assert.match(none.notes.join("|"), /at least one of/);
   assert.match((await run(gridQueueRows, j, g({ queue_months_p50: -1 }))).notes.join("|"), /must be >= 0/);
   const c = spine("corridor", ["A-B:ocean", "A-C:ocean"]);
-  const rr = (o: object) => ({ baseline_corridor_name: "A-B:ocean", reroute_corridor_name: "A-C:ocean", cause: "closure", fuel_burn_multiplier: 1.3, effective_from: "2026-01-01", citation: cite, ...o });
+  const rr = (o: object) => ({ baseline_corridor_name: "A-B:ocean", reroute_corridor_name: "A-C:ocean", route_via: "cape_of_good_hope", cause: "closure", effective_from: "2026-01-01", citation: cite, ...o });
   assert.equal((await run(rerouteRows, c, rr({}))).counts.parsed, 1);
-  const same = await run(rerouteRows, c, rr({ reroute_corridor_name: "A-B:ocean" }));
-  assert.equal(same.counts.parsed, 0);
-  assert.match(same.notes.join("|"), /SAME corridor/);
+  assert.equal((await run(rerouteRows, c, rr({ reroute_corridor_name: "A-B:ocean" }))).counts.parsed, 1, "Suez and the Cape of one port pair are one corridor entity");
+  assert.equal((await run(rerouteRows, c, rr({ reroute_corridor_name: undefined }))).counts.parsed, 1, "no reroute name means the same corridor");
+  assert.match((await run(rerouteRows, c, rr({ route_via: "sea" }))).notes.join("|"), /route_via "sea" is not one of/);
   const miss = await run(rerouteRows, c, rr({ reroute_corridor_name: "Z-Z:air" }));
   assert.equal(miss.counts.parsed, 0);
   assert.match(miss.notes.join("|"), /MISSING/);
-  assert.match((await run(rerouteRows, c, rr({ fuel_burn_multiplier: 0 }))).notes.join("|"), /must be > 0/);
+  assert.match((await run(rerouteRows, c, rr({ fuel_burn_multiplier: 1.3 }))).notes.join("|"), /typed fuel_burn_multiplier \(1\.3\) is refused/);
   assert.match((await run(rerouteRows, c, rr({ effective_to: "2025-01-01" }))).notes.join("|"), /before effective_from/);
 });
 

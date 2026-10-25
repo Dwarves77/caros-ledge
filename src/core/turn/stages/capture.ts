@@ -3,6 +3,8 @@
 // Stage 4, capture: the sources the change stage found changed are queued (one open row per source), then the capture worker drains the queue and stores each whole document.
 // The worker reads no gate of its own: this stage reads the gate first, and the worker call carries a timeout.
 import { capture } from "@/core/fetch";
+import { classifyBody, isStorableClass } from "@/core/fetch/classify-body";
+import { closeBrowser, fetchBrowser, type BrowserDeps } from "@/core/fetch/headless";
 import { storageMaxChars } from "@/core/fetch/policy";
 import { storeCapture, type Db as StoreDb } from "@/core/fetch/store-capture";
 import type { FamilyCall } from "@/core/harness";
@@ -35,15 +37,25 @@ export function shapeCapture(reports: readonly Report[], queued: number): RunRes
   return { ...runResult(outcome, counts, by("failed").map((r) => `${r.source_id}: ${r.detail ?? "failed"}`)), data: { ids: { capture_ids: by("captured").map((r) => r.capture_id).filter((x): x is string => !!x), captured_source_ids: by("captured").map((r) => r.source_id) } } };
 }
 
-/** Rule 17 for a reviewed rows file: each cited page is rated through the class table, captured by the one capture path and stored by the one writer, so the producer's quote check (acceptStoredQuote) finds the capture it verifies against. Never fetches a page twice for one hash. */
+/** Why a direct capture ends the attempt: the licence register, a robots.txt disallow and a private address are final for every channel; a wall (403), a robots.txt the declared identity could not read or a thin script shell go on to the browser tier. */
+const FINAL_HOLDS: ReadonlySet<string> = new Set(["licence_forbids", "robots_disallowed", "private_address"]);
+type Got = { usable: boolean; text: string | null; title: string | null; status: number | null; channel: "api" | "direct" | "browser" | null; holdReason: string | null };
+
+/** Rule 17 for a reviewed rows file: each cited page is rated through the class table, captured by the one capture path and stored by the one writer, so the producer's quote check (acceptStoredQuote) finds the capture it verifies against. Never fetches a page twice for one hash. An EUR-Lex CELEX page is captured through Cellar (the instrument's own family; EUR-Lex answers a script with its robot gate); a page its host walls off is read once more by the browser tier, as the ladder does. */
 export async function captureCited(d: BuiltDeps, cited: readonly { url: string; title: string }[], ruled = false): Promise<RunResult> {
   // A ruled run (an operator dispatch carrying a cadence exception) fetches as the manual run: the one signed caller of an operator-fired run, so the hold's two doors stay two.
   const fetchDeps = ruled ? { ...d.fetch, caller: "manual-intake-run" } : d.fetch;
+  const browserDeps = { launchBrowser: null, ...fetchDeps } as BrowserDeps;
   const counts = { cited: cited.length, captured: 0, unchanged: 0, failed: 0 };
   const notes: string[] = [];
   for (const { url, title } of cited) {
     const rated = await registerAndRate(d.sb, url, { name: title });
-    const got = "source_id" in rated ? await capture(url, {}, fetchDeps) : null;
+    const celex = /[?&]uri=CELEX:([\w()-]+)/i.exec(url)?.[1];
+    let got: Got | null = "source_id" in rated ? await capture(url, celex ? { family: "celex", key: celex } : {}, fetchDeps) : null;
+    if (got && !got.usable && !FINAL_HOLDS.has(got.holdReason ?? "")) {
+      const b = await fetchBrowser(url, browserDeps, { max: storageMaxChars(d.env) });
+      if (b.status === 200 && b.text.length > 200 && isStorableClass(classifyBody(b.text, { status: 200 }).class)) got = { usable: true, text: b.text, title: b.title ?? null, status: 200, channel: "browser", holdReason: null };
+    }
     if (!got?.usable || !got.text || !("source_id" in rated)) {
       counts.failed += 1;
       notes.push(`${url}: ${"source_id" in rated ? (got?.holdReason ?? "no usable capture") : `not registered (${rated.status})`}`);
@@ -53,6 +65,7 @@ export async function captureCited(d: BuiltDeps, cited: readonly { url: string; 
     if (s.outcome === "failed") notes.push(`${url}: ${s.detail}`);
     counts[s.outcome === "captured" ? "captured" : s.outcome === "unchanged" ? "unchanged" : "failed"] += 1;
   }
+  await closeBrowser(browserDeps);
   return runResult(counts.failed ? (counts.failed < cited.length ? "partial" : "failed") : "ok", counts, notes);
 }
 

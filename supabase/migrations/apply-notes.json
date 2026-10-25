@@ -103,6 +103,9 @@
     "hold": "after `node scripts/cutover/export-table.mjs coverage_gap_census_findings` has written docs/archive/logs/<date>-coverage_gap_census_findings.json and its printed row count equals `select count(*) from public.coverage_gap_census_findings`; DESTRUCTIVE",
     "irreversible": "drops a table (116 rows) and a view; the recovery is the export docs/archive/logs/2026-10-18-coverage_gap_census_findings.json (row count and sha256 recorded by scripts/cutover/export-table.mjs) loaded into the table re-created from supabase/schema.sql"
   },
+  "0069_live_check_provenance_no_replica": {
+    "selfCheckBy": "0073_selfcheck_repairs"
+  },
   "0072_data_market_series_selfcheck": {
     "consumer": "src/features/market/producers/market-series-items.ts readSeriesItemMap (the six attachments it reads must exist)",
     "after": "0045",
@@ -116,8 +119,10 @@
       "live_check_provenance_trigger": "called with no argument; it plants its own fixture row inside a sub-transaction it rolls back and reports it (this is the check of 0069, which is applied and is not edited)"
     }
   },
-  "0069_live_check_provenance_no_replica": {
-    "selfCheckBy": "0073_selfcheck_repairs"
+  "0078_migration_log": {
+    "unscopedReads": {
+      "migration_log": "asserts the whole seed: its size is the invariant, and the table is empty before this file creates it"
+    }
   },
   "0102_admin_action_rpcs": {
     "unscopedReads": {
@@ -143,9 +148,9 @@
       "section_claim_provenance": "the same whole-table check: every marker names a FACT claim of the item whose section carries it"
     }
   },
-  "0078_migration_log": {
+  "0124_reroute_route_via": {
     "unscopedReads": {
-      "migration_log": "asserts the whole seed: its size is the invariant, and the table is empty before this file creates it"
+      "reroute_events": "the guard refuses a table that already holds rows (none is given a route by guess): it reads the whole table by design; the self-check's own assertions are scoped to the fixture corridors"
     }
   }
 }

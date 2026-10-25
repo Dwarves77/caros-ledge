@@ -7,6 +7,7 @@
 // rows file the run records the gap and writes nothing (INV-121).
 import { fetchAllRows, type Db } from "@/core/db";
 import { entitiesByKind, entityId, planOrganisation, planOrganisationFkUpdates } from "@/core/entities";
+import { acceptStoredQuote } from "@/core/producers/quote";
 import { loadRowsFile, registerCitedSource, requireCitation, resolveEntityByName, RowsFileError, type Citation } from "@/core/producers/rows-file";
 import type { ParseOut, ProducerCtx, ProducerSpec } from "@/core/producers/runner";
 import { keyOf, type Rec } from "@/core/producers/upsert-plan";
@@ -16,13 +17,13 @@ import { hostOf } from "@/core/shared";
 type Entity = { entity_id: string; canonical_name: string };
 export type ParsedRow = { refused: true; reason: string } | { refused: false; dbRow: Rec; citation: Citation };
 
-const need = (row: Rec, fields: string[], where: string, i: number): void => {
+export const need = (row: Rec, fields: string[], where: string, i: number): void => {
   for (const f of fields) if (row[f] === undefined || row[f] === null || row[f] === "") throw new RowsFileError(`${where}: row[${i}] missing required field "${f}".`);
 };
 const oneOf = (v: unknown, set: readonly string[], label: string, where: string, i: number): void => {
   if (!set.includes(String(v))) throw new RowsFileError(`${where}: row[${i}].${label} "${v}" is not one of ${set.join(", ")}.`);
 };
-const refuse = (reason: string): ParsedRow => ({ refused: true, reason });
+export const refuse = (reason: string): ParsedRow => ({ refused: true, reason });
 
 const TECH = ["heavy_battery", "megawatt_charging", "hydrogen_fcell", "ammonia_engine", "methanol_dualfuel", "saf_refinery", "e_axle", "reefer_electrification"];
 const STAGES = ["announced", "pilot_demonstration", "small_batch_fleet", "mass_series_production"];
@@ -70,23 +71,27 @@ function parseGridQueueRow(row: Rec, i: number, jurisdictions: readonly Entity[]
   return { refused: false, citation, dbRow: { jurisdiction_id: jurisdictionId, dso_name: String(row.dso_name), capacity_band_mw: String(row.capacity_band_mw), queue_months_p50: p50 ?? null, queue_months_p90: p90 ?? null, as_of: row.as_of, obs_status: obs, source_id: null } };
 }
 
+const ROUTES = ["suez", "cape_of_good_hope", "panama", "cape_horn", "arctic", "overland"];
+/** A reroute is the same corridor sailed another way (corridor identity is ORIGIN-DEST:mode, so Suez and the Cape share it): route_via says which way, and the multiplier is derived later (derived_values), never typed here. */
 function parseRerouteRow(row: Rec, i: number, corridors: readonly Entity[]): ParsedRow {
   const where = "reroute-producer";
   const citation = requireCitation(row, i, where);
-  need(row, ["baseline_corridor_name", "reroute_corridor_name", "cause", "fuel_burn_multiplier", "effective_from"], where, i);
-  if (!(Number(row.fuel_burn_multiplier) > 0)) throw new RowsFileError(`${where}: row[${i}].fuel_burn_multiplier must be > 0 (got ${row.fuel_burn_multiplier}).`);
+  need(row, ["baseline_corridor_name", "route_via", "cause", "effective_from"], where, i);
+  oneOf(row.route_via, ROUTES, "route_via", where, i);
+  if (row.fuel_burn_multiplier != null) return refuse(`row[${i}]: a typed fuel_burn_multiplier (${row.fuel_burn_multiplier}) is refused: the multiplier is derived from the stated transit days or distance (derived_values), never typed.`);
   if (row.effective_to && String(row.effective_to) < String(row.effective_from)) throw new RowsFileError(`${where}: row[${i}].effective_to (${row.effective_to}) is before effective_from (${row.effective_from}).`);
+  const toName = String(row.reroute_corridor_name ?? row.baseline_corridor_name);
   const baseline = resolveEntityByName(corridors, String(row.baseline_corridor_name));
-  const reroute = resolveEntityByName(corridors, String(row.reroute_corridor_name));
-  if (!baseline || !reroute) return refuse(`row[${i}]: corridor(s) not found in the live entity spine (baseline "${row.baseline_corridor_name}" ${baseline ? "found" : "MISSING"}, reroute "${row.reroute_corridor_name}" ${reroute ? "found" : "MISSING"}); minting a corridor entity is out of this producer's write set.`);
-  if (baseline === reroute) return refuse(`row[${i}]: baseline and reroute resolved to the SAME corridor entity (${baseline}): not a reroute.`);
-  return { refused: false, citation, dbRow: { baseline_corridor_id: baseline, reroute_corridor_id: reroute, cause: String(row.cause), distance_delta_nm: row.distance_delta_nm ?? null, transit_delta_days: row.transit_delta_days ?? null, fuel_burn_multiplier: Number(row.fuel_burn_multiplier), effective_from: row.effective_from, effective_to: row.effective_to ?? null } };
+  const reroute = resolveEntityByName(corridors, toName);
+  if (!baseline || !reroute) return refuse(`row[${i}]: corridor(s) not found in the live entity spine (baseline "${row.baseline_corridor_name}" ${baseline ? "found" : "MISSING"}, reroute "${toName}" ${reroute ? "found" : "MISSING"}); minting a corridor entity is out of this producer's write set.`);
+  return { refused: false, citation, dbRow: { baseline_corridor_id: baseline, reroute_corridor_id: reroute, route_via: row.route_via, cause: String(row.cause), distance_delta_nm: row.distance_delta_nm ?? null, transit_delta_days: row.transit_delta_days ?? null, effective_from: row.effective_from, effective_to: row.effective_to ?? null } };
 }
 
-interface RowsFileDef {
+export interface RowsFileDef {
   name: string;
   table: string;
-  entityKind: "organisation" | "jurisdiction" | "corridor";
+  /** The kind of entity a row names by canonical name (read once per run); null for a file whose rows resolve nothing by name. */
+  entityKind: "organisation" | "jurisdiction" | "corridor" | null;
   gap: string;
   killSwitchEnv: string;
   pk: string;
@@ -94,9 +99,22 @@ interface RowsFileDef {
   /** The table carries a source_id column: the registered source is stored on the row. */
   storesSource: boolean;
   parseRow(row: Rec, i: number, entities: readonly Entity[]): ParsedRow;
+  /** Apply only, for a row whose citation passed: what the registered source and the verified capture add to the row, and the entities it names (a table with no source_id column keeps its provenance in the row). */
+  settle?(sb: Db, row: Rec, proof: { source_id: string; capture_id: string; citation: Citation }, now: Date): Promise<Rec>;
 }
-async function readEntities(sb: Db | null, kind: string): Promise<Entity[]> {
-  return sb ? entitiesByKind(sb, kind) : [];
+async function readEntities(sb: Db | null, kind: string | null): Promise<Entity[]> {
+  return sb && kind ? entitiesByKind(sb, kind) : [];
+}
+
+/** The quote and every further quote of a citation must stand verbatim on a stored capture of the cited URL: the capture id of the first, or the first refusal. */
+async function checkQuotes(sb: Db, c: Citation): Promise<{ captureId: string } | { reason: string }> {
+  let first = "";
+  for (const quote of [c.quote, ...(c.also ?? [])]) {
+    const v = await acceptStoredQuote(sb, { url: c.url, quote, verifiedAt: c.retrieved_at });
+    if (!v.ok) return { reason: `${v.reason}: ${v.detail}` };
+    first ||= v.captureId;
+  }
+  return { captureId: first };
 }
 
 /** The existing organisation path (planOrganisation: the entity and its HOST identifier, then the source row's organisation_entity_id) for a manufacturer whose name is its rated citation host; never a hand-typed entity row, and a second call finds it held. */
@@ -116,7 +134,7 @@ async function mintOrganisation(sb: Db, url: string, sourceId: string, now: Date
 }
 
 /** The one rows-file driver: parse every row (a bad row is refused by name, never fatal to the others), rate the citation host, insert only rows not already present. */
-function rowsFileSpec(def: RowsFileDef): ProducerSpec {
+export function rowsFileSpec(def: RowsFileDef): ProducerSpec {
   return {
     name: def.name,
     table: def.table,
@@ -161,11 +179,14 @@ function rowsFileSpec(def: RowsFileDef): ProducerSpec {
       for (const row of rows) {
         const { __i, __mint, ...dbRow } = row as Rec & { __i: number; __mint?: string };
         const c = citations[String(__i)] as Citation;
-        const reg = await registerCitedSource(c, { sb: ctx.sb });
-        if (reg.refused) refused.push(`row[${__i}]: citation refused: ${reg.reason}`);
-        else {
+        const proof = await checkQuotes(ctx.sb as Db, c);
+        const reg = "reason" in proof ? null : await registerCitedSource({ url: c.url, title: c.title }, { sb: ctx.sb });
+        if ("reason" in proof) refused.push(`row[${__i}]: citation refused: ${proof.reason}`);
+        else if (reg?.refused) refused.push(`row[${__i}]: citation refused: ${reg.reason}`);
+        else if (reg) {
           if (__mint) await mintOrganisation(ctx.sb as Db, __mint, reg.source_id, ctx.now());
-          kept.push(def.storesSource ? { ...dbRow, source_id: reg.source_id } : dbRow);
+          const row = def.storesSource ? { ...dbRow, source_id: reg.source_id } : dbRow;
+          kept.push(def.settle ? await def.settle(ctx.sb as Db, row, { source_id: reg.source_id, capture_id: proof.captureId, citation: c }, ctx.now()) : row);
         }
       }
       return { rows: kept, refused };
@@ -181,4 +202,4 @@ function rowsFileSpec(def: RowsFileDef): ProducerSpec {
 
 export const oemRoadmapRows = rowsFileSpec({ name: "oem-roadmap-rows", table: "oem_tech_roadmaps", entityKind: "organisation", killSwitchEnv: "OEM_PRODUCER_ROWS_FILE_ENABLED", pk: "roadmap_id", keyFields: ["manufacturer_id", "tech_category", "commercial_stage", "announced_at"], storesSource: true, parseRow: parseOemRoadmapRow, gap: "no $0 structured feed for OEM commercial-stage announcements; the input is a reviewed rows file" });
 export const gridQueueRows = rowsFileSpec({ name: "grid-queue-rows", table: "grid_connection_queues", entityKind: "jurisdiction", killSwitchEnv: "OPERATIONS_PRODUCER_GRID_QUEUE_ROWS_ENABLED", pk: "queue_id", keyFields: ["jurisdiction_id", "dso_name", "capacity_band_mw", "as_of"], storesSource: true, parseRow: parseGridQueueRow, gap: "no confirmed $0 feed for demand-side DSO connection-queue months; the input is a reviewed rows file" });
-export const rerouteRows = rowsFileSpec({ name: "reroute-rows", table: "reroute_events", entityKind: "corridor", killSwitchEnv: "MARKET_PRODUCER_REROUTE_ROWS_ENABLED", pk: "reroute_id", keyFields: ["baseline_corridor_id", "reroute_corridor_id", "effective_from"], storesSource: false, parseRow: parseRerouteRow, gap: "fewer than two distinct corridor entities with a sourced pairing; the input is a reviewed rows file" });
+export const rerouteRows = rowsFileSpec({ name: "reroute-rows", table: "reroute_events", entityKind: "corridor", killSwitchEnv: "MARKET_PRODUCER_REROUTE_ROWS_ENABLED", pk: "reroute_id", keyFields: ["baseline_corridor_id", "route_via", "effective_from"], storesSource: true, parseRow: parseRerouteRow, gap: "no $0 structured feed for carrier and canal reroute notices; the input is a reviewed rows file" });

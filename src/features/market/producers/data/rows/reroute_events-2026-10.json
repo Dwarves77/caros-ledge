@@ -1,0 +1,144 @@
+{
+ "_note": "ARM-2 S2: carrier advisories that put a corridor on another route (the same port pair by Suez or by the Cape of Good Hope). transit_delta_days and distance_delta_nm are left empty where the advisory states a range or no figure; fuel_burn_multiplier is never typed.",
+ "rows": [
+  {
+   "baseline_corridor_name": "CNSHA-NLRTM:ocean",
+   "route_via": "cape_of_good_hope",
+   "cause": "Maersk paused all vessels bound for the Red Sea / Gulf of Aden in light of the recent incident involving Maersk Hangzhou and ongoing developments in the area; all such vessels diverted south around the Cape of Good Hope",
+   "effective_from": "2024-01-02",
+   "citation": {
+    "url": "https://www.maersk.com/news/articles/2023/12/15/maersk-operations-through-red-sea-gulf-of-aden",
+    "title": "Maersk Operations through Red Sea / Gulf of Aden (customer advisory hub, Maersk)",
+    "retrieved_at": "2026-10-24",
+    "quote": "We have therefore decided that all Maersk vessels due to transit the Red Sea / Gulf of Aden will be diverted south around the Cape of Good Hope for the foreseeable future.",
+    "also": [
+     "On 2nd January 2024, A.P. Moller – Maersk announced that it would pause all vessels bound for the Red Sea / Gulf of Aden in light of the recent incident involving Maersk Hangzhou and ongoing developments in the area."
+    ]
+   }
+  },
+  {
+   "baseline_corridor_name": "CNSHA-ITGOA:ocean",
+   "route_via": "cape_of_good_hope",
+   "cause": "Maersk paused all vessels bound for the Red Sea / Gulf of Aden in light of the recent incident involving Maersk Hangzhou and ongoing developments in the area; all such vessels diverted south around the Cape of Good Hope",
+   "effective_from": "2024-01-02",
+   "citation": {
+    "url": "https://www.maersk.com/news/articles/2023/12/15/maersk-operations-through-red-sea-gulf-of-aden",
+    "title": "Maersk Operations through Red Sea / Gulf of Aden (customer advisory hub, Maersk)",
+    "retrieved_at": "2026-10-24",
+    "quote": "We have therefore decided that all Maersk vessels due to transit the Red Sea / Gulf of Aden will be diverted south around the Cape of Good Hope for the foreseeable future.",
+    "also": [
+     "On 2nd January 2024, A.P. Moller – Maersk announced that it would pause all vessels bound for the Red Sea / Gulf of Aden in light of the recent incident involving Maersk Hangzhou and ongoing developments in the area."
+    ]
+   }
+  },
+  {
+   "baseline_corridor_name": "CNSHA-NLRTM:ocean",
+   "route_via": "cape_of_good_hope",
+   "cause": "Hapag-Lloyd: no improvement in the Red Sea situation, vessels routed via the Cape of Good Hope (FAQ update of December 22, 2023)",
+   "effective_from": "2023-12-22",
+   "citation": {
+    "url": "https://www.hapag-lloyd.com/en/services-information/news/2023/12/faq-for-the-suez-canal-situation.html",
+    "title": "FAQ for the Red Sea situation (Hapag-Lloyd CustomerNEWS)",
+    "retrieved_at": "2026-10-24",
+    "quote": "Update December 22, 2023 With no improvements on the current situation, our vessels continue to be routed via the Cape of Good Hope.",
+    "also": [
+     "For your reference, the passage via Cape of Good Hope adds between 7 to 14 days to your shipment’s journey impacting the arrival date at the destination."
+    ]
+   }
+  },
+  {
+   "baseline_corridor_name": "CNSHA-ITGOA:ocean",
+   "route_via": "cape_of_good_hope",
+   "cause": "Hapag-Lloyd: no improvement in the Red Sea situation, vessels routed via the Cape of Good Hope (FAQ update of December 22, 2023)",
+   "effective_from": "2023-12-22",
+   "citation": {
+    "url": "https://www.hapag-lloyd.com/en/services-information/news/2023/12/faq-for-the-suez-canal-situation.html",
+    "title": "FAQ for the Red Sea situation (Hapag-Lloyd CustomerNEWS)",
+    "retrieved_at": "2026-10-24",
+    "quote": "Update December 22, 2023 With no improvements on the current situation, our vessels continue to be routed via the Cape of Good Hope.",
+    "also": [
+     "For your reference, the passage via Cape of Good Hope adds between 7 to 14 days to your shipment’s journey impacting the arrival date at the destination."
+    ]
+   }
+  },
+  {
+   "baseline_corridor_name": "CNSHA-NLRTM:ocean",
+   "route_via": "cape_of_good_hope",
+   "cause": "MSC PALATIUM III was attacked in the Red Sea on 15 December 2023; MSC ships do not transit the Suez Canal until the Red Sea passage is safe and some services are rerouted via the Cape of Good Hope",
+   "effective_from": "2023-12-15",
+   "citation": {
+    "url": "https://www.msc.com/en/newsroom/customer-advisories/2023/december/msc-palatium-iii-incident-in-red-sea---rerouting-suez-traffic-to-cape",
+    "title": "MSC PALATIUM III Incident in Red Sea - Rerouting Suez Traffic to Cape (MSC customer advisory)",
+    "retrieved_at": "2026-10-24",
+    "quote": "Due to this incident and to protect the lives and safety of our seafarers, until the Red Sea passage is safe, MSC ships will not transit the Suez Canal Eastbound and Westbound. Already now, some services will be rerouted to go via the Cape of Good Hope instead.",
+    "also": [
+     "On 15 December 2023 the container ship MSC PALATIUM III was attacked at approximately 09.37 UTC while transiting the Red Sea"
+    ]
+   }
+  },
+  {
+   "baseline_corridor_name": "CNSHA-ITGOA:ocean",
+   "route_via": "cape_of_good_hope",
+   "cause": "MSC PALATIUM III was attacked in the Red Sea on 15 December 2023; MSC ships do not transit the Suez Canal until the Red Sea passage is safe and some services are rerouted via the Cape of Good Hope",
+   "effective_from": "2023-12-15",
+   "citation": {
+    "url": "https://www.msc.com/en/newsroom/customer-advisories/2023/december/msc-palatium-iii-incident-in-red-sea---rerouting-suez-traffic-to-cape",
+    "title": "MSC PALATIUM III Incident in Red Sea - Rerouting Suez Traffic to Cape (MSC customer advisory)",
+    "retrieved_at": "2026-10-24",
+    "quote": "Due to this incident and to protect the lives and safety of our seafarers, until the Red Sea passage is safe, MSC ships will not transit the Suez Canal Eastbound and Westbound. Already now, some services will be rerouted to go via the Cape of Good Hope instead.",
+    "also": [
+     "On 15 December 2023 the container ship MSC PALATIUM III was attacked at approximately 09.37 UTC while transiting the Red Sea"
+    ]
+   }
+  },
+  {
+   "baseline_corridor_name": "CNSHA-NLRTM:ocean",
+   "route_via": "cape_of_good_hope",
+   "cause": "CMA CGM advisory #1 of February 28, 2026: Suez Canal passage suspended until further notice, given the evolving security situation in the Middle East and the restrictions on maritime traffic through the Strait of Hormuz",
+   "effective_from": "2026-02-28",
+   "citation": {
+    "url": "https://www.cma-cgm.com/news/5344/middle-east-situation-updates",
+    "title": "Middle East situation updates (CMA CGM news)",
+    "retrieved_at": "2026-10-24",
+    "quote": "Passage through the Suez Canal has been suspended until further notice, and vessels will be rerouted via the Cape of Good Hope.",
+    "also": [
+     "Advisory #1 - February 28, 2026 Middle East – Strait of Hormuz and Bab El Mandeb Security Transits",
+     "Considering the evolving security situation in the Middle East and the restrictions on maritime traffic through the Strait of Hormuz"
+    ]
+   }
+  },
+  {
+   "baseline_corridor_name": "CNSHA-ITGOA:ocean",
+   "route_via": "cape_of_good_hope",
+   "cause": "CMA CGM advisory #1 of February 28, 2026: Suez Canal passage suspended until further notice, given the evolving security situation in the Middle East and the restrictions on maritime traffic through the Strait of Hormuz",
+   "effective_from": "2026-02-28",
+   "citation": {
+    "url": "https://www.cma-cgm.com/news/5344/middle-east-situation-updates",
+    "title": "Middle East situation updates (CMA CGM news)",
+    "retrieved_at": "2026-10-24",
+    "quote": "Passage through the Suez Canal has been suspended until further notice, and vessels will be rerouted via the Cape of Good Hope.",
+    "also": [
+     "Advisory #1 - February 28, 2026 Middle East – Strait of Hormuz and Bab El Mandeb Security Transits",
+     "Considering the evolving security situation in the Middle East and the restrictions on maritime traffic through the Strait of Hormuz"
+    ]
+   }
+  },
+  {
+   "baseline_corridor_name": "CNSHA-ITGOA:ocean",
+   "route_via": "suez",
+   "cause": "Maersk and Hapag-Lloyd structural change of the AE11 service (Asia to the Mediterranean) from the Cape of Good Hope to the trans-Suez route, first westbound sailing Antonia Maersk 635W from Tanjung Pelepas",
+   "effective_from": "2026-09-19",
+   "citation": {
+    "url": "https://www.maersk.com/news/articles/2026/09/14/structural-changes-ae5-ae11-ae12-me2-gemini-services",
+    "title": "Structural changes to AE5, AE11, AE12 and ME2 Gemini services (Maersk advisory)",
+    "retrieved_at": "2026-10-24",
+    "quote": "These services will now transit via the trans-Suez route instead of sailing around the Cape of Good Hope.",
+    "also": [
+     "AE11 - connects Asia and the Mediterranean. The structural change will mean the service will have the following rotation: Shanghai",
+     "Genoa",
+     "AE11 Antonia Maersk 635W Tanjung Pelepas 19-September"
+    ]
+   }
+  }
+ ]
+}

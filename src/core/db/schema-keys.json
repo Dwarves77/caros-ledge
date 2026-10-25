@@ -17,6 +17,9 @@
  "aggregate_query_log": [
   "query_id"
  ],
+ "applied_batches": [
+  "batch_id"
+ ],
  "assumption_register": [
   "id"
  ],

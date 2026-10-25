@@ -9,7 +9,7 @@ import { parse } from 'yaml';
 
 const workflow = parse(readFileSync('.github/workflows/ci.yml', 'utf8'));
 const jobs = workflow.jobs;
-const VARIABLES = ['ev', 'only', 'sctx', 'sstate', 'production', 'ref', 'isFork', 'parityScope', 'windowsScope', 'edgeScope', 'migrateResult', 'sender', 'targetUrl', 'startsWith'];
+const VARIABLES = ['ev', 'only', 'sctx', 'sstate', 'production', 'ref', 'isFork', 'parityScope', 'windowsScope', 'edgeScope', 'plansScope', 'migrateResult', 'sender', 'targetUrl', 'startsWith'];
 // The ref the run is on and whether the repository is a fork (a test sets them for one case and puts them back).
 const where = { ref: 'refs/heads/main', fork: false };
 // Evaluates a job's `if` for an event, the dispatch input `only`, a status event's context and state, whether the target job derived production, and the scope the `changes` job decided (the expressions use only ==, !=, &&, || and parentheses on those values).
@@ -29,10 +29,12 @@ const runs = (job, event, only = '', status = {}, scope = { parity: 'true', wind
     .replaceAll('needs.changes.outputs.parity', 'parityScope')
     .replaceAll('needs.changes.outputs.windows', 'windowsScope')
     .replaceAll('needs.changes.outputs.edge', 'edgeScope')
+    .replaceAll('needs.changes.outputs.plans', 'plansScope')
+    .replaceAll('needs.changes.result', "'success'")
     .replaceAll('needs.migrate.result', 'migrateResult')
     .replaceAll('==', '===')
     .replaceAll('!=', '!==');
-  return Function(...VARIABLES, `return (${expr});`)(event, only, status.context ?? '', status.state ?? '', production, where.ref, where.fork, scope.parity, scope.windows, scope.edge ?? 'false', migrateResult, status.sender ?? '', status.target_url ?? '', (value, prefix) => String(value).startsWith(prefix));
+  return Function(...VARIABLES, `return (${expr});`)(event, only, status.context ?? '', status.state ?? '', production, where.ref, where.fork, scope.parity, scope.windows, scope.edge ?? 'false', scope.plans ?? '', migrateResult, status.sender ?? '', status.target_url ?? '', (value, prefix) => String(value).startsWith(prefix));
 };
 // The jobs that run: a job whose `if` holds AND whose needs all ran (a job with no status function in its `if` is skipped with a skipped need; edge-deploy's `!cancelled()` states its own rule on needs.migrate.result).
 const on = (event, only, status, scope, production, migrateResult) => {
@@ -182,6 +184,8 @@ test('G13: a job that holds a high-privilege secret never runs on a pull request
     const high = [...secretsOf(job)].filter((s) => HIGH.includes(s));
     if (!high.length) continue;
     for (const event of ['pull_request', 'push']) assert.ok(!runs(job, event), `${job} holds ${high} and runs on a ${event}`);
+    // RUN-1: the one deliberate exception, `ruled-runs`, runs on a push to main that carries a pending plan (merged, reviewed code) and on nothing else: never a pull request, never another ref, never a fork.
+    if (job === 'ruled-runs') continue;
     // On a status event the default checkout is the default branch, but the job may check out the deployed commit: forbidden for these jobs. A dispatch runs the branch the operator chose and says so.
     if (job !== 'turn' && job !== 'screens') for (const ref of checkoutRefs(job)) assert.doesNotMatch(ref, PR_CODE, `${job} (${high}) checks out ${ref}: a branch could change the script that holds the secrets`);
   }
@@ -259,10 +263,10 @@ test('audit 2.3.10: the production admin account reaches the live job only for p
   assert.ok(String(jobs.live.env.LIVE_ADMIN_PAGES).includes(when) && String(jobs.live.env.LIVE_ADMIN_PAGES).includes("'on' || 'off'"));
 });
 
-test('audit 2.3.12 and 2.3.13: migrate and turn run in the production environment (the required reviewers sit there); no other job names an environment', () => {
+test('audit 2.3.12 and 2.3.13: migrate, turn and ruled-runs (RUN-1) run in the production environment (the required reviewers sit there, if the repository sets any); no other job names an environment', () => {
   assert.equal(jobs.migrate.environment, 'production');
   assert.equal(jobs.turn.environment, 'production');
-  assert.deepEqual(Object.keys(jobs).filter((j) => jobs[j].environment !== undefined).sort(), ['migrate', 'turn']);
+  assert.deepEqual(Object.keys(jobs).filter((j) => jobs[j].environment !== undefined).sort(), ['migrate', 'ruled-runs', 'turn']);
 });
 
 test('every upload-artifact keeps its artifact 3 days', () => {
@@ -284,4 +288,36 @@ test('no install runs a package install script: every npm ci and every npm insta
   const installs = Object.entries(jobs).flatMap(([name, job]) => (job.steps ?? []).flatMap((s) => String(s.run ?? '').split('\n').filter((l) => /\bnpm (ci|install)\b/.test(l)).map((l) => [name, l])));
   assert.ok(installs.length >= 10);
   for (const [name, line] of installs) assert.match(line, /--ignore-scripts/, `${name}: ${line.trim()}`);
+});
+
+test('RUN-1: ruled-runs runs on a push to main that changed a pending plan, after migrate, and on nothing else: not without a pending plan, not on a pull request, a dispatch, a status, another ref or a fork', () => {
+  const pending = { parity: 'true', windows: 'true', edge: 'false', plans: 'scripts/runs/plans/2026-10-24-arm-1.json' };
+  assert.ok(on('push', '', {}, pending).includes('ruled-runs'));
+  assert.ok(!on('push').includes('ruled-runs'), 'a push that changed no plan runs nothing');
+  for (const [event, only] of [['pull_request', ''], ['workflow_dispatch', ''], ['workflow_dispatch', 'turn'], ['status', '']]) assert.ok(!on(event, only, VERCEL_OK, pending).includes('ruled-runs'), `${event} only=${only}`);
+  try {
+    where.ref = 'refs/heads/slice/x';
+    assert.ok(!on('push', '', {}, pending).includes('ruled-runs'), 'a branch push');
+    where.ref = 'refs/heads/main';
+    where.fork = true;
+    assert.ok(!on('push', '', {}, pending).includes('ruled-runs'), 'a fork');
+  } finally {
+    where.ref = 'refs/heads/main';
+    where.fork = false;
+  }
+});
+
+test('parity waits for migrate on a push to main (rule 3: the schema is ahead of the code parity reads) and runs as before everywhere else', () => {
+  assert.deepEqual(jobs.parity.needs, ['changes', 'migrate']);
+  assert.ok(on('push', '', {}, undefined, '', 'success').includes('parity'), 'a push to main: parity runs after a successful migrate');
+  for (const result of ['failure', 'skipped', 'cancelled']) assert.ok(!on('push', '', {}, undefined, '', result).includes('parity'), `a push whose migrate is ${result} skips parity`);
+  assert.deepEqual(on('pull_request', '', {}, undefined, '', 'skipped'), ['changes', 'ci', 'parity', 'schema', 'windows'], 'a pull request: migrate is skipped and parity still runs');
+  assert.ok(on('workflow_dispatch', '', {}, undefined, '', 'skipped').includes('parity'), 'a dispatch with only empty: migrate is skipped and parity still runs');
+  assert.ok(!on('pull_request', '', {}, { parity: 'false', windows: 'true' }, '', 'skipped').includes('parity'), 'the scope still skips parity on a pull request');
+  for (const only of ['baseline', 'turn', 'live', 'screens', 'edge-deploy']) assert.ok(!on('workflow_dispatch', only).includes('parity'), `only=${only} runs no parity`);
+});
+
+test('a change to ci.yml is in the parity scope, so the workflow edit that orders parity after migrate is itself checked by parity', async () => {
+  const { PARITY } = await import('../../scripts/ci/changes.mjs');
+  assert.ok(PARITY.test('.github/workflows/ci.yml'));
 });
