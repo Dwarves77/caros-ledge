@@ -64,3 +64,21 @@ Sample (all rows, there is one): `cl:instrument` for CELEX 32018L2001: 48 claims
 - [CONFIRMED] `emission_factors` (13 rows) has no writer in the new tree: no producer or runtime inserts into it. It is mined for refs only (not joined by a detector), so INV-CN2-7 holds; its producer is ARM-1's.
 - [CONFIRMED] `obligation_objects.mode` is empty on every row, `statutory_maximum` is null on every row; P2, P4 and P5 read these columns as they exist (DECIDED in the brief), so they stay quiet until the derive-objects producer fills them from verbatim spans.
 - [CONFIRMED] no market series label resolves to a coupling (labels are petroleum spot prices and ECB rates); the series path of P3 and P4 opens when a biofuel, SAF or bunker series is captured.
+
+## R1: the resolver over every name the spine holds (2026-10-25, same first 2,000 claims, same SQL emulation)
+
+[CONFIRMED] by query. Names now resolved as exact phrases (case-insensitive, longest first, no fuzzy match): the coupling aliases, every entity's canonical and display name, a jurisdiction's country name, the identifier rows (host, ISO 3166-2), the title of the instrument an item carries, the instrument numbers by equality, and six alias seeds. A name under four characters, on the stoplist (data/resolver.json) or shared by two entities resolves nothing. The three-letter aliases of the first pass (HVO, SAF, UCO, OPS, MCS) are refused by that rule and gone.
+
+| claim_kind | claims | before (vocabulary alone) | after |
+|---|---|---|---|
+| FACT | 1,280 | 104 | 242 |
+| GAP | 625 | 8 | 18 |
+| ANALYSIS | 85 | 7 | 23 |
+| DERIVED | 10 | 0 | 0 |
+| total | 2,000 | 119 (5.95 %) | 283 (14.15 %) |
+
+By source of the match (claims that reach at least one entity through it): alias seeds 95, jurisdiction by country name 89, instrument number 64, instrument title 23, coupling mandates 16, nodes 10, instruments 9, attributes 8, carriers 4, feedstocks 1, organisation by host 10, identifier rows 10. The coupling rows are the shortened alias list typed into the query, so they are a floor.
+Alias seeds written (6 aliases, 5 targets, 4 pages, all primary): "Official Journal" (eur-lex.europa.eu), "International Maritime Organization" (imo.org), "European Commission" (commission.europa.eu), "European Union" (jurisdiction EU), "EU ETS" and "EU Emissions Trading System" (Directive 2003/87/EC). icao.int (CORSIA, SAF) is barred by the licence register, so no alias or seed rests on it.
+
+Top unresolved phrases after the change, by claims containing them (generic words the stoplist refuses are shown because they rank): Member States 106, LOCODE 47, No EUR 28, This Decision 25, EEC 20, Member State 19, This Regulation 19, The Decision 15, EUR 15, ELI 14, Contracting Parties 12, European Parliament 11, The Commission 11, EPA 10, HAS ADOPTED THIS DECISION 10, SAF 9, Annex II 8, GAP 8, GHG 8, The Regulation 8.
+The next alias batch: European Parliament (europarl.europa.eu answered 403), LOCODE (UN/LOCODE is licence-barred), Contracting Parties (the agreement named in each claim), and the acronyms EEC, ELI, EPA, GHG, TIR, UAE, IMO, SAF, which the four-character rule refuses and which need their full names as the aliases.
