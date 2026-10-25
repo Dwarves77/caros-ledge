@@ -7,5 +7,5 @@ export type { Identifier } from "./identifiers";
 export { interpretNumber, resolveLocale, scanNumbers } from "./locale";
 export type { LocaleVerdict } from "./locale";
 export { isTrajectoryUnit, kindOf, statutoryUnit } from "./unit";
-export type { StatutoryForm } from "./unit";
+export type { UnitForm } from "./unit";
 export { contentWords, hasWord } from "./words";

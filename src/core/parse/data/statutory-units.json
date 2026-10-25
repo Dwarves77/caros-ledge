@@ -1,56 +1,159 @@
 {
   "forms": [
-    { "form": "eur per equivalent metric ton of vlsfo", "unit": "EUR/t" },
-    { "form": "€ per tonne of co2e", "unit": "EUR/tCO2e" },
-    { "form": "€ per tco2e", "unit": "EUR/tCO2e" },
-    { "form": "€ per gj", "unit": "EUR/GJ" },
-    { "form": "€ per tonne", "unit": "EUR/t" },
-    { "form": "eur per tonne of co2e", "unit": "EUR/tCO2e" },
-    { "form": "eur per tonne of co2", "unit": "EUR/tCO2e" },
-    { "form": "eur per tonne co2e", "unit": "EUR/tCO2e" },
-    { "form": "eur per tonne co2", "unit": "EUR/tCO2e" },
-    { "form": "eur per t co2e", "unit": "EUR/tCO2e" },
-    { "form": "eur per t co2", "unit": "EUR/tCO2e" },
-    { "form": "eur per tco2e", "unit": "EUR/tCO2e" },
-    { "form": "eur per tco2", "unit": "EUR/tCO2e" },
-    { "form": "eur t co2e", "unit": "EUR/tCO2e" },
-    { "form": "eur tco2e", "unit": "EUR/tCO2e" },
-    { "form": "eur tco2", "unit": "EUR/tCO2e" },
-    { "form": "eur per metric tonne", "unit": "EUR/t" },
-    { "form": "eur per metric ton", "unit": "EUR/t" },
-    { "form": "eur per tonne", "unit": "EUR/t" },
-    { "form": "eur per tonnes", "unit": "EUR/t" },
-    { "form": "eur per ton", "unit": "EUR/t" },
-    { "form": "eur tonne", "unit": "EUR/t" },
-    { "form": "eur t", "unit": "EUR/t" },
-    { "form": "eur per gigajoule", "unit": "EUR/GJ" },
-    { "form": "eur per gj", "unit": "EUR/GJ" },
-    { "form": "eur gj", "unit": "EUR/GJ" },
-    { "form": "grams of co2 equivalent per mj", "unit": "gCO2e/MJ" },
-    { "form": "grams co2e per mj", "unit": "gCO2e/MJ" },
-    { "form": "gco2e per mj", "unit": "gCO2e/MJ" },
-    { "form": "g co2e per mj", "unit": "gCO2e/MJ" },
-    { "form": "g co2e mj", "unit": "gCO2e/MJ" },
-    { "form": "gco2eq mj", "unit": "gCO2e/MJ" },
-    { "form": "gco2e mj", "unit": "gCO2e/MJ" },
-    { "form": "per cent", "unit": "pct" },
-    { "form": "percentage", "unit": "pct" },
-    { "form": "percent", "unit": "pct" },
-    { "form": "pct", "unit": "pct" },
-    { "form": "%", "unit": "pct" },
-    { "form": "eur", "unit": "EUR", "exact": true },
-    { "form": "euro", "unit": "EUR", "exact": true },
-    { "form": "euros", "unit": "EUR", "exact": true },
-    { "form": "metric tons", "unit": "t", "exact": true },
-    { "form": "metric ton", "unit": "t", "exact": true },
-    { "form": "tonnes", "unit": "t", "exact": true },
-    { "form": "tonne", "unit": "t", "exact": true },
-    { "form": "ton", "unit": "t", "exact": true },
-    { "form": "t", "unit": "t", "exact": true },
-    { "form": "megawatts", "unit": "MW", "exact": true },
-    { "form": "megawatt", "unit": "MW", "exact": true },
-    { "form": "mw", "unit": "MW", "exact": true },
-    { "form": "months", "unit": "months", "exact": true },
-    { "form": "month", "unit": "months", "exact": true }
+    {
+      "form": "EUR/t",
+      "unit": "EUR/t",
+      "exact": true
+    },
+    {
+      "form": "EUR/tCO2e",
+      "unit": "EUR/tCO2e",
+      "exact": true
+    },
+    {
+      "form": "gCO2e/MJ",
+      "unit": "gCO2e/MJ",
+      "exact": true
+    },
+    {
+      "form": "pct",
+      "unit": "pct",
+      "exact": true
+    },
+    {
+      "form": "EUR/GJ",
+      "unit": "EUR/GJ",
+      "exact": true
+    },
+    {
+      "form": "t",
+      "unit": "t",
+      "exact": true
+    },
+    {
+      "form": "MW",
+      "unit": "MW",
+      "exact": true
+    },
+    {
+      "form": "months",
+      "unit": "months",
+      "exact": true
+    },
+    { "form": "tonnes?|tons?|metric tons?", "unit": "t", "exact": true },
+    { "form": "megawatts?", "unit": "MW", "exact": true },
+    { "form": "months?", "unit": "months", "exact": true },
+    {
+      "form": "\\bEUR per equivalent metric ton of VLSFO\\b",
+      "unit": "EUR/t"
+    },
+    {
+      "form": "\\bgrams? of CO2 equivalent per (?:MJ|megajoule)\\b",
+      "unit": "gCO2e/MJ"
+    },
+    {
+      "form": "%\\s+minimum share of SAF",
+      "unit": "pct"
+    },
+    {
+      "form": "%\\s+reduction of the reference value",
+      "unit": "pct"
+    },
+    {
+      "form": "(?=[\\s\\S]*(?:(?<![A-Za-z])(?:EUR|euros?)(?![A-Za-z])|\u20ac))(?=[\\s\\S]*(?:\\b(?:per|for each|for every)\\s+(?:(?:metric\\s+)?(?:tonnes?|tons?)\\s+of\\s+(?:CO2|carbon dioxide)|tCO2)))",
+      "unit": "EUR/tCO2e"
+    },
+    {
+      "form": "(?=[\\s\\S]*(?:(?<![A-Za-z])(?:EUR|euros?)(?![A-Za-z])|\u20ac))(?=[\\s\\S]*(?:\\b(?:per|for each|for every)\\s+(?:metric\\s+)?(?:tonnes?|tons?)\\b))",
+      "unit": "EUR/t"
+    },
+    {
+      "form": "(?=[\\s\\S]*(?:(?<![A-Za-z])(?:EUR|euros?)(?![A-Za-z])|\u20ac))(?=[\\s\\S]*(?:\\b(?:per|for each|for every)\\s+FEU\\b))",
+      "unit": "EUR/FEU"
+    },
+    {
+      "form": "(?=[\\s\\S]*(?:(?<![A-Za-z])(?:EUR|euros?)(?![A-Za-z])|\u20ac))(?=[\\s\\S]*(?:\\b(?:per|for each|for every)\\s+TEU\\b))",
+      "unit": "EUR/TEU"
+    },
+    {
+      "form": "(?=[\\s\\S]*(?:(?<![A-Za-z])(?:EUR|euros?)(?![A-Za-z])|\u20ac))(?=[\\s\\S]*(?:\\b(?:per|for each|for every)\\s+(?:GJ|gigajoule)\\b))",
+      "unit": "EUR/GJ"
+    },
+    {
+      "form": "(?=[\\s\\S]*(?:(?<![A-Za-z])(?:USD|US dollars?)(?![A-Za-z])|US\\$|\\$))(?=[\\s\\S]*(?:\\b(?:per|for each|for every)\\s+(?:(?:metric\\s+)?(?:tonnes?|tons?)\\s+of\\s+(?:CO2|carbon dioxide)|tCO2)))",
+      "unit": "USD/tCO2e"
+    },
+    {
+      "form": "(?=[\\s\\S]*(?:(?<![A-Za-z])(?:USD|US dollars?)(?![A-Za-z])|US\\$|\\$))(?=[\\s\\S]*(?:\\b(?:per|for each|for every)\\s+(?:metric\\s+)?(?:tonnes?|tons?)\\b))",
+      "unit": "USD/t"
+    },
+    {
+      "form": "(?=[\\s\\S]*(?:(?<![A-Za-z])(?:USD|US dollars?)(?![A-Za-z])|US\\$|\\$))(?=[\\s\\S]*(?:\\b(?:per|for each|for every)\\s+FEU\\b))",
+      "unit": "USD/FEU"
+    },
+    {
+      "form": "(?=[\\s\\S]*(?:(?<![A-Za-z])(?:USD|US dollars?)(?![A-Za-z])|US\\$|\\$))(?=[\\s\\S]*(?:\\b(?:per|for each|for every)\\s+TEU\\b))",
+      "unit": "USD/TEU"
+    },
+    {
+      "form": "(?=[\\s\\S]*(?:(?<![A-Za-z])(?:USD|US dollars?)(?![A-Za-z])|US\\$|\\$))(?=[\\s\\S]*(?:\\b(?:per|for each|for every)\\s+(?:GJ|gigajoule)\\b))",
+      "unit": "USD/GJ"
+    },
+    {
+      "form": "(?=[\\s\\S]*(?:(?<![A-Za-z])(?:GBP|pounds? sterling)(?![A-Za-z])|\u00a3))(?=[\\s\\S]*(?:\\b(?:per|for each|for every)\\s+(?:(?:metric\\s+)?(?:tonnes?|tons?)\\s+of\\s+(?:CO2|carbon dioxide)|tCO2)))",
+      "unit": "GBP/tCO2e"
+    },
+    {
+      "form": "(?=[\\s\\S]*(?:(?<![A-Za-z])(?:GBP|pounds? sterling)(?![A-Za-z])|\u00a3))(?=[\\s\\S]*(?:\\b(?:per|for each|for every)\\s+(?:metric\\s+)?(?:tonnes?|tons?)\\b))",
+      "unit": "GBP/t"
+    },
+    {
+      "form": "(?=[\\s\\S]*(?:(?<![A-Za-z])(?:GBP|pounds? sterling)(?![A-Za-z])|\u00a3))(?=[\\s\\S]*(?:\\b(?:per|for each|for every)\\s+FEU\\b))",
+      "unit": "GBP/FEU"
+    },
+    {
+      "form": "(?=[\\s\\S]*(?:(?<![A-Za-z])(?:GBP|pounds? sterling)(?![A-Za-z])|\u00a3))(?=[\\s\\S]*(?:\\b(?:per|for each|for every)\\s+TEU\\b))",
+      "unit": "GBP/TEU"
+    },
+    {
+      "form": "(?=[\\s\\S]*(?:(?<![A-Za-z])(?:GBP|pounds? sterling)(?![A-Za-z])|\u00a3))(?=[\\s\\S]*(?:\\b(?:per|for each|for every)\\s+(?:GJ|gigajoule)\\b))",
+      "unit": "GBP/GJ"
+    },
+    {
+      "form": "(?<![A-Za-z])(?:EUR|euros?)(?![A-Za-z])|\u20ac",
+      "unit": "EUR"
+    },
+    {
+      "form": "(?<![A-Za-z])(?:USD|US dollars?)(?![A-Za-z])|US\\$|\\$",
+      "unit": "USD"
+    },
+    {
+      "form": "(?<![A-Za-z])(?:GBP|pounds? sterling)(?![A-Za-z])|\u00a3",
+      "unit": "GBP"
+    },
+    {
+      "form": "(?:%|per\\s?cent|percent)\\s+of\\s+(?:the\\s+)?(?:[a-z-]+\\s+){0,3}turnover",
+      "unit": "pct_turnover"
+    },
+    {
+      "form": "g\\s?CO2e?\\s?/\\s?MJ",
+      "unit": "gCO2e/MJ"
+    },
+    {
+      "form": "%|per\\s?cent|percent",
+      "unit": "pct"
+    },
+    {
+      "form": "\\d\\s?(?:tonnes?|tons?|t)\\b",
+      "unit": "t"
+    },
+    {
+      "form": "\\d\\s?MW\\b",
+      "unit": "MW"
+    },
+    {
+      "form": "\\d\\s?months?\\b",
+      "unit": "months"
+    }
   ]
 }

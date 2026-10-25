@@ -21,6 +21,8 @@ import { currentObligationObjects } from "@/core/workspace";
 import { sentenceEnd, sentenceStart } from "../extract/window";
 
 import { classifyItemBindingPosition, type ItemForClassification } from "./classify-binding-position";
+import { extractStatutory, groundingRefusal } from "./maximum";
+import { classifyMode } from "./mode";
 import rulesJson from "./data/object-rules.json";
 import targetsJson from "./data/fueleu-targets.json";
 
@@ -104,6 +106,10 @@ function buildObjectRow(c: Candidate, ctx: { item: ObjectItem | null; capture: C
   if (t.obs_status !== undefined && (!isMissing(t.obs_status) || t.value !== t.obs_status)) return { ok: false, reason: "trigger_obs_status_invalid" };
   if (c.frequency != null && !FREQUENCIES.has(c.frequency)) return { ok: false, reason: "frequency_invalid" };
   if (Array.isArray(c.mode) && c.mode.some((m) => MODE_ALIASES.has(m) || !LEG_MODE_CODES.includes(m))) return { ok: false, reason: "mode_alias" };
+  for (const col of ["statutory_maximum", "cost_formula"] as const) {
+    const why = c[col] == null ? null : groundingRefusal(col, c[col] as string, c.verbatim_text);
+    if (why) return { ok: false, reason: why };
+  }
   for (const col of DATE_COLUMNS) if (c[col] != null && !(typeof c[col] === "string" && DATE_RE.test(c[col] as string))) return { ok: false, reason: `date_malformed:${col}` };
   if (c.effort != null && (typeof c.effort !== "object" || MONEY_KEYS.some((k) => k in (c.effort as object)))) return { ok: false, reason: "effort_carries_money" };
   let position: string | null = null;
@@ -223,7 +229,9 @@ function dutyCandidate(item: ObjectItem, span: string, captureId: string, source
   const pin = PINPOINT_RE.exec(span)?.[0];
   const holders = [...new Set(PHRASES.filter((p) => p.re.test(span)).map((p) => p.class))];
   if (!value || !pin || !holders.length || !DEONTIC_RE.test(span)) return null;
-  return { instrument_item_id: item.id, capture_id: captureId, pinpoint_citation: pin.replace(/\s+/g, " "), verbatim_text: span, duty_holder_class: holders, applicability_trigger: classifyTrigger(span, value), evidence_artifacts: extractArtifacts(span), plain_language: null, ...timeline, source_id: sourceId };
+  const verdict = classifyMode(span, { title: item.title, identifier: item.instrument_identifier });
+  const stated = extractStatutory(span);
+  return { instrument_item_id: item.id, capture_id: captureId, pinpoint_citation: pin.replace(/\s+/g, " "), verbatim_text: span, duty_holder_class: holders, applicability_trigger: classifyTrigger(span, value), evidence_artifacts: extractArtifacts(span), plain_language: null, ...timeline, source_id: sourceId, mode: verdict.modes.length ? verdict.modes : null, statutory_maximum: stated.maximum?.fragment ?? null, cost_formula: stated.formula?.fragment ?? null };
 }
 
 /** FACT claims whose verbatim span names an Article pinpoint, a duty-holder phrase and a deontic verb: one candidate each, in its own capture. */

@@ -20,5 +20,4 @@ src/core/coupling/alias-rules.ts | new in CONNECT-2A-b: what may be an alias (fo
 src/core/coupling/aliases.ts | new in CONNECT-2A-b: the alias seeds loader, each alias grounded on its page
 src/core/coupling/data/alias-seeds.json | new in CONNECT-2A-b: the short names found in the most frequent unresolved phrases, with their pages and verbatim quotes
 src/core/coupling/data/resolver.json | new in CONNECT-2A-b: the alias length floor and the stoplist
-src/core/parse/data/statutory-units.json | new in CONNECT-2 PR A scope review G3: the one map from the prose and currency-prefixed unit forms to the canonical tokens (EUR/t, EUR/tCO2e, gCO2e/MJ, pct, EUR/GJ, t, MW, months)
 tests/coupling/units.test.ts | new in CONNECT-2 PR A scope review G3: every listed form normalises, an unknown unit is excluded, a planted P5 pair in two spellings matches

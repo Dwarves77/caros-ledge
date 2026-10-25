@@ -7,9 +7,14 @@ import { entityId } from "@/core/entities/id";
 import horizonsJson from "@/core/themes/data/horizons.json";
 import { themeAnalysisView, type MemberRow, type ThemeEventRow, type ThemeRow } from "@/core/themes";
 import { SURFACE_ORDER } from "@/core/routing";
+import { ABSENCE_TOKEN } from "@/core/brief";
 import { DUTY_HOLDER_CLASSES, VOCABULARIES } from "@/core/contracts/vocabularies";
+import unitFile from "@/core/parse/data/statutory-units.json" with { type: "json" };
+import stubBrief from "@/features/intake/record-facts/data/stub-brief.json";
+import { buildRecordPayload } from "@/features/intake/record-facts/payload";
 import objectRules from "@/features/obligations/derive/data/object-rules.json";
 import { deriveObligationObjects } from "@/features/obligations";
+import { fillObjectFields } from "@/features/obligations/derive/fill-fields";
 import assessmentCopy from "@/features/research/model/data/assessment-copy.json";
 import stanceRules from "@/features/research/model/data/assessment-stance.json";
 import { selectAssessmentView, selectSignpostView, type AssessmentRow } from "@/features/research/model/assessment-view";
@@ -80,6 +85,7 @@ test("the obligation-object derive path writes spans, ids, dates and data-file t
     "Article 33(1) Manufacturers shall draw up an EU declaration of conformity in accordance with Annex VIII and affix the CE marking.",
     "Article 10(2) Economic operators shall ensure packaging meets the de minimis rule.",
     "Article 39(1) Producers shall register in the register of producers established by the competent authority.",
+    "Article 40(1) Shipping companies shall pay fines of up to EUR 2 000 per tonne of carbon dioxide, calculated as the excess multiplied by the price.",
   ];
   const claims = text.map((t, i) => ({ id: `claim-${i}`, claim_kind: "FACT", source_span: t, search_result_id: "c-1", intelligence_item_id: "i-ppwr" }));
   const events = [{ id: "ev-1", intelligence_item_id: "i-ppwr", event_date: "2027-01-01", date_precision: "day", event_kind: "compliance_deadline", obligation_text: "Operators shall comply by 1 January 2027.", confidence: "high" }];
@@ -92,7 +98,7 @@ test("the obligation-object derive path writes spans, ids, dates and data-file t
   }).db;
   const result = await deriveObligationObjects(db, { dry: true, itemIds: ["i-ppwr"] });
   const rows = (result.data as { plan: { toInsert: Array<{ row: Record<string, unknown> }> } }).plan.toInsert.map((x) => x.row);
-  assert.equal(rows.length, 4);
+  assert.equal(rows.length, 5);
   const classifiers = objectRules.triggerClassifiers;
   const a: Allowed = {
     inputs: new Set(["i-ppwr", "c-1", "2027-01-01", ...rows.map((r) => entityId("obligation", `i-ppwr|${String(r.pinpoint_citation).toLowerCase()}|v1`))]),
@@ -103,12 +109,23 @@ test("the obligation-object derive path writes spans, ids, dates and data-file t
       objectRules.triggerAttribute,
       ...Object.keys(VOCABULARIES.binding_position ?? {}),
       ...Object.keys(DUTY_HOLDER_CLASSES),
+      ...Object.keys(VOCABULARIES.transport_mode ?? {}),
       "not_assessed",
     ]),
     spans: [text.join("\n"), item.instrument_identifier],
   };
   assert.deepEqual(offenders(rows, a), []);
   assert.ok(rows.every((r) => r.plain_language === null), "plain_language is the reader's, never composed by code");
+  // INV-DRV-3: mode, statutory_maximum and cost_formula are vocabulary tokens or the span's own words; the backfill's plan row adds only rule ids, the rules' own `on` values, unit tokens and the absence token.
+  const shipping = rows.find((r) => String(r.pinpoint_citation) === "Article 40(1)");
+  assert.deepEqual([shipping?.mode, shipping?.statutory_maximum, shipping?.cost_formula], [["ocean"], "fines of up to EUR 2 000 per tonne of carbon dioxide", "fines of up to EUR 2 000 per tonne of carbon dioxide, calculated as the excess multiplied by the price"]);
+  const objectRow = (n: number, verbatim_text: string) => ({ obligation_id: `cl:obligation:${String(n).padStart(16, "0")}`, instrument_item_id: "i-ppwr", verbatim_text, mode: null, statutory_maximum: null, cost_formula: null });
+  const filled = await fillObjectFields(connectDb({ intelligence_items: [{ ...item, title: "A plain notice" }], obligation_objects: [4, 0, 3].map((i, n) => objectRow(n + 1, text[i] as string)) }).db, { dry: true, after: null });
+  const planRows = (filled.data as { plan: Array<{ obligation_id: string; modeAbsence: string | null }> }).plan;
+  const planAllowed: Allowed = { inputs: new Set(["i-ppwr", ...planRows.map((r) => r.obligation_id)]), tokens: new Set([...a.tokens, ...objectRules.modeClassifiers.flatMap((c) => [c.id, c.on]), ...unitFile.forms.map((f) => f.unit)]), spans: [text.join("\n")] };
+  assert.equal(planRows[2]?.modeAbsence, objectRules.absence, "a span no rule reads carries the stated absence token on its plan row");
+  assert.deepEqual(offenders(planRows, planAllowed), []);
+  assert.deepEqual(offenders({ statutory_maximum: "a fine of two thousand euros", mode: ["ocean"] }, planAllowed), ["a fine of two thousand euros"], "a planted template sentence is named");
 });
 
 test("INV-CTX6-1 the cluster summary carries ids, surface keys and signal tokens, never a sentence", () => {
@@ -128,4 +145,26 @@ test("INV-CTX6-1 the signpost predicate is a kind token and its own parameters, 
   const predicates = [{ op: "date_passed", by: "2027-01-01", basis: "movement_by_date" }, { op: "date_passed" }, { op: "threshold", metric: "capacity_mw", gte: 40 }, { op: "threshold" }, { op: "count_gte", relation: "pilots", n: 3 }, { op: "count_gte" }, { op: "teleport" }, null];
   const a: Allowed = { inputs: new Set(["2027-01-01", "capacity_mw", "pilots"]), tokens: new Set(Object.keys(assessmentCopy.predicate)), spans: [] };
   for (const predicate of predicates) assert.deepEqual(offenders(selectSignpostView({ ...base, predicate } as never, () => null).predicate, a), [], JSON.stringify(predicate));
+});
+
+/** The strings a stored mint is made of: each line of a text field with its list, heading and emphasis marks removed, a `[slot_key]` prefix split off as its own id. */
+const mintStrings = (v: unknown): string[] =>
+  leaves(v).flatMap((s) => s.split("\n")).map((l) => l.trim().replace(/^(?:-\s+|##\s+)/, "").replace(/^\*(.*)\*$/, "$1").replace(/^Source:\s+/, "")).filter(Boolean).flatMap((l) => {
+    const m = /^\[([a-z0-9_]+)\]\s*(.*)$/.exec(l);
+    return m ? [m[1] ?? "", m[2] ?? ""].filter(Boolean) : [l];
+  });
+
+test("INV-MINT-1 the record mint stores ids, the absence token, its headings and verbatim spans, never a sentence of its own", () => {
+  const captured = "A short note about nothing in particular, written for this fixture.";
+  const url = "https://example.test/doc";
+  const slots = ["effective_date", "penalty_summary", "jurisdictional_scope"];
+  const p = buildRecordPayload({ sourceUrl: url, itemType: "regulation", title: "Zorblax Framework Instrument", source: { id: "s1" }, capturedText: captured, requiredSlots: slots });
+  assert.ok(p.claims.length >= slots.length && p.claims.every((c) => c.claim_kind === "GAP"), "the fixture matches no trigger, so every claim is a stated absence");
+  const a: Allowed = {
+    inputs: new Set([url, "identity", "record_facts", "sources_and_citations", "GAP", ...p.claims.map((c) => c.slot_key)]),
+    tokens: new Set([ABSENCE_TOKEN, stubBrief.marker, stubBrief.factsHeading, stubBrief.gapsHeading]),
+    spans: [captured],
+  };
+  assert.deepEqual(offenders(mintStrings({ sections: p.sections, claims: p.claims, full_brief: p.item.full_brief }), a), []);
+  assert.deepEqual(offenders(mintStrings("[effective_date] No verbatim effective date statement was located in the captured source text for this record-grade item."), a), ["No verbatim effective date statement was located in the captured source text for this record-grade item."]);
 });

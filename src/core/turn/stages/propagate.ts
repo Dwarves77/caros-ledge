@@ -5,8 +5,8 @@
 // Everything after the drain works from the events the drain just processed, so one change reaches every consumer in the same run.
 import { readFileSync } from "node:fs";
 
-import type { FamilyCall } from "@/core/harness";
 import { mineRefs, seedCouplings, seedPages } from "@/core/coupling";
+import { FAMILIES, type FamilyCall } from "@/core/harness";
 import { scoreItems } from "@/core/impact/run";
 import { runPropagationDrain, reopener } from "@/core/propagation";
 import { citedPages, loadProducerRegistry, runProducer, runRegistered, selectRuns } from "@/core/producers";
@@ -14,6 +14,7 @@ import type { RunResult } from "@/core/types/run-result";
 import { leadWithFailures, runResult, worst } from "@/core/types/run-result";
 import { buildEntityItemsReader, buildSignpostStepDeps, runQuestionsOnChange, runSignpostStep } from "@/features/learning";
 import { produceCarbonInputs } from "@/features/market/lib/carbon-run";
+import { cursorAfter, FILL_ONLY, fillObjectFields } from "@/features/obligations";
 import { fetchLiveCandidates } from "@/features/research";
 
 import type { BuiltDeps } from "../wiring";
@@ -29,6 +30,8 @@ const ROWS_FILE = /^src\/features\/(?:market|operations|statutory)\/producers\/d
 export interface PropagatePlan {
   producers: { producer: string; only: string | undefined; rowsFile: string | undefined; orgId: string | undefined } | null;
   batch: number | undefined;
+  /** DERIVE-2: fill the null mode, statutory maximum and cost formula of a bounded batch of obligation objects from their verbatim spans; absent, nothing is derived. */
+  derive: { only: string; batch: number | undefined } | null;
   /** The operator ruling that carries ONE run past the closed fetch gate (rule 16 stays: nothing in system_state changes); empty when none. */
   exception: string;
 }
@@ -36,7 +39,8 @@ function planPropagate(input: Record<string, unknown>): PropagatePlan {
   const p = input.producers && typeof input.producers === "object" ? (input.producers as Record<string, unknown>) : input.producers === true ? {} : null;
   const only = typeof p?.only === "string" ? p.only : undefined;
   const str = (v: unknown) => (typeof v === "string" ? v : undefined);
-  return { producers: p ? { producer: only ? "registry" : str(p.producer) ?? "all", only, rowsFile: str(p.rowsFile), orgId: str(p.orgId) } : null, batch: typeof input.batch === "number" ? input.batch : undefined, exception: str(input.cadence_exception)?.trim() ?? "" };
+  const dv = input.derive && typeof input.derive === "object" ? (input.derive as Record<string, unknown>) : null;
+  return { derive: dv ? { only: str(dv.only) ?? FILL_ONLY, batch: typeof dv.batch === "number" ? dv.batch : undefined } : null, producers: p ? { producer: only ? "registry" : str(p.producer) ?? "all", only, rowsFile: str(p.rowsFile), orgId: str(p.orgId) } : null, batch: typeof input.batch === "number" ? input.batch : undefined, exception: str(input.cadence_exception)?.trim() ?? "" };
 }
 
 /** The ids of the items among the drained events: their research assessments are re-scored (IMP-055). Pure. */
@@ -45,7 +49,7 @@ const changedItemIds = (events: readonly Processed[]): string[] => [...new Set(e
 const pick = (r: RunResult | null, prefix: string): Record<string, number> => Object.fromEntries(Object.entries(r?.counts ?? {}).map(([k, v]) => [`${prefix}${k}`, v]));
 
 /** One result from the five steps. A producer the gates refused is a note, not a failed stage: the drain and its consumers still ran. Pure. */
-export function shapePropagate(parts: { producers: RunResult | null; drain: RunResult; questions: RunResult; signposts: RunResult; assess: RunResult | null; impact?: RunResult<{ ids: { scored_item_ids: string[] } }> | null; carbon?: RunResult | null; couplings?: RunResult | null }, events: readonly Processed[], itemIds: readonly string[]): RunResult {
+export function shapePropagate(parts: { producers: RunResult | null; drain: RunResult; questions: RunResult; signposts: RunResult; assess: RunResult | null; derive?: RunResult<{ ids: { derive_cursor: string[] } }> | null; impact?: RunResult<{ ids: { scored_item_ids: string[] } }> | null; carbon?: RunResult | null; couplings?: RunResult | null }, events: readonly Processed[], itemIds: readonly string[]): RunResult {
   const held = (r: RunResult) => (r.counts.refused ?? 0) > 0 || r.notes.some((n) => n.includes("REFUSING"));
   const soft = (r: RunResult | null) => (r && r.outcome === "failed" && held(r) ? { ...r, outcome: "partial" as const } : r);
   const producers = soft(parts.producers);
@@ -53,11 +57,11 @@ export function shapePropagate(parts: { producers: RunResult | null; drain: RunR
   const counts: Record<string, number> = {
     drained: parts.drain.counts.drained ?? 0, recomputed: parts.drain.counts.recomputed ?? 0, invalidated: parts.drain.counts.invalidated ?? 0, events: parts.drain.counts.events ?? 0,
     questions_written: parts.questions.counts.written ?? 0, scored: parts.signposts.counts.scored ?? 0, signposts_fired: parts.signposts.counts.signposts_fired ?? 0, assessed_written: assess?.counts.written ?? 0,
-    ...pick(producers, "producers_"), ...pick(assess, "assess_"), ...(parts.impact?.counts ?? {}), ...(parts.carbon?.counts ?? {}), ...(parts.couplings?.counts ?? {}),
+    ...pick(producers, "producers_"), ...pick(assess, "assess_"), ...pick(parts.derive ?? null, "derive_"), ...(parts.impact?.counts ?? {}), ...(parts.carbon?.counts ?? {}), ...(parts.couplings?.counts ?? {}),
   };
-  const outcome = worst(parts.drain.outcome, parts.questions.outcome, parts.signposts.outcome, producers?.outcome ?? "ok", assess?.outcome ?? "ok", parts.impact?.outcome ?? "ok", parts.carbon?.outcome ?? "ok", parts.couplings?.outcome ?? "ok");
-  const notes = leadWithFailures([parts.drain, parts.questions, parts.signposts, producers, assess, parts.impact ?? null, parts.carbon ?? null, parts.couplings ?? null]);
-  return { ...runResult(outcome, counts, notes), data: { ids: { drained_event_ids: events.map((e) => String(e.eventId)), reassessed_item_ids: [...itemIds], scored_item_ids: parts.impact?.data?.ids.scored_item_ids ?? [] } } };
+  const outcome = worst(parts.drain.outcome, parts.questions.outcome, parts.signposts.outcome, producers?.outcome ?? "ok", assess?.outcome ?? "ok", parts.impact?.outcome ?? "ok", parts.carbon?.outcome ?? "ok", parts.derive?.outcome ?? "ok", parts.couplings?.outcome ?? "ok");
+  const notes = leadWithFailures([parts.derive ?? null, parts.drain, parts.questions, parts.signposts, producers, assess, parts.impact ?? null, parts.carbon ?? null, parts.couplings ?? null]);
+  return { ...runResult(outcome, counts, notes), data: { ids: { drained_event_ids: events.map((e) => String(e.eventId)), reassessed_item_ids: [...itemIds], scored_item_ids: parts.impact?.data?.ids.scored_item_ids ?? [], ...(parts.derive?.data ? { derive_cursor: parts.derive.data.ids.derive_cursor } : {}) } } };
 }
 
 /** A producer run fetches its document, dry or not, so it runs only while the fetch gate is open (the analysis stages apply with the cadence off; fetching is what rule 16 holds); with the cadence off it is planned (selected and named), never fetched. A named ruling opens the gate for an APPLY call only; a dry call records it and fetches nothing. */
@@ -90,11 +94,23 @@ async function runCouplings(call: FamilyCall, d: BuiltDeps, exception: string): 
   return runResult(worst(seeded.outcome, mined.outcome, capture?.outcome === "failed" ? "partial" : "ok"), { ...pick(capture, "seed_capture_"), ...seeded.counts, ...mined.counts }, [...(capture?.notes ?? []), ...seeded.notes, ...mined.notes]);
 }
 
+/** DERIVE-2: one bounded batch of obligation objects after the cursor the last apply turn left in its ledger row (dry rows never advance it). Runs before the drain, so the changes it writes are drained in the same run. */
+async function runDerive(call: FamilyCall, d: BuiltDeps, p: NonNullable<PropagatePlan["derive"]>): Promise<RunResult<{ ids: { derive_cursor: string[] } }>> {
+  const failed = (note: string) => ({ counts: {}, outcome: "failed" as const, notes: [note] });
+  if (p.only !== FILL_ONLY) return failed(`derive: only "${p.only}" is not a derivation (the one is "${FILL_ONLY}")`);
+  const family = FAMILIES.find((f) => f.stage === "propagate")?.name ?? "";
+  const { data, error } = await d.sb.from("harness_runs").select("outputs").eq("family", family).eq("mode", "apply").order("started_at", { ascending: false }).limit(20);
+  if (error) return failed(`derive: harness_runs read failed: ${error.message}`);
+  const last = (data ?? []).map((r) => (r.outputs as { ids?: { derive_cursor?: string[] } } | null)?.ids?.derive_cursor).find((c) => c !== undefined);
+  return fillObjectFields(d.sb, { dry: call.dry, ...(p.batch ? { batch: p.batch } : {}), after: cursorAfter(last) });
+}
+
 export async function runPropagate(call: FamilyCall, d: BuiltDeps): Promise<RunResult> {
   const plan = planPropagate(call.input);
   const sb = d.sb;
   const producers = plan.producers ? await runProducers(call, d, plan.producers, plan.exception) : null;
   const couplings = await runCouplings(call, d, plan.exception);
+  const derive = plan.derive ? await runDerive(call, d, plan.derive) : null;
   const drain = await runPropagationDrain({ sb, now: d.now, registry: d.registry, reopenQuestion: reopener(sb, d.learning) }, { dry: call.dry, caller: PROPAGATE_CALLER, ...(plan.batch ? { batch: plan.batch } : {}) });
   if (drain.outcome === "failed" && !drain.data?.eventsConsidered && drain.notes.length) return drain;
   const events = drain.data?.processedEvents ?? [];
@@ -108,5 +124,5 @@ export async function runPropagate(call: FamilyCall, d: BuiltDeps): Promise<RunR
   }
   const impact = await scoreItems({ sb, now: d.now, registry: d.registry }, { dry: call.dry, readIds: call.upstream?.ids.scanned_item_ids ?? [] });
   const carbon = await produceCarbonInputs({ sb, now: d.now, registry: d.registry }, { dry: call.dry });
-  return shapePropagate({ producers, drain, questions, signposts, assess, impact, carbon, couplings }, events, itemIds);
+  return shapePropagate({ producers, derive, drain, questions, signposts, assess, impact, carbon, couplings }, events, itemIds);
 }

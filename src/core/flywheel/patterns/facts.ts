@@ -33,7 +33,7 @@ export function factOf(table: string, row: Row, entities: readonly string[], ove
   // a quantity that is compared (a ratchet's maximum, a ceiling, a capacity, an abatement cost) is read in the canonical unit, the one map statutoryUnit holds; a unit it does not state leaves the quantity out and says so. A series keeps the unit it was observed in.
   const rawUnit = figure ? String(row[s.qty?.figure ?? ""] ?? "") : s.qty?.unit ?? (s.qty?.unitColumn ? asText(row[s.qty.unitColumn]) : null);
   const compared = ["ratchet", "ceiling", "capacity", "abatement"].includes(s.role);
-  const canonical = compared ? statutoryUnit(rawUnit, UNIT_FORMS) : null;
+  const canonical = compared && rawUnit ? statutoryUnit(rawUnit, UNIT_FORMS) : null;
   const unitUnknown = compared && rawQty !== null && canonical === null;
   const qty = unitUnknown ? null : rawQty;
   const due = s.due ? asDay(row[s.due]) : s.dueYear && asNumber(row[s.dueYear]) ? `${asNumber(row[s.dueYear])}-01-01` : s.dueMonthsAfterAt && at && asNumber(row[s.dueMonthsAfterAt]) !== null ? plusMonths(at, asNumber(row[s.dueMonthsAfterAt]) as number) : null;

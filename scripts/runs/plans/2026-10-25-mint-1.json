@@ -1,0 +1,161 @@
+{
+  "ruling": "coordinator 2026-10-25: MINT-1 (agent plan L0b) retokenises the record mint absence sentences to the obs_status token; nothing fetches",
+  "steps": [
+    {
+      "name": "retokenise-dry",
+      "stage": "briefs",
+      "mode": "dry",
+      "input": {
+        "retokenise": {
+          "limit": 200
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "retokenise-01",
+      "stage": "briefs",
+      "mode": "apply",
+      "input": {
+        "retokenise": {
+          "limit": 200
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "retokenise-02",
+      "stage": "briefs",
+      "mode": "apply",
+      "input": {
+        "retokenise": {
+          "limit": 200
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "retokenise-03",
+      "stage": "briefs",
+      "mode": "apply",
+      "input": {
+        "retokenise": {
+          "limit": 200
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "retokenise-04",
+      "stage": "briefs",
+      "mode": "apply",
+      "input": {
+        "retokenise": {
+          "limit": 200
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "retokenise-05",
+      "stage": "briefs",
+      "mode": "apply",
+      "input": {
+        "retokenise": {
+          "limit": 200
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "retokenise-06",
+      "stage": "briefs",
+      "mode": "apply",
+      "input": {
+        "retokenise": {
+          "limit": 200
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "retokenise-07",
+      "stage": "briefs",
+      "mode": "apply",
+      "input": {
+        "retokenise": {
+          "limit": 200
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "retokenise-08",
+      "stage": "briefs",
+      "mode": "apply",
+      "input": {
+        "retokenise": {
+          "limit": 200
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "retokenise-09",
+      "stage": "briefs",
+      "mode": "apply",
+      "input": {
+        "retokenise": {
+          "limit": 200
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "retokenise-10",
+      "stage": "briefs",
+      "mode": "apply",
+      "input": {
+        "retokenise": {
+          "limit": 200
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "retokenise-11",
+      "stage": "briefs",
+      "mode": "apply",
+      "input": {
+        "retokenise": {
+          "limit": 200
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "retokenise-12",
+      "stage": "briefs",
+      "mode": "apply",
+      "input": {
+        "retokenise": {
+          "limit": 200
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    }
+  ]
+}

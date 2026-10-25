@@ -21,9 +21,9 @@ test("every listed prose and prefixed form normalises to its canonical token", (
   for (const [raw, unit] of table) assert.equal(statutoryUnit(raw), unit, raw);
 });
 
-test("an unknown, empty or absent unit is null and is never guessed", () => {
-  for (const raw of ["bananas per hectare", "", "   ", null, undefined, "EUR per parsec"]) assert.equal(statutoryUnit(raw), null, String(raw));
-  assert.equal(statutoryUnit("t shirts"), null, "an exact form matches the whole unit, not a leading token");
+test("an unknown or empty unit is null and is never guessed", () => {
+  for (const raw of ["bananas per hectare", "", "   ", "a fine of two thousand"]) assert.equal(statutoryUnit(raw), null, raw);
+  assert.equal(statutoryUnit("t shirts"), null, "an exact form matches the whole text, not a leading token");
 });
 
 test("a planted P5 pair: a ceiling stated as 'EUR 2 400 per tonne' meets an abatement stored as 'EUR/t'; an unknown unit leaves the row out and says so", () => {

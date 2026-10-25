@@ -1,0 +1,3 @@
+src/features/intake/record-facts/retokenise.ts | new in MINT-1: the in-turn backfill that rewrites the record mint's old absence sentences to the obs_status token (ADR-050); no old-tree source
+src/features/intake/record-facts/data/stub-brief.json | new in MINT-1: the stub brief's marker and headings as data, so the no-authored-prose guard can name them as tokens
+src/core/brief/data/record-copy.json | new in MINT-1: the record-grade absence token (an obs_status code) and its label, the copy map the record renderers read

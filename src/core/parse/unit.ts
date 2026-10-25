@@ -2,8 +2,10 @@
 // matchers from it and answers three questions: which unit starts here, are two quantities the same kind, and what is one worth in another unit.
 // Kinds never convert implicitly: tonne-km is not TEU-km, a per-litre intensity is not a per-MJ one; a cross-kind request is refused, and the
 // only bridge between two activity bases is a NAMED data row (tonnes per TEU, with its source), passed explicitly.
+import { z } from "zod";
+
 import { aliasAlternation, escapeRe, GAS_ALTERNATION, GAS_BY_ALIAS, UNIT_BY_ID, UNIT_FILE, UNITS, unitOfAlias, unitsOfDim, type Unit } from "./data";
-import statutoryUnitsJson from "./data/statutory-units.json";
+import statutoryUnits from "./data/statutory-units.json";
 import { mulDec, parseDec, type Dec } from "./decimal";
 
 /** Unit ids of a quantity: a plain unit (n), or a ratio n[ gas]/d. */
@@ -73,21 +75,14 @@ export const canonicalRatio = (value: Dec, p: UnitParts): { num: Dec; den: Dec }
 
 
 
-/** The tokens of a unit as stored or as prose: letters and digits starting with a letter (so "2 400" falls away and "tCO2e" stays one token), and the percent sign. */
-const unitTokens = (s: string): string[] => s.toLowerCase().match(/%|\p{Sc}|\p{L}[\p{L}\p{N}]*/gu) ?? [];
-export interface StatutoryForm { form: string; unit: string; exact?: boolean }
-const longestFirst = (forms: readonly StatutoryForm[]): StatutoryForm[] => [...forms].sort((a, b) => b.form.length - a.form.length);
-const STATUTORY_FORMS = longestFirst(statutoryUnitsJson.forms);
-
-/**
- * The canonical token of a statutory unit written as prose or as a currency-prefixed phrase ("EUR 2 400 per tonne", "EUR per equivalent metric ton of VLSFO", "grams of CO2 equivalent per MJ", "% minimum share of SAF", "EUR/tCO2e"): EUR/t, EUR/tCO2e,
- * EUR/GJ, gCO2e/MJ, pct, EUR, t, MW or months, from the data map in data/statutory-units.json, longest form first. A form marked exact must be the whole unit; the others may sit inside a longer sentence. A unit no form states is null, never guessed.
- * The one map the pattern facts and the statutory derivation share; a caller whose result depends on the map (the pattern facts, under the method-version gate) passes the same file in as `forms` so the gate sees it.
- */
-export function statutoryUnit(raw: string | null | undefined, forms: readonly StatutoryForm[] = STATUTORY_FORMS): string | null {
-  const tokens = unitTokens(String(raw ?? ""));
-  if (!tokens.length) return null;
-  const phrase = ` ${tokens.join(" ")} `;
-  for (const f of forms === STATUTORY_FORMS ? forms : longestFirst(forms)) if (f.exact ? phrase === ` ${f.form} ` : phrase.includes(` ${f.form} `)) return f.unit;
-  return null;
+// The unit token of a statutory figure, read from its verbatim text through ONE data map (./data/statutory-units.json): the first form that matches wins, an `exact` form must match the whole text, and text no form knows is null, never a guess.
+// Shared with CONNECT-2 PR A (facts.ts reads the same map); add a form to the data, never a second normaliser.
+const unitForms = z.object({ forms: z.array(z.object({ form: z.string().min(1), unit: z.string().min(1), exact: z.boolean().optional() })).min(1) }).parse(statutoryUnits);
+export type UnitForm = (typeof unitForms.forms)[number];
+const DEFAULT_FORMS: readonly UnitForm[] = unitForms.forms;
+const compile = (forms: readonly UnitForm[]) => forms.map((f) => ({ unit: f.unit, re: new RegExp(f.exact ? `^(?:${f.form})$` : f.form, "i") }));
+const DEFAULT_COMPILED = compile(DEFAULT_FORMS);
+export function statutoryUnit(raw: string, forms: readonly UnitForm[] = DEFAULT_FORMS): string | null {
+  const text = raw.trim();
+  return (forms === DEFAULT_FORMS ? DEFAULT_COMPILED : compile(forms)).find((f) => f.re.test(text))?.unit ?? null;
 }
