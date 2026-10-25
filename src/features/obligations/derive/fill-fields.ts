@@ -14,6 +14,8 @@ import { classifyMode } from "./mode";
 
 /** The one value `input.derive.only` may carry in this slice. */
 export const FILL_ONLY = "modes-and-maximum";
+/** The most rows one response carries (the server caps a response at 1,000). */
+const PAGE = 1000;
 const fill = z.object({ batch: z.number().int().positive(), absence: z.string().min(1) }).parse({ batch: rulesJson.fill.batch, absence: rulesJson.absence });
 
 export interface FillRow { obligation_id: string; instrument_item_id: string; verbatim_text: string; mode: string[] | null; statutory_maximum: string | null; cost_formula: string | null }
@@ -46,11 +48,20 @@ export const cursorAfter = (ids: readonly string[] | undefined): string | null =
 
 export async function fillObjectFields(sb: Db, input: { dry: boolean; batch?: number; after: string | null }): Promise<RunResult<{ plan: FillPlanRow[]; ids: { derive_cursor: string[] } }>> {
   const batch = input.batch ?? fill.batch;
-  let q = sb.from("obligation_objects").select("obligation_id, instrument_item_id, verbatim_text, mode, statutory_maximum, cost_formula").or("mode.is.null,statutory_maximum.is.null,cost_formula.is.null").order("obligation_id", { ascending: true }).limit(batch);
-  if (input.after) q = q.gt("obligation_id", input.after);
-  const read = await q;
-  if (read.error) return { counts: {}, outcome: "failed", notes: [`derive: obligation_objects read failed: ${read.error.message}`] };
-  const rows = (read.data ?? []) as FillRow[];
+  // Pages of at most PAGE rows (the server answers no more per response), each after the last id of the one before; the batch is the cap of the turn, an empty page is the end of the table and wraps the cursor.
+  const rows: FillRow[] = [];
+  let last = input.after;
+  let ended = false;
+  while (rows.length < batch && !ended) {
+    let q = sb.from("obligation_objects").select("obligation_id, instrument_item_id, verbatim_text, mode, statutory_maximum, cost_formula").or("mode.is.null,statutory_maximum.is.null,cost_formula.is.null").order("obligation_id", { ascending: true }).limit(Math.min(PAGE, batch - rows.length));
+    if (last) q = q.gt("obligation_id", last);
+    const read = await q;
+    if (read.error) return { counts: {}, outcome: "failed", notes: [`derive: obligation_objects read failed: ${read.error.message}`] };
+    const page = (read.data ?? []) as FillRow[];
+    if (!page.length && last && !rows.length && input.after === last) { last = null; continue; } // the cursor stood at the end: start again from the first object
+    if (!page.length) ended = true;
+    else { rows.push(...page); last = (page[page.length - 1] as FillRow).obligation_id; }
+  }
   const items = await fetchAllByIdChunks<{ id: string; title: string | null; instrument_identifier: string | null }>(rows.map((r) => r.instrument_item_id), async (slice) => {
     const { data, error } = await admitItems(sb.from("intelligence_items").select("id, title, instrument_identifier").in("id", slice));
     if (error) throw new Error(`derive: intelligence_items read failed: ${error.message}`);
@@ -67,7 +78,7 @@ export async function fillObjectFields(sb: Db, input: { dry: boolean; batch?: nu
     if (p.patch.cost_formula) bump("formula_set");
     for (const why of p.refused) { bump("refused"); reasons.set(why.split(":")[0] as string, (reasons.get(why.split(":")[0] as string) ?? 0) + 1); }
   }
-  const cursor = rows.length < batch ? [] : [rows[rows.length - 1]?.obligation_id as string, OBJECT_DERIVATION_VERSION];
+  const cursor = ended ? [] : [rows[rows.length - 1]?.obligation_id as string, OBJECT_DERIVATION_VERSION];
   const notes = [...reasons].map(([why, n]) => `refused ${why}: ${n}`);
   const result = (outcome: RunResult["outcome"]) => ({ counts, outcome, notes, data: { plan, ids: { derive_cursor: cursor } } });
   if (input.dry) return result("ok");

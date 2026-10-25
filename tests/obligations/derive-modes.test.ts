@@ -7,7 +7,7 @@ import type { FamilyCall } from "@/core/harness";
 import { LEG_MODE_CODES } from "@/core/contracts/vocabularies";
 import unitFile from "@/core/parse/data/statutory-units.json" with { type: "json" };
 import { statutoryUnit } from "@/core/parse/unit";
-import { deriveObligationObjects, type Candidate } from "@/features/obligations";
+import { deriveObligationObjects, deriveObligationsJob, type Candidate } from "@/features/obligations";
 import rules from "@/features/obligations/derive/data/object-rules.json" with { type: "json" };
 import { cursorAfter, fillObjectFields } from "@/features/obligations/derive/fill-fields";
 import { extractStatutory, groundingRefusal } from "@/features/obligations/derive/maximum";
@@ -200,4 +200,30 @@ test("the propagate stage fills a bounded batch after the cursor the last apply 
   assert.deepEqual(f.db.rows("obligation_objects").find((r) => r.obligation_id === "cl:obligation:0000000000000001")?.mode, null, "objects before the cursor are not read");
   const refused = await runPropagate(call({ derive: { only: "everything" } }), f.d);
   assert.equal(refused.outcome, "failed");
+});
+
+test("a word that merely contains a mode word is not that mode: shipments and relationship are not ships", () => {
+  for (const span of ["Article 9 Shipments of waste shall be accompanied by the form.", "Article 9 The relationship between the operator and the authority shall be recorded."]) assert.deepEqual(classifyMode(span, NONE).modes, [], span);
+  assert.deepEqual(classifyMode("Article 9 Operators shall keep records.", { title: "Regulation on shipments and the relationship of parties" }).modes, [], "nor in an instrument title");
+});
+
+test("the server answers at most 1,000 rows a response: 1,200 objects are all filled, across pages of one call or across turns, and then nothing changes", async () => {
+  const many = (): Row[] => Array.from({ length: 1200 }, (_, i) => OBJ(i + 1, { verbatim_text: `Article ${i + 1} Aircraft operators shall report.` }));
+  const one = connectDb({ intelligence_items: [ITEM], obligation_objects: many(), agent_run_searches: [CAPTURE] });
+  const all = await fillObjectFields(one.db, { dry: false, batch: 2000, after: null });
+  assert.deepEqual([all.counts.scanned, all.counts.updated, all.data?.ids.derive_cursor], [1200, 1200, []]);
+  assert.equal((one.tables.obligation_objects as Row[]).filter((r) => r.mode === null).length, 0);
+  const turns = connectDb({ intelligence_items: [ITEM], obligation_objects: many(), agent_run_searches: [CAPTURE] });
+  let after: string | null = null;
+  const updated: number[] = [];
+  for (let turn = 0; turn < 3; turn += 1) {
+    const r = await fillObjectFields(turns.db, { dry: false, batch: 1000, after });
+    updated.push(r.counts.updated as number);
+    after = cursorAfter(r.data?.ids.derive_cursor);
+  }
+  assert.deepEqual(updated, [1000, 200, 0], "a turn's batch is a cap, the end is an empty page, and the third turn changes nothing");
+  assert.equal((turns.tables.obligation_objects as Row[]).filter((r) => r.mode === null).length, 0);
+  const job = connectDb({ intelligence_items: [ITEM], obligation_objects: many(), agent_run_searches: [CAPTURE], section_claim_provenance: [], fact_suppressions: [], item_forward_events: [] });
+  const replay = await deriveObligationsJob({ sb: job.db }, { dry: false });
+  assert.equal(replay.counts.fill_updated, 1200, replay.notes.join("|"));
 });
