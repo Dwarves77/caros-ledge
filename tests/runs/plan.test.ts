@@ -54,6 +54,15 @@ test("the first plan (ARM-1) parses: a dry ecb-fx step first, every propagate ap
   assert.equal(new Set(p.steps.map((s: { name: string }) => s.name)).size, p.steps.length, "step names are unique");
 });
 
+test("the ARM-2 plan (2026-10-25-arm-2) parses: six steps, dry then apply for statutory-schedules, reroute-rows and state-cost-facts", () => {
+  const p = parsePlan(readFileSync("scripts/runs/plans/2026-10-25-arm-2.json", "utf8"));
+  assert.equal(p.steps.length, 6);
+  assert.deepEqual(
+    p.steps.map((s: { mode: string }) => s.mode),
+    ["dry", "apply", "dry", "apply", "dry", "apply"],
+  );
+});
+
 test("every plan file under scripts/runs/plans parses, so a malformed plan is red in its pull request and not on main", () => {
   for (const f of readdirSync("scripts/runs/plans").filter((n) => n.endsWith(".json"))) parsePlan(readFileSync(`scripts/runs/plans/${f}`, "utf8"));
 });

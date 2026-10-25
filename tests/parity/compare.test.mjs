@@ -163,3 +163,27 @@ test('D4: items A to E against F to J in the same slots passes; an Action band w
   assert.deepEqual(compareRecord('regulations', '1280x900', base, badMasthead, []).fails, ['heading missing: 1:Regulations ledger']);
 
 });
+
+// PARITY-3 (main run 40202525249): a panel's absence-state action ("Request coverage") exists only while the panel has no data. ARM-1 filled grid_connection_queues, the grid panel drew rows, one of the two baseline buttons
+// went, and the gate failed on data. `conditional` entries ({route, match, reason}) are compared when present on both sides and ignored when absent on either; nothing else is loosened.
+test('conditional: a data-conditional control is compared when present on both sides and ignored when absent on either', async () => {
+  const conditional = [{ route: 'operations-detail', match: '^button:Request coverage$', reason: 'absence-state action of a panel' }];
+  const ctl = (...names) => ({ landmarks: [], headings: [], rows: { items: [] }, controls: names.map((name) => ({ role: name.startsWith('Back') ? 'link' : 'button', name })) });
+  const RC = 'Request coverage';
+  const b = ctl('S3', RC, RC, 'Back to list', 'Add note');
+  const run = (cap, entries = conditional, route = 'operations-detail') => compareRecord(route, '1280x900', b, cap, [], [], entries);
+  assert.deepEqual(run(ctl('S3', RC, 'Back to list', 'Add note'), []).fails, ['control reordered: button:Request coverage'], 'without the entry the CI failure reproduces');
+  assert.deepEqual(run(ctl('S3', RC, 'Back to list', 'Add note')).fails, [], 'one panel filled: one button left');
+  assert.deepEqual(run(ctl('S3', 'Back to list', 'Add note')).fails, [], 'both panels filled: none left');
+  assert.deepEqual(run(ctl('S3', RC, RC, RC, 'Back to list', 'Add note')).fails, [], 'a panel emptied: more than the baseline');
+  assert.equal(run(ctl('S3', RC, 'Back to list', 'Add note')).used.some((u) => u.startsWith('conditional:')), true, 'the reason is recorded');
+  assert.deepEqual(run(ctl('S3', RC, 'Back to list', 'Add note'), conditional, 'market').fails.length, 1, 'per route');
+  assert.deepEqual(run(ctl('S3', RC, 'Add note', 'Back to list')).fails, ['control reordered: button:Add note'], 'other controls still gate order');
+  assert.deepEqual(run(ctl('S3', RC, 'Back to list')).fails, ['control missing: button:Add note'], 'other controls still gate presence');
+  assert.deepEqual(run(ctl(RC, 'S3', 'Back to list', 'Add note')).fails, ['control reordered: button:Request coverage'], 'a present conditional control is held to its place');
+  const real = JSON.parse(await readFile(new URL('./baseline/operations-detail.1280x900.json', import.meta.url), 'utf8'));
+  const keep = real.controls.filter((c, i) => i !== 61);
+  assert.equal(real.controls.filter((c) => c.name === RC).length, 2, 'the baseline holds the two buttons');
+  assert.deepEqual(compareRecord('operations-detail', '1280x900', real, { ...real, controls: keep }, [], config.dataNames ?? [], config.conditional ?? []).fails, [], 'the committed config covers the production case');
+  assert.equal(compareRecord('operations-detail', '1280x900', real, { ...real, controls: real.controls.filter((c, i) => i !== 14) }, [], config.dataNames ?? [], config.conditional ?? []).fails.length, 1, 'a removed ordinary control fails under the committed config');
+});

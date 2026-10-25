@@ -25,15 +25,18 @@ export interface GetOptions {
 }
 export type Getter = (url: string, opts?: GetOptions) => Promise<Response>;
 
-/** The one fetch policy: a timeout per attempt, and a retry (twice, doubling back-off) on a network error, a 429 or a 5xx. Any other non-2xx throws NetworkError. */
-function makeGetter(fetchFn: FetchFn, o: { timeoutMs?: number; retries?: number; sleep?: ((ms: number) => Promise<void>) | undefined } = {}): Getter {
+/** The runner's retry configuration: the waits before each retry, in order, so a source that is briefly down (a 503) is given about a minute before the run fails. Its length is the number of retries. */
+const FETCH_RETRY_BACKOFF_MS: readonly number[] = Object.freeze([5_000, 15_000, 45_000]);
+
+/** The one fetch policy: a timeout per attempt, and a retry (after each wait of FETCH_RETRY_BACKOFF_MS) on a network error, a 429 or a 5xx. Any other non-2xx throws NetworkError. */
+function makeGetter(fetchFn: FetchFn, o: { timeoutMs?: number; backoffMs?: readonly number[]; sleep?: ((ms: number) => Promise<void>) | undefined } = {}): Getter {
   const sleep = o.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
-  const retries = o.retries ?? 2;
+  const backoff = o.backoffMs ?? FETCH_RETRY_BACKOFF_MS;
   return async (url, opts = {}) => {
     const headers = { ...(opts.headers ?? {}), ...(opts.range ? { Range: `bytes=${opts.range[0]}-${opts.range[1]}` } : {}) };
     let last = "";
-    for (let attempt = 0; attempt <= retries; attempt += 1) {
-      if (attempt > 0) await sleep(500 * 2 ** (attempt - 1));
+    for (let attempt = 0; attempt <= backoff.length; attempt += 1) {
+      if (attempt > 0) await sleep(backoff[attempt - 1] as number);
       try {
         const res = await fetchFn(url, { method: opts.method, headers, body: opts.body, signal: AbortSignal.timeout(o.timeoutMs ?? 30_000) });
         if (res.ok) return res;

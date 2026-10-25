@@ -2898,7 +2898,8 @@
     "source_id",
     "capture_id",
     "created_at",
-    "updated_at"
+    "updated_at",
+    "evidence_artifacts"
    ],
    "uuid": [],
    "defaults": {

@@ -18,6 +18,8 @@ const Step = z.strictObject({
   producer_env: z.array(z.string().regex(PRODUCER_ENV)),
   /** A ruled step runs the named stage alone unless the plan says otherwise. */
   chain: z.boolean().default(false),
+  /** What a failed step does to the run: "stop" halts the plan and fails the job; "continue" records it, runs the next step, and leaves it without a success row for the next push of the plan to retry. */
+  on_failure: z.enum(["stop", "continue"]).default("stop"),
 });
 
 export const Plan = z

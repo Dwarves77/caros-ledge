@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { assessItem, type AssessInput } from "@/features/research/model/assess";
-import { horizonMetaLabel, selectAssessmentView, selectAssessmentViewsByItemId, selectHistoryEntry, selectSignpostView, type AssessmentRow } from "@/features/research/model/assessment-view";
+import { horizonMetaLabel, predicateWords, selectAssessmentView, selectAssessmentViewsByItemId, selectHistoryEntry, selectSignpostView, type AssessmentRow } from "@/features/research/model/assessment-view";
 import { themeOf, THEME_KEYS } from "@/features/research/model/taxonomy";
 
 const NOW = new Date("2026-10-01T00:00:00Z");
@@ -58,14 +58,14 @@ test("a corridor label is a point for a point and a span for a span; the horizon
   assert.deepEqual([selectHistoryEntry(v!, false).technicalLabel, selectHistoryEntry(v!, true).isCurrent], ["TRL 8", true]);
 });
 
-test("a signpost names the watched entity or none (never its raw id); the predicate reads in customer words and an unknown op guesses nothing", () => {
+test("a signpost names the watched entity or none (never its raw id); the predicate is a kind token with its own parameters and an unknown op guesses nothing", () => {
   const row = { entity_id: "cl:signpost:aa", assessment_id: "a1", watches: "cl:instrument:bb", predicate: { op: "date_passed", field: "occurred_at", by: "2027-01-01", basis: "movement_by_date" }, direction: "confirms", fired_at: null };
   const named = selectSignpostView(row, () => "FuelEU Maritime");
-  assert.deepEqual([named.watchesLabel, named.summary], ["FuelEU Maritime", "expects a recorded change on what it watches by 2027-01-01"]);
+  assert.deepEqual([named.watchesLabel, named.predicate], ["FuelEU Maritime", { kind: "movement_by_date", by: "2027-01-01", metric: null, gte: null, relation: null, n: null }]);
+  assert.equal(predicateWords(named.predicate), "expects a recorded change on what it watches by 2027-01-01");
   assert.equal(selectSignpostView(row, () => null).watchesLabel, null);
-  assert.doesNotMatch(named.summary, /occurred_at|movement_by_date/);
-  assert.equal(selectSignpostView({ ...row, predicate: { op: "teleport" } as never }, () => null).summary, "condition not recognised");
-  assert.equal(selectSignpostView({ ...row, predicate: null as never }, () => null).summary, "no condition recorded");
+  assert.equal(selectSignpostView({ ...row, predicate: { op: "teleport" } as never }, () => null).predicate.kind, "unrecognised");
+  assert.equal(selectSignpostView({ ...row, predicate: null as never }, () => null).predicate.kind, "none");
 });
 
 test("the theme of an item: the stored column first; the specific last-mile phrase is reachable (the old general emission rule shadowed it); no match is null, never a default", () => {

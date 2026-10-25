@@ -19,7 +19,7 @@ const STANCE = z
     for (const r of d.rules) if (r.band !== undefined && r.band !== r.horizon) ctx.addIssue({ code: "custom", message: `a ${r.band} rule must name the ${r.band} horizon, not ${r.horizon}` });
   })
   .parse(stanceJson);
-const COPY = copyJson as { refusal: Record<string, string>; genericRefusal: string; method: Record<string, string> };
+const COPY = copyJson as { refusal: Record<string, string>; genericRefusal: string; method: Record<string, string>; predicate: Record<string, string> };
 export const ASSESSMENT_COLUMNS =
   "id, item_id, supersedes, is_current, lifecycle_state, technical_maturity_low, technical_maturity_high, technical_maturity_method, commercial_maturity_low, commercial_maturity_high, commercial_maturity_method, horizon_kind, horizon_band, horizon_rule, horizon_confidence, horizon_trigger_note, refusal_reason, credibility_evidence_score, credibility_authority_score, status_token, computed_at";
 export const SIGNPOST_COLUMNS = "entity_id, assessment_id, watches, predicate, direction, fired_at";
@@ -61,7 +61,6 @@ export interface AssessmentRow {
 const corridorLabel = (prefix: "TRL" | "CRI", low: number, high: number): string => (low === high ? `${prefix} ${low}` : `${prefix} ${low}-${high}`);
 export const HORIZON_BAND_WORDS: Readonly<Record<string, string>> = { NOW: "now, within 2 years", NEAR: "near, 2 to 5 years", MID: "mid, 5 to 10 years", FAR: "far, beyond 10 years" };
 export const HORIZON_KIND_WORDS: Readonly<Record<string, string>> = { obligation: "Obligation horizon", availability: "Availability horizon", economic: "Economic horizon" };
-export const HORIZON_RULE_WORDS: Readonly<Record<string, string>> = { R1: "a dated statutory instrument", R3: "a named institutional roadmap", R4: "inferred from maturity, no dated evidence" };
 
 export interface Corridor {
   low: number;
@@ -149,24 +148,37 @@ export interface SignpostRow {
   direction: string;
   fired_at: string | null;
 }
-/** One customer sentence for a signpost predicate; an unknown op says so and guesses nothing. */
-function summarizePredicate(p: SignpostRow["predicate"]): string {
-  if (!p || typeof p !== "object" || !p.op) return "no condition recorded";
-  if (p.op === "date_passed") return p.basis === "movement_by_date" && p.by ? `expects a recorded change on what it watches by ${p.by}` : "fires once a recorded date has passed";
-  if (p.op === "threshold") return p.metric && p.gte != null ? `fires once ${p.metric} reaches ${p.gte}` : "fires once a measure crosses its threshold";
-  if (p.op === "count_gte") return p.relation && p.n != null ? `fires once ${p.n} or more ${p.relation} are recorded` : "fires once a count reaches its floor";
-  return "condition not recognised";
+/** The kinds a stored predicate classifies into (the keys of the predicate copy in assessment-copy.json, which words each; "bare" kinds are a known op stored without the parameters its wording needs). */
+export type PredicateKind = keyof typeof copyJson.predicate;
+/** A signpost predicate as data: its kind token and its own stored parameters. No sentence (ADR-050); an unknown op is "unrecognised" and guesses nothing. */
+export interface PredicateView {
+  kind: PredicateKind;
+  by: string | null;
+  metric: string | null;
+  gte: number | null;
+  relation: string | null;
+  n: number | null;
 }
+function summarizePredicate(p: SignpostRow["predicate"]): PredicateView {
+  const view = (kind: PredicateKind): PredicateView => ({ kind, by: p?.by ?? null, metric: p?.metric ?? null, gte: p?.gte ?? null, relation: p?.relation ?? null, n: p?.n ?? null });
+  if (!p || typeof p !== "object" || !p.op) return view("none");
+  if (p.op === "date_passed") return view(p.basis === "movement_by_date" && p.by ? "movement_by_date" : "date_passed");
+  if (p.op === "threshold") return view(p.metric && p.gte != null ? "threshold" : "threshold_bare");
+  if (p.op === "count_gte") return view(p.relation && p.n != null ? "count_gte" : "count_bare");
+  return view("unrecognised");
+}
+/** The words for a predicate: its kind's wording with the predicate's own stored parameters in the {slots}. */
+export const predicateWords = (p: PredicateView): string => (COPY.predicate[p.kind] ?? "").replace(/\{(\w+)\}/g, (_, k: keyof PredicateView) => String(p[k] ?? ""));
 export interface SignpostView {
   entityId: string;
   watches: string;
   /** The watched entity's name when the reader could resolve it, else null (the raw id is never printed). */
   watchesLabel: string | null;
   direction: string;
-  summary: string;
+  predicate: PredicateView;
   firedAt: string | null;
 }
-export const selectSignpostView = (row: SignpostRow, labelOf: (entityId: string) => string | null): SignpostView => ({ entityId: row.entity_id, watches: row.watches, watchesLabel: labelOf(row.watches), direction: row.direction, summary: summarizePredicate(row.predicate), firedAt: row.fired_at });
+export const selectSignpostView = (row: SignpostRow, labelOf: (entityId: string) => string | null): SignpostView => ({ entityId: row.entity_id, watches: row.watches, watchesLabel: labelOf(row.watches), direction: row.direction, predicate: summarizePredicate(row.predicate), firedAt: row.fired_at });
 
 export interface HistoryEntry {
   id: string;

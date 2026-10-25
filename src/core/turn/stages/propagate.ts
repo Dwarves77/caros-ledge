@@ -11,7 +11,7 @@ import { scoreItems } from "@/core/impact/run";
 import { runPropagationDrain, reopener } from "@/core/propagation";
 import { citedPages, loadProducerRegistry, runProducer, runRegistered, selectRuns } from "@/core/producers";
 import type { RunResult } from "@/core/types/run-result";
-import { runResult, worst } from "@/core/types/run-result";
+import { leadWithFailures, runResult, worst } from "@/core/types/run-result";
 import { buildEntityItemsReader, buildSignpostStepDeps, runQuestionsOnChange, runSignpostStep } from "@/features/learning";
 import { produceCarbonInputs } from "@/features/market/lib/carbon-run";
 import { fetchLiveCandidates } from "@/features/research";
@@ -56,7 +56,7 @@ export function shapePropagate(parts: { producers: RunResult | null; drain: RunR
     ...pick(producers, "producers_"), ...pick(assess, "assess_"), ...(parts.impact?.counts ?? {}), ...(parts.carbon?.counts ?? {}), ...(parts.couplings?.counts ?? {}),
   };
   const outcome = worst(parts.drain.outcome, parts.questions.outcome, parts.signposts.outcome, producers?.outcome ?? "ok", assess?.outcome ?? "ok", parts.impact?.outcome ?? "ok", parts.carbon?.outcome ?? "ok", parts.couplings?.outcome ?? "ok");
-  const notes = [parts.drain, parts.questions, parts.signposts, producers, assess, parts.impact ?? null, parts.carbon ?? null, parts.couplings ?? null].flatMap((p) => p?.notes ?? []);
+  const notes = leadWithFailures([parts.drain, parts.questions, parts.signposts, producers, assess, parts.impact ?? null, parts.carbon ?? null, parts.couplings ?? null]);
   return { ...runResult(outcome, counts, notes), data: { ids: { drained_event_ids: events.map((e) => String(e.eventId)), reassessed_item_ids: [...itemIds], scored_item_ids: parts.impact?.data?.ids.scored_item_ids ?? [] } } };
 }
 
@@ -70,7 +70,7 @@ async function runProducers(call: FamilyCall, d: BuiltDeps, p: NonNullable<Propa
     const text = p.rowsFile ? readFileSync(p.rowsFile, "utf8") : undefined;
     const cited = text !== undefined && !call.dry ? await captureCited(d, citedPages(text), ruled) : null;
     const r = await runRegistered(d.producers, { catalog: d.catalog, producer: p.producer, only: p.only, mode: call.mode, ...(text !== undefined ? { input: { text, ...(p.orgId ? { orgId: p.orgId } : {}) } } : {}) });
-    return { ...r, counts: { ...r.counts, ...(cited ? pick(cited, "capture_") : {}), ...(ruled ? { cadence_exception: 1 } : {}) }, notes: [...ruling, ...(cited?.notes ?? []), ...r.notes] };
+    return { ...r, counts: { ...r.counts, ...(cited ? pick(cited, "capture_") : {}), ...(ruled ? { cadence_exception: 1 } : {}) }, notes: r.outcome === "failed" ? [...r.notes, ...ruling, ...(cited?.notes ?? [])] : [...ruling, ...(cited?.notes ?? []), ...r.notes] };
   }
   try {
     const picked = selectRuns(loadProducerRegistry(d.catalog), { producer: p.producer, only: p.only });

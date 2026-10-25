@@ -9,7 +9,7 @@
 import { formatDate } from "@/core/shared";
 import { SectionCard, TagChip } from "@/ui";
 
-import { HORIZON_BAND_WORDS, HORIZON_KIND_WORDS, HORIZON_RULE_WORDS, refusalText, type AssessmentView, type HistoryEntry, type SignpostView } from "../model/assessment-view";
+import { HORIZON_BAND_WORDS, HORIZON_KIND_WORDS, predicateWords, refusalText, type AssessmentView, type HistoryEntry, type SignpostView } from "../model/assessment-view";
 import type { AssessmentBundle } from "../read/research-reads";
 
 import styles from "./research.module.css";
@@ -17,6 +17,8 @@ import styles from "./research.module.css";
 /** One short label per stance token (the token's own words; no sentence about the finding). */
 const STANCE_LABEL: Readonly<Record<string, string>> = { act_today: "Act or invest today", wait_stage: "Wait and stage" };
 
+/** The UI words for the horizon-rule token the stored assessment carries (the evidence state is the token; these are its labels). */
+const RULE_LABEL: Readonly<Record<string, string>> = { R1: "a dated statutory instrument", R3: "a named institutional roadmap", R4: "inferred from maturity, no dated evidence" };
 const Kv = ({ label, children }: { label: string; children: React.ReactNode }) => (
   <div className={styles.kv}>
     <span className={styles.kvLabel}>{label}</span>
@@ -49,7 +51,7 @@ export function AssessmentCard({ assessment, failed }: { assessment: AssessmentV
           <Kv label="Commercial">{assessment.commercial ? `${assessment.commercial.label}${assessment.commercial.method ? ` (${assessment.commercial.method})` : ""}` : "no CRI corridor read from this finding's recorded text"}</Kv>
           {assessment.horizon ? (
             <>
-              <Kv label="Horizon">{`${HORIZON_BAND_WORDS[assessment.horizon.band] ?? assessment.horizon.band} · ${HORIZON_KIND_WORDS[assessment.horizon.kind]?.toLowerCase() ?? assessment.horizon.kind} · read from ${HORIZON_RULE_WORDS[assessment.horizon.rule] ?? assessment.horizon.rule}${assessment.horizon.confidence ? ` · ${assessment.horizon.confidence} confidence` : ""}`}</Kv>
+              <Kv label="Horizon">{`${HORIZON_BAND_WORDS[assessment.horizon.band] ?? assessment.horizon.band} · ${HORIZON_KIND_WORDS[assessment.horizon.kind]?.toLowerCase() ?? assessment.horizon.kind} · read from ${RULE_LABEL[assessment.horizon.rule] ?? assessment.horizon.rule}${assessment.horizon.confidence ? ` · ${assessment.horizon.confidence} confidence` : ""}`}</Kv>
               {assessment.horizon.triggerNote && <Kv label="Basis">{assessment.horizon.triggerNote}</Kv>}
               {assessment.forwardOutlook && <Kv label="Stance">{`${STANCE_LABEL[assessment.forwardOutlook.stance] ?? assessment.forwardOutlook.stance} · ${HORIZON_BAND_WORDS[assessment.forwardOutlook.horizon] ?? assessment.forwardOutlook.horizon}`}</Kv>}
             </>
@@ -99,7 +101,7 @@ export function SignpostList({ signposts }: { signposts: SignpostView[] }) {
             <div key={s.entityId} className={styles.signpost}>
               <div className={styles.signpostBody}>
                 <span className={styles.kvValue}>{s.watchesLabel ? `watches ${s.watchesLabel}, ${s.direction}` : `a watched record, ${s.direction}`}</span>
-                <span className={styles.fine}>{s.summary}</span>
+                <span className={styles.fine}>{predicateWords(s.predicate)}</span>
               </div>
               <span className={`${styles.badge}${s.firedAt ? ` ${styles.badgeOn}` : ""}`}>{s.firedAt ? `Fired ${formatDate(s.firedAt.slice(0, 10))}` : "Watching"}</span>
             </div>
