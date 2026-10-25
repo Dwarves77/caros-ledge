@@ -70,5 +70,7 @@ export async function seedCouplings(deps: { sb: Db; now: () => Date }, input: { 
   await addNew(sb, "entity_identifiers", identifiers as Row[], ["entity_id", "scheme", "value"], k("entity_id", "scheme", "value"), notes);
   counts.seed_aliases_written = await addNew(sb, "entity_aliases", aliases as Row[], ["entity_id", "alias", "alias_kind", "asserted_by"], k("entity_id", "alias", "alias_kind", "asserted_by"), notes);
   counts.seed_relations_written = await addNew(sb, "entity_relations", relations as Row[], ["parent_entity_id", "child_entity_id", "relation"], k("parent_entity_id", "child_entity_id", "relation"), notes);
-  return { counts, outcome: notes.some((n) => n.includes("write failed")) ? "partial" : "ok", notes };
+  // a coupling no capture holds is a gap in the vocabulary: the run is partial and says how it closes
+  if (counts.seed_refused) notes.push(`${counts.seed_refused} coupling(s) refused: no stored capture of their page holds the quote; a run that captures the cited pages (the fetch gate open, or a ruled run) closes it`);
+  return { counts, outcome: counts.seed_refused || notes.some((n) => n.includes("write failed")) ? "partial" : "ok", notes };
 }

@@ -52,6 +52,7 @@ test("planted: a page whose capture does not hold the quote refuses its coupling
   assert.ok(!f.db.rows("entities").some((e) => e.entity_id === E("carrier:hvo")), "the refused coupling is not an entity");
   assert.ok(!f.db.rows("entity_relations").some((x) => x.child_entity_id === E("carrier:hvo") || x.parent_entity_id === E("carrier:hvo")), "no relation rests on it");
   assert.ok(f.db.rows("entities").some((e) => e.entity_id === E("feed:lipid")), "the rest is seeded");
+  assert.equal(f.db.rows("harness_runs").find((x) => x.family === "propagation")?.outcome, "partial", "a refused coupling is a gap in the vocabulary: the run says so");
 });
 
 test("the relations run from a lower class rank to a higher one, so the vocabulary holds no cycle", () => {
