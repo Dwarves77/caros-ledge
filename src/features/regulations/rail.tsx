@@ -60,7 +60,7 @@ export function CoverageLine({ denominator, failed, surface }: { denominator: De
       ) : null}
       <p data-part="coverage-denominator" style={{ margin: 0, display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0 12px", fontSize: "var(--fs-11)", color: "var(--ink-2)" }}>
         {unavailable ? (
-          <span style={{ overflowWrap: "anywhere" }}>
+          <span role="alert" data-part="state-note" style={{ overflowWrap: "anywhere" }}>
             Coverage count: <Absence reason="connect data" variant="dash" /> It did not load; the coverage page has the full count.
           </span>
         ) : (

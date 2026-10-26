@@ -114,7 +114,7 @@ export function ItemAssignBlock({ itemId, todayIso }: { itemId: string; todayIso
   if (phase === "loading") return <p className="cl-collab-meta">Loading assignments…</p>;
   if (phase === "error") {
     return (
-      <div role="alert">
+      <div role="alert" data-part="state-note">
         <p className="cl-collab-meta">{loadError ?? "Assignments could not be loaded."}</p>
         <Button onClick={() => (setPhase("loading"), setAttempt((n) => n + 1))}>Retry</Button>
       </div>

@@ -8,7 +8,7 @@ import { Button } from "./Button";
 /** Full-page error with retry. The default copy blames neither the database nor the user's connection (the old copy did). */
 export function ErrorState({ title = "Something went wrong", message = "This didn't load. Try again; if it keeps happening, the reference below helps us find it.", onRetry, reference }: { title?: string; message?: string; onRetry?: () => void; reference?: string | undefined }) {
   return (
-    <div className="cl-error-state" role="alert">
+    <div className="cl-error-state" role="alert" data-part="page-failure">
       <div className="cl-error-state-mark" aria-hidden="true">
         !
       </div>
@@ -25,7 +25,7 @@ export function ErrorState({ title = "Something went wrong", message = "This did
 }
 
 export const InlineErrorBanner = ({ message, children }: { message: string; children?: ReactNode }) => (
-  <div role="alert" className="cl-inline-error">
+  <div role="alert" data-part="state-note" className="cl-inline-error">
     {message}
     {children}
   </div>

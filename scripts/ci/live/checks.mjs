@@ -15,8 +15,6 @@ export const DEFAULT_CHECKS = CHECKS.filter((c) => !NAMED_ONLY.includes(c));
 /** One page per surface: the Dashboard, Regulations, Market Intel, Research, Operations, the watchlist, Search, Community and Settings. */
 export const SURFACE_PAGES = ["/", "/regulations", "/market", "/research", "/operations", "/watchlist", "/search", "/community", "/settings"];
 export const ADMIN_PAGES = ["/admin"];
-/** The words of the app's own failure blocks (PageFailure, ErrorState, the stated-failure parts) and of the framework's error pages. */
-export const FAILURE_BLOCK = /did not load|could not be loaded|could not load|Application error|Something went wrong on our side|Internal Server Error|This page couldn.t load/i;
 
 /** The environment NAMES each check needs; a check whose names are not all set is skipped (admin) or the run self-skips (the rest). */
 export const NEEDS = {
@@ -34,13 +32,21 @@ export const isAbsent = isMissingObject; // the one list of "the object a pendin
 /** An absent object is a warning before the window and a failure after it; any other error is a failure. */
 const absentOr = (phase, invariant, url, e, migration) => (isAbsent(e) ? (phase === "before" ? warn : fail)(invariant, url, `${url} is absent (migration ${migration} is not applied here): ${e.message}`) : fail(invariant, url, `${url} failed: ${e.message}`));
 
-/** The finding for one page load, or null when it rendered. A failure status, a redirect to the sign-in or unavailable page, or the app's own failure block is a failure. */
+/**
+ * The finding for one page load, or null when it rendered. A failure status, a redirect to the sign-in or unavailable page, a typed failure element in the DOM (page.uiFailures: the app marks every failure it states, see
+ * scripts/ci/live/load.mjs) or any same-origin /api/ response with status >= 400 left after the load (page.apiFailures) is a failure. No page text is matched: the text of a failure element is a diagnostic in the message, never the test.
+ */
 export function pageFinding(invariant, path, page) {
   if (!page || page.error) return fail(invariant, path, `${path} did not answer: ${page?.error ?? "no response"}`);
   if (page.status >= 400) return fail(invariant, path, `${path} answered HTTP ${page.status}`);
   if (/^\/(login|service-unavailable)/.test(new URL(page.finalUrl, "https://x.invalid").pathname) && !path.startsWith("/login")) return fail(invariant, path, `${path} ended at ${new URL(page.finalUrl, "https://x.invalid").pathname}`);
-  const block = FAILURE_BLOCK.exec(page.text ?? "");
-  return block ? fail(invariant, path, `${path} shows a failure block ("${block[0]}")`) : null;
+  const ui = page.uiFailures ?? [];
+  const api = page.apiFailures ?? [];
+  if (ui.length === 0 && api.length === 0) return null;
+  const parts = [];
+  if (ui.length) parts.push(`shows ${ui.length} failure element(s): ${ui.map((u) => `[${u.marker}] "${u.text}"`).join("; ")}`);
+  if (api.length) parts.push(`${ui.length ? "failed" : "had failed"} api read(s): ${api.map((a) => `${a.path} ${a.status}`).join(", ")}`);
+  return fail(invariant, path, `${path} ${parts.join("; ")}`);
 }
 
 /** IMP-116: the member reads of 0038, 0040, 0042 and 0064 as `authenticated` on the live database, and a member select from research_assessments_current against what the service role can see. */

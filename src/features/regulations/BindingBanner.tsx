@@ -87,7 +87,7 @@ export function BindingBanner({ relevance, retry }: { relevance: RelevanceFetch;
           </p>
         ) : relevance.phase === "failed" || !binding ? (
           <div style={{ marginTop: "var(--sp-8)", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "var(--sp-12)" }}>
-            <p role="alert" style={{ ...muted, flex: "1 1 220px" }}>
+            <p role="alert" data-part="state-note" style={{ ...muted, flex: "1 1 220px" }}>
               The obligation positions for this regulation could not be loaded. The rest of the page is unaffected.
             </p>
             <Button onClick={retry}>

@@ -17,6 +17,7 @@ import { pathToFileURL } from "node:url";
 
 import { bypassHeaders, installBypass } from "./live/bypass.mjs";
 import { CHECKS, DEFAULT_CHECKS, missingNames, NEEDS, RUNNERS } from "./live/checks.mjs";
+import { loadPage, newStats } from "./live/load.mjs";
 
 /** The checks that need the signed-in member. */
 const MEMBER_CHECKS = new Set(["member-reads", "sign-in", "pages", "notification-drain", "invitation-email"]);
@@ -114,6 +115,7 @@ async function main() {
   let member = null;
   let browser = null;
   const contexts = {};
+  const loadStats = newStats();
   const accounts = { member: [env.LIVE_SMOKE_EMAIL, env.LIVE_SMOKE_PASSWORD], admin: [env.LIVE_ADMIN_EMAIL, env.LIVE_ADMIN_PASSWORD] };
   const context = async (as) => {
     if (contexts[as]) return contexts[as];
@@ -152,16 +154,10 @@ async function main() {
         return { ok: false, error: e instanceof Error ? e.message : String(e) };
       }
     },
+    // One load per page, with the one 429 reload and the typed failure elements and failed /api/ reads of the load (scripts/ci/live/load.mjs).
     async openPage(path, as) {
       try {
-        const page = await (await context(as)).newPage();
-        try {
-          const res = await page.goto(`${base}${path}`, { waitUntil: "load", timeout: 60000 });
-          await page.waitForLoadState("networkidle", { timeout: 15000 }).catch(() => {});
-          return { status: res?.status() ?? 0, finalUrl: page.url(), text: await page.innerText("body") };
-        } finally {
-          await page.close();
-        }
+        return await loadPage(await context(as), base, path, { stats: loadStats });
       } catch (e) {
         return { error: e instanceof Error ? e.message : String(e) };
       }
@@ -176,6 +172,7 @@ async function main() {
   const record = values["no-record"] ? null : (report, o) => recordLiveSmoke(service, report, o);
   try {
     const results = await runLive({ checks: plan.run, io, phase: values.phase, record, env });
+    console.log(`live-checks: ${loadStats.retries} rate-limit retries (${Math.round(loadStats.waitedMs / 1000)} s waited)`);
     console.log(`live-checks: ${results.length} check(s), ${results.filter((r) => r.failed).length} failed, ${results.filter((r) => r.recordError).length} not recorded`);
     process.exitCode = results.some((r) => r.failed || r.recordError) ? 1 : 0;
   } finally {
