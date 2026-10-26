@@ -13,6 +13,7 @@ import unitFile from "@/core/parse/data/statutory-units.json" with { type: "json
 import stubBrief from "@/features/intake/record-facts/data/stub-brief.json";
 import { buildRecordPayload } from "@/features/intake/record-facts/payload";
 import objectRules from "@/features/obligations/derive/data/object-rules.json";
+import sanctionClasses from "@/features/obligations/derive/data/sanction-classes.json";
 import { deriveObligationObjects } from "@/features/obligations";
 import { fillObjectFields } from "@/features/obligations/derive/fill-fields";
 import assessmentCopy from "@/features/research/model/data/assessment-copy.json";
@@ -110,6 +111,7 @@ test("the obligation-object derive path writes spans, ids, dates and data-file t
       ...objectRules.artifactClasses.map((c) => c.class),
       objectRules.absence,
       objectRules.triggerAttribute,
+      ...sanctionClasses.classes.map((c) => c.token),
       ...Object.keys(VOCABULARIES.binding_position ?? {}),
       ...Object.keys(DUTY_HOLDER_CLASSES),
       ...Object.keys(VOCABULARIES.transport_mode ?? {}),

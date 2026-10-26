@@ -40,6 +40,7 @@ export const relevanceDeps: RelevanceDeps = {
     carrier_passthrough: { code: "carrier_passthrough", label: "Carrier pass-through", note: "Reaches you as a price.", order: 2 },
     monitoring_only: { code: "monitoring_only", label: "Monitor", note: "Watch only.", order: 4 },
   },
+  sanctionLabels: { monetary_per_unit: "Monetary penalty per unit", monetary_formula: "Monetary penalty by published formula" },
   sectors: [
     { id: "fine-art", label: "Fine Art & Museum Logistics", keywords: ["artwork", "gallery", "museum"] },
     { id: "pharma", label: "Pharmaceutical & Life Sciences", keywords: ["pharma", "vaccine"] },

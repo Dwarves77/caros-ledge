@@ -402,8 +402,64 @@
       "route": "signup",
       "kind": "pixel",
       "viewport": "1280x900",
-      "maxDiff": 0.0225,
-      "ruling": "CTX-1 (PR 82, 560335e: \"use readable sans-serif headers\"): the masthead title of a page is Plus Jakarta bold in sentence case at line-height 1.2, where the baseline PNG, shot before that merge, draws it in Anton capitals at 1.05 (src/ui/base.css .cl-masthead-title). The title card is about 5 px taller, so the whole sign-in column, centred in its pane, sits 2 to 3 px elsewhere and every glyph of it differs by design; the left pane is unchanged. Run 39900340328 (PR 88) measured home and login at 1.91%, under the threshold with the clock pinned, so only signup (2.07%) needs this entry. Measured against the pre-merge build on one machine (c43e2f8 against 560335e, 1280x900): all of the added diff lies in the right half, x 769..1149, y 186..743. The left pane (identity panel, date line) does not differ. Covers the 1280x900 image only and only up to maxDiff: a diff beyond it is this change plus another one and fails. Structure (landmarks, headings, controls) still gates at both widths, and 375x812 is under the threshold. Retire this entry when the baseline PNGs of home, login and signup are recaptured from production (the baseline job; tests/parity/baseline/README.md), as r2e-privacy-generated was."
+      "maxDiff": 0.04,
+      "ruling": "CTX-1 (PR 82, 560335e: \"use readable sans-serif headers\"): the masthead title of a page is Plus Jakarta bold in sentence case at line-height 1.2, where the baseline PNG, shot before that merge, draws it in Anton capitals at 1.05 (src/ui/base.css .cl-masthead-title). The title card is about 5 px taller, so the whole sign-in column, centred in its pane, sits 2 to 3 px elsewhere and every glyph of it differs by design; the left pane is unchanged. Run 39900340328 (PR 88) measured home and login at 1.91%, under the threshold with the clock pinned, so only signup (2.07%) needs this entry. Measured against the pre-merge build on one machine (c43e2f8 against 560335e, 1280x900): all of the added diff lies in the right half, x 769..1149, y 186..743. The left pane (identity panel, date line) does not differ. Covers the 1280x900 image only and only up to maxDiff: a diff beyond it is this change plus another one and fails. Structure (landmarks, headings, controls) still gates at both widths, and 375x812 is under the threshold. Retire this entry when the baseline PNGs of home, login and signup are recaptured from production (the baseline job; tests/parity/baseline/README.md), as r2e-privacy-generated was. BTN-1 (2026-10-26) raises the ceiling from 0.0225 to 0.04: the operator look ruling 2026-10-26 (button gradient, four-layer shadow, pressed state) adds 0.97% on this route at 1280x900 (the Create account button), so the sum with the CTX-1 diff is under 3.1%."
+    },
+    {
+      "id": "btn1-look-home-1280",
+      "route": "home",
+      "kind": "pixel",
+      "viewport": "1280x900",
+      "maxDiff": 0.04,
+      "ruling": "operator look ruling 2026-10-26 (BTN-1): button gradient, four-layer shadow, pressed state (src/ui/base.css .cl-btn, tokens in src/ui/theme.css). Controls: the Sign in button (primary) and Continue with a magic link (secondary). Same-machine old-versus-new capture of this route at 1280x900 differs by 1.14% from the button look alone (baseline diff before this change 1.91%, run 39900340328); the ceiling is that sum with margin, so any other change to the route still fails."
+    },
+    {
+      "id": "btn1-look-home-375",
+      "route": "home",
+      "kind": "pixel",
+      "viewport": "375x812",
+      "maxDiff": 0.06,
+      "ruling": "operator look ruling 2026-10-26 (BTN-1): button gradient, four-layer shadow, pressed state (src/ui/base.css .cl-btn, tokens in src/ui/theme.css). Controls: the Sign in button (primary) and Continue with a magic link (secondary). Same-machine old-versus-new capture of this route at 375x812 differs by 3.43% from the button look alone (baseline diff before this change under the 2% threshold); the ceiling is that sum with margin, so any other change to the route still fails."
+    },
+    {
+      "id": "btn1-look-login-1280",
+      "route": "login",
+      "kind": "pixel",
+      "viewport": "1280x900",
+      "maxDiff": 0.04,
+      "ruling": "operator look ruling 2026-10-26 (BTN-1): button gradient, four-layer shadow, pressed state (src/ui/base.css .cl-btn, tokens in src/ui/theme.css). Controls: the Sign in button (primary) and Continue with a magic link (secondary). Same-machine old-versus-new capture of this route at 1280x900 differs by 1.14% from the button look alone (baseline diff before this change 1.91%, run 39900340328); the ceiling is that sum with margin, so any other change to the route still fails."
+    },
+    {
+      "id": "btn1-look-login-375",
+      "route": "login",
+      "kind": "pixel",
+      "viewport": "375x812",
+      "maxDiff": 0.06,
+      "ruling": "operator look ruling 2026-10-26 (BTN-1): button gradient, four-layer shadow, pressed state (src/ui/base.css .cl-btn, tokens in src/ui/theme.css). Controls: the Sign in button (primary) and Continue with a magic link (secondary). Same-machine old-versus-new capture of this route at 375x812 differs by 3.43% from the button look alone (baseline diff before this change under the 2% threshold); the ceiling is that sum with margin, so any other change to the route still fails."
+    },
+    {
+      "id": "btn1-look-signup-375",
+      "route": "signup",
+      "kind": "pixel",
+      "viewport": "375x812",
+      "maxDiff": 0.06,
+      "ruling": "operator look ruling 2026-10-26 (BTN-1): button gradient, four-layer shadow, pressed state (src/ui/base.css .cl-btn, tokens in src/ui/theme.css). Controls: the Create account button (primary). Same-machine old-versus-new capture of this route at 375x812 differs by 3.14% from the button look alone (baseline diff before this change under the 2% threshold); the ceiling is that sum with margin, so any other change to the route still fails."
+    },
+    {
+      "id": "btn1-look-privacy-1280",
+      "route": "privacy",
+      "kind": "pixel",
+      "viewport": "1280x900",
+      "maxDiff": 0.03,
+      "ruling": "operator look ruling 2026-10-26 (BTN-1): button gradient, four-layer shadow, pressed state (src/ui/base.css .cl-btn, tokens in src/ui/theme.css). Controls: the masthead Ask button (secondary) and the command bar, 46 px tall for law 2. Same-machine old-versus-new capture of this route at 1280x900 differs by 0.14% from the button look alone (baseline diff before this change under the 2% threshold); the ceiling is that sum with margin, so any other change to the route still fails."
+    },
+    {
+      "id": "btn1-look-privacy-375",
+      "route": "privacy",
+      "kind": "pixel",
+      "viewport": "375x812",
+      "maxDiff": 0.03,
+      "ruling": "operator look ruling 2026-10-26 (BTN-1): button gradient, four-layer shadow, pressed state (src/ui/base.css .cl-btn, tokens in src/ui/theme.css). Controls: the masthead Ask button (secondary) and the command bar, 46 px tall for law 2. Same-machine old-versus-new capture of this route at 375x812 differs by 0.33% from the button look alone (baseline diff before this change under the 2% threshold); the ceiling is that sum with margin, so any other change to the route still fails."
     },
     {
       "id": "title-1-formal-title-dashboard",

@@ -1,6 +1,8 @@
 // Ported from old_repo/src/components/ui/RowTable.tsx (lines 31-249)
 import type { CSSProperties, ReactNode } from "react";
 
+import { Button } from "./Button";
+
 export interface RowTableColumn {
   label: string;
   width: string;
@@ -19,7 +21,7 @@ interface RowTableProps {
   metrics?: { paddingLeft?: number; rowMinHeight?: number; ruleAfterLastRow?: boolean };
 }
 
-const grid = (columns: RowTableColumn[], paddingLeft: number): CSSProperties => ({ gridTemplateColumns: columns.map((c) => c.width).join(" "), padding: `0 12px 0 ${paddingLeft}px` });
+const grid = (columns: RowTableColumn[], paddingLeft: number): CSSProperties => ({ gridTemplateColumns: columns.map((c) => c.width).join(" "), padding: `0 var(--sp-12) 0 ${paddingLeft}px` });
 
 /** The admin and community table anatomy: header strip, activatable rows, a below-row slot. Scrolls sideways on the phone (base.css). */
 export function RowTable({ columns, rows, metrics }: RowTableProps) {
@@ -64,7 +66,7 @@ export function RowTable({ columns, rows, metrics }: RowTableProps) {
                 </span>
               ))}
             </div>
-            {r.below && <div style={{ padding: `0 12px 12px ${paddingLeft}px`, borderBottom: rule }}>{r.below}</div>}
+            {r.below && <div style={{ padding: `0 var(--sp-12) var(--sp-12) ${paddingLeft}px`, borderBottom: rule }}>{r.below}</div>}
           </div>
         );
       })}
@@ -73,7 +75,7 @@ export function RowTable({ columns, rows, metrics }: RowTableProps) {
 }
 
 export const RowTableAction = ({ label, onClick, disabled }: { label: string; onClick: () => void; disabled?: boolean }) => (
-  <button type="button" onClick={onClick} disabled={disabled} className="cl-btn cl-btn--secondary cl-btn--md cl-rowtable-action">
+  <Button className="cl-rowtable-action" onClick={onClick} disabled={disabled}>
     {label}
-  </button>
+  </Button>
 );

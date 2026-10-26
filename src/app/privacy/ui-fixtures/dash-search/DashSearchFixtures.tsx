@@ -14,6 +14,7 @@ import type { NoticesRead } from "@/features/watchlist/read/notices";
 import type { WatchlistItem, WatchlistRead } from "@/features/watchlist/read/watchlist";
 import { WatchlistSurface } from "@/features/watchlist/ui/WatchlistSurface";
 import type { PortfolioDetailView as Detail, PortfolioSummary } from "@/features/workspace/portfolio/types";
+import { Button } from "@/ui/Button";
 import { useBootstrapStore } from "@/ui/shell/use-bootstrap";
 
 const NOW = "2026-10-15T12:00:00.000Z";
@@ -66,9 +67,9 @@ export function DashSearchFixtures({ screen, titles }: { screen: string; titles:
     <main data-fx="dash-search">
       {screen === "assistant" ? (
         <>
-          <button type="button" id="fx-ask" className="cl-btn cl-btn--secondary cl-btn--md" onClick={() => window.dispatchEvent(new CustomEvent(ASK_EVENT, { detail: { question: "Regulation 2023/9999 reporting", anchor: { top: 120, left: 32, width: 640 } } }))}>
+          <Button id="fx-ask"  onClick={() => window.dispatchEvent(new CustomEvent(ASK_EVENT, { detail: { question: "Regulation 2023/9999 reporting", anchor: { top: 120, left: 32, width: 640 } } }))}>
             Ask the Assistant
-          </button>
+          </Button>
           <AskAssistant />
         </>
       ) : null}

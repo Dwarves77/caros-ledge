@@ -3,6 +3,7 @@
 // Stage 6, connect: the flywheel over the slice the intake stage minted AND any earlier slice nothing ever connected (read from the ledger). Order: tags first, so discovery and the corpus pass see them;
 // then discovery for the slice, the term pass, the corpus pass, and last the reading of the backlog: every verified item not yet read at the current versions has its source text extracted and its obligations derived, oldest first, a bounded number per
 // turn (IMPACT-1; the propagate stage behind scores what was read); last, every pending regulatory trigger a later capture now states is resolved (FLY-1, ADR-050). A slice whose ids are gone refuses; the stage never writes a zero outcome over it.
+import { bindInstrumentCaptures } from "@/core/fetch";
 import { edgeSnapshotSink } from "@/core/flywheel/edges";
 import { runPatterns } from "@/core/flywheel/patterns";
 import type { FamilyCall } from "@/core/harness";
@@ -26,11 +27,11 @@ function planConnect(upstreamIds: readonly string[], backlog: readonly string[],
 }
 
 /** The passes' results become one: counts namespaced by pass (the scan's own counts are the stage's: extracted, derived, refused), the outcome the worst, the connected and scanned ids the hand-off to propagate. Pure. */
-export function shapeConnect(ids: readonly string[], parts: { tag: RunResult | null; discovery: RunResult | null; term: RunResult | null; corpus: RunResult | null; patterns?: RunResult | null; scan?: RunResult<{ ids: { scanned_item_ids: string[] } }> | null; triggers?: RunResult | null }): RunResult {
+export function shapeConnect(ids: readonly string[], parts: { bind?: RunResult | null; tag: RunResult | null; discovery: RunResult | null; term: RunResult | null; corpus: RunResult | null; patterns?: RunResult | null; scan?: RunResult<{ ids: { scanned_item_ids: string[] } }> | null; triggers?: RunResult | null }): RunResult {
   const list = Object.values(parts).filter((p): p is RunResult => p !== null && p !== undefined);
   const outcome = worst("ok", ...list.map((p) => p.outcome));
   const counts: Record<string, number> = {
-    slice: ids.length, connected: outcome === "failed" ? 0 : ids.length, tag_items_written: parts.tag?.counts.items_written ?? 0,
+    slice: ids.length, bound: parts.bind?.counts.bound ?? 0, unbound: parts.bind?.counts.unbound ?? 0, connected: outcome === "failed" ? 0 : ids.length, tag_items_written: parts.tag?.counts.items_written ?? 0,
     edges_written: (parts.discovery?.counts.written ?? 0) + (parts.corpus?.counts.intersection_inserted ?? 0) + (parts.corpus?.counts.shared_entity_written ?? 0),
     term_writes: parts.term ? sumWritten(parts.term.counts) : 0, themes: parts.corpus?.counts.themes ?? 0, ...(parts.patterns?.counts ?? {}), ...(parts.scan?.counts ?? {}), ...Object.fromEntries(Object.entries(parts.triggers?.counts ?? {}).map(([k, n]) => [`triggers_${k}`, n])),
   };
@@ -49,6 +50,8 @@ export async function runConnect(call: FamilyCall, d: BuiltDeps): Promise<RunRes
   const deps = { sb: d.sb, now: d.now };
   // The prior state of every edge the passes overwrite is stored under THIS run before the overwrite (IMP-047); the run's row exists before the stage starts.
   const snap = { ...deps, snapshot: edgeSnapshotSink(d.sb, call.runId) };
+  // DERIVE-3 D3: the captures of the instruments' own pages that were stored with no item are bound first, so the reading below finds them as the item's
+  const bind = await bindInstrumentCaptures(deps, { dry: call.dry });
   const tag = ids.length ? await tagPass(deps, { ids, dry: call.dry, discover: false }) : null;
   const discovery = ids.length ? await discoverForItems(snap, { ids, dry: call.dry }) : null;
   const term = corpus ? await termPass(deps, { dry: call.dry }) : null;
@@ -57,5 +60,5 @@ export async function runConnect(call: FamilyCall, d: BuiltDeps): Promise<RunRes
   const patterns = await runPatterns(deps, { dry: call.dry });
   const scan = await scanBacklog(deps, { dry: call.dry, sliceIds: ids, limit: typeof call.input.scan_limit === "number" ? call.input.scan_limit : READING.backlog.scanPerTurn });
   const triggers = await resolvePendingTriggers(deps, { dry: call.dry });
-  return shapeConnect(ids, { tag, discovery, term, corpus: pass, patterns, scan, triggers });
+  return shapeConnect(ids, { bind, tag, discovery, term, corpus: pass, patterns, scan, triggers });
 }

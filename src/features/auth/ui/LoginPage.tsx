@@ -7,6 +7,7 @@ import { useState, type FormEvent } from "react";
 import { sanitizeReturnPath } from "@/core/auth/route-policy";
 import { browserClient } from "@/core/db/browser";
 import { log } from "@/core/shared/log";
+import { Button } from "@/ui";
 
 import styles from "./auth.module.css";
 import { AuthDivider, AuthErrorBanner, AuthField, AuthTabs, CheckEmailPanel } from "./AuthPanel";
@@ -71,14 +72,14 @@ export default function LoginPage() {
               <div className={styles.forgot}>
                 <a href="/auth/reset-password">Forgot password?</a>
               </div>
-              <button type="submit" disabled={loading} className={styles.primary}>
+              <Button type="submit" variant="primary" loading={loading} className={styles.full}>
                 {loading ? "Signing in…" : "Sign in"}
-              </button>
+              </Button>
             </form>
             <AuthDivider />
-            <button type="button" disabled={magicLoading} onClick={handleMagicLink} className={styles.secondary}>
+            <Button type="button" loading={magicLoading} onClick={handleMagicLink} className={styles.full}>
               {magicLoading ? "Sending link…" : "Continue with a magic link"}
-            </button>
+            </Button>
             <p className={styles.help}>Invited to a workspace? Open the invitation link in your email, it signs you in and joins the workspace in one step.</p>
           </>
         )}

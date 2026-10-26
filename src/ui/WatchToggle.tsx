@@ -6,7 +6,7 @@
 // Ported from old_repo/src/components/ui/WatchButton.tsx (lines 412-529)
 import { useState } from "react";
 
-import { ActionButton } from "./ActionRow";
+import { Button } from "./Button";
 
 export type WatchScope = "personal" | "team";
 
@@ -76,10 +76,10 @@ export function WatchToggle(p: WatchToggleProps) {
   if (variant === "row") {
     return (
       <span className="cl-watch-wrap">
-        <ActionButton ariaPressed={watched} disabled={!loaded} onClick={() => onToggle("personal")} title={titleFor(watched, failed)} onFocus={on.onFocus} onBlur={on.onBlur}>
+        <Button aria-pressed={watched} disabled={!loaded} onClick={() => onToggle("personal")} title={titleFor(watched, failed)} onFocus={on.onFocus} onBlur={on.onBlur}>
           <span aria-hidden="true">{watched ? "★" : "☆"}</span>
           {watched ? "Watching" : "Watch"}
-        </ActionButton>
+        </Button>
         {failure}
       </span>
     );

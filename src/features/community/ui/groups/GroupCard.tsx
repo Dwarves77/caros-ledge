@@ -7,7 +7,7 @@
 import Link from "next/link";
 import { useState } from "react";
 
-import { Button } from "@/ui";
+import { Button, ButtonLink } from "@/ui";
 
 import { communityApi } from "../../lib/api";
 import { isRecentlyActive, regionLabel } from "../../lib/labels";
@@ -56,9 +56,9 @@ export function GroupCard({ group, state: initial, nowIso }: { group: GroupSumma
       {state === "member" ? (
         <Button variant="secondary" disabled aria-disabled="true">Joined</Button>
       ) : state === "pending-invite" ? (
-        <Link href="/community" className="cl-btn cl-btn--secondary cl-btn--md">
+        <ButtonLink href="/community">
           Pending acceptance: answer on Community
-        </Link>
+        </ButtonLink>
       ) : group.privacy === "private" ? (
         <Button variant="secondary" disabled aria-disabled="true" title="This group is by invitation only">By invitation</Button>
       ) : (

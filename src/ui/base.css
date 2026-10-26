@@ -25,20 +25,24 @@ button, input, select, textarea { font-family: inherit; }
   *, *::before, *::after { animation-duration: 0.01ms; animation-iteration-count: 1; transition-duration: 0.01ms; scroll-behavior: auto; }
 }
 
-/* ── buttons: the 44 px floor is the smallest size ── */
-.cl-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: var(--target); padding: 0 16px; border: 1px solid transparent; border-radius: var(--radius-control); font-size: var(--fs-125); font-weight: 600; cursor: pointer; text-decoration: none; background: transparent; color: var(--ink); }
-.cl-btn:disabled { cursor: not-allowed; opacity: 0.4; }
-.cl-btn--sm { font-size: var(--fs-11); padding: 0 12px; }
+/* ── buttons: ONE owner of the look (operator look ruling 2026-10-26, BTN-1). The 44 px floor is the smallest size. ── */
+.cl-btn { --b-glow: transparent; display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-8); min-height: var(--target); padding: 0 var(--sp-16); border: 1px solid transparent; border-radius: var(--radius-control); font-size: var(--fs-125); font-weight: 600; cursor: pointer; text-decoration: none; background: transparent; color: var(--ink); box-shadow: inset 0 1px 0 var(--btn-hi), inset 0 -2px 0 var(--btn-shade), 0 1px 2px var(--btn-contact), 0 8px 24px -6px var(--b-glow); }
+.cl-btn:active:not(:disabled) { translate: 0 1px; box-shadow: inset 0 2px 4px var(--btn-press); }
+.cl-btn:disabled { cursor: not-allowed; opacity: 0.4; --b-glow: transparent; }
+.cl-btn--sm { font-size: var(--fs-11); padding: 0 var(--sp-12); }
 .cl-btn--md { font-size: var(--fs-125); }
-.cl-btn--lg { min-height: 48px; font-size: var(--fs-14); padding: 0 24px; }
-.cl-btn--primary { background: var(--brand); color: var(--invert-text); border-color: var(--brand); }
-.cl-btn--primary:hover:not(:disabled) { opacity: 0.9; }
+.cl-btn--lg { min-height: 48px; font-size: var(--fs-14); padding: 0 var(--sp-24); }
+.cl-btn--primary { --b-from: var(--btn-gradient-from); --b-to: var(--btn-gradient-to); --b-glow: var(--btn-glow); }
+.cl-btn--danger { --b-from: var(--btn-danger-from); --b-to: var(--btn-danger-to); --b-glow: var(--btn-danger-glow); }
+.cl-btn--primary, .cl-btn--danger { background: linear-gradient(to bottom, var(--b-from), var(--b-to)); color: var(--invert-text); border-color: var(--b-to); }
+.cl-btn--primary:hover:not(:disabled), .cl-btn--danger:hover:not(:disabled) { opacity: 0.9; }
 .cl-btn--secondary { border-color: var(--line-4); background: var(--card); }
 .cl-btn--secondary:hover:not(:disabled) { background: var(--tag); }
 .cl-btn--ghost { color: var(--ink-2); }
 .cl-btn--ghost:hover:not(:disabled) { background: var(--tag); color: var(--ink); }
-.cl-btn--danger { border-color: var(--immediate-border); color: var(--immediate); background: var(--card); }
-.cl-btn--danger:hover:not(:disabled) { background: var(--immediate); color: var(--invert-text); }
+.cl-btn--dashed { border-style: dashed; }
+.cl-btn[aria-busy="true"]::after { content: ""; width: var(--sp-12); height: var(--sp-12); border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: cl-spin 0.7s linear infinite; }
+@keyframes cl-spin { to { rotate: 360deg; } }
 
 /* ── absence ── */
 .cl-absence { font-size: var(--fs-105); font-weight: 500; color: var(--ink-3); }
@@ -78,7 +82,7 @@ button, input, select, textarea { font-family: inherit; }
 .cl-filepick-hint { font-size: var(--fs-105); color: var(--ink-3); }
 
 /* ── state notes and banners ── */
-.cl-state-note { display: flex; align-items: center; justify-content: space-between; gap: 12px; border-radius: 0 6px 6px 0; padding: 9px 12px; }
+.cl-state-note { border-left: 3px solid var(--note-rule); display: flex; align-items: center; justify-content: space-between; gap: 12px; border-radius: 0 6px 6px 0; padding: 9px 12px; }
 .cl-state-note-text { font-size: var(--fs-12); color: var(--ink); }
 .cl-state-note-action { flex-shrink: 0; display: inline-flex; align-items: center; min-height: 44px; padding: 8px 4px; font-size: var(--fs-11); font-weight: 600; color: var(--ink); text-decoration: underline; text-decoration-color: var(--link-line); }
 .cl-state-note-action--button { background: none; border: none; cursor: pointer; }
@@ -361,12 +365,6 @@ button, input, select, textarea { font-family: inherit; }
 .cl-exposure-value { font-size: var(--fs-125); line-height: 1.5; color: var(--ink); overflow-wrap: anywhere; }
 .cl-exposure-expand { margin: 8px 0; font-size: var(--fs-105); font-weight: 700; color: var(--ink-3); background: none; border: none; padding: 4px 0; min-height: 44px; display: inline-flex; align-items: center; cursor: pointer; text-decoration: underline; }
 .cl-action-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.cl-action-btn { font-family: var(--font-sans); font-size: var(--fs-115); font-weight: 700; padding: 8px 14px; min-height: var(--target); display: inline-flex; align-items: center; justify-content: center; gap: 6px; border-radius: var(--radius-control); border: 1px solid var(--line-4); background: var(--card); color: var(--ink); cursor: pointer; }
-.cl-action-btn:hover:not(:disabled) { background: var(--tag); }
-.cl-action-btn:disabled { cursor: default; opacity: 0.6; }
-.cl-action-btn--primary { font-weight: 800; border-color: var(--brand); background: var(--brand); color: var(--invert-text); }
-.cl-action-btn--primary:hover:not(:disabled) { background: var(--brand); opacity: 0.9; }
-.cl-action-btn--dashed { border-style: dashed; }
 .cl-watch-wrap { display: inline-flex; flex-direction: column; }
 .cl-watch-pair { display: inline-flex; align-items: center; gap: 6px; }
 .cl-watch-pill { font-size: var(--fs-115); font-weight: 700; padding: 0 16px; min-height: var(--target); border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line-4); background: var(--card); color: var(--ink); cursor: pointer; }
@@ -413,16 +411,15 @@ button, input, select, textarea { font-family: inherit; }
 }
 
 /* ── command bar ── */
-.cl-command-bar { position: relative; display: flex; align-items: center; gap: 10px; height: 40px; background: var(--card); border: 1px solid var(--line-4); border-radius: 8px; padding: 0 6px 0 12px; }
+.cl-command-bar { position: relative; display: flex; align-items: center; gap: 10px; min-height: 46px; background: var(--card); border: 1px solid var(--line-4); border-radius: 8px; padding: 0 6px 0 12px; }
 .cl-search-glyph { font-size: 14px; color: var(--ink-3); }
-.cl-command-bar-input { flex: 1; min-width: 0; height: 100%; border: none; outline: none; background: transparent; font-family: inherit; font-size: var(--fs-13); color: var(--ink); text-overflow: ellipsis; }
+.cl-command-bar-input { flex: 1; min-width: 0; align-self: stretch; border: none; outline: none; background: transparent; font-family: inherit; font-size: var(--fs-13); color: var(--ink); text-overflow: ellipsis; }
 .cl-command-bar:focus-within { outline: 2px solid var(--brand); outline-offset: 2px; }
 .cl-command-bar-clear, .cl-command-bar-panel-close { background: transparent; border: none; cursor: pointer; color: var(--ink-3); }
 .cl-command-bar-clear { flex-shrink: 0; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 6px; font-size: 20px; }
 .cl-command-bar-clear:hover, .cl-command-bar-panel-close:hover { background: var(--tag); }
 .cl-cmdk-hint { flex-shrink: 0; font-size: var(--fs-10); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 700; color: var(--ink-3); border: 1px solid var(--line-1); border-radius: 4px; padding: 1px 6px; }
-.cl-command-bar-ask-submit:disabled { opacity: 0.45; cursor: not-allowed; }
-.cl-command-bar-ask-submit { flex-shrink: 0; height: 40px; min-width: 44px; padding: 0 14px; font-size: var(--fs-125); font-weight: 700; color: var(--invert-text); background: var(--brand); border: none; border-radius: var(--radius-control); cursor: pointer; }
+.cl-command-bar-ask { flex-shrink: 0; }
 .cl-command-bar-panel { position: fixed; background: var(--card); border: 1px solid var(--line-1); border-radius: 8px; box-shadow: var(--shadow-pop); max-height: 360px; overflow: hidden; display: flex; flex-direction: column; z-index: 600; }
 .cl-command-bar-panel-close { flex-shrink: 0; height: 44px; width: 100%; display: flex; align-items: center; gap: 8px; padding: 0 14px; border-bottom: 1px solid var(--line-1); font-size: var(--fs-13); font-weight: 600; color: var(--ink-2); }
 .cl-command-bar-list { max-height: 316px; overflow-y: auto; }
@@ -666,7 +663,7 @@ button, input, select, textarea { font-family: inherit; }
   .cl-filter-chip { font-size: 12px; font-weight: 600; border-radius: 6px; white-space: nowrap; }
   .cl-facets-mobile .cl-filter-chip { min-height: 32px; }
   .cl-filter-chip[data-active="false"] { background: transparent; color: var(--ink-2); }
-  .cl-filters-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 0 16px; border-radius: 8px; border: 1px solid var(--line-4); background: var(--card); color: var(--ink); font-size: 13px; font-weight: 700; cursor: pointer; align-self: flex-start; }
+  .cl-filters-btn { display: inline-flex; align-self: flex-start; }
   .cl-facet-row, .cl-facet-more { min-height: 44px; margin: 0; }
   .cl-tier-chip { font-size: var(--fs-95); border-color: var(--line-4); border-radius: 4px; }
   .cl-band-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
@@ -685,13 +682,10 @@ button, input, select, textarea { font-family: inherit; }
   .cl-masthead-dek { font-size: 12px; line-height: 1.45; }
   .cl-masthead-row { flex-direction: column; align-items: stretch; gap: 12px; }
   .cl-masthead-cmdbar { flex: 1 1 auto; min-width: 0; width: 100%; }
-  .cl-command-bar { height: 44px; }
   .cl-command-bar .cl-cmdk-hint { display: none; }
   .cl-command-bar .cl-search-glyph { font-size: 15px; }
   .cl-action-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .cl-action-row > * { width: 100%; }
-  .cl-action-row .cl-action-btn { font-size: var(--fs-125); font-weight: 600; }
-  .cl-action-row > .cl-action-btn--primary { font-weight: 700; }
   .cl-sort-row { flex-wrap: nowrap; flex-direction: column; align-items: stretch; gap: 8px; }
   .cl-sort-options { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 2px; }
   .cl-sort-options > * { flex-shrink: 0; }

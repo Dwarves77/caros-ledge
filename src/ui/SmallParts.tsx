@@ -6,6 +6,7 @@
 import Link from "next/link";
 import type { ChangeEvent, CSSProperties, ReactNode, RefObject } from "react";
 
+import { buttonClass } from "./Button";
 import { SectionCard } from "./SectionCard";
 
 /** A color-mix builder; kept for the admin callers that tint a token. */
@@ -14,7 +15,7 @@ export const tint = (cssVar: string, percent: number): string => `color-mix(in s
 export function FilePickRow({ label, hint, accept, onFile, icon, inputRef }: { label: string; hint: string; accept: string; onFile: (e: ChangeEvent<HTMLInputElement>) => void; icon?: ReactNode; inputRef?: RefObject<HTMLInputElement | null> }) {
   return (
     <div className="cl-filepick">
-      <label className="cl-btn cl-btn--secondary cl-btn--md">
+      <label className={buttonClass()}>
         {icon}
         {label}
         <input ref={inputRef} type="file" accept={accept} onChange={onFile} className="cl-sr-only" />

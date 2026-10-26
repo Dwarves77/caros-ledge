@@ -17,11 +17,11 @@ export const admissibleForDisplay = (v: Pick<InferenceClaimView, "statusToken" |
 function InferenceClaim({ v, titles, hrefs }: { v: InferenceClaimView; titles: Record<string, string>; hrefs: Record<string, string> }) {
   return (
     <SectionCard className="cl-inference" dataAttributes={{ "data-figure-kind": "inference", "data-origin-class": v.originClass === "modelled" ? "modelled" : "derived" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-8)" }}>
         {statusWord(v.statusToken) && <TagChip>{statusWord(v.statusToken)}</TagChip>}
         <span className="cl-inference-meta">{v.originClass === "modelled" ? "modelled" : "derived"}</span>
       </div>
-      <p style={{ fontSize: "var(--fs-13)", margin: "8px 0 0", overflowWrap: "anywhere" }}>{v.claimText}</p>
+      <p style={{ fontSize: "var(--fs-13)", margin: "var(--sp-8) 0 0", overflowWrap: "anywhere" }}>{v.claimText}</p>
       <p className="cl-inference-meta">Confidence {Math.round(v.confidence * 100)}%</p>
       <p className="cl-inference-meta">
         Cited:{" "}
@@ -29,7 +29,7 @@ function InferenceClaim({ v, titles, hrefs }: { v: InferenceClaimView; titles: R
           <span key={id}>
             {i > 0 ? ", " : ""}
             {hrefs[id] ? (
-              <Link href={hrefs[id]} className="cl-gfm-a" style={{ display: "inline-flex", alignItems: "center", minHeight: 44 }}>
+              <Link href={hrefs[id]} className="cl-gfm-a" style={{ display: "inline-flex", alignItems: "center", minHeight: "var(--target)" }}>
                 {titles[id] ?? id}
               </Link>
             ) : (
@@ -62,7 +62,7 @@ export function InferenceSection({ inferences, index, failed = false, onRetry }:
         {visible.map((v) => (
           <div key={v.id} className="cl-detail-block" style={{ overflowWrap: "anywhere", minWidth: 0 }}>
             {v.questionText && (
-              <p data-guard-title style={{ fontSize: "var(--fs-125)", fontWeight: 700, margin: "0 0 6px", color: "var(--ink)" }}>
+              <p data-guard-title style={{ fontSize: "var(--fs-125)", fontWeight: 700, margin: "0 0 var(--sp-6)", color: "var(--ink)" }}>
                 Question: {v.questionText}
               </p>
             )}
