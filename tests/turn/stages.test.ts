@@ -144,7 +144,8 @@ test("briefs: a theme brief that cites no member rows is residue by the no-singl
   const stale = await runBriefs(call({ input: { batch: { kind: "theme-briefs", content: brief("deadbeef") } } }), f.d);
   assert.deepEqual([stale.outcome, f.db.rows("theme_briefs").length], ["failed", 0]);
   const ok = await runBriefs(call({ input: { batch: { kind: "theme-briefs", content: brief(computeMemberHash(["a", "b"])) } } }), f.d);
-  assert.deepEqual([ok.outcome, ok.counts.applied, f.db.rows("theme_briefs").length], ["failed", 0, 0]);
+  // DRAIN-FIX-2 (Trap B, D1): the residue is recorded in brief_reviews, so an all-residue batch is a clean step (the fixture's theme id is not a uuid, so no row here; tests/digest/review.test.ts reads the row).
+  assert.deepEqual([ok.outcome, ok.counts.applied, f.db.rows("theme_briefs").length], ["ok", 0, 0]);
   assert.match(ok.notes.join("\n"), /no-single-source test/, "the live hash passes; the brief cites no row, so the second gate names the test");
   const dry = await runBriefs(dryCall({ batch: { kind: "theme-briefs", content: brief(computeMemberHash(["a", "b"])) } }), f.d);
   assert.equal(f.db.rows("theme_briefs").length, 0, "a dry run wrote nothing");
