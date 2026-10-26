@@ -1,6 +1,6 @@
 {
-  "ruling": "coordinator 2026-10-26: HEAL-1 regrounds instrument items 7a0ead55 and 15f63ea9 from their stored captures through the heal path; no fetch; the minting hold stands; revision 2, coordinator 2026-10-26 (HEAL-1b): the attribution repair follows the database, a failed unit is partial, and the honest strip removes the sentences no capture states (ADR-050, rule 2), reversible from claim_versions",
-  "revision": 2,
+  "ruling": "coordinator 2026-10-26: HEAL-1 regrounds instrument items 7a0ead55 and 15f63ea9 from their stored captures through the heal path; no fetch; the minting hold stands; revision 2, coordinator 2026-10-26 (HEAL-1b): the attribution repair follows the database, a failed unit is partial, and the honest strip removes the sentences no capture states (ADR-050, rule 2), reversible from claim_versions; revision 3, coordinator 2026-10-26 (HEAL-1c): the ledger ops are applied in chunks of 5 (one call of 25 ops ran past the 8 s statement timeout on 15f63ea9, twice), Gate A reads a quoted literal of another number convention as the figure every locale agrees on (14,5 % in an English brief), and the strip is per sentence: a sentence whose every live token is unprovable goes whole, a sentence that also states a proven token stays and its unprovable tokens are listed as residue for DIGEST-1 PR B",
+  "revision": 3,
   "steps": [
     {
       "name": "heal-dry",

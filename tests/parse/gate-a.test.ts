@@ -90,3 +90,25 @@ test("slots: a word is matched as a word, a stop word names no topic, and one sh
   assert.deepEqual(noms.map((n) => n.url), ["u"], "monitoring is a whole word; cost is not found inside costume");
   assert.equal(decideSlotClaim({ slotKey: "k", nomination: null, confirmed: false, proseCovers: false }).kind, "GAP");
 });
+
+test("HEAL-1c: a quoted passage in another number convention (14,5 % in a brief that reads en) is backed by a claim whose own document read the same figure; an ambiguous literal still is not", () => {
+  const brief = [
+    "Penalties of 28,771.6 kg CO2e, 1,234.5 kg CO2e and 12.75 tonnes were recorded, against 10.5, 3.2, 4.5, 6.25, 7.5, 8.25, 9.75 and 2.5 tonnes in 2024.",
+    "— 14,5 % from 1 January 2035;",
+    "The limit is calculated by reducing the reference value of 91,16 grams of CO₂ equivalent per MJ by the following percentage.",
+    "The company shall pay the FuelEU penalty resulting from the multiplication of EUR 1,5 by the energy in MJ.",
+    "The cap is 9,000 tonnes.",
+  ].join("\n");
+  const quoted = [
+    fact("— 14,5 % from 1 January 2035;", "calculated by reducing the reference value of 91,16 grams of CO 2 equivalent per MJ by the following percentage: — 2 % from 1 January 2025; — 6 % from 1 January 2030; — 14,5 % from 1 January 2035;"),
+    fact("shall be calculated by reducing the reference value of 91,16 grams of CO₂ equivalent per MJ by the following percentage", "reference value of 91,16 grams of CO 2 equivalent per MJ"),
+    fact("the multiplication of EUR 1,5 by the energy used", "the multiplication of EUR 1,5 by the energy used"),
+  ];
+  const tokens = (facts: ReturnType<typeof fact>[]) => scanGateA(brief, facts).orphans.filter((o) => o.class === "figure").map((o) => o.token);
+  const refused = tokens([]);
+  for (const t of ["14,5 %", "91,16 grams of CO₂", "EUR 1,5"]) assert.ok(refused.includes(t), `${t} is an orphan with no claim`);
+  assert.ok(scanGateA(brief, []).orphans.find((o) => o.token === "14,5 %")?.reason, "the document's locale refuses it");
+  assert.deepEqual(tokens(quoted).filter((t) => ["14,5 %", "91,16 grams of CO₂", "EUR 1,5"].includes(t)), [], "backed by the claims that state them");
+  assert.ok(tokens(quoted).includes("9,000 tonnes"), "a figure no claim states stays an orphan");
+  assert.ok(tokens([fact("— 14,6 % from 1 January 2035;"), fact("EUR 1,6 by the energy")]).includes("14,5 %"), "a different value never backs it");
+});

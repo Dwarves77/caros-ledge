@@ -93,6 +93,12 @@ function figureTokens(text: string, counts: SkipCounts, verdict: LocaleVerdict):
   return [...out.values()];
 }
 
+/**
+ * A brief figure its document's locale refuses ("14,5 %" in a brief that reads en: a quoted passage of another convention), read on its own: it has a value only when EVERY locale that can read the literal at all agrees on it
+ * ("14,5" is 14.5 wherever it reads; "9,000" is 9000 or 9.000 and stays unread). The literal is never repaired; the value is the one no locale disputes, compared as a typed figure like any other.
+ */
+const readAlone = (literal: string): Figure | null => findFigures(literal, { verdict: { locale: null, reason: "read on its own" } }).map((h) => h.result).find(isFigure) ?? null;
+
 function deadlineTokens(text: string, counts: SkipCounts, verdict: LocaleVerdict): string[] {
   const out = new Set<string>();
   const dateRes = [new RegExp(`\\b\\d{1,2}\\s+(?:${MONTHS_FULL_RE})\\s+\\d{4}\\b`, "gi"), new RegExp(`\\b(?:${MONTHS_FULL_RE})\\s+\\d{4}\\b`, "gi"), /\b\d{4}-\d{2}-\d{2}\b/g];
@@ -150,7 +156,10 @@ export function scanGateA(fullBrief: string | null | undefined, factClaims: Fact
     const typed = findFigures(doc, { verdict }).flatMap((h) => (isFigure(h.result) ? [h.result] : []));
     return { doc, typed };
   });
-  const figureBacked = (f: FigureToken): boolean => (f.figure !== null && claims.some((c) => c.typed.some((t) => figuresEqual(t, f.figure as Figure)))) || derivedCovered.has(norm(f.token));
+  const figureBacked = (f: FigureToken): boolean => {
+    const fig = f.figure ?? readAlone(f.token);
+    return (fig !== null && claims.some((c) => c.typed.some((t) => figuresEqual(t, fig)))) || derivedCovered.has(norm(f.token));
+  };
   const deadlineBacked = (tk: string): boolean => claims.some((c) => containsNumeral(c.doc, tk)) || derivedCovered.has(norm(tk));
   const orphans: Orphan[] = [
     ...figures.filter((f) => !figureBacked(f)).map((f) => ({ token: f.token, class: "figure" as const, ...(f.figure ? { value: f.figure.value, unit: f.figure.unit, kind: f.figure.kind } : {}), ...(f.reason ? { reason: f.reason } : {}) })),
