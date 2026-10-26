@@ -22,20 +22,26 @@ A record-grade item holds only the facts the mint lifted from its capture. A ses
 - The file as a whole: a batch name that is not `item-briefs-...`, `authored_by` other than `session-lane`, a bad `generated_at`, `entries` not an array (nothing is applied).
 - A stale pool (INV-207): `source_pool_hash` differs from the item's current pool. Re-export and re-author.
 - An item at brief grade without `options.allowBriefOverwrite`.
-- Body: under 600 characters, a fetch-failure explanation, an internal marker, a required slot the prose never addresses.
+- Body: under 600 characters, a fetch-failure explanation, a required slot the prose never addresses.
 - Metadata that breaks the contract table (vocabularies, caps, locked severity and priority pairs).
-- A FACT whose `source_span` is not verbatim (case-insensitive) in the item's pool; a claim without a `section`.
-- The eight mirrors (INV-211):
+- A claim without a `section`.
+- The mirrors that stay at the entry (INV-211):
   1. Gate A: every figure and date in the body sits inside a FACT claim's text or span, or is not written.
   2. Criterion 4: a section that states a requirement (`requires`, `must`, `mandates`, `obligates`, `prohibits`, `applies to`) carries an analysis label or the legal callout in that same section.
   3. Timeline: the format's own timeline section yields at least one dated row (`- <date>: <label>`).
-  4. Claim section: each claim's `section` is a key of the format and its span appears in that section's text.
-  5. Depth accounting (`regulatory_fact_document`): `Substantive Requirements` ends with `Obligations surveyed: N; workspace-adjacent: M; extracted as FACT: K.`, K not above the FACT claims declaring that section, and a `Shortfall: <reason>` line when K < M or a pool over 200,000 characters yields K < 5.
-  6. Qualification accounting: trajectory, exceptions and scope limits are each captured by an unnegated keyword in a FACT span of that section (or by `requirement_trajectory`), or recorded absent by `No phase-in is stated in Articles 1 to 4.`, `No exceptions are stated in ...`, `No scope limits are stated in ...`.
-  7. Numeric figure: every figure in a claim's text also appears in that claim's own span (decimals kept; slot tags and legal locators ignored).
-  8. Criterion 5: every required slot has a FACT claim whose text names the slot key, or a GAP only where the slot's description names a GAP form.
+  4. Numeric figure: every figure in a claim's text also appears in that claim's own span (decimals kept; slot tags and legal locators ignored).
+  5. Criterion 5: every required slot has a FACT claim whose text names the slot key, or a GAP only where the slot's description names a GAP form.
+  (Claim section, depth accounting and qualification accounting are rules of the registry below.)
 
-A defective entry is refused alone, its reasons kept as residue; the valid entries still apply.
+## The brief rules (src/core/brief/data/rules.json)
+
+Thirty-two deterministic rules run on every entry, each a binary check named by its id. The registry row says what a violation does. A `refuse` violation (the rule would make a claim false or expose internals) refuses the entry with the rule id in each reason; the batch is held with its corrections file. A `residue` violation routes the entry to residue: it is not applied, the batch is not held, the reason in the residue row names the rule id, and the item stays a record stub that the next export lists again.
+
+- Refuse: `dash-outside-verbatim` (an em or en dash in your own prose; text inside `«...»` and the `source_span` of a FACT claim are source wording and are never edited; a claim's own `claim_text` is your wording and is not exempt), `tier-phrase-exposure` (a T1 to T7 token or a source-tier phrase), `score-or-schema-token`, `fact-span-in-own-section` (a claim's `section` is a key of the format and holds its span), `no-claim-ledger-json` (an internal marker or a ledger key in the body), `fact-span-in-capture` (a FACT span verbatim, case-insensitive, in the item's pool).
+- Residue: the workspace or a client named; a generic action phrase; a stored `entry_into_force` or `compliance_deadline` the body never writes; `what_it_changes` outside 80 to 200 characters; a do-now section without a severity label (`ACTION REQUIRED`, `COST ALERT`, `WINDOW CLOSING`, `COMPETITIVE EDGE`, `MONITORING`); an empty `sources_used`; an "as of" with no date; a missing required section; the depth and qualification accounting of a regulatory fact document (`accounting-line-present`); pipeline, pool or slot narration; a bare URL in prose; an HTML entity; "ibid"; a stray H1; a double hyphen or a section sign; a severity outside the five tokens (the stored form is the lowercase token, ADR-052), a missing severity, a priority that breaks the locked map, a banner that disagrees with the column; and the hygiene of `urgency_tier`, `why_matters`, `what_is_it`, `topic_tags`, `signal_band` and `theme`.
+- Write the brief so the rules pass: the rule ids above are the reasons the apply gives, the phrase lists are in `src/core/brief/data/rule-patterns.json`, and `node scripts/ci/validator-report.mjs --fixture` shows each rule tripping on its planted sample.
+
+A defective entry is refused alone, its reasons kept as residue; an entry a residue rule routes out is kept the same way; the valid entries still apply.
 
 ## What the apply does
 

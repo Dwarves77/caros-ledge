@@ -138,7 +138,7 @@ export function metadata(over: Record<string, unknown> = {}): Record<string, unk
     what_is_it: "A new annual emissions reporting duty for cargo operators.", severity: "COST ALERT", priority: "HIGH", urgency_tier: "elevated", format_type: "market_signal_brief",
     topic_tags: ["emissions", "reporting"], signal_band: "corporate", theme: null, operational_scenario_tags: [], compliance_object_tags: [], related_items: [],
     intersection_summary: "Reporting duty interacts with carrier surcharge pass-through.", sources_used: [SOURCE], regeneration_skill_version: "2026-09-11",
-    what_it_changes: "Adds a fixed annual reporting deadline.", does_not_resolve: "Which authority is competent for third-country operators.", conversion_trigger: "Publication of the delegated act.",
+    what_it_changes: "Adds a fixed annual reporting deadline of 30 April for every cargo operator, so the reporting calendar and its internal owners must be settled this quarter.", does_not_resolve: "Which authority is competent for third-country operators.", conversion_trigger: "Publication of the delegated act.",
     cross_references: null, cost_mechanism: "Administrative reporting cost.", penalty_range: "Up to EUR 50 000", enforcement_body: "Competent authority", requirement_trajectory: { steps: [{ date: "2027-01-01", value: "annual reporting" }, { date: "2030-01-01", value: "tightened limits" }] },
     why_matters: "Late reporting carries a financial penalty.", key_data: ["30 April annual deadline"], ...over,
   };

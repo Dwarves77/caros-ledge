@@ -1,6 +1,6 @@
 // Ported from old_repo/scripts/lib/loop-run-id.mjs (lines 17-30)
 // Ported from old_repo/scripts/lib/upstream-artifact.mjs (lines 18-47)
-// The families as data: one per runtime, its owning module, the stage that runs it, what it hands to, and which counts prove it wrote.
+// The families as data: one per runtime, its owning module, the stage that runs it, what it hands to, and which counts prove it wrote (writes) and which only describe the work (reads).
 import { z } from "zod";
 
 import raw from "./data/families.json";
@@ -15,6 +15,8 @@ const family = z
     downstream: z.array(z.string()),
     terminal: z.string().optional(),
     writes: z.array(z.string()),
+    /** The other count keys the family reports: totals, plans, refusals, sub-counts. A key in neither list is a write nobody counted (tests/turn/family-keys.test.ts). */
+    reads: z.array(z.string()),
     note: z.string().optional(),
   })
   .strict();

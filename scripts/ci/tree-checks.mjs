@@ -2,10 +2,10 @@
 // scripts/ci/new-files/<slice>.txt), every header range inside the old file, and no banned dependency.
 // Runs over the working tree (tracked plus untracked, minus ignored), so a local run sees what the PR will see.
 // Each rule is a pure function of its input (exported, tried against planted inputs in tests/ci/tree-checks.test.mjs); the main below only reads the tree and calls them.
-import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 
+import { tokenHash } from "../../src/core/contracts/token-hash.ts";
 import { isMain } from "../lib/fs.mjs";
 
 import { trackedOutputProblems } from "./tracked-output.mjs";
@@ -21,7 +21,7 @@ export function identifierProblems(path, text) {
   if (text.includes("\0")) return problems;
   for (const re of PATTERNS) if (re.test(text)) problems.push(`${path}:1: matches ${re}`);
   for (const t of new Set(text.toLowerCase().match(/[a-z]{4,}/g) ?? [])) {
-    if (BANNED_TOKEN_HASHES.has(createHash("sha256").update(t).digest("hex"))) problems.push(`${path}:1: banned token`);
+    if (BANNED_TOKEN_HASHES.has(tokenHash(t))) problems.push(`${path}:1: banned token`);
   }
   return problems;
 }

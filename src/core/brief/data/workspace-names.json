@@ -1,0 +1,11 @@
+{
+  "note": "SHA-256 of each lowercase name, words joined by one space (src/core/contracts/token-hash.ts, the helper tree-checks uses for its banned token). The first four are the workspace organization names (split on the slash) and the named examples of the anchoring rule; the last is a fictional name the tests plant, so no test file holds a real one. The names are never written in the tree; the rule matches the hash of 1 to max_words consecutive words.",
+  "max_words": 2,
+  "hashes": [
+    "633ca0c08054214cbfb6d226e7a0ed16216f4f87802e93107dc11afec1dd3b85",
+    "262c9d6197126f5f319b9d52c67f10e38d7d9105a04fbb90711095b164f54804",
+    "33c04948ead30b8fceb0956230c73344ff8161ce04633ceb5aa52bf51afcecfa",
+    "6e7f3d61d59fcaedfca5ae5f2f59db09b0a115846557f5c9da4d7e3b586b3919",
+    "715fff31a7094453e81357cc08f9eb6773c9e739d55753d53227033c799c8efe"
+  ]
+}
