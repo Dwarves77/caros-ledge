@@ -17,6 +17,7 @@ export const STEPS = [
   { name: "Typecheck", cmd: "typecheck" },
   { name: "Build", cmd: "build", env: { NEXT_TELEMETRY_DISABLED: "1", NEXT_PUBLIC_SUPABASE_URL: "https://placeholder.supabase.co", NEXT_PUBLIC_SUPABASE_ANON_KEY: "placeholder" } },
   { name: "Tests (output kept for the report job)", cmd: "test", capture: "test-output.txt" },
+  { name: "Brief validator report (VALID-1, INV-VAL-5: every rule trips exactly the fixture rows labelled with it)", cmd: "validator-report" },
   { name: "Tree checks", cmd: "tree-checks" },
   { name: "UI checks", cmd: "ui-checks" },
   { name: "Client bundle walk (no \"use client\" file reaches a server-only module, node:crypto or a secret; audit 2026-10-23 2.4)", cmd: "client-walk" },

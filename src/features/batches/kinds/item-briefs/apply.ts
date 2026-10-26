@@ -184,11 +184,11 @@ function itemBriefsSpec(opts: RecordOpts): EntrySpec<RecordLive, RecordPlan> {
     keyOf: (e) => (typeof e.item_id === "string" ? e.item_id : null),
     async load(deps, file) {
       const ids = [...new Set((file.entries as unknown[]).map((e) => (isObj(e) && typeof e.item_id === "string" ? e.item_id : "")).filter((x) => /^[0-9a-f-]{36}$/i.test(x)))];
-      const rows = await rowsByIds<{ id: string; item_type: string; item_grade: string | null; provenance_status: string | null; full_brief: string | null }>(deps.sb, "intelligence_items", "id, item_type, item_grade, provenance_status, full_brief", ids);
+      const rows = await rowsByIds<{ id: string; item_type: string; item_grade: string | null; provenance_status: string | null; full_brief: string | null; entry_into_force: string | null; compliance_deadline: string | null }>(deps.sb, "intelligence_items", "id, item_type, item_grade, provenance_status, full_brief, entry_into_force, compliance_deadline", ids);
       const items: RecordLive["items"] = new Map();
       for (const r of rows) {
         const p = await itemPool(deps.sb, r.id);
-        items.set(r.id, { itemType: r.item_type, grade: r.item_grade, status: r.provenance_status, hash: p.hash, poolText: p.pool.map((x) => x.text).join("\n\n"), bytes: p.bytes, fullBrief: r.full_brief });
+        items.set(r.id, { itemType: r.item_type, grade: r.item_grade, status: r.provenance_status, hash: p.hash, poolText: p.pool.map((x) => x.text).join("\n\n"), bytes: p.bytes, fullBrief: r.full_brief, entryIntoForce: r.entry_into_force, complianceDeadline: r.compliance_deadline });
       }
       const slotRows = await allRows<{ item_type: string; slot_key: string; description: string | null }>(deps.sb, "item_type_required_slots", "item_type, slot_key, description", { cap: 5000 });
       const slots: RecordLive["slots"] = new Map();

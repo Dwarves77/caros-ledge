@@ -23,7 +23,7 @@ export function goodBody(over: { sec1?: string; sec3?: string; sec4?: string; ti
     `${filler}${SPAN_PENALTY}${over.sec4 ?? ""}`,
     `${filler}Competitors with existing reporting systems start ahead.`,
     `${filler}Talk to clients about the reporting calendar early.`,
-    `${filler}Build the reporting calendar now. *Operational implication:* the duty needs an owner in each operating unit.`,
+    `${filler}COST ALERT: Build the reporting calendar now. *Operational implication:* the duty needs an owner in each operating unit.`,
     `- EUR-Lex: ${OFFICIAL_URL}`,
   ];
   return heads.map((h, i) => `## ${i + 1}. ${h}\n\n${secs[i]}`).join("\n\n");
