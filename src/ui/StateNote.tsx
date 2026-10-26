@@ -34,7 +34,7 @@ export function StateNote({ band: bandProp, children, action, tone = "note" }: S
   const color = band ? band.cssVar : tone === "error" ? "var(--immediate)" : "var(--brand)";
   const bg = band ? band.tintCssVar : tone === "error" ? "var(--immediate-tint)" : "var(--tag)";
   return (
-    <div data-part="state-note" role={tone === "error" ? "alert" : undefined} className="cl-state-note" style={{ borderLeft: `3px solid ${color}`, background: bg }}>
+    <div data-part="state-note" role={tone === "error" ? "alert" : undefined} className="cl-state-note" style={{ ["--note-rule" as string]: color, background: bg }}>
       <span className="cl-state-note-text">{children}</span>
       {action?.href ? (
         <Link href={action.href} className="cl-state-note-action">

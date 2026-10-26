@@ -77,7 +77,7 @@ export function DetailSubSection({ title, subtitle, first = false, children }: {
       {!first && <div className="cl-sub-rule" aria-hidden="true" />}
       <SectionLabel>{title}</SectionLabel>
       {subtitle && <p className="cl-sub-subtitle">{subtitle}</p>}
-      <div style={{ marginTop: subtitle ? 0 : 12 }}>{children}</div>
+      <div style={{ marginTop: subtitle ? 0 : "var(--sp-12)" }}>{children}</div>
     </div>
   );
 }

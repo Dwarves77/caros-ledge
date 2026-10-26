@@ -9,6 +9,7 @@ import { authedFetch } from "@/core/http/authed-fetch";
 import { bandFromPriority, detailHref, jurisdictionCode, metaLine } from "@/core/lists";
 import { formatNumber } from "@/core/shared";
 
+import { Button } from "../Button";
 import { SkeletonListRow } from "../Skeleton";
 import { StateNote } from "../StateNote";
 import { ListRow } from "../ListRow";
@@ -154,9 +155,9 @@ function CommandBar({ itemCount, placeholder, onAsk, onSearch }: CommandBarProps
       <span aria-hidden="true" className="cl-cmdk-hint">
         ⌘K
       </span>
-      <button type="button" className="cl-command-bar-ask-submit" onClick={ask} disabled={!onAsk} aria-disabled={!onAsk} title={onAsk ? undefined : "The Assistant is currently unavailable."}>
+      <Button className="cl-command-bar-ask" onClick={ask} disabled={!onAsk} aria-disabled={!onAsk} title={onAsk ? undefined : "The Assistant is currently unavailable."}>
         Ask
-      </button>
+      </Button>
       {open &&
         rect &&
         createPortal(
