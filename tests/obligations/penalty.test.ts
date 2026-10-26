@@ -195,3 +195,13 @@ test("run what is built: the connect stage binds the loose capture of the FuelEU
   await step(false, 60);
   assert.equal(f.db.rows("obligation_objects").length, count);
 });
+
+test("a cited pinpoint on an instrument whose duties exist only in its held objects is made with those holders, and the plan row names the objects that supplied them", async () => {
+  const duty = { ...existingObject("cl:obligation:0000000000000004", "Article 4", F.FUELEU_ITEM, "Article 4 GHG intensity limits 1. Shipping companies shall ensure the limit."), duty_holder_class: ["ism_company"] };
+  const other = { ...existingObject("cl:obligation:0000000000000005", "Article 6", F.ETS_ITEM, "x"), duty_holder_class: ["carrier"] };
+  const w = world({ obligation_objects: [duty, other], agent_run_searches: [capture(F.FUELEU_CAPTURE, F.FUELEU_ITEM, `ANNEX IV Formulas for calculating penalties A. Formulas for calculating the compliance balance of a ship ${F.PART_B}`)] });
+  const r = await deriveObligationObjects(w.db, { dry: true, itemIds: [F.FUELEU_ITEM] });
+  const entry = (r.data as { plan: { toInsert: { row: Row; basis?: { duty_holder_class_from: string[] } }[] } }).plan.toInsert.find((p) => p.row.pinpoint_citation === "Annex IV Part B");
+  assert.deepEqual(entry?.row.duty_holder_class, ["ism_company"], "the holders of the SAME instrument's object, not another instrument's");
+  assert.deepEqual(entry?.basis, { duty_holder_class_from: ["cl:obligation:0000000000000004"] });
+});

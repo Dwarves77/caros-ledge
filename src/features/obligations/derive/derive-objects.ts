@@ -81,9 +81,11 @@ export interface Candidate {
   effort?: Record<string, unknown> | null; status?: string | null; date_reviewed?: string | null; next_review_due?: string | null; source_id?: string | null;
   /** An obligation entity resolved before minting (DERIVE-3: the schedule's entity for the article); absent, the id is derived from the instrument and the pinpoint. */
   obligation_id?: string;
+  /** The objects (by id, or `candidate:<pinpoint>` in the same batch) whose duty holders this candidate inherits because its own span names none. */
+  holder_basis?: string[];
 }
 export interface CaptureRow { id: string; intelligence_item_id: string; result_content: string | null; searched_at?: string | null; }
-export interface ExistingObject { obligation_id: string; instrument_item_id: string; pinpoint_citation: string; verbatim_text: string; version: number; supersedes?: string | null; }
+export interface ExistingObject { obligation_id: string; instrument_item_id: string; pinpoint_citation: string; verbatim_text: string; version: number; supersedes?: string | null; duty_holder_class?: string[] | null; }
 export interface ObjectItem extends ItemForClassification { id: string; is_archived?: boolean | null; }
 
 export type BuildResult = { ok: true; row: Record<string, unknown>; bindingSource: string } | { ok: false; reason: string };
@@ -145,7 +147,7 @@ function buildObjectRow(c: Candidate, ctx: { item: ObjectItem | null; capture: C
 }
 
 export interface ObjectPlan {
-  toInsert: { row: Record<string, unknown>; bindingSource: string }[];
+  toInsert: { row: Record<string, unknown>; bindingSource: string; /** Where a derived column came from when it is not the span (DERIVE-3: the objects whose duty holders a schedule-cited pinpoint inherits). */ basis?: { duty_holder_class_from: string[] } }[];
   refused: { instrument_item_id: string | null; pinpoint_citation: string | null; reason: string }[];
   alreadyRegistered: number;
 }
@@ -172,7 +174,7 @@ function planObligationObjects(candidates: readonly Candidate[], ctx: { itemsByI
     const built = buildObjectRow(c, { item: ctx.itemsById.get(c?.instrument_item_id) ?? null, capture: ctx.capturesById.get(c?.capture_id) ?? null, existingForPinpoint: prior, ...(ctx.classify ? { classify: ctx.classify } : {}) });
     if (!built.ok) plan.refused.push({ ...label, reason: built.reason });
     else if (existingIds.has(built.row.obligation_id as string)) plan.alreadyRegistered += 1;
-    else plan.toInsert.push({ row: built.row, bindingSource: built.bindingSource });
+    else plan.toInsert.push({ row: built.row, bindingSource: built.bindingSource, ...(c.holder_basis ? { basis: { duty_holder_class_from: c.holder_basis } } : {}) });
   }
   return plan;
 }
@@ -344,7 +346,7 @@ export async function deriveObligationObjects(sb: Db, input: { dry: boolean; ite
     return data ?? [];
   }, { chunk: 10 })) capturesById.set(c.id, c);
   const existing = await fetchAllByIdChunks<ExistingObject>([...itemsById.keys()], async (slice) => {
-    const { data, error } = await sb.from("obligation_objects").select("obligation_id, instrument_item_id, pinpoint_citation, verbatim_text, version, supersedes").in("instrument_item_id", slice);
+    const { data, error } = await sb.from("obligation_objects").select("obligation_id, instrument_item_id, pinpoint_citation, verbatim_text, version, supersedes, duty_holder_class").in("instrument_item_id", slice);
     if (error) throw new Error(`derive-objects: obligation_objects read failed: ${error.message}`);
     return data ?? [];
   }, { manyPerId: true });

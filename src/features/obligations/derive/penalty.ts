@@ -7,6 +7,7 @@ import { z } from "zod";
 
 import { fetchAllByIdChunks, type Db } from "@/core/db";
 import { admitItems } from "@/core/derived/admissible";
+import { currentObligationObjects } from "@/core/workspace";
 
 import type { Candidate, CaptureRow, ExistingObject, ObjectItem, ObjectPlan } from "./derive-objects";
 import objectRules from "./data/object-rules.json";
@@ -129,13 +130,15 @@ export async function withPenalties(sb: Db, input: PenaltyInputs): Promise<{ can
       if (!want || taken.has(key)) continue;
       taken.add(key);
       const span = bounded(text, p);
-      const holders = [...new Set([...input.candidates, ...added].filter((c) => c.instrument_item_id === item.id).flatMap((c) => c.duty_holder_class))];
+      // the duty holders of the instrument's own objects, current ones held and candidates of this batch: the span names none, the DB requires one, and the basis says which objects supplied them
+      const sources = [...currentObligationObjects<ExistingObject>(input.existing).filter((o) => o.instrument_item_id === item.id).map((o) => ({ ref: o.obligation_id, holders: o.duty_holder_class ?? [] })), ...[...input.candidates, ...added].filter((c) => c.instrument_item_id === item.id).map((c) => ({ ref: `candidate:${c.pinpoint_citation}`, holders: c.duty_holder_class }))].filter((s) => s.holders.length);
+      const holders = [...new Set(sources.flatMap((s) => s.holders))];
       if (!holders.length) { refused.push({ instrument_item_id: item.id, pinpoint_citation: want.pinpoint, reason: "duty_holder_unresolved" }); continue; }
       const stated = extractStatutory(span);
       const mode = classifyMode(span, { title: item.title, identifier: item.instrument_identifier });
       const entity = [...want.ids.keys()].filter((id) => !held.has(id) && owner.get(id) === pinKey(p.pinpoint)).sort()[0];
       if (entity) held.add(entity);
-      added.push({ instrument_item_id: item.id, capture_id: cap.id, pinpoint_citation: want.pinpoint, verbatim_text: span, duty_holder_class: holders, applicability_trigger: { attribute: objectRules.triggerAttribute, value: item.canonical_instrument_key || item.instrument_identifier || item.title || "" }, plain_language: null, mode: mode.modes.length ? mode.modes : null, sanction_class: want.token, statutory_maximum: stated.maximum?.fragment ?? null, cost_formula: stated.formula?.fragment ?? null, ...(entity ? { obligation_id: entity } : {}) });
+      added.push({ instrument_item_id: item.id, capture_id: cap.id, pinpoint_citation: want.pinpoint, verbatim_text: span, duty_holder_class: holders, holder_basis: sources.map((s) => s.ref), applicability_trigger: { attribute: objectRules.triggerAttribute, value: item.canonical_instrument_key || item.instrument_identifier || item.title || "" }, plain_language: null, mode: mode.modes.length ? mode.modes : null, sanction_class: want.token, statutory_maximum: stated.maximum?.fragment ?? null, cost_formula: stated.formula?.fragment ?? null, ...(entity ? { obligation_id: entity } : {}) });
     }
   }
   for (const [itemId, wanted] of cited) for (const [key, want] of wanted) if (!taken.has(`${itemId}|${key}`)) refused.push({ instrument_item_id: itemId, pinpoint_citation: want.pinpoint, reason: "pinpoint_not_in_capture" });
