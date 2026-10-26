@@ -51,12 +51,13 @@ export async function visitOnce(context, base, path) {
     });
     const res = await page.goto(`${base}${path}`, { waitUntil: "load", timeout: 60000 });
     await page.waitForLoadState("networkidle", { timeout: 15000 }).catch(() => {});
+    const sectionHeads = await page.$$eval('[data-audit="detail-section-head"]', (els) => els.length);
     const uiFailures = await page.$$eval(
       UI_FAILURE_SELECTOR,
       (els, chars) => els.map((e) => ({ marker: e.getAttribute("data-part") ?? (e.getAttribute("data-list-state") ? `data-list-state=${e.getAttribute("data-list-state")}` : e.id || e.tagName.toLowerCase()), text: (e.innerText || e.textContent || "").replace(/\s+/g, " ").trim().slice(0, chars) })),
       DIAGNOSTIC_CHARS,
     );
-    return { status: res?.status() ?? 0, finalUrl: page.url(), uiFailures, apiFailures };
+    return { status: res?.status() ?? 0, finalUrl: page.url(), uiFailures, apiFailures, sectionHeads };
   } finally {
     await page.close();
   }

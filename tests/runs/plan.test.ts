@@ -50,7 +50,7 @@ test("every stage the turn has is accepted", () => {
 });
 
 test("the first plan (ARM-1) parses: a dry ecb-fx step first, every propagate apply step carrying the ruling", () => {
-  const p = parsePlan(readFileSync("scripts/runs/plans/2026-10-24-arm-1.json", "utf8"));
+  const p = parsePlan(readFileSync("scripts/runs/plans/2026-10-24-arm-1.json", "utf8"), "scripts/runs/plans/2026-10-24-arm-1.json");
   assert.deepEqual([p.steps[0].name, p.steps[0].mode], ["ecb-fx-dry", "dry"]);
   assert.ok(p.steps.some((s: { mode: string }) => s.mode === "apply"));
   assert.equal(new Set(p.steps.map((s: { name: string }) => s.name)).size, p.steps.length, "step names are unique");
@@ -93,7 +93,7 @@ test("the ruling's cadence_exception is required on an apply propagate step that
 });
 
 test("the CONNECT-2A plan parses: couplings and patterns, dry then apply, the ruling on the apply propagate step that captures the seed pages", () => {
-  const p = parsePlan(readFileSync("scripts/runs/plans/2026-10-26-connect-2a.json", "utf8"));
+  const p = parsePlan(readFileSync("scripts/runs/plans/2026-10-26-connect-2a.json", "utf8"), "scripts/runs/plans/2026-10-26-connect-2a.json");
   assert.deepEqual(p.steps.map((s: { name: string }) => s.name), ["couplings-dry", "couplings-apply", "patterns-dry", "patterns-apply"]);
   assert.deepEqual(p.steps.map((s: { stage: string }) => s.stage), ["propagate", "propagate", "connect", "connect"]);
   assert.ok(p.steps.every((s: { producer_env: string[]; input: Record<string, { producers?: unknown }> }) => s.producer_env.length === 0 && s.input.propagate?.producers === undefined), "no producer runs in this plan");
@@ -158,4 +158,21 @@ test("DRAIN-1: input_file is loaded relative to the plan and becomes the step's 
   assert.deepEqual(s.input, { connect: { scan_limit: 0 } });
   assert.equal(s.input_file, "data/in.json");
   assert.throws(() => parsePlan(plan({ steps: [fileStep({ input_file: "data/none.json" })] }), p), /none\.json/);
+});
+
+test("DRAIN-FIX-2 D4: an apply connect step with scan_limit 0 is refused in a plan dated 2026-10-27 or later (and with no path); earlier plans and dry steps stand; a positive limit is accepted", () => {
+  const plan = (limit: number, mode = "apply") => JSON.stringify({ ruling: "r", steps: [{ name: "p", stage: "connect", mode, input: { connect: { scan_limit: limit } }, producer_env: [] }] });
+  assert.throws(() => parsePlan(plan(0), "scripts/runs/plans/2026-10-27-x.json"), /scan_limit 0 reads none of the backlog/);
+  assert.throws(() => parsePlan(plan(0)), /scan_limit 0/);
+  parsePlan(plan(0), "scripts/runs/plans/2026-10-26-x.json");
+  parsePlan(plan(0, "dry"), "scripts/runs/plans/2026-10-27-x.json");
+  parsePlan(plan(60), "scripts/runs/plans/2026-10-27-x.json");
+});
+
+test("DRAIN-FIX-2: the drain-1b plan parses; its residue steps allow partial, its apply connect steps carry a positive limit that covers the 1236-item backlog", () => {
+  const p = parsePlan(readFileSync("scripts/runs/plans/2026-10-27-drain-1b.json", "utf8"), "scripts/runs/plans/2026-10-27-drain-1b.json");
+  assert.deepEqual(p.steps.map((s: { name: string }) => s.name).slice(0, 4), ["item-briefs-reapply", "theme-briefs-residue", "propagate-refs-apply", "patterns-dry"]);
+  assert.ok(!JSON.stringify(p.steps[1].input).includes("7ae77ef8"), "the theme gone from connection_themes is dropped from the batch");
+  const apply = p.steps.filter((s: { stage: string; mode: string }) => s.stage === "connect" && s.mode === "apply");
+  assert.ok(apply.length * 60 >= 1236);
 });

@@ -1,0 +1,297 @@
+{
+  "ruling": "operator and coordinator 2026-10-27 (DRAIN-FIX-2, the read-back of DRAIN-1 run 40373840535): the 12 residue entries of the DRAIN-1 batches are recorded in brief_reviews as residue with their failing criteria (the same two input files, re-applied: the 3 accepted briefs are already applied and write nothing, the residue entries are recorded; both steps are partial by design, so they carry allow_partial); the propagate stage then mines the new briefs' claims and tags into entity_refs (it fetches nothing, so it carries no cadence exception), and the patterns pass re-runs with a positive scan_limit of 60, the per-turn bound of src/core/impact/data/reading.json, in 21 steps (1236 backlog items / 60 = 20.6), because scan_limit 0 in DRAIN-1 read none of the backlog and left the pattern spine unfed. Nothing is fetched, so no scrape cadence is exercised and rule 16 stands",
+  "steps": [
+    {
+      "name": "item-briefs-reapply",
+      "stage": "briefs",
+      "mode": "apply",
+      "input_file": "data/2026-10-27-drain-1.items.json",
+      "producer_env": [],
+      "on_failure": "continue",
+      "allow_partial": true
+    },
+    {
+      "name": "theme-briefs-residue",
+      "stage": "briefs",
+      "mode": "apply",
+      "input_file": "data/2026-10-27-drain-1b.themes.json",
+      "producer_env": [],
+      "on_failure": "continue",
+      "allow_partial": true
+    },
+    {
+      "name": "propagate-refs-apply",
+      "stage": "propagate",
+      "mode": "apply",
+      "input": {
+        "propagate": {}
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "patterns-dry",
+      "stage": "connect",
+      "mode": "dry",
+      "input": {
+        "connect": {
+          "scan_limit": 60
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "patterns-apply-01",
+      "stage": "connect",
+      "mode": "apply",
+      "input": {
+        "connect": {
+          "scan_limit": 60
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "patterns-apply-02",
+      "stage": "connect",
+      "mode": "apply",
+      "input": {
+        "connect": {
+          "scan_limit": 60
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "patterns-apply-03",
+      "stage": "connect",
+      "mode": "apply",
+      "input": {
+        "connect": {
+          "scan_limit": 60
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "patterns-apply-04",
+      "stage": "connect",
+      "mode": "apply",
+      "input": {
+        "connect": {
+          "scan_limit": 60
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "patterns-apply-05",
+      "stage": "connect",
+      "mode": "apply",
+      "input": {
+        "connect": {
+          "scan_limit": 60
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "patterns-apply-06",
+      "stage": "connect",
+      "mode": "apply",
+      "input": {
+        "connect": {
+          "scan_limit": 60
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "patterns-apply-07",
+      "stage": "connect",
+      "mode": "apply",
+      "input": {
+        "connect": {
+          "scan_limit": 60
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "patterns-apply-08",
+      "stage": "connect",
+      "mode": "apply",
+      "input": {
+        "connect": {
+          "scan_limit": 60
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "patterns-apply-09",
+      "stage": "connect",
+      "mode": "apply",
+      "input": {
+        "connect": {
+          "scan_limit": 60
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "patterns-apply-10",
+      "stage": "connect",
+      "mode": "apply",
+      "input": {
+        "connect": {
+          "scan_limit": 60
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "patterns-apply-11",
+      "stage": "connect",
+      "mode": "apply",
+      "input": {
+        "connect": {
+          "scan_limit": 60
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "patterns-apply-12",
+      "stage": "connect",
+      "mode": "apply",
+      "input": {
+        "connect": {
+          "scan_limit": 60
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "patterns-apply-13",
+      "stage": "connect",
+      "mode": "apply",
+      "input": {
+        "connect": {
+          "scan_limit": 60
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "patterns-apply-14",
+      "stage": "connect",
+      "mode": "apply",
+      "input": {
+        "connect": {
+          "scan_limit": 60
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "patterns-apply-15",
+      "stage": "connect",
+      "mode": "apply",
+      "input": {
+        "connect": {
+          "scan_limit": 60
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "patterns-apply-16",
+      "stage": "connect",
+      "mode": "apply",
+      "input": {
+        "connect": {
+          "scan_limit": 60
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "patterns-apply-17",
+      "stage": "connect",
+      "mode": "apply",
+      "input": {
+        "connect": {
+          "scan_limit": 60
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "patterns-apply-18",
+      "stage": "connect",
+      "mode": "apply",
+      "input": {
+        "connect": {
+          "scan_limit": 60
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "patterns-apply-19",
+      "stage": "connect",
+      "mode": "apply",
+      "input": {
+        "connect": {
+          "scan_limit": 60
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "patterns-apply-20",
+      "stage": "connect",
+      "mode": "apply",
+      "input": {
+        "connect": {
+          "scan_limit": 60
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "patterns-apply-21",
+      "stage": "connect",
+      "mode": "apply",
+      "input": {
+        "connect": {
+          "scan_limit": 60
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    }
+  ]
+}

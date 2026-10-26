@@ -214,6 +214,7 @@ function itemBriefsSpec(opts: RecordOpts): EntrySpec<RecordLive, RecordPlan> {
       const done = isObj(e) && typeof e.item_id === "string" && typeof e.body === "string" ? sameBrief(live.items.get(e.item_id)?.fullBrief, e.body) && live.items.get(e.item_id)?.grade === "brief" : false;
       return done ? { errors: [], done: true } : validateRecordBriefEntry(e, i, live);
     },
+    residueReview: (e, key) => (key ? { subjectId: key, score: review("item-briefs", e).score, reviewedBy: review("item-briefs", e).reviewed_by ?? "none" } : null),
     write: (deps, _live, item, batch) => applyItem(deps, item, batch, opts.allowBriefOverwrite === true),
     cost: (item) => item.plan.bytes * POOL_REREADS,
     async readBack(deps, _live, written) {

@@ -41,8 +41,10 @@ function summarise(step, out) {
   const refused = step.mode === "apply" ? rows.find(refusedApply) : undefined;
   // A step whose rows count failed units did not do what it was ruled to do, whatever exit code the turn gave it (HEAL-1b: two items failed and the step read ok).
   const failedUnits = step.mode === "apply" && rows.some((r) => (r.counts?.failed ?? 0) > 0);
-  const outcome = out.status !== 0 ? "failed" : forced ? "forced-dry" : refused ? "refused" : failedUnits ? "partial" : "ok";
-  return { step: step.name, stage: step.stage, mode: step.mode, outcome, exit: out.status, root_run_id: out.result?.root_run_id ?? null, refusals, rows, ...(outcome === "refused" ? { note: String(refused.reason ?? refused.outcome) } : {}), ...(outcome === "partial" ? { note: `${rows.reduce((n, r) => n + (r.counts?.failed ?? 0), 0)} unit(s) failed` } : {}), ...(out.error ? { error: out.error } : {}) };
+  // DRAIN-FIX-2 D2: a row whose own turn outcome is partial (residue, a failed downstream, a read-back miss) is partial too: DRAIN-1's item step was partial in the ledger and `ok` in the table.
+  const partialRow = step.mode === "apply" && rows.some((r) => r.outcome === "partial");
+  const outcome = out.status !== 0 ? "failed" : forced ? "forced-dry" : refused ? "refused" : failedUnits || partialRow ? "partial" : "ok";
+  return { step: step.name, stage: step.stage, mode: step.mode, outcome, exit: out.status, root_run_id: out.result?.root_run_id ?? null, refusals, rows, ...(outcome === "refused" ? { note: String(refused.reason ?? refused.outcome) } : {}), ...(outcome === "partial" ? { note: failedUnits ? `${rows.reduce((n, r) => n + (r.counts?.failed ?? 0), 0)} unit(s) failed` : "the turn's outcome is partial" } : {}), ...(out.error ? { error: out.error } : {}) };
 }
 
 /** Runs `plan` (already parsed) step by step. `invoke({args, env})` is the turn call and `applied(key)` the ledger question; both are injected so a test starts no process and reads no database. */
@@ -65,13 +67,15 @@ export async function executePlan(plan, planPath, { invoke = invokeTurn, applied
     }
     const args = ["scripts/turn.mjs", "--stage", step.stage, "--mode", step.mode, ...inputArgs, ...(step.chain ? [] : ["--no-chain"])];
     const done = summarise(step, invoke({ args, env: { ...pairs(step.producer_env), TURN_RULED_PLAN: planPath } }));
-    if (done.outcome !== "ok" && step.on_failure === "continue") {
+    // A partial outcome follows on_failure like any failure unless the step rules it acceptable (allow_partial): it is still reported as partial.
+    const bad = done.outcome !== "ok" && !(done.outcome === "partial" && step.allow_partial === true);
+    if (bad && step.on_failure === "continue") {
       results.steps.push({ ...done, continued: true });
       results.outcome = "partial";
       continue;
     }
     results.steps.push(done);
-    if (done.outcome !== "ok") {
+    if (bad) {
       results.outcome = "failed";
       break;
     }
