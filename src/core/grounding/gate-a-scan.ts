@@ -7,7 +7,7 @@
 import { createHash } from "node:crypto";
 
 import { MONTHS_FULL_RE } from "@/core/brief/vocab";
-import { containsNumeral, figuresEqual, findFigures, isFigure, isTrajectoryUnit, resolveLocale, type Figure, type LocaleVerdict } from "@/core/parse";
+import { containsNumeral, figuresEqual, figureReadings as readings, findFigures, isFigure, isTrajectoryUnit, resolveLocale, type Figure, type LocaleVerdict } from "@/core/parse";
 
 const GATE_A_VERSION = "2026-10-20.1";
 const md5 = (s: unknown): string => createHash("md5").update(String(s ?? ""), "utf8").digest("hex");
@@ -93,11 +93,8 @@ function figureTokens(text: string, counts: SkipCounts, verdict: LocaleVerdict):
   return [...out.values()];
 }
 
-/**
- * A brief figure its document's locale refuses ("14,5 %" in a brief that reads en: a quoted passage of another convention), read on its own: it has a value only when EVERY locale that can read the literal at all agrees on it
- * ("14,5" is 14.5 wherever it reads; "9,000" is 9000 or 9.000 and stays unread). The literal is never repaired; the value is the one no locale disputes, compared as a typed figure like any other.
- */
-const readAlone = (literal: string): Figure | null => findFigures(literal, { verdict: { locale: null, reason: "read on its own" } }).map((h) => h.result).find(isFigure) ?? null;
+/** A refusal about the unit set, not about the number's convention: no reading of the digits repairs it. */
+const CLOSED_SET = /closed set/;
 
 function deadlineTokens(text: string, counts: SkipCounts, verdict: LocaleVerdict): string[] {
   const out = new Set<string>();
@@ -153,12 +150,17 @@ export function scanGateA(fullBrief: string | null | undefined, factClaims: Fact
   const claims = (factClaims ?? []).map((c) => {
     const doc = `${c.claim_text}\n${c.source_span}`;
     const verdict = resolveLocale(doc, c.locale);
-    const typed = findFigures(doc, { verdict }).flatMap((h) => (isFigure(h.result) ? [h.result] : []));
-    return { doc, typed };
+    const hits = findFigures(doc, { verdict });
+    const typed = hits.flatMap((h) => (isFigure(h.result) ? [h.result] : []));
+    // A claim's figure whose own literal forces one reading ("5 000 GT" is 5000 under every locale that reads it; "9,000" is not forced) is evidence for a brief figure its document refuses.
+    const forced = hits.flatMap((h) => { if (!isFigure(h.result) && CLOSED_SET.test(h.result.reason)) return []; const r = readings(h.result.literal); return r.length === 1 && (!isFigure(h.result) || r[0]?.value === h.result.value) ? r : []; });
+    return { doc, typed, forced };
   });
   const figureBacked = (f: FigureToken): boolean => {
-    const fig = f.figure ?? readAlone(f.token);
-    return (fig !== null && claims.some((c) => c.typed.some((t) => figuresEqual(t, fig)))) || derivedCovered.has(norm(f.token));
+    // A brief figure the parser typed meets the claims' typed figures. One it refused (a quotation of another convention, or a document with no resolvable majority) is read under every locale that can read it and meets
+    // the claims' FORCED readings only, so a literal that is ambiguous on both sides ("9,000" against "9,000") still backs nothing.
+    const backed = f.figure ? claims.some((c) => c.typed.some((t) => figuresEqual(t, f.figure as Figure)))   : !CLOSED_SET.test(f.reason ?? "") && readings(f.token).some((fig) => fig.literal === f.token && claims.some((c) => c.forced.some((t) => figuresEqual(t, fig))));
+    return backed || derivedCovered.has(norm(f.token));
   };
   const deadlineBacked = (tk: string): boolean => claims.some((c) => containsNumeral(c.doc, tk)) || derivedCovered.has(norm(tk));
   const orphans: Orphan[] = [

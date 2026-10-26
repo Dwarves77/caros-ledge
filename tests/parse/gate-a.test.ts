@@ -112,3 +112,18 @@ test("HEAL-1c: a quoted passage in another number convention (14,5 % in a brief 
   assert.ok(tokens(quoted).includes("9,000 tonnes"), "a figure no claim states stays an orphan");
   assert.ok(tokens([fact("— 14,6 % from 1 January 2035;"), fact("EUR 1,6 by the energy")]).includes("14,5 %"), "a different value never backs it");
 });
+
+test("HEAL-1c: in a document that mixes number conventions (15f63ea9), a refused brief figure is backed by a claim that states the same digits in another separator form (5,000 GT against 5 000 GT with a space, NBSP or thin space); a different value, unit or kind never backs it", () => {
+  // The literal inventory of the production brief: decimal-comma quotations (26,5 %, 78,4 million) beside English thousands (1,386,051,745, 5,000), so the document has no resolvable majority.
+  const lits: [string, number][] = [["5,000", 5], ["10,000", 2], ["4,4", 1], ["5 000", 1], ["26,5", 2], ["51,5", 2], ["77,5", 2], ["97,5", 2], ["1,185", 1], ["1,386,051,745", 1], ["16.5", 1], ["200 000", 1], ["4,3", 1], ["4.3", 1], ["5,10", 1], ["51.5", 1], ["5,38", 1], ["78,4", 1], ["78.4", 1], ["97.5", 1]];
+  const brief = [...lits.flatMap(([l, n]) => Array.from({ length: n }, () => `Value ${l} % applies.`)), "The directive reaches vessels of 5,000 GT and above.", "The cap is 9,000 tonnes."].join("\n");
+  const orphan = (facts: ReturnType<typeof fact>[], tok: string) => scanGateA(brief, facts).orphans.some((o) => o.token === tok);
+  assert.match(scanGateA(brief, []).orphans.find((o) => o.token === "5,000 GT")?.reason ?? "", /mixes number conventions/, "the document is refused, so the figure carries a reason");
+  for (const span of ["5 000 GT", "5\u00a0000 GT", "5\u202f000 GT", "5000 GT"]) assert.equal(orphan([fact('The captured source text states the figure "x".', span)], "5,000 GT"), false, `${JSON.stringify(span)} backs 5,000 GT`);
+  assert.equal(orphan([fact('the figure "5,000 GT"', "5,000 GT")], "5,000 GT"), true, "the same ambiguous literal on both sides forces nothing: it stays refused");
+  assert.equal(orphan([fact("x", "6 000 GT")], "5,000 GT"), true, "a different value never backs it");
+  assert.equal(orphan([fact("x", "5 000 tonnes")], "5,000 GT"), true, "a different unit never backs it");
+  assert.equal(orphan([fact("x", "5 000 GT")], "9,000 tonnes"), true, "a figure no claim states stays an orphan");
+  assert.equal(orphan([fact("x", "9 000 tonnes")], "9,000 tonnes"), false, "9,000 tonnes is backed by a claim that states 9 000 tonnes");
+  assert.equal(orphan([fact("x", "9 000 tonnes")], "5,000 GT"), true);
+});
