@@ -7,7 +7,7 @@ export { MINT_OK } from "./deps";
 export type { ConnectDeps, IntakeDeps, MintDeps, RecorderDeps, SourcesDeps } from "./deps";
 export { runParticipation } from "./flywheel-participation";
 export { consumePortalCandidates, persistPortalCandidates, selectCandidateLedgerPage } from "./portal-ledger";
-export { groundInjectedLedger, growSources, harvestItemTimeline, injectBrief, readAdoptedTerms, registerBriefSources, sectionBrief, writeSynthesizedBrief } from "./pipeline";
+export { groundInjectedLedger, growSources, harvestItemTimeline, injectBrief, readAdoptedTerms, registerBriefSources, sectionBrief, sectionsDeriveFromBrief, writeSynthesizedBrief } from "./pipeline";
 export { planQuarantine } from "./quarantine/planner";
 export { rehomeQuarantined } from "./quarantine/rehome";
 export { eraseQuarantined } from "./quarantine/erase";

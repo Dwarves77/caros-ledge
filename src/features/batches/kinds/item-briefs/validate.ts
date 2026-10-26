@@ -60,7 +60,7 @@ function requiredSlotErrors(claims: readonly Obj[], slots: readonly SlotRow[], t
   return errors;
 }
 
-export interface RecordItemLive { itemType: string; grade: string | null; status: string | null; hash: string; poolText: string; bytes: number; fullBrief: string | null; entryIntoForce: string | null; complianceDeadline: string | null; /** ISO dates of the item's forward events and timeline rows (the export's forward_events and timelines). */ suppliedDates?: readonly string[] }
+export interface RecordItemLive { /** The stored sections derive from the stored brief (DRAIN-FIX-2 R2): an applied item whose sections do not is half applied and runs again. */ sectionsOk?: boolean; itemType: string; grade: string | null; status: string | null; hash: string; poolText: string; bytes: number; fullBrief: string | null; entryIntoForce: string | null; complianceDeadline: string | null; /** ISO dates of the item's forward events and timeline rows (the export's forward_events and timelines). */ suppliedDates?: readonly string[] }
 export interface RecordLive { items: Map<string, RecordItemLive>; slots: Map<string, SlotRow[]>; adopted: AdoptedTerms; now: Date; allowOverwrite: boolean; /** The live material of the entries that carry typed blocks (DIGEST-1 PR B), by item. */ emit: ReadonlyMap<string, EmitLive> }
 export interface RecordPlan { itemId: string; bytes: number; claims: Obj[]; emission: EmissionPlan | null }
 
