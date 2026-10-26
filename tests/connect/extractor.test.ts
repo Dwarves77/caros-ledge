@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
-import { tryParseDateAt, tryParseDateOrBareYearAt } from "@/features/obligations/extract/date-grammar";
+import { tryParseDateAt, tryParseDateOrBareYearAt } from "@/core/parse/date-grammar";
 import { dedupeEvents } from "@/features/obligations/extract/dedupe";
 import { EXTRACTOR_VERSION, extractForwardEvents } from "@/features/obligations/extract/extract-forward-events";
 import { RULES } from "@/features/obligations/extract/rules";
@@ -158,7 +158,7 @@ test("a claim with no span and a section with no text are recorded, never droppe
 });
 
 test("the extractor is pure: it imports no client, no network, no model", () => {
-  for (const f of ["date-grammar", "window", "rules", "scan", "dedupe", "extract-forward-events"]) {
+  for (const f of ["../../core/parse/date-grammar", "window", "rules", "scan", "dedupe", "extract-forward-events"]) {
     const src = readFileSync(new URL(`../../src/features/obligations/extract/${f}.ts`, import.meta.url), "utf8");
     assert.doesNotMatch(src, /from "@\/core\/db|supabase|fetch\(|anthropic|openai/i, f);
   }

@@ -1,0 +1,7 @@
+{
+  "version": "doc-date@1.0.0",
+  "gapChars": 40,
+  "metadata": ["dc:date", "eli:date_publication", "article:published_time"],
+  "labels": ["Date:", "Published:"],
+  "signatures": ["Done at"]
+}

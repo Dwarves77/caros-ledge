@@ -15,11 +15,13 @@ let c = 100;
 const src = (n: number): string => `b1000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
 const point = (n: number, label: string, key: string, value: number, at: string): Row => ({ id: uuid(300 + n), series_key: key, label, value_numeric: value, unit: "EUR/t", currency: "EUR", derivation: "observed", origin_class: "official", source_key: "fixture", source_ref: "fixture", as_at_date: at, reference_period: at });
 /** A claim and the item it belongs to. The item carries the day the knowledge entered the corpus (added_date), which is the day the claim counts from; the claim's own extraction time is a later backfill. */
-export function claimWithItem(type: keyof typeof TYPE, text: string, added: string, source: string, tier: number | null, kind = "FACT", id = uuid(++c)): { item: Row; claim: Row } {
+export function claimWithItem(type: keyof typeof TYPE, text: string, added: string, source: string, tier: number | null, kind = "FACT", id = uuid(++c), dated: string | null = added): { item: Row; claim: Row; capture: Row } {
   const itemId = uuid(1000 + c);
+  const captureId = uuid(5000 + c);
   return {
+    capture: { id: captureId, intelligence_item_id: itemId, result_url: `https://regulator.invalid/${c}`, result_content: text, search_query: "fixture", result_index: 0, ...(dated ? { document_date: dated, document_date_basis: `Published: ${dated}`, document_date_method: "doc-date@1.0.0" } : {}) },
     item: { id: itemId, title: `fixture ${type} ${c}`, item_type: TYPE[type][0], domain: TYPE[type][1], provenance_status: "unverified", is_archived: false, added_date: added, operational_scenario_tags: [], compliance_object_tags: [], topic_tags: [], jurisdiction_iso: [] },
-    claim: { id, intelligence_item_id: itemId, claim_text: text, claim_kind: kind, source_span: text, source_id: source, source_tier_at_grounding: tier, extracted_at: `${ago(0)}T09:00:00Z` },
+    claim: { id, intelligence_item_id: itemId, search_result_id: captureId, claim_text: text, claim_kind: kind, source_span: text, source_id: source, source_tier_at_grounding: tier, extracted_at: `${ago(0)}T09:00:00Z` },
   };
 }
 export const ITEM = { reg: uuid(1), market: uuid(2), research: uuid(3) };
@@ -53,6 +55,7 @@ export function plant(f: Fixture): void {
     ...Array.from({ length: 12 }, (_, n) => claimWithItem("reg", "General background with no coupling named.", ago(60 + n * 7), src(30 + n), 1)),
   ];
   db.seed("intelligence_items", [item(ITEM.reg, "reg"), item(ITEM.market, "market"), item(ITEM.research, "research"), ...rows.map((r) => r.item)]);
+  db.seed("agent_run_searches", rows.map((r) => r.capture));
   db.seed("section_claim_provenance", rows.map((r) => r.claim));
   db.seed("obligation_objects", [
     // P2: a dated ratchet of the ReFuelEU instrument; P4 (corridor_links): an ocean-wide ratchet inside the recency window

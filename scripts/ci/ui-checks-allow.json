@@ -186,7 +186,7 @@
       "owner": "R2d",
       "reason": "an HTML entity in a string.",
       "files": {
-        "src/features/obligations/extract/date-grammar.ts": {
+        "src/core/parse/date-grammar.ts": {
           "count": 2,
           "reason": "a pattern that matches &nbsp; in captured HTML source, not text shown to a reader: it stays."
         },

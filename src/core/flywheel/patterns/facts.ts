@@ -23,7 +23,7 @@ const specOfEdge = (table: string): { read: string; spec: FactSpec } | null => {
 };
 
 /** The fact a row is, or null when the table has no spec. `entities` are the entities the row is filed under; `over` carries what a row takes from its item: the surface it is read on and the day the item was added (a claim re-extracted by a backfill is no newer than its item). */
-export function factOf(table: string, row: Row, entities: readonly string[], over: { surface?: string | undefined; at?: string | null | undefined } = {}): Fact | null {
+export function factOf(table: string, row: Row, entities: readonly string[], over: { surface?: string | undefined; at?: string | null | undefined; docAt?: string | null | undefined } = {}): Fact | null {
   const hit = specOfEdge(table);
   if (!hit) return null;
   const s = hit.spec;
@@ -38,7 +38,7 @@ export function factOf(table: string, row: Row, entities: readonly string[], ove
   const qty = unitUnknown ? null : rawQty;
   const due = s.due ? asDay(row[s.due]) : s.dueYear && asNumber(row[s.dueYear]) ? `${asNumber(row[s.dueYear])}-01-01` : s.dueMonthsAfterAt && at && asNumber(row[s.dueMonthsAfterAt]) !== null ? plusMonths(at, asNumber(row[s.dueMonthsAfterAt]) as number) : null;
   return {
-    table, pk: String(row[s.pk]), role: s.role, entities: [...entities], modes: [...new Set(entities.flatMap((e) => couplingById(e)?.modes ?? []))].sort(), surface: over.surface ?? s.surface ?? "unknown", at, due,
+    table, pk: String(row[s.pk]), role: s.role, entities: [...entities], modes: [...new Set(entities.flatMap((e) => couplingById(e)?.modes ?? []))].sort(), surface: over.surface ?? s.surface ?? "unknown", at, ...(over.docAt ? { docAt: over.docAt } : {}), due,
     source: s.source ? asText(row[s.source]) : null, tier: s.tier ? asNumber(row[s.tier]) : null, qty, unit: qty === null ? null : compared ? canonical : figure ? figure.unit : s.qty?.unit ?? (s.qty?.unitColumn ? asText(row[s.qty.unitColumn]) : null), ...(unitUnknown ? { unitUnknown: true } : {}), ...(table === "derived_values" && row.admissibility === "display_only" ? { displayOnly: true as const } : {}), trl: s.trl ? asNumber(row[s.trl]) : null,
     kind: s.kind ? asText(row[s.kind]) : null, group: s.group ? asText(row[s.group]) : null,
   };

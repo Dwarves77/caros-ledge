@@ -69,7 +69,9 @@ async function runProducers(call: FamilyCall, d: BuiltDeps, p: NonNullable<Propa
   const ruled = !call.dry && exception !== "";
   const covered = (): string => { try { return selectRuns(loadProducerRegistry(d.catalog), { producer: p.producer, only: p.only }).map((e) => e.name).join(", "); } catch { return p.only ?? p.producer; } };
   const ruling = exception ? [`cadence exception ${ruled ? "in force for this call only" : "recorded (dry: nothing fetched)"}: "${exception}"; producers covered: ${covered()}`] : [];
-  if ((await d.gate.refresh()) || ruled) {
+  // a producer that reads stored data only (spec.fetches === false) needs no open fetch gate: rule 16 holds fetching, not reading
+  const stored = (): boolean => { try { return selectRuns(loadProducerRegistry(d.catalog), { producer: p.producer, only: p.only }).every((e) => d.catalog[e.name]?.fetches === false); } catch { return false; } };
+  if ((await d.gate.refresh()) || ruled || stored()) {
     if (p.rowsFile && !ROWS_FILE.test(p.rowsFile)) return runResult("failed", { refused: 1 }, [`refused: rowsFile "${p.rowsFile}" is not a file under a producer's data/rows directory`]);
     const text = p.rowsFile ? readFileSync(p.rowsFile, "utf8") : undefined;
     const cited = text !== undefined && !call.dry ? await captureCited(d, citedPages(text), ruled) : null;

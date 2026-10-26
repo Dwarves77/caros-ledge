@@ -15,6 +15,8 @@ export interface Fact {
   surface: string;
   /** The day the row was observed or written (YYYY-MM-DD), and the day it falls due or lands. */
   at: string | null;
+  /** A claim's clock for the velocity detector: the document date of the capture it was read from (null: the capture states none, and the claim is left out). Never the day its item was added. */
+  docAt?: string | null;
   due: string | null;
   source: string | null;
   tier: number | null;

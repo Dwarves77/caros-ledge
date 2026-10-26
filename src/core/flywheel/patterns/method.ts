@@ -12,7 +12,7 @@ export function patternMethod(kind: PatternKind): MethodFn {
   return (ctx) => {
     const gone = ctx.inputs.filter((i) => !i.row).map((i) => `${i.table}/${i.pk}`);
     if (gone.length) return { ok: false, reason: `evidence is gone or no longer current: ${gone.join(", ")}` };
-    const facts = ctx.inputs.map((i) => ({ fact: factOf(i.table, i.row as Record<string, unknown>, i.entities ?? [], { surface: i.surface, ...(i.at ? { at: i.at } : {}) }), input: i }));
+    const facts = ctx.inputs.map((i) => ({ fact: factOf(i.table, i.row as Record<string, unknown>, i.entities ?? [], { surface: i.surface, ...(i.at ? { at: i.at } : {}), ...(i.docAt ? { docAt: i.docAt } : {}) }), input: i }));
     if (facts.some((f) => !f.fact)) return { ok: false, reason: "an evidence table has no fact spec" };
     const all = facts.map((f) => f.fact as Fact);
     const relation = ctx.inputs.find((i) => i.relation)?.relation;

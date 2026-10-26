@@ -14,7 +14,7 @@ const UUID_SHAPE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 const columnsOf = (table: string): string => {
   const s = FACT_SPECS[table];
   const q = s?.qty;
-  return [...new Set([s?.pk, s?.at, s?.due, s?.dueYear, s?.dueMonthsAfterAt, q?.column, q?.unitColumn, q?.figure, s?.source, s?.tier, s?.kind, s?.trl, s?.group, s?.item].filter((c): c is string => !!c))].join(",");
+  return [...new Set([s?.pk, s?.at, s?.due, s?.dueYear, s?.dueMonthsAfterAt, q?.column, q?.unitColumn, q?.figure, s?.source, s?.tier, s?.kind, s?.trl, s?.group, s?.item, s?.capture].filter((c): c is string => !!c))].join(",");
 };
 
 /** A series' points become their moves: each point's relative change from the previous point of the same series, dated at the point. The first point of a series has no move and is dropped. */
@@ -43,7 +43,9 @@ export async function loadPatternInput(sb: Db, now: Date): Promise<{ input: Patt
     near.set(l.child_entity_id, [...(near.get(l.child_entity_id) ?? []), { entity: l.parent_entity_id, relation: l.relation as Relation }]);
   }
   const items = new Map((await readAll<{ id: string; item_type: string | null; domain: number | null; added_date: string | null }>(sb, "intelligence_items", "id,item_type,domain,added_date", ["id"])).map((i) => [i.id, { surface: surfaceOf(i.item_type, i.domain), added: i.added_date?.slice(0, 10) ?? null }]));
-  const counts: Record<string, number> = { refs_read: refs.length, relations_read: links.length };
+  // the clock of the velocity detector: the date each capture states about itself; a capture without one dates none of its claims
+  const dated = new Map((await readAll<{ id: string; document_date: string }>(sb, "agent_run_searches", "id,document_date", ["id"], (q) => q.not("document_date", "is", null))).map((c) => [c.id, c.document_date.slice(0, 10)]));
+  const counts: Record<string, number> = { refs_read: refs.length, relations_read: links.length, captures_dated: dated.size };
   const facts: Fact[] = [];
   const flow = new Map<string, number>();
   for (const [table, spec] of Object.entries(FACT_SPECS)) {
@@ -53,10 +55,10 @@ export async function loadPatternInput(sb: Db, now: Date): Promise<{ input: Patt
       const pk = String(r[spec.pk]);
       const item = spec.item ? items.get(String(r[spec.item])) : undefined;
       const es = filed.get(`${table}|${UUID_SHAPE.test(pk) ? pk : uuidOf(pk)}`);
-      const f = es ? factOf(spec.edge ?? table, r, es, { surface: item?.surface, ...(item?.added ? { at: item.added } : {}) }) : null;
-      // the corpus's flow: every claim that is not an absence, on the day its item was added
-      const day = item?.added ?? (typeof r.extracted_at === "string" ? r.extracted_at.slice(0, 10) : null);
-      if (spec.role === "claim" && day && !PATTERNS.velocity.excludeKinds.includes(String(r[spec.kind ?? ""]))) flow.set(day, (flow.get(day) ?? 0) + 1);
+      const docAt = spec.capture ? dated.get(String(r[spec.capture])) : undefined;
+      const f = es ? factOf(spec.edge ?? table, r, es, { surface: item?.surface, ...(item?.added ? { at: item.added } : {}), ...(docAt ? { docAt } : {}) }) : null;
+      // the corpus's flow: every claim that is not an absence, on the day its capture's document is dated; a claim whose capture states no date is in neither the entity's count nor the corpus's
+      if (spec.role === "claim" && docAt && !PATTERNS.velocity.excludeKinds.includes(String(r[spec.kind ?? ""]))) flow.set(docAt, (flow.get(docAt) ?? 0) + 1);
       return f ? [f] : [];
     });
     counts[`facts_${table}`] = made.length;

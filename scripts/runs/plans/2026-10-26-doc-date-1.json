@@ -1,0 +1,60 @@
+{
+  "ruling": "operator and scope reviewer 2026-10-26 under ADR-053 section 2 (DOC-DATE-1): a document's own date is a formal code, read from the stored capture by the document-date producer (nothing is fetched, so no scrape cadence is exercised and rule 16 stands; the cadence_exception key only satisfies INV-RUN-1 for an apply propagate step that names a producer); then the five pattern detectors run once on the document-date clock, superseding the pattern_velocity_burst 1.1.0 rows",
+  "steps": [
+    {
+      "name": "document-date-dry",
+      "stage": "propagate",
+      "mode": "dry",
+      "input": {
+        "propagate": {
+          "producers": {
+            "only": "document-date"
+          }
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "document-date-apply",
+      "stage": "propagate",
+      "mode": "apply",
+      "input": {
+        "propagate": {
+          "producers": {
+            "only": "document-date"
+          },
+          "cadence_exception": "operator and scope reviewer 2026-10-26 under ADR-053 section 2 (DOC-DATE-1): a document's own date is a formal code, read from the stored capture by the document-date producer (nothing is fetched, so no scrape cadence is exercised and rule 16 stands; the cadence_exception key only satisfies INV-RUN-1 for an apply propagate step that names a producer); then the five pattern detectors run once on the document-date clock, superseding the pattern_velocity_burst 1.1.0 rows"
+        }
+      },
+      "producer_env": [
+        "DOCUMENT_DATE_PRODUCER_ENABLED=1"
+      ],
+      "on_failure": "stop"
+    },
+    {
+      "name": "patterns-dry",
+      "stage": "connect",
+      "mode": "dry",
+      "input": {
+        "connect": {
+          "scan_limit": 0
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "patterns-apply",
+      "stage": "connect",
+      "mode": "apply",
+      "input": {
+        "connect": {
+          "scan_limit": 0
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    }
+  ]
+}
