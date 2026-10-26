@@ -134,7 +134,7 @@ export async function collectRefused(deps: CollectDeps, input: { limit?: number;
           ownerName = verdict.substitute.host;
         }
         const r = verdict.result;
-        const stored = await storeCapture(db as unknown as StoreDb, { sourceId: ownerId, sourceUrl: ownerUrl, sourceName: ownerName, finalUrl: r.finalUrl ?? verdict.url ?? src.url, text: r.html ?? r.text, title: r.title ?? null, httpStatus: r.status, channel, numberLocale: captureLocale(channel === "substitute" ? null : src.publisher_locale, r.language), itemId, itemIds: live.map((i) => i.id), declaredTransforms: [{ declared_transform: "collection-channel", channel, at: deps.now().toISOString() }], ceilingBind: null, ceiling }, () => deps.now().getTime(), started);
+        const stored = await storeCapture(db as unknown as StoreDb, { sourceId: ownerId, sourceUrl: ownerUrl, sourceName: ownerName, finalUrl: r.finalUrl ?? verdict.url ?? src.url, text: r.text, title: r.title ?? null, httpStatus: r.status, channel, numberLocale: captureLocale(channel === "substitute" ? null : src.publisher_locale, r.language), itemId, itemIds: live.map((i) => i.id), declaredTransforms: [{ declared_transform: "collection-channel", channel, at: deps.now().toISOString() }], ceilingBind: null, ceiling }, () => deps.now().getTime(), started);
         if (stored.outcome === "failed") {
           counts.failed++;
           notes.push(`${row.id}: ${stored.detail}`);

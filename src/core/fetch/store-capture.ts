@@ -1,6 +1,6 @@
 // Ported from old_repo/supabase/functions/capture-worker/index.ts (lines 259-581)
 // The one place a capture is written, shared by the capture worker (Edge Function, Deno) and the runner-side collection runtime (Node), so a capture from the browser tier or a substitute publisher is stored exactly as a direct one.
-// Import-free for that reason. The idempotency key is (final URL, content hash): the same hash is `unchanged` and writes nothing; a different hash inserts a new capture row, which supersedes the old one by being newer.
+// Import-free for that reason. The content hash is over the text with all whitespace collapsed (I1 of toText: a capture that keeps its paragraphs hashes as the flat capture always did, so no re-capture of an unchanged page is a new row). The idempotency key is (final URL, content hash): the same hash is `unchanged` and writes nothing; a different hash inserts a new capture row, which supersedes the old one by being newer.
 // A fresh body also closes the open stale-snapshot flags of the items on the source; an unchanged body closes none.
 export type Reply = PromiseLike<{ data: unknown; error: { message: string; code?: string } | null }>;
 /** The query-builder calls the worker makes, each named (an index signature reads as possibly undefined under noUncheckedIndexedAccess). */
@@ -49,7 +49,7 @@ const msg = (r: { error: { message: string } | null }): string | null => (r.erro
 /** Store one capture under the contract (ADR-016): a failed idempotency read, run insert or capture insert is reported and retried by the caller, never read as "no duplicate". */
 export async function storeCapture(db: Db, c: CaptureToStore, nowMs: () => number, startedMs: number): Promise<StoreOutcome> {
   const fail = (detail: string, retry = true): StoreOutcome => ({ outcome: "failed", captureId: null, runId: null, contentHash: null, detail, retry });
-  const hash = await sha256Hex(c.text);
+  const hash = await sha256Hex(c.text.replace(/\s+/g, " "));
   const dup = (await db.from("agent_run_searches").select("id").eq("result_url", c.finalUrl).eq("search_query", CAPTURE_QUERY).eq("content_hash", hash).limit(1)) as { data: unknown; error: { message: string } | null };
   if (dup.error) return fail(`idempotency read failed: ${dup.error.message}`);
   const existing = dup.data as Array<{ id: string }> | null;

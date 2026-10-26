@@ -224,3 +224,40 @@ test('gateProblems: a conditional entry names real routes, a reason, a match, an
   assert.match(bad({ ...good.conditional[0], under: undefined }), /needs a match and an under heading/);
   assert.match(bad({ ...good.conditional[1], match: undefined }), /needs a match/);
 });
+
+// PARITY-5 (main run 40286264250): the baseline was captured while the live-smoke account had no profile name, so the Assign to chips read "— Name not set"; the operator named the profile "Jason" on 2026-10-26.
+// The member's name is data. The run of chips between Add note and Due date compares as one token; the chips must still be drawn and nothing else loosens.
+test('dataNames run: the member chips compare as one token, a missing run still fails, a changed neighbour still fails', async () => {
+  const detailRoutes = ['regulation-detail', 'market-detail', 'research-detail', 'operations-detail'];
+  const run = (route, b, c) => compareRecord(route, '1280x900', b, c, [], config.dataNames ?? [], config.conditional ?? []);
+  const ctl = (...names) => ({ controls: names.map((n) => ({ role: n.startsWith('Due date') ? 'textbox' : 'button', name: n })) });
+  const base = ctl('Add note', 'Jason', '— Name not set', 'Due date (optional)', 'Assign');
+  const named = ctl('Add note', 'Jason', 'Jason', 'Due date (optional)', 'Assign');
+  for (const route of detailRoutes) {
+    assert.deepEqual(run(route, base, named).fails, [], `${route}: an absent name against a set one`);
+    assert.deepEqual(run(route, base, ctl('Add note', 'Dana Whitfield', 'Due date (optional)', 'Assign')).fails, [], `${route}: any name, any roster size`);
+    assert.deepEqual(run(route, named, base).fails, [], `${route}: and the other way`);
+  }
+  assert.equal(run('market-detail', base, named).used.some((u) => u.startsWith('data names:')), true, 'the reason is recorded');
+  assert.deepEqual(run('market-detail', base, ctl('Add note', 'Due date (optional)', 'Assign')).fails, ['control missing: button:member name'], 'the button absent still fails');
+  assert.deepEqual(run('market-detail', base, ctl('Add note', 'Jason', 'Due date (optional)')).fails, ['control missing: button:Assign'], 'a different control missing still fails');
+  assert.deepEqual(run('market-detail', base, ctl('Add note', 'Jason', 'Due date (optional)', 'Assign now')).fails, ['control missing: button:Assign'], 'a different control renamed still fails');
+  assert.deepEqual(run('market-detail', base, ctl('Add note', 'Jason', 'Other control', 'Due date (optional)', 'Assign')).fails.length, 0, 'extra buttons in the span are chips: the roster is data');
+  assert.deepEqual(run('market-detail', ctl('Add note', 'Export', 'Due date (optional)'), ctl('Add note', 'Due date (optional)')).fails, ['control missing: button:member name'], 'a baseline run is owed whatever it held');
+  assert.equal(run('market', base, ctl('Add note', 'Jason', 'Jason', 'Due date (optional)', 'Assign')).fails.length, 1, 'per route: elsewhere the name still gates');
+  const real = JSON.parse(await readFile(new URL('./baseline/market-detail.1280x900.json', import.meta.url), 'utf8'));
+  assert.deepEqual(run('market-detail', real, { ...real, controls: real.controls.map((c) => (c.name === '— Name not set' ? { ...c, name: 'Jason' } : c)) }).fails, [], 'the production case under the committed config');
+  assert.equal(run('market-detail', real, { ...real, controls: real.controls.filter((c) => c.name !== '— Name not set' && c.name !== 'Jason') }).fails.length, 1, 'the committed baseline owes the run');
+  assert.equal(run('market-detail', real, { ...real, controls: real.controls.map((c) => (c.name === 'Add note' ? { ...c, name: 'Add a note' } : c)) }).fails.length > 0, true, 'a different control changed still fails under the committed config');
+});
+
+test('gateProblems: a run entry names real routes, a reason, both anchors and a token', () => {
+  const routes = [{ name: 'a' }];
+  const good = { gates: { full: ['a'], frame: [], pixelExact: [], lists: [] }, exempt: [], skippable: [], listEmpty: [], dataNames: [{ route: ['a'], kind: 'run', after: '^button:A$', before: '^button:B$', as: 'member name', reason: 'a long enough reason to stand' }] };
+  assert.deepEqual(gateProblems(routes, good), []);
+  const bad = (over) => gateProblems(routes, { ...good, dataNames: [{ ...good.dataNames[0], ...over }] }).join('|');
+  assert.match(bad({ route: ['ghost'] }), /"ghost" is not a route/);
+  assert.match(bad({ reason: 'short' }), /carries no reason/);
+  assert.match(bad({ as: undefined }), /needs after, before and as/);
+  assert.match(bad({ before: undefined }), /needs after, before and as/);
+});

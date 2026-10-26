@@ -115,15 +115,17 @@ async function readEntities(sb: Db | null, kind: string | null): Promise<Entity[
 /** What one run has learned about its quotes: the text of each capture read and the capture each (url, quote) found, so the database is asked once per distinct (url, quote) and a capture is read once (FIX-QUOTE-1). */
 type QuoteCache = { texts: Map<string, string>; found: Map<string, string | null> };
 
-/** The quote and every further quote of a citation must stand verbatim on a stored capture of the cited URL: the capture id of the first, or the first refusal. */
-async function checkQuotes(sb: Db, c: Citation, cache: QuoteCache): Promise<{ captureId: string } | { reason: string }> {
+/** The quote and every further quote of a citation must stand verbatim on a stored capture of the cited URL: the capture id of the first and the capture's own slice of the quote (the form that is stored), or the first refusal. */
+async function checkQuotes(sb: Db, c: Citation, cache: QuoteCache): Promise<{ captureId: string; quote: string } | { reason: string }> {
   let first = "";
+  let slice = "";
   for (const quote of [c.quote, ...(c.also ?? [])]) {
     const v = await acceptStoredQuote(sb, { url: c.url, quote, verifiedAt: c.retrieved_at }, cache.texts, cache.found);
     if (!v.ok) return { reason: `${v.reason}: ${v.detail}` };
     first ||= v.captureId;
+    slice ||= v.quote;
   }
-  return { captureId: first };
+  return { captureId: first, quote: slice };
 }
 
 /** The existing organisation path (planOrganisation: the entity and its HOST identifier, then the source row's organisation_entity_id) for a manufacturer whose name is its rated citation host; never a hand-typed entity row, and a second call finds it held. */
@@ -199,7 +201,7 @@ export function rowsFileSpec(def: RowsFileDef): ProducerSpec {
         else if (reg) {
           if (__mint) await mintOrganisation(ctx.sb as Db, __mint, reg.source_id, ctx.now());
           const row = def.storesSource ? { ...dbRow, source_id: reg.source_id } : dbRow;
-          kept.push(def.settle ? await def.settle(ctx.sb as Db, row, { source_id: reg.source_id, capture_id: proof.captureId, citation: c }, ctx.now()) : row);
+          kept.push(def.settle ? await def.settle(ctx.sb as Db, row, { source_id: reg.source_id, capture_id: proof.captureId, citation: { ...c, quote: proof.quote } }, ctx.now()) : row);
         }
       }
       return { rows: kept, refused };
