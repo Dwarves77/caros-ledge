@@ -55,6 +55,8 @@ export const poolHashError = (subject: string, authored: unknown, live: string):
 // ---- the one validator pattern -----------------------------------------------------------------------------------
 export interface EntryResult<P> {
   errors: string[];
+  /** Residue-severity rule violations (the brief validator): the entry is not applied and not refused; the batch is not held, and each reason names its rule id. */
+  residue?: string[];
   plan?: P;
   /** The entry's work is already done: a re-apply writes nothing new (INV-210). */
   done?: boolean;
@@ -64,6 +66,8 @@ export interface Verdict<P> {
   fileErrors: string[];
   valid: Item<P>[];
   refused: { index: number; key: string | null; errors: string[] }[];
+  /** Entries a residue rule routed out: kept with their reasons, never written, and no reason to hold the batch. */
+  residue: { index: number; key: string | null; errors: string[] }[];
   alreadyApplied: { index: number; key: string | null; why: string }[];
 }
 export interface Written<P> extends Item<P> { ref: string; notes: string[]; counts: Record<string, number> }
@@ -105,7 +109,7 @@ function fileShapeErrors(json: unknown, spec: Pick<EntrySpec<never, never>, "bat
 /** Validate a whole batch against the live material. Pure. A structural problem fails the whole file; a problem in one entry refuses that entry only; a repeated key is refused. */
 function validateEntries<L, P>(spec: EntrySpec<L, P>, file: unknown, live: L): Verdict<P> {
   const fileErrors = fileShapeErrors(file, spec);
-  const verdict: Verdict<P> = { fileErrors, valid: [], refused: [], alreadyApplied: [] };
+  const verdict: Verdict<P> = { fileErrors, valid: [], refused: [], residue: [], alreadyApplied: [] };
   if (fileErrors.length || !isObj(file)) return verdict;
   const seen = new Set<string>();
   (file.entries as unknown[]).forEach((entry, index) => {
@@ -113,7 +117,8 @@ function validateEntries<L, P>(spec: EntrySpec<L, P>, file: unknown, live: L): V
     const r = spec.entry(entry, index, live);
     if (!r.errors.length && key && seen.has(key)) r.errors.push(`entry ${index} (${key}): duplicate key in this batch`);
     if (key) seen.add(key);
-    if (r.errors.length) verdict.refused.push({ index, key, errors: r.errors });
+    if (r.errors.length) verdict.refused.push({ index, key, errors: [...r.errors, ...(r.residue ?? [])] });
+    else if (r.residue?.length) verdict.residue.push({ index, key, errors: r.residue });
     else if (r.done) verdict.alreadyApplied.push({ index, key, why: "already applied" });
     else verdict.valid.push({ index, key, entry: entry as Obj, plan: r.plan as P });
   });
@@ -121,7 +126,7 @@ function validateEntries<L, P>(spec: EntrySpec<L, P>, file: unknown, live: L): V
 }
 
 const refusalNotes = (v: Verdict<unknown>, cap = 12): string[] => {
-  const all = v.refused.flatMap((r) => r.errors);
+  const all = [...v.refused, ...v.residue].flatMap((r) => r.errors);
   return [...all.slice(0, cap), ...(all.length > cap ? [`... and ${all.length - cap} more refusal reason(s)`] : [])];
 };
 
@@ -143,15 +148,16 @@ export async function applyEntries<L, P>(spec: EntrySpec<L, P>, deps: BatchDeps,
     return { ...runResult("failed", { refused: 1 }, [`${spec.kind}: the live material could not be read, nothing was applied: ${e instanceof Error ? e.message : String(e)}`]), data: empty };
   }
   const v = validateEntries(spec, file, live);
-  const counts: Record<string, number> = { entries: (file as Obj & { entries: unknown[] }).entries.length, valid: v.valid.length, refused: v.refused.length, already_applied: v.alreadyApplied.length, applied: 0, write_failures: 0, read_back_failures: 0 };
-  const data: BatchData = { ...empty, residue: v.refused, alreadyApplied: v.alreadyApplied.map((a) => a.key ?? String(a.index)) };
+  const counts: Record<string, number> = { entries: (file as Obj & { entries: unknown[] }).entries.length, valid: v.valid.length, refused: v.refused.length, residue: v.residue.length, already_applied: v.alreadyApplied.length, applied: 0, write_failures: 0, read_back_failures: 0 };
+  const data: BatchData = { ...empty, residue: [...v.refused, ...v.residue], alreadyApplied: v.alreadyApplied.map((a) => a.key ?? String(a.index)) };
   const notes = refusalNotes(v);
   const after = o.afterKey ? v.valid.findIndex((x) => x.key === o.afterKey) : -1;
   const todo = v.valid.slice(after + 1, typeof o.limit === "number" && o.limit >= 0 ? after + 1 + o.limit : undefined);
   counts.not_selected = v.valid.length - todo.length;
   if (o.dry || !todo.length) {
-    const nothing = !v.valid.length && v.refused.length > 0 && !v.alreadyApplied.length;
-    return { ...runResult(nothing ? "failed" : v.refused.length ? "partial" : "ok", nothing ? { ...counts, refused: v.refused.length } : counts, [...notes, o.dry ? `dry: ${todo.length} valid entr${todo.length === 1 ? "y" : "ies"}, nothing written` : "no valid entry to write"]), data };
+    const left = v.refused.length + v.residue.length;
+    const nothing = !v.valid.length && left > 0 && !v.alreadyApplied.length;
+    return { ...runResult(nothing ? "failed" : left ? "partial" : "ok", nothing ? { ...counts, refused: v.refused.length } : counts, [...notes, o.dry ? `dry: ${todo.length} valid entr${todo.length === 1 ? "y" : "ies"}, nothing written` : "no valid entry to write"]), data };
   }
   const stop = spec.guard ? await spec.guard(deps, o) : null;
   if (stop) return { ...runResult("failed", { ...counts, refused: Math.max(1, v.refused.length), guard_refused: 1 }, [`${spec.kind}: ${stop}`, ...notes]), data };
@@ -210,7 +216,7 @@ export async function applyEntries<L, P>(spec: EntrySpec<L, P>, deps: BatchDeps,
       if (down.outcome !== "ok") notes.push(`${spec.kind} downstream ${down.outcome}: ${down.notes.slice(0, 3).join("; ")}`);
     }
   }
-  const bad = counts.write_failures || counts.read_back_failures || v.refused.length || stoppedAt || (down && down.outcome !== "ok");
+  const bad = counts.write_failures || counts.read_back_failures || v.refused.length || v.residue.length || stoppedAt || (down && down.outcome !== "ok");
   const outcome = !counts.applied ? "failed" : bad ? "partial" : "ok";
   return { ...runResult(outcome, counts, notes), data };
 }

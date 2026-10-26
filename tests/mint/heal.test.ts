@@ -214,6 +214,21 @@ test("rule 18: an orphan figure no capture carries is sourced from a URL the ite
   assert.equal(db.rows("agent_run_searches").filter((x) => x.result_url === url).length, 1, "the cited page is stored as a pool row");
 });
 
+test("HEAL-1: the heal as a ruled plan fires it (no signed caller) while the scrape cadence is off reaches the network for nothing: the cited page is never requested, the orphan is reported as fetch_held, and the pass runs to the end over the stored captures", async () => {
+  const url = "https://publications.europa.eu/resource/doc/penalties";
+  const db = healWorld({ brief: "The penalty is EUR 50 000 per breach.", sections: [{ id: "sec1", item_id: ITEM, section_key: "record_facts", section_order: 2, content_md: `The penalty is EUR 50 000 per breach. See ${url}` }], claims: [...covers, fact("operators shall report verified annual emissions before 30 april of each year.")], captureText: "Operators shall report verified annual emissions before 30 April of each year. Regulation text only." });
+  const requested: string[] = [];
+  const fetchImpl = (async (u: string) => (requested.push(String(u)), new Response(PAGE, { headers: { "content-type": "text/html" } }))) as typeof fetch;
+  const r = await heal(db, {}, { fetch: { db: db.client, resolveHost: null, throttle: null, env: {}, fetchImpl } });
+  assert.deepEqual(requested, [], "nothing was requested from the network");
+  assert.notEqual(r.outcome, "failed", r.notes.join("; "));
+  assert.deepEqual(r.steps.source, ["EUR 50 000: fetch_held"]);
+  assert.equal(r.counts.orphans_sourced ?? 0, 0);
+  assert.equal(r.steps.capture, "held:fetch_hold:cadence_off", "a thin stored capture is not a reason to fetch while the hold is on, and not a failure of the item");
+  assert.equal(r.steps.cited, "held:fetch_hold:cadence_off");
+  assert.equal((db.rows("item_gate_a_state")[0] as { orphan_count: number }).orphan_count, 1, "the pass ran to the end over the stored captures and wrote the Gate A state");
+});
+
 test("rule 18: a host the registry never rates (a hosting platform) leaves the figure an orphan and registers nothing; a page that lacks the figure is followed ONE hop to a same-institution link", async () => {
   const platform = "https://consult.citizenspace.com/penalties";
   const db1 = healWorld({ brief: "The penalty is EUR 50 000 per breach.", sections: [{ id: "sec1", item_id: ITEM, section_key: "record_facts", section_order: 2, content_md: `Penalty EUR 50 000. ${platform}` }], claims: [...covers, fact("Operators shall report verified annual emissions before 30 April of each year.")], captureText: "Operators shall report verified annual emissions before 30 April of each year. Regulation text only." });

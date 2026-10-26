@@ -46,7 +46,7 @@ async function commit(f: Awaited<ReturnType<typeof minted>>["f"], over: { a2?: s
   const row = f.db.rows("harness_runs").find((r) => r.id === ex.rootRunId) as { outputs: { ids: Record<string, string[]> } };
   const stub = (JSON.parse(readFileSync(row.outputs.ids.parts?.[0] as string, "utf8")) as { items: { id: string; source_pool_hash: string }[] }).items[0] as { id: string; source_pool_hash: string };
   const a2 = over.a2 ?? A2;
-  const entry = { item_id: stub.id, source_pool_hash: stub.source_pool_hash, body: regulatoryBody(over.newSources), metadata: metadata({ format_type: "regulatory_fact_document", signal_band: null, sources_used: [] }), claims: [fact(A1, "8", "binding_position"), fact(a2, "8", "due_date"), fact(A3, "8"), fact(A4, "14")] };
+  const entry = { item_id: stub.id, source_pool_hash: stub.source_pool_hash, body: regulatoryBody(over.newSources), metadata: metadata({ format_type: "regulatory_fact_document", signal_band: null }), claims: [fact(A1, "8", "binding_position"), fact(a2, "8", "due_date"), fact(A3, "8"), fact(A4, "14")] };
   const root = mkdtempSync(join(tmpdir(), "caros-fly1-"));
   mkdirSync(join(root, "drain/batches/item-briefs"), { recursive: true });
   writeFileSync(join(root, "drain/batches/item-briefs/item-briefs-001.json"), JSON.stringify({ batch: "item-briefs-001", generated_at: NOW.toISOString(), authored_by: "session-lane", entries: [entry] }));

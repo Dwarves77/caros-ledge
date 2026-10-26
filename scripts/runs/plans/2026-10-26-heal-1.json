@@ -1,0 +1,39 @@
+{
+  "ruling": "coordinator 2026-10-26: HEAL-1 regrounds instrument items 7a0ead55 and 15f63ea9 from their stored captures through the heal path; no fetch; the minting hold stands",
+  "steps": [
+    {
+      "name": "heal-dry",
+      "stage": "ops",
+      "mode": "dry",
+      "input": {
+        "ops": {
+          "op": "heal-quarantined",
+          "args": {
+            "selection": "ids",
+            "ids": ["7a0ead55-7a7b-403b-8ba3-33862cb296e2", "15f63ea9-4803-4bb4-b1a3-9ccdeb8a3050"],
+            "limit": 2
+          }
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "heal-apply",
+      "stage": "ops",
+      "mode": "apply",
+      "input": {
+        "ops": {
+          "op": "heal-quarantined",
+          "args": {
+            "selection": "ids",
+            "ids": ["7a0ead55-7a7b-403b-8ba3-33862cb296e2", "15f63ea9-4803-4bb4-b1a3-9ccdeb8a3050"],
+            "limit": 2
+          }
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    }
+  ]
+}

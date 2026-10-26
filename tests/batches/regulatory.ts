@@ -20,7 +20,7 @@ export function regulatoryBody(newSources = ""): string {
 
 | Source Name | URL |
 |---|---|
-${newSources}` : ""}` : filler}`).join("\n\n");
+${newSources}` : ""}` : i === 2 || i === 10 ? `COST ALERT: ${filler}` : filler}`).join("\n\n");
 }
 export const fact = (span: string, section: string, slot?: string) => ({ section, claim_kind: "FACT", claim_text: slot ? `[${slot}] ${span}` : span, source_span: span, source_url: "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32023R9999", source_id: null, slot_key: slot ?? null });
 
