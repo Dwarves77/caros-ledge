@@ -3,6 +3,7 @@
 import { hostOf } from "@/core/shared";
 
 import portals from "./data/shared-portals.json";
+import { hostAncestors, hostsRelated, ledgerHostOf } from "./host-relation";
 
 /** Registrable domains that are shared super-domains: the SUBDOMAIN is the institution (documented exceptions, not a public-suffix list). */
 const TWO_LEVEL = new Set<string>([
@@ -32,8 +33,8 @@ export interface SourceRow {
   status?: string | null;
 }
 
-/** The grounding tier of a source is base_tier ONLY: reputation (effective_tier) never confers grounding eligibility (INV-175). */
-const tierOfSource = (s: SourceRow | null | undefined): number | null => (s == null ? null : (s.base_tier ?? null));
+/** The grounding tier of a source: its tier_override when set, else its base_tier (the database derives the same, ledger_attribution). Reputation (effective_tier) never confers grounding eligibility (INV-175). */
+const tierOfSource = (s: SourceRow | null | undefined): number | null => (s == null ? null : (s.tier_override ?? s.base_tier ?? null));
 
 export interface SpanResolution {
   tier: number | null;
@@ -51,49 +52,44 @@ export interface Resolver {
 }
 
 /**
- * The resolver over ALL registry rows (the caller reads them with fetchAllRows). An exact-host tier_override wins;
- * a suspended source populates nothing. The first row of an institution supplies the tier, but every institution whose
- * rows disagree is listed in `disagreements`, so the duplicate-row defect surfaces instead of resolving by order.
+ * The resolver over ALL registry rows (the caller reads them with fetchAllRows). A capture resolves to a source the DATABASE accepts for it (host-relation.ts: equal host or subdomain either way): the rows on the exact host first
+ * (a tier_override row before the others), then the nearest registered ancestor host, then a registered subdomain; the tier is that source's own. No related source resolves to nothing, and the caller registers and rates the host (rule 18).
+ * A suspended source populates nothing; a row without a tier is not a grounding source. Rows are taken in the order given. Every institution whose rows disagree on tier is listed in `disagreements`, so the duplicate-row defect surfaces instead of resolving by order.
  */
 export function buildResolver(sources: SourceRow[]): Resolver {
-  const instTier = new Map<string, number>();
-  const instSourceId = new Map<string, string>();
-  const overrideTierByHost = new Map<string, number>();
-  const overrideSourceByHost = new Map<string, string>();
+  const byHost = new Map<string, SourceRow[]>();
+  const bySubdomainOf = new Map<string, SourceRow[]>();
   const seen = new Map<string, { tiers: Set<number>; ids: string[] }>();
+  const push = (m: Map<string, SourceRow[]>, k: string, s: SourceRow) => m.set(k, [...(m.get(k) ?? []), s]);
   for (const s of sources) {
     if (s.status === "suspended") continue;
-    const h = hostOf(s.url);
+    const h = ledgerHostOf(s.url);
     const k = hostInstitution(h);
-    if (!k) continue;
-    if (s.tier_override != null) {
-      overrideTierByHost.set(h, s.tier_override);
-      overrideSourceByHost.set(h, s.id);
-    }
     const t = tierOfSource(s);
-    if (t == null) continue;
+    if (!h || t == null) continue;
+    push(byHost, h, s);
+    for (const up of hostAncestors(h)) push(bySubdomainOf, up, s);
     const group = seen.get(k) ?? { tiers: new Set<number>(), ids: [] };
-    group.tiers.add(t);
+    group.tiers.add(s.base_tier ?? t);
     group.ids.push(s.id);
     seen.set(k, group);
-    if (!instTier.has(k)) {
-      instTier.set(k, t);
-      instSourceId.set(k, s.id);
-    }
   }
   const disagreements = [...seen]
     .filter(([, g]) => g.tiers.size > 1)
     .map(([institution, g]) => ({ institution, tiers: [...g.tiers].sort((a, b) => a - b), sourceIds: g.ids }));
+  /** The index only narrows the candidates; hostsRelated, the one rule, decides. */
+  const pick = (rows: SourceRow[] | undefined, host: string): SpanResolution | null => {
+    const fit = rows?.filter((r) => hostsRelated(ledgerHostOf(r.url), host));
+    const row = fit?.find((r) => r.tier_override != null) ?? fit?.[0];
+    return row ? { tier: tierOfSource(row), sourceId: row.id } : null;
+  };
   return {
     disagreements,
     resolveSpan(resultUrl: string): SpanResolution {
-      const h = hostOf(resultUrl);
+      const h = ledgerHostOf(resultUrl);
       if (!h) return { tier: null, sourceId: null };
-      const override = overrideTierByHost.get(h);
-      if (override !== undefined) return { tier: override, sourceId: overrideSourceByHost.get(h) ?? null };
-      const k = hostInstitution(h);
-      const tier = instTier.get(k);
-      return tier !== undefined ? { tier, sourceId: instSourceId.get(k) ?? null } : { tier: null, sourceId: null };
+      const hit = pick(byHost.get(h), h) ?? hostAncestors(h).map((up) => pick(byHost.get(up), h)).find((r) => r !== null) ?? pick(bySubdomainOf.get(h), h);
+      return hit ?? { tier: null, sourceId: null };
     },
   };
 }

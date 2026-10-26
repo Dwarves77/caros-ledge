@@ -112,19 +112,42 @@ test("relabelling only prefixes the analysis label: the paragraph, the full-brie
   assert.equal(planRelabelModal("The operator must report. *Legal Confirmation Required:*"), null);
 });
 
-test("the honest strip removes the sentence, or the one isolable middle clause, and is ACCEPTED only when Gate A then finds no orphan", () => {
+test("the honest strip removes the sentence, or the one isolable middle clause when it also states a figure that stays, and is ACCEPTED only when Gate A then finds no orphan", () => {
   const single = "The regime applies to vessels. The penalty is EUR 50 000 per breach. Reports are annual.";
-  const accepted = planBriefHonest(single, ["EUR 50"], []);
+  const accepted = planBriefHonest(single, ["EUR 50 000"], []);
   assert.equal(accepted.outcome, "accepted");
   assert.equal(accepted.outcome === "accepted" ? accepted.newFullBrief : "", "The regime applies to vessels. Reports are annual.");
   assert.equal(accepted.outcome === "accepted" ? accepted.previous : "", single);
+  assert.deepEqual(accepted.perToken[0]?.removed, ["The penalty is EUR 50 000 per breach."]);
   const two = "Fines are EUR 50 000, due 1 January 2027, and apply to vessels.";
-  const rejected = planBriefHonest(two, ["EUR 50", "1 January 2027"], []);
-  assert.equal(rejected.outcome, "rejected", "the figure could not be stripped, so Gate A would still find an orphan");
-  assert.deepEqual(rejected.perToken.map((t) => t.outcome), ["refused:sentence_carries_other_live_token_no_isolable_clause", "clause"], "the first clause is never guessed at; the isolable middle clause is removed");
-  assert.equal(planBriefHonest("Fines are EUR 50 000 and apply.", ["EUR 50", "apply"], []).perToken[0]?.outcome, "refused:sentence_carries_other_live_token_no_isolable_clause");
+  const kept = planBriefHonest(two, ["EUR 50 000"], []);
+  assert.equal(kept.outcome, "no_op", "the date stays, so the first clause is never guessed at");
+  assert.deepEqual(kept.perToken.map((t) => t.outcome), ["refused:sentence_carries_other_live_token_no_isolable_clause"]);
+  const middle = planBriefHonest(two, ["1 January 2027"], []);
+  assert.equal(middle.outcome, "rejected", "the middle clause went, the other figure is still an orphan");
+  assert.deepEqual(middle.perToken.map((t) => t.outcome), ["clause"]);
   assert.equal(scanGateA(two, []).orphan_count, 2);
   assert.equal(planBriefHonest("Nothing to strip.", ["EUR 5"], []).outcome, "no_op");
+});
+
+test("HEAL-1b: a table row or list item goes whole whatever else it states, while prose that also states a figure that stays is still protected", () => {
+  const brief = ["The limits follow.", "- 2035: 77.94 gCO₂eq/MJ (14.5% reduction)", "| 1 January 2035 | Target rises to 14.5% (limit: 77.94 gCO₂eq/MJ) | Upcoming |", "The 2035 target is 14.5% and the limit is 77.94 gCO₂eq/MJ."].join("\n");
+  const plan = planBriefHonest(brief, ["77.94 gCO₂"], []);
+  assert.deepEqual(plan.perToken[0]?.outcome, "refused:sentence_carries_other_live_token_no_isolable_clause", "the prose sentence also states 14.5%, a figure that stays");
+  const rows = ["The limits follow.", "- 2035: 77.94 gCO₂eq/MJ (14.5% reduction)", "| 1 January 2035 | Target rises to 14.5% (limit: 77.94 gCO₂eq/MJ) | Upcoming |", "Reports are annual."].join("\n");
+  const cut = planBriefHonest(rows, ["77.94 gCO₂"], [{ claim_text: "1 January 2035, 14.5%", source_span: "1 January 2035, 14.5%" }]);
+  assert.equal(cut.outcome === "accepted" ? cut.newFullBrief : "", ["The limits follow.", "Reports are annual."].join("\n"));
+  assert.deepEqual(cut.perToken[0]?.removed, ["- 2035: 77.94 gCO₂eq/MJ (14.5% reduction)", "| 1 January 2035 | Target rises to 14.5% (limit: 77.94 gCO₂eq/MJ) | Upcoming |"]);
+});
+
+test("HEAL-1b: a sentence whose every figure and date is being removed goes whole, and a token goes from EVERY place it stands, but never out of a longer number or a dated day", () => {
+  const brief = ["Costs are about €15 in 2024, €27 in 2025, and €44 in 2026.", "The cap is €150.", "| 31 March 2026 | Verifier notifies |", "| March 2026 | Council decision |", "See March 2026 again."].join("\n");
+  const plan = planBriefHonest(brief, ["€15", "€27", "€44", "March 2026"], [{ claim_text: "The cap is €150.", source_span: "The cap is €150." }, { claim_text: "| 31 March 2026 | Verifier notifies |", source_span: "31 March 2026 | Verifier notifies" }]);
+  const out = plan.outcome === "accepted" ? plan.newFullBrief : "";
+  assert.ok(out.includes("The cap is €150."), "€15 is not inside €150");
+  assert.ok(out.includes("| 31 March 2026 |"), "March 2026 is not inside 31 March 2026");
+  assert.ok(!out.includes("€27") && !out.includes("€44") && !out.includes("Council decision") && !out.includes("again"), out);
+  assert.equal(plan.perToken.find((t) => t.token === "March 2026")?.removed?.length, 2, "both standing occurrences were cut");
 });
 
 // ---- the healer end to end --------------------------------------------------------------------------------------------------------------------------------------------------
@@ -227,6 +250,37 @@ test("HEAL-1: the heal as a ruled plan fires it (no signed caller) while the scr
   assert.equal(r.steps.capture, "held:fetch_hold:cadence_off", "a thin stored capture is not a reason to fetch while the hold is on, and not a failure of the item");
   assert.equal(r.steps.cited, "held:fetch_hold:cadence_off");
   assert.equal((db.rows("item_gate_a_state")[0] as { orphan_count: number }).orphan_count, 1, "the pass ran to the end over the stored captures and wrote the Gate A state");
+});
+
+test("HEAL-1b: the heal repairs the attributions the database lists and no others: on a fixture shaped like the two items (150 FACTs, 37 of them on ec.europa.eu subdomains standing on finance.ec.europa.eu) the 150 rewrites the resolver preferred collapse to the 37 violations", async () => {
+  const OLD_ROOT = "a0000000-0000-4000-8000-0000000000e1";
+  const FIN = "c0000000-0000-4000-8000-0000000000f1";
+  const OK = 113;
+  const BAD = 37;
+  const sentences = (tag: string, n: number): string[] => Array.from({ length: n }, (_, i) => `The ${tag} provision number ${i + 1} sets out the obligations of operators under the scheme in full.`);
+  const okText = sentences("eur-lex", OK);
+  const badText = sentences("transport", BAD);
+  const db = healWorld({
+    captureText: okText.join(" "),
+    claims: [...covers, ...okText.map((t) => fact(t)), ...badText.map((t) => ({ ...fact(t), search_result_id: "cap2", source_id: FIN, source_tier_at_grounding: 2 }))],
+  });
+  db.seed("sources", [
+    { id: OLD_ROOT, name: "EUR-Lex root", url: "https://eur-lex.europa.eu/", base_tier: 1, tier_override: null, status: "active", institution_id: null, category: "regulatory" },
+    { id: FIN, name: "Finance", url: "https://finance.ec.europa.eu/", base_tier: 2, tier_override: null, status: "active", institution_id: null, category: "regulatory" },
+  ]);
+  db.seed("agent_run_searches", [{ id: "cap2", intelligence_item_id: ITEM, result_url: "https://transport.ec.europa.eu/transport-modes/fueleu-maritime_en", result_content: badText.join(" "), result_index: 1, search_query: "stored" }]);
+  const violations = () => (db.client as unknown as { rpc: (n: string, a: unknown) => Promise<{ data: { claim_id: string }[] }> }).rpc("ledger_attribution_violations", { p_item_id: ITEM }).then((r) => r.data);
+  assert.equal((await violations()).length, BAD, "the fixture is the production shape: source_host_mismatch FACTs on subdomain captures");
+  const r = await heal(db);
+  assert.notEqual(r.outcome, "failed", r.notes.join("; "));
+  assert.equal(r.counts.attribution_repaired, BAD, "only the claims the database lists; the resolver's own preference for the first eur-lex row is no reason to rewrite correct claims");
+  assert.equal(r.counts.ledger_ops, BAD);
+  assert.equal(r.counts.healed, 1, "a pass that wrote counts under the ops family's write key, so its row is not a noop");
+  assert.deepEqual(await violations(), [], "after the heal the database lists none");
+  const moved = claimsOf(db).filter((c) => c.search_result_id === "cap2");
+  assert.equal(moved.length, BAD);
+  assert.ok(moved.every((c) => c.source_id !== FIN && String(db.rows("sources").find((s) => s.id === c.source_id)?.url).includes("transport.ec.europa.eu")), "re-stood on a source registered on the capture's own host (rule 18)");
+  assert.ok(claimsOf(db).filter((c) => c.search_result_id === "cap1" && c.claim_kind === "FACT").every((c) => c.source_id === SOURCE), "the correct claims keep their source");
 });
 
 test("rule 18: a host the registry never rates (a hosting platform) leaves the figure an orphan and registers nothing; a page that lacks the figure is followed ONE hop to a same-institution link", async () => {
