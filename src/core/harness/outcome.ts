@@ -33,7 +33,8 @@ export function classify(result: RunResult, writes: readonly string[], mode: Mod
   const note = result.notes[0] ?? null;
   const wrote = writeCount(result.counts, writes);
   if (result.outcome === "failed") return (result.counts.refused ?? 0) > 0 && wrote === 0 ? { outcome: "refused", reason: note } : { outcome: "failed", reason: note };
-  if (mode === "apply" && wrote === 0) return { outcome: "noop", reason: note ?? "applied with nothing to write" };
+  // Units that failed are not "nothing to write": a run whose units all failed attempted its work and is `partial` (HEAL-1b: two items failed, nothing was written, and the row read noop).
+  if (mode === "apply" && wrote === 0) return (result.counts.failed ?? 0) > 0 ? { outcome: "partial", reason: note ?? "units failed; nothing written" } : { outcome: "noop", reason: note ?? "applied with nothing to write" };
   return result.outcome === "partial" ? { outcome: "partial", reason: note ?? "some units failed" } : { outcome: "success", reason: null };
 }
 
@@ -43,7 +44,8 @@ export function noopContractErrors(row: { outcome: string; mode: string | null; 
   const errors = [...countProblems(counts), ...countProblems((row.outputs.planned ?? {}) as Record<string, unknown>)];
   const wrote = writeCount(errors.length ? {} : counts, writes);
   if (row.outcome === "noop" && wrote > 0) errors.push(`a noop row claims ${wrote} write(s): a run that wrote cannot record itself as one`);
-  if ((row.outcome === "success" || row.outcome === "partial") && row.mode === "apply" && wrote === 0) errors.push(`a ${row.outcome} row in apply mode claims no write: no apply evidence`);
+  const failedUnits = counts.failed ?? 0;
+  if ((row.outcome === "success" || (row.outcome === "partial" && !(failedUnits > 0))) && row.mode === "apply" && wrote === 0) errors.push(`a ${row.outcome} row in apply mode claims no write: no apply evidence`);
   if (row.mode === "dry" && row.outputs.counts !== undefined) errors.push("a dry row carries write counts: a dry run's counts belong under planned");
   return errors;
 }
