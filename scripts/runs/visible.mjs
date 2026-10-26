@@ -1,6 +1,6 @@
 // DRAIN-FIX-2 visibility: `node scripts/runs/visible.mjs <results.json> --base <origin>` loads the detail page of every item a ruled run applied (results.applied_item_ids, written by scripts/runs/execute.mjs) as the signed-in member
 // and asserts the page drew the brief: the typed DOM marker data-audit="detail-section-head" at least once, on the item's own path. No page text is matched (ADR-053). Exit 1 names every item that does not render; 2 when a
-// credential is missing. The sign-in is the capture's own (tests/parity/capture.mjs signIn: LIVE_SMOKE_EMAIL and LIVE_SMOKE_PASSWORD from the environment, never typed), and the item's route is read with the service key.
+// credential is missing. The sign-in is the capture's own (tests/parity/capture.mjs signIn: LIVE_SMOKE_EMAIL and LIVE_SMOKE_PASSWORD from the environment, never typed),. The item type is not read from the database: the item is tried on each surface route and passes when one renders (the runner holds no service key).
 import { readFileSync } from "node:fs";
 import { register } from "node:module";
 import { parseArgs } from "node:util";
@@ -17,13 +17,22 @@ export function finding(id, path, page) {
   return page.markers > 0 ? null : `${id}: ${path} drew no ${MARKER}: the brief is not shown`;
 }
 
-/** Every applied item opened through `open(path)` (a signed-in page loader) and judged; `pathOf(id)` is the item's route. Returns the findings (empty: all rendered). */
+/** Every applied item opened through `open(path)` (a signed-in page loader) and judged; `pathOf(id)` is the item's route or the list of routes it may have (one per surface: the item passes when any renders). Returns the findings (empty: all rendered). */
 export async function checkItems(ids, { open, pathOf }) {
   const out = [];
   for (const id of ids) {
-    const path = await pathOf(id);
-    const f = path ? finding(id, path, await open(path)) : `${id}: no route for the item`;
-    if (f) out.push(f);
+    const paths = [await pathOf(id)].flat().filter(Boolean);
+    const found = [];
+    for (const path of paths) {
+      const f = finding(id, path, await open(path));
+      if (!f) {
+        found.length = 0;
+        break;
+      }
+      found.push(f);
+    }
+    if (!paths.length) out.push(`${id}: no route for the item`);
+    else out.push(...found);
   }
   return out;
 }
@@ -32,28 +41,23 @@ if (isMain(import.meta.url)) {
   const { values, positionals } = parseArgs({ allowPositionals: true, options: { base: { type: "string" } } });
   const ids = JSON.parse(readFileSync(positionals[0], "utf8")).applied_item_ids ?? [];
   const env = process.env;
-  const need = ["NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "LIVE_SMOKE_EMAIL", "LIVE_SMOKE_PASSWORD"].filter((n) => !env[n]);
+  const need = ["LIVE_SMOKE_EMAIL", "LIVE_SMOKE_PASSWORD"].filter((n) => !env[n]);
   if (!values.base || need.length) {
     console.error(`visible: missing ${[!values.base && "--base", ...need].filter(Boolean).join(", ")}`);
     process.exit(2);
   }
   register("../lib/ts-hooks.mjs", import.meta.url, { data: {} });
-  const { serviceClient } = await import("../../src/core/db/index.ts");
-  const { surfaceHref, surfaceOf } = await import("../../src/core/routing/index.ts");
+  const { SURFACE_PATH } = await import("../../src/core/routing/index.ts");
   const { chromium } = await import("playwright");
   const { signIn } = await import("../../tests/parity/capture.mjs");
   const { installBypass } = await import("../ci/live/bypass.mjs");
-  const sb = serviceClient();
   const browser = await chromium.launch();
   try {
     const state = await signIn(browser, values.base, env.LIVE_SMOKE_EMAIL, env.LIVE_SMOKE_PASSWORD);
     const context = await browser.newContext({ storageState: state });
     await installBypass(context, values.base);
     const bad = await checkItems(ids, {
-      pathOf: async (id) => {
-        const { data } = await sb.from("intelligence_items").select("item_type, domain").eq("id", id).maybeSingle();
-        return data ? surfaceHref(surfaceOf(data.item_type, data.domain), id) : null;
-      },
+      pathOf: (id) => Object.values(SURFACE_PATH).map((base) => `${base}/${encodeURIComponent(id)}`),
       open: async (path) => {
         const page = await context.newPage();
         try {

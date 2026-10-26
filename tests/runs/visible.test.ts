@@ -24,6 +24,10 @@ test("visible: an item whose page draws the marker on its own path passes; no ma
   assert.match((await checkItems([A], { pathOf: async () => "/x", open: async () => ({ status: 404, finalUrl: "u", markers: 1 }) }))[0], /HTTP 404/);
   assert.match((await checkItems([A], { pathOf: async () => "/x", open: async () => ({ status: 200, finalUrl: "https://x.test/login", markers: 1 }) }))[0], /away from the item/);
   assert.match((await checkItems([A], { pathOf: async () => null, open: async () => null }))[0], /no route/);
+  // no item type is read: the item is tried on each surface and passes when one renders
+  const tries: string[] = [];
+  const multi = await checkItems([A], { pathOf: async (id: string) => [`/market/${id}`, `/regulations/${id}`], open: async (p: string) => (tries.push(p), p.startsWith("/regulations") ? { status: 200, finalUrl: `https://x.test${p}`, markers: 2 } : { status: 404, finalUrl: `https://x.test${p}`, markers: 0 }) });
+  assert.deepEqual([multi, tries.length], [[], 2]);
 });
 
 test("visible: a real browser page (a local fixture server) is judged by the typed marker, not by text", async () => {
