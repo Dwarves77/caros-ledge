@@ -126,7 +126,7 @@ export function RegulationDetail(p: Props) {
   return (
     <ClaimTierProvider claimTiers={p.claimTiers}>
       <div style={{ paddingTop: 16 }}>
-        <DetailPageWrapper band={band} action={topRecommendedAction(p.recommendedActions)} nowIso={nowIso}>
+        <DetailPageWrapper itemId={r.id} band={band} action={topRecommendedAction(p.recommendedActions)} nowIso={nowIso}>
           <DetailMasthead title={r.title} band={band} surface="Regulations" jurisdiction={jurisLabel} dek={dek} placeholder="Ask about this regulation, e.g. when does the largest deadline hit" nowIso={nowIso} actionSlot={actionCard} connectionsSlot={p.connectionRows && p.connectionRows.length > 0 ? <ItemConnections rows={p.connectionRows} /> : undefined} />
           {isAdminViewer && r.agentIntegrityFlag === true && r.agentIntegrityPhrase && (
             <StateNote tone="error">Flagged for review: the brief carries the phrase “{r.agentIntegrityPhrase}”.</StateNote>

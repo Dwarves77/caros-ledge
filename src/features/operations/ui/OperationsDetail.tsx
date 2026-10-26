@@ -138,7 +138,7 @@ export function OperationsDetail(p: OperationsDetailProps) {
   return (
     <ClaimTierProvider claimTiers={p.claimTiers}>
       <div style={{ paddingTop: 16 }}>
-        <DetailPageWrapper band={band} action={topRecommendedAction(p.recommendedActions)} nowIso={nowIso}>
+        <DetailPageWrapper itemId={r.id} band={band} action={topRecommendedAction(p.recommendedActions)} nowIso={nowIso}>
           <DetailMasthead title={r.title} band={band} surface="Operations" jurisdiction={regionGroup || jurisLabel} dek={dek} placeholder="Ask about this profile, e.g. when does the largest deadline hit" nowIso={nowIso} actionSlot={actionCard} connectionsSlot={p.connectionRows.length > 0 ? <ItemConnections rows={p.connectionRows} /> : undefined} />
           {r.conversionTrigger && <p className={styles.noteText}>{r.conversionTrigger}</p>}
           {p.claimsDegraded && (

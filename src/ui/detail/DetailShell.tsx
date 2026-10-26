@@ -84,10 +84,11 @@ function ItemCollabSlot({ todayIso }: { todayIso: string }) {
   );
 }
 
-export function DetailPageWrapper({ children, band = null, action = null, nowIso }: { children: ReactNode; band?: UrgencyBand | null; action?: string | null; nowIso: string }) {
+/** `itemId` is the uuid of the item the page shows, in a typed attribute: the signed-in visibility check (scripts/runs/visible.mjs) reads it, since a uuid URL redirects to the legacy slug. */
+export function DetailPageWrapper({ children, itemId, band = null, action = null, nowIso }: { children: ReactNode; itemId: string; band?: UrgencyBand | null; action?: string | null; nowIso: string }) {
   return (
     <BandProvider band={band} action={action}>
-      <div className="cl-detail-wrap">
+      <div className="cl-detail-wrap" data-item-id={itemId}>
         {children}
         <ItemCollabSlot todayIso={nowIso} />
       </div>
