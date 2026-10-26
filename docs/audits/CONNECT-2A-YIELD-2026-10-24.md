@@ -246,3 +246,64 @@ All 19 rows (the sample asked for is 20; there are 19), window 90 days, baseline
 2. [CONFIRMED] the corpus was added in bulk: items per `added_date` month are 83, 5, 32, 205, 1, 13, 632, 1,704 (Feb to Sep 2026), so the 90-day window (from 27 July) holds the August and September batches and the 180-day baseline holds the Feb to July months. [HYPOTHESIS, unverified] a share-of-flow burst between two intake batches measures the composition of the batches (EUR-Lex jurisdictional acts) rather than the world's attention, which would make most of the 16 jurisdiction rows an intake artefact. The test that settles it: re-run P1 with the window and baseline measured on the date of the cited source (capture date or the act's own date) instead of the item's `added_date`; if the 19 collapse, the detector needs that change, a producer-side finding, not a threshold edit.
 3. [CONFIRMED] the ledger row of patterns-apply reads outcome `noop` while it wrote 19 `derived_values` and 843 `derivation_edges`. [HYPOTHESIS, unverified] the recorder derives the outcome from count keys ending in written/inserted/minted/raised/closed and the pattern counts are named `patterns_new`; the test is to read the recorder's classification and run a fixture turn with a pattern. Owner: the connect stage and the recorder (INTERFACE GAP, no edit made here).
 4. [CONFIRMED] couplings-apply is `partial` for a stated reason: 11 of the 30 seed pages did not capture (`capture_thin` on four transport.ec.europa.eu pages, `robots_deferred` on imo.org, and others the ledger note truncates), so 6 of 47 couplings were refused and their relations not written (48 of 57). The refusals close when those pages capture through the browser tier; the plan can be re-run under a new revision once that is fixed.
+
+## R5: the three defects of R4 tested, fixed and the plan run again (2026-10-26, production project kwrsbpiseruzbfwjpvsp, FIX-P1-1 merged as a77624d, plan revision 2, main run 40251087309)
+
+Status tokens: rule 14.
+
+| step | ledger run id | family | mode | outcome | what it counted |
+|---|---|---|---|---|---|
+| couplings-dry | f5eb4fb7-54c9-488f-b3af-7c70c78c9380 | propagation | dry | success | nothing written |
+| couplings-apply | 3f880c3b-33e3-4fa9-8c2d-a1161e356cab | propagation | apply | partial | 30 seed pages cited: 9 captured, 19 unchanged, 2 failed (both imo.org); 1 coupling refused (node:bunkering); 3 entities, 13 aliases, 8 relations, 43 refs written; 40 events drained |
+| patterns-dry | 7ea0a548-b06e-4cf4-b8a8-76eb5443c38d | corpus-turn | dry | success | nothing written |
+| patterns-apply | 88e92120-af0f-435b-8a43-3754739c900f | corpus-turn | apply | success | 20 patterns: 1 new, 19 unchanged; refs_read 14,348, relations_read 56 |
+
+### Defect 1 (P1 windows on the intake date): [REFUTED] on the only source date the provenance carries
+- [CONFIRMED] method: the production P1 computation was re-run read-only with the real loader and detector. The run on the current clock (item `added_date`) reproduces the 19 patterns. The window, baseline and corpus flow were then moved to the capture's retrieved_at: `agent_run_searches.searched_at`, reached through `section_claim_provenance.search_result_id`. The provenance carries no published date.
+- [CONFIRMED] result: 16 of the 19 survive with claims lacking a capture dropped (5,737 of 6,391 claim facts carry one); 19 of 19 survive when those claims fall back to the item day. The detector, its config and the method version are unchanged (`pattern_velocity_burst` stays 1.1.0).
+- [HYPOTHESIS] the survival does not show the bursts are world signal: retrieved_at is itself an intake-time clock (every capture a claim rests on dates from 2026-06-02 to 2026-09-04). A date from inside the cited document (the act's own date, the page's published date) would settle it; no column carries one. Recorded on the FIX-P1-1 report as an improvement, not built.
+
+### Defect 2 (the recorder read noop over writes): [CONFIRMED] cause, fixed
+- [CONFIRMED] by code read: `classify` (src/core/harness/outcome.ts:32-38) sums only the keys the family declares in `src/core/harness/data/families.json` `writes`. corpus-turn declared none of the pattern keys, so run 64a761a9 (19 patterns, 843 evidence edges) read noop. The suffix rule in connect.ts:18 that R4 named only totals the term pass. R4's hypothesis named the wrong place.
+- [CONFIRMED] the same class on production rows: 16 brief-apply rows recorded noop while rewriting items and lines (retokenise); 6 producer runs recorded noop while writing assessments, entities and refs. Keys added: corpus-turn patterns_new, patterns_superseded, patterns_obsolete, deadlines_synced, triggers_resolved; propagation seed_entities_written, seed_aliases_written, seed_relations_written, refs_written, seed_capture_captured, producers_capture_captured; brief-apply items_rewritten, lines_rewritten; producers written, entities_written, refs_written, signposts_written, edges_authored.
+- [CONFIRMED] after the fix patterns-apply (88e92120) is `success` with 1 pattern written and 19 unchanged.
+
+### Defect 3 (seed pages): [CONFIRMED] cause, fixed
+| page | direct tier | browser tier | after the fix |
+|---|---|---|---|
+| 9 ec.europa.eu pages (transport x4, energy, environment, taxation-customs, commission, climate) | capture_thin | read the page (5,140 to 20,674 characters), refused by the classifier | captured or unchanged by the direct tier; every cited quote stands verbatim |
+| imo.org (2 pages) | robots_deferred | robots_unknown | still failed: a stated absence, not worked around |
+
+- [CONFIRMED] cause: classifyBody's EUR-Lex interface-shell rule (portal words such as "Select your language" with no instrument body) was handed no host by the capture path, so it applied to every host and fired on every europa.eu page. Reproduced on a rendered page with and without the host. Fix: the fetching sites pass the host and path (`bodyOpts`).
+- Production read-back: seed pages with a stored capture 28 of 30; couplings refused 1 of 47 (node:bunkering, whose page is imo.org); `entity_relations` 56 (48 before); `entity_refs` with a basis 14,348 (14,305 before).
+
+### derived_values by method after the run
+pattern_velocity_burst 1.1.0: 20 emerging, 0 superseded; pattern_mandate_capacity, pattern_lead_lag, pattern_cross_modal, pattern_penalty_abatement: 0. `derivation_edges` into live patterns: 894. 1.2.0: none (the detector was not changed).
+
+### The 20 surviving patterns (all of them; window 90 days, baseline 180 days)
+The 19 of R4 are unchanged; one is new (32018L2001, the Renewable Energy Directive, whose page now grounds its coupling).
+
+| entity | kind | share ratio | admissibility | window claims | baseline claims | surfaces in evidence | edges |
+|---|---|---|---|---|---|---|---|
+| LU | jurisdiction | 29.59 | analysis_ok | 104 | 3 | 2 | 51 |
+| eur-lex.europa.eu | organisation | 20.58 | analysis_ok | 1,061 | 44 | 1 | 51 |
+| 32008L0068 | instrument | 20.20 | analysis_ok | 71 | 3 | 1 | 51 |
+| EU | jurisdiction | 15.09 | analysis_ok | 725 | 41 | 1 | 51 |
+| HR | jurisdiction | 13.23 | analysis_ok | 62 | 4 | 1 | 51 |
+| IT | jurisdiction | 11.10 | analysis_ok | 52 | 4 | 1 | 51 |
+| CH | jurisdiction | 9.50 | display_only | 89 | 8 | 2 | 51 |
+| AT | jurisdiction | 9.39 | analysis_ok | 44 | 4 | 2 | 45 |
+| ES | jurisdiction | 8.11 | analysis_ok | 38 | 4 | 2 | 39 |
+| BE | jurisdiction | 6.61 | display_only | 62 | 8 | 2 | 51 |
+| GB | jurisdiction | 5.69 | analysis_ok | 80 | 12 | 1 | 51 |
+| IE | jurisdiction | 5.43 | analysis_ok | 70 | 11 | 1 | 51 |
+| DK | jurisdiction | 5.24 | analysis_ok | 43 | 7 | 1 | 44 |
+| FI | jurisdiction | 4.91 | analysis_ok | 23 | 4 | 2 | 24 |
+| FR | jurisdiction | 4.61 | analysis_ok | 54 | 10 | 2 | 51 |
+| 32018L2001 | instrument | 4.52 | analysis_ok | 53 | 10 | 1 | 51 |
+| IS | jurisdiction | 2.67 | analysis_ok | 25 | 8 | 1 | 26 |
+| PL | jurisdiction | 2.19 | analysis_ok | 36 | 14 | 1 | 37 |
+| 32015R0757 | instrument | 1.83 | analysis_ok | 15 | 7 | 1 | 16 |
+| DE | jurisdiction | 1.51 | analysis_ok | 69 | 39 | 2 | 51 |
+
+(Evidence is capped at 50 members plus one summary edge, so a pattern whose second surface lies beyond the 50 shown reads one surface here.) R4's judgement stands for the two noise rows (LU, signed-at wording; eur-lex.europa.eu, the publisher host): [CONFIRMED] by the evidence rows in R4, not yet excluded by a rule.
