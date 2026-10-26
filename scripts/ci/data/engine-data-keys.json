@@ -1,5 +1,5 @@
 {
-  "_note": "WORDGATE-1 (ADR-053 section 2): engine data files carry formal codes and numbers, never trigger words. keys: file -> sorted top-level keys; a key outside the list, or a listed key gone, fails tree-checks. shapes: file -> key -> character-class grammar every string of that array must match. No word list anywhere; change a pin only with the file it pins.",
+  "_note": "WORDGATE-1 (ADR-053 section 2): engine data files carry formal codes and numbers, never trigger words. keys: file -> sorted top-level keys; a key outside the list, or a listed key gone, fails tree-checks. shapes: file -> key -> character-class grammar every string of that array must match. entries: file -> key -> exact key set of each object in that array, plus a grammar per field. No word list anywhere; change a pin only with the file it pins.",
   "keys": {
     "src/core/coupling/data/couplings.json": ["classes","columns","entities","relations","version"],
     "src/core/fetch/data/document-date.json": ["gapChars","metadata","version"],
@@ -20,6 +20,9 @@
     "src/features/obligations/derive/data/sanction-classes.json": ["_note","classes","formulaClass"],
     "src/features/obligations/extract/data/resolution-rules.json": ["itemsPerTurn","rules"],
     "src/features/obligations/extract/data/rules.json": ["candidateOnly","patterns","rules"]
+  },
+  "entries": {
+    "src/features/obligations/derive/data/sanction-classes.json": {"classes":{"keys":["label","token"],"fields":{"token":{"pattern":"^[a-z_]+$","flags":""}}}}
   },
   "shapes": {
     "src/core/fetch/data/document-date.json": {"metadata":{"pattern":"^[a-z0-9_-]+:[a-z0-9_.-]+$","flags":"i"}},

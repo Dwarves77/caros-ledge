@@ -91,6 +91,26 @@ test('WORDGATE-1: engine data files are pinned by top-level key and by token sha
   assert.match(engineDataProblems(gone, pins).join('|'), /document-date\.json: pinned file is not in the tree/);
 });
 
+test('WORDGATE-1b: array-of-object entries are pinned by exact key set and per-field grammar (sanction-classes: label + token ^[a-z_]+$); the real file passes, and an extra key, a missing key, or a malformed token fails', () => {
+  const pins = engineDataPins();
+  const tree = engineDataFiles();
+  const sc = 'src/features/obligations/derive/data/sanction-classes.json';
+  assert.deepEqual(pins.entries?.[sc]?.classes?.keys, ['label', 'token'], 'the entry-shape spec pins classes to label and token');
+  assert.equal(pins.entries[sc].classes.fields.token.pattern, '^[a-z_]+$');
+  assert.deepEqual(engineDataProblems(tree, pins), [], 'the real sanction-classes.json passes');
+  const plant = (change) => {
+    const t = new Map([...tree].map(([k, v]) => [k, structuredClone(v)]));
+    change(t.get(sc));
+    return engineDataProblems(t, pins).join('|');
+  };
+  assert.match(plant((j) => { j.classes[0].synonyms = 1; }), /classes\[0\] has key synonyms outside the pinned entry keys/);
+  assert.match(plant((j) => { delete j.classes[1].label; }), /classes\[1\] is missing pinned entry key label/);
+  assert.match(plant((j) => { j.classes[2].token = 'Monetary_Fixed'; }), /classes\[2\]\.token "Monetary_Fixed" does not match \/\^\[a-z_\]\+\$\//);
+  assert.match(plant((j) => { j.classes[2].token = 'two words'; }), /classes\[2\]\.token "two words" does not match/);
+  assert.match(plant((j) => { j.classes[3] = 'monetary_fixed'; }), /classes\[3\] must be an object/);
+  assert.match(plant((j) => { j.classes = 'x'; }), /classes must be an array of objects/);
+});
+
 test('R4: the LOC limits are compared against the real totals (the keys were backslash paths on Windows, so "src/core" never matched and nothing was compared)', () => {
   const root = tmp('loc-');
   const prev = process.cwd();

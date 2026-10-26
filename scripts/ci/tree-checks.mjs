@@ -74,7 +74,7 @@ export function dependencyProblems(pkg) {
 const ENGINE_DATA = /^src\/(?:core\/(?:fetch|parse|coupling|flywheel|obligations)|features\/obligations)\/(?:.+\/)?data\/.+\.json$/;
 export const isEngineDataFile = (path) => ENGINE_DATA.test(path);
 
-/** scripts/ci/data/engine-data-keys.json: `keys` is file -> sorted top-level key list; `shapes` is file -> key -> {pattern, flags}, a character-class grammar every string of that key's array must match. */
+/** scripts/ci/data/engine-data-keys.json: `keys` is file -> sorted top-level key list; `shapes` is file -> key -> {pattern, flags}, a character-class grammar every string of that key's array must match; `entries` is file -> key -> {keys, fields}, the exact key set of every object in that key's array and a {pattern, flags} grammar per field. */
 export function engineDataPins() {
   return JSON.parse(readFileSync("scripts/ci/data/engine-data-keys.json", "utf8"));
 }
@@ -88,7 +88,8 @@ export function engineDataFiles() {
 /**
  * An engine data file carries formal codes and numbers, never trigger words (ADR-053). The guard is structural, never a word list:
  * (1) every top-level key of every engine data file is pinned, so a new array of English triggers has no key to live under;
- * (2) where a key holds only formal tokens, every string of it matches the character-class grammar pinned for it.
+ * (2) where a key holds only formal tokens, every string of it matches the character-class grammar pinned for it;
+ * (3) where a key holds an array of objects, every entry has exactly the pinned key set and each pinned field matches its grammar.
  */
 export function engineDataProblems(files, pins) {
   const problems = [];
@@ -115,6 +116,31 @@ export function engineDataProblems(files, pins) {
       const re = new RegExp(pattern, flags);
       list.forEach((x, i) => {
         if (!re.test(x)) problems.push(`${path}: ${key}[${i}] ${JSON.stringify(x)} does not match ${re}; a token of this key is a code, never a phrase (ADR-053)`);
+      });
+    }
+  }
+  for (const [path, byKey] of Object.entries(pins.entries ?? {})) {
+    const json = files.get(path);
+    if (!json) continue;
+    for (const [key, { keys, fields }] of Object.entries(byKey)) {
+      const list = json[key];
+      if (list === undefined) continue;
+      if (!Array.isArray(list)) {
+        problems.push(`${path}: ${key} must be an array of objects`);
+        continue;
+      }
+      list.forEach((e, i) => {
+        if (e === null || typeof e !== "object" || Array.isArray(e)) {
+          problems.push(`${path}: ${key}[${i}] must be an object`);
+          return;
+        }
+        for (const k of Object.keys(e)) if (!keys.includes(k)) problems.push(`${path}: ${key}[${i}] has key ${k} outside the pinned entry keys ${JSON.stringify(keys)}; an entry carries formal codes only (ADR-053)`);
+        for (const k of keys) if (!(k in e)) problems.push(`${path}: ${key}[${i}] is missing pinned entry key ${k}`);
+        for (const [f, { pattern, flags }] of Object.entries(fields ?? {})) {
+          if (!(f in e)) continue;
+          const re = new RegExp(pattern, flags);
+          if (typeof e[f] !== "string" || !re.test(e[f])) problems.push(`${path}: ${key}[${i}].${f} ${JSON.stringify(e[f])} does not match ${re}; a token of this key is a code, never a phrase (ADR-053)`);
+        }
       });
     }
   }
