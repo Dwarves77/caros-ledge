@@ -278,6 +278,9 @@ BEGIN
     SELECT provenance_status::text INTO st FROM public.intelligence_items WHERE id = it;
     SELECT count(*) INTO flags FROM public.integrity_flags WHERE subject_ref = it::text AND status = 'open' AND created_by = 'set_provenance_status_trigger';
     IF st <> 'quarantined' OR flags <> 1 THEN RAISE EXCEPTION '0142-provenance-once: an unlabeled assertion left % with % open flag(s)', st, flags; END IF;
+    IF NOT EXISTS (SELECT 1 FROM jsonb_array_elements((public.validate_item_provenance(it)).failures) x WHERE x->>'reason' = 'unlabeled_assertion') OR EXISTS (SELECT 1 FROM jsonb_array_elements((public.validate_item_provenance(it)).failures) x WHERE x->>'reason' <> 'unlabeled_assertion') THEN
+      RAISE EXCEPTION '0142-provenance-once: the quarantine did not come from the unlabeled assertion alone: %', (public.validate_item_provenance(it)).failures;
+    END IF;
     UPDATE public.intelligence_item_sections SET content_md = 'A plain statement again.' WHERE id = sec;
     SET CONSTRAINTS ALL IMMEDIATE;
     SET CONSTRAINTS ALL DEFERRED;
