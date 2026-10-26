@@ -11,7 +11,7 @@ import { z } from "zod";
 import { DUTY_HOLDER_CLASSES, isMissing, isValid, LEG_MODE_CODES, OBS_STATUS } from "@/core/contracts/vocabularies";
 import { readFactSuppressionsFor } from "@/core/detail/claim-tiers";
 import { admissibleClaims, admitItems } from "@/core/derived/admissible";
-import { isVerbatim } from "@/core/contracts/verbatim";
+import { isVerbatim, locateSpan } from "@/core/contracts/verbatim";
 import type { Db } from "@/core/db";
 import { fetchAllByIdChunks } from "@/core/db";
 import { entityId } from "@/core/entities/id";
@@ -302,10 +302,12 @@ function candidatesFromFueleuTargets(item: ObjectItem, captures: readonly Captur
   const timeline = timelineFromEvents(events);
   const out: Candidate[] = [];
   for (const p of FUELEU_TARGETS.periods) {
-    const capture = captures.find((c) => isVerbatim(c.result_content, p.quote));
-    if (!capture) continue;
+    // The typed quote is located in the capture (a structured capture keeps its list markers on their own lines); the capture's own slice is stored, and the exact rule runs on it.
+    const held = captures.flatMap((c) => { const slice = locateSpan(c.result_content, p.quote); return slice !== null && isVerbatim(c.result_content, slice) ? [{ capture: c, slice }] : []; })[0];
+    if (!held) continue;
+    const { capture } = held;
     out.push({
-      instrument_item_id: item.id, capture_id: capture.id, pinpoint_citation: `${t.pinpointBase}, from ${p.from_date}`, verbatim_text: p.quote, duty_holder_class: t.dutyHolderClass,
+      instrument_item_id: item.id, capture_id: capture.id, pinpoint_citation: `${t.pinpointBase}, from ${p.from_date}`, verbatim_text: held.slice, duty_holder_class: t.dutyHolderClass,
       plain_language: `GHG intensity limit ${p.target_gco2e_per_mj} ${FUELEU_TARGETS.referenceValue.unit}: ${p.reduction_percent} % below the ${FUELEU_TARGETS.referenceValue.value} reference value, from ${p.from_date}.`,
       applicability_trigger: { attribute: t.applicabilityAttribute, value: p.from_date }, jurisdiction: t.jurisdiction, mode: t.mode, frequency: "annual", ...timeline, date_of_application: p.from_date,
     });

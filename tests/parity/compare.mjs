@@ -136,20 +136,46 @@ export function compareRecord(route, viewport, base, cap, approved, dataNames = 
     },
     reordered: (i, k) => headItems.includes(k),
   });
-  const names = dataNames.filter((d) => d.route === route);
+  // `dataNames` entries of kind 'run' ({route, kind, after, before, as, reason}): a run of buttons that the page draws one per member of the workspace, each named by that member's display name or, for a member with no
+  // profile name, by the absence copy ("— Name not set"). Both are data. The run is whatever buttons sit between the control matching `after` and the one matching `before` (keys are `role:name`); on both sides it
+  // collapses to ONE control named `as`, so which members exist, how many, and what they are called is never compared, while the run itself must still be drawn (a missing run leaves the baseline's token unmatched: FAIL).
+  // A run is collapsed only when `before` follows `after` with nothing but buttons between, so any other control inside the span stays visible to the compare.
+  const runs = dataNames.filter((d) => d.kind === 'run' && [].concat(d.route).includes(route));
+  const collapse = (controls) => {
+    let out = controls;
+    for (const d of runs) {
+      const next = [];
+      for (let i = 0; i < out.length; i += 1) {
+        next.push(out[i]);
+        if (!new RegExp(d.after).test(`${out[i].role}:${uncount(out[i].name)}`)) continue;
+        let j = i + 1;
+        while (j < out.length && out[j].role === 'button') j += 1;
+        if (j > i + 1 && j < out.length && new RegExp(d.before).test(`${out[j].role}:${uncount(out[j].name)}`)) {
+          next.push({ role: 'button', name: d.as });
+          i = j - 1;
+          used.push(`data names: ${d.reason}`);
+        }
+      }
+      out = next;
+    }
+    return out;
+  };
+  const baseAll = collapse(base.controls ?? []);
+  const capAll = collapse(cap.controls ?? []);
+  const names = dataNames.filter((d) => d.kind !== 'run' && d.route === route);
   const stable = (name) => {
     for (const d of names) if (new RegExp(d.match).test(name)) return name.match(new RegExp(d.keep))?.[0] ?? name;
     return name;
   };
   const ctl = (c) => `${c.role}:${stable(uncount(c.name))}`;
-  if (names.length && (base.controls ?? []).some((c) => names.some((d) => new RegExp(d.match).test(uncount(c.name))))) used.push(`data names: ${names[0].reason}`);
-  const capControls = cap.controls ?? [];
+  if (names.length && baseAll.some((c) => names.some((d) => new RegExp(d.match).test(uncount(c.name))))) used.push(`data names: ${names[0].reason}`);
+  const capControls = capAll;
   const capKeys = capControls.map(ctl);
   // `conditional` ({route, match, reason}): a control that exists only while some data does (a panel's "Request coverage" while the panel is empty). It is compared when present on both sides and ignored when absent on either:
   // the baseline keeps at most as many copies of a matching control as the capture draws (the first ones, so a copy that is drawn still holds its place), and a capture's extra copies are not in the baseline to miss.
   const baseControls = [];
   const kept = new Map();
-  for (const c of base.controls ?? []) {
+  for (const c of baseAll) {
     const k = ctl(c);
     const rule = conditional.find((d) => d.kind !== 'heading' && [].concat(d.route).includes(route) && new RegExp(d.match).test(k));
     const seen = kept.get(k) ?? 0;
@@ -246,6 +272,13 @@ export function gateProblems(routes, config) {
   for (const [what, list] of [['gates.pixelExact', pixelExact], ['gates.lists', lists]]) for (const n of list) if (!gated.has(n)) problems.push(`${what} names ${n}, which is not a gated route`);
   for (const n of skippable) if (!gated.has(n)) problems.push(`skippable names ${n}, which is not a gated route`);
   for (const n of listEmpty) if (!lists.includes(n)) problems.push(`listEmpty names ${n}, which is not in gates.lists`);
+  // A dataNames entry of kind 'run' names real routes, says why in a sentence, and carries the two anchors and the token it collapses the run to.
+  for (const [n, d] of (Array.isArray(config.dataNames) ? config.dataNames : []).entries()) {
+    if (d?.kind !== 'run') continue;
+    for (const r of [].concat(d?.route)) if (!known.has(r)) problems.push(`dataNames[${n}]: ${JSON.stringify(r)} is not a route in routes.json`);
+    if (typeof d?.reason !== 'string' || d.reason.trim().length < MIN_REASON) problems.push(`dataNames[${n}]: carries no reason (at least ${MIN_REASON} characters)`);
+    if (typeof d?.after !== 'string' || typeof d?.before !== 'string' || typeof d?.as !== 'string' || !d.as) problems.push(`dataNames[${n}]: a run needs after, before and as`);
+  }
   // A conditional entry names real routes, says why in a sentence, and (kind 'heading') the heading it sits under: an entry that cannot match anything would only hide a difference.
   for (const [n, d] of (Array.isArray(config.conditional) ? config.conditional : []).entries()) {
     for (const r of [].concat(d?.route)) if (!known.has(r)) problems.push(`conditional[${n}]: ${JSON.stringify(r)} is not a route in routes.json`);

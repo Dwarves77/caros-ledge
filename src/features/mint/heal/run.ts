@@ -4,9 +4,9 @@
 // Ported from old_repo/scripts/mint/rederive-record-provenance.mjs (lines 1-85)
 // Per-item provenance healing, in order: capture (when the item has none), ground each FACT in a capture and put its attribution right, cover missing required slots, link the source's institution,
 // capture the cited pages, re-source a below-floor FACT from a better capture, re-kind what still cannot be proven (never rewriting), ground the Gate A orphans (buckets first, then source-and-rate),
-// the opt-in honest strip, relabel, rewrite the Gate A state, and re-derive (validate, touch, read the fresh status; un-archive an archived-unreasoned item that now verifies).
+// the opt-in honest strip (per sentence, residue listed), relabel, rewrite the Gate A state, and re-derive (validate, touch, read the fresh status; un-archive an archived-unreasoned item that now verifies).
 // Every ledger change of the pass is PLANNED as an op (the claim attribution through reattributeClaim: the source and so the tier come from the capture's own host, never the item's) and applied at the
-// end as ONE transaction (ledger_apply_ops: archive first, all or nothing); a refusal fails the item with the rule named and nothing changed. Every read and write is checked. Dry mode plans and writes nothing.
+// end in bounded chunks (applyLedgerOpsChunked: each chunk one ledger_apply_ops transaction, archive first, all or nothing); a refusal fails the item with the rule and the chunk named, the chunks before it stand. Every read and write is checked. Dry mode plans and writes nothing.
 import { randomUUID } from "node:crypto";
 
 import { classifyHost } from "@/core/intake";
@@ -14,7 +14,7 @@ import { capture, FetchHoldError } from "@/core/fetch";
 import { isVerbatim } from "@/core/contracts/verbatim";
 import { fetchAllRows, type Db } from "@/core/db";
 import { authorityFloorFor, buildGateARow, derivedCoveredTokens, readRequiredSlots, scanGateA, upsertGateAState } from "@/core/grounding";
-import { applyLedgerOps, reattributeClaim, sourceForCapture, type AttributionCtx, type LedgerOp } from "@/core/grounding/ledger";
+import { applyLedgerOpsChunked, reattributeClaim, sourceForCapture, type AttributionCtx, type LedgerOp } from "@/core/grounding/ledger";
 import { runResult, type RunResult } from "@/core/intake/result";
 import { buildResolver, registerAndRate, type SourceRow } from "@/core/sources";
 import { buildRecordSlotClaim } from "@/features/intake";
@@ -237,18 +237,21 @@ export async function healItem(deps: HealDeps, input: HealItemInput): Promise<He
     bump("orphans_unprovable", unprovable.length);
     if (unprovable.length) steps.withheld = unprovable.map((token) => ({ token, reason: NO_VERBATIM_SPAN }));
 
-    // 9. the opt-in honest strip
+    // 9. the opt-in honest strip: whole sentences whose every live token is unprovable; a sentence that also states a proven token stays and its unprovable tokens are the residue
     let restore: HealItemResult["restore"];
     if (unprovable.length) {
       const plan = planBriefHonest(item.full_brief, unprovable, facts(), derived);
       steps.brief_honest = plan.outcome;
       steps.strip = plan.perToken.map((t) => `${t.token}: ${t.outcome}${t.removed ? ` (${t.removed.length} cut)` : ""}`);
-      if (input.stripUnprovable) bump(`strip_${plan.outcome}`);
-      if (plan.outcome === "accepted" && input.stripUnprovable && !dry) {
+      steps.stripped = plan.stripped;
+      steps.residue = plan.residue;
+      if (input.stripUnprovable) { bump(`strip_${plan.outcome}`); bump("residue_tokens", plan.residue.length); }
+      if (plan.outcome !== "no_op" && input.stripUnprovable && !dry) {
         ops.push({ op: "brief", full_brief: plan.newFullBrief });
         restore = { itemId: item.id, previous: plan.previous };
         item.full_brief = plan.newFullBrief;
         bump("brief_stripped");
+        bump("sentences_stripped", plan.stripped.length);
       }
     }
 
@@ -271,9 +274,9 @@ export async function healItem(deps: HealDeps, input: HealItemInput): Promise<He
       if (plan) relabel(s, plan.content_md);
     }
 
-    // The ledger changes of the pass, as ONE transaction: all of them or none.
+    // The ledger changes of the pass, in bounded chunks (a chunk is one transaction; the status touch of step 12 comes after the last).
     if (!dry && ops.length) {
-      const applied = await applyLedgerOps(sb, item.id, ops, nowIso);
+      const applied = await applyLedgerOpsChunked(sb, item.id, ops, nowIso);
       steps.ledger = applied;
       bump("ledger_ops", ops.length);
       bump("healed"); // the ops family's declared write: a pass that changed the ledger must not record itself as a noop
@@ -352,7 +355,7 @@ export async function healQuarantined(deps: HealDeps, input: HealSweepInput = {}
       counts.failed = (counts.failed ?? 0) + 1;
       notes.push(`${itemId}: ${r.notes.at(-1) ?? "failed"}`);
     }
-    if (input.stripUnprovable && Array.isArray(r.steps.strip)) notes.push(`${itemId}: honest strip ${String(r.steps.brief_honest)}: ${(r.steps.strip as string[]).join("; ")}`);
+    if (input.stripUnprovable && Array.isArray(r.steps.strip)) notes.push(`${itemId}: honest strip ${String(r.steps.brief_honest)}: ${(r.steps.strip as string[]).join("; ")}${r.counts.residue_tokens ? `; ${r.counts.residue_tokens} residue token(s) left for the reader` : ""}`);
   }
   return { ...runResult(counts.failed ? "partial" : "ok", counts, notes), results };
 }

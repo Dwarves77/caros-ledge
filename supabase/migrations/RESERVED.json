@@ -6,10 +6,10 @@
     { "number": "0133", "slice": "FIX-REFS-1", "status": "landed", "reserved_on": "2026-10-25" },
     { "number": "0134", "slice": "CONNECT-2 PR A", "status": "landed", "reserved_on": "2026-10-25" },
     { "number": "0135", "slice": "DERIVE-3", "status": "released", "reserved_on": "2026-10-25" },
-    { "number": "0136", "slice": "SEV-1", "status": "reserved", "reserved_on": "2026-10-25" },
+    { "number": "0136", "slice": "CONNECT-2 PR B", "status": "reserved", "reserved_on": "2026-10-26" },
     { "number": "0137", "slice": "DOC-DATE-1", "status": "reserved", "reserved_on": "2026-10-26" },
     { "number": "0138", "slice": "MINT-2", "status": "reserved", "reserved_on": "2026-10-26" },
-    { "number": "0139", "slice": "CONNECT-2 PR B", "status": "reserved", "reserved_on": "2026-10-26" },
-    { "number": "0140", "slice": "TITLE-1", "status": "reserved", "reserved_on": "2026-10-26" }
+    { "number": "0139", "slice": "SEV-1", "status": "reserved", "reserved_on": "2026-10-26" },
+    { "number": "0140", "slice": "TITLE-1 PR 2", "status": "reserved", "reserved_on": "2026-10-26" }
   ]
 }
