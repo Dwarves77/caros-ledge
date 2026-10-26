@@ -60,8 +60,8 @@ test("normalizeDisplayTitle: leaves mixed case titles untouched except annex str
   assert.equal(title, "Commission Regulation amending Annex XVII to Regulation (EC) No 1907/2006");
 });
 
-test("normalizeDisplayTitle: a shouting token with an apostrophe is re-cased like any other (JASONLOSH'S, O'BRIEN'S, DON'T)", () => {
-  assert.equal(normalizeDisplayTitle("JASONLOSH'S BRIEF").title, "Jasonlosh's Brief");
+test("normalizeDisplayTitle: a shouting token with an apostrophe is re-cased like any other (PATLEE'S, O'BRIEN'S, DON'T)", () => {
+  assert.equal(normalizeDisplayTitle("PATLEE'S BRIEF").title, "Patlee's Brief");
   assert.equal(normalizeDisplayTitle("O'BRIEN'S BRIEF").title, "O'Brien's Brief");
   assert.equal(normalizeDisplayTitle("DON'T FILE THE ANNUAL REPORT LATE").title, "Don't File the Annual Report Late");
   assert.equal(normalizeDisplayTitle("O'Brien's Brief").title, "O'Brien's Brief");

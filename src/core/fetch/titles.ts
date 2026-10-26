@@ -217,7 +217,7 @@ export function normalizeDisplayTitle(rawTitle: string): { title: string; subtit
         } else if (!isStart && LOWERCASE_TITLE_WORDS.has(core.toLowerCase())) {
           resCore = core.toLowerCase();
         } else {
-          // Each apostrophe-separated part is capitalised (O'Brien) unless it is a lone letter after the first (Jasonlosh's, Don't).
+          // Each apostrophe-separated part is capitalised (O'Brien) unless it is a lone letter after the first (Patlee's, Don't).
           resCore = core.replace(/[a-zA-Z0-9]+/g, (part, at: number) => (at === 0 || part.length > 1 ? part.charAt(0).toUpperCase() + part.slice(1).toLowerCase() : part.toLowerCase()));
         }
         isStart = false;
