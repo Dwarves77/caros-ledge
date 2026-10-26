@@ -220,3 +220,25 @@ test("HEAL-1b: a step whose apply row counts failed units is partial, never ok: 
   assert.equal(r.steps[0].note, "2 unit(s) failed");
   assert.deepEqual([r.outcome, exitCodeOf(r), calls.length], ["failed", 1, 1]);
 });
+
+// DRAIN-1: a step with input_file reaches the turn as --input-file <temp file> holding the input with ruled_plan merged in, never as an inline --input (E2BIG over ~128 KB).
+test("DRAIN-1: an input_file step is invoked with --input-file, the file holding the loaded input plus ruled_plan", async () => {
+  const { mkdirSync, mkdtempSync, readFileSync, writeFileSync } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const d = mkdtempSync(join(tmpdir(), "exec-"));
+  mkdirSync(join(d, "data"));
+  writeFileSync(join(d, "data", "in.json"), JSON.stringify({ connect: { scan_limit: 0 } }));
+  const planPath = join(d, "2026-10-27-x.json");
+  const plan = parsePlan(JSON.stringify({ ruling: RULING, steps: [{ name: "big", stage: "connect", mode: "dry", input_file: "data/in.json", producer_env: [] }, { name: "small", stage: "connect", mode: "dry", input: { connect: {} }, producer_env: [] }] }), planPath);
+  const seen: { args: string[]; body?: unknown }[] = [];
+  const invoke = ({ args }: { args: string[] }) => {
+    const i = args.indexOf("--input-file");
+    seen.push({ args, ...(i >= 0 ? { body: JSON.parse(readFileSync(args[i + 1] as string, "utf8")) } : {}) });
+    return { status: 0, result: { root_run_id: "r", runs: [] } };
+  };
+  await executePlan(plan, planPath, { invoke, now: NOW });
+  assert.ok(!seen[0]!.args.includes("--input"));
+  assert.deepEqual(seen[0]!.body, { connect: { scan_limit: 0, ruled_plan: "2026-10-27-x.json#big" } });
+  assert.ok(seen[1]!.args.includes("--input") && !seen[1]!.args.includes("--input-file"));
+});

@@ -48,6 +48,16 @@ function readCommitted(root: string): CommittedFile[] {
   });
 }
 
+/** The options a committed batch file may carry at its top level: the keys the kit's applyBatch reads (dry and runId are the firing's, never the file's). */
+const FILE_OPTION_KEYS = ["allowBriefOverwrite", "ioBudgetMb", "cooldownMinutes", "afterKey", "limit"] as const;
+function fileOptions(content: string): Record<string, unknown> | undefined {
+  let o: unknown;
+  try { o = (JSON.parse(content) as { options?: unknown }).options; } catch { return undefined; }
+  if (o === null || typeof o !== "object" || Array.isArray(o)) return undefined;
+  const picked = Object.fromEntries(FILE_OPTION_KEYS.filter((k) => Object.hasOwn(o as object, k)).map((k) => [k, (o as Record<string, unknown>)[k]]));
+  return Object.keys(picked).length ? picked : undefined;
+}
+
 type Verdict = "applied" | "held" | "retry";
 /** What the ledger records for an apply result. Pure. */
 function verdictOf(r: RunResult): Verdict {
@@ -86,7 +96,7 @@ export async function applyCommitted(deps: BatchDeps, input: { root: string; dry
     let named: unknown;
     try { named = (JSON.parse(f.content) as { batch?: unknown }).batch; } catch { named = null; }
     const r = (named === undefined || named === f.id
-      ? await applyBatch(f.kind, deps, { content: f.content, dry: input.dry, ...(input.runId ? { runId: input.runId } : {}) })
+      ? await applyBatch(f.kind, deps, { content: f.content, dry: input.dry, ...(input.runId ? { runId: input.runId } : {}), ...(fileOptions(f.content) ? { options: fileOptions(f.content) } : {}) })
       : runResult("failed", { refused: 1, file_refused: 1 }, [`the file is not a batch named ${f.id} (its batch field is ${JSON.stringify(named)})`])) as RunResult<BatchData>;
     sum(counts, r.counts);
     notes.push(...r.notes.map((n) => `${f.id}: ${n}`));

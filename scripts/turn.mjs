@@ -1,4 +1,4 @@
-// The ONE CLI. `node scripts/turn.mjs --stage <sweep|sweep-research|change|capture|intake|connect|propagate|briefs|all|ops> --mode dry|apply [--input '<json keyed by stage>'] [--no-chain]`
+// The ONE CLI. `node scripts/turn.mjs --stage <sweep|sweep-research|change|capture|intake|connect|propagate|briefs|all|ops> --mode dry|apply [--input '<json keyed by stage>' | --input-file <path>] [--no-chain]`
 // Exit 0 every stage recorded and none failed; 1 a stage failed, a record failed, a credential is missing where the event could carry it, or the run is not a dispatch in CI; 2 self-skipped for lack of credentials where the event cannot carry them (src/core/harness/exit.ts:
 // a workstation, or a fork PR). It never runs a turn on a push or a pull request: the workflow gives the turn job its secrets on a dispatch only. The one exception is a RULED run (scripts/runs/execute.mjs, TURN_RULED_PLAN
 // set): the `ruled-runs` job runs a committed plan on a push to main, and only there; the run frame, the emergency stop and the licence register bind it exactly as a dispatch. TURN_RESULT_FILE: where to write the result as JSON.
@@ -7,16 +7,24 @@ import { appendFileSync, writeFileSync } from "node:fs";
 import { register } from "node:module";
 import { parseArgs } from "node:util";
 
+import { turnInputText } from "./lib/turn-input.mjs";
+
 register("./lib/ts-hooks.mjs", import.meta.url, { data: {} });
 
-const USAGE = "usage: node scripts/turn.mjs --stage <name|all|ops> --mode dry|apply [--input '<json keyed by stage>'] [--no-chain]";
+const USAGE = "usage: node scripts/turn.mjs --stage <name|all|ops> --mode dry|apply [--input '<json keyed by stage>' | --input-file <path>] [--no-chain]";
 const fail = (msg) => {
   console.error(`turn: ${msg}\n${USAGE}`);
   process.exit(1);
 };
 const note = (title, msg) => console.log(process.env.GITHUB_ACTIONS ? `::notice title=${title}::${msg}` : `${title}: ${msg}`);
 
-const { values } = parseArgs({ options: { stage: { type: "string" }, mode: { type: "string", default: "dry" }, input: { type: "string", default: "{}" }, "no-chain": { type: "boolean", default: false } }, strict: true, allowPositionals: false });
+const { values } = parseArgs({ options: { stage: { type: "string" }, mode: { type: "string", default: "dry" }, input: { type: "string" }, "input-file": { type: "string" }, "no-chain": { type: "boolean", default: false } }, strict: true, allowPositionals: false });
+let inputText;
+try {
+  inputText = turnInputText(values);
+} catch (e) {
+  fail(e.message);
+}
 const event = process.env.GITHUB_EVENT_NAME;
 const ruled = Boolean(process.env.TURN_RULED_PLAN) && event === "push" && process.env.GITHUB_REF === "refs/heads/main";
 if (event && event !== "workflow_dispatch" && !ruled) fail(`a turn runs only on a dispatch (this run is a ${event}); the workflow gives the turn job its secrets on a dispatch only`);
@@ -29,7 +37,7 @@ if (!values.stage || ![...STAGES, "all", "ops"].includes(values.stage)) fail(`--
 if (!["dry", "apply"].includes(values.mode)) fail("--mode must be dry or apply");
 let input;
 try {
-  input = JSON.parse(values.input);
+  input = JSON.parse(inputText);
 } catch (e) {
   fail(`--input is not JSON: ${e.message}`);
 }

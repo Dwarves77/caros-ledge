@@ -56,7 +56,14 @@ export async function executePlan(plan, planPath, { invoke = invokeTurn, applied
       continue;
     }
     const input = { ...step.input, [step.stage]: { ...step.input[step.stage], ruled_plan: key } };
-    const args = ["scripts/turn.mjs", "--stage", step.stage, "--mode", step.mode, "--input", JSON.stringify(input), ...(step.chain ? [] : ["--no-chain"])];
+    // A step that names an input_file hands the turn a temp file (the input with ruled_plan merged in), never an argv string: a large batch overruns the 128 KB argument limit.
+    let inputArgs = ["--input", JSON.stringify(input)];
+    if (step.input_file !== undefined) {
+      const file = join(mkdtempSync(join(tmpdir(), "ruled-input-")), "input.json");
+      writeFileSync(file, JSON.stringify(input));
+      inputArgs = ["--input-file", file];
+    }
+    const args = ["scripts/turn.mjs", "--stage", step.stage, "--mode", step.mode, ...inputArgs, ...(step.chain ? [] : ["--no-chain"])];
     const done = summarise(step, invoke({ args, env: { ...pairs(step.producer_env), TURN_RULED_PLAN: planPath } }));
     if (done.outcome !== "ok" && step.on_failure === "continue") {
       results.steps.push({ ...done, continued: true });
@@ -91,7 +98,7 @@ if (isMain(import.meta.url)) {
   let failed = false;
   for (const path of process.argv.slice(2)) {
     if (failed) break;
-    const results = await executePlan(parsePlan(readFileSync(path, "utf8")), path, { applied });
+    const results = await executePlan(parsePlan(readFileSync(path, "utf8"), path), path, { applied });
     mkdirSync("scripts/runs/results", { recursive: true });
     writeFileSync(`scripts/runs/results/${results.plan}.json`, `${JSON.stringify(results, null, 2)}\n`);
     const table = summaryTable(results);
