@@ -52,9 +52,9 @@ export interface PenaltyFinding {
 
 /** Why `span` is not a penalty provision (null when it is): a penalty word that no exclusion covers, and a figure near it, a liability phrase, a Member-State clause, a reference to another paragraph's penalty or a calculation rule. */
 function notPenalty(span: string): string | null {
-  const gone = EXCLUSIONS.flatMap((e) => [...span.matchAll(e.re)].map((m) => ({ id: e.id, from: m.index, to: m.index + m[0].length })));
   const words = [...span.matchAll(WORDS)];
   if (!words.length) return "no_penalty_word";
+  const gone = EXCLUSIONS.flatMap((e) => [...span.matchAll(e.re)].map((m) => ({ id: e.id, from: m.index, to: m.index + m[0].length })));
   const kept = words.filter((w) => !gone.some((g) => w.index < g.to && g.from < w.index + w[0].length));
   if (!kept.length) return `excluded:${gone.find((g) => words.some((w) => w.index < g.to && g.from < w.index + w[0].length))?.id ?? "exclusion"}`;
   const near = kept.some((w) => FIGURE.test(span.slice(Math.max(0, w.index - T.figureWindow), w.index + w[0].length + T.figureWindow)));
@@ -200,7 +200,7 @@ async function resolveEntities(sb: Db, list: Candidate[], items: ReadonlyMap<str
       if (instrumentOf.get(c.instrument_item_id) !== rows[0]?.entity_id || c.obligation_id) return [];
       const pin = pinKey(c.pinpoint_citation);
       const n = rows.filter((r) => cited(r).includes(pin)).length;
-      return n > 0 || (entity.canonical_name ?? "").toLowerCase().includes(pin.replace(/\(.*$/, "")) ? [{ i, n }] : [];
+      return n > 0 || ` ${(entity.canonical_name ?? "").toLowerCase()} `.includes(` ${pin.replace(/\(.*$/, "")} `) ? [{ i, n }] : [];
     }).sort((a, b) => b.n - a.n || a.i - b.i)[0];
     if (scored) out[scored.i] = { ...(out[scored.i] as Candidate), obligation_id: entity.entity_id as string };
   }

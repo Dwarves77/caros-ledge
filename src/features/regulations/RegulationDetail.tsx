@@ -223,15 +223,15 @@ export function RegulationDetail(p: Props) {
   );
 }
 
-const FACT_ROW = { display: "flex", justifyContent: "space-between", gap: 12, fontSize: "var(--fs-13)" } as const;
+const FACT_ROW = { display: "flex", justifyContent: "space-between", gap: "var(--sp-12)", fontSize: "var(--fs-13)" } as const;
 /** One block per penalty object: the pinpoint, then its columns as labelled rows (the labels are the section's, the values the object's own). */
 function PenaltyObjects({ views }: { views: readonly PenaltyView[] }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-14)" }}>
       {views.map((v) => {
         const rows: Array<[string, string]> = [v.sanction ? ["Sanction", v.sanction] : null, v.maximum ? ["Penalty amount", v.maximum] : null, v.formula ? ["Formula", v.formula] : null, ...v.basis.map((b): [string, string] => ["Schedule", b]), v.start ? ["Enforcement start", formatDate(v.start)] : null].filter((x): x is [string, string] => x !== null);
         return (
-          <div key={v.pinpoint} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <div key={v.pinpoint} style={{ display: "flex", flexDirection: "column", gap: "var(--sp-6)" }}>
             <p className="cl-detail-label">{v.pinpoint}</p>
             {rows.map(([label, value], i) => (
               <div key={`${label}${i}`} style={FACT_ROW}>
