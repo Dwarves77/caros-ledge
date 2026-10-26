@@ -6,7 +6,7 @@ import { RELATIONS } from "@/core/coupling";
 import { isVerbatim } from "@/core/contracts/verbatim";
 import { DUTY_HOLDER_CLASSES, isValid, LEG_MODE_CODES } from "@/core/contracts/vocabularies";
 import { normaliseTermKey, PROPOSED_ENTITY_KIND, proposedEntityId } from "@/core/vocabulary/adopted";
-import { findFigures, isFigure, statutoryUnit, tryParseDateOrBareYearAt } from "@/core/parse";
+import { findFigures, foldHtmlSpace, isFigure, statutoryUnit, tryParseDateOrBareYearAt } from "@/core/parse";
 import { groundingRefusal } from "@/features/obligations/derive/maximum";
 import { sanctionRefusal } from "@/features/obligations/derive/penalty";
 import { EVENT_KINDS } from "@/features/obligations/kinds";
@@ -59,7 +59,7 @@ function fieldValue(col: (typeof FIELDS)[number], v: unknown, slice: string): { 
       const q = v as { value?: unknown; unit?: unknown };
       const unit = isObj(v) && typeof q.unit === "string" ? statutoryUnit(q.unit) : null;
       if (!isObj(v) || typeof q.value !== "number" || !Number.isFinite(q.value) || !unit) return bad("mandated_quantity must be { value: number, unit } with a unit statutoryUnit knows");
-      return findFigures(slice).some((h) => isFigure(h.result) && Number(h.result.value) === q.value) ? { ok: true, set: { mandated_quantity: q.value, mandated_unit: unit } } : bad(`mandated_quantity ${q.value} is not stated in the quote`);
+      return findFigures(foldHtmlSpace(slice)).some((h) => isFigure(h.result) && Number(h.result.value) === q.value) ? { ok: true, set: { mandated_quantity: q.value, mandated_unit: unit } } : bad(`mandated_quantity ${q.value} is not stated in the quote`);
     }
     case "duty_holder_class": return Array.isArray(v) && v.length && v.every((c) => typeof c === "string" && DUTY_HOLDER_CLASSES[c]) ? { ok: true, set: { duty_holder_class: v } } : bad("duty_holder_class must be one or more duty-holder codes");
     case "binding_position": return isValid("binding_position", v) ? { ok: true, set: { binding_position: v } } : bad(`binding_position ${JSON.stringify(v)} is not a closed token`);
