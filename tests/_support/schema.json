@@ -3472,6 +3472,18 @@
    "defaults": {},
    "fks": []
   },
+  "provenance_recheck": {
+   "columns": [
+    "item_id",
+    "xid",
+    "keep_updated_at"
+   ],
+   "uuid": [],
+   "defaults": {
+    "keep_updated_at": false
+   },
+   "fks": []
+  },
   "provisional_sources": {
    "columns": [
     "id",
