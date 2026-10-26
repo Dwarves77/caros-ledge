@@ -1,7 +1,6 @@
 // The CONNECT-2 world: the integration fixture (real wiring, real stages, the coupling pages served by the fixture transport) plus the data that yields exactly one pattern of each kind and one cross-modal pattern per relation kind. Every number is a fixture number; the entities are the
 // seeded couplings, looked up by key. The data plants nothing the detectors do not read from a table: claims, obligations, a roadmap row, a forward event, three series, a research assessment, a statutory computation and a derived abatement cost.
 import { couplingByKey } from "@/core/coupling";
-import { roleOf } from "@/core/coupling/coupling";
 import { runTurn } from "@/core/turn";
 
 import { fixture, NOW, type Fixture } from "../integration/world.ts";
@@ -55,15 +54,6 @@ export function plant(f: Fixture): void {
   ];
   db.seed("intelligence_items", [item(ITEM.reg, "reg"), item(ITEM.market, "market"), item(ITEM.research, "research"), ...rows.map((r) => r.item)]);
   db.seed("section_claim_provenance", rows.map((r) => r.claim));
-  // The mining pass reads a claim for formal codes only (an instrument identifier, a UN/LOCODE): it matches no word. These claims state their subject in words, so the fixture files them under it directly, the way a producer that knows the entity would; the claim's words play no part.
-  const filedUnder: [string, string][] = [["Green ammonia", "carrier:green_ammonia"], ["Hydrotreated vegetable oil", "carrier:hvo"], ["Lignocellulosic", "feed:lignocellulosic"], ["HEFA output", "carrier:hefa_saf"], ["HDV charging", "node:hdv_charging"], ["Sea-air", "corridor:sea_air_to_air"], ["The PPWR", "instrument:32025R0040"], ["Modal shift to rail", "corridor:rail_road"], ["Modal shift to inland", "corridor:inland_waterway"]];
-  db.seed(
-    "entity_refs",
-    rows.flatMap((r) => {
-      const key = filedUnder.find(([prefix]) => String(r.claim.claim_text).startsWith(prefix))?.[1];
-      return key ? [{ ref_table: "section_claim_provenance", ref_id: r.claim.id, entity_id: E(key), role: roleOf(E(key)), asserted_by: "fixture/world", basis: { claim_id: r.claim.id, how: "producer" }, method_version: "refs@fixture" }] : [];
-    }),
-  );
   db.seed("obligation_objects", [
     // P2: a dated ratchet of the ReFuelEU instrument; P4 (corridor_links): an ocean-wide ratchet inside the recency window
     { obligation_id: OBLIGATION.air, instrument_item_id: ITEM.reg, instrument_entity_id: E("instrument:32023R2405"), first_deadline: new Date(NOW.getTime() + 100 * 86_400_000).toISOString().slice(0, 10), mode: ["air"], applicability_trigger: {} },

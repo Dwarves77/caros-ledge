@@ -202,6 +202,7 @@ test("INV-JOIN-3: a token column with a value outside its vocabulary is red with
   const r = j3Findings(w, sample, {});
   assert.deepEqual(keys(r), ["J3tok:alpha.owner", "J3tok:gamma.mode", "J3toknovocab:beta.stage"]);
   assert.match(r.findings.find((f) => f.key === "J3tok:gamma.mode").msg, /"sea" x10/);
+  assert.ok(r.ran.has("J3toknovocab"), "the no-vocabulary findings are ratcheted: their entries are checked for staleness like any other");
   assert.match(r.findings.find((f) => f.key === "J3toknovocab:beta.stage").msg, /"announced", "pilot"/);
   sample.tokens["gamma.mode"] = dist({ road: 100 });
   sample.tokens["alpha.owner"] = dist({ megawatt: 5 });

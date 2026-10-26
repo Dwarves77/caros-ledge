@@ -1,5 +1,5 @@
 // New in CONNECT-2 PR A (scripts/ci/new-files/connect-2a.txt): entity-ref mining over the full corpus (C2). Three inputs write entity_refs, never without a basis and the version of the rule that read it:
-// (a) CLAIMS: every section_claim_provenance row's text read for formal codes only (an instrument identifier, a UN/LOCODE: resolveText), role from the coupling class, basis {claim_id, span, claim_kind, how}; no word of the prose is matched;
+// (a) CLAIMS: every section_claim_provenance row's text read for formal codes (an instrument identifier, a UN/LOCODE) and for the names and aliases of the closed ontology of couplings.json (resolveText; ADR-053), role from the coupling class, basis {claim_id, span, claim_kind, how}; a country name, a host, an organisation, a title and an acronym are not matched;
 // (b) TYPED COLUMNS: the column-to-entity mapping of couplings.json over the typed tables (an entity id held in a column, a transport mode, a coded value, a constant, or the refs another table's row already holds; a prose label is never matched), basis {table, pk, column, value};
 // (c) SCENARIO TAGS: an item's operational scenario tags resolved to the couplings that list them, basis {tag}.
 // A table keyed by text (obligation_objects) is keyed in entity_refs by the uuid of its key (uuidOf), the key itself in the basis. Idempotent: a second run writes no ref; a dry run counts the refs it would write.
@@ -9,7 +9,8 @@ import { normaliseMode } from "@/core/contracts/vocabularies";
 import type { Db } from "@/core/db";
 import type { RunResult } from "@/core/types/run-result";
 
-import { COLUMNS, couplingByKey, couplingById, couplingsForScenario, roleOf, type ColumnMap } from "./coupling";
+import { admitAlias } from "./alias-rules";
+import { COLUMNS, COUPLINGS, couplingByKey, couplingById, couplingsForScenario, roleOf, type ColumnMap } from "./coupling";
 import { readAll, type Row } from "./read";
 import { buildResolver, resolveText, type Resolver } from "./resolve";
 
@@ -134,15 +135,18 @@ export async function mineRefs(deps: { sb: Db; now: () => Date }, input: { dry: 
     readAll<{ ref_table: string; ref_id: string; entity_id: string; role: string; asserted_by: string; basis: { how?: string; span?: unknown } | null }>(sb, "entity_refs", "ref_table,ref_id,entity_id,role,asserted_by,basis", ["ref_table", "ref_id", "entity_id", "role"]),
     readAll<{ id: string; claim_text: string; claim_kind: string }>(sb, "section_claim_provenance", "id,claim_text,claim_kind", ["id"]),
   ]);
-  // The refs this pass wrote when it matched prose (a country name, a host, an alias, an acronym, a title, a label) are retired: a claim ref whose basis says it was matched by name, alias or acronym, and a typed ref whose basis carries a span in a text label.
+  // The refs this pass wrote when it matched prose outside the closed ontology (a country name, a host, an organisation, a title, an acronym, a text label) are retired: a claim ref matched by name, alias or acronym whose entity is not a named coupling of the ontology (an acronym is never kept), and a typed ref whose basis carries a span in a text label.
   // Counted by basis kind before anything is removed; the connect stage's own supersession retires the patterns that stood only on them.
-  const prose = (r: (typeof existing)[number]) => r.asserted_by === REFS_ASSERTED_BY && (["name", "alias", "acronym"].includes(String(r.basis?.how)) || (r.ref_table !== "section_claim_provenance" && Array.isArray(r.basis?.span)));
+  const ontology = new Set(COUPLINGS.filter((c) => c.named).map((c) => c.entityId));
+  const prose = (r: (typeof existing)[number]) =>
+    r.asserted_by === REFS_ASSERTED_BY && (r.basis?.how === "acronym" || (["name", "alias"].includes(String(r.basis?.how)) && !ontology.has(r.entity_id)) || (r.ref_table !== "section_claim_provenance" && Array.isArray(r.basis?.span)));
   const stale = existing.filter(prose);
   const staleKeys = new Set(stale.map(refKey));
   const kept = existing.filter((r) => !staleKeys.has(refKey(r)));
   const held = new Map<string, string[]>();
   for (const r of kept) held.set(`${r.ref_table}|${r.ref_id}`, [...(held.get(`${r.ref_table}|${r.ref_id}`) ?? []), r.entity_id]);
-  const resolver = buildResolver(identifiers.map((i) => ({ entity_id: i.entity_id, code: i.value })), entities.filter((e) => e.kind === "instrument"));
+  const names = COUPLINGS.filter((c) => c.named).flatMap((c) => [c.name, ...c.aliases].filter(admitAlias).map((name) => ({ entity_id: c.entityId, name })));
+  const resolver = buildResolver(names, identifiers.map((i) => ({ entity_id: i.entity_id, code: i.value })), entities.filter((e) => e.kind === "instrument"));
   const ctx: MineContext = { resolver, known: new Set(entities.map((e) => e.entity_id)), held, kinds: new Map(entities.map((e) => [e.entity_id, e.kind])) };
   const heldKeys = new Set(kept.map(refKey));
   const plan: RefRow[] = [];
@@ -153,10 +157,10 @@ export async function mineRefs(deps: { sb: Db; now: () => Date }, input: { dry: 
 
   const fromClaims = claimRefs(claims, ctx);
   take(fromClaims.refs);
-  const counts: Record<string, number> = { claims: claims.length, claims_resolved: fromClaims.resolved, refs_claims_planned: fromClaims.refs.length, resolver_codes: resolver.codes.size, resolver_instruments: resolver.instruments.size };
-  // the share of claims and refs by what grounded them, before this pass retires the prose ones and after it (formal code: an identifier or a UN/LOCODE; typed: a column of a typed table; prose: a matched word)
+  const counts: Record<string, number> = { claims: claims.length, claims_resolved: fromClaims.resolved, refs_claims_planned: fromClaims.refs.length, resolver_names: resolver.phrases.size, resolver_names_ambiguous: resolver.ambiguous, resolver_codes: resolver.codes.size, resolver_instruments: resolver.instruments.size };
+  // the share of claims and refs by what grounded them, before this pass retires the prose ones and after it (formal code: an identifier or a UN/LOCODE; ontology: a name of couplings.json; typed: a column of a typed table; prose: a word outside the ontology)
   const claimsFiled = (rows: readonly (typeof existing)[number][]) => new Set(rows.filter((r) => r.ref_table === "section_claim_provenance").map((r) => r.ref_id)).size;
-  Object.assign(counts, { claims_filed_before: claimsFiled(existing), refs_before_formal: existing.filter((r) => ["identifier", "code"].includes(String(r.basis?.how))).length, refs_before_typed: existing.filter((r) => !prose(r) && r.basis && ("column" in r.basis || "tag" in r.basis)).length, refs_before_prose: stale.length, refs_prose_existing: stale.length });
+  Object.assign(counts, { claims_filed_before: claimsFiled(existing), refs_before_formal: existing.filter((r) => ["identifier", "code"].includes(String(r.basis?.how))).length, refs_before_typed: existing.filter((r) => !prose(r) && r.basis && ("column" in r.basis || "tag" in r.basis)).length, refs_before_ontology: existing.filter((r) => !prose(r) && r.ref_table === "section_claim_provenance" && ["name", "alias"].includes(String(r.basis?.how))).length, refs_before_prose: stale.length, refs_prose_existing: stale.length });
   for (const r of fromClaims.refs) counts[`claim_refs_${ctx.kinds.get(r.entity_id) ?? "coupling"}`] = (counts[`claim_refs_${ctx.kinds.get(r.entity_id) ?? "coupling"}`] ?? 0) + 1;
   for (const [kind, n] of Object.entries(fromClaims.unresolved)) counts[`claims_unresolved_${kind.toLowerCase()}`] = n;
   for (const map of COLUMNS) {

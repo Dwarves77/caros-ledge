@@ -101,7 +101,7 @@ export function j3Findings(w, sample, writers) {
     const id = `${c.table}.${c.column}`;
     const dist = sample?.tokens?.[id];
     if (!dist) continue;
-    ran.add(c.severity ? "J3sev" : "J3tok");
+    ran.add(c.severity ? "J3sev" : "J3tok").add(c.severity ? "J3sevnovocab" : "J3toknovocab");
     const codes = codesOf(w, c);
     const total = Object.values(dist.values).reduce((a, b) => a + b, 0);
     const outside = Object.entries(dist.values).filter(([v]) => !codes?.includes(v));

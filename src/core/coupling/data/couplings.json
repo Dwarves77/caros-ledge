@@ -4,12 +4,14 @@
   "mode": {
    "kind": "asset",
    "role": "cites_mode",
-   "rank": 5
+   "rank": 5,
+   "text": false
   },
   "hub": {
    "kind": "node",
    "role": "cites_hub",
-   "rank": 4
+   "rank": 4,
+   "text": false
   },
   "feedstock": {
    "kind": "material",
@@ -49,7 +51,8 @@
   "window": {
    "kind": "method",
    "role": "cites_window",
-   "rank": 6
+   "rank": 6,
+   "text": false
   }
  },
  "entities": [
@@ -57,6 +60,7 @@
    "key": "mode:air",
    "class": "mode",
    "name": "Air freight",
+   "aliases": [],
    "modes": [
     "air"
    ],
@@ -74,6 +78,7 @@
    "key": "mode:ocean",
    "class": "mode",
    "name": "Ocean freight",
+   "aliases": [],
    "modes": [
     "ocean"
    ],
@@ -91,6 +96,7 @@
    "key": "mode:road",
    "class": "mode",
    "name": "Road freight",
+   "aliases": [],
    "modes": [
     "road"
    ],
@@ -108,6 +114,7 @@
    "key": "mode:rail",
    "class": "mode",
    "name": "Rail freight",
+   "aliases": [],
    "modes": [
     "rail"
    ],
@@ -125,6 +132,7 @@
    "key": "mode:inland_waterway",
    "class": "mode",
    "name": "Inland waterway freight",
+   "aliases": [],
    "modes": [
     "inland_waterway"
    ],
@@ -142,6 +150,7 @@
    "key": "hub:seaport",
    "class": "hub",
    "name": "Seaport",
+   "aliases": [],
    "modes": [
     "ocean"
    ],
@@ -161,6 +170,7 @@
    "key": "hub:airport",
    "class": "hub",
    "name": "Airport",
+   "aliases": [],
    "modes": [
     "air"
    ],
@@ -180,6 +190,14 @@
    "key": "feed:lipid",
    "class": "feedstock",
    "name": "Lipid feedstock",
+   "aliases": [
+    "lipid feedstock",
+    "lipid feedstocks",
+    "lipids",
+    "oils and fats",
+    "vegetable oil",
+    "vegetable oils"
+   ],
    "modes": [
     "air",
     "road",
@@ -202,6 +220,11 @@
    "key": "feed:uco",
    "class": "feedstock",
    "name": "Used cooking oil",
+   "aliases": [
+    "used cooking oil",
+    "waste cooking oil",
+    "yellow grease"
+   ],
    "modes": [
     "air",
     "road",
@@ -223,6 +246,11 @@
    "key": "feed:tallow",
    "class": "feedstock",
    "name": "Tallow",
+   "aliases": [
+    "tallow",
+    "animal fat",
+    "animal fats"
+   ],
    "modes": [
     "air",
     "road",
@@ -244,6 +272,11 @@
    "key": "feed:lignocellulosic",
    "class": "feedstock",
    "name": "Lignocellulosic biomass",
+   "aliases": [
+    "lignocellulosic",
+    "lignocellulose",
+    "cellulosic biomass"
+   ],
    "modes": [
     "air",
     "road",
@@ -265,6 +298,11 @@
    "key": "feed:residues",
    "class": "feedstock",
    "name": "Waste and residue feedstock",
+   "aliases": [
+    "waste and residues",
+    "agricultural residues",
+    "forestry residues"
+   ],
    "modes": [
     "air",
     "road",
@@ -286,6 +324,10 @@
    "key": "carrier:hvo",
    "class": "carrier",
    "name": "Hydrotreated vegetable oil",
+   "aliases": [
+    "HVO100",
+    "renewable diesel"
+   ],
    "modes": [
     "road",
     "ocean"
@@ -307,6 +349,12 @@
    "key": "carrier:hefa_saf",
    "class": "carrier",
    "name": "HEFA-SAF",
+   "aliases": [
+    "HEFA-SAF",
+    "HEFA",
+    "hydroprocessed esters and fatty acids",
+    "sustainable aviation fuel"
+   ],
    "modes": [
     "air"
    ],
@@ -327,6 +375,16 @@
    "key": "carrier:efuels",
    "class": "carrier",
    "name": "E-fuels",
+   "aliases": [
+    "e-fuel",
+    "e-fuels",
+    "synthetic fuel",
+    "synthetic fuels",
+    "synthetic aviation fuels",
+    "RFNBO",
+    "RFNBOs",
+    "power-to-liquid"
+   ],
    "modes": [
     "air",
     "ocean",
@@ -349,6 +407,9 @@
    "key": "carrier:lng",
    "class": "carrier",
    "name": "Liquefied natural gas",
+   "aliases": [
+    "fossil LNG"
+   ],
    "modes": [
     "ocean",
     "road"
@@ -370,6 +431,12 @@
    "key": "carrier:bio_lng",
    "class": "carrier",
    "name": "Bio-LNG",
+   "aliases": [
+    "bio-LNG",
+    "liquefied biomethane",
+    "biomethane",
+    "bio-CNG"
+   ],
    "modes": [
     "ocean",
     "road"
@@ -391,6 +458,12 @@
    "key": "carrier:bio_methanol",
    "class": "carrier",
    "name": "Bio-methanol",
+   "aliases": [
+    "bio-methanol",
+    "e-methanol",
+    "renewable methanol",
+    "green methanol"
+   ],
    "modes": [
     "ocean"
    ],
@@ -411,6 +484,10 @@
    "key": "carrier:green_ammonia",
    "class": "carrier",
    "name": "Green ammonia",
+   "aliases": [
+    "green ammonia",
+    "renewable ammonia"
+   ],
    "modes": [
     "ocean"
    ],
@@ -431,6 +508,11 @@
    "key": "carrier:renewable_electricity",
    "class": "carrier",
    "name": "Renewable electricity",
+   "aliases": [
+    "renewable electricity",
+    "renewable power",
+    "green electricity"
+   ],
    "modes": [
     "road",
     "ocean",
@@ -453,6 +535,13 @@
    "key": "carrier:bio_bunkers",
    "class": "carrier",
    "name": "Bio-bunkers",
+   "aliases": [
+    "bio-bunkers",
+    "bio-bunker",
+    "marine biofuel",
+    "marine biofuels",
+    "biofuel bunkers"
+   ],
    "modes": [
     "ocean"
    ],
@@ -473,6 +562,13 @@
    "key": "node:shore_power",
    "class": "node",
    "name": "Shore power",
+   "aliases": [
+    "shore power",
+    "shore-side electricity",
+    "onshore power supply",
+    "on-shore power supply",
+    "cold ironing"
+   ],
    "modes": [
     "ocean"
    ],
@@ -493,6 +589,12 @@
    "key": "node:hdv_charging",
    "class": "node",
    "name": "HDV charging",
+   "aliases": [
+    "HDV charging",
+    "heavy-duty charging",
+    "truck charging",
+    "megawatt charging"
+   ],
    "modes": [
     "road"
    ],
@@ -513,6 +615,13 @@
    "key": "node:reefer_plugs",
    "class": "node",
    "name": "Reefer plugs",
+   "aliases": [
+    "reefer plugs",
+    "reefer plug",
+    "reefer",
+    "reefers",
+    "reefer containers"
+   ],
    "modes": [
     "ocean",
     "road"
@@ -533,6 +642,13 @@
    "key": "node:grid_queues",
    "class": "node",
    "name": "Grid connection queues",
+   "aliases": [
+    "grid connection queue",
+    "grid connection queues",
+    "connections queue",
+    "interconnection queue",
+    "grid queue"
+   ],
    "modes": [
     "road",
     "ocean"
@@ -554,6 +670,9 @@
    "key": "node:bunkering",
    "class": "node",
    "name": "Bunkering",
+   "aliases": [
+    "bunkering"
+   ],
    "modes": [
     "ocean"
    ],
@@ -573,6 +692,12 @@
    "key": "node:saf_blending",
    "class": "node",
    "name": "SAF blending",
+   "aliases": [
+    "SAF blending",
+    "SAF blend mandate",
+    "SAF mandate",
+    "blending mandate"
+   ],
    "modes": [
     "air"
    ],
@@ -592,6 +717,11 @@
    "key": "corridor:ocean_to_sea_air",
    "class": "corridor",
    "name": "Ocean to sea-air shift",
+   "aliases": [
+    "sea-air",
+    "sea air",
+    "sea-to-air"
+   ],
    "modes": [
     "ocean",
     "air"
@@ -610,6 +740,10 @@
    "key": "corridor:sea_air_to_air",
    "class": "corridor",
    "name": "Sea-air to air shift",
+   "aliases": [
+    "air-sea",
+    "sea-air to air"
+   ],
    "modes": [
     "ocean",
     "air"
@@ -628,6 +762,11 @@
    "key": "corridor:rail_road",
    "class": "corridor",
    "name": "Rail and road shift",
+   "aliases": [
+    "modal shift to rail",
+    "shift from road to rail",
+    "road-to-rail"
+   ],
    "modes": [
     "rail",
     "road"
@@ -646,6 +785,11 @@
    "key": "corridor:inland_waterway",
    "class": "corridor",
    "name": "Inland waterway shift",
+   "aliases": [
+    "modal shift to inland waterways",
+    "shift to inland waterway transport",
+    "road-to-water"
+   ],
    "modes": [
     "inland_waterway",
     "road"
@@ -664,6 +808,10 @@
    "key": "instrument:32023R2405",
    "class": "instrument",
    "name": "32023R2405",
+   "aliases": [
+    "ReFuelEU Aviation",
+    "ReFuelEU"
+   ],
    "modeAgnostic": false,
    "modes": [
     "air"
@@ -688,6 +836,10 @@
    "key": "instrument:32023R1805",
    "class": "instrument",
    "name": "32023R1805",
+   "aliases": [
+    "FuelEU Maritime",
+    "FuelEU"
+   ],
    "modeAgnostic": false,
    "modes": [
     "ocean"
@@ -712,6 +864,10 @@
    "key": "instrument:32023R1804",
    "class": "instrument",
    "name": "32023R1804",
+   "aliases": [
+    "AFIR",
+    "Alternative Fuels Infrastructure Regulation"
+   ],
    "modeAgnostic": false,
    "modes": [
     "road",
@@ -739,6 +895,9 @@
    "key": "instrument:32023L2413",
    "class": "instrument",
    "name": "32023L2413",
+   "aliases": [
+    "RED III"
+   ],
    "modeAgnostic": true,
    "modes": [
     "air",
@@ -767,6 +926,9 @@
    "key": "instrument:32018L2001",
    "class": "instrument",
    "name": "32018L2001",
+   "aliases": [
+    "RED II"
+   ],
    "modeAgnostic": true,
    "modes": [
     "air",
@@ -795,6 +957,10 @@
    "key": "instrument:32025R0040",
    "class": "mandate",
    "name": "32025R0040",
+   "aliases": [
+    "PPWR",
+    "Packaging and Packaging Waste Regulation"
+   ],
    "modeAgnostic": true,
    "modes": [
     "air",
@@ -816,6 +982,10 @@
    "key": "instrument:32023R0956",
    "class": "mandate",
    "name": "32023R0956",
+   "aliases": [
+    "CBAM",
+    "Carbon Border Adjustment Mechanism"
+   ],
    "modeAgnostic": true,
    "modes": [
     "air",
@@ -837,6 +1007,10 @@
    "key": "instrument:ISO14083",
    "class": "mandate",
    "name": "ISO 14083",
+   "aliases": [
+    "ISO 14083",
+    "ISO14083"
+   ],
    "modeAgnostic": true,
    "modes": [
     "air",
@@ -858,6 +1032,10 @@
    "key": "attr:void_space_ratio",
    "class": "attribute",
    "name": "void_space_ratio",
+   "aliases": [
+    "void space ratio",
+    "empty space ratio"
+   ],
    "unit": "%",
    "citation": {
     "url": "https://en.wikipedia.org/wiki/Packaging_waste",
@@ -872,6 +1050,9 @@
    "key": "attr:recycled_content",
    "class": "attribute",
    "name": "recycled_content",
+   "aliases": [
+    "recycled content"
+   ],
    "unit": "%",
    "citation": {
     "url": "https://environment.ec.europa.eu/topics/waste-and-recycling/packaging-waste_en",
@@ -886,6 +1067,10 @@
    "key": "attr:ghg_intensity",
    "class": "attribute",
    "name": "ghg_intensity",
+   "aliases": [
+    "GHG intensity",
+    "greenhouse gas intensity"
+   ],
    "unit": "gCO2e/MJ",
    "citation": {
     "url": "https://transport.ec.europa.eu/transport-modes/maritime/decarbonising-maritime-transport-fueleu-maritime_en",
@@ -900,6 +1085,10 @@
    "key": "attr:abatement_cost_per_tco2e",
    "class": "attribute",
    "name": "abatement_cost_per_tco2e",
+   "aliases": [
+    "abatement cost",
+    "marginal abatement cost"
+   ],
    "unit": "EUR/tCO2e",
    "citation": {
     "url": "https://en.wikipedia.org/wiki/Marginal_abatement_cost",
@@ -914,6 +1103,10 @@
    "key": "attr:tonnage_cutoff",
    "class": "attribute",
    "name": "tonnage_cutoff",
+   "aliases": [
+    "gross tonnage",
+    "5,000 gross tonnage"
+   ],
    "unit": "GT",
    "citation": {
     "url": "https://transport.ec.europa.eu/transport-modes/maritime/decarbonising-maritime-transport-fueleu-maritime_en",
@@ -928,6 +1121,7 @@
    "key": "window:0-6m",
    "class": "window",
    "name": "0-6m",
+   "aliases": [],
    "fromMonths": 0,
    "toMonths": 6,
    "entityId": "cl:method:9c6e5ad5973f81ba"
@@ -936,6 +1130,7 @@
    "key": "window:6-18m",
    "class": "window",
    "name": "6-18m",
+   "aliases": [],
    "fromMonths": 6,
    "toMonths": 18,
    "entityId": "cl:method:2383b485cff5b01c"
@@ -944,6 +1139,7 @@
    "key": "window:18-36m",
    "class": "window",
    "name": "18-36m",
+   "aliases": [],
    "fromMonths": 18,
    "toMonths": 36,
    "entityId": "cl:method:de617189c3d54540"
@@ -952,6 +1148,7 @@
    "key": "instrument:32003L0087",
    "class": "instrument",
    "name": "32003L0087",
+   "aliases": [],
    "modeAgnostic": false,
    "modes": [
     "air",
@@ -977,6 +1174,7 @@
    "key": "instrument:32019R1242",
    "class": "instrument",
    "name": "32019R1242",
+   "aliases": [],
    "modeAgnostic": false,
    "modes": [
     "road"
@@ -1001,6 +1199,7 @@
    "key": "instrument:32024R1610",
    "class": "instrument",
    "name": "32024R1610",
+   "aliases": [],
    "modeAgnostic": false,
    "modes": [
     "road"
@@ -1025,6 +1224,7 @@
    "key": "carrier:fossil_diesel",
    "class": "carrier",
    "name": "Fossil diesel and gas oil",
+   "aliases": [],
    "modes": [
     "road"
    ],
@@ -1041,6 +1241,7 @@
    "key": "carrier:fossil_gasoline",
    "class": "carrier",
    "name": "Fossil motor gasoline",
+   "aliases": [],
    "modes": [
     "road"
    ],
@@ -1057,6 +1258,7 @@
    "key": "carrier:fossil_jet",
    "class": "carrier",
    "name": "Fossil kerosene-type jet fuel",
+   "aliases": [],
    "modes": [
     "air"
    ],
@@ -1073,6 +1275,7 @@
    "key": "carrier:fossil_lpg",
    "class": "carrier",
    "name": "Fossil liquefied petroleum gas",
+   "aliases": [],
    "modes": [
     "road"
    ],
@@ -1089,6 +1292,7 @@
    "key": "carrier:fossil_fuel_oil",
    "class": "carrier",
    "name": "Fossil residual fuel oil",
+   "aliases": [],
    "modes": [
     "ocean"
    ],

@@ -154,46 +154,10 @@
    "reason": "oem_tech_roadmaps.commercial_stage: no vocabulary; distinct values \"mass_series_production\", \"pilot_demonstration\", \"announced\""
   },
   {
-   "key": "J3toknovocab:oem_tech_roadmaps.commercial_stage",
-   "owner": "vocabularies.json",
-   "date": "2026-10-25",
-   "reason": "oem_tech_roadmaps.commercial_stage: no vocabulary; distinct values \"mass_series_production\", \"pilot_demonstration\", \"announced\""
-  },
-  {
-   "key": "J3toknovocab:oem_tech_roadmaps.commercial_stage",
-   "owner": "vocabularies.json",
-   "date": "2026-10-25",
-   "reason": "oem_tech_roadmaps.commercial_stage: no vocabulary; distinct values \"mass_series_production\", \"pilot_demonstration\", \"announced\""
-  },
-  {
    "key": "J3toknovocab:research_assessments_current.horizon_band",
    "owner": "vocabularies.json",
    "date": "2026-10-25",
    "reason": "research_assessments_current.horizon_band: no vocabulary; distinct values \"NEAR\", \"FAR\", \"NOW\", \"MID\""
-  },
-  {
-   "key": "J3toknovocab:research_assessments_current.horizon_band",
-   "owner": "vocabularies.json",
-   "date": "2026-10-25",
-   "reason": "research_assessments_current.horizon_band: no vocabulary; distinct values \"NEAR\", \"FAR\", \"NOW\", \"MID\""
-  },
-  {
-   "key": "J3toknovocab:research_assessments_current.horizon_band",
-   "owner": "vocabularies.json",
-   "date": "2026-10-25",
-   "reason": "research_assessments_current.horizon_band: no vocabulary; distinct values \"NEAR\", \"FAR\", \"NOW\", \"MID\""
-  },
-  {
-   "key": "J3toknovocab:research_assessments_current.horizon_kind",
-   "owner": "vocabularies.json",
-   "date": "2026-10-25",
-   "reason": "research_assessments_current.horizon_kind: no vocabulary; distinct values \"availability\", \"obligation\""
-  },
-  {
-   "key": "J3toknovocab:research_assessments_current.horizon_kind",
-   "owner": "vocabularies.json",
-   "date": "2026-10-25",
-   "reason": "research_assessments_current.horizon_kind: no vocabulary; distinct values \"availability\", \"obligation\""
   },
   {
    "key": "J3toknovocab:research_assessments_current.horizon_kind",
@@ -226,28 +190,28 @@
    "key": "J5:obligation_objects.first_deadline",
    "owner": "the producer of the table",
    "date": "2026-10-25",
-   "reason": "obligation_objects.first_deadline: unreachable on 278 of 1868 rows: null",
-   "share": 0.1488
+   "reason": "obligation_objects.first_deadline: unreachable on 278 of 1876 rows: null",
+   "share": 0.1482
   },
   {
    "key": "J5:obligation_objects.instrument_entity_id",
    "owner": "the producer of the table",
    "date": "2026-10-25",
-   "reason": "obligation_objects.instrument_entity_id: unreachable on 119 of 1868 rows: null",
-   "share": 0.0637
+   "reason": "obligation_objects.instrument_entity_id: unreachable on 122 of 1876 rows: null",
+   "share": 0.065
   },
   {
    "key": "J5:obligation_objects.source_id",
    "owner": "the producer of the table",
    "date": "2026-10-25",
-   "reason": "obligation_objects.source_id: unreachable on 1807 of 1868 rows: null",
-   "share": 0.9673
+   "reason": "obligation_objects.source_id: unreachable on 1815 of 1876 rows: null",
+   "share": 0.9675
   },
   {
    "key": "J5:obligation_objects.statutory_maximum",
    "owner": "the producer of the table",
    "date": "2026-10-25",
-   "reason": "obligation_objects.statutory_maximum: unreachable on 1867 of 1868 rows: null",
+   "reason": "obligation_objects.statutory_maximum: unreachable on 1875 of 1876 rows: null",
    "share": 0.9995
   },
   {
@@ -303,14 +267,14 @@
    "key": "J5:section_claim_provenance.source_id",
    "owner": "the producer of the table",
    "date": "2026-10-25",
-   "reason": "section_claim_provenance.source_id: unreachable on 10392 of 34037 rows: null",
+   "reason": "section_claim_provenance.source_id: unreachable on 10392 of 34042 rows: null",
    "share": 0.3053
   },
   {
    "key": "J5:section_claim_provenance.source_tier_at_grounding",
    "owner": "the producer of the table",
    "date": "2026-10-25",
-   "reason": "section_claim_provenance.source_tier_at_grounding: unreachable on 13047 of 34037 rows: null",
+   "reason": "section_claim_provenance.source_tier_at_grounding: unreachable on 13047 of 34042 rows: null",
    "share": 0.3833
   }
  ]
