@@ -5,8 +5,7 @@
 // because they answer different questions (clauseStart: where the DISPLAYED clause opens; sentenceStart: where the DEONTIC look-behind opens, and it
 // treats `;` as a terminator); both share the decimal-point rule. Exact behaviour parity with the old extractor is proven by a golden over the live fixture.
 import { ABSENCE_TOKEN } from "@/core/brief";
-
-import { MONTH_EN_ALT, MONTH_PT_ALT } from "./date-grammar";
+import { MONTH_EN_ALT, MONTH_PT_ALT } from "@/core/parse/date-grammar";
 
 const SENTENCE_OPEN_RE = /[A-Z0-9"'“‘«(]/;
 const isDecimalPoint = (text: string, i: number): boolean => /\d/.test(text[i - 1] || "") && /\d/.test(text[i + 1] || "");

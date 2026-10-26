@@ -160,10 +160,6 @@
       "owner": "R2d",
       "reason": "an HTML entity in a string.",
       "files": {
-        "src/features/obligations/extract/date-grammar.ts": {
-          "count": 2,
-          "reason": "a pattern that matches &nbsp; in captured HTML source, not text shown to a reader: it stays."
-        },
         "src/features/regulations/map/MapView.tsx": {
           "count": 1,
           "reason": "Leaflet reads its attribution option as HTML, so the entity is decoded there: it stays."

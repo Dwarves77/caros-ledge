@@ -1,0 +1,36 @@
+{
+  "ruling": "operator and scope reviewer 2026-10-26 under ADR-053 section 2 (DOC-DATE-1): a document's own date is a formal code, read from the stored capture by the document-date producer (nothing is fetched, so no scrape cadence is exercised and rule 16 stands; the cadence_exception key only satisfies INV-RUN-1 for an apply propagate step that names a producer); the velocity detector reads the dates on the document-date clock in CONNECT-2 PR B",
+  "steps": [
+    {
+      "name": "document-date-dry",
+      "stage": "propagate",
+      "mode": "dry",
+      "input": {
+        "propagate": {
+          "producers": {
+            "only": "document-date"
+          }
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "document-date-apply",
+      "stage": "propagate",
+      "mode": "apply",
+      "input": {
+        "propagate": {
+          "producers": {
+            "only": "document-date"
+          },
+          "cadence_exception": "operator and scope reviewer 2026-10-26 under ADR-053 section 2 (DOC-DATE-1): a document's own date is a formal code, read from the stored capture by the document-date producer (nothing is fetched, so no scrape cadence is exercised and rule 16 stands; the cadence_exception key only satisfies INV-RUN-1 for an apply propagate step that names a producer); the velocity detector reads the dates on the document-date clock in CONNECT-2 PR B"
+        }
+      },
+      "producer_env": [
+        "DOCUMENT_DATE_PRODUCER_ENABLED=1"
+      ],
+      "on_failure": "stop"
+    }
+  ]
+}
