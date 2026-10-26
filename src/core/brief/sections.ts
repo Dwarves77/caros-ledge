@@ -21,7 +21,7 @@ export interface SectionRow { section_key: string; section_order: number; conten
 export interface FormatSpec extends FormatDef { extract(fullBrief: string): SectionRow[] }
 
 /** Strip bold/italic wrappers, a leading "Section N <sep>" and a leading "N." or "N)" from a heading payload. */
-function normaliseHeading(raw: string): string {
+export function normaliseHeading(raw: string): string {
   return raw.trim().replace(/^\*+\s*/, "").replace(/\s*\*+$/, "").replace(/^section\s+\d+\s*[—–\-:.)]+\s*/i, "").replace(/^\d+\s*[.)]\s*/, "").trim();
 }
 /** Heading equality: case-insensitive, whitespace-folded, -ize/-ise tolerant. */
