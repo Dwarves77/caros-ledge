@@ -126,7 +126,16 @@ export interface BodyVerdict {
 }
 const verdict = (cls: BodyClass, evidence = ""): BodyVerdict => ({ class: cls, evidence: evidence.slice(0, 200) });
 
-type BodyOpts = { status?: number; timedOut?: boolean; host?: string | null; path?: string | null };
+export type BodyOpts = { status?: number; timedOut?: boolean; host?: string | null; path?: string | null };
+/** The options of a fetched URL: its host and path beside the status, so a rule that belongs to one host (the EUR-Lex interface shell) stays on that host. A caller that knows the URL passes it here; a body with no host is judged by the host-free rules and the EUR-Lex one. */
+export function bodyOpts(url: string | null | undefined, extra: Pick<BodyOpts, "status" | "timedOut"> = {}): BodyOpts {
+  try {
+    const u = new URL(String(url));
+    return { ...extra, host: u.hostname, path: u.pathname };
+  } catch {
+    return extra;
+  }
+}
 /** The wall subset, one head window per signal. With `stubFloor`, a body under the real-content floor is a stub (a challenge page or a JS shell). */
 function wallVerdict(s: string, opts: BodyOpts, stubFloor: boolean): BodyVerdict | null {
   const len = s.trim().length;

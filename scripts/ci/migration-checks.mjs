@@ -1,6 +1,7 @@
 // The static checks on supabase/migrations, before any database work (`npm run migration-checks`, and the first step of the schema job):
-//   - the README table lists every file and only files that exist (IMP-043);
-//   - APPLY.md, the cutover order, equals what scripts/ci/apply-plan.mjs generates from the directory (P2-15);
+//   - the apply plan derives from the directory with nothing wrong in it (scripts/ci/apply-plan.mjs planCheck, the only derivation: no committed plan exists): no duplicate number, nothing in the directory that is not a migration file,
+//     the apply-notes rules, the number ledger RESERVED.json (every number above README_FROZEN_THROUGH is reserved to a slice), and with a base ref (a pull request: origin/main) a new file takes a number above every file there (APPLY-1);
+//   - the README table is frozen: a file up to README_FROZEN_THROUGH has its row, a file above it carries its own `-- change: <text>` line and has no row (IMP-043, APPLY-1);
 //   - a generated data file is verified by the generator it names (IMP-044: screen verdicts reproduce byte for byte, the sources backfill carries its export header and statement count);
 //   - every file ends in a self-check: its last DO block comes after the last statement that changes anything, raises (RAISE EXCEPTION) when what it asserts is false, and prints `<id> OK` for the id the file declares
 //     (a self-check that cannot raise, or that is followed by more DDL, certifies nothing);
@@ -9,13 +10,13 @@
 //     `irreversible` note in apply-notes.json for a file applied before the marker existed). Never both, never a down file for a data migration (it would never run).
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 
-import { applyNotes, isData, migrationFiles, noticeIds, numberOf, selfCheckIdOf } from "../lib/migrations.mjs";
+import { README_FROZEN_THROUGH, applyNotes, changeOf, defaultBase, isData, migrationFiles, noticeIds, numberOf, readmeRows, selfCheckIdOf } from "../lib/migrations.mjs";
 import { isMain } from "../lib/fs.mjs";
 import { checkBackfill } from "../gen/source-backfill-check.mjs";
 import { checkGenerated } from "../gen/screen-verdicts-sql.mjs";
 import { checkShapeFunction } from "../gen/shape-function-sql.mjs";
 
-import { planProblems, planText } from "./apply-plan.mjs";
+import { planCheck } from "./apply-plan.mjs";
 import { scopeProblems } from "./schema/self-check-scope.mjs";
 import { changesDatabase, lastDoIndex, statementsOf } from "./schema/statements.mjs";
 
@@ -83,20 +84,21 @@ export function reversalProblems(file, text, notes, dir) {
   return problems;
 }
 
-export function migrationProblems(dir = "supabase/migrations") {
+/** Every static problem of the migration directory; `base` (a git ref, with `cwd` the repository) adds the order check against it. */
+export function migrationProblems(dir = "supabase/migrations", { base = null, cwd = "." } = {}) {
   const files = migrationFiles(dir);
-  const listed = [...readFileSync(`${dir}/README.md`, "utf8").matchAll(/^\| (\d{4}_\S+) \|/gm)].map((m) => m[1]);
-  const have = existsSync(`${dir}/APPLY.md`) ? readFileSync(`${dir}/APPLY.md`, "utf8").replace(/\r\n/g, "\n") : "";
-  const plan = planProblems(dir);
+  const listed = [...readmeRows(dir).keys()];
+  const plan = planCheck(dir, { base, cwd });
   const notes = applyNotes(dir);
   const tables = new Set(Object.keys(JSON.parse(readFileSync("tests/_support/schema.json", "utf8")).tables));
   const functions = functionNames(dir);
   const downFiles = existsSync(`${dir}/down`) ? readdirSync(`${dir}/down`).filter((f) => f.endsWith(".sql")) : [];
   return [
     ...plan,
-    ...(plan.length || have === planText(dir) ? [] : [`${dir}/APPLY.md differs from the directory: run \`node scripts/ci/apply-plan.mjs --write\` and commit it (the cutover order cannot drift from the files)`]),
-    ...files.filter((f) => !listed.includes(f.replace(/\.sql$/, ""))).map((f) => `${dir}/README.md does not list ${f}`),
+    ...files.filter((f) => numberOf(f) <= README_FROZEN_THROUGH && !listed.includes(f.replace(/\.sql$/, ""))).map((f) => `${dir}/README.md does not list ${f}`),
+    ...files.filter((f) => numberOf(f) > README_FROZEN_THROUGH && !changeOf(readFileSync(`${dir}/${f}`, "utf8"))).map((f) => `${dir}/${f} has no \`-- change: <text>\` line: a file above ${README_FROZEN_THROUGH} describes its change in its own header, never in README.md`),
     ...listed.filter((l) => !files.includes(`${l}.sql`)).map((l) => `${dir}/README.md lists ${l}, which is not a file`),
+    ...listed.filter((l) => l.slice(0, 4) > README_FROZEN_THROUGH).map((l) => `${dir}/README.md has a row for ${l}, above ${README_FROZEN_THROUGH}: the table is frozen, write the change in the file's \`-- change:\` line`),
     ...downFiles.filter((d) => !files.some((f) => numberOf(f) === d.slice(0, 4))).map((d) => `${dir}/down/${d} belongs to no migration`),
     ...files.flatMap((f) => {
       const text = readFileSync(`${dir}/${f}`, "utf8").replace(/\r\n/g, "\n");
@@ -112,7 +114,7 @@ export function migrationProblems(dir = "supabase/migrations") {
 }
 
 if (isMain(import.meta.url)) {
-  const problems = migrationProblems();
+  const problems = migrationProblems("supabase/migrations", { base: defaultBase() });
   for (const p of problems.slice(0, 60)) console.error(p);
   if (problems.length > 60) console.error(`... and ${problems.length - 60} more`);
   console.log(problems.length ? `migration-checks: ${problems.length} problem(s)` : "migration-checks: clean");

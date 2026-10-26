@@ -17,6 +17,7 @@ export const STEPS = [
   { name: "Typecheck", cmd: "typecheck" },
   { name: "Build", cmd: "build", env: { NEXT_TELEMETRY_DISABLED: "1", NEXT_PUBLIC_SUPABASE_URL: "https://placeholder.supabase.co", NEXT_PUBLIC_SUPABASE_ANON_KEY: "placeholder" } },
   { name: "Tests (output kept for the report job)", cmd: "test", capture: "test-output.txt" },
+  { name: "Brief validator report (VALID-1, INV-VAL-5: every rule trips exactly the fixture rows labelled with it)", cmd: "validator-report" },
   { name: "Tree checks", cmd: "tree-checks" },
   { name: "UI checks", cmd: "ui-checks" },
   { name: "Client bundle walk (no \"use client\" file reaches a server-only module, node:crypto or a secret; audit 2026-10-23 2.4)", cmd: "client-walk" },
@@ -26,7 +27,7 @@ export const STEPS = [
   { name: "Joinability (a stored row is reachable by the engine: columns mapped, entities connected, units normalised)", cmd: "joinability" },
   { name: "Citation check (a path, line range or table.column a document cites exists: CITE-1)", cmd: "verify:citations" },
   { name: "Propagation method versions (INV-202: a released method is never edited; new behaviour is a new version)", cmd: "method-versions" },
-  { name: "Migration static checks (self-check, reversal, README, APPLY.md, borrowed rows)", cmd: "migration-checks" },
+  { name: "Migration static checks (self-check, reversal, number ledger and order, README, borrowed rows)", cmd: "migration-checks" },
   { name: "Edge Function bundle (IMP-029: capture-worker bundles with its relative policy import)", cmd: "edge-bundle", scoped: () => edgeChanged() },
 ];
 

@@ -1,0 +1,12 @@
+{
+  "about": "The migration number ledger (APPLY-1). A slice claims its number here, on main, before it writes the file; a file above 0134 whose number is not reserved to a slice fails the migration checks. Status: reserved (claimed, no file yet), landed (the file is on main), released (the number will not be used). A migration PR does not edit this file: a file's presence is what lands a number, so two PRs never touch the same lines. The coordinator appends the next reservation and flips a status in its own commit to main. The monotonic rule (a new file takes a number above every file on its base) is checked against git by `node scripts/ci/apply-plan.mjs --check --base origin/main`.",
+  "reservations": [
+    { "number": "0131", "slice": "APPLY-1", "status": "released", "reserved_on": "2026-10-25" },
+    { "number": "0132", "slice": "FIX-QUOTE-1", "status": "landed", "reserved_on": "2026-10-25" },
+    { "number": "0133", "slice": "FIX-REFS-1", "status": "landed", "reserved_on": "2026-10-25" },
+    { "number": "0134", "slice": "CONNECT-2 PR A", "status": "landed", "reserved_on": "2026-10-25" },
+    { "number": "0135", "slice": "DERIVE-3 (conditional)", "status": "reserved", "reserved_on": "2026-10-25" },
+    { "number": "0136", "slice": "SEV-1", "status": "reserved", "reserved_on": "2026-10-25" },
+    { "number": "0137", "slice": "MINT-2", "status": "reserved", "reserved_on": "2026-10-25" }
+  ]
+}

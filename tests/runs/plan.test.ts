@@ -97,3 +97,25 @@ test("the CONNECT-2A plan parses: couplings and patterns, dry then apply, the ru
   assert.ok(p.steps.every((s: { producer_env: string[]; input: Record<string, { producers?: unknown }> }) => s.producer_env.length === 0 && s.input.propagate?.producers === undefined), "no producer runs in this plan");
   assert.equal(p.steps[1].input.propagate.cadence_exception, p.ruling);
 });
+
+test("HEAL-1: an operator task is ruled as a stage `ops` step whose input names an op of the turn's ops table; an unknown op, and an `ops` input on another stage, are refused", () => {
+  const ops = (over: Record<string, unknown> = {}) => step({ name: "heal", stage: "ops", mode: "dry", input: { ops: { op: "heal-quarantined", args: { selection: "ids", ids: ["a"] } } }, producer_env: [], ...over });
+  const p = parsePlan(plan({ steps: [ops(), ops({ name: "heal-apply", mode: "apply" })] }));
+  assert.deepEqual(p.steps.map((s: { stage: string }) => s.stage), ["ops", "ops"]);
+  assert.throws(() => parsePlan(plan({ steps: [ops({ input: { ops: { op: "heal-everything" } } })] })), /not an op/);
+  assert.throws(() => parsePlan(plan({ steps: [ops({ input: {} })] })), /not an op/);
+  assert.throws(() => parsePlan(plan({ steps: [ops({ stage: "connect", input: { ops: { op: "heal-quarantined" } } })] })), /input.ops belongs to a stage/);
+  assert.throws(() => parsePlan(plan({ steps: [ops({ mode: "apply", input: { ops: { op: "heal-quarantined", cadence_exception: RULING } } })] })), /false claim/);
+});
+
+test("HEAL-1: the heal plan (2026-10-26-heal-1) heals exactly the two ruled instrument items from stored captures: a dry step then an apply step of heal-quarantined over their ids, nothing that fetches", () => {
+  const p = parsePlan(readFileSync("scripts/runs/plans/2026-10-26-heal-1.json", "utf8"));
+  assert.deepEqual(p.steps.map((s: { mode: string }) => s.mode), ["dry", "apply"]);
+  for (const s of p.steps) {
+    assert.equal(s.stage, "ops");
+    assert.deepEqual(s.input.ops.args.ids, ["7a0ead55-7a7b-403b-8ba3-33862cb296e2", "15f63ea9-4803-4bb4-b1a3-9ccdeb8a3050"]);
+    assert.equal(s.input.ops.args.selection, "ids");
+    assert.equal(s.input.ops.args.stripUnprovable, undefined, "the honest strip is not part of this ruling");
+    assert.deepEqual(s.producer_env, []);
+  }
+});

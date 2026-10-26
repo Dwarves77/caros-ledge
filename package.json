@@ -17,6 +17,7 @@
     "schema:apply": "node scripts/ci/schema-apply.mjs",
     "schema:local": "node scripts/ci/schema-local.mjs",
     "tree-checks": "node scripts/ci/tree-checks.mjs",
+    "validator-report": "node scripts/ci/validator-report.mjs --fixture",
     "connections": "node scripts/ci/connections.mjs",
     "columns": "node scripts/ci/columns.mjs",
     "joinability": "node --import ./tests/_support/register.mjs scripts/ci/joinability.mjs",
