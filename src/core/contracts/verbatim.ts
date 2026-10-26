@@ -17,6 +17,17 @@ export function isVerbatim(capture: string | null | undefined, span: string | nu
   return needle !== "" && capture.toLowerCase().includes(needle.toLowerCase());
 }
 
+/**
+ * The ONE tolerant door for a NEW quote (CAPTURE-STRUCT-1). A capture keeps its paragraphs and table cells as line breaks and tabs, and a reader copies "(a) containerships" for "(a)\tcontainerships": the quote's words, joined by
+ * any run of whitespace, are searched case-insensitively and the capture's OWN exact slice is returned (null when the words are not there in that order, or when the quote is blank). The caller stores the slice and then runs
+ * the unchanged exact isVerbatim on it; public.is_verbatim and every stored check stay exact.
+ */
+export function locateSpan(capture: string | null | undefined, quote: string | null | undefined): string | null {
+  const words = (quote ?? "").split(/\s+/).filter(Boolean);
+  if (!capture || !words.length) return null;
+  return new RegExp(words.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("\\s+"), "i").exec(capture)?.[0] ?? null;
+}
+
 /** public.is_verbatim(p_capture, p_span): the rule above as a SQL function. GENERATED: migration 0106 carries this text and a test regenerates and diffs it. */
 export function renderVerbatimSql(): string {
   return `CREATE OR REPLACE FUNCTION public.is_verbatim(p_capture text, p_span text) RETURNS boolean
@@ -35,11 +46,12 @@ export function assertVerbatim(capture: string | null | undefined, span: string 
   return span;
 }
 
-/** Ground a producer candidate against its capture; a missing span, a missing capture or a paraphrase is refused with its reason. */
-export function groundCandidate(candidate: { span_text?: string | null } | null | undefined, captureText: string | null | undefined): { ok: true } | { ok: false; reason: string } {
+/** Ground a producer candidate against its capture; a missing span, a missing capture or a paraphrase is refused with its reason. A grounded span is the capture's own slice (locateSpan, then the exact rule). */
+export function groundCandidate(candidate: { span_text?: string | null } | null | undefined, captureText: string | null | undefined): { ok: true; span: string } | { ok: false; reason: string } {
   const span = candidate?.span_text;
   if (!span || !span.trim()) return { ok: false, reason: "no span_text supplied: a figure with no supporting span is ungrounded, refused per ADR-016 / rule 18" };
   if (!captureText || !captureText.trim()) return { ok: false, reason: "no capture text available for this candidate's source_url, cannot verify the span" };
-  if (!isVerbatim(captureText, span)) return { ok: false, reason: "span_text is not a verbatim substring of the captured source text (database criterion-3 rule)" };
-  return { ok: true };
+  const slice = locateSpan(captureText, span);
+  if (slice === null || !isVerbatim(captureText, slice)) return { ok: false, reason: "span_text is not a verbatim substring of the captured source text (database criterion-3 rule)" };
+  return { ok: true, span: slice };
 }

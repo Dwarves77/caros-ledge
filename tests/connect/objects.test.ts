@@ -3,6 +3,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
+import { isVerbatim } from "@/core/contracts";
 import { deriveObligationObjects, type Candidate } from "@/features/obligations";
 import fueleuTargets from "@/features/obligations/derive/data/fueleu-targets.json" with { type: "json" };
 
@@ -83,6 +84,13 @@ test("FuelEU 2030-2050 targets are data: six periods, each produced only when it
   assert.equal(planOf(some).toInsert.length, 2, "periods whose quote is not held are not produced");
   const other = await deriveObligationObjects(connectDb({ intelligence_items: [ITEM], section_claim_provenance: [], fact_suppressions: [], item_forward_events: [], agent_run_searches: [{ id: "c", intelligence_item_id: "i1", result_url: "https://eur-lex.europa.eu/x", result_content: heldPeriods(6), result_index: 0 }], obligation_objects: [] }).db, { dry: true, itemIds: ["i1"] });
   assert.equal(planOf(other).toInsert.length, 0, "another instrument gets none");
+});
+
+test("FuelEU periods are found in a structured capture (CAPTURE-STRUCT-1): the quote's words may sit on other lines, and the capture's own slice is stored", async () => {
+  const structured = `Article 4(2)\n\n${FUELEU_TARGETS.periods.map((p) => p.quote.replace(/ /g, "\t")).join("\n\n")}`;
+  const plan = planOf(await deriveObligationObjects(world(structured).db, { dry: true, itemIds: ["f1"] }));
+  assert.equal(plan.toInsert.length, 6);
+  for (const x of plan.toInsert) assert.ok(isVerbatim(structured, String(x.row.verbatim_text)), "the stored text is exactly in the capture");
 });
 
 const world = (held: string = heldPeriods(6)) =>

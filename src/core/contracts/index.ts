@@ -4,7 +4,7 @@ export { renderEnvelopeColumnsSql, renderFactorCandidateViewSql, renderTierConst
 export type { Factor, Skipped } from "./factor-tier";
 export { licenceGate, mayEmbedAsSeed, renderDataSourceSeedSql, renderLicenceHostsModule, SOURCE_KEYS, SOURCE_LICENCES } from "./source-licence";
 export type { SourceLicence } from "./source-licence";
-export { assertVerbatim, groundCandidate, isVerbatim, renderVerbatimSql } from "./verbatim";
+export { assertVerbatim, groundCandidate, isVerbatim, locateSpan, renderVerbatimSql } from "./verbatim";
 export { citableAsFact, isMissing, isValid, LEG_MODE_CODES, normaliseMode, orderedValues, VOCABULARIES, weakestOriginClass } from "./vocabularies";
 export type { VocabEntry } from "./vocabularies";
 export { insideLongerNumber, normalizeNumeric } from "./numbers";
