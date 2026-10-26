@@ -1,9 +1,10 @@
 // New in VALID-1: R6 (V11): each stored entry_into_force and compliance_deadline is written in the body in one of the accepted renderings (data/date-renderings.json).
 import { z } from "zod";
 
+import { foldHtmlSpace } from "@/core/parse";
+
 import datesJson from "../data/date-renderings.json";
 
-import { foldHtmlSpace } from "@/core/parse";
 import { violation } from "./_text";
 import type { Rule } from "./types";
 
