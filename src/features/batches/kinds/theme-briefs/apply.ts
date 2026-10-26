@@ -85,23 +85,32 @@ export async function applyThemeBriefs(deps: BatchDeps, input: { content: string
  * (parseThemeBriefEntry) checks an entry against. */
 export type ThemeBundle = ReturnType<typeof buildThemeBundle> & { packets: Packet[]; candidate_entities: ReturnType<typeof menuBlock> };
 export function themeBriefsExporter(sb: Db, o: { charBudget?: number; packets?: PacketReader } = {}) {
-  return async ({ limit }: { limit: number }): Promise<BatchExport> => {
+  return async ({ limit, ids }: { limit: number; ids?: readonly string[] }): Promise<BatchExport> => {
     try {
       const [themes, briefs, lineage] = [await loadThemes(sb), await loadBriefs(sb), await loadLineage(sb)];
       const needs = themesNeedingBrief(themes, briefs, { lineage });
-      const chosen = needs.slice(0, limit);
+      const chosen = (ids?.length ? needs.filter((n) => ids.includes(n.theme.id)) : needs).slice(0, limit);
       const material = await loadThemeMaterial(sb, chosen.map((n) => n.theme));
       const gaps = computeThemeGaps(chosen.map((n) => n.theme), material);
       const packetRead = await (o.packets ?? packetReader(sb))(chosen.map((n) => n.theme.id));
       const items: ThemeBundle[] = [];
+      // A theme is one reading: a bundle that would drop members is refused by name, never handed out short (a session writes from the whole membership).
+      const residue: { theme_id: string; reason: string }[] = [];
+      for (const id of ids ?? []) {
+        if (chosen.some((n) => n.theme.id === id)) continue;
+        const brief = briefs.find((b) => b.theme_id === id);
+        residue.push({ theme_id: id, reason: needs.some((n) => n.theme.id === id) ? "over_limit" : !themes.some((t) => t.id === id) ? "no_live_theme" : `not_needing_brief: its brief is current${brief ? ` (generated_by ${brief.generated_by})` : ""}` });
+      }
       for (const n of chosen) {
         const packets = packetRead.packets.filter((p) => p.id === n.theme.id);
         // the menu: the packet's member entities, or (packets pending) the entities the member items' claims and events are filed under
         const seed = packets.length ? await packetSeed(sb, packets) : await memberSeed(sb, n.theme.member_ids ?? []);
-        items.push({ ...buildThemeBundle(n, material, gaps.get(n.theme.id), { charBudget: o.charBudget ?? DEFAULT_CHAR_BUDGET }), packets, candidate_entities: menuBlock(await candidateMenu(sb, seed)) });
+        const bundle = buildThemeBundle(n, material, gaps.get(n.theme.id), { charBudget: o.charBudget ?? DEFAULT_CHAR_BUDGET });
+        if (bundle.truncation.members_omitted) { residue.push({ theme_id: n.theme.id, reason: `over_budget: ${bundle.truncation.members_omitted} of ${bundle.truncation.members_total} member(s) do not fit the ${bundle.truncation.char_budget}-character budget; the theme is not exported short (raise charBudget)` }); continue; }
+        items.push({ ...bundle, packets, candidate_entities: menuBlock(await candidateMenu(sb, seed)) });
       }
       const by = (r: string) => needs.filter((n) => n.reason === r).length;
-      return { ok: true, items: items as never, source: { type: "table", table: "connection_themes" }, summary: { second_reader: secondReaderBlock("theme-briefs"), themes: themes.length, needing_brief: needs.length, no_brief: by("no_brief"), stale: by("stale"), superseded: by("superseded"), exported: items.length, not_exported_over_limit: needs.length - items.length, packets: packetRead.marker ?? "read" } };
+      return { ok: true, items: items as never, source: { type: "table", table: "connection_themes" }, summary: { second_reader: secondReaderBlock("theme-briefs"), themes: themes.length, needing_brief: needs.length, no_brief: by("no_brief"), stale: by("stale"), superseded: by("superseded"), exported: items.length, not_exported_over_limit: needs.length - chosen.length, not_exported_over_budget: residue.length, packets: packetRead.marker ?? "read" }, residue };
     } catch (e) {
       return { ok: false, items: [], error: (e as Error).message };
     }

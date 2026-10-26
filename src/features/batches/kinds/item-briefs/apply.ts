@@ -200,7 +200,9 @@ function itemBriefsSpec(opts: RecordOpts): EntrySpec<RecordLive, RecordPlan> {
       const items: RecordLive["items"] = new Map();
       for (const r of rows) {
         const p = await itemPool(deps.sb, r.id);
-        items.set(r.id, { itemType: r.item_type, grade: r.item_grade, status: r.provenance_status, hash: p.hash, poolText: p.pool.map((x) => x.text).join("\n\n"), bytes: p.bytes, fullBrief: r.full_brief, entryIntoForce: r.entry_into_force, complianceDeadline: r.compliance_deadline });
+        const [evs, tls] = [await allRows<{ event_date: string | null }>(deps.sb, "item_forward_events", "event_date", { where: (q) => q.eq("intelligence_item_id", r.id) }), await allRows<{ milestone_date: string | null }>(deps.sb, "item_timelines", "milestone_date", { where: (q) => q.eq("item_id", r.id) })];
+        const suppliedDates = [...evs.map((e) => e.event_date), ...tls.map((t) => t.milestone_date)].filter((d): d is string => !!d);
+        items.set(r.id, { suppliedDates, itemType: r.item_type, grade: r.item_grade, status: r.provenance_status, hash: p.hash, poolText: p.pool.map((x) => x.text).join("\n\n"), bytes: p.bytes, fullBrief: r.full_brief, entryIntoForce: r.entry_into_force, complianceDeadline: r.compliance_deadline });
       }
       const slotRows = await allRows<{ item_type: string; slot_key: string; description: string | null }>(deps.sb, "item_type_required_slots", "item_type, slot_key, description", { cap: 5000 });
       const slots: RecordLive["slots"] = new Map();
