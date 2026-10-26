@@ -3,7 +3,7 @@
 // Stage 4, capture: the sources the change stage found changed are queued (one open row per source), then the capture worker drains the queue and stores each whole document.
 // The worker reads no gate of its own: this stage reads the gate first, and the worker call carries a timeout.
 import { capture, itemForCitedUrl } from "@/core/fetch";
-import { classifyBody, isStorableClass } from "@/core/fetch/classify-body";
+import { bodyOpts, classifyBody, isStorableClass } from "@/core/fetch/classify-body";
 import { closeBrowser, fetchBrowser, type BrowserDeps } from "@/core/fetch/headless";
 import { storageMaxChars } from "@/core/fetch/policy";
 import { storeCapture, type Db as StoreDb } from "@/core/fetch/store-capture";
@@ -52,13 +52,17 @@ export async function captureCited(d: BuiltDeps, cited: readonly { url: string; 
     const rated = await registerAndRate(d.sb, url, { name: title });
     const celex = /[?&]uri=CELEX:([\w()-]+)/i.exec(url)?.[1];
     let got: Got | null = "source_id" in rated ? await capture(url, celex ? { family: "celex", key: celex } : {}, fetchDeps) : null;
+    let browserSaid: string | null = null;
     if (got && !got.usable && !FINAL_HOLDS.has(got.holdReason ?? "")) {
       const b = await fetchBrowser(url, browserDeps, { max: storageMaxChars(d.env) });
-      if (b.status === 200 && b.text.length > 200 && isStorableClass(classifyBody(b.text, { status: 200 }).class)) got = { usable: true, text: b.text, title: b.title ?? null, status: 200, channel: "browser", holdReason: null };
+      const cls = b.status === 200 ? classifyBody(b.text, bodyOpts(b.finalUrl ?? url, { status: 200 })).class : null;
+      if (b.status === 200 && b.text.length > 200 && cls !== null && isStorableClass(cls)) got = { usable: true, text: b.text, title: b.title ?? null, status: 200, channel: "browser", holdReason: null };
+      // the browser tier's own answer, kept beside the direct tier's: a page both tiers failed names both (the first tier's reason alone hid that the browser read the page and the classifier refused it)
+      else browserSaid = b.needsHeadless ? "needs_headless" : b.refusal ? b.refusal.reason : cls ?? `http ${b.status}`;
     }
     if (!got?.usable || !got.text || !("source_id" in rated)) {
       counts.failed += 1;
-      notes.push(`${url}: ${"source_id" in rated ? (got?.holdReason ?? "no usable capture") : `not registered (${rated.status})`}`);
+      notes.push(`${url}: ${"source_id" in rated ? `direct: ${got?.holdReason ?? "no usable capture"}${browserSaid ? `; browser: ${browserSaid}` : ""}` : `not registered (${rated.status})`}`);
       continue;
     }
     // DERIVE-3 D3: a page that names one live instrument item by its CELEX, ELI or source URL is stored with that item (the obligation guard refuses an object on a capture bound to no item)
