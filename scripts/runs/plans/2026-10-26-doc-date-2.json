@@ -43,6 +43,18 @@
       },
       "producer_env": [],
       "on_failure": "stop"
+    },
+    {
+      "name": "patterns-apply",
+      "stage": "connect",
+      "mode": "apply",
+      "input": {
+        "connect": {
+          "scan_limit": 0
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
     }
   ]
 }
