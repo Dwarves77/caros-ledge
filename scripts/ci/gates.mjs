@@ -7,16 +7,18 @@ import { dirname } from "node:path";
 
 import { isMain } from "../lib/fs.mjs";
 
+import { withLock } from "./lib/lock.mjs";
+
 const inCi = Boolean(process.env.GITHUB_ACTIONS);
 const git = (...args) => execFileSync("git", args, { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
 
-/** Every step is an npm script, so the failure line names a real script. */
+/** Every step is an npm script, so the failure line names a real script. A `heavy` step (build, tests, schema:local) takes the cross-process "gates" lock (scripts/ci/lib/lock.mjs): two lanes on one workstation never run them at once; the cheap checks stay outside it and report fast. */
 export const STEPS = [
   { name: "Workflows are valid: YAML parses and the pinned actionlint finds nothing (IMP-100)", cmd: "workflow-yaml" },
   { name: "Lint", cmd: "lint" },
   { name: "Typecheck", cmd: "typecheck" },
-  { name: "Build", cmd: "build", env: { NEXT_TELEMETRY_DISABLED: "1", NEXT_PUBLIC_SUPABASE_URL: "https://placeholder.supabase.co", NEXT_PUBLIC_SUPABASE_ANON_KEY: "placeholder" } },
-  { name: "Tests (output kept for the report job)", cmd: "test", capture: "test-output.txt" },
+  { name: "Build", cmd: "build", heavy: true, env: { NEXT_TELEMETRY_DISABLED: "1", NEXT_PUBLIC_SUPABASE_URL: "https://placeholder.supabase.co", NEXT_PUBLIC_SUPABASE_ANON_KEY: "placeholder" } },
+  { name: "Tests (output kept for the report job)", cmd: "test", heavy: true, capture: "test-output.txt" },
   { name: "Brief validator report (VALID-1, INV-VAL-5: every rule trips exactly the fixture rows labelled with it)", cmd: "validator-report" },
   { name: "Tree checks", cmd: "tree-checks" },
   { name: "UI checks", cmd: "ui-checks" },
@@ -65,11 +67,11 @@ if (isMain(import.meta.url)) {
   const stamp = execFileSync("git", ["rev-parse", "--git-path", "gates-last"], { encoding: "utf8" }).trim();
   const last = existsSync(stamp) ? readFileSync(stamp, "utf8").trim() : null;
   const steps = STEPS.filter((s) => !s.scoped || inCi || s.scoped());
-  if (!inCi && supabaseChanged()) steps.push({ name: "Schema on an embedded PostgreSQL 15 (supabase/ changed)", cmd: "schema:local" });
+  if (!inCi && supabaseChanged()) steps.push({ name: "Schema on an embedded PostgreSQL 15 (supabase/ changed)", cmd: "schema:local", heavy: true });
   console.log(`gates: ${steps.map((s) => s.cmd).join(", ")}${last ? `; the last run took ${last}s` : ""}`);
   const started = Date.now();
   for (const step of steps) {
-    const code = run(step);
+    const code = step.heavy ? await withLock("gates", () => run(step)) : run(step);
     if (code !== 0) {
       console.error(`\ngates: FAILED at "${step.name}" (npm run ${step.cmd})`);
       process.exit(1);
