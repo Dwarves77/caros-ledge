@@ -1,5 +1,5 @@
 // New in ARM-3 (no old counterpart): a published freight-rate or fuel-price observation as a market_series row, authored from a stored capture. The value, its day and its unit are read by the rows-file author; this code checks
-// that each stands in the quoted words (the figure as the page prints it, the day as an ISO date, the unit as a currency and a basis through the one unit normaliser) and that the cited host's register verdict allows the row.
+// that each stands in the quoted words (the figure as the page prints it, the day as an ISO date, the unit as a currency and a basis through the one unit normaliser) and that the cited host's register verdict is permitted (the register is the only licence source: a host it does not hold is refused).
 import { SOURCE_LICENCES } from "@/core/contracts";
 import { statutoryUnit } from "@/core/parse";
 import { requireCitation, resolveEntityByName } from "@/core/producers/rows-file";
@@ -35,15 +35,15 @@ function parseSeriesRow(row: Rec, i: number, corridors: readonly { canonical_nam
   if (unit !== `${row.currency}/${row.per}`) return refuse(`row[${i}]: "${row.currency} per ${row.per}" normalises to ${unit}, not ${row.currency}/${row.per}`);
   const verdict = registerVerdict(c.url);
   if (verdict && verdict.redistribution !== "permitted") return refuse(`row[${i}]: licence: ${hostOf(c.url)} is "${verdict.redistribution}" in the register (${verdict.key}); a price from it is a stated absence`);
-  if (!verdict && !String(row.licence_review ?? "").trim()) return refuse(`row[${i}]: licence: ${hostOf(c.url)} has no register row (unregistered) and the row states no licence_review basis`);
+  if (!verdict) return refuse(`row[${i}]: licence: ${hostOf(c.url)} has no register row (unregistered)`);
   let entity: string | null = null;
   if (row.lane != null) {
     entity = resolveEntityByName(corridors, String(row.lane));
     const tail = String(row.lane).split(":")[0]?.toLowerCase();
     if (!entity || !String(row.series_key).endsWith(`:${tail}`)) return refuse(`row[${i}]: lane "${row.lane}" ${entity ? `does not end series_key ${row.series_key}` : "is not a corridor entity"}: minting one is out of this producer's write set`);
   }
-  const dbRow = { series_key: row.series_key, label: row.label, value_numeric: value, unit, currency: row.currency, derivation: row.derivation, origin_class: row.origin_class, source_key: null, source_ref: null, n_observations: null, method_version: "market-series-rows@1", as_at_date: row.as_at_date, reference_period: row.as_at_date, entity_id: entity };
-  return { refused: false, citation: c, dbRow, ...(verdict ? {} : { note: `licence: ${hostOf(c.url)} has no register row (unregistered); written on the row's stated licence_review` }) };
+  const dbRow = { series_key: row.series_key, label: row.label, value_numeric: value, unit, currency: row.currency, derivation: row.derivation, origin_class: row.origin_class, source_key: verdict.key, source_ref: null, n_observations: null, method_version: "market-series-rows@1", as_at_date: row.as_at_date, reference_period: row.as_at_date, entity_id: entity };
+  return { refused: false, citation: c, dbRow };
 }
 
 export const marketSeriesRows = rowsFileSpec({

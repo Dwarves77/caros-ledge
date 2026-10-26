@@ -1,0 +1,204 @@
+{
+ "held": "operator ruling 2026-10-26: Hold (licence check or a permitted rate source first)",
+ "_note": "ARM-3 P1: the Drewry World Container Index observations of two stored captures (b0e5de6d 2026-08-27, bfc01895 2026-06-04), each value, day and basis read from the quoted words. No producer, plan or test dispatch reads this file: market-series-rows refuses a host the register does not hold (drewry.co.uk has no register row), so these rows are written only after the operator's licence check or a permitted rate source, when the file is moved to data/rows.",
+ "rows": [
+  {
+   "series_key": "drewry-wci:cnsha-itgoa",
+   "label": "Drewry World Container Index, Shanghai to Genoa (US$ per 40ft container)",
+   "value_numeric": 4866,
+   "currency": "USD",
+   "per": "FEU",
+   "as_at_date": "2026-08-27",
+   "derivation": "assessed",
+   "origin_class": "verified",
+   "lane": "CNSHA-ITGOA:ocean",
+   "citation": {
+    "url": "https://www.drewry.co.uk/supply-chain-advisors/supply-chain-expertise/world-container-index-assessed-by-drewry",
+    "title": "World Container Index (weekly), Drewry Supply Chain Advisors",
+    "retrieved_at": "2026-08-31",
+    "quote": "rates from Shanghai to Genoa falling 2% to $4,866 per 40ft container",
+    "also": [
+     "Our detailed assessment for Thursday, 27 Aug 2026"
+    ]
+   }
+  },
+  {
+   "series_key": "drewry-wci:cnsha-nlrtm",
+   "label": "Drewry World Container Index, Shanghai to Rotterdam (US$ per 40ft container)",
+   "value_numeric": 4287,
+   "currency": "USD",
+   "per": "FEU",
+   "as_at_date": "2026-08-27",
+   "derivation": "assessed",
+   "origin_class": "verified",
+   "lane": "CNSHA-NLRTM:ocean",
+   "citation": {
+    "url": "https://www.drewry.co.uk/supply-chain-advisors/supply-chain-expertise/world-container-index-assessed-by-drewry",
+    "title": "World Container Index (weekly), Drewry Supply Chain Advisors",
+    "retrieved_at": "2026-08-31",
+    "quote": "from Shanghai to Rotterdam decreasing 3% to $4,287 per 40ft container",
+    "also": [
+     "Our detailed assessment for Thursday, 27 Aug 2026"
+    ]
+   }
+  },
+  {
+   "series_key": "drewry-wci:cnsha-usnyc",
+   "label": "Drewry World Container Index, Shanghai to New York (US$ per 40ft container)",
+   "value_numeric": 9333,
+   "currency": "USD",
+   "per": "FEU",
+   "as_at_date": "2026-08-27",
+   "derivation": "assessed",
+   "origin_class": "verified",
+   "lane": "CNSHA-USNYC:ocean",
+   "citation": {
+    "url": "https://www.drewry.co.uk/supply-chain-advisors/supply-chain-expertise/world-container-index-assessed-by-drewry",
+    "title": "World Container Index (weekly), Drewry Supply Chain Advisors",
+    "retrieved_at": "2026-08-31",
+    "quote": "Spot rates from Shanghai to New York decreased 2% to $9,333 per 40ft container",
+    "also": [
+     "Our detailed assessment for Thursday, 27 Aug 2026"
+    ]
+   }
+  },
+  {
+   "series_key": "drewry-wci:cnsha-uslax",
+   "label": "Drewry World Container Index, Shanghai to Los Angeles (US$ per 40ft container)",
+   "value_numeric": 6818,
+   "currency": "USD",
+   "per": "FEU",
+   "as_at_date": "2026-08-27",
+   "derivation": "assessed",
+   "origin_class": "verified",
+   "lane": "CNSHA-USLAX:ocean",
+   "citation": {
+    "url": "https://www.drewry.co.uk/supply-chain-advisors/supply-chain-expertise/world-container-index-assessed-by-drewry",
+    "title": "World Container Index (weekly), Drewry Supply Chain Advisors",
+    "retrieved_at": "2026-08-31",
+    "quote": "those from Shanghai to Los Angeles remained stable at $6,818 per 40ft container",
+    "also": [
+     "Our detailed assessment for Thursday, 27 Aug 2026"
+    ]
+   }
+  },
+  {
+   "series_key": "drewry-wci:composite",
+   "label": "Drewry World Container Index, composite (US$ per 40ft container)",
+   "value_numeric": 4473,
+   "currency": "USD",
+   "per": "FEU",
+   "as_at_date": "2026-08-27",
+   "derivation": "assessed",
+   "origin_class": "verified",
+   "citation": {
+    "url": "https://www.drewry.co.uk/supply-chain-advisors/supply-chain-expertise/world-container-index-assessed-by-drewry",
+    "title": "World Container Index (weekly), Drewry Supply Chain Advisors",
+    "retrieved_at": "2026-08-31",
+    "quote": "Drewry World Container Index (WCI), the benchmark widely referenced by procurement teams, decreased 1% to $4,473 per 40ft container",
+    "also": [
+     "Our detailed assessment for Thursday, 27 Aug 2026"
+    ]
+   }
+  },
+  {
+   "series_key": "drewry-wci:cnsha-itgoa",
+   "label": "Drewry World Container Index, Shanghai to Genoa (US$ per 40ft container)",
+   "value_numeric": 5089,
+   "currency": "USD",
+   "per": "FEU",
+   "as_at_date": "2026-06-04",
+   "derivation": "assessed",
+   "origin_class": "verified",
+   "lane": "CNSHA-ITGOA:ocean",
+   "citation": {
+    "url": "https://www.drewry.co.uk/supply-chain-advisors/supply-chain-expertise/world-container-index-assessed-by-drewry",
+    "title": "World Container Index (weekly), Drewry Supply Chain Advisors",
+    "retrieved_at": "2026-06-06",
+    "quote": "those from Shanghai to Genoa increased 20% to $5,089 per 40ft container",
+    "also": [
+     "Our detailed assessment for Thursday, 04 Jun 2026"
+    ]
+   }
+  },
+  {
+   "series_key": "drewry-wci:cnsha-nlrtm",
+   "label": "Drewry World Container Index, Shanghai to Rotterdam (US$ per 40ft container)",
+   "value_numeric": 3579,
+   "currency": "USD",
+   "per": "FEU",
+   "as_at_date": "2026-06-04",
+   "derivation": "assessed",
+   "origin_class": "verified",
+   "lane": "CNSHA-NLRTM:ocean",
+   "citation": {
+    "url": "https://www.drewry.co.uk/supply-chain-advisors/supply-chain-expertise/world-container-index-assessed-by-drewry",
+    "title": "World Container Index (weekly), Drewry Supply Chain Advisors",
+    "retrieved_at": "2026-06-06",
+    "quote": "Freight rates from Shanghai to Rotterdam rose 25% to $3,579 per 40ft container",
+    "also": [
+     "Our detailed assessment for Thursday, 04 Jun 2026"
+    ]
+   }
+  },
+  {
+   "series_key": "drewry-wci:cnsha-usnyc",
+   "label": "Drewry World Container Index, Shanghai to New York (US$ per 40ft container)",
+   "value_numeric": 5505,
+   "currency": "USD",
+   "per": "FEU",
+   "as_at_date": "2026-06-04",
+   "derivation": "assessed",
+   "origin_class": "verified",
+   "lane": "CNSHA-USNYC:ocean",
+   "citation": {
+    "url": "https://www.drewry.co.uk/supply-chain-advisors/supply-chain-expertise/world-container-index-assessed-by-drewry",
+    "title": "World Container Index (weekly), Drewry Supply Chain Advisors",
+    "retrieved_at": "2026-06-06",
+    "quote": "Shanghai to New York increasing 20% to $5,505 per 40ft container",
+    "also": [
+     "Our detailed assessment for Thursday, 04 Jun 2026"
+    ]
+   }
+  },
+  {
+   "series_key": "drewry-wci:cnsha-uslax",
+   "label": "Drewry World Container Index, Shanghai to Los Angeles (US$ per 40ft container)",
+   "value_numeric": 4565,
+   "currency": "USD",
+   "per": "FEU",
+   "as_at_date": "2026-06-04",
+   "derivation": "assessed",
+   "origin_class": "verified",
+   "lane": "CNSHA-USLAX:ocean",
+   "citation": {
+    "url": "https://www.drewry.co.uk/supply-chain-advisors/supply-chain-expertise/world-container-index-assessed-by-drewry",
+    "title": "World Container Index (weekly), Drewry Supply Chain Advisors",
+    "retrieved_at": "2026-06-06",
+    "quote": "Shanghai to Los Angeles rising 31% to $4,565 per 40ft container",
+    "also": [
+     "Our detailed assessment for Thursday, 04 Jun 2026"
+    ]
+   }
+  },
+  {
+   "series_key": "drewry-wci:composite",
+   "label": "Drewry World Container Index, composite (US$ per 40ft container)",
+   "value_numeric": 3433,
+   "currency": "USD",
+   "per": "FEU",
+   "as_at_date": "2026-06-04",
+   "derivation": "assessed",
+   "origin_class": "verified",
+   "citation": {
+    "url": "https://www.drewry.co.uk/supply-chain-advisors/supply-chain-expertise/world-container-index-assessed-by-drewry",
+    "title": "World Container Index (weekly), Drewry Supply Chain Advisors",
+    "retrieved_at": "2026-06-06",
+    "quote": "The Drewry World Container Index (WCI), the benchmark widely referenced by procurement teams, surged 23% to $3,433 per 40ft container",
+    "also": [
+     "Our detailed assessment for Thursday, 04 Jun 2026"
+    ]
+   }
+  }
+ ]
+}

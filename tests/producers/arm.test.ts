@@ -64,7 +64,7 @@ test("a rows file: every row cites a page the class table rates, with a real ret
   const files = ["market", "operations", "statutory"].flatMap((f) => {
     const dir = `src/features/${f}/producers/data/rows`;
     try {
-      return readdirSync(dir).map((n) => `${dir}/${n}`);
+      return readdirSync(dir).filter((n) => n.endsWith(".json")).map((n) => `${dir}/${n}`);
     } catch {
       return [];
     }

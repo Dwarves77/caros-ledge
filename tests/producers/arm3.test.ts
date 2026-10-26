@@ -12,10 +12,13 @@ import { captureCited } from "@/core/turn/stages/capture";
 import { fixture } from "../integration/world.ts";
 
 const SERIES = "src/features/market/producers/data/rows/market_series-2026-10.json";
+const STAGED = "src/features/market/producers/data/rows/staged/drewry-wci-2026-10.json";
 const REROUTE = "src/features/market/producers/data/rows/reroute_events-2026-10.json";
 type Row = Record<string, unknown> & { citation: { url: string; title: string; retrieved_at: string; quote: string; also?: string[] } };
-type File = { rows: Row[]; absent: Array<{ source: string; kind: string; verdict: string; reason: string; citation?: { quote: string; capture: string } }>; entity_owed?: { entities: Array<{ kind: string; canonical_name: string }> } };
+type File = { held?: string; rows: Row[]; absent: Array<{ source: string; kind: string; verdict: string; reason: string; citation?: { quote: string; capture: string } }>; entity_owed?: { entities: Array<{ kind: string; canonical_name: string }> } };
 const file = (p: string): File => JSON.parse(readFileSync(p, "utf8")) as File;
+/** The staged rows with their page moved to a host the register holds as permitted (eia.gov): the mechanism is proven on rows the producer may write; the Drewry host itself is proven refused below. */
+const onPermittedHost = (): Row[] => file(STAGED).rows.map((r) => ({ ...r, citation: { ...r.citation, url: "https://www.eia.gov/petroleum/drewry-fixture" } }));
 const textOf = (rows: Row[]): string => JSON.stringify({ rows });
 const filler = "Notice. This page is provided for information and is reproduced here for the fixture. ".repeat(20);
 const corridors = [["CNSHA-ITGOA:ocean", 1], ["CNSHA-NLRTM:ocean", 2], ["CNSHA-USNYC:ocean", 3], ["CNSHA-USLAX:ocean", 4]].map(([n, i]) => ({ entity_id: `cl:corridor:000000000000000${i}`, kind: "corridor", canonical_name: n }));
@@ -38,12 +41,11 @@ const armed = (rows: Row[]) => {
 };
 
 test("INV-ARM-2: every Drewry observation is written with its lane corridor entity, a unit the normaliser knows and the source and capture its quote stands on; the day and the figure are the quote's own", async () => {
-  const rows = file(SERIES).rows;
+  const rows = onPermittedHost();
   const f = armed(rows);
   const dry = await runProducer(f.d.producers, { spec: spec(f, "market-series-rows"), dry: true, text: textOf(rows) });
   assert.equal(dry.counts.parsed, rows.length, dry.notes.join("|"));
   assert.equal(dry.counts.refused_rows_parse, 0);
-  assert.match(dry.notes.join("|"), /\[note\] licence: drewry\.co\.uk has no register row \(unregistered\)/);
   const before = f.db.rows("market_series").length;
   assert.equal(before, f.db.rows("market_series").length, "a dry run writes nothing");
   const { cap, run } = await applyText(f, "market-series-rows", textOf(rows));
@@ -55,7 +57,7 @@ test("INV-ARM-2: every Drewry observation is written with its lane corridor enti
     assert.equal(w.unit, "USD/FEU");
     assert.match(String(w.source_ref), /source [0-9a-f-]{36}; capture [0-9a-f-]{36}; "/);
     assert.equal(w.reference_period, w.as_at_date);
-    assert.equal(w.source_key ?? null, null, "no data_sources row exists for the publisher: the key stays empty, never a borrowed one");
+    assert.equal(w.source_key, "eia", "the row carries the register key that admitted its host");
   }
   const lane = written.filter((w) => w.entity_id);
   assert.equal(lane.length, 8, "four lanes, two days");
@@ -67,7 +69,7 @@ test("INV-ARM-2: every Drewry observation is written with its lane corridor enti
 });
 
 test("INV-ARM-3: a second apply of the series and of the reroute file writes nothing twice", async () => {
-  const series = file(SERIES).rows;
+  const series = onPermittedHost();
   const reroute = file(REROUTE).rows;
   const f = armed([...series, ...reroute]);
   const once = async () => {
@@ -90,19 +92,19 @@ test("INV-ARM-3: a second apply of the series and of the reroute file writes not
   assert.equal(second.reroute.updated, 0, "nothing differs on the second pass, so nothing is patched");
 });
 
-test("INV-ARM-1: a row citing a host the register bars, a host it does not hold without a stated review, a figure the quote lacks, a day other than the quote's, or a lane that is no corridor is refused by name", async () => {
-  const good = file(SERIES).rows[0] as Row;
+test("INV-ARM-1: a row citing a host the register bars, a host it does not hold (free text never opens it), a figure the quote lacks, a day other than the quote's, or a lane that is no corridor is refused by name", async () => {
+  const good = file(STAGED).rows[0] as Row;
   const f = armed([good]);
-  const refuse = async (over: Partial<Row> & { citation?: Row["citation"] }, pattern: RegExp, whole = false) => {
-    const r = await runProducer(f.d.producers, { spec: spec(f, "market-series-rows"), dry: true, text: textOf([whole ? (over as Row) : { ...good, ...over }]) });
+  const refuse = async (over: Partial<Row> & { citation?: Row["citation"] }, pattern: RegExp, permitted = true) => {
+    const base = permitted ? { ...good, citation: { ...good.citation, url: "https://www.eia.gov/petroleum/drewry-fixture" } } : good;
+    const r = await runProducer(f.d.producers, { spec: spec(f, "market-series-rows"), dry: true, text: textOf([{ ...base, ...over }]) });
     assert.equal(r.counts.parsed, 0, pattern.source);
     assert.match(r.notes.join("|"), pattern);
   };
   await refuse({ citation: { ...good.citation, url: "https://www.icao.int/sustainability/saf-prices" } }, /licence: icao\.int is "prohibited" in the register \(icao_int\)/);
   await refuse({ citation: { ...good.citation, url: "https://www.iata.org/en/publications/economics/fuel-monitor/" } }, /is "prohibited" in the register \(iata_codes\)/);
-  const unreviewed = { ...good } as Record<string, unknown>;
-  delete unreviewed.licence_review;
-  await refuse(unreviewed as Row, /has no register row \(unregistered\) and the row states no licence_review basis/, true);
+  await refuse({}, /licence: drewry\.co\.uk has no register row \(unregistered\)/, false);
+  await refuse({ licence_review: "free text states a basis" } as Partial<Row>, /licence: drewry\.co\.uk has no register row \(unregistered\)/, false);
   await refuse({ value_numeric: 4900 }, /the quote does not contain the figure 4900/);
   await refuse({ as_at_date: "2026-08-20" }, /the quote states the day 2026-08-27, not as_at_date 2026-08-20/);
   await refuse({ per: "box" }, /"USD per box" normalises to USD, not USD\/box/);
@@ -130,7 +132,15 @@ test("P3: the Maersk notices resolve to the one registry row of the institution 
 
 test("INV-ARM-4 and the abatement gap: every source attempted that writes no row is stated with its verdict or stored-capture fact and equals the plan's list; the reroute file states each empty column and the entity owed; nothing is typed for abatement", () => {
   const plan = JSON.parse(readFileSync("tests/producers/arm-plan.json", "utf8")) as { tables: Record<string, { armed?: string[]; absent?: Array<{ source: string; reason: string }> }> };
-  const { absent, rows } = file(SERIES);
+  const { absent } = file(SERIES);
+  const staged = file(STAGED);
+  assert.match(staged.held ?? "", /^operator ruling 2026-10-26: Hold \(licence check or a permitted rate source first\)$/);
+  assert.equal(staged.rows.length, 10);
+  assert.ok(staged.rows.every((r) => !("licence_review" in r)));
+  assert.equal(file(SERIES).rows.length, 0, "no row is dispatched from the absences file");
+  const runPlan = readFileSync("scripts/runs/plans/2026-10-27-arm-3.json", "utf8");
+  assert.ok(!runPlan.includes("market-series-rows") && !runPlan.includes("staged/") && !runPlan.includes("drewry"), "the plan dispatches no Drewry row");
+  const rows = staged.rows;
   assert.deepEqual(plan.tables.market_series?.absent?.map((a) => a.source), absent.map((a) => a.source));
   assert.ok(plan.tables.market_series?.armed?.includes("market-series-rows"));
   for (const a of absent) assert.ok(a.verdict.length > 3 && a.reason.length > 40, a.source);
