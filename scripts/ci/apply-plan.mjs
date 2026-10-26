@@ -1,13 +1,15 @@
-// The cutover apply plan (P2-15): supabase/migrations/APPLY.md is GENERATED from the directory, so the list cannot drift from it. Every migration file on main, in the order the window applies them:
+// The cutover apply plan (P2-15, APPLY-1): DERIVED from supabase/migrations on every run, never committed (a committed copy conflicted in every pair of open migration PRs). Every migration file on main, in the order the window applies them:
 //   phase 1  the schema files in name order (a file marked "hold" in apply-notes.json waits for the step it names, then runs in its place),
 //   phase 2  the data files (`_data_`) in name order, each after the schema it names and with its consumer.
 // For each file: its class, the exact CLI command, the self-check it ends with (the id its `RAISE NOTICE '<id> OK'` prints, read from the file), how it is undone (the down file the schema job applies and catalog-compares, or the
 // recovery an irreversible file names). What production carries is not in this file: it is public.migration_log (migration 0078), which scripts/ci/migrate.mjs reads.
-// `node scripts/ci/apply-plan.mjs` prints the plan, `--write` rewrites APPLY.md, `--check` exits 1 when APPLY.md differs; scripts/ci/migration-checks.mjs runs the check before every schema job.
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+// `node scripts/ci/apply-plan.mjs` prints the plan and what each file changes (the schema job uploads it as the apply-plan artifact); `--check [--base <git ref>]` derives in memory and exits 1 with one line per problem (planCheck), reading neither
+// README.md nor any generated file; scripts/ci/migration-checks.mjs runs the same check before every schema job and in the gates.
+import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { relative, resolve } from "node:path";
 
-import { isMain } from "../lib/fs.mjs";
-import { applyNotes, isData, migrationFiles, numberOf, selfCheckIdOf } from "../lib/migrations.mjs";
+import { isMain, posix } from "../lib/fs.mjs";
+import { MIGRATION_FILE, README_FROZEN_THROUGH, RESERVED_FILE, applyNotes, changeOf, filesAtBase, isData, migrationFiles, numberOf, read, readmeRows, selfCheckIdOf } from "../lib/migrations.mjs";
 
 const DIR = "supabase/migrations";
 const CLI = (file) => `supabase db query --linked -f ${DIR}/${file}`;
@@ -34,8 +36,69 @@ export function planProblems(dir = DIR) {
     const n = notes[f.replace(/\.sql$/, "")];
     if (!n?.consumer || !n?.after) problems.push(`${dir}/apply-notes.json: the data file ${f} needs a "consumer" and an "after"`);
   }
-  for (const [k, n] of Object.entries(notes)) if (n.hold && !n.hold.trim()) problems.push(`${dir}/apply-notes.json: ${k} has an empty hold`);
+  for (const [k, n] of Object.entries(notes)) {
+    if (n.hold !== undefined && !n.hold.trim()) problems.push(`${dir}/apply-notes.json: ${k} has an empty hold`);
+    else if (n.hold && !/`[^`]+`|\bstep\b/i.test(n.hold)) problems.push(`${dir}/apply-notes.json: the hold on ${k} names no step (a command in backticks, or "step N")`);
+  }
   return problems;
+}
+
+/** The number ledger (RESERVED.json): well formed, no number claimed twice, every file above README_FROZEN_THROUGH reserved to a slice, a landed number has its file and a released one has none. */
+export function ledgerProblems(dir = DIR, files = migrationFiles(dir)) {
+  const path = `${dir}/${RESERVED_FILE}`;
+  let rows;
+  try {
+    rows = JSON.parse(readFileSync(path, "utf8")).reservations;
+  } catch (e) {
+    return [`${path} cannot be read: ${e.message}`];
+  }
+  if (!Array.isArray(rows)) return [`${path} has no "reservations" list`];
+  const by = new Map();
+  const problems = [];
+  for (const r of rows) {
+    if (!/^\d{4}$/.test(r?.number) || !r.slice || !["reserved", "landed", "released"].includes(r.status) || !/^\d{4}-\d{2}-\d{2}$/.test(r.reserved_on)) problems.push(`${path}: malformed entry ${JSON.stringify(r)} (number, slice, status reserved|landed|released, reserved_on)`);
+    else if (by.has(r.number)) problems.push(`${path}: number ${r.number} is reserved to ${by.get(r.number).slice} and to ${r.slice}`);
+    else by.set(r.number, r);
+  }
+  const has = (n) => files.some((f) => numberOf(f) === n);
+  for (const [n, r] of by) {
+    if (r.status === "landed" && !has(n)) problems.push(`${path}: ${n} (${r.slice}) is marked landed and no file carries it`);
+    if (r.status === "released" && has(n)) problems.push(`${path}: ${n} (${r.slice}) is released and a file carries it`);
+  }
+  for (const f of files) if (numberOf(f) > README_FROZEN_THROUGH && !by.has(numberOf(f))) problems.push(`${dir}/${f}: number ${numberOf(f)} is not reserved to a slice in ${path}`);
+  return problems;
+}
+
+/** What the files say against git ref `base`: a file added since it must take a number above every file there (merge the base first when main moved on), and a file there must still exist under its name. */
+export function baseProblems(dir, base, cwd = ".") {
+  const at = filesAtBase(posix(relative(resolve(cwd), resolve(cwd, dir))), base, cwd);
+  if (!at) return [`cannot read ${dir} at ${base}: fetch it, or run with MIGRATION_BASE=none`];
+  const now = migrationFiles(dir);
+  const top = at.length ? numberOf(at.at(-1)) : "0000";
+  return [
+    ...at.filter((f) => !now.includes(f)).map((f) => `${dir}/${f} is on ${base} and is gone or renamed here: a landed migration keeps its name (if main moved on, merge ${base} first)`),
+    ...now.filter((f) => !at.includes(f) && numberOf(f) <= top).map((f) => `${dir}/${f} is out of order: ${top} is already on ${base}; a new migration takes a number above every file there (see ${RESERVED_FILE})`),
+  ];
+}
+
+/** Every problem of the directory, derived in memory (no committed plan, no README): duplicate numbers, entries that are not migration files, the apply-notes rules, the ledger, and with `base` the order against it. */
+export function planCheck(dir = DIR, { base = null, cwd = "." } = {}) {
+  const files = migrationFiles(dir);
+  const entries = readdirSync(dir, { withFileTypes: true }).filter((e) => !MIGRATION_FILE.test(e.name) && !(e.isDirectory() ? e.name === "down" : ["README.md", "apply-notes.json", RESERVED_FILE].includes(e.name)));
+  return [
+    ...planProblems(dir),
+    ...files.filter((f, i) => i && numberOf(f) === numberOf(files[i - 1])).map((f) => `${dir}/${f} shares the number ${numberOf(f)} with ${files.find((g) => numberOf(g) === numberOf(f))}`),
+    ...entries.map((e) => `${dir}/${e.name} is not a migration file, README.md, apply-notes.json, ${RESERVED_FILE} or down/ (a generated plan is never committed)`),
+    ...ledgerProblems(dir, files),
+    ...(base ? baseProblems(dir, base, cwd) : []),
+  ];
+}
+
+/** What each file changes: the frozen README table for the files up to README_FROZEN_THROUGH, the file's own `-- change:` line above it. */
+export function changesText(dir = DIR) {
+  const legacy = readmeRows(dir);
+  const row = (f) => `| ${f.replace(/\.sql$/, "")} | ${cell((numberOf(f) <= README_FROZEN_THROUGH ? legacy.get(f.replace(/\.sql$/, "")) : changeOf(read(f, dir))) ?? "none")} |`;
+  return ["## What each file changes", "", `Up to ${README_FROZEN_THROUGH} from the frozen table of supabase/migrations/README.md; above it from each file's own \`-- change:\` line.`, "", "| file | change |", "|---|---|", ...migrationFiles(dir).map(row), ""].join("\n");
 }
 
 /** The order the window applies the files in: the schema files in name order, then the data files in name order. */
@@ -62,7 +125,7 @@ export function planText(dir = DIR) {
   const head = "| # | file | class | command | self-check | rollback | when |\n|---|---|---|---|---|---|---|";
   let n = 0;
   const out = [
-    "<!-- GENERATED by `node scripts/ci/apply-plan.mjs --write` from supabase/migrations and apply-notes.json. Do not edit by hand: the schema job fails when this file differs from the directory. -->",
+    "<!-- DERIVED by `node scripts/ci/apply-plan.mjs` from supabase/migrations and apply-notes.json on every run and uploaded by the schema job as the apply-plan artifact. It is not committed: a committed copy conflicted in every pair of migration PRs. -->",
     "# Cutover apply plan",
     "",
     "Every migration file on main, in the order it is applied to production: the class of each file and its order are all this file says. What production carries is `public.migration_log` (migration 0078); no file in git tracks it.",
@@ -100,18 +163,10 @@ export function planText(dir = DIR) {
 }
 
 if (isMain(import.meta.url)) {
-  const bad = planProblems();
-  if (bad.length) {
-    for (const p of bad) console.error(p);
-    process.exit(1);
-  }
-  const text = planText();
-  if (process.argv.includes("--write")) writeFileSync(`${DIR}/APPLY.md`, text);
-  else if (process.argv.includes("--check")) {
-    const have = existsSync(`${DIR}/APPLY.md`) ? readFileSync(`${DIR}/APPLY.md`, "utf8").replace(/\r\n/g, "\n") : "";
-    if (have !== text) {
-      console.error(`${DIR}/APPLY.md differs from the directory: run \`node scripts/ci/apply-plan.mjs --write\` and commit it`);
-      process.exit(1);
-    }
-  } else process.stdout.write(text);
+  const args = process.argv.slice(2);
+  const bad = planCheck(DIR, { base: args.includes("--base") ? args[args.indexOf("--base") + 1] : null });
+  for (const p of bad) console.error(p);
+  if (bad.length) process.exit(1);
+  if (args.includes("--check")) console.log("apply-plan: clean");
+  else process.stdout.write(`${planText()}\n${changesText()}`);
 }

@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { test } from "node:test";
 
 // @ts-expect-error plain .mjs modules
-import { planProblems, planText, rollbackOf, selfCheckOf } from "../../scripts/ci/apply-plan.mjs";
+import { changesText, pendingFiles, planOrder, planProblems, planText, rollbackOf, selfCheckOf } from "../../scripts/ci/apply-plan.mjs";
 // @ts-expect-error plain .mjs modules
 import { DECLARED } from "../../scripts/ci/edge-bundle.mjs";
 // @ts-expect-error plain .mjs modules
@@ -18,36 +18,53 @@ const MIGRATIONS = "supabase/migrations";
 const sqlFiles = readdirSync(MIGRATIONS).filter((f) => /^\d{4}_.+\.sql$/.test(f)).sort();
 const walk = (dir: string): string[] => readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(join(dir, e.name)) : /\.(ts|tsx|mjs)$/.test(e.name) ? [join(dir, e.name).split("\\").join("/")] : []));
 
-// ---- the apply plan ----
-test("APPLY.md lists every migration file once: the schema files in name order, then the data files after them, with the command, the self-check and the rollback of each; the held ones say what they wait for", () => {
-  const text = readFileSync(`${MIGRATIONS}/APPLY.md`, "utf8").replace(/\r\n/g, "\n");
-  assert.equal(text, planText(), "the committed plan is the generated one");
+// ---- the apply plan: derived, never committed ----
+test("the apply plan is derived from the directory: no committed copy exists, two derivations are byte-equal whatever order the directory was written in, schema files in name order then data files in name order, every file once, the held ones say what they wait for", () => {
+  assert.ok(!existsSync(`${MIGRATIONS}/APPLY.md`), "no generated plan is committed");
+  const text: string = planText();
+  const dir = mkdtempSync(join(tmpdir(), "apply-plan-"));
+  try {
+    mkdirSync(join(dir, "down"));
+    for (const f of [...readdirSync(MIGRATIONS)].reverse()) if (f !== "down") cpSync(join(MIGRATIONS, f), join(dir, f));
+    for (const f of [...readdirSync(`${MIGRATIONS}/down`)].reverse()) cpSync(join(MIGRATIONS, "down", f), join(dir, "down", f));
+    assert.equal(planText(dir), text, "the same plan from a directory written in the opposite order");
+    assert.deepEqual(planOrder(dir), planOrder(MIGRATIONS));
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
   const rows = text.split("\n").filter((l) => /^\| \d+ \| \d{4}_/.test(l)).map((l) => l.split(" | "));
   assert.deepEqual(rows.map((r) => `${r[1]}.sql`), [...sqlFiles.filter((f) => !f.includes("_data_")), ...sqlFiles.filter((f) => f.includes("_data_"))], "schema in name order, then data in name order");
   assert.equal(new Set(rows.map((r) => r[1])).size, sqlFiles.length, "every file once");
-  for (const r of rows) assert.match(r[3] ?? "", /^`supabase db query --linked -f supabase\/migrations\/\d{4}_\S+\.sql`$/);
+  for (const r of rows) {
+    assert.match(r[3] ?? "", /^`supabase db query --linked -f supabase\/migrations\/\d{4}_\S+\.sql`$/);
+    assert.ok((r[4] ?? "").length > 0 && (r[5] ?? "").length > 0, `${r[1]} has a self-check cell and a rollback cell`);
+  }
   const held = rows.filter((r) => /HOLD:/.test(r[r.length - 1] ?? "")).map((r) => r[1]);
   assert.deepEqual(held, ["0066_profiles_email_lower_unique", "0067_drop_coverage_gap_census_findings"]);
+  assert.deepEqual(sqlFiles.filter((f) => !pendingFiles(MIGRATIONS, new Set()).includes(f)), held.map((h) => `${h}.sql`), "a held file is in the plan and not pending");
   assert.match(text, /duplicate-emails\.sql/);
   assert.match(text, /export-table\.mjs coverage_gap_census_findings/);
+  assert.match(changesText(MIGRATIONS), /\| 0134_connect_2_spine \| entity_refs\.basis/, "the changes table reads the frozen README rows");
 });
 
-test("the plan is generated, so it cannot drift: a file added without a README row, an APPLY.md that differs, and a data file with no consumer note are each a problem", () => {
+test("the plan check derives in memory: a data file with no consumer note, an apply-notes row naming no file, an empty hold and a hold that names no step are each a problem; the unchanged directory is clean", () => {
   const dir = mkdtempSync(join(tmpdir(), "apply-plan-"));
   try {
     cpSync(MIGRATIONS, dir, { recursive: true });
     assert.deepEqual(migrationProblems(dir), []);
-    writeFileSync(join(dir, "APPLY.md"), `${readFileSync(join(dir, "APPLY.md"), "utf8")}\nedited by hand\n`);
-    assert.match(migrationProblems(dir).join("|"), /APPLY\.md differs from the directory/);
-    cpSync(`${MIGRATIONS}/APPLY.md`, join(dir, "APPLY.md"));
     writeFileSync(join(dir, "0099_planted.sql"), "-- 0099 planted\nBEGIN;\nCOMMIT;\n");
     assert.match(migrationProblems(dir).join("|"), /README\.md does not list 0099_planted\.sql/);
-    assert.match(migrationProblems(dir).join("|"), /APPLY\.md differs/, "the new file is not in the plan either");
     rmSync(join(dir, "0099_planted.sql"));
     writeFileSync(join(dir, "0099_data_planted.sql"), "-- 0099 DATA\nBEGIN;\nCOMMIT;\n");
     assert.match(planProblems(dir).join("|"), /the data file 0099_data_planted\.sql needs a "consumer" and an "after"/);
-    writeFileSync(join(dir, "apply-notes.json"), JSON.stringify({ ...JSON.parse(readFileSync(`${MIGRATIONS}/apply-notes.json`, "utf8")), "0098_nothing": { hold: "x" } }));
+    const notes = JSON.parse(readFileSync(`${MIGRATIONS}/apply-notes.json`, "utf8"));
+    const withNotes = (extra: object) => writeFileSync(join(dir, "apply-notes.json"), JSON.stringify({ ...notes, ...extra }));
+    withNotes({ "0098_nothing": { note: "x" } });
     assert.match(planProblems(dir).join("|"), /names 0098_nothing, which is not a file/);
+    withNotes({ "0066_profiles_email_lower_unique": { hold: " " } });
+    assert.match(planProblems(dir).join("|"), /0066_profiles_email_lower_unique has an empty hold/);
+    withNotes({ "0066_profiles_email_lower_unique": { hold: "until somebody says so" } });
+    assert.match(planProblems(dir).join("|"), /the hold on 0066_profiles_email_lower_unique names no step/);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
