@@ -319,14 +319,14 @@ jobs:
       # DRAIN-FIX-2 hook (CI-BROWSER-1 item 5): the signed-in visibility check over the items a ruled run applied. The script is not on main yet, so the step is guarded on its existence and does nothing until it lands; the path below is the expected name and is
       # corrected in the DRAIN-FIX-2 merge if it differs. It reads the newest results file of this run's ruled-runs.
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
-        if: ${{ !cancelled() && github.event_name == 'push' && hashFiles('scripts/runs/visible.mjs') != '' }}
+        if: ${{ !cancelled() && github.event_name == 'push' && needs.ruled-runs.result != 'skipped' && hashFiles('scripts/runs/visible.mjs') != '' }}
         continue-on-error: true
         with:
           name: ruled-run-results
           path: scripts/runs/results
       - name: Visibility of the items a ruled run applied (DRAIN-FIX-2; runs when scripts/runs/visible.mjs exists)
-        if: ${{ !cancelled() && github.event_name == 'push' && hashFiles('scripts/runs/visible.mjs') != '' }}
-        run: node scripts/runs/visible.mjs "$(ls -t scripts/runs/results/*.json | head -n 1)" --base http://localhost:3100
+        if: ${{ !cancelled() && github.event_name == 'push' && needs.ruled-runs.result != 'skipped' && hashFiles('scripts/runs/visible.mjs') != '' }}
+        run: node scripts/runs/visible.mjs "$(ls -t scripts/runs/results/*.json | head -n 1)" --base https://carosledge.com
       - name: Parity report in the job summary
         if: ${{ !cancelled() }}
         run: |
