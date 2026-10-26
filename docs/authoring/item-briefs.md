@@ -25,6 +25,7 @@ Comprehension happens once, here, and is stored as typed values the flywheel joi
 - `obligation_fields`: `[ { "obligation_id" | "pinpoint": "...", "provision": {quote of the provision text}, "entity_ids": ["<menu ids>"], "fields": { "<column>": { "value": ..., "quote": {...} } } } ]`. Columns: `mode` (leg-mode tokens), `sanction_class` (the closed tokens), `statutory_maximum` and `cost_formula` (the figure exactly as the quote writes it), `enforcement_start`, `due_date` (per object) and `in_force_end` (ISO dates the quote states), `mandated_quantity` (`{ "value": 50, "unit": "MW" }`, the quantity a mandate sets, never the penalty maximum; the unit is one `statutoryUnit` knows), and `duty_holder_class`, `binding_position`, `applicability_trigger` (`{ attribute, value }`), which a NEW object must carry. A reader value supersedes the derived value for the same column (the object becomes the next version); a derived value never overwrites a reader value.
 - `connections`: `[ { "from_entity_id", "to_entity_id", "relation": "<feedstock_of|fuel_for_mode|competes_for_feedstock|shares_grid_zone|serves_hub|corridor_links|implements|amends|consignment_wide>", "reason_token": "<snake_case>", "quote": {...} } ]`. The quote itself states why the two are connected; both ends are menu ids or mode tokens.
 - `events`: `[ { "event_kind": "<entry_into_force|compliance_deadline|review_or_report|phase_step|consultation_close|target|implementing_act_due|delegated_act_due|guidance_expected|other>", "event_date": "YYYY-MM-DD", "quote": {...}, "mode": "ocean|air|road|rail|inland_waterway|multimodal", "entity_ids": [...] } ]`. The date is one the quote states. A maritime or aviation step carries its `mode`. A target or rulemaking date is never a deadline (ADR-051).
+- `omitted_events`: `[ { "event_date": "YYYY-MM-DD", "reason": "<why the brief leaves it out>" } ]`. Every date in the bundle's `forward_events` and `timelines` must reach the brief: an `events` entry with that `event_date`, a section that states the date, or an `omitted_events` entry naming it with a non-blank reason. Otherwise the validator routes the entry to residue under `forward-events-covered`. Dates only; no wording is matched.
 - `document_date`: `{ "date": "YYYY-MM-DD", "quote": {...} }`. It is written only where the producer could not read a dated line.
 - `new_entity_candidates`: `[ { "proposed_kind": "organisation|technology|port|person", "canonical_name": "...", "quote": {...} } ]` for something the text names that is not on the menu. The name must occur inside its quote; a port whose quote carries a UN/LOCODE is written as `UNLOCODE:<code>` instead. A candidate is proposed, never minted, and cannot be used in `entity_ids` of the same entry.
 
@@ -57,6 +58,12 @@ Thirty-two deterministic rules run on every entry, each a binary check named by 
 - Write the brief so the rules pass: the rule ids above are the reasons the apply gives, the phrase lists are in `src/core/brief/data/rule-patterns.json`, and `node scripts/ci/validator-report.mjs --fixture` shows each rule tripping on its planted sample.
 
 A defective entry is refused alone, its reasons kept as residue; an entry a residue rule routes out is kept the same way; the valid entries still apply.
+
+## Metadata, forward events and filler (scope ruling 2026-10-26)
+
+- Metadata is judged as body prose is: `what_is_it`, `what_it_changes` and `why_matters` fall under the same claim-scope (J24) and cause-effect (J05) rules as the body sections.
+- Forward-event coverage (rule `forward-events-covered`): every exported `forward_events` or `timelines` row appears in the brief, by an `events` entry with its date or a section stating its stored date form, or carries an `omitted_events` entry with a reason. The brief also states which operational decision or exposure changes on that date (the second reader's J17 judges that half).
+- No background filler under cost or feasibility headings (J06): regional macro statistics or generic background appear there only when the source ties the figure directly to the item's compliance cost or feasibility.
 
 ## What the apply does
 

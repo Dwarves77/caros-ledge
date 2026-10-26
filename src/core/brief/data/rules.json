@@ -30,5 +30,6 @@
   { "id": "band-or-theme-present", "severity": "residue", "applies_to": ["market_signal_brief", "research_summary"], "scope": "whole" },
   { "id": "no-double-hyphen-dash", "severity": "residue", "applies_to": ["regulatory_fact_document", "market_signal_brief", "research_summary", "operations_profile", "technology_profile"], "scope": "prose" },
   { "id": "no-section-sign", "severity": "residue", "applies_to": ["regulatory_fact_document", "market_signal_brief", "research_summary", "operations_profile", "technology_profile"], "scope": "prose" },
-  { "id": "structural-controls", "severity": "residue", "applies_to": ["regulatory_fact_document", "market_signal_brief", "research_summary", "operations_profile", "technology_profile"], "scope": "prose" }
+  { "id": "structural-controls", "severity": "residue", "applies_to": ["regulatory_fact_document", "market_signal_brief", "research_summary", "operations_profile", "technology_profile"], "scope": "prose" },
+  { "id": "forward-events-covered", "severity": "residue", "applies_to": ["regulatory_fact_document", "market_signal_brief", "research_summary", "operations_profile", "technology_profile"], "scope": "prose" }
 ]

@@ -67,6 +67,7 @@ export const ROWS: Row[] = [
   one("tier-phrase-exposure", { sec: { "4": "**Note on source tier:** The primary enacted text of MARPOL Annex VI is the 2021 consolidated edition." } }),
   one("score-or-schema-token", { sec: { "4": "The intelligence_items.item_type enum has no 'decision' value." } }),
   one("stored-date-stated", { item: { compliance_deadline: "2030-01-01" } }),
+  one("forward-events-covered", { item: { supplied_dates: ["2031-02-03"] } }),
   one("what-it-changes-length", { item: { what_it_changes: "Adds a deadline." } }),
   one("fact-span-in-own-section", { sec: { "2": "Airlines push the surcharge on. The surcharge starts with the next tariff cycle." }, claims: [fact("1", "The surcharge starts with the next tariff cycle.", "The surcharge starts with the next tariff cycle.")] }),
   one("do-now-severity-label", { sec: { "7": "FACT: \"This Regulation shall enter into force on the twentieth day following that of its publication in the Official Journal of the European Union\"" } }),
