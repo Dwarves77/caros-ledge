@@ -42,7 +42,7 @@ test("INV-ARM-1: an armed spec whose licence verdict is not permitted is refused
   const specs = Object.values(cat);
   for (const s of specs.filter((x) => x.enabled && x.licenceKey)) assert.deepEqual(licenceGate(s.licenceKey as string), { ok: true }, s.name);
   for (const name of plan.stillDisabled) assert.equal(cat[name]?.enabled ?? false, false, name);
-  for (const s of specs.filter((x) => x.enabled)) assert.match(s.enabledRuling ?? "", /^operator 2026-10-23: population hold lifted for the structured-data producers/, s.name);
+  for (const s of specs.filter((x) => x.enabled)) assert.match(s.enabledRuling ?? "", /^(operator 2026-10-23: population hold lifted for the structured-data producers|operator and scope reviewer 2026-10-26 under ADR-053 section 2 \(DOC-DATE-1\))/, s.name);
 });
 
 test("INV-ARM-4: every table the pattern engine joins has a producer armed here that the registry and the catalog agree on, a turn pass, or a stated absence with a reason; a table with none fails", () => {
