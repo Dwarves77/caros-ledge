@@ -152,10 +152,10 @@ test('the deployed URL is derived from the status: the branch lower-cased, every
       rmSync(dir, { recursive: true, force: true });
     }
   };
-  assert.deepEqual(derive({ BRANCH: 'slice/r1a' }).out, ['url=https://caros-ledge-git-slice-r1a-dwarves77s-projects.vercel.app', 'production=false']);
-  assert.deepEqual(derive({ BRANCH: 'coord/Report_2' }).out, ['url=https://caros-ledge-git-coord-report-2-dwarves77s-projects.vercel.app', 'production=false']);
-  assert.deepEqual(derive({ BRANCH: 'main' }).out, ['url=https://carosledge.com', 'production=true']);
-  assert.deepEqual(derive({ EVENT: 'workflow_dispatch', LIVE_URL: 'https://x.test' }).out, ['url=https://x.test', 'production=false']);
+  assert.deepEqual(derive({ BRANCH: 'slice/r1a' }).out, ['url=https://caros-ledge-git-slice-r1a-dwarves77s-projects.vercel.app', 'production=false', 'group=signed-in-browser-preview-slice-r1a']);
+  assert.deepEqual(derive({ BRANCH: 'coord/Report_2' }).out, ['url=https://caros-ledge-git-coord-report-2-dwarves77s-projects.vercel.app', 'production=false', 'group=signed-in-browser-preview-coord-report-2']);
+  assert.deepEqual(derive({ BRANCH: 'main' }).out, ['url=https://carosledge.com', 'production=true', 'group=signed-in-browser-main']);
+  assert.deepEqual(derive({ EVENT: 'workflow_dispatch', LIVE_URL: 'https://x.test' }).out, ['url=https://x.test', 'production=false', 'group=signed-in-browser-dispatch-https---x-test']);
   assert.equal(derive({ BRANCH: '' }).status, 1, 'a status that names no branch cannot be located');
   assert.deepEqual([jobs.live.needs, jobs.live.env.LIVE_BASE_URL], ['target', '${{ needs.target.outputs.url }}']);
   assert.deepEqual([jobs['preview-parity'].needs, jobs['preview-parity'].env.PARITY_BASE], ['target', '${{ needs.target.outputs.url }}']);

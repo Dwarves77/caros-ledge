@@ -5,7 +5,7 @@ import { z } from "zod";
 
 import { dbError, HttpError, ok, route } from "@/core/http/errors";
 import { statusForDb } from "@/core/http/failure";
-import { checkRateLimit, clientKey, rateLimitHeaders } from "@/core/http/rate-limit";
+import { checkRateLimit, clientKey, hostScopedKey, rateLimitHeaders } from "@/core/http/rate-limit";
 import { email, isUuid, parseJson, uuid } from "@/core/http/parse";
 import { authedFetch, authHeaders } from "@/core/http/authed-fetch";
 
@@ -111,4 +111,19 @@ test("IMP-057: a route's own budget goes through rate_limit_hit as p_limit, and 
   assert.equal(await checkRateLimit("worker:/api/big-test", t0, open.db, BIG), null);
   assert.deepEqual(open.rpcs, [{ name: "rate_limit_hit", args: { p_key: "worker:/api/big-test", p_limit: 600, p_window_seconds: 60 } }]);
   assert.ok(BIG.limit! > MAX_REQUESTS);
+});
+
+test("CI-BROWSER-1 rate limit: one deployment is one budget whatever the Host header says, two deployments count separately", async () => {
+  const t0 = 5_000_000;
+  const prodEnv = { VERCEL_ENV: "production", VERCEL_DEPLOYMENT_ID: "dpl_prod1" };
+  // The key does not read the request at all: any Host (apex, www, vercel.app, branch alias) lands on the same key.
+  const prod = hostScopedKey("user-x", prodEnv);
+  for (let i = 0; i < MAX_REQUESTS; i += 1) assert.equal(await checkRateLimit(hostScopedKey("user-x", prodEnv), t0 + i, null), null);
+  assert.equal((await checkRateLimit(hostScopedKey("user-x", prodEnv), t0 + 100, null))?.status, 429, "the 61st request is limited, one budget for all aliases");
+  assert.equal(hostScopedKey("user-x", { ...prodEnv }), prod);
+  const preview = hostScopedKey("user-x", { VERCEL_ENV: "preview", VERCEL_DEPLOYMENT_ID: "dpl_prev9" });
+  assert.notEqual(preview, prod);
+  assert.equal(await checkRateLimit(preview, t0 + 100, null), null, "another deployment has its own budget");
+  assert.equal(hostScopedKey("u", { VERCEL_ENV: "preview", VERCEL_URL: "x.vercel.app" }), "u@preview:x.vercel.app", "VERCEL_URL when the id is absent");
+  assert.equal(hostScopedKey("u", {}), "u@local");
 });
