@@ -3,7 +3,7 @@
 import { hostOf } from "@/core/shared";
 
 import portals from "./data/shared-portals.json";
-import { hostAncestors, ledgerHostOf } from "./host-relation";
+import { hostAncestors, hostsRelated, ledgerHostOf } from "./host-relation";
 
 /** Registrable domains that are shared super-domains: the SUBDOMAIN is the institution (documented exceptions, not a public-suffix list). */
 const TWO_LEVEL = new Set<string>([
@@ -77,8 +77,10 @@ export function buildResolver(sources: SourceRow[]): Resolver {
   const disagreements = [...seen]
     .filter(([, g]) => g.tiers.size > 1)
     .map(([institution, g]) => ({ institution, tiers: [...g.tiers].sort((a, b) => a - b), sourceIds: g.ids }));
-  const pick = (rows: SourceRow[] | undefined): SpanResolution | null => {
-    const row = rows?.find((r) => r.tier_override != null) ?? rows?.[0];
+  /** The index only narrows the candidates; hostsRelated, the one rule, decides. */
+  const pick = (rows: SourceRow[] | undefined, host: string): SpanResolution | null => {
+    const fit = rows?.filter((r) => hostsRelated(ledgerHostOf(r.url), host));
+    const row = fit?.find((r) => r.tier_override != null) ?? fit?.[0];
     return row ? { tier: tierOfSource(row), sourceId: row.id } : null;
   };
   return {
@@ -86,7 +88,7 @@ export function buildResolver(sources: SourceRow[]): Resolver {
     resolveSpan(resultUrl: string): SpanResolution {
       const h = ledgerHostOf(resultUrl);
       if (!h) return { tier: null, sourceId: null };
-      const hit = pick(byHost.get(h)) ?? hostAncestors(h).map((up) => pick(byHost.get(up))).find((r) => r !== null) ?? pick(bySubdomainOf.get(h));
+      const hit = pick(byHost.get(h), h) ?? hostAncestors(h).map((up) => pick(byHost.get(up), h)).find((r) => r !== null) ?? pick(bySubdomainOf.get(h), h);
       return hit ?? { tier: null, sourceId: null };
     },
   };
