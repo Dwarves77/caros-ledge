@@ -1382,7 +1382,9 @@
     "asserted_by",
     "asserted_at",
     "source_id",
-    "provenance"
+    "provenance",
+    "basis",
+    "method_version"
    ],
    "uuid": [],
    "defaults": {
@@ -2902,7 +2904,13 @@
     "capture_id",
     "created_at",
     "updated_at",
-    "evidence_artifacts"
+    "evidence_artifacts",
+    "due_date",
+    "mandated_quantity",
+    "mandated_unit",
+    "in_force_end",
+    "method_version",
+    "basis"
    ],
    "uuid": [],
    "defaults": {

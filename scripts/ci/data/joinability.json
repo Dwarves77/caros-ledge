@@ -126,6 +126,12 @@
       "kind": "text"
     },
     {
+      "table": "obligation_objects",
+      "column": "mandated_unit",
+      "kind": "text",
+      "valueColumn": "mandated_quantity"
+    },
+    {
       "table": "statutory_computations",
       "column": "result_unit",
       "kind": "text",
@@ -301,6 +307,8 @@
         "frequency",
         "instrument_entity_id",
         "jurisdiction",
+        "mandated_unit",
+        "method_version",
         "mode",
         "obligation_id",
         "pinpoint_citation",
@@ -325,6 +333,8 @@
         "duty_holder_class": "duty-holder class tokens (vocabularies.json duty_holder_class); a vocabulary token checked by J3",
         "evidence_required": "prose describing the evidence a duty requires",
         "frequency": "how often the duty recurs, as stated; a prose label",
+        "mandated_unit": "the unit of the mandated quantity; a unit token normalised by statutoryUnit (J3), not an entity",
+        "method_version": "version string of the writer of the row (derived or reader@kinds); provenance housekeeping",
         "obligation_id": "the obligation's own text key (primary key); an identifier, filed in entity_refs by its uuid",
         "pinpoint_citation": "the article or paragraph the duty is cited to; a citation label of the instrument already joined through instrument_entity_id",
         "plain_language": "plain-language restatement of the duty; prose derived from the verbatim text, which is the column resolved",

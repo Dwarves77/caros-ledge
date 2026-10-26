@@ -1,13 +1,19 @@
 {
-  "section_claim_provenance": { "role": "claim", "pk": "id", "at": "extracted_at", "source": "source_id", "tier": "source_tier_at_grounding", "kind": "claim_kind", "item": "intelligence_item_id" },
-  "obligation_objects": { "role": "ratchet", "pk": "obligation_id", "surface": "regulations", "due": "first_deadline", "qty": { "figure": "statutory_maximum" }, "source": "source_id" },
-  "statutory_computations": { "role": "ceiling", "pk": "computation_id", "surface": "regulations", "at": "computed_at", "qty": { "column": "result", "unitColumn": "result_unit" } },
+  "section_claim_provenance": { "role": "claim", "pk": "id", "at": "extracted_at", "source": "source_id", "tier": "source_tier_at_grounding", "kind": "claim_kind", "item": "intelligence_item_id", "owner": "intelligence_item_id", "capture": "search_result_id" },
+  "obligation_objects": [
+    { "role": "ratchet", "pk": "obligation_id", "surface": "regulations", "due": "due_date", "qty": { "column": "mandated_quantity", "unitColumn": "mandated_unit" }, "source": "source_id", "owner": "instrument_item_id" },
+    { "role": "ceiling", "pk": "obligation_id", "surface": "regulations", "qty": { "figure": "statutory_maximum" }, "from": "enforcement_start", "until": "in_force_end", "source": "source_id", "owner": "instrument_item_id" }
+  ],
+  "statutory_computations": [
+    { "role": "ceiling", "pk": "computation_id", "surface": "regulations", "at": "computed_at", "qty": { "column": "result", "unitColumn": "result_unit" } },
+    { "role": "ratchet", "pk": "computation_id", "surface": "regulations", "dueYear": "scenario_key" }
+  ],
   "oem_tech_roadmaps": { "role": "capacity", "pk": "roadmap_id", "surface": "market", "at": "announced_at", "dueYear": "target_year", "source": "source_id" },
-  "grid_connection_queues": { "role": "capacity", "pk": "queue_id", "surface": "operations", "at": "as_of", "qty": { "column": "demand_available_mw", "unit": "MW" }, "source": "source_id" },
+  "grid_connection_queues": { "role": "capacity", "pk": "queue_id", "surface": "operations", "at": "as_of", "dueMonthsAfterAt": "queue_months_p50", "qty": { "column": "demand_available_mw", "unit": "MW" }, "source": "source_id" },
   "regional_data_facts": { "role": "capacity", "pk": "id", "surface": "operations", "at": "as_at_date", "qty": { "column": "value_numeric", "unitColumn": "unit" }, "source": "source_id" },
   "market_series": { "role": "series", "pk": "id", "surface": "market", "at": "as_at_date", "qty": { "column": "value_numeric", "unitColumn": "unit" }, "group": "series_key" },
-  "item_forward_events": { "role": "trigger", "pk": "id", "surface": "regulations", "due": "event_date", "at": "created_at", "kind": "event_kind" },
-  "research_assessments_current": { "role": "tech", "edge": "research_assessments", "pk": "id", "surface": "research", "at": "computed_at", "trl": "technical_maturity_low" },
+  "item_forward_events": { "role": "trigger", "pk": "id", "surface": "regulations", "due": "event_date", "at": "created_at", "kind": "event_kind", "resolved": "resolved_at", "owner": "intelligence_item_id" },
+  "research_assessments_current": { "role": "tech", "edge": "research_assessments", "pk": "id", "surface": "research", "at": "computed_at", "trl": "technical_maturity_low", "owner": "item_id" },
   "reroute_events": { "role": "move", "pk": "reroute_id", "surface": "operations", "at": "effective_from" },
   "derived_values": { "role": "abatement", "pk": "value_id", "surface": "market", "at": "asserted_at", "qty": { "column": "value", "unitColumn": "unit" } }
 }
