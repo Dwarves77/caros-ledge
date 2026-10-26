@@ -163,7 +163,7 @@ test("obligation grain: lines are ordered by binding position, carry duty holder
 test("obligation grain beats the item grain in the lens; no objects is not decomposed", () => {
   const r = lens({ title: "x", compliance_object_tags: ["carrier-ocean"], obligation_objects: [OBJECTS[0]] }, { orgRoles: ["forwarder"] });
   assert.deepEqual([r.binding.decomposed, r.applicability?.status], [true, "applies"]);
-  assert.deepEqual(summariseObligationBinding([], {}, relevanceDeps), { decomposed: false, objectCount: 0, applicability: null, lines: [] });
+  assert.deepEqual(summariseObligationBinding([], {}, relevanceDeps), { decomposed: false, objectCount: 0, applicability: null, lines: [], penalties: [] });
   assert.equal(summariseObligationBinding(undefined, {}, relevanceDeps).decomposed, false);
 });
 
