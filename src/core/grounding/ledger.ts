@@ -93,7 +93,7 @@ export function applyLedgerOps(sb: Db, itemId: string, ops: readonly LedgerOp[],
  * Ops per ledger_apply_ops call. Every claim or section write fires set_provenance_status, which re-validates the whole item: measured on production 2026-10-26 at 0.42 to 0.48 s per op on 15f63ea9 (85 FACTs, 3.7 MB of captures)
  * and 0.19 s on 7a0ead55, against the 8 s statement timeout of the API role. 5 ops is 2.4 s on the slowest item (a 25-op call, 12 s, timed out twice).
  */
-export const LEDGER_CHUNK_OPS = 5;
+const LEDGER_CHUNK_OPS = 5;
 /** The ops of a pass applied in order, `size` per call, each call its own transaction. A failure names the chunk and how many ops already committed; the caller re-plans from the database, which already holds them. */
 export async function applyLedgerOpsChunked(sb: Db, itemId: string, ops: readonly LedgerOp[], nowIso: string | null, size = LEDGER_CHUNK_OPS): Promise<{ claims: number; removed: number; sections: number }> {
   const total = { claims: 0, removed: 0, sections: 0 };
