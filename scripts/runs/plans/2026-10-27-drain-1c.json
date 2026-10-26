@@ -1,0 +1,23 @@
+{
+  "ruling": "operator and coordinator 2026-10-27 (GROUND-FIX-1, harness run 87d94626): DRAIN-1b re-applied item b293a2b6's brief and its apply note said ground_skipped, because the ground answered already-verified for a verified item whose brief had changed. The ground now runs for a verified item whose stored ledger lacks the entry's authored claims (the replaced claims are archived to claim_versions) and leaves an item whose ledger holds them alone; the item-briefs done check reads the same signal, so an item whose ledger does not derive from its brief is not done. This plan re-applies the DRAIN-1 item batch (allowBriefOverwrite, the 3 accepted briefs b293a2b6, 0ee667cc, f3cee01b; the residue entries are recorded again, idempotently) so every item whose ledger lacks its authored claims is grounded. Nothing is fetched, so no scrape cadence is exercised and rule 16 stands",
+  "steps": [
+    {
+      "name": "item-briefs-dry",
+      "stage": "briefs",
+      "mode": "dry",
+      "input_file": "data/2026-10-27-drain-1.items.json",
+      "producer_env": [],
+      "on_failure": "stop",
+      "allow_partial": true
+    },
+    {
+      "name": "item-briefs-regrounded",
+      "stage": "briefs",
+      "mode": "apply",
+      "input_file": "data/2026-10-27-drain-1.items.json",
+      "producer_env": [],
+      "on_failure": "continue",
+      "allow_partial": true
+    }
+  ]
+}

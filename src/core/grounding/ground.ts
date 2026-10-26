@@ -26,7 +26,7 @@ import { GROUND_CONFIG } from "./config";
 import { openFlagOnce } from "./flags";
 import type { FactClaim } from "./gate-a-scan";
 import { buildCitationEdges, buildGateARow, clearGateAState, derivedCoveredTokens, mergeNullTierAggregate, mintGates, summarizeNullTierAggregate, upsertGateAState, type GateFact, type NullTierAggregate } from "./gates";
-import { applyLedgerDiff, applyLedgerOps, diffLedger, ledgerRegression, summarizeLedger, type ClaimRow } from "./ledger";
+import { applyLedgerDiff, ledgerCoversClaims, applyLedgerOps, diffLedger, ledgerRegression, summarizeLedger, type ClaimRow } from "./ledger";
 import { authorityFloorFor, floorPool, readAllPoolRows, reattributeToFloor, type PoolRow } from "./pool";
 import { decideSlotClaim, nominateForSlot, readRequiredSlots, type Nomination } from "./slots";
 
@@ -95,10 +95,13 @@ async function ground(deps: GroundDeps, input: GroundInput): Promise<GroundResul
   const it = itemRes.data as ItemRow | null;
   if (!it) return failed("item not found", notes);
   if (!it.source_id) return failed("no source_id", notes);
-  if (it.provenance_status === "verified") return { ...runResult("ok", counts, ["already verified"]), ok: true, valid: true, detail: "already verified", reasons: [], provenance: "verified", kept: 0, dropped: 0, slotCandidates: {}, relabels: [] };
+  const alreadyVerified = () => ({ ...runResult("ok", counts, ["already verified"]), ok: true, valid: true, detail: "already verified", reasons: [], provenance: "verified" as const, kept: 0, dropped: 0, slotCandidates: {}, relabels: [] });
+  if (it.provenance_status === "verified" && !input.replaceLedger) return alreadyVerified();
 
   const prior = await fetchAllRows<ClaimRow>((from, to) => sb.from("section_claim_provenance").select("id, section_row_id, claim_text, claim_kind, source_span, source_id, search_result_id, source_tier_at_grounding, mint_hold_reason").eq("intelligence_item_id", itemId).order("id", { ascending: true }).range(from, to), { cap: 20_000 }).catch((e: Error) => e);
   if (prior instanceof Error) return failed(`grounding aborted: prior-ledger read failed (${prior.message}); refusing to re-ground under a blind comparison`, notes);
+  // GROUND-FIX-1: a verified item is left alone only while its stored ledger holds every authored claim; a replaced brief carries claims the ledger lacks and is grounded again.
+  if (it.provenance_status === "verified" && ledgerCoversClaims(prior, input.ledger)) return alreadyVerified();
   const secRes = await boundedRead<{ id: string; section_key: string; content_md: string | null }>((limit) => sb.from("intelligence_item_sections").select("id, section_key, content_md").eq("item_id", itemId).order("section_order", { ascending: true }).limit(limit), { limit: 100 });
   if (secRes.error) return failed(`sections read failed: ${secRes.error.message}`, notes);
   const secs = secRes.data;

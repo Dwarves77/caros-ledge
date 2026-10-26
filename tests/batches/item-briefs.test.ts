@@ -199,13 +199,29 @@ test("the zero-model guard: the whole apply runs with every network call replace
   }
 });
 
-test("an item still verified when its brief was written is not quietly 'grounded': the ground answers already-verified, the authored ledger did not land, and the step says so", async () => {
+test("GROUND-FIX-1: a verified item whose brief changed has its authored claims stored (the ground runs and the old claim is archived); a verified item whose brief is unchanged is not re-grounded", async () => {
   const w = batchWorld();
-  (w.db.rows("intelligence_items")[0] as Record<string, unknown>).provenance_status = "verified";
-  const r = await apply(w, [recordEntry(w.db)]);
-  assert.equal(r.counts.applied, 1);
-  assert.match(refusals(r), /ground: ground_skipped: the item was still verified when its brief was written, so the authored ledger was not stored/);
-  assert.equal(w.db.rows("section_claim_provenance").length, 0);
-  assert.equal(w.db.rows("intelligence_changes").length, 0, "no change is recorded for a regeneration whose ledger did not land");
-  assert.equal(w.db.rows("item_changelog").length, 0, "and no changelog row either");
+  await apply(w, [recordEntry(w.db)]);
+  assert.equal(item(w).provenance_status, "verified");
+  const stored = () => w.db.rows("section_claim_provenance").map((c) => String(c.claim_text));
+  const first = stored();
+  const unchanged = await apply(w, [recordEntry(w.db)], { options: { allowBriefOverwrite: true } });
+  assert.equal(unchanged.counts.already_applied, 1, "same brief, same claims, ledger holds them: done");
+  assert.deepEqual(stored(), first);
+  const revised = { body: goodBody({ sec1: " The revised brief restates the reporting duty." }), claims: [{ ...claims()[0], claim_text: "Reporting duty restated in the revised brief." }, claims()[1], claims()[2]] };
+  const changed = await apply(w, [recordEntry(w.db, revised)], { options: { allowBriefOverwrite: true } });
+  assert.equal(changed.counts.applied, 1, refusals(changed));
+  assert.doesNotMatch(refusals(changed), /ground_skipped|ground_failed/);
+  assert.ok(stored().includes("Reporting duty restated in the revised brief."), "the new brief's authored claim is in the ledger");
+  assert.ok(w.db.rows("claim_versions").some((v) => v.claim_text === String(claims()[0]!.claim_text)), "the replaced claim is archived, not deleted");
+});
+
+test("GROUND-FIX-1: an item whose ledger lacks the entry's claims is half applied and runs again, however verified it is", async () => {
+  const w = batchWorld();
+  await apply(w, [recordEntry(w.db)]);
+  w.db.rows("section_claim_provenance").length = 0;
+  const again = await apply(w, [recordEntry(w.db)], { options: { allowBriefOverwrite: true } });
+  assert.equal(again.counts.already_applied ?? 0, 0);
+  assert.equal(again.counts.applied, 1, refusals(again));
+  assert.equal(w.db.rows("section_claim_provenance").filter((c) => c.claim_kind === "FACT").length, 3);
 });

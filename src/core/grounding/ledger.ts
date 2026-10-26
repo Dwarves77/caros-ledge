@@ -251,3 +251,10 @@ export function groundRetryPlan(detail: string | null | undefined): "structural_
   if (d.includes("no source_id")) return "structural_hold";
   return DETERMINISTIC.some((r) => d.includes(r)) ? "reresearch_only" : "reground";
 }
+
+/** GROUND-FIX-1: the stored ledger derives from an authored ledger when it holds every authored claim (text and span). A verified item whose brief was replaced fails this and is grounded again (the replaced claims are archived to claim_versions by the diff). */
+export function ledgerCoversClaims(stored: readonly { claim_text?: string | null; source_span?: string | null }[], authored: readonly { claim_text?: unknown; source_span?: unknown }[]): boolean {
+  const key = (t: unknown, p: unknown) => `${String(t ?? "").replace(/\s+/g, " ").trim()}|${String(p ?? "").replace(/\s+/g, " ").trim()}`;
+  const have = new Set(stored.map((c) => key(c.claim_text, c.source_span)));
+  return authored.length === 0 || (have.size > 0 && authored.every((c) => have.has(key(c.claim_text, c.source_span))));
+}
