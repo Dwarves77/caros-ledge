@@ -77,7 +77,7 @@ export function ItemNotesBlock({ itemId }: { itemId: string }) {
   if (phase === "loading") return <p className="cl-collab-meta">Loading notes…</p>;
   if (phase === "error") {
     return (
-      <div role="alert">
+      <div role="alert" data-part="state-note">
         <p className="cl-collab-meta">{loadError ?? "Notes could not be loaded."}</p>
         <Button onClick={() => (setPhase("loading"), setAttempt((n) => n + 1))}>Retry</Button>
       </div>

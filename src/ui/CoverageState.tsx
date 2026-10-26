@@ -90,7 +90,7 @@ export function CoverageState(props: CoverageStateProps) {
         <span data-part-slot="state-label" className={`cl-absence${isError ? " cl-absence--error" : ""}`}>
           {d.label}
         </span>
-        <p className="cl-coverage-headline">{d.headline}</p>
+        <p className="cl-coverage-headline" {...(isError ? { role: "alert", "data-part": "state-note" } : {})}>{d.headline}</p>
         {d.lines.map((line) => (
           <p key={line} className="cl-coverage-line">
             {line}

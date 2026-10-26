@@ -12,7 +12,7 @@ export default function RouteError({ error, reset }: { error: Error & { digest?:
     void reportClientError(`${error.message}${error.digest ? ` [digest:${error.digest}]` : ""}`, error.stack);
   }, [error]);
   return (
-    <div className="cl-page-pad">
+    <div className="cl-page-pad" data-part="page-failure">
       <ErrorState title="This page could not load" message="Something went wrong on our side. Try again; nothing in your account has changed." reference={error.digest} onRetry={reset} />
     </div>
   );

@@ -22,7 +22,7 @@ export function DenominatorLine({ denominator, error, surfacePath }: { denominat
       ) : null}
       <p data-part="coverage-denominator" className="cl-coverage-line">
         {v.state === "unavailable" ? (
-          <span>
+          <span role="alert" data-part="state-note">
             Coverage count: <Absence reason="connect data" variant="dash" /> It did not load; the coverage page has the full count.
           </span>
         ) : (
