@@ -8,6 +8,8 @@ import { z } from "zod";
 
 import type { Db } from "@/core/db";
 import { fetchAllRows } from "@/core/db";
+import { normaliseMode } from "@/core/contracts/vocabularies";
+import { couplingByKey } from "@/core/coupling/coupling";
 import { entityId, corridorSeed } from "@/core/entities/id";
 import { parseCorridorName } from "@/core/entities/kinds";
 import { planJurisdiction } from "@/core/entities/plan";
@@ -19,6 +21,7 @@ import seedsJson from "./data/corridor-seeds.json";
 const seeds = z.object({ seeds: z.array(z.object({ origin: z.string(), dest: z.string(), mode: z.string(), note: z.string(), sourceUrl: z.string() })) }).parse(seedsJson).seeds;
 const RELATION_CORRIDOR_JURISDICTION = "touches_jurisdiction";
 const ATTRIBUTED_BY = "rule:corridor-jurisdiction-unlocode-v1";
+const MODE_LINK_BY = "ops/seed-corridors";
 const CONVENTION_RE = /^corridor:([A-Za-z]{2}[A-Za-z2-9]{3})-([A-Za-z]{2}[A-Za-z2-9]{3}):([a-z_]+)$/;
 
 export interface CorridorCandidate {
@@ -71,6 +74,25 @@ function planDisplayNameBackfill(rows: readonly { entity_id: string; canonical_n
   }
   return out;
 }
+/** A lane corridor is sailed, flown or driven in the mode its name states: it is linked to that mode's asset (corridor_links), so the engine can carry a lane's facts to the mode and the mode's facts to the lane. One relation per corridor; a name without a leg mode links nothing. */
+function planModeLinks(corridors: readonly { entity_id: string; canonical_name: string }[], have: Set<string>): { rows: { parent_entity_id: string; child_entity_id: string; relation: "corridor_links"; asserted_by: string; provenance: object }[]; skipped: number } {
+  const rows: ReturnType<typeof planModeLinks>["rows"] = [];
+  let skipped = 0;
+  for (const c of corridors) {
+    const p = parseCorridorName(c.canonical_name);
+    const mode = p ? couplingByKey(`mode:${normaliseMode(p.mode)}`) : undefined;
+    if (!mode) {
+      skipped += 1;
+      continue;
+    }
+    const key = `${c.entity_id}|${mode.entityId}`;
+    if (have.has(key)) continue;
+    have.add(key);
+    rows.push({ parent_entity_id: c.entity_id, child_entity_id: mode.entityId, relation: "corridor_links", asserted_by: MODE_LINK_BY, provenance: { rule: "the mode a lane corridor's name states", corridor: c.canonical_name } });
+  }
+  return { rows, skipped };
+}
+
 /** Corridor-to-country pairs: the first two letters of each UN/LOCODE endpoint are the ISO 3166-1 country. */
 function deriveCorridorJurisdictionCodes(corridors: readonly { entity_id: string; canonical_name: string }[]): { isoCodes: string[]; pairs: { corridorEntityId: string; iso: string }[]; skipped: { entity_id: string; reason: string }[] } {
   const isoSet = new Set<string>();
@@ -160,6 +182,19 @@ export async function seedCorridors(deps: { sb: Db; now: () => Date }, input: { 
       } else if (table === "entity_scope") counts.scope_rows = rows.length;
       else if (table === "entities") counts.jurisdictions_created = rows.length;
     }
+  }
+  // each lane corridor is linked to the asset of its mode (the mode assets exist once the coupling seeds have run; until then the link is counted and written by the next run)
+  const [assets, links] = await Promise.all([all<{ entity_id: string }>(sb, "entities", "entity_id", "entity_id", "asset"), all<{ parent_entity_id: string; child_entity_id: string }>(sb, "entity_relations", "parent_entity_id, child_entity_id", "parent_entity_id")]);
+  const planned = planModeLinks(live, new Set(links.map((l) => `${l.parent_entity_id}|${l.child_entity_id}`)));
+  const present = new Set(assets.map((a) => a.entity_id));
+  const linkRows = planned.rows.filter((r) => present.has(r.child_entity_id));
+  Object.assign(counts, { mode_links_planned: linkRows.length, mode_links_mode_not_seeded: planned.rows.length - linkRows.length, mode_links_no_mode: planned.skipped });
+  if (!input.dry && linkRows.length) {
+    const { error } = await sb.from("entity_relations").insert(linkRows);
+    if (error) {
+      counts.failed = (counts.failed ?? 0) + 1;
+      notes.push(`entity_relations insert failed: ${error.message}`);
+    } else counts.mode_links = linkRows.length;
   }
   return { counts, outcome: counts.failed ? ((counts.created ?? 0) + (counts.scope_rows ?? 0) > 0 ? "partial" : "failed") : "ok", notes: input.dry ? [...notes, "dry: nothing written"] : notes };
 }

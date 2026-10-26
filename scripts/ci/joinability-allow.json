@@ -44,12 +44,6 @@
    "reason": "item_forward_events.obligation_text: a text column the engine can join on, neither mapped nor listed unmapped with a reason"
   },
   {
-   "key": "J1:market_series.series_key",
-   "owner": "couplings.json maps or the table's unmapped reasons",
-   "date": "2026-10-26",
-   "reason": "market_series.series_key: a text column the engine can join on, neither mapped nor listed unmapped with a reason"
-  },
-  {
    "key": "J1:obligation_objects.jurisdiction",
    "owner": "couplings.json maps or the table's unmapped reasons",
    "date": "2026-10-25",
@@ -104,6 +98,12 @@
    "reason": "statutory_computations.statute_citation: a text column the engine can join on, neither mapped nor listed unmapped with a reason"
   },
   {
+   "key": "J2:instrument:32003L0087:reach",
+   "owner": "couplings.json entities and relations",
+   "date": "2026-10-26",
+   "reason": "instrument:32003L0087 (instrument): reach failed: no path of relations to an entity on a different surface"
+  },
+  {
    "key": "J2:instrument:32018L2001:modeLinks",
    "owner": "couplings.json entities and relations",
    "date": "2026-10-25",
@@ -126,24 +126,6 @@
    "owner": "couplings.json entities and relations",
    "date": "2026-10-25",
    "reason": "instrument:32023L2413 (instrument): reach failed: no path of relations to an entity on a different surface"
-  },
-  {
-   "key": "J3const:oem_tech_roadmaps.c_rate_max",
-   "owner": "statutory-units.json forms",
-   "date": "2026-10-25",
-   "reason": "oem_tech_roadmaps.c_rate_max: the declared unit \"1/h\" is not a form statutoryUnit knows"
-  },
-  {
-   "key": "J3const:oem_tech_roadmaps.energy_density_wh_kg",
-   "owner": "statutory-units.json forms",
-   "date": "2026-10-25",
-   "reason": "oem_tech_roadmaps.energy_density_wh_kg: the declared unit \"Wh/kg\" is not a form statutoryUnit knows"
-  },
-  {
-   "key": "J3const:oem_tech_roadmaps.usable_kwh",
-   "owner": "statutory-units.json forms",
-   "date": "2026-10-25",
-   "reason": "oem_tech_roadmaps.usable_kwh: the declared unit \"kWh\" is not a form statutoryUnit knows"
   },
   {
    "key": "J3sev:intelligence_items.severity",
@@ -178,6 +160,18 @@
    "reason": "oem_tech_roadmaps.commercial_stage: no vocabulary; distinct values \"mass_series_production\", \"pilot_demonstration\", \"announced\""
   },
   {
+   "key": "J3toknovocab:oem_tech_roadmaps.commercial_stage",
+   "owner": "vocabularies.json",
+   "date": "2026-10-25",
+   "reason": "oem_tech_roadmaps.commercial_stage: no vocabulary; distinct values \"mass_series_production\", \"pilot_demonstration\", \"announced\""
+  },
+  {
+   "key": "J3toknovocab:research_assessments_current.horizon_band",
+   "owner": "vocabularies.json",
+   "date": "2026-10-25",
+   "reason": "research_assessments_current.horizon_band: no vocabulary; distinct values \"NEAR\", \"FAR\", \"NOW\", \"MID\""
+  },
+  {
    "key": "J3toknovocab:research_assessments_current.horizon_band",
    "owner": "vocabularies.json",
    "date": "2026-10-25",
@@ -202,25 +196,10 @@
    "reason": "research_assessments_current.horizon_kind: no vocabulary; distinct values \"availability\", \"obligation\""
   },
   {
-   "key": "J3unit:derived_values.unit",
-   "owner": "statutory-units.json forms",
+   "key": "J3toknovocab:research_assessments_current.horizon_kind",
+   "owner": "vocabularies.json",
    "date": "2026-10-25",
-   "reason": "derived_values.unit: unnormalised share 0.6875 over 0.05; top forms \"gCO2e/tonne-km\" x20, \"ratio\" x20, \"km\" x4",
-   "share": 0.6875
-  },
-  {
-   "key": "J3unit:emission_factors.quantity_basis",
-   "owner": "statutory-units.json forms",
-   "date": "2026-10-25",
-   "reason": "emission_factors.quantity_basis: unnormalised share 1.0000 over 0.05; top forms \"tonne_km\" x13",
-   "share": 1
-  },
-  {
-   "key": "J3unit:regional_data_facts.unit",
-   "owner": "statutory-units.json forms",
-   "date": "2026-10-25",
-   "reason": "regional_data_facts.unit: unnormalised share 0.0588 over 0.05; top forms \"gCO2/kWh\" x1",
-   "share": 0.0588
+   "reason": "research_assessments_current.horizon_kind: no vocabulary; distinct values \"availability\", \"obligation\""
   },
   {
    "key": "J3unit:state_cost_facts.unit",
@@ -228,13 +207,6 @@
    "date": "2026-10-25",
    "reason": "state_cost_facts.unit: unnormalised share 0.5652 over 0.05; top forms \"/hr\" x13",
    "share": 0.5652
-  },
-  {
-   "key": "J3unit:statutory_computations.result_unit",
-   "owner": "statutory-units.json forms",
-   "date": "2026-10-25",
-   "reason": "statutory_computations.result_unit: unnormalised share 0.0789 over 0.05; top forms \"calendar year\" x2, \"MJ per metric ton of VLSFO\" x1",
-   "share": 0.0789
   },
   {
    "key": "J5:derived_values.entity_id",

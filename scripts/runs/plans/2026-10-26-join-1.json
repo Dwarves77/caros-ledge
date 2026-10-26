@@ -1,6 +1,24 @@
 {
-  "ruling": "coordinator 2026-10-25, JOIN-1 brief (docs/plans/rebuild/briefs/JOIN-1.md) and its two 2026-10-25 addenda: fill the typed columns the cited captures state (oem_tech_roadmaps.target_year), file each research assessment under the technology entity its item names, retire the mined refs that were grounded only by matching words in prose (operator and scope reviewer 2026-10-25: the flywheel matches no free-text words), then re-mine on formal codes and typed columns and re-detect under rule 17; scrape cadence stays off and the producers fetch only the pages their rows cite",
+  "ruling": "coordinator 2026-10-25, JOIN-1 brief (docs/plans/rebuild/briefs/JOIN-1.md) and its two 2026-10-25 addenda: fill the typed columns the cited captures state (oem_tech_roadmaps.target_year), file each research assessment under the technology entity its item names, retire the mined refs that were grounded only by matching words in prose (operator and scope reviewer 2026-10-25: the flywheel matches no free-text words), seed the instruments, fossil reference fuels and relations the audit TRIANGLE-TRACE-1 named, link each lane corridor to its mode, then re-mine on formal codes and typed columns and re-detect under rule 17; scrape cadence stays off and the producers fetch only the pages their rows cite",
   "steps": [
+    {
+      "name": "couplings-dry",
+      "stage": "propagate",
+      "mode": "dry",
+      "input": {
+        "propagate": {}
+      },
+      "producer_env": []
+    },
+    {
+      "name": "couplings-seeded",
+      "stage": "propagate",
+      "mode": "apply",
+      "input": {
+        "propagate": {}
+      },
+      "producer_env": []
+    },
     {
       "name": "oem-roadmap-rows-dry",
       "stage": "propagate",
@@ -11,7 +29,7 @@
             "only": "oem-roadmap-rows",
             "rowsFile": "src/features/market/producers/data/rows/oem_tech_roadmaps-2026-10.json"
           },
-          "cadence_exception": "coordinator 2026-10-25, JOIN-1 brief (docs/plans/rebuild/briefs/JOIN-1.md) and its two 2026-10-25 addenda: fill the typed columns the cited captures state (oem_tech_roadmaps.target_year), file each research assessment under the technology entity its item names, retire the mined refs that were grounded only by matching words in prose (operator and scope reviewer 2026-10-25: the flywheel matches no free-text words), then re-mine on formal codes and typed columns and re-detect under rule 17; scrape cadence stays off and the producers fetch only the pages their rows cite"
+          "cadence_exception": "coordinator 2026-10-25, JOIN-1 brief (docs/plans/rebuild/briefs/JOIN-1.md) and its two 2026-10-25 addenda: fill the typed columns the cited captures state (oem_tech_roadmaps.target_year), file each research assessment under the technology entity its item names, retire the mined refs that were grounded only by matching words in prose (operator and scope reviewer 2026-10-25: the flywheel matches no free-text words), seed the instruments, fossil reference fuels and relations the audit TRIANGLE-TRACE-1 named, link each lane corridor to its mode, then re-mine on formal codes and typed columns and re-detect under rule 17; scrape cadence stays off and the producers fetch only the pages their rows cite"
         }
       },
       "producer_env": [
@@ -28,7 +46,7 @@
             "only": "oem-roadmap-rows",
             "rowsFile": "src/features/market/producers/data/rows/oem_tech_roadmaps-2026-10.json"
           },
-          "cadence_exception": "coordinator 2026-10-25, JOIN-1 brief (docs/plans/rebuild/briefs/JOIN-1.md) and its two 2026-10-25 addenda: fill the typed columns the cited captures state (oem_tech_roadmaps.target_year), file each research assessment under the technology entity its item names, retire the mined refs that were grounded only by matching words in prose (operator and scope reviewer 2026-10-25: the flywheel matches no free-text words), then re-mine on formal codes and typed columns and re-detect under rule 17; scrape cadence stays off and the producers fetch only the pages their rows cite"
+          "cadence_exception": "coordinator 2026-10-25, JOIN-1 brief (docs/plans/rebuild/briefs/JOIN-1.md) and its two 2026-10-25 addenda: fill the typed columns the cited captures state (oem_tech_roadmaps.target_year), file each research assessment under the technology entity its item names, retire the mined refs that were grounded only by matching words in prose (operator and scope reviewer 2026-10-25: the flywheel matches no free-text words), seed the instruments, fossil reference fuels and relations the audit TRIANGLE-TRACE-1 named, link each lane corridor to its mode, then re-mine on formal codes and typed columns and re-detect under rule 17; scrape cadence stays off and the producers fetch only the pages their rows cite"
         }
       },
       "producer_env": [
@@ -44,7 +62,7 @@
           "producers": {
             "only": "research-assessment"
           },
-          "cadence_exception": "coordinator 2026-10-25, JOIN-1 brief (docs/plans/rebuild/briefs/JOIN-1.md) and its two 2026-10-25 addenda: fill the typed columns the cited captures state (oem_tech_roadmaps.target_year), file each research assessment under the technology entity its item names, retire the mined refs that were grounded only by matching words in prose (operator and scope reviewer 2026-10-25: the flywheel matches no free-text words), then re-mine on formal codes and typed columns and re-detect under rule 17; scrape cadence stays off and the producers fetch only the pages their rows cite"
+          "cadence_exception": "coordinator 2026-10-25, JOIN-1 brief (docs/plans/rebuild/briefs/JOIN-1.md) and its two 2026-10-25 addenda: fill the typed columns the cited captures state (oem_tech_roadmaps.target_year), file each research assessment under the technology entity its item names, retire the mined refs that were grounded only by matching words in prose (operator and scope reviewer 2026-10-25: the flywheel matches no free-text words), seed the instruments, fossil reference fuels and relations the audit TRIANGLE-TRACE-1 named, link each lane corridor to its mode, then re-mine on formal codes and typed columns and re-detect under rule 17; scrape cadence stays off and the producers fetch only the pages their rows cite"
         }
       },
       "producer_env": [
@@ -52,16 +70,29 @@
       ]
     },
     {
-      "name": "refs-prose-retired-dry",
-      "stage": "propagate",
+      "name": "seed-corridors-dry",
+      "stage": "ops",
       "mode": "dry",
       "input": {
-        "propagate": {}
+        "ops": {
+          "op": "seed-corridors"
+        }
       },
       "producer_env": []
     },
     {
-      "name": "refs-prose-retired",
+      "name": "seed-corridors",
+      "stage": "ops",
+      "mode": "apply",
+      "input": {
+        "ops": {
+          "op": "seed-corridors"
+        }
+      },
+      "producer_env": []
+    },
+    {
+      "name": "refs-mined",
       "stage": "propagate",
       "mode": "apply",
       "input": {

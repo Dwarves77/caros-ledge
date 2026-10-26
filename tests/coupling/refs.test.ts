@@ -124,3 +124,14 @@ test("INV-CN2-8: every ref the mining writes carries a basis and the method vers
   assert.equal(f.db.rows("entity_refs").length, before);
   assert.ok((dry.counts.claims_unresolved_fact ?? 0) >= 12, "the claims that state no formal code are counted by kind, never guessed");
 });
+
+test("INV-JOIN-10: a market series is filed under the fossil reference fuel its formal series code names; an exchange rate and a benchmark with no entity in the vocabulary are filed under none", async () => {
+  const f = patternFixture();
+  const row = (n: number, key: string) => ({ id: `b7000000-0000-4000-8000-00000000000${n}`, series_key: key, label: "a label that names nothing", value_numeric: 1, unit: "EUR/t", currency: "EUR", derivation: "observed", origin_class: "official", source_key: "fixture", source_ref: "fixture", as_at_date: "2026-10-01", reference_period: "2026-10-01" });
+  f.db.seed("market_series", [row(1, "eu-oil-bulletin:automotive-diesel"), row(2, "eia-v2:jet-fuel-kerosene-eer-epjk-pf4-rgc-dpg"), row(3, "ecb-fx:eur-usd"), row(4, "eia-v2:brent-crude-rbrte")]);
+  await propagate(f);
+  const filed = (n: number) => refsOf(f).filter((r) => r.ref_table === "market_series" && r.ref_id === `b7000000-0000-4000-8000-00000000000${n}`).map((r) => [r.entity_id, r.role, (r.basis as { column: string }).column]);
+  assert.deepEqual(filed(1), [[E("carrier:fossil_diesel"), "cites_carrier", "series_key"]]);
+  assert.deepEqual(filed(2), [[E("carrier:fossil_jet"), "cites_carrier", "series_key"]]);
+  assert.deepEqual([filed(3), filed(4)], [[], []], "no entity in the vocabulary: filed under none, never guessed from the label");
+});

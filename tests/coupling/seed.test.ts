@@ -77,3 +77,14 @@ test("join completeness (scope review G2): every entity that sits on a leg names
     assert.deepEqual((corridor.modes ?? []).filter((m) => !linked.has(m)), [], `${corridor.key} names modes it does not link`);
   }
 });
+
+test("INV-JOIN-11: the instruments, fuels and relations JOIN-1 added are seeded with the quote that grounds each: the three instruments with their modes, the HDV acts implementing HDV charging, bunkering restored, and every fossil reference fuel serving its mode", async () => {
+  const f = fixture();
+  await propagate(f);
+  const rel = (parent: string, relation: string, child: string) => f.db.rows("entity_relations").some((x) => x.parent_entity_id === E(parent) && x.child_entity_id === E(child) && x.relation === relation && x.source_id);
+  for (const k of ["instrument:32003L0087", "instrument:32019R1242", "instrument:32024R1610", "node:bunkering", "carrier:fossil_diesel", "carrier:fossil_gasoline", "carrier:fossil_jet", "carrier:fossil_lpg", "carrier:fossil_fuel_oil"]) assert.ok(f.db.rows("entities").some((e) => e.entity_id === E(k)), `${k} is an entity`);
+  assert.ok(rel("instrument:32019R1242", "implements", "node:hdv_charging") && rel("instrument:32024R1610", "implements", "node:hdv_charging"));
+  assert.ok(rel("instrument:32024R1610", "amends", "instrument:32019R1242"));
+  for (const [fuel, mode] of [["fossil_diesel", "road"], ["fossil_gasoline", "road"], ["fossil_jet", "air"], ["fossil_lpg", "road"], ["fossil_fuel_oil", "ocean"]]) assert.ok(rel(`carrier:${fuel}`, "fuel_for_mode", `mode:${mode}`), `${fuel} serves ${mode}`);
+  assert.deepEqual(COUPLINGS.find((c) => c.key === "instrument:32003L0087")?.modes, ["air", "ocean"]);
+});
