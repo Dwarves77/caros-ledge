@@ -337,6 +337,10 @@
  "propagation_events": [
   "event_id"
  ],
+ "provenance_recheck": [
+  "item_id",
+  "xid"
+ ],
  "provisional_sources": [
   "id"
  ],

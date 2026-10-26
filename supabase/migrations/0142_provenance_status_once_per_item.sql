@@ -144,9 +144,9 @@ COMMENT ON FUNCTION public.set_provenance_status() IS 'Sprint 4 Block 1 task 1.4
 CREATE TABLE public.provenance_recheck (
   item_id uuid NOT NULL,
   xid bigint NOT NULL,
-  keep_updated_at boolean NOT NULL DEFAULT false,
-  CONSTRAINT provenance_recheck_pkey PRIMARY KEY (item_id, xid)
+  keep_updated_at boolean NOT NULL DEFAULT false
 );
+ALTER TABLE public.provenance_recheck ADD CONSTRAINT provenance_recheck_pkey PRIMARY KEY (item_id, xid);
 
 COMMENT ON TABLE public.provenance_recheck IS 'Migration 0142. One row per (item, transaction) whose sections or claims were written: the dedup key of the deferred provenance derivation. Written only by provenance_recheck_push (SECURITY DEFINER), consumed (deleted) by provenance_recheck_apply at commit, so it is empty between transactions. No role holds a grant: a caller that could delete or pre-insert a row could suppress the derivation of its own write. A row left behind means the deferred trigger is disabled.';
 
