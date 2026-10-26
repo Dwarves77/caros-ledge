@@ -1,6 +1,8 @@
 // RUN-1: the plan validator. INV-RUN-1: an apply step of the propagate stage without the ruling's cadence_exception is refused.
 import assert from "node:assert/strict";
-import { readdirSync, readFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { test } from "node:test";
 
 import { STAGES } from "@/core/turn";
@@ -64,7 +66,7 @@ test("the ARM-2 plan (2026-10-25-arm-2) parses: six steps, dry then apply for st
 });
 
 test("every plan file under scripts/runs/plans parses, so a malformed plan is red in its pull request and not on main", () => {
-  for (const f of readdirSync("scripts/runs/plans").filter((n) => n.endsWith(".json"))) parsePlan(readFileSync(`scripts/runs/plans/${f}`, "utf8"));
+  for (const f of readdirSync("scripts/runs/plans").filter((n) => n.endsWith(".json"))) parsePlan(readFileSync(`scripts/runs/plans/${f}`, "utf8"), `scripts/runs/plans/${f}`);
 });
 
 test("a producers.only that is not an entry of the registry is refused (a typo would run nothing); every registry name is accepted", () => {
@@ -122,10 +124,6 @@ test("HEAL-1: the heal plan (2026-10-26-heal-1) heals exactly the two ruled inst
 });
 
 // DRAIN-1: a step's input is inline (under 100,000 bytes) or a data file beside the plan (input_file), exactly one.
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-
 const planDir = () => {
   const d = mkdtempSync(join(tmpdir(), "plan-"));
   mkdirSync(join(d, "data"));
