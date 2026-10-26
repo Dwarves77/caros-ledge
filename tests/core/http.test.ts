@@ -113,13 +113,17 @@ test("IMP-057: a route's own budget goes through rate_limit_hit as p_limit, and 
   assert.ok(BIG.limit! > MAX_REQUESTS);
 });
 
-test("CI-BROWSER-1 rate limit: one user on two hosts counts separately, and one host still limits at 60", async () => {
+test("CI-BROWSER-1 rate limit: one deployment is one budget whatever the Host header says, two deployments count separately", async () => {
   const t0 = 5_000_000;
-  const prod = hostScopedKey("user-x", { headers: new Headers({ host: "caros-ledge.example" }) });
-  const preview = hostScopedKey("user-x", { headers: new Headers({ host: "caros-ledge-git-pr-9.vercel.app" }) });
-  assert.notEqual(prod, preview);
-  for (let i = 0; i < MAX_REQUESTS; i += 1) assert.equal(await checkRateLimit(prod, t0 + i, null), null);
-  assert.equal((await checkRateLimit(prod, t0 + 100, null))?.status, 429, "one host still limits at 60");
-  assert.equal(await checkRateLimit(preview, t0 + 100, null), null, "the preview host has its own budget");
-  assert.equal(hostScopedKey("u", { headers: new Headers(), url: "https://A.example/x" }), "u@a.example", "falls back to the URL host");
+  const prodEnv = { VERCEL_ENV: "production", VERCEL_DEPLOYMENT_ID: "dpl_prod1" };
+  // The key does not read the request at all: any Host (apex, www, vercel.app, branch alias) lands on the same key.
+  const prod = hostScopedKey("user-x", prodEnv);
+  for (let i = 0; i < MAX_REQUESTS; i += 1) assert.equal(await checkRateLimit(hostScopedKey("user-x", prodEnv), t0 + i, null), null);
+  assert.equal((await checkRateLimit(hostScopedKey("user-x", prodEnv), t0 + 100, null))?.status, 429, "the 61st request is limited, one budget for all aliases");
+  assert.equal(hostScopedKey("user-x", { ...prodEnv }), prod);
+  const preview = hostScopedKey("user-x", { VERCEL_ENV: "preview", VERCEL_DEPLOYMENT_ID: "dpl_prev9" });
+  assert.notEqual(preview, prod);
+  assert.equal(await checkRateLimit(preview, t0 + 100, null), null, "another deployment has its own budget");
+  assert.equal(hostScopedKey("u", { VERCEL_ENV: "preview", VERCEL_URL: "x.vercel.app" }), "u@preview:x.vercel.app", "VERCEL_URL when the id is absent");
+  assert.equal(hostScopedKey("u", {}), "u@local");
 });

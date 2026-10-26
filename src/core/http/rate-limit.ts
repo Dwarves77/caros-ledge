@@ -94,20 +94,14 @@ export function clientKey(request: { headers: Headers }): string {
 }
 
 /**
- * A per-user key scoped to the deployment host (CI-BROWSER-1): production and each preview count separately, so a PR check signing in as the
- * member test account never spends production's 60 per minute. The host is the request's own Host header (Vercel routes only the project's
- * domains, so it cannot be varied to dodge the window), else the request URL's host.
+ * A per-user key scoped to the deployment's own server-side identity (CI-BROWSER-1): production and each preview count separately, so a PR check
+ * signing in as the member test account never spends production's 60 per minute. The identity is VERCEL_ENV plus VERCEL_DEPLOYMENT_ID (VERCEL_URL
+ * if the id is absent), set by the platform and never by the client, so every alias of one deployment (apex, www, the vercel.app name, the branch
+ * alias) shares one budget and a rotated Host header buys nothing. Outside Vercel it is "local".
  */
-export function hostScopedKey(key: string, request: { headers: Headers; url?: string }): string {
-  let host = request.headers.get("host")?.trim().toLowerCase() ?? "";
-  if (!host && request.url) {
-    try {
-      host = new URL(request.url).host.toLowerCase();
-    } catch {
-      host = "";
-    }
-  }
-  return `${key}@${host || "unknown-host"}`;
+export function hostScopedKey(key: string, env: Record<string, string | undefined> = process.env): string {
+  const id = env.VERCEL_DEPLOYMENT_ID || env.VERCEL_URL;
+  return `${key}@${id ? `${env.VERCEL_ENV || "vercel"}:${id}` : "local"}`;
 }
 
 export function rateLimitHeaders(key: string): Record<string, string> {

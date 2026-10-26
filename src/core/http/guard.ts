@@ -48,7 +48,7 @@ export async function requireUser(request: Request): Promise<UserContext | Respo
     const client = await userClient(request);
     const claims = await getClaims(client, bearerToken(request) ?? undefined);
     if (!claims) return refuse(401, bearerToken(request) ? "Invalid or expired token" : "Authentication required");
-    const key = hostScopedKey(claims.userId, request);
+    const key = hostScopedKey(claims.userId);
     const limited = await checkRateLimit(key);
     if (limited) return limited;
     return { userId: claims.userId, email: claims.email, client, headers: rateLimitHeaders(key) };

@@ -18,7 +18,7 @@ export const GET = route("/api/auth/identity", async (request) => {
     const client = await userClient(request);
     const claims = await getClaims(client, bearerToken(request) ?? undefined);
     if (!claims) return Response.json(EMPTY_IDENTITY, { headers: NO_STORE });
-    const limited = await checkRateLimit(hostScopedKey(`user:${claims.userId}`, request));
+    const limited = await checkRateLimit(hostScopedKey(`user:${claims.userId}`));
     if (limited) return limited;
     return Response.json(await resolveIdentity(client), { headers: NO_STORE });
   } catch (e) {
