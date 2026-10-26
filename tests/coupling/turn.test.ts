@@ -5,26 +5,25 @@ import { test } from "node:test";
 
 import { PATTERN_METHODS } from "@/core/propagation/methods";
 
-import { connect, countsOf, E, OBLIGATION, patternFixture, patterns, propagate } from "./_world.ts";
+import { connect, countsOf, E, NOW, OBLIGATION, patternFixture, patterns, propagate } from "./_world.ts";
 
 const byMethod = (rows: Record<string, unknown>[]) => Object.fromEntries(Object.values(PATTERN_METHODS).map((m) => [m.id, rows.filter((r) => r.method_id === m.id).length]));
 
-test("INV-CN2-5: the planted data yields exactly one pattern per kind and one cross-modal pattern per relation kind, no other", async () => {
+test("INV-CN2-5: the planted data yields exactly one pattern per kind it can start and one cross-modal pattern per relation kind a non-mode entity can cross, no other; no velocity pattern while no claim is dated", async () => {
   const f = patternFixture();
   assert.equal((await propagate(f)).exit, 0);
   assert.equal((await connect(f)).exit, 0);
   const rows = patterns(f);
-  assert.deepEqual(byMethod(rows), { pattern_velocity_burst: 1, pattern_mandate_capacity: 1, pattern_lead_lag: 1, pattern_cross_modal: 8, pattern_penalty_abatement: 1 });
+  assert.deepEqual(byMethod(rows), { pattern_velocity_burst: 0, pattern_mandate_capacity: 1, pattern_lead_lag: 1, pattern_cross_modal: 3, pattern_penalty_abatement: 1 });
   const cross = rows.filter((r) => r.method_id === "pattern_cross_modal").map((r) => String(r.computed_by).split("|")[1]).sort();
-  assert.deepEqual(cross, ["competes_for_feedstock", "consignment_wide", "consignment_wide", "corridor_links", "corridor_links", "corridor_links", "feedstock_of", "shares_grid_zone"]);
-  // the join fixes: a mode-agnostic mandate and the two corridors that link road each carry a spill from a road ratchet (P4)
+  assert.deepEqual(cross, ["competes_for_feedstock", "feedstock_of", "shares_grid_zone"]);
+  // a ratchet is filed under its transport mode too (the road and ocean ratchets are): a mode is where a mandate is filed, not what it starts from, so neither starts a pattern
   const keys = rows.filter((r) => r.method_id === "pattern_cross_modal").map((r) => String(r.computed_by));
-  for (const target of ["instrument:32025R0040", "corridor:rail_road", "corridor:inland_waterway"]) assert.ok(keys.some((k) => k.includes(`|${OBLIGATION.road}|`) || (k.includes(OBLIGATION.road) && k.endsWith(E(target)))), target);
+  assert.ok(keys.every((k) => !k.includes(OBLIGATION.road) && !k.includes(OBLIGATION.ocean)));
   const anchor = (id: string) => rows.find((r) => r.method_id === id)?.entity_id;
-  assert.equal(anchor("pattern_velocity_burst"), E("carrier:green_ammonia"));
   assert.equal(anchor("pattern_penalty_abatement"), E("carrier:bio_methanol"));
-  assert.equal(countsOf(f, "corpus-turn").patterns, 12, "the stage's ledger row carries the count per kind");
-  assert.deepEqual([countsOf(f, "corpus-turn").patterns_velocity, countsOf(f, "corpus-turn").patterns_crossModal], [1, 8]);
+  assert.equal(countsOf(f, "corpus-turn").patterns, 6, "the stage's ledger row carries the count per kind");
+  assert.deepEqual([countsOf(f, "corpus-turn").patterns_velocity, countsOf(f, "corpus-turn").patterns_crossModal], [0, 3]);
 });
 
 test("INV-CN2-1: every pattern value names its evidence: member, evidence or key edges, one per evidence row, and the method version is recorded", async () => {
@@ -37,16 +36,14 @@ test("INV-CN2-1: every pattern value names its evidence: member, evidence or key
     assert.ok(mine.length >= 1, `${String(p.method_id)} has evidence edges`);
     assert.ok(mine.every((e) => ["member", "evidence", "key"].includes(String(e.edge_kind))));
     assert.equal(new Set(mine.map((e) => `${String(e.from_table)}/${String(e.from_pk)}/${String(e.edge_kind)}`)).size, mine.length, "one edge per evidence row");
-    assert.equal(p.method_version, p.method_id === "pattern_penalty_abatement" ? "1.3.0" : "1.2.0");
+    assert.equal(p.method_version, p.method_id === "pattern_penalty_abatement" ? "1.4.0" : "1.3.0");
     assert.ok(["analysis_ok", "display_only"].includes(String(p.admissibility)), "graded");
   }
-  const velocity = patterns(f).find((p) => p.method_id === "pattern_velocity_burst");
-  const kinds = edges.filter((e) => e.to_value_id === velocity?.value_id).map((e) => e.edge_kind);
-  assert.equal(kinds.filter((k) => k === "member").length, 3, "the three claims of the burst");
-  assert.equal(kinds.filter((k) => k === "key").length, 1, "the baseline is one summary edge");
+  const cross = patterns(f).find((p) => p.method_id === "pattern_cross_modal");
+  assert.deepEqual(edges.filter((e) => e.to_value_id === cross?.value_id).map((e) => e.edge_kind).sort(), ["evidence", "member"], "the start row and the landing row");
 });
 
-test("a second connect finds the same patterns and writes none; a retired input retires the pattern", async () => {
+test("a second connect finds the same patterns and writes none; a pattern whose input moves out of its window is retired", async () => {
   const f = patternFixture();
   await propagate(f);
   await connect(f);
@@ -54,12 +51,12 @@ test("a second connect finds the same patterns and writes none; a retired input 
   await connect(f);
   assert.equal(patterns(f).length, first);
   assert.equal(countsOf(f, "corpus-turn").patterns_unchanged, first);
-  // the burst's claims fall out of the window: the pattern is retired, not left standing
-  const aged = new Set(f.db.rows("section_claim_provenance").filter((x) => String(x.claim_text).startsWith("Green ammonia")).map((x) => x.intelligence_item_id));
-  for (const i of f.db.rows("intelligence_items").filter((x) => aged.has(x.id))) i.added_date = "2026-02-01";
+  // the maritime step moves inside the lead window's near edge: the lead-lag pattern no longer holds and is retired, not left standing
+  const event = f.db.rows("item_forward_events")[0] as Record<string, unknown>;
+  event.event_date = new Date(NOW.getTime() + 30 * 86_400_000).toISOString().slice(0, 10);
   await propagate(f);
   await connect(f);
-  const retired = patterns(f).filter((p) => p.method_id === "pattern_velocity_burst");
+  const retired = patterns(f).filter((p) => p.method_id === "pattern_lead_lag");
   assert.deepEqual(retired.map((p) => p.lifecycle), ["obsolete"]);
   assert.equal(retired[0]?.admissibility, "stale");
 });
@@ -82,7 +79,7 @@ test("the invalidation DAG: a changed evidence row marks the patterns citing it 
   assert.equal(after.length, before * 2, "each stale value is kept, its successor is a new row");
   const successor = after.find((p) => p.supersedes === first?.value_id);
   assert.ok(successor, "the recomputed pattern supersedes the stale one");
-  assert.equal(successor?.method_version, "1.2.0");
+  assert.equal(successor?.method_version, "1.3.0");
   assert.equal(first?.admissibility, "stale");
   assert.ok((countsOf(f, "propagation").recomputed ?? 0) >= 1);
   // the roadmap now lands before the deadline: the pattern no longer holds, the method refuses, the value stays stale

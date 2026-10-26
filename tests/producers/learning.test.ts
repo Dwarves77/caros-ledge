@@ -70,6 +70,7 @@ test("INV-246: scoring writes one ledger row per DISTINCT grounding source BEFOR
   assert.equal(r.counts.ledger_rows_existing, 1);
   assert.equal(r.counts.scored_without_sources, 1, "s2 had no grounding");
   assert.equal(r.counts.errors, 2);
+  assert.equal(r.counts.signposts_fired, 2, "s1 and s2 fired; s3's fire failed, which is an error and no firing, so the count is a write (families.json declares it as one)");
   assert.deepEqual([...r.failedEventIds].sort(), ["1", "2"], "the failed score and the failed fire keep their event ids for replay");
   assert.equal(r.outcome, "partial");
 });
@@ -96,6 +97,13 @@ test("the real signpost deps: firing is the one transactional rpc, scoring write
   assert.equal(fired.length, 1);
   assert.deepEqual(db.tables.source_reliability_ledger?.map((l) => l.source_id), ["src-1"], "only FACT/LEGAL grounding counts");
   assert.equal(db.tables.signposts?.[0]?.outcome, "held");
+  // a pattern's signpost tracks an inference record and no assessment (migration 0136): the scorer never reads it, whatever its state
+  const patternSignpost = { entity_id: "p1", assessment_id: null, inference_record_id: "inf-1", watches: "ent-1", predicate: { op: "date_passed", field: "pattern_key_date" }, direction: "confirms", fired_at: "2026-10-01T00:00:00Z", outcome: null, lifecycle_applied_at: null };
+  const mixed = memoryDb({ signposts: [patternSignpost, { entity_id: "s9", assessment_id: "a9", watches: "ent-1", predicate: { op: "date_passed", field: "x" }, direction: "confirms", fired_at: "2026-10-01T00:00:00Z", outcome: null, lifecycle_applied_at: null }] }, {});
+  const reads = buildSignpostStepDeps(mixed.db);
+  assert.deepEqual((await reads.readFiredUnscored()).map((r) => r.entity_id), ["s9"]);
+  assert.deepEqual((await reads.readLifecycleUnapplied()).map((r) => r.entity_id), ["s9"]);
+  assert.deepEqual((await reads.readDeadlineCandidates()).map((r) => r.entity_id), []);
   const broken = memoryDb({}, { failures: [{ table: "signposts", op: "select", message: "down" }] });
   await assert.rejects(() => buildSignpostStepDeps(broken.db).readFiredUnscored(), /paginated read failed/);
 });

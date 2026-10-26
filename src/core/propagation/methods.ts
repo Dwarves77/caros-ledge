@@ -258,11 +258,11 @@ const costPerFeu: MethodFn = (ctx) => {
   return { ok: true, value, unit: CARBON.cost.unit, currency: price.currency, derivation: filing ? "calculated" : "estimated", originClass: "derived", lifecycle: filing ? "verified" : "corroborated", admissibility: filing ? "filing_ok" : "display_only", confidence: Math.min(...inputs.map((r) => Number(r.base_confidence))), halfLifeDays: null, basis: CARBON.cost.basis };
 };
 
-const VELOCITY_ID = "pattern_velocity_burst", VELOCITY_VERSION = "1.2.0";
-const MANDATE_ID = "pattern_mandate_capacity", MANDATE_VERSION = "1.2.0";
-const LEADLAG_ID = "pattern_lead_lag", LEADLAG_VERSION = "1.2.0";
-const CROSSMODAL_ID = "pattern_cross_modal", CROSSMODAL_VERSION = "1.2.0";
-const ABATEMENT_ID = "pattern_penalty_abatement", ABATEMENT_VERSION = "1.3.0";
+const VELOCITY_ID = "pattern_velocity_burst", VELOCITY_VERSION = "1.3.0";
+const MANDATE_ID = "pattern_mandate_capacity", MANDATE_VERSION = "1.3.0";
+const LEADLAG_ID = "pattern_lead_lag", LEADLAG_VERSION = "1.3.0";
+const CROSSMODAL_ID = "pattern_cross_modal", CROSSMODAL_VERSION = "1.3.0";
+const ABATEMENT_ID = "pattern_penalty_abatement", ABATEMENT_VERSION = "1.4.0";
 /** The five pattern detectors (CONNECT-2) by kind: the id and version a pattern is registered under. */
 export const PATTERN_METHODS = {
   velocity: { id: VELOCITY_ID, version: VELOCITY_VERSION }, mandateCapacity: { id: MANDATE_ID, version: MANDATE_VERSION }, leadLag: { id: LEADLAG_ID, version: LEADLAG_VERSION },

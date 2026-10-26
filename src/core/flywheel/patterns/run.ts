@@ -2,6 +2,9 @@
 // row (member, evidence or key), superseding the pattern it replaces when its value or evidence changed and retiring one no detector finds any more. The counts per kind are the stage's ledger counts; a dry run plans the same counts and writes nothing. Run after the corpus pass, every turn.
 import { readAll, type Row } from "@/core/coupling/read";
 import type { Db } from "@/core/db";
+import { allRows } from "@/core/db";
+import { createdBy, GAP_NAMESPACE, planReflect } from "@/core/flywheel/flags";
+import { gapFindings, patternGaps } from "@/core/flywheel/gaps";
 import { PATTERN_METHODS } from "@/core/propagation/methods";
 import { registerDerivedValue } from "@/core/propagation/register";
 import type { InputRef } from "@/core/propagation/types";
@@ -11,6 +14,7 @@ import { PATTERNS } from "./config";
 import { DETECTORS } from "./detect";
 import { gradeOf } from "./facts";
 import { loadPatternInput } from "./load";
+import { trackPatterns } from "./signposts";
 import { KINDS, type Fact, type Pattern } from "./types";
 
 const DEAD = ["falsified", "obsolete", "superseded"];
@@ -26,6 +30,27 @@ function inputsOf(p: Pattern, facts: ReadonlyMap<string, Fact>): InputRef[] {
     seen.add(k);
     return [{ table: e.table, pk: e.pk, kind: e.kind, entities: e.entities, surface: facts.get(`${e.table}/${e.pk}`)?.surface ?? "unknown", ...(facts.get(`${e.table}/${e.pk}`)?.at ? { at: facts.get(`${e.table}/${e.pk}`)?.at as string } : {}), ...(e.relation ? { relation: e.relation } : {}), ...(e.summary ? { summary: e.summary } : {}) }];
   });
+}
+
+const OPEN = ["open", "in_review"];
+const NEED_CLOSED = "pattern need closed by rule: the vertex it names is no longer missing, or the pattern or trigger that raised it is gone.";
+/** The needs-search flags of the discovery hook (flywheel-gap kind, open): new needs are raised, a need the stage no longer raises is closed. A dry run counts both. */
+async function raiseNeeds(sb: Db, gaps: ReturnType<typeof patternGaps>, dry: boolean, nowIso: string): Promise<{ counts: Record<string, number>; notes: string[] }> {
+  const open = await allRows<{ id: string; subject_ref: string; created_by: string }>(sb, "integrity_flags", "id,subject_ref,created_by", { cap: 100_000, where: (q) => q.like("created_by", `${createdBy(GAP_NAMESPACE, "pattern_")}%`).in("status", OPEN) });
+  const plan = planReflect(open, gapFindings(gaps).map((f) => ({ ...f, row: { ...f.row, status: "open" as const } })));
+  const [counts, notes] = [{ pattern_needs: gaps.length, pattern_needs_raised: 0, pattern_needs_closed: 0 }, [] as string[]];
+  if (dry) return { counts: { ...counts, pattern_needs_raised: 0 }, notes };
+  if (plan.newRows.length) {
+    const ins = await sb.from("integrity_flags").insert(plan.newRows);
+    if (ins.error) notes.push(`pattern needs insert failed: ${ins.error.message}`);
+    else counts.pattern_needs_raised = plan.newRows.length;
+  }
+  if (plan.staleIds.length) {
+    const upd = await sb.from("integrity_flags").update({ status: "resolved", resolved_at: nowIso, resolved_by: "pattern-step", resolution_note: NEED_CLOSED }).in("id", plan.staleIds).in("status", OPEN);
+    if (upd.error) notes.push(`pattern needs close failed: ${upd.error.message}`);
+    else counts.pattern_needs_closed = plan.staleIds.length;
+  }
+  return { counts, notes };
 }
 
 export async function runPatterns(deps: { sb: Db; now: () => Date }, input: { dry: boolean }): Promise<RunResult> {
@@ -65,5 +90,10 @@ export async function runPatterns(deps: { sb: Db; now: () => Date }, input: { dr
     const ret = await sb.from("derived_values").update({ lifecycle: "obsolete", admissibility: "stale" }).in("value_id", gone.map((r) => String(r.value_id)));
     if (ret.error) notes.push(`retiring ${gone.length} pattern(s) failed: ${ret.error.message}`);
   }
+  // downstream, in the same run (rule 17): the signposts of the patterns found, and the needs-search rows a packet leaves open
+  Object.assign(counts, await trackPatterns(deps, { dry: input.dry, found, facts }));
+  const needs = await raiseNeeds(sb, patternGaps({ patterns: found, facts: loaded.input.facts, readerEdges: loaded.input.readerEdges ?? [], now }), input.dry, now.toISOString());
+  Object.assign(counts, needs.counts);
+  notes.push(...needs.notes);
   return { counts, outcome: notes.length ? "partial" : "ok", notes: input.dry ? [...notes, "dry: nothing written"] : notes };
 }

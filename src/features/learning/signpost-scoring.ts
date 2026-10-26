@@ -95,13 +95,15 @@ export async function runSignpostStep(deps: { step: SignpostStepDeps; now(): Dat
   c.events_seen = events.length;
   const entityIds = [...new Set(events.filter((e) => e.tableName !== "signposts" && e.entityId).map((e) => e.entityId as string))];
   const m = matchEventsToSignposts(events, entityIds.length ? await s.readSignpostsWatching(entityIds) : [], now);
-  Object.assign(c, { events_matched: m.eventsMatched, events_no_entity: m.eventsNoEntity, events_signpost_origin: m.signpostOriginEvents, events_late: m.late, signposts_evaluated: m.evaluated, signposts_fired: m.fires.length });
+  Object.assign(c, { events_matched: m.eventsMatched, events_no_entity: m.eventsNoEntity, events_signpost_origin: m.signpostOriginEvents, events_late: m.late, signposts_evaluated: m.evaluated });
   const toScore: Array<{ sp: SignpostRow; outcome: string; via: "event" | "repair" | "deadline"; eventId: string | null }> = [];
   const firedNow = new Set<string>();
   for (const f of m.fires) {
     if (apply) {
       try { await s.fire(f.signpost.entity_id, now, f.reason); } catch (e) { err(`fire ${f.signpost.entity_id}`, e); failed.add(f.event.eventId); continue; }
     }
+    // a firing is counted when the stamp was written (apply) or would be (dry): a fire that failed is an error and no firing, so the count is a write in apply
+    c.signposts_fired += 1;
     firedNow.add(f.signpost.entity_id);
     const outcome = outcomeForDirection(f.signpost.direction);
     if (outcome) toScore.push({ sp: f.signpost, outcome, via: "event", eventId: f.event.eventId });

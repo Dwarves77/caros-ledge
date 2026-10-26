@@ -56,10 +56,10 @@ export function plant(f: Fixture): void {
   db.seed("section_claim_provenance", rows.map((r) => r.claim));
   db.seed("obligation_objects", [
     // P2: a dated ratchet of the ReFuelEU instrument; P4 (corridor_links): an ocean-wide ratchet inside the recency window
-    { obligation_id: OBLIGATION.air, instrument_item_id: ITEM.reg, instrument_entity_id: E("instrument:32023R2405"), first_deadline: new Date(NOW.getTime() + 100 * 86_400_000).toISOString().slice(0, 10), mode: ["air"], applicability_trigger: {} },
-    { obligation_id: OBLIGATION.ocean, instrument_item_id: ITEM.reg, instrument_entity_id: null, first_deadline: new Date(NOW.getTime() + 30 * 86_400_000).toISOString().slice(0, 10), mode: ["ocean"], applicability_trigger: {} },
+    { obligation_id: OBLIGATION.air, instrument_item_id: ITEM.reg, instrument_entity_id: E("instrument:32023R2405"), due_date: new Date(NOW.getTime() + 100 * 86_400_000).toISOString().slice(0, 10), mode: ["air"], applicability_trigger: {} },
+    { obligation_id: OBLIGATION.ocean, instrument_item_id: ITEM.reg, instrument_entity_id: null, due_date: new Date(NOW.getTime() + 30 * 86_400_000).toISOString().slice(0, 10), mode: ["ocean"], applicability_trigger: {} },
     // a road-wide ratchet inside the recency window (P4 over the road links)
-    { obligation_id: OBLIGATION.road, instrument_item_id: ITEM.reg, instrument_entity_id: null, first_deadline: new Date(NOW.getTime() + 30 * 86_400_000).toISOString().slice(0, 10), mode: ["road"], applicability_trigger: {} },
+    { obligation_id: OBLIGATION.road, instrument_item_id: ITEM.reg, instrument_entity_id: null, due_date: new Date(NOW.getTime() + 30 * 86_400_000).toISOString().slice(0, 10), mode: ["road"], applicability_trigger: {} },
   ]);
   db.seed("oem_tech_roadmaps", [{ roadmap_id: uuid(400), manufacturer_id: null, tech_category: "saf_refinery", commercial_stage: "announced", target_year: 2029, announced_at: null, source_id: src(20), origin_class: "official", derivation: "assessed" }]);
   db.seed("item_forward_events", [{ id: uuid(500), intelligence_item_id: ITEM.reg, event_date: new Date(NOW.getTime() + 100 * 86_400_000).toISOString().slice(0, 10), date_precision: "day", event_kind: "phase_step", obligation_text: "next phase", source_kind: "claim", source_claim_id: HVO_CLAIM, source_span: "x", confidence: "high", extractor_version: "fixture" }]);
