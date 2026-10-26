@@ -12,7 +12,9 @@ export function patternMethod(kind: PatternKind): MethodFn {
   return (ctx) => {
     const gone = ctx.inputs.filter((i) => !i.row).map((i) => `${i.table}/${i.pk}`);
     if (gone.length) return { ok: false, reason: `evidence is gone or no longer current: ${gone.join(", ")}` };
-    const facts = ctx.inputs.map((i) => ({ fact: factOf(i.table, i.row as Record<string, unknown>, i.entities ?? [], { surface: i.surface, ...(i.at ? { at: i.at } : {}) }), input: i }));
+    // an obligation row is a ceiling in a penalty-abatement pattern and a ratchet in the others: the pattern's kind says which of the table's specs the evidence row was read as
+    const role = kind === "penaltyAbatement" ? "ceiling" : "ratchet";
+    const facts = ctx.inputs.map((i) => ({ fact: factOf(i.table, i.row as Record<string, unknown>, i.entities ?? [], { surface: i.surface, ...(i.at ? { at: i.at } : {}), role, now: ctx.now }), input: i }));
     if (facts.some((f) => !f.fact)) return { ok: false, reason: "an evidence table has no fact spec" };
     const all = facts.map((f) => f.fact as Fact);
     const relation = ctx.inputs.find((i) => i.relation)?.relation;

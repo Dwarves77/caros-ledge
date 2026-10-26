@@ -13,7 +13,7 @@ const registry = new Set((JSON.parse(readFileSync("src/core/producers/data/regis
 const writes = (table: string): string[] => outside.filter((f) => new RegExp(`from\\("${table}"\\)[\\s\\S]{0,500}?\\.(insert|upsert)\\(`).test(readFileSync(f, "utf8")));
 
 test("INV-CN2-7: every table a detector joins has a producer in the turn", () => {
-  const tables = Object.entries(FACT_SPECS).map(([t, s]) => s.edge ?? t).filter((t) => t !== "derived_values");
+  const tables = Object.entries(FACT_SPECS).map(([t, s]) => s[0]?.edge ?? t).filter((t) => t !== "derived_values");
   assert.ok(tables.length >= 9);
   const unfed = tables.filter((t) => !registry.has(t) && writes(t).length === 0);
   assert.deepEqual(unfed, []);

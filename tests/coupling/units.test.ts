@@ -42,10 +42,13 @@ test("a planted P5 pair: a ceiling stated as 'EUR 2 400 per tonne' meets an abat
   assert.deepEqual(DETECTORS.penaltyAbatement(input([tech, unknown as Fact, abate as Fact])), []);
 });
 
-test("a ratchet's figure is read in the canonical unit from the obligation's own statutory maximum", () => {
-  const f = factOf("obligation_objects", { obligation_id: "o1", first_deadline: "2027-01-01", statutory_maximum: "up to EUR 2 400 per tonne" }, ["e1"]);
-  assert.equal(f?.qty, 2400);
-  assert.equal(f?.unit, "EUR/t");
+test("a ceiling's figure is read in the canonical unit from the obligation's own statutory maximum; the ratchet reads the mandated quantity and its unit, never the penalty", () => {
+  const row = { obligation_id: "o1", due_date: "2027-01-01", statutory_maximum: "up to EUR 2 400 per tonne", mandated_quantity: 3.6, mandated_unit: "megawatts" };
+  const ceiling = factOf("obligation_objects", row, ["e1"], { role: "ceiling" });
+  assert.deepEqual([ceiling?.role, ceiling?.qty, ceiling?.unit], ["ceiling", 2400, "EUR/t"]);
+  const ratchet = factOf("obligation_objects", row, ["e1"], { role: "ratchet" });
+  assert.deepEqual([ratchet?.role, ratchet?.qty, ratchet?.unit, ratchet?.due], ["ratchet", 3.6, "MW", "2027-01-01"]);
+  assert.equal(factOf("obligation_objects", { obligation_id: "o2", statutory_maximum: "up to EUR 2 400 per tonne" }, ["e1"], { role: "ratchet" }), null, "a penalty with no mandated quantity and no date is no ratchet");
 });
 
 test("review F1: a pattern resting on a display_only abatement cost is graded display_only, one resting on an analysis_ok cost analysis_ok", async () => {

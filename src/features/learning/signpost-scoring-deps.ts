@@ -1,4 +1,5 @@
 // Ported from old_repo/src/lib/learning/prediction-scoring.mjs (lines 345-488)
+// The scorer's signposts are the ones that track a research assessment (assessment_id set); a pattern's signpost tracks an inference record and is scored by the pattern step (src/core/flywheel/patterns/signposts.ts), so no read here returns one.
 // The reads and guarded writes of the signpost step over the service client. Every read throws on a database error (a failed read is never an empty list); a column the
 // schema step did not apply is a schema failure, not a runtime branch. Firing is the one transactional database call (fireSignpost).
 import { fetchAllByIdChunks, fetchAllRows, type Db } from "@/core/db";
@@ -16,10 +17,10 @@ const ok = <T>(r: { data: T | null; error: { message: string } | null }, what: s
 export function buildSignpostStepDeps(sb: Db): SignpostStepDeps {
   const page = (build: (from: number, to: number) => unknown) => fetchAllRows<SignpostRow>(build as never, { cap: CAP });
   return {
-    readSignpostsWatching: (ids) => fetchAllByIdChunks(ids, async (slice) => ok(await sb.from("signposts").select(COLS).in("watches", slice).is("fired_at", null).is("outcome", null), "reading signposts") as SignpostRow[], { manyPerId: true }),
-    readFiredUnscored: () => page((a, b) => sb.from("signposts").select(COLS).not("fired_at", "is", null).is("outcome", null).order("entity_id", { ascending: true }).range(a, b)),
-    readDeadlineCandidates: async () => (await page((a, b) => sb.from("signposts").select(COLS).is("fired_at", null).is("outcome", null).order("entity_id", { ascending: true }).range(a, b))).filter((r) => deadlineMs(r.predicate) !== null),
-    readLifecycleUnapplied: () => page((a, b) => sb.from("signposts").select(COLS).not("fired_at", "is", null).is("lifecycle_applied_at", null).order("entity_id", { ascending: true }).range(a, b)),
+    readSignpostsWatching: (ids) => fetchAllByIdChunks(ids, async (slice) => ok(await sb.from("signposts").select(COLS).in("watches", slice).not("assessment_id", "is", null).is("fired_at", null).is("outcome", null), "reading signposts") as SignpostRow[], { manyPerId: true }),
+    readFiredUnscored: () => page((a, b) => sb.from("signposts").select(COLS).not("assessment_id", "is", null).not("fired_at", "is", null).is("outcome", null).order("entity_id", { ascending: true }).range(a, b)),
+    readDeadlineCandidates: async () => (await page((a, b) => sb.from("signposts").select(COLS).not("assessment_id", "is", null).is("fired_at", null).is("outcome", null).order("entity_id", { ascending: true }).range(a, b))).filter((r) => deadlineMs(r.predicate) !== null),
+    readLifecycleUnapplied: () => page((a, b) => sb.from("signposts").select(COLS).not("assessment_id", "is", null).not("fired_at", "is", null).is("lifecycle_applied_at", null).order("entity_id", { ascending: true }).range(a, b)),
     async readAssessments(ids) {
       const rows = await fetchAllByIdChunks(ids, async (slice) => ok(await sb.from("research_assessments").select("id,item_id,lifecycle_state").in("id", slice), "reading research_assessments") as Array<{ id: string; item_id: string | null; lifecycle_state: string | null }>);
       return new Map(rows.map((r) => [r.id, { item_id: r.item_id ?? null, lifecycle_state: r.lifecycle_state ?? "emerging" }]));
