@@ -1,0 +1,48 @@
+{
+  "ruling": "coordinator 2026-10-26: HEAL-1 regrounds instrument items 7a0ead55 and 15f63ea9 from their stored captures through the heal path; no fetch; the minting hold stands; revision 2, coordinator 2026-10-26 (HEAL-1b): the attribution repair follows the database, a failed unit is partial, and the honest strip removes the sentences no capture states (ADR-050, rule 2), reversible from claim_versions",
+  "revision": 2,
+  "steps": [
+    {
+      "name": "heal-dry",
+      "stage": "ops",
+      "mode": "dry",
+      "input": {
+        "ops": {
+          "op": "heal-quarantined",
+          "args": {
+            "selection": "ids",
+            "ids": [
+              "7a0ead55-7a7b-403b-8ba3-33862cb296e2",
+              "15f63ea9-4803-4bb4-b1a3-9ccdeb8a3050"
+            ],
+            "limit": 2,
+            "stripUnprovable": true
+          }
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "heal-apply",
+      "stage": "ops",
+      "mode": "apply",
+      "input": {
+        "ops": {
+          "op": "heal-quarantined",
+          "args": {
+            "selection": "ids",
+            "ids": [
+              "7a0ead55-7a7b-403b-8ba3-33862cb296e2",
+              "15f63ea9-4803-4bb4-b1a3-9ccdeb8a3050"
+            ],
+            "limit": 2,
+            "stripUnprovable": true
+          }
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    }
+  ]
+}

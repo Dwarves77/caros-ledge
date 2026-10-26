@@ -107,7 +107,7 @@ export function ActionCard({ band, kindLabel, nowIso, extraChips, tier, biasTags
           ))}
         </div>
       )}
-      {tagPopover && <div style={{ marginTop: hasTags ? 8 : 10 }}>{tagPopover}</div>}
+      {tagPopover && <div style={{ marginTop: hasTags ? "var(--sp-8)" : "var(--sp-10)" }}>{tagPopover}</div>}
       <div className="cl-ac-actions">
         <ActionRow onExport={onExport} onShare={onShare} watch={watch} onTag={onTag} exportDisabled={exportDisabled} overflow={overflow} {...(viewer !== undefined ? { viewer } : {})} />
       </div>

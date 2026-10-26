@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
 import { browserClient } from "@/core/db/browser";
+import { Button } from "@/ui";
 
 import styles from "./auth.module.css";
 import { AuthErrorBanner, AuthField } from "./AuthPanel";
@@ -37,9 +38,9 @@ export default function UpdatePasswordPage() {
         {done ? (
           <div className={styles.note}>
             Password updated.{" "}
-            <button type="button" className={styles.primary} onClick={() => router.push("/")}>
+            <Button type="button" variant="primary" className={styles.full} onClick={() => router.push("/")}>
               Continue
-            </button>
+            </Button>
           </div>
         ) : (
           <>
@@ -51,9 +52,9 @@ export default function UpdatePasswordPage() {
               <AuthField label="Confirm new password">
                 <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required autoComplete="new-password" minLength={8} className={styles.input} placeholder="Re-enter password" />
               </AuthField>
-              <button type="submit" disabled={loading} className={styles.primary}>
+              <Button type="submit" variant="primary" loading={loading} className={styles.full}>
                 {loading ? "Saving…" : "Update password"}
-              </button>
+              </Button>
             </form>
           </>
         )}

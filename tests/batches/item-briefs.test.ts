@@ -113,7 +113,7 @@ test("INV-211 (criterion 5): a required slot with no covering FACT is refused, a
   assert.match(refusals(silent), /the body leaves 2 required slot\(s\) silently unaddressed \(tariff_schedule, binding_position\)|silently unaddressed/);
 });
 
-test("regulatory_fact_document mirrors: depth accounting and qualification accounting refuse a thin 'Substantive Requirements' section", () => {
+test("regulatory_fact_document accounting (the accounting-line-present rule, residue): depth accounting and qualification accounting route a thin 'Substantive Requirements' section to residue with the rule id", () => {
   const w = batchWorld();
   const live = (b: ReturnType<typeof batchWorld>) => ({ items: new Map([[ITEM, { itemType: "regulation", grade: "record", status: "quarantined", hash: String(recordEntry(b.db).source_pool_hash), poolText: SPAN_REPORT, bytes: 10, fullBrief: null }]]), slots: new Map(), adopted: {}, now: NOW, allowOverwrite: false });
   const regBody = (req: string) => {
@@ -121,16 +121,16 @@ test("regulatory_fact_document mirrors: depth accounting and qualification accou
     return heads.map((h, i) => `# ${i + 1}. ${h}\n\n${i === 7 ? req : i === 13 ? "- 1 January 2027: entry into force" : "Some prose about the regulation."}`).join("\n\n");
   };
   const e = (req: string) => ({ item_id: ITEM, source_pool_hash: recordEntry(w.db).source_pool_hash, body: regBody(req), metadata: metadata({ format_type: "regulatory_fact_document", signal_band: null, requirement_trajectory: null }), claims: [factClaim(SPAN_REPORT, { section: "8" })] });
-  const missingLine = validateRecordBriefEntry(e(`${SPAN_REPORT}`), 0, live(w) as never).errors.join("\n");
-  assert.match(missingLine, /depth accounting: "Substantive Requirements" must end with the line/);
+  const missingLine = validateRecordBriefEntry(e(`${SPAN_REPORT}`), 0, live(w) as never).residue?.join("\n") ?? "";
+  assert.match(missingLine, /accounting-line-present: depth accounting: "Substantive Requirements" must end with the line/);
   assert.match(missingLine, /qualification accounting: no per-year trajectory captured/);
   assert.match(missingLine, /no exceptions are stated|No exceptions are stated/i);
-  const overstated = validateRecordBriefEntry(e(`${SPAN_REPORT}\n\nObligations surveyed: 5; workspace-adjacent: 4; extracted as FACT: 3.`), 0, live(w) as never).errors.join("\n");
+  const overstated = validateRecordBriefEntry(e(`${SPAN_REPORT}\n\nObligations surveyed: 5; workspace-adjacent: 4; extracted as FACT: 3.`), 0, live(w) as never).residue?.join("\n") ?? "";
   assert.match(overstated, /overstates the 1 FACT claim/);
   assert.match(overstated, /no "Shortfall: <reason>" line/);
-  const trailing = validateRecordBriefEntry(e(`${SPAN_REPORT}\n\nObligations surveyed: 1; workspace-adjacent: 1; extracted as FACT: 1.\n\nA new uncounted obligation.`), 0, live(w) as never).errors.join("\n");
+  const trailing = validateRecordBriefEntry(e(`${SPAN_REPORT}\n\nObligations surveyed: 1; workspace-adjacent: 1; extracted as FACT: 1.\n\nA new uncounted obligation.`), 0, live(w) as never).residue?.join("\n") ?? "";
   assert.match(trailing, /content follows the accounting line/);
-  const honest = validateRecordBriefEntry(e(`${SPAN_REPORT}\n\nNo phase-in is stated in Articles 1 to 4.\nNo exceptions are stated in Articles 1 to 4.\nNo scope limits are stated in Articles 1 to 4.\nObligations surveyed: 1; workspace-adjacent: 1; extracted as FACT: 1.`), 0, live(w) as never).errors.join("\n");
+  const honest = validateRecordBriefEntry(e(`${SPAN_REPORT}\n\nNo phase-in is stated in Articles 1 to 4.\nNo exceptions are stated in Articles 1 to 4.\nNo scope limits are stated in Articles 1 to 4.\nObligations surveyed: 1; workspace-adjacent: 1; extracted as FACT: 1.`), 0, live(w) as never).residue?.join("\n") ?? "";
   assert.doesNotMatch(honest, /depth accounting|qualification accounting/, honest);
 });
 

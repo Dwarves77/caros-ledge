@@ -10,7 +10,7 @@
 import { randomUUID } from "node:crypto";
 
 import { classifyHost } from "@/core/intake";
-import { capture } from "@/core/fetch";
+import { capture, FetchHoldError } from "@/core/fetch";
 import { isVerbatim } from "@/core/contracts/verbatim";
 import { fetchAllRows, type Db } from "@/core/db";
 import { authorityFloorFor, buildGateARow, derivedCoveredTokens, readRequiredSlots, scanGateA, upsertGateAState } from "@/core/grounding";
@@ -67,20 +67,28 @@ export async function healItem(deps: HealDeps, input: HealItemInput): Promise<He
     const resolver = buildResolver(sourceRows.filter((s) => !!s.url) as SourceRow[]);
     const captureById = (id: string | null | undefined): Capture | undefined => captures.find((c) => c.id === id);
 
+    // The claims the database itself lists as mis-attributed (ledger_attribution_violations): the only attributions this pass repairs. The database is the arbiter, not a second opinion of the resolver.
+    const violations = must("ledger_attribution_violations", await sb.rpc("ledger_attribution_violations", { p_item_id: item.id }));
+    const violating = new Set(((violations.data ?? []) as { claim_id: string }[]).map((v) => v.claim_id));
+
     // The ledger plan of this pass, and how a capture's own host resolves to its registered source (rule 18: an unknown host is registered and rated, a host that cannot be rated leaves the FACT unrated).
+    // The resolver names only a source the database accepts for the host (core/sources/host-relation.ts); the tier of a FACT is its source's own.
     const ops: LedgerOp[] = [];
+    const registeredTier = new Map<string, number | null>();
     const attr: AttributionCtx = {
       resolve: (url) => {
         const hit = resolver.resolveSpan(url);
         return hit.sourceId ? { sourceId: hit.sourceId } : null;
       },
-      ...(dry ? {} : { register: async (url: string) => { const reg = await registerAndRate(sb, url); return { sourceId: reg.status === "registered" || reg.status === "existing" ? reg.source_id : null }; } }),
+      ...(dry ? {} : { register: async (url: string) => { const reg = await registerAndRate(sb, url); const ok = reg.status === "registered" || reg.status === "existing"; if (ok) registeredTier.set(reg.source_id, reg.tier); return { sourceId: ok ? reg.source_id : null }; } }),
     };
+    const tierOfSourceId = (id: string | null): number | null => (id == null ? null : registeredTier.has(id) ? registeredTier.get(id) ?? null : idx.byId.get(id)?.tier_override ?? idx.byId.get(id)?.base_tier ?? null);
     /** Stand a FACT on `cap` with `span`: the planned op, and the in-memory claim moved with it for the steps after. */
     const repoint = async (c: HealClaim, cap: Capture, span: string, why: string): Promise<void> => {
       const op = (await reattributeClaim(c, { id: cap.id, url: cap.result_url ?? "" }, span, attr, `heal:${why}`)) as Extract<LedgerOp, { op: "claim" }>;
       if (!dry) ops.push(op);
-      Object.assign(c, { source_span: span, search_result_id: cap.id, source_id: op.row.source_id as string | null, source_tier_at_grounding: resolver.resolveSpan(cap.result_url ?? "").tier });
+      const sourceId = op.row.source_id as string | null;
+      Object.assign(c, { source_span: span, search_result_id: cap.id, source_id: sourceId, source_tier_at_grounding: tierOfSourceId(sourceId) });
     };
 
     // 1. capture, when the item has no usable capture of its own
@@ -90,8 +98,13 @@ export async function healItem(deps: HealDeps, input: HealItemInput): Promise<He
       else if (dry) steps.capture = "would_fetch";
       else {
         const key = item.canonical_instrument_key;
-        const res = await capture(url, classifyHost(url) === "eurlex" && key ? { family: "celex", key } : { family: "generic" }, deps.fetch);
-        if (res.usable && res.text) {
+        // The fetch hold (scrape cadence off, rule 16) is a state of the world, not a failure of the item: the pass goes on over the captures it holds.
+        const res = await capture(url, classifyHost(url) === "eurlex" && key ? { family: "celex", key } : { family: "generic" }, deps.fetch).catch((e: unknown) => {
+          if (e instanceof FetchHoldError) return e;
+          throw e;
+        });
+        if (res instanceof FetchHoldError) steps.capture = `held:fetch_hold:${res.reason}`;
+        else if (res.usable && res.text) {
           const ins = must("pool row insert", await sb.from("agent_run_searches").insert({ intelligence_item_id: item.id, search_query: "heal-provenance:capture", result_url: url, result_title: res.title, result_index: captures.length, result_content: res.text, searched_at: nowIso }).select("id").single());
           captures.push({ id: (ins.data as { id: string }).id, result_url: url, result_content: res.text });
           steps.capture = `captured:${res.transport}`;
@@ -123,10 +136,8 @@ export async function healItem(deps: HealDeps, input: HealItemInput): Promise<He
         await repoint(c, captureById(p.searchId) as Capture, p.newSpan, "ground");
         bump("ground_healed");
       } else if (p.outcome === "already_grounded") {
-        const own = captureById(c.search_result_id) as Capture;
-        const want = resolver.resolveSpan(own.result_url ?? "");
-        if ((want.sourceId ?? null) !== (c.source_id ?? null) || (want.tier ?? null) !== (c.source_tier_at_grounding ?? null)) {
-          await repoint(c, own, c.source_span as string, "attribution");
+        if (violating.has(c.id)) {
+          await repoint(c, captureById(c.search_result_id) as Capture, c.source_span as string, "attribution");
           bump("attribution_repaired");
         }
       } else if (p.outcome === "ungrounded_after_capture") bump("ungrounded");
@@ -169,8 +180,13 @@ export async function healItem(deps: HealDeps, input: HealItemInput): Promise<He
     const ctx: SourceCtx = { sb, fetch: deps.fetch, dry, nowIso, itemId: item.id, idx, cache, capCache: new Map(), captures, claims, fullBrief: item.full_brief, ops, sections, sectionFor: async (token) => findOwningSection(token, sections)?.id ?? recordSection() };
     const heldUrls = new Set(captures.map((c) => canonicalUrl(c.result_url)));
     const cited = [...new Set([...sections.flatMap((s) => [...(s.content_md ?? "").matchAll(CITED_URL)].map((m) => m[0])), ...claims.flatMap((c) => (c.source_id ? [idx.byId.get(c.source_id)?.url ?? ""] : []))].filter(Boolean))].filter((u) => !heldUrls.has(canonicalUrl(u))).slice(0, MAX_CITED);
-    if (!dry) for (const u of cited) { if (await capturePage(ctx, u).catch(() => null)) bump("cited_captured"); }
-    else bump("cited_would_fetch", cited.length);
+    if (!dry) {
+      for (const u of cited) {
+        const got = await capturePage(ctx, u).catch((e: unknown) => (e instanceof FetchHoldError ? e : null));
+        if (got instanceof FetchHoldError) { steps.cited = `held:fetch_hold:${got.reason}`; break; }
+        if (got) bump("cited_captured");
+      }
+    } else bump("cited_would_fetch", cited.length);
 
     // 6. re-source a FACT below the floor from a better capture
     const floor = authorityFloorFor(item.item_type);
@@ -226,6 +242,8 @@ export async function healItem(deps: HealDeps, input: HealItemInput): Promise<He
     if (unprovable.length) {
       const plan = planBriefHonest(item.full_brief, unprovable, facts(), derived);
       steps.brief_honest = plan.outcome;
+      steps.strip = plan.perToken.map((t) => `${t.token}: ${t.outcome}${t.removed ? ` (${t.removed.length} cut)` : ""}`);
+      if (input.stripUnprovable) bump(`strip_${plan.outcome}`);
       if (plan.outcome === "accepted" && input.stripUnprovable && !dry) {
         ops.push({ op: "brief", full_brief: plan.newFullBrief });
         restore = { itemId: item.id, previous: plan.previous };
@@ -258,6 +276,7 @@ export async function healItem(deps: HealDeps, input: HealItemInput): Promise<He
       const applied = await applyLedgerOps(sb, item.id, ops, nowIso);
       steps.ledger = applied;
       bump("ledger_ops", ops.length);
+      bump("healed"); // the ops family's declared write: a pass that changed the ledger must not record itself as a noop
     }
 
     // 11. the Gate A state, written before the re-derive so criterion 7 finds it current
@@ -333,6 +352,7 @@ export async function healQuarantined(deps: HealDeps, input: HealSweepInput = {}
       counts.failed = (counts.failed ?? 0) + 1;
       notes.push(`${itemId}: ${r.notes.at(-1) ?? "failed"}`);
     }
+    if (input.stripUnprovable && Array.isArray(r.steps.strip)) notes.push(`${itemId}: honest strip ${String(r.steps.brief_honest)}: ${(r.steps.strip as string[]).join("; ")}`);
   }
   return { ...runResult(counts.failed ? "partial" : "ok", counts, notes), results };
 }

@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 
 import { z } from "zod";
 
+import { opNames } from "../../src/core/turn/ops.ts";
 import { STAGES } from "../../src/core/turn/registry.ts";
 
 export const PRODUCER_ENV = /^[A-Z0-9_]+_ENABLED=1$/;
@@ -12,7 +13,8 @@ const REGISTRY = new Set(JSON.parse(readFileSync(new URL("../../src/core/produce
 
 const Step = z.strictObject({
   name: z.string().min(1),
-  stage: z.enum(STAGES),
+  /** The turn's stages, and `ops`: an operator task (heal, derive, backfill) is one firing of the ops family and is ruled like a stage (HEAL-1). Its input is {ops: {op, args}}. */
+  stage: z.enum([...STAGES, "ops"]),
   mode: z.enum(["dry", "apply"]),
   input: z.record(z.string(), z.unknown()),
   producer_env: z.array(z.string().regex(PRODUCER_ENV)),
@@ -46,6 +48,14 @@ export const Plan = z
     p.steps.forEach((s, i) => {
       const only = s.input.propagate?.producers?.only;
       if (only !== undefined && !REGISTRY.has(only)) ctx.addIssue({ code: "custom", path: ["steps", i, "input"], message: `step "${s.name}": producers.only "${String(only)}" is not an entry of src/core/producers/data/registry.json` });
+    });
+  })
+  .superRefine((p, ctx) => {
+    const ops = opNames();
+    p.steps.forEach((s, i) => {
+      const op = s.input.ops?.op;
+      if (s.stage === "ops" && !ops.includes(op)) ctx.addIssue({ code: "custom", path: ["steps", i, "input"], message: `step "${s.name}": input.ops.op "${String(op)}" is not an op of src/core/turn/ops.ts (ops: ${ops.join(", ")})` });
+      if (s.stage !== "ops" && s.input.ops !== undefined) ctx.addIssue({ code: "custom", path: ["steps", i, "input"], message: `step "${s.name}": input.ops belongs to a stage "ops" step` });
     });
   })
   .superRefine((p, ctx) => {
