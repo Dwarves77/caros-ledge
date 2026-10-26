@@ -21,8 +21,7 @@ const join = (...parts: (string | undefined)[]): string => parts.filter(Boolean)
 /** "2008/50/ec" -> "2008/50/EC": the basis suffix in the vocabulary's own spelling. */
 const withBasis = (number: string): string => number.replace(/\/([a-z]+)$/i, (_, b: string) => `/${canon(H.legalBases, b)}`);
 
-/** The formal act head of `title`, or `title` itself when it has none. */
-export function displayTitle(title: string): string {
+function actHead(title: string): string {
   const qual = (m: RegExpMatchArray, at = 2): string | undefined => canon(H.qualifiers, m[at]);
   const type = (m: RegExpMatchArray, at = 3): string | undefined => canon(H.types, m[at]);
   let m = BRACKETED.exec(title);
@@ -34,4 +33,20 @@ export function displayTitle(title: string): string {
   m = DATED.exec(title);
   if (m) return join(canon(H.issuers, m[1]), qual(m), type(m), H.dateJoiner, m[4], canon(H.months, m[5]), m[6]);
   return title;
+}
+
+const SUBJECT = new RegExp(`\\b${H.dateJoiner}\\s+\\d{1,2}\\s+(?:${words(H.months)})\\s+\\d{4}\\s+(on\\s[\\s\\S]*)$`, "i");
+const SUBJECT_CUTS = [", amending", ", and repealing", "(Text with", " ANNEX"];
+/**
+ * The formal act head of `title`, or `title` itself when it has none. With `withSubject` (the short name a list row and a detail page title draw, ROWS-1) the subject clause of the title's own grammar follows the head
+ * ("of <date> on <subject>"), cut at the first ", amending", ", and repealing", "(Text with" or annex. The words are the title's; a title with no "on <subject>" clause after its date gives the head alone.
+ */
+export function displayTitle(title: string, withSubject = false): string {
+  const head = actHead(title);
+  if (!withSubject || head === title) return head;
+  const clause = SUBJECT.exec(title)?.[1];
+  if (!clause) return head;
+  const cut = Math.min(clause.length, ...SUBJECT_CUTS.map((c) => (clause.indexOf(c) < 0 ? clause.length : clause.indexOf(c))));
+  const subject = clause.slice(0, cut).replace(/[\s,;:]+$/, "").replace(/\s+/g, " ");
+  return subject ? `${head} ${subject}` : head;
 }

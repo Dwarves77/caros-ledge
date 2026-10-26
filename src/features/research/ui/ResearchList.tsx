@@ -15,10 +15,7 @@ import { filterByWindow, WINDOW_OPTIONS } from "@/ui/list-surface/filter-sort";
 import { ShellCommandBar } from "@/ui/shell/CommandBar";
 import { DenominatorLine } from "@/features/coverage";
 import { useTagsFacet } from "@/features/regulations/useTagsFacet";
-import { itemTypeLabel } from "@/features/market/lib/item-type";
-import { severityLabel } from "@/features/market/lib/severity";
 
-import { horizonMetaLabel } from "../model/assessment-view";
 import { NEW_WINDOW_DAYS, THEME_KEYS, themeLabel, themeOf } from "../model/taxonomy";
 import { UNCLASSIFIED } from "../theme-rules";
 import type { ResearchPageData } from "../read/research-reads";
@@ -81,16 +78,7 @@ export function ResearchList({ data, nowIso, chips, denominator, chipsFailed = f
     { key: "region", label: "Region", options: aggregates === null ? [] : counts.region, selected: filter.region, onSelect: (v) => url.setFacet("region", v) },
   ];
   const tagGroup: FacetGroup = { key: "workspace-tags", label: "Workspace tags", options: tagsFacet.tags.map((t) => ({ value: t.id, label: t.name, count: t.itemCount })), selected: tagsFacet.selected, onSelect: tagsFacet.setSelected };
-  const assessments = data.assessments;
-  const rowsByBand = useMemo(
-    () =>
-      bandedRows(filtered, {
-        list: "research", menuLabel: "Research item actions", bandKey: filter.band, now,
-        meta: (r) => [itemTypeLabel(r.type), themeOf(r) ? themeLabel(themeOf(r) as string) : null, r.sub || (r.modes ?? []).join(", "), horizonMetaLabel(assessments?.[r.id])].filter(Boolean).join(" · "),
-        kind: (r) => severityLabel(r.severity) ?? undefined,
-      }),
-    [filtered, filter.band, now, assessments],
-  );
+  const rowsByBand = useMemo(() => bandedRows(filtered, { list: "research", menuLabel: "Research item actions", bandKey: filter.band, now }), [filtered, filter.band, now]);
   const awarenessNote = useMemo(() => filtered.filter((r) => bandFromPriority(r.priority).key === "awareness" && !isImpactScored(r.impactScores)).length, [filtered]);
   const total = counts.total;
   const windowDays = WINDOW_OPTIONS.find((o) => o.key === windowKey)?.days ?? null;
@@ -112,7 +100,6 @@ export function ResearchList({ data, nowIso, chips, denominator, chipsFailed = f
         <span className={styles.fine}>Two scores, never merged. Open a chip for its detail.</span>
       </div>
       <BiasLegend />
-      {assessments === null && <StateNote tone="error" action={{ label: "Retry", onClick: () => router.refresh() }}>Horizon assessments did not load, so rows carry no horizon band.</StateNote>}
     </div>
   );
   return (

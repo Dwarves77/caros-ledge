@@ -5,7 +5,7 @@
 // Usage: node tests/ux/market-smoke.mjs --base <origin>     (the server must run with UI_FIXTURES=1)
 import { checkClientReads, SHELL_READS } from './client-sweep.mjs';
 import { chromium, open as openPage, smoke, VIEWPORTS, WIDTHS } from './harness.mjs';
-import { listInvariants } from './list-invariants.mjs';
+import { listInvariants, rowReport } from './list-invariants.mjs';
 import { measurePage } from './measure.mjs';
 
 const run = smoke('market-smoke');
@@ -44,6 +44,7 @@ try {
         try {
           for (const o of await measurePage(s.page, { rows: false })) fail(where, o);
           for (const o of await listInvariants(s.page)) fail(where, o);
+          await rowReport(s.page, `market ${where}`, `market-${path.includes('failed') ? 'failed' : 'ok'}`);
           for (const e of s.errors) fail(where, `page error: ${e}`);
         } finally {
           await s.ctx.close();

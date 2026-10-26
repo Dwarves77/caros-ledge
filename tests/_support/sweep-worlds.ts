@@ -19,10 +19,10 @@ const EXTRA: Row[] = [
 const SURFACE_DOMAINS: Record<string, number[]> = { get_workspace_intelligence_listings: [1], get_workspace_intelligence_listings_public: [1], get_market_intel_items_public: [2, 4], get_research_items_public: [7], get_operations_items_public: [3, 6], get_market_intel_items: [2, 4], get_research_items: [7], get_operations_items: [3, 6] };
 
 /** The member's client over the database: the signed-in claims, and an rpc the page can range (PostgREST's rpc builder is chainable; the stand-in answers the whole list for any range). */
-function memberClient(db: MemDb): Any {
+function memberClient(db: MemDb, metadata?: Record<string, unknown>): Any {
   return new Proxy(db, {
     get(target, prop) {
-      if (prop === "auth") return { getClaims: async () => ({ data: { claims: { sub: USER.member, email: "member@example.test" } }, error: null }) };
+      if (prop === "auth") return { getClaims: async () => ({ data: { claims: { sub: USER.member, email: "member@example.test", ...(metadata ? { user_metadata: metadata } : {}) } }, error: null }) };
       if (prop === "rpc") {
         return (name: string, args?: Record<string, unknown>) => {
           const call = target.rpc(name, args);
@@ -44,7 +44,8 @@ const portfolioRows = (): Record<string, Row[]> => ({
 
 const listRow = (i: Row): Row => ({ id: i.id, legacy_id: i.legacy_id, title: i.title, item_type: i.item_type, domain: i.domain, effective_priority: i.priority, added_date: "2026-10-01", full_brief: "x".repeat(60), source_id: null, effective_archived: false });
 
-export function memberWorld(): SweepWorld & { db: MemDb } {
+/** `metadata` is the sign-in provider's user_metadata in the session's claims. */
+export function memberWorld(metadata?: Record<string, unknown>): SweepWorld & { db: MemDb } {
   const base = seed();
   const items = [...(base.tables.intelligence_items ?? []), ...EXTRA];
   const watch = (base.tables.user_watchlist ?? []).map((r) => ({ ...r, item_type: "reg" }));
@@ -56,7 +57,7 @@ export function memberWorld(): SweepWorld & { db: MemDb } {
   db.rpcs.get_research_source_coverage = () => ({ data: [] });
   db.rpcs.load_settings_bundle = () => ({ data: { overrides: [], personal: [], supersessions: [], history: [], truncated: { overrides: false, personal: false, supersessions: false } } });
   void ORG;
-  scripted.user = () => memberClient(db);
+  scripted.user = () => memberClient(db, metadata);
   scripted.service = null;
   return {
     db,

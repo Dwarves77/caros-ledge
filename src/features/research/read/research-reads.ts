@@ -6,15 +6,14 @@
 // Ported from old_repo/src/lib/research/read-signposts.mjs (lines 120-144)
 // The Research readers, on the query kit (tables read: research_assessments_current, research_assessment_history, signposts, entities, intelligence_items; the list itself is the shared list read in features/lists).
 // A failed read is a failed state beside what did load, never an empty list and never "none yet" (INV-263): the old readers dropped every error and read an outage as "no assessment".
-import { fetchAllByIdChunks, type Db } from "@/core/db";
+import type { Db } from "@/core/db";
 import { log } from "@/core/shared/log";
 import type { Resource } from "@/core/types";
 import { readCategory, readSurfaceCounts, type WorkspaceAggregates } from "@/features/lists";
 
-import { ASSESSMENT_COLUMNS, selectAssessmentView, selectAssessmentViewsByItemId, selectHistoryEntry, selectSignpostView, SIGNPOST_COLUMNS, type AssessmentRow, type AssessmentView, type HistoryEntry, type SignpostRow, type SignpostView } from "../model/assessment-view";
+import { ASSESSMENT_COLUMNS, selectAssessmentView, selectHistoryEntry, selectSignpostView, SIGNPOST_COLUMNS, type AssessmentRow, type AssessmentView, type HistoryEntry, type SignpostRow, type SignpostView } from "../model/assessment-view";
 
 const MAX_CHAIN = 25;
-const isUuid = (s: string): boolean => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
 const warn = (what: string, e: unknown): void => log.warn(`[research-reads] ${what} failed:`, e instanceof Error ? e.message : String(e));
 
 export interface ResearchCoverageCell {
@@ -28,38 +27,6 @@ export interface ResearchPageData {
   aggregates: WorkspaceAggregates | null;
   /** Null when the coverage read failed (the rail says so); an empty list is an honest empty matrix. */
   coverage: ResearchCoverageCell[] | null;
-  /** The current assessment per item, keyed by the item's list id; null when the batch read failed. */
-  assessments: Record<string, AssessmentView> | null;
-}
-
-/** The uuid behind each list id (a legacy id is looked up); an id with no row has no entry. */
-async function uuidsOf(db: Db, listIds: readonly string[]): Promise<Map<string, string>> {
-  const out = new Map(listIds.filter(isUuid).map((id) => [id, id]));
-  const legacy = listIds.filter((id) => !isUuid(id));
-  const rows = await fetchAllByIdChunks(legacy, async (slice) => {
-    const { data, error } = await db.from("intelligence_items").select("id, legacy_id").in("legacy_id", slice);
-    if (error) throw new Error(error.message);
-    return (data ?? []) as Array<{ id: string; legacy_id: string }>;
-  });
-  for (const r of rows) out.set(r.legacy_id, r.id);
-  return out;
-}
-
-/** The batched current assessments for the rows a page shows: one chunked read of the view, keyed by list id. */
-async function readAssessmentsFor(db: Db, listIds: readonly string[]): Promise<Record<string, AssessmentView>> {
-  const uuid = await uuidsOf(db, listIds);
-  const rows = await fetchAllByIdChunks([...uuid.values()], async (slice) => {
-    const { data, error } = await db.from("research_assessments_current").select(ASSESSMENT_COLUMNS).in("item_id", slice);
-    if (error) throw new Error(error.message);
-    return (data ?? []) as unknown as AssessmentRow[];
-  });
-  const byUuid = selectAssessmentViewsByItemId(rows);
-  const out: Record<string, AssessmentView> = {};
-  for (const [listId, id] of uuid) {
-    const v = byUuid.get(id);
-    if (v) out[listId] = v;
-  }
-  return out;
 }
 
 async function readCoverage(db: Db): Promise<ResearchCoverageCell[]> {
@@ -80,12 +47,11 @@ const settle = async <T>(what: string, read: () => Promise<T>): Promise<T | null
   }
 };
 
-/** Everything /research draws: the category-routed public items, the corpus tallies, the source coverage and the batched assessments, each with its own failed state. */
+/** Everything /research draws: the category-routed public items, the corpus tallies, and the source coverage, each with its own failed state. */
 /** `orgId` is the member's org: get_surface_counts refuses a null org to every caller but the service role (migration 361), and the Region facet is offered from its surface-wide tally. */
 export async function readResearchPage(db: Db, orgId: string | null): Promise<ResearchPageData> {
   const [category, aggregates, coverage] = await Promise.all([readCategory(db, orgId ? "get_research_items" : "get_research_items_public", orgId), readSurfaceCounts(db, orgId, "research"), settle("source coverage", () => readCoverage(db))]);
-  const assessments = category.failed ? null : await settle("assessments", () => readAssessmentsFor(db, category.resources.map((r) => r.id)));
-  return { rows: category.resources, rowsFailed: category.failed, aggregates, coverage, assessments };
+  return { rows: category.resources, rowsFailed: category.failed, aggregates, coverage };
 }
 
 export interface AssessmentBundle {

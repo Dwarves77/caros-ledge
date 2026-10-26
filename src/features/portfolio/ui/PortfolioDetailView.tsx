@@ -145,7 +145,7 @@ export function PortfolioDetailView({ view, readOnly, dateLabel, nowIso }: { vie
               {g.rows.map((r) => {
                 const f = fieldsOf(r);
                 return (
-                  <ListRow key={r.itemUuid} href={f.href} band={bandFromPriority(f.priority)} jurisdiction={f.jurisdiction} title={f.title} meta={f.meta} impact={f.impact} due={f.due} timeline={f.timeline} tier={f.tier} biasTags={f.biasTags ?? null} itemGrade={f.itemGrade} overflow={<RowActions title={f.title} type={WATCH_TYPE[g.surface]} id={r.uiId} items={readOnly ? [] : removeItem(() => void remove({ itemId: r.itemUuid }))} />} />
+                  <ListRow key={r.itemUuid} href={f.href} band={bandFromPriority(f.priority)} itemType={f.type} jurisdiction={f.jurisdiction} title={f.title} summary={f.summary} due={f.due} tier={f.tier} overflow={<RowActions title={f.title} type={WATCH_TYPE[g.surface]} id={r.uiId} items={readOnly ? [] : removeItem(() => void remove({ itemId: r.itemUuid }))} />} />
                 );
               })}
               <CardFoot left={`${g.rows.length} of ${heldCount} held items in this portfolio`} right={null} />
@@ -156,7 +156,7 @@ export function PortfolioDetailView({ view, readOnly, dateLabel, nowIso }: { vie
               <SectionHead title={`Corridors and entities · ${entityRows.length}`} aside="Spine entities" />
               <ListRowHeader titleLabel="Name" />
               {entityRows.map((e) => (
-                <ListRow key={e.entityId} href={`/search?q=${encodeURIComponent(e.label)}`} band={NEUTRAL_BAND} jurisdiction="" title={e.label} meta={ENTITY_KIND_LABEL[e.entityKind] ?? e.entityKind} overflow={readOnly ? undefined : <Menu label={`Actions for ${e.label}`} items={removeItem(() => void remove({ entityId: e.entityId }))} />} />
+                <ListRow key={e.entityId} href={`/search?q=${encodeURIComponent(e.label)}`} band={NEUTRAL_BAND} itemType="reference" typeLabel={ENTITY_KIND_LABEL[e.entityKind] ?? e.entityKind} title={e.label} overflow={readOnly ? undefined : <Menu label={`Actions for ${e.label}`} items={removeItem(() => void remove({ entityId: e.entityId }))} />} />
               ))}
               <CardFoot left="Open an entity to search the platform for what it holds about it." right={null} />
             </SectionCard>

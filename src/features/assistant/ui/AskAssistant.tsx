@@ -32,7 +32,7 @@ function Hit({ h }: { h: AskHit }) {
   const cited = s?.citationCount != null ? `cited by ${formatNumber(s.citationCount)} ${s.citationCount === 1 ? "item" : "items"}` : null;
   return (
     <div className={styles.hit}>
-      <ListRow href={h.href} band={bandFromPriority(h.priority)} jurisdiction={h.jurisdiction} title={h.title} meta={h.meta} tier={h.tier} />
+      <ListRow href={h.href} band={bandFromPriority(h.priority)} itemType={h.type} jurisdiction={h.jurisdiction} title={h.title} tier={h.tier} />
       <details className={styles.more}>
         <summary>Source and excerpt</summary>
         <div className={styles.moreBody}>
