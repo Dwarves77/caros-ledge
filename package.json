@@ -11,7 +11,7 @@
     "start": "next start",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.tests.json --noEmit",
-    "test": "node --import ./tests/_support/register.mjs --test \"tests/**/*.test.mjs\" \"tests/**/*.test.ts\"",
+    "test": "node scripts/ci/test.mjs",
     "loc": "node scripts/ci/loc.mjs",
     "properties": "node scripts/ci/properties.mjs",
     "schema:apply": "node scripts/ci/schema-apply.mjs",
