@@ -261,3 +261,18 @@ test('gateProblems: a run entry names real routes, a reason, both anchors and a 
   assert.match(bad({ as: undefined }), /needs after, before and as/);
   assert.match(bad({ before: undefined }), /needs after, before and as/);
 });
+
+// PARITY-6 (main run 40373840535): the map's jurisdiction register is ordered by count desc then label; DRAIN-1 moved Australia ahead of Brazil and Japan. The capture marks the register's links as item slots
+// (contract.mjs ITEM_SLOT_SELECTOR), so their order is data and their presence is design.
+test('PARITY-6: reordered register rows pass when marked as item slots; unmarked they fail; a vanished register still fails', () => {
+  const link = (name, item) => ({ role: 'link', name, ...(item ? { item: true } : {}) });
+  const rec = (names, item) => ({ landmarks: [], headings: [], rows: { items: [] }, controls: [{ role: 'button', name: 'Reset' }, ...names.map((n) => link(n, item))] });
+  const b = rec(['Brazil', 'Japan', 'Australia'], false);
+  const run = (cap) => compareRecord('map', '1280x900', b, cap, []).fails;
+  assert.deepEqual(run(rec(['Australia', 'Brazil', 'Japan'], false)), ['control reordered: link:Australia'], 'red-first: unmarked, the CI failure reproduces');
+  assert.deepEqual(run(rec(['Australia', 'Brazil', 'Japan'], true)), [], 'marked as slots: order is data');
+  assert.equal(run(rec([], true)).length > 0, true, 'register gone: fails');
+  assert.deepEqual(run(rec(['Brazil', 'Japan', 'Australia'], true)), []);
+  const two = (names) => ({ landmarks: [], headings: [], rows: { items: [] }, controls: [...names.map((n) => ({ role: 'button', name: n })), link('Brazil', true)] });
+  assert.deepEqual(compareRecord('map', '1280x900', two(['Reset', 'Zoom']), two(['Zoom', 'Reset']), []).fails.length > 0, true, 'an unmarked control keeps its order');
+});

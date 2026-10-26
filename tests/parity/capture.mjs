@@ -22,7 +22,7 @@ import { chromium } from 'playwright';
 import { installBypass } from '../../scripts/ci/live/bypass.mjs';
 import { measurePage } from '../ux/measure.mjs';
 
-import { CAPTURE_CONTRACT, CAPTURE_NOW, CAPTURE_VIEWPORTS as VIEWPORTS, ITEM_PATH, ROW_SELECTOR, SCREEN_MAX_HEIGHT } from './contract.mjs';
+import { CAPTURE_CONTRACT, CAPTURE_NOW, CAPTURE_VIEWPORTS as VIEWPORTS, ITEM_PATH, ITEM_SLOT_SELECTOR, ROW_SELECTOR, SCREEN_MAX_HEIGHT } from './contract.mjs';
 
 export { SCREEN_MAX_HEIGHT };
 // A page that navigates its main frame more often than this after goto is looping (a reload on every auth event, a redirect cycle).
@@ -187,7 +187,7 @@ async function discover(page, base, route, gates, baselineIndex) {
 }
 
 // Runs in the page. Helpers live inside so the whole function serialises as one unit. Exported so the UX smoke records its fixture pages the same way (`{ rowSelector: ROW_SELECTOR }`).
-export function domSummary({ rowSelector, itemPath = null, itemPage = false }) {
+export function domSummary({ rowSelector, itemPath = null, itemPage = false, slotSelector = null }) {
   const clean = (s) => (s || '').replace(/\s+/g, ' ').trim();
   const rendered = (el) => el.getClientRects().length > 0;
   const accName = (el) => {
@@ -242,7 +242,8 @@ export function domSummary({ rowSelector, itemPath = null, itemPage = false }) {
   };
   const inRow = (el) => Boolean(itemRoute && rowSelector && el.closest(rowSelector));
   const inItemSection = (el) => Boolean(itemPage && el.closest('#related, #across-pages, [data-guard-container="cross-page"], [data-part="item-connections"]'));
-  const isItem = (el) => isItemLink(el) || inRow(el) || inItemSection(el);
+  const inSlot = (el) => Boolean(slotSelector && el.closest(slotSelector));
+  const isItem = (el) => isItemLink(el) || inRow(el) || inItemSection(el) || inSlot(el);
 
   const landmarks = [];
   const landmarkSelector = 'header, nav, main, footer, aside, form, section, [role=banner], [role=navigation], [role=main], [role=contentinfo], [role=complementary], [role=region], [role=search], [role=form]';
@@ -428,7 +429,7 @@ async function captureAttempt(browser, base, route, path, viewport, storage, out
     }
     const finalUrl = new URL(page.url());
     await hydrated(page);
-    const dom = await page.evaluate(domSummary, { rowSelector: ROW_SELECTOR, itemPath: ITEM_PATH, itemPage: Boolean(route.discover) });
+    const dom = await page.evaluate(domSummary, { rowSelector: ROW_SELECTOR, itemPath: ITEM_PATH, itemPage: Boolean(route.discover), slotSelector: ITEM_SLOT_SELECTOR });
     const accessibility = await accessibilitySnapshot(page);
     // The layout measure (law 2 targets, overflow, titles) runs on every route at every width the capture visits; the compare fails on what it finds.
     const offences = await measurePage(page, { scope: 'body *' });
