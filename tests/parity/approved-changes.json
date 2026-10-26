@@ -460,6 +460,27 @@
       "viewport": "375x812",
       "maxDiff": 0.03,
       "ruling": "operator look ruling 2026-10-26 (BTN-1): button gradient, four-layer shadow, pressed state (src/ui/base.css .cl-btn, tokens in src/ui/theme.css). Controls: the masthead Ask button (secondary) and the command bar, 46 px tall for law 2. Same-machine old-versus-new capture of this route at 375x812 differs by 0.33% from the button look alone (baseline diff before this change under the 2% threshold); the ceiling is that sum with margin, so any other change to the route still fails."
+    },
+    {
+      "id": "title-1-formal-title-dashboard",
+      "route": "dashboard",
+      "kind": "row",
+      "match": "^div:[A-Z—]*(?:#/#/(?:[eE][eE][cC]|[eE][cC]|[eE][uU]|[eE][uU][rR][aA][tT][oO][mM]): |(?:(?:[cC][oO][mM][mM][iI][sS][sS][iI][oO][nN]|[cC][oO][uU][nN][cC][iI][lL]|[eE][uU][rR][oO][pP][eE][aA][nN] [pP][aA][rR][lL][iI][aA][mM][eE][nN][tT] [aA][nN][dD] [cC][oO][uU][nN][cC][iI][lL]) )?(?:(?:[iI][mM][pP][lL][eE][mM][eE][nN][tT][iI][nN][gG]|[dD][eE][lL][eE][gG][aA][tT][eE][dD]) )?(?:[rR][eE][gG][uU][lL][aA][tT][iI][oO][nN]|[dD][iI][rR][eE][cC][tT][iI][vV][eE]|[dD][eE][cC][iI][sS][iI][oO][nN]|[rR][eE][cC][oO][mM][mM][eE][nN][dD][aA][tT][iI][oO][nN]) (?:\\((?:[eE][uU]|[eE][cC]|[eE][eE][cC]|[eE][uU][rR][aA][tT][oO][mM])\\) |[nN][oO] #/|#/#/|[oO][fF] # ))",
+      "ruling": "Operator look ruling 2026-10-26 (TITLE-1): formal display titles and a 2-line clamp. A list row draws the formal act head of an EU instrument (\"Implementing Regulation (EU) 2023/2122\", src/core/lists/display-title.ts) where it drew the full official title, so the row's text differs from the baseline's after the head; a title with no act head is unchanged. Covers only a baseline row whose title opens with an act head (an optional issuer, an optional Implementing or Delegated, then Regulation, Directive, Decision or Recommendation and its number, or a number-first form such as 2001/118/EC: Commission Decision); checked against the committed baseline rows: it matches exactly the rows the new title changes and no other. Row heights only fall. Retire this entry when the baseline is recaptured from production after the TITLE-1 merge."
+    },
+    {
+      "id": "title-1-formal-title-regulations",
+      "route": "regulations",
+      "kind": "row",
+      "match": "^div:[A-Z—]*(?:#/#/(?:[eE][eE][cC]|[eE][cC]|[eE][uU]|[eE][uU][rR][aA][tT][oO][mM]): |(?:(?:[cC][oO][mM][mM][iI][sS][sS][iI][oO][nN]|[cC][oO][uU][nN][cC][iI][lL]|[eE][uU][rR][oO][pP][eE][aA][nN] [pP][aA][rR][lL][iI][aA][mM][eE][nN][tT] [aA][nN][dD] [cC][oO][uU][nN][cC][iI][lL]) )?(?:(?:[iI][mM][pP][lL][eE][mM][eE][nN][tT][iI][nN][gG]|[dD][eE][lL][eE][gG][aA][tT][eE][dD]) )?(?:[rR][eE][gG][uU][lL][aA][tT][iI][oO][nN]|[dD][iI][rR][eE][cC][tT][iI][vV][eE]|[dD][eE][cC][iI][sS][iI][oO][nN]|[rR][eE][cC][oO][mM][mM][eE][nN][dD][aA][tT][iI][oO][nN]) (?:\\((?:[eE][uU]|[eE][cC]|[eE][eE][cC]|[eE][uU][rR][aA][tT][oO][mM])\\) |[nN][oO] #/|#/#/|[oO][fF] # ))",
+      "ruling": "Operator look ruling 2026-10-26 (TITLE-1): formal display titles and a 2-line clamp. A list row draws the formal act head of an EU instrument (\"Implementing Regulation (EU) 2023/2122\", src/core/lists/display-title.ts) where it drew the full official title, so the row's text differs from the baseline's after the head; a title with no act head is unchanged. Covers only a baseline row whose title opens with an act head (an optional issuer, an optional Implementing or Delegated, then Regulation, Directive, Decision or Recommendation and its number, or a number-first form such as 2001/118/EC: Commission Decision); checked against the committed baseline rows: it matches exactly the rows the new title changes and no other. Row heights only fall. Retire this entry when the baseline is recaptured from production after the TITLE-1 merge."
+    },
+    {
+      "id": "title-1-formal-title-search-emissions",
+      "route": "search-emissions",
+      "kind": "row",
+      "match": "^div:[A-Z—]*(?:#/#/(?:[eE][eE][cC]|[eE][cC]|[eE][uU]|[eE][uU][rR][aA][tT][oO][mM]): |(?:(?:[cC][oO][mM][mM][iI][sS][sS][iI][oO][nN]|[cC][oO][uU][nN][cC][iI][lL]|[eE][uU][rR][oO][pP][eE][aA][nN] [pP][aA][rR][lL][iI][aA][mM][eE][nN][tT] [aA][nN][dD] [cC][oO][uU][nN][cC][iI][lL]) )?(?:(?:[iI][mM][pP][lL][eE][mM][eE][nN][tT][iI][nN][gG]|[dD][eE][lL][eE][gG][aA][tT][eE][dD]) )?(?:[rR][eE][gG][uU][lL][aA][tT][iI][oO][nN]|[dD][iI][rR][eE][cC][tT][iI][vV][eE]|[dD][eE][cC][iI][sS][iI][oO][nN]|[rR][eE][cC][oO][mM][mM][eE][nN][dD][aA][tT][iI][oO][nN]) (?:\\((?:[eE][uU]|[eE][cC]|[eE][eE][cC]|[eE][uU][rR][aA][tT][oO][mM])\\) |[nN][oO] #/|#/#/|[oO][fF] # ))",
+      "ruling": "Operator look ruling 2026-10-26 (TITLE-1): formal display titles and a 2-line clamp. A list row draws the formal act head of an EU instrument (\"Implementing Regulation (EU) 2023/2122\", src/core/lists/display-title.ts) where it drew the full official title, so the row's text differs from the baseline's after the head; a title with no act head is unchanged. Covers only a baseline row whose title opens with an act head (an optional issuer, an optional Implementing or Delegated, then Regulation, Directive, Decision or Recommendation and its number, or a number-first form such as 2001/118/EC: Commission Decision); checked against the committed baseline rows: it matches exactly the rows the new title changes and no other. Row heights only fall. Retire this entry when the baseline is recaptured from production after the TITLE-1 merge."
     }
   ]
 }

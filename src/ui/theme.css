@@ -52,6 +52,8 @@
   --font-display: var(--font-anton), var(--font-anton-ext), system-ui, sans-serif;
   --fs-85: 8.5px; --fs-95: 9.5px; --fs-10: 10px; --fs-105: 10.5px; --fs-11: 11px; --fs-115: 11.5px;
   --fs-12: 12px; --fs-125: 12.5px; --fs-13: 13px; --fs-14: 14px; --fs-22: 22px;
+  /* a list row's title wraps to this many lines on the phone and mid layouts; the detail page header keeps the full title */
+  --row-title-lines: 2;
   /* interaction */
   --row-hover: var(--page);
   --card-hover-line: rgba(0, 0, 0, 0.3);

@@ -6,6 +6,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { normalizeDisplayTitle } from "@/core/fetch/titles";
+import { displayTitle as formalTitle } from "@/core/lists/display-title";
 import { hasBiasTags, type BiasTagInput } from "@/core/sources/bias-tags";
 import type { UrgencyBand } from "@/core/lists";
 import type { ImpactScores, TimelineEntry } from "@/core/types";
@@ -48,7 +49,9 @@ export interface ListRowProps {
  * timeline, tier and a 44 px overflow cell. The whole row is one link. Phone, tablet, mid and wide layouts and the narrow-box reflow are in base.css.
  */
 export function ListRow({ href, band, jurisdiction, title, meta, kind, impact, impactAbsence, due, dueAbsence, timeline, tier, overflow, tags, biasTags, itemGrade, minHeight = 56 }: ListRowProps) {
-  const { title: displayTitle, subtitle } = normalizeDisplayTitle(title);
+  const { title: displayTitle, subtitle } = normalizeDisplayTitle(formalTitle(title));
+  // The link keeps the full official title as its name: the row shows the formal head, a screen reader gets the whole act (and the control name does not change).
+  const linkName = normalizeDisplayTitle(title).title;
   const hasBias = hasBiasTags(biasTags);
   const isRecord = itemGrade === "record";
   const rowAbsence: AbsenceReason | null = pickAbsenceReason([tier == null ? "not in primary source" : null, !due || !isImpactScored(impact) ? "pending" : null]);
@@ -59,7 +62,7 @@ export function ListRow({ href, band, jurisdiction, title, meta, kind, impact, i
   return (
     <div className="cl-list-row" data-part="list-row" data-part-variant="list" style={{ minHeight, ["--row-band" as string]: band.cssVar }}>
       <span className="cl-row-spine" aria-hidden="true" style={{ background: band.cssVar }} />
-      {href && <Link href={href} prefetch={false} className="cl-row-link" aria-label={displayTitle} />}
+      {href && <Link href={href} prefetch={false} className="cl-row-link" aria-label={linkName} />}
       <div className="cl-row-content">
         <div className="cl-row-line1">
           <span className="cl-row-juris">{jurisdiction}</span>

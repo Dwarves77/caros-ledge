@@ -611,7 +611,7 @@ button, input, select, textarea { font-family: inherit; }
   .cl-row-line1 { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
   .cl-row-line1 .cl-row-juris { flex-shrink: 0; font-size: var(--fs-105); letter-spacing: 0.06em; color: var(--ink-2); }
   .cl-row-line1 .cl-row-title { padding: 0; min-width: 0; flex: 1; }
-  .cl-row-title-text { white-space: normal; overflow: visible; text-overflow: clip; font-size: 13.5px; line-height: 1.35; }
+  .cl-row-title-text { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: var(--row-title-lines); white-space: normal; overflow: hidden; text-overflow: clip; font-size: 13.5px; line-height: 1.35; }
   .cl-row-meta-tags { display: none; }
   .cl-row-meta-tags:has(> .cl-row-absence-slot, > .cl-row-meta-mobile, > .cl-row-grade) { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-6); }
   .cl-row-meta-tags > *:not(.cl-row-absence-slot):not(.cl-row-meta-mobile):not(.cl-row-grade) { display: none; }
@@ -730,7 +730,7 @@ button, input, select, textarea { font-family: inherit; }
   .cl-row-line1 { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
   .cl-row-line1 .cl-row-juris { flex-shrink: 0; font-size: var(--fs-105); letter-spacing: 0.06em; color: var(--ink-2); }
   .cl-row-line1 .cl-row-title { padding: 0; min-width: 0; flex: 1; }
-  .cl-row-title-text { white-space: normal; overflow: visible; text-overflow: clip; font-size: 13.5px; line-height: 1.35; }
+  .cl-row-title-text { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: var(--row-title-lines); white-space: normal; overflow: hidden; text-overflow: clip; font-size: 13.5px; line-height: 1.35; }
   .cl-row-meta-tags { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-6); }
   .cl-row-meta-tags > *:not(.cl-row-absence-slot):not(.cl-row-meta-mobile):not(.cl-row-grade) { display: none; }
   .cl-row-meta-mobile { display: block; min-width: 0; font-size: var(--fs-11); color: var(--ink-3); white-space: nowrap; }

@@ -1,0 +1,3 @@
+src/core/lists/display-title.ts | new in TITLE-1 (operator ruling 2026-10-26): the formal act head a list row draws; no old-tree source
+src/core/lists/data/act-heads.json | new in TITLE-1: the act-type vocabulary displayTitle builds a head from (issuers, qualifiers, types, legal bases, months), listed as tokens for the no-authored-prose guard
+src/features/dashboard/data/masthead-copy.json | new in TITLE-1: the masthead title copy ("{name}'s Brief" and its unnamed form) as data; the old tree composed it in code
