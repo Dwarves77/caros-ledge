@@ -1,4 +1,4 @@
-// Tree rules: no personal identifier in a file, a valid Ported-from header on every file under src/ (or a line in
+// Tree rules: no personal identifier in a file, every engine data file pinned by key and token shape (ADR-053), a valid Ported-from header on every file under src/ (or a line in
 // scripts/ci/new-files/<slice>.txt), every header range inside the old file, and no banned dependency.
 // Runs over the working tree (tracked plus untracked, minus ignored), so a local run sees what the PR will see.
 // Each rule is a pure function of its input (exported, tried against planted inputs in tests/ci/tree-checks.test.mjs); the main below only reads the tree and calls them.
@@ -70,6 +70,57 @@ export function dependencyProblems(pkg) {
   return problems;
 }
 
+/** The engine's data files: JSON under a data/ directory of the fetch, parse, coupling, flywheel and obligations engines (src/core/{fetch,parse,coupling,flywheel,obligations}/**\/data/ and src/features/obligations/**\/data/). */
+const ENGINE_DATA = /^src\/(?:core\/(?:fetch|parse|coupling|flywheel|obligations)|features\/obligations)\/(?:.+\/)?data\/.+\.json$/;
+export const isEngineDataFile = (path) => ENGINE_DATA.test(path);
+
+/** scripts/ci/data/engine-data-keys.json: `keys` is file -> sorted top-level key list; `shapes` is file -> key -> {pattern, flags}, a character-class grammar every string of that key's array must match. */
+export function engineDataPins() {
+  return JSON.parse(readFileSync("scripts/ci/data/engine-data-keys.json", "utf8"));
+}
+
+/** The engine data files of the tree as path -> parsed JSON (tracked plus untracked, minus ignored). */
+export function engineDataFiles() {
+  const files = execFileSync("git", ["ls-files", "-z", "--cached", "--others", "--exclude-standard"], { encoding: "utf8" }).split("\0").filter((f) => isEngineDataFile(f) && existsSync(f));
+  return new Map(files.map((f) => [f, JSON.parse(readFileSync(f, "utf8"))]));
+}
+
+/**
+ * An engine data file carries formal codes and numbers, never trigger words (ADR-053). The guard is structural, never a word list:
+ * (1) every top-level key of every engine data file is pinned, so a new array of English triggers has no key to live under;
+ * (2) where a key holds only formal tokens, every string of it matches the character-class grammar pinned for it.
+ */
+export function engineDataProblems(files, pins) {
+  const problems = [];
+  for (const [path, json] of files) {
+    const pinned = pins.keys[path];
+    if (!pinned) {
+      problems.push(`${path}: file is not pinned in scripts/ci/data/engine-data-keys.json; an engine data file carries formal codes and numbers, never trigger words (ADR-053)`);
+      continue;
+    }
+    const keys = Array.isArray(json) ? ["<array>"] : Object.keys(json ?? {});
+    for (const k of keys) if (!pinned.includes(k)) problems.push(`${path}: key ${k} is not pinned; an engine data file carries formal codes and numbers, never trigger words (ADR-053)`);
+    for (const k of pinned) if (!keys.includes(k)) problems.push(`${path}: key ${k} is pinned but missing; change the pin with the file`);
+  }
+  for (const path of Object.keys(pins.keys)) if (!files.has(path)) problems.push(`${path}: pinned file is not in the tree; remove its pin`);
+  for (const [path, byKey] of Object.entries(pins.shapes ?? {})) {
+    const json = files.get(path);
+    if (!json) continue;
+    for (const [key, { pattern, flags }] of Object.entries(byKey)) {
+      const list = json[key];
+      if (!Array.isArray(list) || list.some((x) => typeof x !== "string")) {
+        if (list !== undefined) problems.push(`${path}: ${key} must be an array of strings`);
+        continue;
+      }
+      const re = new RegExp(pattern, flags);
+      list.forEach((x, i) => {
+        if (!re.test(x)) problems.push(`${path}: ${key}[${i}] ${JSON.stringify(x)} does not match ${re}; a token of this key is a code, never a phrase (ADR-053)`);
+      });
+    }
+  }
+  return problems;
+}
+
 function allowFiles() {
   const allowed = new Map();
   for (const name of readdirSync("scripts/ci/new-files").filter((n) => n.endsWith(".txt"))) {
@@ -111,6 +162,7 @@ export function treeProblems() {
     if (f.startsWith("src/")) problems.push(...sourceOriginProblems(f, t, allowed));
   }
   problems.push(...dependencyProblems(JSON.parse(readFileSync("package.json", "utf8"))));
+  problems.push(...engineDataProblems(engineDataFiles(), engineDataPins()));
   return problems;
 }
 

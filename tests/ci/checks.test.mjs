@@ -13,7 +13,7 @@ import { bundleExports, bundleProblems, declaredNames, sourceExports } from '../
 import { codeLines, limitProblems, totalsOf } from '../../scripts/ci/loc.mjs';
 import { scopeOf } from '../../scripts/ci/changes.mjs';
 import { PROFILES, STEPS, profileFrom, stepsFor } from '../../scripts/ci/gates.mjs';
-import { dependencyProblems, headerRangeProblems, identifierProblems, pushGateProblems, sourceOriginProblems } from '../../scripts/ci/tree-checks.mjs';
+import { dependencyProblems, engineDataFiles, engineDataPins, engineDataProblems, headerRangeProblems, identifierProblems, pushGateProblems, sourceOriginProblems } from '../../scripts/ci/tree-checks.mjs';
 import { textProblems } from '../../scripts/ci/workflow-yaml.mjs';
 
 const tmp = (prefix) => mkdtempSync(join(tmpdir(), prefix));
@@ -59,6 +59,38 @@ test('a Ported-from header names a file of the old tree and a range inside it; a
 });
 
 // ---- loc ----
+test('WORDGATE-1: engine data files are pinned by top-level key and by token shape (ADR-053); the current tree passes, and a planted trigger array, a word in a token array, or an unpinned file fails', () => {
+  const pins = engineDataPins();
+  const tree = engineDataFiles();
+  assert.ok(tree.size >= 19 && tree.has('src/core/fetch/data/document-date.json'), 'the glob found the engine data files');
+  assert.deepEqual(engineDataProblems(tree, pins), [], 'the current tree is pinned');
+  const plant = (file, change) => {
+    const t = new Map([...tree].map(([k, v]) => [k, structuredClone(v)]));
+    change(t.get(file));
+    return engineDataProblems(t, pins).join('|');
+  };
+  const dd = 'src/core/fetch/data/document-date.json';
+  // an English trigger array re-entering a data file
+  assert.match(plant(dd, (j) => { j.labels = ['Date:']; }), /document-date\.json: key labels is not pinned; an engine data file carries formal codes and numbers, never trigger words \(ADR-053\)/);
+  assert.match(plant(dd, (j) => { j.signatures = ['Done at']; }), /key signatures is not pinned/);
+  // a pinned key removed is a change to the pin, not a silent drop
+  assert.match(plant(dd, (j) => { delete j.gapChars; }), /key gapChars is pinned but missing/);
+  // a token that is not code-shaped
+  assert.match(plant(dd, (j) => { j.metadata.push('Done at'); }), /metadata\[3\] "Done at" does not match/);
+  assert.match(plant(dd, (j) => { j.metadata.push('dc:date published'); }), /metadata\[3\]/);
+  assert.match(plant(dd, (j) => { j.metadata = 'dc:date'; }), /metadata must be an array of strings/);
+  assert.deepEqual(engineDataProblems(new Map([[dd, { version: 'x', gapChars: 1, metadata: ['dc:date', 'article:published_time', 'a-b:c.d_e'] }]]), { keys: { [dd]: ['gapChars', 'metadata', 'version'] }, shapes: pins.shapes }), []);
+  // an unpinned new data file, at any depth under data/, in any engine directory
+  for (const f of ['src/core/parse/data/new-words.json', 'src/features/obligations/derive/data/sub/x.json', 'src/core/obligations/data/y.json']) {
+    const t = new Map(tree).set(f, { a: 1 });
+    assert.match(engineDataProblems(t, pins).join('|'), new RegExp(`${f.replaceAll('.', '\\.')}: file is not pinned`));
+  }
+  // a pinned file that left the tree is a stale pin
+  const gone = new Map(tree);
+  gone.delete(dd);
+  assert.match(engineDataProblems(gone, pins).join('|'), /document-date\.json: pinned file is not in the tree/);
+});
+
 test('R4: the LOC limits are compared against the real totals (the keys were backslash paths on Windows, so "src/core" never matched and nothing was compared)', () => {
   const root = tmp('loc-');
   const prev = process.cwd();
