@@ -32,3 +32,9 @@ export const SCREEN_MAX_HEIGHT = 16000;
  * The sub-pages that share an item route's shape are named in the pattern so they stay exact.
  */
 export const ITEM_PATH = '^/(regulations|market|research|operations)/(?!register$|series$)[^/]+$';
+
+/**
+ * Data slots that are not links to an item: a block whose rows are data-ordered (the map's jurisdiction register is ordered by count, then label: src/features/regulations/map/rollup.ts) is an item slot. Controls inside it are
+ * marked `item: true` by the capture, so compare.mjs checks that the block is drawn and what form its links take, never their order. A block that vanishes still fails (no item drawn in its section).
+ */
+export const ITEM_SLOT_SELECTOR = '[data-testid="jurisdiction-register-rows"]';
