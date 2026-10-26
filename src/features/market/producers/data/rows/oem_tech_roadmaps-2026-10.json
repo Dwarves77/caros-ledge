@@ -11,6 +11,10 @@
         "title": "Daimler Truck Powertrain plants: start of production of key components for series production of the battery-electric Mercedes-Benz eActros 600",
         "retrieved_at": "2026-10-24",
         "quote": "Just before the start of series production of the new battery-electric eActros 600 at the Mercedes-Benz plant in Wörth on November 22, production of key components has started at the Gaggenau, Kassel and Mannheim plants."
+      },
+      "absent": {
+        "target_year": "the cited capture states no target year for this row; its dated statements are the announcement and the start of production",
+        "usable_kwh": "the cited capture states no usable battery energy (the other eActros 600 page states an installed capacity, which is not usable energy)"
       }
     },
     {
@@ -24,6 +28,9 @@
         "title": "IAA Transportation 2024: Daimler Truck puts the focus on CO2-neutral long-distance haulage; start of series production of the Mercedes-Benz eActros 600 in November",
         "retrieved_at": "2026-10-24",
         "quote": "In April this year, developers from Mercedes-Benz Trucks successfully charged for the first time a prototype of the eActros 600 at a charging station with an output of one megawatt"
+      },
+      "absent": {
+        "target_year": "the cited capture states no target year for this row; its dated statements are the announcement and the start of production"
       }
     },
     {
@@ -37,6 +44,9 @@
         "title": "IAA Transportation 2024: Daimler Truck puts the focus on CO2-neutral long-distance haulage; start of series production of the Mercedes-Benz eActros 600 in November",
         "retrieved_at": "2026-10-24",
         "quote": "road-legal prototype Mercedes-Benz GenH2 Truck last year completed a trip of 1,047 kilometers"
+      },
+      "absent": {
+        "target_year": "the cited capture states no target year for this row; its dated statements are the announcement and the start of production"
       }
     },
     {
@@ -50,6 +60,10 @@
         "title": "Volvo starts series production of electric trucks with up to 700 km range",
         "retrieved_at": "2026-10-24",
         "quote": "Volvo Trucks has now started series production of its new generation of heavy-duty electric trucks, including the Volvo FH Aero Electric with extended range"
+      },
+      "absent": {
+        "target_year": "the cited capture states no target year for this row; its dated statements are the announcement and the start of production",
+        "usable_kwh": "the cited capture states no usable battery energy (the other eActros 600 page states an installed capacity, which is not usable energy)"
       }
     },
     {
@@ -62,8 +76,13 @@
         "url": "https://www.neste.com/news/neste-started-producing-sustainable-aviation-fuel-saf-at-its-renewables-refinery-in-rotterdam-the-netherlands",
         "title": "Neste started producing sustainable aviation fuel (SAF) at its renewables refinery in Rotterdam, the Netherlands",
         "retrieved_at": "2026-10-24",
-        "quote": "The refinery has been modified to enable Neste to produce up to 500,000 tons of SAF per annum."
-      }
+        "quote": "The refinery has been modified to enable Neste to produce up to 500,000 tons of SAF per annum.",
+        "also": [
+          "Neste continues its strategic growth investment project in Rotterdam which will more than double the company’s production capacity at the Rotterdam refinery to 2.7 million tons of renewable products annually",
+          "This expansion, scheduled to be completed in 2027"
+        ]
+      },
+      "target_year": 2027
     },
     {
       "manufacturer_name": "wartsila.com",
@@ -75,8 +94,12 @@
         "url": "https://www.wartsila.com/gbr/media/news/16-07-2026-two-new-gas-carriers-to-stay-ahead-of-environmental-standards-with-wartsila-25-ammonia-engine-3772647",
         "title": "Two new gas carriers to stay ahead of environmental standards with Wärtsilä 25 Ammonia engine",
         "retrieved_at": "2026-10-24",
-        "quote": "Wärtsilä will supply its Wärtsilä 25 Ammonia auxiliary engine, together with a NO x reducer (SCR) and gas valve unit (GVU), for two new 51,350 m 3 capacity midsize LPG/liquid ammonia carrier vessels."
-      }
+        "quote": "Wärtsilä will supply its Wärtsilä 25 Ammonia auxiliary engine, together with a NO x reducer (SCR) and gas valve unit (GVU), for two new 51,350 m 3 capacity midsize LPG/liquid ammonia carrier vessels.",
+        "also": [
+          "The Wärtsilä equipment is scheduled for delivery to the yard commencing in June 2027"
+        ]
+      },
+      "target_year": 2027
     }
   ]
 }

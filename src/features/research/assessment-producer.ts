@@ -10,6 +10,7 @@ import { workByDoi, type OpenAlexDeps } from "@/core/http/openalex";
 import type { ParseOut, ProducerCtx, ProducerSpec } from "@/core/producers/runner";
 import type { Rec } from "@/core/producers/upsert-plan";
 
+import { technologyEntityOf } from "./model/technology-entity";
 import { assessItem, extractDoiCandidate, hasChanged, isResearchCandidate, RESEARCH_CANDIDATE_OR, toAssessmentInput, toRow, type AssessInput, type ForwardEvent, type SignpostSpec } from "./model/assess";
 
 /** DOI in the item's text to an OpenAlex work to a source record for the authority score; unresolved is no record, never a guessed one. */
@@ -24,10 +25,14 @@ async function resolveOpenAlexSourceRecords(input: AssessInput, deps: OpenAlexDe
 
 /** The live candidates: verified, non-archived research items with NO current assessment (the first pass never re-scores; `itemIds` names the items to re-score, current assessment or not), at most `limit`, with their source tier and forward events. */
 export async function fetchLiveCandidates(sb: Db, limit?: number, opts: { itemIds?: readonly string[] } = {}): Promise<AssessInput[]> {
-  const items = await fetchAllRows<Rec>((from, to) => admitItems(sb.from("intelligence_items").select("id,item_type,domain,added_date,title,what_is_it,why_matters,full_brief,source_id,instrument_entity_id").or(RESEARCH_CANDIDATE_OR)).order("id", { ascending: true }).range(from, to) as never, { cap: 100_000 });
+  const items = await fetchAllRows<Rec>((from, to) => admitItems(sb.from("intelligence_items").select("id,item_type,domain,added_date,title,what_is_it,why_matters,full_brief,source_id,instrument_entity_id,operational_scenario_tags").or(RESEARCH_CANDIDATE_OR)).order("id", { ascending: true }).range(from, to) as never, { cap: 100_000 });
   const only = opts.itemIds ? new Set(opts.itemIds) : null;
   const admitted = items.filter((r) => isResearchCandidate(r.item_type, r.domain) && (!only || only.has(String(r.id))));
-  const have = new Set(only ? [] : (await fetchAllByIdChunks(admitted.map((r) => String(r.id)), async (ids) => { const { data, error } = await sb.from("research_assessments_current").select("item_id").in("item_id", ids); if (error) throw new Error(`reading research_assessments_current failed: ${error.message}`); return (data ?? []) as Array<{ item_id: string }>; })).map((r) => r.item_id));
+  // an assessment filed under no entity is re-scored while its item names a technology entity: the backlog works down in the pass that found it (a gap in data is the producer's fault, never a display fix)
+  const named = (r: Rec | undefined) => !!r && technologyEntityOf(r.operational_scenario_tags as string[] | null) !== null;
+  const byId = new Map(admitted.map((r) => [String(r.id), r]));
+  const current = only ? [] : await fetchAllByIdChunks(admitted.map((r) => String(r.id)), async (ids) => { const { data, error } = await sb.from("research_assessments_current").select("item_id,entity_id").in("item_id", ids); if (error) throw new Error(`reading research_assessments_current failed: ${error.message}`); return (data ?? []) as Array<{ item_id: string; entity_id: string | null }>; });
+  const have = new Set(current.filter((c) => c.entity_id || !named(byId.get(c.item_id))).map((c) => c.item_id));
   const needing = admitted.filter((r) => !have.has(String(r.id)));
   const picked = typeof limit === "number" && limit > 0 ? needing.slice(0, limit) : needing;
   const tiers = new Map((await fetchAllByIdChunks(picked.map((r) => String(r.source_id)).filter(Boolean), async (ids) => { const { data, error } = await sb.from("sources").select("id,base_tier").in("id", ids); if (error) throw new Error(`reading sources failed: ${error.message}`); return (data ?? []) as Array<{ id: string; base_tier: number | null }>; })).map((s) => [s.id, s.base_tier] as const));
@@ -62,7 +67,7 @@ export const researchAssessment: ProducerSpec = {
     for (const input of inputs) {
       const records = await resolveOpenAlexSourceRecords(input, oa);
       const computed = assessItem(records.length ? { ...input, sourceRecords: records } : input, { now: ctx.now() });
-      rows.push(toRow(computed));
+      rows.push({ ...toRow(computed), entity_id: input.technologyEntityId ?? null });
       signposts[input.id] = computed.signposts;
     }
     ctx.state.signposts = signposts;
@@ -74,7 +79,12 @@ export const researchAssessment: ProducerSpec = {
     const ids = rows.map((r) => String(r.item_id));
     const current = new Map((await fetchAllByIdChunks(ids, async (chunkIds) => unwrap(await sb.from("research_assessments_current").select("*").in("item_id", chunkIds), "reading research_assessments_current") as Rec[])).map((r) => [String(r.item_id), r]));
     const signposts = ctx.state.signposts as Record<string, SignpostSpec[]>;
-    const c = { unchanged: 0, written: 0, signposts_repointed: 0, signposts_written: 0, signposts_existing: 0, signposts_skipped_no_assessment_id: 0 };
+    // the entity an assessment is filed under must exist (the foreign key): the coupling seeds pass writes it, and until it has run the row is filed under none and the gap is counted
+    const wanted = [...new Set(rows.map((r) => r.entity_id).filter((e): e is string => typeof e === "string"))];
+    const seeded = new Set((await fetchAllByIdChunks(wanted, async (chunkIds) => unwrap(await sb.from("entities").select("entity_id").in("entity_id", chunkIds), "reading the technology entities") as Array<{ entity_id: string }>)).map((e) => e.entity_id));
+    let entityNotSeeded = 0;
+    for (const r of rows) if (typeof r.entity_id === "string" && !seeded.has(r.entity_id)) { r.entity_id = null; entityNotSeeded += 1; }
+    const c = { entity_not_seeded: entityNotSeeded, unchanged: 0, written: 0, signposts_repointed: 0, signposts_written: 0, signposts_existing: 0, signposts_skipped_no_assessment_id: 0 };
     const planned: Array<{ sp: SignpostSpec; assessmentId: string | null }> = [];
     for (const row of rows) {
       const itemId = String(row.item_id);

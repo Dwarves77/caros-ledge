@@ -3,7 +3,7 @@
   "obligation_objects": { "role": "ratchet", "pk": "obligation_id", "surface": "regulations", "due": "first_deadline", "qty": { "figure": "statutory_maximum" }, "source": "source_id" },
   "statutory_computations": { "role": "ceiling", "pk": "computation_id", "surface": "regulations", "at": "computed_at", "qty": { "column": "result", "unitColumn": "result_unit" } },
   "oem_tech_roadmaps": { "role": "capacity", "pk": "roadmap_id", "surface": "market", "at": "announced_at", "dueYear": "target_year", "source": "source_id" },
-  "grid_connection_queues": { "role": "capacity", "pk": "queue_id", "surface": "operations", "at": "as_of", "dueMonthsAfterAt": "queue_months_p50", "qty": { "column": "demand_available_mw", "unit": "MW" }, "source": "source_id" },
+  "grid_connection_queues": { "role": "capacity", "pk": "queue_id", "surface": "operations", "at": "as_of", "qty": { "column": "demand_available_mw", "unit": "MW" }, "source": "source_id" },
   "regional_data_facts": { "role": "capacity", "pk": "id", "surface": "operations", "at": "as_at_date", "qty": { "column": "value_numeric", "unitColumn": "unit" }, "source": "source_id" },
   "market_series": { "role": "series", "pk": "id", "surface": "market", "at": "as_at_date", "qty": { "column": "value_numeric", "unitColumn": "unit" }, "group": "series_key" },
   "item_forward_events": { "role": "trigger", "pk": "id", "surface": "regulations", "due": "event_date", "at": "created_at", "kind": "event_kind" },
