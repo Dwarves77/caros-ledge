@@ -18,11 +18,14 @@ import { runParticipation } from "@/features/intake/flywheel-participation";
 import { recordItemChange } from "@/features/sources/change";
 import { growSources } from "@/features/sources";
 import { allRows, rowsByIds } from "@/core/db";
+import { review } from "@/core/digest/review";
 
 import { BUDGET_STOP_REASON, budgetBytes, POOL_REREADS, preflight } from "../../kit/budget";
 import { applyEntries, isObj, itemPool, type ApplyOpts, type BatchDeps, type EntrySpec, type Item, type Obj } from "../../kit/session-batch";
 
 import { recordChangelog } from "./changelog";
+import { entityTokens, loadEmit, writeEmission } from "./emit";
+import { hasEmission, type EmitLive } from "./emission";
 import { validateRecordBriefEntry, type RecordLive, type RecordPlan } from "./validate";
 
 export interface RecordOpts extends ApplyOpts {
@@ -32,7 +35,7 @@ export interface RecordOpts extends ApplyOpts {
   cooldownMinutes?: number;
 }
 
-interface StepCtx { deps: BatchDeps; itemId: string; entry: Obj; batch: string; overwrite: boolean; ok: Record<string, boolean>; provenance: string | null }
+interface StepCtx { deps: BatchDeps; itemId: string; entry: Obj; plan: RecordPlan; batch: string; overwrite: boolean; ok: Record<string, boolean>; provenance: string | null }
 interface StepOut { outcome: string; ok: boolean; counts?: Record<string, number> }
 type Step = (c: StepCtx) => Promise<StepOut>;
 const intake = (c: StepCtx) => ({ sb: c.deps.sb, sources: c.deps.intake.sources, recorder: c.deps.intake.recorder });
@@ -75,6 +78,15 @@ const STEPS: ReadonlyArray<readonly [string, Step]> = [
     // The ground answers "already verified" without storing the ledger when the item is still verified after its brief was written: the entry's claims did not land, and that is a failed step, never a quiet success.
     const skipped = r.ok && r.detail === "already verified";
     return { outcome: skipped ? "ground_skipped: the item was still verified when its brief was written, so the authored ledger was not stored" : `${r.ok ? "grounded" : `ground_failed: ${r.detail}`}; provenance_status ${c.provenance ?? "unknown"}`, ok: r.ok && !skipped };
+  }],
+  // The reader's typed blocks (DIGEST-1 PR B): entity refs, obligation fields through the derive's own path, connections, capture-backed events, the document date, new entity candidates; then the second reader's record (brief_reviews).
+  ["emission", async (c) => {
+    const it = await itemRow(c.deps.sb, c.itemId);
+    const w = c.plan.emission ? await writeEmission(c.deps, c.itemId, it?.source_id ?? null, c.plan.emission, new Set(c.plan.emission.captureIds)) : { counts: {}, notes: [] };
+    const rv = review("item-briefs", c.entry);
+    const { error } = await c.deps.sb.from("brief_reviews").upsert({ kind: "item-briefs", subject_id: c.itemId, batch: c.batch, score: rv.score, reasons: rv.reasons.join("; ") || "every required judge passed", residue: false, reviewed_by: rv.reviewed_by ?? "none" }, { onConflict: "kind,subject_id,batch" });
+    const notes = [...w.notes, ...(error ? [`brief_reviews write failed: ${error.message}`] : [])];
+    return { outcome: notes.join("; ") || `${Object.entries(w.counts).map(([k, n]) => `${n} ${k}`).join(", ") || "no typed blocks"}; review recorded`, ok: notes.length === 0, counts: w.counts };
   }],
   ["grow", async (c) => {
     const it = await itemRow(c.deps.sb, c.itemId);
@@ -133,7 +145,7 @@ async function recordRegeneration(c: StepCtx): Promise<string | null> {
 }
 
 async function applyItem(deps: BatchDeps, item: Item<RecordPlan>, batch: string, overwrite: boolean) {
-  const ctx: StepCtx = { deps, itemId: item.plan.itemId, entry: item.entry, batch, overwrite, ok: {}, provenance: null };
+  const ctx: StepCtx = { deps, itemId: item.plan.itemId, entry: item.entry, plan: item.plan, batch, overwrite, ok: {}, provenance: null };
   const failed: string[] = [];
   const counts: Record<string, number> = {};
   for (const [name, run] of STEPS) {
@@ -193,7 +205,10 @@ function itemBriefsSpec(opts: RecordOpts): EntrySpec<RecordLive, RecordPlan> {
       const slotRows = await allRows<{ item_type: string; slot_key: string; description: string | null }>(deps.sb, "item_type_required_slots", "item_type, slot_key, description", { cap: 5000 });
       const slots: RecordLive["slots"] = new Map();
       for (const s of slotRows) slots.set(s.item_type, [...(slots.get(s.item_type) ?? []), { slot_key: s.slot_key, description: s.description }]);
-      return { items, slots, adopted: (await readAdoptedTerms(deps.sb)).adopted, now: deps.now(), allowOverwrite: opts.allowBriefOverwrite === true };
+      const entries = (file.entries as unknown[]).filter(isObj);
+      const emit: Map<string, EmitLive> = new Map();
+      for (const e of entries) if (typeof e.item_id === "string" && items.has(e.item_id) && hasEmission(e)) emit.set(e.item_id, await loadEmit(deps, e.item_id, entityTokens(e)));
+      return { items, slots, adopted: (await readAdoptedTerms(deps.sb)).adopted, now: deps.now(), allowOverwrite: opts.allowBriefOverwrite === true, emit };
     },
     entry: (e, i, live) => {
       const done = isObj(e) && typeof e.item_id === "string" && typeof e.body === "string" ? sameBrief(live.items.get(e.item_id)?.fullBrief, e.body) && live.items.get(e.item_id)?.grade === "brief" : false;

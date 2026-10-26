@@ -8,7 +8,12 @@ import { analysisLabelRe, buildTimelineRows, checkBriefContent, findTimelineSect
 import { severityToken, validateBrief, type ItemColumns } from "@/core/brief/rules";
 import { scanGateA, uncoveredSlots, type SlotRow } from "@/core/grounding";
 
+import { digestKind } from "@/core/digest/kinds";
+import { review } from "@/core/digest/review";
+
 import { poolHashError, type EntryResult, isObj, nonEmpty, type Obj } from "../../kit/session-batch";
+
+import { validateEmission, type EmissionPlan, type EmitLive } from "./emission";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MIN_BODY_CHARS = 600;
@@ -56,8 +61,8 @@ function requiredSlotErrors(claims: readonly Obj[], slots: readonly SlotRow[], t
 }
 
 export interface RecordItemLive { itemType: string; grade: string | null; status: string | null; hash: string; poolText: string; bytes: number; fullBrief: string | null; entryIntoForce: string | null; complianceDeadline: string | null }
-export interface RecordLive { items: Map<string, RecordItemLive>; slots: Map<string, SlotRow[]>; adopted: AdoptedTerms; now: Date; allowOverwrite: boolean }
-export interface RecordPlan { itemId: string; bytes: number; claims: Obj[] }
+export interface RecordLive { items: Map<string, RecordItemLive>; slots: Map<string, SlotRow[]>; adopted: AdoptedTerms; now: Date; allowOverwrite: boolean; /** The live material of the entries that carry typed blocks (DIGEST-1 PR B), by item. */ emit: ReadonlyMap<string, EmitLive> }
+export interface RecordPlan { itemId: string; bytes: number; claims: Obj[]; emission: EmissionPlan | null }
 
 const norm = (s: string): string => s.toLowerCase();
 
@@ -147,5 +152,9 @@ export function validateRecordBriefEntry(entry: unknown, i: number, live: Record
   }
   // MIRROR 8: criterion 5.
   errors.push(...requiredSlotErrors(claims, live.slots.get(item.itemType) ?? [], tag, item.itemType));
-  return errors.length || residue.length ? { errors, residue } : { errors, plan: { itemId: entry.item_id, bytes: item.bytes, claims } };
+  // The reader's typed blocks (UNIFIED-PRB-DESIGN section 1): structural checks first, then the second reader's binary judges; every required check passes or the brief is residue naming the criterion.
+  const emission = validateEmission(entry, tag, live.emit.get(entry.item_id) ?? { captures: new Map(), ids: new Map(), objects: new Map(), locate: null });
+  errors.push(...emission.errors);
+  if (digestKind("item-briefs")?.secondReader) for (const reason of review("item-briefs", entry).reasons) residue.push(`${tag}: second reader: ${reason}`);
+  return errors.length || residue.length ? { errors, residue } : { errors, plan: { itemId: entry.item_id, bytes: item.bytes, claims, emission: emission.plan } };
 }

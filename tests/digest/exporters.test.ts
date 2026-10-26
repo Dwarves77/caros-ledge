@@ -79,7 +79,7 @@ test("admin-opportunity-findings: patterns of the window that no current finding
   assert.deepEqual((out.residue as Array<Record<string, unknown>>).map((r) => [r.id, r.reason]), [[V(4), PACKETS_PENDING]]);
 });
 
-test("admin-opportunity-findings: the kit exports it to numbered parts and refuses to apply it, saying what is owed", async () => {
+test("admin-opportunity-findings: the kit exports it to numbered parts, and its apply refuses a file that is not a batch", async () => {
   const w = recordWorld();
   w.db.seed("derived_values", [pattern(1, "pattern_mandate_capacity")]);
   const dir = mkdtempSync(join(tmpdir(), "caros-admin-"));
@@ -90,5 +90,5 @@ test("admin-opportunity-findings: the kit exports it to numbered parts and refus
   assert.equal((JSON.parse(readFileSync(ids.parts[0] as string, "utf8")) as { kind: string }).kind, "admin-opportunity-findings");
   const applied = await applyBatch("admin-opportunity-findings", w.deps, { content: "{}", dry: false });
   assert.equal(applied.outcome, "failed");
-  assert.match(applied.notes[0] ?? "", /no validator or apply yet: DIGEST-1 PR B/);
+  assert.match(applied.notes[0] ?? "", /batch refused whole/);
 });

@@ -7,6 +7,7 @@
 // (a structural defect refuses the whole file; a defective entry is refused alone, with its reasons kept as residue; an entry already applied is "already applied", never a refusal), then written, read back, and its
 // downstream is called in the same run (rule 17). Nothing here calls a model: the session is the author. A runtime entry never exits the process and reads the clock only through `deps.now`.
 import type { Db } from "@/core/db";
+import type { PacketRead } from "@/core/digest/packets-client";
 import { poolHash, readPool } from "@/core/grounding";
 import type { HostVerdictRef } from "@/core/sources";
 import type { RunResult } from "@/core/types/run-result";
@@ -28,7 +29,13 @@ export interface BatchDeps {
   intake: IntakeDeps;
   /** Committed host verdicts for rating a host the class table does not place. */
   verdicts?: ReadonlyMap<string, HostVerdictRef> | null | undefined;
+  /** The locate door of CAPTURE-STRUCT-1 (contracts/verbatim locateSpan): a reader's quote to the capture's own exact slice, or null. The turn wires it; an entry with typed blocks is refused while it is not. */
+  locate?: Locate | null | undefined;
+  /** The pattern packets (CONNECT-2 PR B's packets.ts, read through the packets door); a test or the turn supplies them, the default is the door itself. */
+  packets?: ((ids: readonly string[]) => Promise<PacketRead>) | undefined;
 }
+/** The capture's own slice of the words of a quote (in any run of whitespace), or null. */
+export type Locate = (capture: string, quote: string) => string | null;
 export interface ApplyOpts {
   dry: boolean;
   /** The harness run id of THIS firing: the cooldown ignores its own ledger row. */
@@ -44,8 +51,8 @@ export interface ApplyOpts {
 // ---- reads -----------------------------------------------------------------------------------------------------
 
 /** An item's stored pool as the hash and the text every batch is authored against; a failed read throws. */
-export async function itemPool(sb: Db, itemId: string): Promise<{ pool: { url: string; text: string }[]; hash: string; bytes: number }> {
-  const pool = (await readPool(sb, itemId)).map((p) => ({ url: p.url, text: p.text }));
+export async function itemPool(sb: Db, itemId: string): Promise<{ pool: { id: string; url: string; text: string }[]; hash: string; bytes: number }> {
+  const pool = (await readPool(sb, itemId)).map((p) => ({ id: p.id, url: p.url, text: p.text }));
   return { pool, hash: poolHash(pool), bytes: pool.reduce((n, p) => n + Buffer.byteLength(p.text, "utf8"), 0) };
 }
 /** INV-207: an entry is applied only against the held pool it was authored from. */

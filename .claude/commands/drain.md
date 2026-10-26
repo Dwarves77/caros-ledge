@@ -10,7 +10,7 @@ If it prints `drain: off`, stop here. Report that one line (it names the reason:
 
 If it prints `drain: on`, it wrote a plan file (the path is in its first line, outside the repository) and took mutation leases on every item it handed out. From here on, release those leases no matter how the run ends (STEP 4).
 
-STEP 1, read the plan. It lists kinds in the order to work them (oldest pending first), and for each kind: the batch file path the session must write (exactly one file per kind), the item ids it covers, where the bundle is (re-export it, STEP 2), the apply step that runs on merge, and `authoring_guide` (the batch schema document and the skills). A kind with an `export_error` or no batches is skipped and recorded, never retried and never fabricated. A kind with `apply_pending` has no validator or apply yet: it is counted in the report and not authored.
+STEP 1, read the plan. It lists kinds in the order to work them (oldest pending first), and for each kind: the batch file path the session must write (exactly one file per kind), the item ids it covers, where the bundle is (re-export it, STEP 2), the apply step that runs on merge, and `authoring_guide` (the batch schema document and the skills). A kind with an `export_error` or no batches is skipped and recorded, never retried and never fabricated.
 
 STEP 2, author each batch file, one kind at a time.
 - Export the bundle for the plan's ids to a scratch directory outside the repository: `node scripts/turn.mjs --stage briefs --mode apply --input '{"briefs":{"export":{"kind":"<kind>","outDir":"<dir outside the repo>","ids":[...]}}}'`. Read only the bundle entries for the ids the plan lists.
@@ -34,7 +34,7 @@ The guides, by kind (a skill is loaded by name; the schema document is in the re
 What each sub-agent writes:
 - item-briefs: the format the item type demands, every claim a FACT with its verbatim `source_span` from the named capture in the bundle's `pool` (or the id of a packet row it was read from), sections without grounded content OMITTED with the note the skill prescribes (never filled), workspace anchoring by ROLE from the bundle's role vocabulary and never by name, severity labels at decision points, cause and effect at every link and each link sourced, legal-confirmation labels where the skill requires them. The relationship sections (adjacent research, intersection summary, pending events, cost mechanism) are written from the joined material in the bundle (obligation objects, scores, source tiers and bias tags, the item's packets), never from the item alone; when the bundle's summary says `packets: PENDING CONNECT-2 PR B`, the sections that need a packet are omitted with the note, not written from the item alone.
 - theme-briefs: the cross-surface rule set: the four lenses, cause and effect at every link, the 2-6 and 6-18 month horizons stated per finding; every statement cites a member row; a brief whose rows come from one table or one surface is residue (the no-single-source test).
-- admin-opportunity-findings: not authored until DIGEST-1 PR B (the plan says `apply_pending`).
+- admin-opportunity-findings: authored from the pattern's packet under docs/authoring/admin-opportunity-findings.md; the second reader's verdicts ride in each entry; stored behind the platform-admin gate.
 - The rest: as their schema documents say.
 
 STEP 3, one PR per kind. Never commit on main or the main checkout; work in a worktree.

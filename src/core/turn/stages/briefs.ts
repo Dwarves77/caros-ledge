@@ -3,6 +3,7 @@
 // that the applied_batches ledger has not recorded and applies them; an input names either a batch to apply (`batch: { kind, content, format?, options? }`: item-briefs, question-answers, needs-search, forward-events, theme-briefs, screen-verdicts or
 // ledger-verdicts, each validated whole before it is written) or an export to hand a session (`export: { kind, outDir?, limit?, ids? }`: the bundle goes to a scratch directory, never the repo). The kit's apply ends by
 // calling its own downstream in the same run; the row this stage returns is the run's record.
+import { locateSpan } from "@/core/contracts/verbatim";
 import type { FamilyCall } from "@/core/harness";
 import { scoreItems } from "@/core/impact/run";
 import type { RunResult } from "@/core/types/run-result";
@@ -43,7 +44,7 @@ function planBriefs(input: Record<string, unknown>): BriefsPlan {
 }
 
 /** The kit's deps from the turn's: the members it uses, by name. */
-export const batchDeps = (d: BuiltDeps): BatchDeps => ({ sb: d.sb, now: d.now, intake: d.intake, verdicts: d.producers.verdicts ?? null });
+export const batchDeps = (d: BuiltDeps): BatchDeps => ({ sb: d.sb, now: d.now, intake: d.intake, verdicts: d.producers.verdicts ?? null, locate: locateSpan });
 
 /** The ids the downstream runs over: the item ids a batch of an item-keyed kind applied, less the ones whose read-back failed. */
 const itemIdsOf = (kind: string | null, r: RunResult): string[] => {

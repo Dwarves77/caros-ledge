@@ -25,7 +25,7 @@ export interface DrainDeps {
 }
 export interface PlanLease { kind: string; id: string; lease_id: string; holder: string; released: boolean; release_error?: string | null }
 export interface PlanKind {
-  kind: string; mode: string; label: string; pending_exported: number; export_error: string | null; source: unknown; earliest_pending: string | null; apply_step: string; apply_pending: string | null; authoring_guide: DrainKind["authoringGuide"]; batch_size: number;
+  kind: string; mode: string; label: string; pending_exported: number; export_error: string | null; source: unknown; earliest_pending: string | null; apply_step: string; authoring_guide: DrainKind["authoringGuide"]; batch_size: number;
   batches: Array<{ batch_path: string; item_ids: string[]; count: number }>; residue: { lease_held: Array<{ id: string; holder: string | null; reason: string }>; over_cap: number; not_stale?: number }; would_lease?: number;
 }
 export interface DrainPlan {
@@ -98,8 +98,8 @@ export async function planDrain(deps: DrainDeps, input: { runId: string; limit?:
   try {
     for (const r of orderKinds(raw)) {
       const { kind } = r;
-      const take = kind.applyPending ? [] : r.items.slice(0, kind.batchSize * kind.maxBatchesPerRun); // a kind whose apply is pending is counted, never leased or batched
-      const entry: PlanKind = { kind: kind.id, mode, label: kind.label, pending_exported: r.items.length + r.notStale, export_error: r.error, source: r.source, earliest_pending: r.earliest, apply_step: kind.applyStep, apply_pending: kind.applyPending, authoring_guide: kind.authoringGuide, batch_size: kind.batchSize, batches: [], residue: { lease_held: [], over_cap: kind.applyPending ? 0 : Math.max(0, r.items.length - take.length), ...(mode === "stale" ? { not_stale: r.notStale } : {}) } };
+      const take = r.items.slice(0, kind.batchSize * kind.maxBatchesPerRun);
+      const entry: PlanKind = { kind: kind.id, mode, label: kind.label, pending_exported: r.items.length + r.notStale, export_error: r.error, source: r.source, earliest_pending: r.earliest, apply_step: kind.applyStep, authoring_guide: kind.authoringGuide, batch_size: kind.batchSize, batches: [], residue: { lease_held: [], over_cap: Math.max(0, r.items.length - take.length), ...(mode === "stale" ? { not_stale: r.notStale } : {}) } };
       const existing = deps.listBatchDir(kind);
       const wouldLease = new Set<string>();
       const batches: string[][] = [];

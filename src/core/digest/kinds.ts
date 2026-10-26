@@ -1,6 +1,6 @@
 // Ported from old_repo/scripts/drain/kinds.mjs (lines 1-221)
 // The digest's kinds registry (DIGEST-1 D1): one row per judgement queue, as data. Each row names its exporter (the batch kit's), its authoring guide (the batch schema document and the ratified skills the
-// author works under), its validator, its batch directory, its lease key and its apply path. `applyPending` is a stated reason, never a stub: the admin kind has no validator and no apply until DIGEST-1 PR B.
+// author works under), its validator, its batch directory, its lease key and its apply path.
 import { z } from "zod";
 
 import raw from "./data/kinds.json";
@@ -15,15 +15,14 @@ const kind = z
     label: z.string(),
     exporter: z.string(),
     authoringGuide: guide,
-    validator: z.string().nullable(),
+    validator: z.string(),
     batchDir: z.string().regex(/^drain\/batches\/[a-z-]+$/),
     batchRe: z.string(),
     batchPrefix: z.string(),
     leaseKey: z.string().nullable(),
     idKey: z.string(),
-    applyPath: z.string().nullable(),
+    applyPath: z.string(),
     applyStep: z.string(),
-    applyPending: z.string().nullable(),
     needsPackets: z.boolean(),
     namesFile: z.boolean(),
     batchSize: z.number().int().positive(),
@@ -33,12 +32,21 @@ const kind = z
     lensOfMethod: z.record(z.string(), lens).optional(),
     conditionalMethods: z.array(z.string()).optional(),
     memberLens: z.record(z.string(), lens).optional(),
+    /** The kind's briefs pass the second reader's binary judges before they enter a batch (DIGEST-1 D4). */
+    secondReader: z.boolean().optional(),
+    /** The typed blocks of the reader's emission contract (UNIFIED-PRB-DESIGN section 1), item-briefs only. */
+    emission: z.array(z.string()).optional(),
   })
-  .strict()
-  .refine((k) => (k.applyPending === null) === (k.applyPath !== null && k.validator !== null), { message: "a kind has both a validator and an apply path, or a stated reason it has neither" });
+  .strict();
 export type DigestKind = Omit<z.infer<typeof kind>, "batchRe"> & { batchRe: RegExp };
 
-const parsed = z.object({ kinds: z.array(kind).min(1) }).parse(raw);
+const menuCfg = z.object({ cap: z.number().int().positive(), maxLinked: z.number().int().positive(), maxRegion: z.number().int().nonnegative(), aliases: z.number().int().positive(), kindOrder: z.array(z.string()).min(1) }).strict();
+const parsed = z.object({ version: z.string().regex(/^\d+\.\d+\.\d+$/), menu: menuCfg, kinds: z.array(kind).min(1) }).parse(raw);
+/** The version of this file's emission contract: it stamps every reader value as method_version reader@<version>. */
+export const KINDS_VERSION: string = parsed.version;
+export const READER_METHOD = `reader@${KINDS_VERSION}`;
+/** The candidate_entities menu: its cap, the linked-entity bounds, the aliases per line and the kind order that breaks a tie (TRIANGLE-TRACE Q3.4). */
+export const MENU: Readonly<z.infer<typeof menuCfg>> = Object.freeze(parsed.menu);
 /** The seven digest kinds, in plan order for ties (oldest pending still ranks first). */
 export const DIGEST_KINDS: readonly DigestKind[] = Object.freeze(parsed.kinds.map((k) => Object.freeze({ ...k, batchRe: new RegExp(k.batchRe) })));
 export const digestKind = (id: string): DigestKind | null => DIGEST_KINDS.find((k) => k.id === id) ?? null;

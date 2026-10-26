@@ -12,7 +12,7 @@ import { runTurn } from "@/core/turn";
 import { fixture, NOW } from "../integration/world.ts";
 
 import { A1, A2, A3, A4, fact, installBriefTrigger, regulatoryBody } from "./regulatory.ts";
-import { metadata } from "./world.ts";
+import { metadata, withReview } from "./world.ts";
 
 test("the turn mints, the stage exports the stub, a session authors from the exported file, the stage applies it: the item is a brief grounded in the capture the turn stored", async () => {
   const f = fixture();
@@ -35,10 +35,10 @@ test("the turn mints, the stage exports the stub, a session authors from the exp
   assert.ok(stub.pool[0]?.text.includes(A2), "the author reads the capture the turn stored");
 
   // AUTHOR from the file, APPLY through the stage.
-  const entry = {
+  const entry = withReview({
     item_id: stub.id, source_pool_hash: stub.source_pool_hash, body: regulatoryBody(), metadata: metadata({ format_type: "regulatory_fact_document", signal_band: null }),
     claims: [fact(A1, "8", "binding_position"), fact(A2, "8", "due_date"), fact(A3, "8"), fact(A4, "14")],
-  };
+  });
   const file = JSON.stringify({ batch: "item-briefs-001", generated_at: NOW.toISOString(), authored_by: "session-lane", entries: [entry] });
   const dry = await runTurn({ stage: "briefs", mode: "dry", input: { briefs: { batch: { kind: "item-briefs", content: file } } } }, { d: f.d, env: {}, now: () => NOW });
   assert.equal(dry.exit, 0);

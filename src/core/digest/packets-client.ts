@@ -3,7 +3,16 @@
 const PACKETS_PENDING = "packets: PENDING CONNECT-2 PR B";
 
 /** A packet member row, by table and primary key; `entity_kind` is the coupling class of the entity the row is joined through. */
-export interface PacketMember { table: string; id: string; entity_kind?: string | null }
+export interface PacketMember {
+  table: string;
+  id: string;
+  entity_kind?: string | null;
+  /** The verbatim text the row offers a finding to cite (a claim's span, a cell value, a quoted line), and the surface it sits on. A row with no text cannot back a quoted span. */
+  text?: string | null;
+  surface?: string | null;
+  /** The item the row belongs to, when it belongs to one (a signpost cites items). */
+  item_id?: string | null;
+}
 /** The bundle a reader sees for a pattern, a theme or an item (CONNECT-2 C4); nothing outside it may be cited. */
 export interface Packet { kind: "pattern" | "theme" | "item"; id: string; members: PacketMember[]; [column: string]: unknown }
 export interface PacketRead { packets: Packet[]; marker: string | null }

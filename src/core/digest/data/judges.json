@@ -1,0 +1,236 @@
+{
+ "version": "1.0.0",
+ "judges": [
+  {
+   "id": "J01",
+   "criterion": "severity-label-right",
+   "origin": "A1",
+   "kinds": [
+    "item-briefs"
+   ],
+   "prompt": "Read the brief's severity label and the item's own text. Pass only if the label is the one the severity vocabulary's four evaluation rules give this item (a requirement already in force with no deadline is not ACTION REQUIRED). Fail if the label overstates or understates what the sources say. Answer pass or fail with the sentence of the source that decides it."
+  },
+  {
+   "id": "J02",
+   "criterion": "do-now-action-specific",
+   "origin": "A2",
+   "kinds": [
+    "item-briefs"
+   ],
+   "prompt": "Read the do-now section. Pass only if every action names who does what by when or by which trigger, and a person in the stated role could start it today. Fail if an action is a restatement of the rule, a verb with no object, or advice that fits any regulation. Quote the weakest action."
+  },
+  {
+   "id": "J03",
+   "criterion": "three-ten-thirty-structure",
+   "origin": "A3",
+   "kinds": [
+    "item-briefs"
+   ],
+   "prompt": "Read the first sentence, the first paragraph and the first section. Pass only if the first sentence states what changed for an operator, the first paragraph states a concrete cost or exposure that the sources give, and the first section lets a reader decide whether to read on. Fail otherwise and name which of the three is missing."
+  },
+  {
+   "id": "J04",
+   "criterion": "four-lenses-served",
+   "origin": "A4",
+   "kinds": [
+    "item-briefs",
+    "theme-briefs",
+    "admin-opportunity-findings"
+   ],
+   "prompt": "List the four lenses (regulatory, market, operational, technology or research). For each, decide whether the sources in the bundle support a statement. Pass only if every lens the facts permit is served and each lens the facts do not permit is acknowledged as absent in the brief's own words. Fail if a lens with facts is silent or a lens is filled without facts."
+  },
+  {
+   "id": "J05",
+   "criterion": "cause-effect-sourced",
+   "origin": "A5",
+   "kinds": [
+    "item-briefs",
+    "theme-briefs",
+    "admin-opportunity-findings"
+   ],
+   "prompt": "Take each cause-and-effect chain in the brief. Pass only if every link (cause, mechanical consequence, effect by vertical) rests on a cited FACT or is labelled as analysis with its basis. Fail if any link is asserted with no source and no analysis label. Quote the unsourced link."
+  },
+  {
+   "id": "J06",
+   "criterion": "no-filler-no-invented-subsection",
+   "origin": "A6",
+   "kinds": [
+    "item-briefs",
+    "theme-briefs",
+    "admin-opportunity-findings"
+   ],
+   "prompt": "Read every paragraph and heading. Fail if a heading is not in the format's section list, or a paragraph says nothing a source in the bundle supports and nothing the reader can act on (filler). Pass only if every paragraph carries a sourced statement or a labelled inference. Quote the first offender."
+  },
+  {
+   "id": "J07",
+   "criterion": "no-indirect-identification",
+   "origin": "A7",
+   "kinds": [
+    "item-briefs",
+    "theme-briefs",
+    "admin-opportunity-findings"
+   ],
+   "prompt": "Look for any way the text identifies the workspace, a client or a person other than by role: a distinctive fleet, trade lane, headcount, address or a described situation that points to one organisation. Pass only if the text speaks to roles. Fail and quote the phrase that points to an identity."
+  },
+  {
+   "id": "J08",
+   "criterion": "analysis-supported-by-facts",
+   "origin": "A8",
+   "kinds": [
+    "item-briefs",
+    "theme-briefs",
+    "admin-opportunity-findings"
+   ],
+   "prompt": "For each ANALYSIS-labelled statement, find the FACT claims it rests on. Pass only if every analysis statement follows from facts the brief cites without adding a number, party or date those facts do not hold. Fail and quote the statement that goes beyond its facts."
+  },
+  {
+   "id": "J09",
+   "criterion": "prose-date-same-instrument",
+   "origin": "A9",
+   "kinds": [
+    "item-briefs"
+   ],
+   "prompt": "For each date the prose states (into force, deadline, application), find the instrument it belongs to in the source and compare with the stored column. Pass only if every prose date refers to the item's own instrument. Fail if a date is the date of another instrument, an amending act or a proposal. Quote the date and its source sentence."
+  },
+  {
+   "id": "J10",
+   "criterion": "quote-wording-not-authored",
+   "origin": "A10",
+   "kinds": [
+    "item-briefs"
+   ],
+   "prompt": "Find every dash, entity or section sign that appears in the brief. Pass only if each one sits inside text quoted from a source with the source's own wording. Fail if any appears in the brief's own sentences or in a claim_text the author wrote. Quote it."
+  },
+  {
+   "id": "J11",
+   "criterion": "vendor-claim-not-mandate",
+   "origin": "A11",
+   "kinds": [
+    "item-briefs"
+   ],
+   "prompt": "Find every statement about what a regulator requires. Pass only if each rests on a regulator's or legislator's own text. Fail if a vendor, trade body or press statement is presented as a mandate, or a source of a lower tier is described as binding. Quote the statement and its source."
+  },
+  {
+   "id": "J12",
+   "criterion": "no-causation-from-correlation",
+   "origin": "A12",
+   "kinds": [
+    "item-briefs",
+    "theme-briefs",
+    "admin-opportunity-findings"
+   ],
+   "prompt": "Find every statement of causation and every headline claim. Pass only if each is stated no more strongly than its evidence (a correlation is not called a cause; a pilot is not called a trend). Fail and quote the overstatement."
+  },
+  {
+   "id": "J13",
+   "criterion": "legal-caveat-adequate",
+   "origin": "A13",
+   "kinds": [
+    "item-briefs"
+   ],
+   "prompt": "Find every place the brief states a legal obligation. Pass only if each carries the legal-confirmation callout or an analysis label where the skill requires it and the caveat says what to confirm with counsel. Fail if an obligation is stated as settled law with no caveat, or the caveat is boilerplate that names nothing."
+  },
+  {
+   "id": "J14",
+   "criterion": "tier-word-is-regulations-own",
+   "origin": "A14",
+   "kinds": [
+    "item-briefs"
+   ],
+   "prompt": "Find every use of the word tier in the prose. Pass only if each use is the regulation's own classification (a tier of a standard, a tier of a penalty). Fail if it is the platform's source tier or score. Quote the use."
+  },
+  {
+   "id": "J15",
+   "criterion": "no-invented-party-or-term",
+   "origin": "A15",
+   "kinds": [
+    "item-briefs",
+    "theme-briefs",
+    "admin-opportunity-findings"
+   ],
+   "prompt": "List every named operator, competitor, cost figure and supplier term. Pass only if each appears in a source in the bundle. Fail and quote any that does not."
+  },
+  {
+   "id": "J16",
+   "criterion": "forward-statement-not-stale",
+   "origin": "A16",
+   "kinds": [
+    "item-briefs",
+    "theme-briefs",
+    "admin-opportunity-findings"
+   ],
+   "prompt": "Find every forward-looking statement (a window, a review date, an expected act). Pass only if each is still ahead of the date the brief was written, or is stated as past. Fail if a window has already closed and is written as pending. Quote it with the date."
+  },
+  {
+   "id": "J17",
+   "criterion": "context-and-no-vacuum",
+   "origin": "A17",
+   "kinds": [
+    "item-briefs",
+    "theme-briefs",
+    "admin-opportunity-findings"
+   ],
+   "prompt": "Check three duties: no fact stands alone (each is placed against what surrounds it), the item's analysis draws direction from its documented relationships to items on other surfaces, and forward intelligence is stated where the sources give it. Pass only if all three hold. Fail and name which."
+  },
+  {
+   "id": "J18",
+   "criterion": "entity-ids-complete",
+   "origin": "E1",
+   "kinds": [
+    "item-briefs"
+   ],
+   "prompt": "Read the capture text and the entity_ids the brief emitted, with the candidate menu. Pass only if every entity on the menu that the text names (by its name, an alias or a formal code) is in entity_ids. Fail if one the text names is missing. Name the entity and quote where the text names it."
+  },
+  {
+   "id": "J19",
+   "criterion": "obligation-field-quote-states-it",
+   "origin": "E2",
+   "kinds": [
+    "item-briefs"
+   ],
+   "when": "obligation_fields",
+   "prompt": "For each obligation field, read its value and its quote. Pass only if the quote states the value (the figure, the date, the class, the duty holder, the trigger) in its own words. Fail if the quote is nearby text that does not state it, or the value is inferred. Name the field."
+  },
+  {
+   "id": "J20",
+   "criterion": "connection-reason-in-quote",
+   "origin": "E3",
+   "kinds": [
+    "item-briefs"
+   ],
+   "when": "connections",
+   "prompt": "For each connection, read the two entities, the relation, the reason token and the quote. Pass only if the quote itself states why the two are connected in the way the relation says. Fail if the reason is the author's inference or the quote names only one of the two. Name the connection."
+  },
+  {
+   "id": "J21",
+   "criterion": "pico-and-dissent-fidelity",
+   "origin": "A18",
+   "kinds": [
+    "item-briefs"
+   ],
+   "formats": [
+    "research_summary"
+   ],
+   "prompt": "Read the four ADR-049 blocks (population, intervention, comparator, outcome; the grade; the dissent; the signposts). Pass only if each block states what the study states, the dissent is the study's own limitations or a cited contrary finding, and nothing is added. Fail and quote the block that departs from the source."
+  },
+  {
+   "id": "J22",
+   "criterion": "conditional-section-has-grounded-claim",
+   "origin": "A19",
+   "kinds": [
+    "item-briefs"
+   ],
+   "prompt": "Find every conditional section (one the format says is omitted when nothing grounds it). Pass only if each present conditional section holds at least one grounded claim, and each omitted one carries only the omission note. Fail if a conditional section has prose with no grounded claim, or says there is nothing while a source says otherwise."
+  },
+  {
+   "id": "J23",
+   "criterion": "cross-surface-direction",
+   "origin": "A20",
+   "kinds": [
+    "theme-briefs",
+    "admin-opportunity-findings"
+   ],
+   "prompt": "Read the finding and the packet rows it cites. Pass only if the finding states a direction (what moves, in which window, for whom) that follows from rows on at least two surfaces together and could not be written from one of them. Fail if one row carries it alone. Name the row that would be enough."
+  }
+ ]
+}

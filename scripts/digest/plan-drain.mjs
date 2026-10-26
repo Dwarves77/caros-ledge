@@ -78,7 +78,7 @@ export async function runPlanDrain(argv, io) {
   }
   for (const k of plan.kinds) {
     const planned = k.batches.reduce((a, b) => a + b.count, 0);
-    io.log(`  ${k.kind}${k.mode === "pending" ? "" : ` [${k.mode}]`}: exported ${k.pending_exported}, planned ${planned} in ${k.batches.length} batch(es)${k.apply_pending ? `, apply pending (${k.apply_pending})` : ""}${k.export_error ? `, export error: ${k.export_error}` : ""}${k.residue.lease_held.length ? `, ${k.residue.lease_held.length} lease-held` : ""}${plan.dry ? `, would lease ${k.would_lease ?? 0}` : ""}`);
+    io.log(`  ${k.kind}${k.mode === "pending" ? "" : ` [${k.mode}]`}: exported ${k.pending_exported}, planned ${planned} in ${k.batches.length} batch(es)${k.export_error ? `, export error: ${k.export_error}` : ""}${k.residue.lease_held.length ? `, ${k.residue.lease_held.length} lease-held` : ""}${plan.dry ? `, would lease ${k.would_lease ?? 0}` : ""}`);
     if (plan.dry) for (const b of k.batches) io.log(`    ${b.batch_path}: ${b.item_ids.join(", ")}`);
   }
   return 0;

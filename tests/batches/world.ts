@@ -1,4 +1,5 @@
 // The batch kit's test world: the intake slice's memory database and dependency stubs (one small world, so every flow runs against the same material), the kit's deps over it, and the authored files.
+import { requiredJudges } from "@/core/digest/review";
 import type { BatchDeps } from "@/features/batches";
 
 import { factClaim, ITEM, makeWorld, metadata, NOW, OFFICIAL_TEXT, OFFICIAL_URL, poolHashOf, SOURCE, SPAN_FORCE, SPAN_PENALTY, SPAN_REPORT } from "../intake/fixtures.ts";
@@ -31,7 +32,14 @@ export function goodBody(over: { sec1?: string; sec3?: string; sec4?: string; ti
 
 export const claims = (): Record<string, unknown>[] => [factClaim(SPAN_REPORT, { section: "1" }), factClaim(SPAN_FORCE, { section: "3" }), factClaim(SPAN_PENALTY, { section: "4" })];
 
+/** The second reader's verdicts on an entry: every judge that applies passes, each with its evidence (a test that needs a fail overrides one). */
+export function passingReview(entry: Record<string, unknown>, kind = "item-briefs"): Record<string, unknown> {
+  return { reviewed_by: "second-reader-test", judges: Object.fromEntries(requiredJudges(kind, entry).map((j) => [j.id, { pass: true, evidence: `${j.criterion}: the fixture states it` }])) };
+}
+/** An authored entry with the second reader's all-pass verdicts added. */
+export const withReview = (entry: Record<string, unknown>, kind = "item-briefs"): Record<string, unknown> => ({ ...entry, review: passingReview(entry, kind) });
 export function recordEntry(db: ReturnType<typeof makeWorld>["db"], over: Record<string, unknown> = {}): Record<string, unknown> {
-  return { item_id: ITEM, source_pool_hash: poolHashOf(db), body: goodBody(), metadata: metadata(), claims: claims(), ...over };
+  const entry = { item_id: ITEM, source_pool_hash: poolHashOf(db), body: goodBody(), metadata: metadata(), claims: claims(), ...over };
+  return { ...entry, review: passingReview(entry), ...(over.review === undefined ? {} : { review: over.review }) };
 }
 export const batchFile = (kind: string, entries: unknown[], over: Record<string, unknown> = {}): Record<string, unknown> => ({ batch: `${kind}-001`, generated_at: NOW.toISOString(), authored_by: "session-lane", entries, ...over });

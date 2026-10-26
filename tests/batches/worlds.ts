@@ -74,7 +74,7 @@ export const EVENT_B = "e1000000-0000-4000-8000-000000000001";
 export function themeWorld(): World {
   const w = batchWorld();
   (w.db.rows("intelligence_items")[0] as Record<string, unknown>).provenance_status = "verified";
-  w.db.seed("intelligence_items", [{ id: SECOND, title: "Carrier surcharge pass-through", item_type: "market_signal", item_grade: "brief", provenance_status: "verified", is_archived: false, source_id: "b0000000-0000-4000-8000-000000000001", source_url: "https://eur-lex.europa.eu/x" }]);
+  w.db.seed("intelligence_items", [{ id: SECOND, title: "Carrier surcharge pass-through", item_type: "regulation", item_grade: "brief", provenance_status: "verified", is_archived: false, source_id: "b0000000-0000-4000-8000-000000000001", source_url: "https://eur-lex.europa.eu/x" }]);
   w.db.seed("connection_themes", [{ id: THEME, member_ids: [SECOND, ITEM], surfaces: ["regulations"], pivots: [], dominant_signals: [], density: 0.5, convergence: 0.7 }]);
   w.db.seed("section_claim_provenance", [{ id: CLAIM_A, intelligence_item_id: ITEM, claim_kind: "FACT", claim_text: SPAN_REPORT, source_span: SPAN_REPORT }, { id: CLAIM_B, intelligence_item_id: SECOND, claim_kind: "FACT", claim_text: "Carriers pass the cost on.", source_span: "Carriers pass the cost on." }]);
   w.db.seed("item_forward_events", [{ id: EVENT_B, intelligence_item_id: SECOND, event_date: "2027-01-01", date_precision: "day", event_kind: "entry_into_force", obligation_text: "Surcharges apply.", source_kind: "claim", source_claim_id: CLAIM_B, source_span: "Carriers pass the cost on.", confidence: "high", extractor_version: "t" }]);

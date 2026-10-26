@@ -135,10 +135,9 @@ test("the dry plan takes no lease and writes no file: it counts what a run would
   assert.deepEqual([w.rpcs.length, w.files.size, w.mem.writes.length], [0, 0, 0]);
 });
 
-test("a kind whose apply is pending is counted and never leased or batched; its plan entry says why", async () => {
+test("the admin kind is leased and batched like every other: one pattern, one lease, one batch", async () => {
   const w = world({ exporters: { "admin-opportunity-findings": ex([{ pattern_value_id: U(7), created_at: "2026-10-01" }]) } });
   assert.equal(await runPlanDrain(["--run-id", "r7", "--kind", "admin-opportunity-findings"], w.io), 0);
-  const plan = JSON.parse(w.files.get("/scratch/plan-r7.json") ?? "null") as { leases: unknown[]; kinds: Array<{ pending_exported: number; batches: unknown[]; apply_pending: string | null }> };
-  assert.deepEqual([plan.leases.length, plan.kinds[0]?.pending_exported, plan.kinds[0]?.batches.length], [0, 1, 0]);
-  assert.match(plan.kinds[0]?.apply_pending ?? "", /DIGEST-1 PR B/);
+  const plan = JSON.parse(w.files.get("/scratch/plan-r7.json") ?? "null") as { leases: unknown[]; kinds: Array<{ pending_exported: number; batches: unknown[] }> };
+  assert.deepEqual([plan.leases.length, plan.kinds[0]?.pending_exported, plan.kinds[0]?.batches.length], [1, 1, 1]);
 });

@@ -12,13 +12,16 @@ import type { Db } from "@/core/db";
 import { readPackets, type Packet } from "@/core/digest/packets-client";
 import { applyThemeBrief } from "@/features/flywheel";
 import { rowsByIds } from "@/core/db";
+import { review, singleSourceReason } from "@/core/digest/review";
+import { surfaceOf } from "@/core/routing";
 
+import { candidateMenu, memberSeed, menuBlock, packetSeed } from "../item-briefs/candidates";
 import { applyEntries, isObj, type ApplyOpts, type BatchDeps, type BatchExport, type EntrySpec } from "../../kit/session-batch";
 
 /** The batch name a single payload is applied under (the one-entry batch it becomes). */
 const SINGLE_BATCH = "theme-briefs-single-payload";
 const DEFAULT_CHAR_BUDGET = 120_000;
-interface ThemeLive { ctx: ThemeContext; themes: Map<string, ThemeRow>; stored: Map<string, { member_hash: string; generated_by: string; brief_md: string }> }
+interface ThemeLive { ctx: ThemeContext; themes: Map<string, ThemeRow>; /** The surface each live member sits on (the no-single-source test reads it). */ surfaces: Map<string, string>; stored: Map<string, { member_hash: string; generated_by: string; brief_md: string }> }
 interface Plan { memberIds: string[]; brief: ValidThemeBrief }
 
 const themeBriefsSpec: EntrySpec<ThemeLive, Plan> = {
@@ -31,12 +34,16 @@ const themeBriefsSpec: EntrySpec<ThemeLive, Plan> = {
     const themes = await loadThemes(deps.sb, ids);
     const material = await loadThemeMaterial(deps.sb, themes);
     const stored = await rowsByIds<{ theme_id: string; member_hash: string; generated_by: string; brief_md: string }>(deps.sb, "theme_briefs", "theme_id, member_hash, generated_by, brief_md", ids, "theme_id", "theme_id");
-    return { ctx: buildValidationContext(themes, material, computeThemeGaps(themes, material)), themes: new Map(themes.map((t) => [t.id, t])), stored: new Map(stored.map((s) => [s.theme_id, s])) };
+    return { ctx: buildValidationContext(themes, material, computeThemeGaps(themes, material)), themes: new Map(themes.map((t) => [t.id, t])), surfaces: new Map(material.items.map((i) => [i.id, surfaceOf(i.item_type, i.domain)])), stored: new Map(stored.map((s) => [s.theme_id, s])) };
   },
   entry(e, i, live) {
     const v = parseThemeBriefEntry(e, i, live.ctx);
     if (!v.ok) return { errors: v.errors };
     const id = v.brief.theme_id;
+    // The second reader's binary judges and the no-single-source test (HOW-TO-LOOK point 3, INV-DIG-7): a brief whose cited rows sit in one table or on one surface is residue with the reason.
+    const cited = (v.brief.claims as { member_id: string; claim_ids: string[] }[]).flatMap((c) => c.claim_ids.map((cid) => ({ table: live.ctx.membersById.get(c.member_id)?.event_ids.has(cid) ? "item_forward_events" : "section_claim_provenance", surface: live.surfaces.get(c.member_id) ?? null })));
+    const why = [...review("theme-briefs", e as Record<string, unknown>).reasons.map((r) => `second reader: ${r}`), ...[singleSourceReason(cited)].flatMap((r) => r ?? [])];
+    if (why.length) return { errors: [], residue: why.map((r) => `theme ${id}: ${r}`) };
     const members = (live.themes.get(id)?.member_ids ?? []).slice().sort();
     const prior = live.stored.get(id);
     return prior && prior.member_hash === computeMemberHash(members) && prior.brief_md === v.brief.brief_md ? { errors: [], done: true } : { errors: [], plan: { memberIds: members, brief: v.brief } };
@@ -75,8 +82,8 @@ export async function applyThemeBriefs(deps: BatchDeps, input: { content: string
 
 /** The export: themes that need a brief with their bundle and, declared in the bundle type, the pattern packet of each (read through readPackets; PENDING CONNECT-2 PR B the list is empty and the summary says so). Until the packet validator
  * of DIGEST-1 PR B replaces it, the bundle keeps the theme material the live validator (parseThemeBriefEntry) checks an entry against. */
-export type ThemeBundle = ReturnType<typeof buildThemeBundle> & { packets: Packet[] };
-export function themeBriefsExporter(sb: Db, o: { charBudget?: number } = {}) {
+export type ThemeBundle = ReturnType<typeof buildThemeBundle> & { packets: Packet[]; candidate_entities: ReturnType<typeof menuBlock> };
+export function themeBriefsExporter(sb: Db, o: { charBudget?: number; packets?: typeof readPackets } = {}) {
   return async ({ limit }: { limit: number }): Promise<BatchExport> => {
     try {
       const [themes, briefs, lineage] = [await loadThemes(sb), await loadBriefs(sb), await loadLineage(sb)];
@@ -84,8 +91,14 @@ export function themeBriefsExporter(sb: Db, o: { charBudget?: number } = {}) {
       const chosen = needs.slice(0, limit);
       const material = await loadThemeMaterial(sb, chosen.map((n) => n.theme));
       const gaps = computeThemeGaps(chosen.map((n) => n.theme), material);
-      const packetRead = await readPackets(chosen.map((n) => n.theme.id));
-      const items = chosen.map((n): ThemeBundle => ({ ...buildThemeBundle(n, material, gaps.get(n.theme.id), { charBudget: o.charBudget ?? DEFAULT_CHAR_BUDGET }), packets: packetRead.packets.filter((p) => p.id === n.theme.id) }));
+      const packetRead = await (o.packets ?? readPackets)(chosen.map((n) => n.theme.id));
+      const items: ThemeBundle[] = [];
+      for (const n of chosen) {
+        const packets = packetRead.packets.filter((p) => p.id === n.theme.id);
+        // the menu: the packet's member entities, or (packets pending) the entities the member items' claims and events are filed under
+        const seed = packets.length ? await packetSeed(sb, packets) : await memberSeed(sb, n.theme.member_ids ?? []);
+        items.push({ ...buildThemeBundle(n, material, gaps.get(n.theme.id), { charBudget: o.charBudget ?? DEFAULT_CHAR_BUDGET }), packets, candidate_entities: menuBlock(await candidateMenu(sb, seed)) });
+      }
       const by = (r: string) => needs.filter((n) => n.reason === r).length;
       return { ok: true, items: items as never, source: { type: "table", table: "connection_themes" }, summary: { themes: themes.length, needing_brief: needs.length, no_brief: by("no_brief"), stale: by("stale"), superseded: by("superseded"), exported: items.length, not_exported_over_limit: needs.length - items.length, packets: packetRead.marker ?? "read" } };
     } catch (e) {

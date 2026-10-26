@@ -29,13 +29,13 @@ test("a dry plan over five pending items counts them per kind, takes no lease, w
     log: (l: string) => lines.push(l),
   });
   assert.equal(code, 0);
-  assert.match(lines[0] ?? "", /^drain: on \(dry run: nothing written, no lease taken\)\. 4 item\(s\) in 4 batch\(es\) across 4 kind\(s\)/, "the pattern is counted, not batched: the admin kind's apply is pending");
+  assert.match(lines[0] ?? "", /^drain: on \(dry run: nothing written, no lease taken\)\. 5 item\(s\) in 5 batch\(es\) across 5 kind\(s\)/);
   const by = (kind: string) => lines.find((l) => l.startsWith(`  ${kind}:`)) ?? "";
   assert.match(by("item-briefs"), /exported 1, planned 1 in 1 batch\(es\), would lease 1/);
   assert.match(by("theme-briefs"), /exported 1, planned 1 in 1 batch\(es\), would lease 1/);
   assert.match(by("question-answers"), /exported 1, planned 1 in 1 batch\(es\), would lease 1/);
   assert.match(by("host-verdicts"), /exported 1, planned 1 in 1 batch\(es\), would lease 0/);
-  assert.match(by("admin-opportunity-findings"), /exported 1, planned 0 in 0 batch\(es\), apply pending/);
+  assert.match(by("admin-opportunity-findings"), /exported 1, planned 1 in 1 batch\(es\), would lease 1/);
   assert.ok(lines.some((l) => l.includes(`item-briefs-001.json: `)) && THEME);
   assert.deepEqual([written.length, rpcs.filter((r) => /mutation_lease/.test(r)).length], [0, 0]);
   assert.ok(!lines.some((l) => /export error/.test(l)), "only the kinds with an exporter are planned");

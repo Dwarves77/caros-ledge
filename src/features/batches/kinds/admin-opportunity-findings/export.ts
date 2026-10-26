@@ -3,6 +3,7 @@
 // pattern's packet (read through readPackets; PENDING CONNECT-2 PR B the list is empty, so a P1 or P4 pattern is named residue, never guessed into a lens). The findings it authors are stored behind the platform-admin gate.
 import type { Db } from "@/core/db";
 import { allRows } from "@/core/db";
+import { candidateMenu, menuBlock, packetSeed } from "../item-briefs/candidates";
 import { digestKind, LENSES, WINDOWS } from "@/core/digest/kinds";
 import { readPackets, type Packet } from "@/core/digest/packets-client";
 
@@ -18,7 +19,7 @@ const LENS_DEFINITIONS: Readonly<Record<Lens, string>> = {
   capital_offtake_grant: "Commercial capital, offtake and grant telemetry: filings, offtakes, capex and public grants that show where capital is forced to flow next, months before the market.",
 };
 
-export function adminFindingsExporter(sb: Db, now: () => Date) {
+export function adminFindingsExporter(sb: Db, now: () => Date, packets: typeof readPackets = readPackets) {
   return async (o: { limit: number; ids?: readonly string[] }): Promise<BatchExport> => {
     try {
       const cfg = digestKind("admin-opportunity-findings");
@@ -29,7 +30,7 @@ export function adminFindingsExporter(sb: Db, now: () => Date) {
       const answered = new Set((await allRows<{ pattern_value_id: string }>(sb, "admin_opportunity_findings", "pattern_value_id", { where: (q) => q.is("superseded_by", null) })).map((f) => f.pattern_value_id));
       const wanted = o.ids?.length ? new Set(o.ids) : null;
       const pending = rows.filter((r) => (wanted ? wanted.has(r.value_id) : !answered.has(r.value_id))).sort((a, b) => a.asserted_at.localeCompare(b.asserted_at));
-      const packetRead = await readPackets(pending.map((r) => r.value_id));
+      const packetRead = await packets(pending.map((r) => r.value_id));
       const residue: Obj[] = [];
       const items: Obj[] = [];
       for (const r of pending) {
@@ -38,7 +39,7 @@ export function adminFindingsExporter(sb: Db, now: () => Date) {
         const byMember = packets.flatMap((p) => p.members.map((m) => (m.entity_kind ? cfg.memberLens?.[m.entity_kind] : undefined))).find((l): l is Lens => !!l);
         const lens = fixed ?? byMember;
         if (!lens) residue.push({ id: r.value_id, method_id: r.method_id, reason: packets.length ? "no capital or capacity entity is a member of the packet" : packetRead.marker ?? "no packet" });
-        else items.push({ pattern_value_id: r.value_id, lens, method_id: r.method_id, method_version: r.method_version, entity_id: r.entity_id, derivation: r.derivation, admissibility: r.admissibility, lifecycle: r.lifecycle, base_confidence: r.base_confidence, created_at: r.asserted_at, packets });
+        else items.push({ pattern_value_id: r.value_id, lens, method_id: r.method_id, method_version: r.method_version, entity_id: r.entity_id, derivation: r.derivation, admissibility: r.admissibility, lifecycle: r.lifecycle, base_confidence: r.base_confidence, created_at: r.asserted_at, packets, candidate_entities: menuBlock(await candidateMenu(sb, await packetSeed(sb, packets))) });
       }
       const byLens = (l: Lens) => items.filter((i) => i.lens === l);
       const ordered = LENSES.flatMap(byLens).slice(0, o.limit);
