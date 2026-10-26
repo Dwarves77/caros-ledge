@@ -226,7 +226,7 @@
         "src/features/settings/ui/settings.module.css": 16,
         "src/features/watchlist/ui/watchlist.module.css": 4,
         "src/features/workspace/ui/workspace.module.css": 22,
-        "src/ui/base.css": 432,
+        "src/ui/base.css": 410,
         "src/ui/figures/figures.module.css": 3
       }
     }

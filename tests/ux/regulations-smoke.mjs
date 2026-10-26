@@ -6,7 +6,7 @@
 // Usage: node tests/ux/regulations-smoke.mjs --base <origin>     (the server must run with UI_FIXTURES=1)
 import { checkClientReads, SHELL_READS } from './client-sweep.mjs';
 import { chromium, open as openPage, smoke, VIEWPORTS, WIDTHS } from './harness.mjs';
-import { listInvariants } from './list-invariants.mjs';
+import { listInvariants, rowReport } from './list-invariants.mjs';
 import { hitArea, measurePage } from './measure.mjs';
 
 const SCREENS = ['ledger', 'detail', 'record', 'register', 'map'];
@@ -59,6 +59,7 @@ try {
             fail(where, o);
           }
           for (const o of await listInvariants(session.page)) fail(where, o);
+          await rowReport(session.page, `regulations ${where}`, `regulations-${screen}`);
           for (const e of session.errors) fail(where, `page error: ${e}`);
         } finally {
           await session.ctx.close();

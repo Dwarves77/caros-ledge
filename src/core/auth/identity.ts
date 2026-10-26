@@ -21,17 +21,18 @@ export async function resolveIdentity(client: Db & ClaimsClient, opts: { heal?: 
   if (!claims) return EMPTY_IDENTITY;
   const [membership, profile, admin] = await Promise.all([
     client.from("org_memberships").select("org_id, role, organizations(id, name, workspace_settings(sector_profile))").eq("user_id", claims.userId).order("created_at", { ascending: true }).limit(1).maybeSingle(),
-    client.from("profiles").select("sector_overrides").eq("id", claims.userId).maybeSingle(),
+    client.from("profiles").select("sector_overrides, full_name").eq("id", claims.userId).maybeSingle(),
     readOwnPlatformAdmin(client),
   ]);
   if (membership.error) throw new LookupError("org_memberships", membership.error);
   if (profile.error) throw new LookupError("profiles", profile.error);
   let overrides = (profile.data as { sector_overrides: string[] | null } | null)?.sector_overrides ?? null;
-  if (!profile.data && opts.heal !== false) {
+  const unnamed = !!profile.data && !(profile.data as { full_name?: string | null }).full_name?.trim() && !!claims.name;
+  if ((!profile.data || unnamed) && opts.heal !== false) {
     // The heal runs on the caller's own client: profiles_self_insert admits exactly the row id = auth.uid(), so no service key is needed. A heal that fails is a stated 503, never a silent empty profile.
-    const healed = await ensureProfile(claims.userId, claims.email, client);
+    const healed = await ensureProfile(claims.userId, claims.email, client, claims.name);
     if (!healed.exists) throw new LookupError("profile heal", healed.reason ?? healed.failedStep ?? "unavailable");
-    overrides = [];
+    if (!profile.data) overrides = [];
   }
   const org = (membership.data?.organizations ?? null) as OrgEmbed;
   return {

@@ -11,6 +11,7 @@ import { compareRecord } from '../parity/compare.mjs';
 
 import { checkClientReads, SHELL_READS } from './client-sweep.mjs';
 import { chromium, open as openPage, parityReady, smoke, summarise, until, VIEWPORTS, WIDTHS } from './harness.mjs';
+import { listInvariants, rowReport } from './list-invariants.mjs';
 import { measurePage } from './measure.mjs';
 import { scopeBaseline } from './shell-filter.mjs';
 
@@ -25,7 +26,7 @@ const IDENTITY = { user: { id: 'u-1', email: 'smoke@example.invalid' }, orgId: '
 const BOOT = { personalState: [], members: [], adminAttention: null, overrides: [], navCounts: null, assistantEnabled: true, degraded: [] };
 const ASK = {
   question: 'Regulation 2023/9999 reporting',
-  hits: [{ id: 'h1', title: 'Regulation (EU) 2023/9999 on sustainable freight operations', href: '/regulations/h1', priority: 'HIGH', jurisdiction: 'EU', meta: 'regulation · road', tier: 1, summary: 'Annual emissions reporting for freight operators.', excerpt: 'Operators shall report verified emissions by 30 April of each year.', intersection: null, relatedCount: 2, source: { name: 'EUR-Lex', url: 'https://eur-lex.europa.eu/', citationCount: 5, recency: '2026-10-01' } }],
+  hits: [{ id: 'h1', title: 'Regulation (EU) 2023/9999 on sustainable freight operations', href: '/regulations/h1', priority: 'HIGH', jurisdiction: 'EU', type: 'regulation', tier: 1, summary: 'Annual emissions reporting for freight operators.', excerpt: 'Operators shall report verified emissions by 30 April of each year.', intersection: null, relatedCount: 2, source: { name: 'EUR-Lex', url: 'https://eur-lex.europa.eu/', citationCount: 5, recency: '2026-10-01' } }],
   answers: [{ itemId: 'h1', itemTitle: 'Regulation (EU) 2023/9999', question: 'What must a reader do in response, and by when?', text: 'Reports are due on 30 April of each year.', statusToken: 'HYPOTHESIS', confidence: 0.6, cited: [{ id: 'h1', title: 'Regulation (EU) 2023/9999 on sustainable freight operations', href: '/regulations/h1' }], computedAt: '2026-10-14T00:00:00Z' }],
   passages: [{ id: 'source-hierarchy', heading: 'How sources are weighted', text: 'When sources conflict, they are weighted in this order.' }],
   operations: [],
@@ -84,6 +85,8 @@ try {
             await s.page.locator('details > summary').first().click();
           }
           for (const o of await measurePage(s.page, { rows: false })) fail(where, o);
+          for (const o of await listInvariants(s.page)) fail(where, o);
+          await rowReport(s.page, where, screen);
           for (const e of s.errors) fail(where, `page error: ${e}`);
         } finally {
           await s.ctx.close();
@@ -117,13 +120,19 @@ try {
   // TITLE-1 (operator ruling 2026-10-26): a row draws the formal act head and wraps to at most two lines at 375 px (Miller's law: one chunk per row), whatever the stored title; the line counts are printed for the report.
   await check('dashboard at 375: the 2023/2122 row, the p50 row and a head-less long title are each at most two lines, and the 2023/2122 row reads as its act head', () =>
     session('dashboard', async ({ page }) => {
-      const rows = await page.locator('[data-part="list-row"] .cl-row-title-text').evaluateAll((els) => els.map((el) => ({ text: el.textContent ?? '', lines: Math.round(el.getBoundingClientRect().height / parseFloat(getComputedStyle(el).lineHeight)), clipped: el.scrollHeight > el.clientHeight + 1 })));
+      const rows = await page.locator('[data-part="list-row"] .cl-row-title').evaluateAll((els) => els.map((el) => ({ text: el.textContent ?? '', lines: Math.round(el.getBoundingClientRect().height / parseFloat(getComputedStyle(el).lineHeight)), clipped: el.scrollHeight > el.clientHeight + 1 })));
       for (const r of rows) must(r.lines <= 2, `a row title is ${r.lines} lines: ${r.text.slice(0, 50)}`);
       const at = (needle) => rows.find((r) => r.text.includes(needle));
       must(at('2023/2122')?.text === 'Implementing Regulation (EU) 2023/2122', `the 2023/2122 row reads "${at('2023/2122')?.text}"`);
       must(at('2024/837')?.lines <= 2, 'the p50 row is not two lines');
       must(at('Approval and Promulgation')?.clipped === true, 'the head-less long title is not clamped');
       console.log(`title lines at 375: 2023/2122 ${at('2023/2122').lines}, 2024/837 ${at('2024/837').lines}, head-less ${at('Approval and Promulgation').lines}; all ${rows.length} rows <= 2`);
+      // ROWS-1 (INV-ROWS-2): the stored line is one line and the meta line is one line on every dashboard row; the "What changed" rows carry the change kind as a chip.
+      const lines = await page.locator('[data-part="list-row"]').evaluateAll((els) => els.map((el) => { const n = (sel) => { const e = el.querySelector(sel); return e ? Math.round(e.getBoundingClientRect().height / (parseFloat(getComputedStyle(e).lineHeight) || parseFloat(getComputedStyle(e).fontSize) * 1.3)) : 0; }; return { summary: n('.cl-row-summary'), meta: n('.cl-row-meta') }; }));
+      must(lines.every((l) => l.summary <= 1 && l.meta === 1), `a summary or meta line wraps: ${JSON.stringify(lines)}`);
+      const kinds = await page.locator('[data-field="change"]').allInnerTexts();
+      must(kinds.length >= 3 && kinds.every((k) => /^(New|Updated: (brief|timeline))$/.test(k)), `the change kinds read "${kinds.join('|')}"`);
+      console.log(`rows at 375: ${lines.length}, summary lines max ${Math.max(...lines.map((l) => l.summary))}, meta lines max ${Math.max(...lines.map((l) => l.meta))}, change chips ${kinds.join(' | ')}`);
     }, [375, 812]),
   );
 
@@ -180,7 +189,7 @@ try {
 
   await check('search: rows carry their source rating; a failed search says so with Retry; no result is a different sentence', async () => {
     await session('search', async ({ page }) => {
-      must((await page.locator('.cl-row-tier').first().innerText()).includes('T1'), 'the row carries no tier chip');
+      must((await page.locator('[data-field="tier"]').first().innerText()).includes('T1'), 'the row carries no tier chip');
       must(/Results · 4/i.test(await page.locator('main').innerText()), 'the result count is missing');
     });
     await session('search-failed', async ({ page }) => {
@@ -219,7 +228,7 @@ try {
       const t = await dialog.innerText();
       must(/Inference · Hypothesis · confidence 60%/.test(t), 'the answer is not labelled as an inference with its status and confidence');
       must(/From the platform guide · How sources are weighted/i.test(t), 'the platform guide passage is not shown');
-      must((await dialog.locator('.cl-row-tier').first().innerText()).includes('T1'), 'the citation carries no tier chip');
+      must((await dialog.locator('[data-field="tier"]').first().innerText()).includes('T1'), 'the citation carries no tier chip');
       must(state.calls.filter((c) => c === 'POST /api/ask').length === 1, 'the question was asked more than once');
       await page.keyboard.press('Escape');
       must((await page.locator('[role=dialog]').count()) === 0, 'Esc did not close the panel');

@@ -15,7 +15,6 @@ import { Menu, StateNote, Toast } from "@/ui";
 import { filterRows, liveFacetCounts, sortResourceRows, useListUrlState, withListPosition, ListSurface, SortRow, type FacetGroup, type ListSortKey } from "@/ui/list-surface";
 import { ShellCommandBar } from "@/ui/shell";
 
-import { rowMeta } from "../lib/item-type";
 import { severityLabel } from "../lib/severity";
 
 import { RetryNote } from "./RetryNote";
@@ -101,24 +100,17 @@ export function MarketLedger({ resources, aggregates, failed = false, nowIso, se
       total: inBand.length,
       rows: inBand.map((r, i) => {
         const f = toListRowFields(r, now);
-        const kindLabel = kindOf(r);
         const href = withListPosition(f.href, LIST, i + 1, inBand.length, { prev: inBand[i - 1]?.id ?? null, next: inBand[i + 1]?.id ?? null });
         return {
           key: r.id,
           href,
           band,
+          itemType: f.type,
           jurisdiction: f.jurisdiction,
           title: f.title,
-          meta: rowMeta(r),
-          ...(kindLabel ? { kind: kindLabel } : {}),
-          impact: f.impact,
-          impactAbsence: f.impactAbsence,
+          summary: f.summary,
           due: f.due,
-          dueAbsence: f.dueAbsence,
-          timeline: f.timeline,
           tier: f.tier,
-          ...(f.biasTags ? { biasTags: f.biasTags } : {}),
-          itemGrade: f.itemGrade,
           overflow: <RowMenu id={r.id} href={f.href} onResult={(message, ok) => setToast({ message, ok })} />,
         };
       }),

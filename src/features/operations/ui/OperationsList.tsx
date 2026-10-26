@@ -14,7 +14,6 @@ import { filterRows, LegendRailCard, liveFacetCounts, ListSurface, ThemeStrip, u
 import { ShellCommandBar } from "@/ui/shell/CommandBar";
 import { DenominatorLine } from "@/features/coverage";
 import { useTagsFacet } from "@/features/regulations/useTagsFacet";
-import { rowMeta } from "@/features/market/lib/item-type";
 
 import { bandedRows } from "../../research/ui/rows";
 import { dimensionLabel, DIMENSION_COUNT_WORD, DIMENSIONS } from "../model/dimensions";
@@ -80,7 +79,7 @@ export function OperationsList({ data, nowIso, chips, denominator, chipsFailed =
     }
     return out;
   }, [rows, roster]);
-  const rowsByBand = useMemo(() => bandedRows(filtered, { list: "operations", menuLabel: "Operations item actions", bandKey: filter.band, now, meta: rowMeta }), [filtered, filter.band, now]);
+  const rowsByBand = useMemo(() => bandedRows(filtered, { list: "operations", menuLabel: "Operations item actions", bandKey: filter.band, now }), [filtered, filter.band, now]);
   const gaps = useMemo(() => {
     const sourced = new Map<string, Set<string>>();
     for (const f of data.facts ?? []) sourced.set(f.regionCode, (sourced.get(f.regionCode) ?? new Set<string>()).add(f.dimension));

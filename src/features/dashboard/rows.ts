@@ -4,8 +4,6 @@
 // The Dashboard's row logic, pure: which items the two cards draw, in what order, with what labels. Nothing here reads a clock (the caller passes `now`) or a table. The cards are built from ONE corpus (the
 // due-next read and the by-id backfill of the changed items); an item the read gate does not return is not drawn.
 import { dueInfo, toListRowFields, type ListRowFields } from "@/core/lists";
-import { formatDate } from "@/core/shared";
-import { rowMeta } from "@/features/market/lib/item-type";
 import type { Resource } from "@/core/types";
 import { urgencyScore, type UrgencyContext } from "@/core/urgency/scoring";
 
@@ -79,7 +77,7 @@ export function buildDueNextRows(resources: readonly Resource[], now: Date, cap 
     })
     .sort((a, b) => a.due.daysNum - b.due.daysNum)
     .slice(0, cap)
-    .map(({ r, due }) => ({ ...toListRowFields(r, now), meta: rowMeta(r), dueDays: due.daysNum }));
+    .map(({ r, due }) => ({ ...toListRowFields(r, now), dueDays: due.daysNum }));
 }
 
 /**
@@ -111,16 +109,13 @@ export function buildChangedRows(feed: readonly FeedRow[], candidates: readonly 
     .slice(0, cap)
     .map(({ f, c }): BriefRow => {
       const isUpdated = f.change_kind === "updated";
-      return { ...toListRowFields(c.resource, now), meta: rowMeta(c.resource), isNew: !isUpdated, isUpdated, updatedField: isUpdated ? changelogField[f.id] : undefined, changeDate: f.change_date ?? f.added_date ?? undefined };
+      return { ...toListRowFields(c.resource, now), isNew: !isUpdated, isUpdated, updatedField: isUpdated ? changelogField[f.id] : undefined, changeDate: f.change_date ?? f.added_date ?? undefined };
     });
 }
 
-/** The row's kind and date prefix, computed once: "New", "Updated · brief updated Oct 13, 2026", "Updated · timeline added Oct 13, 2026" (the date formatted, never the raw database string). */
-export function changeRowPrefix(row: Pick<BriefRow, "isNew" | "isUpdated" | "updatedField" | "changeDate">): string | null {
-  if (row.isNew) return "New";
-  if (!row.isUpdated) return null;
-  const what = row.updatedField === "timeline" ? "timeline added" : "brief updated";
-  return row.changeDate ? `Updated · ${what} ${formatDate(row.changeDate)}` : `Updated · ${what}`;
+/** The change kind of a What-changed row: the key of the `change` labels in list-surface/data/row-fields.json ("new", "updated_brief", "updated_timeline"), from the feed's kind and the changelog field; null for a row that did not change. */
+export function changeKindOf(row: Pick<BriefRow, "isNew" | "isUpdated" | "updatedField">): "new" | "updated_brief" | "updated_timeline" | null {
+  return row.isNew ? "new" : row.isUpdated ? (row.updatedField === "timeline" ? "updated_timeline" : "updated_brief") : null;
 }
 
 /** The Due-next aside: the week the card names, extended with how far the SELECTED rows reach when they run past it. */
