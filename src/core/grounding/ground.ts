@@ -101,11 +101,11 @@ async function ground(deps: GroundDeps, input: GroundInput): Promise<GroundResul
   const prior = await fetchAllRows<ClaimRow>((from, to) => sb.from("section_claim_provenance").select("id, section_row_id, claim_text, claim_kind, source_span, source_id, search_result_id, source_tier_at_grounding, mint_hold_reason").eq("intelligence_item_id", itemId).order("id", { ascending: true }).range(from, to), { cap: 20_000 }).catch((e: Error) => e);
   if (prior instanceof Error) return failed(`grounding aborted: prior-ledger read failed (${prior.message}); refusing to re-ground under a blind comparison`, notes);
   // GROUND-FIX-1: a verified item is left alone only while its stored ledger holds every authored claim; a replaced brief carries claims the ledger lacks and is grounded again.
-  if (it.provenance_status === "verified" && ledgerCoversClaims(prior, input.ledger)) return alreadyVerified();
   const secRes = await boundedRead<{ id: string; section_key: string; content_md: string | null }>((limit) => sb.from("intelligence_item_sections").select("id, section_key, content_md").eq("item_id", itemId).order("section_order", { ascending: true }).limit(limit), { limit: 100 });
   if (secRes.error) return failed(`sections read failed: ${secRes.error.message}`, notes);
   const secs = secRes.data;
   if (!secs.length) return failed("no sections", notes);
+  if (it.provenance_status === "verified" && ledgerCoversClaims(prior, input.ledger, secs)) return alreadyVerified();
 
   // ---- pool, error-body gate, cited-host gate -------------------------------------------------------------
   const allRows = await readAllPoolRows(sb, itemId);

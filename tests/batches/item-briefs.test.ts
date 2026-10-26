@@ -225,3 +225,16 @@ test("GROUND-FIX-1: an item whose ledger lacks the entry's claims is half applie
   assert.equal(again.counts.applied, 1, refusals(again));
   assert.equal(w.db.rows("section_claim_provenance").filter((c) => c.claim_kind === "FACT").length, 3);
 });
+
+test("GROUND-FIX-1 G2: a claim whose text is unchanged but which sits in another section after a re-section is not covered: the item runs again and the claim returns to its authored section", async () => {
+  const w = batchWorld();
+  await apply(w, [recordEntry(w.db)]);
+  const secs = w.db.rows("intelligence_item_sections");
+  const claim = w.db.rows("section_claim_provenance").find((c) => c.claim_kind === "FACT")!;
+  const home = claim.section_row_id;
+  claim.section_row_id = secs.find((s) => s.id !== home)!.id;
+  const again = await apply(w, [recordEntry(w.db)], { options: { allowBriefOverwrite: true } });
+  assert.equal(again.counts.already_applied ?? 0, 0, "a moved claim is half applied");
+  assert.equal(again.counts.applied, 1, refusals(again));
+  assert.equal(w.db.rows("section_claim_provenance").find((c) => c.id === claim.id || c.claim_text === claim.claim_text)?.section_row_id, home);
+});
