@@ -22,3 +22,15 @@ test('the code-line table of the PR comment counts the src/ of LOC_ROOT, and the
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+// CI-BROWSER-1: a signed-in job cancelled out of its pending slot is SUPERSEDED, never a pass and never a fail.
+test('a cancelled signed-in job is labelled SUPERSEDED naming the run that took its slot; other conclusions and jobs are unchanged', async () => {
+  const { conclusionLabel, supersedingRun } = await import('../../scripts/ci/pr-comment.mjs');
+  assert.match(conclusionLabel('parity', 'cancelled', 42), /^SUPERSEDED by run 42 \(not a pass, not a fail\)$/);
+  assert.match(conclusionLabel('live', 'cancelled', null), /^SUPERSEDED \(/);
+  assert.equal(conclusionLabel('parity', 'success', 42), 'success');
+  assert.equal(conclusionLabel('parity', 'failure', 42), 'failure');
+  assert.equal(conclusionLabel('ci', 'cancelled', 42), 'cancelled', 'only the signed-in jobs share a pending slot');
+  assert.equal(supersedingRun([{ id: 9 }, { id: 12 }, { id: 11 }, { id: 5 }], 10), 11, 'the earliest later run');
+  assert.equal(supersedingRun([{ id: 5 }], 10), null);
+});
