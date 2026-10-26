@@ -9,10 +9,10 @@ import { parseFrontmatter } from "@/core/briefs/frontmatter";
 import { parseThemeBriefEntry, type ThemeContext, type ValidThemeBrief } from "@/core/briefs/theme-brief-contract";
 import { buildThemeBundle, buildValidationContext, computeThemeGaps, loadBriefs, loadLineage, loadThemeMaterial, loadThemes, themesNeedingBrief, type ThemeRow } from "@/core/briefs/theme-brief-material";
 import type { Db } from "@/core/db";
-import { readPackets, type Packet } from "@/core/digest/packets-client";
+import { packetReader, type Packet, type PacketReader } from "@/core/digest/packets-client";
 import { applyThemeBrief } from "@/features/flywheel";
 import { rowsByIds } from "@/core/db";
-import { review, singleSourceReason } from "@/core/digest/review";
+import { review, secondReaderBlock, singleSourceReason } from "@/core/digest/review";
 import { surfaceOf } from "@/core/routing";
 
 import { candidateMenu, memberSeed, menuBlock, packetSeed } from "../item-briefs/candidates";
@@ -80,10 +80,10 @@ export async function applyThemeBriefs(deps: BatchDeps, input: { content: string
   return applyThemeBriefBatch(deps, isObj(parsed) && Array.isArray(parsed.entries) ? parsed : wrap(parsed), o);
 }
 
-/** The export: themes that need a brief with their bundle and, declared in the bundle type, the pattern packet of each (read through readPackets; PENDING CONNECT-2 PR B the list is empty and the summary says so). Until the packet validator
- * of DIGEST-1 PR B replaces it, the bundle keeps the theme material the live validator (parseThemeBriefEntry) checks an entry against. */
+/** The export: themes that need a brief with their bundle and, declared in the bundle type, the pattern packet of each (read through the packets door; the summary states what is absent). The bundle keeps the theme material the live validator
+ * (parseThemeBriefEntry) checks an entry against. */
 export type ThemeBundle = ReturnType<typeof buildThemeBundle> & { packets: Packet[]; candidate_entities: ReturnType<typeof menuBlock> };
-export function themeBriefsExporter(sb: Db, o: { charBudget?: number; packets?: typeof readPackets } = {}) {
+export function themeBriefsExporter(sb: Db, o: { charBudget?: number; packets?: PacketReader } = {}) {
   return async ({ limit }: { limit: number }): Promise<BatchExport> => {
     try {
       const [themes, briefs, lineage] = [await loadThemes(sb), await loadBriefs(sb), await loadLineage(sb)];
@@ -91,7 +91,7 @@ export function themeBriefsExporter(sb: Db, o: { charBudget?: number; packets?: 
       const chosen = needs.slice(0, limit);
       const material = await loadThemeMaterial(sb, chosen.map((n) => n.theme));
       const gaps = computeThemeGaps(chosen.map((n) => n.theme), material);
-      const packetRead = await (o.packets ?? readPackets)(chosen.map((n) => n.theme.id));
+      const packetRead = await (o.packets ?? packetReader(sb))(chosen.map((n) => n.theme.id));
       const items: ThemeBundle[] = [];
       for (const n of chosen) {
         const packets = packetRead.packets.filter((p) => p.id === n.theme.id);
@@ -100,7 +100,7 @@ export function themeBriefsExporter(sb: Db, o: { charBudget?: number; packets?: 
         items.push({ ...buildThemeBundle(n, material, gaps.get(n.theme.id), { charBudget: o.charBudget ?? DEFAULT_CHAR_BUDGET }), packets, candidate_entities: menuBlock(await candidateMenu(sb, seed)) });
       }
       const by = (r: string) => needs.filter((n) => n.reason === r).length;
-      return { ok: true, items: items as never, source: { type: "table", table: "connection_themes" }, summary: { themes: themes.length, needing_brief: needs.length, no_brief: by("no_brief"), stale: by("stale"), superseded: by("superseded"), exported: items.length, not_exported_over_limit: needs.length - items.length, packets: packetRead.marker ?? "read" } };
+      return { ok: true, items: items as never, source: { type: "table", table: "connection_themes" }, summary: { second_reader: secondReaderBlock("theme-briefs"), themes: themes.length, needing_brief: needs.length, no_brief: by("no_brief"), stale: by("stale"), superseded: by("superseded"), exported: items.length, not_exported_over_limit: needs.length - items.length, packets: packetRead.marker ?? "read" } };
     } catch (e) {
       return { ok: false, items: [], error: (e as Error).message };
     }

@@ -10,10 +10,10 @@ import { loadThemeMaterial, loadThemes } from "@/core/briefs/theme-brief-materia
 import { themeBriefsExporter } from "@/features/batches/kinds/theme-briefs/apply";
 
 import { batchFile, ITEM, passingReview } from "./world.ts";
+import { CLAIM_A, CLAIM_B, EVENT_B, SECOND, THEME, themeWorld, type World } from "./worlds.ts";
 
 /** The second reader's all-pass verdicts on a theme entry. */
 const withThemeReview = <T extends Record<string, unknown>>(e: T): T & { review: Record<string, unknown> } => ({ ...e, review: passingReview(e, "theme-briefs") });
-import { CLAIM_A, CLAIM_B, EVENT_B, SECOND, THEME, themeWorld, type World } from "./worlds.ts";
 
 const hash = computeMemberHash([SECOND, ITEM]);
 /** The stored brief text: the title, then the sections in order under their fixed headings (the format the readers show). */

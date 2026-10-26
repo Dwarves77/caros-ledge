@@ -7,7 +7,7 @@
 // (a structural defect refuses the whole file; a defective entry is refused alone, with its reasons kept as residue; an entry already applied is "already applied", never a refusal), then written, read back, and its
 // downstream is called in the same run (rule 17). Nothing here calls a model: the session is the author. A runtime entry never exits the process and reads the clock only through `deps.now`.
 import type { Db } from "@/core/db";
-import type { PacketRead } from "@/core/digest/packets-client";
+import type { PacketReader } from "@/core/digest/packets-client";
 import { poolHash, readPool } from "@/core/grounding";
 import type { HostVerdictRef } from "@/core/sources";
 import type { RunResult } from "@/core/types/run-result";
@@ -32,7 +32,7 @@ export interface BatchDeps {
   /** The locate door of CAPTURE-STRUCT-1 (contracts/verbatim locateSpan): a reader's quote to the capture's own exact slice, or null. The turn wires it; an entry with typed blocks is refused while it is not. */
   locate?: Locate | null | undefined;
   /** The pattern packets (CONNECT-2 PR B's packets.ts, read through the packets door); a test or the turn supplies them, the default is the door itself. */
-  packets?: ((ids: readonly string[]) => Promise<PacketRead>) | undefined;
+  packets?: PacketReader | undefined;
 }
 /** The capture's own slice of the words of a quote (in any run of whitespace), or null. */
 export type Locate = (capture: string, quote: string) => string | null;

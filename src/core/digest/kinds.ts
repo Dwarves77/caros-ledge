@@ -43,7 +43,7 @@ export type DigestKind = Omit<z.infer<typeof kind>, "batchRe"> & { batchRe: RegE
 const menuCfg = z.object({ cap: z.number().int().positive(), maxLinked: z.number().int().positive(), maxRegion: z.number().int().nonnegative(), aliases: z.number().int().positive(), kindOrder: z.array(z.string()).min(1) }).strict();
 const parsed = z.object({ version: z.string().regex(/^\d+\.\d+\.\d+$/), menu: menuCfg, kinds: z.array(kind).min(1) }).parse(raw);
 /** The version of this file's emission contract: it stamps every reader value as method_version reader@<version>. */
-export const KINDS_VERSION: string = parsed.version;
+const KINDS_VERSION: string = parsed.version;
 export const READER_METHOD = `reader@${KINDS_VERSION}`;
 /** The candidate_entities menu: its cap, the linked-entity bounds, the aliases per line and the kind order that breaks a tie (TRIANGLE-TRACE Q3.4). */
 export const MENU: Readonly<z.infer<typeof menuCfg>> = Object.freeze(parsed.menu);

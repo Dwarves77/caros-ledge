@@ -5,7 +5,7 @@ import { test } from "node:test";
 import { drainExporters } from "@/features/batches";
 
 import { runPlanDrain } from "../../scripts/digest/plan-drain.mjs";
-import { NOW } from "../batches/world.ts";
+import { noPackets, NOW } from "../batches/world.ts";
 import { hostWorld, qaWorld, themeWorld, THEME } from "../batches/worlds.ts";
 
 test("a dry plan over five pending items counts them per kind, takes no lease, writes no file and opens no PR", async () => {
@@ -21,7 +21,7 @@ test("a dry plan over five pending items counts them per kind, takes no lease, w
   const code = await runPlanDrain(["--dry", "--run-id", "dry-1"], {
     now: () => NOW,
     makeDb: () => db,
-    buildExporters: async () => drainExporters(w.deps),
+    buildExporters: async () => drainExporters({ ...w.deps, packets: noPackets }),
     listBatchDir: () => [],
     planPath: (id: string) => `/scratch/${id}.json`,
     writePlan: (path: string) => void written.push(path),

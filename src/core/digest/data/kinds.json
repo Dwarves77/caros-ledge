@@ -210,7 +210,7 @@
      "source-credibility-model"
     ]
    },
-   "validator": "src/features/batches/kinds/admin-opportunity-findings/apply.ts#validateAdminFindingEntry",
+   "validator": "src/features/batches/kinds/admin-opportunity-findings/validate.ts#validateAdminFindingEntry",
    "batchDir": "drain/batches/admin-opportunity-findings",
    "batchRe": "^admin-opportunity-findings-\\d{3}\\.json$",
    "batchPrefix": "admin-opportunity-findings",

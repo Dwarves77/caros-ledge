@@ -1,12 +1,13 @@
 // The admin kind's export (DIGEST-1 D1): the derived patterns of the window that no current finding answers, grouped by the three lenses of HOW-TO-LOOK point 5 (mandated supply-demand bottlenecks; penalty-versus-abatement
 // crossover; commercial capital, offtake and grant telemetry). A P2, P3 or P5 pattern is in on its method; a P1 or P4 pattern is in only when its packet holds a capital or capacity entity (the kind's memberLens). The reader sees the
-// pattern's packet (read through readPackets; PENDING CONNECT-2 PR B the list is empty, so a P1 or P4 pattern is named residue, never guessed into a lens). The findings it authors are stored behind the platform-admin gate.
+// pattern's packet (read through the packets door; a P1 or P4 pattern with no packet is named residue, never guessed into a lens). The findings it authors are stored behind the platform-admin gate.
 import type { Db } from "@/core/db";
 import { allRows } from "@/core/db";
-import { candidateMenu, menuBlock, packetSeed } from "../item-briefs/candidates";
 import { digestKind, LENSES, WINDOWS } from "@/core/digest/kinds";
-import { readPackets, type Packet } from "@/core/digest/packets-client";
+import { packetReader, type Packet, type PacketReader } from "@/core/digest/packets-client";
+import { secondReaderBlock } from "@/core/digest/review";
 
+import { candidateMenu, menuBlock, packetSeed } from "../item-briefs/candidates";
 import type { BatchExport, Obj } from "../../kit/session-batch";
 
 type Lens = (typeof LENSES)[number];
@@ -19,7 +20,7 @@ const LENS_DEFINITIONS: Readonly<Record<Lens, string>> = {
   capital_offtake_grant: "Commercial capital, offtake and grant telemetry: filings, offtakes, capex and public grants that show where capital is forced to flow next, months before the market.",
 };
 
-export function adminFindingsExporter(sb: Db, now: () => Date, packets: typeof readPackets = readPackets) {
+export function adminFindingsExporter(sb: Db, now: () => Date, packets: PacketReader = packetReader(sb)) {
   return async (o: { limit: number; ids?: readonly string[] }): Promise<BatchExport> => {
     try {
       const cfg = digestKind("admin-opportunity-findings");
@@ -43,7 +44,7 @@ export function adminFindingsExporter(sb: Db, now: () => Date, packets: typeof r
       }
       const byLens = (l: Lens) => items.filter((i) => i.lens === l);
       const ordered = LENSES.flatMap(byLens).slice(0, o.limit);
-      return { ok: true, items: ordered, source: { type: "table", table: "derived_values" }, summary: { window_days: cfg.windowDays, patterns_in_window: rows.length, already_answered: rows.filter((r) => answered.has(r.value_id)).length, exported: ordered.length, windows: WINDOWS, per_lens: Object.fromEntries(LENSES.map((l) => [l, byLens(l).length])), lens_definitions: LENS_DEFINITIONS, packets: packetRead.marker ?? "read" }, residue };
+      return { ok: true, items: ordered, source: { type: "table", table: "derived_values" }, summary: { second_reader: secondReaderBlock("admin-opportunity-findings"), window_days: cfg.windowDays, patterns_in_window: rows.length, already_answered: rows.filter((r) => answered.has(r.value_id)).length, exported: ordered.length, windows: WINDOWS, per_lens: Object.fromEntries(LENSES.map((l) => [l, byLens(l).length])), lens_definitions: LENS_DEFINITIONS, packets: packetRead.marker ?? "read" }, residue };
     } catch (e) {
       return { ok: false, items: [], error: (e as Error).message };
     }

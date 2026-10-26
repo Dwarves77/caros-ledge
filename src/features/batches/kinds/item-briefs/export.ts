@@ -2,7 +2,7 @@
 // Ported from old_repo/scripts/turns/export-corpus-for-extraction.mjs (lines 180-292)
 // Ported from old_repo/scripts/turns/export-corpus-for-extraction.mjs (lines 392-533)
 // Item briefs (DIGEST-1 D1): the item's own export plus what its relationship sections are written from: obligation objects, scores, the sources its claims cite with their tiers and bias tags, and the pattern packets of every derived pattern
-// the item is a member of (read through readPackets; PENDING CONNECT-2 PR B they are an empty list and the summary says so). The brief-authoring export: record-grade stub items with the pool text a session may cite (and ONLY that text), the pool hash the entry must echo (INV-207), the required slots with their descriptions (a slot's
+// the item is a member of (read through the packets door; the summary states what is absent). The brief-authoring export: record-grade stub items with the pool text a session may cite (and ONLY that text), the pool hash the entry must echo (INV-207), the required slots with their descriptions (a slot's
 // description says whether a GAP may cover it), the forward events and timelines the brief must carry, and the claims and sections already held. The default scope is verified live items still at record grade (the catalogue stub; writing a brief upgrades the grade); an
 // explicit `ids` list reaches a quarantined item too (ADR-030: items are resolved, never left quarantined), and an id that cannot be exported is named with its reason.
 import type { Db } from "@/core/db";
@@ -10,7 +10,8 @@ import { specForItemType } from "@/core/brief";
 import { DUTY_HOLDER_CLASSES } from "@/core/contracts/vocabularies";
 import { allRows, rowsByIds } from "@/core/db";
 import { digestKind, guideSkills } from "@/core/digest/kinds";
-import { readPackets, type Packet } from "@/core/digest/packets-client";
+import { packetReader, type Packet, type PacketReader } from "@/core/digest/packets-client";
+import { secondReaderBlock } from "@/core/digest/review";
 import { readExtractionInput } from "@/features/obligations";
 
 import { itemPool, type BatchExport, type Obj } from "../../kit/session-batch";
@@ -49,7 +50,7 @@ async function itemContext(sb: Db, it: ItemRow): Promise<{ context: Obj; claimId
   return { context, claimIds: cited.map((c) => c.id), obligationIds: obligations.map((o) => String(o.obligation_id)) };
 }
 
-export function itemBriefsExporter(sb: Db, now: () => Date, packets: typeof readPackets = readPackets) {
+export function itemBriefsExporter(sb: Db, now: () => Date, packets: PacketReader = packetReader(sb)) {
   return async (o: { limit: number; ids?: readonly string[] }): Promise<BatchExport> => {
     try {
       const sel = o.ids?.length ? await selectByIds(sb, o.ids) : await selectNextStubs(sb, o.limit);
@@ -74,7 +75,7 @@ export function itemBriefsExporter(sb: Db, now: () => Date, packets: typeof read
           authoring_skills: guideSkills(guide, specForItemType(it.item_type)?.formatType), ...ctx.context, packets: packetsOf(it.id),
         });
       }
-      return { ok: true, items: out, source: { type: "table", table: "intelligence_items" }, summary: { items_exported: out.length, not_exported: sel.notExported.length, packets: packetRead.marker ?? "read", workspace_role_vocabulary: Object.values(DUTY_HOLDER_CLASSES).map((c) => ({ code: c.code, label: c.label, org_roles: c.orgRoles ?? [] })) }, residue: sel.notExported };
+      return { ok: true, items: out, source: { type: "table", table: "intelligence_items" }, summary: { second_reader: secondReaderBlock("item-briefs"), items_exported: out.length, not_exported: sel.notExported.length, packets: packetRead.marker ?? "read", workspace_role_vocabulary: Object.values(DUTY_HOLDER_CLASSES).map((c) => ({ code: c.code, label: c.label, org_roles: c.orgRoles ?? [] })) }, residue: sel.notExported };
     } catch (e) {
       return { ok: false, items: [], error: (e as Error).message };
     }

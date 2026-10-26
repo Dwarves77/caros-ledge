@@ -33,8 +33,8 @@ export interface EmissionPlan {
   /** Every capture of the item (a capture-backed event is judged stale against them). */
   captureIds: string[];
 }
-export const BLOCKS = ["entity_ids", "obligation_fields", "connections", "events", "document_date", "new_entity_candidates"] as const;
-export const PROPOSED_KINDS = ["organisation", "technology", "port", "person"] as const;
+const BLOCKS = ["entity_ids", "obligation_fields", "connections", "events", "document_date", "new_entity_candidates"] as const;
+const PROPOSED_KINDS = ["organisation", "technology", "port", "person"] as const;
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
 const LOCODE = /(?<![A-Za-z0-9])[A-Z]{2}[A-Z2-9]{3}(?![A-Za-z0-9])/;
 const SYMMETRIC = new Set(["competes_for_feedstock", "shares_grid_zone", "corridor_links"]);

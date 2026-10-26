@@ -19,14 +19,22 @@ export const TEXT = {
 };
 const member = (key: keyof typeof ROWS, surface: string, text: string | null, item: string | null) => {
   const [table, id] = ROWS[key].split(/:(.*)/s) as [string, string];
-  return { table, id, text, surface, item_id: item };
+  return { table, id, text, surface, item_id: item, edge: "member", entities: [], provenance_status: null, columns: {}, spans: text ? [{ kind: "verbatim", text, source_span: null, capture_id: null, source_id: null }] : [] };
 };
 
 export const packet = (): Packet => ({
   kind: "pattern",
   id: PATTERN,
+  version: "1",
+  pattern: null,
+  patterns: [],
+  relations: [],
+  refs: [],
+  signposts: [],
+  eligible: { dated: true, reader_edge: false },
+  cap: { max_members: 80, members_total: 4, members_omitted: 0, relations_total: 0, relations_omitted: 0, context_per_table: 20, context_omitted: 0 },
   members: [member("mandate", "regulations", TEXT.mandate, "a0000000-0000-4000-8000-000000000001"), member("oem", "research", TEXT.oem, null), member("grid", "operations", TEXT.grid, null), member("series", "market", "EUR 4,100 per tonne", null)],
-});
+} as unknown as Packet);
 
 export function adminWorld(packets: Packet[] = [packet()]) {
   const w = qaWorld();

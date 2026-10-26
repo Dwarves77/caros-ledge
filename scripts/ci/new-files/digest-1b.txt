@@ -5,3 +5,4 @@ src/features/batches/kinds/admin-opportunity-findings/apply.ts | new in DIGEST-1
 src/features/batches/kinds/item-briefs/candidates.ts | new in DIGEST-1 PR B: the candidate_entities menu of a reader bundle (ADR-053, TRIANGLE-TRACE Q3); no old counterpart
 src/features/batches/kinds/item-briefs/emission.ts | new in DIGEST-1 PR B: the validator of the reader's typed blocks (UNIFIED-PRB-DESIGN section 1); no old counterpart
 src/features/batches/kinds/item-briefs/emit.ts | new in DIGEST-1 PR B: the live material and the writes of the reader's typed blocks; no old counterpart
+src/features/batches/kinds/admin-opportunity-findings/validate.ts | new in DIGEST-1 PR B: the admin finding validator, split from apply.ts so the kind registry names it; no old counterpart

@@ -3,12 +3,13 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
+import type { PacketMember } from "@/core/digest/packets-client";
 import { applyBatch, drainExporters } from "@/features/batches";
 import type { BatchExport } from "@/features/batches";
 
 import { batchFile } from "../batches/world.ts";
 
-import { adminEntry, adminWorld, PATTERN, ROWS, TEXT } from "./admin-world.ts";
+import { adminEntry, adminWorld, packet, PATTERN, ROWS } from "./admin-world.ts";
 
 const apply = (w: ReturnType<typeof adminWorld>, entries: unknown[], dry = false) => applyBatch("admin-opportunity-findings", w.deps, { content: JSON.stringify(batchFile("admin-opportunity-findings", entries)), dry, runId: "a1" });
 const notes = (r: { notes: string[] }) => r.notes.join("\n");
@@ -49,7 +50,7 @@ test("INV-DIG-7: a finding that cites rows from a single table, or from a single
   const t = await apply(w, [oneTable]);
   assert.match(notes(t), /every cited row is from .* table, at least two tables are required|every cited row is from obligation_objects|grid_connection_queues table/);
   const sameSurface = adminEntry({ sourced_finding_md: `The queue is long [${ROWS.grid}] and the unit is late [${ROWS.oem}].`, inferences: [], claim_provenance: [] });
-  const w2 = adminWorld([{ kind: "pattern", id: PATTERN, members: [{ table: "grid_connection_queues", id: ROWS.grid.split(":")[1] as string, text: TEXT.grid, surface: "operations" }, { table: "oem_tech_roadmaps", id: ROWS.oem.split(":")[1] as string, text: TEXT.oem, surface: "operations" }] }]);
+  const w2 = adminWorld([{ ...packet(), members: (packet().members as PacketMember[]).filter((m) => m.table === "grid_connection_queues" || m.table === "oem_tech_roadmaps").map((m) => ({ ...m, surface: "operations" })) }]);
   const s = await apply(w2, [sameSurface]);
   assert.match(notes(s), /every cited row is on operations surface, at least two surfaces are required/);
   assert.equal(w.db.rows("admin_opportunity_findings").length + w2.db.rows("admin_opportunity_findings").length, 0);

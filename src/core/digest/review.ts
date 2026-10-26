@@ -22,23 +22,22 @@ const judge = z.object({
 export type Judge = z.infer<typeof judge>;
 const file = z.object({ version: z.string(), /** How the validation figures were measured and how far they can be trusted. */ validation_basis: z.string().min(40), judges: z.array(judge).min(1) }).strict().parse(raw);
 if (new Set(file.judges.map((j) => j.id)).size !== file.judges.length) throw new Error("judges.json: a judge id is repeated");
-export const JUDGES_VERSION = file.version;
-export const JUDGES: readonly Judge[] = file.judges;
+const JUDGES: readonly Judge[] = file.judges;
 
 const present = (v: unknown): boolean => (Array.isArray(v) ? v.length > 0 : v !== undefined && v !== null);
 /** The judges a brief of this kind and entry must pass: those of its kind and format whose typed block it carries. */
-export function requiredJudges(kind: string, entry: Record<string, unknown>): Judge[] {
+function requiredJudges(kind: string, entry: Record<string, unknown>): Judge[] {
   const format = (entry.metadata as { format_type?: unknown } | null | undefined)?.format_type;
   return JUDGES.filter((j) => j.kinds.includes(kind) && (!j.formats || (typeof format === "string" && j.formats.includes(format))) && (!j.when || present(entry[j.when])));
 }
 
-export interface Review { score: number; reasons: string[]; residue: boolean; reviewed_by: string | null }
+export interface Review { /** The ids of the judges this entry had to pass. */ required: string[]; score: number; reasons: string[]; residue: boolean; reviewed_by: string | null }
 /** What the verdicts on an entry amount to: a missing review, a missing or unreasoned verdict and a fail each keep the brief out, naming the criterion. The score is the share of required judges that passed (a record, not a gate). */
 export function review(kind: string, entry: Record<string, unknown>): Review {
   const need = requiredJudges(kind, entry);
   const r = entry.review as { reviewed_by?: unknown; judges?: Record<string, { pass?: unknown; evidence?: unknown } | undefined> } | null | undefined;
   const reasons: string[] = [];
-  if (!r || typeof r !== "object" || typeof r.reviewed_by !== "string" || !r.reviewed_by.trim() || !r.judges || typeof r.judges !== "object") return { score: 0, reasons: ["the second reader's verdicts are missing (review: { reviewed_by, judges })"], residue: true, reviewed_by: null };
+  if (!r || typeof r !== "object" || typeof r.reviewed_by !== "string" || !r.reviewed_by.trim() || !r.judges || typeof r.judges !== "object") return { required: need.map((j) => j.id), score: 0, reasons: ["the second reader's verdicts are missing (review: { reviewed_by, judges })"], residue: true, reviewed_by: null };
   let passed = 0;
   for (const j of need) {
     const v = r.judges[j.id];
@@ -47,7 +46,7 @@ export function review(kind: string, entry: Record<string, unknown>): Review {
     else if (!v.pass) reasons.push(`${j.id} ${j.criterion}: failed (${v.evidence.trim().slice(0, 200)})`);
     else passed += 1;
   }
-  return { score: need.length ? passed / need.length : 1, reasons, residue: reasons.length > 0, reviewed_by: r.reviewed_by };
+  return { required: need.map((j) => j.id), score: need.length ? passed / need.length : 1, reasons, residue: reasons.length > 0, reviewed_by: r.reviewed_by };
 }
 
 /** INV-DIG-7 (HOW-TO-LOOK point 3, the no-single-source test): a theme brief or an admin finding cites rows from at least two tables AND at least two surfaces, or it is residue. Pure over the rows it cites. */
@@ -56,3 +55,6 @@ export function singleSourceReason(cited: readonly { table: string; surface?: st
   const surfaces = new Set(cited.flatMap((c) => (c.surface ? [c.surface] : [])));
   return tables.size < 2 ? `no-single-source test: every cited row is from ${[...tables][0] ?? "no"} table, at least two tables are required` : surfaces.size < 2 ? `no-single-source test: every cited row is on ${[...surfaces][0] ?? "no"} surface, at least two surfaces are required` : null;
 }
+
+/** What an export tells the session that reads second: the judges that apply to the kind and where their prompts are (the prompts stay in the file, not in every export). */
+export const secondReaderBlock = (kind: string): { version: string; prompts: string; judges: string[] } => ({ version: file.version, prompts: "src/core/digest/data/judges.json", judges: JUDGES.filter((j) => j.kinds.includes(kind)).map((j) => `${j.id} ${j.criterion}`) });

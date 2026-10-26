@@ -79,7 +79,10 @@ export async function writeEmission(deps: BatchDeps, itemId: string, sourceId: s
     });
     const r = await deriveObligationObjects(sb, { dry: false, itemIds: [itemId], extraCandidates: candidates });
     const mine = new Set(plan.objects.map((o) => norm(o.pinpoint)));
-    for (const x of r.data?.plan.refused ?? []) if (mine.has(norm(x.pinpoint_citation ?? ""))) (bump("objects_refused"), notes.push(`obligation_fields ${x.pinpoint_citation}: refused (${x.reason})`));
+    for (const x of r.data?.plan.refused ?? []) if (mine.has(norm(x.pinpoint_citation ?? ""))) {
+      bump("objects_refused");
+      notes.push(`obligation_fields ${x.pinpoint_citation}: refused (${x.reason})`);
+    }
     bump("objects_written", (r.data?.plan.toInsert ?? []).filter((p) => p.row.method_version === READER_METHOD).length);
     const current = new Map(currentObligationObjects<Row & { pinpoint_citation: string; obligation_id: string }>((await readObjects(sb, itemId)) as never).map((o) => [norm(o.pinpoint_citation), o.obligation_id]));
     for (const o of plan.objects) for (const e of o.entity_ids) if (current.has(norm(o.pinpoint))) refs.push(ref("obligation_objects", uuidOf(current.get(norm(o.pinpoint)) as string), e, { quote: o.provision.text, capture_id: o.provision.capture_id, pinpoint: o.pinpoint }));
@@ -109,7 +112,8 @@ export async function writeEmission(deps: BatchDeps, itemId: string, sourceId: s
     const [cap] = await rowsByIds<{ id: string; document_date: string | null }>(sb, "agent_run_searches", "id, document_date", [plan.document_date.quote.capture_id]);
     if (cap && !cap.document_date) {
       const { error } = await sb.from("agent_run_searches").update({ document_date: plan.document_date.date, document_date_basis: plan.document_date.quote.text, document_date_method: READER_METHOD }).eq("id", cap.id).is("document_date", null);
-      error ? notes.push(`document_date write failed: ${error.message}`) : bump("document_dates_written");
+      if (error) notes.push(`document_date write failed: ${error.message}`);
+      else bump("document_dates_written");
     } else bump("document_dates_kept_producer");
   }
   // new entities: a proposed term and a mention (the reader's own words); the recurrence rule adopts, then mintAdoptedTermEntities mints
@@ -124,7 +128,8 @@ export async function writeEmission(deps: BatchDeps, itemId: string, sourceId: s
     for (const t of (ins.data ?? []) as { id: string; term_key: string }[]) idOf.set(t.term_key, { id: t.id, term_key: t.term_key, kind: "term", status: "proposed" });
     const rows = plan.candidates.flatMap((c) => { const t = idOf.get(normaliseTermKey(c.canonical_name)); return t && t.status !== "retired" ? [{ term_id: t.id, item_id: itemId, source_id: sourceId, detector: "brief-terms", surface_text: c.quote.text }] : []; });
     const up = rows.length ? await sb.from("vocabulary_mentions").upsert(rows, { onConflict: "term_id,item_id,detector" }) : { error: null };
-    up.error ? notes.push(`vocabulary_mentions write failed: ${up.error.message}`) : bump("candidate_mentions", rows.length);
+    if (up.error) notes.push(`vocabulary_mentions write failed: ${up.error.message}`);
+    else bump("candidate_mentions", rows.length);
   }
   return { counts, notes };
 }

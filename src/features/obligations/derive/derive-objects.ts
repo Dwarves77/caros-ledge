@@ -33,7 +33,7 @@ const MODE_ALIASES: ReadonlySet<string> = new Set(["sea", "maritime", "water", "
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const DATE_COLUMNS = ["entry_into_force", "date_of_application", "first_deadline", "enforcement_start", "date_reviewed", "next_review_due", "due_date", "in_force_end"] as const;
 /** A reader's value (method_version reader@<kinds version>, DIGEST-1 PR B) supersedes a derived one and is never overwritten by one (ADR-053). */
-export const isReaderMethod = (m: unknown): boolean => typeof m === "string" && m.startsWith("reader@");
+const isReaderMethod = (m: unknown): boolean => typeof m === "string" && m.startsWith("reader@");
 const MONEY_KEYS = ["amount", "currency", "price", "cost"];
 
 const re = z.string();

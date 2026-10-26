@@ -7,7 +7,6 @@
 import { analysisLabelRe, buildTimelineRows, checkBriefContent, findTimelineSection, FORMAT_SPECS, LEGAL_CALLOUT, MODAL_RE, parseTimeline, validateClaimRecords, validateMetadata, type AdoptedTerms, type BriefMetadata, type SectionRow } from "@/core/brief";
 import { severityToken, validateBrief, type ItemColumns } from "@/core/brief/rules";
 import { scanGateA, uncoveredSlots, type SlotRow } from "@/core/grounding";
-
 import { digestKind } from "@/core/digest/kinds";
 import { review } from "@/core/digest/review";
 

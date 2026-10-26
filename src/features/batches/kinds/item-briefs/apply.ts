@@ -84,7 +84,7 @@ const STEPS: ReadonlyArray<readonly [string, Step]> = [
     const it = await itemRow(c.deps.sb, c.itemId);
     const w = c.plan.emission ? await writeEmission(c.deps, c.itemId, it?.source_id ?? null, c.plan.emission, new Set(c.plan.emission.captureIds)) : { counts: {}, notes: [] };
     const rv = review("item-briefs", c.entry);
-    const { error } = await c.deps.sb.from("brief_reviews").upsert({ kind: "item-briefs", subject_id: c.itemId, batch: c.batch, score: rv.score, reasons: rv.reasons.join("; ") || "every required judge passed", residue: false, reviewed_by: rv.reviewed_by ?? "none" }, { onConflict: "kind,subject_id,batch" });
+    const { error } = await c.deps.sb.from("brief_reviews").upsert({ kind: "item-briefs", subject_id: c.itemId, batch: c.batch, score: rv.score, reasons: rv.reasons.join("; ") || `${rv.required.length} required judges passed`, residue: false, reviewed_by: rv.reviewed_by ?? "none" }, { onConflict: "kind,subject_id,batch" });
     const notes = [...w.notes, ...(error ? [`brief_reviews write failed: ${error.message}`] : [])];
     return { outcome: notes.join("; ") || `${Object.entries(w.counts).map(([k, n]) => `${n} ${k}`).join(", ") || "no typed blocks"}; review recorded`, ok: notes.length === 0, counts: w.counts };
   }],

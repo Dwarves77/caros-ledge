@@ -8,7 +8,6 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { isAbsolute, join, relative, resolve } from "node:path";
 import { tmpdir } from "node:os";
 
-import { digestKind } from "@/core/digest/kinds";
 import type { Exporter } from "@/features/drain";
 import { runResult } from "@/core/types/run-result";
 import type { RunResult } from "@/core/types/run-result";
