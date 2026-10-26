@@ -4,7 +4,6 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { normalizeNumeric } from "@/core/contracts/numbers";
-import { scanGateA } from "@/core/grounding";
 import { classTierForHost } from "@/core/sources";
 import { healItem, healQuarantined, rederiveStale } from "@/features/mint";
 import { buildBuckets, buildSourcesIndex, claimNeedsResource, locateSpan, planGrounding, planResource, type Capture, type HealClaim } from "@/features/mint/heal/ground";
@@ -112,12 +111,14 @@ test("relabelling only prefixes the analysis label: the paragraph, the full-brie
   assert.equal(planRelabelModal("The operator must report. *Legal Confirmation Required:*"), null);
 });
 
+const newOf = (p: ReturnType<typeof planBriefHonest>): string => ("newFullBrief" in p ? p.newFullBrief : "");
+
 test("the honest strip removes whole sentences only (ADR-050), and is ACCEPTED only when Gate A then finds no orphan", () => {
   const single = "The regime applies to vessels. The penalty is EUR 50 000 per breach. Reports are annual.";
   const accepted = planBriefHonest(single, ["EUR 50 000"], []);
   assert.equal(accepted.outcome, "accepted");
-  assert.equal(accepted.outcome === "no_op" ? "" : accepted.newFullBrief, "The regime applies to vessels. Reports are annual.");
-  assert.equal(accepted.outcome === "no_op" ? "" : accepted.previous, single);
+  assert.equal(newOf(accepted), "The regime applies to vessels. Reports are annual.");
+  assert.equal("previous" in accepted ? accepted.previous : "", single);
   assert.deepEqual(accepted.perToken[0]?.removed, ["The penalty is EUR 50 000 per breach."]);
   assert.equal(planBriefHonest("Nothing to strip.", ["EUR 5"], []).outcome, "no_op");
 });
@@ -131,10 +132,10 @@ test("HEAL-1c: a sentence that also states a proven token is KEPT whole (never c
   assert.deepEqual(plan.perToken.map((t) => t.outcome), ["kept:sentence_states_a_proven_token"]);
   const mixed = planBriefHonest(`${two} The fee is EUR 70 000.`, ["EUR 50 000", "EUR 70 000"], facts);
   assert.equal(mixed.outcome, "partial", "the all-unprovable sentence went, the mixed one stayed, Gate A still finds the residue");
-  assert.equal(mixed.outcome === "no_op" ? "" : mixed.newFullBrief, two);
+  assert.equal(newOf(mixed), two);
   assert.deepEqual(mixed.stripped, ["The fee is EUR 70 000."]);
   assert.deepEqual(mixed.residue.map((r) => r.token), ["EUR 50 000"]);
-  assert.equal(mixed.outcome === "no_op" ? -1 : mixed.orphanCount, 1);
+  assert.equal("orphanCount" in mixed ? mixed.orphanCount : -1, 1);
 });
 
 test("HEAL-1b: a table row or list item goes whole whatever else it states, while prose that also states a figure that stays is still protected", () => {
