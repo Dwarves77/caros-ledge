@@ -1,4 +1,4 @@
-// DOC-DATE-1 (ADR-053 section 2): the date a stored document states about itself, read from formal codes. The velocity detector reads it as its clock in CONNECT-2 PR B (patterns.json 1.2.0, capture.document_date); this file proves the column's writer. The fragments are quoted from production captures (read 2026-10-26); the negative cases are planted.
+// DOC-DATE-1 (ADR-053 section 2): the date a stored document states about itself, read from formal codes only; DOC-DATE-2 retired the English word triggers and reverts the dates they wrote. The velocity detector reads it as its clock in CONNECT-2 PR B (patterns.json 1.2.0, capture.document_date); this file proves the column's writer. The fragments are quoted from production captures (read 2026-10-26); the negative cases are planted.
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
@@ -17,15 +17,14 @@ import { NOW, patternFixture } from "./_world.ts";
 const ETS_2003 = '<p>\n         <em>OJ L 275, 25.10.2003, pp. 32–46\n</em> ... <p class="normal">Done at Luxembourg, 13 October 2003.</p>';
 const FUELEU = "( OJ L 243, 9.7.2021, p. 1 ). ( 5 ) OJ L 282, 19.10.2016, p. 4 . ( 6 ) ... licable in all Member States. Done at Strasbourg, 13 September 2023. For the European Parliament";
 const NEW_FORMAT = '<p>PE/84/2023/REV/1</p>\n      <p>\n         <em>OJ L, 2024/1157,  30.4.2024, ELI: <a class="underlineLink" href="';
+const META = (d: string) => `<meta property="article:published_time" content="${d}" />`;
 const FEDERAL_REGISTER = '<meta property="article:published_time" content="2026-07-09" />\n\n    <link rel="image_src"';
 
 test("the formal forms: each real fragment gives its date, the kind and a basis that is a substring of the text", () => {
   const cases: [string, string, string, string, string][] = [
     ["ETS directive, OJ header before the signature", ETS_2003, "https://eur-lex.europa.eu/eli/dir/2003/87/oj/eng", "2003-10-25", "oj_header"],
-    ["FuelEU text: citations are not the header, the signature line is", FUELEU, "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32023R1805", "2023-09-13", "signature_line"],
     ["new-format OJ header with the act number", NEW_FORMAT, "https://eur-lex.europa.eu/eli/reg/2024/1157/oj/eng", "2024-04-30", "oj_header"],
     ["Federal Register published_time metadata", FEDERAL_REGISTER, "https://www.federalregister.gov/documents/2026/07/09/2026-13843/air-plan-approval", "2026-07-09", "eli_metadata"],
-    ["a dated header line (planted)", "<dl>\n  Date: 2025-03-31\n</dl>", "https://example.invalid/x", "2025-03-31", "iso_line"],
   ];
   for (const [name, text, url, date, kind] of cases) {
     const r = extractDocumentDate(text, url);
@@ -45,22 +44,25 @@ test("anything else is null: prose dates, a year-only ELI, an effective date, an
     ["the OJ header of another act than the URL's", NEW_FORMAT, "https://eur-lex.europa.eu/eli/reg/2023/1805/oj/eng"],
     ["an impossible calendar day", "<em>OJ L 105, 31.2.2007, pp. 88–253", "https://example.invalid/e"],
     ["a month and year only", "Done at Brussels, September 2023.", "https://example.invalid/f"],
+    ["DOC-DATE-2: the signature line is English prose, not a formal code (citations of other acts are no header either)", FUELEU, "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32023R1805"],
+    ["DOC-DATE-2: the signature sentence alone", "Done at Strasbourg, 13 September 2023.", "https://example.invalid/g"],
+    ["DOC-DATE-2: a dated header label at a line start", "<dl>\n  Date: 2025-03-31\n</dl>", "https://example.invalid/x"],
+    ["DOC-DATE-2: a published label", "<p>Published: 2026-09-01</p>", "https://example.invalid/y"],
   ];
   for (const [name, text, url] of nulls) assert.equal(extractDocumentDate(text, url), null, name);
 });
 
-test("INV-DD-5: the accepted header tokens are date-header labels, metadata property names and the signature opener, and no others", () => {
+test("INV-DD-5: the accepted tokens are the metadata property names and no English word (DOC-DATE-2), under the 2.0.0 method", () => {
   assert.deepEqual(tokens.metadata, ["dc:date", "eli:date_publication", "article:published_time"]);
-  assert.deepEqual(tokens.labels, ["Date:", "Published:"]);
-  assert.deepEqual(tokens.signatures, ["Done at"]);
-  assert.deepEqual(Object.keys(tokens).sort(), ["gapChars", "labels", "metadata", "signatures", "version"]);
+  assert.deepEqual(Object.keys(tokens).sort(), ["gapChars", "metadata", "version"]);
+  assert.equal(tokens.version, "doc-date@2.0.0");
 });
 
 test("INV-DD-1: a date whose basis is not in its capture is refused, whichever reader produced it; a verbatim one is kept", () => {
   const caps = [{ id: "c1", result_url: "https://x.invalid/1", result_content: ETS_2003 }, { id: "c2", result_url: "https://x.invalid/2", result_content: "no formal date here" }];
   const honest = datedRows(caps, extractDocumentDate);
   assert.deepEqual([honest.rows.map((r) => r.id), honest.refused], [["c1"], []]);
-  const recomposed = datedRows(caps, (t) => (t.includes("Luxembourg") ? { date: "2003-10-13", basis: "Done at Luxembourg, on 13 October 2003", kind: "signature_line" } : null));
+  const recomposed = datedRows(caps, (t) => (t.includes("OJ L 275") ? { date: "2003-10-25", basis: "OJ L 275, dated 25.10.2003", kind: "oj_header" } : null));
   assert.deepEqual([recomposed.rows, recomposed.refused], [[], ["c1"]], "the planted basis is a recomposition of the text, not a substring of it");
 });
 
@@ -82,7 +84,7 @@ test("INV-DD-3: the producer dates the captures it can, writes the verbatim basi
   const run = await runProducer(deps(f), { spec: documentDate, dry: false });
   assert.deepEqual([run.outcome, run.counts.written, run.counts.dated_oj_header, run.counts.dated_eli_metadata], ["ok", 2, 1, 1]);
   const dated = rows().filter((r) => r.document_date);
-  assert.deepEqual(dated.map((r) => [r.document_date, r.document_date_method]).sort(), [["2003-10-25", "doc-date@1.0.0"], ["2026-07-09", "doc-date@1.0.0"]]);
+  assert.deepEqual(dated.map((r) => [r.document_date, r.document_date_method]).sort(), [["2003-10-25", "doc-date@2.0.0"], ["2026-07-09", "doc-date@2.0.0"]]);
   assert.ok(dated.every((r) => String(r.result_content).includes(String(r.document_date_basis))), "every stored basis is verbatim in its capture");
   const again = await runProducer(deps(f), { spec: documentDate, dry: false });
   assert.deepEqual([again.counts.written ?? 0, again.counts.read, again.counts.undated], [0, 1, 1], "only the undated capture is read again; nothing is written");
@@ -96,12 +98,12 @@ test("the propagate stage runs it with the fetch gate closed (it reads stored da
     delete c.document_date;
     delete c.document_date_basis;
     delete c.document_date_method;
-    c.result_content = "<p>Published: 2026-09-01</p>";
+    c.result_content = META("2026-09-01");
   }
   await runTurn({ stage: "propagate", mode: "dry", input: { propagate: { producers: { only: "document-date" } } } }, { d: f.d, env: {}, now: () => NOW });
   assert.ok(f.db.rows("agent_run_searches").every((c) => !c.document_date), "dry wrote no date");
   await runTurn({ stage: "propagate", mode: "apply", input: { propagate: { producers: { only: "document-date" }, cadence_exception: "ruling" } } }, { d: f.d, env: {}, now: () => NOW });
-  assert.ok(f.db.rows("agent_run_searches").filter((c) => mine.has(c.id)).every((c) => c.document_date === "2026-09-01" && String(c.document_date_basis) === "Published: 2026-09-01"), "the apply turn dated every capture that states one (the seed pages it captured in the same run are read by the next run)");
+  assert.ok(f.db.rows("agent_run_searches").filter((c) => mine.has(c.id)).every((c) => c.document_date === "2026-09-01" && String(c.document_date_basis) === 'article:published_time" content="2026-09-01'), "the apply turn dated every capture that states one (the seed pages it captured in the same run are read by the next run)");
 });
 
 test("INV-DD-2: the extractor and the producer read no intake or retrieval date, and a capture whose text states none stays undated whatever its retrieval day", async () => {
@@ -117,10 +119,36 @@ test("INV-DD-4: a bulk intake (ten captures retrieved on one day, ten documents 
   const f = fixture();
   const intake = NOW.toISOString().slice(0, 10);
   const published = Array.from({ length: 10 }, (_, n) => new Date(NOW.getTime() - (40 + n * 35) * 86_400_000).toISOString().slice(0, 10));
-  f.db.seed("agent_run_searches", published.map((d, n) => ({ ...cap(n, `https://bulk.invalid/${n}`, `<p>Published: ${d}</p>`), id: `a0000000-0000-4000-8000-0000000e00${String(n).padStart(2, "0")}`, searched_at: `${intake}T09:00:00Z` })));
+  f.db.seed("agent_run_searches", published.map((d, n) => ({ ...cap(n, `https://bulk.invalid/${n}`, META(d)), id: `a0000000-0000-4000-8000-0000000e00${String(n).padStart(2, "0")}`, searched_at: `${intake}T09:00:00Z` })));
   await runProducer(deps(f), { spec: documentDate, dry: false });
   const rows = f.db.rows("agent_run_searches").filter((r) => String(r.id).includes("0e00"));
   assert.deepEqual(rows.map((r) => r.document_date).sort(), [...published].sort());
   assert.ok(rows.every((r) => r.document_date !== intake), "no capture is dated by its intake day");
   assert.equal(new Set(rows.map((r) => r.document_date)).size, 10, "ten distinct document dates, not one burst day");
+});
+
+const stored = (n: number, url: string, content: string | null, date: string, basis: string) => ({ ...cap(n, url, content as string), document_date: date, document_date_basis: basis, document_date_method: "doc-date@1.0.0" });
+const OJ_URL = "https://eur-lex.europa.eu/eli/dir/2003/87/oj/eng";
+
+test("DOC-DATE-2: a capture the retired word-list method dated is set back to NULL on all three columns; one the new method re-produces is re-stamped; dry writes nothing; a second run is silent", async () => {
+  const f = fixture();
+  f.db.seed("agent_run_searches", [
+    stored(5, "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32023R1805", FUELEU, "2023-09-13", "Done at Strasbourg, 13 September 2023"),
+    stored(6, OJ_URL, ETS_2003, "2003-10-25", "OJ L 275, 25.10.2003"),
+    stored(7, "https://example.invalid/x", "<dl>\n  Date: 2025-03-31\n</dl>", "2025-03-31", "Date: 2025-03-31"),
+    stored(8, "https://example.invalid/nocontent", null, "2025-03-31", "Date: 2025-03-31"),
+    { ...stored(9, OJ_URL, ETS_2003, "2003-10-25", "OJ L 275, 25.10.2003"), document_date_method: "doc-date@2.0.0" },
+  ]);
+  const row = (n: number) => f.db.rows("agent_run_searches").find((r) => String(r.id).endsWith(`0d000${n}`));
+  const triple = (n: number) => [row(n)?.document_date ?? null, row(n)?.document_date_basis ?? null, row(n)?.document_date_method ?? null];
+  const dry = await runProducer(deps(f), { spec: documentDate, dry: true });
+  assert.deepEqual([dry.outcome, dry.counts.reverted, dry.counts.restamped, dry.counts.stale], ["ok", 3, 1, 4], "the 2.0.0 row is not read again");
+  assert.deepEqual([triple(5)[2], triple(6)[2]], ["doc-date@1.0.0", "doc-date@1.0.0"], "dry wrote nothing");
+  const run = await runProducer(deps(f), { spec: documentDate, dry: false });
+  assert.deepEqual([run.outcome, run.counts.written, run.counts.reverted, run.counts.restamped], ["ok", 4, 3, 1]);
+  for (const n of [5, 7, 8]) assert.deepEqual(triple(n), [null, null, null], `capture ${n}: all three columns back to NULL together`);
+  assert.deepEqual(triple(6), ["2003-10-25", "OJ L 275, 25.10.2003", "doc-date@2.0.0"], "the OJ row is re-stamped, date and basis untouched");
+  assert.deepEqual(triple(9), ["2003-10-25", "OJ L 275, 25.10.2003", "doc-date@2.0.0"]);
+  const again = await runProducer(deps(f), { spec: documentDate, dry: false });
+  assert.deepEqual([again.counts.written ?? 0, again.counts.reverted, again.counts.restamped, again.counts.stale], [0, 0, 0, 0], "a second run writes nothing");
 });

@@ -1,11 +1,11 @@
-// New in DOC-DATE-1 (scripts/ci/new-files/doc-date-1.txt): the date a stored document states about itself, read from formal codes only (ADR-053 section 2): the Official Journal header, a date metadata property, a dated header line, the signature line.
-// Pure: no read, no clock. The accepted header tokens are data (data/document-date.json); every date is parsed by the one date grammar (@/core/parse/date-grammar); the basis is the verbatim fragment the date came from. Anything else is null; no stored date is ever a fallback.
+// New in DOC-DATE-1 (scripts/ci/new-files/doc-date-1.txt): the date a stored document states about itself, read from formal codes only (ADR-053 section 2): the Official Journal header and a date metadata property. DOC-DATE-2 retired the English word triggers (a dated header label, the signature line).
+// Pure: no read, no clock. The accepted metadata property names are data (data/document-date.json); every date is parsed by the one date grammar (@/core/parse/date-grammar); the basis is the verbatim fragment the date came from. Anything else is null; no stored date is ever a fallback.
 import { tryParseDateAt } from "@/core/parse/date-grammar";
 
 import tokens from "./data/document-date.json";
 
-const DOC_DATE_METHOD = tokens.version;
-export type DocDateKind = "oj_header" | "eli_metadata" | "iso_line" | "signature_line";
+export const DOC_DATE_METHOD = tokens.version;
+export type DocDateKind = "oj_header" | "eli_metadata";
 export interface DocumentDate {
   date: string;
   basis: string;
@@ -35,31 +35,25 @@ function ojHeader(text: string, url: string): DocumentDate | null {
   return null;
 }
 
-/** The first of `list` (at the start of a line or tag when `lineStart`) followed, with nothing but non-digits between and within the gap, by a day the date grammar parses, in the ISO form or the long form. */
-function afterToken(text: string, list: readonly string[], o: { lineStart: boolean; iso: boolean }): Pick<DocumentDate, "date" | "basis"> | null {
-  for (const t of list) {
+/** The first of the metadata property names followed, with nothing but non-digits between and within the gap, by an ISO day the date grammar parses. */
+function metadataDate(text: string): Pick<DocumentDate, "date" | "basis"> | null {
+  for (const t of tokens.metadata) {
     for (let i = text.indexOf(t); i >= 0; i = text.indexOf(t, i + t.length)) {
-      const head = text.slice(0, i).trimEnd();
-      if (o.lineStart && head && !head.endsWith(">") && !text.slice(head.length, i).includes("\n")) continue;
       const gap = text.slice(i + t.length, i + t.length + tokens.gapChars);
       const at = gap.search(/\d/);
       const date = at < 0 || /[<>]/.test(gap.slice(0, at)) ? null : dayAt(text, i + t.length + at);
-      if (date && /^\d{4}-/.test(date.matchText) === o.iso) return { date: date.iso, basis: text.slice(i, i + t.length + at + date.length) };
+      if (date && /^\d{4}-/.test(date.matchText)) return { date: date.iso, basis: text.slice(i, i + t.length + at + date.length) };
     }
   }
   return null;
 }
 
-/** The document's own date and the fragment it was read from, or null. */
+/** The document's own date and the fragment it was read from, or null. Formal codes only: an English word ("Date:", "Done at") is the digest reader's, with a verbatim quote (ADR-053 section 2, DOC-DATE-2). */
 export function extractDocumentDate(text: string, url: string): DocumentDate | null {
   const oj = ojHeader(text, url);
   if (oj) return oj;
-  const meta = afterToken(text, tokens.metadata, { lineStart: false, iso: true });
-  if (meta) return { ...meta, kind: "eli_metadata" };
-  const line = afterToken(text, tokens.labels, { lineStart: true, iso: true });
-  if (line) return { ...line, kind: "iso_line" };
-  const sig = afterToken(text, tokens.signatures, { lineStart: false, iso: false });
-  return sig ? { ...sig, kind: "signature_line" } : null;
+  const meta = metadataDate(text);
+  return meta ? { ...meta, kind: "eli_metadata" } : null;
 }
 
 export interface Capture { id: string; result_url: string | null; result_content: string | null }
@@ -76,4 +70,17 @@ export function datedRows(caps: readonly Capture[], read: (text: string, url: st
     else rows.push({ id: c.id, document_date: hit.date, document_date_basis: hit.basis, document_date_method: DOC_DATE_METHOD, kind: hit.kind });
   }
   return { rows, refused };
+}
+
+export interface StoredCapture extends Capture { document_date: string | null; document_date_basis: string | null; document_date_method: string | null }
+/** One write of the producer: a date read now ("date"), a stored date the current method re-produces and re-stamps ("restamp"), or one it does not and sets back to NULL, all three columns together ("revert"). */
+export interface Change { id: string; op: "date" | "restamp" | "revert"; document_date: string | null; document_date_basis: string | null; document_date_method: string | null; kind?: DocDateKind }
+
+/** The captures a retired method dated: a stored basis the current method reads again, on the capture's own text, to the same date is re-stamped with the current method; any other (the retired word-list dates, or a capture with no text left) is reverted (DOC-DATE-2). */
+export function reconcileStale(caps: readonly StoredCapture[], read: (text: string, url: string) => DocumentDate | null): Change[] {
+  return caps.map((c): Change => {
+    const hit = c.result_content ? read(c.result_content, c.result_url ?? "") : null;
+    const same = hit !== null && hit.basis === c.document_date_basis && hit.date === c.document_date && (c.result_content as string).includes(hit.basis);
+    return same ? { id: c.id, op: "restamp", document_date: hit.date, document_date_basis: hit.basis, document_date_method: DOC_DATE_METHOD, kind: hit.kind } : { id: c.id, op: "revert", document_date: null, document_date_basis: null, document_date_method: null };
+  });
 }
