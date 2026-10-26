@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { formatDate, pluralize } from "@/core/shared";
 
 import { Absence } from "../../Absence";
-import { ActionButton } from "../../ActionRow";
+import { Button } from "../../Button";
 
 import { collabPath, collabRequest, isIdLabel } from "./collab-client";
 
@@ -116,7 +116,7 @@ export function ItemAssignBlock({ itemId, todayIso }: { itemId: string; todayIso
     return (
       <div role="alert">
         <p className="cl-collab-meta">{loadError ?? "Assignments could not be loaded."}</p>
-        <ActionButton onClick={() => (setPhase("loading"), setAttempt((n) => n + 1))}>Retry</ActionButton>
+        <Button onClick={() => (setPhase("loading"), setAttempt((n) => n + 1))}>Retry</Button>
       </div>
     );
   }
@@ -137,12 +137,12 @@ export function ItemAssignBlock({ itemId, todayIso }: { itemId: string; todayIso
               </p>
               {a.can_change && (
                 <div className="cl-collab-row">
-                  <ActionButton onClick={() => void setState(a, a.state === "done" ? "open" : "done")} disabled={busy !== null}>
+                  <Button onClick={() => void setState(a, a.state === "done" ? "open" : "done")} disabled={busy !== null}>
                     {busy === a.id ? "Saving…" : a.state === "done" ? "Reopen" : "Mark done"}
-                  </ActionButton>
-                  <ActionButton onClick={() => void remove(a)} disabled={busy !== null}>
+                  </Button>
+                  <Button onClick={() => void remove(a)} disabled={busy !== null}>
                     Remove
-                  </ActionButton>
+                  </Button>
                 </div>
               )}
               {error?.id === a.id && (
@@ -173,14 +173,14 @@ export function ItemAssignBlock({ itemId, todayIso }: { itemId: string; todayIso
               ))}
             </div>
           </fieldset>
-          <label className="cl-detail-label" style={{ display: "flex", flexDirection: "column", gap: 4, maxWidth: 260, marginTop: 10 }}>
+          <label className="cl-detail-label" style={{ display: "flex", flexDirection: "column", gap: "var(--sp-4)", maxWidth: "16.25rem", marginTop: "var(--sp-10)" }}>
             Due date (optional)
             <input type="date" value={dueOn} onChange={(e) => (setDueOn(e.target.value), setError(null))} className="cl-collab-field" />
           </label>
           <div className="cl-collab-row">
-            <ActionButton variant="primary" onClick={() => void assign()} disabled={busy !== null || picked.length === 0}>
+            <Button onClick={() => void assign()} disabled={busy !== null || picked.length === 0}>
               {busy === "new" ? "Assigning…" : picked.length === 0 ? "Assign" : `Assign ${people(picked.length)}`}
-            </ActionButton>
+            </Button>
             {picked.length === 0 && <span className="cl-collab-meta">Pick at least one person.</span>}
           </div>
           {error?.id === "new" && (

@@ -1,5 +1,5 @@
 // Ported from old_repo/src/app/not-found.tsx (lines 11-75)
-import Link from "next/link";
+import { ButtonLink } from "@/ui";
 
 /** The honest 404: the copy the old page used, with a 44 px link. */
 export default function NotFound() {
@@ -8,9 +8,9 @@ export default function NotFound() {
       <p className="cl-notfound-kicker">{"404 — Not found"}</p>
       <h1 className="cl-notfound-title">This page doesn&apos;t exist</h1>
       <p className="cl-notfound-text">The link may be outdated, or the item it points to is not published.</p>
-      <Link href="/" prefetch={false} className="cl-btn cl-btn--secondary cl-btn--md">
+      <ButtonLink href="/" prefetch={false}>
         Back to Dashboard
-      </Link>
+      </ButtonLink>
     </div>
   );
 }
