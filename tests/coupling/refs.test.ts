@@ -11,19 +11,80 @@ import { claim, E, ITEM, OBLIGATION, patternFixture, propagate } from "./_world.
 
 const refsOf = (f: ReturnType<typeof patternFixture>) => f.db.rows("entity_refs").filter((r) => r.asserted_by === "coupling/refs");
 
-test("C2a: a claim resolves to the entity it names, by alias and by instrument identifier, with the claim id and span as its basis", async () => {
+test("C2a: a claim resolves to an entity by a formal code it states (an instrument identifier, a UN/LOCODE) or by a name of the closed ontology of couplings.json, with the claim id and span as its basis", async () => {
   const f = patternFixture();
   f.db.seed("section_claim_provenance", [claim(ITEM.reg, "Regulation (EU) 2023/2405 raises the blending obligation.", "2026-10-01", "b1000000-0000-4000-8000-000000000031", 1)]);
   await propagate(f);
+  const byId = refsOf(f).find((r) => r.entity_id === E("instrument:32023R2405") && r.ref_table === "section_claim_provenance");
+  assert.equal((byId?.basis as { how: string }).how, "identifier", "an instrument named by its number resolves through the parse module's equality, not a substring");
+  assert.equal(byId?.role, "cites_instrument");
   const ammonia = refsOf(f).filter((r) => r.entity_id === E("carrier:green_ammonia") && r.ref_table === "section_claim_provenance");
   assert.equal(ammonia.length, 6, "the six claims that name green ammonia");
   assert.deepEqual(ammonia.map((r) => r.role), Array(6).fill("cites_carrier"));
   const first = ammonia[0]?.basis as { claim_id: string; span: number[]; claim_kind: string; how: string };
-  assert.deepEqual([first.span, first.claim_kind, first.how], [[0, 13], "FACT", "alias"]);
-  assert.equal(first.claim_id, ammonia[0]?.ref_id);
-  const byId = refsOf(f).find((r) => r.entity_id === E("instrument:32023R2405") && r.ref_table === "section_claim_provenance");
-  assert.equal((byId?.basis as { how: string }).how, "identifier", "an instrument named by its number resolves through the parse module's equality, not a substring");
-  assert.equal(byId?.role, "cites_instrument");
+  assert.deepEqual([first.span, first.claim_kind, first.how], [[0, 13], "FACT", "name"]);
+});
+
+const DE = "cl:jurisdiction:dddddddddddddddd";
+const RTM = "cl:node:eeeeeeeeeeeeeeee";
+const HOSTORG = "cl:organisation:ffffffffffffffff";
+const ETS = "cl:instrument:1111111111111111";
+
+test("INV-JOIN-8 (ADR-053): a country name in prose yields no ref; a UN/LOCODE and a CELEX identifier stated in prose yield the entity that holds them; a host, an organisation, a title and an acronym in prose yield none", async () => {
+  const f = patternFixture();
+  f.db.seed("entities", [
+    { entity_id: DE, kind: "jurisdiction", canonical_name: "DE", display_name: null },
+    { entity_id: RTM, kind: "node", canonical_name: "Rotterdam", display_name: null },
+    { entity_id: HOSTORG, kind: "organisation", canonical_name: "eur-lex.europa.eu", display_name: null },
+    { entity_id: ETS, kind: "instrument", canonical_name: "32003L0087", display_name: null },
+  ]);
+  f.db.seed("entity_identifiers", [{ entity_id: RTM, scheme: "UNLOCODE", value: "NLRTM" }, { entity_id: HOSTORG, scheme: "HOST", value: "eur-lex.europa.eu" }]);
+  const ids = { country: "b4000000-0000-4000-8000-000000000001", code: "b4000000-0000-4000-8000-000000000002", celex: "b4000000-0000-4000-8000-000000000003", host: "b4000000-0000-4000-8000-000000000004" };
+  f.db.seed("section_claim_provenance", [
+    claim(ITEM.reg, "Germany and Done at Luxembourg were named in the report.", "2026-10-01", "b1000000-0000-4000-8000-000000000051", 1, "FACT", ids.country),
+    claim(ITEM.reg, "The cargo was discharged at NLRTM on Tuesday.", "2026-10-01", "b1000000-0000-4000-8000-000000000052", 1, "FACT", ids.code),
+    claim(ITEM.reg, "Directive 2003/87/EC (CELEX 32003L0087) sets the cap.", "2026-10-01", "b1000000-0000-4000-8000-000000000053", 1, "FACT", ids.celex),
+    claim(ITEM.reg, "The text was published on eur-lex.europa.eu in 2023.", "2026-10-01", "b1000000-0000-4000-8000-000000000054", 1, "FACT", ids.host),
+  ]);
+  await mineRefs({ sb: f.d.sb, now: () => NOW }, { dry: false });
+  const of = (claimId: string) => refsOf(f).filter((r) => r.ref_id === claimId).map((r) => [r.entity_id, (r.basis as { how: string }).how]);
+  assert.deepEqual(of(ids.country), [], "a country name in prose is no mention");
+  assert.deepEqual(of(ids.code), [[RTM, "code"]], "a UN/LOCODE is a formal code");
+  assert.deepEqual(of(ids.host), [], "a publisher's host in prose is no mention: hosts stay on sources");
+  assert.deepEqual(of(ids.celex), [[ETS, "identifier"]], "a CELEX number resolves to the instrument entity that holds it");
+});
+
+test("INV-JOIN-8: a typed jurisdiction column files a row under the jurisdiction entity, with the column and value as its basis", async () => {
+  const f = patternFixture();
+  f.db.seed("entities", [{ entity_id: DE, kind: "jurisdiction", canonical_name: "DE", display_name: null }]);
+  const queue = "b5000000-0000-4000-8000-000000000001";
+  f.db.seed("grid_connection_queues", [{ queue_id: queue, jurisdiction_id: DE, dso_name: "Germany Netz", capacity_band_mw: null, queue_months_p50: null, as_of: "2026-05-29", obs_status: "L", origin_class: "official", derivation: "observed" }]);
+  await mineRefs({ sb: f.d.sb, now: () => NOW }, { dry: false });
+  const mine = refsOf(f).filter((r) => r.ref_table === "grid_connection_queues" && r.ref_id === queue && r.entity_id === DE);
+  assert.deepEqual(mine.map((r) => [r.role, r.basis]), [["cites_jurisdiction", { table: "grid_connection_queues", pk: queue, column: "jurisdiction_id", value: DE }]]);
+  assert.equal(refsOf(f).filter((r) => r.ref_id === queue).every((r) => (r.basis as { column: string | null }).column !== "dso_name"), true, "the operator's name in prose files nothing");
+});
+
+test("INV-JOIN-8: the refs the pass wrote by matching words (name, alias, acronym, a typed text label) are counted by basis kind and retired; the formal, ontology and typed refs stay; a dry run counts and retires nothing", async () => {
+  const f = patternFixture();
+  const old = (ref_table: string, ref_id: string, entity_id: string, basis: Record<string, unknown>) => ({ ref_table, ref_id, entity_id, role: "cites_jurisdiction", asserted_by: "coupling/refs", basis, method_version: "refs@1.0.0" });
+  f.db.seed("entity_refs", [
+    old("section_claim_provenance", "b6000000-0000-4000-8000-000000000001", DE, { how: "name", span: [0, 7] }),
+    old("section_claim_provenance", "b6000000-0000-4000-8000-000000000002", DE, { how: "alias", span: [0, 3] }),
+    old("section_claim_provenance", "b6000000-0000-4000-8000-000000000003", DE, { how: "acronym", span: [0, 3] }),
+    { ...old("section_claim_provenance", "b6000000-0000-4000-8000-000000000007", E("carrier:green_ammonia"), { how: "name", span: [0, 13] }), role: "cites_carrier" },
+    old("market_series", "b6000000-0000-4000-8000-000000000004", DE, { table: "market_series", pk: "x", column: "label", value: "Germany", span: [0, 7] }),
+    old("section_claim_provenance", "b6000000-0000-4000-8000-000000000005", DE, { how: "identifier", span: [0, 7] }),
+    old("grid_connection_queues", "b6000000-0000-4000-8000-000000000006", DE, { table: "grid_connection_queues", pk: "y", column: "jurisdiction_id", value: DE }),
+  ]);
+  const dry = await mineRefs({ sb: f.d.sb, now: () => NOW }, { dry: true });
+  assert.deepEqual([dry.counts.refs_before_prose, dry.counts.refs_before_formal, dry.counts.refs_before_ontology, dry.counts.refs_before_typed], [4, 1, 1, 1], "by basis kind, before anything is retired");
+  assert.equal(f.db.rows("entity_refs").filter((r) => r.entity_id === DE).length, 6, "a dry run retires nothing");
+  const applied = await mineRefs({ sb: f.d.sb, now: () => NOW }, { dry: false });
+  assert.equal(applied.counts.refs_prose_retired, 4);
+  assert.deepEqual(f.db.rows("entity_refs").filter((r) => r.entity_id === DE).map((r) => r.ref_id).sort(), ["b6000000-0000-4000-8000-000000000005", "b6000000-0000-4000-8000-000000000006"]);
+  assert.ok(f.db.rows("entity_refs").some((r) => r.ref_id === "b6000000-0000-4000-8000-000000000007"), "a name of the closed ontology is not prose outside it: its ref stays");
+  assert.equal((await mineRefs({ sb: f.d.sb, now: () => NOW }, { dry: false })).counts.refs_prose_existing, 0, "a second run finds nothing to retire");
 });
 
 test("C2b: a typed table's rows are mined through the column map: a coded value, a mode, a name in a label, the refs of the claim an event rests on; a text key is keyed by its uuid", async () => {
@@ -36,7 +97,7 @@ test("C2b: a typed table's rows are mined through the column map: a coded value,
   assert.equal(ob[0]?.ref_id, uuidOf(OBLIGATION.air));
   assert.equal((ob[0]?.basis as { pk: string }).pk, OBLIGATION.air, "the real key rides in the basis");
   assert.equal(of("obligation_objects", "instrument:32023R2405").length, 1, "the instrument entity the obligation names");
-  assert.equal(of("market_series", "carrier:hvo").length, 2, "both points of the series named in its label");
+  assert.equal(of("market_series", "carrier:hvo").length, 2, "both points of the series filed under the entity by its typed entity_id column");
   assert.equal(of("item_forward_events", "carrier:hvo").length, 1, "the event takes the refs of the claim it rests on");
   assert.equal(of("statutory_computations", "carrier:bio_methanol").length, 1);
   assert.ok(of("research_assessments_current", "carrier:bio_methanol").length === 1);
@@ -53,7 +114,7 @@ test("INV-CN2-8: every ref the mining writes carries a basis and the method vers
   const f = patternFixture();
   await propagate(f);
   const mined = refsOf(f);
-  assert.ok(mined.length > 20);
+  assert.ok(mined.length > 10);
   for (const r of mined) {
     assert.ok(r.basis && typeof r.basis === "object", `${String(r.ref_table)} ${String(r.entity_id)} has a basis`);
     assert.match(String(r.method_version), /^refs@/);
@@ -67,4 +128,15 @@ test("INV-CN2-8: every ref the mining writes carries a basis and the method vers
   assert.equal(dry.counts.refs_new, 1);
   assert.equal(f.db.rows("entity_refs").length, before);
   assert.equal(dry.counts.claims_unresolved_fact, 12, "the twelve background claims name nothing: counted by kind, never guessed");
+});
+
+test("INV-JOIN-10: a market series is filed under the fossil reference fuel its formal series code names; an exchange rate and a benchmark with no entity in the vocabulary are filed under none", async () => {
+  const f = patternFixture();
+  const row = (n: number, key: string) => ({ id: `b7000000-0000-4000-8000-00000000000${n}`, series_key: key, label: "a label that names nothing", value_numeric: 1, unit: "EUR/t", currency: "EUR", derivation: "observed", origin_class: "official", source_key: "fixture", source_ref: "fixture", as_at_date: "2026-10-01", reference_period: "2026-10-01" });
+  f.db.seed("market_series", [row(1, "eu-oil-bulletin:automotive-diesel"), row(2, "eia-v2:jet-fuel-kerosene-eer-epjk-pf4-rgc-dpg"), row(3, "ecb-fx:eur-usd"), row(4, "eia-v2:brent-crude-rbrte")]);
+  await propagate(f);
+  const filed = (n: number) => refsOf(f).filter((r) => r.ref_table === "market_series" && r.ref_id === `b7000000-0000-4000-8000-00000000000${n}`).map((r) => [r.entity_id, r.role, (r.basis as { column: string }).column]);
+  assert.deepEqual(filed(1), [[E("carrier:fossil_diesel"), "cites_carrier", "series_key"]]);
+  assert.deepEqual(filed(2), [[E("carrier:fossil_jet"), "cites_carrier", "series_key"]]);
+  assert.deepEqual([filed(3), filed(4)], [[], []], "no entity in the vocabulary: filed under none, never guessed from the label");
 });

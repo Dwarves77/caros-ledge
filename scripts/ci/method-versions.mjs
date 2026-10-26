@@ -4,7 +4,8 @@
 // key in scripts/ci/data/method-hashes.json. It fails when
 //   - a recorded key's code changed and its version did not (register a NEW version; the old key stays registered so rows computed by it stay reproducible),
 //   - a registered key has no record (a new method or version: `node scripts/ci/method-versions.mjs --write` records it),
-//   - a recorded key is no longer registered (a derived row can still name it).
+//   - a recorded key is no longer registered (a derived row can still name it), unless scripts/ci/data/method-retired.json retires it by name: a retirement states the reason and the registered successor of the same method id, and the rows the key computed stay as they are
+//     (the drain leaves a value whose method is unregistered stale, and the next run supersedes it under the successor). A retired key that is still registered, or whose successor is not, is a problem too.
 // `--write` records the current hashes of keys that are new and refuses to overwrite one whose code changed.
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
@@ -16,6 +17,7 @@ import ts from "typescript";
 import { isMain, walk } from "../lib/fs.mjs";
 
 export const HASH_FILE = "scripts/ci/data/method-hashes.json";
+export const RETIRED_FILE = "scripts/ci/data/method-retired.json";
 // A method's code is the registration, every value declaration it reaches and every JSON table those declarations import (a threshold in data/rules.json is part of the method). The methods live in propagation; the impact score's pure code and rules in impact; the five pattern detectors, their thresholds and fact adapters in flywheel/patterns, and the coupling vocabulary they read in coupling.
 export const DIRS = ["src/core/propagation", "src/core/impact", "src/core/flywheel/patterns", "src/core/coupling"];
 const TABLES = new Set(["derived_values", "inference_records", "item_impact_scores"]);
@@ -113,13 +115,23 @@ export function currentMethods(files) {
 }
 
 /** Compare the current methods with the recorded hashes. Returns the problem lines. */
-export function versionProblems(methods, recorded) {
+export function versionProblems(methods, recorded, retired = {}) {
   const problems = [];
   for (const [key, m] of methods) {
     if (!(key in recorded)) problems.push(`${m.where}: ${key} is registered but not recorded in ${HASH_FILE}: run \`node scripts/ci/method-versions.mjs --write\` and commit it`);
     else if (recorded[key] !== m.hash) problems.push(`${m.where}: ${key}: the code its registration runs changed and its version did not. A released method is never edited (INV-202): register the new behaviour under a new version and keep this one`);
   }
-  for (const key of Object.keys(recorded)) if (!methods.has(key)) problems.push(`${HASH_FILE}: ${key} is recorded but no longer registered: a derived row can still name it`);
+  for (const key of Object.keys(recorded)) {
+    if (methods.has(key)) continue;
+    const r = retired[key];
+    if (!r) problems.push(`${HASH_FILE}: ${key} is recorded but no longer registered: a derived row can still name it (retire it in ${RETIRED_FILE} with its successor and the reason, or keep it registered)`);
+    else if (!methods.has(r.successor)) problems.push(`${RETIRED_FILE}: ${key} is retired in favour of ${String(r.successor)}, which is not registered`);
+  }
+  for (const [key, r] of Object.entries(retired)) {
+    if (methods.has(key)) problems.push(`${RETIRED_FILE}: ${key} is retired but still registered`);
+    if (!(key in recorded)) problems.push(`${RETIRED_FILE}: ${key} was never recorded in ${HASH_FILE}`);
+    if (typeof r.reason !== "string" || r.reason.trim().length < 20) problems.push(`${RETIRED_FILE}: ${key} states no reason`);
+  }
   return problems;
 }
 
@@ -129,7 +141,8 @@ if (isMain(import.meta.url)) {
   const { values } = parseArgs({ options: { write: { type: "boolean", default: false } }, strict: true });
   const { methods, problems: unreadable } = currentMethods(methodFiles());
   const recorded = existsSync(HASH_FILE) ? JSON.parse(readFileSync(HASH_FILE, "utf8")) : {};
-  let problems = [...unreadable, ...versionProblems(methods, recorded)];
+  const retired = existsSync(RETIRED_FILE) ? JSON.parse(readFileSync(RETIRED_FILE, "utf8")) : {};
+  let problems = [...unreadable, ...versionProblems(methods, recorded, retired)];
   if (values.write) {
     const next = { ...recorded };
     for (const [key, m] of methods) if (!(key in recorded)) next[key] = m.hash;

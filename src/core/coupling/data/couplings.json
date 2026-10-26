@@ -680,10 +680,10 @@
     "ocean-bunkering"
    ],
    "citation": {
-    "url": "https://www.imo.org/en/MediaCentre/HotTopics/Pages/Reducing-greenhouse-gas-emissions-from-ships.aspx",
-    "title": "Reducing greenhouse gas emissions from ships, IMO",
-    "retrieved_at": "2026-10-24",
-    "quote": "safe and efficient bunkering of alternative low-carbon and zero-carbon fuels",
+    "url": "https://eur-lex.europa.eu/eli/reg/2023/1804/oj",
+    "title": "Regulation (EU) 2023/1804 (AFIR), EUR-Lex",
+    "retrieved_at": "2026-10-25",
+    "quote": "in relation to electricity supply and hydrogen, methanol and ammonia bunkering",
     "sourceClass": "primary"
    },
    "entityId": "cl:node:45cf3c0145bb7adf"
@@ -1143,6 +1143,167 @@
    "fromMonths": 18,
    "toMonths": 36,
    "entityId": "cl:method:de617189c3d54540"
+  },
+  {
+   "key": "instrument:32003L0087",
+   "class": "instrument",
+   "name": "32003L0087",
+   "aliases": [],
+   "modeAgnostic": false,
+   "modes": [
+    "air",
+    "ocean"
+   ],
+   "modesCitation": {
+    "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02003L0087-20240301",
+    "title": "Directive 2003/87/EC, consolidated version of 2024-03-01, EUR-Lex",
+    "retrieved_at": "2026-10-25",
+    "quote": "emissions from all flights falling within the aviation activities listed in Annex I",
+    "sourceClass": "primary"
+   },
+   "citation": {
+    "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02003L0087-20240301",
+    "title": "Directive 2003/87/EC, consolidated version of 2024-03-01, EUR-Lex",
+    "retrieved_at": "2026-10-25",
+    "quote": "Articles 3ga to 3gg shall apply in respect of the maritime transport activities listed in Annex I",
+    "sourceClass": "primary"
+   },
+   "entityId": "cl:instrument:e89c7cee1cc94843"
+  },
+  {
+   "key": "instrument:32019R1242",
+   "class": "instrument",
+   "name": "32019R1242",
+   "aliases": [],
+   "modeAgnostic": false,
+   "modes": [
+    "road"
+   ],
+   "modesCitation": {
+    "url": "https://publications.europa.eu/resource/celex/32019R1242",
+    "title": "Regulation (EU) 2019/1242, Publications Office of the European Union",
+    "retrieved_at": "2026-10-25",
+    "quote": "setting CO 2 emission performance standards for new heavy-duty vehicles",
+    "sourceClass": "primary"
+   },
+   "citation": {
+    "url": "https://publications.europa.eu/resource/celex/32019R1242",
+    "title": "Regulation (EU) 2019/1242, Publications Office of the European Union",
+    "retrieved_at": "2026-10-25",
+    "quote": "setting CO 2 emission performance standards for new heavy-duty vehicles",
+    "sourceClass": "primary"
+   },
+   "entityId": "cl:instrument:2fc66ca3274f714c"
+  },
+  {
+   "key": "instrument:32024R1610",
+   "class": "instrument",
+   "name": "32024R1610",
+   "aliases": [],
+   "modeAgnostic": false,
+   "modes": [
+    "road"
+   ],
+   "modesCitation": {
+    "url": "https://publications.europa.eu/resource/celex/32024R1610",
+    "title": "Regulation (EU) 2024/1610, Publications Office of the European Union",
+    "retrieved_at": "2026-10-25",
+    "quote": "amending Regulation (EU) 2019/1242 as regards strengthening the CO 2 emission performance standards",
+    "sourceClass": "primary"
+   },
+   "citation": {
+    "url": "https://publications.europa.eu/resource/celex/32024R1610",
+    "title": "Regulation (EU) 2024/1610, Publications Office of the European Union",
+    "retrieved_at": "2026-10-25",
+    "quote": "amending Regulation (EU) 2019/1242 as regards strengthening the CO 2 emission performance standards",
+    "sourceClass": "primary"
+   },
+   "entityId": "cl:instrument:06866e0bec81e01f"
+  },
+  {
+   "key": "carrier:fossil_diesel",
+   "class": "carrier",
+   "name": "Fossil diesel and gas oil",
+   "aliases": [],
+   "modes": [
+    "road"
+   ],
+   "citation": {
+    "url": "https://www.eia.gov/petroleum/",
+    "title": "Petroleum and other liquids, U.S. Energy Information Administration",
+    "retrieved_at": "2026-10-25",
+    "quote": "motor gasoline, distillate fuel oil, jet fuel, residual fuel, and propane",
+    "sourceClass": "primary"
+   },
+   "entityId": "cl:material:90282e802850487f"
+  },
+  {
+   "key": "carrier:fossil_gasoline",
+   "class": "carrier",
+   "name": "Fossil motor gasoline",
+   "aliases": [],
+   "modes": [
+    "road"
+   ],
+   "citation": {
+    "url": "https://www.eia.gov/petroleum/",
+    "title": "Petroleum and other liquids, U.S. Energy Information Administration",
+    "retrieved_at": "2026-10-25",
+    "quote": "motor gasoline, distillate fuel oil, jet fuel, residual fuel, and propane",
+    "sourceClass": "primary"
+   },
+   "entityId": "cl:material:856d87030723168a"
+  },
+  {
+   "key": "carrier:fossil_jet",
+   "class": "carrier",
+   "name": "Fossil kerosene-type jet fuel",
+   "aliases": [],
+   "modes": [
+    "air"
+   ],
+   "citation": {
+    "url": "https://www.eia.gov/petroleum/",
+    "title": "Petroleum and other liquids, U.S. Energy Information Administration",
+    "retrieved_at": "2026-10-25",
+    "quote": "motor gasoline, distillate fuel oil, jet fuel, residual fuel, and propane",
+    "sourceClass": "primary"
+   },
+   "entityId": "cl:material:14ef706668db7883"
+  },
+  {
+   "key": "carrier:fossil_lpg",
+   "class": "carrier",
+   "name": "Fossil liquefied petroleum gas",
+   "aliases": [],
+   "modes": [
+    "road"
+   ],
+   "citation": {
+    "url": "https://www.eia.gov/petroleum/",
+    "title": "Petroleum and other liquids, U.S. Energy Information Administration",
+    "retrieved_at": "2026-10-25",
+    "quote": "motor gasoline, distillate fuel oil, jet fuel, residual fuel, and propane",
+    "sourceClass": "primary"
+   },
+   "entityId": "cl:material:cf08caa76aaa7f17"
+  },
+  {
+   "key": "carrier:fossil_fuel_oil",
+   "class": "carrier",
+   "name": "Fossil residual fuel oil",
+   "aliases": [],
+   "modes": [
+    "ocean"
+   ],
+   "citation": {
+    "url": "https://www.eia.gov/petroleum/",
+    "title": "Petroleum and other liquids, U.S. Energy Information Administration",
+    "retrieved_at": "2026-10-25",
+    "quote": "motor gasoline, distillate fuel oil, jet fuel, residual fuel, and propane",
+    "sourceClass": "primary"
+   },
+   "entityId": "cl:material:4e3d861cf449961f"
   }
  ],
  "relations": [
@@ -1992,6 +2153,132 @@
      "sourceClass": "primary"
     }
    ]
+  },
+  {
+   "parent": "instrument:32019R1242",
+   "child": "node:hdv_charging",
+   "relation": "implements",
+   "citations": [
+    {
+     "url": "https://publications.europa.eu/resource/celex/32024R1610",
+     "title": "Regulation (EU) 2024/1610, Publications Office of the European Union",
+     "retrieved_at": "2026-10-25",
+     "quote": "The deployment of recharging infrastructure for heavy-duty electric vehicles is equally important",
+     "sourceClass": "primary"
+    }
+   ]
+  },
+  {
+   "parent": "instrument:32024R1610",
+   "child": "node:hdv_charging",
+   "relation": "implements",
+   "citations": [
+    {
+     "url": "https://publications.europa.eu/resource/celex/32024R1610",
+     "title": "Regulation (EU) 2024/1610, Publications Office of the European Union",
+     "retrieved_at": "2026-10-25",
+     "quote": "The deployment of recharging infrastructure for heavy-duty electric vehicles is equally important",
+     "sourceClass": "primary"
+    }
+   ]
+  },
+  {
+   "parent": "instrument:32024R1610",
+   "child": "instrument:32019R1242",
+   "relation": "amends",
+   "citations": [
+    {
+     "url": "https://publications.europa.eu/resource/celex/32024R1610",
+     "title": "Regulation (EU) 2024/1610, Publications Office of the European Union",
+     "retrieved_at": "2026-10-25",
+     "quote": "amending Regulation (EU) 2019/1242 as regards strengthening the CO 2 emission performance standards",
+     "sourceClass": "primary"
+    }
+   ]
+  },
+  {
+   "parent": "carrier:fossil_diesel",
+   "child": "mode:road",
+   "relation": "fuel_for_mode",
+   "citations": [
+    {
+     "url": "https://ec.europa.eu/eurostat/statistics-explained/index.php?title=Final_energy_consumption_in_transport_-_detailed_statistics",
+     "title": "Final energy consumption in transport - detailed statistics, Eurostat",
+     "retrieved_at": "2026-10-25",
+     "quote": "motor gasoline and gas/diesel oil added together made up almost 90.0% of the energy consumption in road transport in the EU",
+     "sourceClass": "primary"
+    }
+   ]
+  },
+  {
+   "parent": "carrier:fossil_gasoline",
+   "child": "mode:road",
+   "relation": "fuel_for_mode",
+   "citations": [
+    {
+     "url": "https://ec.europa.eu/eurostat/statistics-explained/index.php?title=Final_energy_consumption_in_transport_-_detailed_statistics",
+     "title": "Final energy consumption in transport - detailed statistics, Eurostat",
+     "retrieved_at": "2026-10-25",
+     "quote": "motor gasoline and gas/diesel oil added together made up almost 90.0% of the energy consumption in road transport in the EU",
+     "sourceClass": "primary"
+    }
+   ]
+  },
+  {
+   "parent": "carrier:fossil_jet",
+   "child": "mode:air",
+   "relation": "fuel_for_mode",
+   "citations": [
+    {
+     "url": "https://ec.europa.eu/eurostat/statistics-explained/index.php?title=Final_energy_consumption_in_transport_-_detailed_statistics",
+     "title": "Final energy consumption in transport - detailed statistics, Eurostat",
+     "retrieved_at": "2026-10-25",
+     "quote": "In 1990, kerosene-type jet fuel accounted for 81.4% of consumption",
+     "sourceClass": "primary"
+    }
+   ]
+  },
+  {
+   "parent": "carrier:fossil_lpg",
+   "child": "mode:road",
+   "relation": "fuel_for_mode",
+   "citations": [
+    {
+     "url": "https://ec.europa.eu/eurostat/statistics-explained/index.php?title=Final_energy_consumption_in_transport_-_detailed_statistics",
+     "title": "Final energy consumption in transport - detailed statistics, Eurostat",
+     "retrieved_at": "2026-10-25",
+     "quote": "Only 6 EU countries reported a consumption of liquefied petroleum gas in road transport higher than 3.0%",
+     "sourceClass": "primary"
+    }
+   ]
+  },
+  {
+   "parent": "carrier:fossil_fuel_oil",
+   "child": "mode:ocean",
+   "relation": "fuel_for_mode",
+   "citations": [
+    {
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016L0802",
+     "title": "Directive (EU) 2016/802, EUR-Lex",
+     "retrieved_at": "2026-10-25",
+     "quote": "This Directive lays down the maximum permitted sulphur content of heavy fuel oil, gas oil, marine gas oil and marine diesel oil used in the Union",
+     "sourceClass": "primary"
+    }
+   ]
+  },
+  {
+   "parent": "instrument:32003L0087",
+   "child": "attr:abatement_cost_per_tco2e",
+   "relation": "implements",
+   "citations": [
+    {
+     "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02003L0087-20240301",
+     "title": "Directive 2003/87/EC, consolidated version of 2024-03-01, EUR-Lex",
+     "retrieved_at": "2026-10-25",
+     "quote": "The excess emissions penalty shall be EUR 100 for each tonne of carbon dioxide equivalent emitted",
+     "sourceClass": "primary"
+    }
+   ]
   }
  ],
  "columns": [
@@ -2006,10 +2293,6 @@
     {
      "column": "mode",
      "by": "mode"
-    },
-    {
-     "column": "verbatim_text",
-     "by": "alias"
     }
    ]
   },
@@ -2020,14 +2303,6 @@
     {
      "column": "entity_id",
      "by": "entity"
-    },
-    {
-     "column": "formula_id",
-     "by": "alias"
-    },
-    {
-     "column": "scenario_key",
-     "by": "alias"
     }
    ]
   },
@@ -2041,11 +2316,19 @@
     },
     {
      "column": "series_key",
-     "by": "alias"
-    },
-    {
-     "column": "label",
-     "by": "alias"
+     "by": "map",
+     "map": {
+      "eia-v2:diesel-no2-low-sulfur-eer-epd2f-pf4-y35ny-dpg": "carrier:fossil_diesel",
+      "eu-oil-bulletin:automotive-diesel": "carrier:fossil_diesel",
+      "eu-oil-bulletin:heating-gas-oil": "carrier:fossil_diesel",
+      "eia-v2:gasoline-rbob-regular-eer-epmrr-pf4-y05la-dpg": "carrier:fossil_gasoline",
+      "eu-oil-bulletin:eurosuper-95": "carrier:fossil_gasoline",
+      "eia-v2:jet-fuel-kerosene-eer-epjk-pf4-rgc-dpg": "carrier:fossil_jet",
+      "eia-v2:propane-mont-belvieu-eer-epllpa-pf4-y44mb-dpg": "carrier:fossil_lpg",
+      "eu-oil-bulletin:lpg-motor-fuel": "carrier:fossil_lpg",
+      "eu-oil-bulletin:heavy-fuel-oil-3-5pct": "carrier:fossil_fuel_oil",
+      "eu-oil-bulletin:residual-fuel-oil-1pct": "carrier:fossil_fuel_oil"
+     }
     }
    ]
   },
@@ -2053,10 +2336,6 @@
    "table": "emission_factors",
    "pk": "factor_id",
    "maps": [
-    {
-     "column": "energy_carrier",
-     "by": "alias"
-    },
     {
      "column": "mode",
      "by": "mode"
@@ -2074,10 +2353,6 @@
     {
      "column": "jurisdiction_id",
      "by": "entity"
-    },
-    {
-     "column": "dso_name",
-     "by": "alias"
     },
     {
      "by": "const",
@@ -2118,10 +2393,6 @@
     {
      "column": "reroute_corridor_id",
      "by": "entity"
-    },
-    {
-     "column": "cause",
-     "by": "alias"
     }
    ]
   },
@@ -2133,14 +2404,6 @@
      "column": "region_id",
      "by": "refs",
      "refTable": "regions"
-    },
-    {
-     "column": "dimension",
-     "by": "alias"
-    },
-    {
-     "column": "fact_label",
-     "by": "alias"
     }
    ]
   },
@@ -2152,10 +2415,6 @@
      "column": "region_id",
      "by": "refs",
      "refTable": "regions"
-    },
-    {
-     "column": "fact_label",
-     "by": "alias"
     }
    ]
   },
@@ -2176,10 +2435,6 @@
     {
      "column": "corridor_id",
      "by": "entity"
-    },
-    {
-     "column": "index_id",
-     "by": "alias"
     }
    ]
   },

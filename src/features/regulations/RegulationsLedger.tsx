@@ -7,8 +7,7 @@
 import { useRouter } from "next/navigation";
 import { useMemo, useState, type ReactNode } from "react";
 
-import { BAND_ORDER, bandFromPriority, bandOf, detailHref, dueInfo, jurisdictionCode, toListRowFields, type UrgencyBandKey } from "@/core/lists";
-import { rowMeta } from "@/features/market/lib/item-type";
+import { BAND_ORDER, bandFromPriority, bandOf, detailHref, dueInfo, toListRowFields, type UrgencyBandKey } from "@/core/lists";
 import { formatLocaleDate, formatNumber } from "@/core/shared";
 import type { WorkspaceAggregates } from "@/features/lists";
 import { mergeWithOverrides, useItemStateStore } from "@/features/workspace/state";
@@ -80,26 +79,17 @@ export function RegulationsLedger({ initial, aggregates, hasMore, nowIso, chips,
       band,
       total: known(url.filter.band && url.filter.band !== band.key ? 0 : aggregates?.byPriority[band.priority], inBand.length),
       rows: inBand.map((r, i) => {
-        const due = dueInfo(r, now);
         const fields = toListRowFields(r, now);
-        const days = Math.floor((now.getTime() - Date.parse(r.lastRegeneratedAt ?? "")) / 86_400_000);
         return {
           key: r.id,
           href: withListPosition(detailHref(r), "regulations", i + 1, inBand.length, { prev: inBand[i - 1]?.id ?? null, next: inBand[i + 1]?.id ?? null }),
           band,
-          jurisdiction: jurisdictionCode(r),
+          itemType: fields.type,
+          jurisdiction: fields.jurisdiction,
           title: r.title,
-          meta: rowMeta(r),
-          ...(days >= 0 && days <= 30 ? { kind: `Updated ${formatLocaleDate(new Date(r.lastRegeneratedAt as string), { month: "short", day: "numeric", timeZone: "UTC" })}` } : {}),
-          impact: r.impactScores ?? null,
-          impactAbsence: fields.impactAbsence,
-          due: due ? { label: due.label, days: due.days } : null,
-          dueAbsence: fields.dueAbsence,
-          timeline: r.timeline ?? null,
-          tier: r.sourceTier ?? null,
-          ...(r.biasTags && r.biasTags.length > 0 ? { biasTags: r.biasTags } : {}),
-          ...(r.itemGrade ? { itemGrade: r.itemGrade } : {}),
-          tags: tagsFacet.tagsFor(uuids.get(r.id) ?? r.id),
+          summary: fields.summary,
+          due: fields.due,
+          tier: fields.tier,
           overflow: <PriorityMenu itemId={r.id} title={r.title} priority={r.priority} top={<DetailWatch type="reg" id={r.id} />} />,
         };
       }),

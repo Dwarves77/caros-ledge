@@ -1,5 +1,6 @@
 // Ported from old_repo/src/app/auth/callback/route.ts (lines 21-60)
 import { ensureProfile } from "@/core/auth/ensure-profile";
+import { nameFromMetadata } from "@/core/auth/profile-name";
 import { sanitizeReturnPath } from "@/core/auth/route-policy";
 import { userClient } from "@/core/db/clients";
 import { checkRateLimit, clientKey } from "@/core/http/rate-limit";
@@ -14,7 +15,7 @@ export async function GET(request: Request) {
   if (code) {
     const { data, error } = await (await userClient(request)).auth.exchangeCodeForSession(code);
     if (!error) {
-      if (data?.user?.id) await ensureProfile(data.user.id, data.user.email ?? null);
+      if (data?.user?.id) await ensureProfile(data.user.id, data.user.email ?? null, undefined, nameFromMetadata(data.user.user_metadata));
       return Response.redirect(`${origin}${next}`, 307);
     }
   }

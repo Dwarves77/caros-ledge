@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import type { Resource } from "@/core/types";
-import { buildChangedRows, buildDueNextRows, briefCardState, changeRowPrefix, computeAuditDate, deriveBriefTitle, dueNextWindowLabel, firstTokenOf, recentChangesWindowDays, selectBriefResources, type Candidate, type FeedRow } from "@/features/dashboard/rows";
+import { buildChangedRows, buildDueNextRows, briefCardState, changeKindOf, computeAuditDate, dueNextWindowLabel, recentChangesWindowDays, selectBriefResources, type Candidate, type FeedRow } from "@/features/dashboard/rows";
 
 const NOW = new Date("2026-10-15T12:00:00.000Z");
 /** The brief reads at most this many distinct change ids in full (the window is a product number, written here once as the test's oracle). */
@@ -48,11 +48,11 @@ test("buildChangedRows: the workspace's sectors and jurisdiction weights change 
   assert.deepEqual(buildChangedRows(f, c, {}, NOW, { sectors: ["fine-art"] }).map((r) => r.id), ["art", "eu"], "a fine-art workspace sees the fine-art change first");
 });
 
-test("changeRowPrefix names the kind and the field; dueNextWindowLabel says how far the rows reach", () => {
-  assert.equal(changeRowPrefix({ isNew: true }), "New");
-  assert.equal(changeRowPrefix({ isUpdated: true, updatedField: "timeline", changeDate: "2026-10-13" }), "Updated · timeline added Oct 13, 2026");
-  assert.equal(changeRowPrefix({ isUpdated: true }), "Updated · brief updated");
-  assert.equal(changeRowPrefix({}), null);
+test("changeKindOf names the kind and the field; dueNextWindowLabel says how far the rows reach", () => {
+  assert.equal(changeKindOf({ isNew: true }), "new");
+  assert.equal(changeKindOf({ isUpdated: true, updatedField: "timeline" }), "updated_timeline");
+  assert.equal(changeKindOf({ isUpdated: true }), "updated_brief");
+  assert.equal(changeKindOf({}), null);
   const rows = buildDueNextRows([item("a", { complianceDeadline: "2026-10-16" }), item("b", { complianceDeadline: "2026-11-30" })], NOW);
   assert.equal(dueNextWindowLabel(rows.slice(0, 1), "Oct 15"), "By next binding date · week of Oct 15");
   assert.match(dueNextWindowLabel(rows, "Oct 15"), /, reaching to /);
@@ -72,12 +72,3 @@ test("rule 16: the What-changed window is 90 days while the cadence is off or un
   assert.deepEqual(["off", null, undefined, "weekly", "monthly"].map(recentChangesWindowDays), [90, 90, 90, 7, 7]);
 });
 
-test("the brief title: the first name, else the workspace, else a stated default; an e-mail local part is a usable first name", () => {
-  assert.equal(deriveBriefTitle("Pat", "Acme"), "PAT'S BRIEF");
-  assert.equal(deriveBriefTitle(null, "Acme Freight"), "ACME FREIGHT");
-  assert.equal(deriveBriefTitle(null, ""), "YOUR BRIEF");
-  assert.equal(firstTokenOf("Pat Lee"), "Pat");
-  assert.equal(firstTokenOf("pat@example.invalid"), "pat");
-  assert.equal(firstTokenOf("  "), null);
-  assert.equal(firstTokenOf(null), null);
-});

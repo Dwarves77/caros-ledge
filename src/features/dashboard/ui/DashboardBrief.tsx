@@ -3,7 +3,6 @@
 // Ported from old_repo/src/components/dashboard/DashboardBrief.tsx (lines 98-460)
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { ReactNode } from "react";
 
 import { refusalSentence } from "@/core/http/failure";
 import { BAND_ORDER, bandFromPriority } from "@/core/lists";
@@ -16,7 +15,7 @@ import type { WatchlistItem } from "@/features/watchlist/read/watchlist";
 import { RowActions } from "@/features/watchlist/ui/RowActions";
 import type { SourceCoverage } from "@/core/derived/source-coverage";
 
-import { briefCardState, changeRowPrefix, SURFACES, type BriefRow } from "../rows";
+import { briefCardState, changeKindOf, SURFACES, type BriefRow } from "../rows";
 import type { Counts } from "../read/digest";
 
 import styles from "./dashboard.module.css";
@@ -47,17 +46,13 @@ export interface DashboardBriefProps {
 
 const bandHref = (key: string) => `/regulations?${PARAM.band}=${key}`;
 
-function Rows({ rows, prefix }: { rows: BriefRow[]; prefix: boolean }) {
+function Rows({ rows, changes }: { rows: BriefRow[]; changes: boolean }) {
   return (
     <>
-      <ListRowHeader dueLabel="Due" />
-      {rows.map((row) => {
-        const lead = prefix ? changeRowPrefix(row) : null;
-        const meta: ReactNode = lead ? `${lead}${row.meta ? ` · ${row.meta}` : ""}` : row.meta;
-        return (
-          <ListRow key={row.id} href={row.href} band={bandFromPriority(row.priority)} jurisdiction={row.jurisdiction} title={row.title} meta={meta} impact={row.impact} due={row.due} timeline={row.timeline} tier={row.tier} biasTags={row.biasTags ?? null} itemGrade={row.itemGrade} overflow={<RowActions title={row.title} type={row.watchType} id={row.id} />} />
-        );
-      })}
+      <ListRowHeader />
+      {rows.map((row) => (
+        <ListRow key={row.id} href={row.href} band={bandFromPriority(row.priority)} itemType={row.type} jurisdiction={row.jurisdiction} title={row.title} summary={row.summary} due={row.due} tier={row.tier} change={changes ? changeKindOf(row) : null} overflow={<RowActions title={row.title} type={row.watchType} id={row.id} />} />
+      ))}
     </>
   );
 }
@@ -148,7 +143,7 @@ export function DashboardBrief(p: DashboardBriefProps) {
               </div>
             ) : (
               <>
-                <Rows rows={p.dueRows} prefix={false} />
+                <Rows rows={p.dueRows} changes={false} />
                 <CardFoot left={by ? <>All {formatNumber(by.CRITICAL)} immediate</> : "All immediate"} leftHref={bandHref("immediate")} right={by ? <>then {formatNumber(by.HIGH)} action · {formatNumber(by.MODERATE)} monitor</> : ""} />
               </>
             )}
@@ -173,8 +168,8 @@ export function DashboardBrief(p: DashboardBriefProps) {
               </div>
             ) : (
               <>
-                <Rows rows={p.changedRows} prefix />
-                <CardFoot left={`All ${formatNumber(p.totalChanges)} changes in the last ${p.windowDays} days`} leftHref={`/regulations?${PARAM.sort}=newest`} right="New = added in this window · Updated = brief or timeline changed" />
+                <Rows rows={p.changedRows} changes />
+                <CardFoot left={`All ${formatNumber(p.totalChanges)} changes in the last ${p.windowDays} days`} leftHref={`/regulations?${PARAM.sort}=newest`} right="" />
               </>
             )}
           </SectionCard>

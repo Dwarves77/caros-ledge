@@ -3,7 +3,7 @@
 // Ported from old_repo/src/lib/tags/useWorkspaceTagsFacet.ts (lines 1-103)
 // The workspace-tags facet of a list: the workspace's tags with live counts, the one selected, and the tags of each row. One call to /api/workspace/tags?withItemTags=1; a failure is a state the
 // list says (the facet is left out and a note offers Retry), never an empty tag list.
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { requestJson } from "@/core/http/request-json";
 
@@ -32,8 +32,6 @@ export function useTagsFacet() {
       cancelled = true;
     };
   }, [attempt]);
-  const byId = useMemo(() => new Map(tags.map((t) => [t.id, t])), [tags]);
   const matches = useCallback((itemId: string) => selected === null || (byItem[itemId] ?? []).includes(selected), [selected, byItem]);
-  const tagsFor = useCallback((itemId: string) => (byItem[itemId] ?? []).flatMap((id) => (byId.has(id) ? [{ id, name: (byId.get(id) as Tag).name }] : [])), [byItem, byId]);
-  return { tags, selected, setSelected, matches, tagsFor, failed, retry: () => setAttempt((n) => n + 1) };
+  return { tags, selected, setSelected, matches, failed, retry: () => setAttempt((n) => n + 1) };
 }

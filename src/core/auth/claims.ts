@@ -2,10 +2,12 @@
 // Ported from old_repo/src/lib/api/community-auth.ts (lines 10-41)
 import { LookupError } from "@/core/http/errors";
 
+import { nameFromMetadata } from "./profile-name";
+
 /** The auth surface a caller needs: anything shaped like a Supabase client. */
 export interface ClaimsClient {
   auth: {
-    getClaims: (jwt?: string) => Promise<{ data: { claims: { sub?: string; email?: string } } | null; error: unknown }>;
+    getClaims: (jwt?: string) => Promise<{ data: { claims: { sub?: string; email?: string; user_metadata?: unknown } } | null; error: unknown }>;
   };
 }
 
@@ -31,7 +33,7 @@ function outage(error: unknown): boolean {
  * Verify a JWT locally (getClaims, never getUser per request): the explicit `jwt`, or the client's own session.
  * Null means no valid session (absent, malformed or expired). A failure of the auth service itself throws ClaimsUnavailable.
  */
-export async function getClaims(client: ClaimsClient, jwt?: string): Promise<{ userId: string; email: string | null } | null> {
+export async function getClaims(client: ClaimsClient, jwt?: string): Promise<{ userId: string; email: string | null; name: string | null } | null> {
   let result: Awaited<ReturnType<ClaimsClient["auth"]["getClaims"]>>;
   try {
     result = await client.auth.getClaims(jwt);
@@ -41,5 +43,5 @@ export async function getClaims(client: ClaimsClient, jwt?: string): Promise<{ u
   if (result.error && outage(result.error)) throw new ClaimsUnavailable(result.error);
   const sub = result.data?.claims?.sub;
   if (result.error || !sub) return null;
-  return { userId: sub, email: result.data?.claims?.email ?? null };
+  return { userId: sub, email: result.data?.claims?.email ?? null, name: nameFromMetadata(result.data?.claims?.user_metadata) };
 }

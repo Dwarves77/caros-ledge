@@ -5,7 +5,7 @@
 // The two category ledgers composed their band-grouped rows identically (the register's "each ledger becomes its facets plus its above-rows slot"): one mapper here, used by Research and Operations. A row is one
 // link to the detail page carrying the list position, the shared row fields, the overflow menu (a 44 px trigger; Open and Copy link), and the band it sits in.
 import { useRouter } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 
 import { BAND_ORDER, bandFromPriority, toListRowFields, type UrgencyBand, type UrgencyBandKey } from "@/core/lists";
 import type { Resource } from "@/core/types";
@@ -48,10 +48,6 @@ export interface BandedOptions {
   /** The selected band tile, or null. */
   bandKey: UrgencyBandKey | null;
   now: Date;
-  /** The row's meta line when the surface composes its own (a theme and a horizon); falls back to the shared one. */
-  meta?: (r: Resource) => ReactNode;
-  /** The row's kind tag (a severity); undefined draws none. */
-  kind?: (r: Resource) => ReactNode;
 }
 
 /** The rows grouped by band in the one band order; a selected band empties the others. The detail link carries the position, the total and the neighbours in the band. */
@@ -63,12 +59,10 @@ export function bandedRows(rows: readonly Resource[], o: BandedOptions): BandedS
       total: inBand.length,
       rows: inBand.map((r, i) => {
         const f = toListRowFields(r, o.now);
-        const kind = o.kind?.(r);
         return {
           key: r.id,
           href: withListPosition(f.href, o.list, i + 1, inBand.length, { prev: inBand[i - 1]?.id ?? null, next: inBand[i + 1]?.id ?? null }),
-          band, jurisdiction: f.jurisdiction, title: f.title, meta: o.meta ? o.meta(r) : f.meta, ...(kind ? { kind } : {}), impact: f.impact, impactAbsence: f.impactAbsence, due: f.due, dueAbsence: f.dueAbsence, timeline: f.timeline, tier: f.tier,
-          ...(f.biasTags ? { biasTags: f.biasTags } : {}), ...(f.itemGrade ? { itemGrade: f.itemGrade } : {}), overflow: <RowMenu label={o.menuLabel} href={f.href} type={o.list === "operations" ? "operations" : "research"} id={r.id} />,
+          band, itemType: f.type, jurisdiction: f.jurisdiction, title: f.title, summary: f.summary, due: f.due, tier: f.tier, overflow: <RowMenu label={o.menuLabel} href={f.href} type={o.list === "operations" ? "operations" : "research"} id={r.id} />,
         };
       }),
     };

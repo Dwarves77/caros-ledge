@@ -54,20 +54,16 @@ const TAGS = ["industry-funded", "peer-reviewed", "regulator"];
 const bias = (n: number) => Array.from({ length: n }, (_, i) => ({ dimension: DIMS[i % 3] as string, tag: TAGS[i % 3] as string, confidence: i === 0 ? 0.79 : 0.9 }));
 const impact = { cost: 3, compliance: 2, client: 1, operational: 2 };
 const timeline = (n: number) => Array.from({ length: n }, (_, i) => ({ date: `2026-${String((i % 9) + 1).padStart(2, "0")}-15`, label: `Milestone ${i + 1} filing window opens`, ...(i < 2 ? { status: "past" as const } : {}) }));
+const KINDS = ["regulation", "directive", "market_signal", "research_finding", "regional_data", "guidance"];
 const rowProps = (i: number, band: UrgencyBand = BAND_ORDER[i % 4] as UrgencyBand) => ({
   href: `/regulations/fx-${i}`,
   band,
+  itemType: KINDS[i % KINDS.length],
   jurisdiction: ["EU", "US", "GLOBAL", "GB"][i % 4] as string,
   title: i === 1 ? LONG : `Fixture regulation ${i}`,
-  meta: "regulation · air, ocean · Carbon",
-  kind: "Law",
-  impact: i % 3 === 0 ? null : impact,
+  summary: i % 3 === 0 ? null : "A stored plain-language line about what this item is, long enough that one line of the row cannot hold all of it.",
   due: i % 2 === 0 ? { label: "Jan 1, 2027", days: "78 days" } : null,
-  timeline: timeline(i % 4 === 0 ? 0 : 3),
   tier: i % 5 === 0 ? null : 2,
-  biasTags: bias(i % 4),
-  itemGrade: i % 7 === 0 ? ("record" as const) : ("brief" as const),
-  tags: i % 6 === 0 ? [{ id: "t1", name: "Q4 audit" }] : null,
   overflow: <WatchToggle variant="icon" watched={i % 2 === 0} loaded onToggle={() => {}} />,
 });
 

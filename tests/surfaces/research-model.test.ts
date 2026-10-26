@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { assessItem, type AssessInput } from "@/features/research/model/assess";
-import { horizonMetaLabel, predicateWords, selectAssessmentView, selectAssessmentViewsByItemId, selectHistoryEntry, selectSignpostView, type AssessmentRow } from "@/features/research/model/assessment-view";
+import { predicateWords, selectAssessmentView, selectHistoryEntry, selectSignpostView, type AssessmentRow } from "@/features/research/model/assessment-view";
 import { themeOf, THEME_KEYS } from "@/features/research/model/taxonomy";
 
 const NOW = new Date("2026-10-01T00:00:00Z");
@@ -50,11 +50,10 @@ test("a corridor label is a point for a point and a span for a span; the horizon
   const v = selectAssessmentView(row);
   const span = selectAssessmentView({ ...row, technical_maturity_low: 8, technical_maturity_high: 9, commercial_maturity_low: 3, commercial_maturity_high: 4, commercial_maturity_method: "m" });
   assert.deepEqual([span?.technical?.label, span?.commercial?.label], ["TRL 8-9", "CRI 3-4"], "a point for a point, a span for a span");
-  assert.deepEqual([v?.technical?.label, v?.commercial, v?.anchored, horizonMetaLabel(v)], ["TRL 8", null, true, "near, 2 to 5 years"]);
+  assert.deepEqual([v?.technical?.label, v?.commercial, v?.anchored], ["TRL 8", null, true]);
   const refused = selectAssessmentView({ ...row, horizon_band: null, horizon_rule: null, horizon_kind: null, refusal_reason: "not forecastable: x" });
-  assert.deepEqual([refused?.horizon, refused?.anchored, horizonMetaLabel(refused)], [null, false, null]);
+  assert.deepEqual([refused?.horizon, refused?.anchored], [null, false]);
   assert.equal(selectAssessmentView(null), null);
-  assert.equal(selectAssessmentViewsByItemId([row, { ...row, id: "a2", item_id: "i2" }]).size, 2);
   assert.deepEqual([selectHistoryEntry(v!, false).technicalLabel, selectHistoryEntry(v!, true).isCurrent], ["TRL 8", true]);
 });
 

@@ -1,0 +1,641 @@
+{
+  "_doc": "Data of scripts/ci/joinability.mjs. tables.<t>.textColumns/arrayColumns are pinned by `joinability.mjs --pin` from information_schema (read-only); unmapped maps a pinned column to what it is. classes declares, per couplings.json class, the surfaces it sits on and which of modes, relations and reach are required.",
+  "pinned": {
+    "date": "2026-10-26",
+    "project": "kwrsbpiseruzbfwjpvsp",
+    "method": "information_schema.columns, BEGIN READ ONLY; data_type text, character varying or ARRAY of them"
+  },
+  "extraTables": [],
+  "unnormalisedShare": 0.05,
+  "autoVocabularies": [
+    "obs_status",
+    "origin_class",
+    "derivation",
+    "binding_position",
+    "duty_holder_class"
+  ],
+  "entityColumns": {
+    "derived_values": "entity_id"
+  },
+  "classes": {
+    "instrument": {
+      "surfaces": [
+        "regulations"
+      ],
+      "modes": "required",
+      "relations": "required",
+      "reach": "required",
+      "basis": "obligation_objects and statutory_computations (facts.json surface regulations) are filed under instruments"
+    },
+    "mandate": {
+      "surfaces": [
+        "regulations"
+      ],
+      "modes": "required",
+      "relations": "required",
+      "reach": "required",
+      "basis": "a consignment-wide mandate is an instrument (obligation_objects, regulations)"
+    },
+    "feedstock": {
+      "surfaces": [
+        "market"
+      ],
+      "modes": "required",
+      "relations": "required",
+      "reach": "required",
+      "basis": "feedstock prices are market_series (facts.json surface market)"
+    },
+    "carrier": {
+      "surfaces": [
+        "market",
+        "research"
+      ],
+      "modes": "required",
+      "relations": "required",
+      "reach": "required",
+      "basis": "oem_tech_roadmaps (market) maps to carriers; research_assessments_current (research) files technologies under them"
+    },
+    "node": {
+      "surfaces": [
+        "market",
+        "operations",
+        "research"
+      ],
+      "modes": "required",
+      "relations": "required",
+      "reach": "required",
+      "basis": "grid_connection_queues (operations) files under node:grid_queues; oem_tech_roadmaps (market) maps charging and reefer nodes; research files technologies"
+    },
+    "corridor": {
+      "surfaces": [
+        "operations"
+      ],
+      "modes": "required",
+      "relations": "required",
+      "reach": "required",
+      "basis": "reroute_events (operations) name corridors"
+    },
+    "hub": {
+      "surfaces": [
+        "operations"
+      ],
+      "modes": "required",
+      "relations": "required",
+      "reach": "required",
+      "basis": "a hub is a port or airport a node serves (operations)"
+    },
+    "mode": {
+      "surfaces": [],
+      "modes": "required",
+      "relations": "required",
+      "reach": "required",
+      "basis": "a mode is a lens on every surface, never a surface of its own"
+    },
+    "attribute": {
+      "surfaces": [],
+      "modes": "exempt",
+      "relations": "exempt",
+      "reach": "exempt",
+      "reason": "a quantitative attribute is a measurement lens (class kind method): it carries a unit, not a mode or a relation"
+    },
+    "window": {
+      "surfaces": [],
+      "modes": "exempt",
+      "relations": "exempt",
+      "reach": "exempt",
+      "reason": "a time window is a horizon definition (class kind method): it is filed by date, not by mode or relation"
+    }
+  },
+  "modeLinks": {
+    "corridor": {
+      "relation": "corridor_links"
+    },
+    "instrument": {
+      "relation": "consignment_wide",
+      "when": "modeAgnostic"
+    },
+    "mandate": {
+      "relation": "consignment_wide",
+      "when": "modeAgnostic"
+    }
+  },
+  "unitColumns": [
+    {
+      "table": "obligation_objects",
+      "column": "statutory_maximum",
+      "kind": "text"
+    },
+    {
+      "table": "statutory_computations",
+      "column": "result_unit",
+      "kind": "text",
+      "valueColumn": "result"
+    },
+    {
+      "table": "statutory_computations",
+      "column": "unit_price_unit",
+      "kind": "text",
+      "valueColumn": "unit_price"
+    },
+    {
+      "table": "derived_values",
+      "column": "unit",
+      "kind": "text",
+      "valueColumn": "value"
+    },
+    {
+      "table": "market_series",
+      "column": "unit",
+      "kind": "text",
+      "valueColumn": "value_numeric"
+    },
+    {
+      "table": "regional_data_facts",
+      "column": "unit",
+      "kind": "text",
+      "valueColumn": "value_numeric"
+    },
+    {
+      "table": "state_cost_facts",
+      "column": "unit",
+      "kind": "text",
+      "valueColumn": "value_numeric"
+    },
+    {
+      "table": "emission_factors",
+      "column": "quantity_basis",
+      "kind": "text",
+      "valueColumn": "wtw_co2e"
+    },
+    {
+      "table": "grid_connection_queues",
+      "column": "demand_available_mw",
+      "kind": "constant",
+      "unit": "MW"
+    },
+    {
+      "table": "grid_connection_queues",
+      "column": "demand_firm_mw",
+      "kind": "constant",
+      "unit": "MW"
+    },
+    {
+      "table": "grid_connection_queues",
+      "column": "capacity_band_mw",
+      "kind": "constant",
+      "unit": "MW"
+    },
+    {
+      "table": "oem_tech_roadmaps",
+      "column": "energy_density_wh_kg",
+      "kind": "constant",
+      "unit": "Wh/kg"
+    },
+    {
+      "table": "oem_tech_roadmaps",
+      "column": "usable_kwh",
+      "kind": "constant",
+      "unit": "kWh"
+    },
+    {
+      "table": "oem_tech_roadmaps",
+      "column": "c_rate_max",
+      "kind": "constant",
+      "unit": "1/h"
+    }
+  ],
+  "tokenColumns": [
+    {
+      "table": "obligation_objects",
+      "column": "mode",
+      "array": true,
+      "vocabulary": "transport_mode"
+    },
+    {
+      "table": "emission_factors",
+      "column": "mode",
+      "array": false,
+      "vocabulary": "transport_mode"
+    },
+    {
+      "table": "oem_tech_roadmaps",
+      "column": "commercial_stage",
+      "array": false,
+      "vocabulary": null
+    },
+    {
+      "table": "oem_tech_roadmaps",
+      "column": "tech_category",
+      "array": false,
+      "couplingMap": {
+        "table": "oem_tech_roadmaps",
+        "column": "tech_category"
+      }
+    },
+    {
+      "table": "research_assessments_current",
+      "column": "horizon_band",
+      "array": false,
+      "vocabulary": null
+    },
+    {
+      "table": "research_assessments_current",
+      "column": "horizon_kind",
+      "array": false,
+      "vocabulary": null
+    },
+    {
+      "table": "intelligence_items",
+      "column": "severity",
+      "array": false,
+      "severity": true,
+      "vocabulary": {
+        "file": "src/core/brief/data/contract.json",
+        "list": "severity",
+        "field": "db"
+      },
+      "where": {
+        "item_grade": "brief",
+        "is_archived": "false"
+      }
+    }
+  ],
+  "absences": [
+    {
+      "table": "grid_connection_queues",
+      "column": "queue_months_p50",
+      "statedBy": {
+        "obs_status": "L"
+      },
+      "reason": "ukpn-capacity-heatmap publishes demand_firm, demand_available and a GREEN/AMBER/RED constraint per substation and no queue duration; the producer stores null with obs_status L (missing) by ruling 2026-10-08 and never a typed number"
+    },
+    {
+      "table": "oem_tech_roadmaps",
+      "column": "target_year",
+      "rowsFile": "src/features/market/producers/data/rows/oem_tech_roadmaps-2026-10.json",
+      "reason": "the cited capture does not state a target year for the row; the rows file says so per row (absent.target_year)"
+    }
+  ],
+  "tables": {
+    "section_claim_provenance": {
+      "textColumns": [
+        "claim_kind",
+        "claim_text",
+        "mint_hold_reason",
+        "source_span"
+      ],
+      "arrayColumns": [],
+      "unmapped": {
+        "claim_kind": "the claim's kind token (GAP, ANALYSIS, DERIVED and the rest); read as the ref role by the claim pass, not an entity",
+        "claim_text": "the verbatim-grounded claim sentence; read for formal codes (an instrument identifier, a UN/LOCODE) by src/core/coupling/refs.ts claimRefs, no word of it is matched",
+        "mint_hold_reason": "why a minted claim was held back; workflow housekeeping prose",
+        "source_span": "the verbatim span of the capture the claim is grounded on; provenance text, the claim text is what is resolved"
+      }
+    },
+    "obligation_objects": {
+      "textColumns": [
+        "binding_position",
+        "cost_formula",
+        "duty_holder_class",
+        "evidence_required",
+        "frequency",
+        "instrument_entity_id",
+        "jurisdiction",
+        "mode",
+        "obligation_id",
+        "pinpoint_citation",
+        "plain_language",
+        "retention_period",
+        "sanction_class",
+        "status",
+        "statutory_maximum",
+        "supersedes",
+        "verbatim_text",
+        "vertical"
+      ],
+      "arrayColumns": [
+        "duty_holder_class",
+        "jurisdiction",
+        "mode",
+        "vertical"
+      ],
+      "unmapped": {
+        "binding_position": "binding-position token (vocabularies.json binding_position); a vocabulary token checked by J3",
+        "cost_formula": "the cost formula the span states, verbatim; prose the statutory computation reads, not an entity",
+        "duty_holder_class": "duty-holder class tokens (vocabularies.json duty_holder_class); a vocabulary token checked by J3",
+        "evidence_required": "prose describing the evidence a duty requires",
+        "frequency": "how often the duty recurs, as stated; a prose label",
+        "obligation_id": "the obligation's own text key (primary key); an identifier, filed in entity_refs by its uuid",
+        "pinpoint_citation": "the article or paragraph the duty is cited to; a citation label of the instrument already joined through instrument_entity_id",
+        "plain_language": "plain-language restatement of the duty; prose derived from the verbatim text, which is the column resolved",
+        "retention_period": "how long records are kept, as stated; prose",
+        "sanction_class": "sanction class token of the duty; a classification label",
+        "status": "workflow or publication status word of the row; a lifecycle token",
+        "statutory_maximum": "the verbatim penalty or ceiling fragment whose unit and figure are read by statutoryUnit and findFigures (J3 unit column)",
+        "supersedes": "obligation_id of the obligation this one supersedes; a self-reference of the obligation table, not an entity",
+        "verbatim_text": "the verbatim duty text; read for formal codes (CELEX and instrument numbers) and its figures through statutoryUnit, no word of it is matched",
+        "vertical": "customer-vertical tokens (vocabulary-verticals); a lens the reader filters by, never an entity of the coupling vocabulary"
+      }
+    },
+    "statutory_computations": {
+      "textColumns": [
+        "entity_id",
+        "formula_id",
+        "formula_version",
+        "obligation_id",
+        "result_unit",
+        "scenario_key",
+        "statute_citation",
+        "unit_price_unit"
+      ],
+      "arrayColumns": [],
+      "unmapped": {
+        "formula_version": "version string of the statutory formula; housekeeping",
+        "result_unit": "unit of the computed result; a unit token normalised by statutoryUnit (J3)",
+        "unit_price_unit": "unit of the unit price; a unit token normalised by statutoryUnit (J3)"
+      }
+    },
+    "oem_tech_roadmaps": {
+      "textColumns": [
+        "commercial_stage",
+        "confidence_admiralty",
+        "density_basis",
+        "derivation",
+        "manufacturer_id",
+        "origin_class",
+        "tech_category"
+      ],
+      "arrayColumns": [],
+      "unmapped": {
+        "commercial_stage": "commercial-stage token (announced to mass_series_production) read by the maturity assessment; its vocabulary is checked by J3",
+        "confidence_admiralty": "Admiralty-code source and information grade (A1 to F6) of the row; a provenance grade, not an entity",
+        "density_basis": "cell, module or pack basis of the stated energy density; a qualifier token of the figure",
+        "derivation": "provenance token (vocabularies.json derivation) saying how the value was derived; a vocabulary token checked by J3, not an entity",
+        "origin_class": "provenance token (vocabularies.json origin_class) saying how the row was obtained; a vocabulary token checked by J3, not a thing to join on"
+      }
+    },
+    "grid_connection_queues": {
+      "textColumns": [
+        "capacity_band_mw",
+        "confidence_admiralty",
+        "demand_constraint",
+        "demand_constraint_limiting_factor",
+        "derivation",
+        "dso_name",
+        "jurisdiction_id",
+        "obs_status",
+        "origin_class",
+        "substation_name",
+        "substation_ref"
+      ],
+      "arrayColumns": [],
+      "unmapped": {
+        "capacity_band_mw": "the capacity band as published, in MW (a constant unit, J3 part ii); a quantity label, not an entity",
+        "confidence_admiralty": "Admiralty-code source and information grade (A1 to F6) of the row; a provenance grade, not an entity",
+        "demand_constraint": "the operator's GREEN, AMBER or RED demand constraint; a status token",
+        "demand_constraint_limiting_factor": "the operator's stated limiting factor; free-text label",
+        "derivation": "provenance token (vocabularies.json derivation) saying how the value was derived; a vocabulary token checked by J3, not an entity",
+        "dso_name": "the network operator's published name; the flywheel matches no free-text words, so the entity comes from the row's entity_id or a formal-code map, never from this label (operator 2026-10-25)",
+        "obs_status": "SDMX observation-status token (vocabularies.json obs_status) of the row; a vocabulary token checked by J3, not an entity",
+        "origin_class": "provenance token (vocabularies.json origin_class) saying how the row was obtained; a vocabulary token checked by J3, not a thing to join on",
+        "substation_name": "the substation's own name; the table is filed under node:grid_queues by the const map, no per-substation entity exists",
+        "substation_ref": "the operator's substation reference (mRID); an upstream identifier"
+      }
+    },
+    "regional_data_facts": {
+      "textColumns": [
+        "currency",
+        "derivation",
+        "dimension",
+        "fact_label",
+        "method_version",
+        "origin_class",
+        "reference_period",
+        "source_key",
+        "source_note",
+        "source_ref",
+        "status",
+        "trend",
+        "unit",
+        "value"
+      ],
+      "arrayColumns": [],
+      "unmapped": {
+        "currency": "ISO 4217 currency code of the value; a unit token (J3 reads units), not an entity",
+        "derivation": "provenance token (vocabularies.json derivation) saying how the value was derived; a vocabulary token checked by J3, not an entity",
+        "dimension": "classification label of the fact (labor_markets, operational_cost); a label, not an entity",
+        "fact_label": "the prose label of the row; the flywheel matches no free-text words, so the entity comes from the row's entity_id or a formal-code map, never from this label (operator 2026-10-25)",
+        "method_version": "version string of the method that computed the row; provenance housekeeping",
+        "origin_class": "provenance token (vocabularies.json origin_class) saying how the row was obtained; a vocabulary token checked by J3, not a thing to join on",
+        "reference_period": "the period the observation covers as published (a date label); a time label the series key already carries",
+        "source_key": "the producer's key for the upstream series or feed; provenance housekeeping, the source is joined through source_id",
+        "source_note": "free-text note on where the figure came from; prose provenance",
+        "source_ref": "the upstream record reference at the publisher; provenance housekeeping",
+        "status": "workflow or publication status word of the row; a lifecycle token",
+        "trend": "direction word of the published value (up, down, flat); a display token",
+        "unit": "the unit of the row's value as published; a unit token normalised by statutoryUnit (J3), not an entity",
+        "value": "the value as published, text form of value_numeric; the figure is read from the typed column"
+      }
+    },
+    "market_series": {
+      "textColumns": [
+        "currency",
+        "derivation",
+        "entity_id",
+        "label",
+        "method_version",
+        "origin_class",
+        "reference_period",
+        "series_key",
+        "source_key",
+        "source_ref",
+        "unit"
+      ],
+      "arrayColumns": [],
+      "unmapped": {
+        "currency": "ISO 4217 currency code of the value; a unit token (J3 reads units), not an entity",
+        "derivation": "provenance token (vocabularies.json derivation) saying how the value was derived; a vocabulary token checked by J3, not an entity",
+        "label": "the prose label of the row; the flywheel matches no free-text words, so the entity comes from the row's entity_id or a formal-code map, never from this label (operator 2026-10-25)",
+        "method_version": "version string of the method that computed the row; provenance housekeeping",
+        "origin_class": "provenance token (vocabularies.json origin_class) saying how the row was obtained; a vocabulary token checked by J3, not a thing to join on",
+        "reference_period": "the period the observation covers as published (a date label); a time label the series key already carries",
+        "source_key": "the producer's key for the upstream series or feed; provenance housekeeping, the source is joined through source_id",
+        "source_ref": "the upstream record reference at the publisher; provenance housekeeping",
+        "unit": "the unit of the row's value as published; a unit token normalised by statutoryUnit (J3), not an entity"
+      }
+    },
+    "item_forward_events": {
+      "textColumns": [
+        "confidence",
+        "date_precision",
+        "event_kind",
+        "extractor_version",
+        "obligation_text",
+        "resolved_span",
+        "source_kind",
+        "source_span"
+      ],
+      "arrayColumns": [],
+      "unmapped": {
+        "confidence": "extractor confidence token of the dated event; a grade",
+        "date_precision": "precision of the event date (day, month, year); a qualifier token",
+        "event_kind": "trigger-kind token (phase_step, implementing_act_due and the rest) read by the lead-lag detector through facts.json kind; a vocabulary of patterns.json",
+        "extractor_version": "version string of the extractor that wrote the event; housekeeping",
+        "resolved_span": "verbatim span of the capture that resolved the event; provenance text",
+        "source_kind": "what kind of source span the event came from; a provenance token",
+        "source_span": "verbatim span the event was extracted from; provenance text"
+      }
+    },
+    "research_assessments_current": {
+      "textColumns": [
+        "commercial_maturity_evidence_ids",
+        "commercial_maturity_method",
+        "computed_by",
+        "credibility_evidence_score",
+        "entity_id",
+        "horizon_band",
+        "horizon_confidence",
+        "horizon_kind",
+        "horizon_rule",
+        "horizon_trigger_note",
+        "lifecycle_state",
+        "refusal_reason",
+        "status_token",
+        "technical_maturity_evidence_ids",
+        "technical_maturity_method"
+      ],
+      "arrayColumns": [
+        "commercial_maturity_evidence_ids",
+        "technical_maturity_evidence_ids"
+      ],
+      "unmapped": {
+        "commercial_maturity_evidence_ids": "ids of the evidence rows behind the commercial maturity band; foreign keys, not entities",
+        "commercial_maturity_method": "method token of the commercial maturity band; housekeeping",
+        "computed_by": "name of the job or method that wrote the row; provenance housekeeping",
+        "credibility_evidence_score": "credibility evidence score grade of the assessment; a grade",
+        "horizon_band": "horizon band token (2-6 months, 6-18 months); a time band, its vocabulary is checked by J3",
+        "horizon_confidence": "confidence grade of the horizon band",
+        "horizon_kind": "horizon kind token; its vocabulary is checked by J3",
+        "horizon_rule": "the rule that placed the horizon band; housekeeping",
+        "horizon_trigger_note": "prose naming what would move the horizon; free text",
+        "lifecycle_state": "lifecycle token of the row (current, superseded, withdrawn); housekeeping",
+        "refusal_reason": "why no assessment was produced (no_dated_basis and the rest); a reason token",
+        "status_token": "rule-14 status token (CONFIRMED, HYPOTHESIS, REFUTED) of the row; a verification label",
+        "technical_maturity_evidence_ids": "ids of the evidence rows behind the technical maturity band; foreign keys, not entities",
+        "technical_maturity_method": "method token of the technical maturity band; housekeeping"
+      }
+    },
+    "reroute_events": {
+      "textColumns": [
+        "baseline_corridor_id",
+        "cause",
+        "reroute_corridor_id",
+        "route_via"
+      ],
+      "arrayColumns": [],
+      "unmapped": {
+        "cause": "the prose label of the row; the flywheel matches no free-text words, so the entity comes from the row's entity_id or a formal-code map, never from this label (operator 2026-10-25)"
+      }
+    },
+    "derived_values": {
+      "textColumns": [
+        "admissibility",
+        "computed_by",
+        "currency",
+        "derivation",
+        "entity_id",
+        "lifecycle",
+        "method_id",
+        "method_version",
+        "origin_class",
+        "unit"
+      ],
+      "arrayColumns": [],
+      "unmapped": {
+        "admissibility": "admissibility token (analysis_ok, display_only, stale); a grade of the value",
+        "computed_by": "name of the job or method that wrote the row; provenance housekeeping",
+        "currency": "ISO 4217 currency code of the value; a unit token (J3 reads units), not an entity",
+        "derivation": "provenance token (vocabularies.json derivation) saying how the value was derived; a vocabulary token checked by J3, not an entity",
+        "lifecycle": "lifecycle token of the value (current, superseded, falsified); housekeeping",
+        "method_id": "id of the propagation method that computed the value; housekeeping",
+        "method_version": "version string of the method that computed the row; provenance housekeeping",
+        "origin_class": "provenance token (vocabularies.json origin_class) saying how the row was obtained; a vocabulary token checked by J3, not a thing to join on",
+        "unit": "the unit of the row's value as published; a unit token normalised by statutoryUnit (J3), not an entity"
+      }
+    },
+    "emission_factors": {
+      "textColumns": [
+        "corridor_id",
+        "derivation",
+        "donor",
+        "energy_carrier",
+        "grid_region",
+        "gwp_basis",
+        "jurisdiction",
+        "method_version",
+        "mode",
+        "movement_ref",
+        "operator_key",
+        "origin_class",
+        "quantity_basis",
+        "scope_kind",
+        "source_key",
+        "source_ref",
+        "tier",
+        "vehicle_class"
+      ],
+      "arrayColumns": [],
+      "unmapped": {
+        "derivation": "provenance token (vocabularies.json derivation) saying how the value was derived; a vocabulary token checked by J3, not an entity",
+        "donor": "the donor dataset a factor was borrowed from; provenance text",
+        "gwp_basis": "global-warming-potential basis token (AR5, AR6); a qualifier of the factor",
+        "method_version": "version string of the method that computed the row; provenance housekeeping",
+        "movement_ref": "reference of the movement a measured factor describes; an identifier",
+        "origin_class": "provenance token (vocabularies.json origin_class) saying how the row was obtained; a vocabulary token checked by J3, not a thing to join on",
+        "quantity_basis": "the basis the factor is per (tkm, vkm, litre); a unit token normalised by statutoryUnit (J3 unit column)",
+        "scope_kind": "scope-kind token of the factor (per vehicle-km, per tonne-km and the rest); a qualifier",
+        "source_key": "the producer's key for the upstream series or feed; provenance housekeeping, the source is joined through source_id",
+        "source_ref": "the upstream record reference at the publisher; provenance housekeeping",
+        "tier": "factor tier token (the tier contract); a grade",
+        "vehicle_class": "vehicle class label inside a mode; a qualifier of the factor, the mode is joined through mode"
+      }
+    },
+    "state_cost_facts": {
+      "textColumns": [
+        "dimension",
+        "fact_label",
+        "origin_class",
+        "state_code",
+        "state_label",
+        "statute_citation",
+        "trend",
+        "unit",
+        "value"
+      ],
+      "arrayColumns": [],
+      "unmapped": {
+        "dimension": "cost dimension token (labor_markets, operational_cost); a classification label",
+        "fact_label": "the prose label of the row; the flywheel matches no free-text words, so the entity comes from the row's entity_id or a formal-code map, never from this label (operator 2026-10-25)",
+        "origin_class": "provenance token (vocabularies.json origin_class) saying how the row was obtained; a vocabulary token checked by J3, not a thing to join on",
+        "trend": "direction word of the published value (up, down, flat); a display token",
+        "unit": "the unit of the row's value as published; a unit token normalised by statutoryUnit (J3), not an entity",
+        "value": "the value as published, text form of value_numeric; the figure is read from the typed column"
+      }
+    },
+    "indexation_clauses": {
+      "textColumns": [
+        "contract_ref",
+        "corridor_id",
+        "index_id",
+        "review_cadence",
+        "rounding_rule"
+      ],
+      "arrayColumns": [],
+      "unmapped": {
+        "contract_ref": "the customer's contract reference; an identifier of customer data, never joined",
+        "review_cadence": "how often the clause is reviewed, as written; prose",
+        "rounding_rule": "how the indexed amount is rounded, as written; prose"
+      }
+    }
+  }
+}

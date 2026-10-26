@@ -69,16 +69,12 @@ export const FilterChip = ({ active, onClick, children }: { active?: boolean; on
   </button>
 );
 
-/** The catalogue-record chip: record-grade items only. A list row on the phone shows the short word (base.css); the full words are the chip's name everywhere else. */
-export const GRADE_SHORT = "Record";
+/** The catalogue-record chip: record-grade items only (the detail header; a list row draws no grade). */
 export function GradeChip({ itemGrade }: { itemGrade?: "record" | "brief" | undefined }) {
   if (itemGrade !== "record") return null;
   return (
     <span data-part="chip-grade" className="cl-grade-chip" title="Catalogue record: every fact below is quoted directly from the source document. A synthesized full brief is a separate, later upgrade for this item.">
-      <span className="cl-grade-full">Catalogue record</span>
-      <span className="cl-grade-short" aria-hidden="true">
-        {GRADE_SHORT}
-      </span>
+      Catalogue record
     </span>
   );
 }

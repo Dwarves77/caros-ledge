@@ -5,44 +5,27 @@ import { test } from "node:test";
 
 import { createElement } from "react";
 
-import { BAND_ORDER } from "@/core/lists";
 import type { Resource } from "@/core/types";
 import { liveFacetCounts } from "@/ui/list-surface";
 import { facetLabel } from "@/ui/list-surface/facet-labels";
 import table from "@/ui/list-surface/facet-labels.json";
 import { EMPTY_FILTER_STATE } from "@/ui/list-surface/filter-sort";
 import { NextObligationLine } from "@/features/regulations/NextObligationLine";
-import { ListRow } from "@/ui/ListRow";
+import { ImpactMeter } from "@/ui/ImpactMeter";
 
-import { renderApp, textOf } from "../_support/render.ts";
+import { renderApp } from "../_support/render.ts";
 
 const SCORED = { cost: 2, compliance: 3, client: 1, operational: 2 };
-const row = (over: Record<string, unknown> = {}) => renderApp(createElement(ListRow, { band: BAND_ORDER[0]!, jurisdiction: "EU", title: "Regulation (EU) 2026/106", tier: 1, impact: null, ...over } as never));
+const meter = (scores: unknown, absence?: string) => renderApp(createElement(ImpactMeter, { scores, absence } as never));
 const count = (html: string, needle: string) => html.split(needle).length - 1;
 
-test("INV-UI1-1: an unscored row renders no impact segment element and one dash named 'Impact not scored'; a scored row renders its twelve segments", () => {
-  const unscored = row({ impact: { cost: 0, compliance: 0, client: 0, operational: 0 } });
+test("INV-UI1-1: an unscored impact meter renders no segment element and one dash named 'Impact not scored'; a scored one renders its twelve segments", () => {
+  const unscored = meter({ cost: 0, compliance: 0, client: 0, operational: 0 });
   assert.equal(count(unscored, "cl-impact-bar"), 0, "no segment element, no outline");
   assert.equal(count(unscored, "cl-impact-group"), 0);
   assert.equal(count(unscored, 'aria-label="Impact not scored"'), 1, "exactly one dash in the impact cell");
-  assert.equal(count(row({ impact: null }), "cl-impact-bar"), 0);
-  assert.equal(count(row({ impact: SCORED }), 'class="cl-impact-bar"'), 12, "a scored row keeps its twelve segments");
-});
-
-test("U3: on the phone the bias chips are one muted sentence-case line of whole labels with a +N count; at the desk they stay chips", () => {
-  const two = [
-    { dimension: "funding", tag: "industry-funded", confidence: 0.9 },
-    { dimension: "methodology", tag: "peer-reviewed", confidence: 0.8 },
-  ];
-  const phone = (html: string) => /class="cl-row-meta-mobile"[^>]*>([^<]*)</.exec(html)?.[1];
-  const shown = row({ impact: SCORED, due: { label: "Nov 15", days: "26d" }, biasTags: two });
-  assert.equal(phone(shown), "Industry funded · Peer reviewed");
-  assert.ok(count(shown, 'data-part="chip-tag"') >= 2, "the desk chips are still there");
-  assert.equal(count(shown, "cl-row-bias-mobile"), 0, "no second phone line for the bias");
-  const three = row({ impact: SCORED, due: { label: "Nov 15", days: "26d" }, biasTags: [...two, { dimension: "stakeholder", tag: "regulator-aligned", confidence: 0.7 }] });
-  assert.equal(phone(three), "Industry funded · +2", "a label that does not fit goes whole, and the count says how many went");
-  const crowded = row({ impact: null, due: null, tier: null, itemGrade: "record", biasTags: two });
-  assert.equal(phone(crowded), undefined, "a line already full of the grade and the absence draws no label it cannot hold");
+  assert.equal(count(meter(null), "cl-impact-bar"), 0);
+  assert.equal(count(meter(SCORED), 'class="cl-impact-bar"'), 12, "a scored row keeps its twelve segments");
 });
 
 const rowOf = (modes: string[], topic: string, jurisdiction: string): Resource => ({ id: topic + modes.join(), title: "t", priority: "HIGH", modes, topic, jurisdiction, sourceTier: 1 }) as never;
@@ -89,12 +72,9 @@ test("U8: the masthead names the next obligation by its title cut at 48 characte
   assert.equal(renderApp(createElement(NextObligationLine, { label: "Nov 15", title: "Short title", href: "/r/1" })).includes(">Short title</a>"), true);
 });
 
-test("IMPACT-1 sentence: a row with impactAbsence draws that sentence once in the meta line, never 'Needs more data', and names it on the impact dash", () => {
-  const html = row({ impact: null, impactAbsence: "No obligations extracted yet", due: { label: "Nov 15", days: "26d" } });
-  const text = textOf(html);
-  assert.equal(text.split("No obligations extracted yet").length - 1, 1, "once as text");
-  assert.doesNotMatch(html, /needs more data/i);
+test("IMPACT-1 sentence: an impact meter with an absence sentence names it on the dash, never 'Needs more data' (the sentence is the detail page's impact card; the list row draws no impact)", () => {
+  const html = meter(null, "No obligations extracted yet");
   assert.match(html, /aria-label="No obligations extracted yet"/, "the impact dash carries the sentence");
-  assert.equal(count(row({ impact: null }), 'aria-label="Impact not scored"'), 1, "with no sentence the dash keeps its name");
-  assert.match(textOf(row({ impact: null, due: null, dueAbsence: "No milestone dates" })), /No milestone dates/);
+  assert.doesNotMatch(html, /needs more data/i);
+  assert.equal(count(meter(null), 'aria-label="Impact not scored"'), 1, "with no sentence the dash keeps its name");
 });

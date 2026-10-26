@@ -154,7 +154,7 @@ export function RegulationDetail(p: Props) {
                     ]}
                   />
                 }
-                impact={<ImpactRailCard scores={r.impactScores ?? null} />}
+                impact={<ImpactRailCard scores={r.impactScores ?? null} absence={r.impactAbsence} />}
                 relevance={<RelevanceRailCard state={p.relevance.phase === "ready" ? { phase: "ready", relevance: p.relevance.data.relevance } : p.relevance.phase === "failed" ? { phase: "failed", retry: p.relevance.retry } : { phase: "loading" }} />}
                 designed={
                   <>

@@ -15,7 +15,7 @@ export interface Reply {
   count?: number | null;
 }
 export interface ClaimsReply {
-  data: { claims: { sub?: string; email?: string } } | null;
+  data: { claims: { sub?: string; email?: string; user_metadata?: unknown } } | null;
   error: unknown;
 }
 export interface FakeOptions {
