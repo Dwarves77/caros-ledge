@@ -1,7 +1,7 @@
 // Ported from old_repo/src/lib/sources/charset-decode.mjs (lines 1-69)
 // Ported from old_repo/src/lib/sources/pdf-extract.mjs (lines 1-39)
 // Ported from old_repo/src/lib/sources/canonical-fetch.mjs (lines 46-57)
-import { toText } from "./classify-body";
+import { tidyLayout, toText } from "./classify-body";
 import { assertFetchAllowed, type HoldDeps } from "./hold";
 import { honestFetch } from "./honest";
 import { cleanCtl, extractPdfBudgeted, fetchDocument, type FetchDocumentOptions, type FetchRefusal, type PdfLib } from "./policy";
@@ -37,12 +37,12 @@ export interface TransportResult {
   channel?: "api" | "feed" | "sitemap" | "direct" | "browser" | "substitute";
 }
 
-/** PDF bytes to text with whitespace collapsed (unpdf's serverless pdf.js), under the page and time budget (extractPdfBudgeted). Throws on a non-PDF, an empty text layer or an over-budget document: a corrupt PDF is a roadblock, not content. `lib` is the reader (unpdf by default). */
+/** PDF bytes to text with its line breaks kept (unpdf's serverless pdf.js), under the page and time budget (extractPdfBudgeted). Throws on a non-PDF, an empty text layer or an over-budget document: a corrupt PDF is a roadblock, not content. `lib` is the reader (unpdf by default). */
 export async function extractPdfText(bytes: Uint8Array, lib?: PdfLib<{ numPages: number; destroy?: () => unknown }>, opts: { timeoutMs?: number } = {}): Promise<{ text: string; pages: number | null; title: string | null; metaError: string | null }> {
   const owned = new Uint8Array(bytes.byteLength);
   owned.set(bytes);
   const out = await extractPdfBudgeted(owned, lib ?? ((await import("unpdf")) as unknown as PdfLib<{ numPages: number; destroy?: () => unknown }>), opts);
-  const full = out.text.replace(/\s+/g, " ").trim();
+  const full = tidyLayout(out.text);
   if (!full) throw new Error("pdf extracted to empty text");
   return { ...out, text: full };
 }
@@ -66,6 +66,6 @@ export async function fetchDirect(url: string, deps: FetchDeps, opts: { max: num
     const text = doc.reason === "error_marker" ? doc.detail : "";
     return { status: doc.status ?? 0, text, truncated: false, fullLength: 0, cap: opts.max, ...(doc.finalUrl ? { finalUrl: doc.finalUrl } : {}), contentType: doc.contentType, refusal: doc };
   }
-  const full = (cleanCtl(doc.isPdf ? doc.text : toText(doc.text)) || "").replace(/\s+/g, " ").trim();
+  const full = tidyLayout(cleanCtl(doc.isPdf ? doc.text : toText(doc.text)) || "");
   return { status: doc.status, text: full.slice(0, opts.max), truncated: full.length > opts.max, fullLength: full.length, cap: opts.max, finalUrl: doc.finalUrl, contentType: doc.contentType, title: doc.title, language: doc.language, ...(opts.keepHtml && !doc.isPdf ? { html: doc.text } : {}), refusal: null };
 }
