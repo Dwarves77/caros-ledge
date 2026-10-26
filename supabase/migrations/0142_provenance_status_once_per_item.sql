@@ -231,7 +231,7 @@ CREATE CONSTRAINT TRIGGER provenance_recheck_apply_trg AFTER INSERT ON public.pr
 -- a queue row, and a section write that makes a verified item unverified (the derivation is not skippable by a writer).
 DO $$
 DECLARE
-  src uuid; it uuid; sec uuid; st text; flags int; i int; q int;
+  src uuid; it uuid; sec uuid; sec2 uuid; st text; flags int; i int; q int;
 BEGIN
   IF (SELECT count(*) FROM pg_trigger WHERE NOT tgisinternal AND tgname IN ('set_provenance_status_sections_trg', 'set_provenance_status_claims_trg', 'set_provenance_status_claims_del_trg') AND tgfoid = 'public.provenance_recheck_push()'::regprocedure AND tgenabled = 'O' AND NOT tgdeferrable) <> 3 THEN
     RAISE EXCEPTION '0142-provenance-once: the three queue triggers are not in place';
@@ -258,8 +258,10 @@ BEGIN
     INSERT INTO public.sources (name, url, base_tier, tier_at_creation) VALUES ('selfcheck-0142 source', 'https://selfcheck-0142.invalid/', 1, 1) RETURNING id INTO src;
     INSERT INTO public.intelligence_items (title, domain, source_id, full_brief) VALUES ('selfcheck-0142 item', 1, src, 'A brief.') RETURNING id INTO it;
     INSERT INTO public.item_gate_a_state (intelligence_item_id, gate_a_version, scanned_hash, orphan_count) VALUES (it, 'selfcheck', md5('A brief.'), 0);
-    SET CONSTRAINTS ALL IMMEDIATE;
-    SET CONSTRAINTS ALL DEFERRED;
+    -- Production seeds item_type_required_slots (criterion 5 wants a FACT or GAP claim naming each slot of the item type; the CI database has none), so the fixture satisfies whatever the live table asks of its item type: one GAP claim per required slot, on a section of its own that no step below deletes.
+    INSERT INTO public.intelligence_item_sections (item_id, section_key, section_order, content_md) VALUES (it, 'selfcheck-slots', 99, 'Slots.') RETURNING id INTO sec2;
+    INSERT INTO public.section_claim_provenance (intelligence_item_id, section_row_id, claim_kind, claim_text)
+      SELECT it, sec2, 'GAP', r.slot_key FROM public.item_type_required_slots r WHERE r.item_type = (SELECT i.item_type FROM public.intelligence_items i WHERE i.id = it);
     -- A valid section: the item verifies (and the derivation has not run before the trigger does).
     INSERT INTO public.intelligence_item_sections (item_id, section_key, section_order, content_md) VALUES (it, 's1', 1, 'A plain statement with no assertion words.') RETURNING id INTO sec;
     SELECT provenance_status::text INTO st FROM public.intelligence_items WHERE id = it;
@@ -288,7 +290,7 @@ BEGIN
     SET CONSTRAINTS ALL DEFERRED;
     SELECT provenance_status::text INTO st FROM public.intelligence_items WHERE id = it;
     IF st <> 'quarantined' THEN RAISE EXCEPTION '0142-provenance-once: a FACT with no span left %', st; END IF;
-    DELETE FROM public.section_claim_provenance WHERE intelligence_item_id = it;
+    DELETE FROM public.section_claim_provenance WHERE intelligence_item_id = it AND claim_kind = 'FACT';
     SET CONSTRAINTS ALL IMMEDIATE;
     SET CONSTRAINTS ALL DEFERRED;
     SELECT provenance_status::text INTO st FROM public.intelligence_items WHERE id = it;
