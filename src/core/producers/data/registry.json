@@ -172,5 +172,14 @@
     "dry_capable": true,
     "enabled_env": "RESEARCH_ASSESSMENT_PRODUCER_ENABLED",
     "in_all": false
+  },
+  {
+    "name": "document-date",
+    "domain_table": "agent_run_searches",
+    "source": "stored_captures",
+    "licence": "Derived from the stored captures' own text; no external source is read",
+    "dry_capable": true,
+    "enabled_env": "DOCUMENT_DATE_PRODUCER_ENABLED",
+    "in_all": false
   }
 ]
