@@ -1,0 +1,48 @@
+{
+  "ruling": "scope reviewer and operator 2026-10-26 under ADR-053 section 2 and Unified PR B design section 1 (DOC-DATE-2): a document's own date is a formal code only (the Official Journal header with its ELI act match, and the metadata properties dc:date, eli:date_publication, article:published_time); the English word triggers of DOC-DATE-1 are retired and a date stated in prose is the DIGEST-1 PR B reader's job with a verbatim quote. The document-date producer reads stored captures only (nothing is fetched, so no scrape cadence is exercised and rule 16 stands; the cadence_exception key only satisfies INV-RUN-1 for an apply propagate step that names a producer): it sets the dates the retired doc-date@1.0.0 wrote from a signature line or a header label back to NULL (all three columns together) and re-stamps the OJ and metadata dates doc-date@2.0.0",
+  "steps": [
+    {
+      "name": "document-date-dry",
+      "stage": "propagate",
+      "mode": "dry",
+      "input": {
+        "propagate": {
+          "producers": {
+            "only": "document-date"
+          }
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "document-date-apply",
+      "stage": "propagate",
+      "mode": "apply",
+      "input": {
+        "propagate": {
+          "producers": {
+            "only": "document-date"
+          },
+          "cadence_exception": "scope reviewer and operator 2026-10-26 under ADR-053 section 2 and Unified PR B design section 1 (DOC-DATE-2): a document's own date is a formal code only (the Official Journal header with its ELI act match, and the metadata properties dc:date, eli:date_publication, article:published_time); the English word triggers of DOC-DATE-1 are retired and a date stated in prose is the DIGEST-1 PR B reader's job with a verbatim quote. The document-date producer reads stored captures only (nothing is fetched, so no scrape cadence is exercised and rule 16 stands; the cadence_exception key only satisfies INV-RUN-1 for an apply propagate step that names a producer): it sets the dates the retired doc-date@1.0.0 wrote from a signature line or a header label back to NULL (all three columns together) and re-stamps the OJ and metadata dates doc-date@2.0.0"
+        }
+      },
+      "producer_env": [
+        "DOCUMENT_DATE_PRODUCER_ENABLED=1"
+      ],
+      "on_failure": "stop"
+    },
+    {
+      "name": "patterns-dry",
+      "stage": "connect",
+      "mode": "dry",
+      "input": {
+        "connect": {
+          "scan_limit": 0
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    }
+  ]
+}
