@@ -27,7 +27,7 @@ import { sanctionRefusal, withPenalties } from "./penalty";
 import rulesJson from "./data/object-rules.json";
 import targetsJson from "./data/fueleu-targets.json";
 
-export const OBJECT_DERIVATION_VERSION = "oblig-objects-2026-10-26.1";
+export const OBJECT_DERIVATION_VERSION = "oblig-objects-2026-10-20.1";
 const FREQUENCIES: ReadonlySet<string> = new Set(["annual", "per_consignment", "per_voyage", "event_triggered"]);
 const MODE_ALIASES: ReadonlySet<string> = new Set(["sea", "maritime", "water", "vessel", "marine", "truck", "lorry", "hgv", "barge", "iww", "inland-waterway", "freighter", "airfreight"]);
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -348,8 +348,8 @@ export async function deriveObligationObjects(sb: Db, input: { dry: boolean; ite
     if (error) throw new Error(`derive-objects: obligation_objects read failed: ${error.message}`);
     return data ?? [];
   }, { manyPerId: true });
-  // DERIVE-3: the penalty columns of every candidate, the penalty paragraphs of the item-bound captures, and the entities of the new ones resolved before they are minted
-  const penalties = await withPenalties(sb, { candidates, itemsById, captures, existing, holdersIn: (span) => [...new Set(PHRASES.filter((p) => p.re.test(span)).map((p) => p.class))] });
+  // DERIVE-3 (ADR-053): the pinpoints the statutory schedule cites become candidates from the item-bound captures, their obligation entities resolved before they are minted
+  const penalties = await withPenalties(sb, { candidates, itemsById, captures, existing });
   const plan = planObligationObjects(penalties.candidates, { itemsById, capturesById, existing });
   plan.refused.push(...penalties.refused);
   const counts: Record<string, number> = { candidates: penalties.candidates.length, to_insert: plan.toInsert.length, already_registered: plan.alreadyRegistered, refused: plan.refused.length, inserted: 0 };

@@ -1,14 +1,11 @@
-// DERIVE-3: penalty provisions as derived obligation objects. INV-D3-1 every penalty field is a verbatim fragment of its object's span (or a token whose basis is), INV-D3-2 "fines" as a material noun is no penalty, INV-D3-3 the statutory
-// schedule joins its object, INV-D3-4 a capture bound to no item is refused and the binder binds it, INV-D3-5 a second apply changes nothing, INV-D3-7 Article 16(3) is its own object and the object beside it is not touched.
+// DERIVE-3 (ADR-053, formal codes only): the pinpoints the statutory schedule cites become objects. INV-D3-1 every fragment is the span's own text and a class is a token of the data file, INV-D3-2 English in a span makes no candidate,
+// INV-D3-3 the statutory schedule joins its object, INV-D3-4 a capture bound to no item is refused and the binder binds it, INV-D3-5 a second apply changes nothing, INV-D3-7 a pinpoint that has an object is not touched.
 // (INV-D3-6, no authored prose in the slot and the section, is in tests/workspace/penalty-readers.test.ts.)
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { bindInstrumentCaptures, itemForCitedUrl } from "@/core/fetch";
 import { deriveObligationObjects, type Candidate } from "@/features/obligations";
-import { OBJECT_DERIVATION_VERSION } from "@/features/obligations/derive/derive-objects";
-import { fillObjectFields } from "@/features/obligations/derive/fill-fields";
-import { extractPenalty } from "@/features/obligations/derive/penalty";
 import classes from "@/features/obligations/derive/data/sanction-classes.json" with { type: "json" };
 import { runConnect } from "@/core/turn";
 import { captureCited } from "@/core/turn/stages/capture";
@@ -50,48 +47,40 @@ const rowOf = (plan: Plan, itemId: string, pinpoint: string): Row => {
   return hit;
 };
 
-test("D1/D2 worked examples: Article 16(3), 16(3a), 23(2), 23(5) and Annex IV Part B are objects with a class, and every fragment is the span's own text (INV-D3-1)", async () => {
+
+test("D1/D2 (ADR-053): the pinpoints the schedule's rows cite (Annex IV Part B, Article 23(5)) become objects from the item-bound capture, with the class the formula id maps to; Article 23(2) and Article 16(3) wait for the reader (INV-D3-1)", async () => {
   const w = world();
   const plan = planOf(await deriveObligationObjects(w.db, { dry: true, itemIds: [F.FUELEU_ITEM, F.ETS_ITEM] }));
-  const want: [string, string, string][] = [[F.ETS_ITEM, "Article 16(1)", "member_state_defined"], [F.ETS_ITEM, "Article 16(3)", "monetary_per_unit"], [F.ETS_ITEM, "Article 16(3a)", "by_reference"], [F.FUELEU_ITEM, "Article 23(2)", "monetary_formula"], [F.FUELEU_ITEM, "Article 23(5)", "monetary_formula"], [F.FUELEU_ITEM, "Annex IV Part B", "monetary_per_unit"]];
-  for (const [id, pin, token] of want) assert.equal(rowOf(plan, id, pin).sanction_class, token, pin);
-  const art16 = rowOf(plan, F.ETS_ITEM, "Article 16(3)");
-  assert.equal(art16.statutory_maximum, "excess emissions penalty shall be EUR 100 for each tonne of carbon dioxide equivalent");
-  assert.equal(rowOf(plan, F.FUELEU_ITEM, "Article 23(5)").statutory_maximum, "EUR 1,5");
-  assert.match(String(rowOf(plan, F.FUELEU_ITEM, "Annex IV Part B").cost_formula), /^2 400 8\. Is the amount to be paid in EUR per equivalent metric ton of VLSFO$/);
-  assert.match(String(rowOf(plan, F.FUELEU_ITEM, "Article 23(2)").cost_formula), /multiplied by 1 \+ \(n -1\)\/10/);
-  for (const { row } of plan.toInsert.filter((p) => p.row.sanction_class)) {
+  assert.equal(rowOf(plan, F.FUELEU_ITEM, "Annex IV Part B").sanction_class, "monetary_per_unit");
+  assert.equal(rowOf(plan, F.FUELEU_ITEM, "Article 23(5)").sanction_class, "monetary_per_unit");
+  const penalty = plan.toInsert.map((p) => p.row).filter((r) => r.sanction_class);
+  assert.deepEqual(penalty.map((r) => r.pinpoint_citation).sort(), ["Annex IV Part B", "Article 23(5)"], "no pinpoint the schedule does not cite is made an object, and an English penalty word makes none");
+  assert.ok(!plan.toInsert.some((p) => p.row.instrument_item_id === F.ETS_ITEM && String(p.row.pinpoint_citation).startsWith("Article 16(")), "Directive 2003/87 Article 16(3) has no schedule row: it waits for the reader");
+  for (const row of penalty) {
     const span = String(row.verbatim_text);
     assert.ok(TOKENS.has(String(row.sanction_class)), "a token of the data file");
     for (const col of ["statutory_maximum", "cost_formula"] as const) if (row[col] !== null) assert.ok(span.includes(String(row[col])), `${String(row.pinpoint_citation)} ${col} is a fragment of its span`);
-    assert.ok(extractPenalty(span).sanction_class?.fragment && span.includes(extractPenalty(span).sanction_class?.fragment as string), "the class's basis is a fragment of the span");
-    assert.ok(F.FUELEU_TEXT.includes(span) || F.ETS_TEXT.includes(span), "the span is the capture's own text");
+    assert.ok(F.FUELEU_TEXT.includes(span), "the span is the capture's own text");
   }
-  // the paragraphs with a penalty word and no trigger are refused with the reason, never silently dropped
-  assert.ok(plan.refused.some((r) => r.pinpoint_citation === "Article 16(4)" && r.reason === "penalty_word_without_trigger"));
+  assert.match(String(rowOf(plan, F.FUELEU_ITEM, "Annex IV Part B").verbatim_text), /2 400 8\. Is the amount to be paid in EUR per equivalent metric ton of VLSFO/, "the bounded Annex IV Part B span keeps the figure rows");
 });
 
-test("INV-D3-1 attack: a session-authored class with no basis in the span, an unknown token and a recomposed maximum are refused with their reasons", async () => {
+test("INV-D3-1 attack: an unknown class token and a recomposed maximum in a session-authored candidate are refused with their reasons", async () => {
   const base: Candidate = { instrument_item_id: F.ETS_ITEM, capture_id: F.ETS_CAPTURE, pinpoint_citation: "Article 15(1)", verbatim_text: "Article 15 Verification 1. Member States shall ensure that reports are verified.", duty_holder_class: ["member_state"], applicability_trigger: { attribute: "instrument_in_scope", value: "32003L0087" } };
   const w = world();
-  const r = await deriveObligationObjects(w.db, { dry: true, itemIds: [], extraCandidates: [{ ...base, sanction_class: "monetary_per_unit" }, { ...base, pinpoint_citation: "Article 15(2)", sanction_class: "severe" }, { ...base, pinpoint_citation: "Article 15(3)", statutory_maximum: "a fine of two thousand euros" }] });
-  assert.deepEqual(planOf(r).refused.filter((x) => x.pinpoint_citation?.startsWith("Article 15(")).map((x) => x.reason.split(":")[0]), ["sanction_class_basis_not_in_span", "sanction_class_unknown", "statutory_maximum_figure_missing"]);
+  const r = await deriveObligationObjects(w.db, { dry: true, itemIds: [], extraCandidates: [{ ...base, sanction_class: "severe" }, { ...base, pinpoint_citation: "Article 15(3)", statutory_maximum: "a fine of two thousand euros" }] });
+  assert.deepEqual(planOf(r).refused.filter((x) => x.pinpoint_citation?.startsWith("Article 15(")).map((x) => x.reason.split(":")[0]), ["sanction_class_unknown", "statutory_maximum_figure_missing"]);
   assert.equal(planOf(r).toInsert.filter((p) => String(p.row.pinpoint_citation).startsWith("Article 15(")).length, 0);
 });
 
-test("INV-D3-2: 'fines' as a material noun (Regulation 147/2013) yields no class and no candidate; an adjective and a procedural penalty notice likewise; a real fine is not excluded", async () => {
-  const sample = extractPenalty(`The captured source states, verbatim: «${F.MATERIAL_SENTENCE}»`);
-  assert.equal(sample.sanction_class, null);
-  assert.deepEqual(sample.refused, ["excluded:fines-material-noun"]);
-  assert.deepEqual(extractPenalty("a very fine mesh of 0,5 mm is required").refused, ["excluded:fine-adjective"]);
-  assert.deepEqual(extractPenalty("a penalty notice under Part 10 may be provided or given to that person in electronic form").refused, ["excluded:penalty-notice-procedure"]);
-  assert.equal(extractPenalty("The operator shall pay fines of up to EUR 2 000 per tonne of carbon dioxide.").sanction_class?.token, "monetary_per_unit");
-  const plan = planOf(await deriveObligationObjects(world().db, { dry: true, itemIds: [F.MATERIAL_ITEM] }));
-  assert.equal(plan.toInsert.filter((p) => String(p.row.verbatim_text).includes("fines")).length, 0);
-  assert.ok(plan.refused.some((r) => r.instrument_item_id === F.MATERIAL_ITEM && r.reason === "excluded:fines-material-noun"));
+test("INV-D3-2 (renamed): a span with no formal pinpoint and no figure yields no candidate, whatever English it carries ('fines' as a material noun, a penalty clause no schedule row cites)", async () => {
+  const plan = planOf(await deriveObligationObjects(world().db, { dry: true, itemIds: [F.MATERIAL_ITEM, F.ETS_ITEM, F.FUELEU_ITEM] }));
+  assert.equal(plan.toInsert.filter((p) => p.row.instrument_item_id === F.MATERIAL_ITEM).length, 0);
+  assert.deepEqual(plan.toInsert.map((p) => p.row).filter((r) => r.sanction_class).map((r) => r.pinpoint_citation).sort(), ["Annex IV Part B", "Article 23(5)"], "Article 23(1), (3), (6) say penalty and are not made: no schedule row cites them");
+  assert.deepEqual(plan.refused.filter((r) => r.instrument_item_id === F.MATERIAL_ITEM), [], "nothing about the sentence is judged: no cue, no refusal");
 });
 
-test("INV-D3-3: the obligation entity the statutory schedule authored is reused by the object that cites its article most, once; every schedule row then joins an object", async () => {
+test("INV-D3-3: the obligation entity the statutory schedule authored is reused by the object that more rows cite, once; every schedule row then joins an object", async () => {
   const w = world();
   const r = await deriveObligationObjects(w.db, { dry: false, itemIds: [F.FUELEU_ITEM] });
   assert.equal(r.outcome, "ok", r.notes.join("|"));
@@ -102,10 +91,11 @@ test("INV-D3-3: the obligation entity the statutory schedule authored is reused 
   assert.notEqual(objects.find((o) => o.pinpoint_citation === "Article 23(5)")?.obligation_id, F.FUELEU_OBLIGATION);
 });
 
-test("INV-D3-3 control: an entity an object already carries is not taken again", async () => {
-  const w = world({ obligation_objects: [existingObject(F.FUELEU_OBLIGATION, "Article 99", F.FUELEU_ITEM, "x")] });
-  await deriveObligationObjects(w.db, { dry: false, itemIds: [F.FUELEU_ITEM] });
+test("INV-D3-3 control: an entity an object already carries is not taken again, and a cited pinpoint no capture holds is refused with the reason", async () => {
+  const w = world({ obligation_objects: [existingObject(F.FUELEU_OBLIGATION, "Article 99", F.FUELEU_ITEM, "x")], statutory_computations: [...SCHEDULE, schedule("sc-4", "x", 1, "EUR", "Annex IX")] });
+  const r = await deriveObligationObjects(w.db, { dry: false, itemIds: [F.FUELEU_ITEM] });
   assert.equal((w.tables.obligation_objects as Row[]).filter((o) => o.obligation_id === F.FUELEU_OBLIGATION).length, 1);
+  assert.ok(planOf(r).refused.some((x) => x.pinpoint_citation === "Annex IX" && x.reason === "pinpoint_not_in_capture"));
 });
 
 test("INV-D3-4: a candidate on a capture bound to no item is refused; the binder binds the NULL-item captures whose CELEX or ELI names exactly one live item and reports the rest with reasons", async () => {
@@ -138,41 +128,33 @@ test("INV-D3-4: a candidate on a capture bound to no item is refused; the binder
   assert.equal(await itemForCitedUrl(w.db, "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R0001"), null, "two items for one key bind to neither");
 });
 
-test("INV-D3-5: a second apply writes zero rows and changes zero rows (derive, then the backfill of the existing objects)", async () => {
+
+test("INV-D3-5: a second apply writes zero rows and changes zero rows", async () => {
   const w = world({ obligation_objects: [ART16_EXISTING] });
   const first = await deriveObligationObjects(w.db, { dry: false, itemIds: [F.FUELEU_ITEM, F.ETS_ITEM] });
-  assert.ok((first.counts.inserted ?? 0) >= 6, first.notes.join("|"));
+  assert.ok((first.counts.inserted ?? 0) >= 2, first.notes.join("|"));
   const after = JSON.stringify(w.tables.obligation_objects);
   const second = await deriveObligationObjects(w.db, { dry: false, itemIds: [F.FUELEU_ITEM, F.ETS_ITEM] });
   assert.deepEqual([second.counts.inserted, second.counts.to_insert], [0, 0]);
   assert.equal(JSON.stringify(w.tables.obligation_objects), after);
-  const fill1 = await fillObjectFields(w.db, { dry: false, after: null });
-  assert.equal(fill1.counts.sanction_set, 1, "the one existing object whose span states a class is filled");
-  const filled = JSON.stringify(w.tables.obligation_objects);
-  const fill2 = await fillObjectFields(w.db, { dry: false, after: null });
-  assert.equal(fill2.counts.updated, 0, "nothing is filled twice");
-  assert.equal(JSON.stringify(w.tables.obligation_objects), filled);
-  assert.ok(OBJECT_DERIVATION_VERSION.includes("2026-10-26"), "the derivation version is bumped, so the connect stage reads every item again");
 });
 
-test("INV-D3-7: Article 16(3) becomes its own object beside the existing Article 16 object, whose row is byte-identical afterwards", async () => {
-  const w = world({ obligation_objects: [ART16_EXISTING] });
-  const before = structuredClone(ART16_EXISTING);
-  await deriveObligationObjects(w.db, { dry: false, itemIds: [F.ETS_ITEM] });
+test("INV-D3-7: a pinpoint that already has an object is not re-spanned or versioned, and the objects beside it are byte-identical", async () => {
+  const held = existingObject("cl:obligation:0000000000000023", "Annex IV Part B", F.FUELEU_ITEM, "B. Formula for calculating the FuelEU Penalties laid down in Article 23(2)");
+  const w = world({ obligation_objects: [held, ART16_EXISTING] });
+  const before = [structuredClone(held), structuredClone(ART16_EXISTING)];
+  const r = await deriveObligationObjects(w.db, { dry: false, itemIds: [F.FUELEU_ITEM, F.ETS_ITEM] });
   const objects = w.tables.obligation_objects as Row[];
-  assert.ok(objects.some((o) => o.pinpoint_citation === "Article 16(3)" && o.obligation_id !== ART16_EXISTING.obligation_id && o.supersedes === null && o.version === 1));
-  assert.deepEqual(objects.find((o) => o.obligation_id === ART16_EXISTING.obligation_id), before);
+  assert.equal(objects.filter((o) => o.pinpoint_citation === "Annex IV Part B").length, 1, r.notes.join("|"));
+  assert.deepEqual([objects.find((o) => o.obligation_id === held.obligation_id), objects.find((o) => o.obligation_id === ART16_EXISTING.obligation_id)], before);
   assert.deepEqual(w.writes.filter((x) => x.table === "obligation_objects" && x.op !== "insert"), [], "nothing but inserts touched the table");
+  assert.ok(objects.some((o) => o.pinpoint_citation === "Article 23(5)"), "the other cited pinpoint is still made");
 });
 
-test("the backfill gives an existing object its sanction class from its own span, only where it is null", async () => {
-  const w = world({ obligation_objects: [existingObject("cl:obligation:0000000000000001", "Article 16(3)", F.ETS_ITEM, F.ART16_3), existingObject("cl:obligation:0000000000000002", "Article 15(1)", F.ETS_ITEM, "Article 15 Verification 1. Member States shall ensure that reports are verified."), { ...existingObject("cl:obligation:0000000000000003", "Article 16(1)", F.ETS_ITEM, "Member States shall lay down the rules on penalties applicable to infringements"), sanction_class: "administrative" }] });
-  const r = await fillObjectFields(w.db, { dry: false, after: null });
-  const by = (id: string) => (w.tables.obligation_objects as Row[]).find((o) => o.obligation_id === id);
-  assert.equal(by("cl:obligation:0000000000000001")?.sanction_class, "monetary_per_unit");
-  assert.equal(by("cl:obligation:0000000000000002")?.sanction_class, null, "a span that is no penalty provision stays null");
-  assert.equal(by("cl:obligation:0000000000000003")?.sanction_class, "administrative", "a non-null is never overwritten");
-  assert.equal(r.counts.sanction_set, 1);
+test("a cited pinpoint on an instrument whose item has no duty holder anywhere is refused duty_holder_unresolved, never given a holder from its English", async () => {
+  const w = world({ agent_run_searches: [capture(F.FUELEU_CAPTURE, F.FUELEU_ITEM, `ANNEX IV Formulas for calculating penalties A. Formulas for calculating the compliance balance of a ship ${F.PART_B}`)] });
+  const plan = planOf(await deriveObligationObjects(w.db, { dry: true, itemIds: [F.FUELEU_ITEM] }));
+  assert.ok(plan.refused.some((x) => x.pinpoint_citation === "Annex IV Part B" && x.reason === "duty_holder_unresolved"), JSON.stringify(plan.refused));
 });
 
 test("D3 at the cause: captureCited stores a page that names one live item by its CELEX with that item, and an already-held unbound capture of the same page is bound by the next call", async () => {
@@ -190,44 +172,26 @@ test("D3 at the cause: captureCited stores a page that names one live item by it
   assert.deepEqual(stored().map((s) => s.intelligence_item_id), [F.FUELEU_ITEM], "the held capture of the same page is bound, not left loose");
 });
 
-test("INV-D3-7: a pinpoint that already has an object is not re-spanned or versioned by the penalty paragraphs", async () => {
-  const held = existingObject("cl:obligation:0000000000000016", "Article 16(3)", F.ETS_ITEM, "3. Member States shall ensure that any operator who does not surrender sufficient allowances shall be held liable");
-  const w = world({ obligation_objects: [held] });
-  const before = structuredClone(held);
-  const r = await deriveObligationObjects(w.db, { dry: false, itemIds: [F.ETS_ITEM] });
-  const objects = (w.tables.obligation_objects as Row[]).filter((o) => o.pinpoint_citation === "Article 16(3)");
-  assert.equal(objects.length, 1, r.notes.join("|"));
-  assert.deepEqual(objects[0], before);
-});
 
-test("run what is built: the connect stage binds the loose capture, then its reading derives the penalty objects of the bound capture's item and records the item as read; a second reading adds nothing (the ruled plan's steps)", async () => {
+test("run what is built: the connect stage binds the loose capture of the FuelEU CELEX, then its reading derives the pinpoints the schedule cites and records the item as read; a second reading adds nothing (the ruled plan's steps)", async () => {
   const f = fixture();
-  f.db.seed("intelligence_items", [ETS]);
-  f.db.seed("agent_run_searches", [capture("00000000-0000-4000-8000-00000000c201", null, F.ETS_TEXT, { result_url: "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02003L0087-20240301" })]);
+  f.db.seed("intelligence_items", [FUELEU]);
+  f.db.seed("statutory_computations", SCHEDULE);
+  f.db.seed("entities", [ENTITY]);
+  f.db.seed("agent_run_searches", [capture("00000000-0000-4000-8000-00000000c201", null, `${FUELEU_DUTY} ${F.FUELEU_TEXT}`, { result_url: "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32023R1805" })]);
   const step = (dry: boolean, scan_limit: number) => runConnect({ mode: dry ? "dry" : "apply", dry, input: { scan_limit }, runId: "r0000000-0000-4000-8000-000000000001", rootRunId: "r0000000-0000-4000-8000-000000000001", upstream: null } as never, f.d);
   const bindDry = await step(true, 0);
   assert.equal(bindDry.counts.unbound, 1);
   assert.equal(f.db.rows("agent_run_searches").find((c) => c.id === "00000000-0000-4000-8000-00000000c201")?.intelligence_item_id ?? null, null, "dry binds nothing");
   const bind = await step(false, 0);
   assert.equal(bind.counts.bound, 1, bind.notes.join("|"));
-  assert.equal(f.db.rows("obligation_objects").filter((o) => o.instrument_item_id === F.ETS_ITEM).length, 0, "scan_limit 0 reads no backlog");
-  const derive = await step(false, 500);
-  const pins = f.db.rows("obligation_objects").filter((o) => o.instrument_item_id === F.ETS_ITEM).map((o) => o.pinpoint_citation);
-  assert.ok(["Article 16(3)", "Article 16(3a)"].every((p) => pins.includes(p)), `${pins.join(",")}; ${derive.notes.join("|")}`);
-  assert.equal(f.db.rows("item_obligation_scan").filter((s) => s.item_id === F.ETS_ITEM).length, 1, "the item is recorded as read at the new derivation version");
+  assert.equal(f.db.rows("obligation_objects").length, 0, "scan_limit 0 reads no backlog");
+  const derive = await step(false, 60);
+  const mine = f.db.rows("obligation_objects").filter((o) => o.instrument_item_id === F.FUELEU_ITEM);
+  assert.ok(["Annex IV Part B", "Article 23(5)"].every((p) => mine.some((o) => o.pinpoint_citation === p)), `${mine.map((o) => o.pinpoint_citation).join(",")}; ${derive.notes.join("|")}`);
+  assert.equal(mine.find((o) => o.pinpoint_citation === "Annex IV Part B")?.obligation_id, F.FUELEU_OBLIGATION);
+  assert.equal(f.db.rows("item_obligation_scan").filter((s) => s.item_id === F.FUELEU_ITEM).length, 1, "the item is recorded as read");
   const count = f.db.rows("obligation_objects").length;
-  await step(false, 500);
+  await step(false, 60);
   assert.equal(f.db.rows("obligation_objects").length, count);
-});
-
-test("the statute grammar is data: a UK Schedule's Part and paragraphs and a US section's clauses are read like an Article's (pinpoints), and a penalty paragraph with no holder anywhere in its instrument is refused with the reason", async () => {
-  const UK = "Article 1 Scope 1. Operators shall keep the records. Regulation 19 SCHEDULE 2 Civil sanctions PART 1 Fixed monetary penalties 1. —(1) The amount of a fixed monetary penalty under these Regulations is £1,000. (2) A fixed monetary penalty may not be imposed on a person on more than one occasion in relation to the same act or omission. 2. —(1) Where the Agency proposes to impose a fixed monetary penalty on a person, the Agency must serve on that person a notice of its intention to do so.";
-  const US = "§ 1.2 Penalties. (a) Any person who violates this part shall be subject to a civil penalty of up to $100,000 per violation. (b) The Administrator may compromise a penalty.";
-  const uk = item("00000000-0000-4000-8000-00000000f0b1", { title: "The Digital Waste Tracking Regulations", instrument_identifier: "SI 2026/9" });
-  const us = item("00000000-0000-4000-8000-00000000f0b2", { title: "A federal part", instrument_identifier: "49 CFR 1" });
-  const w = world({ intelligence_items: [uk, us], agent_run_searches: [capture("00000000-0000-4000-8000-00000000c301", String(uk.id), UK), capture("00000000-0000-4000-8000-00000000c302", String(us.id), US)] });
-  const plan = planOf(await deriveObligationObjects(w.db, { dry: true, itemIds: [String(uk.id), String(us.id)] }));
-  assert.equal(rowOf(plan, String(uk.id), "Schedule 2 Part 1(1)").sanction_class, "monetary_fixed");
-  assert.ok(plan.refused.some((r) => r.pinpoint_citation === "Schedule 2 Part 1(2)" && r.reason === "penalty_word_without_trigger"));
-  assert.ok(plan.refused.some((r) => r.instrument_item_id === String(us.id) && r.pinpoint_citation === "§ 1.2(a)" && r.reason === "duty_holder_unresolved"), JSON.stringify(plan.refused));
 });

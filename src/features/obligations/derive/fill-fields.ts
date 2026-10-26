@@ -11,7 +11,6 @@ import rulesJson from "./data/object-rules.json";
 import { OBJECT_DERIVATION_VERSION } from "./derive-objects";
 import { extractStatutory } from "./maximum";
 import { classifyMode } from "./mode";
-import { extractPenalty } from "./penalty";
 
 /** The one value `input.derive.only` may carry in this slice. */
 export const FILL_ONLY = "modes-and-maximum";
@@ -19,11 +18,11 @@ export const FILL_ONLY = "modes-and-maximum";
 const PAGE = 1000;
 const fill = z.object({ batch: z.number().int().positive(), absence: z.string().min(1) }).parse({ batch: rulesJson.fill.batch, absence: rulesJson.absence });
 
-export interface FillRow { obligation_id: string; instrument_item_id: string; verbatim_text: string; mode: string[] | null; statutory_maximum: string | null; cost_formula: string | null; sanction_class?: string | null }
+export interface FillRow { obligation_id: string; instrument_item_id: string; verbatim_text: string; mode: string[] | null; statutory_maximum: string | null; cost_formula: string | null }
 /** One object's plan: the columns to write (only those that are null and now have a grounded value) and what the classifiers said. `modeAbsence` is the stated absence token for the plan row; a text[] cannot hold it, so the table gets null. */
 export interface FillPlanRow {
   obligation_id: string;
-  patch: { mode?: string[]; statutory_maximum?: string; cost_formula?: string; sanction_class?: string };
+  patch: { mode?: string[]; statutory_maximum?: string; cost_formula?: string };
   modeRules: string[];
   modeFrom: "span" | "instrument" | null;
   consignmentWide: boolean;
@@ -36,12 +35,10 @@ export interface FillPlanRow {
 function planFill(row: FillRow, instrument: { title?: string | null | undefined; identifier?: string | null | undefined }): FillPlanRow {
   const verdict = classifyMode(row.verbatim_text, instrument);
   const stated = extractStatutory(row.verbatim_text);
-  const penalty = extractPenalty(row.verbatim_text);
   const patch: FillPlanRow["patch"] = {
     ...(row.mode === null && verdict.modes.length ? { mode: verdict.modes } : {}),
-    ...(row.statutory_maximum === null && (stated.maximum || penalty.statutory_maximum) ? { statutory_maximum: stated.maximum?.fragment ?? (penalty.statutory_maximum?.fragment as string) } : {}),
-    ...(row.cost_formula === null && (stated.formula || penalty.cost_formula) ? { cost_formula: stated.formula?.fragment ?? (penalty.cost_formula?.fragment as string) } : {}),
-    ...(row.sanction_class == null && penalty.sanction_class ? { sanction_class: penalty.sanction_class.token } : {}),
+    ...(row.statutory_maximum === null && stated.maximum ? { statutory_maximum: stated.maximum.fragment } : {}),
+    ...(row.cost_formula === null && stated.formula ? { cost_formula: stated.formula.fragment } : {}),
   };
   return { obligation_id: row.obligation_id, patch, modeRules: verdict.ruleIds, modeFrom: verdict.from, consignmentWide: verdict.consignmentWide, modeAbsence: row.mode === null && !verdict.modes.length ? fill.absence : null, unit: stated.maximum?.unit ?? null, refused: stated.refused };
 }
@@ -56,7 +53,7 @@ export async function fillObjectFields(sb: Db, input: { dry: boolean; batch?: nu
   let last = input.after;
   let ended = false;
   while (rows.length < batch && !ended) {
-    let q = sb.from("obligation_objects").select("obligation_id, instrument_item_id, verbatim_text, mode, statutory_maximum, cost_formula, sanction_class").or("mode.is.null,statutory_maximum.is.null,cost_formula.is.null,sanction_class.is.null").order("obligation_id", { ascending: true }).limit(Math.min(PAGE, batch - rows.length));
+    let q = sb.from("obligation_objects").select("obligation_id, instrument_item_id, verbatim_text, mode, statutory_maximum, cost_formula").or("mode.is.null,statutory_maximum.is.null,cost_formula.is.null").order("obligation_id", { ascending: true }).limit(Math.min(PAGE, batch - rows.length));
     if (last) q = q.gt("obligation_id", last);
     const read = await q;
     if (read.error) return { counts: {}, outcome: "failed", notes: [`derive: obligation_objects read failed: ${read.error.message}`] };
@@ -72,14 +69,13 @@ export async function fillObjectFields(sb: Db, input: { dry: boolean; batch?: nu
   });
   const byId = new Map(items.map((i) => [i.id, i]));
   const plan = rows.map((r) => planFill(r, { title: byId.get(r.instrument_item_id)?.title, identifier: byId.get(r.instrument_item_id)?.instrument_identifier }));
-  const counts: Record<string, number> = { scanned: rows.length, mode_set: 0, mode_from_title: 0, mode_unmatched: plan.filter((p) => p.modeAbsence !== null).length, maximum_set: 0, formula_set: 0, sanction_set: 0, refused: 0, updated: 0 };
+  const counts: Record<string, number> = { scanned: rows.length, mode_set: 0, mode_from_title: 0, mode_unmatched: plan.filter((p) => p.modeAbsence !== null).length, maximum_set: 0, formula_set: 0, refused: 0, updated: 0 };
   const reasons = new Map<string, number>();
   const bump = (k: string) => { counts[k] = (counts[k] ?? 0) + 1; };
   for (const p of plan) {
     if (p.patch.mode) { bump("mode_set"); p.patch.mode.forEach((m) => bump(`mode_set_${m}`)); if (p.modeFrom === "instrument") bump("mode_from_title"); if (p.consignmentWide) bump("mode_consignment_wide"); }
     if (p.patch.statutory_maximum) bump("maximum_set");
     if (p.patch.cost_formula) bump("formula_set");
-    if (p.patch.sanction_class) { bump("sanction_set"); bump(`sanction_set_${p.patch.sanction_class}`); }
     for (const why of p.refused) { bump("refused"); reasons.set(why.split(":")[0] as string, (reasons.get(why.split(":")[0] as string) ?? 0) + 1); }
   }
   const cursor = ended ? [] : [rows[rows.length - 1]?.obligation_id as string, OBJECT_DERIVATION_VERSION];

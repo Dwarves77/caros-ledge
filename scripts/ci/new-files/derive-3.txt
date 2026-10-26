@@ -1,4 +1,4 @@
 # path | reason (files with no "Ported from" header)
-src/features/obligations/derive/penalty.ts | new in DERIVE-3: penalty provisions as derived obligation objects (sanction class, statutory maximum, cost formula, enforcement start from the verbatim span; the penalty paragraphs of item-bound captures; the obligation entity resolved before minting); no old counterpart
-src/features/obligations/derive/data/sanction-classes.json | new in DERIVE-3: the penalty trigger, its exclusions, the sanction classes with their labels, the cost-formula and figure patterns and the statute heading grammar, as validated data
+src/features/obligations/derive/penalty.ts | new in DERIVE-3: the pinpoints the statutory schedule cites become obligation objects from item-bound captures (Article and Annex heading grammar, formula id to sanction class, obligation entity resolved before minting); no old counterpart
+src/features/obligations/derive/data/sanction-classes.json | new in DERIVE-3: the sanction_class vocabulary (token and label) and the closed map from a schedule formula id to its token
 src/core/fetch/bind-instrument.ts | new in DERIVE-3: the capture of an instrument's own page is stored with that instrument's item (the capture path asks it; the connect stage binds the captures already stored with no item)
