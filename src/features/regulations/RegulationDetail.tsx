@@ -16,6 +16,7 @@ import { bandFromPriority } from "@/core/lists";
 import { formatDate } from "@/core/shared";
 import type { ChangeLogEntry, Dispute, Resource } from "@/core/types";
 import type { RecommendedAction } from "@/core/brief";
+import type { PenaltyView } from "@/core/workspace";
 import { useWorkspaceStore } from "@/core/workspace/store";
 import { ActionCard, ClaimTierProvider, downloadMarkdownBrief, GfmSection, GradeChip, SectionIndex, StateNote, type ClaimTierMap } from "@/ui";
 import { AtAGlanceCard, commonActionCardProps, CrossPageSection, crossPagePresence, DetailLayout, DetailMasthead, DetailPageWrapper, DetailRail, DetailSection, FactBlocks, PendingTriggers, pendingTriggers, ImpactRailCard, InThisListStat, ItemConnections, RecordFacts, RelevanceRailCard, RequirementTrajectory, SourcesGrid, topRecommendedAction, type CrossPageData, type DetailSurfaceSharedProps } from "@/ui/detail";
@@ -92,7 +93,9 @@ export function RegulationDetail(p: Props) {
   const factSections = isRecord ? [] : SECTION_INDEX.filter((e) => e.key && (stored.has(e.key) || (e.key === "6" && hasPendingSection)));
   const unparsedBrief = !isRecord && factSections.length === 0 && r.fullBrief ? stripSourcesSection(r.fullBrief) : "";
   const presence = crossPagePresence(p.crossPage);
-  const present = new Set(["summary", "sources", ...(hasPenalties(r) ? ["penalties"] : []), ...factSections.map((e) => e.id), ...(presence.connected ? [CONNECTED_SECTION_ID] : []), ...(presence.inferences ? [INFERENCES_SECTION_ID] : [])]);
+  // D4: the instrument's penalty objects are read first (the object is canonical); the brief's penalty fields answer only when no penalty object exists
+  const penalties = p.relevance.phase === "ready" ? (p.relevance.data.binding?.penalties ?? []) : [];
+  const present = new Set(["summary", "sources", ...(penalties.length || hasPenalties(r) ? ["penalties"] : []), ...factSections.map((e) => e.id), ...(presence.connected ? [CONNECTED_SECTION_ID] : []), ...(presence.inferences ? [INFERENCES_SECTION_ID] : [])]);
   const index = indexFor(present);
   const parsed = useMemo(() => (isRecord ? parseRecordSections(p.sections, p.claimTiers) : null), [isRecord, p.sections, p.claimTiers]);
   const split = parsed ? splitKeyDateFacts(parsed.facts) : { dateFacts: [], otherFacts: [] };
@@ -202,9 +205,9 @@ export function RegulationDetail(p: Props) {
                   </DetailSection>
                 );
               })}
-            {depth === "full" && hasPenalties(r) && (
-              <DetailSection id="penalties" title="Penalties" aside="From the regulatory brief" index={7}>
-                <PenaltyFacts r={r} />
+            {depth === "full" && (penalties.length > 0 || hasPenalties(r)) && (
+              <DetailSection id="penalties" title="Penalties" aside={penalties.length ? "From the obligations" : "From the regulatory brief"} index={7}>
+                {penalties.length ? <PenaltyObjects views={penalties} /> : <PenaltyFacts r={r} />}
               </DetailSection>
             )}
             {depth === "full" && (
@@ -217,6 +220,29 @@ export function RegulationDetail(p: Props) {
         </DetailPageWrapper>
       </div>
     </ClaimTierProvider>
+  );
+}
+
+const FACT_ROW = { display: "flex", justifyContent: "space-between", gap: "var(--sp-12)", fontSize: "var(--fs-13)" } as const;
+/** One block per penalty object: the pinpoint, then its columns as labelled rows (the labels are the section's, the values the object's own). */
+function PenaltyObjects({ views }: { views: readonly PenaltyView[] }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-14)" }}>
+      {views.map((v) => {
+        const rows: Array<[string, string]> = [v.sanction ? ["Sanction", v.sanction] : null, v.maximum ? ["Penalty amount", v.maximum] : null, v.formula ? ["Formula", v.formula] : null, ...v.basis.map((b): [string, string] => ["Schedule", b]), v.start ? ["Enforcement start", formatDate(v.start)] : null].filter((x): x is [string, string] => x !== null);
+        return (
+          <div key={v.pinpoint} style={{ display: "flex", flexDirection: "column", gap: "var(--sp-6)" }}>
+            <p className="cl-detail-label">{v.pinpoint}</p>
+            {rows.map(([label, value], i) => (
+              <div key={`${label}${i}`} style={FACT_ROW}>
+                <span style={{ color: "var(--ink-3)", fontWeight: 700 }}>{label}</span>
+                <span style={{ color: "var(--ink)", textAlign: "right", overflowWrap: "anywhere" }}>{value}</span>
+              </div>
+            ))}
+          </div>
+        );
+      })}
+    </div>
   );
 }
 

@@ -9,6 +9,7 @@ export { assertFetchAllowed, FetchHoldError, fetchAllowed, getScrapeState, isGlo
 export { escalateFetch } from "./ladder";
 export { fetchDocument } from "./policy";
 export { checkReachability, classifyReachability, decideSourceAssessment, REACH } from "./reachability";
+export { bindInstrumentCaptures, itemForCitedUrl } from "./bind-instrument";
 export { capture } from "./capture";
 export type { CaptureResult } from "./capture";
 export { makePoliteGate, parseOjReference } from "./capture";

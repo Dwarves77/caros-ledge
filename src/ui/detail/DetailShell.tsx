@@ -142,7 +142,7 @@ export function InThisListStat({ backHref, backLabel, band }: { backHref: string
   const next = neighbourHref(base, position, 1);
   return (
     <RailCard title={`In this list${position.list ? ` · ${position.list}` : ""}`} dataAudit="in-this-list-rail">
-      <p style={{ fontSize: "var(--fs-13)", color: "var(--ink)", margin: "0 0 8px" }}>{position.known ? `${position.pos} of ${position.of}${band ? ` in ${band.label}` : ""}` : "Opened directly"}</p>
+      <p style={{ fontSize: "var(--fs-13)", color: "var(--ink)", margin: "0 0 var(--sp-8)" }}>{position.known ? `${position.pos} of ${position.of}${band ? ` in ${band.label}` : ""}` : "Opened directly"}</p>
       <div className="cl-rail-links">
         <Link href={backHref} prefetch={false} className="cl-rail-link">
           {backLabel}

@@ -229,7 +229,7 @@ export function RoomsIndex({ rooms: initial, seeded, verticalGroups: initialGrou
               <Textarea ref={composer} value={draft} onChange={(e) => setDraft(e.target.value)} aria-label={`Post to the ${roomName}`} placeholder={`Ask the ${roomName}, a lane observation, a handler question, a document worth sharing…`} disabled={!canPost} rows={3} maxLength={LIMITS.postBody} />
               <div className={styles.promptRow}>
                 {starters(roomName).map((s) => (
-                  <Button key={s} variant="ghost" size="sm" disabled={!selected.joined} onClick={() => setDraft(s)}>
+                  <Button key={s} variant="ghost" size="sm" className={styles.starter} disabled={!selected.joined} onClick={() => setDraft(s)}>
                     {s}
                   </Button>
                 ))}
@@ -237,7 +237,7 @@ export function RoomsIndex({ rooms: initial, seeded, verticalGroups: initialGrou
               <EntityPicker value={entities} onChange={setEntities} disabled={!canPost} inputId="rooms-entity-search" />
               <div className={styles.composerFoot}>
                 <p className={styles.muted}>{selected.joined ? "You are in this room." : "Join the room to post."}</p>
-                <Button variant="primary" disabled={busy || !draft.trim() || !canPost || !!bindingProblem} onClick={() => void post()}>
+                <Button variant={selected.joined ? "primary" : "secondary"} disabled={busy || !draft.trim() || !canPost || !!bindingProblem} onClick={() => void post()}>
                   Post
                 </Button>
               </div>

@@ -14,6 +14,7 @@ import { requestJson } from "@/core/http/request-json";
 import { formatNumber } from "@/core/shared";
 import { KIND_LABELS } from "@/features/obligations/kinds";
 import { formatForwardEvent } from "@/features/obligations/read/rail-select";
+import { Button } from "@/ui/Button";
 import { parseListUrl } from "@/ui/list-surface/url-state";
 import { StateNote } from "@/ui/StateNote";
 
@@ -99,14 +100,14 @@ export function PolicyTimeline() {
               Scope: <b data-audit="policy-scope-label">{widened ? "All modes and regions" : data.scope?.label || "All modes and regions"}</b>
             </span>
             {!widened && hidden > 0 && (
-              <button type="button" data-audit="policy-scope-widen" className={styles.scopeButton} onClick={() => setWidened(true)}>
+              <Button size="sm" data-audit="policy-scope-widen" onClick={() => setWidened(true)}>
                 {formatNumber(hidden)} hidden by your scope · Show all
-              </button>
+              </Button>
             )}
             {widened && (
-              <button type="button" data-audit="policy-scope-narrow" className={styles.scopeButton} onClick={() => setWidened(false)}>
+              <Button size="sm" data-audit="policy-scope-narrow" onClick={() => setWidened(false)}>
                 Back to your scope
-              </button>
+              </Button>
             )}
           </div>
           {data.events.length === 0 ? (

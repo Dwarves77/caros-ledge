@@ -34,10 +34,7 @@
 .banner { padding: 10px 12px; border-radius: var(--radius-control); background: var(--immediate-tint); border: 1px solid rgb(220 38 38 / 20%); color: var(--immediate); font-size: var(--fs-125); }
 .divider { display: flex; align-items: center; gap: 10px; font-size: var(--fs-11); color: var(--ink-3); }
 .divider span { flex: 1; border-top: 1px solid var(--line-1); }
-.primary, .secondary { width: 100%; min-height: 44px; justify-content: center; border-radius: var(--radius-control); font-weight: 700; font-size: var(--fs-13); cursor: pointer; }
-.primary { background: var(--brand); color: #fff; border: 1px solid var(--brand); }
-.secondary { background: var(--card); color: var(--ink); border: 1px solid var(--line-1); font-weight: 600; font-size: var(--fs-125); }
-.primary:disabled, .secondary:disabled { opacity: 0.6; cursor: default; }
+.full { width: 100%; }
 .help { font-size: var(--fs-115); color: var(--ink-3); line-height: 1.5; margin: 6px 0 0; }
 .forgot { display: flex; justify-content: flex-end; font-size: var(--fs-12); }
 .forgot a, .back { font-weight: 600; color: var(--ink); }
@@ -58,6 +55,4 @@
 .facts { font-size: 12px; margin: 0 0 20px; display: grid; grid-template-columns: 120px 1fr; gap: 4px 12px; color: var(--ink-2); }
 .facts dt { color: var(--ink-3); }
 .warn { margin-bottom: 16px; padding: 12px; border-radius: 6px; font-size: 12px; background: rgb(245 158 11 / 6%); border: 1px solid rgb(245 158 11 / 15%); color: #92400e; }
-.actions { display: flex; align-items: center; gap: 8px; }
-.actions .primary, .actions .secondary { width: auto; padding: 0 16px; }
 .done { text-align: center; display: flex; flex-direction: column; gap: 8px; }

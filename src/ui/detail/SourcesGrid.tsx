@@ -13,7 +13,7 @@ export function SourcesGrid({ rows }: { rows: SourceRow[] }) {
       {rows.map((s, i) => {
         const inner = (
           <>
-            {typeof s.tier === "number" ? <TierChip tier={s.tier} /> : <span style={{ width: 24, display: "inline-flex", justifyContent: "center" }}><Absence reason="not in primary source" variant="dash" /></span>}
+            {typeof s.tier === "number" ? <TierChip tier={s.tier} /> : <span style={{ width: "var(--sp-24)", display: "inline-flex", justifyContent: "center" }}><Absence reason="not in primary source" variant="dash" /></span>}
             <div style={{ minWidth: 0 }}>
               <p className="cl-source-name">{s.name}</p>
               {s.meta && <p className="cl-source-meta">{s.meta}</p>}
