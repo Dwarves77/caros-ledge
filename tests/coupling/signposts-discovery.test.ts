@@ -3,7 +3,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { buildPatternPackets } from "@/core/digest/packets";
+import { readPackets } from "@/core/digest/packets";
 import { patternGaps } from "@/core/flywheel/gaps";
 import { runPatterns, type Pattern } from "@/core/flywheel/patterns";
 import { trackPatterns } from "@/core/flywheel/patterns/signposts";
@@ -87,10 +87,15 @@ test("C5: a hop the reader names with no recent row under its far end is a need 
 
 test("packets: a P1 pattern is packet-eligible only when computed on dated claims (the document-date clock's method version) and one of its entities carries a reader-asserted relation", async () => {
   const entity = E("carrier:hvo");
-  const velocity = (version: string): Parameters<typeof buildPatternPackets>[1][number] => ({ value_id: "00000000-0000-4000-8000-0000000000a1", entity_id: entity, method_id: PATTERN_METHODS.velocity.id, method_version: version, value: 3, unit: "ratio", admissibility: "analysis_ok", lifecycle: "emerging", computed_by: `${PATTERN_METHODS.velocity.id}@${version}:${entity}|30`, inputs: [{ table: "section_claim_provenance", pk: "00000000-0000-4000-8000-0000000000c1", kind: "member", entities: [entity] }] });
-  const db = (reader: boolean) => new MemDb().seed("section_claim_provenance", [{ id: "00000000-0000-4000-8000-0000000000c1", claim_text: "x", claim_kind: "FACT" }]).seed("entity_relations", [{ parent_entity_id: entity, child_entity_id: E("carrier:hefa_saf"), relation: "competes_for_feedstock", asserted_by: "t", ...(reader ? { basis: { quote: "q" }, method_version: "reader@t" } : {}) }]);
-  const built = async (reader: boolean, version: string) => buildPatternPackets(db(reader).client, [velocity(version)]);
-  assert.deepEqual((await built(true, PATTERN_METHODS.velocity.version)).packets.length, 1);
-  assert.deepEqual(await built(false, PATTERN_METHODS.velocity.version).then((r) => [r.packets.length, r.ineligible]), [0, 1], "dated, no reader edge");
-  assert.deepEqual(await built(true, "1.2.0").then((r) => [r.packets.length, r.ineligible]), [0, 1], "a reader edge, computed on item added dates");
+  const claim = "00000000-0000-4000-8000-0000000000c1";
+  const db = (reader: boolean, version: string) =>
+    new MemDb()
+      .seed("section_claim_provenance", [{ id: claim, claim_text: "x", claim_kind: "FACT" }])
+      .seed("entity_relations", [{ parent_entity_id: entity, child_entity_id: E("carrier:hefa_saf"), relation: "competes_for_feedstock", asserted_by: "t", ...(reader ? { basis: { quote: "q" }, method_version: "reader@t" } : {}) }])
+      .seed("derived_values", [{ value_id: "00000000-0000-4000-8000-0000000000a1", entity_id: entity, method_id: PATTERN_METHODS.velocity.id, method_version: version, value: 3, unit: "ratio", admissibility: "analysis_ok", lifecycle: "emerging", computed_by: `${PATTERN_METHODS.velocity.id}@${version}:${entity}|30`, inputs: [{ table: "section_claim_provenance", pk: claim, kind: "member", entities: [entity] }] }]);
+  const read = (reader: boolean, version: string) => readPackets(db(reader, version).client, ["00000000-0000-4000-8000-0000000000a1"]);
+  assert.equal((await read(true, PATTERN_METHODS.velocity.version)).packets.length, 1);
+  const noEdge = await read(false, PATTERN_METHODS.velocity.version);
+  assert.deepEqual([noEdge.packets.length, noEdge.marker], [0, "packets: 1 of 1 ids have no live pattern packet; 1 P1 pattern(s) held back (undated or no reader-asserted edge)"], "dated, no reader edge");
+  assert.equal((await read(true, "1.2.0")).packets.length, 0, "a reader edge, computed on item added dates");
 });

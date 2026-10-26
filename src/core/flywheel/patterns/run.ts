@@ -32,11 +32,11 @@ function inputsOf(p: Pattern, facts: ReadonlyMap<string, Fact>): InputRef[] {
   });
 }
 
-const OPEN = ["open", "in_review"];
-const NEED_CLOSED = "pattern need closed by rule: the vertex it names is no longer missing, or the pattern or trigger that raised it is gone.";
+const PATTERN_NEED_OPEN = ["open", "in_review"];
+const PATTERN_NEED_CLOSED = "pattern need closed by rule: the vertex it names is no longer missing, or the pattern or trigger that raised it is gone.";
 /** The needs-search flags of the discovery hook (flywheel-gap kind, open): new needs are raised, a need the stage no longer raises is closed. A dry run counts both. */
 async function raiseNeeds(sb: Db, gaps: ReturnType<typeof patternGaps>, dry: boolean, nowIso: string): Promise<{ counts: Record<string, number>; notes: string[] }> {
-  const open = await allRows<{ id: string; subject_ref: string; created_by: string }>(sb, "integrity_flags", "id,subject_ref,created_by", { cap: 100_000, where: (q) => q.like("created_by", `${createdBy(GAP_NAMESPACE, "pattern_")}%`).in("status", OPEN) });
+  const open = await allRows<{ id: string; subject_ref: string; created_by: string }>(sb, "integrity_flags", "id,subject_ref,created_by", { cap: 100_000, where: (q) => q.like("created_by", `${createdBy(GAP_NAMESPACE, "pattern_")}%`).in("status", PATTERN_NEED_OPEN) });
   const plan = planReflect(open, gapFindings(gaps).map((f) => ({ ...f, row: { ...f.row, status: "open" as const } })));
   const [counts, notes] = [{ pattern_needs: gaps.length, pattern_needs_raised: 0, pattern_needs_closed: 0 }, [] as string[]];
   if (dry) return { counts: { ...counts, pattern_needs_raised: 0 }, notes };
@@ -46,7 +46,7 @@ async function raiseNeeds(sb: Db, gaps: ReturnType<typeof patternGaps>, dry: boo
     else counts.pattern_needs_raised = plan.newRows.length;
   }
   if (plan.staleIds.length) {
-    const upd = await sb.from("integrity_flags").update({ status: "resolved", resolved_at: nowIso, resolved_by: "pattern-step", resolution_note: NEED_CLOSED }).in("id", plan.staleIds).in("status", OPEN);
+    const upd = await sb.from("integrity_flags").update({ status: "resolved", resolved_at: nowIso, resolved_by: "pattern-step", resolution_note: PATTERN_NEED_CLOSED }).in("id", plan.staleIds).in("status", PATTERN_NEED_OPEN);
     if (upd.error) notes.push(`pattern needs close failed: ${upd.error.message}`);
     else counts.pattern_needs_closed = plan.staleIds.length;
   }

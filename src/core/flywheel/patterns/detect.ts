@@ -32,15 +32,15 @@ const horizonMonths = Math.max(...WINDOWS.map((w) => w.toMonths));
 
 function velocity(i: PatternInput): Pattern[] {
   const c = PATTERNS.velocity;
-  const claims = i.facts.filter((f) => f.role === "claim" && f.docDate && !c.excludeKinds.includes(f.kind ?? ""));
+  const claims = i.facts.filter((f) => f.role === "claim" && f.docAt && !c.excludeKinds.includes(f.kind ?? ""));
   const out: Pattern[] = [];
   for (const [entity, list] of groupBy(claims, (f) => f.entities)) {
     if (c.excludeClasses.includes(couplingById(entity)?.class ?? "")) continue;
     for (const w of [...c.windowsDays].sort((a, b) => a - b)) {
-      const members = list.filter((f) => ageDays(f.docDate as string, i.now) >= 0 && ageDays(f.docDate as string, i.now) < w);
+      const members = list.filter((f) => ageDays(f.docAt as string, i.now) >= 0 && ageDays(f.docAt as string, i.now) < w);
       const distinct = Math.max(new Set(members.map((f) => f.tier)).size, new Set(members.map((f) => f.surface)).size);
       if (new Set(members.map((f) => f.source).filter(Boolean)).size < c.minSources || distinct < c.minDistinct) continue;
-      const base = list.filter((f) => ageDays(f.docDate as string, i.now) >= w && ageDays(f.docDate as string, i.now) < w + c.baselineDays);
+      const base = list.filter((f) => ageDays(f.docAt as string, i.now) >= w && ageDays(f.docAt as string, i.now) < w + c.baselineDays);
       // an entity new to the corpus has no baseline: its first appearance is coverage, not velocity
       if (i.flow && base.length < c.minBaseline) continue;
       const flow = (from: number, to: number): number => (i.flow ? [...i.flow].reduce((n, [d, k]) => n + (ageDays(d, i.now) >= from && ageDays(d, i.now) < to ? k : 0), 0) : 0);
@@ -49,7 +49,7 @@ function velocity(i: PatternInput): Pattern[] {
       const [shareNow, shareBefore] = [members.length / inWindow, Math.max(base.length, 1) / inBaseline];
       if (i.flow ? !inWindow || !inBaseline || shareNow <= base.length / inBaseline : i.carry === undefined) continue;
       // the pattern stands on every member, but its edges are the most recent ones (patterns.json caps them) and one summary edge, on the latest baseline claim, with the counts and the windows
-      const kept = [...members].sort((a, b) => String(b.docDate).localeCompare(String(a.docDate)) || a.pk.localeCompare(b.pk)).slice(0, c.maxEvidence);
+      const kept = [...members].sort((a, b) => String(b.docAt).localeCompare(String(a.docAt)) || a.pk.localeCompare(b.pk)).slice(0, c.maxEvidence);
       const summary = { members: members.length, baseline: base.length, windowDays: w, baselineDays: c.baselineDays };
       const anchor = latestFact(base);
       out.push({ kind: "velocity", key: `${entity}|${w}`, entity, value: i.flow ? shareNow / shareBefore : (i.carry as number), unit: "ratio", evidence: [...kept.map((f) => ev(f, "member")), ...(anchor ? [{ ...ev(anchor, "key"), summary }] : [])] });

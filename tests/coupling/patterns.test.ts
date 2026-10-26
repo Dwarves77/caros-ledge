@@ -18,8 +18,8 @@ test("every detector over no facts finds nothing and raises nothing", () => {
 });
 
 test("P1 velocity: three independent sources of two tiers in the window, at a larger share of the corpus flow than the entity held before; no flow and no earlier citations, no baseline; the near misses are not bursts", () => {
-  const burst = [3, 7, 12].map((ago, n) => fact({ pk: `m${n}`, at: day(-ago), docDate: day(-ago), source: `s${n}`, tier: n + 1 }));
-  const baseline = [100, 101, 102].map((ago, n) => fact({ pk: `b${n}`, at: day(-ago), docDate: day(-ago), source: `s${n + 9}`, tier: 1 }));
+  const burst = [3, 7, 12].map((ago, n) => fact({ pk: `m${n}`, at: day(-ago), docAt: day(-ago), source: `s${n}`, tier: n + 1 }));
+  const baseline = [100, 101, 102].map((ago, n) => fact({ pk: `b${n}`, at: day(-ago), docAt: day(-ago), source: `s${n + 9}`, tier: 1 }));
   const flow = new Map([[day(-5), 2], [day(-3), 1], [day(-7), 1], [day(-12), 1], [day(-100), 30]]);
   const found = DETECTORS.velocity(input([...burst, ...baseline], { flow }));
   assert.equal(found.length, 1);
@@ -32,7 +32,7 @@ test("P1 velocity: three independent sources of two tiers in the window, at a la
   assert.deepEqual(DETECTORS.velocity(input([...burst.slice(0, 2), ...baseline], { flow })), [], "two sources are not three");
   assert.deepEqual(DETECTORS.velocity(input([...burst.map((f) => ({ ...f, source: "s0" })), ...baseline], { flow })), [], "one source cited three times is one source");
   assert.deepEqual(DETECTORS.velocity(input([...burst.map((f) => ({ ...f, tier: 1, surface: "regulations" })), ...baseline], { flow })), [], "one tier on one surface is not convergence");
-  const heavy = Array.from({ length: 18 }, (_, n) => fact({ pk: `h${n}`, at: day(-100 - n), docDate: day(-100 - n), source: `x${n}`, tier: 1 }));
+  const heavy = Array.from({ length: 18 }, (_, n) => fact({ pk: `h${n}`, at: day(-100 - n), docAt: day(-100 - n), source: `x${n}`, tier: 1 }));
   assert.deepEqual(DETECTORS.velocity(input([...burst, ...heavy], { flow })), [], "the same share as before is not a burst: a growing corpus is not a burst of its entities");
   assert.deepEqual(DETECTORS.velocity(input([...burst, ...baseline].map((f) => ({ ...f, kind: PATTERNS.velocity.excludeKinds[0] as string })), { flow })), [], "a claim of an excluded kind (an absence) is not a citation");
   assert.equal(DETECTORS.velocity(input([...burst, ...baseline], { flow: null, carry: 4.5 }))[0]?.value, 4.5, "a stored pattern is revalidated on its own members and keeps its value");
@@ -41,8 +41,8 @@ test("P1 velocity: three independent sources of two tiers in the window, at a la
 test("P1 caps its evidence in patterns.json: the most recent members and one summary edge carrying the counts and the baseline window", () => {
   const cap = PATTERNS.velocity.maxEvidence;
   assert.equal(cap, 50);
-  const members = Array.from({ length: 120 }, (_, n) => fact({ pk: `m${String(n).padStart(3, "0")}`, at: day(-(n % 25)), docDate: day(-(n % 25)), source: `s${n % 7}`, tier: 1 + (n % 3) }));
-  const baseline = [100, 101, 102, 103].map((ago, n) => fact({ pk: `b${n}`, at: day(-ago), docDate: day(-ago), source: `x${n}`, tier: 1 }));
+  const members = Array.from({ length: 120 }, (_, n) => fact({ pk: `m${String(n).padStart(3, "0")}`, at: day(-(n % 25)), docAt: day(-(n % 25)), source: `s${n % 7}`, tier: 1 + (n % 3) }));
+  const baseline = [100, 101, 102, 103].map((ago, n) => fact({ pk: `b${n}`, at: day(-ago), docAt: day(-ago), source: `x${n}`, tier: 1 }));
   const found = DETECTORS.velocity(input([...members, ...baseline], { flow: new Map([[day(-5), 150], [day(-100), 400]]) }));
   assert.equal(found.length, 1);
   const edges = found[0]?.evidence ?? [];
@@ -118,14 +118,14 @@ test("P5 penalty and abatement: a technology at the maturity floor whose abateme
 });
 
 test("P1 clock (unified design section 3): the burst counts on the document date of the capture, never the day the item was added; an undated claim is in the window, the baseline and the flow of nothing", () => {
-  const burst = [3, 7, 12].map((ago, n) => fact({ pk: `m${n}`, at: day(-ago), docDate: day(-ago), source: `s${n}`, tier: n + 1 }));
-  const baseline = [100, 101, 102].map((ago, n) => fact({ pk: `b${n}`, at: day(-ago), docDate: day(-ago), source: `s${n + 9}`, tier: 1 }));
+  const burst = [3, 7, 12].map((ago, n) => fact({ pk: `m${n}`, at: day(-ago), docAt: day(-ago), source: `s${n}`, tier: n + 1 }));
+  const baseline = [100, 101, 102].map((ago, n) => fact({ pk: `b${n}`, at: day(-ago), docAt: day(-ago), source: `s${n + 9}`, tier: 1 }));
   const flow = new Map([[day(-5), 2], [day(-3), 1], [day(-7), 1], [day(-12), 1], [day(-100), 30]]);
   assert.equal(DETECTORS.velocity(input([...burst, ...baseline], { flow })).length, 1);
-  assert.deepEqual(DETECTORS.velocity(input([...burst, ...baseline].map((f) => ({ ...f, docDate: undefined })), { flow })), [], "item added dates alone make no burst");
-  assert.deepEqual(DETECTORS.velocity(input([...burst, ...baseline].map((f) => ({ ...f, docDate: null })), { flow })), [], "claims whose capture carries no document date are undated");
+  assert.deepEqual(DETECTORS.velocity(input([...burst, ...baseline].map((f) => { const g = { ...f }; delete g.docAt; return g; }), { flow })), [], "item added dates alone make no burst");
+  assert.deepEqual(DETECTORS.velocity(input([...burst, ...baseline].map((f) => ({ ...f, docAt: null })), { flow })), [], "claims whose capture carries no document date are undated");
   assert.deepEqual(DETECTORS.velocity(input([...burst, ...baseline].map((f) => ({ ...f, at: day(-200) })), { flow })).map((p) => p.key), ["e1|30"], "the item's added date is not read: old items, recent documents");
-  assert.deepEqual(DETECTORS.velocity(input([...burst.slice(0, 2), ...burst.slice(2).map((f) => ({ ...f, docDate: null })), ...baseline], { flow })), [], "an undated third source does not make the third source");
+  assert.deepEqual(DETECTORS.velocity(input([...burst.slice(0, 2), ...burst.slice(2).map((f) => ({ ...f, docAt: null })), ...baseline], { flow })), [], "an undated third source does not make the third source");
 });
 
 test("P4 starts from the entity a mandate is about, never from the mode or the hub it is filed under: a ratchet filed under mode:ocean alone fans out to nothing, the same ratchet under a carrier crosses (red without the exclusion: five patterns, three consignment_wide and two corridor_links)", () => {

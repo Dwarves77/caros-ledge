@@ -1,0 +1,4 @@
+# path | reason (files with no "Ported from" header)
+src/core/digest/packets.ts | new in CONNECT-2 PR B: the pattern packets the reader sees (C4); the old tree had no cross-table bundle for a reader
+src/core/digest/data/packets.json | new in CONNECT-2 PR B: the caps, the typed columns and the verbatim-span columns of the packet rows
+src/core/flywheel/patterns/signposts.ts | new in CONNECT-2 PR B: the signposts of the patterns (C6); the old tree scored only research assessments' signposts

@@ -12,7 +12,7 @@ import type { Fact, PatternInput } from "./types";
 
 const UUID_SHAPE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const columnsOf = (table: string): string =>
-  [...new Set((FACT_SPECS[table] ?? []).flatMap((s) => [s.pk, s.at, s.due, s.dueYear, s.dueMonthsAfterAt, s.qty?.column, s.qty?.unitColumn, s.qty?.figure, s.source, s.tier, s.kind, s.trl, s.group, s.item, s.owner, s.resolved, s.from, s.until]).filter((c): c is string => !!c))].join(",");
+  [...new Set((FACT_SPECS[table] ?? []).flatMap((s) => [s.pk, s.at, s.due, s.dueYear, s.dueMonthsAfterAt, s.qty?.column, s.qty?.unitColumn, s.qty?.figure, s.source, s.tier, s.kind, s.trl, s.group, s.item, s.owner, s.capture, s.resolved, s.from, s.until]).filter((c): c is string => !!c))].join(",");
 
 /** A series' points become their moves: each point's relative change from the previous point of the same series, dated at the point. The first point of a series has no move and is dropped. */
 function seriesMoves(facts: readonly Fact[]): Fact[] {
@@ -41,7 +41,9 @@ export async function loadPatternInput(sb: Db, now: Date): Promise<{ input: Patt
   }
   const items = new Map((await readAll<{ id: string; item_type: string | null; domain: number | null; added_date: string | null }>(sb, "intelligence_items", "id,item_type,domain,added_date", ["id"])).map((i) => [i.id, { surface: surfaceOf(i.item_type, i.domain), added: i.added_date?.slice(0, 10) ?? null }]));
   const readerEdges = links.filter((l) => l.method_version?.startsWith("reader@") && (RELATIONS as readonly string[]).includes(l.relation)).map((l) => ({ parent: l.parent_entity_id, child: l.child_entity_id, relation: l.relation as Relation }));
-  const counts: Record<string, number> = { refs_read: refs.length, relations_read: links.length, relations_reader: readerEdges.length };
+  // the document date of each capture that states one (DOC-DATE-1: agent_run_searches.document_date, read from formal codes only): a claim is dated by the capture it was read from, never by the day its item was added
+  const documentDates = new Map((await readAll<{ id: string; document_date: string }>(sb, "agent_run_searches", "id,document_date", ["id"], (q) => q.not("document_date", "is", null))).map((c) => [c.id, c.document_date.slice(0, 10)]));
+  const counts: Record<string, number> = { refs_read: refs.length, relations_read: links.length, relations_reader: readerEdges.length, captures_dated: documentDates.size };
   const facts: Fact[] = [];
   const flow = new Map<string, number>();
   for (const [table, specs] of Object.entries(FACT_SPECS)) {
@@ -52,12 +54,15 @@ export async function loadPatternInput(sb: Db, now: Date): Promise<{ input: Patt
         const pk = String(r[spec.pk]);
         const item = spec.item ? items.get(String(r[spec.item])) : undefined;
         const es = filed.get(`${table}|${UUID_SHAPE.test(pk) ? pk : uuidOf(pk)}`);
-        const f = es ? factOf(spec.edge ?? table, r, es, { surface: item?.surface, ...(item?.added ? { at: item.added } : {}), role: spec.role, now }) : null;
+        const f = es ? factOf(spec.edge ?? table, r, es, { surface: item?.surface, ...(item?.added ? { at: item.added } : {}), role: spec.role, now, ...(spec.capture ? { docAt: documentDates.get(String(r[spec.capture])) ?? null } : {}) }) : null;
         return f ? [f] : [];
       }),
     );
-    // the corpus's flow: every dated claim that is not an absence, on its document date (an undated claim is in neither the flow nor a burst)
-    for (const f of made) if (f.role === "claim" && f.docDate && !PATTERNS.velocity.excludeKinds.includes(f.kind ?? "")) flow.set(f.docDate, (flow.get(f.docDate) ?? 0) + 1);
+    // the corpus's flow: every claim that is not an absence, filed or not, on the document date of its capture (an undated claim is in neither the flow nor a burst)
+    for (const spec of specs.filter((x) => x.role === "claim" && x.capture)) for (const r of rows) {
+      const day = documentDates.get(String(r[spec.capture as string]));
+      if (day && !PATTERNS.velocity.excludeKinds.includes(String(r[spec.kind ?? ""]))) flow.set(day, (flow.get(day) ?? 0) + 1);
+    }
     counts[`facts_${table}`] = made.length;
     facts.push(...(table === "market_series" ? seriesMoves(made) : made));
   }

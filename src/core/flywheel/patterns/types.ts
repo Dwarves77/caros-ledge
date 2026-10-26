@@ -17,7 +17,7 @@ export interface Fact {
   at: string | null;
   due: string | null;
   /** A claim's clock for the velocity detector: the document date of the capture it was read from (never the day the item was added). Undated: null, and the claim counts in no burst. */
-  docDate?: string | null;
+  docAt?: string | null;
   /** The intelligence item the row belongs to (the column facts.json names as its owner), for the packet's provenance and the signpost's citations. */
   item?: string | null;
   /** A pending trigger a later capture has resolved. */

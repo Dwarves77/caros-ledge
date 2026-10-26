@@ -15,7 +15,7 @@ import type { InputRef } from "@/core/propagation/types";
 
 import cfg from "./data/packets.json";
 
-export const PACKET_VERSION: string = cfg.version;
+const PACKET_VERSION: string = cfg.version;
 export type PacketEdge = "member" | "evidence" | "key" | "context";
 /** A verbatim slice a row carries: located in `capture_id` by locateSpan (the text), never by an offset. */
 export interface PacketSpan { kind: "claim" | "verbatim" | "event"; text: string; source_span: string | null; capture_id: string | null; source_id: string | null }
@@ -84,7 +84,7 @@ function memberOf(table: string, row: Row, edge: PacketEdge, entities: readonly 
 }
 
 /** The pattern packets of stored patterns (derived values of the pattern methods), in the order given; `ineligible` counts the P1 patterns held back. */
-export async function buildPatternPackets(sb: Db, patterns: readonly PatternRow[]): Promise<{ packets: Packet[]; ineligible: number }> {
+async function buildPatternPackets(sb: Db, patterns: readonly PatternRow[]): Promise<{ packets: Packet[]; ineligible: number }> {
   const inputs = patterns.map((p) => (p.inputs ?? []).filter((i) => i.table && i.pk));
   const rows = new Map<string, Row>();
   for (const table of [...new Set(inputs.flat().map((i) => i.table))]) for (const r of await rowsByIds<Row>(sb, table, columnsOf(table), inputs.flat().filter((i) => i.table === table).map((i) => i.pk), pkOf(table), pkOf(table))) rows.set(`${table}/${String(r[pkOf(table)])}`, r);

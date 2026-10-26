@@ -123,5 +123,5 @@ test("INV-CN2-2: the five pattern detectors are registered under the gate, and a
   // a detector edited: the arithmetic of the burst
   assert.match(copyWith("src/core/flywheel/patterns/detect.ts", (t) => t.replace("shareNow <= base.length / inBaseline", "shareNow < base.length / inBaseline")), /pattern_velocity_burst@1.3.0/);
   // the vocabulary a detector reads is part of it: a mode moved in couplings.json
-  assert.match(copyWith("src/core/coupling/data/couplings.json", (t) => t.replace(/"modes": \[\s*"road",\s*"ocean"\s*\]/, '"modes": ["road"]')), /pattern_cross_modal@1\.2\.0/);
+  assert.match(copyWith("src/core/coupling/data/couplings.json", (t) => t.replace(/"modes": \[\s*"road",\s*"ocean"\s*\]/, '"modes": ["road"]')), /pattern_cross_modal@1\.3\.0/);
 });

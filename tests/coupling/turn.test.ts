@@ -9,12 +9,12 @@ import { connect, countsOf, E, NOW, OBLIGATION, patternFixture, patterns, propag
 
 const byMethod = (rows: Record<string, unknown>[]) => Object.fromEntries(Object.values(PATTERN_METHODS).map((m) => [m.id, rows.filter((r) => r.method_id === m.id).length]));
 
-test("INV-CN2-5: the planted data yields exactly one pattern per kind it can start and one cross-modal pattern per relation kind a non-mode entity can cross, no other; no velocity pattern while no claim is dated", async () => {
+test("INV-CN2-5: the planted data yields exactly one pattern per kind it can start and one cross-modal pattern per relation kind a non-mode entity can cross, no other; the burst stands on the document dates of the claims' captures", async () => {
   const f = patternFixture();
   assert.equal((await propagate(f)).exit, 0);
   assert.equal((await connect(f)).exit, 0);
   const rows = patterns(f);
-  assert.deepEqual(byMethod(rows), { pattern_velocity_burst: 0, pattern_mandate_capacity: 1, pattern_lead_lag: 1, pattern_cross_modal: 3, pattern_penalty_abatement: 1 });
+  assert.deepEqual(byMethod(rows), { pattern_velocity_burst: 1, pattern_mandate_capacity: 1, pattern_lead_lag: 1, pattern_cross_modal: 3, pattern_penalty_abatement: 1 });
   const cross = rows.filter((r) => r.method_id === "pattern_cross_modal").map((r) => String(r.computed_by).split("|")[1]).sort();
   assert.deepEqual(cross, ["competes_for_feedstock", "feedstock_of", "shares_grid_zone"]);
   // a ratchet is filed under its transport mode too (the road and ocean ratchets are): a mode is where a mandate is filed, not what it starts from, so neither starts a pattern
@@ -22,8 +22,9 @@ test("INV-CN2-5: the planted data yields exactly one pattern per kind it can sta
   assert.ok(keys.every((k) => !k.includes(OBLIGATION.road) && !k.includes(OBLIGATION.ocean)));
   const anchor = (id: string) => rows.find((r) => r.method_id === id)?.entity_id;
   assert.equal(anchor("pattern_penalty_abatement"), E("carrier:bio_methanol"));
-  assert.equal(countsOf(f, "corpus-turn").patterns, 6, "the stage's ledger row carries the count per kind");
-  assert.deepEqual([countsOf(f, "corpus-turn").patterns_velocity, countsOf(f, "corpus-turn").patterns_crossModal], [0, 3]);
+  assert.equal(anchor("pattern_velocity_burst"), E("carrier:green_ammonia"));
+  assert.equal(countsOf(f, "corpus-turn").patterns, 7, "the stage's ledger row carries the count per kind");
+  assert.deepEqual([countsOf(f, "corpus-turn").patterns_velocity, countsOf(f, "corpus-turn").patterns_crossModal], [1, 3]);
 });
 
 test("INV-CN2-1: every pattern value names its evidence: member, evidence or key edges, one per evidence row, and the method version is recorded", async () => {
@@ -39,6 +40,10 @@ test("INV-CN2-1: every pattern value names its evidence: member, evidence or key
     assert.equal(p.method_version, p.method_id === "pattern_penalty_abatement" ? "1.4.0" : "1.3.0");
     assert.ok(["analysis_ok", "display_only"].includes(String(p.admissibility)), "graded");
   }
+  const velocity = patterns(f).find((p) => p.method_id === "pattern_velocity_burst");
+  const kinds = edges.filter((e) => e.to_value_id === velocity?.value_id).map((e) => e.edge_kind);
+  assert.equal(kinds.filter((k) => k === "member").length, 3, "the three claims of the burst");
+  assert.equal(kinds.filter((k) => k === "key").length, 1, "the baseline is one summary edge");
   const cross = patterns(f).find((p) => p.method_id === "pattern_cross_modal");
   assert.deepEqual(edges.filter((e) => e.to_value_id === cross?.value_id).map((e) => e.edge_kind).sort(), ["evidence", "member"], "the start row and the landing row");
 });
@@ -106,4 +111,17 @@ test("INV-CN2-6: the connect stage's corpus counts and theme delta are those of 
   const [a, b] = [countsOf(planted, "corpus-turn"), countsOf(bare, "corpus-turn")];
   for (const k of ["slice", "connected", "tag_items_written", "edges_written", "term_writes", "themes"]) assert.equal(a[k], b[k], k);
   assert.ok((a.patterns ?? 0) > 0 && (b.patterns ?? 0) === 0);
+});
+
+test("a bulk intake of old law yields no burst: claims whose items entered the corpus this month but whose captures state a document date years ago, or none, are in no window, and the burst of the same claims dated by their documents is found", async () => {
+  const bulk = patternFixture({ documentDate: "2005-03-01" });
+  await propagate(bulk);
+  await connect(bulk);
+  assert.equal(patterns(bulk).filter((p) => p.method_id === "pattern_velocity_burst").length, 0, "old documents, recent intake");
+  const undated = patternFixture();
+  for (const c of undated.db.rows("agent_run_searches")) (c as Record<string, unknown>).document_date = null;
+  await propagate(undated);
+  await connect(undated);
+  assert.equal(patterns(undated).filter((p) => p.method_id === "pattern_velocity_burst").length, 0, "no document date, no clock");
+  assert.equal(countsOf(undated, "corpus-turn").captures_dated, 0);
 });

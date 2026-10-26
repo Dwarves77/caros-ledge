@@ -31,7 +31,7 @@ export const HVO_CLAIM = uuid(900);
 export const OBLIGATION = { air: "cl:obligation:00000000000000a1", ocean: "cl:obligation:00000000000000a2", road: "cl:obligation:00000000000000a4" };
 
 /** Plant the data of the five patterns (and of the four relation kinds of the cross-modal one) into the fixture database. */
-export function plant(f: Fixture): void {
+export function plant(f: Fixture, options: { documentDate?: string } = {}): void {
   const db = f.db;
   const rows = [
     // P1: three independent sources of three tiers on one carrier in the last 30 days, and three older claims as its baseline
@@ -53,7 +53,10 @@ export function plant(f: Fixture): void {
     ...Array.from({ length: 12 }, (_, n) => claimWithItem("reg", "General background with no coupling named.", ago(60 + n * 7), src(30 + n), 1)),
   ];
   db.seed("intelligence_items", [item(ITEM.reg, "reg"), item(ITEM.market, "market"), item(ITEM.research, "research"), ...rows.map((r) => r.item)]);
-  db.seed("section_claim_provenance", rows.map((r) => r.claim));
+  // the captures the claims were read from: the velocity clock is the document date a capture states about itself (DOC-DATE-1), here the day the claim's item entered the corpus unless the caller dates them otherwise (a bulk intake of old law)
+  const captureOf = rows.map((r, n) => ({ id: uuid(5000 + n), intelligence_item_id: r.item.id, result_url: `https://fixture.invalid/doc/${n}`, result_content: "fixture", result_index: 0, searched_at: `${ago(0)}T09:00:00Z`, document_date: options.documentDate ?? String(r.item.added_date) }));
+  db.seed("agent_run_searches", captureOf);
+  db.seed("section_claim_provenance", rows.map((r, n) => ({ ...r.claim, search_result_id: captureOf[n]?.id })));
   db.seed("obligation_objects", [
     // P2: a dated ratchet of the ReFuelEU instrument; P4 (corridor_links): an ocean-wide ratchet inside the recency window
     { obligation_id: OBLIGATION.air, instrument_item_id: ITEM.reg, instrument_entity_id: E("instrument:32023R2405"), due_date: new Date(NOW.getTime() + 100 * 86_400_000).toISOString().slice(0, 10), mode: ["air"], applicability_trigger: {} },
@@ -74,9 +77,9 @@ export function plant(f: Fixture): void {
 }
 
 /** The fixture with the planted data. The cadence is on, so the fixture transport serves the cited pages. */
-export function patternFixture(): Fixture {
+export function patternFixture(options: { documentDate?: string } = {}): Fixture {
   const f = fixture();
-  plant(f);
+  plant(f, options);
   return f;
 }
 export const propagate = (f: Fixture) => runTurn({ stage: "propagate", mode: "apply", input: {} }, { d: f.d, env: {}, now: () => NOW });

@@ -10,8 +10,8 @@ import { PATTERN_METHODS } from "@/core/propagation/methods";
 import { PATTERNS } from "./config";
 import { patternSeed, type Fact, type Pattern } from "./types";
 
-const COMPUTED_BY = "pattern-signpost:";
-const ok = <T>(r: { data: T | null; error: { message: string } | null }, what: string): T => {
+const SIGNPOST_COMPUTED_BY = "pattern-signpost:";
+const signpostWrite = <T>(r: { data: T | null; error: { message: string } | null }, what: string): T => {
   if (r.error) throw new Error(`${what} failed: ${r.error.message}`);
   return r.data as T;
 };
@@ -25,9 +25,9 @@ export async function trackPatterns(deps: { sb: Db; now: () => Date }, input: { 
   const ids = kinds.map((k) => PATTERN_METHODS[k].id);
   const found = new Map(input.found.filter((p) => kinds.includes(p.kind)).map((p) => [patternSeed(p), p]));
   const standing = (row: string, due: string): boolean => [...input.facts.values()].some((f) => `${f.table}/${f.pk}` === row && f.due === due);
-  const records = await allRows<{ inference_id: string; computed_by: string }>(sb, "inference_records", "inference_id,computed_by", { order: "inference_id", where: (q) => q.in("method_id", ids).like("computed_by", `${COMPUTED_BY}%`) });
-  const rows = await fetchAllByIdChunks(records.map((r) => r.inference_id), async (slice) => ok(await sb.from("signposts").select("entity_id,inference_record_id,outcome,predicate").in("inference_record_id", slice), "reading the pattern signposts") as Array<{ entity_id: string; inference_record_id: string; outcome: string | null; predicate: { key_date?: string; key_row?: string } }>, { manyPerId: true });
-  const seedOf = new Map(records.map((r) => [r.inference_id, r.computed_by.slice(COMPUTED_BY.length)]));
+  const records = await allRows<{ inference_id: string; computed_by: string }>(sb, "inference_records", "inference_id,computed_by", { order: "inference_id", where: (q) => q.in("method_id", ids).like("computed_by", `${SIGNPOST_COMPUTED_BY}%`) });
+  const rows = await fetchAllByIdChunks(records.map((r) => r.inference_id), async (slice) => signpostWrite(await sb.from("signposts").select("entity_id,inference_record_id,outcome,predicate").in("inference_record_id", slice), "reading the pattern signposts") as Array<{ entity_id: string; inference_record_id: string; outcome: string | null; predicate: { key_date?: string; key_row?: string } }>, { manyPerId: true });
+  const seedOf = new Map(records.map((r) => [r.inference_id, r.computed_by.slice(SIGNPOST_COMPUTED_BY.length)]));
   const tracked = new Set(rows.map((r) => seedOf.get(r.inference_record_id)));
   for (const [seed, p] of found) {
     if (tracked.has(seed)) continue;
@@ -40,9 +40,9 @@ export async function trackPatterns(deps: { sb: Db; now: () => Date }, input: { 
     if (input.dry) continue;
     const [keyDate, keyRow] = [p.keyDue, p.evidence.find((e) => e.kind === "key") && `${p.evidence.find((e) => e.kind === "key")?.table}/${p.evidence.find((e) => e.kind === "key")?.pk}`];
     const sid = entityId("signpost", seed);
-    ok(await sb.from("entities").upsert({ entity_id: sid, kind: "signpost", canonical_name: `pattern signpost ${seed}`, status: "active" } as never, { onConflict: "entity_id" }), "writing the signpost entity");
-    const rec = ok(await sb.from("inference_records").insert({ subject_id: p.entity, claim_text: `${seed} stands${keyDate ? ` on ${keyDate}` : " while its evidence holds"}`, status_token: "HYPOTHESIS", confidence: PATTERNS[p.kind].confidence, cited_item_ids: items, origin_class: "derived", method_id: PATTERN_METHODS[p.kind].id, method_version: PATTERN_METHODS[p.kind].version, computed_by: `${COMPUTED_BY}${seed}` } as never).select("inference_id").single(), "writing the inference record") as { inference_id: string };
-    ok(await sb.from("signposts").insert({ entity_id: sid, watches: p.entity, direction: PATTERNS.signposts.direction, inference_record_id: rec.inference_id, predicate: { op: "date_passed", field: "pattern_key_date", pattern: seed, ...(keyDate && keyRow ? { key_date: keyDate, key_row: keyRow } : {}) } } as never), "writing the signpost");
+    signpostWrite(await sb.from("entities").upsert({ entity_id: sid, kind: "signpost", canonical_name: `pattern signpost ${seed}`, status: "active" } as never, { onConflict: "entity_id" }), "writing the signpost entity");
+    const rec = signpostWrite(await sb.from("inference_records").insert({ subject_id: p.entity, claim_text: `${seed} stands${keyDate ? ` on ${keyDate}` : " while its evidence holds"}`, status_token: "HYPOTHESIS", confidence: PATTERNS[p.kind].confidence, cited_item_ids: items, origin_class: "derived", method_id: PATTERN_METHODS[p.kind].id, method_version: PATTERN_METHODS[p.kind].version, computed_by: `${SIGNPOST_COMPUTED_BY}${seed}` } as never).select("inference_id").single(), "writing the inference record") as { inference_id: string };
+    signpostWrite(await sb.from("signposts").insert({ entity_id: sid, watches: p.entity, direction: PATTERNS.signposts.direction, inference_record_id: rec.inference_id, predicate: { op: "date_passed", field: "pattern_key_date", pattern: seed, ...(keyDate && keyRow ? { key_date: keyDate, key_row: keyRow } : {}) } } as never), "writing the signpost");
   }
   for (const r of rows.filter((x) => !x.outcome)) {
     const seed = seedOf.get(r.inference_record_id) as string;
@@ -54,7 +54,7 @@ export async function trackPatterns(deps: { sb: Db; now: () => Date }, input: { 
       continue;
     }
     counts[fell ? "signposts_refuted" : "signposts_held"] += 1;
-    if (!input.dry) ok(await sb.from("signposts").update({ ...(held ? { fired_at: now.toISOString(), lifecycle_applied_at: now.toISOString() } : {}), outcome: fell ? "refuted" : "held", outcome_assessed_at: now.toISOString(), scored_by: PATTERNS.signposts.scoredBy }).eq("entity_id", r.entity_id).is("outcome", null), "scoring the pattern signpost");
+    if (!input.dry) signpostWrite(await sb.from("signposts").update({ ...(held ? { fired_at: now.toISOString(), lifecycle_applied_at: now.toISOString() } : {}), outcome: fell ? "refuted" : "held", outcome_assessed_at: now.toISOString(), scored_by: PATTERNS.signposts.scoredBy }).eq("entity_id", r.entity_id).is("outcome", null), "scoring the pattern signpost");
   }
   return counts;
 }
