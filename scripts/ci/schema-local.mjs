@@ -10,7 +10,7 @@ try {
     (url) =>
       new Promise((resolve) => {
         const child = spawn(process.execPath, ["scripts/ci/schema-apply.mjs", ...process.argv.slice(2)], { stdio: "inherit", env: { ...process.env, DATABASE_URL: url } });
-        child.on("exit", (c) => resolve(c === 0 ? (spawnSync("npm", ["run", "joinability:schema"], { shell: true, stdio: "inherit", env: { ...process.env, DATABASE_URL: url } }).status ?? 1) : (c ?? 1)));
+        child.on("exit", (c) => resolve(c === 0 ? (spawnSync("npm run joinability:schema", { shell: true, stdio: "inherit", env: { ...process.env, DATABASE_URL: url } }).status ?? 1) : (c ?? 1)));
       }),
     (m) => console.log(`schema:local: ${m}`),
   );
