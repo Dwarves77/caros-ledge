@@ -170,7 +170,10 @@ test("collect.ts stores the toText output of a substitute or browser capture, ne
     pending_first_fetch: [{ id: "q-1", source_id: "src-1", status: "refused", attempt_count: 1, queued_at: "2026-10-18T00:00:00Z" }],
   });
   const net = routed((u) => (u.startsWith("https://publications.europa.eu/resource/celex/") ? new Response(xhtml, { headers: { "content-type": "application/xhtml+xml" } }) : new Response("denied", { status: 403 })), {});
-  const deps = { db: m.db, now: () => new Date("2026-10-19T12:00:00Z"), env: { GITHUB_ACTIONS: "true" } as Record<string, string | undefined>, fetchImpl: net.fetch, resolveHost: async () => ["93.184.216.34"], sleep: async () => undefined, random: () => 0 };
+  // The browser tier is a stub that is walled (403), so the ladder reaches the substitute publisher and no real browser is ever launched.
+  const page = { on: () => undefined, goto: async () => ({ status: () => 403 }), content: async () => "<html><body>Access Denied. Reference #18.1234</body></html>", url: () => "", waitForTimeout: async () => undefined, close: async () => undefined, click: async () => undefined };
+  const browser = { newContext: async () => ({ route: async () => undefined, newPage: async () => page, close: async () => undefined }), close: async () => undefined };
+  const deps = { db: m.db, now: () => new Date("2026-10-19T12:00:00Z"), env: { GITHUB_ACTIONS: "true" } as Record<string, string | undefined>, fetchImpl: net.fetch, resolveHost: async () => ["93.184.216.34"], sleep: async () => undefined, random: () => 0, launchBrowser: async () => browser };
   const r = await collectRefused(deps as never, { limit: 1 });
   assert.equal(r.counts.substituted, 1, r.notes.join("; "));
   const cap = m.tables.agent_run_searches?.[0];
