@@ -12,7 +12,7 @@ import { runNotificationOutbox } from "@/features/drain/kinds";
 import { skipVerdict } from "@/core/harness/exit";
 
 // @ts-expect-error plain .mjs modules
-import { CHECKS, DEFAULT_CHECKS, FAILURE_BLOCK, identityAnonymous, memberReads, notificationDrain, pageFinding, pages, productionShape, provenanceTrigger, SURFACE_PAGES } from "../../scripts/ci/live/checks.mjs";
+import { CHECKS, DEFAULT_CHECKS, identityAnonymous, memberReads, notificationDrain, pageFinding, pages, productionShape, provenanceTrigger, SURFACE_PAGES } from "../../scripts/ci/live/checks.mjs";
 // @ts-expect-error plain .mjs modules
 import { planRun, runLive, triggerOf } from "../../scripts/ci/live-checks.mjs";
 import { MemDb } from "../_support/memdb.ts";
@@ -32,15 +32,27 @@ const client = (reads: Record<string, unknown>, writes: Record<string, unknown> 
 const ok = (data: unknown, extra: Record<string, unknown> = {}) => ({ data, error: null, ...extra });
 
 // ---- the page verdict and the sweep over the surfaces ----
-test("a page verdict: a rendered page is none; a failure status, a redirect to sign-in or the unavailable page, the app's own failure block and a page that never answered are each a failure", () => {
-  const good = { status: 200, finalUrl: "https://x.test/market", text: "Market Intel — 12 figures" };
+test("a page verdict: a rendered page is none; a failure status, a redirect to sign-in or the unavailable page, a typed failure element, a failed api read and a page that never answered are each a failure", () => {
+  const good = { status: 200, finalUrl: "https://x.test/market", uiFailures: [], apiFailures: [] };
   assert.equal(pageFinding("pages", "/market", good), null);
   assert.match(pageFinding("pages", "/market", { ...good, status: 503 }).text, /HTTP 503/);
   assert.match(pageFinding("pages", "/market", { ...good, finalUrl: "https://x.test/login?redirect=%2Fmarket" }).text, /ended at \/login/);
   assert.match(pageFinding("pages", "/market", { ...good, finalUrl: "https://x.test/service-unavailable" }).text, /service-unavailable/);
-  assert.match(pageFinding("pages", "/market", { ...good, text: "Your watchlist did not load. Try again" }).text, /failure block/);
   assert.match(pageFinding("pages", "/market", { error: "timeout" }).text, /did not answer: timeout/);
-  for (const t of ["Market Intel did not load", "Application error: a server-side exception", "Internal Server Error", "Something went wrong on our side"]) assert.ok(FAILURE_BLOCK.test(t), t);
+});
+
+test("ADR-053: no English word is the test. Body text that says a thing did not load, with no typed failure element, PASSES; a typed failure element fails and its marker and text are diagnostics; a failed api read fails and is named", () => {
+  const good = { status: 200, finalUrl: "https://x.test/regulations", uiFailures: [], apiFailures: [] };
+  // the page's body text is not even an input of the verdict
+  assert.equal(pageFinding("pages", "/regulations", { ...good, text: "cargo did not load. Application error. Internal Server Error" }), null);
+  const marker = pageFinding("pages", "/regulations", { ...good, uiFailures: [{ marker: "state-note", text: "Your watchlist did not load. Try again" }, { marker: "data-list-state=failed", text: "" }] });
+  assert.equal(marker.severity, "fail");
+  assert.match(marker.text, /shows 2 failure element\(s\): \[state-note\] "Your watchlist did not load. Try again"; \[data-list-state=failed\] ""/);
+  const api = pageFinding("pages", "/regulations", { ...good, apiFailures: [{ path: "/api/workspace/bootstrap", status: 500 }, { path: "/api/saved-views", status: 429 }] });
+  assert.equal(api.severity, "fail");
+  assert.match(api.text, /had failed api read\(s\): \/api\/workspace\/bootstrap 500, \/api\/saved-views 429/);
+  const both = pageFinding("pages", "/regulations", { ...good, uiFailures: [{ marker: "page-failure", text: "boom" }], apiFailures: [{ path: "/api/listings/rest", status: 503 }] });
+  assert.match(both.text, /\[page-failure\] "boom"; failed api read\(s\): \/api\/listings\/rest 503/);
 });
 
 test("one page per surface: the sweep visits every surface path and names the one that fails; the admin console is a separate check", async () => {

@@ -24,7 +24,7 @@ export function OwnerCard({ itemId, assigneeName, lastVerifiedDate, hasWorkspace
       {members === null ? (
         <p style={{ fontSize: "var(--fs-13)", fontWeight: 700, margin: "6px 0 10px", color: ownerName ? "var(--ink)" : "var(--ink-3)" }}>
           {ownerName || "Unassigned"}
-          {rosterFailed && <span style={{ display: "block", fontSize: "var(--fs-105)", fontWeight: 600, color: "var(--ink-3)", marginTop: 2 }}>The roster did not load, so assignment is off for now. Reload the page to try again.</span>}
+          {rosterFailed && <span role="alert" data-part="state-note" style={{ display: "block", fontSize: "var(--fs-105)", fontWeight: 600, color: "var(--ink-3)", marginTop: 2 }}>The roster did not load, so assignment is off for now. Reload the page to try again.</span>}
         </p>
       ) : (
         <Select

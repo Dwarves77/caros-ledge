@@ -35,7 +35,7 @@ export function IssuesRail({ counts, failed, onNavigate, onRetry }: { counts: At
           )}
         </div>
       ) : (
-        <p className={styles.note} role="alert">
+        <p className={styles.note} role="alert" data-part="state-note">
           The queue did not load{failed ? `: ${failed}` : ""}. {onRetry ? <button type="button" className={styles.link} onClick={onRetry}>Retry</button> : null}
         </p>
       )}

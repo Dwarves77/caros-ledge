@@ -146,7 +146,7 @@ jobs:
         run: npm run schema:apply
       # JOIN-1 J1: the text columns of the tables the engine joins, read from information_schema on the database just built, must all be in the pin (scripts/ci/data/joinability.json): a new column is caught the same PR
       - name: Joinability against this database's information_schema (a text column the pin does not list is red)
-        run: node --import ./tests/_support/register.mjs scripts/ci/joinability.mjs --schema
+        run: npm run joinability:schema
 
   turn:
     name: turn
@@ -251,6 +251,10 @@ jobs:
     if: ${{ !cancelled() && needs.changes.result == 'success' && (needs.ruled-runs.result == 'success' || needs.ruled-runs.result == 'skipped' || needs.ruled-runs.result == 'failure') && github.event_name != 'status' && (github.event_name != 'workflow_dispatch' || github.event.inputs.only == '') && (github.event_name != 'pull_request' || needs.changes.outputs.parity == 'true') && (github.event_name != 'push' || needs.migrate.result == 'success') }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # LIVE-RL-1: every browser job signed in as the member test account shares one 60-per-minute budget per user across all deployments (src/core/http/rate-limit.ts), so they run one at a time.
+    concurrency:
+      group: signed-in-browser
+      cancel-in-progress: false
     # The baseline was captured in this image (old repo parity-baseline.yml), so fonts and hinting render identically and the pixel diff measures the design, not the machine.
     container:
       image: mcr.microsoft.com/playwright:v1.61.1-noble
@@ -370,6 +374,10 @@ jobs:
     if: (github.event_name == 'status' && github.event.context == 'Vercel' && github.event.state == 'success') || (github.event_name == 'workflow_dispatch' && github.event.inputs.only == 'live')
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # LIVE-RL-1: every browser job signed in as the member test account shares one 60-per-minute budget per user across all deployments (src/core/http/rate-limit.ts), so they run one at a time.
+    concurrency:
+      group: signed-in-browser
+      cancel-in-progress: false
     container:
       image: mcr.microsoft.com/playwright:v1.61.1-noble
     env:
@@ -410,6 +418,10 @@ jobs:
     if: ((github.event_name == 'status' && github.event.context == 'Vercel' && github.event.state == 'success') || (github.event_name == 'workflow_dispatch' && github.event.inputs.only == 'live')) && needs.target.outputs.production != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # LIVE-RL-1: every browser job signed in as the member test account shares one 60-per-minute budget per user across all deployments (src/core/http/rate-limit.ts), so they run one at a time.
+    concurrency:
+      group: signed-in-browser
+      cancel-in-progress: false
     container:
       image: mcr.microsoft.com/playwright:v1.61.1-noble
     # The member test account only, no admin account and no service key: admin routes are captured by a dispatch of `screens` on the default branch. The capture and compare are the DEFAULT BRANCH's scripts (like `live`): the deployed commit is only the URL being photographed, and
@@ -456,6 +468,10 @@ jobs:
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.only == 'baseline'
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # LIVE-RL-1: every browser job signed in as the member test account shares one 60-per-minute budget per user across all deployments (src/core/http/rate-limit.ts), so they run one at a time.
+    concurrency:
+      group: signed-in-browser
+      cancel-in-progress: false
     container:
       image: mcr.microsoft.com/playwright:v1.61.1-noble
     env:
@@ -488,6 +504,10 @@ jobs:
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.only == 'screens'
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # LIVE-RL-1: every browser job signed in as the member test account shares one 60-per-minute budget per user across all deployments (src/core/http/rate-limit.ts), so they run one at a time.
+    concurrency:
+      group: signed-in-browser
+      cancel-in-progress: false
     container:
       image: mcr.microsoft.com/playwright:v1.61.1-noble
     env:
