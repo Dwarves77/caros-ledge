@@ -95,6 +95,11 @@ export function themeBriefsExporter(sb: Db, o: { charBudget?: number; packets?: 
       const items: ThemeBundle[] = [];
       // A theme is one reading: a bundle that would drop members is refused by name, never handed out short (a session writes from the whole membership).
       const residue: { theme_id: string; reason: string }[] = [];
+      for (const id of ids ?? []) {
+        if (chosen.some((n) => n.theme.id === id)) continue;
+        const brief = briefs.find((b) => b.theme_id === id);
+        residue.push({ theme_id: id, reason: needs.some((n) => n.theme.id === id) ? "over_limit" : !themes.some((t) => t.id === id) ? "no_live_theme" : `not_needing_brief: its brief is current${brief ? ` (generated_by ${brief.generated_by})` : ""}` });
+      }
       for (const n of chosen) {
         const packets = packetRead.packets.filter((p) => p.id === n.theme.id);
         // the menu: the packet's member entities, or (packets pending) the entities the member items' claims and events are filed under

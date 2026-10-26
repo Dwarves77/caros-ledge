@@ -166,3 +166,13 @@ test("the stand-ins behind the validator: a copy of a validated brief is not a v
   w.db.seed("fact_suppressions", [{ id: "fs1", item_id: ITEM, target_kind: "fact", target_ref: CLAIM_A, op: "suppress", machine_value: null, created_at: "2026-10-15T00:00:00Z", revoked_at: null }]);
   assert.deepEqual((await admissibleRows.claims(w.db.client, [claim(CLAIM_A, ITEM), claim("c-other", ITEM), claim(CLAIM_B, SECOND)])).map((c) => c.id), ["c-other"], "the suppressed claim and the archived item's claim are out");
 });
+
+test("DIGEST-FIX-1: a requested id that is not exported is named in the residue with its reason: no live theme, or a theme whose brief is current", async () => {
+  const w = themeWorld();
+  const none = await themeBriefsExporter(w.db.client)({ limit: 5, ids: ["no-such-theme"] });
+  assert.deepEqual(none.residue, [{ theme_id: "no-such-theme", reason: "no_live_theme" }]);
+  await apply(w, [entry()]);
+  const done = await themeBriefsExporter(w.db.client)({ limit: 5, ids: [THEME] });
+  assert.equal(done.items.length, 0);
+  assert.deepEqual(done.residue, [{ theme_id: THEME, reason: "not_needing_brief: its brief is current (generated_by theme-briefs-001)" }]);
+});
