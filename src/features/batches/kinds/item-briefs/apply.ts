@@ -13,11 +13,12 @@ import type { Db } from "@/core/db";
 import { runResult, worst, type RunResult } from "@/core/types/run-result";
 import { recordBriefTerms } from "@/core/vocabulary";
 import { corpusPass, tagPass, termPass } from "@/features/flywheel";
-import { groundInjectedLedger, injectBrief, readAdoptedTerms, sectionBrief } from "@/features/intake";
+import { groundInjectedLedger, injectBrief, readAdoptedTerms, sectionBrief, sectionsDeriveFromBrief } from "@/features/intake";
 import { runParticipation } from "@/features/intake/flywheel-participation";
 import { recordItemChange } from "@/features/sources/change";
 import { growSources } from "@/features/sources";
 import { allRows, rowsByIds } from "@/core/db";
+import { precisionKey } from "@/core/brief/rules/forward-events-covered";
 import { review } from "@/core/digest/review";
 
 import { BUDGET_STOP_REASON, budgetBytes, POOL_REREADS, preflight } from "../../kit/budget";
@@ -198,11 +199,13 @@ function itemBriefsSpec(opts: RecordOpts): EntrySpec<RecordLive, RecordPlan> {
       const ids = [...new Set((file.entries as unknown[]).map((e) => (isObj(e) && typeof e.item_id === "string" ? e.item_id : "")).filter((x) => /^[0-9a-f-]{36}$/i.test(x)))];
       const rows = await rowsByIds<{ id: string; item_type: string; item_grade: string | null; provenance_status: string | null; full_brief: string | null; entry_into_force: string | null; compliance_deadline: string | null }>(deps.sb, "intelligence_items", "id, item_type, item_grade, provenance_status, full_brief, entry_into_force, compliance_deadline", ids);
       const items: RecordLive["items"] = new Map();
+      const stored = await rowsByIds<{ id: string; item_id: string; content_md: string | null }>(deps.sb, "intelligence_item_sections", "id, item_id, content_md", ids, "item_id");
       for (const r of rows) {
         const p = await itemPool(deps.sb, r.id);
-        const [evs, tls] = [await allRows<{ event_date: string | null }>(deps.sb, "item_forward_events", "event_date", { where: (q) => q.eq("intelligence_item_id", r.id) }), await allRows<{ milestone_date: string | null }>(deps.sb, "item_timelines", "milestone_date", { where: (q) => q.eq("item_id", r.id) })];
-        const suppliedDates = [...evs.map((e) => e.event_date), ...tls.map((t) => t.milestone_date)].filter((d): d is string => !!d);
-        items.set(r.id, { suppliedDates, itemType: r.item_type, grade: r.item_grade, status: r.provenance_status, hash: p.hash, poolText: p.pool.map((x) => x.text).join("\n\n"), bytes: p.bytes, fullBrief: r.full_brief, entryIntoForce: r.entry_into_force, complianceDeadline: r.compliance_deadline });
+        const [evs, tls] = [await allRows<{ event_date: string | null; date_precision: string | null }>(deps.sb, "item_forward_events", "event_date, date_precision", { where: (q) => q.eq("intelligence_item_id", r.id) }), await allRows<{ milestone_date: string | null; date_precision: string | null }>(deps.sb, "item_timelines", "milestone_date, date_precision", { where: (q) => q.eq("item_id", r.id) })];
+        // FWD-COVER-1 + precision: a month or year row is compared at its precision (YYYY-MM, YYYY), a day row as before.
+        const suppliedDates = [...evs.map((e) => e.event_date && precisionKey(e.event_date, e.date_precision)), ...tls.map((t) => t.milestone_date && precisionKey(t.milestone_date, t.date_precision))].filter((d): d is string => !!d);
+        items.set(r.id, { sectionsOk: sectionsDeriveFromBrief(r.full_brief, stored.filter((x) => x.item_id === r.id)), suppliedDates, itemType: r.item_type, grade: r.item_grade, status: r.provenance_status, hash: p.hash, poolText: p.pool.map((x) => x.text).join("\n\n"), bytes: p.bytes, fullBrief: r.full_brief, entryIntoForce: r.entry_into_force, complianceDeadline: r.compliance_deadline });
       }
       const slotRows = await allRows<{ item_type: string; slot_key: string; description: string | null }>(deps.sb, "item_type_required_slots", "item_type, slot_key, description", { cap: 5000 });
       const slots: RecordLive["slots"] = new Map();
@@ -213,9 +216,10 @@ function itemBriefsSpec(opts: RecordOpts): EntrySpec<RecordLive, RecordPlan> {
       return { items, slots, adopted: (await readAdoptedTerms(deps.sb)).adopted, now: deps.now(), allowOverwrite: opts.allowBriefOverwrite === true, emit };
     },
     entry: (e, i, live) => {
-      const done = isObj(e) && typeof e.item_id === "string" && typeof e.body === "string" ? sameBrief(live.items.get(e.item_id)?.fullBrief, e.body) && live.items.get(e.item_id)?.grade === "brief" : false;
+      const done = isObj(e) && typeof e.item_id === "string" && typeof e.body === "string" ? sameBrief(live.items.get(e.item_id)?.fullBrief, e.body) && live.items.get(e.item_id)?.grade === "brief" && live.items.get(e.item_id)?.sectionsOk === true : false;
       return done ? { errors: [], done: true } : validateRecordBriefEntry(e, i, live);
     },
+    residueReview: (e, key) => (key ? { subjectId: key, score: review("item-briefs", e).score, reviewedBy: review("item-briefs", e).reviewed_by ?? "none" } : null),
     write: (deps, _live, item, batch) => applyItem(deps, item, batch, opts.allowBriefOverwrite === true),
     cost: (item) => item.plan.bytes * POOL_REREADS,
     async readBack(deps, _live, written) {

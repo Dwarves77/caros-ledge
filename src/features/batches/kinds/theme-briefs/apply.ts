@@ -48,6 +48,7 @@ const themeBriefsSpec: EntrySpec<ThemeLive, Plan> = {
     const prior = live.stored.get(id);
     return prior && prior.member_hash === computeMemberHash(members) && prior.brief_md === v.brief.brief_md ? { errors: [], done: true } : { errors: [], plan: { memberIds: members, brief: v.brief } };
   },
+  residueReview: (e, key) => (key ? { subjectId: key, score: review("theme-briefs", e).score, reviewedBy: review("theme-briefs", e).reviewed_by ?? "none" } : null),
   async write(deps, _live, item, batch) {
     const r = await applyThemeBrief({ sb: deps.sb, now: deps.now }, { brief: item.plan.brief, batch, dry: false });
     if (r.outcome === "failed" || !r.counts.written) throw new Error(r.notes.join("; ") || "the seam wrote nothing");

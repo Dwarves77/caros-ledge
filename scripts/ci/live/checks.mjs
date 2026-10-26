@@ -5,7 +5,7 @@
 import { isMissingObject } from "../../../src/core/db/absent.ts";
 import { shapeDiff } from "../schema/shape.mjs";
 
-export const CHECKS = ["member-reads", "sign-in", "pages", "identity-anonymous", "provenance-trigger", "notification-drain", "admin-pages", "invitation-email", "production-shape"];
+export const CHECKS = ["member-reads", "sign-in", "pages", "identity-anonymous", "provenance-trigger", "notification-drain", "admin-pages", "invitation-email", "production-shape", "applied-items-render"];
 /**
  * Checks that run only when a dispatch names them (--only): invitation-email sends a real message, and provenance-trigger takes a short lock on intelligence_items (migration 0069 disables a trigger under lock_timeout), which a
  * preview deployment must not do to production each time one is built. The default set runs on every preview; these two run on a named dispatch (the nightly one).
@@ -219,4 +219,26 @@ export async function productionShape(ctx) {
   return shapeDiff(ctx.io.expectedShape, actual, { want: "production-shape.json", have: "production" }).map((d) => fail("production-shape", "production-shape.json", d));
 }
 
-export const RUNNERS = { "member-reads": memberReads, "sign-in": signIn, pages, "identity-anonymous": identityAnonymous, "provenance-trigger": provenanceTrigger, "notification-drain": notificationDrain, "admin-pages": adminPages, "invitation-email": invitationEmail, "production-shape": productionShape };
+/**
+ * DRAIN-FIX-2 (visibility): each item a ruled run applied (scripts/ci/data/applied-items.json) opens, for the signed-in member, on its own surface's detail route, and the page draws at least one detail section head (the typed marker
+ * data-audit="detail-section-head", counted by scripts/ci/live/load.mjs). No page text is matched (ADR-053). A page that answers but draws none, or that ends away from the item's path, is a failure.
+ */
+export async function appliedItemsRender(ctx) {
+  const out = [];
+  for (const id of ctx.io.appliedItemIds) {
+    const row = await ctx.io.service.from("intelligence_items").select("item_type, domain").eq("id", id).maybeSingle();
+    if (row.error || !row.data) {
+      out.push(fail("applied-items-render", id, `the item could not be read: ${row.error?.message ?? "not found"}`));
+      continue;
+    }
+    const path = ctx.io.itemPath(row.data.item_type, row.data.domain, id);
+    const page = await ctx.io.openPage(path, "member");
+    const f = pageFinding("applied-items-render", path, page);
+    if (f) out.push(f);
+    else if (!page.finalUrl.includes(id)) out.push(fail("applied-items-render", path, `${path} ended at ${page.finalUrl}, away from the item`));
+    else if (!(page.sectionHeads > 0)) out.push(fail("applied-items-render", path, `${path} rendered with no detail section head: the brief is not shown`));
+  }
+  return out;
+}
+
+export const RUNNERS = { "applied-items-render": appliedItemsRender, "member-reads": memberReads, "sign-in": signIn, pages, "identity-anonymous": identityAnonymous, "provenance-trigger": provenanceTrigger, "notification-drain": notificationDrain, "admin-pages": adminPages, "invitation-email": invitationEmail, "production-shape": productionShape };

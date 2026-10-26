@@ -169,6 +169,21 @@ test("D:21: sectionBrief on an unverified item archives the claims of a vanished
   assert.equal(w.db.rows("intelligence_item_sections").find((s) => s.id === "sec-1")?.content_md !== "old", true, "a surviving section is updated in place under its own id");
 });
 
+test("DRAIN-FIX-2 R2: sectionBrief re-sections a VERIFIED item whose stored sections are not cut from its brief (claims archived first); a verified item whose sections derive from the brief is left alone", async () => {
+  const w = intakeWorld({ itemType: "market_signal" });
+  const row = w.db.rows("intelligence_items")[0]!;
+  row.full_brief = marketSignalBody();
+  row.provenance_status = "verified";
+  const deps = { sb: w.deps.sb, sources: w.deps.sources, recorder: w.deps.recorder };
+  const cut = extractSections(marketSignalBody(), "market_signal");
+  w.db.seed("intelligence_item_sections", cut.map((s, i) => ({ id: `sec-${s.section_key}`, item_id: INTAKE_ITEM, section_key: s.section_key, section_order: i + 1, content_md: "text of an older brief" })));
+  const stale = await sectionBrief(deps, INTAKE_ITEM);
+  assert.equal(stale.counts.sections, cut.length, stale.notes.join("; "));
+  assert.equal(w.db.rows("intelligence_item_sections").some((s) => s.content_md === "text of an older brief"), false);
+  const same = await sectionBrief(deps, INTAKE_ITEM);
+  assert.deepEqual([same.counts.sections, same.notes.some((n) => /already verified/.test(n))], [0, true], "sections now derive from the brief: left alone");
+});
+
 test("D:144: erase writes the tombstone, archives every claim of the item to claim_versions and deletes the item in ONE call; a failure at any step leaves the item, its claims and the ledger untouched", async () => {
   const mk = () => {
     const db = new MemDb();

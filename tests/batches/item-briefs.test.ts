@@ -47,6 +47,17 @@ test("INV-210: a re-apply of the same batch writes nothing new; a dry apply writ
   assert.equal(w.db.rows("item_changelog").length, 1, "the changelog row is written once per item, field and batch");
 });
 
+test("DRAIN-FIX-2 Trap A: an item whose brief is stored but whose sections are not cut from it is half applied and runs again; with its sections in place it is already applied", async () => {
+  const w = batchWorld();
+  await apply(w, [recordEntry(w.db)]);
+  assert.equal((await apply(w, [recordEntry(w.db)])).counts.already_applied, 1, "sections derive from the brief: done");
+  for (const s of w.db.rows("intelligence_item_sections")) s.content_md = "text of an older brief";
+  const again = await apply(w, [recordEntry(w.db)], { options: { allowBriefOverwrite: true } });
+  assert.equal(again.counts.already_applied ?? 0, 0, "stale sections: not already applied");
+  assert.equal(again.counts.applied, 1, refusals(again));
+  assert.equal(w.db.rows("intelligence_item_sections").some((s) => s.content_md === "text of an older brief"), false, "the sections were cut again from the brief");
+});
+
 test("INV-210: a structural defect refuses the whole file; a defective entry is refused alone with its reasons and never blocks the valid one", async () => {
   const w = batchWorld();
   for (const bad of [{ authored_by: "someone" }, { batch: "other-001" }, { generated_at: "yesterday" }]) {

@@ -182,6 +182,13 @@ export async function harvestItemTimeline(deps: Deps, itemId: string, opts: { dr
   return ins.error ? runResult("failed", { rows: 0 }, [...notes, `timeline insert failed after the delete: ${ins.error.message}`]) : runResult("ok", { rows: h.rows.length, skipped: h.skipped.length }, notes);
 }
 
+/** INV-FLY-1's signal: every stored section's text (URL and claim markers gone, whitespace collapsed) is found in the brief, and there is at least one section. Sections cut from an older brief fail it. */
+export function sectionsDeriveFromBrief(brief: string | null, sections: readonly { content_md: string | null }[]): boolean {
+  const flat = (x: string | null): string => String(stripUrlMarkers(x ?? "") ?? "").replace(/<!--\s*claim:[0-9a-fA-F-]{36}\s*-->/g, " ").replace(/\s+/g, " ").trim();
+  const whole = flat(brief);
+  return !!whole && sections.length > 0 && sections.every((x) => flat(x.content_md) === "" || whole.includes(flat(x.content_md)));
+}
+
 /**
  * Reconcile intelligence_item_sections with the brief BY KEY in ONE database transaction (ledger_reconcile_sections): surviving keys are updated in place (their section row ids keep the claims
  * pointing at them), new keys inserted, vanished keys deleted AFTER every claim they carry is archived to claim_versions (the delete cascades; nothing is destroyed unarchived). A VERIFIED item is
@@ -194,8 +201,13 @@ export async function sectionBrief(deps: Deps, itemId: string, opts: { dry?: boo
   const it = r.data as { item_type: string; full_brief: string | null; provenance_status: string | null } | null;
   if (!it?.full_brief) return runResult("failed", {}, ["no full_brief"]);
   if (it.provenance_status === "verified") {
-    const tl = await harvestItemTimeline(deps, itemId, opts);
-    return runResult(tl.outcome, { sections: 0, ...tl.counts }, ["already verified: skip re-section (ledger-preserving)", ...tl.notes]);
+    // DRAIN-FIX-2 R2: a verified item keeps its sections only while they derive from the stored brief; a replaced brief over stale sections is re-sectioned (the DB function archives the claims of a vanished section first, nothing is deleted).
+    const cur = await sb.from("intelligence_item_sections").select("content_md").eq("item_id", itemId);
+    if (cur.error) return runResult("failed", {}, [`sections read failed: ${cur.error.message}`]);
+    if (sectionsDeriveFromBrief(it.full_brief, (cur.data ?? []) as { content_md: string | null }[])) {
+      const tl = await harvestItemTimeline(deps, itemId, opts);
+      return runResult(tl.outcome, { sections: 0, ...tl.counts }, ["already verified: skip re-section (ledger-preserving)", ...tl.notes]);
+    }
   }
   const rows = extractSections(it.full_brief, it.item_type);
   if (!specForItemType(it.item_type)) return runResult("failed", {}, [`no format spec for item_type ${it.item_type}`]);

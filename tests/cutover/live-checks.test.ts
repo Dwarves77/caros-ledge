@@ -12,7 +12,7 @@ import { runNotificationOutbox } from "@/features/drain/kinds";
 import { skipVerdict } from "@/core/harness/exit";
 
 // @ts-expect-error plain .mjs modules
-import { CHECKS, DEFAULT_CHECKS, identityAnonymous, memberReads, notificationDrain, pageFinding, pages, productionShape, provenanceTrigger, SURFACE_PAGES } from "../../scripts/ci/live/checks.mjs";
+import { appliedItemsRender, CHECKS, DEFAULT_CHECKS, identityAnonymous, memberReads, notificationDrain, pageFinding, pages, productionShape, provenanceTrigger, SURFACE_PAGES } from "../../scripts/ci/live/checks.mjs";
 // @ts-expect-error plain .mjs modules
 import { planRun, runLive, triggerOf } from "../../scripts/ci/live-checks.mjs";
 import { MemDb } from "../_support/memdb.ts";
@@ -275,4 +275,12 @@ test("the script follows the one exit-code contract: a workstation with no crede
   assert.equal(fork.status, 2, "a fork PR cannot carry secrets: the one event that skips in CI");
   assert.match(fork.stdout, /fork cannot carry secrets; not set: .*SUPABASE_SERVICE_ROLE_KEY/);
   assert.equal(spawnSync(process.execPath, ["scripts/ci/live-checks.mjs", "--only", "nope", "--base", "https://x.test"], { env, encoding: "utf8" }).status, 1);
+});
+
+test("DRAIN-FIX-2 visibility: an applied item opens on its surface's route and draws a detail section head (a typed marker); no head, or an end away from the item, is a failure", async () => {
+  const ID = "b293a2b6-c882-44dc-8efc-a801ed6a160b";
+  const run = (page: Record<string, unknown>) => appliedItemsRender({ io: { appliedItemIds: [ID], itemPath: (_t: string, _d: number, id: string) => `/regulations/${id}`, service: { from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { item_type: "regulation", domain: 1 }, error: null }) }) }) }) }, openPage: async () => ({ status: 200, finalUrl: `https://x.test/regulations/${ID}`, uiFailures: [], apiFailures: [], ...page }) } });
+  assert.deepEqual(await run({ sectionHeads: 5 }), []);
+  assert.match((await run({ sectionHeads: 0 }))[0]?.text ?? "", /no detail section head/);
+  assert.match((await run({ sectionHeads: 5, finalUrl: "https://x.test/regulations" }))[0]?.text ?? "", /away from the item/);
 });

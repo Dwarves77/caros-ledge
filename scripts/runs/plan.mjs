@@ -1,7 +1,7 @@
 // A ruled run is a committed plan file (scripts/runs/plans/<date>-<name>.json): the operator's ruling and the ordered turn steps it carries. The validator refuses a plan that could not be run exactly as ruled.
 // It imports the turn's own stage list, so the plan can never name a stage the turn does not have; producer_env is validated with the same pattern the turn job's workflow step applies.
 import { readFileSync } from "node:fs";
-import { dirname, isAbsolute, relative, resolve } from "node:path";
+import { basename, dirname, isAbsolute, relative, resolve } from "node:path";
 
 import { z } from "zod";
 
@@ -27,7 +27,18 @@ const Step = z.strictObject({
   chain: z.boolean().default(false),
   /** What a failed step does to the run: "stop" halts the plan and fails the job; "continue" records it, runs the next step, and leaves it without a success row for the next push of the plan to retry. */
   on_failure: z.enum(["stop", "continue"]).default("stop"),
+  /** The step's partial outcome (residue by design) is acceptable: it is reported as partial and the plan goes on. Without it a partial step follows on_failure like a failure (DRAIN-FIX-2). */
+  allow_partial: z.boolean().default(false),
 });
+
+/** DRAIN-FIX-2 D4: `connect.scan_limit: 0` reads none of the backlog (scanBacklog slices it to 0): an apply connect step that sets it re-runs the patterns over an unfed spine and reports success. Refused in plans named 2026-10-27-drain-1b or later (earlier plans, ruled when 0 was the connect-only form, stand). */
+const SCAN_ZERO_FROM = "2026-10-27-drain-1b";
+function refuseScanZero(plan, planPath) {
+  const name = planPath === undefined ? null : basename(planPath, ".json");
+  if (name !== null && name < SCAN_ZERO_FROM) return;
+  const bad = plan.steps.find((s) => s.mode === "apply" && s.stage === "connect" && s.input?.connect?.scan_limit === 0);
+  if (bad) throw new Error(`step "${bad.name}": an apply connect step with scan_limit 0 reads none of the backlog (the patterns run over an unfed spine and report success): give a positive scan_limit`);
+}
 
 export const Plan = z
   .strictObject({
@@ -82,6 +93,7 @@ export const Plan = z
  */
 export function parsePlan(text, planPath) {
   const plan = Plan.parse(JSON.parse(text));
+  refuseScanZero(plan, planPath);
   if (!plan.steps.some((s) => s.input_file !== undefined)) return plan;
   if (planPath === undefined) throw new Error("a plan with input_file steps is parsed with its path (parsePlan(text, planPath))");
   const base = resolve(dirname(planPath));
