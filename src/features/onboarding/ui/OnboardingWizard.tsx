@@ -4,7 +4,6 @@
 // Ported from old_repo/src/components/onboarding/OnboardingWizard.tsx (lines 308-422)
 // Ported from old_repo/src/components/onboarding/OnboardingWizard.tsx (lines 464-516)
 // Ported from old_repo/src/components/onboarding/OnboardingWizard.tsx (lines 582-633)
-import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { readFailure } from "@/core/http/failure";

@@ -3,7 +3,6 @@
 // Ported from old_repo/src/components/admin/IntegrityFlagsView.tsx (lines 65-99)
 // Ported from old_repo/src/components/admin/IntegrityFlagsView.tsx (lines 101-151)
 // Ported from old_repo/src/components/admin/IntegrityFlagsView.tsx (lines 153-389)
-import Link from "next/link";
 import { useState } from "react";
 
 import { formatDate, formatNumber } from "@/core/shared";

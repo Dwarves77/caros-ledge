@@ -3,7 +3,6 @@
 // Ported from old_repo/src/components/regulations/BindingBanner.tsx (lines 30-228)
 // The item-level binding-position banner (spec 01 section 4, component 1): for each position (your duty, carrier pass-through, customer contract, monitor) who holds the duty, why it is in scope,
 // whether it applies to the reader's organisation, and the three cost slots kept apart. An item with no decomposed obligations says so; a failed load says so with Retry.
-import Link from "next/link";
 
 import { OBS_STATUS } from "@/core/contracts/vocabularies";
 import type { ObligationBinding } from "@/core/workspace";
