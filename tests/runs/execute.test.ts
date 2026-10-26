@@ -55,7 +55,7 @@ test("an apply step the run frame forced dry (the emergency stop) is a failure, 
 test("the results file shape: plan, ruling, outcome, times, and per step the ledger row ids, counts and refusals", async () => {
   const r = await executePlan(mk(["a"]), PATH, { invoke: turn().invoke, now: NOW });
   assert.deepEqual(r, {
-    plan: "2026-10-24-x", ruling: RULING, started_at: "2026-10-24T00:00:00.000Z", finished_at: "2026-10-24T00:00:00.000Z", outcome: "ok",
+    plan: "2026-10-24-x", ruling: RULING, started_at: "2026-10-24T00:00:00.000Z", finished_at: "2026-10-24T00:00:00.000Z", outcome: "ok", applied_item_ids: [],
     steps: [{ step: "a", stage: "propagate", mode: "apply", outcome: "ok", exit: 0, root_run_id: "root-a", refusals: 1, rows: [{ family: "propagation", id: "row-a", mode: "apply", outcome: "success", counts: { refused: 1 } }] }],
   });
 });
@@ -241,4 +241,18 @@ test("DRAIN-1: an input_file step is invoked with --input-file, the file holding
   assert.ok(!seen[0]!.args.includes("--input"));
   assert.deepEqual(seen[0]!.body, { connect: { scan_limit: 0, ruled_plan: "2026-10-27-x.json#big" } });
   assert.ok(seen[1]!.args.includes("--input") && !seen[1]!.args.includes("--input-file"));
+});
+
+// DRAIN-FIX-2 D2: DRAIN-1's item step was `partial` in harness_runs (residue) and `ok` in the table.
+test("DRAIN-FIX-2 D2: a step whose turn row outcome is partial is reported partial, follows on_failure as a failure, and runs on only with allow_partial", async () => {
+  const mkPlan = (extra: Record<string, unknown>) => parsePlan(JSON.stringify({ ruling: RULING, steps: [{ name: "briefs", stage: "briefs", mode: "apply", input: { briefs: {} }, producer_env: [], ...extra }, { name: "after", stage: "briefs", mode: "apply", input: { briefs: {} }, producer_env: [] }] }));
+  const calls: string[] = [];
+  const invoke = ({ args }: { args: string[] }) => { calls.push(args[1] as string); return { status: 0, result: { root_run_id: "root", runs: [{ family: "briefs", id: "row", mode: "apply", outcome: "partial", counts: { applied: 3, residue: 9 } }] } }; };
+  const stopped = await executePlan(mkPlan({}), PATH, { invoke, now: NOW });
+  assert.deepEqual(stopped.steps.map((s: { step: string; outcome: string }) => [s.step, s.outcome]), [["briefs", "partial"]]);
+  assert.match(summaryTable(stopped), /\| briefs \| apply \| partial \|/);
+  assert.deepEqual([stopped.outcome, exitCodeOf(stopped)], ["failed", 1]);
+  const allowed = await executePlan(mkPlan({ allow_partial: true }), PATH, { invoke, now: NOW });
+  assert.deepEqual(allowed.steps.map((s: { step: string; outcome: string }) => [s.step, s.outcome]), [["briefs", "partial"], ["after", "partial"]]);
+  assert.equal(allowed.outcome, "failed", "the second step is partial without allow_partial: it fails the plan");
 });

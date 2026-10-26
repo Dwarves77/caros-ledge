@@ -20,9 +20,9 @@ import { CHECKS, DEFAULT_CHECKS, missingNames, NEEDS, RUNNERS } from "./live/che
 import { loadPage, newStats } from "./live/load.mjs";
 
 /** The checks that need the signed-in member. */
-const MEMBER_CHECKS = new Set(["member-reads", "sign-in", "pages", "notification-drain", "invitation-email"]);
+const MEMBER_CHECKS = new Set(["applied-items-render", "member-reads", "sign-in", "pages", "notification-drain", "invitation-email"]);
 /** The checks that read or write the database with the service key. */
-const SERVICE_CHECKS = new Set(["member-reads", "identity-anonymous", "provenance-trigger", "notification-drain", "production-shape"]);
+const SERVICE_CHECKS = new Set(["applied-items-render", "member-reads", "identity-anonymous", "provenance-trigger", "notification-drain", "production-shape"]);
 
 /**
  * Which checks run, which are skipped, and which environment names are missing for the rest. A check the caller named (`only`) is never skipped for lack of an account, and neither is any check in CI (`ci`, from isCi in src/core/harness/exit.ts): a check that cannot run is then a missing name, which the exit contract turns into exit 1 (a fork PR excepted).
@@ -107,6 +107,7 @@ async function main() {
   }
   const { createClient } = await import("@supabase/supabase-js");
   const { recordLiveSmoke } = await import("../../src/core/harness/live-smoke.ts");
+  const { surfaceHref, surfaceOf } = await import("../../src/core/routing/index.ts");
   const { runNotificationOutbox } = await import("../../src/features/drain/kinds.ts");
   const { sendInvitationEmail } = await import("../../src/core/shared/email.ts");
   // The bypass header goes to the target origin only (scripts/ci/live/bypass.mjs): the pages call the database and other origins, and none of them may receive the secret.
@@ -135,6 +136,8 @@ async function main() {
   const io = {
     base,
     service,
+    appliedItemIds: JSON.parse(readFileSync("scripts/ci/data/applied-items.json", "utf8")).ids,
+    itemPath: (itemType, domain, id) => surfaceHref(surfaceOf(itemType, domain), id),
     expectedShape: JSON.parse(readFileSync("scripts/ci/data/production-shape.json", "utf8")).shape,
     runId: randomUUID(),
     async member() {

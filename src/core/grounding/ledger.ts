@@ -203,8 +203,15 @@ export async function eraseClaimWithProof(sb: Db, existing: ClaimRow, _itemId: s
 
 export interface SectionInput { section_key: string; section_order: number; content_md: string; is_conditional: boolean }
 /** Reconcile an item's sections with its brief by key in ONE transaction: the claims of a vanished section are archived to claim_versions before the section (and its cascade) goes. */
-export function reconcileSections(sb: Db, itemId: string, sections: readonly SectionInput[], nowIso: string | null): Promise<{ removed: number; claims_archived: number; updated: number; inserted: number }> {
-  return call(sb, "ledger_reconcile_sections", { p_item_id: itemId, p_sections: sections, p_now: nowIso });
+export async function reconcileSections(sb: Db, itemId: string, sections: readonly SectionInput[], nowIso: string | null): Promise<{ removed: number; claims_archived: number; updated: number; inserted: number }> {
+  // DRAIN-FIX-2 D3: the function is one transaction (a row lock on the item, then a validate_item_provenance trigger per section and claim row, ~15 ms each); a statement timeout (57014) rolls the whole transaction back, so a second attempt is safe and is tried twice more.
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      return await call(sb, "ledger_reconcile_sections", { p_item_id: itemId, p_sections: sections, p_now: nowIso });
+    } catch (e) {
+      if (attempt >= 3 || !(e instanceof LedgerRefusal && (e.code === "57014" || /statement timeout/i.test(e.message)))) throw e;
+    }
+  }
 }
 /** The tombstone, every claim archived to claim_versions, then the item: ONE transaction (ledger_erase_item); a failure at any step leaves all three untouched. */
 export function eraseItem(sb: Db, itemId: string, e: { disposition: string; mergedInto: string | null; holder: string }, nowIso: string | null = null): Promise<{ claims_archived: number }> {

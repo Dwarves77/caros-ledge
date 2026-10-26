@@ -6,6 +6,7 @@
 // (core/brief FORMAT_SPECS), so the old second copy of the section list and its drift test are gone. Pure: the caller supplies the live material.
 import { analysisLabelRe, buildTimelineRows, checkBriefContent, findTimelineSection, FORMAT_SPECS, LEGAL_CALLOUT, MODAL_RE, parseTimeline, validateClaimRecords, validateMetadata, type AdoptedTerms, type BriefMetadata, type SectionRow } from "@/core/brief";
 import { severityToken, validateBrief, type ItemColumns } from "@/core/brief/rules";
+import { precisionKey } from "@/core/brief/rules/forward-events-covered";
 import { scanGateA, uncoveredSlots, type SlotRow } from "@/core/grounding";
 import { digestKind } from "@/core/digest/kinds";
 import { review } from "@/core/digest/review";
@@ -59,7 +60,7 @@ function requiredSlotErrors(claims: readonly Obj[], slots: readonly SlotRow[], t
   return errors;
 }
 
-export interface RecordItemLive { itemType: string; grade: string | null; status: string | null; hash: string; poolText: string; bytes: number; fullBrief: string | null; entryIntoForce: string | null; complianceDeadline: string | null; /** ISO dates of the item's forward events and timeline rows (the export's forward_events and timelines). */ suppliedDates?: readonly string[] }
+export interface RecordItemLive { /** The stored sections derive from the stored brief (DRAIN-FIX-2 R2): an applied item whose sections do not is half applied and runs again. */ sectionsOk?: boolean; itemType: string; grade: string | null; status: string | null; hash: string; poolText: string; bytes: number; fullBrief: string | null; entryIntoForce: string | null; complianceDeadline: string | null; /** ISO dates of the item's forward events and timeline rows (the export's forward_events and timelines). */ suppliedDates?: readonly string[] }
 export interface RecordLive { items: Map<string, RecordItemLive>; slots: Map<string, SlotRow[]>; adopted: AdoptedTerms; now: Date; allowOverwrite: boolean; /** The live material of the entries that carry typed blocks (DIGEST-1 PR B), by item. */ emit: ReadonlyMap<string, EmitLive> }
 export interface RecordPlan { itemId: string; bytes: number; claims: Obj[]; emission: EmissionPlan | null }
 
@@ -74,7 +75,7 @@ const columns = (m: BriefMetadata | null, item: RecordItemLive, formatType: stri
 
 /** FWD-COVER-1: the dates the entry's events block carries and the dates its omitted_events states it leaves out, each with a reason. */
 const eventCoverage = (entry: Obj): { events: string[]; omitted: { date: string; reason: string }[] } => ({
-  events: (Array.isArray(entry.events) ? entry.events : []).filter(isObj).map((e) => String(e.event_date ?? "")),
+  events: (Array.isArray(entry.events) ? entry.events : []).filter(isObj).map((e) => precisionKey(String(e.event_date ?? ""), typeof e.date_precision === "string" ? e.date_precision : null)),
   omitted: (Array.isArray(entry.omitted_events) ? entry.omitted_events : []).filter(isObj).map((o) => ({ date: String(o.event_date ?? ""), reason: String(o.reason ?? "") })),
 });
 

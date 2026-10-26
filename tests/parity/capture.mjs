@@ -106,7 +106,7 @@ async function hydrated(page) {
   await page.waitForFunction(() => document.documentElement.dataset.hydrated === 'true', null, { timeout: 20000 });
 }
 
-async function signIn(browser, base, email, password) {
+export async function signIn(browser, base, email, password) {
   const context = await browser.newContext();
   await installBypass(context, base);
   try {

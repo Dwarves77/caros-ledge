@@ -1,0 +1,2 @@
+# path | reason (files with no "Ported from" header)
+scripts/runs/visible.mjs | new in DRAIN-FIX-2: the signed-in visibility check of the items a ruled run applied (typed DOM marker plus the item id).

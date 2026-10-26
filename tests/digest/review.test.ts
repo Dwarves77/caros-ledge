@@ -55,8 +55,15 @@ test("INV-DIG-3: a brief that fills a conditional section with no grounded claim
   const judge = raw.judges.find((j) => j.criterion === "conditional-section-has-grounded-claim")!;
   const caught = await apply(w, withJudge(planted, judge.id, { pass: false, evidence: "section 5 states there is no guidance while holding no grounded claim" }));
   assert.equal(caught.counts.applied ?? 0, 0);
+  // TRAP B: reviewed residue cleanly recorded in brief_reviews is not a failure of the step (an unrecorded one, or a refused entry, still is: tests/batches/kit.test.ts INV-210).
+  assert.equal(caught.outcome, "ok");
+  assert.equal(caught.counts.residue, 1);
   assert.match(caught.notes.join("\n"), new RegExp(`second reader: ${judge.id} conditional-section-has-grounded-claim: failed`));
-  assert.equal(w.db.rows("brief_reviews").length, 0, "a brief under the bar leaves no applied review row");
+  // DRAIN-FIX-2 D1: no applied review row, but the residue entry is recorded as residue with its failing criterion and reviewer.
+  const rows = w.db.rows("brief_reviews") as { residue: boolean; reasons: string; reviewed_by: string; subject_id: string; kind: string }[];
+  assert.equal(rows.filter((r) => !r.residue).length, 0, "a brief under the bar leaves no applied review row");
+  assert.deepEqual(rows.map((r) => [r.kind, r.subject_id, r.residue, r.reviewed_by]), [["item-briefs", ITEM, true, "second-reader-test"]]);
+  assert.match(rows[0]!.reasons, new RegExp(`${judge.id} conditional-section-has-grounded-claim: failed`));
   assert.equal((await apply(w, planted)).counts.applied, 1);
 });
 
