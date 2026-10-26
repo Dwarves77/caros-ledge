@@ -39,8 +39,10 @@ function summarise(step, out) {
   const forced = step.mode === "apply" && rows.some((r) => r.forced_dry);
   const refusals = rows.reduce((n, r) => n + (r.counts?.refused ?? 0) + (r.outcome === "refused" ? 1 : 0), 0);
   const refused = step.mode === "apply" ? rows.find(refusedApply) : undefined;
-  const outcome = out.status !== 0 ? "failed" : forced ? "forced-dry" : refused ? "refused" : "ok";
-  return { step: step.name, stage: step.stage, mode: step.mode, outcome, exit: out.status, root_run_id: out.result?.root_run_id ?? null, refusals, rows, ...(outcome === "refused" ? { note: String(refused.reason ?? refused.outcome) } : {}), ...(out.error ? { error: out.error } : {}) };
+  // A step whose rows count failed units did not do what it was ruled to do, whatever exit code the turn gave it (HEAL-1b: two items failed and the step read ok).
+  const failedUnits = step.mode === "apply" && rows.some((r) => (r.counts?.failed ?? 0) > 0);
+  const outcome = out.status !== 0 ? "failed" : forced ? "forced-dry" : refused ? "refused" : failedUnits ? "partial" : "ok";
+  return { step: step.name, stage: step.stage, mode: step.mode, outcome, exit: out.status, root_run_id: out.result?.root_run_id ?? null, refusals, rows, ...(outcome === "refused" ? { note: String(refused.reason ?? refused.outcome) } : {}), ...(outcome === "partial" ? { note: `${rows.reduce((n, r) => n + (r.counts?.failed ?? 0), 0)} unit(s) failed` } : {}), ...(out.error ? { error: out.error } : {}) };
 }
 
 /** Runs `plan` (already parsed) step by step. `invoke({args, env})` is the turn call and `applied(key)` the ledger question; both are injected so a test starts no process and reads no database. */

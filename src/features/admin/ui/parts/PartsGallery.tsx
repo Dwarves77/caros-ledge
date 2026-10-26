@@ -126,7 +126,7 @@ export function PartsGallery() {
               <Button variant="primary" size="sm">Small primary</Button><Button variant="danger">Danger</Button><Button variant="ghost" size="lg">Ghost</Button>
               <TabRow ariaLabel="Tabs" semantics="tablist" tabs={[{ key: "a", label: "One", active: tab === "a", onClick: () => setTab("a") }, { key: "b", label: "Two", active: tab === "b", onClick: () => setTab("b") }]} />
               <Menu label="Row actions" items={[{ key: "x", label: "Do it", onSelect: () => {} }]} />
-              <button type="button" id="fx-open-dialog" className="cl-btn cl-btn--secondary cl-btn--md" onClick={() => setDialog(true)}>Open dialog</button>
+              <Button id="fx-open-dialog"  onClick={() => setDialog(true)}>Open dialog</Button>
               <WatchToggle watched teamWatched teamAvailable loaded onToggle={() => {}} />
               <WatchToggle variant="row" watched={false} loaded failed onToggle={() => {}} />
             </section>
@@ -145,7 +145,7 @@ export function PartsGallery() {
         </div>
         <div style={{ display: "none" }}><FiltersRailCard groups={groups} /></div>
         <Toast message="Link copied" visible={toast} onDismiss={() => setToast(false)} duration={600000} />
-        <Dialog open={dialog} onClose={() => setDialog(false)} title="Fixture dialog"><button type="button" className="cl-btn cl-btn--secondary cl-btn--md" onClick={() => setDialog(false)}>Inside</button></Dialog>
+        <Dialog open={dialog} onClose={() => setDialog(false)} title="Fixture dialog"><Button  onClick={() => setDialog(false)}>Inside</Button></Dialog>
       </div>
     </ScrollProvider>
   );

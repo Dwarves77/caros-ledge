@@ -211,6 +211,15 @@ test("classify", () => {
   assert.equal(classify(runResult("failed", { refused: 1, upserted: 2 }, ["gate"]), w, "apply").outcome, "failed", "a refusal that also wrote is a failure");
 });
 
+test("HEAL-1b: units that failed are never \"nothing to write\": the heal sweep that failed both items and wrote nothing (production counts of run 2062fdaa) is partial, its row is recordable, and a partial that claims neither a write nor a failure still is not", () => {
+  const counts = { items: 2, failed: 2, orphans_sourced: 2, orphans_grounded: 4, orphans_unprovable: 17, reclassify_refused: 1, attribution_repaired: 150 };
+  const writes = ["healed", "derived"];
+  assert.equal(classify(runResult("partial", counts, ["ledger_apply_ops: canceling statement due to statement timeout"]), writes, "apply").outcome, "partial");
+  assert.deepEqual(noopContractErrors({ outcome: "partial", mode: "apply", outputs: { counts } }, writes), []);
+  assert.equal(noopContractErrors({ outcome: "partial", mode: "apply", outputs: { counts: { items: 2 } } }, writes).length, 1);
+  assert.equal(noopContractErrors({ outcome: "success", mode: "apply", outputs: { counts } }, writes).length, 1, "a success still needs a write");
+});
+
 test("the family table: parsed, unique names, every downstream a real family, and either a downstream or a stated reason it ends", () => {
   assert.ok(FAMILIES.length > 0, "the shipped table parsed");
   const names = new Set(FAMILIES.map((f) => f.name));

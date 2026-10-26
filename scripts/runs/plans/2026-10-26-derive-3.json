@@ -1,0 +1,53 @@
+{
+  "ruling": "DERIVE-3 brief as reshaped by the operator and scope-reviewer ruling under ADR-053 (coordinator, 2026-10-25): bind the captures of the instruments' own pages to their items, then read the items so the pinpoints the statutory schedule cites become obligation objects joined to the schedule; the steps fetch nothing, so no scrape cadence is exercised (rule 16 stands) and no step carries a cadence_exception (the plan validator refuses the key on a step that fetches nothing)",
+  "steps": [
+    {
+      "name": "bind-instrument-captures-dry",
+      "stage": "connect",
+      "mode": "dry",
+      "input": {
+        "connect": {
+          "scan_limit": 0
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "bind-instrument-captures",
+      "stage": "connect",
+      "mode": "apply",
+      "input": {
+        "connect": {
+          "scan_limit": 0
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "derive-schedule-pinpoints-dry",
+      "stage": "connect",
+      "mode": "dry",
+      "input": {
+        "connect": {
+          "scan_limit": 60
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "derive-schedule-pinpoints",
+      "stage": "connect",
+      "mode": "apply",
+      "input": {
+        "connect": {
+          "scan_limit": 60
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    }
+  ]
+}

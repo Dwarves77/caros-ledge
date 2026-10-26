@@ -1,0 +1,16 @@
+{
+  "_note": "DERIVE-3 data (ADR-053: formal codes only). classes is the sanction_class vocabulary: a token and the noun phrase the readers render. formulaClass is the one closed map this slice writes from: a statutory_computations formula_id (a formal code) to the token of the obligation it belongs to. No pattern in this file reads English; a reader classifies the rest.",
+  "classes": [
+    { "token": "monetary_per_unit", "label": "Monetary penalty per unit" },
+    { "token": "monetary_capped", "label": "Monetary penalty with a maximum" },
+    { "token": "monetary_formula", "label": "Monetary penalty by published formula" },
+    { "token": "monetary_fixed", "label": "Fixed monetary penalty" },
+    { "token": "administrative", "label": "Administrative measure" },
+    { "token": "criminal_or_standard_scale", "label": "Criminal offence or standard scale" },
+    { "token": "member_state_defined", "label": "Penalty rules set by Member States" },
+    { "token": "by_reference", "label": "Penalty set out in another provision" }
+  ],
+  "formulaClass": {
+    "fueleu_penalty_basis": "monetary_per_unit"
+  }
+}

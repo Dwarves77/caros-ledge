@@ -5,6 +5,7 @@ import { useState, type FormEvent } from "react";
 
 import { browserClient } from "@/core/db/browser";
 import { log } from "@/core/shared/log";
+import { Button } from "@/ui";
 
 import styles from "./auth.module.css";
 import { AuthErrorBanner, AuthField } from "./AuthPanel";
@@ -45,9 +46,9 @@ export default function ResetPasswordPage() {
               <AuthField label="Work email">
                 <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" className={styles.input} placeholder="name@company.com" />
               </AuthField>
-              <button type="submit" disabled={loading} className={styles.primary}>
+              <Button type="submit" variant="primary" loading={loading} className={styles.full}>
                 {loading ? "Sending…" : "Send reset link"}
-              </button>
+              </Button>
             </form>
             <a href="/login" className={styles.back}>
               ← Back to sign in

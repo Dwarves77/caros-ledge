@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { NOTE_MAX_LENGTH } from "@/core/workspace/limits";
 import { formatNumber } from "@/core/shared";
 
-import { ActionButton } from "../../ActionRow";
+import { Button } from "../../Button";
 import { RelativeTime } from "../../RelativeTime";
 
 import { collabPath, collabRequest } from "./collab-client";
@@ -79,7 +79,7 @@ export function ItemNotesBlock({ itemId }: { itemId: string }) {
     return (
       <div role="alert">
         <p className="cl-collab-meta">{loadError ?? "Notes could not be loaded."}</p>
-        <ActionButton onClick={() => (setPhase("loading"), setAttempt((n) => n + 1))}>Retry</ActionButton>
+        <Button onClick={() => (setPhase("loading"), setAttempt((n) => n + 1))}>Retry</Button>
       </div>
     );
   }
@@ -93,9 +93,9 @@ export function ItemNotesBlock({ itemId }: { itemId: string }) {
           </label>
           <textarea id={`note-draft-${itemId}`} value={draft} onChange={(e) => (setDraft(e.target.value), setError(null))} rows={3} className="cl-collab-field" placeholder="Which lanes or clients this touches, who is on it, what was decided" />
           <div className="cl-collab-row">
-            <ActionButton variant="primary" onClick={() => void add()} disabled={busy !== null || !draft.trim() || over}>
+            <Button onClick={() => void add()} disabled={busy !== null || !draft.trim() || over}>
               {busy === "new" ? "Adding…" : "Add note"}
-            </ActionButton>
+            </Button>
             <span className="cl-collab-meta">
               {formatNumber(draft.length)} / {formatNumber(NOTE_MAX_LENGTH)}
             </span>
@@ -129,12 +129,12 @@ export function ItemNotesBlock({ itemId }: { itemId: string }) {
                   </label>
                   <textarea id={`note-edit-${n.id}`} value={editing.text} onChange={(e) => setEditing({ id: n.id, text: e.target.value })} rows={3} className="cl-collab-field" />
                   <div className="cl-collab-row">
-                    <ActionButton variant="primary" onClick={() => void save(n.id, editing.text)} disabled={busy !== null || !editing.text.trim() || editing.text.length > NOTE_MAX_LENGTH}>
+                    <Button onClick={() => void save(n.id, editing.text)} disabled={busy !== null || !editing.text.trim() || editing.text.length > NOTE_MAX_LENGTH}>
                       {busy === n.id ? "Saving…" : "Save"}
-                    </ActionButton>
-                    <ActionButton onClick={() => (setEditing(null), setError(null))} disabled={busy !== null}>
+                    </Button>
+                    <Button onClick={() => (setEditing(null), setError(null))} disabled={busy !== null}>
                       Cancel
-                    </ActionButton>
+                    </Button>
                   </div>
                 </div>
               ) : (
@@ -149,19 +149,19 @@ export function ItemNotesBlock({ itemId }: { itemId: string }) {
                 <div role="alertdialog" aria-label="Confirm delete">
                   <p className="cl-collab-meta">Delete this note? It disappears for everyone in your workspace.</p>
                   <div className="cl-collab-row">
-                    <ActionButton variant="primary" onClick={() => void remove(n.id)} disabled={busy !== null}>
+                    <Button variant="danger" onClick={() => void remove(n.id)} disabled={busy !== null}>
                       {busy === n.id ? "Deleting…" : "Delete note"}
-                    </ActionButton>
-                    <ActionButton onClick={() => setConfirmId(null)} disabled={busy !== null}>
+                    </Button>
+                    <Button onClick={() => setConfirmId(null)} disabled={busy !== null}>
                       Keep it
-                    </ActionButton>
+                    </Button>
                   </div>
                 </div>
               )}
               {editing?.id !== n.id && confirmId !== n.id && (n.can_edit || n.can_delete) && (
                 <div className="cl-collab-row">
-                  {n.can_edit && <ActionButton onClick={() => (setEditing({ id: n.id, text: n.body }), setError(null), setConfirmId(null))}>Edit</ActionButton>}
-                  {n.can_delete && <ActionButton onClick={() => (setConfirmId(n.id), setError(null))}>Delete</ActionButton>}
+                  {n.can_edit && <Button onClick={() => (setEditing({ id: n.id, text: n.body }), setError(null), setConfirmId(null))}>Edit</Button>}
+                  {n.can_delete && <Button onClick={() => (setConfirmId(n.id), setError(null))}>Delete</Button>}
                 </div>
               )}
             </li>

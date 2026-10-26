@@ -8,6 +8,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { requestJson } from "@/core/http/request-json";
 
+import { Button } from "../../Button";
 import { RelativeTime } from "../../RelativeTime";
 import { StateNote } from "../../StateNote";
 
@@ -100,9 +101,9 @@ export function NotificationsList({ onUnreadChange, onClose }: { onUnreadChange:
     <div className="cl-inbox">
       <div className="cl-inbox-head">
         <span className="cl-inbox-count">{state.unread > 0 ? `${state.unread} unread` : "All read"}</span>
-        <button type="button" className="cl-btn cl-btn--ghost cl-btn--sm" onClick={() => void readAll()} disabled={state.unread === 0 || busy === "all"}>
+        <Button variant="ghost" size="sm"  onClick={() => void readAll()} disabled={state.unread === 0 || busy === "all"}>
           Mark all read
-        </button>
+        </Button>
       </div>
       {note && (
         <div role="alert" className="cl-inbox-pad">
@@ -126,9 +127,9 @@ export function NotificationsList({ onUnreadChange, onClose }: { onUnreadChange:
       )}
       {state.next && (
         <div className="cl-inbox-pad">
-          <button type="button" className="cl-btn cl-btn--secondary cl-btn--md" onClick={() => void older()} disabled={busy === "older"}>
+          <Button  onClick={() => void older()} disabled={busy === "older"}>
             {busy === "older" ? "Loading…" : "Load older"}
-          </button>
+          </Button>
         </div>
       )}
     </div>

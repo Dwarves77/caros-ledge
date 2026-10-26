@@ -1,0 +1,4 @@
+# path | reason (files with no "Ported from" header)
+src/features/obligations/derive/penalty.ts | new in DERIVE-3: the pinpoints the statutory schedule cites become obligation objects from item-bound captures (Article and Annex heading grammar, formula id to sanction class, obligation entity resolved before minting); no old counterpart
+src/features/obligations/derive/data/sanction-classes.json | new in DERIVE-3: the sanction_class vocabulary (token and label) and the closed map from a schedule formula id to its token
+src/core/fetch/bind-instrument.ts | new in DERIVE-3: the capture of an instrument's own page is stored with that instrument's item (the capture path asks it; the connect stage binds the captures already stored with no item)
