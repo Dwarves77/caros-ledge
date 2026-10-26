@@ -1,6 +1,11 @@
 {
   "_exports": "Exported values with no caller in src, scripts or the Edge Function: only the paths a live lane still owns remain (R2e: src/features/{auth,community,admin,account}); that lane deletes its own entries, and a new offender or an entry that gained a caller is a red run, so the list only shrinks.",
   "exports": {
+    "src/core/digest/packets.ts": [
+      "citableIds",
+      "readPackets",
+      "uncitedIds"
+    ],
     "src/features/account/lib/profile-patch.ts": [
       "profilePatchSchema"
     ],

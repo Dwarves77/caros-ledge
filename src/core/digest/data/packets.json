@@ -1,0 +1,30 @@
+{
+  "version": "1",
+  "maxMembers": 80,
+  "maxRelations": 40,
+  "columns": {
+    "section_claim_provenance": ["id", "claim_kind", "extracted_at", "source_tier_at_grounding"],
+    "obligation_objects": ["obligation_id", "pinpoint_citation", "statutory_maximum", "cost_formula", "direct_compliance_cost", "first_deadline", "due_date", "enforcement_start", "in_force_end", "mandated_quantity", "mandated_unit", "sanction_class", "mode", "method_version"],
+    "statutory_computations": ["computation_id", "scenario_key", "formula_id", "formula_version", "unit_price", "unit_price_unit", "result", "result_unit", "computed_at"],
+    "market_series": ["id", "series_key", "label", "value_numeric", "unit", "currency", "as_at_date"],
+    "emission_factors": ["factor_id", "wtw_co2e", "energy_carrier", "mode", "as_at_date"],
+    "grid_connection_queues": ["queue_id", "substation_ref", "queue_months_p50", "queue_months_p90", "demand_firm_mw", "demand_available_mw", "demand_constraint", "as_of"],
+    "oem_tech_roadmaps": ["roadmap_id", "tech_category", "commercial_stage", "target_year", "announced_at"],
+    "research_assessments": ["id", "technical_maturity_low", "technical_maturity_high", "commercial_maturity_low", "commercial_maturity_high", "horizon_band", "status_token", "computed_at", "lifecycle_state"],
+    "reroute_events": ["reroute_id", "baseline_corridor_id", "reroute_corridor_id", "route_via", "effective_from", "effective_to"],
+    "item_forward_events": ["id", "event_date", "date_precision", "event_kind", "confidence", "resolved_at"],
+    "derived_values": ["value_id", "method_id", "method_version", "value", "unit", "currency", "derivation", "lifecycle", "admissibility", "asserted_at"],
+    "regional_data_facts": ["id", "dimension", "fact_label", "value_numeric", "unit", "as_at_date"]
+  },
+  "spans": {
+    "section_claim_provenance": {"kind": "claim", "text": "claim_text", "span": "source_span", "capture": "search_result_id", "source": "source_id"},
+    "obligation_objects": {"kind": "verbatim", "text": "verbatim_text", "capture": "capture_id", "source": "source_id"},
+    "item_forward_events": {"kind": "event", "text": "obligation_text", "span": "source_span", "capture": "source_capture_id"}
+  },
+  "context": [
+    {"table": "section_claim_provenance", "by": "intelligence_item_id", "order": ["id"], "only": {"claim_kind": ["FACT", "LEGAL"]}},
+    {"table": "item_forward_events", "by": "intelligence_item_id", "order": ["id"]},
+    {"table": "obligation_objects", "by": "instrument_item_id", "order": ["obligation_id"]}
+  ],
+  "maxContextPerTable": 20
+}
