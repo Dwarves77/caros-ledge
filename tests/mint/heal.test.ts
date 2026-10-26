@@ -4,7 +4,6 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { normalizeNumeric } from "@/core/contracts/numbers";
-import { scanGateA } from "@/core/grounding";
 import { classTierForHost } from "@/core/sources";
 import { healItem, healQuarantined, rederiveStale } from "@/features/mint";
 import { buildBuckets, buildSourcesIndex, claimNeedsResource, locateSpan, planGrounding, planResource, type Capture, type HealClaim } from "@/features/mint/heal/ground";
@@ -112,28 +111,38 @@ test("relabelling only prefixes the analysis label: the paragraph, the full-brie
   assert.equal(planRelabelModal("The operator must report. *Legal Confirmation Required:*"), null);
 });
 
-test("the honest strip removes the sentence, or the one isolable middle clause when it also states a figure that stays, and is ACCEPTED only when Gate A then finds no orphan", () => {
+const newOf = (p: ReturnType<typeof planBriefHonest>): string => ("newFullBrief" in p ? p.newFullBrief : "");
+
+test("the honest strip removes whole sentences only (ADR-050), and is ACCEPTED only when Gate A then finds no orphan", () => {
   const single = "The regime applies to vessels. The penalty is EUR 50 000 per breach. Reports are annual.";
   const accepted = planBriefHonest(single, ["EUR 50 000"], []);
   assert.equal(accepted.outcome, "accepted");
-  assert.equal(accepted.outcome === "accepted" ? accepted.newFullBrief : "", "The regime applies to vessels. Reports are annual.");
-  assert.equal(accepted.outcome === "accepted" ? accepted.previous : "", single);
+  assert.equal(newOf(accepted), "The regime applies to vessels. Reports are annual.");
+  assert.equal("previous" in accepted ? accepted.previous : "", single);
   assert.deepEqual(accepted.perToken[0]?.removed, ["The penalty is EUR 50 000 per breach."]);
-  const two = "Fines are EUR 50 000, due 1 January 2027, and apply to vessels.";
-  const kept = planBriefHonest(two, ["EUR 50 000"], []);
-  assert.equal(kept.outcome, "no_op", "the date stays, so the first clause is never guessed at");
-  assert.deepEqual(kept.perToken.map((t) => t.outcome), ["refused:sentence_carries_other_live_token_no_isolable_clause"]);
-  const middle = planBriefHonest(two, ["1 January 2027"], []);
-  assert.equal(middle.outcome, "rejected", "the middle clause went, the other figure is still an orphan");
-  assert.deepEqual(middle.perToken.map((t) => t.outcome), ["clause"]);
-  assert.equal(scanGateA(two, []).orphan_count, 2);
   assert.equal(planBriefHonest("Nothing to strip.", ["EUR 5"], []).outcome, "no_op");
+});
+
+test("HEAL-1c: a sentence that also states a proven token is KEPT whole (never cut to a clause) and its unprovable token is listed as residue with the sentence", () => {
+  const two = "Fines are EUR 50 000, due 1 January 2027, and apply to vessels. Reports are annual.";
+  const facts = [{ claim_text: "due 1 January 2027", source_span: "due 1 January 2027" }];
+  const plan = planBriefHonest(two, ["EUR 50 000"], facts);
+  assert.equal(plan.outcome, "no_op", "nothing is removed: the date is proven, so the sentence stays whole");
+  assert.deepEqual(plan.residue, [{ token: "EUR 50 000", sentence: "Fines are EUR 50 000, due 1 January 2027, and apply to vessels." }]);
+  assert.deepEqual(plan.perToken.map((t) => t.outcome), ["kept:sentence_states_a_proven_token"]);
+  const mixed = planBriefHonest(`${two} The fee is EUR 70 000.`, ["EUR 50 000", "EUR 70 000"], facts);
+  assert.equal(mixed.outcome, "partial", "the all-unprovable sentence went, the mixed one stayed, Gate A still finds the residue");
+  assert.equal(newOf(mixed), two);
+  assert.deepEqual(mixed.stripped, ["The fee is EUR 70 000."]);
+  assert.deepEqual(mixed.residue.map((r) => r.token), ["EUR 50 000"]);
+  assert.equal("orphanCount" in mixed ? mixed.orphanCount : -1, 1);
 });
 
 test("HEAL-1b: a table row or list item goes whole whatever else it states, while prose that also states a figure that stays is still protected", () => {
   const brief = ["The limits follow.", "- 2035: 77.94 gCO₂eq/MJ (14.5% reduction)", "| 1 January 2035 | Target rises to 14.5% (limit: 77.94 gCO₂eq/MJ) | Upcoming |", "The 2035 target is 14.5% and the limit is 77.94 gCO₂eq/MJ."].join("\n");
   const plan = planBriefHonest(brief, ["77.94 gCO₂"], []);
-  assert.deepEqual(plan.perToken[0]?.outcome, "refused:sentence_carries_other_live_token_no_isolable_clause", "the prose sentence also states 14.5%, a figure that stays");
+  assert.deepEqual(plan.perToken[0]?.outcome, "kept:sentence_states_a_proven_token", "the prose sentence also states 14.5%, a figure that stays; the rows of the same brief go whole");
+  assert.equal(plan.residue.at(-1)?.sentence, "The 2035 target is 14.5% and the limit is 77.94 gCO₂eq/MJ.");
   const rows = ["The limits follow.", "- 2035: 77.94 gCO₂eq/MJ (14.5% reduction)", "| 1 January 2035 | Target rises to 14.5% (limit: 77.94 gCO₂eq/MJ) | Upcoming |", "Reports are annual."].join("\n");
   const cut = planBriefHonest(rows, ["77.94 gCO₂"], [{ claim_text: "1 January 2035, 14.5%", source_span: "1 January 2035, 14.5%" }]);
   assert.equal(cut.outcome === "accepted" ? cut.newFullBrief : "", ["The limits follow.", "Reports are annual."].join("\n"));
@@ -148,6 +157,9 @@ test("HEAL-1b: a sentence whose every figure and date is being removed goes whol
   assert.ok(out.includes("| 31 March 2026 |"), "March 2026 is not inside 31 March 2026");
   assert.ok(!out.includes("€27") && !out.includes("€44") && !out.includes("Council decision") && !out.includes("again"), out);
   assert.equal(plan.perToken.find((t) => t.token === "March 2026")?.removed?.length, 2, "both standing occurrences were cut");
+  const three = ["€15", "€27", "€44"].map((t) => plan.perToken.find((x) => x.token === t));
+  assert.ok(three.every((t) => t?.outcome === "sentence" && t.removed?.length === 1), "HEAL-1c: three tokens in one sentence strip that sentence once and each token counts it");
+  assert.equal(plan.stripped.filter((x) => x.includes("€27")).length, 1);
 });
 
 // ---- the healer end to end --------------------------------------------------------------------------------------------------------------------------------------------------
@@ -283,6 +295,63 @@ test("HEAL-1b: the heal repairs the attributions the database lists and no other
   assert.ok(claimsOf(db).filter((c) => c.search_result_id === "cap1" && c.claim_kind === "FACT").every((c) => c.source_id === SOURCE), "the correct claims keep their source");
 });
 
+/** The shape of the production items: `bad` FACTs on a transport.ec.europa.eu capture standing on the finance source (the database lists each as a violation), `ok` correct ones. */
+function violationWorld(bad: number, ok = 10) {
+  const FIN = "c0000000-0000-4000-8000-0000000000f1";
+  const sentences = (tag: string, n: number): string[] => Array.from({ length: n }, (_, i) => `The ${tag} provision number ${i + 1} sets out the obligations of operators under the scheme in full.`);
+  const okText = sentences("eur-lex", ok);
+  const badText = sentences("transport", bad);
+  const db = healWorld({ captureText: okText.join(" "), claims: [...covers, ...okText.map((t) => fact(t)), ...badText.map((t) => ({ ...fact(t), search_result_id: "cap2", source_id: FIN, source_tier_at_grounding: 2 }))] });
+  db.seed("sources", [{ id: FIN, name: "Finance", url: "https://finance.ec.europa.eu/", base_tier: 2, tier_override: null, status: "active", institution_id: null, category: "regulatory" }]);
+  db.seed("agent_run_searches", [{ id: "cap2", intelligence_item_id: ITEM, result_url: "https://transport.ec.europa.eu/transport-modes/fueleu-maritime_en", result_content: badText.join(" "), result_index: 1, search_query: "stored" }]);
+  const violations = () => (db.client as unknown as { rpc: (n: string, a: unknown) => Promise<{ data: unknown[] }> }).rpc("ledger_attribution_violations", { p_item_id: ITEM }).then((r) => r.data);
+  /** The database as production behaves: a call that carries more than `limit` ops runs past the statement timeout and changes nothing; `failAt` fails the n-th call (1-based) the same way. */
+  const sizes: number[] = [];
+  const fail = { at: 0 };
+  const guard = (limit: number, failAt = 0) => {
+    fail.at = failAt;
+    const real = db.rpcs.ledger_apply_ops as NonNullable<typeof db.rpcs.ledger_apply_ops>;
+    db.rpcs.ledger_apply_ops = (a, d) => {
+      sizes.push((a.p_ops as unknown[]).length);
+      return (a.p_ops as unknown[]).length > limit || sizes.length === fail.at ? { error: { message: "canceling statement due to statement timeout", code: "57014" } } : real(a, d);
+    };
+  };
+  return { db, violations, sizes, guard, fail };
+}
+
+test("HEAL-1c: 60 ledger ops against a database that times out above 20 per call are applied in chunks of 5, each its own transaction, and a second pass writes nothing", async () => {
+  const w = violationWorld(60);
+  w.guard(20);
+  assert.equal((await w.violations()).length, 60);
+  const r = await heal(w.db);
+  assert.notEqual(r.outcome, "failed", r.notes.join("; "));
+  assert.equal(r.counts.ledger_ops, 60);
+  assert.deepEqual([...new Set(w.sizes)], [5], "12 calls of 5 ops, none near the limit");
+  assert.equal(w.sizes.length, 12);
+  assert.deepEqual(await w.violations(), [], "every attribution is repaired");
+  w.sizes.length = 0;
+  const again = await heal(w.db);
+  assert.equal(again.counts.ledger_ops, undefined, "the committed chunks are in the database: the next pass plans no op");
+  assert.deepEqual(w.sizes, []);
+});
+
+test("HEAL-1c: a chunk that fails fails the item with the chunk named, leaves the earlier chunks committed and the status untouched; the next pass applies only what is left", async () => {
+  const w = violationWorld(60);
+  w.guard(20, 3);
+  const r = await heal(w.db);
+  assert.equal(r.outcome, "failed");
+  assert.match(r.notes.at(-1) ?? "", /ledger chunk 3 of 12 \(10 of 60 ops already committed\): .*statement timeout/);
+  assert.equal(r.status, "quarantined", "the item stays quarantined: no touch, no verdict");
+  assert.equal(w.db.rows("intelligence_items")[0]?.provenance_status, "quarantined");
+  assert.equal((await w.violations()).length, 50, "chunks 1 and 2 stand");
+  w.sizes.length = 0;
+  w.fail.at = 0;
+  const next = await heal(w.db);
+  assert.equal(next.counts.ledger_ops, 50, "only the 50 still-listed attributions are planned");
+  assert.equal(w.sizes.length, 10);
+  assert.deepEqual(await w.violations(), []);
+});
+
 test("rule 18: a host the registry never rates (a hosting platform) leaves the figure an orphan and registers nothing; a page that lacks the figure is followed ONE hop to a same-institution link", async () => {
   const platform = "https://consult.citizenspace.com/penalties";
   const db1 = healWorld({ brief: "The penalty is EUR 50 000 per breach.", sections: [{ id: "sec1", item_id: ITEM, section_key: "record_facts", section_order: 2, content_md: `Penalty EUR 50 000. ${platform}` }], claims: [...covers, fact("Operators shall report verified annual emissions before 30 April of each year.")], captureText: "Operators shall report verified annual emissions before 30 April of each year. Regulation text only." });
@@ -314,6 +383,20 @@ test("heal: the honest strip is opt-in; without the flag the brief is untouched,
   assert.deepEqual(r1.restore, { itemId: ITEM, previous: brief });
   assert.equal(r1.counts.brief_stripped, 1);
   assert.equal((on.rows("item_gate_a_state")[0] as { orphan_count: number }).orphan_count, 0);
+});
+
+test("HEAL-1c: the strip is per sentence: the all-unprovable sentence goes, the sentence that also states a proven date stays whole and its unprovable figure comes back as residue; the strip stands though the item is not yet released", async () => {
+  const kept = "The Regulation applies from 1 January 2027 and the penalty is EUR 60 000 per breach.";
+  const brief = `${kept} Fines reach EUR 70 000. Reports are annual.`;
+  const db = healWorld({ brief, claims: [...covers, fact("This Regulation shall enter into force on 1 January 2027 and shall be binding in its entirety.")] });
+  const r = await heal(db, { stripUnprovable: true });
+  assert.notEqual(r.outcome, "failed", r.notes.join("; "));
+  assert.equal(db.rows("intelligence_items")[0]?.full_brief, `${kept} Reports are annual.`);
+  assert.deepEqual(r.steps.stripped, ["Fines reach EUR 70 000."]);
+  assert.deepEqual(r.steps.residue, [{ token: "EUR 60 000", sentence: kept }]);
+  assert.deepEqual([r.counts.strip_partial, r.counts.residue_tokens, r.counts.sentences_stripped], [1, 1, 1]);
+  assert.equal((db.rows("item_gate_a_state")[0] as { orphan_count: number }).orphan_count, 1, "Gate A finds the residue, so the criterion keeps the item out");
+  assert.deepEqual(r.restore, { itemId: ITEM, previous: brief });
 });
 
 test("a dry heal plans and writes nothing; a failed read fails the item with its step named", async () => {

@@ -144,3 +144,15 @@ export function findFigures(text: string, opts: ParseOptions = {}): Hit[] {
   return hits;
 }
 
+
+/**
+ * The readings of a literal its document's locale refuses (or never settled): the figure under EVERY locale that reads it validly, one per distinct value and unit ("14,5 %" is 14.5; "5,000 GT" is 5000 or 5; "5 000 GT" is 5000).
+ * Digits and separators only, no word is touched and nothing is rewritten: the caller matches a reading only against an EQUAL typed figure (same value, unit, kind) a claim states, so a different digit, unit or kind never matches.
+ */
+export function figureReadings(literal: string): Figure[] {
+  const out = new Map<string, Figure>();
+  for (const id of Object.keys(LOCALES)) {
+    for (const h of findFigures(literal, { verdict: { locale: id, basis: "declared" } })) if (isFigure(h.result) && !out.has(`${h.result.value}|${h.result.unit}`)) out.set(`${h.result.value}|${h.result.unit}`, h.result);
+  }
+  return [...out.values()];
+}
