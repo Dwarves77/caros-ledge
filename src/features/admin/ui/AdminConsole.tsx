@@ -144,7 +144,7 @@ export function AdminConsole({ userId, userEmail, nowIso, initial }: { userId: s
             {SECTIONS.map((s) => {
               const n = tileCount(s.name, { orgs: orgs?.length ?? null, attention, counts });
               return (
-                <button key={s.name} type="button" aria-pressed={s.name === section} className={`${styles.tile} ${s.name === section ? styles.tileOn : ""}`} onClick={() => pickSection(s.name)}>
+                <button key={s.name} type="button" {...(n === null ? { "data-part": "page-failure" } : {})} aria-pressed={s.name === section} className={`${styles.tile} ${s.name === section ? styles.tileOn : ""}`} onClick={() => pickSection(s.name)}>
                   <StatBlock size="tile" label={s.name} value={n === null ? "—" : formatNumber(n)} note={n === null ? "did not load" : s.sub} tone={s.name === "Sources" && n ? "critical" : "default"} />
                 </button>
               );

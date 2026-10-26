@@ -11,6 +11,7 @@
   "roots": ["src", "supabase/functions", "scripts"],
   "exempt": {
     "scripts/ci/live-checks.mjs": "reads our own deployment (the preview and production origins) and the accounts it is given",
+    "scripts/ci/live/load.mjs": "loads pages of our own deployment (the live checks' page load, called by scripts/ci/live-checks.mjs)",
     "scripts/ops/measure-collection.mjs": "reaches the network only through honestFetch (the guard asks the register) and fetchBrowser (the hold gate asks it)",
     "src/core/http/authed-fetch.ts": "the app's own API with the member's session",
     "src/core/shared/email.ts": "the e-mail vendor's API, not a source of regulatory text"

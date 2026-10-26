@@ -42,7 +42,7 @@ export function AssessmentCard({ assessment, failed }: { assessment: AssessmentV
   return (
     <Card title="Horizon assessment" aside={assessment ? <span title={assessment.anchored ? "Anchored to a dated instrument or roadmap" : "Inferred, not anchored to a dated source"} className={`${styles.badge}${assessment.anchored ? ` ${styles.badgeOn}` : ""}`}>{assessment.anchored ? "Dated source" : "Inferred"}</span> : null}>
       {failed ? (
-        <p className={styles.note}>The assessment did not load. Reload the page to try again.</p>
+        <p className={styles.note} role="alert" data-part="state-note">The assessment did not load. Reload the page to try again.</p>
       ) : !assessment ? (
         <p className={styles.note}>No horizon assessment yet. One needs a maturity phrase or a dated instrument in the finding&apos;s text.</p>
       ) : (
