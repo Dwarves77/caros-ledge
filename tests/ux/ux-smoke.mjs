@@ -15,7 +15,7 @@ import { ROW_SELECTOR } from '../parity/contract.mjs';
 
 import { sweepClientReads } from './client-sweep.mjs';
 import { chromium, exactlyOne, open, settled, smoke, summarise, VIEWPORTS, WIDTHS } from './harness.mjs';
-import { listInvariants } from './list-invariants.mjs';
+import { listInvariants, rowReport } from './list-invariants.mjs';
 import { measurePage } from './measure.mjs';
 
 const run = smoke('ux-smoke');
@@ -96,6 +96,7 @@ try {
       try {
         for (const o of await measurePage(page, { rows: true })) fail(where, o);
         for (const o of await listInvariants(page)) fail(where, o);
+        await rowReport(page, `fixture rows ${where}`, 'parts-rows');
         if (w === 375) {
           // The four band tiles sit in a 2x2 grid at 375.
           const tiles = await page.$$eval('[data-fx="tiles"] .cl-band-tile', (els) => els.map((e) => e.getBoundingClientRect().top));
@@ -131,6 +132,8 @@ try {
         const { ctx, page, errors } = await open(browser, `${base}/privacy/ui-fixtures/surfaces?screen=${screen}`, [w, h]);
         try {
           for (const o of await measurePage(page, { rows: false })) fail(where, o);
+          for (const o of await listInvariants(page)) fail(where, o);
+          await rowReport(page, where, `surfaces-${screen}`);
           // The absence rule: "pending", "unscored" and "not scored" never render on a customer surface.
           const text = await page.locator('[data-fx]').first().innerText();
           const banned = text.match(/\b(pending|unscored|not scored)\b/i);

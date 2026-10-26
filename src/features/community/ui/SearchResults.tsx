@@ -6,7 +6,8 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
-import { Button, EmptyState, SectionCard, SectionHead, StateNote } from "@/ui";
+import { NEUTRAL_BAND } from "@/core/lists";
+import { Button, EmptyState, ListRow, SectionCard, SectionHead, StateNote } from "@/ui";
 
 import { communityApi, type SearchHits } from "../lib/api";
 
@@ -53,11 +54,7 @@ export function SearchResults({ query, scope, onClose }: { query: string; scope:
             <ul className={styles.plain}>
               {hits.posts.map((p) => (
                 <li key={p.id}>
-                  <Link className={styles.hit} href={p.group_slug ? `/community/${p.group_slug}#post-${p.id}` : "/community"}>
-                    <span className={styles.hitTitle}>{p.title}</span>
-                    <span className={styles.muted}>{p.group_name ?? "A group you can read"}</span>
-                    <span className={styles.excerpt}>{p.body_excerpt}</span>
-                  </Link>
+                  <ListRow href={p.group_slug ? `/community/${p.group_slug}#post-${p.id}` : "/community"} band={NEUTRAL_BAND} itemType="post" title={p.title} summary={p.body_excerpt} group={p.group_name ?? "A group you can read"} />
                 </li>
               ))}
             </ul>

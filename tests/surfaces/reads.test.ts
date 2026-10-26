@@ -24,7 +24,6 @@ function world(tables: Record<string, Row[]>, rpc: (name: string) => RpcReply, f
   return m.db;
 }
 const U1 = "a0000000-0000-4000-8000-000000000001";
-const U2 = "a0000000-0000-4000-8000-000000000002";
 const R_EU = "e0000000-0000-4000-8000-000000000001";
 const R_US = "e0000000-0000-4000-8000-000000000002";
 const SRC = "b0000000-0000-4000-8000-000000000001";
@@ -106,29 +105,16 @@ test("a figure with an input that cannot be rated is an absence, never a tier: t
 });
 
 const ROW = (itemId: string, o: Row = {}): Row => ({ id: `a1${itemId.slice(2)}`, item_id: itemId, supersedes: null, is_current: true, lifecycle_state: null, technical_maturity_low: 8, technical_maturity_high: 9, technical_maturity_method: "m", commercial_maturity_low: null, commercial_maturity_high: null, commercial_maturity_method: null, horizon_kind: "availability", horizon_band: "NEAR", horizon_rule: "R4", horizon_confidence: "low", horizon_trigger_note: "inferred", refusal_reason: null, credibility_evidence_score: "limited", credibility_authority_score: null, status_token: "HYPOTHESIS", computed_at: NOW, ...o });
-test("the batch of assessments is keyed by the LIST id: a legacy id is looked up to its uuid (the old page passed legacy ids to a uuid column and swallowed the error)", async () => {
-  const listRow = (id: string) => ({ id, legacy_id: null, title: "T", item_type: "research_finding", domain: 7, priority: "LOW", added_date: "2026-10-01", is_archived: false, effective_archived: false });
-  const rpc = (name: string) => (name === "get_research_items" ? { data: ["r1", U2, "r-missing"].map(listRow) } : name === "get_surface_counts" ? { data: { total_items: 3 } } : name === "get_research_source_coverage" ? { data: [] } : undefined);
-  const tables = (assessments: Row[]) => ({ intelligence_items: [{ id: U1, legacy_id: "r1" }, { id: U2, legacy_id: null }], research_assessments_current: assessments, sources: [], source_bias_tags: [] });
-  const out = (await readResearchPage(world(tables([ROW(U1), ROW(U2)]), rpc), "org-1")).assessments ?? {};
-  assert.deepEqual(Object.keys(out).sort(), [U2, "r1"].sort());
-  assert.equal(out.r1?.horizon?.band, "NEAR");
-  const failed = world(tables([]), rpc, [{ table: "research_assessments_current", op: "select", message: "boom" }]);
-  assert.equal((await readResearchPage(failed, "org-1")).assessments, null, "a failed batch is its own failure, never an empty set");
-});
-
-test("INV-263: the Research page reports a failed list, failed coverage and failed assessments separately; the assessments are not read when the list failed", async () => {
+test("INV-263: the Research page reports a failed list and failed coverage separately", async () => {
   const rows = [{ id: U1, legacy_id: null, title: "T", item_type: "research_finding", domain: 7, priority: "LOW", added_date: "2026-10-01", is_archived: false, effective_archived: false }];
   const rpc = (name: string) => (name === "get_research_items" ? { data: rows } : name === "get_surface_counts" ? { data: { total_items: 1 } } : name === "get_research_source_coverage" ? { data: [{ transport_mode: "ocean", jurisdiction_iso: "EU", source_count: 3 }, { transport_mode: 5, jurisdiction_iso: "EU", source_count: 1 }] } : undefined);
   const tables = (assessments: Row[] = [ROW(U1)]) => ({ intelligence_items: [], research_assessments_current: assessments, sources: [], source_bias_tags: [] });
   const ok = await readResearchPage(world(tables(), rpc), "org-1");
-  assert.deepEqual([ok.rowsFailed, ok.rows.length, ok.coverage, Object.keys(ok.assessments ?? {})], [false, 1, [{ transportMode: "ocean", jurisdictionIso: "EU", sourceCount: 3 }], [U1]]);
+  assert.deepEqual([ok.rowsFailed, ok.rows.length, ok.coverage], [false, 1, [{ transportMode: "ocean", jurisdictionIso: "EU", sourceCount: 3 }]]);
   const covDown = await readResearchPage(world(tables(), (n) => (n === "get_research_source_coverage" ? { data: null, error: { message: "rpc down" } } : rpc(n))), "org-1");
   assert.deepEqual([covDown.coverage, covDown.rows.length], [null, 1]);
-  const asDown = await readResearchPage(world(tables([]), rpc, [{ table: "research_assessments_current", op: "select", message: "boom" }]), "org-1");
-  assert.deepEqual([asDown.assessments, asDown.rows.length], [null, 1]);
   const listDown = await readResearchPage(world(tables([]), (n) => (n === "get_research_items" ? { data: null, error: { message: "rpc down" } } : rpc(n))), "org-1");
-  assert.deepEqual([listDown.rowsFailed, listDown.rows, listDown.assessments], [true, [], null]);
+  assert.deepEqual([listDown.rowsFailed, listDown.rows], [true, []]);
 });
 
 test("the assessment bundle: the current row, the signposts (unfired first, the watched entity named), the supersedes chain newest first; a prior the reader cannot see makes the chain INCOMPLETE and says so; a failed read is failed", async () => {

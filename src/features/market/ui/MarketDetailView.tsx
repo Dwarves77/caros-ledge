@@ -186,7 +186,7 @@ export function MarketDetailView({ resource: r, sections, claimTiers, claimsDegr
                     ]}
                   />
                 }
-                impact={<ImpactRailCard scores={r.impactScores ?? null} />}
+                impact={<ImpactRailCard scores={r.impactScores ?? null} absence={r.impactAbsence} />}
                 relevance={<RelevanceRailCard state={relevance.phase === "ready" ? { phase: "ready", relevance: relevance.data.relevance } : relevance.phase === "failed" ? { phase: "failed", retry: relevance.retry } : { phase: "loading" }} />}
                 designed={<InThisListStat backHref="/market" backLabel="Back to list" band={band} />}
                 legend={<LegendRailCard />}

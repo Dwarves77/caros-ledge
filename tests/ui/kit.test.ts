@@ -3,7 +3,7 @@ import { test } from "node:test";
 
 import { biasChips } from "@/core/sources";
 import { customerTierOf } from "@/core/sources";
-import { NEEDS_PHRASE, pickAbsenceReason, type AbsenceReason } from "@/ui/absence-reason";
+import { NEEDS_PHRASE, type AbsenceReason } from "@/ui/absence-reason";
 import { SOURCE_TIER_MAX as TIER_MAX } from "@/core/sources";
 import { clampTier } from "@/ui/tier";
 import { isImpactScored, rampColor, segmentFilled, SEGMENT_GROUPS } from "@/ui/impact";
@@ -14,12 +14,7 @@ import { clampIndex, trapIndex, wrapIndex } from "@/ui/focus";
 import { sixWordHeadline, withClaimTiers, type FactCardModel } from "@/ui/claim-tier";
 import { moveActiveIndex, resolveEnterKeyAction, runSearch } from "@/ui/shell/command-bar";
 
-test("INV-216: pickAbsenceReason precedence, and the three banned words never render", () => {
-  assert.equal(pickAbsenceReason(["pending", "not in primary source", "connect data"]), "connect data");
-  assert.equal(pickAbsenceReason(["pending", "not in primary source"]), "not in primary source");
-  assert.equal(pickAbsenceReason(["pending"]), "pending");
-  assert.equal(pickAbsenceReason([null, undefined]), null);
-  assert.equal(pickAbsenceReason(["unscored"]), null, "unscored has no slot in the precedence");
+test("INV-216: the three banned words never render", () => {
   for (const reason of Object.keys(NEEDS_PHRASE) as AbsenceReason[]) assert.doesNotMatch(NEEDS_PHRASE[reason], /\b(pending|unscored|not scored)\b/i);
 });
 

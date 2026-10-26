@@ -1,0 +1,144 @@
+{
+  "_about": "ROWS-1 (operator look ruling 2026-10-26, ruling 18): the ONE field set of a list row. A row has three lines: the short name (up to two lines), one line of stored reader text, one meta line. ListRow draws nothing that is not named here; a row type lists its meta fields in the order they are drawn. `drop` ranks the chips a narrow row sets aside whole, with a count, when the meta line does not fit (the date and the tier are never dropped; rank 1 goes first). `absence` is `omit` (the field is not drawn) or `dash` (the one quiet dash of the absence table, with its needs-phrase on the title).",
+  "rowTypes": {
+    "instrument": {
+      "itemTypes": [
+        "regulation",
+        "directive"
+      ],
+      "name": "act_short_name",
+      "meta": [
+        "jurisdiction",
+        "type",
+        "due",
+        "tier",
+        "change"
+      ]
+    },
+    "publication": {
+      "itemTypes": [
+        "guidance",
+        "standard",
+        "framework",
+        "tool",
+        "technology",
+        "innovation",
+        "initiative"
+      ],
+      "name": "source_title",
+      "meta": [
+        "jurisdiction",
+        "type",
+        "due",
+        "tier",
+        "change"
+      ]
+    },
+    "market_signal": {
+      "itemTypes": [
+        "market_signal"
+      ],
+      "name": "source_title",
+      "meta": [
+        "jurisdiction",
+        "type",
+        "due",
+        "tier",
+        "change"
+      ]
+    },
+    "research_finding": {
+      "itemTypes": [
+        "research_finding"
+      ],
+      "name": "source_title",
+      "meta": [
+        "jurisdiction",
+        "type",
+        "due",
+        "tier",
+        "change"
+      ]
+    },
+    "operations_profile": {
+      "itemTypes": [
+        "regional_data"
+      ],
+      "name": "source_title",
+      "meta": [
+        "jurisdiction",
+        "type",
+        "due",
+        "tier",
+        "change"
+      ]
+    },
+    "post": {
+      "itemTypes": [],
+      "name": "source_title",
+      "meta": [
+        "group"
+      ]
+    },
+    "reference": {
+      "itemTypes": [],
+      "name": "source_title",
+      "meta": [
+        "type"
+      ]
+    }
+  },
+  "defaultRowType": "publication",
+  "names": {
+    "act_short_name": "core/lists/display-title.ts shortName: act head, number and the subject clause of the title's own grammar; a title with no recognised head passes through",
+    "source_title": "the item's title as stored (a community post: the post's title)"
+  },
+  "summary": {
+    "source": "intelligence_items.what_is_it (a community post: the stored body excerpt)",
+    "render": "text, one line",
+    "absence": "omit"
+  },
+  "fields": {
+    "jurisdiction": {
+      "source": "intelligence_items.jurisdiction_iso[0], else jurisdictions[0]",
+      "render": "chip",
+      "absence": "omit",
+      "drop": 2
+    },
+    "type": {
+      "source": "intelligence_items.item_type through core/lists/data/item-type.json; a reference row (a watched source or series, a portfolio entity) names its own kind",
+      "render": "chip",
+      "absence": "omit",
+      "drop": 1
+    },
+    "due": {
+      "source": "core/lists dueInfo: the nearest future day of compliance_deadline and the timeline",
+      "render": "text with days",
+      "absence": "dash",
+      "reason": "pending"
+    },
+    "tier": {
+      "source": "customerTierOf the item's source",
+      "render": "chip",
+      "absence": "dash",
+      "reason": "not in primary source"
+    },
+    "change": {
+      "source": "get_workspace_recent_changes.change_kind and item_changelog.field_name",
+      "render": "chip",
+      "absence": "omit",
+      "drop": 3,
+      "labels": {
+        "new": "New",
+        "updated_brief": "Updated: brief",
+        "updated_timeline": "Updated: timeline"
+      }
+    },
+    "group": {
+      "source": "the post's group name (the community search hit)",
+      "render": "chip",
+      "absence": "omit",
+      "drop": 1
+    }
+  }
+}

@@ -42,7 +42,7 @@ test("INV-IMP-3 on the row: a score with every dimension known is drawn with the
   assert.equal(composeImpact(undefined, 2).absence, "No obligations extracted yet");
   assert.deepEqual(composeImpact({ item_id: I3, cost: 1, compliance: null, operational: 1, missing: ["obligations"] }, null).absence, "No obligations extracted yet", "a stored absence outranks the missing workspace");
   const fields = toListRowFields(by[I2]!, new Date("2026-10-15T00:00:00Z"));
-  assert.deepEqual([fields.impact, fields.impactAbsence, fields.dueAbsence], [null, "No cost figure yet", "No milestone dates"], "the row fields carry the sentences the row draws beside its dashes");
+  assert.equal("impact" in fields, false, "the list row draws no impact (ROWS-1): the score and its absence sentence are the detail page's impact card");
 });
 
 test("INV-IMP-4: every row the list readers build has the impact item_impact_scores holds for its item, and the readers that build rows all go through the one function", async () => {

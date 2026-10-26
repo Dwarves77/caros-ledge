@@ -1,0 +1,9 @@
+{
+  "issuers": ["Commission", "Council", "European Parliament and of the Council", "European Parliament and Council"],
+  "qualifiers": ["Implementing", "Delegated"],
+  "types": ["Regulation", "Directive", "Decision", "Recommendation"],
+  "legalBases": ["EU", "EC", "EEC", "Euratom"],
+  "numberWord": "No",
+  "dateJoiner": "of",
+  "months": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+}

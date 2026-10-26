@@ -21,8 +21,6 @@ export interface InputRef {
   surface?: string;
   /** The day a claim counts from (its item's added date), which the claim row does not hold. */
   at?: string;
-  /** The day a velocity claim is dated by (its capture's document date); a claim whose capture has none is not in the pattern. */
-  docAt?: string;
   /** The counts a capped pattern's summary edge carries. */
   summary?: Record<string, number>;
 }

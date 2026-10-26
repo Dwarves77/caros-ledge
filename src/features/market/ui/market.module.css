@@ -86,7 +86,6 @@
 .stripHead { display: flex; align-items: baseline; gap: var(--sp-8); margin: var(--sp-10) 0; }
 .stripTitle { font-size: var(--fs-13); font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; }
 .scopeLine { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-8) var(--sp-12); margin: 0 0 var(--sp-10); }
-.scopeButton { min-height: var(--target); padding: 0 var(--sp-12); border: 1px solid var(--line-4); border-radius: var(--radius-control); background: var(--card); color: var(--ink); font-size: var(--fs-115); font-weight: 700; cursor: pointer; }
 .eventStrip { display: flex; gap: var(--sp-12); overflow-x: auto; padding-bottom: var(--sp-4); }
 .event { display: grid; align-content: start; gap: var(--sp-4); flex: 0 0 240px; min-height: var(--target); padding: 10px 12px; border: 1px solid var(--line-1); border-radius: var(--radius-card); background: var(--card); color: inherit; text-decoration: none; }
 .eventHead { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-8); flex-wrap: wrap; }

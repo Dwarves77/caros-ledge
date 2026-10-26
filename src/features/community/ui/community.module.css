@@ -18,7 +18,6 @@
 .plain { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .filters { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; }
-.excerpt { font-size: var(--fs-12); color: var(--ink-3); overflow-wrap: anywhere; }
 
 /* chips and identity */
 .chip { display: inline-flex; align-items: center; padding: 2px 8px; border: 1px solid var(--line-pill); border-radius: var(--radius-pill); font-size: var(--fs-105); font-weight: 700; color: var(--ink-2); background: var(--card); white-space: nowrap; text-decoration: none; }
@@ -32,7 +31,7 @@
 .inlineLink::after { content: ""; position: absolute; left: -2px; right: -2px; top: 50%; height: 44px; transform: translateY(-50%); }
 .railLink { display: inline-flex; align-items: center; min-height: var(--target); color: var(--ink); font-size: var(--fs-12); font-weight: 600; text-decoration: none; overflow-wrap: anywhere; }
 .railLink:hover { text-decoration: underline; }
-.promptRow :global(.cl-btn) { height: auto; padding: 6px 14px; border-color: var(--line-pill); border-radius: var(--radius-pill); background: var(--tag); color: var(--ink-2); font-size: var(--fs-115); font-weight: 600; white-space: normal; text-align: left; }
+.starter { height: auto; white-space: normal; text-align: left; }
 .chipRow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; min-width: 0; }
 .chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
 .entityChip { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; padding: 0 0 0 10px; min-height: var(--target); border: 1px solid var(--line-1); border-radius: var(--radius-control); background: var(--tag); font-size: var(--fs-12); font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }

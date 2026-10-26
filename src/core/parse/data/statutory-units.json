@@ -40,12 +40,23 @@
       "unit": "months",
       "exact": true
     },
+    { "form": "MJ per (?:equivalent )?metric ton of VLSFO", "unit": "MJ/t VLSFO", "exact": true },
+    { "form": "EUR per equivalent metric ton of VLSFO", "unit": "EUR/t VLSFO-eq", "exact": true },
+    { "form": "calendar years?", "unit": "year", "exact": true },
+    { "form": "Wh/kg", "unit": "Wh/kg", "exact": true },
+    { "form": "kWh", "unit": "kWh", "exact": true },
+    { "form": "1/h", "unit": "1/h", "exact": true },
+    { "form": "km", "unit": "km", "exact": true },
+    { "form": "ratio", "unit": "ratio", "exact": true },
+    { "form": "gCO2e/tonne-km", "unit": "gCO2e/tkm", "exact": true },
+    { "form": "tonne_km", "unit": "tkm", "exact": true },
+    { "form": "gCO2/kWh", "unit": "gCO2/kWh", "exact": true },
     { "form": "tonnes?|tons?|metric tons?", "unit": "t", "exact": true },
     { "form": "megawatts?", "unit": "MW", "exact": true },
     { "form": "months?", "unit": "months", "exact": true },
     {
       "form": "\\bEUR per equivalent metric ton of VLSFO\\b",
-      "unit": "EUR/t"
+      "unit": "EUR/t VLSFO-eq"
     },
     {
       "form": "\\bgrams? of CO2 equivalent per (?:MJ|megajoule)\\b",

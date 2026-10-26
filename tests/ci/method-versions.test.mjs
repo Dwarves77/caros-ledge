@@ -88,6 +88,19 @@ test("planted: a threshold in a JSON table the method imports is part of the met
   assert.match(versionProblems(hashWith('{"factor": 3}'), recorded).join("\n"), /item_impact_scores:score@1: the code its registration runs changed and its version did not/);
 });
 
+test("a recorded key that is no longer registered is a problem unless method-retired.json retires it by name with a registered successor and a reason; a retired key still registered, or never recorded, is a problem too", () => {
+  const m = (hash) => ({ hash, where: "methods.ts:1" });
+  const recorded = { "t:old@1": "h1", "t:new@2": "h2" };
+  const methods = new Map([["t:new@2", m("h2")]]);
+  assert.match(versionProblems(methods, recorded).join(" "), /t:old@1 is recorded but no longer registered/);
+  const retired = { "t:old@1": { successor: "t:new@2", reason: "the vocabulary the method reads changed; its rows are superseded by the next run" } };
+  assert.deepEqual(versionProblems(methods, recorded, retired), []);
+  assert.match(versionProblems(new Map(), recorded, retired).join(" "), /t:old@1 is retired in favour of t:new@2, which is not registered/);
+  assert.match(versionProblems(new Map([["t:old@1", m("h1")], ["t:new@2", m("h2")]]), recorded, retired).join(" "), /t:old@1 is retired but still registered/);
+  assert.match(versionProblems(methods, { "t:new@2": "h2" }, retired).join(" "), /t:old@1 was never recorded/);
+  assert.match(versionProblems(methods, recorded, { "t:old@1": { successor: "t:new@2", reason: "short" } }).join(" "), /states no reason/);
+});
+
 test("THIS repository: every registered method is recorded and unchanged under its version", () => {
   assert.doesNotThrow(() => execFileSync(process.execPath, ["scripts/ci/method-versions.mjs"], { encoding: "utf8", stdio: "pipe" }));
   assert.ok(Object.keys(JSON.parse(readFileSync(HASH_FILE, "utf8"))).length >= 3);
@@ -110,5 +123,5 @@ test("INV-CN2-2: the five pattern detectors are registered under the gate, and a
   // a detector edited: the arithmetic of the burst
   assert.match(copyWith("src/core/flywheel/patterns/detect.ts", (t) => t.replace("shareNow <= base.length / inBaseline", "shareNow < base.length / inBaseline")), /pattern_velocity_burst@1.2.0/);
   // the vocabulary a detector reads is part of it: a mode moved in couplings.json
-  assert.match(copyWith("src/core/coupling/data/couplings.json", (t) => t.replace(/"modes": \[\s*"road",\s*"ocean"\s*\]/, '"modes": ["road"]')), /pattern_cross_modal@1.2.0/);
+  assert.match(copyWith("src/core/coupling/data/couplings.json", (t) => t.replace(/"modes": \[\s*"road",\s*"ocean"\s*\]/, '"modes": ["road"]')), /pattern_cross_modal@1\.2\.0/);
 });

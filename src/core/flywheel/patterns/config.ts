@@ -15,7 +15,7 @@ export const PATTERNS = z
   .object({
     version: z.string().min(1),
     analysisMaxTier: z.number().int().min(1).max(7),
-    velocity: z.object({ clock: z.literal("capture.document_date"), windowsDays: z.array(dayCount).min(1), baselineDays: dayCount, minBaseline: dayCount, maxEvidence: dayCount, minSources: dayCount, minDistinct: dayCount, excludeKinds: z.array(z.string()), excludeClasses: z.array(z.string()), confidence: confidenceScale }).strict(),
+    velocity: z.object({ windowsDays: z.array(dayCount).min(1), baselineDays: dayCount, minBaseline: dayCount, maxEvidence: dayCount, minSources: dayCount, minDistinct: dayCount, excludeKinds: z.array(z.string()), excludeClasses: z.array(z.string()), confidence: confidenceScale }).strict(),
     mandateCapacity: z.object({ confidence: confidenceScale }).strict(),
     leadLag: z.object({ triggerKinds: z.array(z.string()).min(1), leadDays: z.tuple([dayCount, dayCount]), moveWindowDays: dayCount, minMove: z.number().positive(), confidence: confidenceScale }).strict(),
     crossModal: z.object({ relations: z.record(z.string(), z.number().positive().max(1)), recencyDays: dayCount, minStrength: z.number().min(0).max(1), minMove: z.number().positive(), confidence: confidenceScale }).strict(),
@@ -27,7 +27,7 @@ export const PATTERNS = z
 const columnName = z.string().min(1);
 const quantitySpec = z.object({ column: columnName.optional(), unit: columnName.optional(), unitColumn: columnName.optional(), figure: columnName.optional() }).strict();
 const factSpecSchema = z
-  .object({ role: z.enum(["claim", "ratchet", "capacity", "series", "trigger", "tech", "move", "ceiling", "abatement"]), pk: columnName, edge: columnName.optional(), surface: columnName.optional(), at: columnName.optional(), due: columnName.optional(), dueYear: columnName.optional(), dueMonthsAfterAt: columnName.optional(), qty: quantitySpec.optional(), source: columnName.optional(), tier: columnName.optional(), kind: columnName.optional(), capture: columnName.optional(), trl: columnName.optional(), group: columnName.optional(), item: columnName.optional() })
+  .object({ role: z.enum(["claim", "ratchet", "capacity", "series", "trigger", "tech", "move", "ceiling", "abatement"]), pk: columnName, edge: columnName.optional(), surface: columnName.optional(), at: columnName.optional(), due: columnName.optional(), dueYear: columnName.optional(), dueMonthsAfterAt: columnName.optional(), qty: quantitySpec.optional(), source: columnName.optional(), tier: columnName.optional(), kind: columnName.optional(), trl: columnName.optional(), group: columnName.optional(), item: columnName.optional() })
   .strict();
 export const UNIT_FORMS: readonly UnitForm[] = statutoryUnitsJson.forms;
 export type FactSpec = z.infer<typeof factSpecSchema>;

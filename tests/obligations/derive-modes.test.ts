@@ -8,6 +8,7 @@ import { LEG_MODE_CODES } from "@/core/contracts/vocabularies";
 import unitFile from "@/core/parse/data/statutory-units.json" with { type: "json" };
 import { statutoryUnit } from "@/core/parse/unit";
 import { deriveObligationObjects, deriveObligationsJob, type Candidate } from "@/features/obligations";
+import { OBJECT_DERIVATION_VERSION } from "@/features/obligations/derive/derive-objects";
 import rules from "@/features/obligations/derive/data/object-rules.json" with { type: "json" };
 import { cursorAfter, fillObjectFields } from "@/features/obligations/derive/fill-fields";
 import { extractStatutory, groundingRefusal } from "@/features/obligations/derive/maximum";
@@ -99,11 +100,12 @@ test("statutoryUnit maps every token its data map can produce, and a fragment it
     USD: "US$ 500", "USD/tCO2e": "USD 100 per tCO2", "USD/t": "USD 40 per ton", "USD/FEU": "USD 40 for each FEU", "USD/TEU": "USD 40 per TEU", "USD/GJ": "USD 2 per gigajoule",
     GBP: "£500", "GBP/tCO2e": "GBP 100 for every tonne of CO2", "GBP/t": "GBP 40 per metric tonne", "GBP/FEU": "GBP 40 per FEU", "GBP/TEU": "GBP 40 per TEU", "GBP/GJ": "GBP 2 per GJ",
     pct_turnover: "up to 5 % of the annual worldwide turnover", "gCO2e/MJ": "89.3 gCO2e/MJ", pct: "at least 2 %", t: "1 000 tonnes", MW: "40 MW", months: "12 months",
+    "EUR/t VLSFO-eq": "EUR per equivalent metric ton of VLSFO", "MJ/t VLSFO": "MJ per metric ton of VLSFO", year: "calendar year", "Wh/kg": "Wh/kg", kWh: "kWh", "1/h": "1/h", km: "km", ratio: "ratio", "gCO2e/tkm": "gCO2e/tonne-km", tkm: "tonne_km", "gCO2/kWh": "gCO2/kWh",
   };
   assert.deepEqual(Object.keys(cases).sort(), [...STATUTORY_UNIT_TOKENS].sort(), "every token has a planted fragment");
   for (const [token, fragment] of Object.entries(cases)) assert.equal(statutoryUnit(fragment), token, fragment);
   assert.equal(statutoryUnit("a fine of two thousand"), null);
-  for (const [raw, unit] of [["EUR/t", "EUR/t"], ["gCO2e/MJ", "gCO2e/MJ"], ["pct", "pct"], ["EUR per equivalent metric ton of VLSFO", "EUR/t"], ["grams of CO2 equivalent per MJ", "gCO2e/MJ"], ["% minimum share of SAF", "pct"], ["% reduction of the reference value", "pct"], ["t", "t"]] as const) assert.equal(statutoryUnit(raw), unit, raw);
+  for (const [raw, unit] of [["EUR/t", "EUR/t"], ["gCO2e/MJ", "gCO2e/MJ"], ["pct", "pct"], ["EUR per equivalent metric ton of VLSFO", "EUR/t VLSFO-eq"], ["grams of CO2 equivalent per MJ", "gCO2e/MJ"], ["% minimum share of SAF", "pct"], ["% reduction of the reference value", "pct"], ["t", "t"]] as const) assert.equal(statutoryUnit(raw), unit, raw);
   assert.equal(statutoryUnit("a t of something"), null, "an exact form matches the whole text only");
   assert.equal(statutoryUnit("5 widgets", [{ form: "widgets", unit: "widget" }]), "widget", "forms can be handed in");
 });
@@ -192,11 +194,11 @@ test("the propagate stage fills a bounded batch after the cursor the last apply 
   const idle = await runPropagate(call({}), f.d);
   assert.equal(idle.counts.derive_scanned, undefined, "no derive key, no derivation");
   const dry = await runPropagate(call({ derive: { only: "modes-and-maximum", batch: 2 } }, true), f.d);
-  assert.deepEqual([dry.counts.derive_scanned, dry.counts.derive_mode_set, (dry.data as { ids: { derive_cursor: string[] } }).ids.derive_cursor], [2, 2, ["cl:obligation:0000000000000002", "oblig-objects-2026-10-20.1"]]);
+  assert.deepEqual([dry.counts.derive_scanned, dry.counts.derive_mode_set, (dry.data as { ids: { derive_cursor: string[] } }).ids.derive_cursor], [2, 2, ["cl:obligation:0000000000000002", OBJECT_DERIVATION_VERSION]]);
   assert.equal(f.db.rows("obligation_objects").filter((r) => r.mode !== null).length, 1, "a dry run writes nothing");
-  f.db.seed("harness_runs", [{ id: "h1", family: "propagation", root_run_id: "h1", trigger: "dispatch", mode: "apply", outcome: "success", inputs: {}, outputs: { counts: {}, ids: { derive_cursor: ["cl:obligation:0000000000000001", "oblig-objects-2026-10-20.1"] } }, started_at: "2026-10-25T00:00:00Z", finished_at: "2026-10-25T00:00:01Z", forced_dry: false }]);
+  f.db.seed("harness_runs", [{ id: "h1", family: "propagation", root_run_id: "h1", trigger: "dispatch", mode: "apply", outcome: "success", inputs: {}, outputs: { counts: {}, ids: { derive_cursor: ["cl:obligation:0000000000000001", OBJECT_DERIVATION_VERSION] } }, started_at: "2026-10-25T00:00:00Z", finished_at: "2026-10-25T00:00:01Z", forced_dry: false }]);
   const next = await runPropagate(call({ derive: { batch: 2 } }), f.d);
-  assert.deepEqual([next.counts.derive_scanned, next.counts.derive_updated, (next.data as { ids: { derive_cursor: string[] } }).ids.derive_cursor], [2, 1, ["cl:obligation:0000000000000003", "oblig-objects-2026-10-20.1"]], next.notes.join("|"));
+  assert.deepEqual([next.counts.derive_scanned, next.counts.derive_updated, (next.data as { ids: { derive_cursor: string[] } }).ids.derive_cursor], [2, 1, ["cl:obligation:0000000000000003", OBJECT_DERIVATION_VERSION]], next.notes.join("|"));
   assert.deepEqual(f.db.rows("obligation_objects").find((r) => r.obligation_id === "cl:obligation:0000000000000001")?.mode, null, "objects before the cursor are not read");
   const refused = await runPropagate(call({ derive: { only: "everything" } }), f.d);
   assert.equal(refused.outcome, "failed");

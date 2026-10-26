@@ -11,6 +11,7 @@ import { assertMoatBoundary, planLinkWrites } from "@/core/entities/mentions";
 import { distinctNormalized, planJurisdiction } from "@/core/entities/plan";
 import { congruence, sourceRole } from "@/core/entities/source-role";
 import { formatCorridorLabel } from "@/core/entities/unlocode-names";
+import { couplingByKey } from "@/core/coupling/coupling";
 import { backfillDerivationEdges, backfillEntities, backfillLineageEdges, seedCorridors, seedDerivedValues } from "@/features/propagation/ops";
 
 import { connectDb } from "./world.ts";
@@ -137,6 +138,30 @@ test("seed-corridors: dry writes nothing; apply writes corridors, jurisdictions 
   const b = await seedCorridors({ sb: m.db, now: () => NOW }, { dry: false });
   assert.equal(b.counts.created, 0);
   assert.deepEqual([m.tables.entities!.length, (m.tables.entity_scope as Row[]).length], before);
+});
+
+test("INV-JOIN-9: every lane corridor is linked to the asset of the mode its name states, once; a mode asset the coupling seeds have not written yet is counted, not a foreign-key failure; a name with no leg mode links nothing", async () => {
+  const lanes = [["CNSHA-NLRTM:ocean", "ocean"], ["DEHAM-USNYC:air", "air"], ["NLRTM-DEDUI:inland_waterway", "inland_waterway"], ["CNSHA-USLAX:road", "road"], ["CNSHA-ITGOA:rail", "rail"]] as const;
+  const corridors = lanes.map(([name]) => ({ entity_id: entityId("corridor", name), kind: "corridor", canonical_name: name, display_name: name, status: "active" }));
+  const asset = (mode: string) => ({ entity_id: couplingByKey(`mode:${mode}`)?.entityId as string, kind: "asset", canonical_name: mode, display_name: mode, status: "active" });
+  const tables = (modes: string[]) => ({ market_series: [], regional_data_facts: [], entities: [...corridors, ...modes.map(asset)], entity_identifiers: [], entity_scope: [], entity_relations: [] });
+  const none = connectDb(tables([]));
+  const early = await seedCorridors({ sb: none.db, now: () => NOW }, { dry: false });
+  assert.equal(early.counts.mode_links ?? 0, 0, "the mode assets are not there yet");
+  assert.ok((early.counts.mode_links_mode_not_seeded ?? 0) >= lanes.length, "counted, not written");
+  const m = connectDb(tables(lanes.map(([, mode]) => mode)));
+  const a = await seedCorridors({ sb: m.db, now: () => NOW }, { dry: false });
+  assert.ok((a.counts.mode_links ?? 0) >= lanes.length, a.notes.join("; "));
+  const links = m.tables.entity_relations as Row[];
+  for (const [name, mode] of lanes) {
+    const mine = links.filter((r) => r.parent_entity_id === entityId("corridor", name));
+    assert.deepEqual(mine.map((r) => [r.child_entity_id, r.relation]), [[couplingByKey(`mode:${mode}`)?.entityId, "corridor_links"]], name);
+  }
+  assert.equal((await seedCorridors({ sb: m.db, now: () => NOW }, { dry: false })).counts.mode_links ?? 0, 0, "a second apply writes none");
+  const dry = connectDb(tables(["ocean"]));
+  const d = await seedCorridors({ sb: dry.db, now: () => NOW }, { dry: true });
+  assert.ok((d.counts.mode_links_planned ?? 0) >= 1);
+  assert.equal(dry.writes.filter((w) => w.op !== "select").length, 0, "a dry run writes nothing");
 });
 
 test("seed-corridors: a failed read throws; it is never an empty corpus", async () => {

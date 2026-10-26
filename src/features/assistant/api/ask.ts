@@ -4,7 +4,7 @@ import { z } from "zod";
 import { LookupError, ok, route } from "@/core/http/errors";
 import { isRefusal, requireUser } from "@/core/http/guard";
 import { parseJson } from "@/core/http/parse";
-import { detailHref, jurisdictionCode, metaLine } from "@/core/lists";
+import { detailHref, jurisdictionCode } from "@/core/lists";
 import { readOperationsAskLines } from "@/features/operations/read/operations-reads";
 import { loadSuppressedClaims, redactDeep, redactSuppressedClaims } from "@/features/corrections";
 import { embeddedTier, runSearch } from "@/features/search/run-search";
@@ -22,7 +22,7 @@ const HIT_LIMIT = 8;
 const EXCERPT_CHARS = 800;
 const INTERSECTION_CHARS = 600;
 const SELECT =
-  "id, title, summary, priority, severity, item_type, domain, category, jurisdictions, transport_modes, source_id, source_url, intersection_summary, related_items, full_brief, source:sources!source_id(id, name, url, base_tier, effective_tier, tier_override)";
+  "id, title, summary, priority, severity, item_type, domain, jurisdictions, jurisdiction_iso, transport_modes, source_id, source_url, intersection_summary, related_items, full_brief, source:sources!source_id(id, name, url, base_tier, effective_tier, tier_override)";
 const body = z.object({ question: z.string().trim().min(2).max(500) });
 
 interface Source {
@@ -40,8 +40,8 @@ interface Raw {
   priority: string | null;
   item_type: string | null;
   domain: number | null;
-  category: string | null;
   jurisdictions: string[] | null;
+  jurisdiction_iso: string[] | null;
   transport_modes: string[] | null;
   source_id: string | null;
   source_url: string | null;
@@ -82,8 +82,8 @@ export const POST = route(NAME, async (request) => {
       title: r.title,
       href: detailHref({ id: r.id, type: r.item_type, domain: r.domain }),
       priority: r.priority,
-      jurisdiction: jurisdictionCode({ jurisdiction: r.jurisdictions?.[0] ?? undefined }),
-      meta: metaLine({ type: r.item_type, modes: r.transport_modes ?? undefined, topic: r.category ?? undefined }),
+      jurisdiction: jurisdictionCode({ jurisdictionIso: r.jurisdiction_iso ?? undefined, jurisdiction: r.jurisdictions?.[0] ?? undefined }),
+      type: r.item_type,
       tier: embeddedTier(src),
       summary: clip(redactDeep(r.summary, mine), INTERSECTION_CHARS),
       excerpt: clip(brief, EXCERPT_CHARS),

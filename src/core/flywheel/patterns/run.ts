@@ -15,8 +15,6 @@ import { KINDS, type Fact, type Pattern } from "./types";
 
 const DEAD = ["falsified", "obsolete", "superseded"];
 const tagOf = (p: Pattern): string => `${PATTERN_METHODS[p.kind].id}@${PATTERN_METHODS[p.kind].version}:${p.key}`;
-/** The pattern across method versions: a finding the next version of its detector finds again supersedes the row of the earlier version, a finding it no longer makes is retired. */
-const identityOf = (computedBy: string): string => computedBy.replace(/@[^:]*:/, ":");
 const signature = (refs: readonly { table: string; pk: string; kind?: string }[]): string => refs.map((r) => `${r.table}/${r.pk}/${r.kind ?? "input"}`).sort().join();
 
 /** The edges of a pattern, one per evidence row, each carrying the entities and surface the drain needs to recompute it. */
@@ -26,7 +24,7 @@ function inputsOf(p: Pattern, facts: ReadonlyMap<string, Fact>): InputRef[] {
     const k = `${e.table}/${e.pk}/${e.kind}`;
     if (seen.has(k)) return [];
     seen.add(k);
-    return [{ table: e.table, pk: e.pk, kind: e.kind, entities: e.entities, surface: facts.get(`${e.table}/${e.pk}`)?.surface ?? "unknown", ...(facts.get(`${e.table}/${e.pk}`)?.at ? { at: facts.get(`${e.table}/${e.pk}`)?.at as string } : {}), ...(facts.get(`${e.table}/${e.pk}`)?.docAt ? { docAt: facts.get(`${e.table}/${e.pk}`)?.docAt as string } : {}), ...(e.relation ? { relation: e.relation } : {}), ...(e.summary ? { summary: e.summary } : {}) }];
+    return [{ table: e.table, pk: e.pk, kind: e.kind, entities: e.entities, surface: facts.get(`${e.table}/${e.pk}`)?.surface ?? "unknown", ...(facts.get(`${e.table}/${e.pk}`)?.at ? { at: facts.get(`${e.table}/${e.pk}`)?.at as string } : {}), ...(e.relation ? { relation: e.relation } : {}), ...(e.summary ? { summary: e.summary } : {}) }];
   });
 }
 
@@ -38,15 +36,15 @@ export async function runPatterns(deps: { sb: Db; now: () => Date }, input: { dr
   const found = KINDS.flatMap((k) => DETECTORS[k](loaded.input));
   const ids = KINDS.map((k) => PATTERN_METHODS[k].id);
   const held = (await readAll<Row>(sb, "derived_values", "value_id,method_id,method_version,computed_by,value,admissibility,lifecycle,inputs", ["value_id"], (q) => q.in("method_id", ids))).filter((r) => !DEAD.includes(String(r.lifecycle)));
-  const current = new Map(held.map((r) => [identityOf(String(r.computed_by)), r]));
+  const current = new Map(held.map((r) => [String(r.computed_by), r]));
   const counts: Record<string, number> = { ...loaded.counts, patterns: found.length, patterns_new: 0, patterns_unchanged: 0, patterns_superseded: 0, patterns_obsolete: 0 };
   for (const k of KINDS) counts[`patterns_${k}`] = found.filter((p) => p.kind === k).length;
   const notes: string[] = [];
-  const tags = new Set(found.map((p) => identityOf(tagOf(p))));
+  const tags = new Set(found.map(tagOf));
   for (const p of found) {
-    const old = current.get(identityOf(tagOf(p)));
+    const old = current.get(tagOf(p));
     const refs = inputsOf(p, facts);
-    const same = old && String(old.method_version) === PATTERN_METHODS[p.kind].version && old.admissibility !== "stale" && Math.abs(Number(old.value) - p.value) < Number.EPSILON * Math.max(1, Math.abs(p.value)) * 8 && signature(old.inputs as InputRef[]) === signature(refs);
+    const same = old && old.admissibility !== "stale" && Math.abs(Number(old.value) - p.value) < Number.EPSILON * Math.max(1, Math.abs(p.value)) * 8 && signature(old.inputs as InputRef[]) === signature(refs);
     if (same) {
       counts.patterns_unchanged = (counts.patterns_unchanged ?? 0) + 1;
       continue;
@@ -61,7 +59,7 @@ export async function runPatterns(deps: { sb: Db; now: () => Date }, input: { dr
       if (sup.error) notes.push(`superseding ${String(old.value_id)} by ${valueId} failed: ${sup.error.message}`);
     }
   }
-  const gone = held.filter((r) => !tags.has(identityOf(String(r.computed_by))));
+  const gone = held.filter((r) => !tags.has(String(r.computed_by)));
   counts.patterns_obsolete = gone.length;
   if (!input.dry && gone.length) {
     const ret = await sb.from("derived_values").update({ lifecycle: "obsolete", admissibility: "stale" }).in("value_id", gone.map((r) => String(r.value_id)));

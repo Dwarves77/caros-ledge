@@ -1,0 +1,5 @@
+src/core/auth/profile-name.ts | new in ROWS-1: the name a sign-in provider gave the user (user_metadata full_name, else name), never an e-mail address; the profile heal writes it to profiles.full_name
+src/core/lists/data/item-type.json | moved from src/features/market/lib/data/item-type.json in ROWS-1: the one customer word for each stored item type, read by the list row's type chip, now beside its reader in core/lists
+src/core/lists/item-type.ts | moved from src/features/market/lib/item-type.ts (R2d) in ROWS-1: the one reader of the item-type words, imported by the list row (src/ui) and the surfaces, so it lives in core/lists
+src/ui/RowMeta.tsx | new in ROWS-1: the one-line meta of a list row, which sets whole chips aside with a count when the line does not fit (a client effect; the row itself stays a server-renderable part)
+src/ui/list-surface/data/row-fields.json | new in ROWS-1: the one field set of a list row, per row type (operator look ruling 2026-10-26, ruling 18)

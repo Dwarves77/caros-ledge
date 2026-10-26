@@ -119,12 +119,11 @@ test("INV-265: an item detail href comes only from its raw type and domain; unca
   assert.equal(detailHref({ id: "a b", type: null }), "/regulations/a%20b");
 });
 
-test("list row fields: impact is the stored score or null, never a keyword guess; due is the nearest future date", () => {
+test("list row fields: due is the nearest future date; a missing jurisdiction is empty", () => {
   const r = { id: "a", title: "T", priority: "HIGH", type: "regulation", modes: ["air"], complianceDeadline: "2026-12-01", timeline: [{ date: "2026-11-01", label: "x" }] } as unknown as Resource;
   const f = toListRowFields(r, new Date("2026-10-15T12:00:00Z"));
-  assert.equal(f.impact, null);
   assert.equal(f.due?.days, "17 days");
-  assert.equal(f.jurisdiction, "—", "a row that names no jurisdiction shows none (it was GLOBAL)");
+  assert.equal(f.jurisdiction, "", "a row that names no jurisdiction draws no chip (it was GLOBAL, then a dash)");
   assert.equal(bandFromPriority("nonsense"), NEUTRAL_BAND, "an unknown priority is the neutral band, never Awareness (S:84)");
   assert.equal(bandFromPriority(null), NEUTRAL_BAND);
 });

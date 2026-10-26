@@ -18,8 +18,8 @@ test("every detector over no facts finds nothing and raises nothing", () => {
 });
 
 test("P1 velocity: three independent sources of two tiers in the window, at a larger share of the corpus flow than the entity held before; no flow and no earlier citations, no baseline; the near misses are not bursts", () => {
-  const burst = [3, 7, 12].map((ago, n) => fact({ pk: `m${n}`, docAt: day(-ago), source: `s${n}`, tier: n + 1 }));
-  const baseline = [100, 101, 102].map((ago, n) => fact({ pk: `b${n}`, docAt: day(-ago), source: `s${n + 9}`, tier: 1 }));
+  const burst = [3, 7, 12].map((ago, n) => fact({ pk: `m${n}`, at: day(-ago), source: `s${n}`, tier: n + 1 }));
+  const baseline = [100, 101, 102].map((ago, n) => fact({ pk: `b${n}`, at: day(-ago), source: `s${n + 9}`, tier: 1 }));
   const flow = new Map([[day(-5), 2], [day(-3), 1], [day(-7), 1], [day(-12), 1], [day(-100), 30]]);
   const found = DETECTORS.velocity(input([...burst, ...baseline], { flow }));
   assert.equal(found.length, 1);
@@ -32,7 +32,7 @@ test("P1 velocity: three independent sources of two tiers in the window, at a la
   assert.deepEqual(DETECTORS.velocity(input([...burst.slice(0, 2), ...baseline], { flow })), [], "two sources are not three");
   assert.deepEqual(DETECTORS.velocity(input([...burst.map((f) => ({ ...f, source: "s0" })), ...baseline], { flow })), [], "one source cited three times is one source");
   assert.deepEqual(DETECTORS.velocity(input([...burst.map((f) => ({ ...f, tier: 1, surface: "regulations" })), ...baseline], { flow })), [], "one tier on one surface is not convergence");
-  const heavy = Array.from({ length: 18 }, (_, n) => fact({ pk: `h${n}`, docAt: day(-100 - n), source: `x${n}`, tier: 1 }));
+  const heavy = Array.from({ length: 18 }, (_, n) => fact({ pk: `h${n}`, at: day(-100 - n), source: `x${n}`, tier: 1 }));
   assert.deepEqual(DETECTORS.velocity(input([...burst, ...heavy], { flow })), [], "the same share as before is not a burst: a growing corpus is not a burst of its entities");
   assert.deepEqual(DETECTORS.velocity(input([...burst, ...baseline].map((f) => ({ ...f, kind: PATTERNS.velocity.excludeKinds[0] as string })), { flow })), [], "a claim of an excluded kind (an absence) is not a citation");
   assert.equal(DETECTORS.velocity(input([...burst, ...baseline], { flow: null, carry: 4.5 }))[0]?.value, 4.5, "a stored pattern is revalidated on its own members and keeps its value");
@@ -41,8 +41,8 @@ test("P1 velocity: three independent sources of two tiers in the window, at a la
 test("P1 caps its evidence in patterns.json: the most recent members and one summary edge carrying the counts and the baseline window", () => {
   const cap = PATTERNS.velocity.maxEvidence;
   assert.equal(cap, 50);
-  const members = Array.from({ length: 120 }, (_, n) => fact({ pk: `m${String(n).padStart(3, "0")}`, docAt: day(-(n % 25)), source: `s${n % 7}`, tier: 1 + (n % 3) }));
-  const baseline = [100, 101, 102, 103].map((ago, n) => fact({ pk: `b${n}`, docAt: day(-ago), source: `x${n}`, tier: 1 }));
+  const members = Array.from({ length: 120 }, (_, n) => fact({ pk: `m${String(n).padStart(3, "0")}`, at: day(-(n % 25)), source: `s${n % 7}`, tier: 1 + (n % 3) }));
+  const baseline = [100, 101, 102, 103].map((ago, n) => fact({ pk: `b${n}`, at: day(-ago), source: `x${n}`, tier: 1 }));
   const found = DETECTORS.velocity(input([...members, ...baseline], { flow: new Map([[day(-5), 150], [day(-100), 400]]) }));
   assert.equal(found.length, 1);
   const edges = found[0]?.evidence ?? [];
@@ -51,8 +51,8 @@ test("P1 caps its evidence in patterns.json: the most recent members and one sum
   assert.equal(summary.length, 1, "one summary edge, not the baseline claims");
   assert.deepEqual(summary[0]?.summary, { members: 120, baseline: 4, windowDays: 30, baselineDays: 180 });
   const kept = new Set(edges.filter((e) => e.kind === "member").map((e) => e.pk));
-  const oldestKept = Math.min(...members.filter((m) => kept.has(m.pk)).map((m) => Date.parse(m.docAt as string)));
-  assert.ok(members.filter((m) => !kept.has(m.pk)).every((m) => Date.parse(m.docAt as string) <= oldestKept), "the members kept are the most recent");
+  const oldestKept = Math.min(...members.filter((m) => kept.has(m.pk)).map((m) => Date.parse(m.at as string)));
+  assert.ok(members.filter((m) => !kept.has(m.pk)).every((m) => Date.parse(m.at as string) <= oldestKept), "the members kept are the most recent");
 });
 
 test("P2 mandate and capacity: the capacity lands after the ratchet, or holds less than it mandates in the same unit; a past ratchet, one beyond the horizon, a mismatched unit and an earlier capacity are not", () => {

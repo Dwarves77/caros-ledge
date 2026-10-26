@@ -5,5 +5,6 @@ export { canonicalSurface, detailHref } from "./item-links";
 export type { DetailSurface } from "./item-links";
 export { pageSizes, trimRemainder } from "./pagination";
 export type { ListingCursor } from "./pagination";
-export { dueInfo, jurisdictionCode, metaLine, toListRowFields } from "./row-fields";
+export { itemTypeLabel } from "./item-type";
+export { dueInfo, jurisdictionCode, toListRowFields } from "./row-fields";
 export type { DueInfo, ListRowFields, ListWatchType } from "./row-fields";

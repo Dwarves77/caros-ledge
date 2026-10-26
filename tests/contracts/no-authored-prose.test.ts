@@ -13,11 +13,14 @@ import unitFile from "@/core/parse/data/statutory-units.json" with { type: "json
 import stubBrief from "@/features/intake/record-facts/data/stub-brief.json";
 import { buildRecordPayload } from "@/features/intake/record-facts/payload";
 import objectRules from "@/features/obligations/derive/data/object-rules.json";
+import sanctionClasses from "@/features/obligations/derive/data/sanction-classes.json";
 import { deriveObligationObjects } from "@/features/obligations";
 import { fillObjectFields } from "@/features/obligations/derive/fill-fields";
 import assessmentCopy from "@/features/research/model/data/assessment-copy.json";
 import stanceRules from "@/features/research/model/data/assessment-stance.json";
 import { selectAssessmentView, selectSignpostView, type AssessmentRow } from "@/features/research/model/assessment-view";
+import actHeads from "@/core/lists/data/act-heads.json";
+import { displayTitle } from "@/core/lists/display-title";
 
 import { connectDb } from "../connect/world.ts";
 
@@ -107,6 +110,7 @@ test("the obligation-object derive path writes spans, ids, dates and data-file t
       ...objectRules.artifactClasses.map((c) => c.class),
       objectRules.absence,
       objectRules.triggerAttribute,
+      ...sanctionClasses.classes.map((c) => c.token),
       ...Object.keys(VOCABULARIES.binding_position ?? {}),
       ...Object.keys(DUTY_HOLDER_CLASSES),
       ...Object.keys(VOCABULARIES.transport_mode ?? {}),
@@ -167,4 +171,11 @@ test("INV-MINT-1 the record mint stores ids, the absence token, its headings and
   };
   assert.deepEqual(offenders(mintStrings({ sections: p.sections, claims: p.claims, full_brief: p.item.full_brief }), a), []);
   assert.deepEqual(offenders(mintStrings("[effective_date] No verbatim effective date statement was located in the captured source text for this record-grade item."), a), ["No verbatim effective date statement was located in the captured source text for this record-grade item."]);
+});
+
+test("the list row's formal title is act-type tokens and the title's own text, nothing authored (ADR-050; TITLE-1)", () => {
+  const tokens = new Set([...actHeads.issuers.flatMap((s) => s.split(" ")), ...actHeads.qualifiers, ...actHeads.types, ...actHeads.legalBases.map((b) => `(${b})`), actHeads.numberWord, actHeads.dateJoiner, ...actHeads.months]);
+  for (const stored of ["COMMISSION IMPLEMENTING REGULATION (EU) 2023/2122 of 12 October 2023 amending Implementing Regulation (EU) 2018/2066", "Directive 2008/50/EC of the European Parliament", "COMMISSION DECISION of 29 April 2004 concerning guidance"]) {
+    assert.deepEqual(offenders(displayTitle(stored).split(" "), { inputs: new Set(), tokens, spans: [stored] }), [], stored);
+  }
 });

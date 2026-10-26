@@ -14,17 +14,16 @@ test("INV-CN2-5: the planted data yields exactly one pattern per kind and one cr
   assert.equal((await propagate(f)).exit, 0);
   assert.equal((await connect(f)).exit, 0);
   const rows = patterns(f);
-  assert.deepEqual(byMethod(rows), { pattern_velocity_burst: 1, pattern_mandate_capacity: 2, pattern_lead_lag: 1, pattern_cross_modal: 8, pattern_penalty_abatement: 1 });
+  assert.deepEqual(byMethod(rows), { pattern_velocity_burst: 1, pattern_mandate_capacity: 1, pattern_lead_lag: 1, pattern_cross_modal: 8, pattern_penalty_abatement: 1 });
   const cross = rows.filter((r) => r.method_id === "pattern_cross_modal").map((r) => String(r.computed_by).split("|")[1]).sort();
   assert.deepEqual(cross, ["competes_for_feedstock", "consignment_wide", "consignment_wide", "corridor_links", "corridor_links", "corridor_links", "feedstock_of", "shares_grid_zone"]);
-  // the three join fixes: a duty's own text files it under a feedstock, so it meets the capacity row under the carrier that feedstock supplies (P2); a mode-agnostic mandate and the two corridors that link road each carry a spill from a road ratchet (P4)
+  // the join fixes: a mode-agnostic mandate and the two corridors that link road each carry a spill from a road ratchet (P4)
   const keys = rows.filter((r) => r.method_id === "pattern_cross_modal").map((r) => String(r.computed_by));
   for (const target of ["instrument:32025R0040", "corridor:rail_road", "corridor:inland_waterway"]) assert.ok(keys.some((k) => k.includes(`|${OBLIGATION.road}|`) || (k.includes(OBLIGATION.road) && k.endsWith(E(target)))), target);
-  assert.ok(rows.some((r) => r.method_id === "pattern_mandate_capacity" && String(r.computed_by).includes(OBLIGATION.uco)), "the used-cooking-oil duty meets the roadmap under HEFA-SAF");
   const anchor = (id: string) => rows.find((r) => r.method_id === id)?.entity_id;
   assert.equal(anchor("pattern_velocity_burst"), E("carrier:green_ammonia"));
   assert.equal(anchor("pattern_penalty_abatement"), E("carrier:bio_methanol"));
-  assert.equal(countsOf(f, "corpus-turn").patterns, 13, "the stage's ledger row carries the count per kind");
+  assert.equal(countsOf(f, "corpus-turn").patterns, 12, "the stage's ledger row carries the count per kind");
   assert.deepEqual([countsOf(f, "corpus-turn").patterns_velocity, countsOf(f, "corpus-turn").patterns_crossModal], [1, 8]);
 });
 
@@ -56,8 +55,8 @@ test("a second connect finds the same patterns and writes none; a retired input 
   assert.equal(patterns(f).length, first);
   assert.equal(countsOf(f, "corpus-turn").patterns_unchanged, first);
   // the burst's claims fall out of the window: the pattern is retired, not left standing
-  const aged = new Set(f.db.rows("section_claim_provenance").filter((x) => String(x.claim_text).startsWith("Green ammonia")).map((x) => x.search_result_id));
-  for (const c of f.db.rows("agent_run_searches").filter((x) => aged.has(x.id))) c.document_date = "2026-02-01";
+  const aged = new Set(f.db.rows("section_claim_provenance").filter((x) => String(x.claim_text).startsWith("Green ammonia")).map((x) => x.intelligence_item_id));
+  for (const i of f.db.rows("intelligence_items").filter((x) => aged.has(x.id))) i.added_date = "2026-02-01";
   await propagate(f);
   await connect(f);
   const retired = patterns(f).filter((p) => p.method_id === "pattern_velocity_burst");

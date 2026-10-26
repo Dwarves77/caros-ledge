@@ -4,7 +4,7 @@
 import { useRouter } from "next/navigation";
 
 import { refusalSentence } from "@/core/http/failure";
-import { bandFromPriority, detailHref, jurisdictionCode, metaLine } from "@/core/lists";
+import { bandFromPriority, detailHref, jurisdictionCode } from "@/core/lists";
 import { formatNumber } from "@/core/shared";
 import { ListRow, ListRowHeader, Masthead, SectionCard, SectionHead, StateNote } from "@/ui";
 import { PageFrame, ShellCommandBar } from "@/ui/shell";
@@ -45,9 +45,9 @@ export function SearchResultsView({ q, outcome, maxResults, dateLabel, nowIso }:
                   <StateNote>Showing the top {formatNumber(maxResults)} matches. Narrow the search to see more precise results.</StateNote>
                 </div>
               )}
-              <ListRowHeader titleLabel="Title · type · modes" />
+              <ListRowHeader />
               {rows.map((r) => (
-                <ListRow key={r.id} href={detailHref({ id: r.id, type: r.item_type, domain: r.domain })} band={bandFromPriority(r.priority)} jurisdiction={jurisdictionCode({ jurisdiction: r.jurisdictions?.[0] ?? undefined })} title={r.title} meta={metaLine({ type: r.item_type, modes: r.transport_modes ?? undefined, topic: r.topic ?? undefined })} tier={r.tier} />
+                <ListRow key={r.id} href={detailHref({ id: r.id, type: r.item_type, domain: r.domain })} band={bandFromPriority(r.priority)} itemType={r.item_type} jurisdiction={jurisdictionCode({ jurisdictionIso: r.jurisdiction_iso ?? undefined, jurisdiction: r.jurisdictions?.[0] ?? undefined })} title={r.title} summary={r.what_is_it} tier={r.tier} />
               ))}
             </>
           )}

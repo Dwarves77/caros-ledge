@@ -12,19 +12,19 @@ export const RELATIONS = ["feedstock_of", "fuel_for_mode", "competes_for_feedsto
 export type Relation = (typeof RELATIONS)[number];
 
 const schemaText = z.string().min(1);
-export const CITATION = z.object({ url: z.url(), title: schemaText, retrieved_at: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), quote: schemaText, sourceClass: z.enum(["primary", "reference"]) }).strict();
+const CITATION = z.object({ url: z.url(), title: schemaText, retrieved_at: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), quote: schemaText, sourceClass: z.enum(["primary", "reference"]) }).strict();
 const schemaClass = z.object({ kind: z.enum(["material", "node", "asset", "instrument", "method"]), role: schemaText, rank: z.number().int().min(0), text: z.boolean().optional() }).strict();
 const schemaEntity = z
   .object({ key: schemaText, class: schemaText, name: schemaText, aliases: z.array(schemaText), modes: z.array(schemaText).optional(), scenarios: z.array(schemaText).optional(), modeAgnostic: z.boolean().optional(), entityId: z.string().regex(/^cl:[a-z_]+:[0-9a-f]{16}$/), unit: schemaText.optional(), fromMonths: z.number().int().optional(), toMonths: z.number().int().optional(), citation: CITATION.optional(), modesCitation: CITATION.optional() })
   .strict();
 const schemaRelation = z.object({ parent: schemaText, child: schemaText, relation: z.enum(RELATIONS), citations: z.array(CITATION).min(1) }).strict();
-const schemaMap = z.object({ column: schemaText.optional(), by: z.enum(["entity", "alias", "mode", "map", "const", "refs"]), map: z.record(z.string(), z.string()).optional(), entity: schemaText.optional(), refTable: schemaText.optional() }).strict();
+const schemaMap = z.object({ column: schemaText.optional(), by: z.enum(["entity", "mode", "map", "const", "refs"]), map: z.record(z.string(), z.string()).optional(), entity: schemaText.optional(), refTable: schemaText.optional() }).strict();
 const schemaColumn = z.object({ table: schemaText, pk: schemaText, maps: z.array(schemaMap).min(1) }).strict();
 
 export type CouplingEntity = z.infer<typeof schemaEntity>;
 export type ColumnMap = z.infer<typeof schemaColumn>;
 export interface Coupling extends CouplingEntity {
-  /** Whether the entity is named in text (its name and aliases resolve); a mode, a hub or a window is filed by column and relation only. */
+  /** Whether the entity is named in text (its name and aliases are the closed ontology the claims pass matches); a mode, a hub or a window is filed by column and relation only. */
   named: boolean;
   kind: EntityKind;
   role: string;
@@ -36,7 +36,7 @@ const fileProblems: string[] = [];
 if (entityByKey.size !== couplingFile.entities.length) fileProblems.push("an entity key is repeated");
 for (const e of couplingFile.entities) {
   if (!couplingFile.classes[e.class]) fileProblems.push(`${e.key}: class ${e.class} is not defined`);
-  for (const a of [e.name, ...e.aliases]) if (couplingFile.classes[e.class]?.text !== false && !admitAlias(a)) fileProblems.push(`${e.key}: "${a}" may not be an alias (under four characters, no letter, or on the stoplist)`);
+  for (const a of [e.name, ...e.aliases]) if (couplingFile.classes[e.class]?.text !== false && !admitAlias(a)) fileProblems.push(`${e.key}: "${a}" may not be an alias (under four characters or no letter)`);
   if (e.class !== "window" && !e.citation) fileProblems.push(`${e.key}: a coupling other than a time window carries the page and quote it is taken from`);
 }
 for (const r of couplingFile.relations) {

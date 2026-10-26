@@ -9,7 +9,9 @@ import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
 import type { RecommendedAction } from "@/core/brief";
+import { normalizeDisplayTitle } from "@/core/fetch/titles";
 import type { UrgencyBand } from "@/core/lists";
+import { displayTitle } from "@/core/lists/display-title";
 import { itemIdFromDetailPath } from "@/core/workspace/paths";
 import type { ImpactScores } from "@/core/types";
 
@@ -30,9 +32,13 @@ import { neighbourHref, useListPosition } from "./useListPosition";
 export function DetailMasthead({ title, band, surface, jurisdiction, dek, placeholder, nowIso, actionSlot, connectionsSlot }: { title: string; band: UrgencyBand; surface: string; jurisdiction?: string; dek?: ReactNode; placeholder: string; nowIso: string; actionSlot?: ReactNode; connectionsSlot?: ReactNode }) {
   const position = useListPosition();
   const base = [surface, jurisdiction].filter(Boolean).join(" / ");
+  // ROWS-1: the page title is the short name the list row drew; the full official title (with its annex note) is shown once, under it. A title with no short form is the page title as stored.
+  const official = normalizeDisplayTitle(title);
+  const short = displayTitle(official.title, true);
+  const full = short === official.title ? null : [official.title, official.subtitle].filter(Boolean).join(" · ");
   return (
     <div className="cl-detail-mast">
-      <Masthead title={title} size="detail" dateLabel={position.known ? `${base} / ${position.pos} of ${position.of} in ${band.label}` : base} nowIso={nowIso} dek={dek} commandBar={<ShellCommandBar placeholder={placeholder} />} actionSlot={actionSlot} connectionsSlot={connectionsSlot} />
+      <Masthead title={full ? short : title} size="detail" dateLabel={position.known ? `${base} / ${position.pos} of ${position.of} in ${band.label}` : base} nowIso={nowIso} dek={full ? <><p className="cl-masthead-official">{full}</p>{dek}</> : dek} commandBar={<ShellCommandBar placeholder={placeholder} />} actionSlot={actionSlot} connectionsSlot={connectionsSlot} />
     </div>
   );
 }
@@ -127,9 +133,10 @@ export function AtAGlanceCard({ rows }: { rows: Array<{ label: string; value: Re
   );
 }
 
-export const ImpactRailCard = ({ scores }: { scores?: ImpactScores | null }) => (
+/** The impact card: the scores, or the dash with the sentence of the input they wait for (the list row no longer draws either). */
+export const ImpactRailCard = ({ scores, absence }: { scores?: ImpactScores | null; absence?: string | undefined }) => (
   <RailCard title="Impact assessment" dataAudit="impact-assessment-rail">
-    <ImpactMeter scores={scores} valueVisible />
+    <ImpactMeter scores={scores} absence={absence} valueVisible />
   </RailCard>
 );
 
@@ -142,7 +149,7 @@ export function InThisListStat({ backHref, backLabel, band }: { backHref: string
   const next = neighbourHref(base, position, 1);
   return (
     <RailCard title={`In this list${position.list ? ` · ${position.list}` : ""}`} dataAudit="in-this-list-rail">
-      <p style={{ fontSize: "var(--fs-13)", color: "var(--ink)", margin: "0 0 8px" }}>{position.known ? `${position.pos} of ${position.of}${band ? ` in ${band.label}` : ""}` : "Opened directly"}</p>
+      <p style={{ fontSize: "var(--fs-13)", color: "var(--ink)", margin: "0 0 var(--sp-8)" }}>{position.known ? `${position.pos} of ${position.of}${band ? ` in ${band.label}` : ""}` : "Opened directly"}</p>
       <div className="cl-rail-links">
         <Link href={backHref} prefetch={false} className="cl-rail-link">
           {backLabel}

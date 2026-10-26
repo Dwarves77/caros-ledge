@@ -1,9 +1,7 @@
 // Ported from old_repo/src/lib/list-row-fields.ts (lines 1-93)
 // Ported from old_repo/src/lib/dashboard/row-fields.ts (lines 1-86)
-// The fields a list row draws, derived from one Resource. Impact is the stored score (the mapper reads item_impact_scores and the workspace's client relevance) or null (rendered as the dash) with the sentence of the input it waits for; no keyword heuristic scores a row.
-// A missing due date likewise names its input.
-import type { ImpactScores, Resource, TimelineEntry } from "@/core/types";
-import { READING } from "@/core/impact/rules";
+// The fields a list row draws, derived from one Resource (ROWS-1: the row draws only what src/ui/list-surface/data/row-fields.json names). The impact score, timeline, bias tags, grade and workspace tags stay on the Resource for the detail page.
+import type { Resource } from "@/core/types";
 import { formatDate } from "@/core/shared";
 
 import { canonicalSurface, detailHref, type DetailSurface } from "./item-links";
@@ -21,19 +19,15 @@ export interface ListRowFields {
   id: string;
   href: string;
   priority: string;
+  /** The jurisdiction code, or "" when the item names none (the row then draws no chip). */
   jurisdiction: string;
   title: string;
-  meta: string;
-  impact: ImpactScores | null;
-  /** The input the impact score is waiting for ("No obligations extracted yet"), null when it is scored: the absence text a row draws beside the dash. */
-  impactAbsence?: string | null;
+  /** The stored item_type; the row picks its row type and its type chip from it. */
+  type: string | null;
+  /** intelligence_items.what_is_it, the stored reader text, or null. */
+  summary: string | null;
   due: { label: string; days: string } | null;
-  /** Why the due date is empty ("No milestone dates"), null when there is one. */
-  dueAbsence?: string | null;
-  timeline: TimelineEntry[] | null;
   tier: number | null;
-  biasTags?: Resource["biasTags"];
-  itemGrade?: Resource["itemGrade"];
   watchType: ListWatchType;
 }
 
@@ -41,7 +35,7 @@ const watchTypeForItem = (item: { type?: string | null; domain?: number | null }
 
 export function jurisdictionCode(r: { jurisdictionIso?: string[] | undefined; jurisdiction?: string | undefined }): string {
   const iso = r.jurisdictionIso?.[0];
-  return iso ? iso.toUpperCase() : r.jurisdiction ? r.jurisdiction.toUpperCase() : "—";
+  return iso ? iso.toUpperCase() : r.jurisdiction ? r.jurisdiction.toUpperCase() : "";
 }
 
 /** The nearest future date among the deadline and the timeline, by UTC day. Only a stated day counts: a timeline entry the reader gave as a year or a month ("2027", "2027-03") is a period, not a due date (F:12). */
@@ -58,8 +52,6 @@ export function dueInfo(r: Resource, now: Date): DueInfo | null {
   return { label: formatDate(new Date(best).toISOString().slice(0, 10)), days: `${diff} day${diff === 1 ? "" : "s"}`, daysNum: diff };
 }
 
-export const metaLine = (r: { type?: string | null; modes?: string[] | undefined; topic?: string | undefined }): string => [r.type, r.modes?.length ? r.modes.join(", ") : null, r.topic].filter(Boolean).join(" · ");
-
 export function toListRowFields(r: Resource, now: Date): ListRowFields {
   const due = dueInfo(r, now);
   return {
@@ -68,15 +60,10 @@ export function toListRowFields(r: Resource, now: Date): ListRowFields {
     priority: String(r.priority ?? ""),
     jurisdiction: jurisdictionCode(r),
     title: r.title,
-    meta: metaLine(r),
-    impact: r.impactScores ?? null,
-    impactAbsence: r.impactScores ? null : (r.impactAbsence ?? null),
+    type: r.type ?? null,
+    summary: r.whatIsIt?.trim() || null,
     due: due ? { label: due.label, days: due.days } : null,
-    dueAbsence: due ? null : READING.absence.due,
-    timeline: r.timeline ?? null,
     tier: r.sourceTier ?? null,
-    ...(r.biasTags && r.biasTags.length > 0 ? { biasTags: r.biasTags } : {}),
-    ...(r.itemGrade ? { itemGrade: r.itemGrade } : {}),
     watchType: watchTypeForItem(r),
   };
 }

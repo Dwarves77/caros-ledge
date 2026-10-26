@@ -1,4 +1,4 @@
-/* The one token set. Light only. Source: old_repo/src/app/theme.css 20-96 (canonical block), globals.css 7-10 and 518-521,
+/* The one token set. Light page; the button edge has a dark variant. Source: old_repo/src/app/theme.css 20-96 (canonical block), globals.css 7-10 and 518-521,
    theme.css 80 (--selection). No alias layer: every name below is read by a kit part or a surface. Hex and rgba literals live
    in this file and nowhere else in src/ui (scripts/ci/checks-ui.mjs). */
 :root {
@@ -45,13 +45,15 @@
   --radius-pill: 999px;
   /* spacing */
   --sp-2: 2px; --sp-4: 4px; --sp-6: 6px; --sp-8: 8px; --sp-10: 10px; --sp-12: 12px;
-  --sp-14: 14px; --sp-16: 16px; --sp-18: 18px; --sp-20: 20px; --sp-28: 28px; --sp-40: 40px;
+  --sp-14: 14px; --sp-16: 16px; --sp-18: 18px; --sp-20: 20px; --sp-24: 24px; --sp-28: 28px; --sp-40: 40px;
   /* type */
   /* --font-jakarta, --font-jakarta-ext, --font-anton and --font-anton-ext are defined on the root element by the vendored faces (src/ui/fonts.ts); a character the latin face lacks falls to the latin-ext face, then to the system font */
   --font-sans: var(--font-jakarta), var(--font-jakarta-ext), system-ui, sans-serif;
   --font-display: var(--font-anton), var(--font-anton-ext), system-ui, sans-serif;
   --fs-85: 8.5px; --fs-95: 9.5px; --fs-10: 10px; --fs-105: 10.5px; --fs-11: 11px; --fs-115: 11.5px;
   --fs-12: 12px; --fs-125: 12.5px; --fs-13: 13px; --fs-14: 14px; --fs-22: 22px;
+  /* a list row's title wraps to this many lines on the phone and mid layouts; the detail page header keeps the full title */
+  --row-title-lines: 2;
   /* interaction */
   --row-hover: var(--page);
   --card-hover-line: rgba(0, 0, 0, 0.3);
@@ -60,9 +62,22 @@
   --accent-bg: rgba(90, 85, 82, 0.08);
   --scrollbar-thumb: rgba(0, 0, 0, 0.12);
   --scrollbar-thumb-hover: rgba(0, 0, 0, 0.2);
+  /* buttons (operator look ruling 2026-10-26, BTN-1): the one gradient, edge and glow every variant reads (the button rules in base.css) */
+  --btn-gradient-from: color-mix(in srgb, var(--brand), white 16%);
+  --btn-gradient-to: color-mix(in srgb, var(--brand), black 12%);
+  --btn-glow: color-mix(in srgb, var(--brand) 60%, transparent);
+  --btn-danger-from: color-mix(in srgb, var(--immediate), white 16%);
+  --btn-danger-to: color-mix(in srgb, var(--immediate), black 12%);
+  --btn-danger-glow: color-mix(in srgb, var(--immediate) 60%, transparent);
+  --btn-hi: rgba(255, 255, 255, 0.35);
+  --btn-shade: rgba(0, 0, 0, 0.2);
+  --btn-contact: rgba(0, 0, 0, 0.4);
+  --btn-press: rgba(0, 0, 0, 0.25);
   /* layout */
   --nav-width: 252px;
   --target: 44px;
   --cl-detail-pad-x: 36px;
   --cl-impact-track: #E5E1DB;
 }
+/* The theme switch is html[data-theme]. Only the page is light so far; the button edge reads lighter on a dark surface. */
+:root[data-theme="dark"] { --btn-hi: rgba(255, 255, 255, 0.18); --btn-shade: rgba(0, 0, 0, 0.35); --btn-contact: rgba(0, 0, 0, 0.6); --btn-press: rgba(0, 0, 0, 0.4); }

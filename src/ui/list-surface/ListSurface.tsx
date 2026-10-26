@@ -7,6 +7,7 @@ import { BAND_ORDER, type UrgencyBand, type UrgencyBandKey } from "@/core/lists"
 import { formatNumber } from "@/core/shared";
 
 import { BandGroupHeader, BandTile, BandTileRow } from "../BandParts";
+import { Button } from "../Button";
 import { FilterChip, FilterChipGroup } from "../Chips";
 import { ListRow, type ListRowProps } from "../ListRow";
 import { Masthead } from "../Masthead";
@@ -137,9 +138,9 @@ export function ListSurface(p: ListSurfaceProps) {
                   </FilterChipGroup>
                 ))}
               </div>
-              <button type="button" className="cl-filters-btn" onClick={() => setSheet(true)}>
+              <Button className="cl-filters-btn" onClick={() => setSheet(true)}>
                 Filters
-              </button>
+              </Button>
               <FilterSheet open={sheet} onClose={() => setSheet(false)} groups={groups} />
             </>
           )}

@@ -6,7 +6,7 @@ import { useMemo, useState } from "react";
 
 import { bandFromPriority, NEUTRAL_BAND } from "@/core/lists";
 import { countNoun } from "@/core/shared";
-import { CardFoot, ListRowHeader, RailCard, RelativeTime, SectionHead, StateNote } from "@/ui";
+import { CardFoot, ListRowHeader, RailCard, SectionHead, StateNote } from "@/ui";
 import type { ListRowProps } from "@/ui/ListRow";
 import { LegendRailCard, ListSurface, withListPosition, type FacetGroup } from "@/ui/list-surface";
 import { ShellCommandBar } from "@/ui/shell";
@@ -36,25 +36,17 @@ export interface WatchlistSurfaceProps {
 
 function rowOf(item: WatchlistItem, position: number, total: number): Row {
   const f = item.fields;
-  const meta = (
-    <span>
-      {WATCHLIST_TYPE_LABEL[item.type]}
-      {item.scope === "team" && item.addedBy ? ` · added by ${item.addedBy}` : ""} · watched <RelativeTime iso={item.watchedAt} /> · {SCOPE_LABEL[item.scope]}
-    </span>
-  );
   return {
     key: `${item.scope}:${item.type}:${item.id}`,
     ...(f ? { href: withListPosition(f.href, LIST_KEY, position, total) } : {}),
     band: bandFromPriority(f?.priority),
-    jurisdiction: f?.jurisdiction ?? "—",
+    itemType: f ? f.type : "reference",
+    ...(f ? {} : { typeLabel: WATCHLIST_TYPE_LABEL[item.type] }),
+    jurisdiction: f?.jurisdiction,
     title: item.title,
-    meta,
-    impact: f?.impact ?? null,
-    due: f?.due ?? null,
-    timeline: f?.timeline ?? null,
-    tier: f?.tier ?? null,
-    ...(f?.biasTags ? { biasTags: f.biasTags } : {}),
-    ...(f?.itemGrade ? { itemGrade: f.itemGrade } : {}),
+    summary: f?.summary,
+    due: f?.due,
+    tier: f?.tier,
     overflow: <RowActions title={item.title} type={item.type} id={item.id} />,
   };
 }
@@ -143,11 +135,11 @@ export function WatchlistSurface({ watch, notices, limit, dateLabel, nowIso }: W
           {watch?.timelinesFailed && (
             <div className="cl-pad-16">
               <StateNote tone="error" action={{ label: "Retry", onClick: retry }}>
-                Milestone dates did not load for some rows, so their timelines are blank.
+                Milestone dates did not load for some rows, so their next dates are blank.
               </StateNote>
             </div>
           )}
-          {rows.length > 0 && <ListRowHeader titleLabel="Title · type · modes" dueLabel="Next date" />}
+          {rows.length > 0 && <ListRowHeader />}
         </>
       }
       cardFoot={

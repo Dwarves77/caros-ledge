@@ -4,7 +4,6 @@ import assert from "node:assert/strict";
 import { readdirSync, readFileSync } from "node:fs";
 import { test } from "node:test";
 
-import { ACRONYMS, ALIAS_SEEDS } from "@/core/coupling/aliases";
 import { licenceGate } from "@/core/contracts";
 import type { FamilyCall } from "@/core/harness";
 import { acceptStoredQuote } from "@/core/producers/quote";
@@ -28,6 +27,8 @@ const plan = JSON.parse(readFileSync("tests/producers/arm-plan.json", "utf8")) a
 const OEM = "src/features/market/producers/data/rows/oem_tech_roadmaps-2026-10.json";
 const call = (over: Partial<FamilyCall>): FamilyCall => ({ mode: "apply", dry: false, input: {}, runId: "r0000000-0000-4000-8000-000000000001", rootRunId: "r0000000-0000-4000-8000-000000000001", ...over }) as FamilyCall;
 type Row = Record<string, unknown> & { citation: Record<string, string> };
+/** Every verbatim quote a row cites (the quote and the further quotes of its citation): the fixture captures hold all of them, and a typed value must stand in one. */
+const quotesOf = (r: Row): string => [r.citation.quote, ...((r.citation as unknown as { also?: string[] }).also ?? [])].join(String.fromCharCode(10));
 const rowsOf = (path: string): Row[] => (JSON.parse(readFileSync(path, "utf8")) as { rows: Row[] }).rows;
 const spine = (rows: Row[]) => [...new Set(rows.map((r) => r.manufacturer_name as string))].map((m, i) => ({ entity_id: `cl:organisation:${String(i).padStart(16, "0")}`, kind: "organisation", canonical_name: m }));
 
@@ -76,7 +77,7 @@ test("a rows file: every row cites a page the class table rates, with a real ret
       const r = raw.citation ? raw : ({ ...raw, citation: { url: raw.source_url, title: raw.source_name, retrieved_at: "2026-10-24", quote: raw.span_text } } as Row);
       for (const k of ["url", "title", "retrieved_at", "quote"]) assert.ok(r.citation[k]?.trim(), `${f}: citation.${k}`);
       assert.equal(r.citation.retrieved_at, "2026-10-24");
-      if (r.target_year !== undefined) assert.ok(r.citation.quote?.includes(String(r.target_year)), `${f}: target_year ${String(r.target_year)} is not in its quote`);
+      if (r.target_year !== undefined) assert.ok(quotesOf(r).includes(String(r.target_year)), `${f}: target_year ${String(r.target_year)} is not in its quote`);
       assert.notEqual(classTierForHost(hostOf(r.citation.url as string) as string, r.citation.title), null, r.citation.url);
     }
   }
@@ -86,7 +87,7 @@ test("INV-ARM-2 and INV-ARM-3: the propagate stage captures the cited pages, the
   const rows = rowsOf(OEM);
   const pages = new Map<string, string>();
   for (const r of rows) pages.set(r.citation.url as string, `${pages.get(r.citation.url as string) ?? ""}
-${r.citation.quote}`);
+${quotesOf(r)}`);
   const filler = "Notice. This page is provided for information and is reproduced here for the fixture. ".repeat(20);
   const routes = Object.fromEntries([...pages].map(([url, quote]) => [url, () => new Response(`${filler}\n${quote}\n${filler}`, { status: 200, headers: { "content-type": "text/plain; charset=utf-8" } })]));
   const f = fixture({ routes });
@@ -105,6 +106,29 @@ ${r.citation.quote}`);
   const again = await runPropagate(call({ input }), f.d);
   assert.equal(f.db.rows("oem_tech_roadmaps").length, rows.length, "a second apply writes no duplicate");
   assert.equal(again.counts.producers_capture_unchanged, pages.size);
+});
+
+test("INV-JOIN-4: a stored roadmap row whose capture states a target year gets it on the next apply of the rows file (the typed column is patched, never retyped), and a row whose capture states none stays null", async () => {
+  const rows = rowsOf(OEM);
+  const pages = new Map<string, string>();
+  for (const r of rows) pages.set(r.citation.url as string, `${pages.get(r.citation.url as string) ?? ""}
+${quotesOf(r)}`);
+  const filler = "Notice. This page is provided for information and is reproduced here for the fixture. ".repeat(20);
+  const routes = Object.fromEntries([...pages].map(([url, quote]) => [url, () => new Response(`${filler}
+${quote}
+${filler}`, { status: 200, headers: { "content-type": "text/plain; charset=utf-8" } })]));
+  const f = fixture({ routes });
+  Object.assign(f.d.producers.env, { OEM_PRODUCER_ROWS_FILE_ENABLED: "1" });
+  f.db.seed("entities", spine(rows));
+  const input = { producers: { only: "oem-roadmap-rows", rowsFile: OEM } };
+  await runPropagate(call({ input }), f.d);
+  const stored = f.db.rows("oem_tech_roadmaps");
+  assert.equal(stored.length, rows.length);
+  for (const row of stored) row.target_year = null; // the rows as the first pass stored them, before the file stated their years
+  const again = await runPropagate(call({ input }), f.d);
+  const years = f.db.rows("oem_tech_roadmaps").map((r) => r.target_year ?? null).sort();
+  assert.deepEqual(years, [2027, 2027, null, null, null, null], again.notes.join("|"));
+  assert.equal(f.db.rows("oem_tech_roadmaps").length, rows.length, "a patch writes no duplicate");
 });
 
 test("a page that refuses capture leaves its rows refused by name and nothing written; a rowsFile outside a producer's data/rows directory is refused", async () => {
@@ -127,7 +151,7 @@ test("a manufacturer named by its rated citation host is minted once by the orga
   assert.ok(hosts.includes(unknown));
   const pages = new Map<string, string>();
   for (const r of rows) pages.set(r.citation.url as string, `${pages.get(r.citation.url as string) ?? ""}
-${r.citation.quote}`);
+${quotesOf(r)}`);
   const filler = "Notice. This page is provided for information and is reproduced here for the fixture. ".repeat(20);
   const routes = Object.fromEntries([...pages].map(([url, quote]) => [url, () => new Response(`${filler}
 ${quote}
@@ -140,9 +164,7 @@ ${filler}`, { status: 200, headers: { "content-type": "text/plain; charset=utf-8
   assert.equal(dry.counts["producers_oem-roadmap-rows.parsed"], rows.length, "the unknown host parses as a row to be minted");
   assert.equal(f.db.rows("entities").filter((e) => e.kind === "organisation").length, hosts.length - 1, "dry mints nothing");
   await runPropagate(call({ input }), f.d);
-  // the alias seeds of the propagate stage also name organisations (the Official Journal's host, the IMO, the Commission): they are not the manufacturer path's mints
-  const seeded = new Set([...ALIAS_SEEDS.map((x) => x.target.name), ...ACRONYMS.flatMap((x) => ("name" in x.entity ? [x.entity.name] : []))]);
-  const orgs = f.db.rows("entities").filter((e) => e.kind === "organisation" && !seeded.has(String(e.canonical_name)));
+  const orgs = f.db.rows("entities").filter((e) => e.kind === "organisation");
   assert.equal(orgs.length, hosts.length, "exactly one organisation entity was minted");
   const minted = orgs.find((e) => e.canonical_name === unknown);
   assert.ok(minted);
@@ -151,7 +173,7 @@ ${filler}`, { status: 200, headers: { "content-type": "text/plain; charset=utf-8
   assert.equal(f.db.rows("oem_tech_roadmaps").length, rows.length);
   assert.ok(f.db.rows("oem_tech_roadmaps").some((r) => r.manufacturer_id === minted.entity_id));
   await runPropagate(call({ input }), f.d);
-  assert.equal(f.db.rows("entities").filter((e) => e.kind === "organisation" && !seeded.has(String(e.canonical_name))).length, hosts.length, "a second apply mints nothing");
+  assert.equal(f.db.rows("entities").filter((e) => e.kind === "organisation").length, hosts.length, "a second apply mints nothing");
 });
 
 const RULING = "operator 2026-10-23 ruling 1: population hold lifted for the structured-data producers (rulings-2026-10-11.md)";
@@ -183,7 +205,7 @@ test("a ruled apply under a closed gate also captures the cited pages, so a rows
   const rows = rowsOf(OEM);
   const pages = new Map<string, string>();
   for (const r of rows) pages.set(r.citation.url as string, `${pages.get(r.citation.url as string) ?? ""}
-${r.citation.quote}`);
+${quotesOf(r)}`);
   const filler = "Notice. This page is provided for information and is reproduced here for the fixture. ".repeat(20);
   const routes = Object.fromEntries([...pages].map(([url, quote]) => [url, () => new Response(`${filler}
 ${quote}

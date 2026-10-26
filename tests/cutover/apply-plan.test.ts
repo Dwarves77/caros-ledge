@@ -144,7 +144,7 @@ function twoBranches(layout: "derived" | "legacy") {
     if (layout === "derived") {
       cpSync(REAL, join(repo, DIR), BELOW_BOUNDARY);
       const rows = JSON.parse(readFileSync(join(REAL, "RESERVED.json"), "utf8")).reservations;
-      writeLedger(repo, [...rows, entry("0139", "ONE", "reserved"), entry("0140", "TWO", "reserved")]);
+      writeLedger(repo, [...rows, entry("9001", "ONE", "reserved"), entry("9002", "TWO", "reserved")]);
     } else {
       put(repo, `${DIR}/README.md`, "| file | change |\n|---|---|\n| 0001_a | a |\n| 0002_b | b |\n");
       put(repo, `${DIR}/APPLY.md`, "# Cutover apply plan\n\n| # | file |\n|---|---|\n| 1 | 0001_a |\n| 2 | 0002_b |\n");
@@ -166,7 +166,7 @@ function twoBranches(layout: "derived" | "legacy") {
       git(repo, "add", "-A");
       git(repo, "commit", "-q", "-m", branch);
     };
-    const [a, b] = layout === "derived" ? [["0139", "one"], ["0140", "two"]] : [["0003", "one"], ["0004", "two"]];
+    const [a, b] = layout === "derived" ? [["9001", "one"], ["9002", "two"]] : [["0003", "one"], ["0004", "two"]];
     add("a", a![0]!, a![1]!);
     add("b", b![0]!, b![1]!);
     git(repo, "checkout", "-q", "a");

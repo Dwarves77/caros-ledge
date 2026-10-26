@@ -1,11 +1,10 @@
-// DOC-DATE-1 (ADR-053 section 2): the date a stored document states about itself, read from formal codes, and the velocity detector's clock. The fragments are quoted from production captures (read 2026-10-26); the negative cases are planted.
+// DOC-DATE-1 (ADR-053 section 2): the date a stored document states about itself, read from formal codes. The velocity detector reads it as its clock in CONNECT-2 PR B (patterns.json 1.2.0, capture.document_date); this file proves the column's writer. The fragments are quoted from production captures (read 2026-10-26); the negative cases are planted.
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
 import { extractDocumentDate } from "@/core/fetch/document-date";
 import tokens from "@/core/fetch/data/document-date.json" with { type: "json" };
-import { DETECTORS, loadPatternInput, type Fact, type PatternInput } from "@/core/flywheel/patterns";
 import { runProducer } from "@/core/producers";
 import { datedRows } from "@/core/fetch/document-date";
 import { documentDate } from "@/core/producers/document-date";
@@ -13,7 +12,7 @@ import { runTurn } from "@/core/turn";
 
 import { fixture } from "../integration/world.ts";
 
-import { ago, claimWithItem, connect, NOW, patternFixture, patterns, propagate } from "./_world.ts";
+import { NOW, patternFixture } from "./_world.ts";
 
 const ETS_2003 = '<p>\n         <em>OJ L 275, 25.10.2003, pp. 32–46\n</em> ... <p class="normal">Done at Luxembourg, 13 October 2003.</p>';
 const FUELEU = "( OJ L 243, 9.7.2021, p. 1 ). ( 5 ) OJ L 282, 19.10.2016, p. 4 . ( 6 ) ... licable in all Member States. Done at Strasbourg, 13 September 2023. For the European Parliament";
@@ -89,7 +88,7 @@ test("INV-DD-3: the producer dates the captures it can, writes the verbatim basi
   assert.deepEqual([again.counts.written ?? 0, again.counts.read, again.counts.undated], [0, 1, 1], "only the undated capture is read again; nothing is written");
 });
 
-test("the propagate stage runs it with the fetch gate closed (it reads stored data only) and the pattern loader reads what it wrote", async () => {
+test("the propagate stage runs it with the fetch gate closed (it reads stored data only) and writes the date of each capture that states one", async () => {
   const f = patternFixture();
   (f.d.producers.env as Record<string, string>).DOCUMENT_DATE_PRODUCER_ENABLED = "1";
   const mine = new Set(f.db.rows("agent_run_searches").map((c) => c.id));
@@ -103,52 +102,25 @@ test("the propagate stage runs it with the fetch gate closed (it reads stored da
   assert.ok(f.db.rows("agent_run_searches").every((c) => !c.document_date), "dry wrote no date");
   await runTurn({ stage: "propagate", mode: "apply", input: { propagate: { producers: { only: "document-date" }, cadence_exception: "ruling" } } }, { d: f.d, env: {}, now: () => NOW });
   assert.ok(f.db.rows("agent_run_searches").filter((c) => mine.has(c.id)).every((c) => c.document_date === "2026-09-01" && String(c.document_date_basis) === "Published: 2026-09-01"), "the apply turn dated every capture that states one (the seed pages it captured in the same run are read by the next run)");
-  assert.ok(((await loadPatternInput(f.d.sb, NOW)).counts.captures_dated ?? 0) > 0, "the pattern loader reads them");
 });
 
-const claimFact = (over: Partial<Fact>): Fact => ({ table: "section_claim_provenance", pk: "p", role: "claim", entities: ["e1"], modes: [], surface: "regulations", at: null, due: null, source: null, tier: null, qty: null, unit: null, trl: null, kind: "FACT", group: null, ...over });
-const day = (offset: number): string => new Date(NOW.getTime() + offset * 86_400_000).toISOString().slice(0, 10);
-const input = (facts: Fact[], flow: PatternInput["flow"]): PatternInput => ({ now: NOW, facts, related: () => [], flow });
-
-test("INV-DD-2: the velocity detector and the producer read no intake or retrieval date; a claim without a document date is in neither the numerator nor the denominator", () => {
-  const src = readFileSync("src/core/flywheel/patterns/detect.ts", "utf8");
-  const p1 = src.slice(src.indexOf("function velocity"), src.indexOf("function mandateCapacity"));
-  assert.ok(p1.includes("docAt"));
-  assert.doesNotMatch(p1, /added_date|searched_at|retrieved_at|extracted_at|\bf\.at\b|\.at as string/, "P1 reads no other clock");
+test("INV-DD-2: the extractor and the producer read no intake or retrieval date, and a capture whose text states none stays undated whatever its retrieval day", async () => {
   for (const f of ["src/core/producers/document-date.ts", "src/core/fetch/document-date.ts"]) assert.doesNotMatch(readFileSync(f, "utf8").replace(/^\/\/.*$/gm, ""), /added_date|searched_at|retrieved_at|extracted_at/, f);
-  const dated = [...[0, 1, 2].map((n) => claimFact({ pk: `m${n}`, docAt: day(-3 - n * 4), source: `s${n}`, tier: n + 1 })), ...[100, 101, 102].map((a, n) => claimFact({ pk: `b${n}`, docAt: day(-a), source: `s${n + 9}`, tier: 1 }))];
-  const flow = new Map([[day(-5), 2], [day(-3), 1], [day(-7), 1], [day(-12), 1], [day(-100), 30]]);
-  const base = DETECTORS.velocity(input(dated, flow));
-  assert.equal(base.length, 1);
-  const undated = Array.from({ length: 40 }, (_, n) => claimFact({ pk: `u${n}`, docAt: null, at: day(-1), source: `u${n}`, tier: 1 + (n % 3) }));
-  assert.deepEqual(DETECTORS.velocity(input([...dated, ...undated], flow)).map((p) => [p.key, p.value, p.evidence.length]), base.map((p) => [p.key, p.value, p.evidence.length]), "forty undated claims on the intake day change nothing");
-  assert.deepEqual(DETECTORS.velocity(input(undated, flow)), [], "claims dated only by intake form no burst");
+  const f = fixture();
+  f.db.seed("agent_run_searches", [{ ...cap(4, "https://example.invalid/undated", "Regulation text with no dated header."), searched_at: `${NOW.toISOString().slice(0, 10)}T09:00:00Z` }]);
+  await runProducer(deps(f), { spec: documentDate, dry: false });
+  const row = f.db.rows("agent_run_searches").find((r) => String(r.id).includes("0d0004"));
+  assert.deepEqual([row?.document_date ?? null, row?.document_date_basis ?? null, row?.document_date_method ?? null], [null, null, null], "no fallback to the retrieval day");
 });
 
-test("INV-DD-4: a bulk intake (items added the same day, documents dated across a year) is no burst; the same claims dated inside the window are one; undated captures leave the corpus's flow", async () => {
-  // ten items of one carrier added today with ten sources of three tiers; the planted three-claim burst of the fixture is left undated, so the ten decide
-  const GREEN = "Green ammonia offtake agreements were announced by three producers.";
-  const bulk = (dates: (n: number) => string | null) => {
-    const f = patternFixture();
-    for (const g of f.db.rows("section_claim_provenance").filter((x) => String(x.claim_text).startsWith("Green ammonia") && !String(x.source_id).endsWith("0")))
-      for (const c of f.db.rows("agent_run_searches").filter((x) => x.id === g.search_result_id)) if (new Date(String(c.document_date)).getTime() > NOW.getTime() - 20 * 86_400_000) { delete c.document_date; delete c.document_date_basis; delete c.document_date_method; }
-    const made = Array.from({ length: 10 }, (_, n) => claimWithItem("reg", GREEN, ago(1), `b2000000-0000-4000-8000-${String(n).padStart(12, "0")}`, 1 + (n % 3), "FACT", undefined, dates(n)));
-    f.db.seed("intelligence_items", made.map((m) => m.item));
-    f.db.seed("agent_run_searches", made.map((m) => m.capture));
-    f.db.seed("section_claim_provenance", made.map((m) => m.claim));
-    return f;
-  };
-  const velocity = async (f: ReturnType<typeof patternFixture>) => {
-    await propagate(f);
-    await connect(f);
-    return patterns(f).filter((p) => p.method_id === "pattern_velocity_burst");
-  };
-  assert.equal((await velocity(bulk((n) => ago(40 + n * 35)))).length, 0, "claims added today, documents dated across the year");
-  assert.equal((await velocity(bulk((n) => ago(1 + n * 2)))).length, 1, "the same claims dated inside the window");
-  assert.equal((await velocity(bulk(() => null))).length, 0, "no document date, no member");
-  const f = bulk(() => null);
-  await propagate(f);
-  const flow = (await loadPatternInput(f.d.sb, NOW)).input.flow as Map<string, number>;
-  const datedClaims = f.db.rows("section_claim_provenance").filter((c) => f.db.rows("agent_run_searches").some((s) => s.id === c.search_result_id && s.document_date)).length;
-  assert.equal([...flow.values()].reduce((a, b) => a + b, 0), datedClaims, "the corpus's flow counts dated claims only");
+test("INV-DD-4: a bulk intake (ten captures retrieved on one day, ten documents dated across a year) is dated by the documents, one date each, none on the intake day", async () => {
+  const f = fixture();
+  const intake = NOW.toISOString().slice(0, 10);
+  const published = Array.from({ length: 10 }, (_, n) => new Date(NOW.getTime() - (40 + n * 35) * 86_400_000).toISOString().slice(0, 10));
+  f.db.seed("agent_run_searches", published.map((d, n) => ({ ...cap(n, `https://bulk.invalid/${n}`, `<p>Published: ${d}</p>`), id: `a0000000-0000-4000-8000-0000000e00${String(n).padStart(2, "0")}`, searched_at: `${intake}T09:00:00Z` })));
+  await runProducer(deps(f), { spec: documentDate, dry: false });
+  const rows = f.db.rows("agent_run_searches").filter((r) => String(r.id).includes("0e00"));
+  assert.deepEqual(rows.map((r) => r.document_date).sort(), [...published].sort());
+  assert.ok(rows.every((r) => r.document_date !== intake), "no capture is dated by its intake day");
+  assert.equal(new Set(rows.map((r) => r.document_date)).size, 10, "ten distinct document dates, not one burst day");
 });

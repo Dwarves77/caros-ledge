@@ -110,12 +110,13 @@ test("HEAL-1: an operator task is ruled as a stage `ops` step whose input names 
 
 test("HEAL-1: the heal plan (2026-10-26-heal-1) heals exactly the two ruled instrument items from stored captures: a dry step then an apply step of heal-quarantined over their ids, nothing that fetches", () => {
   const p = parsePlan(readFileSync("scripts/runs/plans/2026-10-26-heal-1.json", "utf8"));
+  assert.equal(p.revision, 2, "the re-run marker: heal-apply has no success row, and the changed file starts the job");
   assert.deepEqual(p.steps.map((s: { mode: string }) => s.mode), ["dry", "apply"]);
   for (const s of p.steps) {
     assert.equal(s.stage, "ops");
     assert.deepEqual(s.input.ops.args.ids, ["7a0ead55-7a7b-403b-8ba3-33862cb296e2", "15f63ea9-4803-4bb4-b1a3-9ccdeb8a3050"]);
     assert.equal(s.input.ops.args.selection, "ids");
-    assert.equal(s.input.ops.args.stripUnprovable, undefined, "the honest strip is not part of this ruling");
+    assert.equal(s.input.ops.args.stripUnprovable, true, "revision 2: the honest strip of the sentences no capture states (ruling 2026-10-26)");
     assert.deepEqual(s.producer_env, []);
   }
 });

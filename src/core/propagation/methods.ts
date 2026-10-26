@@ -24,7 +24,6 @@ export interface ResolvedMethodInput {
   relation?: string;
   surface?: string;
   at?: string;
-  docAt?: string;
   summary?: Record<string, number>;
 }
 export interface MethodContext {

@@ -206,3 +206,17 @@ test("HEAL-1: an ops step carries its ruled_plan key inside input.ops (the op's 
   assert.deepEqual(seen[0]!.slice(1, 5), ["--stage", "ops", "--mode", "apply"]);
   assert.deepEqual(JSON.parse(seen[0]![seen[0]!.indexOf("--input") + 1] as string), { ops: { op: "heal-quarantined", args: { selection: "ids", ids: ["x"] }, ruled_plan: "2026-10-24-x.json#heal" } });
 });
+
+test("HEAL-1b: a step whose apply row counts failed units is partial, never ok: it stops the plan and fails the job (production counts of run 2062fdaa: failed 2, row outcome noop, exit 0)", async () => {
+  const calls: string[] = [];
+  const invoke = ({ args }: { args: string[] }) => {
+    calls.push(args[args.indexOf("--mode") + 1] as string);
+    return { status: 0, result: { root_run_id: "root", runs: [{ family: "ops", id: "row", mode: "apply", outcome: "noop", counts: { items: 2, failed: 2, attribution_repaired: 150 } }] } };
+  };
+  const op = { op: "heal-quarantined", args: { selection: "ids", ids: ["x"] } };
+  const plan = parsePlan(JSON.stringify({ ruling: RULING, steps: [{ name: "heal", stage: "ops", mode: "apply", input: { ops: op }, producer_env: [] }, { name: "after", stage: "ops", mode: "apply", input: { ops: op }, producer_env: [] }] }));
+  const r = await executePlan(plan, PATH, { invoke, now: NOW });
+  assert.deepEqual(r.steps.map((s: { step: string; outcome: string }) => [s.step, s.outcome]), [["heal", "partial"]]);
+  assert.equal(r.steps[0].note, "2 unit(s) failed");
+  assert.deepEqual([r.outcome, exitCodeOf(r), calls.length], ["failed", 1, 1]);
+});
