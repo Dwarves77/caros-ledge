@@ -18,6 +18,7 @@ import { runParticipation } from "@/features/intake/flywheel-participation";
 import { recordItemChange } from "@/features/sources/change";
 import { growSources } from "@/features/sources";
 import { allRows, rowsByIds } from "@/core/db";
+import { precisionKey } from "@/core/brief/rules/forward-events-covered";
 import { review } from "@/core/digest/review";
 
 import { BUDGET_STOP_REASON, budgetBytes, POOL_REREADS, preflight } from "../../kit/budget";
@@ -200,8 +201,9 @@ function itemBriefsSpec(opts: RecordOpts): EntrySpec<RecordLive, RecordPlan> {
       const items: RecordLive["items"] = new Map();
       for (const r of rows) {
         const p = await itemPool(deps.sb, r.id);
-        const [evs, tls] = [await allRows<{ event_date: string | null }>(deps.sb, "item_forward_events", "event_date", { where: (q) => q.eq("intelligence_item_id", r.id) }), await allRows<{ milestone_date: string | null }>(deps.sb, "item_timelines", "milestone_date", { where: (q) => q.eq("item_id", r.id) })];
-        const suppliedDates = [...evs.map((e) => e.event_date), ...tls.map((t) => t.milestone_date)].filter((d): d is string => !!d);
+        const [evs, tls] = [await allRows<{ event_date: string | null; date_precision: string | null }>(deps.sb, "item_forward_events", "event_date, date_precision", { where: (q) => q.eq("intelligence_item_id", r.id) }), await allRows<{ milestone_date: string | null; date_precision: string | null }>(deps.sb, "item_timelines", "milestone_date, date_precision", { where: (q) => q.eq("item_id", r.id) })];
+        // FWD-COVER-1 + precision: a month or year row is compared at its precision (YYYY-MM, YYYY), a day row as before.
+        const suppliedDates = [...evs.map((e) => e.event_date && precisionKey(e.event_date, e.date_precision)), ...tls.map((t) => t.milestone_date && precisionKey(t.milestone_date, t.date_precision))].filter((d): d is string => !!d);
         items.set(r.id, { suppliedDates, itemType: r.item_type, grade: r.item_grade, status: r.provenance_status, hash: p.hash, poolText: p.pool.map((x) => x.text).join("\n\n"), bytes: p.bytes, fullBrief: r.full_brief, entryIntoForce: r.entry_into_force, complianceDeadline: r.compliance_deadline });
       }
       const slotRows = await allRows<{ item_type: string; slot_key: string; description: string | null }>(deps.sb, "item_type_required_slots", "item_type, slot_key, description", { cap: 5000 });
