@@ -1,77 +1,47 @@
-// New in CONNECT-2 PR A (scripts/ci/new-files/connect-2a.txt): the text resolver of the entity spine. A piece of text resolves to entities two ways, both read from the database the spine already holds:
-// an instrument identifier it states ("Regulation (EU) 2023/2405", a CELEX id) is matched by EQUALITY on the normalised key of the parse module (the rule resolveMention uses) against the instrument entities' canonical names; and a NAME is matched as an exact phrase,
-// case-insensitive, longest phrase first, never fuzzy: every entity's canonical and display name, its identifiers (host, CELEX, ISO codes), the title of the instrument an item carries, the country name of a jurisdiction, and every row of entity_aliases.
-// A name that may not be an alias (alias-rules.ts) or that names two entities is dropped when the resolver is built, never guessed. The claims pass, the typed-column pass and the tag pass all resolve through this one function.
+// New in CONNECT-2 PR A (scripts/ci/new-files/connect-2a.txt), reduced to formal codes in JOIN-1 (operator and scope reviewer, 2026-10-25: the flywheel matches no free-text words). The text resolver of the entity spine reads two kinds of formal code and nothing else:
+// an instrument identifier it states ("Regulation (EU) 2023/2405", a CELEX id) is matched by EQUALITY on the normalised key of the parse module (the rule resolveMention uses) against the instrument entities, and a UN/LOCODE (two letters and three letters or
+// digits, upper case, whole token) is matched by equality against the entities that hold it as an identifier. A country name, an organisation's host or name, a title, an alias and an acronym are not codes and resolve nothing here: jurisdictions attach from typed
+// columns, publisher hosts stay on sources. The claims pass and the typed-column pass both resolve through this one function (refs.ts).
 import { findIdentifiers, sameIdentifier } from "@/core/parse";
-
-import { admitAlias, isAcronym, phraseOf } from "./alias-rules";
 
 export interface Match {
   entityId: string;
-  /** alias: a row of entity_aliases; name: a canonical or display name, an identifier or a title; identifier: an instrument number stated in the text. */
-  how: "alias" | "name" | "identifier" | "acronym";
+  /** identifier: an instrument number stated in the text; code: a UN/LOCODE. */
+  how: "identifier" | "code";
   /** [start, end) in the text resolved. */
   span: [number, number];
 }
-export interface NameSource {
-  entity_id: string;
-  name: string;
-  how: "alias" | "name";
-}
 export interface Resolver {
-  /** phrase to entity (null: the phrase names two entities and resolves none) and how the name was learned. */
-  phrases: Map<string, { entityId: string | null; how: "alias" | "name" }>;
-  longest: number;
-  /** The listed uppercase acronyms (alias rows whose text is on the list in resolver.json) to their entity, null when two entities claim one; matched case-sensitively as a whole word. */
-  acronyms: Map<string, string | null>;
+  /** UN/LOCODE to entity (null: two entities hold the code, so it resolves none). */
+  codes: Map<string, string | null>;
   instruments: Map<string, { entityId: string; type: string | null }[]>;
 }
 
-/** The resolver over every name source and the instrument entities (canonical names that are CELEX ids state their own identifier). Returns the count of names dropped for ambiguity beside it. */
-export function buildResolver(names: Iterable<NameSource>, instruments: readonly { entity_id: string; canonical_name: string }[]): Resolver & { ambiguous: number } {
-  const phrases: Resolver["phrases"] = new Map();
-  const acronyms: Resolver["acronyms"] = new Map();
-  let longest = 1;
-  for (const n of names) {
-    if (n.how === "alias" && isAcronym(n.name)) {
-      acronyms.set(n.name, acronyms.has(n.name) && acronyms.get(n.name) !== n.entity_id ? null : n.entity_id);
-      continue;
-    }
-    if (!admitAlias(n.name)) continue;
-    const p = phraseOf(n.name);
-    const held = phrases.get(p);
-    if (held && held.entityId !== n.entity_id) held.entityId = null;
-    else if (!held) phrases.set(p, { entityId: n.entity_id, how: n.how });
-    longest = Math.max(longest, p.split(" ").length);
-  }
+/** The shape of a UN/LOCODE: a two-letter country code and three letters or digits, as a whole upper-case token. */
+const LOCODE = /(?<![A-Za-z0-9])[A-Z]{2}[A-Z2-9]{3}(?![A-Za-z0-9])/g;
+
+/** The resolver over the UN/LOCODEs the spine holds and the instrument entities (canonical names that are CELEX ids state their own identifier). */
+export function buildResolver(codes: Iterable<{ entity_id: string; code: string }>, instruments: readonly { entity_id: string; canonical_name: string }[]): Resolver {
+  const byCode: Resolver["codes"] = new Map();
+  for (const c of codes) byCode.set(c.code, byCode.has(c.code) && byCode.get(c.code) !== c.entity_id ? null : c.entity_id);
   const index = new Map<string, { entityId: string; type: string | null }[]>();
   for (const i of instruments) {
     const own = findIdentifiers(i.canonical_name).find((f) => f.kind === "instrument");
     if (own) index.set(own.key, [...(index.get(own.key) ?? []), { entityId: i.entity_id, type: own.type }]);
   }
-  return { phrases, longest, acronyms, instruments: index, ambiguous: [...phrases.values()].filter((v) => v.entityId === null).length + [...acronyms.values()].filter((v) => v === null).length };
+  return { codes: byCode, instruments: index };
 }
 
-/** Every entity the text names, once each (the first mention): instrument numbers by equality, then names as the longest exact phrase at each position. Pure. */
+/** Every entity the text names by a formal code, once each (the first mention). Pure. */
 export function resolveText(text: string, r: Resolver): Match[] {
   const out = new Map<string, Match>();
   for (const f of findIdentifiers(text)) {
     if (f.kind !== "instrument") continue;
     for (const hit of r.instruments.get(f.key) ?? []) if (sameIdentifier(f, { key: f.key, type: hit.type }) && !out.has(hit.entityId)) out.set(hit.entityId, { entityId: hit.entityId, how: "identifier", span: [f.start, f.end] });
   }
-  const tokens = [...text.matchAll(/[\p{L}\p{N}]+/gu)].map((m) => ({ t: m[0].toLowerCase(), raw: m[0], start: m.index, end: m.index + m[0].length }));
-  for (let i = 0; i < tokens.length; ) {
-    let step = 1;
-    for (let n = Math.min(r.longest, tokens.length - i); n >= 1; n -= 1) {
-      const hit = r.phrases.get(tokens.slice(i, i + n).map((x) => x.t).join(" "));
-      if (!hit) continue;
-      if (hit.entityId && !out.has(hit.entityId)) out.set(hit.entityId, { entityId: hit.entityId, how: hit.how, span: [(tokens[i] as { start: number }).start, (tokens[i + n - 1] as { end: number }).end] });
-      step = n;
-      break;
-    }
-    const acr = step === 1 ? r.acronyms.get((tokens[i] as { raw: string }).raw) : undefined;
-    if (acr && !out.has(acr) && !r.phrases.has((tokens[i] as { t: string }).t)) out.set(acr, { entityId: acr, how: "acronym", span: [(tokens[i] as { start: number }).start, (tokens[i] as { end: number }).end] });
-    i += step;
+  for (const m of text.matchAll(LOCODE)) {
+    const entity = r.codes.get(m[0]);
+    if (entity && !out.has(entity)) out.set(entity, { entityId: entity, how: "code", span: [m.index, m.index + m[0].length] });
   }
   return [...out.values()];
 }

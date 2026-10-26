@@ -1,0 +1,345 @@
+{
+ "_doc": "Known joinability findings (scripts/ci/joinability.mjs --write-allow). A new offender is a red run; an entry that no longer offends is a red run (delete it); a share above its entry is a regression. Each entry is owed a data-file batch or a slice (its owner).",
+ "entries": [
+  {
+   "key": "J1:derived_values.entity_id",
+   "owner": "couplings.json maps or the table's unmapped reasons",
+   "date": "2026-10-25",
+   "reason": "derived_values.entity_id: a text column the engine can join on, neither mapped nor listed unmapped with a reason"
+  },
+  {
+   "key": "J1:emission_factors.energy_carrier",
+   "owner": "couplings.json maps or the table's unmapped reasons",
+   "date": "2026-10-26",
+   "reason": "emission_factors.energy_carrier: a text column the engine can join on, neither mapped nor listed unmapped with a reason"
+  },
+  {
+   "key": "J1:emission_factors.grid_region",
+   "owner": "couplings.json maps or the table's unmapped reasons",
+   "date": "2026-10-25",
+   "reason": "emission_factors.grid_region: a text column the engine can join on, neither mapped nor listed unmapped with a reason"
+  },
+  {
+   "key": "J1:emission_factors.jurisdiction",
+   "owner": "couplings.json maps or the table's unmapped reasons",
+   "date": "2026-10-25",
+   "reason": "emission_factors.jurisdiction: a text column the engine can join on, neither mapped nor listed unmapped with a reason"
+  },
+  {
+   "key": "J1:emission_factors.operator_key",
+   "owner": "couplings.json maps or the table's unmapped reasons",
+   "date": "2026-10-25",
+   "reason": "emission_factors.operator_key: a text column the engine can join on, neither mapped nor listed unmapped with a reason"
+  },
+  {
+   "key": "J1:indexation_clauses.index_id",
+   "owner": "couplings.json maps or the table's unmapped reasons",
+   "date": "2026-10-26",
+   "reason": "indexation_clauses.index_id: a text column the engine can join on, neither mapped nor listed unmapped with a reason"
+  },
+  {
+   "key": "J1:item_forward_events.obligation_text",
+   "owner": "couplings.json maps or the table's unmapped reasons",
+   "date": "2026-10-25",
+   "reason": "item_forward_events.obligation_text: a text column the engine can join on, neither mapped nor listed unmapped with a reason"
+  },
+  {
+   "key": "J1:market_series.series_key",
+   "owner": "couplings.json maps or the table's unmapped reasons",
+   "date": "2026-10-26",
+   "reason": "market_series.series_key: a text column the engine can join on, neither mapped nor listed unmapped with a reason"
+  },
+  {
+   "key": "J1:obligation_objects.jurisdiction",
+   "owner": "couplings.json maps or the table's unmapped reasons",
+   "date": "2026-10-25",
+   "reason": "obligation_objects.jurisdiction: a text column the engine can join on, neither mapped nor listed unmapped with a reason"
+  },
+  {
+   "key": "J1:reroute_events.route_via",
+   "owner": "couplings.json maps or the table's unmapped reasons",
+   "date": "2026-10-25",
+   "reason": "reroute_events.route_via: a text column the engine can join on, neither mapped nor listed unmapped with a reason"
+  },
+  {
+   "key": "J1:state_cost_facts.state_code",
+   "owner": "couplings.json maps or the table's unmapped reasons",
+   "date": "2026-10-25",
+   "reason": "state_cost_facts.state_code: a text column the engine can join on, neither mapped nor listed unmapped with a reason"
+  },
+  {
+   "key": "J1:state_cost_facts.state_label",
+   "owner": "couplings.json maps or the table's unmapped reasons",
+   "date": "2026-10-25",
+   "reason": "state_cost_facts.state_label: a text column the engine can join on, neither mapped nor listed unmapped with a reason"
+  },
+  {
+   "key": "J1:state_cost_facts.statute_citation",
+   "owner": "couplings.json maps or the table's unmapped reasons",
+   "date": "2026-10-25",
+   "reason": "state_cost_facts.statute_citation: a text column the engine can join on, neither mapped nor listed unmapped with a reason"
+  },
+  {
+   "key": "J1:statutory_computations.formula_id",
+   "owner": "couplings.json maps or the table's unmapped reasons",
+   "date": "2026-10-26",
+   "reason": "statutory_computations.formula_id: a text column the engine can join on, neither mapped nor listed unmapped with a reason"
+  },
+  {
+   "key": "J1:statutory_computations.obligation_id",
+   "owner": "couplings.json maps or the table's unmapped reasons",
+   "date": "2026-10-25",
+   "reason": "statutory_computations.obligation_id: a text column the engine can join on, neither mapped nor listed unmapped with a reason"
+  },
+  {
+   "key": "J1:statutory_computations.scenario_key",
+   "owner": "couplings.json maps or the table's unmapped reasons",
+   "date": "2026-10-26",
+   "reason": "statutory_computations.scenario_key: a text column the engine can join on, neither mapped nor listed unmapped with a reason"
+  },
+  {
+   "key": "J1:statutory_computations.statute_citation",
+   "owner": "couplings.json maps or the table's unmapped reasons",
+   "date": "2026-10-25",
+   "reason": "statutory_computations.statute_citation: a text column the engine can join on, neither mapped nor listed unmapped with a reason"
+  },
+  {
+   "key": "J2:instrument:32018L2001:modeLinks",
+   "owner": "couplings.json entities and relations",
+   "date": "2026-10-25",
+   "reason": "instrument:32018L2001 (instrument): modeLinks failed: no consignment_wide relation to mode:air, mode:ocean, mode:road, mode:rail, mode:inland_waterway"
+  },
+  {
+   "key": "J2:instrument:32018L2001:reach",
+   "owner": "couplings.json entities and relations",
+   "date": "2026-10-25",
+   "reason": "instrument:32018L2001 (instrument): reach failed: no path of relations to an entity on a different surface"
+  },
+  {
+   "key": "J2:instrument:32023L2413:modeLinks",
+   "owner": "couplings.json entities and relations",
+   "date": "2026-10-25",
+   "reason": "instrument:32023L2413 (instrument): modeLinks failed: no consignment_wide relation to mode:air, mode:ocean, mode:road, mode:rail, mode:inland_waterway"
+  },
+  {
+   "key": "J2:instrument:32023L2413:reach",
+   "owner": "couplings.json entities and relations",
+   "date": "2026-10-25",
+   "reason": "instrument:32023L2413 (instrument): reach failed: no path of relations to an entity on a different surface"
+  },
+  {
+   "key": "J3const:oem_tech_roadmaps.c_rate_max",
+   "owner": "statutory-units.json forms",
+   "date": "2026-10-25",
+   "reason": "oem_tech_roadmaps.c_rate_max: the declared unit \"1/h\" is not a form statutoryUnit knows"
+  },
+  {
+   "key": "J3const:oem_tech_roadmaps.energy_density_wh_kg",
+   "owner": "statutory-units.json forms",
+   "date": "2026-10-25",
+   "reason": "oem_tech_roadmaps.energy_density_wh_kg: the declared unit \"Wh/kg\" is not a form statutoryUnit knows"
+  },
+  {
+   "key": "J3const:oem_tech_roadmaps.usable_kwh",
+   "owner": "statutory-units.json forms",
+   "date": "2026-10-25",
+   "reason": "oem_tech_roadmaps.usable_kwh: the declared unit \"kWh\" is not a form statutoryUnit knows"
+  },
+  {
+   "key": "J3sev:intelligence_items.severity",
+   "owner": "slice SEV-1 (migration 0137)",
+   "date": "2026-10-25",
+   "reason": "intelligence_items.severity: 140 of 535 values are not codes of src/core/brief/data/contract.json (60 outside, 80 null); forms \"reference\" x53, \"background\" x5, \"high\" x2",
+   "share": 0.2617
+  },
+  {
+   "key": "J3sevw:accepts",
+   "owner": "slice SEV-1 and the brief vocabulary (ADR-052 point 4)",
+   "date": "2026-10-25",
+   "reason": "the severity writer gate (toDbSeverity, DB_SEVERITY_VALUES) accepts 8 values outside the five tokens: critical, high, moderate, low, immediate, watch, reference, background"
+  },
+  {
+   "key": "J3tok:oem_tech_roadmaps.tech_category",
+   "owner": "vocabularies.json or the writer",
+   "date": "2026-10-25",
+   "reason": "oem_tech_roadmaps.tech_category: 1 of 6 values are not codes of the coupling map; forms \"hydrogen_fcell\" x1",
+   "share": 0.1667
+  },
+  {
+   "key": "J3toknovocab:oem_tech_roadmaps.commercial_stage",
+   "owner": "vocabularies.json",
+   "date": "2026-10-25",
+   "reason": "oem_tech_roadmaps.commercial_stage: no vocabulary; distinct values \"mass_series_production\", \"pilot_demonstration\", \"announced\""
+  },
+  {
+   "key": "J3toknovocab:oem_tech_roadmaps.commercial_stage",
+   "owner": "vocabularies.json",
+   "date": "2026-10-25",
+   "reason": "oem_tech_roadmaps.commercial_stage: no vocabulary; distinct values \"mass_series_production\", \"pilot_demonstration\", \"announced\""
+  },
+  {
+   "key": "J3toknovocab:research_assessments_current.horizon_band",
+   "owner": "vocabularies.json",
+   "date": "2026-10-25",
+   "reason": "research_assessments_current.horizon_band: no vocabulary; distinct values \"NEAR\", \"FAR\", \"NOW\", \"MID\""
+  },
+  {
+   "key": "J3toknovocab:research_assessments_current.horizon_band",
+   "owner": "vocabularies.json",
+   "date": "2026-10-25",
+   "reason": "research_assessments_current.horizon_band: no vocabulary; distinct values \"NEAR\", \"FAR\", \"NOW\", \"MID\""
+  },
+  {
+   "key": "J3toknovocab:research_assessments_current.horizon_kind",
+   "owner": "vocabularies.json",
+   "date": "2026-10-25",
+   "reason": "research_assessments_current.horizon_kind: no vocabulary; distinct values \"availability\", \"obligation\""
+  },
+  {
+   "key": "J3toknovocab:research_assessments_current.horizon_kind",
+   "owner": "vocabularies.json",
+   "date": "2026-10-25",
+   "reason": "research_assessments_current.horizon_kind: no vocabulary; distinct values \"availability\", \"obligation\""
+  },
+  {
+   "key": "J3unit:derived_values.unit",
+   "owner": "statutory-units.json forms",
+   "date": "2026-10-25",
+   "reason": "derived_values.unit: unnormalised share 0.6875 over 0.05; top forms \"gCO2e/tonne-km\" x20, \"ratio\" x20, \"km\" x4",
+   "share": 0.6875
+  },
+  {
+   "key": "J3unit:emission_factors.quantity_basis",
+   "owner": "statutory-units.json forms",
+   "date": "2026-10-25",
+   "reason": "emission_factors.quantity_basis: unnormalised share 1.0000 over 0.05; top forms \"tonne_km\" x13",
+   "share": 1
+  },
+  {
+   "key": "J3unit:regional_data_facts.unit",
+   "owner": "statutory-units.json forms",
+   "date": "2026-10-25",
+   "reason": "regional_data_facts.unit: unnormalised share 0.0588 over 0.05; top forms \"gCO2/kWh\" x1",
+   "share": 0.0588
+  },
+  {
+   "key": "J3unit:state_cost_facts.unit",
+   "owner": "statutory-units.json forms",
+   "date": "2026-10-25",
+   "reason": "state_cost_facts.unit: unnormalised share 0.5652 over 0.05; top forms \"/hr\" x13",
+   "share": 0.5652
+  },
+  {
+   "key": "J3unit:statutory_computations.result_unit",
+   "owner": "statutory-units.json forms",
+   "date": "2026-10-25",
+   "reason": "statutory_computations.result_unit: unnormalised share 0.0789 over 0.05; top forms \"calendar year\" x2, \"MJ per metric ton of VLSFO\" x1",
+   "share": 0.0789
+  },
+  {
+   "key": "J5:derived_values.entity_id",
+   "owner": "the producer of the table",
+   "date": "2026-10-25",
+   "reason": "derived_values.entity_id: unreachable on 40 of 64 rows: null",
+   "share": 0.625
+  },
+  {
+   "key": "J5:market_series.entity_id",
+   "owner": "the producer of the table",
+   "date": "2026-10-25",
+   "reason": "market_series.entity_id: unreachable on 2751 of 2757 rows: null",
+   "share": 0.9978
+  },
+  {
+   "key": "J5:obligation_objects.first_deadline",
+   "owner": "the producer of the table",
+   "date": "2026-10-25",
+   "reason": "obligation_objects.first_deadline: unreachable on 278 of 1868 rows: null",
+   "share": 0.1488
+  },
+  {
+   "key": "J5:obligation_objects.instrument_entity_id",
+   "owner": "the producer of the table",
+   "date": "2026-10-25",
+   "reason": "obligation_objects.instrument_entity_id: unreachable on 119 of 1868 rows: null",
+   "share": 0.0637
+  },
+  {
+   "key": "J5:obligation_objects.source_id",
+   "owner": "the producer of the table",
+   "date": "2026-10-25",
+   "reason": "obligation_objects.source_id: unreachable on 1807 of 1868 rows: null",
+   "share": 0.9673
+  },
+  {
+   "key": "J5:obligation_objects.statutory_maximum",
+   "owner": "the producer of the table",
+   "date": "2026-10-25",
+   "reason": "obligation_objects.statutory_maximum: unreachable on 1867 of 1868 rows: null",
+   "share": 0.9995
+  },
+  {
+   "key": "J5:oem_tech_roadmaps.target_year",
+   "owner": "the producer of the table",
+   "date": "2026-10-25",
+   "reason": "oem_tech_roadmaps.target_year: unreachable on 6 of 6 rows (4 stated): null",
+   "share": 1
+  },
+  {
+   "key": "J5:regional_data_facts.as_at_date",
+   "owner": "the producer of the table",
+   "date": "2026-10-25",
+   "reason": "regional_data_facts.as_at_date: unreachable on 75 of 92 rows: null",
+   "share": 0.8152
+  },
+  {
+   "key": "J5:regional_data_facts.source_id",
+   "owner": "the producer of the table",
+   "date": "2026-10-25",
+   "reason": "regional_data_facts.source_id: unreachable on 91 of 92 rows: null",
+   "share": 0.9891
+  },
+  {
+   "key": "J5:regional_data_facts.unit",
+   "owner": "the producer of the table",
+   "date": "2026-10-25",
+   "reason": "regional_data_facts.unit: unreachable on 75 of 92 rows: null",
+   "share": 0.8152
+  },
+  {
+   "key": "J5:regional_data_facts.value_numeric",
+   "owner": "the producer of the table",
+   "date": "2026-10-25",
+   "reason": "regional_data_facts.value_numeric: unreachable on 75 of 92 rows: null",
+   "share": 0.8152
+  },
+  {
+   "key": "J5:research_assessments_current.entity_id",
+   "owner": "the producer of the table",
+   "date": "2026-10-25",
+   "reason": "research_assessments_current.entity_id: unreachable on 38 of 38 rows: null",
+   "share": 1
+  },
+  {
+   "key": "J5:research_assessments_current.technical_maturity_low",
+   "owner": "the producer of the table",
+   "date": "2026-10-25",
+   "reason": "research_assessments_current.technical_maturity_low: unreachable on 24 of 38 rows: null",
+   "share": 0.6316
+  },
+  {
+   "key": "J5:section_claim_provenance.source_id",
+   "owner": "the producer of the table",
+   "date": "2026-10-25",
+   "reason": "section_claim_provenance.source_id: unreachable on 10392 of 34037 rows: null",
+   "share": 0.3053
+  },
+  {
+   "key": "J5:section_claim_provenance.source_tier_at_grounding",
+   "owner": "the producer of the table",
+   "date": "2026-10-25",
+   "reason": "section_claim_provenance.source_tier_at_grounding: unreachable on 13047 of 34037 rows: null",
+   "share": 0.3833
+  }
+ ]
+}

@@ -137,6 +137,9 @@ jobs:
       - run: npm ci --no-audit --ignore-scripts # the source-backfill generator imports the classify rules (zod)
       - name: Apply schema.sql to an empty Postgres 15, then the migrations, the down files and the property checks
         run: npm run schema:apply
+      # JOIN-1 J1: the text columns of the tables the engine joins, read from information_schema on the database just built, must all be in the pin (scripts/ci/data/joinability.json): a new column is caught the same PR
+      - name: Joinability against this database's information_schema (a text column the pin does not list is red)
+        run: node --import ./tests/_support/register.mjs scripts/ci/joinability.mjs --schema
 
   turn:
     name: turn
@@ -532,6 +535,11 @@ jobs:
         run: node scripts/ci/migrate.mjs --pending
       - name: Apply them in order (stops at the first failure; each file must print its own OK)
         run: node scripts/ci/migrate.mjs --apply
+      # JOIN-1 J3 and the key coverage: the one place a pull request's credential-free gate cannot reach. The sample is read-only (BEGIN READ ONLY) with the migration credential this job already holds; no secret is added. Its verdict is in the job summary and the step is
+      # red when a finding is not on scripts/ci/joinability-allow.json, but it does not stop the job: ruled-runs and edge-deploy need this job to succeed, and an allow-list entry that a ruled run's fill has just made stale must not block the next push's data runs.
+      - name: Joinability sample (units, tokens, severity, detector keys, claims by surface and tier; read-only)
+        continue-on-error: true
+        run: node --import ./tests/_support/register.mjs scripts/ci/joinability.mjs --sample
 
   # Deploys the Edge Function the repository carries. Runs on a push to main after `migrate` (the schema is ahead of the code) when the push changed supabase/functions or src/core/fetch (the `changes` job's `edge`; a push that
   # did not has the reason in the `changes` summary), or on a dispatch with only=edge-deploy on main; never on a pull request or in a fork. It holds the one token and checks the deploy by the function list: the version went up and the status is ACTIVE.

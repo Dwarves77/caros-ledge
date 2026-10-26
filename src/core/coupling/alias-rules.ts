@@ -1,15 +1,11 @@
-// New in CONNECT-2 PR A (scripts/ci/new-files/connect-2a.txt): what may be an alias, and how a phrase is read. A name or alias shorter than four characters, one with no letter, or one that is a dictionary word or a generic term of the corpus (the stoplist in data/resolver.json) resolves nothing:
-// "Union", "Commission" and "Act" name no entity, and a three-letter acronym names several. The one exception is the acronym listed in data/resolver.json with the entity it expands to and the page that says so: it is matched on its own, CASE-SENSITIVELY, as one whole word (SAF is SAF, never saf, SAFE or Safran). Matching is on the phrase: lower case, the letters and digits of the text in order, everything between them one space.
+// New in CONNECT-2 PR A (scripts/ci/new-files/connect-2a.txt): what may be an alias of a coupling in couplings.json (four characters or more, a letter in it, not a stoplist word). Since JOIN-1 (operator and scope reviewer, 2026-10-25) NO text is matched with this: the flywheel matches no free-text words,
+// so the rule only validates the vocabulary file at load. It stays, with data/resolver.json, because couplings.json is part of the five released pattern methods (INV-202): removing an alias or this list needs the new versions that the follow-up batch registers.
 import rules from "./data/resolver.json";
 
 const stop = new Set(rules.stop);
-const acronyms = new Set(rules.acronyms.map((a) => a.acronym));
-
-/** Whether the text is one of the listed uppercase acronyms (exact, case-sensitive). */
-export const isAcronym = (s: string): boolean => acronyms.has(s);
 
 /** The phrase a name or a text reads as: its letters and digits, lower case, single spaces. */
-export const phraseOf = (s: string): string => (s.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? []).join(" ");
+const phraseOf = (s: string): string => (s.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? []).join(" ");
 
 /** Whether a name may be an alias: four characters or more, a letter in it, not a stoplist word or phrase. */
 export const admitAlias = (alias: string): boolean => {

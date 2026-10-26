@@ -1,0 +1,95 @@
+{
+  "ruling": "coordinator 2026-10-25, JOIN-1 brief (docs/plans/rebuild/briefs/JOIN-1.md) and its two 2026-10-25 addenda: fill the typed columns the cited captures state (oem_tech_roadmaps.target_year), file each research assessment under the technology entity its item names, retire the mined refs that were grounded only by matching words in prose (operator and scope reviewer 2026-10-25: the flywheel matches no free-text words), then re-mine on formal codes and typed columns and re-detect under rule 17; scrape cadence stays off and the producers fetch only the pages their rows cite",
+  "steps": [
+    {
+      "name": "oem-roadmap-rows-dry",
+      "stage": "propagate",
+      "mode": "dry",
+      "input": {
+        "propagate": {
+          "producers": {
+            "only": "oem-roadmap-rows",
+            "rowsFile": "src/features/market/producers/data/rows/oem_tech_roadmaps-2026-10.json"
+          },
+          "cadence_exception": "coordinator 2026-10-25, JOIN-1 brief (docs/plans/rebuild/briefs/JOIN-1.md) and its two 2026-10-25 addenda: fill the typed columns the cited captures state (oem_tech_roadmaps.target_year), file each research assessment under the technology entity its item names, retire the mined refs that were grounded only by matching words in prose (operator and scope reviewer 2026-10-25: the flywheel matches no free-text words), then re-mine on formal codes and typed columns and re-detect under rule 17; scrape cadence stays off and the producers fetch only the pages their rows cite"
+        }
+      },
+      "producer_env": [
+        "OEM_PRODUCER_ROWS_FILE_ENABLED=1"
+      ]
+    },
+    {
+      "name": "oem-roadmap-rows",
+      "stage": "propagate",
+      "mode": "apply",
+      "input": {
+        "propagate": {
+          "producers": {
+            "only": "oem-roadmap-rows",
+            "rowsFile": "src/features/market/producers/data/rows/oem_tech_roadmaps-2026-10.json"
+          },
+          "cadence_exception": "coordinator 2026-10-25, JOIN-1 brief (docs/plans/rebuild/briefs/JOIN-1.md) and its two 2026-10-25 addenda: fill the typed columns the cited captures state (oem_tech_roadmaps.target_year), file each research assessment under the technology entity its item names, retire the mined refs that were grounded only by matching words in prose (operator and scope reviewer 2026-10-25: the flywheel matches no free-text words), then re-mine on formal codes and typed columns and re-detect under rule 17; scrape cadence stays off and the producers fetch only the pages their rows cite"
+        }
+      },
+      "producer_env": [
+        "OEM_PRODUCER_ROWS_FILE_ENABLED=1"
+      ]
+    },
+    {
+      "name": "research-assessment",
+      "stage": "propagate",
+      "mode": "apply",
+      "input": {
+        "propagate": {
+          "producers": {
+            "only": "research-assessment"
+          },
+          "cadence_exception": "coordinator 2026-10-25, JOIN-1 brief (docs/plans/rebuild/briefs/JOIN-1.md) and its two 2026-10-25 addenda: fill the typed columns the cited captures state (oem_tech_roadmaps.target_year), file each research assessment under the technology entity its item names, retire the mined refs that were grounded only by matching words in prose (operator and scope reviewer 2026-10-25: the flywheel matches no free-text words), then re-mine on formal codes and typed columns and re-detect under rule 17; scrape cadence stays off and the producers fetch only the pages their rows cite"
+        }
+      },
+      "producer_env": [
+        "RESEARCH_ASSESSMENT_PRODUCER_ENABLED=1"
+      ]
+    },
+    {
+      "name": "refs-prose-retired-dry",
+      "stage": "propagate",
+      "mode": "dry",
+      "input": {
+        "propagate": {}
+      },
+      "producer_env": []
+    },
+    {
+      "name": "refs-prose-retired",
+      "stage": "propagate",
+      "mode": "apply",
+      "input": {
+        "propagate": {}
+      },
+      "producer_env": []
+    },
+    {
+      "name": "patterns-dry",
+      "stage": "connect",
+      "mode": "dry",
+      "input": {
+        "connect": {
+          "scan_limit": 0
+        }
+      },
+      "producer_env": []
+    },
+    {
+      "name": "patterns",
+      "stage": "connect",
+      "mode": "apply",
+      "input": {
+        "connect": {
+          "scan_limit": 0
+        }
+      },
+      "producer_env": []
+    }
+  ]
+}

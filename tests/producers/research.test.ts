@@ -2,11 +2,13 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
+import { couplingByKey } from "@/core/coupling/coupling";
 import { entityId } from "@/core/entities";
 import { runProducer } from "@/core/producers/runner";
 import { aggregateAuthorityDistribution, scoreSource } from "@/features/research/authority-score";
 import { fetchLiveCandidates, researchAssessment } from "@/features/research/assessment-producer";
-import { assessItem, extractDoiCandidate, hasChanged, toRow, type AssessInput } from "@/features/research/model/assess";
+import { assessItem, extractDoiCandidate, hasChanged, toAssessmentInput, toRow, type AssessInput } from "@/features/research/model/assess";
+import { technologyEntityOf } from "@/features/research/model/technology-entity";
 import { classifyTheme, THEME_VALUES } from "@/features/research/theme-rules";
 import { researchWalker, walkResearch, type WalkerDeps } from "@/features/research/walker";
 
@@ -166,6 +168,46 @@ test("the first live pass scores only verified research items with no current as
   assert.equal(out[0]?.sourceTier, 2);
   assert.equal(out[0]?.forwardEvents.length, 1);
   assert.equal((await fetchLiveCandidates(db.db, 0)).length, 1);
+});
+
+// ---- JOIN-1: an assessment is filed under the technology its item is tagged with ----
+const SAF = couplingByKey("carrier:hefa_saf")?.entityId as string;
+const CHARGING = couplingByKey("node:hdv_charging")?.entityId as string;
+
+test("INV-JOIN-7: the entity of an assessment is the one technology the item's typed tags name; several technologies, none, or only words in the text file it under none", () => {
+  assert.equal(technologyEntityOf(["air-fueling", "unrelated-tag"]), SAF);
+  assert.equal(technologyEntityOf(["drayage"]), CHARGING);
+  assert.equal(technologyEntityOf(["air-fueling", "drayage"]), null, "two technologies: filed under none, never guessed");
+  assert.equal(technologyEntityOf(["SAF-blending"]), null, "a tag that two technology entities list names neither");
+  assert.equal(technologyEntityOf(["ocean-fuel-blend-mandate"]), null, "a tag that many technologies list names none");
+  assert.equal(technologyEntityOf([]), null);
+  assert.equal(technologyEntityOf(null), null);
+  const withWords = toAssessmentInput({ id: "w", item_type: "research_finding", title: "HEFA-SAF offtake and green ammonia engines", what_is_it: "Sustainable aviation fuel.", operational_scenario_tags: [] });
+  assert.equal(withWords.technologyEntityId, null, "the words of the title and text are never matched");
+});
+
+test("INV-JOIN-7: the producer files a row under its technology entity only when the entity exists; an unseeded entity is counted and the row is filed under none, never a foreign-key failure", async () => {
+  const text = (id: string) => JSON.stringify([futureInput("FuelEU compliance date applies. A demonstration pilot project.")].map((c) => ({ ...c, id, technologyEntityId: SAF })));
+  const armed = { ...researchAssessment, enabled: true };
+  const seeded = memoryDb({ entities: [{ entity_id: SAF, kind: "material" }] });
+  const a = await runProducer(makeDeps({ db: seeded, env: ASSESS_ENV }).deps, { spec: armed, dry: false, text: text("item-1") });
+  assert.equal(a.counts.entity_not_seeded, 0, a.notes.join("|"));
+  assert.equal(seeded.tables.research_assessments?.[0]?.entity_id, SAF);
+  const bare = memoryDb({});
+  const b = await runProducer(makeDeps({ db: bare, env: ASSESS_ENV }).deps, { spec: armed, dry: false, text: text("item-2") });
+  assert.equal(b.counts.entity_not_seeded, 1, b.notes.join("|"));
+  assert.equal(bare.tables.research_assessments?.[0]?.entity_id, null);
+});
+
+test("INV-JOIN-7: an assessment filed under no entity is re-scored while its item is tagged with a technology (the backlog works down), and left alone when the tags name none or it already has its entity", async () => {
+  const item = (id: string, title: string, tags: string[]) => ({ id, item_type: "research_finding", domain: 7, title, is_archived: false, provenance_status: "verified", source_id: "s1", operational_scenario_tags: tags });
+  const db = memoryDb({
+    intelligence_items: [item("n1", "Offtake", ["air-fueling"]), item("n2", "A study", []), item("n3", "Supply", ["air-fueling"]), item("n4", "Chargers", ["drayage"])],
+    research_assessments_current: [{ item_id: "n1", entity_id: null }, { item_id: "n2", entity_id: null }, { item_id: "n3", entity_id: SAF }],
+    sources: [{ id: "s1", base_tier: 2 }],
+  });
+  const out = await fetchLiveCandidates(db.db);
+  assert.deepEqual(out.map((c) => [c.id, c.technologyEntityId]), [["n1", SAF], ["n4", CHARGING]]);
 });
 
 // ---- walker ----

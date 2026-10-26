@@ -1,20 +1,19 @@
 // New in CONNECT-2 PR A (scripts/ci/new-files/connect-2a.txt): entity-ref mining over the full corpus (C2). Three inputs write entity_refs, never without a basis and the version of the rule that read it:
-// (a) CLAIMS: every section_claim_provenance row's text resolved to entities (resolveText), role from the coupling class, basis {claim_id, span, claim_kind, how};
-// (b) TYPED COLUMNS: the column-to-entity mapping of couplings.json over the typed tables (an entity id held in a column, a name resolved through the aliases, a transport mode, a coded value, a constant, or the refs another table's row already holds), basis {table, pk, column, value};
+// (a) CLAIMS: every section_claim_provenance row's text read for formal codes only (an instrument identifier, a UN/LOCODE: resolveText), role from the coupling class, basis {claim_id, span, claim_kind, how}; no word of the prose is matched;
+// (b) TYPED COLUMNS: the column-to-entity mapping of couplings.json over the typed tables (an entity id held in a column, a transport mode, a coded value, a constant, or the refs another table's row already holds; a prose label is never matched), basis {table, pk, column, value};
 // (c) SCENARIO TAGS: an item's operational scenario tags resolved to the couplings that list them, basis {tag}.
 // A table keyed by text (obligation_objects) is keyed in entity_refs by the uuid of its key (uuidOf), the key itself in the basis. Idempotent: a second run writes no ref; a dry run counts the refs it would write.
 import { createHash } from "node:crypto";
 
 import { normaliseMode } from "@/core/contracts/vocabularies";
 import type { Db } from "@/core/db";
-import { nameForJurisdiction } from "@/core/entities/unlocode-names";
 import type { RunResult } from "@/core/types/run-result";
 
 import { COLUMNS, couplingByKey, couplingById, couplingsForScenario, roleOf, type ColumnMap } from "./coupling";
 import { readAll, type Row } from "./read";
-import { buildResolver, resolveText, type NameSource, type Resolver } from "./resolve";
+import { buildResolver, resolveText, type Resolver } from "./resolve";
 
-const REFS_VERSION = "refs@1.0.0";
+const REFS_VERSION = "refs@2.0.0";
 const REFS_ASSERTED_BY = "coupling/refs";
 const UUID_SHAPE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const ENTITY_ID_SHAPE = /^cl:[a-z_]+:[0-9a-f]{16}$/;
@@ -74,7 +73,6 @@ function rowEntities(map: ColumnMap, row: Row, c: MineContext): { entity: string
         if (v === null || v === undefined || v === "") continue;
         if (m.by === "entity") add(ENTITY_ID_SHAPE.test(String(v)) ? String(v) : undefined);
         // a text column (a label, a duty's verbatim text) is resolved like a claim; the basis keeps the words that matched and where, not the whole text
-        else if (m.by === "alias") for (const hit of resolveText(String(v), c.resolver)) add(hit.entityId, { value: String(v).slice(hit.span[0], hit.span[1]), span: hit.span });
         else if (m.by === "mode") add(couplingByKey(`mode:${normaliseMode(v)}`)?.entityId);
         else if (m.by === "map") add(couplingByKey(m.map?.[String(v)] ?? "")?.entityId);
       }
@@ -111,38 +109,54 @@ export async function writeRefs(sb: Db, refs: readonly RefRow[], held: ReadonlyS
   return written;
 }
 
+/** Retire refs by key, grouped by table, entity and role with the ref ids in chunks; the count is rows retired (a failed chunk is a note and is not counted). */
+async function removeRefs(sb: Db, refs: readonly { ref_table: string; ref_id: string; entity_id: string; role: string }[], notes: string[]): Promise<number> {
+  const groups = new Map<string, string[]>();
+  for (const r of refs) groups.set(`${r.ref_table}|${r.entity_id}|${r.role}`, [...(groups.get(`${r.ref_table}|${r.entity_id}|${r.role}`) ?? []), r.ref_id]);
+  let removed = 0;
+  for (const [key, ids] of groups) {
+    const [table, entity, role] = key.split("|") as [string, string, string];
+    for (let i = 0; i < ids.length; i += 200) {
+      const { error } = await sb.from("entity_refs").delete().eq("ref_table", table).eq("entity_id", entity).eq("role", role).eq("asserted_by", REFS_ASSERTED_BY).in("ref_id", ids.slice(i, i + 200));
+      if (error) notes.push(`entity_refs retirement failed: ${error.message}`);
+      else removed += ids.slice(i, i + 200).length;
+    }
+  }
+  return removed;
+}
+
 export async function mineRefs(deps: { sb: Db; now: () => Date }, input: { dry: boolean }): Promise<RunResult<{ ids: Record<string, string[]> }>> {
   const { sb } = deps;
   const notes: string[] = [];
-  const [entities, aliases, identifiers, titled, existing] = await Promise.all([
-    readAll<{ entity_id: string; kind: string; canonical_name: string; display_name: string | null }>(sb, "entities", "entity_id,kind,canonical_name,display_name", ["entity_id"]),
-    readAll<{ entity_id: string; alias: string }>(sb, "entity_aliases", "entity_id,alias", ["entity_id", "alias", "alias_kind", "asserted_by"]),
-    readAll<{ entity_id: string; value: string }>(sb, "entity_identifiers", "entity_id,value", ["entity_id", "scheme", "value"]),
-    readAll<{ instrument_entity_id: string; title: string }>(sb, "intelligence_items", "id,instrument_entity_id,title", ["id"], (q) => q.not("instrument_entity_id", "is", null)),
-    readAll<{ ref_table: string; ref_id: string; entity_id: string; role: string }>(sb, "entity_refs", "ref_table,ref_id,entity_id,role", ["ref_table", "ref_id", "entity_id", "role"]),
+  const [entities, identifiers, existing, claims] = await Promise.all([
+    readAll<{ entity_id: string; kind: string; canonical_name: string }>(sb, "entities", "entity_id,kind,canonical_name", ["entity_id"]),
+    readAll<{ entity_id: string; value: string }>(sb, "entity_identifiers", "entity_id,value", ["entity_id", "scheme", "value"], (q) => q.eq("scheme", "UNLOCODE")),
+    readAll<{ ref_table: string; ref_id: string; entity_id: string; role: string; asserted_by: string; basis: { how?: string; span?: unknown } | null }>(sb, "entity_refs", "ref_table,ref_id,entity_id,role,asserted_by,basis", ["ref_table", "ref_id", "entity_id", "role"]),
+    readAll<{ id: string; claim_text: string; claim_kind: string }>(sb, "section_claim_provenance", "id,claim_text,claim_kind", ["id"]),
   ]);
+  // The refs this pass wrote when it matched prose (a country name, a host, an alias, an acronym, a title, a label) are retired: a claim ref whose basis says it was matched by name, alias or acronym, and a typed ref whose basis carries a span in a text label.
+  // Counted by basis kind before anything is removed; the connect stage's own supersession retires the patterns that stood only on them.
+  const prose = (r: (typeof existing)[number]) => r.asserted_by === REFS_ASSERTED_BY && (["name", "alias", "acronym"].includes(String(r.basis?.how)) || (r.ref_table !== "section_claim_provenance" && Array.isArray(r.basis?.span)));
+  const stale = existing.filter(prose);
+  const staleKeys = new Set(stale.map(refKey));
+  const kept = existing.filter((r) => !staleKeys.has(refKey(r)));
   const held = new Map<string, string[]>();
-  for (const r of existing) held.set(`${r.ref_table}|${r.ref_id}`, [...(held.get(`${r.ref_table}|${r.ref_id}`) ?? []), r.entity_id]);
-  // every name the spine holds: the aliases, each entity's canonical and display name (a jurisdiction's by its country name), its identifiers, and the title of the instrument an item carries
-  const names: NameSource[] = [
-    ...aliases.map((a) => ({ entity_id: a.entity_id, name: a.alias, how: "alias" as const })),
-    ...entities.filter((e) => e.kind !== "obligation").flatMap((e) => [e.canonical_name, e.display_name, e.kind === "jurisdiction" ? nameForJurisdiction(e.canonical_name) : null].flatMap((name) => (name ? [{ entity_id: e.entity_id, name, how: "name" as const }] : []))),
-    ...identifiers.map((i) => ({ entity_id: i.entity_id, name: i.value, how: "name" as const })),
-    ...titled.map((i) => ({ entity_id: i.instrument_entity_id, name: i.title.replace(/^The /, ""), how: "name" as const })),
-  ];
-  const resolver = buildResolver(names, entities.filter((e) => e.kind === "instrument"));
+  for (const r of kept) held.set(`${r.ref_table}|${r.ref_id}`, [...(held.get(`${r.ref_table}|${r.ref_id}`) ?? []), r.entity_id]);
+  const resolver = buildResolver(identifiers.map((i) => ({ entity_id: i.entity_id, code: i.value })), entities.filter((e) => e.kind === "instrument"));
   const ctx: MineContext = { resolver, known: new Set(entities.map((e) => e.entity_id)), held, kinds: new Map(entities.map((e) => [e.entity_id, e.kind])) };
-  const heldKeys = new Set(existing.map(refKey));
+  const heldKeys = new Set(kept.map(refKey));
   const plan: RefRow[] = [];
   const take = (refs: RefRow[]) => {
     for (const r of refs) held.set(`${r.ref_table}|${r.ref_id}`, [...new Set([...(held.get(`${r.ref_table}|${r.ref_id}`) ?? []), r.entity_id])]);
     plan.push(...refs);
   };
 
-  const claims = await readAll<{ id: string; claim_text: string; claim_kind: string }>(sb, "section_claim_provenance", "id,claim_text,claim_kind", ["id"]);
   const fromClaims = claimRefs(claims, ctx);
   take(fromClaims.refs);
-  const counts: Record<string, number> = { claims: claims.length, claims_resolved: fromClaims.resolved, refs_claims_planned: fromClaims.refs.length, resolver_names: resolver.phrases.size, resolver_names_ambiguous: resolver.ambiguous };
+  const counts: Record<string, number> = { claims: claims.length, claims_resolved: fromClaims.resolved, refs_claims_planned: fromClaims.refs.length, resolver_codes: resolver.codes.size, resolver_instruments: resolver.instruments.size };
+  // the share of claims and refs by what grounded them, before this pass retires the prose ones and after it (formal code: an identifier or a UN/LOCODE; typed: a column of a typed table; prose: a matched word)
+  const claimsFiled = (rows: readonly (typeof existing)[number][]) => new Set(rows.filter((r) => r.ref_table === "section_claim_provenance").map((r) => r.ref_id)).size;
+  Object.assign(counts, { claims_filed_before: claimsFiled(existing), refs_before_formal: existing.filter((r) => ["identifier", "code"].includes(String(r.basis?.how))).length, refs_before_typed: existing.filter((r) => !prose(r) && r.basis && ("column" in r.basis || "tag" in r.basis)).length, refs_before_prose: stale.length, refs_prose_existing: stale.length });
   for (const r of fromClaims.refs) counts[`claim_refs_${ctx.kinds.get(r.entity_id) ?? "coupling"}`] = (counts[`claim_refs_${ctx.kinds.get(r.entity_id) ?? "coupling"}`] ?? 0) + 1;
   for (const [kind, n] of Object.entries(fromClaims.unresolved)) counts[`claims_unresolved_${kind.toLowerCase()}`] = n;
   for (const map of COLUMNS) {
@@ -157,6 +171,7 @@ export async function mineRefs(deps: { sb: Db; now: () => Date }, input: { dry: 
   const classes = new Set(plan.map((r) => couplingById(r.entity_id)?.class ?? "spine"));
   counts.entity_classes_reached = classes.size;
   if (input.dry) return { counts, outcome: "ok", notes: [...notes, "dry: nothing written"], data: { ids: {} } };
+  counts.refs_prose_retired = await removeRefs(sb, stale, notes);
   counts.refs_written = await writeRefs(sb, plan, heldKeys, notes);
   return { counts, outcome: notes.length ? "partial" : "ok", notes, data: { ids: {} } };
 }

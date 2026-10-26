@@ -14,17 +14,16 @@ test("INV-CN2-5: the planted data yields exactly one pattern per kind and one cr
   assert.equal((await propagate(f)).exit, 0);
   assert.equal((await connect(f)).exit, 0);
   const rows = patterns(f);
-  assert.deepEqual(byMethod(rows), { pattern_velocity_burst: 1, pattern_mandate_capacity: 2, pattern_lead_lag: 1, pattern_cross_modal: 8, pattern_penalty_abatement: 1 });
+  assert.deepEqual(byMethod(rows), { pattern_velocity_burst: 1, pattern_mandate_capacity: 1, pattern_lead_lag: 1, pattern_cross_modal: 8, pattern_penalty_abatement: 1 });
   const cross = rows.filter((r) => r.method_id === "pattern_cross_modal").map((r) => String(r.computed_by).split("|")[1]).sort();
   assert.deepEqual(cross, ["competes_for_feedstock", "consignment_wide", "consignment_wide", "corridor_links", "corridor_links", "corridor_links", "feedstock_of", "shares_grid_zone"]);
-  // the three join fixes: a duty's own text files it under a feedstock, so it meets the capacity row under the carrier that feedstock supplies (P2); a mode-agnostic mandate and the two corridors that link road each carry a spill from a road ratchet (P4)
+  // the join fixes: a mode-agnostic mandate and the two corridors that link road each carry a spill from a road ratchet (P4)
   const keys = rows.filter((r) => r.method_id === "pattern_cross_modal").map((r) => String(r.computed_by));
   for (const target of ["instrument:32025R0040", "corridor:rail_road", "corridor:inland_waterway"]) assert.ok(keys.some((k) => k.includes(`|${OBLIGATION.road}|`) || (k.includes(OBLIGATION.road) && k.endsWith(E(target)))), target);
-  assert.ok(rows.some((r) => r.method_id === "pattern_mandate_capacity" && String(r.computed_by).includes(OBLIGATION.uco)), "the used-cooking-oil duty meets the roadmap under HEFA-SAF");
   const anchor = (id: string) => rows.find((r) => r.method_id === id)?.entity_id;
   assert.equal(anchor("pattern_velocity_burst"), E("carrier:green_ammonia"));
   assert.equal(anchor("pattern_penalty_abatement"), E("carrier:bio_methanol"));
-  assert.equal(countsOf(f, "corpus-turn").patterns, 13, "the stage's ledger row carries the count per kind");
+  assert.equal(countsOf(f, "corpus-turn").patterns, 12, "the stage's ledger row carries the count per kind");
   assert.deepEqual([countsOf(f, "corpus-turn").patterns_velocity, countsOf(f, "corpus-turn").patterns_crossModal], [1, 8]);
 });
 
