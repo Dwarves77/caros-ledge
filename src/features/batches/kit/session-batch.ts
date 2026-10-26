@@ -141,13 +141,13 @@ const refusalNotes = (v: Verdict<unknown>, cap = 12): string[] => {
 
 export interface BatchData { batch: string | null; ids: Record<string, string[]>; residue: { index: number; key: string | null; errors: string[] }[]; alreadyApplied: string[]; downstream: { counts: Record<string, number>; outcome: string; notes: string[] } | null }
 
-/** DRAIN-FIX-2 D1: every entry the reviewer judged is a brief_reviews row: a valid one residue false, a residue or refused one residue true with ALL its reasons. The correction queue lives in the database, and an all-residue batch records its rows too. Returns the notes of a failed write. */
+/** DRAIN-FIX-2 D1: every entry the reviewer judged is a brief_reviews row: a valid one residue false, a residue one residue true with ALL its reasons (a refused entry holds its batch whole, which writes its ledger row only: INV-FLY-2). The correction queue lives in the database, and an all-residue batch records its rows too. Returns the notes of a failed write. */
 async function recordReviews<L, P>(spec: EntrySpec<L, P>, deps: BatchDeps, file: Obj, v: Verdict<P>, batch: string): Promise<string[]> {
   const row = (index: number, key: string | null, reasons: string, residue: boolean) => {
     const id = spec.residueReview?.((file.entries as Obj[])[index] as Obj, key);
     return id && /^[0-9a-f-]{36}$/i.test(id.subjectId) ? [{ kind: spec.kind, subject_id: id.subjectId, batch, score: id.score, reasons, residue, reviewed_by: id.reviewedBy }] : [];
   };
-  const rows = [...v.valid.flatMap((x) => row(x.index, x.key, "required judges passed", false)), ...[...v.refused, ...v.residue].flatMap((r) => row(r.index, r.key, r.errors.join("; "), true))];
+  const rows = [...v.valid.flatMap((x) => row(x.index, x.key, "required judges passed", false)), ...v.residue.flatMap((r) => row(r.index, r.key, r.errors.join("; "), true))];
   if (!rows.length) return [];
   const { error } = await deps.sb.from("brief_reviews").upsert(rows, { onConflict: "kind,subject_id,batch" });
   return error ? [`${spec.kind}: ${rows.length} review row(s) not written: ${error.message}`] : [];
