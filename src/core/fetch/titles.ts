@@ -98,7 +98,7 @@ const QUOTED_ANNEX = /\s['‘’"“]ANNEX\b/;
  * The official act title: a captured title (or the joined heading elements of a page) carries the page's annex headings after the title itself. The title ends at the first "(Text with EEA relevance)" when an annex heading follows it,
  * else before the first quoted ANNEX; a title that still holds an ANNEX word after that cut cannot be split cleanly and is returned as captured. Migration 0140 repairs stored titles by the same two steps, so the two stay one rule.
  */
-export function officialTitle(title: string): string {
+function officialTitle(title: string): string {
   const at = title.indexOf(EEA_MARKER);
   if (at >= 0 && ANNEX_HEADING_AFTER_MARKER.test(title.slice(at + EEA_MARKER.length))) return title.slice(0, at + EEA_MARKER.length);
   const quoted = title.search(QUOTED_ANNEX);

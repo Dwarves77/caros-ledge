@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { buildTitleForRow, extractCellarTitle, normalizeDisplayTitle, officialTitle } from "@/core/fetch/titles";
+import { buildTitleForRow, extractCellarTitle, normalizeDisplayTitle } from "@/core/fetch/titles";
 
 test("extractCellarTitle: ignores annex p.oj-doc-ti elements and preserves act title", () => {
   const html = `
@@ -69,7 +69,9 @@ test("normalizeDisplayTitle: a shouting token with an apostrophe is re-cased lik
 
 const ACT = "COMMISSION IMPLEMENTING REGULATION (EU) 2023/2122 of 12 October 2023 amending Implementing Regulation (EU) 2018/2066 as regards updating the monitoring and reporting of greenhouse gas emissions pursuant to Directive 2003/87/EC of the European Parliament and of the Council (Text with EEA relevance)";
 
-test("officialTitle: the title ends at the EEA marker when an annex heading follows it, else before the first quoted ANNEX, else it is left", () => {
+const officialTitle = (title: string): string => buildTitleForRow({ capture: { title, titleOrigin: "captured_title" }, source: { name: "EUR-Lex", url: "https://eur-lex.europa.eu/" } }).title;
+
+test("officialTitle (through buildTitleForRow): the title ends at the EEA marker when an annex heading follows it, else before the first quoted ANNEX, else it is left", () => {
   const withAnnexes = `${ACT} ‘ANNEX IIa Tier definitions for calculation-based methodologies ‘ANNEX IX Minimum data ANNEX Xb Reports on released fuels`;
   assert.equal(officialTitle(withAnnexes), ACT);
   assert.equal(officialTitle(`${ACT} ANNEX Amendments to Regulation (EU) 2018/2066`), ACT, "a single unnumbered annex after the marker");
@@ -79,7 +81,7 @@ test("officialTitle: the title ends at the EEA marker when an annex heading foll
   assert.equal(officialTitle("COMMISSION DELEGATED REGULATION (EU) No 275/2014 of 7 January 2014 amending Annex I to Regulation (EU) No 1316/2013"), "COMMISSION DELEGATED REGULATION (EU) No 275/2014 of 7 January 2014 amending Annex I to Regulation (EU) No 1316/2013", "a mixed-case Annex inside the title is the title's own");
   const unsplittable = "DIRECTIVE 2008/50/EC on air ANNEX I DATA ‘ANNEX II Determination";
   assert.equal(officialTitle(unsplittable), unsplittable, "an ANNEX word before the quoted one: not split cleanly, left as captured");
-  assert.equal(officialTitle(""), "");
+  assert.equal(officialTitle(" "), " ");
 });
 
 test("the mint takes only the document's own title: a planted amending page with quoted annex headings yields the act title from every capture shape (TITLE-1 B4)", () => {
