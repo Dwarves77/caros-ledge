@@ -2,7 +2,7 @@
 
 A finding says where capital is legally or physically forced to flow next, months before the broader market, from a pattern the machine found across tables. The export is one bundle per derived pattern (a P2, P3 or P5 pattern, or a P1 or P4 pattern with a capital or capacity entity as a member), grouped by lens, each with its pattern packet: every member row with its typed columns, every verbatim claim span, the relations traversed, the evidence rows and the signposts already open. You may cite nothing outside the packet. The finding is stored behind the platform-admin gate and no customer route reads it.
 
-**Status of this guide.** The batch below is what the author writes. Its validator, the second reader and the apply into the findings table are DIGEST-1 PR B (the plan marks this kind `apply_pending` and the drain command does not author it until then). Until the pattern engine's packets land, an export holds the patterns and an empty packet list, and says so.
+**Status of this guide.** The batch below is what the author writes. The validator refuses a row outside the packet and a span the row does not offer; the no-single-source test and the second reader (`review`: `{ reviewed_by, judges }`, every judge that applies answered pass or fail with evidence) run before the apply writes the finding, registers its signposts and supersedes the pattern's earlier finding. The bundle carries `candidate_entities`, the menu of entities the packet's rows are filed under.
 
 ## The three lenses (the export groups by these; HOW-TO-LOOK point 5)
 

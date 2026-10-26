@@ -9,7 +9,7 @@ import { applyBatch } from "@/features/batches";
 import { loadEmit, writeEmission } from "@/features/batches/kinds/item-briefs/emit";
 import { validateEmission, type EmissionPlan } from "@/features/batches/kinds/item-briefs/emission";
 
-import { batchFile, ITEM, NOW } from "../batches/world.ts";
+import { batchFile, ITEM, NOW, SPAN_FORCE } from "../batches/world.ts";
 
 import { emissionEntry, emissionWorld, HVO, OCEAN, ORG, SELF, UCO, type EmissionWorld } from "./emission-world.ts";
 
@@ -68,6 +68,7 @@ test("the contract checks: an id outside the menu, a candidate used as an id, an
   const refused = reasons(await check(w, emissionEntry(w, { obligation_fields: [bare] })));
   for (const need of ["duty_holder_class", "binding_position", "applicability_trigger"]) assert.match(refused, new RegExp(`a new object needs ${need}`));
   assert.match(reasons(await check(w, emissionEntry(w, { document_date: { date: "2023-09-13" } }))), /document date without a quote is refused/);
+  assert.match(reasons(await check(w, emissionEntry(w, { events: [{ event_kind: "entry_into_force", event_date: "2027-01-02", quote: q(SPAN_FORCE) }] }))), /event_date 2027-01-02 is not stated in the quote/);
   assert.match(reasons(await check(w, emissionEntry(w, { document_date: { date: "2023-09-14", quote: q("Done at Strasbourg, 13 September 2023.") } }))), /2023-09-14 is not stated in the quote/);
   assert.match(reasons(await check(w, emissionEntry(w, { new_entity_candidates: [{ proposed_kind: "port", canonical_name: "Rotterdam", quote: q("the port of Rotterdam NLRTM") }] }))), /UN\/LOCODE/);
   assert.match(reasons(await check(w, emissionEntry(w, { entity_ids: [{ entity_id: "CELEX:32099R0000", quote: q("Strasbourg") }] }))), /unknown entity id "CELEX:32099R0000"/);
@@ -128,6 +129,15 @@ test("INV-DIG-5: the entry applies end to end: the blocks reach their tables wit
   assert.deepEqual(["entity_refs", "obligation_objects", "entity_relations", "item_forward_events", "vocabulary_terms", "vocabulary_mentions"].map((t) => w.db.rows(t).length), before, JSON.stringify(again));
   assert.equal(again.counts.objects_written ?? 0, 0);
   assert.equal(again.counts.refs_written ?? 0, 0);
+});
+
+test("a document date the producer already read stands: the reader's value fills only a capture the producer could not date, and the count says so", async () => {
+  const w = emissionWorld();
+  Object.assign(w.db.rows("agent_run_searches").find((r) => r.id === w.cap) as Record<string, unknown>, { document_date: "2023-09-12", document_date_basis: "Done at Strasbourg, 12 September 2023", document_date_method: "doc-date@1.0.0" });
+  const plan = (await check(w, emissionEntry(w))).plan as EmissionPlan;
+  const out = await writeEmission(w.deps, ITEM, null, plan, new Set([w.cap]));
+  const cap = w.db.rows("agent_run_searches").find((r) => r.id === w.cap) as Record<string, unknown>;
+  assert.deepEqual([cap.document_date, cap.document_date_method, out.counts.document_dates_kept_producer, out.counts.document_dates_written ?? 0], ["2023-09-12", "doc-date@1.0.0", 1, 0]);
 });
 
 test("a reader value supersedes a derived one per column, and a derived value never overwrites a reader value (attack both ways)", async () => {

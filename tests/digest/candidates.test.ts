@@ -3,7 +3,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { COUPLINGS } from "@/core/coupling";
+import { COUPLINGS, couplingByKey } from "@/core/coupling";
 import { MENU } from "@/core/digest/kinds";
 import { entityId } from "@/core/entities/id";
 import { drainExporters } from "@/features/batches";
@@ -15,6 +15,7 @@ import { MemDb } from "../_support/memdb.ts";
 import { emissionWorld, HVO, OCEAN, SELF, UCO } from "./emission-world.ts";
 
 const ONTOLOGY = COUPLINGS.filter((c) => c.named);
+const HUB = couplingByKey("hub:seaport")?.entityId as string;
 function seeded(extra: { linked?: number } = {}) {
   const db = new MemDb();
   db.seed("entities", [
@@ -31,14 +32,14 @@ const linked = (n: number) => new Map(Array.from({ length: n }, (_, i) => [entit
 
 test("rank: the item's own instrument first, linked entities by weight, the ontology in kind order, region and publisher last; modes, hubs and windows omitted; aliases at most four; the line format", async () => {
   const db = seeded({ linked: 3 });
-  const m = await candidateMenu(db.client, { self: SELF, weights: new Map([...linked(3), [UCO, 9]]), region: [entityId("jurisdiction", "EU")], publisher: entityId("organisation", "eur-lex.europa.eu") });
+  const m = await candidateMenu(db.client, { self: SELF, weights: new Map([...linked(3), [UCO, 9], [OCEAN, 8], [HUB, 7]]), region: [entityId("jurisdiction", "EU")], publisher: entityId("organisation", "eur-lex.europa.eu") });
   assert.equal(m.ids[0], SELF);
   assert.deepEqual(m.ids.slice(1, 5), [UCO, ...[...linked(3).keys()]], "linked by weight desc: the ontology entity carrying 9 first, then 3, 2, 1");
   const classOf = (id: string) => ONTOLOGY.find((c) => c.entityId === id)?.class;
   const onto = m.ids.filter((id) => classOf(id) !== undefined && id !== UCO);
   assert.deepEqual([...new Set(onto.map(classOf))], MENU.kindOrder.filter((k) => ONTOLOGY.some((c) => c.class === k)), "the rest of the ontology in the configured kind order");
   assert.deepEqual(m.ids.slice(-2), [entityId("jurisdiction", "EU"), entityId("organisation", "eur-lex.europa.eu")]);
-  assert.ok(!m.ids.includes(OCEAN) && COUPLINGS.filter((c) => ["mode", "hub", "window"].includes(c.class)).every((c) => !m.ids.includes(c.entityId)), "closed tokens stay out of the menu");
+  assert.ok(!m.ids.includes(OCEAN) && COUPLINGS.filter((c) => ["mode", "hub", "window"].includes(c.class)).every((c) => !m.ids.includes(c.entityId)), "closed tokens stay out of the menu even when linked");
   const line = m.lines.find((l) => l.startsWith(HVO)) as string;
   assert.deepEqual(line.split(" | ").length, 5);
   assert.equal(line.split(" | ")[3]?.split("; ").length, 4, "aliases up to four");

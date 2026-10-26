@@ -24,6 +24,8 @@ A single brief is also accepted as `batch.content`: `{ theme_id, title, brief_md
 - Each claim's text appears in its section; its `member_id` is a live member; its claim ids are that member's grounded claims.
 - If the bundle lists gaps, the `gaps` section is not empty.
 
+- The second reader: the entry carries `review` (`{ reviewed_by, judges }`) answering every judge that applies to a theme brief, pass or fail with evidence; a failed judge, a missing verdict or a brief whose cited rows sit in one table or on one surface is residue naming the reason (INV-DIG-7). The bundle carries `candidate_entities`, the menu of entities the members are filed under.
+
 ## What the apply does
 
 The seam checks the hash again and writes the `theme_briefs` row (one row per theme) with `sections`, `claims` and the sorted member ids; the stored hash and batch name are read back. A re-apply writes nothing new. A replaced brief is superseded by the member hash; no prior-row copy is kept.
