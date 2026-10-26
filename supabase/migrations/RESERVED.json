@@ -8,6 +8,7 @@
     { "number": "0135", "slice": "DERIVE-3 (conditional)", "status": "reserved", "reserved_on": "2026-10-25" },
     { "number": "0136", "slice": "SEV-1", "status": "reserved", "reserved_on": "2026-10-25" },
     { "number": "0137", "slice": "DOC-DATE-1", "status": "reserved", "reserved_on": "2026-10-26" },
-    { "number": "0138", "slice": "MINT-2", "status": "reserved", "reserved_on": "2026-10-26" }
+    { "number": "0138", "slice": "MINT-2", "status": "reserved", "reserved_on": "2026-10-26" },
+    { "number": "0139", "slice": "CONNECT-2 PR B", "status": "reserved", "reserved_on": "2026-10-26" }
   ]
 }
