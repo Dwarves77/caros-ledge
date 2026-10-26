@@ -2,9 +2,8 @@
 // Ported from old_repo/scripts/lib/institution-key.mjs (lines 1-30)
 import { hostOf } from "@/core/shared";
 
-import { hostAncestors, ledgerHostOf } from "./host-relation";
-
 import portals from "./data/shared-portals.json";
+import { hostAncestors, ledgerHostOf } from "./host-relation";
 
 /** Registrable domains that are shared super-domains: the SUBDOMAIN is the institution (documented exceptions, not a public-suffix list). */
 const TWO_LEVEL = new Set<string>([
