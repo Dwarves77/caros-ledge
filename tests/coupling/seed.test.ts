@@ -4,7 +4,6 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { COUPLING_RELATIONS, COUPLINGS, couplingByKey } from "@/core/coupling";
-import { ACRONYMS, ALIAS_SEEDS } from "@/core/coupling/aliases";
 import { entityId } from "@/core/entities";
 import { seedCouplings } from "@/core/coupling";
 
@@ -18,12 +17,9 @@ test("the propagate stage captures the cited pages and seeds every coupling, eac
   assert.equal(r.exit, 0);
   const counts = (f.db.rows("harness_runs").find((x) => x.family === "propagation")?.outputs as { counts: Record<string, number> }).counts;
   assert.equal(counts.seed_refused, 0);
-  assert.equal(counts.seed_entities_written, new Set([...COUPLINGS.map((c) => c.entityId), ...ALIAS_SEEDS.map((a) => a.entityId), ...ACRONYMS.map((a) => a.entityId)]).size, "every coupling is an entity, and so is every alias and acronym target the spine did not hold (all new in the fixture)");
+  assert.equal(counts.seed_entities_written, COUPLINGS.length, "every coupling is an entity");
   assert.equal(counts.seed_relations_written, COUPLING_RELATIONS.length);
-  const aliases = f.db.rows("entity_aliases");
-  assert.ok(aliases.length > COUPLINGS.length);
-  const windows = new Set(COUPLINGS.filter((c) => c.class === "window").map((c) => c.entityId));
-  for (const a of aliases.filter((x) => !windows.has(String(x.entity_id)))) assert.ok(a.source_id, `${String(a.alias)}: an alias carries its source (a time window is a definition, not a published fact)`);
+  assert.equal(f.db.rows("entity_aliases").length, 0, "no word of the vocabulary is written as a matchable alias: the flywheel matches no free-text words");
   const hvo = f.db.rows("entity_relations").find((x) => x.parent_entity_id === E("feed:lipid") && x.child_entity_id === E("carrier:hvo"));
   assert.equal(hvo?.relation, "feedstock_of");
   assert.ok(hvo?.source_id);
@@ -35,12 +31,12 @@ test("the propagate stage captures the cited pages and seeds every coupling, eac
 test("a second run writes nothing, and a dry run plans without writing", async () => {
   const f = fixture();
   await propagate(f);
-  const before = [f.db.rows("entities").length, f.db.rows("entity_aliases").length, f.db.rows("entity_relations").length];
+  const before = [f.db.rows("entities").length, f.db.rows("entity_relations").length];
   const again = await seedCouplings({ sb: f.d.sb, now: () => NOW }, { dry: false });
-  assert.deepEqual([again.counts.seed_entities_written, again.counts.seed_aliases_written, again.counts.seed_relations_written], [0, 0, 0]);
+  assert.deepEqual([again.counts.seed_entities_written, again.counts.seed_relations_written], [0, 0]);
   const dry = await seedCouplings({ sb: f.d.sb, now: () => NOW }, { dry: true });
-  assert.equal(dry.counts.seed_entities_planned, new Set([...COUPLINGS.map((c) => c.entityId), ...ALIAS_SEEDS.map((a) => a.entityId), ...ACRONYMS.map((a) => a.entityId)]).size);
-  assert.deepEqual([f.db.rows("entities").length, f.db.rows("entity_aliases").length, f.db.rows("entity_relations").length], before);
+  assert.equal(dry.counts.seed_entities_planned, COUPLINGS.length);
+  assert.deepEqual([f.db.rows("entities").length, f.db.rows("entity_relations").length], before);
 });
 
 test("planted: a page whose capture does not hold the quote refuses its couplings and every relation resting on them; nothing is written ungrounded", async () => {
@@ -49,8 +45,7 @@ test("planted: a page whose capture does not hold the quote refuses its coupling
   await propagate(f);
   const counts = (f.db.rows("harness_runs").find((x) => x.family === "propagation")?.outputs as { counts: Record<string, number> }).counts;
   const gone = COUPLINGS.filter((c) => c.citation?.url === url).length;
-  const acronyms = ACRONYMS.filter((a) => a.citation.url === url).length;
-  assert.equal(counts.seed_refused, gone + acronyms, "the couplings and the acronyms the page grounds");
+  assert.equal(counts.seed_refused, gone, "the couplings the page grounds");
   assert.ok(gone > 0);
   assert.ok(!f.db.rows("entities").some((e) => e.entity_id === E("carrier:hvo")), "the refused coupling is not an entity");
   assert.ok(!f.db.rows("entity_relations").some((x) => x.child_entity_id === E("carrier:hvo") || x.parent_entity_id === E("carrier:hvo")), "no relation rests on it");
@@ -81,4 +76,15 @@ test("join completeness (scope review G2): every entity that sits on a leg names
     const linked = new Set(COUPLING_RELATIONS.filter((r) => r.parent === corridor.key && r.relation === "corridor_links").map((r) => r.child.replace(/^mode:/, "")));
     assert.deepEqual((corridor.modes ?? []).filter((m) => !linked.has(m)), [], `${corridor.key} names modes it does not link`);
   }
+});
+
+test("INV-JOIN-11: the instruments, fuels and relations JOIN-1 added are seeded with the quote that grounds each: the three instruments with their modes, the HDV acts implementing HDV charging, bunkering restored, and every fossil reference fuel serving its mode", async () => {
+  const f = fixture();
+  await propagate(f);
+  const rel = (parent: string, relation: string, child: string) => f.db.rows("entity_relations").some((x) => x.parent_entity_id === E(parent) && x.child_entity_id === E(child) && x.relation === relation && x.source_id);
+  for (const k of ["instrument:32003L0087", "instrument:32019R1242", "instrument:32024R1610", "node:bunkering", "carrier:fossil_diesel", "carrier:fossil_gasoline", "carrier:fossil_jet", "carrier:fossil_lpg", "carrier:fossil_fuel_oil"]) assert.ok(f.db.rows("entities").some((e) => e.entity_id === E(k)), `${k} is an entity`);
+  assert.ok(rel("instrument:32019R1242", "implements", "node:hdv_charging") && rel("instrument:32024R1610", "implements", "node:hdv_charging"));
+  assert.ok(rel("instrument:32024R1610", "amends", "instrument:32019R1242"));
+  for (const [fuel, mode] of [["fossil_diesel", "road"], ["fossil_gasoline", "road"], ["fossil_jet", "air"], ["fossil_lpg", "road"], ["fossil_fuel_oil", "ocean"]]) assert.ok(rel(`carrier:${fuel}`, "fuel_for_mode", `mode:${mode}`), `${fuel} serves ${mode}`);
+  assert.deepEqual(COUPLINGS.find((c) => c.key === "instrument:32003L0087")?.modes, ["air", "ocean"]);
 });

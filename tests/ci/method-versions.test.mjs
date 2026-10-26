@@ -88,6 +88,19 @@ test("planted: a threshold in a JSON table the method imports is part of the met
   assert.match(versionProblems(hashWith('{"factor": 3}'), recorded).join("\n"), /item_impact_scores:score@1: the code its registration runs changed and its version did not/);
 });
 
+test("a recorded key that is no longer registered is a problem unless method-retired.json retires it by name with a registered successor and a reason; a retired key still registered, or never recorded, is a problem too", () => {
+  const m = (hash) => ({ hash, where: "methods.ts:1" });
+  const recorded = { "t:old@1": "h1", "t:new@2": "h2" };
+  const methods = new Map([["t:new@2", m("h2")]]);
+  assert.match(versionProblems(methods, recorded).join(" "), /t:old@1 is recorded but no longer registered/);
+  const retired = { "t:old@1": { successor: "t:new@2", reason: "the vocabulary the method reads changed; its rows are superseded by the next run" } };
+  assert.deepEqual(versionProblems(methods, recorded, retired), []);
+  assert.match(versionProblems(new Map(), recorded, retired).join(" "), /t:old@1 is retired in favour of t:new@2, which is not registered/);
+  assert.match(versionProblems(new Map([["t:old@1", m("h1")], ["t:new@2", m("h2")]]), recorded, retired).join(" "), /t:old@1 is retired but still registered/);
+  assert.match(versionProblems(methods, { "t:new@2": "h2" }, retired).join(" "), /t:old@1 was never recorded/);
+  assert.match(versionProblems(methods, recorded, { "t:old@1": { successor: "t:new@2", reason: "short" } }).join(" "), /states no reason/);
+});
+
 test("THIS repository: every registered method is recorded and unchanged under its version", () => {
   assert.doesNotThrow(() => execFileSync(process.execPath, ["scripts/ci/method-versions.mjs"], { encoding: "utf8", stdio: "pipe" }));
   assert.ok(Object.keys(JSON.parse(readFileSync(HASH_FILE, "utf8"))).length >= 3);
@@ -96,7 +109,7 @@ test("THIS repository: every registered method is recorded and unchanged under i
 test("INV-CN2-2: the five pattern detectors are registered under the gate, and a threshold edited in patterns.json without a new method version turns it red", () => {
   const treeOf = (root) => new Map(DIRS.flatMap((d) => walk(join(root, d), (n) => /\.ts$/.test(n))).map((f) => [f, readFileSync(f, "utf8")]));
   const real = currentMethods(treeOf("."));
-  for (const id of ["pattern_velocity_burst", "pattern_mandate_capacity", "pattern_lead_lag", "pattern_cross_modal", "pattern_penalty_abatement"]) assert.ok(real.methods.has(`derived_values:${id}@${id === "pattern_penalty_abatement" ? "1.2.0" : "1.1.0"}`), `${id} is registered`);
+  for (const id of ["pattern_velocity_burst", "pattern_mandate_capacity", "pattern_lead_lag", "pattern_cross_modal", "pattern_penalty_abatement"]) assert.ok(real.methods.has(`derived_values:${id}@${id === "pattern_penalty_abatement" ? "1.3.0" : "1.2.0"}`), `${id} is registered`);
   const recorded = Object.fromEntries([...real.methods].map(([k, m]) => [k, m.hash]));
   assert.deepEqual(versionProblems(real.methods, recorded), []);
   const copyWith = (file, edit) => {
@@ -105,10 +118,10 @@ test("INV-CN2-2: the five pattern detectors are registered under the gate, and a
     writeFileSync(join(root, file), edit(readFileSync(join(root, file), "utf8")));
     return versionProblems(currentMethods(treeOf(root)).methods, recorded).join("\n");
   };
-  // one threshold moved (minSources 3 to 4), the version left at 1.1.0
-  assert.match(copyWith("src/core/flywheel/patterns/data/patterns.json", (t) => t.replace('"minSources": 3', '"minSources": 4')), /derived_values:pattern_velocity_burst@1.1.0: the code its registration runs changed and its version did not/);
+  // one threshold moved (minSources 3 to 4), the version left at 1.2.0
+  assert.match(copyWith("src/core/flywheel/patterns/data/patterns.json", (t) => t.replace('"minSources": 3', '"minSources": 4')), /derived_values:pattern_velocity_burst@1.2.0: the code its registration runs changed and its version did not/);
   // a detector edited: the arithmetic of the burst
-  assert.match(copyWith("src/core/flywheel/patterns/detect.ts", (t) => t.replace("shareNow <= base.length / inBaseline", "shareNow < base.length / inBaseline")), /pattern_velocity_burst@1.1.0/);
+  assert.match(copyWith("src/core/flywheel/patterns/detect.ts", (t) => t.replace("shareNow <= base.length / inBaseline", "shareNow < base.length / inBaseline")), /pattern_velocity_burst@1.2.0/);
   // the vocabulary a detector reads is part of it: a mode moved in couplings.json
-  assert.match(copyWith("src/core/coupling/data/couplings.json", (t) => t.replace(/"modes": \[\s*"road",\s*"ocean"\s*\]/, '"modes": ["road"]')), /pattern_cross_modal@1\.1\.0/);
+  assert.match(copyWith("src/core/coupling/data/couplings.json", (t) => t.replace(/"modes": \[\s*"road",\s*"ocean"\s*\]/, '"modes": ["road"]')), /pattern_cross_modal@1\.2\.0/);
 });

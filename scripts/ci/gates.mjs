@@ -29,6 +29,7 @@ export const STEPS = [
   { name: "LOC gates", cmd: "loc", fast: true },
   { name: "Connection check (nothing runs alone)", cmd: "connections", fast: true },
   { name: "Column check (every select, filter, write payload and rpc in src names a column or function the database defines)", cmd: "columns", fast: true },
+  { name: "Joinability (a stored row is reachable by the engine: columns mapped, entities connected, units normalised)", cmd: "joinability", fast: true },
   { name: "Citation check (a path, line range or table.column a document cites exists: CITE-1)", cmd: "verify:citations", fast: true },
   { name: "Propagation method versions (INV-202: a released method is never edited; new behaviour is a new version)", cmd: "method-versions", fast: true },
   { name: "Migration static checks (self-check, reversal, number ledger and order, README, borrowed rows)", cmd: "migration-checks", fast: true },

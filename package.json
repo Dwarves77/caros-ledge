@@ -20,6 +20,7 @@
     "validator-report": "node scripts/ci/validator-report.mjs --fixture",
     "connections": "node scripts/ci/connections.mjs",
     "columns": "node scripts/ci/columns.mjs",
+    "joinability": "node --import ./tests/_support/register.mjs scripts/ci/joinability.mjs",
     "verify:citations": "node scripts/ci/verify-citations.mjs",
     "method-versions": "node scripts/ci/method-versions.mjs",
     "turn": "node scripts/turn.mjs",

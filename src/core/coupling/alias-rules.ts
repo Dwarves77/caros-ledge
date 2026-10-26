@@ -1,18 +1,10 @@
-// New in CONNECT-2 PR A (scripts/ci/new-files/connect-2a.txt): what may be an alias, and how a phrase is read. A name or alias shorter than four characters, one with no letter, or one that is a dictionary word or a generic term of the corpus (the stoplist in data/resolver.json) resolves nothing:
-// "Union", "Commission" and "Act" name no entity, and a three-letter acronym names several. The one exception is the acronym listed in data/resolver.json with the entity it expands to and the page that says so: it is matched on its own, CASE-SENSITIVELY, as one whole word (SAF is SAF, never saf, SAFE or Safran). Matching is on the phrase: lower case, the letters and digits of the text in order, everything between them one space.
-import rules from "./data/resolver.json";
-
-const stop = new Set(rules.stop);
-const acronyms = new Set(rules.acronyms.map((a) => a.acronym));
-
-/** Whether the text is one of the listed uppercase acronyms (exact, case-sensitive). */
-export const isAcronym = (s: string): boolean => acronyms.has(s);
+// New in CONNECT-2 PR A (scripts/ci/new-files/connect-2a.txt), reduced in JOIN-1 under ADR-053: what may be a name or alias of a coupling in couplings.json, and how a phrase is read. The closed ontology of couplings.json (its names and aliases) is the only word list the
+// claims pass matches: a curated, closed vocabulary of carriers, feedstocks, nodes, corridors and mandates, never a growing English stoplist. A name or alias shorter than four characters, or one with no letter, is refused when the file loads (a three-letter abbreviation
+// names several things); a country name, a host, an organisation, a title and an acronym are not in the file and resolve nothing.
+const MIN_LENGTH = 4;
 
 /** The phrase a name or a text reads as: its letters and digits, lower case, single spaces. */
 export const phraseOf = (s: string): string => (s.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? []).join(" ");
 
-/** Whether a name may be an alias: four characters or more, a letter in it, not a stoplist word or phrase. */
-export const admitAlias = (alias: string): boolean => {
-  const p = phraseOf(alias);
-  return alias.trim().length >= rules.minLength && /\p{L}/u.test(p) && !stop.has(p);
-};
+/** Whether a name may be an alias: four characters or more, with a letter in it. */
+export const admitAlias = (alias: string): boolean => alias.trim().length >= MIN_LENGTH && /\p{L}/u.test(phraseOf(alias));

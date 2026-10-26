@@ -11,7 +11,7 @@ const input = (facts: Fact[]): PatternInput => ({ now: NOW, facts, related: () =
 test("every listed prose and prefixed form normalises to its canonical token", () => {
   const table: [string, string][] = [
     ["EUR 2 400 per tonne", "EUR/t"], ["EUR/t", "EUR/t"], ["EUR per tonne", "EUR/t"], ["€ per tonne", "EUR/t"],
-    ["EUR per equivalent metric ton of VLSFO", "EUR/t"],
+    ["EUR per equivalent metric ton of VLSFO", "EUR/t VLSFO-eq"], ["MJ per metric ton of VLSFO", "MJ/t VLSFO"], ["calendar year", "year"], ["Wh/kg", "Wh/kg"], ["kWh", "kWh"], ["1/h", "1/h"], ["gCO2e/tonne-km", "gCO2e/tkm"],
     ["EUR/tCO2e", "EUR/tCO2e"], ["EUR per tonne of CO2e", "EUR/tCO2e"], ["EUR per tCO2e", "EUR/tCO2e"],
     ["gCO2e/MJ", "gCO2e/MJ"], ["grams of CO2 equivalent per MJ", "gCO2e/MJ"],
     ["%", "pct"], ["percent", "pct"], ["pct", "pct"],

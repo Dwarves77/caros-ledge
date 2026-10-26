@@ -98,6 +98,8 @@ export interface RowsFileDef {
   keyFields: readonly string[];
   /** The table carries a source_id column: the registered source is stored on the row. */
   storesSource: boolean;
+  /** The typed columns a later pass of the same rows file may fill on a row already stored (a value the cited capture states that the first pass left null); default none. */
+  patchable?: readonly string[];
   parseRow(row: Rec, i: number, entities: readonly Entity[]): ParsedRow;
   /** Apply only, for a row whose citation passed: what the registered source and the verified capture add to the row, and the entities it names (a table with no source_id column keeps its provenance in the row). */
   settle?(sb: Db, row: Rec, proof: { source_id: string; capture_id: string; citation: Citation }, now: Date): Promise<Rec>;
@@ -198,12 +200,12 @@ export function rowsFileSpec(def: RowsFileDef): ProducerSpec {
     plan: {
       read: (sb) => fetchAllRows<Rec>((from, to) => sb.from(def.table).select([def.pk, ...def.keyFields].join(", ")).order(def.pk, { ascending: true }).range(from, to) as never, { cap: 200_000 }),
       key: (r) => keyOf(def.keyFields.map((f) => r[f])),
-      patchable: [],
+      patchable: def.patchable ?? [],
       pk: def.pk,
     },
   };
 }
 
-export const oemRoadmapRows = rowsFileSpec({ name: "oem-roadmap-rows", table: "oem_tech_roadmaps", entityKind: "organisation", killSwitchEnv: "OEM_PRODUCER_ROWS_FILE_ENABLED", pk: "roadmap_id", keyFields: ["manufacturer_id", "tech_category", "commercial_stage", "announced_at"], storesSource: true, parseRow: parseOemRoadmapRow, gap: "no $0 structured feed for OEM commercial-stage announcements; the input is a reviewed rows file" });
+export const oemRoadmapRows = rowsFileSpec({ name: "oem-roadmap-rows", table: "oem_tech_roadmaps", entityKind: "organisation", killSwitchEnv: "OEM_PRODUCER_ROWS_FILE_ENABLED", pk: "roadmap_id", keyFields: ["manufacturer_id", "tech_category", "commercial_stage", "announced_at"], storesSource: true, patchable: ["target_year", "energy_density_wh_kg", "density_basis", "c_rate_max", "usable_kwh"], parseRow: parseOemRoadmapRow, gap: "no $0 structured feed for OEM commercial-stage announcements; the input is a reviewed rows file" });
 export const gridQueueRows = rowsFileSpec({ name: "grid-queue-rows", table: "grid_connection_queues", entityKind: "jurisdiction", killSwitchEnv: "OPERATIONS_PRODUCER_GRID_QUEUE_ROWS_ENABLED", pk: "queue_id", keyFields: ["jurisdiction_id", "dso_name", "capacity_band_mw", "as_of"], storesSource: true, parseRow: parseGridQueueRow, gap: "no confirmed $0 feed for demand-side DSO connection-queue months; the input is a reviewed rows file" });
 export const rerouteRows = rowsFileSpec({ name: "reroute-rows", table: "reroute_events", entityKind: "corridor", killSwitchEnv: "MARKET_PRODUCER_REROUTE_ROWS_ENABLED", pk: "reroute_id", keyFields: ["baseline_corridor_id", "route_via", "effective_from"], storesSource: true, parseRow: parseRerouteRow, gap: "no $0 structured feed for carrier and canal reroute notices; the input is a reviewed rows file" });
