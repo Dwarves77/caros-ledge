@@ -20,7 +20,7 @@ const judge = z.object({
   validation: z.object({ tpr: z.number().min(0).max(1).nullable(), tnr: z.number().min(0).max(1).nullable(), n_pass: z.number().int(), n_fail: z.number().int() }).strict().optional(),
 }).strict();
 export type Judge = z.infer<typeof judge>;
-const file = z.object({ version: z.string(), judges: z.array(judge).min(1) }).strict().parse(raw);
+const file = z.object({ version: z.string(), /** How the validation figures were measured and how far they can be trusted. */ validation_basis: z.string().min(40), judges: z.array(judge).min(1) }).strict().parse(raw);
 if (new Set(file.judges.map((j) => j.id)).size !== file.judges.length) throw new Error("judges.json: a judge id is repeated");
 export const JUDGES_VERSION = file.version;
 export const JUDGES: readonly Judge[] = file.judges;

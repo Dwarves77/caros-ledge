@@ -1,5 +1,6 @@
 {
- "version": "1.0.0",
+ "version": "1.1.0",
+ "validation_basis": "Measured 2026-10-26 on the held-out test split of the Step B set. The labeller and the judge are the same lane, and 24 judges have 6 test cases each (3 pass, 3 fail): the figures are an upper bound, not an independent estimate. The first drain's independent second reader re-measures them on at least 50 labelled cases per judge before any rate is corrected with them.",
  "judges": [
   {
    "id": "J01",
@@ -8,7 +9,13 @@
    "kinds": [
     "item-briefs"
    ],
-   "prompt": "Read the brief's severity label and the item's own text. Pass only if the label is the one the severity vocabulary's four evaluation rules give this item (a requirement already in force with no deadline is not ACTION REQUIRED). Fail if the label overstates or understates what the sources say. Answer pass or fail with the sentence of the source that decides it."
+   "prompt": "You are an evaluator assessing whether a brief's severity label is the one the severity vocabulary gives the item's sources. Judge this one criterion only.\n\n## Definitions\nPASS: The label follows the four evaluation rules: a cost or price increase announced or in force is COST ALERT (rule 1); a delayed or rolled-back regulation is MONITORING or WINDOW CLOSING (rule 2); readiness ahead of competitors is COMPETITIVE EDGE (rule 3); ACTION REQUIRED only where a deadline within 30 days needs a concrete step by the reader (rule 4). A requirement already in force with no deadline ahead, a historical instrument and a page with no change are MONITORING.\nFAIL: The label overstates or understates what the source facts support: ACTION REQUIRED with no deadline within 30 days; WINDOW CLOSING with no closing window; COMPETITIVE EDGE for a cost increase; COST ALERT where the sources state no price or cost change; MONITORING where a price change is already in force.\n\n## Examples\n### Example 1: PASS\nSeverity label: COST ALERT. Item: EIA analysis of LNG prices after the closure of the Strait of Hormuz. Source facts: TTF futures rose to $14.80/MMBtu, 35% higher than before the closure; JKM rose 51% to $16.02/MMBtu; the closure affected over 10 Bcf/d of global LNG supply.\nCritique: The source reports futures prices 35% and 51% above pre-closure levels. A price change in force is rule 1, COST ALERT. The label is right.\nResult: Pass\n\n### Example 2: FAIL\nSeverity label: COST ALERT. Item: pages of global industrial electricity price benchmarks. Source facts: the stored pages hold no country figure with unit; no new surcharge, fee or price change is announced or in force.\nCritique: The pages hold no country figure and announce no price change, so rule 1 does not apply. COST ALERT overstates; MONITORING fits.\nResult: Fail\n\n### Example 3: FAIL (borderline)\nSeverity label: MONITORING. Item: EIA outlook. Source facts: Brent averaged $117/b in April (a price already in force) and is forecast to fall to $89/b by 4Q26; the outlook states no freight rate.\nCritique: A price move is in force (rule 1), which points to COST ALERT; the forecast fall and the absence of a freight rate soften it but do not remove a change in force. MONITORING understates.\nResult: Fail\n\n## Output\nAnswer with JSON only: {\"critique\": \"<what in the input decides it, quoting the phrase>\", \"result\": \"Pass\" | \"Fail\"}. Write the critique before the result.",
+   "validation": {
+    "tpr": 1,
+    "tnr": 1,
+    "n_pass": 3,
+    "n_fail": 3
+   }
   },
   {
    "id": "J02",
@@ -17,7 +24,13 @@
    "kinds": [
     "item-briefs"
    ],
-   "prompt": "Read the do-now section. Pass only if every action names who does what by when or by which trigger, and a person in the stated role could start it today. Fail if an action is a restatement of the rule, a verb with no object, or advice that fits any regulation. Quote the weakest action."
+   "prompt": "You are an evaluator assessing whether the do-now section gives actions a person in the stated role could start today. Judge this one criterion only.\n\n## Definitions\nPASS: Every action names a role, a verb with an object, and a trigger or time, and a person in that role could start it today (a desk adds a field this week; a pricing lead reprices on the next quote run).\nFAIL: An action restates the rule, is a verb with no object (monitor, track, review, stay informed), advice that fits any regulation, or a decision restated as a question ('the decision is whether ...') with no step to take.\n\n## Examples\n### Example 1: PASS\nDo-now text: the chartering desk adds a hull-design field to the vessel record this week and refuses to confirm a Union-bound oil booking until the field is filled.\nCritique: The chartering desk adds a field this week and withholds confirmation until it is filled: role, object and time are all named and it can start today.\nResult: Pass\n\n### Example 2: FAIL\nDo-now text: Review the regulation and consider its implications for your business.\nCritique: Review and consider implications names no role, object or time and fits any regulation.\nResult: Fail\n\n### Example 3: PASS (borderline)\nDo-now text: request carrier fuel cost disclosure for LNG-fuelled vessels and set the fuel surcharge review date for the lanes that use them.\nCritique: The actions have an object and a trigger (lanes using LNG-fuelled vessels) and can start today, though no date is given. Acceptable.\nResult: Pass\n\n## Output\nAnswer with JSON only: {\"critique\": \"<what in the input decides it, quoting the phrase>\", \"result\": \"Pass\" | \"Fail\"}. Write the critique before the result.",
+   "validation": {
+    "tpr": 1,
+    "tnr": 1,
+    "n_pass": 3,
+    "n_fail": 3
+   }
   },
   {
    "id": "J03",
@@ -26,7 +39,13 @@
    "kinds": [
     "item-briefs"
    ],
-   "prompt": "Read the first sentence, the first paragraph and the first section. Pass only if the first sentence states what changed for an operator, the first paragraph states a concrete cost or exposure that the sources give, and the first section lets a reader decide whether to read on. Fail otherwise and name which of the three is missing."
+   "prompt": "You are an evaluator assessing whether the opening of a brief works in three, ten and thirty seconds. Judge this one criterion only.\n\n## Definitions\nPASS: what_it_changes states what changed for an operator and who it hits; why_matters states a concrete cost or exposure that the sources give; the first section opening lets a reader decide whether to read on.\nFAIL: what_it_changes is generic or only advises monitoring; why_matters states no cost or exposure or states a figure the sources do not hold; or the first section opening does not let a reader decide.\n\n## Examples\n### Example 1: PASS\nwhat_it_changes: It gives a sourced scenario for zero-emission truck sales shares by 2030 and biofuel needs for aviation, so fleet and fuel planning can be tested against it; it is a scenario, not a forecast.\nwhy_matters: The study projects the zero-emission share of new truck sales by 2030, which frames U.S. road fleet and fuel planning.\nFirst section opens: Headline finding: Results show diverse routes to 80% or more well-to-wheel GHG reductions by 2050.\nCritique: It states the scenario shares and who plans against them; why_matters gives the 2030 share; the opening is the headline finding. All three hold.\nResult: Pass\n\n### Example 2: FAIL\nwhat_it_changes: Brent prices moved.\nwhy_matters: Energy markets are volatile and freight costs follow them.\nFirst section opens: The named triggering event is a price break in oil driven by a supply disruption.\nCritique: 'Brent prices moved' states no change for an operator and why_matters gives no exposure.\nResult: Fail\n\n### Example 3: PASS (borderline)\nwhat_it_changes: Single-hull tankers may not call at Union ports. why_matters: Vessel choice is a booking condition. First section opens: This document covers REGULATION (EU) No 530/2012.\nCritique: The change and the exposure are concrete and from the sources, but the opening names only the instrument, which still tells a reader what it is. Acceptable.\nResult: Pass\n\n## Output\nAnswer with JSON only: {\"critique\": \"<what in the input decides it, quoting the phrase>\", \"result\": \"Pass\" | \"Fail\"}. Write the critique before the result.",
+   "validation": {
+    "tpr": 1,
+    "tnr": 1,
+    "n_pass": 3,
+    "n_fail": 3
+   }
   },
   {
    "id": "J04",
@@ -37,18 +56,30 @@
     "theme-briefs",
     "admin-opportunity-findings"
    ],
-   "prompt": "List the four lenses (regulatory, market, operational, technology or research). For each, decide whether the sources in the bundle support a statement. Pass only if every lens the facts permit is served and each lens the facts do not permit is acknowledged as absent in the brief's own words. Fail if a lens with facts is silent or a lens is filled without facts."
+   "prompt": "You are an evaluator assessing whether a brief serves the lenses its bundle's facts permit and admits the lenses they do not. Judge this one criterion only.\n\n## Definitions\nPASS: Every lens (regulatory, market, operational, technology or research) with facts in the bundle is served from those facts, and every lens without facts is acknowledged as absent in the brief's own words.\nFAIL: A lens with facts in the bundle is silent with no note, or a lens is filled with statements no bundle row holds.\n\n## Examples\n### Example 1: PASS\nBundle facts: a port shore power program (operational) and a subsidy scheme (regulatory).\nBrief: describes both and states that no market price or technology readiness row is in the bundle.\nCritique: Both bundle lenses are described and the brief says that market price and technology readiness rows are absent.\nResult: Pass\n\n### Example 2: FAIL\nBundle facts: CAT page with an explicit statement that the tools and technologies for decarbonising shipping are becoming increasingly accessible (technology).\nBrief: covers policy gap and the postponed vote only; the technology fact is not mentioned and no sentence says technology facts are absent.\nCritique: The bundle holds a technology fact and the brief neither uses it nor says technology facts are absent.\nResult: Fail\n\n### Example 3: PASS (borderline)\nBundle facts: EIA LNG prices (market). Brief: market lens served; section 5 says no competitor is named; a single sentence says LNG-fuelled carriers face higher fuel cost, labelled as an inference.\nCritique: The operational point is a labelled inference, not a filled lens with invented facts, and absent lenses are acknowledged. Acceptable.\nResult: Pass\n\n## Output\nAnswer with JSON only: {\"critique\": \"<what in the input decides it, quoting the phrase>\", \"result\": \"Pass\" | \"Fail\"}. Write the critique before the result.",
+   "validation": {
+    "tpr": 1,
+    "tnr": 1,
+    "n_pass": 3,
+    "n_fail": 3
+   }
   },
   {
    "id": "J05",
    "criterion": "cause-effect-sourced",
-   "origin": "A5",
+   "origin": "A5; error code B-1",
    "kinds": [
     "item-briefs",
     "theme-briefs",
     "admin-opportunity-findings"
    ],
-   "prompt": "Take each cause-and-effect chain in the brief. Pass only if every link (cause, mechanical consequence, effect by vertical) rests on a cited FACT or is labelled as analysis with its basis. Fail if any link is asserted with no source and no analysis label. Quote the unsourced link."
+   "prompt": "You are an evaluator assessing whether each link of a cause-and-effect chain is stated by the source or labelled as analysis. Judge this one criterion only.\n\n## Definitions\nPASS: Every link (cause, mechanical consequence, effect by vertical) rests on a source sentence that states that the consequence follows from the cause, or on an inference labelled as analysis with its basis, or says the source states no effect.\nFAIL: A link is asserted with no source and no analysis label, OR the cause and the consequence are two true sentences from different parts of the source and the source never says one follows from the other (a pair assembled by the author without a label).\n\n## Examples\n### Example 1: PASS\nCause: Brent averaged $117/b in April.\nMechanical consequence: *Analytical inference:* fuel-indexed surcharges lag the spot price by the index period, so the April average reaches invoices later; the source states no index period.\nEffect by vertical: not stated.\nCritique: The consequence is an *Analytical inference:* with its basis and the source's silence stated. Labelled, so the chain is sourced.\nResult: Pass\n\n### Example 2: FAIL\nCause: Single-hull oil tankers above 15 years of age must comply with the Condition Assessment Scheme.\nMechanical consequence: freight rates for oil cargo into Union ports will rise as older tonnage leaves the trade.\nEffect by vertical: crude oil shippers will pay more.\nSource context: the source states the Condition Assessment Scheme rule only.\nCritique: The rate rise and the shipper effect have no source sentence and no analysis label; the source states only the scheme rule.\nResult: Fail\n\n### Example 3: PASS (borderline)\nCause: QatarEnergy declared force majeure. Mechanical consequence: Asian buyers compete for spot cargoes. Source: 'QatarEnergy declared force majeure on March 4, which has forced Asian buyers ... to compete for spot cargoes'.\nCritique: The source itself states that the force majeure forced buyers into the spot market, so the link is sourced.\nResult: Pass\n\n## Output\nAnswer with JSON only: {\"critique\": \"<what in the input decides it, quoting the phrase>\", \"result\": \"Pass\" | \"Fail\"}. Write the critique before the result.",
+   "validation": {
+    "tpr": 1,
+    "tnr": 1,
+    "n_pass": 3,
+    "n_fail": 3
+   }
   },
   {
    "id": "J06",
@@ -59,7 +90,13 @@
     "theme-briefs",
     "admin-opportunity-findings"
    ],
-   "prompt": "Read every paragraph and heading. Fail if a heading is not in the format's section list, or a paragraph says nothing a source in the bundle supports and nothing the reader can act on (filler). Pass only if every paragraph carries a sourced statement or a labelled inference. Quote the first offender."
+   "prompt": "You are an evaluator assessing whether every heading belongs to the format and every paragraph carries a sourced statement or a labelled inference. Judge this one criterion only.\n\n## Definitions\nPASS: Every heading is in the format's section list and every paragraph states something a source in the bundle supports or a labelled inference, or is the single omission note of a conditional section.\nFAIL: A heading is not in the format's list, or a paragraph says nothing a source supports and nothing the reader can act on (generic importance claims, best-practice advice), or a section's text answers a different question than its heading (a true statement placed where it does not belong, such as a regional emissions share under a cost comparison, or a background statement about other regions in a profile of one region).\n\n## Examples\n### Example 1: PASS\nA research summary ends with: '6. Sources' followed by two bullet links to the two captured pages; no other headings beyond the six the format lists.\nCritique: Only the six listed headings and a sources list: nothing invented.\nResult: Pass\n\n### Example 2: FAIL\nParagraph in section 7: 'In today's rapidly changing environment, it is vital for forward-thinking organisations to leverage insights and position themselves for success.'\nCritique: A generic sentence about a changing environment: supports nothing in a source and nothing a reader can act on.\nResult: Fail\n\n### Example 3: PASS (borderline)\nSection 1 of an operations profile: 'Cost baseline: no sourced figure for industrial electricity is stated in the stored sources, so none is given.'\nCritique: It states exactly what the sources hold and does not pad. Acceptable.\nResult: Pass\n\n## Output\nAnswer with JSON only: {\"critique\": \"<what in the input decides it, quoting the phrase>\", \"result\": \"Pass\" | \"Fail\"}. Write the critique before the result.",
+   "validation": {
+    "tpr": 1,
+    "tnr": 1,
+    "n_pass": 3,
+    "n_fail": 3
+   }
   },
   {
    "id": "J07",
@@ -70,18 +107,30 @@
     "theme-briefs",
     "admin-opportunity-findings"
    ],
-   "prompt": "Look for any way the text identifies the workspace, a client or a person other than by role: a distinctive fleet, trade lane, headcount, address or a described situation that points to one organisation. Pass only if the text speaks to roles. Fail and quote the phrase that points to an identity."
+   "prompt": "You are an evaluator assessing whether a text identifies a workspace, client or person other than by role. Judge this one criterion only.\n\n## Definitions\nPASS: The text speaks to roles (a chartering desk, a forwarder, a pricing lead) and names no distinctive fleet, lane, headcount, address or situation that points to one organisation.\nFAIL: The text includes a distinctive combination (a named lane with a fleet size, a headcount with a city and client mix, a named company, a described past event) that points to one organisation.\n\n## Examples\n### Example 1: PASS\nText: a chartering desk without a hull-design field in its vessel record cannot evidence the check.\nCritique: A role (chartering desk) and a generic situation. Nothing identifies an organisation.\nResult: Pass\n\n### Example 2: FAIL\nText: Given that your 40-person Chicago office books mostly pharmaceutical air freight for two hospital groups, the end of free allowances adds a second charge.\nCritique: Headcount, city and client mix together point to one office.\nResult: Fail\n\n### Example 3: PASS (borderline)\nText: forwarders with air freight on Union-origin flights face the mandate cost.\nCritique: A role and a general trade scope: not an identity.\nResult: Pass\n\n## Output\nAnswer with JSON only: {\"critique\": \"<what in the input decides it, quoting the phrase>\", \"result\": \"Pass\" | \"Fail\"}. Write the critique before the result.",
+   "validation": {
+    "tpr": 1,
+    "tnr": 1,
+    "n_pass": 3,
+    "n_fail": 3
+   }
   },
   {
    "id": "J08",
    "criterion": "analysis-supported-by-facts",
-   "origin": "A8",
+   "origin": "A8; error code B-2",
    "kinds": [
     "item-briefs",
     "theme-briefs",
     "admin-opportunity-findings"
    ],
-   "prompt": "For each ANALYSIS-labelled statement, find the FACT claims it rests on. Pass only if every analysis statement follows from facts the brief cites without adding a number, party or date those facts do not hold. Fail and quote the statement that goes beyond its facts."
+   "prompt": "You are an evaluator assessing whether every analysis statement follows from the facts the brief cites. Judge this one criterion only.\n\n## Definitions\nPASS: Each analysis statement (an *Analytical inference:* or an *Operational implication:* line) follows from the cited facts and adds no number, party, scope or date the facts do not hold.\nFAIL: A statement adds a number, a party, a wider scope (more machinery, more regions, later rules) or a consequence the cited facts do not hold, however plausible.\n\n## Examples\n### Example 1: PASS\nAnalysis: a later reopening than assumed would keep Brent above the path stated here.\nFacts cited: the report assumes the Strait of Hormuz remains closed until late May; expected crude prices fall as Middle East production rises.\nCritique: A conditional about a later reopening follows from the cited assumption and adds nothing.\nResult: Pass\n\n### Example 2: FAIL\nAnalysis: ocean and air carriers whose fuel cost follows Brent face a 9% surcharge increase.\nFacts cited: Brent reached a high of $138 per barrel on April 7 and averaged $117/b for April.\nCritique: '9% surcharge increase' is a number no cited fact holds.\nResult: Fail\n\n### Example 3: PASS (borderline)\nAnalysis: carriers whose fuel cost follows Brent face surcharge pressure. Facts: Brent reached $138 and averaged $117 in April.\nCritique: The pressure follows from the cited price level and adds no figure. Acceptable.\nResult: Pass\n\n## Output\nAnswer with JSON only: {\"critique\": \"<what in the input decides it, quoting the phrase>\", \"result\": \"Pass\" | \"Fail\"}. Write the critique before the result.",
+   "validation": {
+    "tpr": 1,
+    "tnr": 1,
+    "n_pass": 3,
+    "n_fail": 3
+   }
   },
   {
    "id": "J09",
@@ -90,7 +139,13 @@
    "kinds": [
     "item-briefs"
    ],
-   "prompt": "For each date the prose states (into force, deadline, application), find the instrument it belongs to in the source and compare with the stored column. Pass only if every prose date refers to the item's own instrument. Fail if a date is the date of another instrument, an amending act or a proposal. Quote the date and its source sentence."
+   "prompt": "You are an evaluator assessing whether every date in the prose belongs to the item's own instrument. Judge this one criterion only.\n\n## Definitions\nPASS: Each date refers to a step of the item's own instrument as its text states it.\nFAIL: A date is the date of another instrument (an amended act, an amending act, a proposal, a sibling decision), or is attached to the wrong kind of step for the instrument.\n\n## Examples\n### Example 1: PASS\nProse: The Regulation applies from 17 December 2027.\nInstrument: the Regulation on plastic pellet losses. Source: 'It shall apply from 17 December 2027.' in the Regulation's final article.\nCritique: The source sentence states the date for this instrument.\nResult: Pass\n\n### Example 2: FAIL\nProse: The Decision enters into force on 31 December 2006.\nInstrument: Council Decision of 25 April 2002 (Kyoto). Source: 31 December 2006 is the date by which the Commission determines emission levels; the Decision's own entry into force is not stated.\nCritique: The source gives 31 December 2006 as a Commission determination date; the prose calls it the Decision's entry into force.\nResult: Fail\n\n### Example 3: PASS (borderline)\nProse: 1 April 2002: Member States shall inform the Commission not later than 1 April 2002. Instrument: the Kyoto approval Decision of 25 April 2002.\nCritique: A date inside the Decision's own text, earlier than the Decision's date but stated by it. Same instrument.\nResult: Pass\n\n## Output\nAnswer with JSON only: {\"critique\": \"<what in the input decides it, quoting the phrase>\", \"result\": \"Pass\" | \"Fail\"}. Write the critique before the result.",
+   "validation": {
+    "tpr": 1,
+    "tnr": 1,
+    "n_pass": 3,
+    "n_fail": 3
+   }
   },
   {
    "id": "J10",
@@ -99,7 +154,13 @@
    "kinds": [
     "item-briefs"
    ],
-   "prompt": "Find every dash, entity or section sign that appears in the brief. Pass only if each one sits inside text quoted from a source with the source's own wording. Fail if any appears in the brief's own sentences or in a claim_text the author wrote. Quote it."
+   "prompt": "You are an evaluator assessing whether dashes, entities and section signs appear only inside text quoted verbatim from a source. Judge this one criterion only.\n\n## Definitions\nPASS: Every dash, HTML entity or section sign in the brief sits inside a verbatim quote of a source, or none appears.\nFAIL: An em dash, en dash, entity or section sign appears in the brief's own sentence or in a claim_text the author composed.\n\n## Examples\n### Example 1: PASS\nPassage: authored sentence 'Obligations surveyed: 3; workspace-adjacent: 0; extracted as FACT: 3.' and a verbatim quote with '&' as in 'Ports & Harbours Bureau' (the capture's own text).\nCritique: The ampersand sits in a verbatim source phrase; the authored sentence has none.\nResult: Pass\n\n### Example 2: FAIL\nPassage: authored sentence 'Ports &amp; terminals must record the hull design.'\nCritique: An HTML entity in an authored sentence.\nResult: Fail\n\n### Example 3: PASS (borderline)\nPassage: authored sentence 'The Regulation applies from 17 December 2027.' and a verbatim quote 'It shall apply from 17 December 2027 – and in full from 2029' from the capture.\nCritique: The en dash is inside a verbatim quote of the capture; the authored sentence has none.\nResult: Pass\n\n## Output\nAnswer with JSON only: {\"critique\": \"<what in the input decides it, quoting the phrase>\", \"result\": \"Pass\" | \"Fail\"}. Write the critique before the result.",
+   "validation": {
+    "tpr": 1,
+    "tnr": 1,
+    "n_pass": 3,
+    "n_fail": 3
+   }
   },
   {
    "id": "J11",
@@ -108,18 +169,30 @@
    "kinds": [
     "item-briefs"
    ],
-   "prompt": "Find every statement about what a regulator requires. Pass only if each rests on a regulator's or legislator's own text. Fail if a vendor, trade body or press statement is presented as a mandate, or a source of a lower tier is described as binding. Quote the statement and its source."
+   "prompt": "You are an evaluator assessing whether every statement of what a regulator requires rests on the regulator's or legislator's own text. Judge this one criterion only.\n\n## Definitions\nPASS: Each statement of a requirement rests on the legislator's or regulator's text, or is worded as a proposal, a vision, a recommendation or a reported claim and says so.\nFAIL: A vendor, trade body, consultancy, airline or press statement is presented as a mandate, or a lower-tier source is described as binding.\n\n## Examples\n### Example 1: PASS\nStatement: a trade association recommends that members adopt the guidance.\nSource: the association's own publication; the brief says 'recommends'.\nCritique: A trade association recommends; the brief says recommends.\nResult: Pass\n\n### Example 2: FAIL\nStatement: IMO regulations bind shipowners to retire vessels rated E.\nSource: a consultancy blog post that describes the CII rating consequences; the legal text is not in the bundle.\nCritique: A consultancy blog is presented as binding law with the legal text absent.\nResult: Fail\n\n### Example 3: PASS (borderline)\nStatement: the BEE has proposed Phase 3 and 4 of the CAFE norms, which are under finalization. Source: an ICCT blog restating the proposal.\nCritique: Worded as a proposal under finalization, not as binding.\nResult: Pass\n\n## Output\nAnswer with JSON only: {\"critique\": \"<what in the input decides it, quoting the phrase>\", \"result\": \"Pass\" | \"Fail\"}. Write the critique before the result.",
+   "validation": {
+    "tpr": 1,
+    "tnr": 1,
+    "n_pass": 3,
+    "n_fail": 3
+   }
   },
   {
    "id": "J12",
    "criterion": "no-causation-from-correlation",
-   "origin": "A12",
+   "origin": "A12; error code B-1",
    "kinds": [
     "item-briefs",
     "theme-briefs",
     "admin-opportunity-findings"
    ],
-   "prompt": "Find every statement of causation and every headline claim. Pass only if each is stated no more strongly than its evidence (a correlation is not called a cause; a pilot is not called a trend). Fail and quote the overstatement."
+   "prompt": "You are an evaluator assessing whether each statement of causation or headline claim is no stronger than its evidence. Judge this one criterion only.\n\n## Definitions\nPASS: Each causal or headline statement is stated as the source states it, or hedged to the evidence (a pilot is a trial result, a scenario is not a forecast, co-movement is not a cause).\nFAIL: A correlation, a sequence or a single pilot is called a cause, a proof or a sector-wide trend, or a causal link is stated that the source does not state.\n\n## Examples\n### Example 1: PASS\nStatement: the two series moved together over the quarter; the source does not say one drives the other.\nEvidence: two price series charted side by side.\nCritique: Co-movement is described without a driver.\nResult: Pass\n\n### Example 2: FAIL\nStatement: The trial proves that shared logistics cuts truck emissions by 28% across Japan.\nEvidence: one on-site trial reported by trade press.\nCritique: One trial reported by trade press is said to prove a 28% cut across Japan.\nResult: Fail\n\n### Example 3: PASS (borderline)\nStatement: shared truck logistics: possible on the evidence of a trial. Evidence: a trade-press report of one trial with a 28% CO2 cut.\nCritique: Stated as 'possible on the evidence of a trial', matching a single report.\nResult: Pass\n\n## Output\nAnswer with JSON only: {\"critique\": \"<what in the input decides it, quoting the phrase>\", \"result\": \"Pass\" | \"Fail\"}. Write the critique before the result.",
+   "validation": {
+    "tpr": 1,
+    "tnr": 1,
+    "n_pass": 3,
+    "n_fail": 3
+   }
   },
   {
    "id": "J13",
@@ -128,7 +201,13 @@
    "kinds": [
     "item-briefs"
    ],
-   "prompt": "Find every place the brief states a legal obligation. Pass only if each carries the legal-confirmation callout or an analysis label where the skill requires it and the caveat says what to confirm with counsel. Fail if an obligation is stated as settled law with no caveat, or the caveat is boilerplate that names nothing."
+   "prompt": "You are an evaluator assessing whether every statement of a legal obligation carries an adequate legal caveat. Judge this one criterion only.\n\n## Definitions\nPASS: Each statement of a legal obligation in the passage carries a Legal Confirmation callout or an analysis label that says what to confirm with counsel, or the passage states no obligation.\nFAIL: An obligation is stated as settled with no caveat, or the caveat is boilerplate that names nothing to confirm.\n\n## Examples\n### Example 1: PASS\nPassage: This is a plain description of a market price rise; no obligation is stated anywhere in the passage.\nCritique: No obligation is stated, so no caveat is needed.\nResult: Pass\n\n### Example 2: FAIL\nPassage: All forwarders must register with the competent authority within 30 days. *Legal Confirmation Required:* this is general information and not legal advice.\nCritique: The callout is generic ('general information, not legal advice') and names nothing to confirm.\nResult: Fail\n\n### Example 3: PASS (borderline)\nPassage: Shippers shall ensure that plastic pellets are packed in strong packaging. *Legal Confirmation Required:* whether a consolidator counts as a shipper is for counsel.\nCritique: The obligation is stated and the caveat names the exact question for counsel.\nResult: Pass\n\n## Output\nAnswer with JSON only: {\"critique\": \"<what in the input decides it, quoting the phrase>\", \"result\": \"Pass\" | \"Fail\"}. Write the critique before the result.",
+   "validation": {
+    "tpr": 1,
+    "tnr": 1,
+    "n_pass": 3,
+    "n_fail": 3
+   }
   },
   {
    "id": "J14",
@@ -137,18 +216,30 @@
    "kinds": [
     "item-briefs"
    ],
-   "prompt": "Find every use of the word tier in the prose. Pass only if each use is the regulation's own classification (a tier of a standard, a tier of a penalty). Fail if it is the platform's source tier or score. Quote the use."
+   "prompt": "You are an evaluator assessing whether every use of the word tier belongs to the regulation's own classification. Judge this one criterion only.\n\n## Definitions\nPASS: Each use of tier is the regulation's or standard's own classification (a penalty tier, an engine tier), or the word does not appear.\nFAIL: The word tier is the platform's source tier, a source ranking or an urgency tier.\n\n## Examples\n### Example 1: PASS\nProse: the penalty schedule has three tiers, set by the number of tonnes exceeded.\nCritique: A penalty schedule's own tiers.\nResult: Pass\n\n### Example 2: FAIL\nProse: this brief is urgency tier 'watch', which sets how it is ranked.\nCritique: The platform's urgency tier.\nResult: Fail\n\n### Example 3: PASS (borderline)\nProse: the standard defines a Tier III emission limit for new engines.\nCritique: The tier is the standard's own classification.\nResult: Pass\n\n## Output\nAnswer with JSON only: {\"critique\": \"<what in the input decides it, quoting the phrase>\", \"result\": \"Pass\" | \"Fail\"}. Write the critique before the result.",
+   "validation": {
+    "tpr": 1,
+    "tnr": 1,
+    "n_pass": 3,
+    "n_fail": 3
+   }
   },
   {
    "id": "J15",
    "criterion": "no-invented-party-or-term",
-   "origin": "A15",
+   "origin": "A15; error code B-3",
    "kinds": [
     "item-briefs",
     "theme-briefs",
     "admin-opportunity-findings"
    ],
-   "prompt": "List every named operator, competitor, cost figure and supplier term. Pass only if each appears in a source in the bundle. Fail and quote any that does not."
+   "prompt": "You are an evaluator assessing whether every named party, figure and term of art in the brief appears in a source in the bundle. Judge this one criterion only.\n\n## Definitions\nPASS: Each named operator, competitor, supplier, cost figure and term of art appears in a source in the bundle.\nFAIL: A named party, figure, instrument or term of art (a fuel grade, a machine class) appears in the brief and in no source in the bundle.\n\n## Examples\n### Example 1: PASS\nBrief: the Condition Assessment Scheme referred to in Article 6.\nSource: Regulation 530/2012 Article 5 refers to the Condition Assessment Scheme referred to in Article 6.\nCritique: The Article 6 scheme named in the brief is the one the source names.\nResult: Pass\n\n### Example 2: FAIL\nBrief: competitor DHL Global Forwarding has already repriced.\nSource: the stored page names no competitor.\nCritique: A named competitor the source does not mention.\nResult: Fail\n\n### Example 3: PASS (borderline)\nBrief: ICCT states logistics costs are about 13% of GDP. Source: the ICCT blog states the 13% figure.\nCritique: Party and figure both in the source.\nResult: Pass\n\n## Output\nAnswer with JSON only: {\"critique\": \"<what in the input decides it, quoting the phrase>\", \"result\": \"Pass\" | \"Fail\"}. Write the critique before the result.",
+   "validation": {
+    "tpr": 1,
+    "tnr": 1,
+    "n_pass": 3,
+    "n_fail": 3
+   }
   },
   {
    "id": "J16",
@@ -159,7 +250,13 @@
     "theme-briefs",
     "admin-opportunity-findings"
    ],
-   "prompt": "Find every forward-looking statement (a window, a review date, an expected act). Pass only if each is still ahead of the date the brief was written, or is stated as past. Fail if a window has already closed and is written as pending. Quote it with the date."
+   "prompt": "You are an evaluator assessing whether every forward-looking statement is still ahead of the date the brief was written. Judge this one criterion only.\n\n## Definitions\nPASS: Each window, review date or expected act is later than the brief's date, or is stated as past.\nFAIL: A window, release or expected act whose date is before the brief's date is written as pending or upcoming.\n\n## Examples\n### Example 1: PASS\nBrief written 2026-10-26. Statement: the Regulation applies from 17 December 2027.\nCritique: 17 December 2027 is after the brief's date.\nResult: Pass\n\n### Example 2: FAIL\nBrief written 2026-10-26. Statement: the consultation window closes on 30 June 2026, so comments are still possible.\nCritique: A June 2026 window is written as still open in a brief dated October 2026.\nResult: Fail\n\n### Example 3: PASS (borderline)\nBrief written 2026-10-26. Statement: the transition period was to expire on 31 December 2020; the date has passed.\nCritique: Stated as past.\nResult: Pass\n\n## Output\nAnswer with JSON only: {\"critique\": \"<what in the input decides it, quoting the phrase>\", \"result\": \"Pass\" | \"Fail\"}. Write the critique before the result.",
+   "validation": {
+    "tpr": 1,
+    "tnr": 1,
+    "n_pass": 3,
+    "n_fail": 3
+   }
   },
   {
    "id": "J17",
@@ -170,7 +267,13 @@
     "theme-briefs",
     "admin-opportunity-findings"
    ],
-   "prompt": "Check three duties: no fact stands alone (each is placed against what surrounds it), the item's analysis draws direction from its documented relationships to items on other surfaces, and forward intelligence is stated where the sources give it. Pass only if all three hold. Fail and name which."
+   "prompt": "You are an evaluator assessing whether no fact stands alone, the analysis uses documented cross-surface relationships, and forward intelligence is stated where the sources give it. Judge this one criterion only.\n\n## Definitions\nPASS: Each figure is placed against a baseline, period or comparison the source gives; the relationships documented in the bundle are used; and the forward events the sources give are stated.\nFAIL: A figure stands alone though the source gives its context, a documented relationship is ignored, or a forward event the bundle holds is left out.\n\n## Examples\n### Example 1: PASS\nBrief passage: the blending share is stated against the refinery capacity and the application date; the theme names the rows on two surfaces it draws from.\nCritique: The figure carries the prior value and the source's explanation and no relationship is documented.\nResult: Pass\n\n### Example 2: FAIL\nBrief passage: 'Prices fell 9%.' with no period, no benchmark and no comparison; the source gives all three.\nCritique: 'Prices fell 9%' has no period, benchmark or comparison though the source gives all three.\nResult: Fail\n\n### Example 3: PASS (borderline)\nBrief passage: 28% storage level stated against the 41% five-year average. Relationships: none documented. Forward events: none in the source.\nCritique: Context is given, nothing documented is ignored, and no forward event exists.\nResult: Pass\n\n## Output\nAnswer with JSON only: {\"critique\": \"<what in the input decides it, quoting the phrase>\", \"result\": \"Pass\" | \"Fail\"}. Write the critique before the result.",
+   "validation": {
+    "tpr": 1,
+    "tnr": 1,
+    "n_pass": 3,
+    "n_fail": 3
+   }
   },
   {
    "id": "J18",
@@ -179,7 +282,13 @@
    "kinds": [
     "item-briefs"
    ],
-   "prompt": "Read the capture text and the entity_ids the brief emitted, with the candidate menu. Pass only if every entity on the menu that the text names (by its name, an alias or a formal code) is in entity_ids. Fail if one the text names is missing. Name the entity and quote where the text names it."
+   "prompt": "You are an evaluator assessing whether the entity_ids a brief emitted include every menu entity the capture text names in the item's own subject. Judge this one criterion only.\n\n## Definitions\nPASS: Every candidate-menu entity that the capture text names (by its name, an alias or a formal code) as part of the item's subject is in entity_ids. A menu entity named only in page boilerplate, a related-article title or an unrelated sidebar need not be.\nFAIL: A menu entity the text names in the item's own content is missing from entity_ids.\n\n## Examples\n### Example 1: PASS\nCapture text (EIA): 'Futures prices for liquified natural gas (LNG) delivery to the Title Transfer Facility ...'; 'global LNG supplies'.\nMenu entities the text names: cl:material:c8be4653bfad0c74 | material | Liquefied natural gas | LNG.\nentity_ids emitted: cl:material:c8be4653bfad0c74.\nCritique: The only menu entity in the text is the LNG material and it is emitted.\nResult: Pass\n\n### Example 2: FAIL\nCapture text (trade news page): 'a subsidy program ... to form LNG bunkering hubs in Japanese ports'.\nMenu entities named: Bunkering node; Liquefied natural gas.\nentity_ids emitted: the LNG material only\nCritique: The text names a Bunkering node and an LNG material; only LNG is emitted.\nResult: Fail\n\n### Example 3: PASS (borderline)\nCapture text: shore power targets for ports, and a footer title 'The Case for Great Nicobar as a Strategic Bunkering Hub'. Menu: Shore power, Bunkering. Emitted: Shore power.\nCritique: Bunkering appears only in a footer title unrelated to the page's subject. Acceptable.\nResult: Pass\n\n## Output\nAnswer with JSON only: {\"critique\": \"<what in the input decides it, quoting the phrase>\", \"result\": \"Pass\" | \"Fail\"}. Write the critique before the result.",
+   "validation": {
+    "tpr": 1,
+    "tnr": 1,
+    "n_pass": 3,
+    "n_fail": 3
+   }
   },
   {
    "id": "J19",
@@ -189,7 +298,13 @@
     "item-briefs"
    ],
    "when": "obligation_fields",
-   "prompt": "For each obligation field, read its value and its quote. Pass only if the quote states the value (the figure, the date, the class, the duty holder, the trigger) in its own words. Fail if the quote is nearby text that does not state it, or the value is inferred. Name the field."
+   "prompt": "You are an evaluator assessing whether the quote attached to each obligation field states the field's value. Judge this one criterion only.\n\n## Definitions\nPASS: The quote states the value itself (the figure, the date, the class, the duty holder, the trigger, the mode) in its own words: the quote names the party, class, figure or date that the value names.\nFAIL: The quote is nearby text that does not state the value, or the value (a date, a code, a mode, a duty holder) is inferred or differs from the quote.\n\n## Examples\n### Example 1: PASS\nField mode = [\"inland_waterway\"]. Provision: Article 2 of Council Decision (EU) 2021/594 on a Union position on professional qualifications.\nQuote: 'the field of inland navigation'.\nCritique: The quote states the mode as the field of inland navigation.\nResult: Pass\n\n### Example 2: FAIL\nField due_date = 2002-04-01. Provision: 'Member States shall inform the Commission not later than 1 April 2002 ...'.\nQuote: 'Member States shall inform the Commission'.\nCritique: The value is a date and the quote has no date.\nResult: Fail\n\n### Example 3: PASS (borderline)\nField duty_holder_class = [member_state]. Quote: 'Each Member State shall inform the IMO'.\nCritique: The quote names the duty holder directly.\nResult: Pass\n\n## Output\nAnswer with JSON only: {\"critique\": \"<what in the input decides it, quoting the phrase>\", \"result\": \"Pass\" | \"Fail\"}. Write the critique before the result.",
+   "validation": {
+    "tpr": 1,
+    "tnr": 1,
+    "n_pass": 3,
+    "n_fail": 3
+   }
   },
   {
    "id": "J20",
@@ -199,19 +314,31 @@
     "item-briefs"
    ],
    "when": "connections",
-   "prompt": "For each connection, read the two entities, the relation, the reason token and the quote. Pass only if the quote itself states why the two are connected in the way the relation says. Fail if the reason is the author's inference or the quote names only one of the two. Name the connection."
+   "prompt": "You are an evaluator assessing whether the quote attached to a connection itself states why the two entities are connected in the way the relation says. Judge this one criterion only.\n\n## Definitions\nPASS: The quote names both entities (or their evident class) and states the relationship the relation token names.\nFAIL: The quote names only one entity, states a different relationship (an amendment for an implementation), or the connection rests on the author's inference.\n\n## Examples\n### Example 1: PASS\nConnection: Regulation (EU) 2020/1040 -- amends --> Regulation (EU) 2016/1628; reason_token amends_transition.\nQuote: 'REGULATION (EU) 2020/1040 ... amending Regulation (EU) 2016/1628 as regards its transitional provisions'.\nCritique: The quote states that the Regulation amends the other Regulation, matching the amends relation.\nResult: Pass\n\n### Example 2: FAIL\nConnection: Shore power -- serves_hub --> Mumbai port; reason_token shore_power_mumbai.\nQuote: 'shore power at all major ports by 2047'.\nCritique: The quote names no specific port, so serves_hub to Mumbai is unsupported.\nResult: Fail\n\n### Example 3: PASS (borderline)\nConnection: LNG -- fuel_for_mode --> ocean. Quote: 'the number of vessels fueled by liquefied natural gas (LNG) is expected to increase'.\nCritique: Vessels are ships and the quote says LNG fuels them. The relation is stated.\nResult: Pass\n\n## Output\nAnswer with JSON only: {\"critique\": \"<what in the input decides it, quoting the phrase>\", \"result\": \"Pass\" | \"Fail\"}. Write the critique before the result.",
+   "validation": {
+    "tpr": 1,
+    "tnr": 1,
+    "n_pass": 3,
+    "n_fail": 3
+   }
   },
   {
    "id": "J21",
    "criterion": "pico-and-dissent-fidelity",
-   "origin": "A18",
+   "origin": "A18; error code B-8",
    "kinds": [
     "item-briefs"
    ],
    "formats": [
     "research_summary"
    ],
-   "prompt": "Read the four ADR-049 blocks (population, intervention, comparator, outcome; the grade; the dissent; the signposts). Pass only if each block states what the study states, the dissent is the study's own limitations or a cited contrary finding, and nothing is added. Fail and quote the block that departs from the source."
+   "prompt": "You are an evaluator assessing whether the research blocks (population, intervention, comparator, outcome, limitations, dissent) state only what the study states. Judge this one criterion only.\n\n## Definitions\nPASS: Each block states what the study states in a readable sentence; dissent and limits are the study's own or a cited contrary finding; no grade or effect is added.\nFAIL: A block departs from the source (a number, a grade, a population, a critique the source does not state) or is a garbled fragment that no longer states the source.\n\n## Examples\n### Example 1: PASS\nSource: a randomised trial of 400 drivers reporting a 6% fuel reduction and listing small sample size as a limitation.\nBlocks: Population: 400 drivers. Outcome: 6% fuel reduction. Limitations: small sample size, as the authors state.\nCritique: Population, outcome and limitation all match the trial.\nResult: Pass\n\n### Example 2: FAIL\nSource: study of electric truck charging at three depots.\nBlocks: Intervention: nationwide fleet electrification; Comparator: diesel fleets in all countries.\nCritique: The intervention and comparator are broader than a three-depot study.\nResult: Fail\n\n### Example 3: PASS (borderline)\nSource: a preprint with no grade. Blocks: Evidence grade: not assigned; no maturity assessment in the stored text.\nCritique: States the absence rather than inventing a grade.\nResult: Pass\n\n## Output\nAnswer with JSON only: {\"critique\": \"<what in the input decides it, quoting the phrase>\", \"result\": \"Pass\" | \"Fail\"}. Write the critique before the result.",
+   "validation": {
+    "tpr": 1,
+    "tnr": 1,
+    "n_pass": 3,
+    "n_fail": 3
+   }
   },
   {
    "id": "J22",
@@ -220,7 +347,13 @@
    "kinds": [
     "item-briefs"
    ],
-   "prompt": "Find every conditional section (one the format says is omitted when nothing grounds it). Pass only if each present conditional section holds at least one grounded claim, and each omitted one carries only the omission note. Fail if a conditional section has prose with no grounded claim, or says there is nothing while a source says otherwise."
+   "prompt": "You are an evaluator assessing whether each conditional section holds a grounded claim or only the omission note. Judge this one criterion only.\n\n## Definitions\nPASS: A present conditional section holds at least one claim grounded in the bundle, and an omitted one carries only the omission note and the bundle holds nothing for it.\nFAIL: A conditional section has prose with no grounded claim, or says there is nothing while the bundle holds a source for it.\n\n## Examples\n### Example 1: PASS\nSection 13 (Adjacent Industry Research and Alternatives, conditional): '*No content for this section as of 2026-10-26: no adjacent research is held for this item.*' Bundle: no research item is linked.\nCritique: The omission note is right: no research item is linked.\nResult: Pass\n\n### Example 2: FAIL\nSection 12 (Exemptions and Edge Cases, conditional): '*No content for this section as of 2026-10-26: the stored source states no exemption.*' Bundle: the source contains Article 8, which allows a competent authority to admit an individual ship in difficulty or an unloaded tanker proceeding to repair.\nCritique: The note says no exemption while the bundle contains Article 8's exception.\nResult: Fail\n\n### Example 3: PASS (borderline)\nSection 12: 'Article 8 allows a competent authority to admit an individual ship in exceptional circumstances; see section 3.' Bundle: Article 8 is a claim in section 3.\nCritique: Present and grounded in a claim the bundle holds.\nResult: Pass\n\n## Output\nAnswer with JSON only: {\"critique\": \"<what in the input decides it, quoting the phrase>\", \"result\": \"Pass\" | \"Fail\"}. Write the critique before the result.",
+   "validation": {
+    "tpr": 1,
+    "tnr": 1,
+    "n_pass": 3,
+    "n_fail": 3
+   }
   },
   {
    "id": "J23",
@@ -230,7 +363,30 @@
     "theme-briefs",
     "admin-opportunity-findings"
    ],
-   "prompt": "Read the finding and the packet rows it cites. Pass only if the finding states a direction (what moves, in which window, for whom) that follows from rows on at least two surfaces together and could not be written from one of them. Fail if one row carries it alone. Name the row that would be enough."
+   "prompt": "You are an evaluator assessing whether a finding states a direction that needs rows on at least two surfaces. Judge this one criterion only.\n\n## Definitions\nPASS: The finding states a direction (what moves, in which window, for whom) that follows from rows on at least two surfaces together and could not be written from one of them.\nFAIL: The finding states no direction, or one row (or rows from one surface or one source) carries the whole statement.\n\n## Examples\n### Example 1: PASS\nFinding: 'A mandated 2% share from 2030 (regulations row) against a refinery capacity target of 1.1 Mt (market row) leaves a shortfall in the 6-18 month window for air carriers on Union lanes.' Rows: regulations and market.\nCritique: A regulations row and a market row together give a shortfall, a window and a party.\nResult: Pass\n\n### Example 2: FAIL\nFinding: 'Bunker prices are pressured by LNG supply loss.' Rows cited: two market rows from the same EIA release.\nCritique: Two market rows from the same release carry the whole statement.\nResult: Fail\n\n### Example 3: PASS (borderline)\nFinding: a regulations row sets a share from 2030 and a market row states capacity for 2030; the shortfall follows only from both, for air carriers in the 6-18 month window.\nCritique: Needs both surfaces and names the window and party.\nResult: Pass\n\n## Output\nAnswer with JSON only: {\"critique\": \"<what in the input decides it, quoting the phrase>\", \"result\": \"Pass\" | \"Fail\"}. Write the critique before the result.",
+   "validation": {
+    "tpr": 1,
+    "tnr": 1,
+    "n_pass": 2,
+    "n_fail": 4
+   }
+  },
+  {
+   "id": "J24",
+   "criterion": "claim-scope-not-widened",
+   "origin": "error code B-3",
+   "kinds": [
+    "item-briefs",
+    "theme-briefs",
+    "admin-opportunity-findings"
+   ],
+   "prompt": "You are an evaluator assessing whether a claim's population, region, period or class is no wider than the source's. Judge this one criterion only.\n\n## Definitions\nPASS: The claim covers the same population, region, period and class as the source sentence it rests on.\nFAIL: The claim generalises beyond the source (one site becomes the sector; cranes become all port machinery; a month becomes a year; a state becomes a country; a position of the Union becomes an operator duty).\n\n## Examples\n### Example 1: PASS\nSource: 'No laden LNG vessels are known to have crossed the strait between March 1 and April 24, according to Kpler data.'\nBrief: according to Kpler, no laden LNG vessels are known to have crossed between March 1 and April 24.\nCritique: Same carrier data, same dates.\nResult: Pass\n\n### Example 2: FAIL\nSource: 'the Brent crude oil spot price increased sharply in April, reaching a high of $138 per barrel on April 7'.\nBrief: oil prices have risen sharply across 2026.\nCritique: One month's spike becomes 'across 2026'.\nResult: Fail\n\n### Example 3: PASS (borderline)\nSource: 'India has only 869 electric medium- and heavy-duty freight vehicles.' Brief: India has few electric heavy freight vehicles.\nCritique: 'Few' restates 'only 869' in the source's own register. Same scope.\nResult: Pass\n\n## Output\nAnswer with JSON only: {\"critique\": \"<what in the input decides it, quoting the phrase>\", \"result\": \"Pass\" | \"Fail\"}. Write the critique before the result.",
+   "validation": {
+    "tpr": 1,
+    "tnr": 1,
+    "n_pass": 3,
+    "n_fail": 3
+   }
   }
  ]
 }
