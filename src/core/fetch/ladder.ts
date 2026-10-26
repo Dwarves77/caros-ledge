@@ -1,7 +1,7 @@
 // Ported from old_repo/src/lib/sources/transport-escalation.mjs (lines 86-256)
 // Ported from old_repo/src/lib/sources/transport-runtime.mjs (lines 1-95)
 import { apiEndpointFor } from "./api";
-import { BODY_CLASS, classifyBody, isStorableClass, type BodyClass } from "./classify-body";
+import { BODY_CLASS, bodyOpts, classifyBody, isStorableClass, type BodyClass } from "./classify-body";
 import { type TransportResult } from "./direct";
 import type { RefusalReason } from "./policy";
 
@@ -120,7 +120,7 @@ export async function escalateFetch(urls: string | string[], deps: LadderDeps): 
   const skip = new Set<TransportName>(deps.skip);
   const src = deps.source;
   const note = (url: string, transport: TransportName, res: { status?: number; text?: string; needsHeadless?: boolean; refusal?: { reason: RefusalReason; detail: string } | null }): AttemptClass => {
-    const cls: AttemptClass = res.needsHeadless ? NEEDS_HEADLESS : isPolicy(res.refusal?.reason) ? res.refusal.reason : classifyBody(res.text ?? "", { status: res.status ?? 200 }).class;
+    const cls: AttemptClass = res.needsHeadless ? NEEDS_HEADLESS : isPolicy(res.refusal?.reason) ? res.refusal.reason : classifyBody(res.text ?? "", bodyOpts(url, { status: res.status ?? 200 })).class;
     attempts.push({ url, transport, class: cls, verdict: labelOf(cls), status: res.status, bytes: typeof res.text === "string" ? res.text.length : 0, reason: isOk(cls) ? null : cls, ...(isPolicy(cls) && res.refusal ? { detail: res.refusal.detail } : {}) });
     return cls;
   };

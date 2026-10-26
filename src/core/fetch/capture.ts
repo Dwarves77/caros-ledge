@@ -4,8 +4,7 @@
 // Ported from old_repo/scripts/mint/heal-provenance.mjs (lines 1057-1099)
 // Ported from old_repo/scripts/mint/heal-provenance.mjs (lines 1114-1199)
 // Ported from old_repo/scripts/mint/heal-provenance.mjs (lines 1240-1330)
-import { toText } from "./classify-body";
-import { classifyBody, isStorableClass } from "./classify-body";
+import { bodyOpts, classifyBody, isStorableClass, toText } from "./classify-body";
 import { celexTxtHtmlUrl } from "./candidates";
 import { FEDERAL_REGISTER_API_BASE } from "./api";
 import { type FetchDeps, fetchDirect } from "./direct";
@@ -96,7 +95,7 @@ interface Env {
 /** One fetched document as an envelope. Usable means ok, over 200 characters of text, not Cellar's metadata fingerprint and not a wall or error body. */
 function envelope(res: { ok: boolean; status: number | null; html: string; refusal?: GuardRefusal | null }, endpoint: string, titler?: Titler): Env {
   const text = toText(res.html);
-  const usable = res.ok && text.length > 200 && !detectCellarGarbledMetadata(text) && isStorableClass(classifyBody(text).class);
+  const usable = res.ok && text.length > 200 && !detectCellarGarbledMetadata(text) && isStorableClass(classifyBody(text, bodyOpts(endpoint)).class);
   return { usable, status: res.status, html: res.html, text: usable ? text : "", endpoint, refusal: res.refusal ?? null, ...(usable && titler ? { title: titler(res.html) } : {}) };
 }
 const attemptOf = (env: Env, transport: string, rawText?: string): CaptureAttempt => ({ endpoint: env.endpoint, transport, status: env.status, bytes: env.html.length, head: (rawText ?? toText(env.html)).slice(0, 300) });
@@ -157,7 +156,7 @@ export async function capture(url: string, opts: { family?: CaptureFamily; key?:
     return held("oj_reference_no_cellar_path");
   } else {
     const res = await fetchDirect(url, deps, { max: 10_000_000, keepHtml: true });
-    const env: Env = { usable: res.status === 200 && isStorableClass(classifyBody(res.text, { status: res.status }).class) && res.text.length > 200, status: res.status || null, html: res.html ?? "", text: res.text, endpoint: res.finalUrl ?? url, title: res.title ? { title: res.title, origin: "captured_title" } : null };
+    const env: Env = { usable: res.status === 200 && isStorableClass(classifyBody(res.text, bodyOpts(res.finalUrl ?? url, { status: res.status })).class) && res.text.length > 200, status: res.status || null, html: res.html ?? "", text: res.text, endpoint: res.finalUrl ?? url, title: res.title ? { title: res.title, origin: "captured_title" } : null };
     attempts.push(attemptOf(env, "direct", res.text));
     if (env.usable) return done(env, "direct");
     last = { ...env, refusal: res.refusal && /^(licence_forbids|robots_|private_address|host_busy)/.test(res.refusal.reason) ? { reason: res.refusal.reason as GuardRefusal["reason"], transient: res.refusal.transient, detail: res.refusal.detail, ...(res.refusal.rule ? { rule: res.refusal.rule } : {}), ...(res.refusal.registerKey ? { registerKey: res.refusal.registerKey } : {}) } : null };
