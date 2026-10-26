@@ -1,4 +1,4 @@
--- Down for 0136_connect_2_pr_b_edges_objects_signposts: the signposts that track no assessment go (the column cannot be NOT NULL again while they stand), the cycle guard returns to walking every relation, and the six obligation_objects columns, the two entity_relations
+-- Down for 0141_connect_2_pr_b_edges_objects_signposts: the signposts that track no assessment go (the column cannot be NOT NULL again while they stand), the cycle guard returns to walking every relation, and the six obligation_objects columns, the two entity_relations
 -- columns and their checks are dropped (the schema job applies this file in a transaction that rolls back and compares the catalog snapshots).
 DELETE FROM public.signposts WHERE assessment_id IS NULL;
 ALTER TABLE public.signposts DROP CONSTRAINT signposts_tracks_something_check;

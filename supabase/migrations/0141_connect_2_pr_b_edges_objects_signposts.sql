@@ -1,4 +1,4 @@
--- 0136 connect_2_pr_b: a connection carries the quote it stands on, a mandate carries its quantity and dates, and a pattern's prediction can be tracked without a research assessment (CONNECT-2 PR B, unified design section 7).
+-- 0141 connect_2_pr_b: a connection carries the quote it stands on, a mandate carries its quantity and dates, and a pattern's prediction can be tracked without a research assessment (CONNECT-2 PR B, unified design section 7).
 -- change: entity_relations gains basis and method_version, the cycle guard stops at hierarchical relations, obligation_objects gains due_date, mandated_quantity, mandated_unit, in_force_end, method_version and basis, signposts may track an inference record without an assessment
 --
 -- (a) entity_relations (a reader's connection) gains `basis jsonb` and `method_version text` with CHECK ((basis IS NULL) = (method_version IS NULL)): an edge the reader asserts says which quote of which capture it stands on and which reader version wrote it; an edge with one and
@@ -18,7 +18,7 @@
 -- signpost"). assessment_id becomes nullable under CHECK (assessment_id IS NOT NULL OR inference_record_id IS NOT NULL): a signpost tracks an assessment, an inference, or both, never nothing. fire_signpost is unchanged: a pattern signpost is scored by the pattern step
 -- (src/core/flywheel/patterns/signposts.ts) in one update and is never fired through the assessment lifecycle.
 --
--- Access: unchanged. Reversal: down/0136.sql restores the cycle function, drops the columns and the checks, and removes the pattern signposts before it restores NOT NULL.
+-- Access: unchanged. Reversal: down/0141.sql restores the cycle function, drops the columns and the checks, and removes the pattern signposts before it restores NOT NULL.
 
 -- catalog: column, constraint, function
 
@@ -90,119 +90,119 @@ ALTER TABLE public.signposts ALTER COLUMN assessment_id DROP NOT NULL;
 ALTER TABLE public.signposts DROP CONSTRAINT IF EXISTS signposts_tracks_something_check;
 ALTER TABLE public.signposts ADD CONSTRAINT signposts_tracks_something_check CHECK (assessment_id IS NOT NULL OR inference_record_id IS NOT NULL);
 
--- Self-check 0136-connect-2-pr-b: the new columns and checks, and attacks. A basis with no method, and a method with no basis, are refused on entity_relations and on obligation_objects, and an edge with both is kept; A competes_for_feedstock B then B competes_for_feedstock A both
+-- Self-check 0141-connect-2-pr-b: the new columns and checks, and attacks. A basis with no method, and a method with no basis, are refused on entity_relations and on obligation_objects, and an edge with both is kept; A competes_for_feedstock B then B competes_for_feedstock A both
 -- insert (the red line before this file: the second raised a cycle error), while a hierarchical cycle (A implements B, B implements A) and a cycle through a mix of hierarchical relations are still refused; a mandated quantity without a unit, a negative quantity and an in-force window that runs
 -- backwards are refused; a reader event of each pending kind grounded on a capture inserts with its ref and a kind outside the list is refused; a signpost with neither an assessment nor an inference record is refused and one with only an inference record is kept.
 DO $$
 DECLARE
-  v_a text := 'cl:asset:0136000000000001'; v_b text := 'cl:asset:0136000000000002'; v_c text := 'cl:asset:0136000000000003'; v_i text := 'cl:instrument:0136000000000004'; v_s text := 'cl:signpost:0136000000000005';
+  v_a text := 'cl:asset:0141000000000001'; v_b text := 'cl:asset:0141000000000002'; v_c text := 'cl:asset:0141000000000003'; v_i text := 'cl:instrument:0141000000000004'; v_s text := 'cl:signpost:0141000000000005';
   v_item uuid := gen_random_uuid(); v_cap uuid := gen_random_uuid(); v_inf uuid := gen_random_uuid(); v_ev uuid := gen_random_uuid();
   v_kind text; n int;
 BEGIN
   IF (SELECT count(*) FROM information_schema.columns WHERE table_schema = 'public' AND ((table_name = 'entity_relations' AND column_name IN ('basis', 'method_version'))
         OR (table_name = 'obligation_objects' AND column_name IN ('due_date', 'mandated_quantity', 'mandated_unit', 'in_force_end', 'method_version', 'basis')))) <> 8 THEN
-    RAISE EXCEPTION '0136-connect-2-pr-b: a column is missing';
+    RAISE EXCEPTION '0141-connect-2-pr-b: a column is missing';
   END IF;
   IF (SELECT is_nullable FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'signposts' AND column_name = 'assessment_id') <> 'YES' THEN
-    RAISE EXCEPTION '0136-connect-2-pr-b: signposts.assessment_id is still NOT NULL';
+    RAISE EXCEPTION '0141-connect-2-pr-b: signposts.assessment_id is still NOT NULL';
   END IF;
   BEGIN
-    INSERT INTO public.entities (entity_id, kind, canonical_name, status) VALUES (v_a, 'asset', 'selfcheck a 0136', 'active'), (v_b, 'asset', 'selfcheck b 0136', 'active'), (v_c, 'asset', 'selfcheck c 0136', 'active'),
-      (v_i, 'instrument', 'selfcheck instrument 0136', 'active'), (v_s, 'signpost', 'selfcheck signpost 0136', 'active');
+    INSERT INTO public.entities (entity_id, kind, canonical_name, status) VALUES (v_a, 'asset', 'selfcheck a 0141', 'active'), (v_b, 'asset', 'selfcheck b 0141', 'active'), (v_c, 'asset', 'selfcheck c 0141', 'active'),
+      (v_i, 'instrument', 'selfcheck instrument 0141', 'active'), (v_s, 'signpost', 'selfcheck signpost 0141', 'active');
 
     -- entity_relations: the basis pair
-    INSERT INTO public.entity_relations (parent_entity_id, child_entity_id, relation, asserted_by, basis, method_version) VALUES (v_a, v_b, 'competes_for_feedstock', 'selfcheck-0136', '{"quote":"x","capture_id":"y","reason_token":"z"}'::jsonb, 'reader@1.0.0');
+    INSERT INTO public.entity_relations (parent_entity_id, child_entity_id, relation, asserted_by, basis, method_version) VALUES (v_a, v_b, 'competes_for_feedstock', 'selfcheck-0141', '{"quote":"x","capture_id":"y","reason_token":"z"}'::jsonb, 'reader@1.0.0');
     BEGIN
-      INSERT INTO public.entity_relations (parent_entity_id, child_entity_id, relation, asserted_by, method_version) VALUES (v_a, v_c, 'competes_for_feedstock', 'selfcheck-0136', 'reader@1.0.0');
-      RAISE EXCEPTION '0136-connect-2-pr-b: an edge with a method and no basis was accepted';
+      INSERT INTO public.entity_relations (parent_entity_id, child_entity_id, relation, asserted_by, method_version) VALUES (v_a, v_c, 'competes_for_feedstock', 'selfcheck-0141', 'reader@1.0.0');
+      RAISE EXCEPTION '0141-connect-2-pr-b: an edge with a method and no basis was accepted';
     EXCEPTION WHEN check_violation THEN NULL;
     END;
     BEGIN
-      INSERT INTO public.entity_relations (parent_entity_id, child_entity_id, relation, asserted_by, basis) VALUES (v_a, v_c, 'competes_for_feedstock', 'selfcheck-0136', '{"quote":"x"}'::jsonb);
-      RAISE EXCEPTION '0136-connect-2-pr-b: an edge with a basis and no method was accepted';
+      INSERT INTO public.entity_relations (parent_entity_id, child_entity_id, relation, asserted_by, basis) VALUES (v_a, v_c, 'competes_for_feedstock', 'selfcheck-0141', '{"quote":"x"}'::jsonb);
+      RAISE EXCEPTION '0141-connect-2-pr-b: an edge with a basis and no method was accepted';
     EXCEPTION WHEN check_violation THEN NULL;
     END;
     BEGIN
-      INSERT INTO public.entity_relations (parent_entity_id, child_entity_id, relation, asserted_by, basis, method_version) VALUES (v_a, v_c, 'competes_for_feedstock', 'selfcheck-0136', '[1]'::jsonb, 'reader@1.0.0');
-      RAISE EXCEPTION '0136-connect-2-pr-b: a basis that is not an object was accepted';
+      INSERT INTO public.entity_relations (parent_entity_id, child_entity_id, relation, asserted_by, basis, method_version) VALUES (v_a, v_c, 'competes_for_feedstock', 'selfcheck-0141', '[1]'::jsonb, 'reader@1.0.0');
+      RAISE EXCEPTION '0141-connect-2-pr-b: a basis that is not an object was accepted';
     EXCEPTION WHEN check_violation THEN NULL;
     END;
 
     -- the symmetric pair from two briefs, then the hierarchy attacks
-    INSERT INTO public.entity_relations (parent_entity_id, child_entity_id, relation, asserted_by, basis, method_version) VALUES (v_b, v_a, 'competes_for_feedstock', 'selfcheck-0136', '{"quote":"x"}'::jsonb, 'reader@1.0.0');
-    INSERT INTO public.entity_relations (parent_entity_id, child_entity_id, relation, asserted_by) VALUES (v_a, v_b, 'corridor_links', 'selfcheck-0136'), (v_b, v_a, 'corridor_links', 'selfcheck-0136');
-    INSERT INTO public.entity_relations (parent_entity_id, child_entity_id, relation, asserted_by) VALUES (v_i, v_a, 'implements', 'selfcheck-0136');
+    INSERT INTO public.entity_relations (parent_entity_id, child_entity_id, relation, asserted_by, basis, method_version) VALUES (v_b, v_a, 'competes_for_feedstock', 'selfcheck-0141', '{"quote":"x"}'::jsonb, 'reader@1.0.0');
+    INSERT INTO public.entity_relations (parent_entity_id, child_entity_id, relation, asserted_by) VALUES (v_a, v_b, 'corridor_links', 'selfcheck-0141'), (v_b, v_a, 'corridor_links', 'selfcheck-0141');
+    INSERT INTO public.entity_relations (parent_entity_id, child_entity_id, relation, asserted_by) VALUES (v_i, v_a, 'implements', 'selfcheck-0141');
     BEGIN
-      INSERT INTO public.entity_relations (parent_entity_id, child_entity_id, relation, asserted_by) VALUES (v_a, v_i, 'implements', 'selfcheck-0136');
-      RAISE EXCEPTION '0136-connect-2-pr-b: a hierarchical cycle (A implements B, B implements A) was accepted';
+      INSERT INTO public.entity_relations (parent_entity_id, child_entity_id, relation, asserted_by) VALUES (v_a, v_i, 'implements', 'selfcheck-0141');
+      RAISE EXCEPTION '0141-connect-2-pr-b: a hierarchical cycle (A implements B, B implements A) was accepted';
     EXCEPTION WHEN check_violation THEN NULL;
     END;
-    INSERT INTO public.entity_relations (parent_entity_id, child_entity_id, relation, asserted_by) VALUES (v_a, v_c, 'amends', 'selfcheck-0136');
+    INSERT INTO public.entity_relations (parent_entity_id, child_entity_id, relation, asserted_by) VALUES (v_a, v_c, 'amends', 'selfcheck-0141');
     BEGIN
-      INSERT INTO public.entity_relations (parent_entity_id, child_entity_id, relation, asserted_by) VALUES (v_c, v_i, 'amends', 'selfcheck-0136');
-      RAISE EXCEPTION '0136-connect-2-pr-b: a cycle through two hierarchical relations was accepted';
+      INSERT INTO public.entity_relations (parent_entity_id, child_entity_id, relation, asserted_by) VALUES (v_c, v_i, 'amends', 'selfcheck-0141');
+      RAISE EXCEPTION '0141-connect-2-pr-b: a cycle through two hierarchical relations was accepted';
     EXCEPTION WHEN check_violation THEN NULL;
     END;
-    SELECT count(*) INTO n FROM public.entity_relations WHERE asserted_by = 'selfcheck-0136' AND relation IN ('competes_for_feedstock', 'corridor_links');
-    IF n <> 4 THEN RAISE EXCEPTION '0136-connect-2-pr-b: the symmetric pairs left % of 4 rows', n; END IF;
+    SELECT count(*) INTO n FROM public.entity_relations WHERE asserted_by = 'selfcheck-0141' AND relation IN ('competes_for_feedstock', 'corridor_links');
+    IF n <> 4 THEN RAISE EXCEPTION '0141-connect-2-pr-b: the symmetric pairs left % of 4 rows', n; END IF;
 
     -- obligation_objects: the checks (a fixture instrument item and capture)
-    INSERT INTO public.intelligence_items (id, title, domain) VALUES (v_item, 'selfcheck 0136', 1);
-    INSERT INTO public.agent_run_searches (id, intelligence_item_id, result_url, result_content, result_index, searched_at) VALUES (v_cap, v_item, 'https://selfcheck-0136.invalid/law', 'Article 1 shall apply from 1 January 2030. The ceiling is EUR 100.', 0, '2026-01-01T00:00:00Z');
+    INSERT INTO public.intelligence_items (id, title, domain) VALUES (v_item, 'selfcheck 0141', 1);
+    INSERT INTO public.agent_run_searches (id, intelligence_item_id, result_url, result_content, result_index, searched_at) VALUES (v_cap, v_item, 'https://selfcheck-0141.invalid/law', 'Article 1 shall apply from 1 January 2030. The ceiling is EUR 100.', 0, '2026-01-01T00:00:00Z');
     BEGIN
       INSERT INTO public.obligation_objects (obligation_id, instrument_item_id, pinpoint_citation, verbatim_text, binding_position, duty_holder_class, applicability_trigger, capture_id, mandated_quantity)
-        VALUES ('cl:obligation:0136000000000011', v_item, 'Article 1', 'Article 1 shall apply from 1 January 2030.', 'direct_duty', ARRAY['carrier'], '{"attribute":"mode","value":"air"}'::jsonb, v_cap, 3.6);
-      RAISE EXCEPTION '0136-connect-2-pr-b: a mandated quantity with no unit was accepted';
+        VALUES ('cl:obligation:0141000000000011', v_item, 'Article 1', 'Article 1 shall apply from 1 January 2030.', 'direct_duty', ARRAY['carrier'], '{"attribute":"mode","value":"air"}'::jsonb, v_cap, 3.6);
+      RAISE EXCEPTION '0141-connect-2-pr-b: a mandated quantity with no unit was accepted';
     EXCEPTION WHEN check_violation THEN NULL;
     END;
     BEGIN
       INSERT INTO public.obligation_objects (obligation_id, instrument_item_id, pinpoint_citation, verbatim_text, binding_position, duty_holder_class, applicability_trigger, capture_id, mandated_quantity, mandated_unit)
-        VALUES ('cl:obligation:0136000000000012', v_item, 'Article 1', 'Article 1 shall apply from 1 January 2030.', 'direct_duty', ARRAY['carrier'], '{"attribute":"mode","value":"air"}'::jsonb, v_cap, -1, 'MW');
-      RAISE EXCEPTION '0136-connect-2-pr-b: a negative mandated quantity was accepted';
+        VALUES ('cl:obligation:0141000000000012', v_item, 'Article 1', 'Article 1 shall apply from 1 January 2030.', 'direct_duty', ARRAY['carrier'], '{"attribute":"mode","value":"air"}'::jsonb, v_cap, -1, 'MW');
+      RAISE EXCEPTION '0141-connect-2-pr-b: a negative mandated quantity was accepted';
     EXCEPTION WHEN check_violation THEN NULL;
     END;
     BEGIN
       INSERT INTO public.obligation_objects (obligation_id, instrument_item_id, pinpoint_citation, verbatim_text, binding_position, duty_holder_class, applicability_trigger, capture_id, enforcement_start, in_force_end)
-        VALUES ('cl:obligation:0136000000000013', v_item, 'Article 1', 'Article 1 shall apply from 1 January 2030.', 'direct_duty', ARRAY['carrier'], '{"attribute":"mode","value":"air"}'::jsonb, v_cap, '2030-01-01', '2007-12-31');
-      RAISE EXCEPTION '0136-connect-2-pr-b: an in-force window that runs backwards was accepted';
+        VALUES ('cl:obligation:0141000000000013', v_item, 'Article 1', 'Article 1 shall apply from 1 January 2030.', 'direct_duty', ARRAY['carrier'], '{"attribute":"mode","value":"air"}'::jsonb, v_cap, '2030-01-01', '2007-12-31');
+      RAISE EXCEPTION '0141-connect-2-pr-b: an in-force window that runs backwards was accepted';
     EXCEPTION WHEN check_violation THEN NULL;
     END;
     BEGIN
       INSERT INTO public.obligation_objects (obligation_id, instrument_item_id, pinpoint_citation, verbatim_text, binding_position, duty_holder_class, applicability_trigger, capture_id, method_version)
-        VALUES ('cl:obligation:0136000000000014', v_item, 'Article 1', 'Article 1 shall apply from 1 January 2030.', 'direct_duty', ARRAY['carrier'], '{"attribute":"mode","value":"air"}'::jsonb, v_cap, 'reader@1.0.0');
-      RAISE EXCEPTION '0136-connect-2-pr-b: an object with a method and no basis was accepted';
+        VALUES ('cl:obligation:0141000000000014', v_item, 'Article 1', 'Article 1 shall apply from 1 January 2030.', 'direct_duty', ARRAY['carrier'], '{"attribute":"mode","value":"air"}'::jsonb, v_cap, 'reader@1.0.0');
+      RAISE EXCEPTION '0141-connect-2-pr-b: an object with a method and no basis was accepted';
     EXCEPTION WHEN check_violation THEN NULL;
     END;
     INSERT INTO public.obligation_objects (obligation_id, instrument_item_id, pinpoint_citation, verbatim_text, binding_position, duty_holder_class, applicability_trigger, capture_id, due_date, mandated_quantity, mandated_unit, enforcement_start, in_force_end, method_version, basis)
-      VALUES ('cl:obligation:0136000000000015', v_item, 'Article 1', 'Article 1 shall apply from 1 January 2030.', 'direct_duty', ARRAY['carrier'], '{"attribute":"mode","value":"air"}'::jsonb, v_cap, '2030-01-01', 3.6, 'MW', '2030-01-01', '2035-12-31', 'reader@1.0.0', '{"quote":"Article 1 shall apply from 1 January 2030."}'::jsonb);
+      VALUES ('cl:obligation:0141000000000015', v_item, 'Article 1', 'Article 1 shall apply from 1 January 2030.', 'direct_duty', ARRAY['carrier'], '{"attribute":"mode","value":"air"}'::jsonb, v_cap, '2030-01-01', 3.6, 'MW', '2030-01-01', '2035-12-31', 'reader@1.0.0', '{"quote":"Article 1 shall apply from 1 January 2030."}'::jsonb);
 
     -- item_forward_events: a reader event of each pending kind grounded on a capture inserts, with its ref; a kind outside the list does not
     FOREACH v_kind IN ARRAY ARRAY['implementing_act_due', 'delegated_act_due', 'guidance_expected'] LOOP
       v_ev := gen_random_uuid();
       INSERT INTO public.item_forward_events (id, intelligence_item_id, event_date, date_precision, event_kind, obligation_text, source_kind, source_capture_id, source_span, confidence, extractor_version)
-        VALUES (v_ev, v_item, '2027-06-01', 'month', v_kind, 'selfcheck 0136', 'capture', v_cap, 'shall apply from 1 January 2030', 'medium', 'reader@1.0.0');
-      INSERT INTO public.entity_refs (ref_table, ref_id, entity_id, role, asserted_by, basis, method_version) VALUES ('item_forward_events', v_ev, v_a, 'cites_asset', 'selfcheck-0136', '{"quote":"x"}'::jsonb, 'reader@1.0.0');
+        VALUES (v_ev, v_item, '2027-06-01', 'month', v_kind, 'selfcheck 0141', 'capture', v_cap, 'shall apply from 1 January 2030', 'medium', 'reader@1.0.0');
+      INSERT INTO public.entity_refs (ref_table, ref_id, entity_id, role, asserted_by, basis, method_version) VALUES ('item_forward_events', v_ev, v_a, 'cites_asset', 'selfcheck-0141', '{"quote":"x"}'::jsonb, 'reader@1.0.0');
     END LOOP;
     BEGIN
       INSERT INTO public.item_forward_events (intelligence_item_id, event_date, date_precision, event_kind, obligation_text, source_kind, source_capture_id, source_span, confidence, extractor_version)
-        VALUES (v_item, '2027-06-01', 'month', 'bogus_kind', 'selfcheck 0136', 'capture', v_cap, 'x', 'medium', 'reader@1.0.0');
-      RAISE EXCEPTION '0136-connect-2-pr-b: an event kind outside the list was accepted';
+        VALUES (v_item, '2027-06-01', 'month', 'bogus_kind', 'selfcheck 0141', 'capture', v_cap, 'x', 'medium', 'reader@1.0.0');
+      RAISE EXCEPTION '0141-connect-2-pr-b: an event kind outside the list was accepted';
     EXCEPTION WHEN check_violation THEN NULL;
     END;
 
     -- signposts: tracks an assessment, an inference or both, never nothing
     INSERT INTO public.inference_records (inference_id, subject_id, claim_text, status_token, confidence, cited_item_ids, origin_class, method_id, method_version, computed_by)
-      VALUES (v_inf, v_a, 'selfcheck 0136 pattern stands', 'HYPOTHESIS', 0.5, ARRAY[v_item], 'derived', 'pattern_selfcheck', '1.0.0', 'selfcheck-0136');
+      VALUES (v_inf, v_a, 'selfcheck 0141 pattern stands', 'HYPOTHESIS', 0.5, ARRAY[v_item], 'derived', 'pattern_selfcheck', '1.0.0', 'selfcheck-0141');
     BEGIN
       INSERT INTO public.signposts (entity_id, watches, predicate, direction) VALUES (v_s, v_a, '{"op":"date_passed","field":"x"}'::jsonb, 'confirms');
-      RAISE EXCEPTION '0136-connect-2-pr-b: a signpost tracking nothing was accepted';
+      RAISE EXCEPTION '0141-connect-2-pr-b: a signpost tracking nothing was accepted';
     EXCEPTION WHEN not_null_violation OR check_violation THEN NULL;
     END;
     INSERT INTO public.signposts (entity_id, watches, predicate, direction, inference_record_id) VALUES (v_s, v_a, '{"op":"date_passed","field":"x"}'::jsonb, 'confirms', v_inf);
     RAISE EXCEPTION USING ERRCODE = 'P0099', MESSAGE = 'selfcheck fixture rolled back';
   EXCEPTION WHEN SQLSTATE 'P0099' THEN NULL;
   END;
-  RAISE NOTICE '0136-connect-2-pr-b OK';
+  RAISE NOTICE '0141-connect-2-pr-b OK';
 END $$;
 
 COMMIT;
