@@ -12,7 +12,7 @@ import { readSourceCoverage } from "@/core/derived/source-coverage";
 import { readThemeChips } from "@/core/detail/cross-page-read";
 
 import { readCounts, readDigest } from "./read/digest";
-import { buildChangedRows, buildDueNextRows, computeAuditDate, dueNextWindowLabel, firstTokenOf, surfaceItemTotal } from "./rows";
+import { buildChangedRows, buildDueNextRows, computeAuditDate, dueNextWindowLabel, firstNameOf, surfaceItemTotal } from "./rows";
 import { DashboardBrief } from "./ui/DashboardBrief";
 import { DashboardMasthead } from "./ui/DashboardMasthead";
 
@@ -35,11 +35,19 @@ export default async function DashboardRoute() {
   const now = new Date(session.nowIso);
   const dateLabel = formatLocaleDate(now, { weekday: "long", year: "numeric", month: "long", day: "numeric", timeZone: "UTC" });
   const orgId = session.orgId;
+  const db = await userClient();
+  const readName = () =>
+    settle("profile", async () => {
+      const { data, error } = await db.from("profiles").select("full_name, display_name").eq("id", session.userId).maybeSingle();
+      if (error) throw new Error(error.message);
+      return firstNameOf(data as { full_name: string | null; display_name: string | null } | null);
+    });
   if (!orgId) {
+    const firstName = await readName();
     return (
       <>
         <div className="cl-list-surface-masthead">
-          <DashboardMasthead firstName={firstTokenOf(session.email)} orgName="" sectors={[]} itemCount={null} jurisdictionCount={null} noWorkspace dateLabel={dateLabel} nowIso={session.nowIso} />
+          <DashboardMasthead firstName={firstName} orgName="" sectors={[]} itemCount={null} jurisdictionCount={null} noWorkspace dateLabel={dateLabel} nowIso={session.nowIso} />
         </div>
         <PageFrame>
           <StateNote action={{ label: "Set up a workspace →", href: "/workspace/new" }}>Your brief shows what is new and due for a workspace. Join or create one to see it.</StateNote>
@@ -47,17 +55,12 @@ export default async function DashboardRoute() {
       </>
     );
   }
-  const db = await userClient();
   const [{ profile, failed: profileFailed }, digest, counts, watch, name, themes, coverage] = await Promise.all([
     readWorkspaceProfile(db, orgId),
     settle("digest", () => readDigest(db, orgId, serviceClient)),
     settle("counts", () => readCounts(db, orgId)),
     settle("watchlist", () => readWatchlist(db, { userId: session.userId, orgId }, WATCHLIST_RAIL_LIMIT, now)),
-    settle("profile", async () => {
-      const { data, error } = await db.from("profiles").select("full_name, display_name").eq("id", session.userId).maybeSingle();
-      if (error) throw new Error(error.message);
-      return (data as { full_name: string | null; display_name: string | null } | null)?.full_name ?? (data as { display_name: string | null } | null)?.display_name ?? null;
-    }),
+    readName(),
     settle("themes", () => readThemeChips(db, { surface: null, minPages: 2, max: 3 })),
     settle("source coverage", () => readSourceCoverage(db)),
   ]);
@@ -69,7 +72,7 @@ export default async function DashboardRoute() {
   return (
     <>
       <div className="cl-list-surface-masthead">
-        <DashboardMasthead firstName={firstTokenOf(name ?? session.email)} orgName={session.orgName} sectors={profile.verticals} itemCount={totals ? surfaceItemTotal(totals.surfaces) : null} jurisdictionCount={totals?.aggregates.totalJurisdictions ?? null} dateLabel={dateLabel} nowIso={session.nowIso} />
+        <DashboardMasthead firstName={name} orgName={session.orgName} sectors={profile.verticals} itemCount={totals ? surfaceItemTotal(totals.surfaces) : null} jurisdictionCount={totals?.aggregates.totalJurisdictions ?? null} dateLabel={dateLabel} nowIso={session.nowIso} />
       </div>
       <DashboardBrief
         dueRows={dueRows}

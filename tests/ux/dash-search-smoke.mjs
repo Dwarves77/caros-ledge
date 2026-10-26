@@ -114,6 +114,19 @@ try {
     }),
   );
 
+  // TITLE-1 (operator ruling 2026-10-26): a row draws the formal act head and wraps to at most two lines at 375 px (Miller's law: one chunk per row), whatever the stored title; the line counts are printed for the report.
+  await check('dashboard at 375: the 2023/2122 row, the p50 row and a head-less long title are each at most two lines, and the 2023/2122 row reads as its act head', () =>
+    session('dashboard', async ({ page }) => {
+      const rows = await page.locator('[data-part="list-row"] .cl-row-title-text').evaluateAll((els) => els.map((el) => ({ text: el.textContent ?? '', lines: Math.round(el.getBoundingClientRect().height / parseFloat(getComputedStyle(el).lineHeight)), clipped: el.scrollHeight > el.clientHeight + 1 })));
+      for (const r of rows) must(r.lines <= 2, `a row title is ${r.lines} lines: ${r.text.slice(0, 50)}`);
+      const at = (needle) => rows.find((r) => r.text.includes(needle));
+      must(at('2023/2122')?.text === 'Implementing Regulation (EU) 2023/2122', `the 2023/2122 row reads "${at('2023/2122')?.text}"`);
+      must(at('2024/837')?.lines <= 2, 'the p50 row is not two lines');
+      must(at('Approval and Promulgation')?.clipped === true, 'the head-less long title is not clamped');
+      console.log(`title lines at 375: 2023/2122 ${at('2023/2122').lines}, 2024/837 ${at('2024/837').lines}, head-less ${at('Approval and Promulgation').lines}; all ${rows.length} rows <= 2`);
+    }, [375, 812]),
+  );
+
   await check('dashboard: the Watch toggle lives in the row menu, shows what the membership read says, and a refused save puts it back with a visible line (never a second star)', () =>
     session('dashboard', async ({ page, state }) => {
       must((await page.locator('.cl-watch-icon').count()) === 0, 'a second watch star is drawn on a row');

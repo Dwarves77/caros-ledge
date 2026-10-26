@@ -7,6 +7,7 @@ import { dueInfo, toListRowFields, type ListRowFields } from "@/core/lists";
 import { formatDate } from "@/core/shared";
 import { rowMeta } from "@/features/market/lib/item-type";
 import type { Resource } from "@/core/types";
+import mastheadCopy from "./data/masthead-copy.json";
 import { urgencyScore, type UrgencyContext } from "@/core/urgency/scoring";
 
 /** The intelligence surfaces the dashboard counts, in order: the ONE list the masthead's "across N surfaces" and the "Across the platform" rail card both read, so the two cannot disagree. */
@@ -59,15 +60,13 @@ export interface BriefRow extends ListRowFields {
 /** The What-changed window: 90 days while the scrape cadence is off (build mode, CLAUDE.md rule 16), 7 days with a cadence. */
 export const recentChangesWindowDays = (cadence: string | null | undefined): number => (cadence === "off" || cadence == null ? BUILD_MODE_WINDOW_DAYS : LIVE_WINDOW_DAYS);
 
-/** "<FIRST NAME>'S BRIEF", else the workspace name, else "YOUR BRIEF". */
-export function deriveBriefTitle(firstName: string | null, orgName: string): string {
-  if (firstName) return `${firstName.toUpperCase()}'S BRIEF`;
-  return orgName ? orgName.toUpperCase() : "YOUR BRIEF";
+/** The masthead title: "<name>'s Brief" from the copy file (data/masthead-copy.json), else its unnamed form. The name is drawn exactly as stored, never case-transformed. */
+export function deriveBriefTitle(firstName: string | null): string {
+  return firstName ? mastheadCopy.named.replace("{name}", () => firstName) : mastheadCopy.unnamed;
 }
-/** The first token of a display name, usable even when the name fell back to an e-mail address. */
-export function firstTokenOf(displayName: string | null | undefined): string | null {
-  const name = displayName?.trim();
-  return name ? ((name.split("@")[0] ?? "").split(/\s+/)[0] || null) : null;
+/** The name the masthead draws: profiles.display_name, else the first token of profiles.full_name, else null. An e-mail address is never a name. */
+export function firstNameOf(profile: { display_name?: string | null; full_name?: string | null } | null | undefined): string | null {
+  return profile?.display_name?.trim() || profile?.full_name?.trim().split(/\s+/)[0] || null;
 }
 
 /** The items with the nearest future binding date, soonest first, capped. No date, no row. */

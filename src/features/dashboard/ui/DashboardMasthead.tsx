@@ -8,7 +8,7 @@ import { ShellCommandBar } from "@/ui/shell";
 import { deriveBriefTitle, SURFACES } from "../rows";
 
 /**
- * The personalised masthead: "<FIRST NAME>'S BRIEF", the item and jurisdiction counts, the workspace and its verticals, and the command bar. The item count is the sum of the rail card's four surface counts (the same
+ * The personalised masthead: "<name>'s Brief", the item and jurisdiction counts, the workspace and its verticals, and the command bar. The item count is the sum of the rail card's four surface counts (the same
  * read, the same render) over the surfaces of the one list. A count the read could not answer (null) says so in words (the brief below carries the Retry); it is never a zero, "pending" or a constant. A reader with
  * no workspace has nothing to count: `noWorkspace` leaves the dek without a count.
  */
@@ -22,5 +22,5 @@ export function DashboardMasthead({ firstName, orgName, sectors, itemCount, juri
       <div>Verticals: {verticals.length > 0 ? verticals.join(", ") : <Absence reason="not in primary source" />}</div>
     </>
   );
-  return <Masthead title={deriveBriefTitle(firstName, orgName)} dateLabel={dateLabel} nowIso={nowIso} dek={dek} commandBar={<ShellCommandBar />} />;
+  return <Masthead title={deriveBriefTitle(firstName)} dateLabel={dateLabel} nowIso={nowIso} dek={dek} commandBar={<ShellCommandBar />} />;
 }

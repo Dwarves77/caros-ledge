@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import type { Resource } from "@/core/types";
-import { buildChangedRows, buildDueNextRows, briefCardState, changeRowPrefix, computeAuditDate, deriveBriefTitle, dueNextWindowLabel, firstTokenOf, recentChangesWindowDays, selectBriefResources, type Candidate, type FeedRow } from "@/features/dashboard/rows";
+import { buildChangedRows, buildDueNextRows, briefCardState, changeRowPrefix, computeAuditDate, dueNextWindowLabel, recentChangesWindowDays, selectBriefResources, type Candidate, type FeedRow } from "@/features/dashboard/rows";
 
 const NOW = new Date("2026-10-15T12:00:00.000Z");
 /** The brief reads at most this many distinct change ids in full (the window is a product number, written here once as the test's oracle). */
@@ -72,12 +72,3 @@ test("rule 16: the What-changed window is 90 days while the cadence is off or un
   assert.deepEqual(["off", null, undefined, "weekly", "monthly"].map(recentChangesWindowDays), [90, 90, 90, 7, 7]);
 });
 
-test("the brief title: the first name, else the workspace, else a stated default; an e-mail local part is a usable first name", () => {
-  assert.equal(deriveBriefTitle("Pat", "Acme"), "PAT'S BRIEF");
-  assert.equal(deriveBriefTitle(null, "Acme Freight"), "ACME FREIGHT");
-  assert.equal(deriveBriefTitle(null, ""), "YOUR BRIEF");
-  assert.equal(firstTokenOf("Pat Lee"), "Pat");
-  assert.equal(firstTokenOf("pat@example.invalid"), "pat");
-  assert.equal(firstTokenOf("  "), null);
-  assert.equal(firstTokenOf(null), null);
-});

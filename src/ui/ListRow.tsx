@@ -6,6 +6,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { normalizeDisplayTitle } from "@/core/fetch/titles";
+import { displayTitle as formalTitle } from "@/core/lists/display-title";
 import { hasBiasTags, type BiasTagInput } from "@/core/sources/bias-tags";
 import type { UrgencyBand } from "@/core/lists";
 import type { ImpactScores, TimelineEntry } from "@/core/types";
@@ -48,7 +49,7 @@ export interface ListRowProps {
  * timeline, tier and a 44 px overflow cell. The whole row is one link. Phone, tablet, mid and wide layouts and the narrow-box reflow are in base.css.
  */
 export function ListRow({ href, band, jurisdiction, title, meta, kind, impact, impactAbsence, due, dueAbsence, timeline, tier, overflow, tags, biasTags, itemGrade, minHeight = 56 }: ListRowProps) {
-  const { title: displayTitle, subtitle } = normalizeDisplayTitle(title);
+  const { title: displayTitle, subtitle } = normalizeDisplayTitle(formalTitle(title));
   const hasBias = hasBiasTags(biasTags);
   const isRecord = itemGrade === "record";
   const rowAbsence: AbsenceReason | null = pickAbsenceReason([tier == null ? "not in primary source" : null, !due || !isImpactScored(impact) ? "pending" : null]);

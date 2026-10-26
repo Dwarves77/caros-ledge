@@ -80,7 +80,7 @@ export function extractCellarTitle(html: unknown): TitleResult | null {
   const rawParts = [...h.matchAll(/<p[^>]*class="[^"]*\boj-doc-ti\b[^"]*"[^>]*>([\s\S]*?)<\/p>/gi)].map((m) => toText(m[1])).filter(Boolean);
   const parts: string[] = [];
   for (const part of rawParts) {
-    if (/^ANNEX(E)?\b/i.test(part.trim())) break;
+    if (/^['‘’"“]?ANNEX(E)?\b/i.test(part.trim())) break;
     parts.push(part);
   }
   if (parts.length) return { title: parts.join(" "), origin: "cellar_doc_title" };
@@ -91,6 +91,20 @@ export function extractCellarTitle(html: unknown): TitleResult | null {
   const text = toText(h);
   return text ? bodyLeadTitle(text) : null;
 }
+const EEA_MARKER = "(Text with EEA relevance)";
+const ANNEX_HEADING_AFTER_MARKER = /^\s+['‘’"“]?(?:ANNEX(?:\s|$)|$)/;
+const QUOTED_ANNEX = /\s['‘’"“]ANNEX\b/;
+/**
+ * The official act title: a captured title (or the joined heading elements of a page) carries the page's annex headings after the title itself. The title ends at the first "(Text with EEA relevance)" when an annex heading follows it,
+ * else before the first quoted ANNEX; a title that still holds an ANNEX word after that cut cannot be split cleanly and is returned as captured. Migration 0140 repairs stored titles by the same two steps, so the two stay one rule.
+ */
+export function officialTitle(title: string): string {
+  const at = title.indexOf(EEA_MARKER);
+  if (at >= 0 && ANNEX_HEADING_AFTER_MARKER.test(title.slice(at + EEA_MARKER.length))) return title.slice(0, at + EEA_MARKER.length);
+  const quoted = title.search(QUOTED_ANNEX);
+  return quoted >= 0 && !/\bANNEX\b/.test(title.slice(0, quoted)) ? title.slice(0, quoted) : title;
+}
+
 /**
  * The title for a row: the capture's own resolved title, else its HTML, else (for a text-only capture) the OJ act title or, when allowed, the body lead, else the source name with the identifier.
  * `allowBodyLeadFallback: false` is for re-titling an existing row, where a raw page-lead slice (often page chrome) is never an honest title.
@@ -111,7 +125,7 @@ export function buildTitleForRow({ capture, source, identifier, allowBodyLeadFal
     }
   }
   if (!title) return { title: identifier ? `${source.name ?? source.url} — ${identifier}` : String(source.name ?? source.url), origin: "source_name_fallback" };
-  return { title, origin: origin ?? "captured_title" };
+  return { title: officialTitle(title), origin: origin ?? "captured_title" };
 }
 
 // EUR-Lex's in-force widget (interactive pages only) and Cellar's own conversion-metadata fingerprint (an RDF description served in place of the act's body).
@@ -190,7 +204,7 @@ export function normalizeDisplayTitle(rawTitle: string): { title: string; subtit
           if (/[—–\-]/.test(w)) isStart = true;
           return w;
         }
-        const match = w.match(/^([^a-zA-Z0-9]*)([a-zA-Z0-9]+)([^a-zA-Z0-9]*)$/);
+        const match = w.match(/^([^a-zA-Z0-9]*)([a-zA-Z0-9]+(?:['’][a-zA-Z0-9]+)*)([^a-zA-Z0-9]*)$/);
         if (!match) return w;
         const pre = match[1] ?? "";
         const core = match[2] ?? "";
@@ -203,7 +217,8 @@ export function normalizeDisplayTitle(rawTitle: string): { title: string; subtit
         } else if (!isStart && LOWERCASE_TITLE_WORDS.has(core.toLowerCase())) {
           resCore = core.toLowerCase();
         } else {
-          resCore = core.charAt(0).toUpperCase() + core.slice(1).toLowerCase();
+          // Each apostrophe-separated part is capitalised (O'Brien) unless it is a lone letter after the first (Jasonlosh's, Don't).
+          resCore = core.replace(/[a-zA-Z0-9]+/g, (part, at: number) => (at === 0 || part.length > 1 ? part.charAt(0).toUpperCase() + part.slice(1).toLowerCase() : part.toLowerCase()));
         }
         isStart = false;
         return pre + resCore + post;
