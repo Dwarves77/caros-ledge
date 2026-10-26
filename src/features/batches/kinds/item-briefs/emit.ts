@@ -97,7 +97,7 @@ export async function writeEmission(deps: BatchDeps, itemId: string, sourceId: s
   }
   // events: capture-backed, medium confidence (a high one needs a claim); the entities and the mode token are filed on the stored row
   if (plan.events.length) {
-    const rows: ExtractedEvent[] = plan.events.map((e) => ({ event_date: e.event_date, date_precision: "day", event_kind: e.event_kind as ExtractedEvent["event_kind"], obligation_text: e.quote.text, source_kind: "capture", source_claim_id: null, source_section_id: null, source_capture_id: e.quote.capture_id, source_span: e.quote.text, confidence: "medium", extractor_version: READER_METHOD }));
+    const rows: ExtractedEvent[] = plan.events.map((e) => ({ event_date: e.event_date, date_precision: e.date_precision, event_kind: e.event_kind as ExtractedEvent["event_kind"], obligation_text: e.quote.text, source_kind: "capture", source_claim_id: null, source_section_id: null, source_capture_id: e.quote.capture_id, source_span: e.quote.text, confidence: "medium", extractor_version: READER_METHOD }));
     bump("events_written", (await insertForwardEvents(sb, itemId, rows, { claimIds: new Set(), sectionIds: new Set(), captureIds })).inserted);
     const stored = new Map((await allRows<Row & { id: string; event_date: string; event_kind: string; obligation_text: string }>(sb, "item_forward_events", "id, event_date, event_kind, obligation_text", { where: (q) => q.eq("intelligence_item_id", itemId) })).map((s) => [forwardEventKey(s), s.id]));
     for (const e of plan.events) {
