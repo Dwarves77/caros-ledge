@@ -2,10 +2,13 @@
 // Ported from old_repo/src/lib/connections/anticipate.mjs (lines 1-129)
 // Coverage gaps of a theme against the workspace profile, and anticipated targets from forward events with thin coverage. Jurisdictions compare as
 // jurisdiction ENTITIES (canonical code, then entity id), never as raw strings (B-0238/2150/2151): "uk" and "GB" are one jurisdiction.
+import { couplingById } from "@/core/coupling/coupling";
 import { canonicalJurisdictionCode, entityId, GENERIC_JURISDICTIONS } from "@/core/entities/id";
 
 import { buildSubjectRef, ANTICIPATE_NAMESPACE, createdBy, GAP_NAMESPACE, type Finding } from "./flags";
 import type { Theme } from "./cluster";
+import { PATTERNS } from "./patterns/config";
+import { patternSeed, type Fact, type Pattern, type ReaderEdge } from "./patterns/types";
 
 const lc = (s: unknown): string => String(s ?? "").toLowerCase().trim();
 
@@ -16,7 +19,7 @@ function jurisdictionKey(code: unknown): string | null {
 }
 
 export interface Gap {
-  type: "jurisdiction_span_gap" | "surface_gap" | "pivot_operations_gap";
+  type: "jurisdiction_span_gap" | "surface_gap" | "pivot_operations_gap" | "pattern_hop_gap" | "pattern_trigger_gap";
   category: string;
   subject_type: string;
   subject_ref: string;
@@ -167,3 +170,29 @@ export const anticipateFindings = (targets: readonly AnticipatedTarget[]): Findi
     subjectRef: t.subject_ref,
     row: { category: "coverage_gap", subject_type: "system", subject_ref: t.subject_ref, description: t.description, recommended_actions: [{ action: "reflected_in_coverage_view", rationale: "anticipated coverage gap, surfaced for visibility; not an operator decision queue (ADR-030 rider, D17 family 13)" }], created_by: createdBy(ANTICIPATE_NAMESPACE, t.reason) },
   }));
+
+/**
+ * The discovery hook of the pattern engine (CONNECT-2 C5, PR B): the needs a packet leaves open, as needs-search flags (the flywheel-gap kind) naming the missing vertex (surface, entities, window) and the venue class that publishes on that surface.
+ * Two rules, both on stored rows. (1) A pending trigger (a kind patterns.json names) that falls due within the lead window's far edge and that no later capture has resolved: the vertex missing is the capture that states it. (2) A hop the reader named: an entity of a pattern has a
+ * reader-asserted relation to an entity that no recent row is filed under (recency from the cross-modal window): the vertex missing is a row on that entity's surface. Pure; the surface of an entity is the surface of its coupling class (patterns.json), and an entity outside the vocabulary names none.
+ */
+export function patternGaps(i: { patterns: readonly Pattern[]; facts: readonly Fact[]; readerEdges: readonly ReaderEdge[]; now: Date }): Gap[] {
+  const d = PATTERNS.discovery;
+  const [today, far] = [i.now.toISOString().slice(0, 10), new Date(i.now.getTime() + PATTERNS.leadLag.leadDays[1] * 86_400_000).toISOString().slice(0, 10)];
+  const recent = new Set(i.facts.filter((f) => (f.at ?? f.due ?? "") >= new Date(i.now.getTime() - PATTERNS.crossModal.recencyDays * 86_400_000).toISOString().slice(0, 10)).flatMap((f) => f.entities));
+  const out: Gap[] = [];
+  for (const t of i.facts.filter((f) => f.role === "trigger" && PATTERNS.leadLag.triggerKinds.includes(f.kind ?? "") && f.due && f.due >= today && f.due <= far && !f.resolved))
+    out.push({ type: "pattern_trigger_gap", category: "coverage_gap", subject_type: "system", subject_ref: buildSubjectRef("trigger", t.table, t.pk), recommended_actions: [], evidence: { trigger: t.pk, kind: t.kind, due: t.due },
+      description: `Pending ${t.kind} ${t.pk} falls due ${t.due} and no capture resolves it. Missing vertex: the capture that states it. Surface regulations; entities ${t.entities.join(", ") || "none filed"}; window ${today} to ${t.due}; venue class: ${d.venueOfSurface.regulations ?? "docket"}.` });
+  for (const p of i.patterns) {
+    const own = new Set(p.evidence.flatMap((e) => e.entities));
+    for (const edge of i.readerEdges.filter((e) => own.has(e.parent) !== own.has(e.child))) {
+      const far = own.has(edge.parent) ? edge.child : edge.parent;
+      const surface = d.surfaceOfClass[couplingById(far)?.class ?? ""];
+      if (!surface || recent.has(far)) continue;
+      out.push({ type: "pattern_hop_gap", category: "coverage_gap", subject_type: "system", subject_ref: buildSubjectRef("pattern", patternSeed(p), far), recommended_actions: [], evidence: { pattern: patternSeed(p), entity: far, relation: edge.relation },
+        description: `Pattern ${patternSeed(p)} names ${edge.relation} to ${far} (reader-asserted) and no recent row is filed under it. Missing vertex: a row on ${far}. Surface ${surface}; entities ${far}; window the last ${PATTERNS.crossModal.recencyDays} days; venue class: ${d.venueOfSurface[surface] ?? "docket"}.` });
+    }
+  }
+  return out.sort((a, b) => (a.subject_ref < b.subject_ref ? -1 : a.subject_ref > b.subject_ref ? 1 : 0));
+}

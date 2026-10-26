@@ -51,7 +51,7 @@
  ],
  "exempt": [
   {
-   "where": "src/features/obligations/extract/date-grammar.ts",
+   "where": "src/core/parse/date-grammar.ts",
    "shape": "entity-in-a-js-string",
    "why": "A pattern that MATCHES an entity in captured HTML text; the string is a regular expression, never printed."
   },

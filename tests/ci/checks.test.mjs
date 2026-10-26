@@ -2,7 +2,7 @@
 // the machine that runs the pre-push hook) are the first two cases and fail on the code as it was.
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import test from 'node:test';
@@ -12,7 +12,7 @@ import { createLinter } from 'actionlint';
 import { bundleExports, bundleProblems, declaredNames, sourceExports } from '../../scripts/ci/edge-bundle.mjs';
 import { codeLines, limitProblems, totalsOf } from '../../scripts/ci/loc.mjs';
 import { scopeOf } from '../../scripts/ci/changes.mjs';
-import { STEPS } from '../../scripts/ci/gates.mjs';
+import { PROFILES, STEPS, profileFrom, stepsFor } from '../../scripts/ci/gates.mjs';
 import { dependencyProblems, headerRangeProblems, identifierProblems, pushGateProblems, sourceOriginProblems } from '../../scripts/ci/tree-checks.mjs';
 import { textProblems } from '../../scripts/ci/workflow-yaml.mjs';
 
@@ -132,4 +132,34 @@ test('every step of `npm run gates` is a real npm script, so a failure line name
   const scripts = JSON.parse(spawnSync(process.execPath, ['-e', 'process.stdout.write(JSON.stringify(require("./package.json").scripts))'], { encoding: 'utf8' }).stdout);
   for (const step of STEPS) assert.ok(scripts[step.cmd], `${step.name}: ${step.cmd}`);
   assert.deepEqual(STEPS.filter((s) => s.fn), []);
+});
+
+// ---- gate profiles (GATES-FAST-1) ----
+test('the fast profile is a strict subset of full; build, the test suite and schema:local are full-only; full is every step', () => {
+  const full = stepsFor('full').map((s) => s.cmd);
+  const fast = stepsFor('fast').map((s) => s.cmd);
+  assert.deepEqual(full, STEPS.map((s) => s.cmd));
+  assert.ok(fast.length > 0 && fast.length < full.length, 'strict subset');
+  for (const cmd of fast) assert.ok(full.includes(cmd), cmd);
+  assert.deepEqual(fast, full.filter((c) => fast.includes(c)), 'fast keeps the full order');
+  for (const cmd of ['build', 'test', 'client-walk', 'schema:local']) assert.ok(!fast.includes(cmd), `${cmd} is full-only`);
+  assert.deepEqual(stepsFor('fast').filter((s) => s.heavy), [], 'the lock applies to full only: no heavy step in fast');
+  assert.ok(STEPS.filter((s) => s.heavy).every((s) => !s.fast));
+  assert.throws(() => stepsFor('quick'), /unknown gates profile/);
+});
+
+test('--profile is read from argv in both spellings, defaults to full, and refuses anything else', () => {
+  assert.deepEqual(PROFILES, ['fast', 'full']);
+  assert.equal(profileFrom([]), 'full');
+  assert.equal(profileFrom(['--profile', 'fast']), 'fast');
+  assert.equal(profileFrom(['--profile=full']), 'full');
+  assert.throws(() => profileFrom(['--profile']), /unknown gates profile/);
+  assert.throws(() => profileFrom(['--profile=quick']), /unknown gates profile/);
+});
+
+test('the pre-push hook names the fast profile and ci.yml runs the full one explicitly', () => {
+  const read = (rel) => readFileSync(rel, 'utf8');
+  assert.match(read('.githooks/pre-push'), /node scripts\/ci\/gates\.mjs --profile fast/);
+  assert.match(read('.githooks/pre-push'), /runs in CI/);
+  assert.match(read('.github/workflows/ci.yml'), /run: npm run gates -- --profile full\s*$/m);
 });

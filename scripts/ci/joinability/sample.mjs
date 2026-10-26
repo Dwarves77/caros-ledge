@@ -20,7 +20,7 @@ const top = (counts, n = 10) => [...counts].sort((a, b) => b[1] - a[1] || String
 const finding = (key, owner, msg, extra = {}) => ({ key, owner, msg, ...extra });
 
 /** The columns of a fact table a detector reads to place a row in time, quantity, tier or source (facts.json, never a typed list). */
-export const keyColumns = (spec, entityColumns = []) => [...new Set([spec.at, spec.due, spec.dueYear, spec.dueMonthsAfterAt, spec.qty?.column, spec.qty?.unitColumn, spec.qty?.figure, spec.source, spec.tier, spec.trl, spec.group, ...entityColumns].filter(Boolean))];
+export const keyColumns = (spec, entityColumns = []) => [...new Set([...[spec].flat().flatMap((x) => [x.at, x.due, x.dueYear, x.dueMonthsAfterAt, x.qty?.column, x.qty?.unitColumn, x.qty?.figure, x.source, x.tier, x.trl, x.group, x.capture, x.resolved, x.from, x.until]), ...entityColumns].filter(Boolean))];
 
 /** The columns of a table that hold an entity id: the `entity` maps of couplings.json and the table's own entityColumns entry. */
 export const entityColumnsOf = (w, t) => [...new Set([...(w.couplings.columns.find((c) => c.table === t)?.maps ?? []).filter((m) => m.by === "entity" && m.column).map((m) => m.column), ...(w.cfg.entityColumns?.[t] ? [w.cfg.entityColumns[t]] : [])])];
@@ -218,7 +218,7 @@ export function readSample(run, w) {
   const jobs = [];
   const add = (sql, then) => jobs.push({ sql, then });
   const s = { units: {}, tokens: {}, keys: { tables: {}, minedRefs: 0 }, claims: [] };
-  const pkOf = (t) => w.couplings.columns.find((c) => c.table === t)?.pk ?? w.facts[t]?.pk;
+  const pkOf = (t) => w.couplings.columns.find((c) => c.table === t)?.pk ?? [w.facts[t]].flat()[0]?.pk;
   for (const u of (w.cfg.unitColumns ?? []).filter((x) => x.kind === "text")) {
     const col = q(u.column);
     const val = u.valueColumn ? q(u.valueColumn) : col;
@@ -234,14 +234,15 @@ export function readSample(run, w) {
     add(`select v, count(*) n from (select ${c.array ? `unnest(${q(c.column)})` : q(c.column)}::text v from ${q(c.table)}${where}) s where v is not null group by v`, (rows) => (cell.values = Object.fromEntries(rows.map((r) => [r.v, Number(r.n)]))));
     if (c.severity) add(`select count(*) total, count(*) filter (where ${q(c.column)} is null) nulls from ${q(c.table)}${where}`, ([t]) => Object.assign(cell, { total: Number(t.total), nulls: Number(t.nulls) }));
   }
-  for (const [t, spec] of Object.entries(w.facts)) {
-    const cols = keyColumns(spec, entityColumnsOf(w, t)).filter((c) => w.schema.get(t)?.has(c));
+  for (const [t, specs] of Object.entries(w.facts)) {
+    const spec = [specs].flat()[0];
+    const cols = keyColumns(specs, entityColumnsOf(w, t)).filter((c) => w.schema.get(t)?.has(c));
     const own = w.cfg.entityColumns?.[t];
     const unfiled = own ? `x.${q(own)} is null` : `${refOf(`x.${q(spec.pk)}`)} not in (select r.ref_id::text from entity_refs r where r.ref_table = '${spec.edge ?? t}' and r.method_version is not null)`;
     add(`select count(*) rows, count(*) filter (where ${unfiled}) unreferenced${cols.map((c, i) => `, count(*) filter (where x.${q(c)} is null) n${i}`).join("")} from ${q(t)} x`, ([r]) => (s.keys.tables[t] = { rows: Number(r.rows), unreferenced: Number(r.unreferenced), nulls: Object.fromEntries(cols.map((c, i) => [c, Number(r[`n${i}`])])) }));
   }
   for (const a of (w.cfg.absences ?? []).filter((x) => x.statedBy)) add(`select count(*) n from ${q(a.table)} where ${q(a.column)} is null and not (${Object.entries(a.statedBy).map(([k, v]) => `${q(k)} = '${String(v).replaceAll("'", "''")}'`).join(" and ")})`, ([r]) => ((s.keys.unstated ??= {})[`${a.table}.${a.column}`] = Number(r.n)));
-  add("select first_deadline, coalesce(array_length(mode, 1), 0) nm, instrument_entity_id is not null has_instrument from obligation_objects", (rows) => (s.obligations = obligationCoverage(rows)));
+  add("select due_date first_deadline, coalesce(array_length(mode, 1), 0) nm, instrument_entity_id is not null has_instrument from obligation_objects", (rows) => (s.obligations = obligationCoverage(rows)));
   add("select count(*) n from entity_refs where method_version is not null", ([r]) => (s.keys.minedRefs = Number(r.n)));
   add("select i.item_type, i.domain, c.source_tier_at_grounding tier, count(*) claims, count(*) filter (where i.added_date >= current_date - 90) recent from section_claim_provenance c join intelligence_items i on i.id = c.intelligence_item_id group by 1, 2, 3", (rows) => (s.claimGroups = rows));
   run(jobs.map((j) => j.sql)).forEach((rows, i) => jobs[i].then(rows));

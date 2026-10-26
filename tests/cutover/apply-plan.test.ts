@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 import { test } from "node:test";
 
 // @ts-expect-error plain .mjs modules
@@ -19,6 +19,8 @@ import { defaultBase, README_FROZEN_THROUGH } from "../../scripts/lib/migrations
 const ROOT = resolve(import.meta.dirname, "../..");
 const REAL = join(ROOT, "supabase/migrations");
 const DIR = "supabase/migrations";
+// the fixture base holds the migrations up to the README boundary: a file above it is a slice's own, reserved in the real ledger, and is not part of the fixture's world
+const BELOW_BOUNDARY = { recursive: true, filter: (s: string) => !(/^[0-9]{4}[_.]/.test(basename(s)) && basename(s).slice(0, 4) > README_FROZEN_THROUGH) };
 
 const git = (cwd: string, ...args: string[]) => execFileSync("git", ["-c", "user.name=Claude", "-c", "user.email=noreply@anthropic.com", "-c", "core.autocrlf=false", ...args], { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
 const put = (repo: string, rel: string, text: string) => {
@@ -32,7 +34,7 @@ const writeLedger = (repo: string, rows: object[]) => put(repo, `${DIR}/RESERVED
 /** A repository whose main holds a copy of the real migrations plus 0138 (landed) with 0135 and 0139 reserved: the base every check below compares with. */
 function fixture() {
   const repo = mkdtempSync(join(tmpdir(), "apply-1-"));
-  cpSync(REAL, join(repo, DIR), { recursive: true });
+  cpSync(REAL, join(repo, DIR), BELOW_BOUNDARY);
   const ledger = JSON.parse(readFileSync(join(REAL, "RESERVED.json"), "utf8")).reservations.filter((r: { number: string }) => r.number <= README_FROZEN_THROUGH);
   writeLedger(repo, [...ledger, entry("0135", "A", "reserved"), entry("0138", "B", "landed"), entry("0139", "C", "reserved"), entry("0140", "D", "reserved")]);
   put(repo, `${DIR}/0138_base_tip.sql`, migration("0138"));
@@ -140,7 +142,7 @@ function twoBranches(layout: "derived" | "legacy") {
   const repo = mkdtempSync(join(tmpdir(), "apply-2-"));
   try {
     if (layout === "derived") {
-      cpSync(REAL, join(repo, DIR), { recursive: true });
+      cpSync(REAL, join(repo, DIR), BELOW_BOUNDARY);
       const rows = JSON.parse(readFileSync(join(REAL, "RESERVED.json"), "utf8")).reservations;
       writeLedger(repo, [...rows, entry("9001", "ONE", "reserved"), entry("9002", "TWO", "reserved")]);
     } else {

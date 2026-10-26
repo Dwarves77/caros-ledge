@@ -3,9 +3,10 @@
 // candidate-only rules (as of, since) become events only when a deontic clause follows and the clause is not a status phrase. One `emit` decides hit or
 // skip for all three paths (the old loop copied it three times). Also the due-date slot helpers: the finer of the extractor's and the slot's precision wins
 // (never quarter), and a slot span with no event of its own is rescued by re-scanning the capture text around the span.
+import { tryParseDateAt, tryParseDateOrBareYearAt, type DateMatch } from "@/core/parse/date-grammar";
+
 import { isBindingInstrumentType, type EventKind } from "../kinds";
 
-import { tryParseDateAt, tryParseDateOrBareYearAt, type DateMatch } from "./date-grammar";
 import { AIM_WORDS, AWAITING_REGULATION, CANDIDATE_ONLY_RULES, DELEGATED_ACT, DEONTIC, GUIDANCE_EXPECTED, IMPLEMENTING_ACT, isStatusOnlyClause, refuseForReferenceDate, REFERENCE_DATE_SKIP_REASON, REGULATOR_ACTION, REGULATOR_SUBJECT, RULES, STATUS_ONLY_SKIP_REASON, type Rule } from "./rules";
 import { clauseAround, sentenceStart } from "./window";
 

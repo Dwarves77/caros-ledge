@@ -99,9 +99,9 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci --no-audit --ignore-scripts
-      - name: Gates (npm run gates, the same list the pre-push hook runs)
+      - name: Gates (npm run gates -- --profile full; the pre-push hook runs the fast subset of this list)
         shell: bash -eo pipefail {0}
-        run: npm run gates
+        run: npm run gates -- --profile full
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:

@@ -1,6 +1,7 @@
 // New in CONNECT-2 PR A (scripts/ci/new-files/connect-2a.txt): the five pattern detectors (C3), pure functions over the facts a loader joined: no read, no clock but `input.now`, no quantity, rate, price or factor typed here (each threshold is in data/patterns.json, each quantity a stored row's).
 // Detection is symmetric across surfaces: any fact of any table may be the first vertex. A detector returns its patterns sorted by key, each with the evidence rows by edge kind.
-//   P1 velocity: three or more independent sources citing one entity in a window, at a share of the corpus's flow above the share the entity held in the trailing baseline window; no flow and no earlier citations, no baseline.
+//   P1 velocity: three or more independent sources citing one entity in a window, at a share of the corpus's flow above the share the entity held in the trailing baseline window; no flow and no earlier citations, no baseline. The clock is the document date of the capture a claim was read from
+//      (never the day its item was added): an undated claim is in neither the window, the baseline nor the flow.
 //   P2 mandate and capacity: a dated ratchet and a capacity row filed under a shared entity, the capacity landing after the ratchet or holding less than it mandates in the same unit.
 //   P3 lead and lag: a pending trigger a set number of days out and a move on a shared entity in the days before.
 //   P4 cross-modal: a mandate or a move in one mode's entity and recent rows in a mode the entity's relation (feedstock, competition, grid zone, corridor) carries it to.
@@ -31,15 +32,15 @@ const horizonMonths = Math.max(...WINDOWS.map((w) => w.toMonths));
 
 function velocity(i: PatternInput): Pattern[] {
   const c = PATTERNS.velocity;
-  const claims = i.facts.filter((f) => f.role === "claim" && f.at && !c.excludeKinds.includes(f.kind ?? ""));
+  const claims = i.facts.filter((f) => f.role === "claim" && f.docAt && !c.excludeKinds.includes(f.kind ?? ""));
   const out: Pattern[] = [];
   for (const [entity, list] of groupBy(claims, (f) => f.entities)) {
     if (c.excludeClasses.includes(couplingById(entity)?.class ?? "")) continue;
     for (const w of [...c.windowsDays].sort((a, b) => a - b)) {
-      const members = list.filter((f) => ageDays(f.at as string, i.now) >= 0 && ageDays(f.at as string, i.now) < w);
+      const members = list.filter((f) => ageDays(f.docAt as string, i.now) >= 0 && ageDays(f.docAt as string, i.now) < w);
       const distinct = Math.max(new Set(members.map((f) => f.tier)).size, new Set(members.map((f) => f.surface)).size);
       if (new Set(members.map((f) => f.source).filter(Boolean)).size < c.minSources || distinct < c.minDistinct) continue;
-      const base = list.filter((f) => ageDays(f.at as string, i.now) >= w && ageDays(f.at as string, i.now) < w + c.baselineDays);
+      const base = list.filter((f) => ageDays(f.docAt as string, i.now) >= w && ageDays(f.docAt as string, i.now) < w + c.baselineDays);
       // an entity new to the corpus has no baseline: its first appearance is coverage, not velocity
       if (i.flow && base.length < c.minBaseline) continue;
       const flow = (from: number, to: number): number => (i.flow ? [...i.flow].reduce((n, [d, k]) => n + (ageDays(d, i.now) >= from && ageDays(d, i.now) < to ? k : 0), 0) : 0);
@@ -48,7 +49,7 @@ function velocity(i: PatternInput): Pattern[] {
       const [shareNow, shareBefore] = [members.length / inWindow, Math.max(base.length, 1) / inBaseline];
       if (i.flow ? !inWindow || !inBaseline || shareNow <= base.length / inBaseline : i.carry === undefined) continue;
       // the pattern stands on every member, but its edges are the most recent ones (patterns.json caps them) and one summary edge, on the latest baseline claim, with the counts and the windows
-      const kept = [...members].sort((a, b) => String(b.at).localeCompare(String(a.at)) || a.pk.localeCompare(b.pk)).slice(0, c.maxEvidence);
+      const kept = [...members].sort((a, b) => String(b.docAt).localeCompare(String(a.docAt)) || a.pk.localeCompare(b.pk)).slice(0, c.maxEvidence);
       const summary = { members: members.length, baseline: base.length, windowDays: w, baselineDays: c.baselineDays };
       const anchor = latestFact(base);
       out.push({ kind: "velocity", key: `${entity}|${w}`, entity, value: i.flow ? shareNow / shareBefore : (i.carry as number), unit: "ratio", evidence: [...kept.map((f) => ev(f, "member")), ...(anchor ? [{ ...ev(anchor, "key"), summary }] : [])] });
@@ -69,7 +70,7 @@ function mandateCapacity(i: PatternInput): Pattern[] {
       const short = r.qty !== null && c.qty !== null && r.unit === c.unit && r.qty > 0 && c.qty < r.qty ? (r.qty - c.qty) / r.qty : null;
       const entity = shared(near, c.entities);
       if ((gap === null && short === null) || !entity) continue;
-      out.push({ kind: "mandateCapacity", key: `${r.pk}|${c.pk}`, entity, value: gap ?? (short as number), unit: gap !== null ? "months" : "ratio", evidence: [ev(r, "key"), ev(c, "evidence")] });
+      out.push({ kind: "mandateCapacity", key: `${r.pk}|${c.pk}`, entity, value: gap ?? (short as number), unit: gap !== null ? "months" : "ratio", evidence: [ev(r, "key"), ev(c, "evidence")], ...(r.due ? { keyDue: r.due } : {}) });
     }
   }
   return sorted(out);
@@ -86,7 +87,7 @@ function leadLag(i: PatternInput): Pattern[] {
     const bySurface = groupBy(moves.filter((m) => shared(near, m.entities)), (m) => [m.surface]);
     const picked = [...bySurface.values()].map((fs) => latestFact(fs) as Fact);
     const entity = picked.length ? shared(near, picked[0]?.entities ?? []) : undefined;
-    if (picked.length && entity) out.push({ kind: "leadLag", key: t.pk, entity, value: lead, unit: "days", evidence: [ev(t, "key"), ...picked.sort((a, b) => a.pk.localeCompare(b.pk)).map((m) => ev(m, "evidence"))] });
+    if (picked.length && entity) out.push({ kind: "leadLag", key: t.pk, entity, value: lead, unit: "days", evidence: [ev(t, "key"), ...picked.sort((a, b) => a.pk.localeCompare(b.pk)).map((m) => ev(m, "evidence"))], keyDue: t.due as string });
   }
   return sorted(out);
 }
@@ -100,6 +101,8 @@ function crossModal(i: PatternInput): Pattern[] {
   const out = new Map<string, Pattern>();
   for (const a of starts) {
     for (const from of a.entities) {
+      // a mode or a hub is where a mandate is filed, not what it starts from: starting there fans one mandate out to every relation of the mode
+      if (c.excludeClasses.includes(couplingById(from)?.class ?? "")) continue;
       for (const link of i.related(from)) {
         const weight = c.relations[link.relation];
         const spill = modesOf(link.entity).filter((m) => !modesOf(from).includes(m));
@@ -116,7 +119,7 @@ function crossModal(i: PatternInput): Pattern[] {
 
 function penaltyAbatement(i: PatternInput): Pattern[] {
   const c = PATTERNS.penaltyAbatement;
-  const ceilings = i.facts.filter((f) => (f.role === "ceiling" || f.role === "ratchet") && f.qty !== null && f.qty > 0);
+  const ceilings = i.facts.filter((f) => f.role === "ceiling" && f.qty !== null && f.qty > 0);
   const abatements = i.facts.filter((f) => f.role === "abatement" && f.qty !== null);
   const out: Pattern[] = [];
   for (const t of i.facts.filter((f) => f.role === "tech" && (f.trl ?? 0) >= c.minTrl)) {

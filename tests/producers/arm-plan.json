@@ -28,6 +28,10 @@
       "producer": "eurostat-nrg-pc-205"
     },
     {
+      "producer": "market-series-rows",
+      "rowsFile": "src/features/market/producers/data/rows/market_series-2026-10.json"
+    },
+    {
       "producer": "oem-roadmap-rows",
       "rowsFile": "src/features/market/producers/data/rows/oem_tech_roadmaps-2026-10.json"
     },
@@ -52,7 +56,58 @@
       "armed": [
         "ecb-fx",
         "eia-v2-petroleum-spot",
-        "eu-weekly-oil-bulletin"
+        "eu-weekly-oil-bulletin",
+        "market-series-rows"
+      ],
+      "absent": [
+        {
+          "source": "Maersk advisory, Red Sea / Gulf of Aden (capture 868368a0-4d93-4663-945d-f82384802fa4)",
+          "reason": "The notice names the Transit Disruption Surcharge (TDS), the Peak Season Surcharge (PSS) and the Emergency Contingency Surcharge (ECS) as in effect and states no amount: the capture holds no currency figure at all. The amounts are open items, never inferred. [unregistered (no register row for maersk.com)]"
+        },
+        {
+          "source": "Maersk advisory, structural changes to AE5, AE11, AE12 and ME2 (capture 17ad7849-6cca-47ee-9fe2-7f35e780f07b)",
+          "reason": "The notice names no surcharge and states no amount; the related-article headlines on the page (Peak Season Surcharge, Emergency Contingency Surcharge) are titles only, with no figure. [unregistered (no register row for maersk.com)]"
+        },
+        {
+          "source": "Drewry WCI 04 Jun 2026: Hapag-Lloyd and Maersk Asia-Europe PSS (capture bfc01895-c31e-4d41-bf84-2dc266a49426)",
+          "reason": "The page, a secondary source, states a range per container size ($300-$500 per 20ft, $600-$1,000 per 40ft), not one amount; a market_series row holds one value, and a midpoint or a bound is never typed. [unregistered (no register row for drewry.co.uk)]"
+        },
+        {
+          "source": "Hapag-Lloyd, MSC, CMA CGM and ONE surcharge notices (emergency or war-risk, peak season, Red Sea or Cape routing)",
+          "reason": "No stored capture of a surcharge notice of these carriers exists (the only Hapag-Lloyd capture is a 2025-12 e-fuel press release; none of msc.com, cma-cgm.com or one-line.com is stored), and the brief admits a carrier host only where its verdict is permitted. Not fetched. Their reroute pages are the stated absences of the ARM-2 plan (403 and no capture). [unregistered (no register row for hapag-lloyd.com, msc.com, cma-cgm.com or one-line.com)]"
+        },
+        {
+          "source": "Carrier ETS and FuelEU surcharge notices",
+          "reason": "carrier-ets-surcharge is disabled by ETS-PROXY decisions 1 and 2 (EEX licence deferred, no apply path); no figure is read around that decision. [held]"
+        },
+        {
+          "source": "Argus Media, S&P Global Platts and ICIS HVO and HEFA-SAF assessments",
+          "reason": "The register holds no verdict for these hosts, so the verdict is not permitted; not fetched, no figure typed. [unregistered (no register row for argusmedia.com, spglobal.com or icis.com)]"
+        },
+        {
+          "source": "IATA jet fuel price monitor and SAF market notes (iata.org)",
+          "reason": "The only register entry for the host is prohibited, and the runner refuses a row citing it. Not fetched. [prohibited (register key iata_codes, terms page on www.iata.org; the entry is scoped to IATA codes and no entry covers price publications)]"
+        },
+        {
+          "source": "ICAO SAF price and stocktaking pages (icao.int)",
+          "reason": "The host is barred by the register (personal, non-commercial use only); the fetch guard refuses it. Not fetched. [prohibited (register key icao_int, barred host icao.int)]"
+        },
+        {
+          "source": "EASA, State of the EU SAF market in 2023, fuel reference prices (easa.europa.eu)",
+          "reason": "The publication is listed on a stored EASA page (captures 43778303-c511-45bf-b7bd-8eb90c24d4b3 and 9cc13499-28fa-40ca-bd02-e42747f58aa1) but the document itself is not captured, so no price is stored; a register row for the host and a capture of the document are owed. [unregistered (no register row for easa.europa.eu; reuse terms eu_reuse by the class table)]"
+        },
+        {
+          "source": "Neste renewable diesel and SAF price publications (neste.com)",
+          "reason": "The register holds no verdict for the host; not fetched. [unregistered (no register row for neste.com)]"
+        },
+        {
+          "source": "Bunker price pages (Ship & Bunker, Bunker Index, port authority pages)",
+          "reason": "No stored capture of a bunker price page exists and the register holds no row for such a host; not fetched. [unregistered]"
+        },
+        {
+          "source": "EIA, Eurostat and the EC Weekly Oil Bulletin (permitted hosts) for HVO or SAF prices",
+          "reason": "A pattern search of the stored captures of eia.gov, energy.ec.europa.eu and the EUR-Lex pages for an HVO, renewable diesel or SAF price statement found none (the matches were the word safety and the ReFuelEU price-gap sentence of transport.ec.europa.eu, which states no amount). The oil series these hosts publish are the fossil references, already mapped. [permitted]"
+        }
       ]
     },
     "market_series_items": {
@@ -139,11 +194,15 @@
         },
         {
           "source": "transit time and distance figures of the advisories",
-          "reason": "Hapag-Lloyd states 7 to 14 days and Maersk 1 to 3 weeks and about 4,000 miles: ranges and an unstated mile, so transit_delta_days and distance_delta_nm stay empty rather than take a midpoint; fuel_burn_multiplier is derived later and never typed"
+          "reason": "no stored notice states one figure: the Maersk captures (868368a0, 17ad7849) state none, Hapag-Lloyd states a range (7 to 14 days) and its page is not captured, so transit_delta_days and distance_delta_nm stay empty rather than take a bound or a midpoint, each row's `absent` says so; fuel_burn_multiplier is derived later and never typed"
         },
         {
           "source": "CNSHA-USNYC and CNSHA-USLAX reroutes",
           "reason": "no advisory read names a Shanghai-to-New York or Shanghai-to-Los Angeles reroute: the transpacific lane is not a Suez or Cape choice and no Panama notice states a reroute"
+        },
+        {
+          "source": "route-qualified corridor entities (CNSHA-NLRTM and CNSHA-ITGOA by the Cape of Good Hope)",
+          "reason": "baseline and reroute corridor are one entity on every row because ORIGIN-DEST:mode cannot name the routing; the entity path owes the two route-qualified corridors listed in entity_owed of the reroute rows file, and the producer counts the equality on every run instead of minting inline"
         }
       ]
     },

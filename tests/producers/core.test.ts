@@ -168,7 +168,7 @@ test("the keyed planner across the four key shapes: create what is new, patch on
 });
 
 test("the registry: closed field set, duplicates and a bad entity id refused, selection by all / registry / only, an entry that disagrees with its spec refused", () => {
-  assert.equal(loadProducerRegistry().length, 18);
+  assert.equal(loadProducerRegistry().length, 20);
   const base = { name: "a-b", domain_table: "market_series", source: "s", licence: "l", dry_capable: true, enabled_env: "A_B", in_all: true };
   assert.throws(() => loadProducerRegistry(undefined, [base, base]), /duplicate/);
   assert.throws(() => loadProducerRegistry(undefined, [{ ...base, extra: 1 }]));

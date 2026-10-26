@@ -75,6 +75,15 @@
     "in_all": false
   },
   {
+    "name": "market-series-rows",
+    "domain_table": "market_series",
+    "source": "reviewed_rows_file",
+    "licence": "Reviewed rows file: every row cites a stored capture of a page the class table rates; the host's register verdict must be permitted, or the row states its licence review",
+    "dry_capable": true,
+    "enabled_env": "MARKET_PRODUCER_SERIES_ROWS_ENABLED",
+    "in_all": false
+  },
+  {
     "name": "reroute-rows",
     "domain_table": "reroute_events",
     "source": "reviewed_rows_file",
@@ -162,6 +171,15 @@
     "licence": "Derived from stored research items and their forward events",
     "dry_capable": true,
     "enabled_env": "RESEARCH_ASSESSMENT_PRODUCER_ENABLED",
+    "in_all": false
+  },
+  {
+    "name": "document-date",
+    "domain_table": "agent_run_searches",
+    "source": "stored_captures",
+    "licence": "Derived from the stored captures' own text; no external source is read",
+    "dry_capable": true,
+    "enabled_env": "DOCUMENT_DATE_PRODUCER_ENABLED",
     "in_all": false
   }
 ]

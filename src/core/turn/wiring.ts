@@ -12,6 +12,7 @@ import { timePhase, withServerTiming } from "@/core/perf";
 import { createMethodRegistry, type LearningDeps, type MarketMethodDeps, type MethodRegistry, registerMarketMethods } from "@/core/propagation";
 import type { Catalog, ProducerSpec } from "@/core/producers";
 import type { ProducerDeps } from "@/core/producers/deps";
+import { documentDate } from "@/core/producers/document-date";
 import { surfaceHref, surfaceOf } from "@/core/routing";
 import { buildResolver, classTierForHost, hostInstitution, institutionKey, loadHostVerdicts, officialnessOf, registerAndRate, verifyPoolTargetMatch, type SourceRow } from "@/core/sources";
 import type { HostVerdictRef } from "@/core/sources";
@@ -24,7 +25,7 @@ import type { CaptureResult, IntakeDeps, SourcesDeps } from "@/features/intake/d
 import { questionFlagRow } from "@/features/learning";
 import { carbonIntensity } from "@/features/market/lib/carbon";
 import { computeSeriesDeltas } from "@/features/market/lib/deltas";
-import { carrierEtsSurcharge, ecbFx, eiaPetroleumSpot, euOilBulletin, gridQueueRows, oemRoadmapRows, publishedPriceStatistics, rerouteRows, sbtiTargets } from "@/features/market/producers";
+import { carrierEtsSurcharge, ecbFx, eiaPetroleumSpot, euOilBulletin, gridQueueRows, marketSeriesRows, oemRoadmapRows, publishedPriceStatistics, rerouteRows, sbtiTargets } from "@/features/market/producers";
 import type { MarketSeriesDeps } from "@/features/market/producers/market-series-delta";
 import { readSeriesItemMap } from "@/features/market/producers/market-series-items";
 import { bindMint, type MintCtx } from "@/features/mint";
@@ -104,7 +105,7 @@ const UA = { "user-agent": "FSI-turn/1.0 (+turn)", accept: "*/*" };
 const MAX_BYTES = 50 * 1024 * 1024;
 
 /** The catalog every registry entry is checked against: each producer spec by name. */
-const PRODUCER_CATALOG: Catalog = Object.freeze(Object.fromEntries([carrierEtsSurcharge, ecbFx, eiaPetroleumSpot, euOilBulletin, gridQueueRows, oemRoadmapRows, publishedPriceStatistics, rerouteRows, sbtiTargets, auxiliaryEnergyRows, blsOews, eurostatElectricity, eurostatLabourCost, indexationRows, nesoCarbonIntensity, stateCostFacts, ukpnHeatmap, researchAssessment, researchWalker, statutorySchedules].map((s) => [s.name, s])));
+const PRODUCER_CATALOG: Catalog = Object.freeze(Object.fromEntries([carrierEtsSurcharge, ecbFx, eiaPetroleumSpot, euOilBulletin, gridQueueRows, marketSeriesRows, oemRoadmapRows, publishedPriceStatistics, rerouteRows, sbtiTargets, auxiliaryEnergyRows, blsOews, eurostatElectricity, eurostatLabourCost, indexationRows, nesoCarbonIntensity, stateCostFacts, ukpnHeatmap, researchAssessment, researchWalker, statutorySchedules, documentDate].map((s) => [s.name, s])));
 
 const captureFamily = (url: string) => (parseOjReference(url) ? ("oj_issue" as const) : ("generic" as const));
 

@@ -15,7 +15,8 @@ import { classTierForHost } from "@/core/sources";
 import { hostOf } from "@/core/shared";
 
 type Entity = { entity_id: string; canonical_name: string };
-export type ParsedRow = { refused: true; reason: string } | { refused: false; dbRow: Rec; citation: Citation };
+/** `note` is a counted warning on a row that is written: a fact the run must say each time (a reroute whose baseline and reroute corridors are one entity). */
+export type ParsedRow = { refused: true; reason: string } | { refused: false; dbRow: Rec; citation: Citation; note?: string };
 
 export const need = (row: Rec, fields: string[], where: string, i: number): void => {
   for (const f of fields) if (row[f] === undefined || row[f] === null || row[f] === "") throw new RowsFileError(`${where}: row[${i}] missing required field "${f}".`);
@@ -84,7 +85,8 @@ function parseRerouteRow(row: Rec, i: number, corridors: readonly Entity[]): Par
   const baseline = resolveEntityByName(corridors, String(row.baseline_corridor_name));
   const reroute = resolveEntityByName(corridors, toName);
   if (!baseline || !reroute) return refuse(`row[${i}]: corridor(s) not found in the live entity spine (baseline "${row.baseline_corridor_name}" ${baseline ? "found" : "MISSING"}, reroute "${toName}" ${reroute ? "found" : "MISSING"}); minting a corridor entity is out of this producer's write set.`);
-  return { refused: false, citation, dbRow: { baseline_corridor_id: baseline, reroute_corridor_id: reroute, route_via: row.route_via, cause: String(row.cause), distance_delta_nm: row.distance_delta_nm ?? null, transit_delta_days: row.transit_delta_days ?? null, effective_from: row.effective_from, effective_to: row.effective_to ?? null } };
+  const note = baseline === reroute ? `reroute corridors equal: ${row.baseline_corridor_name} is one entity for the Suez and the Cape routing; the route-qualified corridor entity is owed to the entity path (ARM-3 report), so baseline and reroute stay one entity until it is minted` : undefined;
+  return { refused: false, citation, ...(note ? { note } : {}), dbRow: { baseline_corridor_id: baseline, reroute_corridor_id: reroute, route_via: row.route_via, cause: String(row.cause), distance_delta_nm: row.distance_delta_nm ?? null, transit_delta_days: row.transit_delta_days ?? null, effective_from: row.effective_from, effective_to: row.effective_to ?? null } };
 }
 
 export interface RowsFileDef {
@@ -101,6 +103,8 @@ export interface RowsFileDef {
   /** The typed columns a later pass of the same rows file may fill on a row already stored (a value the cited capture states that the first pass left null); default none. */
   patchable?: readonly string[];
   parseRow(row: Rec, i: number, entities: readonly Entity[]): ParsedRow;
+  /** Rule 17: the downstream of a write in the same run (a market_series writer authors its delta edges). */
+  after?: ProducerSpec["after"];
   /** Apply only, for a row whose citation passed: what the registered source and the verified capture add to the row, and the entities it names (a table with no source_id column keeps its provenance in the row). */
   settle?(sb: Db, row: Rec, proof: { source_id: string; capture_id: string; citation: Citation }, now: Date): Promise<Rec>;
 }
@@ -159,6 +163,7 @@ export function rowsFileSpec(def: RowsFileDef): ProducerSpec {
       const warnings: string[] = [];
       const out: Rec[] = [];
       const citations: Record<string, Citation> = {};
+      const notes = new Set<string>();
       rows.forEach((raw, i) => {
         let r: ParsedRow;
         try {
@@ -173,8 +178,10 @@ export function rowsFileSpec(def: RowsFileDef): ProducerSpec {
           out.push(r.dbRow);
           citations[String(i)] = r.citation;
           (r.dbRow as Rec).__i = i;
+          if (r.note) notes.add(r.note);
         }
       });
+      warnings.push(...[...notes].map((n) => `[note] ${n}`));
       ctx.state.citations = citations;
       return { rows: out, warnings, counts: { rows_in_file: rows.length, refused_rows_parse: rows.length - out.length } };
     },
@@ -199,8 +206,9 @@ export function rowsFileSpec(def: RowsFileDef): ProducerSpec {
       }
       return { rows: kept, refused };
     },
+    ...(def.after ? { after: def.after } : {}),
     plan: {
-      read: (sb) => fetchAllRows<Rec>((from, to) => sb.from(def.table).select([def.pk, ...def.keyFields].join(", ")).order(def.pk, { ascending: true }).range(from, to) as never, { cap: 200_000 }),
+      read: (sb) => fetchAllRows<Rec>((from, to) => sb.from(def.table).select([...new Set([def.pk, ...def.keyFields, ...(def.patchable ?? [])])].join(", ")).order(def.pk, { ascending: true }).range(from, to) as never, { cap: 200_000 }),
       key: (r) => keyOf(def.keyFields.map((f) => r[f])),
       patchable: def.patchable ?? [],
       pk: def.pk,

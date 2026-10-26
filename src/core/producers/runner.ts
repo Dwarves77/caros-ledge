@@ -128,6 +128,8 @@ export interface ProducerSpec<R extends Rec = Rec> {
   enabled: boolean;
   enabledRuling?: string;
   killSwitchEnv: string | null;
+  /** False: the producer reads stored data only and never touches the network, so the propagate stage runs it with the fetch gate closed (rule 16 holds fetching, not reading). */
+  fetches?: false;
   /** The honest answer to "no input given" for a producer fed only by a reviewed file: a recorded gap, never an invented row. */
   gap?: string;
   /** The one documented free-key exception: the env NAME of a key a source requires. */

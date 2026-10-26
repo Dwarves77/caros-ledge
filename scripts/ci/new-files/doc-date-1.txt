@@ -1,0 +1,4 @@
+src/core/fetch/document-date.ts | new in DOC-DATE-1: extractDocumentDate, the date a stored document states about itself from formal codes (OJ header, date metadata, dated header line, signature line), with its verbatim basis
+src/core/fetch/data/document-date.json | new in DOC-DATE-1: the accepted header tokens (date-header labels, metadata property names, the signature opener) and the extractor's method version
+src/core/producers/document-date.ts | new in DOC-DATE-1: the producer that writes each stored capture's document date, basis and method (reads stored text, fetches nothing)
+tests/coupling/doc-date.test.ts | new in DOC-DATE-1: the formal forms on real fragments, the null cases, INV-DD-1 to INV-DD-5

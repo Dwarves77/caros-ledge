@@ -1,5 +1,5 @@
 {
- "_note": "ARM-2 S2: carrier advisories that put a corridor on another route (the same port pair by Suez or by the Cape of Good Hope). transit_delta_days and distance_delta_nm are left empty where the advisory states a range or no figure; fuel_burn_multiplier is never typed.",
+ "_note": "ARM-2 S2 and ARM-3 P3: carrier advisories that put a corridor on another route (the same port pair by Suez or by the Cape of Good Hope). transit_delta_days and distance_delta_nm are written only where a stored notice states one figure verbatim, and each row's `absent` says per column why it is empty; fuel_burn_multiplier is never typed. The 2026-09-14 Maersk row cites its own notice (capture 17ad7849), so a later apply patches the source of row 92d35ddc from the 2023-12-15 article to it.",
  "rows": [
   {
    "baseline_corridor_name": "CNSHA-NLRTM:ocean",
@@ -14,6 +14,11 @@
     "also": [
      "On 2nd January 2024, A.P. Moller – Maersk announced that it would pause all vessels bound for the Red Sea / Gulf of Aden in light of the recent incident involving Maersk Hangzhou and ongoing developments in the area."
     ]
+   },
+   "absent": {
+    "distance_delta_nm": "the stored capture 868368a0-4d93-4663-945d-f82384802fa4 states no distance in nautical miles (a search of its text for miles, nautical, days and weeks found none)",
+    "transit_delta_days": "the stored capture 868368a0-4d93-4663-945d-f82384802fa4 states no added transit time",
+    "fuel_burn_multiplier": "no notice states a fuel-burn multiplier; it is derived later from stored rows (derived_values) and never typed (INV-ARM-6)"
    }
   },
   {
@@ -29,6 +34,11 @@
     "also": [
      "On 2nd January 2024, A.P. Moller – Maersk announced that it would pause all vessels bound for the Red Sea / Gulf of Aden in light of the recent incident involving Maersk Hangzhou and ongoing developments in the area."
     ]
+   },
+   "absent": {
+    "distance_delta_nm": "the stored capture 868368a0-4d93-4663-945d-f82384802fa4 states no distance in nautical miles (a search of its text for miles, nautical, days and weeks found none)",
+    "transit_delta_days": "the stored capture 868368a0-4d93-4663-945d-f82384802fa4 states no added transit time",
+    "fuel_burn_multiplier": "no notice states a fuel-burn multiplier; it is derived later from stored rows (derived_values) and never typed (INV-ARM-6)"
    }
   },
   {
@@ -44,6 +54,11 @@
     "also": [
      "For your reference, the passage via Cape of Good Hope adds between 7 to 14 days to your shipment’s journey impacting the arrival date at the destination."
     ]
+   },
+   "absent": {
+    "distance_delta_nm": "the page states no distance",
+    "transit_delta_days": "the page states a range (between 7 to 14 days), not one figure; no bound or midpoint is typed",
+    "fuel_burn_multiplier": "no notice states a fuel-burn multiplier; it is derived later from stored rows (derived_values) and never typed (INV-ARM-6)"
    }
   },
   {
@@ -59,6 +74,11 @@
     "also": [
      "For your reference, the passage via Cape of Good Hope adds between 7 to 14 days to your shipment’s journey impacting the arrival date at the destination."
     ]
+   },
+   "absent": {
+    "distance_delta_nm": "the page states no distance",
+    "transit_delta_days": "the page states a range (between 7 to 14 days), not one figure; no bound or midpoint is typed",
+    "fuel_burn_multiplier": "no notice states a fuel-burn multiplier; it is derived later from stored rows (derived_values) and never typed (INV-ARM-6)"
    }
   },
   {
@@ -74,6 +94,11 @@
     "also": [
      "On 15 December 2023 the container ship MSC PALATIUM III was attacked at approximately 09.37 UTC while transiting the Red Sea"
     ]
+   },
+   "absent": {
+    "distance_delta_nm": "the page states no distance",
+    "transit_delta_days": "the page states no added transit time",
+    "fuel_burn_multiplier": "no notice states a fuel-burn multiplier; it is derived later from stored rows (derived_values) and never typed (INV-ARM-6)"
    }
   },
   {
@@ -89,6 +114,11 @@
     "also": [
      "On 15 December 2023 the container ship MSC PALATIUM III was attacked at approximately 09.37 UTC while transiting the Red Sea"
     ]
+   },
+   "absent": {
+    "distance_delta_nm": "the page states no distance",
+    "transit_delta_days": "the page states no added transit time",
+    "fuel_burn_multiplier": "no notice states a fuel-burn multiplier; it is derived later from stored rows (derived_values) and never typed (INV-ARM-6)"
    }
   },
   {
@@ -105,6 +135,11 @@
      "Advisory #1 - February 28, 2026 Middle East – Strait of Hormuz and Bab El Mandeb Security Transits",
      "Considering the evolving security situation in the Middle East and the restrictions on maritime traffic through the Strait of Hormuz"
     ]
+   },
+   "absent": {
+    "distance_delta_nm": "the page states no distance",
+    "transit_delta_days": "the page states no added transit time",
+    "fuel_burn_multiplier": "no notice states a fuel-burn multiplier; it is derived later from stored rows (derived_values) and never typed (INV-ARM-6)"
    }
   },
   {
@@ -121,6 +156,11 @@
      "Advisory #1 - February 28, 2026 Middle East – Strait of Hormuz and Bab El Mandeb Security Transits",
      "Considering the evolving security situation in the Middle East and the restrictions on maritime traffic through the Strait of Hormuz"
     ]
+   },
+   "absent": {
+    "distance_delta_nm": "the page states no distance",
+    "transit_delta_days": "the page states no added transit time",
+    "fuel_burn_multiplier": "no notice states a fuel-burn multiplier; it is derived later from stored rows (derived_values) and never typed (INV-ARM-6)"
    }
   },
   {
@@ -138,7 +178,30 @@
      "Genoa",
      "AE11 Antonia Maersk 635W Tanjung Pelepas 19-September"
     ]
+   },
+   "absent": {
+    "distance_delta_nm": "the stored capture 17ad7849-6cca-47ee-9fe2-7f35e780f07b states no distance",
+    "transit_delta_days": "the notice says the Suez routing offers more efficient transit times and states no number of days",
+    "fuel_burn_multiplier": "no notice states a fuel-burn multiplier; it is derived later from stored rows (derived_values) and never typed (INV-ARM-6)"
    }
   }
- ]
+ ],
+ "entity_owed": {
+  "reason": "baseline_corridor_id equals reroute_corridor_id on every row because corridor identity (ORIGIN-DEST:mode, corridorSeed) cannot name the Suez or the Cape routing of one port pair. The producer does not mint an entity and does not weaken the distinct-corridor requirement: it writes the row on its existing key, counts the equality as a note on every run, and stops for the entity below.",
+  "entities": [
+   {
+    "kind": "corridor",
+    "canonical_name": "CNSHA-NLRTM:ocean:cape_of_good_hope",
+    "for_rows": "the Shanghai to Rotterdam Cape-routed baseline of the 2024-01-02 Maersk row and its Hapag-Lloyd, MSC and CMA CGM counterparts"
+   },
+   {
+    "kind": "corridor",
+    "canonical_name": "CNSHA-ITGOA:ocean:cape_of_good_hope",
+    "for_rows": "the Shanghai to Genoa Cape-routed baseline of the 2026-09-19 AE11 row (back to Suez) and the 2024-01-02 Maersk row"
+   }
+  ],
+  "source_quote": "We have therefore decided that all Maersk vessels due to transit the Red Sea / Gulf of Aden will be diverted south around the Cape of Good Hope for the foreseeable future.",
+  "source_capture": "868368a0-4d93-4663-945d-f82384802fa4",
+  "needs": "src/core/entities corridorSeed and CORRIDOR_NAME_RE accept an optional route suffix drawn from the six route_via tokens (the entity path mints with its source and asserts the mode link); the alternative is two UN/LOCODE legs through a Cape waypoint port, a design for the coordinator."
+ }
 }
