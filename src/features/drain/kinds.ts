@@ -19,9 +19,9 @@ const file = z.object({ kinds: z.array(kind) }).superRefine((f, ctx) => {
 const parsed = file.parse(raw);
 type Own = Omit<z.infer<typeof kind>, "batchRe"> & { batchRe: RegExp };
 /** A drain kind: the seven digest kinds come from the one registry (core/digest); the three below it (theme classification, screen verdicts, the notification outbox) are the drain's own and carry no authoring guide. */
-export type DrainKind = Own & { modes?: Record<string, { label: string }> | undefined; authoringGuide: DigestKind["authoringGuide"] | null; applyPending: string | null };
-const own: DrainKind[] = parsed.kinds.map((k) => ({ ...k, batchRe: new RegExp(k.batchRe), authoringGuide: null, applyPending: null }));
-const digest: DrainKind[] = DIGEST_KINDS.map((k) => ({ id: k.id, label: k.label, batchDir: k.batchDir, batchRe: k.batchRe, batchPrefix: k.batchPrefix, applyStep: k.applyStep, namesFile: k.namesFile, batchSize: k.batchSize, maxBatchesPerRun: k.maxBatchesPerRun, idKey: k.idKey, leaseKey: k.leaseKey, modes: k.modes, authoringGuide: k.authoringGuide, applyPending: k.applyPending }));
+export type DrainKind = Own & { modes?: Record<string, { label: string }> | undefined; authoringGuide: DigestKind["authoringGuide"] | null };
+const own: DrainKind[] = parsed.kinds.map((k) => ({ ...k, batchRe: new RegExp(k.batchRe), authoringGuide: null }));
+const digest: DrainKind[] = DIGEST_KINDS.map((k) => ({ id: k.id, label: k.label, batchDir: k.batchDir, batchRe: k.batchRe, batchPrefix: k.batchPrefix, applyStep: k.applyStep, namesFile: k.namesFile, batchSize: k.batchSize, maxBatchesPerRun: k.maxBatchesPerRun, idKey: k.idKey, leaseKey: k.leaseKey, modes: k.modes, authoringGuide: k.authoringGuide }));
 export const DRAIN_KINDS: readonly DrainKind[] = Object.freeze([...digest, ...own].map((k) => Object.freeze(k)));
 export const KIND_ORDER: readonly string[] = Object.freeze(DRAIN_KINDS.map((k) => k.id));
 export const DEFAULT_MODE = "pending";

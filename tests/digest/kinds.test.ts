@@ -21,16 +21,14 @@ test("the registry holds the seven digest kinds, one each, and every one is a dr
   assert.equal(new Set(DRAIN_KINDS.map((k) => k.id)).size, DRAIN_KINDS.length);
 });
 
-test("each kind's guide, validator and apply path exist; the one kind without a validator or apply says why, and no other does", () => {
+test("each kind's guide, validator and apply path exist", () => {
   for (const k of DIGEST_KINDS) {
     assert.ok(existsSync(k.authoringGuide.schema), `${k.id}: ${k.authoringGuide.schema} is missing`);
     assert.ok(k.authoringGuide.skills.length >= 2 && new Set(k.authoringGuide.skills).size === k.authoringGuide.skills.length, `${k.id}: skills`);
-    for (const ref of [k.validator, k.applyPath]) if (ref) assert.ok(existsSync(fileOf(ref)) && exportsSymbol(ref), `${k.id}: ${ref} is not an export of an existing file`);
-    assert.equal(k.applyPending === null, k.validator !== null && k.applyPath !== null, k.id);
+    for (const ref of [k.validator, k.applyPath]) assert.ok(existsSync(fileOf(ref)) && exportsSymbol(ref), `${k.id}: ${ref} is not an export of an existing file`);
     assert.ok(k.batchRe.test(`${k.batchPrefix}-001.json`) && k.batchDir === `drain/batches/${k.id}`, k.id);
     assert.equal(nextBatchPath(DRAIN_KINDS.find((d) => d.id === k.id)!, [`${k.batchPrefix}-004.json`]), `${k.batchDir}/${k.batchPrefix}-005.json`);
   }
-  assert.deepEqual(DIGEST_KINDS.filter((k) => k.applyPending).map((k) => k.id), ["admin-opportunity-findings"]);
 });
 
 test("the batch kit has an exporter for every registered kind, under the registry's id, and packet-reading kinds say so", () => {

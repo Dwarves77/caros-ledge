@@ -7,6 +7,7 @@ import { couplingById } from "@/core/coupling/coupling";
 import { readAll } from "@/core/coupling/read";
 import { uuidOf } from "@/core/coupling/refs";
 import type { Db } from "@/core/db";
+import { isUuid } from "@/core/http/parse";
 import { allRows, fetchAllByIdChunks, rowsByIds } from "@/core/db";
 import { FACT_SPECS, PATTERNS } from "@/core/flywheel/patterns/config";
 import { KINDS, patternSeed, type PatternKind } from "@/core/flywheel/patterns/types";
@@ -103,7 +104,7 @@ async function buildPatternPackets(sb: Db, patterns: readonly PatternRow[]): Pro
   const relRows = [...(await byIds(sb, "entity_relations", "parent_entity_id,child_entity_id,relation,basis,method_version", "parent_entity_id", entityIds, ["parent_entity_id", "child_entity_id", "relation"])), ...(await byIds(sb, "entity_relations", "parent_entity_id,child_entity_id,relation,basis,method_version", "child_entity_id", entityIds, ["parent_entity_id", "child_entity_id", "relation"]))];
   const relationOf = (r: Row): PacketRelation => ({ id: `${String(r.parent_entity_id)}|${String(r.relation)}|${String(r.child_entity_id)}`, parent: String(r.parent_entity_id), child: String(r.child_entity_id), relation: String(r.relation), reader: String(r.method_version ?? "").startsWith("reader@"), basis: (r.basis as Record<string, unknown> | null) ?? null, method_version: text(r.method_version) });
   const pks = [...rows.keys()].map((k) => k.split("/")[1] as string);
-  const refRows = await byIds(sb, "entity_refs", "ref_table,ref_id,entity_id,role,basis,method_version", "ref_id", [...pks, ...pks.map(uuidOf)], ["ref_table", "ref_id", "entity_id", "role"]);
+  const refRows = await byIds(sb, "entity_refs", "ref_table,ref_id,entity_id,role,basis,method_version", "ref_id", [...pks.filter(isUuid), ...pks.map(uuidOf)], ["ref_table", "ref_id", "entity_id", "role"]);
   const seeds = patterns.map((p) => `pattern-signpost:${patternSeed({ kind: KIND_OF[p.method_id] as PatternKind, key: p.computed_by.slice(p.computed_by.indexOf(":") + 1) })}`);
   const records = await byIds(sb, "inference_records", "inference_id,computed_by", "computed_by", seeds, ["inference_id"]);
   const posts = await byIds(sb, "signposts", "entity_id,direction,outcome,predicate,inference_record_id", "inference_record_id", records.map((r) => String(r.inference_id)), ["entity_id"]);

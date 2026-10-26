@@ -6,13 +6,22 @@
 import type { Db } from "@/core/db";
 import { fetchAllByIdChunks, fetchAllRows } from "@/core/db";
 import { entityId } from "@/core/entities/id";
+import type { EntityKind } from "@/core/entities/kinds";
 
 const ADOPTED_KINDS = ["standard", "material", "theme", "scenario", "compliance_object", "term"] as const;
 export type AdoptedKind = (typeof ADOPTED_KINDS)[number];
 export interface AdoptedEntry {
   key: string;
   label: string;
+  /** The entity kind a reader's proposed_kind maps to (PROPOSED_ENTITY_KIND), carried on a `term` entry by its evidence; absent for every other term. */
+  entityKind?: EntityKind;
 }
+
+/** The reader's proposed_kind (new_entity_candidates, DIGEST-1 PR B) to the entity kind an adopted term mints as. The term is counted under kind `term` with the proposed kind in its evidence: the vocabulary_terms CHECKs admit no other kind today. */
+export const PROPOSED_ENTITY_KIND = { organisation: "organisation", technology: "technology", person: "person", port: "node" } as const satisfies Record<string, EntityKind>;
+/** The deterministic id a proposed term mints under: its entity kind and its normalised name (an organisation id hashes a host, so a name's slash, as in A/S, is a space and not a URL). */
+export const proposedEntityId = (kind: EntityKind, key: string): string => entityId(kind, kind === "organisation" ? key.replaceAll("/", " ") : key);
+const entityKindOfEvidence = (evidence: unknown): EntityKind | undefined => PROPOSED_ENTITY_KIND[(evidence as { proposed_kind?: keyof typeof PROPOSED_ENTITY_KIND } | null)?.proposed_kind as keyof typeof PROPOSED_ENTITY_KIND];
 export type AdoptedVocabulary = Record<AdoptedKind, AdoptedEntry[]>;
 
 /** The one key normal form: NFKC, lower case, single spaces, edge punctuation trimmed. */
@@ -28,7 +37,7 @@ export function normaliseTermKey(text: unknown): string {
 
 const emptyAdopted = (): AdoptedVocabulary => Object.fromEntries(ADOPTED_KINDS.map((k) => [k, []])) as unknown as AdoptedVocabulary;
 
-function groupAdoptedTerms(rows: readonly { kind?: string; term_key?: string; label?: string | null; status?: string }[] | null | undefined): AdoptedVocabulary {
+function groupAdoptedTerms(rows: readonly { kind?: string; term_key?: string; label?: string | null; status?: string; evidence?: unknown }[] | null | undefined): AdoptedVocabulary {
   const out = emptyAdopted();
   const seen = new Set<string>();
   for (const r of rows ?? []) {
@@ -36,7 +45,7 @@ function groupAdoptedTerms(rows: readonly { kind?: string; term_key?: string; la
     const key = normaliseTermKey(r.term_key);
     if (!key || seen.has(`${r.kind}|${key}`)) continue;
     seen.add(`${r.kind}|${key}`);
-    out[r.kind as AdoptedKind].push({ key, label: typeof r.label === "string" && r.label.trim() ? r.label.trim() : key });
+    out[r.kind as AdoptedKind].push({ key, label: typeof r.label === "string" && r.label.trim() ? r.label.trim() : key, ...(r.kind === "term" && entityKindOfEvidence(r.evidence) ? { entityKind: entityKindOfEvidence(r.evidence) as EntityKind } : {}) });
   }
   for (const k of ADOPTED_KINDS) out[k].sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
   return out;
@@ -46,8 +55,8 @@ function groupAdoptedTerms(rows: readonly { kind?: string; term_key?: string; la
 export type AdoptedRead = { ok: true; adopted: AdoptedVocabulary } | { ok: false; adopted: AdoptedVocabulary; reason: string };
 export async function readAdoptedVocabulary(sb: Db): Promise<AdoptedRead> {
   try {
-    const rows = await fetchAllRows<{ kind: string; term_key: string; label: string | null; status: string }>(
-      (from, to) => sb.from("vocabulary_terms").select("kind, term_key, label, status").eq("status", "adopted").order("id", { ascending: true }).range(from, to),
+    const rows = await fetchAllRows<{ kind: string; term_key: string; label: string | null; status: string; evidence: unknown }>(
+      (from, to) => sb.from("vocabulary_terms").select("kind, term_key, label, status, evidence").eq("status", "adopted").order("id", { ascending: true }).range(from, to),
       { cap: 100_000 },
     );
     return { ok: true, adopted: groupAdoptedTerms(rows) };
@@ -71,6 +80,12 @@ function planAdoptedTermEntities(adopted: Partial<AdoptedVocabulary>, existingEn
       byTerm.set(`${termKind}|${e.key}`, id);
       if (!existingEntityIds.has(id) && !entities.some((x) => x.entity_id === id)) entities.push({ entity_id: id, kind: entityKind, canonical_name: e.label || e.key, status: "active" });
     }
+  }
+  for (const e of adoptedEntries(adopted, "term")) {
+    if (!e.entityKind) continue;
+    const id = proposedEntityId(e.entityKind, e.key);
+    byTerm.set(`term|${e.key}`, id);
+    if (!existingEntityIds.has(id) && !entities.some((x) => x.entity_id === id)) entities.push({ entity_id: id, kind: e.entityKind, canonical_name: e.label || e.key, status: "active" });
   }
   return { entities, byTerm };
 }

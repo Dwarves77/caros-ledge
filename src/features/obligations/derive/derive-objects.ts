@@ -31,7 +31,9 @@ export const OBJECT_DERIVATION_VERSION = "oblig-objects-2026-10-20.1";
 const FREQUENCIES: ReadonlySet<string> = new Set(["annual", "per_consignment", "per_voyage", "event_triggered"]);
 const MODE_ALIASES: ReadonlySet<string> = new Set(["sea", "maritime", "water", "vessel", "marine", "truck", "lorry", "hgv", "barge", "iww", "inland-waterway", "freighter", "airfreight"]);
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-const DATE_COLUMNS = ["entry_into_force", "date_of_application", "first_deadline", "enforcement_start", "date_reviewed", "next_review_due"] as const;
+const DATE_COLUMNS = ["entry_into_force", "date_of_application", "first_deadline", "enforcement_start", "date_reviewed", "next_review_due", "due_date", "in_force_end"] as const;
+/** A reader's value (method_version reader@<kinds version>, DIGEST-1 PR B) supersedes a derived one and is never overwritten by one (ADR-053). */
+const isReaderMethod = (m: unknown): boolean => typeof m === "string" && m.startsWith("reader@");
 const MONEY_KEYS = ["amount", "currency", "price", "cost"];
 
 const re = z.string();
@@ -78,6 +80,8 @@ export interface Candidate {
   entry_into_force?: string | null; date_of_application?: string | null; first_deadline?: string | null; enforcement_start?: string | null;
   evidence_required?: string | null; evidence_artifacts?: Array<{ class: string; name: string }> | null; retention_period?: string | null; sanction_class?: string | null; severity_score?: number | null;
   statutory_maximum?: string | null; cost_formula?: string | null; direct_compliance_cost?: Record<string, unknown> | null;
+  /** Reader-authored (0139): the per-object due date, the mandated quantity and its unit (distinct from the penalty maximum), the end of the in-force window, and who wrote the values with the quotes they rest on. */
+  due_date?: string | null; mandated_quantity?: number | null; mandated_unit?: string | null; in_force_end?: string | null; method_version?: string | null; basis?: Record<string, unknown> | null;
   effort?: Record<string, unknown> | null; status?: string | null; date_reviewed?: string | null; next_review_due?: string | null; source_id?: string | null;
   /** An obligation entity resolved before minting (DERIVE-3: the schedule's entity for the article); absent, the id is derived from the instrument and the pinpoint. */
   obligation_id?: string;
@@ -85,7 +89,7 @@ export interface Candidate {
   holder_basis?: string[];
 }
 export interface CaptureRow { id: string; intelligence_item_id: string; result_content: string | null; searched_at?: string | null; }
-export interface ExistingObject { obligation_id: string; instrument_item_id: string; pinpoint_citation: string; verbatim_text: string; version: number; supersedes?: string | null; duty_holder_class?: string[] | null; }
+export interface ExistingObject { obligation_id: string; instrument_item_id: string; pinpoint_citation: string; verbatim_text: string; version: number; supersedes?: string | null; duty_holder_class?: string[] | null; method_version?: string | null; basis?: Record<string, unknown> | null; }
 export interface ObjectItem extends ItemForClassification { id: string; is_archived?: boolean | null; }
 
 export type BuildResult = { ok: true; row: Record<string, unknown>; bindingSource: string } | { ok: false; reason: string };
@@ -119,6 +123,8 @@ function buildObjectRow(c: Candidate, ctx: { item: ObjectItem | null; capture: C
   }
   for (const col of DATE_COLUMNS) if (c[col] != null && !(typeof c[col] === "string" && DATE_RE.test(c[col] as string))) return { ok: false, reason: `date_malformed:${col}` };
   if (c.effort != null && (typeof c.effort !== "object" || MONEY_KEYS.some((k) => k in (c.effort as object)))) return { ok: false, reason: "effort_carries_money" };
+  if ((c.mandated_quantity == null) !== (c.mandated_unit == null) || (c.mandated_quantity != null && !Number.isFinite(c.mandated_quantity))) return { ok: false, reason: "mandated_quantity_incomplete" };
+  if ((c.method_version == null) !== (c.basis == null)) return { ok: false, reason: "method_without_basis" };
   let position: string | null = null;
   let bindingSource = "candidate";
   if (c.binding_position != null) {
@@ -141,6 +147,7 @@ function buildObjectRow(c: Candidate, ctx: { item: ObjectItem | null; capture: C
     entry_into_force: nullable(c.entry_into_force), date_of_application: nullable(c.date_of_application), first_deadline: nullable(c.first_deadline), enforcement_start: nullable(c.enforcement_start),
     evidence_required: nullable(c.evidence_required), evidence_artifacts: nullable(c.evidence_artifacts), retention_period: nullable(c.retention_period), sanction_class: nullable(c.sanction_class), severity_score: nullable(c.severity_score), statutory_maximum: nullable(c.statutory_maximum),
     cost_formula: nullable(c.cost_formula), direct_compliance_cost: nullable(c.direct_compliance_cost), effort: nullable(c.effort), status: "not_assessed",
+    ...Object.fromEntries((c.method_version != null ? ["due_date", "mandated_quantity", "mandated_unit", "in_force_end", "method_version", "basis"] : []).map((k) => [k, nullable(c[k as "due_date"])])),
     date_reviewed: nullable(c.date_reviewed), next_review_due: nullable(c.next_review_due), source_id: nullable(c.source_id), capture_id: c.capture_id,
   };
   return { ok: true, row, bindingSource };
@@ -167,7 +174,12 @@ function planObligationObjects(candidates: readonly Candidate[], ctx: { itemsByI
     }
     seen.add(key);
     const prior = byPinpoint.get(key) ?? null;
-    if (prior && norm(prior.verbatim_text) === norm(c?.verbatim_text)) {
+    const [fromReader, priorReader] = [isReaderMethod(c?.method_version), isReaderMethod(prior?.method_version)];
+    if (prior && priorReader && !fromReader) {
+      plan.alreadyRegistered += 1;
+      continue;
+    }
+    if (prior && norm(prior.verbatim_text) === norm(c?.verbatim_text) && (!fromReader || (priorReader && prior.basis?.fields_hash === c.basis?.fields_hash))) {
       plan.alreadyRegistered += 1;
       continue;
     }
@@ -348,7 +360,7 @@ export async function deriveObligationObjects(sb: Db, input: { dry: boolean; ite
     return data ?? [];
   }, { chunk: 10 })) capturesById.set(c.id, c);
   const existing = await fetchAllByIdChunks<ExistingObject>([...itemsById.keys()], async (slice) => {
-    const { data, error } = await sb.from("obligation_objects").select("obligation_id, instrument_item_id, pinpoint_citation, verbatim_text, version, supersedes, duty_holder_class").in("instrument_item_id", slice);
+    const { data, error } = await sb.from("obligation_objects").select("obligation_id, instrument_item_id, pinpoint_citation, verbatim_text, version, supersedes, duty_holder_class, method_version, basis").in("instrument_item_id", slice);
     if (error) throw new Error(`derive-objects: obligation_objects read failed: ${error.message}`);
     return data ?? [];
   }, { manyPerId: true });

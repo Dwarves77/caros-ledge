@@ -150,6 +150,8 @@ export interface TermRow {
   adoption_rule?: string | null;
   evidence?: unknown;
 }
+/** The kind a reader proposed for a term (evidence.proposed_kind, DIGEST-1 PR B) survives every recount of the term. */
+const proposedKind = (t: TermRow | null | undefined): { proposed_kind?: string } => { const k = (t?.evidence as { proposed_kind?: unknown } | null | undefined)?.proposed_kind; return typeof k === "string" ? { proposed_kind: k } : {}; };
 export interface TermPlan {
   terms: { key: string; kind: string; term_key: string; existing: TermRow | null; next: TermRow; action: "insert" | "update" | "unchanged"; newly_adopted: boolean }[];
   newMentions: Omit<TermMention, "label">[];
@@ -191,7 +193,7 @@ export function buildTermPlan(args: { derived: readonly TermMention[]; persisted
       kind, term_key, label: existing?.label ?? [...ms].map((m) => m.label).sort()[0] ?? term_key, status: adopted ? "adopted" : "proposed", distinct_items: items.size, distinct_sources: sources.size,
       first_seen_at: existing?.first_seen_at ?? args.now, last_seen_at: fresh.length > 0 ? args.now : (existing?.last_seen_at ?? args.now), adopted_at: adopted ? (existing?.adopted_at ?? args.now) : null,
       adoption_rule: adopted ? (existing?.adoption_rule ?? rule) : null,
-      evidence: { detectors: byDetector, sample_items: [...items].sort().slice(0, EVIDENCE_SAMPLE_ITEMS), sample_surface: [...new Set(ms.map((m) => m.surface_text))].sort().slice(0, EVIDENCE_SAMPLE_SURFACE) },
+      evidence: { detectors: byDetector, sample_items: [...items].sort().slice(0, EVIDENCE_SAMPLE_ITEMS), sample_surface: [...new Set(ms.map((m) => m.surface_text))].sort().slice(0, EVIDENCE_SAMPLE_SURFACE), ...proposedKind(existing) },
     };
     let action: "insert" | "update" | "unchanged" = "insert";
     if (existing) {

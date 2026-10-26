@@ -8,6 +8,7 @@ import { opNames, runBriefs, runCapture, runConnect, runIntake, runOps, runPropa
 import { researchAssessment } from "@/features/research";
 import { runResult } from "@/core/types/run-result";
 
+import { withReview } from "../batches/world.ts";
 import { fixture, NEW_URL, NOW, SRC, DOC, CENSUS } from "../integration/world.ts";
 
 const call = (over: Partial<FamilyCall> = {}): FamilyCall => ({ mode: "apply", dry: false, input: {}, runId: "r0000000-0000-4000-8000-000000000001", rootRunId: "r0000000-0000-4000-8000-000000000001", upstream: null, ...over });
@@ -134,19 +135,20 @@ test("IMP-055: an item that changed has its research assessment re-scored in the
   assert.equal((await runPropagate(call(), e.d)).counts.assess_candidates, undefined);
 });
 
-test("briefs: a theme brief is written once against the live membership and a stale hash is refused; a screen-verdict batch is validated; every kit kind is reached and refuses content that is not a batch; an unknown kind is refused", async () => {
+test("briefs: a theme brief that cites no member rows is residue by the no-single-source test and a stale hash is refused; a screen-verdict batch is validated; every kit kind is reached and refuses content that is not a batch; an unknown kind is refused", async () => {
   const f = fixture();
   assert.equal((await runBriefs(call(), f.d)).counts.applied, 0);
   f.db.seed("connection_themes", [{ id: "T1", member_ids: ["a", "b"], surfaces: ["regulations"] }]);
   // a single payload is one entry of a one-entry batch and is validated like any other: sections, claims, figures
-  const brief = (hash: string) => JSON.stringify({ theme_id: "T1", title: "T", member_hash: hash, sections: { connection: "They connect.", meaning: "It matters.", ramifications: "### Regulations\nNeeds an owner.", watch: "Watch the date.", gaps: "" }, claims: [] });
+  const brief = (hash: string) => JSON.stringify(withReview({ theme_id: "T1", title: "T", member_hash: hash, sections: { connection: "They connect.", meaning: "It matters.", ramifications: "### Regulations\nNeeds an owner.", watch: "Watch the date.", gaps: "" }, claims: [] }, "theme-briefs"));
   const stale = await runBriefs(call({ input: { batch: { kind: "theme-briefs", content: brief("deadbeef") } } }), f.d);
   assert.deepEqual([stale.outcome, f.db.rows("theme_briefs").length], ["failed", 0]);
   const ok = await runBriefs(call({ input: { batch: { kind: "theme-briefs", content: brief(computeMemberHash(["a", "b"])) } } }), f.d);
-  assert.deepEqual([ok.outcome, ok.counts.applied, f.db.rows("theme_briefs").map((x) => x.generated_by)], ["ok", 1, ["theme-briefs-single-payload"]]);
+  assert.deepEqual([ok.outcome, ok.counts.applied, f.db.rows("theme_briefs").length], ["failed", 0, 0]);
+  assert.match(ok.notes.join("\n"), /no-single-source test/, "the live hash passes; the brief cites no row, so the second gate names the test");
   const dry = await runBriefs(dryCall({ batch: { kind: "theme-briefs", content: brief(computeMemberHash(["a", "b"])) } }), f.d);
-  assert.equal(f.db.rows("theme_briefs").length, 1, "a dry run wrote nothing more");
-  assert.equal(dry.outcome, "ok");
+  assert.equal(f.db.rows("theme_briefs").length, 0, "a dry run wrote nothing");
+  assert.equal(dry.outcome, "failed");
   const badJson = await runBriefs(call({ input: { batch: { kind: "screen-verdicts", content: "{" } } }), f.d);
   assert.match(badJson.notes[0] ?? "", /not JSON/);
   const partial = await runBriefs(call({ input: { batch: { kind: "screen-verdicts", content: JSON.stringify({ verdicts: [{ census_id: CENSUS, verdict: "on_vertical", basis: "b" }, { census_id: "nope", verdict: "on_vertical", basis: "b" }] }) } } }), f.d);

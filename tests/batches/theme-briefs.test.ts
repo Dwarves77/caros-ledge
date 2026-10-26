@@ -9,8 +9,11 @@ import { applyBatch } from "@/features/batches";
 import { loadThemeMaterial, loadThemes } from "@/core/briefs/theme-brief-material";
 import { themeBriefsExporter } from "@/features/batches/kinds/theme-briefs/apply";
 
-import { batchFile, ITEM } from "./world.ts";
+import { batchFile, ITEM, passingReview } from "./world.ts";
 import { CLAIM_A, CLAIM_B, EVENT_B, SECOND, THEME, themeWorld, type World } from "./worlds.ts";
+
+/** The second reader's all-pass verdicts on a theme entry. */
+const withThemeReview = <T extends Record<string, unknown>>(e: T): T & { review: Record<string, unknown> } => ({ ...e, review: passingReview(e, "theme-briefs") });
 
 const hash = computeMemberHash([SECOND, ITEM]);
 /** The stored brief text: the title, then the sections in order under their fixed headings (the format the readers show). */
@@ -19,7 +22,7 @@ const renderBriefMd = (e: { title: string; sections: Record<string, string> }) =
   const parts = [`# ${e.title.trim()}`, ...HEADINGS.filter(([k]) => (e.sections[k] ?? "").trim()).map(([k, h]) => `## ${h}\n\n${(e.sections[k] ?? "").trim()}`)];
   return `${parts.join("\n\n")}\n`;
 };
-const entry = (over: Record<string, unknown> = {}) => ({
+const entry = (over: Record<string, unknown> = {}) => withThemeReview({
   theme_id: THEME, member_hash: hash, title: "The reporting duty and the surcharge it triggers",
   sections: { connection: "Both items concern the annual reporting duty and how carriers price it.", meaning: "A forwarder should expect the duty to reach the rate card.", ramifications: "### Regulations\nThe duty needs an owner in each operating unit.", watch: "Watch the next dated step.", gaps: "No operations item yet." },
   claims: [{ section: "connection", text: "annual reporting duty", member_id: ITEM, claim_ids: [CLAIM_A] }, { section: "watch", text: "Watch the next dated step.", member_id: SECOND, claim_ids: [EVENT_B] }],
@@ -105,7 +108,7 @@ test("F:15: an invented figure listed under a REAL claim id is not covered by it
   const w = themeWorld();
   const invented = entry({ sections: { ...entry().sections, connection: "The duty carries a fine of EUR 900000 for late filers." }, claims: [{ section: "connection", text: "a fine of EUR 900000", member_id: ITEM, claim_ids: [CLAIM_A] }] });
   assert.match(notes(await apply(w, [invented])), /the listed text states .*"EUR 900000".* that none of its cited grounded claims states/);
-  const honest = entry({ sections: { ...entry().sections, connection: "Operators shall report verified annual emissions before 30 April." }, claims: [{ section: "connection", text: "report verified annual emissions before 30 April", member_id: ITEM, claim_ids: [CLAIM_A] }] });
+  const honest = entry({ sections: { ...entry().sections, connection: "Operators shall report verified annual emissions before 30 April." }, claims: [{ section: "connection", text: "report verified annual emissions before 30 April", member_id: ITEM, claim_ids: [CLAIM_A] }, ...entry().claims.slice(1)] });
   assert.equal((await apply(w, [honest], true)).counts.valid, 1, "a figure the cited claim states is covered");
   // F:16: the member quarantined since the pass, then the claim suppressed
   const themes = await loadThemes(w.db.client, [THEME]);

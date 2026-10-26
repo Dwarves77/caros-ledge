@@ -8,11 +8,11 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { isAbsolute, join, relative, resolve } from "node:path";
 import { tmpdir } from "node:os";
 
-import { digestKind } from "@/core/digest/kinds";
 import type { Exporter } from "@/features/drain";
 import { runResult } from "@/core/types/run-result";
 import type { RunResult } from "@/core/types/run-result";
 
+import { applyAdminFindings } from "../kinds/admin-opportunity-findings/apply";
 import { adminFindingsExporter } from "../kinds/admin-opportunity-findings/export";
 import { applyForwardEvents } from "../kinds/forward-events/apply";
 import { forwardEventsExporter } from "../kinds/forward-events/export";
@@ -42,12 +42,12 @@ export interface ExportOpts { limit: number; mode: string; ids?: readonly string
 const exporterOf = (kind: BatchKindId, deps: BatchDeps): ((o: ExportOpts) => Promise<BatchExport>) => {
   const budget = (o: ExportOpts) => (o.charBudget ? { charBudget: o.charBudget } : {});
   switch (kind) {
-    case "item-briefs": return itemBriefsExporter(deps.sb, deps.now);
-    case "admin-opportunity-findings": return adminFindingsExporter(deps.sb, deps.now);
+    case "item-briefs": return itemBriefsExporter(deps.sb, deps.now, deps.packets);
+    case "admin-opportunity-findings": return adminFindingsExporter(deps.sb, deps.now, deps.packets);
     case "question-answers": return (o) => questionExporter(deps.sb, budget(o))(o);
     case "needs-search": return needsExporter(deps.sb);
     case "forward-events": return forwardEventsExporter(deps.sb, deps.now);
-    case "theme-briefs": return (o) => themeBriefsExporter(deps.sb, budget(o))(o);
+    case "theme-briefs": return (o) => themeBriefsExporter(deps.sb, { ...budget(o), ...(deps.packets ? { packets: deps.packets } : {}) })(o);
     case "screen-verdicts": return screenVerdictsExporter(deps.sb);
     case "ledger-verdicts": return ledgerVerdictsExporter(deps);
     case "host-verdicts": return hostVerdictsExporter(deps.sb);
@@ -146,6 +146,6 @@ export async function applyBatch(kind: string, deps: BatchDeps, input: { content
     case "screen-verdicts": return applyScreenVerdicts(deps, file, o);
     case "ledger-verdicts": return applyLedgerVerdicts(deps, file, o);
     case "host-verdicts": return applyHostVerdicts(deps, file, o);
-    case "admin-opportunity-findings": return runResult("failed", { refused: 1 }, [`refused: ${kind} has no validator or apply yet: ${digestKind(kind)?.applyPending ?? "unregistered"}`]);
+    case "admin-opportunity-findings": return applyAdminFindings(deps, file, o);
   }
 }

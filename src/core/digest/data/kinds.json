@@ -1,4 +1,22 @@
 {
+ "version": "1.1.0",
+ "menu": {
+  "cap": 64,
+  "maxLinked": 24,
+  "maxRegion": 3,
+  "aliases": 4,
+  "kindOrder": [
+   "instrument",
+   "carrier",
+   "feedstock",
+   "node",
+   "corridor",
+   "attribute",
+   "mandate",
+   "jurisdiction",
+   "organisation"
+  ]
+ },
  "kinds": [
   {
    "id": "ledger-verdicts",
@@ -19,7 +37,6 @@
    "idKey": "candidate_id",
    "applyPath": "src/features/batches/kinds/ledger-verdicts/apply.ts#applyLedgerVerdicts",
    "applyStep": "ledger-consume",
-   "applyPending": null,
    "needsPackets": false,
    "namesFile": false,
    "batchSize": 300,
@@ -49,7 +66,6 @@
    "idKey": "host",
    "applyPath": "src/features/batches/kinds/host-verdicts/apply.ts#applyHostVerdicts",
    "applyStep": "host-verdicts",
-   "applyPending": null,
    "needsPackets": false,
    "namesFile": false,
    "batchSize": 150,
@@ -74,7 +90,6 @@
    "idKey": "need_id",
    "applyPath": "src/features/batches/kinds/needs-search/apply.ts#applyNeedsSearch",
    "applyStep": "needs-search",
-   "applyPending": null,
    "needsPackets": false,
    "namesFile": true,
    "batchSize": 40,
@@ -100,7 +115,6 @@
    "idKey": "subject_ref",
    "applyPath": "src/features/batches/kinds/question-answers/apply.ts#applyQuestionAnswers",
    "applyStep": "question-answers",
-   "applyPending": null,
    "needsPackets": false,
    "namesFile": true,
    "batchSize": 40,
@@ -129,11 +143,11 @@
    "idKey": "theme_id",
    "applyPath": "src/features/batches/kinds/theme-briefs/apply.ts#applyThemeBriefs",
    "applyStep": "theme-briefs",
-   "applyPending": null,
    "needsPackets": true,
    "namesFile": true,
    "batchSize": 15,
-   "maxBatchesPerRun": 1
+   "maxBatchesPerRun": 1,
+   "secondReader": true
   },
   {
    "id": "item-briefs",
@@ -167,11 +181,19 @@
    "idKey": "id",
    "applyPath": "src/features/batches/kinds/item-briefs/apply.ts#applyItemBriefs",
    "applyStep": "brief-apply",
-   "applyPending": null,
    "needsPackets": true,
    "namesFile": true,
    "batchSize": 40,
-   "maxBatchesPerRun": 1
+   "maxBatchesPerRun": 1,
+   "secondReader": true,
+   "emission": [
+    "entity_ids",
+    "obligation_fields",
+    "connections",
+    "events",
+    "document_date",
+    "new_entity_candidates"
+   ]
   },
   {
    "id": "admin-opportunity-findings",
@@ -188,15 +210,14 @@
      "source-credibility-model"
     ]
    },
-   "validator": null,
+   "validator": "src/features/batches/kinds/admin-opportunity-findings/validate.ts#validateAdminFindingEntry",
    "batchDir": "drain/batches/admin-opportunity-findings",
    "batchRe": "^admin-opportunity-findings-\\d{3}\\.json$",
    "batchPrefix": "admin-opportunity-findings",
    "leaseKey": "pattern_value_id",
    "idKey": "pattern_value_id",
-   "applyPath": null,
+   "applyPath": "src/features/batches/kinds/admin-opportunity-findings/apply.ts#applyAdminFindings",
    "applyStep": "admin-findings",
-   "applyPending": "DIGEST-1 PR B: the validator that refuses an id outside the packet, the second reader and the apply into admin_opportunity_findings",
    "needsPackets": true,
    "namesFile": true,
    "batchSize": 15,
@@ -214,7 +235,8 @@
    "memberLens": {
     "capacity": "supply_demand_bottleneck",
     "capital": "capital_offtake_grant"
-   }
+   },
+   "secondReader": true
   }
  ]
 }

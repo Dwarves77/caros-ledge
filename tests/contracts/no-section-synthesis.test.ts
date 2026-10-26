@@ -14,7 +14,7 @@ import { nextBatchPath, resolveKind } from "@/features/drain";
 import { resolvePendingTriggers } from "@/features/obligations";
 
 import { A1, A2, A3, A4, fact, installBriefTrigger, regulatoryBody } from "../batches/regulatory.ts";
-import { metadata } from "../batches/world.ts";
+import { metadata, withReview } from "../batches/world.ts";
 import { fixture, NOW } from "../integration/world.ts";
 import { MemDb, type Row } from "../_support/memdb.ts";
 
@@ -49,7 +49,7 @@ async function commit(f: Awaited<ReturnType<typeof minted>>["f"], over: { a2?: s
   const entry = { item_id: stub.id, source_pool_hash: stub.source_pool_hash, body: regulatoryBody(over.newSources), metadata: metadata({ format_type: "regulatory_fact_document", signal_band: null }), claims: [fact(A1, "8", "binding_position"), fact(a2, "8", "due_date"), fact(A3, "8"), fact(A4, "14")] };
   const root = mkdtempSync(join(tmpdir(), "caros-fly1-"));
   mkdirSync(join(root, "drain/batches/item-briefs"), { recursive: true });
-  writeFileSync(join(root, "drain/batches/item-briefs/item-briefs-001.json"), JSON.stringify({ batch: "item-briefs-001", generated_at: NOW.toISOString(), authored_by: "session-lane", entries: [entry] }));
+  writeFileSync(join(root, "drain/batches/item-briefs/item-briefs-001.json"), JSON.stringify({ batch: "item-briefs-001", generated_at: NOW.toISOString(), authored_by: "session-lane", entries: [withReview(entry)] }));
   return root;
 }
 const briefs = async (f: Awaited<ReturnType<typeof minted>>["f"], root: string) => {

@@ -38,7 +38,7 @@ export function makeWorld(opts: { itemType?: string; briefGrade?: boolean; pool?
     { id: SOURCE, name: "EUR-Lex", url: "https://eur-lex.europa.eu/", base_tier: 1, tier_override: null, status: "active" },
     { id: CORROB, name: "News", url: "https://example-news.test/", base_tier: 5, tier_override: null, status: "active" },
   ]);
-  db.seed("intelligence_items", [{ id: ITEM, title: "Sustainable freight operations regulation", item_type: itemType, item_grade: opts.briefGrade ? "brief" : "record", source_id: opts.withSource === false ? null : SOURCE, source_url: OFFICIAL_URL, provenance_status: "quarantined", is_archived: false, full_brief: null, legacy_id: "t-9999", instrument_type: null, instrument_identifier: "2023/9999", canonical_instrument_key: null, jurisdiction_iso: "EU" }]);
+  db.seed("intelligence_items", [{ id: ITEM, title: "Sustainable freight operations regulation", item_type: itemType, item_grade: opts.briefGrade ? "brief" : "record", source_id: opts.withSource === false ? null : SOURCE, source_url: OFFICIAL_URL, provenance_status: "quarantined", is_archived: false, full_brief: null, legacy_id: "t-9999", instrument_type: null, instrument_identifier: "2023/9999", canonical_instrument_key: null, jurisdiction_iso: ["EU"] }]);
   (opts.pool ?? [{ url: OFFICIAL_URL, text: OFFICIAL_TEXT }, { url: OTHER_URL, text: OTHER_TEXT }]).forEach((p, i) => db.seed("agent_run_searches", [{ intelligence_item_id: ITEM, result_url: p.url, result_content: p.text, result_index: i, search_query: "canonical ground" }]));
 
   const rec: Recorded = { runs: [], mints: [], connects: [] };
