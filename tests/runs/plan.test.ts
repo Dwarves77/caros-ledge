@@ -1,6 +1,8 @@
 // RUN-1: the plan validator. INV-RUN-1: an apply step of the propagate stage without the ruling's cadence_exception is refused.
 import assert from "node:assert/strict";
-import { readdirSync, readFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { test } from "node:test";
 
 import { STAGES } from "@/core/turn";
@@ -64,7 +66,7 @@ test("the ARM-2 plan (2026-10-25-arm-2) parses: six steps, dry then apply for st
 });
 
 test("every plan file under scripts/runs/plans parses, so a malformed plan is red in its pull request and not on main", () => {
-  for (const f of readdirSync("scripts/runs/plans").filter((n) => n.endsWith(".json"))) parsePlan(readFileSync(`scripts/runs/plans/${f}`, "utf8"));
+  for (const f of readdirSync("scripts/runs/plans").filter((n) => n.endsWith(".json"))) parsePlan(readFileSync(`scripts/runs/plans/${f}`, "utf8"), `scripts/runs/plans/${f}`);
 });
 
 test("a producers.only that is not an entry of the registry is refused (a typo would run nothing); every registry name is accepted", () => {
@@ -119,4 +121,41 @@ test("HEAL-1: the heal plan (2026-10-26-heal-1) heals exactly the two ruled inst
     assert.equal(s.input.ops.args.stripUnprovable, true, "revision 2: the honest strip of the sentences no capture states (ruling 2026-10-26)");
     assert.deepEqual(s.producer_env, []);
   }
+});
+
+// DRAIN-1: a step's input is inline (under 100,000 bytes) or a data file beside the plan (input_file), exactly one.
+const planDir = () => {
+  const d = mkdtempSync(join(tmpdir(), "plan-"));
+  mkdirSync(join(d, "data"));
+  writeFileSync(join(d, "data", "in.json"), JSON.stringify({ connect: { scan_limit: 0 } }));
+  return d;
+};
+const fileStep = (over: Record<string, unknown> = {}) => ({ name: "f", stage: "connect", mode: "dry", input_file: "data/in.json", producer_env: [], ...over });
+
+test("DRAIN-1: an inline input over 100,000 bytes is refused, naming the step and input_file", () => {
+  const big = { connect: { blob: "x".repeat(100_001) } };
+  assert.throws(() => parsePlan(plan({ steps: [step({ name: "huge", stage: "connect", mode: "dry", input: big, producer_env: [] })] })), /huge[\s\S]*input_file|input_file[\s\S]*huge/);
+  parsePlan(plan({ steps: [step({ stage: "connect", mode: "dry", input: { connect: { blob: "x".repeat(90_000) } }, producer_env: [] })] }));
+});
+
+test("DRAIN-1: input and input_file together, or neither, are refused", () => {
+  const d = planDir();
+  const p = join(d, "p.json");
+  assert.throws(() => parsePlan(plan({ steps: [fileStep({ input: {} })] }), p), /input_file/);
+  assert.throws(() => parsePlan(plan({ steps: [fileStep({ input_file: undefined })] }), p), /input/);
+});
+
+test("DRAIN-1: an input_file that escapes the plan's directory (.., absolute) is refused", () => {
+  const d = planDir();
+  const p = join(d, "p.json");
+  for (const bad of ["../x.json", "data/../../x.json", join(d, "data", "in.json"), "/etc/passwd"]) assert.throws(() => parsePlan(plan({ steps: [fileStep({ input_file: bad })] }), p), /input_file|escape/, bad);
+});
+
+test("DRAIN-1: input_file is loaded relative to the plan and becomes the step's input; a missing file is refused", () => {
+  const d = planDir();
+  const p = join(d, "p.json");
+  const s = parsePlan(plan({ steps: [fileStep()] }), p).steps[0];
+  assert.deepEqual(s.input, { connect: { scan_limit: 0 } });
+  assert.equal(s.input_file, "data/in.json");
+  assert.throws(() => parsePlan(plan({ steps: [fileStep({ input_file: "data/none.json" })] }), p), /none\.json/);
 });

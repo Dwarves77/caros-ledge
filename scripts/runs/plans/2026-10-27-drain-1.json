@@ -1,0 +1,45 @@
+{
+  "ruling": "operator and coordinator 2026-10-27 (DRAIN-1, the first production drain of the rebuild): the reader lane's 12 item briefs and 3 theme briefs, judged by an independent second reader, are applied by the briefs stage; the turn applies the 3 accepted item briefs (items b293a2b6, 0ee667cc, f3cee01b, replacing their old-tree briefs, which the intelligence_item_versions trigger retains) and routes the 12 residue entries to residue with their failing criteria in brief_reviews; the patterns pass then re-runs over the new briefs. Nothing is fetched, so no scrape cadence is exercised and rule 16 stands. The theme step is on_failure continue: all 3 theme briefs are residue, and a batch with no accepted entry exits 1 by the turn's own contract, which must not stop the patterns pass after it",
+  "steps": [
+    {
+      "name": "item-briefs-apply",
+      "stage": "briefs",
+      "mode": "apply",
+      "input_file": "data/2026-10-27-drain-1.items.json",
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "theme-briefs-apply",
+      "stage": "briefs",
+      "mode": "apply",
+      "input_file": "data/2026-10-27-drain-1.themes.json",
+      "producer_env": [],
+      "on_failure": "continue"
+    },
+    {
+      "name": "patterns-dry",
+      "stage": "connect",
+      "mode": "dry",
+      "input": {
+        "connect": {
+          "scan_limit": 0
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "patterns-apply",
+      "stage": "connect",
+      "mode": "apply",
+      "input": {
+        "connect": {
+          "scan_limit": 0
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    }
+  ]
+}
