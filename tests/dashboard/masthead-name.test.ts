@@ -2,9 +2,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { USER } from "../workspace/_world.ts";
 import { deriveBriefTitle, firstNameOf } from "@/features/dashboard/rows";
 
+import { USER } from "../workspace/_world.ts";
 import { renderApp } from "../_support/render.ts";
 import { memberWorld } from "../_support/sweep-worlds.ts";
 

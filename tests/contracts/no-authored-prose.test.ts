@@ -19,7 +19,6 @@ import { fillObjectFields } from "@/features/obligations/derive/fill-fields";
 import assessmentCopy from "@/features/research/model/data/assessment-copy.json";
 import stanceRules from "@/features/research/model/data/assessment-stance.json";
 import { selectAssessmentView, selectSignpostView, type AssessmentRow } from "@/features/research/model/assessment-view";
-
 import actHeads from "@/core/lists/data/act-heads.json";
 import { displayTitle } from "@/core/lists/display-title";
 

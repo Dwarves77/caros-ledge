@@ -7,8 +7,9 @@ import { dueInfo, toListRowFields, type ListRowFields } from "@/core/lists";
 import { formatDate } from "@/core/shared";
 import { rowMeta } from "@/features/market/lib/item-type";
 import type { Resource } from "@/core/types";
-import mastheadCopy from "./data/masthead-copy.json";
 import { urgencyScore, type UrgencyContext } from "@/core/urgency/scoring";
+
+import mastheadCopy from "./data/masthead-copy.json";
 
 /** The intelligence surfaces the dashboard counts, in order: the ONE list the masthead's "across N surfaces" and the "Across the platform" rail card both read, so the two cannot disagree. */
 export const SURFACES = [
