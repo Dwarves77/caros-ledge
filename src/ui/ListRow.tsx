@@ -1,153 +1,99 @@
 // Ported from old_repo/src/components/ui/ListRow.tsx (lines 52-137)
 // Ported from old_repo/src/components/ui/ListRow.tsx (lines 555-555)
 // Ported from old_repo/src/components/ui/ListRow.tsx (lines 713-985)
-// The one list row. Class names only: every layout rule lives once in base.css, so a 100-row list carries the CSS once (the old row emitted 13.6 KB per instance).
+// The one list row (ROWS-1, operator look ruling 2026-10-26): the short name, one line of stored reader text and one meta line, for every row type. The field set is data (list-surface/data/row-fields.json); this file draws nothing that file does not name.
+// Class names only: every layout rule lives once in base.css, so a 100-row list carries the CSS once.
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { z } from "zod";
 
-import { normalizeDisplayTitle } from "@/core/fetch/titles";
-import { hasBiasTags, type BiasTagInput } from "@/core/sources/bias-tags";
+import { displayTitle } from "@/core/lists/display-title";
+import { itemTypeLabel } from "@/core/lists/item-type";
 import type { UrgencyBand } from "@/core/lists";
-import type { ImpactScores, TimelineEntry } from "@/core/types";
 
 import { Absence } from "./Absence";
-import { NEEDS_PHRASE, pickAbsenceReason, type AbsenceReason } from "./absence-reason";
-import { BiasChips } from "./BiasChips";
-import { GRADE_SHORT, GradeChip, TagChip, TierChip, WorkspaceTagPill } from "./Chips";
-import { ImpactMeter } from "./ImpactMeter";
-import { isImpactScored } from "./impact";
-import { biasSummary } from "./bias-summary";
-import { MilestoneTimeline } from "./MilestoneTimeline";
+import type { AbsenceReason } from "./absence-reason";
+import { TagChip, TierChip } from "./Chips";
+import rowFields from "./list-surface/data/row-fields.json";
+import { RowMeta } from "./RowMeta";
+
+const FIELDS = z
+  .object({
+    rowTypes: z.record(z.string(), z.object({ itemTypes: z.array(z.string()), name: z.enum(["act_short_name", "source_title"]), meta: z.array(z.string()) })),
+    defaultRowType: z.string(),
+    fields: z.record(z.string(), z.object({ absence: z.enum(["omit", "dash"]), drop: z.number().optional(), reason: z.string().optional(), labels: z.record(z.string(), z.string()).optional() })),
+  })
+  .parse(rowFields);
+
+/** The row type of a stored item_type (or of a row type's own name): which fields the row draws. */
+const rowTypeOf = (itemType: string | null | undefined): string => (itemType && FIELDS.rowTypes[itemType] ? itemType : (Object.entries(FIELDS.rowTypes).find(([, t]) => t.itemTypes.includes(itemType ?? ""))?.[0] ?? FIELDS.defaultRowType));
 
 export interface ListRowProps {
   /** Where the row opens; absent for a row with no page (a watched source), which draws as a row without the link layer. */
   href?: string | undefined;
   band: UrgencyBand;
-  jurisdiction: string;
+  /** The stored item_type (or "post", a community post): picks the row type. */
+  itemType?: string | null | undefined;
+  /** A kind the item-type table does not hold (a watched source, a portfolio entity); drawn as the type chip. */
+  typeLabel?: string | null | undefined;
+  /** The code of the item's jurisdiction; empty or absent draws no chip. */
+  jurisdiction?: string | null | undefined;
   title: string;
-  meta?: ReactNode;
-  kind?: ReactNode;
-  impact?: ImpactScores | null;
-  /** The sentence naming the input the impact score is waiting for (IMPACT-1); drawn in place of "Needs more data". */
-  impactAbsence?: string | null | undefined;
-  due?: { label: string; days: string } | null;
-  /** Why the due date is empty ("No milestone dates"). */
-  dueAbsence?: string | null | undefined;
-  timeline?: TimelineEntry[] | null;
-  tier?: number | null;
+  /** The stored reader text (what_is_it), drawn on one line; absent draws no line. */
+  summary?: string | null | undefined;
+  /** null: the surface read dates and the item has none (the quiet dash); undefined: this surface reads none (nothing drawn). */
+  due?: { label: string; days: string } | null | undefined;
+  /** null: the item's source has no rating (the quiet dash); undefined: this surface reads none. */
+  tier?: number | null | undefined;
+  /** A key of the `change` labels in row-fields.json (the dashboard's What changed section). */
+  change?: string | null | undefined;
+  /** A community post's group name. */
+  group?: string | null | undefined;
   /** The last control in the row (the watch star or the overflow menu); it never shares a box with the row link. */
   overflow?: ReactNode;
-  tags?: { id: string; name: string; title?: string }[] | null;
-  biasTags?: BiasTagInput[] | null;
-  itemGrade?: "record" | "brief" | undefined;
-  minHeight?: number;
 }
 
-/**
- * The list row: spine, jurisdiction, title with a meta line (kind, grade, meta text, the ONE absence reason, bias chips, tags; on the phone one line: grade, absence, bias as muted text), impact, due with days,
- * timeline, tier and a 44 px overflow cell. The whole row is one link. Phone, tablet, mid and wide layouts and the narrow-box reflow are in base.css.
- */
-export function ListRow({ href, band, jurisdiction, title, meta, kind, impact, impactAbsence, due, dueAbsence, timeline, tier, overflow, tags, biasTags, itemGrade, minHeight = 56 }: ListRowProps) {
-  const { title: displayTitle, subtitle } = normalizeDisplayTitle(title);
-  const hasBias = hasBiasTags(biasTags);
-  const isRecord = itemGrade === "record";
-  const rowAbsence: AbsenceReason | null = pickAbsenceReason([tier == null ? "not in primary source" : null, !due || !isImpactScored(impact) ? "pending" : null]);
-  const hasTags = !!tags && tags.length > 0;
-  // The data names the input a value waits for: that sentence replaces the generic "pending" phrase (it never outranks a missing source rating or a connect prompt).
-  const absenceText = rowAbsence === "pending" ? ((!isImpactScored(impact) ? impactAbsence : null) ?? (!due ? dueAbsence : null) ?? null) : null;
-  const phoneBias = hasBias ? biasSummary(biasTags, (rowAbsence ? (absenceText ?? NEEDS_PHRASE[rowAbsence]).length : 0) + (isRecord ? GRADE_SHORT.length + 1 : 0)) : [];
+function field(key: string, p: ListRowProps): ReactNode {
+  const spec = FIELDS.fields[key]!;
+  const chip = (text: string | null | undefined): ReactNode => (text ? <TagChip variant="row">{text}</TagChip> : null);
+  const dash = <Absence reason={spec.reason as AbsenceReason} variant="dash" />;
+  const node: ReactNode =
+    key === "jurisdiction" ? chip(p.jurisdiction)
+    : key === "type" ? chip(p.typeLabel ?? itemTypeLabel(p.itemType))
+    : key === "group" ? chip(p.group)
+    : key === "change" ? chip(p.change ? spec.labels?.[p.change] : null)
+    : key === "due" ? (p.due === undefined ? null : p.due ? <span className="cl-row-due">{p.due.label} · {p.due.days}</span> : dash)
+    : key === "tier" ? (p.tier === undefined ? null : p.tier !== null ? <TierChip tier={p.tier} /> : dash)
+    : null;
+  return node && spec.drop ? <span key={key} data-field={key} data-drop={spec.drop} className="cl-row-chip">{node}</span> : node ? <span key={key} data-field={key} className="cl-row-chip">{node}</span> : null;
+}
+
+export function ListRow(p: ListRowProps) {
+  const type = FIELDS.rowTypes[rowTypeOf(p.itemType)]!;
+  const name = type.name === "act_short_name" ? displayTitle(p.title, true) : p.title;
   return (
-    <div className="cl-list-row" data-part="list-row" data-part-variant="list" style={{ minHeight, ["--row-band" as string]: band.cssVar }}>
-      <span className="cl-row-spine" aria-hidden="true" style={{ background: band.cssVar }} />
-      {href && <Link href={href} prefetch={false} className="cl-row-link" aria-label={displayTitle} />}
+    <div className="cl-list-row" data-part="list-row" data-part-variant="list" style={{ ["--row-band" as string]: p.band.cssVar }}>
+      <span className="cl-row-spine" aria-hidden="true" style={{ background: p.band.cssVar }} />
+      {/* The link keeps the full official title as its name: the row shows the short name, a screen reader gets the whole act. */}
+      {p.href && <Link href={p.href} prefetch={false} className="cl-row-link" aria-label={p.title} />}
       <div className="cl-row-content">
-        <div className="cl-row-line1">
-          <span className="cl-row-juris">{jurisdiction}</span>
-          <span className="cl-row-title">
-            <span data-guard-title className="cl-row-title-text">
-              {displayTitle}
-            </span>
-            {subtitle && <span className="cl-row-subtitle">({subtitle})</span>}
-            {(meta || kind || rowAbsence || hasBias || isRecord || hasTags) && (
-              <span className="cl-row-meta-tags">
-                {kind && <TagChip variant="row">{kind}</TagChip>}
-                {isRecord && (
-                  <span className="cl-row-grade">
-                    <GradeChip itemGrade={itemGrade} />
-                  </span>
-                )}
-                {meta && <span className="cl-row-meta-text">{meta}</span>}
-                {rowAbsence && (
-                  <span className="cl-row-absence-slot">
-                    <Absence reason={rowAbsence} text={absenceText} />
-                  </span>
-                )}
-                {phoneBias.length > 0 && (
-                  <span className="cl-row-meta-mobile" title="Source bias tags">
-                    {phoneBias.join(" · ")}
-                  </span>
-                )}
-                {hasBias && (
-                  <span className="cl-row-bias-desktop">
-                    <BiasChips tags={biasTags} variant="row" />
-                  </span>
-                )}
-                {hasTags && (
-                  <span className="cl-row-tags">
-                    {tags.map((t) => (
-                      <WorkspaceTagPill key={t.id} name={t.name} {...(t.title ? { title: t.title } : {})} />
-                    ))}
-                  </span>
-                )}
-              </span>
-            )}
-          </span>
-        </div>
-        <div className="cl-row-line2">
-          <span className="cl-row-impact">
-            <ImpactMeter scores={impact} absence={impactAbsence} />
-          </span>
-          <span className="cl-row-due">
-            {due ? (
-              <>
-                <span className="cl-row-due-label">{due.label}</span>
-                <span className="cl-row-due-days">{due.days}</span>
-              </>
-            ) : (
-              <span className="cl-row-due-dash">
-                <Absence reason={rowAbsence ?? "pending"} variant="dash" text={dueAbsence} />
-              </span>
-            )}
-          </span>
-          <span className="cl-row-timeline">
-            <MilestoneTimeline entries={timeline} bandHex={band.hex} />
-          </span>
-          <span className="cl-row-tier">{tier != null ? <TierChip tier={tier} /> : <Absence reason={rowAbsence ?? "not in primary source"} variant="dash" />}</span>
-          {hasTags && (
-            <span className="cl-row-tags-mobile">
-              {tags.map((t) => (
-                <WorkspaceTagPill key={`m-${t.id}`} name={t.name} {...(t.title ? { title: t.title } : {})} />
-              ))}
-            </span>
-          )}
-          <span className="cl-row-overflow">{overflow}</span>
-        </div>
+        <span data-guard-title className="cl-row-title">
+          {name}
+        </span>
+        {p.summary && <span className="cl-row-summary">{p.summary}</span>}
+        <RowMeta>{type.meta.map((key) => field(key, p))}</RowMeta>
       </div>
+      <span className="cl-row-overflow">{p.overflow}</span>
     </div>
   );
 }
 
-/** The list column header on the one grid: hidden when the rows stack. */
-export function ListRowHeader({ dueLabel = "Due", titleLabel = "Title" }: { dueLabel?: string; titleLabel?: string }) {
-  const cells: Array<[string, string?]> = [["Juris."], [titleLabel], ["Impact"], [dueLabel, "cl-row-header-end"], ["Timeline"], ["Tier"]];
+/** The list header over the one row grid: the title column's label. */
+export function ListRowHeader({ titleLabel = "Title" }: { titleLabel?: string }) {
   return (
     <div className="cl-list-row-header" data-part="list-row-header">
       <span aria-hidden="true" />
-      {cells.map(([label, cls]) => (
-        <span key={label} data-part-slot="column-label" className={cls ?? ""}>
-          {label}
-        </span>
-      ))}
+      <span data-part-slot="column-label">{titleLabel}</span>
       <span aria-hidden="true" />
     </div>
   );

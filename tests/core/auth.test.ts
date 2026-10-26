@@ -25,7 +25,8 @@ test("getClaims: verified locally, null for no or bad session, ClaimsUnavailable
   await assert.rejects(failing({ name: "AuthUnknownError", message: "x" }), ClaimsUnavailable);
   assert.equal(await failing({ name: "AuthApiError", status: 401, message: "invalid JWT" }), null);
   assert.equal(await failing({ name: "AuthSessionMissingError", message: "x" }), null);
-  assert.deepEqual(await getClaims(fakeDb(undefined, { claims: signedIn("u1", "a@b.test") }).db), { userId: "u1", email: "a@b.test" });
+  assert.deepEqual(await getClaims(fakeDb(undefined, { claims: signedIn("u1", "a@b.test") }).db), { userId: "u1", email: "a@b.test", name: null });
+  assert.equal((await getClaims(fakeDb(undefined, { claims: { data: { claims: { sub: "u1", email: "a@b.test", user_metadata: { full_name: " Jason Losh " } } }, error: null } }).db))?.name, "Jason Losh", "the provider's name rides the claims");
   assert.equal(await getClaims(fakeDb(undefined, { claims: signedOut }).db), null);
   assert.equal(await getClaims(fakeDb(undefined, { claims: { data: { claims: {} }, error: null } }).db), null);
   await assert.rejects(getClaims(fakeDb(undefined, { claims: { data: null, error: { name: "AuthRetryableFetchError", message: "x" } } }).db), ClaimsUnavailable);
@@ -100,6 +101,22 @@ test("INV-154 / INV-137: ensureProfile creates the row with no privilege column;
   const failed = await ensureProfile("u1", "a@b.test", events.db);
   assert.deepEqual(failed, { created: false, exists: false, failedStep: "profiles_insert", reason: "denied" });
   assert.match(String((wrote(events.calls, "error_events", "insert")[0]?.payload as { message: string }).message), /ensure-profile failed at profiles_insert/);
+});
+
+test("ROWS-1: ensureProfile writes the provider's name into full_name on insert and into an existing row with none, and never over a stored name", async () => {
+  const created = fakeDb((c) => (c.op === "select" ? { data: null } : undefined));
+  await ensureProfile("u1", "a@b.test", created.db, "Jason Losh");
+  assert.deepEqual(wrote(created.calls, "profiles", "insert")[0]?.payload, { id: "u1", email: "a@b.test", role: "member", settings: {}, full_name: "Jason Losh" });
+  const blank = fakeDb((c) => (c.op === "select" ? { data: { id: "u1", full_name: null } } : undefined));
+  assert.deepEqual(await ensureProfile("u1", "a@b.test", blank.db, "Jason Losh"), { created: false, exists: true });
+  assert.deepEqual(wrote(blank.calls, "profiles", "update")[0]?.payload, { full_name: "Jason Losh" });
+  const named = fakeDb((c) => (c.op === "select" ? { data: { id: "u1", full_name: "Pat Lee" } } : undefined));
+  await ensureProfile("u1", "a@b.test", named.db, "Jason Losh");
+  assert.equal(wrote(named.calls, "profiles", "update").length, 0);
+  const denied = fakeDb((c) => (c.table === "profiles" ? (c.op === "select" ? { data: { id: "u1", full_name: null } } : { error: { message: "denied" } }) : undefined));
+  scripted.service = () => denied.db;
+  assert.deepEqual(await ensureProfile("u1", "a@b.test", denied.db, "Jason Losh"), { created: false, exists: true }, "a name that cannot be written is counted, not a failed heal");
+  assert.equal(wrote(denied.calls, "error_events", "insert").length, 1);
 });
 
 test("P1 part a: sign in, claims, membership, organisation resolved", async () => {

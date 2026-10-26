@@ -14,5 +14,5 @@ while read -r local_ref local_sha remote_ref remote_sha; do
     exit 1
   fi
 done
-echo "pre-push: running npm run gates (fail-fast; supabase/ changes add schema:local)"
+echo "pre-push: running npm run gates (fail-fast; supabase/ changes add schema:local; the heavy steps wait for another lane on this machine, and a \"gates: waiting for\" line says whom)"
 exec node scripts/ci/gates.mjs

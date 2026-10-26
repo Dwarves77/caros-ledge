@@ -6,10 +6,10 @@ import { test } from "node:test";
 import { createElement } from "react";
 
 import { assessItem, toRow } from "@/features/research/model/assess";
-import { horizonMetaLabel, refusalText, selectAssessmentView, type AssessmentRow } from "@/features/research/model/assessment-view";
+import { refusalText, selectAssessmentView, type AssessmentRow } from "@/features/research/model/assessment-view";
 import { AssessmentCard } from "@/features/research/ui/AssessmentRail";
 import { CredibilityChips } from "@/features/research/ui/CredibilityChips";
-import { itemTypeLabel, rowMeta } from "@/features/market/lib/item-type";
+import { itemTypeLabel } from "@/core/lists";
 
 import { renderApp, textOf } from "../_support/render.ts";
 
@@ -51,19 +51,12 @@ test("surfaces:5 the maturity method is a code in the row and a plain sentence o
   assert.doesNotMatch(legacyMethod, /spec-?\d/);
 });
 
-test("surfaces:68 the list meta says 'near, 2 to 5 years' from the words table, never the raw token 'NEAR horizon'", () => {
-  const v = selectAssessmentView(row({ horizon_band: "NEAR", horizon_rule: "R1", horizon_kind: "obligation" }));
-  assert.equal(horizonMetaLabel(v), "near, 2 to 5 years");
-  assert.equal(horizonMetaLabel(selectAssessmentView(row({ horizon_band: "SOON", horizon_rule: "R1" }))), null, "a band the table does not hold draws nothing");
-});
-
-test("surfaces:20 a row's meta line carries the type's word, never the stored code or the placeholder 'uncertain'", () => {
+test("surfaces:20 a row's type chip carries the type's word, never the stored code or the placeholder 'uncertain'", () => {
   assert.equal(itemTypeLabel("research_finding"), "Research finding");
   assert.equal(itemTypeLabel("uncertain"), null);
   assert.equal(itemTypeLabel(undefined), null);
-  assert.equal(rowMeta({ type: "market_signal", modes: ["air", "road"], topic: "fuel" }), "Market signal · air, road · fuel");
-  assert.equal(rowMeta({ type: "uncertain", modes: [], topic: undefined }), "");
-  assert.doesNotMatch(rowMeta({ type: "regional_data" }), /_/);
+  assert.equal(itemTypeLabel("market_signal"), "Market signal");
+  assert.doesNotMatch(itemTypeLabel("regional_data") ?? "", /_/);
 });
 
 test("surfaces:69 the credibility chips draw the lines that have data and no fixed 'needs' line: with nothing recorded the legend names the two scores; with one recorded the other is absent, not a placeholder", () => {

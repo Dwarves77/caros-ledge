@@ -127,16 +127,6 @@ export function selectAssessmentView(row: AssessmentRow | null | undefined): Ass
     forwardOutlook: deriveAssessmentForwardOutlook(row),
   };
 }
-export function selectAssessmentViewsByItemId(rows: readonly AssessmentRow[]): Map<string, AssessmentView> {
-  const out = new Map<string, AssessmentView>();
-  for (const r of rows) {
-    const v = selectAssessmentView(r);
-    if (v) out.set(v.itemId, v);
-  }
-  return out;
-}
-/** The list row's meta segment from the horizon words ("near, 2 to 5 years"); null for a refusal and for a band the table does not hold (the row says nothing rather than a token). */
-export const horizonMetaLabel = (v: AssessmentView | null | undefined): string | null => (v?.horizon && Object.hasOwn(HORIZON_BAND_WORDS, v.horizon.band) ? (HORIZON_BAND_WORDS[v.horizon.band] as string) : null);
 /** The one sentence for a stored refusal code; any other stored text (an older row's prose) reads as the generic sentence and is never printed. */
 export const refusalText = (reason: string | null): string => (reason !== null && Object.hasOwn(COPY.refusal, reason) ? (COPY.refusal[reason] as string) : COPY.genericRefusal);
 

@@ -13,8 +13,9 @@ export interface SearchRow {
   domain: number | null;
   priority: string | null;
   jurisdictions: string[] | null;
-  transport_modes: string[] | null;
-  topic: string | null;
+  jurisdiction_iso: string[] | null;
+  /** The stored reader text, drawn as the row's one line. */
+  what_is_it: string | null;
   /** The source's customer tier, or null when the item has no rated source. */
   tier: number | null;
 }

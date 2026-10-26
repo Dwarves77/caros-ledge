@@ -161,7 +161,7 @@ export function OperationsDetail(p: OperationsDetailProps) {
             rail={
               <DetailRail
                 atAGlance={<AtAGlanceCard rows={[{ label: "Topic", value: r.topic ?? null }, { label: "Comparison", value: p.eligibility.unavailable ? "Not available" : p.eligibility.s3Eligible ? "Available" : `Building${p.eligibility.resolvedRegionCodes.length > 0 ? ` (${p.eligibility.resolvedRegionCodes.join(", ")})` : ""}` }]} />}
-                impact={<ImpactRailCard scores={r.impactScores ?? null} />}
+                impact={<ImpactRailCard scores={r.impactScores ?? null} absence={r.impactAbsence} />}
                 relevance={<RelevanceRailCard state={relevance.phase === "ready" ? { phase: "ready", relevance: relevance.data.relevance } : relevance.phase === "failed" ? { phase: "failed", retry: relevance.retry } : { phase: "loading" }} />}
                 designed={<><RelatedRegionCard related={p.related} region={regionGroup || jurisLabel} onRetry={retry} /><DerivedFigures figures={p.derived} retryHref={here} /></>}
                 legend={<LegendRailCard />}

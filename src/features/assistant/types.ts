@@ -6,7 +6,8 @@ export interface AskHit {
   href: string;
   priority: string | null;
   jurisdiction: string;
-  meta: string;
+  /** The stored item_type; the row draws it as the type chip. */
+  type: string | null;
   /** The rating of the item's source (INV-213), or null when it has none. */
   tier: number | null;
   summary: string | null;

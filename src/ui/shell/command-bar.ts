@@ -24,8 +24,9 @@ export interface SearchResultRow {
   domain: number | null;
   priority: string | null;
   jurisdictions: string[] | null;
-  transport_modes: string[] | null;
-  topic: string | null;
+  jurisdiction_iso: string[] | null;
+  /** The source's customer tier, or null when the item has no rated source. */
+  tier: number | null;
 }
 export type SearchState = { phase: "idle" } | { phase: "loading" } | { phase: "ok"; rows: SearchResultRow[] } | { phase: "failed" };
 

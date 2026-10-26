@@ -6,7 +6,7 @@ import { createContext, useContext, useEffect, useId, useLayoutEffect, useMemo, 
 import { createPortal } from "react-dom";
 
 import { authedFetch } from "@/core/http/authed-fetch";
-import { bandFromPriority, detailHref, jurisdictionCode, metaLine } from "@/core/lists";
+import { bandFromPriority, detailHref, jurisdictionCode } from "@/core/lists";
 import { formatNumber } from "@/core/shared";
 
 import { Button } from "../Button";
@@ -185,7 +185,7 @@ function CommandBar({ itemCount, placeholder, onAsk, onSearch }: CommandBarProps
               ) : (
                 rows.map((r, i) => (
                   <div key={r.id} id={optionId(listboxId, i)} role="option" aria-selected={i === active} onMouseMove={() => active !== i && setActive(i)} className={i === active ? "cl-command-bar-opt cl-command-bar-opt--on" : "cl-command-bar-opt"}>
-                    <ListRow href={detailHref({ id: r.id, type: r.item_type, domain: r.domain })} band={bandFromPriority(r.priority)} jurisdiction={jurisdictionCode({ jurisdiction: r.jurisdictions?.[0] ?? undefined })} title={r.title} meta={metaLine({ type: r.item_type, modes: r.transport_modes ?? undefined, topic: r.topic ?? undefined })} />
+                    <ListRow href={detailHref({ id: r.id, type: r.item_type, domain: r.domain })} band={bandFromPriority(r.priority)} itemType={r.item_type} jurisdiction={jurisdictionCode({ jurisdictionIso: r.jurisdiction_iso ?? undefined, jurisdiction: r.jurisdictions?.[0] ?? undefined })} title={r.title} tier={r.tier} />
                   </div>
                 ))
               )}
