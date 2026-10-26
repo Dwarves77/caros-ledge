@@ -9,7 +9,7 @@ export const precisionKey = (date: string, precision?: string | null): string =>
 /** A month or year key written in a section: "June 2031" or "Jun 2031" (a month), the year as a word (a year). A day key goes through the register renderings. */
 const statedAtPrecision = (body: string, key: string): boolean => {
   const text = body.toLowerCase();
-  if (key.length === 4) return new RegExp(String.raw`b${key}b`).test(text);
+  if (key.length === 4) return new RegExp(`(^|[^0-9])${key}([^0-9]|$)`).test(text);
   const name = MONTHS[Number(key.slice(5, 7)) - 1] ?? "";
   return text.includes(`${name} ${key.slice(0, 4)}`) || text.includes(`${name.slice(0, 3)} ${key.slice(0, 4)}`);
 };

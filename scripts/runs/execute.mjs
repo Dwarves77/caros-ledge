@@ -44,12 +44,14 @@ function summarise(step, out) {
   // DRAIN-FIX-2 D2: a row whose own turn outcome is partial (residue, a failed downstream, a read-back miss) is partial too: DRAIN-1's item step was partial in the ledger and `ok` in the table.
   const partialRow = step.mode === "apply" && rows.some((r) => r.outcome === "partial");
   const outcome = out.status !== 0 ? "failed" : forced ? "forced-dry" : refused ? "refused" : failedUnits || partialRow ? "partial" : "ok";
-  return { step: step.name, stage: step.stage, mode: step.mode, outcome, exit: out.status, root_run_id: out.result?.root_run_id ?? null, refusals, rows, ...(outcome === "refused" ? { note: String(refused.reason ?? refused.outcome) } : {}), ...(outcome === "partial" ? { note: failedUnits ? `${rows.reduce((n, r) => n + (r.counts?.failed ?? 0), 0)} unit(s) failed` : "the turn's outcome is partial" } : {}), ...(out.error ? { error: out.error } : {}) };
+  // The item ids an item-briefs apply step applied or found already applied: the signed-in visibility check (scripts/runs/visible.mjs) reads them from the results file.
+  const itemIds = step.mode === "apply" && step.input?.briefs?.batch?.kind === "item-briefs" ? [...new Set(rows.flatMap((r) => [...(r.ids?.applied_ids ?? []), ...(r.ids?.already_applied_ids ?? [])]))] : [];
+  return { step: step.name, stage: step.stage, mode: step.mode, outcome, exit: out.status, ...(itemIds.length ? { item_ids: itemIds } : {}), root_run_id: out.result?.root_run_id ?? null, refusals, rows, ...(outcome === "refused" ? { note: String(refused.reason ?? refused.outcome) } : {}), ...(outcome === "partial" ? { note: failedUnits ? `${rows.reduce((n, r) => n + (r.counts?.failed ?? 0), 0)} unit(s) failed` : "the turn's outcome is partial" } : {}), ...(out.error ? { error: out.error } : {}) };
 }
 
 /** Runs `plan` (already parsed) step by step. `invoke({args, env})` is the turn call and `applied(key)` the ledger question; both are injected so a test starts no process and reads no database. */
 export async function executePlan(plan, planPath, { invoke = invokeTurn, applied = async () => null, now = () => new Date() } = {}) {
-  const results = { plan: basename(planPath, ".json"), ruling: plan.ruling, started_at: now().toISOString(), outcome: "ok", steps: [] };
+  const results = { plan: basename(planPath, ".json"), ruling: plan.ruling, started_at: now().toISOString(), outcome: "ok", applied_item_ids: [], steps: [] };
   for (const step of plan.steps) {
     const key = `${basename(planPath)}#${step.name}`;
     const row = step.mode === "apply" ? await applied(key) : null;
@@ -75,6 +77,7 @@ export async function executePlan(plan, planPath, { invoke = invokeTurn, applied
       continue;
     }
     results.steps.push(done);
+    results.applied_item_ids = [...new Set([...results.applied_item_ids, ...(done.item_ids ?? [])])];
     if (bad) {
       results.outcome = "failed";
       break;

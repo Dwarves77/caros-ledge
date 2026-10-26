@@ -55,7 +55,7 @@ test("an apply step the run frame forced dry (the emergency stop) is a failure, 
 test("the results file shape: plan, ruling, outcome, times, and per step the ledger row ids, counts and refusals", async () => {
   const r = await executePlan(mk(["a"]), PATH, { invoke: turn().invoke, now: NOW });
   assert.deepEqual(r, {
-    plan: "2026-10-24-x", ruling: RULING, started_at: "2026-10-24T00:00:00.000Z", finished_at: "2026-10-24T00:00:00.000Z", outcome: "ok",
+    plan: "2026-10-24-x", ruling: RULING, started_at: "2026-10-24T00:00:00.000Z", finished_at: "2026-10-24T00:00:00.000Z", outcome: "ok", applied_item_ids: [],
     steps: [{ step: "a", stage: "propagate", mode: "apply", outcome: "ok", exit: 0, root_run_id: "root-a", refusals: 1, rows: [{ family: "propagation", id: "row-a", mode: "apply", outcome: "success", counts: { refused: 1 } }] }],
   });
 });

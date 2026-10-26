@@ -170,7 +170,7 @@ export async function applyEntries<L, P>(spec: EntrySpec<L, P>, deps: BatchDeps,
   }
   const v = validateEntries(spec, file, live);
   const counts: Record<string, number> = { entries: (file as Obj & { entries: unknown[] }).entries.length, valid: v.valid.length, refused: v.refused.length, residue: v.residue.length, already_applied: v.alreadyApplied.length, applied: 0, write_failures: 0, read_back_failures: 0 };
-  const data: BatchData = { ...empty, residue: [...v.refused, ...v.residue], alreadyApplied: v.alreadyApplied.map((a) => a.key ?? String(a.index)) };
+  const data: BatchData = { ...empty, ids: v.alreadyApplied.length ? { already_applied_ids: v.alreadyApplied.map((a) => a.key ?? String(a.index)) } : {}, residue: [...v.refused, ...v.residue], alreadyApplied: v.alreadyApplied.map((a) => a.key ?? String(a.index)) };
   const notes = refusalNotes(v);
   const reviewNotes = !o.dry && spec.residueReview ? await recordReviews(spec, deps, file as Obj, v, batch as string) : null;
   if (reviewNotes) notes.push(...reviewNotes);
@@ -228,7 +228,7 @@ export async function applyEntries<L, P>(spec: EntrySpec<L, P>, deps: BatchDeps,
     }
   }
   // The keys whose stored result failed the read-back are named apart: the turn's downstream never runs over them.
-  data.ids = { applied_ids: written.map((w) => w.key ?? String(w.index)), ...(unreadable.length ? { read_back_failed_ids: unreadable } : {}) };
+  data.ids = { ...data.ids, applied_ids: written.map((w) => w.key ?? String(w.index)), ...(unreadable.length ? { read_back_failed_ids: unreadable } : {}) };
   let down: RunResult | null = null;
   if (spec.downstream && written.length) {
     try {
