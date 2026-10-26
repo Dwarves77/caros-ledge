@@ -21,7 +21,7 @@ const instrument = (over: Partial<FilingInstrument> = {}): FilingInstrument => (
 
 test("acceptQuote: a quote stands only on a stored capture id whose text holds it verbatim, with a verified_at that parses; every refusal names its reason", () => {
   const base = { quote: REF, verifiedAt: "2026-10-01", captureId: "cap-1", captureText: TEXT, reuseTerms: "eu_reuse" as const, now: NOW };
-  assert.deepEqual(acceptQuote(base), { ok: true, captureId: "cap-1", verifiedAt: "2026-10-01" });
+  assert.deepEqual(acceptQuote(base), { ok: true, captureId: "cap-1", verifiedAt: "2026-10-01", quote: REF });
   assert.equal(acceptQuote({ ...base, quote: REF.toUpperCase() }).ok, true, "criterion 3 is case-insensitive");
   const refusal = (over: Record<string, unknown>) => { const v = acceptQuote({ ...base, ...over } as never); return v.ok ? "accepted" : v.reason; };
   assert.equal(refusal({ captureId: null }), "no_capture_id", "a quote with no capture id is not accepted");
@@ -84,7 +84,7 @@ test("the statutory row's source block: verified_at must be a date; and each inp
   const proof = await verifyRowQuotes(db.client, row, NOW);
   assert.deepEqual(proof, { ok: true, captureIds: { ghgIntensityActual: "cap-9", energyUsedMJ: "cap-9", consecutiveDeficitYears: "cap-9" } });
   const verdict = await acceptStoredQuote(db.client, { url: block().url, quote: REF, verifiedAt: "2026-10-01", now: NOW });
-  assert.deepEqual(verdict, { ok: true, captureId: "cap-9", verifiedAt: "2026-10-01" });
+  assert.deepEqual(verdict, { ok: true, captureId: "cap-9", verifiedAt: "2026-10-01", quote: REF });
 });
 
 test("the producer citation path uses the same rule: retrieved_at must parse, and registerCitedSource refuses a quote no stored capture of the URL holds before it rates the host", async () => {

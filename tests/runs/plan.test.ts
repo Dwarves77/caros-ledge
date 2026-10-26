@@ -110,7 +110,7 @@ test("HEAL-1: an operator task is ruled as a stage `ops` step whose input names 
 
 test("HEAL-1: the heal plan (2026-10-26-heal-1) heals exactly the two ruled instrument items from stored captures: a dry step then an apply step of heal-quarantined over their ids, nothing that fetches", () => {
   const p = parsePlan(readFileSync("scripts/runs/plans/2026-10-26-heal-1.json", "utf8"));
-  assert.equal(p.revision, 2, "the re-run marker: heal-apply has no success row, and the changed file starts the job");
+  assert.equal(p.revision, 3, "the re-run marker: heal-apply has no success row, and the changed file starts the job");
   assert.deepEqual(p.steps.map((s: { mode: string }) => s.mode), ["dry", "apply"]);
   for (const s of p.steps) {
     assert.equal(s.stage, "ops");

@@ -33,15 +33,28 @@ export type BodyClass = (typeof BODY_CLASS)[keyof typeof BODY_CLASS];
 /** A capture may be stored when it is real content, in any language (a non-English instrument is still the source; only the English-only fallback hunts past it). */
 export const isStorableClass = (c: BodyClass): boolean => c === BODY_CLASS.OK || c === BODY_CLASS.WRONG_LANGUAGE;
 
+// Structure marks (Unicode noncharacters, never in a document): a block edge, a line break, a cell end, a row end, a table end. In a run of adjacent marks the strongest wins: table, row, cell, block, break.
+const [M_BLOCK, M_BR, M_CELL, M_ROW, M_TABLE] = ["\ufdd0", "\ufdd1", "\ufdd2", "\ufdd3", "\ufdd4"] as const;
+const MARKS: ReadonlyArray<readonly [RegExp, string]> = [
+  [/<\/table\b/gi, M_TABLE], [/<\/tr\b/gi, M_ROW], [/<\/t[dh]\b/gi, M_CELL],
+  [/<\/?(?:p|div|h[1-6]|li|ul|ol|section|article|blockquote|pre|table|figure|caption|dl|dt|dd|header|footer)\b/gi, M_BLOCK], [/<br\b/gi, M_BR],
+];
+const layoutOf = (run: string): string =>
+  run.includes(M_TABLE) ? "\n\n" : run.includes(M_ROW) ? "\n" : run.includes(M_CELL) ? "\t".repeat(run.split(M_CELL).length - 1) : run.includes(M_BLOCK) ? "\n\n" : run.includes(M_BR) ? "\n" : " ";
+
+/** Layout whitespace kept, every other run of whitespace one space: spaces around a line break or a tab dropped, no run of three line breaks, trimmed. Collapsing its result to single spaces gives the input collapsed, as before. */
+export const tidyLayout = (s: string): string => s.replace(/[^\S\n\t]+/g, " ").replace(/ ?([\n\t]) ?/g, "$1").replace(/\n{3,}/g, "\n\n").trim();
+
 /**
- * The ONE text stripper for capture, grounding, verification and the walkers, so a span matched at grounding cannot fail at re-verify: scripts and styles dropped, comments and tags removed by one linear pass,
- * character references decoded once (entities.ts), U+0000 removed (Postgres cannot store it), whitespace collapsed.
+ * The ONE text stripper for capture, grounding, verification and the walkers: scripts and styles dropped, comments and tags removed by one linear pass, character references decoded once (entities.ts), U+0000 removed
+ * (Postgres cannot store it). The page's structure survives as whitespace: a block edge is a blank line, a <br> and a table row end are a line break, a table cell end is a tab, every other run of whitespace is one space.
+ * Invariant I1: collapsing all whitespace to one space gives exactly what this function gave before it kept structure, so the change fingerprint and the storage hash (store-capture.ts) are unchanged.
  */
-export const toText = (html: unknown): string =>
-  decodeEntities(stripTags(String(html ?? "").replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "").replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")))
-    .replace(/\u0000/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
+export const toText = (html: unknown): string => {
+  let h = String(html ?? "").replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "").replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "");
+  for (const [re, mark] of MARKS) h = h.replace(re, (tag) => mark + tag);
+  return decodeEntities(stripTags(h)).replace(/\u0000/g, "").replace(/\s+/g, " ").replace(/[ \ufdd0-\ufdd4]+/g, layoutOf).trim();
+};
 
 /** Real content floor: below this extracted text is a stub or roadblock. */
 export const MIN_CONTENT_CHARS = 200;

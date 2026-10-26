@@ -1,5 +1,5 @@
 {
-  "_about": "The parity gate's configuration (tests/parity/compare.mjs). `gates` names what the gate holds: `full` routes are compared whole (landmarks by role and name, headings, controls, list containers and rows, row heights at 375); `frame` routes only for the shell the slice draws (frameControls, frameHeadings); `pixelExact` routes also gate on the 2 percent pixel diff; `lists` routes must have rows in their baseline. Every name in routes.json is gated or listed in `exempt` with a reason (gateProblems, tested). A gated route that is not compared is a FAIL unless `skippable` names it with a reason; the report ends `compared N of M gated routes`. `listEmpty` names a list route whose baseline account legitimately holds no rows. `approved` lists the differences from the baseline that a ruling allows, each with its ruling; nothing else may differ. It is empty because the baseline is the new production site (2026-10-19); a waiver must match a current difference, and the report ends with the `unused waivers:` line. `conditional` ({route, match, reason}) names a control that exists only while some data does (an empty panel's Request coverage): compared when present on both sides, ignored when absent on either. `rulings` is text only.",
+  "_about": "The parity gate's configuration (tests/parity/compare.mjs). `gates` names what the gate holds: `full` routes are compared whole (landmarks by role and name, headings, controls, list containers and rows, row heights at 375); `frame` routes only for the shell the slice draws (frameControls, frameHeadings); `pixelExact` routes also gate on the 2 percent pixel diff; `lists` routes must have rows in their baseline. Every name in routes.json is gated or listed in `exempt` with a reason (gateProblems, tested). A gated route that is not compared is a FAIL unless `skippable` names it with a reason; the report ends `compared N of M gated routes`. `listEmpty` names a list route whose baseline account legitimately holds no rows. `approved` lists the differences from the baseline that a ruling allows, each with its ruling; nothing else may differ. It is empty because the baseline is the new production site (2026-10-19); a waiver must match a current difference, and the report ends with the `unused waivers:` line. `dataNames` kind `run` ({route, after, before, as, reason}) collapses the buttons drawn one per member between two anchor controls to one token on both sides. `conditional` ({route, match, reason}) names a control that exists only while some data does (an empty panel's Request coverage): compared when present on both sides, ignored when absent on either. `rulings` is text only.",
   "gates": {
     "full": [
       "home",
@@ -108,6 +108,19 @@
     }
   ],
   "dataNames": [
+    {
+      "route": [
+        "regulation-detail",
+        "market-detail",
+        "research-detail",
+        "operations-detail"
+      ],
+      "kind": "run",
+      "after": "^button:Add note$",
+      "before": "^textbox:Due date [(]optional[)]$",
+      "as": "member name",
+      "reason": "PARITY-5: the Assign to chips are one button per workspace member, named by the member's display name or, for a member with no profile name, the absence copy (src/ui/detail/collab/ItemAssignBlock.tsx Who); the baseline was captured while the account had no name (\"— Name not set\") and the operator set it on 2026-10-26. The run between Add note and Due date compares as one token; which members exist and what they are called is data, and a page that draws no chip still fails"
+    },
     {
       "route": "community",
       "match": "^(Global|EU|United States|United Kingdom|Asia.Pacific|Latin America|Middle East & Africa) room",

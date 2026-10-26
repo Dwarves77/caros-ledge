@@ -4,7 +4,7 @@
 // (acceptStoredQuote: the database finds the capture id, this function re-checks the text). A source whose reuse terms are unknown or prohibited is quoted only up to data/quotation.json's length (R2c C6). Nothing here guesses: every refusal names its reason.
 import { z } from "zod";
 
-import { isVerbatim } from "@/core/contracts/verbatim";
+import { isVerbatim, locateSpan } from "@/core/contracts/verbatim";
 import type { Db } from "@/core/db";
 import { readSourceByUrl } from "@/core/sources/register";
 import { REUSE_TERMS, reuseTermsForHost, type ReuseTerms } from "@/core/sources/reuse-terms";
@@ -14,7 +14,8 @@ import quotationJson from "./data/quotation.json";
 const QUOTATION = z.object({ cappedTerms: z.array(z.enum(REUSE_TERMS)), maxChars: z.number().int().positive() }).loose().parse(quotationJson);
 
 export type QuoteRefusal = "quote_blank" | "no_capture_id" | "capture_text_missing" | "quote_not_in_capture" | "quote_over_cap" | "verified_at_unparseable";
-export type QuoteVerdict = { ok: true; captureId: string; verifiedAt: string } | { ok: false; reason: QuoteRefusal; detail: string };
+/** `quote` is the capture's own exact slice of the words quoted (locateSpan): the form to store. */
+export type QuoteVerdict = { ok: true; captureId: string; verifiedAt: string; quote: string } | { ok: false; reason: QuoteRefusal; detail: string };
 
 /** A calendar day (YYYY-MM-DD, optionally followed by a time) that exists and is not after `now` when given (a day of slack for the zone); the normalised day, or null. */
 export function parseVerifiedAt(value: unknown, now?: Date): string | null {
@@ -44,12 +45,13 @@ export function acceptQuote(i: QuoteInput): QuoteVerdict {
   if (typeof i.quote !== "string" || !i.quote.trim()) return { ok: false, reason: "quote_blank", detail: "the quote is blank" };
   if (!i.captureId) return { ok: false, reason: "no_capture_id", detail: "the quote names no stored capture: a quote nobody checked against a capture is not accepted" };
   if (typeof i.captureText !== "string" || !i.captureText) return { ok: false, reason: "capture_text_missing", detail: `capture ${i.captureId} has no text to check the quote against` };
-  if (!isVerbatim(i.captureText, i.quote)) return { ok: false, reason: "quote_not_in_capture", detail: `the quote is not verbatim in capture ${i.captureId}` };
-  const length = i.quote.trim().length;
+  const slice = locateSpan(i.captureText, i.quote);
+  if (slice === null || !isVerbatim(i.captureText, slice)) return { ok: false, reason: "quote_not_in_capture", detail: `the quote is not verbatim in capture ${i.captureId}` };
+  const length = slice.length;
   if (QUOTATION.cappedTerms.includes(i.reuseTerms) && length > QUOTATION.maxChars) return { ok: false, reason: "quote_over_cap", detail: `the quote is ${length} characters; a source whose reuse terms are ${i.reuseTerms} may be quoted up to ${QUOTATION.maxChars}` };
   const day = parseVerifiedAt(i.verifiedAt, i.now);
   if (!day) return { ok: false, reason: "verified_at_unparseable", detail: `verified_at ${JSON.stringify(i.verifiedAt)} is not a date` };
-  return { ok: true, captureId: i.captureId, verifiedAt: day };
+  return { ok: true, captureId: i.captureId, verifiedAt: day, quote: slice };
 }
 
 /** The rights verdict stored on the registry row of the quoted page (sources.reuse_terms); the class table's verdict for a page with no row. A failed read throws: a quote is never accepted under a verdict nobody could read. */
@@ -61,7 +63,7 @@ async function reuseTermsOf(sb: Db, url: string): Promise<ReuseTerms> {
   return ((read.data as { reuse_terms?: ReuseTerms | null } | null)?.reuse_terms ?? reuseTermsForHost(url));
 }
 
-/** The online form: the database names the newest stored capture of the URL that holds the quote (capture_holding_quote, migration 0077, narrowed to the cited URL by 0132); acceptQuote re-checks its text. A run passes `texts` (capture text by capture id) and `found` (the capture id, or null, by url and quote): the database is asked once per distinct (url, quote) and each capture is read once. */
+/** The online form: the database names the newest stored capture of the URL that holds the quote (capture_holding_quote, migration 0077, narrowed to the cited URL by 0132; it tests exactly). A quote that differs from a structured capture only in its white space is not found by it, so on a miss the database is asked once more for the newest capture of the URL holding the quote's longest word, and acceptQuote locates the whole quote in that text; either way acceptQuote re-checks the capture's slice exactly. A run passes `texts` (capture text by capture id) and `found` (the capture id, or null, by url and quote): the database is asked once per distinct (url, quote) and each capture is read once. */
 export async function acceptStoredQuote(sb: Db, i: { url: string; quote: string; verifiedAt: unknown; now?: Date }, texts: Map<string, string> = new Map(), found: Map<string, string | null> = new Map()): Promise<QuoteVerdict> {
   const day = parseVerifiedAt(i.verifiedAt, i.now);
   if (!day) return { ok: false, reason: "verified_at_unparseable", detail: `verified_at ${JSON.stringify(i.verifiedAt)} is not a date` };
@@ -71,6 +73,12 @@ export async function acceptStoredQuote(sb: Db, i: { url: string; quote: string;
     const asked = await sb.rpc("capture_holding_quote", { p_url: i.url, p_quote: i.quote });
     if (asked.error) throw new Error(`capture_holding_quote failed: ${asked.error.message}`);
     captureId = typeof asked.data === "string" ? asked.data : null;
+    if (!captureId) {
+      const anchor = i.quote.split(/\s+/).reduce((a, w) => (w.length > a.length ? w : a), "");
+      const near = anchor ? await sb.rpc("capture_holding_quote", { p_url: i.url, p_quote: anchor }) : null;
+      if (near?.error) throw new Error(`capture_holding_quote failed: ${near.error.message}`);
+      captureId = typeof near?.data === "string" ? near.data : null;
+    }
     found.set(key, captureId);
   }
   if (!captureId) return { ok: false, reason: "quote_not_in_capture", detail: `no stored capture of ${i.url} holds the quote verbatim` };

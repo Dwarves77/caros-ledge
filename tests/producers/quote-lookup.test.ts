@@ -68,7 +68,7 @@ test("the verbatim rule is unchanged: a quote the capture does not hold is refus
     const v = await ask(w.sb, "a limit of 99 grams per MJ", cache);
     assert.deepEqual([v.ok, v.ok ? null : v.reason], [false, "quote_not_in_capture"]);
   }
-  assert.equal(w.seen.rpc, 1, "the miss is remembered for the run");
+  assert.equal(w.seen.rpc, 2, "a miss is two questions (the quote, then its longest word for a capture whose layout differs) and is remembered for the run");
   assert.equal((await ask(w.sb, "A LIMIT OF 91,16 GRAMS", cache)).ok, true, "case-insensitive, as the rule always was");
   assert.equal((await ask(w.sb, "   ", cache)).ok, false);
 });
