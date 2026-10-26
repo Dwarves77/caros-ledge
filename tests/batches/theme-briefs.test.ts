@@ -78,8 +78,15 @@ test("the export lists the themes that need a brief with their bundle; a stale b
   (w.db.rows("connection_themes")[0] as Record<string, unknown>).member_ids = [SECOND];
   const after = (await themeBriefsExporter(w.db.client)({ limit: 5 })).items as unknown as { needs: string }[];
   assert.equal(after[0]?.needs, "stale");
-  const tiny = (await themeBriefsExporter(w.db.client, { charBudget: 700 })({ limit: 5 })).items as unknown as { truncation: { members_omitted: number; chars_used: number } }[];
-  assert.ok(tiny[0] && tiny[0].truncation.chars_used <= 700 * 2, "an over-small budget cuts and counts, it does not silently drop");
+});
+
+test("DIGEST-FIX-1: the export honours an explicit ids filter, and a theme over the budget is refused by name with its member count, never exported with members silently dropped", async () => {
+  const w = themeWorld();
+  assert.equal((await themeBriefsExporter(w.db.client)({ limit: 5, ids: ["no-such-theme"] })).items.length, 0);
+  assert.equal((await themeBriefsExporter(w.db.client)({ limit: 5, ids: [THEME] })).items.length, 1);
+  const tiny = await themeBriefsExporter(w.db.client, { charBudget: 700 })({ limit: 5 });
+  assert.equal(tiny.items.length, 0, "no bundle with dropped members is handed out");
+  assert.match(JSON.stringify(tiny.residue), new RegExp(`${THEME}.*2 member`));
 });
 
 test("INV-R2b-5 (F:3): a single payload takes the batch path: an entry that fails validation is refused with the SAME reasons as in a batch, as JSON or markdown, and nothing is written; a valid single entry is written", async () => {
@@ -158,4 +165,14 @@ test("the stand-ins behind the validator: a copy of a validated brief is not a v
   const claim = (id: string, item: string) => ({ id, intelligence_item_id: item, claim_text: "t" });
   w.db.seed("fact_suppressions", [{ id: "fs1", item_id: ITEM, target_kind: "fact", target_ref: CLAIM_A, op: "suppress", machine_value: null, created_at: "2026-10-15T00:00:00Z", revoked_at: null }]);
   assert.deepEqual((await admissibleRows.claims(w.db.client, [claim(CLAIM_A, ITEM), claim("c-other", ITEM), claim(CLAIM_B, SECOND)])).map((c) => c.id), ["c-other"], "the suppressed claim and the archived item's claim are out");
+});
+
+test("DIGEST-FIX-1: a requested id that is not exported is named in the residue with its reason: no live theme, or a theme whose brief is current", async () => {
+  const w = themeWorld();
+  const none = await themeBriefsExporter(w.db.client)({ limit: 5, ids: ["no-such-theme"] });
+  assert.deepEqual(none.residue, [{ theme_id: "no-such-theme", reason: "no_live_theme" }]);
+  await apply(w, [entry()]);
+  const done = await themeBriefsExporter(w.db.client)({ limit: 5, ids: [THEME] });
+  assert.equal(done.items.length, 0);
+  assert.deepEqual(done.residue, [{ theme_id: THEME, reason: "not_needing_brief: its brief is current (generated_by theme-briefs-001)" }]);
 });

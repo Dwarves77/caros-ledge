@@ -33,6 +33,7 @@ test("a candidate: every refusal is named, and a good candidate becomes a not_as
   await refused({ pinpoint_citation: " " }, "pinpoint_blank");
   await refused({ duty_holder_class: [] }, "duty_holder_missing");
   await refused({ duty_holder_class: ["nobody"] }, "duty_holder_unknown:nobody");
+  assert.equal((await planFor(candidate({ duty_holder_class: ["vessel_operator"] }))).refused.some((r) => r.reason.startsWith("duty_holder")), false, "DIGEST-FIX-1: vessels and shipping companies have a typed duty holder");
   await refused({ applicability_trigger: { attribute: "", value: "x" } }, "trigger_malformed");
   await refused({ status: "assessed" }, "status_not_writer_owned");
   await refused({ mode: ["sea"] }, "mode_alias");

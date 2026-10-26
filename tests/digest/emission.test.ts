@@ -177,3 +177,16 @@ test("the new-entity path fired once on a fixture: a proposed organisation recur
   assert.equal(minted.kind, "organisation");
   assert.match(minted.entity_id, /^cl:organisation:[0-9a-f]{16}$/);
 });
+
+test("DIGEST-FIX-1: a month or year precision event is accepted when its quote states that precision as a formal date and stored with the precision; a dateless quote is still refused", async () => {
+  const w = emissionWorld();
+  const q = (text: string) => ({ capture_id: w.cap, text });
+  const ev = (over: Record<string, unknown>) => emissionEntry(w, { events: [{ event_kind: "entry_into_force", ...over }] });
+  const month = await check(w, ev({ event_date: "2023-09-01", date_precision: "month", quote: q("September 2023") }));
+  assert.deepEqual(month.errors, []);
+  assert.deepEqual((month.plan as EmissionPlan).events.map((e) => [e.event_date, e.date_precision]), [["2023-09-01", "month"]]);
+  const year = await check(w, ev({ event_date: "2023-01-01", date_precision: "year", quote: q("September 2023") }));
+  assert.deepEqual((year.plan as EmissionPlan).events.map((e) => [e.event_date, e.date_precision]), [["2023-01-01", "year"]]);
+  assert.match(reasons(await check(w, ev({ event_date: "2023-09-01", date_precision: "month", quote: q("Strasbourg") }))), /does not state a month date 2023-09-01 as a month and year or a year/);
+  assert.match(reasons(await check(w, ev({ event_date: "2023-09-02", date_precision: "month", quote: q("September 2023") }))), /month precision needs the first of the month/);
+});

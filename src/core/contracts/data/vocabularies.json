@@ -631,6 +631,16 @@
     ],
     "origin": "supply chain role attribution",
     "definition": "Commercial undertaking subject to statutory reporting or compliance."
+   },
+   "vessel_operator": {
+    "code": "vessel_operator",
+    "label": "Vessel operator",
+    "order": 21,
+    "orgRoles": [
+     "carrier"
+    ],
+    "origin": "supply chain role attribution",
+    "definition": "The vessel, its master, or the shipping company that operates it, where a rule is addressed to vessels or shipping companies rather than to a carrier by contract."
    }
   },
   "freshness": {
