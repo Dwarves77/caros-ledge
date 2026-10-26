@@ -1,0 +1,2 @@
+tests/coupling/recorder-writes.test.ts | new in FIX-P1-1: the recorder classifies a run by the writes its family declares; each case is the counts of a production run (patterns-apply, couplings-apply, retokenise, producers) that was recorded noop over rows it wrote
+tests/producers/seed-capture.test.ts | new in FIX-P1-1: a Commission page is content for the seed capture (the host reaches the body classifier), the EUR-Lex shell rule stays on EUR-Lex, and a page no tier stored names each tier's reason

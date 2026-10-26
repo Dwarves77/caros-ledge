@@ -1,5 +1,6 @@
 {
-  "ruling": "coordinator 2026-10-25: CONNECT-2 PR A merged 6f714e8 after scope-reviewer LAUNCH; the mining and the five detectors run once for real under rule 17; scrape cadence stays off; no producers fetch in this plan",
+  "revision": 2,
+  "ruling": "coordinator 2026-10-25: CONNECT-2 PR A merged 6f714e8 after scope-reviewer LAUNCH; the mining and the five detectors run once for real under rule 17; scrape cadence stays off; no producers fetch in this plan. Revision 2 (FIX-P1-1): the Commission pages classify as content (the capture path now passes the fetched host to the body classifier) and the recorder counts pattern, seed and ref writes, so couplings-apply and patterns-apply run again",
   "steps": [
     {
       "name": "couplings-dry",
@@ -17,7 +18,7 @@
       "mode": "apply",
       "input": {
         "propagate": {
-          "cadence_exception": "coordinator 2026-10-25: CONNECT-2 PR A merged 6f714e8 after scope-reviewer LAUNCH; the mining and the five detectors run once for real under rule 17; scrape cadence stays off; no producers fetch in this plan"
+          "cadence_exception": "coordinator 2026-10-25: CONNECT-2 PR A merged 6f714e8 after scope-reviewer LAUNCH; the mining and the five detectors run once for real under rule 17; scrape cadence stays off; no producers fetch in this plan. Revision 2 (FIX-P1-1): the Commission pages classify as content (the capture path now passes the fetched host to the body classifier) and the recorder counts pattern, seed and ref writes, so couplings-apply and patterns-apply run again"
         }
       },
       "producer_env": [],
