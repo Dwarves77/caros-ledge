@@ -251,9 +251,10 @@ jobs:
     if: ${{ !cancelled() && needs.changes.result == 'success' && (needs.ruled-runs.result == 'success' || needs.ruled-runs.result == 'skipped' || needs.ruled-runs.result == 'failure') && github.event_name != 'status' && (github.event_name != 'workflow_dispatch' || github.event.inputs.only == '') && (github.event_name != 'pull_request' || needs.changes.outputs.parity == 'true') && (github.event_name != 'push' || needs.migrate.result == 'success') }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    # LIVE-RL-1: every browser job signed in as the member test account shares one 60-per-minute budget per user across all deployments (src/core/http/rate-limit.ts), so they run one at a time.
+    # CI-BROWSER-1 (replaces the one LIVE-RL-1 group): the shared Postgres rate budget is per user AND deployment host (hostScopedKey in src/core/http/rate-limit.ts), so a group is per target, never one for every deployment. This job runs the built app on the runner (localhost, no service key, so the in-memory window): it targets neither production nor a preview, and its group is its own PR, or the main push line (the newest head is the one checked).
+    # GitHub keeps one running and one pending job per group; a newer queued job replaces the pending one, which the report job labels SUPERSEDED (never a pass, never a fail).
     concurrency:
-      group: signed-in-browser
+      group: ${{ github.event_name == 'pull_request' && format('signed-in-browser-pr-{0}', github.event.pull_request.number) || 'signed-in-browser-main-parity' }}
       cancel-in-progress: false
     # The baseline was captured in this image (old repo parity-baseline.yml), so fonts and hinting render identically and the pixel diff measures the design, not the machine.
     container:
@@ -315,6 +316,17 @@ jobs:
         if: ${{ !cancelled() && steps.capture.outcome == 'success' }}
         shell: bash -eo pipefail {0}
         run: node tests/parity/compare.mjs --captured parity-capture | tee parity-report.txt
+      # DRAIN-FIX-2 hook (CI-BROWSER-1 item 5): the signed-in visibility check over the items a ruled run applied. The script is not on main yet, so the step is guarded on its existence and does nothing until it lands; the path below is the expected name and is
+      # corrected in the DRAIN-FIX-2 merge if it differs. It reads the newest results file of this run's ruled-runs.
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        if: ${{ !cancelled() && github.event_name == 'push' && hashFiles('scripts/ops/ruled-visibility.mjs') != '' }}
+        continue-on-error: true
+        with:
+          name: ruled-run-results
+          path: scripts/runs/results
+      - name: Visibility of the items a ruled run applied (DRAIN-FIX-2; runs when scripts/ops/ruled-visibility.mjs exists)
+        if: ${{ !cancelled() && github.event_name == 'push' && hashFiles('scripts/ops/ruled-visibility.mjs') != '' }}
+        run: node scripts/ops/ruled-visibility.mjs --results "$(ls -t scripts/runs/results/*.json | head -n 1)"
       - name: Parity report in the job summary
         if: ${{ !cancelled() }}
         run: |
@@ -344,6 +356,7 @@ jobs:
     outputs:
       url: ${{ steps.url.outputs.url }}
       production: ${{ steps.url.outputs.production }}
+      group: ${{ steps.url.outputs.group }}
     steps:
       - name: Derive the deployed URL
         id: url
@@ -356,16 +369,22 @@ jobs:
           if [ "$EVENT" = workflow_dispatch ]; then
             echo "url=$LIVE_URL" >> "$GITHUB_OUTPUT"
             echo "production=false" >> "$GITHUB_OUTPUT"
+            case "$LIVE_URL" in
+              *carosledge.com*) echo "group=signed-in-browser-main" >> "$GITHUB_OUTPUT" ;;
+              *) echo "group=signed-in-browser-dispatch-$(printf '%s' "$LIVE_URL" | tr 'A-Z' 'a-z' | sed 's/[^a-z0-9]/-/g')" >> "$GITHUB_OUTPUT" ;;
+            esac
           elif [ -z "$BRANCH" ]; then
             echo 'the status names no branch, so the deployed URL cannot be derived'
             exit 1
           elif [ "$BRANCH" = "$DEFAULT_BRANCH" ]; then
             echo "url=https://carosledge.com" >> "$GITHUB_OUTPUT"
             echo "production=true" >> "$GITHUB_OUTPUT"
+            echo "group=signed-in-browser-main" >> "$GITHUB_OUTPUT"
           else
             slug=$(printf '%s' "$BRANCH" | tr 'A-Z' 'a-z' | sed 's/[^a-z0-9]/-/g')
             echo "url=https://caros-ledge-git-${slug}-dwarves77s-projects.vercel.app" >> "$GITHUB_OUTPUT"
             echo "production=false" >> "$GITHUB_OUTPUT"
+            echo "group=signed-in-browser-preview-${slug}" >> "$GITHUB_OUTPUT"
           fi
 
   live:
@@ -374,9 +393,10 @@ jobs:
     if: (github.event_name == 'status' && github.event.context == 'Vercel' && github.event.state == 'success') || (github.event_name == 'workflow_dispatch' && github.event.inputs.only == 'live')
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    # LIVE-RL-1: every browser job signed in as the member test account shares one 60-per-minute budget per user across all deployments (src/core/http/rate-limit.ts), so they run one at a time.
+    # CI-BROWSER-1 (replaces the one LIVE-RL-1 group): the shared Postgres rate budget is per user AND deployment host (hostScopedKey in src/core/http/rate-limit.ts), so a group is per target, never one for every deployment. Production serialises in signed-in-browser-main; a preview has a group of its own branch, so no other PR or main run can cancel it.
+    # GitHub keeps one running and one pending job per group; a newer queued job replaces the pending one, which the report job labels SUPERSEDED (never a pass, never a fail).
     concurrency:
-      group: signed-in-browser
+      group: ${{ needs.target.outputs.group }}
       cancel-in-progress: false
     container:
       image: mcr.microsoft.com/playwright:v1.61.1-noble
@@ -418,9 +438,10 @@ jobs:
     if: ((github.event_name == 'status' && github.event.context == 'Vercel' && github.event.state == 'success') || (github.event_name == 'workflow_dispatch' && github.event.inputs.only == 'live')) && needs.target.outputs.production != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    # LIVE-RL-1: every browser job signed in as the member test account shares one 60-per-minute budget per user across all deployments (src/core/http/rate-limit.ts), so they run one at a time.
+    # CI-BROWSER-1 (replaces the one LIVE-RL-1 group): the shared Postgres rate budget is per user AND deployment host (hostScopedKey in src/core/http/rate-limit.ts), so a group is per target, never one for every deployment. Production serialises in signed-in-browser-main; a preview has a group of its own branch, so no other PR or main run can cancel it.
+    # GitHub keeps one running and one pending job per group; a newer queued job replaces the pending one, which the report job labels SUPERSEDED (never a pass, never a fail).
     concurrency:
-      group: signed-in-browser
+      group: ${{ needs.target.outputs.group }}
       cancel-in-progress: false
     container:
       image: mcr.microsoft.com/playwright:v1.61.1-noble
@@ -468,9 +489,10 @@ jobs:
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.only == 'baseline'
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    # LIVE-RL-1: every browser job signed in as the member test account shares one 60-per-minute budget per user across all deployments (src/core/http/rate-limit.ts), so they run one at a time.
+    # CI-BROWSER-1 (replaces the one LIVE-RL-1 group): the shared Postgres rate budget is per user AND deployment host (hostScopedKey in src/core/http/rate-limit.ts), so a group is per target, never one for every deployment. The old site is the production host.
+    # GitHub keeps one running and one pending job per group; a newer queued job replaces the pending one, which the report job labels SUPERSEDED (never a pass, never a fail).
     concurrency:
-      group: signed-in-browser
+      group: signed-in-browser-main
       cancel-in-progress: false
     container:
       image: mcr.microsoft.com/playwright:v1.61.1-noble
@@ -504,9 +526,10 @@ jobs:
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.only == 'screens'
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    # LIVE-RL-1: every browser job signed in as the member test account shares one 60-per-minute budget per user across all deployments (src/core/http/rate-limit.ts), so they run one at a time.
+    # CI-BROWSER-1 (replaces the one LIVE-RL-1 group): the shared Postgres rate budget is per user AND deployment host (hostScopedKey in src/core/http/rate-limit.ts), so a group is per target, never one for every deployment. A dispatch against production serialises with the production checks; any other URL has its own group.
+    # GitHub keeps one running and one pending job per group; a newer queued job replaces the pending one, which the report job labels SUPERSEDED (never a pass, never a fail).
     concurrency:
-      group: signed-in-browser
+      group: ${{ contains(github.event.inputs.live_url, 'carosledge.com') && 'signed-in-browser-main' || format('signed-in-browser-dispatch-{0}', github.event.inputs.live_url) }}
       cancel-in-progress: false
     container:
       image: mcr.microsoft.com/playwright:v1.61.1-noble
@@ -610,6 +633,7 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
+      actions: read
     steps:
       # The only job whose token can write to a pull request runs the DEFAULT BRANCH's scripts. The tree under report is checked out beside them as data (pr-tree/: the code-line count reads it, nothing in it is run).
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -639,6 +663,8 @@ jobs:
           REPO: ${{ github.repository }}
           PR: ${{ github.event.pull_request.number }}
           RUN_ID: ${{ github.run_id }}
+          EVENT: ${{ github.event_name }}
+          BRANCH: ${{ github.head_ref || github.ref_name }}
           NEEDS: ${{ toJSON(needs) }}
           LOC_ROOT: pr-tree
         run: node scripts/ci/pr-comment.mjs

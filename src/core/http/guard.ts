@@ -12,7 +12,7 @@ import { log } from "@/core/shared/log";
 import type { OrgMembership, OrgRole } from "@/core/types";
 
 import { answer, HttpError, refuse } from "./errors";
-import { checkRateLimit, rateLimitHeaders } from "./rate-limit";
+import { checkRateLimit, hostScopedKey, rateLimitHeaders } from "./rate-limit";
 
 /** A guard answered with a refusal (401, 403, 429, 500, 503) instead of a context. */
 export function isRefusal<T>(result: T | Response): result is Response {
@@ -48,9 +48,10 @@ export async function requireUser(request: Request): Promise<UserContext | Respo
     const client = await userClient(request);
     const claims = await getClaims(client, bearerToken(request) ?? undefined);
     if (!claims) return refuse(401, bearerToken(request) ? "Invalid or expired token" : "Authentication required");
-    const limited = await checkRateLimit(claims.userId);
+    const key = hostScopedKey(claims.userId, request);
+    const limited = await checkRateLimit(key);
     if (limited) return limited;
-    return { userId: claims.userId, email: claims.email, client, headers: rateLimitHeaders(claims.userId) };
+    return { userId: claims.userId, email: claims.email, client, headers: rateLimitHeaders(key) };
   } catch (e) {
     return failed(e);
   }

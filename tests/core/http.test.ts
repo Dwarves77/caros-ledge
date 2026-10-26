@@ -5,7 +5,7 @@ import { z } from "zod";
 
 import { dbError, HttpError, ok, route } from "@/core/http/errors";
 import { statusForDb } from "@/core/http/failure";
-import { checkRateLimit, clientKey, rateLimitHeaders } from "@/core/http/rate-limit";
+import { checkRateLimit, clientKey, hostScopedKey, rateLimitHeaders } from "@/core/http/rate-limit";
 import { email, isUuid, parseJson, uuid } from "@/core/http/parse";
 import { authedFetch, authHeaders } from "@/core/http/authed-fetch";
 
@@ -111,4 +111,15 @@ test("IMP-057: a route's own budget goes through rate_limit_hit as p_limit, and 
   assert.equal(await checkRateLimit("worker:/api/big-test", t0, open.db, BIG), null);
   assert.deepEqual(open.rpcs, [{ name: "rate_limit_hit", args: { p_key: "worker:/api/big-test", p_limit: 600, p_window_seconds: 60 } }]);
   assert.ok(BIG.limit! > MAX_REQUESTS);
+});
+
+test("CI-BROWSER-1 rate limit: one user on two hosts counts separately, and one host still limits at 60", async () => {
+  const t0 = 5_000_000;
+  const prod = hostScopedKey("user-x", { headers: new Headers({ host: "caros-ledge.example" }) });
+  const preview = hostScopedKey("user-x", { headers: new Headers({ host: "caros-ledge-git-pr-9.vercel.app" }) });
+  assert.notEqual(prod, preview);
+  for (let i = 0; i < MAX_REQUESTS; i += 1) assert.equal(await checkRateLimit(prod, t0 + i, null), null);
+  assert.equal((await checkRateLimit(prod, t0 + 100, null))?.status, 429, "one host still limits at 60");
+  assert.equal(await checkRateLimit(preview, t0 + 100, null), null, "the preview host has its own budget");
+  assert.equal(hostScopedKey("u", { headers: new Headers(), url: "https://A.example/x" }), "u@a.example", "falls back to the URL host");
 });

@@ -93,6 +93,23 @@ export function clientKey(request: { headers: Headers }): string {
   return first ? `ip:${first}` : "anon:unknown";
 }
 
+/**
+ * A per-user key scoped to the deployment host (CI-BROWSER-1): production and each preview count separately, so a PR check signing in as the
+ * member test account never spends production's 60 per minute. The host is the request's own Host header (Vercel routes only the project's
+ * domains, so it cannot be varied to dodge the window), else the request URL's host.
+ */
+export function hostScopedKey(key: string, request: { headers: Headers; url?: string }): string {
+  let host = request.headers.get("host")?.trim().toLowerCase() ?? "";
+  if (!host && request.url) {
+    try {
+      host = new URL(request.url).host.toLowerCase();
+    } catch {
+      host = "";
+    }
+  }
+  return `${key}@${host || "unknown-host"}`;
+}
+
 export function rateLimitHeaders(key: string): Record<string, string> {
   const entry = seen.get(key);
   if (!entry) return {};

@@ -7,7 +7,7 @@ import { appendFileSync, existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const { NEEDS = "{}", REPO, PR, RUN_ID, PARITY_DIR = "parity-artifact", RESULTS_DIR = "results-artifact", LOC_ROOT, DRY, GITHUB_STEP_SUMMARY } = process.env;
+const { NEEDS = "{}", REPO, PR, RUN_ID, EVENT, BRANCH, PARITY_DIR = "parity-artifact", RESULTS_DIR = "results-artifact", LOC_ROOT, DRY, GITHUB_STEP_SUMMARY } = process.env;
 const MARKER = "<!-- ci-report -->";
 const gh = (args, input) => execFileSync("gh", ["api", ...args], { encoding: "utf8", input, maxBuffer: 1 << 26 });
 
@@ -17,6 +17,31 @@ const fail = (what, e) => `${what} could not be read: ${String(e?.stderr || e?.m
 export function jobRows(needsJson) {
   const needs = JSON.parse(needsJson);
   return Object.entries(needs).map(([name, v]) => [name, v.result]);
+}
+
+/** The jobs that sign in as the member test account; each sits in a concurrency group that keeps one running and one pending job. */
+export const SIGNED_IN_JOBS = new Set(["parity", "live", "preview-parity", "baseline", "screens"]);
+
+/** What the table says for a conclusion: a cancelled signed-in job lost its pending slot to a newer run (CI-BROWSER-1), which proves nothing either way, so it is SUPERSEDED, never a pass and never a fail. */
+export function conclusionLabel(name, result, supersededBy) {
+  if (result !== "cancelled" || !SIGNED_IN_JOBS.has(name)) return result;
+  return supersededBy ? `SUPERSEDED by run ${supersededBy} (not a pass, not a fail)` : "SUPERSEDED (a newer run took the slot; not a pass, not a fail)";
+}
+
+/** The first run of this workflow, event and branch created after RUN_ID (the one that took the pending slot), from the runs list; null when there is none. Pure given the list. */
+export function supersedingRun(runs, runId) {
+  const later = (runs ?? []).map((r) => Number(r.id)).filter((id) => id > Number(runId));
+  return later.length ? Math.min(...later) : null;
+}
+
+function findSuperseder() {
+  try {
+    const branch = encodeURIComponent(BRANCH ?? "");
+    const out = JSON.parse(gh([`repos/${REPO}/actions/workflows/ci.yml/runs?event=${EVENT}&branch=${branch}&per_page=50`]));
+    return supersedingRun(out.workflow_runs, RUN_ID);
+  } catch {
+    return null;
+  }
 }
 
 /** The test counts out of node's test reporter lines in the captured npm test output. */
@@ -31,9 +56,17 @@ function read(dir, file) {
   return existsSync(p) ? readFileSync(p, "utf8") : null;
 }
 
+let supersederId;
+/** The superseding run id, looked up once and only when a signed-in job was cancelled. */
+function superseder() {
+  if (supersederId === undefined) supersederId = findSuperseder();
+  return supersederId;
+}
+
 function parityTable(rows) {
   const state = rows.find(([n]) => n === "parity")?.[1];
   if (state === undefined || state === "skipped") return "";
+  if (state === "cancelled") return `parity job SUPERSEDED: ${conclusionLabel("parity", state, superseder())}; it was not run to a result, so this run is not reported green for parity`;
   try {
     if (!existsSync(PARITY_DIR)) return `parity job ${state}, but its artifact was not downloaded (no parity-capture artifact in this run)`;
     const report = read(PARITY_DIR, "parity-report.txt");
@@ -79,7 +112,7 @@ function build() {
     "",
     "| job | conclusion |",
     "|---|---|",
-    ...rows.map(([n, c]) => `| ${n} | ${c} |`),
+    ...rows.map(([n, c]) => `| ${n} | ${c === "cancelled" && SIGNED_IN_JOBS.has(n) ? conclusionLabel(n, c, superseder()) : c} |`),
     ...(needsError ? ["", needsError] : []),
     "",
     `Tests: ${tests}`,

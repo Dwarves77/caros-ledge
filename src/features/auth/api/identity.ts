@@ -3,7 +3,7 @@ import { getClaims } from "@/core/auth/claims";
 import { EMPTY_IDENTITY, resolveIdentity } from "@/core/auth/identity";
 import { bearerToken, userClient } from "@/core/db/clients";
 import { route } from "@/core/http/errors";
-import { checkRateLimit } from "@/core/http/rate-limit";
+import { checkRateLimit, hostScopedKey } from "@/core/http/rate-limit";
 import { captureError } from "@/core/shared/telemetry";
 
 const NO_STORE = { "Cache-Control": "private, no-store" };
@@ -18,7 +18,7 @@ export const GET = route("/api/auth/identity", async (request) => {
     const client = await userClient(request);
     const claims = await getClaims(client, bearerToken(request) ?? undefined);
     if (!claims) return Response.json(EMPTY_IDENTITY, { headers: NO_STORE });
-    const limited = await checkRateLimit(`user:${claims.userId}`);
+    const limited = await checkRateLimit(hostScopedKey(`user:${claims.userId}`, request));
     if (limited) return limited;
     return Response.json(await resolveIdentity(client), { headers: NO_STORE });
   } catch (e) {
