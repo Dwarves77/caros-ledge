@@ -268,7 +268,7 @@ BEGIN
     SET CONSTRAINTS ALL DEFERRED;
     SELECT provenance_status::text INTO st FROM public.intelligence_items WHERE id = it;
     IF st <> 'verified' THEN RAISE EXCEPTION '0142-provenance-once: a valid item did not verify (%)', st; END IF;
-    IF EXISTS (SELECT 1 FROM public.provenance_recheck) THEN RAISE EXCEPTION '0142-provenance-once: the queue was not consumed'; END IF;
+    IF EXISTS (SELECT 1 FROM public.provenance_recheck WHERE item_id = it) THEN RAISE EXCEPTION '0142-provenance-once: the queue was not consumed'; END IF;
     -- An unlabeled assertion: quarantined, flag opened; repaired: verified, flag resolved.
     UPDATE public.intelligence_item_sections SET content_md = 'The operator must file a report.' WHERE id = sec;
     SET CONSTRAINTS ALL IMMEDIATE;
@@ -308,7 +308,7 @@ BEGIN
     IF q <> 1 THEN RAISE EXCEPTION '0142-provenance-once: % queue rows for one item in one transaction (expected 1)', q; END IF;
     SET CONSTRAINTS ALL IMMEDIATE;
     SET CONSTRAINTS ALL DEFERRED;
-    IF EXISTS (SELECT 1 FROM public.provenance_recheck) THEN RAISE EXCEPTION '0142-provenance-once: the queue was not consumed after the batch'; END IF;
+    IF EXISTS (SELECT 1 FROM public.provenance_recheck WHERE item_id = it) THEN RAISE EXCEPTION '0142-provenance-once: the queue was not consumed after the batch'; END IF;
     SELECT provenance_status::text INTO st FROM public.intelligence_items WHERE id = it;
     IF st <> (public.validate_item_provenance(it)).recommended_status::text THEN RAISE EXCEPTION '0142-provenance-once: the stamped status % is not the derivation', st; END IF;
     -- Emptying every section quarantines (no_section_content).
@@ -324,7 +324,7 @@ BEGIN
     SELECT provenance_status::text INTO st FROM public.intelligence_items WHERE id = it;
     IF st <> 'verified' THEN RAISE EXCEPTION '0142-provenance-once: attack setup: item is %', st; END IF;
     SET LOCAL ROLE service_role;
-    BEGIN DELETE FROM public.provenance_recheck; RAISE EXCEPTION '0142-provenance-once: service_role deleted from the queue';
+    BEGIN DELETE FROM public.provenance_recheck WHERE item_id = it; RAISE EXCEPTION '0142-provenance-once: service_role deleted from the queue';
     EXCEPTION WHEN insufficient_privilege THEN NULL; END;
     BEGIN INSERT INTO public.provenance_recheck (item_id, xid) VALUES (it, txid_current()); RAISE EXCEPTION '0142-provenance-once: service_role wrote the queue';
     EXCEPTION WHEN insufficient_privilege THEN NULL; END;
@@ -343,7 +343,7 @@ BEGIN
     DELETE FROM public.intelligence_items WHERE id = it;
     SET CONSTRAINTS ALL IMMEDIATE;
     SET CONSTRAINTS ALL DEFERRED;
-    IF EXISTS (SELECT 1 FROM public.provenance_recheck) THEN RAISE EXCEPTION '0142-provenance-once: the cascade delete left a queue row'; END IF;
+    IF EXISTS (SELECT 1 FROM public.provenance_recheck WHERE item_id = it) THEN RAISE EXCEPTION '0142-provenance-once: the cascade delete left a queue row'; END IF;
     RAISE EXCEPTION USING ERRCODE = 'P0099', MESSAGE = 'selfcheck fixture rolled back';
   EXCEPTION WHEN SQLSTATE 'P0099' THEN NULL;
   END;
