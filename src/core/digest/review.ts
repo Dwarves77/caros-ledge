@@ -20,7 +20,8 @@ const judge = z.object({
   validation: z.object({ tpr: z.number().min(0).max(1).nullable(), tnr: z.number().min(0).max(1).nullable(), n_pass: z.number().int(), n_fail: z.number().int() }).strict().optional(),
 }).strict();
 export type Judge = z.infer<typeof judge>;
-const file = z.object({ version: z.string(), /** How the validation figures were measured and how far they can be trusted. */ validation_basis: z.string().min(40), judges: z.array(judge).min(1) }).strict().parse(raw);
+const failureMode = z.object({ code: z.string().regex(/^B-\d+$/), name: z.string().min(1), /** The judges written from it; none for a failure mode a code check owns. */ judges: z.array(z.string().regex(/^J\d{2}$/)), kind: z.enum(["judge", "code-eval"]), evidence: z.string().min(10) }).strict();
+const file = z.object({ version: z.string(), /** The error-discovery taxonomy the judges were written from (Step B open coding over the dry-run entries). */ failure_modes: z.array(failureMode),  /** How the validation figures were measured and how far they can be trusted. */ validation_basis: z.string().min(40), judges: z.array(judge).min(1) }).strict().parse(raw);
 if (new Set(file.judges.map((j) => j.id)).size !== file.judges.length) throw new Error("judges.json: a judge id is repeated");
 const JUDGES: readonly Judge[] = file.judges;
 

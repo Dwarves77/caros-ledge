@@ -4,7 +4,7 @@ A theme is a cluster of connected items. A session writes its brief from the the
 
 ## Export, author, apply
 
-1. Export: `--input '{"briefs":{"export":{"kind":"theme-briefs","outDir":"<dir outside the repo>","limit":15,"charBudget":120000}}}'`. Per theme: `theme_id`, `member_hash` (echo it), `needs` (`no_brief`, `stale`, `superseded`), the gaps, the intra-theme edges and the members (summary, grounded FACT claims with `claim_id`, forward events with `event_id`). What the budget cuts is counted in `truncation`. Each bundle also carries `packets`, the pattern packet of the theme (the part's `summary` says `packets: PENDING CONNECT-2 PR B` while the packets are not built); every statement of a cross-surface brief cites a member row, and a brief whose rows come from one table or one surface is residue.
+1. Export: `--input '{"briefs":{"export":{"kind":"theme-briefs","outDir":"<dir outside the repo>","limit":15,"charBudget":120000}}}'`. Per theme: `theme_id`, `member_hash` (echo it), `needs` (`no_brief`, `stale`, `superseded`), the gaps, the intra-theme edges and the members (summary, grounded FACT claims with `claim_id`, forward events with `event_id`). What the budget cuts is counted in `truncation`. Each bundle also carries `packets`, the pattern packet of the theme (the part's `summary` states what the packets door could not serve; a theme no live pattern touches has an empty packet); every statement of a cross-surface brief cites a member row, and a brief whose rows come from one table or one surface is residue.
 2. Author `theme-briefs-NNN` and apply it as `batch.content`:
 
 ```json

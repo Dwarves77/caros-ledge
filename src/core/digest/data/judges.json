@@ -1,6 +1,124 @@
 {
  "version": "1.1.0",
  "validation_basis": "Measured 2026-10-26 on the held-out test split of the Step B set. The labeller and the judge are the same lane, and 24 judges have 6 test cases each (3 pass, 3 fail): the figures are an upper bound, not an independent estimate. The first drain's independent second reader re-measures them on at least 50 labelled cases per judge before any rate is corrected with them.",
+ "failure_modes": [
+  {
+   "code": "B-1",
+   "name": "cause and consequence assembled from two unrelated source sentences",
+   "judges": [
+    "J05",
+    "J12"
+   ],
+   "kind": "judge",
+   "evidence": "First-draft entries b8da154a, ed63f522, e9ed1215, f3cee01b, 0c2c1ec1, 67434312: 6 of 18 (J05), 3 of 18 (J12)."
+  },
+  {
+   "code": "B-2",
+   "name": "an authored implication that adds a consequence the cited facts do not hold",
+   "judges": [
+    "J08"
+   ],
+   "kind": "judge",
+   "evidence": "25655402, 4c332fac, 5b74e1bd, theme 7ae77ef8: 4 of 18."
+  },
+  {
+   "code": "B-3",
+   "name": "a claim wider than its source, or a term of art the source never uses",
+   "judges": [
+    "J15",
+    "J24"
+   ],
+   "kind": "judge",
+   "evidence": "J24: 25655402, 67434312, 10f26f54, 4c332fac, 5b74e1bd, b8da154a (6 of 18); J15: 25655402, 0ee667cc, 4c332fac (3 of 18)."
+  },
+  {
+   "code": "B-4",
+   "name": "the do-now action restated as a question or a verb with no object",
+   "judges": [
+    "J02"
+   ],
+   "kind": "judge",
+   "evidence": "0ee667cc, 4c332fac, 5b74e1bd: 3 of 18."
+  },
+  {
+   "code": "B-5",
+   "name": "a forward statement whose date is before the brief's date",
+   "judges": [
+    "J16"
+   ],
+   "kind": "judge",
+   "evidence": "5b74e1bd, ed63f522, theme 7ae77ef8: 3 of 18."
+  },
+  {
+   "code": "B-6",
+   "name": "a section answers a different question than its heading, or a filler sentence",
+   "judges": [
+    "J06"
+   ],
+   "kind": "judge",
+   "evidence": "67434312, 10f26f54, e9ed1215: 3 of 18."
+  },
+  {
+   "code": "B-7",
+   "name": "an opening that states no change and no exposure",
+   "judges": [
+    "J03"
+   ],
+   "kind": "judge",
+   "evidence": "0ee667cc, d2b343b4: 2 of 18 (both pages that hold no figure)."
+  },
+  {
+   "code": "B-8",
+   "name": "a research block that is a pasted fragment, not a statement of the study",
+   "judges": [
+    "J21"
+   ],
+   "kind": "judge",
+   "evidence": "f3cee01b comparator: 1 of 3 research summaries."
+  },
+  {
+   "code": "B-9",
+   "name": "an emitted value the quote does not state, or a named menu entity left out",
+   "judges": [
+    "J18",
+    "J19"
+   ],
+   "kind": "judge",
+   "evidence": "b218c094 (two obligation fields), c3fa4cc2 (ghg_intensity): 2 of 18."
+  },
+  {
+   "code": "B-10",
+   "name": "an obligation stated as settled with no legal caveat",
+   "judges": [
+    "J13"
+   ],
+   "kind": "judge",
+   "evidence": "67434312: 1 of 18."
+  },
+  {
+   "code": "B-11",
+   "name": "a pattern packet whose join is a shared mode only, so no finding states a direction",
+   "judges": [
+    "J23"
+   ],
+   "kind": "judge",
+   "evidence": "Both production supply_demand_bottleneck patterns (c20ac3dc, 8e1be168): 2 of 2."
+  },
+  {
+   "code": "B-12",
+   "name": "the depth-accounting line counts do not agree (extracted as FACT above obligations surveyed)",
+   "judges": [],
+   "kind": "code-eval",
+   "evidence": "5b74e1bd: 'surveyed: 1 ... extracted as FACT: 2'. Code-checkable; the accounting-line-present rule tests FACT against attached claims only."
+  },
+  {
+   "code": "B-13",
+   "name": "timeline rows out of chronological order, or a row date its own text does not carry",
+   "judges": [],
+   "kind": "code-eval",
+   "evidence": "25655402 (25 April then 1 April 2002), 5b74e1bd (15 April, 2 June, then 9 April 2021), 0c2c1ec1 (row dated 30 May 2025 reading 'Submitted on 2 Jun 2023'). Code-checkable."
+  }
+ ],
  "judges": [
   {
    "id": "J01",
@@ -20,7 +138,7 @@
   {
    "id": "J02",
    "criterion": "do-now-action-specific",
-   "origin": "A2",
+   "origin": "A2; error code B-4",
    "kinds": [
     "item-briefs"
    ],
@@ -35,7 +153,7 @@
   {
    "id": "J03",
    "criterion": "three-ten-thirty-structure",
-   "origin": "A3",
+   "origin": "A3; error code B-7",
    "kinds": [
     "item-briefs"
    ],
@@ -84,7 +202,7 @@
   {
    "id": "J06",
    "criterion": "no-filler-no-invented-subsection",
-   "origin": "A6",
+   "origin": "A6; error code B-6",
    "kinds": [
     "item-briefs",
     "theme-briefs",
@@ -197,7 +315,7 @@
   {
    "id": "J13",
    "criterion": "legal-caveat-adequate",
-   "origin": "A13",
+   "origin": "A13; error code B-10",
    "kinds": [
     "item-briefs"
    ],
@@ -244,7 +362,7 @@
   {
    "id": "J16",
    "criterion": "forward-statement-not-stale",
-   "origin": "A16",
+   "origin": "A16; error code B-5",
    "kinds": [
     "item-briefs",
     "theme-briefs",
@@ -278,7 +396,7 @@
   {
    "id": "J18",
    "criterion": "entity-ids-complete",
-   "origin": "E1",
+   "origin": "E1; error code B-9",
    "kinds": [
     "item-briefs"
    ],
@@ -293,7 +411,7 @@
   {
    "id": "J19",
    "criterion": "obligation-field-quote-states-it",
-   "origin": "E2",
+   "origin": "E2; error code B-9",
    "kinds": [
     "item-briefs"
    ],
@@ -358,7 +476,7 @@
   {
    "id": "J23",
    "criterion": "cross-surface-direction",
-   "origin": "A20",
+   "origin": "A20; error code B-11",
    "kinds": [
     "theme-briefs",
     "admin-opportunity-findings"

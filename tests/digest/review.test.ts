@@ -71,3 +71,10 @@ test("INV-DIG-6: the regulation format's always-present sections are present or 
   assert.match(missing, /has no section 4/);
   assert.doesNotMatch(validateRecordBriefEntry(entry(null), 0, live as never).residue?.join("\n") ?? "", /required-sections-present/);
 });
+
+test("the judges' failure modes are the error-discovery taxonomy: every error code a judge cites exists and lists it; a code-eval mode has no judge", () => {
+  const codes = new Map(raw.failure_modes.map((f) => [f.code, f]));
+  for (const j of raw.judges) for (const c of /error code (B-\d+)/.exec(j.origin)?.slice(1) ?? []) assert.ok(codes.get(c)?.judges.includes(j.id), `${j.id} cites ${c}`);
+  assert.ok(raw.failure_modes.filter((f) => f.kind === "code-eval").every((f) => f.judges.length === 0));
+  assert.ok(raw.failure_modes.filter((f) => f.kind === "judge").every((f) => f.judges.length > 0 && f.judges.every((id) => raw.judges.some((j) => j.id === id))));
+});

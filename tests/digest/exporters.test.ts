@@ -1,5 +1,5 @@
 // The digest's exporters (D1): the item bundle joins obligations, scores, source tiers with bias tags and the packet input; the theme bundle declares its packet; the admin export groups patterns by lens. Packets are
-// PENDING CONNECT-2 PR B, so each bundle carries an empty list and says so; nothing here invents a packet.
+// absent from the database the exporter reads, so each bundle carries an empty list and says so; nothing here invents a packet.
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
