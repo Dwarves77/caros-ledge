@@ -38,6 +38,7 @@ import bandOrThemePresent from "./band-or-theme-present";
 import noDoubleHyphenDash from "./no-double-hyphen-dash";
 import noSectionSign from "./no-section-sign";
 import structuralControls from "./structural-controls";
+import forwardEventsCovered from "./forward-events-covered";
 
 export type { BriefClaim, BriefModel, ItemColumns, Rule, Violation } from "./types";
 export { severityToken } from "./_sev";
@@ -56,7 +57,7 @@ const RULES: Readonly<Record<string, Rule>> = Object.fromEntries(
   severityInVocabulary, severityPresent, priorityFollowsMap, bannerMatchesColumn,
   poolOrSlotNarration, noBareUrlInProse, noHtmlEntityOutsideSpans, noIbid,
   h1InSectionList, urgencyTierInVocabulary, summaryFieldsNonBlank, topicTagsVocabularyAndCap,
-  bandOrThemePresent, noDoubleHyphenDash, noSectionSign, structuralControls,
+  bandOrThemePresent, noDoubleHyphenDash, noSectionSign, structuralControls, forwardEventsCovered,
   }).map(([name, rule]) => [name.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`), rule]),
 );
 /** A rule file with no registry row, or a row with no rule file, fails the import. */

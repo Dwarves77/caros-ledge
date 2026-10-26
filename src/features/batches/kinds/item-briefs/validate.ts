@@ -59,7 +59,7 @@ function requiredSlotErrors(claims: readonly Obj[], slots: readonly SlotRow[], t
   return errors;
 }
 
-export interface RecordItemLive { itemType: string; grade: string | null; status: string | null; hash: string; poolText: string; bytes: number; fullBrief: string | null; entryIntoForce: string | null; complianceDeadline: string | null }
+export interface RecordItemLive { itemType: string; grade: string | null; status: string | null; hash: string; poolText: string; bytes: number; fullBrief: string | null; entryIntoForce: string | null; complianceDeadline: string | null; /** ISO dates of the item's forward events and timeline rows (the export's forward_events and timelines). */ suppliedDates?: readonly string[] }
 export interface RecordLive { items: Map<string, RecordItemLive>; slots: Map<string, SlotRow[]>; adopted: AdoptedTerms; now: Date; allowOverwrite: boolean; /** The live material of the entries that carry typed blocks (DIGEST-1 PR B), by item. */ emit: ReadonlyMap<string, EmitLive> }
 export interface RecordPlan { itemId: string; bytes: number; claims: Obj[]; emission: EmissionPlan | null }
 
@@ -69,7 +69,13 @@ const norm = (s: string): string => s.toLowerCase();
 const columns = (m: BriefMetadata | null, item: RecordItemLive, formatType: string): ItemColumns => ({
   severity: severityToken(m?.severity), priority: m?.priority ?? null, urgency_tier: m?.urgency_tier ?? null, entry_into_force: item.entryIntoForce ?? null, compliance_deadline: item.complianceDeadline ?? null,
   what_it_changes: m?.what_it_changes ?? null, what_is_it: m?.what_is_it ?? null, why_matters: m?.why_matters ?? null, topic_tags: m?.topic_tags ?? [], sources_used: m?.sources_used ?? [],
-  signal_band: m?.signal_band ?? null, theme: m?.theme ?? null, format_type: formatType, pool_chars: item.poolText.length, has_trajectory: !!m?.requirement_trajectory,
+  signal_band: m?.signal_band ?? null, theme: m?.theme ?? null, format_type: formatType, pool_chars: item.poolText.length, has_trajectory: !!m?.requirement_trajectory, supplied_dates: item.suppliedDates ?? [],
+});
+
+/** FWD-COVER-1: the dates the entry's events block carries and the dates its omitted_events states it leaves out, each with a reason. */
+const eventCoverage = (entry: Obj): { events: string[]; omitted: { date: string; reason: string }[] } => ({
+  events: (Array.isArray(entry.events) ? entry.events : []).filter(isObj).map((e) => String(e.event_date ?? "")),
+  omitted: (Array.isArray(entry.omitted_events) ? entry.omitted_events : []).filter(isObj).map((o) => ({ date: String(o.event_date ?? ""), reason: String(o.reason ?? "") })),
 });
 
 /** Validate ONE entry: every message names the item and the offending field or claim index. */
@@ -144,7 +150,7 @@ export function validateRecordBriefEntry(entry: unknown, i: number, live: Record
   }
   // The brief rules (src/core/brief/data/rules.json): a `refuse` violation refuses the entry; a `residue` violation routes it to residue with the rule id named. Mirror f, mirrors d and e, the internal-marker check and the verbatim-span check are the rules fact-span-in-own-section, accounting-line-present, no-claim-ledger-json and fact-span-in-capture.
   if (spec && body.trim()) {
-    const brief = { body, format: formatType, sections: textByKey, exempt: [], claims: claims.map((c) => ({ kind: String(c.claim_kind ?? ""), section: nonEmpty(c.section) ? c.section : "", span: nonEmpty(c.source_span) ? c.source_span : null, text: String(c.claim_text ?? ""), capture: item.poolText })) };
+    const brief = { body, format: formatType, sections: textByKey, exempt: [], claims: claims.map((c) => ({ kind: String(c.claim_kind ?? ""), section: nonEmpty(c.section) ? c.section : "", span: nonEmpty(c.source_span) ? c.source_span : null, text: String(c.claim_text ?? ""), capture: item.poolText })), ...eventCoverage(entry) };
     const found = validateBrief(brief, columns(meta.ok ? meta.value : null, item, formatType));
     for (const v of found.refuse) at(`${v.rule}: ${v.detail}`);
     if (meta.ok) for (const v of found.residue) residue.push(`${tag}: ${v.rule}: ${v.detail}`);
