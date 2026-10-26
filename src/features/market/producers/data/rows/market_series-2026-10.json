@@ -1,0 +1,88 @@
+{
+ "_note": "ARM-3 P1 and P2. No row is dispatched from this file: the ten Drewry observations are held in staged/drewry-wci-2026-10.json (operator ruling 2026-10-26: Hold; drewry.co.uk has no register row and market-series-rows refuses a host the register does not hold). `absent` lists the sources attempted that write no row, each with the register verdict or the stored-capture fact that stops it; nothing here is typed. Fossil references: eia-v2 diesel and jet-fuel kerosene (455 points each to 2026-08-28) are mapped to carrier:fossil_diesel and carrier:fossil_jet by the series_key map of couplings.json and are not re-fetched.",
+ "rows": [],
+ "absent": [
+  {
+   "source": "Maersk advisory, Red Sea / Gulf of Aden (capture 868368a0-4d93-4663-945d-f82384802fa4)",
+   "kind": "surcharge_no_figure",
+   "verdict": "unregistered (no register row for maersk.com)",
+   "reason": "The notice names the Transit Disruption Surcharge (TDS), the Peak Season Surcharge (PSS) and the Emergency Contingency Surcharge (ECS) as in effect and states no amount: the capture holds no currency figure at all. The amounts are open items, never inferred.",
+   "citation": {
+    "url": "https://www.maersk.com/news/articles/2023/12/15/maersk-operations-through-red-sea-gulf-of-aden",
+    "quote": "The previously announced Transit Disruption Surcharge (TDS), Peak Season Surcharge (PSS) and Emergency Contingency Surcharge (ECS) for all cargo on vessels affected by the disruptions around the Red Sea / Gulf of Aden will remain in effect until further notice.",
+    "capture": "868368a0-4d93-4663-945d-f82384802fa4"
+   }
+  },
+  {
+   "source": "Maersk advisory, structural changes to AE5, AE11, AE12 and ME2 (capture 17ad7849-6cca-47ee-9fe2-7f35e780f07b)",
+   "kind": "surcharge_not_named",
+   "verdict": "unregistered (no register row for maersk.com)",
+   "reason": "The notice names no surcharge and states no amount; the related-article headlines on the page (Peak Season Surcharge, Emergency Contingency Surcharge) are titles only, with no figure."
+  },
+  {
+   "source": "Drewry WCI 04 Jun 2026: Hapag-Lloyd and Maersk Asia-Europe PSS (capture bfc01895-c31e-4d41-bf84-2dc266a49426)",
+   "kind": "surcharge_range",
+   "verdict": "unregistered (no register row for drewry.co.uk)",
+   "reason": "The page, a secondary source, states a range per container size ($300-$500 per 20ft, $600-$1,000 per 40ft), not one amount; a market_series row holds one value, and a midpoint or a bound is never typed.",
+   "citation": {
+    "url": "https://www.drewry.co.uk/supply-chain-advisors/supply-chain-expertise/world-container-index-assessed-by-drewry",
+    "quote": "Hapag-Lloyd and Maersk have announced further PSS on the Asia–Europe trade route, effective 8 June and 10 June, ranging from $300–$500 per 20ft container and $600–$1,000 per 40ft container",
+    "capture": "bfc01895-c31e-4d41-bf84-2dc266a49426"
+   }
+  },
+  {
+   "source": "Hapag-Lloyd, MSC, CMA CGM and ONE surcharge notices (emergency or war-risk, peak season, Red Sea or Cape routing)",
+   "kind": "no_stored_capture",
+   "verdict": "unregistered (no register row for hapag-lloyd.com, msc.com, cma-cgm.com or one-line.com)",
+   "reason": "No stored capture of a surcharge notice of these carriers exists (the only Hapag-Lloyd capture is a 2025-12 e-fuel press release; none of msc.com, cma-cgm.com or one-line.com is stored), and the brief admits a carrier host only where its verdict is permitted. Not fetched. Their reroute pages are the stated absences of the ARM-2 plan (403 and no capture)."
+  },
+  {
+   "source": "Carrier ETS and FuelEU surcharge notices",
+   "kind": "producer_held",
+   "verdict": "held",
+   "reason": "carrier-ets-surcharge is disabled by ETS-PROXY decisions 1 and 2 (EEX licence deferred, no apply path); no figure is read around that decision."
+  },
+  {
+   "source": "Argus Media, S&P Global Platts and ICIS HVO and HEFA-SAF assessments",
+   "kind": "host_not_permitted",
+   "verdict": "unregistered (no register row for argusmedia.com, spglobal.com or icis.com)",
+   "reason": "The register holds no verdict for these hosts, so the verdict is not permitted; not fetched, no figure typed."
+  },
+  {
+   "source": "IATA jet fuel price monitor and SAF market notes (iata.org)",
+   "kind": "host_not_permitted",
+   "verdict": "prohibited (register key iata_codes, terms page on www.iata.org; the entry is scoped to IATA codes and no entry covers price publications)",
+   "reason": "The only register entry for the host is prohibited, and the runner refuses a row citing it. Not fetched."
+  },
+  {
+   "source": "ICAO SAF price and stocktaking pages (icao.int)",
+   "kind": "host_not_permitted",
+   "verdict": "prohibited (register key icao_int, barred host icao.int)",
+   "reason": "The host is barred by the register (personal, non-commercial use only); the fetch guard refuses it. Not fetched."
+  },
+  {
+   "source": "EASA, State of the EU SAF market in 2023, fuel reference prices (easa.europa.eu)",
+   "kind": "no_stored_capture",
+   "verdict": "unregistered (no register row for easa.europa.eu; reuse terms eu_reuse by the class table)",
+   "reason": "The publication is listed on a stored EASA page (captures 43778303-c511-45bf-b7bd-8eb90c24d4b3 and 9cc13499-28fa-40ca-bd02-e42747f58aa1) but the document itself is not captured, so no price is stored; a register row for the host and a capture of the document are owed."
+  },
+  {
+   "source": "Neste renewable diesel and SAF price publications (neste.com)",
+   "kind": "host_not_permitted",
+   "verdict": "unregistered (no register row for neste.com)",
+   "reason": "The register holds no verdict for the host; not fetched."
+  },
+  {
+   "source": "Bunker price pages (Ship & Bunker, Bunker Index, port authority pages)",
+   "kind": "host_not_permitted",
+   "verdict": "unregistered",
+   "reason": "No stored capture of a bunker price page exists and the register holds no row for such a host; not fetched."
+  },
+  {
+   "source": "EIA, Eurostat and the EC Weekly Oil Bulletin (permitted hosts) for HVO or SAF prices",
+   "kind": "no_series_published",
+   "verdict": "permitted",
+   "reason": "A pattern search of the stored captures of eia.gov, energy.ec.europa.eu and the EUR-Lex pages for an HVO, renewable diesel or SAF price statement found none (the matches were the word safety and the ReFuelEU price-gap sentence of transport.ec.europa.eu, which states no amount). The oil series these hosts publish are the fossil references, already mapped."
+  }
+ ]
+}

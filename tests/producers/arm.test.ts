@@ -6,7 +6,7 @@ import { test } from "node:test";
 
 import { licenceGate } from "@/core/contracts";
 import type { FamilyCall } from "@/core/harness";
-import { acceptStoredQuote } from "@/core/producers/quote";
+import { acceptStoredQuote, parseVerifiedAt } from "@/core/producers/quote";
 import { loadProducerRegistry } from "@/core/producers/registry";
 import { citedPages } from "@/core/producers/rows-file";
 import { runProducer, type ProducerSpec } from "@/core/producers/runner";
@@ -64,7 +64,7 @@ test("a rows file: every row cites a page the class table rates, with a real ret
   const files = ["market", "operations", "statutory"].flatMap((f) => {
     const dir = `src/features/${f}/producers/data/rows`;
     try {
-      return readdirSync(dir).map((n) => `${dir}/${n}`);
+      return readdirSync(dir).filter((n) => n.endsWith(".json")).map((n) => `${dir}/${n}`);
     } catch {
       return [];
     }
@@ -76,7 +76,7 @@ test("a rows file: every row cites a page the class table rates, with a real ret
       // A state cost candidate cites its page as source_url and its sentence as span_text (the producer grounds it on the live page before it rates the host).
       const r = raw.citation ? raw : ({ ...raw, citation: { url: raw.source_url, title: raw.source_name, retrieved_at: "2026-10-24", quote: raw.span_text } } as Row);
       for (const k of ["url", "title", "retrieved_at", "quote"]) assert.ok(r.citation[k]?.trim(), `${f}: citation.${k}`);
-      assert.equal(r.citation.retrieved_at, "2026-10-24");
+      assert.ok(parseVerifiedAt(r.citation.retrieved_at, new Date("2026-10-26T12:00:00Z")), `${f}: retrieved_at ${r.citation.retrieved_at} is a real day, not after the run`);
       if (r.target_year !== undefined) assert.ok(quotesOf(r).includes(String(r.target_year)), `${f}: target_year ${String(r.target_year)} is not in its quote`);
       assert.notEqual(classTierForHost(hostOf(r.citation.url as string) as string, r.citation.title), null, r.citation.url);
     }

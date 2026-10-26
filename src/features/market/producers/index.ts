@@ -9,3 +9,4 @@ export { publishedPriceStatistics, ratifySeriesItemMap } from "./published-price
 export { ratifySeriesItems } from "./ratify-series";
 export { gridQueueRows, oemRoadmapRows, rerouteRows } from "./rows-file-producers";
 export { sbtiTargets } from "./sbti-targets";
+export { marketSeriesRows } from "./series-rows";

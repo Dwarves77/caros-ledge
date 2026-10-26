@@ -1,0 +1,96 @@
+{
+  "ruling": "coordinator 2026-10-26, ARM-3 brief (docs/plans/rebuild/briefs/ARM-3.md; operator mandate 2026-10-26, the engine is priority number one): the Drewry freight-rate rows are held (operator ruling 2026-10-26: Hold) and not dispatched, the reroute rows are re-applied on their keys with the equality of baseline and reroute corridor counted, the derived price statistics refresh, the refs are mined on the new typed entity column and the patterns re-detected under rule 17; scrape cadence stays off and the producers fetch only the pages their rows cite",
+  "steps": [
+    {
+      "name": "reroute-rows-dry",
+      "stage": "propagate",
+      "mode": "dry",
+      "input": {
+        "propagate": {
+          "producers": {
+            "only": "reroute-rows",
+            "rowsFile": "src/features/market/producers/data/rows/reroute_events-2026-10.json"
+          }
+        }
+      },
+      "producer_env": []
+    },
+    {
+      "name": "reroute-rows",
+      "stage": "propagate",
+      "mode": "apply",
+      "input": {
+        "propagate": {
+          "producers": {
+            "only": "reroute-rows",
+            "rowsFile": "src/features/market/producers/data/rows/reroute_events-2026-10.json"
+          },
+          "cadence_exception": "coordinator 2026-10-26, ARM-3 brief (docs/plans/rebuild/briefs/ARM-3.md; operator mandate 2026-10-26, the engine is priority number one): the Drewry freight-rate rows are held (operator ruling 2026-10-26: Hold) and not dispatched, the reroute rows are re-applied on their keys with the equality of baseline and reroute corridor counted, the derived price statistics refresh, the refs are mined on the new typed entity column and the patterns re-detected under rule 17; scrape cadence stays off and the producers fetch only the pages their rows cite"
+        }
+      },
+      "producer_env": [
+        "MARKET_PRODUCER_REROUTE_ROWS_ENABLED=1"
+      ]
+    },
+    {
+      "name": "published-price-statistics-dry",
+      "stage": "propagate",
+      "mode": "dry",
+      "input": {
+        "propagate": {
+          "producers": {
+            "only": "refresh-published-price-statistics"
+          }
+        }
+      },
+      "producer_env": []
+    },
+    {
+      "name": "published-price-statistics",
+      "stage": "propagate",
+      "mode": "apply",
+      "input": {
+        "propagate": {
+          "producers": {
+            "only": "refresh-published-price-statistics"
+          },
+          "cadence_exception": "coordinator 2026-10-26, ARM-3 brief (docs/plans/rebuild/briefs/ARM-3.md; operator mandate 2026-10-26, the engine is priority number one): the Drewry freight-rate rows are held (operator ruling 2026-10-26: Hold) and not dispatched, the reroute rows are re-applied on their keys with the equality of baseline and reroute corridor counted, the derived price statistics refresh, the refs are mined on the new typed entity column and the patterns re-detected under rule 17; scrape cadence stays off and the producers fetch only the pages their rows cite"
+        }
+      },
+      "producer_env": [
+        "MARKET_PRODUCER_PUBLISHED_STATS_ENABLED=1"
+      ]
+    },
+    {
+      "name": "refs-mined",
+      "stage": "propagate",
+      "mode": "apply",
+      "input": {
+        "propagate": {}
+      },
+      "producer_env": []
+    },
+    {
+      "name": "patterns-dry",
+      "stage": "connect",
+      "mode": "dry",
+      "input": {
+        "connect": {
+          "scan_limit": 0
+        }
+      },
+      "producer_env": []
+    },
+    {
+      "name": "patterns",
+      "stage": "connect",
+      "mode": "apply",
+      "input": {
+        "connect": {
+          "scan_limit": 0
+        }
+      },
+      "producer_env": []
+    }
+  ]
+}

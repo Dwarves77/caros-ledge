@@ -101,12 +101,16 @@ function assertEdgesAuthored(o: { rowsChanged: number; edgesAuthored: number }):
   }
 }
 
-/** The `after` hook every market_series producer uses: author the edges of the touched series, assert, and report the counts. */
-async function afterMarketWrite(ctx: ProducerCtx, written: { rows: Rec[]; created: Rec[]; updated: Rec[] }): Promise<Record<string, number>> {
+/** The `after` hook every market_series producer uses: author the edges of the touched series, assert, and report the counts. A point older than the edge window (a dated backfill) has no week to compare and is counted as `edges_not_due`, never as a missing edge. */
+export async function afterMarketWrite(ctx: ProducerCtx, written: { rows: Rec[]; created: Rec[]; updated: Rec[] }): Promise<Record<string, number>> {
   const m = marketDeps(ctx);
-  const { counts } = await authorMarketSeriesDeltaEdges(ctx.sb as Db, written.rows.map((r) => String(r.series_key)), "apply", { ...m, now: ctx.now, trace: ctx.input.trace === true });
-  assertEdgesAuthored({ rowsChanged: written.created.length + written.updated.length, edgesAuthored: counts.authored });
-  return { edges_authored: counts.authored, edges_already: counts.skippedAlready, edges_insufficient_history: counts.insufficientHistory, edges_unit_mismatch: counts.unitMismatch, edges_refused: counts.refused, edges_unknown_method: counts.unknownMethod, edges_errored: counts.errored };
+  const cutoff = new Date(ctx.now().getTime() - LOOKBACK_DAYS * 86_400_000).toISOString().slice(0, 10);
+  const due = (rs: Rec[]) => rs.filter((r) => String(r.reference_period ?? r.as_at_date ?? "") >= cutoff);
+  const touched = due(written.rows);
+  if (!touched.length && written.rows.length) return { edges_not_due: written.rows.length };
+  const { counts } = await authorMarketSeriesDeltaEdges(ctx.sb as Db, touched.map((r) => String(r.series_key)), "apply", { ...m, now: ctx.now, trace: ctx.input.trace === true });
+  assertEdgesAuthored({ rowsChanged: due(written.created).length + due(written.updated).length, edgesAuthored: counts.authored });
+  return { edges_authored: counts.authored, edges_already: counts.skippedAlready, edges_insufficient_history: counts.insufficientHistory, edges_unit_mismatch: counts.unitMismatch, edges_refused: counts.refused, edges_unknown_method: counts.unknownMethod, edges_errored: counts.errored, edges_not_due: written.rows.length - touched.length };
 }
 
 /** The envelope and label fields a producer may refresh on an existing market_series row; identity and key fields are excluded. */
