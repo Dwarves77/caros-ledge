@@ -1,7 +1,7 @@
 // `npm run gates [-- --profile fast|full]`: the one list of checks a change must pass, in CI's order, fail-fast. Two profiles over ONE list (GATES-FAST-1):
 // `full` (the default) is every step, and is what the `ci` job in ci.yml runs (`--profile full`; step names are log groups). `fast` is the steps marked `fast: true`, each measured
 // under 60 s, and is what .githooks/pre-push runs, so a push is gated in minutes while the full suite (build, the whole test suite, the client bundle walk, schema:local) runs in CI.
-// The full profile also runs `schema:local`, on the embedded PostgreSQL, when a file under supabase/ differs from the upstream branch (@{upstream}, else origin/main); in CI the `schema` job owns that step.
+// Both profiles also run `schema:local` (schema-apply, then `joinability:schema`, the ci.yml schema job's two steps), on the embedded PostgreSQL, when a file under supabase/ differs from the upstream branch (@{upstream}, else origin/main); in CI the `schema` job owns that step.
 import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
@@ -94,7 +94,7 @@ if (isMain(import.meta.url)) {
   const stamp = execFileSync("git", ["rev-parse", "--git-path", stampName], { encoding: "utf8" }).trim();
   const last = existsSync(stamp) ? readFileSync(stamp, "utf8").trim() : null;
   const steps = stepsFor(profile).filter((s) => !s.scoped || inCi || s.scoped());
-  if (profile === "full" && !inCi && supabaseChanged()) steps.push({ name: "Schema on an embedded PostgreSQL 15 (supabase/ changed)", cmd: "schema:local", heavy: true });
+  if (!inCi && supabaseChanged()) steps.push({ name: "Schema on an embedded PostgreSQL 15 (supabase/ changed)", cmd: "schema:local", heavy: true });
   console.log(`gates (${profile}): ${steps.map((s) => s.cmd).join(", ")}${last ? `; the last ${profile} run took ${last}s` : ""}`);
   const started = Date.now();
   for (const step of steps) {
