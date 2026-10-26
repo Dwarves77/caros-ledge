@@ -1,6 +1,6 @@
 // New in FLY-1 (ADR-050; no old source: the old drain applied a batch when a workflow was dispatched on its merge). The committed session batches the turn's briefs stage applies: the files the judgement drain committed under
 // drain/batches/<kind>/ are read each turn; one the applied_batches ledger has not recorded (or a held one whose file changed) goes through its kind's validator and apply, which grounds every span; a batch is
-// recorded `applied` when nothing was refused, or `held` with the reasons in the ledger row and in <batch>.corrections.json next to the file (the next drain plan reads it). A load failure, the cooldown, a failed write or an
+// recorded `applied` when nothing was refused, or `held` with the reasons in the ledger row and in <batch>.corrections.json next to the file (the next drain plan reads it); an entry a residue rule routed out (its reasons name the rule id) is written to the same corrections file, whatever the batch's own verdict. A load failure, the cooldown, a failed write or an
 // exhausted io budget records nothing, so the next turn tries the batch again (every kind's apply is idempotent per entry). Dry validates and plans the same and writes no ledger row and no file.
 import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
@@ -104,7 +104,7 @@ export async function applyCommitted(deps: BatchDeps, input: { root: string; dry
     try {
       const w = await deps.sb.from("applied_batches").upsert({ batch_id: f.id, kind: f.kind, status: verdict, file_hash: f.hash, run_id: input.runId ?? null, counts: r.counts, reasons, recorded_at: deps.now().toISOString() }, { onConflict: "batch_id" });
       if (w.error) throw new Error(w.error.message);
-      if (verdict === "held") writeFileSync(corrections, `${JSON.stringify(correctionsFile.parse({ batch: f.id, kind: f.kind, held_at: deps.now().toISOString(), file_hash: f.hash, refused: r.data?.residue ?? [], notes: r.notes }), null, 2)}\n`, "utf8");
+      if (verdict === "held" || (r.data?.residue ?? []).length > 0) writeFileSync(corrections, `${JSON.stringify(correctionsFile.parse({ batch: f.id, kind: f.kind, held_at: deps.now().toISOString(), file_hash: f.hash, refused: r.data?.residue ?? [], notes: r.notes }), null, 2)}\n`, "utf8");
       else if (existsSync(corrections)) unlinkSync(corrections);
     } catch (e) {
       outcome = worst(outcome, "partial");

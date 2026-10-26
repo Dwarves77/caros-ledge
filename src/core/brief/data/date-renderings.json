@@ -1,0 +1,4 @@
+{
+  "register": ["{D} {Month} {YYYY}", "{Month} {D}, {YYYY}", "{YYYY}-{MM}-{DD}"],
+  "extra": ["{Month} {D} {YYYY}", "{Mon} {D}, {YYYY}", "{Mon} {D} {YYYY}", "{D} {Mon} {YYYY}", "{D}{ord} {Month} {YYYY}", "{Month} {D}{ord}, {YYYY}", "{DD} {Month} {YYYY}", "{Month} {DD}, {YYYY}"]
+}
