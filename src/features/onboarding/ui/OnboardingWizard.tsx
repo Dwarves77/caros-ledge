@@ -18,7 +18,7 @@ import { saveProfilePatch } from "@/features/account/lib/profile-patch";
 import { AuthFrame, AuthMasthead } from "@/features/auth/ui/AuthFrame";
 import { BriefingScheduleSection } from "@/features/settings/ui/BriefingScheduleSection";
 import { useSettingsStore } from "@/features/settings/state/settings-store";
-import { BandTile, BandTileRow, Button, ChoiceChip, InlineErrorBanner, StateNote } from "@/ui";
+import { BandTile, BandTileRow, Button, ButtonLink, ChoiceChip, InlineErrorBanner, StateNote } from "@/ui";
 
 import { OnboardingStepper } from "./OnboardingStepper";
 import styles from "./onboarding.module.css";
@@ -96,12 +96,12 @@ export function OnboardingWizard({ userId, orgId, byPriority }: { userId: string
           </div>
           <AuthMasthead title="You're set up" dek="Your dashboard is filtered against your modes, jurisdictions and sector profile, and your briefing is conservative by default. You can revisit any of this from Account or Settings any time." />
           <div className={styles.navRight}>
-            <Link href="/" className="cl-btn cl-btn--primary cl-btn--md">
+            <ButtonLink variant="primary" href="/">
               Go to dashboard
-            </Link>
-            <Link href="/community" className="cl-btn cl-btn--secondary cl-btn--md">
+            </ButtonLink>
+            <ButtonLink href="/community">
               Browse the community
-            </Link>
+            </ButtonLink>
           </div>
         </div>
       </AuthFrame>
@@ -197,9 +197,9 @@ export function OnboardingWizard({ userId, orgId, byPriority }: { userId: string
             <span />
           )}
           <div className={styles.navRight}>
-            <Link href="/" className="cl-btn cl-btn--secondary cl-btn--md">
+            <ButtonLink href="/">
               Skip for now
-            </Link>
+            </ButtonLink>
             <Button variant="primary" onClick={() => void next()} disabled={saving || blocked}>
               {saving ? "Saving..." : step === 2 ? "Continue → Sectors" : step === 3 ? "Continue → Briefing" : "Finish"}
             </Button>

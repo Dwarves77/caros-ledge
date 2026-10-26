@@ -7,7 +7,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { formatDate, formatNumber } from "@/core/shared";
-import { Button, EmptyState, FormField, Input, StatBlock, TierChip } from "@/ui";
+import { Button, ButtonLink, EmptyState, FormField, Input, StatBlock, TierChip } from "@/ui";
 
 import { Load, Panel, useAct, useAdminFetch, useFlash } from "./panel-kit";
 import { useReason } from "./reason-dialog";
@@ -68,7 +68,7 @@ export function BriefFlagsView({ nowMs }: { nowMs: number }) {
                       <code className={styles.mono}>{r.phrase || "no phrase recorded"}</code>
                       <FormField label="Replacement source address">{(c) => <Input {...c} type="url" value={url} onChange={(e) => setUrls((s) => ({ ...s, [r.id]: e.target.value }))} placeholder="https://" disabled={busy} />}</FormField>
                       <div className={styles.actions}>
-                        <Link href={`/regulations/${encodeURIComponent(r.legacyId || r.id)}`} target="_blank" className="cl-btn cl-btn--secondary cl-btn--sm">View brief</Link>
+                        <ButtonLink size="sm" href={`/regulations/${encodeURIComponent(r.legacyId || r.id)}`} target="_blank">View brief</ButtonLink>
                         <Button variant="secondary" size="sm" disabled={busy} onClick={async () => { const reason = await why.ask({ title: "Request a re-capture", body: "The next turn fetches and re-grounds this item.", action: "Request re-capture" }); if (reason) await act.run(r.id, "/api/admin/corpus-turn-requests", { method: "POST", body: { itemId: r.id, reason } }, (x) => ((x as { already_open?: boolean } | null)?.already_open ? "A re-capture is already open for this item." : "Re-capture requested: the next turn fetches and re-grounds it.")); }}>Re-capture</Button>
                         <Button variant="secondary" size="sm" disabled={busy} onClick={async () => { const reason = await why.ask({ title: "Mark this flag resolved", body: "The flag leaves the queue. Say what you checked.", action: "Mark resolved" }); if (reason) await act.run(r.id, `/api/admin/integrity-flags/${encodeURIComponent(r.id)}/resolve`, { method: "POST", body: { action: "mark_resolved", reason } }, "Flag marked resolved."); }}>Mark resolved</Button>
                         <Button variant="primary" size="sm" disabled={busy || !/^https?:\/\//.test(url)} onClick={async () => { const reason = await why.ask({ title: "Replace the source address", body: <>The address becomes <b className={styles.wrap}>{url}</b> and the flag is resolved.</>, action: "Replace and resolve" }); if (reason) await act.run(r.id, `/api/admin/integrity-flags/${encodeURIComponent(r.id)}/resolve`, { method: "POST", body: { action: "replace_url", newSourceUrl: url, reason } }, "Source address replaced and the flag resolved."); }}>Replace address</Button>

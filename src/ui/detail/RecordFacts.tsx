@@ -16,7 +16,7 @@ function RecordFactCard({ fact }: { fact: RecordFactRow }) {
   const model = fact.kind === "FACT" ? deriveRecordFactCardModel(fact) : null;
   if (model) return <FactCard model={model} />;
   return (
-    <p style={{ fontSize: "var(--fs-13)", lineHeight: 1.6, color: "var(--ink-2)", margin: "0 0 8px" }}>
+    <p style={{ fontSize: "var(--fs-13)", lineHeight: 1.6, color: "var(--ink-2)", margin: "0 0 var(--sp-8)" }}>
       <strong style={{ color: "var(--ink-3)" }}>{fact.label}:</strong> {fact.text || <Absence reason="not in primary source" />}
     </p>
   );
@@ -37,14 +37,14 @@ export function RecordFacts({ leadNote, dateFacts, otherFacts, gapsLine, tags }:
           {otherFacts.map((f) => <RecordFactCard key={f.slotKey} fact={f} />)}
         </ItemGroup>
       ) : (
-        <div style={{ margin: "14px 0" }}>
+        <div style={{ margin: "var(--sp-14) 0" }}>
           <SectionLabel>Verbatim facts</SectionLabel>
           <Absence reason="not in primary source" />
         </div>
       )}
-      {gapsLine && <p style={{ fontSize: "var(--fs-12)", color: "var(--ink-2)", margin: "8px 0 0" }}>{gapsLine}</p>}
+      {gapsLine && <p style={{ fontSize: "var(--fs-12)", color: "var(--ink-2)", margin: "var(--sp-8) 0 0" }}>{gapsLine}</p>}
       {tags && tags.length > 0 && (
-        <div className="cl-filter-group-chips" style={{ marginTop: 8 }}>
+        <div className="cl-filter-group-chips" style={{ marginTop: "var(--sp-8)" }}>
           {tags.map((t) => <TagChip key={t}>{t}</TagChip>)}
         </div>
       )}

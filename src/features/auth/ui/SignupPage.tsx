@@ -7,6 +7,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { sanitizeReturnPath } from "@/core/auth/route-policy";
 import { browserClient } from "@/core/db/browser";
 import { log } from "@/core/shared/log";
+import { Button } from "@/ui";
 
 import styles from "./auth.module.css";
 import { AuthErrorBanner, AuthField, AuthTabs, CheckEmailPanel } from "./AuthPanel";
@@ -84,9 +85,9 @@ export default function SignupPage() {
               <AuthField label="Confirm password">
                 <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required autoComplete="new-password" minLength={8} className={styles.input} placeholder="Re-enter password" />
               </AuthField>
-              <button type="submit" disabled={loading} className={styles.primary}>
+              <Button type="submit" variant="primary" loading={loading} className={styles.full}>
                 {loading ? "Creating account…" : "Create account"}
-              </button>
+              </Button>
             </form>
             <p className={styles.help}>Invited to a workspace? Open the invitation link in your email, it signs you in and joins the workspace in one step.</p>
           </>
