@@ -1,0 +1,21 @@
+{
+  "ruling": "operator 2026-10-27 (scope ruling Q8, DRAIN-2D): apply the remaining 6 DRAIN-2B briefs (15f63ea9, 8c186db2, 388b2ce8, ab922a18, c3fa4cc2, 5b37050b) after surgical provenance, S-NUMERIC, Gate A, and R33 forward-events-covered repairs, proven verified in rollback with allowBriefOverwrite. Nothing is fetched, so no scrape cadence is exercised and rule 16 stands",
+  "steps": [
+    {
+      "name": "drain-2d-dry",
+      "stage": "briefs",
+      "mode": "dry",
+      "input_file": "data/2026-10-27-drain-2d.items.json",
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "drain-2d-items",
+      "stage": "briefs",
+      "mode": "apply",
+      "input_file": "data/2026-10-27-drain-2d.items.json",
+      "producer_env": [],
+      "on_failure": "stop"
+    }
+  ]
+}
