@@ -141,10 +141,8 @@ function validateEntries<L, P>(spec: EntrySpec<L, P>, file: unknown, live: L): V
   return verdict;
 }
 
-const refusalNotes = (v: Verdict<unknown>, cap = 12): string[] => {
-  const all = [...v.refused, ...v.residue].flatMap((r) => r.errors);
-  return [...all.slice(0, cap), ...(all.length > cap ? [`... and ${all.length - cap} more refusal reason(s)`] : [])];
-};
+/** SYNTH-FIX-1 B4: one note per refused or residue entry listing EVERY failing rule and judge of it (the turn table and the results file show them all, not the first). */
+const refusalNotes = (v: Verdict<unknown>): string[] => [...v.refused, ...v.residue].map((r) => `${r.key ?? `entry ${r.index}`}: ${r.errors.length} failing rule(s): ${r.errors.join(" || ")}`);
 
 export interface BatchData { batch: string | null; ids: Record<string, string[]>; residue: { index: number; key: string | null; errors: string[] }[]; alreadyApplied: string[]; downstream: { counts: Record<string, number>; outcome: string; notes: string[] } | null }
 

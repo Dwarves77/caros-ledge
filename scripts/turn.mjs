@@ -55,11 +55,13 @@ if (d) {
 const result = await runTurn({ stage: values.stage, mode: values.mode, trigger: event ? "dispatch" : "manual", chain: !values["no-chain"], input }, { d, env: process.env, now: () => new Date() });
 
 const lines = result.runs.map((r) => (r.row ? `| ${r.row.family} | ${r.row.mode ?? "-"} | ${r.row.outcome} | ${String(r.row.reason ?? "").replace(/\|/g, "/").slice(0, 160)} |` : `| (not recorded) | - | - | ${String(r.error ?? "").slice(0, 160)} |`));
-const table = [`### Turn ${result.rootRunId}`, "", `stage ${values.stage}, requested ${values.mode}, resolved ${result.resolved.mode}${result.resolved.forcedDry ? ` (${result.resolved.reason})` : ""}`, "", "| family | mode | outcome | reason |", "|---|---|---|---|", ...lines].join("\n");
+let table = [`### Turn ${result.rootRunId}`, "", `stage ${values.stage}, requested ${values.mode}, resolved ${result.resolved.mode}${result.resolved.forcedDry ? ` (${result.resolved.reason})` : ""}`, "", "| family | mode | outcome | reason |", "|---|---|---|---|", ...lines].join("\n");
+const failing = result.runs.filter((r) => r.row && r.row.outcome !== "success" && r.row.outcome !== "noop").flatMap((r) => (r.row.outputs?.notes ?? []).map((n) => `- ${r.row.family}: ${n}`));
+if (failing.length) table += `\n\n#### Every failing rule, per entry\n\n${failing.join("\n")}`;
 for (const n of result.notes) note("turn", n);
 console.log(table);
 if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${table}\n`);
 if (result.exit === 2) note("turn", `${result.runs[0]?.error ?? "self-skipped: no credentials"}; exit 2`);
 if (result.exit === 1) console.error(`turn: ${result.runs.find((r) => r.exit === 1)?.error ?? result.runs.find((r) => r.exit === 1)?.row?.error ?? "a record failed"}`);
-if (process.env.TURN_RESULT_FILE) writeFileSync(process.env.TURN_RESULT_FILE, JSON.stringify({ root_run_id: result.rootRunId, resolved: result.resolved, exit: result.exit, runs: result.runs.map((r) => ({ family: r.row?.family ?? null, id: r.row?.id ?? null, mode: r.row?.mode ?? null, forced_dry: r.row?.forced_dry ?? false, outcome: r.row?.outcome ?? null, reason: r.row?.reason ?? null, counts: r.row?.outputs?.counts ?? {}, ids: r.row?.outputs?.ids ?? {}, error: r.error ?? r.row?.error ?? null })) }));
+if (process.env.TURN_RESULT_FILE) writeFileSync(process.env.TURN_RESULT_FILE, JSON.stringify({ root_run_id: result.rootRunId, resolved: result.resolved, exit: result.exit, runs: result.runs.map((r) => ({ family: r.row?.family ?? null, id: r.row?.id ?? null, mode: r.row?.mode ?? null, forced_dry: r.row?.forced_dry ?? false, outcome: r.row?.outcome ?? null, reason: r.row?.reason ?? null, notes: r.row?.outputs?.notes ?? [], counts: r.row?.outputs?.counts ?? {}, ids: r.row?.outputs?.ids ?? {}, error: r.error ?? r.row?.error ?? null })) }));
 process.exit(result.exit);

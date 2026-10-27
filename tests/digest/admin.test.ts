@@ -31,7 +31,7 @@ test("a valid synthesis of a cluster stores one pattern row and one finding, wit
   const f = w.db.rows("admin_opportunity_findings")[0] as Record<string, unknown>;
   assert.deepEqual([w.db.rows("admin_opportunity_findings").length, f.pattern_value_id, f.lens, f.window, (f.signpost_inference_ids as string[]).length, f.superseded_by ?? null], [1, p?.value_id, "supply_demand_bottleneck", "6-18m", 1, null]);
   assert.equal(w.db.rows("inference_records").length, 2, "the signpost and the tagged inference");
-  assert.match(String(w.db.rows("inference_records").find((i) => i.method_id === "admin-opportunity-findings-signpost")?.claim_text), /source class: govIntergov; confirmed if: fewer than all.*falsified if: every Member State/);
+  assert.match(String(w.db.rows("inference_records").find((i) => i.method_id === "admin-opportunity-findings-signpost")?.claim_text), /source class: govIntergov; confirmed if: fewer than all.*falsified if: every member state/);
   assert.equal(w.db.rows("brief_reviews").filter((b) => b.kind === "admin-opportunity-findings").length, 1);
   assert.equal(w.db.rows("entity_relations").length, 1, "the connection went through the emission writer");
   const again = await apply(w, [adminEntry()]);

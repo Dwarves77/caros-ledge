@@ -5,10 +5,12 @@
 // the numeric figure (decimals kept), and criterion 5 (a required slot without a covering FACT or, where its description allows, GAP). Section boundaries come from the REAL format registry
 // (core/brief FORMAT_SPECS), so the old second copy of the section list and its drift test are gone. Pure: the caller supplies the live material.
 import { analysisLabelRe, buildTimelineRows, checkBriefContent, findTimelineSection, FORMAT_SPECS, LEGAL_CALLOUT, MODAL_RE, parseTimeline, validateClaimRecords, validateMetadata, type AdoptedTerms, type BriefMetadata, type SectionRow } from "@/core/brief";
+import { SEVERITIES } from "@/core/brief/contract";
 import { severityToken, validateBrief, type ItemColumns } from "@/core/brief/rules";
 import { precisionKey } from "@/core/brief/rules/forward-events-covered";
 import { scanGateA, uncoveredSlots, type SlotRow } from "@/core/grounding";
 import { digestKind } from "@/core/digest/kinds";
+import { groundingReasons } from "@/core/digest/containment";
 import { review } from "@/core/digest/review";
 
 import { poolHashError, type EntryResult, isObj, nonEmpty, type Obj } from "../../kit/session-batch";
@@ -171,6 +173,11 @@ export function validateRecordBriefEntry(entry: unknown, i: number, live: Record
   // The reader's typed blocks (UNIFIED-PRB-DESIGN section 1): structural checks first, then the second reader's binary judges; every required check passes or the brief is residue naming the criterion.
   const emission = validateEmission(entry, tag, live.emit.get(entry.item_id) ?? { captures: new Map(), ids: new Map(), objects: new Map(), locate: null });
   errors.push(...emission.errors);
+  // SYNTH-FIX-1 B2: the body and the metadata prose state no number, count, acronym or term the item's pool does not hold (headings and the legal callout are structure, not claims)
+  if (body.trim()) {
+    const prose = meta.ok ? [meta.value.what_is_it, meta.value.why_matters, meta.value.what_it_changes].filter((x): x is string => typeof x === "string") : [];
+    for (const r of groundingReasons({ texts: { body, ...Object.fromEntries(prose.map((x, n) => [`metadata[${n}]`, x])) }, evidence: [item.poolText], counts: [claims.length, sections.length], ignore: [LEGAL_CALLOUT, ...SEVERITIES.map((v) => v.label), ...body.split("\n").map((l) => l.trim()).filter((l) => l.startsWith("#"))] })) residue.push(`${tag}: ${r}`);
+  }
   if (digestKind("item-briefs")?.secondReader) for (const reason of review("item-briefs", entry).reasons) residue.push(`${tag}: second reader: ${reason}`);
   if (!errors.length && residue.length && emission.plan) {
     const r = residueEmission(entry, emission.plan);

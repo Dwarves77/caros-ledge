@@ -25,6 +25,12 @@ const DEFAULT_MAX_ROWS = 40;
 
 interface DetectorRow { value_id: string; method_id: string; method_version: string; entity_id: string | null; value: number | null; unit: string | null; lifecycle: string; admissibility: string; inputs: { table?: string; pk?: string }[] | null }
 
+/** SYNTH-FIX-1 B1: the stored claim text and kind of every section_claim_provenance row of the clusters, whether or not the claim quotes a capture (key table:pk). */
+export async function claimsOfRows(sb: Db, clusters: readonly Cluster[]): Promise<Map<string, { claim_text: string | null; claim_kind: string | null }>> {
+  const ids = [...new Set(clusters.flatMap((c) => c.rows.filter((r) => r.table === "section_claim_provenance").map((r) => r.pk)))];
+  return new Map((await rowsByIds<{ id: string; claim_text: string | null; claim_kind: string | null }>(sb, "section_claim_provenance", "id, claim_text, claim_kind", ids, "id", "id")).map((r) => [`section_claim_provenance:${r.id}`, { claim_text: r.claim_text, claim_kind: r.claim_kind }]));
+}
+
 export function adminFindingsExporter(sb: Db, now: () => Date, o: { assemble?: AssembleClusters; quoteChars?: number; maxRows?: number } = {}) {
   return async (x: { limit: number; ids?: readonly string[] }): Promise<BatchExport> => {
     try {
@@ -42,6 +48,7 @@ export function adminFindingsExporter(sb: Db, now: () => Date, o: { assemble?: A
       const captures = new Map((await rowsByIds<{ id: string; result_content: string | null }>(sb, "agent_run_searches", "id, result_content", captureIds, "id", "id")).map((c) => [c.id, c.result_content ?? ""]));
       const detectors = (await allRows<DetectorRow>(sb, "derived_values", "value_id, method_id, method_version, entity_id, value, unit, lifecycle, admissibility, inputs", { order: "value_id", where: (q) => q.like("method_id", "pattern_%").is("invalidated_at", null) })).filter((r) => !r.method_id.startsWith("pattern_ai_") && !SPENT.has(r.lifecycle) && r.admissibility !== "stale");
       const attachedTo = (c: Cluster): DetectorRow[] => { const keys = new Set(c.rows.map((r) => `${r.table}/${r.pk}`)); return detectors.filter((d) => (d.inputs ?? []).some((i) => keys.has(`${i.table}/${i.pk}`))); };
+      const claims = await claimsOfRows(sb, chosen);
       const attachedAny = new Set<string>();
       const items: Obj[] = chosen.map((c) => {
         const text = (id: string | null): string => (id ? (captures.get(id) ?? "") : "");
@@ -49,8 +56,8 @@ export function adminFindingsExporter(sb: Db, now: () => Date, o: { assemble?: A
         det.forEach((d) => attachedAny.add(d.value_id));
         return {
           cluster_id: c.id, anchor_entity_ids: c.anchor_entity_ids, hops: c.hops, surfaces: c.surfaces, angles: c.angles, axes: c.axes,
-          rows: c.rows.slice(0, cap).map((r) => ({ ref: `${r.table}:${r.pk}`, table: r.table, pk: r.pk, surface: r.surface, entity_ids: r.entity_ids, date: r.date, figure: r.figure, quote_capture_id: r.quote_capture_id, quote_text: text(r.quote_capture_id).slice(0, quoteChars), quote_chars_total: text(r.quote_capture_id).length, quote_truncated: text(r.quote_capture_id).length > quoteChars })),
-          truncation: { rows_total: c.rows.length, rows_omitted: Math.max(0, c.rows.length - cap), quote_chars_per_row: quoteChars },
+          rows: c.rows.slice(0, cap).map((r) => ({ ref: `${r.table}:${r.pk}`, table: r.table, pk: r.pk, surface: r.surface, entity_ids: r.entity_ids, date: r.date, figure: r.figure, quote_capture_id: r.quote_capture_id, quote_text: text(r.quote_capture_id).slice(0, quoteChars), quote_chars_total: text(r.quote_capture_id).length, quote_truncated: text(r.quote_capture_id).length > quoteChars, ...(claims.get(`${r.table}:${r.pk}`) ?? {}) })),
+          truncation: { rows_total: c.rows.length, rows_omitted: Math.max(0, c.rows.length - cap), quote_chars_per_row: quoteChars, dropped_year_only_target_events: c.dropped.year_only_events, dropped_research_assessments_without_a_0_hop_entity: c.dropped.generic_assessments },
           detector_patterns: det.map((d) => ({ pattern_value_id: d.value_id, method_id: d.method_id, method_version: d.method_version, entity_id: d.entity_id, value: d.value, unit: d.unit, lifecycle: d.lifecycle, admissibility: d.admissibility, evidence_rows: (d.inputs ?? []).map((i) => `${i.table}:${i.pk}`) })),
         };
       });

@@ -33,3 +33,7 @@ The seam checks the hash again and writes the `theme_briefs` row (one row per th
 ## Write-back (operator engine spec 2026-10-26)
 
 A theme entry may also carry `signposts`, `coverage_gaps` and `connections`, with the same shape and the same verification as in [admin-opportunity-findings](admin-opportunity-findings.md); one shared module verifies and writes both. A connection quote must be verbatim in a capture of one of the theme member items; a signpost cites the theme member items. A failing element refuses the entry and names the element. Coverage gaps are queued as find-source needs for the hunt, deduplicated, never fetched.
+
+## Before you freeze: effect wording, scope and the self-check (SYNTH-FIX-1)
+
+The same rules as in [admin-opportunity-findings](admin-opportunity-findings.md#before-you-freeze-effect-wording-scope-and-the-self-check-synth-fix-1): a link's effect uses the source's own verb or carries an inference label; jurisdiction, period and baseline are stated whenever two figures are compared; every number, count word, acronym and capitalised term (and, here, every gap) is held by the cited evidence (the validator checks it by containment); and before freezing you answer every required judge's text against your own entry, revise each failure, and record the answers in `review_self` (ignored by the second reader).

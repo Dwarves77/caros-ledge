@@ -3,6 +3,7 @@
 // need a brief (none, stale or superseded), one theme's export bundle within a character budget with every cut counted, and the validator's context. Every read throws on a database error: a failed read is never an empty list.
 import type { Db } from "@/core/db";
 import { fetchAllByIdChunks, fetchAllRows } from "@/core/db";
+import { isYearOnlyTarget } from "@/core/flywheel/clusters";
 import { detectGaps } from "@/core/flywheel/gaps";
 import { computeMemberHash, lineageFromThemeDelta, resolveBriefForTheme } from "@/core/flywheel/themes";
 import { surfaceOf } from "@/core/routing";
@@ -179,13 +180,15 @@ export function buildThemeBundle(need: ThemeNeed, material: ThemeMaterial, gaps:
   const ordered = [...memberIds].sort((a, b) => (rank.get(a) ?? 99) - (rank.get(b) ?? 99) || (a < b ? -1 : 1));
   const members: unknown[] = [];
   const omitted: { id: string; title: string | null }[] = [];
-  const cut = { claimsTotal: 0, claimsOmitted: 0, eventsTotal: 0, eventsOmitted: 0 };
+  const cut = { claimsTotal: 0, claimsOmitted: 0, eventsTotal: 0, eventsOmitted: 0, yearOnly: 0 };
   for (const id of ordered) {
     const it = itemById.get(id);
     const claims = (claimsBy.get(id) ?? []).map((c) => ({ claim_id: c.id, kind: c.claim_kind, claim_text: c.claim_text, source_id: c.source_id ?? null }));
-    const events = (eventsBy.get(id) ?? []).map((e) => ({ event_id: e.id, event_date: e.event_date, date_precision: e.date_precision, event_kind: e.event_kind, obligation_text: e.obligation_text, source_span: e.source_span, confidence: e.confidence }));
+    const allEvents = eventsBy.get(id) ?? [];
+    const events = allEvents.filter((e) => !isYearOnlyTarget(e)).map((e) => ({ event_id: e.id, event_date: e.event_date, date_precision: e.date_precision, event_kind: e.event_kind, obligation_text: e.obligation_text, source_span: e.source_span, confidence: e.confidence }));
     cut.claimsTotal += claims.length;
     cut.eventsTotal += events.length;
+    cut.yearOnly += allEvents.length - events.length;
     const rec = { id, title: it?.title ?? null, item_type: it?.item_type ?? null, surface: it ? surfaceOf(it.item_type, it.domain) : "uncategorized", jurisdictions: it?.jurisdiction_iso ?? [], priority: it?.priority ?? null, summary: it?.summary ?? null, claims: [] as unknown[], forward_events: [] as unknown[] };
     if (used + size(rec) > opts.charBudget) {
       omitted.push({ id, title: it?.title ?? null });
@@ -212,6 +215,6 @@ export function buildThemeBundle(need: ThemeNeed, material: ThemeMaterial, gaps:
   }
   return {
     ...head, members, intra_theme_edges: edges,
-    truncation: { char_budget: opts.charBudget, chars_used: used, members_total: ordered.length, members_included: members.length, members_omitted: omitted.length, omitted_members: omitted, claims_total: cut.claimsTotal, claims_omitted: cut.claimsOmitted, forward_events_total: cut.eventsTotal, forward_events_omitted: cut.eventsOmitted, edges_total: allEdges.length, edges_omitted: allEdges.length - edges.length },
+    truncation: { char_budget: opts.charBudget, chars_used: used, members_total: ordered.length, members_included: members.length, members_omitted: omitted.length, omitted_members: omitted, claims_total: cut.claimsTotal, claims_omitted: cut.claimsOmitted, forward_events_total: cut.eventsTotal, forward_events_omitted: cut.eventsOmitted, forward_events_dropped_year_only_target: cut.yearOnly, edges_total: allEdges.length, edges_omitted: allEdges.length - edges.length },
   };
 }

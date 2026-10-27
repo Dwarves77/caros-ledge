@@ -6,6 +6,7 @@
 // theme_briefs (theme_brief_versions, migration 0039). The export is the themes that need a brief (none, stale or superseded), one bundle each within the character budget.
 import { computeMemberHash } from "@/core/flywheel/themes";
 import { parseFrontmatter } from "@/core/briefs/frontmatter";
+import { groundingReasons, writebackOf } from "@/core/digest/containment";
 import { parseThemeBriefEntry, type ThemeContext, type ValidThemeBrief } from "@/core/briefs/theme-brief-contract";
 import { buildThemeBundle, buildValidationContext, computeThemeGaps, loadBriefs, loadLineage, loadThemeMaterial, loadThemes, themesNeedingBrief, type ThemeRow } from "@/core/briefs/theme-brief-material";
 import type { Db } from "@/core/db";
@@ -52,7 +53,12 @@ const themeBriefsSpec: EntrySpec<ThemeLive, Plan> = {
     const id = v.brief.theme_id;
     // The second reader's binary judges and the no-single-source test (HOW-TO-LOOK point 3, INV-DIG-7): a brief whose cited rows sit in one table or on one surface is residue with the reason.
     const cited = (v.brief.claims as { member_id: string; claim_ids: string[] }[]).flatMap((c) => c.claim_ids.map((cid) => ({ table: live.ctx.membersById.get(c.member_id)?.event_ids.has(cid) ? "item_forward_events" : "section_claim_provenance", surface: live.surfaces.get(c.member_id) ?? null })));
-    const why = [...review("theme-briefs", e as Record<string, unknown>).reasons.map((r) => `second reader: ${r}`), ...[singleSourceReason(cited)].flatMap((r) => r ?? [])];
+    // SYNTH-FIX-1 B2/B3: the brief, its signposts and its gaps against the grounded text of the claims and events it cites
+    const wbText = writebackOf(e as Record<string, unknown>);
+    const claims = v.brief.claims as { member_id: string; claim_ids: string[] }[];
+    const evidence = claims.flatMap((c) => c.claim_ids.flatMap((cid) => live.ctx.groundedText.get(cid) ?? []));
+    const grounding = groundingReasons({ texts: { brief: v.brief.brief_md, ...wbText.texts }, gaps: wbText.gaps, evidence, counts: [claims.length, claims.reduce((n, c) => n + c.claim_ids.length, 0), live.themes.get(id)?.member_ids?.length ?? 0] });
+    const why = [...grounding, ...review("theme-briefs", e as Record<string, unknown>).reasons.map((r) => `second reader: ${r}`), ...[singleSourceReason(cited)].flatMap((r) => r ?? [])];
     if (why.length) return { errors: [], residue: why.map((r) => `theme ${id}: ${r}`) };
     const members = (live.themes.get(id)?.member_ids ?? []).slice().sort();
     const wbLive: WritebackLive = { captures: live.wb.captures.get(id) ?? new Map(), ids: live.wb.entities, now: live.wb.now, itemIds: members };

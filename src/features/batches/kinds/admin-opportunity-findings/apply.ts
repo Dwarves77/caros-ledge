@@ -8,7 +8,7 @@ import { assembleClusters, type Cluster } from "@/core/flywheel/clusters";
 import { applyEntries, isObj, type ApplyOpts, type BatchDeps, type EntrySpec } from "../../kit/session-batch";
 import { activeEntityIds, connectionEntityIds, heldWriteback, itemIdsOfRows, registerOnce, writeWriteback } from "../../kit/writeback";
 
-import type { AssembleClusters } from "./export";
+import { claimsOfRows, type AssembleClusters } from "./export";
 import { clusterOfComputedBy, findingKey, METHOD_VERSION, methodIdOf, SYNTHESIS_PREFIX, validateSynthesisEntry, type SynthLive, type SynthPlan } from "./validate";
 
 const KIND = "admin-opportunity-findings";
@@ -43,7 +43,7 @@ const spec: EntrySpec<SynthLive, SynthPlan> = {
     }
     const found = await rowsByIds<{ pattern_value_id: string; title: string; sourced_finding_md: string; superseded_by: string | null }>(deps.sb, "admin_opportunity_findings", "id, pattern_value_id, title, sourced_finding_md, superseded_by", [...patterns.values()], "pattern_value_id", "id");
     const findings = new Set(found.filter((f) => !f.superseded_by).map((f) => findingKey(f.pattern_value_id, f.title, f.sourced_finding_md)));
-    return { clusters: new Map(mine.map((c) => [c.id, c])), captures, entities, detectors, items, stored: { patterns, findings }, held: await heldWriteback(deps.sb, KIND, entries), now: deps.now(), locate: deps.locate ?? null };
+    return { clusters: new Map(mine.map((c) => [c.id, c])), captures, claims: new Map([...(await claimsOfRows(deps.sb, mine))].map(([k, v]) => [k, v.claim_text ?? ""])), entities, detectors, items, stored: { patterns, findings }, held: await heldWriteback(deps.sb, KIND, entries), now: deps.now(), locate: deps.locate ?? null };
   },
   entry(e, i, live) {
     const r = validateSynthesisEntry(e, i, live);
