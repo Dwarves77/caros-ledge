@@ -33,7 +33,9 @@ const job = workflow.jobs['ruled-runs'];
 test('the ruled-runs job: after changes and migrate, only on a push to main with pending plans, in the production environment with the turn job\'s secrets, one at a time, and it commits nothing', () => {
   assert.deepEqual(job.needs, ['changes', 'migrate']);
   assert.equal(job.environment, 'production');
-  assert.deepEqual(job.env, workflow.jobs.turn.env, 'the same secrets as the turn job');
+  const { LIVE_SMOKE_EMAIL, LIVE_SMOKE_PASSWORD, ...turnSecrets } = job.env;
+  assert.deepEqual(turnSecrets, workflow.jobs.turn.env, 'the same secrets as the turn job');
+  assert.deepEqual([LIVE_SMOKE_EMAIL, LIVE_SMOKE_PASSWORD], ['${{ secrets.LIVE_SMOKE_EMAIL }}', '${{ secrets.LIVE_SMOKE_PASSWORD }}'], 'plus the member account the visibility check signs in with (CI-TRIM-1)');
   assert.equal(job.concurrency['cancel-in-progress'], false);
   assert.match(job.if, /github\.event_name == 'push' && github\.ref == 'refs\/heads\/main'/);
   assert.match(job.if, /needs\.changes\.outputs\.plans != ''/);
