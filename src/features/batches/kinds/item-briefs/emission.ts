@@ -4,6 +4,7 @@
 import { stated } from "@/core/brief/rules/stored-date-stated";
 import { RELATIONS } from "@/core/coupling";
 import { isVerbatim } from "@/core/contracts/verbatim";
+import { isKindToken } from "@/core/entities/kinds";
 import { DUTY_HOLDER_TOKEN, isValid, LEG_MODE_CODES } from "@/core/contracts/vocabularies";
 import { normaliseTermKey, PROPOSED_ENTITY_KIND, proposedEntityId } from "@/core/vocabulary/adopted";
 import { type Precision, findFigures, foldHtmlSpace, isFigure, statutoryUnit, tryParseDateOrBareYearAt } from "@/core/parse";
@@ -21,6 +22,8 @@ export interface EmitLive {
   /** The item's current obligation objects: obligation_id to pinpoint. */
   objects: ReadonlyMap<string, string>;
   locate: Locate | null;
+  /** The live entity a candidate name already is, by `${kind}|${normalised name}` (G3 dedup): a candidate whose kind and normalised name an active entity already holds reuses that entity's id and mints nothing. */
+  named?: ReadonlyMap<string, string>;
 }
 export interface ObjectPlan { obligation_id: string | null; pinpoint: string; provision: Quote; set: Obj; quotes: Record<string, Quote>; entity_ids: string[] }
 export interface EmissionPlan {
@@ -29,12 +32,12 @@ export interface EmissionPlan {
   connections: { parent: string; child: string; relation: string; reason_token: string; quote: Quote }[];
   events: { event_kind: string; event_date: string; date_precision: "day" | "month" | "year"; quote: Quote; mode: string | null; entity_ids: string[] }[];
   document_date: { date: string; quote: Quote } | null;
-  candidates: { proposed_kind: string; canonical_name: string; quote: Quote }[];
+  /** Entities the reader mints (G3): a new entity with the kind, the canonical name and the quote that names it; usable in the same entry by `entity_id`. `existing` when the live graph already holds it. */
+  candidates: { proposed_kind: string; kind: string; canonical_name: string; entity_id: string; existing: boolean; quote: Quote }[];
   /** Every capture of the item (a capture-backed event is judged stale against them). */
   captureIds: string[];
 }
 const BLOCKS = ["entity_ids", "obligation_fields", "connections", "events", "document_date", "new_entity_candidates"] as const;
-const PROPOSED_KINDS = ["organisation", "technology", "port", "person"] as const;
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
 const LOCODE = /(?<![A-Za-z0-9])[A-Z]{2}[A-Z2-9]{3}(?![A-Za-z0-9])/;
 const SYMMETRIC = new Set(["competes_for_feedstock", "shares_grid_zone", "corridor_links"]);
@@ -102,26 +105,29 @@ export function validateEmission(entry: Obj, tag: string, live: EmitLive): { err
     return { capture_id: v.capture_id, text: slice };
   };
   const entityOf = (tokenValue: unknown, at: string): string | null => {
-    const id = typeof tokenValue === "string" ? live.ids.get(tokenValue) : undefined;
+    const id = typeof tokenValue === "string" ? (live.ids.get(tokenValue) ?? (candidateIds.has(tokenValue) ? tokenValue : undefined)) : undefined;
     return id ?? (err(at, `unknown entity id ${JSON.stringify(tokenValue)}: it is not on the candidate menu and no formal code resolves it`));
   };
+  const candidateIds = new Set<string>();
   const list = (b: string): unknown[] | null => (entry[b] === undefined ? null : Array.isArray(entry[b]) ? (entry[b] as unknown[]) : (err(b, "must be an array")));
   const plan: EmissionPlan = { entities: [], objects: [], connections: [], events: [], document_date: null, candidates: [], captureIds: [...live.captures.keys()] };
-  const candidateIds = new Set<string>();
   (list("new_entity_candidates") ?? []).forEach((c, i) => {
     const at = `new_entity_candidates[${i}]`;
-    if (!isObj(c) || !(PROPOSED_KINDS as readonly unknown[]).includes(c.proposed_kind) || !nonEmpty(c.canonical_name)) return err(at, `must be { proposed_kind (${PROPOSED_KINDS.join(", ")}), canonical_name, quote }`);
+    if (!isObj(c) || !isKindToken(c.proposed_kind) || !nonEmpty(c.canonical_name)) return err(at, "must be { proposed_kind (a snake_case token: organisation, technology, person, port, or a kind the text names), canonical_name, quote }");
     const q = quote(c.quote, `${at}.quote`);
     if (!q) return;
     if (!norm(q.text).includes(norm(c.canonical_name))) return err(at, `the name ${JSON.stringify(c.canonical_name)} does not occur inside its quote`);
     if (c.proposed_kind === "port" && LOCODE.test(q.text)) return err(at, "the quote carries a UN/LOCODE: write UNLOCODE:<code> in entity_ids, a port is never proposed when a formal code names it");
-    candidateIds.add(proposedEntityId(PROPOSED_ENTITY_KIND[c.proposed_kind as keyof typeof PROPOSED_ENTITY_KIND], normaliseTermKey(c.canonical_name)));
-    plan.candidates.push({ proposed_kind: c.proposed_kind as string, canonical_name: c.canonical_name.trim(), quote: q });
+    const kind = (PROPOSED_ENTITY_KIND as Record<string, string>)[c.proposed_kind] ?? c.proposed_kind;
+    const key = normaliseTermKey(c.canonical_name);
+    const held = live.named?.get(`${kind}|${key}`);
+    const entityId = held ?? proposedEntityId(kind, key);
+    candidateIds.add(entityId);
+    plan.candidates.push({ proposed_kind: c.proposed_kind, kind, canonical_name: c.canonical_name.trim(), entity_id: entityId, existing: held !== undefined, quote: q });
   });
   (list("entity_ids") ?? []).forEach((e, i) => {
     const at = `entity_ids[${i}]`;
     if (!isObj(e)) return err(at, "must be { entity_id, quote }");
-    if (typeof e.entity_id === "string" && candidateIds.has(e.entity_id)) return err(at, `${e.entity_id} is a new_entity_candidates entry of this entry: a candidate is never usable in entity_ids in the same entry`);
     const id = entityOf(e.entity_id, at);
     const q = quote(e.quote, `${at}.quote`);
     if (id && q) plan.entities.push({ entity_id: id, quote: q });
@@ -151,7 +157,7 @@ export function validateEmission(entry: Obj, tag: string, live: EmitLive): { err
   });
   (list("connections") ?? []).forEach((c, i) => {
     const at = `connections[${i}]`;
-    if (!isObj(c) || !(RELATIONS as readonly unknown[]).includes(c.relation) || typeof c.reason_token !== "string" || !/^[a-z][a-z0-9_]{2,39}$/.test(c.reason_token)) return err(at, `must be { from_entity_id, to_entity_id, relation (${RELATIONS.join(", ")}), reason_token (snake_case), quote }`);
+    if (!isObj(c) || !isKindToken(c.relation) || typeof c.reason_token !== "string" || !/^[a-z][a-z0-9_]{2,39}$/.test(c.reason_token)) return err(at, `must be { from_entity_id, to_entity_id, relation (a snake_case token; the usual ones: ${RELATIONS.join(", ")}), reason_token (snake_case), quote }`);
     const [from, to, q] = [entityOf(c.from_entity_id, `${at}.from_entity_id`), entityOf(c.to_entity_id, `${at}.to_entity_id`), quote(c.quote, `${at}.quote`)];
     if (from === to && from) return err(at, "an entity cannot connect to itself");
     if (!from || !to || !q) return;

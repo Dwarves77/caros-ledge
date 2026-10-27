@@ -26,7 +26,7 @@ import { BUDGET_STOP_REASON, budgetBytes, POOL_REREADS, preflight } from "../../
 import { applyEntries, isObj, itemPool, type ApplyOpts, type BatchDeps, type EntrySpec, type Item, type Obj } from "../../kit/session-batch";
 
 import { recordChangelog } from "./changelog";
-import { entityTokens, loadEmit, writeEmission } from "./emit";
+import { candidateNames, entityTokens, loadEmit, writeEmission } from "./emit";
 import { hasEmission, type EmitLive } from "./emission";
 import { validateRecordBriefEntry, type RecordLive, type RecordPlan } from "./validate";
 
@@ -213,7 +213,7 @@ function itemBriefsSpec(opts: RecordOpts): EntrySpec<RecordLive, RecordPlan> {
       for (const s of slotRows) slots.set(s.item_type, [...(slots.get(s.item_type) ?? []), { slot_key: s.slot_key, description: s.description }]);
       const entries = (file.entries as unknown[]).filter(isObj);
       const emit: Map<string, EmitLive> = new Map();
-      for (const e of entries) if (typeof e.item_id === "string" && items.has(e.item_id) && hasEmission(e)) emit.set(e.item_id, { ...(await loadEmit(deps, e.item_id, entityTokens(e))) });
+      for (const e of entries) if (typeof e.item_id === "string" && items.has(e.item_id) && hasEmission(e)) emit.set(e.item_id, { ...(await loadEmit(deps, e.item_id, entityTokens(e), candidateNames(e))) });
       return { items, slots, adopted: (await readAdoptedTerms(deps.sb)).adopted, now: deps.now(), allowOverwrite: opts.allowBriefOverwrite === true, emit };
     },
     entry: (e, i, live) => {

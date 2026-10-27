@@ -1288,7 +1288,9 @@
     "merged_into",
     "created_at",
     "display_name",
-    "entity_level"
+    "entity_level",
+    "basis",
+    "method_version"
    ],
    "uuid": [],
    "defaults": {

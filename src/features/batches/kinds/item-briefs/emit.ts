@@ -9,7 +9,7 @@ import { allRows, fetchAllByIdChunks, rowsByIds, type Db } from "@/core/db";
 import { READER_METHOD } from "@/core/digest/kinds";
 import { VALIDATORS } from "@/core/entities/crosswalk";
 import { readPool } from "@/core/grounding";
-import { normaliseTermKey } from "@/core/vocabulary/adopted";
+import { normaliseTermKey, PROPOSED_ENTITY_KIND } from "@/core/vocabulary/adopted";
 import { currentObligationObjects } from "@/core/workspace";
 import { deriveObligationObjects, forwardEventKey, insertForwardEvents, type Candidate, type ExtractedEvent } from "@/features/obligations";
 
@@ -30,7 +30,13 @@ export function entityTokens(e: Obj): string[] {
 }
 
 /** The item's live material for the validator: its captures, the ids a reader may write (the menu, closed mode and hub tokens, formal codes the crosswalk resolves to an active entity), and its current obligation objects. */
-export async function loadEmit(deps: BatchDeps, itemId: string, tokens: readonly string[]): Promise<EmitLive> {
+/** The (kind, name) of every new_entity_candidates entry: what loadEmit looks up so a name the graph already holds is reused, not minted twice. */
+export function candidateNames(e: Obj): { kind: string; name: string }[] {
+  const list = Array.isArray(e.new_entity_candidates) ? (e.new_entity_candidates as unknown[]) : [];
+  return list.flatMap((c) => { const o = c as Obj | null; return o && typeof o.proposed_kind === "string" && typeof o.canonical_name === "string" ? [{ kind: (PROPOSED_ENTITY_KIND as Record<string, string>)[o.proposed_kind] ?? o.proposed_kind, name: o.canonical_name }] : []; });
+}
+
+export async function loadEmit(deps: BatchDeps, itemId: string, tokens: readonly string[], names: readonly { kind: string; name: string }[] = []): Promise<EmitLive> {
   const sb = deps.sb;
   const [it] = await rowsByIds<{ id: string; instrument_entity_id: string | null; jurisdiction_iso: string[] | null; source_url: string | null; domain: number | null }>(sb, "intelligence_items", "id, instrument_entity_id, jurisdiction_iso, source_url, domain", [itemId]);
   const captures = new Map((await readPool(sb, itemId)).map((p) => [p.id, p.text]));
@@ -51,7 +57,14 @@ export async function loadEmit(deps: BatchDeps, itemId: string, tokens: readonly
     const live = [...new Set(ents.flatMap((e) => (e.status === "active" ? [e.entity_id] : e.merged_into ? [e.merged_into] : [])))];
     if (live.length === 1) ids.set(t, live[0] as string);
   }
-  return { captures, ids, objects: new Map(currentObligationObjects<Row & { obligation_id: string; pinpoint_citation: string }>(objects as never).map((o) => [o.obligation_id, o.pinpoint_citation])), locate: deps.locate ?? null };
+  // G3 dedup: an active entity of the same kind whose canonical name normalises to the same key is the candidate; it is reused, never minted again.
+  const byName = new Map<string, string>();
+  for (const n of names) {
+    const { data, error } = await sb.from("entities").select("entity_id, canonical_name").eq("kind", n.kind).eq("status", "active").ilike("canonical_name", n.name.replace(/[\\%_]/g, (m) => `\\${m}`));
+    if (error) throw new Error(`entities name read failed: ${error.message}`);
+    for (const e of (data ?? []) as { entity_id: string; canonical_name: string }[]) if (normaliseTermKey(e.canonical_name) === normaliseTermKey(n.name)) byName.set(`${n.kind}|${normaliseTermKey(n.name)}`, e.entity_id);
+  }
+  return { named: byName, captures, ids, objects: new Map(currentObligationObjects<Row & { obligation_id: string; pinpoint_citation: string }>(objects as never).map((o) => [o.obligation_id, o.pinpoint_citation])), locate: deps.locate ?? null };
 }
 const readObjects = (sb: Db, itemId: string): Promise<Row[]> => allRows<Row>(sb, "obligation_objects", "*", { order: "obligation_id", where: (q) => q.eq("instrument_item_id", itemId) });
 
@@ -73,6 +86,14 @@ export async function writeEmission(deps: BatchDeps, itemId: string, sourceId: s
   const { sb } = deps;
   const [counts, notes]: [Record<string, number>, string[]] = [{}, []];
   const bump = (k: string, n = 1) => void (counts[k] = (counts[k] ?? 0) + n);
+  // G3 minting: an entity the text names is written (with the quote and the capture that name it, and the reader version) BEFORE the refs, relations, objects and events that name it. A name the graph already holds is not written again.
+  const fresh = [...new Map(plan.candidates.filter((c) => !c.existing).map((c) => [c.entity_id, c])).values()];
+  if (fresh.length) {
+    const { error } = await sb.from("entities").upsert(fresh.map((c) => ({ entity_id: c.entity_id, kind: c.kind, canonical_name: c.canonical_name, status: "active", basis: { quote: c.quote.text, capture_id: c.quote.capture_id }, method_version: READER_METHOD })), { onConflict: "entity_id", ignoreDuplicates: true });
+    if (error) notes.push(`entities mint failed: ${error.message}`);
+    else bump("entities_minted", fresh.length);
+  }
+  bump("entities_reused", plan.candidates.filter((c) => c.existing).length);
   const refs: Row[] = plan.entities.map((e) => ref("intelligence_items", itemId, e.entity_id, { quote: e.quote.text, capture_id: e.quote.capture_id }));
   // obligation_fields: candidates through the derive's buildObjectRow; the prior object's columns are carried under the reader's values (a carried figure the new provision no longer states is dropped)
   if (plan.objects.length) {

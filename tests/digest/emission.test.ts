@@ -5,9 +5,9 @@ import { test } from "node:test";
 
 import { READER_METHOD } from "@/core/digest/kinds";
 import { entityId } from "@/core/entities/id";
-import { proposedEntityId } from "@/core/vocabulary/adopted";
+import { normaliseTermKey, proposedEntityId } from "@/core/vocabulary/adopted";
 import { applyBatch } from "@/features/batches";
-import { entityTokens, loadEmit, writeEmission } from "@/features/batches/kinds/item-briefs/emit";
+import { candidateNames, entityTokens, loadEmit, writeEmission } from "@/features/batches/kinds/item-briefs/emit";
 import { validateEmission, type EmissionPlan } from "@/features/batches/kinds/item-briefs/emission";
 import { locateSpan } from "@/core/contracts/verbatim";
 
@@ -64,8 +64,8 @@ test("the contract checks: an id outside the menu, a candidate used as an id, an
   const outside = entityId16("cl:organisation:", "feedfeedfeedfeed");
   assert.match(reasons(await check(w, emissionEntry(w, { entity_ids: [{ entity_id: outside, quote: q("Strasbourg") }] }))), new RegExp(`unknown entity id "${outside}"`));
   const asId = proposedEntityId("organisation", "maersk line a/s");
-  assert.match(reasons(await check(w, emissionEntry(w, { entity_ids: [{ entity_id: asId, quote: q(ORG) }] }))), /a candidate is never usable in entity_ids in the same entry/);
-  assert.match(reasons(await check(w, emissionEntry(w, { connections: [{ from_entity_id: UCO, to_entity_id: HVO, relation: "likes", reason_token: "named_feedstock", quote: q("Hydrotreated vegetable oil is produced from used cooking oil") }] }))), /relation \(feedstock_of/);
+  assert.deepEqual((await check(w, emissionEntry(w, { entity_ids: [{ entity_id: asId, quote: q(ORG) }] }))).errors, [], "G3: a candidate of the same entry is usable by its id");
+  assert.match(reasons(await check(w, emissionEntry(w, { connections: [{ from_entity_id: UCO, to_entity_id: HVO, relation: "Likes It", reason_token: "named_feedstock", quote: q("Hydrotreated vegetable oil is produced from used cooking oil") }] }))), /relation \(a snake_case token/);
   const bare = { pinpoint: "Article 9", provision: q("Operators shall report verified annual emissions"), fields: { statutory_maximum: { value: "EUR 50 000", quote: q("EUR 50 000") } } };
   const refused = reasons(await check(w, emissionEntry(w, { obligation_fields: [bare] })));
   for (const need of ["duty_holder_class", "binding_position", "applicability_trigger"]) assert.match(refused, new RegExp(`a new object needs ${need}`));
@@ -123,7 +123,8 @@ test("INV-DIG-5: the entry applies end to end: the blocks reach their tables wit
   assert.deepEqual([term.status, term.kind, term.evidence.proposed_kind], ["proposed", "term", "organisation"]);
   assert.equal(w.db.rows("vocabulary_mentions").filter((m) => m.surface_text === ORG).length, 1);
   assert.equal(w.db.rows("brief_reviews").length, 1);
-  assert.equal(w.db.rows("entities").some((x) => String(x.canonical_name) === "Maersk Line A/S"), false, "a candidate is never minted inline");
+  const minted = w.db.rows("entities").find((x) => String(x.canonical_name) === "Maersk Line A/S") as Record<string, unknown>;
+  assert.deepEqual([minted?.kind, minted?.status, minted?.method_version, (minted?.basis as { capture_id?: string })?.capture_id, (minted?.basis as { quote?: string })?.quote], ["organisation", "active", READER_METHOD, w.cap, ORG], "G3: the candidate is minted with the quote and capture that name it");
   // idempotence: the same plan again writes zero new rows
   const before = ["entity_refs", "obligation_objects", "entity_relations", "item_forward_events", "vocabulary_terms", "vocabulary_mentions"].map((t) => w.db.rows(t).length);
   const plan = (await check(w, e)).plan as EmissionPlan;
@@ -247,4 +248,70 @@ test("G3: obligation_fields.due_date states its precision like an event: stored 
   assert.match(reasons(await check(w, due("2023-09-13", "September 2023", "month"))), /month precision needs the first of the month/);
   assert.match(reasons(await check(w, due("2027-01-01", "within 24 months of the date of entry into force", "year"))), /does not state a year date/);
   assert.match(reasons(await check(w, due("2027-01-01", "1 January 2027", "week"))), /precision must be day, month or year/);
+});
+
+test("G3 minting: a candidate is minted and referenced in the same entry (entity_ids, a connection, an obligation, an event); the mint comes before the refs; a second apply mints nothing", async () => {
+  const w = emissionWorld();
+  const q = (text: string) => ({ capture_id: w.cap, text });
+  const id = proposedEntityId("organisation", normaliseTermKey("Maersk Line A/S"));
+  const base = emissionEntry(w);
+  const e = emissionEntry(w, {
+    entity_ids: [...(base.entity_ids as unknown[]), { entity_id: id, quote: q(ORG) }],
+    connections: [...(base.connections as unknown[]), { from_entity_id: id, to_entity_id: HVO, relation: "operates_service_for", reason_token: "named_service", quote: q(ORG) }],
+    events: [{ event_kind: "entry_into_force", event_date: "2027-01-01", quote: q(SPAN_FORCE), mode: "ocean", entity_ids: [id] }],
+  });
+  const v = await check(w, e);
+  assert.deepEqual(v.errors, [], reasons(v));
+  assert.equal(v.plan?.candidates[0]?.entity_id, id);
+  const r = await apply(w, e);
+  assert.equal(r.counts.applied, 1, r.notes.join("\n"));
+  const ent = w.db.rows("entities").filter((x) => x.entity_id === id);
+  assert.equal(ent.length, 1);
+  assert.equal(ent[0]?.method_version, READER_METHOD);
+  assert.ok(w.db.rows("entity_refs").some((x) => x.entity_id === id && x.ref_table === "intelligence_items"), "the minted entity is filed on the item");
+  assert.ok(w.db.rows("entity_refs").some((x) => x.entity_id === id && x.ref_table === "item_forward_events"), "and on the event");
+  assert.ok(w.db.rows("entity_relations").some((x) => x.parent_entity_id === id && x.relation === "operates_service_for"), "an open relation token, from the minted entity");
+  const before = w.db.rows("entities").length;
+  await apply(w, e);
+  assert.equal(w.db.rows("entities").length, before, "a second apply mints nothing");
+});
+
+test("G3 minting: an unverified quote mints nothing and the references to its id are refused", async () => {
+  const w = emissionWorld();
+  const id = proposedEntityId("organisation", normaliseTermKey("Phantom Shipping Ltd"));
+  const e = emissionEntry(w, {
+    new_entity_candidates: [{ proposed_kind: "organisation", canonical_name: "Phantom Shipping Ltd", quote: { capture_id: w.cap, text: "Phantom Shipping Ltd operates nothing in this capture." } }],
+    entity_ids: [{ entity_id: id, quote: { capture_id: w.cap, text: "Strasbourg" } }],
+  });
+  const v = await check(w, e);
+  assert.match(reasons(v), /the quote is not in capture/);
+  assert.match(reasons(v), new RegExp(`unknown entity id "${id}"`));
+  const r = await apply(w, e);
+  assert.equal(r.counts.applied ?? 0, 0);
+  assert.equal(w.db.rows("entities").some((x) => x.entity_id === id), false);
+});
+
+test("G3 minting: the same name minted twice gives one id (the normalised name); a name an active entity of the kind already holds is reused, not minted; any snake_case kind is a kind", async () => {
+  const w = emissionWorld();
+  const q = (text: string) => ({ capture_id: w.cap, text });
+  const two = emissionEntry(w, { new_entity_candidates: [{ proposed_kind: "organisation", canonical_name: "Maersk Line A/S", quote: q(ORG) }, { proposed_kind: "organisation", canonical_name: "MAERSK  line a/s", quote: q("Maersk  Line A/S") }] });
+  const v = await check(w, two);
+  assert.deepEqual(v.errors, [], reasons(v));
+  assert.equal(new Set(v.plan?.candidates.map((c) => c.entity_id)).size, 1, "one id for both spellings");
+  await apply(w, two);
+  assert.equal(w.db.rows("entities").filter((x) => String(x.canonical_name).toLowerCase().replace(/\s+/g, " ") === "maersk line a/s").length, 1, "one entity row");
+  // an active entity of the kind with that normalised name is reused: its id, no mint
+  const held = entityId("organisation", "held-elsewhere");
+  w.db.seed("entities", [{ entity_id: held, kind: "organisation", canonical_name: "Hamburg Sud", status: "active" }]);
+  const reuse = emissionEntry(w, { new_entity_candidates: [{ proposed_kind: "organisation", canonical_name: "hamburg sud", quote: q("Hamburg Sud operates the weekly service named in the annex.") }] });
+  const text = "Article 9. Hamburg Sud operates the weekly service named in the annex.";
+  void text;
+  const live = await loadEmit(w.deps, ITEM, entityTokens(reuse), candidateNames(reuse));
+  assert.equal(live.named?.get(`organisation|${normaliseTermKey("hamburg sud")}`), held);
+  // an open kind
+  const open = emissionEntry(w, { new_entity_candidates: [{ proposed_kind: "vessel_class", canonical_name: "Maersk Line A/S", quote: q(ORG) }] });
+  const ov = await check(w, open);
+  assert.deepEqual(ov.errors, [], reasons(ov));
+  assert.equal(ov.plan?.candidates[0]?.kind, "vessel_class");
+  assert.match(reasons(await check(w, emissionEntry(w, { new_entity_candidates: [{ proposed_kind: "Vessel Class", canonical_name: "Maersk Line A/S", quote: q(ORG) }] }))), /snake_case token/);
 });

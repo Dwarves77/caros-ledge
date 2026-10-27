@@ -170,5 +170,11 @@
     "unscopedReads": {
       "obligation_objects": "live reference data: the self-check reads the whole table to prove every row that existed took the default day (a whole-table invariant; production holds the rows, the CI database none)"
     }
+  },
+  "0144_entity_kinds_and_relations_open": {
+    "unscopedReads": {
+      "entities": "live reference data: the self-check reads every entity to prove each existing kind, id and entity_level still satisfies the new checks (a whole-table invariant; production holds the rows, the CI database none)",
+      "entity_relations": "live reference data: the self-check reads every relation to prove each existing relation matches the new shape check"
+    }
   }
 }
