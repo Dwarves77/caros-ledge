@@ -189,8 +189,25 @@ export function compareRecord(route, viewport, base, cap, approved, dataNames = 
   const itemsIn = countBy(capKeys.map((k, i) => (capControls[i].item === true && !k.startsWith('button:') ? capSection[i] : null)).filter(Boolean));
   const itemKeys = new Set(capKeys.filter((_, i) => capControls[i].item === true));
   const emptied = new Set();
+  // Slot buttons (capture mark `slot: true`: contract.mjs ITEM_SLOT_SELECTOR, e.g. research theme pills): the baseline carries no marks, so a baseline button is a vanished slot member only when it is absent from the capture and
+  // a run of such absent buttons reaches (in baseline order) a button the capture draws inside a slot. With no slot drawn at all (the whole facet row gone) nothing is excused and the missing buttons fail.
+  const slotKeys = new Set(capKeys.filter((_, i) => capControls[i].slot === true));
+  const capSet = new Set(capKeys);
+  const slotGone = baseKeys.map(() => false);
+  if (slotKeys.size) {
+    const absent = (j) => j >= 0 && j < baseKeys.length && baseKeys[j].startsWith('button:') && !capSet.has(baseKeys[j]);
+    for (const step of [1, -1]) {
+      for (let i = step === 1 ? 0 : baseKeys.length - 1; i >= 0 && i < baseKeys.length; i += step) {
+        if (!absent(i)) continue;
+        let j = i - step;
+        while (absent(j) && !slotGone[j]) j -= step;
+        if (j >= 0 && j < baseKeys.length && (slotKeys.has(baseKeys[j]) || slotGone[j])) slotGone[i] = true;
+      }
+    }
+  }
   check('control', baseControls, capControls, ctl, {
     missing: (i, k) => {
+      if (k.startsWith('button:') && slotGone[i]) return true;
       if (k.startsWith('button:')) return itemKeys.has(k);
       if (!k.startsWith('link:') || itemKeys.size === 0) return false;
       if ((itemsIn.get(baseSection[i]) ?? 0) > 0) return true;

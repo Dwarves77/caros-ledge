@@ -272,7 +272,7 @@ export function domSummary({ rowSelector, itemPath = null, itemPage = false, slo
     if (!rendered(el)) continue;
     const role = roleOf(el);
     if (!role) continue;
-    controls.push({ role, name: accName(el), ...(isItem(el) ? { item: true } : {}) });
+    controls.push({ role, name: accName(el), ...(isItem(el) ? { item: true } : {}), ...(inSlot(el) ? { slot: true } : {}) });
   }
 
   // Every list row on the page, none dropped, in document order, with the container it sits in (the nearest labelled region, else the page): a list's rows are compared with the baseline's, container by container.

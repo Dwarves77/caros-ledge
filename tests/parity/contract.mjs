@@ -35,6 +35,6 @@ export const ITEM_PATH = '^/(regulations|market|research|operations)/(?!register
 
 /**
  * Data slots that are not links to an item: a block whose rows are data-ordered (the map's jurisdiction register is ordered by count, then label: src/features/regulations/map/rollup.ts) is an item slot. Controls inside it are
- * marked `item: true` by the capture, so compare.mjs checks that the block is drawn and what form its links take, never their order. A block that vanishes still fails (no item drawn in its section).
+ * marked `item: true` by the capture, so compare.mjs checks that the block is drawn and what form its links take, never their order. A block that vanishes still fails (no item drawn in its section). The research theme pills (data-part="theme-facet-row") are the second case (PARITY-7): a pill shows only when a visible item resolves to that theme, so a quarantine removes one.
  */
-export const ITEM_SLOT_SELECTOR = '[data-testid="jurisdiction-register-rows"]';
+export const ITEM_SLOT_SELECTOR = '[data-testid="jurisdiction-register-rows"], [data-part="theme-facet-row"]';

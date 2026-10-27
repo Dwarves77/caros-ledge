@@ -276,3 +276,19 @@ test('PARITY-6: reordered register rows pass when marked as item slots; unmarked
   const two = (names) => ({ landmarks: [], headings: [], rows: { items: [] }, controls: [...names.map((n) => ({ role: 'button', name: n })), link('Brazil', true)] });
   assert.deepEqual(compareRecord('map', '1280x900', two(['Reset', 'Zoom']), two(['Zoom', 'Reset']), []).fails.length > 0, true, 'an unmarked control keeps its order');
 });
+
+// PARITY-7: the research theme pills are data-driven (a pill shows only when a visible item resolves to the theme; quarantining the only fuels_saf item removed "Fuels & SAF"). The capture marks the pills
+// as item slots (contract.mjs ITEM_SLOT_SELECTOR, data-part="theme-facet-row"), so a pill appearing, vanishing or reordering is data; the whole facet row vanishing still fails.
+test('PARITY-7: a missing theme pill passes when marked as an item slot; unmarked it fails; the whole row gone still fails', () => {
+  const pill = (name, item) => ({ role: 'button', name, ...(item ? { item: true, slot: true } : {}) });
+  const rec = (names, item) => ({ landmarks: [], headings: [], rows: { items: [] }, controls: [{ role: 'button', name: 'Filter' }, { role: 'button', name: 'Reset' }, ...names.map((n) => pill(n, item))] });
+  const b = rec(['Operations', 'Fuels & SAF', 'Policy'], false);
+  const bm = rec(['Operations', 'Fuels & SAF', 'Policy'], true);
+  const run = (base, cap) => compareRecord('research', '1280x900', base, cap, []).fails;
+  assert.deepEqual(run(b, rec(['Operations', 'Policy'], false)), ['control missing: button:Fuels & SAF'], 'red-first: unmarked, the CI failure reproduces');
+  assert.deepEqual(run(bm, rec(['Operations', 'Policy'], true)), [], 'marked as slots: a missing pill is data');
+  assert.deepEqual(run(bm, rec(['Policy', 'Operations', 'Fuels & SAF'], true)), [], 'reordered pills are data');
+  assert.deepEqual(run(bm, rec(['Fuels & SAF'], true)), [], 'first and last pills missing: data');
+  assert.equal(run(bm, rec([], true)).length > 0, true, 'whole facet row gone: fails');
+  assert.equal(run(bm, { ...rec(['Operations', 'Policy'], true), controls: rec(['Operations', 'Policy'], true).controls.filter((c) => c.name !== 'Filter') }).length > 0, true, 'a non-slot button missing still fails');
+});
