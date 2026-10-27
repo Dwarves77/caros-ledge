@@ -1,0 +1,69 @@
+{
+  "ruling": "operator and coordinator 2026-10-27 (DRAIN-2-RUN, after ENGINE-CORE-FIX-1 and migrations 0143/0144; the rolled-back combined proof on production gave mandateCapacity 1, leadLag 82, regulatoryStacking 6, 17 entities minted with 0 duplicates, entity_refs 12,846 to 40,553): the DRAIN-1 reviewed item batch is re-emitted so the 12 residue entries write their structured blocks (EMIT-ON-RESIDUE), the DRAIN-2 reviewed batch of 18 triangle items (all judge residue, so their prose waits while their emissions and the minting write) is applied, the propagate stage mines the new briefs into entity_refs (it fetches nothing, so it carries no cadence exception), and the patterns pass runs with a positive scan_limit of 60, the per-turn bound of src/core/impact/data/reading.json (read backlog 1 at authoring; two apply steps cover the backlog plus the items the two batches stale). Both brief steps are partial by design (residue), so they carry allow_partial and continue. Nothing is fetched, so no scrape cadence is exercised and rule 16 stands",
+  "steps": [
+    {
+      "name": "drain-1-reemit",
+      "stage": "briefs",
+      "mode": "apply",
+      "input_file": "data/2026-10-27-drain-1.items.json",
+      "producer_env": [],
+      "on_failure": "continue",
+      "allow_partial": true
+    },
+    {
+      "name": "drain-2-items",
+      "stage": "briefs",
+      "mode": "apply",
+      "input_file": "data/2026-10-27-drain-2.items.json",
+      "producer_env": [],
+      "on_failure": "continue",
+      "allow_partial": true
+    },
+    {
+      "name": "propagate-mine",
+      "stage": "propagate",
+      "mode": "apply",
+      "input": {
+        "propagate": {}
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "patterns-dry",
+      "stage": "connect",
+      "mode": "dry",
+      "input": {
+        "connect": {
+          "scan_limit": 60
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "patterns-apply-01",
+      "stage": "connect",
+      "mode": "apply",
+      "input": {
+        "connect": {
+          "scan_limit": 60
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "patterns-apply-02",
+      "stage": "connect",
+      "mode": "apply",
+      "input": {
+        "connect": {
+          "scan_limit": 60
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    }
+  ]
+}

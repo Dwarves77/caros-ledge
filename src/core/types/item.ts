@@ -100,7 +100,10 @@ export interface BiasTag {
 }
 
 export interface Resource {
+  /** The display id: the legacy id when the item has one, else the uuid. Routes and links use it; identity checks do not. */
   id: string;
+  /** The item's uuid (intelligence_items.id), always. The detail root states it as data-item-id. */
+  itemUuid?: string;
   /** Primary mode: ocean, air, road. */
   cat: string;
   sub: string;

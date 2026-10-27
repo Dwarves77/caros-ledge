@@ -11,8 +11,9 @@ import { assertMoatBoundary, planLinkWrites } from "@/core/entities/mentions";
 import { distinctNormalized, planJurisdiction } from "@/core/entities/plan";
 import { congruence, sourceRole } from "@/core/entities/source-role";
 import { formatCorridorLabel } from "@/core/entities/unlocode-names";
-import { couplingByKey } from "@/core/coupling/coupling";
 import { backfillDerivationEdges, backfillEntities, backfillLineageEdges, seedCorridors, seedDerivedValues } from "@/features/propagation/ops";
+
+import { couplingByKey, fixtureRows } from "../_support/ontology.ts";
 
 import { connectDb } from "./world.ts";
 
@@ -144,7 +145,7 @@ test("INV-JOIN-9: every lane corridor is linked to the asset of the mode its nam
   const lanes = [["CNSHA-NLRTM:ocean", "ocean"], ["DEHAM-USNYC:air", "air"], ["NLRTM-DEDUI:inland_waterway", "inland_waterway"], ["CNSHA-USLAX:road", "road"], ["CNSHA-ITGOA:rail", "rail"]] as const;
   const corridors = lanes.map(([name]) => ({ entity_id: entityId("corridor", name), kind: "corridor", canonical_name: name, display_name: name, status: "active" }));
   const asset = (mode: string) => ({ entity_id: couplingByKey(`mode:${mode}`)?.entityId as string, kind: "asset", canonical_name: mode, display_name: mode, status: "active" });
-  const tables = (modes: string[]) => ({ market_series: [], regional_data_facts: [], entities: [...corridors, ...modes.map(asset)], entity_identifiers: [], entity_scope: [], entity_relations: [] });
+  const tables = (modes: string[]) => ({ market_series: [], regional_data_facts: [], entities: [...corridors, ...modes.map(asset)], entity_identifiers: [], entity_scope: [], entity_relations: [], entity_refs: fixtureRows().refs.filter((r) => modes.some((m) => (r.basis as { value: string }).value === m)) });
   const none = connectDb(tables([]));
   const early = await seedCorridors({ sb: none.db, now: () => NOW }, { dry: false });
   assert.equal(early.counts.mode_links ?? 0, 0, "the mode assets are not there yet");

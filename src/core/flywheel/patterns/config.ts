@@ -15,13 +15,20 @@ export const PATTERNS = z
   .object({
     version: z.string().min(1),
     analysisMaxTier: z.number().int().min(1).max(7),
+    /** The classes an entity can belong to that join nothing on their own: a bare mode, a jurisdiction or an organisation shared by two rows is not a finding (the join needs a specific entity: a fuel, a feedstock, a node, a corridor, an instrument). */
+    genericClasses: z.array(z.string()),
+    /** The classes whose relations are not walked: a jurisdiction or an organisation reaches nothing (a mode is walked, so a lane corridor linked to its mode meets the rows filed under the mode). */
+    inertClasses: z.array(z.string()),
+    /** The relations a generic entity (a mode) still reaches over: a lane corridor linked to its mode is a scope of the mode; the fuels and instruments of the mode are not (they would fan one row out to everything of the mode). */
+    genericReach: z.array(z.string()),
     velocity: z.object({ windowsDays: z.array(dayCount).min(1), baselineDays: dayCount, minBaseline: dayCount, maxEvidence: dayCount, minSources: dayCount, minDistinct: dayCount, excludeKinds: z.array(z.string()), excludeClasses: z.array(z.string()), confidence: confidenceScale }).strict(),
     mandateCapacity: z.object({ confidence: confidenceScale }).strict(),
     leadLag: z.object({ triggerKinds: z.array(z.string()).min(1), leadDays: z.tuple([dayCount, dayCount]), moveWindowDays: dayCount, minMove: z.number().positive(), confidence: confidenceScale }).strict(),
     crossModal: z.object({ relations: z.record(z.string(), z.number().positive().max(1)), excludeClasses: z.array(z.string()), recencyDays: dayCount, minStrength: z.number().min(0).max(1), minMove: z.number().positive(), confidence: confidenceScale }).strict(),
-    penaltyAbatement: z.object({ minTrl: z.number().int().min(1), band: z.number().positive(), confidence: confidenceScale }).strict(),
+    penaltyAbatement: z.object({ minTrl: z.number().int().min(1), maturityTrl: z.number().int().min(1).max(9), band: z.number().positive(), abatementUnit: z.string().min(1), confidence: confidenceScale }).strict(),
+    regulatoryStacking: z.object({ minInstruments: z.number().int().min(2), windowDays: dayCount, pastDays: z.number().int().min(0), futureDays: dayCount, entityClasses: z.array(z.string()).min(1), maxEvidence: dayCount, confidence: confidenceScale }).strict(),
     /** The kinds whose prediction is tracked (a signpost each), the direction a standing pattern scores in and who scores it. */
-    signposts: z.object({ kinds: z.array(z.enum(["velocity", "mandateCapacity", "leadLag", "crossModal", "penaltyAbatement"])), direction: z.enum(["confirms", "refutes", "delays"]), scoredBy: z.string().min(1) }).strict(),
+    signposts: z.object({ kinds: z.array(z.enum(["velocity", "mandateCapacity", "leadLag", "crossModal", "penaltyAbatement", "regulatoryStacking"])), direction: z.enum(["confirms", "refutes", "delays"]), scoredBy: z.string().min(1) }).strict(),
     /** The discovery hook: the surface an entity class is read on and the venue class that publishes on each surface. */
     discovery: z.object({ surfaceOfClass: z.record(z.string(), z.string()), venueOfSurface: z.record(z.string(), z.string()) }).strict(),
   })
@@ -31,7 +38,7 @@ export const PATTERNS = z
 const columnName = z.string().min(1);
 const quantitySpec = z.object({ column: columnName.optional(), unit: columnName.optional(), unitColumn: columnName.optional(), figure: columnName.optional() }).strict();
 const factSpecSchema = z
-  .object({ role: z.enum(["claim", "ratchet", "capacity", "series", "trigger", "tech", "move", "ceiling", "abatement"]), pk: columnName, edge: columnName.optional(), surface: columnName.optional(), at: columnName.optional(), due: columnName.optional(), dueYear: columnName.optional(), dueMonthsAfterAt: columnName.optional(), qty: quantitySpec.optional(), source: columnName.optional(), tier: columnName.optional(), kind: columnName.optional(), trl: columnName.optional(), group: columnName.optional(), item: columnName.optional(), owner: columnName.optional(), capture: columnName.optional(), resolved: columnName.optional(), from: columnName.optional(), until: columnName.optional() })
+  .object({ role: z.enum(["claim", "ratchet", "capacity", "series", "trigger", "tech", "move", "ceiling", "abatement"]), pk: columnName, edge: columnName.optional(), surface: columnName.optional(), at: columnName.optional(), due: z.union([columnName, z.array(columnName).min(1)]).optional(), dueYear: columnName.optional(), duePrecision: columnName.optional(), dueMonthsAfterAt: columnName.optional(), qty: quantitySpec.optional(), source: columnName.optional(), tier: columnName.optional(), kind: columnName.optional(), trl: columnName.optional(), group: columnName.optional(), item: columnName.optional(), owner: columnName.optional(), capture: columnName.optional(), resolved: columnName.optional(), from: columnName.optional(), until: columnName.optional() })
   .strict();
 export const UNIT_FORMS: readonly UnitForm[] = statutoryUnitsJson.forms;
 export type FactSpec = z.infer<typeof factSpecSchema>;

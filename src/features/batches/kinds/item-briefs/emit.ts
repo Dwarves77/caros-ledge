@@ -3,13 +3,14 @@
 // connections are entity_relations with a basis; events are capture-backed item_forward_events; a document date fills a capture the producer could not date; new entities are proposed as vocabulary terms (never minted inline; adoption is the recurrence rule's).
 import { createHash } from "node:crypto";
 
-import { COUPLINGS, roleOf, uuidOf } from "@/core/coupling";
+import { loadOntology, uuidOf, type Ontology } from "@/core/coupling";
+import { LEG_MODE_CODES as MODE_TOKENS } from "@/core/contracts/vocabularies";
 import { readAll } from "@/core/coupling/read";
 import { allRows, fetchAllByIdChunks, rowsByIds, type Db } from "@/core/db";
 import { READER_METHOD } from "@/core/digest/kinds";
 import { VALIDATORS } from "@/core/entities/crosswalk";
 import { readPool } from "@/core/grounding";
-import { normaliseTermKey } from "@/core/vocabulary/adopted";
+import { normaliseTermKey, PROPOSED_ENTITY_KIND } from "@/core/vocabulary/adopted";
 import { currentObligationObjects } from "@/core/workspace";
 import { deriveObligationObjects, forwardEventKey, insertForwardEvents, type Candidate, type ExtractedEvent } from "@/features/obligations";
 
@@ -22,21 +23,34 @@ const FORMAL = /^(CELEX|UNLOCODE|ISO3166_1|ISO3166_2):(.+)$/;
 const norm = (s: string): string => s.replace(/\s+/g, " ").trim().toLowerCase();
 type Row = Record<string, unknown>;
 
-/** The formal codes and closed tokens an entry writes where an entity id goes: the strings that are not cl: ids. */
+/** Every string an entry writes where an entity id goes: cl: ids (looked up in entities), formal codes (resolved through the crosswalk) and closed tokens. */
 export function entityTokens(e: Obj): string[] {
   const arr = (v: unknown): unknown[] => (Array.isArray(v) ? v : []);
   const raw = [...arr(e.entity_ids).map((x) => (x as Obj | null)?.entity_id), ...arr(e.obligation_fields).flatMap((o) => arr((o as Obj | null)?.entity_ids)), ...arr(e.events).flatMap((v) => arr((v as Obj | null)?.entity_ids)), ...arr(e.connections).flatMap((c) => [(c as Obj | null)?.from_entity_id, (c as Obj | null)?.to_entity_id])];
-  return raw.filter((x): x is string => typeof x === "string" && !x.startsWith("cl:"));
+  return raw.filter((x): x is string => typeof x === "string");
 }
 
 /** The item's live material for the validator: its captures, the ids a reader may write (the menu, closed mode and hub tokens, formal codes the crosswalk resolves to an active entity), and its current obligation objects. */
-export async function loadEmit(deps: BatchDeps, itemId: string, tokens: readonly string[]): Promise<EmitLive> {
+/** The (kind, name) of every new_entity_candidates entry: what loadEmit looks up so a name the graph already holds is reused, not minted twice. */
+export function candidateNames(e: Obj): { kind: string; name: string }[] {
+  const list = Array.isArray(e.new_entity_candidates) ? (e.new_entity_candidates as unknown[]) : [];
+  return list.flatMap((c) => { const o = c as Obj | null; return o && typeof o.proposed_kind === "string" && typeof o.canonical_name === "string" ? [{ kind: (PROPOSED_ENTITY_KIND as Record<string, string>)[o.proposed_kind] ?? o.proposed_kind, name: o.canonical_name }] : []; });
+}
+
+export async function loadEmit(deps: BatchDeps, itemId: string, tokens: readonly string[], names: readonly { kind: string; name: string }[] = []): Promise<EmitLive> {
   const sb = deps.sb;
-  const [it] = await rowsByIds<{ id: string; instrument_entity_id: string | null; jurisdiction_iso: string[] | null; source_url: string | null }>(sb, "intelligence_items", "id, instrument_entity_id, jurisdiction_iso, source_url", [itemId]);
+  const [it] = await rowsByIds<{ id: string; instrument_entity_id: string | null; jurisdiction_iso: string[] | null; source_url: string | null; domain: number | null }>(sb, "intelligence_items", "id, instrument_entity_id, jurisdiction_iso, source_url, domain", [itemId]);
   const captures = new Map((await readPool(sb, itemId)).map((p) => [p.id, p.text]));
   const [claims, events, objects] = [await allRows<{ id: string }>(sb, "section_claim_provenance", "id", { where: (q) => q.eq("intelligence_item_id", itemId) }), await allRows<{ id: string }>(sb, "item_forward_events", "id", { where: (q) => q.eq("intelligence_item_id", itemId) }), await readObjects(sb, itemId)];
+  const onto = await loadOntology(sb);
   const menu = it ? await candidateMenu(sb, await itemSeed(sb, it, { claimIds: claims.map((c) => c.id), eventIds: events.map((e) => e.id), obligationIds: objects.map((o) => String(o.obligation_id)) })) : { ids: [] as string[] };
-  const ids = new Map<string, string>([...menu.ids.map((id) => [id, id] as const), ...COUPLINGS.filter((c) => c.class === "mode" || c.class === "hub").map((c) => [c.key, c.entityId] as const)]);
+  const ids = new Map<string, string>([...menu.ids.map((id) => [id, id] as const), ...MODE_TOKENS.flatMap((t) => { const e = onto.modeEntity(t); return e ? [[`mode:${t}`, e] as const] : []; })]);
+  // GRAPH-GROW-1: the menu is an authoring aid, not a whitelist. A cl: id the entry names is valid when the entity EXISTS and is live (an active entity, or the one a merged entity points to); an id nothing holds is still refused.
+  const named = [...new Set(tokens)].filter((t) => /^cl:/.test(t) && !ids.has(t));
+  for (const e of await rowsByIds<{ entity_id: string; status: string; merged_into: string | null }>(sb, "entities", "entity_id, status, merged_into", named, "entity_id", "entity_id")) {
+    const live = e.status === "active" ? e.entity_id : e.merged_into;
+    if (live) ids.set(e.entity_id, live);
+  }
   for (const t of new Set(tokens)) {
     const m = FORMAL.exec(t);
     if (!m || !VALIDATORS[m[1] as keyof typeof VALIDATORS](m[2])) continue;
@@ -45,12 +59,19 @@ export async function loadEmit(deps: BatchDeps, itemId: string, tokens: readonly
     const live = [...new Set(ents.flatMap((e) => (e.status === "active" ? [e.entity_id] : e.merged_into ? [e.merged_into] : [])))];
     if (live.length === 1) ids.set(t, live[0] as string);
   }
-  return { captures, ids, objects: new Map(currentObligationObjects<Row & { obligation_id: string; pinpoint_citation: string }>(objects as never).map((o) => [o.obligation_id, o.pinpoint_citation])), locate: deps.locate ?? null };
+  // G3 dedup: an active entity of the same kind whose canonical name normalises to the same key is the candidate; it is reused, never minted again.
+  const byName = new Map<string, string>();
+  for (const n of names) {
+    const { data, error } = await sb.from("entities").select("entity_id, canonical_name").eq("kind", n.kind).eq("status", "active").ilike("canonical_name", n.name.replace(/[\\%_]/g, (m) => `\\${m}`));
+    if (error) throw new Error(`entities name read failed: ${error.message}`);
+    for (const e of (data ?? []) as { entity_id: string; canonical_name: string }[]) if (normaliseTermKey(e.canonical_name) === normaliseTermKey(n.name)) byName.set(`${n.kind}|${normaliseTermKey(n.name)}`, e.entity_id);
+  }
+  return { named: byName, captures, ids, objects: new Map(currentObligationObjects<Row & { obligation_id: string; pinpoint_citation: string }>(objects as never).map((o) => [o.obligation_id, o.pinpoint_citation])), locate: deps.locate ?? null };
 }
 const readObjects = (sb: Db, itemId: string): Promise<Row[]> => allRows<Row>(sb, "obligation_objects", "*", { order: "obligation_id", where: (q) => q.eq("instrument_item_id", itemId) });
 
 const NOT_CARRIED = new Set(["obligation_id", "version", "supersedes", "instrument_entity_id", "status", "created_at", "updated_at", "capture_id", "instrument_item_id", "pinpoint_citation", "verbatim_text", "method_version", "basis"]);
-const ref = (table: string, id: string, entity: string, basis: Row): Row => ({ ref_table: table, ref_id: id, entity_id: entity, role: roleOf(entity), asserted_by: "reader", basis, method_version: READER_METHOD });
+const ref = (onto: Ontology, table: string, id: string, entity: string, basis: Row): Row => ({ ref_table: table, ref_id: id, entity_id: entity, role: onto.roleOf(entity), asserted_by: "reader", basis, method_version: READER_METHOD });
 /** File refs: a ref the reader already holds under this version is left; one that exists from the mining is replaced by the reader's (its basis is the quote). Returns rows written. */
 async function fileRefs(sb: Db, rows: readonly Row[], notes: string[]): Promise<number> {
   const held = await fetchAllByIdChunks<Row>(rows.map((r) => String(r.ref_id)), (slice) => readAll<Row>(sb, "entity_refs", "ref_table, ref_id, entity_id, role, asserted_by, method_version", ["ref_table", "ref_id", "entity_id", "role"], (q) => q.in("ref_id", slice)), { manyPerId: true });
@@ -65,9 +86,18 @@ async function fileRefs(sb: Db, rows: readonly Row[], notes: string[]): Promise<
 /** The writes of one entry's plan. Counts and notes only; a refusal of one value never stops the others (it is a note and a count, and the entry's step reports failed). */
 export async function writeEmission(deps: BatchDeps, itemId: string, sourceId: string | null, plan: EmissionPlan, captureIds: ReadonlySet<string>): Promise<{ counts: Record<string, number>; notes: string[] }> {
   const { sb } = deps;
+  const onto = await loadOntology(sb);
   const [counts, notes]: [Record<string, number>, string[]] = [{}, []];
   const bump = (k: string, n = 1) => void (counts[k] = (counts[k] ?? 0) + n);
-  const refs: Row[] = plan.entities.map((e) => ref("intelligence_items", itemId, e.entity_id, { quote: e.quote.text, capture_id: e.quote.capture_id }));
+  // G3 minting: an entity the text names is written (with the quote and the capture that name it, and the reader version) BEFORE the refs, relations, objects and events that name it. A name the graph already holds is not written again.
+  const fresh = [...new Map(plan.candidates.filter((c) => !c.existing).map((c) => [c.entity_id, c])).values()];
+  if (fresh.length) {
+    const { error } = await sb.from("entities").upsert(fresh.map((c) => ({ entity_id: c.entity_id, kind: c.kind, canonical_name: c.canonical_name, status: "active", basis: { quote: c.quote.text, capture_id: c.quote.capture_id }, method_version: READER_METHOD })), { onConflict: "entity_id", ignoreDuplicates: true });
+    if (error) notes.push(`entities mint failed: ${error.message}`);
+    else bump("entities_minted", fresh.length);
+  }
+  bump("entities_reused", plan.candidates.filter((c) => c.existing).length);
+  const refs: Row[] = plan.entities.map((e) => ref(onto, "intelligence_items", itemId, e.entity_id, { quote: e.quote.text, capture_id: e.quote.capture_id }));
   // obligation_fields: candidates through the derive's buildObjectRow; the prior object's columns are carried under the reader's values (a carried figure the new provision no longer states is dropped)
   if (plan.objects.length) {
     const prior = new Map(currentObligationObjects<Row & { obligation_id: string; pinpoint_citation: string }>((await readObjects(sb, itemId)) as never).map((o) => [norm(o.pinpoint_citation), o]));
@@ -85,13 +115,13 @@ export async function writeEmission(deps: BatchDeps, itemId: string, sourceId: s
     }
     bump("objects_written", (r.data?.plan.toInsert ?? []).filter((p) => p.row.method_version === READER_METHOD).length);
     const current = new Map(currentObligationObjects<Row & { pinpoint_citation: string; obligation_id: string }>((await readObjects(sb, itemId)) as never).map((o) => [norm(o.pinpoint_citation), o.obligation_id]));
-    for (const o of plan.objects) for (const e of o.entity_ids) if (current.has(norm(o.pinpoint))) refs.push(ref("obligation_objects", uuidOf(current.get(norm(o.pinpoint)) as string), e, { quote: o.provision.text, capture_id: o.provision.capture_id, pinpoint: o.pinpoint }));
+    for (const o of plan.objects) for (const e of o.entity_ids) if (current.has(norm(o.pinpoint))) refs.push(ref(onto, "obligation_objects", uuidOf(current.get(norm(o.pinpoint)) as string), e, { quote: o.provision.text, capture_id: o.provision.capture_id, pinpoint: o.pinpoint }));
   }
   // connections: an edge the table already holds (a seed or another brief's) stands; a refusal (the cycle trigger) is counted
   for (const c of plan.connections) {
     const held = await readAll<Row>(sb, "entity_relations", "parent_entity_id", ["parent_entity_id", "child_entity_id", "relation"], (q) => q.eq("parent_entity_id", c.parent).eq("child_entity_id", c.child).eq("relation", c.relation));
     if (held.length) continue;
-    const { error } = await sb.from("entity_relations").insert({ parent_entity_id: c.parent, child_entity_id: c.child, relation: c.relation, asserted_by: "reader", basis: { quote: c.quote.text, capture_id: c.quote.capture_id, reader: READER_METHOD, reason_token: c.reason_token }, method_version: READER_METHOD });
+    const { error } = await sb.from("entity_relations").insert({ parent_entity_id: c.parent, child_entity_id: c.child, relation: c.relation, asserted_by: "reader", basis: { quote: c.quote.text, capture_id: c.quote.capture_id, reader: READER_METHOD, reason_token: c.reason_token, ...(c.asserted_in ? { asserted_in: c.asserted_in } : {}) }, method_version: READER_METHOD });
     if (error) notes.push(`connection ${c.parent} ${c.relation} ${c.child}: refused (${error.message})`);
     bump(error ? "connections_refused" : "connections_written");
   }
@@ -102,8 +132,8 @@ export async function writeEmission(deps: BatchDeps, itemId: string, sourceId: s
     const stored = new Map((await allRows<Row & { id: string; event_date: string; event_kind: string; obligation_text: string }>(sb, "item_forward_events", "id, event_date, event_kind, obligation_text", { where: (q) => q.eq("intelligence_item_id", itemId) })).map((s) => [forwardEventKey(s), s.id]));
     for (const e of plan.events) {
       const id = stored.get(forwardEventKey({ event_date: e.event_date, event_kind: e.event_kind, obligation_text: e.quote.text }));
-      const mode = e.mode ? COUPLINGS.find((c) => c.key === `mode:${e.mode}`)?.entityId : undefined;
-      for (const ent of [...e.entity_ids, ...(mode ? [mode] : [])]) if (id) refs.push(ref("item_forward_events", id, ent, { quote: e.quote.text, capture_id: e.quote.capture_id, event_kind: e.event_kind }));
+      const mode = e.mode ? onto.modeEntity(e.mode) : undefined;
+      for (const ent of [...e.entity_ids, ...(mode ? [mode] : [])]) if (id) refs.push(ref(onto, "item_forward_events", id, ent, { quote: e.quote.text, capture_id: e.quote.capture_id, event_kind: e.event_kind }));
     }
   }
   bump("refs_written", await fileRefs(sb, refs, notes));

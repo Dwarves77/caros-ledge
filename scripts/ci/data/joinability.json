@@ -230,15 +230,6 @@
       "vocabulary": null
     },
     {
-      "table": "oem_tech_roadmaps",
-      "column": "tech_category",
-      "array": false,
-      "couplingMap": {
-        "table": "oem_tech_roadmaps",
-        "column": "tech_category"
-      }
-    },
-    {
       "table": "research_assessments_current",
       "column": "horizon_band",
       "array": false,
@@ -302,6 +293,7 @@
       "textColumns": [
         "binding_position",
         "cost_formula",
+        "due_date_precision",
         "duty_holder_class",
         "evidence_required",
         "frequency",
@@ -330,6 +322,7 @@
       "unmapped": {
         "binding_position": "binding-position token (vocabularies.json binding_position); a vocabulary token checked by J3",
         "cost_formula": "the cost formula the span states, verbatim; prose the statutory computation reads, not an entity",
+        "due_date_precision": "how precise due_date is (day, month or year; migration 0143); a precision token of the date, not an entity",
         "duty_holder_class": "duty-holder class tokens (vocabularies.json duty_holder_class); a vocabulary token checked by J3",
         "evidence_required": "prose describing the evidence a duty requires",
         "frequency": "how often the duty recurs, as stated; a prose label",
@@ -381,7 +374,8 @@
         "confidence_admiralty": "Admiralty-code source and information grade (A1 to F6) of the row; a provenance grade, not an entity",
         "density_basis": "cell, module or pack basis of the stated energy density; a qualifier token of the figure",
         "derivation": "provenance token (vocabularies.json derivation) saying how the value was derived; a vocabulary token checked by J3, not an entity",
-        "origin_class": "provenance token (vocabularies.json origin_class) saying how the row was obtained; a vocabulary token checked by J3, not a thing to join on"
+        "origin_class": "provenance token (vocabularies.json origin_class) saying how the row was obtained; a vocabulary token checked by J3, not a thing to join on",
+        "tech_category": "the technology category token of the roadmap row (a vocabulary word); it maps to no entity in the engine (NO-ENTITY-LISTS-1: no word-to-entity table), so a roadmap is filed by a Reader's ref or its manufacturer_id entity column"
       }
     },
     "grid_connection_queues": {
@@ -466,6 +460,7 @@
         "currency": "ISO 4217 currency code of the value; a unit token (J3 reads units), not an entity",
         "derivation": "provenance token (vocabularies.json derivation) saying how the value was derived; a vocabulary token checked by J3, not an entity",
         "label": "the prose label of the row; the flywheel matches no free-text words, so the entity comes from the row's entity_id or a formal-code map, never from this label (operator 2026-10-25)",
+        "series_key": "the producer's formal series code (an upstream key such as a feed id and product code); it maps to no entity in the engine (NO-ENTITY-LISTS-1: no word-to-entity table), so a series is filed only by its typed entity_id column or by a Reader's ref",
         "method_version": "version string of the method that computed the row; provenance housekeeping",
         "origin_class": "provenance token (vocabularies.json origin_class) saying how the row was obtained; a vocabulary token checked by J3, not a thing to join on",
         "reference_period": "the period the observation covers as published (a date label); a time label the series key already carries",

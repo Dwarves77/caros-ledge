@@ -280,7 +280,9 @@ test("the script follows the one exit-code contract: a workstation with no crede
 test("DRAIN-FIX-2 visibility: an applied item opens on its surface's route and draws a detail section head (a typed marker); no head, or an end away from the item, is a failure", async () => {
   const ID = "b293a2b6-c882-44dc-8efc-a801ed6a160b";
   const run = (page: Record<string, unknown>) => appliedItemsRender({ io: { appliedItemIds: [ID], itemPath: (_t: string, _d: number, id: string) => `/regulations/${id}`, service: { from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { item_type: "regulation", domain: 1 }, error: null }) }) }) }) }, openPage: async () => ({ status: 200, finalUrl: `https://x.test/regulations/${ID}`, uiFailures: [], apiFailures: [], ...page }) } });
-  assert.deepEqual(await run({ sectionHeads: 5 }), []);
-  assert.match((await run({ sectionHeads: 0 }))[0]?.text ?? "", /no detail section head/);
-  assert.match((await run({ sectionHeads: 5, finalUrl: "https://x.test/regulations" }))[0]?.text ?? "", /away from the item/);
+  assert.deepEqual(await run({ sectionHeads: 5, itemId: ID }), []);
+  assert.deepEqual(await run({ sectionHeads: 5, itemId: ID, finalUrl: "https://x.test/regulations/g19" }), [], "a uuid redirects to its slug: the landing URL is not judged (VISIBLE-FIX-2)");
+  assert.match((await run({ sectionHeads: 0, itemId: ID }))[0]?.text ?? "", /drew no/);
+  assert.match((await run({ sectionHeads: 5, itemId: "g19", finalUrl: "https://x.test/regulations/g19" }))[0]?.text ?? "", /shows item g19, not the item/);
+  assert.match((await run({ sectionHeads: 5 }))[0]?.text ?? "", /no data-item-id/);
 });

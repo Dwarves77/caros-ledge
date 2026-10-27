@@ -505,6 +505,28 @@
     "n_pass": 3,
     "n_fail": 3
    }
+  },
+  {
+   "id": "J25",
+   "criterion": "signpost-falsifiable-observable",
+   "origin": "ENGINE-UNBLOCK-1 (proposed 2026-10-26)",
+   "kinds": [
+    "admin-opportunity-findings",
+    "theme-briefs"
+   ],
+   "proposed": true,
+   "prompt": "You are an evaluator assessing whether each signpost of an analysis names a future observable that could actually settle the claim. Judge this one criterion only.\n\n## Definitions\nPASS: Each signpost names ONE specific data point that a source of the stated class would publish after the analysis date, states a result that would confirm the claim and a different result that would falsify it, and the two results cannot both occur.\nFAIL: The observable is a topic rather than a data point, only the confirming result is stated, the falsifying result is the confirming one reworded, or the observable is something the analysis's own rows already show.\n\n## Examples\n### Example 1: PASS\nSignpost: observe the quarterly grid-connection queue median published by the transmission operator; confirmed if it stays above 30 months at the next release, falsified if it falls below 24 months.\nCritique: One published figure from a named class of source, with a confirming and a distinct falsifying threshold.\nResult: Pass\n\n### Example 2: FAIL\nSignpost: observe developments in port electrification; confirmed if developments continue, falsified if they do not.\nCritique: 'developments in port electrification' is a topic, not a data point, and the falsifying result is only the negation of the confirming one with no threshold.\nResult: Fail\n\n### Example 3: PASS (borderline)\nSignpost: observe whether the Member State's annual implementation report states the 24-month target met; confirmed if it does not, falsified if it does.\nCritique: One dated report from an official source with a yes or no result that settles the claim either way.\nResult: Pass\n\n## Output\nAnswer with JSON only: {\"critique\": \"<what in the input decides it, quoting the phrase>\", \"result\": \"Pass\" | \"Fail\"}. Write the critique before the result."
+  },
+  {
+   "id": "J26",
+   "criterion": "coverage-gap-names-missing-input",
+   "origin": "ENGINE-UNBLOCK-1 (proposed 2026-10-26)",
+   "kinds": [
+    "admin-opportunity-findings",
+    "theme-briefs"
+   ],
+   "proposed": true,
+   "prompt": "You are an evaluator assessing whether each coverage gap of an analysis names an input the next reading could acquire and could not do without. Judge this one criterion only.\n\n## Definitions\nPASS: Each gap names the specific datum, instrument or measurement that the analysis's own rows show is absent, and a class of source that publishes that kind of thing; having it would change or settle a statement of the analysis.\nFAIL: The gap is generic ('more data', 'further research'), names an input the bundle rows already hold, names a class of source that would not publish it, or would change nothing the analysis says.\n\n## Examples\n### Example 1: PASS\nGap: the installed capacity of the named port's shore power at the mandate date; source class: the port authority's annual report.\nCritique: A specific datum the rows lack, from the class of source that publishes it, and the capacity comparison in the analysis depends on it.\nResult: Pass\n\n### Example 2: FAIL\nGap: more information about the regulation's effects; source class: news.\nCritique: 'more information about the regulation's effects' names no datum, and news is not a class that publishes a measured effect.\nResult: Fail\n\n### Example 3: PASS (borderline)\nGap: the statutory penalty per tonne in the delegated act; source class: the legal primary text.\nCritique: The rows cite the act but quote no penalty figure, the primary legal text publishes it, and the penalty-versus-abatement comparison needs it.\nResult: Pass\n\n## Output\nAnswer with JSON only: {\"critique\": \"<what in the input decides it, quoting the phrase>\", \"result\": \"Pass\" | \"Fail\"}. Write the critique before the result."
   }
  ]
 }

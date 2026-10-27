@@ -40,7 +40,7 @@ const kind = z
   .strict();
 export type DigestKind = Omit<z.infer<typeof kind>, "batchRe"> & { batchRe: RegExp };
 
-const menuCfg = z.object({ cap: z.number().int().positive(), maxLinked: z.number().int().positive(), maxRegion: z.number().int().nonnegative(), aliases: z.number().int().positive(), kindOrder: z.array(z.string()).min(1) }).strict();
+const menuCfg = z.object({ cap: z.number().int().positive(), maxLinked: z.number().int().positive(), maxRegion: z.number().int().nonnegative(), maxNeighbour: z.number().int().nonnegative(), maxDomain: z.number().int().nonnegative(), domainItems: z.number().int().positive(), aliases: z.number().int().positive(), kindOrder: z.array(z.string()).min(1) }).strict();
 const parsed = z.object({ version: z.string().regex(/^\d+\.\d+\.\d+$/), menu: menuCfg, kinds: z.array(kind).min(1) }).parse(raw);
 /** The version of this file's emission contract: it stamps every reader value as method_version reader@<version>. */
 const KINDS_VERSION: string = parsed.version;

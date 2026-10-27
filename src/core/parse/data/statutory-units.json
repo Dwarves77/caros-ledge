@@ -53,6 +53,8 @@
     { "form": "gCO2/kWh", "unit": "gCO2/kWh", "exact": true },
     { "form": "tonnes?|tons?|metric tons?", "unit": "t", "exact": true },
     { "form": "megawatts?", "unit": "MW", "exact": true },
+    { "form": "kW", "unit": "kW", "exact": true },
+    { "form": "kilowatts?", "unit": "kW", "exact": true },
     { "form": "months?", "unit": "months", "exact": true },
     {
       "form": "\\bEUR per equivalent metric ton of VLSFO\\b",

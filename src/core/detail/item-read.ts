@@ -113,6 +113,7 @@ export async function readDetailItem(db: Db, urlId: string): Promise<DetailRead 
   const tier = src ? customerTierOf(src) : null;
   const resource: Resource = {
     id: resourceId,
+    itemUuid: uuid,
     cat: r.transport_modes?.[0] || "global",
     sub: r.category || "",
     title: r.title,

@@ -2,7 +2,7 @@ export { corridorScopes, corridorsTouching } from "./corridor-scope";
 export type { CorridorScope } from "./corridor-scope";
 export { identifierRow, VALIDATORS } from "./crosswalk";
 export { canonicalJurisdictionCode, corridorSeed, entityId, GENERIC_JURISDICTIONS, hostFromUrl } from "./id";
-export { assertEntityId, entityKindOf, KINDS, parseCorridorName } from "./kinds";
+export { assertEntityId, entityKindOf, parseCorridorName } from "./kinds";
 export type { EntityKind } from "./kinds";
 export { linkItemEntities } from "./link-entities";
 export { linkItems, readLinkCorpus } from "./link-items";

@@ -144,7 +144,7 @@ test("the flat frontmatter block reads a scalar, an inline array, null and inlin
 test("the figure rule: a number or an acronym is allowed only inside a listed claim, a labelled analysis paragraph or a heading; ramifications split by surface heading", async () => {
   const w = themeWorld();
   const valid = async (meaning: string) => (await apply(w, [entry({ sections: { ...entry().sections, meaning } })], true)).counts.valid;
-  assert.equal(await valid("*Analytical inference:* The duty costs EUR 900000 per year."), 1, "a labelled analysis paragraph may state a figure");
+  assert.equal(await valid("*Analytical inference:* The report falls due before 30 April each year."), 1, "a labelled analysis paragraph may state a figure the evidence holds");
   assert.equal(await valid("1. First point about the duty."), 1, "an ordered-list marker is not a figure");
   assert.deepEqual([...parseRamifications("### Research\nx\n### Research\ny").problems], ['duplicate ramifications subsection "Research"']);
 });

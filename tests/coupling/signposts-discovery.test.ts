@@ -3,6 +3,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
+import { ontologyOf } from "@/core/coupling";
 import { readPackets } from "@/core/digest/packets";
 import { patternGaps } from "@/core/flywheel/gaps";
 import { runPatterns, type Pattern } from "@/core/flywheel/patterns";
@@ -10,9 +11,13 @@ import { trackPatterns } from "@/core/flywheel/patterns/signposts";
 import { PATTERN_METHODS } from "@/core/propagation/methods";
 
 import { MemDb } from "../_support/memdb.ts";
+import { fixtureRows } from "../_support/ontology.ts";
 
 import { connect, E, NOW, propagate } from "./_world.ts";
 import { plantReaderRefs, ROW, triangleFixture } from "./_triangles.ts";
+
+const rows = fixtureRows();
+const onto = ontologyOf({ entities: rows.entities as never, refs: rows.refs as never, relations: rows.relations as never });
 
 async function turn() {
   const f = triangleFixture();
@@ -46,8 +51,8 @@ test("C6: a pattern signpost is refuted when the dated step it rests on moved or
   await runPatterns({ sb: f.d.sb, now: at(0) }, { dry: false });
   assert.deepEqual(outcomes(f), ["leadLag=refuted", "mandateCapacity=open", "mandateCapacity=open", "penaltyAbatement=open"]);
   assert.equal(f.db.rows("signposts").find((s) => s.outcome === "refuted")?.fired_at ?? null, null, "a refutation is a score, not a firing");
-  // the penalty-abatement pattern has no key date: it falls when it is no longer found (the technology's maturity drops under the floor)
-  (f.db.rows("research_assessments")[0] as Record<string, unknown>).technical_maturity_low = 3;
+  // the penalty-abatement pattern has no key date: it falls when it is no longer found (the technology's maturity drops under the floor of TRL 1)
+  (f.db.rows("research_assessments")[0] as Record<string, unknown>).technical_maturity_low = 0;
   await runPatterns({ sb: f.d.sb, now: at(0) }, { dry: false });
   assert.ok(outcomes(f).includes("penaltyAbatement=refuted"));
 });
@@ -77,11 +82,11 @@ test("C5: a hop the reader names with no recent row under its far end is a need 
   const pattern: Pattern = { kind: "crossModal", key: "a|competes_for_feedstock|b", entity: E("carrier:bio_bunkers"), value: 0.5, unit: "strength", evidence: [{ table: "obligation_objects", pk: "o1", kind: "member", entities: [E("carrier:bio_bunkers")] }] };
   const edge = { parent: E("carrier:bio_bunkers"), child: E("node:shore_power"), relation: "implements" as const };
   const recent = { table: "section_claim_provenance", pk: "c1", role: "claim" as const, entities: [E("node:shore_power")], modes: [], surface: "market", at: NOW.toISOString().slice(0, 10), due: null, source: null, tier: null, qty: null, unit: null, trl: null, kind: "FACT", group: null };
-  const gaps = patternGaps({ patterns: [pattern], facts: [], readerEdges: [edge], now: NOW });
+  const gaps = patternGaps({ patterns: [pattern], facts: [], readerEdges: [edge], now: NOW, classOf: onto.classOf });
   assert.equal(gaps.length, 1);
   assert.equal(gaps[0]?.type, "pattern_hop_gap");
   assert.match(gaps[0]?.description ?? "", /Surface operations; entities cl:node:4aa80df87d7188f6; window the last 90 days; venue class: grid operator or port authority/);
-  assert.deepEqual(patternGaps({ patterns: [pattern], facts: [recent], readerEdges: [edge], now: NOW }), [], "a recent row under the far end fills the hop");
+  assert.deepEqual(patternGaps({ patterns: [pattern], facts: [recent], readerEdges: [edge], now: NOW, classOf: onto.classOf }), [], "a recent row under the far end fills the hop");
   assert.deepEqual(patternGaps({ patterns: [pattern], facts: [], readerEdges: [], now: NOW }), [], "no reader-named hop, no need");
 });
 

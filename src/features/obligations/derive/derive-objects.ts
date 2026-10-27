@@ -8,7 +8,7 @@
 // same item: a date is never invented.
 import { z } from "zod";
 
-import { DUTY_HOLDER_CLASSES, isMissing, isValid, LEG_MODE_CODES, OBS_STATUS } from "@/core/contracts/vocabularies";
+import { DUTY_HOLDER_TOKEN, isMissing, isValid, LEG_MODE_CODES, OBS_STATUS } from "@/core/contracts/vocabularies";
 import { readFactSuppressionsFor } from "@/core/detail/claim-tiers";
 import { admissibleClaims, admitItems } from "@/core/derived/admissible";
 import { isVerbatim, locateSpan } from "@/core/contracts/verbatim";
@@ -81,7 +81,7 @@ export interface Candidate {
   evidence_required?: string | null; evidence_artifacts?: Array<{ class: string; name: string }> | null; retention_period?: string | null; sanction_class?: string | null; severity_score?: number | null;
   statutory_maximum?: string | null; cost_formula?: string | null; direct_compliance_cost?: Record<string, unknown> | null;
   /** Reader-authored (0139): the per-object due date, the mandated quantity and its unit (distinct from the penalty maximum), the end of the in-force window, and who wrote the values with the quotes they rest on. */
-  due_date?: string | null; mandated_quantity?: number | null; mandated_unit?: string | null; in_force_end?: string | null; method_version?: string | null; basis?: Record<string, unknown> | null;
+  due_date?: string | null; due_date_precision?: "day" | "month" | "year" | null; mandated_quantity?: number | null; mandated_unit?: string | null; in_force_end?: string | null; method_version?: string | null; basis?: Record<string, unknown> | null;
   effort?: Record<string, unknown> | null; status?: string | null; date_reviewed?: string | null; next_review_due?: string | null; source_id?: string | null;
   /** An obligation entity resolved before minting (DERIVE-3: the schedule's entity for the article); absent, the id is derived from the instrument and the pinpoint. */
   obligation_id?: string;
@@ -108,7 +108,8 @@ function buildObjectRow(c: Candidate, ctx: { item: ObjectItem | null; capture: C
   if (c.status !== undefined && c.status !== null && c.status !== "not_assessed") return { ok: false, reason: "status_not_writer_owned" };
   const classes = Array.isArray(c.duty_holder_class) ? c.duty_holder_class.filter((x) => typeof x === "string" && x.trim()) : [];
   if (!classes.length) return { ok: false, reason: "duty_holder_missing" };
-  const unknown = classes.find((x) => !DUTY_HOLDER_CLASSES[x]);
+  // GRAPH-GROW-1: the duty-holder class is OPEN. Any snake_case token the quote backs is valid (the database checks only that the list is non-empty); the vocabulary supplies labels and org roles for the tokens it knows.
+  const unknown = classes.find((x) => !DUTY_HOLDER_TOKEN.test(x));
   if (unknown) return { ok: false, reason: `duty_holder_unknown:${unknown}` };
   const t = c.applicability_trigger;
   if (!(t && typeof t === "object" && !Array.isArray(t) && nz(t.attribute) && nz(t.value) && typeof t.attribute === "string" && typeof t.value === "string")) return { ok: false, reason: "trigger_malformed" };
@@ -148,6 +149,7 @@ function buildObjectRow(c: Candidate, ctx: { item: ObjectItem | null; capture: C
     evidence_required: nullable(c.evidence_required), evidence_artifacts: nullable(c.evidence_artifacts), retention_period: nullable(c.retention_period), sanction_class: nullable(c.sanction_class), severity_score: nullable(c.severity_score), statutory_maximum: nullable(c.statutory_maximum),
     cost_formula: nullable(c.cost_formula), direct_compliance_cost: nullable(c.direct_compliance_cost), effort: nullable(c.effort), status: "not_assessed",
     ...Object.fromEntries((c.method_version != null ? ["due_date", "mandated_quantity", "mandated_unit", "in_force_end", "method_version", "basis"] : []).map((k) => [k, nullable(c[k as "due_date"])])),
+    ...(c.method_version != null ? { due_date_precision: c.due_date_precision ?? "day" } : {}),
     date_reviewed: nullable(c.date_reviewed), next_review_due: nullable(c.next_review_due), source_id: nullable(c.source_id), capture_id: c.capture_id,
   };
   return { ok: true, row, bindingSource };

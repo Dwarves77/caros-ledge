@@ -1,7 +1,8 @@
 // The three planted triangles of TRIANGLE-TRACE Q2 on an isolated fixture database (CONNECT-2 PR B, unified design section 4). Test values only: every number below is a fixture number, none is a real fact. The rows are the minimal rows of the trace's fixture specs; the refs the reader's `entity_ids`
 // would file them under (DIGEST-1 PR B's apply) are planted as entity_refs rows with a reader method_version and a basis; the refs the typed columns give are mined by the propagate stage, and the relations are the seeded couplings plus the lane's corridor_links edge (JOIN-1 J2).
-import { roleOf, uuidOf } from "@/core/coupling";
+import { uuidOf } from "@/core/coupling";
 
+import { roleOf } from "../_support/ontology.ts";
 import { fixture, NOW, type Fixture } from "../integration/world.ts";
 import type { Row } from "../_support/memdb.ts";
 
@@ -22,7 +23,7 @@ const reader = (table: string, key: string, entity: string, quote: string): Row 
 export function plantTriangles(f: Fixture, over: { endedCeiling?: boolean } = {}): void {
   const db = f.db;
   db.seed("intelligence_items", [item(ITEM.ets, "fixture ETS", "verified"), item(ITEM.fueleu, "fixture FuelEU Maritime", "quarantined"), item(ITEM.afir, "fixture AFIR", "quarantined"), item(ITEM.research, "fixture research", "verified")]);
-  db.seed("entities", [{ entity_id: LANE, kind: "corridor", canonical_name: "CNSHA-ITGOA:ocean", status: "active" }]);
+  db.rows("entities").push({ entity_id: LANE, kind: "corridor", canonical_name: "CNSHA-ITGOA:ocean", status: "active" });
   db.seed("obligation_objects", [
     // Triangle 1: the ETS Article 16(3) ceiling (P5) and the FuelEU Article 4 step 36 days out under Bio-bunkers (P4 start); Triangle 2: the AFIR HDV step 14 months out under HDV charging (P2)
     object(OBL.ceiling, ITEM.ets, E("instrument:32003L0087"), { pinpoint_citation: "Article 16(3)", statutory_maximum: "EUR 100 for each tonne of carbon dioxide equivalent", mode: ["air", "ocean"] }),
@@ -46,13 +47,19 @@ export function plantTriangles(f: Fixture, over: { endedCeiling?: boolean } = {}
 
 /** After the propagate stage has seeded the vocabulary: the refs the reader's entity_ids would file (the carrier under the FuelEU step, the node under the AFIR step, the instrument and the mode under the maritime trigger), and the lane's corridor_links edge to its mode. */
 export function plantReaderRefs(f: Fixture): void {
-  f.db.seed("entity_refs", [
+  f.db.rows("entity_refs").push(...[
+    // the technology categories and the grid queue are words and codes the engine maps to nothing: the Reader files them
+    reader("oem_tech_roadmaps", ROW.roadmapSaf, E("carrier:hefa_saf"), "fixture quote: saf refinery"),
+    reader("oem_tech_roadmaps", ROW.roadmapMw, E("node:hdv_charging"), "fixture quote: megawatt charging"),
+    reader("grid_connection_queues", ROW.queue, E("node:grid_queues"), "fixture quote: grid queue"),
+    // the ETS ceiling prices the fuel the abatement cost is for: the Reader files it under that fuel, so the join is a specific entity and not the mode both are filed under
+    reader("obligation_objects", OBL.ceiling, E("carrier:hefa_saf"), "fixture quote: ETS prices SAF"),
     reader("obligation_objects", OBL.fueleu, E("carrier:bio_bunkers"), "fixture quote: Bio-bunkers"),
     reader("obligation_objects", OBL.afir, E("node:hdv_charging"), "fixture quote: HDV charging"),
     reader("item_forward_events", ROW.trigger, E("instrument:32003L0087"), "fixture quote: ETS"),
     reader("item_forward_events", ROW.trigger, E("mode:ocean"), "fixture quote: maritime"),
   ]);
-  f.db.seed("entity_relations", [{ parent_entity_id: LANE, child_entity_id: E("mode:ocean"), relation: "corridor_links", asserted_by: "fixture-modeLinks" }]);
+  f.db.rows("entity_relations").push({ parent_entity_id: LANE, child_entity_id: E("mode:ocean"), relation: "corridor_links", asserted_by: "fixture-modeLinks" });
 }
 
 export function triangleFixture(over: { endedCeiling?: boolean } = {}): Fixture {

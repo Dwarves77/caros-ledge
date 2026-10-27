@@ -12,6 +12,8 @@
     { "number": "0139", "slice": "SEV-1", "status": "reserved", "reserved_on": "2026-10-26" },
     { "number": "0140", "slice": "TITLE-1 PR 2", "status": "reserved", "reserved_on": "2026-10-26" },
     { "number": "0141", "slice": "CONNECT-2 PR B", "status": "reserved", "reserved_on": "2026-10-26" },
-    { "number": "0142", "slice": "PROV-TRIG-1", "status": "reserved", "reserved_on": "2026-10-26" }
+    { "number": "0142", "slice": "PROV-TRIG-1", "status": "reserved", "reserved_on": "2026-10-26" },
+    { "number": "0143", "slice": "ENGINE-CORE-FIX-1", "status": "reserved", "reserved_on": "2026-10-26" },
+    { "number": "0144", "slice": "ENGINE-CORE-FIX-1", "status": "reserved", "reserved_on": "2026-10-26" }
   ]
 }

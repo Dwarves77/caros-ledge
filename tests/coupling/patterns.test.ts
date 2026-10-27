@@ -2,15 +2,17 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { COUPLING_RELATIONS, couplingByKey, type Relation } from "@/core/coupling";
+import { ontologyOf, type Relation } from "@/core/coupling";
 import { DETECTORS, factOf, PATTERNS, type Fact, type PatternInput } from "@/core/flywheel/patterns";
 
-import { E } from "./_world.ts";
+import { couplingByKey, E, FIXTURE_RELATIONS, fixtureRows } from "../_support/ontology.ts";
 
 const NOW = new Date("2026-10-15T12:00:00.000Z");
 const day = (offset: number): string => new Date(NOW.getTime() + offset * 86_400_000).toISOString().slice(0, 10);
 const fact = (over: Partial<Fact>): Fact => ({ table: "t", pk: "p", role: "claim", entities: ["e1"], modes: [], surface: "regulations", at: null, due: null, source: null, tier: null, qty: null, unit: null, trl: null, kind: "FACT", group: null, ...over });
-const input = (facts: Fact[], over: Partial<PatternInput> = {}): PatternInput => ({ now: NOW, facts, related: () => [], flow: null, ...over });
+const rows = fixtureRows();
+const onto = ontologyOf({ entities: rows.entities as never, refs: rows.refs as never, relations: rows.relations as never });
+const input = (facts: Fact[], over: Partial<PatternInput> = {}): PatternInput => ({ now: NOW, facts, related: () => [], flow: null, classOf: onto.classOf, modesOf: onto.modesOf, ...over });
 const links = (map: Record<string, [string, Relation][]>) => (e: string) => (map[e] ?? []).map(([entity, relation]) => ({ entity, relation }));
 
 test("every detector over no facts finds nothing and raises nothing", () => {
@@ -66,21 +68,25 @@ test("P2 mandate and capacity: the capacity lands after the ratchet, or holds le
   assert.deepEqual(late[0]?.evidence.map((e) => [e.table, e.kind]), [["obligation_objects", "key"], ["oem_tech_roadmaps", "evidence"]]);
   const short = DETECTORS.mandateCapacity(input([r({ qty: 200, unit: "MW" }), c({ qty: 150, unit: "MW" })], { related: rel }));
   assert.deepEqual([short[0]?.unit, short[0]?.value], ["ratio", 0.25]);
-  assert.deepEqual(DETECTORS.mandateCapacity(input([r({ qty: 200, unit: "MW" }), c({ qty: 150, unit: "t" })], { related: rel })), [], "no quantity is compared across units");
+  const acrossUnits = DETECTORS.mandateCapacity(input([r({ qty: 200, unit: "MW" }), c({ qty: 150, unit: "t" })], { related: rel }));
+  assert.deepEqual(acrossUnits.map((p) => p.evidence[0]?.marker?.condition), ["dated_vs_measured"], "no quantity is compared across units: the pair is a dated mandate beside a measured constraint, never a shortfall");
   assert.deepEqual(DETECTORS.mandateCapacity(input([r(), c({ due: day(50) })], { related: rel })), [], "capacity that lands first is no collision");
   assert.deepEqual(DETECTORS.mandateCapacity(input([r({ due: day(-5) }), c({ due: day(700) })], { related: rel })), [], "a ratchet already past");
   assert.deepEqual(DETECTORS.mandateCapacity(input([r({ due: day(365 * 5) }), c({ due: day(365 * 9) })], { related: rel })), [], "a ratchet beyond the widest window");
   assert.deepEqual(DETECTORS.mandateCapacity(input([r(), c({ due: day(800) })])), [], "no shared entity, no join");
 });
 
-test("P3 lead and lag: a trigger 60 to 180 days out and a move on a shared entity in the last 90 days; outside either bound it is not", () => {
+test("P3 lead and lag: a trigger 1 to 730 days out (a compliance deadline or an entry into force counts) and a move on a shared entity in the last 90 days; outside either bound it is not", () => {
   const trigger = (due: number, kind = "phase_step") => fact({ table: "item_forward_events", pk: "t1", role: "trigger", kind, due: day(due) });
   const move = (ago: number, qty = 0.2) => fact({ table: "market_series", pk: "m1", role: "series", at: day(-ago), qty, unit: "ratio", surface: "market" });
   const found = DETECTORS.leadLag(input([trigger(100), move(20)]));
   assert.equal(found.length, 1);
   assert.deepEqual([found[0]?.value, found[0]?.unit], [100, "days"]);
-  assert.deepEqual(DETECTORS.leadLag(input([trigger(30), move(20)])), [], "too near");
-  assert.deepEqual(DETECTORS.leadLag(input([trigger(400), move(20)])), [], "too far");
+  assert.equal(DETECTORS.leadLag(input([trigger(30), move(20)])).length, 1, "30 days out is inside the widened bound");
+  assert.deepEqual(DETECTORS.leadLag(input([trigger(0), move(20)])), [], "today is not ahead");
+  assert.equal(DETECTORS.leadLag(input([trigger(400), move(20)])).length, 1, "400 days out is inside the widened bound");
+  assert.deepEqual(DETECTORS.leadLag(input([trigger(800), move(20)])), [], "too far");
+  for (const kind of ["compliance_deadline", "entry_into_force"]) assert.equal(DETECTORS.leadLag(input([trigger(100, kind), move(20)])).length, 1, kind);
   assert.deepEqual(DETECTORS.leadLag(input([trigger(100), move(120)])), [], "the move is older than the window");
   assert.deepEqual(DETECTORS.leadLag(input([trigger(100), move(20, 0.01)])), [], "a move under the threshold is a tick");
   assert.deepEqual(DETECTORS.leadLag(input([trigger(100, "consultation_close"), move(20)])), [], "only the pending kinds");
@@ -99,7 +105,7 @@ test("P4 cross-modal: a mandate or move in one mode entity and recent rows in a 
   assert.deepEqual(found[0]?.evidence.map((e) => [e.kind, e.relation]), [["member", "competes_for_feedstock"], ["evidence", "competes_for_feedstock"]]);
   assert.deepEqual(DETECTORS.crossModal(input([start(), landing()], { related: links({ [road]: [[air, "implements"]] }) })), [], "a relation the detector does not cross");
   const bunkers = E("carrier:bio_bunkers");
-  assert.deepEqual(DETECTORS.crossModal(input([start(), landing({ entities: [bunkers] })], { related: links({ [road]: [[bunkers, "competes_for_feedstock"]] }) })), [], "no mode the start entity lacks");
+  assert.deepEqual(DETECTORS.crossModal(input([start(), landing({ entities: [bunkers] })], { related: links({ [road]: [[bunkers, "competes_for_feedstock"]] }) })), [], "no mode the start entity lacks: the bunker fuel couples ocean, which the road fuel couples too");
   assert.deepEqual(DETECTORS.crossModal(input([start(), landing({ at: day(-200) })], { related: links({ [road]: [[air, "competes_for_feedstock"]] }) })), [], "a landing row older than the window");
   assert.deepEqual(DETECTORS.crossModal(input([start({ at: day(-85) }), landing()], { related: links({ [road]: [[air, "corridor_links"]] }) })), [], "strength below the floor: a weak relation, a stale start");
 });
@@ -112,9 +118,16 @@ test("P5 penalty and abatement: a technology at the maturity floor whose abateme
   assert.equal(near.length, 1);
   assert.ok(Math.abs((near[0]?.value ?? 0) - 0.95) < 1e-12);
   assert.equal(DETECTORS.penaltyAbatement(input([tech(9), abate(130), ceiling(100)]))[0]?.value, 1.3, "crossed");
-  assert.deepEqual(DETECTORS.penaltyAbatement(input([tech(7), abate(95), ceiling(100)])), [], "below the maturity floor");
-  assert.deepEqual(DETECTORS.penaltyAbatement(input([tech(8), abate(60), ceiling(100)])), [], "outside the band");
-  assert.deepEqual(DETECTORS.penaltyAbatement(input([tech(8), abate(95), ceiling(100, "EUR/t")])), [], "across units");
+  assert.deepEqual(DETECTORS.penaltyAbatement(input([tech(0), abate(95), ceiling(100)])), [], "below the floor of 1");
+  const early = DETECTORS.penaltyAbatement(input([tech(4), abate(95), ceiling(100)]));
+  assert.deepEqual([early.length, early[0]?.evidence[0]?.trl, early[0]?.evidence[0]?.marker?.gap], [1, 4, "maturity_gap"], "a technology at TRL 4 is a pattern that records its TRL and carries the maturity gap");
+  const outside = DETECTORS.penaltyAbatement(input([tech(8), abate(60), ceiling(100)]));
+  assert.deepEqual([outside.length, outside[0]?.evidence[0]?.marker?.gap, outside[0]?.unit], [1, "no_crossing", "trl"], "outside the band: the ceiling and the technology still share an entity, and the pattern says no abatement crosses it");
+  const across = DETECTORS.penaltyAbatement(input([tech(8), abate(95), ceiling(100, "EUR/t")]));
+  assert.deepEqual([across.length, across[0]?.evidence[0]?.marker?.gap], [1, "unit_gap"], "across unit families: a unit gap, not silence");
+  const noAbatement = DETECTORS.penaltyAbatement(input([tech(9), ceiling(100)]));
+  assert.deepEqual([noAbatement.length, noAbatement[0]?.evidence.map((e) => e.table), noAbatement[0]?.evidence[0]?.marker?.abatement_present], [1, ["research_assessments", "statutory_computations"], false], "no abatement row at all: the ceiling and the technology are the pattern");
+  assert.deepEqual(DETECTORS.penaltyAbatement(input([tech(9), { ...ceiling(100), entities: ["elsewhere"] }])), [], "no shared entity, no reach: no pattern");
 });
 
 test("P1 clock (unified design section 3): the burst counts on the document date of the capture, never the day the item was added; an undated claim is in the window, the baseline and the flow of nothing", () => {
@@ -130,7 +143,7 @@ test("P1 clock (unified design section 3): the burst counts on the document date
 
 test("P4 starts from the entity a mandate is about, never from the mode or the hub it is filed under: a ratchet filed under mode:ocean alone fans out to nothing, the same ratchet under a carrier crosses (red without the exclusion: five patterns, three consignment_wide and two corridor_links)", () => {
   const ocean = (couplingByKey("mode:ocean") as { entityId: string }).entityId;
-  const related = (e: string) => COUPLING_RELATIONS.flatMap((r) => { const [p, c] = [(couplingByKey(r.parent) as { entityId: string }).entityId, (couplingByKey(r.child) as { entityId: string }).entityId]; return p === e ? [{ entity: c, relation: r.relation }] : c === e ? [{ entity: p, relation: r.relation }] : []; });
+  const related = (e: string) => FIXTURE_RELATIONS.flatMap((r) => { const [p, c] = [(couplingByKey(r.parent) as { entityId: string }).entityId, (couplingByKey(r.child) as { entityId: string }).entityId]; return p === e ? [{ entity: c, relation: r.relation as Relation }] : c === e ? [{ entity: p, relation: r.relation as Relation }] : []; });
   // a recent row under every entity one relation from the mode, so that each neighbour would be a landing
   const landings = related(ocean).map((l, n) => fact({ table: "section_claim_provenance", pk: `l${n}`, entities: [l.entity], at: day(-5) }));
   const ratchet = (entity: string) => fact({ table: "obligation_objects", pk: "r1", role: "ratchet", entities: [entity], due: day(1) });
@@ -176,4 +189,73 @@ test("statutory_computations with a year scenario_key gain a due (HYPOTHESIS of 
   const at = (iso: string) => DETECTORS.mandateCapacity({ now: new Date(`${iso}T12:00:00Z`), facts: [step("2030") as Fact, capacity], related, flow: null });
   assert.deepEqual(at("2026-10-15"), [], "2030-01-01 is 39 months out: beyond the horizon P2 reads");
   assert.deepEqual(at("2027-06-01").map((p) => [p.value, p.unit]), [[24, "months"]], "31 months out: inside it, and the capacity lands 24 months after the step");
+});
+
+test("J1: a ratchet's due resolves due_date, else first_deadline, else date_of_application, and the column that supplied it rides on the fact and on the pattern's evidence (a dated derived obligation is no longer discarded)", () => {
+  const read = (row: Record<string, unknown>) => factOf("obligation_objects", { obligation_id: "o1", ...row }, ["e1"], { role: "ratchet", now: NOW });
+  assert.deepEqual([read({ due_date: day(10), first_deadline: day(20), date_of_application: day(30) })?.due, read({ due_date: day(10), first_deadline: day(20) })?.dueSource], [day(10), "due_date"]);
+  assert.deepEqual([read({ first_deadline: day(20), date_of_application: day(30) })?.due, read({ first_deadline: day(20), date_of_application: day(30) })?.dueSource], [day(20), "first_deadline"]);
+  assert.deepEqual([read({ date_of_application: day(30) })?.due, read({ date_of_application: day(30) })?.dueSource], [day(30), "date_of_application"]);
+  assert.equal(read({}), null, "no date and no quantity: no ratchet");
+  const ratchet = read({ first_deadline: day(40) }) as Fact;
+  const capacity = fact({ table: "oem_tech_roadmaps", pk: "c1", role: "capacity", entities: ["e1"], due: day(40 + 300) });
+  const found = DETECTORS.mandateCapacity(input([ratchet, capacity]));
+  assert.equal(found[0]?.evidence[0]?.dueSource, "first_deadline", "a pattern built on a fallback date is traceable");
+  assert.equal(found[0]?.evidence[0]?.marker?.due_source, "first_deadline");
+});
+
+test("P2: a dated mandate and a measured capacity on one specific entity fire although one side carries only a date and the other only a quantity; the pattern records the condition and which side is partial; copies of one item's date are one finding; a bare jurisdiction joins nothing", () => {
+  const r = (over: Partial<Fact> = {}) => fact({ table: "obligation_objects", pk: "r1", role: "ratchet", entities: ["node-a"], due: day(100), item: "item-1", ...over });
+  const c = (over: Partial<Fact> = {}) => fact({ table: "regional_data_facts", pk: "c1", role: "capacity", entities: ["node-a"], qty: 40, unit: "EUR", ...over });
+  const partial = DETECTORS.mandateCapacity(input([r(), c()]));
+  assert.equal(partial.length, 1);
+  assert.deepEqual([partial[0]?.evidence[0]?.marker?.condition, partial[0]?.evidence[0]?.marker?.ratchet_side, partial[0]?.evidence[0]?.marker?.capacity_side], ["dated_vs_measured", "date_only", "qty_only"]);
+  const timing = DETECTORS.mandateCapacity(input([r(), c({ qty: null, unit: null, due: day(100 + 400) })]));
+  assert.equal(timing[0]?.evidence[0]?.marker?.condition, "timing_gap");
+  const shortfall = DETECTORS.mandateCapacity(input([r({ qty: 100, unit: "EUR" }), c({ qty: 40, unit: "EUR" })]));
+  assert.equal(shortfall[0]?.evidence[0]?.marker?.condition, "quantity_shortfall");
+  const copies = [1, 2, 3, 4].map((n) => r({ pk: `r${n}` }));
+  const collapsed = DETECTORS.mandateCapacity(input([...copies, c()]));
+  assert.deepEqual([collapsed.length, collapsed[0]?.evidence[0]?.marker?.ratchets_collapsed], [1, 4], "four objects of one item with one copied date are one finding");
+  const eu = "cl:jurisdiction:aaaaaaaaaaaaaaaa";
+  assert.deepEqual(DETECTORS.mandateCapacity(input([r({ entities: [eu] }), c({ entities: [eu] })])), [], "a shared jurisdiction alone is not a join");
+  assert.equal(DETECTORS.mandateCapacity(input([r({ entities: [eu, "node-a"] }), c({ entities: [eu, "node-a"] })])).length, 1, "a specific entity beside it is");
+});
+
+test("P6 regulatory stacking: two or more distinct instruments with an active ratchet, ceiling or deadline on one specific entity inside one window; one instrument, a bare mode, a bare jurisdiction and rows a year apart stack nothing; mode plus jurisdiction is a scope", () => {
+  const carrier = E("carrier:hvo");
+  const ocean = E("mode:ocean");
+  const eu = "cl:jurisdiction:aaaaaaaaaaaaaaaa";
+  const row = (pk: string, item: string, entities: string[], over: Partial<Fact> = {}) => fact({ table: "obligation_objects", pk, role: "ratchet", entities, due: day(100), item, ...over });
+  const onto2 = { classOf: (e: string) => (e === eu ? "jurisdiction" : onto.classOf(e)), modesOf: onto.modesOf };
+  const run = (facts: Fact[]) => DETECTORS.regulatoryStacking(input(facts, onto2));
+  const stack = run([row("a1", "i1", [carrier]), row("a2", "i2", [carrier], { due: day(160) }), row("a3", "i2", [carrier], { due: day(165) })]);
+  assert.equal(stack.length, 1);
+  assert.deepEqual([stack[0]?.value, stack[0]?.unit, stack[0]?.entity], [2, "instruments", carrier]);
+  assert.deepEqual(stack[0]?.evidence.map((e) => e.pk).sort(), ["a1", "a2", "a3"], "every row of the window is evidence, each instrument keeps its earliest");
+  const key = stack[0]?.evidence.find((e) => e.kind === "key");
+  assert.deepEqual([key?.marker?.instruments, key?.marker?.window_start, key?.marker?.window_end], [2, day(100), day(165)]);
+  assert.deepEqual(run([row("a1", "i1", [carrier]), row("a2", "i1", [carrier], { due: day(160) })]), [], "one instrument is not a stack");
+  assert.deepEqual(run([row("a1", "i1", [ocean]), row("a2", "i2", [ocean], { due: day(160) })]), [], "a bare mode is generic");
+  assert.deepEqual(run([row("a1", "i1", [eu]), row("a2", "i2", [eu], { due: day(160) })]), [], "a bare jurisdiction is generic");
+  assert.deepEqual(run([row("a1", "i1", [carrier]), row("a2", "i2", [carrier], { due: day(100 + 400) })]), [], "rows more than the window apart do not overlap");
+  assert.deepEqual(run([row("a1", "i1", [carrier], { due: day(-30) }), row("a2", "i2", [carrier], { due: day(160) })]), [], "a ratchet already past is not active");
+  const scoped = run([row("a1", "i1", [ocean, eu]), row("a2", "i2", [ocean, eu], { due: day(160) })]);
+  assert.deepEqual([scoped.length, scoped[0]?.evidence[0]?.marker?.scope ?? scoped[0]?.evidence.find((e) => e.kind === "key")?.marker?.scope], [1, "mode_jurisdiction"], "a mode together with a jurisdiction is a scope");
+  const events = run([row("e1", "i1", [carrier], { table: "item_forward_events", role: "trigger", kind: "compliance_deadline" }), row("a2", "i2", [carrier], { due: day(160) })]);
+  assert.equal(events.length, 1, "a deadline counts beside a ratchet");
+  const ceiling = run([row("k1", "i1", [carrier], { role: "ceiling", due: null, qty: 40, unit: "EUR/tCO2e" }), row("a2", "i2", [carrier], { due: day(160) })]);
+  assert.equal(ceiling.length, 1, "a ceiling in force counts");
+});
+
+test("G3: a ratchet's due date carries its stored precision: a year-precision mandate is a year fact, never a day; a day or an unrecorded precision carries none; a scenario year is a year; a fallback due column carries none", () => {
+  const row = (over: Record<string, unknown>) => factOf("obligation_objects", { obligation_id: "o9", due_date: "2027-01-01", mandated_quantity: 5, mandated_unit: "MW", ...over }, ["e1"], { role: "ratchet", now: NOW }) as Fact;
+  assert.equal(row({ due_date_precision: "year" }).duePrecision, "year");
+  assert.equal(row({ due_date_precision: "month" }).duePrecision, "month");
+  assert.equal(row({ due_date_precision: "day" }).duePrecision, undefined);
+  assert.equal("duePrecision" in row({}), false);
+  assert.equal(row({ due_date_precision: "year" }).due, "2027-01-01", "the stored date is unchanged: only its precision is carried");
+  assert.equal(row({ due_date: null, first_deadline: "2027-01-01", due_date_precision: "year" }).duePrecision, undefined, "the precision belongs to due_date, not to the fallback column");
+  const scenario = factOf("statutory_computations", { computation_id: "c1", scenario_key: "2030", result: 3, result_unit: "MW" }, ["e1"], { role: "ratchet", now: NOW }) as Fact;
+  assert.equal(scenario.duePrecision, "year");
 });
