@@ -82,7 +82,8 @@ export function j1(w, live = null) {
 
 /** J2. Entities against the rules their class declares in joinability.json `classes`, and the relation that binds each mode. */
 export function j2(w) {
-  const { entities, relations } = w.couplings;
+  // the vocabulary is the database now (NO-ENTITY-LISTS-1): couplings.json holds no entity or relation, so there is nothing static to walk; the reach of the live graph is measured over the database by the engine proof
+  const { entities = [], relations = [] } = w.couplings;
   const near = new Map(entities.map((e) => [e.key, new Set()]));
   const linked = new Set(relations.map((r) => `${r.parent}|${r.relation}|${r.child}`));
   for (const r of relations) { near.get(r.parent)?.add(r.child); near.get(r.child)?.add(r.parent); }

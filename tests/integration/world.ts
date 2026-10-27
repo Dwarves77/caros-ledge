@@ -10,7 +10,7 @@ import type { Catalog } from "@/core/producers";
 
 import { drain, type WorkerDeps } from "../../supabase/functions/capture-worker/process.ts";
 import { MemDb, installPortalLedgerRpc, installPropagationRpcs, type Row } from "../_support/memdb.ts";
-import { couplingRoutes } from "../_support/coupling-pages.ts";
+import { fixtureRows } from "../_support/ontology.ts";
 import { OFFICIAL_TEXT } from "../intake/fixtures.ts";
 import { installProvenanceRpc } from "../intake/fixtures.ts";
 
@@ -65,7 +65,6 @@ export function transport(over: Record<string, () => Response> = {}): { fetchImp
     [DOC_URL]: () => new Response(DOC_TEXT, { status: 200, headers: { "content-type": "text/plain; charset=utf-8" } }),
     [NEW_URL]: () => new Response(NEW_TEXT, { status: 200, headers: { "content-type": "text/plain; charset=utf-8" } }),
     "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml": () => new Response(ECB_XML, { status: 200, headers: { "content-type": "application/xml" } }),
-    ...couplingRoutes(),
     ...over,
   };
   const fetchImpl = (async (input: RequestInfo | URL) => {
@@ -111,6 +110,10 @@ export function makeWorld(opts: { cadence?: "off" | "weekly"; itemEvents?: boole
   db.seed("data_sources", [{ source_key: "ecb", name: "European Central Bank", url: "https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html" }]);
   db.seed("licence_clear_sources", []);
   db.seed("market_series", [{ id: "d0000000-0000-4000-8000-000000000001", series_key: "ecb-fx:eur-usd", label: "EUR/USD", value_numeric: 1.05, unit: "USD/EUR", currency: "USD", derivation: "observed", origin_class: "official", source_key: "ecb", reference_period: "2026-10-08", as_at_date: "2026-10-08", __emitted: true }]);
+  const ontology = fixtureRows();
+  db.seed("entities", ontology.entities);
+  db.seed("entity_relations", ontology.relations);
+  db.seed("entity_refs", ontology.refs);
   installProvenanceRpc(db);
   installPropagationRpcs(db);
   installPortalLedgerRpc(db);

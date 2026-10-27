@@ -10,6 +10,7 @@ import { candidateMenu } from "@/features/batches/kinds/item-briefs/candidates";
 import type { BatchExport } from "@/features/batches";
 
 import { MemDb } from "../_support/memdb.ts";
+import { couplingByKey, FIXTURE_ENTITIES, FIXTURE_RELATIONS, fixtureRows } from "../_support/ontology.ts";
 
 import { emissionWorld, HVO, OCEAN, SELF, UCO } from "./emission-world.ts";
 

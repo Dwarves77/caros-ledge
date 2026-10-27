@@ -98,36 +98,6 @@
    "reason": "statutory_computations.statute_citation: a text column the engine can join on, neither mapped nor listed unmapped with a reason"
   },
   {
-   "key": "J2:instrument:32003L0087:reach",
-   "owner": "couplings.json entities and relations",
-   "date": "2026-10-26",
-   "reason": "instrument:32003L0087 (instrument): reach failed: no path of relations to an entity on a different surface"
-  },
-  {
-   "key": "J2:instrument:32018L2001:modeLinks",
-   "owner": "couplings.json entities and relations",
-   "date": "2026-10-25",
-   "reason": "instrument:32018L2001 (instrument): modeLinks failed: no consignment_wide relation to mode:air, mode:ocean, mode:road, mode:rail, mode:inland_waterway"
-  },
-  {
-   "key": "J2:instrument:32018L2001:reach",
-   "owner": "couplings.json entities and relations",
-   "date": "2026-10-25",
-   "reason": "instrument:32018L2001 (instrument): reach failed: no path of relations to an entity on a different surface"
-  },
-  {
-   "key": "J2:instrument:32023L2413:modeLinks",
-   "owner": "couplings.json entities and relations",
-   "date": "2026-10-25",
-   "reason": "instrument:32023L2413 (instrument): modeLinks failed: no consignment_wide relation to mode:air, mode:ocean, mode:road, mode:rail, mode:inland_waterway"
-  },
-  {
-   "key": "J2:instrument:32023L2413:reach",
-   "owner": "couplings.json entities and relations",
-   "date": "2026-10-25",
-   "reason": "instrument:32023L2413 (instrument): reach failed: no path of relations to an entity on a different surface"
-  },
-  {
    "key": "J3sev:intelligence_items.severity",
    "owner": "slice SEV-1 (migration 0137)",
    "date": "2026-10-25",

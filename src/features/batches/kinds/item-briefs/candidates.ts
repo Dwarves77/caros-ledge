@@ -1,7 +1,7 @@
 // New in DIGEST-1 PR B (scripts/ci/new-files/digest-1b.txt), ADR-053 / TRIANGLE-TRACE Q3: the candidate_entities block of a reader bundle. The reader may file an entity only by an id on this menu (or a formal code), so the menu is every entity the text could be about: the item's
 // own instrument first, then the entities its claims, events and obligations are typed-linked to (entity_refs with a method version; never a prose match), then the rest of the closed ontology of couplings.json, then at most three region or publisher lines. Modes, hubs and windows
 // are closed tokens and stay out. The cap is MENU.cap; over it the lowest-ranked linked entities drop and the block says `truncated: n`. A line is `entity_id | kind | canonical_name | aliases | links: n`. The same function serves the theme and admin bundles (their seed is the packet's members).
-import { couplingById, uuidOf } from "@/core/coupling";
+import { loadOntology, uuidOf, type Ontology } from "@/core/coupling";
 import { fetchAllByIdChunks, rowsByIds, type Db } from "@/core/db";
 import { MENU } from "@/core/digest/kinds";
 import type { Packet } from "@/core/digest/packets-client";
@@ -15,11 +15,10 @@ export interface Menu { lines: string[]; ids: string[]; truncated: number }
 interface Ent { entity_id: string; kind: string; canonical_name: string; status: string }
 interface Ident { entity_id: string; scheme: string; value: string }
 
-const rank = (e: Ent): number => { const i = MENU.kindOrder.indexOf(e.kind); return i < 0 ? MENU.kindOrder.length : i; };
-const byRank = (a: Ent, b: Ent): number => rank(a) - rank(b) || (a.entity_id < b.entity_id ? -1 : 1);
+const OUT = new Set(["mode", "hub", "window"]);
+const rank = (onto: Ontology) => (e: Ent): number => { const i = MENU.kindOrder.indexOf(onto.classOf(e.entity_id) || e.kind); return i < 0 ? MENU.kindOrder.length : i; };
+const byRank = (onto: Ontology) => (a: Ent, b: Ent): number => rank(onto)(a) - rank(onto)(b) || (a.entity_id < b.entity_id ? -1 : 1);
 const bump = (m: Map<string, number>, id: string, n = 1): void => void m.set(id, (m.get(id) ?? 0) + n);
-/** A mode, hub or window entity: a closed token the reader writes as `mode:ocean`, never a menu line. */
-const isClosedToken = (id: string): boolean => ["mode", "hub", "window"].includes(couplingById(id)?.class ?? "");
 const identsOf = (sb: Db, ids: readonly string[]) => fetchAllByIdChunks<Ident>(ids, (slice) => readAll(sb, "entity_identifiers", "entity_id, scheme, value", ["entity_id", "scheme", "value"], (q) => q.in("entity_id", slice)), { manyPerId: true });
 
 /**
@@ -55,11 +54,13 @@ async function neighbourhood(sb: Db, seed: Seed): Promise<{ near: Map<string, nu
 /** The menu for a seed: the own instrument, the typed-linked entities, the graph neighbours, the domain's entities, then region and publisher lines; rank, cap and state the truncation. Modes and hubs are closed tokens and stay out. */
 export async function candidateMenu(sb: Db, seed: Seed): Promise<Menu> {
   const region = [...(seed.region ?? []), ...(seed.publisher ? [seed.publisher] : [])].slice(0, MENU.maxRegion);
+  const onto = await loadOntology(sb);
+  const isClosedToken = (id: string): boolean => OUT.has(onto.classOf(id));
   const { near, domain } = await neighbourhood(sb, seed);
   const want = [...new Set([...(seed.self ? [seed.self] : []), ...seed.weights.keys(), ...near.keys(), ...domain.keys(), ...region])];
   const ents = new Map((await rowsByIds<Ent>(sb, "entities", "entity_id, kind, canonical_name, status", want, "entity_id", "entity_id")).filter((e) => e.status === "active" && !isClosedToken(e.entity_id)).map((e) => [e.entity_id, e]));
   const take = (ids: Iterable<string>): Ent[] => [...ids].flatMap((id) => (ents.has(id) ? [ents.get(id) as Ent] : []));
-  const heaviest = (m: ReadonlyMap<string, number>) => (a: Ent, b: Ent) => (m.get(b.entity_id) ?? 0) - (m.get(a.entity_id) ?? 0) || byRank(a, b);
+  const heaviest = (m: ReadonlyMap<string, number>) => (a: Ent, b: Ent) => (m.get(b.entity_id) ?? 0) - (m.get(a.entity_id) ?? 0) || byRank(onto)(a, b);
   const self = take(seed.self ? [seed.self] : []);
   const used = new Set(self.map((e) => e.entity_id));
   const regions = take(region).filter((e) => !used.has(e.entity_id));

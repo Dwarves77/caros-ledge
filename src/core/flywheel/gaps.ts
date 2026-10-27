@@ -2,7 +2,6 @@
 // Ported from old_repo/src/lib/connections/anticipate.mjs (lines 1-129)
 // Coverage gaps of a theme against the workspace profile, and anticipated targets from forward events with thin coverage. Jurisdictions compare as
 // jurisdiction ENTITIES (canonical code, then entity id), never as raw strings (B-0238/2150/2151): "uk" and "GB" are one jurisdiction.
-import { couplingById } from "@/core/coupling/coupling";
 import { canonicalJurisdictionCode, entityId, GENERIC_JURISDICTIONS } from "@/core/entities/id";
 
 import { buildSubjectRef, ANTICIPATE_NAMESPACE, createdBy, GAP_NAMESPACE, type Finding } from "./flags";
@@ -176,7 +175,7 @@ export const anticipateFindings = (targets: readonly AnticipatedTarget[]): Findi
  * Two rules, both on stored rows. (1) A pending trigger (a kind patterns.json names) that falls due within the lead window's far edge and that no later capture has resolved: the vertex missing is the capture that states it. (2) A hop the reader named: an entity of a pattern has a
  * reader-asserted relation to an entity that no recent row is filed under (recency from the cross-modal window): the vertex missing is a row on that entity's surface. Pure; the surface of an entity is the surface of its coupling class (patterns.json), and an entity outside the vocabulary names none.
  */
-export function patternGaps(i: { patterns: readonly Pattern[]; facts: readonly Fact[]; readerEdges: readonly ReaderEdge[]; now: Date }): Gap[] {
+export function patternGaps(i: { patterns: readonly Pattern[]; facts: readonly Fact[]; readerEdges: readonly ReaderEdge[]; now: Date; classOf?: (entity: string) => string }): Gap[] {
   const d = PATTERNS.discovery;
   const [today, far] = [i.now.toISOString().slice(0, 10), new Date(i.now.getTime() + PATTERNS.leadLag.leadDays[1] * 86_400_000).toISOString().slice(0, 10)];
   const recent = new Set(i.facts.filter((f) => (f.at ?? f.due ?? "") >= new Date(i.now.getTime() - PATTERNS.crossModal.recencyDays * 86_400_000).toISOString().slice(0, 10)).flatMap((f) => f.entities));
@@ -188,7 +187,7 @@ export function patternGaps(i: { patterns: readonly Pattern[]; facts: readonly F
     const own = new Set(p.evidence.flatMap((e) => e.entities));
     for (const edge of i.readerEdges.filter((e) => own.has(e.parent) !== own.has(e.child))) {
       const far = own.has(edge.parent) ? edge.child : edge.parent;
-      const surface = d.surfaceOfClass[couplingById(far)?.class ?? ""];
+      const surface = d.surfaceOfClass[i.classOf?.(far) ?? ""];
       if (!surface || recent.has(far)) continue;
       out.push({ type: "pattern_hop_gap", category: "coverage_gap", subject_type: "system", subject_ref: buildSubjectRef("pattern", patternSeed(p), far), recommended_actions: [], evidence: { pattern: patternSeed(p), entity: far, relation: edge.relation },
         description: `Pattern ${patternSeed(p)} names ${edge.relation} to ${far} (reader-asserted) and no recent row is filed under it. Missing vertex: a row on ${far}. Surface ${surface}; entities ${far}; window the last ${PATTERNS.crossModal.recencyDays} days; venue class: ${d.venueOfSurface[surface] ?? "docket"}.` });
