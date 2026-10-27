@@ -9,6 +9,7 @@ import type { Db } from "@/core/db";
 import { specForItemType } from "@/core/brief";
 import { DUTY_HOLDER_CLASSES } from "@/core/contracts/vocabularies";
 import { allRows, rowsByIds } from "@/core/db";
+import { isYearOnlyTarget } from "@/core/flywheel/clusters";
 import { digestKind, guideSkills } from "@/core/digest/kinds";
 import { packetReader, type Packet, type PacketReader } from "@/core/digest/packets-client";
 import { secondReaderBlock } from "@/core/digest/review";
@@ -63,7 +64,8 @@ export function itemBriefsExporter(sb: Db, now: () => Date, packets: PacketReade
       const out: Obj[] = [];
       for (const it of items) {
         const [input, pool] = [await readExtractionInput(sb, it.id, now()), await itemPool(sb, it.id)];
-        const events = await allRows<Obj>(sb, "item_forward_events", "id, event_date, event_kind, obligation_text, confidence, source_span", { where: (q) => q.eq("intelligence_item_id", it.id) });
+        const events = await allRows<Obj>(sb, "item_forward_events", "id, event_date, date_precision, event_kind, obligation_text, confidence, source_span", { where: (q) => q.eq("intelligence_item_id", it.id) });
+        const kept = events.filter((e) => !isYearOnlyTarget(e as { date_precision?: string; event_kind?: string }));
         const ctx = await itemContext(sb, it);
         const menu = await candidateMenu(sb, await itemSeed(sb, it, { claimIds: ctx.claimIds, eventIds: events.map((e) => String(e.id)), obligationIds: ctx.obligationIds }));
         const timelines = await allRows<Obj>(sb, "item_timelines", "id, milestone_date, label, is_completed", { where: (q) => q.eq("item_id", it.id) });
@@ -71,7 +73,7 @@ export function itemBriefsExporter(sb: Db, now: () => Date, packets: PacketReade
           id: it.id, provenance_status: it.provenance_status, title: it.title, item_type: it.item_type, format_type: it.format_type, jurisdiction_iso: it.jurisdiction_iso, canonical_instrument_key: it.canonical_instrument_key, source_id: it.source_id, source_url: it.source_url,
           required_slots: slotRows.filter((s) => s.item_type === it.item_type).map((s) => ({ slot_key: s.slot_key, description: s.description })),
           claims: input.claims, sections: input.sections, pool: pool.pool.map(({ id, url, text }) => ({ capture_id: id, url, text })), source_pool_hash: pool.hash, candidate_entities: menuBlock(menu),
-          forward_events: events.map((e) => omitId(e)), timelines: timelines.map((t) => omitId(t)),
+          forward_events: kept.map((e) => omitId(e)), truncation: { forward_events_dropped_year_only_target: events.length - kept.length }, timelines: timelines.map((t) => omitId(t)),
           authoring_skills: guideSkills(guide, specForItemType(it.item_type)?.formatType), ...ctx.context, packets: packetsOf(it.id),
         });
       }

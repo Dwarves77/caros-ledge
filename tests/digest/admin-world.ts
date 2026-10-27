@@ -23,7 +23,7 @@ export const ROWS = {
 export const ref = (r: { table: string; pk: string }): string => `${r.table}:${r.pk}`;
 
 export const cluster = (): Cluster => ({
-  id: CLUSTER, anchor_entity_ids: [E.mandate], surfaces: ["regulations", "operations", "research", "market"], angles: ["mandate_vs_capacity"], axes: ["shared_entity", "threshold"], hops: 1,
+  id: CLUSTER, anchor_entity_ids: [E.mandate], surfaces: ["regulations", "operations", "research", "market"], angles: ["mandate_vs_capacity"], axes: ["shared_entity", "threshold"], hops: 1, dropped: { year_only_events: 0, generic_assessments: 0 },
   rows: [
     { ...ROWS.item, surface: "regulations", entity_ids: [E.mandate], date: "2027-01-01", figure: { value: 50, unit: "MW" }, quote_capture_id: CAP.mandate },
     { ...ROWS.grid, surface: "operations", entity_ids: [E.grid], date: null, figure: { value: 31, unit: "months" }, quote_capture_id: CAP.grid },
@@ -72,7 +72,7 @@ export function adminEntry(over: Record<string, unknown> = {}): Record<string, u
       claim_provenance: [{ row: ref(ROWS.grid), span: "median grid connection queue is 31 months" }],
     }],
     tagged_inferences: [{ text: "Vendors with grid-independent storage are positioned to supply the gap.", status_token: "HYPOTHESIS", basis: [ref(ROWS.oem)] }],
-    signposts: [{ claim_text: "The 24-month capacity target is missed in at least one Member State", observable: "the annual implementation report's count of Member States reporting the target met", source_class: "govIntergov", confirms_if: "fewer than all Member States report the target met", falsified_if: "every Member State reports the target met by the deadline", by: "2028-09-01" }],
+    signposts: [{ claim_text: "The 24-month capacity target is missed in at least one member state", observable: "the annual implementation report's count of member states reporting the target met", source_class: "govIntergov", confirms_if: "fewer than all member states report the target met", falsified_if: "every member state reports the target met by the deadline", by: "2028-09-01" }],
     coverage_gaps: [{ missing_input: "the installed charging capacity of the transmission zone at the mandate date", source_class: "govIntergov" }],
     connections: [{ from_entity_id: E.mandate, to_entity_id: E.grid, relation: "competes_for_feedstock", reason_token: "queue_blocks_mandate", quote: { capture_id: CAP.grid, text: "median grid connection queue is 31 months" } }],
     ...over,

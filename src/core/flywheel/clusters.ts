@@ -8,7 +8,7 @@
 // Nothing is dropped silently: `truncated` counts the clusters not returned (beyond the limit) and the rows cut from a cluster beyond maxRows.
 import { createHash } from "node:crypto";
 
-import type { Db } from "@/core/db";
+import { rowsByIds, type Db } from "@/core/db";
 
 import { PATTERNS } from "./patterns/config";
 import { DETECTORS } from "./patterns/detect";
@@ -40,7 +40,11 @@ export interface Cluster {
   /** The fewest relation hops at which the rows are reached. */
   hops: 0 | 1 | 2;
   axes: Axis[];
+  /** SYNTH-FIX-1 B1: the rows left out of the bundle, by rule; the export states each in its truncation block. */
+  dropped: { year_only_events: number; generic_assessments: number };
 }
+/** A forward event stored at year precision whose kind is no more than a target: a recital's year as 1 January, not an event. */
+export const isYearOnlyTarget = (e: { date_precision?: string | null; event_kind?: string | null }): boolean => e.date_precision === "year" && (!e.event_kind || e.event_kind === "target");
 
 const SURFACES: readonly string[] = ["regulations", "market", "operations", "research"];
 const MS_PER_DAY = 86_400_000;
@@ -96,6 +100,8 @@ export async function assembleClusters(db: Db, o: { limit: number; minSurfaces?:
   const classOf = (e: string): string => input.classOf?.(e) ?? "";
   const specific = (e: string): boolean => !generic.has(classOf(e));
   const facts = input.facts.filter((f) => SURFACES.includes(f.surface));
+  // the stored precision of a forward event's date (the method's own fact config is untouched): a year-only target is dropped from the rows below
+  const precision = new Map((await rowsByIds<{ id: string; date_precision: string | null }>(db, "item_forward_events", "id, date_precision", facts.filter((f) => f.table === "item_forward_events").map((f) => f.pk), "id", "id")).map((r) => [r.id, r.date_precision]));
   const byEntity = new Map<string, Fact[]>();
   for (const f of facts) for (const e of f.entities) byEntity.set(e, [...(byEntity.get(e) ?? []), f]);
   const drafts = new Map<string, Draft>();
@@ -164,17 +170,23 @@ export async function assembleClusters(db: Db, o: { limit: number; minSurfaces?:
     const angles = new Set<Angle>(anglesOf(all, d.relations));
     for (const k of d.kinds) angles.add(ANGLE_OF_KIND[k]);
     const rows = new Map<string, ClusterRow>();
+    const dropped = { year_only_events: 0, generic_assessments: 0 };
+    const shared = new Set(all.filter((f) => f.table !== "research_assessments").flatMap((f) => f.entities));
     for (const f of all) {
       const r = rowOf(f);
-      if (r && !rows.has(rowKey(f))) rows.set(rowKey(f), r);
+      if (!r || rows.has(rowKey(f))) continue;
+      // B1: a year-only target is no event, and a research assessment stays only when it is filed under a specific entity that another row of the cluster is filed under (a 0-hop join, not one reached by a generic class or a hop)
+      if (f.table === "item_forward_events" && isYearOnlyTarget({ date_precision: precision.get(f.pk) ?? null, event_kind: f.kind })) { dropped.year_only_events += 1; continue; }
+      if (f.table === "research_assessments" && !f.entities.some((e) => shared.has(e) && specific(e))) { dropped.generic_assessments += 1; continue; }
+      rows.set(rowKey(f), r);
     }
     // the rows kept when a cluster is over the cap: round-robin across fronts, so no front is cut away whole
     const perSurface = SURFACES.map((s) => [...rows.values()].filter((r) => r.surface === s).sort((a, b) => String(b.date).localeCompare(String(a.date)) || (a.pk < b.pk ? -1 : 1)));
     const kept: ClusterRow[] = [];
     for (let i = 0; kept.length < maxRows && perSurface.some((l) => i < l.length); i += 1) for (const l of perSurface) if (l[i] && kept.length < maxRows) kept.push(l[i] as ClusterRow);
     cut += rows.size - kept.length;
-    return { id, anchor_entity_ids: [...d.anchors].sort(), rows: kept, surfaces: [...new Set(kept.map((r) => r.surface))].sort(), angles: [...angles].sort(), hops: d.hops, axes: [...d.axes].sort() };
-  });
+    return { id, anchor_entity_ids: [...d.anchors].sort(), rows: kept, surfaces: [...new Set(kept.map((r) => r.surface))].sort(), angles: [...angles].sort(), hops: d.hops, axes: [...d.axes].sort(), dropped };
+  }).filter((c) => new Set(c.rows.map((r) => r.surface)).size >= minSurfaces);
   clusters.sort((a, b) => b.surfaces.length - a.surfaces.length || b.rows.length - a.rows.length || (a.id < b.id ? -1 : 1));
   const returned = clusters.slice(0, Math.max(0, o.limit));
   return { clusters: returned, truncated: clusters.length - returned.length + cut };
