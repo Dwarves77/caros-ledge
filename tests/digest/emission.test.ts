@@ -215,10 +215,11 @@ test("GRAPH-GROW-1: the menu is an authoring aid, not a whitelist: a live entity
   assert.deepEqual(ok.errors, [], reasons(ok));
   assert.deepEqual(ok.plan?.entities.map((e) => e.entity_id), [entityId("organisation", "unlinked-live"), entityId("organisation", "unlinked-live")], "a merged entity resolves to its target");
   assert.match(reasons(await check(w, emissionEntry(w, { entity_ids: [{ entity_id: entityId("organisation", "old-retired"), quote: q("Strasbourg") }] }))), /unknown entity id/);
+});
 
-test("PARSE-FIX-1 D1/D2: an event carries the most precise date its quote states; a forward-looking kind may not carry a date before generated_at", () => {
+test("PARSE-FIX-1 D1: an event carries the most precise date its quote states; a past-dated forward-looking kind is stored (a missed deadline is intelligence; still ahead in prose is a prose error J16 judges)", () => {
   const cap = "Operators shall report by 31 December 2025 and from 1&nbsp;June&nbsp;2027; in 2030 the review follows.";
-  const run = (events: unknown[], generatedAt?: string) => validateEmission({ item_id: "i", events }, "item X", { captures: new Map([["c1", cap]]), ids: new Map(), objects: new Map(), locate: locateSpan, ...(generatedAt ? { generatedAt } : {}) });
+  const run = (events: unknown[]) => validateEmission({ item_id: "i", events }, "item X", { captures: new Map([["c1", cap]]), ids: new Map(), objects: new Map(), locate: locateSpan });
   const ev = (over: Record<string, unknown>, text: string) => ({ event_kind: "compliance_deadline", quote: { capture_id: "c1", text }, ...over });
   const why = (r: { errors: string[] }) => r.errors.join(" | ");
   assert.match(why(run([ev({ event_date: "2025-12-01", date_precision: "month" }, "31 December 2025")])), /more precise day date inside 2025-12-01/);
@@ -226,7 +227,5 @@ test("PARSE-FIX-1 D1/D2: an event carries the most precise date its quote states
   assert.match(why(run([ev({ event_date: "2027-06-01", date_precision: "month" }, "1 June 2027")])), /more precise day date/, "the entity form of the space is read as a space");
   assert.deepEqual(run([ev({ event_date: "2030-01-01", date_precision: "year" }, "in 2030")]).errors, []);
   assert.deepEqual(run([ev({ event_date: "2025-12-31" }, "31 December 2025")]).errors, []);
-  assert.match(why(run([ev({ event_date: "2025-12-31", event_kind: "guidance_expected" }, "31 December 2025")], "2026-03-01T00:00:00.000Z")), /before the batch's generated_at/);
-  assert.deepEqual(run([ev({ event_date: "2025-12-31", event_kind: "guidance_expected" }, "31 December 2025")], "2025-03-01T00:00:00.000Z").errors, []);
-  assert.deepEqual(run([ev({ event_date: "2025-12-31" }, "31 December 2025")], "2026-03-01T00:00:00.000Z").errors, [], "a past compliance_deadline is a fact, not an ahead");
+  for (const kind of ["implementing_act_due", "delegated_act_due", "guidance_expected"]) assert.deepEqual(run([ev({ event_date: "2025-12-31", event_kind: kind }, "31 December 2025")]).errors, [], `a past-dated ${kind} is stored, not refused`);
 });

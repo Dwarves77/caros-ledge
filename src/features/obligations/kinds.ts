@@ -14,9 +14,6 @@ export const EVENT_KINDS = [
   "guidance_expected",
   "other",
 ] as const;
-/** The kinds that name something still awaited (the pending triggers of ADR-050): a date already past at generation cannot carry one. */
-export const FORWARD_LOOKING_KINDS: readonly EventKindName[] = ["implementing_act_due", "delegated_act_due", "guidance_expected"];
-type EventKindName = (typeof EVENT_KINDS)[number];
 export type EventKind = (typeof EVENT_KINDS)[number];
 export const DEFAULT_KINDS: readonly EventKind[] = EVENT_KINDS.filter((k) => k !== "other" && k !== "target");
 export const KIND_LABELS: Readonly<Record<EventKind, string>> = {
