@@ -220,6 +220,16 @@ function itemBriefsSpec(opts: RecordOpts): EntrySpec<RecordLive, RecordPlan> {
       const done = isObj(e) && typeof e.item_id === "string" && typeof e.body === "string" ? sameBrief(live.items.get(e.item_id)?.fullBrief, e.body) && live.items.get(e.item_id)?.grade === "brief" && live.items.get(e.item_id)?.sectionsOk === true && ledgerCoversClaims(live.items.get(e.item_id)?.claims ?? [], Array.isArray(e.claims) ? e.claims : [], live.items.get(e.item_id)?.sections ?? []) : false;
       return done ? { errors: [], done: true } : validateRecordBriefEntry(e, i, live);
     },
+    async writeResidue(deps, _live, item) {
+      const plan = item.plan.emission;
+      const skipped = item.plan.skipped ?? [];
+      if (!plan) return { counts: {}, notes: [], account: "emission blocks written: none (no typed blocks)" };
+      const it = await itemRow(deps.sb, item.plan.itemId);
+      const w = await writeEmission(deps, item.plan.itemId, it?.source_id ?? null, plan, new Set(plan.captureIds));
+      const planned = { entity_ids: plan.entities.length, obligation_fields: plan.objects.length, connections: plan.connections.length, events: plan.events.length, document_date: plan.document_date ? 1 : 0 };
+      const done = Object.entries(planned).filter(([, n]) => n > 0).map(([k, n]) => `${k} ${n}`);
+      return { counts: w.counts, notes: w.notes, account: `emission blocks written: ${done.join(", ") || "none"}${skipped.length ? `; skipped: ${skipped.join(", ")}` : ""}${w.notes.length ? "; failed: " + w.notes.length : ""}` };
+    },
     residueReview: (e, key) => (key ? { subjectId: key, score: review("item-briefs", e).score, reviewedBy: review("item-briefs", e).reviewed_by ?? "none" } : null),
     write: (deps, _live, item, batch) => applyItem(deps, item, batch, opts.allowBriefOverwrite === true),
     cost: (item) => item.plan.bytes * POOL_REREADS,

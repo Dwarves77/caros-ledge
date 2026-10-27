@@ -20,7 +20,7 @@ import { candidateMenu, itemSeed, menuBlock } from "./candidates";
 
 const omitId = (row: Obj): Obj => Object.fromEntries(Object.entries(row).filter(([k]) => k !== "id"));
 interface ItemRow { id: string; title: string | null; item_type: string; format_type: string | null; jurisdiction_iso: string[] | null; canonical_instrument_key: string | null; source_id: string | null; source_url: string | null; provenance_status: string | null; is_archived: boolean | null; priority: string | null; severity: string | null; urgency_tier: string | null; instrument_entity_id: string | null }
-const COLUMNS = "id, title, item_type, format_type, jurisdiction_iso, canonical_instrument_key, source_id, source_url, provenance_status, is_archived, priority, severity, urgency_tier, instrument_entity_id";
+const COLUMNS = "id, title, item_type, format_type, jurisdiction_iso, canonical_instrument_key, source_id, source_url, provenance_status, is_archived, priority, severity, urgency_tier, instrument_entity_id, domain";
 
 /** The exact ids requested, as items: verified or quarantined and not archived; every id that cannot be exported is named archived or not_found. */
 async function selectByIds(sb: Db, ids: readonly string[]): Promise<{ items: ItemRow[]; notExported: { id: string; reason: "archived" | "not_found" }[] }> {

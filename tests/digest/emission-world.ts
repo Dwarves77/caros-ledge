@@ -24,7 +24,8 @@ export function emissionWorld() {
   const cap = (w.db.rows("agent_run_searches").find((r) => r.result_url === OFFICIAL_URL) as { id: string }).id;
   const ent = (entity_id: string, kind: string, canonical_name: string) => ({ entity_id, kind, canonical_name, status: "active" });
   w.db.seed("entities", [ent(SELF, "instrument", "32023R9999"), ent(UCO, "material", "Used cooking oil"), ent(HVO, "material", "HVO"), ent(OCEAN, "asset", "Ocean freight"), ent(entityId("jurisdiction", "EU"), "jurisdiction", "EU"), ent(entityId("organisation", "eur-lex.europa.eu"), "organisation", "eur-lex.europa.eu")]);
-  w.db.seed("entity_identifiers", [{ entity_id: SELF, scheme: "CELEX", value: "32023R9999", asserted_by: "t" }]);
+  // The menu is the live graph (GRAPH-GROW-1): the fixture links the entities its blocks name to the item through a shared formal code, as a seeded graph would.
+  w.db.seed("entity_identifiers", [{ entity_id: SELF, scheme: "CELEX", value: "32023R9999", asserted_by: "t" }, ...[SELF, UCO, HVO].map((e) => ({ entity_id: e, scheme: "FIXTURE_GROUP", value: "emission-world", asserted_by: "t" }))]);
   w.db.seed("entity_aliases", [{ entity_id: HVO, alias: "hydrotreated vegetable oil", alias_kind: "name", asserted_by: "t" }]);
   const deps: BatchDeps = { ...w.deps, locate: locateSpan };
   return { ...w, deps, cap, item };

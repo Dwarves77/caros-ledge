@@ -22,21 +22,27 @@ const FORMAL = /^(CELEX|UNLOCODE|ISO3166_1|ISO3166_2):(.+)$/;
 const norm = (s: string): string => s.replace(/\s+/g, " ").trim().toLowerCase();
 type Row = Record<string, unknown>;
 
-/** The formal codes and closed tokens an entry writes where an entity id goes: the strings that are not cl: ids. */
+/** Every string an entry writes where an entity id goes: cl: ids (looked up in entities), formal codes (resolved through the crosswalk) and closed tokens. */
 export function entityTokens(e: Obj): string[] {
   const arr = (v: unknown): unknown[] => (Array.isArray(v) ? v : []);
   const raw = [...arr(e.entity_ids).map((x) => (x as Obj | null)?.entity_id), ...arr(e.obligation_fields).flatMap((o) => arr((o as Obj | null)?.entity_ids)), ...arr(e.events).flatMap((v) => arr((v as Obj | null)?.entity_ids)), ...arr(e.connections).flatMap((c) => [(c as Obj | null)?.from_entity_id, (c as Obj | null)?.to_entity_id])];
-  return raw.filter((x): x is string => typeof x === "string" && !x.startsWith("cl:"));
+  return raw.filter((x): x is string => typeof x === "string");
 }
 
 /** The item's live material for the validator: its captures, the ids a reader may write (the menu, closed mode and hub tokens, formal codes the crosswalk resolves to an active entity), and its current obligation objects. */
 export async function loadEmit(deps: BatchDeps, itemId: string, tokens: readonly string[]): Promise<EmitLive> {
   const sb = deps.sb;
-  const [it] = await rowsByIds<{ id: string; instrument_entity_id: string | null; jurisdiction_iso: string[] | null; source_url: string | null }>(sb, "intelligence_items", "id, instrument_entity_id, jurisdiction_iso, source_url", [itemId]);
+  const [it] = await rowsByIds<{ id: string; instrument_entity_id: string | null; jurisdiction_iso: string[] | null; source_url: string | null; domain: number | null }>(sb, "intelligence_items", "id, instrument_entity_id, jurisdiction_iso, source_url, domain", [itemId]);
   const captures = new Map((await readPool(sb, itemId)).map((p) => [p.id, p.text]));
   const [claims, events, objects] = [await allRows<{ id: string }>(sb, "section_claim_provenance", "id", { where: (q) => q.eq("intelligence_item_id", itemId) }), await allRows<{ id: string }>(sb, "item_forward_events", "id", { where: (q) => q.eq("intelligence_item_id", itemId) }), await readObjects(sb, itemId)];
   const menu = it ? await candidateMenu(sb, await itemSeed(sb, it, { claimIds: claims.map((c) => c.id), eventIds: events.map((e) => e.id), obligationIds: objects.map((o) => String(o.obligation_id)) })) : { ids: [] as string[] };
   const ids = new Map<string, string>([...menu.ids.map((id) => [id, id] as const), ...COUPLINGS.filter((c) => c.class === "mode" || c.class === "hub").map((c) => [c.key, c.entityId] as const)]);
+  // GRAPH-GROW-1: the menu is an authoring aid, not a whitelist. A cl: id the entry names is valid when the entity EXISTS and is live (an active entity, or the one a merged entity points to); an id nothing holds is still refused.
+  const named = [...new Set(tokens)].filter((t) => /^cl:/.test(t) && !ids.has(t));
+  for (const e of await rowsByIds<{ entity_id: string; status: string; merged_into: string | null }>(sb, "entities", "entity_id, status, merged_into", named, "entity_id", "entity_id")) {
+    const live = e.status === "active" ? e.entity_id : e.merged_into;
+    if (live) ids.set(e.entity_id, live);
+  }
   for (const t of new Set(tokens)) {
     const m = FORMAL.exec(t);
     if (!m || !VALIDATORS[m[1] as keyof typeof VALIDATORS](m[2])) continue;

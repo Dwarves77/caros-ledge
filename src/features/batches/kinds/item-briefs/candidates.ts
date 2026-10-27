@@ -1,7 +1,7 @@
 // New in DIGEST-1 PR B (scripts/ci/new-files/digest-1b.txt), ADR-053 / TRIANGLE-TRACE Q3: the candidate_entities block of a reader bundle. The reader may file an entity only by an id on this menu (or a formal code), so the menu is every entity the text could be about: the item's
 // own instrument first, then the entities its claims, events and obligations are typed-linked to (entity_refs with a method version; never a prose match), then the rest of the closed ontology of couplings.json, then at most three region or publisher lines. Modes, hubs and windows
 // are closed tokens and stay out. The cap is MENU.cap; over it the lowest-ranked linked entities drop and the block says `truncated: n`. A line is `entity_id | kind | canonical_name | aliases | links: n`. The same function serves the theme and admin bundles (their seed is the packet's members).
-import { COUPLINGS, couplingById, uuidOf } from "@/core/coupling";
+import { couplingById, uuidOf } from "@/core/coupling";
 import { fetchAllByIdChunks, rowsByIds, type Db } from "@/core/db";
 import { MENU } from "@/core/digest/kinds";
 import type { Packet } from "@/core/digest/packets-client";
@@ -9,35 +9,78 @@ import { canonicalJurisdictionCode, entityId } from "@/core/entities/id";
 import { readAll } from "@/core/coupling/read";
 import { hostOf } from "@/core/shared/url";
 
-/** What ranks an entity: its own instrument, the typed-link weight of the others, and where the region and publisher lines come from. */
-export interface Seed { self?: string | null; weights: ReadonlyMap<string, number>; region?: readonly string[]; publisher?: string | null }
+/** What ranks an entity: its own instrument, the typed-link weight of the others, where the region and publisher lines come from, and the graph neighbourhood (GRAPH-GROW-1): the item's domain, and the item itself (excluded from its own domain neighbours). */
+export interface Seed { self?: string | null; weights: ReadonlyMap<string, number>; region?: readonly string[]; publisher?: string | null; domain?: number | null; itemId?: string | null }
 export interface Menu { lines: string[]; ids: string[]; truncated: number }
 interface Ent { entity_id: string; kind: string; canonical_name: string; status: string }
+interface Ident { entity_id: string; scheme: string; value: string }
 
-const OUT = new Set(["mode", "hub", "window"]);
-const rank = (e: Ent): number => { const i = MENU.kindOrder.indexOf(couplingById(e.entity_id)?.class ?? e.kind); return i < 0 ? MENU.kindOrder.length : i; };
+const rank = (e: Ent): number => { const i = MENU.kindOrder.indexOf(e.kind); return i < 0 ? MENU.kindOrder.length : i; };
 const byRank = (a: Ent, b: Ent): number => rank(a) - rank(b) || (a.entity_id < b.entity_id ? -1 : 1);
-const isOntology = (id: string): boolean => couplingById(id)?.named === true;
+const bump = (m: Map<string, number>, id: string, n = 1): void => void m.set(id, (m.get(id) ?? 0) + n);
+/** A mode, hub or window entity: a closed token the reader writes as `mode:ocean`, never a menu line. */
+const isClosedToken = (id: string): boolean => ["mode", "hub", "window"].includes(couplingById(id)?.class ?? "");
+const identsOf = (sb: Db, ids: readonly string[]) => fetchAllByIdChunks<Ident>(ids, (slice) => readAll(sb, "entity_identifiers", "entity_id, scheme, value", ["entity_id", "scheme", "value"], (q) => q.in("entity_id", slice)), { manyPerId: true });
 
-/** The menu for a seed: rank, cap and state the truncation. Dropped entities are the lowest-ranked linked ones that are not already in the ontology. */
+/**
+ * The LIVE graph around an item (GRAPH-GROW-1, no static list): the entities one hop from its own and its linked entities in entity_relations, the entities that share a formal code (entity_identifiers) with them,
+ * and, for the item's domain, the entities the other items of that domain are most often filed under. Weights: relations and shared codes counted per entity; the domain by how many items file the entity.
+ */
+export async function neighbourhood(sb: Db, seed: Seed): Promise<{ near: Map<string, number>; domain: Map<string, number> }> {
+  const core = [...new Set([...(seed.self ? [seed.self] : []), ...seed.weights.keys()])];
+  const near = new Map<string, number>();
+  if (core.length) {
+    const edge = (col: "parent_entity_id" | "child_entity_id") => fetchAllByIdChunks<{ parent_entity_id: string; child_entity_id: string }>(core, (slice) => readAll(sb, "entity_relations", "parent_entity_id, child_entity_id, relation", ["parent_entity_id", "child_entity_id", "relation"], (q) => q.in(col, slice)), { manyPerId: true });
+    for (const r of await edge("parent_entity_id")) bump(near, r.child_entity_id);
+    for (const r of await edge("child_entity_id")) bump(near, r.parent_entity_id);
+    const own = await identsOf(sb, core);
+    for (const scheme of new Set(own.map((o) => o.scheme))) {
+      const values = [...new Set(own.filter((o) => o.scheme === scheme).map((o) => o.value))];
+      for (const r of await fetchAllByIdChunks<Ident>(values, (slice) => readAll(sb, "entity_identifiers", "entity_id, scheme, value", ["entity_id", "scheme", "value"], (q) => q.eq("scheme", scheme).in("value", slice)), { manyPerId: true })) bump(near, r.entity_id);
+    }
+    for (const id of core) near.delete(id);
+  }
+  const domain = new Map<string, number>();
+  if (seed.domain !== null && seed.domain !== undefined) {
+    // The newest items of the domain, a bounded sample (a limit, never a paginated read that throws past a cap).
+    const items = await sb.from("intelligence_items").select("id").eq("domain", seed.domain).eq("is_archived", false).order("added_date", { ascending: false }).limit(MENU.domainItems);
+    if (items.error) throw new Error(`domain neighbours read failed: ${items.error.message}`);
+    const ids = ((items.data ?? []) as { id: string }[]).map((i) => i.id).filter((i) => i !== seed.itemId);
+    for (const r of await fetchAllByIdChunks<{ entity_id: string }>(ids, (slice) => readAll(sb, "entity_refs", "entity_id, ref_id, role", ["ref_table", "ref_id", "entity_id", "role"], (q) => q.eq("ref_table", "intelligence_items").in("ref_id", slice).not("method_version", "is", null)), { manyPerId: true })) bump(domain, r.entity_id);
+    for (const id of [...core, ...near.keys()]) domain.delete(id);
+  }
+  return { near, domain };
+}
+
+/** The menu for a seed: the own instrument, the typed-linked entities, the graph neighbours, the domain's entities, then region and publisher lines; rank, cap and state the truncation. Modes and hubs are closed tokens and stay out. */
 export async function candidateMenu(sb: Db, seed: Seed): Promise<Menu> {
   const region = [...(seed.region ?? []), ...(seed.publisher ? [seed.publisher] : [])].slice(0, MENU.maxRegion);
-  const want = [...new Set([...COUPLINGS.filter((c) => c.named).map((c) => c.entityId), ...(seed.self ? [seed.self] : []), ...seed.weights.keys(), ...region])];
-  const ents = new Map((await rowsByIds<Ent>(sb, "entities", "entity_id, kind, canonical_name, status", want, "entity_id", "entity_id")).filter((e) => e.status === "active" && !OUT.has(couplingById(e.entity_id)?.class ?? "")).map((e) => [e.entity_id, e]));
+  const { near, domain } = await neighbourhood(sb, seed);
+  const want = [...new Set([...(seed.self ? [seed.self] : []), ...seed.weights.keys(), ...near.keys(), ...domain.keys(), ...region])];
+  const ents = new Map((await rowsByIds<Ent>(sb, "entities", "entity_id, kind, canonical_name, status", want, "entity_id", "entity_id")).filter((e) => e.status === "active" && !isClosedToken(e.entity_id)).map((e) => [e.entity_id, e]));
   const take = (ids: Iterable<string>): Ent[] => [...ids].flatMap((id) => (ents.has(id) ? [ents.get(id) as Ent] : []));
+  const heaviest = (m: ReadonlyMap<string, number>) => (a: Ent, b: Ent) => (m.get(b.entity_id) ?? 0) - (m.get(a.entity_id) ?? 0) || byRank(a, b);
   const self = take(seed.self ? [seed.self] : []);
   const used = new Set(self.map((e) => e.entity_id));
-  const linked = take([...seed.weights.keys()].filter((id) => !used.has(id))).sort((a, b) => (seed.weights.get(b.entity_id) ?? 0) - (seed.weights.get(a.entity_id) ?? 0) || byRank(a, b));
-  const ontology = take(COUPLINGS.filter((c) => c.named).map((c) => c.entityId)).sort(byRank);
-  const regions = take(region).filter((e) => !ontology.includes(e) && !linked.includes(e));
-  const room = MENU.cap - self.length - ontology.filter((e) => !linked.includes(e)).length - regions.length;
-  let free = Math.min(MENU.maxLinked, room);
-  const kept = linked.filter((e) => isOntology(e.entity_id) || free-- > 0);
-  const ordered = [...self, ...kept, ...ontology.filter((e) => !kept.includes(e)), ...regions];
+  const regions = take(region).filter((e) => !used.has(e.entity_id));
+  regions.forEach((e) => used.add(e.entity_id));
+  const room = (): number => MENU.cap - self.length - regions.length;
+  const pick = (from: Ent[], m: ReadonlyMap<string, number>, limit: number): { kept: Ent[]; all: number } => {
+    const fresh = from.filter((e) => !used.has(e.entity_id)).sort(heaviest(m));
+    const kept = fresh.slice(0, Math.max(0, limit));
+    kept.forEach((e) => used.add(e.entity_id));
+    return { kept, all: fresh.length };
+  };
+  const linked = pick(take(seed.weights.keys()), seed.weights, Math.min(MENU.maxLinked, room()));
+  const neigh = pick(take(near.keys()), near, Math.min(MENU.maxNeighbour, room() - linked.kept.length));
+  const dom = pick(take(domain.keys()), domain, Math.min(MENU.maxDomain, room() - linked.kept.length - neigh.kept.length));
+  const ordered = [...self, ...linked.kept, ...neigh.kept, ...dom.kept, ...regions];
   const aliases = new Map<string, string[]>();
-  for (const a of await fetchAllByIdChunks<{ entity_id: string; alias: string }>(ordered.map((e) => e.entity_id), (slice) => readAll(sb, "entity_aliases", "entity_id, alias", ["entity_id", "alias"], (q) => q.in("entity_id", slice)), { manyPerId: true })) aliases.set(a.entity_id, [...(aliases.get(a.entity_id) ?? []), a.alias]);
-  const line = (e: Ent) => [e.entity_id, e.kind, e.canonical_name, (aliases.get(e.entity_id) ?? []).slice(0, MENU.aliases).join("; "), `links: ${seed.weights.get(e.entity_id) ?? 0}${isOntology(e.entity_id) && seed.weights.has(e.entity_id) ? " ontology: true" : ""}`].join(" | ");
-  return { lines: ordered.map(line), ids: ordered.map((e) => e.entity_id), truncated: linked.length - kept.length };
+  const add = (id: string, v: string) => void aliases.set(id, [...(aliases.get(id) ?? []), v]);
+  for (const a of await identsOf(sb, ordered.map((e) => e.entity_id))) add(a.entity_id, `${a.scheme}:${a.value}`);
+  for (const a of await fetchAllByIdChunks<{ entity_id: string; alias: string }>(ordered.map((e) => e.entity_id), (slice) => readAll(sb, "entity_aliases", "entity_id, alias", ["entity_id", "alias"], (q) => q.in("entity_id", slice)), { manyPerId: true })) add(a.entity_id, a.alias);
+  const line = (e: Ent) => [e.entity_id, e.kind, e.canonical_name, (aliases.get(e.entity_id) ?? []).slice(0, MENU.aliases).join("; "), `links: ${seed.weights.get(e.entity_id) ?? 0}`].join(" | ");
+  return { lines: ordered.map(line), ids: ordered.map((e) => e.entity_id), truncated: linked.all - linked.kept.length + (neigh.all - neigh.kept.length) + (dom.all - dom.kept.length) };
 }
 
 /** The typed-link weights from entity_refs for a set of rows: each ref the mining wrote with a method version counts once for its entity. */
@@ -51,11 +94,11 @@ async function weightsOf(sb: Db, rows: readonly { table: string; id: string }[])
 }
 
 /** An item's seed: its instrument, the entities its claims, forward events and obligations are filed under, its jurisdictions and its publisher host. */
-export async function itemSeed(sb: Db, it: { id: string; instrument_entity_id: string | null; jurisdiction_iso: string[] | null; source_url: string | null }, parts: { claimIds: readonly string[]; eventIds: readonly string[]; obligationIds: readonly string[] }): Promise<Seed> {
+export async function itemSeed(sb: Db, it: { id: string; instrument_entity_id: string | null; jurisdiction_iso: string[] | null; source_url: string | null; domain?: number | null }, parts: { claimIds: readonly string[]; eventIds: readonly string[]; obligationIds: readonly string[] }): Promise<Seed> {
   const rows = [...parts.claimIds.map((id) => ({ table: "section_claim_provenance", id })), ...parts.eventIds.map((id) => ({ table: "item_forward_events", id })), ...parts.obligationIds.map((id) => ({ table: "obligation_objects", id }))];
   const host = hostOf(it.source_url);
   const codes = (it.jurisdiction_iso ?? []).flatMap((c) => canonicalJurisdictionCode(c) ?? []);
-  return { self: it.instrument_entity_id, weights: await weightsOf(sb, rows), region: codes.map((c) => entityId("jurisdiction", c)), publisher: host ? entityId("organisation", host) : null };
+  return { self: it.instrument_entity_id, weights: await weightsOf(sb, rows), region: codes.map((c) => entityId("jurisdiction", c)), publisher: host ? entityId("organisation", host) : null, domain: it.domain ?? null, itemId: it.id };
 }
 
 /** A packet seed (theme and admin bundles): the entities the packet's member rows are filed under. */

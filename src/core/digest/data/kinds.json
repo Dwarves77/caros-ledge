@@ -4,6 +4,9 @@
   "cap": 64,
   "maxLinked": 24,
   "maxRegion": 3,
+  "maxNeighbour": 24,
+  "maxDomain": 8,
+  "domainItems": 400,
   "aliases": 4,
   "kindOrder": [
    "instrument",

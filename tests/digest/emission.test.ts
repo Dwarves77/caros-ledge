@@ -4,16 +4,17 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { READER_METHOD } from "@/core/digest/kinds";
+import { entityId } from "@/core/entities/id";
 import { proposedEntityId } from "@/core/vocabulary/adopted";
 import { applyBatch } from "@/features/batches";
-import { loadEmit, writeEmission } from "@/features/batches/kinds/item-briefs/emit";
+import { entityTokens, loadEmit, writeEmission } from "@/features/batches/kinds/item-briefs/emit";
 import { validateEmission, type EmissionPlan } from "@/features/batches/kinds/item-briefs/emission";
 
 import { batchFile, ITEM, NOW, SPAN_FORCE } from "../batches/world.ts";
 
 import { emissionEntry, emissionWorld, HVO, OCEAN, ORG, SELF, UCO, type EmissionWorld } from "./emission-world.ts";
 
-const live = async (w: EmissionWorld, e: Record<string, unknown>) => loadEmit(w.deps, ITEM, [...JSON.stringify(e).matchAll(/CELEX:\w+/g)].map((m) => m[0]));
+const live = async (w: EmissionWorld, e: Record<string, unknown>) => loadEmit(w.deps, ITEM, entityTokens(e));
 const check = async (w: EmissionWorld, e: Record<string, unknown>) => validateEmission(e, "item X", await live(w, e));
 const apply = (w: EmissionWorld, e: Record<string, unknown>, dry = false) => applyBatch("item-briefs", w.deps, { content: JSON.stringify(batchFile("item-briefs", [e])), dry, runId: "r1" });
 const reasons = (r: { errors: string[] }) => r.errors.join("\n");
@@ -189,4 +190,29 @@ test("DIGEST-FIX-1: a month or year precision event is accepted when its quote s
   assert.deepEqual((year.plan as EmissionPlan).events.map((e) => [e.event_date, e.date_precision]), [["2023-01-01", "year"]]);
   assert.match(reasons(await check(w, ev({ event_date: "2023-09-01", date_precision: "month", quote: q("Strasbourg") }))), /does not state a month date 2023-09-01 as a month and year or a year/);
   assert.match(reasons(await check(w, ev({ event_date: "2023-09-02", date_precision: "month", quote: q("September 2023") }))), /month precision needs the first of the month/);
+});
+
+test("GRAPH-GROW-1: the duty-holder class is open: any snake_case token the quote backs is accepted, a malformed token is refused, and the written object carries the token", async () => {
+  const w = emissionWorld();
+  const base = emissionEntry(w);
+  const withClass = (cls: unknown) => {
+    const objs = (base.obligation_fields as Record<string, unknown>[]).map((o) => ((o.pinpoint as string) === "Article 5" ? { ...o, fields: { ...(o.fields as Record<string, unknown>), duty_holder_class: { value: cls, quote: { capture_id: w.cap, text: "Each Member State shall" } } } } : o));
+    return { ...base, obligation_fields: objs };
+  };
+  const open = await check(w, withClass(["port_authority", "vessel_charterer"]));
+  assert.deepEqual(open.errors, [], reasons(open));
+  assert.deepEqual(open.plan?.objects.find((o) => o.pinpoint === "Article 5")?.set.duty_holder_class, ["port_authority", "vessel_charterer"]);
+  assert.match(reasons(await check(w, withClass(["Not A Token"]))), /duty_holder_class must be one or more snake_case tokens/);
+  assert.match(reasons(await check(w, withClass([]))), /duty_holder_class must be one or more snake_case tokens/);
+});
+
+test("GRAPH-GROW-1: the menu is an authoring aid, not a whitelist: a live entity the entry names is accepted though no graph link put it on the menu; a retired one is refused, a merged one resolves to its target", async () => {
+  const w = emissionWorld();
+  const q = (text: string) => ({ capture_id: w.cap, text });
+  const mk = (name: string, status = "active", merged_into: string | null = null) => ({ entity_id: entityId("organisation", name), kind: "organisation", canonical_name: name, status, merged_into });
+  w.db.seed("entities", [mk("unlinked-live"), mk("old-retired", "retired"), mk("old-merged", "merged", entityId("organisation", "unlinked-live"))]);
+  const ok = await check(w, emissionEntry(w, { entity_ids: [{ entity_id: entityId("organisation", "unlinked-live"), quote: q("Strasbourg") }, { entity_id: entityId("organisation", "old-merged"), quote: q("Strasbourg") }] }));
+  assert.deepEqual(ok.errors, [], reasons(ok));
+  assert.deepEqual(ok.plan?.entities.map((e) => e.entity_id), [entityId("organisation", "unlinked-live"), entityId("organisation", "unlinked-live")], "a merged entity resolves to its target");
+  assert.match(reasons(await check(w, emissionEntry(w, { entity_ids: [{ entity_id: entityId("organisation", "old-retired"), quote: q("Strasbourg") }] }))), /unknown entity id/);
 });

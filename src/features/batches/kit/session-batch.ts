@@ -64,6 +64,8 @@ export interface EntryResult<P> {
   errors: string[];
   /** Residue-severity rule violations (the brief validator): the entry is not applied and not refused; the batch is not held, and each reason names its rule id. */
   residue?: string[];
+  /** EMIT-ON-RESIDUE: what a residue entry may still write (its prose waits): the kind builds it, only from blocks that passed their own validation. */
+  residuePlan?: P;
   plan?: P;
   /** The entry's work is already done: a re-apply writes nothing new (INV-210). */
   done?: boolean;
@@ -74,7 +76,7 @@ export interface Verdict<P> {
   valid: Item<P>[];
   refused: { index: number; key: string | null; errors: string[] }[];
   /** Entries a residue rule routed out: kept with their reasons, never written, and no reason to hold the batch. */
-  residue: { index: number; key: string | null; errors: string[] }[];
+  residue: { index: number; key: string | null; errors: string[]; entry?: Obj; plan?: P }[];
   alreadyApplied: { index: number; key: string | null; why: string }[];
 }
 export interface Written<P> extends Item<P> { ref: string; notes: string[]; counts: Record<string, number> }
@@ -101,6 +103,8 @@ export interface EntrySpec<L, P> {
   guard?(deps: BatchDeps, o: ApplyOpts): Promise<string | null>;
   /** The brief_reviews identity of a residue entry (its subject uuid, the share of required judges it passed, who reviewed it): the entry is recorded there as residue with every failing criterion, the correction queue. */
   residueReview?(entry: Obj, key: string | null): { subjectId: string; score: number; reviewedBy: string } | null;
+  /** EMIT-ON-RESIDUE: write what a residue entry's `residuePlan` allows (never its prose); returns the counts, the failure notes and a one-line account of the blocks written or skipped, recorded on its brief_reviews row. */
+  writeResidue?(deps: BatchDeps, live: L, item: Item<P>, batch: string): Promise<{ counts: Record<string, number>; notes: string[]; account: string }>;
 }
 
 /** The structural problems of the file as a whole (empty when it can be read entry by entry). */
@@ -127,7 +131,7 @@ function validateEntries<L, P>(spec: EntrySpec<L, P>, file: unknown, live: L): V
     if (!r.errors.length && key && seen.has(key)) r.errors.push(`entry ${index} (${key}): duplicate key in this batch`);
     if (key) seen.add(key);
     if (r.errors.length) verdict.refused.push({ index, key, errors: [...r.errors, ...(r.residue ?? [])] });
-    else if (r.residue?.length) verdict.residue.push({ index, key, errors: r.residue });
+    else if (r.residue?.length) verdict.residue.push({ index, key, errors: r.residue, entry: entry as Obj, ...(r.residuePlan ? { plan: r.residuePlan } : {}) });
     else if (r.done) verdict.alreadyApplied.push({ index, key, why: "already applied" });
     else verdict.valid.push({ index, key, entry: entry as Obj, plan: r.plan as P });
   });
@@ -142,12 +146,12 @@ const refusalNotes = (v: Verdict<unknown>, cap = 12): string[] => {
 export interface BatchData { batch: string | null; ids: Record<string, string[]>; residue: { index: number; key: string | null; errors: string[] }[]; alreadyApplied: string[]; downstream: { counts: Record<string, number>; outcome: string; notes: string[] } | null }
 
 /** DRAIN-FIX-2 D1: every entry the reviewer judged is a brief_reviews row: a valid one residue false, a residue one residue true with ALL its reasons (a refused entry holds its batch whole, which writes its ledger row only: INV-FLY-2). The correction queue lives in the database, and an all-residue batch records its rows too. Returns the notes of a failed write. */
-async function recordReviews<L, P>(spec: EntrySpec<L, P>, deps: BatchDeps, file: Obj, v: Verdict<P>, batch: string): Promise<string[]> {
+async function recordReviews<L, P>(spec: EntrySpec<L, P>, deps: BatchDeps, file: Obj, v: Verdict<P>, batch: string, accounts: ReadonlyMap<number, string> = new Map()): Promise<string[]> {
   const row = (index: number, key: string | null, reasons: string, residue: boolean) => {
     const id = spec.residueReview?.((file.entries as Obj[])[index] as Obj, key);
     return id && /^[0-9a-f-]{36}$/i.test(id.subjectId) ? [{ kind: spec.kind, subject_id: id.subjectId, batch, score: id.score, reasons, residue, reviewed_by: id.reviewedBy }] : [];
   };
-  const rows = [...v.valid.flatMap((x) => row(x.index, x.key, "required judges passed", false)), ...v.residue.flatMap((r) => row(r.index, r.key, r.errors.join("; "), true))];
+  const rows = [...v.valid.flatMap((x) => row(x.index, x.key, "required judges passed", false)), ...v.residue.flatMap((r) => row(r.index, r.key, [...r.errors, ...(accounts.has(r.index) ? [accounts.get(r.index) as string] : [])].join("; "), true))];
   if (!rows.length) return [];
   const { error } = await deps.sb.from("brief_reviews").upsert(rows, { onConflict: "kind,subject_id,batch" });
   return error ? [`${spec.kind}: ${rows.length} review row(s) not written: ${error.message}`] : [];
@@ -170,13 +174,36 @@ export async function applyEntries<L, P>(spec: EntrySpec<L, P>, deps: BatchDeps,
   }
   const v = validateEntries(spec, file, live);
   const counts: Record<string, number> = { entries: (file as Obj & { entries: unknown[] }).entries.length, valid: v.valid.length, refused: v.refused.length, residue: v.residue.length, already_applied: v.alreadyApplied.length, applied: 0, write_failures: 0, read_back_failures: 0 };
-  const data: BatchData = { ...empty, ids: v.alreadyApplied.length ? { already_applied_ids: v.alreadyApplied.map((a) => a.key ?? String(a.index)) } : {}, residue: [...v.refused, ...v.residue], alreadyApplied: v.alreadyApplied.map((a) => a.key ?? String(a.index)) };
+  const data: BatchData = { ...empty, ids: v.alreadyApplied.length ? { already_applied_ids: v.alreadyApplied.map((a) => a.key ?? String(a.index)) } : {}, residue: [...v.refused, ...v.residue.map(({ index, key, errors }) => ({ index, key, errors }))], alreadyApplied: v.alreadyApplied.map((a) => a.key ?? String(a.index)) };
   const notes = refusalNotes(v);
-  const reviewNotes = !o.dry && spec.residueReview ? await recordReviews(spec, deps, file as Obj, v, batch as string) : null;
+  // EMIT-ON-RESIDUE: a residue entry's prose waits, but the typed blocks that passed their own validation are written (the guard runs first: this is a write like any other); each entry's account is recorded on its review row.
+  let guarded = false;
+  const accounts = new Map<number, string>();
+  let emitFailed = 0;
+  const emitting = !o.dry && spec.writeResidue ? v.residue.filter((r) => r.plan !== undefined) : [];
+  if (emitting.length) {
+    const stop = spec.guard ? await spec.guard(deps, o) : null;
+    guarded = true;
+    if (stop) return { ...runResult("failed", { ...counts, refused: Math.max(1, v.refused.length), guard_refused: 1 }, [`${spec.kind}: ${stop}`, ...notes]), data };
+    for (const r of emitting) {
+      try {
+        const w = await (spec.writeResidue as NonNullable<typeof spec.writeResidue>)(deps, live, { index: r.index, key: r.key, entry: r.entry as Obj, plan: r.plan as P }, batch as string);
+        accounts.set(r.index, w.account);
+        counts.residue_emitted = (counts.residue_emitted ?? 0) + 1;
+        for (const [k, n] of Object.entries(w.counts)) counts[`residue_${k}`] = (counts[`residue_${k}`] ?? 0) + n;
+        if (w.notes.length) { emitFailed += 1; notes.push(...w.notes.map((n) => `${spec.kind} ${r.key ?? r.index} (residue): ${n}`)); }
+      } catch (e) {
+        emitFailed += 1;
+        accounts.set(r.index, "emission blocks written: unknown (the write threw)");
+        notes.push(`${spec.kind} ${r.key ?? r.index} (residue): emission write failed: ${e instanceof Error ? e.message : String(e)}`);
+      }
+    }
+  }
+  const reviewNotes = !o.dry && spec.residueReview ? await recordReviews(spec, deps, file as Obj, v, batch as string, accounts) : null;
   if (reviewNotes) notes.push(...reviewNotes);
   // TRAP B: residue entries cleanly recorded in brief_reviews are reviewed, not a failure of the step; an execution failure below still is.
   const reviewed = !!spec.residueReview && !!reviewNotes && !reviewNotes.length;
-  const unreviewed = v.refused.length + (reviewed ? 0 : v.residue.length);
+  const unreviewed = v.refused.length + (reviewed ? 0 : v.residue.length) + emitFailed;
   const after = o.afterKey ? v.valid.findIndex((x) => x.key === o.afterKey) : -1;
   const todo = v.valid.slice(after + 1, typeof o.limit === "number" && o.limit >= 0 ? after + 1 + o.limit : undefined);
   counts.not_selected = v.valid.length - todo.length;
@@ -185,7 +212,7 @@ export async function applyEntries<L, P>(spec: EntrySpec<L, P>, deps: BatchDeps,
     const nothing = !v.valid.length && left > 0 && !v.alreadyApplied.length;
     return { ...runResult(nothing ? "failed" : left ? "partial" : "ok", nothing ? { ...counts, refused: v.refused.length } : counts, [...notes, o.dry ? `dry: ${todo.length} valid entr${todo.length === 1 ? "y" : "ies"}, nothing written` : "no valid entry to write"]), data };
   }
-  const stop = spec.guard ? await spec.guard(deps, o) : null;
+  const stop = spec.guard && !guarded ? await spec.guard(deps, o) : null;
   if (stop) return { ...runResult("failed", { ...counts, refused: Math.max(1, v.refused.length), guard_refused: 1 }, [`${spec.kind}: ${stop}`, ...notes]), data };
 
   const written: Written<P>[] = [];

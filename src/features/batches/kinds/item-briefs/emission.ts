@@ -4,7 +4,7 @@
 import { stated } from "@/core/brief/rules/stored-date-stated";
 import { RELATIONS } from "@/core/coupling";
 import { isVerbatim } from "@/core/contracts/verbatim";
-import { DUTY_HOLDER_CLASSES, isValid, LEG_MODE_CODES } from "@/core/contracts/vocabularies";
+import { DUTY_HOLDER_TOKEN, isValid, LEG_MODE_CODES } from "@/core/contracts/vocabularies";
 import { normaliseTermKey, PROPOSED_ENTITY_KIND, proposedEntityId } from "@/core/vocabulary/adopted";
 import { findFigures, isFigure, statutoryUnit, tryParseDateOrBareYearAt } from "@/core/parse";
 import { groundingRefusal } from "@/features/obligations/derive/maximum";
@@ -16,7 +16,7 @@ import { isObj, nonEmpty, type Locate, type Obj } from "../../kit/session-batch"
 export interface Quote { capture_id: string; text: string }
 export interface EmitLive {
   captures: ReadonlyMap<string, string>;
-  /** Every id a reader may write, to the active entity it names: the menu, a formal code the crosswalk resolves, a closed mode or hub token. Anything else is refused. */
+  /** Every id a reader may write, to the active entity it names: the menu, a cl: id of a live entity the entry names, a formal code the crosswalk resolves, a closed mode or hub token. Anything else is refused. */
   ids: ReadonlyMap<string, string>;
   /** The item's current obligation objects: obligation_id to pinpoint. */
   objects: ReadonlyMap<string, string>;
@@ -61,7 +61,7 @@ function fieldValue(col: (typeof FIELDS)[number], v: unknown, slice: string): { 
       if (!isObj(v) || typeof q.value !== "number" || !Number.isFinite(q.value) || !unit) return bad("mandated_quantity must be { value: number, unit } with a unit statutoryUnit knows");
       return findFigures(slice).some((h) => isFigure(h.result) && Number(h.result.value) === q.value) ? { ok: true, set: { mandated_quantity: q.value, mandated_unit: unit } } : bad(`mandated_quantity ${q.value} is not stated in the quote`);
     }
-    case "duty_holder_class": return Array.isArray(v) && v.length && v.every((c) => typeof c === "string" && DUTY_HOLDER_CLASSES[c]) ? { ok: true, set: { duty_holder_class: v } } : bad("duty_holder_class must be one or more duty-holder codes");
+    case "duty_holder_class": return Array.isArray(v) && v.length && v.every((c) => typeof c === "string" && DUTY_HOLDER_TOKEN.test(c)) ? { ok: true, set: { duty_holder_class: v } } : bad("duty_holder_class must be one or more snake_case tokens (the class is open: name the duty holder the quote names)");
     case "binding_position": return isValid("binding_position", v) ? { ok: true, set: { binding_position: v } } : bad(`binding_position ${JSON.stringify(v)} is not a closed token`);
     case "applicability_trigger": return isObj(v) && nonEmpty(v.attribute) && nonEmpty(v.value) ? { ok: true, set: { applicability_trigger: { attribute: v.attribute, value: v.value } } } : bad("applicability_trigger must be { attribute, value }, both non-empty");
   }

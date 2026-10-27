@@ -8,7 +8,7 @@
 // same item: a date is never invented.
 import { z } from "zod";
 
-import { DUTY_HOLDER_CLASSES, isMissing, isValid, LEG_MODE_CODES, OBS_STATUS } from "@/core/contracts/vocabularies";
+import { DUTY_HOLDER_TOKEN, isMissing, isValid, LEG_MODE_CODES, OBS_STATUS } from "@/core/contracts/vocabularies";
 import { readFactSuppressionsFor } from "@/core/detail/claim-tiers";
 import { admissibleClaims, admitItems } from "@/core/derived/admissible";
 import { isVerbatim, locateSpan } from "@/core/contracts/verbatim";
@@ -108,7 +108,8 @@ function buildObjectRow(c: Candidate, ctx: { item: ObjectItem | null; capture: C
   if (c.status !== undefined && c.status !== null && c.status !== "not_assessed") return { ok: false, reason: "status_not_writer_owned" };
   const classes = Array.isArray(c.duty_holder_class) ? c.duty_holder_class.filter((x) => typeof x === "string" && x.trim()) : [];
   if (!classes.length) return { ok: false, reason: "duty_holder_missing" };
-  const unknown = classes.find((x) => !DUTY_HOLDER_CLASSES[x]);
+  // GRAPH-GROW-1: the duty-holder class is OPEN. Any snake_case token the quote backs is valid (the database checks only that the list is non-empty); the vocabulary supplies labels and org roles for the tokens it knows.
+  const unknown = classes.find((x) => !DUTY_HOLDER_TOKEN.test(x));
   if (unknown) return { ok: false, reason: `duty_holder_unknown:${unknown}` };
   const t = c.applicability_trigger;
   if (!(t && typeof t === "object" && !Array.isArray(t) && nz(t.attribute) && nz(t.value) && typeof t.attribute === "string" && typeof t.value === "string")) return { ok: false, reason: "trigger_malformed" };

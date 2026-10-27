@@ -53,6 +53,8 @@ export const DERIVATION = get("derivation");
 export const FRESHNESS = get("freshness");
 const TRANSPORT_MODES = get("transport_mode");
 export const DUTY_HOLDER_CLASSES = get("duty_holder_class");
+/** GRAPH-GROW-1: the shape of a duty-holder class token. The class is open; DUTY_HOLDER_CLASSES above is only the labels and org roles of the tokens the platform already renders. */
+export const DUTY_HOLDER_TOKEN = /^[a-z][a-z0-9_]*$/;
 export const PEDIGREE_AXES: readonly string[] = data.pedigree_axes;
 export const REFRESH_PERIOD_DAYS: Readonly<Record<string, number | null>> = data.refresh_period_days;
 
