@@ -9,6 +9,7 @@ import { proposedEntityId } from "@/core/vocabulary/adopted";
 import { applyBatch } from "@/features/batches";
 import { entityTokens, loadEmit, writeEmission } from "@/features/batches/kinds/item-briefs/emit";
 import { validateEmission, type EmissionPlan } from "@/features/batches/kinds/item-briefs/emission";
+import { locateSpan } from "@/core/contracts/verbatim";
 
 import { batchFile, ITEM, NOW, SPAN_FORCE } from "../batches/world.ts";
 
@@ -186,8 +187,7 @@ test("DIGEST-FIX-1: a month or year precision event is accepted when its quote s
   const month = await check(w, ev({ event_date: "2023-09-01", date_precision: "month", quote: q("September 2023") }));
   assert.deepEqual(month.errors, []);
   assert.deepEqual((month.plan as EmissionPlan).events.map((e) => [e.event_date, e.date_precision]), [["2023-09-01", "month"]]);
-  const year = await check(w, ev({ event_date: "2023-01-01", date_precision: "year", quote: q("September 2023") }));
-  assert.deepEqual((year.plan as EmissionPlan).events.map((e) => [e.event_date, e.date_precision]), [["2023-01-01", "year"]]);
+  assert.match(reasons(await check(w, ev({ event_date: "2023-01-01", date_precision: "year", quote: q("September 2023") }))), /more precise month date/, "PARSE-FIX-1 D1: a quote that states the month is not stored as the year");
   assert.match(reasons(await check(w, ev({ event_date: "2023-09-01", date_precision: "month", quote: q("Strasbourg") }))), /does not state a month date 2023-09-01 as a month and year or a year/);
   assert.match(reasons(await check(w, ev({ event_date: "2023-09-02", date_precision: "month", quote: q("September 2023") }))), /month precision needs the first of the month/);
 });
@@ -215,4 +215,18 @@ test("GRAPH-GROW-1: the menu is an authoring aid, not a whitelist: a live entity
   assert.deepEqual(ok.errors, [], reasons(ok));
   assert.deepEqual(ok.plan?.entities.map((e) => e.entity_id), [entityId("organisation", "unlinked-live"), entityId("organisation", "unlinked-live")], "a merged entity resolves to its target");
   assert.match(reasons(await check(w, emissionEntry(w, { entity_ids: [{ entity_id: entityId("organisation", "old-retired"), quote: q("Strasbourg") }] }))), /unknown entity id/);
+
+test("PARSE-FIX-1 D1/D2: an event carries the most precise date its quote states; a forward-looking kind may not carry a date before generated_at", () => {
+  const cap = "Operators shall report by 31 December 2025 and from 1&nbsp;June&nbsp;2027; in 2030 the review follows.";
+  const run = (events: unknown[], generatedAt?: string) => validateEmission({ item_id: "i", events }, "item X", { captures: new Map([["c1", cap]]), ids: new Map(), objects: new Map(), locate: locateSpan, ...(generatedAt ? { generatedAt } : {}) });
+  const ev = (over: Record<string, unknown>, text: string) => ({ event_kind: "compliance_deadline", quote: { capture_id: "c1", text }, ...over });
+  const why = (r: { errors: string[] }) => r.errors.join(" | ");
+  assert.match(why(run([ev({ event_date: "2025-12-01", date_precision: "month" }, "31 December 2025")])), /more precise day date inside 2025-12-01/);
+  assert.match(why(run([ev({ event_date: "2025-01-01", date_precision: "year" }, "31 December 2025")])), /more precise day date inside 2025-01-01/);
+  assert.match(why(run([ev({ event_date: "2027-06-01", date_precision: "month" }, "1 June 2027")])), /more precise day date/, "the entity form of the space is read as a space");
+  assert.deepEqual(run([ev({ event_date: "2030-01-01", date_precision: "year" }, "in 2030")]).errors, []);
+  assert.deepEqual(run([ev({ event_date: "2025-12-31" }, "31 December 2025")]).errors, []);
+  assert.match(why(run([ev({ event_date: "2025-12-31", event_kind: "guidance_expected" }, "31 December 2025")], "2026-03-01T00:00:00.000Z")), /before the batch's generated_at/);
+  assert.deepEqual(run([ev({ event_date: "2025-12-31", event_kind: "guidance_expected" }, "31 December 2025")], "2025-03-01T00:00:00.000Z").errors, []);
+  assert.deepEqual(run([ev({ event_date: "2025-12-31" }, "31 December 2025")], "2026-03-01T00:00:00.000Z").errors, [], "a past compliance_deadline is a fact, not an ahead");
 });

@@ -8,5 +8,7 @@ export { interpretNumber, resolveLocale, scanNumbers } from "./locale";
 export type { LocaleVerdict } from "./locale";
 export { isTrajectoryUnit, kindOf, statutoryUnit } from "./unit";
 export type { UnitForm } from "./unit";
+export type { Precision } from "./date-grammar";
 export { tryParseDateAt, tryParseDateOrBareYearAt } from "./date-grammar";
+export { foldHtmlSpace, HTML_SPACE_ALT } from "./space";
 export { contentWords, hasWord } from "./words";

@@ -6,10 +6,10 @@ import { RELATIONS } from "@/core/coupling";
 import { isVerbatim } from "@/core/contracts/verbatim";
 import { DUTY_HOLDER_TOKEN, isValid, LEG_MODE_CODES } from "@/core/contracts/vocabularies";
 import { normaliseTermKey, PROPOSED_ENTITY_KIND, proposedEntityId } from "@/core/vocabulary/adopted";
-import { findFigures, isFigure, statutoryUnit, tryParseDateOrBareYearAt } from "@/core/parse";
+import { type Precision, findFigures, foldHtmlSpace, isFigure, statutoryUnit, tryParseDateOrBareYearAt } from "@/core/parse";
 import { groundingRefusal } from "@/features/obligations/derive/maximum";
 import { sanctionRefusal } from "@/features/obligations/derive/penalty";
-import { EVENT_KINDS } from "@/features/obligations/kinds";
+import { EVENT_KINDS, FORWARD_LOOKING_KINDS } from "@/features/obligations/kinds";
 
 import { isObj, nonEmpty, type Locate, type Obj } from "../../kit/session-batch";
 
@@ -21,6 +21,8 @@ export interface EmitLive {
   /** The item's current obligation objects: obligation_id to pinpoint. */
   objects: ReadonlyMap<string, string>;
   locate: Locate | null;
+  /** The batch file's generated_at: a forward-looking event kind may not carry an earlier date. */
+  generatedAt?: string;
 }
 export interface ObjectPlan { obligation_id: string | null; pinpoint: string; provision: Quote; set: Obj; quotes: Record<string, Quote>; entity_ids: string[] }
 export interface EmissionPlan {
@@ -39,9 +41,15 @@ const ISO = /^\d{4}-\d{2}-\d{2}$/;
 const LOCODE = /(?<![A-Za-z0-9])[A-Z]{2}[A-Z2-9]{3}(?![A-Za-z0-9])/;
 const SYMMETRIC = new Set(["competes_for_feedstock", "shares_grid_zone", "corridor_links"]);
 const FIELDS = ["mode", "sanction_class", "statutory_maximum", "cost_formula", "enforcement_start", "due_date", "mandated_quantity", "in_force_end", "duty_holder_class", "binding_position", "applicability_trigger"] as const;
-/** The quote states `iso` at the declared month or year precision as a formal date the shared date parser reads (a month-year or a year; the day form goes through `stated`). */
-const statesAtPrecision = (text: string, iso: string, precision: "month" | "year"): boolean =>
-  [...text].some((_, i) => { const m = tryParseDateOrBareYearAt(text, i); return m !== null && m.precision === precision && m.iso === iso; });
+const STEM = { year: 4, month: 7, day: 10 } as const;
+const RANK = { year: 0, month: 1, day: 2 } as const;
+/** The most precise reading the shared date parser finds in the quote of the date `iso` stored at `precision` (a day in the stored month or year counts); null when the quote states that month or year nowhere. */
+const mostPrecise = (text: string, iso: string, precision: "month" | "year"): Precision | null => {
+  const stem = iso.slice(0, STEM[precision]);
+  let best: Precision | null = null;
+  [...text].forEach((_, i) => { const m = tryParseDateOrBareYearAt(text, i); if (m !== null && m.iso.startsWith(stem) && (best === null || RANK[m.precision] > RANK[best])) best = m.precision; });
+  return best;
+};
 const isoDate = (v: unknown): v is string => typeof v === "string" && ISO.test(v) && !Number.isNaN(Date.parse(v));
 const norm = (s: string): string => s.replace(/\s+/g, " ").trim().toLowerCase();
 export const hasEmission = (e: Obj): boolean => BLOCKS.some((b) => e[b] !== undefined);
@@ -59,7 +67,7 @@ function fieldValue(col: (typeof FIELDS)[number], v: unknown, slice: string): { 
       const q = v as { value?: unknown; unit?: unknown };
       const unit = isObj(v) && typeof q.unit === "string" ? statutoryUnit(q.unit) : null;
       if (!isObj(v) || typeof q.value !== "number" || !Number.isFinite(q.value) || !unit) return bad("mandated_quantity must be { value: number, unit } with a unit statutoryUnit knows");
-      return findFigures(slice).some((h) => isFigure(h.result) && Number(h.result.value) === q.value) ? { ok: true, set: { mandated_quantity: q.value, mandated_unit: unit } } : bad(`mandated_quantity ${q.value} is not stated in the quote`);
+      return findFigures(foldHtmlSpace(slice)).some((h) => isFigure(h.result) && Number(h.result.value) === q.value) ? { ok: true, set: { mandated_quantity: q.value, mandated_unit: unit } } : bad(`mandated_quantity ${q.value} is not stated in the quote`);
     }
     case "duty_holder_class": return Array.isArray(v) && v.length && v.every((c) => typeof c === "string" && DUTY_HOLDER_TOKEN.test(c)) ? { ok: true, set: { duty_holder_class: v } } : bad("duty_holder_class must be one or more snake_case tokens (the class is open: name the duty holder the quote names)");
     case "binding_position": return isValid("binding_position", v) ? { ok: true, set: { binding_position: v } } : bad(`binding_position ${JSON.stringify(v)} is not a closed token`);
@@ -148,7 +156,10 @@ export function validateEmission(entry: Obj, tag: string, live: EmitLive): { err
     if (precision === "year" && !ev.event_date.endsWith("-01-01")) return err(at, `year precision needs YYYY-01-01, not ${ev.event_date}`);
     const q = quote(ev.quote, `${at}.quote`);
     if (q && precision === "day" && !stated(q.text, ev.event_date)) err(at, `event_date ${ev.event_date} is not stated in the quote`);
-    if (q && precision !== "day" && !statesAtPrecision(q.text, ev.event_date, precision)) err(at, `the quote does not state a ${precision} date ${ev.event_date} as a month and year or a year`);
+    const best = q && precision !== "day" ? mostPrecise(q.text, ev.event_date, precision) : null;
+    if (q && precision !== "day" && best === null) err(at, `the quote does not state a ${precision} date ${ev.event_date} as a month and year or a year`);
+    else if (best !== null && best !== precision) err(at, `the quote states a more precise ${best} date inside ${ev.event_date}: store the most precise date the quote states, not ${precision} precision`);
+    if (live.generatedAt && (FORWARD_LOOKING_KINDS as readonly unknown[]).includes(ev.event_kind) && ev.event_date < live.generatedAt.slice(0, 10)) err(at, `event_date ${ev.event_date} is before the batch's generated_at: ${String(ev.event_kind)} names something still ahead, so a past date takes the kind of the event it records`);
     if (ev.mode !== undefined && !LEG_MODE_CODES.includes(ev.mode as string)) err(at, `mode ${JSON.stringify(ev.mode)} is not a leg-mode token`);
     const ids = (Array.isArray(ev.entity_ids) ? ev.entity_ids : []).flatMap((id, k) => entityOf(id, `${at}.entity_ids[${k}]`) ?? []);
     if (q) plan.events.push({ event_kind: ev.event_kind as string, event_date: ev.event_date, date_precision: precision, quote: q, mode: typeof ev.mode === "string" ? ev.mode : null, entity_ids: ids });

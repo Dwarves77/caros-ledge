@@ -6,6 +6,8 @@
 // btrim trims spaces only (U+0020), not tabs or newlines; a null capture or an empty span never matches. Producers, the healer, the quarantine resolver, the timeline and the obligation deriver call this
 // and no second rule: a tolerant SEARCH may locate a candidate, and the candidate counts only when this verdict accepts it.
 
+import { HTML_SPACE_ALT } from "@/core/parse/space";
+
 /** The characters the rule trims from a span (SQL btrim's second argument). */
 const TRIM_CHARS = " ";
 const TRIM = new RegExp(`^[${TRIM_CHARS}]+|[${TRIM_CHARS}]+$`, "g");
@@ -25,7 +27,7 @@ export function isVerbatim(capture: string | null | undefined, span: string | nu
 export function locateSpan(capture: string | null | undefined, quote: string | null | undefined): string | null {
   const words = (quote ?? "").split(/\s+/).filter(Boolean);
   if (!capture || !words.length) return null;
-  return new RegExp(words.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("\\s+"), "i").exec(capture)?.[0] ?? null;
+  return new RegExp(words.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join(`(?:\\s|${HTML_SPACE_ALT})+`), "i").exec(capture)?.[0] ?? null;
 }
 
 /** public.is_verbatim(p_capture, p_span): the rule above as a SQL function. GENERATED: migration 0106 carries this text and a test regenerates and diffs it. */
