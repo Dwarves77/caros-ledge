@@ -1,13 +1,14 @@
 name: CI
 
-# The one workflow. Job `changes`: which of the expensive jobs a pull request needs (scripts/ci/changes.mjs); every other event runs everything.
+# The one workflow. CI-TRIM-1: a pull request is the gate (ci, schema and parity run on every pull request, so a pull request must be up to date with main to merge); a push to main runs only changes, migrate, edge-deploy (when edge == 'true') and ruled-runs (when plans != ''); ci-windows is a dispatch (only=windows).
+# Job `changes`: which of the expensive jobs a pull request needs (scripts/ci/changes.mjs), and on a push the edge and plans outputs.
 # Job `ci`: lint, typecheck, build, tests, tree checks, LOC gates, the connection check, the column check, the migration static checks (npm run gates).
 # Job `schema`: supabase/schema.sql applied to an empty Postgres 15, then the migrations (each self-check must print its own OK, each down file is applied and catalog-compared), then the property checks.
 # Job `turn`: the turn runtime (scripts/turn.mjs). Dispatch only: it is the one job that holds the service key for a run of the branch it was dispatched on; no pull request or push ever receives it.
 # Job `ruled-runs` (RUN-1): a push to main that changed a plan file under scripts/runs/plans/ runs that plan's turn steps in order (scripts/runs/execute.mjs), with the turn job's environment and secrets, after `migrate`. A production run is a plan in a pull request; nobody dispatches it. It is the only job that holds the service key on a push, and only on main: a pull request never reaches it.
 # Each step carries ruled_plan "<plan file>#<step>" in its stage input; the ledger (harness_runs) says which steps already have a success apply row, and those are skipped, so a changed plan is safe to re-run. Nothing is committed back to main: the results are the `ruled-run-results` artifact and the job summary.
-# Job `windows`: the test step alone on Windows (every push to main and dispatch; a pull request that touches scripts/ or tests/).
-# Job `parity`: the built app on the runner, the UX smoke, and the capture compared with tests/parity/baseline (a pull request that touches anything the build reads).
+# Job `windows`: the test step alone on Windows (a dispatch with only=windows; never a pull request or a push).
+# Job `parity`: the built app on the runner, the UX smoke, and the capture compared with tests/parity/baseline (a pull request that touches anything the build reads, or a dispatch; never a push to main).
 # Jobs `target`, `live` and `preview-parity` (P2-15): on the successful `Vercel` commit status posted by the Vercel app (sender vercel[bot], target_url on vercel.com; Vercel posts a commit status and creates no GitHub Deployment, so a deployment event never fires) or a dispatch with only=live. `live` runs the live checks
 # (scripts/ci/live-checks.mjs) with the service key, and the admin account on production or a dispatch only, so it checks out MAIN, never the deployed commit: a branch cannot change the script that holds the secrets. `preview-parity` runs MAIN's capture and compare against the deployed URL and holds the member test account only.
 # Jobs `migrate`, `turn` and `ruled-runs` run in the `production` environment (required reviewers, if the repository sets any). No job runs a package install script (npm ci --ignore-scripts); the Supabase CLI of `edge-deploy` is a devDependency at an exact version.
@@ -45,7 +46,7 @@ on:
         description: 'Baseline recapture (job baseline): route names, comma separated, or all'
         default: all
       only:
-        description: 'Run one job on a dispatch: baseline (the old-site recapture), turn, live (the live checks and the deployed-preview parity), screens (full-page screenshots of every route at a live_url), migrate (apply the pending migrations to production), edge-deploy (deploy capture-worker), or empty for everything but baseline, live, screens, migrate and edge-deploy; migrate applies the pending migrations of the ref the dispatch is on, so the DDL of a slice branch can reach production ahead of its code'
+        description: 'Run one job on a dispatch: baseline (the old-site recapture), turn, live (the live checks and the deployed-preview parity), screens (full-page screenshots of every route at a live_url), migrate (apply the pending migrations to production), edge-deploy (deploy capture-worker), windows (the test step on Windows), or empty for everything but baseline, live, screens, migrate, edge-deploy and windows; migrate applies the pending migrations of the ref the dispatch is on, so the DDL of a slice branch can reach production ahead of its code'
         default: ''
       chain:
         description: 'Run the stage downstream stages too (false runs only the named stage)'
@@ -72,7 +73,6 @@ jobs:
     timeout-minutes: 5
     outputs:
       parity: ${{ steps.scope.outputs.parity }}
-      windows: ${{ steps.scope.outputs.windows }}
       edge: ${{ steps.scope.outputs.edge }}
       plans: ${{ steps.scope.outputs.plans }}
     steps:
@@ -89,7 +89,7 @@ jobs:
 
   ci:
     name: ci
-    if: github.event_name != 'status' && (github.event_name != 'workflow_dispatch' || github.event.inputs.only == '')
+    if: github.event_name != 'status' && github.event_name != 'push' && (github.event_name != 'workflow_dispatch' || github.event.inputs.only == '')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -112,7 +112,7 @@ jobs:
 
   schema:
     name: schema
-    if: github.event_name != 'status' && (github.event_name != 'workflow_dispatch' || github.event.inputs.only == '')
+    if: github.event_name != 'status' && github.event_name != 'push' && (github.event_name != 'workflow_dispatch' || github.event.inputs.only == '')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     services:
@@ -199,8 +199,10 @@ jobs:
     timeout-minutes: 60
     # Same `production` environment and secrets as `turn`. If the environment has required reviewers (a repository setting), the job waits for one and runs nothing meanwhile.
     environment: production
+    # CI-TRIM-1: a plan's data must always apply, so this job is in NO signed-in group and its group can never drop it. GitHub keeps one running and one pending job per group and a newer pending job replaces the older one, so a shared or dedicated group could drop a push's plan;
+    # the group is therefore per commit (every push has its own, nothing to replace) and never cancels. The ledger (harness_runs) makes two overlapping runs skip the steps already applied. The visibility check is the separate `visible` job.
     concurrency:
-      group: ruled-runs
+      group: ruled-runs-${{ github.sha }}
       cancel-in-progress: false
     env:
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
@@ -214,7 +216,13 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci --no-audit --ignore-scripts
-      - name: Playwright Chromium (the headless transport runs on the runner)
+      - name: Do the pending plans drive a browser? (a capture or sweep stage, or a chained step; scripts/ci/changes.mjs --browser)
+        id: browser
+        env:
+          PLANS: ${{ needs.changes.outputs.plans }}
+        run: node scripts/ci/changes.mjs --browser
+      - name: Playwright Chromium (the headless transport runs on the runner; only when a plan drives a browser)
+        if: ${{ steps.browser.outputs.browser == 'true' }}
         run: npx playwright install --with-deps chromium
       - name: Run the plans in order (stops at the first failed step)
         env:
@@ -228,10 +236,49 @@ jobs:
           path: scripts/runs/results
           if-no-files-found: ignore
 
+  # CI-TRIM-1: the signed-in visibility check over the items a ruled run applied (DRAIN-FIX-2 / CI-BROWSER-1 item 5; scripts/runs/visible.mjs, the judgement in scripts/lib/item-on-page.mjs). Its own job so that being superseded in the production signed-in group
+  # (one running, one pending) costs a check and never a plan: the plans' data has applied by then, and the report job labels a cancelled `visible` SUPERSEDED. It starts only after `ruled-runs` succeeded, downloads that job's results artifact, and installs Chromium only for itself,
+  # only when the newest results file names applied items.
+  visible:
+    name: visible
+    needs: [changes, ruled-runs]
+    if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' && github.event.repository.fork == false && needs.ruled-runs.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    concurrency:
+      group: signed-in-browser-main
+      cancel-in-progress: false
+    env:
+      LIVE_SMOKE_EMAIL: ${{ secrets.LIVE_SMOKE_EMAIL }}
+      LIVE_SMOKE_PASSWORD: ${{ secrets.LIVE_SMOKE_PASSWORD }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: '24'
+          cache: npm
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: ruled-run-results
+          path: scripts/runs/results
+      - name: Did a plan apply items? (the newest results file names them; scripts/ci/changes.mjs --visible)
+        id: visible
+        run: node scripts/ci/changes.mjs --visible
+      - name: Install (only when a plan applied items)
+        if: ${{ steps.visible.outputs.visible == 'true' }}
+        run: npm ci --no-audit --ignore-scripts
+      - name: Playwright Chromium (for this check alone)
+        if: ${{ steps.visible.outputs.visible == 'true' }}
+        run: npx playwright install --with-deps chromium
+      - name: Visibility of the items a ruled run applied (scripts/runs/visible.mjs)
+        if: ${{ steps.visible.outputs.visible == 'true' }}
+        env:
+          RESULTS_FILE: ${{ steps.visible.outputs.file }}
+        run: node scripts/runs/visible.mjs "$RESULTS_FILE" --base https://carosledge.com
+
   windows:
     name: ci-windows
-    needs: changes
-    if: github.event_name != 'status' && (github.event_name != 'workflow_dispatch' || github.event.inputs.only == '') && (github.event_name != 'pull_request' || needs.changes.outputs.windows == 'true')
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.only == 'windows'
     runs-on: windows-latest
     timeout-minutes: 15
     steps:
@@ -245,10 +292,9 @@ jobs:
 
   parity:
     name: parity
-    # Rule 3 (DDL before code) as a gate: parity reads production live, so on a push to main it starts only after `migrate` succeeded (a failed or skipped migrate skips it rather than reading a half-applied schema). On a pull request and on a dispatch `migrate` is skipped and parity runs exactly as before.
-    # PARITY-4: parity also waits for `ruled-runs` (a plan writes production rows the capture reads; a capture that straddles a write compares two moments of the data). Whether ruled-runs succeeded, was skipped (no plan changed) or failed, parity runs; only a cancelled run skips it.
-    needs: [changes, migrate, ruled-runs]
-    if: ${{ !cancelled() && needs.changes.result == 'success' && (needs.ruled-runs.result == 'success' || needs.ruled-runs.result == 'skipped' || needs.ruled-runs.result == 'failure') && github.event_name != 'status' && (github.event_name != 'workflow_dispatch' || github.event.inputs.only == '') && (github.event_name != 'pull_request' || needs.changes.outputs.parity == 'true') && (github.event_name != 'push' || needs.migrate.result == 'success') }}
+    # CI-TRIM-1: parity gates a pull request (and a dispatch with only empty) and never runs on a push to main, so it waits for neither `migrate` nor `ruled-runs` (a push is where those two run). The signed-in visibility check of the applied items (scripts/runs/visible.mjs) moved into `ruled-runs`.
+    needs: changes
+    if: ${{ github.event_name != 'status' && github.event_name != 'push' && (github.event_name != 'workflow_dispatch' || github.event.inputs.only == '') && (github.event_name != 'pull_request' || needs.changes.outputs.parity == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     # CI-BROWSER-1 (replaces the one LIVE-RL-1 group): the shared Postgres rate budget is per user AND deployment host (hostScopedKey in src/core/http/rate-limit.ts), so a group is per target, never one for every deployment. This job runs the built app on the runner (localhost, no service key, so the in-memory window): it targets neither production nor a preview, and its group is its own PR, or the main push line (the newest head is the one checked).
@@ -316,17 +362,6 @@ jobs:
         if: ${{ !cancelled() && steps.capture.outcome == 'success' }}
         shell: bash -eo pipefail {0}
         run: node tests/parity/compare.mjs --captured parity-capture | tee parity-report.txt
-      # DRAIN-FIX-2 hook (CI-BROWSER-1 item 5): the signed-in visibility check over the items a ruled run applied. The script is not on main yet, so the step is guarded on its existence and does nothing until it lands; the path below is the expected name and is
-      # corrected in the DRAIN-FIX-2 merge if it differs. It reads the newest results file of this run's ruled-runs.
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
-        if: ${{ !cancelled() && github.event_name == 'push' && needs.ruled-runs.result != 'skipped' && hashFiles('scripts/runs/visible.mjs') != '' }}
-        continue-on-error: true
-        with:
-          name: ruled-run-results
-          path: scripts/runs/results
-      - name: Visibility of the items a ruled run applied (DRAIN-FIX-2; runs when scripts/runs/visible.mjs exists)
-        if: ${{ !cancelled() && github.event_name == 'push' && needs.ruled-runs.result != 'skipped' && hashFiles('scripts/runs/visible.mjs') != '' }}
-        run: node scripts/runs/visible.mjs "$(ls -t scripts/runs/results/*.json | head -n 1)" --base https://carosledge.com
       - name: Parity report in the job summary
         if: ${{ !cancelled() }}
         run: |
@@ -626,7 +661,7 @@ jobs:
   # The one writer of the run's record: runs after every job that can run on a pull request or a push, polls nothing, holds no secrets, and never fails the run itself (it reports the others' conclusions).
   report:
     name: report
-    needs: [changes, ci, schema, turn, windows, parity]
+    needs: [changes, ci, schema, turn, windows, parity, visible]
     if: always() && github.event_name != 'status'
     runs-on: ubuntu-latest
     timeout-minutes: 10
