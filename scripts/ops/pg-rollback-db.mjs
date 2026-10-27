@@ -8,12 +8,29 @@ export async function connect(url) {
   return c;
 }
 
+/** An rpc argument as pg takes it. A parameter the function declares jsonb is ALWAYS JSON text (an empty array is [] there, never the text[] literal {}, which jsonb reads as an object: the SYNTH-APPLY-1 harness artifact); otherwise an object, or an array of objects, is JSON text and an array of scalars stays an array (text[], uuid[]). */
+export function encodeRpcArgs(args, types = {}) {
+  const isJson = (v) => v !== null && typeof v === "object" && (!Array.isArray(v) || v.some((x) => x !== null && typeof x === "object"));
+  return Object.keys(args).map((k) => ((types[k] === "jsonb" ? args[k] !== null && typeof args[k] === "object" : isJson(args[k])) ? JSON.stringify(args[k]) : args[k]));
+}
+
 export function makeDb(client, log = []) {
   const fkCache = [];
   let sp = 0;
   // ONE connection: the app issues reads in parallel (Promise.all), so every statement, its savepoint included, goes through one queue.
   let chain = Promise.resolve();
   const serial = (fn) => { const next = chain.then(fn, fn); chain = next.then(() => undefined, () => undefined); return next; };
+  const typeCache = new Map();
+  /** The declared parameter types of a function, by argument name (from pg_proc). */
+  async function argTypes(fname) {
+    if (!typeCache.has(fname)) {
+      const r = await serial(() => client.query("select p.proargnames as names, p.proargtypes::oid[]::regtype[]::text[] as types from pg_proc p where p.pronamespace = 'public'::regnamespace and p.proname = $1", [fname]));
+      const out = {};
+      for (const row of r.rows) (row.names ?? []).forEach((n, i) => { if (row.types[i] === "jsonb") out[n] = "jsonb"; });
+      typeCache.set(fname, out);
+    }
+    return typeCache.get(fname);
+  }
   async function pk(table) {
     const r = await serial(() => client.query("select a.attname from pg_index i join pg_attribute a on a.attrelid=i.indrelid and a.attnum=any(i.indkey) where i.indrelid=('public.'||quote_ident($1))::regclass and i.indisprimary", [table]));
     return r.rows.map((x) => x.attname);
@@ -216,8 +233,7 @@ export function makeDb(client, log = []) {
     async rpc(name, args = {}) {
       const keys = Object.keys(args);
       // a json argument (an object, or an array of objects) is sent as json text; an array of scalars stays an array (text[], uuid[])
-      const isJson = (v) => v !== null && typeof v === "object" && (!Array.isArray(v) || v.some((x) => x !== null && typeof x === "object"));
-      const params = keys.map((k) => (isJson(args[k]) ? JSON.stringify(args[k]) : args[k]));
+      const params = encodeRpcArgs(args, await argTypes(name));
       const r = await run(`select * from public.${q(name)}(${keys.map((k, i) => `${q(k)} => $${i + 1}`).join(", ")})`, params);
       if (!r.ok) return { data: null, error: r.error };
       const rows = r.r.rows;
