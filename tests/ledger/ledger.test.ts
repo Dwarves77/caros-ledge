@@ -4,7 +4,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { applyLedgerOps, eraseItem, reattributeClaim, reconcileSections, sourceForCapture, type AttributionCtx } from "@/core/grounding/ledger";
+import { applyLedgerDiff, applyLedgerOps, eraseItem, reattributeClaim, reconcileSections, sourceForCapture, type AttributionCtx } from "@/core/grounding/ledger";
 import { eraseQuarantined, rehomeQuarantined, sectionBrief } from "@/features/intake";
 import { briefSentenceOf, NO_VERBATIM_SPAN, planOrphan, supportingSentence, type Bucket } from "@/features/mint/heal/ground";
 import { healItem } from "@/features/mint";
@@ -240,4 +240,17 @@ test("ENGINE-FIX-2: reconciling an item whose vanishing section's claim is refer
   const rows = Object.fromEntries(db.rows("item_forward_events").map((e) => [e.id, e]));
   assert.deepEqual([rows["e-twin"]?.source_claim_id, rows["e-twin"]?.source_kind, rows["e-twin"]?.confidence], ["k-twin", "claim", "high"], "re-pointed to the claim of the same text and span");
   assert.deepEqual([rows["e-solo"]?.source_claim_id, rows["e-solo"]?.source_kind, rows["e-solo"]?.source_capture_id, rows["e-solo"]?.confidence, rows["e-solo"]?.source_span], [null, "capture", "cap-law", "medium", "by 2030"], "no twin: the quote stays, on its capture");
+});
+
+test("ENGINE-FIX-2 Q5: replacing a ledger removes a claim a forward event is sourced from in a SURVIVING section; the event moves to its capture and keeps its quote", async () => {
+  const db = ledgerWorld();
+  db.seed("intelligence_item_sections", [{ id: "s-keep", item_id: INTAKE_ITEM, section_key: "1", section_order: 1, content_md: "old" }]);
+  const old = { id: "k-old", intelligence_item_id: INTAKE_ITEM, section_row_id: "s-keep", claim_kind: "FACT", claim_text: "report by 2030", source_span: "by 2030", source_id: null, search_result_id: "cap-law", source_tier_at_grounding: null };
+  db.seed("section_claim_provenance", [old]);
+  db.seed("item_forward_events", [{ id: "e1", intelligence_item_id: INTAKE_ITEM, event_date: "2030-01-01", date_precision: "year", event_kind: "target", obligation_text: "by 2030", source_kind: "claim", source_claim_id: "k-old", source_section_id: null, source_capture_id: null, source_span: "by 2030", confidence: "high" }]);
+  const r = await applyLedgerDiff(db.client, INTAKE_ITEM, { add: [], change: [], unchanged: [], notReproduced: [old] }, { nowIso: NOW.toISOString(), replaceLedger: true });
+  assert.equal(r.applied.failed, 0, r.notes.join("; "));
+  assert.equal(db.rows("section_claim_provenance").some((c) => c.id === "k-old"), false, "the old claim is gone");
+  const e = db.rows("item_forward_events")[0];
+  assert.deepEqual([e?.source_claim_id, e?.source_kind, e?.source_capture_id, e?.source_span], [null, "capture", "cap-law", "by 2030"]);
 });

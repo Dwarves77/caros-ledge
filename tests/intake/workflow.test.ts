@@ -4,7 +4,7 @@ import { test } from "node:test";
 import { injectBrief } from "@/features/intake/pipeline";
 import { startBriefWorkflow, type InjectedBrief } from "@/features/intake/workflow";
 
-import { factClaim, ITEM, makeWorld, marketSignalBody, metadata, NOW, OFFICIAL_URL, poolHashOf, SPAN_FORCE, SPAN_PENALTY, SPAN_REPORT } from "./fixtures.ts";
+import { CORROB, factClaim, ITEM, OTHER_TEXT, OTHER_URL, makeWorld, marketSignalBody, metadata, NOW, OFFICIAL_URL, poolHashOf, SPAN_FORCE, SPAN_PENALTY, SPAN_REPORT } from "./fixtures.ts";
 
 const injected = (db: ReturnType<typeof makeWorld>["db"], over: Partial<InjectedBrief> = {}): InjectedBrief => ({
   body: marketSignalBody(),
@@ -198,4 +198,13 @@ test("a rerun with no new injection grounds the stored brief and does not erase 
   const none = makeWorld();
   assert.equal((await startBriefWorkflow(none.deps, { itemId: ITEM })).status, "generate_failed", "no injected brief and no stored brief: an author must supply one");
   assert.equal(OFFICIAL_URL.startsWith("https"), true);
+});
+
+test("ENGINE-FIX-2 Q6: a host that is registered but not yet rated keeps its sourceId, so its FACT persists instead of being refused source_resolvable", async () => {
+  const { db, deps } = makeWorld();
+  deps.sources.resolveSource = () => null;
+  deps.sources.registerAndRate = async () => ({ sourceId: CORROB, tier: null });
+  const span = OTHER_TEXT.slice(0, 120);
+  const res = await startBriefWorkflow(deps, { itemId: ITEM, injected: injected(db, { ledger: [factClaim(span, { source_id: null, source_url: OTHER_URL })] }) });
+  assert.match(String(res.steps.ground), /grounded kept=1/, "the FACT persisted (the later audit gate judges the fixture's tier, not this step)");
 });

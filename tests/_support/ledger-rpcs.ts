@@ -86,6 +86,7 @@ function writeClaim(db: MemDb, itemId: string, claimId: string | null, row: Row,
 }
 
 function removeClaim(db: MemDb, claimId: string, reason: string, proof: unknown, note: unknown, now: unknown): number {
+  if (db.rows("item_forward_events").some((e) => e.source_claim_id === claimId)) throw new Refusal("update or delete on section_claim_provenance violates foreign key constraint item_forward_events_source_claim_id_fkey", "23503");
   if (!["proven_inaccurate", "superseded_by_record_briefs", "orphaned_no_prose_referent"].includes(reason)) throw new Refusal(`a claim leaves the ledger only as a listed reason (got ${reason})`);
   if (reason !== "superseded_by_record_briefs" && !(proof && typeof proof === "object" && (proof as Row).reason)) throw new Refusal(`removing a claim as ${reason} needs a proof object with a reason`);
   const claims = db.rows("section_claim_provenance");

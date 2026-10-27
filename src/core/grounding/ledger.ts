@@ -173,6 +173,8 @@ export async function applyLedgerDiff(sb: Db, itemId: string, diff: Diff, opts: 
     currentIds.push(existing.id as string);
     applied.unchanged += 1;
   }
+  // ENGINE-FIX-2 Q5: a claim about to be removed hands its forward events on first (never ON DELETE SET NULL: migration 0003)
+  if (opts.replaceLedger && diff.notReproduced.length) await keepForwardEventLinks(sb, itemId, null, new Set(diff.notReproduced.flatMap((e) => e.id ?? [])));
   for (const e of diff.notReproduced) {
     if (opts.replaceLedger) {
       try {
@@ -201,10 +203,10 @@ export async function eraseClaimWithProof(sb: Db, existing: ClaimRow, _itemId: s
 
 export interface SectionInput { section_key: string; section_order: number; content_md: string; is_conditional: boolean }
 /** ENGINE-FIX-2: item_forward_events.source_claim_id references the claims of a section the reconcile deletes (a foreign key, no cascade), so the reconcile failed on any item with a claim-sourced event in a vanishing section. Before it, an event follows its claim to the claim of the same text and span in a surviving section; with none, it keeps its own quote on its capture (source_kind capture on the claim's search_result_id, confidence medium: the CHECKs tie high to a claim) and lets the claim go. */
-async function keepForwardEventLinks(sb: Db, itemId: string, keys: ReadonlySet<string>): Promise<void> {
-  const gone = new Set((await allRows<{ id: string; section_key: string }>(sb, "intelligence_item_sections", "id, section_key", { where: (q) => q.eq("item_id", itemId) })).filter((x) => !keys.has(x.section_key)).map((x) => x.id));
-  const claims = gone.size ? await allRows<ClaimRow>(sb, "section_claim_provenance", "id, section_row_id, claim_text, source_span, search_result_id", { where: (q) => q.eq("intelligence_item_id", itemId) }) : [];
-  const going = new Map(claims.filter((c) => gone.has(c.section_row_id ?? "")).map((c) => [c.id as string, c]));
+async function keepForwardEventLinks(sb: Db, itemId: string, keys: ReadonlySet<string> | null, claimIds: ReadonlySet<string> = new Set()): Promise<void> {
+  const gone = new Set((await allRows<{ id: string; section_key: string }>(sb, "intelligence_item_sections", "id, section_key", { where: (q) => q.eq("item_id", itemId) })).filter((x) => keys && !keys.has(x.section_key)).map((x) => x.id));
+  const claims = gone.size || claimIds.size ? await allRows<ClaimRow>(sb, "section_claim_provenance", "id, section_row_id, claim_text, source_span, search_result_id", { where: (q) => q.eq("intelligence_item_id", itemId) }) : [];
+  const going = new Map(claims.filter((c) => gone.has(c.section_row_id ?? "") || claimIds.has(c.id as string)).map((c) => [c.id as string, c]));
   for (const ev of await rowsByIds<{ id: string; source_claim_id: string }>(sb, "item_forward_events", "id, source_claim_id", going.keys(), "source_claim_id", "id")) {
     const c = going.get(ev.source_claim_id) as ClaimRow;
     const twin = claims.find((k) => !going.has(k.id as string) && k.claim_text === c.claim_text && k.source_span === c.source_span);
