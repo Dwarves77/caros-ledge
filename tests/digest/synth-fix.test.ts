@@ -37,6 +37,9 @@ test("B3: a coverage gap whose every figure and term a cited capture already hol
   const evidence = ["The median grid connection queue is 31 months in the transmission zone."];
   assert.match(groundingReasons({ texts: {}, gaps: ["the 31 months queue length"], evidence }).join(), /gap contradiction: coverage_gaps\[0\]/);
   assert.deepEqual(groundingReasons({ texts: {}, gaps: ["no HVO price series for the zone"], evidence }), [], "a gap naming an absent series passes");
+  const imo = ["The IMO adopted its 2030 strategy; the grid connection queue is 31 months."];
+  assert.deepEqual(groundingReasons({ texts: {}, gaps: ["no IMO 2030 fuel-intensity figure"], evidence: imo }), [], "context tokens (an acronym, a year) held by a capture are no contradiction");
+  assert.match(groundingReasons({ texts: {}, gaps: ["the grid queue figure"], evidence: ["The grid queue figure is published yearly."] }).join(), /whole phrase/, "the whole missing_input phrase verbatim in a capture");
   assert.deepEqual(groundingReasons({ texts: {}, gaps: ["the installed charging capacity at the mandate date"], evidence }), []);
 });
 

@@ -42,14 +42,17 @@ const heldIn = (evidence: readonly string[], counts: readonly number[], values: 
 /** The refusals of the pre-check: each names the token and where it was stated. `counts` are the structural counts the entry may state (rows, surfaces, items); `ignore` are fixed strings (headings, callouts) that are not claims. */
 export function groundingReasons(o: { texts: Record<string, string>; gaps?: readonly string[]; evidence: readonly string[]; /** the cited rows' stored values (default: the evidence) */ values?: readonly string[]; counts?: readonly number[]; ignore?: readonly string[] }): string[] {
   const held = heldIn(o.evidence, o.counts ?? [], o.values ?? o.evidence);
+  const phrasing = flat(o.evidence).replace(/\s+/g, " ");
+  const numbers = numbersOf(phrasing);
   const seen = new Set<string>();
   const out: string[] = [];
   const miss = (where: string, text: string) => { for (const k of tokensOf(text, o.ignore)) if (!held(k) && !seen.has(`${where}|${k.text}`)) { seen.add(`${where}|${k.text}`); out.push(`grounding pre-check: ${where} states ${k.kind} ${JSON.stringify(k.text)}, which occurs in no cited row value or cited capture`); } };
   for (const [where, text] of Object.entries(o.texts)) miss(where, text);
   (o.gaps ?? []).forEach((g, i) => {
-    // a gap names what the evidence does NOT hold, so it is exempt from containment; only a term or figure (a bare year excepted) that a cited capture already holds contradicts it
-    const known = tokensOf(g, o.ignore).filter((k) => held(k) && k.kind !== "count" && !(k.kind === "number" && Number(k.value) > 1899 && Number(k.value) < 2101));
-    if (known.length) out.push(`gap contradiction: coverage_gaps[${i}] asks for ${JSON.stringify(g.slice(0, 120))}, but ${known.map((k) => k.text).join(", ")} is already held by a cited capture or row`);
+    // a gap names what the evidence does NOT hold, so it is exempt from containment. It is contradicted only by (a) a figure it states as missing (a number with a unit or percent sign, a bare year excepted) held as the same normalised number, or (b) its whole missing_input phrase verbatim in a capture; a context token alone (an acronym, a name, a year) is no contradiction
+    const figures = [...g.matchAll(new RegExp(String.raw`(${NUM_RE.source})\s?(%|per ?cent|[A-Za-z]{1,12})`, "g"))].filter((m) => m[2] === "%" || /^per ?cent$/i.test(m[2] as string) || !(Number(m[1]) > 1899 && Number(m[1]) < 2101)).map((m) => m[0].trim()).filter((f) => numbers.has(num(f.match(NUM_RE)?.[0] ?? "")));
+    const phrase = g.replace(/\s+/g, " ").trim().toLowerCase();
+    if (figures.length || (phrase && phrasing.includes(phrase))) out.push(`gap contradiction: coverage_gaps[${i}] asks for ${JSON.stringify(g.slice(0, 120))}, but ${figures.length ? `its figure ${figures.join(", ")} is` : "the whole phrase is"} already held by a cited capture or row`);
   });
   return out;
 }
