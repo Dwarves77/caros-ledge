@@ -31,10 +31,20 @@ const entry = (number: string, slice: string, status: string) => ({ number, slic
 const migration = (n: string, change: string | null = "planted change") => `${change ? `-- change: ${change}\n` : ""}-- Self-check ${n}-planted\n-- irreversible: nothing is written, nothing to undo\nBEGIN;\nDO $$ BEGIN IF false THEN RAISE EXCEPTION 'never'; END IF; RAISE NOTICE '${n}-planted OK'; END $$;\nCOMMIT;\n`;
 const writeLedger = (repo: string, rows: object[]) => put(repo, `${DIR}/RESERVED.json`, `${JSON.stringify({ about: "fixture", reservations: rows }, null, 2)}\n`);
 
+/** The notes of a file above the boundary describe a file the fixture does not hold (a slice's own migration): the fixture's copy of apply-notes.json drops them. */
+function pruneNotes(repo: string) {
+  const file = join(repo, DIR, "apply-notes.json");
+  const notes = JSON.parse(readFileSync(file, "utf8")) as Record<string, unknown>;
+  for (const k of Object.keys(notes)) if (!existsSync(join(repo, DIR, `${k}.sql`))) delete notes[k];
+  writeFileSync(file, `${JSON.stringify(notes, null, 2)}
+`);
+}
+
 /** A repository whose main holds a copy of the real migrations plus 0138 (landed) with 0135 and 0139 reserved: the base every check below compares with. */
 function fixture() {
   const repo = mkdtempSync(join(tmpdir(), "apply-1-"));
   cpSync(REAL, join(repo, DIR), BELOW_BOUNDARY);
+  pruneNotes(repo);
   const ledger = JSON.parse(readFileSync(join(REAL, "RESERVED.json"), "utf8")).reservations.filter((r: { number: string }) => r.number <= README_FROZEN_THROUGH);
   writeLedger(repo, [...ledger, entry("0135", "A", "reserved"), entry("0138", "B", "landed"), entry("0139", "C", "reserved"), entry("0140", "D", "reserved")]);
   put(repo, `${DIR}/0138_base_tip.sql`, migration("0138"));
@@ -143,6 +153,7 @@ function twoBranches(layout: "derived" | "legacy") {
   try {
     if (layout === "derived") {
       cpSync(REAL, join(repo, DIR), BELOW_BOUNDARY);
+      pruneNotes(repo);
       const rows = JSON.parse(readFileSync(join(REAL, "RESERVED.json"), "utf8")).reservations;
       writeLedger(repo, [...rows, entry("9001", "ONE", "reserved"), entry("9002", "TWO", "reserved")]);
     } else {
