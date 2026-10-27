@@ -10,7 +10,7 @@
 --
 -- Access: unchanged (entities_read stays, community_thread_entities policies do not name the column). Reversal: down/0144.sql restores the enum, the closed relation list and the old checks, and drops the two columns; it fails, loudly, if a kind or relation outside the old lists was minted since.
 
--- catalog: column, constraint, index
+-- catalog: column, constraint, type
 
 BEGIN;
 

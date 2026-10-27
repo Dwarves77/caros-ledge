@@ -293,6 +293,7 @@
       "textColumns": [
         "binding_position",
         "cost_formula",
+        "due_date_precision",
         "duty_holder_class",
         "evidence_required",
         "frequency",
@@ -321,6 +322,7 @@
       "unmapped": {
         "binding_position": "binding-position token (vocabularies.json binding_position); a vocabulary token checked by J3",
         "cost_formula": "the cost formula the span states, verbatim; prose the statutory computation reads, not an entity",
+        "due_date_precision": "how precise due_date is (day, month or year; migration 0143); a precision token of the date, not an entity",
         "duty_holder_class": "duty-holder class tokens (vocabularies.json duty_holder_class); a vocabulary token checked by J3",
         "evidence_required": "prose describing the evidence a duty requires",
         "frequency": "how often the duty recurs, as stated; a prose label",
