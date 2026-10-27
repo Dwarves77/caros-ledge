@@ -1,0 +1,21 @@
+{
+  "ruling": "operator and coordinator 2026-10-27 (SYNTH-APPLY-1): the first two admin capital-radar findings that passed the second reader clean (9a1fc96bf310fa11, 16c6e8865e8f445b) are applied to production through the briefs stage: the pattern_ai_* derived values, the admin_opportunity_findings rows, the signposts, the coverage-gap discovery needs and any connections write through the shared write-back. The other six entries of the batch are still in repair or held and are not carried. Nothing is fetched, so no scrape cadence is exercised and rule 16 stands",
+  "steps": [
+    {
+      "name": "synth-apply-1-dry",
+      "stage": "briefs",
+      "mode": "dry",
+      "input_file": "data/2026-10-27-synth-apply-1.admin.json",
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "synth-apply-1",
+      "stage": "briefs",
+      "mode": "apply",
+      "input_file": "data/2026-10-27-synth-apply-1.admin.json",
+      "producer_env": [],
+      "on_failure": "stop"
+    }
+  ]
+}
