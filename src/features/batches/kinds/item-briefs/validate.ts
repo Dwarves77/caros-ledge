@@ -69,9 +69,9 @@ export function residueEmission(entry: Obj, plan: EmissionPlan): { emission: Emi
   const failed = new Set(review("item-briefs", entry).failed);
   const skipped: string[] = [];
   const out: EmissionPlan = { ...plan };
-  if (plan.connections.length && failed.has("J20")) (out.connections = [], skipped.push("connections (J20 failed)"));
-  if (plan.entities.length && failed.has("J18")) (out.entities = [], skipped.push("entity_ids (J18 failed)"));
-  if (plan.candidates.length) (out.candidates = [], skipped.push("new_entity_candidates (wait with the prose)"));
+  if (plan.connections.length && failed.has("J20")) { out.connections = []; skipped.push("connections (J20 failed)"); }
+  if (plan.entities.length && failed.has("J18")) { out.entities = []; skipped.push("entity_ids (J18 failed)"); }
+  if (plan.candidates.length) { out.candidates = []; skipped.push("new_entity_candidates (wait with the prose)"); }
   return { emission: out, skipped };
 }
 

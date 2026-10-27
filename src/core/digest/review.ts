@@ -43,9 +43,9 @@ export function review(kind: string, entry: Record<string, unknown>): Review {
   const failed: string[] = [];
   for (const j of need) {
     const v = r.judges[j.id];
-    if (!v || typeof v.pass !== "boolean") (reasons.push(`${j.id} ${j.criterion}: no verdict`), failed.push(j.id));
-    else if (typeof v.evidence !== "string" || v.evidence.trim().length < 10) (reasons.push(`${j.id} ${j.criterion}: a verdict without its evidence`), failed.push(j.id));
-    else if (!v.pass) (reasons.push(`${j.id} ${j.criterion}: failed (${v.evidence.trim().slice(0, 200)})`), failed.push(j.id));
+    if (!v || typeof v.pass !== "boolean") { reasons.push(`${j.id} ${j.criterion}: no verdict`); failed.push(j.id); }
+    else if (typeof v.evidence !== "string" || v.evidence.trim().length < 10) { reasons.push(`${j.id} ${j.criterion}: a verdict without its evidence`); failed.push(j.id); }
+    else if (!v.pass) { reasons.push(`${j.id} ${j.criterion}: failed (${v.evidence.trim().slice(0, 200)})`); failed.push(j.id); }
     else passed += 1;
   }
   return { required: need.map((j) => j.id), failed, score: need.length ? passed / need.length : 1, reasons, residue: reasons.length > 0, reviewed_by: r.reviewed_by };
