@@ -165,5 +165,10 @@
     "unscopedReads": {
       "state_cost_facts": "a whole-table invariant (no operational_cost fact is left under a bare two-letter state code after the repair); the CHECK assertions are scoped to the fixture entity"
     }
+  },
+  "0143_obligation_due_date_precision": {
+    "unscopedReads": {
+      "obligation_objects": "live reference data: the self-check reads the whole table to prove every row that existed took the default day (a whole-table invariant; production holds the rows, the CI database none)"
+    }
   }
 }

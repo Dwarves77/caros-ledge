@@ -81,7 +81,7 @@ export interface Candidate {
   evidence_required?: string | null; evidence_artifacts?: Array<{ class: string; name: string }> | null; retention_period?: string | null; sanction_class?: string | null; severity_score?: number | null;
   statutory_maximum?: string | null; cost_formula?: string | null; direct_compliance_cost?: Record<string, unknown> | null;
   /** Reader-authored (0139): the per-object due date, the mandated quantity and its unit (distinct from the penalty maximum), the end of the in-force window, and who wrote the values with the quotes they rest on. */
-  due_date?: string | null; mandated_quantity?: number | null; mandated_unit?: string | null; in_force_end?: string | null; method_version?: string | null; basis?: Record<string, unknown> | null;
+  due_date?: string | null; due_date_precision?: "day" | "month" | "year" | null; mandated_quantity?: number | null; mandated_unit?: string | null; in_force_end?: string | null; method_version?: string | null; basis?: Record<string, unknown> | null;
   effort?: Record<string, unknown> | null; status?: string | null; date_reviewed?: string | null; next_review_due?: string | null; source_id?: string | null;
   /** An obligation entity resolved before minting (DERIVE-3: the schedule's entity for the article); absent, the id is derived from the instrument and the pinpoint. */
   obligation_id?: string;
@@ -149,6 +149,7 @@ function buildObjectRow(c: Candidate, ctx: { item: ObjectItem | null; capture: C
     evidence_required: nullable(c.evidence_required), evidence_artifacts: nullable(c.evidence_artifacts), retention_period: nullable(c.retention_period), sanction_class: nullable(c.sanction_class), severity_score: nullable(c.severity_score), statutory_maximum: nullable(c.statutory_maximum),
     cost_formula: nullable(c.cost_formula), direct_compliance_cost: nullable(c.direct_compliance_cost), effort: nullable(c.effort), status: "not_assessed",
     ...Object.fromEntries((c.method_version != null ? ["due_date", "mandated_quantity", "mandated_unit", "in_force_end", "method_version", "basis"] : []).map((k) => [k, nullable(c[k as "due_date"])])),
+    ...(c.method_version != null ? { due_date_precision: c.due_date_precision ?? "day" } : {}),
     date_reviewed: nullable(c.date_reviewed), next_review_due: nullable(c.next_review_due), source_id: nullable(c.source_id), capture_id: c.capture_id,
   };
   return { ok: true, row, bindingSource };

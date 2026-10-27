@@ -177,3 +177,14 @@ test("statutory_computations with a year scenario_key gain a due (HYPOTHESIS of 
   assert.deepEqual(at("2026-10-15"), [], "2030-01-01 is 39 months out: beyond the horizon P2 reads");
   assert.deepEqual(at("2027-06-01").map((p) => [p.value, p.unit]), [[24, "months"]], "31 months out: inside it, and the capacity lands 24 months after the step");
 });
+
+test("G3: a ratchet's due date carries its stored precision: a year-precision mandate is a year fact, never a day; a day or an unrecorded precision carries none; a scenario year is a year", () => {
+  const row = (over: Record<string, unknown>) => factOf("obligation_objects", { obligation_id: "o9", due_date: "2027-01-01", mandated_quantity: 5, mandated_unit: "MW", ...over }, ["e1"], { role: "ratchet", now: NOW }) as Fact;
+  assert.equal(row({ due_date_precision: "year" }).duePrecision, "year");
+  assert.equal(row({ due_date_precision: "month" }).duePrecision, "month");
+  assert.equal(row({ due_date_precision: "day" }).duePrecision, undefined);
+  assert.equal("duePrecision" in row({}), false);
+  assert.equal(row({ due_date_precision: "year" }).due, "2027-01-01", "the stored date is unchanged: only its precision is carried");
+  const scenario = factOf("statutory_computations", { computation_id: "c1", scenario_key: "2030", result: 3, result_unit: "MW" }, ["e1"], { role: "ratchet", now: NOW }) as Fact;
+  assert.equal(scenario.duePrecision, "year");
+});

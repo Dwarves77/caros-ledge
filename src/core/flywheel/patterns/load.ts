@@ -12,7 +12,7 @@ import type { Fact, PatternInput } from "./types";
 
 const UUID_SHAPE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const columnsOf = (table: string): string =>
-  [...new Set((FACT_SPECS[table] ?? []).flatMap((s) => [s.pk, s.at, s.due, s.dueYear, s.dueMonthsAfterAt, s.qty?.column, s.qty?.unitColumn, s.qty?.figure, s.source, s.tier, s.kind, s.trl, s.group, s.item, s.owner, s.capture, s.resolved, s.from, s.until]).filter((c): c is string => !!c))].join(",");
+  [...new Set((FACT_SPECS[table] ?? []).flatMap((s) => [s.pk, s.at, s.due, s.duePrecision, s.dueYear, s.dueMonthsAfterAt, s.qty?.column, s.qty?.unitColumn, s.qty?.figure, s.source, s.tier, s.kind, s.trl, s.group, s.item, s.owner, s.capture, s.resolved, s.from, s.until]).filter((c): c is string => !!c))].join(",");
 
 /** A series' points become their moves: each point's relative change from the previous point of the same series, dated at the point. The first point of a series has no move and is dropped. */
 function seriesMoves(facts: readonly Fact[]): Fact[] {

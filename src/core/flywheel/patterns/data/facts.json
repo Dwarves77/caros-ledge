@@ -1,7 +1,7 @@
 {
   "section_claim_provenance": { "role": "claim", "pk": "id", "at": "extracted_at", "source": "source_id", "tier": "source_tier_at_grounding", "kind": "claim_kind", "item": "intelligence_item_id", "owner": "intelligence_item_id", "capture": "search_result_id" },
   "obligation_objects": [
-    { "role": "ratchet", "pk": "obligation_id", "surface": "regulations", "due": "due_date", "qty": { "column": "mandated_quantity", "unitColumn": "mandated_unit" }, "source": "source_id", "owner": "instrument_item_id" },
+    { "role": "ratchet", "pk": "obligation_id", "surface": "regulations", "due": "due_date", "duePrecision": "due_date_precision", "qty": { "column": "mandated_quantity", "unitColumn": "mandated_unit" }, "source": "source_id", "owner": "instrument_item_id" },
     { "role": "ceiling", "pk": "obligation_id", "surface": "regulations", "qty": { "figure": "statutory_maximum" }, "from": "enforcement_start", "until": "in_force_end", "source": "source_id", "owner": "instrument_item_id" }
   ],
   "statutory_computations": [

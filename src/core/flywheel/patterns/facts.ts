@@ -42,9 +42,12 @@ export function factOf(table: string, row: Row, entities: readonly string[], ove
   const qty = unitUnknown ? null : rawQty;
   const year = s.dueYear && /^\d{4}$/.test(String(row[s.dueYear] ?? "")) ? String(row[s.dueYear]) : null;
   const due = s.due ? asDay(row[s.due]) : year ? `${year}-01-01` : s.dueMonthsAfterAt && at && asNumber(row[s.dueMonthsAfterAt]) !== null ? plusMonths(at, asNumber(row[s.dueMonthsAfterAt]) as number) : null;
+  // G3: the stored precision of the due date. A year taken from a scenario key is a year; a stored date says its own.
+  const stated = s.duePrecision ? asText(row[s.duePrecision]) : null;
+  const duePrecision = due === null ? undefined : year && !s.due ? "year" : stated === "month" || stated === "year" ? stated : undefined;
   if (s.role === "ratchet" && due === null && qty === null) return null;
   return {
-    table, pk: String(row[s.pk]), role: s.role, entities: [...entities], modes: [...new Set(entities.flatMap((e) => couplingById(e)?.modes ?? []))].sort(), surface: over.surface ?? s.surface ?? "unknown", at, due,
+    table, pk: String(row[s.pk]), role: s.role, entities: [...entities], modes: [...new Set(entities.flatMap((e) => couplingById(e)?.modes ?? []))].sort(), surface: over.surface ?? s.surface ?? "unknown", at, due, ...(duePrecision ? { duePrecision } : {}),
     source: s.source ? asText(row[s.source]) : null, tier: s.tier ? asNumber(row[s.tier]) : null, qty, unit: qty === null ? null : compared ? canonical : figure ? figure.unit : s.qty?.unit ?? (s.qty?.unitColumn ? asText(row[s.qty.unitColumn]) : null), ...(unitUnknown ? { unitUnknown: true } : {}), ...(table === "derived_values" && row.admissibility === "display_only" ? { displayOnly: true as const } : {}), trl: s.trl ? asNumber(row[s.trl]) : null,
     kind: s.kind ? asText(row[s.kind]) : null, group: s.group ? asText(row[s.group]) : null, item: s.owner ? asText(row[s.owner]) : null,
     ...(s.resolved && row[s.resolved] ? { resolved: true as const } : {}), ...(over.docAt !== undefined ? { docAt: over.docAt } : {}),

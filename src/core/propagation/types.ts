@@ -21,6 +21,8 @@ export interface InputRef {
   surface?: string;
   /** The day a claim counts from (its item's added date), which the claim row does not hold. */
   at?: string;
+  /** How precise the evidence row's due date is when less than a day (month or year): a ratchet's year-precision mandate is not a day. */
+  due_precision?: "month" | "year";
   /** The counts a capped pattern's summary edge carries. */
   summary?: Record<string, number>;
 }

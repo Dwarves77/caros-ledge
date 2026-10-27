@@ -27,7 +27,7 @@ test("a full entry validates: every quote is located, every id resolved, every c
   const plan = r.plan as EmissionPlan;
   assert.deepEqual(plan.entities.map((e) => e.entity_id), [SELF, HVO, SELF], "a formal code resolves to the instrument entity through the crosswalk");
   assert.equal(plan.entities[1]?.quote.text, "Hydrotreated vegetable oil", "the quote is stored as the capture's own words, whitespace as the capture has it");
-  assert.deepEqual(plan.objects.map((o) => [o.pinpoint, Object.keys(o.set).sort().join(",")]), [["Article 3", "applicability_trigger,binding_position,duty_holder_class,mode,sanction_class,statutory_maximum"], ["Article 5", "applicability_trigger,binding_position,due_date,duty_holder_class,mandated_quantity,mandated_unit"]]);
+  assert.deepEqual(plan.objects.map((o) => [o.pinpoint, Object.keys(o.set).sort().join(",")]), [["Article 3", "applicability_trigger,binding_position,duty_holder_class,mode,sanction_class,statutory_maximum"], ["Article 5", "applicability_trigger,binding_position,due_date,due_date_precision,duty_holder_class,mandated_quantity,mandated_unit"]]);
   assert.equal(plan.objects[1]?.set.mandated_unit, "MW");
   assert.equal(plan.connections[0]?.relation, "feedstock_of");
 });
@@ -228,4 +228,23 @@ test("PARSE-FIX-1 D1: an event carries the most precise date its quote states; a
   assert.deepEqual(run([ev({ event_date: "2030-01-01", date_precision: "year" }, "in 2030")]).errors, []);
   assert.deepEqual(run([ev({ event_date: "2025-12-31" }, "31 December 2025")]).errors, []);
   for (const kind of ["implementing_act_due", "delegated_act_due", "guidance_expected"]) assert.deepEqual(run([ev({ event_date: "2025-12-31", event_kind: kind }, "31 December 2025")]).errors, [], `a past-dated ${kind} is stored, not refused`);
+});
+
+test("G3: obligation_fields.due_date states its precision like an event: stored normalised, stated at that precision in the quote, the most precise date the quote states wins", async () => {
+  const w = emissionWorld();
+  const base = emissionEntry(w);
+  const due = (value: string, quote: string, precision?: string) => ({
+    ...base,
+    obligation_fields: (base.obligation_fields as Record<string, unknown>[]).map((o) =>
+      (o.pinpoint as string) === "Article 5" ? { ...o, fields: { ...(o.fields as Record<string, unknown>), due_date: { value, quote: { capture_id: w.cap, text: quote }, ...(precision ? { precision } : {}) } } } : o),
+  });
+  const set = (r: Awaited<ReturnType<typeof check>>) => r.plan?.objects.find((o) => o.pinpoint === "Article 5")?.set;
+  const day = await check(w, due("2027-01-01", "1 January 2027"));
+  assert.deepEqual([day.errors, set(day)?.due_date, set(day)?.due_date_precision], [[], "2027-01-01", "day"]);
+  const month = await check(w, due("2023-09-01", "September 2023", "month"));
+  assert.deepEqual([month.errors, set(month)?.due_date, set(month)?.due_date_precision], [[], "2023-09-01", "month"]);
+  assert.match(reasons(await check(w, due("2027-01-01", "1 January 2027", "year"))), /more precise day date inside 2027-01-01/, "a day stated, a year stored: the most precise date wins");
+  assert.match(reasons(await check(w, due("2023-09-13", "September 2023", "month"))), /month precision needs the first of the month/);
+  assert.match(reasons(await check(w, due("2027-01-01", "within 24 months of the date of entry into force", "year"))), /does not state a year date/);
+  assert.match(reasons(await check(w, due("2027-01-01", "1 January 2027", "week"))), /precision must be day, month or year/);
 });

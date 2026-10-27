@@ -53,14 +53,27 @@ const norm = (s: string): string => s.replace(/\s+/g, " ").trim().toLowerCase();
 export const hasEmission = (e: Obj): boolean => BLOCKS.some((b) => e[b] !== undefined);
 
 /** The value of one obligation field, checked as its column is checked at the database, against the slice that states it; the reason it may not be written, or the value to write. */
-function fieldValue(col: (typeof FIELDS)[number], v: unknown, slice: string): { ok: true; set: Obj } | { ok: false; why: string } {
+function fieldValue(col: (typeof FIELDS)[number], v: unknown, slice: string, precision?: unknown): { ok: true; set: Obj } | { ok: false; why: string } {
   const bad = (why: string) => ({ ok: false as const, why });
   const date = (c: string) => (isoDate(v) ? (stated(slice, v) ? { ok: true as const, set: { [c]: v } } : bad(`${c} ${v} is not stated in the quote`)) : bad(`${c} must be an ISO date (YYYY-MM-DD)`));
   switch (col) {
     case "mode": return Array.isArray(v) && v.length && v.every((m) => LEG_MODE_CODES.includes(m as string)) ? { ok: true, set: { mode: v } } : bad(`mode must be leg-mode tokens of ${LEG_MODE_CODES.join(", ")}`);
     case "sanction_class": return typeof v === "string" && !sanctionRefusal({ sanction_class: v }) ? { ok: true, set: { sanction_class: v } } : bad(`sanction_class ${JSON.stringify(v)} is not a closed token`);
     case "statutory_maximum": case "cost_formula": { const why = typeof v === "string" ? groundingRefusal(col, v, slice) : "must be text"; return why ? bad(`${col}: ${why}`) : { ok: true, set: { [col]: v } }; }
-    case "enforcement_start": case "due_date": case "in_force_end": return date(col);
+    case "enforcement_start": case "in_force_end": return date(col);
+    // G3: a due date carries the precision its quote supports (day, month or year), stored normalised, and the most precise date the quote states (D1), as an event's date does.
+    case "due_date": {
+      const p = precision === undefined ? "day" : precision;
+      if (p !== "day" && p !== "month" && p !== "year") return bad("due_date precision must be day, month or year");
+      if (!isoDate(v)) return bad("due_date must be an ISO date (YYYY-MM-DD)");
+      if (p === "month" && !v.endsWith("-01")) return bad(`due_date month precision needs the first of the month (YYYY-MM-01), not ${v}`);
+      if (p === "year" && !v.endsWith("-01-01")) return bad(`due_date year precision needs YYYY-01-01, not ${v}`);
+      if (p === "day") return stated(slice, v) ? { ok: true, set: { due_date: v, due_date_precision: "day" } } : bad(`due_date ${v} is not stated in the quote`);
+      const best = mostPrecise(slice, v, p);
+      if (best === null) return bad(`the quote does not state a ${p} date ${v} as a month and year or a year`);
+      if (best !== p) return bad(`the quote states a more precise ${best} date inside ${v}: store the most precise date the quote states, not ${p} precision`);
+      return { ok: true, set: { due_date: v, due_date_precision: p } };
+    }
     case "mandated_quantity": {
       const q = v as { value?: unknown; unit?: unknown };
       const unit = isObj(v) && typeof q.unit === "string" ? statutoryUnit(q.unit) : null;
@@ -128,7 +141,7 @@ export function validateEmission(entry: Obj, tag: string, live: EmitLive): { err
       if (!isObj(f)) { err(`${at}.${col}`, "must be { value, quote }"); continue; }
       const q = quote(f.quote, `${at}.${col}.quote`);
       if (provision && q && q.capture_id !== provision.capture_id) err(`${at}.${col}`, "the quote is in another capture than the provision");
-      const v = q ? fieldValue(col as (typeof FIELDS)[number], f.value, q.text) : null;
+      const v = q ? fieldValue(col as (typeof FIELDS)[number], f.value, q.text, f.precision) : null;
       if (v && !v.ok) err(`${at}.${col}`, v.why);
       if (q && v?.ok) { Object.assign(out.set, v.set); out.quotes[col] = q; }
     }

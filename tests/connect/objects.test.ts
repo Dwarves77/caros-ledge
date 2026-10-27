@@ -123,3 +123,13 @@ test("deriveObligationObjects: a failed read throws; it does not plan over a hal
   const m = connectDb({ intelligence_items: [FUELEU] }, { failures: [{ table: "obligation_objects", op: "select", message: "down" }] });
   await assert.rejects(() => deriveObligationObjects(m.db, { dry: false, itemIds: ["f1"] }), /obligation_objects read failed/);
 });
+
+test("G3: a reader candidate's due date is stored with its precision; an omitted precision is day; the precision rides with the supersession", async () => {
+  const reader = (over: Partial<Candidate>) => candidate({ method_version: "reader@1.1.0", basis: { reader: "reader@1.1.0" }, ...over });
+  const year = (await planFor(reader({ due_date: "2027-01-01", due_date_precision: "year" }))).toInsert[0]?.row;
+  assert.deepEqual([year?.due_date, year?.due_date_precision], ["2027-01-01", "year"]);
+  const bare = (await planFor(reader({ due_date: "2027-06-15" }))).toInsert[0]?.row;
+  assert.deepEqual([bare?.due_date, bare?.due_date_precision], ["2027-06-15", "day"], "the column's default, written explicitly");
+  const none = (await planFor(candidate())).toInsert[0]?.row;
+  assert.equal("due_date_precision" in (none ?? {}), false, "a derived (non-reader) candidate does not write the reader's columns");
+});

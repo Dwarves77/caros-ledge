@@ -2910,14 +2910,16 @@
     "mandated_unit",
     "in_force_end",
     "method_version",
-    "basis"
+    "basis",
+    "due_date_precision"
    ],
    "uuid": [],
    "defaults": {
     "version": 1,
     "status": "not_assessed",
     "created_at": "__now",
-    "updated_at": "__now"
+    "updated_at": "__now",
+    "due_date_precision": "day"
    },
    "fks": [
     {
