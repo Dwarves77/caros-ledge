@@ -5,7 +5,7 @@ import { createHash } from "node:crypto";
 
 import { isVerbatim, locateSpan } from "@/core/contracts/verbatim";
 import { LENSES, WINDOWS } from "@/core/digest/kinds";
-import { groundingReasons, writebackOf } from "@/core/digest/containment";
+import { figureCoverage } from "@/core/briefs/theme-brief-contract";
 import { review, singleSourceReason } from "@/core/digest/review";
 import type { Angle, Cluster, ClusterRow } from "@/core/flywheel/clusters";
 import type { InputRef } from "@/core/propagation";
@@ -151,16 +151,15 @@ export function validateSynthesisEntry(e: unknown, i: number, live: SynthLive): 
   list("connections").forEach((c, j) => { if (isObj(c)) { entityOk(c.from_entity_id, `connections[${j}].from_entity_id`); entityOk(c.to_entity_id, `connections[${j}].to_entity_id`); } });
   const items = [...(live.items.get(cluster.id) ?? [])];
   if (tagged.length && !items.length) at("tagged_inferences", "an inference record cites at least one intelligence item, and the rows this entry cites name none");
-  const wb = verifyWriteback(e, tag, { captures: live.captures, ids: live.entities, now: live.now, locate: live.locate, itemIds: items });
+  const evidence = [...cited].flatMap((k) => { const r = rows.get(k) as ClusterRow; return [JSON.stringify(r.figure ?? ""), r.date ?? "", live.captures.get(r.quote_capture_id ?? "") ?? "", live.claims?.get(k) ?? ""]; });
+  const wb = verifyWriteback(e, tag, { evidence, captures: live.captures, ids: live.entities, now: live.now, locate: live.locate, itemIds: items });
   errors.push(...wb.errors.filter((m) => !errors.includes(m)));
   if (errors.length) return { errors };
   // a reading with no pattern, finding or inference (only coverage gaps) holds no analysis for the second reader to judge
   // SYNTH-FIX-1 B2/B3: every digit number or percentage stated holds in a cited row or capture; a gap is held to it and contradicted by what a capture holds
-  const evidence = [...cited].flatMap((k) => { const r = rows.get(k) as ClusterRow; return [JSON.stringify(r.figure ?? ""), r.date ?? "", live.captures.get(r.quote_capture_id ?? "") ?? "", live.claims?.get(k) ?? ""]; });
-  const grounding = patterns.length || findings.length ? groundingReasons({
-    texts: { ...Object.fromEntries(findings.flatMap((f, n) => [[`finding[${n}]`, [f.title, f.md].join(String.fromCharCode(10))], ...f.inferences.map((x, m) => [`finding[${n}].inference[${m}]`, String(x.text)])])), ...Object.fromEntries(tagged.map((x, n) => [`tagged_inference[${n}]`, x.text])), ...writebackOf(e).texts },
-    gaps: writebackOf(e).gaps, evidence, counts: [cluster.rows.length, cluster.surfaces.length, cited.size, items.length, ...cluster.surfaces.map((s) => cluster.rows.filter((r) => r.surface === s).length)],
-  }) : [];
+  // CONTAIN-FIX-1: each digit figure a finding, inference or signpost states is stated, as the same typed figure, in a cited row or capture (figureCoverage, the one comparator)
+  const texts = [...findings.flatMap((f) => [[f.title, f.md].join(" "), ...f.inferences.map((x) => String(x.text))]), ...tagged.map((x) => x.text), ...(Array.isArray(e.signposts) ? e.signposts : []).flatMap((x) => (isObj(x) ? [x.claim_text, x.observable, x.confirms_if, x.falsified_if].filter((v): v is string => typeof v === "string") : []))];
+  const grounding = patterns.length || findings.length ? texts.flatMap((t) => figureCoverage(t, evidence).map((f) => `grounding pre-check: figure ${JSON.stringify(f)} is stated in no cited row value or cited capture`)) : [];
   const rv = patterns.length || findings.length || tagged.length ? review("admin-opportunity-findings", e) : { required: [] as string[], score: 1, reasons: [] as string[], residue: false, reviewed_by: null };
   const why = [...(patterns.length || findings.length ? [singleSourceReason([...cited].map((k) => ({ table: (rows.get(k) as ClusterRow).table, surface: (rows.get(k) as ClusterRow).surface })))].flatMap((r) => r ?? []) : []), ...grounding, ...rv.reasons.map((r) => `second reader: ${r}`)];
   if (why.length) return { errors: [], residue: why.map((r) => `${tag}: ${r}`) };

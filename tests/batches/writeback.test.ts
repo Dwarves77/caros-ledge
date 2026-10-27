@@ -106,3 +106,13 @@ test("the closed lists the write-back keeps equal the sources they mirror: sourc
   const tables = [...line.matchAll(/'([a-z_]+)'::text/g)].map((m) => m[1]);
   assert.deepEqual([...EDGE_TABLES].sort(), tables.sort());
 });
+
+test("CONTAIN-FIX-1: a gap that denies a figure with its unit the cited evidence states is refused; a gap for an absent figure, a spelled-out count or a bare year passes", () => {
+  const live = (evidence: string[]) => ({ evidence, captures: new Map<string, string>(), ids: new Map<string, string>(), now: new Date("2026-10-26"), itemIds: ["i1"] });
+  const gap = (missing_input: string, evidence: string[]) => verifyWriteback({ coverage_gaps: [{ missing_input, source_class: "analysis" }] }, "t", live(evidence)).errors.join();
+  const ev = ["Operators shall make 50 MW available in the zone; the IMO adopted its 2030 strategy."];
+  assert.match(gap("the 50 MW capacity figure", ev), /already stated/);
+  assert.equal(gap("the 60 MW capacity", ev), "", "a figure the evidence does not state");
+  assert.equal(gap("no IMO 2030 fuel-intensity figure", ev), "", "a bare year is no figure with a unit");
+  assert.equal(gap("the European Union Member States capacity", ev), "", "no term is word-matched");
+});
