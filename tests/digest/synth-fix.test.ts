@@ -33,10 +33,10 @@ test("B2: an acronym or term absent from every cited capture fails, naming it; p
   assert.deepEqual(groundingReasons({ texts: { f: "## 1. What It Is\n\nThe Emissions Trading System applies." }, evidence: ["The Emissions Trading System applies."], ignore: ["## 1. What It Is"] }), [], "a heading passed as ignore is not read, and a sentence-initial word is not part of a term");
 });
 
-test("B3: a coverage gap whose every figure and term a cited capture already holds is a contradiction; a gap naming what no capture holds is refused as invented", () => {
+test("B3: a coverage gap whose every figure and term a cited capture already holds is a contradiction; a gap naming what no capture holds passes", () => {
   const evidence = ["The median grid connection queue is 31 months in the transmission zone."];
   assert.match(groundingReasons({ texts: {}, gaps: ["the 31 months queue length"], evidence }).join(), /gap contradiction: coverage_gaps\[0\]/);
-  assert.match(groundingReasons({ texts: {}, gaps: ["HEFA feedstock volumes"], evidence }).join(), /coverage_gaps\[0\] states term "HEFA"/);
+  assert.deepEqual(groundingReasons({ texts: {}, gaps: ["no HVO price series for the zone"], evidence }), [], "a gap naming an absent series passes");
   assert.deepEqual(groundingReasons({ texts: {}, gaps: ["the installed charging capacity at the mandate date"], evidence }), []);
 });
 
@@ -48,6 +48,7 @@ test("B2/B3 and B4 in the admin kind: an invented count, an invented term and a 
   const r = await apply(w, [adminEntry({ findings, signposts, coverage_gaps: [{ missing_input: "the queue of 31 months", source_class: "govIntergov" }] })]);
   assert.equal(r.counts.residue, 1);
   const note = r.notes[0] ?? "";
+  assert.doesNotMatch(note, /coverage_gaps\[0\] states/);
   assert.match(note, /3 failing rule\(s\)/);
   for (const part of [/count "eleven"/, /term "TEN-T"/, /gap contradiction/]) assert.match(note, part);
   assert.equal(r.counts.valid, 0);

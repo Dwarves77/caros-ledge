@@ -47,9 +47,9 @@ export function groundingReasons(o: { texts: Record<string, string>; gaps?: read
   const miss = (where: string, text: string) => { for (const k of tokensOf(text, o.ignore)) if (!held(k) && !seen.has(`${where}|${k.text}`)) { seen.add(`${where}|${k.text}`); out.push(`grounding pre-check: ${where} states ${k.kind} ${JSON.stringify(k.text)}, which occurs in no cited row value or cited capture`); } };
   for (const [where, text] of Object.entries(o.texts)) miss(where, text);
   (o.gaps ?? []).forEach((g, i) => {
-    const all = tokensOf(g, o.ignore);
-    if (all.some((k) => !held(k))) return miss(`coverage_gaps[${i}]`, g);
-    if (all.length) out.push(`gap contradiction: coverage_gaps[${i}] asks for ${JSON.stringify(g.slice(0, 120))}, but every figure and term of it (${all.map((k) => k.text).join(", ")}) is already held by a cited capture or row`);
+    // a gap names what the evidence does NOT hold, so it is exempt from containment; only a term or figure (a bare year excepted) that a cited capture already holds contradicts it
+    const known = tokensOf(g, o.ignore).filter((k) => held(k) && k.kind !== "count" && !(k.kind === "number" && Number(k.value) > 1899 && Number(k.value) < 2101));
+    if (known.length) out.push(`gap contradiction: coverage_gaps[${i}] asks for ${JSON.stringify(g.slice(0, 120))}, but ${known.map((k) => k.text).join(", ")} is already held by a cited capture or row`);
   });
   return out;
 }
