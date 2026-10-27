@@ -275,10 +275,33 @@ test('audit 2.3.12 and 2.3.13: migrate, turn and ruled-runs (RUN-1) run in the p
   assert.deepEqual(Object.keys(jobs).filter((j) => jobs[j].environment !== undefined).sort(), ['migrate', 'ruled-runs', 'turn']);
 });
 
-test('every upload-artifact keeps its artifact 3 days', () => {
-  const uploads = Object.values(jobs).flatMap((j) => (j.steps ?? []).filter((s) => String(s.uses).startsWith('actions/upload-artifact')));
+const UPLOADS = () => Object.values(jobs).flatMap((j) => (j.steps ?? []).filter((s) => String(s.uses).startsWith('actions/upload-artifact')));
+const ONE_DAY = ['ci-results', 'apply-plan', 'ruled-run-results', 'parity-capture', 'preview-parity-capture'];
+
+test('every upload-artifact keeps its artifact 3 days, or 1 day for the big or per-run results', () => {
+  const uploads = UPLOADS();
   assert.ok(uploads.length >= 5);
-  for (const u of uploads) assert.equal(u.with['retention-days'], 3, u.with.name);
+  for (const u of uploads) assert.equal(u.with['retention-days'], ONE_DAY.includes(u.with.name) ? 1 : 3, u.with.name);
+});
+
+test('CI-ARTIFACT-1: every upload-artifact has continue-on-error, so a full artifact store never fails a job', () => {
+  const uploads = UPLOADS();
+  assert.ok(uploads.length >= 7);
+  for (const u of uploads) assert.equal(u['continue-on-error'], true, u.with.name);
+});
+
+test('CI-ARTIFACT-1: the parity screenshot uploads run only on failure, with retention 1; the visible job tolerates a missing results artifact and the report labels it SKIPPED-NO-ARTIFACT', () => {
+  for (const name of ['parity-capture', 'preview-parity-capture']) {
+    const u = UPLOADS().find((x) => x.with.name === name);
+    assert.ok(u, name);
+    assert.match(String(u.if), /failure\(\)/, name);
+    assert.doesNotMatch(String(u.if), /always\(\)|cancelled/, name);
+    assert.equal(u.with['retention-days'], 1, name);
+  }
+  const dl = jobs.visible.steps.find((s) => String(s.uses).startsWith('actions/download-artifact'));
+  assert.equal(dl['continue-on-error'], true);
+  assert.ok(jobs.visible.steps.some((s) => /visible: no results artifact \(storage\)/.test(String(s.run ?? ''))));
+  assert.ok(jobs.report.steps.some((s) => /SKIPPED-NO-ARTIFACT/.test(String(s.name ?? '') + String(s.run ?? ''))));
 });
 
 test('only the report job holds a token that writes to a pull request, and it runs the default branch\'s scripts with the tree under report beside them as data', () => {
