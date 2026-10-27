@@ -156,7 +156,7 @@ export function MarketDetailView({ resource: r, sections, claimTiers, claimsDegr
   return (
     <ClaimTierProvider claimTiers={claimTiers}>
       <div style={{ paddingTop: 16 }}>
-        <DetailPageWrapper itemId={r.id} band={band} action={topRecommendedAction(recommendedActions)} nowIso={nowIso}>
+        <DetailPageWrapper itemId={r.itemUuid ?? r.id} band={band} action={topRecommendedAction(recommendedActions)} nowIso={nowIso}>
           <DetailMasthead title={r.title} band={band} surface="Market Intel" jurisdiction={jurisLabel} dek={meta} placeholder="Ask about this signal, e.g. when does the largest deadline hit" nowIso={nowIso} actionSlot={actionCard} />
           {claimsDegraded && (
             <StateNote tone="error" action={{ label: "Retry", onClick: retry }}>

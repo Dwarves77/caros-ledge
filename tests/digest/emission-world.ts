@@ -1,11 +1,11 @@
 // The reader-emission test world (DIGEST-1 PR B): one record item whose pool carries the sentences the typed blocks quote, the entities the candidate menu lists, and a full authored entry that exercises every block. The quotes are in the capture; a test breaks one value to attack it.
-import { couplingByKey } from "@/core/coupling";
 import { locateSpan } from "@/core/contracts/verbatim";
 import { entityId } from "@/core/entities/id";
 import type { BatchDeps } from "@/features/batches";
 
 import { batchWorld, goodBody, claims, ITEM, metadata, OFFICIAL_TEXT, OFFICIAL_URL, passingReview, poolHashOf, SPAN_FORCE, SPAN_PENALTY } from "../batches/world.ts";
 import { OTHER_TEXT, OTHER_URL } from "../intake/fixtures.ts";
+import { couplingByKey, fixtureRows } from "../_support/ontology.ts";
 
 export const MW = "Each Member State shall make available at least 50 MW of charging capacity within 24 months of the date of entry into force.";
 export const FEED = "Hydrotreated vegetable oil is produced from used cooking oil, which is its main feedstock.";
@@ -24,7 +24,10 @@ export function emissionWorld() {
   const cap = (w.db.rows("agent_run_searches").find((r) => r.result_url === OFFICIAL_URL) as { id: string }).id;
   const ent = (entity_id: string, kind: string, canonical_name: string) => ({ entity_id, kind, canonical_name, status: "active" });
   w.db.seed("entities", [ent(SELF, "instrument", "32023R9999"), ent(UCO, "material", "Used cooking oil"), ent(HVO, "material", "HVO"), ent(OCEAN, "asset", "Ocean freight"), ent(entityId("jurisdiction", "EU"), "jurisdiction", "EU"), ent(entityId("organisation", "eur-lex.europa.eu"), "organisation", "eur-lex.europa.eu")]);
-  w.db.seed("entity_identifiers", [{ entity_id: SELF, scheme: "CELEX", value: "32023R9999", asserted_by: "t" }]);
+  // the closed mode token the live refs file under the ocean asset (the ontology reads it from there)
+  w.db.seed("entity_refs", fixtureRows().refs.filter((r) => r.entity_id === OCEAN));
+  // The menu is the live graph (GRAPH-GROW-1): the fixture links the entities its blocks name to the item through a shared formal code, as a seeded graph would.
+  w.db.seed("entity_identifiers", [{ entity_id: SELF, scheme: "CELEX", value: "32023R9999", asserted_by: "t" }, ...[SELF, UCO, HVO].map((e) => ({ entity_id: e, scheme: "FIXTURE_GROUP", value: "emission-world", asserted_by: "t" }))]);
   w.db.seed("entity_aliases", [{ entity_id: HVO, alias: "hydrotreated vegetable oil", alias_kind: "name", asserted_by: "t" }]);
   const deps: BatchDeps = { ...w.deps, locate: locateSpan };
   return { ...w, deps, cap, item };

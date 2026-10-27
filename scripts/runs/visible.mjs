@@ -7,17 +7,9 @@ import { register } from "node:module";
 import { parseArgs } from "node:util";
 
 import { isMain } from "../lib/fs.mjs";
+import { itemOnPageFinding as finding, MARKER, ITEM_ATTR } from "../lib/item-on-page.mjs";
 
-export const MARKER = '[data-audit="detail-section-head"]';
-export const ITEM_ATTR = "data-item-id";
-
-/** The finding for one opened page, or null when the page drew the brief and states the item. The final URL is information only. Pure. */
-export function finding(id, path, page) {
-  if (!page || page.error) return `${id}: ${path} did not load (${page?.error ?? "no response"})`;
-  if (page.status >= 400) return `${id}: ${path} answered HTTP ${page.status}`;
-  if (!(page.markers > 0)) return `${id}: ${path} (ended at ${page.finalUrl}) drew no ${MARKER}: the brief is not shown`;
-  return page.itemId === id ? null : `${id}: ${path} (ended at ${page.finalUrl}) shows ${page.itemId ? `item ${page.itemId}` : `no ${ITEM_ATTR}`}, not the item`;
-}
+export { finding, MARKER, ITEM_ATTR };
 
 /** Every applied item opened through `open(path)` (a signed-in page loader) and judged; `pathOf(id)` is the item's route or the list of routes it may have (one per surface: the item passes when any renders). Returns the findings (empty: all rendered). */
 export async function checkItems(ids, { open, pathOf, landed = [] }) {

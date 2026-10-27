@@ -85,6 +85,7 @@ function fakeContext(loads: Array<{ responses: Any[]; failures?: Any[]; status?:
         goto: async () => (load.responses.forEach(on), { status: () => load.status ?? 200 }),
         waitForLoadState: async () => {},
         url: () => "https://x.test/regulations",
+        $eval: async () => null,
         $$eval: async (selector: string) => ((seen.selector = selector), load.failures ?? []),
         close: async () => {},
       };

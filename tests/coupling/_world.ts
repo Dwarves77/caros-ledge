@@ -1,13 +1,13 @@
 // The CONNECT-2 world: the integration fixture (real wiring, real stages, the coupling pages served by the fixture transport) plus the data that yields exactly one pattern of each kind and one cross-modal pattern per relation kind. Every number is a fixture number; the entities are the
 // seeded couplings, looked up by key. The data plants nothing the detectors do not read from a table: claims, obligations, a roadmap row, a forward event, three series, a research assessment, a statutory computation and a derived abatement cost.
-import { couplingByKey } from "@/core/coupling";
 import { runTurn } from "@/core/turn";
 
 import { fixture, NOW, type Fixture } from "../integration/world.ts";
 import type { Row } from "../_support/memdb.ts";
+import { E, FIXTURE_ENTITIES, readerRef } from "../_support/ontology.ts";
 
 export { NOW };
-export const E = (key: string): string => (couplingByKey(key) as { entityId: string }).entityId;
+export { E };
 export const ago = (days: number): string => new Date(NOW.getTime() - days * 86_400_000).toISOString().slice(0, 10);
 const uuid = (n: number): string => `a0000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
 const TYPE = { reg: ["regulation", 1], market: ["market_signal", 3], research: ["research_finding", 7] } as const;
@@ -57,6 +57,11 @@ export function plant(f: Fixture, options: { documentDate?: string } = {}): void
   const captureOf = rows.map((r, n) => ({ id: uuid(5000 + n), intelligence_item_id: r.item.id, result_url: `https://fixture.invalid/doc/${n}`, result_content: "fixture", result_index: 0, searched_at: `${ago(0)}T09:00:00Z`, document_date: options.documentDate ?? String(r.item.added_date) }));
   db.seed("agent_run_searches", captureOf);
   db.seed("section_claim_provenance", rows.map((r, n) => ({ ...r.claim, search_result_id: captureOf[n]?.id })));
+  // this world's nodes and feedstocks couple the modes their fixture data states (as the live graph does for a carrier through fuel_for_mode), so the relation kinds that cross between nodes can cross a mode
+  db.rows("entity_relations").push(...FIXTURE_ENTITIES.filter((e) => (e.class === "node" || e.class === "feedstock") && e.modes.length).flatMap((e) => e.modes.map((m) => ({ parent_entity_id: e.entityId, child_entity_id: E(`mode:${m}`), relation: "fuel_for_mode", asserted_by: "fixture", source_id: null, provenance: {}, method_version: null }))));
+  // the entities the Reader filed these claims under (the engine matches no words; the old name matching found these)
+  const FILED: [RegExp, string[]][] = [[/green ammonia/i, ["carrier:green_ammonia"]], [/hydrotreated vegetable oil/i, ["carrier:hvo", "feed:lipid"]], [/lignocellulosic/i, ["feed:lignocellulosic"]], [/HEFA/, ["carrier:hefa_saf"]], [/HDV charging/, ["node:hdv_charging"]], [/sea-air/i, ["corridor:ocean_to_sea_air"]], [/PPWR/, ["instrument:32025R0040"]], [/modal shift to rail/i, ["corridor:rail_road"]], [/modal shift to inland waterways/i, ["corridor:inland_waterway"]]];
+  db.rows("entity_refs").push(...rows.flatMap((r) => FILED.flatMap(([re, keys]) => (re.test(String(r.claim.claim_text)) ? keys.map((k) => readerRef("section_claim_provenance", String(r.claim.id), k, String(r.claim.claim_text))) : []))), readerRef("oem_tech_roadmaps", uuid(400), "carrier:hefa_saf", "saf refinery"));
   db.seed("obligation_objects", [
     // P2: a dated ratchet of the ReFuelEU instrument; P4 (corridor_links): an ocean-wide ratchet inside the recency window
     { obligation_id: OBLIGATION.air, instrument_item_id: ITEM.reg, instrument_entity_id: E("instrument:32023R2405"), due_date: new Date(NOW.getTime() + 100 * 86_400_000).toISOString().slice(0, 10), mode: ["air"], applicability_trigger: {} },

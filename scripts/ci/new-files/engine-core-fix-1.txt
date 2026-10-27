@@ -1,0 +1,3 @@
+# path | reason (files with no "Ported from" header)
+src/core/coupling/ontology.ts | new in ENGINE-CORE-FIX-1 (NO-ENTITY-LISTS-1): the ontology read from the database (the class, the ref role and the mode tokens of an entity from the live refs and relations) in place of the entity list of couplings.json.
+src/core/flywheel/clusters.ts | new in ENGINE-CORE-FIX-1 (PATTERN-SYNTHESIS-1): the cluster assembler, multi-surface groups of rows from the live graph on four axes with the angle each can be read from; a detector gates nothing.

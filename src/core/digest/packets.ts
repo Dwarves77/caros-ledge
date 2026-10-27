@@ -3,7 +3,7 @@
 // the entity refs of the rows with their bases, the relations of the pattern's entities (reader-asserted ones flagged), the signposts already open, and context rows (the claims, forward events and obligation objects of the member items, the other points of a member's series in the move window), all under the caps in
 // data/packets.json with the cap stated inside the packet, never silently. A brief may cite only what a packet contains (INV-CN2-4): `uncitedIds` is the check the kind's validator runs. A P1 pattern is packet-eligible only when it was computed on dated claims (its method version is the document-date clock's)
 // and one of its entities carries a reader-asserted relation. This file is the ONE file the DIGEST-1 PR B kinds import.
-import { couplingById } from "@/core/coupling/coupling";
+import { loadOntology } from "@/core/coupling/ontology";
 import { readAll } from "@/core/coupling/read";
 import { uuidOf } from "@/core/coupling/refs";
 import type { Db } from "@/core/db";
@@ -73,12 +73,12 @@ const columnsOf = (table: string): string => {
 const byIds = (sb: Db, table: string, columns: string, col: string, ids: Iterable<string>, order: readonly string[], only: Record<string, string[]> = {}): Promise<Row[]> =>
   fetchAllByIdChunks([...new Set(ids)], (slice) => readAll<Row>(sb, table, columns, order, (q) => Object.entries(only).reduce((x, [c, v]) => x.in(c, v), q.in(col, slice))), { manyPerId: true });
 
-function memberOf(table: string, row: Row, edge: PacketEdge, entities: readonly string[], items: ReadonlyMap<string, string | null>): PacketMember {
+function memberOf(classOf: (e: string) => string, table: string, row: Row, edge: PacketEdge, entities: readonly string[], items: ReadonlyMap<string, string | null>): PacketMember {
   const sp = SPANS[table];
   const owner = specOf(table)?.owner ?? cfg.context.find((c) => c.table === table)?.by;
   const item = owner ? text(row[owner]) : null;
   return {
-    table, id: String(row[pkOf(table)]), entity_kind: entities.map((e) => couplingById(e)?.class).find((c): c is string => !!c) ?? null, edge, entities: [...entities], item_id: item, provenance_status: item ? (items.get(item) ?? null) : null,
+    table, id: String(row[pkOf(table)]), entity_kind: entities.map((e) => classOf(e)).find((c): c is string => !!c) ?? null, edge, entities: [...entities], item_id: item, provenance_status: item ? (items.get(item) ?? null) : null,
     columns: Object.fromEntries((COLUMNS[table] ?? []).map((c) => [c, row[c] ?? null])),
     spans: sp && text(row[sp.text]) ? [{ kind: sp.kind, text: row[sp.text] as string, source_span: sp.span ? text(row[sp.span]) : null, capture_id: sp.capture ? text(row[sp.capture]) : null, source_id: sp.source ? text(row[sp.source]) : null }] : [],
   };
@@ -86,6 +86,7 @@ function memberOf(table: string, row: Row, edge: PacketEdge, entities: readonly 
 
 /** The pattern packets of stored patterns (derived values of the pattern methods), in the order given; `ineligible` counts the P1 patterns held back. */
 async function buildPatternPackets(sb: Db, patterns: readonly PatternRow[]): Promise<{ packets: Packet[]; ineligible: number }> {
+  const onto = await loadOntology(sb);
   const inputs = patterns.map((p) => (p.inputs ?? []).filter((i) => i.table && i.pk));
   const rows = new Map<string, Row>();
   for (const table of [...new Set(inputs.flat().map((i) => i.table))]) for (const r of await rowsByIds<Row>(sb, table, columnsOf(table), inputs.flat().filter((i) => i.table === table).map((i) => i.pk), pkOf(table), pkOf(table))) rows.set(`${table}/${String(r[pkOf(table)])}`, r);
@@ -121,14 +122,14 @@ async function buildPatternPackets(sb: Db, patterns: readonly PatternRow[]): Pro
       ineligible += 1;
       return;
     }
-    const evidence = ins.flatMap((i) => (rows.has(`${i.table}/${i.pk}`) ? [memberOf(i.table, rows.get(`${i.table}/${i.pk}`) as Row, (i.kind as PacketEdge) ?? "member", i.entities ?? [], items)] : []));
+    const evidence = ins.flatMap((i) => (rows.has(`${i.table}/${i.pk}`) ? [memberOf(onto.classOf, i.table, rows.get(`${i.table}/${i.pk}`) as Row, (i.kind as PacketEdge) ?? "member", i.entities ?? [], items)] : []));
     const mine = new Set(evidence.map((m) => `${m.table}/${m.id}`));
     const mineItems = new Set(evidence.map((m) => m.item_id).filter((x): x is string => !!x));
     const first = Math.min(...evidence.filter((m) => m.table === "market_series").map((m) => Date.parse(String(m.columns.as_at_date))));
     const window = Number.isFinite(first) ? new Date(first - PATTERNS.leadLag.moveWindowDays * 86_400_000).toISOString().slice(0, 10) : "9";
     const ctxAll = [
-      ...cfg.context.flatMap((c) => (context.get(c.table) ?? []).filter((r) => mineItems.has(text(r[c.by]) ?? "") && !mine.has(`${c.table}/${String(r[pkOf(c.table)])}`)).slice(0, cfg.maxContextPerTable).map((r) => memberOf(c.table, r, "context", [], items))),
-      ...points.filter((r) => evidence.some((m) => m.table === "market_series" && m.columns.series_key === r.series_key) && String(r.as_at_date) >= window && !mine.has(`market_series/${String(r.id)}`)).slice(0, cfg.maxContextPerTable).map((r) => memberOf("market_series", r, "context", [], items)),
+      ...cfg.context.flatMap((c) => (context.get(c.table) ?? []).filter((r) => mineItems.has(text(r[c.by]) ?? "") && !mine.has(`${c.table}/${String(r[pkOf(c.table)])}`)).slice(0, cfg.maxContextPerTable).map((r) => memberOf(onto.classOf, c.table, r, "context", [], items))),
+      ...points.filter((r) => evidence.some((m) => m.table === "market_series" && m.columns.series_key === r.series_key) && String(r.as_at_date) >= window && !mine.has(`market_series/${String(r.id)}`)).slice(0, cfg.maxContextPerTable).map((r) => memberOf(onto.classOf, "market_series", r, "context", [], items)),
     ];
     const members = evidence.slice(0, cfg.maxMembers);
     const itemMembers = [...mineItems].sort().map((id): PacketMember => ({ table: "intelligence_items", id, edge: "context", entities: [], item_id: id, provenance_status: items.get(id) ?? null, columns: { provenance_status: items.get(id) ?? null }, spans: [] }));
@@ -161,8 +162,3 @@ export async function readPackets(sb: Db, ids: readonly string[]): Promise<Packe
   const missing = ids.filter((i) => !served.has(i));
   return { packets: out, marker: missing.length || ineligible ? `packets: ${missing.length} of ${ids.length} ids have no live pattern packet${ineligible ? `; ${ineligible} P1 pattern(s) held back (undated or no reader-asserted edge)` : ""}` : null };
 }
-
-/** The ids a brief may cite from a packet (INV-CN2-4): the packet, its pattern, its member rows (items included), its relations and its signposts. */
-export const citableIds = (p: Packet): Set<string> => new Set([p.id, ...(p.pattern ? [p.pattern.value_id] : []), ...p.patterns, ...p.members.map((m) => m.id), ...p.relations.map((r) => r.id), ...p.signposts.map((s) => s.entity_id)]);
-/** The cited ids a packet does not contain: the kind's validator refuses an entry that cites any. */
-export const uncitedIds = (p: Packet, cited: readonly string[]): string[] => cited.filter((c) => !citableIds(p).has(c));

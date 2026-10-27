@@ -1,6 +1,8 @@
 // New in VALID-1: R6 (V11): each stored entry_into_force and compliance_deadline is written in the body in one of the accepted renderings (data/date-renderings.json).
 import { z } from "zod";
 
+import { foldHtmlSpace } from "@/core/parse";
+
 import datesJson from "../data/date-renderings.json";
 
 import { violation } from "./_text";
@@ -16,7 +18,7 @@ function render(iso: string, template: string): string {
   return template.replace(/\{(\w+)\}/g, (_, k: string) => parts[k] ?? "");
 }
 export const REGISTER_RENDERINGS: readonly string[] = D.register;
-export const stated = (body: string, iso: string, templates: readonly string[] = [...D.register, ...D.extra]): boolean => templates.some((t) => body.toLowerCase().includes(render(iso, t).toLowerCase()));
+export const stated = (body: string, iso: string, templates: readonly string[] = [...D.register, ...D.extra]): boolean => templates.some((t) => foldHtmlSpace(body).toLowerCase().includes(render(iso, t).toLowerCase()));
 
 const rule: Rule = (b, i) => {
   const missing = (["entry_into_force", "compliance_deadline"] as const).filter((k) => i[k] && !stated(b.body, i[k] as string));

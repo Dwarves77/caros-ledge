@@ -3,6 +3,7 @@
 // `phase` is "before" when the run is the one made BEFORE the cutover window (the new tree's preview on the database that does not carry the new migrations yet): an object a pending migration adds is then a warning that names the
 // migration; in "after" (the default) it is a failure. Everything else is a failure in both phases.
 import { isMissingObject } from "../../../src/core/db/absent.ts";
+import { itemOnPageFinding } from "../../lib/item-on-page.mjs";
 import { shapeDiff } from "../schema/shape.mjs";
 
 export const CHECKS = ["member-reads", "sign-in", "pages", "identity-anonymous", "provenance-trigger", "notification-drain", "admin-pages", "invitation-email", "production-shape", "applied-items-render"];
@@ -221,7 +222,7 @@ export async function productionShape(ctx) {
 
 /**
  * DRAIN-FIX-2 (visibility): each item a ruled run applied (scripts/ci/data/applied-items.json) opens, for the signed-in member, on its own surface's detail route, and the page draws at least one detail section head (the typed marker
- * data-audit="detail-section-head", counted by scripts/ci/live/load.mjs). No page text is matched (ADR-053). A page that answers but draws none, or that ends away from the item's path, is a failure.
+ * data-audit="detail-section-head", counted by scripts/ci/live/load.mjs). No page text is matched (ADR-053). A page that answers but draws none, or whose [data-item-id] is not the item's uuid, is a failure (the landing URL is not judged: a uuid redirects to its slug).
  */
 export async function appliedItemsRender(ctx) {
   const out = [];
@@ -235,8 +236,10 @@ export async function appliedItemsRender(ctx) {
     const page = await ctx.io.openPage(path, "member");
     const f = pageFinding("applied-items-render", path, page);
     if (f) out.push(f);
-    else if (!page.finalUrl.includes(id)) out.push(fail("applied-items-render", path, `${path} ended at ${page.finalUrl}, away from the item`));
-    else if (!(page.sectionHeads > 0)) out.push(fail("applied-items-render", path, `${path} rendered with no detail section head: the brief is not shown`));
+    else {
+      const g = itemOnPageFinding(id, path, { status: page.status, finalUrl: page.finalUrl, markers: page.sectionHeads, itemId: page.itemId });
+      if (g) out.push(fail("applied-items-render", path, g));
+    }
   }
   return out;
 }

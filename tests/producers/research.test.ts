@@ -2,7 +2,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { couplingByKey } from "@/core/coupling/coupling";
 import { entityId } from "@/core/entities";
 import { runProducer } from "@/core/producers/runner";
 import { aggregateAuthorityDistribution, scoreSource } from "@/features/research/authority-score";
@@ -12,6 +11,7 @@ import { technologyEntityOf } from "@/features/research/model/technology-entity"
 import { classifyTheme, THEME_VALUES } from "@/features/research/theme-rules";
 import { researchWalker, walkResearch, type WalkerDeps } from "@/features/research/walker";
 
+import { couplingByKey } from "../_support/ontology.ts";
 import { memoryDb } from "../_support/memory-db.ts";
 import { makeWorld, makeDeps as mintDeps } from "../mint/world.ts";
 
@@ -172,18 +172,11 @@ test("the first live pass scores only verified research items with no current as
 
 // ---- JOIN-1: an assessment is filed under the technology its item is tagged with ----
 const SAF = couplingByKey("carrier:hefa_saf")?.entityId as string;
-const CHARGING = couplingByKey("node:hdv_charging")?.entityId as string;
 
-test("INV-JOIN-7: the entity of an assessment is the one technology the item's typed tags name; several technologies, none, or only words in the text file it under none", () => {
-  assert.equal(technologyEntityOf(["air-fueling", "unrelated-tag"]), SAF);
-  assert.equal(technologyEntityOf(["drayage"]), CHARGING);
-  assert.equal(technologyEntityOf(["air-fueling", "drayage"]), null, "two technologies: filed under none, never guessed");
-  assert.equal(technologyEntityOf(["SAF-blending"]), null, "a tag that two technology entities list names neither");
-  assert.equal(technologyEntityOf(["ocean-fuel-blend-mandate"]), null, "a tag that many technologies list names none");
-  assert.equal(technologyEntityOf([]), null);
-  assert.equal(technologyEntityOf(null), null);
-  const withWords = toAssessmentInput({ id: "w", item_type: "research_finding", title: "HEFA-SAF offtake and green ammonia engines", what_is_it: "Sustainable aviation fuel.", operational_scenario_tags: [] });
-  assert.equal(withWords.technologyEntityId, null, "the words of the title and text are never matched");
+test("NE1: no scenario tag, title or text is mapped to a technology entity by the engine (the scenario lists of couplings.json are gone): an assessment is filed under none until a relation of the database carries it", () => {
+  for (const tags of [["air-fueling", "unrelated-tag"], ["drayage"], ["SAF-blending"], [], null]) assert.equal(technologyEntityOf(tags), null);
+  const withWords = toAssessmentInput({ id: "w", item_type: "research_finding", title: "HEFA-SAF offtake and green ammonia engines", what_is_it: "Sustainable aviation fuel.", operational_scenario_tags: ["air-fueling"] });
+  assert.equal(withWords.technologyEntityId, null, "the words of the title and text and the tags are never matched");
 });
 
 test("INV-JOIN-7: the producer files a row under its technology entity only when the entity exists; an unseeded entity is counted and the row is filed under none, never a foreign-key failure", async () => {
@@ -199,7 +192,7 @@ test("INV-JOIN-7: the producer files a row under its technology entity only when
   assert.equal(bare.tables.research_assessments?.[0]?.entity_id, null);
 });
 
-test("INV-JOIN-7: an assessment filed under no entity is re-scored while its item is tagged with a technology (the backlog works down), and left alone when the tags name none or it already has its entity", async () => {
+test("NE1: with no tag-to-entity mapping the backlog rule re-scores nothing for want of an entity: an assessment with no current row is still produced, one that has a current row is left alone", async () => {
   const item = (id: string, title: string, tags: string[]) => ({ id, item_type: "research_finding", domain: 7, title, is_archived: false, provenance_status: "verified", source_id: "s1", operational_scenario_tags: tags });
   const db = memoryDb({
     intelligence_items: [item("n1", "Offtake", ["air-fueling"]), item("n2", "A study", []), item("n3", "Supply", ["air-fueling"]), item("n4", "Chargers", ["drayage"])],
@@ -207,7 +200,7 @@ test("INV-JOIN-7: an assessment filed under no entity is re-scored while its ite
     sources: [{ id: "s1", base_tier: 2 }],
   });
   const out = await fetchLiveCandidates(db.db);
-  assert.deepEqual(out.map((c) => [c.id, c.technologyEntityId]), [["n1", SAF], ["n4", CHARGING]]);
+  assert.deepEqual(out.map((c) => [c.id, c.technologyEntityId]), [["n4", null]]);
 });
 
 // ---- walker ----

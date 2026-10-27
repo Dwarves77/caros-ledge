@@ -14,7 +14,7 @@ test("INV-CN2-5: the planted data yields exactly one pattern per kind it can sta
   assert.equal((await propagate(f)).exit, 0);
   assert.equal((await connect(f)).exit, 0);
   const rows = patterns(f);
-  assert.deepEqual(byMethod(rows), { pattern_velocity_burst: 1, pattern_mandate_capacity: 1, pattern_lead_lag: 1, pattern_cross_modal: 3, pattern_penalty_abatement: 1 });
+  assert.deepEqual(byMethod(rows), { pattern_velocity_burst: 1, pattern_mandate_capacity: 1, pattern_lead_lag: 1, pattern_cross_modal: 3, pattern_penalty_abatement: 1, pattern_regulatory_stacking: 0 });
   const cross = rows.filter((r) => r.method_id === "pattern_cross_modal").map((r) => String(r.computed_by).split("|")[1]).sort();
   assert.deepEqual(cross, ["competes_for_feedstock", "feedstock_of", "shares_grid_zone"]);
   // a ratchet is filed under its transport mode too (the road and ocean ratchets are): a mode is where a mandate is filed, not what it starts from, so neither starts a pattern
@@ -37,7 +37,7 @@ test("INV-CN2-1: every pattern value names its evidence: member, evidence or key
     assert.ok(mine.length >= 1, `${String(p.method_id)} has evidence edges`);
     assert.ok(mine.every((e) => ["member", "evidence", "key"].includes(String(e.edge_kind))));
     assert.equal(new Set(mine.map((e) => `${String(e.from_table)}/${String(e.from_pk)}/${String(e.edge_kind)}`)).size, mine.length, "one edge per evidence row");
-    assert.equal(p.method_version, p.method_id === "pattern_penalty_abatement" ? "1.4.0" : "1.3.0");
+    assert.equal(p.method_version, p.method_id === "pattern_penalty_abatement" ? "1.5.0" : "1.4.0");
     assert.ok(["analysis_ok", "display_only"].includes(String(p.admissibility)), "graded");
   }
   const velocity = patterns(f).find((p) => p.method_id === "pattern_velocity_burst");
@@ -56,9 +56,9 @@ test("a second connect finds the same patterns and writes none; a pattern whose 
   await connect(f);
   assert.equal(patterns(f).length, first);
   assert.equal(countsOf(f, "corpus-turn").patterns_unchanged, first);
-  // the maritime step moves inside the lead window's near edge: the lead-lag pattern no longer holds and is retired, not left standing
+  // the maritime step reaches its day (the lead window is 1 to 730 days ahead): the lead-lag pattern no longer holds and is retired, not left standing
   const event = f.db.rows("item_forward_events")[0] as Record<string, unknown>;
-  event.event_date = new Date(NOW.getTime() + 30 * 86_400_000).toISOString().slice(0, 10);
+  event.event_date = NOW.toISOString().slice(0, 10);
   await propagate(f);
   await connect(f);
   const retired = patterns(f).filter((p) => p.method_id === "pattern_lead_lag");
@@ -84,7 +84,7 @@ test("the invalidation DAG: a changed evidence row marks the patterns citing it 
   assert.equal(after.length, before * 2, "each stale value is kept, its successor is a new row");
   const successor = after.find((p) => p.supersedes === first?.value_id);
   assert.ok(successor, "the recomputed pattern supersedes the stale one");
-  assert.equal(successor?.method_version, "1.3.0");
+  assert.equal(successor?.method_version, "1.4.0");
   assert.equal(first?.admissibility, "stale");
   assert.ok((countsOf(f, "propagation").recomputed ?? 0) >= 1);
   // the roadmap now lands before the deadline: the pattern no longer holds, the method refuses, the value stays stale

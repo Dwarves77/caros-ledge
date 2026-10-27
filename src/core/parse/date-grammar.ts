@@ -1,3 +1,4 @@
+import { HTML_SPACE_ALT } from "./space";
 // Ported from old_repo/src/lib/forward-events/extract-forward-events.mjs (lines 7-145)
 // The date grammar of the forward-event extractor: English and Portuguese months, ISO dates, month-year, a bare year only after a trigger. A date is
 // parsed at a position and only when it is a real calendar date (2023-02-30 is not one); a bare year never has a `/` after it (a citation number such as
@@ -6,8 +7,8 @@ const MONTHS_EN: Record<string, number> = { january: 1, february: 2, march: 3, a
 const MONTHS_PT: Record<string, number> = { janeiro: 1, fevereiro: 2, "março": 3, marco: 3, abril: 4, maio: 5, junho: 6, julho: 7, agosto: 8, setembro: 9, outubro: 10, novembro: 11, dezembro: 12 };
 
 // Separators between date parts: space, tab, &nbsp; (entity and literal) in captured HTML-derived text.
-const SEP = "(?:[ \\t]|&nbsp;|&#160;|\\u00a0)+";
-const SEP_OPT = "(?:[ \\t]|&nbsp;|&#160;|\\u00a0)*";
+const SEP = `(?:[ \t]|${HTML_SPACE_ALT})+`;
+const SEP_OPT = `(?:[ \t]|${HTML_SPACE_ALT})*`;
 export const MONTH_EN_ALT = Object.keys(MONTHS_EN).map((m) => (m[0] as string).toUpperCase() + m.slice(1)).join("|");
 export const MONTH_PT_ALT = "janeiro|fevereiro|mar[çc]o|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro";
 const FULL_EN = `(\\d{1,2})(?:st|nd|rd|th)?${SEP_OPT}(${MONTH_EN_ALT})${SEP}(\\d{4})`;

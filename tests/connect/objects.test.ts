@@ -32,7 +32,7 @@ test("a candidate: every refusal is named, and a good candidate becomes a not_as
   await refused({}, "instrument_item_missing", { intelligence_items: [] });
   await refused({ pinpoint_citation: " " }, "pinpoint_blank");
   await refused({ duty_holder_class: [] }, "duty_holder_missing");
-  await refused({ duty_holder_class: ["nobody"] }, "duty_holder_unknown:nobody");
+  await refused({ duty_holder_class: ["Not A Token"] }, "duty_holder_unknown:Not A Token");
   assert.equal((await planFor(candidate({ duty_holder_class: ["vessel_operator"] }))).refused.some((r) => r.reason.startsWith("duty_holder")), false, "DIGEST-FIX-1: vessels and shipping companies have a typed duty holder");
   await refused({ applicability_trigger: { attribute: "", value: "x" } }, "trigger_malformed");
   await refused({ status: "assessed" }, "status_not_writer_owned");
@@ -122,4 +122,14 @@ test("deriveObligationObjects: dry plans and writes nothing; apply writes the si
 test("deriveObligationObjects: a failed read throws; it does not plan over a half-read corpus", async () => {
   const m = connectDb({ intelligence_items: [FUELEU] }, { failures: [{ table: "obligation_objects", op: "select", message: "down" }] });
   await assert.rejects(() => deriveObligationObjects(m.db, { dry: false, itemIds: ["f1"] }), /obligation_objects read failed/);
+});
+
+test("G3: a reader candidate's due date is stored with its precision; an omitted precision is day; the precision rides with the supersession", async () => {
+  const reader = (over: Partial<Candidate>) => candidate({ method_version: "reader@1.1.0", basis: { reader: "reader@1.1.0" }, ...over });
+  const year = (await planFor(reader({ due_date: "2027-01-01", due_date_precision: "year" }))).toInsert[0]?.row;
+  assert.deepEqual([year?.due_date, year?.due_date_precision], ["2027-01-01", "year"]);
+  const bare = (await planFor(reader({ due_date: "2027-06-15" }))).toInsert[0]?.row;
+  assert.deepEqual([bare?.due_date, bare?.due_date_precision], ["2027-06-15", "day"], "the column's default, written explicitly");
+  const none = (await planFor(candidate())).toInsert[0]?.row;
+  assert.equal("due_date_precision" in (none ?? {}), false, "a derived (non-reader) candidate does not write the reader's columns");
 });

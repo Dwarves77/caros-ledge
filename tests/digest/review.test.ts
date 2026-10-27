@@ -31,20 +31,20 @@ test("which judges apply: by kind, by format and by the typed block the entry ca
   assert.ok(ids("admin-opportunity-findings", {}).includes("cross-surface-direction") && !ids("item-briefs", base).includes("cross-surface-direction"));
   assert.ok(ids("item-briefs", base).includes("entity-ids-complete"), "the emission items apply to every item brief");
   assert.ok(raw.judges.every((j) => j.prompt.length >= 40 && j.origin), "each judge is one prompt for one failure mode, with where it came from");
-  assert.ok(raw.judges.every((j) => j.validation && j.validation.n_pass > 0 && j.validation.n_fail > 0), "each judge carries its measured TPR and TNR with the counts they rest on");
+  assert.ok(raw.judges.filter((j) => !(j as { proposed?: boolean }).proposed).every((j) => j.validation && j.validation.n_pass > 0 && j.validation.n_fail > 0), "each judge carries its measured TPR and TNR with the counts they rest on");
 });
 
 test("review: a missing verdict set, a missing verdict, an unreasoned pass and a fail each keep the brief out and name the judge and its criterion; all pass keeps it in", () => {
   const e = { metadata: { format_type: "market_signal_brief" } } as Record<string, unknown>;
   const ok = { ...e, review: passingReview(e) };
-  assert.deepEqual(review("item-briefs", ok), { required: review("item-briefs", e).required, score: 1, reasons: [], residue: false, reviewed_by: "second-reader-test" });
+  assert.deepEqual(review("item-briefs", ok), { required: review("item-briefs", e).required, failed: [], score: 1, reasons: [], residue: false, reviewed_by: "second-reader-test" });
   assert.match(review("item-briefs", e).reasons[0] ?? "", /verdicts are missing/);
   const first = { id: review("item-briefs", e).required[0]!, criterion: names("item-briefs").get(review("item-briefs", e).required[0]!)! };
   const dropped = { ...ok, review: { ...(ok.review as object), judges: Object.fromEntries(Object.entries((ok.review as { judges: object }).judges).filter(([k]) => k !== first.id)) } };
   assert.match(review("item-briefs", dropped).reasons.join(), new RegExp(`${first.id} ${first.criterion}: no verdict`));
   assert.match(review("item-briefs", withJudge(ok, first.id, { pass: true, evidence: "" })).reasons.join(), /a verdict without its evidence/);
   const failed = review("item-briefs", withJudge(ok, first.id, { pass: false, evidence: "the label overstates what the source says" }));
-  assert.deepEqual([failed.residue, failed.reasons.length], [true, 1]);
+  assert.deepEqual([failed.residue, failed.reasons.length, failed.failed], [true, 1, [first.id]]);
   assert.match(failed.reasons[0] ?? "", new RegExp(`^${first.id} ${first.criterion}: failed \\(the label overstates`));
   assert.ok(failed.score < 1);
 });

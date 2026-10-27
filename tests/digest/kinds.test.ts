@@ -34,7 +34,7 @@ test("each kind's guide, validator and apply path exist", () => {
 test("the batch kit has an exporter for every registered kind, under the registry's id, and packet-reading kinds say so", () => {
   const exporters = drainExporters(batchWorld().deps);
   for (const k of DIGEST_KINDS) assert.equal(typeof exporters[k.exporter], "function", k.id);
-  assert.deepEqual(DIGEST_KINDS.filter((k) => k.needsPackets).map((k) => k.id), ["theme-briefs", "item-briefs", "admin-opportunity-findings"]);
+  assert.deepEqual(DIGEST_KINDS.filter((k) => k.needsPackets).map((k) => k.id), ["theme-briefs", "item-briefs"]);
 });
 
 test("item briefs are authored under the writer skill of the format the item type demands: all five formats have one", () => {
@@ -44,8 +44,7 @@ test("item briefs are authored under the writer skill of the format the item typ
   assert.deepEqual(guideSkills(digestKind("theme-briefs")!), digestKind("theme-briefs")!.authoringGuide.skills);
 });
 
-test("the admin kind carries the three lenses and windows, and the pattern methods that map to them", () => {
+test("the admin kind reads graph clusters: it names no detector method to gate on, reads no packet, is keyed by cluster and takes no item lease (ENGINE-UNBLOCK-1)", () => {
   const admin = digestKind("admin-opportunity-findings")!;
-  assert.deepEqual(Object.values(admin.lensOfMethod ?? {}).sort(), ["capital_offtake_grant", "penalty_abatement_crossover", "supply_demand_bottleneck"]);
-  assert.deepEqual(admin.conditionalMethods, ["pattern_velocity_burst", "pattern_cross_modal"]);
+  assert.deepEqual([admin.lensOfMethod, admin.conditionalMethods, admin.memberLens, admin.needsPackets, admin.idKey, admin.leaseKey], [undefined, undefined, undefined, false, "cluster_id", null]);
 });

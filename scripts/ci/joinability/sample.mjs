@@ -20,7 +20,7 @@ const top = (counts, n = 10) => [...counts].sort((a, b) => b[1] - a[1] || String
 const finding = (key, owner, msg, extra = {}) => ({ key, owner, msg, ...extra });
 
 /** The columns of a fact table a detector reads to place a row in time, quantity, tier or source (facts.json, never a typed list). */
-export const keyColumns = (spec, entityColumns = []) => [...new Set([...[spec].flat().flatMap((x) => [x.at, x.due, x.dueYear, x.dueMonthsAfterAt, x.qty?.column, x.qty?.unitColumn, x.qty?.figure, x.source, x.tier, x.trl, x.group, x.capture, x.resolved, x.from, x.until]), ...entityColumns].filter(Boolean))];
+export const keyColumns = (spec, entityColumns = []) => [...new Set([...[spec].flat().flatMap((x) => [x.at, ...[x.due ?? []].flat(), x.dueYear, x.dueMonthsAfterAt, x.qty?.column, x.qty?.unitColumn, x.qty?.figure, x.source, x.tier, x.trl, x.group, x.capture, x.resolved, x.from, x.until]), ...entityColumns].filter(Boolean))];
 
 /** The columns of a table that hold an entity id: the `entity` maps of couplings.json and the table's own entityColumns entry. */
 export const entityColumnsOf = (w, t) => [...new Set([...(w.couplings.columns.find((c) => c.table === t)?.maps ?? []).filter((m) => m.by === "entity" && m.column).map((m) => m.column), ...(w.cfg.entityColumns?.[t] ? [w.cfg.entityColumns[t]] : [])])];

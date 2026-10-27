@@ -21,8 +21,16 @@ export interface InputRef {
   surface?: string;
   /** The day a claim counts from (its item's added date), which the claim row does not hold. */
   at?: string;
+  /** How precise the evidence row's due date is when less than a day (month or year): a ratchet's year-precision mandate is not a day. */
+  due_precision?: "month" | "year";
   /** The counts a capped pattern's summary edge carries. */
   summary?: Record<string, number>;
+  /** What a pattern's recompute and its reader need of an evidence row beyond its columns: the role it was read as, the column that supplied its due date, its technical maturity, the class and modes of its entities, and what the detector states about the finding (the condition that fired, a unit or maturity gap, the window). */
+  role?: string;
+  dueSource?: string;
+  trl?: number;
+  onto?: Record<string, { class: string; modes: string[] }>;
+  marker?: Record<string, string | number | boolean>;
 }
 
 /** A derived value as a figure component or the gate sees it. */

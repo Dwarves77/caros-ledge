@@ -9,12 +9,11 @@ import { normaliseMode } from "@/core/contracts/vocabularies";
 import { hostOf } from "@/core/shared/url";
 
 import aliases from "./data/jurisdiction-aliases.json";
-import { KINDS, type EntityKind } from "./kinds";
+import { isKindToken, type EntityKind } from "./kinds";
 
 export { hostOf as hostFromUrl };
 export type { EntityKind };
 
-const KIND_SET: ReadonlySet<string> = new Set(KINDS);
 const HEX_LEN = 16;
 const sha256Hex16 = (payload: string): string => createHash("sha256").update(payload, "utf8").digest("hex").slice(0, HEX_LEN);
 
@@ -40,7 +39,7 @@ export function corridorSeed(input: { origin?: unknown; dest?: unknown; mode?: u
 
 /** The normalised seed per kind (what is hashed). */
 function normalizeSeed(kind: EntityKind, seed: unknown): string {
-  if (!KIND_SET.has(kind)) throw new Error(`entity-id: unknown entity_kind "${kind}", must be one of ${KINDS.join(", ")}`);
+  if (!isKindToken(kind)) throw new Error(`entity-id: entity_kind "${kind}" is not a snake_case token`);
   if (kind === "corridor") return seed && typeof seed === "object" ? corridorSeed(seed as Record<string, unknown>) : String(seed ?? "").trim();
   if (kind === "jurisdiction" || kind === "instrument") return String(seed ?? "").trim().toUpperCase();
   if (kind === "organisation") {
