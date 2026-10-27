@@ -32,5 +32,6 @@
   { "id": "no-section-sign", "severity": "residue", "applies_to": ["regulatory_fact_document", "market_signal_brief", "research_summary", "operations_profile", "technology_profile"], "scope": "prose" },
   { "id": "structural-controls", "severity": "residue", "applies_to": ["regulatory_fact_document", "market_signal_brief", "research_summary", "operations_profile", "technology_profile"], "scope": "prose" },
   { "id": "forward-events-covered", "severity": "residue", "applies_to": ["regulatory_fact_document", "market_signal_brief", "research_summary", "operations_profile", "technology_profile"], "scope": "prose" },
-  { "id": "do-now-restates-gap", "severity": "residue", "applies_to": ["regulatory_fact_document", "market_signal_brief", "research_summary", "operations_profile", "technology_profile"], "scope": "prose" }
+  { "id": "do-now-restates-gap", "severity": "residue", "applies_to": ["regulatory_fact_document", "market_signal_brief", "research_summary", "operations_profile", "technology_profile"], "scope": "prose" },
+  { "id": "section-8-legal-callout", "severity": "residue", "applies_to": ["regulatory_fact_document"], "scope": "prose" }
 ]

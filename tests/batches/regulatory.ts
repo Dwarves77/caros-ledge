@@ -13,7 +13,7 @@ const HEADS = ["Purpose and Scope of This Document", "What This Regulation Is an
 const filler = "The reporting calendar belongs in this quarter's planning for every operator concerned, so the owner of the duty should be named early. ";
 /** `newSources` is the rows of a "New Sources Identified" table a brief may carry: the sources it cites beyond the pool. */
 export function regulatoryBody(newSources = ""): string {
-  const req = [A1, A2, A3, "The applicability of the Regulation follows from Article 1, and the due date of the annual report from Article 2.", "*Operational implication:* each operating unit needs an owner for the annual report.", "No phase-in is stated in Articles 1 to 4.", "No exceptions are stated in Articles 1 to 4.", "Obligations surveyed: 3; workspace-adjacent: 3; extracted as FACT: 3."].join("\n\n");
+  const req = [A1, A2, A3, "The applicability of the Regulation follows from Article 1, and the due date of the annual report from Article 2.", "*Operational implication:* each operating unit needs an owner for the annual report.", "*Legal Confirmation Required:* whether the annual report applies to a given operator is for counsel.", "No phase-in is stated in Articles 1 to 4.", "No exceptions are stated in Articles 1 to 4.", "Obligations surveyed: 3; workspace-adjacent: 3; extracted as FACT: 3."].join("\n\n");
   return HEADS.map((h, i) => `## ${i + 1}. ${h}\n\n${i === 7 ? req : i === 13 ? `- 1 January 2027: ${A4}` : i === 14 ? `- EUR-Lex: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32023R9999${newSources ? `
 
 ### New Sources Identified
