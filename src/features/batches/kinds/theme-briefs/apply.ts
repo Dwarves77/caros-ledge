@@ -14,15 +14,21 @@ import { applyThemeBrief } from "@/features/flywheel";
 import { rowsByIds } from "@/core/db";
 import { review, secondReaderBlock, singleSourceReason } from "@/core/digest/review";
 import { surfaceOf } from "@/core/routing";
+import { readPool } from "@/core/grounding";
 
 import { candidateMenu, memberSeed, menuBlock, packetSeed } from "../item-briefs/candidates";
 import { applyEntries, isObj, type ApplyOpts, type BatchDeps, type BatchExport, type EntrySpec } from "../../kit/session-batch";
+import { activeEntityIds, connectionEntityIds, heldWriteback, verifyWriteback, writebackHeld, writeWriteback, type HeldWriteback, type WritebackLive, type WritebackPlan } from "../../kit/writeback";
 
 /** The batch name a single payload is applied under (the one-entry batch it becomes). */
 const SINGLE_BATCH = "theme-briefs-single-payload";
 const DEFAULT_CHAR_BUDGET = 120_000;
-interface ThemeLive { ctx: ThemeContext; themes: Map<string, ThemeRow>; /** The surface each live member sits on (the no-single-source test reads it). */ surfaces: Map<string, string>; stored: Map<string, { member_hash: string; generated_by: string; brief_md: string }> }
-interface Plan { memberIds: string[]; brief: ValidThemeBrief }
+interface ThemeLive { wb: WbLive; ctx: ThemeContext; themes: Map<string, ThemeRow>; /** The surface each live member sits on (the no-single-source test reads it). */ surfaces: Map<string, string>; stored: Map<string, { member_hash: string; generated_by: string; brief_md: string }> }
+/** The write-back material of the batch (ENGINE-UNBLOCK-1, operator engine spec 2026-10-26): the entities that exist, the member captures a connection may quote, and the signposts an earlier apply already registered. */
+interface WbLive { now: Date; entities: ReadonlyMap<string, string>; captures: Map<string, Map<string, string>>; held: HeldWriteback }
+interface Plan { memberIds: string[]; brief: ValidThemeBrief; wb: WritebackPlan; briefDone: boolean }
+const WB_KEYS = ["signposts", "coverage_gaps", "connections"] as const;
+const hasWb = (e: unknown): boolean => isObj(e) && WB_KEYS.some((k) => e[k] !== undefined);
 
 const themeBriefsSpec: EntrySpec<ThemeLive, Plan> = {
   kind: "theme-briefs",
@@ -34,7 +40,11 @@ const themeBriefsSpec: EntrySpec<ThemeLive, Plan> = {
     const themes = await loadThemes(deps.sb, ids);
     const material = await loadThemeMaterial(deps.sb, themes);
     const stored = await rowsByIds<{ theme_id: string; member_hash: string; generated_by: string; brief_md: string }>(deps.sb, "theme_briefs", "theme_id, member_hash, generated_by, brief_md", ids, "theme_id", "theme_id");
-    return { ctx: buildValidationContext(themes, material, computeThemeGaps(themes, material)), themes: new Map(themes.map((t) => [t.id, t])), surfaces: new Map(material.items.map((i) => [i.id, surfaceOf(i.item_type, i.domain)])), stored: new Map(stored.map((s) => [s.theme_id, s])) };
+    const wbEntries = (file.entries as unknown[]).filter(hasWb) as Record<string, unknown>[];
+    const captures = new Map<string, Map<string, string>>();
+    for (const e of wbEntries) if (e.connections !== undefined && typeof e.theme_id === "string") captures.set(e.theme_id, new Map((await Promise.all((themes.find((t) => t.id === e.theme_id)?.member_ids ?? []).map((id) => readPool(deps.sb, id)))).flat().map((c) => [c.id, c.text])));
+    const wb: WbLive = { now: deps.now(), entities: await activeEntityIds(deps.sb, wbEntries.flatMap(connectionEntityIds)), captures, held: await heldWriteback(deps.sb, "theme-briefs", wbEntries) };
+    return { wb, ctx: buildValidationContext(themes, material, computeThemeGaps(themes, material)), themes: new Map(themes.map((t) => [t.id, t])), surfaces: new Map(material.items.map((i) => [i.id, surfaceOf(i.item_type, i.domain)])), stored: new Map(stored.map((s) => [s.theme_id, s])) };
   },
   entry(e, i, live) {
     const v = parseThemeBriefEntry(e, i, live.ctx);
@@ -45,14 +55,25 @@ const themeBriefsSpec: EntrySpec<ThemeLive, Plan> = {
     const why = [...review("theme-briefs", e as Record<string, unknown>).reasons.map((r) => `second reader: ${r}`), ...[singleSourceReason(cited)].flatMap((r) => r ?? [])];
     if (why.length) return { errors: [], residue: why.map((r) => `theme ${id}: ${r}`) };
     const members = (live.themes.get(id)?.member_ids ?? []).slice().sort();
+    const wbLive: WritebackLive = { captures: live.wb.captures.get(id) ?? new Map(), ids: live.wb.entities, now: live.wb.now, itemIds: members };
+    const wb = verifyWriteback(e as Record<string, unknown>, `theme ${id}`, wbLive);
+    if (wb.errors.length) return { errors: wb.errors };
     const prior = live.stored.get(id);
-    return prior && prior.member_hash === computeMemberHash(members) && prior.brief_md === v.brief.brief_md ? { errors: [], done: true } : { errors: [], plan: { memberIds: members, brief: v.brief } };
+    const briefDone = !!prior && prior.member_hash === computeMemberHash(members) && prior.brief_md === v.brief.brief_md;
+    return briefDone && writebackHeld(wb.plan, live.wb.held) ? { errors: [], done: true } : { errors: [], plan: { memberIds: members, brief: v.brief, wb: wb.plan, briefDone } };
   },
   residueReview: (e, key) => (key ? { subjectId: key, score: review("theme-briefs", e).score, reviewedBy: review("theme-briefs", e).reviewed_by ?? "none" } : null),
   async write(deps, _live, item, batch) {
-    const r = await applyThemeBrief({ sb: deps.sb, now: deps.now }, { brief: item.plan.brief, batch, dry: false });
-    if (r.outcome === "failed" || !r.counts.written) throw new Error(r.notes.join("; ") || "the seam wrote nothing");
-    return { ref: item.plan.brief.theme_id, counts: { briefs_written: 1 } };
+    const counts: Record<string, number> = { briefs_written: 0 };
+    if (!item.plan.briefDone) {
+      const r = await applyThemeBrief({ sb: deps.sb, now: deps.now }, { brief: item.plan.brief, batch, dry: false });
+      if (r.outcome === "failed" || !r.counts.written) throw new Error(r.notes.join("; ") || "the seam wrote nothing");
+      counts.briefs_written = 1;
+    }
+    // The write-back (operator engine spec 2026-10-26): signposts, new connections and the coverage gaps queued for the hunt, written after the brief they were raised by.
+    const wb = await writeWriteback(deps, item.plan.wb, { kind: "theme-briefs", batch, subject: item.plan.brief.theme_id, findingId: null, citedItemIds: item.plan.memberIds, inputs: item.plan.memberIds.map((pk) => ({ table: "intelligence_items", pk })) });
+    for (const [k, n] of Object.entries(wb.counts)) counts[k] = n;
+    return { ref: item.plan.brief.theme_id, counts, notes: wb.notes };
   },
   async readBack(deps, live, written, batch) {
     const stored = new Map((await rowsByIds<{ theme_id: string; member_hash: string; generated_by: string }>(deps.sb, "theme_briefs", "theme_id, member_hash, generated_by", written.map((w) => w.ref), "theme_id", "theme_id")).map((r) => [r.theme_id, r]));

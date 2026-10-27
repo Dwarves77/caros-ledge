@@ -29,3 +29,7 @@ A single brief is also accepted as `batch.content`: `{ theme_id, title, brief_md
 ## What the apply does
 
 The seam checks the hash again and writes the `theme_briefs` row (one row per theme) with `sections`, `claims` and the sorted member ids; the stored hash and batch name are read back. A re-apply writes nothing new. A replaced brief is superseded by the member hash; no prior-row copy is kept.
+
+## Write-back (operator engine spec 2026-10-26)
+
+A theme entry may also carry `signposts`, `coverage_gaps` and `connections`, with the same shape and the same verification as in [admin-opportunity-findings](admin-opportunity-findings.md); one shared module verifies and writes both. A connection quote must be verbatim in a capture of one of the theme member items; a signpost cites the theme member items. A failing element refuses the entry and names the element. Coverage gaps are queued as find-source needs for the hunt, deduplicated, never fetched.

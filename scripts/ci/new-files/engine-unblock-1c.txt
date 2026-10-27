@@ -1,0 +1,4 @@
+# path | reason (files with no "Ported from" header)
+src/features/batches/kit/writeback.ts | new in ENGINE-UNBLOCK-1 lane C: the signpost, coverage-gap and connection write-back every analysis kind shares (operator engine spec 2026-10-26); no old counterpart
+src/features/batches/kinds/admin-opportunity-findings/angles.ts | new in ENGINE-UNBLOCK-1 lane C: the six angles as the pattern kinds a reader emits; no old counterpart
+src/core/flywheel/clusters.ts | STUB of lane B's file (ENGINE-UNBLOCK-1 lane C): carries lane B's interface so lane C typechecks; dropped on combine

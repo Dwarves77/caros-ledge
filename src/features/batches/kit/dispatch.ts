@@ -34,7 +34,7 @@ export type BatchKindId = (typeof BATCH_KINDS)[number];
 const isBatchKind = (k: string): k is BatchKindId => (BATCH_KINDS as readonly string[]).includes(k);
 
 /** The key that names an item in a kind's export (the drain's `idKey`). */
-const ID_KEY: Readonly<Record<BatchKindId, string>> = { "item-briefs": "id", "admin-opportunity-findings": "pattern_value_id", "question-answers": "subject_ref", "needs-search": "need_id", "forward-events": "id", "theme-briefs": "theme_id", "screen-verdicts": "census_id", "ledger-verdicts": "candidate_id", "host-verdicts": "host" };
+const ID_KEY: Readonly<Record<BatchKindId, string>> = { "item-briefs": "id", "admin-opportunity-findings": "cluster_id", "question-answers": "subject_ref", "needs-search": "need_id", "forward-events": "id", "theme-briefs": "theme_id", "screen-verdicts": "census_id", "ledger-verdicts": "candidate_id", "host-verdicts": "host" };
 const DEFAULT_PART_CHARS = 3_000_000;
 export interface ExportInput { outDir?: string; limit?: number; charBudget?: number; ids?: readonly string[]; mode?: string; runId?: string; repoRoot?: string }
 export interface ExportOpts { limit: number; mode: string; ids?: readonly string[]; charBudget?: number }
@@ -43,7 +43,7 @@ const exporterOf = (kind: BatchKindId, deps: BatchDeps): ((o: ExportOpts) => Pro
   const budget = (o: ExportOpts) => (o.charBudget ? { charBudget: o.charBudget } : {});
   switch (kind) {
     case "item-briefs": return itemBriefsExporter(deps.sb, deps.now, deps.packets);
-    case "admin-opportunity-findings": return adminFindingsExporter(deps.sb, deps.now, deps.packets);
+    case "admin-opportunity-findings": return adminFindingsExporter(deps.sb, deps.now, deps.assembleClusters ? { assemble: deps.assembleClusters } : {});
     case "question-answers": return (o) => questionExporter(deps.sb, budget(o))(o);
     case "needs-search": return needsExporter(deps.sb);
     case "forward-events": return forwardEventsExporter(deps.sb, deps.now);

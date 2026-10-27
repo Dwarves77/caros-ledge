@@ -8,6 +8,8 @@ import { runPlanDrain } from "../../scripts/digest/plan-drain.mjs";
 import { noPackets, NOW } from "../batches/world.ts";
 import { hostWorld, qaWorld, themeWorld, THEME } from "../batches/worlds.ts";
 
+import { cluster } from "./admin-world.ts";
+
 test("a dry plan over five pending items counts them per kind, takes no lease, writes no file and opens no PR", async () => {
   const w = themeWorld();
   w.db.seed("system_state", [{ id: true, global_processing_paused: false, judgement_drain: "on" }]);
@@ -21,7 +23,7 @@ test("a dry plan over five pending items counts them per kind, takes no lease, w
   const code = await runPlanDrain(["--dry", "--run-id", "dry-1"], {
     now: () => NOW,
     makeDb: () => db,
-    buildExporters: async () => drainExporters({ ...w.deps, packets: noPackets }),
+    buildExporters: async () => drainExporters({ ...w.deps, packets: noPackets, assembleClusters: async () => ({ clusters: [cluster()], truncated: 0 }) }),
     listBatchDir: () => [],
     planPath: (id: string) => `/scratch/${id}.json`,
     writePlan: (path: string) => void written.push(path),
@@ -35,7 +37,7 @@ test("a dry plan over five pending items counts them per kind, takes no lease, w
   assert.match(by("theme-briefs"), /exported 1, planned 1 in 1 batch\(es\), would lease 1/);
   assert.match(by("question-answers"), /exported 1, planned 1 in 1 batch\(es\), would lease 1/);
   assert.match(by("host-verdicts"), /exported 1, planned 1 in 1 batch\(es\), would lease 0/);
-  assert.match(by("admin-opportunity-findings"), /exported 1, planned 1 in 1 batch\(es\), would lease 1/);
+  assert.match(by("admin-opportunity-findings"), /exported 1, planned 1 in 1 batch\(es\), would lease 0/);
   assert.ok(lines.some((l) => l.includes(`item-briefs-001.json: `)) && THEME);
   assert.deepEqual([written.length, rpcs.filter((r) => /mutation_lease/.test(r)).length], [0, 0]);
   assert.ok(!lines.some((l) => /export error/.test(l)), "only the kinds with an exporter are planned");

@@ -162,8 +162,3 @@ export async function readPackets(sb: Db, ids: readonly string[]): Promise<Packe
   const missing = ids.filter((i) => !served.has(i));
   return { packets: out, marker: missing.length || ineligible ? `packets: ${missing.length} of ${ids.length} ids have no live pattern packet${ineligible ? `; ${ineligible} P1 pattern(s) held back (undated or no reader-asserted edge)` : ""}` : null };
 }
-
-/** The ids a brief may cite from a packet (INV-CN2-4): the packet, its pattern, its member rows (items included), its relations and its signposts. */
-export const citableIds = (p: Packet): Set<string> => new Set([p.id, ...(p.pattern ? [p.pattern.value_id] : []), ...p.patterns, ...p.members.map((m) => m.id), ...p.relations.map((r) => r.id), ...p.signposts.map((s) => s.entity_id)]);
-/** The cited ids a packet does not contain: the kind's validator refuses an entry that cites any. */
-export const uncitedIds = (p: Packet, cited: readonly string[]): string[] => cited.filter((c) => !citableIds(p).has(c));

@@ -7,6 +7,7 @@
 // (a structural defect refuses the whole file; a defective entry is refused alone, with its reasons kept as residue; an entry already applied is "already applied", never a refusal), then written, read back, and its
 // downstream is called in the same run (rule 17). Nothing here calls a model: the session is the author. A runtime entry never exits the process and reads the clock only through `deps.now`.
 import type { Db } from "@/core/db";
+import type { Cluster } from "@/core/flywheel/clusters";
 import type { PacketReader } from "@/core/digest/packets-client";
 import { poolHash, readPool } from "@/core/grounding";
 import type { HostVerdictRef } from "@/core/sources";
@@ -33,6 +34,8 @@ export interface BatchDeps {
   locate?: Locate | null | undefined;
   /** The pattern packets (CONNECT-2 PR B's packets.ts, read through the packets door); a test or the turn supplies them, the default is the door itself. */
   packets?: PacketReader | undefined;
+  /** The cluster assembler of the admin kind (core/flywheel/clusters); a test supplies its own, the default is the module itself. */
+  assembleClusters?: ((db: Db, o: { limit: number; minSurfaces?: number; maxRows?: number }) => Promise<{ clusters: Cluster[]; truncated: number }>) | undefined;
 }
 /** The capture's own slice of the words of a quote (in any run of whitespace), or null. */
 export type Locate = (capture: string, quote: string) => string | null;

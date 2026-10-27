@@ -1,33 +1,51 @@
 # admin-opportunity-findings: the capital and bottleneck radar, for platform admins only
 
-A finding says where capital is legally or physically forced to flow next, months before the broader market, from a pattern the machine found across tables. The export is one bundle per derived pattern (a P2, P3 or P5 pattern, or a P1 or P4 pattern with a capital or capacity entity as a member), grouped by lens, each with its pattern packet: every member row with its typed columns, every verbatim claim span, the relations traversed, the evidence rows and the signposts already open. You may cite nothing outside the packet. The finding is stored behind the platform-admin gate and no customer route reads it.
+The live database graph is the ontology (operator rulings 2026-10-26). The export is one bundle per CLUSTER: a multi-angle neighbourhood of stored rows from the four surfaces, tied by a shared entity, relation hops, a scope window or a threshold. You define the patterns and the analysis from it. A mechanical detector no longer decides what you see; a current detector pattern whose evidence rows overlap the cluster rides in the bundle as one more input. Code verifies every row, entity, figure, date and quote you cite against the stored records.
 
-**Status of this guide.** The batch below is what the author writes. The validator refuses a row outside the packet and a span the row does not offer; the no-single-source test and the second reader (`review`: `{ reviewed_by, judges }`, every judge that applies answered pass or fail with evidence) run before the apply writes the finding, registers its signposts and supersedes the pattern's earlier finding. The bundle carries `candidate_entities`, the menu of entities the packet's rows are filed under.
+## The bundle
 
-## The three lenses (the export groups by these; HOW-TO-LOOK point 5)
+- `cluster_id`, `anchor_entity_ids`, `hops`, `surfaces`, `angles`, `axes` (what joined the rows: `shared_entity`, `relation_hops`, `scope_window`, `threshold`).
+- `rows[]`: `ref` (`table:pk`, the form a citation takes), `surface`, `entity_ids`, `date`, `figure` ({ value, unit } as stored), `quote_capture_id` and `quote_text` (the verbatim text of the row's capture, cut at `truncation.quote_chars_per_row`; `quote_truncated` says when). `truncation` states rows omitted by the cap.
+- `detector_patterns[]`: a stored pattern over overlapping rows; a finding may cite one by `pattern_value_id`.
+- The summary lists the lens and angle definitions, the source classes, the windows and the second reader's judges. A cluster already answered by a current finding is not exported, nor one waiting on a coverage gap it raised that is still open.
 
-- `supply_demand_bottleneck`: a locked statutory demand ratchet against physical capacity (feedstock, grid, fleet, port) that cannot meet it on the date.
-- `penalty_abatement_crossover`: the statutory penalty per tonne crossing or nearing the abatement cost of a technology or fuel at TRL 8 or above.
-- `capital_offtake_grant`: filings, offtakes, capex and public grants that show where capital is forced to flow next.
-
-`window` is the horizon the finding addresses, one of `0-6m`, `6-18m`, `18-36m`; state the horizon in the finding.
-
-## Entry
+## Entry (one per cluster)
 
 ```json
 { "batch": "admin-opportunity-findings-001", "generated_at": "<ISO>", "authored_by": "session-lane",
-  "entries": [ { "pattern_value_id": "<the bundle's id>", "lens": "<one of the three>", "window": "6-18m", "title": "<at most 160 characters>",
-    "sourced_finding_md": "<only what the packet's rows and spans state, each statement ending with its [table:row id]>",
-    "inferences": [ { "text": "<a projection or judgement>", "status_token": "HYPOTHESIS", "basis": ["<packet row ids>"] } ],
-    "signposts": [ { "claim_text": "<what would be seen>", "falsification_condition": "<what would show the finding wrong>", "by": "<date>" } ],
-    "claim_provenance": [ { "row": "<table:id from the packet>", "span": "<verbatim from the packet>" } ] } ] }
+  "entries": [ { "cluster_id": "<the bundle's id>",
+    "patterns": [ { "ref": "p1", "kind": "<an angle token>", "rows_cited": [ { "table": "<t>", "pk": "<pk>" } ], "entity_ids": ["<optional, existing>"],
+      "reasoning": [ { "cause": "<text>", "effect": "<text>", "row": { "table": "<t>", "pk": "<pk>" }, "quote": { "capture_id": "<the row's quote_capture_id>", "text": "<verbatim>" }, "figure": { "value": 0, "unit": "<as stored>" }, "date": "<as stored>" } ] } ],
+    "findings": [ { "pattern_ref": "p1", "lens": "<one of three>", "window": "6-18m", "title": "<at most 160 characters>",
+      "sourced_finding_md": "<only what the rows state, each statement ending with its [table:pk]>",
+      "inferences": [ { "text": "<projection>", "status_token": "HYPOTHESIS", "basis": ["<table:pk>"] } ],
+      "claim_provenance": [ { "row": "<table:pk>", "span": "<verbatim in that row's capture>" } ] } ],
+    "tagged_inferences": [ { "text": "<a judgement across the cluster>", "status_token": "HYPOTHESIS", "basis": ["<table:pk>"] } ],
+    "signposts": [ { "claim_text": "<what the pattern predicts>", "observable": "<one data point>", "source_class": "<class>", "confirms_if": "<result>", "falsified_if": "<a different result>", "by": "<future ISO date>" } ],
+    "coverage_gaps": [ { "missing_input": "<the datum or instrument absent from the rows>", "source_class": "<class>" } ],
+    "connections": [ { "from_entity_id": "<existing>", "to_entity_id": "<existing>", "relation": "<couplings relation>", "reason_token": "<snake_case>", "quote": { "capture_id": "<id>", "text": "<verbatim>" } } ],
+    "review": { "reviewed_by": "<id>", "judges": { "<Jnn>": { "pass": true, "evidence": "<10 characters or more>" } } } } ] }
 ```
 
-## Rules
+- Pattern `kind` is one of `mandate_vs_capacity`, `penalty_vs_abatement`, `cross_modal_competition`, `regulatory_stacking`, `lead_lag`, `maturity_vs_statute`. Any angle may be used on any cluster; `angles` in the bundle is a hint, not a gate.
+- The reasoning is cause and effect at every link; every row in `rows_cited` is quoted by at least one link, and every link cites a row of `rows_cited` and a quote from that row's own capture. `figure` and `date` on a link must equal the stored value.
+- `source_class` is an institution class of the host class table (`legalPrimary`, `legalPublisherAllow`, `govIntergov`, `intergovAnalysis`, `verifierCab`, `academicTld`, `associationAllow`, `standardsBodyAllow`, `lawfirm`, `news`, `analysis`, `big4Advisory`).
+- Sourced finding versus tagged inference: a statement a row supports goes in `sourced_finding_md` with its `[table:pk]`; anything else is an inference tagged `CONFIRMED`, `HYPOTHESIS` or `REFUTED` and spoken as one. A projection is never written as a fact.
+- The three lenses (the finding's `lens`): `supply_demand_bottleneck`, `penalty_abatement_crossover`, `capital_offtake_grant`. `window` is `0-6m`, `6-18m` or `18-36m`.
+- A cluster you cannot read is answered with `coverage_gaps` alone: the missing input and the class of source that would hold it.
 
-- Sourced finding versus tagged inference: a statement a packet row or span supports goes in `sourced_finding_md` with its row id. Anything else is an inference, tagged `CONFIRMED`, `HYPOTHESIS` or `REFUTED` (the inference record vocabulary) and spoken as one; a projection is never written as a fact (rule-no-speculation-as-fact).
-- The no-single-source test (HOW-TO-LOOK point 3): the finding cites rows from at least two tables or surfaces, or it is residue with the reason.
-- Every finding carries at least one falsifiable signpost: what would be seen, by when, and what would refute it. Generic advice ("monitor the market", "consider hedging") is not a finding.
-- An id outside the packet is refused. A figure, date or unit not verbatim in a packet span is not written. Where the packet lacks an input, say which input and stop; do not fill it.
-- Cause and effect at every link, each link sourced (rule-cause-and-effect-chain). Legal readings are labelled for counsel's confirmation (rule-no-regulatory-inferences-as-fact).
-- Admin audience: the scoring recipe may be named, but nothing here is copied to a customer surface (rule-internal-vs-external-surface).
+## What is verified (a failure refuses the entry and names the element)
+
+A cited table and pk must be a row of the cluster and the table an admitted evidence table; an `entity_id` must exist and be active in `entities`; a `figure` or `date` must equal the stored value; a quote must be verbatim in the capture of the row it cites; a finding cites only cluster rows; a signpost's `by` must be in the future; a connection goes through the same validator as an item brief's (a relation of couplings.json, existing entities, a verbatim quote). The no-single-source test (rows from at least two tables and two surfaces) and the second reader make an entry residue with the reason, not a refusal.
+
+## What is stored
+
+- Each pattern: a `derived_values` row, method `pattern_ai_<angle>`, method_version `reader-synthesis@1.0.0`, lifecycle `emerging` (the current state), the cited rows as evidence edges, each carrying its reasoning link and quote in the input's `basis`. A pattern of the same cluster and angle it replaces is superseded.
+- Findings: `admin_opportunity_findings` behind the platform-admin gate; an earlier finding of a replaced pattern is superseded.
+- Signposts and tagged inferences: inference records (a signpost's ids in `admin_opportunity_findings.signpost_inference_ids`).
+- Coverage gaps: queued as an open `integrity_flags` row of `holdings-need:synthesis-gap` with a `find-source` action carrying the source class, the cluster and the finding. The needs-search export reads it as a need; nothing is fetched (build mode holds the cadence off). A gap already queued is not queued twice; it gains the new raiser.
+- Connections: `entity_relations`, through the item briefs' emission writer.
+
+## The second reader
+
+Judges that apply to this kind: J04 four-lenses-served, J05 cause-effect-sourced, J06 no-filler-no-invented-subsection, J07 no-indirect-identification, J08 analysis-supported-by-facts, J12 no-causation-from-correlation, J15 no-invented-party-or-term, J16 forward-statement-not-stale, J17 context-and-no-vacuum, J23 cross-surface-direction, J24 claim-scope-not-widened (prompts in `src/core/digest/data/judges.json`). J25 signpost-falsifiable-observable and J26 coverage-gap-names-missing-input are PROPOSED there (`proposed: true`): they are not required of any entry until their true positive and true negative rates are measured and the flag is removed.
