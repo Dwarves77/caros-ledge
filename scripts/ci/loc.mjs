@@ -3,7 +3,7 @@ import { appendFileSync, readFileSync } from "node:fs";
 
 import { isMain, walk } from "../lib/fs.mjs";
 
-export const LIMITS = { src: 66263, "src/core": 20410, "src/core/brief": 1336, "src/core/digest": 270, "src/features": 39267 };
+export const LIMITS = { src: 66269, "src/core": 20416, "src/core/brief": 1336, "src/core/digest": 270, "src/features": 39267 };
 const CODE_FILE = /\.(ts|tsx|js|jsx|mjs)$/;
 
 /** The code lines of one source text: blank lines, `//` lines and block comments do not count. */

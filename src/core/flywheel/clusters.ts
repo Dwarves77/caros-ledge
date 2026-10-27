@@ -115,7 +115,6 @@ export async function assembleClusters(db: Db, o: { limit: number; minSurfaces?:
     const held = drafts.get(id);
     if (held) {
       unique.forEach((f, k) => held.facts.set(k, f));
-      anchors.forEach((a) => held.anchors.add(a));
       held.axes.add(axis);
       held.hops = Math.min(held.hops, hops) as 0 | 1 | 2;
       for (const r of relations) held.relations.add(r);
