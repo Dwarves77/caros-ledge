@@ -66,7 +66,7 @@ export function validateSynthesisEntry(e: unknown, i: number, live: SynthLive): 
   const at = (where: string, m: string): void => void errors.push(`${tag} ${where}: ${m}`);
   if (!nonEmpty(e.cluster_id)) return { errors: [`entries[${i}]: cluster_id must be a non-empty string`] };
   const cluster = live.clusters.get(e.cluster_id);
-  if (!cluster) return { errors: [`${tag}: this cluster does not assemble from the stored records now (it was never exported, or its rows changed); re-export and re-author`] };
+  if (!cluster) return { errors: [`${tag}: this entry is not loaded: the cluster has no cited row that holds now; re-export and re-author`] };
   const rows = new Map<string, ClusterRow>(cluster.rows.map((r) => [rowKey(r), r]));
   const quoteOf = (v: unknown, row: ClusterRow, where: string): { capture_id: string; text: string } | null => {
     if (!isObj(v) || !nonEmpty(v.capture_id) || !nonEmpty(v.text)) return (at(where, "quote must be { capture_id, text }"), null);
@@ -79,7 +79,7 @@ export function validateSynthesisEntry(e: unknown, i: number, live: SynthLive): 
   const rowOf = (v: unknown, where: string): ClusterRow | null => {
     const key = isObj(v) && typeof v.table === "string" && typeof v.pk === "string" ? rowKey({ table: v.table, pk: v.pk }) : null;
     const r = key ? rows.get(key) : undefined;
-    if (!r) return (at(where, `${key ?? JSON.stringify(v)} is not a row of the cluster: its table and pk do not exist among the stored records this cluster was assembled from`), null);
+    if (!r) return (at(where, `${key ?? JSON.stringify(v)} is not a row of the cluster: its table and pk do not exist among the stored records now: the row no longer exists`), null);
     if (!(EDGE_TABLES as readonly string[]).includes(r.table)) return (at(where, `table ${r.table} is not an admitted evidence table (migration 0134)`), null);
     return r;
   };

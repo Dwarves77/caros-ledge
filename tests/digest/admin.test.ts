@@ -92,7 +92,7 @@ test("an entity id that does not exist, a link without cause and effect, a cited
   assert.match(notes(await apply(w, [adminEntry({ signposts: [] })])), /signposts: a pattern or a finding carries at least one signpost/);
   assert.match(notes(await apply(w, [adminEntry({ coverage_gaps: [{ missing_input: "x", source_class: "nonsense" }] })])), /coverage_gaps\[0\]: source_class "nonsense"/);
   assert.match(notes(await apply(w, [adminEntry({ patterns: [{ ...(adminEntry().patterns as object[])[0], kind: "guess" }] })])), /patterns\[0\]: must be \{ ref, kind/);
-  assert.match(notes(await apply(adminWorld([]), [adminEntry()])), /this cluster does not assemble from the stored records now/);
+  assert.match(notes(await apply(adminWorld([]), [adminEntry()])), /the row no longer exists/);
   nothingWritten(w);
 });
 
@@ -204,4 +204,19 @@ test("LOCK-NO-BLOAT-1: a signpost's figure is held to the cited rows even when t
   const sign = (text: string) => adminEntry({ patterns: [], findings: [], tagged_inferences: [], connections: [], signposts: [{ claim_text: text, observable: "the published index", source_class: "govIntergov", confirms_if: "it rises", falsified_if: "it falls", by: "2028-09-01" }], coverage_gaps: [{ missing_input: "the feedstock series", source_class: "govIntergov" }] });
   assert.match(notes(await apply(w, [sign("The price passes 9999 EUR/t")])), /grounding pre-check: figure .*9999/);
   assert.equal((await apply(w, [sign("The price stays near the stated level")], true)).counts.valid, 1, "a signpost without a figure stays valid");
+});
+
+test("ENGINE-FIX-2: an entry is verified by its cited rows, not by re-assembling its exact cluster: a finding whose cluster id has changed applies while every cited row still holds; one citing a deleted row is refused by name", async () => {
+  const moved = { ...cluster(), id: "7978ef5747153ebc" };
+  const w = adminWorld([moved]);
+  const r = await apply(w, [adminEntry()]);
+  assert.equal(r.counts.applied, 1, notes(r));
+  assert.equal(patterns(w).length, 1);
+  const gone = adminWorld([{ ...cluster(), rows: cluster().rows.filter((x) => x.table !== ROWS.grid.table) }]);
+  const bad = await apply(gone, [adminEntry()]);
+  assert.match(notes(bad), new RegExp(`${ref(ROWS.grid)} is not a row of the cluster: .*the row no longer exists`));
+  nothingWritten(gone);
+  const changed = adminWorld([{ ...cluster(), rows: cluster().rows.map((x) => (x.table === ROWS.grid.table ? { ...x, figure: { value: 40, unit: "months" } } : x)) }]);
+  assert.match(notes(await apply(changed, [adminEntry()])), /figure .*differs from the stored value of grid_connection_queues/);
+  nothingWritten(changed);
 });

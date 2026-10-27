@@ -3,7 +3,7 @@
 // migration 0122 admits no customer read, the apply writes as service_role; an earlier finding of a replaced pattern is superseded), then the shared write-back: coverage gaps queued for the hunt and new connections. Every write is idempotent on its identity (a re-apply writes nothing new).
 import { allRows, rowsByIds } from "@/core/db";
 import { registerDerivedValue, type InputRef } from "@/core/propagation";
-import { assembleClusters, type Cluster } from "@/core/flywheel/clusters";
+import { assembleClusters, type Cluster, type ClusterRow } from "@/core/flywheel/clusters";
 
 import { applyEntries, isObj, type ApplyOpts, type BatchDeps, type EntrySpec } from "../../kit/session-batch";
 import { activeEntityIds, connectionEntityIds, heldWriteback, itemIdsOfRows, registerOnce, writeWriteback } from "../../kit/writeback";
@@ -17,6 +17,13 @@ const splitKey = (k: string): InputRef => ({ table: k.slice(0, k.indexOf(":")), 
 /** The clusters a batch may name, re-assembled from the stored records now: an entry is applied only against the graph as it stands. */
 const assemble = (deps: BatchDeps): AssembleClusters => deps.assembleClusters ?? assembleClusters;
 
+/** ENGINE-FIX-2: every row an entry cites, as table:pk (an object with table and pk, or a table:pk token in any string: a basis, a citation, a claim row). */
+const citedKeys = (x: unknown): string[] => {
+  const out: string[] = [];
+  JSON.stringify(x, (_k, v) => (isObj(v) && typeof v.table === "string" && typeof v.pk === "string" ? out.push(`${v.table}:${v.pk}`) : typeof v === "string" && out.push(...(v.match(/[a-z_]+:[^\s\],"]+/g) ?? [])), v));
+  return out;
+};
+
 interface DetectorRow { value_id: string; method_id: string; lifecycle: string; admissibility: string; inputs: { table?: string; pk?: string }[] | null }
 
 const spec: EntrySpec<SynthLive, SynthPlan> = {
@@ -26,9 +33,15 @@ const spec: EntrySpec<SynthLive, SynthPlan> = {
   keyOf: (e) => (typeof e.cluster_id === "string" ? e.cluster_id : null),
   async load(deps, file) {
     const entries = (file.entries as unknown[]).filter(isObj);
-    const ids = new Set(entries.flatMap((x) => (typeof x.cluster_id === "string" ? [x.cluster_id] : [])));
-    const { clusters } = await assemble(deps)(deps.sb, { limit: 5000, minSurfaces: 2 });
-    const mine: Cluster[] = clusters.filter((c) => ids.has(c.id));
+    // ENGINE-FIX-2: an entry is verified by its cited rows, not by re-assembling its exact cluster: each cited row must still exist among the rows of the graph now (the cluster, whole, plus any other cluster the row sits in) and holds its value there
+    const { clusters } = await assemble(deps)(deps.sb, { limit: 5000, minSurfaces: 2, maxRows: Number.MAX_SAFE_INTEGER });
+    const keyed = (r: ClusterRow): [string, ClusterRow] => [`${r.table}:${r.pk}`, r];
+    const index = new Map(clusters.flatMap((c) => c.rows.map(keyed)));
+    const mine: Cluster[] = entries.flatMap((x) => {
+      const base = clusters.find((c) => c.id === x.cluster_id);
+      const rows = [...new Map([...(base?.rows ?? []).map(keyed), ...citedKeys(x).flatMap((k) => (index.has(k) ? [[k, index.get(k) as ClusterRow] as [string, ClusterRow]] : []))]).values()];
+      return typeof x.cluster_id === "string" ? [{ anchor_entity_ids: [], angles: [], hops: 0 as const, axes: [], dropped: { year_only_events: 0, generic_assessments: 0 }, ...base, id: x.cluster_id, rows, surfaces: [...new Set(rows.map((r) => r.surface))].sort() }] : [];
+    });
     const captureIds = [...new Set(mine.flatMap((c) => c.rows.flatMap((r) => r.quote_capture_id ?? [])))];
     const captures = new Map((await rowsByIds<{ id: string; result_content: string | null }>(deps.sb, "agent_run_searches", "id, result_content", captureIds, "id", "id")).map((c) => [c.id, c.result_content ?? ""]));
     const entityRefs = entries.flatMap((x) => [...connectionEntityIds(x), ...(Array.isArray(x.patterns) ? x.patterns : []).flatMap((p) => (isObj(p) && Array.isArray(p.entity_ids) ? p.entity_ids : []))]).filter((v): v is string => typeof v === "string");

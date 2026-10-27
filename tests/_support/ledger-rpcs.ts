@@ -86,6 +86,7 @@ function writeClaim(db: MemDb, itemId: string, claimId: string | null, row: Row,
 }
 
 function removeClaim(db: MemDb, claimId: string, reason: string, proof: unknown, note: unknown, now: unknown): number {
+  if (db.rows("item_forward_events").some((e) => e.source_claim_id === claimId)) throw new Refusal("update or delete on section_claim_provenance violates foreign key constraint item_forward_events_source_claim_id_fkey", "23503");
   if (!["proven_inaccurate", "superseded_by_record_briefs", "orphaned_no_prose_referent"].includes(reason)) throw new Refusal(`a claim leaves the ledger only as a listed reason (got ${reason})`);
   if (reason !== "superseded_by_record_briefs" && !(proof && typeof proof === "object" && (proof as Row).reason)) throw new Refusal(`removing a claim as ${reason} needs a proof object with a reason`);
   const claims = db.rows("section_claim_provenance");
@@ -143,6 +144,8 @@ export function installLedgerRpcs(db: MemDb): void {
     const out = { removed: 0, claims_archived: 0, updated: 0, inserted: 0 };
     for (const s of d.rows("intelligence_item_sections").filter((x) => x.item_id === itemId && !keys.has(x.section_key))) {
       for (const c of d.rows("section_claim_provenance").filter((x) => x.section_row_id === s.id)) {
+        // item_forward_events_source_claim_id_fkey (no cascade): a claim a forward event is sourced from cannot go
+        if (d.rows("item_forward_events").some((e) => e.source_claim_id === c.id)) throw new Refusal(`update or delete on section_claim_provenance violates foreign key constraint item_forward_events_source_claim_id_fkey (${String(c.id)})`, "23503");
         archive(d, c, "orphaned_no_prose_referent", { reason: "section_removed", section_key: s.section_key }, null, a.p_now);
         out.claims_archived += 1;
       }

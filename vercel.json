@@ -1,7 +1,1 @@
-{
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": "nextjs",
-  "regions": [
-    "sfo1"
-  ]
-}
+{"$schema":"https://openapi.vercel.sh/vercel.json","framework":"nextjs","regions":["sfo1"],"ignoreCommand":"bash -c '[[ \"$VERCEL_ENV\" != \"production\" ]] && exit 0; git diff --quiet HEAD^ HEAD -- src/ public/ package.json package-lock.json next.config.ts tsconfig.json vercel.json'"}

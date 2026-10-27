@@ -214,8 +214,8 @@ async function ground(deps: GroundDeps, input: GroundInput): Promise<GroundResul
       const host = hostOf(effUrl);
       if (host && !dry && !rated.has(host)) rated.set(host, await sources.registerAndRate(effUrl).catch((e: Error) => ({ sourceId: null, tier: null, refused: `register failed: ${e.message}` })));
       const r = rated.get(host);
-      if (r && r.tier != null) res = { tier: r.tier, sourceId: r.sourceId, institution: null };
-      else if (host) {
+      if (r && (r.tier != null || r.sourceId != null)) res = { tier: r.tier, sourceId: r.sourceId, institution: null };
+      if (res.tier == null && host) {
         const agg = nullTier.get(host) ?? { factCount: 0, samples: [] };
         agg.factCount += 1;
         if (agg.samples.length < 3 && c.source_span) agg.samples.push(c.source_span.slice(0, 160));

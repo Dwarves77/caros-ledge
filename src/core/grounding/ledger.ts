@@ -6,7 +6,7 @@
 // the version number taken under the claim's row lock, and a FACT accepted only when its capture holds its span and its tier is the one of the source registered on that
 // capture's host (reattributeClaim is the single place an attribution is resolved, from the capture and never from the item). A claim the new grounding does not reproduce
 // is KEPT. A refusal is returned or thrown with its rule; a failed write is never counted as a success.
-import type { Db } from "@/core/db";
+import { allRows, rowsByIds, type Db } from "@/core/db";
 
 export interface ClaimRow {
   id?: string;
@@ -101,9 +101,7 @@ export async function applyLedgerOpsChunked(sb: Db, itemId: string, ops: readonl
   for (let i = 0; i < chunks; i += 1) {
     try {
       const r = await applyLedgerOps(sb, itemId, ops.slice(i * size, (i + 1) * size), nowIso);
-      total.claims += r.claims;
-      total.removed += r.removed;
-      total.sections += r.sections;
+      for (const k of ["claims", "removed", "sections"] as const) total[k] += r[k];
     } catch (e) {
       throw new Error(`ledger chunk ${i + 1} of ${chunks} (${i * size} of ${ops.length} ops already committed): ${e instanceof Error ? e.message : String(e)}`);
     }
@@ -175,6 +173,8 @@ export async function applyLedgerDiff(sb: Db, itemId: string, diff: Diff, opts: 
     currentIds.push(existing.id as string);
     applied.unchanged += 1;
   }
+  // ENGINE-FIX-2 Q5: a claim about to be removed hands its forward events on first (never ON DELETE SET NULL: migration 0003)
+  if (opts.replaceLedger && diff.notReproduced.length) await keepForwardEventLinks(sb, itemId, null, new Set(diff.notReproduced.flatMap((e) => e.id ?? [])));
   for (const e of diff.notReproduced) {
     if (opts.replaceLedger) {
       try {
@@ -202,8 +202,22 @@ export async function eraseClaimWithProof(sb: Db, existing: ClaimRow, _itemId: s
 }
 
 export interface SectionInput { section_key: string; section_order: number; content_md: string; is_conditional: boolean }
+/** ENGINE-FIX-2: item_forward_events.source_claim_id references the claims of a section the reconcile deletes (a foreign key, no cascade), so the reconcile failed on any item with a claim-sourced event in a vanishing section. Before it, an event follows its claim to the claim of the same text and span in a surviving section; with none, it keeps its own quote on its capture (source_kind capture on the claim's search_result_id, confidence medium: the CHECKs tie high to a claim) and lets the claim go. */
+async function keepForwardEventLinks(sb: Db, itemId: string, keys: ReadonlySet<string> | null, claimIds: ReadonlySet<string> = new Set()): Promise<void> {
+  const gone = new Set((await allRows<{ id: string; section_key: string }>(sb, "intelligence_item_sections", "id, section_key", { where: (q) => q.eq("item_id", itemId) })).filter((x) => keys && !keys.has(x.section_key)).map((x) => x.id));
+  const claims = gone.size || claimIds.size ? await allRows<ClaimRow>(sb, "section_claim_provenance", "id, section_row_id, claim_text, source_span, search_result_id", { where: (q) => q.eq("intelligence_item_id", itemId) }) : [];
+  const going = new Map(claims.filter((c) => gone.has(c.section_row_id ?? "") || claimIds.has(c.id as string)).map((c) => [c.id as string, c]));
+  for (const ev of await rowsByIds<{ id: string; source_claim_id: string }>(sb, "item_forward_events", "id, source_claim_id", going.keys(), "source_claim_id", "id")) {
+    const c = going.get(ev.source_claim_id) as ClaimRow;
+    const twin = claims.find((k) => !going.has(k.id as string) && k.claim_text === c.claim_text && k.source_span === c.source_span);
+    const w = !twin && !c.search_result_id ? null : await sb.from("item_forward_events").update(twin ? { source_claim_id: twin.id } : { source_claim_id: null, source_kind: "capture", source_capture_id: c.search_result_id, confidence: "medium" }).eq("id", ev.id);
+    if (w?.error) throw new Error(`forward event ${ev.id} kept no link: ${w.error.message}`);
+  }
+}
+
 /** Reconcile an item's sections with its brief by key in ONE transaction: the claims of a vanished section are archived to claim_versions before the section (and its cascade) goes. */
 export async function reconcileSections(sb: Db, itemId: string, sections: readonly SectionInput[], nowIso: string | null): Promise<{ removed: number; claims_archived: number; updated: number; inserted: number }> {
+  await keepForwardEventLinks(sb, itemId, new Set(sections.map((x) => x.section_key)));
   // DRAIN-FIX-2 D3: the function is one transaction (a row lock on the item, then a validate_item_provenance trigger per section and claim row, ~15 ms each); a statement timeout (57014) rolls the whole transaction back, so a second attempt is safe and is tried twice more.
   for (let attempt = 1; ; attempt += 1) {
     try {

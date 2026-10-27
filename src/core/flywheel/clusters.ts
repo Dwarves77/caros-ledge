@@ -31,7 +31,7 @@ export interface ClusterRow {
   quote_capture_id: string | null;
 }
 export interface Cluster {
-  /** sha256 of the sorted row keys, first 16 hex. */
+  /** ENGINE-FIX-2: sha256 of the sorted anchor entity ids and the angles, first 16 hex: stable under row additions, truncation, input order and time. */
   id: string;
   anchor_entity_ids: string[];
   rows: ClusterRow[];
@@ -54,7 +54,7 @@ const ANGLE_OF_KIND: Record<PatternKind, Angle> = { velocity: "lead_lag", mandat
 const CROSS_RELATIONS: ReadonlySet<string> = new Set(["competes_for_feedstock", "shares_grid_zone", "corridor_links", "fuel_for_mode", "feedstock_of"]);
 
 const rowKey = (f: Pick<Fact, "table" | "pk">): string => `${f.table}/${f.pk}`;
-const clusterId = (keys: Iterable<string>): string => createHash("sha256").update([...new Set(keys)].sort().join("\n")).digest("hex").slice(0, 16);
+const clusterId = (anchors: Iterable<string>, angles: readonly Angle[]): string => createHash("sha256").update(`${[...new Set(anchors)].sort().join("\n")}|${angles.join(",")}`).digest("hex").slice(0, 16);
 const dateOf = (f: Fact): string | null => f.due ?? f.docAt ?? f.at ?? null;
 
 const rowOf = (f: Fact): ClusterRow | null =>
@@ -105,20 +105,23 @@ export async function assembleClusters(db: Db, o: { limit: number; minSurfaces?:
   const byEntity = new Map<string, Fact[]>();
   for (const f of facts) for (const e of f.entities) byEntity.set(e, [...(byEntity.get(e) ?? []), f]);
   const drafts = new Map<string, Draft>();
+  // ENGINE-FIX-2: the id is the anchors and the angles, never the row set: groups sharing both are one cluster with their rows united
+  const angleSet = (d: Draft): Angle[] => [...new Set<Angle>([...anglesOf([...d.facts.values()], d.relations), ...[...d.kinds].map((k) => ANGLE_OF_KIND[k])])].sort();
   const add = (members: readonly Fact[], anchors: readonly string[], hops: 0 | 1 | 2, axis: Axis, relations: Iterable<string> = [], kind?: PatternKind): void => {
     const unique = new Map(members.map((f) => [`${rowKey(f)}/${f.role}`, f]));
     if (new Set([...unique.values()].map((f) => f.surface)).size < minSurfaces) return;
-    const id = clusterId([...unique.values()].map(rowKey));
+    const draft: Draft = { facts: unique, anchors: new Set(anchors), hops, axes: new Set([axis]), relations: new Set(relations), kinds: new Set(kind ? [kind] : []) };
+    const id = clusterId(draft.anchors, angleSet(draft));
     const held = drafts.get(id);
     if (held) {
-      anchors.forEach((a) => held.anchors.add(a));
+      unique.forEach((f, k) => held.facts.set(k, f));
       held.axes.add(axis);
       held.hops = Math.min(held.hops, hops) as 0 | 1 | 2;
       for (const r of relations) held.relations.add(r);
       if (kind) held.kinds.add(kind);
       return;
     }
-    drafts.set(id, { facts: unique, anchors: new Set(anchors), hops, axes: new Set([axis]), relations: new Set(relations), kinds: new Set(kind ? [kind] : []) });
+    drafts.set(id, draft);
   };
 
   // A and B: around each specific entity, the rows filed under it (0 hops), then under what it reaches in one and two hops over the relation rows
@@ -167,8 +170,7 @@ export async function assembleClusters(db: Db, o: { limit: number; minSurfaces?:
   let cut = 0;
   const clusters: Cluster[] = [...drafts.entries()].map(([id, d]) => {
     const all = [...d.facts.values()];
-    const angles = new Set<Angle>(anglesOf(all, d.relations));
-    for (const k of d.kinds) angles.add(ANGLE_OF_KIND[k]);
+    const angles = angleSet(d);
     const rows = new Map<string, ClusterRow>();
     const dropped = { year_only_events: 0, generic_assessments: 0 };
     const shared = new Set(all.filter((f) => f.table !== "research_assessments").flatMap((f) => f.entities));
@@ -185,7 +187,7 @@ export async function assembleClusters(db: Db, o: { limit: number; minSurfaces?:
     const kept: ClusterRow[] = [];
     for (let i = 0; kept.length < maxRows && perSurface.some((l) => i < l.length); i += 1) for (const l of perSurface) if (l[i] && kept.length < maxRows) kept.push(l[i] as ClusterRow);
     cut += rows.size - kept.length;
-    return { id, anchor_entity_ids: [...d.anchors].sort(), rows: kept, surfaces: [...new Set(kept.map((r) => r.surface))].sort(), angles: [...angles].sort(), hops: d.hops, axes: [...d.axes].sort(), dropped };
+    return { id, anchor_entity_ids: [...d.anchors].sort(), rows: kept, surfaces: [...new Set(kept.map((r) => r.surface))].sort(), angles, hops: d.hops, axes: [...d.axes].sort(), dropped };
   }).filter((c) => new Set(c.rows.map((r) => r.surface)).size >= minSurfaces);
   clusters.sort((a, b) => b.surfaces.length - a.surfaces.length || b.rows.length - a.rows.length || (a.id < b.id ? -1 : 1));
   const returned = clusters.slice(0, Math.max(0, o.limit));
