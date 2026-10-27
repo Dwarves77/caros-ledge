@@ -1,5 +1,5 @@
 {
-  "ruling": "operator and coordinator 2026-10-27 (SYNTH-APPLY-2): the two admin capital-radar findings that passed the second reader clean and answer with signposts and coverage gaps only (3283f152e68e3a23, 4c67950e80a30609) are applied to production through the briefs stage, after the rollback proof showed their one earlier failure to be the proof harness encoding an empty jsonb array (fixed in scripts/ops/pg-rollback-db.mjs). The signposts and the coverage-gap discovery needs write through the shared write-back. Nothing is fetched, so no scrape cadence is exercised and rule 16 stands",
+  "ruling": "operator and coordinator 2026-10-27 (SYNTH-APPLY-2): the four admin capital-radar answers that passed the second reader clean (3283f152e68e3a23, 4c67950e80a30609, 8fea45b484945ccb, b09d950f6c676fa0) are applied to production through the briefs stage, after the rollback proof showed the earlier write failure of the first two to be the proof harness encoding an empty jsonb array (fixed in scripts/ops/pg-rollback-db.mjs). The signposts and the coverage-gap discovery needs write through the shared write-back. Nothing is fetched, so no scrape cadence is exercised and rule 16 stands",
   "steps": [
     {
       "name": "synth-apply-2-dry",
