@@ -29,7 +29,7 @@ export interface ObjectPlan { obligation_id: string | null; pinpoint: string; pr
 export interface EmissionPlan {
   entities: { entity_id: string; quote: Quote }[];
   objects: ObjectPlan[];
-  connections: { parent: string; child: string; relation: string; reason_token: string; quote: Quote }[];
+  connections: { parent: string; child: string; relation: string; reason_token: string; quote: Quote; /** The record that asserted the connection when no item did (a synthesis finding or the cluster it analysed): carried in the relation's basis. */ asserted_in?: string }[];
   events: { event_kind: string; event_date: string; date_precision: "day" | "month" | "year"; quote: Quote; mode: string | null; entity_ids: string[] }[];
   document_date: { date: string; quote: Quote } | null;
   /** Entities the reader mints (G3): a new entity with the kind, the canonical name and the quote that names it; usable in the same entry by `entity_id`. `existing` when the live graph already holds it. */

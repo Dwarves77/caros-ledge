@@ -57,6 +57,8 @@ test("a theme brief writes back its signpost, its connection and its coverage ga
   } finally { globalThis.fetch = realFetch; }
   assert.equal(w.db.rows("theme_briefs").length, 1);
   assert.equal(w.db.rows("entity_relations").length, 1);
+  const basis = w.db.rows("entity_relations")[0]?.basis as { asserted_in?: string; quote?: string };
+  assert.ok(typeof basis.asserted_in === "string" && basis.asserted_in.length > 0 && typeof basis.quote === "string", "a synthesis connection (written with no item) names the record that asserted it");
   assert.deepEqual(w.db.rows("inference_records").map((i) => i.method_id), ["theme-briefs-signpost"]);
   const [f] = gapFlags(w);
   const action = (f?.recommended_actions as Record<string, unknown>[])[0]!;

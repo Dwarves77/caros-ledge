@@ -121,7 +121,7 @@ export async function writeEmission(deps: BatchDeps, itemId: string, sourceId: s
   for (const c of plan.connections) {
     const held = await readAll<Row>(sb, "entity_relations", "parent_entity_id", ["parent_entity_id", "child_entity_id", "relation"], (q) => q.eq("parent_entity_id", c.parent).eq("child_entity_id", c.child).eq("relation", c.relation));
     if (held.length) continue;
-    const { error } = await sb.from("entity_relations").insert({ parent_entity_id: c.parent, child_entity_id: c.child, relation: c.relation, asserted_by: "reader", basis: { quote: c.quote.text, capture_id: c.quote.capture_id, reader: READER_METHOD, reason_token: c.reason_token }, method_version: READER_METHOD });
+    const { error } = await sb.from("entity_relations").insert({ parent_entity_id: c.parent, child_entity_id: c.child, relation: c.relation, asserted_by: "reader", basis: { quote: c.quote.text, capture_id: c.quote.capture_id, reader: READER_METHOD, reason_token: c.reason_token, ...(c.asserted_in ? { asserted_in: c.asserted_in } : {}) }, method_version: READER_METHOD });
     if (error) notes.push(`connection ${c.parent} ${c.relation} ${c.child}: refused (${error.message})`);
     bump(error ? "connections_refused" : "connections_written");
   }

@@ -164,7 +164,7 @@ export async function writeWriteback(deps: BatchDeps, plan: WritebackPlan, ctx: 
   }
   counts.signposts_registered = signpostIds.length;
   if (plan.connections.length) {
-    const r = await writeEmission(deps, "", null, { entities: [], objects: [], connections: plan.connections, events: [], document_date: null, candidates: [], captureIds: [] }, new Set());
+    const r = await writeEmission(deps, "", null, { entities: [], objects: [], connections: plan.connections.map((c) => ({ ...c, asserted_in: ctx.findingId ?? ctx.subject })), events: [], document_date: null, candidates: [], captureIds: [] }, new Set());
     for (const [k, n] of Object.entries(r.counts)) counts[k] = (counts[k] ?? 0) + n;
     notes.push(...r.notes);
   }
