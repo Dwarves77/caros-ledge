@@ -13,9 +13,11 @@ if (values.fixture === values.live) {
   console.error("usage: node scripts/ci/validator-report.mjs (--fixture | --live)");
   process.exit(1);
 }
-const { namesLacking, REGISTRY, runRule } = await import("../../src/core/brief/rules/index.ts");
-const { ACCOUNTING_RE, LABELS, LABEL_OF, patternsOf, REGISTER_RENDERINGS, severityToken, stated } = await import("../../src/core/brief/validate.ts");
+const { ACCOUNTING_RE, assertRegistry, LABELS, LABEL_OF, namesLacking, patternsOf, REGISTER_RENDERINGS, REGISTRY, RULES, runRule, severityToken, stated } = await import("../../src/core/brief/rules/index.ts");
 const { isVerbatim } = await import("../../src/core/contracts/verbatim.ts");
+
+// Every rule function is registered (the import already refuses a disagreement; the report states it again).
+assertRegistry(Object.keys(RULES), REGISTRY);
 
 const REGISTER = JSON.parse(readFileSync(new URL("./data/validator-register.json", import.meta.url), "utf8")).counts;
 const strip = (t) => t.replace(/"[^"\n]*"/g, "").replace(/“[^”\n]*”/g, "");

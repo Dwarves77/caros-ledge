@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
-import { namesLacking, nameAt, REGISTRY, severityToken, validateBrief, type BriefModel, type ItemColumns } from "@/core/brief/rules";
+import { namesLacking, REGISTRY, severityToken, validateBrief, type BriefModel, type ItemColumns } from "@/core/brief/rules";
 import { tokenHash } from "@/core/contracts/token-hash";
 
 import { fixtureRow, run, ruleTests } from "./_cases.ts";
@@ -153,18 +153,16 @@ for (const r of REGISTRY) ruleTests(r.id);
     const data = JSON.parse(readFileSync("src/core/brief/data/workspace-names.json", "utf8")) as { hashes: string[] };
     assert.ok(data.hashes.every((h) => /^[0-9a-f]{64}$/.test(h)), "every entry is a SHA-256 hex digest");
     assert.ok(data.hashes.includes(tokenHash(PLANT)));
-    assert.equal(nameAt(`Prefix text. ${PLANT.toUpperCase()} commissions crates.`), 13);
-    assert.equal(nameAt("Zorblax alone, and Quillfeather alone, are not the name."), -1);
-    assert.equal(nameAt("Zorblax and Quillfeather, a clause apart."), -1);
     const row = fixtureRow("workspace-or-client-named");
+    const said = (text: string) => run("workspace-or-client-named", { ...row.brief, body: text }, row.item)?.rule ?? null;
+    assert.equal(said(`Prefix text. ${PLANT.toUpperCase()} commissions crates.`), "workspace-or-client-named", "case-insensitive");
+    assert.equal(said("Zorblax alone, and Quillfeather alone, are not the name."), null);
+    assert.equal(said("Zorblax and Quillfeather, a clause apart."), null);
     assert.ok(row.brief.body.includes(PLANT));
     assert.equal(run("workspace-or-client-named", row.brief, row.item)?.rule, "workspace-or-client-named");
   });
 
-  test("nameAt takes any hash set (a test plants its own), and tokenHash is the helper tree-checks uses for its banned token", () => {
-    const mine = new Set([tokenHash("Frobnitz"), tokenHash("Ada Lovelace-Smith")]);
-    assert.equal(nameAt("A note on Frobnitz.", mine), 10);
-    assert.equal(nameAt("Ada Lovelace-Smith wrote it.", mine, 2), -1, "a hyphen splits the word: the hash is of whole words");
+  test("tokenHash is the helper tree-checks uses for its banned token", () => {
     assert.equal(tokenHash("ABC"), tokenHash("abc"));
     assert.match(readFileSync("scripts/ci/tree-checks.mjs", "utf8"), /tokenHash\(t\)/);
   });

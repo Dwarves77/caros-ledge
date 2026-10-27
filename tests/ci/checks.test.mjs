@@ -10,7 +10,7 @@ import test from 'node:test';
 import { createLinter } from 'actionlint';
 
 import { bundleExports, bundleProblems, declaredNames, sourceExports } from '../../scripts/ci/edge-bundle.mjs';
-import { codeLines, limitProblems, totalsOf } from '../../scripts/ci/loc.mjs';
+import { codeLines, LIMITS, limitProblems, totalsOf } from '../../scripts/ci/loc.mjs';
 import { scopeOf } from '../../scripts/ci/changes.mjs';
 import { PROFILES, STEPS, profileFrom, stepsFor } from '../../scripts/ci/gates.mjs';
 import { dependencyProblems, engineDataFiles, engineDataPins, engineDataProblems, frozenAllowProblems, headerRangeProblems, identifierProblems, NEW_FILES_FROZEN, OVERRIDE_MARKER, pushGateProblems, sourceOriginProblems } from '../../scripts/ci/tree-checks.mjs';
@@ -154,10 +154,10 @@ test('R4: the LOC limits are compared against the real totals (the keys were bac
 
 test('the loc script exits 1 on a tree over its limit and prints the offending directory', () => {
   const root = tmp('loc-cli-');
-  put(root, 'src/core/big.ts', `${Array.from({ length: 25001 }, (_, i) => `export const v${i} = ${i};`).join('\n')}\n`);
+  put(root, 'src/core/big.ts', `${Array.from({ length: LIMITS['src/core'] + 1 }, (_, i) => `export const v${i} = ${i};`).join('\n')}\n`);
   const r = spawnSync(process.execPath, [join(process.cwd(), 'scripts/ci/loc.mjs')], { cwd: root, encoding: 'utf8' });
   assert.equal(r.status, 1, r.stdout + r.stderr);
-  assert.match(r.stderr, /src\/core has 25001 code lines, limit 25000/);
+  assert.match(r.stderr, new RegExp(`src/core has ${LIMITS['src/core'] + 1} code lines, limit ${LIMITS['src/core']}`));
 });
 
 // ---- workflow-yaml ----
