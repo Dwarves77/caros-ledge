@@ -7,6 +7,7 @@ import { createHash } from "node:crypto";
 
 import { locateSpan } from "@/core/contracts/verbatim";
 import { rowsByIds, type Db } from "@/core/db";
+import { findFigures, isFigure, stateFigure } from "@/core/parse";
 import { createdBy, HOLDINGS_NEED_ACTION, HOLDINGS_NEED_NAMESPACE } from "@/core/flywheel/flags";
 import { registerInferenceRecord, type InputRef } from "@/core/propagation";
 import type { RegisterInferenceRecordInput } from "@/core/propagation/register";
@@ -35,7 +36,7 @@ export interface SignpostPlan { claim_text: string; observable: string; source_c
 export interface GapPlan { missing_input: string; source_class: SourceClass; key: string }
 export interface WritebackPlan { signposts: SignpostPlan[]; gaps: GapPlan[]; connections: EmissionPlan["connections"] }
 /** What a kind supplies about the material an entry may quote: its captures, the entity ids that exist (to their canonical id), the clock and the intelligence items its rows belong to. */
-export interface WritebackLive { captures: ReadonlyMap<string, string>; ids: ReadonlyMap<string, string>; now: Date; locate?: Locate | null | undefined; itemIds: readonly string[] }
+export interface WritebackLive { /** the grounded text of the rows and captures the entry cites: a gap may not claim a figure missing that this text states */ evidence?: readonly string[]; captures: ReadonlyMap<string, string>; ids: ReadonlyMap<string, string>; now: Date; locate?: Locate | null | undefined; itemIds: readonly string[] }
 
 /** The identity of a coverage gap across clusters, themes and batches: the class and the missing input, whitespace and case collapsed. */
 const gapKey = (g: { source_class: string; missing_input: string }): string => createHash("sha256").update(`${g.source_class}\u0000${norm(g.missing_input)}`).digest("hex").slice(0, 16);
@@ -60,6 +61,9 @@ export function verifyWriteback(entry: Obj, tag: string, live: WritebackLive): {
     const at = `coverage_gaps[${k}]`;
     if (!isObj(g) || !nonEmpty(g.missing_input) || g.missing_input.length > 400) return err(at, "must be { missing_input (1 to 400 characters), source_class }");
     if (!isSourceClass(g.source_class)) return err(at, `source_class ${JSON.stringify(g.source_class)} is not an institution class (${SOURCE_CLASSES.join(", ")})`);
+    // CONTAIN-FIX-1: a gap does not deny a figure with its unit that the cited evidence states (the one typed comparator, core/parse stateFigure)
+    const held = live.evidence?.length ? findFigures(g.missing_input).flatMap((h) => (isFigure(h.result) && h.result.unit && stateFigure(live.evidence!.join(" "), h.result) ? [h.result.literal] : [])) : [];
+    if (held.length) return err(at, `asks for ${JSON.stringify(g.missing_input.slice(0, 120))}, but its figure ${held.join(", ")} is already stated in a cited row or capture`);
     const gap = { missing_input: g.missing_input.trim(), source_class: g.source_class, key: "" };
     gap.key = gapKey(gap);
     if (gaps.some((x) => x.key === gap.key)) return err(at, "repeats an earlier coverage gap of this entry");

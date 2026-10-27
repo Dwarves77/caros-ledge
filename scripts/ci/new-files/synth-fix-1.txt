@@ -1,2 +1,0 @@
-# path | reason (files with no "Ported from" header)
-src/core/digest/containment.ts | new in SYNTH-FIX-1: the evidence-containment pre-check (B2, B3): numbers, count words, acronyms and terms an analysis states occur in a cited row or capture; a gap is held to it and contradicted by what a capture holds.

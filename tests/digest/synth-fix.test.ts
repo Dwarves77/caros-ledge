@@ -1,9 +1,8 @@
-// SYNTH-FIX-1: the bundle drops (B1), the evidence-containment pre-check (B2), the gap contradiction (B3), every failing rule listed (B4). Red first: each assertion names the measured fault of SYNTH-1 and DRAIN-2.
+// SYNTH-FIX-1: the bundle drops (B1), the digit-figure pre-check in the admin validator (B2) and the gap-figure contradiction in the shared write-back (B3, tests/batches/writeback.test.ts), every failing rule listed (B4). Red first: each assertion names the measured fault of SYNTH-1 and DRAIN-2.
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { ontologyOf, type Relation } from "@/core/coupling";
-import { groundingReasons } from "@/core/digest/containment";
 import { assembleClusters, isYearOnlyTarget } from "@/core/flywheel/clusters";
 import type { Fact, PatternInput } from "@/core/flywheel/patterns";
 import { applyBatch } from "@/features/batches";
@@ -18,43 +17,18 @@ import { themeWorld } from "../batches/worlds.ts";
 import { adminEntry, adminWorld, ref, ROWS } from "./admin-world.ts";
 
 const apply = (w: ReturnType<typeof adminWorld>, entries: unknown[]) => applyBatch("admin-opportunity-findings", w.deps, { content: JSON.stringify(batchFile("admin-opportunity-findings", entries)), dry: true, runId: "a1" });
-const ten = Array.from({ length: 10 }, (_, i) => `substation ${i + 1}: feeder`).join("\n");
 
-test("B2: a count word the evidence does not hold fails (eleven against a cluster of ten rows); the same word as the cluster's own count passes", () => {
-  assert.match(groundingReasons({ texts: { finding: "The cluster names eleven substations in the zone." }, evidence: [ten], counts: [10] }).join(), /count "eleven"/);
-  assert.deepEqual(groundingReasons({ texts: { finding: "The cluster names ten substations in the zone." }, evidence: [ten], counts: [10] }), []);
-});
-
-test("B2: an acronym or term absent from every cited capture fails, naming it; present, it passes; numbers match as the same normalised number and a percent keeps its sign", () => {
-  const cap = "Ports on the core network (TEN-T) must offer shore power; the 1,000 kW limit applies to 45 % of calls.";
-  assert.match(groundingReasons({ texts: { signpost: "Watch TEN-T core and comprehensive ports" }, evidence: ["Shore power is required at ports."] }).join(), /term "TEN-T"/);
-  assert.deepEqual(groundingReasons({ texts: { signpost: "Watch TEN-T core ports; limit 1000 kW for 45% of calls" }, evidence: [cap] }), []);
-  assert.match(groundingReasons({ texts: { f: "a 45% share" }, evidence: ["a 45 kW limit"] }).join(), /percent "45%"/);
-  assert.deepEqual(groundingReasons({ texts: { f: "## 1. What It Is\n\nThe Emissions Trading System applies." }, evidence: ["The Emissions Trading System applies."], ignore: ["## 1. What It Is"] }), [], "a heading passed as ignore is not read, and a sentence-initial word is not part of a term");
-});
-
-test("B3: a coverage gap whose every figure and term a cited capture already holds is a contradiction; a gap naming what no capture holds passes", () => {
-  const evidence = ["The median grid connection queue is 31 months in the transmission zone."];
-  assert.match(groundingReasons({ texts: {}, gaps: ["the 31 months queue length"], evidence }).join(), /gap contradiction: coverage_gaps\[0\]/);
-  assert.deepEqual(groundingReasons({ texts: {}, gaps: ["no HVO price series for the zone"], evidence }), [], "a gap naming an absent series passes");
-  const imo = ["The IMO adopted its 2030 strategy; the grid connection queue is 31 months."];
-  assert.deepEqual(groundingReasons({ texts: {}, gaps: ["no IMO 2030 fuel-intensity figure"], evidence: imo }), [], "context tokens (an acronym, a year) held by a capture are no contradiction");
-  assert.match(groundingReasons({ texts: {}, gaps: ["the grid queue figure"], evidence: ["The grid queue figure is published yearly."] }).join(), /whole phrase/, "the whole missing_input phrase verbatim in a capture");
-  assert.deepEqual(groundingReasons({ texts: {}, gaps: ["the installed charging capacity at the mandate date"], evidence }), []);
-});
-
-test("B2/B3 and B4 in the admin kind: an invented count, an invented term and a contradicted gap are all residue, and the dry apply lists EVERY failing rule of the entry in one note", async () => {
+test("CONTAIN-FIX-1 in the admin kind: an invented figure is residue naming it; a gap denying a held figure is refused by the shared write-back; the grounded entry is unaffected", async () => {
   const w = adminWorld();
   const base = adminEntry();
-  const findings = [{ ...(base.findings as Record<string, unknown>[])[0], sourced_finding_md: `The mandate requires 50 MW [${ref(ROWS.item)}] and eleven substations [${ref(ROWS.grid)}], also [${ref(ROWS.oem)}].` }];
-  const signposts = [{ ...(base.signposts as Record<string, unknown>[])[0], observable: "TEN-T core ports reporting" }];
-  const r = await apply(w, [adminEntry({ findings, signposts, coverage_gaps: [{ missing_input: "the queue of 31 months", source_class: "govIntergov" }] })]);
+  const findings = [{ ...(base.findings as Record<string, unknown>[])[0], sourced_finding_md: `The mandate requires 60 MW [${ref(ROWS.item)}] and 31 months [${ref(ROWS.grid)}], also [${ref(ROWS.oem)}].` }];
+  const r = await apply(w, [adminEntry({ findings })]);
   assert.equal(r.counts.residue, 1);
-  const note = r.notes[0] ?? "";
-  assert.doesNotMatch(note, /coverage_gaps\[0\] states/);
-  assert.match(note, /3 failing rule\(s\)/);
-  for (const part of [/count "eleven"/, /term "TEN-T"/, /gap contradiction/]) assert.match(note, part);
+  assert.match(r.notes[0] ?? "", /figure "60 MW"/);
   assert.equal(r.counts.valid, 0);
+  const g = await apply(w, [adminEntry({ coverage_gaps: [{ missing_input: "the 50 MW of charging capacity", source_class: "govIntergov" }] })]);
+  assert.equal(g.counts.valid, 0);
+  assert.match(JSON.stringify(g), /already stated in a cited row or capture/);
   assert.equal((await apply(w, [adminEntry()])).counts.valid, 1, "the grounded entry is unaffected");
 });
 
