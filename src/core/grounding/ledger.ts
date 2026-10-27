@@ -252,12 +252,17 @@ export function groundRetryPlan(detail: string | null | undefined): "structural_
   return DETERMINISTIC.some((r) => d.includes(r)) ? "reresearch_only" : "reground";
 }
 
-/** GROUND-FIX-1: the stored ledger derives from an authored ledger when it holds every authored claim as (text, span, section key). A verified item whose brief was replaced, or whose claim moved section in a re-section, fails this and is grounded again (replaced claims are archived to claim_versions by the diff). An authored section key the item lacks resolves to its first section, as the ground does. */
+/** GROUND-FIX-1: the stored ledger derives from an authored ledger when it holds every authored (text, span) pair, each stored in one of the sections the pair was authored in (one row per pair). A verified item whose brief was replaced, or whose claim moved section in a re-section, fails this and is grounded again (replaced claims are archived to claim_versions by the diff). An authored section key the item lacks resolves to its first section, as the ground does. */
 export function ledgerCoversClaims(stored: readonly { claim_text?: string | null; source_span?: string | null; section_row_id?: string | null }[], authored: readonly { claim_text?: unknown; source_span?: unknown; section?: unknown }[], sections: readonly { id: string; section_key: string; section_order?: number }[]): boolean {
   const ordered = [...sections].sort((x, y) => (x.section_order ?? 0) - (y.section_order ?? 0));
   const keyById = new Map(ordered.map((x) => [x.id, String(x.section_key)]));
   const keys = new Set(keyById.values());
   const flat = (v: unknown) => String(v ?? "").replace(/\s+/g, " ").trim();
-  const have = new Set(stored.map((c) => `${flat(c.claim_text)}|${flat(c.source_span)}|${keyById.get(c.section_row_id ?? "") ?? ""}`));
-  return authored.length === 0 || (have.size > 0 && authored.every((c) => have.has(`${flat(c.claim_text)}|${flat(c.source_span)}|${keys.has(String(c.section ?? "")) ? String(c.section) : (ordered[0]?.section_key ?? "")}`)));
+  const pair = (c: { claim_text?: unknown; source_span?: unknown }) => `${flat(c.claim_text)}|${flat(c.source_span)}`;
+  // The ledger stores ONE row per (text, span), so a claim authored in several sections is stored in one of them: coverage compares the SET of authored pairs, and each stored row's section must be one of the sections its pair was authored in.
+  const authoredIn = new Map<string, Set<string>>();
+  for (const c of authored) authoredIn.set(pair(c), (authoredIn.get(pair(c)) ?? new Set<string>()).add(keys.has(String(c.section ?? "")) ? String(c.section) : (ordered[0]?.section_key ?? "")));
+  const storedIn = new Map<string, Set<string>>();
+  for (const c of stored) storedIn.set(pair(c), (storedIn.get(pair(c)) ?? new Set<string>()).add(keyById.get(c.section_row_id ?? "") ?? ""));
+  return authored.length === 0 || (storedIn.size > 0 && [...authoredIn].every(([k, secs]) => { const have = storedIn.get(k); return !!have && [...have].every((h) => secs.has(h)); }));
 }

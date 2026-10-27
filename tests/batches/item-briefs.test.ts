@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
+import { ledgerCoversClaims } from "@/core/grounding/ledger";
 import { applyBatch } from "@/features/batches";
 import { validateRecordBriefEntry } from "@/features/batches/kinds/item-briefs/validate";
 
@@ -237,4 +238,15 @@ test("GROUND-FIX-1 G2: a claim whose text is unchanged but which sits in another
   assert.equal(again.counts.already_applied ?? 0, 0, "a moved claim is half applied");
   assert.equal(again.counts.applied, 1, refusals(again));
   assert.equal(w.db.rows("section_claim_provenance").find((c) => c.id === claim.id || c.claim_text === claim.claim_text)?.section_row_id, home);
+});
+
+test("GROUND-FIX-1 G2 (duplicate sections): a claim authored in two sections and stored once, in either of them, reads as covered; stored in a third section, or not stored, it does not (b293a2b6 no longer loops)", () => {
+  const sections = [{ id: "s1", section_key: "3", section_order: 1 }, { id: "s2", section_key: "8", section_order: 2 }, { id: "s3", section_key: "14", section_order: 3 }];
+  const authored = [{ claim_text: "Scope widens in 2022", source_span: "From January 2022", section: "8" }, { claim_text: "Scope widens in 2022", source_span: "From January 2022", section: "14" }, { claim_text: "Other", source_span: "span", section: "3" }];
+  const row = (text: string, span: string, section: string) => ({ claim_text: text, source_span: span, section_row_id: section });
+  const other = row("Other", "span", "s1");
+  assert.equal(ledgerCoversClaims([row("Scope widens in 2022", "From January 2022", "s2"), other], authored, sections), true, "stored in the first authored section");
+  assert.equal(ledgerCoversClaims([row("Scope widens in 2022", "From January 2022", "s3"), other], authored, sections), true, "stored in the second authored section");
+  assert.equal(ledgerCoversClaims([row("Scope widens in 2022", "From January 2022", "s1"), other], authored, sections), false, "stored in a section it was never authored in");
+  assert.equal(ledgerCoversClaims([other], authored, sections), false, "a pair not stored at all");
 });
