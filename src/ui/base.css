@@ -340,10 +340,11 @@ button, input, select, textarea { font-family: inherit; }
 .cl-ac-pills { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .cl-ac-pills-main { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; }
 .cl-ac-meta { font-size: var(--fs-105); color: var(--ink-3); white-space: nowrap; flex-shrink: 0; }
-.cl-ac-row { margin-top: 10px; }
+.cl-ac-bar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; margin-top: 10px; }
+.cl-ac-row { margin-top: 0; }
 .cl-ac-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
-.cl-ac-actions { margin-top: 14px; }
-.cl-ac-rule { height: 1px; background: var(--line-2); margin: 16px 0; }
+.cl-ac-actions { margin-top: 0; }
+.cl-ac-rule { height: 1px; background: var(--line-2); margin: 12px 0; }
 .cl-ac-label { margin-bottom: 12px; }
 .cl-exposure-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; }
 .cl-exposure-cell { min-width: 0; }
@@ -725,8 +726,8 @@ textarea.cl-input { padding: 10px; resize: vertical; }
 .cl-detail-link { display: block; min-height: 44px; padding: 10px 0; border-bottom: 1px solid var(--line-3); text-decoration: none; color: inherit; }
 .cl-detail-link-title { font-size: 15px; font-weight: 700; line-height: 1.35; color: var(--ink); margin: 0; overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
 /* The connections strip in the masthead card: padded like the action card above it, cards in a grid (the old page: 2px brand edge, kind label over a title clamped to two lines), never full-bleed. */
-.cl-masthead-slot [data-part="item-connections"] { margin-top: var(--sp-10); padding: 14px 20px 16px; }
-.cl-conn-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: 10px; margin-top: 6px; }
+.cl-masthead-slot [data-part="item-connections"] { margin-top: 0; padding: 12px 20px 16px; }
+.cl-conn-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr)); gap: 10px; margin-top: 6px; }
 .cl-conn-grid > .cl-detail-link { border-bottom: 0; border-left: 2px solid var(--brand); padding: 8px 12px; min-width: 0; }
 .cl-detail-link-note { font-size: var(--fs-11); line-height: 1.5; color: var(--ink-2); margin: 3px 0 0; }
 .cl-detail-disclosure { margin-top: 14px; border-top: 1px solid var(--line-2); border-bottom: 1px solid var(--line-2); }

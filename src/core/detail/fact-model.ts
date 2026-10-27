@@ -148,7 +148,7 @@ function splitEmbeddedLinks(node: ClaimNode): ClaimNode[] {
 
 /** Markdown to claim nodes: bold runs and embedded links kept, headings, backticks, list markers and stray asterisks gone. */
 function toClaimNodes(raw: string): ClaimNode[] {
-  const text = raw.replace(/^\s*#{1,6}\s*/, "").replace(/`+/g, "").replace(/\[([^\]]+)\]\([^)]+\)/g, "$1").replace(/^[ \t]*[-*]\s+/, "").replace(/\n[ \t]*[-*]\s+/g, " ").replace(/\s*\n+\s*/g, " ").replace(/[ \t]{2,}/g, " ").trim();
+  const text = raw.replace(/^\s*#{1,6}\s*/, "").replace(/`+/g, "").replace(/\[([^\]]+)\]\([^)]+\)/g, "$1").replace(/^[ \t]*[-*]\s+/, "").replace(/\n[ \t]*[-*]\s+/g, " ").replace(/\s*\n+\s*/g, " ").replace(/[ \t]{2,}/g, " ").trim().replace(/^(\*\*)?([a-z])/, (_, p, c) => (p ?? "") + c.toUpperCase());
   const nodes: ClaimNode[] = [];
   let last = 0;
   for (const m of text.matchAll(/\*\*(.+?)\*\*/g)) {

@@ -110,7 +110,7 @@ test("timeline and trajectory take the request's instant: the same input at two 
 });
 
 test("fact model: kinds from lead-ins, embedded sentences split, a source citation becomes provenance, same-kind runs merge, prose is not a card", () => {
-  const md = "**DEADLINE** Reports are due by **31 March 2027** each year. Source: EUR-Lex, Regulation 2023/9999, 2026 https://eur-lex.europa.eu/x\n\n**DEADLINE** A second deadline applies on 1 July. Source: EUR-Lex, 2026\n\nPlain prose with no source.\n\n*Analytical inference:* This probably raises costs.";
+  const md = "**DEADLINE** Reports are due by **31 March 2027** each year. Source: EUR-Lex, Regulation 2023/9999, 2026 https://eur-lex.europa.eu/x\n\n**DEADLINE** A second deadline applies on 1 July. Source: EUR-Lex, 2026\n\nPlain prose with no source.\n\n*Operational implication:* a procurement lead asks each carrier.";
   const paragraphs = parseFactParagraphs(md);
   assert.deepEqual(paragraphs.map((p) => p.kind), ["fact", "fact", "prose", "inference"]);
   const models = parseFactCardModels(md);
@@ -118,6 +118,7 @@ test("fact model: kinds from lead-ins, embedded sentences split, a source citati
   assert.equal(models[0]?.additionalClaims?.length, 1);
   assert.equal(models[0]?.figureLead, "31 March 2027");
   assert.equal(models[0]?.provenance?.source, "EUR-Lex");
+  assert.equal(models[1]?.claim[0]?.text, "A procurement lead asks each carrier.");
   assert.equal(deriveFactCardModels(paragraphs[2] as (typeof paragraphs)[number]).length, 0);
   assert.equal(mergeAdjacentSameKind([]).length, 0);
   assert.equal(deriveRecordFactCardModel({ label: "x", span: null }), null, "a record fact with no quoted span is not a card");

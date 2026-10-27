@@ -4,7 +4,6 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { normalizeDisplayTitle } from "@/core/fetch/titles";
-import { formatDate } from "@/core/shared";
 import { pickVisibleInferences, type InferenceView } from "@/core/detail/inference-view";
 import { CONNECTED_SECTION_ID, crossPageOrd, INFERENCES_SECTION_ID } from "@/core/detail/section-index";
 import type { buildIntersectionView } from "@/core/flywheel/view-model";
@@ -49,9 +48,9 @@ function cleanPreContractBriefText(md: string): string {
 /** One short label per horizon token (the token's own words; no sentence about an item). */
 /** The cluster's structure drawn as labels and numbers; every word here is the page's own, none is a claim about the items. */
 const SIGNAL_LABEL: Readonly<Record<string, string>> = signalLabels;
-function clusterLine(c: NonNullable<ThemeAnalysisView["cluster"]>, pages: ThemeAnalysisView["pages"]): string {
-  const where = c.surfaces.map((k) => pages.find((p) => p.surface === k)?.label ?? k);
-  return [`${c.memberCount} linked ${c.memberCount === 1 ? "item" : "items"}`, where.length > 0 ? `on ${where.join(", ")}` : null, ...c.signals.map((x) => SIGNAL_LABEL[x] ?? x), c.density === null ? null : `cohesion ${c.density.toFixed(2)}`].filter(Boolean).join(" · ");
+function clusterLine(c: NonNullable<ThemeAnalysisView["cluster"]>): string {
+  const by = c.signals.map((x) => SIGNAL_LABEL[x] ?? x.replace(/_/g, " ")).join(", ");
+  return `A brief for this theme has not been written yet, so what this connection means is not stated here.${by ? ` Grouped by ${by.toLowerCase()}.` : ""}`;
 }
 const HORIZON_LABEL: Readonly<Record<string, string>> = { "0-6m": "Within 6 months", "6-18m": "6 to 18 months", "18-36m": "18 to 36 months", NOW: "Within 2 years (band only)", "3-5y": "3 to 5 years", NEAR: "2 to 5 years (band only)", "5-10y": "5 to 10 years", MID: "5 to 10 years (band only)", ">10y": "Beyond 10 years", FAR: "Beyond 10 years (band only)", unplaced: "No dated event on file (written by the obligations stage)" };
 
@@ -93,7 +92,7 @@ function GroupList({ groups }: { groups: Group[] }) {
   );
 }
 
-function ThemeAnalysis({ theme, surfaceLabel, first, kindLabels }: { theme: ThemeAnalysisView; surfaceLabel: string; first: boolean; kindLabels: Readonly<Record<string, string>> }) {
+function ThemeAnalysis({ theme, surfaceLabel, first }: { theme: ThemeAnalysisView; surfaceLabel: string; first: boolean }) {
   const pageNames = theme.pages.map((p) => p.label).join(", ");
   const s = theme.sections;
   const staleNote = theme.supersedesThemeId ? "Stale: this synthesis was written for an earlier version of this theme and its membership has changed since." : "Stale: this theme's membership has changed since the synthesis was written.";
@@ -140,7 +139,7 @@ function ThemeAnalysis({ theme, surfaceLabel, first, kindLabels }: { theme: Them
       ) : null}
       {!theme.hasBrief && theme.cluster && (
         <div className="cl-detail-block">
-          <StateNote>{clusterLine(theme.cluster, theme.pages)}</StateNote>
+          <StateNote>{clusterLine(theme.cluster)}</StateNote>
         </div>
       )}
       {theme.forwardOutlook.horizons.length > 0 && (
@@ -148,16 +147,7 @@ function ThemeAnalysis({ theme, surfaceLabel, first, kindLabels }: { theme: Them
           <ul style={{ margin: 0, paddingLeft: "var(--sp-18)", fontSize: "var(--fs-13)", lineHeight: 1.6, color: "var(--ink-2)" }}>
             {theme.forwardOutlook.horizons.map((h) => (
               <li key={h.horizon}>
-                <span style={{ fontWeight: 600, color: "var(--ink)" }}>{HORIZON_LABEL[h.horizon] ?? h.horizon}</span> · {h.memberIds.length} {h.memberIds.length === 1 ? "item" : "items"} · {h.surfaces.map((k) => theme.pages.find((p) => p.surface === k)?.label ?? k).join(", ")}
-                {h.triggers.length > 0 && (
-                  <ul style={{ margin: 0, paddingLeft: "var(--sp-18)" }}>
-                    {h.triggers.map((t) => (
-                      <li key={t.eventId}>
-                        {formatDate(t.date)} · {kindLabels[t.kind] ?? t.kind}
-                      </li>
-                    ))}
-                  </ul>
-                )}
+                <span style={{ fontWeight: 600, color: "var(--ink)" }}>{HORIZON_LABEL[h.horizon] ?? h.horizon}</span> · {h.memberIds.length} {h.memberIds.length === 1 ? "item" : "items"}{h.triggers.length > 0 ? ` · ${h.triggers.length} dated ${h.triggers.length === 1 ? "obligation" : "obligations"}` : ""} · {h.surfaces.map((k) => theme.pages.find((p) => p.surface === k)?.label ?? k).join(", ")}
               </li>
             ))}
           </ul>
@@ -204,7 +194,7 @@ export function crossPagePresence(crossPage?: CrossPageData | null): { connected
 }
 
 /** "Connected intelligence" (intersections and the theme analysis) and the Inferences section; the view is computed once here from the rows the page read. */
-export function CrossPageSection({ surfaceKey, surfaceLabel, crossPage, onRetry, kindLabels = {} }: { surfaceKey: string; surfaceLabel: string; crossPage?: CrossPageData | null; onRetry?: () => void; kindLabels?: Readonly<Record<string, string>> }) {
+export function CrossPageSection({ surfaceKey, surfaceLabel, crossPage, onRetry }: { surfaceKey: string; surfaceLabel: string; crossPage?: CrossPageData | null; onRetry?: () => void; kindLabels?: Readonly<Record<string, string>> }) {
   const view = crossPage?.intersections ?? null;
   const theme = crossPage?.theme ?? null;
   const themesFailed = crossPage?.degraded?.includes("themes") ?? false;
@@ -232,7 +222,7 @@ export function CrossPageSection({ surfaceKey, surfaceLabel, crossPage, onRetry,
               )}
             </DetailSubSection>
           )}
-          {theme && <ThemeAnalysis theme={theme} surfaceLabel={surfaceLabel} first={!view} kindLabels={kindLabels} />}
+          {theme && <ThemeAnalysis theme={theme} surfaceLabel={surfaceLabel} first={!view} />}
           {themesFailed && (
             <div className="cl-detail-block">
               <StateNote tone="error" {...(onRetry ? { action: { label: "Retry", onClick: onRetry } } : {})}>

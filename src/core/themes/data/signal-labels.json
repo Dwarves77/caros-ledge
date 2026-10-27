@@ -2,5 +2,10 @@
  "shared_source": "Shared source",
  "shared_scenario": "Shared scenarios",
  "shared_compliance_object": "Shared obligated parties",
- "shared_jurisdiction_topic": "Shared jurisdiction and topic"
+ "shared_jurisdiction_topic": "Shared jurisdiction and topic",
+ "shared_regulation_identifier": "Shared regulation",
+ "shared_title_entity": "Shared subject",
+ "intersection": "Cross-domain intersection",
+ "shared_entity": "Shared entity",
+ "lineage": "Statutory lineage"
 }
