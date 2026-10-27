@@ -7,6 +7,9 @@ const NUM_RE = /\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?/g;
 const ACRONYM_RE = /\b(?:[a-z]+-)?[A-Z]{2,}[A-Z0-9-]*\b/g;
 const TITLE_RE = /\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)+\b/g;
 const STRUCTURE = new Set(["confirmed", "hypothesis", "refuted", "fact", "gap", "analysis"]);
+/** A figure: a number (not part of an id: no letter, slash, dot or hyphen before it) with its unit word or percent sign (a date, a number and a month before a year, is no figure); held when the evidence states the same number with the same unit. */
+const FIGURE_RE = new RegExp(String.raw`(?<![A-Za-z0-9/.-])(${NUM_RE.source})\s?(%|per ?cent|[A-Za-z]{1,12})(?![A-Za-z0-9]|\s?\d{4})`, "gi");
+const stem = (u: string): string => (/^per ?cent$/i.test(u) ? "%" : u.toLowerCase().replace(/s$/, ""));
 const num = (s: string): string => String(Number(s.replace(/,/g, "")));
 /** What is not a claim of the text: citations, ids, source lines (a url), a table's header row, list markers. */
 const stripped = (t: string, ignore: readonly string[]): string => ignore.reduce((x, s) => x.split(s).join(" "), t).replace(/\[[a-z_]+:[^\]\s]+\]|^.*https?:\/\/.*$|^\|[^\n]*\n\|[ \t:|-]+$|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|^\s*\d+[.)]\s/gim, " ");
@@ -43,14 +46,14 @@ const heldIn = (evidence: readonly string[], counts: readonly number[], values: 
 export function groundingReasons(o: { texts: Record<string, string>; gaps?: readonly string[]; evidence: readonly string[]; /** the cited rows' stored values (default: the evidence) */ values?: readonly string[]; counts?: readonly number[]; ignore?: readonly string[] }): string[] {
   const held = heldIn(o.evidence, o.counts ?? [], o.values ?? o.evidence);
   const phrasing = flat(o.evidence).replace(/\s+/g, " ");
-  const numbers = numbersOf(phrasing);
+  const units = new Set([...phrasing.matchAll(FIGURE_RE)].map((m) => `${num(m[1] as string)}|${stem(m[2] as string)}`));
   const seen = new Set<string>();
   const out: string[] = [];
   const miss = (where: string, text: string) => { for (const k of tokensOf(text, o.ignore)) if (!held(k) && !seen.has(`${where}|${k.text}`)) { seen.add(`${where}|${k.text}`); out.push(`grounding pre-check: ${where} states ${k.kind} ${JSON.stringify(k.text)}, which occurs in no cited row value or cited capture`); } };
   for (const [where, text] of Object.entries(o.texts)) miss(where, text);
   (o.gaps ?? []).forEach((g, i) => {
     // a gap names what the evidence does NOT hold, so it is exempt from containment. It is contradicted only by (a) a figure it states as missing (a number with a unit or percent sign, a bare year excepted) held as the same normalised number, or (b) its whole missing_input phrase verbatim in a capture; a context token alone (an acronym, a name, a year) is no contradiction
-    const figures = [...g.matchAll(new RegExp(String.raw`(${NUM_RE.source})\s?(%|per ?cent|[A-Za-z]{1,12})`, "g"))].filter((m) => m[2] === "%" || /^per ?cent$/i.test(m[2] as string) || !(Number(m[1]) > 1899 && Number(m[1]) < 2101)).map((m) => m[0].trim()).filter((f) => numbers.has(num(f.match(NUM_RE)?.[0] ?? "")));
+    const figures = [...g.matchAll(FIGURE_RE)].filter((m) => !(m[2] !== "%" && Number(m[1]) > 1899 && Number(m[1]) < 2101) && units.has(`${num(m[1] as string)}|${stem(m[2] as string)}`)).map((m) => m[0].trim());
     const phrase = g.replace(/\s+/g, " ").trim().toLowerCase();
     if (figures.length || (phrase && phrasing.includes(phrase))) out.push(`gap contradiction: coverage_gaps[${i}] asks for ${JSON.stringify(g.slice(0, 120))}, but ${figures.length ? `its figure ${figures.join(", ")} is` : "the whole phrase is"} already held by a cited capture or row`);
   });
